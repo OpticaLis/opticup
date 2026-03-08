@@ -500,7 +500,7 @@ let currentPONum = '';
 let currentPOSupplier = '';
 let selectedPOForEntry = null;
 let maxBarcode = 0;
-let branchCode = sessionStorage.getItem('prizma_branch') || '000';
+let branchCode = sessionStorage.getItem('prizma_branch') || '00';
 
 // =========================================================
 // SUPABASE COMPATIBILITY LAYER
@@ -856,9 +856,9 @@ async function loadData() {
 
 async function loadMaxBarcode() {
   try {
-    // Branch barcode format: BBBNNNN (3-digit branch + 4-digit sequence)
+    // Branch barcode format: BBDDDDD (2-digit branch + 5-digit sequence)
     // Fetch all barcodes within the current branch prefix
-    const prefix = branchCode.padStart(3, '0');
+    const prefix = branchCode.padStart(2, '0');
     const { data } = await sb.from('inventory')
       .select('barcode')
       .not('barcode', 'is', null)
@@ -867,7 +867,7 @@ async function loadMaxBarcode() {
     if (data?.length) {
       data.forEach(r => {
         if (r.barcode.length === 7 && r.barcode.startsWith(prefix)) {
-          const seq = parseInt(r.barcode.slice(3), 10);
+          const seq = parseInt(r.barcode.slice(2), 10);
           if (!isNaN(seq) && seq > mx) mx = seq;
         }
       });
@@ -1463,7 +1463,7 @@ async function generateBarcodes(source) {
   showLoading('מייצר ברקודים...');
   try {
     await loadMaxBarcode();
-    const prefix = branchCode.padStart(3, '0');
+    const prefix = branchCode.padStart(2, '0');
     let nextSeq = maxBarcode;
 
     for (const row of rows) {
@@ -1480,8 +1480,8 @@ async function generateBarcodes(source) {
         barcode = withQty.fields['ברקוד'] || '';
       } else {
         nextSeq++;
-        if (nextSeq > 9999) throw new Error('חריגה — מקסימום 9999 ברקודים לסניף ' + prefix);
-        barcode = prefix + String(nextSeq).padStart(4, '0');
+        if (nextSeq > 99999) throw new Error('חריגה — מקסימום 99,999 ברקודים לסניף ' + prefix);
+        barcode = prefix + String(nextSeq).padStart(5, '0');
       }
 
       const cell = row.tr.querySelector('.barcode-cell');

@@ -12,7 +12,7 @@ h1 { color: #3b82f6; }
 </style>
 </head>
 <body>
-<h1>Barcode Branch Logic Tests</h1>
+<h1>Barcode Branch Logic Tests (BBDDDDD)</h1>
 <div id="results"></div>
 <script>
 const SUPABASE_URL = 'https://tsxrrxzmdxaenlvocyit.supabase.co';
@@ -29,15 +29,15 @@ function log(name, ok, detail) {
   if (ok) passed++; else failed++;
 }
 
-// ---- Helpers extracted from index.html (pure-logic, no DOM) ----
+// ---- Helpers extracted from index.html (BBDDDDD format) ----
 
 function loadMaxBarcodeFromRows(rows, branchCode) {
-  const prefix = branchCode.padStart(3, '0');
+  const prefix = branchCode.padStart(2, '0');
   let mx = 0;
   rows.forEach(r => {
     const bc = r.barcode;
     if (bc && bc.length === 7 && bc.startsWith(prefix)) {
-      const seq = parseInt(bc.slice(3), 10);
+      const seq = parseInt(bc.slice(2), 10);
       if (!isNaN(seq) && seq > mx) mx = seq;
     }
   });
@@ -45,13 +45,13 @@ function loadMaxBarcodeFromRows(rows, branchCode) {
 }
 
 function generateBarcodesSeq(count, maxBarcode, branchCode) {
-  const prefix = branchCode.padStart(3, '0');
+  const prefix = branchCode.padStart(2, '0');
   const barcodes = [];
   let seq = maxBarcode;
   for (let i = 0; i < count; i++) {
     seq++;
-    if (seq > 9999) throw new Error('overflow');
-    barcodes.push(prefix + String(seq).padStart(4, '0'));
+    if (seq > 99999) throw new Error('overflow');
+    barcodes.push(prefix + String(seq).padStart(5, '0'));
   }
   return { barcodes, newMax: seq };
 }
@@ -62,53 +62,64 @@ function generateBarcodesSeq(count, maxBarcode, branchCode) {
   // Test 1: loadMaxBarcode correctly finds max within branch prefix
   // ============================================================
   try {
-    // Simulate DB rows — mix of branch 000 and branch 001
     const rows = [
       { barcode: '0000001' },
       { barcode: '0000042' },
       { barcode: '0000100' },
-      { barcode: '0010005' },  // branch 001
-      { barcode: '0010012' },  // branch 001
+      { barcode: '0100005' },  // branch 01
+      { barcode: '0100012' },  // branch 01
       { barcode: null },
       { barcode: 'wc0004' },   // non-standard, ignored
       { barcode: '123' },      // too short, ignored
     ];
-    const max000 = loadMaxBarcodeFromRows(rows, '000');
-    const max001 = loadMaxBarcodeFromRows(rows, '001');
-    const max002 = loadMaxBarcodeFromRows(rows, '002');
-    log('loadMaxBarcode branch 000', max000 === 100, `expected 100, got ${max000}`);
-    log('loadMaxBarcode branch 001', max001 === 12, `expected 12, got ${max001}`);
-    log('loadMaxBarcode branch 002 (empty)', max002 === 0, `expected 0, got ${max002}`);
+    const max00 = loadMaxBarcodeFromRows(rows, '00');
+    const max01 = loadMaxBarcodeFromRows(rows, '01');
+    const max02 = loadMaxBarcodeFromRows(rows, '02');
+    log('loadMaxBarcode branch 00', max00 === 100, `expected 100, got ${max00}`);
+    log('loadMaxBarcode branch 01', max01 === 12, `expected 12, got ${max01}`);
+    log('loadMaxBarcode branch 02 (empty)', max02 === 0, `expected 0, got ${max02}`);
   } catch (e) {
     log('loadMaxBarcode', false, e.message);
   }
 
   // ============================================================
-  // Test 2: generateBarcodes produces correct branch-prefixed sequence
+  // Test 2: generateBarcodes produces correct BBDDDDD sequence
   // ============================================================
   try {
-    // Branch 000, starting from max=100, generate 3
-    const r1 = generateBarcodesSeq(3, 100, '000');
-    log('generateBarcodes seq 000',
+    // Branch 00, starting from max=100, generate 3
+    const r1 = generateBarcodesSeq(3, 100, '00');
+    log('generateBarcodes seq 00',
       JSON.stringify(r1.barcodes) === '["0000101","0000102","0000103"]' && r1.newMax === 103,
       `barcodes=${JSON.stringify(r1.barcodes)}, newMax=${r1.newMax}`);
 
-    // Branch 001, starting from 0 (fresh branch)
-    const r2 = generateBarcodesSeq(2, 0, '001');
-    log('generateBarcodes seq 001 fresh',
-      JSON.stringify(r2.barcodes) === '["0010001","0010002"]' && r2.newMax === 2,
+    // Branch 01, starting from 0 (fresh branch)
+    const r2 = generateBarcodesSeq(2, 0, '01');
+    log('generateBarcodes seq 01 fresh',
+      JSON.stringify(r2.barcodes) === '["0100001","0100002"]' && r2.newMax === 2,
       `barcodes=${JSON.stringify(r2.barcodes)}, newMax=${r2.newMax}`);
 
-    // Branch 002, overflow at 9999
+    // Overflow at 99999
     let overflowed = false;
-    try { generateBarcodesSeq(1, 9999, '002'); } catch { overflowed = true; }
-    log('generateBarcodes overflow at 9999', overflowed, overflowed ? 'correctly threw' : 'did not throw');
+    try { generateBarcodesSeq(1, 99999, '00'); } catch { overflowed = true; }
+    log('generateBarcodes overflow at 99999', overflowed, overflowed ? 'correctly threw' : 'did not throw');
   } catch (e) {
     log('generateBarcodes', false, e.message);
   }
 
   // ============================================================
-  // Live DB test: unique constraint rejects duplicate barcode
+  // Test 3: branch 99 (max branch) works correctly
+  // ============================================================
+  try {
+    const r99 = generateBarcodesSeq(2, 500, '99');
+    log('generateBarcodes branch 99 (max)',
+      JSON.stringify(r99.barcodes) === '["9900501","9900502"]' && r99.newMax === 502,
+      `barcodes=${JSON.stringify(r99.barcodes)}, newMax=${r99.newMax}`);
+  } catch (e) {
+    log('generateBarcodes branch 99', false, e.message);
+  }
+
+  // ============================================================
+  // Test 4: DB unique constraint rejects duplicate barcode
   // ============================================================
   try {
     const { data: sample } = await sb.from('inventory').select('barcode').not('barcode','is',null).limit(1);
