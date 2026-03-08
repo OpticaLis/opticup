@@ -823,6 +823,57 @@ async function batchUpdate(tableName, records) {
 }
 
 // =========================================================
+// LOGGING ENGINE
+// =========================================================
+async function writeLog(action, inventoryId, details = {}) {
+  try {
+    const performer = sessionStorage.getItem('prizma_user') || 'system';
+    const branch    = sessionStorage.getItem('prizma_branch') || '00';
+    await sb.from('inventory_logs').insert({
+      action,
+      inventory_id:  inventoryId || null,
+      barcode:       details.barcode       || null,
+      brand:         details.brand         || null,
+      model:         details.model         || null,
+      qty_before:    details.qty_before    ?? null,
+      qty_after:     details.qty_after     ?? null,
+      price_before:  details.price_before  ?? null,
+      price_after:   details.price_after   ?? null,
+      reason:        details.reason        || null,
+      source_ref:    details.source_ref    || null,
+      performed_by:  performer,
+      branch_id:     branch
+    });
+  } catch (e) {
+    console.warn('writeLog failed:', e);
+  }
+}
+
+async function testWriteLog() {
+  await writeLog('entry_manual', null, {
+    barcode: 'TEST001',
+    brand: 'Test Brand',
+    model: 'Test Model',
+    qty_before: 0,
+    qty_after: 1,
+    source_ref: 'בדיקת מערכת'
+  });
+
+  const { data } = await sb
+    .from('inventory_logs')
+    .select('*')
+    .eq('barcode', 'TEST001')
+    .single();
+
+  console.log('Log test result:', data);
+
+  // Clean up test row
+  await sb.from('inventory_logs').delete().eq('barcode', 'TEST001');
+
+  return data ? '✅ writeLog עובד' : '❌ writeLog נכשל';
+}
+
+// =========================================================
 // UI HELPERS
 // =========================================================
 function showLoading(t) { $('loading-text').textContent=t||'טוען...'; $('loading').style.display='flex'; }
@@ -1346,7 +1397,18 @@ async function submitEntry() {
       if (r.cdisc) fields['הנחה עלות %'] = parseFloat(r.cdisc) / 100;
       return {fields};
     });
-    await batchCreate(T.INV, records);
+    const created = await batchCreate(T.INV, records);
+    // Log each created item
+    for (const item of created) {
+      writeLog('entry_manual', item.id, {
+        barcode:    item.fields['ברקוד'],
+        brand:      item.fields['חברה / מותג'],
+        model:      item.fields['דגם'],
+        qty_before: 0,
+        qty_after:  item.fields['כמות'] || 1,
+        source_ref: 'הכנסה ידנית'
+      });
+    }
     setAlert('entry-alerts', `&#10004; ${records.length} פריטים נכנסו למלאי בהצלחה`, 's');
     toast(`${records.length} פריטים נשלחו!`, 's');
     // Clean up dropdowns
@@ -1505,7 +1567,18 @@ async function submitFromPO() {
         fields['סנכרון אתר'] = getBrandSync(cells[1].textContent) || 'לא';
         return { fields };
       });
-      await batchCreate(T.INV, invRecords);
+      const created = await batchCreate(T.INV, invRecords);
+      // Log each item from PO
+      for (const item of created) {
+        writeLog('entry_po', item.id, {
+          barcode:    item.fields['ברקוד'],
+          brand:      item.fields['חברה / מותג'],
+          model:      item.fields['דגם'],
+          qty_before: 0,
+          qty_after:  item.fields['כמות'] || 1,
+          source_ref: selectedPOForEntry.num
+        });
+      }
     }
 
     const updates = [];
@@ -1689,6 +1762,7 @@ function exportInventoryExcel() {
 // EXCEL BULK IMPORT
 // =========================================================
 let excelImportRows = []; // validated rows ready for insert
+let excelImportFileName = ''; // filename for logging
 
 function downloadSampleExcel() {
   const headers = ['חברה/מותג','דגם','גודל','מחיר מכירה','גשר','צבע','סוג מוצר','הנחה%','סנכרון','הערות'];
@@ -1711,6 +1785,7 @@ function resetExcelImport() {
 function handleExcelImport(ev) {
   const file = ev.target.files?.[0];
   if (!file) return;
+  excelImportFileName = file.name;
   clearAlert('excel-import-alerts');
   showLoading('קורא קובץ Excel...');
 
@@ -1857,7 +1932,18 @@ async function confirmExcelImport() {
       return { fields };
     });
 
-    await batchCreate(T.INV, records);
+    const created = await batchCreate(T.INV, records);
+    // Log each imported item
+    for (const item of created) {
+      writeLog('entry_excel', item.id, {
+        barcode:    item.fields['ברקוד'],
+        brand:      item.fields['חברה / מותג'],
+        model:      item.fields['דגם'],
+        qty_before: 0,
+        qty_after:  item.fields['כמות'] || 1,
+        source_ref: excelImportFileName || 'ייבוא אקסל'
+      });
+    }
     setAlert('excel-import-alerts', `&#10004; ${records.length} פריטים נוספו בהצלחה למלאי`, 's');
     toast(`\u2705 ${records.length} פריטים נוספו בהצלחה`, 's');
 
@@ -2685,8 +2771,33 @@ async function saveInventoryChanges() {
 
   showLoading('שומר שינויים...');
   try {
+    // Capture before-values for logging
+    const beforeMap = {};
+    for (const id of ids) {
+      const rec = invData.find(r => r.id === id);
+      if (rec) beforeMap[id] = { ...rec.fields };
+    }
     const updates = ids.map(id => ({ id, fields: invChanges[id] }));
     await batchUpdate(T.INV, updates);
+    // Log each change
+    for (const id of ids) {
+      const before = beforeMap[id] || {};
+      const changed = invChanges[id] || {};
+      const base = { barcode: before['ברקוד'], brand: before['חברה / מותג'], model: before['דגם'] };
+      // Quantity changed
+      if ('כמות' in changed && changed['כמות'] !== before['כמות']) {
+        writeLog('edit_qty', id, { ...base, qty_before: before['כמות'] ?? 0, qty_after: changed['כמות'] ?? 0 });
+      }
+      // Price changed
+      if ('מחיר מכירה' in changed && changed['מחיר מכירה'] !== before['מחיר מכירה']) {
+        writeLog('edit_price', id, { ...base, price_before: before['מחיר מכירה'] ?? 0, price_after: changed['מחיר מכירה'] ?? 0 });
+      }
+      // Other fields changed (not qty/price)
+      const otherKeys = Object.keys(changed).filter(k => k !== 'כמות' && k !== 'מחיר מכירה');
+      if (otherKeys.length) {
+        writeLog('edit_details', id, { ...base, reason: 'עריכת פרטים' });
+      }
+    }
     invChanges = {};
     $('inv-edit-notice').style.display = 'none';
     toast(`${ids.length} רשומות עודכנו בהצלחה`, 's');
