@@ -123,6 +123,15 @@ tr.row-err td{background:#fef2f2}
 #inv-table td.editing{padding:2px}
 #inv-table td.editing input,#inv-table td.editing select{width:100%;padding:4px 6px;font-size:.82rem}
 #inv-table td.changed{background:#fef9c3!important}
+#inv-table tr.selected-row td{background:#eef2ff}
+#inv-table th input[type=checkbox],#inv-table td input[type=checkbox]{width:18px;height:18px;cursor:pointer}
+.inv-bulk-bar{background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:2px solid var(--accent);border-radius:10px;padding:14px 18px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px}
+.bulk-label{font-weight:700;color:var(--primary);font-size:.95rem}
+.bulk-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.bulk-field{display:flex;flex-direction:column;min-width:100px;flex:1}
+.bulk-field label{font-size:.75rem;color:var(--g500);margin-bottom:3px;font-weight:500}
+.bulk-field input,.bulk-field select{padding:6px 8px;border:1px solid var(--g300);border-radius:6px;font-size:.85rem;font-family:inherit}
+.bulk-btns{display:flex;gap:8px;flex-wrap:wrap}
 .search-box{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .search-box input,.search-box select{flex:1;min-width:120px}
 .divider{border:none;border-top:2px dashed var(--g300);margin:28px 0}
@@ -288,28 +297,45 @@ tr.row-err td{background:#fef2f2}
 <!-- ========== TAB: INVENTORY ========== -->
 <section id="tab-inventory" class="tab">
   <div class="card">
-    <h3>&#128451; מלאי ראשי — טבלה מלאה</h3>
+    <h3>&#128451; מלאי ראשי</h3>
     <div id="inv-alerts"></div>
     <div class="form-row" style="align-items:flex-end;margin-bottom:12px;gap:8px">
       <div class="form-group" style="max-width:220px"><label>חיפוש חופשי</label><input type="text" id="inv-search" placeholder="ברקוד / מותג / דגם..." oninput="filterInventoryTable()"></div>
       <div class="form-group" style="max-width:160px"><label>ספק</label><select id="inv-filter-supplier" onchange="filterInventoryTable()"><option value="">הכל</option></select></div>
-      <div class="form-group" style="max-width:160px"><label>סטטוס</label><select id="inv-filter-status" onchange="filterInventoryTable()"><option value="">הכל</option><option value="פעיל">פעיל</option><option value="ממתין לברקוד">ממתין לברקוד</option><option value="נמכר">נמכר</option></select></div>
-      <div class="form-group" style="max-width:100px"><label>כמות &gt; 0</label><select id="inv-filter-qty" onchange="filterInventoryTable()"><option value="">הכל</option><option value="1" selected>במלאי</option><option value="0">אזל</option></select></div>
+      <div class="form-group" style="max-width:160px"><label>סוג מוצר</label><select id="inv-filter-ptype" onchange="filterInventoryTable()"><option value="">הכל</option><option value="משקפי ראייה">ראייה</option><option value="משקפי שמש">שמש</option></select></div>
+      <div class="form-group" style="max-width:100px"><label>כמות</label><select id="inv-filter-qty" onchange="filterInventoryTable()"><option value="">הכל</option><option value="1" selected>במלאי</option><option value="0">אזל</option></select></div>
       <button class="btn btn-p" onclick="loadInventoryTab()">&#128260; רענן</button>
     </div>
     <div style="margin-bottom:8px;font-size:.85rem;color:var(--g500)">
       סה״כ: <strong id="inv-count">0</strong> רשומות (מוצגות: <strong id="inv-shown">0</strong>)
-      <span id="inv-edit-notice" style="color:var(--warn);display:none"> | &#9888; מצב עריכה — לחץ "שמור" לעדכון</span>
+      <span id="inv-sel-count" style="display:none;color:var(--primary);font-weight:700"> | נבחרו: <strong id="inv-sel-num">0</strong></span>
+      <span id="inv-edit-notice" style="color:var(--warn);display:none"> | &#9888; שינויים לא שמורים</span>
     </div>
-    <div class="table-wrap" style="max-height:65vh;overflow-y:auto">
+    <!-- BULK ACTION BAR (admin only) -->
+    <div id="inv-bulk-bar" class="inv-bulk-bar" style="display:none">
+      <div class="bulk-label">&#9998; פעולות על נבחרים:</div>
+      <div class="bulk-actions">
+        <div class="bulk-field"><label>מחיר מכירה</label><input type="number" id="bulk-sprice" placeholder="—"></div>
+        <div class="bulk-field"><label>הנחה % מכירה</label><input type="number" id="bulk-sdisc" placeholder="—" min="0" max="100"></div>
+        <div class="bulk-field cost-field"><label>מחיר עלות</label><input type="number" id="bulk-cprice" placeholder="—"></div>
+        <div class="bulk-field cost-field"><label>הנחה % עלות</label><input type="number" id="bulk-cdisc" placeholder="—" min="0" max="100"></div>
+        <div class="bulk-field"><label>סנכרון</label><select id="bulk-sync"><option value="">—</option><option value="מלא">מלא</option><option value="תדמית">תדמית</option><option value="לא">לא</option></select></div>
+      </div>
+      <div class="bulk-btns">
+        <button class="btn btn-s btn-sm" onclick="applyBulkUpdate()">&#10004; עדכן נבחרים</button>
+        <button class="btn btn-d btn-sm" onclick="bulkDelete()">&#128465; מחק נבחרים</button>
+        <button class="btn btn-g btn-sm" onclick="clearSelection()">&#10006; בטל בחירה</button>
+      </div>
+    </div>
+    <div class="table-wrap" style="max-height:60vh;overflow-y:auto">
       <table id="inv-table">
         <thead><tr>
+          <th style="width:36px"><input type="checkbox" id="inv-select-all" onchange="toggleSelectAll(this.checked)" title="בחר הכל"></th>
           <th>#</th><th>ברקוד</th><th>ספק</th><th>חברה / מותג</th><th>דגם</th>
           <th>גודל</th><th>גשר</th><th>צבע</th><th>אורך מוט</th><th>סוג מוצר</th>
           <th>מ.מכירה</th><th>הנחה%</th>
           <th class="cost-col">מ.עלות</th><th class="cost-col">הנחה% עלות</th>
-          <th>כמות</th><th>סנכרון</th><th>סטטוס</th><th>מקור</th>
-          <th id="inv-actions-th" style="display:none">פעולות</th>
+          <th>כמות</th><th>סנכרון</th>
         </tr></thead>
         <tbody id="inv-body"></tbody>
       </table>
@@ -1691,26 +1717,27 @@ async function submitPO() {
 // TAB: FULL INVENTORY
 // =========================================================
 let invData = [];
+let invFiltered = [];
 let invChanges = {};
+let invSelected = new Set();
 
 async function loadInventoryTab() {
   showLoading('טוען מלאי ראשי...');
   clearAlert('inv-alerts');
   invChanges = {};
+  invSelected.clear();
   $('inv-edit-notice').style.display = 'none';
+  updateSelectionUI();
   try {
     invData = await fetchAll(T.INV);
-    // Populate supplier filter
     const supplierSel = $('inv-filter-supplier');
     const curVal = supplierSel.value;
     supplierSel.innerHTML = '<option value="">הכל</option>' + suppliers.map(s => `<option value="${s}">${s}</option>`).join('');
     supplierSel.value = curVal;
     $('inv-count').textContent = invData.length;
     filterInventoryTable();
-    // Show admin edit controls
     const isAdm = document.body.classList.contains('admin-mode');
     $('inv-admin-bar').style.display = isAdm ? 'flex' : 'none';
-    $('inv-actions-th').style.display = isAdm ? '' : 'none';
   } catch(e) {
     setAlert('inv-alerts', 'שגיאה בטעינת מלאי: '+(e.message||''), 'e');
   }
@@ -1720,13 +1747,13 @@ async function loadInventoryTab() {
 function filterInventoryTable() {
   const search = ($('inv-search')?.value || '').trim().toLowerCase();
   const supplier = $('inv-filter-supplier')?.value || '';
-  const status = $('inv-filter-status')?.value || '';
+  const ptype = $('inv-filter-ptype')?.value || '';
   const qtyFilter = $('inv-filter-qty')?.value || '';
 
-  const filtered = invData.filter(r => {
+  invFiltered = invData.filter(r => {
     const f = r.fields;
     if (supplier && f['ספק'] !== supplier) return false;
-    if (status && f['סטטוס'] !== status) return false;
+    if (ptype && f['סוג מוצר'] !== ptype) return false;
     if (qtyFilter === '1' && (f['כמות'] || 0) <= 0) return false;
     if (qtyFilter === '0' && (f['כמות'] || 0) > 0) return false;
     if (search) {
@@ -1736,14 +1763,13 @@ function filterInventoryTable() {
     return true;
   });
 
-  $('inv-shown').textContent = filtered.length;
-  renderInventoryRows(filtered);
+  $('inv-shown').textContent = invFiltered.length;
+  renderInventoryRows(invFiltered);
 }
 
 function renderInventoryRows(recs) {
   const isAdm = document.body.classList.contains('admin-mode');
   const tb = $('inv-body');
-  // Limit to 500 rows for performance
   const display = recs.slice(0, 500);
   tb.innerHTML = display.map((r, i) => {
     const f = r.fields;
@@ -1754,8 +1780,10 @@ function renderInventoryRows(recs) {
     const sd = f['הנחה מכירה %'] ? Math.round(f['הנחה מכירה %'] * 100) : 0;
     const cp = f['מחיר עלות'] || 0;
     const cd = f['הנחה עלות %'] ? Math.round(f['הנחה עלות %'] * 100) : 0;
-    const changed = invChanges[r.id] ? ' changed' : '';
-    return `<tr data-id="${r.id}">
+    const sel = invSelected.has(r.id) ? ' selected-row' : '';
+    const chk = invSelected.has(r.id) ? ' checked' : '';
+    return `<tr data-id="${r.id}" class="${sel}">
+      <td><input type="checkbox"${chk} onchange="toggleRowSelect('${r.id}',this.checked)"></td>
       <td>${i+1}</td>
       <td class="barcode-cell">${bc}</td>
       <td>${f['ספק']||''}</td>
@@ -1772,16 +1800,122 @@ function renderInventoryRows(recs) {
       <td class="cost-col">${cd}%</td>
       <td style="font-weight:700;color:${qC}"${isAdm?' class="editable" onclick="invEdit(this,\'כמות\',\'number\')"':''}>${qty}</td>
       <td>${f['סנכרון אתר']||''}</td>
-      <td>${f['סטטוס']||''}</td>
-      <td>${f['מקור']||''}</td>
-      ${isAdm ? `<td class="action-btns"><button class="btn btn-d btn-sm" onclick="deleteInvRow('${r.id}')">&#10006;</button></td>` : ''}
     </tr>`;
   }).join('');
   if (recs.length > 500) {
-    tb.innerHTML += `<tr><td colspan="19" style="text-align:center;color:var(--warn);padding:12px">מוצגות 500 רשומות מתוך ${recs.length}. השתמש בפילטרים לצמצום.</td></tr>`;
+    tb.innerHTML += `<tr><td colspan="17" style="text-align:center;color:var(--warn);padding:12px">מוצגות 500 מתוך ${recs.length}. צמצם עם פילטרים.</td></tr>`;
   }
 }
 
+// ---- Selection & Bulk ----
+function toggleRowSelect(id, checked) {
+  if (checked) invSelected.add(id); else invSelected.delete(id);
+  const tr = $('inv-body').querySelector(`tr[data-id="${id}"]`);
+  if (tr) tr.classList.toggle('selected-row', checked);
+  updateSelectionUI();
+}
+
+function toggleSelectAll(checked) {
+  const displayed = invFiltered.slice(0, 500);
+  displayed.forEach(r => { if (checked) invSelected.add(r.id); else invSelected.delete(r.id); });
+  $('inv-body').querySelectorAll('tr[data-id]').forEach(tr => {
+    const cb = tr.querySelector('input[type=checkbox]');
+    if (cb) cb.checked = checked;
+    tr.classList.toggle('selected-row', checked);
+  });
+  updateSelectionUI();
+}
+
+function clearSelection() {
+  invSelected.clear();
+  $('inv-select-all').checked = false;
+  $('inv-body').querySelectorAll('tr[data-id]').forEach(tr => {
+    const cb = tr.querySelector('input[type=checkbox]');
+    if (cb) cb.checked = false;
+    tr.classList.remove('selected-row');
+  });
+  updateSelectionUI();
+}
+
+function updateSelectionUI() {
+  const n = invSelected.size;
+  const isAdm = document.body.classList.contains('admin-mode');
+  $('inv-sel-count').style.display = n > 0 ? 'inline' : 'none';
+  $('inv-sel-num').textContent = n;
+  $('inv-bulk-bar').style.display = (n > 0 && isAdm) ? 'flex' : 'none';
+}
+
+async function applyBulkUpdate() {
+  if (!isAdmin) { toast('נדרשת הרשאת מנהל', 'e'); return; }
+  const ids = Array.from(invSelected);
+  if (!ids.length) { toast('לא נבחרו פריטים', 'w'); return; }
+
+  const fields = {};
+  const sp = $('bulk-sprice').value;
+  const sd = $('bulk-sdisc').value;
+  const cp = $('bulk-cprice').value;
+  const cd = $('bulk-cdisc').value;
+  const sync = $('bulk-sync').value;
+  if (sp !== '') fields['מחיר מכירה'] = parseFloat(sp) || 0;
+  if (sd !== '') fields['הנחה מכירה %'] = (parseFloat(sd) || 0) / 100;
+  if (cp !== '') fields['מחיר עלות'] = parseFloat(cp) || 0;
+  if (cd !== '') fields['הנחה עלות %'] = (parseFloat(cd) || 0) / 100;
+  if (sync) fields['סנכרון אתר'] = sync;
+
+  if (!Object.keys(fields).length) { toast('לא הוזנו ערכים לעדכון', 'w'); return; }
+
+  const desc = Object.entries(fields).map(([k,v]) => `${k}: ${typeof v==='number' && k.includes('%') ? Math.round(v*100)+'%' : v}`).join(', ');
+  const ok = await confirmDialog('עדכון גורף', `לעדכן ${ids.length} פריטים?\n${desc}`);
+  if (!ok) return;
+
+  showLoading(`מעדכן ${ids.length} פריטים...`);
+  try {
+    const updates = ids.map(id => ({ id, fields: { ...fields } }));
+    await batchUpdate(T.INV, updates);
+    // Update local data
+    ids.forEach(id => {
+      const rec = invData.find(r => r.id === id);
+      if (rec) Object.assign(rec.fields, fields);
+    });
+    // Clear bulk inputs
+    $('bulk-sprice').value = '';
+    $('bulk-sdisc').value = '';
+    $('bulk-cprice').value = '';
+    $('bulk-cdisc').value = '';
+    $('bulk-sync').value = '';
+    clearSelection();
+    filterInventoryTable();
+    toast(`${ids.length} פריטים עודכנו בהצלחה`, 's');
+  } catch(e) {
+    setAlert('inv-alerts', 'שגיאה: '+(e.message||''), 'e');
+  }
+  hideLoading();
+}
+
+async function bulkDelete() {
+  if (!isAdmin) { toast('נדרשת הרשאת מנהל', 'e'); return; }
+  const ids = Array.from(invSelected);
+  if (!ids.length) { toast('לא נבחרו פריטים', 'w'); return; }
+  const ok = await confirmDialog('מחיקה גורפת', `למחוק ${ids.length} פריטים לצמיתות? פעולה זו בלתי הפיכה!`);
+  if (!ok) return;
+
+  showLoading(`מוחק ${ids.length} פריטים...`);
+  try {
+    for (const id of ids) {
+      await api('DELETE', `${tbl(T.INV)}/${id}`);
+    }
+    invData = invData.filter(r => !ids.includes(r.id));
+    clearSelection();
+    $('inv-count').textContent = invData.length;
+    filterInventoryTable();
+    toast(`${ids.length} פריטים נמחקו`, 's');
+  } catch(e) {
+    setAlert('inv-alerts', 'שגיאה: '+(e.message||''), 'e');
+  }
+  hideLoading();
+}
+
+// ---- Single cell edit ----
 function invEdit(td, field, type) {
   if (td.classList.contains('editing')) return;
   const tr = td.closest('tr');
@@ -1808,7 +1942,6 @@ function invEdit(td, field, type) {
     if (type === 'number') newVal = parseFloat(newVal) || 0;
     else if (type === 'pct') newVal = (parseFloat(newVal) || 0) / 100;
 
-    // Check if changed
     const origVal = rec.fields[field] || (type === 'number' || type === 'pct' ? 0 : '');
     if (newVal !== origVal) {
       if (!invChanges[recId]) invChanges[recId] = {};
@@ -2045,7 +2178,6 @@ async function addSupplier() {
 // =========================================================
 let testInventory = [];
 
-// Override loadData to load from local JSON
 async function loadData() {
   showLoading('טוען נתוני טסט...');
   try {
@@ -2053,16 +2185,13 @@ async function loadData() {
     const data = await resp.json();
     suppliers = data.suppliers;
     brands = data.brands.map((b, i) => ({
-      id: 'brand_' + i,
-      name: b.name,
-      type: b.type || '',
-      defaultSync: b.defaultSync || 'לא',
-      active: b.active !== false
+      id: 'brand_' + i, name: b.name, type: b.type || '',
+      defaultSync: b.defaultSync || 'לא', active: b.active !== false
     }));
     testInventory = data.inventory;
     maxBarcode = data.maxBarcode || 0;
     populateDropdowns();
-    toast(`נתוני טסט נטענו — ${testInventory.length} פריטים, ${brands.length} מותגים, ${suppliers.length} ספקים`, 's');
+    toast(`טסט: ${testInventory.length} פריטים, ${brands.length} מותגים, ${suppliers.length} ספקים`, 's');
   } catch(e) {
     console.error(e);
     toast('שגיאה בטעינת נתוני טסט: ' + (e.message || ''), 'e');
@@ -2070,7 +2199,6 @@ async function loadData() {
   hideLoading();
 }
 
-// Override fetchAll to use local test data
 async function fetchAll(tableId, formula, fields) {
   if (tableId === T.BRANDS) {
     return brands.map(b => ({
@@ -2081,7 +2209,6 @@ async function fetchAll(tableId, formula, fields) {
   if (tableId === T.INV) {
     let results = testInventory;
     if (formula) {
-      // Simple formula parser for test
       const singleMatch = formula.match(/^\{(.+?)\}="(.+?)"$/);
       if (singleMatch) {
         const [, fld, val] = singleMatch;
@@ -2101,29 +2228,24 @@ async function fetchAll(tableId, formula, fields) {
   return [];
 }
 
-// Override batchCreate to add to local test data
 async function batchCreate(tableId, records) {
   if (tableId === T.INV) {
-    const created = records.map((rec, i) => {
+    return records.map((rec, i) => {
       const id = 'new_' + Date.now() + '_' + i;
-      const item = { id, fields: { ...rec.fields } };
-      testInventory.push(item);
+      testInventory.push({ id, fields: { ...rec.fields } });
       return { id, fields: rec.fields };
     });
-    return created;
   }
   if (tableId === T.BRANDS) {
-    const created = records.map((rec, i) => {
+    return records.map((rec, i) => {
       const id = 'brand_new_' + Date.now() + '_' + i;
-      brands.push({ id, name: rec.fields['שם חברה'] || '', type: rec.fields['סוג מותג'] || '', defaultSync: rec.fields['סנכרון ברירת מחדל'] || '', active: rec.fields['פעיל'] !== false });
+      brands.push({ id, name: rec.fields['שם חברה']||'', type: rec.fields['סוג מותג']||'', defaultSync: rec.fields['סנכרון ברירת מחדל']||'', active: rec.fields['פעיל'] !== false });
       return { id, fields: rec.fields };
     });
-    return created;
   }
   return [];
 }
 
-// Override batchUpdate to update local test data
 async function batchUpdate(tableId, records) {
   if (tableId === T.INV) {
     records.forEach(upd => {
@@ -2145,14 +2267,9 @@ async function batchUpdate(tableId, records) {
   return records;
 }
 
-// Override api for metadata calls
 const _origApi = api;
 function api(method, path, body) {
-  // Block metadata calls in test mode
-  if (path.includes('/meta/')) {
-    return Promise.resolve({ tables: [] });
-  }
-  // DELETE for inventory
+  if (path.includes('/meta/')) return Promise.resolve({ tables: [] });
   if (method === 'DELETE' && path.includes(T.INV)) {
     const id = path.split('/').pop();
     testInventory = testInventory.filter(r => r.id !== id);
@@ -2161,29 +2278,7 @@ function api(method, path, body) {
   return Promise.resolve({});
 }
 
-// Override loadInventoryTab for test data
-async function loadInventoryTab() {
-  showLoading('טוען מלאי ראשי (טסט)...');
-  clearAlert('inv-alerts');
-  invChanges = {};
-  $('inv-edit-notice').style.display = 'none';
-  invData = testInventory.map(r => ({ id: r.id, fields: { ...r.fields } }));
-  const supplierSel = $('inv-filter-supplier');
-  const curVal = supplierSel.value;
-  supplierSel.innerHTML = '<option value="">הכל</option>' + suppliers.map(s => `<option value="${s}">${s}</option>`).join('');
-  supplierSel.value = curVal;
-  $('inv-count').textContent = invData.length;
-  const isAdm = document.body.classList.contains('admin-mode');
-  $('inv-admin-bar').style.display = isAdm ? 'flex' : 'none';
-  $('inv-actions-th').style.display = isAdm ? '' : 'none';
-  filterInventoryTable();
-  hideLoading();
-}
-
-// Override ensureBrandsActiveField for test mode
 async function ensureBrandsActiveField() { brandsActiveFieldReady = true; }
-
-// Override loadMaxBarcode for test mode
 async function loadMaxBarcode() {}
 
 // =========================================================
