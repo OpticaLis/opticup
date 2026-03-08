@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS inventory (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS idx_inv_barcode ON inventory (barcode);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_barcode_unique ON inventory (barcode) WHERE barcode IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_inv_supplier ON inventory (supplier_id);
 CREATE INDEX IF NOT EXISTS idx_inv_brand ON inventory (brand_id);
 CREATE INDEX IF NOT EXISTS idx_inv_status ON inventory (status);

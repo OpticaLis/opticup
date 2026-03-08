@@ -500,6 +500,7 @@ let currentPONum = '';
 let currentPOSupplier = '';
 let selectedPOForEntry = null;
 let maxBarcode = 0;
+let branchCode = sessionStorage.getItem('prizma_branch') || '000';
 
 // =========================================================
 // SUPABASE COMPATIBILITY LAYER
@@ -674,12 +675,41 @@ async function fetchAll(tableName, filters) {
 
 // --- Supabase-backed batchCreate ---
 async function batchCreate(tableName, records) {
+  // Duplicate barcode check for inventory inserts
+  if (tableName === T.INV) {
+    const barcodes = records.map(r => r.fields['ברקוד']).filter(Boolean);
+    if (barcodes.length) {
+      // Check for duplicates within the batch itself
+      const seen = new Set();
+      const batchDupes = [];
+      for (const bc of barcodes) {
+        if (seen.has(bc)) batchDupes.push(bc);
+        seen.add(bc);
+      }
+      if (batchDupes.length) {
+        throw new Error(`ברקודים כפולים בשליחה: ${[...new Set(batchDupes)].join(', ')}`);
+      }
+      // Check against existing barcodes in DB
+      const { data: existing } = await sb.from('inventory').select('barcode').in('barcode', barcodes);
+      if (existing?.length) {
+        const dupes = existing.map(r => r.barcode);
+        throw new Error(`ברקודים כבר קיימים במלאי: ${dupes.join(', ')}`);
+      }
+    }
+  }
+
   const rows = records.map(r => fieldsToRow(r.fields, tableName));
   const created = [];
   for (let i = 0; i < rows.length; i += 100) {
     const batch = rows.slice(i, i + 100);
     const { data, error } = await sb.from(tableName).insert(batch).select(tableName === 'inventory' ? '*, inventory_images(*)' : '*');
-    if (error) throw new Error(error.message);
+    if (error) {
+      // Friendly message for unique constraint violation
+      if (error.code === '23505' && error.message.includes('barcode')) {
+        throw new Error('ברקוד כפול — ברקוד זה כבר קיים במלאי');
+      }
+      throw new Error(error.message);
+    }
     created.push(...(data || []).map(row => rowToRecord(row, tableName)));
   }
   return created;
@@ -691,7 +721,12 @@ async function batchUpdate(tableName, records) {
   for (const rec of records) {
     const row = fieldsToRow(rec.fields, tableName);
     const { data, error } = await sb.from(tableName).update(row).eq('id', rec.id).select(tableName === 'inventory' ? '*, inventory_images(*)' : '*');
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (error.code === '23505' && error.message.includes('barcode')) {
+        throw new Error('ברקוד זה כבר קיים במערכת');
+      }
+      throw new Error(error.message);
+    }
     if (data?.length) updated.push(rowToRecord(data[0], tableName));
   }
   return updated;
@@ -821,16 +856,23 @@ async function loadData() {
 
 async function loadMaxBarcode() {
   try {
-    // Fetch all barcodes that are purely numeric and find the max
-    const { data } = await sb.from('inventory').select('barcode').not('barcode','is',null);
+    // Branch barcode format: BBBNNNN (3-digit branch + 4-digit sequence)
+    // Fetch all barcodes within the current branch prefix
+    const prefix = branchCode.padStart(3, '0');
+    const { data } = await sb.from('inventory')
+      .select('barcode')
+      .not('barcode', 'is', null)
+      .like('barcode', `${prefix}%`);
+    let mx = 0;
     if (data?.length) {
-      let mx = 0;
       data.forEach(r => {
-        const n = parseInt(r.barcode, 10);
-        if (!isNaN(n) && String(n) === r.barcode.replace(/^0+/, '') && n > mx) mx = n;
+        if (r.barcode.length === 7 && r.barcode.startsWith(prefix)) {
+          const seq = parseInt(r.barcode.slice(3), 10);
+          if (!isNaN(seq) && seq > mx) mx = seq;
+        }
       });
-      maxBarcode = mx;
     }
+    maxBarcode = mx;
   } catch(e) { console.warn('Could not load max barcode', e); }
 }
 
@@ -1220,7 +1262,11 @@ async function submitEntry() {
     entryRowNum = 0;
     addEntryRow();
   } catch(e) {
-    setAlert('entry-alerts', 'שגיאה: ' + (e.message||JSON.stringify(e)), 'e');
+    const msg = e.message || JSON.stringify(e);
+    if (msg.includes('כבר קיימים במלאי') || msg.includes('כפול')) {
+      toast('ברקוד זה כבר קיים במערכת', 'e');
+    }
+    setAlert('entry-alerts', 'שגיאה: ' + msg, 'e');
   }
   hideLoading();
 }
@@ -1381,7 +1427,11 @@ async function submitFromPO() {
     backToPOList();
     loadPOListForEntry();
   } catch(e) {
-    setAlert('po-items-alerts', 'שגיאה: '+(e.message||''), 'e');
+    const msg = e.message || '';
+    if (msg.includes('כבר קיימים במלאי') || msg.includes('כפול')) {
+      toast('ברקוד זה כבר קיים במערכת', 'e');
+    }
+    setAlert('po-items-alerts', 'שגיאה: ' + msg, 'e');
   }
   hideLoading();
 }
@@ -1413,10 +1463,11 @@ async function generateBarcodes(source) {
   showLoading('מייצר ברקודים...');
   try {
     await loadMaxBarcode();
-    let nextBarcode = maxBarcode;
+    const prefix = branchCode.padStart(3, '0');
+    let nextSeq = maxBarcode;
 
     for (const row of rows) {
-      // Search existing in inventory
+      // Search existing in inventory (same brand+model+size+color with qty>0)
       const brandId = brandCache[row.brand] || null;
       const existing = await fetchAll(T.INV, [
         ['brand_id','eq',brandId],['model','eq',row.model],
@@ -1428,14 +1479,15 @@ async function generateBarcodes(source) {
       if (withQty) {
         barcode = withQty.fields['ברקוד'] || '';
       } else {
-        nextBarcode++;
-        barcode = String(nextBarcode).padStart(7, '0');
+        nextSeq++;
+        if (nextSeq > 9999) throw new Error('חריגה — מקסימום 9999 ברקודים לסניף ' + prefix);
+        barcode = prefix + String(nextSeq).padStart(4, '0');
       }
 
       const cell = row.tr.querySelector('.barcode-cell');
       if (cell) cell.textContent = barcode;
     }
-    maxBarcode = nextBarcode;
+    maxBarcode = nextSeq;
     toast('ברקודים נוצרו בהצלחה!', 's');
   } catch(e) {
     toast('שגיאה ביצירת ברקודים: ' + (e.message||''), 'e');
@@ -2293,7 +2345,11 @@ async function saveInventoryChanges() {
     toast(`${ids.length} רשומות עודכנו בהצלחה`, 's');
     loadInventoryTab();
   } catch(e) {
-    setAlert('inv-alerts', 'שגיאה: '+(e.message||''), 'e');
+    const msg = e.message || '';
+    if (msg.includes('כבר קיים במערכת') || msg.includes('כפול')) {
+      toast('ברקוד זה כבר קיים במערכת', 'e');
+    }
+    setAlert('inv-alerts', 'שגיאה: ' + msg, 'e');
   }
   hideLoading();
 }
