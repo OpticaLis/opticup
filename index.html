@@ -61,6 +61,7 @@ tr:hover td{background:var(--g100)}
 tr.row-err td{background:#fef2f2}
 .cost-col{display:none}.admin-mode .cost-col{display:table-cell}
 .admin-col{display:none}.admin-mode .admin-col{display:table-cell}
+.admin-tab{display:none!important}.admin-mode .admin-tab{display:inline-block!important}
 .alert{padding:12px 16px;border-radius:8px;margin-bottom:14px;font-size:.92rem;display:flex;align-items:flex-start;gap:10px}
 .alert-s{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
 .alert-e{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
@@ -209,6 +210,30 @@ tr.row-err td{background:#fef2f2}
   .sub-choice{gap:8px}
   .sub-choice button{min-width:calc(50% - 4px);padding:14px 8px;font-size:.88rem}
 }
+/* ===== SYSTEM LOG TAB ===== */
+#tab-systemlog .slog-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+#tab-systemlog .slog-card{background:var(--white);border-radius:var(--radius);padding:18px;text-align:center;box-shadow:var(--shadow)}
+#tab-systemlog .slog-card .num{font-size:2rem;font-weight:700}
+#tab-systemlog .slog-card .lbl{font-size:.82rem;color:var(--g500);margin-top:4px}
+#tab-systemlog .slog-filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+#tab-systemlog .slog-filters .form-group{min-width:120px;flex:1;max-width:180px}
+#tab-systemlog .slog-filters .form-group label{font-size:.78rem}
+#tab-systemlog .slog-table-wrap{overflow-x:auto;border:1px solid var(--g200);border-radius:8px;margin-bottom:12px}
+#tab-systemlog table{width:100%;border-collapse:collapse;font-size:.82rem}
+#tab-systemlog table th{background:var(--primary);color:var(--white);padding:8px 6px;text-align:right;font-weight:600;white-space:nowrap;position:sticky;top:0}
+#tab-systemlog table td{padding:6px;border-bottom:1px solid var(--g200)}
+.slog-row-entry td{color:#166534}
+.slog-row-exit td{color:#991b1b}
+.slog-row-edit td{color:#1e40af}
+.slog-row-delete td{color:#6b7280}
+.slog-row-restore td{color:#92400e}
+.slog-paging{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px;font-size:.9rem}
+.slog-paging button{padding:6px 16px}
+@media(max-width:768px){
+  #tab-systemlog .slog-summary{grid-template-columns:repeat(2,1fr)}
+  #tab-systemlog .slog-filters{flex-direction:column}
+  #tab-systemlog .slog-filters .form-group{max-width:100%!important;min-width:100%!important}
+}
 </style>
 </head>
 <body>
@@ -225,6 +250,7 @@ tr.row-err td{background:#fef2f2}
   <button data-tab="inventory" onclick="showTab('inventory')">&#128451; מלאי ראשי</button>
   <button data-tab="brands" onclick="showTab('brands')">&#127991; ניהול מותגים</button>
   <button data-tab="suppliers" onclick="showTab('suppliers')">&#128101; ניהול ספקים</button>
+  <button data-tab="systemlog" class="admin-tab" onclick="showTab('systemlog')">&#128203; לוג מערכת</button>
   <div class="nav-spacer"></div>
   <button class="admin-btn" id="adminBtn" onclick="toggleAdmin()">&#128274; מנהל</button>
 </nav>
@@ -501,6 +527,66 @@ tr.row-err td{background:#fef2f2}
   </div>
 </section>
 
+<!-- ========== TAB 7: SYSTEM LOG ========== -->
+<section id="tab-systemlog" class="tab">
+  <div class="card">
+    <h3>&#128203; לוג מערכת</h3>
+    <div id="slog-alerts"></div>
+
+    <!-- Summary Cards -->
+    <div class="slog-summary">
+      <div class="slog-card"><div class="num" id="slog-total" style="color:var(--primary)">—</div><div class="lbl">פריטים פעילים במלאי</div></div>
+      <div class="slog-card"><div class="num" id="slog-added" style="color:var(--success)">—</div><div class="lbl">נוספו השבוע</div></div>
+      <div class="slog-card"><div class="num" id="slog-deleted" style="color:var(--error)">—</div><div class="lbl">נמחקו השבוע</div></div>
+      <div class="slog-card"><div class="num" id="slog-edited" style="color:#2196F3">—</div><div class="lbl">נערכו השבוע</div></div>
+    </div>
+
+    <!-- Filter Row -->
+    <div class="slog-filters">
+      <div class="form-group"><label>מתאריך</label><input type="date" id="slog-date-from"></div>
+      <div class="form-group"><label>עד תאריך</label><input type="date" id="slog-date-to"></div>
+      <div class="form-group"><label>סניף</label><input type="text" id="slog-branch" placeholder="הכל"></div>
+      <div class="form-group"><label>פעולה</label>
+        <select id="slog-action">
+          <option value="">הכל</option>
+        </select>
+      </div>
+      <div class="form-group"><label>עובד</label><input type="text" id="slog-employee" placeholder="הכל"></div>
+      <div class="form-group"><label>חיפוש חופשי</label><input type="text" id="slog-search" placeholder="ברקוד / מותג / דגם..."></div>
+      <button class="btn btn-p btn-sm" onclick="loadSystemLog()">&#128269; חפש</button>
+      <button class="btn btn-g btn-sm" onclick="clearSystemLogFilters()">&#10006; נקה</button>
+      <button class="btn btn-s btn-sm" onclick="exportSystemLog()">&#128229; ייצוא לוג</button>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="slog-table-wrap" style="max-height:55vh;overflow-y:auto">
+      <table id="slog-table">
+        <thead><tr>
+          <th>תאריך ושעה</th>
+          <th>פעולה</th>
+          <th>ברקוד</th>
+          <th>מותג</th>
+          <th>דגם</th>
+          <th>כמות לפני&#8594;אחרי</th>
+          <th>מחיר לפני&#8594;אחרי</th>
+          <th>סיבה</th>
+          <th>מקור</th>
+          <th>בוצע ע"י</th>
+          <th>סניף</th>
+        </tr></thead>
+        <tbody id="slog-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="slog-paging" id="slog-paging" style="display:none">
+      <button class="btn btn-g btn-sm" id="slog-prev" onclick="slogPageNav(-1)">&#8592; הקודם</button>
+      <span id="slog-page-info">עמוד 1 מתוך 1</span>
+      <button class="btn btn-g btn-sm" id="slog-next" onclick="slogPageNav(1)">הבא &#8594;</button>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <!-- Admin Modal -->
@@ -648,6 +734,9 @@ let currentPOSupplier = '';
 let selectedPOForEntry = null;
 let maxBarcode = 0;
 let branchCode = sessionStorage.getItem('prizma_branch') || '00';
+
+// System Log state
+let slogPage = 0, slogTotalPages = 0, slogCurrentFilters = {};
 
 // =========================================================
 // SUPABASE COMPATIBILITY LAYER
@@ -971,6 +1060,7 @@ function showTab(name) {
   if (name === 'inventory') loadInventoryTab();
   if (name === 'brands') loadBrandsTab();
   if (name === 'suppliers') loadSuppliersTab();
+  if (name === 'systemlog') loadSystemLog();
 }
 
 function showEntryMode(mode) {
@@ -3308,6 +3398,217 @@ async function addSupplier() {
     toast(`ספק "${name}" נוסף בהצלחה`, 's');
   } catch(e) {
     toast('שגיאה: '+(e.message||''), 'e');
+  }
+  hideLoading();
+}
+
+// =========================================================
+// TAB 7: SYSTEM LOG
+// =========================================================
+const SLOG_PAGE_SIZE = 50;
+
+const SLOG_ROW_CATEGORIES = {
+  entry_manual:'entry', entry_po:'entry', entry_excel:'entry', transfer_in:'entry',
+  sale:'exit', credit_return:'exit', manual_remove:'exit', transfer_out:'exit',
+  edit_qty:'edit', edit_price:'edit', edit_details:'edit', edit_barcode:'edit',
+  soft_delete:'delete', permanent_delete:'delete',
+  restore:'restore', test:'delete'
+};
+
+let slogActionDropdownPopulated = false;
+
+function populateActionDropdown() {
+  if (slogActionDropdownPopulated) return;
+  const sel = $('slog-action');
+  for (const [key, val] of Object.entries(ACTION_MAP)) {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = val.icon + ' ' + val.label;
+    sel.appendChild(opt);
+  }
+  slogActionDropdownPopulated = true;
+}
+
+function getSystemLogFilters() {
+  return {
+    dateFrom:  $('slog-date-from')?.value || '',
+    dateTo:    $('slog-date-to')?.value || '',
+    branch:    $('slog-branch')?.value.trim() || '',
+    action:    $('slog-action')?.value || '',
+    employee:  $('slog-employee')?.value.trim() || '',
+    search:    $('slog-search')?.value.trim() || ''
+  };
+}
+
+function clearSystemLogFilters() {
+  $('slog-date-from').value = '';
+  $('slog-date-to').value = '';
+  $('slog-branch').value = '';
+  $('slog-action').value = '';
+  $('slog-employee').value = '';
+  $('slog-search').value = '';
+  slogPage = 0;
+  loadSystemLog();
+}
+
+function applySlogFilters(query, filters) {
+  if (filters.dateFrom) query = query.gte('created_at', filters.dateFrom + 'T00:00:00');
+  if (filters.dateTo)   query = query.lte('created_at', filters.dateTo + 'T23:59:59');
+  if (filters.branch)   query = query.ilike('branch_id', '%' + filters.branch + '%');
+  if (filters.action)   query = query.eq('action', filters.action);
+  if (filters.employee) query = query.ilike('performed_by', '%' + filters.employee + '%');
+  if (filters.search) {
+    query = query.or(`barcode.ilike.%${filters.search}%,brand.ilike.%${filters.search}%,model.ilike.%${filters.search}%`);
+  }
+  return query;
+}
+
+async function loadSystemLog(filters, page) {
+  populateActionDropdown();
+  if (filters === undefined) filters = getSystemLogFilters();
+  if (page === undefined) page = slogPage;
+  slogPage = page;
+  slogCurrentFilters = filters;
+
+  showLoading('טוען לוג מערכת...');
+  clearAlert('slog-alerts');
+
+  try {
+    // --- Summary cards (parallel) ---
+    const weekAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+
+    const [totalRes, addedRes, deletedRes, editedRes] = await Promise.all([
+      sb.from('inventory').select('*', { count: 'exact', head: true }).eq('is_deleted', false),
+      sb.from('inventory_logs').select('*', { count: 'exact', head: true }).like('action', 'entry_%').gte('created_at', weekAgo),
+      sb.from('inventory_logs').select('*', { count: 'exact', head: true }).eq('action', 'soft_delete').gte('created_at', weekAgo),
+      sb.from('inventory_logs').select('*', { count: 'exact', head: true }).like('action', 'edit_%').gte('created_at', weekAgo)
+    ]);
+
+    $('slog-total').textContent   = totalRes.count ?? '—';
+    $('slog-added').textContent   = addedRes.count ?? '—';
+    $('slog-deleted').textContent = deletedRes.count ?? '—';
+    $('slog-edited').textContent  = editedRes.count ?? '—';
+
+    // --- Build filtered queries ---
+    let countQuery = sb.from('inventory_logs').select('*', { count: 'exact', head: true });
+    let dataQuery  = sb.from('inventory_logs').select('*');
+
+    countQuery = applySlogFilters(countQuery, filters);
+    dataQuery  = applySlogFilters(dataQuery, filters);
+
+    // Get count
+    const { count, error: cErr } = await countQuery;
+    if (cErr) throw new Error(cErr.message);
+
+    const total = count || 0;
+    slogTotalPages = Math.max(1, Math.ceil(total / SLOG_PAGE_SIZE));
+    if (slogPage >= slogTotalPages) slogPage = Math.max(0, slogTotalPages - 1);
+
+    // Get page of data
+    const offset = slogPage * SLOG_PAGE_SIZE;
+    dataQuery = dataQuery.order('created_at', { ascending: false }).range(offset, offset + SLOG_PAGE_SIZE - 1);
+
+    const { data: logs, error: dErr } = await dataQuery;
+    if (dErr) throw new Error(dErr.message);
+
+    // --- Render table ---
+    const tb = $('slog-body');
+    if (!logs || !logs.length) {
+      tb.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--g500)">אין רשומות לוג</td></tr>';
+    } else {
+      tb.innerHTML = logs.map(log => {
+        const info = ACTION_MAP[log.action] || { icon: '❓', label: log.action, color: '#9E9E9E' };
+        const cat  = SLOG_ROW_CATEGORIES[log.action] || 'delete';
+        const dt   = new Date(log.created_at);
+        const dateStr = dt.toLocaleDateString('he-IL') + ' ' + dt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+        const qtyCell  = (log.qty_before != null && log.qty_after != null) ? `${log.qty_before} → ${log.qty_after}` : '—';
+        const priceCell = (log.price_before != null && log.price_after != null) ? `${log.price_before} → ${log.price_after}` : '—';
+
+        return `<tr class="slog-row-${cat}">
+          <td style="white-space:nowrap">${dateStr}</td>
+          <td style="white-space:nowrap"><span style="color:${info.color}">${info.icon}</span> ${info.label}</td>
+          <td class="barcode-cell">${log.barcode || '—'}</td>
+          <td>${log.brand || '—'}</td>
+          <td>${log.model || '—'}</td>
+          <td>${qtyCell}</td>
+          <td>${priceCell}</td>
+          <td>${log.reason || '—'}</td>
+          <td>${log.source_ref || '—'}</td>
+          <td>${log.performed_by || '—'}</td>
+          <td>${log.branch_id || '—'}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // --- Pagination ---
+    const pagingEl = $('slog-paging');
+    if (total > SLOG_PAGE_SIZE) {
+      pagingEl.style.display = 'flex';
+      $('slog-page-info').textContent = `עמוד ${slogPage + 1} מתוך ${slogTotalPages}`;
+      $('slog-prev').disabled = slogPage === 0;
+      $('slog-next').disabled = slogPage >= slogTotalPages - 1;
+    } else {
+      pagingEl.style.display = 'none';
+    }
+
+  } catch(e) {
+    setAlert('slog-alerts', 'שגיאה בטעינת לוג: ' + (e.message || ''), 'e');
+  }
+  hideLoading();
+}
+
+function slogPageNav(dir) {
+  slogPage += dir;
+  if (slogPage < 0) slogPage = 0;
+  if (slogPage >= slogTotalPages) slogPage = slogTotalPages - 1;
+  loadSystemLog(slogCurrentFilters, slogPage);
+}
+
+async function exportSystemLog() {
+  const filters = getSystemLogFilters();
+  showLoading('מייצא לוג...');
+  try {
+    let query = sb.from('inventory_logs').select('*');
+    query = applySlogFilters(query, filters);
+    query = query.order('created_at', { ascending: false }).limit(10000);
+
+    const { data: logs, error } = await query;
+    if (error) throw new Error(error.message);
+
+    if (!logs || !logs.length) { toast('אין רשומות לייצוא', 'w'); hideLoading(); return; }
+
+    const headers = ['תאריך', 'שעה', 'פעולה', 'ברקוד', 'מותג', 'דגם', 'כמות לפני', 'כמות אחרי', 'מחיר לפני', 'מחיר אחרי', 'סיבה', 'מקור', 'בוצע ע"י', 'סניף'];
+    const rows = logs.map(log => {
+      const dt = new Date(log.created_at);
+      const info = ACTION_MAP[log.action] || { label: log.action };
+      return [
+        dt.toLocaleDateString('he-IL'),
+        dt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }),
+        info.label,
+        log.barcode || '',
+        log.brand || '',
+        log.model || '',
+        log.qty_before ?? '',
+        log.qty_after ?? '',
+        log.price_before ?? '',
+        log.price_after ?? '',
+        log.reason || '',
+        log.source_ref || '',
+        log.performed_by || '',
+        log.branch_id || ''
+      ];
+    });
+
+    const wsData = [headers, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length + 2, 12) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'לוג מערכת');
+    const today = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `לוג-מערכת-${today}.xlsx`);
+    toast('📥 קובץ לוג הורד בהצלחה', 's');
+  } catch(e) {
+    toast('שגיאה בייצוא: ' + (e.message || ''), 'e');
   }
   hideLoading();
 }
