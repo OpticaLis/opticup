@@ -674,12 +674,41 @@ async function fetchAll(tableName, filters) {
 
 // --- Supabase-backed batchCreate ---
 async function batchCreate(tableName, records) {
+  // Duplicate barcode check for inventory inserts
+  if (tableName === T.INV) {
+    const barcodes = records.map(r => r.fields['ברקוד']).filter(Boolean);
+    if (barcodes.length) {
+      // Check for duplicates within the batch itself
+      const seen = new Set();
+      const batchDupes = [];
+      for (const bc of barcodes) {
+        if (seen.has(bc)) batchDupes.push(bc);
+        seen.add(bc);
+      }
+      if (batchDupes.length) {
+        throw new Error(`ברקודים כפולים בשליחה: ${[...new Set(batchDupes)].join(', ')}`);
+      }
+      // Check against existing barcodes in DB
+      const { data: existing } = await sb.from('inventory').select('barcode').in('barcode', barcodes);
+      if (existing?.length) {
+        const dupes = existing.map(r => r.barcode);
+        throw new Error(`ברקודים כבר קיימים במלאי: ${dupes.join(', ')}`);
+      }
+    }
+  }
+
   const rows = records.map(r => fieldsToRow(r.fields, tableName));
   const created = [];
   for (let i = 0; i < rows.length; i += 100) {
     const batch = rows.slice(i, i + 100);
     const { data, error } = await sb.from(tableName).insert(batch).select(tableName === 'inventory' ? '*, inventory_images(*)' : '*');
-    if (error) throw new Error(error.message);
+    if (error) {
+      // Friendly message for unique constraint violation
+      if (error.code === '23505' && error.message.includes('barcode')) {
+        throw new Error('ברקוד כפול — ברקוד זה כבר קיים במלאי');
+      }
+      throw new Error(error.message);
+    }
     created.push(...(data || []).map(row => rowToRecord(row, tableName)));
   }
   return created;
