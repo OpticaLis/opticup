@@ -60,6 +60,7 @@ td input[type=number]{width:90px}
 tr:hover td{background:var(--g100)}
 tr.row-err td{background:#fef2f2}
 .cost-col{display:none}.admin-mode .cost-col{display:table-cell}
+.admin-col{display:none}.admin-mode .admin-col{display:table-cell}
 .alert{padding:12px 16px;border-radius:8px;margin-bottom:14px;font-size:.92rem;display:flex;align-items:flex-start;gap:10px}
 .alert-s{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
 .alert-e{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
@@ -450,6 +451,7 @@ tr.row-err td{background:#fef2f2}
           <th class="sortable" data-field="כמות" onclick="sortInventory(this)">כמות <span class="sort-icon">&#9650;</span></th>
           <th>תמונות</th>
           <th class="sortable" data-field="סנכרון אתר" onclick="sortInventory(this)">סנכרון <span class="sort-icon">&#9650;</span></th>
+          <th class="admin-col">פעולות</th>
         </tr></thead>
         <tbody id="inv-body"></tbody>
       </table>
@@ -457,6 +459,7 @@ tr.row-err td{background:#fef2f2}
     <div class="btn-bar" id="inv-admin-bar" style="display:none">
       <button class="btn btn-s" onclick="saveInventoryChanges()">&#10004; שמור שינויים</button>
       <button class="btn btn-g" onclick="loadInventoryTab()">&#10006; בטל שינויים</button>
+      <button class="btn btn-d" onclick="openRecycleBin()" style="margin-right:auto">&#128465; סל מחזור</button>
     </div>
   </div>
 </section>
@@ -552,6 +555,47 @@ tr.row-err td{background:#fef2f2}
     <div id="mismatch-content"></div>
     <button class="btn btn-w" id="mismatch-force">&#9888; בצע בכל זאת</button>
     <button class="btn btn-g" onclick="closeModal('mismatch-modal')">ביטול</button>
+  </div>
+</div>
+
+<!-- Soft Delete Modal -->
+<div id="softdel-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:440px">
+    <h3 id="softdel-title" style="color:var(--error)">&#128465; מחיקת פריט</h3>
+    <p id="softdel-desc" style="font-weight:600;margin-bottom:12px"></p>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>סיבת מחיקה <span style="color:var(--error)">*</span></label>
+      <select id="softdel-reason">
+        <option value="">— בחר סיבה —</option>
+        <option value="פגום / לא שמיש">פגום / לא שמיש</option>
+        <option value="אבדן">אבדן</option>
+        <option value="הוצאה ידנית">הוצאה ידנית</option>
+        <option value="העברה לסניף אחר">העברה לסניף אחר</option>
+        <option value="אחר">אחר</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>הערה (אופציונלי)</label>
+      <textarea id="softdel-note" rows="2" placeholder="פרטים נוספים..." style="width:100%;resize:vertical"></textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>סיסמת עובד <span style="color:var(--error)">*</span></label>
+      <input type="password" id="softdel-pin" placeholder="הזן PIN" style="max-width:140px">
+    </div>
+    <div id="softdel-error" style="color:var(--error);font-size:.85rem;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-g" onclick="closeModal('softdel-modal')">ביטול</button>
+      <button class="btn btn-d" id="softdel-confirm" onclick="confirmSoftDelete()" disabled>אשר מחיקה</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recycle Bin Modal -->
+<div id="recycle-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:850px">
+    <h3>&#128465; סל מחזור</h3>
+    <div id="recycle-content"></div>
+    <button class="btn btn-g" onclick="closeModal('recycle-modal')" style="margin-top:12px">סגור</button>
   </div>
 </div>
 
@@ -2391,7 +2435,7 @@ async function loadInventoryTab() {
   $('inv-edit-notice').style.display = 'none';
   updateSelectionUI();
   try {
-    invData = await fetchAll(T.INV, null);
+    invData = await fetchAll(T.INV, [['is_deleted','eq',false]]);
     const supplierSel = $('inv-filter-supplier');
     const curVal = supplierSel.value;
     supplierSel.innerHTML = '<option value="">הכל</option>' + suppliers.map(s => `<option value="${s}">${s}</option>`).join('');
@@ -2468,6 +2512,7 @@ function renderInventoryRows(recs) {
       <td style="font-weight:700;color:${qC}"${isAdm?' class="editable" onclick="invEdit(this,\'כמות\',\'number\')"':''}>${qty}</td>
       <td class="img-cell">${imgCell}</td>
       <td${isAdm?' class="editable" onclick="invEditSync(this)"':''}>${syncVal}</td>
+      ${isAdm?`<td><button class="btn btn-d btn-sm" onclick="deleteInvRow('${r.id}')" title="מחק">🗑️</button></td>`:'<td class="admin-col"></td>'}
     </tr>`;
   }).join('');
   if (recs.length > 500) {
@@ -2812,21 +2857,181 @@ async function saveInventoryChanges() {
   hideLoading();
 }
 
-async function deleteInvRow(recId) {
-  if (!isAdmin) { toast('פעולה זו דורשת הרשאת מנהל', 'e'); return; }
+// ---- Soft Delete ----
+let softDelTarget = null;
+
+function deleteInvRow(recId) {
   const rec = invData.find(r => r.id === recId);
-  const desc = rec ? `${rec.fields['חברה / מותג']||''} ${rec.fields['דגם']||''} (${rec.fields['ברקוד']||'ללא ברקוד'})` : recId;
-  const ok = await confirmDialog('מחיקת פריט', `למחוק את הפריט ${desc}?`);
-  if (!ok) return;
-  showLoading('מוחק...');
+  if (!rec) return;
+  softDelTarget = rec;
+  const bc = rec.fields['ברקוד'] || 'ללא ברקוד';
+  const brand = rec.fields['חברה / מותג'] || '';
+  const model = rec.fields['דגם'] || '';
+  $('softdel-title').textContent = '🗑️ מחיקת פריט — ' + bc;
+  $('softdel-desc').textContent = brand + ' ' + model;
+  $('softdel-reason').value = '';
+  $('softdel-note').value = '';
+  $('softdel-pin').value = '';
+  $('softdel-error').textContent = '';
+  $('softdel-confirm').disabled = true;
+  $('softdel-modal').style.display = 'flex';
+  // Enable confirm when reason + pin filled
+  const check = () => { $('softdel-confirm').disabled = !$('softdel-reason').value || !$('softdel-pin').value; };
+  $('softdel-reason').onchange = check;
+  $('softdel-pin').oninput = check;
+}
+
+async function confirmSoftDelete() {
+  if (!softDelTarget) return;
+  const pin = $('softdel-pin').value.trim();
+  const reason = $('softdel-reason').value;
+  const note = $('softdel-note').value.trim();
+  if (!reason || !pin) return;
+
+  // Verify PIN
+  const { data: emp } = await sb.from('employees').select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle();
+  if (!emp) {
+    $('softdel-error').textContent = '❌ סיסמת עובד שגויה';
+    return;
+  }
+
+  const id = softDelTarget.id;
+  const f = softDelTarget.fields;
+  const fullReason = note ? reason + ' — ' + note : reason;
+
   try {
-    const { error: delErr } = await sb.from('inventory').delete().eq('id', recId);
-    if (delErr) throw new Error(delErr.message);
-    invData = invData.filter(r => r.id !== recId);
+    const { error } = await sb.from('inventory').update({
+      is_deleted: true,
+      deleted_at: new Date().toISOString(),
+      deleted_by: emp.name,
+      deleted_reason: fullReason
+    }).eq('id', id);
+    if (error) throw new Error(error.message);
+
+    writeLog('soft_delete', id, {
+      barcode:    f['ברקוד'],
+      brand:      f['חברה / מותג'],
+      model:      f['דגם'],
+      reason:     reason,
+      source_ref: 'נמחק ע"י: ' + emp.name
+    });
+
+    invData = invData.filter(r => r.id !== id);
+    $('inv-count').textContent = invData.length;
     filterInventoryTable();
-    toast('פריט נמחק', 's');
-  } catch(e) { toast('שגיאה: '+(e.message||''), 'e'); }
-  hideLoading();
+    closeModal('softdel-modal');
+    toast('הפריט הועבר לסל המחזור 🗑️', 's');
+  } catch (e) {
+    $('softdel-error').textContent = 'שגיאה: ' + (e.message || '');
+  }
+  softDelTarget = null;
+}
+
+// ---- Recycle Bin ----
+async function openRecycleBin() {
+  $('recycle-content').innerHTML = '<p style="text-align:center">טוען...</p>';
+  $('recycle-modal').style.display = 'flex';
+  try {
+    const { data: deleted, error } = await sb.from('inventory')
+      .select('id, barcode, brand_id, model, deleted_by, deleted_at, deleted_reason')
+      .eq('is_deleted', true)
+      .order('deleted_at', { ascending: false });
+    if (error) throw new Error(error.message);
+
+    if (!deleted?.length) {
+      $('recycle-content').innerHTML = '<p style="text-align:center;padding:24px;color:var(--g500)">סל המחזור ריק ♻️</p>';
+      return;
+    }
+
+    // Resolve brand names
+    const brandRevMap = {};
+    for (const [name, uid] of Object.entries(brandCache)) brandRevMap[uid] = name;
+
+    const rows = deleted.map(r => {
+      const brand = brandRevMap[r.brand_id] || '';
+      const dt = r.deleted_at ? new Date(r.deleted_at).toLocaleString('he-IL') : '';
+      return `<tr data-id="${r.id}" data-barcode="${r.barcode||''}" data-brand="${brand}" data-model="${r.model||''}">
+        <td>${r.barcode||'—'}</td>
+        <td>${brand}</td>
+        <td>${r.model||''}</td>
+        <td>${r.deleted_by||''}</td>
+        <td style="font-size:.8rem">${dt}</td>
+        <td style="font-size:.85rem">${r.deleted_reason||''}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-s btn-sm" onclick="restoreItem('${r.id}')">↩️ שחזר</button>
+          <button class="btn btn-d btn-sm" onclick="permanentDelete('${r.id}')">❌ מחק לצמיתות</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    $('recycle-content').innerHTML = `
+      <div class="table-wrap" style="max-height:50vh;overflow-y:auto">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>
+            <th>ברקוד</th><th>מותג</th><th>דגם</th><th>נמחק ע"י</th><th>תאריך מחיקה</th><th>סיבה</th><th>פעולות</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  } catch (e) {
+    $('recycle-content').innerHTML = '<p style="color:var(--error)">שגיאה: ' + (e.message||'') + '</p>';
+  }
+}
+
+async function restoreItem(id) {
+  const row = document.querySelector(`#recycle-modal tr[data-id="${id}"]`);
+  const barcode = row?.dataset.barcode || '';
+  const brand = row?.dataset.brand || '';
+  const model = row?.dataset.model || '';
+
+  try {
+    const { error } = await sb.from('inventory').update({
+      is_deleted: false,
+      deleted_at: null,
+      deleted_by: null,
+      deleted_reason: null
+    }).eq('id', id);
+    if (error) throw new Error(error.message);
+
+    writeLog('restore', id, { barcode, brand, model, reason: 'שוחזר מסל מחזור' });
+    row?.remove();
+    // If table empty, show empty message
+    if (!document.querySelectorAll('#recycle-modal tbody tr').length) {
+      $('recycle-content').innerHTML = '<p style="text-align:center;padding:24px;color:var(--g500)">סל המחזור ריק ♻️</p>';
+    }
+    toast('הפריט שוחזר למלאי ✅', 's');
+  } catch (e) {
+    toast('שגיאה: ' + (e.message||''), 'e');
+  }
+}
+
+async function permanentDelete(id) {
+  const row = document.querySelector(`#recycle-modal tr[data-id="${id}"]`);
+  const barcode = row?.dataset.barcode || '';
+  const brand = row?.dataset.brand || '';
+  const model = row?.dataset.model || '';
+
+  const ok = await confirmDialog('מחיקה לצמיתות', 'האם למחוק לצמיתות? פעולה זו אינה הפיכה');
+  if (!ok) return;
+
+  // Require PIN again
+  const pin = prompt('הזן סיסמת עובד:');
+  if (!pin) return;
+  const { data: emp } = await sb.from('employees').select('id, name').eq('pin', pin.trim()).eq('is_active', true).maybeSingle();
+  if (!emp) { toast('❌ סיסמת עובד שגויה', 'e'); return; }
+
+  try {
+    writeLog('permanent_delete', id, { barcode, brand, model, reason: 'מחיקה לצמיתות', source_ref: 'נמחק ע"י: ' + emp.name });
+    const { error } = await sb.from('inventory').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+    row?.remove();
+    if (!document.querySelectorAll('#recycle-modal tbody tr').length) {
+      $('recycle-content').innerHTML = '<p style="text-align:center;padding:24px;color:var(--g500)">סל המחזור ריק ♻️</p>';
+    }
+    toast('הפריט נמחק לצמיתות', 's');
+  } catch (e) {
+    toast('שגיאה: ' + (e.message||''), 'e');
+  }
 }
 
 // =========================================================
