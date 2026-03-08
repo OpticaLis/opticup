@@ -2181,7 +2181,7 @@ let testInventory = [];
 async function loadData() {
   showLoading('טוען נתוני טסט...');
   try {
-    const resp = await fetch('/test_data.json');
+    const resp = await fetch('./test_data.json');
     const data = await resp.json();
     suppliers = data.suppliers;
     brands = data.brands.map((b, i) => ({
