@@ -318,6 +318,7 @@ tr.row-err td{background:#fef2f2}
       <div class="form-group" style="max-width:160px"><label>סוג מוצר</label><select id="inv-filter-ptype" onchange="filterInventoryTable()"><option value="">הכל</option><option value="משקפי ראייה">ראייה</option><option value="משקפי שמש">שמש</option></select></div>
       <div class="form-group" style="max-width:100px"><label>כמות</label><select id="inv-filter-qty" onchange="filterInventoryTable()"><option value="">הכל</option><option value="1" selected>במלאי</option><option value="0">אזל</option></select></div>
       <button class="btn btn-p" onclick="loadInventoryTab()">&#128260; רענן</button>
+      <button class="btn btn-p" onclick="exportInventoryExcel()">&#128229; ייצוא Excel</button>
     </div>
     <div style="margin-bottom:8px;font-size:.85rem;color:var(--g500)">
       סה״כ: <strong id="inv-count">0</strong> רשומות (מוצגות: <strong id="inv-shown">0</strong>)
@@ -1527,6 +1528,69 @@ function exportBarcodesExcel(source) {
   XLSX.utils.book_append_sheet(wb, ws, 'ברקודים');
   XLSX.writeFile(wb, `barcodes_${Date.now()}.xlsx`);
   toast('קובץ Excel יורד...', 's');
+}
+
+// =========================================================
+// INVENTORY EXCEL EXPORT
+// =========================================================
+function exportInventoryExcel() {
+  if (!invFiltered.length) { toast('אין פריטים לייצוא', 'w'); return; }
+
+  const headers = ['ברקוד','חברה/מותג','דגם','גודל','גשר','צבע','סוג מוצר','מחיר מכירה','הנחה%','כמות','סנכרון'];
+  const rows = invFiltered.map(r => {
+    const f = r.fields;
+    return [
+      f['ברקוד'] || '',
+      f['חברה / מותג'] || '',
+      f['דגם'] || '',
+      f['גודל'] || '',
+      f['גשר'] || '',
+      f['צבע'] || '',
+      f['סוג מוצר'] || '',
+      parseFloat(f['מחיר מכירה']) || 0,
+      f['הנחה מכירה %'] != null ? Math.round((parseFloat(f['הנחה מכירה %']) || 0) * 100) : 0,
+      parseInt(f['כמות']) || 0,
+      f['סנכרון אתר'] || ''
+    ];
+  });
+
+  const wsData = [headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // Column widths — auto-fit based on content
+  const colWidths = headers.map((h, ci) => {
+    let mx = h.length;
+    rows.forEach(r => { const len = String(r[ci]).length; if (len > mx) mx = len; });
+    return { wch: Math.min(mx + 3, 30) };
+  });
+  ws['!cols'] = colWidths;
+
+  // Header styling — bold, dark blue bg, white text
+  const headerStyle = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '1A237E' } }, alignment: { horizontal: 'center' } };
+  headers.forEach((_, ci) => {
+    const ref = XLSX.utils.encode_cell({ r: 0, c: ci });
+    if (!ws[ref]) return;
+    ws[ref].s = headerStyle;
+  });
+
+  // Number format for price column (col index 7) and discount (8) and quantity (9)
+  for (let ri = 1; ri <= rows.length; ri++) {
+    const priceRef = XLSX.utils.encode_cell({ r: ri, c: 7 });
+    if (ws[priceRef]) ws[priceRef].t = 'n';
+    const discRef = XLSX.utils.encode_cell({ r: ri, c: 8 });
+    if (ws[discRef]) ws[discRef].t = 'n';
+    const qtyRef = XLSX.utils.encode_cell({ r: ri, c: 9 });
+    if (ws[qtyRef]) ws[qtyRef].t = 'n';
+  }
+
+  // RTL
+  ws['!views'] = [{ RTL: true }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'מלאי');
+  const today = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `מלאי-פריזמה-${today}.xlsx`);
+  toast('\u{1F4E5} הקובץ הורד בהצלחה', 's');
 }
 
 // =========================================================
