@@ -86,6 +86,10 @@ CREATE POLICY "logs_select" ON inventory_logs
   FOR SELECT USING (true);
 CREATE POLICY "logs_insert" ON inventory_logs
   FOR INSERT WITH CHECK (true);
+CREATE POLICY "logs_delete" ON inventory_logs
+  FOR DELETE USING (true);
+CREATE POLICY "logs_update" ON inventory_logs
+  FOR UPDATE USING (true) WITH CHECK (true);
 CREATE POLICY "employees_select" ON employees
   FOR SELECT USING (true);
 

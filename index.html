@@ -996,8 +996,9 @@ async function writeLog(action, inventoryId, details = {}) {
 }
 
 async function testWriteLog() {
-  await writeLog('entry_manual', null, {
-    barcode: 'TEST001',
+  const marker = 'TEST_' + Date.now();
+  await writeLog('test', null, {
+    barcode: marker,
     brand: 'Test Brand',
     model: 'Test Model',
     qty_before: 0,
@@ -1008,13 +1009,13 @@ async function testWriteLog() {
   const { data } = await sb
     .from('inventory_logs')
     .select('*')
-    .eq('barcode', 'TEST001')
-    .single();
+    .eq('barcode', marker)
+    .maybeSingle();
 
   console.log('Log test result:', data);
 
   // Clean up test row
-  await sb.from('inventory_logs').delete().eq('barcode', 'TEST001');
+  if (data) await sb.from('inventory_logs').delete().eq('id', data.id);
 
   return data ? '✅ writeLog עובד' : '❌ writeLog נכשל';
 }
@@ -3155,7 +3156,7 @@ const ACTION_MAP = {
   edit_details:     { icon: '📝', label: 'עריכת פרטים',        color: '#2196F3' },
   edit_barcode:     { icon: '🔖', label: 'עריכת ברקוד',        color: '#2196F3' },
   soft_delete:      { icon: '🗑️', label: 'מחיקה',             color: '#9E9E9E' },
-  restore:          { icon: '♻️', label: 'שחזור',              color: '#9E9E9E' },
+  restore:          { icon: '♻️', label: 'שחזור',              color: '#92400e' },
   permanent_delete: { icon: '❌', label: 'מחיקה לצמיתות',      color: '#9E9E9E' },
   test:             { icon: '🧪', label: 'בדיקה',              color: '#9E9E9E' }
 };
