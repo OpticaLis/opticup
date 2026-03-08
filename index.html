@@ -472,7 +472,7 @@ tr.row-err td{background:#fef2f2}
     </div>
     <div class="table-wrap">
       <table id="brands-table">
-        <thead><tr><th>שם חברה</th><th>סוג מותג</th><th>סנכרון ברירת מחדל</th><th>פעיל</th></tr></thead>
+        <thead><tr><th>שם חברה</th><th>סוג מותג</th><th>סנכרון ברירת מחדל</th><th>פעיל</th><th>מוחרג מאתר</th></tr></thead>
         <tbody id="brands-body"></tbody>
       </table>
     </div>
@@ -622,7 +622,7 @@ const FIELD_MAP = {
     'תאריך מכירה':'sale_date','הערות':'notes'
   },
   brands: {
-    'שם חברה':'name','סוג מותג':'brand_type','סנכרון ברירת מחדל':'default_sync','פעיל':'active'
+    'שם חברה':'name','סוג מותג':'brand_type','סנכרון ברירת מחדל':'default_sync','פעיל':'active','מוחרג מאתר':'exclude_website'
   },
   suppliers: { 'שם':'name' }
 };
@@ -2333,7 +2333,7 @@ function filterInventoryTable() {
     if (qtyFilter === '1' && (f['כמות'] || 0) <= 0) return false;
     if (qtyFilter === '0' && (f['כמות'] || 0) > 0) return false;
     if (search) {
-      const hay = [f['ברקוד'],f['ספק'],f['חברה / מותג'],f['דגם'],f['גודל'],f['צבע'],f['סוג מוצר']].filter(Boolean).join(' ').toLowerCase();
+      const hay = [f['ברקוד'],f['ספק'],f['חברה / מותג'],f['דגם'],f['גודל'],f['צבע'],f['סוג מוצר'],f['הערות']].filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(search)) return false;
     }
     return true;
@@ -2734,6 +2734,7 @@ async function loadBrandsTab() {
       type: enToHe('brand_type', b.brand_type) || '',
       defaultSync: enToHe('website_sync', b.default_sync) || '',
       active: b.active === true,
+      excludeWebsite: b.exclude_website === true,
       isNew: false
     }));
     renderBrandsTable();
@@ -2760,12 +2761,13 @@ function renderBrandsTable() {
         <option value="לא"${b.defaultSync==='לא'?' selected':''}>לא</option>
       </select></td>
       <td><input type="checkbox" ${b.active?'checked':''} onchange="brandsEdited[${i}].active=this.checked"></td>
+      <td><input type="checkbox" ${b.excludeWebsite?'checked':''} onchange="brandsEdited[${i}].excludeWebsite=this.checked"></td>
     </tr>
   `).join('');
 }
 
 function addBrandRow() {
-  brandsEdited.push({ id: null, name: '', type: '', defaultSync: '', active: true, isNew: true });
+  brandsEdited.push({ id: null, name: '', type: '', defaultSync: '', active: true, excludeWebsite: false, isNew: true });
   renderBrandsTable();
   const rows = $('brands-body').querySelectorAll('tr');
   const last = rows[rows.length-1];
@@ -2786,7 +2788,8 @@ async function saveBrands() {
         name: b.name,
         brand_type: heToEn('brand_type', b.type) || null,
         default_sync: heToEn('website_sync', b.defaultSync) || null,
-        active: b.active
+        active: b.active,
+        exclude_website: b.excludeWebsite
       }).eq('id', b.id);
       if (error) throw new Error(error.message);
       updCount++;
@@ -2799,7 +2802,8 @@ async function saveBrands() {
         name: b.name,
         brand_type: heToEn('brand_type', b.type) || null,
         default_sync: heToEn('website_sync', b.defaultSync) || null,
-        active: b.active
+        active: b.active,
+        exclude_website: b.excludeWebsite
       }));
       const { error } = await sb.from('brands').insert(rows);
       if (error) throw new Error(error.message);

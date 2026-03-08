@@ -3,6 +3,7 @@
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- ============================================================
 -- TABLE: suppliers
@@ -36,12 +37,14 @@ CREATE TABLE IF NOT EXISTS brands (
   name          TEXT NOT NULL UNIQUE,
   brand_type    TEXT CHECK (brand_type IN ('luxury', 'brand', 'regular')),
   default_sync  TEXT CHECK (default_sync IN ('full', 'display', 'none')),
-  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  active          BOOLEAN NOT NULL DEFAULT TRUE,
+  exclude_website BOOLEAN NOT NULL DEFAULT FALSE,
   branch_id     UUID,
   created_by    UUID,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+COMMENT ON COLUMN brands.exclude_website IS 'excluded from WooCommerce sync';
 CREATE INDEX IF NOT EXISTS idx_brands_name ON brands (name);
 CREATE INDEX IF NOT EXISTS idx_brands_active ON brands (active);
 
@@ -81,6 +84,8 @@ CREATE INDEX IF NOT EXISTS idx_inv_brand ON inventory (brand_id);
 CREATE INDEX IF NOT EXISTS idx_inv_status ON inventory (status);
 CREATE INDEX IF NOT EXISTS idx_inv_product_type ON inventory (product_type);
 CREATE INDEX IF NOT EXISTS idx_inv_quantity ON inventory (quantity);
+CREATE INDEX IF NOT EXISTS idx_inv_model_trgm ON inventory USING GIN (model gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_inv_color_trgm ON inventory USING GIN (color gin_trgm_ops);
 
 -- ============================================================
 -- TABLE: inventory_images
