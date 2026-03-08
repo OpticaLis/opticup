@@ -153,15 +153,18 @@ tr.row-err td{background:#fef2f2}
 .action-btns{display:flex;gap:4px;flex-wrap:nowrap}
 @media(max-width:768px){
   header{padding:10px 14px}.logo{font-size:1.1rem}
-  nav{padding:0 8px}
+  /* Nav: smooth horizontal scroll */
+  nav{padding:0 4px;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
   nav button{padding:10px 12px;font-size:.8rem}
   main{padding:10px}
   .card{padding:14px}
-  th,td{padding:5px 4px;font-size:.76rem}
-  td input,td select{padding:4px 5px;font-size:.76rem}
+  th,td{padding:5px 4px;font-size:.78rem}
+  td input,td select{padding:4px 5px;font-size:.78rem}
   td input[type=number]{width:70px}
-  .btn{padding:7px 14px;font-size:.82rem}
-  .btn-sm{padding:4px 8px;font-size:.74rem}
+  /* Touch-friendly buttons */
+  .btn{padding:7px 14px;font-size:.82rem;min-height:44px}
+  .btn-sm{padding:4px 8px;font-size:.74rem;min-height:36px}
   .form-group{min-width:100%}
   .sub-choice button{min-width:140px;padding:16px}
   .sub-choice button .icon{font-size:1.5rem}
@@ -173,6 +176,31 @@ tr.row-err td{background:#fef2f2}
   .item-card{padding:10px 12px}
   .item-card .card-field{min-width:calc(50% - 6px)}
   .card-row{gap:8px}
+  /* Prevent iOS zoom on input focus */
+  input,select,textarea{font-size:16px!important}
+  td input,td select{font-size:14px!important}
+  /* Inventory table: horizontal scroll with min-width */
+  #inv-table{min-width:900px}
+  /* Inventory filter bar: wrap on mobile */
+  #tab-inventory .form-row{flex-direction:column;gap:8px}
+  #tab-inventory .form-row .form-group{max-width:100%!important}
+  #tab-inventory .form-row .btn{width:100%}
+  /* Excel import / format tables: scrollable */
+  #entry-excel .table-wrap{-webkit-overflow-scrolling:touch}
+  #entry-excel table{min-width:700px}
+  #excel-import-table{min-width:700px}
+}
+@media(max-width:600px){
+  /* Entry form: single column */
+  .form-row{flex-direction:column}
+  .form-row .form-group{min-width:100%!important;max-width:100%!important}
+  /* Card-based entry form: single column */
+  .card-row{flex-direction:column}
+  .card-field{min-width:100%!important}
+  .item-card .card-field{min-width:100%!important}
+  /* Sub-choice: 2-col grid */
+  .sub-choice{gap:8px}
+  .sub-choice button{min-width:calc(50% - 4px);padding:14px 8px;font-size:.88rem}
 }
 </style>
 </head>
