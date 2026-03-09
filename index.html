@@ -36,6 +36,7 @@
   <button data-tab="brands" onclick="showTab('brands')">&#127991; ניהול מותגים</button>
   <button data-tab="suppliers" onclick="showTab('suppliers')">&#128101; ניהול ספקים</button>
   <button data-tab="systemlog" class="admin-tab" onclick="showTab('systemlog')">&#128203; לוג מערכת</button>
+  <button data-tab="access-sync" onclick="showTab('access-sync')">&#128260; סנכרון Access</button>
   <div class="nav-spacer"></div>
   <button class="admin-btn" id="adminBtn" onclick="toggleAdmin()">&#128274; מנהל</button>
 </nav>
@@ -455,6 +456,11 @@
   <div id="po-list-container2">טוען...</div>
 </section>
 
+<!-- ========== TAB: ACCESS SYNC ========== -->
+<section id="tab-access-sync" class="tab">
+  <div id="access-sync-container">טוען...</div>
+</section>
+
 </main>
 
 <!-- Admin Modal -->
@@ -721,6 +727,7 @@
 <script src="js/audit-log.js"></script>
 <script src="js/purchase-orders.js"></script>
 <script src="js/brands-suppliers.js"></script>
+<script src="js/access-sync.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>

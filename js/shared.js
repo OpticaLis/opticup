@@ -14,6 +14,9 @@ const T = {
   RECEIPTS: 'goods_receipts',
   RCPT_ITEMS: 'goods_receipt_items',
   PO_ITEMS: 'purchase_order_items',
+  SYNC_LOG: 'sync_log',
+  PENDING_SALES: 'pending_sales',
+  HEARTBEAT: 'watcher_heartbeat',
 };
 
 // =========================================================
@@ -361,6 +364,7 @@ function showTab(name) {
   if (name === 'systemlog') loadSystemLog();
   if (name === 'receipt') loadReceiptTab();
   if (name === 'purchase-orders') loadPurchaseOrdersTab();
+  if (name === 'access-sync') { renderAccessSyncTab(); loadHeartbeat(); loadSyncLog(); loadPendingBadge(); }
 }
 
 function showEntryMode(mode) {
