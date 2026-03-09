@@ -411,15 +411,20 @@ function exportInventoryExcel() {
 let excelImportRows = []; // validated rows ready for insert
 let excelImportFileName = ''; // filename for logging
 
-function downloadSampleExcel() {
-  const headers = ['חברה/מותג','דגם','גודל','מחיר מכירה','גשר','צבע','סוג מוצר','הנחה%','סנכרון','הערות'];
-  const ws = XLSX.utils.aoa_to_sheet([headers]);
-  ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length + 2, 12) }));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'ייבוא');
-  XLSX.writeFile(wb, 'תבנית-ייבוא-מלאי.xlsx');
-  toast('קובץ דוגמה הורד', 's');
+function openExcelFormatPopup() {
+  const m = document.getElementById('excel-format-modal');
+  if (m) m.style.display = 'flex';
 }
+function closeExcelFormatPopup() {
+  const m = document.getElementById('excel-format-modal');
+  if (m) m.style.display = 'none';
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('excel-format-modal')
+    ?.addEventListener('click', function(e) {
+      if (e.target === this) closeExcelFormatPopup();
+    });
+});
 
 function resetExcelImport() {
   excelImportRows = [];

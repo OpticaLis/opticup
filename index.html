@@ -72,29 +72,8 @@
       <h3>&#128194; הכנסת מלאי — הכנסה מאקסל</h3>
       <div id="excel-import-alerts"></div>
 
-      <h4 style="margin:12px 0 8px;color:var(--primary)">פורמט קובץ הייבוא</h4>
-      <div class="table-wrap" style="margin-bottom:16px">
-        <table style="font-size:.82rem">
-          <thead><tr>
-            <th>חברה/מותג <span style="color:#ef4444">*</span></th>
-            <th>דגם <span style="color:#ef4444">*</span></th>
-            <th>גודל <span style="color:#ef4444">*</span></th>
-            <th>מחיר מכירה <span style="color:#ef4444">*</span></th>
-            <th>גשר</th><th>צבע</th><th>סוג מוצר</th><th>הנחה%</th><th>סנכרון</th><th>הערות</th>
-          </tr></thead>
-          <tbody>
-            <tr><td>Gotti</td><td>Arik</td><td>51</td><td>2250</td><td>18</td><td>BLK</td><td>משקפי ראייה</td><td>20</td><td>מלא</td><td></td></tr>
-            <tr><td>Ray-Ban</td><td>RB3025</td><td>58</td><td>890</td><td>14</td><td>Gold</td><td>משקפי שמש</td><td>10</td><td>תדמית</td><td>aviator</td></tr>
-            <tr><td>GUESS</td><td>GU2890</td><td>54</td><td>450</td><td>16</td><td>TOR</td><td>משקפי ראייה</td><td>15</td><td>לא</td><td></td></tr>
-            <tr><td>Tom Ford</td><td>TF5901</td><td>52</td><td>1800</td><td>20</td><td>BLKM</td><td>משקפי ראייה</td><td></td><td>מלא</td><td>חדש</td></tr>
-            <tr><td>BALENCIAGA</td><td>BB0310</td><td>55</td><td>2100</td><td></td><td>HAV</td><td>משקפי שמש</td><td>20</td><td></td><td></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p style="font-size:.82rem;color:var(--g500);margin-bottom:16px">&#9888; שדות חובה מסומנים ב-<span style="color:#ef4444">*</span>. שורות חסרות שדה חובה יידלגו עם הודעת שגיאה.</p>
-
       <div class="btn-bar" style="margin-bottom:20px">
-        <button class="btn btn-p" onclick="downloadSampleExcel()">&#11015;&#65039; הורד קובץ דוגמה</button>
+        <button onclick="openExcelFormatPopup()" class="btn" style="background:#6c757d; color:white; padding:7px 14px">&#10067; מבנה הקובץ</button>
         <label class="btn btn-w" style="cursor:pointer">&#128194; בחר קובץ Excel להעלאה
           <input type="file" id="excel-import-file" accept=".xlsx,.xls" onchange="handleExcelImport(event)" style="display:none">
         </label>
@@ -636,6 +615,71 @@
 
     <div style="margin-top:16px;padding:16px;background:#f5f5f5;border-radius:8px;text-align:center;color:#888">
       &#127916; סרטון הדרכה — בקרוב
+    </div>
+  </div>
+</div>
+
+<!-- Excel format popup -->
+<div id="excel-format-modal"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);
+            z-index:3000; align-items:center; justify-content:center">
+  <div style="background:white; border-radius:12px; padding:24px;
+              max-width:700px; width:95%; max-height:85vh; overflow-y:auto">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+      <h3 style="margin:0">&#128202; מבנה קובץ Excel להכנסת מלאי</h3>
+      <button onclick="closeExcelFormatPopup()" style="background:none; border:none; font-size:20px; cursor:pointer">&#10005;</button>
+    </div>
+    <p style="color:#555; font-size:13px; margin-bottom:16px">
+      הקובץ חייב להכיל את העמודות הבאות (שורה ראשונה = כותרות):
+    </p>
+    <div style="overflow-x:auto; margin-bottom:16px">
+      <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:right">
+        <thead>
+          <tr style="background:#1a2744; color:white">
+            <th style="padding:8px; border:1px solid #ccc">מותג</th>
+            <th style="padding:8px; border:1px solid #ccc">דגם</th>
+            <th style="padding:8px; border:1px solid #ccc">צבע</th>
+            <th style="padding:8px; border:1px solid #ccc">גודל</th>
+            <th style="padding:8px; border:1px solid #ccc">כמות</th>
+            <th style="padding:8px; border:1px solid #ccc">מחיר עלות</th>
+            <th style="padding:8px; border:1px solid #ccc">מחיר מכירה</th>
+            <th style="padding:8px; border:1px solid #ccc">סינכרון</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background:#f9f9f9">
+            <td style="padding:8px; border:1px solid #eee">Rayban</td>
+            <td style="padding:8px; border:1px solid #eee">3025</td>
+            <td style="padding:8px; border:1px solid #eee">Gold</td>
+            <td style="padding:8px; border:1px solid #eee">55</td>
+            <td style="padding:8px; border:1px solid #eee">2</td>
+            <td style="padding:8px; border:1px solid #eee">180</td>
+            <td style="padding:8px; border:1px solid #eee">450</td>
+            <td style="padding:8px; border:1px solid #eee">מלא</td>
+          </tr>
+          <tr>
+            <td style="padding:8px; border:1px solid #eee">Oakley</td>
+            <td style="padding:8px; border:1px solid #eee">Holbrook</td>
+            <td style="padding:8px; border:1px solid #eee">Black</td>
+            <td style="padding:8px; border:1px solid #eee">52</td>
+            <td style="padding:8px; border:1px solid #eee">1</td>
+            <td style="padding:8px; border:1px solid #eee">220</td>
+            <td style="padding:8px; border:1px solid #eee">550</td>
+            <td style="padding:8px; border:1px solid #eee">תדמית</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="background:#f8f9fa; border-radius:8px; padding:16px; font-size:13px">
+      <p style="margin:0 0 8px 0; font-weight:600">הערות חשובות:</p>
+      <ul style="margin:0; padding-right:18px; line-height:2">
+        <li><strong>מותג</strong> — חייב להיות קיים במערכת</li>
+        <li><strong>כמות</strong> — מספר שלם, מינימום 1</li>
+        <li><strong>מחיר עלות / מכירה</strong> — מספר, ניתן להשאיר ריק</li>
+        <li><strong>סינכרון</strong> — מלא / תדמית / לא (אם ריק — ברירת מחדל: מלא)</li>
+        <li>פריטים חדשים ללא ברקוד — יועברו לרשימת המתנה לברקוד</li>
+        <li>פריטים קיימים עם ברקוד — כמות תתעדכן אוטומטית</li>
+      </ul>
     </div>
   </div>
 </div>
