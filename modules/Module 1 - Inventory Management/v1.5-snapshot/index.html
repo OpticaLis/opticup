@@ -1,0 +1,726 @@
+<!--
+  Optic Up — Prizma Optics Inventory System
+  Version: 2.0 — Inventory Module Complete
+  Stack: Vanilla JS + Supabase + SheetJS
+  Features: Barcode mgmt (BBDDDDD), Excel import/export, Mobile responsive
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>אופטיקה פריזמה — מערכת מלאי</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header>
+  <div class="logo"><span>&#9670;</span> אופטיקה פריזמה</div>
+  <span style="font-size:.8rem;opacity:.6">Supabase</span>
+</header>
+
+<div id="low-stock-banner" style="display:none; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:10px 16px; margin:8px 16px; cursor:pointer; align-items:center; gap:10px" onclick="openLowStockModal()">
+  <span style="font-size:18px">&#9888;&#65039;</span>
+  <span id="low-stock-banner-text" style="font-weight:600; color:#856404"></span>
+  <span style="margin-right:auto; color:#856404; font-size:13px">&#8592; לחץ לפרטים</span>
+</div>
+
+<nav id="mainNav">
+  <button data-tab="entry" class="active" onclick="showTab('entry')">&#128230; הכנסת מלאי</button>
+  <button data-tab="reduction" onclick="showTab('reduction')">&#128179; הורדת מלאי</button>
+  <button data-tab="purchase-orders" onclick="showTab('purchase-orders')">&#128203; הזמנות רכש</button>
+  <button data-tab="inventory" onclick="showTab('inventory')">&#128451; מלאי ראשי</button>
+  <button data-tab="brands" onclick="showTab('brands')">&#127991; ניהול מותגים</button>
+  <button data-tab="suppliers" onclick="showTab('suppliers')">&#128101; ניהול ספקים</button>
+  <button data-tab="systemlog" class="admin-tab" onclick="showTab('systemlog')">&#128203; לוג מערכת</button>
+  <div class="nav-spacer"></div>
+  <button class="admin-btn" id="adminBtn" onclick="toggleAdmin()">&#128274; מנהל</button>
+</nav>
+
+<main>
+
+<!-- ========== TAB 1: ENTRY ========== -->
+<section id="tab-entry" class="tab active">
+  <div id="entry-choice" class="sub-choice">
+    <button onclick="showEntryMode('manual')" id="btn-entry-manual"><span class="icon">&#9997;</span>הכנסה ידנית</button>
+    <button onclick="showEntryMode('excel')" id="btn-entry-excel"><span class="icon">&#128194;</span>הכנסה מאקסל</button>
+    <button onclick="showEntryMode('receipt')" id="btn-entry-receipt"><span class="icon">&#128230;</span>קבלת סחורה</button>
+    <button onclick="openEntryHistory()" id="btn-entry-history"><span class="icon">&#128197;</span>היסטוריית הכנסות</button>
+  </div>
+
+  <!-- Manual Entry -->
+  <div id="entry-manual" style="display:none">
+    <div class="card">
+      <h3>&#9997; הכנסת מלאי — הכנסה ידנית</h3>
+      <div id="entry-alerts"></div>
+      <div class="items-container" id="entry-body"></div>
+      <div class="btn-bar">
+        <button class="btn btn-g" onclick="addEntryRow()">&#10010; הוסף שורה</button>
+        <button class="btn btn-w" onclick="generateBarcodes('entry')">&#127991; יצירת ברקודים</button>
+        <button class="btn btn-p" onclick="exportBarcodesExcel('entry')">&#128229; ברקודים-אקסל</button>
+        <button class="btn btn-s" onclick="submitEntry()">&#10004; שלח הכל</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Excel Import -->
+  <div id="entry-excel" style="display:none">
+    <div class="card">
+      <h3>&#128194; הכנסת מלאי — הכנסה מאקסל</h3>
+      <div id="excel-import-alerts"></div>
+
+      <div class="btn-bar" style="margin-bottom:20px">
+        <button onclick="openExcelFormatPopup()" class="btn" style="background:#6c757d; color:white; padding:7px 14px">&#10067; מבנה הקובץ</button>
+        <label class="btn btn-w" style="cursor:pointer">&#128194; בחר קובץ Excel להעלאה
+          <input type="file" id="excel-import-file" accept=".xlsx,.xls" onchange="handleExcelImport(event)" style="display:none">
+        </label>
+      </div>
+
+      <!-- Preview area -->
+      <div id="excel-import-preview" style="display:none">
+        <div id="excel-import-stats" style="margin-bottom:12px;font-weight:600"></div>
+        <div id="excel-import-errors" style="display:none;margin-bottom:12px"></div>
+        <div class="table-wrap" style="max-height:400px;overflow-y:auto">
+          <table id="excel-import-table">
+            <thead><tr>
+              <th>#</th><th>חברה/מותג</th><th>דגם</th><th>גודל</th><th>מחיר מכירה</th><th>גשר</th><th>צבע</th><th>סוג מוצר</th><th>הנחה%</th><th>סנכרון</th><th>הערות</th>
+            </tr></thead>
+            <tbody id="excel-import-body"></tbody>
+          </table>
+        </div>
+        <div class="btn-bar">
+          <button class="btn btn-s" id="excel-import-confirm" onclick="confirmExcelImport()" disabled>&#10004; אשר והכנס 0 פריטים</button>
+          <button class="btn btn-g" onclick="resetExcelImport()">&#10006; בטל</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== TAB 2: REDUCTION ========== -->
+<section id="tab-reduction" class="tab">
+  <div class="card">
+    <h3>&#128196; חלק א' — העלאת קובץ Excel מכירות</h3>
+    <div id="red-excel-alerts"></div>
+    <div class="form-row" style="align-items:flex-end">
+      <div class="form-group" style="max-width:350px">
+        <label>בחר קובץ Excel (.xlsx / .xls)</label>
+        <input type="file" id="red-file" accept=".xlsx,.xls,.csv" onchange="handleRedExcel(event)">
+      </div>
+      <button class="btn btn-g btn-sm" onclick="showSampleReport()">&#128196; דוח לדוגמא</button>
+    </div>
+    <div id="red-preview" style="display:none"></div>
+    <div id="red-results" style="display:none"></div>
+  </div>
+  <hr class="divider">
+  <div class="card">
+    <h3>&#128269; חלק ב' — הורדה ידנית</h3>
+    <div id="red-manual-alerts"></div>
+    <div class="search-box">
+      <input type="text" id="red-barcode" placeholder="חיפוש לפי ברקוד..." onkeydown="if(event.key==='Enter')searchManual()">
+    </div>
+    <p style="margin:8px 0;color:var(--g500);font-size:.88rem">או חיפוש לפי פרטים:</p>
+    <div class="search-box">
+      <select id="red-brand" onchange="loadModelsForBrand(this.value)"><option value="">חברה...</option></select>
+      <input type="text" id="red-model" placeholder="דגם..." list="red-model-list" onchange="loadSizesAndColors()"><datalist id="red-model-list"></datalist>
+      <input type="text" id="red-size" placeholder="גודל..." list="red-size-list"><datalist id="red-size-list"></datalist>
+      <input type="text" id="red-color" placeholder="צבע..." list="red-color-list"><datalist id="red-color-list"></datalist>
+      <button class="btn btn-p" onclick="searchManual()">&#128269; חפש</button>
+    </div>
+    <div id="red-result"></div>
+  </div>
+</section>
+
+<!-- Reduction Reason Modal -->
+<div id="reduce-modal" class="modal" style="display:none">
+  <div class="modal-content" style="max-width:420px">
+    <h3>&#128230; הורדה מהמלאי</h3>
+    <p id="reduce-modal-item" style="font-weight:600;margin:12px 0"></p>
+    <p>כמות נוכחית: <strong id="reduce-modal-current"></strong></p>
+    <div class="form-group" style="margin-top:12px"><label>כמות להורדה</label><input type="number" id="reduce-modal-amount" value="1" min="1" style="width:80px"></div>
+    <div class="form-group"><label>סיבה <span class="req">*</span></label>
+      <select id="reduce-modal-reason">
+        <option value="">— בחר סיבה —</option>
+        <option value="נמכר">נמכר</option>
+        <option value="נשבר">נשבר</option>
+        <option value="לא נמצא">לא נמצא</option>
+        <option value="נשלח לזיכוי">נשלח לזיכוי</option>
+        <option value="הועבר לסניף אחר">הועבר לסניף אחר</option>
+      </select>
+    </div>
+    <div class="form-group"><label>סיסמת עובד <span class="req">*</span></label><input type="password" id="reduce-modal-pin" placeholder="****" onkeydown="if(event.key==='Enter')confirmReduction()"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-d" onclick="confirmReduction()">&#10004; אשר הורדה</button>
+      <button class="btn btn-g" onclick="closeModal('reduce-modal')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- Excel Import Results Modal -->
+<div id="excel-results-modal" class="modal" style="display:none">
+  <div class="modal-content" style="max-width:620px">
+    <h3>&#128230; תוצאות ייבוא מאקסל</h3>
+    <div id="excel-results-success" style="margin-bottom:16px"></div>
+    <div id="excel-results-pending" style="margin-bottom:16px"></div>
+    <div id="excel-results-reminder"></div>
+    <div style="margin-top:16px;text-align:left">
+      <button class="btn btn-g" onclick="closeModal('excel-results-modal')">&#10006; סגור</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TAB: INVENTORY ========== -->
+<section id="tab-inventory" class="tab">
+  <div class="card">
+    <h3>&#128451; מלאי ראשי</h3>
+    <div id="inv-alerts"></div>
+    <div class="form-row" style="align-items:flex-end;margin-bottom:12px;gap:8px">
+      <div class="form-group" style="max-width:220px"><label>חיפוש חופשי</label><input type="text" id="inv-search" placeholder="ברקוד / מותג / דגם..." oninput="filterInventoryTable()"></div>
+      <div class="form-group" style="max-width:160px"><label>ספק</label><select id="inv-filter-supplier" onchange="filterInventoryTable()"><option value="">הכל</option></select></div>
+      <div class="form-group" style="max-width:160px"><label>סוג מוצר</label><select id="inv-filter-ptype" onchange="filterInventoryTable()"><option value="">הכל</option><option value="משקפי ראייה">ראייה</option><option value="משקפי שמש">שמש</option></select></div>
+      <div class="form-group" style="max-width:100px"><label>כמות</label><select id="inv-filter-qty" onchange="filterInventoryTable()"><option value="">הכל</option><option value="1" selected>במלאי</option><option value="0">אזל</option></select></div>
+      <button class="btn btn-p" onclick="loadInventoryTab()">&#128260; רענן</button>
+      <button class="btn btn-p" onclick="exportInventoryExcel()">&#128229; ייצוא Excel</button>
+    </div>
+    <div style="margin-bottom:8px;font-size:.85rem;color:var(--g500)">
+      סה״כ: <strong id="inv-count">0</strong> רשומות (מוצגות: <strong id="inv-shown">0</strong>)
+      <span id="inv-sel-count" style="display:none;color:var(--primary);font-weight:700"> | נבחרו: <strong id="inv-sel-num">0</strong></span>
+      <span id="inv-edit-notice" style="color:var(--warn);display:none"> | &#9888; שינויים לא שמורים</span>
+    </div>
+    <!-- BULK ACTION BAR (admin only) -->
+    <div id="inv-bulk-bar" class="inv-bulk-bar" style="display:none">
+      <div class="bulk-label">&#9998; פעולות על נבחרים:</div>
+      <div class="bulk-actions">
+        <div class="bulk-field"><label>מחיר מכירה</label><input type="number" id="bulk-sprice" placeholder="—"></div>
+        <div class="bulk-field"><label>הנחה % מכירה</label><input type="number" id="bulk-sdisc" placeholder="—" min="0" max="100"></div>
+        <div class="bulk-field cost-field"><label>מחיר עלות</label><input type="number" id="bulk-cprice" placeholder="—"></div>
+        <div class="bulk-field cost-field"><label>הנחה % עלות</label><input type="number" id="bulk-cdisc" placeholder="—" min="0" max="100"></div>
+        <div class="bulk-field"><label>סנכרון</label><select id="bulk-sync"><option value="">—</option><option value="מלא">מלא</option><option value="תדמית">תדמית</option><option value="לא">לא</option></select></div>
+      </div>
+      <div class="bulk-btns">
+        <button class="btn btn-s btn-sm" onclick="applyBulkUpdate()">&#10004; עדכן נבחרים</button>
+        <button class="btn btn-d btn-sm" onclick="bulkDelete()">&#128465; מחק נבחרים</button>
+        <button class="btn btn-g btn-sm" onclick="clearSelection()">&#10006; בטל בחירה</button>
+      </div>
+    </div>
+    <div class="table-wrap" style="max-height:60vh;overflow-y:auto">
+      <table id="inv-table">
+        <thead><tr>
+          <th style="width:30px">📋</th>
+          <th style="width:36px"><input type="checkbox" id="inv-select-all" onchange="toggleSelectAll(this.checked)" title="בחר הכל"></th>
+          <th>#</th>
+          <th class="sortable" data-field="ברקוד" onclick="sortInventory(this)">ברקוד <span class="sort-icon">&#9650;</span></th>
+          <th class="sortable" data-field="ספק" onclick="sortInventory(this)">ספק <span class="sort-icon">&#9650;</span></th>
+          <th class="sortable" data-field="חברה / מותג" onclick="sortInventory(this)">חברה / מותג <span class="sort-icon">&#9650;</span></th>
+          <th class="sortable" data-field="דגם" onclick="sortInventory(this)">דגם <span class="sort-icon">&#9650;</span></th>
+          <th class="sortable" data-field="גודל" onclick="sortInventory(this)">גודל <span class="sort-icon">&#9650;</span></th>
+          <th class="sortable" data-field="גשר" onclick="sortInventory(this)">גשר <span class="sort-icon">&#9650;</span></th>
+          <th>צבע</th>
+          <th class="sortable" data-field="אורך מוט" onclick="sortInventory(this)">אורך מוט <span class="sort-icon">&#9650;</span></th>
+          <th class="sortable" data-field="סוג מוצר" onclick="sortInventory(this)">סוג מוצר <span class="sort-icon">&#9650;</span></th>
+          <th class="sortable" data-field="מחיר מכירה" onclick="sortInventory(this)">מ.מכירה <span class="sort-icon">&#9650;</span></th>
+          <th>הנחה%</th>
+          <th class="cost-col">מ.עלות</th><th class="cost-col">הנחה% עלות</th>
+          <th class="sortable" data-field="כמות" onclick="sortInventory(this)">כמות <span class="sort-icon">&#9650;</span></th>
+          <th>תמונות</th>
+          <th class="sortable" data-field="סנכרון אתר" onclick="sortInventory(this)">סנכרון <span class="sort-icon">&#9650;</span></th>
+          <th class="admin-col">פעולות</th>
+        </tr></thead>
+        <tbody id="inv-body"></tbody>
+      </table>
+    </div>
+    <div class="btn-bar" id="inv-admin-bar" style="display:none">
+      <button class="btn btn-s" onclick="saveInventoryChanges()">&#10004; שמור שינויים</button>
+      <button class="btn btn-g" onclick="loadInventoryTab()">&#10006; בטל שינויים</button>
+      <button class="btn btn-d" onclick="openRecycleBin()" style="margin-right:auto">&#128465; סל מחזור</button>
+    </div>
+  </div>
+</section>
+
+<!-- ========== TAB 4: BRANDS ========== -->
+<section id="tab-brands" class="tab">
+  <div class="card">
+    <h3>&#127991; ניהול מותגים</h3>
+    <div id="brands-alerts"></div>
+    <div class="btn-bar" style="margin-bottom:12px">
+      <button class="btn btn-p" onclick="addBrandRow()">&#10010; הוסף מותג חדש</button>
+      <button class="btn btn-s" onclick="saveBrands()">&#10004; שמור שינויים</button>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+      <select id="brand-filter-active" onchange="renderBrandsTable()" style="padding:7px 10px;border-radius:6px;border:1px solid #ccc">
+        <option value="true">פעילים בלבד</option>
+        <option value="false">לא פעילים</option>
+        <option value="all">הכל</option>
+      </select>
+      <select id="brand-filter-sync" onchange="renderBrandsTable()" style="padding:7px 10px;border-radius:6px;border:1px solid #ccc">
+        <option value="">כל סטטוס סנכרון</option>
+        <option value="מלא">מלא</option>
+        <option value="תדמית">תדמית</option>
+        <option value="לא">לא</option>
+      </select>
+      <select id="brand-filter-type" onchange="renderBrandsTable()" style="padding:7px 10px;border-radius:6px;border:1px solid #ccc">
+        <option value="">כל סוגי המותג</option>
+        <option value="luxury">יוקרה</option>
+        <option value="brand">מותג</option>
+        <option value="regular">רגיל</option>
+      </select>
+      <select id="brand-filter-low-stock" onchange="renderBrandsTable()" style="padding:7px 10px;border-radius:6px;border:1px solid #ccc">
+        <option value="">כל המלאי</option>
+        <option value="low">מלאי נמוך בלבד</option>
+      </select>
+      <span id="brand-filter-count" style="color:#888;font-size:13px"></span>
+    </div>
+    <div class="table-wrap">
+      <table id="brands-table">
+        <thead><tr><th>שם חברה</th><th>סוג מותג</th><th>סנכרון ברירת מחדל</th><th>פעיל</th><th>מוחרג מאתר</th><th>מלאי מינימום</th><th>כמות במלאי</th></tr></thead>
+        <tbody id="brands-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ========== TAB 5: SUPPLIERS ========== -->
+<section id="tab-suppliers" class="tab">
+  <div class="card">
+    <h3>&#128101; ניהול ספקים</h3>
+    <div id="suppliers-alerts"></div>
+    <div class="form-row" style="align-items:flex-end;margin-bottom:16px">
+      <div class="form-group" style="max-width:300px"><label>שם ספק חדש</label><input type="text" id="new-supplier-name" placeholder="הקלד שם ספק..."></div>
+      <button class="btn btn-p" onclick="addSupplier()">&#10010; הוסף ספק</button>
+      <button class="btn btn-s" id="supplier-edit-btn" onclick="toggleSupplierNumberEdit()" style="margin-right:auto">&#9998; ערוך מספרי ספקים</button>
+    </div>
+    <div id="supplier-save-bar" style="display:none;gap:8px;margin-bottom:12px;align-items:center">
+      <button class="btn btn-p" onclick="saveSupplierNumbers()">&#10004; שמור שינויים</button>
+      <button class="btn btn-d" onclick="cancelSupplierNumberEdit()">&#10006; בטל</button>
+      <span style="font-size:13px;color:#888">שינוי מספר חסום אם לספק יש הזמנות רכש</span>
+    </div>
+    <div class="table-wrap">
+      <table id="suppliers-table">
+        <thead><tr><th>מספר ספק</th><th>שם ספק</th><th>פעולות</th></tr></thead>
+        <tbody id="suppliers-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ========== TAB 7: SYSTEM LOG ========== -->
+<section id="tab-systemlog" class="tab">
+  <div class="card">
+    <h3>&#128203; לוג מערכת</h3>
+    <div id="slog-alerts"></div>
+
+    <!-- Summary Cards -->
+    <div class="slog-summary">
+      <div class="slog-card"><div class="num" id="slog-total" style="color:var(--primary)">—</div><div class="lbl">פריטים פעילים במלאי</div></div>
+      <div class="slog-card"><div class="num" id="slog-added" style="color:var(--success)">—</div><div class="lbl">נוספו השבוע</div></div>
+      <div class="slog-card"><div class="num" id="slog-deleted" style="color:var(--error)">—</div><div class="lbl">נמחקו השבוע</div></div>
+      <div class="slog-card"><div class="num" id="slog-edited" style="color:#2196F3">—</div><div class="lbl">נערכו השבוע</div></div>
+    </div>
+
+    <!-- Filter Row -->
+    <div class="slog-filters">
+      <div class="form-group"><label>מתאריך</label><input type="date" id="slog-date-from"></div>
+      <div class="form-group"><label>עד תאריך</label><input type="date" id="slog-date-to"></div>
+      <div class="form-group"><label>סניף</label><input type="text" id="slog-branch" placeholder="הכל"></div>
+      <div class="form-group"><label>פעולה</label>
+        <select id="slog-action">
+          <option value="">הכל</option>
+        </select>
+      </div>
+      <div class="form-group"><label>עובד</label><input type="text" id="slog-employee" placeholder="הכל"></div>
+      <div class="form-group"><label>חיפוש חופשי</label><input type="text" id="slog-search" placeholder="ברקוד / מותג / דגם..."></div>
+      <button class="btn btn-p btn-sm" onclick="loadSystemLog()">&#128269; חפש</button>
+      <button class="btn btn-g btn-sm" onclick="clearSystemLogFilters()">&#10006; נקה</button>
+      <button class="btn btn-s btn-sm" onclick="exportSystemLog()">&#128229; ייצוא לוג</button>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="slog-table-wrap" style="max-height:55vh;overflow-y:auto">
+      <table id="slog-table">
+        <thead><tr>
+          <th>תאריך ושעה</th>
+          <th>פעולה</th>
+          <th>ברקוד</th>
+          <th>מותג</th>
+          <th>דגם</th>
+          <th>כמות לפני&#8594;אחרי</th>
+          <th>מחיר לפני&#8594;אחרי</th>
+          <th>סיבה</th>
+          <th>מקור</th>
+          <th>בוצע ע"י</th>
+          <th>סניף</th>
+        </tr></thead>
+        <tbody id="slog-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="slog-paging" id="slog-paging" style="display:none">
+      <button class="btn btn-g btn-sm" id="slog-prev" onclick="slogPageNav(-1)">&#8592; הקודם</button>
+      <span id="slog-page-info">עמוד 1 מתוך 1</span>
+      <button class="btn btn-g btn-sm" id="slog-next" onclick="slogPageNav(1)">הבא &#8594;</button>
+    </div>
+  </div>
+</section>
+
+<!-- ========== TAB: GOODS RECEIPT ========== -->
+<section id="tab-receipt" class="tab">
+  <!-- STEP 1: Receipt list -->
+  <div id="rcpt-step1">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">&#128230; קבלות סחורה</h3>
+      <button class="btn btn-p" onclick="openNewReceipt()">&#10010; קבלה חדשה</button>
+    </div>
+    <div class="rcpt-summary">
+      <div class="slog-card"><div id="rcpt-drafts" style="font-size:1.6rem;font-weight:700;color:#92400e">0</div><div>טיוטות פתוחות</div></div>
+      <div class="slog-card"><div id="rcpt-confirmed-week" style="font-size:1.6rem;font-weight:700;color:#065f46">0</div><div>אושרו השבוע</div></div>
+      <div class="slog-card"><div id="rcpt-items-week" style="font-size:1.6rem;font-weight:700;color:var(--primary)">0</div><div>פריטים שנקלטו השבוע</div></div>
+    </div>
+    <div id="rcpt-list-alerts"></div>
+    <div class="rcpt-list-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>מס׳ קבלה</th><th>סוג</th><th>ספק</th><th>תאריך</th><th>פריטים</th><th>סכום</th><th>סטטוס</th><th>פעולות</th>
+        </tr></thead>
+        <tbody id="rcpt-list-body"><tr><td colspan="9" style="text-align:center;padding:30px;color:#999">טוען...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- STEP 2: Receipt form -->
+  <div id="rcpt-step2" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0" id="rcpt-form-title">&#128230; קבלה חדשה</h3>
+      <button class="btn btn-g btn-sm" onclick="backToReceiptList()">&#8592; חזור לרשימה</button>
+    </div>
+    <div id="rcpt-form-alerts"></div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="rcpt-header-form">
+        <div class="form-group"><label>סוג מסמך <span class="req">*</span></label>
+          <select id="rcpt-type"><option value="delivery_note">תעודת משלוח</option><option value="invoice">חשבונית</option><option value="tax_invoice">חשבונית מס</option></select>
+        </div>
+        <div class="form-group"><label>מספר מסמך <span class="req">*</span></label>
+          <input type="text" id="rcpt-number" placeholder="מס׳ תעודת משלוח / חשבונית">
+        </div>
+        <div class="form-group"><label>ספק <span class="req">*</span></label>
+          <select id="rcpt-supplier"><option value="">בחר ספק...</option></select>
+        </div>
+        <div class="form-group"><label>הזמנת רכש (אופציונלי)</label>
+          <select id="rcpt-po-select" disabled><option value="">ללא — קבלה חופשית</option></select>
+        </div>
+        <div class="form-group"><label>תאריך קבלה</label>
+          <input type="date" id="rcpt-date">
+        </div>
+        <div class="form-group" style="flex:2;min-width:200px"><label>הערות</label>
+          <input type="text" id="rcpt-notes" placeholder="הערות חופשיות...">
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <h4 style="margin:0 0 10px">פריטים</h4>
+      <div class="rcpt-search-bar">
+        <div class="form-group" style="margin:0;flex:1;max-width:300px">
+          <label>חיפוש ברקוד</label>
+          <input type="text" id="rcpt-barcode-search" placeholder="הזן ברקוד וחפש..." onkeydown="if(event.key==='Enter')searchReceiptBarcode()">
+        </div>
+        <button class="btn btn-p btn-sm" onclick="searchReceiptBarcode()" style="margin-bottom:2px">&#128269; חפש</button>
+        <button class="btn btn-g btn-sm" onclick="addReceiptItemRow()" style="margin-bottom:2px">&#10010; שורה חדשה</button>
+        <label class="btn btn-g btn-sm" style="margin-bottom:2px;cursor:pointer">&#128194; ייבוא Excel<input type="file" accept=".xlsx,.xls,.csv" onchange="handleReceiptExcel(event)" style="display:none"></label>
+      </div>
+      <div class="rcpt-items-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>ברקוד</th><th>מותג</th><th>דגם</th><th>צבע</th><th>גודל</th><th>כמות</th><th>מחיר עלות</th><th>מחיר מכירה</th><th>סנכרון</th><th>תמונות</th><th>סוג</th><th>&#10006;</th>
+          </tr></thead>
+          <tbody id="rcpt-items-body"></tbody>
+        </table>
+      </div>
+      <div id="rcpt-items-stats" style="font-size:.85rem;color:#666;margin-top:4px"></div>
+    </div>
+
+    <div class="btn-bar" style="display:flex;gap:8px;flex-wrap:wrap" id="rcpt-action-bar">
+      <button class="btn btn-g" onclick="saveReceiptDraft()">&#128190; שמור טיוטה</button>
+      <button class="btn btn-s" onclick="confirmReceipt()">&#10004; אשר קבלה ועדכן מלאי</button>
+      <button class="btn btn-g btn-sm" onclick="exportReceiptExcel()" style="margin-right:auto">&#128194; ייצוא Excel</button>
+    </div>
+  </div>
+</section>
+
+<!-- ========== TAB: PURCHASE ORDERS ========== -->
+<section id="tab-purchase-orders" class="tab">
+  <div id="po-list-container2">טוען...</div>
+</section>
+
+</main>
+
+<!-- Admin Modal -->
+<!-- Image Preview Modal -->
+<div id="image-preview-modal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <h3>&#128247; תמונות פריט</h3>
+    <p id="img-preview-title" style="margin-bottom:12px"></p>
+    <div id="img-gallery" class="img-gallery"></div>
+    <button class="btn btn-g" onclick="closeModal('image-preview-modal')" style="margin-top:14px">סגור</button>
+  </div>
+</div>
+
+<div id="admin-modal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <h3>&#128274; כניסת מנהל</h3>
+    <p>הכנס סיסמה כדי לצפות בשדות מחיר עלות</p>
+    <input type="password" id="admin-pass" placeholder="סיסמה..." onkeydown="if(event.key==='Enter')checkAdmin()">
+    <button class="btn btn-p" onclick="checkAdmin()">&#10004; אישור</button>
+    <button class="btn btn-g" onclick="closeModal('admin-modal')">ביטול</button>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div id="confirm-modal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <h3 id="confirm-title">אישור</h3>
+    <p id="confirm-text"></p>
+    <button class="btn btn-s" id="confirm-yes">כן</button>
+    <button class="btn btn-g" id="confirm-no">לא — חזור</button>
+  </div>
+</div>
+
+<!-- Sample Report Modal -->
+<div id="sample-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:650px">
+    <h3>&#128196; מבנה קובץ Excel נדרש</h3>
+    <p>הקובץ צריך להכיל את העמודות הבאות (בדיוק):</p>
+    <table class="sample-table">
+      <tr><th>ברקוד</th><th>ספק</th><th>חברה</th><th>דגם</th><th>גודל</th><th>צבע</th><th>סוג</th><th>כמות</th><th>תאריך</th></tr>
+      <tr><td>0003989</td><td>SHALDAG</td><td>Cazal</td><td>MOD123</td><td>52</td><td>שחור</td><td>ראייה</td><td>1</td><td>2026-03-07</td></tr>
+      <tr><td>0003990</td><td>SHALDAG</td><td>Gucci</td><td>GG001</td><td>54</td><td>חום</td><td>שמש</td><td>1</td><td>2026-03-07</td></tr>
+    </table>
+    <p style="font-size:.85rem;margin-top:8px">&#9432; העמודה הראשונה חייבת להיות ברקוד. שאר העמודות משמשות לזיהוי אי-התאמות.</p>
+    <button class="btn btn-g" onclick="closeModal('sample-modal')">סגור</button>
+  </div>
+</div>
+
+<!-- Mismatch Modal -->
+<div id="mismatch-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:700px">
+    <h3 style="color:var(--error)">&#9888; אי-התאמות נמצאו</h3>
+    <div id="mismatch-content"></div>
+    <button class="btn btn-w" id="mismatch-force">&#9888; בצע בכל זאת</button>
+    <button class="btn btn-g" onclick="closeModal('mismatch-modal')">ביטול</button>
+  </div>
+</div>
+
+<!-- Soft Delete Modal -->
+<div id="softdel-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:440px">
+    <h3 id="softdel-title" style="color:var(--error)">&#128465; מחיקת פריט</h3>
+    <p id="softdel-desc" style="font-weight:600;margin-bottom:12px"></p>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>סיבת מחיקה <span style="color:var(--error)">*</span></label>
+      <select id="softdel-reason">
+        <option value="">— בחר סיבה —</option>
+        <option value="פגום / לא שמיש">פגום / לא שמיש</option>
+        <option value="אבדן">אבדן</option>
+        <option value="הוצאה ידנית">הוצאה ידנית</option>
+        <option value="העברה לסניף אחר">העברה לסניף אחר</option>
+        <option value="אחר">אחר</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>הערה (אופציונלי)</label>
+      <textarea id="softdel-note" rows="2" placeholder="פרטים נוספים..." style="width:100%;resize:vertical"></textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>סיסמת עובד <span style="color:var(--error)">*</span></label>
+      <input type="password" id="softdel-pin" placeholder="הזן PIN" style="max-width:140px">
+    </div>
+    <div id="softdel-error" style="color:var(--error);font-size:.85rem;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-g" onclick="closeModal('softdel-modal')">ביטול</button>
+      <button class="btn btn-d" id="softdel-confirm" onclick="confirmSoftDelete()" disabled>אשר מחיקה</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recycle Bin Modal -->
+<div id="recycle-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:850px">
+    <h3>&#128465; סל מחזור</h3>
+    <div id="recycle-content"></div>
+    <button class="btn btn-g" onclick="closeModal('recycle-modal')" style="margin-top:12px">סגור</button>
+  </div>
+</div>
+
+<!-- Item History Modal -->
+<div id="history-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:700px">
+    <h3>📋 <span id="history-title">היסטוריית פריט</span></h3>
+    <div id="history-timeline" style="max-height:55vh;overflow-y:auto;padding:8px 0"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+      <button class="btn btn-s" onclick="exportHistoryExcel()" id="history-export-btn" style="display:none">📥 ייצוא Excel</button>
+      <button class="btn btn-g" onclick="closeModal('history-modal')">סגור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quantity Change Modal -->
+<div id="qty-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <h3 id="qty-modal-title">שינוי כמות</h3>
+    <p id="qty-modal-item" style="font-weight:600;margin-bottom:12px;color:var(--primary)"></p>
+    <p style="margin-bottom:8px">כמות נוכחית: <strong id="qty-modal-current">0</strong></p>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>כמות <span id="qty-modal-verb">להוספה</span></label>
+      <input type="number" id="qty-modal-amount" min="1" value="1" style="max-width:120px">
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>סיבה (חובה)</label>
+      <select id="qty-modal-reason"><option value="">— בחר סיבה —</option></select>
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>הערה (אופציונלי)</label>
+      <textarea id="qty-modal-note" rows="2" placeholder="הערה חופשית..."></textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>סיסמת עובד</label>
+      <input type="password" id="qty-modal-pin" placeholder="PIN...">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" id="qty-modal-confirm" onclick="confirmQtyChange()">&#10004; אשר</button>
+      <button class="btn btn-g" onclick="closeModal('qty-modal')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="loading" class="loading-overlay" style="display:none">
+  <div class="loading-box"><div class="spinner"></div><p id="loading-text">טוען...</p></div>
+</div>
+
+<!-- Toast -->
+<div id="toast-c"></div>
+
+<!-- Help Button -->
+<button id="help-btn" onclick="openHelpModal()" style="position:fixed;bottom:24px;left:24px;z-index:1000;width:44px;height:44px;border-radius:50%;background:#1a2744;color:white;border:none;font-size:20px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3)" title="הוראות הפעלה">?</button>
+
+<!-- Help Modal -->
+<div id="help-modal" class="modal" style="display:none">
+  <div class="modal-content" style="max-width:680px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">&#128214; הוראות הפעלה — אופטיק אפ</h2>
+      <button class="btn btn-g btn-sm" onclick="closeHelpModal()" style="font-size:18px">&#10006;</button>
+    </div>
+
+    <h3>&#128230; הכנסת מלאי</h3>
+    <ol style="line-height:1.8">
+      <li><strong>הכנסה ידנית:</strong> מלא את פרטי המסגרת &#8592; לחץ "צור ברקודים" &#8592; הורד Excel לברקודים &#8592; הדפס את הברקודים &#8592; רק אחרי ההדפסה לחץ "הכנס למלאי"</li>
+      <li><strong>הכנסה מאקסל:</strong> העלה קובץ Excel עם עמודות: מותג, דגם, גודל, צבע, כמות, מחיר עלות &#8592; אשר ייבוא &#8592; פריטים מוכרים נכנסים אוטומטית &#8592; פריטים חדשים ממתינים לברקוד &#8592; לחץ "צור ברקודים" &#8592; הדפס &#8592; אשר</li>
+      <li><strong>קבלת סחורה:</strong> בחר ספק &#8592; אופציונלי: קשר להזמנת רכש &#8592; הוסף פריטים &#8592; אשר קבלה</li>
+    </ol>
+
+    <h3>&#128228; הורדת מלאי</h3>
+    <ol style="line-height:1.8">
+      <li><strong>הורדה ידנית:</strong> חפש לפי ברקוד או בחר מותג &#8592; דגם &#8592; גודל &#8592; צבע &#8592; לחץ "הורדה מהמלאי" &#8592; בחר סיבה &#8592; הזן PIN</li>
+      <li><strong>הורדה מאקסל:</strong> העלה קובץ Excel עם עמודות ברקוד וכמות</li>
+    </ol>
+
+    <h3>&#128203; הזמנות רכש</h3>
+    <ol style="line-height:1.8">
+      <li>לחץ "+ הזמנה חדשה" &#8592; בחר ספק &#8592; הוסף פריטים (ברקוד / ידני) &#8592; שמור טיוטה</li>
+      <li>כשמוכן לשלוח: לחץ "שלח" &#8592; ההזמנה עוברת לסטטוס "נשלחה"</li>
+      <li>כשהסחורה מגיעה: פתח קבלת סחורה &#8592; קשר ל-PO &#8592; אשר קבלה</li>
+      <li>לאחר קבלה מלאה: לחץ "קלוט למלאי" ב-PO</li>
+    </ol>
+
+    <h3>&#127991;&#65039; ברקודים — כללי זהב</h3>
+    <ul style="line-height:1.8">
+      <li>&#9888;&#65039; <strong>אסור להכניס מסגרת למלאי ללא ברקוד מודפס ומודבק</strong></li>
+      <li>פורמט ברקוד: 2 ספרות סניף + 5 ספרות רצות (לדוגמה: 0000123)</li>
+      <li>מסגרת קיימת במלאי — מקבלת את הברקוד הקיים שלה</li>
+      <li>מסגרת חדשה — מקבלת ברקוד חדש בסדר עולה</li>
+    </ul>
+
+    <div style="margin-top:16px;padding:16px;background:#f5f5f5;border-radius:8px;text-align:center;color:#888">
+      &#127916; סרטון הדרכה — בקרוב
+    </div>
+  </div>
+</div>
+
+<!-- Excel format popup -->
+<div id="excel-format-modal"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);
+            z-index:3000; align-items:center; justify-content:center">
+  <div style="background:white; border-radius:12px; padding:24px;
+              max-width:700px; width:95%; max-height:85vh; overflow-y:auto">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+      <h3 style="margin:0">&#128202; מבנה קובץ Excel להכנסת מלאי</h3>
+      <button onclick="closeExcelFormatPopup()" style="background:none; border:none; font-size:20px; cursor:pointer">&#10005;</button>
+    </div>
+    <p style="color:#555; font-size:13px; margin-bottom:16px">
+      הקובץ חייב להכיל את העמודות הבאות (שורה ראשונה = כותרות):
+    </p>
+    <div style="overflow-x:auto; margin-bottom:16px">
+      <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:right">
+        <thead>
+          <tr style="background:#1a2744; color:white">
+            <th style="padding:8px; border:1px solid #ccc">מותג</th>
+            <th style="padding:8px; border:1px solid #ccc">דגם</th>
+            <th style="padding:8px; border:1px solid #ccc">צבע</th>
+            <th style="padding:8px; border:1px solid #ccc">גודל</th>
+            <th style="padding:8px; border:1px solid #ccc">כמות</th>
+            <th style="padding:8px; border:1px solid #ccc">מחיר עלות</th>
+            <th style="padding:8px; border:1px solid #ccc">מחיר מכירה</th>
+            <th style="padding:8px; border:1px solid #ccc">סינכרון</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background:#f9f9f9">
+            <td style="padding:8px; border:1px solid #eee">Rayban</td>
+            <td style="padding:8px; border:1px solid #eee">3025</td>
+            <td style="padding:8px; border:1px solid #eee">Gold</td>
+            <td style="padding:8px; border:1px solid #eee">55</td>
+            <td style="padding:8px; border:1px solid #eee">2</td>
+            <td style="padding:8px; border:1px solid #eee">180</td>
+            <td style="padding:8px; border:1px solid #eee">450</td>
+            <td style="padding:8px; border:1px solid #eee">מלא</td>
+          </tr>
+          <tr>
+            <td style="padding:8px; border:1px solid #eee">Oakley</td>
+            <td style="padding:8px; border:1px solid #eee">Holbrook</td>
+            <td style="padding:8px; border:1px solid #eee">Black</td>
+            <td style="padding:8px; border:1px solid #eee">52</td>
+            <td style="padding:8px; border:1px solid #eee">1</td>
+            <td style="padding:8px; border:1px solid #eee">220</td>
+            <td style="padding:8px; border:1px solid #eee">550</td>
+            <td style="padding:8px; border:1px solid #eee">תדמית</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="background:#f8f9fa; border-radius:8px; padding:16px; font-size:13px">
+      <p style="margin:0 0 8px 0; font-weight:600">הערות חשובות:</p>
+      <ul style="margin:0; padding-right:18px; line-height:2">
+        <li><strong>מותג</strong> — חייב להיות קיים במערכת</li>
+        <li><strong>כמות</strong> — מספר שלם, מינימום 1</li>
+        <li><strong>מחיר עלות / מכירה</strong> — מספר, ניתן להשאיר ריק</li>
+        <li><strong>סינכרון</strong> — מלא / תדמית / לא (אם ריק — ברירת מחדל: מלא)</li>
+        <li>פריטים חדשים ללא ברקוד — יועברו לרשימת המתנה לברקוד</li>
+        <li>פריטים קיימים עם ברקוד — כמות תתעדכן אוטומטית</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="js/shared.js"></script>
+<script src="js/inventory-core.js"></script>
+<script src="js/inventory-entry.js"></script>
+<script src="js/goods-receipt.js"></script>
+<script src="js/audit-log.js"></script>
+<script src="js/purchase-orders.js"></script>
+<script src="js/brands-suppliers.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
