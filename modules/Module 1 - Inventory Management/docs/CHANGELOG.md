@@ -1,6 +1,6 @@
 # Changelog — מלאי מסגרות
 
-> כל השינויים במודול מלאי מסגרות מהתחלה ועד v1.0
+> כל השינויים במודול מלאי מסגרות מהתחלה ועד היום
 
 ---
 
@@ -182,3 +182,213 @@
 - Summary cards: drafts, confirmed this week, items received
 - ACTION_MAP: added `entry_receipt` (17th action type)
 - SLOG_ROW_CATEGORIES: added entry_receipt → 'entry' category
+
+---
+
+## Phase 8: Architecture — Modularize + DB Prep
+
+### Module v1.0 Docs Archive
+**Commit:** `50d49de` | 2026-03-08
+- Archived Module 1 — Inventory Management docs (SPEC, CHANGELOG, schema, guide)
+
+### Snapshot v1.0 + Cleanup
+**Commit:** `a0aa965` | 2026-03-09
+- Snapshot of monolith before split
+- Archived legacy scripts/data/schema to subdirs
+
+### Repo Cleanup
+**Commit:** `d832a68` | 2026-03-09
+- Moved legacy scripts, data files, and schema files to organized subdirs
+
+### Extract CSS
+**Commit:** `a8e9bbc` | 2026-03-09
+- All styles extracted from index.html to `css/styles.css`
+
+### Split into 7 JS Modules
+**Commit:** `bf7a3a8` | 2026-03-09
+- Monolith index.html split into 7 JS files:
+  - `js/shared.js` — Supabase init, constants, caches, utilities
+  - `js/inventory-core.js` — inventory reduction + main table
+  - `js/inventory-entry.js` — entry forms (manual + Excel)
+  - `js/goods-receipt.js` — goods receipt + system log
+  - `js/audit-log.js` — soft delete, recycle bin, history, qty modal
+  - `js/brands-suppliers.js` — brands + suppliers management
+  - `js/admin.js` — admin mode + app init
+- index.html now just HTML shell + script tags
+
+### DB Prep — min_stock_qty + Remove contact_lenses
+**Commit:** `62542d4` | 2026-03-09
+- Migration: `brands.min_stock_qty` integer column added
+- Removed contact_lenses product type references
+
+### Brands — min_stock_qty Inline Editing
+**Commit:** `c26be57` | 2026-03-09
+- `saveBrandField()` — immediate save on min_stock_qty input change
+- Placeholder shows default threshold by brand type (יוקרה=5, מותג=15)
+
+---
+
+## Phase 9: Purchase Orders Module
+
+### DB Schema for Purchase Orders
+**Commit:** `6c39f2c` | 2026-03-09
+- `purchase_orders` table (po_number, supplier_id, status, notes, etc.)
+- `purchase_order_items` table (po_id, brand_id, model, size, color, quantity, cost_price, etc.)
+- `po_id` FK added to goods_receipts for PO→receipt linkage
+- Migration: `005_purchase_orders.sql`
+
+### PO List View + Summary Cards
+**Commit:** `e4763dd` | 2026-03-09
+- New tab "הזמנות רכש" with summary cards (draft/sent/received counts)
+- Filterable PO list by status + supplier
+- Color-coded status badges
+
+### PO Form — Create/Edit Draft with Items
+**Commit:** `2750ab3` | 2026-03-09
+- PO creation and editing form
+- Item rows with brand, model, size, color, quantity, cost price
+- Draft save functionality
+
+### Fix: po_number Field Name
+**Commits:** `d647715`, `41f5000` | 2026-03-09
+- Renamed order_number → po_number in FIELD_MAP and legacy PO entry flow
+
+### PO Status Management
+**Commit:** `0087908` | 2026-03-09
+- `sendPurchaseOrder()` — marks PO as sent
+- `cancelPO()` — cancels PO
+- `openViewPO()` — read-only view for sent/received POs
+- `openEditPO()` — edit mode for drafts
+
+### CLAUDE.md Project Guide
+**Commit:** `6c13809` | 2026-03-09
+- Added initial CLAUDE.md with project structure, rules, and conventions
+
+### Remove Legacy PO Tab
+**Commit:** `dad9ec6` | 2026-03-09
+- Removed old "הזמנת רכש" tab and all legacy PO functions
+- Replaced with new purchase-orders.js module
+
+### Refactor: Goods Receipt into Entry Tab
+**Commit:** `90a467f` | 2026-03-09
+- Moved קבלת סחורה from standalone tab into הכנסת מלאי as third entry mode
+- Entry tab now has 3 modes: manual, Excel import, goods receipt
+
+---
+
+## Phase 10: Inventory Reduction Improvements
+
+### Fix: Entry Audit Issues
+**Commit:** `3574460` | 2026-03-09
+- Fixed status handling in entry flow
+- Fixed barcode generation edge cases
+- Cleaned dead code
+
+### Reduction — Model Dropdown + PIN + Reasons + writeLog
+**Commit:** `dd1b585` | 2026-03-09
+- `loadModelsForBrand()` — brand-based model datalist
+- `openReductionModal()` / `confirmReduction()` — replaces old markSold()
+- REDUCE_REASONS: נמכר, נשבר, לא נמצא, נשלח לזיכוי, הועבר לסניף אחר
+- PIN verification via employees table
+- writeLog('sale') with reason tracking
+
+### Reduction — Cascading Size + Color Dropdowns
+**Commit:** `e046dd0` | 2026-03-09
+- `loadSizesAndColors(brandName, model)` — populates size/color datalists
+- Full cascading chain: brand → model → size + color
+
+---
+
+## Phase 11: Excel Import + Entry History
+
+### Excel Import — Barcode-First Flow
+**Commit:** `6488c8f` | 2026-03-09
+- Barcode matching: existing items get qty increment, new items go to pending list
+- `generatePendingBarcodes()` / `exportPendingBarcodes()` — barcode generation for new items
+- `showExcelResultsModal()` — results summary with stats
+
+### Help Modal
+**Commit:** `98efebe` | 2026-03-09
+- `openHelpModal()` / `closeHelpModal()` — operating instructions modal
+- Help button in nav bar
+
+### Entry History Modal
+**Commit:** `1655338` | 2026-03-09
+- `openEntryHistory()` — browse entries grouped by date (accordion)
+- `renderEntryHistory()` — timeline view per date group
+- `toggleHistGroup(date)` — expand/collapse date groups
+- `exportDateGroupBarcodes(date)` — export barcodes for a specific date
+
+---
+
+## Phase 12: PO Enhancements
+
+### Bug Fixes — PO + Entry History
+**Commit:** `847f1bc` | 2026-03-09
+- `loadPOsForSupplier()` guard for missing supplier_id
+- Entry history accordion UI fixes
+
+### PO Form — Two-Step Wizard + Brand Datalist
+**Commit:** `51a7486` | 2026-03-09
+- Two-step wizard: step 1 = select supplier, step 2 = generate PO# + edit items
+- `proceedToPOItems()` bridges the two steps
+- `ensurePOBrandDatalist()` — brand datalist for PO items
+- Fixed duplicate row issues
+
+### PO Items — Cascading Dropdowns + Stock Alert + Validation
+**Commit:** `e6eb96c` | 2026-03-09
+- `loadPOModelsForBrand()` / `loadPOColorsAndSizes()` — cascading dropdowns
+- Low stock alert integration in PO item rows
+- Required field validation before save
+- Deduplication of PO items
+
+### PO Export — Excel + PDF
+**Commit:** `fdd6da5` | 2026-03-09
+- `exportPOExcel()` — PO to xlsx with supplier info + item details
+- `exportPOPdf()` — PO to PDF for supplier delivery
+
+### Excel Import — Format Popup
+**Commit:** `b45e010` | 2026-03-09
+- `openExcelFormatPopup()` / `closeExcelFormatPopup()` — sample format guide
+- Replaces old direct sample file download
+
+---
+
+## Phase 13: Supplier + Brand Management
+
+### Supplier Numbers + PO Format + View Export
+**Commit:** `281141e` | 2026-03-09
+- `supplier_number` column (UNIQUE, ≥ 10) on suppliers table
+- PO number format: `PO-{supplier_number}-{4-digit-seq}`
+- Export buttons available in PO view mode
+
+### Supplier Numbers — Edit Mode + PO Lock + Swap
+**Commit:** `561d144` | 2026-03-09
+- `toggleSupplierNumberEdit()` / `cancelSupplierNumberEdit()` — edit mode toggle
+- `saveSupplierNumbers()` — validation (≥ 10, no duplicates), PO lock check, temp negative swap for UNIQUE constraint
+- `getNextSupplierNumber()` — gap-filling (lowest available ≥ 10)
+- Rollback on save failure
+
+### Brands — Stock Qty Column with Low Stock Highlight
+**Commit:** `2ceb635` | 2026-03-09
+- `brandStockByBrand` — aggregated inventory qty per brand
+- Stock qty column in brands table
+- Color logic: red + ⚠️ if below min_stock_qty, green if above, default if no min set
+
+### Brands — Active Field + Filter Bar + Toggle
+**Commit:** `2271728` | 2026-03-09
+- Migration: `009_brands_active.sql` — `brands.active` boolean column
+- `allBrandsData[]` + `brandsEdited[]` — full dataset vs filtered view
+- 3 filter dropdowns: active (פעיל/לא פעיל/הכל), sync, type
+- `setBrandActive()` — immediate DB save on checkbox toggle
+- Filter count label
+
+---
+
+## Phase 14: Documentation
+
+### CLAUDE.md — Full Module Map
+**Commit:** `3793842` | 2026-03-09
+- Comprehensive project guide: file structure, DB tables, all modules with functions + globals
+- 12 documented conventions
+- Known issues section
