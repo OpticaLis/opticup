@@ -364,7 +364,7 @@ async function updatePOStatusAfterReceipt(poId) {
     }
 
     await sb.from(T.PO).update({ status: newStatus }).eq('id', poId);
-    writeLog('po_receipt_update', poId, { total_ordered: totalOrdered, total_received: totalReceived, new_status: newStatus });
+    writeLog('po_receipt_update', null, { total_ordered: totalOrdered, total_received: totalReceived, new_status: newStatus });
   } catch (e) {
     console.error('updatePOStatusAfterReceipt error:', e);
   }
@@ -560,6 +560,13 @@ async function searchReceiptBarcode() {
   const barcode = ($('rcpt-barcode-search').value || '').trim();
   if (!barcode) { toast('הזן ברקוד', 'w'); return; }
 
+  // Check for duplicate barcode in current receipt
+  const existingBarcodes = Array.from($('rcpt-items-body').querySelectorAll('.rcpt-barcode')).map(el => el.value.trim());
+  if (existingBarcodes.includes(barcode)) {
+    toast('ברקוד זה כבר קיים בקבלה — הגדל את הכמות בשורה הקיימת', 'e');
+    return;
+  }
+
   showLoading('מחפש ברקוד...');
   try {
     const { data, error } = await sb.from('inventory')
@@ -601,6 +608,16 @@ async function searchReceiptBarcode() {
 }
 
 function addReceiptItemRow(data) {
+  // Check for duplicate barcode in current receipt
+  const barcode = data?.barcode || '';
+  if (barcode) {
+    const existingBarcodes = Array.from($('rcpt-items-body').querySelectorAll('.rcpt-barcode')).map(el => el.value.trim());
+    if (existingBarcodes.includes(barcode)) {
+      toast('ברקוד זה כבר קיים בקבלה — הגדל את הכמות בשורה הקיימת', 'e');
+      return;
+    }
+  }
+
   rcptRowNum++;
   const tb = $('rcpt-items-body');
   const tr = document.createElement('tr');
@@ -630,23 +647,31 @@ function addReceiptItemRow(data) {
 }
 
 function getReceiptItems() {
-  return Array.from($('rcpt-items-body').querySelectorAll('tr')).map(tr => ({
-    tr,
-    barcode: tr.querySelector('.rcpt-barcode')?.value?.trim() || '',
-    brand: tr.querySelector('.rcpt-brand')?.value?.trim() || '',
-    model: tr.querySelector('.rcpt-model')?.value?.trim() || '',
-    color: tr.querySelector('.rcpt-color')?.value?.trim() || '',
-    size: tr.querySelector('.rcpt-size')?.value?.trim() || '',
-    quantity: parseInt(tr.querySelector('.rcpt-qty')?.value) || 1,
-    unit_cost: parseFloat(tr.querySelector('.rcpt-ucost')?.value) || null,
-    sell_price: parseFloat(tr.querySelector('.rcpt-sprice')?.value) || null,
-    is_new_item: tr.querySelector('.rcpt-is-new')?.value === '1',
-    inventory_id: tr.dataset.inventoryId || null
-  }));
+  return Array.from($('rcpt-items-body').querySelectorAll('tr')).map(tr => {
+    const qtyVal = parseInt(tr.querySelector('.rcpt-qty')?.value);
+    if (!qtyVal || qtyVal < 1) {
+      toast('כמות חייבת להיות לפחות 1', 'e');
+      throw new Error('invalid qty');
+    }
+    return {
+      tr,
+      barcode: tr.querySelector('.rcpt-barcode')?.value?.trim() || '',
+      brand: tr.querySelector('.rcpt-brand')?.value?.trim() || '',
+      model: tr.querySelector('.rcpt-model')?.value?.trim() || '',
+      color: tr.querySelector('.rcpt-color')?.value?.trim() || '',
+      size: tr.querySelector('.rcpt-size')?.value?.trim() || '',
+      quantity: qtyVal,
+      unit_cost: parseFloat(tr.querySelector('.rcpt-ucost')?.value) || null,
+      sell_price: parseFloat(tr.querySelector('.rcpt-sprice')?.value) || null,
+      is_new_item: tr.querySelector('.rcpt-is-new')?.value === '1',
+      inventory_id: tr.dataset.inventoryId || null
+    };
+  });
 }
 
 function updateReceiptItemsStats() {
-  const items = getReceiptItems();
+  let items;
+  try { items = getReceiptItems(); } catch (e) { return; }
   const total = items.reduce((s, i) => s + i.quantity, 0);
   const newCount = items.filter(i => i.is_new_item).length;
   const existCount = items.filter(i => !i.is_new_item).length;
@@ -665,7 +690,8 @@ async function saveReceiptDraft() {
   if (!rcptNumber) { toast('חובה למלא מספר מסמך', 'e'); return; }
   if (!supplierName) { toast('חובה לבחור ספק', 'e'); return; }
 
-  const items = getReceiptItems();
+  let items;
+  try { items = getReceiptItems(); } catch (e) { return; }
   if (!items.length) { toast('חובה להוסיף לפחות פריט אחד', 'e'); return; }
 
   // Validate items
@@ -738,8 +764,58 @@ async function saveReceiptDraft() {
   hideLoading();
 }
 
+async function confirmReceiptCore(receiptId, rcptNumber, poId) {
+  const { data: savedItems, error: siErr } = await sb.from(T.RCPT_ITEMS).select('*').eq('receipt_id', receiptId);
+  if (siErr) throw siErr;
+
+  for (const item of savedItems) {
+    if (!item.is_new_item) {
+      const { data: invRow, error: findErr } = await sb.from('inventory')
+        .select('id, quantity, barcode, brand_id, model')
+        .eq('barcode', item.barcode)
+        .eq('is_deleted', false)
+        .maybeSingle();
+      if (findErr) throw findErr;
+
+      if (invRow) {
+        const oldQty = invRow.quantity || 0;
+        const newQty = oldQty + item.quantity;
+        const { error: updErr } = await sb.from('inventory').update({ quantity: newQty }).eq('id', invRow.id);
+        if (updErr) throw updErr;
+        await sb.from(T.RCPT_ITEMS).update({ inventory_id: invRow.id }).eq('id', item.id);
+        writeLog('entry_receipt', invRow.id, {
+          barcode: item.barcode, brand: item.brand, model: item.model,
+          qty_before: oldQty, qty_after: newQty, source_ref: rcptNumber
+        });
+      } else {
+        console.warn('Barcode not found in inventory, treating as new:', item.barcode);
+        await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
+      }
+    } else {
+      await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
+    }
+  }
+
+  const totalAmount = savedItems.reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
+  const { error: confErr } = await sb.from(T.RECEIPTS).update({
+    status: 'confirmed',
+    total_amount: totalAmount || null,
+    created_by: sessionStorage.getItem('prizma_user') || 'system'
+  }).eq('id', receiptId);
+  if (confErr) throw confErr;
+
+  if (poId) {
+    await updatePOStatusAfterReceipt(poId);
+  }
+
+  toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
+  refreshLowStockBanner();
+  await loadReceiptTab();
+}
+
 async function confirmReceipt() {
-  const items = getReceiptItems();
+  let items;
+  try { items = getReceiptItems(); } catch (e) { return; }
   const rcptNumber = ($('rcpt-number').value || '').trim();
   const supplierName = $('rcpt-supplier').value;
 
@@ -760,75 +836,10 @@ async function confirmReceipt() {
 
   showLoading('מאשר קבלה ומעדכן מלאי...');
   try {
-    // First save the receipt if needed
     await saveReceiptDraftInternal();
-
     const receiptId = currentReceiptId;
     if (!receiptId) throw new Error('Receipt ID is missing');
-
-    // Fetch saved items from DB
-    const { data: savedItems, error: siErr } = await sb.from(T.RCPT_ITEMS).select('*').eq('receipt_id', receiptId);
-    if (siErr) throw siErr;
-
-    // Process each item
-    for (const item of savedItems) {
-      if (!item.is_new_item) {
-        // Existing item — find by barcode and update quantity
-        const { data: invRow, error: findErr } = await sb.from('inventory')
-          .select('id, quantity, barcode, brand_id, model')
-          .eq('barcode', item.barcode)
-          .eq('is_deleted', false)
-          .maybeSingle();
-
-        if (findErr) throw findErr;
-
-        if (invRow) {
-          const oldQty = invRow.quantity || 0;
-          const newQty = oldQty + item.quantity;
-          const { error: updErr } = await sb.from('inventory').update({ quantity: newQty }).eq('id', invRow.id);
-          if (updErr) throw updErr;
-
-          // Update item's inventory_id
-          await sb.from(T.RCPT_ITEMS).update({ inventory_id: invRow.id }).eq('id', item.id);
-
-          writeLog('entry_receipt', invRow.id, {
-            barcode: item.barcode,
-            brand: item.brand,
-            model: item.model,
-            qty_before: oldQty,
-            qty_after: newQty,
-            source_ref: rcptNumber
-          });
-        } else {
-          console.warn('Barcode not found in inventory, treating as new:', item.barcode);
-          // Treat as new item fallback
-          await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
-        }
-      } else {
-        // New item — create in inventory
-        await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
-      }
-    }
-
-    // Calculate total amount
-    const totalAmount = savedItems.reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
-
-    // Update receipt status to confirmed
-    const { error: confErr } = await sb.from(T.RECEIPTS).update({
-      status: 'confirmed',
-      total_amount: totalAmount || null,
-      created_by: sessionStorage.getItem('prizma_user') || 'system'
-    }).eq('id', receiptId);
-    if (confErr) throw confErr;
-
-    // Update PO status if linked
-    if (rcptLinkedPoId) {
-      await updatePOStatusAfterReceipt(rcptLinkedPoId);
-    }
-
-    toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
-    refreshLowStockBanner();
-    await loadReceiptTab();
+    await confirmReceiptCore(receiptId, rcptNumber, rcptLinkedPoId);
   } catch (e) {
     console.error('confirmReceipt error:', e);
     toast('שגיאה באישור: ' + (e.message || ''), 'e');
@@ -945,49 +956,7 @@ async function confirmReceiptById(receiptId) {
   showLoading('מאשר קבלה...');
   try {
     const { data: rcpt } = await sb.from(T.RECEIPTS).select('receipt_number, po_id').eq('id', receiptId).single();
-    const rcptNumber = rcpt?.receipt_number || '';
-    const poId = rcpt?.po_id || null;
-    const { data: items } = await sb.from(T.RCPT_ITEMS).select('*').eq('receipt_id', receiptId);
-
-    for (const item of (items || [])) {
-      if (!item.is_new_item) {
-        const { data: invRow } = await sb.from('inventory')
-          .select('id, quantity')
-          .eq('barcode', item.barcode)
-          .eq('is_deleted', false)
-          .maybeSingle();
-
-        if (invRow) {
-          const oldQty = invRow.quantity || 0;
-          const newQty = oldQty + item.quantity;
-          await sb.from('inventory').update({ quantity: newQty }).eq('id', invRow.id);
-          await sb.from(T.RCPT_ITEMS).update({ inventory_id: invRow.id }).eq('id', item.id);
-          writeLog('entry_receipt', invRow.id, {
-            barcode: item.barcode, brand: item.brand, model: item.model,
-            qty_before: oldQty, qty_after: newQty, source_ref: rcptNumber
-          });
-        } else {
-          await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
-        }
-      } else {
-        await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
-      }
-    }
-
-    const totalAmount = (items || []).reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
-    await sb.from(T.RECEIPTS).update({
-      status: 'confirmed', total_amount: totalAmount || null,
-      created_by: sessionStorage.getItem('prizma_user') || 'system'
-    }).eq('id', receiptId);
-
-    // Update PO status if linked
-    if (poId) {
-      await updatePOStatusAfterReceipt(poId);
-    }
-
-    toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
-    refreshLowStockBanner();
-    await loadReceiptTab();
+    await confirmReceiptCore(receiptId, rcpt?.receipt_number || '', rcpt?.po_id || null);
   } catch (e) {
     console.error('confirmReceiptById error:', e);
     toast('שגיאה באישור: ' + (e.message || ''), 'e');
@@ -1099,7 +1068,8 @@ function handleReceiptExcel(ev) {
 }
 
 async function exportReceiptExcel() {
-  const items = getReceiptItems();
+  let items;
+  try { items = getReceiptItems(); } catch (e) { return; }
   if (!items.length) { toast('אין פריטים לייצוא', 'w'); return; }
 
   const rcptNumber = ($('rcpt-number').value || '').trim() || 'receipt';
