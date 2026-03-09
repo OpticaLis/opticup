@@ -1,7 +1,7 @@
 {
-  "watchFolder": "C:\\Users\\User\\Dropbox\\PrizmaSync\\sales",
-  "processedFolder": "C:\\Users\\User\\Dropbox\\PrizmaSync\\processed",
-  "errorFolder": "C:\\Users\\User\\Dropbox\\PrizmaSync\\error",
+  "watchFolder": "C:\\Users\\User\\Dropbox\\OpticTop\\Inventory\\Frames\\sales",
+  "processedFolder": "C:\\Users\\User\\Dropbox\\OpticTop\\Inventory\\Frames\\processed",
+  "errorFolder": "C:\\Users\\User\\Dropbox\\OpticTop\\Inventory\\Frames\\error",
   "supabaseUrl": "https://tsxrrxzmdxaenlvocyit.supabase.co",
   "supabaseKey": "REPLACE_WITH_SERVICE_ROLE_KEY",
   "heartbeatIntervalMinutes": 5,
