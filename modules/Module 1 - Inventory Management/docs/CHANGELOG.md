@@ -392,3 +392,36 @@
 - Comprehensive project guide: file structure, DB tables, all modules with functions + globals
 - 12 documented conventions
 - Known issues section
+
+---
+
+## Phase 1.5: Improvements & Bug Fixes
+
+### CLAUDE.md — Brands Filter Conventions
+**Commit:** `a6b01de` | 2026-03-09
+- Updated CLAUDE.md conventions section with brands filter documentation
+- Documented `allBrandsData[]`, `renderBrandsTable()` filter logic, `setBrandActive()` pattern
+
+### Brands — Low Stock Filter
+**Commit:** `e7b86b3` | 2026-03-09
+- Added 4th filter dropdown `brand-filter-low-stock` to brands table
+- Options: הכל / מתחת לסף / מעל הסף / ללא סף
+- `renderBrandsTable()` now applies 4 filters (active, sync, type, low stock)
+- Uses `currentQty` vs `min_stock_qty` comparison from `allBrandsData`
+
+### Goods Receipt — Bug Fixes (4 fixes)
+**Commit:** `d9a251a` | 2026-03-09
+- **writeLog fix**: `confirmReceiptCore()` now passes `null` as inventoryId for receipt-level logs instead of PO id
+- **Confirm refactor**: extracted `confirmReceiptCore(receiptId, rcptNumber, poId)` as shared logic for both `confirmReceipt()` (DOM-based) and `confirmReceiptById()` (DB-based)
+- **Duplicate barcode check**: `addReceiptItemRow()` and `searchReceiptBarcode()` now reject items with barcodes already in the receipt table
+- **Qty=0 validation**: `getReceiptItems()` now throws on qty < 1 instead of silently defaulting to 1; all callers wrapped in try/catch
+
+### Sell Price + Sync + Image Validations
+**Commit:** `5bfb824` | 2026-03-09
+- **Sell price required in goods receipt**: `confirmReceipt()` and `saveReceiptDraft()` block on missing sell price
+- **Sell price required before barcode**: `generateBarcodes()` validates sell price > 0 before generating
+- **brandSyncCache**: `loadData()` and `saveBrands()` build `window.brandSyncCache` (brand name → default sync)
+- **Receipt sync field**: `addReceiptItemRow()` adds sync select (auto-set from brand default) + image file input (new items only)
+- **Image validation**: `confirmReceipt()` blocks new items with sync=מלא/תדמית missing images; `validateEntryRows()` adds sync-based image check
+- **Brand default sync**: `createNewInventoryFromReceiptItem()` uses `getBrandSync()` instead of hardcoded `'none'`
+- Receipt table headers updated: +סנכרון, +תמונות columns

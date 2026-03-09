@@ -154,12 +154,12 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 
 ### 3.1 js/shared.js — Infrastructure
 
-**Globals:** `sb`, `T`, `suppliers`, `brands`, `isAdmin`, `maxBarcode`, `branchCode`, `FIELD_MAP`, `FIELD_MAP_REV`, `ENUM_MAP`, `ENUM_REV`, `supplierCache`, `supplierCacheRev`, `supplierNumCache`, `brandCache`, `brandCacheRev`, `activeDropdown`, `slogPage`, `slogTotalPages`, `slogCurrentFilters`, `rcptRowNum`, `currentReceiptId`, `rcptEditMode`, `rcptViewOnly`, `window.lowStockData`
+**Globals:** `sb`, `T`, `suppliers`, `brands`, `isAdmin`, `maxBarcode`, `branchCode`, `FIELD_MAP`, `FIELD_MAP_REV`, `ENUM_MAP`, `ENUM_REV`, `supplierCache`, `supplierCacheRev`, `supplierNumCache`, `brandCache`, `brandCacheRev`, `activeDropdown`, `slogPage`, `slogTotalPages`, `slogCurrentFilters`, `rcptRowNum`, `currentReceiptId`, `rcptEditMode`, `rcptViewOnly`, `window.lowStockData`, `window.brandSyncCache`
 
 | Function | Description |
 |----------|-------------|
 | `loadLookupCaches()` | Fetches suppliers (with supplier_number) + brands into caches |
-| `loadData()` | Initial data load: caches, brands, max barcode |
+| `loadData()` | Initial data load: caches, brands, brandSyncCache, max barcode |
 | `loadMaxBarcode()` | Branch-scoped barcode sequence from inventory |
 | `rowToRecord(row)` | DB row → app record conversion |
 | `fieldsToRow(fields)` | App fields → DB row conversion |
@@ -178,6 +178,8 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 | `populateDropdowns()` | Rebuild brand/supplier dropdowns across all tabs |
 | `activeBrands()` | Returns active brands filtered list |
 | `supplierOpts()` | Returns supplier options for dropdowns |
+| `getBrandType(name)` | Returns brand type (Hebrew) for brand name |
+| `getBrandSync(name)` | Returns brand default sync (Hebrew) for brand name |
 | `createSearchSelect(config)` | Reusable searchable dropdown component (fixed-position) |
 | `loadLowStockAlerts()` | Fetches brands below min_stock_qty |
 | `refreshLowStockBanner()` | Updates low stock banner in nav |
@@ -223,10 +225,10 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 | `copyEntryRow(rowId)` | Duplicates a card with data |
 | `removeEntryRow(rowId)` | Removes entry card |
 | `getEntryRows()` | Collects all card data into array |
-| `validateEntryRows(rows)` | Validates required fields |
+| `validateEntryRows(rows)` | Validates required fields + image required for brand type + image required for sync=מלא/תדמית |
 | `submitEntry()` | Inserts inventory rows, generates barcodes, writes logs |
 | **Barcode** | |
-| `generateBarcodes(rows)` | BBDDDDD format, reuses barcodes for same brand+model+size+color |
+| `generateBarcodes(rows)` | BBDDDDD format, reuses barcodes for same brand+model+size+color. Validates sell price > 0 before generating |
 | **Excel Import** | |
 | `handleExcelImport(input)` | Parses xlsx, maps columns, shows preview |
 | `confirmExcelImport()` | Inserts parsed rows |
@@ -257,15 +259,18 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 | `openNewReceipt()` | Starts new receipt form |
 | `openExistingReceipt(id)` | Opens receipt for editing |
 | `searchReceiptBarcode()` | Find inventory item by barcode for receipt |
-| `addReceiptItemRow(item)` | Adds item row to receipt |
-| `getReceiptItems()` | Collects receipt item data |
-| `saveReceiptDraft()` | Saves receipt as draft |
-| `confirmReceipt()` | Confirms receipt, updates inventory quantities |
+| `addReceiptItemRow(item)` | Adds item row to receipt with sync select (auto-set from brand) + image input (new items only). Rejects duplicate barcodes |
+| `getReceiptItems()` | Collects receipt item data (incl. sync, images). Throws on qty < 1 |
+| `saveReceiptDraft()` | Saves receipt as draft. Validates sell price > 0 |
+| `saveReceiptDraftInternal()` | Internal draft save (called by confirmReceipt flow) |
+| `confirmReceipt()` | Validates sell price + images for sync items, then calls confirmReceiptCore |
+| `confirmReceiptCore(receiptId, rcptNumber, poId)` | Shared confirm logic: processes items (qty update for existing, create for new), writeLog, update PO status |
 | `cancelReceipt()` | Cancels receipt |
 | `handleReceiptExcel()` | Import items from xlsx |
 | `exportReceiptExcel()` | Export receipt to xlsx |
 | `backToReceiptList()` | Returns to receipt list view |
-| `createNewInventoryFromReceiptItem()` | Creates new inventory item with barcode from receipt |
+| `createNewInventoryFromReceiptItem()` | Creates new inventory item with barcode from receipt. Uses brand default sync via getBrandSync() |
+| `updateReceiptItemsStats()` | Updates item count/total display below receipt table |
 | **PO Linkage** | |
 | `loadPOsForSupplier(supplierId)` | Loads POs for receipt-PO linking |
 | `onReceiptPoSelected()` | Handles PO selection, populates items |
@@ -305,10 +310,10 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 |----------|-------------|
 | **Brands** | |
 | `loadBrandsTab()` | Parallel fetch brands + stock data, builds allBrandsData |
-| `renderBrandsTable()` | Applies 3 filters (active/sync/type), renders with inline editing |
+| `renderBrandsTable()` | Applies 4 filters (active/sync/type/low-stock), renders with inline editing |
 | `setBrandActive(brandId, isActive)` | Immediate DB save on active toggle |
 | `addBrandRow()` | Adds new brand row to allBrandsData |
-| `saveBrands()` | Saves all changes (existing updates + new inserts), reloads caches |
+| `saveBrands()` | Saves all changes (existing updates + new inserts), reloads caches, rebuilds brandSyncCache |
 | `saveBrandField(input)` | Immediate save for min_stock_qty |
 | **Suppliers** | |
 | `loadSuppliersTab()` | Renders supplier list (read or edit mode) |
@@ -423,12 +428,16 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 2. קישור אופציונלי להזמנת רכש (loadPOsForSupplier → onReceiptPoSelected)
 3. הוספת פריטים: חיפוש ברקוד / שורה ידנית / ייבוא Excel
 4. שמירת טיוטה → goods_receipts (status=draft) + goods_receipt_items
-5. אישור (confirmReceipt):
+5. ולידציה לפני אישור:
+   - מחיר מכירה חובה בכל שורה
+   - פריטים חדשים עם סנכרון=מלא/תדמית חייבים תמונה
+   - מותג + דגם חובה לפריטים חדשים
+6. אישור (confirmReceiptCore):
    - פריט קיים: UPDATE inventory SET quantity += item.quantity; writeLog('entry_receipt')
-   - פריט חדש: יצירת ברקוד → INSERT inventory → writeLog('entry_receipt')
-6. updatePOStatusAfterReceipt — עדכון סטטוס הזמנת רכש
-7. נעילה: status=confirmed → UI readonly
-8. ביטול: רק draft → status=cancelled
+   - פריט חדש: יצירת ברקוד → INSERT inventory (website_sync מברירת מחדל של מותג) → writeLog('entry_receipt')
+7. updatePOStatusAfterReceipt — עדכון סטטוס הזמנת רכש
+8. נעילה: status=confirmed → UI readonly
+9. ביטול: רק draft → status=cancelled
 
 ### 4.8 הזמנות רכש — flow מלא
 1. **Two-step wizard**: step 1 = select supplier, step 2 = generate PO# + edit items
@@ -440,8 +449,9 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 7. **Low stock integration**: createPOForBrand from low stock modal
 
 ### 4.9 מותגים
-- **allBrandsData** = full dataset, **brandsEdited** = filtered view for rendering
-- **3 filters**: active (פעיל/לא פעיל/הכל), sync, type
+- **allBrandsData** = full dataset (includes `currentQty` per brand), **brandsEdited** = filtered view for rendering
+- **4 filters**: active (פעיל/לא פעיל/הכל), sync, type, low stock (מתחת לסף/מעל הסף/ללא סף/הכל)
+- **brandSyncCache**: `window.brandSyncCache` = { brand_name → default_sync }, rebuilt in loadData() and saveBrands()
 - **setBrandActive** = immediate DB save on checkbox toggle
 - **saveBrandField** = immediate save for min_stock_qty
 - **saveBrands** = batch save for all other fields (name, type, sync, exclude_website)
