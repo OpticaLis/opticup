@@ -427,6 +427,9 @@ async function loadReceiptTab() {
             <button class="btn btn-d btn-sm" onclick="cancelReceipt('${r.id}')" title="בטל">✖</button>`;
         } else {
           actions = `<button class="btn btn-g btn-sm" onclick="openExistingReceipt('${r.id}',true)" title="צפה">👁</button>`;
+          if (r.status === 'confirmed') {
+            actions += ` <button class="btn btn-p btn-sm" onclick="exportReceiptToAccess('${r.id}')" title="ייצוא לAccess">📤</button>`;
+          }
         }
 
         return `<tr>
@@ -1135,4 +1138,66 @@ function backToReceiptList() {
   rcptViewOnly = false;
   rcptRowNum = 0;
   loadReceiptTab();
+}
+
+// =========================================================
+// Export confirmed receipt to Access Excel
+// =========================================================
+async function exportReceiptToAccess(receiptId) {
+  showLoading('מכין ייצוא...');
+  try {
+    // A) Load receipt
+    const { data: receipt, error: rErr } = await sb.from(T.RECEIPTS)
+      .select('*, suppliers(name)')
+      .eq('id', receiptId)
+      .single();
+    if (rErr) throw rErr;
+
+    const supplierName = receipt.suppliers?.name || (receipt.supplier_id ? (supplierCacheRev[receipt.supplier_id] || '—') : '—');
+
+    // B) Load receipt items with inventory + brand
+    const { data: items, error: iErr } = await sb.from(T.RCPT_ITEMS)
+      .select('*, inventory(barcode, model, color, size, sell_price, brand_id, brands(name))')
+      .eq('receipt_id', receiptId);
+    if (iErr) throw iErr;
+
+    if (!items || !items.length) {
+      hideLoading();
+      toast('אין פריטים בקבלה זו', 'w');
+      return;
+    }
+
+    // C) Build Excel rows
+    const rows = items.map(item => {
+      const inv = item.inventory || {};
+      const brandName = inv.brands?.name || '';
+      return {
+        barcode: inv.barcode || '',
+        brand: brandName,
+        model: inv.model || '',
+        color: inv.color || '',
+        size: inv.size || '',
+        sell_price: inv.sell_price || '',
+        quantity: item.quantity || 0,
+        receipt_number: receipt.receipt_number || '',
+        supplier: supplierName,
+        received_date: receipt.receipt_date || ''
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'new_inventory');
+
+    // D) Filename
+    const rcptNum = (receipt.receipt_number || 'receipt').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    XLSX.writeFile(wb, `opticup_new_inventory_${rcptNum}_${dateStr}.xlsx`);
+
+    hideLoading();
+    toast('הקובץ מוכן להורדה', 's');
+  } catch (e) {
+    hideLoading();
+    toast('שגיאה בייצוא: ' + (e.message || ''), 'e');
+  }
 }
