@@ -53,11 +53,11 @@ const FIELD_MAP = {
     'מקור':'origin','הערות':'notes','תמונות':'_images'
   },
   purchase_orders: {
-    'מספר הזמנה':'order_number','ספק':'supplier_id','תאריך הזמנה':'order_date',
+    'מספר הזמנה':'po_number','ספק':'supplier_id','תאריך הזמנה':'order_date',
     'תאריך צפוי הגעה':'expected_date','סטטוס הזמנה':'status','הערות':'notes'
   },
   purchase_order_items: {
-    'מספר הזמנה':'order_number','ספק':'supplier_name','חברה / מותג':'brand_name',
+    'מספר הזמנה':'po_number','ספק':'supplier_name','חברה / מותג':'brand_name',
     'דגם':'model','גודל':'size','גשר':'bridge','צבע':'color','אורך מוט':'temple_length',
     'סוג מוצר':'product_type','מחיר עלות':'cost_price','הנחה עלות %':'cost_discount',
     'מחיר מכירה':'sell_price','הנחה מכירה %':'sell_discount',
