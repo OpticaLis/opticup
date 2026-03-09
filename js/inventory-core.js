@@ -2,12 +2,17 @@
 // TAB 2: REDUCTION — Excel
 // =========================================================
 let redExcelData = [];
+let redExcelFileName = '';
+let redSearchResults = [];
+const REDUCE_REASONS = ['נמכר', 'נשבר', 'לא נמצא', 'נשלח לזיכוי', 'הועבר לסניף אחר'];
+let reduceModalState = {};
 
 function showSampleReport() { $('sample-modal').style.display = 'flex'; }
 
 function handleRedExcel(ev) {
   const file = ev.target.files[0];
   if (!file) return;
+  redExcelFileName = file.name;
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
@@ -63,7 +68,7 @@ async function processRedExcel() {
         const updateFields = { 'כמות': qty };
         if (qty === 0) updateFields['סטטוס'] = 'נמכר';
         await batchUpdate(T.INV, [{ id: rec.id, fields: updateFields }]);
-        writeLog('sale', rec.id, { barcode, brand: f['חברה / מותג'], model: f['דגם'], qty_before: qtyBefore, qty_after: qty, source_ref: excelImportFileName || 'ייבוא אדום' });
+        writeLog('sale', rec.id, { barcode, brand: f['חברה / מותג'], model: f['דגם'], qty_before: qtyBefore, qty_after: qty, source_ref: redExcelFileName || 'ייבוא אדום' });
         results.updated.push({ barcode, model: f['דגם'] || barcode });
       } else if (sync === 'תדמית') {
         results.skipped.push({ barcode, reason: 'פריט תדמית — לא עודכן' });
@@ -105,6 +110,32 @@ async function processRedExcel() {
 // =========================================================
 // TAB 2: REDUCTION — Manual
 // =========================================================
+
+async function loadModelsForBrand(brandName) {
+  const list = $('red-model-list');
+  if (list) list.innerHTML = '';
+  $('red-model').value = '';
+
+  const brandId = brandCache[brandName];
+  if (!brandId) return;
+
+  const { data } = await sb.from('inventory')
+    .select('model')
+    .eq('brand_id', brandId)
+    .eq('is_deleted', false)
+    .gt('quantity', 0)
+    .order('model');
+
+  const models = [...new Set((data || []).map(r => r.model).filter(Boolean))];
+  if (list) {
+    models.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      list.appendChild(opt);
+    });
+  }
+}
+
 async function searchManual() {
   const barcode = $('red-barcode').value.trim();
   const brand = $('red-brand').value;
@@ -119,7 +150,7 @@ async function searchManual() {
   const resultDiv = $('red-result');
 
   try {
-    const filters = [];
+    const filters = [['is_deleted','eq',false]];
     if (barcode) {
       filters.push(['barcode','eq',barcode]);
     } else {
@@ -129,6 +160,7 @@ async function searchManual() {
       if (color) filters.push(['color','eq',color]);
     }
     const recs = await fetchAll(T.INV, filters);
+    redSearchResults = recs;
     if (!recs.length) {
       resultDiv.innerHTML = '<div class="alert alert-e">&#10006; לא נמצאו תוצאות</div>';
       hideLoading();
@@ -149,7 +181,7 @@ async function searchManual() {
           <div class="form-group"><label>סנכרון אתר</label><strong>${f['סנכרון אתר']||'—'}</strong></div>
           <div class="form-group"><label>סטטוס</label><strong>${f['סטטוס']||'—'}</strong></div>
         </div>
-        ${qty > 0 ? `<button class="btn btn-d" onclick="markSold('${r.id}','${f['סנכרון אתר']||''}')">&#10004; סמן כנמכר</button>` : '<span style="color:var(--error);font-weight:600">פריט לא במלאי</span>'}
+        ${qty > 0 ? `<button class="btn btn-d" onclick="openReductionModal('${r.id}')">&#128230; הורדה מהמלאי</button>` : '<span style="color:var(--error);font-weight:600">פריט לא במלאי</span>'}
       </div>`;
     }).join('');
   } catch(e) {
@@ -158,24 +190,73 @@ async function searchManual() {
   hideLoading();
 }
 
-async function markSold(recId, sync) {
-  const ok = await confirmDialog('אישור מכירה', 'האם לסמן פריט זה כנמכר?');
-  if (!ok) return;
+function openReductionModal(recId) {
+  const rec = redSearchResults.find(r => r.id === recId);
+  if (!rec) { toast('פריט לא נמצא', 'e'); return; }
+  const f = rec.fields;
+  const currentQty = parseInt(f['כמות']) || 0;
 
-  showLoading('מעדכן...');
+  reduceModalState = {
+    id: recId, currentQty,
+    barcode: f['ברקוד'] || '',
+    brand: f['חברה / מותג'] || '',
+    model: f['דגם'] || ''
+  };
+
+  $('reduce-modal-item').textContent = [f['ברקוד'], f['חברה / מותג'], f['דגם']].filter(Boolean).join(' | ');
+  $('reduce-modal-current').textContent = currentQty;
+  $('reduce-modal-amount').value = 1;
+  $('reduce-modal-amount').max = currentQty;
+  $('reduce-modal-reason').value = '';
+  $('reduce-modal-pin').value = '';
+
+  $('reduce-modal').style.display = 'flex';
+  $('reduce-modal-reason').focus();
+}
+
+async function confirmReduction() {
+  const { id, currentQty, barcode, brand, model } = reduceModalState;
+  const amount = parseInt($('reduce-modal-amount').value) || 0;
+  const reason = $('reduce-modal-reason').value;
+  const pin = $('reduce-modal-pin').value.trim();
+
+  if (amount < 1) { toast('כמות חייבת להיות 1 לפחות', 'w'); return; }
+  if (!reason) { toast('יש לבחור סיבה', 'w'); return; }
+  if (!pin) { toast('יש להזין סיסמת עובד', 'w'); return; }
+  if (amount > currentQty) { toast(`לא ניתן להוריד יותר מ-${currentQty} יחידות`, 'e'); return; }
+
+  // Verify PIN
+  const { data: emp } = await sb.from('employees').select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle();
+  if (!emp) { toast('סיסמת עובד שגויה', 'e'); $('reduce-modal-pin').value = ''; $('reduce-modal-pin').focus(); return; }
+  sessionStorage.setItem('prizma_user', emp.name);
+
+  const newQty = currentQty - amount;
+  const updateFields = { 'כמות': newQty };
+  // Status logic: only set 'sold' when qty=0 AND reason is 'נמכר'
+  if (newQty === 0 && reason === 'נמכר') {
+    updateFields['סטטוס'] = 'נמכר';
+  }
+
+  // Action mapping
+  let action = 'manual_remove';
+  if (reason === 'נמכר') action = 'sale';
+  else if (reason === 'נשלח לזיכוי') action = 'credit_return';
+
   try {
-    const updateFields = { 'סטטוס': 'נמכר' };
-    if (sync === 'מלא') {
-      const { data: row } = await sb.from('inventory').select('quantity').eq('id', recId).single();
-      const newQty = Math.max(0, (row?.quantity || 1) - 1);
-      updateFields['כמות'] = newQty;
-      if (newQty === 0) updateFields['סטטוס'] = 'נמכר';
-    }
-    await batchUpdate(T.INV, [{ id: recId, fields: updateFields }]);
-    toast('הפריט סומן כנמכר', 's');
-    $('red-result').innerHTML = '<div class="alert alert-s">&#10004; הפריט סומן כנמכר בהצלחה</div>';
-  } catch(e) { toast('שגיאה: '+(e.message||''), 'e'); }
-  hideLoading();
+    await batchUpdate(T.INV, [{ id, fields: updateFields }]);
+    await writeLog(action, id, {
+      barcode, brand, model,
+      qty_before: currentQty,
+      qty_after: newQty,
+      reason,
+      source_ref: 'הורדת מלאי ידנית'
+    });
+    closeModal('reduce-modal');
+    toast(`כמות עודכנה: ${currentQty} → ${newQty} (${reason})`, 's');
+    $('red-result').innerHTML = `<div class="alert alert-s">&#10004; ${brand} ${model} — כמות ${currentQty} → ${newQty} (${reason})</div>`;
+  } catch(e) {
+    toast('שגיאה: ' + (e.message || ''), 'e');
+  }
 }
 
 

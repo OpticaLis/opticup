@@ -144,8 +144,8 @@
     </div>
     <p style="margin:8px 0;color:var(--g500);font-size:.88rem">או חיפוש לפי פרטים:</p>
     <div class="search-box">
-      <select id="red-brand"><option value="">חברה...</option></select>
-      <input type="text" id="red-model" placeholder="דגם...">
+      <select id="red-brand" onchange="loadModelsForBrand(this.value)"><option value="">חברה...</option></select>
+      <input type="text" id="red-model" placeholder="דגם..." list="red-model-list"><datalist id="red-model-list"></datalist>
       <input type="text" id="red-size" placeholder="גודל...">
       <input type="text" id="red-color" placeholder="צבע...">
       <button class="btn btn-p" onclick="searchManual()">&#128269; חפש</button>
@@ -154,6 +154,30 @@
   </div>
 </section>
 
+<!-- Reduction Reason Modal -->
+<div id="reduce-modal" class="modal" style="display:none">
+  <div class="modal-content" style="max-width:420px">
+    <h3>&#128230; הורדה מהמלאי</h3>
+    <p id="reduce-modal-item" style="font-weight:600;margin:12px 0"></p>
+    <p>כמות נוכחית: <strong id="reduce-modal-current"></strong></p>
+    <div class="form-group" style="margin-top:12px"><label>כמות להורדה</label><input type="number" id="reduce-modal-amount" value="1" min="1" style="width:80px"></div>
+    <div class="form-group"><label>סיבה <span class="req">*</span></label>
+      <select id="reduce-modal-reason">
+        <option value="">— בחר סיבה —</option>
+        <option value="נמכר">נמכר</option>
+        <option value="נשבר">נשבר</option>
+        <option value="לא נמצא">לא נמצא</option>
+        <option value="נשלח לזיכוי">נשלח לזיכוי</option>
+        <option value="הועבר לסניף אחר">הועבר לסניף אחר</option>
+      </select>
+    </div>
+    <div class="form-group"><label>סיסמת עובד <span class="req">*</span></label><input type="password" id="reduce-modal-pin" placeholder="****" onkeydown="if(event.key==='Enter')confirmReduction()"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-d" onclick="confirmReduction()">&#10004; אשר הורדה</button>
+      <button class="btn btn-g" onclick="closeModal('reduce-modal')">ביטול</button>
+    </div>
+  </div>
+</div>
 
 <!-- ========== TAB: INVENTORY ========== -->
 <section id="tab-inventory" class="tab">
