@@ -367,7 +367,9 @@ function showEntryMode(mode) {
   $('entry-excel').style.display = mode==='excel' ? 'block' : 'none';
   $('btn-entry-manual').classList.toggle('active', mode==='manual');
   $('btn-entry-excel').classList.toggle('active', mode==='excel');
+  $('btn-entry-receipt').classList.toggle('active', mode==='receipt');
   if (mode==='excel') resetExcelImport();
+  if (mode==='receipt') showTab('receipt');
 }
 
 // (Token management removed — using Supabase anon key)
