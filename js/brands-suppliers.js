@@ -15,6 +15,7 @@ async function loadBrandsTab() {
       defaultSync: enToHe('website_sync', b.default_sync) || '',
       active: b.active === true,
       excludeWebsite: b.exclude_website === true,
+      minStockQty: b.min_stock_qty ?? null,
       isNew: false
     }));
     renderBrandsTable();
@@ -42,6 +43,7 @@ function renderBrandsTable() {
       </select></td>
       <td><input type="checkbox" ${b.active?'checked':''} onchange="brandsEdited[${i}].active=this.checked"></td>
       <td><input type="checkbox" ${b.excludeWebsite?'checked':''} onchange="brandsEdited[${i}].excludeWebsite=this.checked"></td>
+      <td><input type="number" min="0" step="1" value="${b.minStockQty ?? ''}" placeholder="${b.type==='יוקרה'?'5':b.type==='מותג'?'15':'—'}" style="width:70px;text-align:center" data-id="${b.id||''}" data-field="min_stock_qty" class="brand-min-stock-input" onchange="brandsEdited[${i}].minStockQty=this.value===''?null:parseInt(this.value,10);${b.id?'saveBrandField(this)':''}"></td>
     </tr>
   `).join('');
 }
@@ -69,7 +71,8 @@ async function saveBrands() {
         brand_type: heToEn('brand_type', b.type) || null,
         default_sync: heToEn('website_sync', b.defaultSync) || null,
         active: b.active,
-        exclude_website: b.excludeWebsite
+        exclude_website: b.excludeWebsite,
+        min_stock_qty: b.minStockQty ?? null
       }).eq('id', b.id);
       if (error) throw new Error(error.message);
       updCount++;
@@ -83,7 +86,8 @@ async function saveBrands() {
         brand_type: heToEn('brand_type', b.type) || null,
         default_sync: heToEn('website_sync', b.defaultSync) || null,
         active: b.active,
-        exclude_website: b.excludeWebsite
+        exclude_website: b.excludeWebsite,
+        min_stock_qty: b.minStockQty ?? null
       }));
       const { error } = await sb.from('brands').insert(rows);
       if (error) throw new Error(error.message);
@@ -108,6 +112,26 @@ async function saveBrands() {
     setAlert('brands-alerts', 'שגיאה: '+(e.message||''), 'e');
   }
   hideLoading();
+}
+
+async function saveBrandField(input) {
+  const id = input.dataset.id;
+  const field = input.dataset.field;
+  const raw = input.value.trim();
+  const value = raw === '' ? null : parseInt(raw, 10);
+
+  if (raw !== '' && (isNaN(value) || value < 0)) {
+    toast('ערך לא תקין', 'e');
+    return;
+  }
+
+  try {
+    const { error } = await sb.from('brands').update({ [field]: value }).eq('id', id);
+    if (error) throw error;
+    toast('נשמר ✓', 's');
+  } catch (err) {
+    toast('שגיאה בשמירה: ' + err.message, 'e');
+  }
 }
 
 // =========================================================
