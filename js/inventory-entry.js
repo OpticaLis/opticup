@@ -186,6 +186,11 @@ function validateEntryRows() {
       hasErr = true;
       errs.push(`שורה ${i+1}: חובה תמונה לסוג מותג "${r.brandType}"`);
     }
+    // Image required for sync=מלא/תדמית
+    if ((r.sync === 'מלא' || r.sync === 'תדמית') && r.images.length === 0) {
+      hasErr = true;
+      errs.push(`שורה ${i+1}: חובה תמונה לסנכרון "${r.sync}"`);
+    }
     if (hasErr) r.tr.classList.add('row-err');
   });
   return errs;
@@ -277,6 +282,12 @@ async function generateBarcodes(source) {
   const incomplete = rows.filter(r => !r.brand || !r.model || !r.size || !r.color);
   if (incomplete.length) {
     toast(`${incomplete.length} שורות חסרות שדות חובה (חברה, דגם, גודל, צבע)`, 'e');
+    return;
+  }
+
+  const noPrice = rows.filter(r => !r.sprice || parseFloat(r.sprice) <= 0);
+  if (noPrice.length) {
+    toast(`${noPrice.length} שורות חסרות מחיר מכירה — חובה לפני יצירת ברקוד`, 'e');
     return;
   }
 

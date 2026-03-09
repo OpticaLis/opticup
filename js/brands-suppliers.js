@@ -159,6 +159,9 @@ async function saveBrands() {
       active: b.active === true
     })).filter(b => b.name);
 
+    window.brandSyncCache = {};
+    brands.forEach(b => { if (b.defaultSync) window.brandSyncCache[b.name] = b.defaultSync; });
+
     populateDropdowns();
     toast(`נשמרו ${updCount + createCount} מותגים`, 's');
     loadBrandsTab();

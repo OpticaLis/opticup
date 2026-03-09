@@ -492,6 +492,9 @@ async function loadData() {
       active: b.active === true
     })).filter(b => b.name);
 
+    window.brandSyncCache = {};
+    brands.forEach(b => { if (b.defaultSync) window.brandSyncCache[b.name] = b.defaultSync; });
+
     await loadMaxBarcode();
     populateDropdowns();
     toast('נתונים נטענו בהצלחה', 's');

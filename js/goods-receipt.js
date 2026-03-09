@@ -589,6 +589,7 @@ async function searchReceiptBarcode() {
         quantity: 1,
         unit_cost: f['מחיר עלות'] || '',
         sell_price: f['מחיר מכירה'] || '',
+        sync: f['סנכרון אתר'] || '',
         is_new_item: false,
         inventory_id: data.id
       });
@@ -637,11 +638,25 @@ function addReceiptItemRow(data) {
     <td><input type="number" class="rcpt-qty col-qty" min="1" value="${data?.quantity || 1}"></td>
     <td><input type="number" class="rcpt-ucost col-price" step="0.01" value="${data?.unit_cost || ''}"></td>
     <td><input type="number" class="rcpt-sprice col-price" step="0.01" value="${data?.sell_price || ''}"></td>
+    <td><select class="rcpt-sync" style="min-width:65px" ${isExisting ? 'disabled' : ''}>
+      <option value="">—</option>
+      <option value="מלא">מלא</option>
+      <option value="תדמית">תדמית</option>
+      <option value="לא">לא</option>
+    </select></td>
+    <td>${isNew ? '<input type="file" class="rcpt-images" multiple accept="image/*" style="max-width:120px;font-size:.75rem">' : '<span style="color:#999">—</span>'}</td>
     <td>${isNew ? '<span class="rcpt-new-badge">חדש</span>' : '<span class="rcpt-existing-badge">קיים</span>'}
       <input type="hidden" class="rcpt-is-new" value="${isNew ? '1' : '0'}">
     </td>
     <td><button class="btn btn-d btn-sm" onclick="this.closest('tr').remove();updateReceiptItemsStats()" title="הסר">✖</button></td>
   `;
+  // Auto-set sync from brand default
+  const brandName = data?.brand || '';
+  if (brandName) {
+    const defSync = getBrandSync(brandName);
+    if (defSync) tr.querySelector('.rcpt-sync').value = defSync;
+  }
+  if (data?.sync) tr.querySelector('.rcpt-sync').value = data.sync;
   tb.appendChild(tr);
   updateReceiptItemsStats();
 }
@@ -663,6 +678,8 @@ function getReceiptItems() {
       quantity: qtyVal,
       unit_cost: parseFloat(tr.querySelector('.rcpt-ucost')?.value) || null,
       sell_price: parseFloat(tr.querySelector('.rcpt-sprice')?.value) || null,
+      sync: tr.querySelector('.rcpt-sync')?.value || '',
+      images: tr.querySelector('.rcpt-images')?.files || [],
       is_new_item: tr.querySelector('.rcpt-is-new')?.value === '1',
       inventory_id: tr.dataset.inventoryId || null
     };
@@ -693,6 +710,12 @@ async function saveReceiptDraft() {
   let items;
   try { items = getReceiptItems(); } catch (e) { return; }
   if (!items.length) { toast('חובה להוסיף לפחות פריט אחד', 'e'); return; }
+
+  const noPrice = items.filter(i => !i.sell_price || i.sell_price <= 0);
+  if (noPrice.length) {
+    toast(`${noPrice.length} שורות חסרות מחיר מכירה`, 'e');
+    return;
+  }
 
   // Validate items
   const invalidItems = items.filter(i => i.is_new_item && (!i.brand || !i.model));
@@ -823,9 +846,21 @@ async function confirmReceipt() {
   if (!supplierName) { toast('חובה לבחור ספק', 'e'); return; }
   if (!items.length) { toast('חובה להוסיף לפחות פריט אחד', 'e'); return; }
 
+  const noPrice = items.filter(i => !i.sell_price || i.sell_price <= 0);
+  if (noPrice.length) {
+    toast(`${noPrice.length} שורות חסרות מחיר מכירה`, 'e');
+    return;
+  }
+
   const invalidItems = items.filter(i => i.is_new_item && (!i.brand || !i.model));
   if (invalidItems.length) {
     toast('פריטים חדשים חייבים מותג ודגם', 'e');
+    return;
+  }
+
+  const noImg = items.filter(i => i.is_new_item && (i.sync === 'מלא' || i.sync === 'תדמית') && (!i.images || i.images.length === 0));
+  if (noImg.length) {
+    toast(`${noImg.length} פריטים חדשים עם סנכרון חייבים תמונה`, 'e');
     return;
   }
 
@@ -871,7 +906,7 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
     status: 'in_stock',
     origin: 'goods_receipt',
     product_type: 'eyeglasses',
-    website_sync: 'none',
+    website_sync: heToEn('website_sync', getBrandSync(item.brand)) || 'none',
     is_deleted: false
   };
 
