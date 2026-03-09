@@ -221,7 +221,7 @@ async function submitEntry() {
         'סוג מוצר': r.ptype,
         'מחיר מכירה': parseFloat(r.sprice) || 0,
         'הנחה מכירה %': (parseFloat(r.sdisc) || 0) / 100,
-        'סטטוס': 'ממתין לברקוד',
+        'סטטוס': 'במלאי',
         'מקור': 'כניסת מלאי',
         'כמות': 1,
         'סנכרון אתר': r.sync || getBrandSync(r.brand) || 'לא',
@@ -289,16 +289,21 @@ async function generateBarcodes(source) {
     for (const row of rows) {
       // Search existing in inventory (same brand+model+size+color with qty>0)
       const brandId = brandCache[row.brand] || null;
-      const existing = await fetchAll(T.INV, [
-        ['brand_id','eq',brandId],['model','eq',row.model],
-        ['size','eq',row.size],['color','eq',row.color]
-      ]);
-
       let barcode = '';
-      const withQty = existing.find(r => (r.fields['כמות'] || 0) > 0);
-      if (withQty) {
-        barcode = withQty.fields['ברקוד'] || '';
-      } else {
+
+      if (brandId) {
+        const existing = await fetchAll(T.INV, [
+          ['brand_id','eq',brandId],['model','eq',row.model],
+          ['size','eq',row.size],['color','eq',row.color],
+          ['is_deleted','eq',false]
+        ]);
+        const withQty = existing.find(r => (r.fields['כמות'] || 0) > 0);
+        if (withQty && withQty.fields['ברקוד']) {
+          barcode = withQty.fields['ברקוד'];
+        }
+      }
+
+      if (!barcode) {
         nextSeq++;
         if (nextSeq > 99999) throw new Error('חריגה — מקסימום 99,999 ברקודים לסניף ' + prefix);
         barcode = prefix + String(nextSeq).padStart(5, '0');

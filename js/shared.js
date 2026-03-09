@@ -524,8 +524,6 @@ async function loadMaxBarcode() {
 }
 
 function populateDropdowns() {
-  const poSup = $('po-supplier');
-  if (poSup) poSup.innerHTML = '<option value="">בחר ספק...</option>' + suppliers.map(s => `<option value="${s}">${s}</option>`).join('');
   const rb = $('red-brand');
   if (rb) rb.innerHTML = '<option value="">חברה...</option>' + brands.filter(b=>b.active).map(b => `<option value="${b.name}">${b.name}</option>`).join('');
   const rcptSup = $('rcpt-supplier');
