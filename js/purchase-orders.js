@@ -160,16 +160,20 @@ async function populatePoSupplierFilter() {
 }
 
 // ── PO Number generation ─────────────────────────────────────
-async function generatePoNumber() {
-  const year = new Date().getFullYear();
-  const prefix = `PO-${year}-`;
+async function generatePoNumber(supplierId) {
+  const supNum = supplierNumCache[supplierId];
+  if (!supNum) { toast('ספק ללא מספר — פנה למנהל', 'e'); return null; }
+  const prefix = `PO-${supNum}-`;
   const { data } = await sb.from(T.PO)
     .select('po_number')
     .like('po_number', `${prefix}%`)
     .order('po_number', { ascending: false })
     .limit(1);
-  const last = data?.[0]?.po_number;
-  const seq = last ? parseInt(last.split('-')[2]) + 1 : 1;
+  let seq = 1;
+  if (data?.length) {
+    const parts = data[0].po_number.split('-');
+    seq = (parseInt(parts[parts.length - 1]) || 0) + 1;
+  }
   return `${prefix}${String(seq).padStart(4, '0')}`;
 }
 
@@ -177,7 +181,6 @@ async function generatePoNumber() {
 async function openNewPurchaseOrder() {
   showLoading('יוצר הזמנה...');
   try {
-    const poNumber = await generatePoNumber();
     const container = document.getElementById('po-list-container2');
 
     const { data: suppliers } = await sb.from('suppliers')
@@ -227,7 +230,7 @@ async function openNewPurchaseOrder() {
             <input type="text" id="po-step1-notes" placeholder="הערות להזמנה..." value="${prevNotes}"
                    style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #ccc">
           </div>
-          <button onclick="proceedToPOItems('${poNumber}')"
+          <button onclick="proceedToPOItems()"
                   class="btn btn-p" style="width:100%; padding:11px; font-size:15px">
             המשך להוספת פריטים ←
           </button>
@@ -245,11 +248,17 @@ async function openNewPurchaseOrder() {
   hideLoading();
 }
 
-function proceedToPOItems(poNumber) {
+async function proceedToPOItems() {
   const supplierId = document.getElementById('po-step1-supplier')?.value;
   if (!supplierId) {
     toast('יש לבחור ספק', 'e');
     return;
+  }
+  // Keep existing PO number if returning from edit, otherwise generate new
+  let poNumber = currentPO?.po_number;
+  if (!poNumber || !currentPO?.id) {
+    poNumber = await generatePoNumber(supplierId);
+    if (!poNumber) return;
   }
   currentPO = {
     id: currentPO?.id || null,
@@ -899,6 +908,12 @@ async function openViewPO(id) {
     if (e2) throw e2;
     hideLoading();
 
+    // Set currentPO/currentPOItems so export functions work
+    currentPO = { po_number: po.po_number, supplier_id: po.supplier_id,
+                  order_date: po.order_date, expected_date: po.expected_date,
+                  notes: po.notes };
+    currentPOItems = (items || []).map(it => ({ ...it }));
+
     const statusLabel = {
       draft:'טיוטה', sent:'נשלחה', partial:'קבלה חלקית',
       received:'התקבל', cancelled:'בוטל'
@@ -979,6 +994,10 @@ async function openViewPO(id) {
               </tr>
             </tfoot>
           </table>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap">
+          <button onclick="exportPOExcel()" style="background:#217346; color:white; border:none; border-radius:6px; padding:9px 18px; cursor:pointer; font-size:14px">📊 ייצוא Excel</button>
+          <button onclick="exportPOPdf()" style="background:#c0392b; color:white; border:none; border-radius:6px; padding:9px 18px; cursor:pointer; font-size:14px">📄 ייצוא PDF</button>
         </div>
       </div>`;
   } catch (err) {

@@ -108,13 +108,14 @@ function enumCatForCol(tableName, enCol) {
 // --- Supplier & Brand lookup caches ---
 let supplierCache = {};   // name → uuid
 let supplierCacheRev = {}; // uuid → name
+let supplierNumCache = {}; // uuid → supplier_number
 let brandCache = {};       // name → uuid
 let brandCacheRev = {};    // uuid → name
 
 async function loadLookupCaches() {
-  const { data: sups } = await sb.from('suppliers').select('id,name');
-  supplierCache = {}; supplierCacheRev = {};
-  (sups || []).forEach(s => { supplierCache[s.name] = s.id; supplierCacheRev[s.id] = s.name; });
+  const { data: sups } = await sb.from('suppliers').select('id,name,supplier_number');
+  supplierCache = {}; supplierCacheRev = {}; supplierNumCache = {};
+  (sups || []).forEach(s => { supplierCache[s.name] = s.id; supplierCacheRev[s.id] = s.name; supplierNumCache[s.id] = s.supplier_number; });
 
   const { data: brs } = await sb.from('brands').select('id,name');
   brandCache = {}; brandCacheRev = {};

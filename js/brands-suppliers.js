@@ -139,13 +139,15 @@ async function saveBrandField(input) {
 // =========================================================
 function loadSuppliersTab() {
   const tb = $('suppliers-body');
-  tb.innerHTML = suppliers.map((s,i) => `
-    <tr>
-      <td>${i+1}</td>
+  tb.innerHTML = suppliers.map((s,i) => {
+    const sid = supplierCache[s];
+    const num = supplierNumCache[sid] || '—';
+    return `<tr>
+      <td>${num}</td>
       <td><strong>${s}</strong></td>
       <td><button class="btn btn-d btn-sm" onclick="toast('לא ניתן למחוק ספק מהממשק','w')">&#10006;</button></td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 async function addSupplier() {
@@ -155,7 +157,13 @@ async function addSupplier() {
 
   showLoading('מוסיף ספק...');
   try {
-    const { error } = await sb.from('suppliers').insert({ name, active: true });
+    const { data: maxRow } = await sb.from('suppliers')
+      .select('supplier_number')
+      .order('supplier_number', { ascending: false })
+      .limit(1)
+      .single();
+    const nextNum = (maxRow?.supplier_number || 9) + 1;
+    const { error } = await sb.from('suppliers').insert({ name, active: true, supplier_number: nextNum });
     if (error) throw new Error(error.message);
     await loadLookupCaches();
     suppliers = Object.keys(supplierCache).sort();
