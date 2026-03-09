@@ -178,20 +178,89 @@ async function openNewPurchaseOrder() {
   showLoading('יוצר הזמנה...');
   try {
     const poNumber = await generatePoNumber();
-    currentPO = {
-      id: null,
-      po_number: poNumber,
-      supplier_id: '',
-      order_date: new Date().toISOString().split('T')[0],
-      expected_date: '',
-      notes: ''
-    };
-    currentPOItems = [];
-    renderPOForm(false);
+    const container = document.getElementById('po-list-container2');
+
+    const { data: suppliers } = await sb.from('suppliers')
+      .select('id, name').eq('active', true).order('name');
+
+    const supplierOptions = (suppliers || [])
+      .map(s => `<option value="${s.id}"${currentPO?.supplier_id === s.id ? ' selected' : ''}>${s.name}</option>`).join('');
+
+    const prevDate = currentPO?.order_date || new Date().toISOString().split('T')[0];
+    const prevExpected = currentPO?.expected_date || '';
+    const prevNotes = currentPO?.notes || '';
+    const prevSupplier = currentPO?.supplier_id || '';
+
+    container.innerHTML = `
+      <div style="padding:16px; max-width:600px; margin:0 auto">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
+          <h2 style="margin:0">📋 הזמנת רכש חדשה</h2>
+          <button onclick="loadPurchaseOrdersTab()" class="btn btn-g">← חזרה לרשימה</button>
+        </div>
+        <div style="background:white; padding:24px; border-radius:10px;
+                    box-shadow:0 1px 4px rgba(0,0,0,0.1)">
+          <div style="margin-bottom:16px">
+            <label style="display:block; margin-bottom:6px; font-weight:600">
+              ספק <span style="color:#ef4444">*</span>
+            </label>
+            <select id="po-step1-supplier"
+                    style="width:100%; padding:9px 12px; border-radius:6px;
+                           border:1px solid #ccc; font-size:15px">
+              <option value="">בחר ספק...</option>
+              ${supplierOptions}
+            </select>
+          </div>
+          <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px">
+            <div style="flex:1; min-width:160px">
+              <label style="display:block; margin-bottom:6px; font-weight:600">תאריך הזמנה</label>
+              <input type="date" id="po-step1-order-date" value="${prevDate}"
+                     style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #ccc">
+            </div>
+            <div style="flex:1; min-width:160px">
+              <label style="display:block; margin-bottom:6px; font-weight:600">תאריך הגעה צפוי</label>
+              <input type="date" id="po-step1-expected-date" value="${prevExpected}"
+                     style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #ccc">
+            </div>
+          </div>
+          <div style="margin-bottom:20px">
+            <label style="display:block; margin-bottom:6px; font-weight:600">הערות</label>
+            <input type="text" id="po-step1-notes" placeholder="הערות להזמנה..." value="${prevNotes}"
+                   style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #ccc">
+          </div>
+          <button onclick="proceedToPOItems('${poNumber}')"
+                  class="btn btn-p" style="width:100%; padding:11px; font-size:15px">
+            המשך להוספת פריטים ←
+          </button>
+        </div>
+      </div>`;
+
+    // Restore previous supplier selection if returning from step 2
+    if (prevSupplier) {
+      const sel = document.getElementById('po-step1-supplier');
+      if (sel) sel.value = prevSupplier;
+    }
   } catch (err) {
     toast('שגיאה: ' + err.message, 'e');
   }
   hideLoading();
+}
+
+function proceedToPOItems(poNumber) {
+  const supplierId = document.getElementById('po-step1-supplier')?.value;
+  if (!supplierId) {
+    toast('יש לבחור ספק', 'e');
+    return;
+  }
+  currentPO = {
+    id: currentPO?.id || null,
+    po_number:     poNumber,
+    supplier_id:   supplierId,
+    order_date:    document.getElementById('po-step1-order-date')?.value || new Date().toISOString().split('T')[0],
+    expected_date: document.getElementById('po-step1-expected-date')?.value || '',
+    notes:         document.getElementById('po-step1-notes')?.value || ''
+  };
+  if (!currentPOItems) currentPOItems = [];
+  renderPOForm(false);
 }
 
 // ── Edit existing draft PO ───────────────────────────────────
@@ -260,26 +329,18 @@ function renderPOForm(isEdit) {
         <button onclick="loadPurchaseOrdersTab()" class="btn btn-g" style="padding:6px 14px">← חזרה לרשימה</button>
       </div>
 
-      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px;
-                  background:white; padding:16px; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.1)">
-        <div style="flex:1; min-width:200px">
-          <label style="display:block; margin-bottom:6px; font-weight:600">ספק <span style="color:#ef4444">*</span></label>
-          <select id="po-form-supplier" onchange="currentPO.supplier_id=this.value"
-                  style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #ccc">
-            <option value="">בחר ספק...</option>
-          </select>
-        </div>
-        <div>
-          <label style="display:block; margin-bottom:6px; font-weight:600">תאריך הגעה צפוי</label>
-          <input type="date" id="po-expected-date" value="${currentPO.expected_date || ''}"
-                 style="padding:7px 10px; border-radius:6px; border:1px solid #ccc">
-        </div>
-        <div style="flex:2; min-width:200px">
-          <label style="display:block; margin-bottom:6px; font-weight:600">הערות</label>
-          <input type="text" id="po-form-notes" value="${currentPO.notes || ''}"
-                 placeholder="הערות להזמנה..."
-                 style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #ccc">
-        </div>
+      <div style="background:white; padding:12px 16px; border-radius:10px;
+                  box-shadow:0 1px 4px rgba(0,0,0,0.1); margin-bottom:16px;
+                  display:flex; gap:20px; flex-wrap:wrap; align-items:center">
+        <div><strong>מספר הזמנה:</strong> ${currentPO.po_number}</div>
+        <div id="po-supplier-name-display"><strong>ספק:</strong> טוען...</div>
+        <div><strong>תאריך הגעה:</strong> ${currentPO.expected_date ? new Date(currentPO.expected_date).toLocaleDateString('he-IL') : '—'}</div>
+        ${currentPO.notes ? `<div><strong>הערות:</strong> ${currentPO.notes}</div>` : ''}
+        <button onclick="openNewPurchaseOrder()"
+                style="margin-right:auto; background:none; border:1px solid #ccc;
+                       border-radius:6px; padding:4px 10px; cursor:pointer; font-size:13px">
+          ✏️ ערוך פרטים
+        </button>
       </div>
 
       <div style="background:white; padding:16px; border-radius:10px;
@@ -323,7 +384,15 @@ function renderPOForm(isEdit) {
     </div>`;
 
   renderPOItemsTable();
-  initPoSupplierSelect();
+  resolveSupplierName();
+}
+
+async function resolveSupplierName() {
+  if (!currentPO?.supplier_id) return;
+  const { data } = await sb.from('suppliers')
+    .select('name').eq('id', currentPO.supplier_id).single();
+  const el = document.getElementById('po-supplier-name-display');
+  if (el && data) el.innerHTML = `<strong>ספק:</strong> ${data.name}`;
 }
 
 // ── Populate supplier dropdown in form ───────────────────────
@@ -343,10 +412,24 @@ async function initPoSupplierSelect() {
 }
 
 // ── Items table render ───────────────────────────────────────
+function ensurePOBrandDatalist() {
+  if (document.getElementById('po-brand-list')) return;
+  const dl = document.createElement('datalist');
+  dl.id = 'po-brand-list';
+  Object.keys(brandCache).sort().forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    dl.appendChild(opt);
+  });
+  document.body.appendChild(dl);
+}
+
 function renderPOItemsTable() {
   const tbody = document.getElementById('po-items-tbody');
   const tfoot = document.getElementById('po-items-tfoot');
   if (!tbody || !tfoot) return;
+
+  ensurePOBrandDatalist();
 
   if (currentPOItems.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">אין פריטים — לחץ "+ שורה ידנית" או חפש ברקוד</td></tr>`;
@@ -356,7 +439,7 @@ function renderPOItemsTable() {
 
   tbody.innerHTML = currentPOItems.map((item, i) => `
     <tr>
-      <td><input value="${item.brand || ''}" oninput="currentPOItems[${i}].brand=this.value" style="width:90px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+      <td><input value="${item.brand || ''}" list="po-brand-list" oninput="currentPOItems[${i}].brand=this.value" placeholder="מותג..." style="width:110px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input value="${item.model || ''}" oninput="currentPOItems[${i}].model=this.value" style="width:90px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input value="${item.color || ''}" oninput="currentPOItems[${i}].color=this.value" style="width:70px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input value="${item.size || ''}" oninput="currentPOItems[${i}].size=this.value" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
@@ -369,6 +452,7 @@ function renderPOItemsTable() {
       <td id="po-row-total-${i}" style="text-align:center; font-weight:600; padding:8px">—</td>
       <td>
         <button onclick="togglePOItemDetails(${i})" style="background:none;border:none;cursor:pointer;font-size:14px" title="פרטים נוספים">&#9660;</button>
+        <button onclick="duplicatePOItem(${i})" title="שכפל שורה" style="background:none;border:none;cursor:pointer;font-size:14px;color:#2196F3;padding:2px 4px">&#10697;</button>
         <button onclick="removePOItem(${i})" style="background:none;border:none;cursor:pointer;color:#f44336;font-size:16px">&#10005;</button>
       </td>
     </tr>
@@ -491,6 +575,11 @@ function removePOItem(index) {
   renderPOItemsTable();
 }
 
+function duplicatePOItem(i) {
+  currentPOItems.splice(i + 1, 0, { ...currentPOItems[i] });
+  renderPOItemsTable();
+}
+
 function togglePOItemDetails(i) {
   const row = document.getElementById(`po-item-details-${i}`);
   if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
@@ -501,8 +590,7 @@ async function savePODraft() {
   if (!currentPO.supplier_id) { toast('יש לבחור ספק', 'e'); return; }
   if (currentPOItems.length === 0) { toast('יש להוסיף לפחות פריט אחד', 'e'); return; }
 
-  currentPO.expected_date = document.getElementById('po-expected-date')?.value || null;
-  currentPO.notes = document.getElementById('po-form-notes')?.value || '';
+  // expected_date and notes are already set in currentPO from step 1
 
   try {
     showLoading('שומר טיוטה...');
