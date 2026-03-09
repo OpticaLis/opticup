@@ -294,6 +294,167 @@ function exportHistoryExcel() {
   toast('✅ קובץ היסטוריה נשמר', 's');
 }
 
+// ---- Entry History ----
+const ENTRY_ACTIONS = ['entry_manual', 'entry_excel', 'entry_po', 'entry_receipt'];
+
+async function openEntryHistory() {
+  // Create modal dynamically if not present
+  if (!$('entry-history-modal')) {
+    const div = document.createElement('div');
+    div.id = 'entry-history-modal';
+    div.className = 'modal';
+    div.style.display = 'none';
+    div.innerHTML = `
+      <div class="modal-content" style="max-width:900px;max-height:85vh;overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2 style="margin:0">&#128197; היסטוריית הכנסות</h2>
+          <button class="btn btn-g btn-sm" onclick="closeEntryHistory()" style="font-size:18px">&#10006;</button>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+          <label>מתאריך:</label>
+          <input type="date" id="entry-hist-from">
+          <label>עד:</label>
+          <input type="date" id="entry-hist-to">
+          <button class="btn btn-p" onclick="loadEntryHistory()">&#128269; חפש</button>
+        </div>
+        <div id="entry-hist-results" style="color:var(--g500);text-align:center;padding:20px">בחר תאריך ולחץ חפש</div>
+      </div>`;
+    document.body.appendChild(div);
+    div.addEventListener('click', function(e) { if (e.target === this) closeEntryHistory(); });
+  }
+  // Default dates to today
+  const today = new Date().toISOString().slice(0, 10);
+  $('entry-hist-from').value = today;
+  $('entry-hist-to').value = today;
+  $('entry-hist-results').innerHTML = '<p style="text-align:center;color:var(--g500);padding:20px">בחר תאריך ולחץ חפש</p>';
+  $('entry-history-modal').style.display = 'flex';
+}
+
+function closeEntryHistory() {
+  const m = $('entry-history-modal');
+  if (m) m.style.display = 'none';
+}
+
+async function loadEntryHistory() {
+  const from = $('entry-hist-from')?.value;
+  const to = $('entry-hist-to')?.value;
+  if (!from || !to) { toast('יש לבחור תאריכים', 'e'); return; }
+
+  showLoading('טוען היסטוריית הכנסות...');
+  try {
+    const { data, error } = await sb.from('inventory_logs')
+      .select('*, inventory:inventory_id(id, barcode, model, color, size, brand_id, quantity, status)')
+      .in('action', ENTRY_ACTIONS)
+      .gte('created_at', from + 'T00:00:00')
+      .lte('created_at', to + 'T23:59:59')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    hideLoading();
+    renderEntryHistory(data || []);
+  } catch (err) {
+    hideLoading();
+    toast('שגיאה: ' + (err.message || ''), 'e');
+  }
+}
+
+function renderEntryHistory(logs) {
+  const container = $('entry-hist-results');
+  if (!logs.length) {
+    container.innerHTML = '<p style="text-align:center;color:#888;padding:20px">לא נמצאו הכנסות בתאריכים אלו</p>';
+    return;
+  }
+
+  // Resolve brand names
+  const brandRevMap = {};
+  for (const [name, uid] of Object.entries(brandCache)) brandRevMap[uid] = name;
+
+  // Group by date
+  const groups = {};
+  for (const log of logs) {
+    const dateKey = new Date(log.created_at).toLocaleDateString('he-IL');
+    if (!groups[dateKey]) groups[dateKey] = [];
+    groups[dateKey].push(log);
+  }
+
+  const actionLabels = {
+    entry_manual: 'הכנסה ידנית',
+    entry_excel: 'הכנסה מאקסל',
+    entry_po: 'הכנסת רכש',
+    entry_receipt: 'קבלת סחורה'
+  };
+
+  let html = '';
+  for (const [date, items] of Object.entries(groups)) {
+    // Build export data for this group
+    const exportItems = items.map(log => {
+      const inv = log.inventory;
+      const brandName = inv?.brand_id ? (brandRevMap[inv.brand_id] || log.brand || '') : (log.brand || '');
+      return {
+        barcode: inv?.barcode || log.barcode || '',
+        brand: brandName,
+        model: inv?.model || log.model || '',
+        size: inv?.size || '',
+        color: inv?.color || ''
+      };
+    });
+    const exportJson = JSON.stringify(exportItems).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+
+    html += `<div style="margin-bottom:20px">
+      <h3 style="background:#1a2744;color:white;padding:8px 12px;border-radius:6px;margin:0 0 8px 0">
+        &#128197; ${date} — ${items.length} פריטים
+      </h3>
+      <div class="table-wrap" style="max-height:300px;overflow-y:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:#f5f5f5">
+          <th style="padding:8px">ברקוד</th><th style="padding:8px">מותג</th><th style="padding:8px">דגם</th>
+          <th style="padding:8px">גודל</th><th style="padding:8px">צבע</th><th style="padding:8px">כמות</th>
+          <th style="padding:8px">סוג הכנסה</th><th style="padding:8px">שעה</th><th style="padding:8px">מבצע</th>
+        </tr></thead><tbody>`;
+
+    for (const log of items) {
+      const inv = log.inventory;
+      const brandName = inv?.brand_id ? (brandRevMap[inv.brand_id] || log.brand || '') : (log.brand || '');
+      const barcode = inv?.barcode || log.barcode || '';
+      const dt = new Date(log.created_at);
+      const timeStr = dt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+      const noBarcode = !barcode;
+
+      html += `<tr${noBarcode ? ' style="background:#fff9c4"' : ''}>
+        <td style="padding:6px 8px;font-family:monospace;font-weight:600">${barcode || '—'}</td>
+        <td style="padding:6px 8px">${brandName}</td>
+        <td style="padding:6px 8px">${inv?.model || log.model || ''}</td>
+        <td style="padding:6px 8px">${inv?.size || ''}</td>
+        <td style="padding:6px 8px">${inv?.color || ''}</td>
+        <td style="padding:6px 8px">${log.qty_after ?? 1}</td>
+        <td style="padding:6px 8px">${actionLabels[log.action] || log.action}</td>
+        <td style="padding:6px 8px">${timeStr}</td>
+        <td style="padding:6px 8px">${log.performed_by || ''}</td>
+      </tr>`;
+    }
+
+    html += `</tbody></table></div>
+      <button class="btn btn-w" style="margin-top:8px" onclick='exportDateGroupBarcodes(${exportJson})'>
+        &#128424;&#65039; הורד ברקודים לתאריך זה
+      </button>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function exportDateGroupBarcodes(items) {
+  if (!items?.length) { toast('אין פריטים לייצוא', 'e'); return; }
+  const rows = items.filter(i => i.barcode).map(i => ({
+    'ברקוד': i.barcode, 'מותג': i.brand, 'דגם': i.model, 'גודל': i.size, 'צבע': i.color
+  }));
+  if (!rows.length) { toast('אין פריטים עם ברקוד לייצוא', 'e'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'ברקודים');
+  XLSX.writeFile(wb, `barcodes-${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast(`${rows.length} ברקודים יורדים...`, 's');
+}
+
 // ---- Quantity Add/Remove ----
 const QTY_REASONS_ADD = ['קבלת סחורה', 'החזרה מלקוח', 'ספירת מלאי', 'תיקון טעות', 'אחר'];
 const QTY_REASONS_REMOVE = ['מכירה', 'העברה לסניף', 'פגום/אבדן', 'ספירת מלאי', 'תיקון טעות', 'אחר'];
