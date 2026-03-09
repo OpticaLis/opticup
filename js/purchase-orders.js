@@ -509,7 +509,136 @@ async function savePODraft() {
   }
 }
 
-// ── Placeholders (step 1.4) ──────────────────────────────────
-function openViewPO(id)              { toast('בקרוב — צפייה בהזמנה', 'w'); }
-async function sendPurchaseOrder(id) { toast('בקרוב — שליחת הזמנה', 'w'); }
-async function cancelPO(id)          { toast('בקרוב — ביטול הזמנה', 'w'); }
+// ── Send PO ──────────────────────────────────────────────────
+async function sendPurchaseOrder(id) {
+  const confirmed = await confirmDialog('שליחת הזמנה', 'לשלוח את ההזמנה? לאחר השליחה לא ניתן יהיה לערוך אותה.');
+  if (!confirmed) return;
+  try {
+    showLoading();
+    const { error } = await sb.from(T.PO)
+      .update({ status: 'sent' })
+      .eq('id', id)
+      .eq('status', 'draft');
+    if (error) throw error;
+    hideLoading();
+    toast('ההזמנה נשלחה ✓', 's');
+    await writeLog('po_created', null, { source_ref: id, reason: 'הזמנת רכש נשלחה' });
+    loadPurchaseOrdersTab();
+  } catch (err) {
+    hideLoading();
+    toast('שגיאה: ' + err.message, 'e');
+  }
+}
+
+// ── Cancel PO ────────────────────────────────────────────────
+async function cancelPO(id) {
+  const confirmed = await confirmDialog('ביטול הזמנה', 'לבטל את ההזמנה? פעולה זו אינה הפיכה.');
+  if (!confirmed) return;
+  try {
+    showLoading();
+    const { error } = await sb.from(T.PO)
+      .update({ status: 'cancelled' })
+      .eq('id', id);
+    if (error) throw error;
+    hideLoading();
+    toast('ההזמנה בוטלה', 's');
+    loadPurchaseOrdersTab();
+  } catch (err) {
+    hideLoading();
+    toast('שגיאה: ' + err.message, 'e');
+  }
+}
+
+// ── View PO (read-only) ─────────────────────────────────────
+async function openViewPO(id) {
+  try {
+    showLoading();
+    const { data: po, error: e1 } = await sb.from(T.PO)
+      .select('*, suppliers(name)')
+      .eq('id', id).single();
+    if (e1) throw e1;
+    const { data: items, error: e2 } = await sb.from(T.PO_ITEMS)
+      .select('*').eq('po_id', id);
+    if (e2) throw e2;
+    hideLoading();
+
+    const statusLabel = {
+      draft:'טיוטה', sent:'נשלחה', partial:'קבלה חלקית',
+      received:'התקבל', cancelled:'בוטל'
+    };
+    const statusColor = {
+      draft:'#9e9e9e', sent:'#2196F3', partial:'#FF9800',
+      received:'#4CAF50', cancelled:'#f44336'
+    };
+
+    const itemRows = (items || []).map(item => {
+      const total = (item.qty_ordered||0) * (item.unit_cost||0) * (1 - (item.discount_pct||0)/100);
+      const received = item.qty_received || 0;
+      const ordered  = item.qty_ordered  || 0;
+      const rowColor = received >= ordered ? '#e8f5e9' : received > 0 ? '#fff8e1' : '';
+      return `<tr style="background:${rowColor}">
+        <td style="padding:8px">${item.brand||'—'}</td>
+        <td style="padding:8px">${item.model||'—'}</td>
+        <td style="padding:8px">${item.color||'—'}</td>
+        <td style="padding:8px">${item.size||'—'}</td>
+        <td style="padding:8px; text-align:center">${ordered}</td>
+        <td style="padding:8px; text-align:center; font-weight:600">${received}</td>
+        <td style="padding:8px; text-align:center">${item.unit_cost ? '₪'+Number(item.unit_cost).toFixed(2) : '—'}</td>
+        <td style="padding:8px; text-align:center">${item.discount_pct||0}%</td>
+        <td style="padding:8px; text-align:center; font-weight:600">₪${total.toFixed(2)}</td>
+      </tr>`;
+    }).join('');
+
+    const grandTotal = (items||[]).reduce((sum, item) => {
+      return sum + (item.qty_ordered||0) * (item.unit_cost||0) * (1-(item.discount_pct||0)/100);
+    }, 0);
+
+    const container = document.getElementById('po-list-container2');
+    container.innerHTML = `
+      <div style="padding:16px">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+          <h2 style="margin:0">📋 ${po.po_number || '—'}
+            <span style="font-size:15px; color:${statusColor[po.status]||'#888'}; margin-right:10px">
+              ${statusLabel[po.status]||po.status}
+            </span>
+          </h2>
+          <button onclick="loadPurchaseOrdersTab()" class="btn btn-g" style="padding:6px 14px">← חזרה לרשימה</button>
+        </div>
+        <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px;
+                    background:white; padding:16px; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.1)">
+          <div><strong>ספק:</strong> ${po.suppliers?.name||'—'}</div>
+          <div><strong>תאריך הזמנה:</strong> ${po.order_date ? new Date(po.order_date).toLocaleDateString('he-IL') : '—'}</div>
+          <div><strong>תאריך צפוי:</strong> ${po.expected_date ? new Date(po.expected_date).toLocaleDateString('he-IL') : '—'}</div>
+          ${po.notes ? `<div><strong>הערות:</strong> ${po.notes}</div>` : ''}
+        </div>
+        <div style="background:white; padding:16px; border-radius:10px;
+                    box-shadow:0 1px 4px rgba(0,0,0,0.1); overflow-x:auto">
+          <table style="width:100%; border-collapse:collapse; font-size:13px">
+            <thead>
+              <tr style="background:#1a2744; color:white; text-align:right">
+                <th style="padding:8px">מותג</th>
+                <th style="padding:8px">דגם</th>
+                <th style="padding:8px">צבע</th>
+                <th style="padding:8px">גודל</th>
+                <th style="padding:8px">הוזמן</th>
+                <th style="padding:8px">התקבל</th>
+                <th style="padding:8px">עלות</th>
+                <th style="padding:8px">הנחה</th>
+                <th style="padding:8px">סה"כ</th>
+              </tr>
+            </thead>
+            <tbody>${itemRows}</tbody>
+            <tfoot>
+              <tr style="font-weight:700; border-top:2px solid #1a2744">
+                <td colspan="8" style="padding:8px; text-align:left">סה"כ להזמנה:</td>
+                <td style="padding:8px; font-size:15px">₪${grandTotal.toFixed(2)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>`;
+  } catch (err) {
+    hideLoading();
+    toast('שגיאה: ' + err.message, 'e');
+  }
+}
