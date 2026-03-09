@@ -228,7 +228,13 @@ async function openEditPO(id) {
       qty_ordered: it.qty_ordered || 1,
       unit_cost: it.unit_cost || 0,
       discount_pct: it.discount_pct || 0,
-      notes: it.notes || ''
+      notes: it.notes || '',
+      sell_price: it.sell_price || null,
+      sell_discount: it.sell_discount || 0,
+      website_sync: it.website_sync || null,
+      product_type: it.product_type || null,
+      bridge: it.bridge || null,
+      temple_length: it.temple_length || null
     }));
 
     renderPOForm(true);
@@ -361,7 +367,45 @@ function renderPOItemsTable() {
       <td><input type="number" min="0" max="100" step="0.1" value="${item.discount_pct || 0}"
                  oninput="currentPOItems[${i}].discount_pct=+this.value; updatePOTotals()" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td id="po-row-total-${i}" style="text-align:center; font-weight:600; padding:8px">—</td>
-      <td><button onclick="removePOItem(${i})" style="background:none;border:none;cursor:pointer;color:#f44336;font-size:16px">✕</button></td>
+      <td>
+        <button onclick="togglePOItemDetails(${i})" style="background:none;border:none;cursor:pointer;font-size:14px" title="פרטים נוספים">&#9660;</button>
+        <button onclick="removePOItem(${i})" style="background:none;border:none;cursor:pointer;color:#f44336;font-size:16px">&#10005;</button>
+      </td>
+    </tr>
+    <tr id="po-item-details-${i}" style="display:none; background:#f8f9fa">
+      <td colspan="9" style="padding:8px 16px">
+        <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:end">
+          <div><label style="font-size:12px;display:block">מחיר מכירה ₪</label>
+            <input type="number" min="0" step="0.01" value="${item.sell_price||''}"
+                   oninput="currentPOItems[${i}].sell_price=+this.value"
+                   style="width:90px;padding:4px 6px;border-radius:4px;border:1px solid #ccc"></div>
+          <div><label style="font-size:12px;display:block">הנחת מכירה %</label>
+            <input type="number" min="0" max="100" step="0.1" value="${item.sell_discount ? item.sell_discount*100 : 0}"
+                   oninput="currentPOItems[${i}].sell_discount=this.value/100"
+                   style="width:70px;padding:4px 6px;border-radius:4px;border:1px solid #ccc"></div>
+          <div><label style="font-size:12px;display:block">סוג מוצר</label>
+            <select oninput="currentPOItems[${i}].product_type=this.value"
+                    style="padding:4px 6px;border-radius:4px;border:1px solid #ccc">
+              <option value="">—</option>
+              <option value="eyeglasses" ${item.product_type==='eyeglasses'?'selected':''}>משקפי ראייה</option>
+              <option value="sunglasses" ${item.product_type==='sunglasses'?'selected':''}>משקפי שמש</option>
+            </select></div>
+          <div><label style="font-size:12px;display:block">סנכרון אתר</label>
+            <select oninput="currentPOItems[${i}].website_sync=this.value"
+                    style="padding:4px 6px;border-radius:4px;border:1px solid #ccc">
+              <option value="">—</option>
+              <option value="full" ${item.website_sync==='full'?'selected':''}>מלא</option>
+              <option value="display" ${item.website_sync==='display'?'selected':''}>תצוגה</option>
+              <option value="none" ${item.website_sync==='none'?'selected':''}>ללא</option>
+            </select></div>
+          <div><label style="font-size:12px;display:block">גשר</label>
+            <input type="text" value="${item.bridge||''}" oninput="currentPOItems[${i}].bridge=this.value"
+                   style="width:60px;padding:4px 6px;border-radius:4px;border:1px solid #ccc"></div>
+          <div><label style="font-size:12px;display:block">אורך מוט</label>
+            <input type="text" value="${item.temple_length||''}" oninput="currentPOItems[${i}].temple_length=this.value"
+                   style="width:60px;padding:4px 6px;border-radius:4px;border:1px solid #ccc"></div>
+        </div>
+      </td>
     </tr>
   `).join('');
 
@@ -447,6 +491,11 @@ function removePOItem(index) {
   renderPOItemsTable();
 }
 
+function togglePOItemDetails(i) {
+  const row = document.getElementById(`po-item-details-${i}`);
+  if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+
 // ── Save draft ───────────────────────────────────────────────
 async function savePODraft() {
   if (!currentPO.supplier_id) { toast('יש לבחור ספק', 'e'); return; }
@@ -494,7 +543,13 @@ async function savePODraft() {
         qty_received: 0,
         unit_cost:    item.unit_cost || null,
         discount_pct: item.discount_pct || 0,
-        notes:        item.notes || null
+        notes:        item.notes || null,
+        sell_price:    item.sell_price || null,
+        sell_discount: item.sell_discount || 0,
+        website_sync:  item.website_sync || null,
+        product_type:  item.product_type || null,
+        bridge:        item.bridge || null,
+        temple_length: item.temple_length || null
       }));
       const { error } = await sb.from(T.PO_ITEMS).insert(items);
       if (error) throw error;
@@ -503,6 +558,7 @@ async function savePODraft() {
     hideLoading();
     toast(`טיוטה ${currentPO.po_number} נשמרה ✓`, 's');
     loadPurchaseOrdersTab();
+    refreshLowStockBanner();
   } catch (err) {
     hideLoading();
     toast('שגיאה בשמירה: ' + err.message, 'e');
@@ -594,6 +650,10 @@ async function openViewPO(id) {
     }, 0);
 
     const container = document.getElementById('po-list-container2');
+    const importBtn = po.status === 'received'
+      ? `<button onclick="importPOToInventory('${po.id}')" class="btn btn-p" style="padding:8px 18px; margin-left:8px">📥 קלוט למלאי</button>`
+      : '';
+
     container.innerHTML = `
       <div style="padding:16px">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
@@ -602,7 +662,10 @@ async function openViewPO(id) {
               ${statusLabel[po.status]||po.status}
             </span>
           </h2>
-          <button onclick="loadPurchaseOrdersTab()" class="btn btn-g" style="padding:6px 14px">← חזרה לרשימה</button>
+          <div>
+            ${importBtn}
+            <button onclick="loadPurchaseOrdersTab()" class="btn btn-g" style="padding:6px 14px">← חזרה לרשימה</button>
+          </div>
         </div>
         <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px;
                     background:white; padding:16px; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.1)">
@@ -637,6 +700,186 @@ async function openViewPO(id) {
           </table>
         </div>
       </div>`;
+  } catch (err) {
+    hideLoading();
+    toast('שגיאה: ' + err.message, 'e');
+  }
+}
+
+// ── Import PO items to inventory ─────────────────────────────
+async function importPOToInventory(poId) {
+  const confirmed = await confirmDialog('קליטה למלאי', 'לקלוט את כל פריטי ההזמנה למלאי הראשי?');
+  if (!confirmed) return;
+
+  try {
+    showLoading('קולט למלאי...');
+
+    // Fetch PO + items
+    const { data: po, error: e1 } = await sb.from(T.PO)
+      .select('*, suppliers(id, name)')
+      .eq('id', poId).single();
+    if (e1) throw e1;
+
+    const { data: items, error: e2 } = await sb.from(T.PO_ITEMS)
+      .select('*').eq('po_id', poId);
+    if (e2) throw e2;
+
+    if (!items || items.length === 0) {
+      hideLoading();
+      toast('אין פריטים בהזמנה', 'e');
+      return;
+    }
+
+    let created = 0, updated = 0, errors = 0;
+
+    for (const item of items) {
+      const qty = item.qty_received || item.qty_ordered || 1;
+      if (qty <= 0) continue;
+
+      try {
+        // Try to find existing inventory item by barcode or brand+model+color+size
+        let existing = null;
+        if (item.barcode) {
+          const { data } = await sb.from(T.INV)
+            .select('id, quantity')
+            .eq('barcode', item.barcode)
+            .eq('is_deleted', false)
+            .limit(1).single();
+          existing = data;
+        }
+        if (!existing && item.brand && item.model) {
+          const brandId = brandCache[item.brand];
+          if (brandId) {
+            const { data } = await sb.from(T.INV)
+              .select('id, quantity')
+              .eq('brand_id', brandId)
+              .eq('model', item.model)
+              .eq('color', item.color || '')
+              .eq('size', item.size || '')
+              .eq('is_deleted', false)
+              .limit(1).single();
+            existing = data;
+          }
+        }
+
+        if (existing) {
+          // Update quantity
+          const { error } = await sb.from(T.INV)
+            .update({ quantity: (existing.quantity || 0) + qty })
+            .eq('id', existing.id);
+          if (error) throw error;
+          await writeLog('qty_add', existing.id, { delta: qty, reason: `קליטה מ-PO ${po.po_number}` });
+          updated++;
+        } else {
+          // Create new inventory item
+          const brandId = item.brand ? brandCache[item.brand] : null;
+          const newItem = {
+            supplier_id:   po.supplier_id || null,
+            brand_id:      brandId || null,
+            model:         item.model || '',
+            color:         item.color || '',
+            size:          item.size || '',
+            quantity:       qty,
+            cost_price:    item.unit_cost || null,
+            cost_discount: item.discount_pct ? item.discount_pct / 100 : 0,
+            sell_price:    item.sell_price || null,
+            sell_discount: item.sell_discount || 0,
+            product_type:  item.product_type || null,
+            website_sync:  item.website_sync || null,
+            bridge:        item.bridge || null,
+            temple_length: item.temple_length || null,
+            status:        'במלאי',
+            source:        'הזמנת רכש',
+            is_deleted:    false
+          };
+          // Generate barcode if needed
+          if (item.barcode) {
+            newItem.barcode = item.barcode;
+          } else if (typeof maxBarcode !== 'undefined') {
+            maxBarcode++;
+            newItem.barcode = String(maxBarcode);
+          }
+          const { data: created_item, error } = await sb.from(T.INV).insert(newItem).select('id').single();
+          if (error) throw error;
+          await writeLog('item_created', created_item.id, { reason: `קליטה מ-PO ${po.po_number}` });
+          created++;
+        }
+      } catch (itemErr) {
+        console.error('Import item error:', itemErr);
+        errors++;
+      }
+    }
+
+    hideLoading();
+    const msg = `קליטה הושלמה: ${created} חדשים, ${updated} עודכנו` + (errors > 0 ? `, ${errors} שגיאות` : '');
+    toast(msg, errors > 0 ? 'w' : 's');
+    await writeLog('po_imported', null, { source_ref: poId, reason: `קלוט למלאי: ${po.po_number}` });
+    refreshLowStockBanner();
+    openViewPO(poId);
+  } catch (err) {
+    hideLoading();
+    toast('שגיאה בקליטה: ' + err.message, 'e');
+  }
+}
+
+async function createPOForBrand(brandId, brandName) {
+  try {
+    showLoading('מכין הזמנה...');
+    const { data: invItems } = await sb.from('inventory')
+      .select('supplier_id, brand_id, model, color, size, cost_price')
+      .eq('brand_id', brandId)
+      .eq('is_deleted', false)
+      .not('supplier_id', 'is', null)
+      .limit(50);
+    if (!invItems || invItems.length === 0) {
+      hideLoading();
+      toast(`לא נמצא ספק למותג ${brandName}`, 'e');
+      return;
+    }
+    // Use most common supplier
+    const supplierCount = {};
+    invItems.forEach(i => {
+      if (i.supplier_id) supplierCount[i.supplier_id] = (supplierCount[i.supplier_id] || 0) + 1;
+    });
+    const topSupplierId = Object.entries(supplierCount)
+      .sort((a, b) => b[1] - a[1])[0][0];
+
+    const poNumber = await generatePoNumber();
+    currentPO = {
+      po_number: poNumber,
+      supplier_id: topSupplierId,
+      order_date: new Date().toISOString().split('T')[0],
+      expected_date: '',
+      notes: `הזמנה אוטומטית — מלאי נמוך: ${brandName}`
+    };
+    // Add unique models of this brand
+    const seen = new Set();
+    currentPOItems = [];
+    invItems.forEach(item => {
+      const key = `${item.model}|${item.color}|${item.size}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        currentPOItems.push({
+          inventory_id: null,
+          barcode: '',
+          brand: brandName,
+          model: item.model || '',
+          color: item.color || '',
+          size: item.size || '',
+          qty_ordered: 1,
+          unit_cost: item.cost_price || 0,
+          discount_pct: 0,
+          notes: ''
+        });
+      }
+    });
+    hideLoading();
+    showTab('purchase-orders');
+    // Wait for loadPurchaseOrdersTab to finish, then render form on top
+    setTimeout(() => {
+      renderPOForm(false);
+      toast(`טופס PO נפתח עבור ${brandName} (${currentPOItems.length} פריטים)`, 's');
+    }, 500);
   } catch (err) {
     hideLoading();
     toast('שגיאה: ' + err.message, 'e');

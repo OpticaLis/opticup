@@ -22,10 +22,15 @@
   <span style="font-size:.8rem;opacity:.6">Supabase</span>
 </header>
 
+<div id="low-stock-banner" style="display:none; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:10px 16px; margin:8px 16px; cursor:pointer; align-items:center; gap:10px" onclick="openLowStockModal()">
+  <span style="font-size:18px">&#9888;&#65039;</span>
+  <span id="low-stock-banner-text" style="font-weight:600; color:#856404"></span>
+  <span style="margin-right:auto; color:#856404; font-size:13px">&#8592; לחץ לפרטים</span>
+</div>
+
 <nav id="mainNav">
   <button data-tab="entry" class="active" onclick="showTab('entry')">&#128230; הכנסת מלאי</button>
   <button data-tab="reduction" onclick="showTab('reduction')">&#128179; הורדת מלאי</button>
-  <button data-tab="purchase" onclick="showTab('purchase')">&#128203; הזמנת רכש</button>
   <button data-tab="purchase-orders" onclick="showTab('purchase-orders')">&#128203; הזמנות רכש</button>
   <button data-tab="inventory" onclick="showTab('inventory')">&#128451; מלאי ראשי</button>
   <button data-tab="brands" onclick="showTab('brands')">&#127991; ניהול מותגים</button>
@@ -42,7 +47,6 @@
 <section id="tab-entry" class="tab active">
   <div id="entry-choice" class="sub-choice">
     <button onclick="showEntryMode('manual')" id="btn-entry-manual"><span class="icon">&#9997;</span>הכנסה ידנית</button>
-    <button onclick="showEntryMode('frompo')" id="btn-entry-frompo"><span class="icon">&#128230;</span>הכנסה מהזמנת רכש</button>
     <button onclick="showEntryMode('excel')" id="btn-entry-excel"><span class="icon">&#128194;</span>הכנסה מאקסל</button>
   </div>
 
@@ -57,36 +61,6 @@
         <button class="btn btn-w" onclick="generateBarcodes('entry')">&#127991; יצירת ברקודים</button>
         <button class="btn btn-p" onclick="exportBarcodesExcel('entry')">&#128229; ברקודים-אקסל</button>
         <button class="btn btn-s" onclick="submitEntry()">&#10004; שלח הכל</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Entry from PO -->
-  <div id="entry-frompo" style="display:none">
-    <div class="card">
-      <h3>&#128230; הכנסת מלאי — מהזמנת רכש</h3>
-      <div id="frompo-alerts"></div>
-      <div id="po-list-container"></div>
-    </div>
-    <div id="po-items-container" style="display:none">
-      <div class="card">
-        <h3 id="po-items-title">פריטי הזמנה</h3>
-        <div id="po-items-alerts"></div>
-        <div class="table-wrap">
-          <table id="po-items-table">
-            <thead><tr>
-              <th>#</th><th>חברה</th><th>דגם</th><th>גודל</th><th>גשר</th><th>צבע</th><th>אורך מוט</th><th>סוג מוצר</th>
-              <th>מחיר מכירה</th><th>תמונות</th><th>סטטוס</th><th>כמות בפועל</th><th>ברקוד</th>
-            </tr></thead>
-            <tbody id="po-items-body"></tbody>
-          </table>
-        </div>
-        <div class="btn-bar">
-          <button class="btn btn-w" onclick="generateBarcodes('poitems')">&#127991; יצירת ברקודים</button>
-          <button class="btn btn-p" onclick="exportBarcodesExcel('poitems')">&#128229; ברקודים-אקסל</button>
-          <button class="btn btn-s" onclick="submitFromPO()">&#10004; שלח הכל</button>
-          <button class="btn btn-g" onclick="backToPOList()">&#8592; חזרה לרשימה</button>
-        </div>
       </div>
     </div>
   </div>
@@ -180,29 +154,6 @@
   </div>
 </section>
 
-<!-- ========== TAB 3: PURCHASE ========== -->
-<section id="tab-purchase" class="tab">
-  <div id="po-step1" class="card">
-    <h3>&#128203; שלב א' — פתיחת הזמנה חדשה</h3>
-    <div id="po-alerts"></div>
-    <div class="form-row">
-      <div class="form-group"><label>ספק <span class="req">*</span></label><select id="po-supplier"><option value="">בחר ספק...</option></select></div>
-      <div class="form-group"><label>תאריך הזמנה <span class="req">*</span></label><input type="date" id="po-date"></div>
-      <div class="form-group"><label>תאריך צפוי הגעה</label><input type="date" id="po-eta"></div>
-    </div>
-    <div class="form-row"><div class="form-group"><label>הערות</label><textarea id="po-notes" rows="2"></textarea></div></div>
-    <button class="btn btn-p" onclick="openPO()">&#10004; פתח הזמנה</button>
-  </div>
-  <div id="po-step2" class="card" style="display:none">
-    <h3>&#128230; שלב ב' — פריטי הזמנה <span id="po-num-display" style="color:var(--accent)"></span></h3>
-    <div id="po2-alerts"></div>
-    <div class="items-container" id="po-body"></div>
-    <div class="btn-bar">
-      <button class="btn btn-g" onclick="addPORow()">&#10010; הוסף שורה</button>
-      <button class="btn btn-s" onclick="submitPO()">&#128230; שלח הזמנה</button>
-    </div>
-  </div>
-</section>
 
 <!-- ========== TAB: INVENTORY ========== -->
 <section id="tab-inventory" class="tab">
@@ -409,6 +360,9 @@
         </div>
         <div class="form-group"><label>ספק <span class="req">*</span></label>
           <select id="rcpt-supplier"><option value="">בחר ספק...</option></select>
+        </div>
+        <div class="form-group"><label>הזמנת רכש (אופציונלי)</label>
+          <select id="rcpt-po-select" disabled><option value="">ללא — קבלה חופשית</option></select>
         </div>
         <div class="form-group"><label>תאריך קבלה</label>
           <input type="date" id="rcpt-date">

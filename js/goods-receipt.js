@@ -215,6 +215,160 @@ async function exportSystemLog() {
 const RCPT_TYPE_LABELS = { delivery_note: 'תעודת משלוח', invoice: 'חשבונית', tax_invoice: 'חשבונית מס' };
 const RCPT_STATUS_LABELS = { draft: 'טיוטה', confirmed: 'אושרה', cancelled: 'בוטלה' };
 
+// --- PO linkage state ---
+let rcptLinkedPoId = null; // currently linked PO id
+
+async function loadPOsForSupplier(supplierName) {
+  const sel = $('rcpt-po-select');
+  sel.innerHTML = '<option value="">ללא — קבלה חופשית</option>';
+  rcptLinkedPoId = null;
+  if (!supplierName) { sel.disabled = true; return; }
+
+  const supplierId = supplierCache[supplierName];
+  if (!supplierId) { sel.disabled = true; return; }
+
+  try {
+    const { data, error } = await sb.from(T.PO)
+      .select('id, po_number, status, created_at')
+      .eq('supplier_id', supplierId)
+      .in('status', ['sent', 'partial'])
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+
+    if (!data || !data.length) { sel.disabled = true; return; }
+
+    for (const po of data) {
+      const label = `${po.po_number} (${po.status === 'sent' ? 'נשלחה' : 'חלקי'})`;
+      sel.innerHTML += `<option value="${po.id}">${label}</option>`;
+    }
+    sel.disabled = false;
+  } catch (e) {
+    console.error('loadPOsForSupplier error:', e);
+    sel.disabled = true;
+  }
+}
+
+async function onReceiptPoSelected() {
+  const poId = $('rcpt-po-select').value;
+  if (!poId) { rcptLinkedPoId = null; return; }
+
+  showLoading('טוען פריטי הזמנה...');
+  try {
+    const { data: poItems, error } = await sb.from(T.PO_ITEMS)
+      .select('*')
+      .eq('po_id', poId);
+    if (error) throw error;
+
+    // Clear existing items
+    $('rcpt-items-body').innerHTML = '';
+    rcptRowNum = 0;
+
+    for (const item of (poItems || [])) {
+      const ordered = item.qty_ordered || 0;
+      const received = item.qty_received || 0;
+      const remaining = ordered - received;
+      if (remaining <= 0) continue; // skip fully received items
+
+      // Try to find inventory item by barcode for inventory_id
+      let inventoryId = null;
+      if (item.barcode) {
+        const { data: inv } = await sb.from('inventory')
+          .select('id')
+          .eq('barcode', item.barcode)
+          .eq('is_deleted', false)
+          .maybeSingle();
+        if (inv) inventoryId = inv.id;
+      }
+
+      addReceiptItemRow({
+        barcode: item.barcode || '',
+        brand: item.brand || '',
+        model: item.model || '',
+        color: item.color || '',
+        size: item.size || '',
+        quantity: remaining,
+        unit_cost: item.unit_cost || '',
+        sell_price: item.sell_price || '',
+        is_new_item: !inventoryId,
+        inventory_id: inventoryId
+      });
+    }
+
+    rcptLinkedPoId = poId;
+    updateReceiptItemsStats();
+    toast('פריטי הזמנה נטענו', 's');
+  } catch (e) {
+    console.error('onReceiptPoSelected error:', e);
+    toast('שגיאה בטעינת פריטי הזמנה: ' + (e.message || ''), 'e');
+  }
+  hideLoading();
+}
+
+async function updatePOStatusAfterReceipt(poId) {
+  if (!poId) return;
+  try {
+    // Fetch all PO items
+    const { data: poItems, error: piErr } = await sb.from(T.PO_ITEMS)
+      .select('id, barcode, brand, model, color, size, qty_ordered, qty_received')
+      .eq('po_id', poId);
+    if (piErr) throw piErr;
+
+    // Fetch all confirmed receipts linked to this PO
+    const { data: receipts } = await sb.from(T.RECEIPTS)
+      .select('id')
+      .eq('po_id', poId)
+      .eq('status', 'confirmed');
+
+    let totalReceived = 0;
+    if (receipts && receipts.length) {
+      const receiptIds = receipts.map(r => r.id);
+      const { data: rcptItems } = await sb.from(T.RCPT_ITEMS)
+        .select('barcode, brand, model, color, size, quantity')
+        .in('receipt_id', receiptIds);
+
+      // Build lookup: by barcode first, then by model+color+size as fallback
+      const receivedByBarcode = {};
+      const receivedByKey = {};
+      for (const ri of (rcptItems || [])) {
+        if (ri.barcode) receivedByBarcode[ri.barcode] = (receivedByBarcode[ri.barcode] || 0) + ri.quantity;
+        const key = `${ri.brand}|${ri.model}|${ri.color}|${ri.size}`;
+        receivedByKey[key] = (receivedByKey[key] || 0) + ri.quantity;
+      }
+
+      // Update qty_received on PO items
+      for (const pi of (poItems || [])) {
+        let rcvd = 0;
+        if (pi.barcode && receivedByBarcode[pi.barcode]) {
+          rcvd = receivedByBarcode[pi.barcode];
+        } else {
+          const key = `${pi.brand}|${pi.model}|${pi.color}|${pi.size}`;
+          rcvd = receivedByKey[key] || 0;
+        }
+        if (rcvd !== (pi.qty_received || 0)) {
+          await sb.from(T.PO_ITEMS).update({ qty_received: rcvd }).eq('id', pi.id);
+        }
+        totalReceived += rcvd;
+      }
+    }
+
+    // Determine PO status
+    const totalOrdered = (poItems || []).reduce((s, i) => s + (i.qty_ordered || 0), 0);
+    let newStatus;
+    if (totalReceived >= totalOrdered) {
+      newStatus = 'received';
+    } else if (totalReceived > 0) {
+      newStatus = 'partial';
+    } else {
+      newStatus = 'sent'; // no items received yet
+    }
+
+    await sb.from(T.PO).update({ status: newStatus }).eq('id', poId);
+    writeLog('po_receipt_update', poId, { total_ordered: totalOrdered, total_received: totalReceived, new_status: newStatus });
+  } catch (e) {
+    console.error('updatePOStatusAfterReceipt error:', e);
+  }
+}
+
 async function loadReceiptTab() {
   showLoading('טוען קבלות סחורה...');
   try {
@@ -305,6 +459,11 @@ function openNewReceipt() {
   $('rcpt-number').value = '';
   $('rcpt-supplier').innerHTML = '<option value="">בחר ספק...</option>' + suppliers.map(s => `<option value="${s}">${s}</option>`).join('');
   $('rcpt-supplier').value = '';
+  $('rcpt-supplier').onchange = () => loadPOsForSupplier($('rcpt-supplier').value);
+  $('rcpt-po-select').innerHTML = '<option value="">ללא — קבלה חופשית</option>';
+  $('rcpt-po-select').disabled = true;
+  $('rcpt-po-select').onchange = () => onReceiptPoSelected();
+  rcptLinkedPoId = null;
   $('rcpt-date').valueAsDate = new Date();
   $('rcpt-notes').value = '';
   $('rcpt-items-body').innerHTML = '';
@@ -338,6 +497,17 @@ async function openExistingReceipt(receiptId, viewOnly) {
     $('rcpt-number').value = rcpt.receipt_number || '';
     $('rcpt-supplier').innerHTML = '<option value="">בחר ספק...</option>' + suppliers.map(s => `<option value="${s}">${s}</option>`).join('');
     $('rcpt-supplier').value = rcpt.supplier_id ? (supplierCacheRev[rcpt.supplier_id] || '') : '';
+    $('rcpt-supplier').onchange = () => loadPOsForSupplier($('rcpt-supplier').value);
+    // Restore PO linkage
+    rcptLinkedPoId = rcpt.po_id || null;
+    if ($('rcpt-supplier').value) {
+      await loadPOsForSupplier($('rcpt-supplier').value);
+      if (rcptLinkedPoId) $('rcpt-po-select').value = rcptLinkedPoId;
+    } else {
+      $('rcpt-po-select').innerHTML = '<option value="">ללא — קבלה חופשית</option>';
+      $('rcpt-po-select').disabled = true;
+    }
+    $('rcpt-po-select').onchange = () => onReceiptPoSelected();
     $('rcpt-date').value = rcpt.receipt_date || '';
     $('rcpt-notes').value = rcpt.notes || '';
     clearAlert('rcpt-form-alerts');
@@ -518,6 +688,7 @@ async function saveReceiptDraft() {
       notes: notes || null,
       total_amount: totalAmount || null,
       status: 'draft',
+      po_id: rcptLinkedPoId || null,
       created_by: sessionStorage.getItem('prizma_user') || 'system'
     };
 
@@ -649,7 +820,13 @@ async function confirmReceipt() {
     }).eq('id', receiptId);
     if (confErr) throw confErr;
 
+    // Update PO status if linked
+    if (rcptLinkedPoId) {
+      await updatePOStatusAfterReceipt(rcptLinkedPoId);
+    }
+
     toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
+    refreshLowStockBanner();
     await loadReceiptTab();
   } catch (e) {
     console.error('confirmReceipt error:', e);
@@ -723,6 +900,7 @@ async function saveReceiptDraftInternal() {
     notes: notes || null,
     total_amount: totalAmount || null,
     status: 'draft',
+    po_id: rcptLinkedPoId || null,
     created_by: sessionStorage.getItem('prizma_user') || 'system'
   };
 
@@ -765,8 +943,9 @@ async function confirmReceiptById(receiptId) {
 
   showLoading('מאשר קבלה...');
   try {
-    const { data: rcpt } = await sb.from(T.RECEIPTS).select('receipt_number').eq('id', receiptId).single();
+    const { data: rcpt } = await sb.from(T.RECEIPTS).select('receipt_number, po_id').eq('id', receiptId).single();
     const rcptNumber = rcpt?.receipt_number || '';
+    const poId = rcpt?.po_id || null;
     const { data: items } = await sb.from(T.RCPT_ITEMS).select('*').eq('receipt_id', receiptId);
 
     for (const item of (items || [])) {
@@ -800,7 +979,13 @@ async function confirmReceiptById(receiptId) {
       created_by: sessionStorage.getItem('prizma_user') || 'system'
     }).eq('id', receiptId);
 
+    // Update PO status if linked
+    if (poId) {
+      await updatePOStatusAfterReceipt(poId);
+    }
+
     toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
+    refreshLowStockBanner();
     await loadReceiptTab();
   } catch (e) {
     console.error('confirmReceiptById error:', e);

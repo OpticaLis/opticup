@@ -47,5 +47,5 @@ document.addEventListener('DOMContentLoaded', () => {
   if (dateEl) dateEl.valueAsDate = new Date();
   const rcptDateEl = $('rcpt-date');
   if (rcptDateEl) rcptDateEl.valueAsDate = new Date();
-  loadData().then(() => addEntryRow());
+  loadData().then(() => { addEntryRow(); refreshLowStockBanner(); });
 });

@@ -22,10 +22,6 @@ const T = {
 let suppliers = [];
 let brands = [];
 let isAdmin = false;
-let currentPOId = null;
-let currentPONum = '';
-let currentPOSupplier = '';
-let selectedPOForEntry = null;
 let maxBarcode = 0;
 let branchCode = sessionStorage.getItem('prizma_branch') || '00';
 
@@ -368,12 +364,9 @@ function showTab(name) {
 
 function showEntryMode(mode) {
   $('entry-manual').style.display = mode==='manual' ? 'block' : 'none';
-  $('entry-frompo').style.display = mode==='frompo' ? 'block' : 'none';
   $('entry-excel').style.display = mode==='excel' ? 'block' : 'none';
   $('btn-entry-manual').classList.toggle('active', mode==='manual');
-  $('btn-entry-frompo').classList.toggle('active', mode==='frompo');
   $('btn-entry-excel').classList.toggle('active', mode==='excel');
-  if (mode==='frompo') loadPOListForEntry();
   if (mode==='excel') resetExcelImport();
 }
 
@@ -382,6 +375,104 @@ function showEntryMode(mode) {
 // =========================================================
 // DATA LOADING
 // =========================================================
+// =========================================================
+// LOW STOCK ALERTS
+// =========================================================
+window.lowStockData = [];
+
+async function loadLowStockAlerts() {
+  try {
+    const { data, error } = await sb.rpc('get_low_stock_brands');
+    if (error) {
+      // RPC doesn't exist yet — fallback to manual query
+      const { data: brnds } = await sb.from('brands')
+        .select('id, name, min_stock_qty, brand_type')
+        .not('min_stock_qty', 'is', null)
+        .eq('active', true);
+      if (!brnds || brnds.length === 0) return [];
+      const results = [];
+      for (const brand of brnds) {
+        const { data: inv } = await sb.from('inventory')
+          .select('quantity')
+          .eq('brand_id', brand.id)
+          .eq('is_deleted', false);
+        const totalQty = (inv || []).reduce((sum, i) => sum + (i.quantity || 0), 0);
+        if (totalQty < brand.min_stock_qty) {
+          results.push({
+            id: brand.id,
+            name: brand.name,
+            brand_type: brand.brand_type,
+            min_stock_qty: brand.min_stock_qty,
+            current_qty: totalQty,
+            shortage: brand.min_stock_qty - totalQty
+          });
+        }
+      }
+      return results;
+    }
+    return data || [];
+  } catch (err) {
+    console.warn('loadLowStockAlerts error:', err.message);
+    return [];
+  }
+}
+
+async function refreshLowStockBanner() {
+  window.lowStockData = await loadLowStockAlerts();
+  const banner = document.getElementById('low-stock-banner');
+  const text = document.getElementById('low-stock-banner-text');
+  if (!banner || !text) return;
+
+  if (window.lowStockData.length === 0) {
+    banner.style.display = 'none';
+  } else {
+    banner.style.display = 'flex';
+    text.textContent = `מלאי נמוך: ${window.lowStockData.length} מותגים מתחת לסף`;
+  }
+}
+
+function openLowStockModal() {
+  const data = window.lowStockData || [];
+  const rows = data.map(b => `
+    <tr>
+      <td style="padding:10px; font-weight:600">${b.name}</td>
+      <td style="padding:10px; text-align:center; color:#f44336; font-weight:700">${b.current_qty}</td>
+      <td style="padding:10px; text-align:center">${b.min_stock_qty}</td>
+      <td style="padding:10px; text-align:center; color:#FF9800; font-weight:600">${b.shortage}</td>
+      <td style="padding:10px; text-align:center">
+        <button onclick="createPOForBrand('${b.id}','${b.name.replace(/'/g,"\\'")}'); closeLowStockModal()"
+                class="btn btn-p btn-sm">צור PO</button>
+      </td>
+    </tr>`).join('');
+  const modal = document.createElement('div');
+  modal.id = 'low-stock-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:white;border-radius:12px;padding:24px;max-width:700px;width:95%;max-height:80vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2 style="margin:0">&#9888;&#65039; מלאי נמוך</h2>
+        <button onclick="closeLowStockModal()" style="background:none;border:none;font-size:22px;cursor:pointer">&#10005;</button>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead>
+          <tr style="background:#1a2744;color:white;text-align:right">
+            <th style="padding:10px">מותג</th>
+            <th style="padding:10px">כמות נוכחית</th>
+            <th style="padding:10px">סף מינימום</th>
+            <th style="padding:10px">חסר</th>
+            <th style="padding:10px">פעולה</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function closeLowStockModal() {
+  document.getElementById('low-stock-modal')?.remove();
+}
+
 async function loadData() {
   showLoading('טוען ספקים ומותגים...');
   try {
