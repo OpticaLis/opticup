@@ -3,11 +3,22 @@
 // =========================================================
 let brandsEdited = [];
 
+let brandStockByBrand = {};
+
 async function loadBrandsTab() {
   showLoading('טוען מותגים...');
   try {
-    const { data: brandRows, error } = await sb.from('brands').select('*');
+    const [{ data: brandRows, error }, { data: stockData }] = await Promise.all([
+      sb.from('brands').select('*'),
+      sb.from(T.INV).select('brand_id, quantity').eq('is_deleted', false)
+    ]);
     if (error) throw new Error(error.message);
+
+    brandStockByBrand = {};
+    (stockData || []).forEach(r => {
+      brandStockByBrand[r.brand_id] = (brandStockByBrand[r.brand_id] || 0) + (r.quantity || 0);
+    });
+
     brandsEdited = (brandRows || []).map(b => ({
       id: b.id,
       name: b.name || '',
@@ -44,6 +55,7 @@ function renderBrandsTable() {
       <td><input type="checkbox" ${b.active?'checked':''} onchange="brandsEdited[${i}].active=this.checked"></td>
       <td><input type="checkbox" ${b.excludeWebsite?'checked':''} onchange="brandsEdited[${i}].excludeWebsite=this.checked"></td>
       <td><input type="number" min="0" step="1" value="${b.minStockQty ?? ''}" placeholder="${b.type==='יוקרה'?'5':b.type==='מותג'?'15':'—'}" style="width:70px;text-align:center" data-id="${b.id||''}" data-field="min_stock_qty" class="brand-min-stock-input" onchange="brandsEdited[${i}].minStockQty=this.value===''?null:parseInt(this.value,10);${b.id?'saveBrandField(this)':''}"></td>
+      ${(() => { const qty = brandStockByBrand[b.id] || 0; const minQ = b.minStockQty; const isLow = minQ != null && qty < minQ; const color = minQ == null ? '' : (isLow ? 'color:#e53935' : 'color:#2e7d32'); return `<td style="text-align:center;font-weight:600;${color}">${qty}${isLow ? ' ⚠️' : ''}</td>`; })()}
     </tr>
   `).join('');
 }
