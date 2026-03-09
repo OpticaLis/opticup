@@ -39,9 +39,20 @@ function activateAdmin() {
 }
 
 // =========================================================
+// HELP MODAL
+// =========================================================
+function openHelpModal() {
+  $('help-modal').style.display = 'flex';
+}
+function closeHelpModal() {
+  $('help-modal').style.display = 'none';
+}
+
+// =========================================================
 // INIT
 // =========================================================
 document.addEventListener('DOMContentLoaded', () => {
+  $('help-modal')?.addEventListener('click', function(e) { if (e.target === this) closeHelpModal(); });
   if (sessionStorage.getItem('prizma_admin') === '1') activateAdmin();
   const dateEl = $('po-date');
   if (dateEl) dateEl.valueAsDate = new Date();

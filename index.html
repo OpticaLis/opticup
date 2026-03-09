@@ -593,6 +593,52 @@
 <!-- Toast -->
 <div id="toast-c"></div>
 
+<!-- Help Button -->
+<button id="help-btn" onclick="openHelpModal()" style="position:fixed;bottom:24px;left:24px;z-index:1000;width:44px;height:44px;border-radius:50%;background:#1a2744;color:white;border:none;font-size:20px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3)" title="הוראות הפעלה">?</button>
+
+<!-- Help Modal -->
+<div id="help-modal" class="modal" style="display:none">
+  <div class="modal-content" style="max-width:680px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">&#128214; הוראות הפעלה — אופטיק אפ</h2>
+      <button class="btn btn-g btn-sm" onclick="closeHelpModal()" style="font-size:18px">&#10006;</button>
+    </div>
+
+    <h3>&#128230; הכנסת מלאי</h3>
+    <ol style="line-height:1.8">
+      <li><strong>הכנסה ידנית:</strong> מלא את פרטי המסגרת &#8592; לחץ "צור ברקודים" &#8592; הורד Excel לברקודים &#8592; הדפס את הברקודים &#8592; רק אחרי ההדפסה לחץ "הכנס למלאי"</li>
+      <li><strong>הכנסה מאקסל:</strong> העלה קובץ Excel עם עמודות: מותג, דגם, גודל, צבע, כמות, מחיר עלות &#8592; אשר ייבוא &#8592; פריטים מוכרים נכנסים אוטומטית &#8592; פריטים חדשים ממתינים לברקוד &#8592; לחץ "צור ברקודים" &#8592; הדפס &#8592; אשר</li>
+      <li><strong>קבלת סחורה:</strong> בחר ספק &#8592; אופציונלי: קשר להזמנת רכש &#8592; הוסף פריטים &#8592; אשר קבלה</li>
+    </ol>
+
+    <h3>&#128228; הורדת מלאי</h3>
+    <ol style="line-height:1.8">
+      <li><strong>הורדה ידנית:</strong> חפש לפי ברקוד או בחר מותג &#8592; דגם &#8592; גודל &#8592; צבע &#8592; לחץ "הורדה מהמלאי" &#8592; בחר סיבה &#8592; הזן PIN</li>
+      <li><strong>הורדה מאקסל:</strong> העלה קובץ Excel עם עמודות ברקוד וכמות</li>
+    </ol>
+
+    <h3>&#128203; הזמנות רכש</h3>
+    <ol style="line-height:1.8">
+      <li>לחץ "+ הזמנה חדשה" &#8592; בחר ספק &#8592; הוסף פריטים (ברקוד / ידני) &#8592; שמור טיוטה</li>
+      <li>כשמוכן לשלוח: לחץ "שלח" &#8592; ההזמנה עוברת לסטטוס "נשלחה"</li>
+      <li>כשהסחורה מגיעה: פתח קבלת סחורה &#8592; קשר ל-PO &#8592; אשר קבלה</li>
+      <li>לאחר קבלה מלאה: לחץ "קלוט למלאי" ב-PO</li>
+    </ol>
+
+    <h3>&#127991;&#65039; ברקודים — כללי זהב</h3>
+    <ul style="line-height:1.8">
+      <li>&#9888;&#65039; <strong>אסור להכניס מסגרת למלאי ללא ברקוד מודפס ומודבק</strong></li>
+      <li>פורמט ברקוד: 2 ספרות סניף + 5 ספרות רצות (לדוגמה: 0000123)</li>
+      <li>מסגרת קיימת במלאי — מקבלת את הברקוד הקיים שלה</li>
+      <li>מסגרת חדשה — מקבלת ברקוד חדש בסדר עולה</li>
+    </ul>
+
+    <div style="margin-top:16px;padding:16px;background:#f5f5f5;border-radius:8px;text-align:center;color:#888">
+      &#127916; סרטון הדרכה — בקרוב
+    </div>
+  </div>
+</div>
+
 <script src="js/shared.js"></script>
 <script src="js/inventory-core.js"></script>
 <script src="js/inventory-entry.js"></script>
