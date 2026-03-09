@@ -13,6 +13,7 @@ const T = {
   SUPPLIERS: 'suppliers',
   RECEIPTS: 'goods_receipts',
   RCPT_ITEMS: 'goods_receipt_items',
+  PO_ITEMS: 'purchase_order_items',
 };
 
 // =========================================================

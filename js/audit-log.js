@@ -195,7 +195,8 @@ const ACTION_MAP = {
   restore:          { icon: '♻️', label: 'שחזור',              color: '#92400e' },
   permanent_delete: { icon: '❌', label: 'מחיקה לצמיתות',      color: '#9E9E9E' },
   test:             { icon: '🧪', label: 'בדיקה',              color: '#9E9E9E' },
-  entry_receipt:    { icon: '📦', label: 'קבלת סחורה',          color: '#4CAF50' }
+  entry_receipt:    { icon: '📦', label: 'קבלת סחורה',          color: '#4CAF50' },
+  po_created:       { icon: '📋', label: 'הזמנת רכש',            color: '#2196F3' }
 };
 
 async function openItemHistory(id, barcode, brand, model) {
