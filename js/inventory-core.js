@@ -362,7 +362,7 @@ async function submitPO() {
     const poItemRows = rows.map(tr => {
       const row = {
         purchase_order_id: currentPOId,
-        order_number: currentPONum,
+        po_number: currentPONum,
         supplier_name: currentPOSupplier,
         brand_name: tr.querySelector('.col-brand')?.value || '',
         model: tr.querySelector('.col-model')?.value?.trim() || '',
