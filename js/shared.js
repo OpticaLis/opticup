@@ -363,6 +363,7 @@ function showTab(name) {
   if (name === 'suppliers') loadSuppliersTab();
   if (name === 'systemlog') loadSystemLog();
   if (name === 'receipt') loadReceiptTab();
+  if (name === 'purchase-orders') loadPurchaseOrdersTab();
 }
 
 function showEntryMode(mode) {

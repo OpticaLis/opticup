@@ -26,6 +26,7 @@
   <button data-tab="entry" class="active" onclick="showTab('entry')">&#128230; הכנסת מלאי</button>
   <button data-tab="reduction" onclick="showTab('reduction')">&#128179; הורדת מלאי</button>
   <button data-tab="purchase" onclick="showTab('purchase')">&#128203; הזמנת רכש</button>
+  <button data-tab="purchase-orders" onclick="showTab('purchase-orders')">&#128203; הזמנות רכש</button>
   <button data-tab="inventory" onclick="showTab('inventory')">&#128451; מלאי ראשי</button>
   <button data-tab="brands" onclick="showTab('brands')">&#127991; ניהול מותגים</button>
   <button data-tab="suppliers" onclick="showTab('suppliers')">&#128101; ניהול ספקים</button>
@@ -448,6 +449,11 @@
   </div>
 </section>
 
+<!-- ========== TAB: PURCHASE ORDERS ========== -->
+<section id="tab-purchase-orders" class="tab">
+  <div id="po-list-container2">טוען...</div>
+</section>
+
 </main>
 
 <!-- Admin Modal -->
@@ -601,6 +607,7 @@
 <script src="js/inventory-entry.js"></script>
 <script src="js/goods-receipt.js"></script>
 <script src="js/audit-log.js"></script>
+<script src="js/purchase-orders.js"></script>
 <script src="js/brands-suppliers.js"></script>
 <script src="js/admin.js"></script>
 </body>
