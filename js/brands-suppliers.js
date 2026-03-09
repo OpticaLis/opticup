@@ -42,6 +42,7 @@ function renderBrandsTable() {
   const filterActive = document.getElementById('brand-filter-active')?.value ?? 'true';
   const filterSync   = document.getElementById('brand-filter-sync')?.value   || '';
   const filterType   = document.getElementById('brand-filter-type')?.value   || '';
+  const filterLowStock = document.getElementById('brand-filter-low-stock')?.value || '';
 
   let filtered = allBrandsData;
   if (filterActive === 'true')  filtered = filtered.filter(b => b.active !== false);
@@ -50,6 +51,13 @@ function renderBrandsTable() {
   if (filterType === 'luxury')  filtered = filtered.filter(b => b.brand_type === 'luxury');
   else if (filterType === 'brand') filtered = filtered.filter(b => b.brand_type === 'brand');
   else if (filterType === 'regular') filtered = filtered.filter(b => !b.brand_type);
+  if (filterLowStock === 'low') {
+    filtered = filtered.filter(b =>
+      b.minStockQty !== null &&
+      b.minStockQty !== undefined &&
+      b.currentQty < b.minStockQty
+    );
+  }
 
   brandsEdited = filtered;
 
