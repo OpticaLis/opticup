@@ -266,6 +266,12 @@
     <div class="form-row" style="align-items:flex-end;margin-bottom:16px">
       <div class="form-group" style="max-width:300px"><label>שם ספק חדש</label><input type="text" id="new-supplier-name" placeholder="הקלד שם ספק..."></div>
       <button class="btn btn-p" onclick="addSupplier()">&#10010; הוסף ספק</button>
+      <button class="btn btn-s" id="supplier-edit-btn" onclick="toggleSupplierNumberEdit()" style="margin-right:auto">&#9998; ערוך מספרי ספקים</button>
+    </div>
+    <div id="supplier-save-bar" style="display:none;gap:8px;margin-bottom:12px;align-items:center">
+      <button class="btn btn-p" onclick="saveSupplierNumbers()">&#10004; שמור שינויים</button>
+      <button class="btn btn-d" onclick="cancelSupplierNumberEdit()">&#10006; בטל</button>
+      <span style="font-size:13px;color:#888">שינוי מספר חסום אם לספק יש הזמנות רכש</span>
     </div>
     <div class="table-wrap">
       <table id="suppliers-table">
