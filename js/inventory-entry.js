@@ -547,64 +547,207 @@ function handleExcelImport(ev) {
   reader.readAsArrayBuffer(file);
 }
 
+let excelPendingRows = []; // rows waiting for barcode generation
+
+function buildExcelRecordFields(r, barcode) {
+  const fields = {
+    'ברקוד': barcode,
+    'חברה / מותג': r.brand,
+    'דגם': r.model,
+    'גודל': r.size,
+    'מחיר מכירה': r.price,
+    'סוג מוצר': r.ptype,
+    'סטטוס': 'במלאי',
+    'מקור': 'ייבוא אקסל',
+    'כמות': 1,
+  };
+  if (r.bridge) fields['גשר'] = r.bridge;
+  if (r.color) fields['צבע'] = r.color;
+  if (r.discount) fields['הנחה מכירה %'] = (parseFloat(r.discount) || 0) / 100;
+  if (r.notes) fields['הערות'] = r.notes;
+  fields['סנכרון אתר'] = r.sync || getBrandSync(r.brand) || 'לא';
+  const bt = getBrandType(r.brand);
+  if (bt) fields['סוג מותג'] = bt;
+  return fields;
+}
+
 async function confirmExcelImport() {
   if (!excelImportRows.length) return;
   const ok = await confirmDialog('אישור ייבוא', `להכניס ${excelImportRows.length} פריטים למלאי?`);
   if (!ok) return;
 
-  showLoading(`מכניס ${excelImportRows.length} פריטים...`);
+  showLoading(`בודק ברקודים ל-${excelImportRows.length} פריטים...`);
   clearAlert('excel-import-alerts');
 
   try {
-    // Build records in Airtable-compatible shape for batchCreate
-    const records = excelImportRows.map(r => {
-      const fields = {
-        'חברה / מותג': r.brand,
-        'דגם': r.model,
-        'גודל': r.size,
-        'מחיר מכירה': r.price,
-        'סוג מוצר': r.ptype,
-        'סטטוס': 'במלאי',
-        'מקור': 'ייבוא אקסל',
-        'כמות': 1,
-      };
-      if (r.bridge) fields['גשר'] = r.bridge;
-      if (r.color) fields['צבע'] = r.color;
-      if (r.discount) fields['הנחה מכירה %'] = (parseFloat(r.discount) || 0) / 100;
-      if (r.notes) fields['הערות'] = r.notes;
-      // Sync: use file value, fallback to brand default
-      fields['סנכרון אתר'] = r.sync || getBrandSync(r.brand) || 'לא';
-      const bt = getBrandType(r.brand);
-      if (bt) fields['סוג מותג'] = bt;
-      return { fields };
-    });
+    const withBarcode = [];   // Case A — existing barcode found
+    const noPending = [];     // Case B — need new barcode
 
-    const created = await batchCreate(T.INV, records);
-    // Log each imported item
-    for (const item of created) {
-      writeLog('entry_excel', item.id, {
-        barcode:    item.fields['ברקוד'],
-        brand:      item.fields['חברה / מותג'],
-        model:      item.fields['דגם'],
-        qty_before: 0,
-        qty_after:  item.fields['כמות'] || 1,
+    // STEP 1 — Check each row for existing barcode
+    for (const r of excelImportRows) {
+      const brandId = brandCache[r.brand] || null;
+      let matchRec = null;
+
+      if (brandId) {
+        const existing = await fetchAll(T.INV, [
+          ['brand_id','eq',brandId],['model','eq',r.model],
+          ['size','eq',r.size],['color','eq',r.color],
+          ['is_deleted','eq',false]
+        ]);
+        matchRec = existing.find(e => (e.fields['כמות'] || 0) > 0 && e.fields['ברקוד']);
+      }
+
+      if (matchRec) {
+        withBarcode.push({ ...r, barcode: matchRec.fields['ברקוד'], existingId: matchRec.id, existingQty: matchRec.fields['כמות'] || 0 });
+      } else {
+        const reason = !brandId ? 'מותג לא מוכר' : 'פריט חדש / אזל';
+        noPending.push({ ...r, reason });
+      }
+    }
+
+    // STEP 1b — Update qty for Case A items (aggregate duplicates first)
+    let insertedCount = 0;
+    const grouped = {};
+    for (const r of withBarcode) {
+      if (!grouped[r.existingId]) {
+        grouped[r.existingId] = { ...r, addQty: 0 };
+      }
+      grouped[r.existingId].addQty++;
+    }
+    for (const r of Object.values(grouped)) {
+      const newQty = r.existingQty + r.addQty;
+      await batchUpdate(T.INV, [{ id: r.existingId, fields: { 'כמות': newQty } }]);
+      writeLog('entry_excel', r.existingId, {
+        barcode: r.barcode, brand: r.brand, model: r.model,
+        qty_before: r.existingQty, qty_after: newQty,
         source_ref: excelImportFileName || 'ייבוא אקסל'
       });
     }
-    setAlert('excel-import-alerts', `&#10004; ${records.length} פריטים נוספו בהצלחה למלאי`, 's');
-    toast(`\u2705 ${records.length} פריטים נוספו בהצלחה`, 's');
+    insertedCount = withBarcode.length;
 
-    // Reset form and refresh inventory
+    // Store pending for later barcode generation
+    excelPendingRows = noPending;
+
+    // STEP 2 — Show results modal
+    showExcelResultsModal(withBarcode, noPending, insertedCount);
+
+    // Reset import form
     excelImportRows = [];
     $('excel-import-preview').style.display = 'none';
     $('excel-import-file').value = '';
-    loadInventoryTab();
   } catch(e) {
-    const msg = e.message || '';
-    if (msg.includes('כבר קיימים במלאי') || msg.includes('כפול')) {
-      toast('ברקוד זה כבר קיים במערכת', 'e');
-    }
-    setAlert('excel-import-alerts', 'שגיאה: ' + msg, 'e');
+    setAlert('excel-import-alerts', 'שגיאה: ' + (e.message || ''), 'e');
   }
   hideLoading();
+}
+
+function showExcelResultsModal(inserted, pending, insertedCount) {
+  const modal = $('excel-results-modal');
+
+  // Success section
+  const successDiv = $('excel-results-success');
+  if (inserted.length) {
+    let html = `<h4 style="color:var(--success);margin-bottom:8px">&#10004;&#65039; ${insertedCount} פריטים נכנסו למלאי</h4>`;
+    html += '<div class="table-wrap" style="max-height:200px;overflow-y:auto"><table style="font-size:.82rem"><thead><tr><th>מותג</th><th>דגם</th><th>גודל</th><th>צבע</th><th>ברקוד</th></tr></thead><tbody>';
+    for (const r of inserted) {
+      html += `<tr><td>${r.brand}</td><td>${r.model}</td><td>${r.size}</td><td>${r.color}</td><td style="font-family:monospace;font-weight:600">${r.barcode}</td></tr>`;
+    }
+    html += '</tbody></table></div>';
+    successDiv.innerHTML = html;
+    successDiv.style.display = 'block';
+  } else {
+    successDiv.style.display = 'none';
+  }
+
+  // Pending section
+  const pendingDiv = $('excel-results-pending');
+  if (pending.length) {
+    let html = `<h4 style="color:var(--warning, #f59e0b);margin-bottom:8px">&#9888;&#65039; ${pending.length} פריטים ממתינים לברקוד — לא הוכנסו למלאי</h4>`;
+    html += '<div class="table-wrap" style="max-height:200px;overflow-y:auto"><table style="font-size:.82rem"><thead><tr><th>מותג</th><th>דגם</th><th>גודל</th><th>צבע</th><th>סיבה</th></tr></thead><tbody>';
+    for (const r of pending) {
+      html += `<tr><td>${r.brand}</td><td>${r.model}</td><td>${r.size}</td><td>${r.color}</td><td>${r.reason}</td></tr>`;
+    }
+    html += '</tbody></table></div>';
+    html += '<div style="margin-top:12px"><button class="btn btn-p" onclick="generatePendingBarcodes()">&#128203; צור ברקודים לפריטים הממתינים</button></div>';
+    pendingDiv.innerHTML = html;
+    pendingDiv.style.display = 'block';
+  } else {
+    pendingDiv.style.display = 'none';
+  }
+
+  // Instructions reminder
+  const reminderDiv = $('excel-results-reminder');
+  reminderDiv.innerHTML = '<p style="color:var(--g500);font-size:.85rem;margin-top:12px">&#128172; זכור: יש להדפיס את הברקודים לפני אחסון המסגרות במלאי</p>';
+
+  modal.style.display = 'flex';
+}
+
+async function generatePendingBarcodes() {
+  if (!excelPendingRows.length) { toast('אין פריטים ממתינים', 'w'); return; }
+
+  showLoading(`מייצר ברקודים ל-${excelPendingRows.length} פריטים...`);
+  try {
+    await loadMaxBarcode();
+    const prefix = branchCode.padStart(2, '0');
+    let nextSeq = maxBarcode;
+
+    // Generate sequential barcodes for all pending items
+    for (const r of excelPendingRows) {
+      nextSeq++;
+      if (nextSeq > 99999) throw new Error('חריגה — מקסימום 99,999 ברקודים לסניף ' + prefix);
+      r.barcode = prefix + String(nextSeq).padStart(5, '0');
+    }
+    maxBarcode = nextSeq;
+
+    // Insert all pending items with their new barcodes
+    const records = excelPendingRows.map(r => ({ fields: buildExcelRecordFields(r, r.barcode) }));
+    const created = await batchCreate(T.INV, records);
+    for (const item of created) {
+      writeLog('entry_excel', item.id, {
+        barcode: item.fields['ברקוד'], brand: item.fields['חברה / מותג'],
+        model: item.fields['דגם'], qty_before: 0, qty_after: 1,
+        source_ref: excelImportFileName || 'ייבוא אקסל'
+      });
+    }
+
+    // Update modal — show success for these items too
+    const pendingDiv = $('excel-results-pending');
+    let html = `<h4 style="color:var(--success);margin-bottom:8px">&#10004;&#65039; ${created.length} פריטים נוספים נכנסו למלאי</h4>`;
+    html += '<div class="table-wrap" style="max-height:200px;overflow-y:auto"><table style="font-size:.82rem"><thead><tr><th>מותג</th><th>דגם</th><th>גודל</th><th>צבע</th><th>ברקוד</th></tr></thead><tbody>';
+    for (const r of excelPendingRows) {
+      html += `<tr><td>${r.brand}</td><td>${r.model}</td><td>${r.size}</td><td>${r.color}</td><td style="font-family:monospace;font-weight:600">${r.barcode}</td></tr>`;
+    }
+    html += '</tbody></table></div>';
+    html += '<div style="margin-top:12px"><button class="btn btn-w" onclick="exportPendingBarcodes()">&#128424;&#65039; הורד Excel לברקודים</button></div>';
+    pendingDiv.innerHTML = html;
+
+    toast(`${created.length} פריטים נכנסו למלאי!`, 's');
+    // Keep barcode data for Excel export
+    lastGeneratedBarcodes = excelPendingRows.map(r => ({
+      barcode: r.barcode, brand: r.brand, model: r.model,
+      size: r.size, bridge: r.bridge || '', color: r.color,
+      ptype: r.ptype, price: r.price, discount: r.discount || ''
+    }));
+    excelPendingRows = [];
+  } catch(e) {
+    toast('שגיאה ביצירת ברקודים: ' + (e.message || ''), 'e');
+  }
+  hideLoading();
+}
+
+let lastGeneratedBarcodes = [];
+
+function exportPendingBarcodes() {
+  const data = lastGeneratedBarcodes;
+  if (!data.length) { toast('אין ברקודים לייצוא', 'w'); return; }
+  const wsData = data.map(r => ({
+    'ברקוד': r.barcode, 'חברה': r.brand, 'דגם': r.model,
+    'גודל': r.size, 'גשר': r.bridge, 'צבע': r.color,
+    'סוג מוצר': r.ptype, 'מחיר מכירה': r.price, 'הנחה %': r.discount
+  }));
+  const ws = XLSX.utils.json_to_sheet(wsData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'ברקודים');
+  XLSX.writeFile(wb, `barcodes_${Date.now()}.xlsx`);
+  toast('קובץ Excel יורד...', 's');
 }
