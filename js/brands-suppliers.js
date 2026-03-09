@@ -1,8 +1,8 @@
 // =========================================================
 // TAB 4: BRANDS
 // =========================================================
+let allBrandsData = [];
 let brandsEdited = [];
-
 let brandStockByBrand = {};
 
 async function loadBrandsTab() {
@@ -19,14 +19,16 @@ async function loadBrandsTab() {
       brandStockByBrand[r.brand_id] = (brandStockByBrand[r.brand_id] || 0) + (r.quantity || 0);
     });
 
-    brandsEdited = (brandRows || []).map(b => ({
+    allBrandsData = (brandRows || []).map(b => ({
       id: b.id,
       name: b.name || '',
+      brand_type: b.brand_type || '',
       type: enToHe('brand_type', b.brand_type) || '',
       defaultSync: enToHe('website_sync', b.default_sync) || '',
-      active: b.active === true,
+      active: b.active !== false,
       excludeWebsite: b.exclude_website === true,
       minStockQty: b.min_stock_qty ?? null,
+      currentQty: brandStockByBrand[b.id] || 0,
       isNew: false
     }));
     renderBrandsTable();
@@ -37,8 +39,25 @@ async function loadBrandsTab() {
 }
 
 function renderBrandsTable() {
+  const filterActive = document.getElementById('brand-filter-active')?.value ?? 'true';
+  const filterSync   = document.getElementById('brand-filter-sync')?.value   || '';
+  const filterType   = document.getElementById('brand-filter-type')?.value   || '';
+
+  let filtered = allBrandsData;
+  if (filterActive === 'true')  filtered = filtered.filter(b => b.active !== false);
+  if (filterActive === 'false') filtered = filtered.filter(b => b.active === false);
+  if (filterSync) filtered = filtered.filter(b => b.defaultSync === filterSync);
+  if (filterType === 'luxury')  filtered = filtered.filter(b => b.brand_type === 'luxury');
+  else if (filterType === 'brand') filtered = filtered.filter(b => b.brand_type === 'brand');
+  else if (filterType === 'regular') filtered = filtered.filter(b => !b.brand_type);
+
+  brandsEdited = filtered;
+
+  const countEl = document.getElementById('brand-filter-count');
+  if (countEl) countEl.textContent = `מציג ${filtered.length} מותגים`;
+
   const tb = $('brands-body');
-  tb.innerHTML = brandsEdited.map((b,i) => `
+  tb.innerHTML = brandsEdited.map((b, i) => `
     <tr data-idx="${i}">
       <td><input value="${b.name}" onchange="brandsEdited[${i}].name=this.value"></td>
       <td><select onchange="brandsEdited[${i}].type=this.value">
@@ -52,16 +71,31 @@ function renderBrandsTable() {
         <option value="תדמית"${b.defaultSync==='תדמית'?' selected':''}>תדמית</option>
         <option value="לא"${b.defaultSync==='לא'?' selected':''}>לא</option>
       </select></td>
-      <td><input type="checkbox" ${b.active?'checked':''} onchange="brandsEdited[${i}].active=this.checked"></td>
+      <td style="text-align:center"><input type="checkbox" ${b.active?'checked':''} onchange="setBrandActive('${b.id}',this.checked)" title="${b.active ? 'מותג פעיל' : 'מותג לא פעיל'}"></td>
       <td><input type="checkbox" ${b.excludeWebsite?'checked':''} onchange="brandsEdited[${i}].excludeWebsite=this.checked"></td>
       <td><input type="number" min="0" step="1" value="${b.minStockQty ?? ''}" placeholder="${b.type==='יוקרה'?'5':b.type==='מותג'?'15':'—'}" style="width:70px;text-align:center" data-id="${b.id||''}" data-field="min_stock_qty" class="brand-min-stock-input" onchange="brandsEdited[${i}].minStockQty=this.value===''?null:parseInt(this.value,10);${b.id?'saveBrandField(this)':''}"></td>
-      ${(() => { const qty = brandStockByBrand[b.id] || 0; const minQ = b.minStockQty; const isLow = minQ != null && qty < minQ; const color = minQ == null ? '' : (isLow ? 'color:#e53935' : 'color:#2e7d32'); return `<td style="text-align:center;font-weight:600;${color}">${qty}${isLow ? ' ⚠️' : ''}</td>`; })()}
+      ${(() => { const qty = b.currentQty; const minQ = b.minStockQty; const isLow = minQ != null && qty < minQ; const color = minQ == null ? '' : (isLow ? 'color:#e53935' : 'color:#2e7d32'); return `<td style="text-align:center;font-weight:600;${color}">${qty}${isLow ? ' ⚠️' : ''}</td>`; })()}
     </tr>
   `).join('');
 }
 
+async function setBrandActive(brandId, isActive) {
+  if (!brandId) return;
+  const { error } = await sb.from('brands')
+    .update({ active: isActive })
+    .eq('id', brandId);
+  if (error) { toast('שגיאה: ' + error.message, 'e'); return; }
+
+  const b = allBrandsData.find(x => x.id === brandId);
+  if (b) b.active = isActive;
+
+  toast(isActive ? 'מותג סומן כפעיל ✓' : 'מותג סומן כלא פעיל ✓', 's');
+  renderBrandsTable();
+}
+
 function addBrandRow() {
-  brandsEdited.push({ id: null, name: '', type: '', defaultSync: '', active: true, excludeWebsite: false, isNew: true });
+  const newBrand = { id: null, name: '', brand_type: '', type: '', defaultSync: '', active: true, excludeWebsite: false, minStockQty: null, currentQty: 0, isNew: true };
+  allBrandsData.push(newBrand);
   renderBrandsTable();
   const rows = $('brands-body').querySelectorAll('tr');
   const last = rows[rows.length-1];
@@ -75,8 +109,8 @@ async function saveBrands() {
   showLoading('שומר מותגים...');
   try {
     let updCount = 0, createCount = 0;
-    // Update existing brands
-    const existing = brandsEdited.filter(b => b.id && !b.isNew);
+    // Update existing brands (from allBrandsData to capture all edits)
+    const existing = allBrandsData.filter(b => b.id && !b.isNew);
     for (const b of existing) {
       const { error } = await sb.from('brands').update({
         name: b.name,
@@ -91,7 +125,7 @@ async function saveBrands() {
     }
 
     // Create new brands
-    const newBrands = brandsEdited.filter(b => b.isNew && b.name);
+    const newBrands = allBrandsData.filter(b => b.isNew && b.name);
     if (newBrands.length) {
       const rows = newBrands.map(b => ({
         name: b.name,

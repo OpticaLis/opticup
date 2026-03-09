@@ -249,6 +249,26 @@
       <button class="btn btn-p" onclick="addBrandRow()">&#10010; הוסף מותג חדש</button>
       <button class="btn btn-s" onclick="saveBrands()">&#10004; שמור שינויים</button>
     </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+      <select id="brand-filter-active" onchange="renderBrandsTable()" style="padding:7px 10px;border-radius:6px;border:1px solid #ccc">
+        <option value="true">פעילים בלבד</option>
+        <option value="false">לא פעילים</option>
+        <option value="all">הכל</option>
+      </select>
+      <select id="brand-filter-sync" onchange="renderBrandsTable()" style="padding:7px 10px;border-radius:6px;border:1px solid #ccc">
+        <option value="">כל סטטוס סנכרון</option>
+        <option value="מלא">מלא</option>
+        <option value="תדמית">תדמית</option>
+        <option value="לא">לא</option>
+      </select>
+      <select id="brand-filter-type" onchange="renderBrandsTable()" style="padding:7px 10px;border-radius:6px;border:1px solid #ccc">
+        <option value="">כל סוגי המותג</option>
+        <option value="luxury">יוקרה</option>
+        <option value="brand">מותג</option>
+        <option value="regular">רגיל</option>
+      </select>
+      <span id="brand-filter-count" style="color:#888;font-size:13px"></span>
+    </div>
     <div class="table-wrap">
       <table id="brands-table">
         <thead><tr><th>שם חברה</th><th>סוג מותג</th><th>סנכרון ברירת מחדל</th><th>פעיל</th><th>מוחרג מאתר</th><th>מלאי מינימום</th><th>כמות במלאי</th></tr></thead>

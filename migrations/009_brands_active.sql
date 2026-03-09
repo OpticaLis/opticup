@@ -1,0 +1,2 @@
+ALTER TABLE brands ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true;
+UPDATE brands SET active = true WHERE active IS NULL;
