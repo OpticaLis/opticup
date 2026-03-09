@@ -379,6 +379,10 @@ function renderPOForm(isEdit) {
 
       <div style="display:flex; gap:10px; justify-content:flex-end">
         <button onclick="loadPurchaseOrdersTab()" class="btn btn-g" style="padding:9px 18px">ביטול</button>
+        ${currentPOItems.length > 0 ? `
+        <button onclick="exportPOExcel()" class="btn" style="background:#217346; color:white; padding:9px 18px">📊 ייצוא Excel</button>
+        <button onclick="exportPOPdf()" class="btn" style="background:#c0392b; color:white; padding:9px 18px">📄 ייצוא PDF</button>
+        ` : ''}
         <button onclick="savePODraft()" class="btn btn-s" style="padding:9px 24px">💾 שמור טיוטה</button>
       </div>
     </div>`;
@@ -645,6 +649,105 @@ function duplicatePOItem(i) {
 function togglePOItemDetails(i) {
   const row = document.getElementById(`po-item-details-${i}`);
   if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+
+// ── Export Excel ─────────────────────────────────────────────
+async function exportPOExcel() {
+  if (!currentPOItems.length) { toast('אין פריטים להזמנה', 'e'); return; }
+  const { data: sup } = await sb.from(T.SUPPLIERS)
+    .select('name').eq('id', currentPO.supplier_id).single();
+  const supplierName = sup?.name || '';
+  const headerRows = [
+    ['הזמנת רכש', currentPO.po_number],
+    ['ספק', supplierName],
+    ['תאריך הזמנה', currentPO.order_date || ''],
+    ['תאריך הגעה צפוי', currentPO.expected_date || ''],
+    ['הערות', currentPO.notes || ''],
+    [],
+    ['מותג', 'דגם', 'צבע', 'גודל', 'כמות', 'עלות יח\'', 'הנחה %', 'סה"כ שורה']
+  ];
+  const itemRows = currentPOItems.map(it => {
+    const lineTotal = (it.qty_ordered || 0) * (it.unit_cost || 0) * (1 - (it.discount_pct || 0) / 100);
+    return [
+      it.brand || '', it.model || '', it.color || '', it.size || '',
+      it.qty_ordered || 0, it.unit_cost || 0, it.discount_pct || 0,
+      +lineTotal.toFixed(2)
+    ];
+  });
+  const grandTotal = currentPOItems.reduce((sum, it) =>
+    sum + (it.qty_ordered||0) * (it.unit_cost||0) * (1-(it.discount_pct||0)/100), 0);
+  const totalRow = ['', '', '', '', '', '', 'סה"כ הזמנה:', +grandTotal.toFixed(2)];
+  const allRows = [...headerRows, ...itemRows, [], totalRow];
+  const ws = XLSX.utils.aoa_to_sheet(allRows);
+  ws['!cols'] = [{wch:14},{wch:14},{wch:10},{wch:8},{wch:7},{wch:10},{wch:8},{wch:12}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'הזמנת רכש');
+  XLSX.writeFile(wb, `${currentPO.po_number}-${supplierName}.xlsx`);
+  toast('קובץ Excel הורד ✓', 's');
+}
+
+// ── Export PDF ───────────────────────────────────────────────
+async function exportPOPdf() {
+  if (!currentPOItems.length) { toast('אין פריטים להזמנה', 'e'); return; }
+  const { data: sup } = await sb.from(T.SUPPLIERS)
+    .select('name').eq('id', currentPO.supplier_id).single();
+  const supplierName = sup?.name || '';
+  const grandTotal = currentPOItems.reduce((sum, it) =>
+    sum + (it.qty_ordered||0) * (it.unit_cost||0) * (1-(it.discount_pct||0)/100), 0);
+  const itemRows = currentPOItems.map((it, idx) => {
+    const lineTotal = (it.qty_ordered||0) * (it.unit_cost||0) * (1-(it.discount_pct||0)/100);
+    return `<tr>
+      <td>${idx+1}</td><td>${it.brand||''}</td><td>${it.model||''}</td>
+      <td>${it.color||''}</td><td>${it.size||''}</td><td>${it.qty_ordered||0}</td>
+      <td>${(it.unit_cost||0).toFixed(2)}</td><td>${it.discount_pct||0}%</td>
+      <td><strong>${lineTotal.toFixed(2)}</strong></td>
+    </tr>`;
+  }).join('');
+  const html = `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head><meta charset="UTF-8"><title>הזמנת רכש ${currentPO.po_number}</title>
+<style>
+  body{font-family:Arial,sans-serif;padding:30px;direction:rtl;color:#222}
+  h1{font-size:22px;margin-bottom:4px}
+  .meta{display:flex;gap:32px;margin-bottom:20px;font-size:14px;color:#555}
+  .meta span strong{color:#222}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{background:#1a2744;color:white;padding:8px;text-align:right}
+  td{padding:7px 8px;border-bottom:1px solid #eee;text-align:right}
+  tr:nth-child(even) td{background:#f9f9f9}
+  .total-row td{font-weight:bold;border-top:2px solid #1a2744;font-size:14px}
+  .footer{margin-top:30px;font-size:12px;color:#888}
+  @media print{body{padding:10px}}
+</style></head>
+<body>
+  <h1>📋 הזמנת רכש — ${currentPO.po_number}</h1>
+  <div class="meta">
+    <span><strong>ספק:</strong> ${supplierName}</span>
+    <span><strong>תאריך:</strong> ${currentPO.order_date || '—'}</span>
+    <span><strong>הגעה צפויה:</strong> ${currentPO.expected_date || '—'}</span>
+    ${currentPO.notes ? `<span><strong>הערות:</strong> ${currentPO.notes}</span>` : ''}
+  </div>
+  <table>
+    <thead><tr>
+      <th>#</th><th>מותג</th><th>דגם</th><th>צבע</th><th>גודל</th>
+      <th>כמות</th><th>עלות יח'</th><th>הנחה</th><th>סה"כ</th>
+    </tr></thead>
+    <tbody>
+      ${itemRows}
+      <tr class="total-row">
+        <td colspan="8" style="text-align:left">סה"כ הזמנה:</td>
+        <td>${grandTotal.toFixed(2)} ₪</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="footer">הופק על ידי מערכת אופטיק אפ • ${new Date().toLocaleDateString('he-IL')}</div>
+</body></html>`;
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { w.print(); }, 400);
+  toast('PDF נפתח להדפסה ✓', 's');
 }
 
 // ── Save draft ───────────────────────────────────────────────
