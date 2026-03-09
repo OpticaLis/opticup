@@ -115,6 +115,8 @@ async function loadModelsForBrand(brandName) {
   const list = $('red-model-list');
   if (list) list.innerHTML = '';
   $('red-model').value = '';
+  // Reset downstream cascades
+  clearSizeColorLists();
 
   const brandId = brandCache[brandName];
   if (!brandId) return;
@@ -134,6 +136,39 @@ async function loadModelsForBrand(brandName) {
       list.appendChild(opt);
     });
   }
+}
+
+function clearSizeColorLists() {
+  const sl = $('red-size-list');
+  const cl = $('red-color-list');
+  if (sl) sl.innerHTML = '';
+  if (cl) cl.innerHTML = '';
+  $('red-size').value = '';
+  $('red-color').value = '';
+}
+
+async function loadSizesAndColors() {
+  const brandName = $('red-brand').value;
+  const model = $('red-model').value.trim();
+  clearSizeColorLists();
+
+  const brandId = brandCache[brandName];
+  if (!brandId || !model) return;
+
+  const { data } = await sb.from('inventory')
+    .select('size, color')
+    .eq('brand_id', brandId)
+    .eq('model', model)
+    .eq('is_deleted', false)
+    .gt('quantity', 0);
+
+  const sizes  = [...new Set((data || []).map(r => r.size).filter(Boolean))].sort();
+  const colors = [...new Set((data || []).map(r => r.color).filter(Boolean))].sort();
+
+  const sl = $('red-size-list');
+  const cl = $('red-color-list');
+  if (sl) sl.innerHTML = sizes.map(s => `<option value="${s}">`).join('');
+  if (cl) cl.innerHTML = colors.map(c => `<option value="${c}">`).join('');
 }
 
 async function searchManual() {

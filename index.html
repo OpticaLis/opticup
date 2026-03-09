@@ -145,9 +145,9 @@
     <p style="margin:8px 0;color:var(--g500);font-size:.88rem">או חיפוש לפי פרטים:</p>
     <div class="search-box">
       <select id="red-brand" onchange="loadModelsForBrand(this.value)"><option value="">חברה...</option></select>
-      <input type="text" id="red-model" placeholder="דגם..." list="red-model-list"><datalist id="red-model-list"></datalist>
-      <input type="text" id="red-size" placeholder="גודל...">
-      <input type="text" id="red-color" placeholder="צבע...">
+      <input type="text" id="red-model" placeholder="דגם..." list="red-model-list" onchange="loadSizesAndColors()"><datalist id="red-model-list"></datalist>
+      <input type="text" id="red-size" placeholder="גודל..." list="red-size-list"><datalist id="red-size-list"></datalist>
+      <input type="text" id="red-color" placeholder="צבע..." list="red-color-list"><datalist id="red-color-list"></datalist>
       <button class="btn btn-p" onclick="searchManual()">&#128269; חפש</button>
     </div>
     <div id="red-result"></div>
