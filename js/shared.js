@@ -67,7 +67,7 @@ const FIELD_MAP = {
     'תאריך מכירה':'sale_date','הערות':'notes'
   },
   brands: {
-    'שם חברה':'name','סוג מותג':'brand_type','סנכרון ברירת מחדל':'default_sync','פעיל':'active','מוחרג מאתר':'exclude_website'
+    'שם חברה':'name','סוג מותג':'brand_type','סנכרון ברירת מחדל':'default_sync','פעיל':'active','מוחרג מאתר':'exclude_website','מלאי מינימום':'min_stock_qty'
   },
   suppliers: { 'שם':'name' }
 };
@@ -81,7 +81,7 @@ for (const [tbl, map] of Object.entries(FIELD_MAP)) {
 
 // --- Enum maps: Hebrew ↔ English ---
 const ENUM_MAP = {
-  product_type: {'משקפי ראייה':'eyeglasses','משקפי שמש':'sunglasses','עדשות מגע':'contact_lenses'},
+  product_type: {'משקפי ראייה':'eyeglasses','משקפי שמש':'sunglasses'},
   status: {'פעיל':'in_stock','במלאי':'in_stock','נמכר':'sold','הוזמן':'ordered','ממתין לברקוד':'pending_barcode','ממתין לתמונות':'pending_images'},
   website_sync: {'מלא':'full','תדמית':'display','לא':'none'},
   brand_type: {'יוקרה':'luxury','מותג':'brand','רגיל':'regular'},
@@ -439,7 +439,7 @@ function populateDropdowns() {
 
 function activeBrands() { return brands.filter(b => b.active); }
 function supplierOpts() { return '<option value="">בחר...</option>' + suppliers.map(s=>`<option value="${s}">${s}</option>`).join(''); }
-function productTypeOpts() { return '<option value="">בחר...</option><option value="משקפי ראייה">משקפי ראייה</option><option value="משקפי שמש">משקפי שמש</option><option value="עדשות מגע">עדשות מגע</option>'; }
+function productTypeOpts() { return '<option value="">בחר...</option><option value="משקפי ראייה">משקפי ראייה</option><option value="משקפי שמש">משקפי שמש</option>'; }
 function syncOpts() { return '<option value="">בחר...</option><option value="מלא">מלא</option><option value="תדמית">תדמית</option><option value="לא">לא</option>'; }
 
 function getBrandType(name) { return brands.find(b=>b.name===name)?.type || ''; }
