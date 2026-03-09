@@ -424,6 +424,58 @@ function ensurePOBrandDatalist() {
   document.body.appendChild(dl);
 }
 
+async function loadPOModelsForBrand(i, brandName) {
+  const brandId = brandCache[brandName];
+  if (!brandId) return;
+  const { data } = await sb.from(T.INV)
+    .select('model')
+    .eq('brand_id', brandId)
+    .eq('is_deleted', false)
+    .order('model');
+  const models = [...new Set((data||[]).map(r=>r.model).filter(Boolean))].sort();
+  const listId = `po-model-list-${i}`;
+  let dl = document.getElementById(listId);
+  if (!dl) { dl = document.createElement('datalist'); dl.id = listId; document.body.appendChild(dl); }
+  dl.innerHTML = models.map(m => `<option value="${m}">`).join('');
+  currentPOItems[i].model = '';
+  currentPOItems[i].color = '';
+  currentPOItems[i].size  = '';
+  const row = document.querySelector(`tr[data-po-row="${i}"]`);
+  if (row) {
+    row.querySelector('.po-model-input').value = '';
+    row.querySelector('.po-color-input').value = '';
+    row.querySelector('.po-size-input').value  = '';
+  }
+  row?.querySelector('.po-model-input')?.setAttribute('list', listId);
+}
+
+async function loadPOColorsAndSizes(i, brandName, model) {
+  const brandId = brandCache[brandName];
+  if (!brandId || !model) return;
+  const { data } = await sb.from(T.INV)
+    .select('color, size, quantity')
+    .eq('brand_id', brandId)
+    .eq('model', model)
+    .eq('is_deleted', false);
+  const colors = [...new Set((data||[]).map(r=>r.color).filter(Boolean))].sort();
+  const sizes  = [...new Set((data||[]).map(r=>r.size).filter(Boolean))].sort();
+  const colorListId = `po-color-list-${i}`;
+  const sizeListId  = `po-size-list-${i}`;
+  let cdl = document.getElementById(colorListId);
+  if (!cdl) { cdl = document.createElement('datalist'); cdl.id = colorListId; document.body.appendChild(cdl); }
+  cdl.innerHTML = colors.map(c => `<option value="${c}">`).join('');
+  let sdl = document.getElementById(sizeListId);
+  if (!sdl) { sdl = document.createElement('datalist'); sdl.id = sizeListId; document.body.appendChild(sdl); }
+  sdl.innerHTML = sizes.map(s => `<option value="${s}">`).join('');
+  const row = document.querySelector(`tr[data-po-row="${i}"]`);
+  row?.querySelector('.po-color-input')?.setAttribute('list', colorListId);
+  row?.querySelector('.po-size-input')?.setAttribute('list', sizeListId);
+  const totalQty = (data||[]).reduce((sum, r) => sum + (r.quantity||0), 0);
+  if (totalQty > 0) {
+    toast(`⚠️ ${brandName} ${model} קיים במלאי (${totalQty} יח')`, 'w');
+  }
+}
+
 function renderPOItemsTable() {
   const tbody = document.getElementById('po-items-tbody');
   const tfoot = document.getElementById('po-items-tfoot');
@@ -438,11 +490,11 @@ function renderPOItemsTable() {
   }
 
   tbody.innerHTML = currentPOItems.map((item, i) => `
-    <tr>
-      <td><input value="${item.brand || ''}" list="po-brand-list" oninput="currentPOItems[${i}].brand=this.value" placeholder="מותג..." style="width:110px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
-      <td><input value="${item.model || ''}" oninput="currentPOItems[${i}].model=this.value" style="width:90px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
-      <td><input value="${item.color || ''}" oninput="currentPOItems[${i}].color=this.value" style="width:70px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
-      <td><input value="${item.size || ''}" oninput="currentPOItems[${i}].size=this.value" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+    <tr data-po-row="${i}">
+      <td><input value="${item.brand || ''}" list="po-brand-list" class="po-brand-input" oninput="currentPOItems[${i}].brand=this.value; loadPOModelsForBrand(${i},this.value)" placeholder="מותג..." style="width:110px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+      <td><input value="${item.model || ''}" class="po-model-input" oninput="currentPOItems[${i}].model=this.value; loadPOColorsAndSizes(${i},currentPOItems[${i}].brand,this.value)" style="width:90px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+      <td><input value="${item.color || ''}" class="po-color-input" oninput="currentPOItems[${i}].color=this.value" style="width:70px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+      <td><input value="${item.size || ''}" class="po-size-input" oninput="currentPOItems[${i}].size=this.value" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input type="number" min="1" value="${item.qty_ordered || 1}"
                  oninput="currentPOItems[${i}].qty_ordered=+this.value; updatePOTotals()" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input type="number" min="0" step="0.01" value="${item.unit_cost || ''}"
@@ -576,7 +628,17 @@ function removePOItem(index) {
 }
 
 function duplicatePOItem(i) {
-  currentPOItems.splice(i + 1, 0, { ...currentPOItems[i] });
+  const orig = currentPOItems[i];
+  const copy = { ...orig, size: '' };
+  const key = `${copy.brand}|${copy.model}|${copy.color}|${copy.size}`;
+  const conflict = copy.size !== '' && currentPOItems.some((it, idx) =>
+    idx !== i && `${it.brand}|${it.model}|${it.color}|${it.size}` === key
+  );
+  if (conflict) {
+    toast('פריט זהה כבר קיים ברשימה', 'e');
+    return;
+  }
+  currentPOItems.splice(i + 1, 0, copy);
   renderPOItemsTable();
 }
 
@@ -589,6 +651,34 @@ function togglePOItemDetails(i) {
 async function savePODraft() {
   if (!currentPO.supplier_id) { toast('יש לבחור ספק', 'e'); return; }
   if (currentPOItems.length === 0) { toast('יש להוסיף לפחות פריט אחד', 'e'); return; }
+
+  // Required fields validation
+  for (let idx = 0; idx < currentPOItems.length; idx++) {
+    const it = currentPOItems[idx];
+    const missing = [];
+    if (!it.brand)     missing.push('מותג');
+    if (!it.model)     missing.push('דגם');
+    if (!it.color)     missing.push('צבע');
+    if (!it.size)      missing.push('גודל');
+    if (!it.qty_ordered || it.qty_ordered < 1) missing.push('כמות');
+    if (!it.unit_cost  || it.unit_cost  < 0)   missing.push('עלות ש"ח');
+    if (missing.length) {
+      toast(`שורה ${idx+1}: חסרים שדות — ${missing.join(', ')}`, 'e');
+      return;
+    }
+  }
+
+  // Duplicate rows check
+  const seen = new Set();
+  for (let idx = 0; idx < currentPOItems.length; idx++) {
+    const it = currentPOItems[idx];
+    const key = `${it.brand}|${it.model}|${it.color}|${it.size}`;
+    if (seen.has(key)) {
+      toast(`שורות כפולות: אותו פריט מופיע פעמיים — ${it.brand} ${it.model} ${it.color} ${it.size}`, 'e');
+      return;
+    }
+    seen.add(key);
+  }
 
   // expected_date and notes are already set in currentPO from step 1
 
