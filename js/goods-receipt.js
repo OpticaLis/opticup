@@ -219,6 +219,7 @@ const RCPT_STATUS_LABELS = { draft: 'טיוטה', confirmed: 'אושרה', cance
 let rcptLinkedPoId = null; // currently linked PO id
 
 async function loadPOsForSupplier(supplierName) {
+  if (!supplierName) return;
   const sel = $('rcpt-po-select');
   sel.innerHTML = '<option value="">ללא — קבלה חופשית</option>';
   rcptLinkedPoId = null;

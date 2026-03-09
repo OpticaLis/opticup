@@ -302,10 +302,10 @@ async function openEntryHistory() {
   if (!$('entry-history-modal')) {
     const div = document.createElement('div');
     div.id = 'entry-history-modal';
-    div.className = 'modal';
+    div.className = 'modal-overlay';
     div.style.display = 'none';
     div.innerHTML = `
-      <div class="modal-content" style="max-width:900px;max-height:85vh;overflow-y:auto">
+      <div class="modal" style="max-width:900px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <h2 style="margin:0">&#128197; היסטוריית הכנסות</h2>
           <button class="btn btn-g btn-sm" onclick="closeEntryHistory()" style="font-size:18px">&#10006;</button>
@@ -384,7 +384,7 @@ function renderEntryHistory(logs) {
     entry_receipt: 'קבלת סחורה'
   };
 
-  let html = '';
+  let html = '<div id="entry-hist-accordion">';
   for (const [date, items] of Object.entries(groups)) {
     // Build export data for this group
     const exportItems = items.map(log => {
@@ -400,18 +400,8 @@ function renderEntryHistory(logs) {
     });
     const exportJson = JSON.stringify(exportItems).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
 
-    html += `<div style="margin-bottom:20px">
-      <h3 style="background:#1a2744;color:white;padding:8px 12px;border-radius:6px;margin:0 0 8px 0">
-        &#128197; ${date} — ${items.length} פריטים
-      </h3>
-      <div class="table-wrap" style="max-height:300px;overflow-y:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="background:#f5f5f5">
-          <th style="padding:8px">ברקוד</th><th style="padding:8px">מותג</th><th style="padding:8px">דגם</th>
-          <th style="padding:8px">גודל</th><th style="padding:8px">צבע</th><th style="padding:8px">כמות</th>
-          <th style="padding:8px">סוג הכנסה</th><th style="padding:8px">שעה</th><th style="padding:8px">מבצע</th>
-        </tr></thead><tbody>`;
-
+    // Build table rows
+    let rowsHtml = '';
     for (const log of items) {
       const inv = log.inventory;
       const brandName = inv?.brand_id ? (brandRevMap[inv.brand_id] || log.brand || '') : (log.brand || '');
@@ -420,7 +410,7 @@ function renderEntryHistory(logs) {
       const timeStr = dt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
       const noBarcode = !barcode;
 
-      html += `<tr${noBarcode ? ' style="background:#fff9c4"' : ''}>
+      rowsHtml += `<tr${noBarcode ? ' style="background:#fff9c4"' : ''}>
         <td style="padding:6px 8px;font-family:monospace;font-weight:600">${barcode || '—'}</td>
         <td style="padding:6px 8px">${brandName}</td>
         <td style="padding:6px 8px">${inv?.model || log.model || ''}</td>
@@ -433,13 +423,64 @@ function renderEntryHistory(logs) {
       </tr>`;
     }
 
-    html += `</tbody></table></div>
-      <button class="btn btn-w" style="margin-top:8px" onclick='exportDateGroupBarcodes(${exportJson})'>
-        &#128424;&#65039; הורד ברקודים לתאריך זה
+    html += `<div class="hist-group" style="margin-bottom:8px">
+      <button onclick="toggleHistGroup(this)"
+              style="width:100%;text-align:right;padding:12px 16px;
+                     background:#1a2744;color:white;border:none;
+                     border-radius:8px;cursor:pointer;font-size:14px;
+                     display:flex;justify-content:space-between;align-items:center">
+        <span>&#128197; ${date} — ${items.length} פריטים</span>
+        <span class="hist-arrow" style="font-size:12px;transition:transform 0.2s">&#9660;</span>
       </button>
+      <div class="hist-content" style="display:none;border:1px solid #ddd;
+                                        border-top:none;border-radius:0 0 8px 8px;
+                                        overflow:hidden">
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead><tr style="background:#f5f5f5;text-align:right">
+              <th style="padding:8px">ברקוד</th><th style="padding:8px">מותג</th><th style="padding:8px">דגם</th>
+              <th style="padding:8px">גודל</th><th style="padding:8px">צבע</th><th style="padding:8px">כמות</th>
+              <th style="padding:8px">סוג הכנסה</th><th style="padding:8px">שעה</th><th style="padding:8px">מבצע</th>
+            </tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+        <div style="padding:10px">
+          <button onclick='exportDateGroupBarcodes(${exportJson})'
+                  style="width:100%;padding:10px;background:#FF9800;color:white;
+                         border:none;border-radius:6px;cursor:pointer;font-size:14px">
+            &#128424;&#65039; הורד ברקודים לתאריך זה
+          </button>
+        </div>
+      </div>
     </div>`;
   }
+  html += '</div>';
   container.innerHTML = html;
+
+  // Auto-expand the most recent date group (first one)
+  const firstBtn = container.querySelector('.hist-group button');
+  if (firstBtn) toggleHistGroup(firstBtn);
+}
+
+function toggleHistGroup(btn) {
+  const group = btn.closest('.hist-group');
+  const content = group.querySelector('.hist-content');
+  const arrow = group.querySelector('.hist-arrow');
+  const accordion = document.getElementById('entry-hist-accordion');
+
+  // Close all other open groups
+  accordion.querySelectorAll('.hist-content').forEach(c => {
+    if (c !== content) {
+      c.style.display = 'none';
+      c.closest('.hist-group').querySelector('.hist-arrow').style.transform = '';
+    }
+  });
+
+  // Toggle this group
+  const isOpen = content.style.display !== 'none';
+  content.style.display = isOpen ? 'none' : 'block';
+  arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 
 function exportDateGroupBarcodes(items) {
