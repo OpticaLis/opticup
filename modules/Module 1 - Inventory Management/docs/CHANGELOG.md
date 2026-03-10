@@ -425,3 +425,96 @@
 - **Image validation**: `confirmReceipt()` blocks new items with sync=מלא/תדמית missing images; `validateEntryRows()` adds sync-based image check
 - **Brand default sync**: `createNewInventoryFromReceiptItem()` uses `getBrandSync()` instead of hardcoded `'none'`
 - Receipt table headers updated: +סנכרון, +תמונות columns
+
+---
+
+## פאזה 2 — גשר Access
+
+### Migration 010: Access Bridge Tables
+**Commit:** `dbc44fa` | 2026-03-09
+- 3 new tables: `sync_log`, `pending_sales`, `watcher_heartbeat`
+- `sync_log` — tracks each imported file with row counts and status
+- `pending_sales` — holds rows whose barcode was not found in inventory
+- `watcher_heartbeat` — single-row table for watcher uptime monitoring
+- Indexes on created_at, filename, status, order_number
+- RLS policies (all open for now)
+- Migration: `010_access_bridge.sql`
+
+### Access Sync Tab — Skeleton
+**Commit:** `ae41e1a` | 2026-03-09
+- New tab "🔄 סנכרון Access" with heartbeat status, sync log table, pending badge
+- `js/access-sync.js` — new module file
+- `loadHeartbeat()` — green/red/gray indicator based on watcher_heartbeat.last_beat
+- `loadSyncLog()` — displays sync history with status badges
+- `loadPendingBadge()` — COUNT pending WHERE status='pending', updates button style
+
+### Pending Sales Panel — Resolve, Search, Ignore
+**Commit:** `7a25bd5` | 2026-03-09
+- `renderPendingPanel()` — overlay with cards per pending sale
+- `loadSuggestions()` — up to 5 barcode-matched inventory suggestions
+- `resolvePending()` — maps pending row to inventory item, updates qty
+- `toggleFreeSearch()` / `runPendingSearch()` — free text search fallback
+- `ignorePending()` — marks pending row as "not in inventory"
+
+### Inventory Core — Access Sales Excel Import
+**Commit:** `2ccdffe` | 2026-03-09
+- `processAccessSalesFile(workbook, filename)` in inventory-core.js
+- Detects `sales_template` sheet, skips 2 metadata rows
+- Validates barcode, qty, date, order_number per row
+- Barcode found → updates inventory qty + writeLog
+- Barcode not found → inserts into pending_sales
+- Creates sync_log entry with final row counts
+
+### Goods Receipt — Export to Access Excel
+**Commit:** `4ad76c5` | 2026-03-09
+- `exportReceiptToAccess(receiptId)` in goods-receipt.js
+- Exports confirmed receipt items as Excel with `new_inventory` sheet
+- 📤 button visible only on confirmed receipts in list view
+
+### Scripts — Sync Watcher
+**Commit:** `0e1888a` | 2026-03-10
+- `scripts/sync-watcher.js` — Node.js file watcher using chokidar
+- Watches Dropbox folder for .xlsx/.xls files
+- Processes `sales_template` sheet → inventory updates / pending_sales
+- Retry logic (3 attempts, 30s delay) for network errors
+- Heartbeat every 5min to watcher_heartbeat table
+- Graceful SIGTERM/SIGINT shutdown
+- `scripts/config.json` (gitignored) + `scripts/config.example.json`
+- `scripts/package.json` with chokidar, xlsx, supabase-js dependencies
+
+### Scripts — Windows Service + README
+**Commit:** `5e7379b` | 2026-03-10
+- `scripts/install-service.js` / `scripts/uninstall-service.js` — node-windows service wrapper
+- `scripts/README.md` — Hebrew installation guide
+- OpticTop folder path structure for Dropbox sync
+
+### Migration 011 — Inventory Logs Sale Fields
+**Commit:** `528183e` | 2026-03-10
+- 12 new columns on `inventory_logs`: sale_amount, discount, discount_1, discount_2, final_amount, coupon_code, campaign, employee_id, lens_included, lens_category, order_number, sync_filename
+- `writeLog()` in shared.js updated to accept 13 additional Access sale fields
+- `sync-watcher.js` direct INSERT updated with same fields
+- Migration: `011_inventory_logs_sale_fields.sql`
+
+### Fix HIGH — Config Leak, Crash Risk, Security Gates
+**Commit:** `977b87d` | 2026-03-10
+- `scripts/config.json` added to .gitignore + untracked from git
+- `scripts/config.example.json` created with placeholder key
+- `moveToProcessed()` wrapped in try/catch with copy+delete fallback
+- `resolvePending()` gated with confirmDialog + PIN verification
+
+### Fix MEDIUM — Pagination, Optimistic Lock, Dedup, Labels, Table Names
+**Commit:** `3ffbb0c` | 2026-03-10
+- `loadSyncLog()` rewritten with `.range()` pagination (20 rows/page)
+- `resolvePending()` uses optimistic lock: UPDATE WHERE status='pending' before inventory changes
+- Duplicate filename check changed from `.eq()` to `.ilike()` (case-insensitive) in both web + watcher
+- `SOURCE_LABELS` map for source_ref display (🤖 Watcher / 👤 ידני)
+- `TABLES` const in sync-watcher.js — replaced all hardcoded table name strings
+
+### Fix LOW — Error Logging, XSS, Dead Code, Heartbeat Refresh
+**Commit:** `7dbef27` | 2026-03-10
+- `processAccessSalesFile()` row-level catch now logs `console.warn` with barcode
+- Duplicate check catch replaced with warning + toast instead of silent proceed
+- All inline `onclick`/`oninput` handlers in access-sync.js replaced with `data-*` attributes + delegated event listeners (XSS prevention)
+- Removed dead `patterns[1]` computation in `loadSuggestions()`
+- Removed unused `orderNumber` parameter from `ignorePending()`
+- Added `startHeartbeatRefresh()` / `stopHeartbeatRefresh()` with 60s auto-refresh interval

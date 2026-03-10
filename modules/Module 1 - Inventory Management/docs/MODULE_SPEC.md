@@ -18,13 +18,18 @@
 index.html              — HTML shell + nav + modals + script tags
 css/styles.css          — all styles
 js/shared.js            — Supabase init, constants, caches, utilities (load FIRST)
-js/inventory-core.js    — inventory reduction (Excel + manual) + main inventory table
+js/inventory-core.js    — inventory reduction (Excel + manual + Access sales) + main inventory table
 js/inventory-entry.js   — inventory entry forms (manual + Excel import)
-js/goods-receipt.js     — goods receipt module + system log viewer
+js/goods-receipt.js     — goods receipt module + system log viewer + Access Excel export
 js/audit-log.js         — soft delete, recycle bin, item history, qty modal
 js/brands-suppliers.js  — brands management + suppliers management
 js/purchase-orders.js   — purchase orders (CRUD, export, import to inventory)
+js/access-sync.js       — Access sync tab: heartbeat, sync log, pending sales panel
 js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
+scripts/sync-watcher.js — Node.js file watcher for Dropbox-synced Access sales files
+scripts/config.example.json — config template (config.json is gitignored)
+scripts/install-service.js / uninstall-service.js — Windows Service wrapper
+scripts/README.md       — Hebrew installation guide
 ```
 
 ---
@@ -92,7 +97,19 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 | barcode, brand, model | TEXT | snapshot |
 | qty_before, qty_after | INTEGER | שינוי כמות |
 | price_before, price_after | NUMERIC | שינוי מחיר |
-| reason, source_ref | TEXT | סיבה + מקור |
+| reason, source_ref | TEXT | סיבה + מקור (watcher / manual / null) |
+| sale_amount | NUMERIC(10,2) | Access: מחיר לפני הנחות |
+| discount | NUMERIC(10,2) | Access: הנחה קבועה |
+| discount_1 | NUMERIC(10,2) | Access: הנחה נוספת 1 |
+| discount_2 | NUMERIC(10,2) | Access: הנחה נוספת 2 |
+| final_amount | NUMERIC(10,2) | Access: מחיר סופי |
+| coupon_code | TEXT | Access: קוד קופון |
+| campaign | TEXT | Access: שם מבצע |
+| employee_id | TEXT | Access: עובד מוכר |
+| lens_included | BOOLEAN | Access: עדשות כלולות |
+| lens_category | TEXT | Access: קטגוריית עדשה |
+| order_number | TEXT | Access: מספר הזמנה POS |
+| sync_filename | TEXT | Access: שם קובץ Excel מקור |
 | performed_by | TEXT DEFAULT 'system' | מבצע |
 | branch_id | TEXT | סניף |
 | created_at | TIMESTAMPTZ | חותמת זמן |
@@ -148,6 +165,51 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 | unit_cost, sell_price | DECIMAL | מחירים |
 | is_new_item | BOOLEAN DEFAULT false | פריט חדש |
 
+### 2.11 `sync_log` — לוג סנכרונים (`T.SYNC_LOG`)
+| שדה | סוג | תיאור |
+|-----|------|--------|
+| id | UUID PK | מזהה |
+| created_at | TIMESTAMPTZ | חותמת זמן |
+| filename | TEXT NOT NULL | שם קובץ Excel |
+| source_ref | TEXT NOT NULL CHECK (watcher / manual) | מקור |
+| status | TEXT NOT NULL CHECK (success / partial / error) | סטטוס |
+| rows_total | INTEGER | סה"כ שורות |
+| rows_success | INTEGER | שורות שהצליחו |
+| rows_pending | INTEGER | שורות ממתינות |
+| rows_error | INTEGER | שורות שנכשלו |
+| error_message | TEXT | הודעת שגיאה |
+| processed_at | TIMESTAMPTZ | זמן סיום עיבוד |
+
+### 2.12 `pending_sales` — מכירות ממתינות (`T.PENDING_SALES`)
+| שדה | סוג | תיאור |
+|-----|------|--------|
+| id | UUID PK | מזהה |
+| created_at | TIMESTAMPTZ | חותמת זמן |
+| sync_log_id | UUID FK → sync_log | לוג סנכרון |
+| source_ref | TEXT NOT NULL | מקור (watcher / manual) |
+| filename | TEXT NOT NULL | שם קובץ |
+| barcode_received | TEXT NOT NULL | ברקוד שהתקבל |
+| quantity | INTEGER NOT NULL | כמות |
+| action_type | TEXT NOT NULL CHECK (sale / return) | סוג פעולה |
+| transaction_date | DATE NOT NULL | תאריך עסקה |
+| order_number | TEXT NOT NULL | מספר הזמנה |
+| employee_id, sale_amount, discount, discount_1, discount_2, final_amount | TEXT / NUMERIC | פרטי מכירה |
+| coupon_code, campaign, lens_included, lens_category | TEXT / BOOLEAN / TEXT | פרטים נוספים |
+| reason | TEXT NOT NULL | סיבה |
+| status | TEXT DEFAULT 'pending' CHECK (pending / resolved / ignored) | סטטוס |
+| resolved_at | TIMESTAMPTZ | זמן טיפול |
+| resolved_by | TEXT | מי טיפל |
+| resolved_inventory_id | UUID FK → inventory | פריט שהותאם |
+| resolution_note | TEXT | הערת פתרון |
+
+### 2.13 `watcher_heartbeat` — מוניטור Watcher (`T.HEARTBEAT`)
+| שדה | סוג | תיאור |
+|-----|------|--------|
+| id | INTEGER PK DEFAULT 1 | מזהה (תמיד 1) |
+| last_beat | TIMESTAMPTZ | דופק אחרון |
+| watcher_version | TEXT | גרסת watcher |
+| host | TEXT | שם מחשב |
+
 ---
 
 ## 3. Function List (per file)
@@ -168,7 +230,7 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 | `fetchAll(table, filters, select, order)` | Paginated Supabase query |
 | `batchCreate(table, rows)` | Bulk insert |
 | `batchUpdate(table, rows)` | Bulk update |
-| `writeLog(action, inventoryId, details)` | Audit logging engine (async, non-blocking) |
+| `writeLog(action, inventoryId, details)` | Audit logging engine (async, non-blocking). Accepts 13 additional Access sale fields in details: sale_amount, discount, discount_1, discount_2, final_amount, coupon_code, campaign, employee_id, lens_included, lens_category, order_number, source_ref, filename (→ sync_filename) |
 | `showLoading(msg)` / `hideLoading()` | Loading overlay |
 | `$(id)` | document.getElementById shorthand |
 | `toast(msg, type)` | Toast notifications — 's' success, 'e' error, 'w' warning |
@@ -194,6 +256,8 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 | **Reduction — Excel** | |
 | `handleRedExcel(input)` | Reads uploaded xlsx file |
 | `processRedExcel()` | Loops rows by barcode, reduces qty for sync=מלא items |
+| **Reduction — Access Sales** | |
+| `processAccessSalesFile(workbook, filename)` | Detects sales_template sheet, validates rows, writes sync_log, updates inventory or pending_sales, calls writeLog with all 13 Access sale fields |
 | **Reduction — Manual** | |
 | `loadModelsForBrand(brandName)` | Populates model datalist for selected brand |
 | `loadSizesAndColors(brandName, model)` | Populates size/color datalists |
@@ -268,6 +332,7 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 | `cancelReceipt()` | Cancels receipt |
 | `handleReceiptExcel()` | Import items from xlsx |
 | `exportReceiptExcel()` | Export receipt to xlsx |
+| `exportReceiptToAccess(receiptId)` | Exports confirmed receipt as Excel with `new_inventory` sheet for Access import. Button visible on confirmed receipts only |
 | `backToReceiptList()` | Returns to receipt list view |
 | `createNewInventoryFromReceiptItem()` | Creates new inventory item with barcode from receipt. Uses brand default sync via getBrandSync() |
 | `updateReceiptItemsStats()` | Updates item count/total display below receipt table |
@@ -374,6 +439,52 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 | `openHelpModal()` / `closeHelpModal()` | Help modal |
 | DOMContentLoaded | Restores admin, sets dates, calls `loadData()` then `addEntryRow()` + `refreshLowStockBanner()` |
 
+### 3.9 js/access-sync.js — Access Sync Tab + Pending Sales
+
+**Globals:** `syncLogPage`, `SYNC_LOG_PAGE_SIZE` (20), `SOURCE_LABELS`, `pendingSearchTimers`, `heartbeatInterval`
+
+| Function | Description |
+|----------|-------------|
+| **Tab Rendering** | |
+| `renderAccessSyncTab()` | Renders heartbeat status, sync log table, pending badge. Calls `startHeartbeatRefresh()` |
+| **Heartbeat** | |
+| `loadHeartbeat()` | Fetches watcher_heartbeat, shows green (<10min) / red (>10min) / gray (unknown) |
+| `startHeartbeatRefresh()` | Starts 60s auto-refresh interval for heartbeat |
+| `stopHeartbeatRefresh()` | Clears heartbeat interval |
+| **Sync Log** | |
+| `loadSyncLog(page)` | Paginated sync log (20/page) with `.range()`, source_ref labels with icons |
+| `loadPendingBadge()` | COUNT pending_sales WHERE status='pending', updates button style |
+| **Pending Panel** | |
+| `renderPendingPanel()` | Overlay with cards per pending sale, event delegation (no inline onclick) |
+| `pendingCardHtml(r)` | Generates card HTML with data-* attributes for event delegation |
+| `closePendingPanel()` | Hides pending panel overlay |
+| `updatePendingPanelCount()` | Updates panel header count after resolve/ignore |
+| **Suggestions** | |
+| `loadSuggestions(pendingId, barcode)` | Finds up to 5 inventory matches by barcode suffix |
+| **Free Search** | |
+| `toggleFreeSearch(pendingId)` | Shows/hides search input for pending item |
+| `debouncePendingSearch(pendingId, query)` | 300ms debounce for search input |
+| `runPendingSearch(pendingId, query)` | Searches inventory by barcode/model, up to 8 results |
+| **Actions** | |
+| `resolvePending(pendingId, inventoryId)` | confirmDialog → PIN verify → optimistic lock (UPDATE WHERE status='pending') → update inventory qty → writeLog |
+| `ignorePending(pendingId, barcode, sourceRef)` | confirmDialog → mark as ignored → writeLog('pending_ignored') |
+
+Event delegation: `document.addEventListener('click/input')` handles `data-action` attributes (suggestions, free-search, ignore, resolve) and `data-pending-search` for input debounce.
+
+### 3.10 scripts/sync-watcher.js — Dropbox File Watcher (Node.js)
+
+**Constants:** `TABLES` (INVENTORY, INV_LOGS, SYNC_LOG, PENDING, HEARTBEAT)
+
+| Function | Description |
+|----------|-------------|
+| `processFile(filepath, filename)` | Reads Excel, validates sales_template rows, updates inventory or inserts pending_sales, writes sync_log |
+| `processFileWithRetry(filepath, filename, attempt)` | Retries on network errors (3 attempts, 30s delay) |
+| `handleNewFile(filepath)` | Guards against duplicate processing, calls processFileWithRetry |
+| `moveToProcessed(filepath, filename)` | Moves file to processed folder (try rename, fallback to copy+delete) |
+| `moveToError(filepath, filename, errorMessage)` | Moves file to error folder with .error.txt detail file |
+| `sendHeartbeat()` | Updates watcher_heartbeat row (id=1) with timestamp, version, hostname |
+| `shutdown()` | Graceful SIGTERM/SIGINT handler: clears interval, closes watcher |
+
 ---
 
 ## 4. Business Logic Rules
@@ -467,7 +578,17 @@ js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
 - **Immediate**: setBrandActive(), saveBrandField(), setBrandActive() — saved to DB on change
 - **Batch**: brands table edits (saveBrands), inventory table edits (saveInventoryChanges) — require explicit "Save" button
 
-### 4.12 Hebrew↔English Maps
+### 4.12 סנכרון Access — Access Bridge
+- **Two ingest paths**: manual Excel upload (web) + automated Dropbox watcher (Node.js)
+- **Excel format**: `sales_template` sheet, row 1 = headers, rows 2-3 = metadata, row 4+ = data
+- **Per-row fields**: barcode, quantity, action_type (sale/return), transaction_date, order_number, employee_id, sale_amount, discount, discount_1, discount_2, final_amount, coupon_code, campaign, lens_included, lens_category
+- **Processing**: barcode found → update inventory qty + writeLog; barcode not found → insert pending_sales
+- **Duplicate file check**: `.ilike('filename')` (case-insensitive), user can override via confirmDialog
+- **Pending resolution**: confirmDialog → PIN → optimistic lock (UPDATE WHERE status='pending') → inventory update → writeLog
+- **Watcher heartbeat**: every 5min → watcher_heartbeat table; UI shows green (<10min) / red (>10min) / gray (unknown)
+- **Export**: confirmed goods receipts can be exported as Access-compatible Excel (`new_inventory` sheet)
+
+### 4.13 Hebrew↔English Maps
 - **FIELD_MAP** / **FIELD_MAP_REV** — column name translation (e.g., ברקוד ↔ barcode)
 - **ENUM_MAP** / **ENUM_REV** — enum value translation (e.g., במלאי ↔ in_stock)
 - Helpers: `enToHe(field, val)` / `heToEn(field, val)`

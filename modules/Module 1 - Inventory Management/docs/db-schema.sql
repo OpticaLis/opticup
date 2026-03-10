@@ -7,6 +7,7 @@
 -- 4. inventory  5. inventory_images  6. inventory_logs
 -- 7. purchase_orders  8. purchase_order_items
 -- 9. goods_receipts  10. goods_receipt_items
+-- 11. sync_log  12. pending_sales  13. watcher_heartbeat
 -- ============================================================
 -- Migrations applied:
 --   supabase_schema.sql  — initial tables
@@ -18,6 +19,8 @@
 --   007_po_items_extended.sql  — extra columns on po items
 --   008_supplier_number.sql  — supplier_number UNIQUE
 --   009_brands_active.sql  — brands.active
+--   010_access_bridge.sql  — sync_log + pending_sales + watcher_heartbeat
+--   011_inventory_logs_sale_fields.sql  — 12 Access sale columns on inventory_logs
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -302,6 +305,76 @@ CREATE TABLE IF NOT EXISTS goods_receipt_items (
 CREATE INDEX IF NOT EXISTS idx_receipt_items ON goods_receipt_items(receipt_id);
 
 -- ============================================================
+-- 11. sync_log — לוג סנכרונים Access (010)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS sync_log (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at       TIMESTAMPTZ DEFAULT now(),
+  filename         TEXT NOT NULL,                                  -- שם קובץ Excel
+  source_ref       TEXT NOT NULL CHECK (source_ref IN ('watcher', 'manual')),  -- מקור: watcher אוטומטי | manual ידני
+  status           TEXT NOT NULL CHECK (status IN ('success', 'partial', 'error')),  -- סטטוס עיבוד
+  rows_total       INTEGER DEFAULT 0,                              -- סה"כ שורות
+  rows_success     INTEGER DEFAULT 0,                              -- שורות שהצליחו
+  rows_pending     INTEGER DEFAULT 0,                              -- שורות ממתינות (ברקוד לא נמצא)
+  rows_error       INTEGER DEFAULT 0,                              -- שורות שנכשלו
+  error_message    TEXT,                                           -- הודעת שגיאה כללית
+  processed_at     TIMESTAMPTZ                                     -- זמן סיום עיבוד
+);
+
+CREATE INDEX IF NOT EXISTS idx_sync_log_created  ON sync_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sync_log_filename ON sync_log(filename);
+
+-- ============================================================
+-- 12. pending_sales — מכירות ממתינות לטיפול (010)
+-- ============================================================
+-- שורות מ-Access שהברקוד שלהן לא נמצא במלאי — ממתינות להתאמה ידנית
+CREATE TABLE IF NOT EXISTS pending_sales (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at       TIMESTAMPTZ DEFAULT now(),
+  sync_log_id      UUID REFERENCES sync_log(id),                   -- FK לוג סנכרון
+  source_ref       TEXT NOT NULL CHECK (source_ref IN ('watcher', 'manual')),
+  filename         TEXT NOT NULL,                                  -- שם קובץ מקור
+  barcode_received TEXT NOT NULL,                                  -- ברקוד שהתקבל מ-Access
+  quantity         INTEGER NOT NULL,                               -- כמות
+  action_type      TEXT NOT NULL CHECK (action_type IN ('sale', 'return')),  -- מכירה או החזרה
+  transaction_date DATE NOT NULL,                                  -- תאריך עסקה
+  order_number     TEXT NOT NULL,                                  -- מספר הזמנה POS
+  employee_id      TEXT,                                           -- עובד מוכר
+  sale_amount      NUMERIC(10,2),                                  -- מחיר לפני הנחות
+  discount         NUMERIC(10,2) DEFAULT 0,                        -- הנחה קבועה
+  discount_1       NUMERIC(10,2) DEFAULT 0,                        -- הנחה נוספת 1
+  discount_2       NUMERIC(10,2) DEFAULT 0,                        -- הנחה נוספת 2
+  final_amount     NUMERIC(10,2),                                  -- מחיר סופי
+  coupon_code      TEXT,                                           -- קוד קופון
+  campaign         TEXT,                                           -- שם מבצע
+  lens_included    BOOLEAN DEFAULT false,                          -- עדשות כלולות
+  lens_category    TEXT,                                           -- קטגוריית עדשה
+  reason           TEXT NOT NULL,                                  -- סיבת המתנה
+  status           TEXT NOT NULL DEFAULT 'pending'                 -- סטטוס: pending | resolved | ignored
+                   CHECK (status IN ('pending', 'resolved', 'ignored')),
+  resolved_at      TIMESTAMPTZ,                                    -- מתי טופל
+  resolved_by      TEXT,                                           -- מי טיפל
+  resolved_inventory_id UUID REFERENCES inventory(id),             -- FK פריט שהותאם
+  resolution_note  TEXT                                            -- הערת פתרון
+);
+
+CREATE INDEX IF NOT EXISTS idx_pending_sales_status ON pending_sales(status);
+CREATE INDEX IF NOT EXISTS idx_pending_sales_order  ON pending_sales(order_number);
+
+-- ============================================================
+-- 13. watcher_heartbeat — מוניטור Watcher (010)
+-- ============================================================
+-- שורה אחת בלבד (id=1) — מתעדכנת כל 5 דקות ע"י ה-watcher
+CREATE TABLE IF NOT EXISTS watcher_heartbeat (
+  id              INTEGER PRIMARY KEY DEFAULT 1,                   -- תמיד 1
+  last_beat       TIMESTAMPTZ DEFAULT now(),                       -- דופק אחרון
+  watcher_version TEXT,                                            -- גרסת watcher
+  host            TEXT                                             -- שם מחשב
+);
+
+INSERT INTO watcher_heartbeat (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================
 -- FUTURE TABLES (stubs — not yet used by app)
 -- ============================================================
 
@@ -450,6 +523,18 @@ CREATE POLICY "all_goods_receipts" ON goods_receipts FOR ALL USING (true) WITH C
 
 -- Goods Receipt Items
 CREATE POLICY "all_goods_receipt_items" ON goods_receipt_items FOR ALL USING (true) WITH CHECK (true);
+
+-- Sync Log (010)
+ALTER TABLE sync_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_sync_log" ON sync_log FOR ALL USING (true) WITH CHECK (true);
+
+-- Pending Sales (010)
+ALTER TABLE pending_sales ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_pending_sales" ON pending_sales FOR ALL USING (true) WITH CHECK (true);
+
+-- Watcher Heartbeat (010)
+ALTER TABLE watcher_heartbeat ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_watcher_heartbeat" ON watcher_heartbeat FOR ALL USING (true) WITH CHECK (true);
 
 -- Sales (future)
 CREATE POLICY "anon_all_sales" ON sales FOR ALL USING (true) WITH CHECK (true);
