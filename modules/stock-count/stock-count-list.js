@@ -60,7 +60,7 @@ function renderStockCountList(counts) {
 
     let actions = '';
     if (c.status === 'in_progress') {
-      actions = `<button class="btn btn-p btn-sm" onclick="toast('בקרוב','w')">המשך</button>
+      actions = `<button class="btn btn-p btn-sm" onclick="openWorkerPin('${escapeHtml(c.id)}')">המשך</button>
         <button class="btn btn-d btn-sm" onclick="toast('בקרוב','w')">ביטול</button>`;
     } else if (c.status === 'completed') {
       actions = `<button class="btn btn-g btn-sm" onclick="toast('בקרוב','w')">צפייה</button>`;
@@ -97,19 +97,43 @@ async function generateCountNumber() {
   return `${prefix}${String(seq).padStart(4, '0')}`;
 }
 
-// ── Start new count (stub) ───────────────────────────────────
+// ── Start new count ──────────────────────────────────────────
 async function startNewCount() {
   try {
     showLoading('יוצר ספירה חדשה...');
     const countNumber = await generateCountNumber();
-    const { data, error } = await sb.from(T.STOCK_COUNTS).insert({
+    // 1. Create count header
+    const { data: count, error } = await sb.from(T.STOCK_COUNTS).insert({
       count_number: countNumber,
       status: 'in_progress',
+      count_date: new Date().toISOString().slice(0, 10),
       branch_id: branchCode || '00'
     }).select().single();
     if (error) throw error;
-    toast('ספירה ' + countNumber + ' נוצרה — מסך ספירה בקרוב', 'w');
-    loadStockCountTab();
+
+    // 2. Fetch all active inventory (not deleted, qty > 0)
+    const inventory = await fetchAll(T.INV,
+      [['is_deleted', 'eq', false], ['quantity', 'gt', 0]]);
+
+    // 3. Build count items from inventory
+    const items = inventory.map(inv => ({
+      count_id: count.id,
+      inventory_id: inv.id,
+      barcode: inv.barcode || '',
+      brand: brandCacheRev[inv.brand_id] || '',
+      model: inv.model || '',
+      color: inv.color || '',
+      size: inv.size || '',
+      expected_qty: inv.quantity || 0,
+      status: 'pending'
+    }));
+
+    // 4. Batch insert count items
+    if (items.length) await batchCreate(T.STOCK_COUNT_ITEMS, items);
+
+    toast('ספירה ' + countNumber + ' נוצרה — ' + items.length + ' פריטים', 's');
+    // 5. Open worker PIN → session
+    openWorkerPin(count.id);
   } catch (err) {
     toast('שגיאה ביצירת ספירה: ' + err.message, 'e');
   } finally {

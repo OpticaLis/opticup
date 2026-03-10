@@ -36,11 +36,12 @@
 | 26 | access-sync.js | modules/access-sync/access-sync.js | 177 | Access sync tab: renderAccessSyncTab, heartbeat monitoring (60s interval), loadSyncLog (paginated), loadPendingBadge |
 | 27 | pending-panel.js | modules/access-sync/pending-panel.js | 233 | Pending sales panel: renderPendingPanel, pendingCardHtml, loadSuggestions (barcode matching), free-text search with debounce, event delegation |
 | 28 | pending-resolve.js | modules/access-sync/pending-resolve.js | 164 | Pending resolution: ignorePending, resolvePending (PIN-verified), confirmResolvePending (optimistic locking on status), updatePendingPanelCount |
-| 29 | stock-count-list.js | modules/stock-count/stock-count-list.js | 116 | Stock count list screen: loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (stub), renderStockCountList |
-| 30 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
-| 31 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
+| 29 | stock-count-list.js | modules/stock-count/stock-count-list.js | 142 | Stock count list screen: loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (creates count + items + opens PIN), renderStockCountList |
+| 30 | stock-count-session.js | modules/stock-count/stock-count-session.js | 221 | Stock count session: worker PIN entry (openWorkerPin/confirmWorkerPin), camera barcode scanning (ZXing), manual barcode input, scan handler, item update, session UI |
+| 31 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
+| 32 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
 
-**Total: 31 files, ~6,274 lines**
+**Total: 32 files, ~6,537 lines**
 
 ---
 
@@ -373,7 +374,25 @@
 | `loadStockCountTab` | `()` | Async. Tab entry point — fetches all stock counts, computes summary cards, renders table |
 | `renderStockCountList` | `(counts)` | Renders stock count table rows with status badges and action buttons |
 | `generateCountNumber` | `()` | Async. Generates SC-YYYY-NNNN count number (same pattern as generatePoNumber) |
-| `startNewCount` | `()` | Async. Creates new stock_counts row with status='in_progress', stub for session screen |
+| `startNewCount` | `()` | Async. Creates count header + fetches active inventory + batch inserts count items + calls openWorkerPin |
+
+### modules/stock-count/stock-count-session.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `openWorkerPin` | `(countId)` | Shows fullscreen PIN modal ("מי סורק?"), stores countId for session |
+| `confirmWorkerPin` | `()` | Async. Verifies PIN against T.EMPLOYEES, stores activeWorker in sessionStorage, calls openCountSession |
+| `openCountSession` | `(countId)` | Async. Fetches count header + items from T.STOCK_COUNT_ITEMS, calls renderSessionScreen |
+| `scRenderItemRow` | `(it)` | Returns HTML `<tr>` for one count item with row color class (ok/warn/diff/pending) |
+| `scCalcStats` | `(items)` | Returns {counted, total, diffs, pct} stats object from items array |
+| `renderSessionScreen` | `(countId, items)` | Replaces tab content with session UI: topbar, camera section, summary bar, items table |
+| `manualBarcodeSearch` | `()` | Reads manual barcode input, calls handleScan |
+| `startCamera` | `()` | Async. Initializes ZXing BrowserMultiFormatReader, starts video decoding |
+| `stopCamera` | `()` | Stops ZXing reader, hides video element |
+| `handleScan` | `(countId, barcode)` | Async. Debounced scan handler: unknown → warning toast, counted → confirm +1, pending → qty prompt |
+| `updateCountItem` | `(itemId, actualQty)` | Async. Updates T.STOCK_COUNT_ITEMS row, refreshes local array + UI |
+| `refreshSessionUI` | `()` | Updates summary stats + re-renders table body from scSessionItems |
+| `finishSession` | `(countId)` | Stub: stops camera, shows "בקרוב" toast |
 
 ### modules/admin/admin.js
 
@@ -573,6 +592,19 @@
 |----------|------|---------------|-------------|
 | `SC_STATUS` | Object (const) | 3 entries | Maps status → {text, color} for badge rendering |
 
+### modules/stock-count/stock-count-session.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `scSessionItems` | Array | `[]` | Loaded count items for current session |
+| `scCountId` | String/null | `null` | Current count UUID |
+| `scCountNumber` | String | `''` | Current count display number (SC-YYYY-NNNN) |
+| `unknownBarcodes` | Array | `[]` | Barcodes scanned but not found in inventory |
+| `activeWorker` | Object/null | `null` | {id, name} of PIN-verified worker |
+| `scCodeReader` | Object/null | `null` | ZXing BrowserMultiFormatReader instance |
+| `_lastScanCode` | String | `''` | Last scanned barcode for debounce |
+| `_lastScanTime` | Number | `0` | Timestamp of last scan for debounce (2s window) |
+
 ### modules/admin/system-log.js
 
 | Variable | Type | Initial Value | Description |
@@ -598,6 +630,17 @@ shared.js
   → calls: renderAccessSyncTab(), loadHeartbeat(), loadSyncLog(), loadPendingBadge(), stopHeartbeatRefresh() [access-sync.js]
   → calls: loadStockCountTab() [stock-count-list.js]
   → calls: resetExcelImport() [excel-import.js]
+
+stock-count-list.js
+  → reads: T.STOCK_COUNTS, T.INV, brandCacheRev, branchCode [shared.js]
+  → calls: fetchAll(), batchCreate() [supabase-ops.js], showLoading(), hideLoading(), toast(), escapeHtml(), $() [shared.js]
+  → calls: generateCountNumber() [self], openWorkerPin() [stock-count-session.js]
+
+stock-count-session.js
+  → reads: T.EMPLOYEES, T.STOCK_COUNTS, T.STOCK_COUNT_ITEMS [shared.js]
+  → calls: fetchAll() [supabase-ops.js], showLoading(), hideLoading(), toast(), escapeHtml(), $(), confirmDialog() [shared.js]
+  → calls: loadStockCountTab() [stock-count-list.js]
+  → uses: ZXing.BrowserMultiFormatReader (external CDN library)
 
 supabase-ops.js
   → reads/writes: sb, T, supplierCache, supplierCacheRev, supplierNumCache, brandCache, brandCacheRev [shared.js]
