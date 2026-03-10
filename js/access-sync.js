@@ -404,10 +404,21 @@ async function ignorePending(pendingId, barcode, orderNumber, sourceRef) {
 // ── Resolve pending ─────────────────────────────────────
 async function resolvePending(pendingId, inventoryId) {
   try {
-    // 1. Read the pending row
+    // 1. Read the pending row (needed for confirm message)
     const { data: row, error: rErr } = await sb.from(T.PENDING_SALES)
       .select('*').eq('id', pendingId).maybeSingle();
     if (rErr || !row) throw rErr || new Error('row not found');
+
+    // Gate 1 — confirm dialog
+    const confirmed = await confirmDialog(`לאשר שינוי כמות במלאי עבור ברקוד ${row.barcode_received}?`);
+    if (!confirmed) return;
+
+    // Gate 2 — PIN verification
+    const pin = prompt('הזן סיסמת עובד:');
+    if (!pin) return;
+    const { data: emp } = await sb.from('employees').select('id, name').eq('pin', pin.trim()).eq('is_active', true).maybeSingle();
+    if (!emp) { toast('סיסמת עובד שגויה', 'e'); return; }
+    sessionStorage.setItem('prizma_user', emp.name);
 
     // 2. Read current inventory
     const { data: inv, error: iErr } = await sb.from(T.INV)
@@ -442,7 +453,8 @@ async function resolvePending(pendingId, inventoryId) {
       qty_before: qtyBefore,
       qty_after: qtyAfter,
       reason: 'סנכרון Access — התאמה ידנית',
-      source_ref: row.source_ref + ':' + row.filename
+      source_ref: row.source_ref + ':' + row.filename,
+      performed_by: emp.name
     });
 
     // 7. Mark pending as resolved
@@ -450,7 +462,7 @@ async function resolvePending(pendingId, inventoryId) {
       status: 'resolved',
       resolved_at: new Date().toISOString(),
       resolved_inventory_id: inventoryId,
-      resolution_note: 'הותאם ידנית על ידי משתמש'
+      resolution_note: `הותאם ידנית על ידי ${emp.name}`
     }).eq('id', pendingId);
     if (pErr) throw pErr;
 

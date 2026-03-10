@@ -69,8 +69,20 @@ function isNetworkError(err) {
 // ── F) moveToProcessed ──────────────────────────────────────
 function moveToProcessed(filepath, filename) {
   const dest = path.join(config.processedFolder, `${timestamp()}_${filename}`);
-  fs.renameSync(filepath, dest);
-  log(`Moved to processed: ${filename}`);
+  try {
+    fs.renameSync(filepath, dest);
+    log(`Moved to processed: ${filename}`);
+  } catch (err) {
+    log(`rename failed, trying copy: ${err.message}`);
+    try {
+      fs.copyFileSync(filepath, dest);
+      fs.unlinkSync(filepath);
+      log(`Copied to processed: ${filename}`);
+    } catch (err2) {
+      log(`❌ Could not move to processed: ${err2.message}`);
+      // Don't crash — file stays in watch folder but sync_log is written
+    }
+  }
 }
 
 // ── G) moveToError ──────────────────────────────────────────
