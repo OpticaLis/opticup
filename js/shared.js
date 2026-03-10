@@ -15,6 +15,8 @@ const T = {
   SYNC_LOG: 'sync_log',
   PENDING_SALES: 'pending_sales',
   HEARTBEAT: 'watcher_heartbeat',
+  STOCK_COUNTS: 'stock_counts',
+  STOCK_COUNT_ITEMS: 'stock_count_items',
 };
 
 // =========================================================
