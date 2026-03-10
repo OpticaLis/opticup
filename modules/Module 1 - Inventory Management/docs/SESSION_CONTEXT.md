@@ -15,6 +15,7 @@
 | Goal 4 ✅ | Code cleanup — removed debug code, dead functions, stale comments (-42 lines) | `38abb0c` |
 | Goal 3 ✅ | MODULE_MAP.md created — 856 lines, full codebase reference | `01d86e9` |
 | Goal 0 ✅ | Atomic quantity updates — replaced all client-side qty calculations with Supabase RPC (`increment_inventory` / `decrement_inventory`) in 5 functions across 4 files | `62381b7` |
+| Phase 2a ✅ | Stock Count module — full flow: list screen, session with camera scanning + worker PIN, diff report, approval + writeLog, Excel export | `f3c5f0f`, `c8bcaa3` |
 
 ### Current File Structure
 ```
@@ -31,20 +32,16 @@ modules/
 ├── audit/                 ← 3 files
 ├── brands/                ← 2 files
 ├── access-sync/           ← 3 files
+├── stock-count/           ← 3 files
 └── admin/                 ← 2 files
 ```
 
 ---
 
-## What's Next — Phase 2
+## What's Next — Phase 2b
 
-### Phase 2 Features (ROADMAP פאזה 2)
-1. **Stock Count** — new tables: `stock_counts`, `stock_count_items`
-   - Barcode scan → enter quantity → discrepancy report
-   - PIN confirmation → update quantities + writeLog
-   - Export to Excel
-
-2. **Access Bridge** — Node.js Folder Watcher on Dropbox
+### Phase 2b Features (ROADMAP פאזה 2)
+1. **Access Bridge** — Node.js Folder Watcher on Dropbox
    - Read sales Excel → auto-update quantities
    - "Pending" screen for unrecognized barcodes
    - Export new inventory to Access
@@ -65,6 +62,7 @@ modules/
 | Issue | File | Severity | Notes |
 |-------|------|----------|-------|
 | `loadPOsForSupplier` console warning | `goods-receipts/goods-receipt.js` | Low | Fires when receipt tab loads without supplier selected. Non-blocking. |
+| ~~`scanned_by` column missing~~ | `stock-count/stock-count-session.js` | ✅ Resolved | Was missing from migration 013 — fixed in migration 014 (`c8bcaa3`) |
 
 ---
 

@@ -4,6 +4,22 @@
 
 ---
 
+## [Phase 2a] — 2026-03-11
+
+### Added
+- modules/stock-count/stock-count-list.js — list screen, summary cards, generateCountNumber (SC-YYYY-NNNN), startNewCount
+- modules/stock-count/stock-count-session.js — worker PIN entry, camera scanning (ZXing), handleScan, updateCountItem
+- modules/stock-count/stock-count-report.js — diff report, confirmCount (manager PIN + RPC + writeLog), cancelCount, exportCountExcel
+- migrations/013_stock_count.sql — stock_counts + stock_count_items tables
+- migrations/014_stock_count_scanned_by.sql — added scanned_by column to stock_count_items
+- Supabase RPC: set_inventory_qty(inv_id, new_qty)
+
+### Changed
+- index.html — added 📊 ספירת מלאי tab + ZXing library
+- js/shared.js — added T.STOCK_COUNTS, T.STOCK_COUNT_ITEMS
+
+---
+
 ## [Goal 0] — 2026-03-10
 
 ### Changed
