@@ -171,6 +171,7 @@ function showTab(name) {
   if (name === 'receipt') loadReceiptTab();
   if (name === 'purchase-orders') loadPurchaseOrdersTab();
   if (name === 'access-sync') { renderAccessSyncTab(); loadHeartbeat(); loadSyncLog(); loadPendingBadge(); }
+  if (name === 'stock-count') loadStockCountTab();
 }
 
 function showEntryMode(mode) {

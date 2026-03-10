@@ -36,10 +36,11 @@
 | 26 | access-sync.js | modules/access-sync/access-sync.js | 177 | Access sync tab: renderAccessSyncTab, heartbeat monitoring (60s interval), loadSyncLog (paginated), loadPendingBadge |
 | 27 | pending-panel.js | modules/access-sync/pending-panel.js | 233 | Pending sales panel: renderPendingPanel, pendingCardHtml, loadSuggestions (barcode matching), free-text search with debounce, event delegation |
 | 28 | pending-resolve.js | modules/access-sync/pending-resolve.js | 164 | Pending resolution: ignorePending, resolvePending (PIN-verified), confirmResolvePending (optimistic locking on status), updatePendingPanelCount |
-| 29 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
-| 30 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
+| 29 | stock-count-list.js | modules/stock-count/stock-count-list.js | 116 | Stock count list screen: loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (stub), renderStockCountList |
+| 30 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
+| 31 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
 
-**Total: 30 files, ~6,158 lines**
+**Total: 31 files, ~6,274 lines**
 
 ---
 
@@ -365,6 +366,15 @@
 | `confirmResolvePending` | `()` | Async. Verifies PIN, optimistic lock on status='pending', adjusts qty via `sb.rpc('decrement_inventory'/'increment_inventory')`, writes log |
 | `updatePendingPanelCount` | `()` | Updates card count in panel header |
 
+### modules/stock-count/stock-count-list.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `loadStockCountTab` | `()` | Async. Tab entry point — fetches all stock counts, computes summary cards, renders table |
+| `renderStockCountList` | `(counts)` | Renders stock count table rows with status badges and action buttons |
+| `generateCountNumber` | `()` | Async. Generates SC-YYYY-NNNN count number (same pattern as generatePoNumber) |
+| `startNewCount` | `()` | Async. Creates new stock_counts row with status='in_progress', stub for session screen |
+
 ### modules/admin/admin.js
 
 | Function | Parameters | Description |
@@ -557,6 +567,12 @@
 |----------|------|---------------|-------------|
 | `resolvePendingTarget` | Object/null | `null` | {pendingId, inventoryId, row} for current resolution |
 
+### modules/stock-count/stock-count-list.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `SC_STATUS` | Object (const) | 3 entries | Maps status → {text, color} for badge rendering |
+
 ### modules/admin/system-log.js
 
 | Variable | Type | Initial Value | Description |
@@ -580,6 +596,7 @@ shared.js
   → calls: loadReceiptTab() [goods-receipt.js]
   → calls: loadPurchaseOrdersTab() [purchase-orders.js]
   → calls: renderAccessSyncTab(), loadHeartbeat(), loadSyncLog(), loadPendingBadge(), stopHeartbeatRefresh() [access-sync.js]
+  → calls: loadStockCountTab() [stock-count-list.js]
   → calls: resetExcelImport() [excel-import.js]
 
 supabase-ops.js

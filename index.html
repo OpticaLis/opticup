@@ -37,6 +37,7 @@
   <button data-tab="suppliers" onclick="showTab('suppliers')">&#128101; ניהול ספקים</button>
   <button data-tab="systemlog" class="admin-tab" onclick="showTab('systemlog')">&#128203; לוג מערכת</button>
   <button data-tab="access-sync" onclick="showTab('access-sync')">&#128260; סנכרון Access</button>
+  <button data-tab="stock-count" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
   <div class="nav-spacer"></div>
   <button class="admin-btn" id="adminBtn" onclick="toggleAdmin()">&#128274; מנהל</button>
 </nav>
@@ -466,6 +467,49 @@
   <div id="access-sync-container">טוען...</div>
 </section>
 
+<!-- ========== TAB: STOCK COUNT ========== -->
+<section id="tab-stock-count" class="tab">
+  <div style="padding:16px">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px">
+      <h2 style="margin:0">&#128202; ספירת מלאי</h2>
+      <button class="btn btn-p" onclick="startNewCount()" style="padding:8px 18px;font-size:15px">+ ספירה חדשה</button>
+    </div>
+    <div class="sc-summary" style="display:flex; gap:16px; margin-bottom:20px; flex-wrap:wrap">
+      <div class="slog-card" style="flex:1;min-width:140px;background:var(--white);border-radius:var(--radius);padding:18px;text-align:center;box-shadow:var(--shadow)">
+        <div style="font-size:2rem;font-weight:700;color:#2196F3" id="sc-open">0</div>
+        <div style="font-size:.82rem;color:var(--g500);margin-top:4px">ספירות פתוחות</div>
+      </div>
+      <div class="slog-card" style="flex:1;min-width:140px;background:var(--white);border-radius:var(--radius);padding:18px;text-align:center;box-shadow:var(--shadow)">
+        <div style="font-size:2rem;font-weight:700;color:#4CAF50" id="sc-completed">0</div>
+        <div style="font-size:.82rem;color:var(--g500);margin-top:4px">הושלמו החודש</div>
+      </div>
+      <div class="slog-card" style="flex:1;min-width:140px;background:var(--white);border-radius:var(--radius);padding:18px;text-align:center;box-shadow:var(--shadow)">
+        <div style="font-size:2rem;font-weight:700;color:#f44336" id="sc-diffs">0</div>
+        <div style="font-size:.82rem;color:var(--g500);margin-top:4px">פערים החודש</div>
+      </div>
+    </div>
+    <div id="sc-list-alerts"></div>
+    <div style="overflow-x:auto; border:1px solid var(--g200); border-radius:8px">
+      <table style="width:100%; border-collapse:collapse; font-size:.85rem">
+        <thead>
+          <tr style="background:var(--primary); color:white; text-align:right">
+            <th style="padding:10px">מספר ספירה</th>
+            <th style="padding:10px">תאריך</th>
+            <th style="padding:10px">סטטוס</th>
+            <th style="padding:10px">נספרו</th>
+            <th style="padding:10px">פערים</th>
+            <th style="padding:10px">מבצע</th>
+            <th style="padding:10px">פעולות</th>
+          </tr>
+        </thead>
+        <tbody id="sc-list-body">
+          <tr><td colspan="7" style="text-align:center;padding:30px;color:#999">טוען...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <!-- Admin Modal -->
@@ -753,6 +797,7 @@
 <script src="modules/purchasing/po-view-import.js"></script>
 <script src="modules/brands/brands.js"></script>
 <script src="modules/brands/suppliers.js"></script>
+<script src="modules/stock-count/stock-count-list.js"></script>
 <script src="modules/access-sync/access-sync.js"></script>
 <script src="modules/access-sync/pending-panel.js"></script>
 <script src="modules/access-sync/pending-resolve.js"></script>
