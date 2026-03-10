@@ -228,19 +228,3 @@ async function resolveSupplierName() {
   const el = document.getElementById('po-supplier-name-display');
   if (el && data) el.innerHTML = `<strong>ספק:</strong> ${data.name}`;
 }
-
-// ── Populate supplier dropdown in form ───────────────────────
-async function initPoSupplierSelect() {
-  const sel = document.getElementById('po-form-supplier');
-  if (!sel) return;
-  try {
-    const { data } = await sb.from('suppliers').select('id, name').eq('active', true).order('name');
-    (data || []).forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.id;
-      opt.textContent = s.name;
-      if (s.id === currentPO.supplier_id) opt.selected = true;
-      sel.appendChild(opt);
-    });
-  } catch {}
-}

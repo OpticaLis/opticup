@@ -157,28 +157,3 @@ async function writeLog(action, inventoryId, details = {}) {
     toast('שגיאה: פעולה לא נרשמה ביומן', 'e');
   }
 }
-
-async function testWriteLog() {
-  const marker = 'TEST_' + Date.now();
-  await writeLog('test', null, {
-    barcode: marker,
-    brand: 'Test Brand',
-    model: 'Test Model',
-    qty_before: 0,
-    qty_after: 1,
-    source_ref: 'בדיקת מערכת'
-  });
-
-  const { data } = await sb
-    .from('inventory_logs')
-    .select('*')
-    .eq('barcode', marker)
-    .maybeSingle();
-
-  console.log('Log test result:', data);
-
-  // Clean up test row
-  if (data) await sb.from('inventory_logs').delete().eq('id', data.id);
-
-  return data ? '✅ writeLog עובד' : '❌ writeLog נכשל';
-}

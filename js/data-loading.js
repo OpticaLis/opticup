@@ -122,7 +122,7 @@ async function loadData() {
     populateDropdowns();
     toast('נתונים נטענו בהצלחה', 's');
   } catch(e) {
-    console.error(e);
+    console.error('loadData failed:', e);
     toast('שגיאה בטעינה: ' + (e.message || JSON.stringify(e)), 'e');
   }
   hideLoading();

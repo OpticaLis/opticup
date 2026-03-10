@@ -171,7 +171,6 @@ async function loadPendingBadge() {
 }
 
 // ── Button handlers ─────────────────────────────────────
-// onManualImportClick — stub, button removed until feature is implemented
 
 function onPendingClick() {
   renderPendingPanel();
