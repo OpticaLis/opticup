@@ -4,6 +4,20 @@
 
 ---
 
+## [Goal 0] — 2026-03-10
+
+### Changed
+- `receipt-actions.js` — `confirmReceiptCore()`: atomic increment via RPC
+- `qty-modal.js` — `confirmQtyChange()`: atomic increment/decrement via RPC
+- `pending-resolve.js` — `confirmResolvePending()`: atomic increment/decrement via RPC
+- `inventory-reduction.js` — `processRedExcel()`: atomic decrement via RPC
+- `inventory-reduction.js` — `confirmReduction()`: atomic decrement via RPC
+
+### Added
+- `migrations/012_atomic_qty_rpc.sql` — `increment_inventory` + `decrement_inventory` RPC functions
+
+---
+
 ## Phase 1: Airtable Era (V1.1A → V1.6A)
 
 ### V1.3A — Initial Release
