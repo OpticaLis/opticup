@@ -138,7 +138,10 @@ async function processAccessSalesFile(workbook, filename) {
       const ok = await confirmDialog('הקובץ הזה כבר עובד בעבר. לייבא בכל זאת?');
       if (!ok) return;
     }
-  } catch (e) { /* proceed */ }
+  } catch (e) {
+    console.warn('Duplicate check failed:', e.message || e);
+    toast('בדיקת כפילויות נכשלה — ממשיך', 'w');
+  }
 
   showLoading('מעבד קובץ מכירות Access...');
 
@@ -308,6 +311,7 @@ async function processAccessSalesFile(workbook, filename) {
         rowsPending++;
       }
     } catch (e) {
+      console.warn(`Row error (${row.barcode}):`, e.message || e);
       rowsError++;
     }
   }

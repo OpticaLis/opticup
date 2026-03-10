@@ -50,9 +50,25 @@ function renderAccessSyncTab() {
       <div id="as-log-pagination" style="display:none;margin-top:10px;text-align:center;font-size:.9rem"></div>
     </div>
   `;
+  startHeartbeatRefresh();
 }
 
-// ── loadHeartbeat ───────────────────────────────────────
+// ── Heartbeat auto-refresh ──────────────────────────────
+let heartbeatInterval = null;
+
+function startHeartbeatRefresh() {
+  stopHeartbeatRefresh();
+  loadHeartbeat();
+  heartbeatInterval = setInterval(loadHeartbeat, 60000);
+}
+
+function stopHeartbeatRefresh() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+}
+
 async function loadHeartbeat() {
   const el = $('as-heartbeat');
   if (!el) return;
@@ -233,9 +249,9 @@ function pendingCardHtml(r) {
         <span><b>קובץ:</b> ${r.filename}</span>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-p btn-sm" onclick="loadSuggestions('${r.id}','${r.barcode_received}')">&#128161; המלצות</button>
-        <button class="btn btn-g btn-sm" onclick="toggleFreeSearch('${r.id}')">&#128269; חיפוש חופשי</button>
-        <button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5" onclick="ignorePending('${r.id}','${r.barcode_received}','${r.order_number}','${r.source_ref}')">&#10006; לא קיים במלאי</button>
+        <button class="btn btn-p btn-sm" data-action="suggestions" data-pending-id="${r.id}" data-barcode="${r.barcode_received}">&#128161; המלצות</button>
+        <button class="btn btn-g btn-sm" data-action="free-search" data-pending-id="${r.id}">&#128269; חיפוש חופשי</button>
+        <button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5" data-action="ignore" data-pending-id="${r.id}" data-barcode="${r.barcode_received}" data-source-ref="${r.source_ref}">&#10006; לא קיים במלאי</button>
       </div>
       <div id="pcard-suggestions-${r.id}" style="display:none;margin-top:10px"></div>
       <div id="pcard-search-${r.id}" style="display:none;margin-top:10px"></div>
@@ -256,10 +272,6 @@ async function loadSuggestions(pendingId, barcode) {
     if (barcode.length >= 5) {
       patterns.push(barcode.slice(-5)); // last 5 digits
     }
-    if (barcode.length >= 3) {
-      patterns.push(barcode.slice(-3)); // last 3 digits
-    }
-
     let results = [];
     // Exact barcode match first
     const { data: exact } = await sb.from(T.INV)
@@ -306,7 +318,7 @@ async function loadSuggestions(pendingId, barcode) {
         const brand = brandMap[r.brand_id] || '';
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;font-size:.85rem;background:#fafafa">
           <span>${brand} ${r.model || ''} | ${r.color || ''} ${r.size || ''} | <code>${r.barcode || '—'}</code> | כמות: ${r.quantity}</span>
-          <button class="btn btn-p btn-sm" style="padding:2px 10px;font-size:.8rem" onclick="resolvePending('${pendingId}','${r.id}')">זה הפריט</button>
+          <button class="btn btn-p btn-sm" style="padding:2px 10px;font-size:.8rem" data-action="resolve" data-pending-id="${pendingId}" data-inventory-id="${r.id}">זה הפריט</button>
         </div>`;
       }).join('');
   } catch (e) {
@@ -326,7 +338,7 @@ function toggleFreeSearch(pendingId) {
   container.innerHTML = `
     <input type="text" id="psearch-input-${pendingId}" placeholder="חפש ברקוד / מותג / דגם..."
       style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:.9rem;margin-bottom:6px"
-      oninput="debouncePendingSearch('${pendingId}', this.value)">
+      data-pending-search="${pendingId}">
     <div id="psearch-results-${pendingId}"></div>
   `;
   container.querySelector('input').focus();
@@ -392,7 +404,7 @@ async function runPendingSearch(pendingId, query) {
 
     resultsDiv.innerHTML = items.map(r => {
       const brand = brandMap[r.brand_id] || '';
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;font-size:.85rem;background:#fafafa;cursor:pointer" onclick="resolvePending('${pendingId}','${r.id}')">
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;font-size:.85rem;background:#fafafa;cursor:pointer" data-action="resolve" data-pending-id="${pendingId}" data-inventory-id="${r.id}">
         <span>${brand} ${r.model || ''} | ${r.color || ''} ${r.size || ''} | <code>${r.barcode || '—'}</code> | כמות: ${r.quantity}</span>
         <span style="color:var(--accent);font-size:.8rem">&#10004; בחר</span>
       </div>`;
@@ -403,7 +415,7 @@ async function runPendingSearch(pendingId, query) {
 }
 
 // ── Ignore pending ──────────────────────────────────────
-async function ignorePending(pendingId, barcode, orderNumber, sourceRef) {
+async function ignorePending(pendingId, barcode, sourceRef) {
   const ok = await confirmDialog('סימון כלא קיים', 'לסמן שמסגרת זו אינה קיימת במלאי?');
   if (!ok) return;
   try {
@@ -525,3 +537,28 @@ function updatePendingPanelCount() {
     container.innerHTML = '<p style="text-align:center;color:#888;padding:32px 0">אין פריטים ממתינים</p>';
   }
 }
+
+// ── Event delegation for pending panel ──────────────────
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const pendingId = btn.dataset.pendingId;
+  if (!pendingId) return;
+  if (action === 'suggestions') {
+    loadSuggestions(pendingId, btn.dataset.barcode);
+  } else if (action === 'free-search') {
+    toggleFreeSearch(pendingId);
+  } else if (action === 'ignore') {
+    ignorePending(pendingId, btn.dataset.barcode, btn.dataset.sourceRef);
+  } else if (action === 'resolve') {
+    resolvePending(pendingId, btn.dataset.inventoryId);
+  }
+});
+
+document.addEventListener('input', function(e) {
+  const input = e.target;
+  if (input.dataset.pendingSearch) {
+    debouncePendingSearch(input.dataset.pendingSearch, input.value);
+  }
+});
