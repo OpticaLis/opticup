@@ -40,6 +40,15 @@ for (const dir of [config.watchFolder, config.processedFolder, config.errorFolde
   }
 }
 
+// ── Table name constants ────────────────────────────────────
+const TABLES = {
+  INVENTORY:  'inventory',
+  INV_LOGS:   'inventory_logs',
+  SYNC_LOG:   'sync_log',
+  PENDING:    'pending_sales',
+  HEARTBEAT:  'watcher_heartbeat',
+};
+
 // ── Init Supabase ───────────────────────────────────────────
 const sb = createClient(config.supabaseUrl, config.supabaseKey);
 
@@ -110,7 +119,7 @@ async function processFile(filepath, filename) {
   }
 
   // 3. Duplicate check
-  const { data: existing } = await sb.from('sync_log').select('id').eq('filename', filename);
+  const { data: existing } = await sb.from(TABLES.SYNC_LOG).select('id').ilike('filename', filename);
   if (existing && existing.length > 0) {
     log(`כפול — מדלג: ${filename}`);
     moveToProcessed(filepath, filename);
@@ -188,7 +197,7 @@ async function processFile(filepath, filename) {
   }
 
   // 6. Create sync_log entry
-  const { data: logRow, error: logErr } = await sb.from('sync_log').insert({
+  const { data: logRow, error: logErr } = await sb.from(TABLES.SYNC_LOG).insert({
     filename,
     source_ref: 'watcher',
     status: 'partial',
@@ -207,7 +216,7 @@ async function processFile(filepath, filename) {
 
   for (const row of validRows) {
     try {
-      const { data: invRows, error: invErr } = await sb.from('inventory')
+      const { data: invRows, error: invErr } = await sb.from(TABLES.INVENTORY)
         .select('id, quantity')
         .eq('barcode', row.barcode)
         .eq('is_deleted', false)
@@ -224,13 +233,13 @@ async function processFile(filepath, filename) {
           newQty = inv.quantity + row.quantity;
         }
 
-        const { error: updErr } = await sb.from('inventory')
+        const { error: updErr } = await sb.from(TABLES.INVENTORY)
           .update({ quantity: newQty })
           .eq('id', inv.id);
         if (updErr) throw updErr;
 
         // Write audit log directly (no writeLog helper in Node)
-        const { error: logInsErr } = await sb.from('inventory_logs').insert({
+        const { error: logInsErr } = await sb.from(TABLES.INV_LOGS).insert({
           action: row.action_type === 'sale' ? 'reduce_qty' : 'return_qty',
           inventory_id: inv.id,
           qty_before: inv.quantity,
@@ -258,7 +267,7 @@ async function processFile(filepath, filename) {
         rowsSuccess++;
       } else {
         // Barcode not found — insert pending_sales
-        const { error: pendErr } = await sb.from('pending_sales').insert({
+        const { error: pendErr } = await sb.from(TABLES.PENDING).insert({
           sync_log_id: syncLogId,
           source_ref: 'watcher',
           filename,
@@ -293,7 +302,7 @@ async function processFile(filepath, filename) {
   const finalStatus = (rowsError === 0 && rowsPending === 0) ? 'success'
     : (rowsSuccess === 0 && rowsPending === 0) ? 'error'
     : 'partial';
-  await sb.from('sync_log').update({
+  await sb.from(TABLES.SYNC_LOG).update({
     status: finalStatus,
     rows_success: rowsSuccess,
     rows_pending: rowsPending,
@@ -344,7 +353,7 @@ async function handleNewFile(filepath) {
 // ── I) Heartbeat ────────────────────────────────────────────
 async function sendHeartbeat() {
   try {
-    await sb.from('watcher_heartbeat').update({
+    await sb.from(TABLES.HEARTBEAT).update({
       last_beat: new Date().toISOString(),
       watcher_version: config.watcherVersion || '1.0.0',
       host: os.hostname()

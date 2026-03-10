@@ -133,7 +133,7 @@ async function processAccessSalesFile(workbook, filename) {
 
   // B) Duplicate file check
   try {
-    const { data: existing } = await sb.from(T.SYNC_LOG).select('id').eq('filename', filename);
+    const { data: existing } = await sb.from(T.SYNC_LOG).select('id').ilike('filename', filename);
     if (existing && existing.length > 0) {
       const ok = await confirmDialog('הקובץ הזה כבר עובד בעבר. לייבא בכל זאת?');
       if (!ok) return;

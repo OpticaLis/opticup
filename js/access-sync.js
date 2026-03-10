@@ -2,6 +2,14 @@
 // ACCESS SYNC — סנכרון Access
 // =========================================================
 
+let syncLogPage = 0;
+const SYNC_LOG_PAGE_SIZE = 20;
+
+const SOURCE_LABELS = {
+  watcher: '🤖 Watcher',
+  manual:  '👤 ידני',
+};
+
 // ── renderAccessSyncTab ─────────────────────────────────
 function renderAccessSyncTab() {
   const c = $('access-sync-container');
@@ -39,6 +47,7 @@ function renderAccessSyncTab() {
           </tbody>
         </table>
       </div>
+      <div id="as-log-pagination" style="display:none;margin-top:10px;text-align:center;font-size:.9rem"></div>
     </div>
   `;
 }
@@ -69,19 +78,27 @@ async function loadHeartbeat() {
 }
 
 // ── loadSyncLog ─────────────────────────────────────────
-async function loadSyncLog() {
+async function loadSyncLog(page = 0) {
+  syncLogPage = page;
   const body = $('as-log-body');
+  const paginationDiv = $('as-log-pagination');
   if (!body) return;
   try {
-    const { data, error } = await sb.from(T.SYNC_LOG).select('*').order('created_at', { ascending: false }).limit(50);
+    const from = page * SYNC_LOG_PAGE_SIZE;
+    const to = from + SYNC_LOG_PAGE_SIZE - 1;
+    const { data, error, count } = await sb.from(T.SYNC_LOG)
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
     if (error) throw error;
     if (!data || data.length === 0) {
       body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#888;padding:24px">אין סנכרונים עדיין</td></tr>';
+      if (paginationDiv) paginationDiv.style.display = 'none';
       return;
     }
     body.innerHTML = data.map(r => {
       const date = new Date(r.created_at).toLocaleString('he-IL');
-      const src = r.source_ref === 'watcher' ? 'Watcher' : 'ידני';
+      const src = SOURCE_LABELS[r.source_ref] ?? r.source_ref;
       let statusBadge = '';
       if (r.status === 'success') statusBadge = '<span style="color:#16a34a;font-weight:600">&#10004; הצליח</span>';
       else if (r.status === 'partial') statusBadge = '<span style="color:#d97706;font-weight:600">&#9888; חלקי</span>';
@@ -97,6 +114,19 @@ async function loadSyncLog() {
         <td>${r.rows_error || 0}</td>
       </tr>`;
     }).join('');
+    // Pagination controls
+    if (paginationDiv && count > SYNC_LOG_PAGE_SIZE) {
+      const totalPages = Math.ceil(count / SYNC_LOG_PAGE_SIZE);
+      const currentPage = page + 1;
+      paginationDiv.style.display = 'block';
+      paginationDiv.innerHTML = `
+        <button class="btn btn-g btn-sm" ${page === 0 ? 'disabled' : ''} onclick="loadSyncLog(${page - 1})">הקודם</button>
+        <span style="margin:0 12px">עמוד ${currentPage} מתוך ${totalPages}</span>
+        <button class="btn btn-g btn-sm" ${currentPage >= totalPages ? 'disabled' : ''} onclick="loadSyncLog(${page + 1})">הבא</button>
+      `;
+    } else if (paginationDiv) {
+      paginationDiv.style.display = 'none';
+    }
   } catch (e) {
     body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#dc2626;padding:24px">שגיאה בטעינת לוג</td></tr>';
   }
@@ -420,12 +450,25 @@ async function resolvePending(pendingId, inventoryId) {
     if (!emp) { toast('סיסמת עובד שגויה', 'e'); return; }
     sessionStorage.setItem('prizma_user', emp.name);
 
-    // 2. Read current inventory
+    // 2. Optimistic lock — only resolve if still pending
+    const { data: lockResult } = await sb.from(T.PENDING_SALES).update({
+      status: 'resolved',
+      resolved_at: new Date().toISOString(),
+      resolved_inventory_id: inventoryId,
+      resolution_note: `הותאם ידנית על ידי ${emp.name}`
+    }).eq('id', pendingId).eq('status', 'pending').select('id');
+    if (!lockResult || lockResult.length === 0) {
+      toast('הפריט כבר טופל על ידי משתמש אחר', 'e');
+      renderPendingPanel();
+      return;
+    }
+
+    // 3. Read current inventory
     const { data: inv, error: iErr } = await sb.from(T.INV)
       .select('id, quantity, barcode, brand_id, model').eq('id', inventoryId).maybeSingle();
     if (iErr || !inv) throw iErr || new Error('inventory not found');
 
-    // 3. Calculate new quantity
+    // 4. Calculate new quantity
     const qtyBefore = inv.quantity;
     let qtyAfter;
     if (row.action_type === 'sale') {
@@ -434,18 +477,18 @@ async function resolvePending(pendingId, inventoryId) {
       qtyAfter = qtyBefore + row.quantity;
     }
 
-    // 4. Update inventory
+    // 5. Update inventory
     const { error: uErr } = await sb.from(T.INV)
       .update({ quantity: qtyAfter }).eq('id', inventoryId);
     if (uErr) throw uErr;
 
-    // 5. Resolve brand name for log
+    // 6. Resolve brand name for log
     let brandName = '';
     if (inv.brand_id) {
       brandName = brandCacheRev[inv.brand_id] || '';
     }
 
-    // 6. writeLog
+    // 7. writeLog
     writeLog(row.action_type === 'sale' ? 'sale' : 'credit_return', inventoryId, {
       barcode: inv.barcode,
       brand: brandName,
@@ -456,15 +499,6 @@ async function resolvePending(pendingId, inventoryId) {
       source_ref: row.source_ref + ':' + row.filename,
       performed_by: emp.name
     });
-
-    // 7. Mark pending as resolved
-    const { error: pErr } = await sb.from(T.PENDING_SALES).update({
-      status: 'resolved',
-      resolved_at: new Date().toISOString(),
-      resolved_inventory_id: inventoryId,
-      resolution_note: `הותאם ידנית על ידי ${emp.name}`
-    }).eq('id', pendingId);
-    if (pErr) throw pErr;
 
     // 8. Remove card, update badge
     const card = $('pcard-' + pendingId);
