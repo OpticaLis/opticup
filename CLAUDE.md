@@ -17,7 +17,7 @@
 - Mobile responsive
 
 ## Critical Rules
-1. **Quantity changes** — ONLY through ➕➖ buttons with PIN verification. Never direct edit.
+1. **Quantity changes** — ONLY through ➕➖ buttons with PIN verification. Never direct edit. Quantity updates should prefer atomic increments via Supabase RPC (`quantity = quantity + x`) over calculated values to prevent race conditions. New quantity-changing features must use this pattern.
 2. **writeLog()** — must be called for every quantity/price change. It is async and non-blocking.
 3. **Deletion** — always soft delete (is_deleted flag). Permanent delete requires double PIN.
 4. **Barcodes** — format BBDDDDD (2-digit branch + 5-digit sequence). Do NOT change barcode logic.
@@ -25,11 +25,14 @@
 6. **index.html** — must stay in repo root. Never move it.
 7. **Admin password** — 1234 (sessionStorage key: adminMode)
 8. **Default employee PIN** — 1234
+9. **API Abstraction** — All database interactions must pass through `shared.js` helper functions (`fetchAll`, `batchCreate`, `batchUpdate`, etc.). Modules should never call `sb.from()` directly unless for specialized joins that cannot be expressed through the helpers.
+10. **Security & Sanitization** — Never use `innerHTML` with user-controlled input. Always use `escapeHtml()` or `textContent`. Note: PIN is currently verified client-side against the `employees` table — server-side RPC migration is planned. Do not attempt to refactor PIN verification unless explicitly instructed.
 
 ---
 
 ## File Structure
 
+**Current structure (transitional — being migrated to module folders):**
 ```
 prizma/
 ├── index.html                  — shell: HTML structure + nav + modals + script tags
@@ -37,17 +40,40 @@ prizma/
 │   └── styles.css              — all styles
 ├── js/
 │   ├── shared.js               — Supabase init, constants, caches, utility functions (load FIRST)
-│   ├── inventory-core.js       — inventory reduction (Excel + manual) + main inventory table
-│   ├── inventory-entry.js      — inventory entry forms (manual + Excel import)
-│   ├── goods-receipt.js        — goods receipt module + system log viewer
-│   ├── audit-log.js            — soft delete, recycle bin, item history, qty modal
-│   ├── brands-suppliers.js     — brands management + suppliers management
-│   ├── purchase-orders.js      — purchase orders (CRUD, export, import to inventory)
-│   └── admin.js                — admin mode toggle + app init (DOMContentLoaded)
+│   ├── inventory-*.js          — inventory module files
+│   ├── goods-receipt.js        — goods receipt module
+│   ├── audit-log.js / item-history.js / qty-modal.js
+│   ├── brands.js / suppliers.js
+│   ├── purchase-orders.js / po-*.js
+│   ├── access-sync.js / pending-*.js
+│   └── admin.js / system-log.js
 ├── migrations/
-│   └── 009_brands_active.sql   — brands.active column
+│   └── 009_brands_active.sql
 └── serve.js                    — local dev server (Node.js, port 8080)
 ```
+
+**Target structure (after folder reorganization — planned after all splits complete):**
+```
+prizma/
+├── index.html
+├── css/
+│   └── styles.css
+├── js/
+│   └── shared.js               — global only: Supabase client, caches, utils (load FIRST)
+├── modules/
+│   ├── inventory/              — inventory-table, inventory-edit, inventory-reduction,
+│   │                             inventory-entry, inventory-export, excel-import, access-sales
+│   ├── purchasing/             — purchase-orders, po-form, po-items, po-actions, po-view-import
+│   ├── receipts/               — goods-receipt, receipt-form, receipt-actions, receipt-excel
+│   ├── audit/                  — audit-log, item-history, qty-modal
+│   ├── brands/                 — brands, suppliers
+│   ├── access-sync/            — access-sync, pending-panel, pending-resolve
+│   └── admin/                  — admin, system-log
+├── migrations/
+└── serve.js
+```
+
+**Important:** When the folder reorganization is executed, all `<script src="...">` paths in `index.html` must be updated to match the new paths. Do not reorganize folders without updating `index.html` in the same commit.
 
 ## DB Tables (via T constant)
 
@@ -90,7 +116,7 @@ prizma/
 - `loadLookupCaches()` — fetches suppliers (with supplier_number) + brands into caches
 - `loadData()` — initial data load: caches, brands, max barcode
 - `loadMaxBarcode()` — branch-scoped barcode sequence from inventory
-- `rowToRecord(row)` / `fieldsToRow(fields)` — DB↔app field conversion
+- `enrichRow(row)` — adds brand_name + supplier_name resolved from cache onto raw DB row
 - `enToHe(field, val)` / `heToEn(field, val)` — enum translation helpers
 - `fetchAll(table, filters, select, order)` — paginated Supabase query
 - `batchCreate(table, rows)` / `batchUpdate(table, rows)` — bulk CRUD
@@ -364,7 +390,7 @@ prizma/
 
 6. **Immediate save vs. batch save** — checkboxes like `setBrandActive()` and `saveBrandField()` save immediately to DB. Row edits (brands table, inventory table) require explicit "Save" button.
 
-7. **PIN verification** — all qty changes, soft delete, permanent delete, and inventory reduction require PIN entry verified against `employees` table.
+7. **PIN verification** — all qty changes, soft delete, permanent delete, and inventory reduction require PIN entry verified against `employees` table. Currently client-side — server-side RPC migration is planned.
 
 8. **Temp negative swap** — supplier number reassignment uses temp negative values to avoid UNIQUE constraint violations during concurrent swaps.
 
@@ -383,6 +409,27 @@ prizma/
 ## Known Issues
 
 1. **loadPOsForSupplier console warning** — when receipt tab loads without a supplier selected, `loadPOsForSupplier()` may log a warning about missing supplier_id. Non-blocking.
+
+---
+
+## File Size Rules
+
+- **Target: max 300 lines per file.** This is the threshold at which an AI assistant can read and fully understand a file in a single context window.
+- **Absolute maximum: 350 lines** — only acceptable when splitting further would break a tightly coupled logical unit (e.g. a single pipeline or wizard flow).
+- **Split rule:** Only split where there is a clear logical separation. Never cut arbitrarily by line count alone.
+- **One responsibility per file** — if you need "and" to describe what a file does, it should be two files.
+
+---
+
+## Working Rules (AI Sessions)
+
+1. **One file at a time** — never touch multiple files in a single task unless explicitly instructed
+2. **Backup before every major change** — copy affected files to `modules/Module 1 - Inventory Management/backups/` before splitting or refactoring
+3. **Stop and report after every task** — do not proceed to the next step without explicit approval
+4. **No logic changes during structural work** — when splitting or reorganizing, copy code verbatim. Zero behavior changes.
+5. **Verify after every change** — app must load with zero console errors after every file modification
+6. **Report before executing** — for any task touching more than one function, show the plan first and wait for approval
+7. **Never auto-proceed** — even if the next step seems obvious, stop and wait
 
 ---
 
