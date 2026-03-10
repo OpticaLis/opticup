@@ -67,7 +67,7 @@ function renderBrandsTable() {
   const tb = $('brands-body');
   tb.innerHTML = brandsEdited.map((b, i) => `
     <tr data-idx="${i}">
-      <td><input value="${escapeHtml(b.name)}" onchange="brandsEdited[${i}].name=this.value"></td>
+      <td><input value="${b.name}" onchange="brandsEdited[${i}].name=this.value"></td>
       <td><select onchange="brandsEdited[${i}].type=this.value">
         <option value="">—</option>
         <option value="יוקרה"${b.type==='יוקרה'?' selected':''}>יוקרה</option>
@@ -89,11 +89,6 @@ function renderBrandsTable() {
 
 async function setBrandActive(brandId, isActive) {
   if (!brandId) return;
-  const msg = isActive
-    ? 'הפעלת מותג תחזיר אותו לכל הרשימות. להמשיך?'
-    : 'השבתת מותג תסתיר אותו מכל הרשימות. להמשיך?';
-  const ok = await confirmDialog(isActive ? 'הפעלת מותג' : 'השבתת מותג', msg);
-  if (!ok) { renderBrandsTable(); return; }
   const { error } = await sb.from('brands')
     .update({ active: isActive })
     .eq('id', brandId);
@@ -216,13 +211,13 @@ function loadSuppliersTab() {
     if (supplierEditMode) {
       return `<tr>
         <td><input type="number" min="10" value="${num}" class="sup-num-input" data-sid="${sid}" style="width:70px;text-align:center"></td>
-        <td><strong>${escapeHtml(s)}</strong></td>
+        <td><strong>${s}</strong></td>
         <td></td>
       </tr>`;
     }
     return `<tr>
       <td>${num || '—'}</td>
-      <td><strong>${escapeHtml(s)}</strong></td>
+      <td><strong>${s}</strong></td>
       <td><button class="btn btn-d btn-sm" onclick="toast('לא ניתן למחוק ספק מהממשק','w')">&#10006;</button></td>
     </tr>`;
   }).join('');

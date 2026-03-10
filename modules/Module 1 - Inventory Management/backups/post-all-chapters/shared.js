@@ -123,16 +123,63 @@ async function loadLookupCaches() {
   (brs || []).forEach(b => { brandCache[b.name] = b.id; brandCacheRev[b.id] = b.name; });
 }
 
-// --- Enrich Supabase row with resolved brand/supplier names ---
-function enrichRow(row) {
-  return {
-    ...row,
-    brand_name:    brandCacheRev[row.brand_id]    || '',
-    supplier_name: supplierCacheRev[row.supplier_id] || '',
-  };
+// --- Convert Supabase row → Airtable-shaped {id, fields:{Hebrew...}} ---
+function rowToRecord(row, tableName) {
+  const rev = FIELD_MAP_REV[tableName] || {};
+  const fields = {};
+  for (const [enCol, val] of Object.entries(row)) {
+    if (enCol === 'id' || enCol === 'created_at' || enCol === 'updated_at' ||
+        enCol === 'branch_id' || enCol === 'created_by' || enCol === 'woocommerce_id') continue;
+    if (enCol === 'inventory_images') {
+      // Convert joined images to Airtable-shaped array
+      fields['תמונות'] = (val || []).map(img => ({
+        url: img.url,
+        thumbnails: {
+          small: { url: img.thumbnail_url || img.url },
+          large: { url: img.url }
+        }
+      }));
+      continue;
+    }
+    const heName = rev[enCol];
+    if (!heName) continue;
+    if (heName === '_images') continue; // skip placeholder
+
+    // Resolve FK → name
+    if (enCol === 'supplier_id') { fields['ספק'] = supplierCacheRev[val] || ''; continue; }
+    if (enCol === 'brand_id') { fields['חברה / מותג'] = brandCacheRev[val] || ''; continue; }
+
+    // Reverse enum
+    const cat = enumCatForCol(tableName, enCol);
+    if (cat) { fields[heName] = enToHe(cat, val); continue; }
+
+    fields[heName] = val;
+  }
+  return { id: row.id, fields };
 }
 
-// --- Supabase-backed fetchAll ---
+// --- Convert Hebrew fields → English row for insert/update ---
+function fieldsToRow(hebrewFields, tableName) {
+  const map = FIELD_MAP[tableName] || {};
+  const row = {};
+  for (const [heKey, val] of Object.entries(hebrewFields)) {
+    const enCol = map[heKey];
+    if (!enCol || enCol === '_images') continue;
+
+    // Resolve name → FK
+    if (enCol === 'supplier_id') { row.supplier_id = supplierCache[val] || null; continue; }
+    if (enCol === 'brand_id') { row.brand_id = brandCache[val] || null; continue; }
+
+    // Forward enum
+    const cat = enumCatForCol(tableName, enCol);
+    if (cat) { row[enCol] = heToEn(cat, val); continue; }
+
+    row[enCol] = val;
+  }
+  return row;
+}
+
+// --- Supabase-backed fetchAll (returns Airtable-shaped records) ---
 async function fetchAll(tableName, filters) {
   const PAGE = 1000;
   let all = [], from = 0;
@@ -157,14 +204,14 @@ async function fetchAll(tableName, filters) {
     if (data.length < PAGE) break;
     from += PAGE;
   }
-  return all.map(enrichRow);
+  return all.map(row => rowToRecord(row, tableName));
 }
 
 // --- Supabase-backed batchCreate ---
 async function batchCreate(tableName, records) {
   // Duplicate barcode check for inventory inserts
   if (tableName === T.INV) {
-    const barcodes = records.map(r => r.barcode).filter(Boolean);
+    const barcodes = records.map(r => r.fields['ברקוד']).filter(Boolean);
     if (barcodes.length) {
       // Check for duplicates within the batch itself
       const seen = new Set();
@@ -185,9 +232,10 @@ async function batchCreate(tableName, records) {
     }
   }
 
+  const rows = records.map(r => fieldsToRow(r.fields, tableName));
   const created = [];
-  for (let i = 0; i < records.length; i += 100) {
-    const batch = records.slice(i, i + 100);
+  for (let i = 0; i < rows.length; i += 100) {
+    const batch = rows.slice(i, i + 100);
     const { data, error } = await sb.from(tableName).insert(batch).select(tableName === 'inventory' ? '*, inventory_images(*)' : '*');
     if (error) {
       // Friendly message for unique constraint violation
@@ -196,7 +244,7 @@ async function batchCreate(tableName, records) {
       }
       throw new Error(error.message);
     }
-    created.push(...(data || []).map(enrichRow));
+    created.push(...(data || []).map(row => rowToRecord(row, tableName)));
   }
   return created;
 }
@@ -209,10 +257,10 @@ async function batchUpdate(tableName, records) {
   // Group records by their column set for valid upsert batches
   const groups = new Map();
   for (const rec of records) {
-    const { id, ...row } = rec;
+    const row = fieldsToRow(rec.fields, tableName);
     const key = Object.keys(row).sort().join(',');
     if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(rec);
+    groups.get(key).push({ id: rec.id, ...row });
   }
 
   const allData = [];
@@ -229,7 +277,7 @@ async function batchUpdate(tableName, records) {
     if (data) allData.push(...data);
   }
 
-  return allData.map(enrichRow);
+  return allData.map(row => rowToRecord(row, tableName));
 }
 
 // =========================================================

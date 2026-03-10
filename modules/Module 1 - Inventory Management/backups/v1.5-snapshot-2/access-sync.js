@@ -24,6 +24,7 @@ function renderAccessSyncTab() {
 
       <!-- Action buttons -->
       <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="btn btn-p" id="as-btn-import" onclick="onManualImportClick()">&#128229; ייבוא ידני</button>
         <button class="btn btn-g" id="as-btn-pending" onclick="onPendingClick()">ממתינים לטיפול</button>
       </div>
 
@@ -120,8 +121,8 @@ async function loadSyncLog(page = 0) {
       else statusBadge = '<span style="color:#dc2626;font-weight:600">&#10008; שגיאה</span>';
       return `<tr>
         <td>${date}</td>
-        <td style="direction:ltr;text-align:right">${escapeHtml(r.filename) || ''}</td>
-        <td>${escapeHtml(src)}</td>
+        <td style="direction:ltr;text-align:right">${r.filename || ''}</td>
+        <td>${src}</td>
         <td>${statusBadge}</td>
         <td>${r.rows_total || 0}</td>
         <td>${r.rows_success || 0}</td>
@@ -171,7 +172,9 @@ async function loadPendingBadge() {
 }
 
 // ── Button handlers ─────────────────────────────────────
-// onManualImportClick — stub, button removed until feature is implemented
+function onManualImportClick() {
+  toast('בקרוב — ייבוא ידני', 'w');
+}
 
 function onPendingClick() {
   renderPendingPanel();
@@ -235,20 +238,20 @@ function pendingCardHtml(r) {
   return `
     <div class="card" id="pcard-${r.id}" style="margin-bottom:12px;border:1px solid #e2e8f0;padding:14px">
       <div style="display:flex;flex-wrap:wrap;gap:8px 24px;margin-bottom:6px;font-size:.9rem">
-        <span><b>ברקוד:</b> <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px">${escapeHtml(r.barcode_received)}</code></span>
+        <span><b>ברקוד:</b> <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px">${r.barcode_received}</code></span>
         <span><b>כמות:</b> ${r.quantity}</span>
-        <span><b>הזמנה:</b> ${escapeHtml(r.order_number)}</span>
+        <span><b>הזמנה:</b> ${r.order_number}</span>
         <span><b>סוג:</b> ${typeLabel}</span>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px 24px;margin-bottom:10px;font-size:.85rem;color:#64748b">
-        <span><b>סיבה:</b> ${escapeHtml(r.reason)}</span>
+        <span><b>סיבה:</b> ${r.reason}</span>
         <span><b>תאריך:</b> ${date}</span>
-        <span><b>קובץ:</b> ${escapeHtml(r.filename)}</span>
+        <span><b>קובץ:</b> ${r.filename}</span>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-p btn-sm" data-action="suggestions" data-pending-id="${r.id}" data-barcode="${escapeHtml(r.barcode_received)}">&#128161; המלצות</button>
+        <button class="btn btn-p btn-sm" data-action="suggestions" data-pending-id="${r.id}" data-barcode="${r.barcode_received}">&#128161; המלצות</button>
         <button class="btn btn-g btn-sm" data-action="free-search" data-pending-id="${r.id}">&#128269; חיפוש חופשי</button>
-        <button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5" data-action="ignore" data-pending-id="${r.id}" data-barcode="${escapeHtml(r.barcode_received)}" data-source-ref="${escapeHtml(r.source_ref)}">&#10006; לא קיים במלאי</button>
+        <button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5" data-action="ignore" data-pending-id="${r.id}" data-barcode="${r.barcode_received}" data-source-ref="${r.source_ref}">&#10006; לא קיים במלאי</button>
       </div>
       <div id="pcard-suggestions-${r.id}" style="display:none;margin-top:10px"></div>
       <div id="pcard-search-${r.id}" style="display:none;margin-top:10px"></div>
@@ -314,7 +317,7 @@ async function loadSuggestions(pendingId, barcode) {
       results.map(r => {
         const brand = brandMap[r.brand_id] || '';
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;font-size:.85rem;background:#fafafa">
-          <span>${escapeHtml(brand)} ${escapeHtml(r.model) || ''} | ${escapeHtml(r.color) || ''} ${escapeHtml(r.size) || ''} | <code>${escapeHtml(r.barcode) || '—'}</code> | כמות: ${r.quantity}</span>
+          <span>${brand} ${r.model || ''} | ${r.color || ''} ${r.size || ''} | <code>${r.barcode || '—'}</code> | כמות: ${r.quantity}</span>
           <button class="btn btn-p btn-sm" style="padding:2px 10px;font-size:.8rem" data-action="resolve" data-pending-id="${pendingId}" data-inventory-id="${r.id}">זה הפריט</button>
         </div>`;
       }).join('');
@@ -402,7 +405,7 @@ async function runPendingSearch(pendingId, query) {
     resultsDiv.innerHTML = items.map(r => {
       const brand = brandMap[r.brand_id] || '';
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;font-size:.85rem;background:#fafafa;cursor:pointer" data-action="resolve" data-pending-id="${pendingId}" data-inventory-id="${r.id}">
-        <span>${escapeHtml(brand)} ${escapeHtml(r.model) || ''} | ${escapeHtml(r.color) || ''} ${escapeHtml(r.size) || ''} | <code>${escapeHtml(r.barcode) || '—'}</code> | כמות: ${r.quantity}</span>
+        <span>${brand} ${r.model || ''} | ${r.color || ''} ${r.size || ''} | <code>${r.barcode || '—'}</code> | כמות: ${r.quantity}</span>
         <span style="color:var(--accent);font-size:.8rem">&#10004; בחר</span>
       </div>`;
     }).join('');
@@ -441,8 +444,6 @@ async function ignorePending(pendingId, barcode, sourceRef) {
 }
 
 // ── Resolve pending ─────────────────────────────────────
-let resolvePendingTarget = null;
-
 async function resolvePending(pendingId, inventoryId) {
   try {
     // 1. Read the pending row (needed for confirm message)
@@ -454,48 +455,13 @@ async function resolvePending(pendingId, inventoryId) {
     const confirmed = await confirmDialog(`לאשר שינוי כמות במלאי עבור ברקוד ${row.barcode_received}?`);
     if (!confirmed) return;
 
-    // Gate 2 — PIN modal
-    resolvePendingTarget = { pendingId, inventoryId, row };
-    if (!$('resolve-pin-modal')) {
-      const div = document.createElement('div');
-      div.id = 'resolve-pin-modal';
-      div.className = 'modal-overlay';
-      div.style.display = 'none';
-      div.innerHTML = `
-        <div class="modal" style="max-width:360px">
-          <h3 style="margin:0 0 12px 0">🔒 אימות עובד</h3>
-          <p style="margin:0 0 12px 0;font-size:.9rem;color:var(--g500)">טיפול בפריט ממתין דורש סיסמת עובד</p>
-          <input type="password" id="resolve-pin" placeholder="סיסמת עובד" style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;margin-bottom:8px"
-                 onkeydown="if(event.key==='Enter') confirmResolvePending()">
-          <p id="resolve-pin-error" style="color:var(--error);font-size:.85rem;margin:0 0 8px 0"></p>
-          <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button class="btn btn-g btn-sm" onclick="closeModal('resolve-pin-modal')">ביטול</button>
-            <button class="btn btn-p btn-sm" onclick="confirmResolvePending()">✅ אשר</button>
-          </div>
-        </div>`;
-      document.body.appendChild(div);
-      div.addEventListener('click', function(e) { if (e.target === this) closeModal('resolve-pin-modal'); });
-    }
-    $('resolve-pin').value = '';
-    $('resolve-pin-error').textContent = '';
-    $('resolve-pin-modal').style.display = 'flex';
-    $('resolve-pin').focus();
-  } catch (e) {
-    toast('שגיאה בטיפול בפריט: ' + (e.message || e), 'e');
-  }
-}
+    // Gate 2 — PIN verification
+    const pin = prompt('הזן סיסמת עובד:');
+    if (!pin) return;
+    const { data: emp } = await sb.from('employees').select('id, name').eq('pin', pin.trim()).eq('is_active', true).maybeSingle();
+    if (!emp) { toast('סיסמת עובד שגויה', 'e'); return; }
+    sessionStorage.setItem('prizma_user', emp.name);
 
-async function confirmResolvePending() {
-  if (!resolvePendingTarget) return;
-  const pin = $('resolve-pin').value.trim();
-  if (!pin) { $('resolve-pin-error').textContent = 'יש להזין סיסמת עובד'; return; }
-
-  const { data: emp } = await sb.from('employees').select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle();
-  if (!emp) { $('resolve-pin-error').textContent = '❌ סיסמת עובד שגויה'; $('resolve-pin').value = ''; $('resolve-pin').focus(); return; }
-  sessionStorage.setItem('prizma_user', emp.name);
-
-  const { pendingId, inventoryId, row } = resolvePendingTarget;
-  try {
     // 2. Optimistic lock — only resolve if still pending
     const { data: lockResult } = await sb.from(T.PENDING_SALES).update({
       status: 'resolved',
@@ -506,8 +472,6 @@ async function confirmResolvePending() {
     if (!lockResult || lockResult.length === 0) {
       toast('הפריט כבר טופל על ידי משתמש אחר', 'e');
       renderPendingPanel();
-      closeModal('resolve-pin-modal');
-      resolvePendingTarget = null;
       return;
     }
 
@@ -549,7 +513,6 @@ async function confirmResolvePending() {
     });
 
     // 8. Remove card, update badge
-    closeModal('resolve-pin-modal');
     const card = $('pcard-' + pendingId);
     if (card) card.remove();
     updatePendingPanelCount();
@@ -558,7 +521,6 @@ async function confirmResolvePending() {
   } catch (e) {
     toast('שגיאה בטיפול בפריט: ' + (e.message || e), 'e');
   }
-  resolvePendingTarget = null;
 }
 
 // ── Update panel header count ───────────────────────────

@@ -69,9 +69,9 @@ async function processRedExcel() {
       if (sync === 'full') {
         const qtyBefore = rec.quantity || 1;
         const qty = Math.max(0, qtyBefore - (parseInt(row['כמות'] || row['כמות שנמכרה']) || 1));
-        const updateFields = { quantity: qty };
-        if (qty === 0) updateFields.status = heToEn('status', 'נמכר');
-        await batchUpdate(T.INV, [{ id: rec.id, ...updateFields }]);
+        const updateFields = { 'כמות': qty };
+        if (qty === 0) updateFields['סטטוס'] = 'נמכר';
+        await batchUpdate(T.INV, [{ id: rec.id, fields: updateFields }]);
         writeLog('sale', rec.id, { barcode, brand: rec.brand_name, model: rec.model, qty_before: qtyBefore, qty_after: qty, source_ref: redExcelFileName || 'ייבוא אדום' });
         results.updated.push({ barcode, model: rec.model || barcode });
       } else if (sync === 'display') {
@@ -513,10 +513,10 @@ async function confirmReduction() {
   sessionStorage.setItem('prizma_user', emp.name);
 
   const newQty = currentQty - amount;
-  const updateFields = { quantity: newQty };
+  const updateFields = { 'כמות': newQty };
   // Status logic: only set 'sold' when qty=0 AND reason is 'נמכר'
   if (newQty === 0 && reason === 'נמכר') {
-    updateFields.status = heToEn('status', 'נמכר');
+    updateFields['סטטוס'] = 'נמכר';
   }
 
   // Action mapping
@@ -525,7 +525,7 @@ async function confirmReduction() {
   else if (reason === 'נשלח לזיכוי') action = 'credit_return';
 
   try {
-    await batchUpdate(T.INV, [{ id, ...updateFields }]);
+    await batchUpdate(T.INV, [{ id, fields: updateFields }]);
     await writeLog(action, id, {
       barcode, brand, model,
       qty_before: currentQty,
@@ -812,11 +812,11 @@ async function applyBulkUpdate() {
   const cp = $('bulk-cprice').value;
   const cd = $('bulk-cdisc').value;
   const sync = $('bulk-sync').value;
-  if (sp !== '') fields.sell_price = parseFloat(sp) || 0;
-  if (sd !== '') fields.sell_discount = (parseFloat(sd) || 0) / 100;
-  if (cp !== '') fields.cost_price = parseFloat(cp) || 0;
-  if (cd !== '') fields.cost_discount = (parseFloat(cd) || 0) / 100;
-  if (sync) fields.website_sync = heToEn('website_sync', sync);
+  if (sp !== '') fields['מחיר מכירה'] = parseFloat(sp) || 0;
+  if (sd !== '') fields['הנחה מכירה %'] = (parseFloat(sd) || 0) / 100;
+  if (cp !== '') fields['מחיר עלות'] = parseFloat(cp) || 0;
+  if (cd !== '') fields['הנחה עלות %'] = (parseFloat(cd) || 0) / 100;
+  if (sync) fields['סנכרון אתר'] = sync;
 
   if (!Object.keys(fields).length) { toast('לא הוזנו ערכים לעדכון', 'w'); return; }
 
@@ -841,13 +841,13 @@ async function applyBulkUpdate() {
     }
   }
 
-  const desc = Object.entries(fields).map(([k,v]) => `${FIELD_MAP_REV.inventory?.[k]||k}: ${typeof v==='number' && k.includes('discount') ? Math.round(v*100)+'%' : v}`).join(', ');
+  const desc = Object.entries(fields).map(([k,v]) => `${k}: ${typeof v==='number' && k.includes('%') ? Math.round(v*100)+'%' : v}`).join(', ');
   const ok = await confirmDialog('עדכון גורף', `לעדכן ${ids.length} פריטים?\n${desc}`);
   if (!ok) return;
 
   showLoading(`מעדכן ${ids.length} פריטים...`);
   try {
-    const updates = ids.map(id => ({ id, ...fields }));
+    const updates = ids.map(id => ({ id, fields: { ...fields } }));
     await batchUpdate(T.INV, updates);
     // Clear bulk inputs
     $('bulk-sprice').value = '';
@@ -951,6 +951,12 @@ function invEdit(td, field, type) {
   const rec = invData.find(r => r.id === recId);
   if (!rec) return;
 
+  // Reverse map: English column → Hebrew key (for invChanges → fieldsToRow bridge)
+  const FIELD_MAP_INV_REV = Object.fromEntries(
+    Object.entries(FIELD_MAP.inventory).map(([he, en]) => [en, he])
+  );
+  const hebrewField = FIELD_MAP_INV_REV[field] || field;
+
   let curVal = rec[field] || '';
   if (type === 'pct') curVal = rec[field] ? Math.round(rec[field] * 100) : 0;
   if (type === 'number') curVal = rec[field] || 0;
@@ -973,7 +979,7 @@ function invEdit(td, field, type) {
     const origVal = rec[field] || (type === 'number' || type === 'pct' ? 0 : '');
     if (newVal !== origVal) {
       if (!invChanges[recId]) invChanges[recId] = {};
-      invChanges[recId][field] = newVal;
+      invChanges[recId][hebrewField] = newVal;
       rec[field] = newVal;  // local object stays English-keyed
       td.classList.add('changed');
       $('inv-edit-notice').style.display = 'inline';
@@ -1032,7 +1038,7 @@ function invEditSync(td) {
     }
     if (newVal !== curVal) {
       if (!invChanges[recId]) invChanges[recId] = {};
-      invChanges[recId].website_sync = heToEn('website_sync', newVal);
+      invChanges[recId]['סנכרון אתר'] = newVal;
       rec.website_sync = heToEn('website_sync', newVal);
       td.classList.add('changed');
       $('inv-edit-notice').style.display = 'inline';
@@ -1096,26 +1102,26 @@ async function saveInventoryChanges() {
     const beforeMap = {};
     for (const id of ids) {
       const rec = invData.find(r => r.id === id);
-      if (rec) beforeMap[id] = { ...rec };
+      if (rec) beforeMap[id] = { ...rec.fields };
     }
     // Strip quantity — must use ➕➖ buttons only
-    for (const id of ids) { delete invChanges[id].quantity; if (!Object.keys(invChanges[id]).length) delete invChanges[id]; }
+    for (const id of ids) { delete invChanges[id]['כמות']; if (!Object.keys(invChanges[id]).length) delete invChanges[id]; }
     const filteredIds = Object.keys(invChanges);
     if (!filteredIds.length) { toast('אין שינויים לשמור (כמות משתנה רק דרך ➕➖)', 'w'); hideLoading(); return; }
 
-    const updates = filteredIds.map(id => ({ id, ...invChanges[id] }));
+    const updates = filteredIds.map(id => ({ id, fields: invChanges[id] }));
     await batchUpdate(T.INV, updates);
     // Log each change
     for (const id of filteredIds) {
       const before = beforeMap[id] || {};
       const changed = invChanges[id] || {};
-      const base = { barcode: before.barcode, brand: before.brand_name, model: before.model };
+      const base = { barcode: before['ברקוד'], brand: before['חברה / מותג'], model: before['דגם'] };
       // Price changed
-      if ('sell_price' in changed && changed.sell_price !== before.sell_price) {
-        writeLog('edit_price', id, { ...base, price_before: before.sell_price ?? 0, price_after: changed.sell_price ?? 0 });
+      if ('מחיר מכירה' in changed && changed['מחיר מכירה'] !== before['מחיר מכירה']) {
+        writeLog('edit_price', id, { ...base, price_before: before['מחיר מכירה'] ?? 0, price_after: changed['מחיר מכירה'] ?? 0 });
       }
       // Other fields changed (not qty/price)
-      const otherKeys = Object.keys(changed).filter(k => k !== 'quantity' && k !== 'sell_price');
+      const otherKeys = Object.keys(changed).filter(k => k !== 'כמות' && k !== 'מחיר מכירה');
       if (otherKeys.length) {
         writeLog('edit_details', id, { ...base, reason: 'עריכת פרטים' });
       }

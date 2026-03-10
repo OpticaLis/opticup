@@ -57,14 +57,14 @@ function renderPoList(container) {
         let actions = '';
         if (po.status === 'draft') {
           actions = `
-            <button class="btn btn-p btn-sm btn-po-edit" data-id="${escapeHtml(po.id)}">עריכה</button>
-            <button class="btn btn-s btn-sm btn-po-send" data-id="${escapeHtml(po.id)}">שלח</button>
-            <button class="btn btn-d btn-sm btn-po-cancel" data-id="${escapeHtml(po.id)}">בטל</button>`;
+            <button onclick="openEditPO('${po.id}')" class="btn btn-p btn-sm">עריכה</button>
+            <button onclick="sendPurchaseOrder('${po.id}')" class="btn btn-s btn-sm">שלח</button>
+            <button onclick="cancelPO('${po.id}')" class="btn btn-d btn-sm">בטל</button>`;
         } else if (po.status === 'sent' || po.status === 'partial') {
-          actions = `<button class="btn btn-g btn-sm btn-po-view" data-id="${escapeHtml(po.id)}">צפייה</button>
-            <button class="btn btn-d btn-sm btn-po-cancel" data-id="${escapeHtml(po.id)}">בטל</button>`;
+          actions = `<button onclick="openViewPO('${po.id}')" class="btn btn-g btn-sm">צפייה</button>
+            <button onclick="cancelPO('${po.id}')" class="btn btn-d btn-sm">בטל</button>`;
         } else {
-          actions = `<button class="btn btn-g btn-sm btn-po-view" data-id="${escapeHtml(po.id)}">צפייה</button>`;
+          actions = `<button onclick="openViewPO('${po.id}')" class="btn btn-g btn-sm">צפייה</button>`;
         }
         return `<tr>
           <td style="font-weight:600">${po.po_number || '—'}</td>
@@ -516,9 +516,9 @@ function renderPOItemsTable() {
                  oninput="currentPOItems[${i}].discount_pct=+this.value; updatePOTotals()" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td id="po-row-total-${i}" style="text-align:center; font-weight:600; padding:8px">—</td>
       <td>
-        <button class="btn-po-toggle" data-index="${i}" style="background:none;border:none;cursor:pointer;font-size:14px" title="פרטים נוספים">&#9660;</button>
-        <button class="btn-po-dup" data-index="${i}" title="שכפל שורה" style="background:none;border:none;cursor:pointer;font-size:14px;color:#2196F3;padding:2px 4px">&#10697;</button>
-        <button class="btn-po-remove" data-index="${i}" style="background:none;border:none;cursor:pointer;color:#f44336;font-size:16px">&#10005;</button>
+        <button onclick="togglePOItemDetails(${i})" style="background:none;border:none;cursor:pointer;font-size:14px" title="פרטים נוספים">&#9660;</button>
+        <button onclick="duplicatePOItem(${i})" title="שכפל שורה" style="background:none;border:none;cursor:pointer;font-size:14px;color:#2196F3;padding:2px 4px">&#10697;</button>
+        <button onclick="removePOItem(${i})" style="background:none;border:none;cursor:pointer;color:#f44336;font-size:16px">&#10005;</button>
       </td>
     </tr>
     <tr id="po-item-details-${i}" style="display:none; background:#f8f9fa">
@@ -947,7 +947,7 @@ async function openViewPO(id) {
 
     const container = document.getElementById('po-list-container2');
     const importBtn = po.status === 'received'
-      ? `<button class="btn btn-p btn-po-import" data-id="${escapeHtml(po.id)}" style="padding:8px 18px; margin-left:8px">📥 קלוט למלאי</button>`
+      ? `<button onclick="importPOToInventory('${po.id}')" class="btn btn-p" style="padding:8px 18px; margin-left:8px">📥 קלוט למלאי</button>`
       : '';
 
     container.innerHTML = `
@@ -1185,31 +1185,3 @@ async function createPOForBrand(brandId, brandName) {
     toast('שגיאה: ' + err.message, 'e');
   }
 }
-
-// ─── EVENT DELEGATION — purchase-orders.js ──────────────────────
-document.addEventListener('click', function(e) {
-  // #12 openEditPO
-  const editBtn = e.target.closest('.btn-po-edit');
-  if (editBtn) { openEditPO(editBtn.dataset.id); return; }
-  // #13 sendPurchaseOrder
-  const sendBtn = e.target.closest('.btn-po-send');
-  if (sendBtn) { sendPurchaseOrder(sendBtn.dataset.id); return; }
-  // #14-16 cancelPO
-  const cancelBtn = e.target.closest('.btn-po-cancel');
-  if (cancelBtn) { cancelPO(cancelBtn.dataset.id); return; }
-  // #15-17 openViewPO
-  const viewBtn = e.target.closest('.btn-po-view');
-  if (viewBtn) { openViewPO(viewBtn.dataset.id); return; }
-  // #18 togglePOItemDetails (array index)
-  const toggleBtn = e.target.closest('.btn-po-toggle');
-  if (toggleBtn) { togglePOItemDetails(parseInt(toggleBtn.dataset.index)); return; }
-  // #19 duplicatePOItem (array index)
-  const dupBtn = e.target.closest('.btn-po-dup');
-  if (dupBtn) { duplicatePOItem(parseInt(dupBtn.dataset.index)); return; }
-  // #20 removePOItem (array index)
-  const removeBtn = e.target.closest('.btn-po-remove');
-  if (removeBtn) { removePOItem(parseInt(removeBtn.dataset.index)); return; }
-  // #21 importPOToInventory
-  const importBtn = e.target.closest('.btn-po-import');
-  if (importBtn) { importPOToInventory(importBtn.dataset.id); return; }
-});

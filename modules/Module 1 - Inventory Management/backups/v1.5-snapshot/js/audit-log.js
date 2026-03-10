@@ -5,9 +5,9 @@ function deleteInvRow(recId) {
   const rec = invData.find(r => r.id === recId);
   if (!rec) return;
   softDelTarget = rec;
-  const bc = rec.barcode || 'ללא ברקוד';
-  const brand = rec.brand_name || '';
-  const model = rec.model || '';
+  const bc = rec.fields['ברקוד'] || 'ללא ברקוד';
+  const brand = rec.fields['חברה / מותג'] || '';
+  const model = rec.fields['דגם'] || '';
   $('softdel-title').textContent = '🗑️ מחיקת פריט — ' + bc;
   $('softdel-desc').textContent = brand + ' ' + model;
   $('softdel-reason').value = '';
@@ -37,6 +37,7 @@ async function confirmSoftDelete() {
   }
 
   const id = softDelTarget.id;
+  const f = softDelTarget.fields;
   const fullReason = note ? reason + ' — ' + note : reason;
 
   try {
@@ -49,9 +50,9 @@ async function confirmSoftDelete() {
     if (error) throw new Error(error.message);
 
     writeLog('soft_delete', id, {
-      barcode:    softDelTarget.barcode,
-      brand:      softDelTarget.brand_name,
-      model:      softDelTarget.model,
+      barcode:    f['ברקוד'],
+      brand:      f['חברה / מותג'],
+      model:      f['דגם'],
       reason:     reason,
       source_ref: 'נמחק ע"י: ' + emp.name
     });
@@ -90,13 +91,13 @@ async function openRecycleBin() {
     const rows = deleted.map(r => {
       const brand = brandRevMap[r.brand_id] || '';
       const dt = r.deleted_at ? new Date(r.deleted_at).toLocaleString('he-IL') : '';
-      return `<tr data-id="${r.id}" data-barcode="${escapeHtml(r.barcode)||''}" data-brand="${escapeHtml(brand)}" data-model="${escapeHtml(r.model)||''}">
-        <td>${escapeHtml(r.barcode)||'—'}</td>
-        <td>${escapeHtml(brand)}</td>
-        <td>${escapeHtml(r.model)||''}</td>
-        <td>${escapeHtml(r.deleted_by)||''}</td>
+      return `<tr data-id="${r.id}" data-barcode="${r.barcode||''}" data-brand="${brand}" data-model="${r.model||''}">
+        <td>${r.barcode||'—'}</td>
+        <td>${brand}</td>
+        <td>${r.model||''}</td>
+        <td>${r.deleted_by||''}</td>
         <td style="font-size:.8rem">${dt}</td>
-        <td style="font-size:.85rem">${escapeHtml(r.deleted_reason)||''}</td>
+        <td style="font-size:.85rem">${r.deleted_reason||''}</td>
         <td style="white-space:nowrap">
           <button class="btn btn-s btn-sm" onclick="restoreItem('${r.id}')">↩️ שחזר</button>
           <button class="btn btn-d btn-sm" onclick="permanentDelete('${r.id}')">❌ מחק לצמיתות</button>
@@ -145,8 +146,6 @@ async function restoreItem(id) {
   }
 }
 
-let permDelTarget = null;
-
 async function permanentDelete(id) {
   const row = document.querySelector(`#recycle-modal tr[data-id="${id}"]`);
   const barcode = row?.dataset.barcode || '';
@@ -156,62 +155,24 @@ async function permanentDelete(id) {
   const ok = await confirmDialog('מחיקה לצמיתות', 'האם למחוק לצמיתות? פעולה זו אינה הפיכה');
   if (!ok) return;
 
-  permDelTarget = { id, row, barcode, brand, model };
-
-  // Create PIN modal dynamically if needed
-  if (!$('permdel-pin-modal')) {
-    const div = document.createElement('div');
-    div.id = 'permdel-pin-modal';
-    div.className = 'modal-overlay';
-    div.style.display = 'none';
-    div.innerHTML = `
-      <div class="modal" style="max-width:360px">
-        <h3 style="margin:0 0 12px 0">🔒 אימות עובד</h3>
-        <p style="margin:0 0 12px 0;font-size:.9rem;color:var(--g500)">מחיקה לצמיתות דורשת סיסמת עובד</p>
-        <input type="password" id="permdel-pin" placeholder="סיסמת עובד" style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;margin-bottom:8px"
-               onkeydown="if(event.key==='Enter') confirmPermanentDelete()">
-        <p id="permdel-pin-error" style="color:var(--error);font-size:.85rem;margin:0 0 8px 0"></p>
-        <div style="display:flex;gap:8px;justify-content:flex-end">
-          <button class="btn btn-g btn-sm" onclick="closeModal('permdel-pin-modal')">ביטול</button>
-          <button class="btn btn-d btn-sm" onclick="confirmPermanentDelete()">❌ מחק לצמיתות</button>
-        </div>
-      </div>`;
-    document.body.appendChild(div);
-    div.addEventListener('click', function(e) { if (e.target === this) closeModal('permdel-pin-modal'); });
-  }
-  $('permdel-pin').value = '';
-  $('permdel-pin-error').textContent = '';
-  $('permdel-pin-modal').style.display = 'flex';
-  $('permdel-pin').focus();
-}
-
-async function confirmPermanentDelete() {
-  if (!permDelTarget) return;
-  const pin = $('permdel-pin').value.trim();
-  if (!pin) { $('permdel-pin-error').textContent = 'יש להזין סיסמת עובד'; return; }
-
-  const { data: emp } = await sb.from('employees').select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle();
-  if (!emp) { $('permdel-pin-error').textContent = '❌ סיסמת עובד שגויה'; $('permdel-pin').value = ''; $('permdel-pin').focus(); return; }
-
-  const { id, row, barcode, brand, model } = permDelTarget;
+  // Require PIN again
+  const pin = prompt('הזן סיסמת עובד:');
+  if (!pin) return;
+  const { data: emp } = await sb.from('employees').select('id, name').eq('pin', pin.trim()).eq('is_active', true).maybeSingle();
+  if (!emp) { toast('❌ סיסמת עובד שגויה', 'e'); return; }
 
   try {
+    writeLog('permanent_delete', id, { barcode, brand, model, reason: 'מחיקה לצמיתות', source_ref: 'נמחק ע"י: ' + emp.name });
     const { error } = await sb.from('inventory').delete().eq('id', id);
-    if (error) {
-      toast('שגיאה: ' + error.message, 'e');
-      return;
-    }
-    await writeLog('permanent_delete', null, { barcode, brand, model, reason: 'מחיקה לצמיתות', source_ref: 'נמחק ע"י: ' + emp.name });
+    if (error) throw new Error(error.message);
     row?.remove();
     if (!document.querySelectorAll('#recycle-modal tbody tr').length) {
       $('recycle-content').innerHTML = '<p style="text-align:center;padding:24px;color:var(--g500)">סל המחזור ריק ♻️</p>';
     }
-    closeModal('permdel-pin-modal');
     toast('הפריט נמחק לצמיתות', 's');
   } catch (e) {
     toast('שגיאה: ' + (e.message||''), 'e');
   }
-  permDelTarget = null;
 }
 
 // ---- Item History ----
@@ -235,10 +196,7 @@ const ACTION_MAP = {
   permanent_delete: { icon: '❌', label: 'מחיקה לצמיתות',      color: '#9E9E9E' },
   test:             { icon: '🧪', label: 'בדיקה',              color: '#9E9E9E' },
   entry_receipt:    { icon: '📦', label: 'קבלת סחורה',          color: '#4CAF50' },
-  po_created:       { icon: '📋', label: 'הזמנת רכש',            color: '#2196F3' },
-  reduce_qty:       { icon: '📉', label: 'הפחתת כמות',           color: 'orange' },
-  return_qty:       { icon: '↩️', label: 'החזרת כמות',           color: 'blue' },
-  pending_ignored:  { icon: '🚫', label: 'ממתין - בוטל',         color: 'gray' }
+  po_created:       { icon: '📋', label: 'הזמנת רכש',            color: '#2196F3' }
 };
 
 async function openItemHistory(id, barcode, brand, model) {
@@ -280,9 +238,9 @@ async function openItemHistory(id, barcode, brand, model) {
       if (log.price_before != null && log.price_after != null) {
         details.push(`מחיר: ${log.price_before} → ${log.price_after}`);
       }
-      if (log.reason) details.push(`סיבה: ${escapeHtml(log.reason)}`);
-      if (log.source_ref) details.push(`מקור: ${escapeHtml(log.source_ref)}`);
-      if (log.performed_by && log.performed_by !== 'system') details.push(`ע"י: ${escapeHtml(log.performed_by)}`);
+      if (log.reason) details.push(`סיבה: ${log.reason}`);
+      if (log.source_ref) details.push(`מקור: ${log.source_ref}`);
+      if (log.performed_by && log.performed_by !== 'system') details.push(`ע"י: ${log.performed_by}`);
 
       return `<div style="display:flex;gap:12px;align-items:flex-start;padding:8px 4px;border-right:3px solid ${info.color};margin-bottom:8px;border-radius:0 6px 6px 0;background:rgba(255,255,255,0.02)">
         <div style="font-size:1.4rem;min-width:32px;text-align:center">${info.icon}</div>
@@ -298,7 +256,7 @@ async function openItemHistory(id, barcode, brand, model) {
 
     $('history-timeline').innerHTML = html;
   } catch (e) {
-    $('history-timeline').innerHTML = `<p style="text-align:center;color:var(--error);padding:24px">שגיאה: ${escapeHtml(e.message)}</p>`;
+    $('history-timeline').innerHTML = `<p style="text-align:center;color:var(--error);padding:24px">שגיאה: ${e.message}</p>`;
   }
 }
 
@@ -453,15 +411,15 @@ function renderEntryHistory(logs) {
       const noBarcode = !barcode;
 
       rowsHtml += `<tr${noBarcode ? ' style="background:#fff9c4"' : ''}>
-        <td style="padding:6px 8px;font-family:monospace;font-weight:600">${escapeHtml(barcode) || '—'}</td>
-        <td style="padding:6px 8px">${escapeHtml(brandName)}</td>
-        <td style="padding:6px 8px">${escapeHtml(inv?.model || log.model) || ''}</td>
-        <td style="padding:6px 8px">${escapeHtml(inv?.size) || ''}</td>
-        <td style="padding:6px 8px">${escapeHtml(inv?.color) || ''}</td>
+        <td style="padding:6px 8px;font-family:monospace;font-weight:600">${barcode || '—'}</td>
+        <td style="padding:6px 8px">${brandName}</td>
+        <td style="padding:6px 8px">${inv?.model || log.model || ''}</td>
+        <td style="padding:6px 8px">${inv?.size || ''}</td>
+        <td style="padding:6px 8px">${inv?.color || ''}</td>
         <td style="padding:6px 8px">${log.qty_after ?? 1}</td>
         <td style="padding:6px 8px">${actionLabels[log.action] || log.action}</td>
         <td style="padding:6px 8px">${timeStr}</td>
-        <td style="padding:6px 8px">${escapeHtml(log.performed_by) || ''}</td>
+        <td style="padding:6px 8px">${log.performed_by || ''}</td>
       </tr>`;
     }
 
@@ -547,10 +505,11 @@ function openQtyModal(inventoryId, mode) {
   const rec = invData.find(r => r.id === inventoryId);
   if (!rec) { toast('פריט לא נמצא', 'e'); return; }
 
-  const bc = rec.barcode || '';
-  const brand = rec.brand_name || '';
-  const model = rec.model || '';
-  const currentQty = parseInt(rec.quantity) || 0;
+  const f = rec.fields;
+  const bc = f['ברקוד'] || '';
+  const brand = f['חברה / מותג'] || '';
+  const model = f['דגם'] || '';
+  const currentQty = parseInt(f['כמות']) || 0;
 
   qtyModalState = { id: inventoryId, mode, currentQty, barcode: bc, brand, model };
 
@@ -621,7 +580,7 @@ async function confirmQtyChange() {
 
     // Update in-memory data + UI
     const rec = invData.find(r => r.id === id);
-    if (rec) rec.quantity = newQty;
+    if (rec) rec.fields['כמות'] = newQty;
 
     const qtyTd = document.querySelector(`td[data-qty-id="${id}"]`);
     if (qtyTd) {

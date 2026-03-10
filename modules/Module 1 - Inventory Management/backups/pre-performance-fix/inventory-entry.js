@@ -221,27 +221,27 @@ async function submitEntry() {
     while (attempt < 3) {
       const currentRows = attempt === 0 ? rows : getEntryRows();
       const records = currentRows.map(r => {
-        const rec = {
-          barcode: r.barcode,
-          supplier_id: supplierCache[r.supplier] || null,
-          brand_id: brandCache[r.brand] || null,
-          model: r.model,
-          size: r.size,
-          color: r.color,
-          product_type: heToEn('product_type', r.ptype),
-          sell_price: parseFloat(r.sprice) || 0,
-          sell_discount: (parseFloat(r.sdisc) || 0) / 100,
-          status: heToEn('status', 'במלאי'),
-          origin: 'כניסת מלאי',
-          quantity: 1,
-          website_sync: heToEn('website_sync', r.sync || getBrandSync(r.brand) || 'לא'),
+        const fields = {
+          'ברקוד': r.barcode,
+          'ספק': r.supplier,
+          'חברה / מותג': r.brand,
+          'דגם': r.model,
+          'גודל': r.size,
+          'צבע': r.color,
+          'סוג מוצר': r.ptype,
+          'מחיר מכירה': parseFloat(r.sprice) || 0,
+          'הנחה מכירה %': (parseFloat(r.sdisc) || 0) / 100,
+          'סטטוס': 'במלאי',
+          'מקור': 'כניסת מלאי',
+          'כמות': 1,
+          'סנכרון אתר': r.sync || getBrandSync(r.brand) || 'לא',
         };
-        if (r.bridge) rec.bridge = r.bridge;
-        if (r.temple) rec.temple_length = r.temple;
-        if (r.brandType) rec.brand_type = heToEn('brand_type', r.brandType);
-        if (r.cprice) rec.cost_price = parseFloat(r.cprice);
-        if (r.cdisc) rec.cost_discount = parseFloat(r.cdisc) / 100;
-        return rec;
+        if (r.bridge) fields['גשר'] = r.bridge;
+        if (r.temple) fields['אורך מוט'] = r.temple;
+        if (r.brandType) fields['סוג מותג'] = r.brandType;
+        if (r.cprice) fields['מחיר עלות'] = parseFloat(r.cprice);
+        if (r.cdisc) fields['הנחה עלות %'] = parseFloat(r.cdisc) / 100;
+        return {fields};
       });
       try {
         created = await batchCreate(T.INV, records);
@@ -264,16 +264,16 @@ async function submitEntry() {
     // Log each created item
     for (const item of created) {
       writeLog('entry_manual', item.id, {
-        barcode:    item.barcode,
-        brand:      item.brand_name,
-        model:      item.model,
+        barcode:    item.fields['ברקוד'],
+        brand:      item.fields['חברה / מותג'],
+        model:      item.fields['דגם'],
         qty_before: 0,
-        qty_after:  item.quantity || 1,
+        qty_after:  item.fields['כמות'] || 1,
         source_ref: 'הכנסה ידנית'
       });
     }
-    setAlert('entry-alerts', `&#10004; ${created.length} פריטים נכנסו למלאי בהצלחה`, 's');
-    toast(`${created.length} פריטים נשלחו!`, 's');
+    setAlert('entry-alerts', `&#10004; ${records.length} פריטים נכנסו למלאי בהצלחה`, 's');
+    toast(`${records.length} פריטים נשלחו!`, 's');
     // Clean up dropdowns
     $('entry-body').querySelectorAll('.search-select').forEach(ss => { if (ss._dropdown) ss._dropdown.remove(); });
     $('entry-body').innerHTML = '';
@@ -330,9 +330,9 @@ async function generateBarcodes(source) {
           ['size','eq',row.size],['color','eq',row.color],
           ['is_deleted','eq',false]
         ]);
-        const withQty = existing.find(r => (r.quantity || 0) > 0);
-        if (withQty && withQty.barcode) {
-          barcode = withQty.barcode;
+        const withQty = existing.find(r => (r.fields['כמות'] || 0) > 0);
+        if (withQty && withQty.fields['ברקוד']) {
+          barcode = withQty.fields['ברקוד'];
         }
       }
 
@@ -378,69 +378,24 @@ function exportBarcodesExcel(source) {
 // =========================================================
 // INVENTORY EXCEL EXPORT
 // =========================================================
-async function exportInventoryExcel() {
-  toast('טוען נתונים לייצוא...', 'w');
-
-  // Full fetch with current filters (no pagination limit)
-  try {
-    const f = invCurrentFilters || {};
-    let query = sb.from('inventory')
-      .select('*, inventory_images(*)', { count: 'exact' })
-      .eq('is_deleted', false);
-    if (f.supplier) {
-      const suppId = supplierCache[f.supplier];
-      if (suppId) query = query.eq('supplier_id', suppId);
-    }
-    if (f.ptype) query = query.eq('product_type', heToEn('product_type', f.ptype));
-    if (f.qtyFilter === '1') query = query.gt('quantity', 0);
-    else if (f.qtyFilter === '0') query = query.lte('quantity', 0);
-    if (f.search) {
-      const safe = f.search.replace(/[,().\\]/g, '');
-      if (safe) {
-        const orParts = [
-          `barcode.ilike.%${safe}%`, `model.ilike.%${safe}%`,
-          `size.ilike.%${safe}%`, `color.ilike.%${safe}%`, `notes.ilike.%${safe}%`
-        ];
-        const bIds = Object.entries(brandCache).filter(([n]) => n.toLowerCase().includes(safe)).map(([,id]) => id);
-        if (bIds.length) orParts.push(`brand_id.in.(${bIds.join(',')})`);
-        const sIds = Object.entries(supplierCache).filter(([n]) => n.toLowerCase().includes(safe)).map(([,id]) => id);
-        if (sIds.length) orParts.push(`supplier_id.in.(${sIds.join(',')})`);
-        query = query.or(orParts.join(','));
-      }
-    }
-    query = query.order('created_at', { ascending: false });
-    // Paginate in 1000-row batches (no single-page limit)
-    let allRows = [], from = 0;
-    while (true) {
-      const { data, error } = await query.range(from, from + 999);
-      if (error) throw new Error(error.message);
-      if (!data?.length) break;
-      allRows.push(...data);
-      if (data.length < 1000) break;
-      from += 1000;
-    }
-    var exportData = allRows.map(enrichRow);
-  } catch (e) {
-    toast('שגיאה בטעינת נתונים לייצוא: ' + (e.message || ''), 'e');
-    return;
-  }
-
-  if (!exportData.length) { toast('אין פריטים לייצוא', 'w'); return; }
+function exportInventoryExcel() {
+  if (!invFiltered.length) { toast('אין פריטים לייצוא', 'w'); return; }
 
   const headers = ['ברקוד','חברה/מותג','דגם','גודל','גשר','צבע','סוג מוצר','מחיר מכירה','הנחה%','כמות','סנכרון'];
-  const rows = exportData.map(r => {
+  const rows = invFiltered.map(r => {
+    const f = r.fields;
     return [
-      r.barcode || '',
-      r.brand_name || '',
-      r.model || '',
-      r.size || '',
-      r.bridge || '',
-      r.color || '',
-      r.product_type ? enToHe('product_type', r.product_type) : '',
-      parseFloat(r.sell_price) || 0,
-      r.sell_discount != null ? Math.round((parseFloat(r.sell_discount) || 0) * 100) : 0,
-      parseInt(r.quantity) || 0,
-      r.website_sync ? enToHe('website_sync', r.website_sync) : ''
+      f['ברקוד'] || '',
+      f['חברה / מותג'] || '',
+      f['דגם'] || '',
+      f['גודל'] || '',
+      f['גשר'] || '',
+      f['צבע'] || '',
+      f['סוג מוצר'] || '',
+      parseFloat(f['מחיר מכירה']) || 0,
+      f['הנחה מכירה %'] != null ? Math.round((parseFloat(f['הנחה מכירה %']) || 0) * 100) : 0,
+      parseInt(f['כמות']) || 0,
+      f['סנכרון אתר'] || ''
     ];
   });
 
@@ -633,25 +588,25 @@ function handleExcelImport(ev) {
 let excelPendingRows = []; // rows waiting for barcode generation
 
 function buildExcelRecordFields(r, barcode) {
-  const rec = {
-    barcode: barcode,
-    brand_id: brandCache[r.brand] || null,
-    model: r.model,
-    size: r.size,
-    sell_price: r.price,
-    product_type: heToEn('product_type', r.ptype),
-    status: heToEn('status', 'במלאי'),
-    origin: 'ייבוא אקסל',
-    quantity: 1,
+  const fields = {
+    'ברקוד': barcode,
+    'חברה / מותג': r.brand,
+    'דגם': r.model,
+    'גודל': r.size,
+    'מחיר מכירה': r.price,
+    'סוג מוצר': r.ptype,
+    'סטטוס': 'במלאי',
+    'מקור': 'ייבוא אקסל',
+    'כמות': 1,
   };
-  if (r.bridge) rec.bridge = r.bridge;
-  if (r.color) rec.color = r.color;
-  if (r.discount) rec.sell_discount = (parseFloat(r.discount) || 0) / 100;
-  if (r.notes) rec.notes = r.notes;
-  rec.website_sync = heToEn('website_sync', r.sync || getBrandSync(r.brand) || 'לא');
+  if (r.bridge) fields['גשר'] = r.bridge;
+  if (r.color) fields['צבע'] = r.color;
+  if (r.discount) fields['הנחה מכירה %'] = (parseFloat(r.discount) || 0) / 100;
+  if (r.notes) fields['הערות'] = r.notes;
+  fields['סנכרון אתר'] = r.sync || getBrandSync(r.brand) || 'לא';
   const bt = getBrandType(r.brand);
-  if (bt) rec.brand_type = heToEn('brand_type', bt);
-  return rec;
+  if (bt) fields['סוג מותג'] = bt;
+  return fields;
 }
 
 async function confirmExcelImport() {
@@ -677,11 +632,11 @@ async function confirmExcelImport() {
           ['size','eq',r.size],['color','eq',r.color],
           ['is_deleted','eq',false]
         ]);
-        matchRec = existing.find(e => (e.quantity || 0) > 0 && e.barcode);
+        matchRec = existing.find(e => (e.fields['כמות'] || 0) > 0 && e.fields['ברקוד']);
       }
 
       if (matchRec) {
-        withBarcode.push({ ...r, barcode: matchRec.barcode, existingId: matchRec.id, existingQty: matchRec.quantity || 0 });
+        withBarcode.push({ ...r, barcode: matchRec.fields['ברקוד'], existingId: matchRec.id, existingQty: matchRec.fields['כמות'] || 0 });
       } else {
         const reason = !brandId ? 'מותג לא מוכר' : 'פריט חדש / אזל';
         noPending.push({ ...r, reason });
@@ -699,7 +654,7 @@ async function confirmExcelImport() {
     }
     for (const r of Object.values(grouped)) {
       const newQty = r.existingQty + r.addQty;
-      await batchUpdate(T.INV, [{ id: r.existingId, quantity: newQty }]);
+      await batchUpdate(T.INV, [{ id: r.existingId, fields: { 'כמות': newQty } }]);
       writeLog('entry_excel', r.existingId, {
         barcode: r.barcode, brand: r.brand, model: r.model,
         qty_before: r.existingQty, qty_after: newQty,
@@ -783,12 +738,12 @@ async function generatePendingBarcodes() {
     maxBarcode = nextSeq;
 
     // Insert all pending items with their new barcodes
-    const records = excelPendingRows.map(r => buildExcelRecordFields(r, r.barcode));
+    const records = excelPendingRows.map(r => ({ fields: buildExcelRecordFields(r, r.barcode) }));
     const created = await batchCreate(T.INV, records);
     for (const item of created) {
       writeLog('entry_excel', item.id, {
-        barcode: item.barcode, brand: item.brand_name,
-        model: item.model, qty_before: 0, qty_after: 1,
+        barcode: item.fields['ברקוד'], brand: item.fields['חברה / מותג'],
+        model: item.fields['דגם'], qty_before: 0, qty_after: 1,
         source_ref: excelImportFileName || 'ייבוא אקסל'
       });
     }

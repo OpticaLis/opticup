@@ -7,6 +7,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const T = {
   INV:    'inventory',
   PO:     'purchase_orders',
+  SALES:  'sales',
+  ITEMS:  'purchase_order_items',
   BRANDS: 'brands',
   SUPPLIERS: 'suppliers',
   RECEIPTS: 'goods_receipts',
@@ -123,16 +125,63 @@ async function loadLookupCaches() {
   (brs || []).forEach(b => { brandCache[b.name] = b.id; brandCacheRev[b.id] = b.name; });
 }
 
-// --- Enrich Supabase row with resolved brand/supplier names ---
-function enrichRow(row) {
-  return {
-    ...row,
-    brand_name:    brandCacheRev[row.brand_id]    || '',
-    supplier_name: supplierCacheRev[row.supplier_id] || '',
-  };
+// --- Convert Supabase row → Airtable-shaped {id, fields:{Hebrew...}} ---
+function rowToRecord(row, tableName) {
+  const rev = FIELD_MAP_REV[tableName] || {};
+  const fields = {};
+  for (const [enCol, val] of Object.entries(row)) {
+    if (enCol === 'id' || enCol === 'created_at' || enCol === 'updated_at' ||
+        enCol === 'branch_id' || enCol === 'created_by' || enCol === 'woocommerce_id') continue;
+    if (enCol === 'inventory_images') {
+      // Convert joined images to Airtable-shaped array
+      fields['תמונות'] = (val || []).map(img => ({
+        url: img.url,
+        thumbnails: {
+          small: { url: img.thumbnail_url || img.url },
+          large: { url: img.url }
+        }
+      }));
+      continue;
+    }
+    const heName = rev[enCol];
+    if (!heName) continue;
+    if (heName === '_images') continue; // skip placeholder
+
+    // Resolve FK → name
+    if (enCol === 'supplier_id') { fields['ספק'] = supplierCacheRev[val] || ''; continue; }
+    if (enCol === 'brand_id') { fields['חברה / מותג'] = brandCacheRev[val] || ''; continue; }
+
+    // Reverse enum
+    const cat = enumCatForCol(tableName, enCol);
+    if (cat) { fields[heName] = enToHe(cat, val); continue; }
+
+    fields[heName] = val;
+  }
+  return { id: row.id, fields };
 }
 
-// --- Supabase-backed fetchAll ---
+// --- Convert Hebrew fields → English row for insert/update ---
+function fieldsToRow(hebrewFields, tableName) {
+  const map = FIELD_MAP[tableName] || {};
+  const row = {};
+  for (const [heKey, val] of Object.entries(hebrewFields)) {
+    const enCol = map[heKey];
+    if (!enCol || enCol === '_images') continue;
+
+    // Resolve name → FK
+    if (enCol === 'supplier_id') { row.supplier_id = supplierCache[val] || null; continue; }
+    if (enCol === 'brand_id') { row.brand_id = brandCache[val] || null; continue; }
+
+    // Forward enum
+    const cat = enumCatForCol(tableName, enCol);
+    if (cat) { row[enCol] = heToEn(cat, val); continue; }
+
+    row[enCol] = val;
+  }
+  return row;
+}
+
+// --- Supabase-backed fetchAll (returns Airtable-shaped records) ---
 async function fetchAll(tableName, filters) {
   const PAGE = 1000;
   let all = [], from = 0;
@@ -157,14 +206,14 @@ async function fetchAll(tableName, filters) {
     if (data.length < PAGE) break;
     from += PAGE;
   }
-  return all.map(enrichRow);
+  return all.map(row => rowToRecord(row, tableName));
 }
 
 // --- Supabase-backed batchCreate ---
 async function batchCreate(tableName, records) {
   // Duplicate barcode check for inventory inserts
   if (tableName === T.INV) {
-    const barcodes = records.map(r => r.barcode).filter(Boolean);
+    const barcodes = records.map(r => r.fields['ברקוד']).filter(Boolean);
     if (barcodes.length) {
       // Check for duplicates within the batch itself
       const seen = new Set();
@@ -185,9 +234,10 @@ async function batchCreate(tableName, records) {
     }
   }
 
+  const rows = records.map(r => fieldsToRow(r.fields, tableName));
   const created = [];
-  for (let i = 0; i < records.length; i += 100) {
-    const batch = records.slice(i, i + 100);
+  for (let i = 0; i < rows.length; i += 100) {
+    const batch = rows.slice(i, i + 100);
     const { data, error } = await sb.from(tableName).insert(batch).select(tableName === 'inventory' ? '*, inventory_images(*)' : '*');
     if (error) {
       // Friendly message for unique constraint violation
@@ -196,40 +246,26 @@ async function batchCreate(tableName, records) {
       }
       throw new Error(error.message);
     }
-    created.push(...(data || []).map(enrichRow));
+    created.push(...(data || []).map(row => rowToRecord(row, tableName)));
   }
   return created;
 }
 
-// --- Supabase-backed batchUpdate (upsert-based, PERF-01) ---
+// --- Supabase-backed batchUpdate ---
 async function batchUpdate(tableName, records) {
-  if (!records?.length) return [];
-  const selectCols = tableName === 'inventory' ? '*, inventory_images(*)' : '*';
-
-  // Group records by their column set for valid upsert batches
-  const groups = new Map();
+  const updated = [];
   for (const rec of records) {
-    const { id, ...row } = rec;
-    const key = Object.keys(row).sort().join(',');
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(rec);
-  }
-
-  const allData = [];
-  for (const rows of groups.values()) {
-    const { data, error } = await sb.from(tableName)
-      .upsert(rows, { onConflict: 'id' })
-      .select(selectCols);
+    const row = fieldsToRow(rec.fields, tableName);
+    const { data, error } = await sb.from(tableName).update(row).eq('id', rec.id).select(tableName === 'inventory' ? '*, inventory_images(*)' : '*');
     if (error) {
       if (error.code === '23505' && error.message.includes('barcode')) {
         throw new Error('ברקוד זה כבר קיים במערכת');
       }
       throw new Error(error.message);
     }
-    if (data) allData.push(...data);
+    if (data?.length) updated.push(rowToRecord(data[0], tableName));
   }
-
-  return allData.map(enrichRow);
+  return updated;
 }
 
 // =========================================================
@@ -269,7 +305,6 @@ async function writeLog(action, inventoryId, details = {}) {
     });
   } catch (e) {
     console.warn('writeLog failed:', e);
-    toast('שגיאה: פעולה לא נרשמה ביומן', 'e');
   }
 }
 
@@ -301,16 +336,6 @@ async function testWriteLog() {
 // =========================================================
 // UI HELPERS
 // =========================================================
-function escapeHtml(str) {
-  if (str == null) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
 function showLoading(t) { $('loading-text').textContent=t||'טוען...'; $('loading').style.display='flex'; }
 function hideLoading() { $('loading').style.display='none'; }
 function $(id) { return document.getElementById(id); }
@@ -339,7 +364,6 @@ function confirmDialog(title, text) {
 // NAVIGATION
 // =========================================================
 function showTab(name) {
-  if (typeof stopHeartbeatRefresh === 'function') stopHeartbeatRefresh();
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('nav button[data-tab]').forEach(b => b.classList.remove('active'));
   $('tab-'+name).classList.add('active');
@@ -357,13 +381,13 @@ function showTab(name) {
 }
 
 function showEntryMode(mode) {
-  if (mode === 'receipt') { showTab('receipt'); return; }
   $('entry-manual').style.display = mode==='manual' ? 'block' : 'none';
   $('entry-excel').style.display = mode==='excel' ? 'block' : 'none';
   $('btn-entry-manual').classList.toggle('active', mode==='manual');
   $('btn-entry-excel').classList.toggle('active', mode==='excel');
-  $('btn-entry-receipt').classList.toggle('active', false);
+  $('btn-entry-receipt').classList.toggle('active', mode==='receipt');
   if (mode==='excel') resetExcelImport();
+  if (mode==='receipt') showTab('receipt');
 }
 
 // (Token management removed — using Supabase anon key)
@@ -431,7 +455,7 @@ function openLowStockModal() {
   const data = window.lowStockData || [];
   const rows = data.map(b => `
     <tr>
-      <td style="padding:10px; font-weight:600">${escapeHtml(b.name)}</td>
+      <td style="padding:10px; font-weight:600">${b.name}</td>
       <td style="padding:10px; text-align:center; color:#f44336; font-weight:700">${b.current_qty}</td>
       <td style="padding:10px; text-align:center">${b.min_stock_qty}</td>
       <td style="padding:10px; text-align:center; color:#FF9800; font-weight:600">${b.shortage}</td>
@@ -522,13 +546,13 @@ async function loadMaxBarcode() {
 
 function populateDropdowns() {
   const rb = $('red-brand');
-  if (rb) rb.innerHTML = '<option value="">חברה...</option>' + brands.filter(b=>b.active).map(b => `<option value="${escapeHtml(b.name)}">${escapeHtml(b.name)}</option>`).join('');
+  if (rb) rb.innerHTML = '<option value="">חברה...</option>' + brands.filter(b=>b.active).map(b => `<option value="${b.name}">${b.name}</option>`).join('');
   const rcptSup = $('rcpt-supplier');
-  if (rcptSup) rcptSup.innerHTML = '<option value="">בחר ספק...</option>' + suppliers.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  if (rcptSup) rcptSup.innerHTML = '<option value="">בחר ספק...</option>' + suppliers.map(s => `<option value="${s}">${s}</option>`).join('');
 }
 
 function activeBrands() { return brands.filter(b => b.active); }
-function supplierOpts() { return '<option value="">בחר...</option>' + suppliers.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join(''); }
+function supplierOpts() { return '<option value="">בחר...</option>' + suppliers.map(s=>`<option value="${s}">${s}</option>`).join(''); }
 function productTypeOpts() { return '<option value="">בחר...</option><option value="משקפי ראייה">משקפי ראייה</option><option value="משקפי שמש">משקפי שמש</option>'; }
 function syncOpts() { return '<option value="">בחר...</option><option value="מלא">מלא</option><option value="תדמית">תדמית</option><option value="לא">לא</option>'; }
 
@@ -539,15 +563,6 @@ function getBrandSync(name) { return brands.find(b=>b.name===name)?.defaultSync 
 // SEARCHABLE SELECT — Fixed positioning dropdown
 // =========================================================
 let activeDropdown = null; // Track the currently open dropdown
-
-// Shared MutationObserver for search-select dropdown cleanup (STAB-06)
-const _searchSelectCleanups = new Set();
-window._sharedSearchObserver = new MutationObserver(() => {
-  for (const fn of [..._searchSelectCleanups]) {
-    if (fn()) _searchSelectCleanups.delete(fn);
-  }
-});
-window._sharedSearchObserver.observe(document.body, {childList: true, subtree: true});
 
 function closeAllDropdowns() {
   document.querySelectorAll('.ss-dropdown.open').forEach(d => d.classList.remove('open'));
@@ -602,7 +617,7 @@ function createSearchSelect(items, value, onChange) {
       dropdown.innerHTML = '<div class="ss-empty">לא נמצאו תוצאות</div>';
     } else {
       dropdown.innerHTML = filtered
-        .map(it => `<div class="ss-item${it===hidden.value?' selected':''}" data-val="${escapeHtml(it)}">${escapeHtml(it)}</div>`).join('');
+        .map(it => `<div class="ss-item${it===hidden.value?' selected':''}" data-val="${it}">${it}</div>`).join('');
     }
     dropdown.querySelectorAll('.ss-item').forEach(el => {
       el.onmousedown = (e) => {
@@ -653,14 +668,14 @@ function createSearchSelect(items, value, onChange) {
     }, 200);
   });
 
-  // Clean up dropdown when row is removed (uses shared observer — STAB-06)
-  _searchSelectCleanups.add(() => {
+  // Clean up dropdown when row is removed
+  const observer = new MutationObserver(() => {
     if (!wrap.isConnected) {
       dropdown.remove();
-      return true;
+      observer.disconnect();
     }
-    return false;
   });
+  observer.observe(document.body, {childList: true, subtree: true});
 
   wrap.appendChild(inp);
   wrap.appendChild(hidden);

@@ -55,26 +55,27 @@ async function processRedExcel() {
         continue;
       }
       const rec = recs[0];
-      const sync = rec.website_sync || '';
+      const f = rec.fields;
+      const sync = f['סנכרון אתר'] || '';
 
       const mismatches = [];
-      if (row['חברה'] && row['חברה'] !== rec.brand_name) mismatches.push(`חברה: "${row['חברה']}" ≠ "${rec.brand_name}"`);
-      if (row['דגם'] && row['דגם'] !== rec.model) mismatches.push(`דגם: "${row['דגם']}" ≠ "${rec.model}"`);
+      if (row['חברה'] && row['חברה'] !== f['חברה / מותג']) mismatches.push(`חברה: "${row['חברה']}" ≠ "${f['חברה / מותג']}"`);
+      if (row['דגם'] && row['דגם'] !== f['דגם']) mismatches.push(`דגם: "${row['דגם']}" ≠ "${f['דגם']}"`);
 
       if (mismatches.length) {
         results.mismatch.push({ barcode, reason: mismatches.join(', '), row });
         continue;
       }
 
-      if (sync === 'full') {
-        const qtyBefore = rec.quantity || 1;
+      if (sync === 'מלא') {
+        const qtyBefore = f['כמות'] || 1;
         const qty = Math.max(0, qtyBefore - (parseInt(row['כמות'] || row['כמות שנמכרה']) || 1));
-        const updateFields = { quantity: qty };
-        if (qty === 0) updateFields.status = heToEn('status', 'נמכר');
-        await batchUpdate(T.INV, [{ id: rec.id, ...updateFields }]);
-        writeLog('sale', rec.id, { barcode, brand: rec.brand_name, model: rec.model, qty_before: qtyBefore, qty_after: qty, source_ref: redExcelFileName || 'ייבוא אדום' });
-        results.updated.push({ barcode, model: rec.model || barcode });
-      } else if (sync === 'display') {
+        const updateFields = { 'כמות': qty };
+        if (qty === 0) updateFields['סטטוס'] = 'נמכר';
+        await batchUpdate(T.INV, [{ id: rec.id, fields: updateFields }]);
+        writeLog('sale', rec.id, { barcode, brand: f['חברה / מותג'], model: f['דגם'], qty_before: qtyBefore, qty_after: qty, source_ref: redExcelFileName || 'ייבוא אדום' });
+        results.updated.push({ barcode, model: f['דגם'] || barcode });
+      } else if (sync === 'תדמית') {
         results.skipped.push({ barcode, reason: 'פריט תדמית — לא עודכן' });
       } else {
         results.skipped.push({ barcode, reason: 'סנכרון=לא — לא עודכן' });
@@ -451,18 +452,19 @@ async function searchManual() {
       return;
     }
     resultDiv.innerHTML = recs.map(r => {
-      const qty = r.quantity ?? 0;
+      const f = r.fields;
+      const qty = f['כמות'] ?? 0;
       const qtyColor = qty > 0 ? 'var(--success)' : 'var(--error)';
       return `<div class="card" style="border-right:4px solid var(--accent);margin-top:12px">
         <div class="form-row">
-          <div class="form-group"><label>ברקוד</label><strong style="font-family:monospace">${escapeHtml(r.barcode)||'—'}</strong></div>
-          <div class="form-group"><label>חברה/מותג</label><strong>${escapeHtml(r.brand_name)||'—'}</strong></div>
-          <div class="form-group"><label>דגם</label><strong>${escapeHtml(r.model)||'—'}</strong></div>
-          <div class="form-group"><label>גודל</label><strong>${escapeHtml(r.size)||'—'}</strong></div>
-          <div class="form-group"><label>צבע</label><strong>${escapeHtml(r.color)||'—'}</strong></div>
+          <div class="form-group"><label>ברקוד</label><strong style="font-family:monospace">${escapeHtml(f['ברקוד'])||'—'}</strong></div>
+          <div class="form-group"><label>חברה/מותג</label><strong>${escapeHtml(f['חברה / מותג'])||'—'}</strong></div>
+          <div class="form-group"><label>דגם</label><strong>${escapeHtml(f['דגם'])||'—'}</strong></div>
+          <div class="form-group"><label>גודל</label><strong>${escapeHtml(f['גודל'])||'—'}</strong></div>
+          <div class="form-group"><label>צבע</label><strong>${escapeHtml(f['צבע'])||'—'}</strong></div>
           <div class="form-group"><label>כמות</label><strong style="color:${qtyColor}">${qty}</strong></div>
-          <div class="form-group"><label>סנכרון אתר</label><strong>${enToHe('website_sync', r.website_sync)||'—'}</strong></div>
-          <div class="form-group"><label>סטטוס</label><strong>${enToHe('status', r.status)||'—'}</strong></div>
+          <div class="form-group"><label>סנכרון אתר</label><strong>${f['סנכרון אתר']||'—'}</strong></div>
+          <div class="form-group"><label>סטטוס</label><strong>${f['סטטוס']||'—'}</strong></div>
         </div>
         ${qty > 0 ? `<button class="btn btn-d btn-reduce" data-id="${escapeHtml(r.id)}">&#128230; הורדה מהמלאי</button>` : '<span style="color:var(--error);font-weight:600">פריט לא במלאי</span>'}
       </div>`;
@@ -476,16 +478,17 @@ async function searchManual() {
 function openReductionModal(recId) {
   const rec = redSearchResults.find(r => r.id === recId);
   if (!rec) { toast('פריט לא נמצא', 'e'); return; }
-  const currentQty = parseInt(rec.quantity) || 0;
+  const f = rec.fields;
+  const currentQty = parseInt(f['כמות']) || 0;
 
   reduceModalState = {
     id: recId, currentQty,
-    barcode: rec.barcode || '',
-    brand: rec.brand_name || '',
-    model: rec.model || ''
+    barcode: f['ברקוד'] || '',
+    brand: f['חברה / מותג'] || '',
+    model: f['דגם'] || ''
   };
 
-  $('reduce-modal-item').textContent = [rec.barcode, rec.brand_name, rec.model].filter(Boolean).join(' | ');
+  $('reduce-modal-item').textContent = [f['ברקוד'], f['חברה / מותג'], f['דגם']].filter(Boolean).join(' | ');
   $('reduce-modal-current').textContent = currentQty;
   $('reduce-modal-amount').value = 1;
   $('reduce-modal-amount').max = currentQty;
@@ -513,10 +516,10 @@ async function confirmReduction() {
   sessionStorage.setItem('prizma_user', emp.name);
 
   const newQty = currentQty - amount;
-  const updateFields = { quantity: newQty };
+  const updateFields = { 'כמות': newQty };
   // Status logic: only set 'sold' when qty=0 AND reason is 'נמכר'
   if (newQty === 0 && reason === 'נמכר') {
-    updateFields.status = heToEn('status', 'נמכר');
+    updateFields['סטטוס'] = 'נמכר';
   }
 
   // Action mapping
@@ -525,7 +528,7 @@ async function confirmReduction() {
   else if (reason === 'נשלח לזיכוי') action = 'credit_return';
 
   try {
-    await batchUpdate(T.INV, [{ id, ...updateFields }]);
+    await batchUpdate(T.INV, [{ id, fields: updateFields }]);
     await writeLog(action, id, {
       barcode, brand, model,
       qty_before: currentQty,
@@ -552,208 +555,87 @@ let invSelected = new Set();
 let invSortField = '';
 let invSortDir = 0; // 0=none, 1=asc, -1=desc
 
-// =========================================================
-// SERVER-SIDE PAGINATION
-// =========================================================
-const INV_PAGE_SIZE = 50;
-let invPage = 0;
-let invTotalCount = 0;
-let invTotalPages = 0;
-let invCurrentFilters = {};
-let invDebounceTimer = null;
-
-async function loadInventoryPage() {
-  showLoading('טוען מלאי...');
+async function loadInventoryTab() {
+  showLoading('טוען מלאי ראשי...');
   clearAlert('inv-alerts');
   invChanges = {};
+  invSelected.clear();
   $('inv-edit-notice').style.display = 'none';
-
-  // Read filters from DOM
-  const search = ($('inv-search')?.value || '').trim().toLowerCase();
-  const supplier = $('inv-filter-supplier')?.value || '';
-  const ptype = $('inv-filter-ptype')?.value || '';
-  const qtyFilter = $('inv-filter-qty')?.value || '';
-  invCurrentFilters = { search, supplier, ptype, qtyFilter };
-
+  updateSelectionUI();
   try {
-    // Build Supabase query with exact count
-    let query = sb.from('inventory')
-      .select('*, inventory_images(*), brands(name), suppliers(name)', { count: 'exact' })
-      .eq('is_deleted', false);
-
-    // Supplier filter (name → UUID)
-    if (supplier) {
-      const suppId = supplierCache[supplier];
-      if (suppId) query = query.eq('supplier_id', suppId);
-    }
-
-    // Product type filter (Hebrew → English enum)
-    if (ptype) {
-      query = query.eq('product_type', heToEn('product_type', ptype));
-    }
-
-    // Quantity filter
-    if (qtyFilter === '1') query = query.gt('quantity', 0);
-    else if (qtyFilter === '0') query = query.lte('quantity', 0);
-
-    // Free-text search via .or() on text columns + brand/supplier ID pre-lookup
-    if (search) {
-      const safe = search.replace(/[,().\\]/g, '');
-      if (safe) {
-        const orParts = [
-          `barcode.ilike.%${safe}%`,
-          `model.ilike.%${safe}%`,
-          `size.ilike.%${safe}%`,
-          `color.ilike.%${safe}%`,
-          `notes.ilike.%${safe}%`
-        ];
-        // Pre-lookup brand IDs whose name matches the search term
-        const matchBrandIds = Object.entries(brandCache)
-          .filter(([name]) => name.toLowerCase().includes(safe))
-          .map(([, id]) => id);
-        if (matchBrandIds.length) orParts.push(`brand_id.in.(${matchBrandIds.join(',')})`);
-        // Pre-lookup supplier IDs whose name matches the search term
-        const matchSupplierIds = Object.entries(supplierCache)
-          .filter(([name]) => name.toLowerCase().includes(safe))
-          .map(([, id]) => id);
-        if (matchSupplierIds.length) orParts.push(`supplier_id.in.(${matchSupplierIds.join(',')})`);
-
-        query = query.or(orParts.join(','));
-      }
-    }
-
-    // Sorting (Hebrew field → English column)
-    if (invSortField && invSortDir !== 0) {
-      const enCol = FIELD_MAP.inventory[invSortField];
-      if (enCol && enCol !== '_images') {
-        query = query.order(enCol, { ascending: invSortDir === 1 });
-      }
-    } else {
-      query = query.order('created_at', { ascending: false });
-    }
-
-    // Pagination
-    const offset = invPage * INV_PAGE_SIZE;
-    query = query.range(offset, offset + INV_PAGE_SIZE - 1);
-
-    const { data, error, count } = await query;
-    if (error) throw new Error(error.message);
-
-    // Update pagination state
-    invTotalCount = count || 0;
-    invTotalPages = Math.max(1, Math.ceil(invTotalCount / INV_PAGE_SIZE));
-    if (invPage >= invTotalPages) invPage = Math.max(0, invTotalPages - 1);
-
-    // Enrich rows with display names + images
-    invData = (data || []).map(row => ({
-      ...row,
-      brand_name: brandCacheRev[row.brand_id] || '',
-      supplier_name: supplierCacheRev[row.supplier_id] || '',
-      _images: (row.inventory_images || []).map(img => ({
-        url: img.url,
-        thumbnails: {
-          small: { url: img.thumbnail_url || img.url },
-          large: { url: img.url }
-        }
-      }))
-    }));
-    invFiltered = invData; // Compatibility alias
-
-    // Populate supplier dropdown (preserves current selection)
+    invData = await fetchAll(T.INV, [['is_deleted','eq',false]]);
     const supplierSel = $('inv-filter-supplier');
     const curVal = supplierSel.value;
     supplierSel.innerHTML = '<option value="">הכל</option>' + suppliers.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
     supplierSel.value = curVal;
-
-    // Update UI
-    $('inv-count').textContent = invTotalCount;
-    renderInventoryRows(invData);
-    updatePaginationUI();
-    updateSelectionUI();
-
+    $('inv-count').textContent = invData.length;
+    filterInventoryTable();
     const isAdm = document.body.classList.contains('admin-mode');
     $('inv-admin-bar').style.display = isAdm ? 'flex' : 'none';
-  } catch (e) {
-    setAlert('inv-alerts', 'שגיאה בטעינת מלאי: ' + (e.message || ''), 'e');
+  } catch(e) {
+    setAlert('inv-alerts', 'שגיאה בטעינת מלאי: '+(e.message||''), 'e');
   }
   hideLoading();
 }
 
-function updatePaginationUI() {
-  const pag = $('inv-pagination');
-  if (!pag) return;
-
-  if (invTotalPages <= 1) {
-    pag.style.display = 'none';
-  } else {
-    pag.style.display = 'flex';
-    $('inv-page-info').textContent = `עמוד ${invPage + 1} מתוך ${invTotalPages} | סה"כ ${invTotalCount} פריטים`;
-    $('inv-prev').disabled = invPage === 0;
-    $('inv-next').disabled = invPage >= invTotalPages - 1;
-  }
-
-  // Update the "shown" counter with range
-  const start = invPage * INV_PAGE_SIZE + 1;
-  const end = Math.min((invPage + 1) * INV_PAGE_SIZE, invTotalCount);
-  $('inv-shown').textContent = invTotalCount > 0 ? `${start}–${end}` : '0';
-}
-
-function invPageNav(delta) {
-  invPage += delta;
-  if (invPage < 0) invPage = 0;
-  if (invPage >= invTotalPages) invPage = invTotalPages - 1;
-  loadInventoryPage();
-}
-
-async function loadInventoryTab() {
-  invPage = 0;
-  invSelected.clear();
-  updateSelectionUI();
-  await loadInventoryPage();
-}
-
 function filterInventoryTable() {
-  clearTimeout(invDebounceTimer);
-  invDebounceTimer = setTimeout(() => {
-    invPage = 0;
-    loadInventoryPage();
-  }, 300);
+  const search = ($('inv-search')?.value || '').trim().toLowerCase();
+  const supplier = $('inv-filter-supplier')?.value || '';
+  const ptype = $('inv-filter-ptype')?.value || '';
+  const qtyFilter = $('inv-filter-qty')?.value || '';
+
+  invFiltered = invData.filter(r => {
+    const f = r.fields;
+    if (supplier && f['ספק'] !== supplier) return false;
+    if (ptype && f['סוג מוצר'] !== ptype) return false;
+    if (qtyFilter === '1' && (f['כמות'] || 0) <= 0) return false;
+    if (qtyFilter === '0' && (f['כמות'] || 0) > 0) return false;
+    if (search) {
+      const hay = [f['ברקוד'],f['ספק'],f['חברה / מותג'],f['דגם'],f['גודל'],f['צבע'],f['סוג מוצר'],f['הערות']].filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  $('inv-shown').textContent = invFiltered.length;
+  renderInventoryRows(invFiltered);
 }
 
 function renderInventoryRows(recs) {
   const isAdm = document.body.classList.contains('admin-mode');
   const tb = $('inv-body');
-  const pageOffset = invPage * INV_PAGE_SIZE;
-  tb.innerHTML = recs.map((r, i) => {
-    const bc = r.barcode || '';
-    const qty = r.quantity ?? 0;
+  const display = recs.slice(0, 500);
+  tb.innerHTML = display.map((r, i) => {
+    const f = r.fields;
+    const bc = f['ברקוד'] || '';
+    const qty = f['כמות'] ?? 0;
     const qC = qty > 0 ? 'var(--success)' : 'var(--error)';
-    const sp = r.sell_price || 0;
-    const sd = r.sell_discount ? Math.round(r.sell_discount * 100) : 0;
-    const cp = r.cost_price || 0;
-    const cd = r.cost_discount ? Math.round(r.cost_discount * 100) : 0;
+    const sp = f['מחיר מכירה'] || 0;
+    const sd = f['הנחה מכירה %'] ? Math.round(f['הנחה מכירה %'] * 100) : 0;
+    const cp = f['מחיר עלות'] || 0;
+    const cd = f['הנחה עלות %'] ? Math.round(f['הנחה עלות %'] * 100) : 0;
     const sel = invSelected.has(r.id) ? ' selected-row' : '';
     const chk = invSelected.has(r.id) ? ' checked' : '';
-    const imgs = r._images || [];
+    const imgs = f['תמונות'] || [];
     const imgCell = imgs.length > 0
       ? `<img class="img-thumb img-thumb-click" src="${encodeURI(imgs[0].thumbnails?.small?.url || imgs[0].url)}" data-id="${escapeHtml(r.id)}" title="${imgs.length} תמונות">`
       : '<span class="no-img">—</span>';
-    const syncVal = enToHe('website_sync', r.website_sync) || '';
+    const syncVal = f['סנכרון אתר'] || '';
     return `<tr data-id="${r.id}" class="${sel}">
-      <td><button class="btn-item-history" style="background:none;border:none;cursor:pointer;font-size:1rem" data-id="${escapeHtml(r.id)}" data-barcode="${escapeHtml(bc)}" data-brand="${escapeHtml(r.brand_name||'')}" data-model="${escapeHtml(r.model||'')}" title="היסטוריה">📋</button></td>
+      <td><button class="btn-item-history" style="background:none;border:none;cursor:pointer;font-size:1rem" data-id="${escapeHtml(r.id)}" data-barcode="${escapeHtml(bc)}" data-brand="${escapeHtml(f['חברה / מותג']||'')}" data-model="${escapeHtml(f['דגם']||'')}" title="היסטוריה">📋</button></td>
       <td><input type="checkbox"${chk} class="inv-row-check" data-id="${escapeHtml(r.id)}"></td>
-      <td>${pageOffset+i+1}</td>
+      <td>${i+1}</td>
       <td class="barcode-cell">${escapeHtml(bc)}</td>
-      <td>${escapeHtml(r.supplier_name)||''}</td>
-      <td>${escapeHtml(r.brand_name)||''}${(window.lowStockData||[]).some(b=>b.name===r.brand_name)?' <span style="background:#f44336;color:white;border-radius:4px;padding:1px 5px;font-size:11px;margin-right:4px">&#9888;</span>':''}</td>
-      <td${isAdm?' class="editable" onclick="invEdit(this,\'model\')"':''}>${escapeHtml(r.model)||''}</td>
-      <td${isAdm?' class="editable" onclick="invEdit(this,\'size\')"':''}>${escapeHtml(r.size)||''}</td>
-      <td${isAdm?' class="editable" onclick="invEdit(this,\'bridge\')"':''}>${escapeHtml(r.bridge)||''}</td>
-      <td${isAdm?' class="editable" onclick="invEdit(this,\'color\')"':''}>${escapeHtml(r.color)||''}</td>
-      <td${isAdm?' class="editable" onclick="invEdit(this,\'temple_length\')"':''}>${escapeHtml(r.temple_length)||''}</td>
-      <td>${enToHe('product_type', r.product_type)||''}</td>
-      <td${isAdm?' class="editable" onclick="invEdit(this,\'sell_price\',\'number\')"':''}>${sp}</td>
-      <td${isAdm?' class="editable" onclick="invEdit(this,\'sell_discount\',\'pct\')"':''}>${sd}%</td>
+      <td>${escapeHtml(f['ספק'])||''}</td>
+      <td>${escapeHtml(f['חברה / מותג'])||''}${(window.lowStockData||[]).some(b=>b.name===f['חברה / מותג'])?' <span style="background:#f44336;color:white;border-radius:4px;padding:1px 5px;font-size:11px;margin-right:4px">&#9888;</span>':''}</td>
+      <td${isAdm?' class="editable" onclick="invEdit(this,\'דגם\')"':''}>${escapeHtml(f['דגם'])||''}</td>
+      <td${isAdm?' class="editable" onclick="invEdit(this,\'גודל\')"':''}>${escapeHtml(f['גודל'])||''}</td>
+      <td${isAdm?' class="editable" onclick="invEdit(this,\'גשר\')"':''}>${escapeHtml(f['גשר'])||''}</td>
+      <td${isAdm?' class="editable" onclick="invEdit(this,\'צבע\')"':''}>${escapeHtml(f['צבע'])||''}</td>
+      <td${isAdm?' class="editable" onclick="invEdit(this,\'אורך מוט\')"':''}>${escapeHtml(f['אורך מוט'])||''}</td>
+      <td>${f['סוג מוצר']||''}</td>
+      <td${isAdm?' class="editable" onclick="invEdit(this,\'מחיר מכירה\',\'number\')"':''}>${sp}</td>
+      <td${isAdm?' class="editable" onclick="invEdit(this,\'הנחה מכירה %\',\'pct\')"':''}>${sd}%</td>
       <td class="cost-col">${cp}</td>
       <td class="cost-col">${cd}%</td>
       <td style="font-weight:700;color:${qC}" data-qty-id="${r.id}">${qty}${isAdm?` <span class="qty-btns"><button class="qty-btn qty-plus" data-id="${escapeHtml(r.id)}" data-dir="add" title="הוסף כמות">➕</button><button class="qty-btn qty-minus" data-id="${escapeHtml(r.id)}" data-dir="remove" title="הוצא כמות">➖</button></span>`:''}</td>
@@ -762,6 +644,9 @@ function renderInventoryRows(recs) {
       ${isAdm?`<td><button class="btn btn-d btn-sm btn-inv-delete" data-id="${escapeHtml(r.id)}" title="מחק">🗑️</button></td>`:'<td class="admin-col"></td>'}
     </tr>`;
   }).join('');
+  if (recs.length > 500) {
+    tb.innerHTML += `<tr><td colspan="19" style="text-align:center;color:var(--warn);padding:12px">מוצגות 500 מתוך ${recs.length}. צמצם עם פילטרים.</td></tr>`;
+  }
 }
 
 // ---- Selection & Bulk ----
@@ -773,7 +658,8 @@ function toggleRowSelect(id, checked) {
 }
 
 function toggleSelectAll(checked) {
-  invData.forEach(r => { if (checked) invSelected.add(r.id); else invSelected.delete(r.id); });
+  const displayed = invFiltered.slice(0, 500);
+  displayed.forEach(r => { if (checked) invSelected.add(r.id); else invSelected.delete(r.id); });
   $('inv-body').querySelectorAll('tr[data-id]').forEach(tr => {
     const cb = tr.querySelector('input[type=checkbox]');
     if (cb) cb.checked = checked;
@@ -812,11 +698,11 @@ async function applyBulkUpdate() {
   const cp = $('bulk-cprice').value;
   const cd = $('bulk-cdisc').value;
   const sync = $('bulk-sync').value;
-  if (sp !== '') fields.sell_price = parseFloat(sp) || 0;
-  if (sd !== '') fields.sell_discount = (parseFloat(sd) || 0) / 100;
-  if (cp !== '') fields.cost_price = parseFloat(cp) || 0;
-  if (cd !== '') fields.cost_discount = (parseFloat(cd) || 0) / 100;
-  if (sync) fields.website_sync = heToEn('website_sync', sync);
+  if (sp !== '') fields['מחיר מכירה'] = parseFloat(sp) || 0;
+  if (sd !== '') fields['הנחה מכירה %'] = (parseFloat(sd) || 0) / 100;
+  if (cp !== '') fields['מחיר עלות'] = parseFloat(cp) || 0;
+  if (cd !== '') fields['הנחה עלות %'] = (parseFloat(cd) || 0) / 100;
+  if (sync) fields['סנכרון אתר'] = sync;
 
   if (!Object.keys(fields).length) { toast('לא הוזנו ערכים לעדכון', 'w'); return; }
 
@@ -826,11 +712,12 @@ async function applyBulkUpdate() {
     ids.forEach(id => {
       const rec = invData.find(r => r.id === id);
       if (!rec) return;
+      const f = rec.fields;
       const missing = [];
-      if (!(rec._images||[]).length) missing.push('תמונה');
-      if (!(rec.bridge||'').toString().trim()) missing.push('גשר');
-      if (!(rec.temple_length||'').toString().trim()) missing.push('אורך מוט');
-      if (missing.length) problemItems.push(`${rec.barcode||'?'}: חסר ${missing.join(', ')}`);
+      if (!(f['תמונות']||[]).length) missing.push('תמונה');
+      if (!(f['גשר']||'').toString().trim()) missing.push('גשר');
+      if (!(f['אורך מוט']||'').toString().trim()) missing.push('אורך מוט');
+      if (missing.length) problemItems.push(`${f['ברקוד']||'?'}: חסר ${missing.join(', ')}`);
     });
     if (problemItems.length) {
       const show = problemItems.slice(0, 10).join('\n');
@@ -841,14 +728,19 @@ async function applyBulkUpdate() {
     }
   }
 
-  const desc = Object.entries(fields).map(([k,v]) => `${FIELD_MAP_REV.inventory?.[k]||k}: ${typeof v==='number' && k.includes('discount') ? Math.round(v*100)+'%' : v}`).join(', ');
+  const desc = Object.entries(fields).map(([k,v]) => `${k}: ${typeof v==='number' && k.includes('%') ? Math.round(v*100)+'%' : v}`).join(', ');
   const ok = await confirmDialog('עדכון גורף', `לעדכן ${ids.length} פריטים?\n${desc}`);
   if (!ok) return;
 
   showLoading(`מעדכן ${ids.length} פריטים...`);
   try {
-    const updates = ids.map(id => ({ id, ...fields }));
+    const updates = ids.map(id => ({ id, fields: { ...fields } }));
     await batchUpdate(T.INV, updates);
+    // Update local data
+    ids.forEach(id => {
+      const rec = invData.find(r => r.id === id);
+      if (rec) Object.assign(rec.fields, fields);
+    });
     // Clear bulk inputs
     $('bulk-sprice').value = '';
     $('bulk-sdisc').value = '';
@@ -856,7 +748,7 @@ async function applyBulkUpdate() {
     $('bulk-cdisc').value = '';
     $('bulk-sync').value = '';
     clearSelection();
-    await loadInventoryPage();
+    filterInventoryTable();
     toast(`${ids.length} פריטים עודכנו בהצלחה`, 's');
   } catch(e) {
     setAlert('inv-alerts', 'שגיאה: '+(e.message||''), 'e');
@@ -915,6 +807,7 @@ async function confirmBulkDelete() {
   try {
     for (const id of ids) {
       const rec = invData.find(r => r.id === id);
+      const f = rec ? rec.fields : {};
 
       const { error } = await sb.from('inventory').update({
         is_deleted: true,
@@ -925,16 +818,18 @@ async function confirmBulkDelete() {
       if (error) throw new Error(error.message);
 
       writeLog('soft_delete', id, {
-        barcode: rec?.barcode || '',
-        brand: rec?.brand_name || '',
-        model: rec?.model || '',
+        barcode: f['ברקוד'] || '',
+        brand: f['חברה / מותג'] || '',
+        model: f['דגם'] || '',
         reason: 'מחיקה גורפת',
         source_ref: 'נמחק ע"י: ' + emp.name
       });
     }
 
+    invData = invData.filter(r => !ids.includes(r.id));
     clearSelection();
-    await loadInventoryPage();
+    $('inv-count').textContent = invData.length;
+    filterInventoryTable();
     toast(`${ids.length} פריטים הועברו לסל המחזור 🗑️`, 's');
   } catch (e) {
     setAlert('inv-alerts', 'שגיאה: ' + (e.message || ''), 'e');
@@ -951,9 +846,9 @@ function invEdit(td, field, type) {
   const rec = invData.find(r => r.id === recId);
   if (!rec) return;
 
-  let curVal = rec[field] || '';
-  if (type === 'pct') curVal = rec[field] ? Math.round(rec[field] * 100) : 0;
-  if (type === 'number') curVal = rec[field] || 0;
+  let curVal = rec.fields[field] || '';
+  if (type === 'pct') curVal = rec.fields[field] ? Math.round(rec.fields[field] * 100) : 0;
+  if (type === 'number') curVal = rec.fields[field] || 0;
 
   td.classList.add('editing');
   const input = document.createElement('input');
@@ -970,23 +865,23 @@ function invEdit(td, field, type) {
     if (type === 'number') newVal = parseFloat(newVal) || 0;
     else if (type === 'pct') newVal = (parseFloat(newVal) || 0) / 100;
 
-    const origVal = rec[field] || (type === 'number' || type === 'pct' ? 0 : '');
+    const origVal = rec.fields[field] || (type === 'number' || type === 'pct' ? 0 : '');
     if (newVal !== origVal) {
       if (!invChanges[recId]) invChanges[recId] = {};
       invChanges[recId][field] = newVal;
-      rec[field] = newVal;  // local object stays English-keyed
+      rec.fields[field] = newVal;
       td.classList.add('changed');
       $('inv-edit-notice').style.display = 'inline';
     }
 
-    if (type === 'pct') td.textContent = Math.round((rec[field]||0)*100) + '%';
-    else td.textContent = rec[field] || '';
+    if (type === 'pct') td.textContent = Math.round((rec.fields[field]||0)*100) + '%';
+    else td.textContent = rec.fields[field] || '';
   };
 
   input.addEventListener('blur', save);
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') { input.blur(); }
-    if (e.key === 'Escape') { td.classList.remove('editing'); td.textContent = type==='pct' ? Math.round((rec[field]||0)*100)+'%' : (rec[field]||''); }
+    if (e.key === 'Escape') { td.classList.remove('editing'); td.textContent = type==='pct' ? Math.round((rec.fields[field]||0)*100)+'%' : (rec.fields[field]||''); }
   });
 }
 
@@ -999,7 +894,7 @@ function invEditSync(td) {
   const rec = invData.find(r => r.id === recId);
   if (!rec) return;
 
-  const curVal = enToHe('website_sync', rec.website_sync) || '';
+  const curVal = rec.fields['סנכרון אתר'] || '';
   td.classList.add('editing');
   const sel = document.createElement('select');
   ['', 'מלא', 'תדמית', 'לא'].forEach(v => {
@@ -1017,9 +912,9 @@ function invEditSync(td) {
     const newVal = sel.value;
     // Validation: sync=מלא or תדמית requires images, bridge, temple length
     if (newVal === 'מלא' || newVal === 'תדמית') {
-      const imgs = rec._images || [];
-      const bridge = (rec.bridge || '').toString().trim();
-      const temple = (rec.temple_length || '').toString().trim();
+      const imgs = rec.fields['תמונות'] || [];
+      const bridge = (rec.fields['גשר'] || '').toString().trim();
+      const temple = (rec.fields['אורך מוט'] || '').toString().trim();
       const missing = [];
       if (!imgs.length) missing.push('תמונה');
       if (!bridge) missing.push('גשר');
@@ -1032,12 +927,12 @@ function invEditSync(td) {
     }
     if (newVal !== curVal) {
       if (!invChanges[recId]) invChanges[recId] = {};
-      invChanges[recId].website_sync = heToEn('website_sync', newVal);
-      rec.website_sync = heToEn('website_sync', newVal);
+      invChanges[recId]['סנכרון אתר'] = newVal;
+      rec.fields['סנכרון אתר'] = newVal;
       td.classList.add('changed');
       $('inv-edit-notice').style.display = 'inline';
     }
-    td.textContent = enToHe('website_sync', rec.website_sync) || '';
+    td.textContent = rec.fields['סנכרון אתר'] || '';
   };
 
   sel.addEventListener('blur', save);
@@ -1051,9 +946,10 @@ function invEditSync(td) {
 function showImagePreview(recId) {
   const rec = invData.find(r => r.id === recId);
   if (!rec) return;
-  const imgs = rec._images || [];
+  const imgs = rec.fields['תמונות'] || [];
   if (!imgs.length) { toast('אין תמונות לפריט זה', 'w'); return; }
-  $('img-preview-title').textContent = `${rec.brand_name||''} ${rec.model||''} (${rec.barcode||''})`;
+  const f = rec.fields;
+  $('img-preview-title').textContent = `${f['חברה / מותג']||''} ${f['דגם']||''} (${f['ברקוד']||''})`;
   $('img-gallery').innerHTML = imgs.map(img =>
     `<img src="${encodeURI(img.thumbnails?.large?.url || img.url)}" alt="תמונת פריט">`
   ).join('');
@@ -1079,9 +975,26 @@ function sortInventory(th) {
     th.classList.add(invSortDir === 1 ? 'sort-asc' : 'sort-desc');
     th.querySelector('.sort-icon').innerHTML = invSortDir === 1 ? '&#9650;' : '&#9660;';
   }
-  // Server-side sort — reset to page 0 and re-fetch
-  invPage = 0;
-  loadInventoryPage();
+  // Sort the filtered data
+  if (invSortDir === 0) {
+    filterInventoryTable();
+    return;
+  }
+  const numericFields = ['מחיר מכירה', 'כמות', 'גודל', 'גשר', 'אורך מוט'];
+  const isNum = numericFields.includes(field);
+  invFiltered.sort((a, b) => {
+    let va = a.fields[field] ?? '';
+    let vb = b.fields[field] ?? '';
+    if (isNum) {
+      va = parseFloat(va) || 0;
+      vb = parseFloat(vb) || 0;
+      return (va - vb) * invSortDir;
+    }
+    va = String(va).toLowerCase();
+    vb = String(vb).toLowerCase();
+    return va.localeCompare(vb, 'he') * invSortDir;
+  });
+  renderInventoryRows(invFiltered);
 }
 
 async function saveInventoryChanges() {
@@ -1096,26 +1009,26 @@ async function saveInventoryChanges() {
     const beforeMap = {};
     for (const id of ids) {
       const rec = invData.find(r => r.id === id);
-      if (rec) beforeMap[id] = { ...rec };
+      if (rec) beforeMap[id] = { ...rec.fields };
     }
     // Strip quantity — must use ➕➖ buttons only
-    for (const id of ids) { delete invChanges[id].quantity; if (!Object.keys(invChanges[id]).length) delete invChanges[id]; }
+    for (const id of ids) { delete invChanges[id]['כמות']; if (!Object.keys(invChanges[id]).length) delete invChanges[id]; }
     const filteredIds = Object.keys(invChanges);
     if (!filteredIds.length) { toast('אין שינויים לשמור (כמות משתנה רק דרך ➕➖)', 'w'); hideLoading(); return; }
 
-    const updates = filteredIds.map(id => ({ id, ...invChanges[id] }));
+    const updates = filteredIds.map(id => ({ id, fields: invChanges[id] }));
     await batchUpdate(T.INV, updates);
     // Log each change
     for (const id of filteredIds) {
       const before = beforeMap[id] || {};
       const changed = invChanges[id] || {};
-      const base = { barcode: before.barcode, brand: before.brand_name, model: before.model };
+      const base = { barcode: before['ברקוד'], brand: before['חברה / מותג'], model: before['דגם'] };
       // Price changed
-      if ('sell_price' in changed && changed.sell_price !== before.sell_price) {
-        writeLog('edit_price', id, { ...base, price_before: before.sell_price ?? 0, price_after: changed.sell_price ?? 0 });
+      if ('מחיר מכירה' in changed && changed['מחיר מכירה'] !== before['מחיר מכירה']) {
+        writeLog('edit_price', id, { ...base, price_before: before['מחיר מכירה'] ?? 0, price_after: changed['מחיר מכירה'] ?? 0 });
       }
       // Other fields changed (not qty/price)
-      const otherKeys = Object.keys(changed).filter(k => k !== 'quantity' && k !== 'sell_price');
+      const otherKeys = Object.keys(changed).filter(k => k !== 'כמות' && k !== 'מחיר מכירה');
       if (otherKeys.length) {
         writeLog('edit_details', id, { ...base, reason: 'עריכת פרטים' });
       }

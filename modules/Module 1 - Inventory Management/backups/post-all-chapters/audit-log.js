@@ -5,9 +5,9 @@ function deleteInvRow(recId) {
   const rec = invData.find(r => r.id === recId);
   if (!rec) return;
   softDelTarget = rec;
-  const bc = rec.barcode || 'ללא ברקוד';
-  const brand = rec.brand_name || '';
-  const model = rec.model || '';
+  const bc = rec.fields['ברקוד'] || 'ללא ברקוד';
+  const brand = rec.fields['חברה / מותג'] || '';
+  const model = rec.fields['דגם'] || '';
   $('softdel-title').textContent = '🗑️ מחיקת פריט — ' + bc;
   $('softdel-desc').textContent = brand + ' ' + model;
   $('softdel-reason').value = '';
@@ -37,6 +37,7 @@ async function confirmSoftDelete() {
   }
 
   const id = softDelTarget.id;
+  const f = softDelTarget.fields;
   const fullReason = note ? reason + ' — ' + note : reason;
 
   try {
@@ -49,9 +50,9 @@ async function confirmSoftDelete() {
     if (error) throw new Error(error.message);
 
     writeLog('soft_delete', id, {
-      barcode:    softDelTarget.barcode,
-      brand:      softDelTarget.brand_name,
-      model:      softDelTarget.model,
+      barcode:    f['ברקוד'],
+      brand:      f['חברה / מותג'],
+      model:      f['דגם'],
       reason:     reason,
       source_ref: 'נמחק ע"י: ' + emp.name
     });
@@ -547,10 +548,11 @@ function openQtyModal(inventoryId, mode) {
   const rec = invData.find(r => r.id === inventoryId);
   if (!rec) { toast('פריט לא נמצא', 'e'); return; }
 
-  const bc = rec.barcode || '';
-  const brand = rec.brand_name || '';
-  const model = rec.model || '';
-  const currentQty = parseInt(rec.quantity) || 0;
+  const f = rec.fields;
+  const bc = f['ברקוד'] || '';
+  const brand = f['חברה / מותג'] || '';
+  const model = f['דגם'] || '';
+  const currentQty = parseInt(f['כמות']) || 0;
 
   qtyModalState = { id: inventoryId, mode, currentQty, barcode: bc, brand, model };
 
@@ -621,7 +623,7 @@ async function confirmQtyChange() {
 
     // Update in-memory data + UI
     const rec = invData.find(r => r.id === id);
-    if (rec) rec.quantity = newQty;
+    if (rec) rec.fields['כמות'] = newQty;
 
     const qtyTd = document.querySelector(`td[data-qty-id="${id}"]`);
     if (qtyTd) {

@@ -372,21 +372,22 @@ async function searchReceiptBarcode() {
     if (error) throw error;
 
     if (data) {
-      const brandName = brandCacheRev[data.brand_id] || '';
+      const rec = rowToRecord(data, 'inventory');
+      const f = rec.fields;
       addReceiptItemRow({
-        barcode: data.barcode || barcode,
-        brand: brandName,
-        model: data.model || '',
-        color: data.color || '',
-        size: data.size || '',
+        barcode: f['ברקוד'] || barcode,
+        brand: f['חברה / מותג'] || '',
+        model: f['דגם'] || '',
+        color: f['צבע'] || '',
+        size: f['גודל'] || '',
         quantity: 1,
-        unit_cost: data.cost_price || '',
-        sell_price: data.sell_price || '',
-        sync: enToHe('website_sync', data.website_sync) || '',
+        unit_cost: f['מחיר עלות'] || '',
+        sell_price: f['מחיר מכירה'] || '',
+        sync: f['סנכרון אתר'] || '',
         is_new_item: false,
         inventory_id: data.id
       });
-      toast(`נמצא: ${brandName} ${data.model || ''}`, 's');
+      toast(`נמצא: ${f['חברה / מותג']} ${f['דגם']}`, 's');
     } else {
       toast('ברקוד לא נמצא במלאי — הוסף כפריט חדש', 'w');
       addReceiptItemRow({ barcode, is_new_item: true, quantity: 1 });
