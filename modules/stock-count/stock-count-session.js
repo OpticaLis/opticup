@@ -214,8 +214,8 @@ function refreshSessionUI() {
   if (tbody) tbody.innerHTML = scSessionItems.map(scRenderItemRow).join('');
 }
 
-// ── Finish session (stub) ────────────────────────────────────
+// ── Finish session → diff report ─────────────────────────────
 function finishSession(countId) {
   stopCamera();
-  toast('בקרוב — דוח פערים', 'w');
+  showDiffReport(countId);
 }

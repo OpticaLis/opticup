@@ -47,3 +47,11 @@ CREATE INDEX IF NOT EXISTS idx_sci_inventory ON stock_count_items(inventory_id);
 
 ALTER TABLE stock_count_items ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_sc_items" ON stock_count_items FOR ALL USING (true) WITH CHECK (true);
+
+-- set_inventory_qty RPC added separately via SQL editor
+-- CREATE OR REPLACE FUNCTION set_inventory_qty(inv_id UUID, new_qty INTEGER)
+-- RETURNS void LANGUAGE plpgsql AS $$
+-- BEGIN
+--   UPDATE inventory SET quantity = new_qty WHERE id = inv_id;
+-- END;
+-- $$;

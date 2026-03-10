@@ -38,10 +38,11 @@
 | 28 | pending-resolve.js | modules/access-sync/pending-resolve.js | 164 | Pending resolution: ignorePending, resolvePending (PIN-verified), confirmResolvePending (optimistic locking on status), updatePendingPanelCount |
 | 29 | stock-count-list.js | modules/stock-count/stock-count-list.js | 142 | Stock count list screen: loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (creates count + items + opens PIN), renderStockCountList |
 | 30 | stock-count-session.js | modules/stock-count/stock-count-session.js | 221 | Stock count session: worker PIN entry (openWorkerPin/confirmWorkerPin), camera barcode scanning (ZXing), manual barcode input, scan handler, item update, session UI |
-| 31 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
-| 32 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
+| 31 | stock-count-report.js | modules/stock-count/stock-count-report.js | 217 | Diff report screen (showDiffReport/renderReportScreen), manager PIN approval (confirmCount with role check), cancelCount, exportCountExcel (SheetJS) |
+| 32 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
+| 33 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
 
-**Total: 32 files, ~6,537 lines**
+**Total: 33 files, ~6,754 lines**
 
 ---
 
@@ -392,7 +393,18 @@
 | `handleScan` | `(countId, barcode)` | Async. Debounced scan handler: unknown → warning toast, counted → confirm +1, pending → qty prompt |
 | `updateCountItem` | `(itemId, actualQty)` | Async. Updates T.STOCK_COUNT_ITEMS row, refreshes local array + UI |
 | `refreshSessionUI` | `()` | Updates summary stats + re-renders table body from scSessionItems |
-| `finishSession` | `(countId)` | Stub: stops camera, shows "בקרוב" toast |
+| `finishSession` | `(countId)` | Stops camera, calls showDiffReport(countId) |
+
+### modules/stock-count/stock-count-report.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `showDiffReport` | `(countId)` | Async. Fetches count header + items, splits into diff/all, calls renderReportScreen |
+| `renderReportScreen` | `(countId, diffItems, allItems)` | Renders diff report: summary cards (shortages/surpluses/uncounted), diff table, action buttons |
+| `showConfirmPinForCount` | `(countId)` | Shows inline manager PIN input for count approval |
+| `confirmCount` | `(countId)` | Async. Verifies manager PIN (role IN admin/manager), updates inventory via set_inventory_qty RPC, writeLogs via Promise.all, marks count completed |
+| `cancelCount` | `(countId)` | Async. Confirms cancellation, updates count status to cancelled |
+| `exportCountExcel` | `(countId)` | Async. Exports all counted items to xlsx via SheetJS (10 columns) |
 
 ### modules/admin/admin.js
 
@@ -639,8 +651,15 @@ stock-count-list.js
 stock-count-session.js
   → reads: T.EMPLOYEES, T.STOCK_COUNTS, T.STOCK_COUNT_ITEMS [shared.js]
   → calls: fetchAll() [supabase-ops.js], showLoading(), hideLoading(), toast(), escapeHtml(), $(), confirmDialog() [shared.js]
-  → calls: loadStockCountTab() [stock-count-list.js]
+  → calls: loadStockCountTab() [stock-count-list.js], showDiffReport() [stock-count-report.js]
   → uses: ZXing.BrowserMultiFormatReader (external CDN library)
+
+stock-count-report.js
+  → reads: T.EMPLOYEES, T.STOCK_COUNTS, T.STOCK_COUNT_ITEMS, scCountNumber [stock-count-session.js]
+  → calls: fetchAll(), writeLog() [supabase-ops.js], showLoading(), hideLoading(), toast(), escapeHtml(), $(), confirmDialog() [shared.js]
+  → calls: loadStockCountTab() [stock-count-list.js], openCountSession() [stock-count-session.js]
+  → calls: sb.rpc('set_inventory_qty') [Supabase RPC]
+  → uses: XLSX (SheetJS, external CDN library)
 
 supabase-ops.js
   → reads/writes: sb, T, supplierCache, supplierCacheRev, supplierNumCache, brandCache, brandCacheRev [shared.js]
