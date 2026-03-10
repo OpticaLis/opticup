@@ -77,7 +77,7 @@ async function confirmResolvePending() {
   const pin = $('resolve-pin').value.trim();
   if (!pin) { $('resolve-pin-error').textContent = 'יש להזין סיסמת עובד'; return; }
 
-  const { data: emp } = await sb.from('employees').select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle();
+  const { data: emp } = await sb.from(T.EMPLOYEES).select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle();
   if (!emp) { $('resolve-pin-error').textContent = '❌ סיסמת עובד שגויה'; $('resolve-pin').value = ''; $('resolve-pin').focus(); return; }
   sessionStorage.setItem('prizma_user', emp.name);
 

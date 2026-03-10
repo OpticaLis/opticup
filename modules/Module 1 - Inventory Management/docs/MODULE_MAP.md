@@ -406,7 +406,7 @@
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
 | `sb` | SupabaseClient | `supabase.createClient(...)` | Supabase client instance |
-| `T` | Object | `{ INV, PO, BRANDS, SUPPLIERS, ... }` | Table name constants (see DB Schema section) |
+| `T` | Object | `{ INV, PO, BRANDS, SUPPLIERS, EMPLOYEES, ... }` | Table name constants (see DB Schema section) |
 | `FIELD_MAP` | Object | Nested {table: {he: en}} | Hebrew→English field name mapping per table |
 | `FIELD_MAP_REV` | Object | Auto-built reverse | English→Hebrew field name mapping per table |
 | `ENUM_MAP` | Object | {category: {he: en}} | Hebrew→English enum value mapping |
@@ -738,7 +738,7 @@ admin.js (DOMContentLoaded)
 | `inventory` | `T.INV` | id (uuid PK), barcode (unique), brand_id (FK→brands), supplier_id (FK→suppliers), model, size, bridge, color, temple_length, product_type, sell_price, sell_discount, cost_price, cost_discount, quantity, status, website_sync, origin, notes, is_deleted, deleted_at, deleted_by, deleted_reason, created_at | → brands.id, → suppliers.id, ← inventory_images.inventory_id, ← inventory_logs.inventory_id, ← goods_receipt_items.inventory_id |
 | `brands` | `T.BRANDS` | id (uuid PK), name, brand_type (luxury/brand), default_sync (full/display/no), active (bool), exclude_website (bool), min_stock_qty (int) | ← inventory.brand_id, ← purchase_order_items.brand_id |
 | `suppliers` | `T.SUPPLIERS` | id (uuid PK), name, active (bool), supplier_number (unique int, >= 10) | ← inventory.supplier_id, ← purchase_orders.supplier_id, ← goods_receipts.supplier_id |
-| `employees` | (direct table ref) | id (uuid PK), name, pin | Used for PIN verification (client-side query) |
+| `employees` | `T.EMPLOYEES` | id (uuid PK), name, pin, role, branch_id, is_active, created_at | Used for PIN verification (client-side query) |
 | `inventory_logs` | (direct table ref) | id (uuid PK), action, inventory_id (FK→inventory, nullable), details (jsonb), employee, branch, created_at | → inventory.id |
 | `inventory_images` | (direct table ref) | id (uuid PK), inventory_id (FK→inventory), url | → inventory.id |
 | `purchase_orders` | `T.PO` | id (uuid PK), po_number (unique, format PO-{supNum}-{seq}), supplier_id (FK→suppliers), status (draft/sent/partial/received/cancelled), notes, expected_date, created_at | → suppliers.id, ← purchase_order_items.po_id, ← goods_receipts.po_id |
@@ -759,8 +759,8 @@ All quantity changes, deletions, and pending resolutions require employee PIN ve
 
 **Pattern:**
 1. Modal opens with PIN input field
-2. User enters 4-digit PIN
-3. Code queries `sb.from('employees').select('id, name').eq('pin', pin)`
+2. User enters PIN
+3. Code queries `sb.from(T.EMPLOYEES).select('id, name').eq('pin', pin).eq('is_active', true)`
 4. If no match → error toast, return
 5. If match → proceed with action, store employee name in `sessionStorage('prizma_user')`
 6. Employee name is passed to `writeLog()` via sessionStorage

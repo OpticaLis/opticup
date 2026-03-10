@@ -30,7 +30,7 @@ async function confirmSoftDelete() {
   if (!reason || !pin) return;
 
   // Verify PIN
-  const { data: emp } = await sb.from('employees').select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle();
+  const { data: emp } = await sb.from(T.EMPLOYEES).select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle();
   if (!emp) {
     $('softdel-error').textContent = '❌ סיסמת עובד שגויה';
     return;
@@ -190,7 +190,7 @@ async function confirmPermanentDelete() {
   const pin = $('permdel-pin').value.trim();
   if (!pin) { $('permdel-pin-error').textContent = 'יש להזין סיסמת עובד'; return; }
 
-  const { data: emp } = await sb.from('employees').select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle();
+  const { data: emp } = await sb.from(T.EMPLOYEES).select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle();
   if (!emp) { $('permdel-pin-error').textContent = '❌ סיסמת עובד שגויה'; $('permdel-pin').value = ''; $('permdel-pin').focus(); return; }
 
   const { id, row, barcode, brand, model } = permDelTarget;

@@ -17,6 +17,7 @@ const T = {
   HEARTBEAT: 'watcher_heartbeat',
   STOCK_COUNTS: 'stock_counts',
   STOCK_COUNT_ITEMS: 'stock_count_items',
+  EMPLOYEES: 'employees',
 };
 
 // =========================================================
