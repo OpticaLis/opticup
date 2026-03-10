@@ -65,8 +65,9 @@ async function confirmQtyChange() {
   const fullReason = note ? reason + ' — ' + note : reason;
 
   try {
-    // Update DB
-    const { error } = await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
+    // Update DB (atomic RPC)
+    const rpcName = mode === 'add' ? 'increment_inventory' : 'decrement_inventory';
+    const { error } = await sb.rpc(rpcName, { inv_id: id, delta: amount });
     if (error) throw new Error(error.message);
 
     // Write log

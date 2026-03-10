@@ -108,14 +108,13 @@ async function confirmResolvePending() {
     let qtyAfter;
     if (row.action_type === 'sale') {
       qtyAfter = Math.max(0, qtyBefore - row.quantity);
+      const { error: uErr } = await sb.rpc('decrement_inventory', { inv_id: inventoryId, delta: row.quantity });
+      if (uErr) throw uErr;
     } else {
       qtyAfter = qtyBefore + row.quantity;
+      const { error: uErr } = await sb.rpc('increment_inventory', { inv_id: inventoryId, delta: row.quantity });
+      if (uErr) throw uErr;
     }
-
-    // 5. Update inventory
-    const { error: uErr } = await sb.from(T.INV)
-      .update({ quantity: qtyAfter }).eq('id', inventoryId);
-    if (uErr) throw uErr;
 
     // 6. Resolve brand name for log
     let brandName = '';

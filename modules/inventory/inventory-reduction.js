@@ -68,10 +68,13 @@ async function processRedExcel() {
 
       if (sync === 'full') {
         const qtyBefore = rec.quantity || 1;
-        const qty = Math.max(0, qtyBefore - (parseInt(row['כמות'] || row['כמות שנמכרה']) || 1));
-        const updateFields = { quantity: qty };
-        if (qty === 0) updateFields.status = heToEn('status', 'נמכר');
-        await batchUpdate(T.INV, [{ id: rec.id, ...updateFields }]);
+        const delta = parseInt(row['כמות'] || row['כמות שנמכרה']) || 1;
+        const qty = Math.max(0, qtyBefore - delta);
+        const { error: decErr } = await sb.rpc('decrement_inventory', { inv_id: rec.id, delta: delta });
+        if (decErr) throw decErr;
+        if (qty === 0) {
+          await batchUpdate(T.INV, [{ id: rec.id, status: heToEn('status', 'נמכר') }]);
+        }
         writeLog('sale', rec.id, { barcode, brand: rec.brand_name, model: rec.model, qty_before: qtyBefore, qty_after: qty, source_ref: redExcelFileName || 'ייבוא אדום' });
         results.updated.push({ barcode, model: rec.model || barcode });
       } else if (sync === 'display') {
@@ -268,11 +271,6 @@ async function confirmReduction() {
   sessionStorage.setItem('prizma_user', emp.name);
 
   const newQty = currentQty - amount;
-  const updateFields = { quantity: newQty };
-  // Status logic: only set 'sold' when qty=0 AND reason is 'נמכר'
-  if (newQty === 0 && reason === 'נמכר') {
-    updateFields.status = heToEn('status', 'נמכר');
-  }
 
   // Action mapping
   let action = 'manual_remove';
@@ -280,7 +278,11 @@ async function confirmReduction() {
   else if (reason === 'נשלח לזיכוי') action = 'credit_return';
 
   try {
-    await batchUpdate(T.INV, [{ id, ...updateFields }]);
+    const { error: decErr } = await sb.rpc('decrement_inventory', { inv_id: id, delta: amount });
+    if (decErr) throw decErr;
+    if (newQty === 0 && reason === 'נמכר') {
+      await batchUpdate(T.INV, [{ id, status: heToEn('status', 'נמכר') }]);
+    }
     await writeLog(action, id, {
       barcode, brand, model,
       qty_before: currentQty,

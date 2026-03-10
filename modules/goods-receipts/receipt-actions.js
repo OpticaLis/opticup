@@ -104,7 +104,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
       if (invRow) {
         const oldQty = invRow.quantity || 0;
         const newQty = oldQty + item.quantity;
-        const { error: updErr } = await sb.from('inventory').update({ quantity: newQty }).eq('id', invRow.id);
+        const { error: updErr } = await sb.rpc('increment_inventory', { inv_id: invRow.id, delta: item.quantity });
         if (updErr) throw updErr;
         await sb.from(T.RCPT_ITEMS).update({ inventory_id: invRow.id }).eq('id', item.id);
         writeLog('entry_receipt', invRow.id, {

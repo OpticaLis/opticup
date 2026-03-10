@@ -135,13 +135,13 @@
 |----------|------------|-------------|
 | `showSampleReport` | `()` | Shows sample report modal |
 | `handleRedExcel` | `(ev)` | Reads uploaded Excel. Detects Access sales template → delegates to processAccessSalesFile |
-| `processRedExcel` | `()` | Async. Processes reduction Excel rows: barcode lookup, brand/model validation, qty reduction for sync=full items |
+| `processRedExcel` | `()` | Async. Processes reduction Excel rows: barcode lookup, brand/model validation, qty reduction via `sb.rpc('decrement_inventory')` for sync=full items |
 | `loadModelsForBrand` | `(brandName)` | Async. Cascading dropdown: populates model datalist for brand |
 | `clearSizeColorLists` | `()` | Clears size/color datalists and inputs |
 | `loadSizesAndColors` | `()` | Async. Cascading dropdown: populates size+color datalists for brand+model |
 | `searchManual` | `()` | Async. Searches by barcode or brand+model+size+color, renders result cards |
 | `openReductionModal` | `(recId)` | Opens reduction modal with item info, amount, reason, PIN fields |
-| `confirmReduction` | `()` | Async. Validates amount/reason/PIN, updates qty, maps reason→action type, writes log |
+| `confirmReduction` | `()` | Async. Validates amount/reason/PIN, decrements qty via `sb.rpc('decrement_inventory')`, maps reason→action type, writes log |
 
 ### modules/inventory/inventory-entry.js
 
@@ -263,7 +263,7 @@
 | Function | Parameters | Description |
 |----------|------------|-------------|
 | `saveReceiptDraft` | `()` | Async. Validates fields, creates or updates receipt + items |
-| `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Core confirmation: updates inventory quantities, creates new items, updates PO status |
+| `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Core confirmation: increments inventory quantities via `sb.rpc('increment_inventory')`, creates new items, updates PO status |
 | `confirmReceipt` | `()` | Async. UI-facing: validates, saves draft internally, then calls confirmReceiptCore |
 | `createNewInventoryFromReceiptItem` | `(item, receiptId, rcptNumber)` | Async. Creates inventory row with generated barcode from receipt item |
 | `saveReceiptDraftInternal` | `()` | Async. Internal save without UI feedback, used before confirmReceipt |
@@ -308,7 +308,7 @@
 | Function | Parameters | Description |
 |----------|------------|-------------|
 | `openQtyModal` | `(inventoryId, mode)` | Opens qty change modal (add/remove) with reason dropdown and PIN |
-| `confirmQtyChange` | `()` | Async. Validates amount/reason/PIN, updates DB qty directly, writes log, updates DOM |
+| `confirmQtyChange` | `()` | Async. Validates amount/reason/PIN, updates qty via `sb.rpc('increment_inventory'/'decrement_inventory')`, writes log, updates DOM |
 
 ### modules/brands/brands.js
 
@@ -362,7 +362,7 @@
 |----------|------------|-------------|
 | `ignorePending` | `(pendingId, barcode, sourceRef)` | Async. Marks pending as 'ignored', writes log, updates badge |
 | `resolvePending` | `(pendingId, inventoryId)` | Async. Shows confirm + PIN modal for resolution |
-| `confirmResolvePending` | `()` | Async. Verifies PIN, optimistic lock on status='pending', adjusts qty (sale: subtract, return: add), writes log |
+| `confirmResolvePending` | `()` | Async. Verifies PIN, optimistic lock on status='pending', adjusts qty via `sb.rpc('decrement_inventory'/'increment_inventory')`, writes log |
 | `updatePendingPanelCount` | `()` | Updates card count in panel header |
 
 ### modules/admin/admin.js
@@ -848,9 +848,10 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 
 **Risk:** Race condition if two users modify the same item simultaneously. The second write overwrites the first.
 
-**Planned fix (Phase 2):** Migrate to Supabase RPC with atomic SQL increment:
-```sql
-UPDATE inventory SET quantity = quantity + $1 WHERE id = $2;
-```
+**✅ Fixed (Goal 0):** Migrated to Supabase RPC with atomic SQL increment/decrement:
+- `increment_inventory(inv_id, delta)` — `quantity = quantity + delta`
+- `decrement_inventory(inv_id, delta)` — `quantity = GREATEST(0, quantity - delta)`
+- Migration: `migrations/012_atomic_qty_rpc.sql`
 
-**Files affected:** qty-modal.js (`confirmQtyChange`), receipt-actions.js (`confirmReceiptCore`), inventory-reduction.js (`confirmReduction`), access-sales.js (`processAccessSalesFile`), pending-resolve.js (`confirmResolvePending`), po-view-import.js (`importPOToInventory`)
+**Files updated:** qty-modal.js (`confirmQtyChange`), receipt-actions.js (`confirmReceiptCore`), inventory-reduction.js (`processRedExcel`, `confirmReduction`), pending-resolve.js (`confirmResolvePending`)
+**Files remaining (future):** access-sales.js (`processAccessSalesFile`), po-view-import.js (`importPOToInventory`)
