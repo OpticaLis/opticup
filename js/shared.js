@@ -288,7 +288,20 @@ async function writeLog(action, inventoryId, details = {}) {
       reason:        details.reason        || null,
       source_ref:    details.source_ref    || null,
       performed_by:  performer,
-      branch_id:     branch
+      branch_id:     branch,
+      // Access sale fields (011)
+      sale_amount:   details.sale_amount   ?? null,
+      discount:      details.discount      ?? null,
+      discount_1:    details.discount_1    ?? null,
+      discount_2:    details.discount_2    ?? null,
+      final_amount:  details.final_amount  ?? null,
+      coupon_code:   details.coupon_code   ?? null,
+      campaign:      details.campaign      ?? null,
+      employee_id:   details.employee_id   ?? null,
+      lens_included: details.lens_included ?? null,
+      lens_category: details.lens_category ?? null,
+      order_number:  details.order_number  ?? null,
+      sync_filename: details.filename      ?? null
     });
   } catch (e) {
     console.warn('writeLog failed:', e);

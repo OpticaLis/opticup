@@ -181,7 +181,21 @@ CREATE TABLE IF NOT EXISTS inventory_logs (
 
   -- פרטי הפעולה
   reason          TEXT,                                          -- סיבה
-  source_ref      TEXT,                                          -- מקור: הזמנת רכש / מספר מכירה / שם קובץ / סניף
+  source_ref      TEXT,                                          -- מקור: watcher | manual | null לפעולות רגילות
+
+  -- Access sale fields (011)
+  sale_amount     NUMERIC(10,2),                                 -- מחיר לפני הנחות
+  discount        NUMERIC(10,2),                                 -- הנחה קבועה (חיילים וכו')
+  discount_1      NUMERIC(10,2),                                 -- הנחה נוספת 1
+  discount_2      NUMERIC(10,2),                                 -- הנחה נוספת 2
+  final_amount    NUMERIC(10,2),                                 -- מחיר סופי ששולם
+  coupon_code     TEXT,                                          -- קוד קופון
+  campaign        TEXT,                                          -- שם מבצע
+  employee_id     TEXT,                                          -- עובד שביצע מכירה (Access)
+  lens_included   BOOLEAN,                                       -- עדשות כלולות
+  lens_category   TEXT,                                          -- קטגוריית עדשה
+  order_number    TEXT,                                          -- מספר הזמנה POS
+  sync_filename   TEXT,                                          -- שם קובץ Excel מ-Access
 
   -- מי ומתי
   performed_by    TEXT NOT NULL DEFAULT 'system',                 -- מבצע הפעולה (שם עובד)

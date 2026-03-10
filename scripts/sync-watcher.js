@@ -226,7 +226,20 @@ async function processFile(filepath, filename) {
           reason: 'sale_from_access',
           source_ref: 'watcher',
           performed_by: 'watcher',
-          branch_id: '00'
+          branch_id: '00',
+          // Access sale fields (011)
+          sale_amount:   row.sale_amount   ?? null,
+          discount:      row.discount      ?? null,
+          discount_1:    row.discount_1    ?? null,
+          discount_2:    row.discount_2    ?? null,
+          final_amount:  row.final_amount  ?? null,
+          coupon_code:   row.coupon_code   ?? null,
+          campaign:      row.campaign      ?? null,
+          employee_id:   row.employee_id   ?? null,
+          lens_included: row.lens_included ?? null,
+          lens_category: row.lens_category ?? null,
+          order_number:  row.order_number  ?? null,
+          sync_filename: filename
         });
         if (logInsErr) log(`Warning: audit log insert failed — ${logInsErr.message}`);
 
