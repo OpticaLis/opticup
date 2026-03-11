@@ -42,7 +42,7 @@
   <button data-tab="stock-count" data-tab-permission="stock_count.create" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
   <button data-tab="employees" data-tab-permission="employees.view" onclick="showTab('employees')">&#128101; עובדים</button>
   <div class="nav-spacer"></div>
-  <a href="index.html" id="homeBtn" class="home-link" style="display:none;color:rgba(255,255,255,.8);text-decoration:none;font-size:.85rem;margin-left:12px;white-space:nowrap;flex-shrink:0;">&#8594; מסך בית</a>
+  <a href="index.html" id="homeBtn" class="home-link" style="display:none;color:var(--primary);text-decoration:none;font-size:.85rem;margin-left:12px;white-space:nowrap;flex-shrink:0;">&#8594; מסך בית</a>
   <button class="admin-btn unlocked" id="adminBtn" style="display:none" onclick="confirmDialog('האם להתנתק מהמערכת?').then(ok=>{if(ok)clearSession()})">&#128100;</button>
 </nav>
 
