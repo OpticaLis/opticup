@@ -133,17 +133,20 @@ async function processAccessSalesFile(workbook, filename) {
       if (invRows && invRows.length > 0) {
         // Case 1 — barcode found
         const inv = invRows[0];
-        let newQty;
+
+        // Atomic RPC update
         if (row.action_type === 'sale') {
-          newQty = Math.max(0, inv.quantity - row.quantity);
+          const { error: rpcErr } = await sb.rpc('decrement_inventory', { inv_id: inv.id, delta: row.quantity });
+          if (rpcErr) throw rpcErr;
         } else {
-          newQty = inv.quantity + row.quantity;
+          const { error: rpcErr } = await sb.rpc('increment_inventory', { inv_id: inv.id, delta: row.quantity });
+          if (rpcErr) throw rpcErr;
         }
 
-        const { error: updErr } = await sb.from(T.INV)
-          .update({ quantity: newQty })
-          .eq('id', inv.id);
-        if (updErr) throw updErr;
+        // Calculate newQty for writeLog only (not used for DB update)
+        const newQty = row.action_type === 'sale'
+          ? Math.max(0, inv.quantity - row.quantity)
+          : inv.quantity + row.quantity;
 
         writeLog(
           row.action_type === 'sale' ? 'reduce_qty' : 'return_qty',

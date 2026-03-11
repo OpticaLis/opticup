@@ -143,7 +143,7 @@ function setAlert(id, html, type) { $(id).innerHTML = `<div class="alert alert-$
 function clearAlert(id) { $(id).innerHTML = ''; }
 function closeModal(id) { $(id).style.display = 'none'; }
 
-function confirmDialog(title, text) {
+function confirmDialog(title, text = '') {
   return new Promise(res => {
     $('confirm-title').textContent = title;
     $('confirm-text').textContent = text;
@@ -157,6 +157,8 @@ function confirmDialog(title, text) {
 // NAVIGATION
 // =========================================================
 function showTab(name) {
+  // Stop camera stream if active (stock-count tab)
+  if (typeof stopCamera === 'function') stopCamera();
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('nav button[data-tab]').forEach(b => b.classList.remove('active'));
   $('tab-'+name).classList.add('active');

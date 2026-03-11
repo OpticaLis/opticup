@@ -62,7 +62,8 @@ async function confirmWorkerPin() {
         count_number: countNumber,
         status: 'in_progress',
         count_date: new Date().toISOString().slice(0, 10),
-        branch_id: branchCode || '00'
+        branch_id: branchCode || '00',
+        counted_by: activeWorker.name
       }).select().single();
       if (error) throw error;
 

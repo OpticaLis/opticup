@@ -125,6 +125,7 @@ async function processFile(filepath, filename) {
 
   // 4. Process each row
   let successCount = 0;
+  let pendingCount = 0;
   let failedCount = 0;
   const errors = [];
 
@@ -156,8 +157,27 @@ async function processFile(filepath, filename) {
       if (invErr) throw invErr;
 
       if (!invRows || invRows.length === 0) {
-        errors.push(`Row ${rowNum}: barcode ${barcode} not found in inventory`);
-        failedCount++;
+        // Barcode not found → create pending_sales row for manual resolution
+        const { error: pendErr } = await sb.from('pending_sales').insert({
+          source_ref: 'watcher',
+          filename,
+          barcode_received: barcode,
+          quantity,
+          action_type: actionType,
+          transaction_date: transactionDate,
+          order_number: String(r.order_number || '').trim() || null,
+          employee_id: String(r.employee_id || '').trim() || null,
+          sale_amount: parseFloat(r.sale_amount) || null,
+          final_amount: parseFloat(r.final_amount) || null,
+          status: 'pending'
+        });
+        if (pendErr) {
+          errors.push(`Row ${rowNum}: pending_sales insert failed: ${pendErr.message}`);
+          failedCount++;
+        } else {
+          log(`  Barcode ${barcode} not found — added to pending_sales`);
+          pendingCount++;
+        }
         continue;
       }
 
@@ -195,8 +215,9 @@ async function processFile(filepath, filename) {
       if (await isDuplicateLog(inv.id, filename)) {
         log(`  Skipping duplicate inventory_log for ${barcode}`);
       } else {
+        const logAction = actionType === 'return' ? 'credit_return' : 'sale';
         const { error: logErr } = await sb.from('inventory_logs').insert({
-          action:         'sale',
+          action:         logAction,
           inventory_id:   inv.id,
           qty_before:     qtyBefore,
           qty_after:      qtyAfter,
@@ -228,7 +249,9 @@ async function processFile(filepath, filename) {
   }
 
   // 8. Determine status + upload failed files to storage
-  const status = failedCount === 0 ? 'success' : successCount === 0 ? 'error' : 'partial';
+  const status = (failedCount === 0 && pendingCount === 0) ? 'success'
+    : (successCount === 0 && pendingCount === 0) ? 'error'
+    : 'partial';
   let storagePath = null;
   const destDir = status === 'error' ? CONFIG.failedDir : CONFIG.processedDir;
 
@@ -246,7 +269,7 @@ async function processFile(filepath, filename) {
       status,
       rows_total:    dataRows.length,
       rows_success:  successCount,
-      rows_pending:  0,
+      rows_pending:  pendingCount,
       rows_error:    failedCount,
       errors:        errors.length ? errors : null,
       processed_at:  new Date().toISOString(),

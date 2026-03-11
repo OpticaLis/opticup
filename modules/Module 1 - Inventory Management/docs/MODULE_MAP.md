@@ -64,8 +64,8 @@
 | `setAlert` | `(id, html, type)` | Sets inline alert in container element |
 | `clearAlert` | `(id)` | Clears inline alert |
 | `closeModal` | `(id)` | Hides modal by setting display:none |
-| `confirmDialog` | `(title, text)` | Async confirm modal. Returns Promise\<boolean\> |
-| `showTab` | `(name)` | Main navigation: deactivates all tabs, activates target, calls appropriate loader |
+| `confirmDialog` | `(title, text='')` | Async confirm modal. Returns Promise\<boolean\>. text defaults to empty string |
+| `showTab` | `(name)` | Main navigation: stops camera if active, deactivates all tabs, activates target, calls appropriate loader |
 | `showEntryMode` | `(mode)` | Switches between manual/excel/receipt entry sub-modes |
 
 ### js/supabase-ops.js
@@ -185,7 +185,7 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `processAccessSalesFile` | `(workbook, filename)` | Async. Processes Access POS sales file: validates rows, checks duplicate file via sync_log, adjusts qty for sales/returns, unmatched→pending_sales |
+| `processAccessSalesFile` | `(workbook, filename)` | Async. Processes Access POS sales file: validates rows, checks duplicate file via sync_log, adjusts qty via atomic RPC for sales/returns, unmatched→pending_sales |
 
 ### modules/purchasing/purchase-orders.js
 

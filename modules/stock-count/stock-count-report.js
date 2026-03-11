@@ -161,11 +161,13 @@ async function confirmCount(countId) {
     await Promise.all(logPromises);
 
     // Update count header
+    const worker = activeWorker || JSON.parse(sessionStorage.getItem('activeWorker') || '{}');
     const { error } = await sb.from(T.STOCK_COUNTS).update({
       status: 'completed',
       completed_at: new Date().toISOString(),
       total_items: allItems.filter(i => i.status === 'counted').length,
-      total_diffs: diffItems.length
+      total_diffs: diffItems.length,
+      counted_by: worker.name || emp.name
     }).eq('id', countId);
     if (error) throw error;
 
