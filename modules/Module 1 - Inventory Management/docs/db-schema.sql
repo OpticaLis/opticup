@@ -1,6 +1,6 @@
 -- ============================================================
 -- Prizma Optics — מלאי מסגרות — Full DB Schema
--- גרסה 2.0 | מרץ 2026
+-- גרסה 3.0 | מרץ 2026 | Post-Phase 2
 -- ============================================================
 -- סדר יצירה לפי תלויות (FK)
 -- 1. brands  2. suppliers  3. employees
@@ -8,6 +8,7 @@
 -- 7. purchase_orders  8. purchase_order_items
 -- 9. goods_receipts  10. goods_receipt_items
 -- 11. sync_log  12. pending_sales  13. watcher_heartbeat
+-- 14. stock_counts  15. stock_count_items
 -- ============================================================
 -- Migrations applied:
 --   supabase_schema.sql  — initial tables
@@ -21,6 +22,10 @@
 --   009_brands_active.sql  — brands.active
 --   010_access_bridge.sql  — sync_log + pending_sales + watcher_heartbeat
 --   011_inventory_logs_sale_fields.sql  — 12 Access sale columns on inventory_logs
+--   012_atomic_qty_rpc.sql  — increment_inventory + decrement_inventory RPC functions
+--   013_stock_count.sql  — stock_counts + stock_count_items tables + set_inventory_qty RPC
+--   014_stock_count_scanned_by.sql  — scanned_by column on stock_count_items
+--   015_failed_sync_storage.sql  — storage_path + errors columns on sync_log, storage policy
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -318,6 +323,8 @@ CREATE TABLE IF NOT EXISTS sync_log (
   rows_pending     INTEGER DEFAULT 0,                              -- שורות ממתינות (ברקוד לא נמצא)
   rows_error       INTEGER DEFAULT 0,                              -- שורות שנכשלו
   error_message    TEXT,                                           -- הודעת שגיאה כללית
+  errors           JSONB,                                          -- מערך שגיאות מפורט (015)
+  storage_path     TEXT,                                           -- נתיב קובץ ב-Supabase Storage (015)
   processed_at     TIMESTAMPTZ                                     -- זמן סיום עיבוד
 );
 
@@ -373,6 +380,95 @@ CREATE TABLE IF NOT EXISTS watcher_heartbeat (
 );
 
 INSERT INTO watcher_heartbeat (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================
+-- 14. stock_counts — ספירות מלאי (013)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS stock_counts (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  count_number    TEXT NOT NULL UNIQUE,                        -- SC-YYYY-NNNN (auto-generated)
+  count_date      DATE NOT NULL DEFAULT CURRENT_DATE,          -- תאריך ספירה
+  status          TEXT NOT NULL DEFAULT 'in_progress'          -- in_progress | completed | cancelled
+                  CHECK (status IN ('in_progress', 'completed', 'cancelled')),
+  counted_by      TEXT,                                        -- מי ספר (שם עובד)
+  notes           TEXT,                                        -- הערות
+  total_items     INTEGER DEFAULT 0,                           -- סה"כ פריטים שנספרו
+  total_diffs     INTEGER DEFAULT 0,                           -- סה"כ פערים שנמצאו
+  branch_id       TEXT,                                        -- קוד סניף
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at    TIMESTAMPTZ                                  -- מתי הושלם
+);
+CREATE INDEX IF NOT EXISTS idx_sc_status ON stock_counts(status);
+CREATE INDEX IF NOT EXISTS idx_sc_date ON stock_counts(count_date DESC);
+
+ALTER TABLE stock_counts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_stock_counts" ON stock_counts FOR ALL USING (true) WITH CHECK (true);
+
+-- ============================================================
+-- 15. stock_count_items — שורות ספירה (013 + 014)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS stock_count_items (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  count_id        UUID NOT NULL REFERENCES stock_counts(id) ON DELETE CASCADE,
+  inventory_id    UUID NOT NULL REFERENCES inventory(id) ON DELETE CASCADE,
+  barcode         TEXT,                                        -- ברקוד (snapshot)
+  brand           TEXT,                                        -- מותג (snapshot)
+  model           TEXT,                                        -- דגם (snapshot)
+  color           TEXT,                                        -- צבע (snapshot)
+  size            TEXT,                                        -- גודל (snapshot)
+  expected_qty    INTEGER NOT NULL,                            -- כמות צפויה (מהמערכת)
+  actual_qty      INTEGER,                                     -- כמות בפועל (מהספירה)
+  difference      INTEGER GENERATED ALWAYS AS (actual_qty - expected_qty) STORED,  -- פער
+  status          TEXT NOT NULL DEFAULT 'pending'              -- pending | counted | skipped
+                  CHECK (status IN ('pending', 'counted', 'skipped')),
+  notes           TEXT,                                        -- הערה לשורה
+  counted_at      TIMESTAMPTZ,                                 -- מתי נספר
+  scanned_by      TEXT                                         -- מי סרק (014)
+);
+CREATE INDEX IF NOT EXISTS idx_sci_count ON stock_count_items(count_id);
+CREATE INDEX IF NOT EXISTS idx_sci_inventory ON stock_count_items(inventory_id);
+
+ALTER TABLE stock_count_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_sc_items" ON stock_count_items FOR ALL USING (true) WITH CHECK (true);
+
+-- ============================================================
+-- RPC Functions — Atomic quantity updates (012 + 013)
+-- ============================================================
+
+-- Increment inventory quantity by delta (for receipts, manual additions)
+CREATE OR REPLACE FUNCTION increment_inventory(inv_id UUID, delta INTEGER)
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE inventory SET quantity = quantity + delta WHERE id = inv_id;
+END;
+$$;
+
+-- Decrement inventory quantity by delta, floor at 0 (for sales, reductions)
+CREATE OR REPLACE FUNCTION decrement_inventory(inv_id UUID, delta INTEGER)
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE inventory
+  SET quantity = GREATEST(0, quantity - delta)
+  WHERE id = inv_id;
+END;
+$$;
+
+-- Set inventory quantity directly (for stock count approval)
+CREATE OR REPLACE FUNCTION set_inventory_qty(inv_id UUID, new_qty INTEGER)
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE inventory SET quantity = new_qty WHERE id = inv_id;
+END;
+$$;
+
+-- ============================================================
+-- Supabase Storage — failed sync files (015)
+-- ============================================================
+-- Bucket: failed-sync-files (created via Supabase dashboard)
+CREATE POLICY "allow_all_failed_files"
+ON storage.objects FOR ALL
+USING (bucket_id = 'failed-sync-files')
+WITH CHECK (bucket_id = 'failed-sync-files');
 
 -- ============================================================
 -- FUTURE TABLES (stubs — not yet used by app)

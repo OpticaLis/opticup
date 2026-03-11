@@ -1,35 +1,49 @@
 # מלאי מסגרות — Module Spec
-## גרסה 2.0 | מרץ 2026
+## גרסה 3.0 | מרץ 2026 | Post-Phase 2
 
 ---
 
 ## 1. סקירה כללית
 
-**מודול מלאי מסגרות** הוא הליבה של מערכת Optic Up — מנהל את כל מחזור החיים של מסגרות משקפיים במלאי: כניסה, מעקב, עריכה, מכירה, מחיקה ושחזור.
+**מודול מלאי מסגרות** הוא הליבה של מערכת Optic Up — מנהל את כל מחזור החיים של מסגרות משקפיים במלאי: כניסה, מעקב, עריכה, מכירה, מחיקה, שחזור, ספירת מלאי וסנכרון עם Access.
 
 **סטאק טכנולוגי:**
-- Frontend: Vanilla JS (no framework), index.html (shell) + 7 JS modules + CSS
-- Backend: Supabase (PostgreSQL + REST API), client = `sb`
+- Frontend: Vanilla JS (no framework), index.html (shell) + 32 JS modules + CSS
+- Backend: Supabase (PostgreSQL + REST API + RPC functions), client = `sb`
 - Excel: SheetJS (xlsx) לייבוא/ייצוא
+- Barcode: ZXing (camera-based scanning for stock count)
 - Deploy: GitHub Pages → https://opticalis.github.io/prizma-inventory/
+- Watcher: Node.js + chokidar (Dropbox folder watcher for Access sync)
 
 **קבצים:**
 ```
 index.html              — HTML shell + nav + modals + script tags
 css/styles.css          — all styles
-js/shared.js            — Supabase init, constants, caches, utilities (load FIRST)
-js/inventory-core.js    — inventory reduction (Excel + manual + Access sales) + main inventory table
-js/inventory-entry.js   — inventory entry forms (manual + Excel import)
-js/goods-receipt.js     — goods receipt module + system log viewer + Access Excel export
-js/audit-log.js         — soft delete, recycle bin, item history, qty modal
-js/brands-suppliers.js  — brands management + suppliers management
-js/purchase-orders.js   — purchase orders (CRUD, export, import to inventory)
-js/access-sync.js       — Access sync tab: heartbeat, sync log, pending sales panel
-js/admin.js             — admin mode toggle + app init (DOMContentLoaded)
-scripts/sync-watcher.js — Node.js file watcher for Dropbox-synced Access sales files
-scripts/config.example.json — config template (config.json is gitignored)
-scripts/install-service.js / uninstall-service.js — Windows Service wrapper
-scripts/README.md       — Hebrew installation guide
+
+js/                     — 4 global files (load first)
+├── shared.js           — Supabase init, constants, caches, utilities
+├── supabase-ops.js     — DB abstraction: fetchAll, batchCreate, batchUpdate, writeLog
+├── data-loading.js     — App init: loadData, loadMaxBarcode, low stock alerts
+└── search-select.js    — Reusable searchable dropdown component
+
+modules/
+├── inventory/          — 7 files: table, edit, entry, reduction, excel-import, excel-export, access-sales
+├── purchasing/         — 5 files: purchase-orders, po-form, po-items, po-actions, po-view-import
+├── goods-receipts/     — 4 files: goods-receipt, receipt-form, receipt-actions, receipt-excel
+├── audit/              — 3 files: audit-log, item-history, qty-modal
+├── brands/             — 2 files: brands, suppliers
+├── access-sync/        — 4 files: access-sync, sync-details, pending-panel, pending-resolve
+├── stock-count/        — 3 files: stock-count-list, stock-count-session, stock-count-report
+└── admin/              — 2 files: admin, system-log
+
+scripts/
+├── sync-watcher.js     — Node.js Dropbox folder watcher for Access sales files
+├── config.example.json — Config template (config.json is gitignored)
+├── install-service.js  — Windows Service wrapper (node-windows)
+├── uninstall-service.js
+└── README.md           — Hebrew installation guide
+
+migrations/             — SQL migrations (012-015 for Phase 2)
 ```
 
 ---
@@ -178,6 +192,8 @@ scripts/README.md       — Hebrew installation guide
 | rows_pending | INTEGER | שורות ממתינות |
 | rows_error | INTEGER | שורות שנכשלו |
 | error_message | TEXT | הודעת שגיאה |
+| errors | JSONB | מערך שגיאות מפורט (015) |
+| storage_path | TEXT | נתיב קובץ ב-Supabase Storage (015) |
 | processed_at | TIMESTAMPTZ | זמן סיום עיבוד |
 
 ### 2.12 `pending_sales` — מכירות ממתינות (`T.PENDING_SALES`)
@@ -210,395 +226,221 @@ scripts/README.md       — Hebrew installation guide
 | watcher_version | TEXT | גרסת watcher |
 | host | TEXT | שם מחשב |
 
+### 2.14 `stock_counts` — ספירות מלאי (`T.STOCK_COUNTS`)
+| שדה | סוג | תיאור |
+|-----|------|--------|
+| id | UUID PK | מזהה |
+| count_number | TEXT NOT NULL UNIQUE | מספר ספירה: SC-YYYY-NNNN |
+| count_date | DATE NOT NULL DEFAULT CURRENT_DATE | תאריך ספירה |
+| status | TEXT NOT NULL DEFAULT 'in_progress' | סטטוס (in_progress / completed / cancelled) |
+| counted_by | TEXT | מי ספר (שם עובד) |
+| notes | TEXT | הערות |
+| total_items | INTEGER DEFAULT 0 | סה"כ פריטים שנספרו |
+| total_diffs | INTEGER DEFAULT 0 | סה"כ פערים |
+| branch_id | TEXT | קוד סניף |
+| created_at | TIMESTAMPTZ NOT NULL DEFAULT NOW() | נוצר |
+| completed_at | TIMESTAMPTZ | הושלם |
+
+### 2.15 `stock_count_items` — שורות ספירה (`T.STOCK_COUNT_ITEMS`)
+| שדה | סוג | תיאור |
+|-----|------|--------|
+| id | UUID PK | מזהה |
+| count_id | UUID FK → stock_counts ON DELETE CASCADE | ספירה |
+| inventory_id | UUID FK → inventory ON DELETE CASCADE | פריט מלאי |
+| barcode | TEXT | ברקוד (snapshot) |
+| brand | TEXT | מותג (snapshot) |
+| model | TEXT | דגם (snapshot) |
+| color | TEXT | צבע (snapshot) |
+| size | TEXT | גודל (snapshot) |
+| expected_qty | INTEGER NOT NULL | כמות צפויה |
+| actual_qty | INTEGER | כמות בפועל |
+| difference | INTEGER GENERATED ALWAYS AS (actual_qty - expected_qty) STORED | פער (computed) |
+| status | TEXT NOT NULL DEFAULT 'pending' | סטטוס (pending / counted / skipped) |
+| notes | TEXT | הערה |
+| counted_at | TIMESTAMPTZ | מתי נספר |
+| scanned_by | TEXT | מי סרק (014) |
+
+### 2.16 RPC Functions (Supabase)
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `increment_inventory` | `(inv_id UUID, delta INTEGER)` | Atomic: `quantity = quantity + delta` (012) |
+| `decrement_inventory` | `(inv_id UUID, delta INTEGER)` | Atomic: `quantity = GREATEST(0, quantity - delta)` (012) |
+| `set_inventory_qty` | `(inv_id UUID, new_qty INTEGER)` | Direct set: `quantity = new_qty` — stock count approval (013) |
+
+### 2.17 Supabase Storage
+| Bucket | Purpose |
+|--------|---------|
+| `failed-sync-files` | Stores Excel files that failed/partially processed during Access sync (015) |
+
 ---
 
-## 3. Function List (per file)
+## 3. Screens & Modules
 
-### 3.1 js/shared.js — Infrastructure
+### 3.1 הכנסת מלאי (Inventory Entry)
+- **Manual entry**: card-based form with cascading brand → model → size/color dropdowns
+- **Excel import**: upload xlsx, column mapping, two-phase process (match existing + queue pending)
+- **Barcode generation**: BBDDDDD format, reuses for identical brand+model+size+color
 
-**Globals:** `sb`, `T`, `suppliers`, `brands`, `isAdmin`, `maxBarcode`, `branchCode`, `FIELD_MAP`, `FIELD_MAP_REV`, `ENUM_MAP`, `ENUM_REV`, `supplierCache`, `supplierCacheRev`, `supplierNumCache`, `brandCache`, `brandCacheRev`, `activeDropdown`, `slogPage`, `slogTotalPages`, `slogCurrentFilters`, `rcptRowNum`, `currentReceiptId`, `rcptEditMode`, `rcptViewOnly`, `window.lowStockData`, `window.brandSyncCache`
+### 3.2 הורדת מלאי (Inventory Reduction)
+- **Excel reduction**: upload xlsx → reduce qty by barcode for sync=מלא items
+- **Manual search**: cascading brand → model → size+color → search → reduction modal with PIN+reason
+- **Access sales**: process sales_template Excel from Access POS, update qty or create pending_sales
 
-| Function | Description |
-|----------|-------------|
-| `loadLookupCaches()` | Fetches suppliers (with supplier_number) + brands into caches |
-| `loadData()` | Initial data load: caches, brands, brandSyncCache, max barcode |
-| `loadMaxBarcode()` | Branch-scoped barcode sequence from inventory |
-| `rowToRecord(row)` | DB row → app record conversion |
-| `fieldsToRow(fields)` | App fields → DB row conversion |
-| `enToHe(field, val)` | English enum → Hebrew |
-| `heToEn(field, val)` | Hebrew enum → English |
-| `fetchAll(table, filters, select, order)` | Paginated Supabase query |
-| `batchCreate(table, rows)` | Bulk insert |
-| `batchUpdate(table, rows)` | Bulk update |
-| `writeLog(action, inventoryId, details)` | Audit logging engine (async, non-blocking). Accepts 13 additional Access sale fields in details: sale_amount, discount, discount_1, discount_2, final_amount, coupon_code, campaign, employee_id, lens_included, lens_category, order_number, source_ref, filename (→ sync_filename) |
-| `showLoading(msg)` / `hideLoading()` | Loading overlay |
-| `$(id)` | document.getElementById shorthand |
-| `toast(msg, type)` | Toast notifications — 's' success, 'e' error, 'w' warning |
-| `setAlert(containerId, msg, type)` | Inline alert |
-| `confirmDialog(msg)` | Async confirm modal → Promise\<boolean\> |
-| `showTab(tabId)` / `showEntryMode(mode)` | Tab / mode navigation |
-| `populateDropdowns()` | Rebuild brand/supplier dropdowns across all tabs |
-| `activeBrands()` | Returns active brands filtered list |
-| `supplierOpts()` | Returns supplier options for dropdowns |
-| `getBrandType(name)` | Returns brand type (Hebrew) for brand name |
-| `getBrandSync(name)` | Returns brand default sync (Hebrew) for brand name |
-| `createSearchSelect(config)` | Reusable searchable dropdown component (fixed-position) |
-| `loadLowStockAlerts()` | Fetches brands below min_stock_qty |
-| `refreshLowStockBanner()` | Updates low stock banner in nav |
-| `openLowStockModal()` | Opens low stock details modal |
+### 3.3 מלאי ראשי (Main Inventory Table)
+- Server-side paginated table with inline editing
+- Filters: search, supplier, product type, quantity range
+- Sorting, row selection, bulk operations (update sync/status, bulk delete)
+- Image preview modal
 
-### 3.2 js/inventory-core.js — Inventory Reduction + Main Table
+### 3.4 הזמנות רכש (Purchase Orders)
+- Two-step wizard: select supplier → generate PO# + edit items
+- PO number format: PO-{supplier_number}-{4-digit-seq}
+- Statuses: draft → sent → partial → received / cancelled
+- Cascading dropdowns for items (brand → model → color+size)
+- Export to Excel + PDF, import to inventory
 
-**Globals:** `redExcelData`, `redExcelFileName`, `redSearchResults`, `REDUCE_REASONS`, `reduceModalState`, `invData`, `invFiltered`, `invChanges`, `invSelected`, `invSortField`, `invSortDir`
+### 3.5 קבלת סחורה (Goods Receipt)
+- Receipt list with status cards
+- Receipt form: document type + number + supplier + date
+- Optional PO linkage (auto-populates items from PO)
+- Item entry: barcode search / manual / Excel import
+- Validation: sell price required, images for sync items
+- Confirm flow: qty update for existing items, create new items with barcode
+- Export confirmed receipts as Access-compatible Excel
 
-| Function | Description |
-|----------|-------------|
-| **Reduction — Excel** | |
-| `handleRedExcel(input)` | Reads uploaded xlsx file |
-| `processRedExcel()` | Loops rows by barcode, reduces qty for sync=מלא items |
-| **Reduction — Access Sales** | |
-| `processAccessSalesFile(workbook, filename)` | Detects sales_template sheet, validates rows, writes sync_log, updates inventory or pending_sales, calls writeLog with all 13 Access sale fields |
-| **Reduction — Manual** | |
-| `loadModelsForBrand(brandName)` | Populates model datalist for selected brand |
-| `loadSizesAndColors(brandName, model)` | Populates size/color datalists |
-| `searchManual()` | Search by barcode or brand+model+size+color (filters is_deleted=false) |
-| `openReductionModal(recId)` | Opens PIN-verified reduction modal with reason select |
-| `confirmReduction()` | Validates amount/reason/PIN, updates DB, writes log |
-| **Inventory Table** | |
-| `loadInventoryTab()` | Fetches all inventory with brand/supplier joins |
-| `filterInventoryTable()` | Applies search + filter dropdowns |
-| `renderInventoryRows()` | Renders table with inline editing, selection, sorting |
-| `sortInventory(field)` | Toggle column sort |
-| `invEdit(id, field, value)` | Inline cell editing |
-| `invEditSync(id, value)` | Inline sync field editing |
-| `saveInventoryChanges()` | Saves pending changes with writeLog for price/detail edits |
-| `showImagePreview(urls)` | Image preview modal |
-| **Bulk Operations** | |
-| `toggleRowSelect(id, checked)` | Toggle row selection |
-| `applyBulkUpdate()` | Bulk update selected rows (sync, status, etc.) |
-| `bulkDelete()` | Soft-delete selected rows with PIN |
+### 3.6 ספירת מלאי (Stock Count) — Phase 2a
+- **List screen**: summary cards (open/completed/diffs this month), stock count table
+- **New count flow**: worker PIN → create count header + snapshot all active inventory items
+- **Session screen**: camera barcode scanning (ZXing), manual barcode/search input, real-time stats
+- **Scan handling**: unknown barcode → warning, already counted → confirm +1, pending → qty prompt
+- **Diff report**: shortages/surpluses/uncounted summary, items table
+- **Approval**: manager PIN (role=admin/manager) → update inventory via `set_inventory_qty` RPC → writeLog per diff item
+- **Cancel**: cancels count without changing quantities
+- **Export**: all counted items to xlsx (10 columns including scanned_by)
 
-### 3.3 js/inventory-entry.js — Entry Forms
+### 3.7 סנכרון Access (Access Sync) — Phase 2b
+- **Sync tab**: summary cards (syncs/items/errors today), last activity timestamp, sync log table with pagination
+- **Sync log**: per-file rows with status badges, action buttons (details, retry, download failed file)
+- **Sync details modal**: file info grid, processed items table (from inventory_logs), errors table
+- **Failed file download**: signed URL from Supabase Storage bucket `failed-sync-files`
+- **Pending sales panel**: overlay modal with per-item cards
+  - Suggestions: partial barcode matching (suffix)
+  - Free search: debounced text search by barcode/model
+  - Resolve: confirmDialog → PIN → optimistic lock (WHERE status='pending') → atomic qty RPC → writeLog
+  - Ignore: mark as not-in-inventory → writeLog('pending_ignored')
+- **Folder Watcher (Node.js)**: watches Dropbox/InventorySync/sales/ for xlsx files
+  - Processes sales_template sheet, validates rows
+  - Found barcode → atomic qty update via RPC + inventory_log
+  - Unknown barcode → pending_sales
+  - Idempotency guards (5s window dedup for both inventory_logs and sync_log)
+  - Failed files uploaded to Supabase Storage
+  - 30s cooldown per filename to prevent duplicate chokidar events
+  - Moves processed files to processed/ or failed/ folder
 
-**Globals:** `entryRowNum`, `excelImportRows`, `excelImportFileName`, `excelPendingRows`, `lastGeneratedBarcodes`
+### 3.8 ניהול מותגים (Brands Management)
+- Table with 4 filters (active/sync/type/low-stock)
+- Inline editing, immediate save for active toggle + min_stock_qty
+- Batch save for other fields
+- Stock qty column with low-stock alert (red + ⚠️)
 
-| Function | Description |
-|----------|-------------|
-| **Manual Entry** | |
-| `addEntryRow()` | Adds entry card with brand/supplier/model/size/color fields |
-| `copyEntryRow(rowId)` | Duplicates a card with data |
-| `removeEntryRow(rowId)` | Removes entry card |
-| `getEntryRows()` | Collects all card data into array |
-| `validateEntryRows(rows)` | Validates required fields + image required for brand type + image required for sync=מלא/תדמית |
-| `submitEntry()` | Inserts inventory rows, generates barcodes, writes logs |
-| **Barcode** | |
-| `generateBarcodes(rows)` | BBDDDDD format, reuses barcodes for same brand+model+size+color. Validates sell price > 0 before generating |
-| **Excel Import** | |
-| `handleExcelImport(input)` | Parses xlsx, maps columns, shows preview |
-| `confirmExcelImport()` | Inserts parsed rows |
-| `showExcelResultsModal(results)` | Shows import results |
-| `generatePendingBarcodes()` | Generates barcodes for imported rows |
-| `exportPendingBarcodes()` | Exports generated barcodes to xlsx |
-| **Excel Export** | |
-| `exportBarcodesExcel(barcodes)` | Exports barcode list to xlsx |
-| `exportInventoryExcel()` | Exports current inventory to xlsx |
-| `openExcelFormatPopup()` / `closeExcelFormatPopup()` | Sample format download popup |
+### 3.9 ניהול ספקים (Suppliers Management)
+- Supplier list with supplier_number (UNIQUE ≥ 10, gap-filling)
+- Edit mode for supplier number reassignment (temp negative swap)
+- PO lock: cannot change number if supplier has existing POs
 
-### 3.4 js/goods-receipt.js — Goods Receipt + System Log
+### 3.10 יומן מערכת (System Log)
+- Paginated log viewer with 6 filters (date range, branch, action, employee, search)
+- 19 action types with icons/colors
+- Export to xlsx (up to 10k rows)
 
-**Globals:** `SLOG_PAGE_SIZE`, `SLOG_ROW_CATEGORIES`, `slogActionDropdownPopulated`, `RCPT_TYPE_LABELS`, `RCPT_STATUS_LABELS`, `rcptLinkedPoId`
-
-| Function | Description |
-|----------|-------------|
-| **System Log** | |
-| `loadSystemLog()` | Paginated log viewer with filters |
-| `slogPageNav(delta)` | Page navigation |
-| `exportSystemLog()` | Export logs to xlsx |
-| `populateActionDropdown()` | One-time action filter population |
-| `getSystemLogFilters()` | Returns current filter state |
-| `clearSystemLogFilters()` | Resets all filters |
-| `applySlogFilters()` | Applies filters and reloads |
-| **Goods Receipt** | |
-| `loadReceiptTab()` | Loads receipt list |
-| `openNewReceipt()` | Starts new receipt form |
-| `openExistingReceipt(id)` | Opens receipt for editing |
-| `searchReceiptBarcode()` | Find inventory item by barcode for receipt |
-| `addReceiptItemRow(item)` | Adds item row to receipt with sync select (auto-set from brand) + image input (new items only). Rejects duplicate barcodes |
-| `getReceiptItems()` | Collects receipt item data (incl. sync, images). Throws on qty < 1 |
-| `saveReceiptDraft()` | Saves receipt as draft. Validates sell price > 0 |
-| `saveReceiptDraftInternal()` | Internal draft save (called by confirmReceipt flow) |
-| `confirmReceipt()` | Validates sell price + images for sync items, then calls confirmReceiptCore |
-| `confirmReceiptCore(receiptId, rcptNumber, poId)` | Shared confirm logic: processes items (qty update for existing, create for new), writeLog, update PO status |
-| `cancelReceipt()` | Cancels receipt |
-| `handleReceiptExcel()` | Import items from xlsx |
-| `exportReceiptExcel()` | Export receipt to xlsx |
-| `exportReceiptToAccess(receiptId)` | Exports confirmed receipt as Excel with `new_inventory` sheet for Access import. Button visible on confirmed receipts only |
-| `backToReceiptList()` | Returns to receipt list view |
-| `createNewInventoryFromReceiptItem()` | Creates new inventory item with barcode from receipt. Uses brand default sync via getBrandSync() |
-| `updateReceiptItemsStats()` | Updates item count/total display below receipt table |
-| **PO Linkage** | |
-| `loadPOsForSupplier(supplierId)` | Loads POs for receipt-PO linking |
-| `onReceiptPoSelected()` | Handles PO selection, populates items |
-| `updatePOStatusAfterReceipt(poId)` | Updates PO status after receipt confirmation |
-
-### 3.5 js/audit-log.js — Soft Delete, Recycle Bin, History, Qty Modal
-
-**Globals:** `ACTION_MAP`, `softDelTarget`, `historyCache`, `ENTRY_ACTIONS`, `QTY_REASONS_ADD`, `QTY_REASONS_REMOVE`, `qtyModalState`
-
-| Function | Description |
-|----------|-------------|
-| **Soft Delete** | |
-| `deleteInvRow(id)` | Initiates soft delete with PIN |
-| `confirmSoftDelete()` | PIN-verified soft delete with reason and writeLog |
-| **Recycle Bin** | |
-| `openRecycleBin()` | Shows deleted items |
-| `restoreItem(id)` | Restores soft-deleted item |
-| `permanentDelete(id)` | Double-PIN permanent delete |
-| **Item History** | |
-| `openItemHistory(id)` | Timeline view of item changes |
-| `exportHistoryExcel()` | Export history to xlsx |
-| **Entry History** | |
-| `openEntryHistory()` | Entry log grouped by date (accordion) |
-| `loadEntryHistory()` | Fetches entry log data |
-| `renderEntryHistory()` | Renders accordion groups |
-| `toggleHistGroup(date)` | Expand/collapse date group |
-| `exportDateGroupBarcodes(date)` | Export barcodes for a date group |
-| **Qty Modal** | |
-| `openQtyModal(id, direction)` | Opens add/remove qty modal with PIN + reason |
-| `confirmQtyChange()` | Validates, updates qty, writes log |
-
-### 3.6 js/brands-suppliers.js — Brands + Suppliers Management
-
-**Globals:** `allBrandsData`, `brandsEdited`, `brandStockByBrand`, `supplierEditMode`
-
-| Function | Description |
-|----------|-------------|
-| **Brands** | |
-| `loadBrandsTab()` | Parallel fetch brands + stock data, builds allBrandsData |
-| `renderBrandsTable()` | Applies 4 filters (active/sync/type/low-stock), renders with inline editing |
-| `setBrandActive(brandId, isActive)` | Immediate DB save on active toggle |
-| `addBrandRow()` | Adds new brand row to allBrandsData |
-| `saveBrands()` | Saves all changes (existing updates + new inserts), reloads caches, rebuilds brandSyncCache |
-| `saveBrandField(input)` | Immediate save for min_stock_qty |
-| **Suppliers** | |
-| `loadSuppliersTab()` | Renders supplier list (read or edit mode) |
-| `toggleSupplierNumberEdit()` | Enters supplier number edit mode |
-| `cancelSupplierNumberEdit()` | Cancels edit mode |
-| `saveSupplierNumbers()` | Validates, checks PO lock, saves via temp negative swap |
-| `getNextSupplierNumber()` | Lowest available number ≥ 10 (gap-filling) |
-| `addSupplier()` | Creates supplier with auto-assigned number |
-
-### 3.7 js/purchase-orders.js — Purchase Orders
-
-**Globals:** `poData`, `poFilters`, `currentPO`, `currentPOItems`
-
-| Function | Description |
-|----------|-------------|
-| **PO List** | |
-| `loadPurchaseOrdersTab()` | Fetches POs with supplier join |
-| `renderPoList(container)` | Renders PO list with summary cards + table |
-| `poSummaryCard(label, value, color)` | Summary card HTML |
-| `applyPoFilters(data)` | Filters by status/supplier |
-| `populatePoSupplierFilter()` | Populates supplier filter dropdown |
-| **PO CRUD** | |
-| `generatePoNumber(supplierId)` | Format: PO-{supplierNum}-{4-digit-seq} |
-| `openNewPurchaseOrder()` | Two-step wizard: supplier → items |
-| `proceedToPOItems()` | Step 2: generates PO number, opens item editor |
-| `openEditPO(id)` | Loads PO for editing |
-| `renderPOForm(isEdit)` | Renders PO header form |
-| `resolveSupplierName()` | Resolves supplier UUID to name |
-| `initPoSupplierSelect()` | Searchable supplier dropdown for PO |
-| `savePODraft()` | Saves/updates PO as draft |
-| `sendPurchaseOrder(id)` | Marks PO as sent |
-| `cancelPO(id)` | Cancels PO |
-| `openViewPO(id)` | Read-only PO view |
-| **PO Items** | |
-| `ensurePOBrandDatalist()` | Populates brand datalist |
-| `loadPOModelsForBrand(i, brandName)` | Cascading model dropdown |
-| `loadPOColorsAndSizes(i, brandName, model)` | Cascading color/size |
-| `renderPOItemsTable()` | Renders PO item rows with inline editing |
-| `updatePOTotals()` | Recalculates PO totals |
-| `addPOItemManual()` | Adds empty PO item row |
-| `addPOItemByBarcode()` | Adds PO item from existing inventory barcode |
-| `removePOItem(index)` | Removes PO item |
-| `duplicatePOItem(i)` | Duplicates PO item row |
-| `togglePOItemDetails(i)` | Expand/collapse item details |
-| **Export / Import** | |
-| `exportPOExcel()` | Exports PO to xlsx |
-| `exportPOPdf()` | Exports PO to PDF |
-| `importPOToInventory(poId)` | Creates inventory items from PO |
-| `createPOForBrand(brandId, brandName)` | Creates PO from low stock modal |
-
-### 3.8 js/admin.js — Admin Mode + App Init
-
-| Function | Description |
-|----------|-------------|
-| `toggleAdmin()` | Prompts for password (1234) |
-| `checkAdmin()` | Checks sessionStorage for admin state |
-| `activateAdmin()` | Activates admin mode UI |
-| `openHelpModal()` / `closeHelpModal()` | Help modal |
-| DOMContentLoaded | Restores admin, sets dates, calls `loadData()` then `addEntryRow()` + `refreshLowStockBanner()` |
-
-### 3.9 js/access-sync.js — Access Sync Tab + Pending Sales
-
-**Globals:** `syncLogPage`, `SYNC_LOG_PAGE_SIZE` (20), `SOURCE_LABELS`, `pendingSearchTimers`, `heartbeatInterval`
-
-| Function | Description |
-|----------|-------------|
-| **Tab Rendering** | |
-| `renderAccessSyncTab()` | Renders heartbeat status, sync log table, pending badge. Calls `startHeartbeatRefresh()` |
-| **Heartbeat** | |
-| `loadHeartbeat()` | Fetches watcher_heartbeat, shows green (<10min) / red (>10min) / gray (unknown) |
-| `startHeartbeatRefresh()` | Starts 60s auto-refresh interval for heartbeat |
-| `stopHeartbeatRefresh()` | Clears heartbeat interval |
-| **Sync Log** | |
-| `loadSyncLog(page)` | Paginated sync log (20/page) with `.range()`, source_ref labels with icons |
-| `loadPendingBadge()` | COUNT pending_sales WHERE status='pending', updates button style |
-| **Pending Panel** | |
-| `renderPendingPanel()` | Overlay with cards per pending sale, event delegation (no inline onclick) |
-| `pendingCardHtml(r)` | Generates card HTML with data-* attributes for event delegation |
-| `closePendingPanel()` | Hides pending panel overlay |
-| `updatePendingPanelCount()` | Updates panel header count after resolve/ignore |
-| **Suggestions** | |
-| `loadSuggestions(pendingId, barcode)` | Finds up to 5 inventory matches by barcode suffix |
-| **Free Search** | |
-| `toggleFreeSearch(pendingId)` | Shows/hides search input for pending item |
-| `debouncePendingSearch(pendingId, query)` | 300ms debounce for search input |
-| `runPendingSearch(pendingId, query)` | Searches inventory by barcode/model, up to 8 results |
-| **Actions** | |
-| `resolvePending(pendingId, inventoryId)` | confirmDialog → PIN verify → optimistic lock (UPDATE WHERE status='pending') → update inventory qty → writeLog |
-| `ignorePending(pendingId, barcode, sourceRef)` | confirmDialog → mark as ignored → writeLog('pending_ignored') |
-
-Event delegation: `document.addEventListener('click/input')` handles `data-action` attributes (suggestions, free-search, ignore, resolve) and `data-pending-search` for input debounce.
-
-### 3.10 scripts/sync-watcher.js — Dropbox File Watcher (Node.js)
-
-**Constants:** `TABLES` (INVENTORY, INV_LOGS, SYNC_LOG, PENDING, HEARTBEAT)
-
-| Function | Description |
-|----------|-------------|
-| `processFile(filepath, filename)` | Reads Excel, validates sales_template rows, updates inventory or inserts pending_sales, writes sync_log |
-| `processFileWithRetry(filepath, filename, attempt)` | Retries on network errors (3 attempts, 30s delay) |
-| `handleNewFile(filepath)` | Guards against duplicate processing, calls processFileWithRetry |
-| `moveToProcessed(filepath, filename)` | Moves file to processed folder (try rename, fallback to copy+delete) |
-| `moveToError(filepath, filename, errorMessage)` | Moves file to error folder with .error.txt detail file |
-| `sendHeartbeat()` | Updates watcher_heartbeat row (id=1) with timestamp, version, hostname |
-| `shutdown()` | Graceful SIGTERM/SIGINT handler: clears interval, closes watcher |
+### 3.11 ניהול (Admin)
+- Admin mode toggle (password: 1234)
+- Help modal
 
 ---
 
 ## 4. Business Logic Rules
 
 ### 4.1 ברקוד BBDDDDD
-- **BB** = 2 ספרות קוד סניף (00-99), **DDDDD** = 5 ספרות רצות (00001-99999)
-- מקסימום: 99,999 פריטים לסניף
-- **שימוש חוזר**: אם קיים פריט זהה (מותג+דגם+גודל+צבע) עם כמות > 0, הברקוד נעשה שימוש חוזר
-- **ולידציה**: בדיקת כפילויות בתוך ה-batch + מול ה-DB לפני INSERT
+- **BB** = 2 ספרות קוד סניף (00-99), **DDDDD** = 5 ספרות רצות
+- שימוש חוזר: אם קיים פריט זהה (מותג+דגם+גודל+צבע) עם כמות > 0
+- ולידציה: כפילויות בתוך ה-batch + מול ה-DB
 
-### 4.2 כמות — Add/Remove עם PIN
+### 4.2 כמות — Atomic RPC Updates
 - **כלל ברזל**: כמות לא ניתנת לעריכה ישירה. רק דרך ➕➖ עם PIN
-- **Flow**: ➕/➖ → modal (כמות + סיבה חובה + הערה + PIN) → אימות PIN מול employees → עדכון DB → writeLog
-- **Over-remove protection**: לא ניתן להוריד יותר מהכמות הנוכחית
-- **סיבות הוספה** (QTY_REASONS_ADD): קבלת סחורה, החזרה מלקוח, ספירת מלאי, תיקון טעות, אחר
-- **סיבות הוצאה** (QTY_REASONS_REMOVE): מכירה, העברה לסניף, פגום/אבדן, ספירת מלאי, תיקון טעות, אחר
+- **Atomic RPCs**: `increment_inventory`, `decrement_inventory`, `set_inventory_qty` — prevent race conditions
+- **Flow**: ➕/➖ → modal (כמות + סיבה + הערה + PIN) → אימות PIN → RPC → writeLog
+- **Over-remove protection**: `GREATEST(0, quantity - delta)` in DB
 
 ### 4.3 הורדת מלאי — Reduction
-- **Excel**: upload xlsx → parse by barcode → reduce qty for sync=מלא items → summary
-- **Manual**: cascading brand → model → size+color → search → reduction modal
-- **Reduction modal**: amount ≤ current qty, reason (REDUCE_REASONS), PIN verification → update DB → writeLog
-- **REDUCE_REASONS**: נמכר, נשבר, לא נמצא, נשלח לזיכוי, הועבר לסניף אחר
+- **Excel**: upload xlsx → reduce qty by barcode for sync=מלא items
+- **Manual**: cascading search → reduction modal with PIN + reason
+- **Access sales**: sales_template Excel → qty update or pending_sales
 
 ### 4.4 Soft Delete + סל מחזור
-- **Flow**: 🗑️ → modal (סיבה + הערה + PIN) → is_deleted=true + deleted_at/by/reason → writeLog
-- **שחזור**: is_deleted=false + ניקוי deleted_* fields + writeLog
-- **מחיקה לצמיתות**: double PIN → DELETE מה-DB → writeLog (inventory_id → NULL בגלל ON DELETE SET NULL)
-- כל שאילתות מלאי מסננות `is_deleted = false`
+- **Flow**: 🗑️ → modal (סיבה + הערה + PIN) → is_deleted=true → writeLog
+- **שחזור**: is_deleted=false → writeLog
+- **מחיקה לצמיתות**: double PIN → DELETE → writeLog
+- All queries filter `is_deleted = false`
 
 ### 4.5 Audit Trail — writeLog
-- כל פעולה שמשנה מלאי חייבת writeLog(action, inventoryId, details)
-- async ו-non-blocking — לעולם לא חוסם את הפעולה הראשית
-- 19 סוגי actions:
-
-| קטגוריה | actions |
-|---------|---------|
-| כניסה | entry_manual, entry_po, entry_excel, entry_receipt, transfer_in |
-| יציאה | sale, credit_return, manual_remove, transfer_out |
-| עריכה | edit_qty, edit_price, edit_details, edit_barcode, edit_sync |
-| מחיקה | soft_delete, permanent_delete |
-| שחזור | restore |
-| בדיקה | test |
+- Every data mutation calls writeLog(action, inventoryId, details)
+- Async and non-blocking
+- 19 action types + pending_ignored for sync
+- Access sale fields: 13 additional fields in details object
 
 ### 4.6 אימות PIN
 - Query: `sb.from('employees').select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle()`
-- נדרש עבור: soft delete, permanent delete, add/remove quantity, inventory reduction
-- כשל: הודעת שגיאה "סיסמת עובד שגויה"
-- הצלחה: שם העובד נשמר ב-log (performed_by)
+- Required for: qty changes, soft/permanent delete, reduction, pending resolution, stock count session
+- Stock count approval: requires role IN ('admin', 'manager')
 
-### 4.7 קבלת סחורה — flow מלא
-1. יצירת קבלה חדשה (סוג מסמך + מספר + ספק + תאריך)
-2. קישור אופציונלי להזמנת רכש (loadPOsForSupplier → onReceiptPoSelected)
-3. הוספת פריטים: חיפוש ברקוד / שורה ידנית / ייבוא Excel
-4. שמירת טיוטה → goods_receipts (status=draft) + goods_receipt_items
-5. ולידציה לפני אישור:
-   - מחיר מכירה חובה בכל שורה
-   - פריטים חדשים עם סנכרון=מלא/תדמית חייבים תמונה
-   - מותג + דגם חובה לפריטים חדשים
-6. אישור (confirmReceiptCore):
-   - פריט קיים: UPDATE inventory SET quantity += item.quantity; writeLog('entry_receipt')
-   - פריט חדש: יצירת ברקוד → INSERT inventory (website_sync מברירת מחדל של מותג) → writeLog('entry_receipt')
-7. updatePOStatusAfterReceipt — עדכון סטטוס הזמנת רכש
-8. נעילה: status=confirmed → UI readonly
-9. ביטול: רק draft → status=cancelled
+### 4.7 קבלת סחורה — flow
+1. יצירת קבלה (סוג מסמך + מספר + ספק + תאריך)
+2. קישור אופציונלי ל-PO
+3. הוספת פריטים (ברקוד / ידני / Excel)
+4. ולידציה: מחיר מכירה חובה, תמונה לפריטים חדשים עם סנכרון
+5. אישור: qty update לקיימים, create + barcode לחדשים
+6. Export confirmed receipts as Access-compatible Excel
 
-### 4.8 הזמנות רכש — flow מלא
-1. **Two-step wizard**: step 1 = select supplier, step 2 = generate PO# + edit items
-2. **PO number format**: PO-{supplier_number}-{4-digit sequential} per supplier
-3. **Cascading dropdowns**: brand → model → color + size (queries inventory for distinct values)
-4. **Statuses**: draft → sent → partial/received/cancelled
-5. **Export**: Excel + PDF for supplier delivery
-6. **Import to inventory**: importPOToInventory — creates inventory items from PO
-7. **Low stock integration**: createPOForBrand from low stock modal
+### 4.8 הזמנות רכש — flow
+1. Two-step wizard: select supplier → generate PO# + edit items
+2. PO number: PO-{supplier_number}-{4-digit-seq}
+3. Cascading dropdowns: brand → model → color+size
+4. Statuses: draft → sent → partial/received/cancelled
+5. Export Excel + PDF, import to inventory, create from low stock
 
-### 4.9 מותגים
-- **allBrandsData** = full dataset (includes `currentQty` per brand), **brandsEdited** = filtered view for rendering
-- **4 filters**: active (פעיל/לא פעיל/הכל), sync, type, low stock (מתחת לסף/מעל הסף/ללא סף/הכל)
-- **brandSyncCache**: `window.brandSyncCache` = { brand_name → default_sync }, rebuilt in loadData() and saveBrands()
-- **setBrandActive** = immediate DB save on checkbox toggle
-- **saveBrandField** = immediate save for min_stock_qty
-- **saveBrands** = batch save for all other fields (name, type, sync, exclude_website)
-- **Stock qty column**: aggregated inventory qty per brand, red+⚠️ if below min_stock_qty
+### 4.9 ספירת מלאי — flow
+1. Worker PIN entry (any active employee)
+2. Create count header + snapshot all active inventory items (qty > 0, is_deleted = false)
+3. Count number: SC-YYYY-NNNN (auto-generated)
+4. Camera scanning (ZXing) or manual barcode entry
+5. Smart search: text filters by brand/model/color, digits treated as barcode
+6. Diff report: shortages, surpluses, uncounted items
+7. Manager PIN approval (role = admin/manager)
+8. Inventory update via `set_inventory_qty` RPC per diff item
+9. writeLog('edit_qty') per diff item with reason='ספירת מלאי'
 
-### 4.10 ספקים
-- **supplier_number**: UNIQUE integer ≥ 10, auto-assigned via gap-filling (getNextSupplierNumber)
-- **Edit mode**: toggle to show number inputs, save validates (≥ 10, no duplicates)
-- **PO lock**: cannot change supplier number if supplier has existing purchase orders
-- **Temp negative swap**: saves use temporary negative values to avoid UNIQUE constraint violations
-
-### 4.11 Immediate Save vs. Batch Save
-- **Immediate**: setBrandActive(), saveBrandField(), setBrandActive() — saved to DB on change
-- **Batch**: brands table edits (saveBrands), inventory table edits (saveInventoryChanges) — require explicit "Save" button
-
-### 4.12 סנכרון Access — Access Bridge
+### 4.10 סנכרון Access — flow
 - **Two ingest paths**: manual Excel upload (web) + automated Dropbox watcher (Node.js)
 - **Excel format**: `sales_template` sheet, row 1 = headers, rows 2-3 = metadata, row 4+ = data
-- **Per-row fields**: barcode, quantity, action_type (sale/return), transaction_date, order_number, employee_id, sale_amount, discount, discount_1, discount_2, final_amount, coupon_code, campaign, lens_included, lens_category
-- **Processing**: barcode found → update inventory qty + writeLog; barcode not found → insert pending_sales
-- **Duplicate file check**: `.ilike('filename')` (case-insensitive), user can override via confirmDialog
-- **Pending resolution**: confirmDialog → PIN → optimistic lock (UPDATE WHERE status='pending') → inventory update → writeLog
-- **Watcher heartbeat**: every 5min → watcher_heartbeat table; UI shows green (<10min) / red (>10min) / gray (unknown)
-- **Export**: confirmed goods receipts can be exported as Access-compatible Excel (`new_inventory` sheet)
+- **Per-row fields**: barcode, quantity, action_type (sale/return), transaction_date, order_number, + sale detail fields
+- **Processing**: found → atomic RPC qty update + writeLog; not found → pending_sales
+- **Duplicate file check**: case-insensitive ilike, user can override
+- **Pending resolution**: confirm → PIN → optimistic lock → atomic RPC → writeLog
+- **Watcher heartbeat**: every 5min → watcher_heartbeat table
+- **Idempotency**: 5s window dedup for inventory_logs and sync_log; 30s filename cooldown
+- **Failed files**: uploaded to Supabase Storage bucket `failed-sync-files`, downloadable via signed URL
 
-### 4.13 Hebrew↔English Maps
-- **FIELD_MAP** / **FIELD_MAP_REV** — column name translation (e.g., ברקוד ↔ barcode)
-- **ENUM_MAP** / **ENUM_REV** — enum value translation (e.g., במלאי ↔ in_stock)
+### 4.11 Hebrew↔English Maps
+- **FIELD_MAP** / **FIELD_MAP_REV** — column name translation
+- **ENUM_MAP** / **ENUM_REV** — enum value translation
 - Helpers: `enToHe(field, val)` / `heToEn(field, val)`
-- Every new DB field must be added to FIELD_MAP
 
 ---
 
 ## 5. Known Issues
 
-1. **loadPOsForSupplier console warning** — when receipt tab loads without a supplier selected, may log a warning about missing supplier_id. Non-blocking.
+1. **loadPOsForSupplier console warning** — fires when receipt tab loads without supplier. Non-blocking.
 2. **RLS פתוח** — all tables use `USING (true)` — needs hardening with auth
 3. **branch_id inconsistency** — some tables UUID, some TEXT
 4. **No employee CRUD** — only default PIN 1234, no management UI
