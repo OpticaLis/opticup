@@ -9,8 +9,56 @@ const SC_STATUS = {
   cancelled:   { text: 'בוטל',    color: '#9e9e9e' }
 };
 
+// ── Restore list HTML if tab was replaced by session/pin screen ──
+function ensureStockCountListHTML() {
+  if (document.getElementById('sc-list-body')) return;
+  const tab = document.getElementById('tab-stock-count');
+  if (!tab) return;
+  tab.innerHTML = `
+    <div style="padding:16px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px">
+        <h2 style="margin:0">&#128202; ספירת מלאי</h2>
+        <button class="btn btn-p" onclick="startNewCount()" style="padding:8px 18px;font-size:15px">+ ספירה חדשה</button>
+      </div>
+      <div class="sc-summary" style="display:flex; gap:16px; margin-bottom:20px; flex-wrap:wrap">
+        <div class="slog-card" style="flex:1;min-width:140px;background:var(--white);border-radius:var(--radius);padding:18px;text-align:center;box-shadow:var(--shadow)">
+          <div style="font-size:2rem;font-weight:700;color:#2196F3" id="sc-open">0</div>
+          <div style="font-size:.82rem;color:var(--g500);margin-top:4px">ספירות פתוחות</div>
+        </div>
+        <div class="slog-card" style="flex:1;min-width:140px;background:var(--white);border-radius:var(--radius);padding:18px;text-align:center;box-shadow:var(--shadow)">
+          <div style="font-size:2rem;font-weight:700;color:#4CAF50" id="sc-completed">0</div>
+          <div style="font-size:.82rem;color:var(--g500);margin-top:4px">הושלמו החודש</div>
+        </div>
+        <div class="slog-card" style="flex:1;min-width:140px;background:var(--white);border-radius:var(--radius);padding:18px;text-align:center;box-shadow:var(--shadow)">
+          <div style="font-size:2rem;font-weight:700;color:#f44336" id="sc-diffs">0</div>
+          <div style="font-size:.82rem;color:var(--g500);margin-top:4px">פערים החודש</div>
+        </div>
+      </div>
+      <div id="sc-list-alerts"></div>
+      <div style="overflow-x:auto; border:1px solid var(--g200); border-radius:8px">
+        <table style="width:100%; border-collapse:collapse; font-size:.85rem">
+          <thead>
+            <tr style="background:var(--primary); color:white; text-align:right">
+              <th style="padding:10px">מספר ספירה</th>
+              <th style="padding:10px">תאריך</th>
+              <th style="padding:10px">סטטוס</th>
+              <th style="padding:10px">נספרו</th>
+              <th style="padding:10px">פערים</th>
+              <th style="padding:10px">מבצע</th>
+              <th style="padding:10px">פעולות</th>
+            </tr>
+          </thead>
+          <tbody id="sc-list-body">
+            <tr><td colspan="7" style="text-align:center;padding:30px;color:#999">טוען...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
 // ── Tab entry point ──────────────────────────────────────────
 async function loadStockCountTab() {
+  ensureStockCountListHTML();
   const body = document.getElementById('sc-list-body');
   if (!body) return;
   body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#999">טוען...</td></tr>';
@@ -98,45 +146,7 @@ async function generateCountNumber() {
 }
 
 // ── Start new count ──────────────────────────────────────────
-async function startNewCount() {
-  try {
-    showLoading('יוצר ספירה חדשה...');
-    const countNumber = await generateCountNumber();
-    // 1. Create count header
-    const { data: count, error } = await sb.from(T.STOCK_COUNTS).insert({
-      count_number: countNumber,
-      status: 'in_progress',
-      count_date: new Date().toISOString().slice(0, 10),
-      branch_id: branchCode || '00'
-    }).select().single();
-    if (error) throw error;
-
-    // 2. Fetch all active inventory (not deleted, qty > 0)
-    const inventory = await fetchAll(T.INV,
-      [['is_deleted', 'eq', false], ['quantity', 'gt', 0]]);
-
-    // 3. Build count items from inventory
-    const items = inventory.map(inv => ({
-      count_id: count.id,
-      inventory_id: inv.id,
-      barcode: inv.barcode || '',
-      brand: brandCacheRev[inv.brand_id] || '',
-      model: inv.model || '',
-      color: inv.color || '',
-      size: inv.size || '',
-      expected_qty: inv.quantity || 0,
-      status: 'pending'
-    }));
-
-    // 4. Batch insert count items
-    if (items.length) await batchCreate(T.STOCK_COUNT_ITEMS, items);
-
-    toast('ספירה ' + countNumber + ' נוצרה — ' + items.length + ' פריטים', 's');
-    // 5. Open worker PIN → session
-    openWorkerPin(count.id);
-  } catch (err) {
-    toast('שגיאה ביצירת ספירה: ' + err.message, 'e');
-  } finally {
-    hideLoading();
-  }
+function startNewCount() {
+  // PIN first — DB creation happens in confirmWorkerPin() after valid PIN
+  openWorkerPin(null);
 }

@@ -28,7 +28,7 @@ function openWorkerPin(countId) {
         <div id="sc-pin-error" style="color:var(--error);font-size:.85rem;margin-bottom:12px;min-height:20px"></div>
         <button onclick="confirmWorkerPin()" class="btn btn-p"
                 style="width:100%;min-height:48px;font-size:16px;margin-bottom:10px">&#9989; אישור</button>
-        <button onclick="loadStockCountTab()" class="btn btn-g"
+        <button onclick="showTab('stock-count')" class="btn btn-g"
                 style="width:100%;min-height:48px;font-size:15px">&#8592; חזרה לרשימה</button>
       </div>
     </div>`;
@@ -49,7 +49,46 @@ async function confirmWorkerPin() {
   }
   activeWorker = { id: emp.id, name: emp.name };
   sessionStorage.setItem('activeWorker', JSON.stringify(activeWorker));
-  openCountSession(scCountId);
+
+  if (scCountId) {
+    // Resuming existing count
+    openCountSession(scCountId);
+  } else {
+    // New count — create in DB after PIN verified
+    try {
+      showLoading('יוצר ספירה חדשה...');
+      const countNumber = await generateCountNumber();
+      const { data: count, error } = await sb.from(T.STOCK_COUNTS).insert({
+        count_number: countNumber,
+        status: 'in_progress',
+        count_date: new Date().toISOString().slice(0, 10),
+        branch_id: branchCode || '00'
+      }).select().single();
+      if (error) throw error;
+
+      const inventory = await fetchAll(T.INV,
+        [['is_deleted', 'eq', false], ['quantity', 'gt', 0]]);
+      const items = inventory.map(inv => ({
+        count_id: count.id,
+        inventory_id: inv.id,
+        barcode: inv.barcode || '',
+        brand: brandCacheRev[inv.brand_id] || '',
+        model: inv.model || '',
+        color: inv.color || '',
+        size: inv.size || '',
+        expected_qty: inv.quantity || 0,
+        status: 'pending'
+      }));
+      if (items.length) await batchCreate(T.STOCK_COUNT_ITEMS, items);
+
+      toast('ספירה ' + countNumber + ' נוצרה — ' + items.length + ' פריטים', 's');
+      openCountSession(count.id);
+    } catch (err) {
+      toast('שגיאה ביצירת ספירה: ' + err.message, 'e');
+    } finally {
+      hideLoading();
+    }
+  }
 }
 
 // ── Session screen ───────────────────────────────────────────
