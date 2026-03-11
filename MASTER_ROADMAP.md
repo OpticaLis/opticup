@@ -9,428 +9,583 @@
 
 ## חלק 1 — מה זה Optic Up
 
-### המוצר
-Optic Up היא **מערכת ניהול מלאה לחנויות אופטיקה ורשתות אופטיקה.**
-המערכת מכסה את כל מחזור החיים העסקי: מלאי, לקוחות, הזמנות, בדיקות עיניים, מעבדת מסגור, תשלומים, דוחות, WhatsApp, ועוד.
+### שני מוצרים, DB אחד
 
-### המטרה הסופית
-**להציע את Optic Up כמוצר SaaS לחנויות אופטיקה פרטיות ורשתות.**
-לכן המערכת חייבת להיות:
-- **Multi-tenant** — כל רשת/חנות = tenant נפרד
-- **Multi-branch** — תמיכה ברשת סניפים + מעבדה מרכזית
-- **Scalable** — אלפי לקוחות, עשרות אלפי הזמנות, מספר רב של משתמשים בו-זמנית
-- **Configurable** — כל חנות מגדירה SLA, תפקידים, תבניות הודעות, מותגים
-- **Professional** — ממשק מקצועי שאפשר למכור, לא פרויקט פנימי
+**Optic Up ERP** — מערכת ניהול פנימית לעובדי חנות אופטיקה: מלאי, לקוחות, הזמנות, מעבדה, תשלומים, דוחות.
 
-### הלקוח הראשון (Pilot)
-**אופטיקה פריזמה** — רשת ישראלית. משתמשת היום בתוכנת Access (מכירות, הזמנות, לקוחות) + תוכנת מעבדה נפרדת (מסגור, מעקב ייצור). שתי התוכנות מחוברות דרך טבלה פנימית.
+**Optic Up Storefront** — אתר חנות/ויטרינה ללקוח הקצה: קטלוג מוצרים, מעקב הזמנה, בלוג, לידים, רכישה אונליין.
 
-### האסטרטגיה — "בנייה ליד Access"
-**לא מחליפים את Access בבת אחת.** בונים מודולים שרצים לידו, מחוברים אליו דרך גשר (Excel/Dropbox). כל מודול חדש עובד גם עם Access (דרך bridge) וגם standalone. בהדרגה — Access נכבה ו-Optic Up מחליף אותו לגמרי.
+שניהם קוראים מאותו Supabase — אבל הם **פרויקטים נפרדים**, **repos נפרדים**, **קהלים שונים**.
 
 ```
-שלב 1 (עכשיו):   Access פעיל ──bridge──► Optic Up (מלאי, לקוחות)
-שלב 2 (בקרוב):    Access פעיל ──bridge──► Optic Up (+ הזמנות, תשלומים)
-שלב 3 (יעד):      Access נכבה.           Optic Up = הכל
+┌──────────────────────┐         ┌──────────────────────┐
+│   Optic Up ERP       │         │  Optic Up Storefront  │
+│   (ניהול פנימי)       │         │  (אתר ללקוח קצה)      │
+│                      │         │                      │
+│  Vanilla JS + HTML   │         │  Astro / Vanilla JS  │
+│  GitHub Pages        │         │  Vercel / Netlify    │
+│  עובדי חנות בלבד     │         │  פתוח לציבור         │
+└──────────┬───────────┘         └──────────┬───────────┘
+           │                                │
+           │     ┌──────────────────┐       │
+           └────►│    Supabase      │◄──────┘
+                 │   (PostgreSQL)   │
+                 │                  │
+                 │  ┌────────────┐  │
+                 │  │ Views      │  │  ← Storefront קורא רק מ-Views
+                 │  │ RPC funcs  │  │  ← Storefront כותב רק דרך Functions
+                 │  │ RLS        │  │  ← tenant_id מבודד הכל
+                 │  └────────────┘  │
+                 │                  │
+                 │  Tables (direct) │  ← ERP ניגש ישירות
+                 └──────────────────┘
+```
+
+### המטרה הסופית
+**Optic Up = פלטפורמת SaaS לרשתות וחנויות אופטיקה.**
+כל חנות מקבלת: מערכת ניהול מלאה + אתר חנות ממותג.
+
+לכן המערכת חייבת להיות:
+- **Multi-tenant** — כל חנות/רשת = tenant נפרד, מבודד לחלוטין
+- **Multi-branch** — תמיכה ברשת סניפים + מעבדה מרכזית
+- **Scalable** — אלפי לקוחות, עשרות אלפי הזמנות
+- **Configurable** — כל חנות מגדירה צבעים, לוגו, SLA, תפקידים, תבניות
+- **Professional** — ממשק שאפשר למכור, לא פרויקט פנימי
+
+### הלקוח הראשון (Pilot)
+**אופטיקה פריזמה** — רשת ישראלית. משתמשת היום ב:
+- **תוכנת Access** — מכירות, הזמנות, לקוחות
+- **תוכנת מעבדה נפרדת** — מסגור, מעקב ייצור (מחוברת ל-Access דרך טבלה פנימית)
+- **אתר WordPress/WooCommerce** — קיים, ירוצה להחליף/לחבר
+
+### האסטרטגיה — "בנייה ליד Access, החלפה הדרגתית"
+```
+שלב 1 (עכשיו):   Access פעיל ── bridge ──► Optic Up ERP (מלאי)
+שלב 2:            Access פעיל ── bridge ──► Optic Up ERP + Storefront
+שלב 3:            Access נכבה.              Optic Up = הכל
+שלב 4:            Optic Up → SaaS          לקוחות נוספים
 ```
 
 ---
 
 ## חלק 2 — סטאק טכנולוגי
 
+### ERP (מערכת ניהול)
 | שכבה | טכנולוגיה | הערות |
 |-------|-----------|--------|
 | Frontend | Vanilla JS, HTML נפרד לכל מודול | כל מודול = קובץ HTML עצמאי |
-| Database | Supabase (PostgreSQL) | EU Ireland, RLS |
+| Database | Supabase (PostgreSQL) | EU Ireland, RLS, tenant_id |
 | Auth | Supabase + טבלת employees עם PIN | |
 | Storage | Supabase Storage | תמונות מסגרות |
-| Hosting | GitHub Pages | Auto-deploy |
+| Hosting | GitHub Pages | |
 | Repo | `opticalis/prizma-inventory` | |
-| Supabase URL | `https://tsxrrxzmdxaenlvocyit.supabase.co` | |
+| Supabase | `https://tsxrrxzmdxaenlvocyit.supabase.co` | |
 | Bridge | Node.js Folder Watcher + Dropbox | סנכרון עם Access |
 
-### למה לא Next.js/React?
-הוחלט ללכת על Vanilla JS + HTML נפרד כי: פיתוח מהיר יותר, Claude Code עובד טוב עם זה, deploy פשוט, ואפשר תמיד לעבור ל-framework אחרי שה-MVP חי. זה refactor, לא rebuild.
+### Storefront (אתר חנות) — מתוכנן
+| שכבה | טכנולוגיה | הערות |
+|-------|-----------|--------|
+| Frontend | Astro או Vanilla JS SSG | מהיר, SEO-friendly, 90+ PageSpeed |
+| Data | Supabase Views + RPC | לא ניגש לטבלאות ישירות |
+| Hosting | Vercel או Netlify | CDN, SSL, custom domains |
+| Repo | `opticalis/prizma-storefront` (חדש) | נפרד מ-ERP |
+| Images | Supabase Storage + WebP auto-convert | |
+| Analytics | GA4 + Facebook Pixel per tenant | |
 
-### מבנה ה-Repo
+### מבנה Repo — ERP
 ```
-├── index.html                              ← תמיד המודול הפעיל (בודקים ב-GitHub Pages)
-├── shared/                                 ← קוד משותף (ריק כרגע, יאוכלס בהדרגה)
+├── index.html                              ← תמיד המודול הפעיל
+├── shared/                                 ← קוד משותף
 ├── modules/
-│   └── Module 1 - Inventory Management/
-│       ├── inventory.html                  ← עותק מאורכב של המודול
-│       ├── MODULE_SPEC.md
-│       ├── CHANGELOG.md
-│       ├── db-schema.sql
-│       └── ROADMAP.md                      ← מפת פאזות פנימיות למודול
-├── migrations/
-│   ├── 002_logs_and_soft_delete.sql
-│   └── 003_goods_receipts.sql
-└── docs/                                   ← מסמכים כלליים
+│   └── Module 1 - Inventory Management/    ← מודולים מאורכבים
+├── migrations/                             ← SQL migrations
+└── docs/
 ```
 
-**לוגיקת index.html:**
-- `index.html` = תמיד המודול שעובדים עליו עכשיו
-- כשמודול מסתיים → מעתיקים אותו ל-`modules/Module X - Name/`
-- `index.html` מוחלף בתוכן של המודול הבא
-- ב-GitHub Pages תמיד נכנסים לאותו URL
+**לוגיקת index.html:** תמיד המודול שעובדים עליו. כשמודול מסתיים → מועתק ל-modules/. index.html מוחלף.
 
 ---
 
 ## חלק 3 — שיטת עבודה (4 שכבות)
 
 ```
-🏛️ צ'אט אסטרטגי ראשי
-│   תפקיד: "מנכ"ל" — רואה הכל מלמעלה
-│   אחריות: סדר מודולים, ארכיטקטורה, תלויות, החלטות גדולות
-│   מסמך מפתח: MASTER_ROADMAP.md (הקובץ הזה)
-│   מתי מחליפים: כשנגמר context window → מדביקים MASTER_ROADMAP בצ'אט חדש
+🏛️ צ'אט אסטרטגי ראשי (מנכ"ל)
+│   רואה הכל מלמעלה. מסמך: MASTER_ROADMAP.md
+│   מחליף: מדביקים MASTER_ROADMAP בצ'אט חדש
 │
-├── 📋 צ'אט אסטרטגי למודול (אחד לכל מודול)
-│   │   תפקיד: "מנהל מוצר" — רואה מודול ספציפי מלמעלה
-│   │   אחריות: פאזות פנימיות, אפיון, החלטות ברמת מודול
-│   │   מסמך מפתח: ROADMAP.md של המודול
-│   │   מתי מחליפים: כשנגמר context או מודול נגמר
+├── 📋 צ'אט אסטרטגי למודול (מנהל מוצר)
+│   │   רואה מודול ספציפי. מסמך: ROADMAP.md של המודול
 │   │
-│   └── 🔧 צ'אט מפקח (אחד לכל פאזה בתוך מודול)
-│           תפקיד: "מנהל עבודה" — כותב פרומפטים ל-Claude Code
-│           אחריות: פרומפטים לשלבים, בדיקת תוצאות, תיקונים
-│           מסמך מפתח: PROJECT_GUIDE.md + פרומפט ספציפי
-│           מתי מחליפים: כשנגמרת פאזה
-│           ⚠️ הצ'אט הזה לא כותב קוד! הוא כותב פרומפטים שהמשתמש מעתיק ל-Claude Code
+│   └── 🔧 צ'אט מפקח (מנהל עבודה)
+│           כותב פרומפטים ל-Claude Code, בודק תוצאות
+│           ⚠️ לא כותב קוד! כותב פרומפטים שהמשתמש מעתיק ל-Claude Code
 │
 │           └── ⚡ Claude Code (Terminal) — מבצע בלבד
 ```
 
-**Daniel (בעל הפרויקט)** עובר בין השכבות: מתכנן עם האסטרטגי, מפרט עם מנהל המוצר, מעתיק פרומפטים מהמפקח ל-Claude Code, מדביק תוצאות חזרה.
+**Daniel** עובר בין השכבות: מתכנן → מפרט → מעתיק פרומפטים → מדביק תוצאות → בודק ב-GitHub Pages.
 
 ---
 
 ## חלק 4 — איפה אנחנו עכשיו (מרץ 2026)
 
-### מה הושלם
+### ✅ מודול 1 — מלאי מסגרות (Inventory Management)
+**גרסה:** v1.0 | **מיקום:** `modules/Module 1 - Inventory Management/`
+**DB:** 12 טבלאות
+**פיצ'רים (34+):** CRUD, ברקוד BBDDDDD, Add/Remove PIN, קבלת סחורה, PO, ספירת מלאי, Access bridge, Audit logs, Soft delete, Excel, pg_trgm, mobile responsive
+**פאזות שהושלמו:** 0 (הכנה), 1 (PO), 1.5 (שיפורים), 2 (ספירה + Access bridge)
 
-**✅ מודול 1 — מלאי מסגרות (Inventory Management)**
-- **גרסה:** v1.0 | **מיקום:** `modules/Module 1 - Inventory Management/`
-- **DB:** 12 טבלאות — inventory, inventory_images, inventory_logs, brands, suppliers, employees, goods_receipts, goods_receipt_items, purchase_orders, purchase_order_items, stock_counts, stock_count_items
-- **פיצ'רים (34+):**
-  - CRUD מלא + ברקוד BBDDDDD (2 ספרות סניף + 5 עולות, 3 שכבות הגנה)
-  - כמות = readonly, שינוי רק דרך ➕➖ עם PIN + סיבה (כלל ברזל)
-  - ניהול מותגים (כולל exclude_website) + ספקים
-  - הזמנות רכש (PO): two-step wizard, סטטוסים, PDF, Excel
-  - קבלת סחורה: תעודת משלוח/חשבונית → פריטים → אישור → מלאי מתעדכן
-  - ספירת מלאי: סריקת ברקוד → כמות → דוח פערים → אישור PIN
-  - גשר Access: Node.js Folder Watcher + Dropbox sync + staging + fallback ידני
-  - Audit & Logs: writeLog() non-blocking, 17 סוגי actions, timeline, מסך לוג מערכת
-  - Soft delete: PIN + סיבה, סל מחזור, שחזור, מחיקה לצמיתות
-  - ייצוא/ייבוא Excel, חיפוש pg_trgm עברית, פילטרים מתקדמים, mobile responsive
-- **פאזות פנימיות שהושלמו:** 0 (הכנה), 1 (PO), 1.5 (שיפורים), 2 (ספירה + Access bridge)
+### 🔄 מודול 2 — Auth + תפקידים + ניהול עובדים
+**סטטוס:** בבנייה כפאזה 3 בתוך מודול 1
+**DB מתוכנן:** roles, permissions, role_permissions, employee_roles, auth_sessions
+**כולל:** Login PIN, 5 תפקידים, מטריצת הרשאות, session, ממשק ניהול עובדים
+**⚠️ במודול זה: הוספת tenant_id לכל הטבלאות הקיימות והעתידיות**
 
-### מה בבנייה
+### ⬜ מודול 3 — ניהול לקוחות (CRM)
+**סטטוס: טרם התחיל**
+**DB מתוכנן:** customers, customer_notes
 
-**🔄 מודול 2 — ניהול לקוחות (CRM)**
-- DB מתוכנן: customers, customer_notes
-- פיצ'רים: מספור 10001/10001-1 (משפחה), כרטיס 6 לשוניות, pg_trgm, ולידציית טלפון ישראלי, זיהוי כפולות, Excel, soft delete
-
-**🔄 מודול 3 — Auth + תפקידים + ניהול עובדים**
-- נבנה כפאזה 3 בתוך מודול 1
-- DB מתוכנן: roles, permissions, role_permissions, employee_roles, auth_sessions
-- טבלת employees כבר קיימת, מוסיפים: Login PIN, 5 תפקידים, מטריצת הרשאות, session, ממשק ניהול
+### הכל אחרי — טרם התחיל
 
 ---
 
-## חלק 5 — סדר בנייה ותלויות
-
-### הרצף המלא
+## חלק 5 — סדר בנייה מלא
 
 | סדר | מודול | פאזה | סטטוס | למה בסדר הזה |
 |-----|-------|------|-------|--------------|
-| 1 | מלאי מסגרות | 1 | ✅ הושלם | הבסיס — ניהול מלאי זה הכאב הראשי |
-| 2 | לקוחות CRM | 1 | 🔄 בבנייה | חוסם הזמנות + בדיקות + WhatsApp |
-| 3 | Auth + תפקידים | 1 | 🔄 בבנייה | חוסם "מי עשה מה" בכל מודול |
-| 4 | הזמנות | 2 | ⬜ | הליבה העסקית — מחליף את Access |
-| 5 | בדיקת עיניים | 2 | ⬜ | פשוט, תלוי בלקוחות + הזמנות |
-| 6 | תשלומים | 2 | ⬜ | תלוי בהזמנות |
-| 7 | מעבדה + KDS | 2 | ⬜ | אחרי הזמנות + תשלומים — native, בלי bridge |
-| 8 | מלאי עדשות | 3 | ⬜ | אותה ארכיטקטורה כמו מודול 1 |
-| 9 | סניפים | 3 | ⬜ | MVP = סניף אחד, סניפים = אחרי שהכל עובד |
-| 10 | מעקב הזמנות Dashboard | 3 | ⬜ | צריך נתונים מהזמנות + תשלומים + מעבדה |
-| 11 | WhatsApp אוטומטי | 3 | ⬜ | צריך לקוחות + הזמנות + API token |
-| 12 | דוחות וסטטיסטיקות | 4 | ⬜ | צריך נתונים מכל המודולים |
-| 13 | ניהול כספים ספקים | 4 | ⬜ | צריך goods_receipts (✅) + חשבוניות |
-| 14 | סוכן AI | 5 | ⬜ | OCR חשבוניות, התראות, דוחות אוטומטיים |
-| 15 | פורטל ספקים | 5 | ⬜ | read-only לספק |
-| 16 | פורטל לקוחות | 5 | ⬜ | היסטוריה, מרשמים, תוכן חינוכי |
-| 17 | WooCommerce | 5 | ⬜ | סנכרון מלאי דו-כיווני |
-| 18 | קופה אנדרואיד | 5 | ⬜ | חיבור POS |
-
-### מפת תלויות
-
-```
-פאזה 1 — CORE                 פאזה 2 — OPERATIONS              פאזה 3 — SCALE
-─────────────                  ────────────────                  ─────────────
-
-┌─────────────┐                                              
-│  1. מלאי ✅  │                                              
-└──────┬──────┘                                              
-       │                                                     
-┌──────┴──────┐                                   ┌──────────────┐
-│ 2. לקוחות 🔄│                                   │ 4. הזמנות    │
-└──────┬──────┘                                   │    ⬜        │
-       │         ┌────────────────────────────────►│              │
-┌──────┴──────┐  │                                └──┬──────┬────┘
-│ 3. Auth  🔄 │──┘                                   │      │
-└─────────────┘                                      │      │
-                                              ┌──────┘      └───────┐
-                                              ▼                     ▼
-                                       ┌────────────┐       ┌────────────┐
-                                       │ 5. בדיקת   │       │ 6. תשלומים │
-                                       │   עיניים ⬜│       │    ⬜      │
-                                       └────────────┘       └──────┬─────┘
-                                                                   │
-                                                            ┌──────┘
-                                                            ▼
-                                                     ┌────────────┐
-                                                     │ 7. מעבדה   │
-                                                     │   + KDS ⬜ │
-                                                     └────────────┘
-```
-
-### למה מעבדה באה אחרי תשלומים (מודול 7 ולא קודם)
-
-היתה שקילה לבנות מעבדה מוקדם (עם bridge מ-Access). ההחלטה: **לא.**
-
-**הסיבות:**
-1. **יציבות** — מעבדה שרצה על native הזמנות (ולא bridge) = אפס מיגרציות, אפס adapters, אפס סיכון
-2. **שלמות** — ה-KDS צריך לדעת אם הזמנה שולמה (עדיפות), מה הסטטוס, מי הלקוח — כל זה קיים native
-3. **איכות** — כשמוכרים את המוצר לרשתות אחרות, מודול מעבדה שבנוי על native הזמנות = מוצר מוכן, לא workaround
-4. **בינתיים** — תוכנת המעבדה הנפרדת ממשיכה לעבוד עם Access. אין דחיפות להחליף
+| 1 | מלאי מסגרות | 1 | ✅ | הבסיס — הכאב הראשי |
+| 2 | Auth + תפקידים + tenant_id | 1 | 🔄 | הרשאות + tenant_id לכל הטבלאות |
+| 3 | **Storefront Showcase** | 1.5 | ⬜ | **ROI מיידי — אתר חנות ממלאי קיים** |
+| 4 | לקוחות CRM | 2 | ⬜ | חוסם הזמנות + בדיקות + WhatsApp |
+| 5 | הזמנות | 2 | ⬜ | הליבה — מתחיל להחליף Access |
+| 6 | בדיקת עיניים | 2 | ⬜ | תלוי בלקוחות + הזמנות |
+| 7 | תשלומים | 2 | ⬜ | תלוי בהזמנות |
+| 8 | **Storefront Full** | 2.5 | ⬜ | **עגלה + תשלום + מעקב הזמנה** |
+| 9 | מעבדה + KDS | 3 | ⬜ | אחרי הזמנות + תשלומים = native |
+| 10 | מלאי עדשות | 3 | ⬜ | אותה ארכיטקטורה כמו מודול 1 |
+| 11 | סניפים | 3 | ⬜ | MVP = סניף אחד |
+| 12 | מעקב הזמנות Dashboard | 3 | ⬜ | צריך נתונים מהכל |
+| 13 | WhatsApp אוטומטי | 3 | ⬜ | צריך לקוחות + הזמנות + token |
+| 14 | דוחות | 4 | ⬜ | צריך נתונים מכל המודולים |
+| 15 | כספים ספקים | 4 | ⬜ | חשבוניות, תשלומים, סגירה חודשית |
+| 16 | סוכן AI | 5 | ⬜ | OCR חשבוניות, התראות |
+| 17 | פורטל ספקים | 5 | ⬜ | read-only לספק |
+| 18 | WooCommerce sync | 5 | ⬜ | סנכרון דו-כיווני |
+| 19 | קופה אנדרואיד | 5 | ⬜ | חיבור POS |
 
 ---
 
-## חלק 6 — עקרונות ארכיטקטוניים
+## חלק 6 — ארכיטקטורת Storefront (Future-Proof)
+
+### העיקרון: Storefront לא נוגע ב-ERP, ו-ERP לא נוגע ב-Storefront
+
+הם מדברים **רק** דרך שכבת Supabase (Views + RPC Functions). ככה כל מודול ERP חדש שנבנה — פשוט חושפים View חדש, וה-Storefront קורא אותו. **אפס שינויים בקוד קיים.**
+
+### שכבת ה-Views (Supabase) — הגשר בין ERP ל-Storefront
+
+```sql
+-- ═══ קיים מיום 1 של Storefront ═══
+
+-- מוצרים לתצוגה (קורא מ-inventory, brands, inventory_images)
+CREATE VIEW storefront_products AS
+SELECT
+  i.id, i.barcode, i.brand, i.model, i.color, i.size,
+  i.product_type, i.sell_price, i.discount_percent,
+  i.quantity, i.bridge_size, i.tenant_id,
+  b.name as brand_name, b.logo_url as brand_logo,
+  b.exclude_website,
+  COALESCE(
+    (SELECT json_agg(url) FROM inventory_images WHERE inventory_id = i.id),
+    '[]'
+  ) as images,
+  sc.display_mode  -- 'full' / 'showcase' / 'offline'
+FROM inventory i
+JOIN brands b ON i.brand = b.name AND i.tenant_id = b.tenant_id
+LEFT JOIN storefront_product_config sc ON sc.inventory_id = i.id
+WHERE i.is_deleted = false
+  AND b.exclude_website = false
+  AND (sc.display_mode IS NULL OR sc.display_mode != 'offline');
+
+-- מותגים לתצוגה
+CREATE VIEW storefront_brands AS
+SELECT id, name, logo_url, tenant_id
+FROM brands
+WHERE exclude_website = false;
+
+-- ═══ נוסף כשמודול הזמנות ייבנה ═══
+
+-- מעקב הזמנה ללקוח (קורא מ-orders, order_items)
+CREATE VIEW storefront_order_tracking AS
+SELECT
+  o.order_number, o.status, o.created_at,
+  o.expected_ready_date, o.actual_ready_date,
+  o.tenant_id
+  -- ללא מידע רגיש (מחירים פנימיים, עובד וכו')
+FROM orders o;
+
+-- ═══ נוסף כשמודול תשלומים ייבנה ═══
+
+-- קליטת תשלום אונליין (RPC function)
+CREATE FUNCTION storefront_create_payment(...) ...
+
+-- ═══ נוסף כשמודול מעבדה ייבנה ═══
+
+-- סטטוס ייצור ללקוח
+CREATE VIEW storefront_production_status AS
+SELECT
+  lo.order_number, lo.current_status, lo.sla_deadline,
+  lo.tenant_id
+FROM lab_orders lo;
+
+-- ═══ נוסף כשמודול בדיקות עיניים ייבנה ═══
+
+-- מרשמים ללקוח (עם אישור)
+CREATE VIEW storefront_prescriptions AS ...
+```
+
+### מה זה אומר בפועל
+
+| כשנבנה מודול... | מה מוסיפים ל-Storefront | שינוי במודולי ERP |
+|-----------------|------------------------|-------------------|
+| הזמנות | View חדש + דף מעקב הזמנה | **אפס** |
+| תשלומים | RPC function + דף checkout | **אפס** |
+| מעבדה/KDS | View חדש + timeline בדף מעקב | **אפס** |
+| בדיקות עיניים | View חדש + דף מרשמים | **אפס** |
+| לקוחות CRM | View חדש + פורטל לקוח | **אפס** |
+| WhatsApp | כבר יש כפתור WhatsApp | **אפס** |
+
+**אפס שינויים במודולי ERP קיימים. אף פעם.** רק מוסיפים View חדש ב-Supabase ורכיב חדש ב-Storefront.
+
+### טבלאות Storefront-specific (ב-Supabase)
+
+```sql
+-- קונפיגורציה per-tenant
+storefront_config (
+  tenant_id         UUID PRIMARY KEY,
+  store_name        TEXT,
+  logo_url          TEXT,
+  favicon_url       TEXT,
+  primary_color     TEXT DEFAULT '#1A237E',
+  secondary_color   TEXT DEFAULT '#2196F3',
+  font_family       TEXT DEFAULT 'Arial',
+  hero_banners      JSONB DEFAULT '[]',     -- [{image, title, link}]
+  featured_categories JSONB DEFAULT '[]',
+  whatsapp_number   TEXT,
+  whatsapp_message_template TEXT DEFAULT 'היי {store_name}, אני מעוניין בדגם {model} שראיתי באתר',
+  google_analytics_id TEXT,
+  facebook_pixel_id TEXT,
+  custom_domain     TEXT,                    -- לעתיד
+  display_prices    BOOLEAN DEFAULT true,
+  enable_cart       BOOLEAN DEFAULT false,   -- false = showcase, true = full
+  enable_blog       BOOLEAN DEFAULT false,
+  maintenance_mode  BOOLEAN DEFAULT false
+)
+
+-- הגדרת תצוגה per-product
+storefront_product_config (
+  id                UUID PRIMARY KEY,
+  inventory_id      UUID REFERENCES inventory(id),
+  tenant_id         UUID,
+  display_mode      TEXT DEFAULT 'showcase', -- 'full' / 'showcase' / 'offline'
+  featured          BOOLEAN DEFAULT false,
+  badge             TEXT,                    -- 'חדש' / 'במבצע' / 'בלעדי'
+  sort_order        INTEGER DEFAULT 0
+)
+
+-- לידים
+storefront_leads (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id         UUID,
+  name              TEXT,
+  phone             TEXT,
+  email             TEXT,
+  source            TEXT,  -- 'contact_form' / 'whatsapp_click' / 'newsletter' / 'product_inquiry'
+  product_id        UUID,  -- אם פנייה מעמוד מוצר
+  utm_source        TEXT,
+  utm_medium        TEXT,
+  utm_campaign      TEXT,
+  created_at        TIMESTAMPTZ DEFAULT now()
+)
+
+-- מאמרים/בלוג
+storefront_articles (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id         UUID,
+  title             TEXT,
+  slug              TEXT,
+  content           TEXT,
+  featured_image    TEXT,
+  related_products  UUID[],  -- מוצרים מומלצים מהמלאי
+  published         BOOLEAN DEFAULT false,
+  published_at      TIMESTAMPTZ,
+  created_at        TIMESTAMPTZ DEFAULT now()
+)
+```
+
+### Storefront Showcase — מה ייבנה (מודול 3)
+
+**דף הבית:**
+- Hero banners (מנוהלים מ-ERP דרך storefront_config)
+- קטגוריות מהירות (משקפי שמש, ראייה, עדשות מגע)
+- Best sellers (לפי quantity/sort_order)
+- Brand wall (לוגואים מ-storefront_brands view)
+
+**קטלוג מוצרים:**
+- פילטרים: מותג, סוג מסגרת, חומר, צורה, מגדר, צבע, מחיר
+- תצוגת grid: תמונה, שם דגם, מחיר (אם display_prices = true)
+- Badges: "חדש", "במבצע", "בלעדי", "Showcase בלבד"
+- Pagination / infinite scroll
+
+**עמוד מוצר:**
+- גלריית תמונות (WebP auto-convert)
+- מפרט: מידות, צבעים, חומר
+- מצב Showcase: כפתור WhatsApp עם הודעה מוכנה + שם הדגם
+- מצב Full (עתידי): כפתור "הוסף לסל" + זמינות
+- Cross-sell (עתידי): "מוצרים דומים" לפי מותג/קטגוריה
+
+**בלוג/SEO:**
+- מאמרים מ-storefront_articles
+- מוצרים מומלצים בתוך מאמר
+- Schema.org markup, sitemap, meta tags
+
+**לידים:**
+- טופס "צור קשר" → storefront_leads
+- WhatsApp click tracking → storefront_leads
+- Newsletter signup → storefront_leads
+- UTM params נשמרים אוטומטי
+
+**SEO/ביצועים:**
+- ציון 90+ PageSpeed
+- SSG/SSR לעמודי מוצר (גוגל סורק הכל)
+- תמונות WebP
+- Schema.org לכל מוצר
+
+**White-Label (מהיום הראשון):**
+- צבעים, לוגו, פונט מ-storefront_config
+- tenant_id מזוהה לפי domain/subdomain
+- כל חנות = look & feel שונה, אותו קוד
+
+### Storefront Full — מה יתווסף (מודול 8)
+
+כשמודולי הזמנות + תשלומים יהיו מוכנים:
+- עגלת קניות + checkout
+- תשלום אונליין (אשראי)
+- מעקב הזמנה (מספר הזמנה/טלפון → סטטוס)
+- פורטל לקוח (היסטוריה, מרשמים)
+- Cross-sell מבוסס נתוני רכישות
+
+---
+
+## חלק 7 — tenant_id: איך מבטיחים שלא יהיו בעיות
+
+### מה נעשה במודול 2 (Auth)
+
+```sql
+-- 1. הוספת tenant_id לכל טבלה קיימת
+ALTER TABLE inventory ADD COLUMN tenant_id UUID NOT NULL DEFAULT '[prizma-uuid]';
+ALTER TABLE brands ADD COLUMN tenant_id UUID NOT NULL DEFAULT '[prizma-uuid]';
+ALTER TABLE suppliers ADD COLUMN tenant_id UUID NOT NULL DEFAULT '[prizma-uuid]';
+-- ... לכל הטבלאות
+
+-- 2. טבלת tenants
+CREATE TABLE tenants (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name        TEXT NOT NULL,          -- "אופטיקה פריזמה"
+  slug        TEXT UNIQUE NOT NULL,   -- "prizma"
+  domain      TEXT,                   -- "www.prizma-optics.co.il"
+  is_active   BOOLEAN DEFAULT true,
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+-- 3. RLS policy על כל טבלה
+CREATE POLICY tenant_isolation ON inventory
+  USING (tenant_id = current_setting('app.tenant_id')::uuid);
+-- ... על כל טבלה
+```
+
+### מה זה אומר לכל מודול עתידי
+
+| מודול | tenant_id impact | בעיות? |
+|-------|-----------------|--------|
+| מלאי | כל record שייך ל-tenant. שני tenants = אותו מותג, מלאי נפרד | ✅ עובד |
+| לקוחות | לקוח שייך ל-tenant. אותו טלפון ב-2 tenants = בסדר | ✅ עובד |
+| Auth | עובד שייך ל-tenant. תפקידים per-tenant | ✅ עובד |
+| הזמנות | הזמנה שייכת ל-tenant. מספור עולה per-tenant | ✅ עובד |
+| מעבדה | מעבדה יכולה להיות shared (רשת) או per-tenant | ✅ עובד |
+| Storefront | tenant_id מזוהה לפי domain → טוען config + נתונים | ✅ עובד |
+| ברקוד | BBDDDDD — prefix סניף per-tenant, 99 סניפים לכל tenant | ✅ עובד |
+
+### מה נבנה כשיהיה לקוח שני
+
+- Tenant management UI (יצירת tenant)
+- Onboarding flow
+- Billing (אם SaaS בתשלום)
+
+### מה לא ישתנה
+
+**שום מודול קיים.** כי tenant_id כבר שם מהיום הראשון.
+
+---
+
+## חלק 8 — כללי ברזל וארכיטקטורה
 
 ### כללי ברזל (Iron Rules)
-> ⛔ כמות מלאי = שינוי רק דרך Add/Remove עם PIN + סיבה. לא עריכה ישירה. אף פעם.
-> ⛔ תאריך הזמנה / מרשם = immutable. לא ניתן לשינוי.
-> ⛔ מספר הזמנה / לקוח / קבלה = ייחודי, עולה, immutable.
-> ⛔ מחיקת נתונים = soft delete בלבד (is_deleted = true).
-> ⛔ כל פעולה = נרשמת בלוג עם user_id + timestamp.
+> ⛔ כמות מלאי = שינוי רק דרך Add/Remove עם PIN + סיבה
+> ⛔ תאריכים (הזמנה/מרשם) = immutable
+> ⛔ מספרים (הזמנה/לקוח/קבלה) = ייחודי, עולה, immutable
+> ⛔ מחיקה = soft delete בלבד
+> ⛔ כל פעולה = לוג עם user_id + timestamp
+> ⛔ Storefront לא ניגש לטבלאות ישירות — רק Views + RPC
 
-### Zero Tight Coupling (חוזים בין מודולים)
-**מודול לא ניגש לטבלאות של מודול אחר ישירות.** כל מודול חושף פונקציות (חוזה) שמודולים אחרים משתמשים בהן. אם המבנה הפנימי משתנה — הפונקציה נשארת.
+### Zero Tight Coupling
+מודול לא ניגש לטבלאות של מודול אחר ישירות. חוזים (functions) בלבד.
 
 **חוזים קיימים:**
 
-מודול 1 — מלאי מספק:
+מודול 1 — מלאי:
 ```
 getItemByBarcode(barcode) → inventory record
 searchFrames(query) → filtered array
-updateQuantity(id, +/-, reason, employee) → updated record + log
-getStockLevel(barcode) → { current_qty, min_stock_qty }
+updateQuantity(id, +/-, reason, employee) → updated + log
 writeLog(action, id, details) → log entry
-getBrands() → brands list
-getSuppliers() → suppliers list
+getBrands() / getSuppliers() → lists
 ```
 
-מודול 2 — לקוחות מספק (מתוכנן):
+מודול 2 — Auth (מתוכנן):
+```
+getCurrentUser() → { id, name, role, branch_id, tenant_id }
+verifyPIN(pin) → employee or error
+hasPermission(user, action) → boolean
+```
+
+מודול 3 — לקוחות (מתוכנן):
 ```
 getCustomer(id) → customer record
 searchCustomers(query) → filtered array
 getCustomerByPhone(phone) → customer or null
 getFamilyMembers(family_id) → array
-getCustomerNotes(id) → notes array
 ```
-
-מודול 3 — Auth מספק (מתוכנן):
-```
-getCurrentUser() → { id, name, role, branch_id }
-verifyPIN(pin) → employee record or error
-hasPermission(user, action) → boolean
-```
-
-**כלל: כשבונים מודול חדש — מגדירים חוזה ב-MODULE_SPEC.md בסוף.**
-
-### מוכן לסקייל — החלטות עיצוב
-- **branch_id** קיים כבר בטבלאות inventory, employees, goods_receipts — מוכן ל-multi-branch
-- **ברקוד BBDDDDD** — 2 ספרות סניף מאפשרות 99 סניפים
-- **מספור לקוחות** — 10001+ עם תמיכה במשפחות (10001-1, 10001-2)
-- **RLS** על כל טבלה — מוכן ל-multi-tenant בעתיד
-- **שדות מעבדה מוכנים מראש** בטבלת orders (כשתיבנה): routing_type, sla_deadline, qa_status
 
 ---
 
-## חלק 7 — פירוט מודולים עתידיים
+## חלק 9 — פירוט מודולים עתידיים
 
-### מודול 4 — הזמנות
+### מודול 5 — הזמנות
 **תלוי ב:** לקוחות, מלאי, Auth
 **DB:** orders, order_items
-**פיצ'רים:** מספור immutable, 5 סוגי הזמנה (רגילה, שמירת מסגרת, הזמנת מסגרת, תיקון מסגרת, תיקון עדשה), עד 2 זוגות, סטטוסים (ממתין → בייצור → מוכן → נמסר), חישוב מחיר + הנחות, הדפסה
 **שדות מוכנים למעבדה:** routing_type, sla_deadline, qa_status, lab_notes
-**⚠️ כשמודול זה חי — Access מתחיל להיות מוחלף**
+**כשמודול זה חי → Storefront מקבל View למעקב הזמנה**
 
-### מודול 5 — בדיקת עיניים
+### מודול 6 — בדיקת עיניים
 **תלוי ב:** לקוחות, הזמנות
 **DB:** eye_exams
-**פיצ'רים:** SPH/CYL/AXIS/ADD/Visus/PD ימין+שמאל, תאריך immutable, היסטוריה, גרפי התקדמות, הדפסה
+**כשמודול זה חי → Storefront מקבל View למרשמים**
 
-### מודול 6 — תשלומים
+### מודול 7 — תשלומים
 **תלוי ב:** הזמנות
 **DB:** payments, receipts
-**פיצ'רים:** מזומן/אשראי (5 חברות)/קופת חולים (4), 1-36 תשלומים, מעורב, קבלה immutable, החזרים (עדשות בלבד, אישור מנהל)
+**כשמודול זה חי → Storefront מקבל RPC לתשלום אונליין**
 
-### מודול 7 — מעבדה + KDS
+### מודול 8 — Storefront Full
+**תלוי ב:** הזמנות + תשלומים
+**מה מתווסף:** עגלה, checkout, מעקב הזמנה, פורטל לקוח, cross-sell
+
+### מודול 9 — מעבדה + KDS
 **תלוי ב:** הזמנות, תשלומים, Auth
+**6 תת-מודולים:** Order Lifecycle, KDS Dashboard, SLA + פיצויים, QA, לוגיסטיקה/מניפסט, Control Panel
 **DB:** lab_orders, lab_order_status_log, lab_sla_config, lab_compensations, lab_qa_checklists, lab_shipments, lab_shipment_items
+**כשמודול זה חי → Storefront מקבל View לסטטוס ייצור**
 
-**חזון:** הפיכת תהליך ייצור המשקפיים ללוח בקרה שקוף ומנוהל.
-
-**6 תת-מודולים:**
-1. **Order Lifecycle** — ניתוב (סניף/מעבדה מרכזית/חיצוני), סטטוסים חכמים, חיבור native להזמנות
-2. **KDS Dashboard** — צביעת דחיפות (ירוק/צהוב/אדום), טיימרים, ממשק טאבלט
-3. **SLA + פיצויים** — SLA דינמי לכל סוג עבודה, התראה ב-80%, כפתור פיצוי בחריגה, סוגי פיצוי מוגדרים, רף לפי תפקיד
-4. **QA (בקרת איכות)** — checklist דיגיטלי חובה (מרכוז, ניקיון, ברגים, מרשם), תיעוד ליקויים, מעקב Remakes
-5. **לוגיסטיקה/מניפסט** — סריקת מסגרות ל"תיק מעבדה", ברקוד אחד לתיק, אישור קבלה
-6. **Control Panel** — עריכת SLA, רף פיצוי, דוח "נזקי עיכובים"
-
-### מודול 8 — מלאי עדשות
-**אותה ארכיטקטורה כמו מודול 1.**
-**DB:** lenses, lens_stock
-**פיצ'רים:** קטלוג SPH/CYL/ADD, מחיר עלות+מכירה, כמות לפי ספק, "לוח עדשות בשימוש"
-
-### מודול 9 — סניפים
-**עדיפות נמוכה — MVP = סניף אחד.**
-**DB:** branches
-**פיצ'רים:** הגדרת סניפים, שעות, מלאי נפרד, העברות, multi-branch view
-
-### מודול 10 — מעקב הזמנות Dashboard
-**פיצ'רים:** פילטרים מתקדמים, מעקב מולטיפוקל (הסתגלות 30 יום), bulk actions, ייצוא
-
-### מודול 11 — WhatsApp אוטומטי
-**חוסם:** API token
-**פיצ'רים:** תבניות, שפה לפי לקוח, triggers אוטומטיים, bulk, לוג
-
-### מודולים 12-18 — פאזות מתקדמות
-- **12: דוחות** — מכירות, מלאי, עובדים, ספקים, Excel/CSV
-- **13: כספים ספקים** — חשבוניות, תשלומים, סגירה חודשית, מט"ח
-- **14: סוכן AI** — OCR חשבוניות (Claude Vision), התראות, דוחות אוטומטיים
-- **15: פורטל ספקים** — קישור ייחודי, read-only מלאי
-- **16: פורטל לקוחות** — היסטוריה, מרשמים, תוכן חינוכי
-- **17: WooCommerce** — סנכרון מלאי דו-כיווני
-- **18: קופה אנדרואיד** — חיבור POS
+### מודולים 10-19
+- **10: מלאי עדשות** — אותה ארכיטקטורה כמו מודול 1
+- **11: סניפים** — MVP = סניף אחד, בהמשך multi-branch
+- **12: מעקב הזמנות Dashboard** — פילטרים, מולטיפוקל, bulk
+- **13: WhatsApp** — תבניות, triggers, bulk, לוג
+- **14: דוחות** — מכירות, מלאי, עובדים, ספקים
+- **15: כספים ספקים** — חשבוניות, תשלומים, מט"ח
+- **16: סוכן AI** — OCR חשבוניות, התראות
+- **17: פורטל ספקים** — read-only per supplier
+- **18: WooCommerce sync** — סנכרון דו-כיווני עם אתר קיים
+- **19: קופה אנדרואיד** — חיבור POS
 
 ---
 
-## חלק 8 — מפת DB מלאה
+## חלק 10 — מפת DB
 
 ```
-═══ קיים ✅ (12 טבלאות) ═══
-inventory                    ← מודול 1
-inventory_images             ← מודול 1
-inventory_logs               ← מודול 1 (משותף לכל המודולים)
-brands                       ← מודול 1
-suppliers                    ← מודול 1
-employees                    ← מודול 1 (משותף לכל המודולים)
-goods_receipts               ← מודול 1
-goods_receipt_items          ← מודול 1
-purchase_orders              ← מודול 1
-purchase_order_items         ← מודול 1
-stock_counts                 ← מודול 1
-stock_count_items            ← מודול 1
+═══ קיים ✅ ═══
+inventory, inventory_images, inventory_logs, brands, suppliers,
+employees, goods_receipts, goods_receipt_items, purchase_orders,
+purchase_order_items, stock_counts, stock_count_items
 
-═══ בבנייה 🔄 ═══
-customers                    ← מודול 2
-customer_notes               ← מודול 2
-roles                        ← מודול 3
-permissions                  ← מודול 3
-role_permissions             ← מודול 3
-employee_roles               ← מודול 3
-auth_sessions                ← מודול 3
+═══ מתוכנן ⬜ — Auth ═══
+tenants, roles, permissions, role_permissions,
+employee_roles, auth_sessions
 
-═══ מתוכנן ⬜ ═══
-orders                       ← מודול 4
-order_items                  ← מודול 4
-eye_exams                    ← מודול 5
-payments                     ← מודול 6
-receipts                     ← מודול 6
-lab_orders                   ← מודול 7
-lab_order_status_log         ← מודול 7
-lab_sla_config               ← מודול 7
-lab_compensations            ← מודול 7
-lab_qa_checklists            ← מודול 7
-lab_shipments                ← מודול 7
-lab_shipment_items           ← מודול 7
-lenses                       ← מודול 8
-lens_stock                   ← מודול 8
-branches                     ← מודול 9
-whatsapp_log                 ← מודול 11
-whatsapp_templates           ← מודול 11
-supplier_invoices            ← מודול 13
-supplier_payments            ← מודול 13
+═══ מתוכנן ⬜ — Storefront ═══
+storefront_config, storefront_product_config,
+storefront_leads, storefront_articles
+
+═══ מתוכנן ⬜ — CRM ═══
+customers, customer_notes
+
+═══ מתוכנן ⬜ — הזמנות + תשלומים ═══
+orders, order_items, payments, receipts
+
+═══ מתוכנן ⬜ — מעבדה ═══
+lab_orders, lab_order_status_log, lab_sla_config,
+lab_compensations, lab_qa_checklists, lab_shipments, lab_shipment_items
+
+═══ מתוכנן ⬜ — עדשות ═══
+lenses, lens_stock
+
+═══ מתוכנן ⬜ — שאר ═══
+branches, whatsapp_log, whatsapp_templates,
+supplier_invoices, supplier_payments
 ```
 
 ---
 
-## חלק 9 — תיעוד לכל מודול
-
-### קבצים שנוצרים בסוף כל מודול
-```
-modules/Module X - Name/
-├── [name].html           ← עותק מאורכב של index.html
-├── MODULE_SPEC.md        ← אפיון טכני: DB, פיצ'רים, לוגיקות, חוזים, TODO
-├── CHANGELOG.md          ← היסטוריית commits ושינויים
-├── db-schema.sql         ← CREATE TABLE + INDEXES + RLS
-└── ROADMAP.md            ← מפת פאזות פנימיות (אם יש)
-```
-
-### מסמכים גלובליים
-| מסמך | תפקיד | מי מעדכן |
-|-------|--------|----------|
-| MASTER_ROADMAP.md (זה) | מוח הפרויקט — הכל מלמעלה | צ'אט אסטרטגי ראשי |
-| PROJECT_GUIDE.md | הוראות עבודה לצ'אט מפקח | צ'אט אסטרטגי ראשי |
-
----
-
-## חלק 10 — החלטות שהתקבלו
+## חלק 11 — החלטות שהתקבלו
 
 | תאריך | החלטה | נימוק |
 |--------|--------|--------|
-| מרץ 2026 | מתחילים ממלאי, לא מהזמנות | Access מטפל במכירות. המלאי = הכאב הראשי |
-| מרץ 2026 | בונים ליד Access, לא במקומו | ערך מיידי ללא סיכון, החלפה הדרגתית |
-| מרץ 2026 | ברקוד BBDDDDD (7 ספרות) | 99 סניפים × 99,999 פריטים |
-| מרץ 2026 | HTML נפרד לכל מודול, לא Next.js | מהירות, פשטות, Claude Code compatibility |
-| מרץ 2026 | index.html = תמיד המודול הפעיל | URL קבוע, נוח לטסטים |
-| מרץ 2026 | 4-tier workflow | הפרדת אחריות: אסטרטגי → מוצר → מפקח → מבצע |
-| מרץ 2026 | לקוחות לפני Auth | לקוחות חוסמים יותר מודולים |
-| מרץ 2026 | מעבדה אחרי הזמנות + תשלומים (מודול 7) | native, לא bridge. יציבות > מהירות |
+| מרץ 2026 | מתחילים ממלאי | Access מטפל במכירות. המלאי = הכאב הראשי |
+| מרץ 2026 | בונים ליד Access, לא במקומו | ערך מיידי, החלפה הדרגתית |
+| מרץ 2026 | HTML נפרד לכל מודול ERP | מהירות, פשטות |
+| מרץ 2026 | Storefront = repo נפרד, קורא רק Views | אבטחה, הפרדה מלאה, אפס coupling |
+| מרץ 2026 | tenant_id מהיום הראשון (מודול Auth) | מוכן ל-SaaS בלי rebuild |
+| מרץ 2026 | Storefront Showcase לפני CRM | ROI מיידי, לא צריך לקוחות |
+| מרץ 2026 | Storefront Full אחרי תשלומים | צריך עגלה + checkout |
+| מרץ 2026 | מעבדה אחרי הזמנות + תשלומים | native, לא bridge. יציבות |
 | מרץ 2026 | סניפים בעדיפות נמוכה | MVP = סניף אחד |
-| מרץ 2026 | קבלת סחורה כחלק ממלאי | שדות ישמשו מודול כספים |
-| מרץ 2026 | Zero tight coupling — חוזים | מודול לא ניגש לטבלאות של מודול אחר ישירות |
-| מרץ 2026 | שדות מעבדה מוכנים מראש בטבלת orders | routing_type, sla_deadline, qa_status |
-| מרץ 2026 | המטרה הסופית = SaaS לרשתות אופטיקה | multi-tenant, configurable, professional |
+| מרץ 2026 | Zero coupling + חוזים | מודולים עצמאיים |
+| מרץ 2026 | המטרה = SaaS לרשתות אופטיקה | multi-tenant, configurable |
+| מרץ 2026 | 4-tier workflow | אסטרטגי → מוצר → מפקח → מבצע |
 
 ---
 
-## חלק 11 — שאלות פתוחות
+## חלק 12 — שאלות פתוחות
 
 | שאלה | חוסם | דחיפות |
 |-------|------|--------|
-| WhatsApp Business API token | מודול 11 | לפני פאזה 3 |
-| תמחור ציפויים — מבנה טבלה | מודול 4 (הזמנות) | בינונית |
-| שאלון בריאות — חזרה מ-WhatsApp? | מודול 5 (בדיקות) | נמוכה |
-| קופה אנדרואיד — דגם/תוכנה | מודול 18 | נמוכה |
-| פורמט הטבלה הפנימית Access↔מעבדה | מודול 7 | בינונית |
-| Access migration — רשימת טבלאות | אחרי פאזה 2 | נמוכה |
-| Multi-tenant architecture — מתי? | לפני מכירת המוצר | גבוהה (בהמשך) |
+| Storefront framework: Astro או Vanilla JS SSG? | מודול 3 (Storefront) | גבוהה — לפני שמתחילים |
+| Hosting: Vercel או Netlify? | מודול 3 | גבוהה |
+| WooCommerce קיים — לחבר או להחליף? | מודול 18 | בינונית |
+| WhatsApp Business API token | מודול 13 | לפני פאזה 3 |
+| תמחור ציפויים — מבנה טבלה | מודול 5 | בינונית |
+| פורמט טבלה Access↔מעבדה | מודול 9 | בינונית |
+| Multi-tenant billing model | לפני לקוח שני | בינתיים לא רלוונטי |
 
 ---
 
-## חלק 12 — הצעד הבא
+## חלק 13 — הצעד הבא
 
-**עכשיו:** לסיים מודול 2 (לקוחות) + מודול 3 (Auth).
-**אחרי:** מודול 4 (הזמנות) — זה המודול שמתחיל להחליף את Access.
+**עכשיו:** לסיים מודול 2 (Auth + תפקידים + tenant_id).
+**אחרי:** מודול 3 — Storefront Showcase. ROI מיידי.
+**אחרי:** מודול 4 — לקוחות CRM. חוסם הזמנות.
 
 ---
 
 *מסמך זה הוא "מוח הפרויקט". כל מה שצריך לדעת כדי להמשיך — כאן.*
-*אם אתה צ'אט אסטרטגי חדש — קרא את כל המסמך והמשך מחלק 12.*
+*אם אתה צ'אט אסטרטגי חדש — קרא את כל המסמך והמשך מחלק 13.*

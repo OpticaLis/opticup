@@ -2,9 +2,20 @@
 
 ## Current Status
 
-Phase 3 ✅ complete. Next: home screen architecture + rename repo to opticup.
+Phase 3.5 ✅ complete. Next: Phase 4 — מעקב חובות ספקים.
 
-## Last Completed: Phase 3 — Auth & Permissions
+## Last Completed: Phase 3.5 — מסך בית + שינוי שם ריפו
+
+**Commits:** e9a1d57, 8ec3c4b, 2933bb5, 5eabe0a
+
+**What was built:**
+- index.html (310 lines) — home screen with MODULES config array, 6 module cards, PIN login modal, session restore on load, live clock
+- inventory.html — renamed from index.html (main app, no content changes)
+- js/auth-service.js — clearSession() now redirects to index.html instead of reload
+- Cards: inventory + employees (active), customers/finance/lab/attendance (coming_soon)
+- Full auth flow: login on index.html → session persists to inventory.html → logout returns to index.html
+
+## Previous: Phase 3 — Auth & Permissions
 
 **Commits:** e0d7a28, 31b2bac, 450d5b5, 0c34bd5, 6b74bc4, b21067c, 2706d4d, c850392, cd8dd04, 908111a, 98ff6c7, 8c4d4d7, 3b167ee, 253f0f2
 
@@ -25,16 +36,6 @@ Phase 3 ✅ complete. Next: home screen architecture + rename repo to opticup.
 - E2E testing: 32 tests, 29 pass initially, 3 bugs found and fixed
 - RLS policies added for employees INSERT/UPDATE/DELETE
 
-## Next: Home Screen Architecture
-
-**Strategic decisions made:**
-- index.html → becomes home screen (PIN login + module cards)
-- inventory.html → current index.html (full app) renamed
-- Repo renamed: prizma-inventory → opticup
-- New URL: opticalis.github.io/opticup
-- Session passes between pages via sessionStorage (same domain)
-- Future: session timeout configurable by manager/CEO (e.g. 60 min) — deferred
-
 ## Open Items / Warnings
 
 - ⚠️ ?dev_bypass=opticup2024 MUST be removed before production (auth-service.js line 143)
@@ -42,6 +43,8 @@ Phase 3 ✅ complete. Next: home screen architecture + rename repo to opticup.
 - ⚠️ All existing PINs are 4 digits — reset to 5 digits before go-live
 - ⚠️ RLS policies are wide open (USING true) — needs hardening before production
 - ⚠️ Internet exposure of app — status not yet confirmed
+- ⚠️ serve.js still routes / to index.html — update if using local dev server
+- ⚠️ Repo rename (prizma-inventory → opticup) is a manual GitHub Settings action — not yet done
 
 ## Future Features (deferred from Phase 3)
 

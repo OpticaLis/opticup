@@ -4,6 +4,19 @@
 
 ---
 
+## v3.5 — Phase 3.5: מסך בית + שינוי שם ריפו
+
+Date: March 2026
+
+Commits: e9a1d57, 8ec3c4b, 2933bb5, 5eabe0a
+
+- phase 3.5: rename index.html → inventory.html
+- phase 3.5: clearSession redirects to index.html instead of reload
+- phase 3.5: add home screen index.html with module cards
+- docs: add Phase 3.5 to ROADMAP
+
+---
+
 ## v3.0 — Phase 3: Auth & Permissions
 
 Date: March 2026

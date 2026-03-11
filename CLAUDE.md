@@ -17,7 +17,7 @@ After reading SESSION_CONTEXT.md, confirm:
 - **Name:** Optic Up — optical store management for Israeli optician chain
 - **Repo:** opticalis/prizma-inventory
 - **Supabase:** https://tsxrrxzmdxaenlvocyit.supabase.co
-- **Deploy:** GitHub Pages → https://opticalis.github.io/prizma-inventory/
+- **Deploy:** GitHub Pages → https://opticalis.github.io/prizma-inventory/ (index.html = home screen, inventory.html = main app)
 
 ## Stack
 - Vanilla JS (no framework), Supabase JS v2, SheetJS (xlsx)
@@ -95,13 +95,18 @@ prizma/
 | `T.INV`           | inventory                | id, barcode, brand_id, supplier_id, model, size, color, quantity, status, is_deleted, website_sync, ... |
 | `T.BRANDS`        | brands                   | id, name, brand_type, default_sync, active, exclude_website, min_stock_qty |
 | `T.SUPPLIERS`     | suppliers                | id, name, active, supplier_number (UNIQUE, ≥ 10)                         |
-| `T.EMPLOYEES`     | employees                | id, name, pin                                                            |
+| `T.EMPLOYEES`     | employees                | id, name, pin, email, phone, branch_id, failed_attempts, locked_until, last_login |
 | `T.LOGS`          | inventory_logs           | id, action, inventory_id, details (jsonb), created_at                    |
 | `T.IMAGES`        | inventory_images         | id, inventory_id, url                                                    |
 | `T.RECEIPTS`      | goods_receipts           | id, type, status, supplier_id, po_id, notes, created_at                  |
 | `T.RECEIPT_ITEMS` | goods_receipt_items      | id, receipt_id, inventory_id, quantity, ...                              |
 | `T.PO`            | purchase_orders          | id, po_number, supplier_id, status, notes, created_at                    |
 | `T.PO_ITEMS`      | purchase_order_items     | id, po_id, brand_id, model, size, color, quantity, cost_price, ...       |
+| `T.ROLES`         | roles                    | id, name_he, description, is_system                                      |
+| `T.PERMISSIONS`   | permissions              | id, module, action, name_he                                              |
+| `T.ROLE_PERMS`    | role_permissions         | role_id, permission_id, granted                                          |
+| `T.EMP_ROLES`     | employee_roles           | employee_id, role_id, granted_by, granted_at                             |
+| `T.SESSIONS`      | auth_sessions            | id, employee_id, token, permissions, is_active, expires_at               |
 
 ---
 
