@@ -16,6 +16,8 @@
 | Goal 3 ✅ | MODULE_MAP.md created — 856 lines, full codebase reference | `01d86e9` |
 | Goal 0 ✅ | Atomic quantity updates — replaced all client-side qty calculations with Supabase RPC (`increment_inventory` / `decrement_inventory`) in 5 functions across 4 files | `62381b7` |
 | Phase 2a ✅ | Stock Count module — full flow: list screen, session with camera scanning + worker PIN, diff report, approval + writeLog, Excel export | `f3c5f0f`, `c8bcaa3` |
+| Phase 2b ✅ | InventorySync Folder Watcher + Access Sync screen + failed file upload to Supabase Storage + sync log with details modal | `544cf71`, `553b3ea`, `9ba6ed0`, `4a27823` |
+| Phase 2 fixes ✅ | Stock count: PIN before DB creation, unscanned items in diff report, smart search field, watcher idempotency + debounce | `6d452c1`, `226e7a8`, `8f83e22`, `deba9db` |
 
 ### Current File Structure
 ```
@@ -38,14 +40,12 @@ modules/
 
 ---
 
-## What's Next — Phase 2b
+## What's Next — Phase 3
 
-### Phase 2b Features (ROADMAP פאזה 2)
-1. **Access Bridge** — Node.js Folder Watcher on Dropbox
-   - Read sales Excel → auto-update quantities
-   - "Pending" screen for unrecognized barcodes
-   - Export new inventory to Access
-   - Windows Service with auto-restart
+### Phase 3 — Roles & Permissions + Supabase Auth
+- Employees module with 5-digit PIN login
+- Role-based access (admin, manager, worker)
+- Supabase Auth integration
 
 ---
 

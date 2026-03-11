@@ -4,6 +4,29 @@
 
 ---
 
+## [Phase 2b] — 2026-03-11
+
+### Added
+- scripts/sync-watcher.js — InventorySync Folder Watcher (chokidar, idempotency guards, 30s debounce)
+- modules/access-sync/sync-details.js — sync details modal, failed file download via Supabase Storage
+- Supabase Storage bucket: failed-sync-files
+- migrations/015 — storage_path + errors columns on sync_log
+
+### Changed
+- modules/access-sync/access-sync.js — full sync screen with summary cards, log table, action buttons
+- scripts/sync-watcher.js — uploads failed files to Supabase Storage
+
+## [Phase 2 fixes] — 2026-03-11
+
+### Fixed
+- Stock count: PIN verified before count created in DB
+- Stock count: unscanned items now appear in diff report as "לא נספר"
+- Stock count: unified smart search field (brand/model/color/barcode)
+- Sync watcher: idempotency guards prevent duplicate DB rows
+- Sync watcher: 30-second cooldown prevents duplicate file processing
+
+---
+
 ## [Phase 2a] — 2026-03-11
 
 ### Added
