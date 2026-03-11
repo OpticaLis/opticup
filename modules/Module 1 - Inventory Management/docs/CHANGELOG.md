@@ -4,6 +4,57 @@
 
 ---
 
+## v3.0 — Phase 3: Auth & Permissions
+
+Date: March 2026
+
+Commits: e0d7a28, 31b2bac, 450d5b5, 0c34bd5, 6b74bc4, b21067c, 2706d4d, c850392, cd8dd04, 908111a, 98ff6c7, 8c4d4d7, 3b167ee, 253f0f2, a21145f
+
+### DB (migration 016)
+- New tables: roles (5 system roles: ceo, manager, team_lead, worker, viewer)
+- New tables: permissions (35 granular permissions across 9 modules)
+- New tables: role_permissions (94 default role→permission mappings)
+- New tables: employee_roles, auth_sessions (token-based, 8h expiry)
+- ALTER employees: added email, phone, branch_id, created_by, last_login, failed_attempts, locked_until
+- RLS: added INSERT/UPDATE/DELETE policies on employees table
+- pin_length CHECK constraint added but commented out (pre-production TODO)
+- Added purchase_order.view permission (was missing, caused PO tab to be hidden)
+
+### New Files
+- js/auth-service.js — 287 lines, 14 functions: full auth engine
+- modules/employees/employee-list.js — 283 lines, 8 functions: employee CRUD + permission matrix
+
+### Features
+- Login screen: 5-box PIN modal, fullscreen overlay, session restore on reload
+- Session management: token-based, 8h expiry, permission snapshot in sessionStorage
+- PIN lockout: 5 failed attempts → sessionStorage lock + server-side locked_until (15min)
+- Role-based access: 5 roles with 35 granular permissions across 9 modules
+- UI guards: 10 nav tabs + 21 action buttons gated by data-permission attributes
+- Employee management screen: add/edit/deactivate, role assignment, permission matrix
+- User display button: shows logged-in employee name + logout on click
+- Dev bypass: ?dev_bypass=opticup2024 (TODO: remove before production)
+
+### Refactoring
+- 8 legacy PIN call sites replaced with verifyEmployeePIN()
+- admin.js: removed toggleAdmin(), checkAdmin() — replaced with hasPermission('settings.edit')
+- writeLog(): auto-populates employee_id from getCurrentEmployee()
+- loadData(): session guard added (returns early if no active session)
+- stock-count-session.js: skips PIN modal if active session exists
+- empSummaryCard: renamed from summaryCard to avoid global name collision with access-sync.js
+
+### QA
+- 32 E2E tests run across all 5 roles
+- 29/32 passed on first run
+- 3 bugs found and fixed: purchase_order.view missing, summary cards "undefined", PIN lockout client-side only
+
+### Deferred to Future Features
+- impersonateUser, previewUIAsRole, generatePermissionSnapshot
+- writePermissionLog, validateActionIntegrity
+- Rate limiting, multi-branch roles, custom permission groups
+- Supabase Auth, configurable session timeout
+
+---
+
 ## [Phase 2b] — 2026-03-11
 
 ### Added
