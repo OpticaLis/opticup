@@ -239,7 +239,10 @@ async function handleNewFile(filepath) {
   if (path.extname(filepath).toLowerCase() !== '.xlsx') return;
 
   const filename = path.basename(filepath);
-  if (processing.has(filename)) return;
+  if (processing.has(filename)) {
+    log(`Skipping duplicate event: ${filename}`);
+    return;
+  }
   processing.add(filename);
 
   log(`New file detected: ${filename}`);
@@ -267,7 +270,8 @@ async function handleNewFile(filepath) {
       log(`Could not move to failed: ${moveErr.message}`);
     }
   } finally {
-    processing.delete(filename);
+    // Keep filename locked for 30s cooldown to prevent delayed duplicate events
+    setTimeout(() => processing.delete(filename), 30000);
   }
 }
 

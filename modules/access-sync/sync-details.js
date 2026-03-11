@@ -10,14 +10,24 @@ async function openSyncDetails(logId) {
     const { data: log, error } = await sb.from(T.SYNC_LOG).select('*').eq('id', logId).maybeSingle();
     if (error || !log) { toast('לא נמצא רשומת סנכרון', 'e'); return; }
 
-    // 2. Fetch inventory_logs for this file
+    // 2. Find previous sync_log entry to establish time window lower bound
+    const { data: prevLogs } = await sb.from(T.SYNC_LOG)
+      .select('created_at')
+      .lt('created_at', log.created_at)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    const lowerBound = prevLogs?.[0]?.created_at || '1970-01-01T00:00:00Z';
+
+    // 3. Fetch inventory_logs scoped to this sync event's time window
     const { data: items } = await sb.from('inventory_logs')
       .select('inventory_id, action, qty_before, qty_after, created_at')
       .or(`source_ref.eq.${log.filename},sync_filename.eq.${log.filename}`)
+      .gt('created_at', lowerBound)
+      .lte('created_at', log.created_at)
       .order('created_at', { ascending: true })
       .limit(200);
 
-    // 3. Fetch inventory details for all referenced items
+    // 4. Fetch inventory details for all referenced items
     const invMap = {};
     if (items && items.length) {
       const ids = [...new Set(items.map(i => i.inventory_id).filter(Boolean))];
@@ -39,7 +49,7 @@ async function openSyncDetails(logId) {
       }
     }
 
-    // 4. Build modal HTML
+    // 5. Build modal HTML
     const badge = STATUS_BADGES[log.status] || STATUS_BADGES.error;
     const date = new Date(log.created_at).toLocaleString('he-IL');
 
@@ -61,7 +71,7 @@ async function openSyncDetails(logId) {
           <div><b>שגיאה:</b> ${log.rows_error || 0}</div>
         </div>`;
 
-    // 5. Items table
+    // 6. Items table
     if (items && items.length) {
       html += `<h4 style="margin:0 0 8px 0">\u2705 פריטים שעובדו (${items.length})</h4>
       <div style="max-height:300px;overflow-y:auto;margin-bottom:16px">
@@ -89,7 +99,7 @@ async function openSyncDetails(logId) {
       html += '<p style="color:#888;margin-bottom:16px">לא נמצאו פריטים מעובדים לקובץ זה</p>';
     }
 
-    // 6. Error table
+    // 7. Error table
     const errs = Array.isArray(log.errors) ? log.errors : [];
     if (errs.length) {
       html += `<h4 style="margin:0 0 8px 0;color:#dc2626">\u274C שגיאות (${errs.length})</h4>
@@ -106,7 +116,7 @@ async function openSyncDetails(logId) {
       <button class="btn btn-g" onclick="closeSyncDetails()">סגור</button>
     </div></div></div>`;
 
-    // 7. Inject into DOM
+    // 8. Inject into DOM
     const existing = $('sync-detail-overlay');
     if (existing) existing.remove();
     document.body.insertAdjacentHTML('beforeend', html);
