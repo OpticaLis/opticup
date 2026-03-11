@@ -1,0 +1,11 @@
+{
+  "watchFolder": "C:\\Users\\User\\Dropbox\\OpticTop\\Inventory\\Frames\\sales",
+  "processedFolder": "C:\\Users\\User\\Dropbox\\OpticTop\\Inventory\\Frames\\processed",
+  "errorFolder": "C:\\Users\\User\\Dropbox\\OpticTop\\Inventory\\Frames\\error",
+  "supabaseUrl": "https://tsxrrxzmdxaenlvocyit.supabase.co",
+  "supabaseKey": "REPLACE_WITH_SERVICE_ROLE_KEY",
+  "heartbeatIntervalMinutes": 5,
+  "retryAttempts": 3,
+  "retryDelaySeconds": 30,
+  "watcherVersion": "1.0.0"
+}
