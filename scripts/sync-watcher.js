@@ -1,60 +1,29 @@
 #!/usr/bin/env node
 // =========================================================
-// Optic Up — Sync Watcher
-// Watches a local folder (Dropbox-synced) for Access Excel
-// sales files and processes them into Supabase.
+// Optic Up — InventorySync Folder Watcher
+// Watches for Excel sales files and processes them into Supabase.
 // =========================================================
 
-const fs = require('fs');
+const fs   = require('fs');
 const path = require('path');
-const os = require('os');
 const chokidar = require('chokidar');
-const XLSX = require('xlsx');
+const XLSX     = require('xlsx');
 const { createClient } = require('@supabase/supabase-js');
 
-// ── Load config ─────────────────────────────────────────────
-const configPath = path.join(__dirname, 'config.json');
-if (!fs.existsSync(configPath)) {
-  console.error('config.json not found at', configPath);
-  process.exit(1);
-}
-const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-
-const REQUIRED = ['watchFolder', 'processedFolder', 'errorFolder', 'supabaseUrl', 'supabaseKey'];
-for (const key of REQUIRED) {
-  if (!config[key]) {
-    console.error(`Missing required config field: ${key}`);
-    process.exit(1);
-  }
-}
-if (config.supabaseKey === 'REPLACE_WITH_SERVICE_ROLE_KEY') {
-  console.error('Please set supabaseKey in config.json (service role key)');
-  process.exit(1);
-}
-
-// ── Ensure folders exist ────────────────────────────────────
-for (const dir of [config.watchFolder, config.processedFolder, config.errorFolder]) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-    log(`Created folder: ${dir}`);
-  }
-}
-
-// ── Table name constants ────────────────────────────────────
-const TABLES = {
-  INVENTORY:  'inventory',
-  INV_LOGS:   'inventory_logs',
-  SYNC_LOG:   'sync_log',
-  PENDING:    'pending_sales',
-  HEARTBEAT:  'watcher_heartbeat',
+// ── Configuration ───────────────────────────────────────────
+const CONFIG = {
+  watchDir:      'C:\\Users\\User\\Dropbox\\InventorySync\\sales',
+  processedDir:  'C:\\Users\\User\\Dropbox\\InventorySync\\processed',
+  failedDir:     'C:\\Users\\User\\Dropbox\\InventorySync\\failed',
+  supabaseUrl:   'https://tsxrrxzmdxaenlvocyit.supabase.co',
+  supabaseKey:   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU',
 };
 
 // ── Init Supabase ───────────────────────────────────────────
-const sb = createClient(config.supabaseUrl, config.supabaseKey);
+const sb = createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
 
 // ── State ───────────────────────────────────────────────────
 const processing = new Set();
-let watcher = null;
 
 // ── Helpers ─────────────────────────────────────────────────
 function log(msg) {
@@ -62,329 +31,242 @@ function log(msg) {
   console.log(`[${ts}] ${msg}`);
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+function makeTimestamp() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
 }
 
-function timestamp() {
-  return new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15);
-}
-
-function isNetworkError(err) {
-  const msg = (err.message || '').toLowerCase();
-  return ['fetch', 'network', 'econnrefused', 'timeout', 'enotfound'].some(k => msg.includes(k));
-}
-
-// ── F) moveToProcessed ──────────────────────────────────────
-function moveToProcessed(filepath, filename) {
-  const dest = path.join(config.processedFolder, `${timestamp()}_${filename}`);
+function moveFile(filepath, destDir, filename) {
+  const dest = path.join(destDir, `${makeTimestamp()}_${filename}`);
   try {
     fs.renameSync(filepath, dest);
-    log(`Moved to processed: ${filename}`);
-  } catch (err) {
-    log(`rename failed, trying copy: ${err.message}`);
-    try {
-      fs.copyFileSync(filepath, dest);
-      fs.unlinkSync(filepath);
-      log(`Copied to processed: ${filename}`);
-    } catch (err2) {
-      log(`❌ Could not move to processed: ${err2.message}`);
-      // Don't crash — file stays in watch folder but sync_log is written
-    }
+  } catch {
+    // renameSync may have succeeded despite throwing (Dropbox sync edge case)
+    if (fs.existsSync(dest)) return;
+    if (!fs.existsSync(filepath)) return;
+    fs.copyFileSync(filepath, dest);
+    fs.unlinkSync(filepath);
   }
 }
 
-// ── G) moveToError ──────────────────────────────────────────
-function moveToError(filepath, filename, errorMessage) {
-  const ts = timestamp();
-  const dest = path.join(config.errorFolder, `${ts}_${filename}`);
-  const errFile = path.join(config.errorFolder, `${ts}_${filename}.error.txt`);
-  try {
-    fs.renameSync(filepath, dest);
-  } catch (e) {
-    log(`Warning: could not move file — ${e.message}`);
+function parseDateField(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'number') {
+    const d = new Date((raw - 25569) * 86400000);
+    return d.toISOString().split('T')[0];
   }
-  fs.writeFileSync(errFile, `Error: ${errorMessage}\nTimestamp: ${new Date().toISOString()}\nFile: ${filename}\n`, 'utf8');
-  log(`❌ Moved to error: ${filename} — ${errorMessage}`);
+  const d = new Date(raw);
+  return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
 }
 
-// ── E) processFile ──────────────────────────────────────────
+// ── Process a single Excel file ─────────────────────────────
 async function processFile(filepath, filename) {
-  // 1. Read file
-  const wb = XLSX.readFile(filepath);
+  // 1. Read Excel
+  let wb;
+  try {
+    wb = XLSX.readFile(filepath);
+  } catch (e) {
+    throw new Error(`Not a valid Excel file: ${e.message}`);
+  }
 
-  // 2. Verify sheet
+  // 2. Verify sheet exists
   if (!wb.SheetNames.includes('sales_template')) {
-    throw new Error('גיליון sales_template לא נמצא');
+    throw new Error('Sheet "sales_template" not found');
   }
 
-  // 3. Duplicate check
-  const { data: existing } = await sb.from(TABLES.SYNC_LOG).select('id').ilike('filename', filename);
-  if (existing && existing.length > 0) {
-    log(`כפול — מדלג: ${filename}`);
-    moveToProcessed(filepath, filename);
-    return;
-  }
-
-  // 4. Parse rows (row 1 = headers, rows 2-3 = metadata, row 4+ = data)
+  // 3. Parse rows — first 2 rows are Hebrew headers + descriptions
   const ws = wb.Sheets['sales_template'];
   const allRows = XLSX.utils.sheet_to_json(ws, { defval: '', range: 0 });
-  const rows = allRows.slice(2).filter(r =>
-    String(r.barcode || '').trim() || String(r.order_number || '').trim()
-  );
+  const dataRows = allRows.slice(2).filter(r => String(r.barcode || '').trim());
 
-  if (!rows.length) {
-    throw new Error('הקובץ לא מכיל שורות נתונים');
+  if (!dataRows.length) {
+    throw new Error('No data rows found in file');
   }
 
-  // 5. Validate rows
-  const validRows = [];
-  const errorDetails = [];
-  for (let i = 0; i < rows.length; i++) {
-    const r = rows[i];
-    const rowNum = i + 4;
-    const errs = [];
+  // 4. Process each row
+  let successCount = 0;
+  let failedCount = 0;
+  const errors = [];
 
-    const barcode = String(r.barcode || '').trim();
-    if (!barcode) errs.push('ברקוד חסר');
+  for (let i = 0; i < dataRows.length; i++) {
+    const r = dataRows[i];
+    const rowNum = i + 4; // Excel row (1-indexed header + 2 meta rows + data)
 
-    const qty = parseInt(r.quantity);
-    if (isNaN(qty) || qty <= 0) errs.push('כמות לא תקינה');
-
-    let txDate = null;
-    const txDateRaw = r.transaction_date;
-    if (txDateRaw) {
-      if (typeof txDateRaw === 'number') {
-        const d = new Date((txDateRaw - 25569) * 86400000);
-        txDate = d.toISOString().split('T')[0];
-      } else {
-        const d = new Date(txDateRaw);
-        if (isNaN(d.getTime())) errs.push('תאריך לא תקין');
-        else txDate = d.toISOString().split('T')[0];
-      }
-    } else {
-      errs.push('תאריך לא תקין');
-    }
-
-    const orderNum = String(r.order_number || '').trim();
-    if (!orderNum) errs.push('מספר הזמנה חסר');
-
-    let actionType = String(r.action_type || 'sale').trim().toLowerCase();
-    if (actionType !== 'sale' && actionType !== 'return') actionType = 'sale';
-
-    let lensIncluded = false;
-    const lensRaw = String(r.lens_included || '').trim().toLowerCase();
-    if (lensRaw === 'yes' || lensRaw === 'true' || lensRaw === '1') lensIncluded = true;
-
-    if (errs.length) {
-      errorDetails.push({ rowNum, barcode, errors: errs });
-    } else {
-      validRows.push({
-        barcode, quantity: qty, action_type: actionType,
-        transaction_date: txDate, order_number: orderNum,
-        employee_id: String(r.employee_id || '').trim() || null,
-        sale_amount: parseFloat(r.sale_amount) || null,
-        discount: parseFloat(r.discount) || 0,
-        discount_1: parseFloat(r.discount_1) || 0,
-        discount_2: parseFloat(r.discount_2) || 0,
-        final_amount: parseFloat(r.final_amount) || null,
-        coupon_code: String(r.coupon_code || '').trim() || null,
-        campaign: String(r.campaign || '').trim() || null,
-        lens_included: lensIncluded,
-        lens_category: String(r.lens_category || '').trim() || null
-      });
-    }
-  }
-
-  // 6. Create sync_log entry
-  const { data: logRow, error: logErr } = await sb.from(TABLES.SYNC_LOG).insert({
-    filename,
-    source_ref: 'watcher',
-    status: 'partial',
-    rows_total: rows.length,
-    rows_success: 0,
-    rows_pending: 0,
-    rows_error: errorDetails.length
-  }).select('id').single();
-  if (logErr) throw logErr;
-  const syncLogId = logRow.id;
-
-  // 7. Process valid rows
-  let rowsSuccess = 0;
-  let rowsPending = 0;
-  let rowsError = errorDetails.length;
-
-  for (const row of validRows) {
     try {
-      const { data: invRows, error: invErr } = await sb.from(TABLES.INVENTORY)
+      // Validate required fields
+      const barcode = String(r.barcode || '').trim();
+      if (!barcode) { errors.push(`Row ${rowNum}: barcode missing`); failedCount++; continue; }
+
+      const quantity = parseInt(r.quantity);
+      if (isNaN(quantity) || quantity <= 0) { errors.push(`Row ${rowNum}: invalid quantity`); failedCount++; continue; }
+
+      const transactionDate = parseDateField(r.transaction_date);
+      if (!transactionDate) { errors.push(`Row ${rowNum}: transaction_date missing or invalid`); failedCount++; continue; }
+
+      let actionType = String(r.action_type || 'sale').trim().toLowerCase();
+      if (actionType !== 'sale' && actionType !== 'return') actionType = 'sale';
+
+      // 5. Query inventory by barcode
+      const { data: invRows, error: invErr } = await sb
+        .from('inventory')
         .select('id, quantity')
-        .eq('barcode', row.barcode)
+        .eq('barcode', barcode)
         .eq('is_deleted', false)
         .limit(1);
       if (invErr) throw invErr;
 
-      if (invRows && invRows.length > 0) {
-        // Barcode found — update inventory
-        const inv = invRows[0];
-        let newQty;
-        if (row.action_type === 'sale') {
-          newQty = Math.max(0, inv.quantity - row.quantity);
-        } else {
-          newQty = inv.quantity + row.quantity;
-        }
-
-        const { error: updErr } = await sb.from(TABLES.INVENTORY)
-          .update({ quantity: newQty })
-          .eq('id', inv.id);
-        if (updErr) throw updErr;
-
-        // Write audit log directly (no writeLog helper in Node)
-        const { error: logInsErr } = await sb.from(TABLES.INV_LOGS).insert({
-          action: row.action_type === 'sale' ? 'reduce_qty' : 'return_qty',
-          inventory_id: inv.id,
-          qty_before: inv.quantity,
-          qty_after: newQty,
-          reason: 'sale_from_access',
-          source_ref: 'watcher',
-          performed_by: 'watcher',
-          branch_id: '00',
-          // Access sale fields (011)
-          sale_amount:   row.sale_amount   ?? null,
-          discount:      row.discount      ?? null,
-          discount_1:    row.discount_1    ?? null,
-          discount_2:    row.discount_2    ?? null,
-          final_amount:  row.final_amount  ?? null,
-          coupon_code:   row.coupon_code   ?? null,
-          campaign:      row.campaign      ?? null,
-          employee_id:   row.employee_id   ?? null,
-          lens_included: row.lens_included ?? null,
-          lens_category: row.lens_category ?? null,
-          order_number:  row.order_number  ?? null,
-          sync_filename: filename
-        });
-        if (logInsErr) log(`Warning: audit log insert failed — ${logInsErr.message}`);
-
-        rowsSuccess++;
-      } else {
-        // Barcode not found — insert pending_sales
-        const { error: pendErr } = await sb.from(TABLES.PENDING).insert({
-          sync_log_id: syncLogId,
-          source_ref: 'watcher',
-          filename,
-          barcode_received: row.barcode,
-          quantity: row.quantity,
-          action_type: row.action_type,
-          transaction_date: row.transaction_date,
-          order_number: row.order_number,
-          employee_id: row.employee_id,
-          sale_amount: row.sale_amount,
-          discount: row.discount,
-          discount_1: row.discount_1,
-          discount_2: row.discount_2,
-          final_amount: row.final_amount,
-          coupon_code: row.coupon_code,
-          campaign: row.campaign,
-          lens_included: row.lens_included,
-          lens_category: row.lens_category,
-          reason: 'ברקוד לא נמצא במלאי',
-          status: 'pending'
-        });
-        if (pendErr) throw pendErr;
-        rowsPending++;
+      if (!invRows || invRows.length === 0) {
+        errors.push(`Row ${rowNum}: barcode ${barcode} not found in inventory`);
+        failedCount++;
+        continue;
       }
+
+      const inv = invRows[0];
+      const qtyBefore = inv.quantity;
+
+      // 6. Call RPC for atomic quantity update
+      if (actionType === 'sale') {
+        const { error: rpcErr } = await sb.rpc('decrement_inventory', { inv_id: inv.id, delta: quantity });
+        if (rpcErr) throw rpcErr;
+      } else {
+        const { error: rpcErr } = await sb.rpc('increment_inventory', { inv_id: inv.id, delta: quantity });
+        if (rpcErr) throw rpcErr;
+      }
+
+      const qtyAfter = actionType === 'sale'
+        ? Math.max(0, qtyBefore - quantity)
+        : qtyBefore + quantity;
+
+      // 7. Write to inventory_logs
+      const orderNumber  = String(r.order_number  || '').trim() || null;
+      const employeeId   = String(r.employee_id   || '').trim() || null;
+      const saleAmount   = parseFloat(r.sale_amount)   || null;
+      const finalAmount  = parseFloat(r.final_amount)  || null;
+      const discount     = parseFloat(r.discount)      || 0;
+      const discount1    = parseFloat(r.discount_1)    || 0;
+      const discount2    = parseFloat(r.discount_2)    || 0;
+      const couponCode   = String(r.coupon_code || '').trim() || null;
+      const campaign     = String(r.campaign    || '').trim() || null;
+      const lensRaw      = String(r.lens_included || '').trim().toLowerCase();
+      const lensIncluded = ['yes', 'true', '1'].includes(lensRaw);
+      const lensCategory = String(r.lens_category || '').trim() || null;
+
+      const { error: logErr } = await sb.from('inventory_logs').insert({
+        action:         'sale',
+        inventory_id:   inv.id,
+        qty_before:     qtyBefore,
+        qty_after:      qtyAfter,
+        reason:         'מכירה מ-InventorySync',
+        source_ref:     filename,
+        performed_by:   'watcher',
+        branch_id:      '00',
+        order_number:   orderNumber,
+        employee_id:    employeeId,
+        sale_amount:    saleAmount,
+        final_amount:   finalAmount,
+        discount:       discount,
+        discount_1:     discount1,
+        discount_2:     discount2,
+        coupon_code:    couponCode,
+        campaign:       campaign,
+        lens_included:  lensIncluded,
+        lens_category:  lensCategory,
+        sync_filename:  filename,
+      });
+      if (logErr) log(`  Warning: audit log insert failed row ${rowNum}: ${logErr.message}`);
+
+      successCount++;
     } catch (e) {
-      log(`  Row error (${row.barcode}): ${e.message}`);
-      rowsError++;
+      errors.push(`Row ${rowNum}: ${e.message}`);
+      failedCount++;
     }
   }
 
-  // 8. Update sync_log with final counts
-  const finalStatus = (rowsError === 0 && rowsPending === 0) ? 'success'
-    : (rowsSuccess === 0 && rowsPending === 0) ? 'error'
-    : 'partial';
-  await sb.from(TABLES.SYNC_LOG).update({
-    status: finalStatus,
-    rows_success: rowsSuccess,
-    rows_pending: rowsPending,
-    rows_error: rowsError,
-    processed_at: new Date().toISOString()
-  }).eq('id', syncLogId);
+  // 8. Write to sync_log table
+  const status = failedCount === 0 ? 'success' : successCount === 0 ? 'error' : 'partial';
+  await sb.from('sync_log').insert({
+    filename,
+    source_ref:    'watcher',
+    status,
+    rows_total:    dataRows.length,
+    rows_success:  successCount,
+    rows_pending:  0,
+    rows_error:    failedCount,
+    processed_at:  new Date().toISOString(),
+  }).then(({ error }) => { if (error) log(`  Warning: sync_log insert failed: ${error.message}`); });
 
-  // 9. Move to processed
-  moveToProcessed(filepath, filename);
+  // 9. Console summary
+  log(`${filename} | total: ${dataRows.length} | success: ${successCount} | failed: ${failedCount}`);
+  if (errors.length) errors.forEach(e => log(`  ${e}`));
 
-  // 10. Log result
-  log(`✅ ${filename}: ${rowsSuccess} success, ${rowsPending} pending, ${rowsError} errors`);
+  // 10. Move to processed
+  moveFile(filepath, CONFIG.processedDir, filename);
+  log(`Moved to processed: ${filename}`);
 }
 
-// ── D) processFileWithRetry ─────────────────────────────────
-async function processFileWithRetry(filepath, filename, attempt = 1) {
-  try {
-    await processFile(filepath, filename);
-  } catch (err) {
-    log(`Error processing ${filename}: ${err.message}`);
-    if (attempt < config.retryAttempts && isNetworkError(err)) {
-      log(`Retry ${attempt}/${config.retryAttempts} in ${config.retryDelaySeconds}s`);
-      await sleep(config.retryDelaySeconds * 1000);
-      return processFileWithRetry(filepath, filename, attempt + 1);
-    } else {
-      await moveToError(filepath, filename, err.message);
-    }
-  }
-}
-
-// ── C) handleNewFile ────────────────────────────────────────
+// ── Handle new file detection ───────────────────────────────
 async function handleNewFile(filepath) {
-  const ext = path.extname(filepath).toLowerCase();
-  if (ext !== '.xlsx' && ext !== '.xls') return;
+  if (path.extname(filepath).toLowerCase() !== '.xlsx') return;
 
   const filename = path.basename(filepath);
   if (processing.has(filename)) return;
   processing.add(filename);
 
-  log(`📄 New file detected: ${filename}`);
+  log(`New file detected: ${filename}`);
+
   try {
-    await processFileWithRetry(filepath, filename);
+    await processFile(filepath, filename);
+  } catch (err) {
+    log(`Error processing ${filename}: ${err.message}`);
+    try {
+      moveFile(filepath, CONFIG.failedDir, filename);
+      log(`Moved to failed: ${filename}`);
+    } catch (moveErr) {
+      log(`Could not move to failed: ${moveErr.message}`);
+    }
   } finally {
     processing.delete(filename);
   }
 }
 
-// ── I) Heartbeat ────────────────────────────────────────────
-async function sendHeartbeat() {
-  try {
-    await sb.from(TABLES.HEARTBEAT).update({
-      last_beat: new Date().toISOString(),
-      watcher_version: config.watcherVersion || '1.0.0',
-      host: os.hostname()
-    }).eq('id', 1);
-    log('💓 Heartbeat sent');
-  } catch (e) {
-    log(`Heartbeat error: ${e.message}`);
-  }
+// ── Startup ─────────────────────────────────────────────────
+if (!fs.existsSync(CONFIG.watchDir)) {
+  console.error(`Error: watch directory does not exist: ${CONFIG.watchDir}`);
+  process.exit(1);
 }
 
-// ── B) Start watcher ────────────────────────────────────────
-log(`Watcher started — watching: ${config.watchFolder}`);
+for (const dir of [CONFIG.processedDir, CONFIG.failedDir]) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
 
-watcher = chokidar.watch(config.watchFolder, {
+console.log(`InventorySync Watcher started. Watching: ${CONFIG.watchDir}`);
+
+// Process any existing files (arrived while watcher was offline)
+const existing = fs.readdirSync(CONFIG.watchDir).filter(f => f.toLowerCase().endsWith('.xlsx'));
+if (existing.length) {
+  log(`Found ${existing.length} existing file(s) — processing...`);
+  (async () => {
+    for (const f of existing) {
+      await handleNewFile(path.join(CONFIG.watchDir, f));
+    }
+    log('Existing files done. Watching for new files...');
+  })();
+}
+
+// Watch for new files (ignoreInitial=true since we handle existing above)
+const watcher = chokidar.watch(CONFIG.watchDir, {
   persistent: true,
-  ignoreInitial: false,
+  ignoreInitial: true,
   awaitWriteFinish: { stabilityThreshold: 2000, pollInterval: 500 },
-  ignored: /(^|[\/\\])\../
+  ignored: /(^|[\/\\])\../,
 }).on('add', filepath => handleNewFile(filepath));
 
-// Initial heartbeat + interval
-sendHeartbeat();
-const heartbeatMs = (config.heartbeatIntervalMinutes || 5) * 60 * 1000;
-const heartbeatTimer = setInterval(sendHeartbeat, heartbeatMs);
-
-// ── J) Graceful shutdown ────────────────────────────────────
+// Graceful shutdown
 function shutdown() {
-  log('Watcher shutting down...');
-  clearInterval(heartbeatTimer);
-  if (watcher) watcher.close();
+  log('Shutting down...');
+  watcher.close();
   process.exit(0);
 }
 process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+process.on('SIGINT',  shutdown);

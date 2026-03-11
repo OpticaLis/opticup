@@ -1,42 +1,76 @@
-# OpticUp Sync Watcher — הוראות התקנה
+# OpticUp Scripts
 
-## דרישות מקדימות
-- Node.js 18+ מותקן
-- הרצה כ-Administrator
+## InventorySync Watcher
 
-## הגדרה ראשונית
-1. פתח את `scripts/config.json`
-2. עדכן `watchFolder` לנתיב התיקייה המקומית של Dropbox
-3. החלף `REPLACE_WITH_SERVICE_ROLE_KEY` במפתח ה-Service Role מ:
-   Supabase Dashboard → Project Settings → API → service_role key
+Node.js script that watches a Dropbox folder for Excel sales files from Access and automatically processes them into Supabase (updates inventory quantities + writes audit logs).
 
-## התקנה כ-Windows Service
-```
+### Setup
+
+```bash
 cd scripts
 npm install
-npm run install-service
-```
-השירות יופעל אוטומטית עם Windows ויאתחל לאחר כשלים.
-
-## הסרה
-```
-npm run uninstall-service
 ```
 
-## הרצה ידנית (ללא service)
-```
-npm start
+### Run
+
+```bash
+node sync-watcher.js
 ```
 
-## מבנה תיקיות
+### Watch folder
+
 ```
-Dropbox/OpticTop/Inventory/Frames/
-  sales/       ← Access מניח כאן קבצים
-  processed/   ← קבצים שעובדו בהצלחה
-  error/       ← קבצים שנכשלו + קובץ שגיאה
+C:\Users\User\Dropbox\InventorySync\sales\
 ```
 
-## ניטור
-- סטטוס Watcher גלוי בטאב "סנכרון Access" באפליקציה
-- ירוק = פעיל (heartbeat < 10 דקות)
-- אדום = לא מגיב
+### File format
+
+- Filename: `opticup_sales_YYYYMMDD_HHMMSS.xlsx`
+- Sheet name: `sales_template`
+- Row 1: English column headers
+- Row 2: Hebrew descriptions
+- Row 3+: Data rows
+
+### Required columns
+
+| Column | Description |
+|--------|-------------|
+| barcode | Inventory barcode (BBDDDDD) |
+| quantity | Positive integer |
+| transaction_date | YYYY-MM-DD |
+
+### Optional columns
+
+| Column | Description |
+|--------|-------------|
+| action_type | `sale` (default) or `return` |
+| order_number | POS order number |
+| employee_id | Employee ID from POS |
+| sale_amount | Full price before discounts |
+| discount | Fixed discount amount |
+| discount_1 | Additional discount 1 |
+| discount_2 | Additional discount 2 |
+| final_amount | Final price paid |
+| coupon_code | Coupon code used |
+| campaign | Campaign name |
+| lens_included | `yes` / `no` |
+| lens_category | Lens category |
+
+### Folder structure
+
+```
+Dropbox/InventorySync/
+  sales/       <- Access drops Excel files here
+  processed/   <- Successfully processed files (timestamped)
+  failed/      <- Files that failed processing
+```
+
+### Behavior
+
+- On startup: processes any existing files in `sales/`
+- Then watches for new `.xlsx` files
+- Waits 2 seconds for file copy to finish before processing
+- Uses Supabase RPC for atomic quantity updates
+- Writes audit logs to `inventory_logs` table
+- Writes sync summary to `sync_log` table
+- Never crashes — all errors are caught per file
