@@ -157,7 +157,6 @@ function confirmDialog(title, text) {
 // NAVIGATION
 // =========================================================
 function showTab(name) {
-  if (typeof stopHeartbeatRefresh === 'function') stopHeartbeatRefresh();
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('nav button[data-tab]').forEach(b => b.classList.remove('active'));
   $('tab-'+name).classList.add('active');
@@ -171,7 +170,7 @@ function showTab(name) {
   if (name === 'systemlog') loadSystemLog();
   if (name === 'receipt') loadReceiptTab();
   if (name === 'purchase-orders') loadPurchaseOrdersTab();
-  if (name === 'access-sync') { renderAccessSyncTab(); loadHeartbeat(); loadSyncLog(); loadSyncSummary(); loadLastActivity(); loadPendingBadge(); }
+  if (name === 'access-sync') { renderAccessSyncTab(); loadSyncLog(); loadSyncSummary(); loadLastActivity(); loadPendingBadge(); }
   if (name === 'stock-count') loadStockCountTab();
 }
 

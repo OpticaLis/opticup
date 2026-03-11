@@ -10,12 +10,34 @@ async function openSyncDetails(logId) {
     const { data: log, error } = await sb.from(T.SYNC_LOG).select('*').eq('id', logId).maybeSingle();
     if (error || !log) { toast('לא נמצא רשומת סנכרון', 'e'); return; }
 
-    // 2. Fetch inventory_logs for this file (table has barcode/brand/model directly)
+    // 2. Fetch inventory_logs for this file
     const { data: items } = await sb.from('inventory_logs')
-      .select('barcode, brand, model, action, qty_before, qty_after, created_at')
+      .select('inventory_id, action, qty_before, qty_after, created_at')
       .or(`source_ref.eq.${log.filename},sync_filename.eq.${log.filename}`)
       .order('created_at', { ascending: true })
       .limit(200);
+
+    // 3. Fetch inventory details for all referenced items
+    const invMap = {};
+    if (items && items.length) {
+      const ids = [...new Set(items.map(i => i.inventory_id).filter(Boolean))];
+      if (ids.length) {
+        const { data: invRows } = await sb.from(T.INV)
+          .select('id, barcode, brand_id, model, color, size')
+          .in('id', ids);
+        if (invRows) {
+          for (const r of invRows) {
+            invMap[r.id] = {
+              barcode: r.barcode || '',
+              brand: (brandCacheRev && brandCacheRev[r.brand_id]) || '',
+              model: r.model || '',
+              color: r.color || '',
+              size: r.size || '',
+            };
+          }
+        }
+      }
+    }
 
     // 4. Build modal HTML
     const badge = STATUS_BADGES[log.status] || STATUS_BADGES.error;
@@ -44,15 +66,18 @@ async function openSyncDetails(logId) {
       html += `<h4 style="margin:0 0 8px 0">\u2705 פריטים שעובדו (${items.length})</h4>
       <div style="max-height:300px;overflow-y:auto;margin-bottom:16px">
         <table><thead><tr>
-          <th>ברקוד</th><th>מותג</th><th>דגם</th><th>פעולה</th><th>לפני</th><th>אחרי</th><th>תאריך</th>
+          <th>ברקוד</th><th>מותג</th><th>דגם</th><th>צבע</th><th>גודל</th><th>פעולה</th><th>לפני</th><th>אחרי</th><th>תאריך</th>
         </tr></thead><tbody>`;
       for (const item of items) {
+        const inv = invMap[item.inventory_id] || {};
         const action = item.action === 'sale' ? 'מכירה' : item.action === 'return' ? 'החזרה' : (item.action || '');
         const itemDate = new Date(item.created_at).toLocaleString('he-IL');
         html += `<tr>
-          <td style="direction:ltr;text-align:right">${escapeHtml(item.barcode || '')}</td>
-          <td>${escapeHtml(item.brand || '')}</td>
-          <td>${escapeHtml(item.model || '')}</td>
+          <td style="direction:ltr;text-align:right">${escapeHtml(inv.barcode || '')}</td>
+          <td>${escapeHtml(inv.brand || '')}</td>
+          <td>${escapeHtml(inv.model || '')}</td>
+          <td>${escapeHtml(inv.color || '')}</td>
+          <td>${escapeHtml(inv.size || '')}</td>
           <td>${escapeHtml(action)}</td>
           <td>${item.qty_before ?? ''}</td>
           <td>${item.qty_after ?? ''}</td>

@@ -37,12 +37,7 @@ function renderAccessSyncTab() {
       <!-- Header -->
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
         <h3 style="margin:0">\uD83D\uDD04 סנכרון Access</h3>
-        <div style="display:flex;align-items:center;gap:12px">
-          <span id="as-last-activity" style="font-size:13px;color:#64748b"></span>
-          <div id="as-heartbeat" style="padding:6px 12px;border-radius:8px;background:#f1f5f9;font-size:13px;display:inline-block">
-            \u26AA סטטוס Watcher לא ידוע
-          </div>
-        </div>
+        <span id="as-last-activity" style="font-size:13px;color:#64748b"></span>
       </div>
 
       <!-- Summary cards -->
@@ -80,7 +75,6 @@ function renderAccessSyncTab() {
       <div id="as-log-pagination" style="display:none;margin-top:10px;text-align:center;font-size:.9rem"></div>
     </div>
   `;
-  startHeartbeatRefresh();
 }
 
 function summaryCard(id, icon, label, value, color) {
@@ -88,46 +82,6 @@ function summaryCard(id, icon, label, value, color) {
     <div style="font-size:13px;color:#64748b;margin-bottom:4px">${icon} ${label}</div>
     <div style="font-size:24px;font-weight:700;color:${color}" data-val>${value}</div>
   </div>`;
-}
-
-// ── Heartbeat auto-refresh ──────────────────────────────────
-let heartbeatInterval = null;
-
-function startHeartbeatRefresh() {
-  stopHeartbeatRefresh();
-  loadHeartbeat();
-  heartbeatInterval = setInterval(loadHeartbeat, 60000);
-}
-
-function stopHeartbeatRefresh() {
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval);
-    heartbeatInterval = null;
-  }
-}
-
-async function loadHeartbeat() {
-  const el = $('as-heartbeat');
-  if (!el) return;
-  try {
-    const { data, error } = await sb.from(T.HEARTBEAT).select('last_beat, watcher_version, host').eq('id', 1).maybeSingle();
-    if (error || !data || !data.last_beat) {
-      el.style.background = '#f1f5f9';
-      el.textContent = '\u26AA סטטוס Watcher לא ידוע';
-      return;
-    }
-    const mins = Math.floor((Date.now() - new Date(data.last_beat).getTime()) / 60000);
-    if (mins < 10) {
-      el.style.background = '#dcfce7';
-      el.textContent = `\uD83D\uDFE2 Watcher פעיל — לפני ${mins} דקות`;
-    } else {
-      el.style.background = '#fee2e2';
-      el.textContent = `\uD83D\uDD34 Watcher לא מגיב — לפני ${mins} דקות`;
-    }
-  } catch (e) {
-    el.style.background = '#f1f5f9';
-    el.textContent = '\u26AA סטטוס Watcher לא ידוע';
-  }
 }
 
 // ── loadSyncSummary ─────────────────────────────────────────
