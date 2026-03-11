@@ -25,8 +25,9 @@ function showUserButton() {
   const emp = getCurrentEmployee();
   const btn = $('adminBtn');
   if (emp && btn) {
-    btn.textContent = emp.name + ' \u{1F464}';
     btn.style.display = '';
+    const nameEl = document.getElementById('adminBtnName');
+    if (nameEl) nameEl.textContent = emp.name;
     document.getElementById('homeBtn').style.display = '';
   }
 }
