@@ -49,6 +49,7 @@
 | 1.5 | ✅ | שיפורים | Cascading dropdowns, two-step wizard, PDF, באגים |
 | 2 | ✅ | ספירת מלאי + גשר Access | מסך ספירה עם סורק, Folder Watcher, סנכרון Dropbox |
 | 3 | ✅ | הרשאות ואימות | PIN login, תפקידים (5 רמות), הרשאות לפי מודול, ניהול עובדים |
+| 3.5 | ⬜ | מסך בית + שינוי שם ריפו | index.html → מסך בית, inventory.html, ריפו opticup, session בין דפים |
 | 4 | ⬜ | מעקב חובות ספקים | חשבוניות, תשלומים, דשבורד חובות, מט"ח |
 | 5 | ⬜ | סוכן AI לניהול ספקים | OCR חשבוניות (Claude Vision), התראות, דוחות אוטומטיים |
 | 6 | ⬜ | פורטל ספקים | גישת ספק חיצונית, view-only מלאי לפי ספק |
@@ -106,6 +107,13 @@
 - מסך ניהול עובדים: הוספה, עריכה, שיוך תפקיד
 - מטריצת הרשאות ניתנת לעריכה (CEO/מנהל)
 - פירוט מלא: `docs/PHASE_3_SPEC.md`
+
+### פאזה 3.5 ⬜ — מסך בית + שינוי שם ריפו
+- index.html הופך למסך בית: PIN login + כרטיסי מודולים
+- האפליקציה הנוכחית עוברת ל-inventory.html
+- ריפו משנה שם: prizma-inventory → opticup
+- URL חדש: opticalis.github.io/opticup
+- Session עובר בין דפים דרך sessionStorage
 
 ### פאזה 4 ⬜ — מעקב חובות ספקים
 - טבלאות DB: supplier_invoices, supplier_payments
