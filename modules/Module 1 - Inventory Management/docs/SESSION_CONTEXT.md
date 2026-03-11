@@ -2,42 +2,56 @@
 
 ## Current Status
 
-Phase 2 ✅ complete. Phase 3 (Auth & Permissions) ready to start.
+Phase 3 ✅ complete. Next: home screen architecture + rename repo to opticup.
 
-## Last Completed: Phase 2 — Stock Count + Access Bridge
+## Last Completed: Phase 3 — Auth & Permissions
 
-**Commits:** 9d889a9 (docs), and prior Phase 2 commits
+**Commits:** e0d7a28, 31b2bac, 450d5b5, 0c34bd5, 6b74bc4, b21067c, 2706d4d, c850392, cd8dd04, 908111a, 98ff6c7, 8c4d4d7, 3b167ee, 253f0f2
 
 **What was built:**
-- Tables: stock_counts, stock_count_items, sync_log, pending_sales, watcher_heartbeat
-- Stock count screen: barcode scan → quantity entry → gap report → PIN approval → Excel export
-- Access bridge: Node.js folder watcher (sync-watcher.js) running as Windows Service
-- Dropbox sync path: Dropbox/OpticTop/Inventory/Frames/
-- Pending items panel ("ממתינים לטיפול") with PIN-verified resolve flow
-- Manual Excel import integrated into "הורדת מלאי" screen
-- Export button on confirmed goods receipts
-- Sync tab with heartbeat monitoring and fallback manual import
-- Excel template v3 (opticup_sales_template_v3.xlsx) delivered to Access developer
-- Full QA cycle completed (HIGH/MEDIUM/LOW issues resolved)
+- Migration 016: tables roles (5 system roles), permissions (34+1 permissions), role_permissions (94 default mappings), employee_roles, auth_sessions
+- ALTER employees: email, phone, branch_id, created_by, last_login, failed_attempts, locked_until
+- js/auth-service.js (287 lines, 14 functions): verifyEmployeePIN, initSecureSession, loadSession, clearSession, hasPermission, requirePermission, applyUIPermissions, assignRoleToEmployee, forceLogout, getCurrentEmployee, and helpers
+- Login screen: 5-box PIN modal, fullscreen overlay, session restore on reload, auto-logout after 8h
+- PIN lockout: 5 failed attempts → sessionStorage lock + server-side locked_until (15min)
+- 8 legacy PIN call sites replaced with verifyEmployeePIN()
+- UI guards: 10 data-tab-permission + 21 data-permission attributes on all sensitive elements
+- modules/employees/employee-list.js (283 lines, 8 functions): employee CRUD, role assignment, permission matrix
+- Admin button replaced with user display (name + logout)
+- isAdmin/toggleAdmin/checkAdmin removed — replaced with hasPermission('settings.edit')
+- writeLog() updated: auto-populates employee_id from getCurrentEmployee()
+- loadData() session guard added
+- stock-count-session.js: skips PIN modal if active session exists
+- E2E testing: 32 tests, 29 pass initially, 3 bugs found and fixed
+- RLS policies added for employees INSERT/UPDATE/DELETE
 
-## Next Phase: Phase 3 — Auth & Permissions
+## Next: Home Screen Architecture
 
-**Spec file:** modules/Module 1 - Inventory Management/docs/PHASE_3_SPEC.md
-
-**What to build:**
-- DB: roles, permissions, role_permissions, employee_roles, auth_sessions tables
-- js/auth-service.js — core engine (verifyEmployeePIN, initSecureSession, hasPermission, applyUIPermissions)
-- Login screen — 5-box PIN modal, session restore, auto-logout after 8h
-- Update 6 existing PIN call sites to use verifyEmployeePIN()
-- UI guards — data-permission attributes on all sensitive buttons/tabs
-- modules/employees/employee-list.js — add/edit/deactivate employees, assign roles
-- Admin functions — updateRolePermission, renderPermissionMatrix
-
-**Execution order:** DB migration → auth-service.js → login screen → PIN call sites → UI guards → employee screen → admin functions → E2E tests
+**Strategic decisions made:**
+- index.html → becomes home screen (PIN login + module cards)
+- inventory.html → current index.html (full app) renamed
+- Repo renamed: prizma-inventory → opticup
+- New URL: opticalis.github.io/opticup
+- Session passes between pages via sessionStorage (same domain)
+- Future: session timeout configurable by manager/CEO (e.g. 60 min) — deferred
 
 ## Open Items / Warnings
 
-- ⚠️ ?dev_bypass=opticup2024 must be added during Phase 3 development, then REMOVED before production
-- ⚠️ All existing PINs are 4 digits — will be reset to 5 digits before go-live. CHECK (LENGTH(pin) = 5) constraint goes in with the migration.
-- ⚠️ Default admin PIN (1234) must be changed before production
+- ⚠️ ?dev_bypass=opticup2024 MUST be removed before production (auth-service.js line 143)
+- ⚠️ pin_length CHECK constraint commented out in migration 016 — uncomment before production
+- ⚠️ All existing PINs are 4 digits — reset to 5 digits before go-live
+- ⚠️ RLS policies are wide open (USING true) — needs hardening before production
 - ⚠️ Internet exposure of app — status not yet confirmed
+
+## Future Features (deferred from Phase 3)
+
+- impersonateUser()
+- previewUIAsRole()
+- generatePermissionSnapshot()
+- writePermissionLog()
+- validateActionIntegrity()
+- Rate limiting beyond 5-attempt lockout
+- Multi-branch roles
+- Custom permission groups
+- Supabase Auth (email/phone login)
+- Session timeout configurable by manager/CEO
