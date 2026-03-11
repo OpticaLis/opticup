@@ -6,19 +6,6 @@
 
 ---
 
-## חזון — SaaS לרשתות אופטיקה
-
-Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיקה. כל חנות שמצטרפת מקבלת:
-
-1. **ERP** — מערכת ניהול פנימית (מלאי, הזמנות, ספקים, עובדים)
-2. **Storefront** — אתר חנות ממותג ללקוח הקצה (עתידי)
-
-שני המוצרים חולקים **Supabase אחד** עם בידוד מלא באמצעות `tenant_id` על כל טבלה. Storefront קורא רק מ-Views ו-RPC — לעולם לא נוגע בטבלאות ישירות.
-
-**הלקוח הראשון:** אופטיקה פריזמה. אבל כל פאזה נבנית כאילו מחר מצטרפת חנות שנייה.
-
----
-
 ## מה המודול הזה עושה
 
 דמיין חנות אופטיקה עם קיר מלא משקפיים. יש מאות מסגרות — כל אחת שונה: מותג אחר, צבע אחר, גודל אחר. מישהו צריך לדעת בכל רגע: מה יש בקיר, מה נמכר, מה צריך להזמין, וכמה חייבים לספק.
@@ -62,8 +49,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 1.5 | ✅ | שיפורים | Cascading dropdowns, two-step wizard, PDF, באגים |
 | 2 | ✅ | ספירת מלאי + גשר Access | מסך ספירה עם סורק, Folder Watcher, סנכרון Dropbox |
 | 3 | ✅ | הרשאות ואימות | PIN login, תפקידים (5 רמות), הרשאות לפי מודול, ניהול עובדים |
-| 3.5 | ⬜ | מסך בית + שינוי שם ריפו | index.html → מסך בית, inventory.html, ריפו opticup, session בין דפים |
-| 3.75 | ⬜ | Multi-Tenancy Foundation | tenant_id על כל הטבלאות, RLS, contracts, תשתית SaaS |
+| 3.5 | ✅ | מסך בית + שינוי שם ריפו | index.html → מסך בית, inventory.html, ריפו opticup, session בין דפים |
 | 4 | ⬜ | מעקב חובות ספקים | חשבוניות, תשלומים, דשבורד חובות, מט"ח |
 | 5 | ⬜ | סוכן AI לניהול ספקים | OCR חשבוניות (Claude Vision), התראות, דוחות אוטומטיים |
 | 6 | ⬜ | פורטל ספקים | גישת ספק חיצונית, view-only מלאי לפי ספק |
@@ -122,69 +108,34 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - מטריצת הרשאות ניתנת לעריכה (CEO/מנהל)
 - פירוט מלא: `docs/PHASE_3_SPEC.md`
 
-### פאזה 3.5 ⬜ — מסך בית + שינוי שם ריפו
+### פאזה 3.5 ✅ — מסך בית + שינוי שם ריפו
 - index.html הופך למסך בית: PIN login + כרטיסי מודולים
 - האפליקציה הנוכחית עוברת ל-inventory.html
 - ריפו משנה שם: prizma-inventory → opticup
 - URL חדש: opticalis.github.io/opticup
 - Session עובר בין דפים דרך sessionStorage
-- פירוט מלא: `docs/PHASE_3.5_SPEC.md`
-
-### פאזה 3.75 ⬜ — Multi-Tenancy Foundation
-- טבלת tenants + seed של אופטיקה פריזמה כ-tenant ראשון
-- הוספת tenant_id UUID NOT NULL לכל הטבלאות הקיימות (~22 טבלאות)
-- Backfill כל השורות הקיימות עם tenant_id של פריזמה
-- RLS tenant isolation policy על כל הטבלאות
-- עדכון כל ה-JS: tenant_id בכל insert/select
-- יצירת RPC functions כחוזים בין מודולים
-- אינדקסים: tenant_id + composite indexes על שדות שכיחים
-- פאזת אפס-פיצ'רים: אין UI חדש, רק תשתית
-- פירוט מלא: `docs/PHASE_3.75_SPEC.md`
 
 ### פאזה 4 ⬜ — מעקב חובות ספקים
-- טבלאות DB: supplier_invoices, supplier_payments, currencies (כולן עם tenant_id)
+- טבלאות DB: supplier_invoices, supplier_payments
 - רישום חשבוניות ספקים (מספר, סכום, תאריך תשלום, מט"ח)
 - רישום תשלומים (סכום, אמצעי, קישור לחשבונית)
 - דשבורד: חוב כולל, מגיע השבוע, באיחור
 - היסטוריית ספק מלאה
-- currency + exchange_rate לספקי חו"ל — configurable, לא hardcoded
-- Contracts: getSupplierDebt(), getDebtDashboard(), וכו'
-- Views מוכנים לפורטל ספקים (פאזה 6)
+- currency + exchange_rate לספקי חו"ל
 
 ### פאזה 5 ⬜ — סוכן AI לניהול ספקים
 - OCR חשבוניות: העלאת PDF/תמונה → Claude Vision API → JSON
 - מילוי אוטומטי של supplier_invoices
-- מנגנון למידה מתיקוני משתמש (per tenant)
+- מנגנון למידה מתיקוני משתמש
 - התראות תשלום אוטומטיות
 - זיהוי אי-התאמות (חשבונית ≠ PO ≠ קבלה)
 - דוח שבועי אוטומטי
-- ai_agent_config per tenant
 
 ### פאזה 6 ⬜ — פורטל ספקים
-- קישור ייחודי לכל ספק (token-based auth, לא PIN)
+- קישור ייחודי לכל ספק
 - צפייה read-only: רק הפריטים של הספק הספציפי
 - בלי מחירים (רק מה קיים + כמויות)
-- קורא מ-Views בלבד — לא מטבלאות ישירות
-- הרשאות per-tenant per-supplier (JSONB permissions)
 - בעתיד: ספק יכול להציע מלאי / לאשר הזמנות
-
----
-
-## כללי ברזל
-
-### קיימים (מאז תמיד):
-- ⛔ כמות מלאי = רק Add/Remove עם PIN
-- ⛔ כל שינוי = writeLog() חובה
-- ⛔ מחיקה = soft delete בלבד
-- ⛔ ברקודים = BBDDDDD, immutable
-- ⛔ קבצים = מתחת ל-350 שורות
-
-### חדשים (מפאזה 3.75 ואילך):
-- ⛔ כל טבלה חדשה = tenant_id UUID NOT NULL
-- ⛔ כל טבלה חדשה = RLS tenant isolation policy
-- ⛔ כל פאזה = מגדירה Contracts (RPC functions) ב-MODULE_SPEC
-- ⛔ כל פאזה = שוקלת Views לגורמים חיצוניים
-- ⛔ לא לקשיח ערכים = מטבעות, שפות, סוגי תשלום → טבלאות configurable
 
 ---
 
@@ -194,6 +145,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 |-------|----------|-------------|
 | **ROADMAP.md** (זה) | מפת פאזות + תיאור המודול | בסוף כל פאזה — עדכון ✅/⬜ |
 | **CHANGELOG.md** | מה קרה — כל commit, כל שינוי | בסוף כל פאזה |
-| **MODULE_SPEC.md** | מה קיים עכשיו — טבלאות, פונקציות, לוגיקות, contracts | בסוף כל פאזה |
-| **db-schema.sql** | סכמת DB מלאה + RLS policies | בכל שינוי DB |
+| **MODULE_SPEC.md** | מה קיים עכשיו — טבלאות, פונקציות, לוגיקות | בסוף כל פאזה |
+| **db-schema.sql** | סכמת DB מלאה | בכל שינוי DB |
 | **PHASE_X_SPEC.md** | מה לבנות בפאזה X | נכתב ע"י הצ'אט האסטרטגי לפני כל פאזה |

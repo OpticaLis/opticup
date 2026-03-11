@@ -2,13 +2,13 @@
 
 ## Current Status
 
-Phase 3.5 🔄 in progress. Next task: build employees.html (standalone employee management page).
+Phase 3.5 🔄 in progress. employees.html done. Next: remove employees tab from inventory.html.
 
 ## Phase 3.5 — מסך בית + דפים עצמאיים
 
 ### Last work done in Phase 3.5
 
-**Commits:** e9a1d57, 8ec3c4b, 2933bb5, 5eabe0a, d796b93, 188681d, df3b568
+**Commits:** e9a1d57, 8ec3c4b, 2933bb5, 5eabe0a, d796b93, 188681d, df3b568, 588a7cf, 378d231, 8bf3707
 
 **What was built:**
 - index.html renamed to inventory.html (main app)
@@ -18,11 +18,15 @@ Phase 3.5 🔄 in progress. Next task: build employees.html (standalone employee
 - inventory.html nav: added homeBtn shown after login
 - modules/admin/admin.js: showUserButton() reveals homeBtn after login
 - Fixes: homeBtn flex width (24px→64px), homeBtn text color (white→var(--primary))
+- employees.html standalone page built
+- employees card in index.html links to employees.html
+- employees.html uses correct element IDs for loading, toast, and confirm dialog
 
 ### Remaining in Phase 3.5
 
-- Build employees.html — standalone page for employee management
-- Update index.html MODULES: employees card URL → employees.html
+- Remove employees tab from inventory.html (nav button + section + any JS references)
+- Fix logout button in all pages: label "יציאה", employee name shown below in small text
+- Add permission-based lock on module cards in index.html: after login, cards the user has no permission to access show a 🔒 overlay and are not clickable
 - End-of-phase documentation update
 
 ## Previous: Phase 3 — Auth & Permissions

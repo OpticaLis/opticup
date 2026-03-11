@@ -14,22 +14,49 @@ After reading SESSION_CONTEXT.md, confirm:
 ---
 
 ## Project
-- **Name:** Optic Up — optical store management for Israeli optician chain
-- **Repo:** opticalis/prizma-inventory
+
+- **Name:** Optic Up — optical store management SaaS for optician chains
+- **Direction:** Multi-tenant SaaS — each store gets its own isolated environment (ERP + Storefront)
+- **Current tenant:** אופטיקה פריזמה (Prizma Optics) — first and only tenant
+- **Repo:** opticalis/opticup
 - **Supabase:** https://tsxrrxzmdxaenlvocyit.supabase.co
-- **Deploy:** GitHub Pages → https://opticalis.github.io/prizma-inventory/ (index.html = home screen, inventory.html = main app)
+- **Deploy:** GitHub Pages → https://opticalis.github.io/opticup/ (index.html = home screen, inventory.html = inventory module)
+
+## Architecture — SaaS Multi-Tenant
+
+```
+┌──────────────────────┐         ┌──────────────────────┐
+│   Optic Up ERP       │         │  Optic Up Storefront  │
+│   (internal mgmt)    │         │  (public-facing site)  │
+│   employees only     │         │  open to public        │
+└──────────┬───────────┘         └──────────┬───────────┘
+           │                                │
+           └────────► Supabase ◄────────────┘
+                    (tenant_id isolates everything)
+```
+
+- **ERP** = what we're building now (inventory, debt tracking, etc.)
+- **Storefront** = future public-facing site — reads ONLY from Views and RPC functions, never touches tables directly
+- **Supplier Portal** = same principle as Storefront — Views only
+- **Every table has `tenant_id UUID NOT NULL`** — no exceptions
 
 ## Stack
+
 - Vanilla JS (no framework), Supabase JS v2, SheetJS (xlsx)
-- index.html must stay in repo root (GitHub Pages requirement)
-- JS files in /js/, CSS in /css/
+- index.html = home screen (login + module cards)
+- inventory.html = inventory management module
+- JS files in /js/, CSS in /css/, modules in /modules/
 
 ## UI
+
 - Hebrew RTL interface
 - Dark blue + white + gray theme
 - Mobile responsive
 
 ## Critical Rules
+
+### Iron Rules — Never Break
+
 1. **Quantity changes** — ONLY through ➕➖ buttons with PIN verification. Never direct edit. Quantity updates should prefer atomic increments via Supabase RPC (`quantity = quantity + x`) over calculated values to prevent race conditions. New quantity-changing features must use this pattern.
 2. **writeLog()** — must be called for every quantity/price change. It is async and non-blocking.
 3. **Deletion** — always soft delete (is_deleted flag). Permanent delete requires double PIN.
@@ -41,72 +68,80 @@ After reading SESSION_CONTEXT.md, confirm:
 9. **API Abstraction** — All database interactions must pass through `shared.js` helper functions (`fetchAll`, `batchCreate`, `batchUpdate`, etc.). Modules should never call `sb.from()` directly unless for specialized joins that cannot be expressed through the helpers.
 10. **Security & Sanitization** — Never use `innerHTML` with user-controlled input. Always use `escapeHtml()` or `textContent`. Note: PIN is currently verified client-side against the `employees` table — server-side RPC migration is planned. Do not attempt to refactor PIN verification unless explicitly instructed.
 
+### SaaS Rules — Mandatory from Phase 3.75 Onward
+
+11. **tenant_id on every table** — every new table MUST have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. No exceptions, ever.
+12. **RLS on every table** — every new table MUST have Row Level Security enabled with a tenant isolation policy.
+13. **Contracts** — every phase must define RPC functions (contracts) that other modules call. No direct table access between modules.
+14. **Views for external access** — every phase must consider: "What does a supplier/customer/storefront need to see?" and plan Views accordingly.
+15. **No hardcoded values** — currencies, languages, payment types = configurable tables, not hardcoded enums. Build as if a second store joins tomorrow in a different country.
+
 ---
 
 ## File Structure
 
-**Current structure (transitional — being migrated to module folders):**
 ```
-prizma/
-├── index.html                  — shell: HTML structure + nav + modals + script tags
+opticup/
+├── index.html                  — home screen: PIN login + module cards
+├── inventory.html              — inventory management module (full app)
 ├── css/
 │   └── styles.css              — all styles
 ├── js/
-│   ├── shared.js               — Supabase init, constants, caches, utility functions (load FIRST)
-│   ├── inventory-*.js          — inventory module files
-│   ├── goods-receipt.js        — goods receipt module
-│   ├── audit-log.js / item-history.js / qty-modal.js
-│   ├── brands.js / suppliers.js
-│   ├── purchase-orders.js / po-*.js
-│   ├── access-sync.js / pending-*.js
-│   └── admin.js / system-log.js
-├── migrations/
-│   └── 009_brands_active.sql
-└── serve.js                    — local dev server (Node.js, port 8080)
-```
-
-**Target structure (after folder reorganization — planned after all splits complete):**
-```
-prizma/
-├── index.html
-├── css/
-│   └── styles.css
-├── js/
-│   └── shared.js               — global only: Supabase client, caches, utils (load FIRST)
+│   ├── shared.js               — Supabase init, constants, caches, utilities (load FIRST)
+│   ├── supabase-ops.js         — DB operations: writeLog, fetchAll, batch ops
+│   ├── data-loading.js         — data loading + enrichment
+│   ├── search-select.js        — searchable dropdown component
+│   └── auth-service.js         — PIN login, session management, permissions
 ├── modules/
-│   ├── inventory/              — inventory-table, inventory-edit, inventory-reduction,
-│   │                             inventory-entry, inventory-export, excel-import, access-sales
-│   ├── purchasing/             — purchase-orders, po-form, po-items, po-actions, po-view-import
-│   ├── receipts/               — goods-receipt, receipt-form, receipt-actions, receipt-excel
-│   ├── audit/                  — audit-log, item-history, qty-modal
-│   ├── brands/                 — brands, suppliers
-│   ├── access-sync/            — access-sync, pending-panel, pending-resolve
-│   └── admin/                  — admin, system-log
+│   ├── inventory/              — 7 files (table, entry, edit, export, reduction, excel-import, access-sales)
+│   ├── purchasing/             — 5 files (purchase-orders, po-form, po-items, po-actions, po-view-import)
+│   ├── goods-receipts/         — 4 files (goods-receipt, receipt-form, receipt-actions, receipt-excel)
+│   ├── audit/                  — 3 files (audit-log, item-history, qty-modal)
+│   ├── brands/                 — 2 files (brands, suppliers)
+│   ├── access-sync/            — 3 files (access-sync, pending-panel, pending-resolve)
+│   └── admin/                  — 2 files (admin, system-log)
+├── scripts/
+│   ├── sync-watcher.js         — Node.js folder watcher (Windows Service)
+│   ├── install-service.js
+│   └── uninstall-service.js
 ├── migrations/
-└── serve.js
+│   └── *.sql
+├── modules/Module 1 - Inventory Management/
+│   ├── ROADMAP.md
+│   ├── SECONDARY_CHAT_TEMPLATE_FINAL.md
+│   ├── MY_CHEATSHEET.md
+│   └── docs/
+│       ├── SESSION_CONTEXT.md
+│       ├── MODULE_MAP.md
+│       ├── MODULE_SPEC.md
+│       ├── CHANGELOG.md
+│       ├── db-schema.sql
+│       └── PHASE_X_SPEC.md
+└── CLAUDE.md                   — this file
 ```
-
-**Important:** When the folder reorganization is executed, all `<script src="...">` paths in `index.html` must be updated to match the new paths. Do not reorganize folders without updating `index.html` in the same commit.
 
 ## DB Tables (via T constant)
 
 | Constant          | Table                    | Key columns                                                              |
 |-------------------|--------------------------|--------------------------------------------------------------------------|
-| `T.INV`           | inventory                | id, barcode, brand_id, supplier_id, model, size, color, quantity, status, is_deleted, website_sync, ... |
-| `T.BRANDS`        | brands                   | id, name, brand_type, default_sync, active, exclude_website, min_stock_qty |
-| `T.SUPPLIERS`     | suppliers                | id, name, active, supplier_number (UNIQUE, ≥ 10)                         |
-| `T.EMPLOYEES`     | employees                | id, name, pin, email, phone, branch_id, failed_attempts, locked_until, last_login |
-| `T.LOGS`          | inventory_logs           | id, action, inventory_id, details (jsonb), created_at                    |
+| `T.TENANTS`       | tenants                  | id, name, slug, default_currency, timezone, locale, is_active            |
+| `T.INV`           | inventory                | id, barcode, brand_id, supplier_id, model, size, color, quantity, status, is_deleted, tenant_id |
+| `T.BRANDS`        | brands                   | id, name, brand_type, default_sync, active, exclude_website, min_stock_qty, tenant_id |
+| `T.SUPPLIERS`     | suppliers                | id, name, active, supplier_number (UNIQUE, ≥ 10), tenant_id             |
+| `T.EMPLOYEES`     | employees                | id, name, pin, email, phone, branch_id, failed_attempts, locked_until, last_login, tenant_id |
+| `T.LOGS`          | inventory_logs           | id, action, inventory_id, details (jsonb), created_at, tenant_id        |
 | `T.IMAGES`        | inventory_images         | id, inventory_id, url                                                    |
-| `T.RECEIPTS`      | goods_receipts           | id, type, status, supplier_id, po_id, notes, created_at                  |
-| `T.RECEIPT_ITEMS` | goods_receipt_items      | id, receipt_id, inventory_id, quantity, ...                              |
-| `T.PO`            | purchase_orders          | id, po_number, supplier_id, status, notes, created_at                    |
-| `T.PO_ITEMS`      | purchase_order_items     | id, po_id, brand_id, model, size, color, quantity, cost_price, ...       |
-| `T.ROLES`         | roles                    | id, name_he, description, is_system                                      |
-| `T.PERMISSIONS`   | permissions              | id, module, action, name_he                                              |
-| `T.ROLE_PERMS`    | role_permissions         | role_id, permission_id, granted                                          |
-| `T.EMP_ROLES`     | employee_roles           | employee_id, role_id, granted_by, granted_at                             |
-| `T.SESSIONS`      | auth_sessions            | id, employee_id, token, permissions, is_active, expires_at               |
+| `T.RECEIPTS`      | goods_receipts           | id, type, status, supplier_id, po_id, notes, created_at, tenant_id     |
+| `T.RECEIPT_ITEMS` | goods_receipt_items      | id, receipt_id, inventory_id, quantity, tenant_id                       |
+| `T.PO`            | purchase_orders          | id, po_number, supplier_id, status, notes, created_at, tenant_id       |
+| `T.PO_ITEMS`      | purchase_order_items     | id, po_id, brand_id, model, size, color, quantity, cost_price, tenant_id |
+| `T.ROLES`         | roles                    | id, name_he, description, is_system, tenant_id                          |
+| `T.PERMISSIONS`   | permissions              | id, module, action, name_he, tenant_id                                   |
+| `T.ROLE_PERMS`    | role_permissions         | role_id, permission_id, granted, tenant_id                               |
+| `T.EMP_ROLES`     | employee_roles           | employee_id, role_id, granted_by, granted_at, tenant_id                  |
+| `T.SESSIONS`      | auth_sessions            | id, employee_id, token, permissions, is_active, expires_at, tenant_id   |
+
+**Note:** tenant_id columns will be added in Phase 3.75 migration. Until then, tables listed above may not yet have tenant_id in the actual DB.
 
 ---
 
@@ -138,234 +173,21 @@ prizma/
 - `enToHe(field, val)` / `heToEn(field, val)` — enum translation helpers
 - `fetchAll(table, filters, select, order)` — paginated Supabase query
 - `batchCreate(table, rows)` / `batchUpdate(table, rows)` — bulk CRUD
-- `writeLog(action, inventoryId, details)` — audit logging engine
-- `showLoading(msg)` / `hideLoading()` — loading overlay
-- `$(id)` — document.getElementById shorthand
-- `toast(msg, type)` — toast notifications ('s' success, 'e' error, 'w' warning)
-- `setAlert(containerId, msg, type)` — inline alert
-- `confirmDialog(msg)` — async confirm modal (returns Promise<boolean>)
-- `showTab(tabId)` / `showEntryMode(mode)` — tab/mode navigation
-- `populateDropdowns()` — rebuild brand/supplier dropdowns across all tabs
-- `activeBrands()` — returns active brands filtered list
-- `supplierOpts()` — returns supplier options for dropdowns
-- `createSearchSelect(config)` — reusable searchable dropdown component (fixed-position)
-- `loadLowStockAlerts()` / `refreshLowStockBanner()` / `openLowStockModal()` — low stock alerts
+- `confirmDialog(title, text)` — modal confirmation
+- `toast(msg, type)` — notification toasts
+- `verifyPin()` — PIN verification modal
+- `escapeHtml(str)` — XSS prevention
+- `getTenantId()` — returns current tenant_id from sessionStorage
 
-### js/inventory-core.js — Inventory Reduction + Main Table
-
-**Key globals:**
-- `redExcelData`, `redExcelFileName` — Excel reduction upload state
-- `redSearchResults` — manual search results
-- `REDUCE_REASONS` — ['נמכר', 'נשבר', 'לא נמצא', 'נשלח לזיכוי', 'הועבר לסניף אחר']
-- `reduceModalState` — current reduction modal context
-- `invData`, `invFiltered` — full + filtered inventory rows
-- `invChanges` — pending inline edits (keyed by row id)
-- `invSelected` — Set of selected row IDs for bulk ops
-- `invSortField`, `invSortDir` — current sort state (0=none, 1=asc, -1=desc)
-
-**Functions — Reduction (Excel):**
-- `handleRedExcel(input)` — reads uploaded xlsx file
-- `processRedExcel()` — loops rows by barcode, reduces qty for sync=מלא items
-
-**Functions — Reduction (Manual):**
-- `loadModelsForBrand(brandName)` — populates model datalist for selected brand
-- `loadSizesAndColors(brandName, model)` — populates size/color datalists
-- `searchManual()` — search by barcode or brand+model+size+color (filters is_deleted=false)
-- `openReductionModal(recId)` — opens PIN-verified reduction modal with reason select
-- `confirmReduction()` — validates amount/reason/PIN, updates DB, writes log
-
-**Functions — Inventory Table:**
-- `loadInventoryTab()` — fetches all inventory with brand/supplier joins
-- `filterInventoryTable()` — applies search + filter dropdowns
-- `renderInventoryRows()` — renders table with inline editing, selection, sorting
-- `sortInventory(field)` — toggle column sort
-- `invEdit(id, field, value)` / `invEditSync(id, value)` — inline cell editing
-- `saveInventoryChanges()` — saves pending changes with writeLog for price/detail edits
-- `showImagePreview(urls)` — image preview modal
-
-**Functions — Bulk Operations:**
-- `toggleRowSelect(id, checked)` — toggle row selection
-- `applyBulkUpdate()` — bulk update selected rows (sync, status, etc.)
-- `bulkDelete()` — soft-delete selected rows with PIN
-
-### js/inventory-entry.js — Entry Forms
-
-**Key globals:**
-- `entryRowNum` — incrementing row counter for card IDs
-- `excelImportRows`, `excelImportFileName` — parsed Excel import state
-- `excelPendingRows` — rows waiting for barcode generation
-- `lastGeneratedBarcodes` — last batch of generated barcodes for export
-
-**Functions — Manual Entry:**
-- `addEntryRow()` — adds entry card with brand/supplier/model/size/color fields
-- `copyEntryRow(rowId)` — duplicates a card with data
-- `removeEntryRow(rowId)` — removes entry card
-- `getEntryRows()` — collects all card data into array
-- `validateEntryRows(rows)` — validates required fields
-- `submitEntry()` — inserts inventory rows, generates barcodes, writes logs
-
-**Functions — Barcode:**
-- `generateBarcodes(rows)` — BBDDDDD format, reuses barcodes for same brand+model+size+color
-
-**Functions — Excel Import:**
-- `handleExcelImport(input)` — parses xlsx, maps columns, shows preview
-- `confirmExcelImport()` — inserts parsed rows
-- `showExcelResultsModal(results)` — shows import results
-- `generatePendingBarcodes()` — generates barcodes for imported rows
-- `exportPendingBarcodes()` — exports generated barcodes to xlsx
-
-**Functions — Excel Export:**
-- `exportBarcodesExcel(barcodes)` — exports barcode list to xlsx
-- `exportInventoryExcel()` — exports current inventory to xlsx
-- `openExcelFormatPopup()` / `closeExcelFormatPopup()` — sample format download popup
-
-### js/goods-receipt.js — Goods Receipt + System Log
-
-**Key globals:**
-- `SLOG_PAGE_SIZE` — 50 rows per page
-- `SLOG_ROW_CATEGORIES` — action→category mapping (entry, quantity, deletion, etc.)
-- `slogActionDropdownPopulated` — flag for one-time action filter population
-- `RCPT_TYPE_LABELS` — { delivery_note, invoice, tax_invoice } → Hebrew
-- `RCPT_STATUS_LABELS` — { draft, confirmed, cancelled } → Hebrew
-- `rcptLinkedPoId` — currently linked PO id for receipt
-
-**Functions — System Log:**
-- `loadSystemLog()` — paginated log viewer with filters
-- `slogPageNav(delta)` — page navigation
-- `exportSystemLog()` — export logs to xlsx
-- `populateActionDropdown()` — one-time action filter population
-- `getSystemLogFilters()` / `clearSystemLogFilters()` / `applySlogFilters()` — filter management
-
-**Functions — Goods Receipt:**
-- `loadReceiptTab()` — loads receipt list
-- `openNewReceipt()` — starts new receipt form
-- `openExistingReceipt(id)` — opens receipt for editing
-- `searchReceiptBarcode()` — find inventory item by barcode for receipt
-- `addReceiptItemRow(item)` — adds item row to receipt
-- `getReceiptItems()` — collects receipt item data
-- `saveReceiptDraft()` — saves receipt as draft
-- `confirmReceipt()` — confirms receipt, updates inventory quantities
-- `cancelReceipt()` — cancels receipt
-- `handleReceiptExcel()` — import items from xlsx
-- `exportReceiptExcel()` — export receipt to xlsx
-- `backToReceiptList()` — returns to receipt list view
-- `createNewInventoryFromReceiptItem()` — creates new inventory item with barcode from receipt
-
-**Functions — PO Linkage:**
-- `loadPOsForSupplier(supplierId)` — loads POs for receipt-PO linking
-- `onReceiptPoSelected()` — handles PO selection, populates items
-- `updatePOStatusAfterReceipt(poId)` — updates PO status after receipt confirmation
-
-### js/audit-log.js — Soft Delete, Recycle Bin, History, Qty Modal
-
-**Key globals:**
-- `ACTION_MAP` — 19 action types with icon/label/color for log display
-- `softDelTarget` — item targeted for soft deletion
-- `historyCache` — cached history for current item
-- `ENTRY_ACTIONS` — ['entry_manual', 'entry_excel', 'entry_po', 'entry_receipt']
-- `QTY_REASONS_ADD` — ['קבלת סחורה', 'החזרה מלקוח', 'ספירת מלאי', 'תיקון טעות', 'אחר']
-- `QTY_REASONS_REMOVE` — ['מכירה', 'העברה לסניף', 'פגום/אבדן', 'ספירת מלאי', 'תיקון טעות', 'אחר']
-- `qtyModalState` — current qty change modal context
-
-**Functions — Soft Delete:**
-- `deleteInvRow(id)` — initiates soft delete with PIN
-- `confirmSoftDelete()` — PIN-verified soft delete with reason and writeLog
-
-**Functions — Recycle Bin:**
-- `openRecycleBin()` — shows deleted items
-- `restoreItem(id)` — restores soft-deleted item
-- `permanentDelete(id)` — double-PIN permanent delete
-
-**Functions — Item History:**
-- `openItemHistory(id)` — timeline view of item changes
-- `exportHistoryExcel()` — export history to xlsx
-
-**Functions — Entry History:**
-- `openEntryHistory()` — entry log grouped by date (accordion)
-- `loadEntryHistory()` / `renderEntryHistory()` — fetch and render
-- `toggleHistGroup(date)` — expand/collapse date group
-- `exportDateGroupBarcodes(date)` — export barcodes for a date group
-
-**Functions — Qty Modal:**
-- `openQtyModal(id, direction)` — opens add/remove qty modal with PIN + reason
-- `confirmQtyChange()` — validates, updates qty, writes log
-
-### js/brands-suppliers.js — Brands + Suppliers Management
-
-**Key globals:**
-- `allBrandsData` — full unfiltered brand dataset
-- `brandsEdited` — filtered view for current rendering
-- `brandStockByBrand` — { brand_id → total_qty } for stock display
-- `supplierEditMode` — flag for supplier number edit mode
-
-**Functions — Brands:**
-- `loadBrandsTab()` — parallel fetch brands + stock data, builds allBrandsData
-- `renderBrandsTable()` — applies 3 filters (active/sync/type), renders with inline editing
-- `setBrandActive(brandId, isActive)` — immediate DB save on active toggle
-- `addBrandRow()` — adds new brand row to allBrandsData
-- `saveBrands()` — saves all changes (existing updates + new inserts), reloads caches
-- `saveBrandField(input)` — immediate save for min_stock_qty
-
-**Functions — Suppliers:**
-- `loadSuppliersTab()` — renders supplier list (read or edit mode)
-- `toggleSupplierNumberEdit()` / `cancelSupplierNumberEdit()` — edit mode toggle
-- `saveSupplierNumbers()` — validates, checks PO lock, saves via temp negative swap
-- `getNextSupplierNumber()` — lowest available number ≥ 10 (gap-filling)
-- `addSupplier()` — creates supplier with auto-assigned number
-
-### js/purchase-orders.js — Purchase Orders
-
-**Key globals:**
-- `poData` — cached PO list
-- `poFilters` — { status, supplier } filter state
-- `currentPO` — currently open PO object
-- `currentPOItems` — items array for current PO
-
-**Functions — PO List:**
-- `loadPurchaseOrdersTab()` — fetches POs with supplier join
-- `renderPoList(container)` — renders PO list with summary cards + table
-- `poSummaryCard(label, value, color)` — summary card HTML
-- `applyPoFilters(data)` — filters by status/supplier
-- `populatePoSupplierFilter()` — populates supplier filter dropdown
-
-**Functions — PO CRUD:**
-- `generatePoNumber(supplierId)` — format: PO-{supplierNum}-{4-digit-seq}
-- `openNewPurchaseOrder()` — two-step wizard: supplier → items
-- `proceedToPOItems()` — step 2: generates PO number, opens item editor
-- `openEditPO(id)` — loads PO for editing
-- `renderPOForm(isEdit)` — renders PO header form
-- `resolveSupplierName()` — resolves supplier UUID to name
-- `initPoSupplierSelect()` — searchable supplier dropdown for PO
-- `savePODraft()` — saves/updates PO as draft
-- `sendPurchaseOrder(id)` — marks PO as sent
-- `cancelPO(id)` — cancels PO
-- `openViewPO(id)` — read-only PO view
-
-**Functions — PO Items:**
-- `ensurePOBrandDatalist()` — populates brand datalist
-- `loadPOModelsForBrand(i, brandName)` — cascading model dropdown
-- `loadPOColorsAndSizes(i, brandName, model)` — cascading color/size
-- `renderPOItemsTable()` — renders PO item rows with inline editing
-- `updatePOTotals()` — recalculates PO totals
-- `addPOItemManual()` — adds empty PO item row
-- `addPOItemByBarcode()` — adds PO item from existing inventory barcode
-- `removePOItem(index)` — removes PO item
-- `duplicatePOItem(i)` — duplicates PO item row
-- `togglePOItemDetails(i)` — expand/collapse item details
-
-**Functions — Export/Import:**
-- `exportPOExcel()` — exports PO to xlsx
-- `exportPOPdf()` — exports PO to PDF
-- `importPOToInventory(poId)` — creates inventory items from PO
-- `createPOForBrand(brandId, brandName)` — creates PO from low stock modal
-
-### js/admin.js — Admin Mode + App Init
+### js/auth-service.js — Authentication & Session Management
 
 **Functions:**
-- `toggleAdmin()` — prompts for password (1234)
-- `checkAdmin()` / `activateAdmin()` — admin state management via sessionStorage
-- `openHelpModal()` / `closeHelpModal()` — help modal
-- DOMContentLoaded — restores admin, sets dates, calls `loadData()` then `addEntryRow()` + `refreshLowStockBanner()`
+- `loadSession()` — restore session from sessionStorage
+- `initSecureSession(employee)` — create new session after PIN login
+- `clearSession()` — logout
+- `hasPermission(module, action)` — check permission
+- `requirePermission(module, action)` — check + redirect
+- `applyUIPermissions()` — show/hide UI elements based on role
 
 ---
 
@@ -421,6 +243,8 @@ prizma/
 12. **Hebrew↔English maps** — `FIELD_MAP` for column names, `ENUM_MAP` for enum values. Both have reverse maps (`FIELD_MAP_REV`, `ENUM_REV`). Use `enToHe()`/`heToEn()` helpers.
 
 13. **Brand filters** — `allBrandsData[]` global stores all brands including `currentQty`. `renderBrandsTable()` reads 4 filter dropdowns: `brand-filter-active`, `brand-filter-sync`, `brand-filter-type`, `brand-filter-low-stock`. `setBrandActive(brandId, isActive)` updates DB immediately and re-renders the table.
+
+14. **tenant_id on all writes** — every `.insert()` and `.upsert()` must include `tenant_id: getTenantId()`. Every `.select()` should filter by `.eq('tenant_id', getTenantId())` as defense-in-depth alongside RLS.
 
 ---
 
