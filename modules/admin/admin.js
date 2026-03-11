@@ -27,6 +27,7 @@ function showUserButton() {
   if (emp && btn) {
     btn.textContent = emp.name + ' \u{1F464}';
     btn.style.display = '';
+    document.getElementById('homeBtn').style.display = '';
   }
 }
 
