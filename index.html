@@ -30,8 +30,8 @@
 </div>
 
 <nav id="mainNav">
-  <button data-tab="entry" class="active" onclick="showTab('entry')">&#128230; הכנסת מלאי</button>
-  <button data-tab="reduction" onclick="showTab('reduction')">&#128179; הורדת מלאי</button>
+  <button data-tab="entry" data-tab-permission="inventory.edit" class="active" onclick="showTab('entry')">&#128230; הכנסת מלאי</button>
+  <button data-tab="reduction" data-tab-permission="inventory.reduce" onclick="showTab('reduction')">&#128179; הורדת מלאי</button>
   <button data-tab="purchase-orders" data-tab-permission="purchase_order.view" onclick="showTab('purchase-orders')">&#128203; הזמנות רכש</button>
   <button data-tab="inventory" data-tab-permission="inventory.view" onclick="showTab('inventory')">&#128451; מלאי ראשי</button>
   <button data-tab="brands" data-tab-permission="brands.view" onclick="showTab('brands')">&#127991; ניהול מותגים</button>
@@ -41,7 +41,7 @@
   <button data-tab="stock-count" data-tab-permission="stock_count.create" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
   <button data-tab="employees" data-tab-permission="employees.view" onclick="showTab('employees')">&#128101; עובדים</button>
   <div class="nav-spacer"></div>
-  <button class="admin-btn" id="adminBtn" data-tab-permission="settings.view" onclick="toggleAdmin()">&#128274; מנהל</button>
+  <button class="admin-btn" id="adminBtn" data-tab-permission="settings.view">&#128274; מנהל</button>
 </nav>
 
 <main>
