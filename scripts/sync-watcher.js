@@ -158,6 +158,7 @@ async function processFile(filepath, filename) {
 
       if (!invRows || invRows.length === 0) {
         // Barcode not found → create pending_sales row for manual resolution
+        const lensRawP = String(r.lens_included || '').trim().toLowerCase();
         const { error: pendErr } = await sb.from('pending_sales').insert({
           source_ref: 'watcher',
           filename,
@@ -169,6 +170,16 @@ async function processFile(filepath, filename) {
           employee_id: String(r.employee_id || '').trim() || null,
           sale_amount: parseFloat(r.sale_amount) || null,
           final_amount: parseFloat(r.final_amount) || null,
+          reason: 'ברקוד לא נמצא במלאי',
+          discount: parseFloat(r.discount) || null,
+          discount_1: parseFloat(r.discount_1) || null,
+          discount_2: parseFloat(r.discount_2) || null,
+          coupon_code: String(r.coupon_code || '').trim() || null,
+          campaign: String(r.campaign || '').trim() || null,
+          lens_included: ['yes', 'true', '1'].includes(lensRawP),
+          lens_category: String(r.lens_category || '').trim() || null,
+          // TODO: sync_log_id unavailable — watcher has no sync_log row at this point
+          sync_log_id: null,
           status: 'pending'
         });
         if (pendErr) {

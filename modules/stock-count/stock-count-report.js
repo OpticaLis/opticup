@@ -15,14 +15,16 @@ async function showDiffReport(countId) {
     const diffItems = allItems.filter(i => i.status === 'counted' && i.actual_qty !== i.expected_qty);
     const pendingItems = allItems.filter(i => i.status === 'pending');
     const displayItems = [...diffItems, ...pendingItems];
-    renderReportScreen(countId, diffItems, allItems, displayItems);
+    const nothingScanned = !allItems.some(i => i.status === 'counted');
+    renderReportScreen(countId, diffItems, allItems, displayItems, nothingScanned);
+    if (nothingScanned) toast('לא נסרק אף פריט — לא ניתן לאשר ספירה ריקה', 'w');
   } catch (err) {
     toast('שגיאה בהכנת דוח: ' + err.message, 'e');
   } finally { hideLoading(); }
 }
 
 // ── Render report screen ─────────────────────────────────────
-function renderReportScreen(countId, diffItems, allItems, displayItems) {
+function renderReportScreen(countId, diffItems, allItems, displayItems, nothingScanned) {
   const shortages = diffItems.filter(i => (i.actual_qty - i.expected_qty) < 0);
   const surpluses = diffItems.filter(i => (i.actual_qty - i.expected_qty) > 0);
   const uncounted = allItems.filter(i => i.status !== 'counted').length;
@@ -85,8 +87,8 @@ function renderReportScreen(countId, diffItems, allItems, displayItems) {
       </div>
 
       <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding-bottom:20px">
-        <button class="btn btn-p" style="min-height:48px;font-size:15px"
-                onclick="showConfirmPinForCount('${escapeHtml(countId)}')">&#9989; אשר ועדכן מלאי</button>
+        ${nothingScanned ? '' : `<button class="btn btn-p" style="min-height:48px;font-size:15px"
+                onclick="showConfirmPinForCount('${escapeHtml(countId)}')">&#9989; אשר ועדכן מלאי</button>`}
         <button class="btn btn-g" style="min-height:48px;font-size:15px"
                 onclick="openCountSession('${escapeHtml(countId)}')">&#8617;&#65039; חזור לספירה</button>
         <button class="btn btn-s" style="min-height:48px;font-size:15px"

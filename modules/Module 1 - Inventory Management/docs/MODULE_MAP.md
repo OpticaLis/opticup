@@ -39,8 +39,8 @@
 | 29 | pending-resolve.js | modules/access-sync/pending-resolve.js | 188 | Pending resolution: ignorePending, resolvePending (PIN-verified), confirmResolvePending (optimistic locking on status), updatePendingPanelCount |
 | 30 | stock-count-list.js | modules/stock-count/stock-count-list.js | 152 | Stock count list screen: ensureStockCountListHTML, loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (PIN first, DB creation after), renderStockCountList |
 | 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 281 | Stock count session: worker PIN entry (openWorkerPin/confirmWorkerPin), camera barcode scanning (ZXing), manual barcode/smart search input, scan handler, item update, session UI |
-| 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 232 | Diff report screen (showDiffReport/renderReportScreen), manager PIN approval (confirmCount with role check), cancelCount, exportCountExcel (SheetJS) |
-| 33 | sync-watcher.js | scripts/sync-watcher.js | 374 | Node.js Dropbox folder watcher: processes sales_template Excel files, atomic qty updates via RPC, pending_sales for unknown barcodes, idempotency guards, failed file upload to Supabase Storage |
+| 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 234 | Diff report screen (showDiffReport/renderReportScreen), empty count guard, manager PIN approval (confirmCount with role check), cancelCount, exportCountExcel (SheetJS) |
+| 33 | sync-watcher.js | scripts/sync-watcher.js | 385 | Node.js Dropbox folder watcher: processes sales_template Excel files, atomic qty updates via RPC, pending_sales for unknown barcodes (full field set), idempotency guards, failed file upload to Supabase Storage |
 | 34 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
 | 35 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
 
@@ -414,8 +414,8 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `showDiffReport` | `(countId)` | Async. Fetches count header + items, splits into diff/all, calls renderReportScreen |
-| `renderReportScreen` | `(countId, diffItems, allItems, displayItems)` | Renders diff report: summary cards (shortages/surpluses/uncounted), diff+pending items table, action buttons |
+| `showDiffReport` | `(countId)` | Async. Fetches count header + items, splits into diff/all, guards empty count (toast + hide approve), calls renderReportScreen |
+| `renderReportScreen` | `(countId, diffItems, allItems, displayItems, nothingScanned)` | Renders diff report: summary cards (shortages/surpluses/uncounted), diff+pending items table, action buttons (approve hidden if nothingScanned) |
 | `showConfirmPinForCount` | `(countId)` | Shows inline manager PIN input for count approval |
 | `confirmCount` | `(countId)` | Async. Verifies manager PIN (role IN admin/manager), updates inventory via set_inventory_qty RPC, writeLogs via Promise.all, marks count completed |
 | `cancelCount` | `(countId)` | Async. Confirms cancellation, updates count status to cancelled |
