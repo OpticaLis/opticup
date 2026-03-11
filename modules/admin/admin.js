@@ -49,14 +49,29 @@ function closeHelpModal() {
 }
 
 // =========================================================
-// INIT
+// APP INIT (called after auth or after successful login)
 // =========================================================
-document.addEventListener('DOMContentLoaded', () => {
-  $('help-modal')?.addEventListener('click', function(e) { if (e.target === this) closeHelpModal(); });
+function resumeAppInit() {
   if (sessionStorage.getItem('prizma_admin') === '1') activateAdmin();
   const dateEl = $('po-date');
   if (dateEl) dateEl.valueAsDate = new Date();
   const rcptDateEl = $('rcpt-date');
   if (rcptDateEl) rcptDateEl.valueAsDate = new Date();
   loadData().then(() => { addEntryRow(); refreshLowStockBanner(); });
+}
+
+// =========================================================
+// INIT
+// =========================================================
+document.addEventListener('DOMContentLoaded', async () => {
+  $('help-modal')?.addEventListener('click', function(e) { if (e.target === this) closeHelpModal(); });
+
+  // Auth: check for existing session
+  const session = await loadSession();
+  if (!session) {
+    showLoginModal();
+    return;
+  }
+  applyUIPermissions();
+  resumeAppInit();
 });
