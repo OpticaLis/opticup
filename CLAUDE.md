@@ -1,5 +1,18 @@
 # Optic Up — Claude Code Project Guide
 
+## First Action — Read This Before Anything Else
+
+When starting a new session, read these two files immediately:
+1. `modules/Module 1 - Inventory Management/docs/SESSION_CONTEXT.md` — current status, what's done, what's next
+2. This file (CLAUDE.md) — rules, conventions, file structure
+
+**Do NOT read MODULE_MAP.md at session start.** It is a reference document — open it only when you need details about a specific file, function, or dependency. Reading it upfront wastes context window.
+
+After reading SESSION_CONTEXT.md, confirm:
+> "I've read SESSION_CONTEXT.md. Current status: [one line summary]. Ready to proceed."
+
+---
+
 ## Project
 - **Name:** Optic Up — optical store management for Israeli optician chain
 - **Repo:** opticalis/prizma-inventory
@@ -418,6 +431,58 @@ prizma/
 - **Absolute maximum: 350 lines** — only acceptable when splitting further would break a tightly coupled logical unit (e.g. a single pipeline or wizard flow).
 - **Split rule:** Only split where there is a clear logical separation. Never cut arbitrarily by line count alone.
 - **One responsibility per file** — if you need "and" to describe what a file does, it should be two files.
+
+---
+
+## MODULE_MAP.md — Living Architecture Document
+
+`modules/Module 1 - Inventory Management/docs/MODULE_MAP.md` is the single source of truth for the entire codebase.
+
+**Rules — enforced on every commit:**
+- Every new **module** added → add a new top-level section in MODULE_MAP.md
+- Every new **file** added → add it under its module section with a one-line description and line count
+- Every new **function** added → add it to the Function Registry table
+- Every new **global variable** added → add it to the Globals table
+- Every new **DB table or column** added → update the Database Schema section
+
+**MODULE_MAP.md must be updated in the same commit as the code change — never separately.**
+
+If you add code without updating MODULE_MAP.md, the task is not complete.
+
+For full function/file/dependency reference → see MODULE_MAP.md
+
+---
+
+## Documentation Files — Paths & Rules
+
+### File locations
+
+All documentation lives in `modules/Module 1 - Inventory Management/`:
+
+| File | Path | Contains |
+|------|------|----------|
+| `ROADMAP.md` | `modules/Module 1 - Inventory Management/ROADMAP.md` | Phase map — ⬜/✅ status per phase |
+| `SESSION_CONTEXT.md` | `modules/Module 1 - Inventory Management/docs/SESSION_CONTEXT.md` | Current status, last commits, what's next, open issues |
+| `CHANGELOG.md` | `modules/Module 1 - Inventory Management/docs/CHANGELOG.md` | Full history — one section per phase/goal |
+| `MODULE_SPEC.md` | `modules/Module 1 - Inventory Management/docs/MODULE_SPEC.md` | Current state only — what tables/functions/logic exist NOW (no history) |
+| `MODULE_MAP.md` | `modules/Module 1 - Inventory Management/docs/MODULE_MAP.md` | Full code map — every file, function, global, DB table |
+| `db-schema.sql` | `modules/Module 1 - Inventory Management/docs/db-schema.sql` | Current DB schema — all tables with columns |
+
+### Rules — enforced always
+
+**Every commit that adds/changes code:**
+- `MODULE_MAP.md` — must be updated in the same commit (new files, functions, globals)
+- `db-schema.sql` — must be updated if any DB change was made (new tables, columns, RLS)
+
+**End of every session:**
+- `SESSION_CONTEXT.md` — update: what was done, commit hashes, what's next, open issues
+
+**End of every phase:**
+- `ROADMAP.md` — mark completed phase ⬜ → ✅
+- `CHANGELOG.md` — add new section with all commits and changes
+- `MODULE_SPEC.md` — update current state (overwrite, not append)
+- `MODULE_MAP.md` — verify all new files/functions are documented
+- `db-schema.sql` — verify schema is current
 
 ---
 
