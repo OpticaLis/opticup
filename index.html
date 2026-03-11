@@ -125,11 +125,11 @@
 // status: 'active' | 'coming_soon' | 'locked'
 // =========================================================
 const MODULES = [
-  { id: 'inventory',  label: 'ניהול מלאי',   icon: '\uD83D\uDD76\uFE0F', url: 'inventory.html',           status: 'active' },
+  { id: 'inventory',  label: 'ניהול מלאי',   icon: '\uD83D\uDD76\uFE0F', url: 'inventory.html',           status: 'active', permission: 'inventory.view' },
   { id: 'customers',  label: 'ניהול לקוחות', icon: '\uD83D\uDC64',       url: 'customers.html',           status: 'coming_soon' },
   { id: 'finance',    label: 'פיננסים',       icon: '\uD83D\uDCB0',       url: 'finance.html',             status: 'coming_soon' },
   { id: 'lab',        label: 'מעבדה',         icon: '\uD83D\uDD2C',       url: 'lab.html',                 status: 'coming_soon' },
-  { id: 'employees',  label: 'עובדים',        icon: '\uD83D\uDC65',       url: 'employees.html',           status: 'active' },
+  { id: 'employees',  label: 'עובדים',        icon: '\uD83D\uDC65',       url: 'employees.html',           status: 'active', permission: 'employees.view' },
   { id: 'attendance', label: 'שעון נוכחות',  icon: '\uD83D\uDD50',       url: 'attendance.html',          status: 'coming_soon' }
 ];
 
@@ -158,6 +158,13 @@ function renderModules() {
     if (!loggedIn && m.status === 'active') {
       a.classList.add('locked-overlay');
       a.removeAttribute('href');
+    }
+
+    if (loggedIn && m.status === 'active' && m.permission) {
+      if (!hasPermission(m.permission)) {
+        a.classList.add('locked-overlay');
+        a.removeAttribute('href');
+      }
     }
 
     let badge = '';
