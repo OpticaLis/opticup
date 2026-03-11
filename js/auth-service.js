@@ -36,7 +36,9 @@ async function verifyEmployeePIN(pin) {
   if (!emp) return null;
 
   // Locked out?
-  if (emp.locked_until && new Date(emp.locked_until) > new Date()) return null;
+  if (emp.locked_until && new Date(emp.locked_until) > new Date()) {
+    return { locked: true, name: emp.name };
+  }
 
   // Success — reset counters, update last_login
   await sb.from(T.EMPLOYEES).update({

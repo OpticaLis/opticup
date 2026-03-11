@@ -44,9 +44,9 @@ async function loadEmployeesTab() {
   employees.forEach(e => { counts[e.resolvedRole] = (counts[e.resolvedRole] || 0) + 1; });
 
   let html = '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">';
-  html += summaryCard('סה״כ עובדים', employees.length, '#1a2744');
+  html += empSummaryCard('סה״כ עובדים', employees.length, '#1a2744');
   for (const [roleId, badge] of Object.entries(ROLE_BADGES)) {
-    if (counts[roleId]) html += summaryCard(badge.label, counts[roleId], badge.color);
+    if (counts[roleId]) html += empSummaryCard(badge.label, counts[roleId], badge.color);
   }
   html += '</div>';
 
@@ -67,7 +67,7 @@ async function loadEmployeesTab() {
   if (hasPermission('settings.view')) renderPermissionMatrix('perm-matrix-wrap');
 }
 
-function summaryCard(label, value, color) {
+function empSummaryCard(label, value, color) {
   return `<div style="flex:1;min-width:120px;background:white;border-radius:10px;padding:16px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)">
     <div style="font-size:1.8rem;font-weight:700;color:${escapeHtml(color)}">${value}</div>
     <div style="font-size:.82rem;color:#666;margin-top:4px">${escapeHtml(label)}</div></div>`;
