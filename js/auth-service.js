@@ -260,3 +260,27 @@ function applyUIPermissions() {
 function getCurrentEmployee() {
   return JSON.parse(sessionStorage.getItem(SK.EMPLOYEE) || 'null');
 }
+
+// =========================================================
+// 11. assignRoleToEmployee(employeeId, roleId)
+// =========================================================
+async function assignRoleToEmployee(employeeId, roleId) {
+  requirePermission('employees.assign_role');
+  const me = getCurrentEmployee();
+  await sb.from(AT.EMP_ROLES)
+    .upsert({ employee_id: employeeId, role_id: roleId, granted_by: me?.id, granted_at: new Date().toISOString() },
+      { onConflict: 'employee_id,role_id' });
+  writeLog('role_assigned', null, { employeeId, roleId, assignedBy: me?.id });
+  toast('תפקיד עודכן', 's');
+}
+
+// =========================================================
+// 12. forceLogout(employeeId)
+// =========================================================
+async function forceLogout(employeeId) {
+  requirePermission('employees.delete');
+  await sb.from(AT.SESSIONS)
+    .update({ is_active: false })
+    .eq('employee_id', employeeId);
+  toast('העובד נותק בהצלחה', 's');
+}

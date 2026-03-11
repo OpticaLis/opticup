@@ -1,37 +1,9 @@
 // =========================================================
-// ADMIN MODE
+// ADMIN MODE (permission-based — replaces legacy password flow)
 // =========================================================
-function toggleAdmin() {
-  if (isAdmin) {
-    isAdmin = false;
-    sessionStorage.removeItem('prizma_admin');
-    document.body.classList.remove('admin-mode');
-    $('adminBtn').classList.remove('unlocked');
-    $('adminBtn').innerHTML = '&#128274; מנהל';
-    toast('יצאת ממצב מנהל', 'i');
-  } else {
-    if (sessionStorage.getItem('prizma_admin') === '1') {
-      activateAdmin();
-    } else {
-      $('admin-modal').style.display = 'flex';
-      $('admin-pass').value = '';
-      setTimeout(() => $('admin-pass').focus(), 100);
-    }
-  }
-}
-function checkAdmin() {
-  if ($('admin-pass').value === '1234') {
-    closeModal('admin-modal');
-    sessionStorage.setItem('prizma_admin', '1');
-    activateAdmin();
-  } else {
-    toast('סיסמה שגויה', 'e');
-    $('admin-pass').value = '';
-    $('admin-pass').focus();
-  }
-}
 function activateAdmin() {
-  isAdmin = true;
+  isAdmin = hasPermission('settings.edit');
+  if (!isAdmin) return;
   document.body.classList.add('admin-mode');
   $('adminBtn').classList.add('unlocked');
   $('adminBtn').innerHTML = '&#128275; מנהל (פעיל)';
@@ -52,7 +24,7 @@ function closeHelpModal() {
 // APP INIT (called after auth or after successful login)
 // =========================================================
 function resumeAppInit() {
-  if (sessionStorage.getItem('prizma_admin') === '1') activateAdmin();
+  if (hasPermission('settings.edit')) activateAdmin();
   const dateEl = $('po-date');
   if (dateEl) dateEl.valueAsDate = new Date();
   const rcptDateEl = $('rcpt-date');
