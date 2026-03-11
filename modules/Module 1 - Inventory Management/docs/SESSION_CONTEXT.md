@@ -2,18 +2,28 @@
 
 ## Current Status
 
-Phase 3.5 ✅ complete. Next: Phase 4 — מעקב חובות ספקים.
+Phase 3.5 🔄 in progress. Next task: build employees.html (standalone employee management page).
 
-## Last Completed: Phase 3.5 — מסך בית + שינוי שם ריפו
+## Phase 3.5 — מסך בית + דפים עצמאיים
 
-**Commits:** e9a1d57, 8ec3c4b, 2933bb5, 5eabe0a
+### Last work done in Phase 3.5
+
+**Commits:** e9a1d57, 8ec3c4b, 2933bb5, 5eabe0a, d796b93, 188681d, df3b568
 
 **What was built:**
-- index.html (310 lines) — home screen with MODULES config array, 6 module cards, PIN login modal, session restore on load, live clock
-- inventory.html — renamed from index.html (main app, no content changes)
-- js/auth-service.js — clearSession() now redirects to index.html instead of reload
-- Cards: inventory + employees (active), customers/finance/lab/attendance (coming_soon)
-- Full auth flow: login on index.html → session persists to inventory.html → logout returns to index.html
+- index.html renamed to inventory.html (main app)
+- index.html created as new home screen (310 lines): MODULES config array, 6 module cards, PIN login modal, session restore, live clock
+- auth-service.js: clearSession() now redirects to index.html
+- inventory.html header: added h1 "ניהול מלאי" + static "← מסך בית" link
+- inventory.html nav: added homeBtn shown after login
+- modules/admin/admin.js: showUserButton() reveals homeBtn after login
+- Fixes: homeBtn flex width (24px→64px), homeBtn text color (white→var(--primary))
+
+### Remaining in Phase 3.5
+
+- Build employees.html — standalone page for employee management
+- Update index.html MODULES: employees card URL → employees.html
+- End-of-phase documentation update
 
 ## Previous: Phase 3 — Auth & Permissions
 
