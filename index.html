@@ -41,7 +41,7 @@
   <button data-tab="stock-count" data-tab-permission="stock_count.create" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
   <button data-tab="employees" data-tab-permission="employees.view" onclick="showTab('employees')">&#128101; עובדים</button>
   <div class="nav-spacer"></div>
-  <button class="admin-btn" id="adminBtn" data-tab-permission="settings.view">&#128274; מנהל</button>
+  <button class="admin-btn unlocked" id="adminBtn" style="display:none" onclick="confirmDialog('האם להתנתק מהמערכת?').then(ok=>{if(ok)clearSession()})">&#128100;</button>
 </nav>
 
 <main>

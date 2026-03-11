@@ -5,8 +5,6 @@ function activateAdmin() {
   isAdmin = hasPermission('settings.edit');
   if (!isAdmin) return;
   document.body.classList.add('admin-mode');
-  $('adminBtn').classList.add('unlocked');
-  $('adminBtn').innerHTML = '&#128275; מנהל (פעיל)';
   toast('מצב מנהל הופעל — שדות עלות גלויים', 's');
 }
 
@@ -23,8 +21,18 @@ function closeHelpModal() {
 // =========================================================
 // APP INIT (called after auth or after successful login)
 // =========================================================
+function showUserButton() {
+  const emp = getCurrentEmployee();
+  const btn = $('adminBtn');
+  if (emp && btn) {
+    btn.textContent = emp.name + ' \u{1F464}';
+    btn.style.display = '';
+  }
+}
+
 function resumeAppInit() {
   if (hasPermission('settings.edit')) activateAdmin();
+  showUserButton();
   const dateEl = $('po-date');
   if (dateEl) dateEl.valueAsDate = new Date();
   const rcptDateEl = $('rcpt-date');
@@ -41,6 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Auth: check for existing session
   const session = await loadSession();
   if (!session) {
+    $('adminBtn').style.display = 'none';
     showLoginModal();
     return;
   }
