@@ -33,14 +33,15 @@
 | 23 | qty-modal.js | modules/audit/qty-modal.js | 98 | Quantity change modal: openQtyModal (add/remove with reason+PIN), confirmQtyChange |
 | 24 | brands.js | modules/brands/brands.js | 197 | Brand management: loadBrandsTab, renderBrandsTable (4 filters), setBrandActive (immediate save), addBrandRow, saveBrands, saveBrandField |
 | 25 | suppliers.js | modules/brands/suppliers.js | 167 | Supplier management: loadSuppliersTab, supplier number editing with temp-negative-swap, addSupplier with auto-number, getNextSupplierNumber (gap-filling) |
-| 26 | access-sync.js | modules/access-sync/access-sync.js | 177 | Access sync tab: renderAccessSyncTab, heartbeat monitoring (60s interval), loadSyncLog (paginated), loadPendingBadge |
-| 27 | pending-panel.js | modules/access-sync/pending-panel.js | 233 | Pending sales panel: renderPendingPanel, pendingCardHtml, loadSuggestions (barcode matching), free-text search with debounce, event delegation |
-| 28 | pending-resolve.js | modules/access-sync/pending-resolve.js | 164 | Pending resolution: ignorePending, resolvePending (PIN-verified), confirmResolvePending (optimistic locking on status), updatePendingPanelCount |
-| 29 | stock-count-list.js | modules/stock-count/stock-count-list.js | 142 | Stock count list screen: loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (creates count + items + opens PIN), renderStockCountList |
-| 30 | stock-count-session.js | modules/stock-count/stock-count-session.js | 221 | Stock count session: worker PIN entry (openWorkerPin/confirmWorkerPin), camera barcode scanning (ZXing), manual barcode input, scan handler, item update, session UI |
-| 31 | stock-count-report.js | modules/stock-count/stock-count-report.js | 217 | Diff report screen (showDiffReport/renderReportScreen), manager PIN approval (confirmCount with role check), cancelCount, exportCountExcel (SheetJS) |
-| 32 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
-| 33 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
+| 26 | access-sync.js | modules/access-sync/access-sync.js | 256 | Access sync tab: renderAccessSyncTab (summary cards + log table + heartbeat), loadSyncLog (paginated with action buttons), loadSyncSummary, loadLastActivity, calcTimeSince, loadPendingBadge |
+| 27 | sync-details.js | modules/access-sync/sync-details.js | 122 | Sync details modal: openSyncDetails (items table + error table), closeSyncDetails, downloadFailedFile (signed URL from Supabase Storage) |
+| 28 | pending-panel.js | modules/access-sync/pending-panel.js | 233 | Pending sales panel: renderPendingPanel, pendingCardHtml, loadSuggestions (barcode matching), free-text search with debounce, event delegation |
+| 29 | pending-resolve.js | modules/access-sync/pending-resolve.js | 164 | Pending resolution: ignorePending, resolvePending (PIN-verified), confirmResolvePending (optimistic locking on status), updatePendingPanelCount |
+| 30 | stock-count-list.js | modules/stock-count/stock-count-list.js | 142 | Stock count list screen: loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (creates count + items + opens PIN), renderStockCountList |
+| 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 221 | Stock count session: worker PIN entry (openWorkerPin/confirmWorkerPin), camera barcode scanning (ZXing), manual barcode input, scan handler, item update, session UI |
+| 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 217 | Diff report screen (showDiffReport/renderReportScreen), manager PIN approval (confirmCount with role check), cancelCount, exportCountExcel (SheetJS) |
+| 33 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
+| 34 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
 
 **Total: 33 files, ~6,754 lines**
 
@@ -339,13 +340,26 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `renderAccessSyncTab` | `()` | Renders tab HTML with heartbeat indicator, pending button, sync log table |
+| `renderAccessSyncTab` | `()` | Renders full sync tab: header with last activity, 3 summary cards, pending button, sync log table with action buttons |
+| `summaryCard` | `(id, icon, label, value, color)` | Returns summary card HTML |
+| `calcTimeSince` | `(timestamp)` | Returns Hebrew relative time string (דקות/שעות/ימים) |
 | `startHeartbeatRefresh` | `()` | Starts 60s heartbeat polling interval |
 | `stopHeartbeatRefresh` | `()` | Clears heartbeat interval |
 | `loadHeartbeat` | `()` | Async. Fetches heartbeat, updates indicator (green <10min, red >10min, gray unknown) |
-| `loadSyncLog` | `(page?)` | Async. Paginated sync_log fetch with status badges |
+| `loadSyncSummary` | `()` | Async. Fetches today's sync_log rows, calculates summary card values (syncs, items, errors) |
+| `loadLastActivity` | `()` | Async. Fetches most recent sync_log row, displays relative time in header |
+| `loadSyncLog` | `(page?)` | Async. Paginated sync_log fetch (50 rows) with status badges and action buttons |
+| `renderSyncLogRow` | `(r)` | Returns table row HTML for a sync_log entry with actions (details, retry, download) |
 | `loadPendingBadge` | `()` | Async. Counts pending sales, updates button style |
 | `onPendingClick` | `()` | Calls renderPendingPanel |
+
+### modules/access-sync/sync-details.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `openSyncDetails` | `(logId)` | Async. Opens modal with file info, processed items table (from inventory_logs), error table (from sync_log.errors JSONB) |
+| `closeSyncDetails` | `()` | Removes sync detail overlay from DOM |
+| `downloadFailedFile` | `(logId)` | Async. Fetches storage_path from sync_log, creates signed URL (1hr) from Supabase Storage, opens in new tab |
 
 ### modules/access-sync/pending-panel.js
 
@@ -585,6 +599,7 @@
 | `heartbeatInterval` | Number/null | `null` | Heartbeat auto-refresh interval ID |
 | `SYNC_LOG_PAGE_SIZE` | Number (const) | `20` | Sync log rows per page |
 | `SOURCE_LABELS` | Object (const) | `{watcher:'🤖 Watcher', manual:'👤 ידני'}` | Sync source display labels |
+| `STATUS_BADGES` | Object (const) | `{success:{...}, partial:{...}, error:{...}}` | Status badge config (icon, text, CSS class) |
 
 ### modules/access-sync/pending-panel.js
 
@@ -639,7 +654,7 @@ shared.js
   → calls: loadSystemLog() [system-log.js]
   → calls: loadReceiptTab() [goods-receipt.js]
   → calls: loadPurchaseOrdersTab() [purchase-orders.js]
-  → calls: renderAccessSyncTab(), loadHeartbeat(), loadSyncLog(), loadPendingBadge(), stopHeartbeatRefresh() [access-sync.js]
+  → calls: renderAccessSyncTab(), loadHeartbeat(), loadSyncLog(), loadSyncSummary(), loadLastActivity(), loadPendingBadge(), stopHeartbeatRefresh() [access-sync.js]
   → calls: loadStockCountTab() [stock-count-list.js]
   → calls: resetExcelImport() [excel-import.js]
 
@@ -773,6 +788,12 @@ system-log.js
 ```
 access-sync.js
   → calls: renderPendingPanel() [pending-panel.js]
+  → reads: T.SYNC_LOG, T.HEARTBEAT, T.PENDING_SALES, SOURCE_LABELS, STATUS_BADGES [self]
+
+sync-details.js
+  → calls: openSyncDetails(), downloadFailedFile() [self]
+  → reads: T.SYNC_LOG, 'inventory_logs' (direct), T.INV, brandCacheRev [shared.js], SOURCE_LABELS, STATUS_BADGES [access-sync.js]
+  → uses: sb.storage.from('failed-sync-files') [Supabase Storage]
 
 pending-panel.js
   → calls: ignorePending(), resolvePending() [pending-resolve.js] (via event delegation)
@@ -807,7 +828,7 @@ admin.js (DOMContentLoaded)
 | `purchase_order_items` | `T.PO_ITEMS` | id (uuid PK), po_id (FK→purchase_orders), brand_id (FK→brands), model, size, color, quantity, unit_cost, discount, sell_price, sell_discount, website_sync, product_type, bridge, temple_length, qty_received | → purchase_orders.id, → brands.id |
 | `goods_receipts` | `T.RECEIPTS` | id (uuid PK), receipt_number, type (delivery_note/invoice/tax_invoice), status (draft/confirmed/cancelled), supplier_id (FK→suppliers), po_id (FK→purchase_orders, nullable), notes, total_amount, branch, created_at | → suppliers.id, → purchase_orders.id, ← goods_receipt_items.receipt_id |
 | `goods_receipt_items` | `T.RCPT_ITEMS` | id (uuid PK), receipt_id (FK→goods_receipts), inventory_id (FK→inventory, nullable), barcode, brand, model, color, size, quantity, unit_cost, sell_price, website_sync, is_new_item (bool) | → goods_receipts.id, → inventory.id |
-| `sync_log` | `T.SYNC_LOG` | id (uuid PK), filename, source (watcher/manual), status (success/partial/error), total_rows, processed, errors, pending, created_at | ← access-sales.js checks for duplicate filenames |
+| `sync_log` | `T.SYNC_LOG` | id (uuid PK), filename, source_ref (watcher/manual), status (success/partial/error), rows_total, rows_success, rows_pending, rows_error, errors (JSONB), storage_path (TEXT), error_message, processed_at, created_at | ← access-sales.js checks for duplicate filenames, ← sync-details.js reads for detail modal |
 | `pending_sales` | `T.PENDING_SALES` | id (uuid PK), barcode, quantity, action_type (sale/return), order_number, sale_date, source_ref, sync_log_id, status (pending/resolved/ignored), resolved_inventory_id, resolution_note, created_at | → sync_log.id (implicit), → inventory.id (resolved) |
 | `watcher_heartbeat` | `T.HEARTBEAT` | id, last_beat, status | Single-row table for watcher status monitoring |
 

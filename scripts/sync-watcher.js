@@ -60,6 +60,23 @@ function parseDateField(raw) {
   return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
 }
 
+// ── Upload failed file to Supabase Storage ──────────────────
+async function uploadFailedFile(filepath, filename) {
+  try {
+    const buffer = fs.readFileSync(filepath);
+    const storagePath = `${makeTimestamp()}_${filename}`;
+    const { error } = await sb.storage
+      .from('failed-sync-files')
+      .upload(storagePath, buffer, { contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    if (error) { log(`  Warning: storage upload failed: ${error.message}`); return null; }
+    log(`  Uploaded to storage: ${storagePath}`);
+    return storagePath;
+  } catch (e) {
+    log(`  Warning: storage upload error: ${e.message}`);
+    return null;
+  }
+}
+
 // ── Process a single Excel file ─────────────────────────────
 async function processFile(filepath, filename) {
   // 1. Read Excel
@@ -183,9 +200,17 @@ async function processFile(filepath, filename) {
     }
   }
 
-  // 8. Write to sync_log table
+  // 8. Determine status + upload failed files to storage
   const status = failedCount === 0 ? 'success' : successCount === 0 ? 'error' : 'partial';
-  await sb.from('sync_log').insert({
+  let storagePath = null;
+  const destDir = status === 'error' ? CONFIG.failedDir : CONFIG.processedDir;
+
+  if (status === 'error' || status === 'partial') {
+    storagePath = await uploadFailedFile(filepath, filename);
+  }
+
+  // 9. Write to sync_log table
+  const logRow = {
     filename,
     source_ref:    'watcher',
     status,
@@ -193,16 +218,20 @@ async function processFile(filepath, filename) {
     rows_success:  successCount,
     rows_pending:  0,
     rows_error:    failedCount,
+    errors:        errors.length ? errors : null,
     processed_at:  new Date().toISOString(),
-  }).then(({ error }) => { if (error) log(`  Warning: sync_log insert failed: ${error.message}`); });
+  };
+  if (storagePath) logRow.storage_path = storagePath;
+  await sb.from('sync_log').insert(logRow)
+    .then(({ error }) => { if (error) log(`  Warning: sync_log insert failed: ${error.message}`); });
 
-  // 9. Console summary
+  // 10. Console summary
   log(`${filename} | total: ${dataRows.length} | success: ${successCount} | failed: ${failedCount}`);
   if (errors.length) errors.forEach(e => log(`  ${e}`));
 
-  // 10. Move to processed
-  moveFile(filepath, CONFIG.processedDir, filename);
-  log(`Moved to processed: ${filename}`);
+  // 11. Move file
+  moveFile(filepath, destDir, filename);
+  log(`Moved to ${status === 'error' ? 'failed' : 'processed'}: ${filename}`);
 }
 
 // ── Handle new file detection ───────────────────────────────
@@ -219,6 +248,18 @@ async function handleNewFile(filepath) {
     await processFile(filepath, filename);
   } catch (err) {
     log(`Error processing ${filename}: ${err.message}`);
+    // Upload failed file to Supabase Storage
+    let storagePath = null;
+    try { storagePath = await uploadFailedFile(filepath, filename); } catch (_) {}
+    // Write sync_log entry for file-level failure
+    const logRow = {
+      filename, source_ref: 'watcher', status: 'error',
+      rows_total: 0, rows_success: 0, rows_pending: 0, rows_error: 0,
+      errors: [err.message],
+      processed_at: new Date().toISOString(),
+    };
+    if (storagePath) logRow.storage_path = storagePath;
+    await sb.from('sync_log').insert(logRow).catch(() => {});
     try {
       moveFile(filepath, CONFIG.failedDir, filename);
       log(`Moved to failed: ${filename}`);
