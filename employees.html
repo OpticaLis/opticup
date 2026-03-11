@@ -1,0 +1,73 @@
+<!--
+  Optic Up — Employee Management
+  Standalone page — loads employee-list.js for all logic
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>אופטיקה פריזמה — ניהול עובדים</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span>&#9670;</span> אופטיקה פריזמה</div>
+  <h1 style="font-size:1rem;font-weight:600;margin:0;color:white;">ניהול עובדים</h1>
+  <a href="index.html" style="font-size:.85rem;color:rgba(255,255,255,.75);text-decoration:none;">&#8594; מסך בית</a>
+</header>
+
+<nav id="mainNav" style="justify-content:flex-end;padding:6px 16px;">
+  <a href="index.html" id="homeBtn" class="home-link" style="display:none;color:var(--primary);text-decoration:none;font-size:.85rem;margin-left:12px;white-space:nowrap;flex-shrink:0;">&#8594; מסך בית</a>
+  <button class="admin-btn unlocked" id="adminBtn" style="display:none" onclick="confirmDialog('האם להתנתק מהמערכת?').then(ok=>{if(ok)clearSession()})">&#128100;</button>
+</nav>
+
+<main>
+  <div style="padding:16px">
+    <div id="employees-container">טוען...</div>
+  </div>
+</main>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="loading-overlay" style="display:none">
+  <div class="spinner"></div>
+  <span id="loadingMsg">טוען...</span>
+</div>
+
+<!-- Confirm dialog modal -->
+<div id="confirmOverlay" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:400px;text-align:center">
+    <h3 id="confirmTitle" style="margin-bottom:12px"></h3>
+    <p id="confirmMsg" style="margin-bottom:20px"></p>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button id="confirmYes" class="btn btn-d">אישור</button>
+      <button id="confirmNo" class="btn btn-g">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/shared.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/supabase-ops.js"></script>
+<script src="js/data-loading.js"></script>
+<script src="modules/employees/employee-list.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', async () => {
+  const session = await loadSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+  if (!hasPermission('employees.view')) { window.location.href = 'index.html'; return; }
+  const emp = getCurrentEmployee();
+  if (emp) {
+    document.getElementById('adminBtn').textContent = emp.name + ' \u{1F464}';
+    document.getElementById('adminBtn').style.display = '';
+    document.getElementById('homeBtn').style.display = '';
+  }
+  await loadData();
+  loadEmployeesTab();
+});
+</script>
+</body>
+</html>
