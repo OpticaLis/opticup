@@ -71,10 +71,15 @@ After reading SESSION_CONTEXT.md, confirm:
 ### SaaS Rules — Mandatory from Phase 3.75 Onward
 
 11. **tenant_id on every table** — every new table MUST have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. No exceptions, ever.
-12. **RLS on every table** — every new table MUST have Row Level Security enabled with a tenant isolation policy.
-13. **Contracts** — every phase must define RPC functions (contracts) that other modules call. No direct table access between modules.
+12. **RLS on every table** — every new table MUST have Row Level Security enabled with a tenant isolation policy. Use this template:
+    ```sql
+    CREATE POLICY tenant_isolation ON [table_name]
+      USING (tenant_id = current_setting('app.tenant_id')::uuid);
+    ```
+13. **Contracts** — every phase must define its public functions (contracts) in MODULE_SPEC.md. Other modules call only these contract functions — never access another module's tables directly.
 14. **Views for external access** — every phase must consider: "What does a supplier/customer/storefront need to see?" and plan Views accordingly.
 15. **No hardcoded values** — currencies, languages, payment types = configurable tables, not hardcoded enums. Build as if a second store joins tomorrow in a different country.
+16. **SaaS litmus test** — build every phase as if tomorrow a second optician chain joins that we've never met. If they can use the phase without any code changes — it was done right.
 
 ---
 
