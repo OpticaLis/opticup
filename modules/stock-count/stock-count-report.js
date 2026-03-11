@@ -13,23 +13,36 @@ async function showDiffReport(countId) {
     // Fetch all items
     const allItems = await fetchAll(T.STOCK_COUNT_ITEMS, [['count_id', 'eq', countId]]);
     const diffItems = allItems.filter(i => i.status === 'counted' && i.actual_qty !== i.expected_qty);
-    renderReportScreen(countId, diffItems, allItems);
+    const pendingItems = allItems.filter(i => i.status === 'pending');
+    const displayItems = [...diffItems, ...pendingItems];
+    renderReportScreen(countId, diffItems, allItems, displayItems);
   } catch (err) {
     toast('שגיאה בהכנת דוח: ' + err.message, 'e');
   } finally { hideLoading(); }
 }
 
 // ── Render report screen ─────────────────────────────────────
-function renderReportScreen(countId, diffItems, allItems) {
+function renderReportScreen(countId, diffItems, allItems, displayItems) {
   const shortages = diffItems.filter(i => (i.actual_qty - i.expected_qty) < 0);
   const surpluses = diffItems.filter(i => (i.actual_qty - i.expected_qty) > 0);
   const uncounted = allItems.filter(i => i.status !== 'counted').length;
   const totalShortage = shortages.reduce((s, i) => s + (i.actual_qty - i.expected_qty), 0);
   const totalSurplus = surpluses.reduce((s, i) => s + (i.actual_qty - i.expected_qty), 0);
 
-  const rows = diffItems.length === 0
+  const rows = displayItems.length === 0
     ? '<tr><td colspan="7" style="text-align:center;padding:24px;color:#999">אין פערים — הכל תקין!</td></tr>'
-    : diffItems.map(it => {
+    : displayItems.map(it => {
+        if (it.status === 'pending') {
+          return `<tr class="sc-row-pending">
+            <td style="font-weight:600;font-size:.85rem">${escapeHtml(it.barcode || '—')}</td>
+            <td>${escapeHtml(it.brand || '—')}</td>
+            <td>${escapeHtml(it.model || '—')}</td>
+            <td style="text-align:center">${it.expected_qty}</td>
+            <td style="text-align:center;font-weight:700">—</td>
+            <td style="text-align:center;font-weight:700;color:var(--g400)">?</td>
+            <td>לא נספר</td>
+          </tr>`;
+        }
         const diff = it.actual_qty - it.expected_qty;
         const cls = diff < 0 ? 'sc-row-diff' : 'sc-row-warn';
         return `<tr class="${cls}">
