@@ -24,10 +24,12 @@
 ## סוף פאזה
 
 ### שלב 1 — הצ'אט המשני מעדכן (הוא עושה את זה לבד):
+- [ ] ROADMAP.md — סימון ✅
+- [ ] SESSION_CONTEXT.md — מצב נוכחי, commits, מה הבא
 - [ ] CHANGELOG.md — מה קרה
 - [ ] MODULE_SPEC.md — מה קיים עכשיו
+- [ ] MODULE_MAP.md — קבצים/פונקציות חדשים
 - [ ] db-schema.sql — אם היה שינוי DB
-- [ ] ROADMAP.md — סימון ✅ על הפאזה שהושלמה
 
 ### שלב 2 — הצ'אט המשני נותן לך סיכום
 
@@ -35,29 +37,23 @@
 - [ ] את הסיכום שהצ'אט המשני כתב (copy-paste)
 - [ ] זה הכל. אני קורא, מתכנן, וכותב PHASE_X+1_SPEC.
 
-### שלב 4 — לעדכן בתבנית:
-- [ ] פתח את `SECONDARY_CHAT_TEMPLATE_FINAL.md`
-- [ ] עדכן את שם קובץ ה-PHASE בסעיף 4 (למשל PHASE_2 → PHASE_3)
-- [ ] זהו
-
 ---
 
 ## תזכורת — מה נמצא איפה
 
 ```
-modules/Module 1 - Inventory Management/docs/
-├── ROADMAP.md          ← מפת פאזות (מתעדכן בסוף כל פאזה)
-├── CHANGELOG.md        ← היסטוריה (מתעדכן בסוף כל פאזה)
-├── MODULE_SPEC.md      ← מצב נוכחי (מתעדכן בסוף כל פאזה)
-├── db-schema.sql       ← DB (מתעדכן בכל שינוי)
-├── PHASE_0_1_SPEC.md   ← אפיון פאזה 0+1 (היסטורי)
-├── PHASE_2_SPEC.md     ← אפיון פאזה 2 (נוכחי)
-└── PHASE_3_SPEC.md     ← אפיון פאזה 3 (עתידי — אני אכתוב)
-```
-
-```
-אצלך במחשב:
-├── SECONDARY_CHAT_TEMPLATE_FINAL.md   ← תבנית קבועה לצ'אט משני
+modules/Module 1 - Inventory Management/
+├── ROADMAP.md                    ← מפת פאזות (✅/⬜)
+├── SECONDARY_CHAT_TEMPLATE_FINAL.md  ← תבנית לצ'אט משני
+├── MY_CHEATSHEET.md              ← הקובץ הזה
+│
+└── docs/
+    ├── SESSION_CONTEXT.md        ← מצב נוכחי (מתעדכן כל session)
+    ├── MODULE_MAP.md             ← מפת קוד מלאה (856 שורות)
+    ├── MODULE_SPEC.md            ← מה קיים עכשיו
+    ├── CHANGELOG.md              ← היסטוריה
+    ├── db-schema.sql             ← DB
+    └── PHASE_X_SPEC.md           ← אפיון הפאזה הנוכחית
 ```
 
 ---

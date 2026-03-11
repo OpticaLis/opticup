@@ -5,7 +5,7 @@
 -- Creates:
 --   1. ALTER employees — new columns for auth
 --   2. roles — 5 system roles
---   3. permissions — 30 granular permissions
+--   3. permissions — 31 granular permissions
 --   4. role_permissions — default role→permission mappings
 --   5. employee_roles — employee→role assignments
 --   6. auth_sessions — token-based sessions (8h expiry)
@@ -75,6 +75,7 @@ INSERT INTO permissions (id, module, action, name_he) VALUES
   ('stock_count.approve',     'stock_count',    'approve', 'אישור ספירה'),
   ('stock_count.cancel',      'stock_count',    'cancel',  'ביטול ספירה'),
   -- Purchase Orders
+  ('purchase_order.view',     'purchasing',     'view',    'צפייה בהזמנות רכש'),
   ('purchase_order.create',   'purchasing',     'create',  'יצירת הזמנה'),
   ('purchase_order.edit',     'purchasing',     'edit',    'עריכת הזמנה'),
   ('purchase_order.approve',  'purchasing',     'approve', 'אישור הזמנה'),
@@ -143,6 +144,7 @@ INSERT INTO role_permissions (role_id, permission_id, granted) VALUES
   ('team_lead', 'stock_count.scan',       true),
   ('team_lead', 'stock_count.approve',    true),
   ('team_lead', 'stock_count.cancel',     true),
+  ('team_lead', 'purchase_order.view',    true),
   ('team_lead', 'purchase_order.create',  true),
   ('team_lead', 'purchase_order.edit',    true),
   ('team_lead', 'goods_receipt.create',   true),
