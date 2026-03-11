@@ -280,3 +280,5 @@ tr.row-err td{background:#fef2f2}
   .sc-summary-bar .sc-stat{flex:1;min-width:80px;padding:8px 10px}
   .sc-summary-bar .sc-stat strong{font-size:1.1rem}
 }
+.logout-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;padding:6px 14px;border-radius:8px;cursor:pointer;font-family:'Heebo',sans-serif;font-size:.85rem;transition:background .2s;}
+.logout-btn:hover{background:rgba(255,255,255,.25);}
