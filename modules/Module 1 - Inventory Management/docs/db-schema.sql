@@ -643,3 +643,84 @@ CREATE POLICY "anon_all_prescriptions" ON prescriptions FOR ALL USING (true) WIT
 
 -- Work Orders (future)
 CREATE POLICY "anon_all_work_orders" ON work_orders FOR ALL USING (true) WITH CHECK (true);
+
+-- ============================================================
+-- Migration 016 — Phase 3: Auth & Permissions
+-- ============================================================
+
+-- ALTER employees table
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS branch_id TEXT DEFAULT '00';
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES employees(id);
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS last_login TIMESTAMPTZ;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS failed_attempts INTEGER DEFAULT 0;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ;
+
+-- RLS policies added to employees
+CREATE POLICY "employees_insert" ON employees FOR INSERT WITH CHECK (true);
+CREATE POLICY "employees_update" ON employees FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "employees_delete" ON employees FOR DELETE USING (true);
+
+-- TODO: uncomment before production (all PINs must be 5 digits first)
+-- ALTER TABLE employees ADD CONSTRAINT pin_length CHECK (LENGTH(pin) = 5);
+
+-- roles
+CREATE TABLE IF NOT EXISTS roles (
+  id          TEXT PRIMARY KEY,
+  name_he     TEXT NOT NULL,
+  description TEXT,
+  is_system   BOOLEAN DEFAULT true,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_roles" ON roles FOR ALL USING (true) WITH CHECK (true);
+
+-- permissions
+CREATE TABLE IF NOT EXISTS permissions (
+  id          TEXT PRIMARY KEY,
+  module      TEXT NOT NULL,
+  action      TEXT NOT NULL,
+  name_he     TEXT NOT NULL,
+  description TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_permissions" ON permissions FOR ALL USING (true) WITH CHECK (true);
+
+-- role_permissions
+CREATE TABLE IF NOT EXISTS role_permissions (
+  role_id       TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  permission_id TEXT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+  granted       BOOLEAN NOT NULL DEFAULT true,
+  PRIMARY KEY (role_id, permission_id)
+);
+ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_role_permissions" ON role_permissions FOR ALL USING (true) WITH CHECK (true);
+
+-- employee_roles
+CREATE TABLE IF NOT EXISTS employee_roles (
+  employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+  role_id     TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  granted_by  UUID REFERENCES employees(id),
+  granted_at  TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (employee_id, role_id)
+);
+ALTER TABLE employee_roles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_employee_roles" ON employee_roles FOR ALL USING (true) WITH CHECK (true);
+
+-- auth_sessions
+CREATE TABLE IF NOT EXISTS auth_sessions (
+  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  employee_id  UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+  token        TEXT NOT NULL UNIQUE,
+  permissions  JSONB NOT NULL,
+  role_id      TEXT NOT NULL,
+  branch_id    TEXT NOT NULL DEFAULT '00',
+  created_at   TIMESTAMPTZ DEFAULT NOW(),
+  expires_at   TIMESTAMPTZ NOT NULL,
+  last_active  TIMESTAMPTZ DEFAULT NOW(),
+  is_active    BOOLEAN DEFAULT true
+);
+ALTER TABLE auth_sessions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_auth_sessions" ON auth_sessions FOR ALL USING (true) WITH CHECK (true);
