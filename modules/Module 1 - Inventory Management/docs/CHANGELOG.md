@@ -18,6 +18,8 @@
 - phase 3.5: permission-based lock on module cards in index.html
 - docs: add SaaS/multi-tenant rules to CLAUDE.md
 - docs: update SESSION_CONTEXT and ROADMAP
+- style: add global logout-btn class to styles.css
+- style: move logout button to header, home link always visible in nav (inventory.html + employees.html)
 
 ---
 

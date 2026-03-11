@@ -8,7 +8,7 @@ Phase 3.5 ✅ complete. Next: Phase 4 — מעקב חובות ספקים.
 
 ### Last work done in Phase 3.5
 
-**Commits:** e9a1d57, 8ec3c4b, 2933bb5, 5eabe0a, d796b93, 188681d, df3b568, 588a7cf, 378d231, 8bf3707, 608f9a9, 698bb17, b79b430, f328582, e92ac12, edb7fac
+**Commits:** e9a1d57, 8ec3c4b, 2933bb5, 5eabe0a, d796b93, 188681d, df3b568, 588a7cf, 378d231, 8bf3707, 608f9a9, 698bb17, b79b430, f328582, e92ac12, edb7fac, 99c61d1, 34830e3, 22fae18
 
 **What was built:**
 - index.html renamed to inventory.html (main app)
@@ -21,6 +21,9 @@ Phase 3.5 ✅ complete. Next: Phase 4 — מעקב חובות ספקים.
 - employees.html standalone page built
 - employees card in index.html links to employees.html
 - employees.html uses correct element IDs for loading, toast, and confirm dialog
+- style: added global .logout-btn class to styles.css
+- style: logout button moved to header in inventory.html and employees.html
+- style: "→ מסך בית" always visible in nav (removed from header)
 
 ### Remaining in Phase 3.5
 
@@ -55,6 +58,7 @@ All items complete.
 - ⚠️ RLS policies are wide open (USING true) — needs hardening before production
 - ⚠️ Internet exposure of app — status not yet confirmed
 - ⚠️ serve.js still routes / to index.html — update if using local dev server
+- ⚠️ employees.html toast timing bug — toast() called before DOM ready in loadData(), causes console error (non-blocking)
 - ⚠️ Repo rename (prizma-inventory → opticup) is a manual GitHub Settings action — not yet done
 
 ## Future Features (deferred from Phase 3)

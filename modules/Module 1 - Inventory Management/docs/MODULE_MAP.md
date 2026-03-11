@@ -46,11 +46,11 @@
 | 36 | auth-service.js | js/auth-service.js | 287 | Core auth engine: verifyEmployeePIN, initSecureSession, loadSession, clearSession, hasPermission, requirePermission, applyUIPermissions, getCurrentEmployee, assignRoleToEmployee, forceLogout |
 | 37 | employee-list.js | modules/employees/employee-list.js | 283 | Employee management: loadEmployeesTab, renderEmployeeTable, openAddEmployee, openEditEmployee, saveEmployee, confirmDeactivateEmployee, renderPermissionMatrix, updateRolePermission |
 | 38 | index.html | index.html | 310 | Home screen shell: MODULES config array, renderModules (permission-based card lock), PIN login modal, session restore, live clock, onLoginSuccess |
-| 39 | employees.html | employees.html | ~120 | Standalone employee management page (extracted from inventory.html employees tab) |
+| 39 | employees.html | employees.html | ~120 | Standalone employee management page (extracted from inventory.html employees tab). adminBtn in header, homeBtn always visible in nav |
 
 **Total: 39 files, ~8,128 lines** (includes scripts/sync-watcher.js)
 
-**Note:** inventory.html — employees tab removed in Phase 3.5. Employee management now lives in standalone employees.html.
+**Note:** inventory.html — employees tab removed in Phase 3.5. Employee management now lives in standalone employees.html. Both inventory.html and employees.html have adminBtn in header and homeBtn always visible in nav.
 
 ---
 
