@@ -32,15 +32,15 @@
 <nav id="mainNav">
   <button data-tab="entry" class="active" onclick="showTab('entry')">&#128230; הכנסת מלאי</button>
   <button data-tab="reduction" onclick="showTab('reduction')">&#128179; הורדת מלאי</button>
-  <button data-tab="purchase-orders" onclick="showTab('purchase-orders')">&#128203; הזמנות רכש</button>
-  <button data-tab="inventory" onclick="showTab('inventory')">&#128451; מלאי ראשי</button>
-  <button data-tab="brands" onclick="showTab('brands')">&#127991; ניהול מותגים</button>
-  <button data-tab="suppliers" onclick="showTab('suppliers')">&#128101; ניהול ספקים</button>
-  <button data-tab="systemlog" class="admin-tab" onclick="showTab('systemlog')">&#128203; לוג מערכת</button>
-  <button data-tab="access-sync" onclick="showTab('access-sync')">&#128260; סנכרון Access</button>
-  <button data-tab="stock-count" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
+  <button data-tab="purchase-orders" data-tab-permission="purchase_order.view" onclick="showTab('purchase-orders')">&#128203; הזמנות רכש</button>
+  <button data-tab="inventory" data-tab-permission="inventory.view" onclick="showTab('inventory')">&#128451; מלאי ראשי</button>
+  <button data-tab="brands" data-tab-permission="brands.view" onclick="showTab('brands')">&#127991; ניהול מותגים</button>
+  <button data-tab="suppliers" data-tab-permission="suppliers.view" onclick="showTab('suppliers')">&#128101; ניהול ספקים</button>
+  <button data-tab="systemlog" data-tab-permission="settings.view" class="admin-tab" onclick="showTab('systemlog')">&#128203; לוג מערכת</button>
+  <button data-tab="access-sync" data-tab-permission="sync.view" onclick="showTab('access-sync')">&#128260; סנכרון Access</button>
+  <button data-tab="stock-count" data-tab-permission="stock_count.create" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
   <div class="nav-spacer"></div>
-  <button class="admin-btn" id="adminBtn" onclick="toggleAdmin()">&#128274; מנהל</button>
+  <button class="admin-btn" id="adminBtn" data-tab-permission="settings.view" onclick="toggleAdmin()">&#128274; מנהל</button>
 </nav>
 
 <main>
@@ -50,7 +50,7 @@
   <div id="entry-choice" class="sub-choice">
     <button onclick="showEntryMode('manual')" id="btn-entry-manual"><span class="icon">&#9997;</span>הכנסה ידנית</button>
     <button onclick="showEntryMode('excel')" id="btn-entry-excel"><span class="icon">&#128194;</span>הכנסה מאקסל</button>
-    <button onclick="showEntryMode('receipt')" id="btn-entry-receipt"><span class="icon">&#128230;</span>קבלת סחורה</button>
+    <button onclick="showEntryMode('receipt')" id="btn-entry-receipt" data-tab-permission="goods_receipt.create"><span class="icon">&#128230;</span>קבלת סחורה</button>
     <button onclick="openEntryHistory()" id="btn-entry-history"><span class="icon">&#128197;</span>היסטוריית הכנסות</button>
   </div>
 
@@ -61,10 +61,10 @@
       <div id="entry-alerts"></div>
       <div class="items-container" id="entry-body"></div>
       <div class="btn-bar">
-        <button class="btn btn-g" onclick="addEntryRow()">&#10010; הוסף שורה</button>
+        <button class="btn btn-g" onclick="addEntryRow()" data-permission="inventory.edit">&#10010; הוסף שורה</button>
         <button class="btn btn-w" onclick="generateBarcodes('entry')">&#127991; יצירת ברקודים</button>
-        <button class="btn btn-p" onclick="exportBarcodesExcel('entry')">&#128229; ברקודים-אקסל</button>
-        <button class="btn btn-s" onclick="submitEntry()">&#10004; שלח הכל</button>
+        <button class="btn btn-p" onclick="exportBarcodesExcel('entry')" data-permission="inventory.export">&#128229; ברקודים-אקסל</button>
+        <button class="btn btn-s" onclick="submitEntry()" data-permission="inventory.edit">&#10004; שלח הכל</button>
       </div>
     </div>
   </div>
@@ -95,7 +95,7 @@
           </table>
         </div>
         <div class="btn-bar">
-          <button class="btn btn-s" id="excel-import-confirm" onclick="confirmExcelImport()" disabled>&#10004; אשר והכנס 0 פריטים</button>
+          <button class="btn btn-s" id="excel-import-confirm" onclick="confirmExcelImport()" data-permission="inventory.edit" disabled>&#10004; אשר והכנס 0 פריטים</button>
           <button class="btn btn-g" onclick="resetExcelImport()">&#10006; בטל</button>
         </div>
       </div>
@@ -156,7 +156,7 @@
     </div>
     <div class="form-group"><label>סיסמת עובד <span class="req">*</span></label><input type="password" id="reduce-modal-pin" placeholder="****" onkeydown="if(event.key==='Enter')confirmReduction()"></div>
     <div style="display:flex;gap:8px;margin-top:16px">
-      <button class="btn btn-d" onclick="confirmReduction()">&#10004; אשר הורדה</button>
+      <button class="btn btn-d" onclick="confirmReduction()" data-permission="inventory.reduce">&#10004; אשר הורדה</button>
       <button class="btn btn-g" onclick="closeModal('reduce-modal')">ביטול</button>
     </div>
   </div>
@@ -186,7 +186,7 @@
       <div class="form-group" style="max-width:160px"><label>סוג מוצר</label><select id="inv-filter-ptype" onchange="filterInventoryTable()"><option value="">הכל</option><option value="משקפי ראייה">ראייה</option><option value="משקפי שמש">שמש</option></select></div>
       <div class="form-group" style="max-width:100px"><label>כמות</label><select id="inv-filter-qty" onchange="filterInventoryTable()"><option value="">הכל</option><option value="1" selected>במלאי</option><option value="0">אזל</option></select></div>
       <button class="btn btn-p" onclick="loadInventoryTab()">&#128260; רענן</button>
-      <button class="btn btn-p" onclick="exportInventoryExcel()">&#128229; ייצוא Excel</button>
+      <button class="btn btn-p" onclick="exportInventoryExcel()" data-permission="inventory.export">&#128229; ייצוא Excel</button>
     </div>
     <div style="margin-bottom:8px;font-size:.85rem;color:var(--g500)">
       סה״כ: <strong id="inv-count">0</strong> רשומות (מוצגות: <strong id="inv-shown">0</strong>)
@@ -204,8 +204,8 @@
         <div class="bulk-field"><label>סנכרון</label><select id="bulk-sync"><option value="">—</option><option value="מלא">מלא</option><option value="תדמית">תדמית</option><option value="לא">לא</option></select></div>
       </div>
       <div class="bulk-btns">
-        <button class="btn btn-s btn-sm" onclick="applyBulkUpdate()">&#10004; עדכן נבחרים</button>
-        <button class="btn btn-d btn-sm" onclick="bulkDelete()">&#128465; מחק נבחרים</button>
+        <button class="btn btn-s btn-sm" onclick="applyBulkUpdate()" data-permission="inventory.edit">&#10004; עדכן נבחרים</button>
+        <button class="btn btn-d btn-sm" onclick="bulkDelete()" data-permission="inventory.delete">&#128465; מחק נבחרים</button>
         <button class="btn btn-g btn-sm" onclick="clearSelection()">&#10006; בטל בחירה</button>
       </div>
     </div>
@@ -241,9 +241,9 @@
       <button id="inv-next" class="btn btn-g btn-sm" onclick="invPageNav(1)">הבא &#9654;</button>
     </div>
     <div class="btn-bar" id="inv-admin-bar" style="display:none">
-      <button class="btn btn-s" onclick="saveInventoryChanges()">&#10004; שמור שינויים</button>
+      <button class="btn btn-s" onclick="saveInventoryChanges()" data-permission="inventory.edit">&#10004; שמור שינויים</button>
       <button class="btn btn-g" onclick="loadInventoryTab()">&#10006; בטל שינויים</button>
-      <button class="btn btn-d" onclick="openRecycleBin()" style="margin-right:auto">&#128465; סל מחזור</button>
+      <button class="btn btn-d" onclick="openRecycleBin()" data-permission="inventory.delete" style="margin-right:auto">&#128465; סל מחזור</button>
     </div>
   </div>
 </section>
@@ -254,8 +254,8 @@
     <h3>&#127991; ניהול מותגים</h3>
     <div id="brands-alerts"></div>
     <div class="btn-bar" style="margin-bottom:12px">
-      <button class="btn btn-p" onclick="addBrandRow()">&#10010; הוסף מותג חדש</button>
-      <button class="btn btn-s" onclick="saveBrands()">&#10004; שמור שינויים</button>
+      <button class="btn btn-p" onclick="addBrandRow()" data-permission="brands.edit">&#10010; הוסף מותג חדש</button>
+      <button class="btn btn-s" onclick="saveBrands()" data-permission="brands.edit">&#10004; שמור שינויים</button>
     </div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
       <select id="brand-filter-active" onchange="renderBrandsTable()" style="padding:7px 10px;border-radius:6px;border:1px solid #ccc">
@@ -297,8 +297,8 @@
     <div id="suppliers-alerts"></div>
     <div class="form-row" style="align-items:flex-end;margin-bottom:16px">
       <div class="form-group" style="max-width:300px"><label>שם ספק חדש</label><input type="text" id="new-supplier-name" placeholder="הקלד שם ספק..."></div>
-      <button class="btn btn-p" onclick="addSupplier()">&#10010; הוסף ספק</button>
-      <button class="btn btn-s" id="supplier-edit-btn" onclick="toggleSupplierNumberEdit()" style="margin-right:auto">&#9998; ערוך מספרי ספקים</button>
+      <button class="btn btn-p" onclick="addSupplier()" data-permission="suppliers.edit">&#10010; הוסף ספק</button>
+      <button class="btn btn-s" id="supplier-edit-btn" onclick="toggleSupplierNumberEdit()" data-permission="suppliers.edit" style="margin-right:auto">&#9998; ערוך מספרי ספקים</button>
     </div>
     <div id="supplier-save-bar" style="display:none;gap:8px;margin-bottom:12px;align-items:center">
       <button class="btn btn-p" onclick="saveSupplierNumbers()">&#10004; שמור שינויים</button>
@@ -342,7 +342,7 @@
       <div class="form-group"><label>חיפוש חופשי</label><input type="text" id="slog-search" placeholder="ברקוד / מותג / דגם..."></div>
       <button class="btn btn-p btn-sm" onclick="loadSystemLog()">&#128269; חפש</button>
       <button class="btn btn-g btn-sm" onclick="clearSystemLogFilters()">&#10006; נקה</button>
-      <button class="btn btn-s btn-sm" onclick="exportSystemLog()">&#128229; ייצוא לוג</button>
+      <button class="btn btn-s btn-sm" onclick="exportSystemLog()" data-permission="reports.export">&#128229; ייצוא לוג</button>
     </div>
 
     <!-- Logs Table -->
@@ -380,7 +380,7 @@
   <div id="rcpt-step1">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <h3 style="margin:0">&#128230; קבלות סחורה</h3>
-      <button class="btn btn-p" onclick="openNewReceipt()">&#10010; קבלה חדשה</button>
+      <button class="btn btn-p" onclick="openNewReceipt()" data-permission="goods_receipt.create">&#10010; קבלה חדשה</button>
     </div>
     <div class="rcpt-summary">
       <div class="slog-card"><div id="rcpt-drafts" style="font-size:1.6rem;font-weight:700;color:#92400e">0</div><div>טיוטות פתוחות</div></div>
@@ -452,8 +452,8 @@
 
     <div class="btn-bar" style="display:flex;gap:8px;flex-wrap:wrap" id="rcpt-action-bar">
       <button class="btn btn-g" onclick="saveReceiptDraft()">&#128190; שמור טיוטה</button>
-      <button class="btn btn-s" onclick="confirmReceipt()">&#10004; אשר קבלה ועדכן מלאי</button>
-      <button class="btn btn-g btn-sm" onclick="exportReceiptExcel()" style="margin-right:auto">&#128194; ייצוא Excel</button>
+      <button class="btn btn-s" onclick="confirmReceipt()" data-permission="goods_receipt.confirm">&#10004; אשר קבלה ועדכן מלאי</button>
+      <button class="btn btn-g btn-sm" onclick="exportReceiptExcel()" data-permission="goods_receipt.export" style="margin-right:auto">&#128194; ייצוא Excel</button>
     </div>
   </div>
 </section>
@@ -473,7 +473,7 @@
   <div style="padding:16px">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px">
       <h2 style="margin:0">&#128202; ספירת מלאי</h2>
-      <button class="btn btn-p" onclick="startNewCount()" style="padding:8px 18px;font-size:15px">+ ספירה חדשה</button>
+      <button class="btn btn-p" onclick="startNewCount()" data-permission="stock_count.create" style="padding:8px 18px;font-size:15px">+ ספירה חדשה</button>
     </div>
     <div class="sc-summary" style="display:flex; gap:16px; margin-bottom:20px; flex-wrap:wrap">
       <div class="slog-card" style="flex:1;min-width:140px;background:var(--white);border-radius:var(--radius);padding:18px;text-align:center;box-shadow:var(--shadow)">
@@ -630,7 +630,7 @@
     <div id="softdel-error" style="color:var(--error);font-size:.85rem;margin-bottom:8px"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-g" onclick="closeModal('softdel-modal')">ביטול</button>
-      <button class="btn btn-d" id="softdel-confirm" onclick="confirmSoftDelete()" disabled>אשר מחיקה</button>
+      <button class="btn btn-d" id="softdel-confirm" onclick="confirmSoftDelete()" data-permission="inventory.delete" disabled>אשר מחיקה</button>
     </div>
   </div>
 </div>
@@ -650,7 +650,7 @@
     <h3>📋 <span id="history-title">היסטוריית פריט</span></h3>
     <div id="history-timeline" style="max-height:55vh;overflow-y:auto;padding:8px 0"></div>
     <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-      <button class="btn btn-s" onclick="exportHistoryExcel()" id="history-export-btn" style="display:none">📥 ייצוא Excel</button>
+      <button class="btn btn-s" onclick="exportHistoryExcel()" id="history-export-btn" data-permission="inventory.export" style="display:none">📥 ייצוא Excel</button>
       <button class="btn btn-g" onclick="closeModal('history-modal')">סגור</button>
     </div>
   </div>
