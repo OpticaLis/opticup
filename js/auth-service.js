@@ -212,7 +212,7 @@ async function clearSession() {
     await sb.from(AT.SESSIONS).update({ is_active: false }).eq('token', token);
   }
   clearSessionLocal();
-  window.location.reload();
+  window.location.href = 'index.html';
 }
 
 // =========================================================
