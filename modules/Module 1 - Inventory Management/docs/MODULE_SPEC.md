@@ -99,6 +99,13 @@ migrations/             — SQL migrations (012-015 for Phase 2)
 | pin | TEXT NOT NULL | קוד PIN |
 | role | TEXT DEFAULT 'employee' | תפקיד (employee / manager / admin) |
 | is_active | BOOLEAN DEFAULT true | פעיל |
+| email | TEXT | אימייל (Phase 3) |
+| phone | TEXT | טלפון (Phase 3) |
+| branch_id | TEXT DEFAULT '00' | קוד סניף (Phase 3) |
+| created_by | UUID FK → employees | מי יצר (Phase 3) |
+| last_login | TIMESTAMPTZ | התחברות אחרונה (Phase 3) |
+| failed_attempts | INTEGER DEFAULT 0 | ניסיונות כושלים (Phase 3) |
+| locked_until | TIMESTAMPTZ | נעול עד (Phase 3) |
 
 ברירת מחדל: מנהל ראשי, PIN 1234, role admin
 
@@ -272,6 +279,62 @@ migrations/             — SQL migrations (012-015 for Phase 2)
 |--------|---------|
 | `failed-sync-files` | Stores Excel files that failed/partially processed during Access sync (015) |
 
+### 2.18 `roles` — תפקידים (Phase 3)
+| שדה | סוג | תיאור |
+|-----|------|--------|
+| id | TEXT PK | 'ceo' \| 'manager' \| 'team_lead' \| 'worker' \| 'viewer' |
+| name_he | TEXT | שם תצוגה בעברית |
+| description | TEXT | תיאור |
+| is_system | BOOLEAN DEFAULT true | תפקיד מערכת (לא ניתן למחיקה) |
+| created_at | TIMESTAMPTZ | חותמת זמן |
+
+5 system rows inserted by default — cannot be deleted
+
+### 2.19 `permissions` — הרשאות (Phase 3)
+| שדה | סוג | תיאור |
+|-----|------|--------|
+| id | TEXT PK | e.g. 'inventory.view', 'purchase_order.create' |
+| module | TEXT | מודול (inventory, stock_count, purchasing, etc.) |
+| action | TEXT | פעולה (view, create, edit, delete, etc.) |
+| name_he | TEXT | שם בעברית |
+| description | TEXT | תיאור |
+| created_at | TIMESTAMPTZ | חותמת זמן |
+
+35 permissions across 9 modules: inventory, stock_count, purchasing, goods_receipts, sync, brands, suppliers, employees, reports, audit, settings
+
+### 2.20 `role_permissions` — מיפוי תפקיד←הרשאה (Phase 3)
+| שדה | סוג | תיאור |
+|-----|------|--------|
+| role_id | TEXT FK → roles | תפקיד (PK) |
+| permission_id | TEXT FK → permissions | הרשאה (PK) |
+| granted | BOOLEAN DEFAULT true | האם מוענקת |
+
+PK: (role_id, permission_id). 94 default mappings inserted by migration
+
+### 2.21 `employee_roles` — שיוך עובד←תפקיד (Phase 3)
+| שדה | סוג | תיאור |
+|-----|------|--------|
+| employee_id | UUID FK → employees | עובד (PK) |
+| role_id | TEXT FK → roles | תפקיד (PK) |
+| granted_by | UUID FK → employees | מי שייך |
+| granted_at | TIMESTAMPTZ | מתי שויך |
+
+PK: (employee_id, role_id)
+
+### 2.22 `auth_sessions` — סשנים (Phase 3)
+| שדה | סוג | תיאור |
+|-----|------|--------|
+| id | UUID PK | מזהה |
+| employee_id | UUID FK → employees | עובד |
+| token | TEXT UNIQUE | טוקן אקראי 32-char hex |
+| permissions | JSONB | snapshot הרשאות בזמן התחברות |
+| role_id | TEXT | תפקיד |
+| branch_id | TEXT DEFAULT '00' | סניף |
+| created_at | TIMESTAMPTZ | נוצר |
+| expires_at | TIMESTAMPTZ | פג תוקף (NOW()+8h) |
+| last_active | TIMESTAMPTZ | פעילות אחרונה |
+| is_active | BOOLEAN | פעיל |
+
 ---
 
 ## 3. Screens & Modules
@@ -443,5 +506,49 @@ migrations/             — SQL migrations (012-015 for Phase 2)
 1. **loadPOsForSupplier console warning** — fires when receipt tab loads without supplier. Non-blocking.
 2. **RLS פתוח** — all tables use `USING (true)` — needs hardening with auth
 3. **branch_id inconsistency** — some tables UUID, some TEXT
-4. **No employee CRUD** — only default PIN 1234, no management UI
-5. **Images** — basic upload only, no edit/delete/reorder from UI
+4. **Images** — basic upload only, no edit/delete/reorder from UI
+
+---
+
+## 6. New Files (Phase 3)
+
+### 6.1 `js/auth-service.js` (287 lines)
+Core auth engine. Key functions:
+- `verifyEmployeePIN(pin)` — PIN lookup, lockout check, failed_attempts management. Returns employee object or { locked: true } or null
+- `initSecureSession(employee)` — token generation, DB insert, sessionStorage write, permission snapshot
+- `loadSession()` — token validation, session restore, dev bypass support
+- `clearSession()` — DB deactivate + sessionStorage clear + page reload
+- `hasPermission(permissionKey)` — checks permission snapshot, supports '*' wildcard
+- `requirePermission(permissionKey)` — guard: toast error + throw if unauthorized
+- `applyUIPermissions()` — hides elements by data-permission + data-tab-permission
+- `getCurrentEmployee()` — returns employee object from sessionStorage
+- `assignRoleToEmployee(employeeId, roleId)` — upsert employee_roles
+- `forceLogout(employeeId)` — deactivate all sessions for target employee
+
+### 6.2 `modules/employees/employee-list.js` (283 lines)
+Employee management screen. Key functions:
+- `loadEmployeesTab()` — fetch employees + roles, render summary cards + table
+- `renderEmployeeTable(employees)` — table with colored role badges + action buttons
+- `openAddEmployee()` / `openEditEmployee(id)` — modal: name, PIN, role, branch
+- `saveEmployee(data)` — insert/update employees + employee_roles
+- `confirmDeactivateEmployee(id, name)` — PIN confirm → soft delete → invalidate sessions
+- `renderPermissionMatrix(targetDivId)` — roles×permissions table, editable by CEO only
+- `updateRolePermission(roleId, permissionId, granted)` — upsert role_permissions
+
+---
+
+## 7. Auth Flow (Phase 3)
+
+1. App load → `loadSession()` → if no valid session → `showLoginModal()`
+2. PIN entry → `verifyEmployeePIN()` → `initSecureSession()` → `applyUIPermissions()` → `hideLoginModal()`
+3. Session expires after 8h → `clearSession()` → reload → login modal
+4. 5 failed PINs → sessionStorage lock (client) + `locked_until` in DB (server-side, for correct-PIN-but-locked accounts)
+
+---
+
+## 8. Permission System (Phase 3)
+
+- 5 roles with hierarchical access: ceo > manager > team_lead > worker > viewer
+- 35 permissions checked via `hasPermission(key)` at runtime
+- UI guards: `data-permission` on buttons, `data-tab-permission` on nav tabs
+- `applyUIPermissions()` runs after every login and tab switch
