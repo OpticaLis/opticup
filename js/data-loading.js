@@ -100,6 +100,8 @@ function closeLowStockModal() {
 }
 
 async function loadData() {
+  const session = await loadSession();
+  if (!session) return; // login modal already shown by caller
   showLoading('טוען ספקים ומותגים...');
   try {
     await loadLookupCaches();

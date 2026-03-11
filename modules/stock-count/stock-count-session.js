@@ -14,6 +14,18 @@ let _lastScanCode = '', _lastScanTime = 0;
 // ── Worker PIN entry ─────────────────────────────────────────
 function openWorkerPin(countId) {
   scCountId = countId;
+  // Skip PIN modal if already logged in
+  const emp = getCurrentEmployee();
+  if (emp) {
+    activeWorker = { id: emp.id, name: emp.name };
+    sessionStorage.setItem('activeWorker', JSON.stringify(activeWorker));
+    if (scCountId) {
+      openCountSession(scCountId);
+    } else {
+      _createNewStockCount();
+    }
+    return;
+  }
   const tab = document.getElementById('tab-stock-count');
   tab.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:center;min-height:60vh;padding:20px">
@@ -88,6 +100,37 @@ async function confirmWorkerPin() {
     } finally {
       hideLoading();
     }
+  }
+}
+
+// ── Create new count (shared by session-skip and confirmWorkerPin paths)
+async function _createNewStockCount() {
+  try {
+    showLoading('יוצר ספירה חדשה...');
+    const countNumber = await generateCountNumber();
+    const { data: count, error } = await sb.from(T.STOCK_COUNTS).insert({
+      count_number: countNumber,
+      status: 'in_progress',
+      count_date: new Date().toISOString().slice(0, 10),
+      branch_id: branchCode || '00',
+      counted_by: activeWorker.name
+    }).select().single();
+    if (error) throw error;
+    const inventory = await fetchAll(T.INV,
+      [['is_deleted', 'eq', false], ['quantity', 'gt', 0]]);
+    const items = inventory.map(inv => ({
+      count_id: count.id, inventory_id: inv.id,
+      barcode: inv.barcode || '', brand: brandCacheRev[inv.brand_id] || '',
+      model: inv.model || '', color: inv.color || '', size: inv.size || '',
+      expected_qty: inv.quantity || 0, status: 'pending'
+    }));
+    if (items.length) await batchCreate(T.STOCK_COUNT_ITEMS, items);
+    toast('ספירה ' + countNumber + ' נוצרה — ' + items.length + ' פריטים', 's');
+    openCountSession(count.id);
+  } catch (err) {
+    toast('שגיאה ביצירת ספירה: ' + err.message, 'e');
+  } finally {
+    hideLoading();
   }
 }
 

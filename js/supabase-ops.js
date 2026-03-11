@@ -122,8 +122,8 @@ async function batchUpdate(tableName, records) {
 // =========================================================
 async function writeLog(action, inventoryId, details = {}) {
   try {
-    const performer = sessionStorage.getItem('prizma_user') || 'system';
-    const branch    = sessionStorage.getItem('prizma_branch') || '00';
+    const emp    = getCurrentEmployee();
+    const branch = emp?.branch_id || sessionStorage.getItem('prizma_branch') || '00';
     await sb.from('inventory_logs').insert({
       action,
       inventory_id:  inventoryId || null,
@@ -136,7 +136,7 @@ async function writeLog(action, inventoryId, details = {}) {
       price_after:   details.price_after   ?? null,
       reason:        details.reason        || null,
       source_ref:    details.source_ref    || null,
-      performed_by:  performer,
+      performed_by:  emp?.name || sessionStorage.getItem('prizma_user') || 'unknown',
       branch_id:     branch,
       // Access sale fields (011)
       sale_amount:   details.sale_amount   ?? null,
@@ -146,7 +146,7 @@ async function writeLog(action, inventoryId, details = {}) {
       final_amount:  details.final_amount  ?? null,
       coupon_code:   details.coupon_code   ?? null,
       campaign:      details.campaign      ?? null,
-      employee_id:   details.employee_id   ?? null,
+      employee_id:   emp?.id || details.employee_id || null,
       lens_included: details.lens_included ?? null,
       lens_category: details.lens_category ?? null,
       order_number:  details.order_number  ?? null,
