@@ -39,6 +39,7 @@
   <button data-tab="systemlog" data-tab-permission="settings.view" class="admin-tab" onclick="showTab('systemlog')">&#128203; לוג מערכת</button>
   <button data-tab="access-sync" data-tab-permission="sync.view" onclick="showTab('access-sync')">&#128260; סנכרון Access</button>
   <button data-tab="stock-count" data-tab-permission="stock_count.create" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
+  <button data-tab="employees" data-tab-permission="employees.view" onclick="showTab('employees')">&#128101; עובדים</button>
   <div class="nav-spacer"></div>
   <button class="admin-btn" id="adminBtn" data-tab-permission="settings.view" onclick="toggleAdmin()">&#128274; מנהל</button>
 </nav>
@@ -511,6 +512,13 @@
   </div>
 </section>
 
+<!-- ========== TAB: EMPLOYEES ========== -->
+<section id="tab-employees" class="tab">
+  <div style="padding:16px">
+    <div id="employees-container">טוען...</div>
+  </div>
+</section>
+
 </main>
 
 <!-- Login Modal -->
@@ -806,6 +814,7 @@
 
 <script src="js/shared.js"></script>
 <script src="js/auth-service.js"></script>
+<script src="modules/employees/employee-list.js"></script>
 <script src="js/supabase-ops.js"></script>
 <script src="js/data-loading.js"></script>
 <script src="js/search-select.js"></script>
@@ -840,6 +849,17 @@
 <script src="modules/access-sync/pending-resolve.js"></script>
 <script src="modules/admin/admin.js"></script>
 <script>
+// =========================================================
+// TAB WIRING — extend showTab for employees tab
+// =========================================================
+(function() {
+  const _orig = showTab;
+  showTab = function(name) {
+    _orig(name);
+    if (name === 'employees') loadEmployeesTab();
+  };
+})();
+
 // =========================================================
 // LOGIN SCREEN FUNCTIONS
 // =========================================================
