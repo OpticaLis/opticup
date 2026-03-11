@@ -22,7 +22,10 @@
 
 <nav id="mainNav" style="justify-content:flex-end;padding:6px 16px;">
   <a href="index.html" id="homeBtn" class="home-link" style="display:none;color:var(--primary);text-decoration:none;font-size:.85rem;margin-left:12px;white-space:nowrap;flex-shrink:0;">&#8594; מסך בית</a>
-  <button class="admin-btn unlocked" id="adminBtn" style="display:none" onclick="confirmDialog('האם להתנתק מהמערכת?').then(ok=>{if(ok)clearSession()})">&#128100;</button>
+  <button class="admin-btn unlocked" id="adminBtn" style="display:none" onclick="confirmDialog('האם להתנתק מהמערכת?').then(ok=>{if(ok)clearSession()})">
+    <span>יציאה</span>
+    <small id="adminBtnName" style="display:block;font-size:.7rem;opacity:.75;font-weight:normal"></small>
+  </button>
 </nav>
 
 <main>
@@ -61,7 +64,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (!hasPermission('employees.view')) { window.location.href = 'index.html'; return; }
   const emp = getCurrentEmployee();
   if (emp) {
-    document.getElementById('adminBtn').textContent = emp.name + ' \u{1F464}';
+    const nameEl = document.getElementById('adminBtnName');
+    if (nameEl) nameEl.textContent = emp.name;
     document.getElementById('adminBtn').style.display = '';
     document.getElementById('homeBtn').style.display = '';
   }
