@@ -39,8 +39,7 @@ function openWorkerPin(countId) {
 async function confirmWorkerPin() {
   const pin = ($('sc-pin-input')?.value || '').trim();
   if (!pin) { $('sc-pin-error').textContent = 'יש להזין PIN'; return; }
-  const { data: emp } = await sb.from(T.EMPLOYEES).select('id, name')
-    .eq('pin', pin).eq('is_active', true).maybeSingle();
+  const emp = await verifyEmployeePIN(pin);
   if (!emp) {
     $('sc-pin-error').textContent = 'PIN שגוי';
     $('sc-pin-input').value = '';

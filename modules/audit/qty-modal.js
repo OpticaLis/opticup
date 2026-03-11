@@ -55,7 +55,7 @@ async function confirmQtyChange() {
   }
 
   // Verify PIN
-  const { data: emp } = await sb.from(T.EMPLOYEES).select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle();
+  const emp = await verifyEmployeePIN(pin);
   if (!emp) { toast('❌ סיסמת עובד שגויה', 'e'); $('qty-modal-pin').value = ''; $('qty-modal-pin').focus(); return; }
 
   // Store performer name

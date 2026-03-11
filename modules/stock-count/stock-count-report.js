@@ -132,13 +132,16 @@ async function confirmCount(countId) {
   const pin = ($('sc-mgr-pin')?.value || '').trim();
   if (!pin) { $('sc-mgr-pin-error').textContent = 'יש להזין PIN'; return; }
 
-  // Verify manager/admin PIN
-  const { data: emp } = await sb.from(T.EMPLOYEES).select('id, name, role')
-    .eq('pin', pin).eq('is_active', true).in('role', ['admin', 'manager']).maybeSingle();
+  // Verify PIN + permission
+  const emp = await verifyEmployeePIN(pin);
   if (!emp) {
-    $('sc-mgr-pin-error').textContent = 'PIN שגוי או אין הרשאת מנהל';
+    $('sc-mgr-pin-error').textContent = 'PIN שגוי';
     $('sc-mgr-pin').value = '';
     $('sc-mgr-pin').focus();
+    return;
+  }
+  if (!hasPermission('stock_count.approve')) {
+    toast('אין הרשאה לאישור ספירה', 'e');
     return;
   }
   sessionStorage.setItem('prizma_user', emp.name);

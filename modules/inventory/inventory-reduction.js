@@ -266,7 +266,7 @@ async function confirmReduction() {
   if (amount > currentQty) { toast(`לא ניתן להוריד יותר מ-${currentQty} יחידות`, 'e'); return; }
 
   // Verify PIN
-  const { data: emp } = await sb.from(T.EMPLOYEES).select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle();
+  const emp = await verifyEmployeePIN(pin);
   if (!emp) { toast('סיסמת עובד שגויה', 'e'); $('reduce-modal-pin').value = ''; $('reduce-modal-pin').focus(); return; }
   sessionStorage.setItem('prizma_user', emp.name);
 
