@@ -215,3 +215,13 @@ CREATE INDEX IF NOT EXISTS idx_sessions_employee ON auth_sessions(employee_id);
 ALTER TABLE auth_sessions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_auth_sessions" ON auth_sessions
   FOR ALL USING (true) WITH CHECK (true);
+
+-- ============================================================
+-- 7. Fix missing RLS policies on employees table
+-- ============================================================
+-- Migration 002 only added SELECT policy. INSERT/UPDATE/DELETE
+-- are required for employee management (Phase 3).
+
+CREATE POLICY "employees_insert" ON employees FOR INSERT WITH CHECK (true);
+CREATE POLICY "employees_update" ON employees FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "employees_delete" ON employees FOR DELETE USING (true);
