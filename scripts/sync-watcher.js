@@ -77,6 +77,28 @@ async function uploadFailedFile(filepath, filename) {
   }
 }
 
+// ── Idempotency guards (prevent duplicate rows from transport retries) ──
+async function isDuplicateLog(inventoryId, sourceRef) {
+  const since = new Date(Date.now() - 5000).toISOString();
+  const { data } = await sb.from('inventory_logs')
+    .select('id')
+    .eq('inventory_id', inventoryId)
+    .eq('source_ref', sourceRef)
+    .gte('created_at', since)
+    .limit(1);
+  return data && data.length > 0;
+}
+
+async function isDuplicateSyncLog(filename) {
+  const since = new Date(Date.now() - 5000).toISOString();
+  const { data } = await sb.from('sync_log')
+    .select('id')
+    .eq('filename', filename)
+    .gte('created_at', since)
+    .limit(1);
+  return data && data.length > 0;
+}
+
 // ── Process a single Excel file ─────────────────────────────
 async function processFile(filepath, filename) {
   // 1. Read Excel
@@ -169,29 +191,34 @@ async function processFile(filepath, filename) {
       const lensIncluded = ['yes', 'true', '1'].includes(lensRaw);
       const lensCategory = String(r.lens_category || '').trim() || null;
 
-      const { error: logErr } = await sb.from('inventory_logs').insert({
-        action:         'sale',
-        inventory_id:   inv.id,
-        qty_before:     qtyBefore,
-        qty_after:      qtyAfter,
-        reason:         'מכירה מ-InventorySync',
-        source_ref:     filename,
-        performed_by:   'watcher',
-        branch_id:      '00',
-        order_number:   orderNumber,
-        employee_id:    employeeId,
-        sale_amount:    saleAmount,
-        final_amount:   finalAmount,
-        discount:       discount,
-        discount_1:     discount1,
-        discount_2:     discount2,
-        coupon_code:    couponCode,
-        campaign:       campaign,
-        lens_included:  lensIncluded,
-        lens_category:  lensCategory,
-        sync_filename:  filename,
-      });
-      if (logErr) log(`  Warning: audit log insert failed row ${rowNum}: ${logErr.message}`);
+      // Idempotency: skip if already logged for this item+file within 5s
+      if (await isDuplicateLog(inv.id, filename)) {
+        log(`  Skipping duplicate inventory_log for ${barcode}`);
+      } else {
+        const { error: logErr } = await sb.from('inventory_logs').insert({
+          action:         'sale',
+          inventory_id:   inv.id,
+          qty_before:     qtyBefore,
+          qty_after:      qtyAfter,
+          reason:         'מכירה מ-InventorySync',
+          source_ref:     filename,
+          performed_by:   'watcher',
+          branch_id:      '00',
+          order_number:   orderNumber,
+          employee_id:    employeeId,
+          sale_amount:    saleAmount,
+          final_amount:   finalAmount,
+          discount:       discount,
+          discount_1:     discount1,
+          discount_2:     discount2,
+          coupon_code:    couponCode,
+          campaign:       campaign,
+          lens_included:  lensIncluded,
+          lens_category:  lensCategory,
+          sync_filename:  filename,
+        });
+        if (logErr) log(`  Warning: audit log insert failed row ${rowNum}: ${logErr.message}`);
+      }
 
       successCount++;
     } catch (e) {
@@ -209,21 +236,25 @@ async function processFile(filepath, filename) {
     storagePath = await uploadFailedFile(filepath, filename);
   }
 
-  // 9. Write to sync_log table
-  const logRow = {
-    filename,
-    source_ref:    'watcher',
-    status,
-    rows_total:    dataRows.length,
-    rows_success:  successCount,
-    rows_pending:  0,
-    rows_error:    failedCount,
-    errors:        errors.length ? errors : null,
-    processed_at:  new Date().toISOString(),
-  };
-  if (storagePath) logRow.storage_path = storagePath;
-  await sb.from('sync_log').insert(logRow)
-    .then(({ error }) => { if (error) log(`  Warning: sync_log insert failed: ${error.message}`); });
+  // 9. Write to sync_log table (with idempotency check)
+  if (await isDuplicateSyncLog(filename)) {
+    log(`  Skipping duplicate sync_log for ${filename}`);
+  } else {
+    const logRow = {
+      filename,
+      source_ref:    'watcher',
+      status,
+      rows_total:    dataRows.length,
+      rows_success:  successCount,
+      rows_pending:  0,
+      rows_error:    failedCount,
+      errors:        errors.length ? errors : null,
+      processed_at:  new Date().toISOString(),
+    };
+    if (storagePath) logRow.storage_path = storagePath;
+    const { error: slErr } = await sb.from('sync_log').insert(logRow);
+    if (slErr) log(`  Warning: sync_log insert failed: ${slErr.message}`);
+  }
 
   // 10. Console summary
   log(`${filename} | total: ${dataRows.length} | success: ${successCount} | failed: ${failedCount}`);
@@ -254,15 +285,18 @@ async function handleNewFile(filepath) {
     // Upload failed file to Supabase Storage
     let storagePath = null;
     try { storagePath = await uploadFailedFile(filepath, filename); } catch (_) {}
-    // Write sync_log entry for file-level failure
-    const logRow = {
-      filename, source_ref: 'watcher', status: 'error',
-      rows_total: 0, rows_success: 0, rows_pending: 0, rows_error: 0,
-      errors: [err.message],
-      processed_at: new Date().toISOString(),
-    };
-    if (storagePath) logRow.storage_path = storagePath;
-    await sb.from('sync_log').insert(logRow).catch(() => {});
+    // Write sync_log entry for file-level failure (with idempotency check)
+    if (!await isDuplicateSyncLog(filename)) {
+      const logRow = {
+        filename, source_ref: 'watcher', status: 'error',
+        rows_total: 0, rows_success: 0, rows_pending: 0, rows_error: 0,
+        errors: [err.message],
+        processed_at: new Date().toISOString(),
+      };
+      if (storagePath) logRow.storage_path = storagePath;
+      const { error: slErr } = await sb.from('sync_log').insert(logRow);
+      if (slErr) log(`  Warning: sync_log insert failed: ${slErr.message}`);
+    }
     try {
       moveFile(filepath, CONFIG.failedDir, filename);
       log(`Moved to failed: ${filename}`);
