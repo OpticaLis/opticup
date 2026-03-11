@@ -45,8 +45,12 @@
 | 35 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
 | 36 | auth-service.js | js/auth-service.js | 287 | Core auth engine: verifyEmployeePIN, initSecureSession, loadSession, clearSession, hasPermission, requirePermission, applyUIPermissions, getCurrentEmployee, assignRoleToEmployee, forceLogout |
 | 37 | employee-list.js | modules/employees/employee-list.js | 283 | Employee management: loadEmployeesTab, renderEmployeeTable, openAddEmployee, openEditEmployee, saveEmployee, confirmDeactivateEmployee, renderPermissionMatrix, updateRolePermission |
+| 38 | index.html | index.html | 310 | Home screen shell: MODULES config array, renderModules (permission-based card lock), PIN login modal, session restore, live clock, onLoginSuccess |
+| 39 | employees.html | employees.html | ~120 | Standalone employee management page (extracted from inventory.html employees tab) |
 
-**Total: 37 files, ~7,698 lines** (includes scripts/sync-watcher.js)
+**Total: 39 files, ~8,128 lines** (includes scripts/sync-watcher.js)
+
+**Note:** inventory.html — employees tab removed in Phase 3.5. Employee management now lives in standalone employees.html.
 
 ---
 
@@ -478,6 +482,18 @@
 | `getCurrentEmployee` | `()` | Return employee object from sessionStorage |
 | `assignRoleToEmployee` | `(employeeId, roleId)` | Requires employees.assign_role — upsert employee_roles |
 | `forceLogout` | `(employeeId)` | Requires employees.delete — deactivate all sessions for target employee |
+
+### index.html (inline script)
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `renderModules` | `()` | Renders MODULES config as cards with coming_soon/locked/locked-overlay states. Applies permission-based lock after login |
+| `onLoginSuccess` | `(emp)` | Sets loggedIn=true, shows user info, hides login button, re-renders modules |
+| `openPinModal` | `()` | Shows PIN login modal, clears inputs, focuses first box |
+| `closePinModal` | `()` | Hides PIN modal |
+| `handlePinSubmit` | `()` | Verifies PIN via verifyEmployeePIN, handles lockout, calls initSecureSession + onLoginSuccess |
+| `doLogout` | `()` | Calls clearSession() to end session and redirect |
+| `updateClock` | `()` | Updates clock-bar with Hebrew date + time (1s interval) |
 
 ### modules/employees/employee-list.js
 

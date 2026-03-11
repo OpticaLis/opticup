@@ -4,16 +4,20 @@
 
 ---
 
-## v3.5 — Phase 3.5: מסך בית + שינוי שם ריפו
-
-Date: March 2026
-
-Commits: e9a1d57, 8ec3c4b, 2933bb5, 5eabe0a
+## v3.5 — Phase 3.5: מסך בית + דפים עצמאיים (מרץ 2026)
 
 - phase 3.5: rename index.html → inventory.html
-- phase 3.5: clearSession redirects to index.html instead of reload
+- phase 3.5: clearSession redirects to index.html
 - phase 3.5: add home screen index.html with module cards
-- docs: add Phase 3.5 to ROADMAP
+- phase 3.5: add employees.html standalone page
+- phase 3.5: employees card links to employees.html
+- fix: homeBtn nav link width and text color
+- phase 3.5: remove employees tab from inventory.html
+- phase 3.5: redesign logout button with יציאה label (inventory.html + employees.html)
+- phase 3.5: showUserButton sets employee name in adminBtnName span
+- phase 3.5: permission-based lock on module cards in index.html
+- docs: add SaaS/multi-tenant rules to CLAUDE.md
+- docs: update SESSION_CONTEXT and ROADMAP
 
 ---
 

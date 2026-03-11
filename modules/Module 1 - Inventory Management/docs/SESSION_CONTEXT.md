@@ -2,13 +2,13 @@
 
 ## Current Status
 
-Phase 3.5 🔄 in progress. employees.html done. Next: remove employees tab from inventory.html.
+Phase 3.5 ✅ complete. Next: Phase 4 — מעקב חובות ספקים.
 
 ## Phase 3.5 — מסך בית + דפים עצמאיים
 
 ### Last work done in Phase 3.5
 
-**Commits:** e9a1d57, 8ec3c4b, 2933bb5, 5eabe0a, d796b93, 188681d, df3b568, 588a7cf, 378d231, 8bf3707
+**Commits:** e9a1d57, 8ec3c4b, 2933bb5, 5eabe0a, d796b93, 188681d, df3b568, 588a7cf, 378d231, 8bf3707, 608f9a9, 698bb17, b79b430, f328582, e92ac12, edb7fac
 
 **What was built:**
 - index.html renamed to inventory.html (main app)
@@ -24,10 +24,7 @@ Phase 3.5 🔄 in progress. employees.html done. Next: remove employees tab from
 
 ### Remaining in Phase 3.5
 
-- Remove employees tab from inventory.html (nav button + section + any JS references)
-- Fix logout button in all pages: label "יציאה", employee name shown below in small text
-- Add permission-based lock on module cards in index.html: after login, cards the user has no permission to access show a 🔒 overlay and are not clickable
-- End-of-phase documentation update
+All items complete.
 
 ## Previous: Phase 3 — Auth & Permissions
 

@@ -552,3 +552,27 @@ Employee management screen. Key functions:
 - 35 permissions checked via `hasPermission(key)` at runtime
 - UI guards: `data-permission` on buttons, `data-tab-permission` on nav tabs
 - `applyUIPermissions()` runs after every login and tab switch
+
+---
+
+## 9. Home Screen & Standalone Pages (Phase 3.5)
+
+### New Files
+- **index.html** — home screen: MODULES config array, 6 module cards, PIN login modal, session restore, live clock
+- **employees.html** — standalone employee management page (extracted from inventory.html)
+
+### Modified Files
+- **inventory.html** — removed employees tab (nav button + section), added h1 "ניהול מלאי" + "← מסך בית" link, יציאה logout button
+- **js/auth-service.js** — `clearSession()` redirects to index.html instead of page reload
+- **modules/admin/admin.js** — `showUserButton()` populates adminBtnName span with employee name
+
+### Module Cards
+- `MODULES` config array in index.html — single source of truth for all home screen cards
+- Fields per module: `id`, `label`, `icon`, `url`, `status`, `permission`
+- `status`: `active` | `coming_soon` | `locked`
+- `permission`: maps to a permission key checked via `hasPermission()` (e.g. `inventory.view`, `employees.view`)
+
+### Permission-Based Card Lock
+- Before login: all active cards show `locked-overlay` (lock icon + non-clickable)
+- After login: active cards where `hasPermission(m.permission)` returns false keep the `locked-overlay`
+- Coming-soon cards are always non-clickable regardless of permissions

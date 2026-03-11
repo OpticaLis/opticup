@@ -62,7 +62,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 1.5 | ✅ | שיפורים | Cascading dropdowns, two-step wizard, PDF, באגים |
 | 2 | ✅ | ספירת מלאי + גשר Access | מסך ספירה עם סורק, Folder Watcher, סנכרון Dropbox |
 | 3 | ✅ | הרשאות ואימות | PIN login, תפקידים (5 רמות), הרשאות לפי מודול, ניהול עובדים |
-| 3.5 | ⬜ | מסך בית + שינוי שם ריפו | index.html → מסך בית, inventory.html, ריפו opticup, session בין דפים |
+| 3.5 | ✅ | מסך בית + שינוי שם ריפו | index.html → מסך בית, inventory.html, ריפו opticup, session בין דפים |
 | 3.75 | ⬜ | Multi-Tenancy Foundation | tenant_id על כל הטבלאות, RLS, contracts, תשתית SaaS |
 | 4 | ⬜ | מעקב חובות ספקים | חשבוניות, תשלומים, דשבורד חובות, מט"ח |
 | 5 | ⬜ | סוכן AI לניהול ספקים | OCR חשבוניות (Claude Vision), התראות, דוחות אוטומטיים |
@@ -122,7 +122,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - מטריצת הרשאות ניתנת לעריכה (CEO/מנהל)
 - פירוט מלא: `docs/PHASE_3_SPEC.md`
 
-### פאזה 3.5 ⬜ — מסך בית + שינוי שם ריפו
+### פאזה 3.5 ✅ — מסך בית + שינוי שם ריפו
 - index.html הופך למסך בית: PIN login + כרטיסי מודולים
 - האפליקציה הנוכחית עוברת ל-inventory.html
 - ריפו משנה שם: prizma-inventory → opticup
