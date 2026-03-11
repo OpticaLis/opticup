@@ -261,6 +261,7 @@ tr.row-err td{background:#fef2f2}
 .sc-row-warn{background:rgba(234,179,8,.15)}
 .sc-row-diff{background:rgba(239,68,68,.15)}
 .sc-row-pending{background:rgba(251,146,60,.2)}
+.sc-search-input{flex:1;min-height:44px;padding:8px;border:1px solid var(--g300);border-radius:6px;font-size:.9rem}
 .sc-session-topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--primary);color:var(--white);border-radius:var(--radius);margin-bottom:12px;flex-wrap:wrap;gap:8px}
 .sc-worker-badge{background:rgba(255,255,255,.15);padding:6px 14px;border-radius:20px;font-size:.85rem;font-weight:600}
 .sc-camera-section{background:var(--white);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);text-align:center}
