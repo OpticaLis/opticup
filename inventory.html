@@ -40,7 +40,7 @@
   <button data-tab="systemlog" data-tab-permission="settings.view" class="admin-tab" onclick="showTab('systemlog')">&#128203; לוג מערכת</button>
   <button data-tab="access-sync" data-tab-permission="sync.view" onclick="showTab('access-sync')">&#128260; סנכרון Access</button>
   <button data-tab="stock-count" data-tab-permission="stock_count.create" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
-  <button data-tab="employees" data-tab-permission="employees.view" onclick="showTab('employees')">&#128101; עובדים</button>
+
   <div class="nav-spacer"></div>
   <a href="index.html" id="homeBtn" class="home-link" style="display:none;color:var(--primary);text-decoration:none;font-size:.85rem;margin-left:12px;white-space:nowrap;flex-shrink:0;">&#8594; מסך בית</a>
   <button class="admin-btn unlocked" id="adminBtn" style="display:none" onclick="confirmDialog('האם להתנתק מהמערכת?').then(ok=>{if(ok)clearSession()})">&#128100;</button>
@@ -514,12 +514,7 @@
   </div>
 </section>
 
-<!-- ========== TAB: EMPLOYEES ========== -->
-<section id="tab-employees" class="tab">
-  <div style="padding:16px">
-    <div id="employees-container">טוען...</div>
-  </div>
-</section>
+
 
 </main>
 
@@ -816,7 +811,7 @@
 
 <script src="js/shared.js"></script>
 <script src="js/auth-service.js"></script>
-<script src="modules/employees/employee-list.js"></script>
+
 <script src="js/supabase-ops.js"></script>
 <script src="js/data-loading.js"></script>
 <script src="js/search-select.js"></script>
@@ -851,16 +846,7 @@
 <script src="modules/access-sync/pending-resolve.js"></script>
 <script src="modules/admin/admin.js"></script>
 <script>
-// =========================================================
-// TAB WIRING — extend showTab for employees tab
-// =========================================================
-(function() {
-  const _orig = showTab;
-  showTab = function(name) {
-    _orig(name);
-    if (name === 'employees') loadEmployeesTab();
-  };
-})();
+
 
 // =========================================================
 // LOGIN SCREEN FUNCTIONS
