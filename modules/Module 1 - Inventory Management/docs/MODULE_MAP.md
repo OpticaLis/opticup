@@ -43,8 +43,10 @@
 | 33 | sync-watcher.js | scripts/sync-watcher.js | 385 | Node.js Dropbox folder watcher: processes sales_template Excel files, atomic qty updates via RPC, pending_sales for unknown barcodes (full field set), idempotency guards, failed file upload to Supabase Storage |
 | 34 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
 | 35 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
+| 36 | auth-service.js | js/auth-service.js | 287 | Core auth engine: verifyEmployeePIN, initSecureSession, loadSession, clearSession, hasPermission, requirePermission, applyUIPermissions, getCurrentEmployee, assignRoleToEmployee, forceLogout |
+| 37 | employee-list.js | modules/employees/employee-list.js | 283 | Employee management: loadEmployeesTab, renderEmployeeTable, openAddEmployee, openEditEmployee, saveEmployee, confirmDeactivateEmployee, renderPermissionMatrix, updateRolePermission |
 
-**Total: 35 files, ~7,128 lines** (includes scripts/sync-watcher.js)
+**Total: 37 files, ~7,698 lines** (includes scripts/sync-watcher.js)
 
 ---
 
@@ -458,6 +460,39 @@
 | `slogPageNav` | `(dir)` | Navigates system log pages |
 | `exportSystemLog` | `()` | Async. Exports up to 10k filtered rows to xlsx |
 
+### js/auth-service.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `verifyEmployeePIN` | `(pin)` | PIN lookup + lockout check + reset counters. Returns employee object, { locked: true }, or null |
+| `incrementFailedAttempts` | `(employeeId)` | Helper: increment failures, set locked_until after 5 attempts |
+| `getEffectivePermissions` | `(employeeId)` | Join employee_roles→role_permissions→permissions. Returns array of permission id strings |
+| `initSecureSession` | `(employee)` | Token generation, DB insert into auth_sessions, sessionStorage write |
+| `loadSession` | `()` | Token validation, session restore, dev bypass (?dev_bypass=opticup2024) |
+| `clearSessionLocal` | `()` | Helper: clear all prizma_* sessionStorage keys |
+| `clearSession` | `()` | DB deactivate + local clear + page reload |
+| `hasPermission` | `(permissionKey)` | Check permission snapshot, supports '*' wildcard for dev bypass |
+| `requirePermission` | `(permissionKey)` | Guard: toast('אין הרשאה...') + throw if unauthorized |
+| `checkBranchAccess` | `(branchId)` | Returns true if CEO/manager OR branch matches |
+| `applyUIPermissions` | `()` | Hide elements by [data-permission] and [data-tab-permission] |
+| `getCurrentEmployee` | `()` | Return employee object from sessionStorage |
+| `assignRoleToEmployee` | `(employeeId, roleId)` | Requires employees.assign_role — upsert employee_roles |
+| `forceLogout` | `(employeeId)` | Requires employees.delete — deactivate all sessions for target employee |
+
+### modules/employees/employee-list.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `loadEmployeesTab` | `()` | requirePermission check, fetch employees+roles, render summary cards + table |
+| `renderEmployeeTable` | `(employees)` | Table with colored role badges, edit/deactivate buttons per permissions |
+| `openAddEmployee` | `()` | requirePermission('employees.create'), open modal |
+| `openEditEmployee` | `(id)` | requirePermission('employees.edit'), pre-fill modal, block editing higher roles |
+| `saveEmployee` | `()` | Insert/update employees + employee_roles, writeLog |
+| `confirmDeactivateEmployee` | `(id, name)` | PIN confirm → is_active=false → invalidate sessions → writeLog |
+| `renderPermissionMatrix` | `(targetDivId)` | Roles×permissions table, checkboxes editable by CEO only |
+| `updateRolePermission` | `(roleId, permissionId, granted)` | requirePermission('settings.edit') → upsert role_permissions |
+| `empSummaryCard` | `(label, value, color)` | Local helper — renders a summary stat card (renamed from summaryCard to avoid collision) |
+
 ---
 
 ## 3. Global Variables
@@ -836,7 +871,7 @@ admin.js (DOMContentLoaded)
 | `inventory` | `T.INV` | id (uuid PK), barcode (unique), brand_id (FK→brands), supplier_id (FK→suppliers), model, size, bridge, color, temple_length, product_type, sell_price, sell_discount, cost_price, cost_discount, quantity, status, website_sync, origin, notes, is_deleted, deleted_at, deleted_by, deleted_reason, created_at | → brands.id, → suppliers.id, ← inventory_images.inventory_id, ← inventory_logs.inventory_id, ← goods_receipt_items.inventory_id |
 | `brands` | `T.BRANDS` | id (uuid PK), name, brand_type (luxury/brand), default_sync (full/display/no), active (bool), exclude_website (bool), min_stock_qty (int) | ← inventory.brand_id, ← purchase_order_items.brand_id |
 | `suppliers` | `T.SUPPLIERS` | id (uuid PK), name, active (bool), supplier_number (unique int, >= 10) | ← inventory.supplier_id, ← purchase_orders.supplier_id, ← goods_receipts.supplier_id |
-| `employees` | `T.EMPLOYEES` | id (uuid PK), name, pin, role, branch_id, is_active, created_at | Used for PIN verification (client-side query) |
+| `employees` | `T.EMPLOYEES` | id (uuid PK), name, pin, role, branch_id, is_active, email, phone, created_by (FK→employees), last_login, failed_attempts, locked_until, created_at | ← employee_roles.employee_id, ← auth_sessions.employee_id |
 | `inventory_logs` | (direct table ref) | id (uuid PK), action, inventory_id (FK→inventory, nullable), details (jsonb), employee, branch, created_at | → inventory.id |
 | `inventory_images` | (direct table ref) | id (uuid PK), inventory_id (FK→inventory), url | → inventory.id |
 | `purchase_orders` | `T.PO` | id (uuid PK), po_number (unique, format PO-{supNum}-{seq}), supplier_id (FK→suppliers), status (draft/sent/partial/received/cancelled), notes, expected_date, created_at | → suppliers.id, ← purchase_order_items.po_id, ← goods_receipts.po_id |
@@ -848,6 +883,11 @@ admin.js (DOMContentLoaded)
 | `watcher_heartbeat` | `T.HEARTBEAT` | id (int PK, always 1), last_beat, watcher_version, host | Single-row table for watcher status monitoring |
 | `stock_counts` | `T.STOCK_COUNTS` | id (uuid PK), count_number (unique, SC-YYYY-NNNN), count_date, status (in_progress/completed/cancelled), counted_by, total_items, total_diffs, branch_id, completed_at, created_at | ← stock_count_items.count_id |
 | `stock_count_items` | `T.STOCK_COUNT_ITEMS` | id (uuid PK), count_id (FK→stock_counts), inventory_id (FK→inventory), barcode, brand, model, color, size, expected_qty, actual_qty, difference (generated), status (pending/counted/skipped), scanned_by, counted_at | → stock_counts.id, → inventory.id |
+| `roles` | — | id (text PK: ceo/manager/team_lead/worker/viewer), name_he, description, is_system (bool), created_at | ← role_permissions.role_id, ← employee_roles.role_id, ← auth_sessions.role_id |
+| `permissions` | — | id (text PK: e.g. 'inventory.view'), module, action, name_he, description, created_at | ← role_permissions.permission_id |
+| `role_permissions` | — | role_id (FK→roles, PK), permission_id (FK→permissions, PK), granted (bool) | → roles.id, → permissions.id |
+| `employee_roles` | — | employee_id (FK→employees, PK), role_id (FK→roles, PK), granted_by (FK→employees), granted_at | → employees.id, → roles.id |
+| `auth_sessions` | — | id (uuid PK), employee_id (FK→employees), token (unique), permissions (jsonb), role_id, branch_id, created_at, expires_at, last_active, is_active | → employees.id |
 
 ---
 
