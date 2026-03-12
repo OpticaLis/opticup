@@ -27,14 +27,14 @@ Claude Code — כלי שעובד ב-terminal עם גישה מלאה ל-repo, ל
 • ספציפי — לא "תבנה מודול לקוחות". כן: "צור טבלת customers ב-Supabase עם השדות הבאים..."
 • מחולק לשלבים — לא פרומפט ענק אחד. שלב 1, ואז אני חוזר אליך, שלב 2, וכו'
 • כולל קונטקסט טכני: 
-o Repo: opticalis/prizma-inventory
+o Repo: opticalis/opticup
 o Supabase URL: https://tsxrrxzmdxaenlvocyit.supabase.co
 o הקובץ הראשי: index.html
 o Stack: Vanilla JS + Supabase JS v2 + SheetJS
 o Deploy: GitHub Pages
 מבנה פרומפט אידיאלי ל-Claude Code
 Context: We're building Optic Up — optical store management.
-Repo: opticalis/prizma-inventory (already cloned)
+Repo: opticalis/opticup (already cloned)
 Supabase: https://tsxrrxzmdxaenlvocyit.supabase.co
 Current file: index.html (single-file HTML app)
 
