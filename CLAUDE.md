@@ -66,7 +66,7 @@ After reading SESSION_CONTEXT.md, confirm:
 7. **Admin password** — 1234 (sessionStorage key: adminMode)
 8. **Default employee PIN** — 1234
 9. **API Abstraction** — All database interactions must pass through `shared.js` helper functions (`fetchAll`, `batchCreate`, `batchUpdate`, etc.). Modules should never call `sb.from()` directly unless for specialized joins that cannot be expressed through the helpers.
-10. **Security & Sanitization** — Never use `innerHTML` with user-controlled input. Always use `escapeHtml()` or `textContent`. Note: PIN is currently verified client-side against the `employees` table — server-side RPC migration is planned. Do not attempt to refactor PIN verification unless explicitly instructed.
+10. **Security & Sanitization** — Never use `innerHTML` with user-controlled input. Always use `escapeHtml()` or `textContent`. Note: PIN verification calls the pin-auth Edge Function which validates server-side and returns a signed JWT. Do not attempt to refactor PIN verification unless explicitly instructed.
 
 ### SaaS Rules — Mandatory from Phase 3.75 Onward
 
@@ -89,6 +89,7 @@ After reading SESSION_CONTEXT.md, confirm:
 opticup/
 ├── index.html                  — home screen: PIN login + module cards
 ├── inventory.html              — inventory management module (full app)
+├── employees.html              — standalone employee management page
 ├── css/
 │   └── styles.css              — all styles
 ├── js/
@@ -103,7 +104,7 @@ opticup/
 │   ├── goods-receipts/         — 4 files (goods-receipt, receipt-form, receipt-actions, receipt-excel)
 │   ├── audit/                  — 3 files (audit-log, item-history, qty-modal)
 │   ├── brands/                 — 2 files (brands, suppliers)
-│   ├── access-sync/            — 3 files (access-sync, pending-panel, pending-resolve)
+│   ├── access-sync/            — 4 files (access-sync, sync-details, pending-panel, pending-resolve)
 │   └── admin/                  — 2 files (admin, system-log)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service)
@@ -135,7 +136,7 @@ opticup/
 | `T.SUPPLIERS`     | suppliers                | id, name, active, supplier_number (UNIQUE, ≥ 10), tenant_id             |
 | `T.EMPLOYEES`     | employees                | id, name, pin, email, phone, branch_id, failed_attempts, locked_until, last_login, tenant_id |
 | `T.LOGS`          | inventory_logs           | id, action, inventory_id, details (jsonb), created_at, tenant_id        |
-| `T.IMAGES`        | inventory_images         | id, inventory_id, url                                                    |
+| `T.IMAGES`        | inventory_images         | id, inventory_id, url, tenant_id                                        |
 | `T.RECEIPTS`      | goods_receipts           | id, type, status, supplier_id, po_id, notes, created_at, tenant_id     |
 | `T.RECEIPT_ITEMS` | goods_receipt_items      | id, receipt_id, inventory_id, quantity, tenant_id                       |
 | `T.PO`            | purchase_orders          | id, po_number, supplier_id, status, notes, created_at, tenant_id       |
@@ -145,79 +146,27 @@ opticup/
 | `T.ROLE_PERMS`    | role_permissions         | role_id, permission_id, granted, tenant_id                               |
 | `T.EMP_ROLES`     | employee_roles           | employee_id, role_id, granted_by, granted_at, tenant_id                  |
 | `T.SESSIONS`      | auth_sessions            | id, employee_id, token, permissions, is_active, expires_at, tenant_id   |
+| `T.SYNC_LOG`      | sync_log                 | id, filename, source_ref, status, rows_total, rows_success, tenant_id   |
+| `T.PENDING_SALES` | pending_sales            | id, barcode_received, quantity, action_type, status, tenant_id          |
+| `T.HEARTBEAT`     | watcher_heartbeat        | id, last_beat, watcher_version, host, tenant_id                         |
+| `T.STOCK_COUNTS`  | stock_counts             | id, count_number, status, counted_by, total_items, total_diffs, tenant_id |
+| `T.STOCK_COUNT_ITEMS` | stock_count_items    | id, count_id, inventory_id, expected_qty, actual_qty, difference, tenant_id |
 
-**Note:** tenant_id columns will be added in Phase 3.75 migration. Until then, tables listed above may not yet have tenant_id in the actual DB.
-
----
-
-## Modules
-
-### js/shared.js — Infrastructure (load FIRST)
-
-**Key globals:**
-- `sb` — Supabase client (NOT `supabase`)
-- `T` — table name constants (T.INV, T.BRANDS, T.SUPPLIERS, T.EMPLOYEES, T.LOGS, T.IMAGES, T.RECEIPTS, T.RECEIPT_ITEMS, T.PO, T.PO_ITEMS)
-- `FIELD_MAP` / `FIELD_MAP_REV` — Hebrew↔English field name mapping
-- `ENUM_MAP` / `ENUM_REV` — Hebrew↔English enum value mapping
-- `suppliers`, `brands` — cached arrays for dropdowns
-- `isAdmin` — admin mode flag
-- `maxBarcode` — highest barcode sequence in current branch
-- `branchCode` — 2-digit branch code from sessionStorage (default '00')
-- `supplierCache` (name→uuid), `supplierCacheRev` (uuid→name), `supplierNumCache` (uuid→supplier_number)
-- `brandCache` (name→uuid), `brandCacheRev` (uuid→name)
-- `activeDropdown` — currently open searchable dropdown instance
-- `slogPage`, `slogTotalPages`, `slogCurrentFilters` — system log pagination state
-- `rcptRowNum`, `currentReceiptId`, `rcptEditMode`, `rcptViewOnly` — receipt state
-- `window.lowStockData` — low stock alerts data
-
-**Functions:**
-- `loadLookupCaches()` — fetches suppliers (with supplier_number) + brands into caches
-- `loadData()` — initial data load: caches, brands, max barcode
-- `loadMaxBarcode()` — branch-scoped barcode sequence from inventory
-- `enrichRow(row)` — adds brand_name + supplier_name resolved from cache onto raw DB row
-- `enToHe(field, val)` / `heToEn(field, val)` — enum translation helpers
-- `fetchAll(table, filters, select, order)` — paginated Supabase query
-- `batchCreate(table, rows)` / `batchUpdate(table, rows)` — bulk CRUD
-- `confirmDialog(title, text)` — modal confirmation
-- `toast(msg, type)` — notification toasts
-- `verifyPin()` — PIN verification modal
-- `escapeHtml(str)` — XSS prevention
-- `getTenantId()` — returns current tenant_id from sessionStorage
-
-### js/auth-service.js — Authentication & Session Management
-
-**Functions:**
-- `loadSession()` — restore session from sessionStorage
-- `initSecureSession(employee)` — create new session after PIN login
-- `clearSession()` — logout
-- `hasPermission(module, action)` — check permission
-- `requirePermission(module, action)` — check + redirect
-- `applyUIPermissions()` — show/hide UI elements based on role
+**Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 20 tables.
 
 ---
 
-## All Globals (by file)
+## Modules — Quick Reference
 
-### shared.js
-`sb`, `T`, `suppliers`, `brands`, `isAdmin`, `maxBarcode`, `branchCode`, `slogPage`, `slogTotalPages`, `slogCurrentFilters`, `rcptRowNum`, `currentReceiptId`, `rcptEditMode`, `rcptViewOnly`, `FIELD_MAP`, `FIELD_MAP_REV`, `ENUM_MAP`, `ENUM_REV`, `supplierCache`, `supplierCacheRev`, `supplierNumCache`, `brandCache`, `brandCacheRev`, `activeDropdown`, `window.lowStockData`
+**Key globals:** `sb` (Supabase client, NOT `supabase`), `T` (table constants), `FIELD_MAP` / `ENUM_MAP` (Hebrew↔English), `getTenantId()` (current tenant UUID).
 
-### inventory-core.js
-`redExcelData`, `redExcelFileName`, `redSearchResults`, `REDUCE_REASONS`, `reduceModalState`, `invData`, `invFiltered`, `invChanges`, `invSelected`, `invSortField`, `invSortDir`
+**Key infrastructure:** shared.js loads FIRST → supabase-ops.js → data-loading.js → auth-service.js.
 
-### inventory-entry.js
-`entryRowNum`, `excelImportRows`, `excelImportFileName`, `excelPendingRows`, `lastGeneratedBarcodes`
+For complete function registry and globals list → see MODULE_MAP.md
 
-### goods-receipt.js
-`SLOG_PAGE_SIZE`, `SLOG_ROW_CATEGORIES`, `slogActionDropdownPopulated`, `RCPT_TYPE_LABELS`, `RCPT_STATUS_LABELS`, `rcptLinkedPoId`
+---
 
-### audit-log.js
-`ACTION_MAP`, `softDelTarget`, `historyCache`, `ENTRY_ACTIONS`, `QTY_REASONS_ADD`, `QTY_REASONS_REMOVE`, `qtyModalState`
-
-### brands-suppliers.js
-`allBrandsData`, `brandsEdited`, `brandStockByBrand`, `supplierEditMode`
-
-### purchase-orders.js
-`poData`, `poFilters`, `currentPO`, `currentPOItems`
+For complete globals list by file → see MODULE_MAP.md section 3.
 
 ---
 
@@ -235,7 +184,7 @@ opticup/
 
 6. **Immediate save vs. batch save** — checkboxes like `setBrandActive()` and `saveBrandField()` save immediately to DB. Row edits (brands table, inventory table) require explicit "Save" button.
 
-7. **PIN verification** — all qty changes, soft delete, permanent delete, and inventory reduction require PIN entry verified against `employees` table. Currently client-side — server-side RPC migration is planned.
+7. **PIN verification** — all qty changes, soft delete, permanent delete, and inventory reduction require PIN entry. Login PIN calls the pin-auth Edge Function (server-side JWT). Mid-session PIN checks use `verifyPinOnly()` (client-side query).
 
 8. **Temp negative swap** — supplier number reassignment uses temp negative values to avoid UNIQUE constraint violations during concurrent swaps.
 
@@ -255,7 +204,7 @@ opticup/
 
 ## Known Issues
 
-1. **loadPOsForSupplier console warning** — when receipt tab loads without a supplier selected, `loadPOsForSupplier()` may log a warning about missing supplier_id. Non-blocking.
+Known issues are tracked in SESSION_CONTEXT.md — single home for all open issues.
 
 ---
 
@@ -317,6 +266,47 @@ All documentation lives in `modules/Module 1 - Inventory Management/`:
 - `MODULE_SPEC.md` — update current state (overwrite, not append)
 - `MODULE_MAP.md` — verify all new files/functions are documented
 - `db-schema.sql` — verify schema is current
+
+---
+
+## Authority Matrix — Single Source of Truth
+
+Every type of information has ONE authoritative home. If there is a conflict between files, this hierarchy wins:
+
+| Information Type | Authoritative File | Notes |
+|---|---|---|
+| Iron rules & SaaS rules | CLAUDE.md | No other file defines rules |
+| File structure (high-level) | CLAUDE.md | Folder names only, no line counts |
+| DB schema (columns, SQL) | db-schema.sql | Only file with executable SQL |
+| Function signatures & globals | MODULE_MAP.md | Complete registry, updated every commit |
+| Business logic flows | MODULE_SPEC.md | What the system does, not how |
+| Phase status & vision | ROADMAP.md | Checkmarks only, no rules |
+| Commit history | CHANGELOG.md | One section per phase |
+| Current status & next steps | SESSION_CONTEXT.md | Updated end of every session |
+| Known issues | SESSION_CONTEXT.md | Single home for all open issues |
+
+---
+
+## Backup Protocol — End of Every Phase
+
+At the end of every phase, before any documentation updates:
+
+```
+mkdir -p "modules/Module 1 - Inventory Management/backups/M1F{phase}_{YYYY-MM-DD}"
+```
+
+Copy these files into the backup folder:
+- CLAUDE.md
+- modules/Module 1 - Inventory Management/ROADMAP.md
+- modules/Module 1 - Inventory Management/docs/MODULE_SPEC.md
+- modules/Module 1 - Inventory Management/docs/MODULE_MAP.md
+- modules/Module 1 - Inventory Management/docs/SESSION_CONTEXT.md
+- modules/Module 1 - Inventory Management/docs/CHANGELOG.md
+- modules/Module 1 - Inventory Management/docs/db-schema.sql
+
+Naming convention: M=Module number, F=Phase number. Example: `M1F3.75_2026-03-12`
+
+This backup must happen BEFORE any documentation changes, never after.
 
 ---
 

@@ -1,6 +1,6 @@
 # MODULE_MAP — Optic Up Complete Codebase Reference
 
-> Updated 2026-03-12. Single reference document for any developer or AI assistant.
+> Generated 2026-03-10. Single reference document for any developer or AI assistant.
 
 ---
 
@@ -50,8 +50,6 @@
 
 **Total: 39 files, ~8,128 lines** (includes scripts/sync-watcher.js)
 
-**Note (Phase 3.75):** All JS files updated with tenant_id in inserts/selects. auth-service.js updated with Edge Function call and JWT client recreation.
-
 **Note:** inventory.html — employees tab removed in Phase 3.5. Employee management now lives in standalone employees.html. Both inventory.html and employees.html have adminBtn in header and homeBtn always visible in nav.
 
 ---
@@ -76,7 +74,6 @@
 | `confirmDialog` | `(title, text='')` | Async confirm modal. Returns Promise\<boolean\>. text defaults to empty string |
 | `showTab` | `(name)` | Main navigation: stops camera if active, deactivates all tabs, activates target, calls appropriate loader |
 | `showEntryMode` | `(mode)` | Switches between manual/excel/receipt entry sub-modes |
-| `getTenantId` | `()` | Returns tenant_id UUID from sessionStorage ('prizma_tenant_id'). Used in every insert/select as defense-in-depth alongside RLS (Phase 3.75) |
 
 ### js/supabase-ops.js
 
@@ -471,11 +468,11 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `verifyEmployeePIN` | `(pin)` | Calls pin-auth Edge Function → returns {token, employee} with signed JWT. Handles lockout check + failed_attempts. Returns employee object, { locked: true }, or null (Phase 3.75: Edge Function) |
+| `verifyEmployeePIN` | `(pin)` | PIN lookup + lockout check + reset counters. Returns employee object, { locked: true }, or null |
 | `incrementFailedAttempts` | `(employeeId)` | Helper: increment failures, set locked_until after 5 attempts |
 | `getEffectivePermissions` | `(employeeId)` | Join employee_roles→role_permissions→permissions. Returns array of permission id strings |
-| `initSecureSession` | `(employee, jwtToken?)` | Token generation, DB insert into auth_sessions, sessionStorage write. If jwtToken provided (Phase 3.75), recreates sb client with JWT Bearer token |
-| `loadSession` | `()` | Restores JWT client from sessionStorage before querying auth_sessions. Token validation, session restore, dev bypass (?dev_bypass=opticup2024) (Phase 3.75: JWT restore) |
+| `initSecureSession` | `(employee)` | Token generation, DB insert into auth_sessions, sessionStorage write |
+| `loadSession` | `()` | Token validation, session restore, dev bypass (?dev_bypass=opticup2024) |
 | `clearSessionLocal` | `()` | Helper: clear all prizma_* sessionStorage keys |
 | `clearSession` | `()` | DB deactivate + local clear + page reload |
 | `hasPermission` | `(permissionKey)` | Check permission snapshot, supports '*' wildcard for dev bypass |
@@ -485,7 +482,6 @@
 | `getCurrentEmployee` | `()` | Return employee object from sessionStorage |
 | `assignRoleToEmployee` | `(employeeId, roleId)` | Requires employees.assign_role — upsert employee_roles |
 | `forceLogout` | `(employeeId)` | Requires employees.delete — deactivate all sessions for target employee |
-| `verifyPinOnly` | `(pin)` | Mid-session PIN check (non-login). Calls verifyEmployeePIN logic client-side, returns employee or null. Does NOT create new JWT or session (Phase 3.75) |
 
 ### index.html (inline script)
 
@@ -886,12 +882,9 @@ admin.js (DOMContentLoaded)
 
 ## 5. Database Schema
 
-> **Note (Phase 3.75):** All tables below have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. JWT-based RLS tenant isolation is active on all tables. For full SQL DDL → see db-schema.sql.
-
 | Table | Constant | Key Columns | Relationships |
 |-------|----------|-------------|---------------|
-| `tenants` | `T.TENANTS` | id (uuid PK), name, slug, default_currency, timezone, locale, is_active, created_at | ← all tables via tenant_id FK |
-| `inventory` | `T.INV` | id (uuid PK), barcode (unique), brand_id (FK→brands), supplier_id (FK→suppliers), model, size, bridge, color, temple_length, product_type, sell_price, sell_discount, cost_price, cost_discount, quantity, status, website_sync, origin, notes, is_deleted, deleted_at, deleted_by, deleted_reason, tenant_id, created_at | → brands.id, → suppliers.id, ← inventory_images.inventory_id, ← inventory_logs.inventory_id, ← goods_receipt_items.inventory_id |
+| `inventory` | `T.INV` | id (uuid PK), barcode (unique), brand_id (FK→brands), supplier_id (FK→suppliers), model, size, bridge, color, temple_length, product_type, sell_price, sell_discount, cost_price, cost_discount, quantity, status, website_sync, origin, notes, is_deleted, deleted_at, deleted_by, deleted_reason, created_at | → brands.id, → suppliers.id, ← inventory_images.inventory_id, ← inventory_logs.inventory_id, ← goods_receipt_items.inventory_id |
 | `brands` | `T.BRANDS` | id (uuid PK), name, brand_type (luxury/brand), default_sync (full/display/no), active (bool), exclude_website (bool), min_stock_qty (int) | ← inventory.brand_id, ← purchase_order_items.brand_id |
 | `suppliers` | `T.SUPPLIERS` | id (uuid PK), name, active (bool), supplier_number (unique int, >= 10) | ← inventory.supplier_id, ← purchase_orders.supplier_id, ← goods_receipts.supplier_id |
 | `employees` | `T.EMPLOYEES` | id (uuid PK), name, pin, role, branch_id, is_active, email, phone, created_by (FK→employees), last_login, failed_attempts, locked_until, created_at | ← employee_roles.employee_id, ← auth_sessions.employee_id |

@@ -1,7 +1,6 @@
 # Optic Up — מודול ניהול מלאי — ROADMAP
 
-> **Authority:** Phase status only. For rules → CLAUDE.md. For code → MODULE_MAP.md. For current status → SESSION_CONTEXT.md.
-> **מיקום:** `modules/Module 1 - Inventory Management/ROADMAP.md`
+> **מיקום:** `modules/Module 1 - Inventory Management/docs/ROADMAP.md`
 > **עודכן לאחרונה:** מרץ 2026
 > **הצ'אט המשני מעדכן את סימוני ✅/⬜ בסוף כל פאזה**
 
@@ -65,7 +64,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 3 | ✅ | הרשאות ואימות | PIN login, תפקידים (5 רמות), הרשאות לפי מודול, ניהול עובדים |
 | 3.5 | ✅ | מסך בית + שינוי שם ריפו | index.html → מסך בית, inventory.html, ריפו opticup, session בין דפים |
 | 3.75 | ✅ | Multi-Tenancy Foundation | tenant_id על כל הטבלאות, RLS, contracts, תשתית SaaS |
-| 3.8 | ⬜ | Sticky Header | שם + לוגו חנות בכל המסכים, header.js מודולרי |
 | 4 | ⬜ | מעקב חובות ספקים | חשבוניות, תשלומים, דשבורד חובות, מט"ח |
 | 5 | ⬜ | סוכן AI לניהול ספקים | OCR חשבוניות (Claude Vision), התראות, דוחות אוטומטיים |
 | 6 | ⬜ | פורטל ספקים | גישת ספק חיצונית, view-only מלאי לפי ספק |
@@ -143,12 +141,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - פאזת אפס-פיצ'רים: אין UI חדש, רק תשתית
 - פירוט מלא: `docs/PHASE_3.75_SPEC.md`
 
-### פאזה 3.8 ⬜ — Sticky Header
-- קובץ js/header.js חדש — טוען שם + לוגו מטבלת tenants
-- Header אחיד בכל המסכים (index.html, inventory.html, employees.html)
-- שם "Optic Up" קבוע — לוגו + שם חנות ניתנים לשינוי ע"י בעל המנוי
-- מודולרי — דף חדש בעתיד = שורת script אחת
-
 ### פאזה 4 ⬜ — מעקב חובות ספקים
 - טבלאות DB: supplier_invoices, supplier_payments, currencies (כולן עם tenant_id)
 - רישום חשבוניות ספקים (מספר, סכום, תאריך תשלום, מט"ח)
@@ -180,10 +172,28 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 
 ## כללי ברזל
 
-כללי הפיתוח וה-SaaS מוגדרים ב-CLAUDE.md בלבד.
+### קיימים (מאז תמיד):
+- ⛔ כמות מלאי = רק Add/Remove עם PIN
+- ⛔ כל שינוי = writeLog() חובה
+- ⛔ מחיקה = soft delete בלבד
+- ⛔ ברקודים = BBDDDDD, immutable
+- ⛔ קבצים = מתחת ל-350 שורות
+
+### חדשים (מפאזה 3.75 ואילך):
+- ⛔ כל טבלה חדשה = tenant_id UUID NOT NULL
+- ⛔ כל טבלה חדשה = RLS tenant isolation policy
+- ⛔ כל פאזה = מגדירה Contracts (RPC functions) ב-MODULE_SPEC
+- ⛔ כל פאזה = שוקלת Views לגורמים חיצוניים
+- ⛔ לא לקשיח ערכים = מטבעות, שפות, סוגי תשלום → טבלאות configurable
 
 ---
 
 ## קבצי תיעוד של המודול
 
-ניהול התיעוד מוגדר ב-CLAUDE.md (סעיף Documentation Files — Paths & Rules).
+| קובץ | מה יש בו | מתי מעדכנים |
+|-------|----------|-------------|
+| **ROADMAP.md** (זה) | מפת פאזות + תיאור המודול | בסוף כל פאזה — עדכון ✅/⬜ |
+| **CHANGELOG.md** | מה קרה — כל commit, כל שינוי | בסוף כל פאזה |
+| **MODULE_SPEC.md** | מה קיים עכשיו — טבלאות, פונקציות, לוגיקות, contracts | בסוף כל פאזה |
+| **db-schema.sql** | סכמת DB מלאה + RLS policies | בכל שינוי DB |
+| **PHASE_X_SPEC.md** | מה לבנות בפאזה X | נכתב ע"י הצ'אט האסטרטגי לפני כל פאזה |

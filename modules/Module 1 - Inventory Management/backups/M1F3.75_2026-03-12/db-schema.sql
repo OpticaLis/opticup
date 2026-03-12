@@ -1,6 +1,6 @@
 -- ============================================================
 -- Prizma Optics — מלאי מסגרות — Full DB Schema
--- גרסה 3.75 | מרץ 2026 | Post-Phase 3.75
+-- גרסה 3.0 | מרץ 2026 | Post-Phase 2
 -- ============================================================
 -- סדר יצירה לפי תלויות (FK)
 -- 1. brands  2. suppliers  3. employees
@@ -26,40 +26,10 @@
 --   013_stock_count.sql  — stock_counts + stock_count_items tables + set_inventory_qty RPC
 --   014_stock_count_scanned_by.sql  — scanned_by column on stock_count_items
 --   015_failed_sync_storage.sql  — storage_path + errors columns on sync_log, storage policy
---   016_auth_permissions.sql  — roles, permissions, role_permissions, employee_roles, auth_sessions
---   017_tenants.sql  — tenants table + Prizma seed
---   018_add_tenant_id.sql  — tenant_id UUID column on all 20 tables + backfill
---   019_tenant_id_constraints.sql  — NOT NULL + FK constraints + 25 indexes
---   020_rls_tenant_isolation.sql  — JWT-based tenant isolation on all 20 tables
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
-
--- ============================================================
--- 0. tenants — דיירים (017)
--- ============================================================
-CREATE TABLE IF NOT EXISTS tenants (
-  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name             TEXT NOT NULL,
-  slug             TEXT UNIQUE NOT NULL,
-  logo_url         TEXT,
-  default_currency TEXT DEFAULT 'ILS',
-  timezone         TEXT DEFAULT 'Asia/Jerusalem',
-  locale           TEXT DEFAULT 'he-IL',
-  is_active        BOOLEAN DEFAULT true,
-  created_at       TIMESTAMPTZ DEFAULT now(),
-  updated_at       TIMESTAMPTZ DEFAULT now()
-);
-
-ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "service_bypass_tenants" ON tenants FOR ALL TO service_role USING (true);
-CREATE POLICY "anon_read_tenants" ON tenants FOR SELECT USING (true);
-
--- Seed Prizma as tenant #1
-INSERT INTO tenants (name, slug, default_currency)
-VALUES ('אופטיקה פריזמה', 'prizma', 'ILS')
-ON CONFLICT (slug) DO NOTHING;
 
 -- ============================================================
 -- 1. brands — מותגים
@@ -72,7 +42,6 @@ CREATE TABLE IF NOT EXISTS brands (
   active          BOOLEAN NOT NULL DEFAULT TRUE,                 -- פעיל (009)
   exclude_website BOOLEAN NOT NULL DEFAULT FALSE,                -- מוחרג מאתר WooCommerce
   min_stock_qty   INTEGER DEFAULT NULL,                          -- סף מלאי מינימלי (004/006)
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   branch_id       UUID,
   created_by      UUID,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -100,7 +69,6 @@ CREATE TABLE IF NOT EXISTS suppliers (
   rating          SMALLINT CHECK (rating BETWEEN 1 AND 5),       -- דירוג 1-5
   notes           TEXT,                                          -- הערות
   active          BOOLEAN NOT NULL DEFAULT TRUE,                 -- פעיל
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   branch_id       UUID,
   created_by      UUID,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -119,7 +87,6 @@ CREATE TABLE IF NOT EXISTS employees (
   role            TEXT NOT NULL DEFAULT 'employee',              -- תפקיד: employee | manager | admin
   branch_id       TEXT,                                          -- קוד סניף
   is_active       BOOLEAN NOT NULL DEFAULT true,                 -- פעיל
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -159,7 +126,6 @@ CREATE TABLE IF NOT EXISTS inventory (
   deleted_by      TEXT,                                          -- מי מחק (שם עובד)
   deleted_reason  TEXT,                                          -- סיבת מחיקה
   -- System fields
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   branch_id       UUID,                                          -- סניף
   created_by      UUID,                                          -- יוצר
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -189,7 +155,6 @@ CREATE TABLE IF NOT EXISTS inventory_images (
   file_name       TEXT,                                          -- שם קובץ
   file_size       INTEGER,                                       -- גודל בבתים
   sort_order      SMALLINT DEFAULT 0,                            -- סדר מיון
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_inv_images_inv ON inventory_images (inventory_id);
@@ -243,7 +208,6 @@ CREATE TABLE IF NOT EXISTS inventory_logs (
   -- מי ומתי
   performed_by    TEXT NOT NULL DEFAULT 'system',                 -- מבצע הפעולה (שם עובד)
   branch_id       TEXT,                                          -- קוד סניף
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -266,7 +230,6 @@ CREATE TABLE IF NOT EXISTS purchase_orders (
   status          TEXT NOT NULL DEFAULT 'draft'                  -- סטטוס
                   CHECK (status IN ('draft', 'sent', 'partial', 'received', 'cancelled')),
   notes           TEXT,                                          -- הערות
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   branch_id       TEXT,                                          -- קוד סניף
   created_by      TEXT,                                          -- מי יצר
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -299,8 +262,7 @@ CREATE TABLE IF NOT EXISTS purchase_order_items (
   sell_price      DECIMAL(10,2),                                 -- מחיר מכירה (007)
   sell_discount   DECIMAL(5,4) DEFAULT 0,                        -- הנחה מכירה (007)
   website_sync    TEXT CHECK (website_sync IN ('full', 'display', 'none')),  -- סנכרון אתר (007)
-  notes           TEXT,                                          -- הערות
-  tenant_id       UUID NOT NULL REFERENCES tenants(id)           -- דייר (018)
+  notes           TEXT                                           -- הערות
 );
 
 CREATE INDEX IF NOT EXISTS idx_poi_po_id ON purchase_order_items(po_id);
@@ -321,7 +283,6 @@ CREATE TABLE IF NOT EXISTS goods_receipts (
   total_amount    DECIMAL(10,2),                                 -- סכום כולל
   notes           TEXT,                                          -- הערות
   status          TEXT NOT NULL DEFAULT 'draft',                 -- סטטוס: draft | confirmed | cancelled
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   created_by      TEXT,                                          -- מי יצר
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -344,8 +305,7 @@ CREATE TABLE IF NOT EXISTS goods_receipt_items (
   quantity        INTEGER NOT NULL DEFAULT 1,                    -- כמות
   unit_cost       DECIMAL(10,2),                                 -- מחיר עלות ליחידה
   sell_price      DECIMAL(10,2),                                 -- מחיר מכירה
-  is_new_item     BOOLEAN NOT NULL DEFAULT false,                -- true = פריט חדש (לא היה במלאי)
-  tenant_id       UUID NOT NULL REFERENCES tenants(id)           -- דייר (018)
+  is_new_item     BOOLEAN NOT NULL DEFAULT false                 -- true = פריט חדש (לא היה במלאי)
 );
 CREATE INDEX IF NOT EXISTS idx_receipt_items ON goods_receipt_items(receipt_id);
 
@@ -365,7 +325,6 @@ CREATE TABLE IF NOT EXISTS sync_log (
   error_message    TEXT,                                           -- הודעת שגיאה כללית
   errors           JSONB,                                          -- מערך שגיאות מפורט (015)
   storage_path     TEXT,                                           -- נתיב קובץ ב-Supabase Storage (015)
-  tenant_id        UUID NOT NULL REFERENCES tenants(id),           -- דייר (018)
   processed_at     TIMESTAMPTZ                                     -- זמן סיום עיבוד
 );
 
@@ -403,8 +362,7 @@ CREATE TABLE IF NOT EXISTS pending_sales (
   resolved_at      TIMESTAMPTZ,                                    -- מתי טופל
   resolved_by      TEXT,                                           -- מי טיפל
   resolved_inventory_id UUID REFERENCES inventory(id),             -- FK פריט שהותאם
-  resolution_note  TEXT,                                           -- הערת פתרון
-  tenant_id        UUID NOT NULL REFERENCES tenants(id)            -- דייר (018)
+  resolution_note  TEXT                                            -- הערת פתרון
 );
 
 CREATE INDEX IF NOT EXISTS idx_pending_sales_status ON pending_sales(status);
@@ -418,8 +376,7 @@ CREATE TABLE IF NOT EXISTS watcher_heartbeat (
   id              INTEGER PRIMARY KEY DEFAULT 1,                   -- תמיד 1
   last_beat       TIMESTAMPTZ DEFAULT now(),                       -- דופק אחרון
   watcher_version TEXT,                                            -- גרסת watcher
-  host            TEXT,                                            -- שם מחשב
-  tenant_id       UUID NOT NULL REFERENCES tenants(id)             -- דייר (018)
+  host            TEXT                                             -- שם מחשב
 );
 
 INSERT INTO watcher_heartbeat (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
@@ -437,7 +394,6 @@ CREATE TABLE IF NOT EXISTS stock_counts (
   notes           TEXT,                                        -- הערות
   total_items     INTEGER DEFAULT 0,                           -- סה"כ פריטים שנספרו
   total_diffs     INTEGER DEFAULT 0,                           -- סה"כ פערים שנמצאו
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),        -- דייר (018)
   branch_id       TEXT,                                        -- קוד סניף
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   completed_at    TIMESTAMPTZ                                  -- מתי הושלם
@@ -446,9 +402,7 @@ CREATE INDEX IF NOT EXISTS idx_sc_status ON stock_counts(status);
 CREATE INDEX IF NOT EXISTS idx_sc_date ON stock_counts(count_date DESC);
 
 ALTER TABLE stock_counts ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON stock_counts FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON stock_counts FOR ALL TO service_role USING (true);
+CREATE POLICY "all_stock_counts" ON stock_counts FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================================
 -- 15. stock_count_items — שורות ספירה (013 + 014)
@@ -469,8 +423,7 @@ CREATE TABLE IF NOT EXISTS stock_count_items (
                   CHECK (status IN ('pending', 'counted', 'skipped')),
   notes           TEXT,                                        -- הערה לשורה
   counted_at      TIMESTAMPTZ,                                 -- מתי נספר
-  scanned_by      TEXT,                                        -- מי סרק (014)
-  tenant_id       UUID NOT NULL REFERENCES tenants(id)         -- דייר (018)
+  scanned_by      TEXT                                         -- מי סרק (014)
 );
 CREATE INDEX IF NOT EXISTS idx_sci_count ON stock_count_items(count_id);
 CREATE INDEX IF NOT EXISTS idx_sci_inventory ON stock_count_items(inventory_id);
@@ -614,11 +567,10 @@ DO $$ BEGIN
 END $$;
 
 -- ============================================================
--- RLS — Row Level Security (020: JWT-based tenant isolation)
+-- RLS — Row Level Security
 -- ============================================================
--- כל טבלה מקבלת שתי פוליסות:
---   1. tenant_isolation — מבטיחה שכל שאילתה רואה רק שורות של ה-tenant מה-JWT
---   2. service_bypass — מאפשרת ל-service_role (migrations, admin) גישה מלאה
+-- כרגע: גישה מלאה (anon key, single-user)
+-- עתיד: חיזוק עם Supabase Auth + role-based policies
 
 ALTER TABLE brands ENABLE ROW LEVEL SECURITY;
 ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
@@ -630,92 +582,66 @@ ALTER TABLE purchase_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE purchase_order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE goods_receipts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE goods_receipt_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sync_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE pending_sales ENABLE ROW LEVEL SECURITY;
-ALTER TABLE watcher_heartbeat ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prescriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE work_orders ENABLE ROW LEVEL SECURITY;
 
--- Tenant isolation pattern (applied to all 20 active tables):
---   USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid)
+-- Brands
+CREATE POLICY "anon_all_brands" ON brands FOR ALL USING (true) WITH CHECK (true);
 
--- brands
-CREATE POLICY "tenant_isolation" ON brands FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON brands FOR ALL TO service_role USING (true);
+-- Suppliers
+CREATE POLICY "anon_all_suppliers" ON suppliers FOR ALL USING (true) WITH CHECK (true);
 
--- suppliers
-CREATE POLICY "tenant_isolation" ON suppliers FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON suppliers FOR ALL TO service_role USING (true);
+-- Employees (SELECT only for PIN verification)
+CREATE POLICY "employees_select" ON employees FOR SELECT USING (true);
 
--- employees
-CREATE POLICY "tenant_isolation" ON employees FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON employees FOR ALL TO service_role USING (true);
+-- Inventory
+CREATE POLICY "anon_all_inventory" ON inventory FOR ALL USING (true) WITH CHECK (true);
 
--- inventory
-CREATE POLICY "tenant_isolation" ON inventory FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON inventory FOR ALL TO service_role USING (true);
+-- Inventory Images
+CREATE POLICY "anon_all_inv_images" ON inventory_images FOR ALL USING (true) WITH CHECK (true);
 
--- inventory_images
-CREATE POLICY "tenant_isolation" ON inventory_images FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON inventory_images FOR ALL TO service_role USING (true);
+-- Inventory Logs (SELECT + INSERT + DELETE + UPDATE)
+CREATE POLICY "logs_select" ON inventory_logs FOR SELECT USING (true);
+CREATE POLICY "logs_insert" ON inventory_logs FOR INSERT WITH CHECK (true);
+CREATE POLICY "logs_delete" ON inventory_logs FOR DELETE USING (true);
+CREATE POLICY "logs_update" ON inventory_logs FOR UPDATE USING (true) WITH CHECK (true);
 
--- inventory_logs
-CREATE POLICY "tenant_isolation" ON inventory_logs FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON inventory_logs FOR ALL TO service_role USING (true);
+-- Purchase Orders
+CREATE POLICY "all_purchase_orders" ON purchase_orders FOR ALL USING (true) WITH CHECK (true);
 
--- purchase_orders
-CREATE POLICY "tenant_isolation" ON purchase_orders FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON purchase_orders FOR ALL TO service_role USING (true);
+-- Purchase Order Items
+CREATE POLICY "all_po_items" ON purchase_order_items FOR ALL USING (true) WITH CHECK (true);
 
--- purchase_order_items
-CREATE POLICY "tenant_isolation" ON purchase_order_items FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON purchase_order_items FOR ALL TO service_role USING (true);
+-- Goods Receipts
+CREATE POLICY "all_goods_receipts" ON goods_receipts FOR ALL USING (true) WITH CHECK (true);
 
--- goods_receipts
-CREATE POLICY "tenant_isolation" ON goods_receipts FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON goods_receipts FOR ALL TO service_role USING (true);
+-- Goods Receipt Items
+CREATE POLICY "all_goods_receipt_items" ON goods_receipt_items FOR ALL USING (true) WITH CHECK (true);
 
--- goods_receipt_items
-CREATE POLICY "tenant_isolation" ON goods_receipt_items FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON goods_receipt_items FOR ALL TO service_role USING (true);
+-- Sync Log (010)
+ALTER TABLE sync_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_sync_log" ON sync_log FOR ALL USING (true) WITH CHECK (true);
 
--- sync_log
-CREATE POLICY "tenant_isolation" ON sync_log FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON sync_log FOR ALL TO service_role USING (true);
+-- Pending Sales (010)
+ALTER TABLE pending_sales ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_pending_sales" ON pending_sales FOR ALL USING (true) WITH CHECK (true);
 
--- pending_sales
-CREATE POLICY "tenant_isolation" ON pending_sales FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON pending_sales FOR ALL TO service_role USING (true);
+-- Watcher Heartbeat (010)
+ALTER TABLE watcher_heartbeat ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_watcher_heartbeat" ON watcher_heartbeat FOR ALL USING (true) WITH CHECK (true);
 
--- watcher_heartbeat
-CREATE POLICY "tenant_isolation" ON watcher_heartbeat FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON watcher_heartbeat FOR ALL TO service_role USING (true);
-
--- sales (future)
+-- Sales (future)
 CREATE POLICY "anon_all_sales" ON sales FOR ALL USING (true) WITH CHECK (true);
 
--- customers (future)
+-- Customers (future)
 CREATE POLICY "anon_all_customers" ON customers FOR ALL USING (true) WITH CHECK (true);
 
--- prescriptions (future)
+-- Prescriptions (future)
 CREATE POLICY "anon_all_prescriptions" ON prescriptions FOR ALL USING (true) WITH CHECK (true);
 
--- work_orders (future)
+-- Work Orders (future)
 CREATE POLICY "anon_all_work_orders" ON work_orders FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================================
@@ -745,7 +671,6 @@ CREATE TABLE IF NOT EXISTS roles (
   name_he     TEXT NOT NULL,
   description TEXT,
   is_system   BOOLEAN DEFAULT true,
-  tenant_id   UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
@@ -758,7 +683,6 @@ CREATE TABLE IF NOT EXISTS permissions (
   action      TEXT NOT NULL,
   name_he     TEXT NOT NULL,
   description TEXT,
-  tenant_id   UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
@@ -769,7 +693,6 @@ CREATE TABLE IF NOT EXISTS role_permissions (
   role_id       TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
   permission_id TEXT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
   granted       BOOLEAN NOT NULL DEFAULT true,
-  tenant_id     UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
   PRIMARY KEY (role_id, permission_id)
 );
 ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
@@ -781,7 +704,6 @@ CREATE TABLE IF NOT EXISTS employee_roles (
   role_id     TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
   granted_by  UUID REFERENCES employees(id),
   granted_at  TIMESTAMPTZ DEFAULT NOW(),
-  tenant_id   UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
   PRIMARY KEY (employee_id, role_id)
 );
 ALTER TABLE employee_roles ENABLE ROW LEVEL SECURITY;
@@ -798,8 +720,7 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
   created_at   TIMESTAMPTZ DEFAULT NOW(),
   expires_at   TIMESTAMPTZ NOT NULL,
   last_active  TIMESTAMPTZ DEFAULT NOW(),
-  is_active    BOOLEAN DEFAULT true,
-  tenant_id    UUID NOT NULL REFERENCES tenants(id)             -- דייר (018)
+  is_active    BOOLEAN DEFAULT true
 );
 ALTER TABLE auth_sessions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_auth_sessions" ON auth_sessions FOR ALL USING (true) WITH CHECK (true);
