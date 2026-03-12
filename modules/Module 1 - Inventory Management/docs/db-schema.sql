@@ -1,6 +1,6 @@
 -- ============================================================
 -- Prizma Optics — מלאי מסגרות — Full DB Schema
--- גרסה 4a | מרץ 2026 | Post-Phase 4a
+-- גרסה 4a+ | מרץ 2026 | Post-Phase 4a+ patch
 -- ============================================================
 -- סדר יצירה לפי תלויות (FK)
 -- 1. brands  2. suppliers  3. employees
@@ -32,6 +32,7 @@
 --   019_tenant_id_constraints.sql  — NOT NULL + FK constraints + 25 indexes
 --   020_rls_tenant_isolation.sql  — JWT-based tenant isolation on all 20 tables
 --   021_phase4a_supplier_debt_tables.sql  — 11 new tables for supplier debt tracking + seed data
+--   022_phase4a_plus_patch.sql  — withholding tax, internal numbering, duplicate prevention, payment approval
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -639,13 +640,19 @@ CREATE TABLE IF NOT EXISTS supplier_documents (
   created_by        UUID REFERENCES employees(id),
   created_at        TIMESTAMPTZ DEFAULT now(),
   updated_at        TIMESTAMPTZ DEFAULT now(),
-  is_deleted        BOOLEAN DEFAULT false
+  internal_number   TEXT,                                    -- our internal reference number (022)
+  is_deleted        BOOLEAN DEFAULT false,
+  CONSTRAINT supplier_documents_tenant_supplier_docnum_unique
+    UNIQUE(tenant_id, supplier_id, document_number)          -- duplicate prevention (022)
 );
 CREATE INDEX IF NOT EXISTS idx_supdocs_tenant ON supplier_documents(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_supdocs_tenant_supplier ON supplier_documents(tenant_id, supplier_id);
 CREATE INDEX IF NOT EXISTS idx_supdocs_tenant_status ON supplier_documents(tenant_id, status);
 CREATE INDEX IF NOT EXISTS idx_supdocs_tenant_due ON supplier_documents(tenant_id, due_date);
 CREATE INDEX IF NOT EXISTS idx_supdocs_parent ON supplier_documents(parent_invoice_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_supdocs_internal_unique
+  ON supplier_documents(tenant_id, internal_number)
+  WHERE internal_number IS NOT NULL;                         -- partial unique (022)
 
 -- ============================================================
 -- 22. document_links — maps delivery notes to monthly invoices (021)
@@ -676,6 +683,12 @@ CREATE TABLE IF NOT EXISTS supplier_payments (
   payment_method    TEXT NOT NULL,
   reference_number  TEXT,
   prepaid_deal_id   UUID REFERENCES prepaid_deals(id),
+  withholding_tax_rate   DECIMAL(5,2) DEFAULT 0,             -- ניכוי מס במקור % (022)
+  withholding_tax_amount DECIMAL(12,2) DEFAULT 0,            -- סכום ניכוי (022)
+  net_amount        DECIMAL(12,2),                           -- סכום נטו לאחר ניכוי (022)
+  status            TEXT NOT NULL DEFAULT 'approved',        -- approved / pending / rejected (022)
+  approved_by       UUID REFERENCES employees(id),           -- מי אישר (022)
+  approved_at       TIMESTAMPTZ,                             -- מתי אושר (022)
   notes             TEXT,
   created_by        UUID REFERENCES employees(id),
   created_at        TIMESTAMPTZ DEFAULT now(),
@@ -683,6 +696,7 @@ CREATE TABLE IF NOT EXISTS supplier_payments (
 );
 CREATE INDEX IF NOT EXISTS idx_suppay_tenant ON supplier_payments(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_suppay_tenant_supplier ON supplier_payments(tenant_id, supplier_id);
+CREATE INDEX IF NOT EXISTS idx_suppay_status ON supplier_payments(tenant_id, status);  -- (022)
 
 -- ============================================================
 -- 24. payment_allocations — maps payments to documents (021)
@@ -756,6 +770,9 @@ ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS default_document_type TEXT DEFAUL
 ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS default_currency TEXT DEFAULT 'ILS';
 ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS payment_terms_days INTEGER DEFAULT 30;
 ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS has_prepaid_deal BOOLEAN DEFAULT false;
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS withholding_tax_rate DECIMAL(5,2) DEFAULT 0;  -- ניכוי מס % (022)
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS tax_exempt_certificate TEXT;                   -- תעודת פטור (022)
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS tax_exempt_until DATE;                         -- פטור עד תאריך (022)
 
 -- ============================================================
 -- RLS — Phase 4a tables (021)
