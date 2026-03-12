@@ -26,7 +26,8 @@
 | 16 | po-view-import.js | modules/purchasing/po-view-import.js | 319 | Read-only PO view with received qty tracking, importPOToInventory (creates/updates inventory from PO items), createPOForBrand (from low stock modal), PO event delegation |
 | 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 275 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (populates items from PO), updatePOStatusAfterReceipt, openNewReceipt |
 | 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 217 | Receipt form: openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow, getReceiptItems, updateReceiptItemsStats |
-| 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 325 | Receipt lifecycle: saveReceiptDraft, confirmReceipt, confirmReceiptCore, confirmReceiptById (from list), cancelReceipt, createNewInventoryFromReceiptItem, backToReceiptList |
+| 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 174 | Receipt save/cancel: saveReceiptDraft, saveReceiptDraftInternal, cancelReceipt, backToReceiptList |
+| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 154 | Receipt confirmation: confirmReceipt, confirmReceiptCore, confirmReceiptById (from list), createNewInventoryFromReceiptItem |
 | 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 195 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, receipt list event delegation |
 | 21 | audit-log.js | modules/audit/audit-log.js | 215 | Soft delete flow (deleteInvRow, confirmSoftDelete), recycle bin (openRecycleBin, restoreItem, permanentDelete with double PIN) |
 | 22 | item-history.js | modules/audit/item-history.js | 323 | Item timeline (openItemHistory), ACTION_MAP constant (21 action types), entry history accordion (openEntryHistory, loadEntryHistory, renderEntryHistory), exports |
@@ -281,13 +282,18 @@
 | Function | Parameters | Description |
 |----------|------------|-------------|
 | `saveReceiptDraft` | `()` | Async. Validates fields, creates or updates receipt + items |
+| `saveReceiptDraftInternal` | `()` | Async. Internal save without UI feedback, used before confirmReceipt |
+| `cancelReceipt` | `(receiptId)` | Async. Sets receipt status to 'cancelled' |
+| `backToReceiptList` | `()` | Resets form state, calls loadReceiptTab |
+
+### modules/goods-receipts/receipt-confirm.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
 | `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Core confirmation: increments inventory quantities via `sb.rpc('increment_inventory')`, creates new items, updates PO status |
 | `confirmReceipt` | `()` | Async. UI-facing: validates, saves draft internally, then calls confirmReceiptCore |
 | `createNewInventoryFromReceiptItem` | `(item, receiptId, rcptNumber)` | Async. Creates inventory row with generated barcode from receipt item |
-| `saveReceiptDraftInternal` | `()` | Async. Internal save without UI feedback, used before confirmReceipt |
 | `confirmReceiptById` | `(receiptId)` | Async. Confirms receipt from list view without opening form |
-| `cancelReceipt` | `(receiptId)` | Async. Sets receipt status to 'cancelled' |
-| `backToReceiptList` | `()` | Resets form state, calls loadReceiptTab |
 
 ### modules/goods-receipts/receipt-excel.js
 
@@ -837,13 +843,18 @@ receipt-form.js
 
 receipt-actions.js
   → calls: getReceiptItems() [receipt-form.js]
+  → calls: loadReceiptTab() [goods-receipt.js]
+
+receipt-confirm.js
+  → calls: getReceiptItems() [receipt-form.js]
+  → calls: saveReceiptDraftInternal() [receipt-actions.js]
   → calls: loadReceiptTab(), updatePOStatusAfterReceipt() [goods-receipt.js]
   → calls: refreshLowStockBanner() [data-loading.js]
 
 receipt-excel.js
   → calls: addReceiptItemRow(), updateReceiptItemsStats(), getReceiptItems() [receipt-form.js]
   → calls: openExistingReceipt() [receipt-form.js]
-  → calls: confirmReceiptById(), cancelReceipt() [receipt-actions.js]
+  → calls: confirmReceiptById() [receipt-confirm.js], cancelReceipt() [receipt-actions.js]
 ```
 
 ### Audit Module
@@ -1042,7 +1053,7 @@ All deletions use soft delete by default. Permanent delete requires escalated ve
 **Current implementation:** Quantity changes read the current value, calculate the new value in JavaScript, then write the result back.
 
 ```js
-// Current pattern (qty-modal.js, receipt-actions.js, etc.)
+// Current pattern (qty-modal.js, receipt-confirm.js, etc.)
 const { data } = await sb.from('inventory').select('quantity').eq('id', id).single();
 const newQty = data.quantity + amount;
 await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
@@ -1056,5 +1067,5 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 - `set_inventory_qty(inv_id, new_qty)` — `quantity = new_qty` (013, stock count approval)
 - Migrations: `012_atomic_qty_rpc.sql`, `013_stock_count.sql`
 
-**Files updated:** qty-modal.js (`confirmQtyChange`), receipt-actions.js (`confirmReceiptCore`), inventory-reduction.js (`processRedExcel`, `confirmReduction`), pending-resolve.js (`confirmResolvePending`), access-sales.js (`processAccessSalesFile`), stock-count-report.js (`confirmCount` via `set_inventory_qty`), sync-watcher.js (watcher uses `increment_inventory`/`decrement_inventory`)
+**Files updated:** qty-modal.js (`confirmQtyChange`), receipt-confirm.js (`confirmReceiptCore`), inventory-reduction.js (`processRedExcel`, `confirmReduction`), pending-resolve.js (`confirmResolvePending`), access-sales.js (`processAccessSalesFile`), stock-count-report.js (`confirmCount` via `set_inventory_qty`), sync-watcher.js (watcher uses `increment_inventory`/`decrement_inventory`)
 **Files remaining (future):** po-view-import.js (`importPOToInventory`)
