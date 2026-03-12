@@ -22,7 +22,9 @@ async function fetchAll(tableName, filters) {
   const PAGE = 1000;
   let all = [], from = 0;
   while (true) {
+    const tid = getTenantId();
     let query = sb.from(tableName).select(tableName === 'inventory' ? '*, inventory_images(*)' : '*');
+    if (tid) query = query.eq('tenant_id', tid);
     if (filters) {
       for (const [col, op, val] of filters) {
         if (op === 'eq') query = query.eq(col, val);
@@ -69,6 +71,9 @@ async function batchCreate(tableName, records) {
       }
     }
   }
+
+  const tid = getTenantId();
+  if (tid) records = records.map(r => ({ ...r, tenant_id: tid }));
 
   const created = [];
   for (let i = 0; i < records.length; i += 100) {
@@ -147,6 +152,7 @@ async function writeLog(action, inventoryId, details = {}) {
       coupon_code:   details.coupon_code   ?? null,
       campaign:      details.campaign      ?? null,
       employee_id:   emp?.id || details.employee_id || null,
+      tenant_id:     getTenantId(),
       lens_included: details.lens_included ?? null,
       lens_category: details.lens_category ?? null,
       order_number:  details.order_number  ?? null,
