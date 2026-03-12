@@ -80,10 +80,10 @@ async function loadSystemLog(filters, page) {
     const weekAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
 
     const [totalRes, addedRes, deletedRes, editedRes] = await Promise.all([
-      sb.from('inventory').select('*', { count: 'exact', head: true }).eq('is_deleted', false),
-      sb.from('inventory_logs').select('*', { count: 'exact', head: true }).like('action', 'entry_%').gte('created_at', weekAgo),
-      sb.from('inventory_logs').select('*', { count: 'exact', head: true }).eq('action', 'soft_delete').gte('created_at', weekAgo),
-      sb.from('inventory_logs').select('*', { count: 'exact', head: true }).like('action', 'edit_%').gte('created_at', weekAgo)
+      sb.from('inventory').select('*', { count: 'exact', head: true }).eq('tenant_id', getTenantId()).eq('is_deleted', false),
+      sb.from('inventory_logs').select('*', { count: 'exact', head: true }).eq('tenant_id', getTenantId()).like('action', 'entry_%').gte('created_at', weekAgo),
+      sb.from('inventory_logs').select('*', { count: 'exact', head: true }).eq('tenant_id', getTenantId()).eq('action', 'soft_delete').gte('created_at', weekAgo),
+      sb.from('inventory_logs').select('*', { count: 'exact', head: true }).eq('tenant_id', getTenantId()).like('action', 'edit_%').gte('created_at', weekAgo)
     ]);
 
     $('slog-total').textContent   = totalRes.count ?? '—';
@@ -92,8 +92,8 @@ async function loadSystemLog(filters, page) {
     $('slog-edited').textContent  = editedRes.count ?? '—';
 
     // --- Build filtered queries ---
-    let countQuery = sb.from('inventory_logs').select('*', { count: 'exact', head: true });
-    let dataQuery  = sb.from('inventory_logs').select('*');
+    let countQuery = sb.from('inventory_logs').select('*', { count: 'exact', head: true }).eq('tenant_id', getTenantId());
+    let dataQuery  = sb.from('inventory_logs').select('*').eq('tenant_id', getTenantId());
 
     countQuery = applySlogFilters(countQuery, filters);
     dataQuery  = applySlogFilters(dataQuery, filters);
@@ -170,7 +170,7 @@ async function exportSystemLog() {
   const filters = getSystemLogFilters();
   showLoading('מייצא לוג...');
   try {
-    let query = sb.from('inventory_logs').select('*');
+    let query = sb.from('inventory_logs').select('*').eq('tenant_id', getTenantId());
     query = applySlogFilters(query, filters);
     query = query.order('created_at', { ascending: false }).limit(10000);
 

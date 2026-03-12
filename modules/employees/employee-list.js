@@ -25,12 +25,13 @@ async function loadEmployeesTab() {
 
   const { data: employees, error } = await sb.from(T.EMPLOYEES)
     .select('id, name, branch_id, last_login, is_active, role')
+    .eq('tenant_id', getTenantId())
     .eq('is_active', true)
     .order('name');
   if (error) { toast('שגיאה בטעינת עובדים', 'e'); return; }
 
   // Fetch role assignments
-  const { data: empRoles } = await sb.from(AT.EMP_ROLES).select('employee_id, role_id');
+  const { data: empRoles } = await sb.from(AT.EMP_ROLES).select('employee_id, role_id').eq('tenant_id', getTenantId());
   const roleMap = {};
   (empRoles || []).forEach(r => { roleMap[r.employee_id] = r.role_id; });
 
@@ -125,11 +126,12 @@ async function openEditEmployee(id) {
   requirePermission('employees.edit');
   const { data: emp } = await sb.from(T.EMPLOYEES)
     .select('id, name, branch_id, role')
+    .eq('tenant_id', getTenantId())
     .eq('id', id).maybeSingle();
   if (!emp) { toast('עובד לא נמצא', 'e'); return; }
 
   const { data: empRole } = await sb.from(AT.EMP_ROLES)
-    .select('role_id').eq('employee_id', id).maybeSingle();
+    .select('role_id').eq('tenant_id', getTenantId()).eq('employee_id', id).maybeSingle();
   const roleId = empRole?.role_id || LEGACY_ROLE_MAP[emp.role] || 'viewer';
 
   empEditId = id;
@@ -198,7 +200,7 @@ async function saveEmployee() {
   } else {
     // New employee
     if (!/^\d{5}$/.test(pin)) { toast('PIN חייב להכיל 5 ספרות בדיוק', 'e'); return; }
-    const { data: existing } = await sb.from(T.EMPLOYEES).select('id').eq('pin', pin).eq('is_active', true).maybeSingle();
+    const { data: existing } = await sb.from(T.EMPLOYEES).select('id').eq('tenant_id', getTenantId()).eq('pin', pin).eq('is_active', true).maybeSingle();
     if (existing) { toast('PIN כבר בשימוש על ידי עובד אחר', 'e'); return; }
     const { data: newEmp, error } = await sb.from(T.EMPLOYEES)
       .insert({ name, pin, branch_id: branchId, is_active: true, created_by: getCurrentEmployee()?.id, tenant_id: getTenantId() })
@@ -235,9 +237,9 @@ async function renderPermissionMatrix(targetDivId) {
   if (!wrap) return;
 
   const [{ data: roles }, { data: perms }, { data: rolePerms }] = await Promise.all([
-    sb.from(AT.ROLES).select('id, name_he').order('id'),
-    sb.from(AT.PERMISSIONS).select('id, module, name_he').order('module, id'),
-    sb.from(AT.ROLE_PERMS).select('role_id, permission_id, granted')
+    sb.from(AT.ROLES).select('id, name_he').eq('tenant_id', getTenantId()).order('id'),
+    sb.from(AT.PERMISSIONS).select('id, module, name_he').eq('tenant_id', getTenantId()).order('module, id'),
+    sb.from(AT.ROLE_PERMS).select('role_id, permission_id, granted').eq('tenant_id', getTenantId())
   ]);
   if (!roles || !perms) { wrap.textContent = 'שגיאה בטעינת הרשאות'; return; }
 

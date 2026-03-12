@@ -1,10 +1,10 @@
 async function openExistingReceipt(receiptId, viewOnly) {
   showLoading('טוען קבלה...');
   try {
-    const { data: rcpt, error: rErr } = await sb.from(T.RECEIPTS).select('*').eq('id', receiptId).single();
+    const { data: rcpt, error: rErr } = await sb.from(T.RECEIPTS).select('*').eq('tenant_id', getTenantId()).eq('id', receiptId).single();
     if (rErr) throw rErr;
 
-    const { data: items, error: iErr } = await sb.from(T.RCPT_ITEMS).select('*').eq('receipt_id', receiptId);
+    const { data: items, error: iErr } = await sb.from(T.RCPT_ITEMS).select('*').eq('tenant_id', getTenantId()).eq('receipt_id', receiptId);
     if (iErr) throw iErr;
 
     currentReceiptId = receiptId;
@@ -90,6 +90,7 @@ async function searchReceiptBarcode() {
   try {
     const { data, error } = await sb.from('inventory')
       .select('*, inventory_images(*)')
+      .eq('tenant_id', getTenantId())
       .eq('barcode', barcode)
       .eq('is_deleted', false)
       .maybeSingle();

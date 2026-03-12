@@ -9,8 +9,8 @@ async function loadBrandsTab() {
   showLoading('טוען מותגים...');
   try {
     const [{ data: brandRows, error }, { data: stockData }] = await Promise.all([
-      sb.from('brands').select('*'),
-      sb.from(T.INV).select('brand_id, quantity').eq('is_deleted', false)
+      sb.from('brands').select('*').eq('tenant_id', getTenantId()),
+      sb.from(T.INV).select('brand_id, quantity').eq('tenant_id', getTenantId()).eq('is_deleted', false)
     ]);
     if (error) throw new Error(error.message);
 
@@ -156,7 +156,7 @@ async function saveBrands() {
 
     // Reload brands cache
     await loadLookupCaches();
-    const { data: brandRows } = await sb.from('brands').select('*');
+    const { data: brandRows } = await sb.from('brands').select('*').eq('tenant_id', getTenantId());
     brands = (brandRows || []).map(b => ({
       id: b.id,
       name: b.name || '',

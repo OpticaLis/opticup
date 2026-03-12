@@ -22,6 +22,7 @@ async function loadPOsForSupplier(supplierName) {
   try {
     const { data, error } = await sb.from(T.PO)
       .select('id, po_number, status, created_at')
+      .eq('tenant_id', getTenantId())
       .eq('supplier_id', supplierId)
       .in('status', ['sent', 'partial'])
       .order('created_at', { ascending: false });
@@ -48,6 +49,7 @@ async function onReceiptPoSelected() {
   try {
     const { data: poItems, error } = await sb.from(T.PO_ITEMS)
       .select('*')
+      .eq('tenant_id', getTenantId())
       .eq('po_id', poId);
     if (error) throw error;
 
@@ -66,6 +68,7 @@ async function onReceiptPoSelected() {
       if (item.barcode) {
         const { data: inv } = await sb.from('inventory')
           .select('id')
+          .eq('tenant_id', getTenantId())
           .eq('barcode', item.barcode)
           .eq('is_deleted', false)
           .maybeSingle();
@@ -102,12 +105,14 @@ async function updatePOStatusAfterReceipt(poId) {
     // Fetch all PO items
     const { data: poItems, error: piErr } = await sb.from(T.PO_ITEMS)
       .select('id, barcode, brand, model, color, size, qty_ordered, qty_received')
+      .eq('tenant_id', getTenantId())
       .eq('po_id', poId);
     if (piErr) throw piErr;
 
     // Fetch all confirmed receipts linked to this PO
     const { data: receipts } = await sb.from(T.RECEIPTS)
       .select('id')
+      .eq('tenant_id', getTenantId())
       .eq('po_id', poId)
       .eq('status', 'confirmed');
 
@@ -116,6 +121,7 @@ async function updatePOStatusAfterReceipt(poId) {
       const receiptIds = receipts.map(r => r.id);
       const { data: rcptItems } = await sb.from(T.RCPT_ITEMS)
         .select('barcode, brand, model, color, size, quantity')
+        .eq('tenant_id', getTenantId())
         .in('receipt_id', receiptIds);
 
       // Build lookup: by barcode first, then by model+color+size as fallback
@@ -173,13 +179,14 @@ async function loadReceiptTab() {
     const weekStr = weekAgo.toISOString();
 
     const [draftsRes, confirmedRes, itemsRes, listRes] = await Promise.all([
-      sb.from(T.RECEIPTS).select('id', { count: 'exact', head: true }).eq('status', 'draft'),
-      sb.from(T.RECEIPTS).select('id', { count: 'exact', head: true }).eq('status', 'confirmed').gte('created_at', weekStr),
+      sb.from(T.RECEIPTS).select('id', { count: 'exact', head: true }).eq('tenant_id', getTenantId()).eq('status', 'draft'),
+      sb.from(T.RECEIPTS).select('id', { count: 'exact', head: true }).eq('tenant_id', getTenantId()).eq('status', 'confirmed').gte('created_at', weekStr),
       sb.from(T.RCPT_ITEMS).select('quantity', { count: 'exact', head: false })
+        .eq('tenant_id', getTenantId())
         .in('receipt_id',
-          (await sb.from(T.RECEIPTS).select('id').eq('status', 'confirmed').gte('created_at', weekStr)).data?.map(r => r.id) || []
+          (await sb.from(T.RECEIPTS).select('id').eq('tenant_id', getTenantId()).eq('status', 'confirmed').gte('created_at', weekStr)).data?.map(r => r.id) || []
         ),
-      sb.from(T.RECEIPTS).select('*').order('created_at', { ascending: false }).limit(100)
+      sb.from(T.RECEIPTS).select('*').eq('tenant_id', getTenantId()).order('created_at', { ascending: false }).limit(100)
     ]);
 
     $('rcpt-drafts').textContent = draftsRes.count || 0;
@@ -195,7 +202,7 @@ async function loadReceiptTab() {
     } else {
       // Get item counts per receipt
       const receiptIds = receipts.map(r => r.id);
-      const { data: itemCounts } = await sb.from(T.RCPT_ITEMS).select('receipt_id, quantity');
+      const { data: itemCounts } = await sb.from(T.RCPT_ITEMS).select('receipt_id, quantity').eq('tenant_id', getTenantId());
       const countMap = {};
       (itemCounts || []).forEach(i => {
         if (!countMap[i.receipt_id]) countMap[i.receipt_id] = { count: 0, total: 0 };

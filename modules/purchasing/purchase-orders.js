@@ -17,6 +17,7 @@ async function loadPurchaseOrdersTab() {
     const { data, error } = await sb
       .from(T.PO)
       .select(`*, suppliers(name)`)
+      .eq('tenant_id', getTenantId())
       .order('created_at', { ascending: false });
     if (error) throw error;
     poData = data || [];
@@ -148,7 +149,7 @@ async function populatePoSupplierFilter() {
   if (!sel) return;
   const current = poFilters.supplier;
   try {
-    const { data } = await sb.from('suppliers').select('id, name').eq('active', true).order('name');
+    const { data } = await sb.from('suppliers').select('id, name').eq('tenant_id', getTenantId()).eq('active', true).order('name');
     (data || []).forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
@@ -166,6 +167,7 @@ async function generatePoNumber(supplierId) {
   const prefix = `PO-${supNum}-`;
   const { data } = await sb.from(T.PO)
     .select('po_number')
+    .eq('tenant_id', getTenantId())
     .like('po_number', `${prefix}%`)
     .order('po_number', { ascending: false })
     .limit(1);

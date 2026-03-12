@@ -19,7 +19,7 @@ async function processAccessSalesFile(workbook, filename) {
 
   // B) Duplicate file check
   try {
-    const { data: existing } = await sb.from(T.SYNC_LOG).select('id').ilike('filename', filename);
+    const { data: existing } = await sb.from(T.SYNC_LOG).select('id').eq('tenant_id', getTenantId()).ilike('filename', filename);
     if (existing && existing.length > 0) {
       const ok = await confirmDialog('הקובץ הזה כבר עובד בעבר. לייבא בכל זאת?');
       if (!ok) return;
@@ -125,6 +125,7 @@ async function processAccessSalesFile(workbook, filename) {
       // Look up inventory by barcode
       const { data: invRows, error: invErr } = await sb.from(T.INV)
         .select('id, quantity')
+        .eq('tenant_id', getTenantId())
         .eq('barcode', row.barcode)
         .eq('is_deleted', false)
         .limit(1);
