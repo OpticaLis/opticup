@@ -7,12 +7,13 @@ async function openSyncDetails(logId) {
   showLoading('טוען פרטי סנכרון...');
   try {
     // 1. Fetch sync_log row
-    const { data: log, error } = await sb.from(T.SYNC_LOG).select('*').eq('id', logId).maybeSingle();
+    const { data: log, error } = await sb.from(T.SYNC_LOG).select('*').eq('tenant_id', getTenantId()).eq('id', logId).maybeSingle();
     if (error || !log) { toast('לא נמצא רשומת סנכרון', 'e'); return; }
 
     // 2. Find previous sync_log entry to establish time window lower bound
     const { data: prevLogs } = await sb.from(T.SYNC_LOG)
       .select('created_at')
+      .eq('tenant_id', getTenantId())
       .lt('created_at', log.created_at)
       .order('created_at', { ascending: false })
       .limit(1);
@@ -21,6 +22,7 @@ async function openSyncDetails(logId) {
     // 3. Fetch inventory_logs scoped to this sync event's time window
     const { data: items } = await sb.from('inventory_logs')
       .select('inventory_id, action, qty_before, qty_after, created_at')
+      .eq('tenant_id', getTenantId())
       .or(`source_ref.eq.${log.filename},sync_filename.eq.${log.filename}`)
       .gt('created_at', lowerBound)
       .lte('created_at', log.created_at)
@@ -34,6 +36,7 @@ async function openSyncDetails(logId) {
       if (ids.length) {
         const { data: invRows } = await sb.from(T.INV)
           .select('id, barcode, brand_id, model, color, size')
+          .eq('tenant_id', getTenantId())
           .in('id', ids);
         if (invRows) {
           for (const r of invRows) {
@@ -136,7 +139,7 @@ function closeSyncDetails() {
 async function downloadFailedFile(logId) {
   showLoading('יוצר קישור הורדה...');
   try {
-    const { data: log, error } = await sb.from(T.SYNC_LOG).select('storage_path, filename').eq('id', logId).maybeSingle();
+    const { data: log, error } = await sb.from(T.SYNC_LOG).select('storage_path, filename').eq('tenant_id', getTenantId()).eq('id', logId).maybeSingle();
     if (error || !log || !log.storage_path) {
       toast('לא נמצא קובץ להורדה', 'e');
       return;

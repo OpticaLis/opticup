@@ -9,6 +9,7 @@ async function renderPendingPanel() {
   try {
     const { data, error } = await sb.from(T.PENDING_SALES)
       .select('*')
+      .eq('tenant_id', getTenantId())
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
     if (error) throw error;
@@ -94,6 +95,7 @@ async function loadSuggestions(pendingId, barcode) {
     // Exact barcode match first
     const { data: exact } = await sb.from(T.INV)
       .select('id, barcode, brand_id, model, color, size, quantity')
+      .eq('tenant_id', getTenantId())
       .eq('is_deleted', false)
       .gt('quantity', 0)
       .eq('barcode', barcode)
@@ -104,6 +106,7 @@ async function loadSuggestions(pendingId, barcode) {
     if (results.length < 5 && patterns[0]) {
       const { data: partial } = await sb.from(T.INV)
         .select('id, barcode, brand_id, model, color, size, quantity')
+        .eq('tenant_id', getTenantId())
         .eq('is_deleted', false)
         .gt('quantity', 0)
         .ilike('barcode', '%' + patterns[0])
@@ -127,7 +130,7 @@ async function loadSuggestions(pendingId, barcode) {
     const brandIds = [...new Set(results.map(r => r.brand_id).filter(Boolean))];
     let brandMap = {};
     if (brandIds.length) {
-      const { data: br } = await sb.from(T.BRANDS).select('id, name').in('id', brandIds);
+      const { data: br } = await sb.from(T.BRANDS).select('id, name').eq('tenant_id', getTenantId()).in('id', brandIds);
       if (br) br.forEach(b => brandMap[b.id] = b.name);
     }
 
@@ -184,6 +187,7 @@ async function runPendingSearch(pendingId, query) {
     // Barcode exact or partial
     const { data: byBarcode } = await sb.from(T.INV)
       .select('id, barcode, brand_id, model, color, size, quantity')
+      .eq('tenant_id', getTenantId())
       .eq('is_deleted', false)
       .gt('quantity', 0)
       .ilike('barcode', '%' + q + '%')
@@ -194,6 +198,7 @@ async function runPendingSearch(pendingId, query) {
     if (items.length < 5) {
       const { data: byModel } = await sb.from(T.INV)
         .select('id, barcode, brand_id, model, color, size, quantity')
+        .eq('tenant_id', getTenantId())
         .eq('is_deleted', false)
         .gt('quantity', 0)
         .ilike('model', '%' + q + '%')
@@ -216,7 +221,7 @@ async function runPendingSearch(pendingId, query) {
     const brandIds = [...new Set(items.map(r => r.brand_id).filter(Boolean))];
     let brandMap = {};
     if (brandIds.length) {
-      const { data: br } = await sb.from(T.BRANDS).select('id, name').in('id', brandIds);
+      const { data: br } = await sb.from(T.BRANDS).select('id, name').eq('tenant_id', getTenantId()).in('id', brandIds);
       if (br) br.forEach(b => brandMap[b.id] = b.name);
     }
 

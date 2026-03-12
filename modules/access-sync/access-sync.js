@@ -90,6 +90,7 @@ async function loadSyncSummary() {
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
     const { data, error } = await sb.from(T.SYNC_LOG)
       .select('rows_success, rows_error, created_at')
+      .eq('tenant_id', getTenantId())
       .gte('created_at', todayStart.toISOString());
     if (error) throw error;
     const syncs  = data ? data.length : 0;
@@ -107,6 +108,7 @@ async function loadLastActivity() {
   try {
     const { data } = await sb.from(T.SYNC_LOG)
       .select('created_at')
+      .eq('tenant_id', getTenantId())
       .order('created_at', { ascending: false })
       .limit(1);
     const el = $('as-last-activity');
@@ -127,6 +129,7 @@ async function loadSyncLog(page = 0) {
     const to = from + SYNC_LOG_PAGE_SIZE - 1;
     const { data, error, count } = await sb.from(T.SYNC_LOG)
       .select('*', { count: 'exact' })
+      .eq('tenant_id', getTenantId())
       .order('created_at', { ascending: false })
       .range(from, to);
     if (error) throw error;
@@ -186,7 +189,7 @@ async function loadPendingBadge() {
   const btn = $('as-btn-pending');
   if (!btn) return;
   try {
-    const { count, error } = await sb.from(T.PENDING_SALES).select('*', { count: 'exact', head: true }).eq('status', 'pending');
+    const { count, error } = await sb.from(T.PENDING_SALES).select('*', { count: 'exact', head: true }).eq('tenant_id', getTenantId()).eq('status', 'pending');
     const n = (!error && count) ? count : 0;
     if (n > 0) {
       btn.textContent = `\u26A0\uFE0F ממתינים לטיפול (${n})`;
