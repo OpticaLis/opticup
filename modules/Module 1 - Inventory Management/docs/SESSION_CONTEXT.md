@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Phase 3.75 ✅ complete. Next: Phase 4 — מעקב חובות ספקים.
+Phase 3.5 ✅ complete. Next: Phase 3.75 — Multi-Tenancy Foundation.
 
 ## Phase 3.5 — מסך בית + דפים עצמאיים
 
