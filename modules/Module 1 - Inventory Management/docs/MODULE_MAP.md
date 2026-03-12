@@ -51,8 +51,12 @@
 | 39 | employees.html | employees.html | ~120 | Standalone employee management page (extracted from inventory.html employees tab). adminBtn in header, homeBtn always visible in nav |
 | 40 | header.css | css/header.css | 98 | Sticky header styles: 60px height, z-index 1000, RTL, 3-zone flex layout (right: logo+store, center: app name, left: employee+logout), responsive below 600px hides role |
 | 41 | header.js | js/header.js | 58 | Sticky header logic: initHeader (DOMContentLoaded, session check, tenant fetch), buildHeader (DOM injection, escapeHtml, clearSession logout) |
+| 42 | suppliers-debt.html | suppliers-debt.html | ~140 | Supplier debt tracking page: summary cards (total debt, due this week, overdue, paid this month), 4 tabs (suppliers, documents, payments, prepaid), session check with debt:view permission fallback, tab switching |
+| 43 | debt-dashboard.js | modules/suppliers-debt/debt-dashboard.js | ~90 | Debt dashboard summary: loadDebtSummary (queries supplier_documents + supplier_payments, calculates totals/overdue/due-week/paid-month), formatILS helper |
 
-**Total: 41 files, ~8,284 lines** (includes scripts/sync-watcher.js)
+**Total: 43 files, ~8,514 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 4c):** suppliers-debt.html + debt-dashboard.js added. New folder modules/suppliers-debt/. T.SUP_PAYMENTS added to shared.js. Debt module card added to index.html MODULES array.
 
 **Note (Phase 3.8):** header.css + header.js added. Script/link tags added to index.html, inventory.html, employees.html.
 
@@ -526,6 +530,19 @@
 | `doLogout` | `()` | Calls clearSession() to end session and redirect |
 | `updateClock` | `()` | Updates clock-bar with Hebrew date + time (1s interval) |
 
+### suppliers-debt.html (inline script)
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `switchDebtTab` | `(tabName)` | Switches active tab button and content div for the 4 debt tabs (suppliers, documents, payments, prepaid) |
+
+### modules/suppliers-debt/debt-dashboard.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `formatILS` | `(amount)` | Formats number as ILS currency string (₪1,234) with thousands separator |
+| `loadDebtSummary` | `()` | Queries supplier_documents (open, not deleted) and supplier_payments (this month). Calculates total debt, due this week, overdue, paid this month. Updates DOM cards. Adds 'overdue' class if overdue > 0 |
+
 ### modules/employees/employee-list.js
 
 | Function | Parameters | Description |
@@ -918,6 +935,20 @@ admin.js (DOMContentLoaded)
   → calls: loadData() [data-loading.js]
   → calls: addEntryRow() [inventory-entry.js]
   → calls: refreshLowStockBanner() [data-loading.js]
+```
+
+### Supplier Debt Module
+
+```
+debt-dashboard.js
+  → reads: T.SUP_DOCS, T.SUP_PAYMENTS [shared.js]
+  → calls: sb.from() queries [Supabase direct]
+  → provides: loadDebtSummary(), formatILS()
+
+suppliers-debt.html (inline script)
+  → calls: loadSession(), hasPermission() [auth-service.js]
+  → calls: loadDebtSummary() [debt-dashboard.js]
+  → provides: switchDebtTab()
 ```
 
 ---

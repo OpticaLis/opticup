@@ -20,6 +20,7 @@ const T = {
   EMPLOYEES: 'employees',
   DOC_TYPES: 'document_types',
   SUP_DOCS: 'supplier_documents',
+  SUP_PAYMENTS: 'supplier_payments',
 };
 
 // =========================================================
