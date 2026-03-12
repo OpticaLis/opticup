@@ -1,16 +1,9 @@
 // =========================================================
 // debt-dashboard.js — Supplier Debt Dashboard (Phase 4c)
 // Load after: shared.js, supabase-ops.js, auth-service.js
-// Provides: loadDebtSummary(), formatILS()
+// Provides: loadDebtSummary()
+// Note: formatILS() moved to shared.js (Phase 4d)
 // =========================================================
-
-/**
- * Format a number as ILS currency string: ₪1,234
- */
-function formatILS(amount) {
-  const num = Number(amount) || 0;
-  return '\u20AA' + num.toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
 
 /**
  * Load summary card data from supplier_documents + supplier_payments

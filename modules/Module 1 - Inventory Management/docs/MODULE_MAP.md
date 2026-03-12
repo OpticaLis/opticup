@@ -52,9 +52,13 @@
 | 40 | header.css | css/header.css | 98 | Sticky header styles: 60px height, z-index 1000, RTL, 3-zone flex layout (right: logo+store, center: app name, left: employee+logout), responsive below 600px hides role |
 | 41 | header.js | js/header.js | 58 | Sticky header logic: initHeader (DOMContentLoaded, session check, tenant fetch), buildHeader (DOM injection, escapeHtml, clearSession logout) |
 | 42 | suppliers-debt.html | suppliers-debt.html | ~140 | Supplier debt tracking page: summary cards (total debt, due this week, overdue, paid this month), 4 tabs (suppliers, documents, payments, prepaid), session check with debt:view permission fallback, tab switching |
-| 43 | debt-dashboard.js | modules/suppliers-debt/debt-dashboard.js | ~90 | Debt dashboard summary: loadDebtSummary (queries supplier_documents + supplier_payments, calculates totals/overdue/due-week/paid-month), formatILS helper |
+| 43 | debt-dashboard.js | modules/suppliers-debt/debt-dashboard.js | ~85 | Debt dashboard summary: loadDebtSummary (queries supplier_documents + supplier_payments, calculates totals/overdue/due-week/paid-month). Note: formatILS moved to shared.js in Phase 4d |
+| 44 | debt-documents.js | modules/suppliers-debt/debt-documents.js | 300 | Documents tab: loadDocumentsTab (fetch docs+types+suppliers), renderDocFilterBar (supplier/type/status/date/overdue filters), applyDocFilters (client-side), renderDocumentsTable, openNewDocumentModal (PIN-verified CRUD), saveNewDocument, generateDocInternalNumber, viewDocument |
+| 45 | debt-doc-link.js | modules/suppliers-debt/debt-doc-link.js | 72 | Delivery note → invoice linking: openLinkToInvoiceModal (shows supplier's invoices), linkDeliveryToInvoice (creates document_links record, updates status to linked) |
 
-**Total: 43 files, ~8,514 lines** (includes scripts/sync-watcher.js)
+**Total: 45 files, ~8,971 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 4d):** debt-documents.js + debt-doc-link.js added. formatILS moved from debt-dashboard.js to shared.js. T.DOC_LINKS added to shared.js.
 
 **Note (Phase 4c):** suppliers-debt.html + debt-dashboard.js added. New folder modules/suppliers-debt/. T.SUP_PAYMENTS added to shared.js. Debt module card added to index.html MODULES array.
 
@@ -87,6 +91,7 @@
 | `showTab` | `(name)` | Main navigation: stops camera if active, deactivates all tabs, activates target, calls appropriate loader |
 | `showEntryMode` | `(mode)` | Switches between manual/excel/receipt entry sub-modes |
 | `getTenantId` | `()` | Returns tenant_id UUID from sessionStorage ('prizma_tenant_id'). Used in every insert/select as defense-in-depth alongside RLS (Phase 3.75) |
+| `formatILS` | `(amount)` | Formats number as ILS currency string (₪1,234) with thousands separator. Moved from debt-dashboard.js in Phase 4d |
 
 ### js/supabase-ops.js
 
@@ -540,8 +545,29 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `formatILS` | `(amount)` | Formats number as ILS currency string (₪1,234) with thousands separator |
 | `loadDebtSummary` | `()` | Queries supplier_documents (open, not deleted) and supplier_payments (this month). Calculates total debt, due this week, overdue, paid this month. Updates DOM cards. Adds 'overdue' class if overdue > 0 |
+
+### modules/suppliers-debt/debt-documents.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `loadDocumentsTab` | `()` | Fetches supplier_documents + document_types + suppliers in parallel. Stores in module-level caches. Renders filter bar + table |
+| `renderDocFilterBar` | `()` | Builds filter toolbar inside dtab-documents: supplier, type, status dropdowns, date range, overdue checkbox, "+ מסמך חדש" button |
+| `applyDocFilters` | `()` | Reads filter inputs, filters _docData client-side, sorts by date desc, calls renderDocumentsTable |
+| `renderDocumentsTable` | `(docs)` | Renders HTML table with columns: date, type, number, internal number, supplier, amount, paid, balance, status badge, action buttons |
+| `viewDocument` | `(docId)` | Placeholder alert — full view modal deferred to Phase 4g |
+| `openNewDocumentModal` | `()` | Creates dynamic modal with supplier/type/number/dates/amounts/VAT/notes/PIN fields. Auto-calculates VAT on input |
+| `closeAndRemoveModal` | `(id)` | Removes modal element from DOM by id |
+| `calcNewDocTotal` | `()` | Auto-calc: reads subtotal + VAT rate, updates VAT and total fields |
+| `saveNewDocument` | `()` | Validates fields, checks duplicates, verifies PIN, generates internal_number, batchCreate to supplier_documents, writeLog, refresh tab |
+| `generateDocInternalNumber` | `()` | Queries max existing DOC-NNNN from supplier_documents, returns next sequential number |
+
+### modules/suppliers-debt/debt-doc-link.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `openLinkToInvoiceModal` | `(docId)` | Shows modal for linking a delivery note to an invoice. Lists same-supplier invoices (not cancelled) as dropdown options |
+| `linkDeliveryToInvoice` | `(deliveryNoteId)` | Creates document_links record (parent=invoice, child=delivery note), updates delivery note status to 'linked', writeLog, refresh tab |
 
 ### modules/employees/employee-list.js
 
@@ -566,7 +592,7 @@
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
 | `sb` | SupabaseClient | `supabase.createClient(...)` | Supabase client instance |
-| `T` | Object | `{ INV, PO, BRANDS, SUPPLIERS, EMPLOYEES, ... }` | Table name constants (see DB Schema section) |
+| `T` | Object | `{ INV, PO, BRANDS, SUPPLIERS, EMPLOYEES, DOC_LINKS, ... }` | Table name constants (see DB Schema section) |
 | `FIELD_MAP` | Object | Nested {table: {he: en}} | Hebrew→English field name mapping per table |
 | `FIELD_MAP_REV` | Object | Auto-built reverse | English→Hebrew field name mapping per table |
 | `ENUM_MAP` | Object | {category: {he: en}} | Hebrew→English enum value mapping |
@@ -942,12 +968,28 @@ admin.js (DOMContentLoaded)
 ```
 debt-dashboard.js
   → reads: T.SUP_DOCS, T.SUP_PAYMENTS [shared.js]
-  → calls: sb.from() queries [Supabase direct]
-  → provides: loadDebtSummary(), formatILS()
+  → calls: sb.from() queries [Supabase direct], formatILS() [shared.js]
+  → provides: loadDebtSummary()
+
+debt-documents.js
+  → reads: T.SUP_DOCS, T.DOC_TYPES, T.SUPPLIERS [shared.js]
+  → calls: fetchAll() [supabase-ops.js], batchCreate() [supabase-ops.js]
+  → calls: writeLog() [supabase-ops.js], verifyPinOnly() [auth-service.js]
+  → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), setAlert(), formatILS() [shared.js]
+  → calls: sb.from() [Supabase direct — generateDocInternalNumber]
+  → provides: loadDocumentsTab(), openNewDocumentModal(), closeAndRemoveModal(), viewDocument(), calcNewDocTotal()
+
+debt-doc-link.js
+  → reads: _docData, _docTypes [debt-documents.js]
+  → calls: batchCreate() [supabase-ops.js], batchUpdate() [supabase-ops.js], writeLog() [supabase-ops.js]
+  → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), setAlert(), formatILS() [shared.js]
+  → calls: closeAndRemoveModal(), loadDocumentsTab() [debt-documents.js]
+  → provides: openLinkToInvoiceModal(), linkDeliveryToInvoice()
 
 suppliers-debt.html (inline script)
   → calls: loadSession(), hasPermission() [auth-service.js]
   → calls: loadDebtSummary() [debt-dashboard.js]
+  → calls: loadDocumentsTab() [debt-documents.js]
   → provides: switchDebtTab()
 ```
 
@@ -984,8 +1026,8 @@ suppliers-debt.html (inline script)
 | `payment_methods` | — | id (uuid PK), code (unique per tenant), name_he, name_en, is_system, is_active | Configurable payment method registry. Seeded: bank_transfer, check, cash, credit_card |
 | `currencies` | — | id (uuid PK), code (unique per tenant), name_he, symbol, is_default, is_active | Configurable currency registry. Seeded: ILS (default), USD, EUR |
 | `supplier_documents` | `T.SUP_DOCS` | id (uuid PK), supplier_id (FK→suppliers), document_type_id (FK→document_types), document_number, document_date, due_date, received_date, currency, exchange_rate, subtotal, vat_rate, vat_amount, total_amount, parent_invoice_id (FK→self), file_url, goods_receipt_id (FK→goods_receipts), po_id (FK→purchase_orders), status (open/partially_paid/paid/linked/cancelled), paid_amount, internal_number (022), is_deleted. UNIQUE(tenant_id, supplier_id, document_number) (022) | → suppliers, → document_types, → goods_receipts, → purchase_orders, ← document_links, ← payment_allocations |
-| `document_links` | — | id (uuid PK), parent_document_id (FK→supplier_documents), child_document_id (FK→supplier_documents), amount_on_invoice | Maps delivery notes to monthly invoices |
-| `supplier_payments` | — | id (uuid PK), supplier_id (FK→suppliers), amount, currency, exchange_rate, payment_date, payment_method, reference_number, prepaid_deal_id (FK→prepaid_deals), withholding_tax_rate (022), withholding_tax_amount (022), net_amount (022), status (approved/pending/rejected) (022), approved_by (FK→employees) (022), approved_at (022), is_deleted | → suppliers, → prepaid_deals, → employees, ← payment_allocations |
+| `document_links` | `T.DOC_LINKS` | id (uuid PK), parent_document_id (FK→supplier_documents), child_document_id (FK→supplier_documents), amount_on_invoice | Maps delivery notes to monthly invoices |
+| `supplier_payments` | `T.SUP_PAYMENTS` | id (uuid PK), supplier_id (FK→suppliers), amount, currency, exchange_rate, payment_date, payment_method, reference_number, prepaid_deal_id (FK→prepaid_deals), withholding_tax_rate (022), withholding_tax_amount (022), net_amount (022), status (approved/pending/rejected) (022), approved_by (FK→employees) (022), approved_at (022), is_deleted | → suppliers, → prepaid_deals, → employees, ← payment_allocations |
 | `payment_allocations` | — | id (uuid PK), payment_id (FK→supplier_payments), document_id (FK→supplier_documents), allocated_amount | Many-to-many: payments ↔ documents |
 | `prepaid_deals` | — | id (uuid PK), supplier_id (FK→suppliers), deal_name, start_date, end_date, total_prepaid, currency, total_used, total_remaining, alert_threshold_pct, alert_threshold_amt, status (active/completed/cancelled), is_deleted | → suppliers, ← prepaid_checks, ← supplier_payments |
 | `prepaid_checks` | — | id (uuid PK), prepaid_deal_id (FK→prepaid_deals), check_number, amount, check_date, status (pending/cashed/bounced/cancelled), cashed_date | → prepaid_deals |

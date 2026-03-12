@@ -40,6 +40,23 @@
   .debt-tab-content { display: none; }
   .debt-tab-content.active { display: block; }
   .empty-state { text-align: center; padding: 48px 16px; color: var(--g400); font-size: .95rem; }
+
+  /* Documents tab — toolbar + badges + buttons */
+  .doc-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .doc-filter-input { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--g300); font-family: inherit; font-size: .88rem; }
+  .doc-cb-label { display: flex; align-items: center; gap: 4px; font-size: .85rem; color: var(--g600); }
+  .doc-add-btn { margin-right: auto; }
+  .doc-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: .78rem; font-weight: 600; }
+  .dst-open { background: #e3f0ff; color: #1a5fb4; }
+  .dst-partial { background: #fff3cd; color: #856404; }
+  .dst-paid { background: #d4edda; color: #155724; }
+  .dst-linked { background: #e8dff5; color: #6f42c1; }
+  .dst-cancel { background: var(--g200); color: var(--g500); }
+  .btn-sm { padding: 3px 8px; border: 1px solid var(--g300); border-radius: 4px; background: var(--white); cursor: pointer; font-size: .78rem; font-family: inherit; }
+  .btn-sm:hover { background: var(--g100); }
+  .btn-lnk { border-color: #6f42c1; color: #6f42c1; }
+  .btn-lnk:hover { background: #f3eefb; }
+  .nd-field { width: 100%; padding: 6px; border: 1px solid var(--g300); border-radius: 4px; font-family: inherit; font-size: .88rem; box-sizing: border-box; }
 </style>
 </head>
 <body>
@@ -120,6 +137,8 @@
 <script src="js/auth-service.js"></script>
 <script src="js/header.js"></script>
 <script src="modules/suppliers-debt/debt-dashboard.js"></script>
+<script src="modules/suppliers-debt/debt-documents.js"></script>
+<script src="modules/suppliers-debt/debt-doc-link.js"></script>
 <script>
 // =========================================================
 // Tab switching
@@ -131,6 +150,8 @@ function switchDebtTab(tabName) {
   document.querySelectorAll('.debt-tab-content').forEach(function(div) {
     div.classList.toggle('active', div.id === 'dtab-' + tabName);
   });
+  // Load tab data
+  if (tabName === 'documents') loadDocumentsTab();
 }
 
 // =========================================================

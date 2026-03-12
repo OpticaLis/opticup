@@ -21,6 +21,7 @@ const T = {
   DOC_TYPES: 'document_types',
   SUP_DOCS: 'supplier_documents',
   SUP_PAYMENTS: 'supplier_payments',
+  DOC_LINKS: 'document_links',
 };
 
 // =========================================================
@@ -134,6 +135,14 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+/**
+ * Format a number as ILS currency string: ₪1,234
+ */
+function formatILS(amount) {
+  const num = Number(amount) || 0;
+  return '\u20AA' + num.toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 function showLoading(t) { $('loading-text').textContent=t||'טוען...'; $('loading').style.display='flex'; }
