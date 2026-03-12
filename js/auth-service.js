@@ -171,6 +171,15 @@ async function loadSession() {
   const token = sessionStorage.getItem(SK.TOKEN);
   if (!token) return null;
 
+  // Restore JWT-authenticated client BEFORE querying (RLS requires tenant_id)
+  const jwt = sessionStorage.getItem('jwt_token');
+  if (jwt) {
+    window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+      global: { headers: { Authorization: 'Bearer ' + jwt } }
+    });
+    sb = window.sb;
+  }
+
   // Validate token against DB
   const { data: session } = await sb.from(AT.SESSIONS)
     .select('id, employee_id, permissions, role_id, expires_at')
@@ -180,15 +189,6 @@ async function loadSession() {
     .maybeSingle();
 
   if (!session) { clearSessionLocal(); return null; }
-
-  // Restore JWT-authenticated client
-  const jwt = sessionStorage.getItem('jwt_token');
-  if (jwt) {
-    window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
-      global: { headers: { Authorization: 'Bearer ' + jwt } }
-    });
-    sb = window.sb;
-  }
 
   // Touch last_active
   sb.from(AT.SESSIONS)
