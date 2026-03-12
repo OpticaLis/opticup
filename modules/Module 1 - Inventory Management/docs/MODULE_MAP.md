@@ -51,16 +51,19 @@
 | 39 | employees.html | employees.html | ~120 | Standalone employee management page (extracted from inventory.html employees tab). adminBtn in header, homeBtn always visible in nav |
 | 40 | header.css | css/header.css | 98 | Sticky header styles: 60px height, z-index 1000, RTL, 3-zone flex layout (right: logo+store, center: app name, left: employee+logout), responsive below 600px hides role |
 | 41 | header.js | js/header.js | 58 | Sticky header logic: initHeader (DOMContentLoaded, session check, tenant fetch), buildHeader (DOM injection, escapeHtml, clearSession logout) |
-| 42 | suppliers-debt.html | suppliers-debt.html | ~140 | Supplier debt tracking page: summary cards (total debt, due this week, overdue, paid this month), 4 tabs (suppliers, documents, payments, prepaid), session check with debt:view permission fallback, tab switching |
-| 43 | debt-dashboard.js | modules/suppliers-debt/debt-dashboard.js | ~85 | Debt dashboard summary: loadDebtSummary (queries supplier_documents + supplier_payments, calculates totals/overdue/due-week/paid-month). Note: formatILS moved to shared.js in Phase 4d |
+| 42 | suppliers-debt.html | suppliers-debt.html | ~195 | Supplier debt tracking page: summary cards, 4 tabs, session check, tab switching. debt-main-content wrapper + supplier-detail-panel for detail view |
+| 43 | debt-dashboard.js | modules/suppliers-debt/debt-dashboard.js | ~230 | Debt dashboard summary: loadDebtSummary, loadSuppliersTab (aggregated supplier table with debt/overdue/prepaid), renderSuppliersTable, openPaymentForSupplier |
 | 44 | debt-documents.js | modules/suppliers-debt/debt-documents.js | 300 | Documents tab: loadDocumentsTab (fetch docs+types+suppliers), renderDocFilterBar (supplier/type/status/date/overdue filters), applyDocFilters (client-side), renderDocumentsTable, openNewDocumentModal (PIN-verified CRUD), saveNewDocument, generateDocInternalNumber, viewDocument |
 | 45 | debt-doc-link.js | modules/suppliers-debt/debt-doc-link.js | 72 | Delivery note → invoice linking: openLinkToInvoiceModal (shows supplier's invoices), linkDeliveryToInvoice (creates document_links record, updates status to linked) |
 | 46 | debt-payments.js | modules/suppliers-debt/debt-payments.js | 168 | Payments tab: loadPaymentsTab (fetch payments+methods+suppliers+allocations+documents), renderPaymentsToolbar (filters + add button), applyPayFilters (client-side), renderPaymentsTable (with כנגד doc numbers), viewPayment (detail modal with allocation table) |
 | 47 | debt-payment-wizard.js | modules/suppliers-debt/debt-payment-wizard.js | 146 | Payment wizard steps 1-2: openNewPaymentWizard (state reset + modal), supplier selection with debt summary + withholding tax rate lookup, payment details form with auto-calc withholding tax |
 | 48 | debt-payment-alloc.js | modules/suppliers-debt/debt-payment-alloc.js | 254 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status) |
 | 49 | debt-prepaid.js | modules/suppliers-debt/debt-prepaid.js | 285 | Prepaid deals tab: loadPrepaidTab (fetch deals+checks+suppliers), renderPrepaidToolbar (filters + add button), applyPrepaidFilters (client-side), renderPrepaidTable (progress bar, status badges), openNewDealModal (PIN-verified), openAddCheckModal, viewDealDetail (progress bar + checks table), updateCheckStatus |
+| 50 | debt-supplier-detail.js | modules/suppliers-debt/debt-supplier-detail.js | ~327 | Supplier detail view: openSupplierDetail (slide-in panel with summary + 4 sub-tabs), closeSupplierDetail, loadSupplierTimeline (merged docs+payments sorted by date), loadSupplierDocuments (filtered table), loadSupplierPayments (filtered table), loadSupplierReturns (placeholder) |
 
-**Total: 49 files, ~9,824 lines** (includes scripts/sync-watcher.js)
+**Total: 50 files, ~10,375 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 4g):** debt-supplier-detail.js added. debt-dashboard.js extended with loadSuppliersTab + renderSuppliersTable + openPaymentForSupplier. suppliers-debt.html restructured with debt-main-content wrapper + supplier-detail-panel div.
 
 **Note (Phase 4f):** debt-prepaid.js added. T.PREPAID_DEALS + T.PREPAID_CHECKS added to shared.js. Auto-deduction logic added to receipt-debt.js. Tab switching wired in suppliers-debt.html.
 
@@ -553,7 +556,10 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `loadDebtSummary` | `()` | Queries supplier_documents (open, not deleted) and supplier_payments (this month). Calculates total debt, due this week, overdue, paid this month. Updates DOM cards. Adds 'overdue' class if overdue > 0 |
+| `loadDebtSummary` | `()` | Queries supplier_documents (open, not deleted) and supplier_payments (this month). Calculates total debt, due this week, overdue, paid this month. Updates DOM cards. Adds 'overdue' class if overdue > 0. Calls loadSuppliersTab |
+| `loadSuppliersTab` | `()` | Fetches suppliers + open documents + active prepaid deals. Aggregates per-supplier: open doc count, total debt, overdue amount, next due date, prepaid deal remaining. Sorts overdue-first then by debt desc |
+| `renderSuppliersTable` | `(data)` | Renders supplier table with columns: name, open docs, total debt, overdue (red), next due, prepaid deal, action buttons. Row click opens supplier detail |
+| `openPaymentForSupplier` | `(supplierId)` | Opens payment wizard pre-filled with supplier (skips step 1). Ensures _payMethods loaded |
 
 ### modules/suppliers-debt/debt-documents.js
 
@@ -626,6 +632,19 @@
 | `saveNewCheck` | `(dealId)` | batchCreate prepaid_checks → writeLog → refresh |
 | `viewDealDetail` | `(dealId)` | Detail modal: deal summary, progress bar, checks table with status actions |
 | `updateCheckStatus` | `(checkId, newStatus)` | Updates check status (pending→cashed/bounced), sets cashed_date |
+
+### modules/suppliers-debt/debt-supplier-detail.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `openSupplierDetail` | `(supplierId)` | Hides main content, shows detail panel. Fetches supplier info + docs + prepaid deals. Renders header with debt summary + 4 sub-tabs (timeline default) |
+| `closeSupplierDetail` | `()` | Hides detail panel, restores main content |
+| `_switchDetailTab` | `(tabName)` | Switches active sub-tab, loads content (timeline/docs/payments/returns) |
+| `loadSupplierTimeline` | `(supplierId)` | Fetches all docs + payments for supplier, merges into date-sorted timeline with icons. Max 50 entries with "show more" |
+| `_showAllTimeline` | `()` | Shows all timeline entries beyond the initial 50 limit |
+| `loadSupplierDocuments` | `(supplierId)` | Fetches supplier_documents filtered to this supplier, renders table (date, type, number, amount, paid, balance, status) |
+| `loadSupplierPayments` | `(supplierId)` | Fetches supplier_payments filtered to this supplier, renders table (date, amount, net, method, reference, status) |
+| `loadSupplierReturns` | `(supplierId)` | Placeholder — shows "אין החזרות" empty state (built in Phase 4h) |
 
 ### modules/employees/employee-list.js
 
@@ -875,6 +894,20 @@
 | `DEAL_STATUS_MAP` | Object (const) | 3 entries | Maps deal status → {he, cls} for badge rendering |
 | `CHECK_STATUS_MAP` | Object (const) | 4 entries | Maps check status → {he, cls} for badge rendering |
 
+### modules/suppliers-debt/debt-dashboard.js (Phase 4g additions)
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `_supTabData` | Array | `[]` | Aggregated supplier rows: id, name, openCount, totalDebt, overdueAmt, nextDue, hasDeal, dealRemaining |
+
+### modules/suppliers-debt/debt-supplier-detail.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `_detailSupplierId` | String/null | `null` | Currently open supplier ID in detail view |
+| `_detailSupplierName` | String | `''` | Name of currently open supplier |
+| `_detailActiveTab` | String | `'timeline'` | Active sub-tab in detail view |
+
 ---
 
 ## 4. Dependency Graph
@@ -1116,9 +1149,18 @@ debt-prepaid.js
   → calls: closeAndRemoveModal() [debt-documents.js]
   → provides: loadPrepaidTab(), openNewDealModal(), openAddCheckModal(), viewDealDetail(), updateCheckStatus()
 
+debt-supplier-detail.js
+  → reads: T.SUPPLIERS, T.SUP_DOCS, T.SUP_PAYMENTS, T.PREPAID_DEALS, T.DOC_TYPES, T.PAY_METHODS [shared.js]
+  → reads: DOC_STATUS_MAP [debt-documents.js], PAY_STATUS_MAP [debt-payments.js]
+  → calls: fetchAll() [supabase-ops.js]
+  → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), formatILS() [shared.js]
+  → provides: openSupplierDetail(), closeSupplierDetail(), loadSupplierTimeline(),
+    loadSupplierDocuments(), loadSupplierPayments(), loadSupplierReturns()
+
 suppliers-debt.html (inline script)
   → calls: loadSession(), hasPermission() [auth-service.js]
   → calls: loadDebtSummary() [debt-dashboard.js]
+  → calls: loadSuppliersTab() [debt-dashboard.js]
   → calls: loadDocumentsTab() [debt-documents.js]
   → calls: loadPaymentsTab() [debt-payments.js]
   → calls: loadPrepaidTab() [debt-prepaid.js]

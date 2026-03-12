@@ -69,47 +69,53 @@
     <h2>מעקב חובות ספקים</h2>
   </div>
 
-  <!-- Summary cards -->
-  <div class="debt-cards">
-    <div class="debt-card" id="card-total-debt">
-      <div class="dc-title">חוב כולל</div>
-      <div class="dc-amount" id="val-total-debt">&#8362;0</div>
+  <!-- Main content (hidden when detail panel is open) -->
+  <div id="debt-main-content">
+    <!-- Summary cards -->
+    <div class="debt-cards">
+      <div class="debt-card" id="card-total-debt">
+        <div class="dc-title">חוב כולל</div>
+        <div class="dc-amount" id="val-total-debt">&#8362;0</div>
+      </div>
+      <div class="debt-card" id="card-due-week">
+        <div class="dc-title">לתשלום השבוע</div>
+        <div class="dc-amount" id="val-due-week">&#8362;0</div>
+      </div>
+      <div class="debt-card" id="card-overdue">
+        <div class="dc-title">באיחור</div>
+        <div class="dc-amount" id="val-overdue">&#8362;0</div>
+      </div>
+      <div class="debt-card" id="card-paid-month">
+        <div class="dc-title">שולם החודש</div>
+        <div class="dc-amount" id="val-paid-month">&#8362;0</div>
+      </div>
     </div>
-    <div class="debt-card" id="card-due-week">
-      <div class="dc-title">לתשלום השבוע</div>
-      <div class="dc-amount" id="val-due-week">&#8362;0</div>
+
+    <!-- Tabs -->
+    <div class="debt-tabs">
+      <button class="debt-tab-btn active" data-tab="suppliers" onclick="switchDebtTab('suppliers')">ספקים</button>
+      <button class="debt-tab-btn" data-tab="documents" onclick="switchDebtTab('documents')">מסמכים</button>
+      <button class="debt-tab-btn" data-tab="payments" onclick="switchDebtTab('payments')">תשלומים</button>
+      <button class="debt-tab-btn" data-tab="prepaid" onclick="switchDebtTab('prepaid')">עסקאות מראש</button>
     </div>
-    <div class="debt-card" id="card-overdue">
-      <div class="dc-title">באיחור</div>
-      <div class="dc-amount" id="val-overdue">&#8362;0</div>
+
+    <!-- Tab content areas -->
+    <div id="dtab-suppliers" class="debt-tab-content active">
+      <div class="empty-state">אין נתונים להצגה</div>
     </div>
-    <div class="debt-card" id="card-paid-month">
-      <div class="dc-title">שולם החודש</div>
-      <div class="dc-amount" id="val-paid-month">&#8362;0</div>
+    <div id="dtab-documents" class="debt-tab-content">
+      <div class="empty-state">אין נתונים להצגה</div>
+    </div>
+    <div id="dtab-payments" class="debt-tab-content">
+      <div class="empty-state">אין נתונים להצגה</div>
+    </div>
+    <div id="dtab-prepaid" class="debt-tab-content">
+      <div class="empty-state">אין נתונים להצגה</div>
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="debt-tabs">
-    <button class="debt-tab-btn active" data-tab="suppliers" onclick="switchDebtTab('suppliers')">ספקים</button>
-    <button class="debt-tab-btn" data-tab="documents" onclick="switchDebtTab('documents')">מסמכים</button>
-    <button class="debt-tab-btn" data-tab="payments" onclick="switchDebtTab('payments')">תשלומים</button>
-    <button class="debt-tab-btn" data-tab="prepaid" onclick="switchDebtTab('prepaid')">עסקאות מראש</button>
-  </div>
-
-  <!-- Tab content areas -->
-  <div id="dtab-suppliers" class="debt-tab-content active">
-    <div class="empty-state">אין נתונים להצגה</div>
-  </div>
-  <div id="dtab-documents" class="debt-tab-content">
-    <div class="empty-state">אין נתונים להצגה</div>
-  </div>
-  <div id="dtab-payments" class="debt-tab-content">
-    <div class="empty-state">אין נתונים להצגה</div>
-  </div>
-  <div id="dtab-prepaid" class="debt-tab-content">
-    <div class="empty-state">אין נתונים להצגה</div>
-  </div>
+  <!-- Supplier detail panel (shown/hidden by JS) -->
+  <div id="supplier-detail-panel" style="display:none"></div>
 </main>
 
 <!-- Toast container -->
@@ -144,6 +150,7 @@
 <script src="modules/suppliers-debt/debt-payment-wizard.js"></script>
 <script src="modules/suppliers-debt/debt-payment-alloc.js"></script>
 <script src="modules/suppliers-debt/debt-prepaid.js"></script>
+<script src="modules/suppliers-debt/debt-supplier-detail.js"></script>
 <script>
 // =========================================================
 // Tab switching
@@ -156,6 +163,7 @@ function switchDebtTab(tabName) {
     div.classList.toggle('active', div.id === 'dtab-' + tabName);
   });
   // Load tab data
+  if (tabName === 'suppliers') loadSuppliersTab();
   if (tabName === 'documents') loadDocumentsTab();
   if (tabName === 'payments') loadPaymentsTab();
   if (tabName === 'prepaid') loadPrepaidTab();
@@ -170,8 +178,9 @@ window.addEventListener('DOMContentLoaded', async function() {
 
   // Permission check — allow access if permission doesn't exist yet
   if (typeof hasPermission === 'function') {
-    const perms = JSON.parse(sessionStorage.getItem('prizma_permissions') || '[]');
-    const debtPermExists = perms.some(function(p) { return p.startsWith('debt'); });
+    const permsRaw = JSON.parse(sessionStorage.getItem('prizma_permissions') || '{}');
+    const permKeys = Array.isArray(permsRaw) ? permsRaw : Object.keys(permsRaw);
+    const debtPermExists = permKeys.some(function(p) { return p.startsWith('debt'); });
     if (debtPermExists && !hasPermission('debt:view')) {
       window.location.href = 'index.html';
       return;
@@ -179,6 +188,7 @@ window.addEventListener('DOMContentLoaded', async function() {
   }
 
   await loadDebtSummary();
+  await loadSuppliersTab();
 });
 </script>
 </body>
