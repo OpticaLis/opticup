@@ -28,7 +28,7 @@ const LEGACY_ROLE_MAP = { admin: 'ceo', manager: 'manager', employee: 'worker' }
 // =========================================================
 async function verifyEmployeePIN(pin) {
   const { data: emp } = await sb.from(T.EMPLOYEES)
-    .select('id, name, role, branch_id, failed_attempts, locked_until')
+    .select('id, name, role, branch_id, failed_attempts, locked_until, tenant_id')
     .eq('pin', String(pin))
     .eq('is_active', true)
     .maybeSingle();
@@ -46,7 +46,7 @@ async function verifyEmployeePIN(pin) {
     last_login: new Date().toISOString()
   }).eq('id', emp.id);
 
-  return { id: emp.id, name: emp.name, role: emp.role, branch_id: emp.branch_id || '00' };
+  return { id: emp.id, name: emp.name, role: emp.role, branch_id: emp.branch_id || '00', tenant_id: emp.tenant_id };
 }
 
 // Standalone helper: increment failed_attempts for a known employee (called by login screen)
@@ -126,11 +126,13 @@ async function initSecureSession(employee) {
     permissions: permSnapshot,
     role_id: roleId,
     branch_id: employee.branch_id || '00',
-    expires_at: expiresAt
+    expires_at: expiresAt,
+    tenant_id: employee.tenant_id
   });
 
   // Persist to sessionStorage
   sessionStorage.setItem(SK.TOKEN, token);
+  sessionStorage.setItem('tenant_id', employee.tenant_id);
   sessionStorage.setItem(SK.EMPLOYEE, JSON.stringify(employee));
   sessionStorage.setItem(SK.PERMS, JSON.stringify(permSnapshot));
   sessionStorage.setItem(SK.ROLE, roleId);

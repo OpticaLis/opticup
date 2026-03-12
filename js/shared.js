@@ -119,6 +119,10 @@ let brandCacheRev = {};    // uuid → name
 // =========================================================
 // UI HELPERS
 // =========================================================
+function getTenantId() {
+  return sessionStorage.getItem('tenant_id');
+}
+
 function escapeHtml(str) {
   if (str == null) return '';
   return String(str)
