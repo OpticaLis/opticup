@@ -56,6 +56,7 @@
   .btn-sm:hover { background: var(--g100); }
   .btn-lnk { border-color: #6f42c1; color: #6f42c1; }
   .btn-lnk:hover { background: #f3eefb; }
+  .pst-red { background: #f8d7da; color: #721c24; }
   .nd-field { width: 100%; padding: 6px; border: 1px solid var(--g300); border-radius: 4px; font-family: inherit; font-size: .88rem; box-sizing: border-box; }
 </style>
 </head>
@@ -139,6 +140,9 @@
 <script src="modules/suppliers-debt/debt-dashboard.js"></script>
 <script src="modules/suppliers-debt/debt-documents.js"></script>
 <script src="modules/suppliers-debt/debt-doc-link.js"></script>
+<script src="modules/suppliers-debt/debt-payments.js"></script>
+<script src="modules/suppliers-debt/debt-payment-wizard.js"></script>
+<script src="modules/suppliers-debt/debt-payment-alloc.js"></script>
 <script>
 // =========================================================
 // Tab switching
@@ -152,6 +156,7 @@ function switchDebtTab(tabName) {
   });
   // Load tab data
   if (tabName === 'documents') loadDocumentsTab();
+  if (tabName === 'payments') loadPaymentsTab();
 }
 
 // =========================================================

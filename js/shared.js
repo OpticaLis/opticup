@@ -22,6 +22,8 @@ const T = {
   SUP_DOCS: 'supplier_documents',
   SUP_PAYMENTS: 'supplier_payments',
   DOC_LINKS: 'document_links',
+  PAY_ALLOC: 'payment_allocations',
+  PAY_METHODS: 'payment_methods',
 };
 
 // =========================================================

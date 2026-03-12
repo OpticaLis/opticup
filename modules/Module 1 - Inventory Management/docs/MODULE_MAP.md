@@ -55,8 +55,13 @@
 | 43 | debt-dashboard.js | modules/suppliers-debt/debt-dashboard.js | ~85 | Debt dashboard summary: loadDebtSummary (queries supplier_documents + supplier_payments, calculates totals/overdue/due-week/paid-month). Note: formatILS moved to shared.js in Phase 4d |
 | 44 | debt-documents.js | modules/suppliers-debt/debt-documents.js | 300 | Documents tab: loadDocumentsTab (fetch docs+types+suppliers), renderDocFilterBar (supplier/type/status/date/overdue filters), applyDocFilters (client-side), renderDocumentsTable, openNewDocumentModal (PIN-verified CRUD), saveNewDocument, generateDocInternalNumber, viewDocument |
 | 45 | debt-doc-link.js | modules/suppliers-debt/debt-doc-link.js | 72 | Delivery note → invoice linking: openLinkToInvoiceModal (shows supplier's invoices), linkDeliveryToInvoice (creates document_links record, updates status to linked) |
+| 46 | debt-payments.js | modules/suppliers-debt/debt-payments.js | 168 | Payments tab: loadPaymentsTab (fetch payments+methods+suppliers+allocations+documents), renderPaymentsToolbar (filters + add button), applyPayFilters (client-side), renderPaymentsTable (with כנגד doc numbers), viewPayment (detail modal with allocation table) |
+| 47 | debt-payment-wizard.js | modules/suppliers-debt/debt-payment-wizard.js | 146 | Payment wizard steps 1-2: openNewPaymentWizard (state reset + modal), supplier selection with debt summary + withholding tax rate lookup, payment details form with auto-calc withholding tax |
+| 48 | debt-payment-alloc.js | modules/suppliers-debt/debt-payment-alloc.js | 254 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status) |
 
-**Total: 45 files, ~8,971 lines** (includes scripts/sync-watcher.js)
+**Total: 48 files, ~9,539 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 4e):** debt-payments.js + debt-payment-wizard.js + debt-payment-alloc.js added. T.PAY_ALLOC + T.PAY_METHODS added to shared.js. Tab switching wired in suppliers-debt.html.
 
 **Note (Phase 4d):** debt-documents.js + debt-doc-link.js added. formatILS moved from debt-dashboard.js to shared.js. T.DOC_LINKS added to shared.js.
 
@@ -569,6 +574,40 @@
 | `openLinkToInvoiceModal` | `(docId)` | Shows modal for linking a delivery note to an invoice. Lists same-supplier invoices (not cancelled) as dropdown options |
 | `linkDeliveryToInvoice` | `(deliveryNoteId)` | Creates document_links record (parent=invoice, child=delivery note), updates delivery note status to 'linked', writeLog, refresh tab |
 
+### modules/suppliers-debt/debt-payments.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `loadPaymentsTab` | `()` | Fetches payments + payment_methods + suppliers + allocations + documents in parallel. Builds allocation map and doc lookup. Renders toolbar + table |
+| `renderPaymentsToolbar` | `()` | Builds filter toolbar: supplier dropdown, status dropdown, date range, "+ תשלום חדש" button |
+| `applyPayFilters` | `()` | Reads filter inputs, filters _payData client-side, sorts by date desc, calls renderPaymentsTable |
+| `renderPaymentsTable` | `(payments)` | Renders HTML table: date, supplier, amount, withholding tax, net, method, reference, linked doc numbers, status badge, view button |
+| `viewPayment` | `(payId)` | Creates detail modal showing payment info grid + allocations table with document numbers |
+
+### modules/suppliers-debt/debt-payment-wizard.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `openNewPaymentWizard` | `()` | Resets wizard state, creates modal overlay, renders step 1 |
+| `_wizRenderStep1` | `()` | Supplier selection step with searchable dropdown. Restores previous selection on back navigation |
+| `_wizSelectSupplier` | `(supplierId)` | Fetches open docs for supplier, calculates total debt/overdue, reads withholding_tax_rate. Shows info card |
+| `_wizRenderStep2` | `()` | Payment details form: amount, withholding tax rate (pre-filled), auto-calc tax/net, date, method, reference, notes. Restores values on back |
+| `_wizCalcTax` | `()` | Auto-calculates withholding_tax_amount and net_amount from gross amount and rate |
+
+### modules/suppliers-debt/debt-payment-alloc.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `_wizGoStep3` | `()` | Validates step 2 fields, stores in _wizState, fetches open docs, runs autoAllocateFIFO, renders step 3 |
+| `autoAllocateFIFO` | `(paymentAmount, openDocs)` | Distributes payment across documents oldest-first. Returns array of { document_id, allocated_amount } |
+| `_wizRenderStep3` | `()` | Document allocation table with editable amounts per document. Running total with match/mismatch indicator |
+| `_wizUpdateAllocTotal` | `()` | Reads all allocation inputs, rebuilds _wizState.allocations, updates summary with diff warning |
+| `_wizAutoAllocate` | `()` | Re-runs FIFO allocation, updates all input values |
+| `_wizClearAlloc` | `()` | Clears all allocation inputs and state |
+| `_wizGoStep4` | `()` | Validates allocation total vs net amount (warns on mismatch), renders step 4 |
+| `_wizRenderStep4` | `()` | Confirmation screen: payment summary grid + PIN input |
+| `_wizSavePayment` | `()` | Verifies PIN, creates supplier_payments record, creates payment_allocations, updates paid_amount/status on documents, writeLog, refreshes tab + summary cards |
+
 ### modules/employees/employee-list.js
 
 | Function | Parameters | Description |
@@ -592,7 +631,7 @@
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
 | `sb` | SupabaseClient | `supabase.createClient(...)` | Supabase client instance |
-| `T` | Object | `{ INV, PO, BRANDS, SUPPLIERS, EMPLOYEES, DOC_LINKS, ... }` | Table name constants (see DB Schema section) |
+| `T` | Object | `{ INV, PO, BRANDS, SUPPLIERS, EMPLOYEES, DOC_LINKS, PAY_ALLOC, PAY_METHODS, ... }` | Table name constants (see DB Schema section) |
 | `FIELD_MAP` | Object | Nested {table: {he: en}} | Hebrew→English field name mapping per table |
 | `FIELD_MAP_REV` | Object | Auto-built reverse | English→Hebrew field name mapping per table |
 | `ENUM_MAP` | Object | {category: {he: en}} | Hebrew→English enum value mapping |
@@ -780,6 +819,32 @@
 | `slogActionDropdownPopulated` | Boolean | `false` | Flag for one-time action dropdown population |
 | `SLOG_PAGE_SIZE` | Number (const) | `50` | System log rows per page |
 | `SLOG_ROW_CATEGORIES` | Object (const) | action → CSS category | Maps action types to entry/exit/edit/delete/restore categories |
+
+### modules/suppliers-debt/debt-documents.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `_docData` | Array | `[]` | Cached supplier documents |
+| `_docTypes` | Array | `[]` | Cached document types |
+| `_docSuppliers` | Array | `[]` | Cached active suppliers for documents tab |
+| `DOC_STATUS_MAP` | Object (const) | 5 entries | Maps status → {he, cls} for badge rendering |
+
+### modules/suppliers-debt/debt-payments.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `_payData` | Array | `[]` | Cached supplier payments |
+| `_paySuppliers` | Array | `[]` | Cached active suppliers for payments tab |
+| `_payMethods` | Array | `[]` | Cached active payment methods |
+| `_payAllocMap` | Object | `{}` | payment_id → [allocation] mapping |
+| `_payDocMap` | Object | `{}` | document_id → document object lookup |
+| `PAY_STATUS_MAP` | Object (const) | 5 entries | Maps payment status → {he, cls} for badge rendering |
+
+### modules/suppliers-debt/debt-payment-wizard.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `_wizState` | Object | `{}` | Wizard state: supplierId, amount, taxRate, allocations, openDocs, etc. |
 
 ---
 
@@ -986,10 +1051,39 @@ debt-doc-link.js
   → calls: closeAndRemoveModal(), loadDocumentsTab() [debt-documents.js]
   → provides: openLinkToInvoiceModal(), linkDeliveryToInvoice()
 
+debt-payments.js
+  → reads: T.SUP_PAYMENTS, T.PAY_METHODS, T.SUPPLIERS, T.PAY_ALLOC, T.SUP_DOCS [shared.js]
+  → calls: fetchAll() [supabase-ops.js]
+  → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), formatILS() [shared.js]
+  → calls: closeAndRemoveModal() [debt-documents.js]
+  → provides: loadPaymentsTab(), applyPayFilters(), viewPayment()
+  → provides: _paySuppliers, _payMethods, _payAllocMap, _payDocMap (used by wizard)
+
+debt-payment-wizard.js
+  → reads: _paySuppliers, _payMethods [debt-payments.js]
+  → reads: T.SUP_DOCS [shared.js]
+  → calls: fetchAll() [supabase-ops.js]
+  → calls: escapeHtml(), $(), setAlert(), formatILS() [shared.js]
+  → calls: closeAndRemoveModal() [debt-documents.js]
+  → provides: openNewPaymentWizard(), _wizState, _wizRenderStep1(), _wizRenderStep2(), _wizCalcTax()
+
+debt-payment-alloc.js
+  → reads: _wizState [debt-payment-wizard.js]
+  → reads: _payMethods [debt-payments.js]
+  → reads: T.SUP_DOCS, T.SUP_PAYMENTS, T.PAY_ALLOC [shared.js]
+  → calls: fetchAll() [supabase-ops.js], batchCreate() [supabase-ops.js], batchUpdate() [supabase-ops.js]
+  → calls: writeLog() [supabase-ops.js], verifyPinOnly() [auth-service.js]
+  → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), setAlert(), formatILS() [shared.js]
+  → calls: closeAndRemoveModal() [debt-documents.js]
+  → calls: _wizRenderStep2() [debt-payment-wizard.js]
+  → calls: loadPaymentsTab() [debt-payments.js], loadDebtSummary() [debt-dashboard.js]
+  → provides: _wizGoStep3(), autoAllocateFIFO(), _wizSavePayment()
+
 suppliers-debt.html (inline script)
   → calls: loadSession(), hasPermission() [auth-service.js]
   → calls: loadDebtSummary() [debt-dashboard.js]
   → calls: loadDocumentsTab() [debt-documents.js]
+  → calls: loadPaymentsTab() [debt-payments.js]
   → provides: switchDebtTab()
 ```
 
