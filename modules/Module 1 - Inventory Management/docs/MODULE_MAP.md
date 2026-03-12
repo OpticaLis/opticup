@@ -59,9 +59,13 @@
 | 47 | debt-payment-wizard.js | modules/suppliers-debt/debt-payment-wizard.js | 146 | Payment wizard steps 1-2: openNewPaymentWizard (state reset + modal), supplier selection with debt summary + withholding tax rate lookup, payment details form with auto-calc withholding tax |
 | 48 | debt-payment-alloc.js | modules/suppliers-debt/debt-payment-alloc.js | 254 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status) |
 | 49 | debt-prepaid.js | modules/suppliers-debt/debt-prepaid.js | 285 | Prepaid deals tab: loadPrepaidTab (fetch deals+checks+suppliers), renderPrepaidToolbar (filters + add button), applyPrepaidFilters (client-side), renderPrepaidTable (progress bar, status badges), openNewDealModal (PIN-verified), openAddCheckModal, viewDealDetail (progress bar + checks table), updateCheckStatus |
-| 50 | debt-supplier-detail.js | modules/suppliers-debt/debt-supplier-detail.js | ~327 | Supplier detail view: openSupplierDetail (slide-in panel with summary + 4 sub-tabs), closeSupplierDetail, loadSupplierTimeline (merged docs+payments sorted by date), loadSupplierDocuments (filtered table), loadSupplierPayments (filtered table), loadSupplierReturns (placeholder) |
+| 50 | debt-supplier-detail.js | modules/suppliers-debt/debt-supplier-detail.js | ~328 | Supplier detail view: openSupplierDetail (slide-in panel with summary + 4 sub-tabs), closeSupplierDetail, loadSupplierTimeline (merged docs+payments sorted by date), loadSupplierDocuments (filtered table), loadSupplierPayments (filtered table), loadSupplierReturns (delegates to debt-returns.js) |
+| 51 | debt-returns.js | modules/suppliers-debt/debt-returns.js | ~230 | Supplier returns tab: loadReturnsForSupplier (fetch+render), renderReturnsTable, viewReturnDetail (modal with items), promptReturnStatusUpdate (PIN-verified), updateReturnStatus, generateReturnNumber (RET-{supplier_number}-{seq}) |
+| 52 | inventory-return.js | modules/inventory/inventory-return.js | ~185 | Supplier return initiation from inventory: openSupplierReturnModal (validates selection, same-supplier check, items preview), _doConfirmSupplierReturn (PIN-verified, creates return+items, decrements inventory, writeLog) |
 
-**Total: 50 files, ~10,375 lines** (includes scripts/sync-watcher.js)
+**Total: 52 files, ~10,790 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 4h):** debt-returns.js + inventory-return.js added. T.SUP_RETURNS + T.SUP_RETURN_ITEMS added to shared.js. loadSupplierReturns in debt-supplier-detail.js now delegates to loadReturnsForSupplier. "זיכוי לספק" button added to inventory bulk bar.
 
 **Note (Phase 4g):** debt-supplier-detail.js added. debt-dashboard.js extended with loadSuppliersTab + renderSuppliersTable + openPaymentForSupplier. suppliers-debt.html restructured with debt-main-content wrapper + supplier-detail-panel div.
 
@@ -644,7 +648,26 @@
 | `_showAllTimeline` | `()` | Shows all timeline entries beyond the initial 50 limit |
 | `loadSupplierDocuments` | `(supplierId)` | Fetches supplier_documents filtered to this supplier, renders table (date, type, number, amount, paid, balance, status) |
 | `loadSupplierPayments` | `(supplierId)` | Fetches supplier_payments filtered to this supplier, renders table (date, amount, net, method, reference, status) |
-| `loadSupplierReturns` | `(supplierId)` | Placeholder — shows "אין החזרות" empty state (built in Phase 4h) |
+| `loadSupplierReturns` | `(supplierId)` | Delegates to loadReturnsForSupplier (debt-returns.js) with fallback empty state |
+
+### modules/suppliers-debt/debt-returns.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `loadReturnsForSupplier` | `(supplierId)` | Fetches supplier_returns + supplier_return_items for supplier, builds itemsMap for counts/totals, renders table |
+| `renderReturnsTable` | `(returns, container)` | Renders returns table (number, date, type, items, amount, status, actions) with status badges and action buttons |
+| `viewReturnDetail` | `(returnId)` | Modal showing return items table (barcode, brand, model, color, size, qty, price) with summary |
+| `promptReturnStatusUpdate` | `(returnId, newStatus)` | PIN prompt modal for status transition |
+| `_confirmReturnStatus` | `(returnId, newStatus)` | Verifies PIN, calls updateReturnStatus, reloads returns tab |
+| `updateReturnStatus` | `(returnId, newStatus)` | Updates status + timestamps via batchUpdate, writeLog |
+| `generateReturnNumber` | `(supplierId)` | Generates RET-{supplier_number}-{seq 4-digit} (mirrors PO number pattern) |
+
+### modules/inventory/inventory-return.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `openSupplierReturnModal` | `()` | Validates invSelected items, checks same supplier, shows return form modal with items preview |
+| `_doConfirmSupplierReturn` | `(supplierId)` | PIN-verified: generates return number, creates supplier_returns + supplier_return_items, decrements inventory (sb.rpc), writeLog per item, refreshes table |
 
 ### modules/employees/employee-list.js
 
@@ -1156,6 +1179,29 @@ debt-supplier-detail.js
   → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), formatILS() [shared.js]
   → provides: openSupplierDetail(), closeSupplierDetail(), loadSupplierTimeline(),
     loadSupplierDocuments(), loadSupplierPayments(), loadSupplierReturns()
+  → calls: loadReturnsForSupplier() [debt-returns.js]
+
+debt-returns.js
+  → reads: T.SUP_RETURNS, T.SUP_RETURN_ITEMS [shared.js]
+  → reads: supplierNumCache [shared.js], _detailSupplierId [debt-supplier-detail.js]
+  → calls: fetchAll() [supabase-ops.js], batchUpdate() [supabase-ops.js]
+  → calls: writeLog() [supabase-ops.js], verifyPinOnly() [auth-service.js]
+  → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), formatILS(), closeModal() [shared.js]
+  → calls: sb.from() [shared.js] (for return number query)
+  → provides: loadReturnsForSupplier(), renderReturnsTable(), viewReturnDetail(),
+    promptReturnStatusUpdate(), updateReturnStatus(), generateReturnNumber(),
+    RETURN_TYPE_MAP, RETURN_STATUS_MAP
+
+inventory-return.js
+  → reads: invSelected [inventory-table.js], brandCacheRev, supplierCacheRev [shared.js]
+  → reads: T.INV, T.SUP_RETURNS, T.SUP_RETURN_ITEMS [shared.js]
+  → calls: fetchAll() [supabase-ops.js], batchCreate() [supabase-ops.js]
+  → calls: writeLog() [supabase-ops.js], verifyPinOnly() [auth-service.js]
+  → calls: sb.rpc('decrement_inventory') [shared.js]
+  → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), closeModal() [shared.js]
+  → calls: updateSelectionUI() [inventory-edit.js], loadInventoryPage() [inventory-table.js]
+  → calls: generateReturnNumber() [debt-returns.js]
+  → provides: openSupplierReturnModal(), _doConfirmSupplierReturn()
 
 suppliers-debt.html (inline script)
   → calls: loadSession(), hasPermission() [auth-service.js]

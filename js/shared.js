@@ -26,6 +26,8 @@ const T = {
   PAY_METHODS: 'payment_methods',
   PREPAID_DEALS: 'prepaid_deals',
   PREPAID_CHECKS: 'prepaid_checks',
+  SUP_RETURNS: 'supplier_returns',
+  SUP_RETURN_ITEMS: 'supplier_return_items',
 };
 
 // =========================================================

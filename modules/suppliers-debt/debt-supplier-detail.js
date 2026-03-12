@@ -1,7 +1,7 @@
 // =========================================================
 // debt-supplier-detail.js — Supplier Detail View (Phase 4g)
 // Load after: shared.js, supabase-ops.js, debt-dashboard.js,
-//   debt-documents.js, debt-payments.js
+//   debt-documents.js, debt-payments.js, debt-returns.js
 // Provides: openSupplierDetail(), closeSupplierDetail(),
 //   loadSupplierTimeline(), loadSupplierDocuments(),
 //   loadSupplierPayments(), loadSupplierReturns(),
@@ -318,10 +318,13 @@ async function loadSupplierPayments(supplierId) {
 }
 
 // =========================================================
-// Returns sub-tab (placeholder — built in Phase 4h)
+// Returns sub-tab (delegates to debt-returns.js)
 // =========================================================
-function loadSupplierReturns(/* supplierId */) {
-  var content = $('detail-tab-content');
-  if (!content) return;
-  content.innerHTML = '<div class="empty-state">אין החזרות</div>';
+function loadSupplierReturns(supplierId) {
+  if (typeof loadReturnsForSupplier === 'function') {
+    loadReturnsForSupplier(supplierId);
+  } else {
+    var content = $('detail-tab-content');
+    if (content) content.innerHTML = '<div class="empty-state">אין החזרות</div>';
+  }
 }

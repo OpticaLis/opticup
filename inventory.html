@@ -212,6 +212,7 @@
       <div class="bulk-btns">
         <button class="btn btn-s btn-sm" onclick="applyBulkUpdate()" data-permission="inventory.edit">&#10004; עדכן נבחרים</button>
         <button class="btn btn-d btn-sm" onclick="bulkDelete()" data-permission="inventory.delete">&#128465; מחק נבחרים</button>
+        <button class="btn btn-sm" style="background:var(--primary);color:#fff" onclick="openSupplierReturnModal()">&#128230; זיכוי לספק</button>
         <button class="btn btn-g btn-sm" onclick="clearSelection()">&#10006; בטל בחירה</button>
       </div>
     </div>
@@ -828,6 +829,8 @@
 <script src="modules/inventory/inventory-entry.js"></script>
 <script src="modules/inventory/inventory-export.js"></script>
 <script src="modules/inventory/excel-import.js"></script>
+<script src="modules/suppliers-debt/debt-returns.js"></script>
+<script src="modules/inventory/inventory-return.js"></script>
 <script src="modules/goods-receipts/goods-receipt.js"></script>
 <script src="modules/goods-receipts/receipt-form.js"></script>
 <script src="modules/goods-receipts/receipt-actions.js"></script>
