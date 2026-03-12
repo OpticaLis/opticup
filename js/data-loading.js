@@ -13,6 +13,7 @@ async function loadLowStockAlerts() {
       // RPC doesn't exist yet — fallback to manual query
       const { data: brnds } = await sb.from('brands')
         .select('id, name, min_stock_qty, brand_type')
+        .eq('tenant_id', getTenantId())
         .not('min_stock_qty', 'is', null)
         .eq('active', true);
       if (!brnds || brnds.length === 0) return [];
@@ -20,6 +21,7 @@ async function loadLowStockAlerts() {
       for (const brand of brnds) {
         const { data: inv } = await sb.from('inventory')
           .select('quantity')
+          .eq('tenant_id', getTenantId())
           .eq('brand_id', brand.id)
           .eq('is_deleted', false);
         const totalQty = (inv || []).reduce((sum, i) => sum + (i.quantity || 0), 0);
@@ -107,7 +109,7 @@ async function loadData() {
     await loadLookupCaches();
     suppliers = Object.keys(supplierCache).sort();
 
-    const { data: brandRows, error: bErr } = await sb.from('brands').select('*');
+    const { data: brandRows, error: bErr } = await sb.from('brands').select('*').eq('tenant_id', getTenantId());
     if (bErr) throw new Error(bErr.message);
     brands = (brandRows || []).map(b => ({
       id: b.id,
@@ -137,6 +139,7 @@ async function loadMaxBarcode() {
     const prefix = branchCode.padStart(2, '0');
     const { data } = await sb.from('inventory')
       .select('barcode')
+      .eq('tenant_id', getTenantId())
       .not('barcode', 'is', null)
       .like('barcode', `${prefix}%`);
     let mx = 0;
