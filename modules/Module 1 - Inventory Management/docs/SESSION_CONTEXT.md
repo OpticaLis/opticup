@@ -2,13 +2,13 @@
 
 ## Current Status
 
-Phase 3.5 ✅ complete. Next: Phase 4 — מעקב חובות ספקים.
+Phase 3.75 ✅ complete. Next: Phase 4 — מעקב חובות ספקים.
 
 ## Phase 3.5 — מסך בית + דפים עצמאיים
 
 ### Last work done in Phase 3.5
 
-**Commits:** e9a1d57, 8ec3c4b, 2933bb5, 5eabe0a, d796b93, 188681d, df3b568, 588a7cf, 378d231, 8bf3707, 608f9a9, 698bb17, b79b430, f328582, e92ac12, edb7fac, 99c61d1, 34830e3, 22fae18
+**Commits:** e9a1d57, 8ec3c4b, 2933bb5, 5eabe0a, d796b93, 188681d, df3b568, 588a7cf, 378d231, 8bf3707, 608f9a9, 698bb17, b79b430, f328582, e92ac12, edb7fac, 99c61d1, 34830e3, 22fae18, 9b0c457, 71a0a4e, 6ea90ba
 
 **What was built:**
 - index.html renamed to inventory.html (main app)
@@ -24,6 +24,10 @@ Phase 3.5 ✅ complete. Next: Phase 4 — מעקב חובות ספקים.
 - style: added global .logout-btn class to styles.css
 - style: logout button moved to header in inventory.html and employees.html
 - style: "→ מסך בית" always visible in nav (removed from header)
+- Permission-based lock on module cards in index.html
+- Employees tab removed from inventory.html (standalone module only)
+- SaaS/multi-tenant rules added to CLAUDE.md
+- Backup created: M1F3.75_2026-03-12 (88 files)
 
 ### Remaining in Phase 3.5
 
