@@ -192,7 +192,7 @@ async function saveEmployee() {
     await sb.from(T.EMPLOYEES).update(update).eq('id', empEditId);
     // Update role
     await sb.from(AT.EMP_ROLES).delete().eq('employee_id', empEditId);
-    await sb.from(AT.EMP_ROLES).insert({ employee_id: empEditId, role_id: roleId, granted_by: getCurrentEmployee()?.id });
+    await sb.from(AT.EMP_ROLES).insert({ employee_id: empEditId, role_id: roleId, granted_by: getCurrentEmployee()?.id, tenant_id: getTenantId() });
     writeLog('employee_edit', null, { employee_id: empEditId, name, role: roleId });
     toast('עובד עודכן בהצלחה', 's');
   } else {
@@ -201,10 +201,10 @@ async function saveEmployee() {
     const { data: existing } = await sb.from(T.EMPLOYEES).select('id').eq('pin', pin).eq('is_active', true).maybeSingle();
     if (existing) { toast('PIN כבר בשימוש על ידי עובד אחר', 'e'); return; }
     const { data: newEmp, error } = await sb.from(T.EMPLOYEES)
-      .insert({ name, pin, branch_id: branchId, is_active: true, created_by: getCurrentEmployee()?.id })
+      .insert({ name, pin, branch_id: branchId, is_active: true, created_by: getCurrentEmployee()?.id, tenant_id: getTenantId() })
       .select('id').single();
     if (error || !newEmp) { toast('שגיאה ביצירת עובד', 'e'); return; }
-    await sb.from(AT.EMP_ROLES).insert({ employee_id: newEmp.id, role_id: roleId, granted_by: getCurrentEmployee()?.id });
+    await sb.from(AT.EMP_ROLES).insert({ employee_id: newEmp.id, role_id: roleId, granted_by: getCurrentEmployee()?.id, tenant_id: getTenantId() });
     writeLog('employee_create', null, { employee_id: newEmp.id, name, role: roleId });
     toast('עובד נוצר בהצלחה', 's');
   }
@@ -277,7 +277,7 @@ async function renderPermissionMatrix(targetDivId) {
 async function updateRolePermission(roleId, permissionId, granted) {
   requirePermission('settings.edit');
   const { error } = await sb.from(AT.ROLE_PERMS)
-    .upsert({ role_id: roleId, permission_id: permissionId, granted }, { onConflict: 'role_id,permission_id' });
+    .upsert({ role_id: roleId, permission_id: permissionId, granted, tenant_id: getTenantId() }, { onConflict: 'role_id,permission_id' });
   if (error) { toast('שגיאה בעדכון הרשאה', 'e'); return; }
   toast('הרשאות עודכנו', 's');
 }
