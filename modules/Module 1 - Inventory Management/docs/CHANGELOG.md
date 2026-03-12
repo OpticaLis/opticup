@@ -4,6 +4,20 @@
 
 ---
 
+## Phase 3.75 — Multi-Tenancy Foundation (March 2026)
+
+- Created tenants table + seeded Prizma as tenant #1
+- Added tenant_id UUID NOT NULL to 20 tables, backfilled 13,457 rows
+- Added 25 indexes (single + composite)
+- Deployed pin-auth Edge Function (PIN → JWT with tenant_id claim)
+- Updated auth flow: sb client uses JWT Bearer token after login
+- Added tenant_id to all writes (15 direct + 3 helpers)
+- Added tenant_id filter to all reads (~60 direct selects)
+- JWT-based RLS tenant isolation active on all 20 tables
+- Added getTenantId(), verifyPinOnly() to shared/auth modules
+
+---
+
 ## v3.5 — Phase 3.5: מסך בית + דפים עצמאיים (מרץ 2026)
 
 - phase 3.5: rename index.html → inventory.html
