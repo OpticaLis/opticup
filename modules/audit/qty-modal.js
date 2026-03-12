@@ -55,7 +55,7 @@ async function confirmQtyChange() {
   }
 
   // Verify PIN
-  const emp = await verifyEmployeePIN(pin);
+  const emp = await verifyPinOnly(pin);
   if (!emp) { toast('❌ סיסמת עובד שגויה', 'e'); $('qty-modal-pin').value = ''; $('qty-modal-pin').focus(); return; }
 
   // Store performer name

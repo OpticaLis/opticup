@@ -51,7 +51,7 @@ function openWorkerPin(countId) {
 async function confirmWorkerPin() {
   const pin = ($('sc-pin-input')?.value || '').trim();
   if (!pin) { $('sc-pin-error').textContent = 'יש להזין PIN'; return; }
-  const emp = await verifyEmployeePIN(pin);
+  const emp = await verifyPinOnly(pin);
   if (!emp) {
     $('sc-pin-error').textContent = 'PIN שגוי';
     $('sc-pin-input').value = '';

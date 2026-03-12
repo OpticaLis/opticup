@@ -893,25 +893,16 @@ async function handleLoginSubmit() {
   const pin = Array.from({ length: 5 }, (_, i) => $('pin-box-' + i).value).join('');
   if (pin.length < 5) return;
 
-  const emp = await verifyEmployeePIN(pin);
-
-  if (emp && emp.locked) {
-    $('login-error').textContent = 'החשבון נעול. פנה למנהל.';
-    $('login-error').style.display = 'block';
-    $('login-attempts').style.display = 'none';
-    clearPinBoxes();
-    return;
-  }
-
-  if (emp) {
-    await initSecureSession(emp);
+  try {
+    const { token, employee } = await verifyEmployeePIN(pin);
+    await initSecureSession(employee, token);
     applyUIPermissions();
     hideLoginModal();
     loginFailCount = 0;
     $('login-error').style.display = 'none';
     $('login-attempts').style.display = 'none';
     resumeAppInit();
-  } else {
+  } catch (e) {
     loginFailCount++;
     $('login-error').style.display = 'block';
     if (loginFailCount >= 5) {
@@ -922,7 +913,7 @@ async function handleLoginSubmit() {
       }
       $('login-attempts').style.display = 'none';
     } else {
-      $('login-error').textContent = 'PIN שגוי';
+      $('login-error').textContent = e.message || 'PIN שגוי';
       $('login-attempts').textContent = 'ניסיון ' + loginFailCount + ' מתוך 5';
       $('login-attempts').style.display = 'block';
     }

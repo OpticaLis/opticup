@@ -3,7 +3,7 @@
 // =========================================================
 const SUPABASE_URL = 'https://tsxrrxzmdxaenlvocyit.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+let sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const T = {
   INV:    'inventory',
   PO:     'purchase_orders',

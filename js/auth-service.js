@@ -24,29 +24,31 @@ const SK = {
 const LEGACY_ROLE_MAP = { admin: 'ceo', manager: 'manager', employee: 'worker' };
 
 // =========================================================
-// 1. verifyEmployeePIN(pin)
+// 1. verifyEmployeePIN(pin) — calls Edge Function
 // =========================================================
 async function verifyEmployeePIN(pin) {
-  const { data: emp } = await sb.from(T.EMPLOYEES)
-    .select('id, name, role, branch_id, failed_attempts, locked_until, tenant_id')
-    .eq('pin', String(pin))
-    .eq('is_active', true)
-    .maybeSingle();
-
-  if (!emp) return null;
-
-  // Locked out?
-  if (emp.locked_until && new Date(emp.locked_until) > new Date()) {
-    return { locked: true, name: emp.name };
+  const EDGE_URL = SUPABASE_URL + '/functions/v1/pin-auth';
+  const res = await fetch(EDGE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin: String(pin), slug: 'prizma' })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'PIN שגוי');
   }
+  const { token, employee } = await res.json();
+  return { token, employee };
+}
 
-  // Success — reset counters, update last_login
-  await sb.from(T.EMPLOYEES).update({
-    failed_attempts: 0,
-    last_login: new Date().toISOString()
-  }).eq('id', emp.id);
-
-  return { id: emp.id, name: emp.name, role: emp.role, branch_id: emp.branch_id || '00', tenant_id: emp.tenant_id };
+// Lightweight wrapper: verifies PIN via Edge Function, returns employee or null
+async function verifyPinOnly(pin) {
+  try {
+    const { employee } = await verifyEmployeePIN(pin);
+    return employee;
+  } catch {
+    return null;
+  }
 }
 
 // Standalone helper: increment failed_attempts for a known employee (called by login screen)
@@ -97,8 +99,17 @@ async function getEffectivePermissions(employeeId) {
 // =========================================================
 // 3. initSecureSession(employee)
 // =========================================================
-async function initSecureSession(employee) {
-  // Generate 32-char hex token
+async function initSecureSession(employee, jwtToken) {
+  // Store JWT and recreate sb client with Authorization header
+  if (jwtToken) {
+    sessionStorage.setItem('jwt_token', jwtToken);
+    window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+      global: { headers: { Authorization: 'Bearer ' + jwtToken } }
+    });
+    sb = window.sb;
+  }
+
+  // Generate 32-char hex token for internal session tracking
   const arr = new Uint8Array(16);
   crypto.getRandomValues(arr);
   const token = Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
@@ -170,6 +181,15 @@ async function loadSession() {
 
   if (!session) { clearSessionLocal(); return null; }
 
+  // Restore JWT-authenticated client
+  const jwt = sessionStorage.getItem('jwt_token');
+  if (jwt) {
+    window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+      global: { headers: { Authorization: 'Bearer ' + jwt } }
+    });
+    sb = window.sb;
+  }
+
   // Touch last_active
   sb.from(AT.SESSIONS)
     .update({ last_active: new Date().toISOString() })
@@ -206,6 +226,10 @@ function clearSessionLocal() {
   sessionStorage.removeItem(SK.EMPLOYEE);
   sessionStorage.removeItem(SK.PERMS);
   sessionStorage.removeItem(SK.ROLE);
+  sessionStorage.removeItem('jwt_token');
+  // Reset sb to anon client
+  window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  sb = window.sb;
 }
 
 async function clearSession() {

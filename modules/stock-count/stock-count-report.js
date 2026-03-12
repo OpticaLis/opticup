@@ -133,7 +133,7 @@ async function confirmCount(countId) {
   if (!pin) { $('sc-mgr-pin-error').textContent = 'יש להזין PIN'; return; }
 
   // Verify PIN + permission
-  const emp = await verifyEmployeePIN(pin);
+  const emp = await verifyPinOnly(pin);
   if (!emp) {
     $('sc-mgr-pin-error').textContent = 'PIN שגוי';
     $('sc-mgr-pin').value = '';

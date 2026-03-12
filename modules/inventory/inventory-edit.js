@@ -139,7 +139,7 @@ async function confirmBulkDelete() {
   const pin = $('bulkdel-pin').value.trim();
   if (!pin) { $('bulkdel-pin-error').textContent = 'יש להזין סיסמת עובד'; return; }
 
-  const emp = await verifyEmployeePIN(pin);
+  const emp = await verifyPinOnly(pin);
   if (!emp) { $('bulkdel-pin-error').textContent = '❌ סיסמת עובד שגויה'; $('bulkdel-pin').value = ''; $('bulkdel-pin').focus(); return; }
 
   const ids = bulkDelIds;
