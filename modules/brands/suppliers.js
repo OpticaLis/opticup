@@ -151,7 +151,7 @@ async function addSupplier() {
   showLoading('מוסיף ספק...');
   try {
     const nextNum = await getNextSupplierNumber();
-    const { error } = await sb.from('suppliers').insert({ name, active: true, supplier_number: nextNum });
+    const { error } = await sb.from('suppliers').insert({ name, active: true, supplier_number: nextNum, tenant_id: getTenantId() });
     if (error) throw new Error(error.message);
     await loadLookupCaches();
     suppliers = Object.keys(supplierCache).sort();

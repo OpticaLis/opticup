@@ -272,7 +272,7 @@ async function assignRoleToEmployee(employeeId, roleId) {
   requirePermission('employees.assign_role');
   const me = getCurrentEmployee();
   await sb.from(AT.EMP_ROLES)
-    .upsert({ employee_id: employeeId, role_id: roleId, granted_by: me?.id, granted_at: new Date().toISOString() },
+    .upsert({ employee_id: employeeId, role_id: roleId, granted_by: me?.id, granted_at: new Date().toISOString(), tenant_id: getTenantId() },
       { onConflict: 'employee_id,role_id' });
   writeLog('role_assigned', null, { employeeId, roleId, assignedBy: me?.id });
   toast('תפקיד עודכן', 's');

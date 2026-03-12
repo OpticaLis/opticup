@@ -143,7 +143,8 @@ async function savePODraft() {
         order_date:    currentPO.order_date || new Date().toISOString().split('T')[0],
         expected_date: currentPO.expected_date || null,
         notes:         currentPO.notes,
-        status:        'draft'
+        status:        'draft',
+        tenant_id:     getTenantId()
       }).select().single();
       if (error) throw error;
       poId = data.id;
@@ -177,7 +178,8 @@ async function savePODraft() {
         website_sync:  item.website_sync || null,
         product_type:  item.product_type || null,
         bridge:        item.bridge || null,
-        temple_length: item.temple_length || null
+        temple_length: item.temple_length || null,
+        tenant_id:     getTenantId()
       }));
       const { error } = await sb.from(T.PO_ITEMS).insert(items);
       if (error) throw error;

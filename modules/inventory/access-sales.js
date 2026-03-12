@@ -104,7 +104,8 @@ async function processAccessSalesFile(workbook, filename) {
       rows_total: rows.length,
       rows_success: 0,
       rows_pending: 0,
-      rows_error: errorDetails.length
+      rows_error: errorDetails.length,
+      tenant_id: getTenantId()
     }).select('id').single();
     if (logErr) throw logErr;
     syncLogId = logRow.id;
@@ -194,7 +195,8 @@ async function processAccessSalesFile(workbook, filename) {
           lens_included: row.lens_included,
           lens_category: row.lens_category,
           reason: 'ברקוד לא נמצא במלאי',
-          status: 'pending'
+          status: 'pending',
+          tenant_id: getTenantId()
         });
         if (pendErr) throw pendErr;
         rowsPending++;

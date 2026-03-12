@@ -146,7 +146,8 @@ async function saveBrands() {
         default_sync: heToEn('website_sync', b.defaultSync) || null,
         active: b.active,
         exclude_website: b.excludeWebsite,
-        min_stock_qty: b.minStockQty ?? null
+        min_stock_qty: b.minStockQty ?? null,
+        tenant_id: getTenantId()
       }));
       const { error } = await sb.from('brands').insert(rows);
       if (error) throw new Error(error.message);

@@ -74,7 +74,8 @@ async function confirmWorkerPin() {
         status: 'in_progress',
         count_date: new Date().toISOString().slice(0, 10),
         branch_id: branchCode || '00',
-        counted_by: activeWorker.name
+        counted_by: activeWorker.name,
+        tenant_id: getTenantId()
       }).select().single();
       if (error) throw error;
 
@@ -113,7 +114,8 @@ async function _createNewStockCount() {
       status: 'in_progress',
       count_date: new Date().toISOString().slice(0, 10),
       branch_id: branchCode || '00',
-      counted_by: activeWorker.name
+      counted_by: activeWorker.name,
+      tenant_id: getTenantId()
     }).select().single();
     if (error) throw error;
     const inventory = await fetchAll(T.INV,

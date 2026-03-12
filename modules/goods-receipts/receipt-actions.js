@@ -40,7 +40,8 @@ async function saveReceiptDraft() {
       total_amount: totalAmount || null,
       status: 'draft',
       po_id: rcptLinkedPoId || null,
-      created_by: sessionStorage.getItem('prizma_user') || 'system'
+      created_by: sessionStorage.getItem('prizma_user') || 'system',
+      tenant_id: getTenantId()
     };
 
     let receiptId;
@@ -74,7 +75,8 @@ async function saveReceiptDraft() {
       quantity: i.quantity,
       unit_cost: i.unit_cost,
       sell_price: i.sell_price,
-      is_new_item: i.is_new_item
+      is_new_item: i.is_new_item,
+      tenant_id: getTenantId()
     }));
 
     const { error: iErr } = await sb.from(T.RCPT_ITEMS).insert(itemRows);
@@ -208,7 +210,8 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
     origin: 'goods_receipt',
     product_type: 'eyeglasses',
     website_sync: heToEn('website_sync', getBrandSync(item.brand)) || 'none',
-    is_deleted: false
+    is_deleted: false,
+    tenant_id: getTenantId()
   };
 
   const { data: created, error: cErr } = await sb.from('inventory').insert(newRow).select().single();
@@ -249,7 +252,8 @@ async function saveReceiptDraftInternal() {
     total_amount: totalAmount || null,
     status: 'draft',
     po_id: rcptLinkedPoId || null,
-    created_by: sessionStorage.getItem('prizma_user') || 'system'
+    created_by: sessionStorage.getItem('prizma_user') || 'system',
+    tenant_id: getTenantId()
   };
 
   let receiptId;
@@ -278,7 +282,8 @@ async function saveReceiptDraftInternal() {
     quantity: i.quantity,
     unit_cost: i.unit_cost,
     sell_price: i.sell_price,
-    is_new_item: i.is_new_item
+    is_new_item: i.is_new_item,
+    tenant_id: getTenantId()
   }));
 
   const { error: iErr } = await sb.from(T.RCPT_ITEMS).insert(itemRows);

@@ -193,7 +193,8 @@ async function importPOToInventory(poId) {
             temple_length: item.temple_length || null,
             status:        'במלאי',
             source:        'הזמנת רכש',
-            is_deleted:    false
+            is_deleted:    false,
+            tenant_id:     getTenantId()
           };
           // Generate barcode if needed
           if (item.barcode) {
