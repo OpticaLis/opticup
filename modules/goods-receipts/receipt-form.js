@@ -114,8 +114,9 @@ async function searchReceiptBarcode() {
       });
       toast(`נמצא: ${brandName} ${data.model || ''}`, 's');
     } else {
-      toast('ברקוד לא נמצא במלאי — הוסף כפריט חדש', 'w');
-      addReceiptItemRow({ barcode, is_new_item: true, quantity: 1 });
+      const newBarcode = await generateNextBarcode();
+      addReceiptItemRow({ barcode: newBarcode, is_new_item: true, quantity: 1 });
+      toast(`ברקוד ${newBarcode} הוקצה לפריט חדש — הדפס תווית`, 's');
     }
 
     $('rcpt-barcode-search').value = '';
@@ -149,7 +150,7 @@ function addReceiptItemRow(data) {
 
   tr.innerHTML = `
     <td>${rcptRowNum}</td>
-    <td><input type="text" class="rcpt-barcode" value="${data?.barcode || ''}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
+    <td><input type="text" class="rcpt-barcode" value="${data?.barcode || ''}" readonly style="background:#f0f0f0"></td>
     <td><input type="text" class="rcpt-brand" value="${data?.brand || ''}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
     <td><input type="text" class="rcpt-model" value="${data?.model || ''}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
     <td><input type="text" class="rcpt-color" value="${data?.color || ''}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
@@ -214,4 +215,60 @@ function updateReceiptItemsStats() {
   $('rcpt-items-stats').textContent = items.length
     ? `סה"כ ${items.length} שורות | ${total} יחידות | ${existCount} קיימים | ${newCount} חדשים`
     : '';
+}
+
+async function addNewReceiptRow() {
+  try {
+    const barcode = await generateNextBarcode();
+    addReceiptItemRow({ barcode, is_new_item: true, quantity: 1 });
+    toast(`ברקוד ${barcode} הוקצה לפריט חדש — הדפס תווית`, 's');
+  } catch (e) {
+    console.error('addNewReceiptRow error:', e);
+    toast('שגיאה ביצירת ברקוד: ' + (e.message || ''), 'e');
+  }
+}
+
+// =========================================================
+// INFO GUIDE — Employee quick reference
+// =========================================================
+const RECEIPT_GUIDE_TEXT = `
+📦 קבלת סחורה — מדריך מהיר
+
+1. סחורה הגיעה? בדוק מה מצורף:
+   • חשבונית מס → בחר "חשבונית מס"
+   • תעודת משלוח → בחר "תעודת משלוח"
+
+2. סרוק או צלם את המסמך (שמירה לתיקייה משותפת)
+
+3. פתח "קבלה חדשה":
+   • בחר ספק (המערכת תזהה את סוג המסמך הרגיל שלו)
+   • הכנס מספר מסמך
+   • אם יש הזמנת רכש פתוחה — היא תופיע אוטומטית
+
+4. הוסף פריטים:
+   • פריט קיים → סרוק ברקוד או חפש
+   • פריט חדש → הכנס פרטים → ברקוד ייווצר אוטומטית
+   • ודא כמויות ומחירים
+
+5. בדוק את הסיכום ואשר עם PIN
+
+✅ המלאי יתעדכן, החוב לספק ייווצר אוטומטית
+`.trim();
+
+function showReceiptGuide() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:12px;padding:24px 28px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;direction:rtl;text-align:right;line-height:1.8;white-space:pre-line;font-size:.95rem;box-shadow:0 8px 32px rgba(0,0,0,.25)';
+  box.textContent = RECEIPT_GUIDE_TEXT;
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = 'סגור';
+  closeBtn.className = 'btn btn-p';
+  closeBtn.style.cssText = 'margin-top:16px;display:block;margin-right:auto';
+  closeBtn.onclick = () => overlay.remove();
+  box.appendChild(closeBtn);
+  overlay.appendChild(box);
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
 }

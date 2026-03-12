@@ -9,7 +9,7 @@
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
 | 1 | shared.js | js/shared.js | 185 | Supabase client init, table constants (T), FIELD_MAP/ENUM_MAP, Hebrew↔English translation, UI helpers ($, toast, setAlert, confirmDialog, showLoading), tab navigation (showTab, showEntryMode), escapeHtml, global variable declarations |
-| 2 | supabase-ops.js | js/supabase-ops.js | 160 | Database abstraction layer: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (grouped upsert), writeLog |
+| 2 | supabase-ops.js | js/supabase-ops.js | 176 | Database abstraction layer: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (grouped upsert), writeLog, generateNextBarcode |
 | 3 | data-loading.js | js/data-loading.js | 167 | App initialization: loadData, loadMaxBarcode, populateDropdowns, low stock alerts (loadLowStockAlerts, refreshLowStockBanner, openLowStockModal), helper functions (activeBrands, supplierOpts, getBrandType, getBrandSync) |
 | 4 | search-select.js | js/search-select.js | 136 | Reusable searchable dropdown component: createSearchSelect, closeAllDropdowns, repositionDropdown, MutationObserver cleanup |
 | 5 | inventory-table.js | modules/inventory/inventory-table.js | 275 | Main inventory table: server-side paginated loading, filtering (search/supplier/type/qty), sorting, rendering with inline edit cells, event delegation for row actions |
@@ -25,9 +25,9 @@
 | 15 | po-actions.js | modules/purchasing/po-actions.js | 235 | PO lifecycle actions: savePODraft (with duplicate row detection), sendPurchaseOrder, cancelPO, exportPOExcel, exportPOPdf |
 | 16 | po-view-import.js | modules/purchasing/po-view-import.js | 319 | Read-only PO view with received qty tracking, importPOToInventory (creates/updates inventory from PO items), createPOForBrand (from low stock modal), PO event delegation |
 | 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 275 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (populates items from PO), updatePOStatusAfterReceipt, openNewReceipt |
-| 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 217 | Receipt form: openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow, getReceiptItems, updateReceiptItemsStats |
+| 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 274 | Receipt form: openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow, getReceiptItems, updateReceiptItemsStats, addNewReceiptRow, showReceiptGuide |
 | 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 174 | Receipt save/cancel: saveReceiptDraft, saveReceiptDraftInternal, cancelReceipt, backToReceiptList |
-| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 171 | Receipt confirmation: confirmReceipt, confirmReceiptCore, confirmReceiptById (from list), createNewInventoryFromReceiptItem |
+| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 167 | Receipt confirmation: confirmReceipt, confirmReceiptCore, confirmReceiptById (from list), createNewInventoryFromReceiptItem |
 | 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 92 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt |
 | 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 195 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, receipt list event delegation |
 | 21 | audit-log.js | modules/audit/audit-log.js | 215 | Soft delete flow (deleteInvRow, confirmSoftDelete), recycle bin (openRecycleBin, restoreItem, permanentDelete with double PIN) |
@@ -94,6 +94,7 @@
 | `batchCreate` | `(tableName, records)` | Async. Inserts in batches of 100. Detects duplicate barcodes (within batch + existing DB). Returns enriched rows |
 | `batchUpdate` | `(tableName, records)` | Async. Groups by column set, upserts each group. Handles duplicate barcode constraint errors. Returns enriched rows |
 | `writeLog` | `(action, inventoryId?, details?)` | Async. Inserts into inventory_logs. Reads prizma_user and prizma_branch from sessionStorage. Supports 20+ detail fields |
+| `generateNextBarcode` | `()` | Async. Shared helper — calls loadMaxBarcode(), increments maxBarcode, returns BBDDDDD barcode string. Used by receipt-form and receipt-confirm |
 
 ### js/data-loading.js
 
@@ -277,6 +278,8 @@
 | `addReceiptItemRow` | `(data)` | Adds <tr> to receipt items table. Different rendering for new vs existing items |
 | `getReceiptItems` | `()` | Collects all receipt item data from DOM. Throws if qty < 1 |
 | `updateReceiptItemsStats` | `()` | Calculates and displays item/unit/new/existing counts |
+| `addNewReceiptRow` | `()` | Async. Generates barcode via generateNextBarcode(), then calls addReceiptItemRow(). Used by manual "שורה חדשה" button |
+| `showReceiptGuide` | `()` | Opens modal overlay with employee quick-reference guide (RECEIPT_GUIDE_TEXT constant) |
 
 ### modules/goods-receipts/receipt-actions.js
 
@@ -293,7 +296,7 @@
 |----------|------------|-------------|
 | `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Core confirmation: increments inventory quantities via `sb.rpc('increment_inventory')`, creates new items, updates PO status, calls createDocumentFromReceipt |
 | `confirmReceipt` | `()` | Async. UI-facing: validates, saves draft internally, then calls confirmReceiptCore |
-| `createNewInventoryFromReceiptItem` | `(item, receiptId, rcptNumber)` | Async. Creates inventory row with generated barcode from receipt item |
+| `createNewInventoryFromReceiptItem` | `(item, receiptId, rcptNumber)` | Async. Creates inventory row using pre-assigned barcode from receipt item (falls back to generateNextBarcode) |
 | `confirmReceiptById` | `(receiptId)` | Async. Confirms receipt from list view without opening form |
 
 ### modules/goods-receipts/receipt-debt.js
@@ -560,6 +563,7 @@
 | `slogTotalPages` | Number | `0` | System log total page count |
 | `slogCurrentFilters` | Object | `{}` | System log active filter state |
 | `rcptRowNum` | Number | `0` | Receipt item row counter |
+| `RECEIPT_GUIDE_TEXT` | String (const) | — | Employee quick-reference guide for goods receipt (Hebrew, multi-line) |
 | `currentReceiptId` | String/null | `null` | Currently open receipt UUID |
 | `rcptEditMode` | Boolean | `false` | Whether receipt is in edit mode |
 | `rcptViewOnly` | Boolean | `false` | Whether receipt is in view-only mode |

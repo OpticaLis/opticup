@@ -111,12 +111,8 @@ async function confirmReceipt() {
 }
 
 async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
-  // Generate barcode for new item
-  await loadMaxBarcode();
-  const prefix = branchCode.padStart(2, '0');
-  maxBarcode++;
-  if (maxBarcode > 99999) throw new Error('חריגה — מקסימום ברקודים');
-  const newBarcode = prefix + String(maxBarcode).padStart(5, '0');
+  // Use pre-assigned barcode from receipt item, or generate new one as fallback
+  const newBarcode = item.barcode || await generateNextBarcode();
 
   const brandId = brandCache[item.brand] || null;
   const supplierId = supplierCache[$('rcpt-supplier').value] || null;

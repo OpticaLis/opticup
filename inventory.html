@@ -407,7 +407,10 @@
   <!-- STEP 2: Receipt form -->
   <div id="rcpt-step2" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <h3 style="margin:0" id="rcpt-form-title">&#128230; קבלה חדשה</h3>
+      <div style="display:flex;align-items:center;gap:8px">
+        <h3 style="margin:0" id="rcpt-form-title">&#128230; קבלה חדשה</h3>
+        <button class="btn btn-sm" onclick="showReceiptGuide()" style="background:#e3f2fd;color:#1565c0;border:1px solid #90caf9;font-size:.85rem" title="מדריך לעובד">&#8505;&#65039; מידע</button>
+      </div>
       <button class="btn btn-g btn-sm" onclick="backToReceiptList()">&#8592; חזור לרשימה</button>
     </div>
     <div id="rcpt-form-alerts"></div>
@@ -442,7 +445,7 @@
           <input type="text" id="rcpt-barcode-search" placeholder="הזן ברקוד וחפש..." onkeydown="if(event.key==='Enter')searchReceiptBarcode()">
         </div>
         <button class="btn btn-p btn-sm" onclick="searchReceiptBarcode()" style="margin-bottom:2px">&#128269; חפש</button>
-        <button class="btn btn-g btn-sm" onclick="addReceiptItemRow()" style="margin-bottom:2px">&#10010; שורה חדשה</button>
+        <button class="btn btn-g btn-sm" onclick="addNewReceiptRow()" style="margin-bottom:2px">&#10010; שורה חדשה</button>
         <label class="btn btn-g btn-sm" style="margin-bottom:2px;cursor:pointer">&#128194; ייבוא Excel<input type="file" accept=".xlsx,.xls,.csv" onchange="handleReceiptExcel(event)" style="display:none"></label>
       </div>
       <div class="rcpt-items-wrap">

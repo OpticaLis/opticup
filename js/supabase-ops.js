@@ -123,6 +123,17 @@ async function batchUpdate(tableName, records) {
 }
 
 // =========================================================
+// BARCODE GENERATION (shared helper — BBDDDDD format)
+// =========================================================
+async function generateNextBarcode() {
+  await loadMaxBarcode();
+  const prefix = branchCode.padStart(2, '0');
+  maxBarcode++;
+  if (maxBarcode > 99999) throw new Error('חריגה — מקסימום ברקודים');
+  return prefix + String(maxBarcode).padStart(5, '0');
+}
+
+// =========================================================
 // LOGGING ENGINE
 // =========================================================
 async function writeLog(action, inventoryId, details = {}) {
