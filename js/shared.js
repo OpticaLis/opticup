@@ -18,6 +18,8 @@ const T = {
   STOCK_COUNTS: 'stock_counts',
   STOCK_COUNT_ITEMS: 'stock_count_items',
   EMPLOYEES: 'employees',
+  DOC_TYPES: 'document_types',
+  SUP_DOCS: 'supplier_documents',
 };
 
 // =========================================================

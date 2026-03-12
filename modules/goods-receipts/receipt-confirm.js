@@ -42,7 +42,24 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
     await updatePOStatusAfterReceipt(poId);
   }
 
-  toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
+  // Auto-create supplier document for debt tracking
+  const { data: rcptData } = await sb.from(T.RECEIPTS).select('supplier_id').eq('id', receiptId).single();
+  if (rcptData?.supplier_id) {
+    try {
+      const doc = await createDocumentFromReceipt(receiptId, rcptData.supplier_id, savedItems);
+      if (doc) {
+        toast(`קבלה אושרה · מסמך ספק ${doc.internal_number} נוצר`, 's');
+      } else {
+        toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
+      }
+    } catch (docErr) {
+      console.error('createDocumentFromReceipt error:', docErr);
+      toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן (שגיאה ביצירת מסמך ספק)`, 's');
+    }
+  } else {
+    toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
+  }
+
   refreshLowStockBanner();
   await loadReceiptTab();
 }
