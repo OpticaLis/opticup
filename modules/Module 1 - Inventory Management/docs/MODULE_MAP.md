@@ -897,14 +897,14 @@ admin.js (DOMContentLoaded)
 
 ## 5. Database Schema
 
-> **Note (Phase 3.75):** All tables below have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. JWT-based RLS tenant isolation is active on all tables. For full SQL DDL → see db-schema.sql.
+> **Note (Phase 4a):** All tables below have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. JWT-based RLS tenant isolation is active on all tables. 11 new tables added in Phase 4a for supplier debt tracking. For full SQL DDL → see db-schema.sql.
 
 | Table | Constant | Key Columns | Relationships |
 |-------|----------|-------------|---------------|
 | `tenants` | `T.TENANTS` | id (uuid PK), name, slug, default_currency, timezone, locale, is_active, created_at | ← all tables via tenant_id FK |
 | `inventory` | `T.INV` | id (uuid PK), barcode (unique), brand_id (FK→brands), supplier_id (FK→suppliers), model, size, bridge, color, temple_length, product_type, sell_price, sell_discount, cost_price, cost_discount, quantity, status, website_sync, origin, notes, is_deleted, deleted_at, deleted_by, deleted_reason, tenant_id, created_at | → brands.id, → suppliers.id, ← inventory_images.inventory_id, ← inventory_logs.inventory_id, ← goods_receipt_items.inventory_id |
 | `brands` | `T.BRANDS` | id (uuid PK), name, brand_type (luxury/brand), default_sync (full/display/no), active (bool), exclude_website (bool), min_stock_qty (int) | ← inventory.brand_id, ← purchase_order_items.brand_id |
-| `suppliers` | `T.SUPPLIERS` | id (uuid PK), name, active (bool), supplier_number (unique int, >= 10) | ← inventory.supplier_id, ← purchase_orders.supplier_id, ← goods_receipts.supplier_id |
+| `suppliers` | `T.SUPPLIERS` | id (uuid PK), name, active (bool), supplier_number (unique int, >= 10), default_document_type, default_currency, payment_terms_days, has_prepaid_deal | ← inventory.supplier_id, ← purchase_orders.supplier_id, ← goods_receipts.supplier_id, ← supplier_documents.supplier_id, ← supplier_payments.supplier_id, ← supplier_returns.supplier_id, ← prepaid_deals.supplier_id |
 | `employees` | `T.EMPLOYEES` | id (uuid PK), name, pin, role, branch_id, is_active, email, phone, created_by (FK→employees), last_login, failed_attempts, locked_until, created_at | ← employee_roles.employee_id, ← auth_sessions.employee_id |
 | `inventory_logs` | (direct table ref) | id (uuid PK), action, inventory_id (FK→inventory, nullable), details (jsonb), employee, branch, created_at | → inventory.id |
 | `inventory_images` | (direct table ref) | id (uuid PK), inventory_id (FK→inventory), url | → inventory.id |
@@ -922,6 +922,17 @@ admin.js (DOMContentLoaded)
 | `role_permissions` | — | role_id (FK→roles, PK), permission_id (FK→permissions, PK), granted (bool) | → roles.id, → permissions.id |
 | `employee_roles` | — | employee_id (FK→employees, PK), role_id (FK→roles, PK), granted_by (FK→employees), granted_at | → employees.id, → roles.id |
 | `auth_sessions` | — | id (uuid PK), employee_id (FK→employees), token (unique), permissions (jsonb), role_id, branch_id, created_at, expires_at, last_active, is_active | → employees.id |
+| `document_types` | — | id (uuid PK), code (unique per tenant), name_he, name_en, affects_debt (increase/decrease/none), is_system, is_active | Configurable document type registry. Seeded: invoice, delivery_note, credit_note, receipt |
+| `payment_methods` | — | id (uuid PK), code (unique per tenant), name_he, name_en, is_system, is_active | Configurable payment method registry. Seeded: bank_transfer, check, cash, credit_card |
+| `currencies` | — | id (uuid PK), code (unique per tenant), name_he, symbol, is_default, is_active | Configurable currency registry. Seeded: ILS (default), USD, EUR |
+| `supplier_documents` | — | id (uuid PK), supplier_id (FK→suppliers), document_type_id (FK→document_types), document_number, document_date, due_date, received_date, currency, exchange_rate, subtotal, vat_rate, vat_amount, total_amount, parent_invoice_id (FK→self), file_url, goods_receipt_id (FK→goods_receipts), po_id (FK→purchase_orders), status (open/partially_paid/paid/linked/cancelled), paid_amount, is_deleted | → suppliers, → document_types, → goods_receipts, → purchase_orders, ← document_links, ← payment_allocations |
+| `document_links` | — | id (uuid PK), parent_document_id (FK→supplier_documents), child_document_id (FK→supplier_documents), amount_on_invoice | Maps delivery notes to monthly invoices |
+| `supplier_payments` | — | id (uuid PK), supplier_id (FK→suppliers), amount, currency, exchange_rate, payment_date, payment_method, reference_number, prepaid_deal_id (FK→prepaid_deals), is_deleted | → suppliers, → prepaid_deals, ← payment_allocations |
+| `payment_allocations` | — | id (uuid PK), payment_id (FK→supplier_payments), document_id (FK→supplier_documents), allocated_amount | Many-to-many: payments ↔ documents |
+| `prepaid_deals` | — | id (uuid PK), supplier_id (FK→suppliers), deal_name, start_date, end_date, total_prepaid, currency, total_used, total_remaining, alert_threshold_pct, alert_threshold_amt, status (active/completed/cancelled), is_deleted | → suppliers, ← prepaid_checks, ← supplier_payments |
+| `prepaid_checks` | — | id (uuid PK), prepaid_deal_id (FK→prepaid_deals), check_number, amount, check_date, status (pending/cashed/bounced/cancelled), cashed_date | → prepaid_deals |
+| `supplier_returns` | — | id (uuid PK), supplier_id (FK→suppliers), return_number, return_type (agent_pickup/ship_to_supplier/pending_in_store), reason, status (pending/ready_to_ship/shipped/received_by_supplier/credited), credit_document_id (FK→supplier_documents), credit_amount, is_deleted | → suppliers, → supplier_documents, ← supplier_return_items |
+| `supplier_return_items` | — | id (uuid PK), return_id (FK→supplier_returns), inventory_id (FK→inventory), barcode, quantity, brand_name, model, color, size, cost_price | → supplier_returns, → inventory |
 
 ---
 
