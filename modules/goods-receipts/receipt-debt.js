@@ -88,5 +88,30 @@ async function createDocumentFromReceipt(receiptId, supplierId, receiptItems) {
 
   // 9. Insert using batchCreate helper
   const created = await batchCreate(T.SUP_DOCS, [docRow]);
-  return created[0] || null;
+  const createdDoc = created[0] || null;
+
+  // 10. Auto-deduct from active prepaid deal if exists
+  try {
+    const deals = await fetchAll(T.PREPAID_DEALS, [
+      ['supplier_id', 'eq', supplierId],
+      ['status', 'eq', 'active'],
+      ['is_deleted', 'eq', false]
+    ]);
+    if (deals.length > 0) {
+      const activeDeal = deals[0];
+      const newUsed = (parseFloat(activeDeal.total_used) || 0) + totalAmount;
+      const newRemaining = parseFloat(activeDeal.total_prepaid) - newUsed;
+      await batchUpdate(T.PREPAID_DEALS, [{
+        id: activeDeal.id,
+        total_used: newUsed,
+        total_remaining: newRemaining,
+        updated_at: new Date().toISOString()
+      }]);
+      console.log('Prepaid deal deducted:', activeDeal.deal_name, 'amount:', totalAmount);
+    }
+  } catch (e) {
+    console.warn('Auto-deduct prepaid deal failed (non-blocking):', e);
+  }
+
+  return createdDoc;
 }

@@ -28,7 +28,7 @@
 | 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 274 | Receipt form: openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow, getReceiptItems, updateReceiptItemsStats, addNewReceiptRow, showReceiptGuide |
 | 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 174 | Receipt save/cancel: saveReceiptDraft, saveReceiptDraftInternal, cancelReceipt, backToReceiptList |
 | 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 167 | Receipt confirmation: confirmReceipt, confirmReceiptCore, confirmReceiptById (from list), createNewInventoryFromReceiptItem |
-| 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 92 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt |
+| 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 112 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt. Phase 4f: auto-deducts from active prepaid deal if exists |
 | 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 195 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, receipt list event delegation |
 | 21 | audit-log.js | modules/audit/audit-log.js | 215 | Soft delete flow (deleteInvRow, confirmSoftDelete), recycle bin (openRecycleBin, restoreItem, permanentDelete with double PIN) |
 | 22 | item-history.js | modules/audit/item-history.js | 323 | Item timeline (openItemHistory), ACTION_MAP constant (21 action types), entry history accordion (openEntryHistory, loadEntryHistory, renderEntryHistory), exports |
@@ -58,8 +58,11 @@
 | 46 | debt-payments.js | modules/suppliers-debt/debt-payments.js | 168 | Payments tab: loadPaymentsTab (fetch payments+methods+suppliers+allocations+documents), renderPaymentsToolbar (filters + add button), applyPayFilters (client-side), renderPaymentsTable (with כנגד doc numbers), viewPayment (detail modal with allocation table) |
 | 47 | debt-payment-wizard.js | modules/suppliers-debt/debt-payment-wizard.js | 146 | Payment wizard steps 1-2: openNewPaymentWizard (state reset + modal), supplier selection with debt summary + withholding tax rate lookup, payment details form with auto-calc withholding tax |
 | 48 | debt-payment-alloc.js | modules/suppliers-debt/debt-payment-alloc.js | 254 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status) |
+| 49 | debt-prepaid.js | modules/suppliers-debt/debt-prepaid.js | 285 | Prepaid deals tab: loadPrepaidTab (fetch deals+checks+suppliers), renderPrepaidToolbar (filters + add button), applyPrepaidFilters (client-side), renderPrepaidTable (progress bar, status badges), openNewDealModal (PIN-verified), openAddCheckModal, viewDealDetail (progress bar + checks table), updateCheckStatus |
 
-**Total: 48 files, ~9,539 lines** (includes scripts/sync-watcher.js)
+**Total: 49 files, ~9,824 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 4f):** debt-prepaid.js added. T.PREPAID_DEALS + T.PREPAID_CHECKS added to shared.js. Auto-deduction logic added to receipt-debt.js. Tab switching wired in suppliers-debt.html.
 
 **Note (Phase 4e):** debt-payments.js + debt-payment-wizard.js + debt-payment-alloc.js added. T.PAY_ALLOC + T.PAY_METHODS added to shared.js. Tab switching wired in suppliers-debt.html.
 
@@ -317,7 +320,7 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `createDocumentFromReceipt` | `(receiptId, supplierId, receiptItems)` | Async. Auto-creates supplier_documents record from confirmed receipt. Calculates subtotal/VAT/total from item costs, generates DOC-NNNN internal_number, uses supplier's default_document_type and payment_terms_days. Skips if no cost data. Uses fetchAll/batchCreate helpers. |
+| `createDocumentFromReceipt` | `(receiptId, supplierId, receiptItems)` | Async. Auto-creates supplier_documents record from confirmed receipt. Calculates subtotal/VAT/total from item costs, generates DOC-NNNN internal_number, uses supplier's default_document_type and payment_terms_days. Skips if no cost data. Phase 4f: auto-deducts totalAmount from active prepaid deal (updates total_used/total_remaining). Uses fetchAll/batchCreate/batchUpdate helpers. |
 
 ### modules/goods-receipts/receipt-excel.js
 
@@ -608,6 +611,22 @@
 | `_wizRenderStep4` | `()` | Confirmation screen: payment summary grid + PIN input |
 | `_wizSavePayment` | `()` | Verifies PIN, creates supplier_payments record, creates payment_allocations, updates paid_amount/status on documents, writeLog, refreshes tab + summary cards |
 
+### modules/suppliers-debt/debt-prepaid.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `loadPrepaidTab` | `()` | Fetches prepaid_deals + prepaid_checks + suppliers, renders toolbar + table |
+| `renderPrepaidToolbar` | `()` | Supplier/status filter dropdowns + "עסקה חדשה" button |
+| `applyPrepaidFilters` | `()` | Client-side filter by supplier and status |
+| `renderPrepaidTable` | `(deals)` | Table with progress bar, status badges, action buttons |
+| `openNewDealModal` | `()` | Modal: supplier, name, dates, amount, threshold, PIN |
+| `_dealAutoName` | `()` | Auto-generates deal name from supplier + year |
+| `saveNewDeal` | `()` | PIN verify → batchCreate prepaid_deals → writeLog → refresh |
+| `openAddCheckModal` | `(dealId)` | Modal: check number, amount, date, notes |
+| `saveNewCheck` | `(dealId)` | batchCreate prepaid_checks → writeLog → refresh |
+| `viewDealDetail` | `(dealId)` | Detail modal: deal summary, progress bar, checks table with status actions |
+| `updateCheckStatus` | `(checkId, newStatus)` | Updates check status (pending→cashed/bounced), sets cashed_date |
+
 ### modules/employees/employee-list.js
 
 | Function | Parameters | Description |
@@ -631,7 +650,7 @@
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
 | `sb` | SupabaseClient | `supabase.createClient(...)` | Supabase client instance |
-| `T` | Object | `{ INV, PO, BRANDS, SUPPLIERS, EMPLOYEES, DOC_LINKS, PAY_ALLOC, PAY_METHODS, ... }` | Table name constants (see DB Schema section) |
+| `T` | Object | `{ INV, PO, BRANDS, SUPPLIERS, EMPLOYEES, DOC_LINKS, PAY_ALLOC, PAY_METHODS, PREPAID_DEALS, PREPAID_CHECKS, ... }` | Table name constants (see DB Schema section) |
 | `FIELD_MAP` | Object | Nested {table: {he: en}} | Hebrew→English field name mapping per table |
 | `FIELD_MAP_REV` | Object | Auto-built reverse | English→Hebrew field name mapping per table |
 | `ENUM_MAP` | Object | {category: {he: en}} | Hebrew→English enum value mapping |
@@ -845,6 +864,16 @@
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
 | `_wizState` | Object | `{}` | Wizard state: supplierId, amount, taxRate, allocations, openDocs, etc. |
+
+### modules/suppliers-debt/debt-prepaid.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `_prepaidDeals` | Array | `[]` | Cached prepaid deals |
+| `_prepaidChecks` | Array | `[]` | Cached prepaid checks for all deals |
+| `_prepaidSuppliers` | Array | `[]` | Cached active suppliers for prepaid tab |
+| `DEAL_STATUS_MAP` | Object (const) | 3 entries | Maps deal status → {he, cls} for badge rendering |
+| `CHECK_STATUS_MAP` | Object (const) | 4 entries | Maps check status → {he, cls} for badge rendering |
 
 ---
 
@@ -1079,11 +1108,20 @@ debt-payment-alloc.js
   → calls: loadPaymentsTab() [debt-payments.js], loadDebtSummary() [debt-dashboard.js]
   → provides: _wizGoStep3(), autoAllocateFIFO(), _wizSavePayment()
 
+debt-prepaid.js
+  → reads: T.PREPAID_DEALS, T.PREPAID_CHECKS, T.SUPPLIERS [shared.js]
+  → calls: fetchAll() [supabase-ops.js], batchCreate() [supabase-ops.js], batchUpdate() [supabase-ops.js]
+  → calls: writeLog() [supabase-ops.js], verifyPinOnly() [auth-service.js]
+  → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), setAlert(), formatILS() [shared.js]
+  → calls: closeAndRemoveModal() [debt-documents.js]
+  → provides: loadPrepaidTab(), openNewDealModal(), openAddCheckModal(), viewDealDetail(), updateCheckStatus()
+
 suppliers-debt.html (inline script)
   → calls: loadSession(), hasPermission() [auth-service.js]
   → calls: loadDebtSummary() [debt-dashboard.js]
   → calls: loadDocumentsTab() [debt-documents.js]
   → calls: loadPaymentsTab() [debt-payments.js]
+  → calls: loadPrepaidTab() [debt-prepaid.js]
   → provides: switchDebtTab()
 ```
 

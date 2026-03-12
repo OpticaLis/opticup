@@ -24,6 +24,8 @@ const T = {
   DOC_LINKS: 'document_links',
   PAY_ALLOC: 'payment_allocations',
   PAY_METHODS: 'payment_methods',
+  PREPAID_DEALS: 'prepaid_deals',
+  PREPAID_CHECKS: 'prepaid_checks',
 };
 
 // =========================================================

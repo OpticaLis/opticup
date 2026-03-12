@@ -143,6 +143,7 @@
 <script src="modules/suppliers-debt/debt-payments.js"></script>
 <script src="modules/suppliers-debt/debt-payment-wizard.js"></script>
 <script src="modules/suppliers-debt/debt-payment-alloc.js"></script>
+<script src="modules/suppliers-debt/debt-prepaid.js"></script>
 <script>
 // =========================================================
 // Tab switching
@@ -157,6 +158,7 @@ function switchDebtTab(tabName) {
   // Load tab data
   if (tabName === 'documents') loadDocumentsTab();
   if (tabName === 'payments') loadPaymentsTab();
+  if (tabName === 'prepaid') loadPrepaidTab();
 }
 
 // =========================================================
