@@ -4,19 +4,6 @@
 
 ---
 
-## Phase 3.8 — Sticky Header (2026-03-12)
-
-- Created css/header.css (98 lines) — sticky header: 60px, z-index 1000, RTL, 3-zone layout (logo+store | app name | employee+logout), responsive below 600px
-- Created js/header.js (58 lines) — initHeader() fetches tenant name/logo from DB, buildHeader() injects header as first child of body, uses escapeHtml() for all dynamic values, logout wired to clearSession()
-- Updated index.html — added header.css link + header.js script tag
-- Updated inventory.html — added header.css link + header.js script tag
-- Updated employees.html — added header.css link + header.js script tag
-- Fallback SVG glasses icon when tenant logo_url is null
-- No DB changes — reads from existing tenants table (Phase 3.75)
-- E2E tested: login → header on all 3 screens → logout → no header pre-login, zero console errors
-
----
-
 ## Phase 3.75 — Multi-Tenancy Foundation (March 2026)
 
 - Created tenants table + seeded Prizma as tenant #1

@@ -65,7 +65,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 3 | ✅ | הרשאות ואימות | PIN login, תפקידים (5 רמות), הרשאות לפי מודול, ניהול עובדים |
 | 3.5 | ✅ | מסך בית + שינוי שם ריפו | index.html → מסך בית, inventory.html, ריפו opticup, session בין דפים |
 | 3.75 | ✅ | Multi-Tenancy Foundation | tenant_id על כל הטבלאות, RLS, contracts, תשתית SaaS |
-| 3.8 | ✅ | Sticky Header | שם + לוגו חנות בכל המסכים, header.js מודולרי |
+| 3.8 | ⬜ | Sticky Header | שם + לוגו חנות בכל המסכים, header.js מודולרי |
 | 4 | ⬜ | מעקב חובות ספקים | חשבוניות, תשלומים, דשבורד חובות, מט"ח |
 | 5 | ⬜ | סוכן AI לניהול ספקים | OCR חשבוניות (Claude Vision), התראות, דוחות אוטומטיים |
 | 6 | ⬜ | פורטל ספקים | גישת ספק חיצונית, view-only מלאי לפי ספק |
@@ -143,12 +143,11 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - פאזת אפס-פיצ'רים: אין UI חדש, רק תשתית
 - פירוט מלא: `docs/PHASE_3.75_SPEC.md`
 
-### פאזה 3.8 ✅ — Sticky Header
+### פאזה 3.8 ⬜ — Sticky Header
 - קובץ js/header.js חדש — טוען שם + לוגו מטבלת tenants
-- קובץ css/header.css חדש — עיצוב header (sticky, RTL, responsive)
 - Header אחיד בכל המסכים (index.html, inventory.html, employees.html)
 - שם "Optic Up" קבוע — לוגו + שם חנות ניתנים לשינוי ע"י בעל המנוי
-- מודולרי — דף חדש בעתיד = שורת script + link אחד
+- מודולרי — דף חדש בעתיד = שורת script אחת
 
 ### פאזה 4 ⬜ — מעקב חובות ספקים
 - טבלאות DB: supplier_invoices, supplier_payments, currencies (כולן עם tenant_id)

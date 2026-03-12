@@ -1,0 +1,120 @@
+/* Optic Up — Sticky Header */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: 60px;
+  background: var(--primary);
+  color: var(--white);
+  direction: rtl;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  border-bottom: 2px solid var(--primary-light);
+}
+
+/* Right zone — logo + store name */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.header-logo-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.header-store-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Center zone — app name */
+.header-center {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--g300);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/* Left zone — employee + logout */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-employee {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+}
+
+.header-emp-name {
+  font-weight: 600;
+}
+
+.header-emp-role {
+  font-weight: 400;
+  color: var(--g300);
+  font-size: 0.8rem;
+}
+
+.header-logout {
+  padding: 5px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--white);
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.header-logout:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--white);
+}
+
+/* Responsive — below 600px */
+@media (max-width: 600px) {
+  .app-header {
+    padding: 0 12px;
+  }
+
+  .header-emp-role {
+    display: none;
+  }
+
+  .header-store-name {
+    font-size: 0.92rem;
+  }
+
+  .header-center {
+    font-size: 0.75rem;
+  }
+}

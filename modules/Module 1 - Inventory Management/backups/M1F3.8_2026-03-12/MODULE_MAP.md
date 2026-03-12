@@ -47,12 +47,8 @@
 | 37 | employee-list.js | modules/employees/employee-list.js | 283 | Employee management: loadEmployeesTab, renderEmployeeTable, openAddEmployee, openEditEmployee, saveEmployee, confirmDeactivateEmployee, renderPermissionMatrix, updateRolePermission |
 | 38 | index.html | index.html | 310 | Home screen shell: MODULES config array, renderModules (permission-based card lock), PIN login modal, session restore, live clock, onLoginSuccess |
 | 39 | employees.html | employees.html | ~120 | Standalone employee management page (extracted from inventory.html employees tab). adminBtn in header, homeBtn always visible in nav |
-| 40 | header.css | css/header.css | 98 | Sticky header styles: 60px height, z-index 1000, RTL, 3-zone flex layout (right: logo+store, center: app name, left: employee+logout), responsive below 600px hides role |
-| 41 | header.js | js/header.js | 58 | Sticky header logic: initHeader (DOMContentLoaded, session check, tenant fetch), buildHeader (DOM injection, escapeHtml, clearSession logout) |
 
-**Total: 41 files, ~8,284 lines** (includes scripts/sync-watcher.js)
-
-**Note (Phase 3.8):** header.css + header.js added. Script/link tags added to index.html, inventory.html, employees.html.
+**Total: 39 files, ~8,128 lines** (includes scripts/sync-watcher.js)
 
 **Note (Phase 3.75):** All JS files updated with tenant_id in inserts/selects. auth-service.js updated with Edge Function call and JWT client recreation.
 
@@ -490,13 +486,6 @@
 | `assignRoleToEmployee` | `(employeeId, roleId)` | Requires employees.assign_role — upsert employee_roles |
 | `forceLogout` | `(employeeId)` | Requires employees.delete — deactivate all sessions for target employee |
 | `verifyPinOnly` | `(pin)` | Mid-session PIN check (non-login). Calls verifyEmployeePIN logic client-side, returns employee or null. Does NOT create new JWT or session (Phase 3.75) |
-
-### js/header.js
-
-| Function | Parameters | Description |
-|----------|------------|-------------|
-| `initHeader` | `()` | DOMContentLoaded handler. Checks sessionStorage for employee (SK.EMPLOYEE). If absent, returns (no header pre-login). Fetches tenant name + logo_url from tenants table. Calls buildHeader() |
-| `buildHeader` | `(emp, tenantName, logoUrl, role)` | Creates `<header id="app-header">` with 3 zones: right (logo/fallback SVG + store name), center ("Optic Up"), left (employee name + role + logout button). All dynamic values escaped via escapeHtml(). Logout wired to clearSession() via addEventListener |
 
 ### index.html (inline script)
 
