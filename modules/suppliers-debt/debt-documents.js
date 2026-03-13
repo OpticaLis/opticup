@@ -32,52 +32,7 @@ async function loadDocumentsTab() {
   }
 }
 
-function renderDocFilterBar() {
-  const container = $('dtab-documents');
-  const supOpts = _docSuppliers.map(function(s) {
-    return '<option value="' + escapeHtml(s.id) + '">' + escapeHtml(s.name) + '</option>';
-  }).join('');
-  const typeOpts = _docTypes.map(function(t) {
-    return '<option value="' + escapeHtml(t.id) + '">' + escapeHtml(t.name_he) + '</option>';
-  }).join('');
-  container.innerHTML =
-    '<div class="doc-toolbar">' +
-      '<select id="doc-f-supplier" onchange="applyDocFilters()" class="doc-filter-input"><option value="">\u05DB\u05DC \u05D4\u05E1\u05E4\u05E7\u05D9\u05DD</option>' + supOpts + '</select>' +
-      '<select id="doc-f-type" onchange="applyDocFilters()" class="doc-filter-input"><option value="">\u05DB\u05DC \u05D4\u05E1\u05D5\u05D2\u05D9\u05DD</option>' + typeOpts + '</select>' +
-      '<select id="doc-f-status" onchange="applyDocFilters()" class="doc-filter-input">' +
-        '<option value="">\u05D4\u05DB\u05DC</option><option value="open">\u05E4\u05EA\u05D5\u05D7</option><option value="partially_paid">\u05E9\u05D5\u05DC\u05DD \u05D7\u05DC\u05E7\u05D9\u05EA</option>' +
-        '<option value="paid">\u05E9\u05D5\u05DC\u05DD</option><option value="linked">\u05DE\u05E7\u05D5\u05E9\u05E8</option><option value="cancelled">\u05DE\u05D1\u05D5\u05D8\u05DC</option>' +
-      '</select>' +
-      '<input type="date" id="doc-f-from" onchange="applyDocFilters()" class="doc-filter-input">' +
-      '<input type="date" id="doc-f-to" onchange="applyDocFilters()" class="doc-filter-input">' +
-      '<label class="doc-cb-label"><input type="checkbox" id="doc-f-overdue" onchange="applyDocFilters()"> \u05D1\u05D0\u05D9\u05D7\u05D5\u05E8 \u05D1\u05DC\u05D1\u05D3</label>' +
-      '<button class="btn btn-s doc-add-btn" onclick="openNewDocumentModal()">+ \u05DE\u05E1\u05DE\u05DA \u05D7\u05D3\u05E9</button>' +
-    '</div><div id="doc-table-wrap"></div>';
-}
-
-function applyDocFilters() {
-  var fSup    = ($('doc-f-supplier') || {}).value || '';
-  var fType   = ($('doc-f-type') || {}).value || '';
-  var fStatus = ($('doc-f-status') || {}).value || '';
-  var fFrom   = ($('doc-f-from') || {}).value || '';
-  var fTo     = ($('doc-f-to') || {}).value || '';
-  var fOverdue = ($('doc-f-overdue') || {}).checked || false;
-  var today = new Date().toISOString().slice(0, 10);
-  var filtered = _docData.filter(function(d) {
-    if (fSup && d.supplier_id !== fSup) return false;
-    if (fType && d.document_type_id !== fType) return false;
-    if (fStatus && d.status !== fStatus) return false;
-    if (fFrom && d.document_date < fFrom) return false;
-    if (fTo && d.document_date > fTo) return false;
-    if (fOverdue) {
-      if (!d.due_date || d.due_date >= today) return false;
-      if (d.status === 'paid' || d.status === 'cancelled') return false;
-    }
-    return true;
-  });
-  filtered.sort(function(a, b) { return (b.document_date || '').localeCompare(a.document_date || ''); });
-  renderDocumentsTable(filtered);
-}
+// renderDocFilterBar() and applyDocFilters() are in debt-doc-filters.js
 
 function renderDocumentsTable(docs) {
   var wrap = $('doc-table-wrap');
