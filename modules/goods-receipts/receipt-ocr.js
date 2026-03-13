@@ -51,6 +51,7 @@ async function _rcptOcrScan() {
       hideLoading(); toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05E2\u05DC\u05D0\u05EA \u05E7\u05D5\u05D1\u05E5', 'e'); return;
     }
     var fileUrl = uploadResult.url;
+    _pendingReceiptFileUrl = fileUrl; // track for cleanup if user removes file
     var rcptType = ($('rcpt-type') || {}).value || null;
 
     var res = await fetch(SUPABASE_URL + '/functions/v1/ocr-extract', {

@@ -1,5 +1,6 @@
 // Pending file for receipt document attachment
 var _pendingReceiptFile = null;
+var _pendingReceiptFileUrl = null; // Storage path if uploaded (for cleanup on remove)
 
 function _pickReceiptFile() {
   var input = document.createElement('input');
@@ -10,12 +11,50 @@ function _pickReceiptFile() {
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) { toast('קובץ גדול מדי — מקסימום 10MB', 'e'); return; }
     _pendingReceiptFile = file;
-    var nameEl = $('rcpt-attach-name');
-    if (nameEl) nameEl.textContent = file.name;
+    _pendingReceiptFileUrl = null;
+    // Hide original button, show filename + remove
     var btn = $('rcpt-attach-btn');
-    if (btn) btn.innerHTML = '&#10004; ' + escapeHtml(file.name.length > 15 ? file.name.slice(0, 15) + '...' : file.name);
+    if (btn) btn.style.display = 'none';
+    var nameEl = $('rcpt-attach-name');
+    if (nameEl) {
+      nameEl.innerHTML = '';
+      var displayName = file.name.length > 20 ? file.name.slice(0, 20) + '...' : file.name;
+      var span = document.createElement('span');
+      span.textContent = '\uD83D\uDCCE ' + displayName;
+      nameEl.appendChild(span);
+      var removeBtn = document.createElement('button');
+      removeBtn.className = 'btn btn-d btn-sm';
+      removeBtn.style.cssText = 'margin-right:6px;font-size:.75rem';
+      removeBtn.textContent = '\u2716 \u05D4\u05E1\u05E8';
+      removeBtn.onclick = _removeReceiptFile;
+      nameEl.appendChild(removeBtn);
+    }
   };
   input.click();
+}
+
+async function _removeReceiptFile() {
+  // Delete from Storage if already uploaded (e.g. after OCR scan)
+  if (_pendingReceiptFileUrl) {
+    try {
+      await sb.storage.from('supplier-docs').remove([_pendingReceiptFileUrl]);
+    } catch (e) {
+      console.warn('Failed to delete uploaded file:', e);
+    }
+    _pendingReceiptFileUrl = null;
+  }
+  _pendingReceiptFile = null;
+  // Restore original attach button
+  var btn = $('rcpt-attach-btn');
+  if (btn) { btn.style.display = ''; btn.innerHTML = '&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA'; }
+  var nameEl = $('rcpt-attach-name');
+  if (nameEl) nameEl.innerHTML = '';
+  // Hide OCR button
+  var ocrBtn = $('rcpt-ocr-btn');
+  if (ocrBtn) ocrBtn.style.display = 'none';
+  // Remove OCR banner if exists
+  var banner = $('rcpt-ocr-banner');
+  if (banner) banner.remove();
 }
 
 async function openExistingReceipt(receiptId, viewOnly) {
@@ -252,7 +291,7 @@ async function addNewReceiptRow() {
 // INFO GUIDE — Employee quick reference
 // =========================================================
 const RECEIPT_GUIDE_TEXT = `
-📦 קבלת סחורה — מדריך מהיר
+\uD83D\uDCE6 קבלת סחורה — מדריך מהיר
 
 1. סחורה הגיעה? בדוק מה מצורף:
    • חשבונית מס → בחר "חשבונית מס"
@@ -272,7 +311,19 @@ const RECEIPT_GUIDE_TEXT = `
 
 5. בדוק את הסיכום ואשר עם PIN
 
-✅ המלאי יתעדכן, החוב לספק ייווצר אוטומטית
+\u2705 המלאי יתעדכן, החוב לספק ייווצר אוטומטית
+
+\uD83E\uDD16 סריקה חכמה עם AI
+\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+1. צרף מסמך (PDF או תמונה) בלחיצה על "צרף מסמך"
+2. לחץ על "סרוק עם AI" — המערכת תזהה אוטומטית:
+   • שם הספק
+   • מספר מסמך ותאריך
+   • פריטים, כמויות ומחירים
+3. בדוק את הנתונים שזוהו ותקן במידת הצורך
+4. אשר עם PIN — המלאי מתעדכן אוטומטית
+
+\uD83D\uDCA1 ככל שתשתמש יותר, המערכת לומדת את הפורמט של כל ספק ומשתפרת!
 `.trim();
 
 function showReceiptGuide() {
