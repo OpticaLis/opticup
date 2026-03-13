@@ -90,6 +90,7 @@
 - Return statuses: pending → ready_to_ship → shipped → received_by_supplier → credited
 
 ### 4i: Documentation Update
+**Commit:** `96c4886`
 - Backup to M1F4_2026-03-13/
 - ROADMAP.md: Phase 4 ⬜ → ✅
 - SESSION_CONTEXT.md: full update with all commits
@@ -98,6 +99,29 @@
 - MODULE_MAP.md: verified (updated incrementally during 4a-4h)
 - db-schema.sql: verified (updated during 4a/4a+)
 - CLAUDE.md: updated T constants + file structure
+
+### Phase 4 QA Fixes + File Upload
+**Commit:** `043f3ec`
+- **batchUpdate RLS violation (CRITICAL)** — replaced .upsert() with individual .update().eq('id') calls + tenant_id
+- **inventory-return.js 'in' filter (CRITICAL)** — fixed fetchAll filter from parenthesized string to array; same fix in debt-returns.js
+- **Payment wizard rollback (CRITICAL)** — _wizSavePayment rolls back (deletes payment + allocations) if document update fails
+- **supplierNumCache fallback (CRITICAL)** — generateReturnNumber fetches supplier_number from DB when cache empty
+- **Document filter missing "cancelled" (minor)** — added "מבוטל" option
+- **cost_price formatting (minor)** — wrapped with formatILS() in inventory-return.js
+- **file-upload.js (NEW)** — uploadSupplierFile, getSupplierFileUrl, renderFilePreview, pickAndUploadFile
+- Receipt form: "צרף מסמך" button, _pendingReceiptFile, warning if no file before confirm
+- receipt-debt.js: uploads file after creating supplier document
+- Documents tab: viewDocument modal with file preview + 📎 attach/replace button
+
+### Phase 4 — Auto-Update cost_price + PO Price Comparison
+**Commit:** `6ab6cfe`
+- receipt-confirm.js: confirmReceiptCore auto-updates inventory cost_price from receipt item unit_cost via batchUpdate + writeLog('cost_update')
+- checkPoPriceDiscrepancies() — new function: fetches PO items, matches by brand+model+size+color, flags >5% price differences, shows Hebrew warning dialog, adds price_discrepancy note to supplier_documents. Non-blocking.
+
+### Phase 4 — Aging Report on Debt Dashboard
+**Commit:** `25cb50c`
+- debt-dashboard.js: loadAgingReport(docs) — 5 aging buckets (שוטף, 1-30, 31-60, 61-90, 90+ days) by due_date. Colored bars proportional to total. No extra DB queries — reuses loadDebtSummary data.
+- suppliers-debt.html: aging section between summary cards and tabs, responsive flex layout with color-coded bars (green → red)
 
 ---
 

@@ -1,12 +1,12 @@
 # Session Context
 
 ## Last Updated
-Phase 4 QA fixes + file upload — 2026-03-13
+Phase 4 final — 2026-03-13
 
 ## What Was Done This Session
-Phase 4 QA fixes (4 critical + 2 minor) and file upload feature
+Phase 4 final polish: QA bug fixes, file upload, cost_price auto-update, PO price comparison, aging report.
 
-### Bug Fixes:
+### Bug Fixes (commit `043f3ec`):
 1. **batchUpdate RLS violation (CRITICAL)** — replaced .upsert() with individual .update().eq('id') calls + tenant_id. Unblocks payment wizard, prepaid deals, returns, and all Phase 4 update operations.
 2. **inventory-return.js 'in' filter (CRITICAL)** — fixed fetchAll filter from parenthesized string to array. Also fixed same bug in debt-returns.js loadReturnsForSupplier.
 3. **Payment wizard rollback (CRITICAL)** — _wizSavePayment now rolls back (deletes payment + allocations) if document update step fails. Prevents orphaned records.
@@ -14,11 +14,20 @@ Phase 4 QA fixes (4 critical + 2 minor) and file upload feature
 5. **Document filter missing "cancelled" (minor)** — added "מבוטל" option to status dropdown.
 6. **cost_price formatting (minor)** — wrapped with formatILS() in inventory-return.js modal.
 
-### New Feature — File upload for supplier documents:
+### New Feature — File upload for supplier documents (commit `043f3ec`):
 - **file-upload.js** — new helper: uploadSupplierFile (validates type/size, uploads to Supabase Storage), getSupplierFileUrl (signed URLs), renderFilePreview, pickAndUploadFile
 - **Receipt form** — "צרף מסמך" button added, _pendingReceiptFile stored until confirmation, warning dialog if no file attached before confirming
 - **receipt-debt.js** — uploads file after creating supplier document
 - **Documents tab** — viewDocument upgraded from placeholder alert to full modal with file preview + document metadata. 📎 button in table for attach/replace file per document.
+- **Manual step needed:** create Supabase Storage bucket "supplier-docs" (private, with RLS policy)
+
+### Auto-update cost_price on receipt + PO price comparison (commit `6ab6cfe`):
+- **receipt-confirm.js** — confirmReceiptCore now auto-updates inventory cost_price from receipt item unit_cost via batchUpdate, with writeLog('cost_update')
+- **checkPoPriceDiscrepancies()** — new function compares receipt item prices vs PO item prices when receipt is linked to a PO. Shows warning dialog if any item differs by >5%. Adds price_discrepancy note to supplier_documents record. Non-blocking.
+
+### Aging report on debt dashboard (commit `25cb50c`):
+- **debt-dashboard.js** — new loadAgingReport(docs) function calculates 5 aging buckets (שוטף, 1-30, 31-60, 61-90, 90+ days) from open docs by due_date. Renders colored bars proportional to total debt. No additional DB queries — reuses docs from loadDebtSummary.
+- **suppliers-debt.html** — aging section added between summary cards and tabs with CSS for responsive flex layout.
 
 ### Previous sub-phases (Phase 4a-4i):
 
@@ -33,15 +42,15 @@ Phase 4 QA fixes (4 critical + 2 minor) and file upload feature
 9. **4f: Prepaid deals tab** — debt-prepaid.js, deal management, checks, auto-deduction from receipt-debt.js — commit `edad755`
 10. **4g: Suppliers table + detail view** — debt-supplier-detail.js, slide-in panel with timeline and 4 sub-tabs — commit `7516714`
 11. **4h: Supplier returns** — debt-returns.js + inventory-return.js, initiation from inventory selection, returns tab in supplier detail — commit `d9e2f4e`
-12. **4i: Documentation** — backup, ROADMAP, SESSION_CONTEXT, CHANGELOG, MODULE_SPEC, MODULE_MAP verification, db-schema verification, CLAUDE.md update — this commit
+12. **4i: Documentation** — backup, ROADMAP, SESSION_CONTEXT, CHANGELOG, MODULE_SPEC, MODULE_MAP verification, db-schema verification, CLAUDE.md update — commit `96c4886`
 
 ## Current State
-- **3 HTML pages**: index.html (home), inventory.html (inventory module), suppliers-debt.html (supplier debt module), employees.html (employee management)
-- **53 JS files** across 9 module folders + 5 global files + 1 script
-- **~10,890 lines of JS code**
+- **4 HTML pages**: index.html (home), inventory.html (inventory module), suppliers-debt.html (supplier debt module), employees.html (employee management)
+- **54 JS files** across 9 module folders + 6 global files + 1 script
+- **~11,200 lines of JS code**
 - **31 DB tables** (20 pre-Phase 4 + 11 new) + 3 RPC functions + seed data
 - **JWT-based RLS** tenant isolation on all tables
-- **New features**: debt dashboard, document management, payment wizard, prepaid deals, supplier detail view, supplier returns, enhanced goods receipt, file upload for supplier documents
+- **Phase 4 features**: debt dashboard with aging report, document management, payment wizard with FIFO allocation, prepaid deals, supplier detail view with timeline, supplier returns, enhanced goods receipt (cost_price auto-update, PO price comparison), file upload for supplier documents
 - **Supabase Storage**: "supplier-docs" bucket for scanned invoices (private, signed URLs)
 
 ## Open Issues
@@ -68,4 +77,6 @@ Phase 5 — AI Agent for Supplier Management (OCR invoices via Claude Vision, au
 - Phase 4g: `7516714` — suppliers table + detail
 - Phase 4h: `d9e2f4e` — supplier returns
 - Phase 4i: `96c4886` — documentation update + backup
-- Phase 4 QA: (this commit) — 6 bug fixes + file upload feature
+- Phase 4 QA + file upload: `043f3ec` — 6 bug fixes + file upload
+- Phase 4 cost_price + PO comparison: `6ab6cfe` — auto-update cost_price + price discrepancy warning
+- Phase 4 aging report: `25cb50c` — debt aging breakdown on dashboard
