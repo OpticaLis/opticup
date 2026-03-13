@@ -258,6 +258,14 @@ async function createAlert(alertType, severity, title, entityType, entityId, dat
   try {
     var tid = getTenantId();
     if (!tid) return null;
+    // Skip alerts for historical documents (Phase 5.5h-2)
+    if (entityType === 'supplier_document' && entityId) {
+      try {
+        var { data: docRow } = await sb.from(T.SUP_DOCS).select('is_historical')
+          .eq('id', entityId).eq('tenant_id', tid).single();
+        if (docRow && docRow.is_historical === true) return null;
+      } catch (e) { /* proceed if check fails */ }
+    }
     // Check ai_agent_config flags
     var cfgRows = await sb.from(T.AI_CONFIG).select('*').eq('tenant_id', tid).limit(1);
     var cfg = (cfgRows.data && cfgRows.data[0]) || {};
