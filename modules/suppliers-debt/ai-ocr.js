@@ -175,6 +175,20 @@ async function showOCRReview(result, fileUrl) {
 
   var ex = $('ocr-review-modal'); if (ex) ex.remove();
   document.body.insertAdjacentHTML('beforeend', html);
+
+  // Validate OCR data and highlight errors
+  if (typeof validateOCRData === 'function') {
+    var vResults = validateOCRData(Object.assign({}, ext, { supplier_match: supMatch }));
+    var fMap = { total_amount: 'ocr-total', document_date: 'ocr-doc-date', due_date: 'ocr-due-date', vat_rate: 'ocr-vat-rate', supplier: 'ocr-supplier' };
+    vResults.forEach(function(v) {
+      var el = $(fMap[v.field]); if (!el) return;
+      var lbl = el.closest('.ocr-flbl') || el.parentElement; if (!lbl) return;
+      var clr = v.level === 'error' ? '#e74c3c' : '#f39c12';
+      lbl.insertAdjacentHTML('beforeend', '<div style="color:' + clr + ';font-size:.8rem;margin-top:2px">' +
+        (v.level === 'error' ? '\uD83D\uDD34' : '\u26A0\uFE0F') + ' ' + escapeHtml(v.msg) + '</div>');
+      if (v.level === 'error') el.style.borderColor = '#e74c3c';
+    });
+  }
 }
 
 // =========================================================
@@ -201,9 +215,7 @@ function _ocrAddItemRow() {
     '<td><input type="number" class="ocr-itm" data-i="' + idx + '" data-f="total" step="0.01"></td></tr>');
 }
 
-// =========================================================
-// 3. Save OCR result + create supplier_document
-// =========================================================
+// --- 3. Save OCR result + create supplier_document ---
 async function _ocrSave(mode) {
   var supplierId = ($('ocr-supplier') || {}).value;
   var typeId = ($('ocr-doc-type') || {}).value;
@@ -289,9 +301,7 @@ async function _ocrSave(mode) {
   } finally { hideLoading(); }
 }
 
-// =========================================================
-// 4. Inject OCR scan buttons into documents table rows
-// =========================================================
+// --- 4. Inject OCR scan buttons into documents table rows ---
 function _injectOCRScanIcons(docs) {
   var wrap = $('doc-table-wrap'); if (!wrap) return;
   var tbody = wrap.querySelector('tbody'); if (!tbody) return;
@@ -309,9 +319,7 @@ function _injectOCRScanIcons(docs) {
   });
 }
 
-// =========================================================
-// 5. Add OCR toolbar button + patch documents rendering
-// =========================================================
+// --- 5. Add OCR toolbar button + patch documents rendering ---
 function _injectOCRToolbarBtn() {
   var toolbar = document.querySelector('.doc-toolbar');
   if (!toolbar || toolbar.querySelector('.ocr-toolbar-btn')) return;

@@ -288,3 +288,52 @@ async function alertPriceAnomaly(item, poPrice, receiptPrice, supplierId, docId)
   return createAlert('price_anomaly', 'warning', title, 'supplier_document', docId,
     { item: item, po_price: poPrice, receipt_price: receiptPrice, supplier_id: supplierId });
 }
+
+// =========================================================
+// validateOCRData — business-rule validation after OCR extraction
+// Returns array of { field, level, msg }. Empty = all valid.
+// =========================================================
+function validateOCRData(data) {
+  if (!data) return [];
+  var results = [];
+  var fv = function(f) { var v = data[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v; };
+  var subtotal = Number(fv('subtotal')) || 0;
+  var vatAmt = Number(fv('vat_amount')) || 0;
+  var total = Number(fv('total_amount')) || 0;
+  var vatRate = fv('vat_rate');
+  var docDate = fv('document_date');
+  var dueDate = fv('due_date');
+  var docType = fv('document_type') || '';
+  var supMatch = data.supplier_match;
+
+  // Amount math: subtotal + vat_amount ≠ total_amount (tolerance ₪1)
+  if (subtotal > 0 && total > 0 && Math.abs((subtotal + vatAmt) - total) > 1) {
+    results.push({ field: 'total_amount', level: 'error', msg: 'סכום לא תואם חישוב' });
+  }
+  // Future date
+  var today = new Date().toISOString().slice(0, 10);
+  if (docDate && docDate > today) {
+    results.push({ field: 'document_date', level: 'error', msg: 'תאריך עתידי' });
+  }
+  // Due before issue
+  if (dueDate && docDate && dueDate < docDate) {
+    results.push({ field: 'due_date', level: 'warning', msg: 'תאריך פירעון לפני תאריך מסמך' });
+  }
+  // Negative amount (not credit note)
+  if (total < 0 && docType !== 'credit_note') {
+    results.push({ field: 'total_amount', level: 'error', msg: 'סכום שלילי' });
+  }
+  // Unusual VAT
+  if (vatRate != null && Number(vatRate) !== 17 && Number(vatRate) !== 0) {
+    results.push({ field: 'vat_rate', level: 'warning', msg: 'שיעור מע"מ חריג' });
+  }
+  // Missing supplier
+  if (!supMatch || (!supMatch.id && !supMatch)) {
+    results.push({ field: 'supplier', level: 'warning', msg: 'ספק לא זוהה' });
+  }
+  // Suspicious total
+  if (total > 500000) {
+    results.push({ field: 'total_amount', level: 'warning', msg: 'סכום חריג (מעל ₪500,000)' });
+  }
+  return results;
+}

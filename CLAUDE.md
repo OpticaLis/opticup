@@ -173,7 +173,7 @@ opticup/
 | `T.AI_CONFIG`     | ai_agent_config          | id, tenant_id, ocr_enabled, confidence_threshold, alerts_enabled, weekly_report_enabled |
 | `T.OCR_TEMPLATES` | supplier_ocr_templates   | id, tenant_id, supplier_id, document_type, extraction_hints, times_used, accuracy_rate |
 | `T.OCR_EXTRACTIONS` | ocr_extractions        | id, tenant_id, file_path, raw_result, confidence, status, template_id   |
-| `T.ALERTS`        | alerts                   | id, tenant_id, alert_type, severity, title, message, source_type, source_id, is_read, dismissed_at |
+| `T.ALERTS`        | alerts                   | id, tenant_id, alert_type, severity, title, message, data (jsonb), status, entity_type, entity_id, dismissed_at |
 | `T.WEEKLY_REPORTS` | weekly_reports          | id, tenant_id, week_start, week_end, report_data (jsonb), generated_by  |
 
 **Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 36 tables.

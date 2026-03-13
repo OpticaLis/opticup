@@ -227,10 +227,15 @@ async function alertAction(alertId, action) {
     if (!alert) return;
 
     // Mark as read
-    await sb.from(T.ALERTS)
-      .update({ status: 'read', read_at: new Date().toISOString() })
-      .eq('id', alertId)
-      .eq('tenant_id', tid);
+    try {
+      await sb.from(T.ALERTS)
+        .update({ status: 'read', read_at: new Date().toISOString() })
+        .eq('id', alertId)
+        .eq('tenant_id', tid);
+    } catch (err) {
+      console.error('alertAction view error:', err);
+      toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E2\u05D3\u05DB\u05D5\u05DF \u05D4\u05EA\u05E8\u05D0\u05D4', 'e');
+    }
 
     // Navigate based on entity_type
     if (alert.entity_type === 'supplier_document') {
@@ -246,28 +251,33 @@ async function alertAction(alertId, action) {
   }
 
   if (action === 'dismiss') {
-    const emp = JSON.parse(sessionStorage.getItem(SK.EMPLOYEE) || 'null');
-    const { error } = await sb.from(T.ALERTS)
-      .update({
-        status: 'dismissed',
-        dismissed_at: new Date().toISOString(),
-        dismissed_by: emp?.id || null
-      })
-      .eq('id', alertId)
-      .eq('tenant_id', tid);
+    try {
+      const emp = JSON.parse(sessionStorage.getItem(SK.EMPLOYEE) || 'null');
+      const { error } = await sb.from(T.ALERTS)
+        .update({
+          status: 'dismissed',
+          dismissed_at: new Date().toISOString(),
+          dismissed_by: emp?.id || null
+        })
+        .eq('id', alertId)
+        .eq('tenant_id', tid);
 
-    if (error) { console.warn('dismiss error:', error.message); return; }
+      if (error) { console.warn('dismiss error:', error.message); return; }
 
-    // Remove from UI
-    const el = document.getElementById('alert-' + alertId);
-    if (el) el.remove();
+      // Remove from UI
+      const el = document.getElementById('alert-' + alertId);
+      if (el) el.remove();
 
-    // Update cache
-    _alertsCache = _alertsCache.filter(a => a.id !== alertId);
+      // Update cache
+      _alertsCache = _alertsCache.filter(a => a.id !== alertId);
 
-    // Refresh badge and re-render if empty
-    await refreshAlertsBadge();
-    if (_alertsCache.length === 0) renderAlertsPanel();
+      // Refresh badge and re-render if empty
+      await refreshAlertsBadge();
+      if (_alertsCache.length === 0) renderAlertsPanel();
+    } catch (err) {
+      console.error('alertAction dismiss error:', err);
+      toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E2\u05D3\u05DB\u05D5\u05DF \u05D4\u05EA\u05E8\u05D0\u05D4', 'e');
+    }
   }
 }
 
@@ -275,16 +285,21 @@ async function markAllAlertsRead() {
   const tid = getTenantId();
   if (!tid) return;
 
-  const { error } = await sb.from(T.ALERTS)
-    .update({ status: 'read', read_at: new Date().toISOString() })
-    .eq('tenant_id', tid)
-    .eq('status', 'unread');
+  try {
+    const { error } = await sb.from(T.ALERTS)
+      .update({ status: 'read', read_at: new Date().toISOString() })
+      .eq('tenant_id', tid)
+      .eq('status', 'unread');
 
-  if (error) { console.warn('mark all read error:', error.message); return; }
+    if (error) { console.warn('mark all read error:', error.message); return; }
 
-  _alertsCache = [];
-  renderAlertsPanel();
-  await refreshAlertsBadge();
+    _alertsCache = [];
+    renderAlertsPanel();
+    await refreshAlertsBadge();
+  } catch (err) {
+    console.error('markAllAlertsRead error:', err);
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E2\u05D3\u05DB\u05D5\u05DF \u05D4\u05EA\u05E8\u05D0\u05D4', 'e');
+  }
 }
 
 // =========================================================

@@ -48,7 +48,9 @@ async function loadWeeklyReport(weekStart) {
       .select('*').eq('tenant_id', tid)
       .eq('week_start', _fd(weekStart)).limit(1);
     var snap = saved && saved.length ? saved[0] : null;
-    if (snap && snap.report_data) {
+    var snapFresh = snap && snap.report_data && snap.updated_at &&
+      (Date.now() - new Date(snap.updated_at).getTime() < 24 * 60 * 60 * 1000);
+    if (snap && snap.report_data && snapFresh) {
       _wrData = snap.report_data;
       _wrData._saved = true;
       _wrData._pdf_url = snap.pdf_url || null;
@@ -57,6 +59,22 @@ async function loadWeeklyReport(weekStart) {
       _wrData = await _gatherReportData(tid, weekStart, weekEnd);
       _wrData._saved = false;
       _wrData._pdf_url = null;
+      // Save snapshot on first render (Fix A)
+      var snapPayload = Object.assign({}, _wrData);
+      delete snapPayload._saved; delete snapPayload._pdf_url; delete snapPayload._report_id;
+      if (snap && snap.id) {
+        await sb.from(T.WEEKLY_REPORTS)
+          .update({ report_data: snapPayload, updated_at: new Date().toISOString() })
+          .eq('id', snap.id).eq('tenant_id', tid);
+        _wrData._report_id = snap.id;
+      } else {
+        var { data: ins } = await sb.from(T.WEEKLY_REPORTS).insert({
+          tenant_id: tid, week_start: _fd(weekStart), week_end: _fd(weekEnd),
+          report_data: snapPayload
+        }).select('id');
+        if (ins && ins[0]) _wrData._report_id = ins[0].id;
+      }
+      _wrData._saved = true;
     }
     _renderWeeklyReport(weekStart, weekEnd);
   } catch (e) {
@@ -248,7 +266,7 @@ async function exportWeeklyPDF() {
     if (_wrData._report_id) {
       await sb.from(T.WEEKLY_REPORTS)
         .update({ report_data: snapData, pdf_generated_at: new Date().toISOString() })
-        .eq('id', _wrData._report_id);
+        .eq('id', _wrData._report_id).eq('tenant_id', tid);
     } else {
       await sb.from(T.WEEKLY_REPORTS).insert({
         tenant_id: tid, week_start: _fd(_wrWeekStart), week_end: _fd(weekEnd),

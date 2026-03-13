@@ -155,7 +155,12 @@ async function _applyOCRToReceipt(result, fileUrl) {
     updateReceiptItemsStats();
   }
 
-  _rcptOcrShowBanner(conf, matchedCount, totalItems, fileUrl);
+  // Validate OCR data and append warnings to banner
+  var _ocrValidation = [];
+  if (typeof validateOCRData === 'function') {
+    _ocrValidation = validateOCRData(Object.assign({}, ext, { supplier_match: supMatch }));
+  }
+  _rcptOcrShowBanner(conf, matchedCount, totalItems, fileUrl, _ocrValidation);
   if (totalItems > 0) {
     toast('\u05D6\u05D5\u05D4\u05D5 ' + matchedCount + ' \u05DE\u05EA\u05D5\u05DA ' + totalItems + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD', 's');
   } else {
@@ -195,16 +200,25 @@ function _rcptOcrHighlightRow(type) {
 }
 
 // --- 6. Show OCR confidence banner at top of receipt form ---
-function _rcptOcrShowBanner(confidence, matched, total, fileUrl) {
+function _rcptOcrShowBanner(confidence, matched, total, fileUrl, validationResults) {
   var existing = $('rcpt-ocr-banner'); if (existing) existing.remove();
+  var hasErrors = validationResults && validationResults.some(function(v) { return v.level === 'error'; });
   var confPct = Math.round((confidence || 0) * 100);
-  var confColor = confPct >= 85 ? '#27ae60' : confPct >= 70 ? '#f39c12' : '#e74c3c';
+  var confColor = hasErrors ? '#e74c3c' : (confPct >= 85 ? '#27ae60' : confPct >= 70 ? '#f39c12' : '#e74c3c');
   var banner = document.createElement('div');
   banner.id = 'rcpt-ocr-banner';
-  banner.style.cssText = 'background:#e3f2fd;border:1px solid #90caf9;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.88rem';
+  banner.style.cssText = 'background:' + (hasErrors ? '#fce4ec' : '#e3f2fd') + ';border:1px solid ' + (hasErrors ? '#ef9a9a' : '#90caf9') + ';border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.88rem';
   var text = '\uD83E\uDD16 \u05DE\u05D5\u05DC\u05D0 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA \u05DE\u05E1\u05E8\u05D9\u05E7\u05D4 \u2014 ';
   text += '\u05E8\u05DE\u05EA \u05D1\u05D9\u05D8\u05D7\u05D5\u05DF: <span style="color:' + confColor + ';font-weight:700">' + confPct + '%</span>';
   if (total > 0) text += ' \u2014 \u05D6\u05D5\u05D4\u05D5 ' + matched + '/' + total + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD';
+  // Show validation warnings/errors
+  if (validationResults && validationResults.length > 0) {
+    text += '<br>';
+    validationResults.forEach(function(v) {
+      var icon = v.level === 'error' ? '\uD83D\uDD34' : '\u26A0\uFE0F';
+      text += '<span style="color:' + (v.level === 'error' ? '#e74c3c' : '#f39c12') + '">' + icon + ' ' + escapeHtml(v.msg) + '</span> ';
+    });
+  }
   banner.innerHTML = text;
   if (fileUrl) {
     var viewBtn = document.createElement('button');
