@@ -43,19 +43,12 @@ async function createDocumentFromReceipt(receiptId, supplierId, receiptItems) {
   const vatAmount = Math.round(subtotal * vatRate) / 100;
   const totalAmount = subtotal + vatAmount;
 
-  // 5. Generate internal_number: DOC-0001, DOC-0002, etc.
-  const allDocs = await fetchAll(T.SUP_DOCS, []);
-  let maxNum = 0;
-  for (const d of allDocs) {
-    if (d.internal_number) {
-      const match = d.internal_number.match(/^DOC-(\d+)$/);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        if (num > maxNum) maxNum = num;
-      }
-    }
-  }
-  const internalNumber = 'DOC-' + String(maxNum + 1).padStart(4, '0');
+  // 5. Generate internal_number via atomic RPC (FOR UPDATE lock on tenant)
+  const { data: internalNumber, error: numError } = await sb.rpc('next_internal_doc_number', {
+    p_tenant_id: getTenantId(),
+    p_prefix: 'DOC'
+  });
+  if (numError) throw new Error('שגיאה ביצירת מספר פנימי: ' + numError.message);
 
   // 6. Calculate dates
   const today = new Date().toISOString().slice(0, 10);

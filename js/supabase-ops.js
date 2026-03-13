@@ -175,36 +175,21 @@ function buildHintsFromCorrections(corrections, extractedData, existingHints) {
   return hints;
 }
 
-async function updateOCRTemplate(supplierId, docTypeCode, corrections, extractedData, templateName) {
+async function updateOCRTemplate(supplierId, docTypeCode, corrections, extractedData, tenantId) {
   if (!supplierId) return;
-  var hasCorr = corrections && Object.keys(corrections).length > 0;
-  var code = docTypeCode || 'general';
+  var tid = tenantId || getTenantId();
+  var wasCorrected = corrections && Object.keys(corrections).length > 0;
+  var hints = buildHintsFromCorrections(corrections, extractedData, {});
   try {
-    var existing = await fetchAll(T.OCR_TEMPLATES, [
-      ['supplier_id', 'eq', supplierId],
-      ['document_type_code', 'eq', code]
-    ]);
-    var template = (existing && existing.length > 0) ? existing[0] : null;
-    var now = new Date().toISOString();
-    if (template) {
-      var used = (template.times_used || 0) + 1;
-      var corrected = (template.times_corrected || 0) + (hasCorr ? 1 : 0);
-      var accuracy = used > 0 ? Math.round((1 - corrected / used) * 10000) / 100 : 100;
-      var hints = buildHintsFromCorrections(corrections, extractedData, template.extraction_hints || {});
-      await batchUpdate(T.OCR_TEMPLATES, [{
-        id: template.id, times_used: used, times_corrected: corrected,
-        accuracy_rate: accuracy, extraction_hints: hints,
-        last_used_at: now, updated_at: now
-      }]);
-    } else {
-      var hints = buildHintsFromCorrections(corrections || {}, extractedData, {});
-      await batchCreate(T.OCR_TEMPLATES, [{
-        supplier_id: supplierId, document_type_code: code,
-        template_name: templateName || code, extraction_hints: hints,
-        times_used: 1, times_corrected: hasCorr ? 1 : 0,
-        accuracy_rate: hasCorr ? 0 : 100, last_used_at: now
-      }]);
-    }
+    var { data, error } = await sb.rpc('update_ocr_template_stats', {
+      p_tenant_id: tid,
+      p_supplier_id: supplierId,
+      p_doc_type_code: docTypeCode || 'general',
+      p_was_corrected: wasCorrected,
+      p_new_hints: Object.keys(hints).length > 0 ? hints : null
+    });
+    if (error) console.error('Template update failed:', error);
+    return data;
   } catch (e) {
     console.warn('updateOCRTemplate error:', e);
   }

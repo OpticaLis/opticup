@@ -369,17 +369,11 @@ async function saveNewDocument() {
 }
 
 async function generateDocInternalNumber() {
-  var res = await sb.from(T.SUP_DOCS)
-    .select('internal_number')
-    .eq('tenant_id', getTenantId())
-    .like('internal_number', 'DOC-%')
-    .order('internal_number', { ascending: false })
-    .limit(1);
-  var maxNum = 0;
-  if (res.data && res.data[0] && res.data[0].internal_number) {
-    var match = res.data[0].internal_number.match(/^DOC-(\d+)$/);
-    if (match) maxNum = parseInt(match[1], 10);
-  }
-  return 'DOC-' + String(maxNum + 1).padStart(4, '0');
+  var { data, error } = await sb.rpc('next_internal_doc_number', {
+    p_tenant_id: getTenantId(),
+    p_prefix: 'DOC'
+  });
+  if (error) throw new Error('שגיאה ביצירת מספר פנימי: ' + error.message);
+  return data;
 }
 
