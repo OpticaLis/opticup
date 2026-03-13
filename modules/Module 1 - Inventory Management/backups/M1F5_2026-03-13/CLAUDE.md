@@ -97,28 +97,24 @@ opticup/
 │   └── header.css              — sticky header styles
 ├── js/
 │   ├── shared.js               — Supabase init, constants, caches, utilities (load FIRST)
-│   ├── supabase-ops.js         — DB operations: writeLog, fetchAll, batch ops, OCR learning, alerts
+│   ├── supabase-ops.js         — DB operations: writeLog, fetchAll, batch ops
 │   ├── data-loading.js         — data loading + enrichment
 │   ├── search-select.js        — searchable dropdown component
 │   ├── auth-service.js         — PIN login, session management, permissions
-│   ├── header.js               — sticky header logic
-│   ├── file-upload.js          — supplier document file upload/preview
-│   └── alerts-badge.js         — bell icon + unread badge + dropdown panel (all pages)
+│   └── header.js               — sticky header logic
 ├── modules/
 │   ├── inventory/              — 8 files (table, entry, edit, export, reduction, excel-import, access-sales, inventory-return)
 │   ├── purchasing/             — 5 files (purchase-orders, po-form, po-items, po-actions, po-view-import)
-│   ├── goods-receipts/         — 7 files (goods-receipt, receipt-form, receipt-actions, receipt-confirm, receipt-debt, receipt-excel, receipt-ocr)
+│   ├── goods-receipts/         — 6 files (goods-receipt, receipt-form, receipt-actions, receipt-confirm, receipt-debt, receipt-excel)
 │   ├── audit/                  — 3 files (audit-log, item-history, qty-modal)
 │   ├── brands/                 — 2 files (brands, suppliers)
-│   ├── access-sync/            — 4 files (access-sync, sync-details, pending-panel, pending-resolve)
+│   ├── access-sync/            — 3 files (access-sync, sync-details, pending-panel, pending-resolve)
 │   ├── admin/                  — 2 files (admin, system-log)
-│   └── suppliers-debt/         — 13 files (debt-dashboard, debt-documents, debt-doc-link, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-supplier-detail, debt-returns, ai-ocr, ai-alerts, ai-weekly-report, ai-config)
+│   └── suppliers-debt/         — 9 files (debt-dashboard, debt-documents, debt-doc-link, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-supplier-detail, debt-returns)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service)
 │   ├── install-service.js
 │   └── uninstall-service.js
-├── supabase/functions/ocr-extract/ — Edge Function (Claude Vision OCR)
-│   └── index.ts
 ├── migrations/
 │   └── *.sql
 ├── modules/Module 1 - Inventory Management/
@@ -170,13 +166,8 @@ opticup/
 | `T.PREPAID_CHECKS`| prepaid_checks           | id, prepaid_deal_id, check_number, amount, check_date, status, tenant_id |
 | `T.SUP_RETURNS`   | supplier_returns         | id, supplier_id, return_number, return_type, status, tenant_id           |
 | `T.SUP_RETURN_ITEMS` | supplier_return_items | id, return_id, inventory_id, barcode, quantity, cost_price, tenant_id    |
-| `T.AI_CONFIG`     | ai_agent_config          | id, tenant_id, ocr_enabled, confidence_threshold, alerts_enabled, weekly_report_enabled |
-| `T.OCR_TEMPLATES` | supplier_ocr_templates   | id, tenant_id, supplier_id, document_type, extraction_hints, times_used, accuracy_rate |
-| `T.OCR_EXTRACTIONS` | ocr_extractions        | id, tenant_id, file_path, raw_result, confidence, status, template_id   |
-| `T.ALERTS`        | alerts                   | id, tenant_id, alert_type, severity, title, message, source_type, source_id, is_read, dismissed_at |
-| `T.WEEKLY_REPORTS` | weekly_reports          | id, tenant_id, week_start, week_end, report_data (jsonb), generated_by  |
 
-**Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 36 tables.
+**Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 31 tables.
 
 ---
 

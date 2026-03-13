@@ -67,7 +67,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 3.75 | ✅ | Multi-Tenancy Foundation | tenant_id על כל הטבלאות, RLS, contracts, תשתית SaaS |
 | 3.8 | ✅ | Sticky Header | שם + לוגו חנות בכל המסכים, header.js מודולרי |
 | 4 | ✅ | מעקב חובות ספקים | חשבוניות, תשלומים, דשבורד חובות, מט"ח |
-| 5 | ✅ | סוכן AI לניהול ספקים | OCR חשבוניות (Claude Vision), התראות, דוחות אוטומטיים |
+| 5 | ⬜ | סוכן AI לניהול ספקים | OCR חשבוניות (Claude Vision), התראות, דוחות אוטומטיים |
 | 6 | ⬜ | פורטל ספקים | גישת ספק חיצונית, view-only מלאי לפי ספק |
 
 ---
@@ -165,7 +165,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - inventory-return.js חדש ב-modules/inventory/
 - receipt-confirm.js + receipt-debt.js חדשים ב-modules/goods-receipts/
 
-### פאזה 5 ✅ — סוכן AI לניהול ספקים
+### פאזה 5 ⬜ — סוכן AI לניהול ספקים
 - OCR חשבוניות: העלאת PDF/תמונה → Claude Vision API → JSON
 - מילוי אוטומטי של supplier_invoices
 - מנגנון למידה מתיקוני משתמש (per tenant)

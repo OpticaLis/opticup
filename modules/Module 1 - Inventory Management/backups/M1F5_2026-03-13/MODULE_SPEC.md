@@ -1,5 +1,5 @@
 # מלאי מסגרות — Module Spec
-## גרסה 5 | מרץ 2026 | Post-Phase 5
+## גרסה 4 | מרץ 2026 | Post-Phase 4
 
 > **Authority:** Business logic flows and screen descriptions. For code details → MODULE_MAP.md. For DB schema → db-schema.sql. For rules → CLAUDE.md.
 
@@ -10,7 +10,7 @@
 **מודול מלאי מסגרות** הוא הליבה של מערכת Optic Up — מנהל את כל מחזור החיים של מסגרות משקפיים במלאי: כניסה, מעקב, עריכה, מכירה, מחיקה, שחזור, ספירת מלאי, סנכרון עם Access, ומעקב חובות ספקים.
 
 **סטאק טכנולוגי:**
-- Frontend: Vanilla JS (no framework), 56 JS modules + CSS
+- Frontend: Vanilla JS (no framework), 52 JS modules + CSS
 - Backend: Supabase (PostgreSQL + REST API + RPC + Edge Functions), client = `sb`
 - Auth: PIN → Edge Function (pin-auth) → signed JWT with tenant_id claim
 - Excel: SheetJS (xlsx) לייבוא/ייצוא
@@ -27,21 +27,17 @@ For complete file index → see MODULE_MAP.md section 1.
 
 לסכימה המלאה (columns, types, constraints, RLS) → ראה **db-schema.sql**.
 
-כל הטבלאות מכילות `tenant_id UUID NOT NULL` מאז פאזה 3.75. JWT-based RLS tenant isolation פעיל על כל 36 הטבלאות.
+כל הטבלאות מכילות `tenant_id UUID NOT NULL` מאז פאזה 3.75. JWT-based RLS tenant isolation פעיל על כל 31 הטבלאות.
 
 **טבלאות עיקריות (pre-Phase 4):** tenants, inventory, brands, suppliers, employees, inventory_logs, inventory_images, purchase_orders, purchase_order_items, goods_receipts, goods_receipt_items, sync_log, pending_sales, watcher_heartbeat, stock_counts, stock_count_items, roles, permissions, role_permissions, employee_roles, auth_sessions.
 
-**טבלאות Phase 4:** document_types, payment_methods, currencies, supplier_documents, document_links, supplier_payments, payment_allocations, prepaid_deals, prepaid_checks, supplier_returns, supplier_return_items.
+**טבלאות חדשות (Phase 4):** document_types, payment_methods, currencies, supplier_documents, document_links, supplier_payments, payment_allocations, prepaid_deals, prepaid_checks, supplier_returns, supplier_return_items.
 
-**טבלאות Phase 5 (AI Agent):** ai_agent_config, supplier_ocr_templates, ocr_extractions, alerts, weekly_reports.
+**RPC Functions:** `increment_inventory`, `decrement_inventory`, `set_inventory_qty`.
 
-**RPC Functions:** `increment_inventory`, `decrement_inventory`, `set_inventory_qty`, `generate_daily_alerts`.
+**Supabase Storage:** bucket `failed-sync-files` for failed Access sync files.
 
-**Supabase Storage:** bucket `failed-sync-files` for failed Access sync files, bucket `supplier-docs` for scanned invoices.
-
-**Edge Functions:**
-- `pin-auth` — validates PIN server-side, returns signed JWT with tenant_id claim
-- `ocr-extract` — Claude Vision API integration, extracts invoice fields from scanned documents
+**Edge Function:** `pin-auth` — validates PIN server-side, returns signed JWT with tenant_id claim.
 
 ---
 
@@ -264,32 +260,6 @@ Standalone page: `suppliers-debt.html` with 4 tabs.
 - **Supplier returns**: initiated from inventory selection, generates RET-{supplier_number}-{seq}
 - **Document linking**: delivery notes can be linked to monthly invoices (document_links)
 
-### 3.14 סריקת חשבוניות OCR (AI OCR) — Phase 5b-5e
-- **OCR scan flow**: upload PDF/image → Edge Function (ocr-extract) → Claude Vision API → extracted JSON
-- **Review modal**: side-by-side view (fields left, document right), confidence indicators per field
-- **Correction tracking**: records diff between AI extraction and user corrections
-- **Goods receipt integration**: "סרוק עם AI" button auto-fills receipt form from scanned invoice
-- **Learning system**: supplier_ocr_templates updated on every correction, accuracy tracking per supplier
-
-### 3.15 התראות (Alerts) — Phase 5f
-- **Alerts badge**: bell icon (🔔) on all 4 pages with unread count
-- **Dropdown panel**: last 10 alerts with type icons, action buttons (view, dismiss, mark read)
-- **Daily alerts** (via generate_daily_alerts RPC): payment_due (7 days), payment_overdue, prepaid_low (<20%)
-- **Event alerts**: price_anomaly (>10% change), duplicate_document, amount_mismatch, ocr_low_confidence
-- **Auto-dismiss**: payment alerts dismissed on payment save, OCR alerts on extraction accept
-
-### 3.16 דוח שבועי (Weekly Report) — Phase 5g
-- **Report tab** in suppliers-debt.html: "דוח שבועי"
-- **4 sections**: debt summary, upcoming payments, prepaid deals status, OCR statistics
-- **Week navigation**: prev/next week buttons
-- **PDF export**: html2canvas + jsPDF (CDN)
-- **Snapshot**: saved to weekly_reports table as JSONB
-
-### 3.17 הגדרות AI (AI Config) — Phase 5h
-- **Settings modal**: accessible to CEO/Manager only
-- **3 config sections**: OCR settings (confidence threshold), Alerts settings (toggle types), Weekly Report settings
-- **Usage statistics**: total scans, templates, alerts, reports
-
 ---
 
 ## 5. Known Issues
@@ -328,7 +298,7 @@ Known issues are tracked in SESSION_CONTEXT.md — single home for all open issu
 ## 9. Multi-Tenancy Foundation (Phase 3.75)
 
 - טבלת `tenants` — id, name, slug, default_currency, timezone, locale, is_active
-- `tenant_id UUID NOT NULL` on all 36 tables, JWT-based RLS tenant isolation
+- `tenant_id UUID NOT NULL` on all 31 tables, JWT-based RLS tenant isolation
 - Edge Function `pin-auth` returns JWT with tenant_id claim
 - `getTenantId()` reads from sessionStorage
 - All inserts include `tenant_id: getTenantId()`
@@ -344,17 +314,19 @@ Known issues are tracked in SESSION_CONTEXT.md — single home for all open issu
 
 ---
 
-## 11. Contracts — RPC Functions & Edge Functions
+## 11. Contracts — Phase 4 RPC/View Plans
 
-**RPC Functions:**
+**RPC Functions (existing, pre-Phase 4):**
 - `increment_inventory(inv_id, delta)` — atomic qty increment
 - `decrement_inventory(inv_id, delta)` — atomic qty decrement (floor 0)
 - `set_inventory_qty(inv_id, new_qty)` — set qty directly
-- `generate_daily_alerts(p_tenant_id)` — generates payment_due, payment_overdue, prepaid_low alerts (idempotent)
 
-**Edge Functions:**
-- `pin-auth` — PIN validation → signed JWT with tenant_id claim
-- `ocr-extract` (POST /functions/v1/ocr-extract) — Claude Vision OCR: accepts file_path + tenant JWT, returns extracted invoice fields with confidence scores
+**Planned RPC Functions (Phase 5+):**
+- `get_supplier_debt(supplier_id)` — aggregated debt summary
+- `get_debt_dashboard()` — tenant-wide debt summary
+- `get_supplier_statement(supplier_id, date_from, date_to)` — full statement
+- `get_overdue_documents(days_threshold)` — overdue document list
+- `get_prepaid_balance(supplier_id)` — prepaid deal remaining
 
 **Planned Views (Phase 6 — Supplier Portal):**
 - `v_supplier_inventory` — supplier sees their items in our inventory
