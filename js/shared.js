@@ -245,4 +245,48 @@ function showEntryMode(mode) {
   if (mode==='excel') resetExcelImport();
 }
 
+// =========================================================
+// INFO MODAL — shared helper for ❓ help modals
+// =========================================================
+function showInfoModal(title, bodyHTML) {
+  var old = document.getElementById('info-modal-overlay');
+  if (old) old.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'info-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:12px;max-width:600px;width:92%;max-height:80vh;display:flex;flex-direction:column;direction:rtl;text-align:right;box-shadow:0 8px 32px rgba(0,0,0,.25)';
+  var header = document.createElement('div');
+  header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid #e0e0e0;flex-shrink:0';
+  var h3 = document.createElement('h3');
+  h3.style.cssText = 'margin:0;font-size:1.1rem';
+  h3.textContent = title;
+  var closeX = document.createElement('button');
+  closeX.className = 'btn-sm';
+  closeX.textContent = '\u2715';
+  closeX.onclick = function() { overlay.remove(); };
+  header.appendChild(h3);
+  header.appendChild(closeX);
+  box.appendChild(header);
+  var body = document.createElement('div');
+  body.style.cssText = 'padding:16px 20px;line-height:1.8;font-size:.92rem;overflow-y:auto';
+  body.innerHTML = bodyHTML;
+  box.appendChild(body);
+  var footer = document.createElement('div');
+  footer.style.cssText = 'padding:12px 20px;border-top:1px solid #e0e0e0;text-align:left;flex-shrink:0';
+  var closeBtn = document.createElement('button');
+  closeBtn.className = 'btn btn-p';
+  closeBtn.textContent = '\u05E1\u05D2\u05D5\u05E8';
+  closeBtn.onclick = function() { overlay.remove(); };
+  footer.appendChild(closeBtn);
+  box.appendChild(footer);
+  overlay.appendChild(box);
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  var escHandler = function(e) {
+    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', escHandler); }
+  };
+  document.addEventListener('keydown', escHandler);
+  document.body.appendChild(overlay);
+}
+
 // (Token management removed — using Supabase anon key)

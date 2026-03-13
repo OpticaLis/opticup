@@ -74,6 +74,10 @@
   .aging-bucket .ab-bar { height: 6px; border-radius: 3px; background: var(--g200); overflow: hidden; }
   .aging-bucket .ab-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
   @media (max-width: 480px) { .aging-row { gap: 4px; } .aging-bucket .ab-amount { font-size: .85rem; } }
+
+  /* Info help buttons */
+  .info-help-btn { background: none; border: 1px solid var(--g200); cursor: pointer; font-size: 1rem; padding: 2px 7px; border-radius: 50%; opacity: .7; transition: all .2s; line-height: 1; }
+  .info-help-btn:hover { opacity: 1; background: var(--g100); border-color: var(--primary); }
 </style>
 </head>
 <body>
@@ -188,6 +192,8 @@
 <script src="modules/suppliers-debt/ai-historical-import.js"></script>
 <script src="modules/suppliers-debt/ai-weekly-report.js"></script>
 <script src="modules/suppliers-debt/ai-config.js"></script>
+<script src="modules/suppliers-debt/debt-info-content.js"></script>
+<script src="modules/suppliers-debt/debt-info-inject.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <script>

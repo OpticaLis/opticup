@@ -8,7 +8,7 @@
 
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
-| 1 | shared.js | js/shared.js | 185 | Supabase client init, table constants (T), FIELD_MAP/ENUM_MAP, Hebrew↔English translation, UI helpers ($, toast, setAlert, confirmDialog, showLoading), tab navigation (showTab, showEntryMode), escapeHtml, global variable declarations |
+| 1 | shared.js | js/shared.js | 292 | Supabase client init, table constants (T), FIELD_MAP/ENUM_MAP, Hebrew↔English translation, UI helpers ($, toast, setAlert, confirmDialog, showLoading), tab navigation (showTab, showEntryMode), escapeHtml, showInfoModal, global variable declarations |
 | 2 | supabase-ops.js | js/supabase-ops.js | 291 | Database abstraction layer: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (individual updates, RLS-safe), writeLog, generateNextBarcode, OCR learning helpers (updateOCRTemplate, buildHintsFromCorrections), alert engine (createAlert, alertPriceAnomaly) |
 | 3 | data-loading.js | js/data-loading.js | 167 | App initialization: loadData, loadMaxBarcode, populateDropdowns, low stock alerts (loadLowStockAlerts, refreshLowStockBanner, openLowStockModal), helper functions (activeBrands, supplierOpts, getBrandType, getBrandSync) |
 | 4 | search-select.js | js/search-select.js | 136 | Reusable searchable dropdown component: createSearchSelect, closeAllDropdowns, repositionDropdown, MutationObserver cleanup |
@@ -74,8 +74,10 @@
 | 60 | ai-batch-upload.js | modules/suppliers-debt/ai-batch-upload.js | 332 | Batch document upload: drag-drop modal, SHA-256 file hash dedup (within batch + against DB), upload-only or upload+OCR modes, progress bar, file preview, batch_id tracking. Injects toolbar button via monkey-patch |
 | 61 | ai-batch-ocr.js | modules/suppliers-debt/ai-batch-ocr.js | 297 | Batch OCR processing: sequential pipeline with pause/resume, retry failed, auto-approve above confidence threshold, review individual docs, summary modal with stats. Entry point: window._startBatchOCR(batchId, docIds) |
 | 62 | ai-historical-import.js | modules/suppliers-debt/ai-historical-import.js | 330 | Historical document import: drag-drop upload for old documents, marks is_historical=true (no inventory impact, no alerts), default status selection (paid/open/per_doc), OCR + learning for supplier templates, per-supplier accuracy summary |
+| 63 | debt-info-content.js | modules/suppliers-debt/debt-info-content.js | 250 | Info modal content for all supplier debt screens; 12 _show*Info() functions + _injectInfoBtn helper |
+| 64 | debt-info-inject.js | modules/suppliers-debt/debt-info-inject.js | 182 | Monkey-patches to inject ❓ buttons into supplier debt screens; _injectModalInfoBtn helper + all tab/modal patches |
 
-**Total: 62 files, ~14,500 lines** (includes scripts/sync-watcher.js)
+**Total: 64 files, ~14,932 lines** (includes scripts/sync-watcher.js)
 
 **Note (Phase 5.5h-2):** ai-historical-import.js added (modules/suppliers-debt/). Historical document import with drag-drop, is_historical marking, default status selection, OCR learning with per-supplier accuracy summary. Script tag added to suppliers-debt.html.
 
@@ -159,6 +161,7 @@
 | `showEntryMode` | `(mode)` | Switches between manual/excel/receipt entry sub-modes |
 | `getTenantId` | `()` | Returns tenant_id UUID from sessionStorage ('prizma_tenant_id'). Used in every insert/select as defense-in-depth alongside RLS (Phase 3.75) |
 | `formatILS` | `(amount)` | Formats number as ILS currency string (₪1,234) with thousands separator. Moved from debt-dashboard.js in Phase 4d |
+| `showInfoModal` | `(title, bodyHTML)` | Creates overlay info modal with title, body HTML, close button, Escape handler |
 
 ### js/supabase-ops.js
 
@@ -883,6 +886,30 @@
 | `_renderHistFileList` | `()` | Renders file list with status indicators and preview buttons |
 | `_injectHistImportBtn` | `()` | Injects "ייבוא היסטורי" button into documents tab toolbar via monkey-patch |
 
+### modules/suppliers-debt/debt-info-content.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `_injectInfoBtn` | `(parent, clickFn)` | Injects ❓ button into a parent element (prevents duplicates) |
+| `_showDashboardInfo` | `()` | Shows dashboard info modal |
+| `_showSuppliersInfo` | `()` | Shows suppliers tab info modal |
+| `_showDocumentsInfo` | `()` | Shows documents tab info modal |
+| `_showNewDocInfo` | `()` | Shows new document modal info |
+| `_showPaymentsInfo` | `()` | Shows payments tab info modal |
+| `_showPayWizardInfo` | `()` | Shows payment wizard info modal |
+| `_showPrepaidInfo` | `()` | Shows prepaid deals tab info modal |
+| `_showWeeklyReportInfo` | `()` | Shows weekly report info modal |
+| `_showBatchUploadInfo` | `()` | Shows batch upload info modal |
+| `_showHistImportInfo` | `()` | Shows historical import info modal |
+| `_showOCRReviewInfo` | `()` | Shows OCR review info modal |
+| `_showAIConfigInfo` | `()` | Shows AI config info modal |
+
+### modules/suppliers-debt/debt-info-inject.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `_injectModalInfoBtn` | `(modalId, infoFn)` | Injects ❓ button next to h3 in a modal |
+
 ### modules/inventory/inventory-return.js
 
 | Function | Parameters | Description |
@@ -1555,6 +1582,15 @@ ai-historical-import.js
   → reads: _docSuppliers [debt-documents.js], T.SUP_DOCS, T.OCR_EXTRACTIONS, T.OCR_TEMPLATES [shared.js]
   → patches: loadDocumentsTab() [debt-documents.js] (injects toolbar button)
   → provides: _openHistoricalImportModal()
+
+debt-info-content.js
+  → calls: showInfoModal() [shared.js]
+  → provides: _injectInfoBtn(), _showDashboardInfo(), _showSuppliersInfo(), _showDocumentsInfo(), _showNewDocInfo(), _showPaymentsInfo(), _showPayWizardInfo(), _showPrepaidInfo(), _showWeeklyReportInfo(), _showBatchUploadInfo(), _showHistImportInfo(), _showOCRReviewInfo(), _showAIConfigInfo()
+
+debt-info-inject.js
+  → calls: _injectInfoBtn(), _showDashboardInfo(), _showSuppliersInfo(), _showDocumentsInfo(), _showNewDocInfo(), _showPaymentsInfo(), _showPayWizardInfo(), _showPrepaidInfo(), _showWeeklyReportInfo(), _showBatchUploadInfo(), _showHistImportInfo(), _showOCRReviewInfo(), _showAIConfigInfo() [debt-info-content.js]
+  → patches: loadDashboardTab(), loadSuppliersTab(), loadDocumentsTab(), loadPaymentsTab(), loadPrepaidTab(), initWeeklyReport(), openAIConfig() (injects ❓ buttons)
+  → provides: _injectModalInfoBtn()
 
 inventory-return.js
   → reads: invSelected [inventory-table.js], brandCacheRev, supplierCacheRev [shared.js]
