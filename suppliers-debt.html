@@ -119,6 +119,7 @@
       <button class="debt-tab-btn" data-tab="documents" onclick="switchDebtTab('documents')">מסמכים</button>
       <button class="debt-tab-btn" data-tab="payments" onclick="switchDebtTab('payments')">תשלומים</button>
       <button class="debt-tab-btn" data-tab="prepaid" onclick="switchDebtTab('prepaid')">עסקאות מראש</button>
+      <button class="debt-tab-btn" data-tab="weekly" onclick="switchDebtTab('weekly')">&#128202; דוח שבועי</button>
     </div>
 
     <!-- Tab content areas -->
@@ -133,6 +134,9 @@
     </div>
     <div id="dtab-prepaid" class="debt-tab-content">
       <div class="empty-state">אין נתונים להצגה</div>
+    </div>
+    <div id="dtab-weekly" class="debt-tab-content">
+      <div id="weeklyReportContent"><div class="empty-state">טוען...</div></div>
     </div>
   </div>
 
@@ -178,6 +182,9 @@
 <script src="modules/suppliers-debt/debt-returns.js"></script>
 <script src="modules/suppliers-debt/ai-ocr.js"></script>
 <script src="modules/suppliers-debt/ai-alerts.js"></script>
+<script src="modules/suppliers-debt/ai-weekly-report.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <script>
 // =========================================================
 // Tab switching
@@ -194,6 +201,7 @@ function switchDebtTab(tabName) {
   if (tabName === 'documents') loadDocumentsTab();
   if (tabName === 'payments') loadPaymentsTab();
   if (tabName === 'prepaid') loadPrepaidTab();
+  if (tabName === 'weekly') initWeeklyReport();
 }
 
 // =========================================================

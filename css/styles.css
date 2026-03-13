@@ -311,3 +311,31 @@ tr.row-err td{background:#fef2f2}
   .ocr-fields-grid{grid-template-columns:1fr}
   .ocr-footer{flex-wrap:wrap}
 }
+
+/* Weekly Report (Phase 5g) */
+.weekly-report-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.weekly-report-header h3{margin:0;font-size:1.1rem;color:var(--primary);text-align:center;flex:1}
+.weekly-report-header button[disabled]{opacity:.4;cursor:not-allowed}
+.weekly-report-section{margin-bottom:14px}
+.weekly-report-card{background:var(--white);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.weekly-report-card h4{margin:0 0 12px;font-size:.95rem;color:var(--primary);border-bottom:1px solid var(--g200);padding-bottom:8px}
+.weekly-stat{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;margin-bottom:6px;font-size:.9rem}
+.weekly-stat span{color:var(--g500)}
+.weekly-stat strong{color:var(--primary);font-size:1.05rem}
+.weekly-upcoming-row{display:flex;gap:12px;padding:6px 0;border-bottom:1px solid var(--g100);font-size:.88rem;align-items:center}
+.weekly-upcoming-row:last-child{border-bottom:none}
+.wur-date{min-width:80px;color:var(--g500);font-size:.82rem}
+.wur-name{flex:1;font-weight:500}
+.wur-amount{font-weight:600;color:var(--primary)}
+.wur-doc{font-size:.8rem;color:var(--g400);min-width:80px;text-align:left}
+.weekly-prepaid-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--g100);font-size:.88rem}
+.weekly-prepaid-row:last-child{border-bottom:none}
+.weekly-ocr-stats{display:flex;flex-wrap:wrap;gap:16px;font-size:.9rem}
+.weekly-ocr-stats span{color:var(--g500)}
+.weekly-ocr-stats strong{color:var(--primary)}
+.weekly-report-actions{display:flex;gap:10px;margin-top:16px;justify-content:center}
+@media(max-width:480px){
+  .weekly-report-header{flex-wrap:wrap}
+  .weekly-upcoming-row{flex-wrap:wrap;gap:4px}
+  .weekly-ocr-stats{gap:8px;font-size:.82rem}
+}

@@ -52,7 +52,7 @@
 | 39 | employees.html | employees.html | ~120 | Standalone employee management page (extracted from inventory.html employees tab). adminBtn in header, homeBtn always visible in nav |
 | 40 | header.css | css/header.css | 98 | Sticky header styles: 60px height, z-index 1000, RTL, 3-zone flex layout (right: logo+store, center: app name, left: employee+logout), responsive below 600px hides role |
 | 41 | header.js | js/header.js | 58 | Sticky header logic: initHeader (DOMContentLoaded, session check, tenant fetch), buildHeader (DOM injection, escapeHtml, clearSession logout) |
-| 42 | suppliers-debt.html | suppliers-debt.html | ~195 | Supplier debt tracking page: summary cards, 4 tabs, session check, tab switching. debt-main-content wrapper + supplier-detail-panel for detail view |
+| 42 | suppliers-debt.html | suppliers-debt.html | ~230 | Supplier debt tracking page: summary cards, 5 tabs (suppliers, documents, payments, prepaid, weekly report), session check, tab switching. CDN: jsPDF + html2canvas. debt-main-content wrapper + supplier-detail-panel for detail view |
 | 43 | debt-dashboard.js | modules/suppliers-debt/debt-dashboard.js | ~275 | Debt dashboard summary: loadDebtSummary (calls loadAgingReport), loadAgingReport (5-bucket aging breakdown), loadSuppliersTab (aggregated supplier table with debt/overdue/prepaid), renderSuppliersTable, openPaymentForSupplier |
 | 44 | debt-documents.js | modules/suppliers-debt/debt-documents.js | ~360 | Documents tab: loadDocumentsTab (fetch docs+types+suppliers), renderDocFilterBar (supplier/type/status/date/overdue filters), applyDocFilters (client-side), renderDocumentsTable, viewDocument (file preview modal), _attachFileToDoc (file upload), openNewDocumentModal (PIN-verified CRUD), saveNewDocument, generateDocInternalNumber |
 | 45 | debt-doc-link.js | modules/suppliers-debt/debt-doc-link.js | 72 | Delivery note → invoice linking: openLinkToInvoiceModal (shows supplier's invoices), linkDeliveryToInvoice (creates document_links record, updates status to linked) |
@@ -68,8 +68,11 @@
 
 | 55 | alerts-badge.js | js/alerts-badge.js | 323 | Bell icon + unread badge + dropdown panel on ALL pages: initAlertsBadge (inject bell into header), refreshAlertsBadge (poll unread count every 60s), toggleAlertsPanel/openAlertsPanel/closeAlertsPanel, loadAlertsList (last 10 unread), alertAction (view/dismiss), markAllAlertsRead, timeAgo (Hebrew relative time) |
 | 56 | ai-alerts.js | modules/suppliers-debt/ai-alerts.js | 219 | Event-driven alerts + auto-dismiss + hooks: checkDuplicateDocument, alertDuplicateDocument, alertAmountMismatch, alertOCRLowConfidence, autoDismissAlerts. Patches: saveNewDocument (duplicate check), linkDeliveryToInvoice (amount mismatch), _ocrSave (auto-dismiss OCR), _wizSavePayment (auto-dismiss payment), triggerOCR (low confidence check) |
+| 57 | ai-weekly-report.js | modules/suppliers-debt/ai-weekly-report.js | 274 | Weekly report screen + PDF export: initWeeklyReport (default to current week), navigateWeek (prev/next), loadWeeklyReport (load snapshot or live data), _gatherReportData (parallel queries: total debt, payments, new docs, upcoming, prepaid, OCR stats), _renderWeeklyReport (4 sections: summary, upcoming, prepaid, OCR), exportWeeklyPDF (html2canvas + jsPDF, snapshot save to weekly_reports) |
 
-**Total: 56 files, ~11,790 lines** (includes scripts/sync-watcher.js)
+**Total: 57 files, ~12,070 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 5g):** ai-weekly-report.js added (modules/suppliers-debt/). Weekly report tab in suppliers-debt.html with 4 sections: summary (total debt + change vs prev week), upcoming payments (14 days), prepaid deals status, OCR stats. Week navigation (prev/next). PDF export via html2canvas + jsPDF (CDN). Snapshot saved to weekly_reports table. Historical reports load from saved snapshots. CSS added to styles.css. CDN scripts (jspdf, html2canvas) added with defer to suppliers-debt.html.
 
 **Note (Phase 5f-2):** ai-alerts.js added (modules/suppliers-debt/). Event-driven alert system: createAlert + alertPriceAnomaly in supabase-ops.js (shared across all pages). ai-alerts.js provides duplicate document check, amount mismatch, OCR low confidence alerts + auto-dismiss on payment/OCR accept. Hooks via monkey-patching saveNewDocument, linkDeliveryToInvoice, _ocrSave, _wizSavePayment, triggerOCR. receipt-confirm.js checkPoPriceDiscrepancies now calls alertPriceAnomaly for each price anomaly. Respects ai_agent_config flags.
 
@@ -633,7 +636,7 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `switchDebtTab` | `(tabName)` | Switches active tab button and content div for the 4 debt tabs (suppliers, documents, payments, prepaid) |
+| `switchDebtTab` | `(tabName)` | Switches active tab button and content div for the 5 debt tabs (suppliers, documents, payments, prepaid, weekly). Calls initWeeklyReport for weekly tab |
 
 ### modules/suppliers-debt/debt-dashboard.js
 
@@ -772,6 +775,20 @@
 | `_patchDocLinking` | `()` | Patches linkDeliveryToInvoice to check invoice vs delivery notes total mismatch |
 | `_patchOCRSave` | `()` | Patches _ocrSave to auto-dismiss ocr_low_confidence on accept/correct |
 | `_patchPaymentSave` | `()` | Patches _wizSavePayment to auto-dismiss payment_due/payment_overdue on allocated docs |
+
+### modules/suppliers-debt/ai-weekly-report.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `initWeeklyReport` | `()` | Calculates current week's Sunday, calls loadWeeklyReport. Called when weekly tab opened |
+| `navigateWeek` | `(delta)` | Navigates week by delta (-1=prev, +1=next). Blocks future week navigation |
+| `loadWeeklyReport` | `(weekStart)` | Async. Checks weekly_reports for saved snapshot; if found uses it, otherwise calls _gatherReportData for live data |
+| `_gatherReportData` | `(tid, weekStart, weekEnd)` | Async. 8 parallel queries: open docs (total debt), week payments, new docs count, upcoming 14-day payments, active prepaid deals, OCR extractions, suppliers lookup, previous week snapshot |
+| `_renderWeeklyReport` | `(weekStart, weekEnd)` | Renders 4-section report: summary with debt change, upcoming payments table, prepaid deals with low-warning, OCR stats bar. Week navigation header |
+| `exportWeeklyPDF` | `()` | Async. Uses html2canvas to render report element, jsPDF to create PDF. Auto-downloads. Saves/updates snapshot in weekly_reports table |
+| `_wrCard` | `(title, body)` | Returns HTML string for a weekly report card section |
+| `_fd` | `(d)` | Returns YYYY-MM-DD string from Date object |
+| `_fdh` | `(d)` | Returns DD/MM/YYYY string from Date object |
 
 ### modules/inventory/inventory-return.js
 
@@ -1015,6 +1032,13 @@
 |----------|------|---------------|-------------|
 | `_ocrExtractionId` | String/null | `null` | Current OCR extraction ID being reviewed |
 | `_ocrOriginalData` | Object/null | `null` | Deep copy of original AI-extracted data for correction diff |
+
+### modules/suppliers-debt/ai-weekly-report.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `_wrWeekStart` | Date/null | `null` | Current week start (Sunday) being viewed |
+| `_wrData` | Object/null | `null` | Current report data object (live or from snapshot) |
 
 ### modules/suppliers-debt/debt-payments.js
 
@@ -1350,6 +1374,13 @@ ai-alerts.js
     _ocrSave() [ai-ocr.js], _wizSavePayment() [debt-payment-alloc.js], triggerOCR() [ai-ocr.js]
   → provides: checkDuplicateDocument(), alertDuplicateDocument(), alertAmountMismatch(),
     alertOCRLowConfidence(), autoDismissAlerts(), _patchAlertHooks()
+
+ai-weekly-report.js
+  → calls: sb.from() [shared.js], formatILS(), escapeHtml(), $(), showLoading(), hideLoading(), toast(), getTenantId() [shared.js]
+  → uses: T.SUP_DOCS, T.SUP_PAYMENTS, T.PREPAID_DEALS, T.OCR_EXTRACTIONS, T.SUPPLIERS, T.WEEKLY_REPORTS [shared.js]
+  → uses: html2canvas (CDN), jspdf (CDN)
+  → provides: initWeeklyReport(), navigateWeek(), loadWeeklyReport(), exportWeeklyPDF()
+  → globals: _wrWeekStart, _wrData
 
 inventory-return.js
   → reads: invSelected [inventory-table.js], brandCacheRev, supplierCacheRev [shared.js]
