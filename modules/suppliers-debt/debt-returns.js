@@ -42,7 +42,7 @@ async function loadReturnsForSupplier(supplierId) {
     var allItems = [];
     if (returnIds.length) {
       allItems = await fetchAll(T.SUP_RETURN_ITEMS, [
-        ['return_id', 'in', '(' + returnIds.join(',') + ')']
+        ['return_id', 'in', returnIds]
       ]);
     }
 
@@ -251,7 +251,15 @@ async function updateReturnStatus(returnId, newStatus) {
 // Generate return number — RET-{supplier_number}-{seq 4-digit}
 // =========================================================
 async function generateReturnNumber(supplierId) {
-  var supNum = supplierNumCache[supplierId];
+  var supNum = (typeof supplierNumCache !== 'undefined' && supplierNumCache[supplierId])
+    ? supplierNumCache[supplierId] : null;
+  if (!supNum) {
+    // Fallback: fetch supplier_number directly (for pages without loadLookupCaches)
+    try {
+      var res = await sb.from('suppliers').select('supplier_number').eq('id', supplierId).single();
+      supNum = res.data ? res.data.supplier_number : null;
+    } catch (e) { /* ignore */ }
+  }
   if (!supNum) { toast('ספק ללא מספר — פנה למנהל', 'e'); return null; }
   var prefix = 'RET-' + supNum + '-';
   var data = [];

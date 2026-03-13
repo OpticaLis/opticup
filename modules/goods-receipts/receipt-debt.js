@@ -90,6 +90,25 @@ async function createDocumentFromReceipt(receiptId, supplierId, receiptItems) {
   const created = await batchCreate(T.SUP_DOCS, [docRow]);
   const createdDoc = created[0] || null;
 
+  // 9b. Upload attached file if exists
+  if (createdDoc && typeof _pendingReceiptFile !== 'undefined' && _pendingReceiptFile) {
+    try {
+      const uploadResult = await uploadSupplierFile(_pendingReceiptFile, supplierId);
+      if (uploadResult) {
+        await batchUpdate(T.SUP_DOCS, [{
+          id: createdDoc.id,
+          file_url: uploadResult.url,
+          file_name: uploadResult.fileName
+        }]);
+        createdDoc.file_url = uploadResult.url;
+        createdDoc.file_name = uploadResult.fileName;
+      }
+    } catch (uploadErr) {
+      console.warn('File upload for receipt document failed (non-blocking):', uploadErr);
+    }
+    _pendingReceiptFile = null;
+  }
+
   // 10. Auto-deduct from active prepaid deal if exists
   try {
     const deals = await fetchAll(T.PREPAID_DEALS, [

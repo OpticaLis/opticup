@@ -435,6 +435,11 @@
         <div class="form-group" style="flex:2;min-width:200px"><label>הערות</label>
           <input type="text" id="rcpt-notes" placeholder="הערות חופשיות...">
         </div>
+        <div class="form-group" style="min-width:140px">
+          <label>מסמך מצורף</label>
+          <button class="btn btn-g btn-sm" id="rcpt-attach-btn" onclick="_pickReceiptFile()" style="width:100%">&#128206; צרף מסמך</button>
+          <span id="rcpt-attach-name" style="font-size:.78rem;color:var(--g600);display:block;margin-top:2px"></span>
+        </div>
       </div>
     </div>
 
@@ -822,6 +827,7 @@
 <script src="js/supabase-ops.js"></script>
 <script src="js/data-loading.js"></script>
 <script src="js/search-select.js"></script>
+<script src="js/file-upload.js"></script>
 <script src="modules/inventory/inventory-reduction.js"></script>
 <script src="modules/inventory/access-sales.js"></script>
 <script src="modules/inventory/inventory-table.js"></script>

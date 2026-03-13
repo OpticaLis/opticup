@@ -92,6 +92,13 @@ async function confirmReceipt() {
     return;
   }
 
+  // Warn if no file attached
+  if (!_pendingReceiptFile) {
+    const attachOk = await confirmDialog('לא צורף מסמך',
+      'לא צורף מסמך לקבלה זו. להמשיך בלי מסמך?');
+    if (!attachOk) return;
+  }
+
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
   const ok = await confirmDialog('אישור קבלת סחורה',
     `האם לאשר קבלה ${rcptNumber} עם ${items.length} פריטים (${totalQty} יח׳) ולעדכן מלאי?`);

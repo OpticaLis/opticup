@@ -15,7 +15,7 @@ async function openSupplierReturnModal() {
   showLoading('טוען פרטי פריטים...');
   try {
     // Fetch full item data for selected IDs
-    var items = await fetchAll(T.INV, [['id', 'in', '(' + ids.join(',') + ')']]);
+    var items = await fetchAll(T.INV, [['id', 'in', ids]]);
     if (!items.length) { toast('לא נמצאו פריטים', 'e'); hideLoading(); return; }
 
     // Check all items belong to the same supplier
@@ -56,7 +56,7 @@ async function openSupplierReturnModal() {
         '<td>' + escapeHtml(item.color || '') + '</td>' +
         '<td>' + escapeHtml(item.size || '') + '</td>' +
         '<td>' + (item.quantity || 0) + '</td>' +
-        '<td>' + (item.cost_price || 0) + '</td>' +
+        '<td>' + formatILS(item.cost_price) + '</td>' +
       '</tr>';
     }).join('');
 

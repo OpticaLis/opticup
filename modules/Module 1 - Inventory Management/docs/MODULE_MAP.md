@@ -9,7 +9,7 @@
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
 | 1 | shared.js | js/shared.js | 185 | Supabase client init, table constants (T), FIELD_MAP/ENUM_MAP, Hebrew↔English translation, UI helpers ($, toast, setAlert, confirmDialog, showLoading), tab navigation (showTab, showEntryMode), escapeHtml, global variable declarations |
-| 2 | supabase-ops.js | js/supabase-ops.js | 176 | Database abstraction layer: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (grouped upsert), writeLog, generateNextBarcode |
+| 2 | supabase-ops.js | js/supabase-ops.js | 176 | Database abstraction layer: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (individual updates, RLS-safe), writeLog, generateNextBarcode |
 | 3 | data-loading.js | js/data-loading.js | 167 | App initialization: loadData, loadMaxBarcode, populateDropdowns, low stock alerts (loadLowStockAlerts, refreshLowStockBanner, openLowStockModal), helper functions (activeBrands, supplierOpts, getBrandType, getBrandSync) |
 | 4 | search-select.js | js/search-select.js | 136 | Reusable searchable dropdown component: createSearchSelect, closeAllDropdowns, repositionDropdown, MutationObserver cleanup |
 | 5 | inventory-table.js | modules/inventory/inventory-table.js | 275 | Main inventory table: server-side paginated loading, filtering (search/supplier/type/qty), sorting, rendering with inline edit cells, event delegation for row actions |
@@ -25,10 +25,10 @@
 | 15 | po-actions.js | modules/purchasing/po-actions.js | 235 | PO lifecycle actions: savePODraft (with duplicate row detection), sendPurchaseOrder, cancelPO, exportPOExcel, exportPOPdf |
 | 16 | po-view-import.js | modules/purchasing/po-view-import.js | 319 | Read-only PO view with received qty tracking, importPOToInventory (creates/updates inventory from PO items), createPOForBrand (from low stock modal), PO event delegation |
 | 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 275 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (populates items from PO), updatePOStatusAfterReceipt, openNewReceipt |
-| 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 274 | Receipt form: openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow, getReceiptItems, updateReceiptItemsStats, addNewReceiptRow, showReceiptGuide |
+| 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 292 | Receipt form: openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow, getReceiptItems, updateReceiptItemsStats, addNewReceiptRow, showReceiptGuide, _pickReceiptFile (file attach) |
 | 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 174 | Receipt save/cancel: saveReceiptDraft, saveReceiptDraftInternal, cancelReceipt, backToReceiptList |
 | 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 167 | Receipt confirmation: confirmReceipt, confirmReceiptCore, confirmReceiptById (from list), createNewInventoryFromReceiptItem |
-| 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 112 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt. Phase 4f: auto-deducts from active prepaid deal if exists |
+| 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 130 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt. Uploads attached file if _pendingReceiptFile exists. Phase 4f: auto-deducts from active prepaid deal if exists |
 | 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 195 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, receipt list event delegation |
 | 21 | audit-log.js | modules/audit/audit-log.js | 215 | Soft delete flow (deleteInvRow, confirmSoftDelete), recycle bin (openRecycleBin, restoreItem, permanentDelete with double PIN) |
 | 22 | item-history.js | modules/audit/item-history.js | 323 | Item timeline (openItemHistory), ACTION_MAP constant (21 action types), entry history accordion (openEntryHistory, loadEntryHistory, renderEntryHistory), exports |
@@ -53,17 +53,20 @@
 | 41 | header.js | js/header.js | 58 | Sticky header logic: initHeader (DOMContentLoaded, session check, tenant fetch), buildHeader (DOM injection, escapeHtml, clearSession logout) |
 | 42 | suppliers-debt.html | suppliers-debt.html | ~195 | Supplier debt tracking page: summary cards, 4 tabs, session check, tab switching. debt-main-content wrapper + supplier-detail-panel for detail view |
 | 43 | debt-dashboard.js | modules/suppliers-debt/debt-dashboard.js | ~230 | Debt dashboard summary: loadDebtSummary, loadSuppliersTab (aggregated supplier table with debt/overdue/prepaid), renderSuppliersTable, openPaymentForSupplier |
-| 44 | debt-documents.js | modules/suppliers-debt/debt-documents.js | 300 | Documents tab: loadDocumentsTab (fetch docs+types+suppliers), renderDocFilterBar (supplier/type/status/date/overdue filters), applyDocFilters (client-side), renderDocumentsTable, openNewDocumentModal (PIN-verified CRUD), saveNewDocument, generateDocInternalNumber, viewDocument |
+| 44 | debt-documents.js | modules/suppliers-debt/debt-documents.js | ~360 | Documents tab: loadDocumentsTab (fetch docs+types+suppliers), renderDocFilterBar (supplier/type/status/date/overdue filters), applyDocFilters (client-side), renderDocumentsTable, viewDocument (file preview modal), _attachFileToDoc (file upload), openNewDocumentModal (PIN-verified CRUD), saveNewDocument, generateDocInternalNumber |
 | 45 | debt-doc-link.js | modules/suppliers-debt/debt-doc-link.js | 72 | Delivery note → invoice linking: openLinkToInvoiceModal (shows supplier's invoices), linkDeliveryToInvoice (creates document_links record, updates status to linked) |
 | 46 | debt-payments.js | modules/suppliers-debt/debt-payments.js | 168 | Payments tab: loadPaymentsTab (fetch payments+methods+suppliers+allocations+documents), renderPaymentsToolbar (filters + add button), applyPayFilters (client-side), renderPaymentsTable (with כנגד doc numbers), viewPayment (detail modal with allocation table) |
 | 47 | debt-payment-wizard.js | modules/suppliers-debt/debt-payment-wizard.js | 146 | Payment wizard steps 1-2: openNewPaymentWizard (state reset + modal), supplier selection with debt summary + withholding tax rate lookup, payment details form with auto-calc withholding tax |
-| 48 | debt-payment-alloc.js | modules/suppliers-debt/debt-payment-alloc.js | 254 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status) |
+| 48 | debt-payment-alloc.js | modules/suppliers-debt/debt-payment-alloc.js | ~275 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status, rollback on failure) |
 | 49 | debt-prepaid.js | modules/suppliers-debt/debt-prepaid.js | 285 | Prepaid deals tab: loadPrepaidTab (fetch deals+checks+suppliers), renderPrepaidToolbar (filters + add button), applyPrepaidFilters (client-side), renderPrepaidTable (progress bar, status badges), openNewDealModal (PIN-verified), openAddCheckModal, viewDealDetail (progress bar + checks table), updateCheckStatus |
 | 50 | debt-supplier-detail.js | modules/suppliers-debt/debt-supplier-detail.js | ~328 | Supplier detail view: openSupplierDetail (slide-in panel with summary + 4 sub-tabs), closeSupplierDetail, loadSupplierTimeline (merged docs+payments sorted by date), loadSupplierDocuments (filtered table), loadSupplierPayments (filtered table), loadSupplierReturns (delegates to debt-returns.js) |
 | 51 | debt-returns.js | modules/suppliers-debt/debt-returns.js | ~230 | Supplier returns tab: loadReturnsForSupplier (fetch+render), renderReturnsTable, viewReturnDetail (modal with items), promptReturnStatusUpdate (PIN-verified), updateReturnStatus, generateReturnNumber (RET-{supplier_number}-{seq}) |
-| 52 | inventory-return.js | modules/inventory/inventory-return.js | ~185 | Supplier return initiation from inventory: openSupplierReturnModal (validates selection, same-supplier check, items preview), _doConfirmSupplierReturn (PIN-verified, creates return+items, decrements inventory, writeLog) |
+| 52 | inventory-return.js | modules/inventory/inventory-return.js | ~218 | Supplier return initiation from inventory: openSupplierReturnModal (validates selection, same-supplier check, items preview), _doConfirmSupplierReturn (PIN-verified, creates return+items, decrements inventory, writeLog) |
+| 53 | file-upload.js | js/file-upload.js | 97 | File upload helper for supplier documents: uploadSupplierFile (validates type/size, uploads to Supabase Storage), getSupplierFileUrl (signed URLs), renderFilePreview (PDF iframe / image), pickAndUploadFile (hidden file input + upload) |
 
-**Total: 52 files, ~10,790 lines** (includes scripts/sync-watcher.js)
+**Total: 53 files, ~10,890 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 4 QA fixes + file upload):** file-upload.js added (js/). batchUpdate changed from upsert to individual updates (RLS fix). Payment wizard rollback on failure. generateReturnNumber fallback for supplierNumCache. "cancelled" filter added to documents tab. viewDocument upgraded from placeholder to full modal with file preview. File attach button added to receipt form + documents tab. _pickReceiptFile + _pendingReceiptFile added to receipt-form.js. File-missing warning in confirmReceipt. receipt-debt.js uploads attached file after document creation.
 
 **Note (Phase 4h):** debt-returns.js + inventory-return.js added. T.SUP_RETURNS + T.SUP_RETURN_ITEMS added to shared.js. loadSupplierReturns in debt-supplier-detail.js now delegates to loadReturnsForSupplier. "זיכוי לספק" button added to inventory bulk bar.
 
@@ -116,7 +119,7 @@
 | `enrichRow` | `(row)` | Adds brand_name and supplier_name from caches. Returns new object |
 | `fetchAll` | `(tableName, filters?)` | Async. Paginated query (1000/page). Auto-joins inventory_images for inventory table. Supports eq/in/ilike/neq/gt/gte/lt filters. Returns enriched rows |
 | `batchCreate` | `(tableName, records)` | Async. Inserts in batches of 100. Detects duplicate barcodes (within batch + existing DB). Returns enriched rows |
-| `batchUpdate` | `(tableName, records)` | Async. Groups by column set, upserts each group. Handles duplicate barcode constraint errors. Returns enriched rows |
+| `batchUpdate` | `(tableName, records)` | Async. Individual .update().eq('id') per record (RLS-safe). Adds tenant_id. Handles duplicate barcode constraint errors. Returns enriched rows |
 | `writeLog` | `(action, inventoryId?, details?)` | Async. Inserts into inventory_logs. Reads prizma_user and prizma_branch from sessionStorage. Supports 20+ detail fields |
 | `generateNextBarcode` | `()` | Async. Shared helper — calls loadMaxBarcode(), increments maxBarcode, returns BBDDDDD barcode string. Used by receipt-form and receipt-confirm |
 
@@ -304,6 +307,7 @@
 | `updateReceiptItemsStats` | `()` | Calculates and displays item/unit/new/existing counts |
 | `addNewReceiptRow` | `()` | Async. Generates barcode via generateNextBarcode(), then calls addReceiptItemRow(). Used by manual "שורה חדשה" button |
 | `showReceiptGuide` | `()` | Opens modal overlay with employee quick-reference guide (RECEIPT_GUIDE_TEXT constant) |
+| `_pickReceiptFile` | `()` | Opens hidden file input, stores selected file in _pendingReceiptFile, updates attach button label |
 
 ### modules/goods-receipts/receipt-actions.js
 
@@ -327,7 +331,7 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `createDocumentFromReceipt` | `(receiptId, supplierId, receiptItems)` | Async. Auto-creates supplier_documents record from confirmed receipt. Calculates subtotal/VAT/total from item costs, generates DOC-NNNN internal_number, uses supplier's default_document_type and payment_terms_days. Skips if no cost data. Phase 4f: auto-deducts totalAmount from active prepaid deal (updates total_used/total_remaining). Uses fetchAll/batchCreate/batchUpdate helpers. |
+| `createDocumentFromReceipt` | `(receiptId, supplierId, receiptItems)` | Async. Auto-creates supplier_documents record from confirmed receipt. Calculates subtotal/VAT/total from item costs, generates DOC-NNNN internal_number, uses supplier's default_document_type and payment_terms_days. Skips if no cost data. Uploads _pendingReceiptFile if attached. Phase 4f: auto-deducts totalAmount from active prepaid deal (updates total_used/total_remaining). Uses fetchAll/batchCreate/batchUpdate helpers. |
 
 ### modules/goods-receipts/receipt-excel.js
 
@@ -538,6 +542,15 @@
 | `initHeader` | `()` | DOMContentLoaded handler. Checks sessionStorage for employee (SK.EMPLOYEE). If absent, returns (no header pre-login). Fetches tenant name + logo_url from tenants table. Calls buildHeader() |
 | `buildHeader` | `(emp, tenantName, logoUrl, role)` | Creates `<header id="app-header">` with 3 zones: right (logo/fallback SVG + store name), center ("Optic Up"), left (employee name + role + logout button). All dynamic values escaped via escapeHtml(). Logout wired to clearSession() via addEventListener |
 
+### js/file-upload.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `uploadSupplierFile` | `(file, supplierId)` | Async. Validates type (PDF/JPG/PNG) and size (10MB max). Uploads to Supabase Storage bucket "supplier-docs" at path {tenant_id}/{supplier_id}/{timestamp}_{filename}. Returns { url, fileName, signedUrl } or null |
+| `getSupplierFileUrl` | `(filePath)` | Async. Creates 1-hour signed URL for viewing a stored file. Returns URL string or null |
+| `renderFilePreview` | `(fileUrl, fileName, containerId)` | Renders PDF iframe or img tag into container. Shows "אין קובץ מצורף" if no URL |
+| `pickAndUploadFile` | `(supplierId, callback)` | Opens hidden file input, uploads selected file, calls callback with result |
+
 ### index.html (inline script)
 
 | Function | Parameters | Description |
@@ -573,7 +586,8 @@
 | `renderDocFilterBar` | `()` | Builds filter toolbar inside dtab-documents: supplier, type, status dropdowns, date range, overdue checkbox, "+ מסמך חדש" button |
 | `applyDocFilters` | `()` | Reads filter inputs, filters _docData client-side, sorts by date desc, calls renderDocumentsTable |
 | `renderDocumentsTable` | `(docs)` | Renders HTML table with columns: date, type, number, internal number, supplier, amount, paid, balance, status badge, action buttons |
-| `viewDocument` | `(docId)` | Placeholder alert — full view modal deferred to Phase 4g |
+| `viewDocument` | `(docId)` | Async. Full modal: document metadata grid + file preview (PDF iframe / image). Shows "צרף מסמך" button if no file attached |
+| `_attachFileToDoc` | `(docId, supplierId)` | Opens file picker, uploads via uploadSupplierFile, updates document file_url/file_name, refreshes view |
 | `openNewDocumentModal` | `()` | Creates dynamic modal with supplier/type/number/dates/amounts/VAT/notes/PIN fields. Auto-calculates VAT on input |
 | `closeAndRemoveModal` | `(id)` | Removes modal element from DOM by id |
 | `calcNewDocTotal` | `()` | Auto-calc: reads subtotal + VAT rate, updates VAT and total fields |
@@ -619,7 +633,7 @@
 | `_wizClearAlloc` | `()` | Clears all allocation inputs and state |
 | `_wizGoStep4` | `()` | Validates allocation total vs net amount (warns on mismatch), renders step 4 |
 | `_wizRenderStep4` | `()` | Confirmation screen: payment summary grid + PIN input |
-| `_wizSavePayment` | `()` | Verifies PIN, creates supplier_payments record, creates payment_allocations, updates paid_amount/status on documents, writeLog, refreshes tab + summary cards |
+| `_wizSavePayment` | `()` | Verifies PIN, creates supplier_payments record, creates payment_allocations, updates paid_amount/status on documents, writeLog, refreshes tab + summary cards. Rollback: deletes payment+allocations on failure |
 
 ### modules/suppliers-debt/debt-prepaid.js
 

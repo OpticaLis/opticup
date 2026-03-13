@@ -194,6 +194,8 @@ async function _wizSavePayment() {
   if (!emp) { setAlert('wiz-alert', 'קוד עובד שגוי', 'e'); return; }
 
   showLoading('שומר תשלום...');
+  var paymentId = null;
+  var createdAllocIds = [];
   try {
     // 1. Create payment record
     var created = await batchCreate(T.SUP_PAYMENTS, [{
@@ -212,9 +214,9 @@ async function _wizSavePayment() {
       notes: _wizState.notes || null,
       created_by: emp.id
     }]);
-    var paymentId = created[0].id;
+    paymentId = created[0].id;
 
-    // 2. Create allocations + update documents
+    // 2. Create allocations
     if (_wizState.allocations.length) {
       var allocRecs = _wizState.allocations.map(function(a) {
         return {
@@ -223,7 +225,8 @@ async function _wizSavePayment() {
           allocated_amount: a.allocated_amount
         };
       });
-      await batchCreate(T.PAY_ALLOC, allocRecs);
+      var allocCreated = await batchCreate(T.PAY_ALLOC, allocRecs);
+      createdAllocIds = allocCreated.map(function(a) { return a.id; });
 
       // 3. Update paid_amount + status on each allocated document
       for (var i = 0; i < _wizState.allocations.length; i++) {
@@ -251,6 +254,19 @@ async function _wizSavePayment() {
     await loadDebtSummary();
   } catch (e) {
     console.error('_wizSavePayment error:', e);
+    // Rollback: delete allocations and payment if created
+    try {
+      if (createdAllocIds.length) {
+        for (var j = 0; j < createdAllocIds.length; j++) {
+          await sb.from(T.PAY_ALLOC).delete().eq('id', createdAllocIds[j]);
+        }
+      }
+      if (paymentId) {
+        await sb.from(T.SUP_PAYMENTS).delete().eq('id', paymentId);
+      }
+    } catch (rollbackErr) {
+      console.error('Rollback failed:', rollbackErr);
+    }
     setAlert('wiz-alert', 'שגיאה: ' + escapeHtml(e.message), 'e');
   } finally {
     hideLoading();

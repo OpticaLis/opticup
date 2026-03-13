@@ -1,3 +1,23 @@
+// Pending file for receipt document attachment
+var _pendingReceiptFile = null;
+
+function _pickReceiptFile() {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.pdf,.jpg,.jpeg,.png';
+  input.onchange = function() {
+    var file = input.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { toast('קובץ גדול מדי — מקסימום 10MB', 'e'); return; }
+    _pendingReceiptFile = file;
+    var nameEl = $('rcpt-attach-name');
+    if (nameEl) nameEl.textContent = file.name;
+    var btn = $('rcpt-attach-btn');
+    if (btn) btn.innerHTML = '&#10004; ' + escapeHtml(file.name.length > 15 ? file.name.slice(0, 15) + '...' : file.name);
+  };
+  input.click();
+}
+
 async function openExistingReceipt(receiptId, viewOnly) {
   showLoading('טוען קבלה...');
   try {

@@ -1,12 +1,27 @@
 # Session Context
 
 ## Last Updated
-Phase 4 complete — 2026-03-13
+Phase 4 QA fixes + file upload — 2026-03-13
 
 ## What Was Done This Session
-Phase 4 — Supplier Debt Tracking & Enhanced Goods Receipt — COMPLETE
+Phase 4 QA fixes (4 critical + 2 minor) and file upload feature
 
-### Sub-phases and commits:
+### Bug Fixes:
+1. **batchUpdate RLS violation (CRITICAL)** — replaced .upsert() with individual .update().eq('id') calls + tenant_id. Unblocks payment wizard, prepaid deals, returns, and all Phase 4 update operations.
+2. **inventory-return.js 'in' filter (CRITICAL)** — fixed fetchAll filter from parenthesized string to array. Also fixed same bug in debt-returns.js loadReturnsForSupplier.
+3. **Payment wizard rollback (CRITICAL)** — _wizSavePayment now rolls back (deletes payment + allocations) if document update step fails. Prevents orphaned records.
+4. **supplierNumCache fallback (CRITICAL)** — generateReturnNumber now fetches supplier_number directly from DB if supplierNumCache is empty (fixes suppliers-debt.html which doesn't load lookup caches).
+5. **Document filter missing "cancelled" (minor)** — added "מבוטל" option to status dropdown.
+6. **cost_price formatting (minor)** — wrapped with formatILS() in inventory-return.js modal.
+
+### New Feature — File upload for supplier documents:
+- **file-upload.js** — new helper: uploadSupplierFile (validates type/size, uploads to Supabase Storage), getSupplierFileUrl (signed URLs), renderFilePreview, pickAndUploadFile
+- **Receipt form** — "צרף מסמך" button added, _pendingReceiptFile stored until confirmation, warning dialog if no file attached before confirming
+- **receipt-debt.js** — uploads file after creating supplier document
+- **Documents tab** — viewDocument upgraded from placeholder alert to full modal with file preview + document metadata. 📎 button in table for attach/replace file per document.
+
+### Previous sub-phases (Phase 4a-4i):
+
 1. **4a: DB tables** — 11 new tables (document_types, payment_methods, currencies, supplier_documents, document_links, supplier_payments, payment_allocations, prepaid_deals, prepaid_checks, supplier_returns, supplier_return_items), indexes, RLS, seed data — commit `1c4b2b9`
 2. **4a+: Patch** — withholding tax columns on supplier_payments, internal_number on supplier_documents, duplicate prevention constraint, payment approval fields — commit `384a3bf`
 3. **4b-1: Split receipt-actions.js** — extracted receipt-confirm.js (zero logic changes) — commit `013a79c`
@@ -22,18 +37,19 @@ Phase 4 — Supplier Debt Tracking & Enhanced Goods Receipt — COMPLETE
 
 ## Current State
 - **3 HTML pages**: index.html (home), inventory.html (inventory module), suppliers-debt.html (supplier debt module), employees.html (employee management)
-- **52 JS files** across 9 module folders + 4 global files + 1 script
-- **~10,790 lines of JS code**
+- **53 JS files** across 9 module folders + 5 global files + 1 script
+- **~10,890 lines of JS code**
 - **31 DB tables** (20 pre-Phase 4 + 11 new) + 3 RPC functions + seed data
 - **JWT-based RLS** tenant isolation on all tables
-- **New features**: debt dashboard, document management, payment wizard, prepaid deals, supplier detail view, supplier returns, enhanced goods receipt
+- **New features**: debt dashboard, document management, payment wizard, prepaid deals, supplier detail view, supplier returns, enhanced goods receipt, file upload for supplier documents
+- **Supabase Storage**: "supplier-docs" bucket for scanned invoices (private, signed URLs)
 
 ## Open Issues
 - JWT secret exposed in dev chat — must rotate before production
 - employees.html session sometimes lost when navigating from inventory.html after reload — inconsistent, monitor
 - sync-watcher.js (Node.js) inserts not updated with tenant_id — deferred (separate runtime)
 - Staging environment needed before second tenant onboards
-- viewDocument() in debt-documents.js is still a placeholder alert — full modal deferred to Phase 5+
+- Supabase Storage bucket "supplier-docs" needs to be created + RLS policy configured (manual step)
 - Views for external access (supplier portal, storefront) are planned but not created yet — Phase 6
 
 ## Next Phase
@@ -51,4 +67,5 @@ Phase 5 — AI Agent for Supplier Management (OCR invoices via Claude Vision, au
 - Phase 4f: `edad755` — prepaid deals
 - Phase 4g: `7516714` — suppliers table + detail
 - Phase 4h: `d9e2f4e` — supplier returns
-- Phase 4i: (this commit) — documentation update + backup
+- Phase 4i: `96c4886` — documentation update + backup
+- Phase 4 QA: (this commit) — 6 bug fixes + file upload feature

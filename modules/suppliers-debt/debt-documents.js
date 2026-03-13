@@ -60,6 +60,7 @@ function renderDocFilterBar() {
         '<option value="partially_paid">שולם חלקית</option>' +
         '<option value="paid">שולם</option>' +
         '<option value="linked">מקושר</option>' +
+        '<option value="cancelled">מבוטל</option>' +
       '</select>' +
       '<input type="date" id="doc-f-from" onchange="applyDocFilters()" class="doc-filter-input">' +
       '<input type="date" id="doc-f-to" onchange="applyDocFilters()" class="doc-filter-input">' +
@@ -134,6 +135,8 @@ function renderDocumentsTable(docs) {
       '<td><span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></td>' +
       '<td>' +
         '<button class="btn-sm" onclick="viewDocument(\'' + d.id + '\')">צפה</button> ' +
+        '<button class="btn-sm" title="' + (d.file_url ? 'החלף מסמך' : 'צרף מסמך') + '" ' +
+          'onclick="_attachFileToDoc(\'' + d.id + '\',\'' + d.supplier_id + '\')">&#128206;</button> ' +
         '<button class="btn-sm" onclick="switchDebtTab(\'payments\')">שלם</button>' +
         linkBtn +
       '</td>' +
@@ -151,10 +154,92 @@ function renderDocumentsTable(docs) {
     '</table></div>';
 }
 
-function viewDocument(docId) {
+async function viewDocument(docId) {
   var doc = _docData.find(function(d) { return d.id === docId; });
   if (!doc) return;
-  alert('תצוגת מסמך מלאה תתווסף בשלב 4g\n\nמסמך: ' + (doc.document_number || doc.internal_number));
+
+  var typeMap = {};
+  _docTypes.forEach(function(t) { typeMap[t.id] = t; });
+  var supMap = {};
+  _docSuppliers.forEach(function(s) { supMap[s.id] = s.name; });
+  var type = typeMap[doc.document_type_id] || {};
+  var st = DOC_STATUS_MAP[doc.status] || { he: doc.status, cls: '' };
+  var balance = (Number(doc.total_amount) || 0) - (Number(doc.paid_amount) || 0);
+
+  // Get signed URL if file exists
+  var fileUrl = null;
+  if (doc.file_url) {
+    fileUrl = await getSupplierFileUrl(doc.file_url);
+  }
+
+  var fileSection;
+  if (fileUrl) {
+    var ext = (doc.file_name || doc.file_url || '').split('.').pop().toLowerCase();
+    var isPdf = ext === 'pdf';
+    fileSection = isPdf
+      ? '<iframe src="' + escapeHtml(fileUrl) + '" style="width:100%;height:350px;border:1px solid var(--g200);border-radius:6px" title="PDF"></iframe>'
+      : '<img src="' + escapeHtml(fileUrl) + '" style="max-width:100%;max-height:350px;border-radius:6px;border:1px solid var(--g200)">';
+    fileSection += '<div style="margin-top:6px;font-size:.82rem;color:var(--g500)">' + escapeHtml(doc.file_name || '') + '</div>';
+  } else {
+    fileSection =
+      '<div style="text-align:center;padding:24px;color:var(--g400);font-size:.88rem">' +
+        'אין קובץ מצורף' +
+        '<div style="margin-top:8px">' +
+          '<button class="btn btn-g btn-sm" onclick="_attachFileToDoc(\'' + doc.id + '\',\'' + doc.supplier_id + '\')">&#128206; צרף מסמך</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  var html =
+    '<div class="modal-overlay" id="view-doc-modal" style="display:flex" onclick="if(event.target===this)closeAndRemoveModal(\'view-doc-modal\')">' +
+      '<div class="modal" style="max-width:650px;width:95%">' +
+        '<h3 style="margin:0 0 12px">מסמך ' + escapeHtml(doc.document_number || doc.internal_number || '') + '</h3>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.88rem;margin-bottom:14px">' +
+          '<div>סוג: <strong>' + escapeHtml(type.name_he || '') + '</strong></div>' +
+          '<div>ספק: <strong>' + escapeHtml(supMap[doc.supplier_id] || '') + '</strong></div>' +
+          '<div>תאריך: <strong>' + escapeHtml(doc.document_date || '') + '</strong></div>' +
+          '<div>תאריך תשלום: <strong>' + escapeHtml(doc.due_date || '') + '</strong></div>' +
+          '<div>סכום: <strong>' + formatILS(doc.total_amount) + '</strong></div>' +
+          '<div>שולם: <strong>' + formatILS(doc.paid_amount) + '</strong></div>' +
+          '<div>יתרה: <strong>' + formatILS(balance) + '</strong></div>' +
+          '<div>סטטוס: <span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></div>' +
+        '</div>' +
+        '<div style="border-top:1px solid var(--g200);padding-top:12px">' +
+          fileSection +
+        '</div>' +
+        '<div style="text-align:left;margin-top:14px">' +
+          '<button class="btn btn-g" onclick="closeAndRemoveModal(\'view-doc-modal\')">סגור</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  var existing = $('view-doc-modal');
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+// --- Attach/replace file on a document ---
+function _attachFileToDoc(docId, supplierId) {
+  pickAndUploadFile(supplierId, async function(result) {
+    try {
+      await batchUpdate(T.SUP_DOCS, [{
+        id: docId,
+        file_url: result.url,
+        file_name: result.fileName
+      }]);
+      // Update local cache
+      var doc = _docData.find(function(d) { return d.id === docId; });
+      if (doc) { doc.file_url = result.url; doc.file_name = result.fileName; }
+      toast('קובץ צורף בהצלחה');
+      // Refresh view if modal is open
+      var viewModal = $('view-doc-modal');
+      if (viewModal) { viewModal.remove(); viewDocument(docId); }
+      applyDocFilters();
+    } catch (e) {
+      console.error('_attachFileToDoc error:', e);
+      toast('שגיאה בצירוף קובץ: ' + (e.message || ''), 'e');
+    }
+  });
 }
 
 // --- New document modal ---

@@ -1,4 +1,4 @@
-# Optic Up — Claude Code Project Guide
+﻿# Optic Up — Claude Code Project Guide
 
 ## First Action — Read This Before Anything Else
 
@@ -67,6 +67,7 @@ After reading SESSION_CONTEXT.md, confirm:
 8. **Default employee PIN** — 1234
 9. **API Abstraction** — All database interactions must pass through `shared.js` helper functions (`fetchAll`, `batchCreate`, `batchUpdate`, etc.). Modules should never call `sb.from()` directly unless for specialized joins that cannot be expressed through the helpers.
 10. **Security & Sanitization** — Never use `innerHTML` with user-controlled input. Always use `escapeHtml()` or `textContent`. Note: PIN verification calls the pin-auth Edge Function which validates server-side and returns a signed JWT. Do not attempt to refactor PIN verification unless explicitly instructed.
+11. **No hardcoded business values** — Business name, address, tax rate, logo, phone, and any tenant-specific data must always be read from a variable or config, never from a hardcoded string in code. This ensures every tenant can customize without code changes.
 
 ### SaaS Rules — Mandatory from Phase 3.75 Onward
 
@@ -340,3 +341,4 @@ This backup must happen BEFORE any documentation changes, never after.
 ```
 git add -A && git commit -m "descriptive message in English" && git push
 ```
+

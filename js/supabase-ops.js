@@ -91,24 +91,20 @@ async function batchCreate(tableName, records) {
   return created;
 }
 
-// --- Supabase-backed batchUpdate (upsert-based, PERF-01) ---
+// --- Supabase-backed batchUpdate (individual updates for RLS compat) ---
 async function batchUpdate(tableName, records) {
   if (!records?.length) return [];
   const selectCols = tableName === 'inventory' ? '*, inventory_images(*)' : '*';
+  const tid = getTenantId();
+  const allData = [];
 
-  // Group records by their column set for valid upsert batches
-  const groups = new Map();
   for (const rec of records) {
     const { id, ...row } = rec;
-    const key = Object.keys(row).sort().join(',');
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(rec);
-  }
-
-  const allData = [];
-  for (const rows of groups.values()) {
+    if (!id) throw new Error('batchUpdate: record missing id');
+    if (tid) row.tenant_id = tid;
     const { data, error } = await sb.from(tableName)
-      .upsert(rows, { onConflict: 'id' })
+      .update(row)
+      .eq('id', id)
       .select(selectCols);
     if (error) {
       if (error.code === '23505' && error.message.includes('barcode')) {
