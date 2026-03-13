@@ -4,6 +4,91 @@
 
 ---
 
+## Phase 5.5 — Stability, Scale & Batch Operations (2026-03-13)
+
+### 5.5a-1: SQL Migrations — Atomic RPCs + Schema Additions
+**Commit:** `dbaa77d`
+- 2 new RPC functions: `next_internal_doc_number(p_tenant_id UUID)` and `update_ocr_template_stats(p_template_id UUID, p_corrections JSONB, p_extracted_data JSONB)`
+- 3 new columns on supplier_documents: `file_hash TEXT`, `batch_id TEXT`, `is_historical BOOLEAN DEFAULT false`
+- 3 new indexes: idx_sup_docs_file_hash, idx_sup_docs_batch, idx_sup_docs_historical
+- Migrations: phase5_5a_atomic_rpcs.sql, phase5_5b_schema_additions.sql
+
+### 5.5a-2: batchWriteLog + FIELD_MAP
+**Commits:** `d4acf1f`, `8242e1a`
+- `batchWriteLog(logs)` in supabase-ops.js — batch insert multiple log entries
+- FIELD_MAP updated with Hebrew translations for file_hash (גיבוב קובץ), batch_id (מזהה קבוצה), is_historical (מסמך היסטורי)
+
+### 5.5b: RPCs Applied in JS
+**Commit:** `235e42b`
+- `generateDocInternalNumber()` in debt-documents.js rewritten to use `next_internal_doc_number` RPC (atomic, race-condition-safe)
+- `updateOCRTemplate()` in supabase-ops.js rewritten to use `update_ocr_template_stats` RPC (atomic accuracy calculation)
+- receipt-debt.js `createDocumentFromReceipt()` uses `next_internal_doc_number` RPC
+
+### 5.5c: pg_cron Daily Alert Generation
+**Commit:** `0168846`
+- pg_cron job `daily-alert-generation` scheduled at 05:00 UTC
+- Calls `generate_daily_alerts()` with fault isolation: each alert type (payment_due, payment_overdue, prepaid_low) wrapped in BEGIN/EXCEPTION blocks
+- Migration: phase5_5c_pgcron_alerts.sql
+
+### 5.5d: Stability Fixes
+**Commit:** `5aecfad`
+- Weekly report: snapshot cache with tenant_id fix
+- alerts-badge.js: try/catch wrappers around all async operations
+- `validateOCRData(extractedData)` — 7 business rules: required fields, date validation, amount consistency, supplier match, document type, currency format, duplicate document number
+- `createAlert()` skips historical documents (checks `is_historical` flag)
+- CLAUDE.md: corrected alerts table description
+
+### 5.5e: UX Fixes
+**Commit:** `9284538`
+- Remove file button added to receipt form (clear attached file without reload)
+- AI info modal for OCR scanning in goods receipt (explains what the AI does)
+
+### 5.5f: Advanced Document Filtering
+**Commit:** `c119c6b`
+- Created modules/suppliers-debt/debt-doc-filters.js (242 lines)
+- Replaces simple filter bar from debt-documents.js
+- 8 filter criteria: status, document type, supplier (searchable), date range (from/to), amount range (from/to), source (historical/current)
+- Saved filter favorites via localStorage (max 5 per tenant)
+- Collapsible filter panel with count display
+- Right-click to delete saved favorites
+
+### 5.5g: Batch Document Upload
+**Commit:** `e8535b6`
+- Created modules/suppliers-debt/ai-batch-upload.js (332 lines)
+- Drag-and-drop upload modal with file preview
+- SHA-256 file hash dedup: checks within batch + against DB (file_hash column)
+- Two modes: upload-only (creates draft documents) or upload+OCR (chains to batch OCR)
+- Progress bar, per-file status icons, cleanup on close/beforeunload
+- Max 50 files per batch, validates type (PDF/JPG/PNG) and size (10MB)
+- Monkey-patches renderDocFilterBar to inject toolbar button
+
+### 5.5h-1: Batch OCR with Pipelining
+**Commit:** `9969ff4`
+- Created modules/suppliers-debt/ai-batch-ocr.js (297 lines)
+- Sequential OCR processing via `window._startBatchOCR(batchId, docIds)`
+- Pause/resume queue, retry failed documents, retry single document
+- Review individual docs via existing showOCRReview modal
+- Auto-approve valid documents (above confidence threshold from ai_agent_config)
+- Summary modal showing total/success/failed and average confidence
+- validateOCRData integration for error flagging
+
+### 5.5h-2: Historical Document Import
+**Commit:** `bbef876`
+- Created modules/suppliers-debt/ai-historical-import.js (330 lines)
+- Import old/historical documents for AI learning without inventory impact
+- Documents marked `is_historical=true` — no alerts generated, no inventory changes
+- Default status selection: paid (default), open, or per-document
+- Chains to batch OCR after upload for AI template learning
+- Learning summary modal: per-supplier scan count, confidence, template accuracy
+- Monkey-patches renderDocFilterBar to inject toolbar button
+
+### 5.5i: Documentation & Backup
+**Commits:** `d1f0511` (backup), current (docs)
+- Backup to M1F5.5_2026-03-13/
+- All documentation files updated
+
+---
+
 ## Phase 5 — AI Agent for Supplier Management (2026-03-13)
 
 ### 5a: DB Tables — 5 New Tables

@@ -112,7 +112,7 @@ opticup/
 │   ├── brands/                 — 2 files (brands, suppliers)
 │   ├── access-sync/            — 4 files (access-sync, sync-details, pending-panel, pending-resolve)
 │   ├── admin/                  — 2 files (admin, system-log)
-│   └── suppliers-debt/         — 13 files (debt-dashboard, debt-documents, debt-doc-link, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-supplier-detail, debt-returns, ai-ocr, ai-alerts, ai-weekly-report, ai-config)
+│   └── suppliers-debt/         — 17 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-supplier-detail, debt-returns, ai-ocr, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service)
 │   ├── install-service.js

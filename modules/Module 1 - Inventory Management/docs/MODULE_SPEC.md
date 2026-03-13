@@ -1,5 +1,5 @@
 # מלאי מסגרות — Module Spec
-## גרסה 5 | מרץ 2026 | Post-Phase 5
+## גרסה 5.5 | מרץ 2026 | Post-Phase 5.5
 
 > **Authority:** Business logic flows and screen descriptions. For code details → MODULE_MAP.md. For DB schema → db-schema.sql. For rules → CLAUDE.md.
 
@@ -10,7 +10,7 @@
 **מודול מלאי מסגרות** הוא הליבה של מערכת Optic Up — מנהל את כל מחזור החיים של מסגרות משקפיים במלאי: כניסה, מעקב, עריכה, מכירה, מחיקה, שחזור, ספירת מלאי, סנכרון עם Access, ומעקב חובות ספקים.
 
 **סטאק טכנולוגי:**
-- Frontend: Vanilla JS (no framework), 56 JS modules + CSS
+- Frontend: Vanilla JS (no framework), ~62 JS modules + CSS
 - Backend: Supabase (PostgreSQL + REST API + RPC + Edge Functions), client = `sb`
 - Auth: PIN → Edge Function (pin-auth) → signed JWT with tenant_id claim
 - Excel: SheetJS (xlsx) לייבוא/ייצוא
@@ -35,7 +35,9 @@ For complete file index → see MODULE_MAP.md section 1.
 
 **טבלאות Phase 5 (AI Agent):** ai_agent_config, supplier_ocr_templates, ocr_extractions, alerts, weekly_reports.
 
-**RPC Functions:** `increment_inventory`, `decrement_inventory`, `set_inventory_qty`, `generate_daily_alerts`.
+**RPC Functions:** `increment_inventory`, `decrement_inventory`, `set_inventory_qty`, `generate_daily_alerts`, `next_internal_doc_number`, `update_ocr_template_stats`.
+
+**pg_cron Jobs:** `daily-alert-generation` — runs at 05:00 UTC, calls generate_daily_alerts with fault isolation per alert type.
 
 **Supabase Storage:** bucket `failed-sync-files` for failed Access sync files, bucket `supplier-docs` for scanned invoices.
 
@@ -257,12 +259,32 @@ Standalone page: `suppliers-debt.html` with 4 tabs.
 
 ### 4.12 מעקב חובות ספקים — flow
 - **Document creation**: manual (via CRUD modal) or automatic (receipt confirmation)
-- **Internal numbering**: DOC-NNNN sequential per tenant
+- **Internal numbering**: DOC-NNNN sequential per tenant (uses `next_internal_doc_number` RPC)
 - **Payment flow**: 4-step wizard → FIFO document allocation → updates paid_amount/status on documents
 - **Withholding tax**: per-supplier rate, auto-calculated on payment
 - **Prepaid deals**: check-based, auto-deduction on receipt, progress tracking
 - **Supplier returns**: initiated from inventory selection, generates RET-{supplier_number}-{seq}
 - **Document linking**: delivery notes can be linked to monthly invoices (document_links)
+
+### 4.13 validateOCRData — 7 Business Rules (Phase 5.5d)
+Validates OCR-extracted data before document creation:
+1. **Required fields**: supplier_name, document_number, total_amount must exist
+2. **Positive amount**: total_amount must be > 0
+3. **Valid date**: document_date must be parseable and not in the future
+4. **VAT consistency**: if vat_amount provided, must be ≤ subtotal
+5. **Supplier match**: supplier_name must fuzzy-match an existing supplier
+6. **Duplicate check**: document_number must not already exist for same supplier
+7. **Item validation**: if line items exist, each must have description and quantity > 0
+
+### 4.14 batchWriteLog (Phase 5.5a-2)
+- Bulk insert into inventory_logs for batch operations
+- Accepts array of log entries, inserts in single DB call
+- Same fields as writeLog but optimized for batch upload/OCR/import flows
+
+### 4.15 supplier_documents — Extended Columns (Phase 5.5a-1)
+- **file_hash** (TEXT): SHA-256 hash of uploaded file for dedup
+- **batch_id** (TEXT): groups documents uploaded together in batch operations
+- **is_historical** (BOOLEAN, default false): marks imported historical documents — excluded from alerts and inventory impact
 
 ### 3.14 סריקת חשבוניות OCR (AI OCR) — Phase 5b-5e
 - **OCR scan flow**: upload PDF/image → Edge Function (ocr-extract) → Claude Vision API → extracted JSON
@@ -289,6 +311,35 @@ Standalone page: `suppliers-debt.html` with 4 tabs.
 - **Settings modal**: accessible to CEO/Manager only
 - **3 config sections**: OCR settings (confidence threshold), Alerts settings (toggle types), Weekly Report settings
 - **Usage statistics**: total scans, templates, alerts, reports
+
+### 3.18 סינון מסמכים מתקדם (Advanced Document Filtering) — Phase 5.5f
+- **Collapsible filter panel**: replaces simple filter bar in documents tab
+- **8 filter criteria**: status, document type, supplier, date range (from/to), amount range (min/max), source (manual/OCR/receipt)
+- **Saved filter favorites**: up to 5 saved presets per user (localStorage)
+- **Filter count display**: shows active filter count on toggle button
+- **Client-side filtering**: reads filter values, applies to cached document data
+
+### 3.19 העלאת מסמכים באצווה (Batch Document Upload) — Phase 5.5g
+- **Drag-and-drop modal**: opens from documents tab toolbar
+- **File dedup**: SHA-256 hash per file, checks within batch + against DB (file_hash column)
+- **Two modes**: upload-only (stores files) or upload+OCR (stores + triggers batch OCR)
+- **Progress tracking**: per-file progress bar, file preview, status indicators
+- **Batch ID**: unique identifier groups files uploaded together (batch_id column)
+
+### 3.20 OCR באצווה (Batch OCR Processing) — Phase 5.5h-1
+- **Sequential pipeline**: processes queued documents one at a time
+- **Pause/resume**: queue can be paused and resumed mid-processing
+- **Retry failed**: individual or bulk retry for failed OCR extractions
+- **Auto-approve**: documents above confidence threshold auto-approved
+- **Review integration**: click to open individual OCR review for any document
+- **Summary modal**: shows stats (processed, approved, failed, avg confidence)
+
+### 3.21 ייבוא מסמכים היסטוריים (Historical Document Import) — Phase 5.5h-2
+- **Import modal**: drag-drop upload for old/historical documents
+- **Historical marking**: documents flagged `is_historical=true` — no inventory impact, no alerts
+- **Default status selection**: choose paid/open/per_doc for all imported documents
+- **OCR + learning**: runs OCR on historical docs to train supplier templates
+- **Learning summary**: shows per-supplier accuracy stats after import completes
 
 ---
 
@@ -351,6 +402,8 @@ Known issues are tracked in SESSION_CONTEXT.md — single home for all open issu
 - `decrement_inventory(inv_id, delta)` — atomic qty decrement (floor 0)
 - `set_inventory_qty(inv_id, new_qty)` — set qty directly
 - `generate_daily_alerts(p_tenant_id)` — generates payment_due, payment_overdue, prepaid_low alerts (idempotent)
+- `next_internal_doc_number(p_tenant_id)` — atomic sequential DOC-NNNN generation (race-condition safe)
+- `update_ocr_template_stats(p_template_id, p_corrections, p_extracted_data)` — atomic template stats update (times_used, accuracy_rate, extraction_hints)
 
 **Edge Functions:**
 - `pin-auth` — PIN validation → signed JWT with tenant_id claim

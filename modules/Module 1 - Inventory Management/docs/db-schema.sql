@@ -1271,3 +1271,101 @@ CREATE INDEX idx_alerts_tenant_type ON alerts(tenant_id, alert_type);
 CREATE INDEX idx_alerts_expires ON alerts(expires_at) WHERE expires_at IS NOT NULL;
 CREATE INDEX idx_weekly_reports_tenant ON weekly_reports(tenant_id);
 CREATE INDEX idx_weekly_reports_period ON weekly_reports(tenant_id, week_start);
+
+-- ============================================================
+-- Phase 5.5a — Schema additions for batch operations
+-- ============================================================
+
+-- 3 new columns on supplier_documents
+ALTER TABLE supplier_documents ADD COLUMN IF NOT EXISTS file_hash TEXT;
+ALTER TABLE supplier_documents ADD COLUMN IF NOT EXISTS batch_id TEXT;
+ALTER TABLE supplier_documents ADD COLUMN IF NOT EXISTS is_historical BOOLEAN DEFAULT false;
+
+-- 3 new indexes
+CREATE INDEX idx_sup_docs_file_hash ON supplier_documents(tenant_id, file_hash) WHERE file_hash IS NOT NULL;
+CREATE INDEX idx_sup_docs_batch ON supplier_documents(tenant_id, batch_id) WHERE batch_id IS NOT NULL;
+CREATE INDEX idx_sup_docs_historical ON supplier_documents(tenant_id, is_historical) WHERE is_historical = true;
+
+-- ============================================================
+-- Phase 5.5a — RPC: next_internal_doc_number
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION next_internal_doc_number(p_tenant_id UUID)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_max_num INT;
+  v_next TEXT;
+BEGIN
+  SELECT COALESCE(MAX(
+    CAST(SUBSTRING(internal_number FROM 5) AS INT)
+  ), 0) INTO v_max_num
+  FROM supplier_documents
+  WHERE tenant_id = p_tenant_id
+    AND internal_number IS NOT NULL
+    AND internal_number LIKE 'DOC-%';
+
+  v_next := 'DOC-' || LPAD((v_max_num + 1)::TEXT, 4, '0');
+  RETURN v_next;
+END;
+$$;
+
+-- ============================================================
+-- Phase 5.5a — RPC: update_ocr_template_stats
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION update_ocr_template_stats(
+  p_template_id UUID,
+  p_corrections JSONB,
+  p_extracted_data JSONB
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_has_corrections BOOLEAN;
+BEGIN
+  v_has_corrections := p_corrections IS NOT NULL AND p_corrections != '{}'::JSONB;
+
+  UPDATE supplier_ocr_templates SET
+    times_used = times_used + 1,
+    times_corrected = CASE WHEN v_has_corrections THEN times_corrected + 1 ELSE times_corrected END,
+    accuracy_rate = CASE
+      WHEN times_used + 1 > 0
+      THEN ROUND(((times_used + 1 - (CASE WHEN v_has_corrections THEN times_corrected + 1 ELSE times_corrected END))::DECIMAL / (times_used + 1)) * 100, 2)
+      ELSE 100.00
+    END,
+    last_used_at = NOW(),
+    updated_at = NOW()
+  WHERE id = p_template_id;
+END;
+$$;
+
+-- ============================================================
+-- Phase 5.5c — pg_cron daily alerts
+-- ============================================================
+
+-- Requires pg_cron extension to be enabled in Supabase dashboard
+-- SELECT cron.schedule(
+--   'daily-alert-generation',
+--   '0 5 * * *',  -- 05:00 UTC daily
+--   $$
+--   DO $body$
+--   DECLARE
+--     t RECORD;
+--   BEGIN
+--     FOR t IN SELECT id FROM tenants WHERE is_active = true LOOP
+--       BEGIN
+--         PERFORM set_config('app.tenant_id', t.id::TEXT, true);
+--         PERFORM generate_daily_alerts(t.id);
+--       EXCEPTION WHEN OTHERS THEN
+--         RAISE WARNING 'Alert generation failed for tenant %: %', t.id, SQLERRM;
+--       END;
+--     END LOOP;
+--   END;
+--   $body$;
+--   $$
+-- );

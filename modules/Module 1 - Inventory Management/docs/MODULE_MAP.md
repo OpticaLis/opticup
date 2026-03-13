@@ -70,8 +70,22 @@
 | 56 | ai-alerts.js | modules/suppliers-debt/ai-alerts.js | 221 | Event-driven alerts + auto-dismiss + hooks: checkDuplicateDocument, alertDuplicateDocument, alertAmountMismatch, alertOCRLowConfidence, autoDismissAlerts. Patches: saveNewDocument (duplicate check), linkDeliveryToInvoice (amount mismatch), _ocrSave (auto-dismiss OCR), _wizSavePayment (auto-dismiss payment), triggerOCR (low confidence check) |
 | 57 | ai-weekly-report.js | modules/suppliers-debt/ai-weekly-report.js | 274 | Weekly report screen + PDF export: initWeeklyReport (default to current week), navigateWeek (prev/next), loadWeeklyReport (load snapshot or live data), _gatherReportData (parallel queries: total debt, payments, new docs, upcoming, prepaid, OCR stats), _renderWeeklyReport (4 sections: summary, upcoming, prepaid, OCR), exportWeeklyPDF (html2canvas + jsPDF, snapshot save to weekly_reports) |
 | 58 | ai-config.js | modules/suppliers-debt/ai-config.js | 223 | AI agent config screen — settings modal with permission check: openAIConfig (loads config + stats, CEO/Manager only), _renderAIConfigModal (3 sections: OCR, Alerts, Weekly Report + stats grid), saveAIConfig (updates ai_agent_config row), _injectConfigGear (gear button in topbar for authorized roles), confidence slider with real-time % display |
+| 59 | debt-doc-filters.js | modules/suppliers-debt/debt-doc-filters.js | 242 | Advanced document filtering: collapsible 8-criteria filter panel (status, type, supplier, date range, amount range, source), saved filter favorites (localStorage, max 5), filter count display, replaces simple renderDocFilterBar. Patches loadDocumentsTab to inject filter panel |
+| 60 | ai-batch-upload.js | modules/suppliers-debt/ai-batch-upload.js | 332 | Batch document upload: drag-drop modal, SHA-256 file hash dedup (within batch + against DB), upload-only or upload+OCR modes, progress bar, file preview, batch_id tracking. Injects toolbar button via monkey-patch |
+| 61 | ai-batch-ocr.js | modules/suppliers-debt/ai-batch-ocr.js | 297 | Batch OCR processing: sequential pipeline with pause/resume, retry failed, auto-approve above confidence threshold, review individual docs, summary modal with stats. Entry point: window._startBatchOCR(batchId, docIds) |
+| 62 | ai-historical-import.js | modules/suppliers-debt/ai-historical-import.js | 330 | Historical document import: drag-drop upload for old documents, marks is_historical=true (no inventory impact, no alerts), default status selection (paid/open/per_doc), OCR + learning for supplier templates, per-supplier accuracy summary |
 
-**Total: 58 files, ~13,200 lines** (includes scripts/sync-watcher.js)
+**Total: 62 files, ~14,500 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 5.5h-2):** ai-historical-import.js added (modules/suppliers-debt/). Historical document import with drag-drop, is_historical marking, default status selection, OCR learning with per-supplier accuracy summary. Script tag added to suppliers-debt.html.
+
+**Note (Phase 5.5h-1):** ai-batch-ocr.js added (modules/suppliers-debt/). Batch OCR sequential pipeline with pause/resume, retry failed, auto-approve valid, review individual docs, summary modal. Entry via window._startBatchOCR. Script tag added to suppliers-debt.html.
+
+**Note (Phase 5.5g):** ai-batch-upload.js added (modules/suppliers-debt/). Batch document upload modal with drag-drop, SHA-256 dedup (file_hash column), upload-only or upload+OCR modes, batch_id tracking. Injects toolbar button. Script tag added to suppliers-debt.html.
+
+**Note (Phase 5.5f):** debt-doc-filters.js added (modules/suppliers-debt/). Advanced 8-criteria filter panel replacing simple renderDocFilterBar. Saved filter favorites (localStorage, max 5). Script tag added to suppliers-debt.html.
+
+**Note (Phase 5.5a-5.5d):** batchWriteLog added to supabase-ops.js. validateOCRData (7 business rules) added to supabase-ops.js. generateDocInternalNumber now uses next_internal_doc_number RPC. updateOCRTemplate now uses update_ocr_template_stats RPC. createAlert skips is_historical documents. 3 new columns on supplier_documents: file_hash, batch_id, is_historical. FIELD_MAP updated with new column translations.
 
 **Note (Phase 5h):** ai-config.js added (modules/suppliers-debt/). Settings modal for AI agent configuration. Gear icon injected into debt-topbar (CEO/Manager only). All ai_agent_config fields editable: OCR toggles + confidence slider, alert toggles + reminder days, weekly report toggle + day picker. Stats section: total OCR scans, avg accuracy, active templates, active alerts. CSS added to styles.css. Script tag added to suppliers-debt.html after ai-weekly-report.js.
 
@@ -162,6 +176,8 @@
 | `updateOCRTemplate` | `(supplierId, docTypeCode, corrections, extractedData, templateName?)` | Async. Finds or creates supplier_ocr_templates record. Increments times_used, times_corrected if corrections exist. Recalculates accuracy_rate. Merges extraction_hints via buildHintsFromCorrections. Shared between ai-ocr.js and receipt-ocr.js |
 | `createAlert` | `(alertType, severity, title, entityType, entityId, data?, expiresAt?)` | Async. Creates alert in DB. Checks ai_agent_config flags (alerts_enabled + per-type flags). Calls refreshAlertsBadge. Returns created alert or null. Shared across all pages |
 | `alertPriceAnomaly` | `(item, poPrice, receiptPrice, supplierId, docId)` | Async. Creates price_anomaly alert via createAlert. Called from receipt-confirm.js checkPoPriceDiscrepancies |
+| `batchWriteLog` | `(entries)` | Async. Bulk insert array of log entries into inventory_logs. Single DB call for batch operations. Each entry: {action, inventory_id, details}. Adds employee/branch from sessionStorage (Phase 5.5a-2) |
+| `validateOCRData` | `(extractedData, supplierId?)` | Validates OCR-extracted data against 7 business rules: required fields, positive amount, valid date, VAT consistency, supplier match, duplicate check, item validation. Returns {valid, errors[]} (Phase 5.5d) |
 
 ### js/data-loading.js
 
@@ -805,6 +821,68 @@
 | `_cfgStat` | `(label, value)` | Returns HTML string for a stat item in the stats grid |
 | `saveAIConfig` | `()` | Async. Reads all form values, updates ai_agent_config row, closes modal |
 
+### modules/suppliers-debt/debt-doc-filters.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `renderDocFilterBar` | `()` | Builds collapsible 8-criteria filter panel (status, type, supplier, date range, amount range, source). Replaces original renderDocFilterBar from debt-documents.js |
+| `applyDocFilters` | `()` | Reads all filter values via _readFilterValues, filters _docData client-side, calls renderDocumentsTable |
+| `getDocFilterState` | `()` | Returns current filter state object for external use |
+| `_readFilterValues` | `()` | Reads all 8 filter inputs, returns { status, type, supplier, dateFrom, dateTo, amountMin, amountMax, source } |
+| `_saveDocFilterFav` | `()` | Saves current filter state to localStorage favorites (max 5) |
+| `_applyFavorite` | `(idx)` | Restores filter state from saved favorite by index |
+| `_deleteFavorite` | `(idx)` | Removes saved favorite by index |
+| `_clearDocFilters` | `()` | Resets all filter inputs and re-applies (shows all docs) |
+| `_toggleDocFilters` | `()` | Expands/collapses filter panel, updates toggle button icon |
+
+### modules/suppliers-debt/ai-batch-upload.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `_openBatchUploadModal` | `()` | Opens batch upload modal with supplier select, drag-drop zone, file list |
+| `_computeFileHash` | `(file)` | Async. Computes SHA-256 hash of file using crypto.subtle.digest |
+| `_batchAddFiles` | `(fileList)` | Async. Adds files to batch, computes hashes, checks for in-batch duplicates |
+| `_batchCheckDBDupes` | `(hashes)` | Async. Queries supplier_documents for matching file_hash values |
+| `_batchUploadOnly` | `()` | Async. Uploads all files to Storage, creates supplier_documents with file_hash + batch_id |
+| `_batchUploadAndOCR` | `()` | Async. Uploads files then triggers batch OCR via window._startBatchOCR |
+| `_closeBatchUpload` | `()` | Closes modal, cleans up preview URLs |
+| `_setupBatchDragDrop` | `()` | Wires dragenter/dragover/dragleave/drop events on drop zone |
+| `_batchPickFiles` | `()` | Opens hidden file input for manual file selection |
+| `_renderBatchFileList` | `()` | Renders file list with status indicators, preview buttons, remove buttons |
+| `_batchPreviewFile` | `(idx)` | Opens file preview in modal (PDF iframe or image) |
+| `_injectBatchUploadBtn` | `()` | Injects "העלאה באצווה" button into documents tab toolbar via monkey-patch |
+
+### modules/suppliers-debt/ai-batch-ocr.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `window._startBatchOCR` | `(batchId, docIds)` | Entry point: initializes batch OCR state, shows panel, starts processing |
+| `_showBatchOCRPanel` | `()` | Renders batch OCR progress panel with queue list, controls, stats |
+| `_processNextInQueue` | `()` | Async. Picks next pending item, calls _processSingleOCR, advances queue |
+| `_processSingleOCR` | `(item)` | Async. Calls triggerOCR for single document, updates item status/result |
+| `_updateBatchOCRUI` | `()` | Updates progress bar, item statuses, stats counters in panel |
+| `_batchOCRTogglePause` | `()` | Toggles pause/resume state for processing queue |
+| `_batchOCRRetryFailed` | `()` | Resets all failed items to pending, restarts processing |
+| `_batchOCRRetrySingle` | `(idx)` | Resets single failed item, processes it |
+| `_batchOCRReviewDoc` | `(idx)` | Opens standard OCR review modal for individual document |
+| `_batchOCRApproveValid` | `()` | Async. Auto-approves all items above confidence threshold |
+| `_batchOCRShowSummary` | `()` | Shows summary modal with processed/approved/failed/avg confidence stats |
+
+### modules/suppliers-debt/ai-historical-import.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `_openHistoricalImportModal` | `()` | Opens historical import modal with supplier select, status options, drag-drop zone |
+| `_histAddFiles` | `(fileList)` | Adds files to import list, validates types (PDF/JPG/PNG) |
+| `_histStartImport` | `()` | Async. Uploads files with is_historical=true, runs OCR, waits for completion |
+| `_waitForHistOCRComplete` | `(docIds)` | Async. Polls OCR status until all docs processed or timeout |
+| `_histShowLearningSummary` | `(docIds)` | Async. Shows per-supplier accuracy stats from processed historical docs |
+| `_closeHistImport` | `()` | Closes modal, cleans up preview URLs |
+| `_setupHistDragDrop` | `()` | Wires drag-and-drop events on historical import drop zone |
+| `_histPickFiles` | `()` | Opens hidden file input for file selection |
+| `_renderHistFileList` | `()` | Renders file list with status indicators and preview buttons |
+| `_injectHistImportBtn` | `()` | Injects "ייבוא היסטורי" button into documents tab toolbar via monkey-patch |
+
 ### modules/inventory/inventory-return.js
 
 | Function | Parameters | Description |
@@ -1047,6 +1125,46 @@
 |----------|------|---------------|-------------|
 | `_ocrExtractionId` | String/null | `null` | Current OCR extraction ID being reviewed |
 | `_ocrOriginalData` | Object/null | `null` | Deep copy of original AI-extracted data for correction diff |
+
+### modules/suppliers-debt/debt-doc-filters.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `_docFilterState` | Object | `{}` | Current filter values: {status, type, supplier, dateFrom, dateTo, amountMin, amountMax, source} |
+| `_docFilterCollapsed` | Boolean | `true` | Whether filter panel is collapsed |
+| `_docFilterSupSelect` | Object/null | `null` | Searchable supplier dropdown instance |
+| `_docTotalCount` | Number | `0` | Total document count before filtering (for "showing X of Y") |
+
+### modules/suppliers-debt/ai-batch-upload.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `_batchFiles` | Array | `[]` | Files queued for batch upload [{file, hash, status, name, size}] |
+| `_batchId` | String/null | `null` | Unique batch identifier (timestamp-based) |
+| `_batchSupplierId` | String/null | `null` | Selected supplier ID for batch |
+| `_batchUploadedPaths` | Array | `[]` | Storage paths of uploaded files |
+| `_batchTimestamp` | String | `''` | Batch creation timestamp |
+| `_batchPreviewUrl` | String/null | `null` | Object URL for current file preview |
+
+### modules/suppliers-debt/ai-batch-ocr.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `_batchOCRState` | Array | `[]` | Queue items [{docId, fileUrl, status, result, confidence}] |
+| `_batchOCRPaused` | Boolean | `false` | Whether processing is paused |
+| `_batchOCRBatchId` | String/null | `null` | Current batch ID being processed |
+| `_batchOCRCurrentIdx` | Number | `-1` | Index of currently processing item |
+
+### modules/suppliers-debt/ai-historical-import.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `_histFiles` | Array | `[]` | Files queued for historical import |
+| `_histSupplierId` | String/null | `null` | Selected supplier ID for import |
+| `_histDefaultStatus` | String | `'paid'` | Default status for imported docs (paid/open/per_doc) |
+| `_histBatchId` | String/null | `null` | Batch ID for historical import group |
+| `_histUploadedPaths` | Array | `[]` | Storage paths of uploaded historical files |
+| `_histPreviewUrl` | String/null | `null` | Object URL for current file preview |
 
 ### modules/suppliers-debt/ai-weekly-report.js
 
@@ -1403,6 +1521,41 @@ ai-config.js
   → reads: sessionStorage prizma_role [auth-service.js]
   → provides: openAIConfig(), saveAIConfig()
 
+debt-doc-filters.js
+  → reads: _docData, _docTypes, _docSuppliers [debt-documents.js]
+  → calls: renderDocumentsTable() [debt-documents.js]
+  → calls: createSearchSelect() [search-select.js]
+  → calls: escapeHtml(), $(), formatILS() [shared.js]
+  → patches: loadDocumentsTab() [debt-documents.js] (replaces renderDocFilterBar)
+  → provides: renderDocFilterBar(), applyDocFilters(), getDocFilterState()
+
+ai-batch-upload.js
+  → calls: uploadSupplierFile() [file-upload.js]
+  → calls: fetchAll(), batchCreate() [supabase-ops.js]
+  → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), getTenantId() [shared.js]
+  → calls: loadDocumentsTab() [debt-documents.js]
+  → calls: window._startBatchOCR() [ai-batch-ocr.js]
+  → reads: _docSuppliers [debt-documents.js], T.SUP_DOCS [shared.js]
+  → patches: loadDocumentsTab() [debt-documents.js] (injects toolbar button)
+  → provides: _openBatchUploadModal(), _computeFileHash()
+
+ai-batch-ocr.js
+  → calls: triggerOCR() [ai-ocr.js]
+  → calls: showOCRReview() [ai-ocr.js]
+  → calls: showLoading(), hideLoading(), toast(), $() [shared.js]
+  → reads: T.OCR_EXTRACTIONS, T.SUP_DOCS [shared.js]
+  → provides: window._startBatchOCR()
+
+ai-historical-import.js
+  → calls: uploadSupplierFile() [file-upload.js]
+  → calls: fetchAll(), batchCreate() [supabase-ops.js]
+  → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), getTenantId() [shared.js]
+  → calls: loadDocumentsTab() [debt-documents.js]
+  → calls: window._startBatchOCR() [ai-batch-ocr.js]
+  → reads: _docSuppliers [debt-documents.js], T.SUP_DOCS, T.OCR_EXTRACTIONS, T.OCR_TEMPLATES [shared.js]
+  → patches: loadDocumentsTab() [debt-documents.js] (injects toolbar button)
+  → provides: _openHistoricalImportModal()
+
 inventory-return.js
   → reads: invSelected [inventory-table.js], brandCacheRev, supplierCacheRev [shared.js]
   → reads: T.INV, T.SUP_RETURNS, T.SUP_RETURN_ITEMS [shared.js]
@@ -1428,7 +1581,7 @@ suppliers-debt.html (inline script)
 
 ## 5. Database Schema
 
-> **Note (Phase 5a):** All tables below have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. JWT-based RLS tenant isolation is active on all tables. 11 tables added in Phase 4a for supplier debt tracking. 5 tables added in Phase 5a for AI agent (OCR, alerts, weekly reports). For full SQL DDL → see db-schema.sql.
+> **Note (Phase 5.5):** All tables below have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. JWT-based RLS tenant isolation is active on all 36 tables. 11 tables added in Phase 4a for supplier debt tracking. 5 tables added in Phase 5a for AI agent (OCR, alerts, weekly reports). Phase 5.5a added 3 columns to supplier_documents (file_hash, batch_id, is_historical) + 3 indexes + 2 RPC functions + 1 pg_cron job. For full SQL DDL → see db-schema.sql.
 
 | Table | Constant | Key Columns | Relationships |
 |-------|----------|-------------|---------------|
@@ -1456,7 +1609,7 @@ suppliers-debt.html (inline script)
 | `document_types` | `T.DOC_TYPES` | id (uuid PK), code (unique per tenant), name_he, name_en, affects_debt (increase/decrease/none), is_system, is_active | Configurable document type registry. Seeded: invoice, delivery_note, credit_note, receipt |
 | `payment_methods` | — | id (uuid PK), code (unique per tenant), name_he, name_en, is_system, is_active | Configurable payment method registry. Seeded: bank_transfer, check, cash, credit_card |
 | `currencies` | — | id (uuid PK), code (unique per tenant), name_he, symbol, is_default, is_active | Configurable currency registry. Seeded: ILS (default), USD, EUR |
-| `supplier_documents` | `T.SUP_DOCS` | id (uuid PK), supplier_id (FK→suppliers), document_type_id (FK→document_types), document_number, document_date, due_date, received_date, currency, exchange_rate, subtotal, vat_rate, vat_amount, total_amount, parent_invoice_id (FK→self), file_url, goods_receipt_id (FK→goods_receipts), po_id (FK→purchase_orders), status (open/partially_paid/paid/linked/cancelled), paid_amount, internal_number (022), is_deleted. UNIQUE(tenant_id, supplier_id, document_number) (022) | → suppliers, → document_types, → goods_receipts, → purchase_orders, ← document_links, ← payment_allocations |
+| `supplier_documents` | `T.SUP_DOCS` | id (uuid PK), supplier_id (FK→suppliers), document_type_id (FK→document_types), document_number, document_date, due_date, received_date, currency, exchange_rate, subtotal, vat_rate, vat_amount, total_amount, parent_invoice_id (FK→self), file_url, goods_receipt_id (FK→goods_receipts), po_id (FK→purchase_orders), status (open/partially_paid/paid/linked/cancelled), paid_amount, internal_number, is_deleted, file_hash (TEXT, Phase 5.5a), batch_id (TEXT, Phase 5.5a), is_historical (BOOLEAN default false, Phase 5.5a). UNIQUE(tenant_id, supplier_id, document_number) | → suppliers, → document_types, → goods_receipts, → purchase_orders, ← document_links, ← payment_allocations |
 | `document_links` | `T.DOC_LINKS` | id (uuid PK), parent_document_id (FK→supplier_documents), child_document_id (FK→supplier_documents), amount_on_invoice | Maps delivery notes to monthly invoices |
 | `supplier_payments` | `T.SUP_PAYMENTS` | id (uuid PK), supplier_id (FK→suppliers), amount, currency, exchange_rate, payment_date, payment_method, reference_number, prepaid_deal_id (FK→prepaid_deals), withholding_tax_rate (022), withholding_tax_amount (022), net_amount (022), status (approved/pending/rejected) (022), approved_by (FK→employees) (022), approved_at (022), is_deleted | → suppliers, → prepaid_deals, → employees, ← payment_allocations |
 | `payment_allocations` | — | id (uuid PK), payment_id (FK→supplier_payments), document_id (FK→supplier_documents), allocated_amount | Many-to-many: payments ↔ documents |
@@ -1598,3 +1751,17 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 **✅ Phase 5f:** Daily alert generation RPC function:
 - `generate_daily_alerts(p_tenant_id)` — Creates alerts for: payment_overdue (critical), payment_due (warning, within reminder window), prepaid_low (warning, <20% remaining). Respects ai_agent_config flags. Returns JSON `{alerts_created: N}`. Skips if duplicate alert already exists for same entity.
 - Migration: `phase5f_alert_generation.sql`
+
+**✅ Phase 5.5a:** Atomic RPCs for document numbers and OCR templates:
+- `next_internal_doc_number(p_tenant_id UUID)` — Atomic sequential DOC-NNNN generation. Uses SELECT MAX + 1 within a single SQL function to prevent race conditions on concurrent document creation.
+- `update_ocr_template_stats(p_template_id UUID, p_corrections JSONB, p_extracted_data JSONB)` — Atomic template stats update: increments times_used, optionally times_corrected, recalculates accuracy_rate, merges extraction_hints. Single DB call instead of read-modify-write.
+- Migration: `phase5_5a_atomic_rpcs.sql`
+
+**✅ Phase 5.5a:** Schema additions for batch operations:
+- 3 new columns on supplier_documents: `file_hash TEXT`, `batch_id TEXT`, `is_historical BOOLEAN DEFAULT false`
+- 3 new indexes: `idx_sup_docs_file_hash`, `idx_sup_docs_batch`, `idx_sup_docs_historical`
+- Migration: `phase5_5b_schema_additions.sql`
+
+**✅ Phase 5.5c:** pg_cron daily alerts:
+- Job `daily-alert-generation`: runs at 05:00 UTC, calls generate_daily_alerts with fault isolation per alert type (each wrapped in BEGIN/EXCEPTION)
+- Migration: `phase5_5c_pgcron_alerts.sql`
