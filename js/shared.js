@@ -28,6 +28,11 @@ const T = {
   PREPAID_CHECKS: 'prepaid_checks',
   SUP_RETURNS: 'supplier_returns',
   SUP_RETURN_ITEMS: 'supplier_return_items',
+  AI_CONFIG: 'ai_agent_config',
+  OCR_TEMPLATES: 'supplier_ocr_templates',
+  OCR_EXTRACTIONS: 'ocr_extractions',
+  ALERTS: 'alerts',
+  WEEKLY_REPORTS: 'weekly_reports',
 };
 
 // =========================================================
@@ -80,7 +85,34 @@ const FIELD_MAP = {
   brands: {
     'שם חברה':'name','סוג מותג':'brand_type','סנכרון ברירת מחדל':'default_sync','פעיל':'active','מוחרג מאתר':'exclude_website','מלאי מינימום':'min_stock_qty'
   },
-  suppliers: { 'שם':'name' }
+  suppliers: { 'שם':'name' },
+  ai_agent_config: {
+    'סריקה פעילה':'ocr_enabled','התאמת ספק אוטומטית':'auto_match_supplier',
+    'התאמת הזמנה אוטומטית':'auto_match_po','סף ביטחון':'confidence_threshold',
+    'התראות פעילות':'alerts_enabled','ימי תזכורת תשלום':'payment_reminder_days',
+    'התראת איחור':'overdue_alert','התראת מקדמה':'prepaid_threshold_alert',
+    'התראת חריגה':'anomaly_alert','דוח שבועי פעיל':'weekly_report_enabled',
+    'יום דוח שבועי':'weekly_report_day','מקור מפתח':'api_key_source'
+  },
+  supplier_ocr_templates: {
+    'שם תבנית':'template_name','סוג מסמך':'document_type_code',
+    'רמזי חילוץ':'extraction_hints','פעמים בשימוש':'times_used',
+    'פעמים תוקן':'times_corrected','אחוז דיוק':'accuracy_rate','פעיל':'is_active'
+  },
+  ocr_extractions: {
+    'קובץ':'file_url','שם קובץ':'file_name','תגובה גולמית':'raw_response',
+    'מודל':'model_used','נתונים שחולצו':'extracted_data','ציון ביטחון':'confidence_score',
+    'סטטוס':'status','תיקונים':'corrections','זמן עיבוד':'processing_time_ms'
+  },
+  alerts: {
+    'סוג התראה':'alert_type','חומרה':'severity','כותרת':'title',
+    'הודעה':'message','סטטוס':'status','סוג ישות':'entity_type',
+    'תפוגה':'expires_at','פעולה שננקטה':'action_taken'
+  },
+  weekly_reports: {
+    'תחילת שבוע':'week_start','סוף שבוע':'week_end',
+    'נתוני דוח':'report_data','קובץ PDF':'pdf_url'
+  }
 };
 
 // Build reverse maps (English→Hebrew)

@@ -1233,7 +1233,7 @@ suppliers-debt.html (inline script)
 
 ## 5. Database Schema
 
-> **Note (Phase 4a):** All tables below have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. JWT-based RLS tenant isolation is active on all tables. 11 new tables added in Phase 4a for supplier debt tracking. For full SQL DDL → see db-schema.sql.
+> **Note (Phase 5a):** All tables below have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. JWT-based RLS tenant isolation is active on all tables. 11 tables added in Phase 4a for supplier debt tracking. 5 tables added in Phase 5a for AI agent (OCR, alerts, weekly reports). For full SQL DDL → see db-schema.sql.
 
 | Table | Constant | Key Columns | Relationships |
 |-------|----------|-------------|---------------|
@@ -1269,6 +1269,11 @@ suppliers-debt.html (inline script)
 | `prepaid_checks` | — | id (uuid PK), prepaid_deal_id (FK→prepaid_deals), check_number, amount, check_date, status (pending/cashed/bounced/cancelled), cashed_date | → prepaid_deals |
 | `supplier_returns` | — | id (uuid PK), supplier_id (FK→suppliers), return_number, return_type (agent_pickup/ship_to_supplier/pending_in_store), reason, status (pending/ready_to_ship/shipped/received_by_supplier/credited), credit_document_id (FK→supplier_documents), credit_amount, is_deleted | → suppliers, → supplier_documents, ← supplier_return_items |
 | `supplier_return_items` | — | id (uuid PK), return_id (FK→supplier_returns), inventory_id (FK→inventory), barcode, quantity, brand_name, model, color, size, cost_price | → supplier_returns, → inventory |
+| `ai_agent_config` | `T.AI_CONFIG` | id (uuid PK), tenant_id (UNIQUE FK→tenants), ocr_enabled, auto_match_supplier, auto_match_po, confidence_threshold (decimal 3,2), alerts_enabled, payment_reminder_days (int), overdue_alert, prepaid_threshold_alert, anomaly_alert, weekly_report_enabled, weekly_report_day (int), api_key_source, tenant_api_key, created_at, updated_at | → tenants (one row per tenant) |
+| `supplier_ocr_templates` | `T.OCR_TEMPLATES` | id (uuid PK), tenant_id (FK→tenants), supplier_id (FK→suppliers), template_name, document_type_code, extraction_hints (jsonb), times_used, times_corrected, accuracy_rate (decimal 5,2), last_used_at, is_active, created_at, updated_at. UNIQUE(tenant_id, supplier_id, document_type_code) | → tenants, → suppliers, ← ocr_extractions.template_id |
+| `ocr_extractions` | `T.OCR_EXTRACTIONS` | id (uuid PK), tenant_id (FK→tenants), file_url, file_name, raw_response (jsonb), model_used, extracted_data (jsonb), confidence_score (decimal 3,2), status (pending/accepted/corrected/rejected), corrections (jsonb), supplier_document_id (FK→supplier_documents), template_id (FK→supplier_ocr_templates), processed_by (FK→employees), processing_time_ms, created_at | → tenants, → supplier_documents, → supplier_ocr_templates, → employees |
+| `alerts` | `T.ALERTS` | id (uuid PK), tenant_id (FK→tenants), alert_type, severity (info/warning/critical), title, message, data (jsonb), status (unread/read/dismissed/actioned), read_at, dismissed_at, dismissed_by (FK→employees), action_taken, entity_type, entity_id, expires_at, created_at | → tenants, → employees |
+| `weekly_reports` | `T.WEEKLY_REPORTS` | id (uuid PK), tenant_id (FK→tenants), week_start (date), week_end (date), report_data (jsonb), pdf_url, pdf_generated_at, created_at | → tenants |
 
 ---
 
