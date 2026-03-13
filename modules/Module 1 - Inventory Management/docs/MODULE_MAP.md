@@ -29,6 +29,7 @@
 | 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 174 | Receipt save/cancel: saveReceiptDraft, saveReceiptDraftInternal, cancelReceipt, backToReceiptList |
 | 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 249 | Receipt confirmation: confirmReceipt, confirmReceiptCore (auto-updates cost_price), confirmReceiptById (from list), createNewInventoryFromReceiptItem, checkPoPriceDiscrepancies (PO vs receipt price warning) |
 | 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 130 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt. Uploads attached file if _pendingReceiptFile exists. Phase 4f: auto-deducts from active prepaid deal if exists |
+| 19d | receipt-ocr.js | modules/goods-receipts/receipt-ocr.js | 247 | OCR integration in goods receipt: initReceiptOCR (injects scan button), _rcptOcrScan (upload + Edge Function call), _applyOCRToReceipt (auto-fill supplier/items), _rcptOcrMatchInventory (ILIKE search), _rcptOcrShowBanner (confidence banner), _rcptOcrPreviewDoc (source doc modal) |
 | 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 195 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, receipt list event delegation |
 | 21 | audit-log.js | modules/audit/audit-log.js | 215 | Soft delete flow (deleteInvRow, confirmSoftDelete), recycle bin (openRecycleBin, restoreItem, permanentDelete with double PIN) |
 | 22 | item-history.js | modules/audit/item-history.js | 323 | Item timeline (openItemHistory), ACTION_MAP constant (21 action types), entry history accordion (openEntryHistory, loadEntryHistory, renderEntryHistory), exports |
@@ -352,6 +353,19 @@
 | Function | Parameters | Description |
 |----------|------------|-------------|
 | `createDocumentFromReceipt` | `(receiptId, supplierId, receiptItems)` | Async. Auto-creates supplier_documents record from confirmed receipt. Calculates subtotal/VAT/total from item costs, generates DOC-NNNN internal_number, uses supplier's default_document_type and payment_terms_days. Skips if no cost data. Uploads _pendingReceiptFile if attached. Phase 4f: auto-deducts totalAmount from active prepaid deal (updates total_used/total_remaining). Uses fetchAll/batchCreate/batchUpdate helpers. |
+
+### modules/goods-receipts/receipt-ocr.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `initReceiptOCR` | `()` | Injects OCR scan button next to file attach button in receipt form. Patches _pickReceiptFile to show/hide button. Uses MutationObserver on attach elements. Called on DOMContentLoaded. |
+| `_rcptOcrUpdateBtn` | `()` | Shows/hides OCR button based on _pendingReceiptFile state |
+| `_rcptOcrScan` | `()` | Async. Uploads _pendingReceiptFile via uploadSupplierFile, calls ocr-extract Edge Function, applies results via _applyOCRToReceipt |
+| `_applyOCRToReceipt` | `(result, fileUrl)` | Async. Auto-fills supplier dropdown, document number/date/type, and receipt items from OCR extracted_data. Matches items to inventory via _rcptOcrMatchInventory. Shows confidence banner and summary toast. |
+| `_rcptOcrMatchInventory` | `(description, supplierId)` | Async. Searches inventory by model ILIKE, optionally filtered by supplier_id. Returns first match or null. |
+| `_rcptOcrHighlightRow` | `(type)` | Highlights last receipt item row — yellow for unmatched, green (fading) for matched |
+| `_rcptOcrShowBanner` | `(confidence, matched, total, fileUrl)` | Creates OCR confidence banner at top of receipt form with match stats and "view source" button |
+| `_rcptOcrPreviewDoc` | `(fileUrl)` | Async. Opens modal with document preview (PDF iframe or image) using signed URL from getSupplierFileUrl |
 
 ### modules/goods-receipts/receipt-excel.js
 
@@ -1112,6 +1126,14 @@ receipt-confirm.js
   → calls: createDocumentFromReceipt() [receipt-debt.js]
   → calls: loadReceiptTab(), updatePOStatusAfterReceipt() [goods-receipt.js]
   → calls: refreshLowStockBanner() [data-loading.js]
+
+receipt-ocr.js
+  → calls: addReceiptItemRow(), updateReceiptItemsStats() [receipt-form.js]
+  → calls: uploadSupplierFile(), getSupplierFileUrl() [file-upload.js]
+  → calls: generateNextBarcode() [shared.js]
+  → reads: supplierCache, supplierCacheRev, brandCacheRev [shared.js]
+  → reads: _pendingReceiptFile [receipt-form.js]
+  → calls: ocr-extract Edge Function [Supabase]
 
 receipt-debt.js
   → calls: fetchAll(), batchCreate() [supabase-ops.js]
