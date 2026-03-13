@@ -66,7 +66,11 @@
 | 53 | file-upload.js | js/file-upload.js | 97 | File upload helper for supplier documents: uploadSupplierFile (validates type/size, uploads to Supabase Storage), getSupplierFileUrl (signed URLs), renderFilePreview (PDF iframe / image), pickAndUploadFile (hidden file input + upload) |
 | 54 | ai-ocr.js | modules/suppliers-debt/ai-ocr.js | 342 | OCR trigger, review screen, correction flow with learning: triggerOCR (calls ocr-extract Edge Function), showOCRReview (side-by-side modal + supplier OCR stats), _ocrSave (saves corrections + creates supplier_document + updates OCR template), confidence indicators per field, _injectOCRScanIcons (adds scan buttons to doc table rows), _injectOCRToolbarBtn (toolbar scan button), patches loadDocumentsTab |
 
-**Total: 54 files, ~11,207 lines** (includes scripts/sync-watcher.js)
+| 55 | alerts-badge.js | js/alerts-badge.js | 323 | Bell icon + unread badge + dropdown panel on ALL pages: initAlertsBadge (inject bell into header), refreshAlertsBadge (poll unread count every 60s), toggleAlertsPanel/openAlertsPanel/closeAlertsPanel, loadAlertsList (last 10 unread), alertAction (view/dismiss), markAllAlertsRead, timeAgo (Hebrew relative time) |
+
+**Total: 55 files, ~11,530 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 5f-1):** alerts-badge.js added (js/). Bell icon + badge + dropdown panel injected into sticky header on all 4 pages. 60s polling for unread count. Dismiss/mark-read actions update DB. Hebrew timeAgo helper. CSS added to header.css. generate_daily_alerts RPC function (payment_due, payment_overdue, prepaid_low).
 
 **Note (Phase 5e):** OCR learning system. updateOCRTemplate + buildHintsFromCorrections added to supabase-ops.js (shared utility). ai-ocr.js _ocrSave now updates supplier_ocr_templates after saving. showOCRReview displays supplier OCR stats (scan count + accuracy). receipt-ocr.js stores OCR result and patches confirmReceiptCore to call updateOCRTemplate on successful confirm. _rcptOcrResult global added to receipt-ocr.js.
 
@@ -583,6 +587,22 @@
 | `initHeader` | `()` | DOMContentLoaded handler. Checks sessionStorage for employee (SK.EMPLOYEE). If absent, returns (no header pre-login). Fetches tenant name + logo_url from tenants table. Calls buildHeader() |
 | `buildHeader` | `(emp, tenantName, logoUrl, role)` | Creates `<header id="app-header">` with 3 zones: right (logo/fallback SVG + store name), center ("Optic Up"), left (employee name + role + logout button). All dynamic values escaped via escapeHtml(). Logout wired to clearSession() via addEventListener |
 
+### js/alerts-badge.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `initAlertsBadge` | `()` | DOMContentLoaded handler (600ms delay for header). Injects bell button + badge into .header-left before logout. Creates hidden alerts-panel div. Wires click + outside-click handlers. Calls refreshAlertsBadge, starts 60s polling |
+| `refreshAlertsBadge` | `()` | Async. Queries alerts count WHERE status='unread'. Updates badge number + visibility. Triggers bell-shake animation if count > 0 |
+| `toggleAlertsPanel` | `()` | Toggles alerts dropdown open/closed |
+| `openAlertsPanel` | `()` | Async. Positions panel below bell, shows loading, calls loadAlertsList |
+| `closeAlertsPanel` | `()` | Hides alerts panel, sets _alertsPanelOpen = false |
+| `loadAlertsList` | `()` | Async. Fetches last 10 unread alerts ordered by created_at DESC. Stores in _alertsCache. Calls renderAlertsPanel |
+| `renderAlertsPanel` | `()` | Builds panel HTML: header, alert items with severity icon + title + timeAgo + action buttons, footer with mark-all-read + view-all link |
+| `buildAlertActions` | `(alert)` | Returns HTML for alert action buttons (view/dismiss). Uses "בדוק" label for ocr_low_confidence type |
+| `alertAction` | `(alertId, action)` | Async. 'view': marks alert as read, navigates to suppliers-debt.html. 'dismiss': updates status to dismissed with employee id, removes from UI, refreshes badge |
+| `markAllAlertsRead` | `()` | Async. Updates all unread alerts to status='read'. Clears cache, re-renders panel, refreshes badge |
+| `timeAgo` | `(dateStr)` | Returns Hebrew relative time string: עכשיו, לפני X דקות, לפני שעה, לפני X שעות, היום, אתמול, לפני X ימים, לפני שבוע, לפני X שבועות, לפני חודש, לפני X חודשים |
+
 ### js/file-upload.js
 
 | Function | Parameters | Description |
@@ -801,6 +821,14 @@
 | `activeDropdown` | Object/null | `null` | Currently open searchable dropdown instance |
 | `_searchSelectCleanups` | Set | `new Set()` | Cleanup functions for orphaned dropdowns |
 | `window._sharedSearchObserver` | MutationObserver | observes body | Auto-cleans disconnected dropdown elements |
+
+### js/alerts-badge.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `_alertsPanelOpen` | Boolean | `false` | Whether alerts dropdown is currently visible |
+| `_alertsRefreshTimer` | Number/null | `null` | setInterval ID for 60s badge refresh polling |
+| `_alertsCache` | Array | `[]` | Last fetched unread alerts (up to 10) for panel rendering |
 
 ### modules/inventory/inventory-table.js
 
@@ -1484,3 +1512,7 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 
 **Files updated:** qty-modal.js (`confirmQtyChange`), receipt-confirm.js (`confirmReceiptCore`), inventory-reduction.js (`processRedExcel`, `confirmReduction`), pending-resolve.js (`confirmResolvePending`), access-sales.js (`processAccessSalesFile`), stock-count-report.js (`confirmCount` via `set_inventory_qty`), sync-watcher.js (watcher uses `increment_inventory`/`decrement_inventory`)
 **Files remaining (future):** po-view-import.js (`importPOToInventory`)
+
+**✅ Phase 5f:** Daily alert generation RPC function:
+- `generate_daily_alerts(p_tenant_id)` — Creates alerts for: payment_overdue (critical), payment_due (warning, within reminder window), prepaid_low (warning, <20% remaining). Respects ai_agent_config flags. Returns JSON `{alerts_created: N}`. Skips if duplicate alert already exists for same entity.
+- Migration: `phase5f_alert_generation.sql`
