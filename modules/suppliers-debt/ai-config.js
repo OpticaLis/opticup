@@ -114,7 +114,7 @@ function _renderAIConfigModal(config, stats) {
 
       // OCR Section
       '<div class="ai-config-section">' +
-        '<h4>\U0001F4F7 \u05E1\u05E8\u05D9\u05E7\u05EA OCR</h4>' +
+        '<h4>\uD83D\uDCF7 \u05E1\u05E8\u05D9\u05E7\u05EA OCR</h4>' +
         _cfgCheckbox('cfg-ocr-enabled', '\u05E1\u05E8\u05D9\u05E7\u05D4 \u05E4\u05E2\u05D9\u05DC\u05D4', c.ocr_enabled) +
         _cfgCheckbox('cfg-auto-supplier', '\u05D4\u05EA\u05D0\u05DE\u05EA \u05E1\u05E4\u05E7 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA', c.auto_match_supplier) +
         _cfgCheckbox('cfg-auto-po', '\u05D4\u05EA\u05D0\u05DE\u05EA \u05D4\u05D6\u05DE\u05E0\u05EA \u05E8\u05DB\u05E9 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA', c.auto_match_po) +
@@ -129,7 +129,7 @@ function _renderAIConfigModal(config, stats) {
 
       // Alerts Section
       '<div class="ai-config-section">' +
-        '<h4>\U0001F514 \u05D4\u05EA\u05E8\u05D0\u05D5\u05EA</h4>' +
+        '<h4>\uD83D\uDD14 \u05D4\u05EA\u05E8\u05D0\u05D5\u05EA</h4>' +
         _cfgCheckbox('cfg-alerts-enabled', '\u05D4\u05EA\u05E8\u05D0\u05D5\u05EA \u05E4\u05E2\u05D9\u05DC\u05D5\u05EA', c.alerts_enabled) +
         '<div class="ai-config-row">' +
           '<label>\u05D9\u05DE\u05D9 \u05EA\u05D6\u05DB\u05D5\u05E8\u05EA \u05EA\u05E9\u05DC\u05D5\u05DD:</label>' +
@@ -142,7 +142,7 @@ function _renderAIConfigModal(config, stats) {
 
       // Weekly Report Section
       '<div class="ai-config-section">' +
-        '<h4>\U0001F4CA \u05D3\u05D5\u05D7 \u05E9\u05D1\u05D5\u05E2\u05D9</h4>' +
+        '<h4>\uD83D\uDCCA \u05D3\u05D5\u05D7 \u05E9\u05D1\u05D5\u05E2\u05D9</h4>' +
         _cfgCheckbox('cfg-weekly-enabled', '\u05E4\u05E2\u05D9\u05DC', c.weekly_report_enabled) +
         '<div class="ai-config-row">' +
           '<label>\u05D9\u05D5\u05DD \u05D4\u05E4\u05E7\u05EA \u05D3\u05D5\u05D7:</label>' +
@@ -152,7 +152,7 @@ function _renderAIConfigModal(config, stats) {
 
       // Stats Section
       '<div class="ai-config-section ai-config-stats">' +
-        '<h4>\U0001F4C8 \u05E1\u05D8\u05D8\u05D9\u05E1\u05D8\u05D9\u05E7\u05D5\u05EA</h4>' +
+        '<h4>\uD83D\uDCC8 \u05E1\u05D8\u05D8\u05D9\u05E1\u05D8\u05D9\u05E7\u05D5\u05EA</h4>' +
         '<div class="ai-config-stats-grid">' +
           _cfgStat('\u05E1\u05E8\u05D9\u05E7\u05D5\u05EA OCR', stats.totalScans) +
           _cfgStat('\u05D3\u05D9\u05D5\u05E7 \u05DE\u05DE\u05D5\u05E6\u05E2', stats.avgAccuracy + '%') +
