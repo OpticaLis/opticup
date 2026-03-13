@@ -88,6 +88,22 @@
 
 ---
 
+## 1b. Edge Functions
+
+| # | Function | Path | Lines | Purpose |
+|---|----------|------|-------|---------|
+| EF1 | pin-auth | supabase/functions/pin-auth/index.ts | 221 | PIN-based JWT authentication. POST {pin, slug} → validates employee PIN → returns signed JWT with tenant_id claim for RLS. Handles failed attempts + account lockout. |
+| EF2 | ocr-extract | supabase/functions/ocr-extract/index.ts | 349 | Claude Vision OCR for supplier documents. POST {file_url, tenant_id, supplier_id?, document_type_hint?} → fetches file from Storage → sends to Claude Vision API → parses structured data → fuzzy-matches supplier/PO → saves to ocr_extractions → returns extracted data with confidence scores. |
+
+**Environment variables (Edge Functions):**
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` — auto-available
+- `JWT_SECRET` — used by pin-auth for JWT signing
+- `ANTHROPIC_API_KEY` — used by ocr-extract for Claude Vision API (set in Supabase Secrets)
+
+**Note (Phase 5b):** ocr-extract added. Uses service_role client for DB operations (bypasses RLS). Validates user JWT by checking auth_sessions table. Supports PDF and image files. Retry-once on Claude API timeout. Fuzzy supplier matching via Dice coefficient. PO matching by reference number or single-open-PO heuristic.
+
+---
+
 ## 2. Function Registry
 
 ### js/shared.js
