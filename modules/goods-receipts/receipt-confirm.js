@@ -227,6 +227,14 @@ async function checkPoPriceDiscrepancies(poId, receiptItems, receiptId) {
       const existing = docs[0].notes || '';
       await batchUpdate(T.SUP_DOCS, [{ id: docs[0].id, notes: existing ? existing + '\n' + discNote : discNote }]);
     }
+
+    // Create alerts for each price discrepancy
+    if (typeof alertPriceAnomaly === 'function') {
+      var alertDocId = docs.length > 0 ? docs[0].id : null;
+      for (const d of discrepancies) {
+        alertPriceAnomaly(d.brand + ' ' + d.model, d.poPrice, d.receiptPrice, null, alertDocId);
+      }
+    }
   } catch (e) {
     console.warn('checkPoPriceDiscrepancies error (non-blocking):', e);
   }

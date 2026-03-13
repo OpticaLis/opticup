@@ -251,3 +251,41 @@ async function writeLog(action, inventoryId, details = {}) {
     toast('שגיאה: פעולה לא נרשמה ביומן', 'e');
   }
 }
+
+// =========================================================
+// ALERTS ENGINE — shared across all pages (Phase 5f-2)
+// =========================================================
+async function createAlert(alertType, severity, title, entityType, entityId, data, expiresAt) {
+  try {
+    var tid = getTenantId();
+    if (!tid) return null;
+    // Check ai_agent_config flags
+    var cfgRows = await sb.from(T.AI_CONFIG).select('*').eq('tenant_id', tid).limit(1);
+    var cfg = (cfgRows.data && cfgRows.data[0]) || {};
+    if (cfg.alerts_enabled === false) return null;
+    // Per-type flag check
+    var flagMap = { anomaly_alert: 'price_anomaly', overdue_alert: 'payment_overdue' };
+    for (var flag in flagMap) {
+      if (flagMap[flag] === alertType && cfg[flag] === false) return null;
+    }
+    var row = {
+      tenant_id: tid, alert_type: alertType, severity: severity || 'info',
+      title: title, entity_type: entityType || null, entity_id: entityId || null,
+      data: data || null, status: 'unread'
+    };
+    if (expiresAt) row.expires_at = expiresAt;
+    var { data: created, error } = await sb.from(T.ALERTS).insert(row).select().single();
+    if (error) { console.warn('createAlert error:', error.message); return null; }
+    if (typeof refreshAlertsBadge === 'function') refreshAlertsBadge();
+    return created;
+  } catch (e) {
+    console.warn('createAlert failed:', e);
+    return null;
+  }
+}
+
+async function alertPriceAnomaly(item, poPrice, receiptPrice, supplierId, docId) {
+  var title = 'פער מחיר — ' + (item || '') + ': ₪' + poPrice + ' → ₪' + receiptPrice;
+  return createAlert('price_anomaly', 'warning', title, 'supplier_document', docId,
+    { item: item, po_price: poPrice, receipt_price: receiptPrice, supplier_id: supplierId });
+}

@@ -9,7 +9,7 @@
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
 | 1 | shared.js | js/shared.js | 185 | Supabase client init, table constants (T), FIELD_MAP/ENUM_MAP, Hebrew↔English translation, UI helpers ($, toast, setAlert, confirmDialog, showLoading), tab navigation (showTab, showEntryMode), escapeHtml, global variable declarations |
-| 2 | supabase-ops.js | js/supabase-ops.js | 253 | Database abstraction layer: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (individual updates, RLS-safe), writeLog, generateNextBarcode, OCR learning helpers (updateOCRTemplate, buildHintsFromCorrections) |
+| 2 | supabase-ops.js | js/supabase-ops.js | 291 | Database abstraction layer: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (individual updates, RLS-safe), writeLog, generateNextBarcode, OCR learning helpers (updateOCRTemplate, buildHintsFromCorrections), alert engine (createAlert, alertPriceAnomaly) |
 | 3 | data-loading.js | js/data-loading.js | 167 | App initialization: loadData, loadMaxBarcode, populateDropdowns, low stock alerts (loadLowStockAlerts, refreshLowStockBanner, openLowStockModal), helper functions (activeBrands, supplierOpts, getBrandType, getBrandSync) |
 | 4 | search-select.js | js/search-select.js | 136 | Reusable searchable dropdown component: createSearchSelect, closeAllDropdowns, repositionDropdown, MutationObserver cleanup |
 | 5 | inventory-table.js | modules/inventory/inventory-table.js | 275 | Main inventory table: server-side paginated loading, filtering (search/supplier/type/qty), sorting, rendering with inline edit cells, event delegation for row actions |
@@ -27,7 +27,7 @@
 | 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 275 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (populates items from PO), updatePOStatusAfterReceipt, openNewReceipt |
 | 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 292 | Receipt form: openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow, getReceiptItems, updateReceiptItemsStats, addNewReceiptRow, showReceiptGuide, _pickReceiptFile (file attach) |
 | 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 174 | Receipt save/cancel: saveReceiptDraft, saveReceiptDraftInternal, cancelReceipt, backToReceiptList |
-| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 249 | Receipt confirmation: confirmReceipt, confirmReceiptCore (auto-updates cost_price), confirmReceiptById (from list), createNewInventoryFromReceiptItem, checkPoPriceDiscrepancies (PO vs receipt price warning) |
+| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 256 | Receipt confirmation: confirmReceipt, confirmReceiptCore (auto-updates cost_price), confirmReceiptById (from list), createNewInventoryFromReceiptItem, checkPoPriceDiscrepancies (PO vs receipt price warning + alertPriceAnomaly) |
 | 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 130 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt. Uploads attached file if _pendingReceiptFile exists. Phase 4f: auto-deducts from active prepaid deal if exists |
 | 19d | receipt-ocr.js | modules/goods-receipts/receipt-ocr.js | 297 | OCR integration in goods receipt with learning: initReceiptOCR (injects scan button), _rcptOcrScan (upload + Edge Function call), _applyOCRToReceipt (auto-fill supplier/items, stores OCR data for learning), _rcptOcrMatchInventory (ILIKE search), _rcptOcrShowBanner (confidence banner), _rcptOcrPreviewDoc (source doc modal), _rcptOcrUpdateTemplate (compares OCR vs final form, calls updateOCRTemplate), _patchReceiptConfirmForOCR (hooks into confirmReceiptCore) |
 | 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 195 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, receipt list event delegation |
@@ -67,8 +67,11 @@
 | 54 | ai-ocr.js | modules/suppliers-debt/ai-ocr.js | 342 | OCR trigger, review screen, correction flow with learning: triggerOCR (calls ocr-extract Edge Function), showOCRReview (side-by-side modal + supplier OCR stats), _ocrSave (saves corrections + creates supplier_document + updates OCR template), confidence indicators per field, _injectOCRScanIcons (adds scan buttons to doc table rows), _injectOCRToolbarBtn (toolbar scan button), patches loadDocumentsTab |
 
 | 55 | alerts-badge.js | js/alerts-badge.js | 323 | Bell icon + unread badge + dropdown panel on ALL pages: initAlertsBadge (inject bell into header), refreshAlertsBadge (poll unread count every 60s), toggleAlertsPanel/openAlertsPanel/closeAlertsPanel, loadAlertsList (last 10 unread), alertAction (view/dismiss), markAllAlertsRead, timeAgo (Hebrew relative time) |
+| 56 | ai-alerts.js | modules/suppliers-debt/ai-alerts.js | 219 | Event-driven alerts + auto-dismiss + hooks: checkDuplicateDocument, alertDuplicateDocument, alertAmountMismatch, alertOCRLowConfidence, autoDismissAlerts. Patches: saveNewDocument (duplicate check), linkDeliveryToInvoice (amount mismatch), _ocrSave (auto-dismiss OCR), _wizSavePayment (auto-dismiss payment), triggerOCR (low confidence check) |
 
-**Total: 55 files, ~11,530 lines** (includes scripts/sync-watcher.js)
+**Total: 56 files, ~11,790 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 5f-2):** ai-alerts.js added (modules/suppliers-debt/). Event-driven alert system: createAlert + alertPriceAnomaly in supabase-ops.js (shared across all pages). ai-alerts.js provides duplicate document check, amount mismatch, OCR low confidence alerts + auto-dismiss on payment/OCR accept. Hooks via monkey-patching saveNewDocument, linkDeliveryToInvoice, _ocrSave, _wizSavePayment, triggerOCR. receipt-confirm.js checkPoPriceDiscrepancies now calls alertPriceAnomaly for each price anomaly. Respects ai_agent_config flags.
 
 **Note (Phase 5f-1):** alerts-badge.js added (js/). Bell icon + badge + dropdown panel injected into sticky header on all 4 pages. 60s polling for unread count. Dismiss/mark-read actions update DB. Hebrew timeAgo helper. CSS added to header.css. generate_daily_alerts RPC function (payment_due, payment_overdue, prepaid_low).
 
@@ -151,6 +154,8 @@
 | `_detectDateFormat` | `(dateStr)` | Detects date format from string (YYYY-MM-DD, DD/MM/YYYY, DD.MM.YYYY). Returns format string or null |
 | `buildHintsFromCorrections` | `(corrections, extractedData, existingHints)` | Builds extraction_hints JSONB from OCR corrections and extracted data. Merges with existing hints. Detects date format, supplier name pattern, document number examples |
 | `updateOCRTemplate` | `(supplierId, docTypeCode, corrections, extractedData, templateName?)` | Async. Finds or creates supplier_ocr_templates record. Increments times_used, times_corrected if corrections exist. Recalculates accuracy_rate. Merges extraction_hints via buildHintsFromCorrections. Shared between ai-ocr.js and receipt-ocr.js |
+| `createAlert` | `(alertType, severity, title, entityType, entityId, data?, expiresAt?)` | Async. Creates alert in DB. Checks ai_agent_config flags (alerts_enabled + per-type flags). Calls refreshAlertsBadge. Returns created alert or null. Shared across all pages |
+| `alertPriceAnomaly` | `(item, poPrice, receiptPrice, supplierId, docId)` | Async. Creates price_anomaly alert via createAlert. Called from receipt-confirm.js checkPoPriceDiscrepancies |
 
 ### js/data-loading.js
 
@@ -354,7 +359,7 @@
 | `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Core confirmation: increments inventory quantities via `sb.rpc('increment_inventory')`, auto-updates cost_price from receipt via batchUpdate, creates new items, updates PO status, calls createDocumentFromReceipt, calls checkPoPriceDiscrepancies |
 | `confirmReceipt` | `()` | Async. UI-facing: validates, saves draft internally, then calls confirmReceiptCore |
 | `createNewInventoryFromReceiptItem` | `(item, receiptId, rcptNumber)` | Async. Creates inventory row using pre-assigned barcode from receipt item (falls back to generateNextBarcode) |
-| `checkPoPriceDiscrepancies` | `(poId, receiptItems, receiptId)` | Async. Compares receipt item prices vs PO item prices. Shows warning dialog if any item differs by >5%. Adds price_discrepancy note to supplier_documents record |
+| `checkPoPriceDiscrepancies` | `(poId, receiptItems, receiptId)` | Async. Compares receipt item prices vs PO item prices. Shows warning dialog if any item differs by >5%. Adds price_discrepancy note to supplier_documents record. Creates alertPriceAnomaly for each discrepancy (Phase 5f-2) |
 | `confirmReceiptById` | `(receiptId)` | Async. Confirms receipt from list view without opening form |
 
 ### modules/goods-receipts/receipt-debt.js
@@ -752,6 +757,21 @@
 | `_ocrConfDot` | `(c)` | Returns confidence indicator HTML (green/yellow/red) based on score |
 | `_ocrFV` | `(ext, f)` | Extracts field value from possibly nested {value, confidence} object |
 | `_ocrFC` | `(ext, f)` | Extracts confidence score from field or top-level confidence object |
+
+### modules/suppliers-debt/ai-alerts.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `checkDuplicateDocument` | `(supplierId, docNumber, tenantId?)` | Async. Queries supplier_documents for matching supplier_id + document_number. Returns existing doc or null |
+| `alertDuplicateDocument` | `(supplierName, docType, docNumber, existingDocId)` | Async. Creates duplicate_document warning alert via createAlert |
+| `alertAmountMismatch` | `(invoiceNum, invoiceTotal, notesTotal, invoiceDocId)` | Async. Creates amount_mismatch warning alert when invoice total != linked delivery notes total |
+| `alertOCRLowConfidence` | `(fileName, extractionId, confidence)` | Async. Creates ocr_low_confidence info alert with 7-day expiry |
+| `autoDismissAlerts` | `(entityType, entityId, alertTypes)` | Async. Dismisses matching alerts (status → dismissed). Called on payment save, OCR accept |
+| `_patchAlertHooks` | `()` | Initializes all monkey-patches on DOMContentLoaded (via setTimeout 800ms) |
+| `_patchDocumentSave` | `()` | Patches saveNewDocument to check for duplicate before save, shows confirmDialog |
+| `_patchDocLinking` | `()` | Patches linkDeliveryToInvoice to check invoice vs delivery notes total mismatch |
+| `_patchOCRSave` | `()` | Patches _ocrSave to auto-dismiss ocr_low_confidence on accept/correct |
+| `_patchPaymentSave` | `()` | Patches _wizSavePayment to auto-dismiss payment_due/payment_overdue on allocated docs |
 
 ### modules/inventory/inventory-return.js
 
@@ -1161,6 +1181,7 @@ receipt-confirm.js
   → calls: createDocumentFromReceipt() [receipt-debt.js]
   → calls: loadReceiptTab(), updatePOStatusAfterReceipt() [goods-receipt.js]
   → calls: refreshLowStockBanner() [data-loading.js]
+  → calls: alertPriceAnomaly() [supabase-ops.js] (Phase 5f-2, optional)
 
 receipt-ocr.js
   → calls: addReceiptItemRow(), updateReceiptItemsStats() [receipt-form.js]
@@ -1320,6 +1341,15 @@ ai-ocr.js
   → provides: triggerOCR(), showOCRReview(), _ocrSave(), _ocrCalcTotal(), _ocrAddItemRow(),
     _injectOCRScanIcons(), _injectOCRToolbarBtn(), _ocrConfDot(), _ocrFV(), _ocrFC()
   → globals: _ocrExtractionId, _ocrOriginalData
+
+ai-alerts.js
+  → calls: createAlert() [supabase-ops.js], refreshAlertsBadge() [alerts-badge.js]
+  → calls: fetchAll() [supabase-ops.js], confirmDialog(), formatILS(), $(), escapeHtml(), getTenantId() [shared.js]
+  → reads: _docSuppliers, _docData [debt-documents.js], _ocrExtractionId [ai-ocr.js], _wizState [debt-payment-wizard.js]
+  → patches: saveNewDocument() [debt-documents.js], linkDeliveryToInvoice() [debt-doc-link.js],
+    _ocrSave() [ai-ocr.js], _wizSavePayment() [debt-payment-alloc.js], triggerOCR() [ai-ocr.js]
+  → provides: checkDuplicateDocument(), alertDuplicateDocument(), alertAmountMismatch(),
+    alertOCRLowConfidence(), autoDismissAlerts(), _patchAlertHooks()
 
 inventory-return.js
   → reads: invSelected [inventory-table.js], brandCacheRev, supplierCacheRev [shared.js]
