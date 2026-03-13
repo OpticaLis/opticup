@@ -1,8 +1,8 @@
 # Optic Up — Master Roadmap
 
 > **מסמך זה הוא "מוח הפרויקט".**
-> אם הצ'אט האסטרטגי מוחלף — מדביקים את המסמך הזה בצ'אט החדש.
-> הצ'אט החדש צריך להבין הכל בלי שום הסבר נוסף.
+> אם הצ'אט האסטרטגי מוחלף — מדביקים את המסמך הזה בצ'אט החדש ואומרים:
+> "אתה הצ'אט האסטרטגי הראשי של Optic Up. קרא את המסמך והמשך מחלק 15."
 > עודכן לאחרונה: מרץ 2026
 
 ---
@@ -10,54 +10,83 @@
 ## חלק 1 — מה זה Optic Up
 
 ### שני מוצרים, DB אחד
-
 **Optic Up ERP** — מערכת ניהול פנימית לעובדי חנות אופטיקה.
-**Optic Up Storefront** — אתר חנות/ויטרינה ללקוח הקצה.
-
-שניהם קוראים מאותו Supabase. Storefront קורא רק מ-Views ו-RPC, אף פעם מטבלאות ישירות.
+**Optic Up Storefront** — אתר חנות/ויטרינה ללקוח הקצה (repo נפרד).
+שניהם קוראים מאותו Supabase. Storefront קורא רק מ-Views ו-RPC.
 
 ### המטרה הסופית
-**Optic Up = פלטפורמת SaaS לרשתות וחנויות אופטיקה.**
-כל חנות שמצטרפת מקבלת: מערכת ניהול + אתר חנות ממותג.
+**פלטפורמת SaaS לרשתות וחנויות אופטיקה.** כל חנות = ERP + אתר ממותג.
 Multi-tenant, multi-branch, scalable, configurable, professional.
 
-### הלקוח הראשון
-**אופטיקה פריזמה** — רשת ישראלית. Access + תוכנת מעבדה נפרדת + אתר WooCommerce.
+### חזון עתידי
+**Content Hub** — AI שהופך תמונות מלאי לתוכן שיווקי אוטומטית.
+**B2B Network** — חנויות מחפשות מסגרות אצל חנויות אחרות. Network effect.
+**AI Insights** — ניתוח צווארי בקבוק, תקלות חוזרות, המלצות. דורש 3+ tenants.
+**AI Support Bot** — צ'אט בוט per-tenant שעונה לעובדים על שאלות טכניות.
+**Predictive Validation** — AI שמזהה חריגות בנתונים בזמן אמת ("מחיר 500 למסגרת שבדרך כלל 150?").
 
-### האסטרטגיה
+### הלקוח הראשון
+**אופטיקה פריזמה** — Access + תוכנת מעבדה נפרדת + אתר WooCommerce.
+
+### האסטרטגיה — "בנייה ליד Access"
 בונים ליד Access, מחליפים בהדרגה. כל מודול עובד גם עם bridge וגם standalone.
 
 ---
 
 ## חלק 2 — סטאק טכנולוגי
 
-**ERP:** Vanilla JS, HTML נפרד לכל מודול, GitHub Pages, Supabase.
-**Storefront (מתוכנן):** Astro/Vanilla SSG, Vercel, repo נפרד, קורא רק Views.
+### ERP (מערכת ניהול) — בלי build step
+| שכבה | טכנולוגיה | הערות |
+|-------|-----------|--------|
+| Frontend | **Vanilla JS** | לא TypeScript, לא framework |
+| Styling | **CSS Variables (shared/variables.css)** | לא Tailwind, לא build |
+| Structure | HTML נפרד לכל מודול | כל מודול = קובץ עצמאי |
+| Hosting | GitHub Pages | בלי build step |
+| DB | Supabase (PostgreSQL) | RLS, tenant_id |
+
+**למה לא TypeScript/Tailwind/Vite ב-ERP?** הכל עובד, Claude Code מתפקד מצוין עם Vanilla JS, build step = סיבוך שלא צריך ל-GitHub Pages. מה שעובד לא נוגעים בו.
+
+### Storefront (אתר חנות) — stack מודרני
+| שכבה | טכנולוגיה | הערות |
+|-------|-----------|--------|
+| Framework | **Astro** | SSG/SSR, SEO מושלם, 90+ PageSpeed |
+| Language | **TypeScript** | מהיום הראשון, כל קובץ |
+| Styling | **Tailwind CSS** | עיצוב מהיר, אחיד, responsive |
+| Data | Supabase Views + RPC | לא ניגש לטבלאות ישירות |
+| Hosting | Vercel או Netlify | CDN, SSL, custom domains |
+| Repo | `opticalis/prizma-storefront` (חדש) | **נפרד מ-ERP** |
+
+**שני עולמות נפרדים, DB אחד.**
+
+### Supabase + Repo
 **Supabase:** `https://tsxrrxzmdxaenlvocyit.supabase.co`
-**Repo:** `opticalis/opticup`
-**URL:** `https://opticalis.github.io/opticup/`
+**Repo ERP:** `opticalis/opticup`
+**URL ERP:** `https://opticalis.github.io/opticup/`
 
 ---
 
 ## חלק 3 — שיטת עבודה (4 שכבות)
 
 ```
-🏛️ צ'אט אסטרטגי ראשי (מנכ"ל) — מסמך: MASTER_ROADMAP.md
-├── 📋 צ'אט אסטרטגי למודול (מנהל מוצר) — מסמך: ROADMAP.md של המודול
-│   └── 🔧 צ'אט מפקח (מנהל עבודה) — כותב פרומפטים ל-Claude Code
+🏛️ צ'אט אסטרטגי ראשי (מנכ"ל) — MASTER_ROADMAP.md
+├── 📋 צ'אט אסטרטגי למודול (מנהל מוצר) — ROADMAP.md
+│   └── 🔧 צ'אט מפקח (מנהל עבודה) — פרומפטים ל-Claude Code
 │       └── ⚡ Claude Code (terminal) — מבצע בלבד
 ```
 
+Daniel עובר בין השכבות: מתכנן → מפרט → מעתיק פרומפטים → מדביק תוצאות → בודק.
+
 ---
 
-## חלק 4 — איפה אנחנו עכשיו (מרץ 2026)
+## חלק 4 — איפה אנחנו (מרץ 2026)
 
 ### ✅ מודול 1 — מלאי מסגרות
-**הושלם עד פאזה 3.8.** פאזות 4-6 (חובות ספקים, AI, פורטל ספקים) ממתינות.
-12 טבלאות, 34+ פיצ'רים. כולל: Auth + 5 תפקידים, tenant_id על כל הטבלאות, RLS, Access bridge, PO, ספירת מלאי, מסך בית, sticky header.
+הושלם עד פאזה 3.8. פאזות 4-6 ממתינות.
+12 טבלאות, 34+ פיצ'רים. Auth + 5 תפקידים, tenant_id, RLS, Access bridge, PO, ספירה, sticky header.
 
-### ⬜ מודול 2 — Platform Admin — הבא בתור
+**פאזות שהושלמו:** 0 (הכנה), 1 (PO), 1.5 (שיפורים), 2 (ספירה + Access bridge), 3 (Auth), 3.5 (מסך בית + repo rename), 3.75 (Multi-tenancy), 3.8 (Sticky Header).
 
+### ⬜ מודול 1.5 — Shared Components Refactor — הבא בתור
 ### כל השאר — טרם התחיל
 
 ---
@@ -66,342 +95,135 @@ Multi-tenant, multi-branch, scalable, configurable, professional.
 
 | סדר | מודול | סטטוס | למה בסדר הזה |
 |-----|-------|-------|--------------|
-| 1 | מלאי מסגרות | ✅ (פאזות 0-3.8) | הבסיס — הכאב הראשי |
-| **2** | **Platform Admin Basics** | **⬜ הבא** | **תשתית SaaS — כל מודול אחריו נשען על זה** |
-| 3 | Storefront Showcase | ⬜ | ROI מיידי — אתר חנות ממלאי קיים |
+| 1 | מלאי מסגרות | ✅ (0-3.8) | הבסיס |
+| **1.5** | **Shared Components Refactor** | **⬜ הבא** | **תשתית לכל מודול עתידי** |
+| 2 | Platform Admin Basics | ⬜ | SaaS foundation — plans, limits, provisioning, הגדרות |
+| 3 | Storefront Showcase (Astro+TS+Tailwind) | ⬜ | ROI מיידי — אתר מהמלאי הקיים |
 | 4 | לקוחות CRM | ⬜ | חוסם הזמנות + בדיקות + WhatsApp |
 | 5 | הזמנות | ⬜ | הליבה — מתחיל להחליף Access |
 | 6 | בדיקת עיניים | ⬜ | תלוי בלקוחות + הזמנות |
 | 7 | תשלומים | ⬜ | תלוי בהזמנות |
-| 8 | Storefront Full | ⬜ | עגלה + תשלום + מעקב הזמנה |
+| 8 | Storefront Full | ⬜ | עגלה + תשלום + מעקב |
 | 9 | מעבדה + KDS | ⬜ | אחרי הזמנות + תשלומים = native |
 | 10 | מלאי עדשות | ⬜ | אותה ארכיטקטורה כמו מודול 1 |
 | 11 | סניפים | ⬜ | MVP = סניף אחד |
 | 12 | מעקב הזמנות Dashboard | ⬜ | צריך נתונים מהכל |
 | 13 | WhatsApp אוטומטי | ⬜ | צריך לקוחות + הזמנות + token |
 | 14 | דוחות | ⬜ | צריך נתונים מכל המודולים |
-| 15 | כספים ספקים (פאזה 4 ממודול 1) | ⬜ | חשבוניות, תשלומים, סגירה חודשית |
-| 16 | סוכן AI (פאזה 5 ממודול 1) | ⬜ | OCR חשבוניות, התראות |
-| 17 | פורטל ספקים (פאזה 6 ממודול 1) | ⬜ | read-only per supplier |
-| 18 | WooCommerce sync | ⬜ | סנכרון דו-כיווני |
-| 19 | קופה אנדרואיד | ⬜ | חיבור POS |
+| 15 | כספים ספקים | ⬜ | חשבוניות, תשלומים. טופס AI-ready |
+| 16 | סוכן AI | ⬜ | OCR חשבוניות (Claude Vision) |
+| 17 | פורטל ספקים | ⬜ | read-only per supplier, token auth |
+| 18 | Content Hub AI | ⬜ | תמונות → Reels + קופי. תשתית ב-1.5 |
+| 19 | B2B Network | ⬜ | Marketplace בין חנויות. תשתית כבר קיימת |
+| 20 | AI Support Bot | ⬜ | צ'אט בוט per-tenant. knowledge base = MODULE_SPECs |
+| 21 | WooCommerce sync | ⬜ | סנכרון דו-כיווני |
+| 22 | קופה אנדרואיד | ⬜ | חיבור POS |
 
 ---
 
-## חלק 6 — מודול 2: Platform Admin — עיצוב מלא
+## חלק 6 — מודול 1.5: Shared Components Refactor
 
-### הפילוסופיה: טבלאות עכשיו, UI בהדרגה
+### 6 משימות
 
-**כל הטבלאות נבנות עכשיו עם כל השדות** — גם אם אין UI לכולם. ככה שום מודול עתידי לא דורש migration. UI נבנה בשלבים: מינימום עכשיו, שאר כשצריך.
+#### 1. חילוץ רכיבים ל-shared/
+```
+shared/
+  css/
+    variables.css      ← CSS Variables (צבעים, פונטים, מרווחים)
+    components.css     ← טבלאות, כפתורים, טפסים, מודאלים, toast
+    layout.css         ← RTL, grid, responsive breakpoints
+  js/
+    table-builder.js, modal-builder.js, form-builder.js,
+    pin-modal.js, toast.js, export-excel.js, validators.js
+```
 
-### למה חייב עכשיו ולא אחר כך
+#### 2. Atomic RPC Operations
+כל שינוי כמות = Supabase RPC (`quantity = quantity + x`). אין חישוב ב-JS. סריקה והחלפה של כל read→compute→write.
 
-כל מודול שנבנה בלי Platform Admin מכיל הנחות סמויות:
-- "יש tenant אחד" → לא בודקים plan limits
-- "Auth = PIN" → אין הפרדה בין בעל פלטפורמה לעובד חנות
-- "Config = hardcoded" → כל חנות חדשה דורשת שינויי קוד
-- "אין provisioning" → הוספת חנות = עבודה ידנית של שעות
-
-ככל שיותר מודולים נבנים ככה — יותר מודולים צריך לתקן אחר כך.
-
----
-
-### DB — טבלאות שנבנות במודול 2
-
-**טבלת `tenants` — כבר קיימת, צריכה הרחבה:**
+#### 3. Activity Log — טבלה מרכזית
 ```sql
-tenants (
-  id              UUID PRIMARY KEY,
-  name            TEXT NOT NULL,              -- "אופטיקה פריזמה"
-  slug            TEXT UNIQUE NOT NULL,       -- "prizma"
-  
-  -- סטטוס ומחזור חיים
-  status          TEXT DEFAULT 'trial',       -- 'trial' / 'active' / 'suspended' / 'cancelled'
-  trial_ends_at   TIMESTAMPTZ,                -- מתי נגמר הניסיון
-  suspended_at    TIMESTAMPTZ,
-  suspended_reason TEXT,
-  cancelled_at    TIMESTAMPTZ,
-  
-  -- תוכנית מנוי
-  plan_id         UUID REFERENCES plans(id),
-  plan_started_at TIMESTAMPTZ,
-  
-  -- פרטים
-  owner_name      TEXT,                       -- שם בעל החנות
-  owner_email     TEXT,                       -- מייל בעל החנות
-  owner_phone     TEXT,
-  logo_url        TEXT,
-  
-  -- הגדרות
-  default_currency TEXT DEFAULT 'ILS',
-  default_language TEXT DEFAULT 'he',
-  timezone        TEXT DEFAULT 'Asia/Jerusalem',
-  
-  -- מטא
-  created_at      TIMESTAMPTZ DEFAULT now(),
-  updated_at      TIMESTAMPTZ DEFAULT now()
+activity_log (
+  id UUID, tenant_id UUID, branch_id UUID, user_id UUID,
+  level TEXT DEFAULT 'info',  -- info/warning/error/critical
+  action TEXT, entity_type TEXT, entity_id UUID,
+  details JSONB DEFAULT '{}', -- changes: [{field, old, new}] when relevant
+  created_at TIMESTAMPTZ
+)
+```
+inventory_logs נשאר. unified view בעתיד.
+
+#### 4. מסך "תוכן שיווקי" + content_items
+Gallery פריטים חדשים, הורדת תמונות, סימון "פורסם."
+```sql
+content_items (
+  id UUID, tenant_id UUID, inventory_id UUID, source_image TEXT,
+  status TEXT DEFAULT 'new',
+  ai_caption TEXT, ai_video_url TEXT, ai_hashtags TEXT[],  -- עתידי
+  manual_caption TEXT, published_to JSONB, published_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ
 )
 ```
 
-**טבלת `plans` — תוכניות מנוי:**
+#### 5. אפס ערכים hardcoded
+סריקת כל הקוד: שם עסק, כתובת, מע"מ, לוגו = תמיד ממשתנה.
+
+#### 6. custom_fields JSONB בטבלאות מרכזיות
+הוספת שדה ריק לטבלאות שעתיד להיות בהן שדות מותאמים:
 ```sql
-plans (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name            TEXT NOT NULL,              -- "Basic" / "Pro" / "Enterprise"
-  slug            TEXT UNIQUE NOT NULL,       -- "basic" / "pro" / "enterprise"
-  
-  -- גבולות
-  max_employees   INTEGER,                    -- NULL = ללא הגבלה
-  max_inventory   INTEGER,                    -- מקסימום פריטי מלאי
-  max_branches    INTEGER DEFAULT 1,
-  max_customers   INTEGER,
-  
-  -- פיצ'רים
-  features        JSONB DEFAULT '{}',         -- {"storefront": true, "ai_agent": false, "supplier_portal": false}
-  
-  -- תמחור
-  price_monthly   DECIMAL(10,2) DEFAULT 0,
-  price_yearly    DECIMAL(10,2) DEFAULT 0,
-  currency        TEXT DEFAULT 'ILS',
-  
-  -- מטא
-  is_active       BOOLEAN DEFAULT true,
-  sort_order      INTEGER DEFAULT 0,
-  created_at      TIMESTAMPTZ DEFAULT now()
-)
+ALTER TABLE inventory ADD COLUMN custom_fields JSONB DEFAULT '{}';
+ALTER TABLE customers ADD COLUMN custom_fields JSONB DEFAULT '{}';  -- כשתיבנה
+ALTER TABLE orders ADD COLUMN custom_fields JSONB DEFAULT '{}';     -- כשתיבנה
 ```
-
-**Seed ברירת מחדל:**
-```sql
-INSERT INTO plans (name, slug, max_employees, max_inventory, max_branches, features, price_monthly) VALUES
-('Trial', 'trial', 3, 500, 1, '{"storefront": false, "ai_agent": false, "supplier_portal": false}', 0),
-('Basic', 'basic', 5, 2000, 1, '{"storefront": true, "ai_agent": false, "supplier_portal": false}', 0),
-('Pro', 'pro', 15, 10000, 3, '{"storefront": true, "ai_agent": true, "supplier_portal": false}', 0),
-('Enterprise', 'enterprise', NULL, NULL, NULL, '{"storefront": true, "ai_agent": true, "supplier_portal": true}', 0);
--- מחירים = 0 כרגע. יעודכנו כשיהיה billing
-```
-
-**טבלת `platform_admins` — auth נפרד לחלוטין מעובדי חנות:**
-```sql
-platform_admins (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email           TEXT UNIQUE NOT NULL,
-  name            TEXT NOT NULL,
-  role            TEXT NOT NULL,              -- 'super_owner' / 'support_agent' / 'billing_manager' / 'onboarding_manager'
-  
-  -- Supabase Auth
-  auth_user_id    UUID UNIQUE,               -- מצביע ל-auth.users של Supabase Auth (email+password, לא PIN)
-  
-  -- הרשאות
-  permissions     JSONB DEFAULT '[]',        -- override ספציפי מעבר ל-role
-  
-  -- מטא
-  is_active       BOOLEAN DEFAULT true,
-  last_login_at   TIMESTAMPTZ,
-  last_login_ip   TEXT,
-  created_at      TIMESTAMPTZ DEFAULT now()
-)
-```
-
-**תפקידי Platform Admin:**
-```
-super_owner       — גישה לכל, כולל מחיקת tenants, שינוי plans
-support_agent     — read-only על כל tenant, איפוס PIN, צפייה בלוגים
-billing_manager   — ניהול תשלומים ותוכניות בלבד
-onboarding_manager— יצירת tenants, לא מחיקה
-```
-
-**טבלת `platform_audit_log` — לוג נפרד מ-inventory_logs:**
-```sql
-platform_audit_log (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  admin_id        UUID REFERENCES platform_admins(id),
-  action          TEXT NOT NULL,              -- 'tenant_created' / 'tenant_suspended' / 'plan_changed' / 'admin_login' / ...
-  target_type     TEXT,                       -- 'tenant' / 'plan' / 'admin'
-  target_id       UUID,
-  details         JSONB DEFAULT '{}',         -- פרטים נוספים
-  ip_address      TEXT,
-  created_at      TIMESTAMPTZ DEFAULT now()
-)
-```
-
-**טבלת `tenant_config` — הגדרות מרכזיות per-tenant:**
-```sql
-tenant_config (
-  tenant_id       UUID PRIMARY KEY REFERENCES tenants(id),
-  
-  -- עסק
-  business_name   TEXT,                       -- שם מלא לחשבוניות
-  business_id     TEXT,                       -- ח.פ / מספר עוסק
-  address         TEXT,
-  phone           TEXT,
-  email           TEXT,
-  website         TEXT,
-  
-  -- מלאי
-  barcode_prefix  TEXT DEFAULT '00',          -- prefix סניף ברירת מחדל
-  low_stock_threshold INTEGER DEFAULT 2,      -- סף התראת מלאי נמוך
-  
-  -- מכירות
-  default_tax_rate DECIMAL(5,2) DEFAULT 17,   -- מע"מ ברירת מחדל
-  receipt_header  TEXT,                       -- כותרת קבלה
-  receipt_footer  TEXT,                       -- תחתית קבלה
-  
-  -- WhatsApp
-  whatsapp_number TEXT,
-  whatsapp_default_message TEXT,
-  
-  -- פיצ'רים
-  enabled_modules JSONB DEFAULT '["inventory"]',  -- אילו מודולים פעילים
-  custom_settings JSONB DEFAULT '{}',             -- הגדרות חופשיות
-  
-  -- מטא
-  updated_at      TIMESTAMPTZ DEFAULT now()
-)
-```
-
-**טבלת `tenant_provisioning_log` — מעקב provisioning:**
-```sql
-tenant_provisioning_log (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id       UUID REFERENCES tenants(id),
-  step            TEXT NOT NULL,              -- 'tenant_created' / 'roles_seeded' / 'permissions_seeded' / 'default_employee_created' / 'config_created'
-  status          TEXT DEFAULT 'pending',     -- 'pending' / 'completed' / 'failed'
-  error_message   TEXT,
-  created_at      TIMESTAMPTZ DEFAULT now()
-)
-```
+אין UI עכשיו. השדה ריק ומוכן. בעתיד: UI builder לשדות דינמיים per-tenant (בסגנון Monday.com).
 
 ---
 
-### Provisioning — מה קורה כשנוצר tenant חדש
+## חלק 7 — מודול 2: Platform Admin
 
+### DB
+**tenants** — הרחבה: status, plan_id, trial_ends_at, owner details.
+**plans** — Trial/Basic/Pro/Enterprise, גבולות, features JSONB, מחירים.
+**platform_admins** — email+password (Supabase Auth, **לא PIN**). תפקידים: super_owner, support_agent, billing_manager, onboarding_manager.
+**tenant_config** — הגדרות per-tenant: עסק, מלאי, מכירות, WhatsApp, enabled_modules.
+**platform_audit_log, tenant_provisioning_log.**
+
+### Provisioning + Helpers
 ```
-createTenant(name, slug, owner_email, plan) →
-  1. INSERT INTO tenants (...) → tenant_id
-  2. INSERT INTO tenant_config (tenant_id, defaults...)
-  3. INSERT INTO roles — seed 5 תפקידים (CEO, מנהל, ראש צוות, עובד, צופה)
-  4. INSERT INTO permissions — seed כל ההרשאות
-  5. INSERT INTO role_permissions — seed מטריצת ברירת מחדל
-  6. INSERT INTO employees — עובד ראשוני (בעל החנות, PIN 00000, role CEO)
-  7. INSERT INTO tenant_provisioning_log — לכל שלב
-  8. שלח מייל ללקוח עם קישור כניסה ראשוני
+createTenant() → tenant → config → roles → permissions → default employee → log
+isTenantActive(), checkPlanLimit(), isFeatureEnabled(), getTenantConfig()
 ```
 
-**כל שלב מתועד ב-provisioning_log.** אם שלב נכשל — אפשר לראות בדיוק איפה ולתקן.
-
-**כל מודול עתידי שדורש seed data** (למשל: מודול תשלומים צריך payment_methods ברירת מחדל) — מוסיף שלב provisioning בלי לשנות את הקיימים.
+### UI: Login admin, דשבורד tenants, יצירת tenant, עריכה, מסך הגדרות.
 
 ---
 
-### UI שנבנה עכשיו (מינימום)
+## חלק 8 — Storefront (מודולים 3 + 8)
 
-**מסך Login Platform Admin:**
-- email + password (Supabase Auth, לא PIN)
-- נפרד לחלוטין ממסך Login של עובדי חנות
-- URL נפרד: `/admin.html`
+**Repo נפרד. Tech: Astro + TypeScript + Tailwind CSS.** קורא רק Views + RPC.
 
-**מסך דשבורד Platform:**
-- רשימת tenants: שם, סטטוס, תוכנית, תאריך הצטרפות, עובדים פעילים
-- כרטיסי סיכום: סה"כ tenants, פעילים, בניסיון, מושהים
-- סינון לפי סטטוס
+### Showcase (מודול 3)
+דף בית, קטלוג, עמוד מוצר (Showcase=WhatsApp, Full=עגלה עתידית), בלוג, לידים, SEO, White-Label.
+**טבלאות:** storefront_config, storefront_product_config, storefront_leads, storefront_articles.
 
-**מסך יצירת tenant:**
-- טופס: שם חנות, slug, שם בעלים, מייל, טלפון, תוכנית
-- כפתור "צור חנות" → provisioning מלא
-- הצגת provisioning_log בזמן אמת (שלב 1 ✅, שלב 2 ✅...)
+### Full (מודול 8)
+עגלה + checkout + מעקב הזמנה + פורטל לקוח.
 
-**מסך עריכת tenant:**
-- שינוי סטטוס (active ↔ suspended)
-- שינוי תוכנית
-- צפייה בפרטים
+### עיקרון: ERP מודול חדש → View חדש → Storefront רכיב חדש. אפס שינויים ב-ERP.
 
 ---
 
-### UI שנבנה בעתיד (לא עכשיו)
+## חלק 9 — מודולים עתידיים (תקצירים)
 
-- 2FA
-- Impersonation (כניסה ל-tenant ב-read-only)
-- איפוס PIN לעובד
-- חיפוש גלובלי
-- Billing + Stripe
-- Feature flags per tenant
-- Analytics פלטפורמה
-- Maintenance mode
-- גרפים וטרנדים
-- דוח הכנסות
-
----
-
-### Helper Functions שכל מודול עתידי ישתמש בהם
-
-```javascript
-// בודק אם tenant פעיל (לא suspended/cancelled)
-async function isTenantActive(tenantId) → boolean
-
-// בודק אם tenant בתוך הגבולות של התוכנית שלו
-async function checkPlanLimit(tenantId, resource, currentCount) → { allowed, limit, current }
-// resource = 'employees' / 'inventory' / 'branches' / 'customers'
-
-// בודק אם פיצ'ר מופעל לtenant
-async function isFeatureEnabled(tenantId, feature) → boolean
-// feature = 'storefront' / 'ai_agent' / 'supplier_portal' / 'whatsapp'
-
-// מחזיר config של tenant
-async function getTenantConfig(tenantId) → tenant_config record
-
-// מחזיר tenant + plan + config
-async function getFullTenantInfo(tenantId) → { tenant, plan, config }
-```
-
-**כל מודול ERP עתידי:** כשמשתמש מנסה להוסיף עובד → `checkPlanLimit(tenantId, 'employees', currentCount)`. אם חורג → "שדרג תוכנית." בלי Platform Admin — אין מי שיבדוק את זה, וכל מודול יתעלם מגבולות.
-
----
-
-## חלק 7 — ארכיטקטורת Storefront (תזכורת)
-
-Storefront = repo נפרד, קורא רק Views + RPC. כל מודול ERP חדש → חושפים View → Storefront מוסיף רכיב. אפס שינויים ב-ERP.
-
-**טבלאות Storefront:**
-storefront_config, storefront_product_config, storefront_leads, storefront_articles
-
----
-
-## חלק 8 — כללי ברזל
-
-> ⛔ כמות מלאי = רק Add/Remove עם PIN
-> ⛔ תאריכים (הזמנה/מרשם) = immutable
-> ⛔ מספרים (הזמנה/לקוח/קבלה) = ייחודי, עולה, immutable
-> ⛔ מחיקה = soft delete בלבד
-> ⛔ כל פעולה = לוג עם user_id + timestamp
-> ⛔ Storefront קורא רק Views + RPC
-> ⛔ כל טבלה = tenant_id + RLS
-> ⛔ ערכים configurable, לא hardcoded
-> ⛔ מודולים מתקשרים דרך חוזים, לא טבלאות ישירות
-> ⛔ כל מודול בודק plan limits דרך checkPlanLimit()
-
----
-
-## חלק 9 — חוזים קיימים
-
-**מודול 1 — מלאי:**
-```
-getItemByBarcode(barcode), searchFrames(query), updateQuantity(id, +/-, reason, employee),
-getStockLevel(barcode), writeLog(action, id, details), getBrands(), getSuppliers()
-```
-
-**מודול 1 — Auth:**
-```
-getCurrentUser() → { id, name, role, branch_id, tenant_id }
-verifyPIN(pin), hasPermission(user, action)
-```
-
-**מודול 2 — Platform Admin (מתוכנן):**
-```
-isTenantActive(tenantId), checkPlanLimit(tenantId, resource, count),
-isFeatureEnabled(tenantId, feature), getTenantConfig(tenantId),
-getFullTenantInfo(tenantId), createTenant(details), suspendTenant(tenantId, reason)
-```
+**4 — לקוחות CRM:** מספור 10001/10001-1, 6 לשוניות, pg_trgm, ולידציית טלפון.
+**5 — הזמנות:** 5 סוגי הזמנה, 2 זוגות, סטטוסים. שדות מעבדה מוכנים: routing_type, sla_deadline, qa_status.
+**6 — בדיקת עיניים:** SPH/CYL/AXIS/ADD/Visus/PD, תאריך immutable, גרפים.
+**7 — תשלומים:** מזומן/אשראי/קופת חולים, 1-36 תשלומים, קבלה, החזרים.
+**9 — מעבדה + KDS:** 6 תת-מודולים. Native הזמנות, לא bridge.
+**10 — מלאי עדשות.** **11 — סניפים (MVP=אחד).** **12 — מעקב Dashboard.** **13 — WhatsApp.**
+**14 — דוחות.** **15 — כספים ספקים (AI-ready invoicing).** **16 — סוכן AI (OCR).**
+**17 — פורטל ספקים (token auth, Views).** **18 — Content Hub AI.** **19 — B2B Network.**
+**20 — AI Support Bot:** צ'אט בוט per-tenant. עובד שואל שאלה טכנית → AI עונה מתוך knowledge base (MODULE_SPECs). למידה מ-feedback (helpful: true/false). DB: `support_chat_history (id, tenant_id, user_id, message, response, helpful, created_at)`. דורש 5+ מודולים עם specs + 2-3 tenants.
+**21 — WooCommerce.** **22 — קופה אנדרואיד.**
 
 ---
 
@@ -414,79 +236,127 @@ goods_receipts, goods_receipt_items, purchase_orders, purchase_order_items,
 stock_counts, stock_count_items, tenants, roles, permissions,
 role_permissions, employee_roles, auth_sessions
 
-═══ מתוכנן — מודול 2 (Platform Admin) ═══
-plans, platform_admins, platform_audit_log, tenant_config, tenant_provisioning_log
-+ הרחבת tenants (status, plan_id, trial_ends_at, owner_*)
+═══ מודול 1.5 ═══
+activity_log, content_items
++ custom_fields JSONB על inventory (ועל customers/orders כשייבנו)
++ RPC functions + shared/ components
 
-═══ מתוכנן — Storefront ═══
+═══ מודול 2 ═══
+plans, platform_admins, platform_audit_log, tenant_config, tenant_provisioning_log
+
+═══ Storefront ═══
 storefront_config, storefront_product_config, storefront_leads, storefront_articles
 
-═══ מתוכנן — CRM ═══
+═══ CRM ═══
 customers, customer_notes
 
-═══ מתוכנן — הזמנות + תשלומים ═══
+═══ הזמנות + תשלומים ═══
 orders, order_items, payments, receipts
 
-═══ מתוכנן — מעבדה ═══
+═══ מעבדה ═══
 lab_orders, lab_order_status_log, lab_sla_config, lab_compensations,
 lab_qa_checklists, lab_shipments, lab_shipment_items
 
-═══ מתוכנן — שאר ═══
-lenses, lens_stock, branches, supplier_returns, supplier_return_items,
-whatsapp_log, whatsapp_templates, supplier_invoices, supplier_payments
+═══ כספים + זיכויים ═══
+supplier_invoices, supplier_payments, currencies,
+supplier_returns, supplier_return_items
+
+═══ שאר ═══
+lenses, lens_stock, branches, supplier_auth, ai_agent_config,
+whatsapp_log, whatsapp_templates, networks, network_members,
+support_chat_history
 ```
 
 ---
 
-## חלק 11 — החלטות שהתקבלו
+## חלק 11 — כללי ברזל
+
+> ⛔ כמות מלאי = רק דרך RPC אטומי (לא חישוב ב-JS)
+> ⛔ תאריכים (הזמנה/מרשם) = immutable
+> ⛔ מספרים (הזמנה/לקוח/קבלה) = ייחודי, עולה, immutable
+> ⛔ מחיקה = soft delete בלבד
+> ⛔ כל פעולה = activity_log עם: tenant_id, branch_id, user_id, level, action, entity_type, entity_id, details
+> ⛔ שינוי ערך = details חייב { changes: [{ field, old, new }] }
+> ⛔ Storefront קורא רק Views + RPC
+> ⛔ כל טבלה = tenant_id + RLS
+> ⛔ אין ערכים עסקיים hardcoded — תמיד ממשתנה/config
+> ⛔ ערכים configurable — מטבעות, שפות, סוגי תשלום = טבלאות, לא enums
+> ⛔ מודולים מתקשרים דרך חוזים, לא טבלאות ישירות
+> ⛔ כל מודול בודק plan limits דרך checkPlanLimit()
+> ⛔ כל רכיב UI חדש = דרך shared/ (לא קוד חד-פעמי)
+> ⛔ תמונות מלאי = original resolution + WebP copy
+> ⛔ שום צבע hardcoded — רק CSS Variables
+> ⛔ ERP = Vanilla JS, no build step. Storefront = Astro + TypeScript + Tailwind
+
+---
+
+## חלק 12 — חוזים קיימים
+
+**מודול 1 — מלאי:** getItemByBarcode, searchFrames, updateQuantity (RPC atomic), getStockLevel, writeLog, getBrands, getSuppliers
+**מודול 1 — Auth:** getCurrentUser → { id, name, role, branch_id, tenant_id }, verifyPIN, hasPermission
+**מודול 2 — Platform (מתוכנן):** isTenantActive, checkPlanLimit, isFeatureEnabled, getTenantConfig, createTenant, suspendTenant
+
+---
+
+## חלק 13 — כל ההחלטות
 
 | תאריך | החלטה | נימוק |
 |--------|--------|--------|
-| מרץ 2026 | מתחילים ממלאי | Access מטפל במכירות. המלאי = הכאב הראשי |
-| מרץ 2026 | בונים ליד Access, לא במקומו | ערך מיידי, החלפה הדרגתית |
-| מרץ 2026 | HTML נפרד לכל מודול ERP | מהירות, פשטות |
-| מרץ 2026 | Storefront = repo נפרד, קורא רק Views | אבטחה, הפרדה, אפס coupling |
-| מרץ 2026 | tenant_id מהיום הראשון | מוכן ל-SaaS בלי rebuild |
-| מרץ 2026 | Platform Admin = מודול 2, לפני הכל | כל מודול אחריו נשען על plans, limits, config |
-| מרץ 2026 | Platform Auth נפרד מ-Tenant Auth | email+password לבעל פלטפורמה, PIN לעובדי חנות |
-| מרץ 2026 | טבלאות מלאות עכשיו, UI בהדרגה | אפס migrations עתידיות |
-| מרץ 2026 | Provisioning אוטומטי עם log | כל tenant חדש = seed מלא, מעקב שלב-שלב |
-| מרץ 2026 | Plan limits + feature flags בDB | כל מודול בודק גבולות, אפס hardcoding |
-| מרץ 2026 | Storefront Showcase לפני CRM | ROI מיידי |
+| מרץ 2026 | מתחילים ממלאי | Access מטפל במכירות. המלאי = הכאב |
+| מרץ 2026 | בונים ליד Access | ערך מיידי, החלפה הדרגתית |
+| מרץ 2026 | ERP = Vanilla JS, HTML נפרד, no build step | מהירות, פשטות, Claude Code |
+| מרץ 2026 | Storefront = Astro + TypeScript + Tailwind | SEO, ביצועים, מודרני. repo נפרד |
+| מרץ 2026 | לא TypeScript/Tailwind/Vite ל-ERP | עובד, לא נוגעים. build step = סיבוך מיותר |
+| מרץ 2026 | Storefront = repo נפרד, Views בלבד | אבטחה, הפרדה |
+| מרץ 2026 | tenant_id מהיום הראשון | SaaS-ready בלי rebuild |
+| מרץ 2026 | מודול 1.5 לפני מודול 2 | shared components + atomic RPC + audit |
+| מרץ 2026 | Platform Admin = מודול 2 | plans, limits, provisioning, הגדרות per-tenant |
+| מרץ 2026 | Platform Auth ≠ Tenant Auth | email+password vs PIN |
+| מרץ 2026 | מסך הגדרות = מודול 2, לא 1.5 | tenant_config מלא, לא גרסה רזה |
+| מרץ 2026 | טבלאות מלאות, UI בהדרגה | אפס migrations |
+| מרץ 2026 | Provisioning אוטומטי + log | seed מלא, מעקב שלב-שלב |
+| מרץ 2026 | Atomic RPC לכל שינוי כמות | מניעת race conditions |
+| מרץ 2026 | activity_log מרכזי | analytics חוצי-מודולים, severity+branch_id+changeset |
+| מרץ 2026 | inventory_logs נשאר, unified view בעתיד | לא שוברים מודול 1 |
+| מרץ 2026 | content_items + מסך תוכן שיווקי | תשתית ב-1.5, AI בפאזה 5+ |
+| מרץ 2026 | custom_fields JSONB ריק בטבלאות מרכזיות | מוכן לשדות דינמיים per-tenant בעתיד |
+| מרץ 2026 | AI-ready invoicing | טופס ידני, שדות תואמים ל-Claude Vision |
+| מרץ 2026 | AI Support Bot = פאזה 5+ | דורש knowledge base (MODULE_SPECs) + tenants |
+| מרץ 2026 | Predictive Validation = פאזה 5+ | דורש data, אפס תשתית נוספת |
+| מרץ 2026 | Behavioral tracking = analytics tool, לא custom | Mixpanel/Amplitude כשיש 10+ tenants |
+| מרץ 2026 | B2B Network = אפס תשתית נוספת | tenant_id + RLS = מספיק |
+| מרץ 2026 | זיכויים מפוצלים | מלאי/מעבדה/כספים |
 | מרץ 2026 | מעבדה אחרי הזמנות + תשלומים | native, לא bridge |
-| מרץ 2026 | זיכויים לספקים = מפוצל (מלאי/מעבדה/כספים) | zero coupling |
-| מרץ 2026 | 4-tier workflow | אסטרטגי → מוצר → מפקח → מבצע |
+| מרץ 2026 | סניפים בעדיפות נמוכה | MVP = סניף אחד |
+| מרץ 2026 | 4-tier workflow | אסטרטגי → מוצר → מפקח → Claude Code |
+| מרץ 2026 | Zero coupling + חוזים | מודולים עצמאיים |
+| מרץ 2026 | כל פאזה שוקלת Views לגורמים חיצוניים | Storefront, ספקים, לקוחות |
 
 ---
 
-## חלק 12 — שאלות פתוחות
+## חלק 14 — שאלות פתוחות
 
 | שאלה | חוסם | דחיפות |
 |-------|------|--------|
-| Storefront framework: Astro או SSG? | מודול 3 | גבוהה |
 | Platform Admin URL: /admin.html או subdomain? | מודול 2 | גבוהה |
-| Supabase Auth setup — email+password flow | מודול 2 | גבוהה |
-| WooCommerce — לחבר או להחליף? | מודול 18 | בינונית |
+| Supabase Auth — email+password flow | מודול 2 | גבוהה |
+| WooCommerce — לחבר או להחליף? | מודול 21 | בינונית |
 | WhatsApp Business API token | מודול 13 | בינונית |
 | תמחור ציפויים — מבנה טבלה | מודול 5 | בינונית |
 | פורמט טבלה Access↔מעבדה | מודול 9 | בינונית |
-| Billing model (מחירי תוכניות) | לפני לקוח שני | נמוכה כרגע |
+| Billing model | לפני לקוח שני | נמוכה |
 
 ---
 
-## חלק 13 — הצעד הבא
+## חלק 15 — הצעד הבא
 
-**עכשיו:** מודול 2 — Platform Admin Basics.
-- Super Owner login (Supabase Auth)
-- Plans + limits
-- Tenant management UI
-- Provisioning אוטומטי
-- Helper functions (isTenantActive, checkPlanLimit, isFeatureEnabled)
-
-**אחרי:** מודול 3 — Storefront Showcase. ROI מיידי.
+**עכשיו:** לסיים פאזות פתוחות במודול 1 (אם נשארו).
+**אחרי:** מודול 1.5 — Shared Components Refactor (6 משימות).
+**אחרי:** מודול 2 — Platform Admin Basics.
+**אחרי:** מודול 3 — Storefront Showcase (Astro + TypeScript + Tailwind).
 **אחרי:** מודול 4 — לקוחות CRM.
 
 ---
 
-*מסמך זה הוא "מוח הפרויקט". כל מה שצריך לדעת כדי להמשיך — כאן.*
-*אם אתה צ'אט אסטרטגי חדש — קרא הכל והמשך מחלק 13.*
+*מסמך זה הוא "מוח הפרויקט". 22 מודולים, כל ההחלטות, כל התלויות.*
+*צ'אט אסטרטגי חדש — קרא הכל והמשך מחלק 15.*
