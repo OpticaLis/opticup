@@ -4,6 +4,8 @@
 // Uses: _pendingReceiptFile, supplierCache/Rev, brandCacheRev, addReceiptItemRow,
 //   updateReceiptItemsStats, uploadSupplierFile, getSupplierFileUrl
 
+var _rcptOcrResult = null; // Phase 5e: stored when OCR applied, used for learning
+
 // --- 1. Inject OCR button next to file attach button ---
 function initReceiptOCR() {
   var attachName = $('rcpt-attach-name');
@@ -79,6 +81,8 @@ async function _applyOCRToReceipt(result, fileUrl) {
   var ext = result.extracted_data || {};
   var conf = result.confidence_score || 0;
   var supMatch = result.supplier_match;
+  // Phase 5e: store for learning on confirm
+  _rcptOcrResult = { extracted_data: ext, supplier_match: supMatch, extraction_id: result.extraction_id };
   var fv = function(f) {
     var v = ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v;
   };
@@ -241,7 +245,53 @@ async function _rcptOcrPreviewDoc(fileUrl) {
   document.body.appendChild(overlay);
 }
 
-// --- 8. Initialize on DOMContentLoaded ---
+// --- 8. Compare OCR data to final form and update template (Phase 5e) ---
+async function _rcptOcrUpdateTemplate() {
+  if (!_rcptOcrResult) return;
+  try {
+    var ext = _rcptOcrResult.extracted_data || {};
+    var fv = function(f) { var v = ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v; };
+    var supplierId = (_rcptOcrResult.supplier_match && _rcptOcrResult.supplier_match.id) || null;
+    if (!supplierId) {
+      var supName = ($('rcpt-supplier') || {}).value;
+      if (supName && typeof supplierCache !== 'undefined') supplierId = supplierCache[supName] || null;
+    }
+    if (!supplierId) { _rcptOcrResult = null; return; }
+    // Build corrections by comparing OCR original to final form values
+    var corrections = {};
+    var finalDocNum = (($('rcpt-number') || {}).value || '').trim();
+    var ocrDocNum = fv('document_number');
+    if (ocrDocNum && String(ocrDocNum) !== finalDocNum) {
+      corrections.document_number = { ai: ocrDocNum, user: finalDocNum };
+    }
+    var finalDate = ($('rcpt-date') || {}).value || '';
+    var ocrDate = fv('document_date');
+    if (ocrDate && String(ocrDate) !== finalDate) {
+      corrections.document_date = { ai: ocrDate, user: finalDate };
+    }
+    var docType = fv('document_type') || 'delivery_note';
+    await updateOCRTemplate(supplierId, docType,
+      Object.keys(corrections).length > 0 ? corrections : null, ext);
+  } catch (e) {
+    console.warn('_rcptOcrUpdateTemplate error:', e);
+  }
+  _rcptOcrResult = null;
+}
+
+// Patch confirmReceiptCore to call template update after successful confirm
+function _patchReceiptConfirmForOCR() {
+  var orig = typeof confirmReceiptCore === 'function' ? confirmReceiptCore : null;
+  if (!orig) return;
+  window.confirmReceiptCore = async function(receiptId, rcptNumber, poId) {
+    await orig(receiptId, rcptNumber, poId);
+    await _rcptOcrUpdateTemplate();
+  };
+}
+
+// --- 9. Initialize on DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(initReceiptOCR, 200);
+  setTimeout(function() {
+    initReceiptOCR();
+    _patchReceiptConfirmForOCR();
+  }, 200);
 });

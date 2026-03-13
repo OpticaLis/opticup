@@ -111,6 +111,21 @@ async function showOCRReview(result, fileUrl) {
   var confClr = confPct >= 85 ? '#27ae60' : confPct >= 70 ? '#f39c12' : '#e74c3c';
   var aiHint = fv('supplier_name') ? '<div class="ocr-ai-hint">AI זיהה: ' + escapeHtml(fv('supplier_name')) + '</div>' : '';
 
+  // Query OCR stats for this supplier (Phase 5e)
+  var statsHtml = '';
+  if (supMatch && supMatch.id) {
+    try {
+      var templates = await fetchAll(T.OCR_TEMPLATES, [['supplier_id', 'eq', supMatch.id]]);
+      if (templates && templates.length > 0) {
+        var tmpl = templates[0];
+        var accPct = tmpl.accuracy_rate != null ? Math.round(tmpl.accuracy_rate) : '\u2014';
+        statsHtml = '<div class="ocr-stats-bar" style="background:#e8f5e9;border-radius:6px;padding:6px 12px;margin-bottom:8px;font-size:.85rem;color:#2e7d32">' +
+          '\uD83D\uDCCA \u05E1\u05E4\u05E7 \u05D6\u05D4 \u05E0\u05E1\u05E8\u05E7 ' + (tmpl.times_used || 0) +
+          ' \u05E4\u05E2\u05DE\u05D9\u05DD | \u05D3\u05D9\u05D5\u05E7: ' + accPct + '%</div>';
+      }
+    } catch (e) { /* ignore stats error */ }
+  }
+
   function fld(lbl, id, type, val, cf, ex) {
     return '<label class="ocr-flbl' + wc(cf) + '">' + escapeHtml(lbl) + ' ' + fc(cf) +
       '<input' + (type ? ' type="' + type + '"' : '') + ' id="' + id + '" class="nd-field" value="' +
@@ -122,6 +137,7 @@ async function showOCRReview(result, fileUrl) {
     '<div class="modal ocr-modal-box">' +
       '<div class="ocr-header"><h3 style="margin:0;font-size:1.1rem">\uD83E\uDD16 תוצאות סריקה</h3>' +
         '<button class="btn-sm" onclick="closeAndRemoveModal(\'ocr-review-modal\')">\u2715</button></div>' +
+      statsHtml +
       '<div class="ocr-body">' +
         '<div class="ocr-fields-panel"><div class="ocr-fields-grid">' +
           '<label class="ocr-flbl' + wc('supplier_name') + '">ספק ' + fc('supplier_name') +
@@ -255,6 +271,15 @@ async function _ocrSave(mode) {
     await writeLog('doc_create', null, {
       reason: 'מסמך מסריקת AI — ' + docNumber, source_ref: intNum, ocr_extraction_id: _ocrExtractionId
     });
+    // Phase 5e: Update OCR learning template
+    var docTypeCode = '';
+    var docTypeName = '';
+    if (_docTypes) {
+      var selectedType = _docTypes.find(function(t) { return t.id === typeId; });
+      if (selectedType) { docTypeCode = selectedType.code; docTypeName = selectedType.name_he; }
+    }
+    await updateOCRTemplate(supplierId, docTypeCode, hasCorr ? corrections : null,
+      _ocrOriginalData, docTypeName || docTypeCode);
     closeAndRemoveModal('ocr-review-modal');
     toast('המסמך נשמר בהצלחה');
     if (typeof loadDocumentsTab === 'function') await loadDocumentsTab();

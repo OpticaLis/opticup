@@ -9,7 +9,7 @@
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
 | 1 | shared.js | js/shared.js | 185 | Supabase client init, table constants (T), FIELD_MAP/ENUM_MAP, Hebrew↔English translation, UI helpers ($, toast, setAlert, confirmDialog, showLoading), tab navigation (showTab, showEntryMode), escapeHtml, global variable declarations |
-| 2 | supabase-ops.js | js/supabase-ops.js | 176 | Database abstraction layer: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (individual updates, RLS-safe), writeLog, generateNextBarcode |
+| 2 | supabase-ops.js | js/supabase-ops.js | 253 | Database abstraction layer: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (individual updates, RLS-safe), writeLog, generateNextBarcode, OCR learning helpers (updateOCRTemplate, buildHintsFromCorrections) |
 | 3 | data-loading.js | js/data-loading.js | 167 | App initialization: loadData, loadMaxBarcode, populateDropdowns, low stock alerts (loadLowStockAlerts, refreshLowStockBanner, openLowStockModal), helper functions (activeBrands, supplierOpts, getBrandType, getBrandSync) |
 | 4 | search-select.js | js/search-select.js | 136 | Reusable searchable dropdown component: createSearchSelect, closeAllDropdowns, repositionDropdown, MutationObserver cleanup |
 | 5 | inventory-table.js | modules/inventory/inventory-table.js | 275 | Main inventory table: server-side paginated loading, filtering (search/supplier/type/qty), sorting, rendering with inline edit cells, event delegation for row actions |
@@ -29,7 +29,7 @@
 | 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 174 | Receipt save/cancel: saveReceiptDraft, saveReceiptDraftInternal, cancelReceipt, backToReceiptList |
 | 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 249 | Receipt confirmation: confirmReceipt, confirmReceiptCore (auto-updates cost_price), confirmReceiptById (from list), createNewInventoryFromReceiptItem, checkPoPriceDiscrepancies (PO vs receipt price warning) |
 | 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 130 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt. Uploads attached file if _pendingReceiptFile exists. Phase 4f: auto-deducts from active prepaid deal if exists |
-| 19d | receipt-ocr.js | modules/goods-receipts/receipt-ocr.js | 247 | OCR integration in goods receipt: initReceiptOCR (injects scan button), _rcptOcrScan (upload + Edge Function call), _applyOCRToReceipt (auto-fill supplier/items), _rcptOcrMatchInventory (ILIKE search), _rcptOcrShowBanner (confidence banner), _rcptOcrPreviewDoc (source doc modal) |
+| 19d | receipt-ocr.js | modules/goods-receipts/receipt-ocr.js | 297 | OCR integration in goods receipt with learning: initReceiptOCR (injects scan button), _rcptOcrScan (upload + Edge Function call), _applyOCRToReceipt (auto-fill supplier/items, stores OCR data for learning), _rcptOcrMatchInventory (ILIKE search), _rcptOcrShowBanner (confidence banner), _rcptOcrPreviewDoc (source doc modal), _rcptOcrUpdateTemplate (compares OCR vs final form, calls updateOCRTemplate), _patchReceiptConfirmForOCR (hooks into confirmReceiptCore) |
 | 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 195 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, receipt list event delegation |
 | 21 | audit-log.js | modules/audit/audit-log.js | 215 | Soft delete flow (deleteInvRow, confirmSoftDelete), recycle bin (openRecycleBin, restoreItem, permanentDelete with double PIN) |
 | 22 | item-history.js | modules/audit/item-history.js | 323 | Item timeline (openItemHistory), ACTION_MAP constant (21 action types), entry history accordion (openEntryHistory, loadEntryHistory, renderEntryHistory), exports |
@@ -64,9 +64,11 @@
 | 51 | debt-returns.js | modules/suppliers-debt/debt-returns.js | ~230 | Supplier returns tab: loadReturnsForSupplier (fetch+render), renderReturnsTable, viewReturnDetail (modal with items), promptReturnStatusUpdate (PIN-verified), updateReturnStatus, generateReturnNumber (RET-{supplier_number}-{seq}) |
 | 52 | inventory-return.js | modules/inventory/inventory-return.js | ~218 | Supplier return initiation from inventory: openSupplierReturnModal (validates selection, same-supplier check, items preview), _doConfirmSupplierReturn (PIN-verified, creates return+items, decrements inventory, writeLog) |
 | 53 | file-upload.js | js/file-upload.js | 97 | File upload helper for supplier documents: uploadSupplierFile (validates type/size, uploads to Supabase Storage), getSupplierFileUrl (signed URLs), renderFilePreview (PDF iframe / image), pickAndUploadFile (hidden file input + upload) |
-| 54 | ai-ocr.js | modules/suppliers-debt/ai-ocr.js | 317 | OCR trigger, review screen, correction flow: triggerOCR (calls ocr-extract Edge Function), showOCRReview (side-by-side modal with extracted fields + document preview), _ocrSave (saves corrections + creates supplier_document), confidence indicators per field, _injectOCRScanIcons (adds scan buttons to doc table rows), _injectOCRToolbarBtn (toolbar scan button), patches loadDocumentsTab |
+| 54 | ai-ocr.js | modules/suppliers-debt/ai-ocr.js | 342 | OCR trigger, review screen, correction flow with learning: triggerOCR (calls ocr-extract Edge Function), showOCRReview (side-by-side modal + supplier OCR stats), _ocrSave (saves corrections + creates supplier_document + updates OCR template), confidence indicators per field, _injectOCRScanIcons (adds scan buttons to doc table rows), _injectOCRToolbarBtn (toolbar scan button), patches loadDocumentsTab |
 
 **Total: 54 files, ~11,207 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 5e):** OCR learning system. updateOCRTemplate + buildHintsFromCorrections added to supabase-ops.js (shared utility). ai-ocr.js _ocrSave now updates supplier_ocr_templates after saving. showOCRReview displays supplier OCR stats (scan count + accuracy). receipt-ocr.js stores OCR result and patches confirmReceiptCore to call updateOCRTemplate on successful confirm. _rcptOcrResult global added to receipt-ocr.js.
 
 **Note (Phase 5c):** ai-ocr.js added (modules/suppliers-debt/). OCR review screen with side-by-side layout, confidence indicators, correction tracking. Toolbar "סרוק מסמך" button + row-level scan icons for docs with files. CSS styles added to styles.css. Script tag added to suppliers-debt.html after debt-returns.js.
 
@@ -142,6 +144,9 @@
 | `batchUpdate` | `(tableName, records)` | Async. Individual .update().eq('id') per record (RLS-safe). Adds tenant_id. Handles duplicate barcode constraint errors. Returns enriched rows |
 | `writeLog` | `(action, inventoryId?, details?)` | Async. Inserts into inventory_logs. Reads prizma_user and prizma_branch from sessionStorage. Supports 20+ detail fields |
 | `generateNextBarcode` | `()` | Async. Shared helper — calls loadMaxBarcode(), increments maxBarcode, returns BBDDDDD barcode string. Used by receipt-form and receipt-confirm |
+| `_detectDateFormat` | `(dateStr)` | Detects date format from string (YYYY-MM-DD, DD/MM/YYYY, DD.MM.YYYY). Returns format string or null |
+| `buildHintsFromCorrections` | `(corrections, extractedData, existingHints)` | Builds extraction_hints JSONB from OCR corrections and extracted data. Merges with existing hints. Detects date format, supplier name pattern, document number examples |
+| `updateOCRTemplate` | `(supplierId, docTypeCode, corrections, extractedData, templateName?)` | Async. Finds or creates supplier_ocr_templates record. Increments times_used, times_corrected if corrections exist. Recalculates accuracy_rate. Merges extraction_hints via buildHintsFromCorrections. Shared between ai-ocr.js and receipt-ocr.js |
 
 ### js/data-loading.js
 
@@ -366,6 +371,8 @@
 | `_rcptOcrHighlightRow` | `(type)` | Highlights last receipt item row — yellow for unmatched, green (fading) for matched |
 | `_rcptOcrShowBanner` | `(confidence, matched, total, fileUrl)` | Creates OCR confidence banner at top of receipt form with match stats and "view source" button |
 | `_rcptOcrPreviewDoc` | `(fileUrl)` | Async. Opens modal with document preview (PDF iframe or image) using signed URL from getSupplierFileUrl |
+| `_rcptOcrUpdateTemplate` | `()` | Async. Phase 5e: compares OCR extracted data to final receipt form values, builds corrections, calls updateOCRTemplate. Clears _rcptOcrResult after. |
+| `_patchReceiptConfirmForOCR` | `()` | Patches confirmReceiptCore to call _rcptOcrUpdateTemplate after successful receipt confirmation. Called on DOMContentLoaded. |
 
 ### modules/goods-receipts/receipt-excel.js
 
@@ -716,10 +723,10 @@
 | Function | Parameters | Description |
 |----------|------------|-------------|
 | `triggerOCR` | `(fileUrl, supplierId, documentTypeHint)` | Calls ocr-extract Edge Function, shows loading, opens review screen on success |
-| `showOCRReview` | `(result, fileUrl)` | Builds side-by-side modal: extracted fields (left) + document preview (right), confidence indicators per field |
+| `showOCRReview` | `(result, fileUrl)` | Builds side-by-side modal: extracted fields (left) + document preview (right), confidence indicators per field, supplier OCR stats bar if template exists (Phase 5e) |
 | `_ocrCalcTotal` | `()` | Auto-recalculates VAT amount and total from subtotal + VAT rate |
 | `_ocrAddItemRow` | `()` | Adds a new empty row to the OCR items table |
-| `_ocrSave` | `(mode)` | Saves OCR result: updates ocr_extractions status/corrections, creates supplier_document via batchCreate, links extraction to document |
+| `_ocrSave` | `(mode)` | Saves OCR result: updates ocr_extractions status/corrections, creates supplier_document via batchCreate, links extraction to document, calls updateOCRTemplate for learning (Phase 5e) |
 | `_injectOCRScanIcons` | `(docs)` | Post-render: adds 🤖 scan buttons to doc table rows that have file_url but no total_amount |
 | `_injectOCRToolbarBtn` | `()` | Adds "סרוק מסמך" button to documents tab toolbar |
 | `_ocrConfDot` | `(c)` | Returns confidence indicator HTML (green/yellow/red) based on score |
@@ -1131,8 +1138,11 @@ receipt-ocr.js
   → calls: addReceiptItemRow(), updateReceiptItemsStats() [receipt-form.js]
   → calls: uploadSupplierFile(), getSupplierFileUrl() [file-upload.js]
   → calls: generateNextBarcode() [shared.js]
+  → calls: updateOCRTemplate() [supabase-ops.js] (Phase 5e)
+  → patches: confirmReceiptCore() [receipt-confirm.js] (Phase 5e)
   → reads: supplierCache, supplierCacheRev, brandCacheRev [shared.js]
   → reads: _pendingReceiptFile [receipt-form.js]
+  → globals: _rcptOcrResult
   → calls: ocr-extract Edge Function [Supabase]
 
 receipt-debt.js
