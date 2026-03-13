@@ -63,6 +63,17 @@
   .rst-received { background: #d4edda; color: #155724; }
   .rst-credited { background: #d4edda; color: #155724; }
   .nd-field { width: 100%; padding: 6px; border: 1px solid var(--g300); border-radius: 4px; font-family: inherit; font-size: .88rem; box-sizing: border-box; }
+
+  /* Aging report */
+  .aging-section { background: var(--white); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow); }
+  .aging-title { font-size: .92rem; font-weight: 600; color: var(--primary); margin-bottom: 12px; }
+  .aging-row { display: flex; gap: 8px; }
+  .aging-bucket { flex: 1; text-align: center; min-width: 0; }
+  .aging-bucket .ab-label { font-size: .78rem; color: var(--g500); margin-bottom: 4px; }
+  .aging-bucket .ab-amount { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+  .aging-bucket .ab-bar { height: 6px; border-radius: 3px; background: var(--g200); overflow: hidden; }
+  .aging-bucket .ab-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+  @media (max-width: 480px) { .aging-row { gap: 4px; } .aging-bucket .ab-amount { font-size: .85rem; } }
 </style>
 </head>
 <body>
@@ -94,6 +105,12 @@
         <div class="dc-title">שולם החודש</div>
         <div class="dc-amount" id="val-paid-month">&#8362;0</div>
       </div>
+    </div>
+
+    <!-- Aging report -->
+    <div class="aging-section">
+      <div class="aging-title">גיול חובות</div>
+      <div class="aging-row" id="aging-buckets"></div>
     </div>
 
     <!-- Tabs -->

@@ -87,9 +87,59 @@ async function loadDebtSummary() {
       overdueCard.classList.remove('overdue');
     }
 
+    // Aging report — reuse already-fetched docs
+    loadAgingReport(docs || []);
+
   } catch (e) {
     console.error('loadDebtSummary error:', e);
   }
+}
+
+/**
+ * Aging report — break down open debt by due_date buckets.
+ * Reuses docs already fetched by loadDebtSummary (no extra queries).
+ */
+function loadAgingReport(docs) {
+  var el = document.getElementById('aging-buckets');
+  if (!el) return;
+
+  var todayStr = new Date().toISOString().slice(0, 10);
+  var today = new Date(todayStr);
+
+  var buckets = [
+    { label: 'שוטף', color: '#2e7d32', amount: 0 },
+    { label: '1-30 יום', color: '#1a5fb4', amount: 0 },
+    { label: '31-60 יום', color: '#f9a825', amount: 0 },
+    { label: '61-90 יום', color: '#e07655', amount: 0 },
+    { label: '90+ יום', color: '#c62828', amount: 0 }
+  ];
+
+  (docs || []).forEach(function(doc) {
+    var rate = Number(doc.exchange_rate) || 1;
+    var remaining = (Number(doc.total_amount) - Number(doc.paid_amount)) * rate;
+    if (remaining <= 0) return;
+
+    if (!doc.due_date || doc.due_date >= todayStr) {
+      buckets[0].amount += remaining;
+    } else {
+      var daysPast = Math.floor((today - new Date(doc.due_date)) / 86400000);
+      if (daysPast <= 30) buckets[1].amount += remaining;
+      else if (daysPast <= 60) buckets[2].amount += remaining;
+      else if (daysPast <= 90) buckets[3].amount += remaining;
+      else buckets[4].amount += remaining;
+    }
+  });
+
+  var totalDebt = buckets.reduce(function(s, b) { return s + b.amount; }, 0);
+
+  el.innerHTML = buckets.map(function(b) {
+    var pct = totalDebt > 0 ? Math.round(b.amount / totalDebt * 100) : 0;
+    return '<div class="aging-bucket">' +
+      '<div class="ab-label">' + b.label + '</div>' +
+      '<div class="ab-amount" style="color:' + b.color + '">' + formatILS(b.amount) + '</div>' +
+      '<div class="ab-bar"><div class="ab-bar-fill" style="width:' + pct + '%;background:' + b.color + '"></div></div>' +
+    '</div>';
+  }).join('');
 }
 
 // =========================================================
