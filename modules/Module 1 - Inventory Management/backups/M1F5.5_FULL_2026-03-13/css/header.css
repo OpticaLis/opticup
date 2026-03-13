@@ -1,0 +1,349 @@
+/* Optic Up — Sticky Header */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: 60px;
+  background: var(--primary);
+  color: var(--white);
+  direction: rtl;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  border-bottom: 2px solid var(--primary-light);
+}
+
+/* Right zone — logo + store name */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.header-logo-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.header-store-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Center zone — app name */
+.header-center {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--g300);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/* Left zone — employee + logout */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-employee {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+}
+
+.header-emp-name {
+  font-weight: 600;
+}
+
+.header-emp-role {
+  font-weight: 400;
+  color: var(--g300);
+  font-size: 0.8rem;
+}
+
+.header-logout {
+  padding: 5px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--white);
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.header-logout:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--white);
+}
+
+/* =========================================================
+   Alerts Bell + Dropdown Panel (Phase 5f)
+   ========================================================= */
+
+/* Bell wrapper — sits in header-left before logout */
+.alerts-bell-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.alerts-bell-btn {
+  background: none;
+  border: none;
+  color: var(--white);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  position: relative;
+  transition: transform 0.2s;
+  line-height: 1;
+}
+
+.alerts-bell-btn:hover {
+  transform: scale(1.15);
+}
+
+/* Red badge circle */
+.alerts-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  background: #e53935;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+  font-family: inherit;
+}
+
+/* Bell shake animation */
+@keyframes bell-shake {
+  0%   { transform: rotate(0); }
+  15%  { transform: rotate(14deg); }
+  30%  { transform: rotate(-14deg); }
+  45%  { transform: rotate(10deg); }
+  60%  { transform: rotate(-8deg); }
+  75%  { transform: rotate(4deg); }
+  100% { transform: rotate(0); }
+}
+
+.bell-shake {
+  animation: bell-shake 0.8s ease-in-out;
+}
+
+/* Dropdown panel */
+.alerts-panel {
+  position: fixed;
+  z-index: 9999;
+  width: 360px;
+  max-height: 420px;
+  background: var(--white, #fff);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+  direction: rtl;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.alerts-panel-header {
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #e0e0e0;
+  color: var(--primary, #1a237e);
+  background: #f5f7fa;
+}
+
+.alerts-panel-list {
+  overflow-y: auto;
+  max-height: 300px;
+  flex: 1;
+}
+
+.alerts-panel-loading,
+.alerts-panel-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+/* Individual alert row */
+.alert-item {
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  border-right: 4px solid transparent;
+  transition: background 0.15s;
+}
+
+.alert-item:hover {
+  background: #f8f9fb;
+}
+
+.alert-item-critical {
+  border-right-color: #e53935;
+}
+
+.alert-item-warning {
+  border-right-color: #ff9800;
+}
+
+.alert-item-info {
+  border-right-color: #1e88e5;
+}
+
+.alert-item-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.alert-severity-icon {
+  flex-shrink: 0;
+  font-size: 0.95rem;
+}
+
+.alert-item-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #222;
+  line-height: 1.35;
+}
+
+.alert-item-time {
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 2px;
+  margin-right: 22px;
+}
+
+/* Action buttons row */
+.alert-actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  margin-right: 22px;
+}
+
+.alert-action-btn {
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background: #fff;
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.alert-action-view {
+  color: var(--primary, #1a237e);
+  border-color: var(--primary, #1a237e);
+}
+
+.alert-action-view:hover {
+  background: var(--primary, #1a237e);
+  color: #fff;
+}
+
+.alert-action-dismiss {
+  color: #888;
+}
+
+.alert-action-dismiss:hover {
+  background: #f0f0f0;
+}
+
+/* Panel footer */
+.alerts-panel-footer {
+  padding: 10px 16px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f5f7fa;
+}
+
+.alerts-mark-all {
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--primary, #1a237e);
+  background: transparent;
+  color: var(--primary, #1a237e);
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.alerts-mark-all:hover {
+  background: var(--primary, #1a237e);
+  color: #fff;
+}
+
+.alerts-view-all {
+  font-size: 0.78rem;
+  color: var(--primary, #1a237e);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.alerts-view-all:hover {
+  text-decoration: underline;
+}
+
+/* Responsive — below 600px */
+@media (max-width: 600px) {
+  .app-header {
+    padding: 0 12px;
+  }
+
+  .header-emp-role {
+    display: none;
+  }
+
+  .header-store-name {
+    font-size: 0.92rem;
+  }
+
+  .header-center {
+    font-size: 0.75rem;
+  }
+
+  .alerts-panel {
+    width: calc(100vw - 16px);
+    left: 8px !important;
+    right: 8px;
+  }
+}

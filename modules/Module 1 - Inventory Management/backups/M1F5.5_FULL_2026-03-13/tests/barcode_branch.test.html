@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>Barcode Branch Logic — Tests</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+body { font-family: monospace; padding: 24px; direction: ltr; background: #1a1a2e; color: #e0e0e0; }
+h1 { color: #3b82f6; }
+.pass { color: #10b981; } .fail { color: #ef4444; }
+.result { padding: 8px 12px; margin: 6px 0; border-radius: 6px; background: #222; }
+</style>
+</head>
+<body>
+<h1>Barcode Branch Logic Tests (BBDDDDD)</h1>
+<div id="results"></div>
+<script>
+const SUPABASE_URL = 'https://tsxrrxzmdxaenlvocyit.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const out = document.getElementById('results');
+let passed = 0, failed = 0;
+
+function log(name, ok, detail) {
+  const cls = ok ? 'pass' : 'fail';
+  const icon = ok ? '✓' : '✗';
+  out.innerHTML += `<div class="result ${cls}">${icon} <strong>${name}</strong> — ${detail}</div>`;
+  if (ok) passed++; else failed++;
+}
+
+// ---- Helpers extracted from index.html (BBDDDDD format) ----
+
+function loadMaxBarcodeFromRows(rows, branchCode) {
+  const prefix = branchCode.padStart(2, '0');
+  let mx = 0;
+  rows.forEach(r => {
+    const bc = r.barcode;
+    if (bc && bc.length === 7 && bc.startsWith(prefix)) {
+      const seq = parseInt(bc.slice(2), 10);
+      if (!isNaN(seq) && seq > mx) mx = seq;
+    }
+  });
+  return mx;
+}
+
+function generateBarcodesSeq(count, maxBarcode, branchCode) {
+  const prefix = branchCode.padStart(2, '0');
+  const barcodes = [];
+  let seq = maxBarcode;
+  for (let i = 0; i < count; i++) {
+    seq++;
+    if (seq > 99999) throw new Error('overflow');
+    barcodes.push(prefix + String(seq).padStart(5, '0'));
+  }
+  return { barcodes, newMax: seq };
+}
+
+// ---- Tests ----
+(async () => {
+  // ============================================================
+  // Test 1: loadMaxBarcode correctly finds max within branch prefix
+  // ============================================================
+  try {
+    const rows = [
+      { barcode: '0000001' },
+      { barcode: '0000042' },
+      { barcode: '0000100' },
+      { barcode: '0100005' },  // branch 01
+      { barcode: '0100012' },  // branch 01
+      { barcode: null },
+      { barcode: 'wc0004' },   // non-standard, ignored
+      { barcode: '123' },      // too short, ignored
+    ];
+    const max00 = loadMaxBarcodeFromRows(rows, '00');
+    const max01 = loadMaxBarcodeFromRows(rows, '01');
+    const max02 = loadMaxBarcodeFromRows(rows, '02');
+    log('loadMaxBarcode branch 00', max00 === 100, `expected 100, got ${max00}`);
+    log('loadMaxBarcode branch 01', max01 === 12, `expected 12, got ${max01}`);
+    log('loadMaxBarcode branch 02 (empty)', max02 === 0, `expected 0, got ${max02}`);
+  } catch (e) {
+    log('loadMaxBarcode', false, e.message);
+  }
+
+  // ============================================================
+  // Test 2: generateBarcodes produces correct BBDDDDD sequence
+  // ============================================================
+  try {
+    // Branch 00, starting from max=100, generate 3
+    const r1 = generateBarcodesSeq(3, 100, '00');
+    log('generateBarcodes seq 00',
+      JSON.stringify(r1.barcodes) === '["0000101","0000102","0000103"]' && r1.newMax === 103,
+      `barcodes=${JSON.stringify(r1.barcodes)}, newMax=${r1.newMax}`);
+
+    // Branch 01, starting from 0 (fresh branch)
+    const r2 = generateBarcodesSeq(2, 0, '01');
+    log('generateBarcodes seq 01 fresh',
+      JSON.stringify(r2.barcodes) === '["0100001","0100002"]' && r2.newMax === 2,
+      `barcodes=${JSON.stringify(r2.barcodes)}, newMax=${r2.newMax}`);
+
+    // Overflow at 99999
+    let overflowed = false;
+    try { generateBarcodesSeq(1, 99999, '00'); } catch { overflowed = true; }
+    log('generateBarcodes overflow at 99999', overflowed, overflowed ? 'correctly threw' : 'did not throw');
+  } catch (e) {
+    log('generateBarcodes', false, e.message);
+  }
+
+  // ============================================================
+  // Test 3: branch 99 (max branch) works correctly
+  // ============================================================
+  try {
+    const r99 = generateBarcodesSeq(2, 500, '99');
+    log('generateBarcodes branch 99 (max)',
+      JSON.stringify(r99.barcodes) === '["9900501","9900502"]' && r99.newMax === 502,
+      `barcodes=${JSON.stringify(r99.barcodes)}, newMax=${r99.newMax}`);
+  } catch (e) {
+    log('generateBarcodes branch 99', false, e.message);
+  }
+
+  // ============================================================
+  // Test 4: DB unique constraint rejects duplicate barcode
+  // ============================================================
+  try {
+    const { data: sample } = await sb.from('inventory').select('barcode').not('barcode','is',null).limit(1);
+    if (sample?.length) {
+      const dup = sample[0].barcode;
+      const { error } = await sb.from('inventory').insert({
+        barcode: dup, model: 'DUP-TEST', product_type: 'eyeglasses', sell_price: 1, status: 'in_stock', quantity: 1
+      });
+      log('DB unique constraint', error && error.code === '23505',
+        error ? `code=${error.code}` : 'no error — FAIL');
+    } else {
+      log('DB unique constraint', false, 'no sample barcode found');
+    }
+  } catch (e) {
+    log('DB unique constraint', false, e.message);
+  }
+
+  // ---- Summary ----
+  out.innerHTML += `<hr><div class="result" style="font-size:1.2em"><strong>Total: ${passed + failed}</strong> | <span class="pass">${passed} passed</span> | <span class="fail">${failed} failed</span></div>`;
+})();
+</script>
+</body>
+</html>

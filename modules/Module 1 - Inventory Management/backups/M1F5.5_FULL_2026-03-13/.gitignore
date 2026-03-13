@@ -1,0 +1,4 @@
+node_modules/
+.claude/
+scripts/upload_to_airtable.js
+scripts/config.json

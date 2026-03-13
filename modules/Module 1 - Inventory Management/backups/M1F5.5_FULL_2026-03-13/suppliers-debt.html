@@ -1,0 +1,241 @@
+<!--
+  Optic Up — Supplier Debt Tracking
+  Standalone page — loads debt-dashboard.js for summary logic
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optic Up — מעקב חובות ספקים</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/header.css">
+<style>
+  .debt-page { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+  /* Back link + title */
+  .debt-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .debt-topbar .back-link { color: var(--primary); text-decoration: none; font-size: .9rem; white-space: nowrap; }
+  .debt-topbar .back-link:hover { text-decoration: underline; }
+  .debt-topbar h2 { margin: 0; font-size: 1.25rem; color: var(--primary); }
+
+  /* Summary cards row */
+  .debt-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  @media (max-width: 640px) { .debt-cards { grid-template-columns: repeat(2, 1fr); } }
+  .debt-card { background: var(--white); border-radius: var(--radius); padding: 18px 14px; text-align: center; box-shadow: var(--shadow); }
+  .debt-card .dc-title { font-size: .82rem; color: var(--g500); margin-bottom: 6px; }
+  .debt-card .dc-amount { font-size: 1.6rem; font-weight: 700; color: var(--primary); }
+  .debt-card .dc-sub { font-size: .75rem; color: var(--g400); margin-top: 4px; }
+  .debt-card.overdue .dc-amount { color: var(--error); }
+  .debt-card.overdue { border: 2px solid var(--error); }
+
+  /* Tabs */
+  .debt-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--g200); margin-bottom: 16px; }
+  .debt-tab-btn { padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: .92rem; font-family: inherit; color: var(--g500); border-bottom: 3px solid transparent; transition: all .2s; font-weight: 500; }
+  .debt-tab-btn:hover { color: var(--primary); background: var(--g100); }
+  .debt-tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 700; }
+
+  /* Tab content */
+  .debt-tab-content { display: none; }
+  .debt-tab-content.active { display: block; }
+  .empty-state { text-align: center; padding: 48px 16px; color: var(--g400); font-size: .95rem; }
+
+  /* Documents tab — toolbar + badges + buttons */
+  .doc-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .doc-filter-input { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--g300); font-family: inherit; font-size: .88rem; }
+  .doc-cb-label { display: flex; align-items: center; gap: 4px; font-size: .85rem; color: var(--g600); }
+  .doc-add-btn { margin-right: auto; }
+  .doc-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: .78rem; font-weight: 600; }
+  .dst-open { background: #e3f0ff; color: #1a5fb4; }
+  .dst-partial { background: #fff3cd; color: #856404; }
+  .dst-paid { background: #d4edda; color: #155724; }
+  .dst-linked { background: #e8dff5; color: #6f42c1; }
+  .dst-cancel { background: var(--g200); color: var(--g500); }
+  .btn-sm { padding: 3px 8px; border: 1px solid var(--g300); border-radius: 4px; background: var(--white); cursor: pointer; font-size: .78rem; font-family: inherit; }
+  .btn-sm:hover { background: var(--g100); }
+  .btn-lnk { border-color: #6f42c1; color: #6f42c1; }
+  .btn-lnk:hover { background: #f3eefb; }
+  .pst-red { background: #f8d7da; color: #721c24; }
+  .rst-pending { background: #fff3cd; color: #856404; }
+  .rst-ready { background: #e3f0ff; color: #1a5fb4; }
+  .rst-shipped { background: #e8dff5; color: #6f42c1; }
+  .rst-received { background: #d4edda; color: #155724; }
+  .rst-credited { background: #d4edda; color: #155724; }
+  .nd-field { width: 100%; padding: 6px; border: 1px solid var(--g300); border-radius: 4px; font-family: inherit; font-size: .88rem; box-sizing: border-box; }
+
+  /* Aging report */
+  .aging-section { background: var(--white); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow); }
+  .aging-title { font-size: .92rem; font-weight: 600; color: var(--primary); margin-bottom: 12px; }
+  .aging-row { display: flex; gap: 8px; }
+  .aging-bucket { flex: 1; text-align: center; min-width: 0; }
+  .aging-bucket .ab-label { font-size: .78rem; color: var(--g500); margin-bottom: 4px; }
+  .aging-bucket .ab-amount { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+  .aging-bucket .ab-bar { height: 6px; border-radius: 3px; background: var(--g200); overflow: hidden; }
+  .aging-bucket .ab-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+  @media (max-width: 480px) { .aging-row { gap: 4px; } .aging-bucket .ab-amount { font-size: .85rem; } }
+
+  /* Info help buttons */
+  .info-help-btn { background: none; border: 1px solid var(--g200); cursor: pointer; font-size: 1rem; padding: 2px 7px; border-radius: 50%; opacity: .7; transition: all .2s; line-height: 1; }
+  .info-help-btn:hover { opacity: 1; background: var(--g100); border-color: var(--primary); }
+</style>
+</head>
+<body>
+
+<main class="debt-page">
+  <!-- Top bar -->
+  <div class="debt-topbar">
+    <a href="index.html" class="back-link">&#8594; מסך בית</a>
+    <h2>מעקב חובות ספקים</h2>
+  </div>
+
+  <!-- Main content (hidden when detail panel is open) -->
+  <div id="debt-main-content">
+    <!-- Summary cards -->
+    <div class="debt-cards">
+      <div class="debt-card" id="card-total-debt">
+        <div class="dc-title">חוב כולל</div>
+        <div class="dc-amount" id="val-total-debt">&#8362;0</div>
+      </div>
+      <div class="debt-card" id="card-due-week">
+        <div class="dc-title">לתשלום השבוע</div>
+        <div class="dc-amount" id="val-due-week">&#8362;0</div>
+      </div>
+      <div class="debt-card" id="card-overdue">
+        <div class="dc-title">באיחור</div>
+        <div class="dc-amount" id="val-overdue">&#8362;0</div>
+      </div>
+      <div class="debt-card" id="card-paid-month">
+        <div class="dc-title">שולם החודש</div>
+        <div class="dc-amount" id="val-paid-month">&#8362;0</div>
+      </div>
+    </div>
+
+    <!-- Aging report -->
+    <div class="aging-section">
+      <div class="aging-title">גיול חובות</div>
+      <div class="aging-row" id="aging-buckets"></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="debt-tabs">
+      <button class="debt-tab-btn active" data-tab="suppliers" onclick="switchDebtTab('suppliers')">ספקים</button>
+      <button class="debt-tab-btn" data-tab="documents" onclick="switchDebtTab('documents')">מסמכים</button>
+      <button class="debt-tab-btn" data-tab="payments" onclick="switchDebtTab('payments')">תשלומים</button>
+      <button class="debt-tab-btn" data-tab="prepaid" onclick="switchDebtTab('prepaid')">עסקאות מראש</button>
+      <button class="debt-tab-btn" data-tab="weekly" onclick="switchDebtTab('weekly')">&#128202; דוח שבועי</button>
+    </div>
+
+    <!-- Tab content areas -->
+    <div id="dtab-suppliers" class="debt-tab-content active">
+      <div class="empty-state">אין נתונים להצגה</div>
+    </div>
+    <div id="dtab-documents" class="debt-tab-content">
+      <div class="empty-state">אין נתונים להצגה</div>
+    </div>
+    <div id="dtab-payments" class="debt-tab-content">
+      <div class="empty-state">אין נתונים להצגה</div>
+    </div>
+    <div id="dtab-prepaid" class="debt-tab-content">
+      <div class="empty-state">אין נתונים להצגה</div>
+    </div>
+    <div id="dtab-weekly" class="debt-tab-content">
+      <div id="weeklyReportContent"><div class="empty-state">טוען...</div></div>
+    </div>
+  </div>
+
+  <!-- Supplier detail panel (shown/hidden by JS) -->
+  <div id="supplier-detail-panel" style="display:none"></div>
+</main>
+
+<!-- Toast container -->
+<div id="toast-c" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:10000;display:flex;flex-direction:column;gap:8px"></div>
+
+<!-- Loading overlay -->
+<div id="loading" class="loading-overlay" style="display:none">
+  <div class="loading-box"><div class="spinner"></div><p id="loading-text">טוען...</p></div>
+</div>
+
+<!-- Confirm dialog modal -->
+<div id="confirm-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:400px;text-align:center">
+    <h3 id="confirm-title">אישור</h3>
+    <p id="confirm-text"></p>
+    <button class="btn btn-s" id="confirm-yes">כן</button>
+    <button class="btn btn-g" id="confirm-no">לא — חזור</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/supabase-ops.js"></script>
+<script src="js/data-loading.js"></script>
+<script src="js/search-select.js"></script>
+<script src="js/file-upload.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/header.js"></script>
+<script src="js/alerts-badge.js"></script>
+<script src="modules/suppliers-debt/debt-dashboard.js"></script>
+<script src="modules/suppliers-debt/debt-documents.js"></script>
+<script src="modules/suppliers-debt/debt-doc-filters.js"></script>
+<script src="modules/suppliers-debt/debt-doc-link.js"></script>
+<script src="modules/suppliers-debt/debt-payments.js"></script>
+<script src="modules/suppliers-debt/debt-payment-wizard.js"></script>
+<script src="modules/suppliers-debt/debt-payment-alloc.js"></script>
+<script src="modules/suppliers-debt/debt-prepaid.js"></script>
+<script src="modules/suppliers-debt/debt-supplier-detail.js"></script>
+<script src="modules/suppliers-debt/debt-returns.js"></script>
+<script src="modules/suppliers-debt/ai-ocr.js"></script>
+<script src="modules/suppliers-debt/ai-alerts.js"></script>
+<script src="modules/suppliers-debt/ai-batch-upload.js"></script>
+<script src="modules/suppliers-debt/ai-batch-ocr.js"></script>
+<script src="modules/suppliers-debt/ai-historical-import.js"></script>
+<script src="modules/suppliers-debt/ai-weekly-report.js"></script>
+<script src="modules/suppliers-debt/ai-config.js"></script>
+<script src="modules/suppliers-debt/debt-info-content.js"></script>
+<script src="modules/suppliers-debt/debt-info-inject.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<script>
+// =========================================================
+// Tab switching
+// =========================================================
+function switchDebtTab(tabName) {
+  document.querySelectorAll('.debt-tab-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
+  });
+  document.querySelectorAll('.debt-tab-content').forEach(function(div) {
+    div.classList.toggle('active', div.id === 'dtab-' + tabName);
+  });
+  // Load tab data
+  if (tabName === 'suppliers') loadSuppliersTab();
+  if (tabName === 'documents') loadDocumentsTab();
+  if (tabName === 'payments') loadPaymentsTab();
+  if (tabName === 'prepaid') loadPrepaidTab();
+  if (tabName === 'weekly') initWeeklyReport();
+}
+
+// =========================================================
+// Session check + init
+// =========================================================
+window.addEventListener('DOMContentLoaded', async function() {
+  const session = await loadSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+
+  // Permission check — allow access if permission doesn't exist yet
+  if (typeof hasPermission === 'function') {
+    const permsRaw = JSON.parse(sessionStorage.getItem('prizma_permissions') || '{}');
+    const permKeys = Array.isArray(permsRaw) ? permsRaw : Object.keys(permsRaw);
+    const debtPermExists = permKeys.some(function(p) { return p.startsWith('debt'); });
+    if (debtPermExists && !hasPermission('debt:view')) {
+      window.location.href = 'index.html';
+      return;
+    }
+  }
+
+  await loadDebtSummary();
+  await loadSuppliersTab();
+});
+</script>
+</body>
+</html>
