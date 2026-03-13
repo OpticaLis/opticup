@@ -66,7 +66,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 3.5 | ✅ | מסך בית + שינוי שם ריפו | index.html → מסך בית, inventory.html, ריפו opticup, session בין דפים |
 | 3.75 | ✅ | Multi-Tenancy Foundation | tenant_id על כל הטבלאות, RLS, contracts, תשתית SaaS |
 | 3.8 | ✅ | Sticky Header | שם + לוגו חנות בכל המסכים, header.js מודולרי |
-| 4 | ✅ | מעקב חובות ספקים | חשבוניות, תשלומים, דשבורד חובות, מט"ח |
+| 4 | ⬜ | מעקב חובות ספקים | חשבוניות, תשלומים, דשבורד חובות, מט"ח |
 | 5 | ⬜ | סוכן AI לניהול ספקים | OCR חשבוניות (Claude Vision), התראות, דוחות אוטומטיים |
 | 6 | ⬜ | פורטל ספקים | גישת ספק חיצונית, view-only מלאי לפי ספק |
 
@@ -150,20 +150,15 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - שם "Optic Up" קבוע — לוגו + שם חנות ניתנים לשינוי ע"י בעל המנוי
 - מודולרי — דף חדש בעתיד = שורת script + link אחד
 
-### פאזה 4 ✅ — מעקב חובות ספקים
-- 11 טבלאות DB חדשות: document_types, payment_methods, currencies, supplier_documents, document_links, supplier_payments, payment_allocations, prepaid_deals, prepaid_checks, supplier_returns, supplier_return_items
-- 7 עמודות חדשות על suppliers (payment_terms_days, withholding_tax_rate, ועוד)
-- דף suppliers-debt.html חדש עם 4 טאבים: ספקים, מסמכים, תשלומים, עסקאות מקדמה
-- דשבורד חובות: סיכום חוב כולל, מגיע השבוע, באיחור, שולם החודש
-- ניהול מסמכים: CRUD, מספור פנימי אוטומטי, קישור תעודות משלוח לחשבוניות
-- אשף תשלומים 4 שלבים: בחירת ספק, פרטי תשלום (כולל ניכוי מס), הקצאה למסמכים (FIFO), אישור עם PIN
-- עסקאות מקדמה: ניהול שיקים, ניכוי אוטומטי מקבלת סחורה
-- צפייה בפרטי ספק: טיימליין, מסמכים, תשלומים, זיכויים — slide-in panel
-- החזרות לספק: יצירה מתוך מלאי (invSelected), ניהול סטטוסים
-- קבלת סחורה משופרת: יצירת מסמך ספק אוטומטית באישור, ברקוד חובה, מדריך לעובד
-- 9 קבצי JS חדשים ב-modules/suppliers-debt/
-- inventory-return.js חדש ב-modules/inventory/
-- receipt-confirm.js + receipt-debt.js חדשים ב-modules/goods-receipts/
+### פאזה 4 ⬜ — מעקב חובות ספקים
+- טבלאות DB: supplier_invoices, supplier_payments, currencies (כולן עם tenant_id)
+- רישום חשבוניות ספקים (מספר, סכום, תאריך תשלום, מט"ח)
+- רישום תשלומים (סכום, אמצעי, קישור לחשבונית)
+- דשבורד: חוב כולל, מגיע השבוע, באיחור
+- היסטוריית ספק מלאה
+- currency + exchange_rate לספקי חו"ל — configurable, לא hardcoded
+- Contracts: getSupplierDebt(), getDebtDashboard(), וכו'
+- Views מוכנים לפורטל ספקים (פאזה 6)
 
 ### פאזה 5 ⬜ — סוכן AI לניהול ספקים
 - OCR חשבוניות: העלאת PDF/תמונה → Claude Vision API → JSON

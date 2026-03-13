@@ -1,6 +1,6 @@
 # MODULE_MAP — Optic Up Complete Codebase Reference
 
-> Updated 2026-03-13. Single reference document for any developer or AI assistant.
+> Updated 2026-03-12. Single reference document for any developer or AI assistant.
 
 ---
 

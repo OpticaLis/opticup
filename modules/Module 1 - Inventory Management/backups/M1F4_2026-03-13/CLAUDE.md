@@ -89,27 +89,23 @@ After reading SESSION_CONTEXT.md, confirm:
 opticup/
 ├── index.html                  — home screen: PIN login + module cards
 ├── inventory.html              — inventory management module (full app)
-├── suppliers-debt.html         — supplier debt tracking module
 ├── employees.html              — standalone employee management page
 ├── css/
-│   ├── styles.css              — all styles
-│   └── header.css              — sticky header styles
+│   └── styles.css              — all styles
 ├── js/
 │   ├── shared.js               — Supabase init, constants, caches, utilities (load FIRST)
 │   ├── supabase-ops.js         — DB operations: writeLog, fetchAll, batch ops
 │   ├── data-loading.js         — data loading + enrichment
 │   ├── search-select.js        — searchable dropdown component
-│   ├── auth-service.js         — PIN login, session management, permissions
-│   └── header.js               — sticky header logic
+│   └── auth-service.js         — PIN login, session management, permissions
 ├── modules/
-│   ├── inventory/              — 8 files (table, entry, edit, export, reduction, excel-import, access-sales, inventory-return)
+│   ├── inventory/              — 7 files (table, entry, edit, export, reduction, excel-import, access-sales)
 │   ├── purchasing/             — 5 files (purchase-orders, po-form, po-items, po-actions, po-view-import)
-│   ├── goods-receipts/         — 6 files (goods-receipt, receipt-form, receipt-actions, receipt-confirm, receipt-debt, receipt-excel)
+│   ├── goods-receipts/         — 4 files (goods-receipt, receipt-form, receipt-actions, receipt-excel)
 │   ├── audit/                  — 3 files (audit-log, item-history, qty-modal)
 │   ├── brands/                 — 2 files (brands, suppliers)
-│   ├── access-sync/            — 3 files (access-sync, sync-details, pending-panel, pending-resolve)
-│   ├── admin/                  — 2 files (admin, system-log)
-│   └── suppliers-debt/         — 9 files (debt-dashboard, debt-documents, debt-doc-link, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-supplier-detail, debt-returns)
+│   ├── access-sync/            — 4 files (access-sync, sync-details, pending-panel, pending-resolve)
+│   └── admin/                  — 2 files (admin, system-log)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service)
 │   ├── install-service.js
@@ -137,7 +133,7 @@ opticup/
 | `T.TENANTS`       | tenants                  | id, name, slug, default_currency, timezone, locale, is_active            |
 | `T.INV`           | inventory                | id, barcode, brand_id, supplier_id, model, size, color, quantity, status, is_deleted, tenant_id |
 | `T.BRANDS`        | brands                   | id, name, brand_type, default_sync, active, exclude_website, min_stock_qty, tenant_id |
-| `T.SUPPLIERS`     | suppliers                | id, name, active, supplier_number (UNIQUE, ≥ 10), payment_terms_days, withholding_tax_rate, tenant_id |
+| `T.SUPPLIERS`     | suppliers                | id, name, active, supplier_number (UNIQUE, ≥ 10), tenant_id             |
 | `T.EMPLOYEES`     | employees                | id, name, pin, email, phone, branch_id, failed_attempts, locked_until, last_login, tenant_id |
 | `T.LOGS`          | inventory_logs           | id, action, inventory_id, details (jsonb), created_at, tenant_id        |
 | `T.IMAGES`        | inventory_images         | id, inventory_id, url, tenant_id                                        |
@@ -155,18 +151,8 @@ opticup/
 | `T.HEARTBEAT`     | watcher_heartbeat        | id, last_beat, watcher_version, host, tenant_id                         |
 | `T.STOCK_COUNTS`  | stock_counts             | id, count_number, status, counted_by, total_items, total_diffs, tenant_id |
 | `T.STOCK_COUNT_ITEMS` | stock_count_items    | id, count_id, inventory_id, expected_qty, actual_qty, difference, tenant_id |
-| `T.DOC_TYPES`     | document_types           | id, code, name_he, name_en, affects_debt, is_system, tenant_id           |
-| `T.SUP_DOCS`      | supplier_documents       | id, supplier_id, document_type_id, document_number, total_amount, paid_amount, status, tenant_id |
-| `T.DOC_LINKS`     | document_links           | id, parent_document_id, child_document_id, amount_on_invoice, tenant_id  |
-| `T.SUP_PAYMENTS`  | supplier_payments        | id, supplier_id, amount, payment_date, payment_method, withholding_tax_rate, status, tenant_id |
-| `T.PAY_ALLOC`     | payment_allocations      | id, payment_id, document_id, allocated_amount, tenant_id                 |
-| `T.PAY_METHODS`   | payment_methods          | id, code, name_he, name_en, is_system, tenant_id                        |
-| `T.PREPAID_DEALS` | prepaid_deals            | id, supplier_id, total_prepaid, total_used, total_remaining, status, tenant_id |
-| `T.PREPAID_CHECKS`| prepaid_checks           | id, prepaid_deal_id, check_number, amount, check_date, status, tenant_id |
-| `T.SUP_RETURNS`   | supplier_returns         | id, supplier_id, return_number, return_type, status, tenant_id           |
-| `T.SUP_RETURN_ITEMS` | supplier_return_items | id, return_id, inventory_id, barcode, quantity, cost_price, tenant_id    |
 
-**Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 31 tables.
+**Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 20 tables.
 
 ---
 

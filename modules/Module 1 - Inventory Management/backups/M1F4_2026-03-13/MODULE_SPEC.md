@@ -1,5 +1,5 @@
 # מלאי מסגרות — Module Spec
-## גרסה 4 | מרץ 2026 | Post-Phase 4
+## גרסה 3.75 | מרץ 2026 | Post-Phase 3.75
 
 > **Authority:** Business logic flows and screen descriptions. For code details → MODULE_MAP.md. For DB schema → db-schema.sql. For rules → CLAUDE.md.
 
@@ -7,10 +7,10 @@
 
 ## 1. סקירה כללית
 
-**מודול מלאי מסגרות** הוא הליבה של מערכת Optic Up — מנהל את כל מחזור החיים של מסגרות משקפיים במלאי: כניסה, מעקב, עריכה, מכירה, מחיקה, שחזור, ספירת מלאי, סנכרון עם Access, ומעקב חובות ספקים.
+**מודול מלאי מסגרות** הוא הליבה של מערכת Optic Up — מנהל את כל מחזור החיים של מסגרות משקפיים במלאי: כניסה, מעקב, עריכה, מכירה, מחיקה, שחזור, ספירת מלאי וסנכרון עם Access.
 
 **סטאק טכנולוגי:**
-- Frontend: Vanilla JS (no framework), 52 JS modules + CSS
+- Frontend: Vanilla JS (no framework), 39 JS modules + CSS
 - Backend: Supabase (PostgreSQL + REST API + RPC + Edge Functions), client = `sb`
 - Auth: PIN → Edge Function (pin-auth) → signed JWT with tenant_id claim
 - Excel: SheetJS (xlsx) לייבוא/ייצוא
@@ -27,11 +27,9 @@ For complete file index → see MODULE_MAP.md section 1.
 
 לסכימה המלאה (columns, types, constraints, RLS) → ראה **db-schema.sql**.
 
-כל הטבלאות מכילות `tenant_id UUID NOT NULL` מאז פאזה 3.75. JWT-based RLS tenant isolation פעיל על כל 31 הטבלאות.
+כל הטבלאות מכילות `tenant_id UUID NOT NULL` מאז פאזה 3.75. JWT-based RLS tenant isolation פעיל על כל 20+ הטבלאות.
 
-**טבלאות עיקריות (pre-Phase 4):** tenants, inventory, brands, suppliers, employees, inventory_logs, inventory_images, purchase_orders, purchase_order_items, goods_receipts, goods_receipt_items, sync_log, pending_sales, watcher_heartbeat, stock_counts, stock_count_items, roles, permissions, role_permissions, employee_roles, auth_sessions.
-
-**טבלאות חדשות (Phase 4):** document_types, payment_methods, currencies, supplier_documents, document_links, supplier_payments, payment_allocations, prepaid_deals, prepaid_checks, supplier_returns, supplier_return_items.
+**טבלאות עיקריות:** tenants, inventory, brands, suppliers, employees, inventory_logs, inventory_images, purchase_orders, purchase_order_items, goods_receipts, goods_receipt_items, sync_log, pending_sales, watcher_heartbeat, stock_counts, stock_count_items, roles, permissions, role_permissions, employee_roles, auth_sessions.
 
 **RPC Functions:** `increment_inventory`, `decrement_inventory`, `set_inventory_qty`.
 
@@ -56,7 +54,7 @@ For complete file index → see MODULE_MAP.md section 1.
 ### 3.3 מלאי ראשי (Main Inventory Table)
 - Server-side paginated table with inline editing
 - Filters: search, supplier, product type, quantity range
-- Sorting, row selection, bulk operations (update sync/status, bulk delete, supplier return)
+- Sorting, row selection, bulk operations (update sync/status, bulk delete)
 - Image preview modal
 
 ### 3.4 הזמנות רכש (Purchase Orders)
@@ -71,12 +69,8 @@ For complete file index → see MODULE_MAP.md section 1.
 - Receipt form: document type + number + supplier + date
 - Optional PO linkage (auto-populates items from PO)
 - Item entry: barcode search / manual / Excel import
-- Barcode mandatory on new items (pre-assigned via generateNextBarcode)
-- Employee quick-reference guide (ℹ️ button → modal)
 - Validation: sell price required, images for sync items
 - Confirm flow: qty update for existing items, create new items with barcode
-- **Auto-create supplier_documents** on receipt confirmation (receipt-debt.js)
-- **Auto-deduct from active prepaid deal** if supplier has one (Phase 4f)
 - Export confirmed receipts as Access-compatible Excel
 
 ### 3.6 ספירת מלאי (Stock Count) — Phase 2a
@@ -100,6 +94,13 @@ For complete file index → see MODULE_MAP.md section 1.
   - Resolve: confirmDialog → PIN → optimistic lock (WHERE status='pending') → atomic qty RPC → writeLog
   - Ignore: mark as not-in-inventory → writeLog('pending_ignored')
 - **Folder Watcher (Node.js)**: watches Dropbox/InventorySync/sales/ for xlsx files
+  - Processes sales_template sheet, validates rows
+  - Found barcode → atomic qty update via RPC + inventory_log
+  - Unknown barcode → pending_sales
+  - Idempotency guards (5s window dedup for both inventory_logs and sync_log)
+  - Failed files uploaded to Supabase Storage
+  - 30s cooldown per filename to prevent duplicate chokidar events
+  - Moves processed files to processed/ or failed/ folder
 
 ### 3.8 ניהול מותגים (Brands Management)
 - Table with 4 filters (active/sync/type/low-stock)
@@ -120,58 +121,6 @@ For complete file index → see MODULE_MAP.md section 1.
 ### 3.11 ניהול (Admin)
 - Admin mode toggle (password: 1234)
 - Help modal
-
-### 3.12 מעקב חובות ספקים (Supplier Debt Tracking) — Phase 4
-Standalone page: `suppliers-debt.html` with 4 tabs.
-
-#### 3.12.1 טאב ספקים (Suppliers Tab)
-- **Dashboard summary cards**: total debt, due this week, overdue (red highlight), paid this month
-- **Suppliers table**: aggregated per supplier — open doc count, total debt, overdue amount, next due date, prepaid deal remaining
-- Row click → supplier detail panel (slide-in)
-- Quick action: create payment for supplier
-
-#### 3.12.2 טאב מסמכים (Documents Tab)
-- **Filter bar**: supplier, type, status, date range, overdue checkbox
-- **Documents table**: date, type, number, internal number (DOC-NNNN), supplier, amount, paid, balance, status badge
-- **New document modal**: supplier, type, number, dates, amounts (auto-calc VAT), notes, PIN verification
-- **Auto-generated internal number** (DOC-NNNN sequential)
-- **Delivery note → invoice linking**: openLinkToInvoiceModal, creates document_links record
-- **Document types** (configurable): חשבונית מס, תעודת משלוח, חשבונית זיכוי, קבלה
-
-#### 3.12.3 טאב תשלומים (Payments Tab)
-- **Filter bar**: supplier, status, date range
-- **Payments table**: date, supplier, amount, withholding tax, net, method, reference, linked doc numbers, status
-- **Payment detail modal**: info grid + allocations table
-- **4-step payment wizard**:
-  1. Select supplier (shows debt summary + withholding tax rate)
-  2. Payment details (amount, date, method, reference, auto-calc withholding tax)
-  3. Document allocation (FIFO auto-allocate or manual override, mismatch warning)
-  4. Confirmation (summary + PIN)
-- **Payment methods** (configurable): העברה בנקאית, צ׳ק, מזומן, כרטיס אשראי
-
-#### 3.12.4 טאב עסקאות מקדמה (Prepaid Deals Tab)
-- **Filter bar**: supplier, status
-- **Deals table**: supplier, name, dates, total, used, remaining (progress bar), status badge
-- **New deal modal**: supplier, name, dates, amount, alert threshold, PIN
-- **Deal detail modal**: summary, progress bar, checks table with status actions
-- **Check management**: add check (number, amount, date), status transitions (pending → cashed/bounced)
-- **Auto-deduction**: receipt confirmation auto-deducts from active prepaid deal
-
-#### 3.12.5 פרטי ספק (Supplier Detail — slide-in panel)
-- **Header**: supplier name, total debt, overdue, prepaid remaining
-- **4 sub-tabs**:
-  - Timeline: merged docs + payments sorted by date with icons (max 50 + "show more")
-  - Documents: filtered table for this supplier
-  - Payments: filtered table for this supplier
-  - Returns: delegated to debt-returns.js
-
-### 3.13 החזרות לספק (Supplier Returns) — Phase 4h
-- **Initiation from inventory**: select items → "זיכוי לספק" → validates same supplier, shows preview
-- **Return creation**: PIN verification, generates RET-{supplier_number}-{seq} number, creates return + items, decrements inventory
-- **Returns tab in supplier detail**: table with status badges and action buttons
-- **Return detail modal**: items table (barcode, brand, model, color, size, qty, price) + summary
-- **Status management**: pending → ready_to_ship → shipped → received_by_supplier → credited (PIN-verified transitions)
-- **Return types**: agent_pickup, ship_to_supplier, pending_in_store
 
 ---
 
@@ -206,19 +155,17 @@ Standalone page: `suppliers-debt.html` with 4 tabs.
 - Access sale fields: 13 additional fields in details object
 
 ### 4.6 אימות PIN
-- Login PIN calls pin-auth Edge Function (server-side JWT)
-- Mid-session PIN checks use `verifyPinOnly()` (client-side query)
-- Required for: qty changes, soft/permanent delete, reduction, pending resolution, stock count, new documents, payments, returns
+- Query: `sb.from('employees').select('id, name').eq('pin', pin).eq('is_active', true).maybeSingle()`
+- Required for: qty changes, soft/permanent delete, reduction, pending resolution, stock count session
+- Stock count approval: requires role IN ('admin', 'manager')
 
 ### 4.7 קבלת סחורה — flow
 1. יצירת קבלה (סוג מסמך + מספר + ספק + תאריך)
 2. קישור אופציונלי ל-PO
-3. הוספת פריטים (ברקוד / ידני / Excel) — barcode mandatory on new items
+3. הוספת פריטים (ברקוד / ידני / Excel)
 4. ולידציה: מחיר מכירה חובה, תמונה לפריטים חדשים עם סנכרון
 5. אישור: qty update לקיימים, create + barcode לחדשים
-6. Auto-create supplier_documents (receipt-debt.js)
-7. Auto-deduct from active prepaid deal if exists
-8. Export confirmed receipts as Access-compatible Excel
+6. Export confirmed receipts as Access-compatible Excel
 
 ### 4.8 הזמנות רכש — flow
 1. Two-step wizard: select supplier → generate PO# + edit items
@@ -245,20 +192,14 @@ Standalone page: `suppliers-debt.html` with 4 tabs.
 - **Processing**: found → atomic RPC qty update + writeLog; not found → pending_sales
 - **Duplicate file check**: case-insensitive ilike, user can override
 - **Pending resolution**: confirm → PIN → optimistic lock → atomic RPC → writeLog
+- **Watcher heartbeat**: every 5min → watcher_heartbeat table
+- **Idempotency**: 5s window dedup for inventory_logs and sync_log; 30s filename cooldown
+- **Failed files**: uploaded to Supabase Storage bucket `failed-sync-files`, downloadable via signed URL
 
 ### 4.11 Hebrew↔English Maps
 - **FIELD_MAP** / **FIELD_MAP_REV** — column name translation
 - **ENUM_MAP** / **ENUM_REV** — enum value translation
 - Helpers: `enToHe(field, val)` / `heToEn(field, val)`
-
-### 4.12 מעקב חובות ספקים — flow
-- **Document creation**: manual (via CRUD modal) or automatic (receipt confirmation)
-- **Internal numbering**: DOC-NNNN sequential per tenant
-- **Payment flow**: 4-step wizard → FIFO document allocation → updates paid_amount/status on documents
-- **Withholding tax**: per-supplier rate, auto-calculated on payment
-- **Prepaid deals**: check-based, auto-deduction on receipt, progress tracking
-- **Supplier returns**: initiated from inventory selection, generates RET-{supplier_number}-{seq}
-- **Document linking**: delivery notes can be linked to monthly invoices (document_links)
 
 ---
 
@@ -268,16 +209,43 @@ Known issues are tracked in SESSION_CONTEXT.md — single home for all open issu
 
 ---
 
-## 6. Auth Flow (Phase 3)
+## 6. New Files (Phase 3)
+
+### 6.1 `js/auth-service.js` (287 lines)
+Core auth engine. Key functions:
+- `verifyEmployeePIN(pin)` — PIN lookup, lockout check, failed_attempts management. Returns employee object or { locked: true } or null
+- `initSecureSession(employee)` — token generation, DB insert, sessionStorage write, permission snapshot
+- `loadSession()` — token validation, session restore, dev bypass support
+- `clearSession()` — DB deactivate + sessionStorage clear + page reload
+- `hasPermission(permissionKey)` — checks permission snapshot, supports '*' wildcard
+- `requirePermission(permissionKey)` — guard: toast error + throw if unauthorized
+- `applyUIPermissions()` — hides elements by data-permission + data-tab-permission
+- `getCurrentEmployee()` — returns employee object from sessionStorage
+- `assignRoleToEmployee(employeeId, roleId)` — upsert employee_roles
+- `forceLogout(employeeId)` — deactivate all sessions for target employee
+
+### 6.2 `modules/employees/employee-list.js` (283 lines)
+Employee management screen. Key functions:
+- `loadEmployeesTab()` — fetch employees + roles, render summary cards + table
+- `renderEmployeeTable(employees)` — table with colored role badges + action buttons
+- `openAddEmployee()` / `openEditEmployee(id)` — modal: name, PIN, role, branch
+- `saveEmployee(data)` — insert/update employees + employee_roles
+- `confirmDeactivateEmployee(id, name)` — PIN confirm → soft delete → invalidate sessions
+- `renderPermissionMatrix(targetDivId)` — roles×permissions table, editable by CEO only
+- `updateRolePermission(roleId, permissionId, granted)` — upsert role_permissions
+
+---
+
+## 7. Auth Flow (Phase 3)
 
 1. App load → `loadSession()` → if no valid session → `showLoginModal()`
 2. PIN entry → `verifyEmployeePIN()` → `initSecureSession()` → `applyUIPermissions()` → `hideLoginModal()`
 3. Session expires after 8h → `clearSession()` → reload → login modal
-4. 5 failed PINs → sessionStorage lock (client) + `locked_until` in DB (server-side)
+4. 5 failed PINs → sessionStorage lock (client) + `locked_until` in DB (server-side, for correct-PIN-but-locked accounts)
 
 ---
 
-## 7. Permission System (Phase 3)
+## 8. Permission System (Phase 3)
 
 - 5 roles with hierarchical access: ceo > manager > team_lead > worker > viewer
 - 35 permissions checked via `hasPermission(key)` at runtime
@@ -286,50 +254,46 @@ Known issues are tracked in SESSION_CONTEXT.md — single home for all open issu
 
 ---
 
-## 8. Home Screen & Standalone Pages (Phase 3.5)
+## 9. Home Screen & Standalone Pages (Phase 3.5)
 
-- **index.html** — home screen: MODULES config array, module cards, PIN login modal, session restore, live clock
-- **employees.html** — standalone employee management page
-- **suppliers-debt.html** — standalone supplier debt tracking page (Phase 4)
-- Module cards show permission-based lock overlays
+### New Files
+- **index.html** — home screen: MODULES config array, 6 module cards, PIN login modal, session restore, live clock
+- **employees.html** — standalone employee management page (extracted from inventory.html)
+
+### Modified Files
+- **inventory.html** — removed employees tab (nav button + section), added h1 "ניהול מלאי" + "← מסך בית" link, יציאה logout button
+- **js/auth-service.js** — `clearSession()` redirects to index.html instead of page reload
+- **modules/admin/admin.js** — `showUserButton()` populates adminBtnName span with employee name
+
+### Module Cards
+- `MODULES` config array in index.html — single source of truth for all home screen cards
+- Fields per module: `id`, `label`, `icon`, `url`, `status`, `permission`
+- `status`: `active` | `coming_soon` | `locked`
+- `permission`: maps to a permission key checked via `hasPermission()` (e.g. `inventory.view`, `employees.view`)
+
+### Permission-Based Card Lock
+- Before login: all active cards show `locked-overlay` (lock icon + non-clickable)
+- After login: active cards where `hasPermission(m.permission)` returns false keep the `locked-overlay`
+- Coming-soon cards are always non-clickable regardless of permissions
 
 ---
 
-## 9. Multi-Tenancy Foundation (Phase 3.75)
+## 10. Multi-Tenancy Foundation (Phase 3.75)
 
+### תשתית
 - טבלת `tenants` — id, name, slug, default_currency, timezone, locale, is_active
-- `tenant_id UUID NOT NULL` on all 31 tables, JWT-based RLS tenant isolation
-- Edge Function `pin-auth` returns JWT with tenant_id claim
-- `getTenantId()` reads from sessionStorage
-- All inserts include `tenant_id: getTenantId()`
-- All selects filter by `.eq('tenant_id', getTenantId())` as defense-in-depth
+- `tenant_id UUID NOT NULL` נוסף לכל 20 הטבלאות הקיימות, כולל backfill של 13,457 שורות
+- 25 אינדקסים (20 single + 5 composite) על tenant_id ושדות שכיחים
 
----
+### אימות ובידוד
+- **Edge Function `pin-auth`** — מקבל PIN, מוודא מול DB, מחזיר JWT חתום עם tenant_id claim
+- **JWT-based RLS** — כל הטבלאות עם `tenant_isolation` policy: `USING (tenant_id = jwt_claim)`
+- **service_bypass** — policy נוספת ל-service_role (migrations, admin)
+- `sb` client נבנה מחדש עם JWT Bearer token אחרי login
+- `loadSession()` משחזר JWT client מ-sessionStorage לפני שאילתות
 
-## 10. Sticky Header (Phase 3.8)
-
-- js/header.js + css/header.css
-- Renders on all pages when session is active
-- Shows: tenant name + logo | "Optic Up" | employee name + role + logout
-
----
-
-## 11. Contracts — Phase 4 RPC/View Plans
-
-**RPC Functions (existing, pre-Phase 4):**
-- `increment_inventory(inv_id, delta)` — atomic qty increment
-- `decrement_inventory(inv_id, delta)` — atomic qty decrement (floor 0)
-- `set_inventory_qty(inv_id, new_qty)` — set qty directly
-
-**Planned RPC Functions (Phase 5+):**
-- `get_supplier_debt(supplier_id)` — aggregated debt summary
-- `get_debt_dashboard()` — tenant-wide debt summary
-- `get_supplier_statement(supplier_id, date_from, date_to)` — full statement
-- `get_overdue_documents(days_threshold)` — overdue document list
-- `get_prepaid_balance(supplier_id)` — prepaid deal remaining
-
-**Planned Views (Phase 6 — Supplier Portal):**
-- `v_supplier_inventory` — supplier sees their items in our inventory
-- `v_supplier_documents` — supplier sees their documents
-- `v_supplier_payments` — supplier sees their payment history
-- `v_supplier_returns` — supplier sees their return history
+### קוד JS
+- כל `.insert()` ו-`.upsert()` מכילים `tenant_id: getTenantId()`
+- כל `.select()` מסנן `.eq('tenant_id', getTenantId())` כ-defense-in-depth
+- `getTenantId()` — קורא מ-sessionStorage
+- `verifyPinOnly(pin)` — אימות PIN אמצע-סשן (לא login, לא JWT חדש)
