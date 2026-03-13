@@ -27,7 +27,7 @@
 | 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 275 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (populates items from PO), updatePOStatusAfterReceipt, openNewReceipt |
 | 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 292 | Receipt form: openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow, getReceiptItems, updateReceiptItemsStats, addNewReceiptRow, showReceiptGuide, _pickReceiptFile (file attach) |
 | 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 174 | Receipt save/cancel: saveReceiptDraft, saveReceiptDraftInternal, cancelReceipt, backToReceiptList |
-| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 167 | Receipt confirmation: confirmReceipt, confirmReceiptCore, confirmReceiptById (from list), createNewInventoryFromReceiptItem |
+| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 249 | Receipt confirmation: confirmReceipt, confirmReceiptCore (auto-updates cost_price), confirmReceiptById (from list), createNewInventoryFromReceiptItem, checkPoPriceDiscrepancies (PO vs receipt price warning) |
 | 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 130 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt. Uploads attached file if _pendingReceiptFile exists. Phase 4f: auto-deducts from active prepaid deal if exists |
 | 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 195 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, receipt list event delegation |
 | 21 | audit-log.js | modules/audit/audit-log.js | 215 | Soft delete flow (deleteInvRow, confirmSoftDelete), recycle bin (openRecycleBin, restoreItem, permanentDelete with double PIN) |
@@ -322,9 +322,10 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Core confirmation: increments inventory quantities via `sb.rpc('increment_inventory')`, creates new items, updates PO status, calls createDocumentFromReceipt |
+| `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Core confirmation: increments inventory quantities via `sb.rpc('increment_inventory')`, auto-updates cost_price from receipt via batchUpdate, creates new items, updates PO status, calls createDocumentFromReceipt, calls checkPoPriceDiscrepancies |
 | `confirmReceipt` | `()` | Async. UI-facing: validates, saves draft internally, then calls confirmReceiptCore |
 | `createNewInventoryFromReceiptItem` | `(item, receiptId, rcptNumber)` | Async. Creates inventory row using pre-assigned barcode from receipt item (falls back to generateNextBarcode) |
+| `checkPoPriceDiscrepancies` | `(poId, receiptItems, receiptId)` | Async. Compares receipt item prices vs PO item prices. Shows warning dialog if any item differs by >5%. Adds price_discrepancy note to supplier_documents record |
 | `confirmReceiptById` | `(receiptId)` | Async. Confirms receipt from list view without opening form |
 
 ### modules/goods-receipts/receipt-debt.js

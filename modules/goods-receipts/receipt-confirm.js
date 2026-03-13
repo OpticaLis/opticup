@@ -5,7 +5,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
   for (const item of savedItems) {
     if (!item.is_new_item) {
       const { data: invRow, error: findErr } = await sb.from('inventory')
-        .select('id, quantity, barcode, brand_id, model')
+        .select('id, quantity, barcode, brand_id, model, cost_price')
         .eq('barcode', item.barcode)
         .eq('is_deleted', false)
         .maybeSingle();
@@ -21,6 +21,20 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
           barcode: item.barcode, brand: item.brand, model: item.model,
           qty_before: oldQty, qty_after: newQty, source_ref: rcptNumber
         });
+
+        // Auto-update cost_price from receipt
+        const rcptCost = parseFloat(item.unit_cost) || 0;
+        const oldCost = parseFloat(invRow.cost_price) || 0;
+        if (rcptCost > 0 && rcptCost !== oldCost) {
+          await batchUpdate('inventory', [{ id: invRow.id, cost_price: rcptCost }]);
+          writeLog('cost_update', invRow.id, {
+            field: 'cost_price',
+            old_value: oldCost,
+            new_value: rcptCost,
+            source: 'goods_receipt',
+            receipt_id: receiptId
+          });
+        }
       } else {
         console.warn('Barcode not found in inventory, treating as new:', item.barcode);
         await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
@@ -58,6 +72,11 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
     }
   } else {
     toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
+  }
+
+  // PO vs Receipt price comparison warning
+  if (poId) {
+    await checkPoPriceDiscrepancies(poId, savedItems, receiptId);
   }
 
   refreshLowStockBanner();
@@ -156,6 +175,61 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
     qty_after: item.quantity,
     source_ref: rcptNumber
   });
+}
+
+async function checkPoPriceDiscrepancies(poId, receiptItems, receiptId) {
+  try {
+    const { data: poItems, error } = await sb.from(T.PO_ITEMS)
+      .select('*')
+      .eq('tenant_id', getTenantId())
+      .eq('po_id', poId);
+    if (error || !poItems?.length) return;
+
+    // Build PO price map: brand|model|size|color → unit_cost
+    const poMap = {};
+    for (const pi of poItems) {
+      const key = `${pi.brand || ''}|${pi.model || ''}|${pi.size || ''}|${pi.color || ''}`;
+      poMap[key] = parseFloat(pi.unit_cost) || 0;
+    }
+
+    const discrepancies = [];
+    for (const ri of receiptItems) {
+      const riCost = parseFloat(ri.unit_cost) || 0;
+      if (riCost <= 0) continue;
+      const key = `${ri.brand || ''}|${ri.model || ''}|${ri.size || ''}|${ri.color || ''}`;
+      const poPrice = poMap[key];
+      if (poPrice == null || poPrice <= 0) continue;
+
+      const diff = Math.abs(riCost - poPrice) / poPrice * 100;
+      if (diff > 5) {
+        discrepancies.push({
+          brand: ri.brand || '', model: ri.model || '',
+          poPrice, receiptPrice: riCost, diffPercent: diff.toFixed(1)
+        });
+      }
+    }
+
+    if (!discrepancies.length) return;
+
+    // Show warning dialog (informational — receipt already confirmed)
+    const lines = discrepancies.map(d =>
+      `• ${d.brand} ${d.model}: הוזמן ב-₪${d.poPrice.toLocaleString()}, התקבל ב-₪${d.receiptPrice.toLocaleString()} (${d.diffPercent}%)`
+    ).join('\n');
+    confirmDialog('חריגות מחיר מול הזמנת רכש',
+      `נמצאו חריגות מחיר:\n${lines}`);
+
+    // Add note to supplier_documents for finance review
+    const discNote = 'price_discrepancy: ' + discrepancies.map(d =>
+      `${d.brand} ${d.model}: PO ₪${d.poPrice} vs Receipt ₪${d.receiptPrice} (${d.diffPercent}%)`
+    ).join('; ');
+    const docs = await fetchAll(T.SUP_DOCS, [['goods_receipt_id', 'eq', receiptId]]);
+    if (docs.length > 0) {
+      const existing = docs[0].notes || '';
+      await batchUpdate(T.SUP_DOCS, [{ id: docs[0].id, notes: existing ? existing + '\n' + discNote : discNote }]);
+    }
+  } catch (e) {
+    console.warn('checkPoPriceDiscrepancies error (non-blocking):', e);
+  }
 }
 
 async function confirmReceiptById(receiptId) {
