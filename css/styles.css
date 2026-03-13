@@ -339,3 +339,24 @@ tr.row-err td{background:#fef2f2}
   .weekly-upcoming-row{flex-wrap:wrap;gap:4px}
   .weekly-ocr-stats{gap:8px;font-size:.82rem}
 }
+/* AI Config Modal */
+.ai-config-gear-btn{background:none;border:1px solid var(--g300);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:1.1rem;margin-right:auto;transition:all .2s}
+.ai-config-gear-btn:hover{background:var(--g100);border-color:var(--accent)}
+.ai-config-modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000}
+.ai-config-card{background:var(--white);border-radius:var(--radius);padding:24px;max-width:500px;width:92%;box-shadow:0 12px 40px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto}
+.ai-config-card h3{margin:0 0 16px;color:var(--primary);font-size:1.15rem;border-bottom:2px solid var(--g200);padding-bottom:10px}
+.ai-config-section{margin-bottom:16px}
+.ai-config-section h4{margin:0 0 10px;font-size:.92rem;color:var(--primary)}
+.ai-config-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:.88rem;gap:8px}
+.ai-config-row label{color:var(--g700);flex-shrink:0}
+.ai-config-checkbox{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+.ai-config-slider-wrap{display:flex;align-items:center;gap:8px;flex:1;max-width:200px}
+.ai-config-slider{flex:1;accent-color:var(--accent)}
+.ai-config-slider-val{font-weight:600;color:var(--primary);min-width:36px;text-align:center;font-size:.85rem}
+.ai-config-num{padding:4px 8px;border:1px solid var(--g300);border-radius:4px;font-family:inherit;font-size:.88rem;width:80px;text-align:center}
+.ai-config-stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.ai-config-stat-item{text-align:center;background:var(--g100);border-radius:8px;padding:10px 8px}
+.aics-value{font-size:1.3rem;font-weight:700;color:var(--primary)}
+.aics-label{font-size:.78rem;color:var(--g500);margin-top:2px}
+.ai-config-actions{display:flex;gap:10px;margin-top:16px}
+.ai-config-actions .btn{flex:1;justify-content:center}

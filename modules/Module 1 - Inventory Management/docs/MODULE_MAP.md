@@ -69,8 +69,11 @@
 | 55 | alerts-badge.js | js/alerts-badge.js | 323 | Bell icon + unread badge + dropdown panel on ALL pages: initAlertsBadge (inject bell into header), refreshAlertsBadge (poll unread count every 60s), toggleAlertsPanel/openAlertsPanel/closeAlertsPanel, loadAlertsList (last 10 unread), alertAction (view/dismiss), markAllAlertsRead, timeAgo (Hebrew relative time) |
 | 56 | ai-alerts.js | modules/suppliers-debt/ai-alerts.js | 219 | Event-driven alerts + auto-dismiss + hooks: checkDuplicateDocument, alertDuplicateDocument, alertAmountMismatch, alertOCRLowConfidence, autoDismissAlerts. Patches: saveNewDocument (duplicate check), linkDeliveryToInvoice (amount mismatch), _ocrSave (auto-dismiss OCR), _wizSavePayment (auto-dismiss payment), triggerOCR (low confidence check) |
 | 57 | ai-weekly-report.js | modules/suppliers-debt/ai-weekly-report.js | 274 | Weekly report screen + PDF export: initWeeklyReport (default to current week), navigateWeek (prev/next), loadWeeklyReport (load snapshot or live data), _gatherReportData (parallel queries: total debt, payments, new docs, upcoming, prepaid, OCR stats), _renderWeeklyReport (4 sections: summary, upcoming, prepaid, OCR), exportWeeklyPDF (html2canvas + jsPDF, snapshot save to weekly_reports) |
+| 58 | ai-config.js | modules/suppliers-debt/ai-config.js | 168 | AI agent config screen — settings modal with permission check: openAIConfig (loads config + stats, CEO/Manager only), _renderAIConfigModal (3 sections: OCR, Alerts, Weekly Report + stats grid), saveAIConfig (updates ai_agent_config row), _injectConfigGear (gear button in topbar for authorized roles), confidence slider with real-time % display |
 
-**Total: 57 files, ~12,070 lines** (includes scripts/sync-watcher.js)
+**Total: 58 files, ~12,240 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 5h):** ai-config.js added (modules/suppliers-debt/). Settings modal for AI agent configuration. Gear icon injected into debt-topbar (CEO/Manager only). All ai_agent_config fields editable: OCR toggles + confidence slider, alert toggles + reminder days, weekly report toggle + day picker. Stats section: total OCR scans, avg accuracy, active templates, active alerts. CSS added to styles.css. Script tag added to suppliers-debt.html after ai-weekly-report.js.
 
 **Note (Phase 5g):** ai-weekly-report.js added (modules/suppliers-debt/). Weekly report tab in suppliers-debt.html with 4 sections: summary (total debt + change vs prev week), upcoming payments (14 days), prepaid deals status, OCR stats. Week navigation (prev/next). PDF export via html2canvas + jsPDF (CDN). Snapshot saved to weekly_reports table. Historical reports load from saved snapshots. CSS added to styles.css. CDN scripts (jspdf, html2canvas) added with defer to suppliers-debt.html.
 
@@ -790,6 +793,18 @@
 | `_fd` | `(d)` | Returns YYYY-MM-DD string from Date object |
 | `_fdh` | `(d)` | Returns DD/MM/YYYY string from Date object |
 
+### modules/suppliers-debt/ai-config.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `_aiCfgHasAccess` | `()` | Returns true if session role is 'ceo' or 'manager' |
+| `_injectConfigGear` | `()` | Injects gear button into .debt-topbar if user has access. Called on DOMContentLoaded |
+| `openAIConfig` | `()` | Async. Permission check, loads ai_agent_config + stats (4 parallel queries), renders modal |
+| `_renderAIConfigModal` | `(config, stats)` | Builds modal HTML: 3 settings sections (OCR, Alerts, Weekly Report) + stats grid + save/cancel |
+| `_cfgCheckbox` | `(id, label, checked)` | Returns HTML string for a config checkbox row |
+| `_cfgStat` | `(label, value)` | Returns HTML string for a stat item in the stats grid |
+| `saveAIConfig` | `()` | Async. Reads all form values, updates ai_agent_config row, closes modal |
+
 ### modules/inventory/inventory-return.js
 
 | Function | Parameters | Description |
@@ -1381,6 +1396,12 @@ ai-weekly-report.js
   → uses: html2canvas (CDN), jspdf (CDN)
   → provides: initWeeklyReport(), navigateWeek(), loadWeeklyReport(), exportWeeklyPDF()
   → globals: _wrWeekStart, _wrData
+
+ai-config.js
+  → calls: sb.from() [shared.js], showLoading(), hideLoading(), toast(), getTenantId() [shared.js]
+  → uses: T.AI_CONFIG, T.OCR_EXTRACTIONS, T.OCR_TEMPLATES, T.ALERTS [shared.js]
+  → reads: sessionStorage prizma_role [auth-service.js]
+  → provides: openAIConfig(), saveAIConfig()
 
 inventory-return.js
   → reads: invSelected [inventory-table.js], brandCacheRev, supplierCacheRev [shared.js]
