@@ -252,6 +252,20 @@ async function writeLog(action, inventoryId, details = {}) {
   }
 }
 
+// --- Batch version of writeLog (single INSERT for multiple entries) ---
+async function batchWriteLog(entries) {
+  // entries = [{ action, inventory_id, details }, ...]
+  if (!entries || entries.length === 0) return;
+  const tid = getTenantId();
+  const records = entries.map(e => ({
+    action: e.action,
+    inventory_id: e.inventory_id || null,
+    details: e.details || {},
+    tenant_id: tid
+  }));
+  await batchCreate(T.LOGS, records);
+}
+
 // =========================================================
 // ALERTS ENGINE — shared across all pages (Phase 5f-2)
 // =========================================================

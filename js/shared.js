@@ -112,6 +112,11 @@ const FIELD_MAP = {
   weekly_reports: {
     'תחילת שבוע':'week_start','סוף שבוע':'week_end',
     'נתוני דוח':'report_data','קובץ PDF':'pdf_url'
+  },
+  supplier_documents: {
+    'האש קובץ':'file_hash',
+    'מזהה אצווה':'batch_id',
+    'מסמך היסטורי':'is_historical'
   }
 };
 
