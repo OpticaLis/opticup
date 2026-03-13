@@ -114,9 +114,9 @@ const FIELD_MAP = {
     'נתוני דוח':'report_data','קובץ PDF':'pdf_url'
   },
   supplier_documents: {
-    'האש קובץ':'file_hash',
+    'חתימת קובץ':'file_hash',
     'מזהה אצווה':'batch_id',
-    'מסמך היסטורי':'is_historical'
+    'היסטורי':'is_historical'
   }
 };
 
