@@ -63,8 +63,11 @@
 | 51 | debt-returns.js | modules/suppliers-debt/debt-returns.js | ~230 | Supplier returns tab: loadReturnsForSupplier (fetch+render), renderReturnsTable, viewReturnDetail (modal with items), promptReturnStatusUpdate (PIN-verified), updateReturnStatus, generateReturnNumber (RET-{supplier_number}-{seq}) |
 | 52 | inventory-return.js | modules/inventory/inventory-return.js | ~218 | Supplier return initiation from inventory: openSupplierReturnModal (validates selection, same-supplier check, items preview), _doConfirmSupplierReturn (PIN-verified, creates return+items, decrements inventory, writeLog) |
 | 53 | file-upload.js | js/file-upload.js | 97 | File upload helper for supplier documents: uploadSupplierFile (validates type/size, uploads to Supabase Storage), getSupplierFileUrl (signed URLs), renderFilePreview (PDF iframe / image), pickAndUploadFile (hidden file input + upload) |
+| 54 | ai-ocr.js | modules/suppliers-debt/ai-ocr.js | 317 | OCR trigger, review screen, correction flow: triggerOCR (calls ocr-extract Edge Function), showOCRReview (side-by-side modal with extracted fields + document preview), _ocrSave (saves corrections + creates supplier_document), confidence indicators per field, _injectOCRScanIcons (adds scan buttons to doc table rows), _injectOCRToolbarBtn (toolbar scan button), patches loadDocumentsTab |
 
-**Total: 53 files, ~10,890 lines** (includes scripts/sync-watcher.js)
+**Total: 54 files, ~11,207 lines** (includes scripts/sync-watcher.js)
+
+**Note (Phase 5c):** ai-ocr.js added (modules/suppliers-debt/). OCR review screen with side-by-side layout, confidence indicators, correction tracking. Toolbar "סרוק מסמך" button + row-level scan icons for docs with files. CSS styles added to styles.css. Script tag added to suppliers-debt.html after debt-returns.js.
 
 **Note (Phase 4 QA fixes + file upload):** file-upload.js added (js/). batchUpdate changed from upsert to individual updates (RLS fix). Payment wizard rollback on failure. generateReturnNumber fallback for supplierNumCache. "cancelled" filter added to documents tab. viewDocument upgraded from placeholder to full modal with file preview. File attach button added to receipt form + documents tab. _pickReceiptFile + _pendingReceiptFile added to receipt-form.js. File-missing warning in confirmReceipt. receipt-debt.js uploads attached file after document creation.
 
@@ -694,6 +697,21 @@
 | `updateReturnStatus` | `(returnId, newStatus)` | Updates status + timestamps via batchUpdate, writeLog |
 | `generateReturnNumber` | `(supplierId)` | Generates RET-{supplier_number}-{seq 4-digit} (mirrors PO number pattern) |
 
+### modules/suppliers-debt/ai-ocr.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `triggerOCR` | `(fileUrl, supplierId, documentTypeHint)` | Calls ocr-extract Edge Function, shows loading, opens review screen on success |
+| `showOCRReview` | `(result, fileUrl)` | Builds side-by-side modal: extracted fields (left) + document preview (right), confidence indicators per field |
+| `_ocrCalcTotal` | `()` | Auto-recalculates VAT amount and total from subtotal + VAT rate |
+| `_ocrAddItemRow` | `()` | Adds a new empty row to the OCR items table |
+| `_ocrSave` | `(mode)` | Saves OCR result: updates ocr_extractions status/corrections, creates supplier_document via batchCreate, links extraction to document |
+| `_injectOCRScanIcons` | `(docs)` | Post-render: adds 🤖 scan buttons to doc table rows that have file_url but no total_amount |
+| `_injectOCRToolbarBtn` | `()` | Adds "סרוק מסמך" button to documents tab toolbar |
+| `_ocrConfDot` | `(c)` | Returns confidence indicator HTML (green/yellow/red) based on score |
+| `_ocrFV` | `(ext, f)` | Extracts field value from possibly nested {value, confidence} object |
+| `_ocrFC` | `(ext, f)` | Extracts confidence score from field or top-level confidence object |
+
 ### modules/inventory/inventory-return.js
 
 | Function | Parameters | Description |
@@ -921,6 +939,13 @@
 | `_docTypes` | Array | `[]` | Cached document types |
 | `_docSuppliers` | Array | `[]` | Cached active suppliers for documents tab |
 | `DOC_STATUS_MAP` | Object (const) | 5 entries | Maps status → {he, cls} for badge rendering |
+
+### modules/suppliers-debt/ai-ocr.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `_ocrExtractionId` | String/null | `null` | Current OCR extraction ID being reviewed |
+| `_ocrOriginalData` | Object/null | `null` | Deep copy of original AI-extracted data for correction diff |
 
 ### modules/suppliers-debt/debt-payments.js
 
@@ -1223,6 +1248,18 @@ debt-returns.js
   → provides: loadReturnsForSupplier(), renderReturnsTable(), viewReturnDetail(),
     promptReturnStatusUpdate(), updateReturnStatus(), generateReturnNumber(),
     RETURN_TYPE_MAP, RETURN_STATUS_MAP
+
+ai-ocr.js
+  → reads: _docSuppliers, _docTypes [debt-documents.js]
+  → reads: T.OCR_EXTRACTIONS, T.SUP_DOCS [shared.js]
+  → calls: fetchAll(), batchCreate(), batchUpdate() [supabase-ops.js]
+  → calls: writeLog() [supabase-ops.js], getCurrentEmployee() [auth-service.js]
+  → calls: getSupplierFileUrl(), pickAndUploadFile() [file-upload.js]
+  → calls: generateDocInternalNumber(), loadDocumentsTab(), renderDocumentsTable(), applyDocFilters() [debt-documents.js]
+  → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), closeAndRemoveModal(), getTenantId() [shared.js]
+  → provides: triggerOCR(), showOCRReview(), _ocrSave(), _ocrCalcTotal(), _ocrAddItemRow(),
+    _injectOCRScanIcons(), _injectOCRToolbarBtn(), _ocrConfDot(), _ocrFV(), _ocrFC()
+  → globals: _ocrExtractionId, _ocrOriginalData
 
 inventory-return.js
   → reads: invSelected [inventory-table.js], brandCacheRev, supplierCacheRev [shared.js]

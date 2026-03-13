@@ -282,3 +282,32 @@ tr.row-err td{background:#fef2f2}
 }
 .logout-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;padding:6px 14px;border-radius:8px;cursor:pointer;font-family:'Heebo',sans-serif;font-size:.85rem;transition:background .2s;}
 .logout-btn:hover{background:rgba(255,255,255,.25);}
+
+/* === OCR Review Modal (Phase 5c) === */
+.ocr-modal-box{max-width:95vw!important;width:95vw;max-height:90vh;height:90vh;display:flex;flex-direction:column;padding:0!important;overflow:hidden}
+.ocr-header{padding:14px 20px;border-bottom:1px solid var(--g200);display:flex;justify-content:space-between;align-items:center}
+.ocr-body{flex:1;display:flex;overflow:hidden;min-height:0}
+.ocr-fields-panel{width:50%;overflow-y:auto;padding:16px;border-left:1px solid var(--g200)}
+.ocr-preview-panel{width:50%;overflow:auto;padding:16px;display:flex;align-items:center;justify-content:center;background:var(--g100)}
+.ocr-footer{padding:12px 20px;border-top:1px solid var(--g200);display:flex;align-items:center;gap:12px}
+.ocr-fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ocr-flbl{font-size:.85rem;display:flex;flex-direction:column;gap:2px}
+.ocr-field-warn{background:#fff8e1;border-radius:4px;padding:4px}
+.ocr-conf-high{color:#27ae60;font-size:.85rem;margin-right:4px}
+.ocr-conf-med{color:#f39c12;font-size:.85rem;margin-right:4px}
+.ocr-conf-low{color:#e74c3c;font-size:.85rem;margin-right:4px}
+.ocr-ai-hint{font-size:.75rem;color:var(--g400);margin-top:2px}
+.ocr-items-section{margin-top:12px;border-top:1px solid var(--g200);padding-top:8px}
+.ocr-items-tbl input{width:100%;padding:4px;border:1px solid var(--g300);border-radius:3px;font-size:.82rem;box-sizing:border-box;font-family:inherit}
+.ocr-conf-bar{display:flex;align-items:center;gap:8px;flex:1}
+.ocr-scan-btn{background:#fff3e0!important;border-color:#ff9800!important}
+.ocr-scan-btn:hover{background:#ffe0b2!important}
+.ocr-toolbar-btn{background:#e8f5e9!important;border-color:#4caf50!important;color:#2e7d32!important;margin-left:8px}
+.ocr-toolbar-btn:hover{background:#c8e6c9!important}
+@media(max-width:768px){
+  .ocr-body{flex-direction:column}
+  .ocr-fields-panel,.ocr-preview-panel{width:100%!important}
+  .ocr-preview-panel{max-height:40vh}
+  .ocr-fields-grid{grid-template-columns:1fr}
+  .ocr-footer{flex-wrap:wrap}
+}
