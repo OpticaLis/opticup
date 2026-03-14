@@ -1,188 +1,109 @@
-// ── Ignore pending ──────────────────────────────────────
-async function ignorePending(pendingId, barcode, sourceRef) {
-  const ok = await confirmDialog('סימון כלא קיים', 'לסמן שמסגרת זו אינה קיימת במלאי?');
+// =========================================================
+// PENDING RESOLVE — Mark resolved / ignored with PIN
+// =========================================================
+
+// ── Mark as resolved (manually updated in inventory) ────
+async function markResolved(pendingId) {
+  const ok = await confirmDialog('\u05E2\u05D3\u05DB\u05D5\u05DF \u05D9\u05D3\u05E0\u05D9\u05EA', '\u05D4\u05E4\u05E8\u05D9\u05D8 \u05E2\u05D5\u05D3\u05DB\u05DF \u05D9\u05D3\u05E0\u05D9\u05EA \u05D1\u05DE\u05DC\u05D0\u05D9?');
   if (!ok) return;
-  try {
-    const { error } = await sb.from(T.PENDING_SALES).update({
-      status: 'ignored',
-      resolved_at: new Date().toISOString(),
-      resolution_note: 'לא קיים במלאי'
-    }).eq('id', pendingId);
-    if (error) throw error;
-
-    writeLog('pending_ignored', null, {
-      barcode: barcode,
-      reason: 'לא קיים במלאי',
-      source_ref: sourceRef
-    });
-
-    // Remove card from panel
-    const card = $('pcard-' + pendingId);
-    if (card) card.remove();
-    updatePendingPanelCount();
-    loadPendingBadge();
-    toast('פריט סומן כלא קיים', 's');
-  } catch (e) {
-    toast('שגיאה בעדכון', 'e');
-  }
+  await pinGatedAction(pendingId, 'resolved', '\u05E2\u05D5\u05D3\u05DB\u05DF \u05D9\u05D3\u05E0\u05D9\u05EA');
 }
 
-// ── Resolve pending ─────────────────────────────────────
-let resolvePendingTarget = null;
-
-async function resolvePending(pendingId, inventoryId) {
-  try {
-    // 1. Read the pending row (needed for confirm message)
-    const { data: row, error: rErr } = await sb.from(T.PENDING_SALES)
-      .select('*').eq('id', pendingId).maybeSingle();
-    if (rErr || !row) throw rErr || new Error('row not found');
-
-    // Gate 1 — confirm dialog
-    const confirmed = await confirmDialog(`לאשר שינוי כמות במלאי עבור ברקוד ${row.barcode_received}?`);
-    if (!confirmed) return;
-
-    // Gate 2 — PIN modal
-    resolvePendingTarget = { pendingId, inventoryId, row };
-    if (!$('resolve-pin-modal')) {
-      const div = document.createElement('div');
-      div.id = 'resolve-pin-modal';
-      div.className = 'modal-overlay';
-      div.style.display = 'none';
-      div.innerHTML = `
-        <div class="modal" style="max-width:360px">
-          <h3 style="margin:0 0 12px 0">🔒 אימות עובד</h3>
-          <p style="margin:0 0 12px 0;font-size:.9rem;color:var(--g500)">טיפול בפריט ממתין דורש סיסמת עובד</p>
-          <input type="password" id="resolve-pin" placeholder="סיסמת עובד" style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;margin-bottom:8px"
-                 onkeydown="if(event.key==='Enter') confirmResolvePending()">
-          <p id="resolve-pin-error" style="color:var(--error);font-size:.85rem;margin:0 0 8px 0"></p>
-          <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button class="btn btn-g btn-sm" onclick="closeModal('resolve-pin-modal')">ביטול</button>
-            <button class="btn btn-p btn-sm" onclick="confirmResolvePending()">✅ אשר</button>
-          </div>
-        </div>`;
-      document.body.appendChild(div);
-      div.addEventListener('click', function(e) { if (e.target === this) closeModal('resolve-pin-modal'); });
-    }
-    $('resolve-pin').value = '';
-    $('resolve-pin-error').textContent = '';
-    $('resolve-pin-modal').style.display = 'flex';
-    $('resolve-pin').focus();
-  } catch (e) {
-    toast('שגיאה בטיפול בפריט: ' + (e.message || e), 'e');
-  }
+// ── Mark as ignored (item doesn't exist in inventory) ───
+async function markIgnored(pendingId) {
+  const ok = await confirmDialog('\u05DC\u05D0 \u05E7\u05D9\u05D9\u05DD \u05D1\u05DE\u05DC\u05D0\u05D9', '\u05DC\u05E1\u05DE\u05DF \u05E9\u05D4\u05E4\u05E8\u05D9\u05D8 \u05DC\u05D0 \u05E7\u05D9\u05D9\u05DD \u05D1\u05DE\u05DC\u05D0\u05D9?');
+  if (!ok) return;
+  await pinGatedAction(pendingId, 'ignored', '\u05DC\u05D0 \u05E7\u05D9\u05D9\u05DD \u05D1\u05DE\u05DC\u05D0\u05D9');
 }
 
-async function confirmResolvePending() {
-  if (!resolvePendingTarget) return;
-  const pin = $('resolve-pin').value.trim();
-  if (!pin) { $('resolve-pin-error').textContent = 'יש להזין סיסמת עובד'; return; }
+// ── PIN-gated status update ─────────────────────────────
+let pendingResolveCtx = null;
+
+async function pinGatedAction(pendingId, newStatus, note) {
+  pendingResolveCtx = { pendingId, newStatus, note };
+  ensurePinModal();
+  $('pending-pin').value = '';
+  $('pending-pin-error').textContent = '';
+  $('pending-pin-modal').style.display = 'flex';
+  $('pending-pin').focus();
+}
+
+function ensurePinModal() {
+  if ($('pending-pin-modal')) return;
+  const div = document.createElement('div');
+  div.id = 'pending-pin-modal';
+  div.className = 'modal-overlay';
+  div.style.display = 'none';
+  div.style.zIndex = '1002';
+  div.innerHTML = `
+    <div class="modal" style="max-width:360px">
+      <h3 style="margin:0 0 12px 0">\uD83D\uDD12 \u05D0\u05D9\u05DE\u05D5\u05EA \u05E2\u05D5\u05D1\u05D3</h3>
+      <p style="margin:0 0 12px 0;font-size:.9rem;color:var(--g500)">\u05D8\u05D9\u05E4\u05D5\u05DC \u05D1\u05E4\u05E8\u05D9\u05D8 \u05DE\u05DE\u05EA\u05D9\u05DF \u05D3\u05D5\u05E8\u05E9 \u05E1\u05D9\u05E1\u05DE\u05EA \u05E2\u05D5\u05D1\u05D3</p>
+      <input type="password" id="pending-pin" placeholder="\u05E1\u05D9\u05E1\u05DE\u05EA \u05E2\u05D5\u05D1\u05D3"
+        style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;margin-bottom:8px"
+        onkeydown="if(event.key==='Enter') confirmPendingPin()">
+      <p id="pending-pin-error" style="color:var(--error);font-size:.85rem;margin:0 0 8px 0"></p>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-g btn-sm" onclick="closePendingPinModal()">\u05D1\u05D9\u05D8\u05D5\u05DC</button>
+        <button class="btn btn-p btn-sm" onclick="confirmPendingPin()">\u2705 \u05D0\u05E9\u05E8</button>
+      </div>
+    </div>`;
+  document.body.appendChild(div);
+  div.addEventListener('click', function(e) { if (e.target === this) closePendingPinModal(); });
+}
+
+function closePendingPinModal() {
+  closeModal('pending-pin-modal');
+  pendingResolveCtx = null;
+}
+
+async function confirmPendingPin() {
+  if (!pendingResolveCtx) return;
+  const pin = $('pending-pin').value.trim();
+  if (!pin) { $('pending-pin-error').textContent = '\u05D9\u05E9 \u05DC\u05D4\u05D6\u05D9\u05DF \u05E1\u05D9\u05E1\u05DE\u05EA \u05E2\u05D5\u05D1\u05D3'; return; }
 
   const emp = await verifyPinOnly(pin);
-  if (!emp) { $('resolve-pin-error').textContent = '❌ סיסמת עובד שגויה'; $('resolve-pin').value = ''; $('resolve-pin').focus(); return; }
+  if (!emp) {
+    $('pending-pin-error').textContent = '\u274C \u05E1\u05D9\u05E1\u05DE\u05EA \u05E2\u05D5\u05D1\u05D3 \u05E9\u05D2\u05D5\u05D9\u05D4';
+    $('pending-pin').value = '';
+    $('pending-pin').focus();
+    return;
+  }
   sessionStorage.setItem('prizma_user', emp.name);
 
-  const { pendingId, inventoryId, row } = resolvePendingTarget;
+  const { pendingId, newStatus, note } = pendingResolveCtx;
   try {
-    // 2. Optimistic lock — only resolve if still pending
-    const { data: lockResult } = await sb.from(T.PENDING_SALES).update({
-      status: 'resolved',
+    const { data: updated, error } = await sb.from(T.PENDING_SALES).update({
+      status: newStatus,
       resolved_at: new Date().toISOString(),
-      resolved_inventory_id: inventoryId,
-      resolution_note: `הותאם ידנית על ידי ${emp.name}`
+      resolved_by: emp.name,
+      resolution_note: note
     }).eq('id', pendingId).eq('status', 'pending').select('id');
-    if (!lockResult || lockResult.length === 0) {
-      toast('הפריט כבר טופל על ידי משתמש אחר', 'e');
+
+    if (error) throw error;
+    if (!updated || updated.length === 0) {
+      toast('\u05D4\u05E4\u05E8\u05D9\u05D8 \u05DB\u05D1\u05E8 \u05D8\u05D5\u05E4\u05DC', 'w');
+      closePendingPinModal();
       renderPendingPanel();
-      closeModal('resolve-pin-modal');
-      resolvePendingTarget = null;
       return;
     }
 
-    // 3. Read current inventory
-    const { data: inv, error: iErr } = await sb.from(T.INV)
-      .select('id, quantity, barcode, brand_id, model').eq('id', inventoryId).maybeSingle();
-    if (iErr || !inv) throw iErr || new Error('inventory not found');
-
-    // 4. Calculate new quantity
-    const qtyBefore = inv.quantity;
-    let qtyAfter;
-    if (row.action_type === 'sale') {
-      qtyAfter = Math.max(0, qtyBefore - row.quantity);
-      const { error: uErr } = await sb.rpc('decrement_inventory', { inv_id: inventoryId, delta: row.quantity });
-      if (uErr) throw uErr;
-    } else {
-      qtyAfter = qtyBefore + row.quantity;
-      const { error: uErr } = await sb.rpc('increment_inventory', { inv_id: inventoryId, delta: row.quantity });
-      if (uErr) throw uErr;
-    }
-
-    // 6. Resolve brand name for log
-    let brandName = '';
-    if (inv.brand_id) {
-      brandName = brandCacheRev[inv.brand_id] || '';
-    }
-
-    // 7. writeLog
-    writeLog(row.action_type === 'sale' ? 'sale' : 'credit_return', inventoryId, {
-      barcode: inv.barcode,
-      brand: brandName,
-      model: inv.model,
-      qty_before: qtyBefore,
-      qty_after: qtyAfter,
-      reason: 'סנכרון Access — התאמה ידנית',
-      source_ref: row.source_ref + ':' + row.filename,
+    // Write audit log
+    const row = pendingData.find(x => x.id === pendingId);
+    const action = newStatus === 'resolved' ? 'pending_resolved' : 'pending_ignored';
+    writeLog(action, null, {
+      barcode: row ? row.barcode_received : '',
+      status: newStatus,
+      note: note,
       performed_by: emp.name
     });
 
-    // 8. Remove card, update badge
-    closeModal('resolve-pin-modal');
-    const card = $('pcard-' + pendingId);
-    if (card) card.remove();
-    updatePendingPanelCount();
+    closePendingPinModal();
     loadPendingBadge();
-    toast('פריט טופל בהצלחה', 's');
+    toast(newStatus === 'resolved' ? '\u05E4\u05E8\u05D9\u05D8 \u05E1\u05D5\u05DE\u05DF \u05DB\u05DE\u05D8\u05D5\u05E4\u05DC' : '\u05E4\u05E8\u05D9\u05D8 \u05E1\u05D5\u05DE\u05DF \u05DB\u05DC\u05D0 \u05E7\u05D9\u05D9\u05DD', 's');
+    renderPendingPanel();
   } catch (e) {
-    toast('שגיאה בטיפול בפריט: ' + (e.message || e), 'e');
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E2\u05D3\u05DB\u05D5\u05DF: ' + (e.message || e), 'e');
   }
-  resolvePendingTarget = null;
+  pendingResolveCtx = null;
 }
-
-// ── Update panel header count ───────────────────────────
-function updatePendingPanelCount() {
-  const container = $('pending-cards-container');
-  if (!container) return;
-  const remaining = container.querySelectorAll('[id^="pcard-"]').length;
-  const overlay = $('pending-panel-overlay');
-  if (overlay) {
-    const h3 = overlay.querySelector('h3');
-    if (h3) h3.innerHTML = `&#9888;&#65039; ממתינים לטיפול (${remaining})`;
-  }
-  if (remaining === 0) {
-    container.innerHTML = '<p style="text-align:center;color:#888;padding:32px 0">אין פריטים ממתינים</p>';
-  }
-}
-
-// ── Event delegation for pending panel ──────────────────
-document.addEventListener('click', function(e) {
-  const btn = e.target.closest('[data-action]');
-  if (!btn) return;
-  const action = btn.dataset.action;
-  const pendingId = btn.dataset.pendingId;
-  if (!pendingId) return;
-  if (action === 'suggestions') {
-    loadSuggestions(pendingId, btn.dataset.barcode);
-  } else if (action === 'free-search') {
-    toggleFreeSearch(pendingId);
-  } else if (action === 'ignore') {
-    ignorePending(pendingId, btn.dataset.barcode, btn.dataset.sourceRef);
-  } else if (action === 'resolve') {
-    resolvePending(pendingId, btn.dataset.inventoryId);
-  }
-});
-
-document.addEventListener('input', function(e) {
-  const input = e.target;
-  if (input.dataset.pendingSearch) {
-    debouncePendingSearch(input.dataset.pendingSearch, input.value);
-  }
-});
