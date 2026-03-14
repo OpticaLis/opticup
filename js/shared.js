@@ -33,6 +33,9 @@ const T = {
   OCR_EXTRACTIONS: 'ocr_extractions',
   ALERTS: 'alerts',
   WEEKLY_REPORTS: 'weekly_reports',
+  COURIERS: 'courier_companies',
+  SHIPMENTS: 'shipments',
+  SHIP_ITEMS: 'shipment_items',
 };
 
 // =========================================================
@@ -120,6 +123,22 @@ const FIELD_MAP = {
   },
   pending_sales: {
     'מותג':'brand','דגם':'model','גודל':'size','צבע':'color'
+  },
+  courier_companies: {
+    'איש קשר':'contact_person'
+  },
+  shipments: {
+    'מספר ארגז':'box_number','סוג משלוח':'shipment_type',
+    'שם לקוח':'customer_name','טלפון לקוח':'customer_phone','כתובת לקוח':'customer_address',
+    'חברת שליחויות':'courier_id','מספר מעקב':'tracking_number',
+    'נארז ע"י':'packed_by','תאריך אריזה':'packed_at',
+    'תאריך נעילה':'locked_at','ננעל ע"י':'locked_by',
+    'מתקן ארגז':'corrects_box_id','מספר פריטים':'items_count','סכום כולל':'total_value'
+  },
+  shipment_items: {
+    'סוג פריט':'item_type','פריט מלאי':'inventory_id','החזרה':'return_id',
+    'מספר הזמנה':'order_number','מספר לקוח':'customer_number',
+    'קטגוריה':'category','עלות יחידה':'unit_cost'
   }
 };
 
@@ -137,7 +156,10 @@ const ENUM_MAP = {
   website_sync: {'מלא':'full','תדמית':'display','לא':'none'},
   brand_type: {'יוקרה':'luxury','מותג':'brand','רגיל':'regular'},
   po_status: {'טיוטה':'draft','הוזמן':'ordered','הגיע חלקית':'partial','הגיע במלואו':'complete'},
-  item_status: {'ממתין':'pending','הועבר למלאי':'transferred','לא סופק':'not_supplied'}
+  item_status: {'ממתין':'pending','הועבר למלאי':'transferred','לא סופק':'not_supplied'},
+  shipment_type: {'מסגור':'framing','זיכוי':'return','תיקון':'repair','משלוח':'delivery'},
+  shipment_item_type: {'מלאי':'inventory','הזמנה':'order','תיקון':'repair'},
+  shipment_category: {'מסגרת מהמלאי':'stock','הזמנה':'order','ייצור':'production','מולטיפוקל':'multifocal','אופיס':'office','ביפוקל':'bifocal','שמש':'sun','עדשות מגע':'contact','תיקון':'repair'}
 };
 const ENUM_REV = {};
 for (const [cat, map] of Object.entries(ENUM_MAP)) {
