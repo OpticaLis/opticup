@@ -70,7 +70,7 @@ async function openSyncDetails(logId) {
     // Fetch pending items
     const { data: pendingItems } = await sb.from(T.PENDING_SALES)
       .select('id, barcode_received, quantity, action_type, status, brand, model, size, color, resolved_at, resolved_by, created_at')
-      .eq('tenant_id', getTenantId()).eq('sync_filename', log.filename)
+      .eq('tenant_id', getTenantId()).eq('filename', log.filename)
       .order('created_at', { ascending: true }).limit(200);
 
     renderSyncDetailModal(log, successItems || [], invMap, pendingItems || []);

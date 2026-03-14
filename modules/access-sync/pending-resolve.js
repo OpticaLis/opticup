@@ -10,7 +10,7 @@ async function syncDetailResolve(pendingId, newStatus) {
       status: newStatus,
       resolved_at: new Date().toISOString(),
       resolved_by: _syncDetailEmployee ? _syncDetailEmployee.name : ''
-    }).eq('id', pendingId).eq('status', 'pending').select('id, sync_filename');
+    }).eq('id', pendingId).eq('status', 'pending').select('id, filename');
 
     if (error) throw error;
     if (!updated || updated.length === 0) { toast('הפריט כבר טופל', 'w'); return; }
@@ -30,7 +30,7 @@ async function syncDetailResolve(pendingId, newStatus) {
 
     toast(newStatus === 'resolved' ? 'פריט סומן כמטופל' : 'פריט סומן כלא נמצא', 's');
 
-    const filename = updated[0]?.sync_filename;
+    const filename = updated[0]?.filename;
     if (filename) await checkFileCompletion(filename);
   } catch (e) {
     toast('שגיאה בעדכון: ' + (e.message || e), 'e');
@@ -42,7 +42,7 @@ async function checkFileCompletion(filename) {
   const { count, error } = await sb.from(T.PENDING_SALES)
     .select('*', { count: 'exact', head: true })
     .eq('tenant_id', getTenantId())
-    .eq('sync_filename', filename)
+    .eq('filename', filename)
     .eq('status', 'pending');
   if (error) return;
 
