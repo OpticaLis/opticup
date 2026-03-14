@@ -141,7 +141,8 @@ function renderSyncDetailModal(log, successItems, invMap, pendingItems) {
     const rowBg = p.status === 'pending' ? '#fffbeb' : p.status === 'resolved' ? '#f0fdf4' : '#f8fafc';
     itemRows += `<tr id="sync-pending-row-${p.id}" style="background:${rowBg}">
       <td style="direction:ltr;text-align:right">${barcodeHtml}</td>
-      <td>${escapeHtml(p.brand || '')}</td><td>${escapeHtml(p.model || '')}</td>
+      <td>${p.brand ? `<a href="#" onclick="event.preventDefault();searchBrandInInventory('${escapeHtml(p.brand)}')" style="color:#3b82f6;cursor:pointer">${escapeHtml(p.brand)}</a>` : ''}</td>
+      <td>${p.model ? `<a href="#" onclick="event.preventDefault();searchModelInInventory('${escapeHtml(p.brand || '')}','${escapeHtml(p.model)}')" style="color:#3b82f6;cursor:pointer">${escapeHtml(p.model)}</a>` : ''}</td>
       <td>${escapeHtml(p.size || '')}</td><td>${escapeHtml(p.color || '')}</td>
       <td>${p.quantity || 1}</td>
       <td id="sync-pending-status-${p.id}">${pendingItemStatus(p)}</td>

@@ -83,14 +83,27 @@ function copySyncDetailTable() {
     .catch(() => toast('שגיאה בהעתקה', 'e'));
 }
 
-// ── Search barcode from detail modal ────────────────────────
+// ── Search from detail modal ────────────────────────────────
 function syncDetailSearchBarcode(barcode) {
+  syncDetailSearchInInventory(barcode);
+}
+
+function searchBrandInInventory(brand) {
+  syncDetailSearchInInventory(brand);
+}
+
+function searchModelInInventory(brand, model) {
+  const term = brand ? `${brand} ${model}` : model;
+  syncDetailSearchInInventory(term);
+}
+
+function syncDetailSearchInInventory(searchText) {
   closeSyncDetails();
   showTab('inventory');
   setTimeout(() => {
     const input = $('inv-search');
     if (input) {
-      input.value = barcode;
+      input.value = searchText;
       if (typeof filterInventoryTable === 'function') filterInventoryTable();
     }
   }, 200);
