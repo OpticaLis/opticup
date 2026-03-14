@@ -58,6 +58,28 @@
   /* Btn helpers */
   .btn-sm { padding: 3px 8px; border: 1px solid var(--g300); border-radius: 4px; background: var(--white); cursor: pointer; font-size: .78rem; font-family: inherit; }
   .btn-sm:hover { background: var(--g100); }
+
+  /* Wizard */
+  .wiz-box { background: var(--white); border-radius: 12px; padding: 20px 24px; max-width: 560px; width: 95vw; max-height: 90vh; overflow-y: auto; position: relative; }
+  .wiz-header { text-align: center; margin-bottom: 16px; }
+  .wiz-steps { display: flex; justify-content: center; gap: 6px; font-size: .9rem; color: var(--g400); }
+  .wiz-dot { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--g300); font-weight: 600; font-size: .82rem; }
+  .wiz-dot.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .wiz-step-label { font-size: .82rem; color: var(--g500); margin-top: 4px; }
+  .wiz-title { margin: 0 0 14px; font-size: 1.05rem; color: var(--primary); }
+  .wiz-label { display: block; font-size: .85rem; font-weight: 500; margin: 10px 0 4px; color: var(--g600); }
+  .wiz-input { width: 100%; padding: 8px 10px; border: 1px solid var(--g300); border-radius: 6px; font-family: inherit; font-size: .9rem; box-sizing: border-box; }
+  .wiz-input:focus { border-color: var(--primary); outline: none; }
+  textarea.wiz-input { resize: vertical; }
+  .wiz-note { text-align: center; padding: 20px; color: var(--g400); font-size: .88rem; }
+  .wiz-type-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .wiz-type-btn { flex: 1; min-width: 100px; padding: 12px 8px; border: 2px solid var(--g300); border-radius: 8px; background: var(--white); cursor: pointer; text-align: center; font-family: inherit; font-size: .88rem; transition: border-color .15s, background .15s; }
+  .wiz-type-btn:hover { border-color: var(--primary); background: #f0f4ff; }
+  .wiz-type-btn.selected { border-color: var(--primary); background: #e8eeff; font-weight: 600; }
+  .wiz-type-icon { display: block; font-size: 1.3rem; margin-bottom: 4px; }
+  .wiz-summary { background: var(--g100); border-radius: 8px; padding: 12px 14px; margin: 12px 0; font-size: .88rem; line-height: 1.7; }
+  .wiz-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .wiz-create-btn { font-weight: 700; font-size: .95rem; }
 </style>
 </head>
 <body>
@@ -140,8 +162,12 @@
 <script src="js/header.js"></script>
 <script src="js/alerts-badge.js"></script>
 <script src="modules/shipments/shipments-list.js"></script>
+<script src="modules/shipments/shipments-create.js"></script>
 <script>
-window.addEventListener('DOMContentLoaded', function() { initShipmentsPage(); });
+window.addEventListener('DOMContentLoaded', function() {
+  initShipmentsPage();
+  $('btn-new-box').addEventListener('click', openNewBoxWizard);
+});
 </script>
 </body>
 </html>
