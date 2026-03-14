@@ -250,6 +250,7 @@ tr.row-err td{background:#fef2f2}
 .sync-badge-success{background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:8px;font-size:.78rem;font-weight:600}
 .sync-badge-partial{background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:8px;font-size:.78rem;font-weight:600}
 .sync-badge-error{background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:8px;font-size:.78rem;font-weight:600}
+.sync-badge-handled{background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:8px;font-size:.78rem;font-weight:600}
 @media(max-width:768px){
   .rcpt-header-form{flex-direction:column}
   .rcpt-header-form .form-group{min-width:100%}

@@ -15,6 +15,7 @@ const STATUS_BADGES = {
   success: { icon: '\u2705', text: 'הצליח',  cls: 'sync-badge-success' },
   partial: { icon: '\u26A0\uFE0F', text: 'חלקי',   cls: 'sync-badge-partial' },
   error:   { icon: '\u274C', text: 'שגיאה',  cls: 'sync-badge-error'   },
+  handled: { icon: '\u2611\uFE0F', text: 'טופל',   cls: 'sync-badge-handled' },
 };
 
 // ── calcTimeSince ───────────────────────────────────────────
@@ -241,7 +242,10 @@ async function loadPendingBadge() {
   const btn = $('as-btn-pending');
   if (!btn) return;
   try {
-    const { count, error } = await sb.from(T.PENDING_SALES).select('*', { count: 'exact', head: true }).eq('tenant_id', getTenantId()).eq('status', 'pending');
+    const { count, error } = await sb.from(T.SYNC_LOG)
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', getTenantId())
+      .in('status', ['partial', 'error']);
     const n = (!error && count) ? count : 0;
     updatePendingButtonStyle(btn, n);
   } catch (e) {

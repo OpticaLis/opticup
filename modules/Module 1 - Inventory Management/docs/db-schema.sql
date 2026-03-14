@@ -360,7 +360,7 @@ CREATE TABLE IF NOT EXISTS sync_log (
   created_at       TIMESTAMPTZ DEFAULT now(),
   filename         TEXT NOT NULL,                                  -- שם קובץ Excel
   source_ref       TEXT NOT NULL CHECK (source_ref IN ('watcher', 'manual')),  -- מקור: watcher אוטומטי | manual ידני
-  status           TEXT NOT NULL CHECK (status IN ('success', 'partial', 'error')),  -- סטטוס עיבוד
+  status           TEXT NOT NULL CHECK (status IN ('success', 'partial', 'error', 'handled')),  -- סטטוס עיבוד
   rows_total       INTEGER DEFAULT 0,                              -- סה"כ שורות
   rows_success     INTEGER DEFAULT 0,                              -- שורות שהצליחו
   rows_pending     INTEGER DEFAULT 0,                              -- שורות ממתינות (ברקוד לא נמצא)

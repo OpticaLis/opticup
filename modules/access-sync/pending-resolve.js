@@ -50,13 +50,13 @@ async function checkFileCompletion(filename) {
   if (countEl) countEl.textContent = count || 0;
 
   if (count === 0) {
-    await sb.from(T.SYNC_LOG).update({ status: 'success', rows_pending: 0 })
+    await sb.from(T.SYNC_LOG).update({ status: 'handled', rows_pending: 0 })
       .eq('tenant_id', getTenantId()).eq('filename', filename)
       .in('status', ['partial', 'error']);
 
     const badgeEl = $('sync-detail-status-badge');
     if (badgeEl) {
-      const b = STATUS_BADGES.success;
+      const b = STATUS_BADGES.handled;
       badgeEl.innerHTML = `<b>סטטוס:</b> <span class="${b.cls}">${b.icon} ${b.text}</span>`;
     }
     toast('כל הפריטים טופלו — הקובץ הושלם', 's');
