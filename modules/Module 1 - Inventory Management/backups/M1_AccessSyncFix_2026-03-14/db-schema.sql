@@ -1,6 +1,6 @@
 -- ============================================================
 -- Prizma Optics — מלאי מסגרות — Full DB Schema
--- גרסה 5.75+ | מרץ 2026 | Post-Access Sync Fix (Communications & Knowledge tables + sync enhancements)
+-- גרסה 5.75 | מרץ 2026 | Post-Phase 5.75 (Communications & Knowledge tables)
 -- ============================================================
 -- סדר יצירה לפי תלויות (FK)
 -- 1. brands  2. suppliers  3. employees

@@ -4,50 +4,6 @@
 
 ---
 
-## Access Sync Fix (2026-03-14)
-
-> Not a numbered phase. Comprehensive fixes and enhancements to the Access sync system (originally Phase 2), done after Phase 5.75.
-
-### CSV Support
-- **Commit:** `bc88058` — sync-watcher.js: CSV support (was XLSX only). New parseCSVFile() function, BOM stripping, trailing comma handling
-- **Commit:** `0df2699` — access-sales.js + inventory-reduction.js: CSV support for manual browser import
-
-### Security
-- **Commit:** `bbc01a9` — sync-watcher.js: tenant_id added to all 4 insert operations (pending_sales, inventory_logs, sync_log x2)
-- **Commit:** `1c209c3` — sync-watcher.js: switched to service_role key via OPTICUP_SERVICE_ROLE_KEY env var
-
-### Heartbeat + Status Indicator
-- **Commit:** `be376f3` — sync-watcher.js: heartbeat every 60s to watcher_heartbeat table. access-sync.js: watcher status indicator (green/yellow/red dot)
-
-### Pending Panel Redesign
-- **Commit:** `082f07b` — pending-panel.js + pending-resolve.js: complete rewrite — table view + detail panel
-- **Commit:** `dff070e` — DB: 4 new columns on pending_sales (brand, model, size, color). Watcher + manual import save them. Pending panel shows them
-- **Commit:** `9c7a72b` — Fix CHECK constraint error on resolve. Add refresh button. Show product fields in sync detail modal
-- **Commit:** `98448e3` — Major restructure: detail modal becomes work center, pending button becomes filter toggle, inline resolve with PIN at entry
-- **Commit:** `f869cc3` — Fix pending_sales query: 'filename' column not 'sync_filename'
-- **Commit:** `afab388` — New sync_log status 'handled' (orange). Badge counts files not items
-- **Commit:** `a53b41b` — Brand/model clickable in detail modal → search in inventory
-- **Commit:** `18939ff` — Help button "הסבר לתיקון ידני" in detail modal. start-watcher.bat launcher
-
-### Configurable Watch Directory
-- **Commit:** `eed515a` — OPTICUP_WATCH_DIR env var — configurable watch directory
-
-### Reverse Sync (Export New Inventory to Access)
-- **Commit:** `f302b0b` — Migrations run: access_exported column on inventory, sync_log source_ref allows 'export'. Batch update in groups of 100. Export logs with 📤 icon
-- **Commit:** `e0ffbec` — New file: scripts/sync-export.js. Reverse sync exports new inventory to CSV every 30s. OPTICUP_EXPORT_DIR env var
-
-### Standalone Deployment Package
-- **Commit:** `6affea9` — watcher-deploy/ standalone package (8 files): sync-watcher.js, sync-export.js, install-service.js, uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed to be copied via USB/Dropbox to any Windows machine with Node.js
-
-### DB Changes
-- 4 new columns on pending_sales: brand, model, size, color
-- 1 new column on inventory: access_exported BOOLEAN DEFAULT false
-- Partial index: idx_inventory_access_unexported (tenant_id, access_exported) WHERE access_exported = false AND is_deleted = false
-- sync_log status CHECK now includes 'handled'
-- sync_log source_ref CHECK now includes 'export'
-
----
-
 ## Phase 5.75 — Communications & Knowledge Infrastructure (2026-03-14)
 
 ### 5.75a: Spec + Migration SQL

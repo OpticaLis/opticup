@@ -1,6 +1,6 @@
 # MODULE_MAP — Optic Up Complete Codebase Reference
 
-> Updated 2026-03-14. Single reference document for any developer or AI assistant.
+> Updated 2026-03-13. Single reference document for any developer or AI assistant.
 
 ---
 
@@ -18,7 +18,7 @@
 | 8 | inventory-entry.js | modules/inventory/inventory-entry.js | 289 | Manual entry forms: addEntryRow (card-based), copyEntryRow, removeEntryRow, getEntryRows, validateEntryRows, submitEntry with barcode retry |
 | 9 | inventory-export.js | modules/inventory/inventory-export.js | 209 | Barcode generation (BBDDDDD format with reuse), barcode export to xlsx, full inventory export with styled Excel |
 | 10 | excel-import.js | modules/inventory/excel-import.js | 335 | Excel import: handleExcelImport (column mapping), confirmExcelImport (two-phase: match existing + queue pending), generatePendingBarcodes, exportPendingBarcodes |
-| 11 | access-sales.js | modules/inventory/access-sales.js | 263 | Access POS sales file processing: parses sales_template sheet (XLSX) or CSV files, duplicate file check via sync_log, qty adjustments for sales/returns, unmatched items to pending_sales (with brand/model/size/color) |
+| 11 | access-sales.js | modules/inventory/access-sales.js | 243 | Access POS sales file processing: parses sales_template sheet, duplicate file check via sync_log, qty adjustments for sales/returns, unmatched items to pending_sales |
 | 12 | purchase-orders.js | modules/purchasing/purchase-orders.js | 178 | PO list: loadPurchaseOrdersTab, renderPoList with summary cards, applyPoFilters, generatePoNumber (PO-{supplierNum}-{seq}) |
 | 13 | po-form.js | modules/purchasing/po-form.js | 231 | PO creation wizard: openNewPurchaseOrder (step 1), proceedToPOItems (step 2 bridge), openEditPO, renderPOForm, resolveSupplierName |
 | 14 | po-items.js | modules/purchasing/po-items.js | 236 | PO item management: renderPOItemsTable, cascading brand→model→color/size datalists, addPOItemManual, addPOItemByBarcode, removePOItem, duplicatePOItem, updatePOTotals |
@@ -36,15 +36,15 @@
 | 23 | qty-modal.js | modules/audit/qty-modal.js | 98 | Quantity change modal: openQtyModal (add/remove with reason+PIN), confirmQtyChange |
 | 24 | brands.js | modules/brands/brands.js | 197 | Brand management: loadBrandsTab, renderBrandsTable (4 filters), setBrandActive (immediate save), addBrandRow, saveBrands, saveBrandField |
 | 25 | suppliers.js | modules/brands/suppliers.js | 167 | Supplier management: loadSuppliersTab, supplier number editing with temp-negative-swap, addSupplier with auto-number, getNextSupplierNumber (gap-filling) |
-| 26 | access-sync.js | modules/access-sync/access-sync.js | 298 | Access sync tab: renderAccessSyncTab (summary cards + log table + watcher status), loadSyncLog (paginated with action buttons), loadSyncSummary, loadLastActivity, calcTimeSince, loadPendingBadge, loadWatcherStatus, refreshSyncTab, togglePendingFilter |
-| 27 | sync-details.js | modules/access-sync/sync-details.js | 234 | Sync details work center: openSyncDetails (items table + error table + inline resolve), closeSyncDetails, downloadFailedFile (signed URL), toggleSyncDetailHelp, syncDetailSearchInInventory |
-| 28 | pending-panel.js | modules/access-sync/pending-panel.js | 32 | Pending filter toggle: togglePendingFilter (delegates to access-sync.js filter logic) |
-| 29 | pending-resolve.js | modules/access-sync/pending-resolve.js | 132 | Pending resolution: syncDetailResolve (inline resolve in work center), checkFileCompletion (marks sync_log 'handled'), searchBarcodeInInventory, syncDetailSearchInInventory |
+| 26 | access-sync.js | modules/access-sync/access-sync.js | 210 | Access sync tab: renderAccessSyncTab (summary cards + log table), loadSyncLog (paginated with action buttons), loadSyncSummary, loadLastActivity, calcTimeSince, loadPendingBadge |
+| 27 | sync-details.js | modules/access-sync/sync-details.js | 157 | Sync details modal: openSyncDetails (items table + error table), closeSyncDetails, downloadFailedFile (signed URL from Supabase Storage) |
+| 28 | pending-panel.js | modules/access-sync/pending-panel.js | 233 | Pending sales panel: renderPendingPanel, pendingCardHtml, loadSuggestions (barcode matching), free-text search with debounce, event delegation |
+| 29 | pending-resolve.js | modules/access-sync/pending-resolve.js | 188 | Pending resolution: ignorePending, resolvePending (PIN-verified), confirmResolvePending (optimistic locking on status), updatePendingPanelCount |
 | 30 | stock-count-list.js | modules/stock-count/stock-count-list.js | 152 | Stock count list screen: ensureStockCountListHTML, loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (PIN first, DB creation after), renderStockCountList |
 | 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 281 | Stock count session: worker PIN entry (openWorkerPin/confirmWorkerPin), camera barcode scanning (ZXing), manual barcode/smart search input, scan handler, item update, session UI |
 | 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 234 | Diff report screen (showDiffReport/renderReportScreen), empty count guard, manager PIN approval (confirmCount with role check), cancelCount, exportCountExcel (SheetJS) |
-| 33 | sync-watcher.js | scripts/sync-watcher.js | 461 | Node.js Dropbox folder watcher: processes sales_template Excel/CSV files, CSV support with parseCSVFile + BOM stripping, atomic qty updates via RPC, pending_sales for unknown barcodes (with brand/model/size/color), idempotency guards, failed file upload to Supabase Storage, heartbeat every 60s, reverse sync export interval every 30s. Uses service_role key via OPTICUP_SERVICE_ROLE_KEY env var. Configurable OPTICUP_WATCH_DIR + OPTICUP_EXPORT_DIR |
-| 33b | sync-export.js | scripts/sync-export.js | 117 | Reverse sync: exports unexported inventory items (access_exported=false) as UTF-8 BOM CSV for Access import. Joins brand/supplier names, batch marks items as access_exported (groups of 100), writes sync_log entry with source_ref='export' |
+| 33 | sync-watcher.js | scripts/sync-watcher.js | 460 | Node.js Dropbox folder watcher: processes sales_template Excel/CSV files, atomic qty updates via RPC, pending_sales for unknown barcodes, idempotency guards, failed file upload to Supabase Storage, reverse sync export interval |
+| 33b | sync-export.js | scripts/sync-export.js | 110 | Reverse sync: exports unexported inventory items as UTF-8 BOM CSV for Access import. Joins brand/supplier names, batch marks items as access_exported, writes sync_log entry |
 | 34 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
 | 35 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
 | 36 | auth-service.js | js/auth-service.js | 287 | Core auth engine: verifyEmployeePIN, initSecureSession, loadSession, clearSession, hasPermission, requirePermission, applyUIPermissions, getCurrentEmployee, assignRoleToEmployee, forceLogout |
@@ -78,11 +78,7 @@
 | 63 | debt-info-content.js | modules/suppliers-debt/debt-info-content.js | 250 | Info modal content for all supplier debt screens; 12 _show*Info() functions + _injectInfoBtn helper |
 | 64 | debt-info-inject.js | modules/suppliers-debt/debt-info-inject.js | 182 | Monkey-patches to inject ❓ buttons into supplier debt screens; _injectModalInfoBtn helper + all tab/modal patches |
 
-| 65 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
-
-**Total: 65 JS files + watcher-deploy/ (8-file standalone package), ~15,100 lines** (includes scripts/sync-watcher.js + sync-export.js)
-
-**Note (Access Sync Fix):** Major Access sync enhancement (17 commits, not a numbered phase). sync-watcher.js: CSV support (parseCSVFile), service_role key, tenant_id on all inserts, heartbeat every 60s, configurable OPTICUP_WATCH_DIR + OPTICUP_EXPORT_DIR. access-sync.js: watcher status indicator, pending filter toggle, refreshSyncTab. sync-details.js: work center pattern (PIN at entry, inline resolve, help button, brand/model clickable → inventory search). pending-panel.js: reduced to ~32 lines (filter toggle wrapper). pending-resolve.js: rewritten with syncDetailResolve, checkFileCompletion (marks 'handled'), searchBarcodeInInventory, syncDetailSearchInInventory. sync-export.js added (scripts/): reverse sync exports new inventory to CSV every 30s. watcher-deploy/ folder added (8-file standalone package). DB changes: 4 new columns on pending_sales (brand/model/size/color), access_exported on inventory, sync_log status 'handled' + source_ref 'export'.
+**Total: 65 files, ~15,022 lines** (includes scripts/sync-watcher.js + sync-export.js)
 
 **Note (Phase 5.5h-2):** ai-historical-import.js added (modules/suppliers-debt/). Historical document import with drag-drop, is_historical marking, default status selection, OCR learning with per-supplier accuracy summary. Script tag added to suppliers-debt.html.
 
@@ -478,42 +474,44 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `renderAccessSyncTab` | `()` | Renders full sync tab: header with last activity + watcher status, 3 summary cards, pending filter toggle, sync log table with action buttons |
+| `renderAccessSyncTab` | `()` | Renders full sync tab: header with last activity, 3 summary cards, pending button, sync log table with action buttons |
 | `summaryCard` | `(id, icon, label, value, color)` | Returns summary card HTML |
 | `calcTimeSince` | `(timestamp)` | Returns Hebrew relative time string (דקות/שעות/ימים) |
 | `loadSyncSummary` | `()` | Async. Fetches today's sync_log rows, calculates summary card values (syncs, items, errors) |
 | `loadLastActivity` | `()` | Async. Fetches most recent sync_log row, displays relative time in header |
-| `loadSyncLog` | `(page?)` | Async. Paginated sync_log fetch (20 rows) with status badges and action buttons. Export entries show 📤 icon |
+| `loadSyncLog` | `(page?)` | Async. Paginated sync_log fetch (20 rows) with status badges and action buttons |
 | `renderSyncLogRow` | `(r)` | Returns table row HTML for a sync_log entry with actions (details, retry, download) |
-| `loadPendingBadge` | `()` | Async. Counts pending files (not items), updates button style |
-| `loadWatcherStatus` | `()` | Async. Fetches watcher_heartbeat, shows green (< 2min) / yellow (< 5min) / red (> 5min) indicator |
-| `refreshSyncTab` | `()` | Async. Reloads summary + log + pending badge + watcher status |
-| `togglePendingFilter` | `()` | Toggles sync log between showing all entries and pending-only entries |
+| `loadPendingBadge` | `()` | Async. Counts pending sales, updates button style |
+| `onPendingClick` | `()` | Calls renderPendingPanel |
 
 ### modules/access-sync/sync-details.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `openSyncDetails` | `(logId)` | Async. Opens work center modal: file info grid, processed items table (from inventory_logs), pending items with inline resolve, error table. Brand/model clickable → inventory search. PIN verification at entry |
+| `openSyncDetails` | `(logId)` | Async. Opens modal with file info, processed items table (from inventory_logs), error table (from sync_log.errors JSONB) |
 | `closeSyncDetails` | `()` | Removes sync detail overlay from DOM |
 | `downloadFailedFile` | `(logId)` | Async. Fetches storage_path from sync_log, creates signed URL (1hr) from Supabase Storage, opens in new tab |
-| `toggleSyncDetailHelp` | `()` | Toggles help section "הסבר לתיקון ידני" in detail modal |
-| `syncDetailSearchInInventory` | `(text)` | Async. Searches inventory by brand/model text from clickable fields in work center |
 
 ### modules/access-sync/pending-panel.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `togglePendingFilter` | `()` | Delegates pending filter toggle to access-sync.js (minimal wrapper after restructure) |
+| `renderPendingPanel` | `()` | Async. Fetches pending sales, renders overlay modal with item cards |
+| `closePendingPanel` | `()` | Hides pending panel overlay |
+| `pendingCardHtml` | `(r)` | Returns HTML for a pending item card with action buttons |
+| `loadSuggestions` | `(pendingId, barcode)` | Async. Searches inventory for exact + partial barcode matches |
+| `toggleFreeSearch` | `(pendingId)` | Toggles free-text search input visibility |
+| `debouncePendingSearch` | `(pendingId, query)` | Debounces 300ms, calls runPendingSearch |
+| `runPendingSearch` | `(pendingId, query)` | Async. Searches inventory by barcode and model (ilike) |
 
 ### modules/access-sync/pending-resolve.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `syncDetailResolve` | `(id, status)` | Async. Inline resolve in work center: PIN verification, optimistic lock, atomic RPC qty update, writeLog |
-| `checkFileCompletion` | `(filename)` | Async. Checks if all pending items for a file are resolved. If so, marks sync_log status as 'handled' |
-| `searchBarcodeInInventory` | `(barcode)` | Async. Searches inventory by barcode for suggestion in work center |
-| `syncDetailSearchInInventory` | `(text)` | Async. Searches inventory by brand/model text, shows results in work center |
+| `ignorePending` | `(pendingId, barcode, sourceRef)` | Async. Marks pending as 'ignored', writes log, updates badge |
+| `resolvePending` | `(pendingId, inventoryId)` | Async. Shows confirm + PIN modal for resolution |
+| `confirmResolvePending` | `()` | Async. Verifies PIN, optimistic lock on status='pending', adjusts qty via `sb.rpc('decrement_inventory'/'increment_inventory')`, writes log |
+| `updatePendingPanelCount` | `()` | Updates card count in panel header |
 
 ### modules/stock-count/stock-count-list.js
 
@@ -564,13 +562,11 @@
 | `makeTimestamp` | `()` | Returns YYYYMMDD_HHMMSS string for file naming |
 | `moveFile` | `(filepath, destDir, filename)` | Moves file with timestamp prefix (rename, fallback to copy+delete) |
 | `parseDateField` | `(raw)` | Parses date from string or Excel serial number |
-| `parseCSVFile` | `(filepath)` | Parses CSV file with BOM stripping. Returns array of row objects keyed by headers |
 | `uploadFailedFile` | `(filepath, filename)` | Async. Uploads file to Supabase Storage bucket `failed-sync-files` |
 | `isDuplicateLog` | `(inventoryId, sourceRef)` | Async. Checks for duplicate inventory_log within 5s window |
 | `isDuplicateSyncLog` | `(filename)` | Async. Checks for duplicate sync_log within 5s window |
-| `processFile` | `(filepath, filename)` | Async. Main processing: reads CSV or Excel, validates rows, updates inventory via atomic RPC or inserts pending_sales (with brand/model/size/color), writes sync_log |
+| `processFile` | `(filepath, filename)` | Async. Main processing: reads Excel, validates sales_template rows, updates inventory via atomic RPC or inserts pending_sales, writes sync_log |
 | `handleNewFile` | `(filepath)` | Async. Guards against duplicate processing, calls processFile, moves to processed/failed |
-| `sendHeartbeat` | `()` | Async. Upserts watcher_heartbeat row (id=1) with timestamp, version, hostname. Called every 60s |
 | `runExport` | `()` | Async. Wrapper for exportNewInventoryToAccess with try/catch. Called on startup + every 30s |
 | `shutdown` | `()` | Graceful SIGTERM/SIGINT handler: closes watcher, exits |
 
@@ -1109,9 +1105,20 @@
 |----------|------|---------------|-------------|
 | `syncLogPage` | Number | `0` | Sync log current page |
 | `SYNC_LOG_PAGE_SIZE` | Number (const) | `20` | Sync log rows per page |
-| `SOURCE_LABELS` | Object (const) | `{watcher:'🤖 Watcher', manual:'👤 ידני', export:'📤 ייצוא'}` | Sync source display labels |
-| `STATUS_BADGES` | Object (const) | `{success:{...}, partial:{...}, error:{...}, handled:{...}}` | Status badge config (icon, text, CSS class). Includes 'handled' (orange) |
-| `pendingFilterActive` | Boolean | `false` | Whether pending-only filter is active in sync log |
+| `SOURCE_LABELS` | Object (const) | `{watcher:'🤖 Watcher', manual:'👤 ידני'}` | Sync source display labels |
+| `STATUS_BADGES` | Object (const) | `{success:{...}, partial:{...}, error:{...}}` | Status badge config (icon, text, CSS class) |
+
+### modules/access-sync/pending-panel.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `pendingSearchTimers` | Object | `{}` | pendingId → setTimeout ID for debounced search |
+
+### modules/access-sync/pending-resolve.js
+
+| Variable | Type | Initial Value | Description |
+|----------|------|---------------|-------------|
+| `resolvePendingTarget` | Object/null | `null` | {pendingId, inventoryId, row} for current resolution |
 
 ### modules/stock-count/stock-count-list.js
 

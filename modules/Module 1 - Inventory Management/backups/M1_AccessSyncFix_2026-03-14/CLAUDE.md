@@ -114,11 +114,9 @@ opticup/
 │   ├── admin/                  — 2 files (admin, system-log)
 │   └── suppliers-debt/         — 17 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-supplier-detail, debt-returns, ai-ocr, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import)
 ├── scripts/
-│   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
-│   ├── sync-export.js          — Reverse sync: export new inventory to CSV for Access
+│   ├── sync-watcher.js         — Node.js folder watcher (Windows Service)
 │   ├── install-service.js
 │   └── uninstall-service.js
-├── watcher-deploy/               — Standalone deployment package (8 files, no Git needed)
 ├── supabase/functions/ocr-extract/ — Edge Function (Claude Vision OCR)
 │   └── index.ts
 ├── migrations/
@@ -142,7 +140,7 @@ opticup/
 | Constant          | Table                    | Key columns                                                              |
 |-------------------|--------------------------|--------------------------------------------------------------------------|
 | `T.TENANTS`       | tenants                  | id, name, slug, default_currency, timezone, locale, is_active            |
-| `T.INV`           | inventory                | id, barcode, brand_id, supplier_id, model, size, color, quantity, status, is_deleted, access_exported, tenant_id |
+| `T.INV`           | inventory                | id, barcode, brand_id, supplier_id, model, size, color, quantity, status, is_deleted, tenant_id |
 | `T.BRANDS`        | brands                   | id, name, brand_type, default_sync, active, exclude_website, min_stock_qty, tenant_id |
 | `T.SUPPLIERS`     | suppliers                | id, name, active, supplier_number (UNIQUE, ≥ 10), payment_terms_days, withholding_tax_rate, tenant_id |
 | `T.EMPLOYEES`     | employees                | id, name, pin, email, phone, branch_id, failed_attempts, locked_until, last_login, tenant_id |
