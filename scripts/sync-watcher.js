@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // =========================================================
 // Optic Up — InventorySync Folder Watcher
-// Watches for Excel sales files and processes them into Supabase.
+// Watches for Excel/CSV sales files and processes them into Supabase.
 // =========================================================
 
 const fs   = require('fs');
@@ -9,6 +9,8 @@ const path = require('path');
 const chokidar = require('chokidar');
 const XLSX     = require('xlsx');
 const { createClient } = require('@supabase/supabase-js');
+
+const SUPPORTED_EXT = ['.csv', '.xlsx'];
 
 // ── Configuration ───────────────────────────────────────────
 const CONFIG = {
@@ -60,6 +62,20 @@ function parseDateField(raw) {
   return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
 }
 
+// ── Parse CSV file (Access exports UTF-8 CSV with BOM) ──────
+function parseCSVFile(filepath) {
+  let text = fs.readFileSync(filepath, 'utf-8').replace(/^\uFEFF/, '');
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) throw new Error('CSV file has no data rows');
+  const headers = lines[0].split(',').map(h => h.trim()).filter(h => h);
+  return lines.slice(1).map(line => {
+    const vals = line.split(',');
+    const row = {};
+    headers.forEach((h, j) => row[h] = (vals[j] || '').trim());
+    return row;
+  });
+}
+
 // ── Upload failed file to Supabase Storage ──────────────────
 async function uploadFailedFile(filepath, filename) {
   try {
@@ -67,7 +83,7 @@ async function uploadFailedFile(filepath, filename) {
     const storagePath = `${makeTimestamp()}_${filename}`;
     const { error } = await sb.storage
       .from('failed-sync-files')
-      .upload(storagePath, buffer, { contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      .upload(storagePath, buffer, { contentType: filename.endsWith('.csv') ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     if (error) { log(`  Warning: storage upload failed: ${error.message}`); return null; }
     log(`  Uploaded to storage: ${storagePath}`);
     return storagePath;
@@ -99,29 +115,25 @@ async function isDuplicateSyncLog(filename) {
   return data && data.length > 0;
 }
 
-// ── Process a single Excel file ─────────────────────────────
+// ── Process a single sales file (CSV or XLSX) ────────────────
 async function processFile(filepath, filename) {
-  // 1. Read Excel
-  let wb;
-  try {
-    wb = XLSX.readFile(filepath);
-  } catch (e) {
-    throw new Error(`Not a valid Excel file: ${e.message}`);
+  const ext = path.extname(filename).toLowerCase();
+  let dataRows;
+
+  if (ext === '.csv') {
+    // CSV from Access — header + data rows, no metadata to skip
+    dataRows = parseCSVFile(filepath);
+  } else {
+    // XLSX — legacy format with sales_template sheet + 2 metadata rows
+    let wb;
+    try { wb = XLSX.readFile(filepath); } catch (e) { throw new Error(`Not a valid Excel file: ${e.message}`); }
+    if (!wb.SheetNames.includes('sales_template')) throw new Error('Sheet "sales_template" not found');
+    const ws = wb.Sheets['sales_template'];
+    dataRows = XLSX.utils.sheet_to_json(ws, { defval: '', range: 0 }).slice(2);
   }
 
-  // 2. Verify sheet exists
-  if (!wb.SheetNames.includes('sales_template')) {
-    throw new Error('Sheet "sales_template" not found');
-  }
-
-  // 3. Parse rows — first 2 rows are Hebrew headers + descriptions
-  const ws = wb.Sheets['sales_template'];
-  const allRows = XLSX.utils.sheet_to_json(ws, { defval: '', range: 0 });
-  const dataRows = allRows.slice(2).filter(r => String(r.barcode || '').trim());
-
-  if (!dataRows.length) {
-    throw new Error('No data rows found in file');
-  }
+  dataRows = dataRows.filter(r => String(r.barcode || '').trim());
+  if (!dataRows.length) throw new Error('No data rows found in file');
 
   // 4. Process each row
   let successCount = 0;
@@ -131,7 +143,7 @@ async function processFile(filepath, filename) {
 
   for (let i = 0; i < dataRows.length; i++) {
     const r = dataRows[i];
-    const rowNum = i + 4; // Excel row (1-indexed header + 2 meta rows + data)
+    const rowNum = ext === '.csv' ? i + 2 : i + 4; // CSV: header+data; XLSX: header+2 meta+data
 
     try {
       // Validate required fields
@@ -301,7 +313,7 @@ async function processFile(filepath, filename) {
 
 // ── Handle new file detection ───────────────────────────────
 async function handleNewFile(filepath) {
-  if (path.extname(filepath).toLowerCase() !== '.xlsx') return;
+  if (!SUPPORTED_EXT.includes(path.extname(filepath).toLowerCase())) return;
 
   const filename = path.basename(filepath);
   if (processing.has(filename)) {
@@ -356,7 +368,7 @@ for (const dir of [CONFIG.processedDir, CONFIG.failedDir]) {
 console.log(`InventorySync Watcher started. Watching: ${CONFIG.watchDir}`);
 
 // Process any existing files (arrived while watcher was offline)
-const existing = fs.readdirSync(CONFIG.watchDir).filter(f => f.toLowerCase().endsWith('.xlsx'));
+const existing = fs.readdirSync(CONFIG.watchDir).filter(f => SUPPORTED_EXT.includes(path.extname(f).toLowerCase()));
 if (existing.length) {
   log(`Found ${existing.length} existing file(s) — processing...`);
   (async () => {
