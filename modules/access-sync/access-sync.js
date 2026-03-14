@@ -72,7 +72,10 @@ function renderAccessSyncTab() {
 
       <!-- Header -->
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
-        <h3 style="margin:0">\uD83D\uDD04 סנכרון Access</h3>
+        <div style="display:flex;align-items:center;gap:6px">
+          <h3 style="margin:0">\uD83D\uDD04 סנכרון Access</h3>
+          <button onclick="refreshSyncTab()" title="רענון" style="background:none;border:none;cursor:pointer;font-size:1.2rem;padding:2px 4px">🔄</button>
+        </div>
         <span id="as-last-activity" style="font-size:13px;color:#64748b"></span>
       </div>
 
@@ -246,4 +249,16 @@ async function loadPendingBadge() {
 // ── Button handlers ─────────────────────────────────────────
 function onPendingClick() {
   renderPendingPanel();
+}
+
+// ── refreshSyncTab ──────────────────────────────────────────
+async function refreshSyncTab() {
+  toast('\u05DE\u05EA\u05E2\u05D3\u05DB\u05DF...', 'i');
+  await Promise.all([
+    loadSyncSummary(),
+    loadSyncLog(),
+    loadPendingBadge(),
+    loadWatcherStatus(),
+    loadLastActivity()
+  ]);
 }

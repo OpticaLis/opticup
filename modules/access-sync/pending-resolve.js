@@ -6,21 +6,21 @@
 async function markResolved(pendingId) {
   const ok = await confirmDialog('\u05E2\u05D3\u05DB\u05D5\u05DF \u05D9\u05D3\u05E0\u05D9\u05EA', '\u05D4\u05E4\u05E8\u05D9\u05D8 \u05E2\u05D5\u05D3\u05DB\u05DF \u05D9\u05D3\u05E0\u05D9\u05EA \u05D1\u05DE\u05DC\u05D0\u05D9?');
   if (!ok) return;
-  await pinGatedAction(pendingId, 'resolved', '\u05E2\u05D5\u05D3\u05DB\u05DF \u05D9\u05D3\u05E0\u05D9\u05EA', '_MANUAL');
+  await pinGatedAction(pendingId, 'resolved', '\u05E2\u05D5\u05D3\u05DB\u05DF \u05D9\u05D3\u05E0\u05D9\u05EA');
 }
 
 // -- Mark as ignored (item not found in inventory) --------
 async function markIgnored(pendingId) {
   const ok = await confirmDialog('\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0', '\u05DC\u05E1\u05DE\u05DF \u05E9\u05D4\u05E4\u05E8\u05D9\u05D8 \u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0 \u05D1\u05DE\u05DC\u05D0\u05D9?');
   if (!ok) return;
-  await pinGatedAction(pendingId, 'ignored', '\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0', '_NOTFOUND');
+  await pinGatedAction(pendingId, 'ignored', '\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0');
 }
 
 // -- PIN-gated status update ------------------------------
 let pendingResolveCtx = null;
 
-async function pinGatedAction(pendingId, newStatus, note, suffix) {
-  pendingResolveCtx = { pendingId, newStatus, note, suffix };
+async function pinGatedAction(pendingId, newStatus, note) {
+  pendingResolveCtx = { pendingId, newStatus, note };
   ensurePinModal();
   $('pending-pin').value = '';
   $('pending-pin-error').textContent = '';
@@ -71,14 +71,12 @@ async function confirmPendingPin() {
   }
   sessionStorage.setItem('prizma_user', emp.name);
 
-  const { pendingId, newStatus, note, suffix } = pendingResolveCtx;
+  const { pendingId, newStatus, note } = pendingResolveCtx;
   try {
     const row = pendingData.find(x => x.id === pendingId);
-    const updatedSourceRef = row && row.source_ref ? row.source_ref + suffix : suffix;
 
     const { data: updated, error } = await sb.from(T.PENDING_SALES).update({
       status: newStatus,
-      source_ref: updatedSourceRef,
       resolved_at: new Date().toISOString(),
       resolved_by: emp.name,
       resolution_note: note
@@ -97,7 +95,6 @@ async function confirmPendingPin() {
       barcode: row ? row.barcode_received : '',
       status: newStatus,
       note: note,
-      source_ref_suffix: suffix,
       performed_by: emp.name
     });
 

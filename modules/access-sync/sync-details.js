@@ -102,6 +102,37 @@ async function openSyncDetails(logId) {
       html += '<p style="color:#888;margin-bottom:16px">לא נמצאו פריטים מעובדים לקובץ זה</p>';
     }
 
+    // 6b. Pending items from pending_sales for this sync
+    const { data: pendingItems } = await sb.from(T.PENDING_SALES)
+      .select('barcode_received, quantity, action_type, status, brand, model, size, color, created_at')
+      .eq('tenant_id', getTenantId())
+      .eq('sync_filename', log.filename)
+      .order('created_at', { ascending: true })
+      .limit(200);
+
+    if (pendingItems && pendingItems.length) {
+      html += `<h4 style="margin:0 0 8px 0;color:#ca8a04">\u26A0\uFE0F פריטים ממתינים (${pendingItems.length})</h4>
+      <div style="max-height:250px;overflow-y:auto;margin-bottom:16px">
+        <table><thead><tr>
+          <th>ברקוד</th><th>מותג</th><th>דגם</th><th>צבע</th><th>גודל</th><th>כמות</th><th>סוג</th><th>סטטוס</th>
+        </tr></thead><tbody>`;
+      for (const p of pendingItems) {
+        const typeLabel = p.action_type === 'return' ? 'החזרה' : 'מכירה';
+        const statusLabel = p.status === 'pending' ? 'ממתין' : p.status === 'resolved' ? 'עודכן' : 'לא נמצא';
+        html += `<tr>
+          <td style="direction:ltr;text-align:right">${escapeHtml(p.barcode_received || '')}</td>
+          <td>${escapeHtml(p.brand || '')}</td>
+          <td>${escapeHtml(p.model || '')}</td>
+          <td>${escapeHtml(p.color || '')}</td>
+          <td>${escapeHtml(p.size || '')}</td>
+          <td>${p.quantity || 1}</td>
+          <td>${escapeHtml(typeLabel)}</td>
+          <td>${escapeHtml(statusLabel)}</td>
+        </tr>`;
+      }
+      html += '</tbody></table></div>';
+    }
+
     // 7. Error table
     const errs = Array.isArray(log.errors) ? log.errors : [];
     if (errs.length) {
