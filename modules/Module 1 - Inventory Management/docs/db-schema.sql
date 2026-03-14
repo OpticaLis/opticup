@@ -161,6 +161,8 @@ CREATE TABLE IF NOT EXISTS inventory (
   deleted_at      TIMESTAMPTZ,                                   -- מתי נמחק
   deleted_by      TEXT,                                          -- מי מחק (שם עובד)
   deleted_reason  TEXT,                                          -- סיבת מחיקה
+  -- Reverse sync (Access export)
+  access_exported BOOLEAN DEFAULT false,                         -- האם יוצא ל-Access
   -- System fields
   tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   branch_id       UUID,                                          -- סניף
@@ -179,6 +181,7 @@ CREATE INDEX IF NOT EXISTS idx_inv_quantity        ON inventory (quantity);
 CREATE INDEX IF NOT EXISTS idx_inv_model_trgm      ON inventory USING GIN (model gin_trgm_ops);   -- חיפוש טקסט מטושטש
 CREATE INDEX IF NOT EXISTS idx_inv_color_trgm      ON inventory USING GIN (color gin_trgm_ops);   -- חיפוש טקסט מטושטש
 CREATE INDEX IF NOT EXISTS idx_inventory_not_deleted ON inventory (is_deleted) WHERE is_deleted = false;  -- פריטים פעילים בלבד
+CREATE INDEX IF NOT EXISTS idx_inventory_access_unexported ON inventory (tenant_id, access_exported) WHERE access_exported = false AND is_deleted = false;
 
 -- ============================================================
 -- 5. inventory_images — תמונות פריטי מלאי

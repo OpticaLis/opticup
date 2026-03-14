@@ -43,7 +43,8 @@
 | 30 | stock-count-list.js | modules/stock-count/stock-count-list.js | 152 | Stock count list screen: ensureStockCountListHTML, loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (PIN first, DB creation after), renderStockCountList |
 | 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 281 | Stock count session: worker PIN entry (openWorkerPin/confirmWorkerPin), camera barcode scanning (ZXing), manual barcode/smart search input, scan handler, item update, session UI |
 | 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 234 | Diff report screen (showDiffReport/renderReportScreen), empty count guard, manager PIN approval (confirmCount with role check), cancelCount, exportCountExcel (SheetJS) |
-| 33 | sync-watcher.js | scripts/sync-watcher.js | 385 | Node.js Dropbox folder watcher: processes sales_template Excel files, atomic qty updates via RPC, pending_sales for unknown barcodes (full field set), idempotency guards, failed file upload to Supabase Storage |
+| 33 | sync-watcher.js | scripts/sync-watcher.js | 460 | Node.js Dropbox folder watcher: processes sales_template Excel/CSV files, atomic qty updates via RPC, pending_sales for unknown barcodes, idempotency guards, failed file upload to Supabase Storage, reverse sync export interval |
+| 33b | sync-export.js | scripts/sync-export.js | 90 | Reverse sync: exports unexported inventory items as UTF-8 BOM CSV for Access import. Joins brand/supplier names, marks items as access_exported after write |
 | 34 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
 | 35 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
 | 36 | auth-service.js | js/auth-service.js | 287 | Core auth engine: verifyEmployeePIN, initSecureSession, loadSession, clearSession, hasPermission, requirePermission, applyUIPermissions, getCurrentEmployee, assignRoleToEmployee, forceLogout |
@@ -77,7 +78,7 @@
 | 63 | debt-info-content.js | modules/suppliers-debt/debt-info-content.js | 250 | Info modal content for all supplier debt screens; 12 _show*Info() functions + _injectInfoBtn helper |
 | 64 | debt-info-inject.js | modules/suppliers-debt/debt-info-inject.js | 182 | Monkey-patches to inject ❓ buttons into supplier debt screens; _injectModalInfoBtn helper + all tab/modal patches |
 
-**Total: 64 files, ~14,932 lines** (includes scripts/sync-watcher.js)
+**Total: 65 files, ~15,022 lines** (includes scripts/sync-watcher.js + sync-export.js)
 
 **Note (Phase 5.5h-2):** ai-historical-import.js added (modules/suppliers-debt/). Historical document import with drag-drop, is_historical marking, default status selection, OCR learning with per-supplier accuracy summary. Script tag added to suppliers-debt.html.
 
@@ -566,7 +567,16 @@
 | `isDuplicateSyncLog` | `(filename)` | Async. Checks for duplicate sync_log within 5s window |
 | `processFile` | `(filepath, filename)` | Async. Main processing: reads Excel, validates sales_template rows, updates inventory via atomic RPC or inserts pending_sales, writes sync_log |
 | `handleNewFile` | `(filepath)` | Async. Guards against duplicate processing, calls processFile, moves to processed/failed |
+| `runExport` | `()` | Async. Wrapper for exportNewInventoryToAccess with try/catch. Called on startup + every 30s |
 | `shutdown` | `()` | Graceful SIGTERM/SIGINT handler: closes watcher, exits |
+
+### scripts/sync-export.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `exportNewInventoryToAccess` | `(sb, tenantId, exportDir, log)` | Async. Queries unexported inventory with brand/supplier joins, writes UTF-8 BOM CSV, marks items as access_exported |
+| `makeExportFilename` | `()` | Returns `export_YYYYMMDD_HHmmss.csv` string |
+| `escapeCsvField` | `(val)` | Escapes CSV field (quotes fields containing commas/quotes/newlines) |
 
 ### modules/admin/admin.js
 

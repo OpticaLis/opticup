@@ -39,10 +39,15 @@ const CONFIG = {
   failedDir:     path.join(BASE_DIR, 'failed'),
 };
 
+const EXPORT_DIR = process.env.OPTICUP_EXPORT_DIR || path.join(BASE_DIR, 'new');
+
 const TENANT_ID = process.env.OPTICUP_TENANT_ID || '6ad0781b-37f0-47a9-92e3-be9ed1477e1c';
 
 // ── Init Supabase ───────────────────────────────────────────
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── Reverse sync (export new inventory to CSV for Access) ───
+const { exportNewInventoryToAccess } = require('./sync-export');
 
 // ── State ───────────────────────────────────────────────────
 const processing = new Set();
@@ -433,6 +438,17 @@ const watcher = chokidar.watch(CONFIG.watchDir, {
   awaitWriteFinish: { stabilityThreshold: 2000, pollInterval: 500 },
   ignored: /(^|[\/\\])\../,
 }).on('add', filepath => handleNewFile(filepath));
+
+// ── Reverse sync: export new inventory every 30s ────────────
+async function runExport() {
+  try {
+    await exportNewInventoryToAccess(sb, TENANT_ID, EXPORT_DIR, log);
+  } catch (err) {
+    log(`Export error: ${err.message}`);
+  }
+}
+runExport();
+setInterval(runExport, 30 * 1000);
 
 // Graceful shutdown
 function shutdown() {

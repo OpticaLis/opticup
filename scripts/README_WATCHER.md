@@ -65,6 +65,24 @@ node scripts/uninstall-service.js
 
 ---
 
+## סנכרון הפוך — ייצוא מלאי חדש ל-Access
+
+כשמוסיפים פריטים חדשים ב-Optic Up, ה-Watcher מייצא אותם אוטומטית כ-CSV לתיקיית "new" כדי ש-Access יוכל לקלוט אותם.
+
+### איך זה עובד
+- כל 30 שניות, ה-Watcher בודק אם יש פריטי מלאי חדשים שטרם יוצאו
+- אם יש — נוצר קובץ CSV בתיקיית הייצוא (ברירת מחדל: `InventorySync\new`)
+- הפריטים מסומנים כ-`access_exported = true` כדי לא לייצא אותם שוב
+- הקובץ בקידוד UTF-8 עם BOM (תואם עברית ב-Access)
+- שם הקובץ: `export_YYYYMMDD_HHmmss.csv`
+
+### הגדרה
+- משתנה סביבה: `OPTICUP_EXPORT_DIR` — נתיב תיקיית הייצוא
+- ברירת מחדל: תיקיית `new` ליד תיקיית ה-watch (למשל `InventorySync\new`)
+- בקובץ BAT, מוגדר: `set OPTICUP_EXPORT_DIR=C:\Users\User\Dropbox\InventorySync\new`
+
+---
+
 ## בדיקה
 - ב-inventory.html → טאב סנכרון Access → אמור להופיע "🟢 Watcher פעיל"
 - ה-Watcher צופה על התיקייה שהוגדרה ומעבד כל קובץ CSV חדש
