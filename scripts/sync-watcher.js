@@ -13,19 +13,33 @@ const { createClient } = require('@supabase/supabase-js');
 const SUPPORTED_EXT = ['.csv', '.xlsx'];
 
 // ── Configuration ───────────────────────────────────────────
-// NOTE: Consider switching to service_role key for backend service (bypasses RLS)
+// SECURITY: sync-watcher uses service_role key (bypasses RLS).
+// This is safe because:
+// 1. The watcher runs on the store's local machine as a Windows Service
+// 2. tenant_id is explicitly set on every insert (defense-in-depth)
+// 3. The service_role key is loaded from environment variable, never committed
+//
+// Setup: set OPTICUP_SERVICE_ROLE_KEY environment variable before running
+// Get the key from: Supabase Dashboard → Settings → API → service_role
+const SUPABASE_URL = 'https://tsxrrxzmdxaenlvocyit.supabase.co';
+const SUPABASE_KEY = process.env.OPTICUP_SERVICE_ROLE_KEY || 'PLACEHOLDER_REPLACE_BEFORE_DEPLOY';
+
+if (SUPABASE_KEY.includes('PLACEHOLDER')) {
+  console.error('ERROR: Set OPTICUP_SERVICE_ROLE_KEY environment variable');
+  console.error('Get the key from: Supabase Dashboard → Settings → API → service_role');
+  process.exit(1);
+}
+
 const CONFIG = {
   watchDir:      'C:\\Users\\User\\Dropbox\\InventorySync\\sales',
   processedDir:  'C:\\Users\\User\\Dropbox\\InventorySync\\processed',
   failedDir:     'C:\\Users\\User\\Dropbox\\InventorySync\\failed',
-  supabaseUrl:   'https://tsxrrxzmdxaenlvocyit.supabase.co',
-  supabaseKey:   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU',
 };
 
 const TENANT_ID = process.env.OPTICUP_TENANT_ID || '6ad0781b-37f0-47a9-92e3-be9ed1477e1c';
 
 // ── Init Supabase ───────────────────────────────────────────
-const sb = createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── State ───────────────────────────────────────────────────
 const processing = new Set();
