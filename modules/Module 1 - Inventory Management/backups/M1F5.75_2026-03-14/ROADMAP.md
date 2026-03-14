@@ -69,7 +69,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 4 | ✅ | מעקב חובות ספקים | חשבוניות, תשלומים, דשבורד חובות, מט"ח |
 | 5 | ✅ | סוכן AI לניהול ספקים | OCR חשבוניות (Claude Vision), התראות, דוחות אוטומטיים |
 | 5.5 | ✅ | יציבות, סקייל ואצוות | atomic RPCs, batch upload/OCR, filtering, historical import |
-| 5.75 | ✅ | Communications & Knowledge Infrastructure | DB stubs: conversations, participants, messages, knowledge_base, reactions, notification_preferences |
 | 6 | ⬜ | פורטל ספקים | גישת ספק חיצונית, view-only מלאי לפי ספק |
 
 ---
@@ -187,14 +186,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - ייבוא היסטורי — מסמכים ישנים ללמידת AI
 - 3 עמודות חדשות: file_hash, batch_id, is_historical
 - 3 אינדקסים חדשים, 2 RPC functions חדשות
-
-### פאזה 5.75 ✅ — Communications & Knowledge Infrastructure
-- Zero-UI phase — database stubs only (like Phase 3.75)
-- 6 new tables: conversations, conversation_participants, messages, knowledge_base, message_reactions, notification_preferences
-- Foundation for future internal messaging, AI assistant, supplier/customer communications
-- All tables with tenant_id, RLS, service_bypass
-- 20 custom indexes including GIN on knowledge_base.tags
-- No JS, no UI, no Edge Functions — tables start empty
 
 ### פאזה 6 ⬜ — פורטל ספקים
 - קישור ייחודי לכל ספק (token-based auth, לא PIN)

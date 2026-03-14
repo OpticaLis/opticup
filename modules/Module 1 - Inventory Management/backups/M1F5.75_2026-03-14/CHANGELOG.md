@@ -4,28 +4,6 @@
 
 ---
 
-## Phase 5.75 — Communications & Knowledge Infrastructure (2026-03-14)
-
-### 5.75a: Spec + Migration SQL
-**Commit:** `dbbe96a`
-- PHASE_5.75_SPEC.md added to docs/
-- Migration file: phase5_75_communications_knowledge.sql
-- 6 new tables: conversations, conversation_participants, messages, knowledge_base, message_reactions, notification_preferences
-- 20 custom indexes + 3 UNIQUE constraints
-- GIN index on knowledge_base.tags
-- RLS tenant isolation + service_bypass on all 6 tables
-
-### 5.75b: Run Migration + Verify
-- Migration executed in Supabase SQL Editor — "Success. No rows returned"
-- Verification: 6 tables exist, all tenant_id NOT NULL, all RLS enabled, 29 indexes (20 custom + 6 PK + 3 UNIQUE), 12 policies (2 per table)
-
-### 5.75c: Backup + Documentation Update
-- Backup to M1F5.75_2026-03-14/
-- Updated: ROADMAP.md, db-schema.sql, MODULE_SPEC.md, CHANGELOG.md, SESSION_CONTEXT.md, MODULE_MAP.md, CLAUDE.md
-- Zero-UI phase — no JS files added
-
----
-
 ## Phase 5.5 — Stability, Scale & Batch Operations (2026-03-13)
 
 ### 5.5a-1: SQL Migrations — Atomic RPCs + Schema Additions

@@ -175,14 +175,8 @@ opticup/
 | `T.OCR_EXTRACTIONS` | ocr_extractions        | id, tenant_id, file_path, raw_result, confidence, status, template_id   |
 | `T.ALERTS`        | alerts                   | id, tenant_id, alert_type, severity, title, message, data (jsonb), status, entity_type, entity_id, dismissed_at |
 | `T.WEEKLY_REPORTS` | weekly_reports          | id, tenant_id, week_start, week_end, report_data (jsonb), generated_by  |
-| `T.CONVERSATIONS` | conversations            | id, tenant_id, channel_type, context_type, context_id, title, status |
-| `T.CONV_PARTICIPANTS` | conversation_participants | id, tenant_id, conversation_id, participant_type, participant_id, role, unread_count |
-| `T.MESSAGES`      | messages                 | id, tenant_id, conversation_id, sender_type, sender_id, message_type, content, status |
-| `T.KNOWLEDGE`     | knowledge_base           | id, tenant_id, title, answer, category, tags, ai_usable, status |
-| `T.MSG_REACTIONS`  | message_reactions        | id, tenant_id, message_id, employee_id, reaction |
-| `T.NOTIF_PREFS`   | notification_preferences | id, tenant_id, employee_id, in_app, email, whatsapp, push |
 
-**Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 42 tables.
+**Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 36 tables.
 
 ---
 

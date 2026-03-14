@@ -1,5 +1,5 @@
 # מלאי מסגרות — Module Spec
-## גרסה 5.75 | מרץ 2026 | Post-Phase 5.75
+## גרסה 5.5 | מרץ 2026 | Post-Phase 5.5
 
 > **Authority:** Business logic flows and screen descriptions. For code details → MODULE_MAP.md. For DB schema → db-schema.sql. For rules → CLAUDE.md.
 
@@ -27,7 +27,7 @@ For complete file index → see MODULE_MAP.md section 1.
 
 לסכימה המלאה (columns, types, constraints, RLS) → ראה **db-schema.sql**.
 
-כל הטבלאות מכילות `tenant_id UUID NOT NULL` מאז פאזה 3.75. JWT-based RLS tenant isolation פעיל על כל 42 הטבלאות.
+כל הטבלאות מכילות `tenant_id UUID NOT NULL` מאז פאזה 3.75. JWT-based RLS tenant isolation פעיל על כל 36 הטבלאות.
 
 **טבלאות עיקריות (pre-Phase 4):** tenants, inventory, brands, suppliers, employees, inventory_logs, inventory_images, purchase_orders, purchase_order_items, goods_receipts, goods_receipt_items, sync_log, pending_sales, watcher_heartbeat, stock_counts, stock_count_items, roles, permissions, role_permissions, employee_roles, auth_sessions.
 
@@ -395,23 +395,7 @@ Known issues are tracked in SESSION_CONTEXT.md — single home for all open issu
 
 ---
 
-## 11. Communications & Knowledge Infrastructure (Phase 5.75)
-
-Zero-UI — tables are empty stubs for future communications module. No JS files added.
-
-**6 new tables:**
-- `conversations` — unified conversation container for internal, supplier, customer, and AI channels; context-linked to business entities
-- `conversation_participants` — polymorphic participants (employee/supplier/customer/AI) with read tracking and per-conversation notification prefs
-- `messages` — all message types (text, file, image, entity_ref, AI suggestion, system); threading via reply_to_id
-- `knowledge_base` — procedures/answers extracted from chat; categorized with tags (GIN index), AI usage tracking, versioning
-- `message_reactions` — lightweight engagement tracking (emoji reactions per employee per message)
-- `notification_preferences` — global per-employee notification settings (in-app, future email/WhatsApp/push, quiet hours)
-
-No contracts defined — RPC functions will be created when UI module is built. Planned RPCs documented in PHASE_5.75_SPEC.md section 6.
-
----
-
-## 12. Contracts — RPC Functions & Edge Functions
+## 11. Contracts — RPC Functions & Edge Functions
 
 **RPC Functions:**
 - `increment_inventory(inv_id, delta)` — atomic qty increment
