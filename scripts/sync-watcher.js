@@ -6,6 +6,7 @@
 
 const fs   = require('fs');
 const path = require('path');
+const os   = require('os');
 const chokidar = require('chokidar');
 const XLSX     = require('xlsx');
 const { createClient } = require('@supabase/supabase-js');
@@ -376,6 +377,21 @@ async function handleNewFile(filepath) {
   }
 }
 
+// ── Heartbeat ───────────────────────────────────────────────
+async function sendHeartbeat() {
+  try {
+    await sb.from('watcher_heartbeat').upsert({
+      id: 1,
+      tenant_id: TENANT_ID,
+      last_beat: new Date().toISOString(),
+      watcher_version: '2.0.0',
+      host: os.hostname()
+    }, { onConflict: 'id' });
+  } catch (err) {
+    console.error('Heartbeat failed:', err.message);
+  }
+}
+
 // ── Startup ─────────────────────────────────────────────────
 if (!fs.existsSync(CONFIG.watchDir)) {
   console.error(`Error: watch directory does not exist: ${CONFIG.watchDir}`);
@@ -387,6 +403,10 @@ for (const dir of [CONFIG.processedDir, CONFIG.failedDir]) {
 }
 
 console.log(`InventorySync Watcher started. Watching: ${CONFIG.watchDir}`);
+
+// Send heartbeat on startup + every 60s
+sendHeartbeat();
+setInterval(sendHeartbeat, 60 * 1000);
 
 // Process any existing files (arrived while watcher was offline)
 const existing = fs.readdirSync(CONFIG.watchDir).filter(f => SUPPORTED_EXT.includes(path.extname(f).toLowerCase()));

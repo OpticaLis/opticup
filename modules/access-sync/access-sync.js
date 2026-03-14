@@ -29,11 +29,47 @@ function calcTimeSince(timestamp) {
   return `\u05DC\u05E4\u05E0\u05D9 ${days} ימים`;
 }
 
+// ── loadWatcherStatus ───────────────────────────────────────
+async function loadWatcherStatus() {
+  const el = $('watcher-status');
+  if (!el) return;
+  try {
+    const { data, error } = await sb.from(T.HEARTBEAT)
+      .select('last_beat, watcher_version, host')
+      .eq('tenant_id', getTenantId())
+      .limit(1)
+      .single();
+    if (error || !data) {
+      el.innerHTML = '\u26AA ה-Watcher לא הופעל';
+      el.style.color = '#9ca3af';
+      return;
+    }
+    const diffMs = Date.now() - new Date(data.last_beat).getTime();
+    const diffMin = diffMs / 60000;
+    if (diffMin < 2) {
+      el.style.color = '#16a34a';
+      el.innerHTML = `\uD83D\uDFE2 Watcher פעיל <span style="font-size:12px;color:#64748b">${escapeHtml(data.host || '')} v${escapeHtml(data.watcher_version || '')}</span>`;
+    } else if (diffMin < 10) {
+      el.style.color = '#ca8a04';
+      el.innerHTML = `\uD83D\uDFE1 Watcher לא מגיב <span style="font-size:12px;color:#64748b">נראה לאחרונה: ${calcTimeSince(data.last_beat)}</span>`;
+    } else {
+      el.style.color = '#dc2626';
+      el.innerHTML = `\uD83D\uDD34 Watcher לא פעיל <span style="font-size:12px;color:#64748b">נראה לאחרונה: ${calcTimeSince(data.last_beat)}</span>`;
+    }
+  } catch (_) {
+    el.innerHTML = '\u26AA ה-Watcher לא הופעל';
+    el.style.color = '#9ca3af';
+  }
+}
+
 // ── renderAccessSyncTab ─────────────────────────────────────
 function renderAccessSyncTab() {
   const c = $('access-sync-container');
   c.innerHTML = `
     <div class="card">
+      <!-- Watcher status -->
+      <div id="watcher-status" style="font-size:14px;margin-bottom:12px;padding:8px 12px;background:#f1f5f9;border-radius:8px"></div>
+
       <!-- Header -->
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
         <h3 style="margin:0">\uD83D\uDD04 סנכרון Access</h3>
