@@ -10,6 +10,9 @@ REM Get your key from: Supabase Dashboard > Settings > API > service_role > Reve
 REM Replace YOUR_KEY_HERE with the actual service_role key (one time setup)
 set OPTICUP_SERVICE_ROLE_KEY=YOUR_KEY_HERE
 
+REM Change this path to match the Dropbox sync folder on this computer
+set OPTICUP_WATCH_DIR=C:\Users\User\Dropbox\InventorySync\sales
+
 REM === DO NOT EDIT BELOW THIS LINE ===
 cd /d %~dp0\..
 

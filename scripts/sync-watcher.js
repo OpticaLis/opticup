@@ -31,10 +31,12 @@ if (SUPABASE_KEY.includes('PLACEHOLDER')) {
   process.exit(1);
 }
 
+const WATCH_DIR = process.env.OPTICUP_WATCH_DIR || 'C:\\Users\\User\\Dropbox\\InventorySync\\sales';
+const BASE_DIR = path.dirname(WATCH_DIR);
 const CONFIG = {
-  watchDir:      'C:\\Users\\User\\Dropbox\\InventorySync\\sales',
-  processedDir:  'C:\\Users\\User\\Dropbox\\InventorySync\\processed',
-  failedDir:     'C:\\Users\\User\\Dropbox\\InventorySync\\failed',
+  watchDir:      WATCH_DIR,
+  processedDir:  path.join(BASE_DIR, 'processed'),
+  failedDir:     path.join(BASE_DIR, 'failed'),
 };
 
 const TENANT_ID = process.env.OPTICUP_TENANT_ID || '6ad0781b-37f0-47a9-92e3-be9ed1477e1c';

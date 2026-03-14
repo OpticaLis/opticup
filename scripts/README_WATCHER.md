@@ -6,7 +6,12 @@
    - היכנס ל: https://supabase.com/dashboard
    - Settings → API → service_role → Reveal
    - העתק את כל ה-key
-3. שמור את הקובץ
+3. אם תיקיית ה-Dropbox נמצאת במיקום שונה במחשב — שנה גם את השורה:
+   ```
+   set OPTICUP_WATCH_DIR=C:\Users\User\Dropbox\InventorySync\sales
+   ```
+   לנתיב המתאים במחשב שלך (התיקייה שבה Access שומר את קבצי ה-CSV)
+4. שמור את הקובץ
 
 ## הפעלה
 - לחיצה כפולה על `start-watcher.bat`
