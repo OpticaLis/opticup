@@ -9,6 +9,7 @@ let syncPendingFilterActive = false;
 const SOURCE_LABELS = {
   watcher: '\uD83E\uDD16 Watcher',
   manual:  '\uD83D\uDC64 ידני',
+  export:  '\uD83D\uDCE4 ייצוא',
 };
 
 const STATUS_BADGES = {

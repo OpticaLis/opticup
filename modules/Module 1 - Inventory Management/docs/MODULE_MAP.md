@@ -44,7 +44,7 @@
 | 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 281 | Stock count session: worker PIN entry (openWorkerPin/confirmWorkerPin), camera barcode scanning (ZXing), manual barcode/smart search input, scan handler, item update, session UI |
 | 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 234 | Diff report screen (showDiffReport/renderReportScreen), empty count guard, manager PIN approval (confirmCount with role check), cancelCount, exportCountExcel (SheetJS) |
 | 33 | sync-watcher.js | scripts/sync-watcher.js | 460 | Node.js Dropbox folder watcher: processes sales_template Excel/CSV files, atomic qty updates via RPC, pending_sales for unknown barcodes, idempotency guards, failed file upload to Supabase Storage, reverse sync export interval |
-| 33b | sync-export.js | scripts/sync-export.js | 90 | Reverse sync: exports unexported inventory items as UTF-8 BOM CSV for Access import. Joins brand/supplier names, marks items as access_exported after write |
+| 33b | sync-export.js | scripts/sync-export.js | 110 | Reverse sync: exports unexported inventory items as UTF-8 BOM CSV for Access import. Joins brand/supplier names, batch marks items as access_exported, writes sync_log entry |
 | 34 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
 | 35 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
 | 36 | auth-service.js | js/auth-service.js | 287 | Core auth engine: verifyEmployeePIN, initSecureSession, loadSession, clearSession, hasPermission, requirePermission, applyUIPermissions, getCurrentEmployee, assignRoleToEmployee, forceLogout |
@@ -574,7 +574,7 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `exportNewInventoryToAccess` | `(sb, tenantId, exportDir, log)` | Async. Queries unexported inventory with brand/supplier joins, writes UTF-8 BOM CSV, marks items as access_exported |
+| `exportNewInventoryToAccess` | `(sb, tenantId, exportDir, log)` | Async. Queries unexported inventory with brand/supplier joins, writes UTF-8 BOM CSV, batch marks items as access_exported (groups of 100), writes sync_log entry |
 | `makeExportFilename` | `()` | Returns `export_YYYYMMDD_HHmmss.csv` string |
 | `escapeCsvField` | `(val)` | Escapes CSV field (quotes fields containing commas/quotes/newlines) |
 

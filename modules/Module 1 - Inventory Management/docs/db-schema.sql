@@ -34,6 +34,8 @@
 --   021_phase4a_supplier_debt_tables.sql  — 11 new tables for supplier debt tracking + seed data
 --   022_phase4a_plus_patch.sql  — withholding tax, internal numbering, duplicate prevention, payment approval
 --   add_pending_sales_product_columns.sql  — brand, model, size, color on pending_sales
+--   add_inventory_access_exported.sql  — access_exported BOOLEAN + partial index on inventory
+--   add_sync_log_export_source.sql  — 'export' added to sync_log source_ref CHECK
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -362,7 +364,7 @@ CREATE TABLE IF NOT EXISTS sync_log (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at       TIMESTAMPTZ DEFAULT now(),
   filename         TEXT NOT NULL,                                  -- שם קובץ Excel
-  source_ref       TEXT NOT NULL CHECK (source_ref IN ('watcher', 'manual')),  -- מקור: watcher אוטומטי | manual ידני
+  source_ref       TEXT NOT NULL CHECK (source_ref IN ('watcher', 'manual', 'export')),  -- מקור: watcher אוטומטי | manual ידני | export ייצוא
   status           TEXT NOT NULL CHECK (status IN ('success', 'partial', 'error', 'handled')),  -- סטטוס עיבוד
   rows_total       INTEGER DEFAULT 0,                              -- סה"כ שורות
   rows_success     INTEGER DEFAULT 0,                              -- שורות שהצליחו

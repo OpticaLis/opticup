@@ -79,15 +79,36 @@ async function exportNewInventoryToAccess(sb, tenantId, exportDir, log) {
   const filepath = path.join(exportDir, filename);
   fs.writeFileSync(filepath, csvContent, 'utf-8');
 
-  // 5. Mark exported items by their specific IDs (avoids race with new inserts)
+  // 5. Mark exported items by their specific IDs in batches of 100
   const ids = items.map(i => i.id);
-  const { error: updateErr } = await sb
-    .from('inventory')
-    .update({ access_exported: true })
-    .in('id', ids);
+  for (let i = 0; i < ids.length; i += 100) {
+    const batch = ids.slice(i, i + 100);
+    const { error: updateErr } = await sb
+      .from('inventory')
+      .update({ access_exported: true })
+      .in('id', batch)
+      .eq('tenant_id', tenantId);
+    if (updateErr) {
+      log(`Warning: failed to mark batch ${Math.floor(i / 100) + 1} as exported: ${updateErr.message}`);
+    }
+  }
 
-  if (updateErr) {
-    log(`Warning: failed to mark items as exported: ${updateErr.message}`);
+  // 6. Write sync_log entry
+  try {
+    const { error: logErr } = await sb.from('sync_log').insert({
+      tenant_id:     tenantId,
+      filename,
+      source_ref:    'export',
+      status:        'success',
+      rows_total:    items.length,
+      rows_success:  items.length,
+      rows_pending:  0,
+      rows_error:    0,
+      processed_at:  new Date().toISOString(),
+    });
+    if (logErr) log(`Warning: sync_log insert failed: ${logErr.message}`);
+  } catch (e) {
+    log(`Warning: sync_log insert error: ${e.message}`);
   }
 
   log(`Exported ${items.length} new items to ${filename}`);
