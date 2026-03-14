@@ -184,7 +184,15 @@ function renderSyncDetailModal(log, successItems, invMap, pendingItems) {
         </tr></thead><tbody id="sync-detail-items">${itemRows}</tbody></table>
       </div>
       ${errorsHtml}
+      <div id="sync-detail-help" style="display:none;background:#f0f4f8;border:1px solid #cbd5e1;border-radius:8px;padding:14px 18px;margin-top:12px;direction:rtl;font-size:.9rem;line-height:1.7">
+        <b>סדר פעולות לתיקון ידני:</b><br>
+        1. לחץ על הברקוד / מותג / דגם כדי לחפש את הפריט במלאי הראשי<br>
+        2. אם מצאת — עדכן את הכמות ידנית במלאי<br>
+        3. חזור לכאן ולחץ "עודכן \u2705"<br>
+        4. אם לא מצאת ואין התאמה — לחץ "לא נמצא \u274C"
+      </div>
       <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
+        <button class="btn btn-g" onclick="toggleSyncDetailHelp()">\u2753 הסבר לתיקון ידני</button>
         <button class="btn btn-g" onclick="copySyncDetailTable()">\uD83D\uDCCB העתק טבלה</button>
         <button class="btn btn-g" onclick="closeSyncDetails()">סגור</button>
       </div>
@@ -207,6 +215,12 @@ function pendingItemActions(p) {
       onclick="syncDetailResolve('${p.id}','resolved')">עודכן \u2705</button>
     <button class="btn btn-sm" style="background:#ea580c;color:#fff;border:none;padding:4px 10px;border-radius:5px;font-size:.82rem;margin-right:4px"
       onclick="syncDetailResolve('${p.id}','ignored')">לא נמצא \u274C</button>`;
+}
+
+// ── Toggle help box ─────────────────────────────────────────
+function toggleSyncDetailHelp() {
+  const el = $('sync-detail-help');
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 // ── Close detail modal ──────────────────────────────────────
