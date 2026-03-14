@@ -73,7 +73,8 @@ function pendingAccordionRow(r) {
 
   let html = `<tr style="background:${rowBg};opacity:${rowOpacity};cursor:pointer;border-bottom:1px solid #e2e8f0"
     onclick="togglePendingRow('${r.id}')">
-    <td style="padding:8px 10px"><code style="background:#e2e8f0;padding:2px 6px;border-radius:4px">${escapeHtml(r.barcode_received)}</code></td>
+    <td style="padding:8px 10px"><a href="#" onclick="event.preventDefault();event.stopPropagation();searchBarcodeInInventory('${escapeHtml(r.barcode_received)}')"
+      style="color:#3b82f6;text-decoration:underline;font-weight:700"><code style="background:#e2e8f0;padding:2px 6px;border-radius:4px">${escapeHtml(r.barcode_received)}</code></a></td>
     <td style="padding:8px 10px">${r.quantity || 1}</td>
     <td style="padding:8px 10px">${typeLabel}</td>
     <td style="padding:8px 10px">${escapeHtml(r.order_number || '\u2014')}</td>
@@ -92,17 +93,15 @@ function pendingAccordionRow(r) {
 
 // -- Detail content inside expanded row -------------------
 function pendingDetailContent(r) {
-  const typeLabel = r.action_type === 'return' ? '\u05D4\u05D7\u05D6\u05E8\u05D4' : '\u05DE\u05DB\u05D9\u05E8\u05D4';
-  const amount = r.final_amount ? Number(r.final_amount).toLocaleString('he-IL') : '\u2014';
   const isPending = r.status === 'pending';
-  const barcode = escapeHtml(r.barcode_received || '');
 
-  const detailLine = `\u05D1\u05E8\u05E7\u05D5\u05D3: <a href="#" onclick="event.preventDefault();event.stopPropagation();searchBarcodeInInventory('${barcode}')"
-    style="color:#3b82f6;text-decoration:underline;font-weight:700;font-size:1rem">${barcode}</a>
-    | \u05DB\u05DE\u05D5\u05EA: ${r.quantity || 1}
-    | \u05E1\u05D5\u05D2: ${typeLabel}
-    | \u05D4\u05D6\u05DE\u05E0\u05D4: ${escapeHtml(r.order_number || '\u2014')}
-    | \u05E1\u05DB\u05D5\u05DD: ${amount}`;
+  // Show only product detail fields (skip null/empty)
+  const parts = [];
+  if (r.brand) parts.push(`\u05DE\u05D5\u05EA\u05D2: ${escapeHtml(r.brand)}`);
+  if (r.model) parts.push(`\u05D3\u05D2\u05DD: ${escapeHtml(r.model)}`);
+  if (r.size) parts.push(`\u05D2\u05D5\u05D3\u05DC: ${escapeHtml(r.size)}`);
+  if (r.color) parts.push(`\u05E6\u05D1\u05E2: ${escapeHtml(r.color)}`);
+  const detailLine = parts.length ? parts.join(' | ') : '<span style="color:#94a3b8">\u05D0\u05D9\u05DF \u05E4\u05E8\u05D8\u05D9 \u05DE\u05D5\u05E6\u05E8</span>';
 
   let actionsHtml = '';
   if (isPending) {
@@ -171,10 +170,15 @@ function closePendingPanel() {
 function copyPendingData(id) {
   const r = pendingData.find(x => x.id === id);
   if (!r) return;
-  const typeLabel = r.action_type === 'return' ? '\u05D4\u05D7\u05D6\u05E8\u05D4' : '\u05DE\u05DB\u05D9\u05E8\u05D4';
   const amount = r.final_amount ? Number(r.final_amount).toLocaleString('he-IL') : '';
-  const text = `\u05D1\u05E8\u05E7\u05D5\u05D3: ${r.barcode_received || ''} | \u05DB\u05DE\u05D5\u05EA: ${r.quantity || ''} | \u05E1\u05D5\u05D2: ${typeLabel} | \u05D4\u05D6\u05DE\u05E0\u05D4: ${r.order_number || ''} | \u05E1\u05DB\u05D5\u05DD: ${amount}`;
-  navigator.clipboard.writeText(text)
+  const parts = [`\u05D1\u05E8\u05E7\u05D5\u05D3: ${r.barcode_received || ''}`];
+  if (r.brand) parts.push(`\u05DE\u05D5\u05EA\u05D2: ${r.brand}`);
+  if (r.model) parts.push(`\u05D3\u05D2\u05DD: ${r.model}`);
+  if (r.size) parts.push(`\u05D2\u05D5\u05D3\u05DC: ${r.size}`);
+  if (r.color) parts.push(`\u05E6\u05D1\u05E2: ${r.color}`);
+  if (r.order_number) parts.push(`\u05D4\u05D6\u05DE\u05E0\u05D4: ${r.order_number}`);
+  if (amount) parts.push(`\u05E1\u05DB\u05D5\u05DD: ${amount}`);
+  navigator.clipboard.writeText(parts.join(' | '))
     .then(() => toast('\u05D4\u05D5\u05E2\u05EA\u05E7 \u05DC\u05DC\u05D5\u05D7', 's'))
     .catch(() => toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05E2\u05EA\u05E7\u05D4', 'e'));
 }

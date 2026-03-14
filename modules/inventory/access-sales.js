@@ -95,7 +95,11 @@ async function processAccessSalesFile(source, filename) {
         coupon_code: String(r.coupon_code || '').trim() || null,
         campaign: String(r.campaign || '').trim() || null,
         lens_included: lensIncluded,
-        lens_category: String(r.lens_category || '').trim() || null
+        lens_category: String(r.lens_category || '').trim() || null,
+        brand: String(r.brand || '').trim() || null,
+        model: String(r.model || '').trim() || null,
+        size: String(r.size || '').trim() || null,
+        color: String(r.color || '').trim() || null
       });
     }
   }
@@ -201,6 +205,10 @@ async function processAccessSalesFile(source, filename) {
           campaign: row.campaign,
           lens_included: row.lens_included,
           lens_category: row.lens_category,
+          brand: row.brand || null,
+          model: row.model || null,
+          size: row.size || null,
+          color: row.color || null,
           reason: 'ברקוד לא נמצא במלאי',
           status: 'pending',
           tenant_id: getTenantId()

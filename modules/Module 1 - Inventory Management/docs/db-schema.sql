@@ -33,6 +33,7 @@
 --   020_rls_tenant_isolation.sql  — JWT-based tenant isolation on all 20 tables
 --   021_phase4a_supplier_debt_tables.sql  — 11 new tables for supplier debt tracking + seed data
 --   022_phase4a_plus_patch.sql  — withholding tax, internal numbering, duplicate prevention, payment approval
+--   add_pending_sales_product_columns.sql  — brand, model, size, color on pending_sales
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -399,6 +400,10 @@ CREATE TABLE IF NOT EXISTS pending_sales (
   campaign         TEXT,                                           -- שם מבצע
   lens_included    BOOLEAN DEFAULT false,                          -- עדשות כלולות
   lens_category    TEXT,                                           -- קטגוריית עדשה
+  brand            TEXT,                                           -- מותג (מ-Access CSV)
+  model            TEXT,                                           -- דגם (מ-Access CSV)
+  size             TEXT,                                           -- גודל (מ-Access CSV)
+  color            TEXT,                                           -- צבע (מ-Access CSV)
   reason           TEXT NOT NULL,                                  -- סיבת המתנה
   status           TEXT NOT NULL DEFAULT 'pending'                 -- סטטוס: pending | resolved | ignored
                    CHECK (status IN ('pending', 'resolved', 'ignored')),

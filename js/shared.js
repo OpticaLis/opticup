@@ -117,6 +117,9 @@ const FIELD_MAP = {
     'חתימת קובץ':'file_hash',
     'מזהה אצווה':'batch_id',
     'היסטורי':'is_historical'
+  },
+  pending_sales: {
+    'מותג':'brand','דגם':'model','גודל':'size','צבע':'color'
   }
 };
 

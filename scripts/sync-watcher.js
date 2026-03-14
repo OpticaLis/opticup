@@ -208,6 +208,10 @@ async function processFile(filepath, filename) {
           campaign: String(r.campaign || '').trim() || null,
           lens_included: ['yes', 'true', '1'].includes(lensRawP),
           lens_category: String(r.lens_category || '').trim() || null,
+          brand: String(r.brand || '').trim() || null,
+          model: String(r.model || '').trim() || null,
+          size: String(r.size || '').trim() || null,
+          color: String(r.color || '').trim() || null,
           // TODO: sync_log_id unavailable — watcher has no sync_log row at this point
           sync_log_id: null,
           status: 'pending',
