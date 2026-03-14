@@ -1,27 +1,70 @@
 # הפעלת Watcher לסנכרון Access
 
-## הגדרה (פעם אחת)
-1. פתח את הקובץ `start-watcher.bat` בעורך טקסט (לחיצה ימנית → ערוך)
-2. החלף את `YOUR_KEY_HERE` ב-Service Role Key מ-Supabase Dashboard:
-   - היכנס ל: https://supabase.com/dashboard
-   - Settings → API → service_role → Reveal
-   - העתק את כל ה-key
-3. אם תיקיית ה-Dropbox נמצאת במיקום שונה במחשב — שנה גם את השורה:
+ה-Watcher צופה על תיקיית Dropbox ומעבד אוטומטית קבצי CSV שמגיעים מ-Access.
+
+---
+
+## אפשרות 1: Windows Service (מומלץ)
+
+שירות שרץ ברקע — שורד הפעלות מחדש, לא צריך חלון פתוח, המפתח מאוחסן בצורה מאובטחת.
+
+### התקנה (פעם אחת, כמנהל מערכת)
+
+1. פתח Command Prompt **כמנהל מערכת** (לחיצה ימנית → Run as administrator)
+2. נווט לתיקיית הפרויקט:
    ```
+   cd C:\prizma
+   ```
+3. הרץ את פקודת ההתקנה:
+   ```
+   node scripts/install-service.js --key=YOUR_KEY_HERE --watch-dir="C:\Users\User\Dropbox\InventorySync\sales"
+   ```
+   - החלף `YOUR_KEY_HERE` ב-Service Role Key מ-Supabase Dashboard:
+     - היכנס ל: https://supabase.com/dashboard
+     - Settings → API → service_role → Reveal
+   - שנה את הנתיב אם תיקיית ה-Dropbox נמצאת במיקום אחר
+
+   או הרץ באופן אינטראקטיבי (יבקש את הפרטים):
+   ```
+   node scripts/install-service.js
+   ```
+
+### מה קורה
+- השירות מותקן ומתחיל לרוץ מיד
+- השירות עולה אוטומטית עם הפעלת Windows
+- אם השירות קורס — הוא מתחיל מחדש אוטומטית
+- המפתח מאוחסן כמשתנה סביבה של המערכת (לא בקובץ)
+
+### הסרה
+```
+node scripts/uninstall-service.js
+```
+
+---
+
+## אפשרות 2: הרצה ידנית עם BAT (לבדיקות בלבד)
+
+לבדיקות ודיבוג — דורש חלון פתוח כל הזמן.
+
+### הגדרה
+1. צור קובץ `scripts/start-watcher.bat` (לא נשמר ב-git מטעמי אבטחה)
+2. הכנס את התוכן הבא:
+   ```bat
+   @echo off
+   set OPTICUP_SERVICE_ROLE_KEY=YOUR_KEY_HERE
    set OPTICUP_WATCH_DIR=C:\Users\User\Dropbox\InventorySync\sales
+   cd /d %~dp0\..
+   node scripts\sync-watcher.js
    ```
-   לנתיב המתאים במחשב שלך (התיקייה שבה Access שומר את קבצי ה-CSV)
-4. שמור את הקובץ
+3. החלף `YOUR_KEY_HERE` במפתח האמיתי
+4. לחיצה כפולה על הקובץ להפעלה
 
-## הפעלה
-- לחיצה כפולה על `start-watcher.bat`
-- חלון שחור ייפתח עם הודעת "Watcher started"
-- אל תסגור את החלון — הוא חייב להישאר פתוח
+### חשוב
+- **אל תסגור** את החלון השחור — ה-Watcher חייב שהחלון יישאר פתוח
+- הקובץ הזה **לא נשמר ב-git** כי הוא מכיל את המפתח
 
-## מה קורה
-- ה-Watcher צופה על תיקיית: C:\Users\User\Dropbox\InventorySync\sales
-- כל קובץ CSV שמגיע מ-Access מעובד אוטומטית
-- אם ה-Watcher נעצר — הוא מתחיל מחדש אוטומטית אחרי 5 שניות
+---
 
 ## בדיקה
 - ב-inventory.html → טאב סנכרון Access → אמור להופיע "🟢 Watcher פעיל"
+- ה-Watcher צופה על התיקייה שהוגדרה ומעבד כל קובץ CSV חדש
