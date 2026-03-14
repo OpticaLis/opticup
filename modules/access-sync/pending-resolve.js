@@ -1,109 +1,120 @@
 // =========================================================
-// PENDING RESOLVE — Mark resolved / ignored with PIN
+// SYNC RESOLVE — Inline resolve + utilities for detail modal
 // =========================================================
 
-// -- Mark as resolved (manually updated in inventory) -----
-async function markResolved(pendingId) {
-  const ok = await confirmDialog('\u05E2\u05D3\u05DB\u05D5\u05DF \u05D9\u05D3\u05E0\u05D9\u05EA', '\u05D4\u05E4\u05E8\u05D9\u05D8 \u05E2\u05D5\u05D3\u05DB\u05DF \u05D9\u05D3\u05E0\u05D9\u05EA \u05D1\u05DE\u05DC\u05D0\u05D9?');
-  if (!ok) return;
-  await pinGatedAction(pendingId, 'resolved', '\u05E2\u05D5\u05D3\u05DB\u05DF \u05D9\u05D3\u05E0\u05D9\u05EA');
-}
-
-// -- Mark as ignored (item not found in inventory) --------
-async function markIgnored(pendingId) {
-  const ok = await confirmDialog('\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0', '\u05DC\u05E1\u05DE\u05DF \u05E9\u05D4\u05E4\u05E8\u05D9\u05D8 \u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0 \u05D1\u05DE\u05DC\u05D0\u05D9?');
-  if (!ok) return;
-  await pinGatedAction(pendingId, 'ignored', '\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0');
-}
-
-// -- PIN-gated status update ------------------------------
-let pendingResolveCtx = null;
-
-async function pinGatedAction(pendingId, newStatus, note) {
-  pendingResolveCtx = { pendingId, newStatus, note };
-  ensurePinModal();
-  $('pending-pin').value = '';
-  $('pending-pin-error').textContent = '';
-  $('pending-pin-modal').style.display = 'flex';
-  $('pending-pin').focus();
-}
-
-function ensurePinModal() {
-  if ($('pending-pin-modal')) return;
-  const div = document.createElement('div');
-  div.id = 'pending-pin-modal';
-  div.className = 'modal-overlay';
-  div.style.display = 'none';
-  div.style.zIndex = '1002';
-  div.innerHTML = `
-    <div class="modal" style="max-width:360px">
-      <h3 style="margin:0 0 12px 0">\uD83D\uDD12 \u05D0\u05D9\u05DE\u05D5\u05EA \u05E2\u05D5\u05D1\u05D3</h3>
-      <p style="margin:0 0 12px 0;font-size:.9rem;color:var(--g500)">\u05D8\u05D9\u05E4\u05D5\u05DC \u05D1\u05E4\u05E8\u05D9\u05D8 \u05DE\u05DE\u05EA\u05D9\u05DF \u05D3\u05D5\u05E8\u05E9 \u05E1\u05D9\u05E1\u05DE\u05EA \u05E2\u05D5\u05D1\u05D3</p>
-      <input type="password" id="pending-pin" placeholder="\u05E1\u05D9\u05E1\u05DE\u05EA \u05E2\u05D5\u05D1\u05D3"
-        style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;margin-bottom:8px"
-        onkeydown="if(event.key==='Enter') confirmPendingPin()">
-      <p id="pending-pin-error" style="color:var(--error);font-size:.85rem;margin:0 0 8px 0"></p>
-      <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button class="btn btn-g btn-sm" onclick="closePendingPinModal()">\u05D1\u05D9\u05D8\u05D5\u05DC</button>
-        <button class="btn btn-p btn-sm" onclick="confirmPendingPin()">\u2705 \u05D0\u05E9\u05E8</button>
-      </div>
-    </div>`;
-  document.body.appendChild(div);
-  div.addEventListener('click', function(e) { if (e.target === this) closePendingPinModal(); });
-}
-
-function closePendingPinModal() {
-  closeModal('pending-pin-modal');
-  pendingResolveCtx = null;
-}
-
-async function confirmPendingPin() {
-  if (!pendingResolveCtx) return;
-  const pin = $('pending-pin').value.trim();
-  if (!pin) { $('pending-pin-error').textContent = '\u05D9\u05E9 \u05DC\u05D4\u05D6\u05D9\u05DF \u05E1\u05D9\u05E1\u05DE\u05EA \u05E2\u05D5\u05D1\u05D3'; return; }
-
-  const emp = await verifyPinOnly(pin);
-  if (!emp) {
-    $('pending-pin-error').textContent = '\u274C \u05E1\u05D9\u05E1\u05DE\u05EA \u05E2\u05D5\u05D1\u05D3 \u05E9\u05D2\u05D5\u05D9\u05D4';
-    $('pending-pin').value = '';
-    $('pending-pin').focus();
-    return;
-  }
-  sessionStorage.setItem('prizma_user', emp.name);
-
-  const { pendingId, newStatus, note } = pendingResolveCtx;
+// ── Inline resolve ──────────────────────────────────────────
+async function syncDetailResolve(pendingId, newStatus) {
   try {
-    const row = pendingData.find(x => x.id === pendingId);
-
+    const note = newStatus === 'resolved' ? 'עודכן ידנית' : 'לא נמצא';
     const { data: updated, error } = await sb.from(T.PENDING_SALES).update({
       status: newStatus,
       resolved_at: new Date().toISOString(),
-      resolved_by: emp.name,
-      resolution_note: note
-    }).eq('id', pendingId).eq('status', 'pending').select('id');
+      resolved_by: _syncDetailEmployee ? _syncDetailEmployee.name : ''
+    }).eq('id', pendingId).eq('status', 'pending').select('id, sync_filename');
 
     if (error) throw error;
-    if (!updated || updated.length === 0) {
-      toast('\u05D4\u05E4\u05E8\u05D9\u05D8 \u05DB\u05D1\u05E8 \u05D8\u05D5\u05E4\u05DC', 'w');
-      closePendingPinModal();
-      renderPendingPanel();
-      return;
-    }
+    if (!updated || updated.length === 0) { toast('הפריט כבר טופל', 'w'); return; }
 
-    const action = newStatus === 'resolved' ? 'pending_resolved' : 'pending_ignored';
-    writeLog(action, null, {
-      barcode: row ? row.barcode_received : '',
-      status: newStatus,
-      note: note,
-      performed_by: emp.name
+    writeLog(newStatus === 'resolved' ? 'pending_resolved' : 'pending_ignored', null, {
+      pending_id: pendingId, status: newStatus, note,
+      performed_by: _syncDetailEmployee ? _syncDetailEmployee.name : ''
     });
 
-    closePendingPinModal();
-    loadPendingBadge();
-    toast(newStatus === 'resolved' ? '\u05E4\u05E8\u05D9\u05D8 \u05E1\u05D5\u05DE\u05DF \u05DB\u05DE\u05D8\u05D5\u05E4\u05DC' : '\u05E4\u05E8\u05D9\u05D8 \u05E1\u05D5\u05DE\u05DF \u05DB\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0', 's');
-    renderPendingPanel();
+    // Update row inline
+    const statusEl = $('sync-pending-status-' + pendingId);
+    const actionsEl = $('sync-pending-actions-' + pendingId);
+    const rowEl = $('sync-pending-row-' + pendingId);
+    if (statusEl) statusEl.innerHTML = pendingItemStatus({ status: newStatus });
+    if (actionsEl) actionsEl.innerHTML = '';
+    if (rowEl) rowEl.style.background = newStatus === 'resolved' ? '#f0fdf4' : '#f8fafc';
+
+    toast(newStatus === 'resolved' ? 'פריט סומן כמטופל' : 'פריט סומן כלא נמצא', 's');
+
+    const filename = updated[0]?.sync_filename;
+    if (filename) await checkFileCompletion(filename);
   } catch (e) {
-    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E2\u05D3\u05DB\u05D5\u05DF: ' + (e.message || e), 'e');
+    toast('שגיאה בעדכון: ' + (e.message || e), 'e');
   }
-  pendingResolveCtx = null;
+}
+
+// ── Check file completion ───────────────────────────────────
+async function checkFileCompletion(filename) {
+  const { count, error } = await sb.from(T.PENDING_SALES)
+    .select('*', { count: 'exact', head: true })
+    .eq('tenant_id', getTenantId())
+    .eq('sync_filename', filename)
+    .eq('status', 'pending');
+  if (error) return;
+
+  const countEl = $('sync-detail-pending-count');
+  if (countEl) countEl.textContent = count || 0;
+
+  if (count === 0) {
+    await sb.from(T.SYNC_LOG).update({ status: 'success', rows_pending: 0 })
+      .eq('tenant_id', getTenantId()).eq('filename', filename)
+      .in('status', ['partial', 'error']);
+
+    const badgeEl = $('sync-detail-status-badge');
+    if (badgeEl) {
+      const b = STATUS_BADGES.success;
+      badgeEl.innerHTML = `<b>סטטוס:</b> <span class="${b.cls}">${b.icon} ${b.text}</span>`;
+    }
+    toast('כל הפריטים טופלו — הקובץ הושלם', 's');
+  }
+
+  loadPendingBadge();
+}
+
+// ── Copy table to clipboard ─────────────────────────────────
+function copySyncDetailTable() {
+  const table = $('sync-detail-items');
+  if (!table) return;
+  const rows = table.querySelectorAll('tr');
+  const lines = ['ברקוד\tמותג\tדגם\tגודל\tצבע\tכמות\tסטטוס'];
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    if (cells.length < 7) return;
+    const vals = [];
+    for (let i = 0; i < 7; i++) vals.push(cells[i].textContent.trim());
+    lines.push(vals.join('\t'));
+  });
+  navigator.clipboard.writeText(lines.join('\n'))
+    .then(() => toast('הועתק ללוח', 's'))
+    .catch(() => toast('שגיאה בהעתקה', 'e'));
+}
+
+// ── Search barcode from detail modal ────────────────────────
+function syncDetailSearchBarcode(barcode) {
+  closeSyncDetails();
+  showTab('inventory');
+  setTimeout(() => {
+    const input = $('inv-search');
+    if (input) {
+      input.value = barcode;
+      if (typeof filterInventoryTable === 'function') filterInventoryTable();
+    }
+  }, 200);
+}
+
+// ── Download failed file ────────────────────────────────────
+async function downloadFailedFile(logId) {
+  showLoading('יוצר קישור הורדה...');
+  try {
+    const { data: log, error } = await sb.from(T.SYNC_LOG)
+      .select('storage_path, filename').eq('tenant_id', getTenantId())
+      .eq('id', logId).maybeSingle();
+    if (error || !log || !log.storage_path) {
+      toast('לא נמצא קובץ להורדה', 'e'); return;
+    }
+    const { data: urlData, error: urlErr } = await sb.storage
+      .from('failed-sync-files').createSignedUrl(log.storage_path, 3600);
+    if (urlErr || !urlData?.signedUrl) {
+      toast('שגיאה ביצירת קישור הורדה', 'e'); return;
+    }
+    window.open(urlData.signedUrl, '_blank');
+  } catch (e) {
+    toast('שגיאה בהורדת קובץ', 'e');
+  } finally {
+    hideLoading();
+  }
 }

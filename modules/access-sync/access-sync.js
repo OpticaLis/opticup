@@ -4,6 +4,7 @@
 
 let syncLogPage = 0;
 const SYNC_LOG_PAGE_SIZE = 20;
+let syncPendingFilterActive = false;
 
 const SOURCE_LABELS = {
   watcher: '\uD83E\uDD16 Watcher',
@@ -21,12 +22,12 @@ function calcTimeSince(timestamp) {
   if (!timestamp) return '';
   const diff = Date.now() - new Date(timestamp).getTime();
   const mins  = Math.floor(diff / 60000);
-  if (mins < 1) return '\u05DC\u05E4\u05E0\u05D9 פחות מדקה';
-  if (mins < 60) return `\u05DC\u05E4\u05E0\u05D9 ${mins} דקות`;
+  if (mins < 1) return 'לפני פחות מדקה';
+  if (mins < 60) return `לפני ${mins} דקות`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `\u05DC\u05E4\u05E0\u05D9 ${hours} שעות`;
+  if (hours < 24) return `לפני ${hours} שעות`;
   const days = Math.floor(hours / 24);
-  return `\u05DC\u05E4\u05E0\u05D9 ${days} ימים`;
+  return `לפני ${days} ימים`;
 }
 
 // ── loadWatcherStatus ───────────────────────────────────────
@@ -72,11 +73,13 @@ function renderAccessSyncTab() {
 
       <!-- Header -->
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
-        <div style="display:flex;align-items:center;gap:6px">
-          <h3 style="margin:0">\uD83D\uDD04 סנכרון Access</h3>
-          <button onclick="refreshSyncTab()" title="רענון" style="background:none;border:none;cursor:pointer;font-size:1.2rem;padding:2px 4px">🔄</button>
-        </div>
+        <h3 style="margin:0">סנכרון Access</h3>
         <span id="as-last-activity" style="font-size:13px;color:#64748b"></span>
+      </div>
+
+      <!-- Refresh button below last activity -->
+      <div style="margin-bottom:16px">
+        <button onclick="refreshSyncTab()" class="btn btn-g btn-sm" title="רענון">🔄 רענון</button>
       </div>
 
       <!-- Summary cards -->
@@ -166,14 +169,24 @@ async function loadSyncLog(page = 0) {
   try {
     const from = page * SYNC_LOG_PAGE_SIZE;
     const to = from + SYNC_LOG_PAGE_SIZE - 1;
-    const { data, error, count } = await sb.from(T.SYNC_LOG)
+
+    let query = sb.from(T.SYNC_LOG)
       .select('*', { count: 'exact' })
-      .eq('tenant_id', getTenantId())
+      .eq('tenant_id', getTenantId());
+
+    // Apply pending filter if active
+    if (syncPendingFilterActive) {
+      query = query.in('status', ['partial', 'error']);
+    }
+
+    const { data, error, count } = await query
       .order('created_at', { ascending: false })
       .range(from, to);
+
     if (error) throw error;
     if (!data || data.length === 0) {
-      body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#888;padding:24px">אין סנכרונים עדיין</td></tr>';
+      const msg = syncPendingFilterActive ? 'אין קבצים עם פריטים ממתינים' : 'אין סנכרונים עדיין';
+      body.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#888;padding:24px">${msg}</td></tr>`;
       if (paginationDiv) paginationDiv.style.display = 'none';
       return;
     }
@@ -230,30 +243,46 @@ async function loadPendingBadge() {
   try {
     const { count, error } = await sb.from(T.PENDING_SALES).select('*', { count: 'exact', head: true }).eq('tenant_id', getTenantId()).eq('status', 'pending');
     const n = (!error && count) ? count : 0;
-    if (n > 0) {
-      btn.textContent = `\u26A0\uFE0F ממתינים לטיפול (${n})`;
-      btn.style.background = '#fee2e2';
-      btn.style.borderColor = '#dc2626';
-      btn.style.color = '#dc2626';
-    } else {
-      btn.textContent = 'ממתינים לטיפול';
-      btn.style.background = '';
-      btn.style.borderColor = '';
-      btn.style.color = '';
-    }
+    updatePendingButtonStyle(btn, n);
   } catch (e) {
     // silent
   }
 }
 
+function updatePendingButtonStyle(btn, count) {
+  if (syncPendingFilterActive) {
+    btn.textContent = count > 0 ? `ממתינים לטיפול (${count})` : 'ממתינים לטיפול';
+    btn.style.background = '#1e3a5f';
+    btn.style.borderColor = '#1e3a5f';
+    btn.style.color = '#fff';
+  } else if (count > 0) {
+    btn.textContent = `\u26A0\uFE0F ממתינים לטיפול (${count})`;
+    btn.style.background = '#fee2e2';
+    btn.style.borderColor = '#dc2626';
+    btn.style.color = '#dc2626';
+  } else {
+    btn.textContent = 'ממתינים לטיפול';
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  }
+}
+
+// ── Toggle pending filter ───────────────────────────────────
+function togglePendingFilter() {
+  syncPendingFilterActive = !syncPendingFilterActive;
+  loadSyncLog(0);
+  loadPendingBadge();
+}
+
 // ── Button handlers ─────────────────────────────────────────
 function onPendingClick() {
-  renderPendingPanel();
+  togglePendingFilter();
 }
 
 // ── refreshSyncTab ──────────────────────────────────────────
 async function refreshSyncTab() {
-  toast('\u05DE\u05EA\u05E2\u05D3\u05DB\u05DF...', 'i');
+  toast('מתעדכן...', 'i');
   await Promise.all([
     loadSyncSummary(),
     loadSyncLog(),
