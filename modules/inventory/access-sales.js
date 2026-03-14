@@ -2,15 +2,21 @@
 // TAB 2: REDUCTION — Access Sales Import
 // =========================================================
 
-async function processAccessSalesFile(workbook, filename) {
-  const ws = workbook.Sheets['sales_template'];
-  // Parse: row 1 = headers (consumed by sheet_to_json), rows 2-3 = metadata, row 4+ = data
-  const allRows = XLSX.utils.sheet_to_json(ws, { defval: '', range: 0 });
-  // Skip 2 metadata rows (rows 2-3 in Excel = indices 0-1 in array)
-  const rows = allRows.slice(2).filter(r => {
-    // Skip empty rows — check if barcode or order_number has any value
-    return String(r.barcode || '').trim() || String(r.order_number || '').trim();
-  });
+async function processAccessSalesFile(source, filename) {
+  const isCSV = Array.isArray(source);
+  let rows;
+
+  if (isCSV) {
+    // CSV — rows already parsed by caller
+    rows = source;
+  } else {
+    // XLSX — extract from workbook (sales_template sheet, skip 2 metadata rows)
+    const ws = source.Sheets['sales_template'];
+    const allRows = XLSX.utils.sheet_to_json(ws, { defval: '', range: 0 });
+    rows = allRows.slice(2);
+  }
+
+  rows = rows.filter(r => String(r.barcode || '').trim() || String(r.order_number || '').trim());
 
   if (!rows.length) {
     toast('הקובץ לא מכיל שורות נתונים', 'e');
@@ -36,7 +42,7 @@ async function processAccessSalesFile(workbook, filename) {
   const errorDetails = [];
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
-    const rowNum = i + 4; // row 4 onward in Excel
+    const rowNum = isCSV ? i + 2 : i + 4; // CSV: header+data; XLSX: header+2 meta+data
     const errs = [];
 
     const barcode = String(r.barcode || '').trim();

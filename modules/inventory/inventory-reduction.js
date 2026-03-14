@@ -13,6 +13,32 @@ function handleRedExcel(ev) {
   const file = ev.target.files[0];
   if (!file) return;
   redExcelFileName = file.name;
+
+  // CSV path — Access exports CSV files
+  if (file.name.toLowerCase().endsWith('.csv')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        let text = e.target.result.replace(/^\uFEFF/, '');
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length < 2) { toast('קובץ CSV ריק', 'e'); return; }
+        const headers = lines[0].split(',').map(h => h.trim()).filter(h => h);
+        const rows = lines.slice(1).map(line => {
+          const vals = line.split(',');
+          const row = {};
+          headers.forEach((h, j) => row[h] = (vals[j] || '').trim());
+          return row;
+        });
+        processAccessSalesFile(rows, file.name);
+      } catch(err) {
+        toast('שגיאה בקריאת קובץ CSV: ' + err.message, 'e');
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+    return;
+  }
+
+  // XLSX path — legacy Excel format
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
