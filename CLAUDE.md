@@ -338,6 +338,12 @@ Naming convention: M=Module number, F=Phase number. Example: `M1F3.75_2026-03-12
 
 This backup must happen BEFORE any documentation changes, never after.
 
+**After committing the phase, create a git tag:**
+```
+git tag v{phase} -m "Phase {phase}: {short description}"
+git push origin v{phase}
+```
+
 ---
 
 ## Working Rules (AI Sessions)
