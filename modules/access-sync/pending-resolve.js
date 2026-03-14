@@ -93,8 +93,7 @@ function searchBrandInInventory(brand) {
 }
 
 function searchModelInInventory(brand, model) {
-  const term = brand ? `${brand} ${model}` : model;
-  syncDetailSearchInInventory(term);
+  syncDetailSearchInInventory(model);
 }
 
 function syncDetailSearchInInventory(searchText) {
