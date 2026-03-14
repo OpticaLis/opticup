@@ -13,6 +13,7 @@ const { createClient } = require('@supabase/supabase-js');
 const SUPPORTED_EXT = ['.csv', '.xlsx'];
 
 // ── Configuration ───────────────────────────────────────────
+// NOTE: Consider switching to service_role key for backend service (bypasses RLS)
 const CONFIG = {
   watchDir:      'C:\\Users\\User\\Dropbox\\InventorySync\\sales',
   processedDir:  'C:\\Users\\User\\Dropbox\\InventorySync\\processed',
@@ -20,6 +21,8 @@ const CONFIG = {
   supabaseUrl:   'https://tsxrrxzmdxaenlvocyit.supabase.co',
   supabaseKey:   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU',
 };
+
+const TENANT_ID = process.env.OPTICUP_TENANT_ID || '6ad0781b-37f0-47a9-92e3-be9ed1477e1c';
 
 // ── Init Supabase ───────────────────────────────────────────
 const sb = createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
@@ -192,7 +195,8 @@ async function processFile(filepath, filename) {
           lens_category: String(r.lens_category || '').trim() || null,
           // TODO: sync_log_id unavailable — watcher has no sync_log row at this point
           sync_log_id: null,
-          status: 'pending'
+          status: 'pending',
+          tenant_id: TENANT_ID
         });
         if (pendErr) {
           errors.push(`Row ${rowNum}: pending_sales insert failed: ${pendErr.message}`);
@@ -260,6 +264,7 @@ async function processFile(filepath, filename) {
           lens_included:  lensIncluded,
           lens_category:  lensCategory,
           sync_filename:  filename,
+          tenant_id:      TENANT_ID,
         });
         if (logErr) log(`  Warning: audit log insert failed row ${rowNum}: ${logErr.message}`);
       }
@@ -296,6 +301,7 @@ async function processFile(filepath, filename) {
       rows_error:    failedCount,
       errors:        errors.length ? errors : null,
       processed_at:  new Date().toISOString(),
+      tenant_id:     TENANT_ID,
     };
     if (storagePath) logRow.storage_path = storagePath;
     const { error: slErr } = await sb.from('sync_log').insert(logRow);
@@ -338,6 +344,7 @@ async function handleNewFile(filepath) {
         rows_total: 0, rows_success: 0, rows_pending: 0, rows_error: 0,
         errors: [err.message],
         processed_at: new Date().toISOString(),
+        tenant_id: TENANT_ID,
       };
       if (storagePath) logRow.storage_path = storagePath;
       const { error: slErr } = await sb.from('sync_log').insert(logRow);
