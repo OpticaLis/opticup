@@ -244,7 +244,9 @@ async function createBox() {
     }
 
     // Handle return items — update supplier_returns status (Phase 5.9d)
+    var returnCount = 0;
     if (typeof handleReturnItemsOnCreate === 'function') {
+      returnCount = ws.items.filter(function(it) { return !!it.return_id; }).length;
       await handleReturnItemsOnCreate(ws.items, created.box_number);
     }
 
@@ -262,7 +264,11 @@ async function createBox() {
 
     closeWizard();
     await loadShipments();
-    toast('ארגז ' + created.box_number + ' נוצר — 30 דקות לעריכה');
+    if (returnCount > 0) {
+      toast('ארגז ' + created.box_number + ' נוצר — ' + returnCount + ' פריטי זיכוי עודכנו ל-\'נשלח\'');
+    } else {
+      toast('ארגז ' + created.box_number + ' נוצר — 30 דקות לעריכה');
+    }
   } catch (err) {
     toast('שגיאה: ' + err.message, 'e');
     if (btn) { btn.disabled = false; btn.textContent = '📦 צור ארגז'; }
