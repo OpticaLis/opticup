@@ -89,7 +89,46 @@ async function bulkAction(action) {
 // Send to shipment box — navigate to shipments wizard
 // =========================================================
 function sendToBox(returnId, supplierId) {
-  window.location.href = 'shipments.html?type=return&supplier=' + encodeURIComponent(supplierId) + '&return=' + encodeURIComponent(returnId);
+  window.location.href = 'shipments.html?type=return&supplier=' + encodeURIComponent(supplierId) + '&returns=' + encodeURIComponent(returnId);
+}
+
+// =========================================================
+// Bulk send to box — validate same supplier, navigate
+// =========================================================
+function bulkSendToBox() {
+  var checkboxes = document.querySelectorAll('.ret-cb:checked');
+  if (!checkboxes.length) { toast('לא נבחרו פריטים', 'w'); return; }
+
+  // Filter for ready_to_ship only
+  var selected = [];
+  checkboxes.forEach(function(cb) {
+    if (cb.dataset.status === 'ready_to_ship') {
+      selected.push({ idx: Number(cb.dataset.idx), returnId: cb.dataset.returnId });
+    }
+  });
+  if (!selected.length) { toast('הפריטים שנבחרו אינם בסטטוס "מוכן למשלוח"', 'w'); return; }
+
+  // Get supplier IDs from _returnsData
+  var supplierIds = {};
+  var supplierId = null;
+  for (var i = 0; i < selected.length; i++) {
+    var item = window._returnsData[selected[i].idx];
+    var sid = item && item.return ? item.return.supplier_id : null;
+    if (sid) supplierIds[sid] = true;
+    if (!supplierId) supplierId = sid;
+  }
+
+  if (Object.keys(supplierIds).length > 1) {
+    toast('לא ניתן לשלוח פריטים מספקים שונים באותו ארגז — בחר פריטים מספק אחד', 'e');
+    return;
+  }
+
+  // Collect unique return IDs
+  var returnIdMap = {};
+  selected.forEach(function(s) { returnIdMap[s.returnId] = true; });
+  var returnIds = Object.keys(returnIdMap).join(',');
+
+  window.location.href = 'shipments.html?type=return&supplier=' + encodeURIComponent(supplierId) + '&returns=' + encodeURIComponent(returnIds);
 }
 
 // =========================================================

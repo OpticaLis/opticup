@@ -260,6 +260,17 @@ function showTab(name) {
   if (name === 'access-sync') { renderAccessSyncTab(); loadWatcherStatus(); loadSyncLog(); loadSyncSummary(); loadLastActivity(); loadPendingBadge(); }
   if (name === 'stock-count') loadStockCountTab();
   if (name === 'returns') initReturnsTab();
+  if (name === 'reduction') {
+    var rw = $('reduction-help-wrap');
+    if (rw && !rw.querySelector('.help-banner-wrap')) {
+      renderHelpBanner(rw, 'help_inv_reduction',
+        '<strong>הורדת מלאי</strong><br>' +
+        'כאן מורידים כמויות מהמלאי — עדכון מכירות או שינויים ידניים.' +
+        '<ul><li><strong>חלק א\' — Excel</strong>: העלה קובץ מכירות מ-Access. המערכת תתאים ברקודים ותפחית כמויות.</li>' +
+        '<li><strong>חלק ב\' — ידני</strong>: חפש לפי ברקוד/מותג ולחץ ➖ להורדה. נדרשת סיסמת עובד.</li>' +
+        '<li><strong>כל שינוי כמות</strong> נרשם בלוג ודורש PIN.</li></ul>');
+    }
+  }
 }
 
 function showEntryMode(mode) {
@@ -314,6 +325,33 @@ function showInfoModal(title, bodyHTML) {
   };
   document.addEventListener('keydown', escHandler);
   document.body.appendChild(overlay);
+}
+
+// =========================================================
+// HELP BANNER — collapsible inline help with sessionStorage
+// =========================================================
+function renderHelpBanner(parentEl, storageKey, helpHTML) {
+  if (!parentEl) return;
+  var isCollapsed = sessionStorage.getItem(storageKey) === '1';
+  var wrap = document.createElement('div');
+  wrap.className = 'help-banner-wrap';
+  var btn = document.createElement('button');
+  btn.className = 'help-banner-toggle';
+  btn.innerHTML = '&#10067; עזרה';
+  btn.onclick = function() {
+    var content = wrap.querySelector('.help-banner-content');
+    if (!content) return;
+    var hidden = content.style.display === 'none';
+    content.style.display = hidden ? 'block' : 'none';
+    sessionStorage.setItem(storageKey, hidden ? '0' : '1');
+  };
+  wrap.appendChild(btn);
+  var content = document.createElement('div');
+  content.className = 'help-banner-content';
+  content.style.display = isCollapsed ? 'none' : 'block';
+  content.innerHTML = helpHTML;
+  wrap.appendChild(content);
+  parentEl.insertBefore(wrap, parentEl.firstChild);
 }
 
 // (Token management removed — using Supabase anon key)

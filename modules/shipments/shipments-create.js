@@ -6,12 +6,17 @@
 
 window._wizardState = null;
 
-function openNewBoxWizard(presetType, presetSupplierId, presetReturnId) {
+function openNewBoxWizard(presetType, presetSupplierId, presetReturnIds) {
+  // Accept single string (legacy) or array of return IDs
+  var returnIds = null;
+  if (presetReturnIds) {
+    returnIds = Array.isArray(presetReturnIds) ? presetReturnIds : [presetReturnIds];
+  }
   window._wizardState = {
     step: 1, type: null, supplierId: null, supplierName: null,
     customerName: null, customerPhone: null, customerAddress: null,
     items: [], courierId: null, trackingNumber: null, notes: null,
-    presetReturnId: presetReturnId || null
+    presetReturnIds: returnIds
   };
   const modal = $('shipment-wizard');
   modal.classList.remove('hidden');

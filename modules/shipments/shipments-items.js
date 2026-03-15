@@ -42,18 +42,18 @@ async function loadStagedReturns(supplierId) {
   }
   window._stagedReturns = data || [];
 
-  // Auto-check items for presetReturnId (from sendToBox)
+  // Auto-check items for presetReturnIds (from sendToBox / bulkSendToBox)
   var ws = window._wizardState;
-  if (ws && ws.presetReturnId && data && data.length) {
+  if (ws && ws.presetReturnIds && ws.presetReturnIds.length && data && data.length) {
     for (var i = 0; i < data.length; i++) {
       var it = data[i];
       var retId = it.return ? it.return.id : it.return_id;
-      if (retId === ws.presetReturnId) {
+      if (ws.presetReturnIds.indexOf(retId) !== -1) {
         toggleStagedItem(it.id, true);
       }
     }
     // Clear preset so it doesn't re-trigger on back/forward
-    ws.presetReturnId = null;
+    ws.presetReturnIds = null;
   }
 
   renderStagedPicker();

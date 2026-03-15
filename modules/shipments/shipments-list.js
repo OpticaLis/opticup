@@ -33,6 +33,12 @@ async function initShipmentsPage() {
     loadLockMinutes()
   ]);
 
+  renderHelpBanner($('shipments-help-wrap'), 'help_shipments',
+    '<strong>משלוחים וארגזים</strong><br>' +
+    'כאן מנוהלים כל הארגזים — מסגור, זיכוי, תיקון ומשלוח.' +
+    '<ul><li><strong>ארגז חדש</strong> — אשף 3 שלבים: סוג+יעד, פריטים, שליח+אישור (PIN).</li>' +
+    '<li><strong>נעילה אוטומטית</strong> — ארגז ננעל לאחר 30 דקות (ניתן לשינוי בהגדרות).</li>' +
+    '<li><strong>פריטי זיכוי</strong> — כשנוצר ארגז זיכוי, הפריטים עוברים אוטומטית ל"נשלח".</li></ul>');
   setupFilterListeners();
   await loadShipments();
   autoLockExpiredBoxes();
@@ -240,13 +246,17 @@ function checkWizardUrlParams() {
   const params = new URLSearchParams(window.location.search);
   const type = params.get('type');
   const supplierId = params.get('supplier');
-  const returnId = params.get('return');
+  // Support both single 'return' (legacy) and comma-separated 'returns'
+  var returnsParam = params.get('returns') || params.get('return') || '';
   if (!type) return;
 
   // Clear URL params immediately (prevent re-trigger on refresh)
   history.replaceState(null, '', window.location.pathname);
 
+  // Parse comma-separated return IDs into array
+  var returnIds = returnsParam ? returnsParam.split(',').filter(Boolean) : [];
+
   if (typeof openNewBoxWizard === 'function') {
-    openNewBoxWizard(type, supplierId || null, returnId || null);
+    openNewBoxWizard(type, supplierId || null, returnIds.length ? returnIds : null);
   }
 }

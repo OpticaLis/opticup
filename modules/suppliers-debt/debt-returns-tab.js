@@ -22,11 +22,18 @@ async function initDebtReturnsTab() {
         '<h2 style="margin:0;font-size:1.15rem;color:var(--primary)">&#128260; זיכויים — מעקב כולל</h2>' +
         '<button class="btn btn-p" onclick="exportDebtReturnsExcel()" style="padding:8px 14px;font-size:.88rem">&#128229; ייצוא Excel</button>' +
       '</div>' +
+      '<div id="debt-ret-help-wrap"></div>' +
       '<div id="debt-ret-supplier-note" style="display:none;background:#e3f0ff;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.88rem;color:#1a5fb4"></div>' +
       '<div id="debt-ret-filters"></div>' +
       '<div id="debt-ret-summary" style="margin-bottom:8px"></div>' +
       '<div id="debt-ret-list"></div>' +
     '</div>';
+  renderHelpBanner($('debt-ret-help-wrap'), 'help_debt_returns',
+    '<strong>זיכויים — מעקב כולל</strong><br>' +
+    'מסך זה מציג את כל הפריטים שנשלחו או נאספו ע"י סוכן וממתינים לזיכוי מהספק.' +
+    '<ul><li><strong>ממתין לזיכוי</strong> — ברירת המחדל. מציג פריטים בסטטוס "נשלח" + "סוכן לקח".</li>' +
+    '<li><strong>סמן כזוכה</strong> — בחר פריטים ולחץ ✅ לסימון. נדרשת סיסמת עובד.</li>' +
+    '<li><strong>הצג היסטוריה</strong> — מציג גם פריטים שכבר זוכו.</li></ul>');
   renderDebtReturnsFilters();
   await loadDebtReturns();
 }

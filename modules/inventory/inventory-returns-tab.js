@@ -20,9 +20,16 @@ async function initReturnsTab() {
         '<h2 style="margin:0">&#128260; זיכויים</h2>' +
         '<button class="btn btn-p" onclick="exportReturnsExcel()" style="padding:8px 14px;font-size:.88rem">&#128229; ייצוא Excel</button>' +
       '</div>' +
+      '<div id="returns-help-wrap"></div>' +
       '<div id="returns-filters"></div>' +
       '<div id="returns-list"></div>' +
     '</div>';
+  renderHelpBanner($('returns-help-wrap'), 'help_inv_returns',
+    '<strong>טאב זיכויים — מלאי</strong><br>' +
+    'כאן מנוהלים פריטים שסומנו להחזרה לספק מתוך המלאי.' +
+    '<ul><li><strong>מוכן למשלוח</strong> — פריט מוכן לארגז. לחץ 📦 לשלוח בארגז או 🚶 לסמן סוכן לקח.</li>' +
+    '<li><strong>שלח בארגז (בודד/מרובה)</strong> — בחר פריטים מאותו ספק ולחץ 📦 למעלה.</li>' +
+    '<li><strong>סוכן לקח</strong> — הנציג איסף פיזית.</li></ul>');
   renderReturnsFilters();
   await loadReturnsData();
 }
@@ -166,6 +173,7 @@ function renderReturnsList(items) {
   var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">' +
     '<div style="font-size:.88rem;color:var(--g600)">' + totalQty + ' פריטים, סה"כ ' + formatILS(totalVal) + '</div>' +
     '<div style="display:flex;gap:6px">' +
+      '<button class="btn btn-sm" onclick="bulkSendToBox()" title="שלח בארגז">&#128230; שלח בארגז</button> ' +
       '<button class="btn btn-sm" onclick="bulkAction(\'agent_picked\')" title="סוכן לקח">&#128694; סוכן לקח</button>' +
     '</div>' +
   '</div>';
