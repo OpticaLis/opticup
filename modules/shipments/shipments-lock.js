@@ -313,7 +313,7 @@ function getCategoryLabel(key) {
   var customCats = (cfg && cfg.categories && cfg.categories.custom) ? cfg.categories.custom : [];
   var found = customCats.find(function(c) { return c.key === key; });
   if (found) return found.label_he;
-  return (ENUM_MAP.shipment_category && ENUM_MAP.shipment_category[key]) ? ENUM_MAP.shipment_category[key] : key;
+  return (ENUM_REV.shipment_category && ENUM_REV.shipment_category[key]) ? ENUM_REV.shipment_category[key] : key;
 }
 
 function getStep3Config(field) {
