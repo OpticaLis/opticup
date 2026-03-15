@@ -1,12 +1,9 @@
-// =========================================================
 // TAB 2: REDUCTION — Excel
-// =========================================================
 let redExcelData = [];
 let redExcelFileName = '';
 let redSearchResults = [];
 const REDUCE_REASONS = ['נמכר', 'נשבר', 'לא נמצא', 'נשלח לזיכוי', 'הועבר לסניף אחר'];
 let reduceModalState = {};
-
 function showSampleReport() { $('sample-modal').style.display = 'flex'; }
 
 function handleRedExcel(ev) {
@@ -67,13 +64,10 @@ async function processRedExcel() {
   if (!redExcelData.length) return;
   showLoading('מעבד קובץ מכירות...');
   clearAlert('red-excel-alerts');
-
   const results = { updated: [], skipped: [], mismatch: [] };
-
   for (const row of redExcelData) {
     const barcode = String(row['ברקוד'] || row['barcode'] || Object.values(row)[0] || '').trim();
     if (!barcode) continue;
-
     try {
       const recs = await fetchAll(T.INV, [['barcode','eq',barcode]]);
       if (!recs.length) {
@@ -140,10 +134,7 @@ async function processRedExcel() {
   hideLoading();
 }
 
-// =========================================================
 // TAB 2: REDUCTION — Manual
-// =========================================================
-
 async function loadModelsForBrand(brandName) {
   const list = $('red-model-list');
   if (list) list.innerHTML = '';
@@ -170,7 +161,6 @@ async function loadModelsForBrand(brandName) {
     });
   }
 }
-
 function clearSizeColorLists() {
   const sl = $('red-size-list');
   const cl = $('red-color-list');
@@ -179,7 +169,6 @@ function clearSizeColorLists() {
   $('red-size').value = '';
   $('red-color').value = '';
 }
-
 async function loadSizesAndColors() {
   const brandName = $('red-brand').value;
   const model = $('red-model').value.trim();
@@ -266,7 +255,11 @@ function openReductionModal(recId) {
     id: recId, currentQty,
     barcode: rec.barcode || '',
     brand: rec.brand_name || '',
-    model: rec.model || ''
+    model: rec.model || '',
+    supplier_id: rec.supplier_id || '',
+    cost_price: rec.cost_price || 0,
+    color: rec.color || '',
+    size: rec.size || ''
   };
 
   $('reduce-modal-item').textContent = [rec.barcode, rec.brand_name, rec.model].filter(Boolean).join(' | ');
@@ -281,7 +274,7 @@ function openReductionModal(recId) {
 }
 
 async function confirmReduction() {
-  const { id, currentQty, barcode, brand, model } = reduceModalState;
+  const { id, currentQty, barcode, brand, model, supplier_id, cost_price, color, size } = reduceModalState;
   const amount = parseInt($('reduce-modal-amount').value) || 0;
   const reason = $('reduce-modal-reason').value;
   const pin = $('reduce-modal-pin').value.trim();
@@ -316,10 +309,43 @@ async function confirmReduction() {
       reason,
       source_ref: 'הורדת מלאי ידנית'
     });
+
+    // Create supplier_return when reason is 'נשלח לזיכוי'
+    if (action === 'credit_return' && supplier_id) {
+      _createReturnFromReduction(id, barcode, brand, model, color, size, supplier_id, cost_price, amount)
+        .catch(err => {
+          console.error('Return creation failed (inventory already decremented):', err);
+          toast('⚠ המלאי עודכן אך יצירת הזיכוי נכשלה — צור זיכוי ידנית', 'w');
+        });
+    }
+
     closeModal('reduce-modal');
-    toast(`כמות עודכנה: ${currentQty} → ${newQty} (${reason})`, 's');
+    const toastMsg = action === 'credit_return'
+      ? `הכמות עודכנה — פריט הועבר לזיכוי (${currentQty} → ${newQty})`
+      : `כמות עודכנה: ${currentQty} → ${newQty} (${reason})`;
+    toast(toastMsg, 's');
     $('red-result').innerHTML = `<div class="alert alert-s">&#10004; ${escapeHtml(brand)} ${escapeHtml(model)} — כמות ${currentQty} → ${newQty} (${reason})</div>`;
   } catch(e) {
     toast('שגיאה: ' + (e.message || ''), 'e');
   }
+}
+
+// Create supplier_return from reduction (fire-and-forget)
+async function _createReturnFromReduction(invId, barcode, brand, model, color, size, supplierId, costPrice, qty) {
+  const returnNumber = await generateReturnNumber(supplierId);
+  if (!returnNumber) throw new Error('Failed to generate return number');
+  const created = await batchCreate(T.SUP_RETURNS, [{
+    tenant_id: getTenantId(), supplier_id: supplierId, return_number: returnNumber,
+    return_type: 'pending_in_store', status: 'ready_to_ship',
+    total_items: qty, total_cost: costPrice || 0, notes: 'נוצר מהורדת מלאי — נשלח לזיכוי'
+  }]);
+  if (!created || !created.length) throw new Error('Failed to create return record');
+  await batchCreate(T.SUP_RETURN_ITEMS, [{
+    tenant_id: getTenantId(), return_id: created[0].id, inventory_id: invId,
+    barcode, quantity: qty, cost_price: costPrice || 0,
+    brand_name: brand, model, color, size
+  }]);
+  writeLog('supplier_return', invId, {
+    barcode, return_number: returnNumber, reason: 'נשלח לזיכוי', status: 'ready_to_ship'
+  });
 }

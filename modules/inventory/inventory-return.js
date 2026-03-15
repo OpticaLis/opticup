@@ -151,7 +151,7 @@ async function _doConfirmSupplierReturn(supplierId) {
       return_number: returnNumber,
       return_type: returnType,
       reason: reason,
-      status: 'pending',
+      status: 'ready_to_ship',
       created_by: emp.id,
       notes: reason
     }];
