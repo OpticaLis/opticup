@@ -19,9 +19,12 @@ var RETURN_STATUS_MAP = {
   credited:              { he: 'זוכה',         cls: 'rst-credited' }
 };
 
-// Allowed status transitions in Phase 4
+// Allowed status transitions — full chain
 var RETURN_TRANSITIONS = {
-  pending: ['ready_to_ship']
+  pending:               ['ready_to_ship'],
+  ready_to_ship:         ['shipped'],
+  shipped:               ['received_by_supplier'],
+  received_by_supplier:  ['credited']
 };
 
 // =========================================================
@@ -94,7 +97,7 @@ function renderReturnsTable(returns, container) {
       var nextSt = transitions[0];
       var nextLbl = RETURN_STATUS_MAP[nextSt] ? RETURN_STATUS_MAP[nextSt].he : nextSt;
       actionBtns += ' <button class="btn-sm btn-lnk" onclick="promptReturnStatusUpdate(\'' +
-        r.id + '\',\'' + nextSt + '\')">' + escapeHtml(nextLbl) + '</button>';
+        r.id + '\',\'' + nextSt + '\')">העבר ל: ' + escapeHtml(nextLbl) + '</button>';
     }
 
     return '<tr>' +
@@ -236,8 +239,12 @@ async function _confirmReturnStatus(returnId, newStatus) {
 }
 
 async function updateReturnStatus(returnId, newStatus) {
-  var updateObj = { id: returnId, status: newStatus, updated_at: new Date().toISOString() };
-  if (newStatus === 'ready_to_ship') updateObj.ready_at = new Date().toISOString();
+  var now = new Date().toISOString();
+  var updateObj = { id: returnId, status: newStatus, updated_at: now };
+  if (newStatus === 'ready_to_ship') updateObj.ready_at = now;
+  if (newStatus === 'shipped') updateObj.shipped_at = now;
+  if (newStatus === 'received_by_supplier') updateObj.received_at = now;
+  if (newStatus === 'credited') updateObj.credited_at = now;
 
   await batchUpdate(T.SUP_RETURNS, [updateObj]);
   await writeLog('return_status_update', null, {
