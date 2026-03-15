@@ -109,6 +109,52 @@
   .wiz-manual-header { font-size: .85rem; font-weight: 600; color: var(--g600); margin-bottom: 6px; padding-top: 4px; border-top: 1px solid var(--g200); }
   .wiz-link-icon { font-size: .75rem; margin-left: 2px; flex-shrink: 0; }
   .wiz-item-linked { border-right: 3px solid #7c5cbf; }
+
+  /* Detail panel */
+  .detail-header { display: flex; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--g200); position: relative; }
+  .detail-close { position: absolute; top: 10px; left: 10px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--g500); padding: 4px 8px; line-height: 1; }
+  .detail-close:hover { color: var(--g700); }
+  .detail-box-num { background: #fdf0c4; color: #7a5c00; font-weight: 700; padding: 6px 14px; border-radius: 8px; font-size: 1.1rem; }
+  .detail-status { font-size: .85rem; }
+  .detail-meta { padding: 14px 18px; border-bottom: 1px solid var(--g200); }
+  .detail-meta-row { font-size: .88rem; line-height: 1.8; }
+  .detail-meta-label { font-weight: 600; color: var(--g600); }
+  .detail-correction-link { color: #6f42c1; font-weight: 500; }
+  .detail-timer { padding: 8px 18px; font-size: .9rem; }
+  .detail-items-section { padding: 14px 18px; }
+  .detail-items-title { font-weight: 600; font-size: .92rem; color: var(--primary); margin-bottom: 8px; }
+  .detail-items-table { font-size: .82rem; border: 1px solid var(--g200); border-radius: 6px; overflow: hidden; }
+  .detail-items-header { display: grid; grid-template-columns: 30px 90px 1fr 80px 70px 1fr 30px; gap: 4px; padding: 6px 8px; background: var(--g100); font-weight: 600; color: var(--g600); font-size: .78rem; }
+  .detail-item-row { display: grid; grid-template-columns: 30px 90px 1fr 80px 70px 1fr 30px; gap: 4px; padding: 6px 8px; border-top: 1px solid var(--g100); }
+  .detail-item-row:hover { background: var(--g50, #fafafa); }
+  .di-col { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .di-num { text-align: center; font-weight: 600; color: var(--g500); }
+  .di-cost { text-align: left; }
+  .di-act { text-align: center; }
+  .detail-items-footer { font-size: .85rem; margin-top: 8px; color: var(--g600); font-weight: 500; }
+  .detail-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 18px; border-top: 1px solid var(--g200); }
+  .detail-add-form { padding: 12px; background: #f0f4ff; border-radius: 8px; margin-bottom: 10px; }
+  .detail-add-title { font-size: .88rem; font-weight: 600; color: var(--primary); margin-bottom: 8px; }
+  .detail-edit-form { padding: 4px 0; }
+
+  /* Print — manifest only */
+  @media print {
+    body > *:not(#manifest-print) { display: none !important; }
+    #manifest-print { display: block !important; }
+    .manifest-page { font-family: 'Heebo', sans-serif; direction: rtl; color: #000; background: #fff; padding: 20px; max-width: 100%; }
+    .manifest-header { text-align: center; margin-bottom: 18px; }
+    .manifest-title { font-size: 1.3rem; font-weight: 700; }
+    .manifest-info { margin-bottom: 16px; line-height: 1.7; font-size: .95rem; }
+    .manifest-info-row { margin-bottom: 2px; }
+    .manifest-label { font-weight: 600; }
+    .manifest-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: .9rem; }
+    .manifest-table th, .manifest-table td { border: 1px solid #333; padding: 6px 8px; text-align: right; }
+    .manifest-table th { background: #eee; font-weight: 600; }
+    .manifest-total { font-size: .95rem; font-weight: 600; margin-bottom: 24px; }
+    .manifest-signature { margin-top: 30px; line-height: 2.5; font-size: .95rem; }
+    .manifest-sig-line { display: inline-block; width: 200px; border-bottom: 1px solid #000; margin-right: 8px; }
+  }
+  #manifest-print { display: none; }
 </style>
 </head>
 <body>
@@ -194,6 +240,8 @@
 <script src="modules/shipments/shipments-create.js"></script>
 <script src="modules/shipments/shipments-items.js"></script>
 <script src="modules/shipments/shipments-lock.js"></script>
+<script src="modules/shipments/shipments-detail.js"></script>
+<script src="modules/shipments/shipments-manifest.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', function() {
   initShipmentsPage();

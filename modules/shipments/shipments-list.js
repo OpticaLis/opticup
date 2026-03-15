@@ -199,7 +199,7 @@ function buildStatusIndicator(box) {
 // ROW CLICK — placeholder for detail panel (Phase 5.9f)
 // =========================================================
 function onShipmentClick(id) {
-  console.log('detail', id);
+  if (typeof openShipmentDetail === 'function') openShipmentDetail(id);
 }
 
 // =========================================================
