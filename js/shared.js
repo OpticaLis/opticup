@@ -33,6 +33,7 @@ const T = {
   OCR_EXTRACTIONS: 'ocr_extractions',
   ALERTS: 'alerts',
   WEEKLY_REPORTS: 'weekly_reports',
+  TENANTS: 'tenants',
   COURIERS: 'courier_companies',
   SHIPMENTS: 'shipments',
   SHIP_ITEMS: 'shipment_items',
