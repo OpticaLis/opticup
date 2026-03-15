@@ -1,46 +1,37 @@
 # Session Context
 
 ## Last Updated
-Phase 5.9 — 2026-03-15
+Post-Phase 5.9i — 2026-03-15
 
 ## What Was Done This Session
-Phase 5.9: Shipments & Box Management — complete new module with 9 JS files, shipments.html, 3 DB tables, 1 RPC, JSONB config system.
+Returns management expansion: inventory returns tab, debt returns tab, bulk sendToBox, help banners, status chain fixes, reverse sync XLS format.
 
-### Sub-phases
-- **5.9a:** DB migration — courier_companies, shipments, shipment_items tables + next_box_number RPC + RLS + indexes. Commit `017f5bc`
-- **5.9b-1:** T constants + FIELD_MAP + ENUM_MAP in shared.js. Commit `a50c251`
-- **5.9b-2:** shipments.html + shipments-list.js. Commit `f003e92`
-- **5.9c-1:** shipments-create.js — wizard steps 1/3 + createBox. Commit `f21feff`
-- **5.9d:** Return integration — staged picker + status updates + shipments-items.js (wizard step 2). Commit `ef8b76a`
-- **5.9e:** Lock system — configurable timer + auto-lock + correction box. tenants.shipment_lock_minutes. Commit `3ef5cb8`
-- **5.9f:** Detail panel + manifest print. Commit `b7962ed`
-- **5.9g:** Courier management + shipment settings (4 fields). Commit `fa3e383`
-- **5.9h:** Home screen card + permissions + E2E (19/19 pass). Commits `89e13bf`, `40cfe7b`, `4225445`, `91aee99`
-
-### Post-E2E Improvements
-- Fix: reduction "לזיכוי" creates supplier_return (ready_to_ship), bulk return status pending → ready_to_ship. Commit `7a1a51d`
-- JSONB config Part 1: tenants.shipment_config column + DB seed + config helpers in shipments-lock.js. Commit `b8315dd`
-- JSONB config Part 2: dynamic fields in wizard step 2 + accordion + step 3 validation. Commit `8bc113c`
-- JSONB config Part 3: field settings UI (shipments-settings.js). Commit `cb7040d`
-
-### Bugs Fixed During Phase
-- Permission key format colon → dot notation (`40cfe7b`)
-- T.TENANTS missing from shared.js (`4225445`)
-- next_box_number RPC SECURITY DEFINER (`91aee99`)
+### Post-5.9i Commits
+- **Fix:** `_createReturnFromReduction` — removed non-existent total_items/total_cost columns. Commit `cbf6d28`
+- **Fix:** qty-modal adds "נשלח לזיכוי" reason + creates supplier_return via `_createReturnFromReduction`. Commit `52d2a6b`
+- **Fix:** category dropdown shows Hebrew labels — uses ENUM_REV not ENUM_MAP. Commit `58ae39c`
+- **Fix:** return status transitions expanded — full chain pending→ready_to_ship→shipped/agent_picked→received_by_supplier→credited. Commit `f70635b`
+- **Returns tab in inventory.html:** inventory-returns-tab.js (265 lines) + inventory-returns-actions.js (164 lines) — filters, accordion, bulk selection, sendToBox, export. Commit `00d46dc`
+- **Wire sendToBox:** returns tab → shipments wizard with pre-fill (supplierId + returnIds in URL params). Commit `24c3711`
+- **Fix:** DB columns agent_picked_at, received_at, credited_at on supplier_returns + bulk selection fix + remove credited items from inventory returns. Commit `ff331f0`
+- **Debt returns tab in suppliers-debt.html:** debt-returns-tab.js (276 lines) + debt-returns-tab-actions.js (154 lines) — global credit management view with filters, bulk markCredited, export. Commit `fc1d32c`
+- **Bulk sendToBox + help banners:** bulk sendToBox for multiple returns, renderHelpBanner() in shared.js, help text on inventory returns + debt returns + shipments list + shipments wizard. Commit `7be6657`
+- **Reverse sync XLS:** sync-export.js changed from CSV to XLS via SheetJS (bookType: biff8). Both scripts/ and watcher-deploy/ updated. Commits `0e7ddd0`, `04c6521`
 
 ## Current State
 - **5 HTML pages**: index.html (home), inventory.html (inventory module), suppliers-debt.html (supplier debt module), employees.html (employee management), shipments.html (shipments & box management)
 - **2 Edge Functions**: pin-auth (JWT auth), ocr-extract (Claude Vision OCR)
-- **~78 JS files** across 12 module folders + 8 global files
-- **~18,200 lines of JS code**
+- **~82 JS files** across 12 module folders + 8 global files
+- **~19,500 lines of JS code**
 - **45 DB tables** + 7 RPC functions (increment_inventory, decrement_inventory, set_inventory_qty, generate_daily_alerts, next_internal_doc_number, update_ocr_template_stats, next_box_number)
 - **1 pg_cron job**: daily-alert-generation (05:00 UTC)
 - **JWT-based RLS** tenant isolation on all 45 tables
 - **Phase 5.75 tables** (empty stubs): conversations, conversation_participants, messages, knowledge_base, message_reactions, notification_preferences
-- **3 new tables** (Phase 5.9): courier_companies, shipments, shipment_items
-- **5 new columns on tenants**: shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config (JSONB)
-- **9 new JS files** in modules/shipments/ (~2,258 lines)
-- **shipments.html** — new standalone page (287 lines)
+- **3 tables** (Phase 5.9): courier_companies, shipments, shipment_items
+- **3 new columns on supplier_returns** (post-5.9i): agent_picked_at, received_at, credited_at
+- **5 columns on tenants**: shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config (JSONB)
+- **4 new JS files** (post-5.9i): inventory-returns-tab.js, inventory-returns-actions.js, debt-returns-tab.js, debt-returns-tab-actions.js
+- **renderHelpBanner()** added to shared.js — reusable collapsible help banner component
 
 ## Open Issues
 - JWT secret exposed in dev chat — must rotate before production
@@ -56,11 +47,25 @@ Phase 5.9: Shipments & Box Management — complete new module with 9 JS files, s
 - install-service.js in scripts/ folder missing --export-dir support (only watcher-deploy/ version has it)
 - shipment_config settings UI not tested with real Supabase session (verified via code + preview_eval only)
 - Correction box shows items_count=0 after creation (items added manually in edit window — by design, but could be confusing)
+- Deployed watcher service runs from C:\Users\User\opticup\watcher-deploy\ — must manually copy updated files there after git pull
 
 ## Next Phase
 TBD (Phase 6 Supplier Portal deferred)
 
 ## Last Commits
+### Post-Phase 5.9i (Returns Management, Config & Fixes)
+- Fix: `cbf6d28` — _createReturnFromReduction removed non-existent columns
+- Fix: `52d2a6b` — qty-modal adds "נשלח לזיכוי" reason + creates supplier_return
+- Fix: `58ae39c` — category dropdown Hebrew labels (ENUM_REV not ENUM_MAP)
+- Fix: `f70635b` — return status transitions expanded to full chain + agent_picked
+- Returns tab: `00d46dc` — DB migration + inventory-returns-tab.js + inventory-returns-actions.js
+- Wire sendToBox: `24c3711` — returns tab → shipments wizard with pre-fill
+- Fix: `ff331f0` — DB columns agent_picked_at/received_at/credited_at + bulk selection + hide credited
+- Debt returns: `fc1d32c` — debt-returns-tab.js + debt-returns-tab-actions.js (global credit view)
+- Bulk sendToBox: `7be6657` — bulk sendToBox + renderHelpBanner + help text on all screens
+- XLS export: `0e7ddd0` — reverse sync export as XLS instead of CSV
+- XLS fix: `04c6521` — all export paths use XLS format via SheetJS
+
 ### Phase 5.9 (Shipments & Box Management)
 - Phase 5.9a: `017f5bc` — DB migration (3 tables + RPC + RLS + indexes)
 - Phase 5.9b-1: `a50c251` — T constants + FIELD_MAP + ENUM_MAP
@@ -78,3 +83,4 @@ TBD (Phase 6 Supplier Portal deferred)
 - JSONB Part 1: `b8315dd` — config column + seed + helpers
 - JSONB Part 2: `8bc113c` — dynamic fields + accordion + validation
 - JSONB Part 3: `cb7040d` — field settings UI
+- Phase 5.9i: `0b2946f` — documentation update

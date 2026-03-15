@@ -1,5 +1,5 @@
 # מלאי מסגרות — Module Spec
-## גרסה 5.9 | מרץ 2026 | Shipments & Box Management
+## גרסה 5.9+ | מרץ 2026 | Returns Management + Shipments
 
 > **Authority:** Business logic flows and screen descriptions. For code details → MODULE_MAP.md. For DB schema → db-schema.sql. For rules → CLAUDE.md.
 
@@ -10,7 +10,7 @@
 **מודול מלאי מסגרות** הוא הליבה של מערכת Optic Up — מנהל את כל מחזור החיים של מסגרות משקפיים במלאי: כניסה, מעקב, עריכה, מכירה, מחיקה, שחזור, ספירת מלאי, סנכרון עם Access, ומעקב חובות ספקים.
 
 **סטאק טכנולוגי:**
-- Frontend: Vanilla JS (no framework), ~78 JS modules + CSS
+- Frontend: Vanilla JS (no framework), ~82 JS modules + CSS
 - Backend: Supabase (PostgreSQL + REST API + RPC + Edge Functions), client = `sb`
 - Auth: PIN → Edge Function (pin-auth) → signed JWT with tenant_id claim
 - Excel: SheetJS (xlsx) לייבוא/ייצוא
@@ -116,8 +116,8 @@ For complete file index → see MODULE_MAP.md section 1.
   - Heartbeat: sends to watcher_heartbeat every 60s (hostname, version)
   - Security: service_role key via OPTICUP_SERVICE_ROLE_KEY env var, tenant_id on all inserts
   - Configurable: OPTICUP_WATCH_DIR, OPTICUP_EXPORT_DIR env vars
-- **Reverse sync**: exports unexported inventory items to CSV every 30s for Access import
-  - sync-export.js: queries access_exported=false, writes UTF-8 BOM CSV, batch marks items exported (groups of 100)
+- **Reverse sync**: exports unexported inventory items to XLS every 30s for Access import
+  - sync-export.js: queries access_exported=false, writes XLS (biff8 format via SheetJS), batch marks items exported (groups of 100)
   - Logs with source_ref='export' in sync_log
 - **Standalone deployment**: watcher-deploy/ folder — self-contained package (8 files) for Windows machines without Git/IDE
   - setup.bat: Hebrew interactive installer (Node.js check, npm install, env var prompts, Windows Service install)
@@ -187,13 +187,19 @@ Standalone page: `suppliers-debt.html` with 4 tabs.
   - Payments: filtered table for this supplier
   - Returns: delegated to debt-returns.js
 
-### 3.13 החזרות לספק (Supplier Returns) — Phase 4h
+### 3.13 החזרות לספק (Supplier Returns) — Phase 4h + Post-5.9i
 - **Initiation from inventory**: select items → "זיכוי לספק" → validates same supplier, shows preview
+- **Initiation from qty-modal**: "נשלח לזיכוי" reason in ➖ modal → auto-creates supplier_return via _createReturnFromReduction (fire-and-forget)
 - **Return creation**: PIN verification, generates RET-{supplier_number}-{seq} number, creates return + items, decrements inventory
-- **Returns tab in supplier detail**: table with status badges and action buttons
+- **Returns tab in supplier detail** (debt-returns.js): per-supplier table with status badges and action buttons
+- **Inventory returns tab** (inventory-returns-tab.js): global view across all suppliers, filters (status/supplier/date/search), accordion detail, bulk selection, sendToBox integration
+- **Debt returns tab** (debt-returns-tab.js): global credit management view in suppliers-debt.html, filters, bulk markCredited, summary cards
 - **Return detail modal**: items table (barcode, brand, model, color, size, qty, price) + summary
-- **Status management**: pending → ready_to_ship → shipped → received_by_supplier → credited (PIN-verified transitions)
+- **Status management**: pending → ready_to_ship → shipped/agent_picked → received_by_supplier → credited (PIN-verified transitions)
+- **Timestamp tracking**: ready_at, shipped_at, agent_picked_at, received_at, credited_at on supplier_returns
 - **Return types**: agent_pickup, ship_to_supplier, pending_in_store
+- **sendToBox**: single or bulk — navigates to shipments wizard with supplierId + returnIds pre-filled via URL params
+- **Help banners**: renderHelpBanner() on returns tabs + shipments screens — collapsible with sessionStorage state
 
 ---
 
@@ -267,7 +273,7 @@ Standalone page: `suppliers-debt.html` with 4 tabs.
 - **Processing**: found → atomic RPC qty update + writeLog; not found → pending_sales (with product fields)
 - **Duplicate file check**: case-insensitive ilike, user can override
 - **Pending resolution**: work center modal with PIN at entry → inline resolve → optimistic lock → atomic RPC → writeLog → file completion check (marks sync_log 'handled')
-- **Reverse sync**: new inventory items (access_exported=false) → CSV export every 30s → Access import folder
+- **Reverse sync**: new inventory items (access_exported=false) → XLS export (biff8 via SheetJS) every 30s → Access import folder
 - **Watcher deployment**: standalone watcher-deploy/ package with setup.bat installer for Windows machines
 
 ### 4.11 Hebrew↔English Maps

@@ -8,13 +8,13 @@
 
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
-| 1 | shared.js | js/shared.js | 292 | Supabase client init, table constants (T), FIELD_MAP/ENUM_MAP, Hebrew↔English translation, UI helpers ($, toast, setAlert, confirmDialog, showLoading), tab navigation (showTab, showEntryMode), escapeHtml, showInfoModal, global variable declarations |
+| 1 | shared.js | js/shared.js | 357 | Supabase client init, table constants (T), FIELD_MAP/ENUM_MAP, Hebrew↔English translation, UI helpers ($, toast, setAlert, confirmDialog, showLoading), tab navigation (showTab, showEntryMode), escapeHtml, showInfoModal, renderHelpBanner (collapsible help component), global variable declarations |
 | 2 | supabase-ops.js | js/supabase-ops.js | 291 | Database abstraction layer: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (individual updates, RLS-safe), writeLog, generateNextBarcode, OCR learning helpers (updateOCRTemplate, buildHintsFromCorrections), alert engine (createAlert, alertPriceAnomaly) |
 | 3 | data-loading.js | js/data-loading.js | 167 | App initialization: loadData, loadMaxBarcode, populateDropdowns, low stock alerts (loadLowStockAlerts, refreshLowStockBanner, openLowStockModal), helper functions (activeBrands, supplierOpts, getBrandType, getBrandSync) |
 | 4 | search-select.js | js/search-select.js | 136 | Reusable searchable dropdown component: createSearchSelect, closeAllDropdowns, repositionDropdown, MutationObserver cleanup |
 | 5 | inventory-table.js | modules/inventory/inventory-table.js | 275 | Main inventory table: server-side paginated loading, filtering (search/supplier/type/qty), sorting, rendering with inline edit cells, event delegation for row actions |
 | 6 | inventory-edit.js | modules/inventory/inventory-edit.js | 344 | Inline editing (invEdit, invEditSync), row selection (toggle/selectAll/clear), bulk update, bulk delete with PIN, image preview, saveInventoryChanges with writeLog |
-| 7 | inventory-reduction.js | modules/inventory/inventory-reduction.js | 296 | Stock reduction: Excel-based reduction (handleRedExcel, processRedExcel), manual search with cascading dropdowns, reduction modal with PIN+reason, Access sales file detection |
+| 7 | inventory-reduction.js | modules/inventory/inventory-reduction.js | 350 | Stock reduction: Excel-based reduction (handleRedExcel, processRedExcel), manual search with cascading dropdowns, reduction modal with PIN+reason, Access sales file detection, _createReturnFromReduction (fire-and-forget supplier_return creation) |
 | 8 | inventory-entry.js | modules/inventory/inventory-entry.js | 289 | Manual entry forms: addEntryRow (card-based), copyEntryRow, removeEntryRow, getEntryRows, validateEntryRows, submitEntry with barcode retry |
 | 9 | inventory-export.js | modules/inventory/inventory-export.js | 209 | Barcode generation (BBDDDDD format with reuse), barcode export to xlsx, full inventory export with styled Excel |
 | 10 | excel-import.js | modules/inventory/excel-import.js | 335 | Excel import: handleExcelImport (column mapping), confirmExcelImport (two-phase: match existing + queue pending), generatePendingBarcodes, exportPendingBarcodes |
@@ -33,7 +33,7 @@
 | 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 195 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, receipt list event delegation |
 | 21 | audit-log.js | modules/audit/audit-log.js | 215 | Soft delete flow (deleteInvRow, confirmSoftDelete), recycle bin (openRecycleBin, restoreItem, permanentDelete with double PIN) |
 | 22 | item-history.js | modules/audit/item-history.js | 323 | Item timeline (openItemHistory), ACTION_MAP constant (21 action types), entry history accordion (openEntryHistory, loadEntryHistory, renderEntryHistory), exports |
-| 23 | qty-modal.js | modules/audit/qty-modal.js | 98 | Quantity change modal: openQtyModal (add/remove with reason+PIN), confirmQtyChange |
+| 23 | qty-modal.js | modules/audit/qty-modal.js | 114 | Quantity change modal: openQtyModal (add/remove with reason+PIN including "נשלח לזיכוי"), confirmQtyChange (calls _createReturnFromReduction when reason is credit) |
 | 24 | brands.js | modules/brands/brands.js | 197 | Brand management: loadBrandsTab, renderBrandsTable (4 filters), setBrandActive (immediate save), addBrandRow, saveBrands, saveBrandField |
 | 25 | suppliers.js | modules/brands/suppliers.js | 167 | Supplier management: loadSuppliersTab, supplier number editing with temp-negative-swap, addSupplier with auto-number, getNextSupplierNumber (gap-filling) |
 | 26 | access-sync.js | modules/access-sync/access-sync.js | 298 | Access sync tab: renderAccessSyncTab (summary cards + log table + watcher status), loadSyncLog (paginated with action buttons), loadSyncSummary, loadLastActivity, calcTimeSince, loadPendingBadge, loadWatcherStatus, refreshSyncTab, togglePendingFilter |
@@ -44,7 +44,7 @@
 | 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 281 | Stock count session: worker PIN entry (openWorkerPin/confirmWorkerPin), camera barcode scanning (ZXing), manual barcode/smart search input, scan handler, item update, session UI |
 | 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 234 | Diff report screen (showDiffReport/renderReportScreen), empty count guard, manager PIN approval (confirmCount with role check), cancelCount, exportCountExcel (SheetJS) |
 | 33 | sync-watcher.js | scripts/sync-watcher.js | 461 | Node.js Dropbox folder watcher: processes sales_template Excel/CSV files, CSV support with parseCSVFile + BOM stripping, atomic qty updates via RPC, pending_sales for unknown barcodes (with brand/model/size/color), idempotency guards, failed file upload to Supabase Storage, heartbeat every 60s, reverse sync export interval every 30s. Uses service_role key via OPTICUP_SERVICE_ROLE_KEY env var. Configurable OPTICUP_WATCH_DIR + OPTICUP_EXPORT_DIR |
-| 33b | sync-export.js | scripts/sync-export.js | 117 | Reverse sync: exports unexported inventory items (access_exported=false) as UTF-8 BOM CSV for Access import. Joins brand/supplier names, batch marks items as access_exported (groups of 100), writes sync_log entry with source_ref='export' |
+| 33b | sync-export.js | scripts/sync-export.js | 111 | Reverse sync: exports unexported inventory items (access_exported=false) as XLS (biff8 format via SheetJS) for Access import. Joins brand/supplier names, batch marks items as access_exported (groups of 100), writes sync_log entry with source_ref='export' |
 | 34 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
 | 35 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
 | 36 | auth-service.js | js/auth-service.js | 287 | Core auth engine: verifyEmployeePIN, initSecureSession, loadSession, clearSession, hasPermission, requirePermission, applyUIPermissions, getCurrentEmployee, assignRoleToEmployee, forceLogout |
@@ -62,8 +62,12 @@
 | 48 | debt-payment-alloc.js | modules/suppliers-debt/debt-payment-alloc.js | ~275 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status, rollback on failure) |
 | 49 | debt-prepaid.js | modules/suppliers-debt/debt-prepaid.js | 285 | Prepaid deals tab: loadPrepaidTab (fetch deals+checks+suppliers), renderPrepaidToolbar (filters + add button), applyPrepaidFilters (client-side), renderPrepaidTable (progress bar, status badges), openNewDealModal (PIN-verified), openAddCheckModal, viewDealDetail (progress bar + checks table), updateCheckStatus |
 | 50 | debt-supplier-detail.js | modules/suppliers-debt/debt-supplier-detail.js | ~328 | Supplier detail view: openSupplierDetail (slide-in panel with summary + 4 sub-tabs), closeSupplierDetail, loadSupplierTimeline (merged docs+payments sorted by date), loadSupplierDocuments (filtered table), loadSupplierPayments (filtered table), loadSupplierReturns (delegates to debt-returns.js) |
-| 51 | debt-returns.js | modules/suppliers-debt/debt-returns.js | ~230 | Supplier returns tab: loadReturnsForSupplier (fetch+render), renderReturnsTable, viewReturnDetail (modal with items), promptReturnStatusUpdate (PIN-verified), updateReturnStatus, generateReturnNumber (RET-{supplier_number}-{seq}) |
+| 51 | debt-returns.js | modules/suppliers-debt/debt-returns.js | 292 | Supplier returns tab (per-supplier): loadReturnsForSupplier (fetch+render), renderReturnsTable, viewReturnDetail (modal with items), promptReturnStatusUpdate (PIN-verified), updateReturnStatus (with timestamp fields), generateReturnNumber (RET-{supplier_number}-{seq}). RETURN_TRANSITIONS expanded for full status chain + agent_picked |
 | 52 | inventory-return.js | modules/inventory/inventory-return.js | ~218 | Supplier return initiation from inventory: openSupplierReturnModal (validates selection, same-supplier check, items preview), _doConfirmSupplierReturn (PIN-verified, creates return+items, decrements inventory, writeLog) |
+| 52b | inventory-returns-tab.js | modules/inventory/inventory-returns-tab.js | 265 | Inventory returns (זיכויים) tab: initReturnsTab, loadReturnsData (status/supplier/date/search filtering), renderReturnsFilters, renderReturnsList (accordion table with bulk selection), toggleReturnsHistory, getReturnsCount (cached badge count) |
+| 52c | inventory-returns-actions.js | modules/inventory/inventory-returns-actions.js | 164 | Returns tab actions: markAgentPicked (PIN-verified), sendToBox (navigate to shipments wizard), bulkSendToBox (validates same supplier), bulkAction (bulk status update), exportReturnsExcel |
+| 51b | debt-returns-tab.js | modules/suppliers-debt/debt-returns-tab.js | 276 | Global debt returns (credit tracking) tab: initDebtReturnsTab, loadDebtReturns (multi-status filtering), renderDebtReturnsList (accordion with bulk selection), renderDebtReturnsSummary, toggleDebtReturnsHistory |
+| 51c | debt-returns-tab-actions.js | modules/suppliers-debt/debt-returns-tab-actions.js | 154 | Debt returns actions: markDebtCredited (modal + PIN), _execMarkCredited, bulkMarkCredited, exportDebtReturnsExcel |
 | 53 | file-upload.js | js/file-upload.js | 97 | File upload helper for supplier documents: uploadSupplierFile (validates type/size, uploads to Supabase Storage), getSupplierFileUrl (signed URLs), renderFilePreview (PDF iframe / image), pickAndUploadFile (hidden file input + upload) |
 | 54 | ai-ocr.js | modules/suppliers-debt/ai-ocr.js | 342 | OCR trigger, review screen, correction flow with learning: triggerOCR (calls ocr-extract Edge Function), showOCRReview (side-by-side modal + supplier OCR stats), _ocrSave (saves corrections + creates supplier_document + updates OCR template), confidence indicators per field, _injectOCRScanIcons (adds scan buttons to doc table rows), _injectOCRToolbarBtn (toolbar scan button), patches loadDocumentsTab |
 
@@ -78,9 +82,9 @@
 | 63 | debt-info-content.js | modules/suppliers-debt/debt-info-content.js | 250 | Info modal content for all supplier debt screens; 12 _show*Info() functions + _injectInfoBtn helper |
 | 64 | debt-info-inject.js | modules/suppliers-debt/debt-info-inject.js | 182 | Monkey-patches to inject ❓ buttons into supplier debt screens; _injectModalInfoBtn helper + all tab/modal patches |
 
-| 65 | shipments-list.js | modules/shipments/shipments-list.js | 231 | Shipment list: initShipmentsPage (auth + config load), loadShipments (paginated fetch with supplier/courier joins), renderShipmentsList (grid rows with lock status), filtering (type/supplier/courier/date/search), populateCourierFilter, exportShipmentsExcel |
-| 66 | shipments-create.js | modules/shipments/shipments-create.js | 294 | New box wizard: openNewBoxWizard (3-step state machine), renderWizardStep1 (type selector + destination), renderWizardStep3 (courier/tracking/notes), createBox (RPC next_box_number + insert + return item status updates) |
-| 67 | shipments-items.js | modules/shipments/shipments-items.js | 306 | Wizard step 2: initWizardItems, loadStagedReturns (for return boxes), renderStagedPicker (checkbox picker), toggleStagedItem, renderItemForm (dynamic fields from config), addItemToWizard, removeWizardItem, handleReturnItemsOnCreate, revertReturnStatus |
+| 65 | shipments-list.js | modules/shipments/shipments-list.js | 262 | Shipment list: initShipmentsPage (auth + config load), loadShipments (paginated fetch with supplier/courier joins), renderShipmentsList (grid rows with lock status), filtering (type/supplier/courier/date/search), populateCourierFilter, exportShipmentsExcel |
+| 66 | shipments-create.js | modules/shipments/shipments-create.js | 321 | New box wizard: openNewBoxWizard (3-step state machine), renderWizardStep1 (type selector + destination), renderWizardStep3 (courier/tracking/notes), createBox (RPC next_box_number + insert + return item status updates) |
+| 67 | shipments-items.js | modules/shipments/shipments-items.js | 321 | Wizard step 2: initWizardItems, loadStagedReturns (for return boxes), renderStagedPicker (checkbox picker), toggleStagedItem, renderItemForm (dynamic fields from config), addItemToWizard, removeWizardItem, handleReturnItemsOnCreate, revertReturnStatus |
 | 68 | shipments-items-table.js | modules/shipments/shipments-items-table.js | 125 | Accordion items table: renderItemsTable (expandable rows), toggleItemDetail, item detail view with all fields |
 | 69 | shipments-lock.js | modules/shipments/shipments-lock.js | 323 | Lock lifecycle: loadLockMinutes (loads all config from tenants), isBoxEditable, getEditableMinutes/Seconds, renderLockStatus, lockBox (PIN-verified), autoLockExpiredBoxes, createCorrectionBox, addItemToExistingBox, removeItemFromExistingBox, startLockTimer/stopLockTimer, config helpers (getFieldConfig, getCustomField, getVisibleCategories, getCategoryLabel, getStep3Config) |
 | 70 | shipments-detail.js | modules/shipments/shipments-detail.js | 345 | Detail slide panel: openShipmentDetail (loads items + renders), renderDetailPanel (metadata + items + actions), renderDetailItems (items table), updateDetailField (inline edit tracking/courier/notes), showAddItemForm (barcode search + manual entry for edit window), deleteShipment (soft delete with PIN) |
@@ -91,7 +95,9 @@
 
 | 75 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
 
-**Total: 78 JS files + watcher-deploy/ (8-file standalone package), ~18,200 lines** (includes scripts/sync-watcher.js + sync-export.js)
+**Total: 82 JS files + watcher-deploy/ (8-file standalone package), ~19,500 lines** (includes scripts/sync-watcher.js + sync-export.js)
+
+**Note (Post-5.9i):** Returns management expansion. 4 new files: inventory-returns-tab.js + inventory-returns-actions.js (modules/inventory/) — inventory returns tab with filters, accordion, bulk selection, sendToBox, export. debt-returns-tab.js + debt-returns-tab-actions.js (modules/suppliers-debt/) — global credit management view with filters, bulk markCredited, export. shared.js: renderHelpBanner() added. qty-modal.js: "נשלח לזיכוי" reason + _createReturnFromReduction call. inventory-reduction.js: _createReturnFromReduction fixed (removed non-existent columns). debt-returns.js: RETURN_TRANSITIONS expanded for full status chain + agent_picked + timestamp columns in updateReturnStatus. shipments-create.js + shipments-items.js: pre-fill from URL params (supplierId, returnIds). shipments-list.js + shipments-couriers.js: help banners. sync-export.js: CSV→XLS via SheetJS (bookType: biff8). DB: 3 new columns on supplier_returns (agent_picked_at, received_at, credited_at), CHECK constraint updated with agent_picked.
 
 **Note (Phase 5.9):** Shipments & Box Management. 9 new JS files in modules/shipments/ + shipments.html. T.TENANTS, T.COURIERS, T.SHIPMENTS, T.SHIP_ITEMS added to shared.js. FIELD_MAP updated with shipment fields. ENUM_MAP updated with shipment_type, shipment_item_type, shipment_category. inventory-reduction.js: _createReturnFromReduction creates supplier_return with status ready_to_ship. inventory-return.js: bulk return uses ready_to_ship. index.html: shipments module card added. DB: 3 new tables (courier_companies, shipments, shipment_items), next_box_number RPC (SECURITY DEFINER), 5 new columns on tenants (shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config JSONB), 6 RLS policies, 9 indexes.
 
@@ -180,6 +186,7 @@
 | `getTenantId` | `()` | Returns tenant_id UUID from sessionStorage ('prizma_tenant_id'). Used in every insert/select as defense-in-depth alongside RLS (Phase 3.75) |
 | `formatILS` | `(amount)` | Formats number as ILS currency string (₪1,234) with thousands separator. Moved from debt-dashboard.js in Phase 4d |
 | `showInfoModal` | `(title, bodyHTML)` | Creates overlay info modal with title, body HTML, close button, Escape handler |
+| `renderHelpBanner` | `(parentEl, storageKey, helpHTML)` | Renders collapsible help banner with sessionStorage collapse state. Used on returns tabs, shipments list, wizard |
 
 ### js/supabase-ops.js
 
@@ -795,6 +802,29 @@
 | `updateReturnStatus` | `(returnId, newStatus)` | Updates status + timestamps via batchUpdate, writeLog |
 | `generateReturnNumber` | `(supplierId)` | Generates RET-{supplier_number}-{seq 4-digit} (mirrors PO number pattern) |
 
+### modules/suppliers-debt/debt-returns-tab.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `initDebtReturnsTab` | `()` | Initialize global debt returns (credit tracking) tab with filters and help banner |
+| `loadDebtReturns` | `(filters)` | Load all returns awaiting credit with multi-status filtering from DB |
+| `renderDebtReturnsFilters` | `()` | Render filter dropdowns and search controls |
+| `renderDebtReturnsList` | `(items)` | Render debt returns table with expandable detail rows and bulk selection |
+| `applyDebtReturnsFilters` | `()` | Collect filter values and trigger loadDebtReturns |
+| `toggleDebtReturnsHistory` | `()` | Toggle between pending-credit and all-history views |
+| `renderDebtReturnsSummary` | `(items, supplierId)` | Render summary box with counts/totals and supplier-specific note |
+| `toggleDebtRetAccordion` | `(idx)` | Toggle expanded detail row in debt returns table |
+| `toggleDebtRetSelectAll` | `(checked)` | Toggle checkboxes in debt returns table (skip disabled) |
+
+### modules/suppliers-debt/debt-returns-tab-actions.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `markDebtCredited` | `(returnId, itemId)` | Show modal to mark single item as credited (זוכה) |
+| `_execMarkCredited` | `(returnId, itemId)` | Execute mark-as-credited with PIN verification and logging |
+| `bulkMarkCredited` | `()` | Show modal to bulk-mark selected items as credited |
+| `exportDebtReturnsExcel` | `()` | Export debt returns data to Excel with credit dates |
+
 ### modules/suppliers-debt/ai-ocr.js
 
 | Function | Parameters | Description |
@@ -943,6 +973,31 @@
 |----------|------------|-------------|
 | `openSupplierReturnModal` | `()` | Validates invSelected items, checks same supplier, shows return form modal with items preview |
 | `_doConfirmSupplierReturn` | `(supplierId)` | PIN-verified: generates return number, creates supplier_returns + supplier_return_items, decrements inventory (sb.rpc), writeLog per item, refreshes table |
+
+### modules/inventory/inventory-returns-tab.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `initReturnsTab` | `()` | Initialize inventory returns (זיכויים) tab with filters and help banner |
+| `loadReturnsData` | `(filters)` | Load returns items with status/supplier/date/search filtering from DB |
+| `renderReturnsFilters` | `()` | Render filter dropdowns and search controls for returns |
+| `renderReturnsList` | `(items)` | Render returns data as HTML table with expandable detail rows |
+| `toggleReturnsHistory` | `()` | Toggle between pending-only and all-history views |
+| `applyReturnsFilters` | `()` | Collect filter values and trigger loadReturnsData |
+| `toggleReturnAccordion` | `(idx)` | Toggle expanded detail row for a specific return item |
+| `toggleReturnSelectAll` | `(checked)` | Toggle all checkboxes in returns table |
+| `getReturnsCount` | `()` | Fetch count of pending returns for badge (cached) |
+
+### modules/inventory/inventory-returns-actions.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `markAgentPicked` | `(returnId, itemId)` | Mark single return as agent_picked (סוכן לקח) with PIN verification |
+| `_getCurrentReturnFilters` | `()` | Extract current filter state from DOM elements (helper) |
+| `bulkAction` | `(action)` | Bulk mark selected items to action (e.g., agent_picked) with PIN |
+| `sendToBox` | `(returnId, supplierId)` | Navigate to shipments wizard with return pre-filled |
+| `bulkSendToBox` | `()` | Validate selected returns are same supplier, navigate to shipments wizard |
+| `exportReturnsExcel` | `()` | Export filtered returns data to Excel file |
 
 ### modules/employees/employee-list.js
 

@@ -106,18 +106,18 @@ opticup/
 │   ├── file-upload.js          — supplier document file upload/preview
 │   └── alerts-badge.js         — bell icon + unread badge + dropdown panel (all pages)
 ├── modules/
-│   ├── inventory/              — 8 files (table, entry, edit, export, reduction, excel-import, access-sales, inventory-return)
+│   ├── inventory/              — 10 files (table, entry, edit, export, reduction, excel-import, access-sales, inventory-return, inventory-returns-tab, inventory-returns-actions)
 │   ├── purchasing/             — 5 files (purchase-orders, po-form, po-items, po-actions, po-view-import)
 │   ├── goods-receipts/         — 7 files (goods-receipt, receipt-form, receipt-actions, receipt-confirm, receipt-debt, receipt-excel, receipt-ocr)
 │   ├── audit/                  — 3 files (audit-log, item-history, qty-modal)
 │   ├── brands/                 — 2 files (brands, suppliers)
 │   ├── access-sync/            — 4 files (access-sync, sync-details, pending-panel, pending-resolve)
 │   ├── admin/                  — 2 files (admin, system-log)
-│   ├── suppliers-debt/         — 17 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-supplier-detail, debt-returns, ai-ocr, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import)
+│   ├── suppliers-debt/         — 19 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-supplier-detail, debt-returns, debt-returns-tab, debt-returns-tab-actions, ai-ocr, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import)
 │   └── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
-│   ├── sync-export.js          — Reverse sync: export new inventory to CSV for Access
+│   ├── sync-export.js          — Reverse sync: export new inventory to XLS for Access
 │   ├── install-service.js
 │   └── uninstall-service.js
 ├── watcher-deploy/               — Standalone deployment package (8 files, no Git needed)
@@ -172,7 +172,7 @@ opticup/
 | `T.PAY_METHODS`   | payment_methods          | id, code, name_he, name_en, is_system, tenant_id                        |
 | `T.PREPAID_DEALS` | prepaid_deals            | id, supplier_id, total_prepaid, total_used, total_remaining, status, tenant_id |
 | `T.PREPAID_CHECKS`| prepaid_checks           | id, prepaid_deal_id, check_number, amount, check_date, status, tenant_id |
-| `T.SUP_RETURNS`   | supplier_returns         | id, supplier_id, return_number, return_type, status, tenant_id           |
+| `T.SUP_RETURNS`   | supplier_returns         | id, supplier_id, return_number, return_type, status, agent_picked_at, received_at, credited_at, tenant_id |
 | `T.SUP_RETURN_ITEMS` | supplier_return_items | id, return_id, inventory_id, barcode, quantity, cost_price, tenant_id    |
 | `T.AI_CONFIG`     | ai_agent_config          | id, tenant_id, ocr_enabled, confidence_threshold, alerts_enabled, weekly_report_enabled |
 | `T.OCR_TEMPLATES` | supplier_ocr_templates   | id, tenant_id, supplier_id, document_type, extraction_hints, times_used, accuracy_rate |

@@ -4,6 +4,48 @@
 
 ---
 
+## Post-Phase 5.9: Returns Management, Config & Fixes (2026-03-15)
+
+> Returns tabs for inventory + debt, bulk sendToBox, help banners, status chain fixes, reverse sync XLS.
+
+### Commits
+- **Commit:** `cbf6d28` — Fix: _createReturnFromReduction — removed non-existent total_items/total_cost columns from supplier_returns insert
+- **Commit:** `52d2a6b` — Fix: qty-modal adds "נשלח לזיכוי" reason to dropdown + creates supplier_return via _createReturnFromReduction when reason selected
+- **Commit:** `58ae39c` — Fix: category dropdown shows Hebrew labels — uses ENUM_REV (en→he) not ENUM_MAP (he→en)
+- **Commit:** `f70635b` — Fix: return status transitions expanded to full chain — pending→ready_to_ship→shipped/agent_picked→received_by_supplier→credited. Added agent_picked status
+- **Commit:** `00d46dc` — Returns tab in inventory.html: DB migration (agent_picked_at, received_at, credited_at columns) + inventory-returns-tab.js (265 lines, filters/accordion/badge) + inventory-returns-actions.js (164 lines, markAgentPicked/sendToBox/bulkAction/export)
+- **Commit:** `24c3711` — Wire sendToBox: returns tab navigates to shipments wizard with supplierId + returnIds pre-filled via URL params
+- **Commit:** `ff331f0` — Fix: returns tab — add agent_picked_at/received_at/credited_at to DB schema, fix bulk selection, remove credited items from inventory returns view
+- **Commit:** `fc1d32c` — Debt returns tab in suppliers-debt.html: debt-returns-tab.js (276 lines, global credit management view) + debt-returns-tab-actions.js (154 lines, markCredited/bulkMarkCredited/export)
+- **Commit:** `7be6657` — Bulk sendToBox for multiple returns + renderHelpBanner() in shared.js + help text banners on inventory returns, debt returns, shipments list, shipments wizard
+- **Commit:** `0e7ddd0` — Reverse sync: export as XLS instead of CSV via SheetJS (bookType: biff8)
+- **Commit:** `04c6521` — Fix: all export paths use XLS format — updated comment in sync-watcher.js + README
+
+### New Files
+- `modules/inventory/inventory-returns-tab.js` (265 lines) — inventory returns (זיכויים) tab with filters, accordion, bulk selection, badge count
+- `modules/inventory/inventory-returns-actions.js` (164 lines) — markAgentPicked, sendToBox, bulkSendToBox, bulkAction, exportReturnsExcel
+- `modules/suppliers-debt/debt-returns-tab.js` (276 lines) — global debt returns tab for credit tracking across all suppliers
+- `modules/suppliers-debt/debt-returns-tab-actions.js` (154 lines) — markDebtCredited, bulkMarkCredited, exportDebtReturnsExcel
+
+### Updated Files
+- `js/shared.js` — added renderHelpBanner() reusable component
+- `modules/audit/qty-modal.js` — added "נשלח לזיכוי" reason, calls _createReturnFromReduction
+- `modules/inventory/inventory-reduction.js` — fixed _createReturnFromReduction (removed bad columns)
+- `modules/suppliers-debt/debt-returns.js` — expanded RETURN_TRANSITIONS + updateReturnStatus with timestamp fields
+- `modules/shipments/shipments-items.js` — pre-fill from URL params (returnIds)
+- `modules/shipments/shipments-create.js` — pre-fill supplier from URL params
+- `modules/shipments/shipments-list.js` — help banner
+- `modules/shipments/shipments-couriers.js` — help banner
+- `scripts/sync-export.js` — CSV→XLS via SheetJS
+- `watcher-deploy/sync-export.js` — CSV→XLS via SheetJS (deployed copy)
+- `css/styles.css` — help banner styles, returns tab styles
+
+### DB Changes
+- `supplier_returns`: added columns agent_picked_at (TIMESTAMPTZ), received_at (TIMESTAMPTZ), credited_at (TIMESTAMPTZ)
+- `supplier_returns`: CHECK constraint updated to include 'agent_picked' status
+
+---
+
 ## Phase 5.9 — Shipments & Box Management (2026-03-15)
 
 > Complete new module: shipments.html + 9 JS files + 3 DB tables + 1 RPC + JSONB config system.

@@ -1,6 +1,6 @@
 -- ============================================================
 -- Prizma Optics — מלאי מסגרות — Full DB Schema
--- גרסה 5.9 | מרץ 2026 | Shipments & Box Management
+-- גרסה 5.9+ | מרץ 2026 | Returns Management + Shipments
 -- ============================================================
 -- סדר יצירה לפי תלויות (FK)
 -- 1. brands  2. suppliers  3. employees
