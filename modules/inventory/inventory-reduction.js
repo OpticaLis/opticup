@@ -337,7 +337,7 @@ async function _createReturnFromReduction(invId, barcode, brand, model, color, s
   const created = await batchCreate(T.SUP_RETURNS, [{
     tenant_id: getTenantId(), supplier_id: supplierId, return_number: returnNumber,
     return_type: 'pending_in_store', status: 'ready_to_ship',
-    total_items: qty, total_cost: costPrice || 0, notes: 'נוצר מהורדת מלאי — נשלח לזיכוי'
+    notes: 'נוצר מהורדת מלאי — נשלח לזיכוי'
   }]);
   if (!created || !created.length) throw new Error('Failed to create return record');
   await batchCreate(T.SUP_RETURN_ITEMS, [{
