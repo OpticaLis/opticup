@@ -1,57 +1,46 @@
 # Session Context
 
 ## Last Updated
-Access Sync Fix — 2026-03-14
+Phase 5.9 — 2026-03-15
 
 ## What Was Done This Session
-Access Sync Fix — not a numbered phase. A comprehensive set of fixes and enhancements to the Access sync system (originally built in Phase 2), done after Phase 5.75.
+Phase 5.9: Shipments & Box Management — complete new module with 9 JS files, shipments.html, 3 DB tables, 1 RPC, JSONB config system.
 
-### CSV Support (Watcher + Manual Import)
-- `bc88058` — sync-watcher.js: CSV support (was XLSX only). parseCSVFile(), BOM stripping, trailing comma handling
-- `0df2699` — access-sales.js + inventory-reduction.js: CSV support for manual browser import
+### Sub-phases
+- **5.9a:** DB migration — courier_companies, shipments, shipment_items tables + next_box_number RPC + RLS + indexes. Commit `017f5bc`
+- **5.9b-1:** T constants + FIELD_MAP + ENUM_MAP in shared.js. Commit `a50c251`
+- **5.9b-2:** shipments.html + shipments-list.js. Commit `f003e92`
+- **5.9c-1:** shipments-create.js — wizard steps 1/3 + createBox. Commit `f21feff`
+- **5.9d:** Return integration — staged picker + status updates + shipments-items.js (wizard step 2). Commit `ef8b76a`
+- **5.9e:** Lock system — configurable timer + auto-lock + correction box. tenants.shipment_lock_minutes. Commit `3ef5cb8`
+- **5.9f:** Detail panel + manifest print. Commit `b7962ed`
+- **5.9g:** Courier management + shipment settings (4 fields). Commit `fa3e383`
+- **5.9h:** Home screen card + permissions + E2E (19/19 pass). Commits `89e13bf`, `40cfe7b`, `4225445`, `91aee99`
 
-### Security (tenant_id, service_role key)
-- `bbc01a9` — sync-watcher.js: tenant_id added to all 4 insert operations (pending_sales, inventory_logs, sync_log x2)
-- `1c209c3` — sync-watcher.js: switched to service_role key via OPTICUP_SERVICE_ROLE_KEY env var
+### Post-E2E Improvements
+- Fix: reduction "לזיכוי" creates supplier_return (ready_to_ship), bulk return status pending → ready_to_ship. Commit `7a1a51d`
+- JSONB config Part 1: tenants.shipment_config column + DB seed + config helpers in shipments-lock.js. Commit `b8315dd`
+- JSONB config Part 2: dynamic fields in wizard step 2 + accordion + step 3 validation. Commit `8bc113c`
+- JSONB config Part 3: field settings UI (shipments-settings.js). Commit `cb7040d`
 
-### Heartbeat + Status Indicator
-- `be376f3` — sync-watcher.js: heartbeat every 60s. access-sync.js: watcher status indicator (green/yellow/red)
-
-### Pending Panel Redesign → Restructure to Work Center
-- `082f07b` — pending-panel.js + pending-resolve.js: complete rewrite — table view + detail panel
-- `dff070e` — DB: 4 new columns on pending_sales (brand, model, size, color). Watcher + manual import save them. Pending panel shows them
-- `9c7a72b` — Fix CHECK constraint error on resolve. Add refresh button. Show product fields in sync detail modal
-- `98448e3` — Major restructure: detail modal becomes work center, pending button becomes filter toggle, inline resolve with PIN at entry
-- `f869cc3` — Fix pending_sales query: 'filename' column not 'sync_filename'
-- `afab388` — New sync_log status 'handled' (orange). Badge counts files not items
-- `a53b41b` — Brand/model clickable in detail modal → search in inventory
-- `18939ff` — Help button "הסבר לתיקון ידני" in detail modal. start-watcher.bat launcher
-
-### Configurable Watch Directory
-- `eed515a` — OPTICUP_WATCH_DIR env var — configurable watch directory
-
-### Reverse Sync (Export New Inventory to Access)
-- `f302b0b` — Migrations run: access_exported column, sync_log source_ref allows 'export'. Batch update in groups of 100. Export logs with 📤 icon
-- `e0ffbec` — Reverse sync: sync-export.js exports new inventory to CSV every 30s. OPTICUP_EXPORT_DIR env var
-
-### Standalone Deployment Package
-- `6affea9` — watcher-deploy/ standalone package: 8 files, setup.bat interactive installer, Windows Service
+### Bugs Fixed During Phase
+- Permission key format colon → dot notation (`40cfe7b`)
+- T.TENANTS missing from shared.js (`4225445`)
+- next_box_number RPC SECURITY DEFINER (`91aee99`)
 
 ## Current State
-- **4 HTML pages**: index.html (home), inventory.html (inventory module), suppliers-debt.html (supplier debt module), employees.html (employee management)
+- **5 HTML pages**: index.html (home), inventory.html (inventory module), suppliers-debt.html (supplier debt module), employees.html (employee management), shipments.html (shipments & box management)
 - **2 Edge Functions**: pin-auth (JWT auth), ocr-extract (Claude Vision OCR)
-- **~65 JS files** across 10 module folders + 8 global files
-- **~14,500 lines of JS code**
-- **42 DB tables** + 6 RPC functions (increment_inventory, decrement_inventory, set_inventory_qty, generate_daily_alerts, next_internal_doc_number, update_ocr_template_stats)
+- **~78 JS files** across 12 module folders + 8 global files
+- **~18,200 lines of JS code**
+- **45 DB tables** + 7 RPC functions (increment_inventory, decrement_inventory, set_inventory_qty, generate_daily_alerts, next_internal_doc_number, update_ocr_template_stats, next_box_number)
 - **1 pg_cron job**: daily-alert-generation (05:00 UTC)
-- **JWT-based RLS** tenant isolation on all 42 tables
+- **JWT-based RLS** tenant isolation on all 45 tables
 - **Phase 5.75 tables** (empty stubs): conversations, conversation_participants, messages, knowledge_base, message_reactions, notification_preferences
-- **4 new columns on pending_sales**: brand, model, size, color (product fields from Access CSV)
-- **1 new column on inventory**: access_exported (BOOLEAN, default false) + partial index
-- **New file**: scripts/sync-export.js (~117 lines) — reverse sync exports
-- **New folder**: watcher-deploy/ (8 files) — standalone deployment package for optica installation
-- **2 new migrations run**: add_pending_sales_product_columns.sql, add_inventory_access_exported.sql, add_sync_log_export_source.sql
-- **sync_log** has new status 'handled' and source_ref 'export'
+- **3 new tables** (Phase 5.9): courier_companies, shipments, shipment_items
+- **5 new columns on tenants**: shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config (JSONB)
+- **9 new JS files** in modules/shipments/ (~2,258 lines)
+- **shipments.html** — new standalone page (287 lines)
 
 ## Open Issues
 - JWT secret exposed in dev chat — must rotate before production
@@ -65,55 +54,27 @@ Access Sync Fix — not a numbered phase. A comprehensive set of fixes and enhan
 - Hebrew displays as squares in CMD/bat files (cosmetic, doesn't affect functionality)
 - Dedup by filename: if Access sends sale + cancellation with same order number, second file is skipped. Workaround: Access developer to use unique filenames for cancellations
 - install-service.js in scripts/ folder missing --export-dir support (only watcher-deploy/ version has it)
+- shipment_config settings UI not tested with real Supabase session (verified via code + preview_eval only)
+- Correction box shows items_count=0 after creation (items added manually in edit window — by design, but could be confusing)
 
 ## Next Phase
-Phase 6 — Supplier Portal (token-based supplier auth, read-only views, supplier-specific inventory/documents/payments)
+TBD (Phase 6 Supplier Portal deferred)
 
 ## Last Commits
-### Phase 5 (AI Agent)
-- Phase 5a: `d82fb25` — DB tables (5 new)
-- Phase 5b: `70124b4` — Edge Function ocr-extract
-- Phase 5c: `bcf627a` — OCR review screen
-- Phase 5d: `f66a37b` — OCR in goods receipt
-- Phase 5e: `1024ef2` — Learning system
-- Phase 5f-1: `ab2be62` — Alerts badge + daily alert SQL
-- Phase 5f-2: `3ba3d9d` — Event alerts + auto-dismiss
-- Phase 5g: `6176385` — Weekly report + PDF export
-- Phase 5h: `dfce880`, `b9c1ab0` — AI config screen + emoji fix
-
-### Phase 5.5 (Stability, Scale & Batch)
-- Phase 5.5a-1: `dbaa77d` — SQL migrations (2 RPCs + 3 columns + 3 indexes)
-- Phase 5.5a-2: `d4acf1f`, `8242e1a` — batchWriteLog + FIELD_MAP
-- Phase 5.5b: `235e42b` — RPCs applied in JS
-- Phase 5.5c: `0168846` — pg_cron daily alerts
-- Phase 5.5d: `5aecfad` — Stability fixes
-- Phase 5.5e: `9284538` — UX fixes
-- Phase 5.5f: `c119c6b` — Advanced document filtering
-- Phase 5.5g: `e8535b6` — Batch document upload
-- Phase 5.5h-1: `9969ff4` — Batch OCR with pipelining
-- Phase 5.5h-2: `bbef876` — Historical document import
-- Phase 5.5i-1: `d1f0511` — Backup
-
-### Phase 5.75 (Communications & Knowledge Infrastructure)
-- Phase 5.75a: `dbbe96a` — Spec + migration SQL (6 new tables)
-- Phase 5.75b: Migration executed + verified in Supabase
-- Phase 5.75c: Backup + documentation update
-
-### Access Sync Fix (post-Phase 5.75)
-- `bc88058` — CSV support for watcher (parseCSVFile, BOM stripping)
-- `bbc01a9` — tenant_id on all watcher inserts
-- `1c209c3` — service_role key via env var
-- `0df2699` — CSV support for manual browser import
-- `be376f3` — Heartbeat + watcher status indicator
-- `082f07b` — Pending panel + resolve rewrite
-- `dff070e` — 4 new columns on pending_sales (brand/model/size/color)
-- `9c7a72b` — CHECK constraint fix, refresh button, product fields in detail modal
-- `98448e3` — Detail modal → work center restructure
-- `f869cc3` — Fix pending_sales query column name
-- `afab388` — sync_log status 'handled', badge counts files
-- `a53b41b` — Brand/model clickable → inventory search
-- `18939ff` — Help button + start-watcher.bat
-- `eed515a` — OPTICUP_WATCH_DIR env var
-- `f302b0b` — Migrations: access_exported, source_ref 'export'
-- `e0ffbec` — Reverse sync: sync-export.js + OPTICUP_EXPORT_DIR
-- `6affea9` — watcher-deploy/ standalone package
+### Phase 5.9 (Shipments & Box Management)
+- Phase 5.9a: `017f5bc` — DB migration (3 tables + RPC + RLS + indexes)
+- Phase 5.9b-1: `a50c251` — T constants + FIELD_MAP + ENUM_MAP
+- Phase 5.9b-2: `f003e92` — shipments.html + shipments-list.js
+- Phase 5.9c-1: `f21feff` — new box wizard (steps 1/3 + creation)
+- Phase 5.9d: `ef8b76a` — return integration (staged picker + items step 2)
+- Phase 5.9e: `3ef5cb8` — lock system (timer, auto-lock, correction box)
+- Phase 5.9f: `b7962ed` — detail panel + manifest print
+- Phase 5.9g: `fa3e383` — courier management + shipment settings
+- Phase 5.9h: `89e13bf` — home screen card + permissions
+- Phase 5.9h fix: `40cfe7b` — permission key format fix
+- Phase 5.9h fix: `4225445` — T.TENANTS constant
+- Phase 5.9h fix: `91aee99` — SECURITY DEFINER on RPC
+- Post-E2E: `7a1a51d` — reduction creates supplier_return
+- JSONB Part 1: `b8315dd` — config column + seed + helpers
+- JSONB Part 2: `8bc113c` — dynamic fields + accordion + validation
+- JSONB Part 3: `cb7040d` — field settings UI

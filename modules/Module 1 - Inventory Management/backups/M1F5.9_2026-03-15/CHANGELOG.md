@@ -4,57 +4,6 @@
 
 ---
 
-## Phase 5.9 — Shipments & Box Management (2026-03-15)
-
-> Complete new module: shipments.html + 9 JS files + 3 DB tables + 1 RPC + JSONB config system.
-
-### Sub-phases
-- **Commit:** `017f5bc` — Phase 5.9a: DB migration — courier_companies, shipments, shipment_items tables + next_box_number RPC (SECURITY DEFINER) + RLS (6 policies) + indexes (9)
-- **Commit:** `a50c251` — Phase 5.9b-1: T constants (T.TENANTS, T.COURIERS, T.SHIPMENTS, T.SHIP_ITEMS) + FIELD_MAP + ENUM_MAP (shipment_type, shipment_item_type, shipment_category) in shared.js
-- **Commit:** `f003e92` — Phase 5.9b-2: shipments.html (287 lines) + shipments-list.js (231 lines) — list, filters, search, export
-- **Commit:** `f21feff` — Phase 5.9c-1: shipments-create.js (294 lines) — wizard steps 1/3 + createBox with next_box_number RPC
-- **Commit:** `ef8b76a` — Phase 5.9d: shipments-items.js (306 lines) — wizard step 2 (item entry), staged return picker, return status updates (ready_to_ship → shipped)
-- **Commit:** `3ef5cb8` — Phase 5.9e: shipments-lock.js (323 lines) — lock system (configurable timer, auto-lock expired, correction box, edit window add/remove), tenants.shipment_lock_minutes column
-- **Commit:** `b7962ed` — Phase 5.9f: shipments-detail.js (345 lines) + shipments-manifest.js (94 lines) — detail slide panel + manifest print
-- **Commit:** `fa3e383` — Phase 5.9g: shipments-couriers.js (229 lines) — courier CRUD + shipment settings (4 fields: lock minutes, prefix, require tracking, auto print)
-- **Commit:** `89e13bf` — Phase 5.9h: home screen card + 5 permissions (shipments.view/create/edit/lock/settings)
-- **Commit:** `40cfe7b` — Fix: permission key format colon → dot notation
-- **Commit:** `4225445` — Fix: add T.TENANTS constant to shared.js
-- **Commit:** `91aee99` — Fix: add SECURITY DEFINER to next_box_number RPC
-
-### Post-E2E Improvements
-- **Commit:** `7a1a51d` — Fix: reduction "לזיכוי" creates supplier_return with status ready_to_ship; bulk return also uses ready_to_ship
-- **Commit:** `b8315dd` — JSONB config Part 1: tenants.shipment_config JSONB column + DB seed + config helpers (getFieldConfig, getCustomField, getVisibleCategories, getCategoryLabel, getStep3Config) in shipments-lock.js
-- **Commit:** `8bc113c` — JSONB config Part 2: dynamic fields in wizard step 2 based on config, accordion items table (shipments-items-table.js, 125 lines), step 3 validation from config
-- **Commit:** `cb7040d` — JSONB config Part 3: shipments-settings.js (309 lines) — settings UI for field visibility per box type, category management, step 3 config, 3 collapsible sub-sections
-
-### Files Added
-- shipments.html (287 lines)
-- modules/shipments/shipments-list.js (231 lines)
-- modules/shipments/shipments-create.js (294 lines)
-- modules/shipments/shipments-items.js (306 lines)
-- modules/shipments/shipments-items-table.js (125 lines)
-- modules/shipments/shipments-lock.js (323 lines)
-- modules/shipments/shipments-detail.js (345 lines)
-- modules/shipments/shipments-manifest.js (94 lines)
-- modules/shipments/shipments-couriers.js (231 lines)
-- modules/shipments/shipments-settings.js (309 lines)
-
-### DB Changes
-- 3 new tables: courier_companies, shipments, shipment_items
-- 1 new RPC: next_box_number (SECURITY DEFINER)
-- 5 new columns on tenants: shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config
-- 6 new RLS policies (tenant_isolation + service_bypass on each new table)
-- 9 new indexes
-
-### Files Modified
-- shared.js: T.TENANTS, T.COURIERS, T.SHIPMENTS, T.SHIP_ITEMS + FIELD_MAP + ENUM_MAP additions
-- inventory-reduction.js: _createReturnFromReduction creates supplier_return with status ready_to_ship
-- inventory-return.js: bulk return status uses ready_to_ship
-- index.html: shipments module card added
-
----
-
 ## Access Sync Fix (2026-03-14)
 
 > Not a numbered phase. Comprehensive fixes and enhancements to the Access sync system (originally Phase 2), done after Phase 5.75.

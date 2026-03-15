@@ -1,5 +1,5 @@
 # מלאי מסגרות — Module Spec
-## גרסה 5.9 | מרץ 2026 | Shipments & Box Management
+## גרסה 5.75+ | מרץ 2026 | Post-Access Sync Fix
 
 > **Authority:** Business logic flows and screen descriptions. For code details → MODULE_MAP.md. For DB schema → db-schema.sql. For rules → CLAUDE.md.
 
@@ -10,7 +10,7 @@
 **מודול מלאי מסגרות** הוא הליבה של מערכת Optic Up — מנהל את כל מחזור החיים של מסגרות משקפיים במלאי: כניסה, מעקב, עריכה, מכירה, מחיקה, שחזור, ספירת מלאי, סנכרון עם Access, ומעקב חובות ספקים.
 
 **סטאק טכנולוגי:**
-- Frontend: Vanilla JS (no framework), ~78 JS modules + CSS
+- Frontend: Vanilla JS (no framework), ~65 JS modules + CSS
 - Backend: Supabase (PostgreSQL + REST API + RPC + Edge Functions), client = `sb`
 - Auth: PIN → Edge Function (pin-auth) → signed JWT with tenant_id claim
 - Excel: SheetJS (xlsx) לייבוא/ייצוא
@@ -27,7 +27,7 @@ For complete file index → see MODULE_MAP.md section 1.
 
 לסכימה המלאה (columns, types, constraints, RLS) → ראה **db-schema.sql**.
 
-כל הטבלאות מכילות `tenant_id UUID NOT NULL` מאז פאזה 3.75. JWT-based RLS tenant isolation פעיל על כל 45 הטבלאות.
+כל הטבלאות מכילות `tenant_id UUID NOT NULL` מאז פאזה 3.75. JWT-based RLS tenant isolation פעיל על כל 42 הטבלאות.
 
 **טבלאות עיקריות (pre-Phase 4):** tenants, inventory, brands, suppliers, employees, inventory_logs, inventory_images, purchase_orders, purchase_order_items, goods_receipts, goods_receipt_items, sync_log, pending_sales, watcher_heartbeat, stock_counts, stock_count_items, roles, permissions, role_permissions, employee_roles, auth_sessions.
 
@@ -35,11 +35,7 @@ For complete file index → see MODULE_MAP.md section 1.
 
 **טבלאות Phase 5 (AI Agent):** ai_agent_config, supplier_ocr_templates, ocr_extractions, alerts, weekly_reports.
 
-**טבלאות Phase 5.75 (Communications stubs):** conversations, conversation_participants, messages, knowledge_base, message_reactions, notification_preferences.
-
-**טבלאות Phase 5.9 (Shipments):** courier_companies, shipments, shipment_items.
-
-**RPC Functions:** `increment_inventory`, `decrement_inventory`, `set_inventory_qty`, `generate_daily_alerts`, `next_internal_doc_number`, `update_ocr_template_stats`, `next_box_number`.
+**RPC Functions:** `increment_inventory`, `decrement_inventory`, `set_inventory_qty`, `generate_daily_alerts`, `next_internal_doc_number`, `update_ocr_template_stats`.
 
 **pg_cron Jobs:** `daily-alert-generation` — runs at 05:00 UTC, calls generate_daily_alerts with fault isolation per alert type.
 
@@ -390,15 +386,14 @@ Known issues are tracked in SESSION_CONTEXT.md — single home for all open issu
 - **index.html** — home screen: MODULES config array, module cards, PIN login modal, session restore, live clock
 - **employees.html** — standalone employee management page
 - **suppliers-debt.html** — standalone supplier debt tracking page (Phase 4)
-- **shipments.html** — standalone shipments & box management page (Phase 5.9)
 - Module cards show permission-based lock overlays
 
 ---
 
 ## 9. Multi-Tenancy Foundation (Phase 3.75)
 
-- טבלת `tenants` — id, name, slug, default_currency, timezone, locale, is_active, shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config
-- `tenant_id UUID NOT NULL` on all 45 tables, JWT-based RLS tenant isolation
+- טבלת `tenants` — id, name, slug, default_currency, timezone, locale, is_active
+- `tenant_id UUID NOT NULL` on all 36 tables, JWT-based RLS tenant isolation
 - Edge Function `pin-auth` returns JWT with tenant_id claim
 - `getTenantId()` reads from sessionStorage
 - All inserts include `tenant_id: getTenantId()`
@@ -430,67 +425,7 @@ No contracts defined — RPC functions will be created when UI module is built. 
 
 ---
 
-## 12. Shipments & Box Management (Phase 5.9)
-
-Standalone page: `shipments.html` with 9 JS files in `modules/shipments/`.
-
-### 12.1 Box Types
-- **מסגור (framing)**: frames sent for glazing at external lab
-- **זיכוי (return)**: items returned to supplier (integrates with supplier_returns)
-- **תיקון (repair)**: items sent for repair
-- **משלוח (delivery)**: general deliveries to customers or branches
-
-### 12.2 Wizard — 3-step box creation
-1. **Step 1**: Select box type + destination (supplier for return, customer for delivery)
-2. **Step 2**: Add items — barcode scan or manual entry. For return boxes, staged picker shows ready_to_ship return items. Dynamic fields per box type (JSONB config). Accordion items table
-3. **Step 3**: Courier selection + tracking number + notes. Field requirements from config
-
-### 12.3 Lock System
-- Configurable edit window (default 30 min, tenants.shipment_lock_minutes)
-- Auto-lock: expired boxes locked automatically with timestamp
-- Manual lock: PIN-verified, optional tracking number requirement
-- Correction box: creates new box linked to locked original (corrects_box_id)
-- Edit window: add/remove items while box is editable
-
-### 12.4 Box Numbering
-- Format: `{prefix}-{4-digit-seq}` (e.g., BOX-0001)
-- Prefix configurable (tenants.box_number_prefix, default "BOX")
-- Atomic generation via `next_box_number` RPC (SECURITY DEFINER)
-
-### 12.5 Detail Panel + Manifest
-- Slide-in panel showing box metadata, items table, lock timer
-- Print manifest: formatted page with box info, items table, signature lines
-
-### 12.6 Courier Management
-- CRUD for courier companies (name, phone, contact person, active toggle)
-- Settings: lock minutes, prefix, require tracking before lock, auto print on lock
-
-### 12.7 JSONB Config (shipment_config on tenants)
-- **Field visibility per box type**: required/optional/hidden for 6 standard fields + 3 custom fields per type
-- **Categories**: toggle visibility of 9 built-in categories + add custom categories
-- **Step 3 config**: required/optional for courier, tracking number, notes
-- **Settings UI**: 3 collapsible sub-sections in courier modal settings tab
-- **Config helpers**: getFieldConfig, getCustomField, getVisibleCategories, getCategoryLabel, getStep3Config
-
-### 12.8 Permissions
-5 permissions: `shipments.view`, `shipments.create`, `shipments.edit`, `shipments.lock`, `shipments.settings`
-
-### 12.9 DB Tables
-- `courier_companies` — id, tenant_id, name, phone, contact_person, is_active
-- `shipments` — id, tenant_id, box_number, shipment_type, supplier_id, customer_name, customer_phone, customer_address, courier_id, tracking_number, packed_by, packed_at, locked_at, locked_by, items_count, total_value, corrects_box_id, notes, is_deleted
-- `shipment_items` — id, tenant_id, shipment_id, item_type, inventory_id, return_id, order_number, customer_name, customer_number, barcode, brand, model, size, color, category, unit_cost, notes
-
-### 12.10 Contracts
-- `next_box_number(p_tenant_id)` — atomic sequential box number generation
-- `getFieldConfig(type, field)` — returns field visibility for box type
-- `getCustomField(type, index)` — returns custom field config
-- `getVisibleCategories()` — returns visible category keys
-- `getCategoryLabel(key)` — returns Hebrew label for category
-- `getStep3Config(field)` — returns step 3 field requirement
-
----
-
-## 13. Contracts — RPC Functions & Edge Functions
+## 12. Contracts — RPC Functions & Edge Functions
 
 **RPC Functions:**
 - `increment_inventory(inv_id, delta)` — atomic qty increment
@@ -499,7 +434,6 @@ Standalone page: `shipments.html` with 9 JS files in `modules/shipments/`.
 - `generate_daily_alerts(p_tenant_id)` — generates payment_due, payment_overdue, prepaid_low alerts (idempotent)
 - `next_internal_doc_number(p_tenant_id)` — atomic sequential DOC-NNNN generation (race-condition safe)
 - `update_ocr_template_stats(p_template_id, p_corrections, p_extracted_data)` — atomic template stats update (times_used, accuracy_rate, extraction_hints)
-- `next_box_number(p_tenant_id)` — atomic sequential box number generation ({prefix}-{4-digit-seq}), SECURITY DEFINER
 
 **Edge Functions:**
 - `pin-auth` — PIN validation → signed JWT with tenant_id claim

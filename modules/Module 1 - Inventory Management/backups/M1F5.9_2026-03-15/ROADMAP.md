@@ -70,7 +70,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 5 | ✅ | סוכן AI לניהול ספקים | OCR חשבוניות (Claude Vision), התראות, דוחות אוטומטיים |
 | 5.5 | ✅ | יציבות, סקייל ואצוות | atomic RPCs, batch upload/OCR, filtering, historical import |
 | 5.75 | ✅ | Communications & Knowledge Infrastructure | DB stubs: conversations, participants, messages, knowledge_base, reactions, notification_preferences |
-| 5.9 | ✅ | משלוחים וארגזים | shipments.html, ארגזים ממוספרים, 4 סוגים, staged picker, נעילה, manifest, הגדרות |
 | 6 | ⬜ | פורטל ספקים | גישת ספק חיצונית, view-only מלאי לפי ספק |
 
 ---
@@ -196,22 +195,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - All tables with tenant_id, RLS, service_bypass
 - 20 custom indexes including GIN on knowledge_base.tags
 - No JS, no UI, no Edge Functions — tables start empty
-
-### פאזה 5.9 ✅ — משלוחים וארגזים
-- 3 טבלאות DB חדשות: courier_companies, shipments, shipment_items
-- RPC: next_box_number (SECURITY DEFINER, atomic box number generation)
-- 5 עמודות חדשות על tenants: shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config (JSONB)
-- דף shipments.html חדש עם רשימת ארגזים, פילטרים, חיפוש
-- אשף יצירת ארגז 3 שלבים: סוג ארגז → פריטים → שלב סיום (שליחות + הערות)
-- 4 סוגי ארגזים: מסגור, זיכוי, תיקון, משלוח
-- Staged return picker — בחירת פריטי זיכוי ממתינים אוטומטית
-- מערכת נעילה: טיימר קונפיגורבילי, נעילה אוטומטית, ארגז תיקון
-- פאנל פרטי ארגז (slide-in) + הדפסת manifest
-- ניהול חברות שליחויות (CRUD) + הגדרות משלוח (4 שדות)
-- JSONB config: field visibility per box type, categories, custom fields, step 3 validation
-- הגדרות שדות ארגז UI — 3 תתי-סעיפים מתקפלים
-- כרטיס מסך בית + 5 הרשאות: shipments.view/create/edit/lock/settings
-- 9 קבצי JS ב-modules/shipments/ (~2,258 שורות)
 
 ### פאזה 6 ⬜ — פורטל ספקים
 - קישור ייחודי לכל ספק (token-based auth, לא PIN)

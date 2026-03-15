@@ -1,6 +1,6 @@
 # MODULE_MAP — Optic Up Complete Codebase Reference
 
-> Updated 2026-03-15. Single reference document for any developer or AI assistant.
+> Updated 2026-03-14. Single reference document for any developer or AI assistant.
 
 ---
 
@@ -78,22 +78,9 @@
 | 63 | debt-info-content.js | modules/suppliers-debt/debt-info-content.js | 250 | Info modal content for all supplier debt screens; 12 _show*Info() functions + _injectInfoBtn helper |
 | 64 | debt-info-inject.js | modules/suppliers-debt/debt-info-inject.js | 182 | Monkey-patches to inject ❓ buttons into supplier debt screens; _injectModalInfoBtn helper + all tab/modal patches |
 
-| 65 | shipments-list.js | modules/shipments/shipments-list.js | 231 | Shipment list: initShipmentsPage (auth + config load), loadShipments (paginated fetch with supplier/courier joins), renderShipmentsList (grid rows with lock status), filtering (type/supplier/courier/date/search), populateCourierFilter, exportShipmentsExcel |
-| 66 | shipments-create.js | modules/shipments/shipments-create.js | 294 | New box wizard: openNewBoxWizard (3-step state machine), renderWizardStep1 (type selector + destination), renderWizardStep3 (courier/tracking/notes), createBox (RPC next_box_number + insert + return item status updates) |
-| 67 | shipments-items.js | modules/shipments/shipments-items.js | 306 | Wizard step 2: initWizardItems, loadStagedReturns (for return boxes), renderStagedPicker (checkbox picker), toggleStagedItem, renderItemForm (dynamic fields from config), addItemToWizard, removeWizardItem, handleReturnItemsOnCreate, revertReturnStatus |
-| 68 | shipments-items-table.js | modules/shipments/shipments-items-table.js | 125 | Accordion items table: renderItemsTable (expandable rows), toggleItemDetail, item detail view with all fields |
-| 69 | shipments-lock.js | modules/shipments/shipments-lock.js | 323 | Lock lifecycle: loadLockMinutes (loads all config from tenants), isBoxEditable, getEditableMinutes/Seconds, renderLockStatus, lockBox (PIN-verified), autoLockExpiredBoxes, createCorrectionBox, addItemToExistingBox, removeItemFromExistingBox, startLockTimer/stopLockTimer, config helpers (getFieldConfig, getCustomField, getVisibleCategories, getCategoryLabel, getStep3Config) |
-| 70 | shipments-detail.js | modules/shipments/shipments-detail.js | 345 | Detail slide panel: openShipmentDetail (loads items + renders), renderDetailPanel (metadata + items + actions), renderDetailItems (items table), updateDetailField (inline edit tracking/courier/notes), showAddItemForm (barcode search + manual entry for edit window), deleteShipment (soft delete with PIN) |
-| 71 | shipments-manifest.js | modules/shipments/shipments-manifest.js | 94 | Print manifest: printManifest (creates formatted print page with box info, items table, totals, signature lines) |
-| 72 | shipments-couriers.js | modules/shipments/shipments-couriers.js | 231 | Courier modal: openCourierModal/closeCourierModal, tab switching (couriers/settings), loadCouriers, renderCourierList, showCourierForm (CRUD), saveCourier, toggleCourierActive, loadShipmentSettings, renderSettingsTab (4 basic settings + field settings container), saveShipmentSettings |
-| 73 | shipments-settings.js | modules/shipments/shipments-settings.js | 309 | Field settings UI: initFieldSettings (3 collapsible sub-sections), renderFieldsPerType (type selector + field table + custom fields), renderCategoriesSection (checkbox list + custom categories), renderStep3Section (step 3 field table), collectFieldConfig (builds JSON from UI), saveFieldConfig (validates + updates DB + cache) |
-| 74 | shipments.html | shipments.html | 287 | Shipments page shell: filter bar (type/supplier/courier/date/search), action buttons (new box/settings/export), shipments list container, detail slide panel, wizard modal, courier modal, print manifest div |
+| 65 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
 
-| 75 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
-
-**Total: 78 JS files + watcher-deploy/ (8-file standalone package), ~18,200 lines** (includes scripts/sync-watcher.js + sync-export.js)
-
-**Note (Phase 5.9):** Shipments & Box Management. 9 new JS files in modules/shipments/ + shipments.html. T.TENANTS, T.COURIERS, T.SHIPMENTS, T.SHIP_ITEMS added to shared.js. FIELD_MAP updated with shipment fields. ENUM_MAP updated with shipment_type, shipment_item_type, shipment_category. inventory-reduction.js: _createReturnFromReduction creates supplier_return with status ready_to_ship. inventory-return.js: bulk return uses ready_to_ship. index.html: shipments module card added. DB: 3 new tables (courier_companies, shipments, shipment_items), next_box_number RPC (SECURITY DEFINER), 5 new columns on tenants (shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config JSONB), 6 RLS policies, 9 indexes.
+**Total: 65 JS files + watcher-deploy/ (8-file standalone package), ~15,100 lines** (includes scripts/sync-watcher.js + sync-export.js)
 
 **Note (Access Sync Fix):** Major Access sync enhancement (17 commits, not a numbered phase). sync-watcher.js: CSV support (parseCSVFile), service_role key, tenant_id on all inserts, heartbeat every 60s, configurable OPTICUP_WATCH_DIR + OPTICUP_EXPORT_DIR. access-sync.js: watcher status indicator, pending filter toggle, refreshSyncTab. sync-details.js: work center pattern (PIN at entry, inline resolve, help button, brand/model clickable → inventory search). pending-panel.js: reduced to ~32 lines (filter toggle wrapper). pending-resolve.js: rewritten with syncDetailResolve, checkFileCompletion (marks 'handled'), searchBarcodeInInventory, syncDetailSearchInInventory. sync-export.js added (scripts/): reverse sync exports new inventory to CSV every 30s. watcher-deploy/ folder added (8-file standalone package). DB changes: 4 new columns on pending_sales (brand/model/size/color), access_exported on inventory, sync_log status 'handled' + source_ref 'export'.
 

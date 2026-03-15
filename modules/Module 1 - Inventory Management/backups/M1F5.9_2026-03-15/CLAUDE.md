@@ -92,7 +92,6 @@ opticup/
 ├── inventory.html              — inventory management module (full app)
 ├── suppliers-debt.html         — supplier debt tracking module
 ├── employees.html              — standalone employee management page
-├── shipments.html              — shipments & box management module
 ├── css/
 │   ├── styles.css              — all styles
 │   └── header.css              — sticky header styles
@@ -113,8 +112,7 @@ opticup/
 │   ├── brands/                 — 2 files (brands, suppliers)
 │   ├── access-sync/            — 4 files (access-sync, sync-details, pending-panel, pending-resolve)
 │   ├── admin/                  — 2 files (admin, system-log)
-│   ├── suppliers-debt/         — 17 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-supplier-detail, debt-returns, ai-ocr, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import)
-│   └── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
+│   └── suppliers-debt/         — 17 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-supplier-detail, debt-returns, ai-ocr, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
 │   ├── sync-export.js          — Reverse sync: export new inventory to CSV for Access
@@ -143,7 +141,7 @@ opticup/
 
 | Constant          | Table                    | Key columns                                                              |
 |-------------------|--------------------------|--------------------------------------------------------------------------|
-| `T.TENANTS`       | tenants                  | id, name, slug, default_currency, timezone, locale, is_active, shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config (JSONB) |
+| `T.TENANTS`       | tenants                  | id, name, slug, default_currency, timezone, locale, is_active            |
 | `T.INV`           | inventory                | id, barcode, brand_id, supplier_id, model, size, color, quantity, status, is_deleted, access_exported, tenant_id |
 | `T.BRANDS`        | brands                   | id, name, brand_type, default_sync, active, exclude_website, min_stock_qty, tenant_id |
 | `T.SUPPLIERS`     | suppliers                | id, name, active, supplier_number (UNIQUE, ≥ 10), payment_terms_days, withholding_tax_rate, tenant_id |
@@ -185,11 +183,8 @@ opticup/
 | `T.KNOWLEDGE`     | knowledge_base           | id, tenant_id, title, answer, category, tags, ai_usable, status |
 | `T.MSG_REACTIONS`  | message_reactions        | id, tenant_id, message_id, employee_id, reaction |
 | `T.NOTIF_PREFS`   | notification_preferences | id, tenant_id, employee_id, in_app, email, whatsapp, push |
-| `T.COURIERS`      | courier_companies        | id, tenant_id, name, phone, contact_person, is_active                    |
-| `T.SHIPMENTS`     | shipments                | id, tenant_id, box_number, shipment_type, supplier_id, courier_id, packed_by, locked_at, items_count, total_value, corrects_box_id, is_deleted |
-| `T.SHIP_ITEMS`    | shipment_items           | id, tenant_id, shipment_id, item_type, inventory_id, return_id, barcode, brand, model, category, unit_cost |
 
-**Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 45 tables.
+**Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 42 tables.
 
 ---
 
