@@ -155,19 +155,6 @@ async function initSecureSession(employee, jwtToken) {
 // 4. loadSession()
 // =========================================================
 async function loadSession() {
-  // Dev bypass — TODO: REMOVE BEFORE PRODUCTION
-  if (new URLSearchParams(window.location.search).get('dev_bypass') === 'opticup2024') {
-    const devSession = {
-      employee: { id: 'dev', name: 'Dev', role: 'ceo', branch_id: '00' },
-      permissions: { '*': true },
-      role: 'ceo'
-    };
-    sessionStorage.setItem(SK.EMPLOYEE, JSON.stringify(devSession.employee));
-    sessionStorage.setItem(SK.PERMS, JSON.stringify(devSession.permissions));
-    sessionStorage.setItem(SK.ROLE, 'ceo');
-    return devSession;
-  }
-
   const token = sessionStorage.getItem(SK.TOKEN);
   if (!token) return null;
 
@@ -246,7 +233,6 @@ async function clearSession() {
 // =========================================================
 function hasPermission(permissionKey) {
   const perms = JSON.parse(sessionStorage.getItem(SK.PERMS) || '{}');
-  if (perms['*']) return true;  // dev bypass wildcard
   return perms[permissionKey] === true;
 }
 

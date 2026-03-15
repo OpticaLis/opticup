@@ -14,7 +14,6 @@ async function createDocumentFromReceipt(receiptId, supplierId, receiptItems) {
 
   // Skip if no pricing data (some receipts have no cost info)
   if (!subtotal || subtotal <= 0) {
-    console.log('createDocumentFromReceipt: no cost data, skipping document creation');
     return null;
   }
 
@@ -119,7 +118,6 @@ async function createDocumentFromReceipt(receiptId, supplierId, receiptItems) {
         total_remaining: newRemaining,
         updated_at: new Date().toISOString()
       }]);
-      console.log('Prepaid deal deducted:', activeDeal.deal_name, 'amount:', totalAmount);
     }
   } catch (e) {
     console.warn('Auto-deduct prepaid deal failed (non-blocking):', e);
