@@ -46,7 +46,7 @@ const TENANT_ID = process.env.OPTICUP_TENANT_ID || '6ad0781b-37f0-47a9-92e3-be9e
 // ── Init Supabase ───────────────────────────────────────────
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ── Reverse sync (export new inventory to CSV for Access) ───
+// ── Reverse sync (export new inventory to XLS for Access) ───
 const { exportNewInventoryToAccess } = require('./sync-export');
 
 // ── State ───────────────────────────────────────────────────

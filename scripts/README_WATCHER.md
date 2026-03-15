@@ -67,14 +67,14 @@ node scripts/uninstall-service.js
 
 ## סנכרון הפוך — ייצוא מלאי חדש ל-Access
 
-כשמוסיפים פריטים חדשים ב-Optic Up, ה-Watcher מייצא אותם אוטומטית כ-CSV לתיקיית "new" כדי ש-Access יוכל לקלוט אותם.
+כשמוסיפים פריטים חדשים ב-Optic Up, ה-Watcher מייצא אותם אוטומטית כ-XLS לתיקיית "new" כדי ש-Access יוכל לקלוט אותם.
 
 ### איך זה עובד
 - כל 30 שניות, ה-Watcher בודק אם יש פריטי מלאי חדשים שטרם יוצאו
-- אם יש — נוצר קובץ CSV בתיקיית הייצוא (ברירת מחדל: `InventorySync\new`)
+- אם יש — נוצר קובץ XLS (בפורמט biff8) בתיקיית הייצוא (ברירת מחדל: `InventorySync\new`)
 - הפריטים מסומנים כ-`access_exported = true` כדי לא לייצא אותם שוב
-- הקובץ בקידוד UTF-8 עם BOM (תואם עברית ב-Access)
-- שם הקובץ: `export_YYYYMMDD_HHmmss.csv`
+- הקובץ נכתב באמצעות SheetJS (תואם עברית ב-Access)
+- שם הקובץ: `export_YYYYMMDD_HHmmss.xls`
 
 ### הגדרה
 - משתנה סביבה: `OPTICUP_EXPORT_DIR` — נתיב תיקיית הייצוא
