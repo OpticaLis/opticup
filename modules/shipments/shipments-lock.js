@@ -1,16 +1,17 @@
-// shipments-lock.js — Lock lifecycle: timer, manual/auto lock, correction box, edit-window ops
+// shipments-lock.js — Lock lifecycle: timer, manual/auto lock, correction box, edit-window ops, config helpers
 window._lockMinutes = 30;
 window._lockTimerInterval = null;
 window._boxPrefix = 'BOX';
 window._requireTracking = false;
 window._autoPrint = false;
+window._shipmentConfig = null;
 
 // --- LOAD CONFIGURABLE SHIPMENT SETTINGS ---
 async function loadLockMinutes() {
   const tid = getTenantId();
   if (!tid) return;
   const { data, error } = await sb.from(T.TENANTS)
-    .select('shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock')
+    .select('shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config')
     .eq('id', tid)
     .maybeSingle();
   if (!error && data) {
@@ -18,6 +19,9 @@ async function loadLockMinutes() {
     if (data.box_number_prefix) window._boxPrefix = data.box_number_prefix;
     window._requireTracking = !!data.require_tracking_before_lock;
     window._autoPrint = !!data.auto_print_on_lock;
+    if (data.shipment_config && typeof data.shipment_config === 'object') {
+      window._shipmentConfig = data.shipment_config;
+    }
   }
 }
 
@@ -276,4 +280,44 @@ function stopLockTimer() {
     clearInterval(window._lockTimerInterval);
     window._lockTimerInterval = null;
   }
+}
+
+// --- SHIPMENT CONFIG HELPERS ---
+function getFieldConfig(type, field) {
+  var cfg = window._shipmentConfig;
+  if (!cfg || !cfg.fields || !cfg.fields[type]) return 'optional';
+  var val = cfg.fields[type][field];
+  if (val === null || val === undefined) return 'hidden';
+  if (typeof val === 'object') return val.visible ? 'optional' : 'hidden';
+  return val; // 'required', 'optional', or 'hidden'
+}
+
+function getCustomField(type, index) {
+  var cfg = window._shipmentConfig;
+  if (!cfg || !cfg.fields || !cfg.fields[type]) return null;
+  var custom = cfg.fields[type]['custom_' + index];
+  if (!custom || typeof custom !== 'object') return null;
+  return custom; // { label: "...", visible: true/false }
+}
+
+function getVisibleCategories() {
+  var cfg = window._shipmentConfig;
+  if (!cfg || !cfg.categories) return Object.keys(ENUM_MAP.shipment_category || {});
+  var visible = cfg.categories.visible || [];
+  var custom = (cfg.categories.custom || []).map(function(c) { return c.key; });
+  return visible.concat(custom);
+}
+
+function getCategoryLabel(key) {
+  var cfg = window._shipmentConfig;
+  var customCats = (cfg && cfg.categories && cfg.categories.custom) ? cfg.categories.custom : [];
+  var found = customCats.find(function(c) { return c.key === key; });
+  if (found) return found.label_he;
+  return (ENUM_MAP.shipment_category && ENUM_MAP.shipment_category[key]) ? ENUM_MAP.shipment_category[key] : key;
+}
+
+function getStep3Config(field) {
+  var cfg = window._shipmentConfig;
+  if (!cfg || !cfg.step3) return 'optional';
+  return cfg.step3[field] || 'optional';
 }
