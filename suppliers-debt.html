@@ -125,6 +125,7 @@
       <button class="debt-tab-btn" data-tab="payments" onclick="switchDebtTab('payments')">תשלומים</button>
       <button class="debt-tab-btn" data-tab="prepaid" onclick="switchDebtTab('prepaid')">עסקאות מראש</button>
       <button class="debt-tab-btn" data-tab="weekly" onclick="switchDebtTab('weekly')">&#128202; דוח שבועי</button>
+      <button class="debt-tab-btn" data-tab="returns" onclick="switchDebtTab('returns')">&#128260; זיכויים</button>
     </div>
 
     <!-- Tab content areas -->
@@ -142,6 +143,9 @@
     </div>
     <div id="dtab-weekly" class="debt-tab-content">
       <div id="weeklyReportContent"><div class="empty-state">טוען...</div></div>
+    </div>
+    <div id="dtab-returns" class="debt-tab-content">
+      <div id="debt-returns-tab-content"><div class="empty-state">טוען...</div></div>
     </div>
   </div>
 
@@ -186,6 +190,8 @@
 <script src="modules/suppliers-debt/debt-prepaid.js"></script>
 <script src="modules/suppliers-debt/debt-supplier-detail.js"></script>
 <script src="modules/suppliers-debt/debt-returns.js"></script>
+<script src="modules/suppliers-debt/debt-returns-tab.js"></script>
+<script src="modules/suppliers-debt/debt-returns-tab-actions.js"></script>
 <script src="modules/suppliers-debt/ai-ocr.js"></script>
 <script src="modules/suppliers-debt/ai-alerts.js"></script>
 <script src="modules/suppliers-debt/ai-batch-upload.js"></script>
@@ -214,6 +220,7 @@ function switchDebtTab(tabName) {
   if (tabName === 'payments') loadPaymentsTab();
   if (tabName === 'prepaid') loadPrepaidTab();
   if (tabName === 'weekly') initWeeklyReport();
+  if (tabName === 'returns') initDebtReturnsTab();
 }
 
 // =========================================================
