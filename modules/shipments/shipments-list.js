@@ -29,11 +29,13 @@ async function initShipmentsPage() {
   await Promise.all([
     populateTypeFilter(),
     populateSupplierFilter(),
-    populateCourierFilter()
+    populateCourierFilter(),
+    loadLockMinutes()
   ]);
 
   setupFilterListeners();
   await loadShipments();
+  autoLockExpiredBoxes();
 }
 
 // =========================================================
@@ -190,29 +192,7 @@ function renderShipmentsList(shipments) {
 }
 
 function buildStatusIndicator(box) {
-  if (box.corrects_box_id) return '<span class="correction" title="ארגז תיקון">&#128279;</span>';
-  if (box.locked_at) return '<span class="locked" title="נעול">&#128274;</span>';
-  const mins = getEditableMinutes(box);
-  if (mins > 0) return '<span class="editable" title="ניתן לעריכה">&#9999;&#65039;' + mins + 'm</span>';
-  return '<span class="locked" title="נעול (אוטומטי)">&#128274;</span>';
-}
-
-// =========================================================
-// BOX EDIT WINDOW HELPERS
-// =========================================================
-function isBoxEditable(box) {
-  if (box.locked_at) return false;
-  const thirtyMin = 30 * 60 * 1000;
-  if (Date.now() - new Date(box.packed_at).getTime() > thirtyMin) return false;
-  return true;
-}
-
-function getEditableMinutes(box) {
-  if (box.locked_at) return 0;
-  const thirtyMin = 30 * 60 * 1000;
-  const elapsed = Date.now() - new Date(box.packed_at).getTime();
-  const remaining = thirtyMin - elapsed;
-  return remaining > 0 ? Math.ceil(remaining / 60000) : 0;
+  return renderLockStatus(box);
 }
 
 // =========================================================
