@@ -102,7 +102,7 @@ function handleExcelImport(ev) {
       const errEl = $('excel-import-errors');
       if (errors.length) {
         errEl.style.display = 'block';
-        errEl.innerHTML = `<div class="alert alert-e" style="max-height:160px;overflow-y:auto;font-size:.82rem">${errors.join('<br>')}</div>`;
+        errEl.innerHTML = `<div class="alert alert-e" style="max-height:160px;overflow-y:auto;font-size:.82rem">${errors.map(e => escapeHtml(e)).join('<br>')}</div>`;
       } else {
         errEl.style.display = 'none';
       }
@@ -111,8 +111,8 @@ function handleExcelImport(ev) {
       const tbody = $('excel-import-body');
       tbody.innerHTML = validRows.map((r, i) =>
         `<tr>
-          <td>${i + 1}</td><td>${r.brand}</td><td>${r.model}</td><td>${r.size}</td><td>${r.price}</td>
-          <td>${r.bridge}</td><td>${r.color}</td><td>${r.ptype}</td><td>${r.discount}</td><td>${r.sync}</td><td>${r.notes}</td>
+          <td>${i + 1}</td><td>${escapeHtml(r.brand)}</td><td>${escapeHtml(r.model)}</td><td>${escapeHtml(r.size)}</td><td>${r.price}</td>
+          <td>${escapeHtml(r.bridge)}</td><td>${escapeHtml(r.color)}</td><td>${escapeHtml(r.ptype)}</td><td>${escapeHtml(r.discount)}</td><td>${escapeHtml(r.sync)}</td><td>${escapeHtml(r.notes)}</td>
         </tr>`
       ).join('');
 
@@ -233,7 +233,7 @@ function showExcelResultsModal(inserted, pending, insertedCount) {
     let html = `<h4 style="color:var(--success);margin-bottom:8px">&#10004;&#65039; ${insertedCount} פריטים נכנסו למלאי</h4>`;
     html += '<div class="table-wrap" style="max-height:200px;overflow-y:auto"><table style="font-size:.82rem"><thead><tr><th>מותג</th><th>דגם</th><th>גודל</th><th>צבע</th><th>ברקוד</th></tr></thead><tbody>';
     for (const r of inserted) {
-      html += `<tr><td>${r.brand}</td><td>${r.model}</td><td>${r.size}</td><td>${r.color}</td><td style="font-family:monospace;font-weight:600">${r.barcode}</td></tr>`;
+      html += `<tr><td>${escapeHtml(r.brand)}</td><td>${escapeHtml(r.model)}</td><td>${escapeHtml(r.size)}</td><td>${escapeHtml(r.color)}</td><td style="font-family:monospace;font-weight:600">${escapeHtml(r.barcode)}</td></tr>`;
     }
     html += '</tbody></table></div>';
     successDiv.innerHTML = html;
@@ -248,7 +248,7 @@ function showExcelResultsModal(inserted, pending, insertedCount) {
     let html = `<h4 style="color:var(--warning, #f59e0b);margin-bottom:8px">&#9888;&#65039; ${pending.length} פריטים ממתינים לברקוד — לא הוכנסו למלאי</h4>`;
     html += '<div class="table-wrap" style="max-height:200px;overflow-y:auto"><table style="font-size:.82rem"><thead><tr><th>מותג</th><th>דגם</th><th>גודל</th><th>צבע</th><th>סיבה</th></tr></thead><tbody>';
     for (const r of pending) {
-      html += `<tr><td>${r.brand}</td><td>${r.model}</td><td>${r.size}</td><td>${r.color}</td><td>${r.reason}</td></tr>`;
+      html += `<tr><td>${escapeHtml(r.brand)}</td><td>${escapeHtml(r.model)}</td><td>${escapeHtml(r.size)}</td><td>${escapeHtml(r.color)}</td><td>${escapeHtml(r.reason)}</td></tr>`;
     }
     html += '</tbody></table></div>';
     html += '<div style="margin-top:12px"><button class="btn btn-p" onclick="generatePendingBarcodes()">&#128203; צור ברקודים לפריטים הממתינים</button></div>';
@@ -298,7 +298,7 @@ async function generatePendingBarcodes() {
     let html = `<h4 style="color:var(--success);margin-bottom:8px">&#10004;&#65039; ${created.length} פריטים נוספים נכנסו למלאי</h4>`;
     html += '<div class="table-wrap" style="max-height:200px;overflow-y:auto"><table style="font-size:.82rem"><thead><tr><th>מותג</th><th>דגם</th><th>גודל</th><th>צבע</th><th>ברקוד</th></tr></thead><tbody>';
     for (const r of excelPendingRows) {
-      html += `<tr><td>${r.brand}</td><td>${r.model}</td><td>${r.size}</td><td>${r.color}</td><td style="font-family:monospace;font-weight:600">${r.barcode}</td></tr>`;
+      html += `<tr><td>${escapeHtml(r.brand)}</td><td>${escapeHtml(r.model)}</td><td>${escapeHtml(r.size)}</td><td>${escapeHtml(r.color)}</td><td style="font-family:monospace;font-weight:600">${escapeHtml(r.barcode)}</td></tr>`;
     }
     html += '</tbody></table></div>';
     html += '<div style="margin-top:12px"><button class="btn btn-w" onclick="exportPendingBarcodes()">&#128424;&#65039; הורד Excel לברקודים</button></div>';

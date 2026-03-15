@@ -78,10 +78,10 @@ function renderPOItemsTable() {
 
   tbody.innerHTML = currentPOItems.map((item, i) => `
     <tr data-po-row="${i}">
-      <td><input value="${item.brand || ''}" list="po-brand-list" class="po-brand-input" oninput="currentPOItems[${i}].brand=this.value; loadPOModelsForBrand(${i},this.value)" placeholder="מותג..." style="width:110px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
-      <td><input value="${item.model || ''}" class="po-model-input" oninput="currentPOItems[${i}].model=this.value; loadPOColorsAndSizes(${i},currentPOItems[${i}].brand,this.value)" style="width:90px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
-      <td><input value="${item.color || ''}" class="po-color-input" oninput="currentPOItems[${i}].color=this.value" style="width:70px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
-      <td><input value="${item.size || ''}" class="po-size-input" oninput="currentPOItems[${i}].size=this.value" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+      <td><input value="${escapeHtml(item.brand || '')}" list="po-brand-list" class="po-brand-input" oninput="currentPOItems[${i}].brand=this.value; loadPOModelsForBrand(${i},this.value)" placeholder="מותג..." style="width:110px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+      <td><input value="${escapeHtml(item.model || '')}" class="po-model-input" oninput="currentPOItems[${i}].model=this.value; loadPOColorsAndSizes(${i},currentPOItems[${i}].brand,this.value)" style="width:90px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+      <td><input value="${escapeHtml(item.color || '')}" class="po-color-input" oninput="currentPOItems[${i}].color=this.value" style="width:70px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+      <td><input value="${escapeHtml(item.size || '')}" class="po-size-input" oninput="currentPOItems[${i}].size=this.value" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input type="number" min="1" value="${item.qty_ordered || 1}"
                  oninput="currentPOItems[${i}].qty_ordered=+this.value; updatePOTotals()" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input type="number" min="0" step="0.01" value="${item.unit_cost || ''}"
@@ -122,10 +122,10 @@ function renderPOItemsTable() {
               <option value="none" ${item.website_sync==='none'?'selected':''}>ללא</option>
             </select></div>
           <div><label style="font-size:12px;display:block">גשר</label>
-            <input type="text" value="${item.bridge||''}" oninput="currentPOItems[${i}].bridge=this.value"
+            <input type="text" value="${escapeHtml(item.bridge||'')}" oninput="currentPOItems[${i}].bridge=this.value"
                    style="width:60px;padding:4px 6px;border-radius:4px;border:1px solid #ccc"></div>
           <div><label style="font-size:12px;display:block">אורך מוט</label>
-            <input type="text" value="${item.temple_length||''}" oninput="currentPOItems[${i}].temple_length=this.value"
+            <input type="text" value="${escapeHtml(item.temple_length||'')}" oninput="currentPOItems[${i}].temple_length=this.value"
                    style="width:60px;padding:4px 6px;border-radius:4px;border:1px solid #ccc"></div>
         </div>
       </td>

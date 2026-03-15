@@ -100,7 +100,7 @@ async function confirmQtyChange() {
     if (qtyTd) {
       const qC = newQty > 0 ? 'var(--success)' : 'var(--error)';
       qtyTd.style.color = qC;
-      qtyTd.innerHTML = `${newQty} <span class="qty-btns"><button class="qty-btn qty-plus" onclick="openQtyModal('${id}','add')" title="הוסף כמות">➕</button><button class="qty-btn qty-minus" onclick="openQtyModal('${id}','remove')" title="הוצא כמות">➖</button></span>`;
+      qtyTd.innerHTML = `${newQty} <span class="qty-btns"><button class="qty-btn qty-plus" onclick="openQtyModal('${escapeHtml(id)}','add')" title="הוסף כמות">➕</button><button class="qty-btn qty-minus" onclick="openQtyModal('${escapeHtml(id)}','remove')" title="הוצא כמות">➖</button></span>`;
     }
 
     closeModal('qty-modal');

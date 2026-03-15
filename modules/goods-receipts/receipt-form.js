@@ -209,11 +209,11 @@ function addReceiptItemRow(data) {
 
   tr.innerHTML = `
     <td>${rcptRowNum}</td>
-    <td><input type="text" class="rcpt-barcode" value="${data?.barcode || ''}" readonly style="background:#f0f0f0"></td>
-    <td><input type="text" class="rcpt-brand" value="${data?.brand || ''}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
-    <td><input type="text" class="rcpt-model" value="${data?.model || ''}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
-    <td><input type="text" class="rcpt-color" value="${data?.color || ''}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
-    <td><input type="text" class="rcpt-size" value="${data?.size || ''}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
+    <td><input type="text" class="rcpt-barcode" value="${escapeHtml(data?.barcode || '')}" readonly style="background:#f0f0f0"></td>
+    <td><input type="text" class="rcpt-brand" value="${escapeHtml(data?.brand || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
+    <td><input type="text" class="rcpt-model" value="${escapeHtml(data?.model || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
+    <td><input type="text" class="rcpt-color" value="${escapeHtml(data?.color || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
+    <td><input type="text" class="rcpt-size" value="${escapeHtml(data?.size || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
     <td><input type="number" class="rcpt-qty col-qty" min="1" value="${data?.quantity || 1}"></td>
     <td><input type="number" class="rcpt-ucost col-price" step="0.01" value="${data?.unit_cost || ''}"></td>
     <td><input type="number" class="rcpt-sprice col-price" step="0.01" value="${data?.sell_price || ''}"></td>
