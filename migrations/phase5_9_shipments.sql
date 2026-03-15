@@ -136,6 +136,7 @@ CREATE INDEX idx_ship_items_return ON shipment_items(return_id)
 CREATE OR REPLACE FUNCTION next_box_number(p_tenant_id UUID)
 RETURNS TEXT
 LANGUAGE plpgsql
+SECURITY DEFINER
 AS $$
 DECLARE
   v_max INTEGER;
