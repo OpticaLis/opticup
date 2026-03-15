@@ -1,6 +1,6 @@
 // ---- Quantity Add/Remove ----
 const QTY_REASONS_ADD = ['קבלת סחורה', 'החזרה מלקוח', 'ספירת מלאי', 'תיקון טעות', 'אחר'];
-const QTY_REASONS_REMOVE = ['מכירה', 'העברה לסניף', 'פגום/אבדן', 'ספירת מלאי', 'תיקון טעות', 'אחר'];
+const QTY_REASONS_REMOVE = ['מכירה', 'נשלח לזיכוי', 'העברה לסניף', 'פגום/אבדן', 'ספירת מלאי', 'תיקון טעות', 'אחר'];
 let qtyModalState = {};
 
 function openQtyModal(inventoryId, mode) {
@@ -12,7 +12,9 @@ function openQtyModal(inventoryId, mode) {
   const model = rec.model || '';
   const currentQty = parseInt(rec.quantity) || 0;
 
-  qtyModalState = { id: inventoryId, mode, currentQty, barcode: bc, brand, model };
+  qtyModalState = { id: inventoryId, mode, currentQty, barcode: bc, brand, model,
+    supplier_id: rec.supplier_id || '', cost_price: rec.cost_price || 0,
+    color: rec.color || '', size: rec.size || '' };
 
   const isAdd = mode === 'add';
   $('qty-modal-title').textContent = isAdd ? '➕ הוספת כמות' : '➖ הוצאת כמות';
@@ -37,7 +39,7 @@ function openQtyModal(inventoryId, mode) {
 }
 
 async function confirmQtyChange() {
-  const { id, mode, currentQty, barcode, brand, model } = qtyModalState;
+  const { id, mode, currentQty, barcode, brand, model, supplier_id, cost_price, color, size } = qtyModalState;
   const amount = parseInt($('qty-modal-amount').value) || 0;
   const reason = $('qty-modal-reason').value;
   const note = $('qty-modal-note').value.trim();
@@ -71,7 +73,8 @@ async function confirmQtyChange() {
     if (error) throw new Error(error.message);
 
     // Write log
-    const action = mode === 'remove' ? 'manual_remove' : 'edit_qty';
+    const isCreditReturn = mode === 'remove' && reason === 'נשלח לזיכוי';
+    const action = isCreditReturn ? 'credit_return' : (mode === 'remove' ? 'manual_remove' : 'edit_qty');
     await writeLog(action, id, {
       barcode, brand, model,
       qty_before: currentQty,
@@ -79,6 +82,15 @@ async function confirmQtyChange() {
       reason: fullReason,
       source_ref: 'שינוי כמות ידני'
     });
+
+    // Create supplier_return when reason is 'נשלח לזיכוי'
+    if (isCreditReturn && supplier_id) {
+      _createReturnFromReduction(id, barcode, brand, model, color, size, supplier_id, cost_price, amount)
+        .catch(err => {
+          console.error('Return creation failed (inventory already decremented):', err);
+          toast('⚠ המלאי עודכן אך יצירת הזיכוי נכשלה — צור זיכוי ידנית', 'w');
+        });
+    }
 
     // Update in-memory data + UI
     const rec = invData.find(r => r.id === id);
@@ -92,7 +104,10 @@ async function confirmQtyChange() {
     }
 
     closeModal('qty-modal');
-    toast(`✅ כמות עודכנה: ${currentQty} → ${newQty}`, 's');
+    const toastMsg = isCreditReturn
+      ? `✅ הכמות עודכנה — פריט הועבר לזיכוי (${currentQty} → ${newQty})`
+      : `✅ כמות עודכנה: ${currentQty} → ${newQty}`;
+    toast(toastMsg, 's');
   } catch (e) {
     toast('שגיאה: ' + (e.message || ''), 'e');
   }
