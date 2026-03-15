@@ -137,6 +137,30 @@
   .detail-add-title { font-size: .88rem; font-weight: 600; color: var(--primary); margin-bottom: 8px; }
   .detail-edit-form { padding: 4px 0; }
 
+  /* Courier modal */
+  .courier-modal-box { background: var(--white); border-radius: 12px; padding: 0; max-width: 560px; width: 95vw; max-height: 85vh; overflow-y: auto; position: relative; }
+  .cm-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--g200); }
+  .cm-title { margin: 0; font-size: 1.05rem; color: var(--primary); }
+  .cm-tabs { display: flex; border-bottom: 1px solid var(--g200); }
+  .cm-tab { flex: 1; padding: 10px; border: none; background: none; font-family: inherit; font-size: .88rem; cursor: pointer; color: var(--g500); border-bottom: 2px solid transparent; }
+  .cm-tab:hover { color: var(--primary); }
+  .cm-tab.active { color: var(--primary); font-weight: 600; border-bottom-color: var(--primary); }
+  .cm-section { padding: 16px 18px; }
+  .cm-add-btn { margin-bottom: 12px; }
+  .cm-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  .cm-table th { text-align: right; padding: 6px 8px; color: var(--g600); font-weight: 600; border-bottom: 1px solid var(--g200); font-size: .8rem; }
+  .cm-table td { padding: 6px 8px; border-bottom: 1px solid var(--g100); }
+  .cm-table input[type="checkbox"] { accent-color: var(--primary); }
+  .cm-form { padding: 12px; background: #f0f4ff; border-radius: 8px; margin-bottom: 12px; }
+  .cm-form-title { font-size: .88rem; font-weight: 600; color: var(--primary); margin-bottom: 8px; }
+  .cm-settings { display: flex; flex-direction: column; gap: 16px; }
+  .cm-setting-row { display: flex; flex-direction: column; gap: 4px; }
+  .cm-setting-label { font-weight: 600; font-size: .9rem; color: var(--g700); }
+  .cm-setting-desc { font-size: .8rem; color: var(--g500); }
+  .cm-setting-input { max-width: 180px; }
+  .cm-setting-check { font-size: .88rem; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .cm-setting-check input { accent-color: var(--primary); }
+
   /* Print — manifest only */
   @media print {
     body > *:not(#manifest-print) { display: none !important; }
@@ -242,10 +266,12 @@
 <script src="modules/shipments/shipments-lock.js"></script>
 <script src="modules/shipments/shipments-detail.js"></script>
 <script src="modules/shipments/shipments-manifest.js"></script>
+<script src="modules/shipments/shipments-couriers.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', function() {
   initShipmentsPage();
   $('btn-new-box').addEventListener('click', openNewBoxWizard);
+  $('btn-courier-settings').addEventListener('click', openCourierModal);
 });
 </script>
 </body>

@@ -1,17 +1,23 @@
 // shipments-lock.js — Lock lifecycle: timer, manual/auto lock, correction box, edit-window ops
 window._lockMinutes = 30;
 window._lockTimerInterval = null;
+window._boxPrefix = 'BOX';
+window._requireTracking = false;
+window._autoPrint = false;
 
-// --- LOAD CONFIGURABLE LOCK MINUTES ---
+// --- LOAD CONFIGURABLE SHIPMENT SETTINGS ---
 async function loadLockMinutes() {
   const tid = getTenantId();
   if (!tid) return;
   const { data, error } = await sb.from(T.TENANTS)
-    .select('shipment_lock_minutes')
+    .select('shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock')
     .eq('id', tid)
     .maybeSingle();
-  if (!error && data && data.shipment_lock_minutes) {
-    window._lockMinutes = data.shipment_lock_minutes;
+  if (!error && data) {
+    if (data.shipment_lock_minutes) window._lockMinutes = data.shipment_lock_minutes;
+    if (data.box_number_prefix) window._boxPrefix = data.box_number_prefix;
+    window._requireTracking = !!data.require_tracking_before_lock;
+    window._autoPrint = !!data.auto_print_on_lock;
   }
 }
 
@@ -60,6 +66,11 @@ async function lockBox(shipmentId) {
   if (!box) { toast('ארגז לא נמצא', 'e'); return; }
   if (box.locked_at) { toast('הארגז כבר נעול', 'i'); return; }
 
+  // Check tracking requirement
+  if (window._requireTracking && !box.tracking_number) {
+    toast('נדרש מספר מעקב לפני נעילה', 'e'); return;
+  }
+
   var pin = prompt('הזן סיסמת עובד לנעילה:');
   if (!pin) return;
   var emp = await verifyPinOnly(pin);
@@ -74,6 +85,14 @@ async function lockBox(shipmentId) {
 
   writeLog('shipment_locked', null, { box_number: box.box_number, locked_by: emp.name });
   toast('ארגז ' + box.box_number + ' ננעל');
+
+  // Auto-print manifest on lock if enabled
+  if (window._autoPrint && typeof printManifest === 'function') {
+    var { data: items } = await sb.from(T.SHIP_ITEMS).select('*')
+      .eq('shipment_id', shipmentId).eq('tenant_id', tid).order('created_at');
+    printManifest(box, items || []);
+  }
+
   await loadShipments();
 }
 
