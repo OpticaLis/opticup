@@ -194,8 +194,10 @@ function renderSettingsTab() {
     ' הדפסה אוטומטית בנעילה</label>' +
     '<div class="cm-setting-desc">הדפס manifest אוטומטית כשארגז ננעל</div></div>' +
 
-    '<div class="wiz-btns"><button class="btn btn-p" onclick="saveShipmentSettings()">&#128190; שמור הגדרות</button></div></div>';
+    '<div class="wiz-btns"><button class="btn btn-p" onclick="saveShipmentSettings()">&#128190; שמור הגדרות</button></div>' +
+    '<div id="field-settings-container"></div></div>';
   body.innerHTML = html;
+  if (typeof initFieldSettings === 'function') initFieldSettings();
 }
 
 async function saveShipmentSettings() {
