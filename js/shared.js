@@ -259,6 +259,7 @@ function showTab(name) {
   if (name === 'purchase-orders') loadPurchaseOrdersTab();
   if (name === 'access-sync') { renderAccessSyncTab(); loadWatcherStatus(); loadSyncLog(); loadSyncSummary(); loadLastActivity(); loadPendingBadge(); }
   if (name === 'stock-count') loadStockCountTab();
+  if (name === 'returns') initReturnsTab();
 }
 
 function showEntryMode(mode) {

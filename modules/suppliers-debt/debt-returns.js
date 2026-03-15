@@ -15,6 +15,7 @@ var RETURN_STATUS_MAP = {
   pending:               { he: 'ממתין',        cls: 'rst-pending' },
   ready_to_ship:         { he: 'מוכן למשלוח',  cls: 'rst-ready' },
   shipped:               { he: 'נשלח',         cls: 'rst-shipped' },
+  agent_picked:          { he: 'סוכן לקח',     cls: 'rst-agent' },
   received_by_supplier:  { he: 'התקבל אצל ספק', cls: 'rst-received' },
   credited:              { he: 'זוכה',         cls: 'rst-credited' }
 };
@@ -22,8 +23,9 @@ var RETURN_STATUS_MAP = {
 // Allowed status transitions — full chain
 var RETURN_TRANSITIONS = {
   pending:               ['ready_to_ship'],
-  ready_to_ship:         ['shipped'],
+  ready_to_ship:         ['shipped', 'agent_picked'],
   shipped:               ['received_by_supplier'],
+  agent_picked:          ['credited'],
   received_by_supplier:  ['credited']
 };
 
@@ -93,8 +95,8 @@ function renderReturnsTable(returns, container) {
     var transitions = RETURN_TRANSITIONS[r.status] || [];
 
     var actionBtns = '<button class="btn-sm" onclick="viewReturnDetail(\'' + r.id + '\')">צפה</button>';
-    if (transitions.length) {
-      var nextSt = transitions[0];
+    for (var ti = 0; ti < transitions.length; ti++) {
+      var nextSt = transitions[ti];
       var nextLbl = RETURN_STATUS_MAP[nextSt] ? RETURN_STATUS_MAP[nextSt].he : nextSt;
       actionBtns += ' <button class="btn-sm btn-lnk" onclick="promptReturnStatusUpdate(\'' +
         r.id + '\',\'' + nextSt + '\')">העבר ל: ' + escapeHtml(nextLbl) + '</button>';
@@ -243,6 +245,7 @@ async function updateReturnStatus(returnId, newStatus) {
   var updateObj = { id: returnId, status: newStatus, updated_at: now };
   if (newStatus === 'ready_to_ship') updateObj.ready_at = now;
   if (newStatus === 'shipped') updateObj.shipped_at = now;
+  if (newStatus === 'agent_picked') updateObj.agent_picked_at = now;
   if (newStatus === 'received_by_supplier') updateObj.received_at = now;
   if (newStatus === 'credited') updateObj.credited_at = now;
 

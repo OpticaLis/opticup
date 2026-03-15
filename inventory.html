@@ -44,6 +44,7 @@
   <button data-tab="systemlog" data-tab-permission="settings.view" class="admin-tab" onclick="showTab('systemlog')">&#128203; לוג מערכת</button>
   <button data-tab="access-sync" data-tab-permission="sync.view" onclick="showTab('access-sync')">&#128260; סנכרון Access</button>
   <button data-tab="stock-count" data-tab-permission="stock_count.create" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
+  <button data-tab="returns" onclick="showTab('returns')">&#128260; זיכויים</button>
 
   <div class="nav-spacer"></div>
   <a href="index.html" id="homeBtn" class="home-link" style="display:inline;color:var(--primary);text-decoration:none;font-size:.85rem;margin-left:12px;white-space:nowrap;flex-shrink:0;">&#8594; מסך בית</a>
@@ -526,7 +527,10 @@
   </div>
 </section>
 
-
+<!-- ========== TAB: RETURNS ========== -->
+<section id="tab-returns" class="tab">
+  <div id="returns-tab"></div>
+</section>
 
 </main>
 
@@ -543,6 +547,15 @@
   #login-modal .pin-box { width:48px; height:56px; text-align:center; font-size:1.5rem; border:2px solid #d0d5dd; border-radius:10px; outline:none; font-family:'Heebo',sans-serif; transition:border-color .2s; }
   #login-modal .pin-box:focus { border-color:#1a2744; box-shadow:0 0 0 3px rgba(26,39,68,0.15); }
   #login-modal .pin-box:disabled { background:#f0f0f0; cursor:not-allowed; }
+  .doc-badge { display:inline-block; padding:2px 10px; border-radius:12px; font-size:.78rem; font-weight:600; }
+  .rst-pending { background:#fff3cd; color:#856404; }
+  .rst-ready { background:#e3f0ff; color:#1a5fb4; }
+  .rst-shipped { background:#e8dff5; color:#6f42c1; }
+  .rst-agent { background:#ffe0b2; color:#e65100; }
+  .rst-received { background:#d4edda; color:#155724; }
+  .rst-credited { background:#d4edda; color:#155724; }
+  .btn-lnk { background:none; border:1px solid #6f42c1; color:#6f42c1; border-radius:6px; cursor:pointer; }
+  .btn-lnk:hover { background:#f3eefb; }
 </style>
 <div id="login-modal" class="hidden">
   <div class="login-card">
@@ -837,6 +850,8 @@
 <script src="modules/inventory/excel-import.js"></script>
 <script src="modules/suppliers-debt/debt-returns.js"></script>
 <script src="modules/inventory/inventory-return.js"></script>
+<script src="modules/inventory/inventory-returns-tab.js"></script>
+<script src="modules/inventory/inventory-returns-actions.js"></script>
 <script src="modules/goods-receipts/goods-receipt.js"></script>
 <script src="modules/goods-receipts/receipt-form.js"></script>
 <script src="modules/goods-receipts/receipt-ocr.js"></script>
