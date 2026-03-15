@@ -36,6 +36,9 @@ async function initShipmentsPage() {
   setupFilterListeners();
   await loadShipments();
   autoLockExpiredBoxes();
+
+  // Check URL params from sendToBox (returns tab → wizard pre-fill)
+  checkWizardUrlParams();
 }
 
 // =========================================================
@@ -228,4 +231,22 @@ function exportShipmentsExcel() {
   const today = new Date().toISOString().slice(0, 10);
   XLSX.writeFile(wb, 'shipments_' + today + '.xlsx');
   toast('קובץ Excel יוצא בהצלחה');
+}
+
+// =========================================================
+// URL PARAMS — auto-open wizard from returns tab sendToBox
+// =========================================================
+function checkWizardUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const type = params.get('type');
+  const supplierId = params.get('supplier');
+  const returnId = params.get('return');
+  if (!type) return;
+
+  // Clear URL params immediately (prevent re-trigger on refresh)
+  history.replaceState(null, '', window.location.pathname);
+
+  if (typeof openNewBoxWizard === 'function') {
+    openNewBoxWizard(type, supplierId || null, returnId || null);
+  }
 }

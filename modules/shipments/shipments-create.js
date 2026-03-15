@@ -6,16 +6,26 @@
 
 window._wizardState = null;
 
-function openNewBoxWizard() {
+function openNewBoxWizard(presetType, presetSupplierId, presetReturnId) {
   window._wizardState = {
     step: 1, type: null, supplierId: null, supplierName: null,
     customerName: null, customerPhone: null, customerAddress: null,
-    items: [], courierId: null, trackingNumber: null, notes: null
+    items: [], courierId: null, trackingNumber: null, notes: null,
+    presetReturnId: presetReturnId || null
   };
   const modal = $('shipment-wizard');
   modal.classList.remove('hidden');
   modal.innerHTML = '<div class="modal-overlay" onclick="if(event.target===this)closeWizard()"><div class="wiz-box" id="wiz-box"></div></div>';
-  renderWizardStep(1);
+
+  if (presetType && presetSupplierId) {
+    // Pre-fill type + supplier and skip to step 2
+    prefillWizardAndAdvance(presetType, presetSupplierId);
+  } else if (presetType) {
+    window._wizardState.type = presetType;
+    renderWizardStep(1);
+  } else {
+    renderWizardStep(1);
+  }
 }
 
 function closeWizard() {
@@ -102,6 +112,18 @@ async function loadSupplierDropdown() {
   wrap.innerHTML = '';
   wrap.appendChild(ss);
   if (ws.supplierId) { ss._hidden.value = ws.supplierName; ss._input.value = ws.supplierName; }
+}
+
+async function prefillWizardAndAdvance(type, supplierId) {
+  const ws = window._wizardState;
+  ws.type = type;
+  ws.supplierId = supplierId;
+  // Lookup supplier name
+  const { data } = await sb.from(T.SUPPLIERS)
+    .select('name').eq('id', supplierId).eq('tenant_id', getTenantId()).maybeSingle();
+  ws.supplierName = data ? data.name : '';
+  // Go directly to step 2
+  renderWizardStep(2);
 }
 
 function onDestInput() {
