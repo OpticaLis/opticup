@@ -89,12 +89,19 @@
   .wiz-add-btn { width: 100%; margin-bottom: 14px; }
   .wiz-items-count { font-size: .82rem; color: var(--g500); margin-bottom: 6px; font-weight: 600; }
   .wiz-items-list { display: flex; flex-direction: column; gap: 4px; }
-  .wiz-item-row { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--g100); border-radius: 6px; font-size: .82rem; }
+  .wiz-item-row { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--g100); border-radius: 6px; font-size: .82rem; cursor: pointer; border-bottom: 1px solid var(--g200, #ddd); transition: background .15s; }
+  .wiz-item-row:hover { background: rgba(255,255,255,0.12); }
+  .wiz-item-row.expanded { background: var(--g200, #e8e8e8); border-radius: 6px 6px 0 0; }
   .wiz-item-num { font-weight: 700; color: var(--g500); min-width: 20px; text-align: center; }
   .wiz-item-col { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .wiz-item-col.wide { flex: 1.5; }
   .wiz-item-del { background: none; border: none; color: #c00; cursor: pointer; font-size: 1rem; padding: 2px 6px; flex-shrink: 0; }
   .wiz-item-del:hover { background: #fee; border-radius: 4px; }
+  .wiz-item-detail { display: none; padding: 8px 16px 8px 36px; background: rgba(0,0,0,0.04); font-size: .82rem; border-radius: 0 0 6px 6px; margin-bottom: 4px; }
+  .wiz-item-detail.open { display: block; }
+  .detail-row { padding: 2px 0; }
+  .detail-label { font-weight: 600; color: var(--g600); }
+  .field-required::after { content: ' *'; color: #e74c3c; font-weight: 700; }
 
   /* Staged return items picker */
   .wiz-staged-section { margin-bottom: 14px; padding: 10px; background: #f4f0ff; border: 1px solid #d5ccee; border-radius: 8px; }
@@ -263,6 +270,7 @@
 <script src="modules/shipments/shipments-list.js"></script>
 <script src="modules/shipments/shipments-create.js"></script>
 <script src="modules/shipments/shipments-items.js"></script>
+<script src="modules/shipments/shipments-items-table.js"></script>
 <script src="modules/shipments/shipments-lock.js"></script>
 <script src="modules/shipments/shipments-detail.js"></script>
 <script src="modules/shipments/shipments-manifest.js"></script>

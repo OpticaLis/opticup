@@ -152,12 +152,19 @@ async function renderStep3() {
   const destName = ws.supplierName || ws.customerName || '—';
   const totalValue = ws.items.reduce(function(s, it) { return s + (Number(it.unit_cost) || 0); }, 0);
 
+  var courierReq = getStep3Config('courier_id') === 'required';
+  var trackReq = getStep3Config('tracking_number') === 'required';
+  var notesReq = getStep3Config('notes') === 'required';
+  var courierCls = courierReq ? ' field-required' : '';
+  var trackCls = trackReq ? ' field-required' : '';
+  var notesCls = notesReq ? ' field-required' : '';
+
   const html = '<h3 class="wiz-title">שליחויות ואישור</h3>' +
-    '<label class="wiz-label">חברת שליחויות</label>' +
+    '<label class="wiz-label' + courierCls + '">חברת שליחויות</label>' +
     '<select id="wiz-courier" class="wiz-input"><option value="">— בחר —</option></select>' +
-    '<label class="wiz-label">מספר מעקב</label>' +
-    '<input type="text" id="wiz-tracking" class="wiz-input" placeholder="אופציונלי" value="' + escapeHtml(ws.trackingNumber || '') + '">' +
-    '<label class="wiz-label">הערות</label>' +
+    '<label class="wiz-label' + trackCls + '">מספר מעקב</label>' +
+    '<input type="text" id="wiz-tracking" class="wiz-input" placeholder="' + (trackReq ? 'חובה' : 'אופציונלי') + '" value="' + escapeHtml(ws.trackingNumber || '') + '">' +
+    '<label class="wiz-label' + notesCls + '">הערות</label>' +
     '<textarea id="wiz-notes" class="wiz-input" rows="2" placeholder="הערות לארגז">' + escapeHtml(ws.notes || '') + '</textarea>' +
     '<div class="wiz-summary">' +
       '<div><strong>סוג:</strong> ' + escapeHtml(typeHe) + '</div>' +
@@ -202,6 +209,17 @@ async function createBox() {
   ws.courierId = ($('wiz-courier') || {}).value || null;
   ws.trackingNumber = ($('wiz-tracking') || {}).value.trim() || null;
   ws.notes = ($('wiz-notes') || {}).value.trim() || null;
+
+  // Step 3 required field validation
+  if (getStep3Config('courier_id') === 'required' && !ws.courierId) {
+    toast('שדה חובה: חברת שליחויות', 'e'); return;
+  }
+  if (getStep3Config('tracking_number') === 'required' && !ws.trackingNumber) {
+    toast('שדה חובה: מספר מעקב', 'e'); return;
+  }
+  if (getStep3Config('notes') === 'required' && !ws.notes) {
+    toast('שדה חובה: הערות', 'e'); return;
+  }
 
   const pin = ($('wiz-pin') || {}).value || '';
   if (!pin) { toast('יש להזין סיסמת עובד', 'e'); return; }

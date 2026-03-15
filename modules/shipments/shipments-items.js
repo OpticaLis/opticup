@@ -1,6 +1,16 @@
 // shipments-items.js — Wizard Step 2: item entry + staged return picker + status helpers
 window._stagedReturns = [];
 
+var FIELD_LABELS = {
+  order_number: 'מס\' הזמנה', customer_name: 'שם לקוח', customer_number: 'מס\' לקוח',
+  barcode: 'ברקוד', category: 'קטגוריה', notes: 'הערות'
+};
+var FIELD_IDS = {
+  order_number: 'wiz-order', customer_name: 'wiz-cust', customer_number: 'wiz-custnum',
+  barcode: 'wiz-barcode', category: 'wiz-category', notes: 'wiz-inotes'
+};
+var FIELD_ORDER = ['order_number', 'customer_name', 'customer_number', 'barcode', 'category', 'notes'];
+
 function initWizardItems() {
   const ws = window._wizardState;
   if (!ws) return;
@@ -19,20 +29,17 @@ async function loadStagedReturns(supplierId) {
   const pickerEl = $('wiz-staged-picker');
   if (!pickerEl) return;
   pickerEl.innerHTML = '<div class="wiz-note">טוען פריטי זיכוי...</div>';
-
   const tid = getTenantId();
   const { data, error } = await sb.from(T.SUP_RETURN_ITEMS)
     .select('id, return_id, inventory_id, barcode, quantity, cost_price, brand_name, model, color, size, return:supplier_returns!inner(id, supplier_id, status, return_number)')
     .eq('return.supplier_id', supplierId)
     .eq('return.status', 'ready_to_ship')
     .eq('tenant_id', tid);
-
   if (error) {
     pickerEl.innerHTML = '<div class="wiz-note">שגיאה בטעינת פריטי זיכוי</div>';
     window._stagedReturns = [];
     return;
   }
-
   window._stagedReturns = data || [];
   renderStagedPicker();
 }
@@ -41,17 +48,14 @@ function renderStagedPicker() {
   const pickerEl = $('wiz-staged-picker');
   if (!pickerEl) return;
   const items = window._stagedReturns;
-
   if (!items.length) {
     pickerEl.innerHTML = '<div class="wiz-staged-section"><div class="wiz-staged-title">פריטי זיכוי ממתינים</div>' +
       '<div class="wiz-note">אין פריטי זיכוי ממתינים לספק זה</div></div>';
     return;
   }
-
   const ws = window._wizardState;
   let html = '<div class="wiz-staged-section"><div class="wiz-staged-title">פריטי זיכוי ממתינים (' + items.length + ')</div>';
   html += '<div class="wiz-staged-list">';
-
   for (const it of items) {
     const isSelected = ws && ws.items.some(function(w) { return w.return_item_id === it.id; });
     const retNum = it.return && it.return.return_number ? it.return.return_number : '';
@@ -64,7 +68,6 @@ function renderStagedPicker() {
       '<span class="wiz-staged-col wiz-staged-ret">' + escapeHtml(retNum) + '</span>' +
       '</label>';
   }
-
   html += '</div></div>';
   pickerEl.innerHTML = html;
 }
@@ -73,67 +76,54 @@ function toggleStagedItem(returnItemId, checked) {
   const ws = window._wizardState;
   if (!ws) return;
   const staged = window._stagedReturns;
-
   if (checked) {
-    // Prevent duplicates
     if (ws.items.some(function(w) { return w.return_item_id === returnItemId; })) return;
     const src = staged.find(function(s) { return s.id === returnItemId; });
     if (!src) return;
-
     ws.items.push({
       item_type: 'inventory',
       return_id: src.return ? src.return.id : src.return_id,
       return_item_id: src.id,
       inventory_id: src.inventory_id || null,
-      barcode: src.barcode || null,
-      brand: src.brand_name || null,
-      model: src.model || null,
-      size: src.size || null,
-      color: src.color || null,
-      unit_cost: src.cost_price || null,
-      category: 'stock',
+      barcode: src.barcode || null, brand: src.brand_name || null,
+      model: src.model || null, size: src.size || null, color: src.color || null,
+      unit_cost: src.cost_price || null, category: 'stock',
       order_number: null, customer_name: null, customer_number: null, notes: null
     });
   } else {
-    // Remove by return_item_id
     ws.items = ws.items.filter(function(w) { return w.return_item_id !== returnItemId; });
   }
-
   renderItemsTable();
   renderStagedPicker();
   updateStep2Next();
 }
 
-// --- ITEM FORM — varies by box type ---
+// --- ITEM FORM — config-driven fields ---
 function renderItemForm(type) {
-  const el = $('wiz-item-form');
+  var el = $('wiz-item-form');
   if (!el) return;
-  let html = '<div class="wiz-item-fields">';
+  var html = '<div class="wiz-item-fields">';
+  if (type === 'return') html += '<div class="wiz-manual-header">+ הוסף ידנית</div>';
 
-  if (type === 'framing') {
-    html += fieldRow('wiz-order', 'מס\' הזמנה', 'text') +
-      fieldRow('wiz-cust', 'שם לקוח', 'text') +
-      fieldRow('wiz-custnum', 'מס\' לקוח', 'text') +
-      categoryDropdown() +
-      fieldRow('wiz-barcode', 'ברקוד (אופציונלי)', 'text') +
-      fieldRow('wiz-inotes', 'הערות', 'text');
-  } else if (type === 'return') {
-    html += '<div class="wiz-manual-header">+ הוסף ידנית</div>' +
-      fieldRow('wiz-barcode', 'ברקוד', 'text') +
-      fieldRow('wiz-order', 'מס\' הזמנה', 'text') +
-      fieldRow('wiz-cust', 'שם לקוח', 'text') +
-      fieldRow('wiz-custnum', 'מס\' לקוח', 'text') +
-      categoryDropdown() +
-      fieldRow('wiz-inotes', 'הערות', 'text');
-  } else if (type === 'repair') {
-    html += fieldRow('wiz-barcode', 'ברקוד', 'text') +
-      fieldRow('wiz-inotes', 'תיאור התקלה', 'text') +
-      fieldRow('wiz-order', 'מס\' הזמנה (אופציונלי)', 'text');
-  } else if (type === 'delivery') {
-    html += fieldRow('wiz-order', 'מס\' הזמנה', 'text') +
-      fieldRow('wiz-barcode', 'ברקוד (אופציונלי)', 'text') +
-      categoryDropdown() +
-      fieldRow('wiz-inotes', 'הערות', 'text');
+  for (var i = 0; i < FIELD_ORDER.length; i++) {
+    var field = FIELD_ORDER[i];
+    var vis = getFieldConfig(type, field);
+    if (vis === 'hidden') continue;
+    var label = FIELD_LABELS[field] || field;
+    var isReq = (vis === 'required');
+    if (field === 'category') {
+      html += categoryDropdown(isReq);
+    } else {
+      html += fieldRow(FIELD_IDS[field], label, 'text', isReq);
+    }
+  }
+
+  // Custom fields
+  for (var ci = 1; ci <= 3; ci++) {
+    var custom = getCustomField(type, ci);
+    if (custom && custom.visible) {
+      html += fieldRow('wiz-custom-' + ci, custom.label || 'שדה מותאם ' + ci, 'text', false);
+    }
   }
 
   html += '</div>';
@@ -141,53 +131,90 @@ function renderItemForm(type) {
   el.innerHTML = html;
 }
 
-function fieldRow(id, label, type) {
+function fieldRow(id, label, type, required) {
+  var cls = required ? ' field-required' : '';
   return '<div class="wiz-field-row">' +
-    '<label class="wiz-field-label">' + label + '</label>' +
+    '<label class="wiz-field-label' + cls + '">' + label + '</label>' +
     '<input type="' + type + '" id="' + id + '" class="wiz-input wiz-field-input" autocomplete="off">' +
     '</div>';
 }
 
-function categoryDropdown() {
-  const cats = ENUM_MAP.shipment_category || {};
-  let opts = '<option value="">— קטגוריה —</option>';
-  for (const [he, en] of Object.entries(cats)) {
-    if (en === 'stock') continue;
-    opts += '<option value="' + en + '">' + escapeHtml(he) + '</option>';
+function categoryDropdown(required) {
+  var keys = getVisibleCategories();
+  var opts = '<option value="">— קטגוריה —</option>';
+  for (var i = 0; i < keys.length; i++) {
+    var key = keys[i];
+    if (key === 'stock') continue;
+    opts += '<option value="' + key + '">' + escapeHtml(getCategoryLabel(key)) + '</option>';
   }
+  var cls = required ? ' field-required' : '';
   return '<div class="wiz-field-row">' +
-    '<label class="wiz-field-label">קטגוריה</label>' +
+    '<label class="wiz-field-label' + cls + '">קטגוריה</label>' +
     '<select id="wiz-category" class="wiz-input wiz-field-input">' + opts + '</select></div>';
 }
 
-// --- ADD ITEM (manual entry) ---
+// --- ADD ITEM (manual entry) with config-driven validation ---
 async function addItemRow() {
-  const ws = window._wizardState;
+  var ws = window._wizardState;
   if (!ws) return;
+  var type = ws.type;
 
-  const barcode = (($('wiz-barcode') || {}).value || '').trim();
-  const orderNum = (($('wiz-order') || {}).value || '').trim();
-  const custName = (($('wiz-cust') || {}).value || '').trim();
-  const custNum = (($('wiz-custnum') || {}).value || '').trim();
-  const category = (($('wiz-category') || {}).value || '');
-  const notes = (($('wiz-inotes') || {}).value || '').trim();
+  // Read all field values
+  var vals = {};
+  for (var i = 0; i < FIELD_ORDER.length; i++) {
+    var f = FIELD_ORDER[i];
+    var el = $(FIELD_IDS[f]);
+    vals[f] = el ? el.value.trim() : '';
+  }
 
-  if (!barcode && !orderNum && !custName) {
+  // Validate required fields
+  for (var j = 0; j < FIELD_ORDER.length; j++) {
+    var field = FIELD_ORDER[j];
+    var vis = getFieldConfig(type, field);
+    if (vis === 'required' && !vals[field]) {
+      toast('שדה חובה: ' + (FIELD_LABELS[field] || field), 'e');
+      return;
+    }
+  }
+
+  // At least one identifier
+  if (!vals.barcode && !vals.order_number && !vals.customer_name) {
     toast('יש למלא לפחות שדה מזהה אחד (ברקוד / הזמנה / לקוח)', 'e');
     return;
   }
 
-  const item = {
-    barcode: barcode || null, order_number: orderNum || null,
-    customer_name: custName || null, customer_number: custNum || null,
-    category: category || null, notes: notes || null,
+  // Collect custom field values
+  var customData = {};
+  var hasCustom = false;
+  for (var ci = 1; ci <= 3; ci++) {
+    var custom = getCustomField(type, ci);
+    if (custom && custom.visible) {
+      var cEl = $('wiz-custom-' + ci);
+      var cVal = cEl ? cEl.value.trim() : '';
+      if (cVal) {
+        customData['custom_' + ci] = { label: custom.label, value: cVal };
+        hasCustom = true;
+      }
+    }
+  }
+
+  var item = {
+    barcode: vals.barcode || null, order_number: vals.order_number || null,
+    customer_name: vals.customer_name || null, customer_number: vals.customer_number || null,
+    category: vals.category || null,
+    notes: hasCustom ? JSON.stringify(customData) : (vals.notes || null),
     brand: null, model: null, size: null, color: null,
     unit_cost: null, inventory_id: null, return_id: null, return_item_id: null,
-    item_type: 'order'
+    item_type: 'order', _notesText: vals.notes || null
   };
+  // If notes text AND custom data, merge them
+  if (hasCustom && vals.notes) {
+    customData._text = vals.notes;
+    item.notes = JSON.stringify(customData);
+  }
 
-  if (barcode) {
-    const inv = await lookupBarcode(barcode);
+  if (vals.barcode) {
+    var inv = await lookupBarcode(vals.barcode);
     if (inv) {
       item.inventory_id = inv.id;
       item.brand = inv.brand?.name || null;
@@ -201,10 +228,7 @@ async function addItemRow() {
       toast('ברקוד לא נמצא במלאי — נוסף כפריט ידני', 'i');
     }
   }
-
-  if (ws.type === 'repair' && item.item_type !== 'inventory') {
-    item.item_type = 'repair';
-  }
+  if (type === 'repair' && item.item_type !== 'inventory') item.item_type = 'repair';
 
   ws.items.push(item);
   renderItemsTable();
@@ -214,18 +238,17 @@ async function addItemRow() {
 }
 
 async function lookupBarcode(barcode) {
-  const { data, error } = await sb.from(T.INV)
+  var { data, error } = await sb.from(T.INV)
     .select('id, barcode, brand:brands(name), model, size, color, cost_price')
-    .eq('barcode', barcode)
-    .eq('tenant_id', getTenantId())
-    .eq('is_deleted', false)
+    .eq('barcode', barcode).eq('tenant_id', getTenantId()).eq('is_deleted', false)
     .maybeSingle();
   if (error || !data) return null;
   return data;
 }
 
 function clearItemForm() {
-  ['wiz-barcode', 'wiz-order', 'wiz-cust', 'wiz-custnum', 'wiz-inotes'].forEach(function(id) {
+  ['wiz-barcode', 'wiz-order', 'wiz-cust', 'wiz-custnum', 'wiz-inotes',
+   'wiz-custom-1', 'wiz-custom-2', 'wiz-custom-3'].forEach(function(id) {
     var el = $(id);
     if (el) el.value = '';
   });
@@ -247,101 +270,37 @@ function removeItem(index) {
   var removed = ws.items[index];
   ws.items.splice(index, 1);
   renderItemsTable();
-  // If staged picker is visible, re-sync checkbox state
-  if (removed && removed.return_item_id && $('wiz-staged-picker')) {
-    renderStagedPicker();
-  }
+  if (removed && removed.return_item_id && $('wiz-staged-picker')) renderStagedPicker();
   updateStep2Next();
 }
 
-// --- ITEMS TABLE ---
-function renderItemsTable() {
-  var ws = window._wizardState;
-  var el = $('wiz-items-table');
-  if (!el || !ws) return;
-
-  if (!ws.items.length) {
-    el.innerHTML = '<div class="wiz-note">טרם נוספו פריטים</div>';
-    return;
-  }
-
-  var catMap = ENUM_REV.shipment_category || {};
-  var html = '<div class="wiz-items-count">' + ws.items.length + ' פריטים</div>';
-  html += '<div class="wiz-items-list">';
-
-  for (var i = 0; i < ws.items.length; i++) {
-    var it = ws.items[i];
-    var linked = it.return_item_id ? ' wiz-item-linked' : '';
-    html += '<div class="wiz-item-row' + linked + '">';
-    html += '<span class="wiz-item-num">' + (i + 1) + '</span>';
-    if (it.return_item_id) html += '<span class="wiz-link-icon" title="מקושר לזיכוי">&#128279;</span>';
-
-    if (ws.type === 'framing') {
-      html += col(it.order_number) + col(it.customer_name) +
-        col(catMap[it.category] || it.category) + col(it.barcode) + col(it.notes, true);
-    } else if (ws.type === 'return') {
-      html += col(it.barcode) + col(it.brand) + col(it.model) +
-        col(it.unit_cost ? formatILS(it.unit_cost) : '') + col(it.notes, true);
-    } else if (ws.type === 'repair') {
-      html += col(it.barcode) + col(it.notes) + col(it.order_number, true);
-    } else if (ws.type === 'delivery') {
-      html += col(it.order_number) + col(it.barcode) +
-        col(catMap[it.category] || it.category) + col(it.notes, true);
-    }
-
-    html += '<button class="wiz-item-del" onclick="removeItem(' + i + ')" title="הסר">&#10005;</button>';
-    html += '</div>';
-  }
-
-  html += '</div>';
-  el.innerHTML = html;
-}
-
-function col(val, wide) {
-  return '<span class="wiz-item-col' + (wide ? ' wide' : '') + '">' +
-    escapeHtml(val || '—') + '</span>';
-}
-
-// --- RETURN STATUS HELPERS (used by shipments-create.js & future edit window) ---
+// --- RETURN STATUS HELPERS ---
 async function handleReturnItemsOnCreate(items, boxNumber) {
-  const returnItems = items.filter(function(it) { return !!it.return_id; });
+  var returnItems = items.filter(function(it) { return !!it.return_id; });
   if (!returnItems.length) return;
-
-  const tid = getTenantId();
+  var tid = getTenantId();
   var successCount = 0;
-
-  for (const it of returnItems) {
-    const { error } = await sb.from(T.SUP_RETURNS)
+  for (var i = 0; i < returnItems.length; i++) {
+    var it = returnItems[i];
+    var { error } = await sb.from(T.SUP_RETURNS)
       .update({ status: 'shipped', shipped_at: new Date().toISOString() })
-      .eq('id', it.return_id)
-      .eq('tenant_id', tid);
+      .eq('id', it.return_id).eq('tenant_id', tid);
     if (error) {
       toast('שגיאה בעדכון סטטוס זיכוי: ' + error.message, 'w');
     } else {
       successCount++;
-      writeLog('return_shipped', it.inventory_id || null, {
-        return_id: it.return_id, box_number: boxNumber
-      });
+      writeLog('return_shipped', it.inventory_id || null, { return_id: it.return_id, box_number: boxNumber });
     }
   }
-
-  if (successCount > 0) {
-    toast(boxNumber + ' — ' + successCount + ' פריטי זיכוי עודכנו ל-\'נשלח\'');
-  }
+  if (successCount > 0) toast(boxNumber + ' — ' + successCount + ' פריטי זיכוי עודכנו ל-\'נשלח\'');
 }
 
 async function revertReturnStatus(item, boxNumber) {
   if (!item || !item.return_id) return;
-  const tid = getTenantId();
-  const { error } = await sb.from(T.SUP_RETURNS)
+  var tid = getTenantId();
+  var { error } = await sb.from(T.SUP_RETURNS)
     .update({ status: 'ready_to_ship', shipped_at: null })
-    .eq('id', item.return_id)
-    .eq('tenant_id', tid);
-  if (error) {
-    toast('שגיאה בהחזרת סטטוס זיכוי: ' + error.message, 'w');
-    return;
-  }
-  writeLog('return_unshipped', item.inventory_id || null, {
-    return_id: item.return_id, box_number: boxNumber
-  });
+    .eq('id', item.return_id).eq('tenant_id', tid);
+  if (error) { toast('שגיאה בהחזרת סטטוס זיכוי: ' + error.message, 'w'); return; }
+  writeLog('return_unshipped', item.inventory_id || null, { return_id: item.return_id, box_number: boxNumber });
 }
