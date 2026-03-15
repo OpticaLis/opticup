@@ -17,7 +17,7 @@ async function initShipmentsPage() {
     const permsRaw = JSON.parse(sessionStorage.getItem('prizma_permissions') || '{}');
     const permKeys = Array.isArray(permsRaw) ? permsRaw : Object.keys(permsRaw);
     const shipPermExists = permKeys.some(p => p.startsWith('shipments'));
-    if (shipPermExists && !hasPermission('shipments:view')) {
+    if (shipPermExists && !hasPermission('shipments.view')) {
       window.location.href = 'index.html';
       return;
     }
