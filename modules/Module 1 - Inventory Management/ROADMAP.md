@@ -71,7 +71,8 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 5.5 | ✅ | יציבות, סקייל ואצוות | atomic RPCs, batch upload/OCR, filtering, historical import |
 | 5.75 | ✅ | Communications & Knowledge Infrastructure | DB stubs: conversations, participants, messages, knowledge_base, reactions, notification_preferences |
 | 5.9 | ✅ | משלוחים וארגזים | shipments.html, ארגזים ממוספרים, 4 סוגים, staged picker, נעילה, manifest, הגדרות |
-| 6 | ⬜ | פורטל ספקים | גישת ספק חיצונית, view-only מלאי לפי ספק |
+| QA | ⬜ | בדיקות מקיפות | בדיקת כל הפיצ'רים של Phase 5.9, תיקוני באגים, regression |
+| 6 | 🚫 נדחה | פורטל ספקים — ייבנה במודול עתידי | גישת ספק חיצונית, view-only מלאי לפי ספק |
 
 ---
 
@@ -213,7 +214,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - כרטיס מסך בית + 5 הרשאות: shipments.view/create/edit/lock/settings
 - 9 קבצי JS ב-modules/shipments/ (~2,258 שורות)
 
-### פאזה 6 ⬜ — פורטל ספקים
+### פאזה 6 🚫 נדחה — פורטל ספקים (ייבנה במודול עתידי)
 - קישור ייחודי לכל ספק (token-based auth, לא PIN)
 - צפייה read-only: רק הפריטים של הספק הספציפי
 - בלי מחירים (רק מה קיים + כמויות)

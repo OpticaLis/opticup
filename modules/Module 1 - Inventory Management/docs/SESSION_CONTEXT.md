@@ -50,7 +50,7 @@ Returns management expansion: inventory returns tab, debt returns tab, bulk send
 - Deployed watcher service runs from C:\Users\User\opticup\watcher-deploy\ — must manually copy updated files there after git pull
 
 ## Next Phase
-TBD (Phase 6 Supplier Portal deferred)
+QA — comprehensive testing of all Phase 5.9 features and post-5.9 improvements
 
 ## Last Commits
 ### Post-Phase 5.9i (Returns Management, Config & Fixes)
