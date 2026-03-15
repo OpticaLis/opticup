@@ -26,30 +26,6 @@ async function markAgentPicked(returnId, itemId) {
 }
 
 // =========================================================
-// Mark as credited — PIN + update
-// =========================================================
-async function markCredited(returnId, itemId) {
-  var pin = prompt('הזן סיסמת עובד:');
-  if (!pin) return;
-  var emp = await verifyPinOnly(pin);
-  if (!emp) { toast('סיסמת עובד שגויה', 'e'); return; }
-
-  try {
-    await updateReturnStatus(returnId, 'credited');
-    var item = window._returnsData.find(function(it) { return it.id === itemId; });
-    writeLog('return_credited', item ? item.inventory_id : null, {
-      return_id: returnId, barcode: item ? item.barcode : ''
-    });
-    toast('פריט זוכה', 's');
-    window._returnsCountCache = null;
-    await loadReturnsData(_getCurrentReturnFilters());
-  } catch (e) {
-    console.error('markCredited error:', e);
-    toast('שגיאה בעדכון: ' + (e.message || ''), 'e');
-  }
-}
-
-// =========================================================
 // Get current filter state (reusable)
 // =========================================================
 function _getCurrentReturnFilters() {
@@ -70,8 +46,7 @@ async function bulkAction(action) {
   if (!checkboxes.length) { toast('יש לבחור פריטים', 'w'); return; }
 
   // Validate action is applicable to selected items
-  var validStatuses = (action === 'agent_picked') ? ['ready_to_ship'] :
-                      (action === 'credited') ? ['shipped', 'agent_picked'] : [];
+  var validStatuses = (action === 'agent_picked') ? ['ready_to_ship'] : [];
   var validItems = [];
   checkboxes.forEach(function(cb) {
     if (validStatuses.indexOf(cb.dataset.status) !== -1) {
@@ -97,7 +72,7 @@ async function bulkAction(action) {
   for (var rid in returnIds) {
     try {
       await updateReturnStatus(rid, action);
-      var logAction = (action === 'agent_picked') ? 'return_agent_picked' : 'return_credited';
+      var logAction = 'return_agent_picked';
       writeLog(logAction, null, { return_id: rid, bulk: true });
       count++;
     } catch (e) {

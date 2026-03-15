@@ -167,7 +167,6 @@ function renderReturnsList(items) {
     '<div style="font-size:.88rem;color:var(--g600)">' + totalQty + ' פריטים, סה"כ ' + formatILS(totalVal) + '</div>' +
     '<div style="display:flex;gap:6px">' +
       '<button class="btn btn-sm" onclick="bulkAction(\'agent_picked\')" title="סוכן לקח">&#128694; סוכן לקח</button>' +
-      '<button class="btn btn-sm" onclick="bulkAction(\'credited\')" title="זוכה">&#9989; זוכה</button>' +
     '</div>' +
   '</div>';
 
@@ -194,13 +193,11 @@ function renderReturnsList(items) {
     var dateStr = ret.created_at ? ret.created_at.slice(0, 10) : '';
     var isExpanded = (window._expandedReturnIdx === i);
 
-    // Action buttons based on status
+    // Action buttons based on status — only ready_to_ship gets actions
     var actions = '';
     if (ret.status === 'ready_to_ship') {
       actions = '<button class="btn-sm" onclick="event.stopPropagation();sendToBox(\'' + ret.id + '\',\'' + (ret.supplier_id || '') + '\')" title="שלח בארגז">&#128230;</button> ' +
         '<button class="btn-sm" onclick="event.stopPropagation();markAgentPicked(\'' + ret.id + '\',\'' + it.id + '\')" title="סוכן לקח">&#128694;</button>';
-    } else if (ret.status === 'shipped' || ret.status === 'agent_picked') {
-      actions = '<button class="btn-sm" onclick="event.stopPropagation();markCredited(\'' + ret.id + '\',\'' + it.id + '\')" title="זוכה">&#9989;</button>';
     }
 
     html += '<tr style="cursor:pointer;border-bottom:1px solid var(--g200)" onclick="toggleReturnAccordion(' + i + ')">' +
