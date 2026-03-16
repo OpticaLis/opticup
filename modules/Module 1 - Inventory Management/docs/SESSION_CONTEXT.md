@@ -1,9 +1,18 @@
 # Session Context
 
 ## Last Updated
-Post-Phase QA — 2026-03-16
+Post-QA Restructure — 2026-03-16
 
 ## What Was Done This Session
+
+### Final Restructure (path-only, zero logic changes)
+- Renamed `modules/suppliers-debt/` → `modules/debt/` (21 files)
+- Created `modules/debt/ai/` sub-folder, moved 7 AI files into it
+- Renamed `modules/employees/` → `modules/permissions/` (1 file)
+- Updated all `<script src>` paths in suppliers-debt.html, inventory.html, employees.html
+- Updated CLAUDE.md, MODULE_MAP.md, SESSION_CONTEXT.md, MODULE_SPEC.md documentation
+
+### Previous: QA Phase
 Comprehensive QA phase for Module 1 — final certification. Full code scan, functional testing (~190 tests, 177 PASS), 9 end-to-end flows, edge cases, security audit, performance review, UX/mobile/RTL audit, permissions expansion, and extensive bug fixing.
 
 ### QA Sub-Phases
@@ -69,7 +78,8 @@ Comprehensive QA phase for Module 1 — final certification. Full code scan, fun
 ## Current State
 - **6 HTML pages**: index.html (home), inventory.html (inventory module), suppliers-debt.html (supplier debt module), employees.html (permission management), shipments.html (shipments & box management), settings.html (tenant settings)
 - **2 Edge Functions**: pin-auth (JWT auth), ocr-extract (Claude Vision OCR)
-- **78 JS files** across 13 module folders + 9 global files
+- **78 JS files** across 14 module folders + 9 global files
+- **Folder structure**: modules/debt/ (14 debt files + ai/ sub-folder with 7 AI files), modules/permissions/ (1 file)
 - **~20,500 lines of JS code**
 - **45 DB tables** + 7 RPC functions + 1 pg_cron job
 - **55 permissions** across 15 modules, 5 roles with hierarchical access

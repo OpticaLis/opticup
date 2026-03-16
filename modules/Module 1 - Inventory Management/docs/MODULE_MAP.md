@@ -48,39 +48,39 @@
 | 34 | admin.js | modules/admin/admin.js | 52 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
 | 35 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
 | 36 | auth-service.js | js/auth-service.js | 309 | Core auth engine: verifyEmployeePIN, initSecureSession, loadSession, clearSession, hasPermission, requirePermission, applyUIPermissions, getCurrentEmployee, assignRoleToEmployee, forceLogout |
-| 37 | employee-list.js | modules/employees/employee-list.js | 322 | Employee management: loadEmployeesTab, renderEmployeeTable, openAddEmployee, openEditEmployee, saveEmployee, confirmDeactivateEmployee, renderPermissionMatrix, updateRolePermission |
+| 37 | employee-list.js | modules/permissions/employee-list.js | 322 | Employee management: loadEmployeesTab, renderEmployeeTable, openAddEmployee, openEditEmployee, saveEmployee, confirmDeactivateEmployee, renderPermissionMatrix, updateRolePermission |
 | 38 | index.html | index.html | 318 | Home screen shell: MODULES config array, renderModules (permission-based card lock), PIN login modal, session restore, live clock, onLoginSuccess |
 | 39 | employees.html | employees.html | 60 | Standalone employee management page (extracted from inventory.html employees tab). adminBtn in header, homeBtn always visible in nav |
 | 40 | header.css | css/header.css | 349 | Sticky header styles: 60px height, z-index 1000, RTL, 3-zone flex layout (right: logo+store, center: app name, left: employee+logout), responsive below 600px hides role |
 | 41 | header.js | js/header.js | 61 | Sticky header logic: initHeader (DOMContentLoaded, session check, tenant fetch), buildHeader (DOM injection, escapeHtml, clearSession logout) |
 | 42 | suppliers-debt.html | suppliers-debt.html | 233 | Supplier debt tracking page: summary cards, 5 tabs (suppliers, documents, payments, prepaid, weekly report), session check, tab switching. CDN: jsPDF + html2canvas. debt-main-content wrapper + supplier-detail-panel for detail view |
-| 43 | debt-dashboard.js | modules/suppliers-debt/debt-dashboard.js | ~275 | Debt dashboard summary: loadDebtSummary (calls loadAgingReport), loadAgingReport (5-bucket aging breakdown), loadSuppliersTab (aggregated supplier table with debt/overdue/prepaid), renderSuppliersTable, openPaymentForSupplier |
-| 44 | debt-documents.js | modules/suppliers-debt/debt-documents.js | 294 | Documents tab: loadDocumentsTab (fetch docs+types+suppliers), renderDocFilterBar (supplier/type/status/date/overdue filters), applyDocFilters (client-side), renderDocumentsTable, viewDocument (file preview modal), _attachFileToDoc (file upload), openNewDocumentModal (PIN-verified CRUD), saveNewDocument, generateDocInternalNumber |
-| 45 | debt-doc-link.js | modules/suppliers-debt/debt-doc-link.js | 72 | Delivery note → invoice linking: openLinkToInvoiceModal (shows supplier's invoices), linkDeliveryToInvoice (creates document_links record, updates status to linked) |
-| 46 | debt-payments.js | modules/suppliers-debt/debt-payments.js | 229 | Payments tab: loadPaymentsTab (fetch payments+methods+suppliers+allocations+documents), renderPaymentsToolbar (filters + add button), applyPayFilters (client-side), renderPaymentsTable (with כנגד doc numbers), viewPayment (detail modal with allocation table) |
-| 47 | debt-payment-wizard.js | modules/suppliers-debt/debt-payment-wizard.js | 146 | Payment wizard steps 1-2: openNewPaymentWizard (state reset + modal), supplier selection with debt summary + withholding tax rate lookup, payment details form with auto-calc withholding tax |
-| 48 | debt-payment-alloc.js | modules/suppliers-debt/debt-payment-alloc.js | ~275 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status, rollback on failure) |
-| 49 | debt-prepaid.js | modules/suppliers-debt/debt-prepaid.js | 428 | Prepaid deals tab: loadPrepaidTab (fetch deals+checks+suppliers), renderPrepaidToolbar (filters + add button), applyPrepaidFilters (client-side), renderPrepaidTable (progress bar, status badges), openNewDealModal (PIN-verified), openAddCheckModal, viewDealDetail (progress bar + checks table), updateCheckStatus |
-| 50 | debt-supplier-detail.js | modules/suppliers-debt/debt-supplier-detail.js | ~328 | Supplier detail view: openSupplierDetail (slide-in panel with summary + 4 sub-tabs), closeSupplierDetail, loadSupplierTimeline (merged docs+payments sorted by date), loadSupplierDocuments (filtered table), loadSupplierPayments (filtered table), loadSupplierReturns (delegates to debt-returns.js) |
-| 51 | debt-returns.js | modules/suppliers-debt/debt-returns.js | 292 | Supplier returns tab (per-supplier): loadReturnsForSupplier (fetch+render), renderReturnsTable, viewReturnDetail (modal with items), promptReturnStatusUpdate (PIN-verified), updateReturnStatus (with timestamp fields), generateReturnNumber (RET-{supplier_number}-{seq}). RETURN_TRANSITIONS expanded for full status chain + agent_picked |
+| 43 | debt-dashboard.js | modules/debt/debt-dashboard.js | ~275 | Debt dashboard summary: loadDebtSummary (calls loadAgingReport), loadAgingReport (5-bucket aging breakdown), loadSuppliersTab (aggregated supplier table with debt/overdue/prepaid), renderSuppliersTable, openPaymentForSupplier |
+| 44 | debt-documents.js | modules/debt/debt-documents.js | 294 | Documents tab: loadDocumentsTab (fetch docs+types+suppliers), renderDocFilterBar (supplier/type/status/date/overdue filters), applyDocFilters (client-side), renderDocumentsTable, viewDocument (file preview modal), _attachFileToDoc (file upload), openNewDocumentModal (PIN-verified CRUD), saveNewDocument, generateDocInternalNumber |
+| 45 | debt-doc-link.js | modules/debt/debt-doc-link.js | 72 | Delivery note → invoice linking: openLinkToInvoiceModal (shows supplier's invoices), linkDeliveryToInvoice (creates document_links record, updates status to linked) |
+| 46 | debt-payments.js | modules/debt/debt-payments.js | 229 | Payments tab: loadPaymentsTab (fetch payments+methods+suppliers+allocations+documents), renderPaymentsToolbar (filters + add button), applyPayFilters (client-side), renderPaymentsTable (with כנגד doc numbers), viewPayment (detail modal with allocation table) |
+| 47 | debt-payment-wizard.js | modules/debt/debt-payment-wizard.js | 146 | Payment wizard steps 1-2: openNewPaymentWizard (state reset + modal), supplier selection with debt summary + withholding tax rate lookup, payment details form with auto-calc withholding tax |
+| 48 | debt-payment-alloc.js | modules/debt/debt-payment-alloc.js | ~275 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status, rollback on failure) |
+| 49 | debt-prepaid.js | modules/debt/debt-prepaid.js | 428 | Prepaid deals tab: loadPrepaidTab (fetch deals+checks+suppliers), renderPrepaidToolbar (filters + add button), applyPrepaidFilters (client-side), renderPrepaidTable (progress bar, status badges), openNewDealModal (PIN-verified), openAddCheckModal, viewDealDetail (progress bar + checks table), updateCheckStatus |
+| 50 | debt-supplier-detail.js | modules/debt/debt-supplier-detail.js | ~328 | Supplier detail view: openSupplierDetail (slide-in panel with summary + 4 sub-tabs), closeSupplierDetail, loadSupplierTimeline (merged docs+payments sorted by date), loadSupplierDocuments (filtered table), loadSupplierPayments (filtered table), loadSupplierReturns (delegates to debt-returns.js) |
+| 51 | debt-returns.js | modules/debt/debt-returns.js | 292 | Supplier returns tab (per-supplier): loadReturnsForSupplier (fetch+render), renderReturnsTable, viewReturnDetail (modal with items), promptReturnStatusUpdate (PIN-verified), updateReturnStatus (with timestamp fields), generateReturnNumber (RET-{supplier_number}-{seq}). RETURN_TRANSITIONS expanded for full status chain + agent_picked |
 | 52 | inventory-return.js | modules/inventory/inventory-return.js | ~218 | Supplier return initiation from inventory: openSupplierReturnModal (validates selection, same-supplier check, items preview), _doConfirmSupplierReturn (PIN-verified, creates return+items, decrements inventory, writeLog) |
 | 52b | inventory-returns-tab.js | modules/inventory/inventory-returns-tab.js | 269 | Inventory returns (זיכויים) tab: initReturnsTab, loadReturnsData (status/supplier/date/search filtering), renderReturnsFilters, renderReturnsList (accordion table with bulk selection), toggleReturnsHistory, getReturnsCount (cached badge count) |
 | 52c | inventory-returns-actions.js | modules/inventory/inventory-returns-actions.js | 164 | Returns tab actions: markAgentPicked (PIN-verified), sendToBox (navigate to shipments wizard), bulkSendToBox (validates same supplier), bulkAction (bulk status update), exportReturnsExcel |
-| 51b | debt-returns-tab.js | modules/suppliers-debt/debt-returns-tab.js | 365 | Global debt returns (credit tracking) tab: initDebtReturnsTab, loadDebtReturns (multi-status filtering), renderDebtReturnsList (accordion with bulk selection), renderDebtReturnsSummary, toggleDebtReturnsHistory |
-| 51c | debt-returns-tab-actions.js | modules/suppliers-debt/debt-returns-tab-actions.js | 184 | Debt returns actions: markDebtCredited (modal + PIN), _execMarkCredited, bulkMarkCredited, exportDebtReturnsExcel |
+| 51b | debt-returns-tab.js | modules/debt/debt-returns-tab.js | 365 | Global debt returns (credit tracking) tab: initDebtReturnsTab, loadDebtReturns (multi-status filtering), renderDebtReturnsList (accordion with bulk selection), renderDebtReturnsSummary, toggleDebtReturnsHistory |
+| 51c | debt-returns-tab-actions.js | modules/debt/debt-returns-tab-actions.js | 184 | Debt returns actions: markDebtCredited (modal + PIN), _execMarkCredited, bulkMarkCredited, exportDebtReturnsExcel |
 | 53 | file-upload.js | js/file-upload.js | 114 | File upload helper for supplier documents: uploadSupplierFile (validates type/size, uploads to Supabase Storage), getSupplierFileUrl (signed URLs), renderFilePreview (PDF iframe / image), pickAndUploadFile (hidden file input + upload) |
-| 54 | ai-ocr.js | modules/suppliers-debt/ai-ocr.js | 350 | OCR trigger, review screen, correction flow with learning: triggerOCR (calls ocr-extract Edge Function), showOCRReview (side-by-side modal + supplier OCR stats), _ocrSave (saves corrections + creates supplier_document + updates OCR template), confidence indicators per field, _injectOCRScanIcons (adds scan buttons to doc table rows), _injectOCRToolbarBtn (toolbar scan button), patches loadDocumentsTab |
+| 54 | ai-ocr.js | modules/debt/ai/ai-ocr.js | 350 | OCR trigger, review screen, correction flow with learning: triggerOCR (calls ocr-extract Edge Function), showOCRReview (side-by-side modal + supplier OCR stats), _ocrSave (saves corrections + creates supplier_document + updates OCR template), confidence indicators per field, _injectOCRScanIcons (adds scan buttons to doc table rows), _injectOCRToolbarBtn (toolbar scan button), patches loadDocumentsTab |
 
 | 55 | alerts-badge.js | js/alerts-badge.js | 338 | Bell icon + unread badge + dropdown panel on ALL pages: initAlertsBadge (inject bell into header), refreshAlertsBadge (poll unread count every 60s), toggleAlertsPanel/openAlertsPanel/closeAlertsPanel, loadAlertsList (last 10 unread), alertAction (view/dismiss), markAllAlertsRead, timeAgo (Hebrew relative time) |
-| 56 | ai-alerts.js | modules/suppliers-debt/ai-alerts.js | 221 | Event-driven alerts + auto-dismiss + hooks: checkDuplicateDocument, alertDuplicateDocument, alertAmountMismatch, alertOCRLowConfidence, autoDismissAlerts. Patches: saveNewDocument (duplicate check), linkDeliveryToInvoice (amount mismatch), _ocrSave (auto-dismiss OCR), _wizSavePayment (auto-dismiss payment), triggerOCR (low confidence check) |
-| 57 | ai-weekly-report.js | modules/suppliers-debt/ai-weekly-report.js | 292 | Weekly report screen + PDF export: initWeeklyReport (default to current week), navigateWeek (prev/next), loadWeeklyReport (load snapshot or live data), _gatherReportData (parallel queries: total debt, payments, new docs, upcoming, prepaid, OCR stats), _renderWeeklyReport (4 sections: summary, upcoming, prepaid, OCR), exportWeeklyPDF (html2canvas + jsPDF, snapshot save to weekly_reports) |
-| 58 | ai-config.js | modules/suppliers-debt/ai-config.js | 223 | AI agent config screen — settings modal with permission check: openAIConfig (loads config + stats, CEO/Manager only), _renderAIConfigModal (3 sections: OCR, Alerts, Weekly Report + stats grid), saveAIConfig (updates ai_agent_config row), _injectConfigGear (gear button in topbar for authorized roles), confidence slider with real-time % display |
-| 59 | debt-doc-filters.js | modules/suppliers-debt/debt-doc-filters.js | 242 | Advanced document filtering: collapsible 8-criteria filter panel (status, type, supplier, date range, amount range, source), saved filter favorites (localStorage, max 5), filter count display, replaces simple renderDocFilterBar. Patches loadDocumentsTab to inject filter panel |
-| 60 | ai-batch-upload.js | modules/suppliers-debt/ai-batch-upload.js | 332 | Batch document upload: drag-drop modal, SHA-256 file hash dedup (within batch + against DB), upload-only or upload+OCR modes, progress bar, file preview, batch_id tracking. Injects toolbar button via monkey-patch |
-| 61 | ai-batch-ocr.js | modules/suppliers-debt/ai-batch-ocr.js | 297 | Batch OCR processing: sequential pipeline with pause/resume, retry failed, auto-approve above confidence threshold, review individual docs, summary modal with stats. Entry point: window._startBatchOCR(batchId, docIds) |
-| 62 | ai-historical-import.js | modules/suppliers-debt/ai-historical-import.js | 330 | Historical document import: drag-drop upload for old documents, marks is_historical=true (no inventory impact, no alerts), default status selection (paid/open/per_doc), OCR + learning for supplier templates, per-supplier accuracy summary |
-| 63 | debt-info-content.js | modules/suppliers-debt/debt-info-content.js | 250 | Info modal content for all supplier debt screens; 12 _show*Info() functions + _injectInfoBtn helper |
-| 64 | debt-info-inject.js | modules/suppliers-debt/debt-info-inject.js | 182 | Monkey-patches to inject ❓ buttons into supplier debt screens; _injectModalInfoBtn helper + all tab/modal patches |
+| 56 | ai-alerts.js | modules/debt/ai/ai-alerts.js | 221 | Event-driven alerts + auto-dismiss + hooks: checkDuplicateDocument, alertDuplicateDocument, alertAmountMismatch, alertOCRLowConfidence, autoDismissAlerts. Patches: saveNewDocument (duplicate check), linkDeliveryToInvoice (amount mismatch), _ocrSave (auto-dismiss OCR), _wizSavePayment (auto-dismiss payment), triggerOCR (low confidence check) |
+| 57 | ai-weekly-report.js | modules/debt/ai/ai-weekly-report.js | 292 | Weekly report screen + PDF export: initWeeklyReport (default to current week), navigateWeek (prev/next), loadWeeklyReport (load snapshot or live data), _gatherReportData (parallel queries: total debt, payments, new docs, upcoming, prepaid, OCR stats), _renderWeeklyReport (4 sections: summary, upcoming, prepaid, OCR), exportWeeklyPDF (html2canvas + jsPDF, snapshot save to weekly_reports) |
+| 58 | ai-config.js | modules/debt/ai/ai-config.js | 223 | AI agent config screen — settings modal with permission check: openAIConfig (loads config + stats, CEO/Manager only), _renderAIConfigModal (3 sections: OCR, Alerts, Weekly Report + stats grid), saveAIConfig (updates ai_agent_config row), _injectConfigGear (gear button in topbar for authorized roles), confidence slider with real-time % display |
+| 59 | debt-doc-filters.js | modules/debt/debt-doc-filters.js | 242 | Advanced document filtering: collapsible 8-criteria filter panel (status, type, supplier, date range, amount range, source), saved filter favorites (localStorage, max 5), filter count display, replaces simple renderDocFilterBar. Patches loadDocumentsTab to inject filter panel |
+| 60 | ai-batch-upload.js | modules/debt/ai/ai-batch-upload.js | 332 | Batch document upload: drag-drop modal, SHA-256 file hash dedup (within batch + against DB), upload-only or upload+OCR modes, progress bar, file preview, batch_id tracking. Injects toolbar button via monkey-patch |
+| 61 | ai-batch-ocr.js | modules/debt/ai/ai-batch-ocr.js | 297 | Batch OCR processing: sequential pipeline with pause/resume, retry failed, auto-approve above confidence threshold, review individual docs, summary modal with stats. Entry point: window._startBatchOCR(batchId, docIds) |
+| 62 | ai-historical-import.js | modules/debt/ai/ai-historical-import.js | 330 | Historical document import: drag-drop upload for old documents, marks is_historical=true (no inventory impact, no alerts), default status selection (paid/open/per_doc), OCR + learning for supplier templates, per-supplier accuracy summary |
+| 63 | debt-info-content.js | modules/debt/debt-info-content.js | 250 | Info modal content for all supplier debt screens; 12 _show*Info() functions + _injectInfoBtn helper |
+| 64 | debt-info-inject.js | modules/debt/debt-info-inject.js | 182 | Monkey-patches to inject ❓ buttons into supplier debt screens; _injectModalInfoBtn helper + all tab/modal patches |
 
 | 65 | shipments-list.js | modules/shipments/shipments-list.js | 254 | Shipment list: initShipmentsPage (auth + config load), loadShipments (paginated fetch with supplier/courier joins), renderShipmentsList (grid rows with lock status), filtering (type/supplier/courier/date/search), populateCourierFilter, exportShipmentsExcel |
 | 66 | shipments-create.js | modules/shipments/shipments-create.js | 321 | New box wizard: openNewBoxWizard (3-step state machine), renderWizardStep1 (type selector + destination), renderWizardStep3 (courier/tracking/notes), createBox (RPC next_box_number + insert + return item status updates) |
@@ -104,33 +104,33 @@
 
 **Note (QA Phase):** Module 1 final certification. 4 new files: settings.html (tenant settings page), js/pin-modal.js (shared PIN prompt replacing inline HTML), modules/settings/settings-page.js (settings logic + logo management), modules/stock-count/stock-count-filters.js (brand/category pre-count filters). New functions: promptPin (pin-modal.js), getTenantConfig/storeTenantConfig (settings-page.js), handleLogoUpload/handleLogoDelete/renderLogoPreview (settings-page.js), openReturnTimeline (debt-returns-tab.js), _createCreditNoteForReturn (debt-returns-tab-actions.js), cancelDocument (debt-documents.js), cancelPayment (debt-payments.js). Bug fixes: settings save RLS policy, logo persistence, toast position, loadReturnsData error handling, loading spinners on all pages. DB: tenant_update_own RLS policy on tenants table, 3 migration files (030_settings_columns.sql, 031_stock_count_filter_criteria.sql, 031_tenants_update_policy.sql). 55 permissions across 15 modules (expanded from 29). Storage: tenant-logos bucket added.
 
-**Note (Post-5.9i):** Returns management expansion. 4 new files: inventory-returns-tab.js + inventory-returns-actions.js (modules/inventory/) — inventory returns tab with filters, accordion, bulk selection, sendToBox, export. debt-returns-tab.js + debt-returns-tab-actions.js (modules/suppliers-debt/) — global credit management view with filters, bulk markCredited, export. shared.js: renderHelpBanner() added. qty-modal.js: "נשלח לזיכוי" reason + _createReturnFromReduction call. inventory-reduction.js: _createReturnFromReduction fixed (removed non-existent columns). debt-returns.js: RETURN_TRANSITIONS expanded for full status chain + agent_picked + timestamp columns in updateReturnStatus. shipments-create.js + shipments-items.js: pre-fill from URL params (supplierId, returnIds). shipments-list.js + shipments-couriers.js: help banners. sync-export.js: CSV→XLS via SheetJS (bookType: biff8). DB: 3 new columns on supplier_returns (agent_picked_at, received_at, credited_at), CHECK constraint updated with agent_picked.
+**Note (Post-5.9i):** Returns management expansion. 4 new files: inventory-returns-tab.js + inventory-returns-actions.js (modules/inventory/) — inventory returns tab with filters, accordion, bulk selection, sendToBox, export. debt-returns-tab.js + debt-returns-tab-actions.js (modules/debt/) — global credit management view with filters, bulk markCredited, export. shared.js: renderHelpBanner() added. qty-modal.js: "נשלח לזיכוי" reason + _createReturnFromReduction call. inventory-reduction.js: _createReturnFromReduction fixed (removed non-existent columns). debt-returns.js: RETURN_TRANSITIONS expanded for full status chain + agent_picked + timestamp columns in updateReturnStatus. shipments-create.js + shipments-items.js: pre-fill from URL params (supplierId, returnIds). shipments-list.js + shipments-couriers.js: help banners. sync-export.js: CSV→XLS via SheetJS (bookType: biff8). DB: 3 new columns on supplier_returns (agent_picked_at, received_at, credited_at), CHECK constraint updated with agent_picked.
 
 **Note (Phase 5.9):** Shipments & Box Management. 9 new JS files in modules/shipments/ + shipments.html. T.TENANTS, T.COURIERS, T.SHIPMENTS, T.SHIP_ITEMS added to shared.js. FIELD_MAP updated with shipment fields. ENUM_MAP updated with shipment_type, shipment_item_type, shipment_category. inventory-reduction.js: _createReturnFromReduction creates supplier_return with status ready_to_ship. inventory-return.js: bulk return uses ready_to_ship. index.html: shipments module card added. DB: 3 new tables (courier_companies, shipments, shipment_items), next_box_number RPC (SECURITY DEFINER), 5 new columns on tenants (shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config JSONB), 6 RLS policies, 9 indexes.
 
 **Note (Access Sync Fix):** Major Access sync enhancement (17 commits, not a numbered phase). sync-watcher.js: CSV support (parseCSVFile), service_role key, tenant_id on all inserts, heartbeat every 60s, configurable OPTICUP_WATCH_DIR + OPTICUP_EXPORT_DIR. access-sync.js: watcher status indicator, pending filter toggle, refreshSyncTab. sync-details.js: work center pattern (PIN at entry, inline resolve, help button, brand/model clickable → inventory search). pending-panel.js: reduced to ~32 lines (filter toggle wrapper). pending-resolve.js: rewritten with syncDetailResolve, checkFileCompletion (marks 'handled'), searchBarcodeInInventory, syncDetailSearchInInventory. sync-export.js added (scripts/): reverse sync exports new inventory to CSV every 30s. watcher-deploy/ folder added (8-file standalone package). DB changes: 4 new columns on pending_sales (brand/model/size/color), access_exported on inventory, sync_log status 'handled' + source_ref 'export'.
 
-**Note (Phase 5.5h-2):** ai-historical-import.js added (modules/suppliers-debt/). Historical document import with drag-drop, is_historical marking, default status selection, OCR learning with per-supplier accuracy summary. Script tag added to suppliers-debt.html.
+**Note (Phase 5.5h-2):** ai-historical-import.js added (modules/debt/ai/). Historical document import with drag-drop, is_historical marking, default status selection, OCR learning with per-supplier accuracy summary. Script tag added to suppliers-debt.html.
 
-**Note (Phase 5.5h-1):** ai-batch-ocr.js added (modules/suppliers-debt/). Batch OCR sequential pipeline with pause/resume, retry failed, auto-approve valid, review individual docs, summary modal. Entry via window._startBatchOCR. Script tag added to suppliers-debt.html.
+**Note (Phase 5.5h-1):** ai-batch-ocr.js added (modules/debt/ai/). Batch OCR sequential pipeline with pause/resume, retry failed, auto-approve valid, review individual docs, summary modal. Entry via window._startBatchOCR. Script tag added to suppliers-debt.html.
 
-**Note (Phase 5.5g):** ai-batch-upload.js added (modules/suppliers-debt/). Batch document upload modal with drag-drop, SHA-256 dedup (file_hash column), upload-only or upload+OCR modes, batch_id tracking. Injects toolbar button. Script tag added to suppliers-debt.html.
+**Note (Phase 5.5g):** ai-batch-upload.js added (modules/debt/ai/). Batch document upload modal with drag-drop, SHA-256 dedup (file_hash column), upload-only or upload+OCR modes, batch_id tracking. Injects toolbar button. Script tag added to suppliers-debt.html.
 
-**Note (Phase 5.5f):** debt-doc-filters.js added (modules/suppliers-debt/). Advanced 8-criteria filter panel replacing simple renderDocFilterBar. Saved filter favorites (localStorage, max 5). Script tag added to suppliers-debt.html.
+**Note (Phase 5.5f):** debt-doc-filters.js added (modules/debt/). Advanced 8-criteria filter panel replacing simple renderDocFilterBar. Saved filter favorites (localStorage, max 5). Script tag added to suppliers-debt.html.
 
 **Note (Phase 5.5a-5.5d):** batchWriteLog added to supabase-ops.js. validateOCRData (7 business rules) added to supabase-ops.js. generateDocInternalNumber now uses next_internal_doc_number RPC. updateOCRTemplate now uses update_ocr_template_stats RPC. createAlert skips is_historical documents. 3 new columns on supplier_documents: file_hash, batch_id, is_historical. FIELD_MAP updated with new column translations.
 
-**Note (Phase 5h):** ai-config.js added (modules/suppliers-debt/). Settings modal for AI agent configuration. Gear icon injected into debt-topbar (CEO/Manager only). All ai_agent_config fields editable: OCR toggles + confidence slider, alert toggles + reminder days, weekly report toggle + day picker. Stats section: total OCR scans, avg accuracy, active templates, active alerts. CSS added to styles.css. Script tag added to suppliers-debt.html after ai-weekly-report.js.
+**Note (Phase 5h):** ai-config.js added (modules/debt/ai/). Settings modal for AI agent configuration. Gear icon injected into debt-topbar (CEO/Manager only). All ai_agent_config fields editable: OCR toggles + confidence slider, alert toggles + reminder days, weekly report toggle + day picker. Stats section: total OCR scans, avg accuracy, active templates, active alerts. CSS added to styles.css. Script tag added to suppliers-debt.html after ai-weekly-report.js.
 
-**Note (Phase 5g):** ai-weekly-report.js added (modules/suppliers-debt/). Weekly report tab in suppliers-debt.html with 4 sections: summary (total debt + change vs prev week), upcoming payments (14 days), prepaid deals status, OCR stats. Week navigation (prev/next). PDF export via html2canvas + jsPDF (CDN). Snapshot saved to weekly_reports table. Historical reports load from saved snapshots. CSS added to styles.css. CDN scripts (jspdf, html2canvas) added with defer to suppliers-debt.html.
+**Note (Phase 5g):** ai-weekly-report.js added (modules/debt/ai/). Weekly report tab in suppliers-debt.html with 4 sections: summary (total debt + change vs prev week), upcoming payments (14 days), prepaid deals status, OCR stats. Week navigation (prev/next). PDF export via html2canvas + jsPDF (CDN). Snapshot saved to weekly_reports table. Historical reports load from saved snapshots. CSS added to styles.css. CDN scripts (jspdf, html2canvas) added with defer to suppliers-debt.html.
 
-**Note (Phase 5f-2):** ai-alerts.js added (modules/suppliers-debt/). Event-driven alert system: createAlert + alertPriceAnomaly in supabase-ops.js (shared across all pages). ai-alerts.js provides duplicate document check, amount mismatch, OCR low confidence alerts + auto-dismiss on payment/OCR accept. Hooks via monkey-patching saveNewDocument, linkDeliveryToInvoice, _ocrSave, _wizSavePayment, triggerOCR. receipt-confirm.js checkPoPriceDiscrepancies now calls alertPriceAnomaly for each price anomaly. Respects ai_agent_config flags.
+**Note (Phase 5f-2):** ai-alerts.js added (modules/debt/ai/). Event-driven alert system: createAlert + alertPriceAnomaly in supabase-ops.js (shared across all pages). ai-alerts.js provides duplicate document check, amount mismatch, OCR low confidence alerts + auto-dismiss on payment/OCR accept. Hooks via monkey-patching saveNewDocument, linkDeliveryToInvoice, _ocrSave, _wizSavePayment, triggerOCR. receipt-confirm.js checkPoPriceDiscrepancies now calls alertPriceAnomaly for each price anomaly. Respects ai_agent_config flags.
 
 **Note (Phase 5f-1):** alerts-badge.js added (js/). Bell icon + badge + dropdown panel injected into sticky header on all 4 pages. 60s polling for unread count. Dismiss/mark-read actions update DB. Hebrew timeAgo helper. CSS added to header.css. generate_daily_alerts RPC function (payment_due, payment_overdue, prepaid_low).
 
 **Note (Phase 5e):** OCR learning system. updateOCRTemplate + buildHintsFromCorrections added to supabase-ops.js (shared utility). ai-ocr.js _ocrSave now updates supplier_ocr_templates after saving. showOCRReview displays supplier OCR stats (scan count + accuracy). receipt-ocr.js stores OCR result and patches confirmReceiptCore to call updateOCRTemplate on successful confirm. _rcptOcrResult global added to receipt-ocr.js.
 
-**Note (Phase 5c):** ai-ocr.js added (modules/suppliers-debt/). OCR review screen with side-by-side layout, confidence indicators, correction tracking. Toolbar "סרוק מסמך" button + row-level scan icons for docs with files. CSS styles added to styles.css. Script tag added to suppliers-debt.html after debt-returns.js.
+**Note (Phase 5c):** ai-ocr.js added (modules/debt/ai/). OCR review screen with side-by-side layout, confidence indicators, correction tracking. Toolbar "סרוק מסמך" button + row-level scan icons for docs with files. CSS styles added to styles.css. Script tag added to suppliers-debt.html after debt-returns.js.
 
 **Note (Phase 4 QA fixes + file upload):** file-upload.js added (js/). batchUpdate changed from upsert to individual updates (RLS fix). Payment wizard rollback on failure. generateReturnNumber fallback for supplierNumCache. "cancelled" filter added to documents tab. viewDocument upgraded from placeholder to full modal with file preview. File attach button added to receipt form + documents tab. _pickReceiptFile + _pendingReceiptFile added to receipt-form.js. File-missing warning in confirmReceipt. receipt-debt.js uploads attached file after document creation.
 
@@ -144,7 +144,7 @@
 
 **Note (Phase 4d):** debt-documents.js + debt-doc-link.js added. formatILS moved from debt-dashboard.js to shared.js. T.DOC_LINKS added to shared.js.
 
-**Note (Phase 4c):** suppliers-debt.html + debt-dashboard.js added. New folder modules/suppliers-debt/. T.SUP_PAYMENTS added to shared.js. Debt module card added to index.html MODULES array.
+**Note (Phase 4c):** suppliers-debt.html + debt-dashboard.js added. New folder modules/debt/. T.SUP_PAYMENTS added to shared.js. Debt module card added to index.html MODULES array.
 
 **Note (Phase 3.8):** header.css + header.js added. Script/link tags added to index.html, inventory.html, employees.html.
 
@@ -706,7 +706,7 @@
 |----------|------------|-------------|
 | `switchDebtTab` | `(tabName)` | Switches active tab button and content div for the 5 debt tabs (suppliers, documents, payments, prepaid, weekly). Calls initWeeklyReport for weekly tab |
 
-### modules/suppliers-debt/debt-dashboard.js
+### modules/debt/debt-dashboard.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -716,7 +716,7 @@
 | `renderSuppliersTable` | `(data)` | Renders supplier table with columns: name, open docs, total debt, overdue (red), next due, prepaid deal, action buttons. Row click opens supplier detail |
 | `openPaymentForSupplier` | `(supplierId)` | Opens payment wizard pre-filled with supplier (skips step 1). Ensures _payMethods loaded |
 
-### modules/suppliers-debt/debt-documents.js
+### modules/debt/debt-documents.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -733,14 +733,14 @@
 | `generateDocInternalNumber` | `()` | Queries max existing DOC-NNNN from supplier_documents, returns next sequential number |
 | `cancelDocument` | `(docId)` | Async. PIN-verified document cancellation: sets status to cancelled, updates related links, writeLog |
 
-### modules/suppliers-debt/debt-doc-link.js
+### modules/debt/debt-doc-link.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
 | `openLinkToInvoiceModal` | `(docId)` | Shows modal for linking a delivery note to an invoice. Lists same-supplier invoices (not cancelled) as dropdown options |
 | `linkDeliveryToInvoice` | `(deliveryNoteId)` | Creates document_links record (parent=invoice, child=delivery note), updates delivery note status to 'linked', writeLog, refresh tab |
 
-### modules/suppliers-debt/debt-payments.js
+### modules/debt/debt-payments.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -751,7 +751,7 @@
 | `viewPayment` | `(payId)` | Creates detail modal showing payment info grid + allocations table with document numbers |
 | `cancelPayment` | `(payId)` | Async. PIN-verified payment cancellation: rolls back allocation amounts on linked documents, sets status to cancelled, writeLog |
 
-### modules/suppliers-debt/debt-payment-wizard.js
+### modules/debt/debt-payment-wizard.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -761,7 +761,7 @@
 | `_wizRenderStep2` | `()` | Payment details form: amount, withholding tax rate (pre-filled), auto-calc tax/net, date, method, reference, notes. Restores values on back |
 | `_wizCalcTax` | `()` | Auto-calculates withholding_tax_amount and net_amount from gross amount and rate |
 
-### modules/suppliers-debt/debt-payment-alloc.js
+### modules/debt/debt-payment-alloc.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -775,7 +775,7 @@
 | `_wizRenderStep4` | `()` | Confirmation screen: payment summary grid + PIN input |
 | `_wizSavePayment` | `()` | Verifies PIN, creates supplier_payments record, creates payment_allocations, updates paid_amount/status on documents, writeLog, refreshes tab + summary cards. Rollback: deletes payment+allocations on failure |
 
-### modules/suppliers-debt/debt-prepaid.js
+### modules/debt/debt-prepaid.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -791,7 +791,7 @@
 | `viewDealDetail` | `(dealId)` | Detail modal: deal summary, progress bar, checks table with status actions |
 | `updateCheckStatus` | `(checkId, newStatus)` | Updates check status (pending→cashed/bounced), sets cashed_date |
 
-### modules/suppliers-debt/debt-supplier-detail.js
+### modules/debt/debt-supplier-detail.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -804,7 +804,7 @@
 | `loadSupplierPayments` | `(supplierId)` | Fetches supplier_payments filtered to this supplier, renders table (date, amount, net, method, reference, status) |
 | `loadSupplierReturns` | `(supplierId)` | Delegates to loadReturnsForSupplier (debt-returns.js) with fallback empty state |
 
-### modules/suppliers-debt/debt-returns.js
+### modules/debt/debt-returns.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -816,7 +816,7 @@
 | `updateReturnStatus` | `(returnId, newStatus)` | Updates status + timestamps via batchUpdate, writeLog |
 | `generateReturnNumber` | `(supplierId)` | Generates RET-{supplier_number}-{seq 4-digit} (mirrors PO number pattern) |
 
-### modules/suppliers-debt/debt-returns-tab.js
+### modules/debt/debt-returns-tab.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -831,7 +831,7 @@
 | `toggleDebtRetSelectAll` | `(checked)` | Toggle checkboxes in debt returns table (skip disabled) |
 | `openReturnTimeline` | `(returnId)` | Opens visual timeline modal showing return status progression with dates and icons |
 
-### modules/suppliers-debt/debt-returns-tab-actions.js
+### modules/debt/debt-returns-tab-actions.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -841,7 +841,7 @@
 | `exportDebtReturnsExcel` | `()` | Export debt returns data to Excel with credit dates |
 | `_createCreditNoteForReturn` | `(returnId, supplierId, creditAmount)` | Async. Auto-creates credit_note document in supplier_documents when marking return as credited |
 
-### modules/suppliers-debt/ai-ocr.js
+### modules/debt/ai/ai-ocr.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -856,7 +856,7 @@
 | `_ocrFV` | `(ext, f)` | Extracts field value from possibly nested {value, confidence} object |
 | `_ocrFC` | `(ext, f)` | Extracts confidence score from field or top-level confidence object |
 
-### modules/suppliers-debt/ai-alerts.js
+### modules/debt/ai/ai-alerts.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -871,7 +871,7 @@
 | `_patchOCRSave` | `()` | Patches _ocrSave to auto-dismiss ocr_low_confidence on accept/correct |
 | `_patchPaymentSave` | `()` | Patches _wizSavePayment to auto-dismiss payment_due/payment_overdue on allocated docs |
 
-### modules/suppliers-debt/ai-weekly-report.js
+### modules/debt/ai/ai-weekly-report.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -885,7 +885,7 @@
 | `_fd` | `(d)` | Returns YYYY-MM-DD string from Date object |
 | `_fdh` | `(d)` | Returns DD/MM/YYYY string from Date object |
 
-### modules/suppliers-debt/ai-config.js
+### modules/debt/ai/ai-config.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -897,7 +897,7 @@
 | `_cfgStat` | `(label, value)` | Returns HTML string for a stat item in the stats grid |
 | `saveAIConfig` | `()` | Async. Reads all form values, updates ai_agent_config row, closes modal |
 
-### modules/suppliers-debt/debt-doc-filters.js
+### modules/debt/debt-doc-filters.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -911,7 +911,7 @@
 | `_clearDocFilters` | `()` | Resets all filter inputs and re-applies (shows all docs) |
 | `_toggleDocFilters` | `()` | Expands/collapses filter panel, updates toggle button icon |
 
-### modules/suppliers-debt/ai-batch-upload.js
+### modules/debt/ai/ai-batch-upload.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -928,7 +928,7 @@
 | `_batchPreviewFile` | `(idx)` | Opens file preview in modal (PDF iframe or image) |
 | `_injectBatchUploadBtn` | `()` | Injects "העלאה באצווה" button into documents tab toolbar via monkey-patch |
 
-### modules/suppliers-debt/ai-batch-ocr.js
+### modules/debt/ai/ai-batch-ocr.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -944,7 +944,7 @@
 | `_batchOCRApproveValid` | `()` | Async. Auto-approves all items above confidence threshold |
 | `_batchOCRShowSummary` | `()` | Shows summary modal with processed/approved/failed/avg confidence stats |
 
-### modules/suppliers-debt/ai-historical-import.js
+### modules/debt/ai/ai-historical-import.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -959,7 +959,7 @@
 | `_renderHistFileList` | `()` | Renders file list with status indicators and preview buttons |
 | `_injectHistImportBtn` | `()` | Injects "ייבוא היסטורי" button into documents tab toolbar via monkey-patch |
 
-### modules/suppliers-debt/debt-info-content.js
+### modules/debt/debt-info-content.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -977,7 +977,7 @@
 | `_showOCRReviewInfo` | `()` | Shows OCR review info modal |
 | `_showAIConfigInfo` | `()` | Shows AI config info modal |
 
-### modules/suppliers-debt/debt-info-inject.js
+### modules/debt/debt-info-inject.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -1015,7 +1015,7 @@
 | `bulkSendToBox` | `()` | Validate selected returns are same supplier, navigate to shipments wizard |
 | `exportReturnsExcel` | `()` | Export filtered returns data to Excel file |
 
-### modules/employees/employee-list.js
+### modules/permissions/employee-list.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -1250,7 +1250,7 @@
 | `SLOG_PAGE_SIZE` | Number (const) | `50` | System log rows per page |
 | `SLOG_ROW_CATEGORIES` | Object (const) | action → CSS category | Maps action types to entry/exit/edit/delete/restore categories |
 
-### modules/suppliers-debt/debt-documents.js
+### modules/debt/debt-documents.js
 
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
@@ -1259,14 +1259,14 @@
 | `_docSuppliers` | Array | `[]` | Cached active suppliers for documents tab |
 | `DOC_STATUS_MAP` | Object (const) | 5 entries | Maps status → {he, cls} for badge rendering |
 
-### modules/suppliers-debt/ai-ocr.js
+### modules/debt/ai/ai-ocr.js
 
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
 | `_ocrExtractionId` | String/null | `null` | Current OCR extraction ID being reviewed |
 | `_ocrOriginalData` | Object/null | `null` | Deep copy of original AI-extracted data for correction diff |
 
-### modules/suppliers-debt/debt-doc-filters.js
+### modules/debt/debt-doc-filters.js
 
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
@@ -1275,7 +1275,7 @@
 | `_docFilterSupSelect` | Object/null | `null` | Searchable supplier dropdown instance |
 | `_docTotalCount` | Number | `0` | Total document count before filtering (for "showing X of Y") |
 
-### modules/suppliers-debt/ai-batch-upload.js
+### modules/debt/ai/ai-batch-upload.js
 
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
@@ -1286,7 +1286,7 @@
 | `_batchTimestamp` | String | `''` | Batch creation timestamp |
 | `_batchPreviewUrl` | String/null | `null` | Object URL for current file preview |
 
-### modules/suppliers-debt/ai-batch-ocr.js
+### modules/debt/ai/ai-batch-ocr.js
 
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
@@ -1295,7 +1295,7 @@
 | `_batchOCRBatchId` | String/null | `null` | Current batch ID being processed |
 | `_batchOCRCurrentIdx` | Number | `-1` | Index of currently processing item |
 
-### modules/suppliers-debt/ai-historical-import.js
+### modules/debt/ai/ai-historical-import.js
 
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
@@ -1306,14 +1306,14 @@
 | `_histUploadedPaths` | Array | `[]` | Storage paths of uploaded historical files |
 | `_histPreviewUrl` | String/null | `null` | Object URL for current file preview |
 
-### modules/suppliers-debt/ai-weekly-report.js
+### modules/debt/ai/ai-weekly-report.js
 
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
 | `_wrWeekStart` | Date/null | `null` | Current week start (Sunday) being viewed |
 | `_wrData` | Object/null | `null` | Current report data object (live or from snapshot) |
 
-### modules/suppliers-debt/debt-payments.js
+### modules/debt/debt-payments.js
 
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
@@ -1324,13 +1324,13 @@
 | `_payDocMap` | Object | `{}` | document_id → document object lookup |
 | `PAY_STATUS_MAP` | Object (const) | 5 entries | Maps payment status → {he, cls} for badge rendering |
 
-### modules/suppliers-debt/debt-payment-wizard.js
+### modules/debt/debt-payment-wizard.js
 
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
 | `_wizState` | Object | `{}` | Wizard state: supplierId, amount, taxRate, allocations, openDocs, etc. |
 
-### modules/suppliers-debt/debt-prepaid.js
+### modules/debt/debt-prepaid.js
 
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
@@ -1340,13 +1340,13 @@
 | `DEAL_STATUS_MAP` | Object (const) | 3 entries | Maps deal status → {he, cls} for badge rendering |
 | `CHECK_STATUS_MAP` | Object (const) | 4 entries | Maps check status → {he, cls} for badge rendering |
 
-### modules/suppliers-debt/debt-dashboard.js (Phase 4g additions)
+### modules/debt/debt-dashboard.js (Phase 4g additions)
 
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
 | `_supTabData` | Array | `[]` | Aggregated supplier rows: id, name, openCount, totalDebt, overdueAmt, nextDue, hasDeal, dealRemaining |
 
-### modules/suppliers-debt/debt-supplier-detail.js
+### modules/debt/debt-supplier-detail.js
 
 | Variable | Type | Initial Value | Description |
 |----------|------|---------------|-------------|
