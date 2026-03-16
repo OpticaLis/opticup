@@ -71,7 +71,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 5.5 | ✅ | יציבות, סקייל ואצוות | atomic RPCs, batch upload/OCR, filtering, historical import |
 | 5.75 | ✅ | Communications & Knowledge Infrastructure | DB stubs: conversations, participants, messages, knowledge_base, reactions, notification_preferences |
 | 5.9 | ✅ | משלוחים וארגזים | shipments.html, ארגזים ממוספרים, 4 סוגים, staged picker, נעילה, manifest, הגדרות |
-| QA | ✅ | בדיקות מקיפות — Module 1 Final Certification | ~190 tests (177 PASS), 9 E2E flows, security audit, XSS fixes, permissions expansion (55), settings page, PIN modal, stock count filters, auto credit note, return timeline, 14 bug fixes |
+| QA | ⬜ | בדיקות מקיפות | בדיקת כל הפיצ'רים של Phase 5.9, תיקוני באגים, regression |
 | 6 | 🚫 נדחה | פורטל ספקים — ייבנה במודול עתידי | גישת ספק חיצונית, view-only מלאי לפי ספק |
 
 ---

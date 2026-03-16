@@ -93,7 +93,6 @@ opticup/
 ├── suppliers-debt.html         — supplier debt tracking module
 ├── employees.html              — standalone employee management page
 ├── shipments.html              — shipments & box management module
-├── settings.html               — tenant settings (business info, financial config, display prefs)
 ├── css/
 │   ├── styles.css              — all styles
 │   └── header.css              — sticky header styles
@@ -105,8 +104,7 @@ opticup/
 │   ├── auth-service.js         — PIN login, session management, permissions
 │   ├── header.js               — sticky header logic
 │   ├── file-upload.js          — supplier document file upload/preview
-│   ├── alerts-badge.js         — bell icon + unread badge + dropdown panel (all pages)
-│   └── pin-modal.js            — reusable PIN prompt modal (shared promptPin())
+│   └── alerts-badge.js         — bell icon + unread badge + dropdown panel (all pages)
 ├── modules/
 │   ├── inventory/              — 10 files (table, entry, edit, export, reduction, excel-import, access-sales, inventory-return, inventory-returns-tab, inventory-returns-actions)
 │   ├── purchasing/             — 5 files (purchase-orders, po-form, po-items, po-actions, po-view-import)
@@ -115,10 +113,8 @@ opticup/
 │   ├── brands/                 — 2 files (brands, suppliers)
 │   ├── access-sync/            — 4 files (access-sync, sync-details, pending-panel, pending-resolve)
 │   ├── admin/                  — 2 files (admin, system-log)
-│   ├── suppliers-debt/         — 21 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-supplier-detail, debt-returns, debt-returns-tab, debt-returns-tab-actions, ai-ocr, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import, debt-info-content, debt-info-inject)
-│   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
-│   ├── settings/               — 1 file (settings-page)
-│   └── stock-count/            — 4 files (stock-count-list, stock-count-session, stock-count-report, stock-count-filters)
+│   ├── suppliers-debt/         — 19 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-supplier-detail, debt-returns, debt-returns-tab, debt-returns-tab-actions, ai-ocr, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import)
+│   └── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
 │   ├── sync-export.js          — Reverse sync: export new inventory to XLS for Access
@@ -147,7 +143,7 @@ opticup/
 
 | Constant          | Table                    | Key columns                                                              |
 |-------------------|--------------------------|--------------------------------------------------------------------------|
-| `T.TENANTS`       | tenants                  | id, name, slug, default_currency, timezone, locale, is_active, shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config (JSONB), address, phone, email, tax_id, logo_url, vat_rate |
+| `T.TENANTS`       | tenants                  | id, name, slug, default_currency, timezone, locale, is_active, shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config (JSONB) |
 | `T.INV`           | inventory                | id, barcode, brand_id, supplier_id, model, size, color, quantity, status, is_deleted, access_exported, tenant_id |
 | `T.BRANDS`        | brands                   | id, name, brand_type, default_sync, active, exclude_website, min_stock_qty, tenant_id |
 | `T.SUPPLIERS`     | suppliers                | id, name, active, supplier_number (UNIQUE, ≥ 10), payment_terms_days, withholding_tax_rate, tenant_id |

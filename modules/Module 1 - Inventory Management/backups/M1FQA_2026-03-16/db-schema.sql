@@ -1,6 +1,6 @@
 -- ============================================================
 -- Prizma Optics — מלאי מסגרות — Full DB Schema
--- גרסה QA | מרץ 2026 | Module 1 Final Certification
+-- גרסה 5.9+ | מרץ 2026 | Returns Management + Shipments
 -- ============================================================
 -- סדר יצירה לפי תלויות (FK)
 -- 1. brands  2. suppliers  3. employees
@@ -36,18 +36,6 @@
 --   add_pending_sales_product_columns.sql  — brand, model, size, color on pending_sales
 --   add_inventory_access_exported.sql  — access_exported BOOLEAN + partial index on inventory
 --   add_sync_log_export_source.sql  — 'export' added to sync_log source_ref CHECK
---   add_sync_log_handled_status.sql — 'handled' added to sync_log status CHECK
---   fix_supplier_returns_columns.sql — agent_picked_at, received_at, credited_at on supplier_returns
---   phase5a_ai_agent_tables.sql — ai_agent_config, supplier_ocr_templates, ocr_extractions, alerts, weekly_reports
---   phase5f_alert_generation.sql — generate_daily_alerts RPC + pg_cron job
---   phase5_5a_atomic_rpcs.sql — next_internal_doc_number, update_ocr_template_stats RPCs
---   phase5_5b_schema_additions.sql — file_hash, batch_id, is_historical columns + indexes
---   phase5_5c_pgcron_alerts.sql — pg_cron scheduling
---   phase5_75_communications_knowledge.sql — 6 communications tables
---   phase5_9_shipments.sql — courier_companies, shipments, shipment_items + next_box_number RPC
---   030_settings_columns.sql — business/financial/display columns on tenants
---   031_stock_count_filter_criteria.sql — filter_criteria JSONB on stock_counts
---   031_tenants_update_policy.sql — tenant_update_own RLS policy on tenants
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -86,9 +74,6 @@ CREATE TABLE IF NOT EXISTS tenants (
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "service_bypass_tenants" ON tenants FOR ALL TO service_role USING (true);
 CREATE POLICY "anon_read_tenants" ON tenants FOR SELECT USING (true);
--- QA phase: allow tenant to update its own row (settings page)
-CREATE POLICY "tenant_update_own" ON tenants FOR UPDATE
-  USING (id = current_setting('app.tenant_id')::uuid);
 
 -- Seed Prizma as tenant #1
 INSERT INTO tenants (name, slug, default_currency)
@@ -1739,20 +1724,3 @@ BEGIN
   RETURN v_next;
 END;
 $$;
-
--- ============================================================
--- Supabase Storage Buckets
--- ============================================================
--- failed-sync-files — failed Access sync files for manual retry
--- supplier-docs — scanned invoices and supplier document attachments
--- tenant-logos — public bucket, 2MB max, jpg/png/webp only (QA phase)
-
--- ============================================================
--- QA Phase: Permissions Expansion
--- ============================================================
--- 55 total permissions across 15 modules:
--- inventory (6), purchasing (4), receipts (4), stock_count (4),
--- access_sync (3), brands (3), suppliers (3), audit (3),
--- employees (4), settings (2), debt (5), ai (4), returns (3),
--- shipments (5), admin (2)
--- 36 role_permissions assignments added for 5 roles (ceo, manager, team_lead, worker, viewer)

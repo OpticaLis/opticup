@@ -1,5 +1,5 @@
 # מלאי מסגרות — Module Spec
-## גרסה QA | מרץ 2026 | Module 1 Final Certification
+## גרסה 5.9+ | מרץ 2026 | Returns Management + Shipments
 
 > **Authority:** Business logic flows and screen descriptions. For code details → MODULE_MAP.md. For DB schema → db-schema.sql. For rules → CLAUDE.md.
 
@@ -10,7 +10,7 @@
 **מודול מלאי מסגרות** הוא הליבה של מערכת Optic Up — מנהל את כל מחזור החיים של מסגרות משקפיים במלאי: כניסה, מעקב, עריכה, מכירה, מחיקה, שחזור, ספירת מלאי, סנכרון עם Access, ומעקב חובות ספקים.
 
 **סטאק טכנולוגי:**
-- Frontend: Vanilla JS (no framework), 78 JS modules + CSS
+- Frontend: Vanilla JS (no framework), ~82 JS modules + CSS
 - Backend: Supabase (PostgreSQL + REST API + RPC + Edge Functions), client = `sb`
 - Auth: PIN → Edge Function (pin-auth) → signed JWT with tenant_id claim
 - Excel: SheetJS (xlsx) לייבוא/ייצוא
@@ -43,7 +43,7 @@ For complete file index → see MODULE_MAP.md section 1.
 
 **pg_cron Jobs:** `daily-alert-generation` — runs at 05:00 UTC, calls generate_daily_alerts with fault isolation per alert type.
 
-**Supabase Storage:** bucket `failed-sync-files` for failed Access sync files, bucket `supplier-docs` for scanned invoices, bucket `tenant-logos` for tenant logo images.
+**Supabase Storage:** bucket `failed-sync-files` for failed Access sync files, bucket `supplier-docs` for scanned invoices.
 
 **Edge Functions:**
 - `pin-auth` — validates PIN server-side, returns signed JWT with tenant_id claim
@@ -98,8 +98,6 @@ For complete file index → see MODULE_MAP.md section 1.
 - **Approval**: manager PIN (role=admin/manager) → update inventory via `set_inventory_qty` RPC → writeLog per diff item
 - **Cancel**: cancels count without changing quantities
 - **Export**: all counted items to xlsx (10 columns including scanned_by)
-- **Brand/category filters** (QA): pre-count filter screen to select brands and product types for targeted counts (stock-count-filters.js). Builds filter_criteria JSONB stored on stock_counts
-- **Realtime search** (QA): debounced search in count session filters items by brand/model/barcode
 
 ### 3.7 סנכרון Access (Access Sync) — Phase 2b + Access Sync Fix
 - **Sync tab**: summary cards (syncs/items/errors today), last activity timestamp, watcher status indicator (green/yellow/red based on heartbeat), sync log table with pagination
@@ -202,23 +200,6 @@ Standalone page: `suppliers-debt.html` with 4 tabs.
 - **Return types**: agent_pickup, ship_to_supplier, pending_in_store
 - **sendToBox**: single or bulk — navigates to shipments wizard with supplierId + returnIds pre-filled via URL params
 - **Help banners**: renderHelpBanner() on returns tabs + shipments screens — collapsible with sessionStorage state
-- **Return credit timeline** (QA): visual timeline modal showing return status progression with dates and icons (openReturnTimeline in debt-returns-tab.js)
-- **Auto credit note** (QA): when marking return as credited, auto-creates credit_note document in supplier_documents (_createCreditNoteForReturn in debt-returns-tab-actions.js)
-
-### 3.22 הגדרות (Tenant Settings) — QA Phase
-Standalone page: `settings.html` with `modules/settings/settings-page.js`.
-
-- **3 settings sections**:
-  - Business info: name, address, phone, email, tax_id
-  - Financial config: vat_rate, default_currency
-  - Display preferences: logo upload/delete/preview
-- **Logo management**: upload to tenant-logos Storage bucket with client-side resize (max 200px), delete, preview
-- **VAT wired to tenant config**: reads vat_rate from tenants table instead of hardcoded 17%
-
-### 3.23 PIN משותף (Consistent PIN Modal) — QA Phase
-- **js/pin-modal.js**: shared `promptPin()` function returns Promise with employee object or null
-- Replaces inline PIN HTML across multiple modules for consistency
-- Uses `verifyPinOnly()` under the hood
 
 ---
 
@@ -256,7 +237,6 @@ Standalone page: `settings.html` with `modules/settings/settings-page.js`.
 - Login PIN calls pin-auth Edge Function (server-side JWT)
 - Mid-session PIN checks use `verifyPinOnly()` (client-side query)
 - Required for: qty changes, soft/permanent delete, reduction, pending resolution, stock count, new documents, payments, returns
-- dev_bypass query param removed in QA phase (security hardening)
 
 ### 4.7 קבלת סחורה — flow
 1. יצירת קבלה (סוג מסמך + מספר + ספק + תאריך)
@@ -309,8 +289,6 @@ Standalone page: `settings.html` with `modules/settings/settings-page.js`.
 - **Prepaid deals**: check-based, auto-deduction on receipt, progress tracking
 - **Supplier returns**: initiated from inventory selection, generates RET-{supplier_number}-{seq}
 - **Document linking**: delivery notes can be linked to monthly invoices (document_links)
-- **Document cancel** (QA): PIN-verified cancellation updates status and related links
-- **Payment cancel** (QA): PIN-verified cancellation rolls back allocation amounts on linked documents
 
 ### 4.13 validateOCRData — 7 Business Rules (Phase 5.5d)
 Validates OCR-extracted data before document creation:
@@ -407,7 +385,7 @@ Known issues are tracked in SESSION_CONTEXT.md — single home for all open issu
 ## 7. Permission System (Phase 3)
 
 - 5 roles with hierarchical access: ceo > manager > team_lead > worker > viewer
-- 55 permissions across 15 modules, checked via `hasPermission(key)` at runtime
+- 35 permissions checked via `hasPermission(key)` at runtime
 - UI guards: `data-permission` on buttons, `data-tab-permission` on nav tabs
 - `applyUIPermissions()` runs after every login and tab switch
 
@@ -419,14 +397,13 @@ Known issues are tracked in SESSION_CONTEXT.md — single home for all open issu
 - **employees.html** — standalone employee management page
 - **suppliers-debt.html** — standalone supplier debt tracking page (Phase 4)
 - **shipments.html** — standalone shipments & box management page (Phase 5.9)
-- **settings.html** — tenant settings page with 3 sections: business info, financial config, display preferences. Logo upload/delete/preview via tenant-logos Storage bucket (QA)
 - Module cards show permission-based lock overlays
 
 ---
 
 ## 9. Multi-Tenancy Foundation (Phase 3.75)
 
-- טבלת `tenants` — id, name, slug, default_currency, timezone, locale, is_active, shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config, address, phone, email, tax_id, logo_url, vat_rate
+- טבלת `tenants` — id, name, slug, default_currency, timezone, locale, is_active, shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config
 - `tenant_id UUID NOT NULL` on all 45 tables, JWT-based RLS tenant isolation
 - Edge Function `pin-auth` returns JWT with tenant_id claim
 - `getTenantId()` reads from sessionStorage
