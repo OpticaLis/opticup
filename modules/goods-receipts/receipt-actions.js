@@ -12,9 +12,10 @@ async function saveReceiptDraft() {
   try { items = getReceiptItems(); } catch (e) { return; }
   if (!items.length) { toast('חובה להוסיף לפחות פריט אחד', 'e'); return; }
 
-  const noPrice = items.filter(i => !i.sell_price || i.sell_price <= 0);
-  if (noPrice.length) {
-    toast(`${noPrice.length} שורות חסרות מחיר מכירה`, 'e');
+  // Only require sell_price for new items — existing items already have sell_price in inventory
+  const newNoPrice = items.filter(i => i.is_new_item && (!i.sell_price || i.sell_price <= 0));
+  if (newNoPrice.length) {
+    toast(`${newNoPrice.length} פריטים חדשים חסרים מחיר מכירה`, 'e');
     return;
   }
 

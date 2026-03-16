@@ -89,7 +89,7 @@ async function proceedToPOItems() {
     expected_date: document.getElementById('po-step1-expected-date')?.value || '',
     notes:         document.getElementById('po-step1-notes')?.value || ''
   };
-  if (!currentPOItems) currentPOItems = [];
+  if (!currentPOItems || !Array.isArray(currentPOItems)) currentPOItems = [];
   renderPOForm(false);
 }
 

@@ -10,6 +10,10 @@ let currentPOItems = [];
 
 // ── Tab entry point ──────────────────────────────────────────
 async function loadPurchaseOrdersTab() {
+  // Reset PO state so next "new PO" starts clean
+  currentPO = null;
+  currentPOItems = [];
+
   const container = document.getElementById('po-list-container2');
   if (!container) return;
   container.innerHTML = '<p style="padding:20px">טוען...</p>';
