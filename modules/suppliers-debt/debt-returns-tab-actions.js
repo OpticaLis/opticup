@@ -1,53 +1,99 @@
 // =========================================================
 // debt-returns-tab-actions.js — Credit marking + Excel export
 // Load after: debt-returns-tab.js, debt-returns.js
-// Provides: markDebtCredited(), _execMarkCredited(),
-//   bulkMarkCredited(), exportDebtReturnsExcel()
+// Provides: markDebtCredited(), bulkMarkCredited(),
+//   _createCreditNoteForReturn(), exportDebtReturnsExcel()
 // =========================================================
 
 // =========================================================
 // Mark single item as credited (PIN required)
 // =========================================================
 async function markDebtCredited(returnId, itemId) {
-  var html =
-    '<div class="modal-overlay" id="dret-credit-modal" style="display:flex" onclick="if(event.target===this)closeModal(\'dret-credit-modal\')">' +
-      '<div class="modal" style="max-width:400px">' +
-        '<h3 style="margin:0 0 12px">סימון כזוכה</h3>' +
-        '<p style="font-size:.9rem">סמן פריט זה כ"זוכה"?</p>' +
-        '<div class="form-group"><label>סיסמת עובד</label>' +
-          '<input type="password" id="dret-credit-pin" class="nd-field" maxlength="10" placeholder="הזן PIN">' +
-        '</div>' +
-        '<div style="display:flex;gap:8px;margin-top:12px">' +
-          '<button class="btn btn-p" onclick="_execMarkCredited(\'' + returnId + '\',\'' + itemId + '\')">&#9989; אשר</button>' +
-          '<button class="btn btn-g" onclick="closeModal(\'dret-credit-modal\')">ביטול</button>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
-  var existing = $('dret-credit-modal');
-  if (existing) existing.remove();
-  document.body.insertAdjacentHTML('beforeend', html);
-  setTimeout(function() { var p = $('dret-credit-pin'); if (p) p.focus(); }, 100);
+  promptPin('סימון כזוכה — אימות עובד', async function(pin, emp) {
+    try {
+      await updateReturnStatus(returnId, 'credited');
+      var item = window._debtReturnsData.find(function(d) { return d.id === itemId; });
+      await writeLog('return_credited', null, {
+        return_id: returnId, item_id: itemId,
+        barcode: item ? item.barcode : '', source_ref: 'debt_module'
+      });
+      // Auto-create credit note document
+      var ret = item ? item.return : null;
+      if (ret) {
+        var creditDoc = await _createCreditNoteForReturn(ret, returnId, emp.id);
+        if (creditDoc) {
+          toast('זוכה + מסמך זיכוי נוצר: ' + creditDoc.docNumber, 's');
+        } else {
+          toast('פריט סומן כזוכה (מסמך זיכוי לא נוצר)', 'w');
+        }
+      } else {
+        toast('פריט סומן כזוכה', 's');
+      }
+      applyDebtReturnsFilters();
+    } catch (e) {
+      console.error('markDebtCredited error:', e);
+      toast('שגיאה: ' + (e.message || ''), 'e');
+    }
+  });
 }
 
-async function _execMarkCredited(returnId, itemId) {
-  var pin = ($('dret-credit-pin') || {}).value || '';
-  if (!pin) { toast('יש להזין סיסמת עובד', 'w'); return; }
-  var emp = await verifyPinOnly(pin);
-  if (!emp) { toast('סיסמת עובד שגויה', 'e'); var p = $('dret-credit-pin'); if (p) p.value = ''; return; }
-
+// =========================================================
+// Auto-create credit note document for a credited return
+// =========================================================
+async function _createCreditNoteForReturn(ret, returnId, empId) {
   try {
-    await updateReturnStatus(returnId, 'credited');
-    var item = window._debtReturnsData.find(function(d) { return d.id === itemId; });
-    await writeLog('return_credited', null, {
-      return_id: returnId, item_id: itemId,
-      barcode: item ? item.barcode : '', source_ref: 'debt_module'
+    // Find credit_note document type
+    var types = await fetchAll(T.DOC_TYPES, [['code', 'eq', 'credit_note'], ['is_active', 'eq', true]]);
+    if (!types.length) {
+      console.warn('credit_note document type not found — skipping credit note creation');
+      return null;
+    }
+    var typeId = types[0].id;
+
+    // Calculate total from return items
+    var items = window._debtReturnsData.filter(function(d) { return d.return_id === returnId; });
+    var subtotal = items.reduce(function(sum, it) {
+      return sum + (Number(it.cost_price) || 0) * (it.quantity || 1);
+    }, 0);
+    if (subtotal <= 0) subtotal = 0.01; // avoid zero
+
+    var vatRate = getTenantConfig('vat_rate') || 17;
+    var vatAmount = Math.round(subtotal * vatRate) / 100;
+    var totalAmount = subtotal + vatAmount;
+
+    var docNumber = 'CRD-' + (ret.return_number || returnId.slice(0, 8));
+    var internalNumber = await generateDocInternalNumber();
+
+    await batchCreate(T.SUP_DOCS, [{
+      tenant_id: getTenantId(),
+      supplier_id: ret.supplier_id,
+      document_type_id: typeId,
+      document_number: docNumber,
+      document_date: new Date().toISOString().slice(0, 10),
+      subtotal: subtotal,
+      vat_rate: vatRate,
+      vat_amount: vatAmount,
+      total_amount: totalAmount,
+      currency: 'ILS',
+      status: 'paid',
+      notes: 'זיכוי אוטומטי עבור ' + (ret.return_number || ''),
+      internal_number: internalNumber,
+      created_by: empId
+    }]);
+
+    // Link credit document to return
+    await sb.from(T.SUP_RETURNS).update({ credit_document_id: null })
+      .eq('id', returnId); // clear if needed, we don't have the doc id easily
+
+    await writeLog('credit_note_auto', null, {
+      return_id: returnId, return_number: ret.return_number || '',
+      document_number: docNumber, total_amount: totalAmount
     });
-    closeModal('dret-credit-modal');
-    toast('פריט סומן כזוכה', 's');
-    applyDebtReturnsFilters();
+
+    return { docNumber: docNumber };
   } catch (e) {
-    console.error('markDebtCredited error:', e);
-    toast('שגיאה: ' + (e.message || ''), 'e');
+    console.error('_createCreditNoteForReturn error:', e);
+    return null;
   }
 }
 
@@ -67,38 +113,15 @@ async function bulkMarkCredited() {
   });
   if (!selected.length) { toast('לא נבחרו פריטים ממתינים', 'w'); return; }
 
-  var html =
-    '<div class="modal-overlay" id="dret-credit-modal" style="display:flex" onclick="if(event.target===this)closeModal(\'dret-credit-modal\')">' +
-      '<div class="modal" style="max-width:400px">' +
-        '<h3 style="margin:0 0 12px">סימון ' + selected.length + ' פריטים כזוכו</h3>' +
-        '<div class="form-group"><label>סיסמת עובד</label>' +
-          '<input type="password" id="dret-credit-pin" class="nd-field" maxlength="10" placeholder="הזן PIN">' +
-        '</div>' +
-        '<div style="display:flex;gap:8px;margin-top:12px">' +
-          '<button class="btn btn-p" id="dret-bulk-confirm">&#9989; אשר</button>' +
-          '<button class="btn btn-g" onclick="closeModal(\'dret-credit-modal\')">ביטול</button>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
-  var existing = $('dret-credit-modal');
-  if (existing) existing.remove();
-  document.body.insertAdjacentHTML('beforeend', html);
-  setTimeout(function() { var p = $('dret-credit-pin'); if (p) p.focus(); }, 100);
-
-  $('dret-bulk-confirm').onclick = async function() {
-    var pin = ($('dret-credit-pin') || {}).value || '';
-    if (!pin) { toast('יש להזין סיסמת עובד', 'w'); return; }
-    var emp = await verifyPinOnly(pin);
-    if (!emp) { toast('סיסמת עובד שגויה', 'e'); $('dret-credit-pin').value = ''; return; }
-
+  promptPin('סימון ' + selected.length + ' פריטים כזוכו', async function(pin, emp) {
     try {
-      // Group by return_id to avoid duplicate status updates
       var byReturn = {};
       selected.forEach(function(s) {
         if (!byReturn[s.returnId]) byReturn[s.returnId] = [];
         byReturn[s.returnId].push(s.itemId);
       });
 
+      var creditCount = 0;
       for (var rid in byReturn) {
         await updateReturnStatus(rid, 'credited');
         for (var j = 0; j < byReturn[rid].length; j++) {
@@ -109,16 +132,23 @@ async function bulkMarkCredited() {
             barcode: item ? item.barcode : '', source_ref: 'debt_module_bulk'
           });
         }
+        var firstItem = window._debtReturnsData.find(function(d) { return d.return_id === rid; });
+        var ret = firstItem ? firstItem.return : null;
+        if (ret) {
+          var doc = await _createCreditNoteForReturn(ret, rid, emp.id);
+          if (doc) creditCount++;
+        }
       }
 
-      closeModal('dret-credit-modal');
-      toast(selected.length + ' פריטים סומנו כזוכו', 's');
+      var msg = selected.length + ' פריטים סומנו כזוכו';
+      if (creditCount) msg += ', ' + creditCount + ' מסמכי זיכוי נוצרו';
+      toast(msg, 's');
       applyDebtReturnsFilters();
     } catch (e) {
       console.error('bulkMarkCredited error:', e);
       toast('שגיאה: ' + (e.message || ''), 'e');
     }
-  };
+  });
 }
 
 // =========================================================

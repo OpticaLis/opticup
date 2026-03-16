@@ -277,20 +277,18 @@ async function cancelDocument(docId) {
   if (!doc || doc.status !== 'open') { toast('\u05E0\u05D9\u05EA\u05DF \u05DC\u05D1\u05D8\u05DC \u05E8\u05E7 \u05DE\u05E1\u05DE\u05DA \u05E4\u05EA\u05D5\u05D7', 'e'); return; }
   var ok = await confirmDialog('\u05D1\u05D9\u05D8\u05D5\u05DC \u05DE\u05E1\u05DE\u05DA', '\u05D4\u05D0\u05DD \u05DC\u05D1\u05D8\u05DC \u05D0\u05EA \u05D4\u05DE\u05E1\u05DE\u05DA? \u05E4\u05E2\u05D5\u05DC\u05D4 \u05D6\u05D5 \u05EA\u05D0\u05E4\u05E1 \u05D0\u05EA \u05D4\u05D9\u05EA\u05E8\u05D4');
   if (!ok) return;
-  var pin = prompt('\u05D4\u05D6\u05DF \u05E7\u05D5\u05D3 \u05E2\u05D5\u05D1\u05D3 (PIN)');
-  if (!pin) return;
-  var emp = await verifyPinOnly(pin);
-  if (!emp) { toast('\u05E7\u05D5\u05D3 \u05E2\u05D5\u05D1\u05D3 \u05E9\u05D2\u05D5\u05D9', 'e'); return; }
-  showLoading('\u05DE\u05D1\u05D8\u05DC \u05DE\u05E1\u05DE\u05DA...');
-  try {
-    await batchUpdate(T.SUP_DOCS, [{ id: docId, status: 'cancelled', total_amount: 0, paid_amount: 0 }]);
-    await writeLog('doc_cancel', null, { document_id: docId, document_number: doc.document_number, cancelled_by: emp.id });
-    toast('\u05DE\u05E1\u05DE\u05DA \u05D1\u05D5\u05D8\u05DC');
-    await loadDocumentsTab();
-  } catch (e) {
-    console.error('cancelDocument error:', e);
-    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D1\u05D9\u05D8\u05D5\u05DC: ' + (e.message || ''), 'e');
-  } finally {
-    hideLoading();
-  }
+  promptPin('ביטול מסמך — אימות עובד', async function(pin, emp) {
+    showLoading('מבטל מסמך...');
+    try {
+      await batchUpdate(T.SUP_DOCS, [{ id: docId, status: 'cancelled', total_amount: 0, paid_amount: 0 }]);
+      await writeLog('doc_cancel', null, { document_id: docId, document_number: doc.document_number, cancelled_by: emp.id });
+      toast('מסמך בוטל');
+      await loadDocumentsTab();
+    } catch (e) {
+      console.error('cancelDocument error:', e);
+      toast('שגיאה בביטול: ' + (e.message || ''), 'e');
+    } finally {
+      hideLoading();
+    }
+  });
 }

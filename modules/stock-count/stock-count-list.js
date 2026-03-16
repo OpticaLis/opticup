@@ -152,6 +152,8 @@ function startNewCount() {
 }
 
 let _scFilterCriteria = {};
+let _scBrandsList = []; // brands loaded for filter screen
+let _scActiveCats = []; // active category filters
 
 async function _showCountFilterScreen() {
   const tab = document.getElementById('tab-stock-count');
@@ -165,6 +167,8 @@ async function _showCountFilterScreen() {
     try { brands = await fetchAll(T.BRANDS, [['active', 'eq', true]]); } catch(e) {}
   }
   brands.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  _scBrandsList = brands;
+  _scActiveCats = [];
 
   // Load suppliers
   var suppliers = [];
@@ -175,7 +179,7 @@ async function _showCountFilterScreen() {
   }
 
   var brandChecks = brands.map(b =>
-    '<label style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#f0f4ff;border-radius:6px;font-size:.82rem;cursor:pointer;white-space:nowrap">' +
+    '<label class="sc-brand-label" data-brand-type="' + (b.brand_type || '') + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#f0f4ff;border-radius:6px;font-size:.82rem;cursor:pointer;white-space:nowrap">' +
       '<input type="checkbox" class="sc-brand-cb" value="' + b.id + '"> ' + escapeHtml(b.name) +
     '</label>'
   ).join('');
@@ -199,6 +203,13 @@ async function _showCountFilterScreen() {
       <div style="background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)">
         <div style="margin-bottom:16px">
           <label style="font-weight:600;font-size:.9rem;display:block;margin-bottom:6px">מותגים</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px">
+            <span style="font-size:.82rem;color:var(--g600);margin-left:6px">סנן לפי קטגוריה:</span>
+            <button class="sc-cat-btn sc-cat-active" data-cat="all" onclick="_scToggleCat('all')" style="padding:4px 14px;border-radius:16px;border:2px solid var(--primary);background:var(--primary);color:white;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">הכל</button>
+            <button class="sc-cat-btn" data-cat="luxury" onclick="_scToggleCat('luxury')" style="padding:4px 14px;border-radius:16px;border:2px solid var(--primary);background:transparent;color:var(--primary);font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">יוקרה</button>
+            <button class="sc-cat-btn" data-cat="brand" onclick="_scToggleCat('brand')" style="padding:4px 14px;border-radius:16px;border:2px solid var(--primary);background:transparent;color:var(--primary);font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">מותג</button>
+            <button class="sc-cat-btn" data-cat="none" onclick="_scToggleCat('none')" style="padding:4px 14px;border-radius:16px;border:2px solid var(--primary);background:transparent;color:var(--primary);font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">ללא מותג</button>
+          </div>
           <div style="display:flex;gap:4px;margin-bottom:6px">
             <button class="btn btn-sm" onclick="_scToggleAllBrands(true)" style="font-size:.78rem;padding:4px 10px">בחר הכל</button>
             <button class="btn btn-sm" onclick="_scToggleAllBrands(false)" style="font-size:.78rem;padding:4px 10px">נקה הכל</button>
@@ -251,8 +262,52 @@ async function _showCountFilterScreen() {
 
 let _scPreviewTimer = null;
 
+function _scToggleCat(cat) {
+  if (cat === 'all') {
+    _scActiveCats = [];
+  } else {
+    var idx = _scActiveCats.indexOf(cat);
+    if (idx >= 0) _scActiveCats.splice(idx, 1);
+    else _scActiveCats.push(cat);
+  }
+  // Update button styles
+  document.querySelectorAll('.sc-cat-btn').forEach(function(btn) {
+    var bc = btn.getAttribute('data-cat');
+    var isActive = (bc === 'all' && !_scActiveCats.length) || _scActiveCats.indexOf(bc) >= 0;
+    btn.style.background = isActive ? 'var(--primary)' : 'transparent';
+    btn.style.color = isActive ? 'white' : 'var(--primary)';
+    btn.classList.toggle('sc-cat-active', isActive);
+  });
+  // Filter visible brands
+  _scApplyCategoryFilter();
+  clearTimeout(_scPreviewTimer);
+  _scPreviewTimer = setTimeout(_scUpdateFilterPreview, 300);
+}
+
+function _scApplyCategoryFilter() {
+  document.querySelectorAll('.sc-brand-label').forEach(function(lbl) {
+    var bt = lbl.getAttribute('data-brand-type') || '';
+    if (!_scActiveCats.length) {
+      lbl.style.display = '';
+      return;
+    }
+    var show = false;
+    for (var i = 0; i < _scActiveCats.length; i++) {
+      if (_scActiveCats[i] === 'luxury' && bt === 'luxury') show = true;
+      else if (_scActiveCats[i] === 'brand' && bt === 'brand') show = true;
+      else if (_scActiveCats[i] === 'none' && !bt) show = true;
+    }
+    lbl.style.display = show ? '' : 'none';
+  });
+}
+
 function _scToggleAllBrands(checked) {
-  document.querySelectorAll('.sc-brand-cb').forEach(cb => { cb.checked = checked; });
+  // Only toggle visible (not hidden by category filter) brands
+  document.querySelectorAll('.sc-brand-label').forEach(function(lbl) {
+    if (lbl.style.display === 'none') return;
+    var cb = lbl.querySelector('.sc-brand-cb');
+    if (cb) cb.checked = checked;
+  });
   clearTimeout(_scPreviewTimer);
   _scPreviewTimer = setTimeout(_scUpdateFilterPreview, 300);
 }

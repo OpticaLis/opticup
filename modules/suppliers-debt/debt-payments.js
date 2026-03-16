@@ -203,29 +203,27 @@ async function cancelPayment(payId) {
   if (!pay || pay.status !== 'approved') { toast('ניתן לבטל רק תשלום מאושר', 'e'); return; }
   var ok = await confirmDialog('ביטול תשלום', 'האם לבטל את התשלום? הסכום יוחזר ליתרת החוב');
   if (!ok) return;
-  var pin = prompt('הזן קוד עובד (PIN)');
-  if (!pin) return;
-  var emp = await verifyPinOnly(pin);
-  if (!emp) { toast('קוד עובד שגוי', 'e'); return; }
-  showLoading('מבטל תשלום...');
-  try {
-    // Delete allocations for this payment
-    var allocs = _payAllocMap[payId] || [];
-    if (allocs.length) {
-      var allocIds = allocs.map(function(a) { return a.id; });
-      for (var i = 0; i < allocIds.length; i++) {
-        await sb.from(T.PAY_ALLOC).delete().eq('id', allocIds[i]);
+  promptPin('ביטול תשלום — אימות עובד', async function(pin, emp) {
+    showLoading('מבטל תשלום...');
+    try {
+      // Delete allocations for this payment
+      var allocs = _payAllocMap[payId] || [];
+      if (allocs.length) {
+        var allocIds = allocs.map(function(a) { return a.id; });
+        for (var i = 0; i < allocIds.length; i++) {
+          await sb.from(T.PAY_ALLOC).delete().eq('id', allocIds[i]);
+        }
       }
+      await batchUpdate(T.SUP_PAYMENTS, [{ id: payId, status: 'cancelled' }]);
+      await writeLog('payment_cancel', null, { payment_id: payId, amount: pay.amount, cancelled_by: emp.id });
+      toast('תשלום בוטל');
+      closeAndRemoveModal('view-pay-modal');
+      await loadPaymentsTab();
+    } catch (e) {
+      console.error('cancelPayment error:', e);
+      toast('שגיאה בביטול: ' + (e.message || ''), 'e');
+    } finally {
+      hideLoading();
     }
-    await batchUpdate(T.SUP_PAYMENTS, [{ id: payId, status: 'cancelled' }]);
-    await writeLog('payment_cancel', null, { payment_id: payId, amount: pay.amount, cancelled_by: emp.id });
-    toast('תשלום בוטל');
-    closeAndRemoveModal('view-pay-modal');
-    await loadPaymentsTab();
-  } catch (e) {
-    console.error('cancelPayment error:', e);
-    toast('שגיאה בביטול: ' + (e.message || ''), 'e');
-  } finally {
-    hideLoading();
-  }
+  });
 }

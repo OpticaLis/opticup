@@ -54,16 +54,26 @@ async function loadInventoryPage() {
     else if (qtyFilter === '0') query = query.lte('quantity', 0);
 
     // Free-text search via .or() on text columns + brand/supplier ID pre-lookup
-    if (search) {
+    if (search && search.length >= 2) {
       const safe = search.replace(/[,().\\]/g, '');
       if (safe) {
-        const orParts = [
-          `barcode.ilike.%${safe}%`,
+        // Barcode search: exact prefix match (fast, uses index)
+        const isNumeric = /^\d+$/.test(safe);
+        const orParts = [];
+        if (isNumeric) {
+          // Numeric input — likely barcode, prioritize exact prefix
+          orParts.push(`barcode.ilike.${safe}%`);
+        } else {
+          orParts.push(`barcode.ilike.%${safe}%`);
+        }
+        orParts.push(
           `model.ilike.%${safe}%`,
-          `size.ilike.%${safe}%`,
-          `color.ilike.%${safe}%`,
-          `notes.ilike.%${safe}%`
-        ];
+          `color.ilike.%${safe}%`
+        );
+        // Only search size/notes for longer queries (reduce OR branches)
+        if (safe.length >= 3) {
+          orParts.push(`size.ilike.%${safe}%`, `notes.ilike.%${safe}%`);
+        }
         // Pre-lookup brand IDs whose name matches the search term
         const matchBrandIds = Object.entries(brandCache)
           .filter(([name]) => name.toLowerCase().includes(safe))
@@ -77,6 +87,9 @@ async function loadInventoryPage() {
 
         query = query.or(orParts.join(','));
       }
+    } else if (search && search.length === 1) {
+      // Single character — only search barcode prefix (fast)
+      query = query.ilike('barcode', search + '%');
     }
 
     // Sorting (Hebrew field → English column)
@@ -171,10 +184,13 @@ async function loadInventoryTab() {
 
 function filterInventoryTable() {
   clearTimeout(invDebounceTimer);
+  var search = ($('inv-search')?.value || '').trim();
+  // Faster debounce for barcode scans (numeric), longer for text search
+  var delay = /^\d+$/.test(search) ? 200 : 400;
   invDebounceTimer = setTimeout(() => {
     invPage = 0;
     loadInventoryPage();
-  }, 300);
+  }, delay);
 }
 
 function renderInventoryRows(recs) {
