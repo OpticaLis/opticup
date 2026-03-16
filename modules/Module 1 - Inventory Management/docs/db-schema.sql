@@ -54,7 +54,21 @@ CREATE TABLE IF NOT EXISTS tenants (
   locale           TEXT DEFAULT 'he-IL',
   is_active        BOOLEAN DEFAULT true,
   created_at       TIMESTAMPTZ DEFAULT now(),
-  updated_at       TIMESTAMPTZ DEFAULT now()
+  updated_at       TIMESTAMPTZ DEFAULT now(),
+  -- Business settings (030)
+  business_name    TEXT,
+  business_address TEXT,
+  business_phone   TEXT,
+  business_email   TEXT,
+  business_id      TEXT,                          -- מספר עוסק מורשה / ח.פ.
+  -- Financial settings (030)
+  vat_rate                  NUMERIC DEFAULT 17,
+  withholding_tax_default   NUMERIC DEFAULT 0,
+  payment_terms_days        INTEGER DEFAULT 30,
+  -- Display settings (030)
+  rows_per_page    INTEGER DEFAULT 50,
+  date_format      TEXT DEFAULT 'DD/MM/YYYY',
+  theme            TEXT DEFAULT 'light'
 );
 
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;

@@ -148,6 +148,15 @@ async function initSecureSession(employee, jwtToken) {
   sessionStorage.setItem(SK.PERMS, JSON.stringify(permSnapshot));
   sessionStorage.setItem(SK.ROLE, roleId);
 
+  // Load and cache tenant config (VAT, currency, display settings)
+  try {
+    const { data: tenantRow } = await sb.from('tenants')
+      .select('vat_rate,withholding_tax_default,payment_terms_days,default_currency,rows_per_page,date_format,theme,business_name,logo_url')
+      .eq('id', employee.tenant_id)
+      .single();
+    if (tenantRow) sessionStorage.setItem('tenant_config', JSON.stringify(tenantRow));
+  } catch (e) { console.warn('Failed to load tenant config:', e); }
+
   return { token, employee, permissions: permSnapshot, role: roleId, expires_at: expiresAt };
 }
 

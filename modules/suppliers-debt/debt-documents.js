@@ -154,7 +154,7 @@ function openNewDocumentModal() {
         '<label>\u05EA\u05D0\u05E8\u05D9\u05DA \u05DE\u05E1\u05DE\u05DA<input type="date" id="nd-date" class="nd-field"></label>' +
         '<label>\u05EA\u05D0\u05E8\u05D9\u05DA \u05EA\u05E9\u05DC\u05D5\u05DD<input type="date" id="nd-due" class="nd-field"></label>' +
         '<label>\u05E1\u05DB\u05D5\u05DD \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DD<input type="number" id="nd-subtotal" step="0.01" min="0" class="nd-field" oninput="calcNewDocTotal()"></label>' +
-        '<label>% \u05DE\u05E2"\u05DD<input type="number" id="nd-vat-rate" value="17" step="0.01" class="nd-field" oninput="calcNewDocTotal()"></label>' +
+        '<label>% \u05DE\u05E2"\u05DD<input type="number" id="nd-vat-rate" value="' + (getTenantConfig('vat_rate') || 17) + '" step="0.01" class="nd-field" oninput="calcNewDocTotal()"></label>' +
         '<label>\u05DE\u05E2"\u05DD<input type="number" id="nd-vat" readonly class="nd-field" style="background:var(--g100)"></label>' +
         '<label>\u05E1\u05D4"\u05DB<input type="number" id="nd-total" readonly class="nd-field" style="background:var(--g100);font-weight:700"></label>' +
         '<label style="grid-column:1/-1">\u05D4\u05E2\u05E8\u05D5\u05EA<textarea id="nd-notes" rows="2" class="nd-field"></textarea></label>' +

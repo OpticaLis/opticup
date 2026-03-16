@@ -196,6 +196,11 @@ function getTenantId() {
   return sessionStorage.getItem('tenant_id');
 }
 
+function getTenantConfig(key) {
+  const config = JSON.parse(sessionStorage.getItem('tenant_config') || '{}');
+  return key ? config[key] : config;
+}
+
 function escapeHtml(str) {
   if (str == null) return '';
   return String(str)

@@ -235,7 +235,7 @@ async function _batchOCRApproveValid() {
         if (matchType) typeId = matchType.id;
       }
       var subtotal = Number(fv('subtotal')) || 0;
-      var vatRate = fv('vat_rate') != null ? Number(fv('vat_rate')) : 17;
+      var vatRate = fv('vat_rate') != null ? Number(fv('vat_rate')) : (Number(getTenantConfig('vat_rate')) || 17);
       var vatAmt = Number(fv('vat_amount')) || Math.round(subtotal * vatRate) / 100;
       var totalAmt = Number(fv('total_amount')) || (subtotal + vatAmt);
       // Update the draft document with OCR data

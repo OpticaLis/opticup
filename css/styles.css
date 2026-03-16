@@ -368,3 +368,22 @@ tr.row-err td{background:#fef2f2}
 .help-banner-content{background:#f0f6ff;border:1px solid #c0d8f0;border-radius:8px;padding:12px 16px;margin-top:8px;font-size:.85rem;line-height:1.7;color:#1a3a5c}
 .help-banner-content ul{margin:4px 0 4px 20px;padding:0}
 .help-banner-content li{margin-bottom:2px}
+
+/* ============================================================
+   Settings page
+   ============================================================ */
+.settings-container{max-width:800px;margin:0 auto;padding:20px 16px 80px}
+.settings-title{color:var(--primary);font-size:1.5rem;margin-bottom:20px;text-align:center}
+.settings-section{background:var(--white);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);margin-bottom:24px}
+.settings-section-title{color:var(--primary);font-size:1.1rem;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--bg)}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px}
+@media(max-width:640px){.settings-grid{grid-template-columns:1fr}}
+.settings-field{display:flex;flex-direction:column}
+.settings-field.full-width{grid-column:1/-1}
+.settings-field label{font-size:.85rem;color:var(--g500);margin-bottom:4px;font-weight:600}
+.settings-field .required{color:var(--error)}
+.settings-field input,.settings-field select,.settings-field textarea{padding:9px 12px;border:1px solid var(--g300);border-radius:8px;font-size:.92rem;font-family:inherit}
+.settings-field textarea{resize:vertical}
+.logo-preview{max-width:200px;max-height:80px;margin-top:8px;border-radius:6px;border:1px solid var(--g200)}
+.settings-actions{text-align:center;margin-top:8px}
+.settings-actions .btn-p{padding:12px 40px;font-size:1rem}

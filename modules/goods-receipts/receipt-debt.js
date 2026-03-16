@@ -37,8 +37,8 @@ async function createDocumentFromReceipt(receiptId, supplierId, receiptItems) {
     return null;
   }
 
-  // 4. Calculate VAT
-  const vatRate = 17.0;
+  // 4. Calculate VAT (from tenant config, fallback 17%)
+  const vatRate = Number(getTenantConfig('vat_rate')) || 17;
   const vatAmount = Math.round(subtotal * vatRate) / 100;
   const totalAmount = subtotal + vatAmount;
 

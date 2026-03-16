@@ -1,0 +1,152 @@
+<!--
+  Optic Up — Settings / הגדרות
+  CEO/Manager only — business, financial, display settings
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optic Up — הגדרות</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/header.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<main>
+  <div class="settings-container" id="settings-container">
+    <h1 class="settings-title">&#9881;&#65039; הגדרות</h1>
+
+    <!-- Section 1: Business -->
+    <div class="settings-section">
+      <h2 class="settings-section-title">&#127978; הגדרות עסק</h2>
+      <div class="settings-grid">
+        <div class="settings-field">
+          <label for="set-business-name">שם העסק <span class="required">*</span></label>
+          <input type="text" id="set-business-name" required>
+        </div>
+        <div class="settings-field">
+          <label for="set-business-id">מספר עוסק מורשה / ח.פ.</label>
+          <input type="text" id="set-business-id">
+        </div>
+        <div class="settings-field">
+          <label for="set-business-phone">טלפון</label>
+          <input type="tel" id="set-business-phone">
+        </div>
+        <div class="settings-field">
+          <label for="set-business-email">אימייל</label>
+          <input type="email" id="set-business-email">
+        </div>
+        <div class="settings-field full-width">
+          <label for="set-business-address">כתובת</label>
+          <textarea id="set-business-address" rows="2"></textarea>
+        </div>
+        <div class="settings-field full-width">
+          <label for="set-logo-url">לוגו (URL)</label>
+          <input type="text" id="set-logo-url" placeholder="https://..." dir="ltr">
+          <img id="logo-preview" class="logo-preview hidden" alt="logo preview">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Financial -->
+    <div class="settings-section">
+      <h2 class="settings-section-title">&#128176; הגדרות פיננסיות</h2>
+      <div class="settings-grid">
+        <div class="settings-field">
+          <label for="set-vat-rate">אחוז מע"מ</label>
+          <input type="number" id="set-vat-rate" min="0" max="50" step="0.1">
+        </div>
+        <div class="settings-field">
+          <label for="set-withholding-tax">ניכוי מס במקור (%)</label>
+          <input type="number" id="set-withholding-tax" min="0" max="50" step="0.1">
+        </div>
+        <div class="settings-field">
+          <label for="set-payment-terms">תנאי תשלום (שוטף + X ימים)</label>
+          <input type="number" id="set-payment-terms" min="0" max="365">
+        </div>
+        <div class="settings-field">
+          <label for="set-currency">מטבע ברירת מחדל</label>
+          <select id="set-currency">
+            <option value="ILS">&#8362; (שקל)</option>
+            <option value="USD">$ (דולר)</option>
+            <option value="EUR">&euro; (אירו)</option>
+            <option value="GBP">&pound; (לירה)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Display -->
+    <div class="settings-section">
+      <h2 class="settings-section-title">&#128421;&#65039; הגדרות תצוגה</h2>
+      <div class="settings-grid">
+        <div class="settings-field">
+          <label for="set-rows-per-page">שורות לעמוד בטבלאות</label>
+          <select id="set-rows-per-page">
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+        </div>
+        <div class="settings-field">
+          <label for="set-date-format">פורמט תאריך</label>
+          <select id="set-date-format">
+            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+          </select>
+        </div>
+        <div class="settings-field">
+          <label for="set-theme">מצב תצוגה</label>
+          <select id="set-theme" disabled>
+            <option value="light">בהיר</option>
+            <option value="dark">כהה (בקרוב)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-actions">
+      <button class="btn-p" id="save-settings" onclick="saveSettings()">&#128190; שמור הגדרות</button>
+    </div>
+  </div>
+</main>
+
+<!-- Toast container -->
+<div id="toast-c" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:10000;display:flex;flex-direction:column;gap:8px"></div>
+
+<!-- Loading overlay -->
+<div id="loading" class="loading-overlay" style="display:none">
+  <div class="loading-box"><div class="spinner"></div><p id="loading-text">טוען...</p></div>
+</div>
+
+<!-- Confirm dialog modal -->
+<div id="confirm-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:400px;text-align:center">
+    <h3 id="confirm-title">אישור</h3>
+    <p id="confirm-text"></p>
+    <button class="btn btn-s" id="confirm-yes">כן</button>
+    <button class="btn btn-g" id="confirm-no">לא — חזור</button>
+  </div>
+</div>
+
+<script src="js/shared.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/supabase-ops.js"></script>
+<script src="js/header.js"></script>
+<script src="js/alerts-badge.js"></script>
+<script src="modules/settings/settings-page.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', async () => {
+  const session = await loadSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+  if (!hasPermission('settings.view')) { window.location.href = 'index.html'; return; }
+  await loadSettings();
+});
+</script>
+</body>
+</html>
