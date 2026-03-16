@@ -47,7 +47,7 @@ function buildHeader(emp, tenantName, logoUrl, role) {
       logoHtml +
       '<span class="header-store-name">' + escapeHtml(tenantName) + '</span>' +
     '</div>' +
-    '<div class="header-center">Optic Up</div>' +
+    '<div class="header-center"><a href="index.html" style="color:inherit;text-decoration:none;cursor:pointer">Optic Up</a></div>' +
     '<div class="header-left">' +
       '<div class="header-employee">' +
         '<span class="header-emp-name">' + escapeHtml(emp.name || '') + '</span>' +

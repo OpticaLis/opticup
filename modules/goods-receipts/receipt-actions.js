@@ -26,6 +26,13 @@ async function saveReceiptDraft() {
     return;
   }
 
+  // Block negative prices
+  const negPrice = items.filter(i => (i.unit_cost && i.unit_cost < 0) || (i.sell_price && i.sell_price < 0));
+  if (negPrice.length) {
+    toast('מחיר לא יכול להיות שלילי', 'e');
+    return;
+  }
+
   showLoading('שומר טיוטה...');
   try {
     const supplierId = supplierCache[supplierName] || null;

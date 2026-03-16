@@ -47,7 +47,7 @@ function renderDocFilterBar() {
   }
   var collapsed = _docFilterCollapsed;
   var html = favHtml +
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+    '<div class="doc-toolbar" style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
       '<button class="btn btn-g btn-sm" id="doc-filter-toggle" onclick="_toggleDocFilters()">' +
         '\uD83D\uDD0D \u05E1\u05D9\u05E0\u05D5\u05DF [' + (collapsed ? '\u25BC' : '\u25B2') + ']</button>' +
       '<span id="doc-filter-count" style="font-size:.82rem;color:var(--g500)"></span>' +

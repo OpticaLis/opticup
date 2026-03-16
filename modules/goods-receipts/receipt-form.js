@@ -215,8 +215,8 @@ function addReceiptItemRow(data) {
     <td><input type="text" class="rcpt-color" value="${escapeHtml(data?.color || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
     <td><input type="text" class="rcpt-size" value="${escapeHtml(data?.size || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
     <td><input type="number" class="rcpt-qty col-qty" min="1" value="${data?.quantity || 1}"></td>
-    <td><input type="number" class="rcpt-ucost col-price" step="0.01" value="${data?.unit_cost || ''}"></td>
-    <td><input type="number" class="rcpt-sprice col-price" step="0.01" value="${data?.sell_price || ''}"></td>
+    <td><input type="number" class="rcpt-ucost col-price" step="0.01" min="0" value="${data?.unit_cost || ''}"></td>
+    <td><input type="number" class="rcpt-sprice col-price" step="0.01" min="0" value="${data?.sell_price || ''}"></td>
     <td><select class="rcpt-sync" style="min-width:65px" ${isExisting ? 'disabled' : ''}>
       <option value="">—</option>
       <option value="מלא">מלא</option>

@@ -192,6 +192,7 @@ function invEdit(td, field, type) {
   td.classList.add('editing');
   const input = document.createElement('input');
   input.type = (type === 'number' || type === 'pct') ? 'number' : 'text';
+  if (type === 'number' || type === 'pct') input.min = '0';
   input.value = curVal;
   td.textContent = '';
   td.appendChild(input);
@@ -203,6 +204,13 @@ function invEdit(td, field, type) {
     let newVal = input.value.trim();
     if (type === 'number') newVal = parseFloat(newVal) || 0;
     else if (type === 'pct') newVal = (parseFloat(newVal) || 0) / 100;
+
+    // Block negative prices/percentages
+    if ((type === 'number' || type === 'pct') && newVal < 0) {
+      toast('ערך לא יכול להיות שלילי', 'e');
+      td.textContent = type === 'pct' ? Math.round((rec[field]||0)*100) + '%' : (rec[field] || '');
+      return;
+    }
 
     const origVal = rec[field] || (type === 'number' || type === 'pct' ? 0 : '');
     if (newVal !== origVal) {

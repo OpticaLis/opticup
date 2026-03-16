@@ -32,9 +32,9 @@ function addEntryRow(copyFrom) {
     <div class="card-row">
       <div class="card-field" style="min-width:80px"><label>אורך מוט</label><input class="col-temple" placeholder="אורך מוט"></div>
       <div class="card-field" style="min-width:120px"><label>סוג מוצר <span class="req">*</span></label><select class="col-ptype">${productTypeOpts()}</select></div>
-      <div class="card-field" style="min-width:100px"><label>מחיר מכירה <span class="req">*</span></label><input type="number" class="col-sprice" placeholder="₪" step="0.01"></div>
+      <div class="card-field" style="min-width:100px"><label>מחיר מכירה <span class="req">*</span></label><input type="number" class="col-sprice" placeholder="₪" step="0.01" min="0"></div>
       <div class="card-field" style="min-width:80px"><label>הנחה % <span class="req">*</span></label><input type="number" class="col-sdisc" placeholder="%" min="0" max="100" value="0"></div>
-      <div class="card-field cost-field" style="min-width:100px"><label>מחיר עלות</label><input type="number" class="col-cprice" placeholder="₪" step="0.01"></div>
+      <div class="card-field cost-field" style="min-width:100px"><label>מחיר עלות</label><input type="number" class="col-cprice" placeholder="₪" step="0.01" min="0"></div>
       <div class="card-field cost-field" style="min-width:80px"><label>הנחה % עלות</label><input type="number" class="col-cdisc" placeholder="%" min="0" max="100"></div>
       <div class="card-field" style="min-width:90px"><label>סנכרון <span class="req">*</span></label><select class="col-sync">${syncOpts()}</select></div>
       <div class="card-field" style="min-width:150px"><label>תמונות</label><input type="file" class="col-images" multiple accept="image/*"><div class="img-preview"></div></div>
@@ -181,6 +181,15 @@ function validateEntryRows() {
         el.classList.remove('err');
       }
     });
+    // Negative price validation
+    if (r.sprice && parseFloat(r.sprice) < 0) {
+      hasErr = true;
+      errs.push(`שורה ${i+1}: מחיר מכירה לא יכול להיות שלילי`);
+    }
+    if (r.cprice && parseFloat(r.cprice) < 0) {
+      hasErr = true;
+      errs.push(`שורה ${i+1}: מחיר עלות לא יכול להיות שלילי`);
+    }
     // Image required for luxury/brand types
     if ((r.brandType === 'יוקרה' || r.brandType === 'מותג') && r.images.length === 0) {
       hasErr = true;
