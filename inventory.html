@@ -19,6 +19,8 @@
 </head>
 <body>
 
+<div id="page-loader" class="page-loading"><div class="spinner"></div><span>טוען נתונים...</span></div>
+
 <div id="low-stock-banner" style="display:none; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:10px 16px; margin:8px 16px; cursor:pointer; align-items:center; gap:10px" onclick="openLowStockModal()">
   <span style="font-size:18px">&#9888;&#65039;</span>
   <span id="low-stock-banner-text" style="font-weight:600; color:#856404"></span>
@@ -825,6 +827,7 @@
 
 <script src="js/shared.js"></script>
 <script src="js/auth-service.js"></script>
+<script src="js/pin-modal.js"></script>
 
 <script src="js/supabase-ops.js"></script>
 <script src="js/data-loading.js"></script>
@@ -860,6 +863,7 @@
 <script src="modules/brands/brands.js"></script>
 <script src="modules/brands/suppliers.js"></script>
 <script src="modules/stock-count/stock-count-list.js"></script>
+<script src="modules/stock-count/stock-count-filters.js"></script>
 <script src="modules/stock-count/stock-count-session.js"></script>
 <script src="modules/stock-count/stock-count-report.js"></script>
 <script src="modules/access-sync/access-sync.js"></script>

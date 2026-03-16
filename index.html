@@ -31,7 +31,7 @@
   .login-btn:hover { background: #253a5e; transform: translateY(-1px); }
 
   /* Module grid */
-  .modules-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 780px; margin: 24px auto; padding: 0 20px; }
+  .modules-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 780px; margin: 24px auto; padding: 0 20px; opacity: 0; transition: opacity 0.3s ease; }
   @media (max-width: 640px) { .modules-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; } }
 
   .module-card { background: white; border-radius: 14px; padding: 28px 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.07); transition: transform .2s, box-shadow .2s; position: relative; cursor: pointer; text-decoration: none; color: #1a2744; display: block; }
@@ -285,6 +285,7 @@ function onLoginSuccess(emp) {
   document.getElementById('user-display').textContent = emp.name + ' \u2022 \u05E1\u05E0\u05D9\u05E3 ' + (emp.branch_id || '00');
   document.getElementById('user-info').classList.remove('hidden');
   renderModules();
+  document.getElementById('modules-grid').style.opacity = '1';
 }
 
 async function doLogout() {
@@ -304,9 +305,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     const session = await loadSession();
     if (session && session.employee) {
       onLoginSuccess(session.employee);
+    } else {
+      document.getElementById('modules-grid').style.opacity = '1';
     }
   } catch (e) {
     console.warn('Session restore failed:', e);
+    document.getElementById('modules-grid').style.opacity = '1';
   }
 });
 </script>

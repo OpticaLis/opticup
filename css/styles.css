@@ -67,6 +67,8 @@ tr.row-err td{background:#fef2f2}
 .toast{padding:12px 20px;border-radius:8px;color:var(--white);font-size:.92rem;box-shadow:0 4px 16px rgba(0,0,0,.2);animation:slideIn .3s ease;max-width:400px}
 .toast.s{background:var(--success)}.toast.e{background:var(--error)}.toast.w{background:var(--warn)}.toast.i{background:var(--accent)}
 @keyframes slideIn{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.page-loading{display:flex;justify-content:center;align-items:center;min-height:60vh;flex-direction:column;gap:16px;color:var(--g500);font-size:.95rem}
+.page-loading .spinner{width:40px;height:40px;border:4px solid var(--g200);border-top:4px solid var(--primary);border-radius:50%;animation:spin .8s linear infinite}
 
 /* SEARCH SELECT — uses fixed positioning to avoid table overflow clipping */
 .search-select{position:relative;min-width:120px}

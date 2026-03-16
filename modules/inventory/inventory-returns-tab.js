@@ -14,6 +14,7 @@ window._returnsCountCache = null;
 async function initReturnsTab() {
   var container = $('returns-tab');
   if (!container) return;
+  if (!getTenantId()) return; // Guard: no session
   container.innerHTML =
     '<div style="padding:16px">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">' +
@@ -39,10 +40,12 @@ async function initReturnsTab() {
 // =========================================================
 async function loadReturnsData(filters) {
   var listEl = $('returns-list');
-  if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:30px;color:#999">טוען...</div>';
+  if (!listEl) return; // Guard: tab not rendered yet
+  listEl.innerHTML = '<div style="text-align:center;padding:30px;color:#999">טוען...</div>';
 
   filters = filters || {};
   var tid = getTenantId();
+  if (!tid) return; // Guard: no session yet
 
   try {
     var query = sb.from(T.SUP_RETURN_ITEMS)
@@ -255,6 +258,7 @@ async function getReturnsCount() {
   if (window._returnsCountCache !== null) return window._returnsCountCache;
   try {
     var tid = getTenantId();
+    if (!tid) return 0;
     var { count, error } = await sb.from(T.SUP_RETURN_ITEMS)
       .select('id, return:supplier_returns!inner(status)', { count: 'exact', head: true })
       .eq('tenant_id', tid)

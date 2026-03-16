@@ -112,6 +112,7 @@ async function handleLogoUpload(file) {
     await sb.from('tenants').update({ logo_url: publicUrl }).eq('id', tenantId);
     document.getElementById('set-logo-url').value = publicUrl;
     renderLogoPreview(publicUrl);
+    storeTenantConfig({ logo_url: publicUrl });
     toast('לוגו הועלה בהצלחה');
   } catch (e) {
     console.error('handleLogoUpload error:', e);
@@ -135,6 +136,7 @@ async function handleLogoDelete() {
     await sb.from('tenants').update({ logo_url: null }).eq('id', tenantId);
     document.getElementById('set-logo-url').value = '';
     renderLogoPreview(null);
+    storeTenantConfig({ logo_url: null });
     toast('לוגו נמחק');
   } catch (e) {
     console.error('handleLogoDelete error:', e);

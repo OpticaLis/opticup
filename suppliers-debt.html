@@ -79,6 +79,8 @@
 
 <main class="debt-page">
 
+  <div id="page-loader" class="page-loading"><div class="spinner"></div><span>טוען נתונים...</span></div>
+
   <!-- Main content (hidden when detail panel is open) -->
   <div id="debt-main-content">
     <!-- Summary cards -->
@@ -167,6 +169,7 @@
 <script src="js/search-select.js"></script>
 <script src="js/file-upload.js"></script>
 <script src="js/auth-service.js"></script>
+<script src="js/pin-modal.js"></script>
 <script src="js/header.js"></script>
 <script src="js/alerts-badge.js"></script>
 <script src="modules/suppliers-debt/debt-dashboard.js"></script>
@@ -223,6 +226,7 @@ window.addEventListener('DOMContentLoaded', async function() {
 
   await loadDebtSummary();
   await loadSuppliersTab();
+  document.getElementById('page-loader')?.remove();
 });
 </script>
 </body>
