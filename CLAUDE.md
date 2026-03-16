@@ -162,7 +162,7 @@ opticup/
 | `T.SYNC_LOG`      | sync_log                 | id, filename, source_ref, status, rows_total, rows_success, tenant_id   |
 | `T.PENDING_SALES` | pending_sales            | id, barcode_received, quantity, action_type, status, tenant_id          |
 | `T.HEARTBEAT`     | watcher_heartbeat        | id, last_beat, watcher_version, host, tenant_id                         |
-| `T.STOCK_COUNTS`  | stock_counts             | id, count_number, status, counted_by, total_items, total_diffs, tenant_id |
+| `T.STOCK_COUNTS`  | stock_counts             | id, count_number, status, counted_by, total_items, total_diffs, filter_criteria (JSONB), tenant_id |
 | `T.STOCK_COUNT_ITEMS` | stock_count_items    | id, count_id, inventory_id, expected_qty, actual_qty, difference, tenant_id |
 | `T.DOC_TYPES`     | document_types           | id, code, name_he, name_en, affects_debt, is_system, tenant_id           |
 | `T.SUP_DOCS`      | supplier_documents       | id, supplier_id, document_type_id, document_number, total_amount, paid_amount, status, tenant_id |

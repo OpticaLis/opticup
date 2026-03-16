@@ -61,8 +61,9 @@ function renderReportScreen(countId, diffItems, allItems, displayItems, nothingS
   const tab = document.getElementById('tab-stock-count');
   tab.innerHTML = `
     <div style="padding:8px 12px;max-width:900px;margin:0 auto">
-      <h2 style="text-align:center;color:var(--primary);margin-bottom:16px">
+      <h2 style="text-align:center;color:var(--primary);margin-bottom:8px">
         &#128203; דוח פערים — ${escapeHtml(scCountNumber)}</h2>
+      ${window._scActiveFilterDesc ? '<div style="text-align:center;font-size:.82rem;color:var(--g500);margin-bottom:12px">' + escapeHtml(window._scActiveFilterDesc) + '</div>' : ''}
 
       <div class="sc-summary-bar" style="margin-bottom:16px">
         <div class="sc-stat"><strong style="color:var(--error)">${totalShortage}</strong>

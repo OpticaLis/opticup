@@ -34,6 +34,7 @@ async function fetchAll(tableName, filters) {
         else if (op === 'gt') query = query.gt(col, val);
         else if (op === 'gte') query = query.gte(col, val);
         else if (op === 'lt') query = query.lt(col, val);
+        else if (op === 'lte') query = query.lte(col, val);
       }
     }
     query = query.range(from, from + PAGE - 1);

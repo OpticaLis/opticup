@@ -66,41 +66,7 @@ async function confirmWorkerPin() {
     openCountSession(scCountId);
   } else {
     // New count — create in DB after PIN verified
-    try {
-      showLoading('יוצר ספירה חדשה...');
-      const countNumber = await generateCountNumber();
-      const { data: count, error } = await sb.from(T.STOCK_COUNTS).insert({
-        count_number: countNumber,
-        status: 'in_progress',
-        count_date: new Date().toISOString().slice(0, 10),
-        branch_id: branchCode || '00',
-        counted_by: activeWorker.name,
-        tenant_id: getTenantId()
-      }).select().single();
-      if (error) throw error;
-
-      const inventory = await fetchAll(T.INV,
-        [['is_deleted', 'eq', false], ['quantity', 'gt', 0]]);
-      const items = inventory.map(inv => ({
-        count_id: count.id,
-        inventory_id: inv.id,
-        barcode: inv.barcode || '',
-        brand: brandCacheRev[inv.brand_id] || '',
-        model: inv.model || '',
-        color: inv.color || '',
-        size: inv.size || '',
-        expected_qty: inv.quantity || 0,
-        status: 'pending'
-      }));
-      if (items.length) await batchCreate(T.STOCK_COUNT_ITEMS, items);
-
-      toast('ספירה ' + countNumber + ' נוצרה — ' + items.length + ' פריטים', 's');
-      openCountSession(count.id);
-    } catch (err) {
-      toast('שגיאה ביצירת ספירה: ' + err.message, 'e');
-    } finally {
-      hideLoading();
-    }
+    _createNewStockCount();
   }
 }
 
@@ -109,17 +75,30 @@ async function _createNewStockCount() {
   try {
     showLoading('יוצר ספירה חדשה...');
     const countNumber = await generateCountNumber();
-    const { data: count, error } = await sb.from(T.STOCK_COUNTS).insert({
+    const fc = (typeof _scFilterCriteria !== 'undefined') ? _scFilterCriteria : {};
+    const hasFilters = fc.brands?.length || fc.product_types?.length || fc.supplier_id || fc.price_min || fc.price_max;
+    const insertObj = {
       count_number: countNumber,
       status: 'in_progress',
       count_date: new Date().toISOString().slice(0, 10),
       branch_id: branchCode || '00',
       counted_by: activeWorker.name,
       tenant_id: getTenantId()
-    }).select().single();
+    };
+    if (hasFilters) insertObj.filter_criteria = fc;
+
+    const { data: count, error } = await sb.from(T.STOCK_COUNTS).insert(insertObj).select().single();
     if (error) throw error;
-    const inventory = await fetchAll(T.INV,
-      [['is_deleted', 'eq', false], ['quantity', 'gt', 0]]);
+
+    // Build inventory filters
+    var invFilters = [['is_deleted', 'eq', false], ['quantity', 'gt', 0]];
+    if (fc.brands?.length) invFilters.push(['brand_id', 'in', fc.brands]);
+    if (fc.product_types?.length) invFilters.push(['product_type', 'in', fc.product_types]);
+    if (fc.supplier_id) invFilters.push(['supplier_id', 'eq', fc.supplier_id]);
+    if (fc.price_min) invFilters.push(['cost_price', 'gte', fc.price_min]);
+    if (fc.price_max) invFilters.push(['cost_price', 'lte', fc.price_max]);
+
+    const inventory = await fetchAll(T.INV, invFilters);
     const items = inventory.map(inv => ({
       count_id: count.id, inventory_id: inv.id,
       barcode: inv.barcode || '', brand: brandCacheRev[inv.brand_id] || '',
@@ -136,6 +115,19 @@ async function _createNewStockCount() {
   }
 }
 
+function _scBuildFilterDesc(fc) {
+  if (!fc) return '';
+  var parts = [];
+  if (fc.brands?.length) parts.push('\u05DE\u05D5\u05EA\u05D2\u05D9\u05DD: ' + fc.brands.length);
+  if (fc.product_types?.length) {
+    var ptMap = { eyeglasses: '\u05DE\u05E9\u05E7\u05E4\u05D9 \u05E8\u05D0\u05D9\u05D9\u05D4', sunglasses: '\u05DE\u05E9\u05E7\u05E4\u05D9 \u05E9\u05DE\u05E9' };
+    parts.push('\u05E1\u05D5\u05D2: ' + fc.product_types.map(p => ptMap[p] || p).join(', '));
+  }
+  if (fc.supplier_id) parts.push('\u05E1\u05E4\u05E7 \u05DE\u05E1\u05D5\u05E0\u05DF');
+  if (fc.price_min || fc.price_max) parts.push('\u05DE\u05D7\u05D9\u05E8: ' + (fc.price_min || 0) + '–' + (fc.price_max || '\u221E'));
+  return parts.length ? '\u05E1\u05E4\u05D9\u05E8\u05D4 \u05DC\u05E4\u05D9: ' + parts.join(' | ') : '';
+}
+
 // ── Session screen ───────────────────────────────────────────
 async function openCountSession(countId) {
   scCountId = countId;
@@ -144,6 +136,7 @@ async function openCountSession(countId) {
     const { data: countRow } = await sb.from(T.STOCK_COUNTS)
       .select('*').eq('id', countId).single();
     scCountNumber = countRow?.count_number || '';
+    window._scActiveFilterDesc = _scBuildFilterDesc(countRow?.filter_criteria);
     const items = await fetchAll(T.STOCK_COUNT_ITEMS, [['count_id', 'eq', countId]]);
     scSessionItems = items || [];
     renderSessionScreen(countId, scSessionItems);
@@ -184,6 +177,7 @@ function renderSessionScreen(countId, items) {
         <div>
           <div style="font-size:1.1rem;font-weight:700">${escapeHtml(scCountNumber)}</div>
           <div class="sc-worker-badge">&#128100; ${escapeHtml(worker.name || '—')}</div>
+          ${window._scActiveFilterDesc ? '<div style="font-size:.78rem;color:var(--g500);margin-top:2px">' + escapeHtml(window._scActiveFilterDesc) + '</div>' : ''}
         </div>
         <button class="sc-btn-finish" onclick="finishSession('${escapeHtml(countId)}')">&#9989; סיום ספירה</button>
       </div>
@@ -192,9 +186,9 @@ function renderSessionScreen(countId, items) {
         <video id="sc-video" style="display:none" playsinline></video>
         <button id="sc-cam-stop" style="display:none;margin:8px auto;min-height:40px;font-size:15px" class="btn btn-d" onclick="stopCamera()">&#10006; עצור מצלמה</button>
         <div class="sc-manual-bar">
-          <input id="sc-smart-search" type="text" placeholder="ברקוד / מותג / דגם / צבע" oninput="filterSessionItems(this.value)">
-          <button class="btn btn-p" style="min-height:48px;font-size:16px" onclick="manualBarcodeSearch()">&#128269; חפש</button>
+          <input id="sc-smart-search" type="text" placeholder="ברקוד / מותג / דגם / צבע" oninput="_scDebouncedFilter(this.value)">
         </div>
+        <div id="sc-filter-count" style="font-size:.82rem;color:var(--g500);margin:4px 8px 0;min-height:18px"></div>
       </div>
       <div class="sc-summary-bar">
         <div class="sc-stat"><strong id="sc-s-counted">${s.counted}</strong><span style="font-size:.78rem;color:var(--g500)">נספרו מתוך ${s.total}</span></div>
@@ -220,26 +214,39 @@ function renderSessionTable(items) {
   if (tbody) tbody.innerHTML = items.map(scRenderItemRow).join('');
 }
 
+let _scFilterTimer = null;
+function _scDebouncedFilter(query) {
+  clearTimeout(_scFilterTimer);
+  _scFilterTimer = setTimeout(() => filterSessionItems(query), 300);
+}
+
 function filterSessionItems(query) {
   const q = (query || '').trim();
-  if (!q) { renderSessionTable(scSessionItems); return; }
-  if (/^\d+$/.test(q)) return; // digits only — wait for Enter/button click
+  const countEl = document.getElementById('sc-filter-count');
+  if (!q) {
+    renderSessionTable(scSessionItems);
+    if (countEl) countEl.textContent = '';
+    return;
+  }
   const lower = q.toLowerCase();
   const filtered = scSessionItems.filter(i =>
+    (i.barcode || '').toLowerCase().includes(lower) ||
     (i.brand || '').toLowerCase().includes(lower) ||
     (i.model || '').toLowerCase().includes(lower) ||
-    (i.color || '').toLowerCase().includes(lower) ||
-    (i.barcode || '').includes(lower));
+    (i.color || '').toLowerCase().includes(lower));
   renderSessionTable(filtered);
+  if (countEl) countEl.textContent = '\u05DE\u05E6\u05D9\u05D2 ' + filtered.length + ' \u05DE\u05EA\u05D5\u05DA ' + scSessionItems.length + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD';
 }
 
 function manualBarcodeSearch() {
   const val = ($('sc-smart-search')?.value || '').trim();
-  if (!val) { toast('הזן ברקוד או חיפוש', 'w'); return; }
+  if (!val) return;
   if (/^\d+$/.test(val)) {
     handleScan(scCountId, val);
     $('sc-smart-search').value = '';
     renderSessionTable(scSessionItems);
+    const countEl = document.getElementById('sc-filter-count');
+    if (countEl) countEl.textContent = '';
   }
 }
 

@@ -145,8 +145,188 @@ async function generateCountNumber() {
   return `${prefix}${String(seq).padStart(4, '0')}`;
 }
 
-// ── Start new count ──────────────────────────────────────────
+// ── Start new count — show filter screen ─────────────────────
 function startNewCount() {
-  // PIN first — DB creation happens in confirmWorkerPin() after valid PIN
+  _scFilterCriteria = {};
+  _showCountFilterScreen();
+}
+
+let _scFilterCriteria = {};
+
+async function _showCountFilterScreen() {
+  const tab = document.getElementById('tab-stock-count');
+  if (!tab) return;
+
+  // Load brands
+  var brands = [];
+  if (typeof allBrandsData !== 'undefined' && allBrandsData.length) {
+    brands = allBrandsData.filter(b => b.active !== false);
+  } else {
+    try { brands = await fetchAll(T.BRANDS, [['active', 'eq', true]]); } catch(e) {}
+  }
+  brands.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+  // Load suppliers
+  var suppliers = [];
+  if (typeof allSuppliersData !== 'undefined' && allSuppliersData.length) {
+    suppliers = allSuppliersData.filter(s => s.active !== false);
+  } else {
+    try { suppliers = await fetchAll(T.SUPPLIERS, [['active', 'eq', true]]); } catch(e) {}
+  }
+
+  var brandChecks = brands.map(b =>
+    '<label style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#f0f4ff;border-radius:6px;font-size:.82rem;cursor:pointer;white-space:nowrap">' +
+      '<input type="checkbox" class="sc-brand-cb" value="' + b.id + '"> ' + escapeHtml(b.name) +
+    '</label>'
+  ).join('');
+
+  var supOpts = '<option value="">ספק — הכל</option>';
+  suppliers.forEach(s => { supOpts += '<option value="' + s.id + '">' + escapeHtml(s.name) + '</option>'; });
+
+  var ptypes = [
+    { val: 'eyeglasses', he: 'משקפי ראייה' },
+    { val: 'sunglasses', he: 'משקפי שמש' }
+  ];
+  var ptypeChecks = ptypes.map(p =>
+    '<label style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#f0fff0;border-radius:6px;font-size:.82rem;cursor:pointer">' +
+      '<input type="checkbox" class="sc-ptype-cb" value="' + p.val + '"> ' + escapeHtml(p.he) +
+    '</label>'
+  ).join('');
+
+  tab.innerHTML = `
+    <div style="padding:16px;max-width:700px;margin:0 auto">
+      <h2 style="color:var(--primary);margin-bottom:16px">&#128202; ספירה חדשה — סינון פריטים</h2>
+      <div style="background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)">
+        <div style="margin-bottom:16px">
+          <label style="font-weight:600;font-size:.9rem;display:block;margin-bottom:6px">מותגים</label>
+          <div style="display:flex;gap:4px;margin-bottom:6px">
+            <button class="btn btn-sm" onclick="_scToggleAllBrands(true)" style="font-size:.78rem;padding:4px 10px">בחר הכל</button>
+            <button class="btn btn-sm" onclick="_scToggleAllBrands(false)" style="font-size:.78rem;padding:4px 10px">נקה הכל</button>
+          </div>
+          <div id="sc-filter-brands" style="display:flex;flex-wrap:wrap;gap:6px;max-height:200px;overflow-y:auto;padding:4px;border:1px solid var(--g200);border-radius:6px">
+            ${brandChecks || '<span style="color:#999">אין מותגים</span>'}
+          </div>
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-weight:600;font-size:.9rem;display:block;margin-bottom:6px">סוג מוצר</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">${ptypeChecks}</div>
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-weight:600;font-size:.9rem;display:block;margin-bottom:6px">ספק</label>
+          <select id="sc-filter-supplier" style="padding:8px;border:1px solid var(--g300);border-radius:6px;font-family:inherit;font-size:.88rem;width:100%">${supOpts}</select>
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-weight:600;font-size:.9rem;display:block;margin-bottom:6px">טווח מחירים (עלות)</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="number" id="sc-filter-price-min" placeholder="מינימום" min="0" style="width:120px;padding:8px;border:1px solid var(--g300);border-radius:6px;font-family:inherit">
+            <span>—</span>
+            <input type="number" id="sc-filter-price-max" placeholder="מקסימום" min="0" style="width:120px;padding:8px;border:1px solid var(--g300);border-radius:6px;font-family:inherit">
+          </div>
+        </div>
+        <div id="sc-filter-preview" style="background:#f5f7fa;border-radius:8px;padding:12px;margin-bottom:16px;text-align:center;font-size:.9rem;color:var(--primary)">
+          טוען תצוגה מקדימה...
+        </div>
+        <div id="sc-filter-desc" style="font-size:.82rem;color:var(--g500);margin-bottom:12px;min-height:18px"></div>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button class="btn btn-p" onclick="_scConfirmFilters()" style="min-height:48px;font-size:15px;padding:8px 24px">&#9989; צור ספירה</button>
+          <button class="btn btn-g" onclick="loadStockCountTab()" style="min-height:48px;font-size:15px;padding:8px 24px">&#8592; חזרה</button>
+        </div>
+      </div>
+    </div>`;
+
+  // Preview count after short delay
+  setTimeout(_scUpdateFilterPreview, 300);
+
+  // Add change listeners for live preview
+  document.querySelectorAll('.sc-brand-cb, .sc-ptype-cb').forEach(cb => {
+    cb.addEventListener('change', () => { clearTimeout(_scPreviewTimer); _scPreviewTimer = setTimeout(_scUpdateFilterPreview, 400); });
+  });
+  var supSel = document.getElementById('sc-filter-supplier');
+  if (supSel) supSel.addEventListener('change', () => { clearTimeout(_scPreviewTimer); _scPreviewTimer = setTimeout(_scUpdateFilterPreview, 400); });
+  ['sc-filter-price-min', 'sc-filter-price-max'].forEach(id => {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => { clearTimeout(_scPreviewTimer); _scPreviewTimer = setTimeout(_scUpdateFilterPreview, 500); });
+  });
+}
+
+let _scPreviewTimer = null;
+
+function _scToggleAllBrands(checked) {
+  document.querySelectorAll('.sc-brand-cb').forEach(cb => { cb.checked = checked; });
+  clearTimeout(_scPreviewTimer);
+  _scPreviewTimer = setTimeout(_scUpdateFilterPreview, 300);
+}
+
+function _scCollectFilters() {
+  var brandIds = [];
+  document.querySelectorAll('.sc-brand-cb:checked').forEach(cb => { brandIds.push(cb.value); });
+  var ptypes = [];
+  document.querySelectorAll('.sc-ptype-cb:checked').forEach(cb => { ptypes.push(cb.value); });
+  var supplierId = (document.getElementById('sc-filter-supplier') || {}).value || '';
+  var priceMin = parseFloat((document.getElementById('sc-filter-price-min') || {}).value) || null;
+  var priceMax = parseFloat((document.getElementById('sc-filter-price-max') || {}).value) || null;
+  return { brands: brandIds, product_types: ptypes, supplier_id: supplierId, price_min: priceMin, price_max: priceMax };
+}
+
+async function _scUpdateFilterPreview() {
+  var previewEl = document.getElementById('sc-filter-preview');
+  var descEl = document.getElementById('sc-filter-desc');
+  if (!previewEl) return;
+  previewEl.textContent = 'טוען...';
+
+  var f = _scCollectFilters();
+  var hasFilters = f.brands.length || f.product_types.length || f.supplier_id || f.price_min || f.price_max;
+
+  try {
+    var filters = [['is_deleted', 'eq', false], ['quantity', 'gt', 0]];
+    if (f.brands.length) filters.push(['brand_id', 'in', f.brands]);
+    if (f.product_types.length) filters.push(['product_type', 'in', f.product_types]);
+    if (f.supplier_id) filters.push(['supplier_id', 'eq', f.supplier_id]);
+    if (f.price_min) filters.push(['cost_price', 'gte', f.price_min]);
+    if (f.price_max) filters.push(['cost_price', 'lte', f.price_max]);
+
+    var items = await fetchAll(T.INV, filters);
+    var count = items.length;
+    previewEl.innerHTML = '<strong style="font-size:1.4rem">' + count + '</strong> \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05D9\u05D9\u05DB\u05DC\u05DC\u05D5 \u05D1\u05E1\u05E4\u05D9\u05E8\u05D4';
+
+    // Description
+    if (descEl) {
+      if (!hasFilters) {
+        descEl.textContent = '\u05DB\u05DC \u05D4\u05DE\u05DC\u05D0\u05D9 — \u05DC\u05DC\u05D0 \u05E1\u05D9\u05E0\u05D5\u05DF';
+      } else {
+        var parts = [];
+        if (f.brands.length) {
+          var brandNames = [];
+          document.querySelectorAll('.sc-brand-cb:checked').forEach(cb => {
+            var lbl = cb.parentElement;
+            if (lbl) brandNames.push(lbl.textContent.trim());
+          });
+          parts.push('\u05DE\u05D5\u05EA\u05D2\u05D9\u05DD: ' + brandNames.slice(0, 5).join(', ') + (brandNames.length > 5 ? ' (+' + (brandNames.length - 5) + ')' : ''));
+        }
+        if (f.product_types.length) {
+          var ptMap = { eyeglasses: '\u05DE\u05E9\u05E7\u05E4\u05D9 \u05E8\u05D0\u05D9\u05D9\u05D4', sunglasses: '\u05DE\u05E9\u05E7\u05E4\u05D9 \u05E9\u05DE\u05E9' };
+          parts.push('\u05E1\u05D5\u05D2: ' + f.product_types.map(p => ptMap[p] || p).join(', '));
+        }
+        if (f.supplier_id) {
+          var sel = document.getElementById('sc-filter-supplier');
+          if (sel && sel.selectedOptions[0]) parts.push('\u05E1\u05E4\u05E7: ' + sel.selectedOptions[0].textContent);
+        }
+        if (f.price_min || f.price_max) {
+          parts.push('\u05DE\u05D7\u05D9\u05E8: ' + (f.price_min || 0) + '–' + (f.price_max || '\u221E'));
+        }
+        descEl.textContent = '\u05E1\u05E4\u05D9\u05E8\u05D4 \u05DC\u05E4\u05D9: ' + parts.join(' | ');
+      }
+    }
+  } catch (e) {
+    previewEl.textContent = '\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05D4';
+    console.error('_scUpdateFilterPreview error:', e);
+  }
+}
+
+function _scConfirmFilters() {
+  _scFilterCriteria = _scCollectFilters();
+  var hasFilters = _scFilterCriteria.brands.length || _scFilterCriteria.product_types.length ||
+    _scFilterCriteria.supplier_id || _scFilterCriteria.price_min || _scFilterCriteria.price_max;
+  if (!hasFilters) _scFilterCriteria = {};
   openWorkerPin(null);
 }

@@ -466,7 +466,8 @@ CREATE TABLE IF NOT EXISTS stock_counts (
   tenant_id       UUID NOT NULL REFERENCES tenants(id),        -- דייר (018)
   branch_id       TEXT,                                        -- קוד סניף
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  completed_at    TIMESTAMPTZ                                  -- מתי הושלם
+  completed_at    TIMESTAMPTZ,                                 -- מתי הושלם
+  filter_criteria JSONB DEFAULT '{}'                            -- סינון: brands, product_types, supplier_id, price range (031)
 );
 CREATE INDEX IF NOT EXISTS idx_sc_status ON stock_counts(status);
 CREATE INDEX IF NOT EXISTS idx_sc_date ON stock_counts(count_date DESC);
