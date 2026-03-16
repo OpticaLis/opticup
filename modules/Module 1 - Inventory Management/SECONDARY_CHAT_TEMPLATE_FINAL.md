@@ -87,6 +87,9 @@ File structure:
     brands/                         ← 2 files (brands, suppliers)
     access-sync/                    ← 3 files (access-sync, pending-panel, pending-resolve)
     admin/                          ← 2 files (admin, system-log)
+    debt/                           ← 14 files (debt-dashboard, debt-documents, etc.)
+      ai/                           ← 7 files (ai-ocr, ai-alerts, ai-config, etc.)
+    permissions/                    ← 1 file (employee-list)
   scripts/
     sync-watcher.js, install-service.js, uninstall-service.js
 
