@@ -7,7 +7,6 @@ nav{background:var(--white);border-bottom:2px solid var(--g200);display:flex;ali
 nav button{padding:12px 20px;border:none;background:none;cursor:pointer;font-size:.92rem;font-family:inherit;color:var(--g500);white-space:nowrap;border-bottom:3px solid transparent;transition:all .2s;font-weight:500}
 nav button:hover{color:var(--primary);background:var(--g100)}
 nav button.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:700}
-.nav-spacer{flex:1}
 .admin-btn{background:var(--primary-dark)!important;color:var(--white)!important;border-radius:20px;margin:6px 0;padding:8px 18px!important;font-size:.85rem!important}
 .admin-btn.unlocked{background:var(--success)!important}
 main{padding:20px;max-width:1300px;margin:0 auto}

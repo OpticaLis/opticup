@@ -19,19 +19,9 @@
 </head>
 <body>
 
-<header>
-  <div class="logo"><span>&#9670;</span> אופטיקה פריזמה</div>
-  <h1 style="font-size:1rem;font-weight:600;margin:0;color:white;">ניהול מלאי</h1>
-  <div id="adminBtn" style="display:none;text-align:center;">
-    <button class="logout-btn" onclick="confirmDialog('האם להתנתק מהמערכת?').then(ok=>{if(ok)clearSession()})">🚪 יציאה</button>
-    <div id="adminBtnName" style="font-size:.75rem;opacity:.7;margin-top:2px;"></div>
-  </div>
-</header>
-
 <div id="low-stock-banner" style="display:none; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:10px 16px; margin:8px 16px; cursor:pointer; align-items:center; gap:10px" onclick="openLowStockModal()">
   <span style="font-size:18px">&#9888;&#65039;</span>
   <span id="low-stock-banner-text" style="font-weight:600; color:#856404"></span>
-  <span style="margin-right:auto; color:#856404; font-size:13px">&#8592; לחץ לפרטים</span>
 </div>
 
 <nav id="mainNav">
@@ -46,8 +36,6 @@
   <button data-tab="stock-count" data-tab-permission="stock_count.create" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
   <button data-tab="returns" onclick="showTab('returns')">&#128260; זיכויים</button>
 
-  <div class="nav-spacer"></div>
-  <a href="index.html" id="homeBtn" class="home-link" style="display:inline;color:var(--primary);text-decoration:none;font-size:.85rem;margin-left:12px;white-space:nowrap;flex-shrink:0;">&#8594; מסך בית</a>
 </nav>
 
 <main>

@@ -22,14 +22,7 @@ function closeHelpModal() {
 // APP INIT (called after auth or after successful login)
 // =========================================================
 function showUserButton() {
-  const emp = getCurrentEmployee();
-  const btn = $('adminBtn');
-  if (emp && btn) {
-    btn.style.display = '';
-    const nameEl = document.getElementById('adminBtnName');
-    if (nameEl) nameEl.textContent = emp.name;
-    document.getElementById('homeBtn').style.display = '';
-  }
+  // Header is now built dynamically by header.js — no manual show needed
 }
 
 function resumeAppInit() {
@@ -51,7 +44,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Auth: check for existing session
   const session = await loadSession();
   if (!session) {
-    $('adminBtn').style.display = 'none';
     showLoginModal();
     return;
   }

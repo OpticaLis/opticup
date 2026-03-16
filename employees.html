@@ -15,18 +15,6 @@
 </head>
 <body>
 
-<header>
-  <div class="logo"><span>&#9670;</span> אופטיקה פריזמה</div>
-  <h1 style="font-size:1rem;font-weight:600;margin:0;color:white;">ניהול עובדים</h1>
-  <div id="adminBtn" style="display:none;text-align:center;">
-    <button class="logout-btn" onclick="confirmDialog('האם להתנתק מהמערכת?').then(ok=>{if(ok)clearSession()})">🚪 יציאה</button>
-    <div id="adminBtnName" style="font-size:.75rem;opacity:.7;margin-top:2px;"></div>
-  </div>
-</header>
-
-<nav id="mainNav" style="justify-content:flex-end;padding:6px 16px;">
-  <a href="index.html" id="homeBtn" class="home-link" style="display:inline;color:var(--primary);text-decoration:none;font-size:.85rem;margin-left:12px;white-space:nowrap;flex-shrink:0;">&#8594; מסך בית</a>
-</nav>
 
 <main>
   <div style="padding:16px">
@@ -64,12 +52,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   const session = await loadSession();
   if (!session) { window.location.href = 'index.html'; return; }
   if (!hasPermission('employees.view')) { window.location.href = 'index.html'; return; }
-  const emp = getCurrentEmployee();
-  if (emp) {
-    const nameEl = document.getElementById('adminBtnName');
-    if (nameEl) nameEl.textContent = emp.name;
-    document.getElementById('adminBtn').style.display = '';
-  }
   await loadData();
   loadEmployeesTab();
 });
