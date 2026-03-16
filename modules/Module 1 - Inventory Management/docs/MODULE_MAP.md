@@ -1,6 +1,6 @@
 # MODULE_MAP — Optic Up Complete Codebase Reference
 
-> Updated 2026-03-16 (Post-QA). Single reference document for any developer or AI assistant.
+> Updated 2026-03-16 (Post-QA audit). Single reference document for any developer or AI assistant.
 
 ---
 
@@ -9,27 +9,27 @@
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
 | 1 | shared.js | js/shared.js | 346 | Supabase client init, table constants (T), FIELD_MAP/ENUM_MAP, Hebrew↔English translation, UI helpers ($, toast, setAlert, confirmDialog, showLoading), tab navigation (showTab, showEntryMode), escapeHtml, showInfoModal, renderHelpBanner (collapsible help component), global variable declarations |
-| 2 | supabase-ops.js | js/supabase-ops.js | 291 | Database abstraction layer: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (individual updates, RLS-safe), writeLog, generateNextBarcode, OCR learning helpers (updateOCRTemplate, buildHintsFromCorrections), alert engine (createAlert, alertPriceAnomaly) |
+| 2 | supabase-ops.js | js/supabase-ops.js | 348 | Database abstraction layer: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (individual updates, RLS-safe), writeLog, generateNextBarcode, OCR learning helpers (updateOCRTemplate, buildHintsFromCorrections), alert engine (createAlert, alertPriceAnomaly) |
 | 3 | data-loading.js | js/data-loading.js | 167 | App initialization: loadData, loadMaxBarcode, populateDropdowns, low stock alerts (loadLowStockAlerts, refreshLowStockBanner, openLowStockModal), helper functions (activeBrands, supplierOpts, getBrandType, getBrandSync) |
 | 4 | search-select.js | js/search-select.js | 136 | Reusable searchable dropdown component: createSearchSelect, closeAllDropdowns, repositionDropdown, MutationObserver cleanup |
-| 5 | inventory-table.js | modules/inventory/inventory-table.js | 275 | Main inventory table: server-side paginated loading, filtering (search/supplier/type/qty), sorting, rendering with inline edit cells, event delegation for row actions |
-| 6 | inventory-edit.js | modules/inventory/inventory-edit.js | 344 | Inline editing (invEdit, invEditSync), row selection (toggle/selectAll/clear), bulk update, bulk delete with PIN, image preview, saveInventoryChanges with writeLog |
+| 5 | inventory-table.js | modules/inventory/inventory-table.js | 291 | Main inventory table: server-side paginated loading, filtering (search/supplier/type/qty), sorting, rendering with inline edit cells, event delegation for row actions |
+| 6 | inventory-edit.js | modules/inventory/inventory-edit.js | 352 | Inline editing (invEdit, invEditSync), row selection (toggle/selectAll/clear), bulk update, bulk delete with PIN, image preview, saveInventoryChanges with writeLog |
 | 7 | inventory-reduction.js | modules/inventory/inventory-reduction.js | 350 | Stock reduction: Excel-based reduction (handleRedExcel, processRedExcel), manual search with cascading dropdowns, reduction modal with PIN+reason, Access sales file detection, _createReturnFromReduction (fire-and-forget supplier_return creation) |
-| 8 | inventory-entry.js | modules/inventory/inventory-entry.js | 289 | Manual entry forms: addEntryRow (card-based), copyEntryRow, removeEntryRow, getEntryRows, validateEntryRows, submitEntry with barcode retry |
+| 8 | inventory-entry.js | modules/inventory/inventory-entry.js | 298 | Manual entry forms: addEntryRow (card-based), copyEntryRow, removeEntryRow, getEntryRows, validateEntryRows, submitEntry with barcode retry |
 | 9 | inventory-export.js | modules/inventory/inventory-export.js | 209 | Barcode generation (BBDDDDD format with reuse), barcode export to xlsx, full inventory export with styled Excel |
 | 10 | excel-import.js | modules/inventory/excel-import.js | 335 | Excel import: handleExcelImport (column mapping), confirmExcelImport (two-phase: match existing + queue pending), generatePendingBarcodes, exportPendingBarcodes |
 | 11 | access-sales.js | modules/inventory/access-sales.js | 263 | Access POS sales file processing: parses sales_template sheet (XLSX) or CSV files, duplicate file check via sync_log, qty adjustments for sales/returns, unmatched items to pending_sales (with brand/model/size/color) |
-| 12 | purchase-orders.js | modules/purchasing/purchase-orders.js | 178 | PO list: loadPurchaseOrdersTab, renderPoList with summary cards, applyPoFilters, generatePoNumber (PO-{supplierNum}-{seq}) |
+| 12 | purchase-orders.js | modules/purchasing/purchase-orders.js | 184 | PO list: loadPurchaseOrdersTab, renderPoList with summary cards, applyPoFilters, generatePoNumber (PO-{supplierNum}-{seq}) |
 | 13 | po-form.js | modules/purchasing/po-form.js | 231 | PO creation wizard: openNewPurchaseOrder (step 1), proceedToPOItems (step 2 bridge), openEditPO, renderPOForm, resolveSupplierName |
 | 14 | po-items.js | modules/purchasing/po-items.js | 236 | PO item management: renderPOItemsTable, cascading brand→model→color/size datalists, addPOItemManual, addPOItemByBarcode, removePOItem, duplicatePOItem, updatePOTotals |
 | 15 | po-actions.js | modules/purchasing/po-actions.js | 235 | PO lifecycle actions: savePODraft (with duplicate row detection), sendPurchaseOrder, cancelPO, exportPOExcel, exportPOPdf |
 | 16 | po-view-import.js | modules/purchasing/po-view-import.js | 319 | Read-only PO view with received qty tracking, importPOToInventory (creates/updates inventory from PO items), createPOForBrand (from low stock modal), PO event delegation |
-| 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 275 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (populates items from PO), updatePOStatusAfterReceipt, openNewReceipt |
-| 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 292 | Receipt form: openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow, getReceiptItems, updateReceiptItemsStats, addNewReceiptRow, showReceiptGuide, _pickReceiptFile (file attach) |
-| 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 174 | Receipt save/cancel: saveReceiptDraft, saveReceiptDraftInternal, cancelReceipt, backToReceiptList |
+| 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 281 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (populates items from PO), updatePOStatusAfterReceipt, openNewReceipt |
+| 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 345 | Receipt form: openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow, getReceiptItems, updateReceiptItemsStats, addNewReceiptRow, showReceiptGuide, _pickReceiptFile (file attach) |
+| 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 182 | Receipt save/cancel: saveReceiptDraft, saveReceiptDraftInternal, cancelReceipt, backToReceiptList |
 | 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 256 | Receipt confirmation: confirmReceipt, confirmReceiptCore (auto-updates cost_price), confirmReceiptById (from list), createNewInventoryFromReceiptItem, checkPoPriceDiscrepancies (PO vs receipt price warning + alertPriceAnomaly) |
 | 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 130 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt. Uploads attached file if _pendingReceiptFile exists. Phase 4f: auto-deducts from active prepaid deal if exists |
-| 19d | receipt-ocr.js | modules/goods-receipts/receipt-ocr.js | 297 | OCR integration in goods receipt with learning: initReceiptOCR (injects scan button), _rcptOcrScan (upload + Edge Function call), _applyOCRToReceipt (auto-fill supplier/items, stores OCR data for learning), _rcptOcrMatchInventory (ILIKE search), _rcptOcrShowBanner (confidence banner), _rcptOcrPreviewDoc (source doc modal), _rcptOcrUpdateTemplate (compares OCR vs final form, calls updateOCRTemplate), _patchReceiptConfirmForOCR (hooks into confirmReceiptCore) |
+| 19d | receipt-ocr.js | modules/goods-receipts/receipt-ocr.js | 312 | OCR integration in goods receipt with learning: initReceiptOCR (injects scan button), _rcptOcrScan (upload + Edge Function call), _applyOCRToReceipt (auto-fill supplier/items, stores OCR data for learning), _rcptOcrMatchInventory (ILIKE search), _rcptOcrShowBanner (confidence banner), _rcptOcrPreviewDoc (source doc modal), _rcptOcrUpdateTemplate (compares OCR vs final form, calls updateOCRTemplate), _patchReceiptConfirmForOCR (hooks into confirmReceiptCore) |
 | 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 195 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, receipt list event delegation |
 | 21 | audit-log.js | modules/audit/audit-log.js | 215 | Soft delete flow (deleteInvRow, confirmSoftDelete), recycle bin (openRecycleBin, restoreItem, permanentDelete with double PIN) |
 | 22 | item-history.js | modules/audit/item-history.js | 323 | Item timeline (openItemHistory), ACTION_MAP constant (21 action types), entry history accordion (openEntryHistory, loadEntryHistory, renderEntryHistory), exports |
@@ -38,20 +38,20 @@
 | 25 | suppliers.js | modules/brands/suppliers.js | 167 | Supplier management: loadSuppliersTab, supplier number editing with temp-negative-swap, addSupplier with auto-number, getNextSupplierNumber (gap-filling) |
 | 26 | access-sync.js | modules/access-sync/access-sync.js | 298 | Access sync tab: renderAccessSyncTab (summary cards + log table + watcher status), loadSyncLog (paginated with action buttons), loadSyncSummary, loadLastActivity, calcTimeSince, loadPendingBadge, loadWatcherStatus, refreshSyncTab, togglePendingFilter |
 | 27 | sync-details.js | modules/access-sync/sync-details.js | 234 | Sync details work center: openSyncDetails (items table + error table + inline resolve), closeSyncDetails, downloadFailedFile (signed URL), toggleSyncDetailHelp, syncDetailSearchInInventory |
-| 28 | pending-panel.js | modules/access-sync/pending-panel.js | 32 | Pending filter toggle: togglePendingFilter (delegates to access-sync.js filter logic) |
+| 28 | pending-panel.js | modules/access-sync/pending-panel.js | 32 | Legacy wrappers: renderPendingPanel (calls togglePendingFilter), closePendingPanel, updatePendingPanelCount (calls loadPendingBadge), searchBarcodeInInventory. **Note: all 4 functions are dead code — never called from current codebase** |
 | 29 | pending-resolve.js | modules/access-sync/pending-resolve.js | 132 | Pending resolution: syncDetailResolve (inline resolve in work center), checkFileCompletion (marks sync_log 'handled'), searchBarcodeInInventory, syncDetailSearchInInventory |
 | 30 | stock-count-list.js | modules/stock-count/stock-count-list.js | 148 | Stock count list screen: ensureStockCountListHTML, loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (PIN first, DB creation after), renderStockCountList |
 | 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 332 | Stock count session: worker PIN entry (openWorkerPin/confirmWorkerPin), camera barcode scanning (ZXing), manual barcode/smart search input, scan handler, item update, session UI |
 | 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 234 | Diff report screen (showDiffReport/renderReportScreen), empty count guard, manager PIN approval (confirmCount with role check), cancelCount, exportCountExcel (SheetJS) |
 | 33 | sync-watcher.js | scripts/sync-watcher.js | 461 | Node.js Dropbox folder watcher: processes sales_template Excel/CSV files, CSV support with parseCSVFile + BOM stripping, atomic qty updates via RPC, pending_sales for unknown barcodes (with brand/model/size/color), idempotency guards, failed file upload to Supabase Storage, heartbeat every 60s, reverse sync export interval every 30s. Uses service_role key via OPTICUP_SERVICE_ROLE_KEY env var. Configurable OPTICUP_WATCH_DIR + OPTICUP_EXPORT_DIR |
 | 33b | sync-export.js | scripts/sync-export.js | 111 | Reverse sync: exports unexported inventory items (access_exported=false) as XLS (biff8 format via SheetJS) for Access import. Joins brand/supplier names, batch marks items as access_exported (groups of 100), writes sync_log entry with source_ref='export' |
-| 34 | admin.js | modules/admin/admin.js | 63 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
+| 34 | admin.js | modules/admin/admin.js | 52 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
 | 35 | system-log.js | modules/admin/system-log.js | 217 | System log viewer: loadSystemLog (6 filters, pagination, 4 summary stats), exportSystemLog (up to 10k rows), action dropdown from ACTION_MAP |
 | 36 | auth-service.js | js/auth-service.js | 309 | Core auth engine: verifyEmployeePIN, initSecureSession, loadSession, clearSession, hasPermission, requirePermission, applyUIPermissions, getCurrentEmployee, assignRoleToEmployee, forceLogout |
 | 37 | employee-list.js | modules/employees/employee-list.js | 322 | Employee management: loadEmployeesTab, renderEmployeeTable, openAddEmployee, openEditEmployee, saveEmployee, confirmDeactivateEmployee, renderPermissionMatrix, updateRolePermission |
 | 38 | index.html | index.html | 318 | Home screen shell: MODULES config array, renderModules (permission-based card lock), PIN login modal, session restore, live clock, onLoginSuccess |
 | 39 | employees.html | employees.html | 60 | Standalone employee management page (extracted from inventory.html employees tab). adminBtn in header, homeBtn always visible in nav |
-| 40 | header.css | css/header.css | 98 | Sticky header styles: 60px height, z-index 1000, RTL, 3-zone flex layout (right: logo+store, center: app name, left: employee+logout), responsive below 600px hides role |
+| 40 | header.css | css/header.css | 349 | Sticky header styles: 60px height, z-index 1000, RTL, 3-zone flex layout (right: logo+store, center: app name, left: employee+logout), responsive below 600px hides role |
 | 41 | header.js | js/header.js | 61 | Sticky header logic: initHeader (DOMContentLoaded, session check, tenant fetch), buildHeader (DOM injection, escapeHtml, clearSession logout) |
 | 42 | suppliers-debt.html | suppliers-debt.html | 233 | Supplier debt tracking page: summary cards, 5 tabs (suppliers, documents, payments, prepaid, weekly report), session check, tab switching. CDN: jsPDF + html2canvas. debt-main-content wrapper + supplier-detail-panel for detail view |
 | 43 | debt-dashboard.js | modules/suppliers-debt/debt-dashboard.js | ~275 | Debt dashboard summary: loadDebtSummary (calls loadAgingReport), loadAgingReport (5-bucket aging breakdown), loadSuppliersTab (aggregated supplier table with debt/overdue/prepaid), renderSuppliersTable, openPaymentForSupplier |
@@ -60,7 +60,7 @@
 | 46 | debt-payments.js | modules/suppliers-debt/debt-payments.js | 229 | Payments tab: loadPaymentsTab (fetch payments+methods+suppliers+allocations+documents), renderPaymentsToolbar (filters + add button), applyPayFilters (client-side), renderPaymentsTable (with כנגד doc numbers), viewPayment (detail modal with allocation table) |
 | 47 | debt-payment-wizard.js | modules/suppliers-debt/debt-payment-wizard.js | 146 | Payment wizard steps 1-2: openNewPaymentWizard (state reset + modal), supplier selection with debt summary + withholding tax rate lookup, payment details form with auto-calc withholding tax |
 | 48 | debt-payment-alloc.js | modules/suppliers-debt/debt-payment-alloc.js | ~275 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status, rollback on failure) |
-| 49 | debt-prepaid.js | modules/suppliers-debt/debt-prepaid.js | 285 | Prepaid deals tab: loadPrepaidTab (fetch deals+checks+suppliers), renderPrepaidToolbar (filters + add button), applyPrepaidFilters (client-side), renderPrepaidTable (progress bar, status badges), openNewDealModal (PIN-verified), openAddCheckModal, viewDealDetail (progress bar + checks table), updateCheckStatus |
+| 49 | debt-prepaid.js | modules/suppliers-debt/debt-prepaid.js | 428 | Prepaid deals tab: loadPrepaidTab (fetch deals+checks+suppliers), renderPrepaidToolbar (filters + add button), applyPrepaidFilters (client-side), renderPrepaidTable (progress bar, status badges), openNewDealModal (PIN-verified), openAddCheckModal, viewDealDetail (progress bar + checks table), updateCheckStatus |
 | 50 | debt-supplier-detail.js | modules/suppliers-debt/debt-supplier-detail.js | ~328 | Supplier detail view: openSupplierDetail (slide-in panel with summary + 4 sub-tabs), closeSupplierDetail, loadSupplierTimeline (merged docs+payments sorted by date), loadSupplierDocuments (filtered table), loadSupplierPayments (filtered table), loadSupplierReturns (delegates to debt-returns.js) |
 | 51 | debt-returns.js | modules/suppliers-debt/debt-returns.js | 292 | Supplier returns tab (per-supplier): loadReturnsForSupplier (fetch+render), renderReturnsTable, viewReturnDetail (modal with items), promptReturnStatusUpdate (PIN-verified), updateReturnStatus (with timestamp fields), generateReturnNumber (RET-{supplier_number}-{seq}). RETURN_TRANSITIONS expanded for full status chain + agent_picked |
 | 52 | inventory-return.js | modules/inventory/inventory-return.js | ~218 | Supplier return initiation from inventory: openSupplierReturnModal (validates selection, same-supplier check, items preview), _doConfirmSupplierReturn (PIN-verified, creates return+items, decrements inventory, writeLog) |
@@ -68,12 +68,12 @@
 | 52c | inventory-returns-actions.js | modules/inventory/inventory-returns-actions.js | 164 | Returns tab actions: markAgentPicked (PIN-verified), sendToBox (navigate to shipments wizard), bulkSendToBox (validates same supplier), bulkAction (bulk status update), exportReturnsExcel |
 | 51b | debt-returns-tab.js | modules/suppliers-debt/debt-returns-tab.js | 365 | Global debt returns (credit tracking) tab: initDebtReturnsTab, loadDebtReturns (multi-status filtering), renderDebtReturnsList (accordion with bulk selection), renderDebtReturnsSummary, toggleDebtReturnsHistory |
 | 51c | debt-returns-tab-actions.js | modules/suppliers-debt/debt-returns-tab-actions.js | 184 | Debt returns actions: markDebtCredited (modal + PIN), _execMarkCredited, bulkMarkCredited, exportDebtReturnsExcel |
-| 53 | file-upload.js | js/file-upload.js | 97 | File upload helper for supplier documents: uploadSupplierFile (validates type/size, uploads to Supabase Storage), getSupplierFileUrl (signed URLs), renderFilePreview (PDF iframe / image), pickAndUploadFile (hidden file input + upload) |
-| 54 | ai-ocr.js | modules/suppliers-debt/ai-ocr.js | 342 | OCR trigger, review screen, correction flow with learning: triggerOCR (calls ocr-extract Edge Function), showOCRReview (side-by-side modal + supplier OCR stats), _ocrSave (saves corrections + creates supplier_document + updates OCR template), confidence indicators per field, _injectOCRScanIcons (adds scan buttons to doc table rows), _injectOCRToolbarBtn (toolbar scan button), patches loadDocumentsTab |
+| 53 | file-upload.js | js/file-upload.js | 114 | File upload helper for supplier documents: uploadSupplierFile (validates type/size, uploads to Supabase Storage), getSupplierFileUrl (signed URLs), renderFilePreview (PDF iframe / image), pickAndUploadFile (hidden file input + upload) |
+| 54 | ai-ocr.js | modules/suppliers-debt/ai-ocr.js | 350 | OCR trigger, review screen, correction flow with learning: triggerOCR (calls ocr-extract Edge Function), showOCRReview (side-by-side modal + supplier OCR stats), _ocrSave (saves corrections + creates supplier_document + updates OCR template), confidence indicators per field, _injectOCRScanIcons (adds scan buttons to doc table rows), _injectOCRToolbarBtn (toolbar scan button), patches loadDocumentsTab |
 
-| 55 | alerts-badge.js | js/alerts-badge.js | 323 | Bell icon + unread badge + dropdown panel on ALL pages: initAlertsBadge (inject bell into header), refreshAlertsBadge (poll unread count every 60s), toggleAlertsPanel/openAlertsPanel/closeAlertsPanel, loadAlertsList (last 10 unread), alertAction (view/dismiss), markAllAlertsRead, timeAgo (Hebrew relative time) |
+| 55 | alerts-badge.js | js/alerts-badge.js | 338 | Bell icon + unread badge + dropdown panel on ALL pages: initAlertsBadge (inject bell into header), refreshAlertsBadge (poll unread count every 60s), toggleAlertsPanel/openAlertsPanel/closeAlertsPanel, loadAlertsList (last 10 unread), alertAction (view/dismiss), markAllAlertsRead, timeAgo (Hebrew relative time) |
 | 56 | ai-alerts.js | modules/suppliers-debt/ai-alerts.js | 221 | Event-driven alerts + auto-dismiss + hooks: checkDuplicateDocument, alertDuplicateDocument, alertAmountMismatch, alertOCRLowConfidence, autoDismissAlerts. Patches: saveNewDocument (duplicate check), linkDeliveryToInvoice (amount mismatch), _ocrSave (auto-dismiss OCR), _wizSavePayment (auto-dismiss payment), triggerOCR (low confidence check) |
-| 57 | ai-weekly-report.js | modules/suppliers-debt/ai-weekly-report.js | 274 | Weekly report screen + PDF export: initWeeklyReport (default to current week), navigateWeek (prev/next), loadWeeklyReport (load snapshot or live data), _gatherReportData (parallel queries: total debt, payments, new docs, upcoming, prepaid, OCR stats), _renderWeeklyReport (4 sections: summary, upcoming, prepaid, OCR), exportWeeklyPDF (html2canvas + jsPDF, snapshot save to weekly_reports) |
+| 57 | ai-weekly-report.js | modules/suppliers-debt/ai-weekly-report.js | 292 | Weekly report screen + PDF export: initWeeklyReport (default to current week), navigateWeek (prev/next), loadWeeklyReport (load snapshot or live data), _gatherReportData (parallel queries: total debt, payments, new docs, upcoming, prepaid, OCR stats), _renderWeeklyReport (4 sections: summary, upcoming, prepaid, OCR), exportWeeklyPDF (html2canvas + jsPDF, snapshot save to weekly_reports) |
 | 58 | ai-config.js | modules/suppliers-debt/ai-config.js | 223 | AI agent config screen — settings modal with permission check: openAIConfig (loads config + stats, CEO/Manager only), _renderAIConfigModal (3 sections: OCR, Alerts, Weekly Report + stats grid), saveAIConfig (updates ai_agent_config row), _injectConfigGear (gear button in topbar for authorized roles), confidence slider with real-time % display |
 | 59 | debt-doc-filters.js | modules/suppliers-debt/debt-doc-filters.js | 242 | Advanced document filtering: collapsible 8-criteria filter panel (status, type, supplier, date range, amount range, source), saved filter favorites (localStorage, max 5), filter count display, replaces simple renderDocFilterBar. Patches loadDocumentsTab to inject filter panel |
 | 60 | ai-batch-upload.js | modules/suppliers-debt/ai-batch-upload.js | 332 | Batch document upload: drag-drop modal, SHA-256 file hash dedup (within batch + against DB), upload-only or upload+OCR modes, progress bar, file preview, batch_id tracking. Injects toolbar button via monkey-patch |
@@ -82,7 +82,7 @@
 | 63 | debt-info-content.js | modules/suppliers-debt/debt-info-content.js | 250 | Info modal content for all supplier debt screens; 12 _show*Info() functions + _injectInfoBtn helper |
 | 64 | debt-info-inject.js | modules/suppliers-debt/debt-info-inject.js | 182 | Monkey-patches to inject ❓ buttons into supplier debt screens; _injectModalInfoBtn helper + all tab/modal patches |
 
-| 65 | shipments-list.js | modules/shipments/shipments-list.js | 262 | Shipment list: initShipmentsPage (auth + config load), loadShipments (paginated fetch with supplier/courier joins), renderShipmentsList (grid rows with lock status), filtering (type/supplier/courier/date/search), populateCourierFilter, exportShipmentsExcel |
+| 65 | shipments-list.js | modules/shipments/shipments-list.js | 254 | Shipment list: initShipmentsPage (auth + config load), loadShipments (paginated fetch with supplier/courier joins), renderShipmentsList (grid rows with lock status), filtering (type/supplier/courier/date/search), populateCourierFilter, exportShipmentsExcel |
 | 66 | shipments-create.js | modules/shipments/shipments-create.js | 321 | New box wizard: openNewBoxWizard (3-step state machine), renderWizardStep1 (type selector + destination), renderWizardStep3 (courier/tracking/notes), createBox (RPC next_box_number + insert + return item status updates) |
 | 67 | shipments-items.js | modules/shipments/shipments-items.js | 321 | Wizard step 2: initWizardItems, loadStagedReturns (for return boxes), renderStagedPicker (checkbox picker), toggleStagedItem, renderItemForm (dynamic fields from config), addItemToWizard, removeWizardItem, handleReturnItemsOnCreate, revertReturnStatus |
 | 68 | shipments-items-table.js | modules/shipments/shipments-items-table.js | 125 | Accordion items table: renderItemsTable (expandable rows), toggleItemDetail, item detail view with all fields |
@@ -100,7 +100,7 @@
 
 | 79 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
 
-**Total: 78 JS files across 14 module folders + 9 global files + watcher-deploy/ (8-file standalone package), ~20,500 lines** (includes scripts/sync-watcher.js + sync-export.js)
+**Total: 78 JS files across 14 module folders + 9 global files + watcher-deploy/ (8-file standalone package), ~19,560 lines** (includes scripts/sync-watcher.js + sync-export.js)
 
 **Note (QA Phase):** Module 1 final certification. 4 new files: settings.html (tenant settings page), js/pin-modal.js (shared PIN prompt replacing inline HTML), modules/settings/settings-page.js (settings logic + logo management), modules/stock-count/stock-count-filters.js (brand/category pre-count filters). New functions: promptPin (pin-modal.js), getTenantConfig/storeTenantConfig (settings-page.js), handleLogoUpload/handleLogoDelete/renderLogoPreview (settings-page.js), openReturnTimeline (debt-returns-tab.js), _createCreditNoteForReturn (debt-returns-tab-actions.js), cancelDocument (debt-documents.js), cancelPayment (debt-payments.js). Bug fixes: settings save RLS policy, logo persistence, toast position, loadReturnsData error handling, loading spinners on all pages. DB: tenant_update_own RLS policy on tenants table, 3 migration files (030_settings_columns.sql, 031_stock_count_filter_criteria.sql, 031_tenants_update_policy.sql). 55 permissions across 15 modules (expanded from 29). Storage: tenant-logos bucket added.
 
@@ -151,6 +151,8 @@
 **Note (Phase 3.75):** All JS files updated with tenant_id in inserts/selects. auth-service.js updated with Edge Function call and JWT client recreation.
 
 **Note:** inventory.html — employees tab removed in Phase 3.5. Employee management now lives in standalone employees.html. Both inventory.html and employees.html have adminBtn in header and homeBtn always visible in nav.
+
+**Dead code identified (QA audit 2026-03-16):** 12 functions confirmed unused. pending-panel.js: all 4 functions (renderPendingPanel, closePendingPanel, updatePendingPanelCount, searchBarcodeInInventory) — legacy wrappers, never called. auth-service.js: incrementFailedAttempts (handled server-side), forceLogout, assignRoleToEmployee, checkBranchAccess (planned APIs, never wired). file-upload.js: renderFilePreview (never called). inventory-returns-tab.js: getReturnsCount (never wired). debt-returns-tab.js: toggleDebtRetAccordion (replaced by openReturnTimeline). debt-doc-filters.js: getDocFilterState (no consumer). Also: syncDetailSearchInInventory is defined in both sync-details.js and pending-resolve.js (duplicate definition). These are tracked for future cleanup.
 
 ---
 
@@ -531,7 +533,10 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `togglePendingFilter` | `()` | Delegates pending filter toggle to access-sync.js (minimal wrapper after restructure) |
+| `renderPendingPanel` | `()` | **Dead code.** Wrapper that calls togglePendingFilter() — never called from current codebase |
+| `closePendingPanel` | `()` | **Dead code.** Wrapper for toggling off pending filter — never called |
+| `updatePendingPanelCount` | `()` | **Dead code.** Wrapper for loadPendingBadge() — never called |
+| `searchBarcodeInInventory` | `(barcode)` | **Dead code.** Navigates to inventory tab and searches — never called |
 
 ### modules/access-sync/pending-resolve.js
 
@@ -716,8 +721,8 @@
 | Function | Parameters | Description |
 |----------|------------|-------------|
 | `loadDocumentsTab` | `()` | Fetches supplier_documents + document_types + suppliers in parallel. Stores in module-level caches. Renders filter bar + table |
-| `renderDocFilterBar` | `()` | Builds filter toolbar inside dtab-documents: supplier, type, status dropdowns, date range, overdue checkbox, "+ מסמך חדש" button |
-| `applyDocFilters` | `()` | Reads filter inputs, filters _docData client-side, sorts by date desc, calls renderDocumentsTable |
+| `renderDocFilterBar` | `()` | **Overridden by debt-doc-filters.js.** Original: builds simple filter toolbar. Now replaced at runtime by advanced 8-criteria panel |
+| `applyDocFilters` | `()` | **Overridden by debt-doc-filters.js.** Original: reads filter inputs, filters client-side. Now replaced by advanced filter logic |
 | `renderDocumentsTable` | `(docs)` | Renders HTML table with columns: date, type, number, internal number, supplier, amount, paid, balance, status badge, action buttons |
 | `viewDocument` | `(docId)` | Async. Full modal: document metadata grid + file preview (PDF iframe / image). Shows "צרף מסמך" button if no file attached |
 | `_attachFileToDoc` | `(docId, supplierId)` | Opens file picker, uploads via uploadSupplierFile, updates document file_url/file_name, refreshes view |
@@ -1527,10 +1532,10 @@ sync-details.js
   → uses: sb.storage.from('failed-sync-files') [Supabase Storage]
 
 pending-panel.js
-  → calls: ignorePending(), resolvePending() [pending-resolve.js] (via event delegation)
+  → **All 4 functions are dead code — never called from current codebase**
+  → calls: togglePendingFilter() [access-sync.js], loadPendingBadge() [access-sync.js] (if called)
 
 pending-resolve.js
-  → calls: renderPendingPanel() [pending-panel.js]
   → calls: loadPendingBadge() [access-sync.js]
 ```
 
