@@ -68,7 +68,11 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
       }
     } catch (docErr) {
       console.error('createDocumentFromReceipt error:', docErr);
-      toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן (שגיאה ביצירת מסמך ספק)`, 's');
+      toast(`הקבלה אושרה אך יצירת מסמך ספק נכשלה — צור מסמך ידנית`, 'w');
+      writeLog('debt_creation_failed', null, {
+        receipt_id: receiptId, receipt_number: rcptNumber,
+        supplier_id: rcptData.supplier_id, error: docErr.message || String(docErr)
+      });
     }
   } else {
     toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');

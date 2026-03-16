@@ -44,9 +44,19 @@
           <textarea id="set-business-address" rows="2"></textarea>
         </div>
         <div class="settings-field full-width">
-          <label for="set-logo-url">לוגו (URL)</label>
-          <input type="text" id="set-logo-url" placeholder="https://..." dir="ltr">
-          <img id="logo-preview" class="logo-preview hidden" alt="logo preview">
+          <label>לוגו</label>
+          <div class="logo-upload-area">
+            <div id="logo-preview-wrap" style="text-align:center;margin-bottom:8px">
+              <!-- filled by renderLogoPreview -->
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <label class="btn btn-p btn-sm" for="logo-file-input" style="cursor:pointer">📷 העלה לוגו</label>
+              <input type="file" id="logo-file-input" accept="image/jpeg,image/png" hidden>
+              <button class="btn btn-d btn-sm" id="logo-delete" style="display:none" onclick="handleLogoDelete()">🗑️ מחק לוגו</button>
+            </div>
+            <small style="color:var(--g400);font-size:.78rem">JPG, PNG — עד 2MB</small>
+          </div>
+          <input type="hidden" id="set-logo-url">
         </div>
       </div>
     </div>

@@ -130,7 +130,9 @@ function renderPaymentsTable(payments) {
         escapeHtml(againstText.length > 30 ? againstText.slice(0, 28) + '\u2026' : againstText) +
       '</td>' +
       '<td><span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></td>' +
-      '<td><button class="btn-sm" onclick="viewPayment(\'' + p.id + '\')">צפה</button></td>' +
+      '<td><button class="btn-sm" onclick="viewPayment(\'' + p.id + '\')">צפה</button>' +
+        (p.status === 'approved' ? ' <button class="btn-sm btn-d" onclick="cancelPayment(\'' + p.id + '\')">ביטול</button>' : '') +
+      '</td>' +
     '</tr>';
   }).join('');
 
@@ -194,4 +196,36 @@ function viewPayment(payId) {
       '</div>' +
     '</div>';
   document.body.appendChild(modal);
+}
+
+async function cancelPayment(payId) {
+  var pay = _payData.find(function(p) { return p.id === payId; });
+  if (!pay || pay.status !== 'approved') { toast('ניתן לבטל רק תשלום מאושר', 'e'); return; }
+  var ok = await confirmDialog('ביטול תשלום', 'האם לבטל את התשלום? הסכום יוחזר ליתרת החוב');
+  if (!ok) return;
+  var pin = prompt('הזן קוד עובד (PIN)');
+  if (!pin) return;
+  var emp = await verifyPinOnly(pin);
+  if (!emp) { toast('קוד עובד שגוי', 'e'); return; }
+  showLoading('מבטל תשלום...');
+  try {
+    // Delete allocations for this payment
+    var allocs = _payAllocMap[payId] || [];
+    if (allocs.length) {
+      var allocIds = allocs.map(function(a) { return a.id; });
+      for (var i = 0; i < allocIds.length; i++) {
+        await sb.from(T.PAY_ALLOC).delete().eq('id', allocIds[i]);
+      }
+    }
+    await batchUpdate(T.SUP_PAYMENTS, [{ id: payId, status: 'cancelled' }]);
+    await writeLog('payment_cancel', null, { payment_id: payId, amount: pay.amount, cancelled_by: emp.id });
+    toast('תשלום בוטל');
+    closeAndRemoveModal('view-pay-modal');
+    await loadPaymentsTab();
+  } catch (e) {
+    console.error('cancelPayment error:', e);
+    toast('שגיאה בביטול: ' + (e.message || ''), 'e');
+  } finally {
+    hideLoading();
+  }
 }

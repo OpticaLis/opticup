@@ -62,6 +62,7 @@ function renderDocumentsTable(docs) {
         '<button class="btn-sm" onclick="viewDocument(\'' + d.id + '\')">\u05E6\u05E4\u05D4</button> ' +
         '<button class="btn-sm" title="' + (d.file_url ? '\u05D4\u05D7\u05DC\u05E3 \u05DE\u05E1\u05DE\u05DA' : '\u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA') + '" onclick="_attachFileToDoc(\'' + d.id + '\',\'' + d.supplier_id + '\')">&#128206;</button> ' +
         '<button class="btn-sm" onclick="switchDebtTab(\'payments\')">\u05E9\u05DC\u05DD</button>' + linkBtn +
+        (d.status === 'open' ? ' <button class="btn-sm btn-d" onclick="cancelDocument(\'' + d.id + '\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' : '') +
       '</td></tr>';
   }).join('');
   wrap.innerHTML =
@@ -269,4 +270,27 @@ async function generateDocInternalNumber() {
   });
   if (error) throw new Error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D9\u05E6\u05D9\u05E8\u05EA \u05DE\u05E1\u05E4\u05E8 \u05E4\u05E0\u05D9\u05DE\u05D9: ' + error.message);
   return data;
+}
+
+async function cancelDocument(docId) {
+  var doc = _docData.find(function(d) { return d.id === docId; });
+  if (!doc || doc.status !== 'open') { toast('\u05E0\u05D9\u05EA\u05DF \u05DC\u05D1\u05D8\u05DC \u05E8\u05E7 \u05DE\u05E1\u05DE\u05DA \u05E4\u05EA\u05D5\u05D7', 'e'); return; }
+  var ok = await confirmDialog('\u05D1\u05D9\u05D8\u05D5\u05DC \u05DE\u05E1\u05DE\u05DA', '\u05D4\u05D0\u05DD \u05DC\u05D1\u05D8\u05DC \u05D0\u05EA \u05D4\u05DE\u05E1\u05DE\u05DA? \u05E4\u05E2\u05D5\u05DC\u05D4 \u05D6\u05D5 \u05EA\u05D0\u05E4\u05E1 \u05D0\u05EA \u05D4\u05D9\u05EA\u05E8\u05D4');
+  if (!ok) return;
+  var pin = prompt('\u05D4\u05D6\u05DF \u05E7\u05D5\u05D3 \u05E2\u05D5\u05D1\u05D3 (PIN)');
+  if (!pin) return;
+  var emp = await verifyPinOnly(pin);
+  if (!emp) { toast('\u05E7\u05D5\u05D3 \u05E2\u05D5\u05D1\u05D3 \u05E9\u05D2\u05D5\u05D9', 'e'); return; }
+  showLoading('\u05DE\u05D1\u05D8\u05DC \u05DE\u05E1\u05DE\u05DA...');
+  try {
+    await batchUpdate(T.SUP_DOCS, [{ id: docId, status: 'cancelled', total_amount: 0, paid_amount: 0 }]);
+    await writeLog('doc_cancel', null, { document_id: docId, document_number: doc.document_number, cancelled_by: emp.id });
+    toast('\u05DE\u05E1\u05DE\u05DA \u05D1\u05D5\u05D8\u05DC');
+    await loadDocumentsTab();
+  } catch (e) {
+    console.error('cancelDocument error:', e);
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D1\u05D9\u05D8\u05D5\u05DC: ' + (e.message || ''), 'e');
+  } finally {
+    hideLoading();
+  }
 }

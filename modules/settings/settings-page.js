@@ -58,27 +58,89 @@ function renderSettings(data) {
     if (val != null) el.value = val;
   });
 
-  // Logo preview
-  updateLogoPreview();
-
-  // Bind logo URL change
-  const logoInput = document.getElementById('set-logo-url');
-  if (logoInput) logoInput.addEventListener('input', updateLogoPreview);
+  // Logo preview + upload binding
+  renderLogoPreview(data.logo_url);
+  const fileInput = document.getElementById('logo-file-input');
+  if (fileInput) fileInput.addEventListener('change', function() {
+    if (this.files[0]) handleLogoUpload(this.files[0]);
+    this.value = '';
+  });
 }
 
 // =========================================================
 // Logo preview
 // =========================================================
-function updateLogoPreview() {
-  const url = (document.getElementById('set-logo-url') || {}).value;
-  const preview = document.getElementById('logo-preview');
-  if (!preview) return;
-  if (url && url.startsWith('http')) {
-    preview.src = url;
-    preview.classList.remove('hidden');
-    preview.onerror = function() { preview.classList.add('hidden'); };
+function renderLogoPreview(url) {
+  const wrap = document.getElementById('logo-preview-wrap');
+  const delBtn = document.getElementById('logo-delete');
+  if (!wrap) return;
+  if (url) {
+    wrap.innerHTML = '<img src="' + escapeHtml(url) + '" style="max-width:150px;max-height:80px;border-radius:6px;border:1px solid var(--g200)" alt="logo" onerror="this.style.display=\'none\'">';
+    if (delBtn) delBtn.style.display = '';
   } else {
-    preview.classList.add('hidden');
+    wrap.innerHTML = '<div style="width:150px;height:80px;background:var(--g100);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--g400);font-size:2rem;margin:0 auto">🏪</div>';
+    if (delBtn) delBtn.style.display = 'none';
+  }
+}
+
+// =========================================================
+// Logo upload
+// =========================================================
+async function handleLogoUpload(file) {
+  if (!file.type.match(/^image\/(jpeg|png)$/)) {
+    toast('יש להעלות קובץ JPG או PNG בלבד', 'e'); return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    toast('הקובץ גדול מדי — מקסימום 2MB', 'e'); return;
+  }
+  showLoading('מעלה לוגו...');
+  try {
+    const tenantId = getTenantId();
+    const ext = file.name.split('.').pop().toLowerCase();
+    const path = tenantId + '/logo.' + ext;
+    const { error: upErr } = await sb.storage.from('tenant-logos').upload(path, file, { upsert: true });
+    if (upErr) {
+      if (upErr.message && upErr.message.includes('not found')) {
+        toast('יש ליצור bucket בשם tenant-logos בפאנל Supabase', 'e');
+      } else {
+        throw upErr;
+      }
+      return;
+    }
+    const { data: urlData } = sb.storage.from('tenant-logos').getPublicUrl(path);
+    const publicUrl = urlData.publicUrl + '?t=' + Date.now();
+    await sb.from('tenants').update({ logo_url: publicUrl }).eq('id', tenantId);
+    document.getElementById('set-logo-url').value = publicUrl;
+    renderLogoPreview(publicUrl);
+    toast('לוגו הועלה בהצלחה');
+  } catch (e) {
+    console.error('handleLogoUpload error:', e);
+    toast('שגיאה בהעלאת לוגו: ' + (e.message || ''), 'e');
+  } finally {
+    hideLoading();
+  }
+}
+
+// =========================================================
+// Logo delete
+// =========================================================
+async function handleLogoDelete() {
+  const ok = await confirmDialog('מחיקת לוגו', 'האם למחוק את הלוגו?');
+  if (!ok) return;
+  showLoading('מוחק לוגו...');
+  try {
+    const tenantId = getTenantId();
+    // Try to remove both extensions
+    await sb.storage.from('tenant-logos').remove([tenantId + '/logo.png', tenantId + '/logo.jpg', tenantId + '/logo.jpeg']);
+    await sb.from('tenants').update({ logo_url: null }).eq('id', tenantId);
+    document.getElementById('set-logo-url').value = '';
+    renderLogoPreview(null);
+    toast('לוגו נמחק');
+  } catch (e) {
+    console.error('handleLogoDelete error:', e);
+    toast('שגיאה במחיקת לוגו: ' + (e.message || ''), 'e');
+  } finally {
+    hideLoading();
   }
 }
 
