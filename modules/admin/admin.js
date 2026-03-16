@@ -32,7 +32,7 @@ function resumeAppInit() {
   if (dateEl) dateEl.valueAsDate = new Date();
   const rcptDateEl = $('rcpt-date');
   if (rcptDateEl) rcptDateEl.valueAsDate = new Date();
-  loadData().then(() => { addEntryRow(); refreshLowStockBanner(); document.getElementById('page-loader')?.remove(); });
+  loadData().then(() => { addEntryRow(); refreshLowStockBanner(); });
 }
 
 // =========================================================

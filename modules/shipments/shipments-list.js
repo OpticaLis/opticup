@@ -32,7 +32,6 @@ async function initShipmentsPage() {
     '<li><strong>פריטי זיכוי</strong> — כשנוצר ארגז זיכוי, הפריטים עוברים אוטומטית ל"נשלח".</li></ul>');
   setupFilterListeners();
   await loadShipments();
-  document.getElementById('page-loader')?.remove();
   autoLockExpiredBoxes();
 
   // Check URL params from sendToBox (returns tab → wizard pre-fill)
