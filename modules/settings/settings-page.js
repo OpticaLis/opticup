@@ -28,7 +28,7 @@ async function loadSettings() {
   showLoading('טוען הגדרות...');
   try {
     const tenantId = getTenantId();
-    if (!tenantId) { toast('שגיאה: לא נמצא דייר פעיל', 'error'); return; }
+    if (!tenantId) { toast('שגיאה: לא נמצא דייר פעיל', 'e'); return; }
 
     const { data, error } = await sb.from('tenants')
       .select('*')
@@ -36,12 +36,12 @@ async function loadSettings() {
       .single();
 
     if (error) throw error;
-    if (!data) { toast('שגיאה: דייר לא נמצא', 'error'); return; }
+    if (!data) { toast('שגיאה: דייר לא נמצא', 'e'); return; }
 
     renderSettings(data);
   } catch (err) {
     console.error('loadSettings error:', err);
-    toast('שגיאה בטעינת הגדרות: ' + err.message, 'error');
+    toast('שגיאה בטעינת הגדרות: ' + err.message, 'e');
   } finally {
     hideLoading();
   }
@@ -109,7 +109,15 @@ async function handleLogoUpload(file) {
     }
     const { data: urlData } = sb.storage.from('tenant-logos').getPublicUrl(path);
     const publicUrl = urlData.publicUrl + '?t=' + Date.now();
-    await sb.from('tenants').update({ logo_url: publicUrl }).eq('id', tenantId);
+    const { data: logoData, error: logoErr } = await sb.from('tenants')
+      .update({ logo_url: publicUrl })
+      .eq('id', tenantId)
+      .select('logo_url');
+    if (logoErr) throw logoErr;
+    if (!logoData || logoData.length === 0) {
+      toast('הלוגו הועלה לאחסון אך לא נשמר בהגדרות — בדוק הרשאות RLS', 'e');
+      return;
+    }
     document.getElementById('set-logo-url').value = publicUrl;
     renderLogoPreview(publicUrl);
     storeTenantConfig({ logo_url: publicUrl });
@@ -133,7 +141,11 @@ async function handleLogoDelete() {
     const tenantId = getTenantId();
     // Try to remove both extensions
     await sb.storage.from('tenant-logos').remove([tenantId + '/logo.png', tenantId + '/logo.jpg', tenantId + '/logo.jpeg']);
-    await sb.from('tenants').update({ logo_url: null }).eq('id', tenantId);
+    const { error: delErr } = await sb.from('tenants')
+      .update({ logo_url: null })
+      .eq('id', tenantId)
+      .select('logo_url');
+    if (delErr) throw delErr;
     document.getElementById('set-logo-url').value = '';
     renderLogoPreview(null);
     storeTenantConfig({ logo_url: null });
@@ -152,14 +164,14 @@ async function handleLogoDelete() {
 async function saveSettings() {
   // Permission check
   if (!hasPermission('settings.edit')) {
-    toast('אין לך הרשאה לערוך הגדרות', 'error');
+    toast('אין לך הרשאה לערוך הגדרות', 'e');
     return;
   }
 
   // Validate required fields
   const nameEl = document.getElementById('set-business-name');
   if (!nameEl || !nameEl.value.trim()) {
-    toast('שם העסק הוא שדה חובה', 'error');
+    toast('שם העסק הוא שדה חובה', 'e');
     nameEl && nameEl.focus();
     return;
   }
@@ -182,19 +194,24 @@ async function saveSettings() {
     // Also update 'name' column to match business_name
     updates.name = updates.business_name;
 
-    const { error } = await sb.from('tenants')
+    const { data, error } = await sb.from('tenants')
       .update(updates)
-      .eq('id', tenantId);
+      .eq('id', tenantId)
+      .select();
 
     if (error) throw error;
+    if (!data || data.length === 0) {
+      toast('שגיאה: לא ניתן לשמור — בדוק הרשאות RLS בטבלת tenants', 'e');
+      return;
+    }
 
     // Update tenant_config in sessionStorage for VAT and other settings
     storeTenantConfig(updates);
 
-    toast('ההגדרות נשמרו בהצלחה', 'success');
+    toast('ההגדרות נשמרו בהצלחה', 's');
   } catch (err) {
     console.error('saveSettings error:', err);
-    toast('שגיאה בשמירת הגדרות: ' + err.message, 'error');
+    toast('שגיאה בשמירת הגדרות: ' + err.message, 'e');
   } finally {
     hideLoading();
   }

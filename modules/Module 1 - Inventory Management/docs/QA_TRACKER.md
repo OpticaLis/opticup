@@ -6,6 +6,15 @@
 
 Legend: `[ ]` = not tested, `[x]` = pass, `[!]` = fail (add bug ID), `[-]` = skipped (with reason)
 
+### QA-a: Setup & Pre-scan ✅
+- [x] QA_TRACKER.md created with all 448 tests
+- [x] Automated code scan completed (dev_bypass, innerHTML, tenant_id, console.log, file sizes)
+- [x] JS syntax check — all files pass
+- [x] CRITICAL: dev_bypass removed from auth-service.js (`28cc3ba`)
+- [x] LOW: 2 debug console.logs removed from receipt-debt.js (`28cc3ba`)
+- [x] XSS: 10 innerHTML risks fixed across 4 files (`daaff18`)
+- [x] Tenant_id audit: all 27 insert/upsert calls verified — 0 missing
+
 ---
 
 ## QA-1: Functional Testing (~182 tests)
@@ -352,7 +361,7 @@ Legend: `[ ]` = not tested, `[x]` = pass, `[!]` = fail (add bug ID), `[-]` = ski
 
 - [ ] S.01 — JWT token validation — expired token rejected, returns 401
 - [ ] S.02 — JWT token tampering — modified token rejected
-- [ ] S.03 — XSS via input fields — HTML/script injection sanitized (escapeHtml)
+- [x] S.03 — XSS via input fields — HTML/script injection sanitized (escapeHtml) ✅ Fixed in `daaff18`: excel-import, po-items, receipt-form, qty-modal
 - [ ] S.04 — XSS via URL parameters — query params sanitized
 - [ ] S.05 — SQL injection via search — parameterized queries prevent injection
 - [ ] S.06 — RLS enforcement — direct Supabase API call without tenant_id returns empty
@@ -360,7 +369,7 @@ Legend: `[ ]` = not tested, `[x]` = pass, `[!]` = fail (add bug ID), `[-]` = ski
 - [ ] S.08 — Session hijacking — stolen token from different IP/device rejected or flagged
 - [ ] S.09 — CSRF — cross-site requests blocked
 - [ ] S.10 — Sensitive data in URL — no PINs/tokens in query strings
-- [ ] S.11 — Console exposure — no secrets/tokens logged to console
+- [x] S.11 — Console exposure — no secrets/tokens logged to console ✅ dev_bypass removed in `28cc3ba`, debug console.logs removed
 - [ ] S.12 — Admin password not hardcoded in client JS — verify 1234 is only in sessionStorage check
 
 ---
