@@ -12,16 +12,7 @@ async function initShipmentsPage() {
   const session = await loadSession();
   if (!session) { window.location.href = 'index.html'; return; }
 
-  // Permission check
-  if (typeof hasPermission === 'function') {
-    const permsRaw = JSON.parse(sessionStorage.getItem('prizma_permissions') || '{}');
-    const permKeys = Array.isArray(permsRaw) ? permsRaw : Object.keys(permsRaw);
-    const shipPermExists = permKeys.some(p => p.startsWith('shipments'));
-    if (shipPermExists && !hasPermission('shipments.view')) {
-      window.location.href = 'index.html';
-      return;
-    }
-  }
+  if (!hasPermission('shipments.view')) { window.location.href = 'index.html'; return; }
 
   // Apply UI permissions if available
   if (typeof applyUIPermissions === 'function') applyUIPermissions();

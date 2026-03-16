@@ -219,16 +219,7 @@ window.addEventListener('DOMContentLoaded', async function() {
   const session = await loadSession();
   if (!session) { window.location.href = 'index.html'; return; }
 
-  // Permission check — allow access if permission doesn't exist yet
-  if (typeof hasPermission === 'function') {
-    const permsRaw = JSON.parse(sessionStorage.getItem('prizma_permissions') || '{}');
-    const permKeys = Array.isArray(permsRaw) ? permsRaw : Object.keys(permsRaw);
-    const debtPermExists = permKeys.some(function(p) { return p.startsWith('debt'); });
-    if (debtPermExists && !hasPermission('debt:view')) {
-      window.location.href = 'index.html';
-      return;
-    }
-  }
+  if (!hasPermission('debt.view')) { window.location.href = 'index.html'; return; }
 
   await loadDebtSummary();
   await loadSuppliersTab();

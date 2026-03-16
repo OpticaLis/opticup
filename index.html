@@ -132,9 +132,9 @@ const MODULES = [
   { id: 'customers',  label: 'ניהול לקוחות', icon: '\uD83D\uDC64',       url: 'customers.html',           status: 'coming_soon' },
   { id: 'finance',    label: 'פיננסים',       icon: '\uD83D\uDCB0',       url: 'finance.html',             status: 'coming_soon' },
   { id: 'lab',        label: 'מעבדה',         icon: '\uD83D\uDD2C',       url: 'lab.html',                 status: 'coming_soon' },
-  { id: 'debt',       label: 'מעקב חובות ספקים', icon: '\uD83D\uDCB0',    url: 'suppliers-debt.html',      status: 'active' },
+  { id: 'debt',       label: 'מעקב חובות ספקים', icon: '\uD83D\uDCB0',    url: 'suppliers-debt.html',      status: 'active', permission: 'debt.view' },
   { id: 'shipments', label: 'משלוחים וארגזים', icon: '\uD83D\uDE9A',     url: 'shipments.html',           status: 'active', permission: 'shipments.view' },
-  { id: 'employees',  label: 'עובדים',        icon: '\uD83D\uDC65',       url: 'employees.html',           status: 'active', permission: 'employees.view' },
+  { id: 'employees',  label: '\u05E0\u05D9\u05D4\u05D5\u05DC \u05D4\u05E8\u05E9\u05D0\u05D5\u05EA', icon: '\uD83D\uDD10', url: 'employees.html', status: 'active', permission: 'employees.view' },
   { id: 'settings',   label: 'הגדרות',        icon: '\u2699\uFE0F',        url: 'settings.html',            status: 'active', permission: 'settings.view' },
   { id: 'attendance', label: 'שעון נוכחות',  icon: '\uD83D\uDD50',       url: 'attendance.html',          status: 'coming_soon' }
 ];

@@ -60,7 +60,7 @@ async function loadEmployeesTab() {
 
   // Permission matrix section
   if (hasPermission('settings.view')) {
-    html += '<div style="margin-top:32px"><h3>&#128272; מטריצת הרשאות</h3><div id="perm-matrix-wrap">טוען...</div></div>';
+    html += '<div style="margin-top:32px"><h3>\uD83D\uDD10 \u05DE\u05D8\u05E8\u05D9\u05E6\u05EA \u05D4\u05E8\u05E9\u05D0\u05D5\u05EA</h3><div id="perm-matrix-wrap">\u05D8\u05D5\u05E2\u05DF...</div></div>';
   }
 
   container.innerHTML = html;
@@ -232,6 +232,26 @@ async function confirmDeactivateEmployee(id, name) {
 // =========================================================
 // 7. renderPermissionMatrix(targetDivId)
 // =========================================================
+const MODULE_LABELS = {
+  inventory: { icon: '\uD83D\uDCE6', he: '\u05DE\u05DC\u05D0\u05D9' },
+  debt: { icon: '\uD83D\uDCB0', he: '\u05D7\u05D5\u05D1\u05D5\u05EA \u05E1\u05E4\u05E7\u05D9\u05DD' },
+  shipments: { icon: '\uD83D\uDE9A', he: '\u05DE\u05E9\u05DC\u05D5\u05D7\u05D9\u05DD' },
+  ai: { icon: '\uD83E\uDD16', he: 'AI/OCR' },
+  returns: { icon: '\uD83D\uDD04', he: '\u05D6\u05D9\u05DB\u05D5\u05D9\u05D9\u05DD' },
+  stock_count: { icon: '\uD83D\uDCCA', he: '\u05E1\u05E4\u05D9\u05E8\u05EA \u05DE\u05DC\u05D0\u05D9' },
+  reports: { icon: '\uD83D\uDCC8', he: '\u05D3\u05D5\u05D7\u05D5\u05EA' },
+  settings: { icon: '\u2699\uFE0F', he: '\u05D4\u05D2\u05D3\u05E8\u05D5\u05EA' },
+  employees: { icon: '\uD83D\uDC65', he: '\u05E0\u05D9\u05D4\u05D5\u05DC \u05D4\u05E8\u05E9\u05D0\u05D5\u05EA' },
+  purchasing: { icon: '\uD83D\uDED2', he: '\u05D4\u05D6\u05DE\u05E0\u05D5\u05EA \u05E8\u05DB\u05E9' },
+  goods_receipts: { icon: '\uD83D\uDCE5', he: '\u05E7\u05D1\u05DC\u05EA \u05E1\u05D7\u05D5\u05E8\u05D4' },
+  brands: { icon: '\uD83C\uDFF7\uFE0F', he: '\u05DE\u05D5\u05EA\u05D2\u05D9\u05DD' },
+  suppliers: { icon: '\uD83C\uDFED', he: '\u05E1\u05E4\u05E7\u05D9\u05DD' },
+  audit: { icon: '\uD83D\uDCDD', he: '\u05DC\u05D5\u05D2 \u05E4\u05E2\u05D5\u05DC\u05D5\u05EA' },
+  sync: { icon: '\uD83D\uDD04', he: '\u05E1\u05E0\u05DB\u05E8\u05D5\u05DF' }
+};
+
+const MODULE_ORDER = ['inventory', 'debt', 'shipments', 'returns', 'purchasing', 'goods_receipts', 'stock_count', 'ai', 'reports', 'brands', 'suppliers', 'settings', 'employees', 'audit', 'sync'];
+
 async function renderPermissionMatrix(targetDivId) {
   const wrap = $(targetDivId);
   if (!wrap) return;
@@ -241,29 +261,37 @@ async function renderPermissionMatrix(targetDivId) {
     sb.from(AT.PERMISSIONS).select('id, module, name_he').eq('tenant_id', getTenantId()).order('module, id'),
     sb.from(AT.ROLE_PERMS).select('role_id, permission_id, granted').eq('tenant_id', getTenantId())
   ]);
-  if (!roles || !perms) { wrap.textContent = 'שגיאה בטעינת הרשאות'; return; }
+  if (!roles || !perms) { wrap.textContent = '\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05D4\u05E8\u05E9\u05D0\u05D5\u05EA'; return; }
 
   const rpMap = {};
   (rolePerms || []).forEach(rp => { rpMap[rp.role_id + '|' + rp.permission_id] = rp.granted; });
 
   const canEdit = hasPermission('settings.edit');
-  const modules = [...new Set(perms.map(p => p.module))];
+  const moduleSet = [...new Set(perms.map(p => p.module))];
+  const sortedModules = MODULE_ORDER.filter(m => moduleSet.includes(m));
+  moduleSet.forEach(m => { if (!sortedModules.includes(m)) sortedModules.push(m); });
 
   let t = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.8rem">';
-  t += '<thead><tr style="background:#f1f5f9"><th style="padding:8px;text-align:right">הרשאה</th>';
-  roles.forEach(r => { t += `<th style="padding:8px;text-align:center">${escapeHtml(r.name_he)}</th>`; });
+  t += '<thead><tr style="background:#f1f5f9;position:sticky;top:0;z-index:5"><th style="padding:8px;text-align:right">\u05D4\u05E8\u05E9\u05D0\u05D4</th>';
+  roles.forEach(r => { t += '<th style="padding:8px;text-align:center">' + escapeHtml(r.name_he) + '</th>'; });
   t += '</tr></thead><tbody>';
 
-  modules.forEach(mod => {
-    t += `<tr><td colspan="${roles.length + 1}" style="padding:8px 10px;font-weight:700;background:#e2e8f0">${escapeHtml(mod)}</td></tr>`;
-    perms.filter(p => p.module === mod).forEach(p => {
-      t += '<tr style="border-bottom:1px solid #f0f0f0">';
-      t += `<td style="padding:6px 10px">${escapeHtml(p.name_he)}</td>`;
+  sortedModules.forEach(mod => {
+    const ml = MODULE_LABELS[mod] || { icon: '\uD83D\uDCCB', he: mod };
+    const modPerms = perms.filter(p => p.module === mod);
+    t += '<tr class="perm-module-header" data-module="' + mod + '" onclick="togglePermModule(this)" style="cursor:pointer;user-select:none">';
+    t += '<td colspan="' + (roles.length + 1) + '" style="padding:10px 12px;font-weight:700;background:var(--primary);color:white;font-size:.88rem">';
+    t += '<span class="perm-arrow" style="display:inline-block;transition:transform .2s;margin-left:6px">\u25BC</span> ';
+    t += ml.icon + ' ' + escapeHtml(ml.he) + ' <span style="font-weight:400;font-size:.75rem;opacity:.7">(' + modPerms.length + ')</span>';
+    t += '</td></tr>';
+    modPerms.forEach(p => {
+      t += '<tr class="perm-row perm-mod-' + mod + '" style="border-bottom:1px solid #f0f0f0">';
+      t += '<td style="padding:6px 10px;padding-right:24px">' + escapeHtml(p.name_he) + '</td>';
       roles.forEach(r => {
         const key = r.id + '|' + p.id;
         const checked = rpMap[key] ? ' checked' : '';
         const disabled = canEdit ? '' : ' disabled';
-        t += `<td style="text-align:center"><input type="checkbox"${checked}${disabled} onchange="updateRolePermission('${r.id}','${p.id}',this.checked)"></td>`;
+        t += '<td style="text-align:center"><input type="checkbox"' + checked + disabled + ' onchange="updateRolePermission(\'' + r.id + '\',\'' + p.id + '\',this.checked)" style="accent-color:var(--success);width:18px;height:18px"></td>';
       });
       t += '</tr>';
     });
@@ -271,6 +299,15 @@ async function renderPermissionMatrix(targetDivId) {
 
   t += '</tbody></table></div>';
   wrap.innerHTML = t;
+}
+
+function togglePermModule(headerRow) {
+  const mod = headerRow.getAttribute('data-module');
+  const rows = document.querySelectorAll('.perm-mod-' + mod);
+  const arrow = headerRow.querySelector('.perm-arrow');
+  const hidden = rows.length && rows[0].style.display === 'none';
+  rows.forEach(r => { r.style.display = hidden ? '' : 'none'; });
+  if (arrow) arrow.style.transform = hidden ? '' : 'rotate(-90deg)';
 }
 
 // =========================================================
