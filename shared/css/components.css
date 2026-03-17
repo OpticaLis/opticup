@@ -1,0 +1,254 @@
+/* =============================================================================
+   components.css — Shared UI Components for Optic Up (Part 1)
+   =============================================================================
+   All visual values come from variables.css — ZERO hardcoded colors, sizes,
+   spacing, radii, or shadows allowed.
+
+   Components: buttons, inputs, selects, textareas, badges, cards.
+   See also: components-extra.css (tables, slide panel, skeleton, accordion)
+   ============================================================================= */
+
+/* =============================================================================
+   1. BUTTONS
+   Extracted from: styles.css .btn, .btn-p, .btn-s, .btn-d, .btn-g, .btn-w, .btn-sm
+   ============================================================================= */
+
+.btn {
+  padding: var(--space-sm) var(--space-xl);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  font-family: var(--font-family);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  line-height: var(--line-height-tight);
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-info);
+  color: var(--color-white);
+}
+.btn-primary:hover {
+  background: var(--color-info-hover);
+}
+
+.btn-secondary {
+  background: var(--color-success);
+  color: var(--color-white);
+}
+.btn-secondary:hover {
+  background: var(--color-success-hover);
+}
+
+.btn-danger {
+  background: var(--color-error);
+  color: var(--color-white);
+}
+.btn-danger:hover {
+  background: var(--color-error-hover);
+}
+
+.btn-ghost {
+  background: var(--color-gray-200);
+  color: var(--color-gray-700);
+}
+.btn-ghost:hover {
+  background: var(--color-gray-300);
+}
+
+.btn-sm {
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-size-sm);
+}
+
+.btn-md {
+  padding: var(--space-sm) var(--space-xl);
+  font-size: var(--font-size-md);
+}
+
+.btn-lg {
+  padding: var(--space-md) var(--space-2xl);
+  font-size: var(--font-size-lg);
+}
+
+/* =============================================================================
+   2. INPUTS
+   Extracted from: styles.css input, select, textarea, .err
+   ============================================================================= */
+
+.input {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-family: var(--font-family);
+  direction: rtl;
+  transition: border var(--transition-normal);
+  background: var(--color-bg-input);
+  color: var(--color-gray-700);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input-error {
+  border-color: var(--color-error);
+  background: var(--color-error-light);
+}
+
+.input-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--color-gray-100);
+}
+
+/* =============================================================================
+   3. SELECT
+   ============================================================================= */
+
+.select {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-family: var(--font-family);
+  direction: rtl;
+  transition: border var(--transition-normal);
+  background: var(--color-bg-input);
+  color: var(--color-gray-700);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.select-error {
+  border-color: var(--color-error);
+  background: var(--color-error-light);
+}
+
+/* =============================================================================
+   4. TEXTAREA
+   ============================================================================= */
+
+.textarea {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-family: var(--font-family);
+  direction: rtl;
+  transition: border var(--transition-normal);
+  background: var(--color-bg-input);
+  color: var(--color-gray-700);
+  resize: vertical;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.textarea-error {
+  border-color: var(--color-error);
+  background: var(--color-error-light);
+}
+
+/* =============================================================================
+   5. BADGES
+   Extracted from: styles.css .badge-orange, .badge-blue, .badge-green, .badge-gray
+   ============================================================================= */
+
+.badge {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  white-space: nowrap;
+}
+
+.badge-success {
+  background: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+
+.badge-error {
+  background: var(--color-error-light);
+  color: var(--color-error-dark);
+}
+
+.badge-warning {
+  background: var(--color-warning-light);
+  color: var(--color-warning-dark);
+}
+
+.badge-info {
+  background: var(--color-info-light);
+  color: var(--color-info-dark);
+}
+
+.badge-neutral {
+  background: var(--color-gray-200);
+  color: var(--color-gray-500);
+}
+
+/* =============================================================================
+   6. CARDS
+   Extracted from: styles.css .card, .card h3
+   ============================================================================= */
+
+.card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-xl);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 2px solid var(--color-bg-page);
+}
+
+.card-header h3 {
+  color: var(--color-primary);
+  font-size: var(--font-size-lg);
+  margin: 0;
+}
+
+.card-body {
+  padding: 0;
+}
+
+.card-footer {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-gray-200);
+}

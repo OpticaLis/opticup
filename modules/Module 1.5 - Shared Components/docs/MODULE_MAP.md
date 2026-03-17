@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-03-16 (Phase 1, Step 2)
+> Last updated: 2026-03-17 (Phase 1, Step 3)
 
 ---
 
@@ -10,7 +10,9 @@
 
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
-| 1 | variables.css | shared/css/variables.css | 136 | Design tokens: colors (primary, semantic, neutral, background), typography (family, sizes, weights, line-heights), spacing (6-step scale), border-radius, shadows, z-index, transitions. Single source of truth for all visual values. |
+| 1 | variables.css | shared/css/variables.css | 157 | Design tokens: colors (primary, semantic + dark text, neutral, background), typography (family, sizes, weights, line-heights), spacing (6-step scale), border-radius, shadows, z-index, transitions. Single source of truth for all visual values. |
+| 2 | components.css | shared/css/components.css | 254 | UI components part 1: buttons (primary/secondary/danger/ghost × sm/md/lg), inputs, selects, textareas, badges (success/error/warning/info/neutral), cards (header/body/footer). All values via CSS variables. |
+| 3 | components-extra.css | shared/css/components-extra.css | 214 | UI components part 2: table base (header/row/cell/sortable), slide-in panel (RTL, overlay), skeleton loaders (text/circle/rect/row + pulse animation), accordion (CSS-only open/close). |
 
 ---
 
@@ -37,11 +39,11 @@ All variables defined in `shared/css/variables.css`:
 ### Colors — Primary (4 vars)
 `--color-primary`, `--color-primary-hover`, `--color-primary-light`, `--color-primary-dark`
 
-### Colors — Semantic (12 vars)
-`--color-success`, `--color-success-light`, `--color-success-hover`
-`--color-error`, `--color-error-light`, `--color-error-hover`
-`--color-warning`, `--color-warning-light`, `--color-warning-hover`
-`--color-info`, `--color-info-light`, `--color-info-hover`
+### Colors — Semantic (16 vars)
+`--color-success`, `--color-success-light`, `--color-success-hover`, `--color-success-dark`
+`--color-error`, `--color-error-light`, `--color-error-hover`, `--color-error-dark`
+`--color-warning`, `--color-warning-light`, `--color-warning-hover`, `--color-warning-dark`
+`--color-info`, `--color-info-light`, `--color-info-hover`, `--color-info-dark`
 
 ### Colors — Neutral (12 vars)
 `--color-white`, `--color-gray-50` through `--color-gray-900`, `--color-black`
@@ -70,7 +72,7 @@ All variables defined in `shared/css/variables.css`:
 ### Transitions (3 vars)
 `--transition-fast`, `--transition-normal`, `--transition-slow`
 
-**Total: 65 CSS variables**
+**Total: 69 CSS variables**
 
 ---
 

@@ -48,6 +48,12 @@
   --color-info-light:     #dbeafe;  /* from .alert-i background */
   --color-info-hover:     #2563eb;  /* from .btn-p:hover */
 
+  /* Badge / alert dark text colors (dark on light backgrounds) */
+  --color-success-dark:   #166534;  /* from .badge-green, .alert-s color, .rcpt-status-confirmed */
+  --color-error-dark:     #991b1b;  /* from .alert-e color, .rcpt-status-cancelled */
+  --color-warning-dark:   #92400e;  /* from .alert-w color, .badge-orange, .rcpt-status-draft */
+  --color-info-dark:      #1e40af;  /* from .alert-i color, .badge-blue, .rcpt-new-badge */
+
   /* =========================================================================
      3. COLORS — NEUTRAL (Gray Scale)
      Source: styles.css :root --g100 through --g700 (Tailwind gray palette)
