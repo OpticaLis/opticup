@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-03-17 (Phase 1, Steps 6-7)
+> Last updated: 2026-03-17 (Phase 2, Step 1)
 
 ---
 
@@ -15,6 +15,7 @@
 | 3 | components-extra.css | shared/css/components-extra.css | 214 | UI components part 2: table base (header/row/cell/sortable), slide-in panel (RTL, overlay), skeleton loaders (text/circle/rect/row + pulse animation), accordion (CSS-only open/close). |
 | 4 | layout.css | shared/css/layout.css | 201 | Page structure (container/header/content), sticky header, flex helpers (flex/col/wrap, items, justify, gap), grid helpers (2/3/4 col), RTL utilities (logical properties), visibility (hidden/visible/sr-only), print styles (no-print, header hidden). |
 | 5 | forms.css | shared/css/forms.css | 146 | Form layout: form-group (label+input wrapper), form-label, form-required (red asterisk), form-error/form-help text, form-row (multi-column flex), form-col-2 (2-col grid), form-actions (button container), form-inline (label+input same line), mobile responsive. |
+| 6 | modal.css | shared/css/modal.css | 233 | Modal system: overlay (fixed, z-modal), container (flex column, 90vh max), header/body/footer, close button. 5 sizes (sm 340px, md 500px, lg 700px, xl 900px, fullscreen 95vw). 5 types (default, confirm, alert, danger with red header, wizard with progress bar). Wizard step indicators (num/active/done). Animations (entering/leaving with scale+fade). Stack support (dimmed, pointer-events:none). Responsive (640px breakpoint). |
 
 ---
 

@@ -1,0 +1,233 @@
+/* =============================================================================
+   modal.css — Modal System Styles for Optic Up
+   Standalone — no @import. Uses CSS variables from variables.css.
+   ============================================================================= */
+
+/* --- 1. Overlay --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 1000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* --- 2. Container --- */
+.modal-container {
+  position: relative;
+  width: 100%;
+  max-width: 500px; /* default = md */
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: var(--space-md, 12px);
+  background: var(--color-bg-card, #ffffff);
+  border-radius: var(--radius-lg, 10px);
+  box-shadow: var(--shadow-lg, 0 12px 40px rgba(0, 0, 0, 0.25));
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- 3. Header / Body / Footer --- */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md, 12px) var(--space-lg, 16px);
+  border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+  flex-shrink: 0;
+}
+.modal-header .modal-title {
+  font-size: var(--font-size-lg, 1.1rem);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-gray-900, #111827);
+  margin: 0;
+  line-height: var(--line-height-tight, 1.25);
+}
+.modal-body {
+  padding: var(--space-lg, 16px);
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+.modal-footer {
+  display: flex;
+  gap: var(--space-sm, 8px);
+  justify-content: flex-end;
+  padding: var(--space-md, 12px) var(--space-lg, 16px);
+  border-top: 1px solid var(--color-gray-200, #e5e7eb);
+  flex-shrink: 0;
+}
+
+/* --- 4. Close button --- */
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--color-gray-400, #9ca3af);
+  padding: var(--space-xs, 4px);
+  border-radius: var(--radius-sm, 6px);
+  transition: color var(--transition-fast, 150ms ease),
+              background var(--transition-fast, 150ms ease);
+}
+.modal-close:hover {
+  color: var(--color-gray-700, #374151);
+  background: var(--color-gray-100, #f9fafb);
+}
+
+/* --- 5. Sizes (max-width on .modal-container) --- */
+.modal-sm .modal-container { max-width: 340px; }
+.modal-md .modal-container { max-width: 500px; }
+.modal-lg .modal-container { max-width: 700px; }
+.modal-xl .modal-container { max-width: 900px; }
+.modal-fullscreen .modal-container {
+  max-width: 95vw;
+  height: 95vh;
+  max-height: 95vh;
+}
+
+/* --- 6. Types --- */
+/* .modal-type-default / .modal-type-confirm / .modal-type-alert — no extra styling */
+
+/* Danger — red-tinted header */
+.modal-type-danger .modal-header {
+  background: var(--color-error-light, #fee2e2);
+  border-bottom-color: var(--color-error, #ef4444);
+}
+.modal-type-danger .modal-header .modal-title {
+  color: var(--color-error, #ef4444);
+}
+.modal-type-danger .danger-confirm-input {
+  width: 100%;
+  margin-block-start: var(--space-md, 12px);
+  padding: var(--space-sm, 8px) var(--space-md, 12px);
+  border: 2px solid var(--color-gray-300, #d1d5db);
+  border-radius: var(--radius-md, 8px);
+  font-size: var(--font-size-md, 0.92rem);
+  font-family: var(--font-family, 'Heebo', sans-serif);
+  transition: border-color var(--transition-fast, 150ms ease);
+}
+.modal-type-danger .danger-confirm-input:focus {
+  outline: none;
+  border-color: var(--color-error, #ef4444);
+}
+
+/* --- 7. Wizard progress bar --- */
+.wizard-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  padding: var(--space-sm, 8px) var(--space-lg, 16px);
+  border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.wizard-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs, 4px);
+  font-size: var(--font-size-sm, 0.85rem);
+  color: var(--color-gray-400, #9ca3af);
+  white-space: nowrap;
+  transition: color var(--transition-fast, 150ms ease);
+}
+.wizard-step + .wizard-step::before {
+  content: '';
+  display: inline-block;
+  width: 24px;
+  height: 1px;
+  background: var(--color-gray-300, #d1d5db);
+  margin-inline-end: var(--space-xs, 4px);
+  flex-shrink: 0;
+}
+.wizard-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: var(--font-weight-semibold, 600);
+  background: var(--color-gray-200, #e5e7eb);
+  color: var(--color-gray-500, #6b7280);
+  flex-shrink: 0;
+  transition: background var(--transition-fast, 150ms ease),
+              color var(--transition-fast, 150ms ease);
+}
+.wizard-step-active {
+  color: var(--color-primary, #1a237e);
+  font-weight: var(--font-weight-semibold, 600);
+}
+.wizard-step-active .wizard-step-num {
+  background: var(--color-primary, #1a237e);
+  color: var(--color-white, #ffffff);
+}
+.wizard-step-done {
+  color: var(--color-success, #10b981);
+}
+.wizard-step-done .wizard-step-num {
+  background: var(--color-success, #10b981);
+  color: var(--color-white, #ffffff);
+}
+.wizard-panel { display: none; }
+.wizard-panel-active { display: block; }
+
+/* --- 8. Animations --- */
+.modal-entering {
+  animation: modalOverlayIn var(--transition-normal, 200ms ease) forwards;
+}
+.modal-leaving {
+  animation: modalOverlayOut var(--transition-normal, 200ms ease) forwards;
+}
+.modal-entering .modal-container {
+  animation: modalContainerIn var(--transition-normal, 200ms ease) forwards;
+}
+.modal-leaving .modal-container {
+  animation: modalContainerOut var(--transition-normal, 200ms ease) forwards;
+}
+@keyframes modalOverlayIn {
+  from { opacity: 0; } to { opacity: 1; }
+}
+@keyframes modalOverlayOut {
+  from { opacity: 1; } to { opacity: 0; }
+}
+@keyframes modalContainerIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes modalContainerOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.95); }
+}
+
+/* --- 9. Stack support --- */
+.modal-stacked { pointer-events: none; }
+.modal-stacked .modal-container {
+  transform: scale(0.97);
+  filter: brightness(0.92);
+  transition: transform var(--transition-normal, 200ms ease),
+              filter var(--transition-normal, 200ms ease);
+}
+
+/* --- 10. Responsive --- */
+@media (max-width: 640px) {
+  .modal-container {
+    max-width: calc(100vw - var(--space-lg, 16px) * 2) !important;
+    margin: var(--space-sm, 8px);
+  }
+  .modal-fullscreen .modal-container {
+    max-width: 100vw !important;
+    height: 100vh;
+    max-height: 100vh;
+    margin: 0;
+    border-radius: 0;
+  }
+  .wizard-progress {
+    gap: var(--space-xs, 4px);
+    padding: var(--space-xs, 4px) var(--space-md, 12px);
+  }
+  .wizard-step + .wizard-step::before { width: 12px; }
+}
