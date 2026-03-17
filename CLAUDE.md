@@ -376,3 +376,36 @@ git push origin v{phase}
 git add -A && git commit -m "descriptive message in English" && git push
 ```
 
+---
+
+## Branching & Environments
+
+### Branches
+- **`main`** = Production. Live for end users via GitHub Pages. Do NOT push directly — merge only.
+- **`develop`** = Development. All Claude Code work happens here.
+
+### Development Flow
+1. All work on `develop`
+2. When ready for production:
+   `git checkout main && git merge develop && git push && git checkout develop`
+3. After merge, verify GitHub Pages deploy succeeded
+
+### Merge Policy
+- **Refactor modules** (e.g., 1.5 Shared Components): merge to main at end of module after full QA.
+- **Feature modules** (e.g., CRM, Orders): merge per-phase if the phase delivers standalone user value.
+- **Hotfixes**: merge immediately.
+
+### Shared Database
+Both branches share one Supabase instance.
+- **Safe changes** (do anytime): ADD COLUMN, CREATE TABLE, CREATE FUNCTION, ADD INDEX
+- **Breaking changes** (plan carefully): DROP COLUMN, ALTER COLUMN type, DROP FUNCTION, RENAME COLUMN
+- **Protocol for breaking changes:**
+  1. Add the new structure (backward compatible)
+  2. Merge code to main that uses the new structure
+  3. Only then remove the old structure
+
+### Rules
+- Every Claude Code session starts on `develop`: verify with `git branch` before any work
+- Never `git push` to `main` directly — always merge from `develop`
+- DB changes must be backward compatible with `main` until merge
+
