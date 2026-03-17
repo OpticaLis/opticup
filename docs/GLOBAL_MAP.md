@@ -372,17 +372,6 @@ Phase 1 Step 7 will add `ui-test.html` for visual regression testing.
 | `getCategoryLabel` | shipments-settings.js | `key: string` | `string` | shipments-items.js, shipments-items-table.js |
 | `getStep3Config` | shipments-settings.js | `field: string` | `string` | shipments-create.js |
 
-### Contracts from Audit Not Verified in Code
-
-| Contract | Status | Notes |
-|----------|--------|-------|
-| `getItemByBarcode` | ⚠️ Not found as standalone function | Barcode lookup is done inline via `sb.from('inventory').select(...).eq('barcode', ...)` in multiple places |
-| `searchFrames` | ⚠️ Not found as standalone function | Search is done inline in inventory-table.js and inventory-reduction.js |
-| `updateQuantity` | ⚠️ Not a direct function | Quantity updates use RPC calls (`increment_inventory`, `decrement_inventory`) not a JS wrapper |
-| `getStockLevel` | ⚠️ Not found as standalone function | Stock levels queried inline from inventory table |
-| `getBrands` | ⚠️ Not a standalone contract | Brand data loaded via `loadLookupCaches()` + `brands` global array |
-| `getSuppliers` | ⚠️ Not a standalone contract | Supplier data loaded via `loadLookupCaches()` + `suppliers` global array |
-
 ---
 
 ## 6. Module Registry

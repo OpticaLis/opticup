@@ -25,4 +25,4 @@
 - Phase 1 Step 8: Verification
 
 ## Open Issues
-- None
+- RLS permissive (USING true) on 5 tables: stock_count_items, roles, permissions, role_permissions, employee_roles + 4 future stubs. Known debt — will be hardened in Module 2 (Platform Admin). Not a risk with single tenant.
