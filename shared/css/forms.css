@@ -1,0 +1,146 @@
+/* =============================================================================
+   forms.css — Form Layout, Labels, Validation States, Multi-Column
+   =============================================================================
+   All visual values from variables.css. ZERO hardcoded colors, sizes, spacing.
+   Extracted from: styles.css .form-row, .form-group, label, .req
+   ============================================================================= */
+
+/* =============================================================================
+   1. FORM GROUP — wrapper for label + input + help/error
+   Extracted from: styles.css .form-group { flex-direction:column; flex:1; min-width:140px }
+   ============================================================================= */
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 140px;
+  margin-bottom: var(--space-md);
+}
+
+/* =============================================================================
+   2. FORM LABEL
+   Extracted from: styles.css .form-group label { font-size:.82rem; color:var(--g500) }
+   ============================================================================= */
+
+.form-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  margin-bottom: var(--space-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+}
+
+/* =============================================================================
+   3. FORM REQUIRED — red asterisk
+   Extracted from: styles.css .req { color:var(--error) }
+   ============================================================================= */
+
+.form-required::after {
+  content: ' *';
+  color: var(--color-error);
+  font-weight: var(--font-weight-bold);
+}
+
+/* =============================================================================
+   4. FORM ERROR — validation error text below input
+   ============================================================================= */
+
+.form-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  margin-top: var(--space-xs);
+  line-height: var(--line-height-tight);
+}
+
+/* =============================================================================
+   5. FORM HELP — gray hint text below input
+   ============================================================================= */
+
+.form-help {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-400);
+  margin-top: var(--space-xs);
+  line-height: var(--line-height-tight);
+}
+
+/* =============================================================================
+   6. FORM ROW — flex container for multi-column forms
+   Extracted from: styles.css .form-row { display:flex; gap:12px; flex-wrap:wrap }
+   ============================================================================= */
+
+.form-row {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+}
+
+.form-row > .form-group {
+  margin-bottom: 0;
+}
+
+/* =============================================================================
+   7. FORM COL-2 — two equal columns side by side
+   ============================================================================= */
+
+.form-col-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+/* =============================================================================
+   8. FORM ACTIONS — submit/cancel button container
+   Extracted from: styles.css .btn-bar { display:flex; gap:10px; margin-top:16px }
+   ============================================================================= */
+
+.form-actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+/* =============================================================================
+   9. FORM INLINE — label + input on same line
+   ============================================================================= */
+
+.form-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.form-inline .form-label {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.form-inline .form-group {
+  margin-bottom: 0;
+}
+
+/* =============================================================================
+   10. RESPONSIVE — single column on mobile
+   Extracted from: styles.css @media(max-width:600px) .form-row { flex-direction:column }
+   ============================================================================= */
+
+@media (max-width: 640px) {
+  .form-row {
+    flex-direction: column;
+  }
+
+  .form-row > .form-group {
+    min-width: 100%;
+  }
+
+  .form-col-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .form-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

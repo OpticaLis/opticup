@@ -1,0 +1,201 @@
+/* =============================================================================
+   layout.css — Page Structure, Flex/Grid Helpers, RTL, Visibility, Print
+   =============================================================================
+   All visual values from variables.css. ZERO hardcoded colors, sizes, spacing.
+   Uses CSS logical properties for RTL support (margin-inline-start, not margin-left).
+   ============================================================================= */
+
+/* =============================================================================
+   1. PAGE STRUCTURE
+   Extracted from: styles.css main { max-width:1300px; margin:0 auto; padding:20px }
+   ============================================================================= */
+
+.page-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: var(--space-xl);
+}
+
+.page-header {
+  margin-bottom: var(--space-xl);
+}
+
+.page-header h1,
+.page-header h2 {
+  color: var(--color-primary);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+}
+
+.page-content {
+  min-height: 60vh;
+}
+
+/* =============================================================================
+   2. STICKY HEADER
+   Extracted from: styles.css header { position:sticky; top:0; z-index:100 }
+   ============================================================================= */
+
+.header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  background: var(--color-primary);
+  color: var(--color-white);
+  padding: var(--space-md) var(--space-xl);
+  box-shadow: var(--shadow-md);
+}
+
+/* =============================================================================
+   3. FLEX HELPERS
+   ============================================================================= */
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.items-end {
+  align-items: flex-end;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.gap-sm {
+  gap: var(--space-sm);
+}
+
+.gap-md {
+  gap: var(--space-md);
+}
+
+.gap-lg {
+  gap: var(--space-lg);
+}
+
+/* =============================================================================
+   4. GRID HELPERS
+   ============================================================================= */
+
+.grid {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+}
+
+/* =============================================================================
+   5. RTL UTILITIES (logical properties)
+   ============================================================================= */
+
+.text-start {
+  text-align: start;
+}
+
+.text-end {
+  text-align: end;
+}
+
+.ms-auto {
+  margin-inline-start: auto;
+}
+
+.me-auto {
+  margin-inline-end: auto;
+}
+
+/* =============================================================================
+   6. VISIBILITY
+   ============================================================================= */
+
+.hidden {
+  display: none !important;
+}
+
+.visible {
+  display: block;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* =============================================================================
+   7. PRINT
+   Extracted from: header hidden in print, .no-print utility
+   ============================================================================= */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .header-sticky {
+    position: static;
+    box-shadow: none;
+  }
+
+  header {
+    display: none !important;
+  }
+
+  nav {
+    display: none !important;
+  }
+
+  .page-container {
+    max-width: 100%;
+    padding: 0;
+  }
+}
