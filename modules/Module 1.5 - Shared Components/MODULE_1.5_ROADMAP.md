@@ -67,6 +67,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 
 | פאזה | סטטוס | שם | מה כולל |
 |------|--------|----|---------|
+| 0 | ✅ | Infrastructure Setup | Global docs, module directory, CLAUDE.md update, branching |
 | 1 | ⬜ | CSS Foundation | variables.css, components.css, layout.css, form classes, per-tenant theming |
 | 2 | ⬜ | Core UI Components | Modal system (5 גדלים, 5 סוגים), Toast system, PIN modal migration |
 | 3 | ⬜ | Data Layer | Supabase wrapper, Activity Log (DB + JS), Atomic RPC scan |
@@ -77,6 +78,34 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 ---
 
 ## פירוט כל פאזה
+
+### פאזה 0 ✅ — Infrastructure Setup
+
+**המטרה:** העברת הפרויקט ממבנה "מודול אחד" למבנה "ריבוי מודולים" עם מסמכים גלובליים, branching, ותשתית תיקיות.
+
+**מה נוצר:**
+- `docs/GLOBAL_MAP.md` — מפת כל הפונקציות המשותפות, contracts, module registry, DB table ownership
+- `docs/GLOBAL_SCHEMA.sql` — סכמת DB מלאה מכל המודולים
+- `modules/Module 1.5 - Shared Components/` — מבנה תיקיות + docs ריקים
+- `shared/css/`, `shared/js/`, `shared/tests/` — תיקיות ריקות
+- `develop` branch — כל העבודה מכאן קדימה
+
+**מה מתעדכן:**
+- `CLAUDE.md` — סעיף Branching, Documentation Architecture מעודכן, Authority Matrix
+- `ROADMAP.md` — פאזה 0 מסומנת ✅
+
+**פירוט מלא:** ראה `MODULE_1.5_PHASE_0_SPEC.md`
+
+**Verification:**
+- [ ] docs/GLOBAL_MAP.md קיים ומכיל כל הפונקציות/טבלאות/contracts
+- [ ] docs/GLOBAL_SCHEMA.sql קיים ומכיל כל הטבלאות — ספירה תואמת MODULE_MAP
+- [ ] CLAUDE.md מעודכן עם branching + multi-module docs
+- [ ] develop branch קיים ופעיל
+- [ ] Module 1.5 directory structure מלא עם docs ריקים
+- [ ] shared/ directories קיימים (css, js, tests)
+- [ ] Cross-reference: כל טבלה ב-GLOBAL_SCHEMA מופיעה ב-GLOBAL_MAP
+
+---
 
 ### פאזה 1 ⬜ — CSS Foundation
 

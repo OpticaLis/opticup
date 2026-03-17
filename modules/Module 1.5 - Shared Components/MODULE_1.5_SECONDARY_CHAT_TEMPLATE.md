@@ -55,6 +55,8 @@ Files to read:
 - The PHASE_X_SPEC.md file for the current phase (first ⬜ in ROADMAP.md)
 
 Also read (reference only — do NOT modify):
+- docs/GLOBAL_MAP.md (all shared functions, contracts, module registry — project-wide)
+- docs/GLOBAL_SCHEMA.sql (full DB schema across all modules — project-wide)
 - modules/Module 1 - Inventory Management/docs/MODULE_MAP.md (existing code to understand what needs migration)
 
 Do NOT make any changes yet — just read and summarize.
@@ -72,7 +74,7 @@ Do NOT make any changes yet — just read and summarize.
 Context: Optic Up — multi-tenant SaaS optical store management.
 Repo: opticalis/opticup (already cloned)
 Supabase: https://tsxrrxzmdxaenlvocyit.supabase.co
-Deploy: GitHub Pages → https://app.opticalis.co.il/
+Deploy: GitHub Pages → https://opticalis.github.io/opticup/
 Stack: Vanilla JS + Supabase JS v2 + SheetJS
 
 Current module: 1.5 — Shared Components Refactor
@@ -201,6 +203,15 @@ When done: git add -A && git commit -m "[message]" && git push
 **docs/MODULE_MAP.md** — עדכן עם קבצים/פונקציות חדשים שנוספו ב-shared/.
 
 **docs/db-schema.sql** — עדכן אם היה שינוי DB (activity_log, custom_fields).
+
+**Integration Ceremony (GLOBAL docs):**
+```
+Read modules/Module 1.5 - Shared Components/docs/MODULE_MAP.md
+Merge NEW entries into docs/GLOBAL_MAP.md (add only, never overwrite existing)
+
+Read modules/Module 1.5 - Shared Components/docs/db-schema.sql
+Merge NEW tables into docs/GLOBAL_SCHEMA.sql (add only, never overwrite existing)
+```
 
 **Backup:**
 ```
