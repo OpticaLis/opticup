@@ -86,7 +86,22 @@ All variables defined in `shared/css/variables.css`:
 
 ---
 
-## 5. DB Changes
+## 5. Integration Points — Redirect Files
+
+| # | File | Path | Lines | Purpose |
+|---|------|------|-------|---------|
+| 1 | pin-modal.js (redirect) | js/pin-modal.js | 5 | Backward-compat redirect to shared/js/pin-modal.js via `document.write()`. Will be removed in Phase 5. |
+
+**Pages modified for PIN modal dependencies:**
+
+| Page | Added CSS | Added JS |
+|------|-----------|----------|
+| inventory.html | `shared/css/modal.css` in `<head>` | `shared/js/modal-builder.js` before pin-modal.js |
+| suppliers-debt.html | `shared/css/modal.css` in `<head>` | `shared/js/modal-builder.js` before pin-modal.js |
+
+---
+
+## 6. DB Changes
 
 | Phase | Table | Change | Description |
 |-------|-------|--------|-------------|
