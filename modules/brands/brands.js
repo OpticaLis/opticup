@@ -8,11 +8,21 @@ let brandStockByBrand = {};
 async function loadBrandsTab() {
   showLoading('טוען מותגים...');
   try {
-    const [{ data: brandRows, error }, { data: stockData }] = await Promise.all([
-      sb.from('brands').select('*').eq('tenant_id', getTenantId()),
-      sb.from(T.INV).select('brand_id, quantity').eq('tenant_id', getTenantId()).eq('is_deleted', false)
-    ]);
+    const { data: brandRows, error } = await sb.from('brands').select('*').eq('tenant_id', getTenantId());
     if (error) throw new Error(error.message);
+
+    // Paginate inventory stock query (server may cap at 1000 rows)
+    let stockData = [], from = 0;
+    const PAGE = 1000;
+    while (true) {
+      const { data: batch } = await sb.from(T.INV).select('brand_id, quantity')
+        .eq('tenant_id', getTenantId()).eq('is_deleted', false)
+        .range(from, from + PAGE - 1);
+      if (!batch?.length) break;
+      stockData.push(...batch);
+      if (batch.length < PAGE) break;
+      from += PAGE;
+    }
 
     brandStockByBrand = {};
     (stockData || []).forEach(r => {

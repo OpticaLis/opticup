@@ -168,16 +168,26 @@ async function loadEntryHistory() {
 
   showLoading('טוען היסטוריית הכנסות...');
   try {
-    const { data, error } = await sb.from('inventory_logs')
-      .select('*, inventory:inventory_id(id, barcode, model, color, size, brand_id, quantity, status)')
-      .in('action', ENTRY_ACTIONS)
-      .gte('created_at', from + 'T00:00:00')
-      .lte('created_at', to + 'T23:59:59')
-      .order('created_at', { ascending: false });
+    // Paginate (server may cap at 1000 rows)
+    let data = [], pg = 0;
+    const PG = 1000;
+    while (true) {
+      const { data: batch, error: bErr } = await sb.from('inventory_logs')
+        .select('*, inventory:inventory_id(id, barcode, model, color, size, brand_id, quantity, status)')
+        .in('action', ENTRY_ACTIONS)
+        .gte('created_at', from + 'T00:00:00')
+        .lte('created_at', to + 'T23:59:59')
+        .order('created_at', { ascending: false })
+        .range(pg, pg + PG - 1);
+      if (bErr) throw bErr;
+      if (!batch?.length) break;
+      data.push(...batch);
+      if (batch.length < PG) break;
+      pg += PG;
+    }
 
-    if (error) throw error;
     hideLoading();
-    renderEntryHistory(data || []);
+    renderEntryHistory(data);
   } catch (err) {
     hideLoading();
     toast('שגיאה: ' + (err.message || ''), 'e');

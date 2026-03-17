@@ -18,7 +18,8 @@ async function loadPOModelsForBrand(i, brandName) {
     .select('model')
     .eq('brand_id', brandId)
     .eq('is_deleted', false)
-    .order('model');
+    .order('model')
+    .range(0, 99999);
   const models = [...new Set((data||[]).map(r=>r.model).filter(Boolean))].sort();
   const listId = `po-model-list-${i}`;
   let dl = document.getElementById(listId);
