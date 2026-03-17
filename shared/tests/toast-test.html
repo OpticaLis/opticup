@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Toast System Test — Optic Up Shared</title>
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/toast.css">
+  <style>
+    body { font-family: var(--font-family); background: var(--color-bg-page); color: var(--color-gray-900); padding: 24px; margin: 0; }
+    h1 { font-size: var(--font-size-2xl); margin-bottom: 24px; }
+    .test-section { background: var(--color-bg-card); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 16px; }
+    .test-section h2 { font-size: var(--font-size-lg); margin: 0 0 12px; color: var(--color-primary); }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    #log { background: var(--color-gray-900); color: #0f0; font-family: monospace; font-size: 13px; padding: 12px; border-radius: var(--radius-md); max-height: 200px; overflow-y: auto; direction: ltr; text-align: left; margin-top: 16px; }
+    #log:empty::before { content: 'Log output will appear here...'; color: #666; }
+    .log-entry { padding: 2px 0; border-bottom: 1px solid #333; }
+  </style>
+</head>
+<body>
+
+<h1>Toast System Test</h1>
+
+<!-- Section 1: Types -->
+<div class="test-section">
+  <h2>סוגים (Types)</h2>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="testType('success')">Success</button>
+    <button class="btn btn-danger" onclick="testType('error')">Error</button>
+    <button class="btn btn-secondary" onclick="testType('warning')">Warning</button>
+    <button class="btn btn-secondary" onclick="testType('info')">Info</button>
+  </div>
+</div>
+
+<!-- Section 2: Duration -->
+<div class="test-section">
+  <h2>משך (Duration)</h2>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="testDuration(1000)">1 שניה</button>
+    <button class="btn btn-secondary" onclick="testDuration(5000)">5 שניות</button>
+    <button class="btn btn-secondary" onclick="testPersistent()">Persistent</button>
+    <button class="btn btn-secondary" onclick="dismissPersistent()">Dismiss Persistent</button>
+  </div>
+</div>
+
+<!-- Section 3: Stack -->
+<div class="test-section">
+  <h2>ערימה (Stack)</h2>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="testStack5()">Open 5 Toasts</button>
+    <button class="btn btn-danger" onclick="testStack6th()">Open 6th (pushes oldest)</button>
+    <button class="btn btn-secondary" onclick="testClearAll()">Clear All</button>
+  </div>
+</div>
+
+<!-- Section 4: Duplicate Prevention -->
+<div class="test-section">
+  <h2>Duplicate Prevention</h2>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="testShowLoading()">Show Loading</button>
+    <button class="btn btn-primary" onclick="testReplaceWithDone()">Replace with Done</button>
+    <button class="btn btn-secondary" onclick="testDismissById()">Dismiss by ID</button>
+  </div>
+</div>
+
+<!-- Section 5: XSS -->
+<div class="test-section">
+  <h2>XSS Test</h2>
+  <div class="btn-row">
+    <button class="btn btn-danger" onclick="testXSS()">XSS</button>
+  </div>
+</div>
+
+<!-- Section 6: No Close Button -->
+<div class="test-section">
+  <h2>No Close Button</h2>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="testNoClose()">No X</button>
+  </div>
+</div>
+
+<!-- Log Area -->
+<div id="log"></div>
+
+<script src="../js/toast.js"></script>
+<script>
+function log(msg) {
+  var el = document.getElementById('log');
+  var entry = document.createElement('div');
+  entry.className = 'log-entry';
+  var ts = new Date().toLocaleTimeString('he-IL');
+  entry.textContent = '[' + ts + '] ' + msg;
+  el.prepend(entry);
+}
+
+// --- Section 1: Types ---
+var typeMessages = {
+  success: '\u05D4\u05E4\u05E2\u05D5\u05DC\u05D4 \u05D1\u05D5\u05E6\u05E2\u05D4 \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4',
+  error:   '\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E9\u05DE\u05D9\u05E8\u05EA \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD',
+  warning: '\u05D7\u05E1\u05E8\u05D9\u05DD \u05E9\u05D3\u05D5\u05EA \u05D7\u05D5\u05D1\u05D4',
+  info:    '\u05DE\u05D9\u05D3\u05E2 \u05D7\u05E9\u05D5\u05D1'
+};
+function testType(type) {
+  var id = Toast[type](typeMessages[type]);
+  log(type + ' \u2192 id: ' + id);
+}
+
+// --- Section 2: Duration ---
+function testDuration(ms) {
+  var id = Toast.info(ms === 1000 ? '\u05E0\u05E2\u05DC\u05DD \u05DE\u05D4\u05E8' : '\u05E0\u05E2\u05DC\u05DD \u05DC\u05D0\u05D8', { duration: ms });
+  log('duration ' + ms + 'ms \u2192 id: ' + id);
+}
+
+function testPersistent() {
+  var id = Toast.warning('\u05DC\u05D0 \u05E0\u05E2\u05DC\u05DD', { persistent: true, id: 'persistent-test' });
+  log('persistent \u2192 id: ' + id);
+}
+
+function dismissPersistent() {
+  Toast.dismiss('persistent-test');
+  log('dismissed persistent-test');
+}
+
+// --- Section 3: Stack ---
+function testStack5() {
+  Toast.success('\u05D4\u05D5\u05D3\u05E2\u05D4 1 \u2014 success');
+  Toast.error('\u05D4\u05D5\u05D3\u05E2\u05D4 2 \u2014 error');
+  Toast.warning('\u05D4\u05D5\u05D3\u05E2\u05D4 3 \u2014 warning');
+  Toast.info('\u05D4\u05D5\u05D3\u05E2\u05D4 4 \u2014 info');
+  Toast.success('\u05D4\u05D5\u05D3\u05E2\u05D4 5 \u2014 success');
+  log('opened 5 toasts');
+}
+
+function testStack6th() {
+  var id = Toast.error('\u05D4\u05D5\u05D3\u05E2\u05D4 6 \u2014 should push oldest');
+  log('opened 6th toast \u2192 id: ' + id + ' (oldest should be removed)');
+}
+
+function testClearAll() {
+  Toast.clear();
+  log('cleared all toasts');
+}
+
+// --- Section 4: Duplicate Prevention ---
+function testShowLoading() {
+  var id = Toast.info('\u05D8\u05D5\u05E2\u05DF...', { persistent: true, id: 'loading' });
+  log('loading \u2192 id: ' + id);
+}
+
+function testReplaceWithDone() {
+  var id = Toast.success('\u05D4\u05D5\u05E9\u05DC\u05DD!', { id: 'loading' });
+  log('replaced loading with done \u2192 id: ' + id);
+}
+
+function testDismissById() {
+  Toast.dismiss('loading');
+  log('dismissed loading by id');
+}
+
+// --- Section 5: XSS ---
+function testXSS() {
+  var id = Toast.success('<script>alert("xss")<\/script><img src=x onerror=alert("xss")>');
+  log('XSS test \u2192 id: ' + id + ' (should show tags as text)');
+}
+
+// --- Section 6: No Close Button ---
+function testNoClose() {
+  var id = Toast.info('\u05D0\u05D9\u05DF \u05DB\u05E4\u05EA\u05D5\u05E8 \u05E1\u05D2\u05D9\u05E8\u05D4', { closable: false, duration: 3000 });
+  log('no close button \u2192 id: ' + id);
+}
+</script>
+</body>
+</html>

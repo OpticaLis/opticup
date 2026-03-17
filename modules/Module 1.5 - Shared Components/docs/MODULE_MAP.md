@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-03-17 (Phase 2, Step 6)
+> Last updated: 2026-03-17 (Phase 2, Step 7)
 
 ---
 
@@ -37,6 +37,7 @@
 |---|------|------|-------|----------------|
 | 1 | ui-test.html | shared/tests/ui-test.html | 252 | Visual test page: all 14 component sections (colors, typography, buttons, inputs, selects, textareas, badges, cards, tables, slide panel, skeleton, accordion, forms). 3-palette theme switcher using loadTenantTheme(). RTL, Hebrew, self-contained. |
 | 2 | modal-test.html | shared/tests/modal-test.html | 251 | Modal system test page: 5 sections — sizes (sm/md/lg/xl/fullscreen), types (confirm/alert/danger/form/wizard), stack (3-layer), keyboard (escape/no-escape/no-backdrop), XSS test. Log area for event output. RTL, Hebrew, self-contained. |
+| 3 | toast-test.html | shared/tests/toast-test.html | 155 | Toast system test page: 6 sections — types (success/error/warning/info), duration (1s/5s/persistent/dismiss), stack (5 toasts + 6th overflow), duplicate prevention (loading→done replace), XSS test, no-close-button. Log area for event output. RTL, Hebrew, self-contained. |
 
 ---
 
