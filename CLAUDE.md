@@ -2,14 +2,18 @@
 
 ## First Action — Read This Before Anything Else
 
-When starting a new session, read these two files immediately:
-1. `modules/Module 1 - Inventory Management/docs/SESSION_CONTEXT.md` — current status, what's done, what's next
-2. This file (CLAUDE.md) — rules, conventions, file structure
+When starting a new session:
+1. Verify you are on `develop` branch: `git branch`
+2. Read `CLAUDE.md` (this file) — rules, conventions, structure
+3. Read the SESSION_CONTEXT.md of the module you're working on:
+   - Module 1: `modules/Module 1 - Inventory Management/docs/SESSION_CONTEXT.md`
+   - Module 1.5: `modules/Module 1.5 - Shared Components/docs/SESSION_CONTEXT.md`
+4. Read `docs/GLOBAL_MAP.md` — shared functions, contracts, module registry (reference only — do NOT modify)
 
-**Do NOT read MODULE_MAP.md at session start.** It is a reference document — open it only when you need details about a specific file, function, or dependency. Reading it upfront wastes context window.
+**Do NOT read MODULE_MAP.md or GLOBAL_SCHEMA.sql at session start.** They are reference documents — open only when needed.
 
-After reading SESSION_CONTEXT.md, confirm:
-> "I've read SESSION_CONTEXT.md. Current status: [one line summary]. Ready to proceed."
+After reading, confirm:
+> "On branch: develop. Module: [X]. Current status: [one line]. Ready."
 
 ---
 
@@ -312,21 +316,66 @@ All documentation lives in `modules/Module 1 - Inventory Management/`:
 
 ---
 
+## Documentation Architecture — Multi-Module
+
+### Global docs (project-wide, in docs/):
+| File | Contains | Updated When |
+|------|----------|-------------|
+| `docs/GLOBAL_MAP.md` | All shared functions, contracts, module registry, DB table ownership | Integration Ceremony (end of phase) |
+| `docs/GLOBAL_SCHEMA.sql` | Full DB schema across all modules | Integration Ceremony (end of phase) |
+
+### Module docs (per-module, in modules/Module X/docs/):
+| File | Contains | Updated When |
+|------|----------|-------------|
+| `ROADMAP.md` | Phase map with ⬜/✅ status | End of phase |
+| `SESSION_CONTEXT.md` | Current status, last commits, next steps, issues | End of every session |
+| `CHANGELOG.md` | Full commit history per phase | End of phase |
+| `MODULE_SPEC.md` | Current state: tables, functions, contracts (no history) | End of phase |
+| `MODULE_MAP.md` | Code map: files, functions, globals for this module only | Every commit |
+| `db-schema.sql` | DB tables owned by this module | Every DB change |
+
+### Documentation Rules
+**Every commit that adds/changes code:**
+- Module's `MODULE_MAP.md` — must be updated in same commit
+- Module's `db-schema.sql` — must be updated if any DB change
+
+**End of every session:**
+- Module's `SESSION_CONTEXT.md` — what was done, commits, what's next, issues
+
+**End of every phase (Integration Ceremony):**
+1. Backup: `mkdir -p "modules/Module X/backups/MXF{phase}_{date}"` → copy all docs
+2. Module's `ROADMAP.md` — mark ⬜ → ✅
+3. Module's `CHANGELOG.md` — add phase section
+4. Module's `MODULE_SPEC.md` — update current state
+5. Module's `MODULE_MAP.md` — verify completeness
+6. Module's `db-schema.sql` — verify current
+7. **GLOBAL integration:** merge module's MODULE_MAP into `docs/GLOBAL_MAP.md` (add only, never overwrite)
+8. **GLOBAL integration:** merge module's db-schema.sql into `docs/GLOBAL_SCHEMA.sql` (add only, never overwrite)
+9. Git tag: `v{module}-{phase}`
+
+### Cross-module rules
+- **Contracts:** modules communicate ONLY through contract functions. Never access another module's tables directly.
+- **shared/ is read-only for modules.** To add a function to shared/, it goes through Module 1.5.
+- **docs/GLOBAL_MAP.md and docs/GLOBAL_SCHEMA.sql are read-only during development.** Updated only during Integration Ceremony.
+- **Before starting a new module:** read GLOBAL_MAP.md and GLOBAL_SCHEMA.sql to understand what exists.
+
+---
+
 ## Authority Matrix — Single Source of Truth
 
-Every type of information has ONE authoritative home. If there is a conflict between files, this hierarchy wins:
+Every type of information has ONE authoritative home:
 
-| Information Type | Authoritative File | Notes |
-|---|---|---|
-| Iron rules & SaaS rules | CLAUDE.md | No other file defines rules |
-| File structure (high-level) | CLAUDE.md | Folder names only, no line counts |
-| DB schema (columns, SQL) | db-schema.sql | Only file with executable SQL |
-| Function signatures & globals | MODULE_MAP.md | Complete registry, updated every commit |
-| Business logic flows | MODULE_SPEC.md | What the system does, not how |
-| Phase status & vision | ROADMAP.md | Checkmarks only, no rules |
-| Commit history | CHANGELOG.md | One section per phase |
-| Current status & next steps | SESSION_CONTEXT.md | Updated end of every session |
-| Known issues | SESSION_CONTEXT.md | Single home for all open issues |
+| Information Type | Authoritative File |
+|---|---|
+| Iron rules & SaaS rules | CLAUDE.md |
+| Project-wide function registry | docs/GLOBAL_MAP.md |
+| Project-wide DB schema | docs/GLOBAL_SCHEMA.sql |
+| Module's code map | modules/Module X/docs/MODULE_MAP.md |
+| Module's DB tables | modules/Module X/docs/db-schema.sql |
+| Module's business logic | modules/Module X/docs/MODULE_SPEC.md |
+| Module's phase status | modules/Module X/ROADMAP.md |
+| Module's commit history | modules/Module X/docs/CHANGELOG.md |
+| Module's current status | modules/Module X/docs/SESSION_CONTEXT.md |
 
 ---
 
