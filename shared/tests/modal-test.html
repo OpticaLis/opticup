@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modal System Test — Optic Up Shared</title>
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/modal.css">
+  <style>
+    body { font-family: var(--font-family); background: var(--color-bg-page); color: var(--color-gray-900); padding: 24px; margin: 0; }
+    h1 { font-size: var(--font-size-2xl); margin-bottom: 24px; }
+    .test-section { background: var(--color-bg-card); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 16px; }
+    .test-section h2 { font-size: var(--font-size-lg); margin: 0 0 12px; color: var(--color-primary); }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    #log { background: var(--color-gray-900); color: #0f0; font-family: monospace; font-size: 13px; padding: 12px; border-radius: var(--radius-md); max-height: 200px; overflow-y: auto; direction: ltr; text-align: left; margin-top: 16px; }
+    #log:empty::before { content: 'Log output will appear here...'; color: #666; }
+    .log-entry { padding: 2px 0; border-bottom: 1px solid #333; }
+  </style>
+</head>
+<body>
+
+<h1>Modal System Test</h1>
+
+<!-- Section 1: Sizes -->
+<div class="test-section">
+  <h2>גדלים (Sizes)</h2>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="testSize('sm')">SM (340px)</button>
+    <button class="btn btn-secondary" onclick="testSize('md')">MD (500px)</button>
+    <button class="btn btn-secondary" onclick="testSize('lg')">LG (700px)</button>
+    <button class="btn btn-secondary" onclick="testSize('xl')">XL (900px)</button>
+    <button class="btn btn-secondary" onclick="testSize('fullscreen')">Fullscreen</button>
+  </div>
+</div>
+
+<!-- Section 2: Types -->
+<div class="test-section">
+  <h2>סוגים (Types)</h2>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="testConfirm()">Confirm</button>
+    <button class="btn btn-primary" onclick="testAlert()">Alert</button>
+    <button class="btn btn-danger" onclick="testDanger()">Danger</button>
+    <button class="btn btn-primary" onclick="testForm()">Form</button>
+    <button class="btn btn-primary" onclick="testWizard()">Wizard (4 steps)</button>
+  </div>
+</div>
+
+<!-- Section 3: Stack -->
+<div class="test-section">
+  <h2>ערימה (Stack)</h2>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="testStack()">Open 3 Stacked</button>
+  </div>
+</div>
+
+<!-- Section 4: Keyboard -->
+<div class="test-section">
+  <h2>מקלדת (Keyboard)</h2>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="testEscape()">Escape Test</button>
+    <button class="btn btn-secondary" onclick="testNoEscape()">No Escape</button>
+    <button class="btn btn-secondary" onclick="testNoBackdrop()">No Backdrop Close</button>
+  </div>
+</div>
+
+<!-- Section 5: XSS -->
+<div class="test-section">
+  <h2>XSS Test</h2>
+  <div class="btn-row">
+    <button class="btn btn-danger" onclick="testXSS()">XSS in confirm</button>
+  </div>
+</div>
+
+<!-- Log Area -->
+<div id="log"></div>
+
+<script src="../js/modal-builder.js"></script>
+<script src="../js/modal-wizard.js"></script>
+<script>
+function log(msg) {
+  var el = document.getElementById('log');
+  var entry = document.createElement('div');
+  entry.className = 'log-entry';
+  var ts = new Date().toLocaleTimeString('he-IL');
+  entry.textContent = '[' + ts + '] ' + msg;
+  el.prepend(entry);
+}
+
+// --- Section 1: Sizes ---
+function testSize(size) {
+  var content = '<p>תוכן לדוגמה בגודל ' + size + '</p>';
+  if (size === 'fullscreen') {
+    content += '<p>זהו מודאל במסך מלא. הוא תופס את כל החלון ומאפשר הצגת תוכן רב.</p>' +
+      '<p>שורה נוספת לבדיקת גלילה וגובה.</p>';
+  }
+  Modal.show({ size: size, title: 'Modal — ' + size, content: content });
+  log('Opened size: ' + size);
+}
+
+// --- Section 2: Types ---
+function testConfirm() {
+  Modal.confirm({
+    title: 'אישור',
+    message: 'האם אתה בטוח?',
+    onConfirm: function () { log('Confirm → confirmed'); },
+    onCancel: function () { log('Confirm → cancelled'); }
+  });
+  log('Opened: confirm');
+}
+
+function testAlert() {
+  Modal.alert({
+    title: 'הודעה',
+    message: 'פעולה בוצעה בהצלחה',
+    onClose: function () { log('Alert → closed'); }
+  });
+  log('Opened: alert');
+}
+
+function testDanger() {
+  Modal.danger({
+    title: 'מחיקה',
+    message: 'הקלד "מחק" לאישור',
+    confirmWord: 'מחק',
+    onConfirm: function () { log('Danger → deleted'); }
+  });
+  log('Opened: danger');
+}
+
+function testForm() {
+  Modal.form({
+    title: 'טופס לדוגמה',
+    content: '<div class="form-group"><label>שם</label><input type="text" class="form-control" id="test-name"></div>' +
+      '<div class="form-group"><label>אימייל</label><input type="email" class="form-control" id="test-email"></div>',
+    onSubmit: function (form) {
+      var name = form.querySelector('#test-name').value;
+      var email = form.querySelector('#test-email').value;
+      log('Form → name: ' + name + ', email: ' + email);
+    }
+  });
+  log('Opened: form');
+}
+
+function testWizard() {
+  Modal.wizard({
+    title: 'אשף לדוגמה',
+    size: 'lg',
+    steps: [
+      {
+        label: 'פרטים',
+        content: '<p>שלב 1 — הזן פרטים בסיסיים.</p><input type="text" class="form-control" id="wiz-name" placeholder="שם">'
+      },
+      {
+        label: 'אימות',
+        content: '<p>שלב 2 — הזן קוד אימות.</p><input type="text" class="form-control" id="wiz-code" placeholder="קוד">',
+        validate: function () {
+          var v = document.getElementById('wiz-code');
+          if (!v || !v.value.trim()) { window.alert('יש להזין קוד'); return false; }
+          log('Wizard step 2 validated: ' + v.value);
+          return true;
+        }
+      },
+      {
+        label: 'סיכום',
+        content: function () {
+          var name = document.getElementById('wiz-name');
+          var code = document.getElementById('wiz-code');
+          return '<p>שלב 3 — תוכן דינמי:</p><ul><li>שם: ' +
+            (name ? name.value : '—') + '</li><li>קוד: ' +
+            (code ? code.value : '—') + '</li></ul>';
+        }
+      },
+      {
+        label: 'סיום',
+        content: '<p>שלב 4 — הכל מוכן! לחץ "סיום" להשלמה.</p>'
+      }
+    ],
+    onFinish: function () { log('Wizard → finished'); },
+    onCancel: function () { log('Wizard → cancelled'); }
+  });
+  log('Opened: wizard (4 steps)');
+}
+
+// --- Section 3: Stack ---
+function testStack() {
+  var m1 = Modal.show({
+    size: 'lg', title: 'שכבה 1',
+    content: '<p>מודאל ראשון — ברקע.</p><button class="btn btn-primary" id="stack-open2">פתח שכבה 2</button>'
+  });
+  log('Stack → opened layer 1');
+  setTimeout(function () {
+    document.getElementById('stack-open2').addEventListener('click', function () {
+      var m2 = Modal.show({
+        size: 'md', title: 'שכבה 2',
+        content: '<p>מודאל שני — מעל הראשון.</p><button class="btn btn-primary" id="stack-open3">פתח שכבה 3</button>'
+      });
+      log('Stack → opened layer 2');
+      setTimeout(function () {
+        document.getElementById('stack-open3').addEventListener('click', function () {
+          Modal.confirm({
+            title: 'שכבה 3', message: 'מודאל שלישי — confirm על הערימה.',
+            onConfirm: function () { log('Stack → layer 3 confirmed'); }
+          });
+          log('Stack → opened layer 3 (confirm)');
+        });
+      }, 50);
+    });
+  }, 50);
+}
+
+// --- Section 4: Keyboard ---
+function testEscape() {
+  Modal.show({
+    title: 'Escape Test', closeOnEscape: true,
+    content: '<p>לחץ Escape לסגירה</p>',
+    onClose: function () { log('Escape → closed via Escape'); }
+  });
+  log('Opened: escape test (closeOnEscape: true)');
+}
+
+function testNoEscape() {
+  Modal.show({
+    title: 'No Escape', closeOnEscape: false,
+    content: '<p>Escape לא יסגור — לחץ על X</p>',
+    onClose: function () { log('No Escape → closed via X'); }
+  });
+  log('Opened: no escape (closeOnEscape: false)');
+}
+
+function testNoBackdrop() {
+  Modal.show({
+    title: 'No Backdrop Close', closeOnBackdrop: false,
+    content: '<p>לחיצה על הרקע לא תסגור — לחץ על X</p>',
+    onClose: function () { log('No Backdrop → closed via X'); }
+  });
+  log('Opened: no backdrop close');
+}
+
+// --- Section 5: XSS ---
+function testXSS() {
+  Modal.confirm({
+    title: 'XSS Test',
+    message: '<script>alert("xss")<\/script><img src=x onerror=alert("xss")>',
+    onConfirm: function () { log('XSS confirm → confirmed (no script executed)'); }
+  });
+  log('Opened: XSS test — should show tags as text');
+}
+</script>
+</body>
+</html>
