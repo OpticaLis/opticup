@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-03-17 (Phase 1, Steps 4-5)
+> Last updated: 2026-03-17 (Phase 1, Steps 6-7)
 
 ---
 
@@ -22,7 +22,7 @@
 
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
-| — | *(empty — Phase 1 Step 6 adds theme-loader.js)* | | | |
+| 1 | theme-loader.js | shared/js/theme-loader.js | 42 | Per-tenant CSS variable override. `loadTenantTheme(tenantRow)` reads `ui_config` JSONB, injects `--` prefixed keys as `:root` CSS overrides via `setProperty()`. Zero DB calls, standalone, no innerHTML. |
 
 ---
 
@@ -30,7 +30,7 @@
 
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
-| — | *(empty — Phase 1 Step 7 adds ui-test.html)* | | | |
+| 1 | ui-test.html | shared/tests/ui-test.html | 252 | Visual test page: all 14 component sections (colors, typography, buttons, inputs, selects, textareas, badges, cards, tables, slide panel, skeleton, accordion, forms). 3-palette theme switcher using loadTenantTheme(). RTL, Hebrew, self-contained. |
 
 ---
 

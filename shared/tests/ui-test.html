@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optic Up — Shared Components Test</title>
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/components-extra.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <script src="../js/theme-loader.js"></script>
+  <style>
+    /* Test page minimal styles only — NOT shared */
+    body { font-family: var(--font-family); background: var(--color-bg-page); color: var(--color-gray-700); margin: 0; direction: rtl; }
+    .test-section { margin-bottom: var(--space-2xl); }
+    .test-section h2 { color: var(--color-primary); border-bottom: 2px solid var(--color-gray-200); padding-bottom: var(--space-xs); margin-bottom: var(--space-md); }
+    .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: var(--space-sm); }
+    .swatch { height: 48px; border-radius: var(--radius-md); display: flex; align-items: flex-end; padding: var(--space-xs); font-size: 10px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+    .theme-bar { position: sticky; top: 0; z-index: 100; background: var(--color-primary); padding: var(--space-sm) var(--space-xl); display: flex; gap: var(--space-sm); align-items: center; }
+    .theme-bar span { color: var(--color-white); font-weight: 600; margin-inline-end: var(--space-md); }
+    .theme-btn { padding: var(--space-xs) var(--space-md); border: 2px solid var(--color-white); border-radius: var(--radius-md); background: transparent; color: var(--color-white); cursor: pointer; font-family: inherit; font-size: var(--font-size-sm); }
+    .theme-btn:hover { background: rgba(255,255,255,.15); }
+    .theme-btn.active { background: var(--color-white); color: var(--color-primary); }
+  </style>
+</head>
+<body>
+
+<!-- 14. Theme Switcher -->
+<div class="theme-bar">
+  <span>Theme:</span>
+  <button class="theme-btn active" onclick="applyTheme('default')">Default</button>
+  <button class="theme-btn" onclick="applyTheme('green')">Palette B (Green)</button>
+  <button class="theme-btn" onclick="applyTheme('purple')">Palette C (Purple)</button>
+</div>
+
+<div class="page-container">
+  <div class="page-header"><h1>Shared Components — Test Page</h1></div>
+
+  <!-- 1. Color Palette -->
+  <div class="test-section">
+    <h2>1. Color Palette</h2>
+    <h3>Primary</h3>
+    <div class="swatch-grid">
+      <div class="swatch" style="background:var(--color-primary)">primary</div>
+      <div class="swatch" style="background:var(--color-primary-hover)">hover</div>
+      <div class="swatch" style="background:var(--color-primary-light)">light</div>
+      <div class="swatch" style="background:var(--color-primary-dark)">dark</div>
+    </div>
+    <h3>Semantic</h3>
+    <div class="swatch-grid">
+      <div class="swatch" style="background:var(--color-success)">success</div>
+      <div class="swatch" style="background:var(--color-error)">error</div>
+      <div class="swatch" style="background:var(--color-warning)">warning</div>
+      <div class="swatch" style="background:var(--color-info)">info</div>
+    </div>
+    <h3>Grays</h3>
+    <div class="swatch-grid">
+      <div class="swatch" style="background:var(--color-gray-100);color:#333">100</div>
+      <div class="swatch" style="background:var(--color-gray-200);color:#333">200</div>
+      <div class="swatch" style="background:var(--color-gray-300);color:#333">300</div>
+      <div class="swatch" style="background:var(--color-gray-400)">400</div>
+      <div class="swatch" style="background:var(--color-gray-500)">500</div>
+      <div class="swatch" style="background:var(--color-gray-700)">700</div>
+    </div>
+  </div>
+
+  <!-- 2. Typography -->
+  <div class="test-section">
+    <h2>2. Typography</h2>
+    <p style="font-size:var(--font-size-xs)">XS — טקסט קטן מאוד (font-size-xs)</p>
+    <p style="font-size:var(--font-size-sm)">SM — טקסט קטן (font-size-sm)</p>
+    <p style="font-size:var(--font-size-md)">MD — טקסט רגיל (font-size-md)</p>
+    <p style="font-size:var(--font-size-lg)">LG — טקסט גדול (font-size-lg)</p>
+    <p style="font-size:var(--font-size-xl)">XL — כותרת (font-size-xl)</p>
+    <p style="font-size:var(--font-size-2xl);font-weight:var(--font-weight-bold)">2XL Bold — כותרת ראשית</p>
+  </div>
+
+  <!-- 3. Buttons -->
+  <div class="test-section">
+    <h2>3. Buttons</h2>
+    <div class="flex flex-wrap gap-sm" style="margin-bottom:var(--space-md)">
+      <button class="btn btn-primary btn-sm">Primary SM</button>
+      <button class="btn btn-primary btn-md">Primary MD</button>
+      <button class="btn btn-primary btn-lg">Primary LG</button>
+    </div>
+    <div class="flex flex-wrap gap-sm" style="margin-bottom:var(--space-md)">
+      <button class="btn btn-secondary">Secondary</button>
+      <button class="btn btn-danger">Danger</button>
+      <button class="btn btn-ghost">Ghost</button>
+    </div>
+    <div class="flex flex-wrap gap-sm">
+      <button class="btn btn-primary" disabled>Disabled Primary</button>
+      <button class="btn btn-danger" disabled>Disabled Danger</button>
+    </div>
+  </div>
+
+  <!-- 4. Inputs -->
+  <div class="test-section">
+    <h2>4. Inputs</h2>
+    <div class="flex flex-wrap gap-md">
+      <input class="input" placeholder="Normal input">
+      <input class="input input-error" value="שגיאה">
+      <input class="input input-disabled" value="מושבת" disabled>
+    </div>
+  </div>
+
+  <!-- 5. Selects -->
+  <div class="test-section">
+    <h2>5. Selects</h2>
+    <div class="flex flex-wrap gap-md">
+      <select class="select"><option>בחר אפשרות</option><option>אופציה 1</option></select>
+      <select class="select select-error"><option>שגיאה</option></select>
+    </div>
+  </div>
+
+  <!-- 6. Textareas -->
+  <div class="test-section">
+    <h2>6. Textareas</h2>
+    <div class="flex flex-wrap gap-md">
+      <textarea class="textarea" rows="2" placeholder="Normal textarea"></textarea>
+      <textarea class="textarea textarea-error" rows="2">שגיאה בשדה</textarea>
+    </div>
+  </div>
+
+  <!-- 7. Badges -->
+  <div class="test-section">
+    <h2>7. Badges</h2>
+    <div class="flex flex-wrap gap-sm">
+      <span class="badge badge-success">הצלחה</span>
+      <span class="badge badge-error">שגיאה</span>
+      <span class="badge badge-warning">אזהרה</span>
+      <span class="badge badge-info">מידע</span>
+      <span class="badge badge-neutral">ניטרלי</span>
+    </div>
+  </div>
+
+  <!-- 8. Card -->
+  <div class="test-section">
+    <h2>8. Card</h2>
+    <div class="card">
+      <div class="card-header"><h3>כרטיס לדוגמה</h3><span class="badge badge-info">פעיל</span></div>
+      <div class="card-body"><p>תוכן הכרטיס. כל אלמנט שמיוצג כאן בנוי מ-shared/css בלבד.</p></div>
+      <div class="card-footer"><button class="btn btn-primary btn-sm">שמור</button><button class="btn btn-ghost btn-sm">ביטול</button></div>
+    </div>
+  </div>
+
+  <!-- 9. Table -->
+  <div class="test-section">
+    <h2>9. Table</h2>
+    <table class="table">
+      <thead><tr>
+        <th class="table-header table-sortable table-sort-active">ברקוד ▼</th>
+        <th class="table-header table-sortable">מותג</th>
+        <th class="table-header">כמות</th>
+        <th class="table-header">סטטוס</th>
+      </tr></thead>
+      <tbody>
+        <tr class="table-row"><td class="table-cell">0012345</td><td class="table-cell">Ray-Ban</td><td class="table-cell">12</td><td class="table-cell"><span class="badge badge-success">במלאי</span></td></tr>
+        <tr class="table-row"><td class="table-cell">0012346</td><td class="table-cell">Oakley</td><td class="table-cell">3</td><td class="table-cell"><span class="badge badge-warning">מלאי נמוך</span></td></tr>
+        <tr class="table-row"><td class="table-cell">0012347</td><td class="table-cell">Gucci</td><td class="table-cell">0</td><td class="table-cell"><span class="badge badge-error">אזל</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 10. Slide-in Panel -->
+  <div class="test-section">
+    <h2>10. Slide-in Panel</h2>
+    <button class="btn btn-primary" onclick="document.getElementById('test-panel').classList.add('slide-panel-open');document.getElementById('panel-overlay').classList.add('active')">פתח פאנל</button>
+  </div>
+
+  <!-- 11. Skeleton Loader -->
+  <div class="test-section">
+    <h2>11. Skeleton Loader</h2>
+    <div class="skeleton-row"><div class="skeleton-circle"></div><div style="flex:1"><div class="skeleton-text" style="width:60%"></div><div class="skeleton-text" style="width:40%"></div></div></div>
+    <div class="skeleton-rect" style="height:60px;margin-top:var(--space-sm)"></div>
+  </div>
+
+  <!-- 12. Accordion -->
+  <div class="test-section">
+    <h2>12. Accordion</h2>
+    <div class="accordion accordion-open" onclick="this.classList.toggle('accordion-open')"><div class="accordion-header">פריט ראשון (פתוח)</div><div class="accordion-content"><p>תוכן הפריט הראשון. ניתן ללחוץ לסגירה.</p></div></div>
+    <div class="accordion" onclick="this.classList.toggle('accordion-open')"><div class="accordion-header">פריט שני (סגור)</div><div class="accordion-content"><p>תוכן הפריט השני.</p></div></div>
+    <div class="accordion" onclick="this.classList.toggle('accordion-open')"><div class="accordion-header">פריט שלישי (סגור)</div><div class="accordion-content"><p>תוכן הפריט השלישי.</p></div></div>
+  </div>
+
+  <!-- 13. Form -->
+  <div class="test-section">
+    <h2>13. Form</h2>
+    <div class="card">
+      <div class="form-col-2">
+        <div class="form-group">
+          <label class="form-label form-required">שם מותג</label>
+          <input class="input" placeholder="הכנס שם מותג">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ספק</label>
+          <select class="select"><option>בחר ספק</option></select>
+          <span class="form-help">בחר את הספק הראשי</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label form-required">דגם</label>
+        <input class="input input-error" value="ER-001">
+        <span class="form-error">שם דגם כבר קיים במערכת</span>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">גודל</label><input class="input" placeholder="52"></div>
+        <div class="form-group"><label class="form-label">צבע</label><input class="input" placeholder="שחור"></div>
+        <div class="form-group"><label class="form-label">מחיר</label><input class="input" placeholder="₪0.00"></div>
+      </div>
+      <div class="form-inline" style="margin-bottom:var(--space-md)">
+        <label class="form-label">פעיל:</label>
+        <input type="checkbox" checked>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary">שמור</button>
+        <button class="btn btn-ghost">ביטול</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-container -->
+
+<!-- Slide Panel (outside container) -->
+<div class="slide-panel-overlay" id="panel-overlay" onclick="document.getElementById('test-panel').classList.remove('slide-panel-open');this.classList.remove('active')"></div>
+<div class="slide-panel" id="test-panel">
+  <div class="slide-panel-header"><h3>פרטי פריט</h3><button class="btn btn-ghost btn-sm" onclick="document.getElementById('test-panel').classList.remove('slide-panel-open');document.getElementById('panel-overlay').classList.remove('active')">✕</button></div>
+  <div class="slide-panel-body">
+    <div class="form-group"><label class="form-label">ברקוד</label><input class="input" value="0012345" readonly></div>
+    <div class="form-group"><label class="form-label">מותג</label><input class="input" value="Ray-Ban"></div>
+    <div class="form-group"><label class="form-label">דגם</label><input class="input" value="Aviator Classic"></div>
+    <p style="color:var(--color-gray-400);font-size:var(--font-size-sm);margin-top:var(--space-lg)">פאנל צד RTL — נכנס מימין</p>
+  </div>
+</div>
+
+<script>
+  const themes = {
+    default: null,
+    green: { ui_config: { '--color-primary': '#059669', '--color-primary-hover': '#047857', '--color-primary-dark': '#064e3b', '--color-primary-light': '#d1fae5', '--color-info': '#0d9488', '--color-info-hover': '#0f766e' } },
+    purple: { ui_config: { '--color-primary': '#7c3aed', '--color-primary-hover': '#6d28d9', '--color-primary-dark': '#4c1d95', '--color-primary-light': '#ede9fe', '--color-info': '#ec4899', '--color-info-hover': '#db2777' } }
+  };
+  function applyTheme(name) {
+    // Reset to defaults by removing inline overrides
+    document.documentElement.removeAttribute('style');
+    if (themes[name]) loadTenantTheme(themes[name]);
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>
