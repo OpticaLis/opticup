@@ -424,16 +424,16 @@ Phase 1 Step 7 will add `ui-test.html` for visual regression testing.
 | Table Name | Owner Module | Key Columns | Used By |
 |------------|-------------|-------------|---------|
 | `stock_counts` | Stock Count | id, count_number, status, counted_by, filter_criteria, tenant_id | Stock count list, report |
-| `stock_count_items` | Stock Count | id, count_id, inventory_id, expected_qty, actual_qty, difference, tenant_id | Stock count session, diff report |
+| `stock_count_items` | Stock Count | id, count_id, inventory_id, expected_qty, actual_qty, difference, tenant_id | Stock count session, diff report (⚠️ RLS permissive — will be fixed in Module 2) |
 
 ### Auth & Permissions (5 tables)
 
 | Table Name | Owner Module | Key Columns | Used By |
 |------------|-------------|-------------|---------|
-| `roles` | Permissions | id, name_he, is_system, tenant_id | Employee management, role assignment |
-| `permissions` | Permissions | id, module, action, name_he, tenant_id | Role management |
-| `role_permissions` | Permissions | role_id, permission_id, granted, tenant_id | getEffectivePermissions |
-| `employee_roles` | Permissions | employee_id, role_id, granted_by, tenant_id | initSecureSession, getEffectivePermissions |
+| `roles` | Permissions | id, name_he, is_system, tenant_id | Employee management, role assignment (⚠️ RLS permissive — will be fixed in Module 2) |
+| `permissions` | Permissions | id, module, action, name_he, tenant_id | Role management (⚠️ RLS permissive — will be fixed in Module 2) |
+| `role_permissions` | Permissions | role_id, permission_id, granted, tenant_id | getEffectivePermissions (⚠️ RLS permissive — will be fixed in Module 2) |
+| `employee_roles` | Permissions | employee_id, role_id, granted_by, tenant_id | initSecureSession, getEffectivePermissions (⚠️ RLS permissive — will be fixed in Module 2) |
 | `auth_sessions` | Auth Service | id, employee_id, token, permissions, role_id, tenant_id | loadSession, clearSession |
 
 ### Supplier Debt (11 tables)
@@ -485,10 +485,10 @@ Phase 1 Step 7 will add `ui-test.html` for visual regression testing.
 
 | Table Name | Owner Module | Key Columns | Used By |
 |------------|-------------|-------------|---------|
-| `sales` (future) | Future Sales Module | id, inventory_id, barcode, quantity_sold, sale_price, tenant_id | — |
-| `customers` (future) | Future CRM | id, full_name, id_number, phone, email, tenant_id | — |
-| `prescriptions` (future) | Future Prescriptions | id, customer_id, prescription_date, od_sph, os_sph, tenant_id | — |
-| `work_orders` (future) | Future Work Orders | id, order_number, customer_id, prescription_id, status, tenant_id | — |
+| `sales` (future) | Future Sales Module | id, inventory_id, barcode, quantity_sold, sale_price, tenant_id | — (⚠️ RLS permissive — future stub, will be fixed in Module 2) |
+| `customers` (future) | Future CRM | id, full_name, id_number, phone, email, tenant_id | — (⚠️ RLS permissive — future stub, will be fixed in Module 2) |
+| `prescriptions` (future) | Future Prescriptions | id, customer_id, prescription_date, od_sph, os_sph, tenant_id | — (⚠️ RLS permissive — future stub, will be fixed in Module 2) |
+| `work_orders` (future) | Future Work Orders | id, order_number, customer_id, prescription_id, status, tenant_id | — (⚠️ RLS permissive — future stub, will be fixed in Module 2) |
 
 ---
 
