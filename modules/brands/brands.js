@@ -53,6 +53,10 @@ function renderBrandsTable() {
   const filterSync   = document.getElementById('brand-filter-sync')?.value   || '';
   const filterType   = document.getElementById('brand-filter-type')?.value   || '';
   const filterLowStock = document.getElementById('brand-filter-low-stock')?.value || '';
+  const searchInput  = document.getElementById('brand-search-input');
+  const searchTerm   = searchInput?.value?.trim().toLowerCase() || '';
+  const clearBtn     = document.getElementById('brand-search-clear');
+  if (clearBtn) clearBtn.style.display = searchTerm ? 'block' : 'none';
 
   let filtered = allBrandsData;
   if (filterActive === 'true')  filtered = filtered.filter(b => b.active !== false);
@@ -63,11 +67,16 @@ function renderBrandsTable() {
   else if (filterType === 'regular') filtered = filtered.filter(b => !b.brand_type);
   if (filterLowStock === 'low') {
     filtered = filtered.filter(b =>
+      b.active !== false &&
       b.minStockQty !== null &&
       b.minStockQty !== undefined &&
       b.currentQty < b.minStockQty
     );
   }
+  if (searchTerm) filtered = filtered.filter(b => b.name.toLowerCase().includes(searchTerm));
+
+  // Sort alphabetically by brand name (Hebrew + English aware)
+  filtered.sort((a, b) => a.name.localeCompare(b.name, 'he'));
 
   brandsEdited = filtered;
 
@@ -75,8 +84,16 @@ function renderBrandsTable() {
   if (countEl) countEl.textContent = `מציג ${filtered.length} מותגים`;
 
   const tb = $('brands-body');
-  tb.innerHTML = brandsEdited.map((b, i) => `
-    <tr data-idx="${i}">
+  tb.innerHTML = brandsEdited.map((b, i) => {
+    const inactive = b.active === false;
+    const minStockStyle = inactive
+      ? 'width:70px;text-align:center;opacity:0.3;pointer-events:none'
+      : 'width:70px;text-align:center';
+    const qty = b.currentQty;
+    const minQ = b.minStockQty;
+    const isLow = !inactive && minQ != null && qty < minQ;
+    const color = inactive ? 'color:#999' : (minQ == null ? '' : (isLow ? 'color:#e53935' : 'color:#2e7d32'));
+    return `<tr data-idx="${i}"${inactive ? ' style="opacity:0.7"' : ''}>
       <td><input value="${escapeHtml(b.name)}" onchange="brandsEdited[${i}].name=this.value"></td>
       <td><select onchange="brandsEdited[${i}].type=this.value">
         <option value="">—</option>
@@ -91,10 +108,10 @@ function renderBrandsTable() {
       </select></td>
       <td style="text-align:center"><input type="checkbox" ${b.active?'checked':''} onchange="setBrandActive('${b.id}',this.checked)" title="${b.active ? 'מותג פעיל' : 'מותג לא פעיל'}"></td>
       <td><input type="checkbox" ${b.excludeWebsite?'checked':''} onchange="brandsEdited[${i}].excludeWebsite=this.checked"></td>
-      <td><input type="number" min="0" step="1" value="${b.minStockQty ?? ''}" placeholder="${b.type==='יוקרה'?'5':b.type==='מותג'?'15':'—'}" style="width:70px;text-align:center" data-id="${b.id||''}" data-field="min_stock_qty" class="brand-min-stock-input" onchange="brandsEdited[${i}].minStockQty=this.value===''?null:parseInt(this.value,10);${b.id?'saveBrandField(this)':''}"></td>
-      ${(() => { const qty = b.currentQty; const minQ = b.minStockQty; const isLow = minQ != null && qty < minQ; const color = minQ == null ? '' : (isLow ? 'color:#e53935' : 'color:#2e7d32'); return `<td style="text-align:center;font-weight:600;${color}">${qty}${isLow ? ' ⚠️' : ''}</td>`; })()}
-    </tr>
-  `).join('');
+      <td><input type="number" min="0" step="1" value="${b.minStockQty ?? ''}" placeholder="${b.type==='יוקרה'?'5':b.type==='מותג'?'15':'—'}" style="${minStockStyle}" data-id="${b.id||''}" data-field="min_stock_qty" class="brand-min-stock-input" onchange="brandsEdited[${i}].minStockQty=this.value===''?null:parseInt(this.value,10);${b.id?'saveBrandField(this)':''}"></td>
+      <td style="text-align:center;font-weight:600;${color}">${qty}${isLow ? ' ⚠️' : ''}</td>
+    </tr>`;
+  }).join('');
 }
 
 async function setBrandActive(brandId, isActive) {
@@ -114,6 +131,7 @@ async function setBrandActive(brandId, isActive) {
 
   toast(isActive ? 'מותג סומן כפעיל ✓' : 'מותג סומן כלא פעיל ✓', 's');
   renderBrandsTable();
+  if (typeof refreshLowStockBanner === 'function') refreshLowStockBanner();
 }
 
 function addBrandRow() {

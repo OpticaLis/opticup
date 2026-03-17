@@ -255,6 +255,10 @@
       <button class="btn btn-s" onclick="saveBrands()" data-permission="brands.edit">&#10004; שמור שינויים</button>
     </div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+      <div style="position:relative;display:inline-block">
+        <input id="brand-search-input" type="text" placeholder="חיפוש מותג..." oninput="renderBrandsTable()" style="padding:7px 30px 7px 10px;border-radius:6px;border:1px solid #ccc;width:160px">
+        <button id="brand-search-clear" onclick="document.getElementById('brand-search-input').value='';renderBrandsTable()" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:#999;display:none">&times;</button>
+      </div>
       <select id="brand-filter-active" onchange="renderBrandsTable()" style="padding:7px 10px;border-radius:6px;border:1px solid #ccc">
         <option value="true">פעילים בלבד</option>
         <option value="false">לא פעילים</option>
