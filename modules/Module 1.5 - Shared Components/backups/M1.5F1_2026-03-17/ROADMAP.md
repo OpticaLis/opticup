@@ -68,7 +68,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | פאזה | סטטוס | שם | מה כולל |
 |------|--------|----|---------|
 | 0 | ✅ | Infrastructure Setup | Global docs, module directory, CLAUDE.md update, branching |
-| 1 | ✅ | CSS Foundation | variables.css, components.css, layout.css, form classes, per-tenant theming |
+| 1 | ⬜ | CSS Foundation | variables.css, components.css, layout.css, form classes, per-tenant theming |
 | 2 | ⬜ | Core UI Components | Modal system (5 גדלים, 5 סוגים), Toast system, PIN modal migration |
 | 3 | ⬜ | Data Layer | Supabase wrapper, Activity Log (DB + JS), Atomic RPC scan |
 | 4 | ⬜ | Table Builder + Permissions | Table builder רזה, Permission-aware UI helpers |
@@ -107,7 +107,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 
 ---
 
-### פאזה 1 ✅ — CSS Foundation
+### פאזה 1 ⬜ — CSS Foundation
 
 **המטרה:** כל עיצוב במערכת מוגדר דרך CSS Variables ורכיבים. שינוי ב-variables.css = כל המסכים מתעדכנים. חנות שנייה עם צבעים אחרים = שורה ב-DB.
 

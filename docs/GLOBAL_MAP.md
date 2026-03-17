@@ -284,32 +284,52 @@ Reusable PIN prompt modal with 5-digit split input.
 
 ---
 
-## 4. Shared Components (shared/)
+## 4. Shared Components (shared/) — Phase 1 complete ✅
 
-### shared/css/variables.css (151 lines) — Phase 1 Step 2 done
+### shared/css/variables.css (157 lines)
 
-66 CSS custom properties (design tokens) extracted from styles.css. Categories:
-- Colors — primary (4), semantic (12), gray scale (6), badges (6), alerts (8)
-- Typography — font-family (1), font-sizes (8 named tokens)
-- Spacing — padding/gap/margin tokens (6)
-- Borders — radius (4), border-color (2)
-- Shadows — card, header, modal, toast, dropdown (5)
-- Z-index — header, nav, loading, modal, toast, dropdown (6)
-- Transitions — default timing values (2)
+70 CSS custom properties (design tokens) extracted from styles.css. Categories:
+- Colors — primary (4), semantic (16 incl. dark text), neutral (12), background (3)
+- Typography — font-family (1), font-sizes (6), font-weights (4), line-heights (3)
+- Spacing — 6-step scale (xs through 2xl)
+- Borders — radius (4: sm/md/lg/full)
+- Shadows — sm/md/lg (3)
+- Z-index — dropdown/sticky/overlay/modal/toast (5)
+- Transitions — fast/normal/slow (3)
 
-### shared/css/ — pending files
+### shared/css/components.css (254 lines)
 
-- `components.css` — Phase 1 Step 3 (pending)
-- `layout.css` — Phase 1 Step 4 (pending)
-- `forms.css` — Phase 1 Step 5 (pending)
+UI components part 1: buttons (primary/secondary/danger/ghost × sm/md/lg + disabled/hover states), inputs (.input, .input-error, .input-disabled), selects (.select, .select-error), textareas (.textarea, .textarea-error), badges (success/error/warning/info/neutral), cards (header/body/footer). All values via CSS variables.
 
-### shared/js/ — empty
+### shared/css/components-extra.css (214 lines)
 
-Future Phase 2+ will populate with shared JS components (theme-loader.js, etc.)
+UI components part 2: table base (.table, .table-header, .table-row, .table-cell, .table-sortable, .table-sort-active), slide-in panel (RTL, overlay, header/body), skeleton loaders (text/circle/rect/row + pulse animation), accordion (CSS-only open/close via .accordion-open).
 
-### shared/tests/ — empty
+### shared/css/layout.css (201 lines)
 
-Phase 1 Step 7 will add `ui-test.html` for visual regression testing.
+Page structure (.page-container, .page-header, .page-content), sticky header, flex helpers (flex/col/wrap, items, justify, gap), grid helpers (2/3/4 col), RTL utilities (logical margin/padding/inset), visibility (hidden/visible/sr-only), print styles (no-print, header hidden).
+
+### shared/css/forms.css (146 lines)
+
+Form layout: .form-group (label+input wrapper), .form-label, .form-required (red asterisk), .form-error/.form-help text, .form-row (multi-column flex), .form-col-2 (2-col grid), .form-actions (button container), .form-inline (label+input same line), mobile responsive.
+
+### shared/js/theme-loader.js (42 lines)
+
+**Functions:**
+
+| Function | Parameters | Returns | Description |
+|----------|-----------|---------|-------------|
+| `loadTenantTheme` | `tenantRow: object` | `void` | Read ui_config JSONB from tenant row, inject CSS variable overrides to :root via setProperty(). Only keys starting with `--` are injected (security). Zero DB calls, standalone, no innerHTML. |
+
+**Global Variables:**
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `window.loadTenantTheme` | `function` | Global reference to loadTenantTheme |
+
+### shared/tests/ui-test.html (252 lines)
+
+Visual test page: 13 component sections (colors, typography, buttons, inputs, selects, textareas, badges, cards, tables, slide panel, skeleton, accordion, forms). 3-palette theme switcher (Default/Green/Purple) using loadTenantTheme(). RTL, Hebrew, self-contained. Loads only shared/css/ files — no styles.css dependency.
 
 ---
 
@@ -379,7 +399,7 @@ Phase 1 Step 7 will add `ui-test.html` for visual regression testing.
 | Module | Status | Directory | HTML Pages | DB Tables (count) |
 |--------|--------|-----------|------------|-------------------|
 | Module 1 — Inventory Management | ✅ Complete | `modules/inventory/`, `modules/purchasing/`, `modules/goods-receipts/`, `modules/audit/`, `modules/brands/`, `modules/access-sync/`, `modules/admin/`, `modules/debt/`, `modules/debt/ai/`, `modules/permissions/`, `modules/shipments/`, `modules/stock-count/`, `modules/settings/` | `index.html`, `inventory.html`, `suppliers-debt.html`, `employees.html`, `shipments.html`, `settings.html` | 46 active + 4 stubs = 50 |
-| Module 1.5 — Shared Components | 🔨 In Progress (Phase 1 Step 2 done) | `shared/css/`, `shared/js/`, `shared/tests/` | — | 0 (ui_config JSONB column on tenants only) |
+| Module 1.5 — Shared Components | 🔨 In Progress (Phase 1 complete ✅) | `shared/css/`, `shared/js/`, `shared/tests/` | — | 0 (ui_config JSONB column on tenants only) |
 
 ---
 
