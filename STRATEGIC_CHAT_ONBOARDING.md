@@ -122,7 +122,7 @@ Daniel מעתיק פרומפטים בין השכבות ומדביק תוצאות
 
 ### ב-GitHub
 - **Repo:** `opticalis/opticup` (שונה מ-prizma-inventory)
-- **URL:** `https://opticalis.github.io/opticup/`
+- **URL:** `https://app.opticalis.co.il/`
 - **מבנה:** index.html (מסך בית + login) → inventory.html (מודול מלאי) → employees.html (ניהול עובדים)
 - **Sticky Header:** שם + לוגו חנות דינמי per-tenant
 - **Archived:** `modules/Module 1 - Inventory Management/` עם כל התיעוד

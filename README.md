@@ -28,5 +28,5 @@
 | | הערות |
 
 ## קישורים
-- אפליקציה: https://opticalis.github.io/prizma-inventory/
+- אפליקציה: https://app.opticalis.co.il/
 - Supabase: https://tsxrrxzmdxaenlvocyit.supabase.co

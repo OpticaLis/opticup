@@ -15,7 +15,7 @@
 - Auth: PIN → Edge Function (pin-auth) → signed JWT with tenant_id claim
 - Excel: SheetJS (xlsx) לייבוא/ייצוא
 - Barcode: ZXing (camera-based scanning for stock count)
-- Deploy: GitHub Pages → https://opticalis.github.io/opticup/
+- Deploy: GitHub Pages → https://app.opticalis.co.il/
 - Watcher: Node.js + chokidar (Dropbox folder watcher for Access sync)
 - Multi-tenant: tenant_id UUID NOT NULL on all tables, JWT-based RLS
 

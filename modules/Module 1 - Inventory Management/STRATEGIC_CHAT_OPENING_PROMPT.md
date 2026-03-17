@@ -43,7 +43,7 @@ Optic Up הוא **SaaS multi-tenant** — כל חנות אופטיקה שמצט�
 - **Frontend:** Vanilla JS (no framework), single-page app, Hebrew RTL
 - **Backend:** Supabase (PostgreSQL) — `tsxrrxzmdxaenlvocyit.supabase.co`
 - **Repo:** `opticalis/opticup`
-- **Deploy:** GitHub Pages → `opticalis.github.io/opticup/`
+- **Deploy:** GitHub Pages → `app.opticalis.co.il/`
 - **Libraries:** SheetJS (Excel), chokidar (Folder Watcher)
 - **AI (עתידי):** Claude Vision API לסריקת חשבוניות
 

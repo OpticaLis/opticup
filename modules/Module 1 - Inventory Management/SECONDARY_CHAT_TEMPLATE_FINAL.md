@@ -70,7 +70,7 @@ Do NOT make any changes yet — just read and summarize.
 Context: Optic Up — multi-tenant SaaS optical store management.
 Repo: opticalis/opticup (already cloned)
 Supabase: https://tsxrrxzmdxaenlvocyit.supabase.co
-Deploy: GitHub Pages → https://opticalis.github.io/opticup/
+Deploy: GitHub Pages → https://app.opticalis.co.il/
 Stack: Vanilla JS + Supabase JS v2 + SheetJS
 
 File structure:

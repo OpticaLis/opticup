@@ -10,9 +10,9 @@ let couriersList = [];
 // =========================================================
 async function initShipmentsPage() {
   const session = await loadSession();
-  if (!session) { window.location.href = 'index.html'; return; }
+  if (!session) { window.location.href = '/'; return; }
 
-  if (!hasPermission('shipments.view')) { window.location.href = 'index.html'; return; }
+  if (!hasPermission('shipments.view')) { window.location.href = '/'; return; }
 
   // Apply UI permissions if available
   if (typeof applyUIPermissions === 'function') applyUIPermissions();

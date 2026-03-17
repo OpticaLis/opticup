@@ -153,8 +153,8 @@
 <script>
 window.addEventListener('DOMContentLoaded', async () => {
   const session = await loadSession();
-  if (!session) { window.location.href = 'index.html'; return; }
-  if (!hasPermission('settings.view')) { window.location.href = 'index.html'; return; }
+  if (!session) { window.location.href = '/'; return; }
+  if (!hasPermission('settings.view')) { window.location.href = '/'; return; }
   await loadSettings();
 });
 </script>

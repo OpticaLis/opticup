@@ -218,9 +218,9 @@ function switchDebtTab(tabName) {
 // =========================================================
 window.addEventListener('DOMContentLoaded', async function() {
   const session = await loadSession();
-  if (!session) { window.location.href = 'index.html'; return; }
+  if (!session) { window.location.href = '/'; return; }
 
-  if (!hasPermission('debt.view')) { window.location.href = 'index.html'; return; }
+  if (!hasPermission('debt.view')) { window.location.href = '/'; return; }
 
   await loadDebtSummary();
   await loadSuppliersTab();

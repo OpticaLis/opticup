@@ -132,7 +132,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - index.html הופך למסך בית: PIN login + כרטיסי מודולים
 - האפליקציה הנוכחית עוברת ל-inventory.html
 - ריפו משנה שם: prizma-inventory → opticup
-- URL חדש: opticalis.github.io/opticup
+- URL חדש: app.opticalis.co.il
 - Session עובר בין דפים דרך sessionStorage
 - פירוט מלא: `docs/PHASE_3.5_SPEC.md`
 

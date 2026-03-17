@@ -20,7 +20,7 @@ After reading SESSION_CONTEXT.md, confirm:
 - **Current tenant:** אופטיקה פריזמה (Prizma Optics) — first and only tenant
 - **Repo:** opticalis/opticup
 - **Supabase:** https://tsxrrxzmdxaenlvocyit.supabase.co
-- **Deploy:** GitHub Pages → https://opticalis.github.io/opticup/ (index.html = home screen, inventory.html = inventory module)
+- **Deploy:** GitHub Pages → https://app.opticalis.co.il/ (index.html = home screen, inventory.html = inventory module)
 
 ## Architecture — SaaS Multi-Tenant
 
