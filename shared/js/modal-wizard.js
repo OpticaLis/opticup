@@ -18,6 +18,7 @@
     var nextText = config.nextText || '\u05D4\u05D1\u05D0'; // הבא
     var backText = config.backText || '\u05D4\u05E7\u05D5\u05D3\u05DD'; // הקודם
     var currentStep = 0;
+    var _finished = false;
 
     // Build progress bar
     var progress = _createEl('div', 'wizard-progress');
@@ -64,7 +65,7 @@
       _type: 'wizard',
       closeOnEscape: true,
       closeOnBackdrop: false,
-      onClose: config.onCancel || null
+      onClose: function () { if (!_finished && typeof config.onCancel === 'function') config.onCancel(); }
     });
 
     function updateWizard() {
@@ -113,6 +114,7 @@
       if (typeof step.onLeave === 'function') step.onLeave(panels[currentStep]);
 
       if (currentStep === steps.length - 1) {
+        _finished = true;
         if (typeof config.onFinish === 'function') config.onFinish(modal.el);
         modal.close();
       } else {
@@ -132,7 +134,6 @@
 
     cancelBtn.addEventListener('click', function () {
       modal.close();
-      if (typeof config.onCancel === 'function') config.onCancel();
     });
 
     updateWizard();
