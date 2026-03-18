@@ -319,15 +319,43 @@ async function handleScan(countId, barcode) {
     return;
   }
   if (item.status === 'counted') {
-    const yes = await confirmDialog('ברקוד כבר נסרק. האם להוסיף עוד 1?');
-    if (yes) await updateCountItem(item.id, (item.actual_qty || 0) + 1);
+    _showQtyModal(item);
     return;
   }
-  const qty = prompt('הזן כמות בפועל עבור ברקוד ' + barcode + ':', '1');
-  if (qty === null) return;
-  const parsed = parseInt(qty);
-  if (isNaN(parsed) || parsed < 0) { toast('כמות לא תקינה', 'e'); return; }
-  await updateCountItem(item.id, parsed);
+  // First scan — auto-count as 1
+  await updateCountItem(item.id, 1);
+}
+
+// ── Quantity update modal (re-scan) ──────────────────────────
+function _showQtyModal(item) {
+  const bc = escapeHtml(item.barcode || '');
+  const brand = escapeHtml(item.brand || '—');
+  const model = escapeHtml(item.model || '—');
+  const cur = item.actual_qty || 0;
+  Modal.form({
+    title: 'עדכון כמות',
+    size: 'sm',
+    submitText: 'עדכן',
+    cancelText: 'ביטול',
+    content: `
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-size:.85rem;color:var(--g500);margin-bottom:4px">${bc} — ${brand} — ${model}</div>
+        <div style="font-size:.82rem;color:var(--g400)">כמות נוכחית: <strong>${cur}</strong></div>
+      </div>
+      <label style="display:block;font-weight:600;margin-bottom:6px;font-size:.9rem">כמה יחידות יש מפריט זה?</label>
+      <input id="sc-qty-input" type="number" min="0" value="${cur}"
+        style="width:100%;min-height:52px;font-size:22px;text-align:center;border:2px solid var(--g300);border-radius:8px;padding:10px">`,
+    onSubmit: function (formEl) {
+      var inp = formEl.querySelector('#sc-qty-input');
+      var val = parseInt(inp?.value);
+      if (isNaN(val) || val < 0) { toast('כמות לא תקינה', 'e'); return; }
+      updateCountItem(item.id, val);
+    }
+  });
+  setTimeout(function () {
+    var inp = document.getElementById('sc-qty-input');
+    if (inp) { inp.focus(); inp.select(); }
+  }, 100);
 }
 
 // ── Update count item ────────────────────────────────────────
