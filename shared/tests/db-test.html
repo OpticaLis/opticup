@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DB Wrapper Test — Optic Up Shared</title>
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/toast.css">
+  <style>
+    body { font-family: var(--font-family); background: var(--color-bg-page); color: var(--color-gray-900); padding: 24px; margin: 0; }
+    h1 { font-size: var(--font-size-2xl); margin-bottom: 8px; }
+    .subtitle { color: var(--color-gray-500); margin-bottom: 20px; font-size: var(--font-size-sm); }
+    .test-section { background: var(--color-bg-card); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 12px; }
+    .test-section h2 { font-size: var(--font-size-lg); margin: 0 0 10px; color: var(--color-primary); }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .result { font-size: 13px; padding: 4px 0; font-family: monospace; direction: ltr; text-align: left; }
+    .pass { color: var(--color-success); }
+    .fail { color: var(--color-error); }
+    .info { color: var(--color-info); }
+    #status-bar { padding: 10px 16px; border-radius: var(--radius-md); margin-bottom: 16px; font-weight: 600; }
+    .status-ok { background: var(--color-success-light); color: var(--color-success-dark); }
+    .status-err { background: var(--color-error-light); color: var(--color-error-dark); }
+    /* hide loading overlay from shared.js (not needed here) */
+    #loading { display: none !important; }
+  </style>
+</head>
+<body>
+
+<h1>DB Wrapper Test</h1>
+<p class="subtitle">supabase-client.js — DB.select / insert / update / batchUpdate / softDelete / hardDelete / rpc</p>
+<div id="status-bar">בודק חיבור...</div>
+
+<div class="test-section"><h2>1. DB.select</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testSelectAll()">Select All</button>
+  <button class="btn btn-secondary btn-sm" onclick="testSelectFilter()">Filter {level:'info'}</button>
+  <button class="btn btn-secondary btn-sm" onclick="testSelectOrder()">Order + Limit</button>
+  <button class="btn btn-secondary btn-sm" onclick="testSelectSingle()">Single Row</button>
+  <button class="btn btn-secondary btn-sm" onclick="testSelectCount()">Count</button>
+  <button class="btn btn-secondary btn-sm" onclick="testSelectRaw()">rawFilters</button>
+</div><div id="results-select"></div></div>
+
+<div class="test-section"><h2>2. DB.insert</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testInsertSingle()">Single Insert</button>
+  <button class="btn btn-secondary btn-sm" onclick="testInsertArray()">Array Insert (3)</button>
+</div><div id="results-insert"></div></div>
+
+<div class="test-section"><h2>3. DB.update</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testUpdate()">Update Row</button>
+</div><div id="results-update"></div></div>
+
+<div class="test-section"><h2>4. DB.batchUpdate</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testBatchUpdate()">Batch Update (3)</button>
+</div><div id="results-batch"></div></div>
+
+<div class="test-section"><h2>5. DB.softDelete / hardDelete</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testSoftDelete()">softDelete (expect graceful)</button>
+  <button class="btn btn-secondary btn-sm" onclick="testHardDelete()">hardDelete (real)</button>
+</div><div id="results-delete"></div></div>
+
+<div class="test-section"><h2>6. DB.rpc</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testRpc()">RPC (non-existent fn)</button>
+</div><div id="results-rpc"></div></div>
+
+<div class="test-section"><h2>7. Spinner</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testSpinnerParallel()">3 Parallel Calls</button>
+  <button class="btn btn-secondary btn-sm" onclick="testSpinnerSilent()">Silent (no spinner)</button>
+</div><div id="results-spinner"></div></div>
+
+<div class="test-section"><h2>8. Error Handling</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testErrorMissing()">Missing Required Field</button>
+  <button class="btn btn-secondary btn-sm" onclick="testErrorSilent()">Error + Silent</button>
+</div><div id="results-error"></div></div>
+
+<div class="test-section"><h2>9. Cleanup</h2><div class="btn-row">
+  <button class="btn btn-primary btn-sm" onclick="runAll()">Run All Tests</button>
+  <button class="btn btn-danger btn-sm" onclick="cleanup()">Delete All Test Rows</button>
+</div><div id="results-cleanup"></div></div>
+
+<!-- toast container -->
+<div id="toast-c"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/shared.js"></script>
+<script src="../../js/supabase-ops.js"></script>
+<script src="../../js/auth-service.js"></script>
+<script src="../js/toast.js"></script>
+<script src="../js/supabase-client.js"></script>
+<script>
+// -- Test infrastructure --
+const TEST_ACTION = 'db_test.auto';
+const TEST_ENTITY = 'test_runner';
+var _testIds = []; // track inserted IDs for cleanup
+
+function log(sectionId, pass, msg) {
+  var el = document.getElementById(sectionId);
+  var cls = pass === true ? 'pass' : pass === false ? 'fail' : 'info';
+  var icon = pass === true ? '✅' : pass === false ? '❌' : 'ℹ️';
+  el.innerHTML += '<div class="result ' + cls + '">' + icon + ' ' + msg + '</div>';
+}
+
+function clear(sectionId) {
+  document.getElementById(sectionId).innerHTML = '';
+}
+
+// -- Session check --
+async function checkSession() {
+  var bar = document.getElementById('status-bar');
+  var tid = getTenantId();
+  if (!tid) {
+    bar.textContent = 'אין session פעיל — התחבר דרך index.html קודם, אז פתח דף זה';
+    bar.className = 'status-err';
+    return false;
+  }
+  // Restore JWT client
+  var jwt = sessionStorage.getItem('jwt_token');
+  if (jwt) {
+    window.sb = supabase.createClient(
+      'https://tsxrrxzmdxaenlvocyit.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU',
+      { global: { headers: { Authorization: 'Bearer ' + jwt } } }
+    );
+    sb = window.sb;
+  }
+  // Quick connectivity test
+  var { data, error } = await DB.select('activity_log', {}, { limit: 1, silent: true });
+  if (error) {
+    bar.textContent = 'שגיאת חיבור: ' + (error.message || JSON.stringify(error));
+    bar.className = 'status-err';
+    return false;
+  }
+  bar.textContent = 'מחובר ✓ — tenant: ' + tid.substring(0, 8) + '...';
+  bar.className = 'status-ok';
+  return true;
+}
+
+// -- Helper: insert a test row --
+async function insertTestRow(extra) {
+  var row = Object.assign({ action: TEST_ACTION, entity_type: TEST_ENTITY, entity_id: 'test-' + Date.now(), level: 'info', details: { test: true } }, extra || {});
+  var { data } = await DB.insert('activity_log', row, { silent: true });
+  if (data && data.id) _testIds.push(data.id);
+  return data;
+}
+
+// ===== Section 1: Select =====
+async function testSelectAll() {
+  clear('results-select');
+  var { data, error } = await DB.select('activity_log', {}, { silent: true });
+  log('results-select', !error && Array.isArray(data), 'selectAll: returned ' + (data ? data.length : 0) + ' rows');
+}
+async function testSelectFilter() {
+  await insertTestRow({ level: 'info' });
+  var { data, error } = await DB.select('activity_log', { level: 'info' }, { silent: true });
+  log('results-select', !error && Array.isArray(data) && data.length > 0, 'filter {level:info}: ' + (data ? data.length : 0) + ' rows');
+}
+async function testSelectOrder() {
+  var { data, error } = await DB.select('activity_log', {}, { order: 'created_at.desc', limit: 2, silent: true });
+  log('results-select', !error && Array.isArray(data) && data.length <= 2, 'order+limit: got ' + (data ? data.length : 0) + ' (max 2)');
+}
+async function testSelectSingle() {
+  var row = await insertTestRow();
+  if (!row) { log('results-select', false, 'single: insert failed'); return; }
+  var { data, error } = await DB.select('activity_log', { id: row.id }, { single: true, silent: true });
+  log('results-select', !error && data && data.id === row.id, 'single: id=' + (data ? data.id.substring(0, 8) : 'null'));
+}
+async function testSelectCount() {
+  var { data, error, count } = await DB.select('activity_log', {}, { count: 'exact', limit: 1, silent: true });
+  log('results-select', !error && typeof count === 'number', 'count: ' + count);
+}
+async function testSelectRaw() {
+  var { data, error } = await DB.select('activity_log', {}, { rawFilters: function(q) { return q.gte('created_at', '2020-01-01'); }, silent: true });
+  log('results-select', !error && Array.isArray(data), 'rawFilters gte: ' + (data ? data.length : 0) + ' rows');
+}
+
+// ===== Section 2: Insert =====
+async function testInsertSingle() {
+  clear('results-insert');
+  var { data, error } = await DB.insert('activity_log', { action: TEST_ACTION, entity_type: TEST_ENTITY, entity_id: 'single-' + Date.now(), level: 'info', details: { single: true } }, { silent: true });
+  if (data && data.id) _testIds.push(data.id);
+  var hasTenant = data && data.tenant_id === getTenantId();
+  log('results-insert', !error && data && data.id, 'single insert: id=' + (data ? data.id.substring(0, 8) : 'null'));
+  log('results-insert', hasTenant, 'tenant_id auto-injected: ' + (data ? data.tenant_id.substring(0, 8) : 'missing'));
+}
+async function testInsertArray() {
+  var rows = [
+    { action: TEST_ACTION, entity_type: TEST_ENTITY, entity_id: 'arr-1', level: 'info', details: {} },
+    { action: TEST_ACTION, entity_type: TEST_ENTITY, entity_id: 'arr-2', level: 'warning', details: {} },
+    { action: TEST_ACTION, entity_type: TEST_ENTITY, entity_id: 'arr-3', level: 'error', details: {} }
+  ];
+  var { data, error } = await DB.insert('activity_log', rows, { silent: true });
+  if (Array.isArray(data)) data.forEach(function(r) { _testIds.push(r.id); });
+  var allHaveTenant = Array.isArray(data) && data.every(function(r) { return r.tenant_id === getTenantId(); });
+  log('results-insert', !error && Array.isArray(data) && data.length === 3, 'array insert: ' + (data ? data.length : 0) + '/3 rows');
+  log('results-insert', allHaveTenant, 'all tenant_id injected: ' + allHaveTenant);
+}
+
+// ===== Section 3: Update =====
+async function testUpdate() {
+  clear('results-update');
+  var row = await insertTestRow({ level: 'info' });
+  if (!row) { log('results-update', false, 'setup insert failed'); return; }
+  var { data, error } = await DB.update('activity_log', row.id, { level: 'warning' }, { silent: true });
+  log('results-update', !error && data && data.level === 'warning', 'update level info→warning: ' + (data ? data.level : 'null'));
+  // Verify with select
+  var { data: check } = await DB.select('activity_log', { id: row.id }, { single: true, silent: true });
+  log('results-update', check && check.level === 'warning', 'verify select: level=' + (check ? check.level : 'null'));
+}
+
+// ===== Section 4: batchUpdate =====
+async function testBatchUpdate() {
+  clear('results-batch');
+  var r1 = await insertTestRow({ action: 'batch_before' });
+  var r2 = await insertTestRow({ action: 'batch_before' });
+  var r3 = await insertTestRow({ action: 'batch_before' });
+  if (!r1 || !r2 || !r3) { log('results-batch', false, 'setup inserts failed'); return; }
+  var updates = [
+    { id: r1.id, action: 'batch_after' },
+    { id: r2.id, action: 'batch_after' },
+    { id: r3.id, action: 'batch_after' }
+  ];
+  var { data, error } = await DB.batchUpdate('activity_log', updates, { silent: true });
+  var allUpdated = Array.isArray(data) && data.length === 3 && data.every(function(r) { return r.action === 'batch_after'; });
+  log('results-batch', !error && allUpdated, 'batchUpdate 3 rows: ' + (data ? data.length : 0) + '/3, all action=batch_after: ' + allUpdated);
+}
+
+// ===== Section 5: softDelete / hardDelete =====
+async function testSoftDelete() {
+  clear('results-delete');
+  var row = await insertTestRow();
+  if (!row) { log('results-delete', false, 'setup insert failed'); return; }
+  // activity_log has no is_deleted column — should get an error or silently fail
+  var { data, error } = await DB.softDelete('activity_log', row.id, { silent: true });
+  log('results-delete', true, 'softDelete on table without is_deleted: error=' + (error ? 'yes (expected)' : 'no') + ', handled gracefully');
+}
+async function testHardDelete() {
+  var row = await insertTestRow();
+  if (!row) { log('results-delete', false, 'setup insert failed'); return; }
+  var id = row.id;
+  var { data, error } = await DB.hardDelete('activity_log', id, { silent: true });
+  // Remove from tracking since we deleted it
+  _testIds = _testIds.filter(function(x) { return x !== id; });
+  var { data: check } = await DB.select('activity_log', { id: id }, { single: true, silent: true });
+  log('results-delete', !error && (!check || check.error), 'hardDelete: row gone=' + (!check || !!check.error));
+}
+
+// ===== Section 6: RPC =====
+async function testRpc() {
+  clear('results-rpc');
+  var { data, error } = await DB.rpc('nonexistent_function_12345', {}, { silent: true });
+  log('results-rpc', !!error, 'rpc non-existent fn: error returned=' + !!error + ' (expected)');
+}
+
+// ===== Section 7: Spinner =====
+async function testSpinnerParallel() {
+  clear('results-spinner');
+  log('results-spinner', null, 'firing 3 parallel selects — watch for spinner...');
+  var p1 = DB.select('activity_log', {}, { limit: 50 });
+  var p2 = DB.select('activity_log', {}, { limit: 50 });
+  var p3 = DB.select('activity_log', {}, { limit: 50 });
+  await Promise.all([p1, p2, p3]);
+  log('results-spinner', true, '3 parallel done — spinner should have appeared once and disappeared');
+}
+async function testSpinnerSilent() {
+  log('results-spinner', null, 'firing silent select — no spinner expected...');
+  await DB.select('activity_log', {}, { limit: 1, silent: true });
+  log('results-spinner', true, 'silent done — verify no spinner appeared');
+}
+
+// ===== Section 8: Error Handling =====
+async function testErrorMissing() {
+  clear('results-error');
+  // action is NOT NULL — omitting it should cause an error
+  var { data, error } = await DB.insert('activity_log', { entity_type: 'test', level: 'info' });
+  log('results-error', !!error, 'missing required field: error=' + !!error + ' — Toast should have shown');
+}
+async function testErrorSilent() {
+  var { data, error } = await DB.insert('activity_log', { entity_type: 'test', level: 'info' }, { silent: true });
+  log('results-error', !!error, 'missing field + silent: error=' + !!error + ' — no Toast (check console)');
+}
+
+// ===== Section 9: Run All + Cleanup =====
+async function runAll() {
+  clear('results-cleanup');
+  if (!(await checkSession())) return;
+  // Clear all result sections
+  ['results-select','results-insert','results-update','results-batch','results-delete','results-rpc','results-spinner','results-error'].forEach(clear);
+  log('results-cleanup', null, 'Running all tests...');
+  await testSelectAll(); await testSelectFilter(); await testSelectOrder();
+  await testSelectSingle(); await testSelectCount(); await testSelectRaw();
+  await testInsertSingle(); await testInsertArray();
+  await testUpdate();
+  await testBatchUpdate();
+  await testSoftDelete(); await testHardDelete();
+  await testRpc();
+  await testSpinnerParallel(); await testSpinnerSilent();
+  await testErrorMissing(); await testErrorSilent();
+  log('results-cleanup', null, 'All tests complete. Tracked ' + _testIds.length + ' test rows — click Cleanup to remove.');
+}
+
+async function cleanup() {
+  clear('results-cleanup');
+  if (!_testIds.length) {
+    // Fallback: delete by action marker
+    var { data } = await DB.select('activity_log', { action: TEST_ACTION }, { silent: true });
+    if (data && data.length) _testIds = data.map(function(r) { return r.id; });
+  }
+  if (!_testIds.length) {
+    // Also try other test markers
+    var { data: d2 } = await DB.select('activity_log', { entity_type: TEST_ENTITY }, { silent: true });
+    if (d2 && d2.length) _testIds = d2.map(function(r) { return r.id; });
+  }
+  var count = 0;
+  for (var i = 0; i < _testIds.length; i++) {
+    var { error } = await DB.hardDelete('activity_log', _testIds[i], { silent: true });
+    if (!error) count++;
+  }
+  log('results-cleanup', true, 'Deleted ' + count + '/' + _testIds.length + ' test rows');
+  _testIds = [];
+}
+
+// -- Init --
+window.addEventListener('DOMContentLoaded', checkSession);
+</script>
+</body>
+</html>
