@@ -412,6 +412,7 @@ git push origin v{phase}
 
 ## Working Rules (AI Sessions)
 
+0. **Branch verification** — Every prompt starts with: `git branch` → confirm on `develop`. If not: `git checkout develop`. No exceptions.
 1. **One file at a time** — never touch multiple files in a single task unless explicitly instructed
 2. **Backup before every major change** — copy affected files to `modules/Module 1 - Inventory Management/backups/` before splitting or refactoring
 3. **Stop and report after every task** — do not proceed to the next step without explicit approval
