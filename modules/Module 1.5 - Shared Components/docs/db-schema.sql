@@ -106,3 +106,13 @@ BEGIN
     WHERE id = p_shipment_id;
 END;
 $$;
+
+-- =============================================================================
+-- Phase 5: custom_fields JSONB on inventory
+-- Executed: 2026-03-18
+-- Purpose: Empty JSONB column ready for per-tenant custom fields.
+--          No UI yet — future modules will define field schemas in tenant_config
+--          and render dynamic inputs.
+-- =============================================================================
+ALTER TABLE inventory
+  ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}';

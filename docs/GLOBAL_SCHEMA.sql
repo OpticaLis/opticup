@@ -212,6 +212,8 @@ CREATE TABLE IF NOT EXISTS inventory (
   deleted_reason  TEXT,                                          -- סיבת מחיקה
   -- Reverse sync (Access export)
   access_exported BOOLEAN DEFAULT false,                         -- האם יוצא ל-Access
+  -- Custom fields (Module 1.5 Phase 5)
+  custom_fields   JSONB DEFAULT '{}',                            -- שדות מותאמים per-tenant (no UI yet)
   -- System fields
   tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   branch_id       UUID,                                          -- סניף
