@@ -18,7 +18,7 @@ const ActivityLog = (function () {
     return {
       tenant_id: tid,
       user_id: emp ? emp.id : null,
-      branch_id: emp ? (emp.branch_id || null) : null
+      branch_id: emp && emp.branch_id && emp.branch_id.length > 10 ? emp.branch_id : null
     };
   }
 
