@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Permission UI Test — Optic Up Shared</title>
+  <link rel="stylesheet" href="../css/variables.css">
+  <style>
+    body { font-family: var(--font-family); background: var(--color-bg-page); color: var(--color-gray-900); padding: 24px; margin: 0; }
+    h1 { font-size: var(--font-size-2xl); margin-bottom: 24px; }
+    .ts { background: var(--color-bg-card); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 16px; }
+    .ts h2 { font-size: var(--font-size-lg); margin: 0 0 4px; color: var(--color-primary); }
+    .ts p { font-size: var(--font-size-sm); color: var(--color-gray-500); margin: 0 0 12px; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .btn-t { padding: 6px 14px; border: 1px solid var(--color-gray-300); border-radius: var(--radius-sm); background: var(--color-bg-card); cursor: pointer; font-size: var(--font-size-sm); }
+    .btn-t:hover { background: var(--color-gray-100); }
+    .btn-p { padding: 6px 14px; border: none; border-radius: var(--radius-sm); background: var(--color-primary); color: var(--color-white); cursor: pointer; font-size: var(--font-size-sm); }
+    .chk-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; font-size: var(--font-size-sm); }
+    .chk-row label { display: flex; align-items: center; gap: 4px; }
+    pre.out { background: var(--color-gray-900); color: #0f0; font-family: monospace; font-size: 12px; padding: 10px; border-radius: var(--radius-md); max-height: 120px; overflow: auto; direction: ltr; text-align: left; margin-top: 8px; }
+    .dyn-box { border: 2px dashed var(--color-gray-300); border-radius: var(--radius-md); padding: 12px; min-height: 40px; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+<h1>Permission UI Test</h1>
+
+<script>
+// ========== Mock hasPermission ==========
+var mockPerms = {
+  'inventory.view': true, 'inventory.edit': true,
+  'inventory.delete': false, 'inventory.admin': false,
+  'shipments.create': false, 'shipments.admin': false,
+  'purchasing.admin': false
+};
+function hasPermission(key) { return mockPerms[key] === true; }
+
+function log(msg) {
+  var el = document.getElementById('log');
+  if (!el) return;
+  var d = document.createElement('div');
+  d.textContent = '[' + new Date().toLocaleTimeString('he-IL') + '] ' + msg;
+  el.prepend(d);
+}
+
+// Reset element visibility/disabled state before re-applying
+function resetPerms(root) {
+  (root || document).querySelectorAll('[data-permission]').forEach(function(el) {
+    el.style.display = '';
+    el.style.opacity = '';
+    el.style.pointerEvents = '';
+    el.removeAttribute('disabled');
+    el.title = '';
+  });
+}
+function reapply() { resetPerms(); PermissionUI.apply(); log('PermissionUI.apply() called'); }
+</script>
+<script src="../js/permission-ui.js"></script>
+
+<!-- Section 1: Hide Mode -->
+<div class="ts">
+  <h2>1. הסתרה (Hide — ברירת מחדל)</h2>
+  <p>view + edit = true → נראים. delete + admin = false → מוסתרים.</p>
+  <div class="chk-row">
+    <label><input type="checkbox" checked onchange="mockPerms['inventory.view']=this.checked"> inventory.view</label>
+    <label><input type="checkbox" checked onchange="mockPerms['inventory.edit']=this.checked"> inventory.edit</label>
+    <label><input type="checkbox" onchange="mockPerms['inventory.delete']=this.checked"> inventory.delete</label>
+    <label><input type="checkbox" onchange="mockPerms['inventory.admin']=this.checked"> inventory.admin</label>
+  </div>
+  <button class="btn-p" onclick="reapply()">Re-apply</button>
+  <div class="btn-row" style="margin-top:8px">
+    <button class="btn-t" data-permission="inventory.view">📦 צפייה (view)</button>
+    <button class="btn-t" data-permission="inventory.edit">✏️ עריכה (edit)</button>
+    <button class="btn-t" data-permission="inventory.delete">🗑️ מחיקה (delete)</button>
+    <button class="btn-t" data-permission="inventory.admin">⚙️ ניהול (admin)</button>
+  </div>
+</div>
+
+<!-- Section 2: Disable Mode -->
+<div class="ts">
+  <h2>2. השבתה (Disable Mode)</h2>
+  <p>edit = enabled. delete + shipments = disabled (שקוף + tooltip "אין הרשאה").</p>
+  <div class="btn-row">
+    <button class="btn-t" data-permission="inventory.edit" data-permission-mode="disable">✏️ עריכה (edit)</button>
+    <button class="btn-t" data-permission="inventory.delete" data-permission-mode="disable">🗑️ מחיקה (delete)</button>
+    <button class="btn-t" data-permission="shipments.create" data-permission-mode="disable">📦 יצירת משלוח</button>
+  </div>
+</div>
+
+<!-- Section 3: OR Logic -->
+<div class="ts">
+  <h2>3. לוגיקת OR</h2>
+  <p>edit|admin → נראה (edit=true). shipments.admin|purchasing.admin → מוסתר. view|shipments.admin → נראה (view=true).</p>
+  <div class="btn-row">
+    <button class="btn-t" data-permission="inventory.edit|inventory.admin">edit|admin ✅</button>
+    <button class="btn-t" data-permission="shipments.admin|purchasing.admin">ship.admin|purch.admin ❌</button>
+    <button class="btn-t" data-permission="inventory.view|shipments.admin">view|ship.admin ✅</button>
+  </div>
+</div>
+
+<!-- Section 4: applyTo Dynamic -->
+<div class="ts">
+  <h2>4. תוכן דינמי (applyTo)</h2>
+  <p>הוספת אלמנטים דינמית → applyTo על הקונטיינר בלבד.</p>
+  <button class="btn-p" onclick="addDynamic()">הוסף תוכן דינמי</button>
+  <button class="btn-t" onclick="clearDynamic()">נקה</button>
+  <div class="dyn-box" id="dyn-container"></div>
+</div>
+<script>
+function addDynamic() {
+  var c = document.getElementById('dyn-container');
+  c.innerHTML =
+    '<button class="btn-t" data-permission="inventory.view">📦 צפייה (דינמי)</button> ' +
+    '<button class="btn-t" data-permission="inventory.delete">🗑️ מחיקה (דינמי)</button> ' +
+    '<button class="btn-t" data-permission="inventory.edit" data-permission-mode="disable">✏️ עריכה disabled (דינמי)</button>';
+  PermissionUI.applyTo(c);
+  log('applyTo(dyn-container) — view visible, delete hidden, edit depends on perm');
+}
+function clearDynamic() { document.getElementById('dyn-container').innerHTML = ''; }
+</script>
+
+<!-- Section 5: Manual Check -->
+<div class="ts">
+  <h2>5. בדיקה ידנית (check)</h2>
+  <p>הקלידו permission string ולחצו "בדוק".</p>
+  <div class="btn-row">
+    <input id="check-input" value="inventory.view" style="padding:6px; border:1px solid var(--color-gray-300); border-radius:var(--radius-sm); font-size:var(--font-size-sm); width:200px">
+    <button class="btn-p" onclick="doCheck()">בדוק</button>
+  </div>
+  <pre class="out" id="check-out">result will appear here...</pre>
+</div>
+<script>
+function doCheck() {
+  var val = document.getElementById('check-input').value;
+  var result = PermissionUI.check(val);
+  document.getElementById('check-out').textContent = 'PermissionUI.check("' + val + '") → ' + result;
+  log('check("' + val + '") = ' + result);
+}
+</script>
+
+<!-- Section 6: No hasPermission -->
+<div class="ts">
+  <h2>6. ללא hasPermission</h2>
+  <p>הסרת הפונקציה → כל האלמנטים מוסתרים (ברירת מחדל בטוחה). צפו ב-console.warn.</p>
+  <button class="btn-t" onclick="testNoHasPerm()">הסר hasPermission + apply</button>
+  <button class="btn-t" onclick="restoreHasPerm()">שחזר hasPermission</button>
+  <div class="dyn-box" id="no-perm-box">
+    <button class="btn-t" data-permission="inventory.view">📦 צפייה</button>
+    <button class="btn-t" data-permission="inventory.edit">✏️ עריכה</button>
+  </div>
+</div>
+<script>
+var _savedHasPerm = hasPermission;
+function testNoHasPerm() {
+  window.hasPermission = undefined;
+  resetPerms(document.getElementById('no-perm-box'));
+  PermissionUI.applyTo(document.getElementById('no-perm-box'));
+  log('hasPermission removed — all should be hidden. Check console for warn.');
+}
+function restoreHasPerm() {
+  window.hasPermission = _savedHasPerm;
+  resetPerms(document.getElementById('no-perm-box'));
+  PermissionUI.applyTo(document.getElementById('no-perm-box'));
+  log('hasPermission restored — visibility based on perms');
+}
+</script>
+
+<!-- Section 7: Full Reset -->
+<div class="ts">
+  <h2>7. איפוס מלא</h2>
+  <div class="btn-row">
+    <button class="btn-p" onclick="setAll(false)">הסר הכל (אפס)</button>
+    <button class="btn-p" onclick="setAll(true)">CEO mode (הכל)</button>
+  </div>
+</div>
+<script>
+function setAll(val) {
+  Object.keys(mockPerms).forEach(function(k) { mockPerms[k] = val; });
+  // Update checkboxes in section 1
+  document.querySelectorAll('.chk-row input[type=checkbox]').forEach(function(cb) { cb.checked = val; });
+  reapply();
+  log(val ? 'CEO mode — all permissions ON' : 'All permissions OFF');
+}
+</script>
+
+<!-- Initial apply -->
+<script>PermissionUI.apply(); log('Initial PermissionUI.apply()');</script>
+
+<pre class="out" id="log">Action log...</pre>
+</body>
+</html>
