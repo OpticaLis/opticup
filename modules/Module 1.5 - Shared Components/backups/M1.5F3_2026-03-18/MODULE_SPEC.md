@@ -1,10 +1,9 @@
 # Module 1.5 — Shared Components Refactor — MODULE_SPEC
 
-## Current State (Phase 3 complete)
+## Current State (Phase 2 complete)
 
 ### DB Changes
 - `tenants.ui_config` (JSONB, default '{}') — per-tenant CSS variable overrides. Keys must start with `--` to be injected.
-- `activity_log` table — system-level event log: level (info/warning/error/critical), action, entity_type, entity_id, details JSONB. RLS via request.jwt.claims + 5 indexes.
 
 ### shared/css/ (7 files, 1,360 lines)
 
@@ -18,7 +17,7 @@
 | modal.css | 233 | Modal system: overlay (fixed, z-modal), container (flex column, 90vh max), header/body/footer, close button. 5 sizes (sm/md/lg/xl/fullscreen). 5 types (default/confirm/alert/danger/wizard). Wizard step indicators. Animations (entering/leaving). Stack support. Responsive. |
 | toast.css | 155 | Toast notifications: container (fixed, z-toast, top-start), toast item (border-inline-start colored by type), icon/content/close/progress bar. 4 types (success/error/warning/info). 3 animations (enter/leave/progress). CSS custom property --toast-duration. Responsive. |
 
-### shared/js/ (7 files, 1,010 lines)
+### shared/js/ (5 files, 657 lines)
 
 | File | Lines | Description |
 |------|-------|-------------|
@@ -27,18 +26,14 @@
 | modal-wizard.js | 144 | Wizard extension for Modal. `Modal.wizard(config)`. Multi-step progress bar, back/next/finish buttons, step validate/onEnter/onLeave callbacks. Depends on modal-builder.js. |
 | toast.js | 131 | Toast notification system. Global `Toast` object: success/error/warning/info/dismiss/clear. Max 5 visible, duplicate prevention via id, auto-dismiss with CSS progress bar, XSS-safe. Zero dependencies. |
 | pin-modal.js | 123 | PIN prompt modal — migration of js/pin-modal.js. Global `promptPin(title, callback)` — identical external API. Uses Modal.show() internally. 5-digit split input with auto-advance, backspace, paste, auto-submit. Depends on modal-builder.js + auth-service.js. |
-| supabase-client.js | 263 | Supabase wrapper. Global `DB` object: select/insert/update/batchUpdate/softDelete/hardDelete/rpc. CSS-only spinner (200ms debounce), error classification (RLS/network/unique/not-found), tenant_id auto-inject, Toast optional. Depends on sb + getTenantId(). |
-| activity-logger.js | 90 | Activity log helper. Global `ActivityLog` object: write/warning/error/critical. Fire-and-forget, auto-inject tenant_id/user_id/branch_id. Uses DB.insert or sb.from() fallback. Zero CSS dependencies. |
 
-### shared/tests/ (5 files, 1,234 lines)
+### shared/tests/ (3 files, 658 lines)
 
 | File | Lines | Description |
 |------|-------|-------------|
 | ui-test.html | 252 | Visual test page: 13 component sections, 3-palette theme switcher using loadTenantTheme(). RTL, Hebrew, self-contained. |
 | modal-test.html | 251 | Modal system test page: 5 sections — sizes, types, stack, keyboard, XSS. Log area for event output. RTL, Hebrew, self-contained. |
 | toast-test.html | 155 | Toast system test page: 6 sections — types, duration, stack, dedup, XSS, no-close. Log area for event output. RTL, Hebrew, self-contained. |
-| db-test.html | 325 | DB wrapper test page: 9 sections — select, insert, update, batchUpdate, softDelete/hardDelete, RPC, spinner, error handling, cleanup. Requires JWT session. |
-| activity-log-test.html | 251 | Activity log test page: 8 sections — write, warning, error, critical, changeset format, fire-and-forget, validation, cleanup. Requires JWT session. |
 
 ### Integration Points
 
@@ -109,26 +104,8 @@ Pages modified for shared/ dependencies:
 **JS Functions — Theme:**
 - `loadTenantTheme(tenantRow)` — per-tenant CSS override injection
 
-**JS Functions — DB Wrapper (Phase 3):**
-- `DB.select(table, filters?, opts?) → { data, error, count }` — query with tenant_id auto-filter
-- `DB.insert(table, data, opts?) → { data, error }` — single or array (chunked to 100), tenant_id auto-inject
-- `DB.update(table, id, changes, opts?) → { data, error }` — single row update by id
-- `DB.batchUpdate(table, records, opts?) → { data, error }` — loop of updates, each record needs .id
-- `DB.softDelete(table, id, opts?) → { data, error }` — sets is_deleted = true
-- `DB.hardDelete(table, id, opts?) → { data, error }` — permanent delete
-- `DB.rpc(fn, params?, opts?) → { data, error }` — call Supabase RPC
-
-**JS Functions — Activity Log (Phase 3):**
-- `ActivityLog.write(config)` — log event (level: info or override)
-- `ActivityLog.warning(config)` — log warning
-- `ActivityLog.error(config)` — log error
-- `ActivityLog.critical(config)` — log critical event
-
-**RPC Functions (Phase 3 — new):**
-- `increment_paid_amount(p_doc_id, p_delta)` — atomic paid_amount update + status on supplier_documents
-- `increment_prepaid_used(p_deal_id, p_delta)` — atomic total_used/total_remaining update on prepaid_deals
-- `increment_shipment_counters(p_shipment_id, p_items_delta, p_value_delta)` — atomic items_count/total_value update on shipments
-
-### What Doesn't Exist Yet (Phase 4+)
+### What Doesn't Exist Yet (Phase 3+)
+- Supabase wrapper (supabase-client.js)
+- Activity logger (activity-logger.js)
 - Table builder (table-builder.js)
 - Permission UI helpers (permission-ui.js)

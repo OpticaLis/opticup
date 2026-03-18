@@ -418,6 +418,9 @@ Pages modified for shared/ dependencies:
 | `next_internal_doc_number` | Debt | `p_tenant_id UUID` | `TEXT` (DOC-NNNN) | Debt Documents, Receipt-Debt auto-create |
 | `update_ocr_template_stats` | AI Agent | `p_tenant_id UUID, p_supplier_id UUID, p_doc_type_code TEXT, p_was_corrected BOOLEAN, p_new_hints JSONB` | `void` | AI OCR, Historical Import |
 | `next_box_number` | Shipments | `p_tenant_id UUID` | `TEXT` ({prefix}-NNNN) | Shipments Create |
+| `increment_paid_amount` | Module 1.5 (Phase 3) | `p_doc_id UUID, p_delta NUMERIC` | `void` | Debt Payment Allocation |
+| `increment_prepaid_used` | Module 1.5 (Phase 3) | `p_deal_id UUID, p_delta NUMERIC` | `void` | Receipt-Debt (prepaid auto-deduct) |
+| `increment_shipment_counters` | Module 1.5 (Phase 3) | `p_shipment_id UUID, p_items_delta INTEGER, p_value_delta NUMERIC` | `void` | Shipments Lock (item add) |
 
 ### Edge Functions (Supabase)
 
@@ -457,6 +460,17 @@ Pages modified for shared/ dependencies:
 | `Toast.info` | shared/js/toast.js | `msg: string, opts?: object` | `void` | Info notification |
 | `Toast.dismiss` | shared/js/toast.js | `id: string` | `void` | Dismiss specific toast |
 | `Toast.clear` | shared/js/toast.js | — | `void` | Dismiss all toasts |
+| `DB.select` | shared/js/supabase-client.js | `table, filters?, opts?` | `{ data, error, count }` | Any module (DB queries) |
+| `DB.insert` | shared/js/supabase-client.js | `table, data, opts?` | `{ data, error }` | Any module (DB inserts) |
+| `DB.update` | shared/js/supabase-client.js | `table, id, changes, opts?` | `{ data, error }` | Any module (DB updates) |
+| `DB.batchUpdate` | shared/js/supabase-client.js | `table, records, opts?` | `{ data, error }` | Any module (batch DB updates) |
+| `DB.softDelete` | shared/js/supabase-client.js | `table, id, opts?` | `{ data, error }` | Any module (soft delete) |
+| `DB.hardDelete` | shared/js/supabase-client.js | `table, id, opts?` | `{ data, error }` | Any module (permanent delete) |
+| `DB.rpc` | shared/js/supabase-client.js | `fn, params?, opts?` | `{ data, error }` | Any module (RPC calls) |
+| `ActivityLog.write` | shared/js/activity-logger.js | `config: object` | `void` | System event logging (fire-and-forget) |
+| `ActivityLog.warning` | shared/js/activity-logger.js | `config: object` | `void` | Warning event logging |
+| `ActivityLog.error` | shared/js/activity-logger.js | `config: object` | `void` | Error event logging |
+| `ActivityLog.critical` | shared/js/activity-logger.js | `config: object` | `void` | Critical event logging |
 | `escapeHtml` | shared.js | `str: string` | `string` | Every module (HTML rendering) |
 | `toast` | shared.js | `msg: string, type?: string` | `void` | Every module (user feedback) |
 | `formatILS` | shared.js | `amount: number` | `string` | Debt, PO, Receipts, Shipments |
@@ -486,7 +500,7 @@ Pages modified for shared/ dependencies:
 | Module | Status | Directory | HTML Pages | DB Tables (count) |
 |--------|--------|-----------|------------|-------------------|
 | Module 1 — Inventory Management | ✅ Complete | `modules/inventory/`, `modules/purchasing/`, `modules/goods-receipts/`, `modules/audit/`, `modules/brands/`, `modules/access-sync/`, `modules/admin/`, `modules/debt/`, `modules/debt/ai/`, `modules/permissions/`, `modules/shipments/`, `modules/stock-count/`, `modules/settings/` | `index.html`, `inventory.html`, `suppliers-debt.html`, `employees.html`, `shipments.html`, `settings.html` | 46 active + 4 stubs = 50 |
-| Module 1.5 — Shared Components | 🔨 In Progress (Phase 2 complete ✅) | `shared/css/`, `shared/js/`, `shared/tests/` | — | 0 (ui_config JSONB column on tenants only) |
+| Module 1.5 — Shared Components | 🔨 In Progress (Phase 3 complete ✅) | `shared/css/`, `shared/js/`, `shared/tests/` | — | 1 (activity_log) + ui_config column on tenants |
 
 ---
 

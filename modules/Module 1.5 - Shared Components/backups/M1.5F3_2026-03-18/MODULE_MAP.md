@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-03-18 (Phase 3 complete)
+> Last updated: 2026-03-17 (Phase 2 complete)
 
 ---
 
@@ -29,8 +29,6 @@
 | 3 | modal-wizard.js | shared/js/modal-wizard.js | 145 | Wizard extension for Modal. Attaches `Modal.wizard(config)→{el,close}`. Multi-step progress bar (wizard-step-active/done), back/next/finish buttons, step validate/onEnter/onLeave callbacks. Depends on modal-builder.js (must load after). |
 | 4 | toast.js | shared/js/toast.js | 147 | Toast notification system. Global `Toast` object: `success(msg,opts)`, `error(msg,opts)`, `warning(msg,opts)`, `info(msg,opts)`, `dismiss(id)`, `clear()`. Max 5 visible, duplicate prevention via id, auto-dismiss with CSS progress bar (--toast-duration), XSS-safe via _escapeHtml(). Zero dependencies. |
 | 5 | pin-modal.js | shared/js/pin-modal.js | 123 | PIN prompt modal — migration of js/pin-modal.js. Global `promptPin(title, callback)` — identical external API. Internally uses `Modal.show()` for overlay/backdrop/close. 5-digit split input with auto-advance, backspace, paste, auto-submit. Calls `verifyPinOnly()` from auth-service.js. PIN-specific styles injected once via `<style>` block. Depends on modal-builder.js. |
-| 6 | supabase-client.js | shared/js/supabase-client.js | 263 | Supabase wrapper. Global `DB` object: `select(table,filters?,opts?)`, `insert(table,data,opts?)`, `update(table,id,changes,opts?)`, `batchUpdate(table,records,opts?)`, `softDelete(table,id,opts?)`, `hardDelete(table,id,opts?)`, `rpc(fn,params?,opts?)`. CSS-only spinner (200ms debounce, counter for parallel calls). Error classification (RLS 42501, network, unique 23505, not-found). Auto tenant_id on insert/select. Toast optional dependency. Depends on sb + getTenantId(). |
-| 7 | activity-logger.js | shared/js/activity-logger.js | 90 | Activity log helper. Global `ActivityLog` object: `write(config)`, `warning(config)`, `error(config)`, `critical(config)`. Fire-and-forget (async, non-blocking). Auto-inject tenant_id from getTenantId(), user_id/branch_id from getCurrentEmployee(). Uses DB.insert if available, sb.from() fallback. Skips non-UUID branch_id. Zero CSS dependencies. |
 
 ---
 
@@ -41,8 +39,6 @@
 | 1 | ui-test.html | shared/tests/ui-test.html | 252 | Visual test page: all 14 component sections (colors, typography, buttons, inputs, selects, textareas, badges, cards, tables, slide panel, skeleton, accordion, forms). 3-palette theme switcher using loadTenantTheme(). RTL, Hebrew, self-contained. |
 | 2 | modal-test.html | shared/tests/modal-test.html | 251 | Modal system test page: 5 sections — sizes (sm/md/lg/xl/fullscreen), types (confirm/alert/danger/form/wizard), stack (3-layer), keyboard (escape/no-escape/no-backdrop), XSS test. Log area for event output. RTL, Hebrew, self-contained. |
 | 3 | toast-test.html | shared/tests/toast-test.html | 174 | Toast system test page: 6 sections — types (success/error/warning/info), duration (1s/5s/persistent/dismiss), stack (5 toasts + 6th overflow), duplicate prevention (loading→done replace), XSS test, no-close-button. Log area for event output. RTL, Hebrew, self-contained. |
-| 4 | db-test.html | shared/tests/db-test.html | 325 | DB wrapper test page: 9 sections — select (all/filter/order/single/count/rawFilters), insert (single/array), update, batchUpdate, softDelete/hardDelete, RPC, spinner (parallel/silent), error handling (missing field/silent), cleanup. Requires JWT session. |
-| 5 | activity-log-test.html | shared/tests/activity-log-test.html | 251 | Activity log test page: 8 sections — write (info), warning, error, critical, changeset format, fire-and-forget, validation (missing fields), cleanup. Uses waitAndFind polling. Requires JWT session. |
 
 ---
 
@@ -111,6 +107,3 @@ All variables defined in `shared/css/variables.css`:
 |-------|-------|--------|-------------|
 | 1 | tenants | ADD COLUMN `ui_config JSONB DEFAULT '{}'` | Per-tenant CSS variable overrides for theming |
 | 3 | activity_log | CREATE TABLE | System-level event log: level (info/warning/error/critical), action, entity_type, entity_id, details JSONB. RLS + 5 indexes. |
-| 3 | — | CREATE FUNCTION `increment_paid_amount(p_doc_id, p_delta)` | Atomic paid_amount increment + status update on supplier_documents |
-| 3 | — | CREATE FUNCTION `increment_prepaid_used(p_deal_id, p_delta)` | Atomic total_used/total_remaining update on prepaid_deals |
-| 3 | — | CREATE FUNCTION `increment_shipment_counters(p_shipment_id, p_items_delta, p_value_delta)` | Atomic items_count/total_value update on shipments |

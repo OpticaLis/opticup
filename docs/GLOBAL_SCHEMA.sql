@@ -1779,3 +1779,60 @@ $$;
 -- ═══════════════════════════════════════════════════════════════
 -- Added in Phase 1:
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS ui_config JSONB DEFAULT '{}';
+
+-- Added in Phase 3: activity_log table
+CREATE TABLE activity_log (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id),
+  branch_id UUID,
+  user_id UUID REFERENCES employees(id),
+  level TEXT NOT NULL DEFAULT 'info'
+    CHECK (level IN ('info', 'warning', 'error', 'critical')),
+  action TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id TEXT,
+  details JSONB DEFAULT '{}',
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON activity_log
+  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
+CREATE INDEX idx_activity_log_tenant ON activity_log(tenant_id);
+CREATE INDEX idx_activity_log_entity ON activity_log(tenant_id, entity_type, entity_id);
+CREATE INDEX idx_activity_log_action ON activity_log(tenant_id, action);
+CREATE INDEX idx_activity_log_created ON activity_log(tenant_id, created_at DESC);
+CREATE INDEX idx_activity_log_level ON activity_log(tenant_id, level) WHERE level IN ('warning', 'error', 'critical');
+
+-- Added in Phase 3: Atomic RPC functions
+CREATE OR REPLACE FUNCTION increment_paid_amount(p_doc_id UUID, p_delta NUMERIC)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  UPDATE supplier_documents
+    SET paid_amount = COALESCE(paid_amount, 0) + p_delta,
+        status = CASE WHEN COALESCE(paid_amount, 0) + p_delta >= total_amount THEN 'paid' ELSE 'partially_paid' END
+    WHERE id = p_doc_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION increment_prepaid_used(p_deal_id UUID, p_delta NUMERIC)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  UPDATE prepaid_deals
+    SET total_used = COALESCE(total_used, 0) + p_delta,
+        total_remaining = total_prepaid - (COALESCE(total_used, 0) + p_delta),
+        updated_at = now()
+    WHERE id = p_deal_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION increment_shipment_counters(p_shipment_id UUID, p_items_delta INTEGER, p_value_delta NUMERIC)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  UPDATE shipments
+    SET items_count = COALESCE(items_count, 0) + p_items_delta,
+        total_value = COALESCE(total_value, 0) + p_value_delta
+    WHERE id = p_shipment_id;
+END;
+$$;
