@@ -154,6 +154,15 @@ async function openCountSession(countId) {
 
 // ── Shared row renderer ──────────────────────────────────────
 function scRenderItemRow(it) {
+  if (it.status === 'unknown') {
+    const bc = escapeHtml(it.barcode || '');
+    return `<tr style="background:#fef3c7;cursor:default">
+      <td style="font-weight:600;font-size:.85rem">${bc || '—'}</td>
+      <td>${escapeHtml(it.brand || '—')}</td><td>${escapeHtml(it.model || '—')}</td>
+      <td style="text-align:center;font-weight:700">${it.actual_qty || '—'}</td>
+      <td style="text-align:center">—</td>
+      <td style="text-align:center;color:#d97706;font-weight:600">לא ידוע</td></tr>`;
+  }
   const diff = it.status === 'counted' ? (it.actual_qty - it.expected_qty) : null;
   const cls = it.status === 'pending' ? 'sc-row-pending'
     : diff === 0 ? 'sc-row-ok'
@@ -174,10 +183,12 @@ function scRenderItemRow(it) {
 }
 
 function scCalcStats(items) {
-  const counted = items.filter(i => i.status === 'counted').length;
-  const total = items.length;
-  const diffs = items.filter(i => i.status === 'counted' && i.actual_qty !== i.expected_qty).length;
-  return { counted, total, diffs, pct: total ? Math.round(counted / total * 100) : 0 };
+  const unknowns = items.filter(i => i.status === 'unknown').length;
+  const knownItems = items.filter(i => i.status !== 'unknown');
+  const counted = knownItems.filter(i => i.status === 'counted').length;
+  const total = knownItems.length;
+  const diffs = knownItems.filter(i => i.status === 'counted' && i.actual_qty !== i.expected_qty).length;
+  return { counted, total, diffs, unknowns, pct: total ? Math.round(counted / total * 100) : 0 };
 }
 
 function renderSessionScreen(countId, items) {
@@ -211,6 +222,8 @@ function renderSessionScreen(countId, items) {
           <strong id="sc-s-counted">${s.counted}</strong><span style="font-size:.78rem;color:var(--g500)">נספרו</span></div>
         <div class="sc-stat sc-filter-box${_scStatusFilter === 'diffs' ? ' sc-filter-active' : ''}" onclick="_scToggleStatusFilter('diffs')" title="הצג פערים בלבד">
           <strong id="sc-s-diffs" style="color:var(--error)">${s.diffs}</strong><span style="font-size:.78rem;color:var(--g500)">פערים</span></div>
+        <div class="sc-stat sc-filter-box${_scStatusFilter === 'unknown' ? ' sc-filter-active' : ''}" onclick="_scToggleStatusFilter('unknown')" title="הצג לא ידועים בלבד">
+          <strong id="sc-s-unknown" style="color:#d97706">${s.unknowns}</strong><span style="font-size:.78rem;color:var(--g500)">לא ידועים</span></div>
         <div class="sc-stat"><strong id="sc-s-pct">${s.pct}%</strong><span style="font-size:.78rem;color:var(--g500)">התקדמות</span></div>
       </div>
       <div style="overflow-x:auto;border:1px solid var(--g200);border-radius:8px">
@@ -232,6 +245,7 @@ function _scApplyFilters(items) {
   if (_scStatusFilter === 'pending') result = result.filter(i => i.status === 'pending');
   else if (_scStatusFilter === 'counted') result = result.filter(i => i.status === 'counted');
   else if (_scStatusFilter === 'diffs') result = result.filter(i => i.status === 'counted' && i.actual_qty !== i.expected_qty);
+  else if (_scStatusFilter === 'unknown') result = result.filter(i => i.status === 'unknown');
   return result;
 }
 
@@ -248,7 +262,7 @@ function _scToggleStatusFilter(filter) {
   });
   if (_scStatusFilter) {
     var boxes = document.querySelectorAll('.sc-filter-box');
-    var idx = { pending: 0, counted: 1, diffs: 2 }[_scStatusFilter];
+    var idx = { pending: 0, counted: 1, diffs: 2, unknown: 3 }[_scStatusFilter];
     if (boxes[idx]) boxes[idx].classList.add('sc-filter-active');
   }
   _scRefreshTable();
@@ -385,6 +399,39 @@ async function startCamera() {
           <button id="sc-cam-qty-close" style="min-height:48px;padding:10px 16px;font-size:.9rem;font-weight:600;border:2px solid var(--g300);border-radius:10px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:80px">✕ סגור</button>
         </div>
       </div>
+    </div>
+    <div id="sc-cam-notfound" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10003;
+      flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)">
+      <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+        <div style="font-size:2rem;margin-bottom:8px">⚠️</div>
+        <div style="font-size:1rem;font-weight:600;color:#d97706;margin-bottom:4px">ברקוד לא נמצא ברשימה</div>
+        <div id="sc-cam-nf-barcode" style="font-size:.9rem;color:var(--g500);margin-bottom:16px;direction:ltr"></div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button id="sc-cam-nf-add" style="min-height:48px;padding:10px 18px;font-size:.95rem;font-weight:600;border:none;border-radius:10px;background:#d97706;color:#fff;cursor:pointer;flex:1;min-width:140px">+ הוסף פריט לא ידוע</button>
+          <button id="sc-cam-nf-skip" style="min-height:48px;padding:10px 18px;font-size:.9rem;font-weight:600;border:2px solid var(--g300);border-radius:10px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:100px">המשך סריקה</button>
+        </div>
+      </div>
+    </div>
+    <div id="sc-cam-unknown" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10003;
+      flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);overflow-y:auto">
+      <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:380px;width:92%;text-align:right;box-shadow:0 8px 32px rgba(0,0,0,.3);margin:20px 0">
+        <div style="text-align:center;font-size:1rem;font-weight:700;color:var(--primary);margin-bottom:12px">הוספת פריט לא ידוע</div>
+        <div style="font-size:.82rem;color:var(--g500);margin-bottom:10px;text-align:center" id="sc-unk-barcode-label"></div>
+        <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:4px">מותג</label>
+        <input id="sc-unk-brand" type="text" style="width:100%;min-height:42px;font-size:16px;border:2px solid var(--g300);border-radius:8px;padding:8px;margin-bottom:10px">
+        <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:4px">דגם</label>
+        <input id="sc-unk-model" type="text" style="width:100%;min-height:42px;font-size:16px;border:2px solid var(--g300);border-radius:8px;padding:8px;margin-bottom:10px">
+        <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:4px">צבע</label>
+        <input id="sc-unk-color" type="text" style="width:100%;min-height:42px;font-size:16px;border:2px solid var(--g300);border-radius:8px;padding:8px;margin-bottom:10px">
+        <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:4px">כמות</label>
+        <input id="sc-unk-qty" type="number" min="1" value="1" inputmode="numeric" style="width:100%;min-height:42px;font-size:18px;text-align:center;border:2px solid var(--g300);border-radius:8px;padding:8px;margin-bottom:10px">
+        <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:4px">הערות</label>
+        <input id="sc-unk-notes" type="text" placeholder="לדוגמא: נמצא על מדף 3" style="width:100%;min-height:42px;font-size:16px;border:2px solid var(--g300);border-radius:8px;padding:8px;margin-bottom:14px">
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button id="sc-cam-unk-save" style="min-height:48px;padding:10px 20px;font-size:1rem;font-weight:600;border:none;border-radius:10px;background:var(--primary);color:#fff;cursor:pointer;flex:1;min-width:100px">שמור</button>
+          <button id="sc-cam-unk-cancel" style="min-height:48px;padding:10px 16px;font-size:.9rem;font-weight:600;border:2px solid var(--g300);border-radius:10px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:80px">ביטול</button>
+        </div>
+      </div>
     </div>`;
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
@@ -396,6 +443,10 @@ async function startCamera() {
   document.getElementById('sc-cam-qty-skip').addEventListener('click', function () { _scCamQtyDismiss(); });
   document.getElementById('sc-cam-qty-close').addEventListener('click', function () { stopCamera(); });
   document.getElementById('sc-cam-zoom').addEventListener('click', function () { _scToggleZoom(); });
+  document.getElementById('sc-cam-nf-add').addEventListener('click', function () { _scShowUnknownForm(); });
+  document.getElementById('sc-cam-nf-skip').addEventListener('click', function () { _scResumeScanning(); });
+  document.getElementById('sc-cam-unk-save').addEventListener('click', function () { _scSaveUnknownItem(); });
+  document.getElementById('sc-cam-unk-cancel').addEventListener('click', function () { _scResumeScanning(); });
 
   try {
     scCodeReader = new ZXing.BrowserMultiFormatReader();
@@ -479,15 +530,17 @@ async function _scHandleCameraScan(barcode) {
   try {
     var item = _scNormalizeBarcode(barcode);
     if (!item) {
-      _scSetStatus('לא נמצא: ' + barcode);
       _scDebugLog('NO MATCH: ' + barcode);
-      var errNow = Date.now();
-      if (errNow - _lastErrorTime >= 3000) {
-        toast('ברקוד לא קיים במלאי', 'w');
-        _lastErrorTime = errNow;
-      }
-      _scClearPauseTimer();
-      setTimeout(function () { _scanPaused = false; _scResetViewfinder(); _scSetStatus('סורק...'); }, 500);
+      _scSetStatus('לא נמצא: ' + barcode);
+      // Show not-found panel inside overlay
+      _scNotFoundBarcode = barcode;
+      var nfBc = document.getElementById('sc-cam-nf-barcode');
+      if (nfBc) nfBc.textContent = barcode;
+      var nfPanel = document.getElementById('sc-cam-notfound');
+      if (nfPanel) nfPanel.style.display = 'flex';
+      var hint = document.getElementById('sc-cam-hint');
+      if (hint) hint.style.display = 'none';
+      // scanning stays paused until user clicks a button
       return;
     }
     _scDebugLog('MATCH: ' + item.barcode + ' (' + item.status + ')');
@@ -529,10 +582,10 @@ function _scResumeScanning() {
   _scanPaused = false;
   _scClearPauseTimer();
   _lastScanCode = ''; _lastScanTime = 0;
-  var banner = document.getElementById('sc-cam-success');
-  if (banner) banner.style.display = 'none';
-  var qtyPanel = document.getElementById('sc-cam-qty');
-  if (qtyPanel) qtyPanel.style.display = 'none';
+  // Hide all overlay panels
+  ['sc-cam-success', 'sc-cam-qty', 'sc-cam-notfound', 'sc-cam-unknown'].forEach(function (id) {
+    var el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
   var hint = document.getElementById('sc-cam-hint');
   if (hint) hint.style.display = '';
   _scResetViewfinder();
@@ -560,6 +613,56 @@ function _scCamQtyDismiss() {
   _scCamQtyItem = null;
   var qtyPanel = document.getElementById('sc-cam-qty');
   if (qtyPanel) qtyPanel.style.display = 'none';
+  _scResumeScanning();
+}
+
+// ── Unknown barcode panels ────────────────────────────────────
+var _scNotFoundBarcode = '';
+
+function _scShowUnknownForm() {
+  // Hide not-found panel, show unknown item form
+  var nfPanel = document.getElementById('sc-cam-notfound');
+  if (nfPanel) nfPanel.style.display = 'none';
+  var label = document.getElementById('sc-unk-barcode-label');
+  if (label) label.textContent = 'ברקוד: ' + _scNotFoundBarcode;
+  // Clear form
+  var ids = ['sc-unk-brand', 'sc-unk-model', 'sc-unk-color', 'sc-unk-notes'];
+  ids.forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+  var qtyInp = document.getElementById('sc-unk-qty');
+  if (qtyInp) qtyInp.value = '1';
+  var unkPanel = document.getElementById('sc-cam-unknown');
+  if (unkPanel) unkPanel.style.display = 'flex';
+  setTimeout(function () { var b = document.getElementById('sc-unk-brand'); if (b) b.focus(); }, 100);
+}
+
+async function _scSaveUnknownItem() {
+  var brand = (document.getElementById('sc-unk-brand')?.value || '').trim();
+  var model = (document.getElementById('sc-unk-model')?.value || '').trim();
+  var color = (document.getElementById('sc-unk-color')?.value || '').trim();
+  var qty = parseInt(document.getElementById('sc-unk-qty')?.value) || 1;
+  var notes = (document.getElementById('sc-unk-notes')?.value || '').trim();
+  var worker = activeWorker || JSON.parse(sessionStorage.getItem('activeWorker') || '{}');
+  try {
+    var row = {
+      count_id: scCountId, inventory_id: null,
+      barcode: _scNotFoundBarcode, brand: brand, model: model, color: color,
+      expected_qty: 0, actual_qty: qty, status: 'unknown',
+      notes: notes, counted_at: new Date().toISOString(),
+      scanned_by: worker.name || '', tenant_id: getTenantId()
+    };
+    var { data, error } = await sb.from(T.STOCK_COUNT_ITEMS).insert(row).select().single();
+    if (error) throw error;
+    // Add to local session items
+    scSessionItems.push(data);
+    unknownBarcodes.push({ barcode: _scNotFoundBarcode, time: new Date().toISOString() });
+    refreshSessionUI();
+    _scSetStatus('פריט לא ידוע נשמר ✅');
+    toast('פריט לא ידוע נשמר — הנח בצד לבדיקת מנהל', 's');
+  } catch (err) {
+    toast('שגיאה בשמירה: ' + err.message, 'e');
+    _scSetStatus('שגיאה: ' + err.message);
+  }
+  _scNotFoundBarcode = '';
   _scResumeScanning();
 }
 
@@ -725,6 +828,7 @@ function refreshSessionUI() {
   if (el('sc-s-pending')) el('sc-s-pending').textContent = s.total - s.counted;
   if (el('sc-s-counted')) el('sc-s-counted').textContent = s.counted;
   if (el('sc-s-diffs')) el('sc-s-diffs').textContent = s.diffs;
+  if (el('sc-s-unknown')) el('sc-s-unknown').textContent = s.unknowns;
   if (el('sc-s-pct')) el('sc-s-pct').textContent = s.pct + '%';
   _scRefreshTable();
 }
