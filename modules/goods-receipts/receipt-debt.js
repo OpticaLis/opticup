@@ -109,15 +109,8 @@ async function createDocumentFromReceipt(receiptId, supplierId, receiptItems) {
       ['is_deleted', 'eq', false]
     ]);
     if (deals.length > 0) {
-      const activeDeal = deals[0];
-      const newUsed = (parseFloat(activeDeal.total_used) || 0) + totalAmount;
-      const newRemaining = parseFloat(activeDeal.total_prepaid) - newUsed;
-      await batchUpdate(T.PREPAID_DEALS, [{
-        id: activeDeal.id,
-        total_used: newUsed,
-        total_remaining: newRemaining,
-        updated_at: new Date().toISOString()
-      }]);
+      // Atomic RPC — Phase 3 fix
+      await sb.rpc('increment_prepaid_used', { p_deal_id: deals[0].id, p_delta: totalAmount });
     }
   } catch (e) {
     console.warn('Auto-deduct prepaid deal failed (non-blocking):', e);
