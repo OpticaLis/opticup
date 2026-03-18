@@ -14,9 +14,10 @@ async function showDiffReport(countId) {
     const allItems = await fetchAll(T.STOCK_COUNT_ITEMS, [['count_id', 'eq', countId]]);
     const diffItems = allItems.filter(i => i.status === 'counted' && i.actual_qty !== i.expected_qty);
     const pendingItems = allItems.filter(i => i.status === 'pending');
+    const unknownItems = allItems.filter(i => i.status === 'unknown');
     const displayItems = [...diffItems, ...pendingItems];
-    const nothingScanned = !allItems.some(i => i.status === 'counted');
-    renderReportScreen(countId, diffItems, allItems, displayItems, nothingScanned);
+    const nothingScanned = !allItems.some(i => i.status === 'counted' || i.status === 'unknown');
+    renderReportScreen(countId, diffItems, allItems, displayItems, nothingScanned, unknownItems);
     if (nothingScanned) toast('לא נסרק אף פריט — לא ניתן לאשר ספירה ריקה', 'w');
   } catch (err) {
     toast('שגיאה בהכנת דוח: ' + err.message, 'e');
@@ -24,7 +25,8 @@ async function showDiffReport(countId) {
 }
 
 // ── Render report screen ─────────────────────────────────────
-function renderReportScreen(countId, diffItems, allItems, displayItems, nothingScanned) {
+function renderReportScreen(countId, diffItems, allItems, displayItems, nothingScanned, unknownItems) {
+  unknownItems = unknownItems || [];
   const shortages = diffItems.filter(i => (i.actual_qty - i.expected_qty) < 0);
   const surpluses = diffItems.filter(i => (i.actual_qty - i.expected_qty) > 0);
   const uncounted = allItems.filter(i => i.status !== 'counted').length;
@@ -87,6 +89,27 @@ function renderReportScreen(countId, diffItems, allItems, displayItems, nothingS
         </table>
       </div>
 
+      ${unknownItems.length > 0 ? `
+      <h3 style="color:#d97706;margin:16px 0 8px;text-align:center">⚠️ ${unknownItems.length} פריטים לא ידועים — ממתינים לאישור מנהל</h3>
+      <div style="overflow-x:auto;border:2px solid #d97706;border-radius:8px;margin-bottom:16px">
+        <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+          <thead><tr style="background:#d97706;color:white;text-align:right">
+            <th style="padding:8px">ברקוד</th><th style="padding:8px">מותג</th><th style="padding:8px">דגם</th>
+            <th style="padding:8px">צבע</th><th style="padding:8px">גודל</th>
+            <th style="padding:8px;text-align:center">כמות</th><th style="padding:8px">הערה</th>
+          </tr></thead>
+          <tbody>${unknownItems.map(u => `<tr style="border-bottom:1px solid var(--g200)">
+            <td style="padding:8px;font-weight:600">${escapeHtml(u.barcode || '—')}</td>
+            <td style="padding:8px">${escapeHtml(u.brand || '—')}</td>
+            <td style="padding:8px">${escapeHtml(u.model || '—')}</td>
+            <td style="padding:8px">${escapeHtml(u.color || '—')}</td>
+            <td style="padding:8px">${escapeHtml(u.size || '—')}</td>
+            <td style="padding:8px;text-align:center;font-weight:700">${u.actual_qty || 0}</td>
+            <td style="padding:8px">${escapeHtml(u.notes || '')}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>` : ''}
+
       <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding-bottom:20px">
         ${nothingScanned ? '' : `<button class="btn btn-p" style="min-height:48px;font-size:15px"
                 onclick="showConfirmPinForCount('${escapeHtml(countId)}')">&#9989; אשר ועדכן מלאי</button>`}
@@ -102,6 +125,7 @@ function renderReportScreen(countId, diffItems, allItems, displayItems, nothingS
   // Store for later use in confirm/export
   tab._scReportDiffItems = diffItems;
   tab._scReportAllItems = allItems;
+  tab._scReportUnknownItems = unknownItems;
 }
 
 // ── Manager PIN for approval ─────────────────────────────────

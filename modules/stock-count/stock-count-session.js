@@ -423,6 +423,8 @@ async function startCamera() {
         <input id="sc-unk-model" type="text" style="width:100%;min-height:42px;font-size:16px;border:2px solid var(--g300);border-radius:8px;padding:8px;margin-bottom:10px">
         <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:4px">צבע</label>
         <input id="sc-unk-color" type="text" style="width:100%;min-height:42px;font-size:16px;border:2px solid var(--g300);border-radius:8px;padding:8px;margin-bottom:10px">
+        <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:4px">גודל</label>
+        <input id="sc-unk-size" type="text" style="width:100%;min-height:42px;font-size:16px;border:2px solid var(--g300);border-radius:8px;padding:8px;margin-bottom:10px">
         <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:4px">כמות</label>
         <input id="sc-unk-qty" type="number" min="1" value="1" inputmode="numeric" style="width:100%;min-height:42px;font-size:18px;text-align:center;border:2px solid var(--g300);border-radius:8px;padding:8px;margin-bottom:10px">
         <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:4px">הערות</label>
@@ -545,6 +547,7 @@ async function _scHandleCameraScan(barcode) {
     }
     _scDebugLog('MATCH: ' + item.barcode + ' (' + item.status + ')');
     if (item.status === 'counted') {
+      _scClearPauseTimer(); // user needs time to update qty — don't auto-resume
       _scCamQtyItem = item;
       var infoEl = document.getElementById('sc-cam-qty-info');
       if (infoEl) infoEl.textContent = (item.barcode || '') + ' — ' + (item.brand || '') + ' ' + (item.model || '');
@@ -621,12 +624,13 @@ var _scNotFoundBarcode = '';
 
 function _scShowUnknownForm() {
   // Hide not-found panel, show unknown item form
+  _scClearPauseTimer(); // user is typing — don't auto-resume
   var nfPanel = document.getElementById('sc-cam-notfound');
   if (nfPanel) nfPanel.style.display = 'none';
   var label = document.getElementById('sc-unk-barcode-label');
   if (label) label.textContent = 'ברקוד: ' + _scNotFoundBarcode;
   // Clear form
-  var ids = ['sc-unk-brand', 'sc-unk-model', 'sc-unk-color', 'sc-unk-notes'];
+  var ids = ['sc-unk-brand', 'sc-unk-model', 'sc-unk-color', 'sc-unk-size', 'sc-unk-notes'];
   ids.forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
   var qtyInp = document.getElementById('sc-unk-qty');
   if (qtyInp) qtyInp.value = '1';
@@ -639,13 +643,14 @@ async function _scSaveUnknownItem() {
   var brand = (document.getElementById('sc-unk-brand')?.value || '').trim();
   var model = (document.getElementById('sc-unk-model')?.value || '').trim();
   var color = (document.getElementById('sc-unk-color')?.value || '').trim();
+  var size = (document.getElementById('sc-unk-size')?.value || '').trim();
   var qty = parseInt(document.getElementById('sc-unk-qty')?.value) || 1;
   var notes = (document.getElementById('sc-unk-notes')?.value || '').trim();
   var worker = activeWorker || JSON.parse(sessionStorage.getItem('activeWorker') || '{}');
   try {
     var row = {
       count_id: scCountId, inventory_id: null,
-      barcode: _scNotFoundBarcode, brand: brand, model: model, color: color,
+      barcode: _scNotFoundBarcode, brand: brand, model: model, color: color, size: size,
       expected_qty: 0, actual_qty: qty, status: 'unknown',
       notes: notes, counted_at: new Date().toISOString(),
       scanned_by: worker.name || '', tenant_id: getTenantId()
