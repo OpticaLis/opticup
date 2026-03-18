@@ -37,6 +37,7 @@ const CONFIG = {
   watchDir:      WATCH_DIR,
   processedDir:  path.join(BASE_DIR, 'processed'),
   failedDir:     path.join(BASE_DIR, 'failed'),
+  tempDir:       path.join(BASE_DIR, 'temp'),
 };
 
 const EXPORT_DIR = process.env.OPTICUP_EXPORT_DIR || path.join(BASE_DIR, 'new');
@@ -85,6 +86,27 @@ function parseDateField(raw) {
   }
   const d = new Date(raw);
   return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+}
+
+// ── Copy file to temp dir before processing (Dropbox lock immunity) ──
+async function copyToTemp(filepath, filename, maxRetries = 10, delayMs = 2000) {
+  const tempPath = path.join(CONFIG.tempDir, filename);
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      fs.copyFileSync(filepath, tempPath);
+      // Verify the copy is complete and readable
+      const stat = fs.statSync(tempPath);
+      if (stat.size === 0) throw new Error('Copied file is empty');
+      return tempPath;
+    } catch (err) {
+      if (attempt === maxRetries) {
+        log(`  File copy failed after ${maxRetries} attempts: ${err.message}`);
+        throw err;
+      }
+      log(`  File locked by Dropbox (attempt ${attempt}/${maxRetries}), waiting ${delayMs / 1000}s...`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
 }
 
 // ── Parse CSV file (Access exports UTF-8 CSV with BOM) ──────
@@ -144,30 +166,19 @@ async function isDuplicateSyncLog(filename) {
 async function processFile(filepath, filename) {
   const ext = path.extname(filename).toLowerCase();
 
-  // Retry file reading up to 5 times (Dropbox lock workaround)
+  // Copy to temp dir first — immune to Dropbox file locks
+  const tempPath = await copyToTemp(filepath, filename);
+
   let dataRows;
-  let lastErr;
-  for (let attempt = 1; attempt <= 5; attempt++) {
-    try {
-      if (ext === '.csv') {
-        dataRows = parseCSVFile(filepath);
-      } else {
-        let wb;
-        try { wb = XLSX.readFile(filepath); } catch (e) { throw new Error(`Not a valid Excel file: ${e.message}`); }
-        if (!wb.SheetNames.includes('sales_template')) throw new Error('Sheet "sales_template" not found');
-        const ws = wb.Sheets['sales_template'];
-        dataRows = XLSX.utils.sheet_to_json(ws, { defval: '', range: 0 }).slice(2);
-      }
-      break; // success — exit retry loop
-    } catch (err) {
-      lastErr = err;
-      if (attempt < 5) {
-        log(`  File read failed (attempt ${attempt}/5), retrying in 2s...`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    }
+  if (ext === '.csv') {
+    dataRows = parseCSVFile(tempPath);
+  } else {
+    let wb;
+    try { wb = XLSX.readFile(tempPath); } catch (e) { throw new Error(`Not a valid Excel file: ${e.message}`); }
+    if (!wb.SheetNames.includes('sales_template')) throw new Error('Sheet "sales_template" not found');
+    const ws = wb.Sheets['sales_template'];
+    dataRows = XLSX.utils.sheet_to_json(ws, { defval: '', range: 0 }).slice(2);
   }
-  if (!dataRows) throw lastErr;
 
   dataRows = dataRows.filter(r => String(r.barcode || '').trim());
   if (!dataRows.length) throw new Error('No data rows found in file');
@@ -350,8 +361,9 @@ async function processFile(filepath, filename) {
   log(`${filename} | total: ${dataRows.length} | success: ${successCount} | failed: ${failedCount}`);
   if (errors.length) errors.forEach(e => log(`  ${e}`));
 
-  // 11. Move file
+  // 11. Move file + clean up temp
   moveFile(filepath, destDir, filename);
+  try { fs.unlinkSync(path.join(CONFIG.tempDir, filename)); } catch (_) {}
   log(`Moved to ${status === 'error' ? 'failed' : 'processed'}: ${filename}`);
 }
 
@@ -394,6 +406,7 @@ async function handleNewFile(filepath) {
     } catch (moveErr) {
       log(`Could not move to failed: ${moveErr.message}`);
     }
+    try { fs.unlinkSync(path.join(CONFIG.tempDir, filename)); } catch (_) {}
   } finally {
     // Keep filename locked for 30s cooldown to prevent delayed duplicate events
     setTimeout(() => processing.delete(filename), 30000);
@@ -421,7 +434,7 @@ if (!fs.existsSync(CONFIG.watchDir)) {
   process.exit(1);
 }
 
-for (const dir of [CONFIG.processedDir, CONFIG.failedDir]) {
+for (const dir of [CONFIG.processedDir, CONFIG.failedDir, CONFIG.tempDir]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
