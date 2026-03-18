@@ -182,7 +182,10 @@ function renderSessionScreen(countId, items) {
           <div class="sc-worker-badge">&#128100; ${escapeHtml(worker.name || '—')}</div>
           ${window._scActiveFilterDesc ? '<div style="font-size:.78rem;color:var(--g500);margin-top:2px">' + escapeHtml(window._scActiveFilterDesc) + '</div>' : ''}
         </div>
-        <button class="sc-btn-finish" onclick="finishSession('${escapeHtml(countId)}')">&#9989; סיום ספירה</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="sc-btn-finish" onclick="finishSession('${escapeHtml(countId)}')">&#9989; סיום ספירה</button>
+          <button class="btn btn-g" style="min-height:40px;font-size:14px;padding:6px 14px" onclick="pauseSession()">&#9208;&#65039; השהה</button>
+        </div>
       </div>
       <div class="sc-camera-section">
         <button class="sc-btn-camera" onclick="startCamera()" id="sc-cam-btn">&#128247; סרוק ברקוד</button>
@@ -350,6 +353,15 @@ function refreshSessionUI() {
   if (el('sc-s-diffs')) el('sc-s-diffs').textContent = s.diffs;
   if (el('sc-s-pct')) el('sc-s-pct').textContent = s.pct + '%';
   renderSessionTable(scSessionItems);
+}
+
+// ── Pause session — save progress and return to list ─────────
+async function pauseSession() {
+  stopCamera();
+  const yes = await confirmDialog('הספירה תישמר ותוכל להמשיך מאוחר יותר. להשהות?');
+  if (!yes) return;
+  toast('הספירה הושהתה — ניתן להמשיך מהרשימה', 's');
+  loadStockCountTab();
 }
 
 // ── Finish session → diff report ─────────────────────────────
