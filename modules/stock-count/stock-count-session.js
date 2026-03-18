@@ -10,6 +10,7 @@ let unknownBarcodes = [];
 let activeWorker = null;
 let scCodeReader = null;
 let _lastScanCode = '', _lastScanTime = 0;
+let _scStatusFilter = 'pending'; // 'pending' | 'counted' | 'diffs' | null (all)
 
 // ── Worker PIN entry ─────────────────────────────────────────
 function openWorkerPin(countId) {
@@ -153,6 +154,9 @@ function scRenderItemRow(it) {
     : Math.abs(diff) <= 2 ? 'sc-row-warn' : 'sc-row-diff';
   const st = it.status === 'counted' ? 'נספר' : 'ממתין';
   const bc = escapeHtml(it.barcode || '');
+  const undo = it.status === 'counted'
+    ? `<button class="btn btn-sm" onclick="event.stopPropagation();undoCountItem('${escapeHtml(it.id)}')" style="font-size:.72rem;padding:2px 6px;color:var(--g500)" title="ביטול ספירה">&#8617;&#65039;</button>`
+    : '';
   return `<tr class="${cls}" data-barcode="${bc}"
     style="cursor:pointer" onclick="scRowClick('${bc}')"
     onmouseenter="this.style.background='#e3edf9'" onmouseleave="this.style.background=''">
@@ -160,7 +164,7 @@ function scRenderItemRow(it) {
     <td>${escapeHtml(it.brand || '—')}</td><td>${escapeHtml(it.model || '—')}</td>
     <td style="text-align:center;font-weight:700">${it.status === 'counted' ? it.actual_qty : '—'}</td>
     <td style="text-align:center;font-weight:700">${diff !== null ? (diff > 0 ? '+' : '') + diff : '—'}</td>
-    <td style="text-align:center">${st}</td></tr>`;
+    <td style="text-align:center">${st} ${undo}</td></tr>`;
 }
 
 function scCalcStats(items) {
@@ -196,9 +200,13 @@ function renderSessionScreen(countId, items) {
         </div>
         <div id="sc-filter-count" style="font-size:.82rem;color:var(--g500);margin:4px 8px 0;min-height:18px"></div>
       </div>
-      <div class="sc-summary-bar">
-        <div class="sc-stat"><strong id="sc-s-counted">${s.counted}</strong><span style="font-size:.78rem;color:var(--g500)">נספרו מתוך ${s.total}</span></div>
-        <div class="sc-stat"><strong id="sc-s-diffs" style="color:var(--error)">${s.diffs}</strong><span style="font-size:.78rem;color:var(--g500)">פערים</span></div>
+      <div class="sc-summary-bar" style="cursor:pointer;user-select:none">
+        <div class="sc-stat sc-filter-box${_scStatusFilter === 'pending' ? ' sc-filter-active' : ''}" onclick="_scToggleStatusFilter('pending')" title="הצג לא נספרו בלבד">
+          <strong id="sc-s-pending">${s.total - s.counted}</strong><span style="font-size:.78rem;color:var(--g500)">לא נספרו</span></div>
+        <div class="sc-stat sc-filter-box${_scStatusFilter === 'counted' ? ' sc-filter-active' : ''}" onclick="_scToggleStatusFilter('counted')" title="הצג נספרו בלבד">
+          <strong id="sc-s-counted">${s.counted}</strong><span style="font-size:.78rem;color:var(--g500)">נספרו</span></div>
+        <div class="sc-stat sc-filter-box${_scStatusFilter === 'diffs' ? ' sc-filter-active' : ''}" onclick="_scToggleStatusFilter('diffs')" title="הצג פערים בלבד">
+          <strong id="sc-s-diffs" style="color:var(--error)">${s.diffs}</strong><span style="font-size:.78rem;color:var(--g500)">פערים</span></div>
         <div class="sc-stat"><strong id="sc-s-pct">${s.pct}%</strong><span style="font-size:.78rem;color:var(--g500)">התקדמות</span></div>
       </div>
       <div style="overflow-x:auto;border:1px solid var(--g200);border-radius:8px">
@@ -208,16 +216,49 @@ function renderSessionScreen(countId, items) {
             <th style="padding:8px;text-align:center">בפועל</th><th style="padding:8px;text-align:center">פער</th>
             <th style="padding:8px;text-align:center">סטטוס</th>
           </tr></thead>
-          <tbody id="sc-session-body">${items.map(scRenderItemRow).join('')}</tbody>
+          <tbody id="sc-session-body">${_scApplyFilters(items).map(scRenderItemRow).join('')}</tbody>
         </table>
       </div>
     </div>`;
   $('sc-smart-search')?.addEventListener('keydown', e => { if (e.key === 'Enter') manualBarcodeSearch(); });
 }
 
+function _scApplyFilters(items) {
+  var result = items;
+  if (_scStatusFilter === 'pending') result = result.filter(i => i.status === 'pending');
+  else if (_scStatusFilter === 'counted') result = result.filter(i => i.status === 'counted');
+  else if (_scStatusFilter === 'diffs') result = result.filter(i => i.status === 'counted' && i.actual_qty !== i.expected_qty);
+  return result;
+}
+
 function renderSessionTable(items) {
   const tbody = document.getElementById('sc-session-body');
-  if (tbody) tbody.innerHTML = items.map(scRenderItemRow).join('');
+  if (tbody) tbody.innerHTML = _scApplyFilters(items).map(scRenderItemRow).join('');
+}
+
+function _scToggleStatusFilter(filter) {
+  _scStatusFilter = (_scStatusFilter === filter) ? null : filter;
+  // Update active box styles
+  document.querySelectorAll('.sc-filter-box').forEach(function (el) {
+    el.classList.remove('sc-filter-active');
+  });
+  if (_scStatusFilter) {
+    var boxes = document.querySelectorAll('.sc-filter-box');
+    var idx = { pending: 0, counted: 1, diffs: 2 }[_scStatusFilter];
+    if (boxes[idx]) boxes[idx].classList.add('sc-filter-active');
+  }
+  _scRefreshTable();
+}
+
+function _scRefreshTable() {
+  var q = ($('sc-smart-search')?.value || '').trim();
+  var countEl = document.getElementById('sc-filter-count');
+  if (!q) {
+    renderSessionTable(scSessionItems);
+    if (countEl) countEl.textContent = '';
+  } else {
+    filterSessionItems(q);
+  }
 }
 
 let _scFilterTimer = null;
@@ -240,7 +281,8 @@ function filterSessionItems(query) {
     (i.brand || '').toLowerCase().includes(lower) ||
     (i.model || '').toLowerCase().includes(lower) ||
     (i.color || '').toLowerCase().includes(lower));
-  renderSessionTable(filtered);
+  const tbody = document.getElementById('sc-session-body');
+  if (tbody) tbody.innerHTML = _scApplyFilters(filtered).map(scRenderItemRow).join('');
   if (countEl) countEl.textContent = '\u05DE\u05E6\u05D9\u05D2 ' + filtered.length + ' \u05DE\u05EA\u05D5\u05DA ' + scSessionItems.length + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD';
 }
 
@@ -268,16 +310,21 @@ function manualBarcodeSearch() {
 
 function scRowClick(barcode) {
   if (!barcode) return;
-  handleScan(scCountId, barcode);
-  _scClearSearch();
+  const item = scSessionItems.find(i => i.barcode === barcode);
+  if (!item) { handleScan(scCountId, barcode); _scClearSearch(); return; }
+  if (item.status === 'counted') { _showQtyModal(item); _scClearSearch(); return; }
+  Modal.confirm({
+    title: 'ספור פריט?',
+    message: barcode + ' — ' + (item.brand || '') + ' — ' + (item.model || ''),
+    confirmText: 'אישור', cancelText: 'ביטול',
+    onConfirm: function () { handleScan(scCountId, barcode); _scClearSearch(); }
+  });
 }
 
 function _scClearSearch() {
   const inp = $('sc-smart-search');
   if (inp) inp.value = '';
-  renderSessionTable(scSessionItems);
-  const countEl = document.getElementById('sc-filter-count');
-  if (countEl) countEl.textContent = '';
+  _scRefreshTable();
 }
 
 // ── Camera / ZXing ───────────────────────────────────────────
@@ -411,10 +458,28 @@ async function updateCountItem(itemId, actualQty) {
 function refreshSessionUI() {
   const s = scCalcStats(scSessionItems);
   const el = id => document.getElementById(id);
+  if (el('sc-s-pending')) el('sc-s-pending').textContent = s.total - s.counted;
   if (el('sc-s-counted')) el('sc-s-counted').textContent = s.counted;
   if (el('sc-s-diffs')) el('sc-s-diffs').textContent = s.diffs;
   if (el('sc-s-pct')) el('sc-s-pct').textContent = s.pct + '%';
-  renderSessionTable(scSessionItems);
+  _scRefreshTable();
+}
+
+// ── Undo counted item ────────────────────────────────────────
+async function undoCountItem(itemId) {
+  const item = scSessionItems.find(i => i.id === itemId);
+  if (!item) return;
+  const yes = await confirmDialog('להחזיר פריט ' + (item.barcode || '') + ' למצב לא נספר?');
+  if (!yes) return;
+  try {
+    const { error } = await sb.from(T.STOCK_COUNT_ITEMS).update({
+      actual_qty: null, status: 'pending', counted_at: null, scanned_by: null
+    }).eq('id', itemId);
+    if (error) throw error;
+    item.actual_qty = null; item.status = 'pending'; item.counted_at = null; item.scanned_by = null;
+    refreshSessionUI();
+    toast('הפריט הוחזר למצב ממתין', 's');
+  } catch (err) { toast('שגיאה: ' + err.message, 'e'); }
 }
 
 // ── Pause session — save progress and return to list ─────────
