@@ -145,10 +145,8 @@ async function restoreItem(id) {
   }
 }
 
-let permDelTarget = null;
-
 async function permanentDelete(id) {
-  const row = document.querySelector(`#recycle-modal tr[data-id="${id}"]`);
+  const row = document.querySelector('#recycle-modal tr[data-id="' + id + '"]');
   const barcode = row?.dataset.barcode || '';
   const brand = row?.dataset.brand || '';
   const model = row?.dataset.model || '';
@@ -156,60 +154,21 @@ async function permanentDelete(id) {
   const ok = await confirmDialog('מחיקה לצמיתות', 'האם למחוק לצמיתות? פעולה זו אינה הפיכה');
   if (!ok) return;
 
-  permDelTarget = { id, row, barcode, brand, model };
-
-  // Create PIN modal dynamically if needed
-  if (!$('permdel-pin-modal')) {
-    const div = document.createElement('div');
-    div.id = 'permdel-pin-modal';
-    div.className = 'modal-overlay';
-    div.style.display = 'none';
-    div.innerHTML = `
-      <div class="modal" style="max-width:360px">
-        <h3 style="margin:0 0 12px 0">🔒 אימות עובד</h3>
-        <p style="margin:0 0 12px 0;font-size:.9rem;color:var(--g500)">מחיקה לצמיתות דורשת סיסמת עובד</p>
-        <input type="password" id="permdel-pin" placeholder="סיסמת עובד" style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;margin-bottom:8px"
-               onkeydown="if(event.key==='Enter') confirmPermanentDelete()">
-        <p id="permdel-pin-error" style="color:var(--error);font-size:.85rem;margin:0 0 8px 0"></p>
-        <div style="display:flex;gap:8px;justify-content:flex-end">
-          <button class="btn btn-g btn-sm" onclick="closeModal('permdel-pin-modal')">ביטול</button>
-          <button class="btn btn-d btn-sm" onclick="confirmPermanentDelete()">❌ מחק לצמיתות</button>
-        </div>
-      </div>`;
-    document.body.appendChild(div);
-    div.addEventListener('click', function(e) { if (e.target === this) closeModal('permdel-pin-modal'); });
-  }
-  $('permdel-pin').value = '';
-  $('permdel-pin-error').textContent = '';
-  $('permdel-pin-modal').style.display = 'flex';
-  $('permdel-pin').focus();
-}
-
-async function confirmPermanentDelete() {
-  if (!permDelTarget) return;
-  const pin = $('permdel-pin').value.trim();
-  if (!pin) { $('permdel-pin-error').textContent = 'יש להזין סיסמת עובד'; return; }
-
-  const emp = await verifyPinOnly(pin);
-  if (!emp) { $('permdel-pin-error').textContent = '❌ סיסמת עובד שגויה'; $('permdel-pin').value = ''; $('permdel-pin').focus(); return; }
-
-  const { id, row, barcode, brand, model } = permDelTarget;
-
-  try {
-    const { error } = await sb.from('inventory').delete().eq('id', id);
-    if (error) {
-      toast('שגיאה: ' + error.message, 'e');
-      return;
+  PinModal.prompt('🔒 מחיקה לצמיתות — אימות עובד', async function(pin, emp) {
+    try {
+      const { error } = await sb.from('inventory').delete().eq('id', id);
+      if (error) {
+        toast('שגיאה: ' + error.message, 'e');
+        return;
+      }
+      await writeLog('permanent_delete', null, { barcode, brand, model, reason: 'מחיקה לצמיתות', source_ref: 'נמחק ע"י: ' + emp.name });
+      row?.remove();
+      if (!document.querySelectorAll('#recycle-modal tbody tr').length) {
+        $('recycle-content').innerHTML = '<p style="text-align:center;padding:24px;color:var(--g500)">סל המחזור ריק ♻️</p>';
+      }
+      toast('הפריט נמחק לצמיתות', 's');
+    } catch (e) {
+      toast('שגיאה: ' + (e.message||''), 'e');
     }
-    await writeLog('permanent_delete', null, { barcode, brand, model, reason: 'מחיקה לצמיתות', source_ref: 'נמחק ע"י: ' + emp.name });
-    row?.remove();
-    if (!document.querySelectorAll('#recycle-modal tbody tr').length) {
-      $('recycle-content').innerHTML = '<p style="text-align:center;padding:24px;color:var(--g500)">סל המחזור ריק ♻️</p>';
-    }
-    closeModal('permdel-pin-modal');
-    toast('הפריט נמחק לצמיתות', 's');
-  } catch (e) {
-    toast('שגיאה: ' + (e.message||''), 'e');
-  }
-  permDelTarget = null;
+  });
 }

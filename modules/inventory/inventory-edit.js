@@ -98,8 +98,6 @@ async function applyBulkUpdate() {
   hideLoading();
 }
 
-let bulkDelIds = null;
-
 async function bulkDelete() {
   if (!isAdmin) { toast('נדרשת הרשאת מנהל', 'e'); return; }
   const ids = Array.from(invSelected);
@@ -107,74 +105,37 @@ async function bulkDelete() {
   const ok = await confirmDialog('מחיקה גורפת', `להעביר ${ids.length} פריטים לסל המחזור?`);
   if (!ok) return;
 
-  bulkDelIds = ids;
-  if (!$('bulkdel-pin-modal')) {
-    const div = document.createElement('div');
-    div.id = 'bulkdel-pin-modal';
-    div.className = 'modal-overlay';
-    div.style.display = 'none';
-    div.innerHTML = `
-      <div class="modal" style="max-width:360px">
-        <h3 style="margin:0 0 12px 0">🔒 אימות עובד</h3>
-        <p style="margin:0 0 12px 0;font-size:.9rem;color:var(--g500)">מחיקה גורפת דורשת סיסמת עובד</p>
-        <input type="password" id="bulkdel-pin" placeholder="סיסמת עובד" style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;margin-bottom:8px"
-               onkeydown="if(event.key==='Enter') confirmBulkDelete()">
-        <p id="bulkdel-pin-error" style="color:var(--error);font-size:.85rem;margin:0 0 8px 0"></p>
-        <div style="display:flex;gap:8px;justify-content:flex-end">
-          <button class="btn btn-g btn-sm" onclick="closeModal('bulkdel-pin-modal')">ביטול</button>
-          <button class="btn btn-d btn-sm" onclick="confirmBulkDelete()">🗑️ מחק</button>
-        </div>
-      </div>`;
-    document.body.appendChild(div);
-    div.addEventListener('click', function(e) { if (e.target === this) closeModal('bulkdel-pin-modal'); });
-  }
-  $('bulkdel-pin').value = '';
-  $('bulkdel-pin-error').textContent = '';
-  $('bulkdel-pin-modal').style.display = 'flex';
-  $('bulkdel-pin').focus();
-}
+  PinModal.prompt('🔒 מחיקה גורפת — אימות עובד', async function(pin, emp) {
+    showLoading('מעביר ' + ids.length + ' פריטים לסל המחזור...');
+    try {
+      for (const id of ids) {
+        const rec = invData.find(r => r.id === id);
 
-async function confirmBulkDelete() {
-  if (!bulkDelIds || !bulkDelIds.length) return;
-  const pin = $('bulkdel-pin').value.trim();
-  if (!pin) { $('bulkdel-pin-error').textContent = 'יש להזין סיסמת עובד'; return; }
+        const { error } = await sb.from('inventory').update({
+          is_deleted: true,
+          deleted_at: new Date().toISOString(),
+          deleted_by: emp.name,
+          deleted_reason: 'מחיקה גורפת'
+        }).eq('id', id);
+        if (error) throw new Error(error.message);
 
-  const emp = await verifyPinOnly(pin);
-  if (!emp) { $('bulkdel-pin-error').textContent = '❌ סיסמת עובד שגויה'; $('bulkdel-pin').value = ''; $('bulkdel-pin').focus(); return; }
+        writeLog('soft_delete', id, {
+          barcode: rec?.barcode || '',
+          brand: rec?.brand_name || '',
+          model: rec?.model || '',
+          reason: 'מחיקה גורפת',
+          source_ref: 'נמחק ע"י: ' + emp.name
+        });
+      }
 
-  const ids = bulkDelIds;
-  closeModal('bulkdel-pin-modal');
-  showLoading(`מעביר ${ids.length} פריטים לסל המחזור...`);
-
-  try {
-    for (const id of ids) {
-      const rec = invData.find(r => r.id === id);
-
-      const { error } = await sb.from('inventory').update({
-        is_deleted: true,
-        deleted_at: new Date().toISOString(),
-        deleted_by: emp.name,
-        deleted_reason: 'מחיקה גורפת'
-      }).eq('id', id);
-      if (error) throw new Error(error.message);
-
-      writeLog('soft_delete', id, {
-        barcode: rec?.barcode || '',
-        brand: rec?.brand_name || '',
-        model: rec?.model || '',
-        reason: 'מחיקה גורפת',
-        source_ref: 'נמחק ע"י: ' + emp.name
-      });
+      clearSelection();
+      await loadInventoryPage();
+      toast(ids.length + ' פריטים הועברו לסל המחזור 🗑️', 's');
+    } catch (e) {
+      setAlert('inv-alerts', 'שגיאה: ' + (e.message || ''), 'e');
     }
-
-    clearSelection();
-    await loadInventoryPage();
-    toast(`${ids.length} פריטים הועברו לסל המחזור 🗑️`, 's');
-  } catch (e) {
-    setAlert('inv-alerts', 'שגיאה: ' + (e.message || ''), 'e');
-  }
-  bulkDelIds = null;
-  hideLoading();
+    hideLoading();
+  });
 }
 
 // ---- Single cell edit ----

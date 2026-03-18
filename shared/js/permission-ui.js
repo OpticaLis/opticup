@@ -36,13 +36,30 @@
     }
   }
 
-  // Scan a container (or document) for [data-permission] elements
+  // Process a single element using data-tab-permission (same logic, different attr)
+  function _processTabEl(el) {
+    const perm = el.getAttribute('data-tab-permission');
+    if (_checkPermStr(perm)) return; // has permission — leave untouched
+
+    const mode = el.getAttribute('data-permission-mode');
+    if (mode === 'disable') {
+      el.setAttribute('disabled', 'disabled');
+      el.style.opacity = '0.5';
+      el.style.pointerEvents = 'none';
+      el.title = 'אין הרשאה';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  // Scan a container (or document) for [data-permission] and [data-tab-permission] elements
   function _scan(root) {
     if (typeof hasPermission !== 'function') {
       console.warn('PermissionUI: hasPermission() not available — hiding all guarded elements');
     }
-    const els = (root || document).querySelectorAll('[data-permission]');
-    els.forEach(_processEl);
+    var r = root || document;
+    r.querySelectorAll('[data-permission]').forEach(_processEl);
+    r.querySelectorAll('[data-tab-permission]').forEach(_processTabEl);
   }
 
   window.PermissionUI = {
