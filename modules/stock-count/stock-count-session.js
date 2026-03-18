@@ -12,6 +12,10 @@ let scCodeReader = null;
 let _lastScanCode = '', _lastScanTime = 0;
 let _lastErrorTime = 0; // global error cooldown — suppress toast spam
 let _scanPaused = false; // pause ZXing callback while showing result
+let _scanPauseTimer = null; // safety timeout to auto-reset frozen scan
+let _scCamStream = null; // camera MediaStream for zoom control
+let _scZoomLevel = 1; // current zoom (1 or 2)
+const SC_DEBUG = false; // set true for verbose debug panel
 let _scStatusFilter = 'pending'; // 'pending' | 'counted' | 'diffs' | null (all)
 
 // ── Worker PIN entry ─────────────────────────────────────────
@@ -330,13 +334,18 @@ function _scClearSearch() {
 // ── Camera / ZXing — Fullscreen overlay ──────────────────────
 async function startCamera() {
   _scanPaused = false;
+  _scZoomLevel = 1;
+  _scCamStream = null;
+  if (_scanPauseTimer) { clearTimeout(_scanPauseTimer); _scanPauseTimer = null; }
   var overlay = document.createElement('div');
   overlay.id = 'sc-cam-overlay';
   overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:-webkit-fill-available;z-index:9999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden';
   overlay.innerHTML = `
     <video id="sc-video-fs" playsinline autoplay muted
       style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;right:0;bottom:0"></video>
-    <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:flex-end;padding:12px;z-index:10002">
+    <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:12px;z-index:10002">
+      <button id="sc-cam-zoom" style="display:none;width:52px;height:52px;border-radius:50%;border:none;background:rgba(0,0,0,.55);
+        color:#fff;font-size:18px;font-weight:700;cursor:pointer;backdrop-filter:blur(4px)">1x</button>
       <button id="sc-cam-close" style="width:52px;height:52px;border-radius:50%;border:none;background:rgba(0,0,0,.55);
         color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;
         backdrop-filter:blur(4px)">✕</button>
@@ -348,7 +357,8 @@ async function startCamera() {
       background:linear-gradient(transparent,rgba(0,0,0,.7))">
       <span style="color:rgba(255,255,255,.85);font-size:1rem;font-weight:500">כוון את המצלמה לברקוד</span>
     </div>
-    <div id="sc-scan-debug" style="position:absolute;bottom:60px;left:10px;right:10px;background:rgba(0,0,0,0.8);color:#0f0;font-family:monospace;font-size:13px;padding:10px;border-radius:8px;max-height:150px;overflow-y:auto;z-index:10004;direction:ltr;text-align:left">סורק...</div>
+    <div id="sc-cam-status" style="position:absolute;bottom:60px;left:10px;right:10px;background:rgba(0,0,0,0.6);color:#fff;font-size:14px;padding:8px 12px;border-radius:8px;text-align:center;z-index:10004">סורק...</div>
+    ${SC_DEBUG ? '<div id="sc-scan-debug" style="position:absolute;bottom:100px;left:10px;right:10px;background:rgba(0,0,0,0.8);color:#0f0;font-family:monospace;font-size:13px;padding:10px;border-radius:8px;max-height:150px;overflow-y:auto;z-index:10004;direction:ltr;text-align:left">DEBUG</div>' : ''}
     <div id="sc-cam-success" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10003;
       flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)">
       <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">
@@ -385,113 +395,139 @@ async function startCamera() {
   document.getElementById('sc-cam-qty-save').addEventListener('click', function () { _scCamQtySave(); });
   document.getElementById('sc-cam-qty-skip').addEventListener('click', function () { _scCamQtyDismiss(); });
   document.getElementById('sc-cam-qty-close').addEventListener('click', function () { stopCamera(); });
+  document.getElementById('sc-cam-zoom').addEventListener('click', function () { _scToggleZoom(); });
 
-  var debugEl = document.getElementById('sc-scan-debug');
   try {
     scCodeReader = new ZXing.BrowserMultiFormatReader();
-    if (debugEl) debugEl.innerHTML = 'ZXing initialized...<br>' + debugEl.innerHTML;
+    _scDebugLog('ZXing initialized');
     var constraints = { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } };
     var stream = await navigator.mediaDevices.getUserMedia(constraints);
-    if (debugEl) debugEl.innerHTML = 'Camera stream acquired<br>' + debugEl.innerHTML;
+    _scCamStream = stream;
+    _scDebugLog('Camera stream acquired');
+    // Check zoom support and show button if available
+    _scInitZoom(stream);
     var videoEl = document.getElementById('sc-video-fs');
     videoEl.srcObject = stream;
     await scCodeReader.decodeFromVideoDevice(null, 'sc-video-fs', function (result) {
       try {
         if (!result) return;
         var raw = result.getText();
-        var dbg = document.getElementById('sc-scan-debug');
-        // Filter garbage reads — strip control chars, then check: valid = 5+ digits only
-        var cleaned = raw.replace(/[^\x20-\x7E]/g, '').trim(); // remove non-printable chars
-        var isValid = /^\d{5,}$/.test(cleaned);
-        if (!isValid) {
-          if (dbg) {
-            var now0 = new Date().toLocaleTimeString('he-IL');
-            var safeRaw = raw.replace(/[^\x20-\x7E]/g, '?'); // show non-printable as ?
-            dbg.innerHTML = '<span style="color:#888">' + now0 + ' | IGNORED ("' + safeRaw + '" len:' + raw.length + ')</span><br>' + dbg.innerHTML;
-            var ls0 = dbg.innerHTML.split('<br>'); if (ls0.length > 10) dbg.innerHTML = ls0.slice(0, 10).join('<br>');
-          }
+        var cleaned = raw.replace(/[^\x20-\x7E]/g, '').trim();
+        if (!/^\d{5,}$/.test(cleaned)) {
+          _scDebugLog('IGNORED: "' + raw.replace(/[^\x20-\x7E]/g, '?') + '" len:' + raw.length);
           return;
         }
-        raw = cleaned; // use cleaned version from here on
-        // TEMP DEBUG: log valid detection to visible panel
-        if (dbg) {
-          var now = new Date().toLocaleTimeString('he-IL');
-          var fmt = result.getBarcodeFormat ? result.getBarcodeFormat() : 'unknown';
-          var line = now + ' | raw: "' + raw + '" | fmt: ' + fmt + ' | len: ' + raw.length + (_scanPaused ? ' [PAUSED]' : '');
-          dbg.innerHTML = line + '<br>' + dbg.innerHTML;
-          var lines = dbg.innerHTML.split('<br>');
-          if (lines.length > 10) dbg.innerHTML = lines.slice(0, 10).join('<br>');
-        }
-        // ISSUE 2: Check pause flag — must be AFTER logging but BEFORE any processing
+        raw = cleaned;
+        _scDebugLog('Read: ' + raw + (_scanPaused ? ' [PAUSED]' : ''));
         if (_scanPaused) return;
         var vf = document.getElementById('sc-viewfinder');
         if (vf) { vf.style.borderColor = '#22c55e'; vf.style.boxShadow = '0 0 20px rgba(34,197,94,.6), 0 0 0 4000px rgba(0,0,0,.35)'; }
-        _scanPaused = true; // freeze scanning SYNCHRONOUSLY before async handler
+        _scanPaused = true;
+        _scStartPauseTimer(); // safety: auto-resume after 10s if stuck
         _scHandleCameraScan(raw);
       } catch (cbErr) {
-        var dbg2 = document.getElementById('sc-scan-debug');
-        if (dbg2) dbg2.innerHTML = '<span style="color:red">CALLBACK ERR: ' + cbErr.message + '</span><br>' + dbg2.innerHTML;
-        // Do NOT reset _scanPaused on error — keep frozen to prevent cascade
+        _scDebugLog('CALLBACK ERR: ' + cbErr.message);
+        _scanPaused = false;
+        if (_scanPauseTimer) { clearTimeout(_scanPauseTimer); _scanPauseTimer = null; }
       }
     });
-    if (debugEl) debugEl.innerHTML = 'Decode started — waiting for barcodes...<br>' + debugEl.innerHTML;
+    _scDebugLog('Decode started');
+    _scSetStatus('סורק...');
   } catch (err) {
-    // Camera/ZXing failed — show error IN the debug panel, keep overlay open
     console.warn('Camera error:', err);
-    var dbgErr = document.getElementById('sc-scan-debug');
-    if (dbgErr) dbgErr.innerHTML = '<span style="color:red">CAM ERROR: ' + err.message + '</span><br>' + dbgErr.innerHTML;
+    _scDebugLog('CAM ERROR: ' + err.message);
+    _scSetStatus('שגיאת מצלמה: ' + err.message);
     toast('שגיאת מצלמה: ' + err.message, 'w');
-    // Do NOT call stopCamera() — keep overlay open so user sees the error
   }
 }
 
-// Handle camera scan result — show success banner or qty modal, keep overlay open
-async function _scHandleCameraScan(barcode) {
-  var item = _scNormalizeBarcode(barcode);
-  // TEMP DEBUG: show normalization result
-  var debugEl = document.getElementById('sc-scan-debug');
-  if (debugEl) {
-    var matchLine = item ? '  ↳ MATCH → ' + item.barcode + ' (status: ' + item.status + ')' : '  ↳ NO MATCH (tried: ' + barcode + ')';
-    debugEl.innerHTML = matchLine + '<br>' + debugEl.innerHTML;
-  }
-  if (!item) {
-    // Not found — show error (with cooldown), resume after brief delay to avoid rapid re-trigger
-    var errNow = Date.now();
-    if (errNow - _lastErrorTime >= 3000) {
-      toast('ברקוד לא קיים במלאי', 'w');
-      _lastErrorTime = errNow;
+// ── Minimal status line + optional debug ──────────────────────
+function _scSetStatus(text) {
+  var el = document.getElementById('sc-cam-status');
+  if (el) el.textContent = text;
+}
+
+function _scDebugLog(msg) {
+  if (!SC_DEBUG) return;
+  var dbg = document.getElementById('sc-scan-debug');
+  if (!dbg) return;
+  var now = new Date().toLocaleTimeString('he-IL');
+  dbg.innerHTML = now + ' ' + msg + '<br>' + dbg.innerHTML;
+  var lines = dbg.innerHTML.split('<br>');
+  if (lines.length > 10) dbg.innerHTML = lines.slice(0, 10).join('<br>');
+}
+
+// ── Safety timeout: auto-resume if _scanPaused stuck ──────────
+function _scStartPauseTimer() {
+  if (_scanPauseTimer) clearTimeout(_scanPauseTimer);
+  _scanPauseTimer = setTimeout(function () {
+    if (_scanPaused && document.getElementById('sc-cam-overlay')) {
+      console.warn('SCAN SAFETY: auto-resuming after 10s freeze');
+      _scResumeScanning();
+      _scSetStatus('סריקה חודשה אוטומטית');
     }
-    setTimeout(function () { _scanPaused = false; _scResetViewfinder(); }, 500);
-    return;
+    _scanPauseTimer = null;
+  }, 10000);
+}
+
+function _scClearPauseTimer() {
+  if (_scanPauseTimer) { clearTimeout(_scanPauseTimer); _scanPauseTimer = null; }
+}
+
+// ── Camera scan handler (with try/catch safety) ───────────────
+async function _scHandleCameraScan(barcode) {
+  try {
+    var item = _scNormalizeBarcode(barcode);
+    if (!item) {
+      _scSetStatus('לא נמצא: ' + barcode);
+      _scDebugLog('NO MATCH: ' + barcode);
+      var errNow = Date.now();
+      if (errNow - _lastErrorTime >= 3000) {
+        toast('ברקוד לא קיים במלאי', 'w');
+        _lastErrorTime = errNow;
+      }
+      _scClearPauseTimer();
+      setTimeout(function () { _scanPaused = false; _scResetViewfinder(); _scSetStatus('סורק...'); }, 500);
+      return;
+    }
+    _scDebugLog('MATCH: ' + item.barcode + ' (' + item.status + ')');
+    if (item.status === 'counted') {
+      _scCamQtyItem = item;
+      var infoEl = document.getElementById('sc-cam-qty-info');
+      if (infoEl) infoEl.textContent = (item.barcode || '') + ' — ' + (item.brand || '') + ' ' + (item.model || '');
+      var curEl = document.getElementById('sc-cam-qty-cur');
+      if (curEl) curEl.textContent = 'כבר נספר! כמות נוכחית: ' + (item.actual_qty || 0);
+      var inp = document.getElementById('sc-cam-qty-input');
+      if (inp) inp.value = item.actual_qty || 0;
+      var qtyPanel = document.getElementById('sc-cam-qty');
+      if (qtyPanel) qtyPanel.style.display = 'flex';
+      var hint = document.getElementById('sc-cam-hint');
+      if (hint) hint.style.display = 'none';
+      _scSetStatus('כבר נספר — עדכן כמות');
+      setTimeout(function () { if (inp) { inp.focus(); inp.select(); } }, 100);
+      return;
+    }
+    await updateCountItem(item.id, 1);
+    var txt = document.getElementById('sc-cam-success-text');
+    if (txt) txt.textContent = 'נסרק: ' + (item.barcode || '') + ' — ' + (item.brand || '') + ' ' + (item.model || '');
+    var banner = document.getElementById('sc-cam-success');
+    if (banner) banner.style.display = 'flex';
+    var hint2 = document.getElementById('sc-cam-hint');
+    if (hint2) hint2.style.display = 'none';
+    _scSetStatus('נסרק: ' + (item.barcode || '') + ' ✅');
+  } catch (err) {
+    console.warn('_scHandleCameraScan error:', err);
+    _scDebugLog('HANDLER ERR: ' + err.message);
+    _scSetStatus('שגיאה: ' + err.message);
+    _scClearPauseTimer();
+    _scanPaused = false;
+    _scResetViewfinder();
   }
-  if (item.status === 'counted') {
-    // Already counted — show qty panel INSIDE camera overlay
-    _scCamQtyItem = item;
-    var infoEl = document.getElementById('sc-cam-qty-info');
-    if (infoEl) infoEl.textContent = (item.barcode || '') + ' — ' + (item.brand || '') + ' ' + (item.model || '');
-    var curEl = document.getElementById('sc-cam-qty-cur');
-    if (curEl) curEl.textContent = 'כבר נספר! כמות נוכחית: ' + (item.actual_qty || 0);
-    var inp = document.getElementById('sc-cam-qty-input');
-    if (inp) inp.value = item.actual_qty || 0;
-    var qtyPanel = document.getElementById('sc-cam-qty');
-    if (qtyPanel) qtyPanel.style.display = 'flex';
-    var hint = document.getElementById('sc-cam-hint');
-    if (hint) hint.style.display = 'none';
-    setTimeout(function () { if (inp) { inp.focus(); inp.select(); } }, 100);
-    return;
-  }
-  // First scan — auto-count as 1, show success banner
-  await updateCountItem(item.id, 1);
-  var txt = document.getElementById('sc-cam-success-text');
-  if (txt) txt.textContent = 'נסרק: ' + (item.barcode || '') + ' — ' + (item.brand || '') + ' ' + (item.model || '');
-  var banner = document.getElementById('sc-cam-success');
-  if (banner) banner.style.display = 'flex';
-  var hint = document.getElementById('sc-cam-hint');
-  if (hint) hint.style.display = 'none';
 }
 
 function _scResumeScanning() {
   _scanPaused = false;
+  _scClearPauseTimer();
   _lastScanCode = ''; _lastScanTime = 0;
   var banner = document.getElementById('sc-cam-success');
   if (banner) banner.style.display = 'none';
@@ -500,6 +536,7 @@ function _scResumeScanning() {
   var hint = document.getElementById('sc-cam-hint');
   if (hint) hint.style.display = '';
   _scResetViewfinder();
+  _scSetStatus('סורק...');
 }
 
 function _scResetViewfinder() {
@@ -526,8 +563,38 @@ function _scCamQtyDismiss() {
   _scResumeScanning();
 }
 
+// ── Zoom control ──────────────────────────────────────────────
+function _scInitZoom(stream) {
+  try {
+    var track = stream.getVideoTracks()[0];
+    var caps = track.getCapabilities ? track.getCapabilities() : {};
+    if (caps.zoom) {
+      var zoomBtn = document.getElementById('sc-cam-zoom');
+      if (zoomBtn) zoomBtn.style.display = '';
+    }
+  } catch (e) { /* zoom not supported — button stays hidden */ }
+}
+
+function _scToggleZoom() {
+  if (!_scCamStream) return;
+  try {
+    var track = _scCamStream.getVideoTracks()[0];
+    var caps = track.getCapabilities ? track.getCapabilities() : {};
+    if (!caps.zoom) return;
+    var minZ = caps.zoom.min || 1;
+    var maxZ = caps.zoom.max || 1;
+    _scZoomLevel = (_scZoomLevel === 1) ? Math.min(2 * minZ, maxZ) : 1;
+    track.applyConstraints({ advanced: [{ zoom: _scZoomLevel }] });
+    var btn = document.getElementById('sc-cam-zoom');
+    if (btn) btn.textContent = (_scZoomLevel > 1) ? '2x' : '1x';
+  } catch (e) { console.warn('Zoom error:', e); }
+}
+
 function stopCamera() {
   _scanPaused = false;
+  _scClearPauseTimer();
+  _scCamStream = null;
+  _scZoomLevel = 1;
   if (scCodeReader) { scCodeReader.reset(); scCodeReader = null; }
   var overlay = document.getElementById('sc-cam-overlay');
   if (overlay) {
