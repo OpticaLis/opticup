@@ -152,8 +152,11 @@ function scRenderItemRow(it) {
     : diff === 0 ? 'sc-row-ok'
     : Math.abs(diff) <= 2 ? 'sc-row-warn' : 'sc-row-diff';
   const st = it.status === 'counted' ? 'נספר' : 'ממתין';
-  return `<tr class="${cls}" data-barcode="${escapeHtml(it.barcode || '')}">
-    <td style="font-weight:600;font-size:.85rem">${escapeHtml(it.barcode || '—')}</td>
+  const bc = escapeHtml(it.barcode || '');
+  return `<tr class="${cls}" data-barcode="${bc}"
+    style="cursor:pointer" onclick="scRowClick('${bc}')"
+    onmouseenter="this.style.background='#e3edf9'" onmouseleave="this.style.background=''">
+    <td style="font-weight:600;font-size:.85rem">${bc || '—'}</td>
     <td>${escapeHtml(it.brand || '—')}</td><td>${escapeHtml(it.model || '—')}</td>
     <td style="text-align:center;font-weight:700">${it.status === 'counted' ? it.actual_qty : '—'}</td>
     <td style="text-align:center;font-weight:700">${diff !== null ? (diff > 0 ? '+' : '') + diff : '—'}</td>
@@ -241,13 +244,37 @@ function filterSessionItems(query) {
 function manualBarcodeSearch() {
   const val = ($('sc-smart-search')?.value || '').trim();
   if (!val) return;
+  // Exact barcode (all digits) — original behavior
   if (/^\d+$/.test(val)) {
     handleScan(scCountId, val);
-    $('sc-smart-search').value = '';
-    renderSessionTable(scSessionItems);
-    const countEl = document.getElementById('sc-filter-count');
-    if (countEl) countEl.textContent = '';
+    _scClearSearch();
+    return;
   }
+  // Non-barcode text: if filter shows exactly 1 result, auto-count it
+  const lower = val.toLowerCase();
+  const filtered = scSessionItems.filter(i =>
+    (i.barcode || '').toLowerCase().includes(lower) ||
+    (i.brand || '').toLowerCase().includes(lower) ||
+    (i.model || '').toLowerCase().includes(lower) ||
+    (i.color || '').toLowerCase().includes(lower));
+  if (filtered.length === 1 && filtered[0].barcode) {
+    handleScan(scCountId, filtered[0].barcode);
+    _scClearSearch();
+  }
+}
+
+function scRowClick(barcode) {
+  if (!barcode) return;
+  handleScan(scCountId, barcode);
+  _scClearSearch();
+}
+
+function _scClearSearch() {
+  const inp = $('sc-smart-search');
+  if (inp) inp.value = '';
+  renderSessionTable(scSessionItems);
+  const countEl = document.getElementById('sc-filter-count');
+  if (countEl) countEl.textContent = '';
 }
 
 // ── Camera / ZXing ───────────────────────────────────────────
