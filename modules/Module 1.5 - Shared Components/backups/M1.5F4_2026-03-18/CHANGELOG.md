@@ -1,42 +1,5 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
-## Phase 4 — Table Builder + Permissions ✅ (2026-03-18)
-
-### Commits
-- 6cdb546: Phase 4 Step 1: create shared/css/table.css — table builder styles
-- 7027f98: Phase 4 Step 2: create shared/js/table-builder.js — TableBuilder API
-- bd78b50: Phase 4 Step 3: create shared/tests/table-test.html — TableBuilder test page
-- 9661ebb: Phase 4 Step 4: fix TableBuilder — double-escaping, sticky header, test page
-- fe8dfc9: Phase 4 Step 5: create shared/js/permission-ui.js — permission-aware UI
-- f06e700: Phase 4 Step 6: create shared/tests/permission-test.html — PermissionUI test page
-
-### New Files
-- shared/css/table.css (150 lines) — Table builder CSS: wrapper, header, rows, sort indicators (▲▼ via data-sort-dir), empty/loading states, zebra, sticky header, RTL logical properties, responsive
-- shared/js/table-builder.js (296 lines) — TableBuilder.create → TableInstance with setData/setLoading/updateRow/removeRow/getData/destroy. 7 column types, external sort, XSS-safe
-- shared/js/permission-ui.js (53 lines) — PermissionUI.apply/applyTo/check. data-permission attributes, hide/disable modes, OR logic, hasPermission wrapper
-- shared/tests/table-test.html (235 lines) — 9 sections, 21 tests for Table Builder
-- shared/tests/permission-test.html (190 lines) — 7 sections, 22 tests for PermissionUI
-
-### DB Changes
-- None (JS + CSS only)
-
-### Bug Fixes
-- table-builder.js: text renderer returned escaped HTML but textContent double-escaped it. Fix: renderers return plain text
-- table.css: overflow-x:auto on wrapper created scroll context breaking position:sticky. Fix: .tb-wrapper-sticky sets overflow-x:visible
-- table-test.html: shared.js requires Supabase lib. Fix: inline escapeHtml() standalone
-
-### Testing
-- Table Builder: 21/21 PASS (3 bugs found and fixed)
-- PermissionUI: 22/22 PASS (zero fixes needed)
-- Regression: 6/6 pages PASS, zero console errors
-
-### Phase Summary
-- 5 new files, ~924 lines of new code
-- 0 modified existing files (zero changes to pages)
-- 0 DB changes, 0 breaking changes
-
----
-
 ## Phase 3 — Data Layer ✅ (2026-03-18)
 
 ### Commits

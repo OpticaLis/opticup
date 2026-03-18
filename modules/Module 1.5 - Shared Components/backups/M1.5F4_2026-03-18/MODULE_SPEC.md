@@ -1,12 +1,12 @@
 # Module 1.5 — Shared Components Refactor — MODULE_SPEC
 
-## Current State (Phase 4 complete)
+## Current State (Phase 3 complete)
 
 ### DB Changes
 - `tenants.ui_config` (JSONB, default '{}') — per-tenant CSS variable overrides. Keys must start with `--` to be injected.
 - `activity_log` table — system-level event log: level (info/warning/error/critical), action, entity_type, entity_id, details JSONB. RLS via request.jwt.claims + 5 indexes.
 
-### shared/css/ (8 files, 1,510 lines)
+### shared/css/ (7 files, 1,360 lines)
 
 | File | Lines | Description |
 |------|-------|-------------|
@@ -17,9 +17,8 @@
 | forms.css | 146 | Form layout: form-group, form-label, form-required, form-error/form-help, form-row, form-col-2, form-actions, form-inline, mobile responsive |
 | modal.css | 233 | Modal system: overlay (fixed, z-modal), container (flex column, 90vh max), header/body/footer, close button. 5 sizes (sm/md/lg/xl/fullscreen). 5 types (default/confirm/alert/danger/wizard). Wizard step indicators. Animations (entering/leaving). Stack support. Responsive. |
 | toast.css | 155 | Toast notifications: container (fixed, z-toast, top-start), toast item (border-inline-start colored by type), icon/content/close/progress bar. 4 types (success/error/warning/info). 3 animations (enter/leave/progress). CSS custom property --toast-duration. Responsive. |
-| table.css | 150 | Table builder: .tb-wrapper (overflow-x), .tb-table, .tb-header, .tb-th (sortable with ▲▼ via data-sort-dir), .tb-row (zebra, hover), .tb-td (actions flex), empty state (icon/text/CTA), loading skeleton (pulse), sticky header (.tb-wrapper-sticky), responsive. All via CSS variables. |
 
-### shared/js/ (9 files, 1,359 lines)
+### shared/js/ (7 files, 1,010 lines)
 
 | File | Lines | Description |
 |------|-------|-------------|
@@ -30,10 +29,8 @@
 | pin-modal.js | 123 | PIN prompt modal — migration of js/pin-modal.js. Global `promptPin(title, callback)` — identical external API. Uses Modal.show() internally. 5-digit split input with auto-advance, backspace, paste, auto-submit. Depends on modal-builder.js + auth-service.js. |
 | supabase-client.js | 263 | Supabase wrapper. Global `DB` object: select/insert/update/batchUpdate/softDelete/hardDelete/rpc. CSS-only spinner (200ms debounce), error classification (RLS/network/unique/not-found), tenant_id auto-inject, Toast optional. Depends on sb + getTenantId(). |
 | activity-logger.js | 90 | Activity log helper. Global `ActivityLog` object: write/warning/error/critical. Fire-and-forget, auto-inject tenant_id/user_id/branch_id. Uses DB.insert or sb.from() fallback. Zero CSS dependencies. |
-| table-builder.js | 296 | Table builder. Global `TableBuilder` object: create(config) → TableInstance with setData/setLoading/updateRow/removeRow/getData/destroy. 7 column types (text/number/currency/date/badge/actions/custom). External sort via onSort callback. XSS-safe text via textContent. Soft dep on escapeHtml(). |
-| permission-ui.js | 53 | Permission-aware UI. Global `PermissionUI` object: apply()/applyTo(container)/check(perm). Scans [data-permission] attributes, hide or disable elements. OR logic via pipe separator. Wraps hasPermission() from auth-service.js. Safe fallback when unavailable. |
 
-### shared/tests/ (7 files, 1,659 lines)
+### shared/tests/ (5 files, 1,234 lines)
 
 | File | Lines | Description |
 |------|-------|-------------|
@@ -42,8 +39,6 @@
 | toast-test.html | 155 | Toast system test page: 6 sections — types, duration, stack, dedup, XSS, no-close. Log area for event output. RTL, Hebrew, self-contained. |
 | db-test.html | 325 | DB wrapper test page: 9 sections — select, insert, update, batchUpdate, softDelete/hardDelete, RPC, spinner, error handling, cleanup. Requires JWT session. |
 | activity-log-test.html | 251 | Activity log test page: 8 sections — write, warning, error, critical, changeset format, fire-and-forget, validation, cleanup. Requires JWT session. |
-| table-test.html | 235 | Table builder test page: 9 sections — basic (all types), sort, empty state, loading, row ops, sticky header, row click, XSS, destroy. Self-contained with mock data. |
-| permission-test.html | 190 | Permission UI test page: 7 sections — hide, disable, OR logic, applyTo dynamic, manual check, no-hasPermission fallback, full reset. Mock hasPermission inline. |
 
 ### Integration Points
 
@@ -89,7 +84,6 @@ Pages modified for shared/ dependencies:
 - Utilities: `.hidden`, `.visible`, `.sr-only`, `.no-print`, `.text-center/right/left`
 - Modals: `.modal-overlay`, `.modal-container`, `.modal-header`, `.modal-body`, `.modal-footer`, `.modal-close`, `.modal-sm/md/lg/xl/fullscreen`, `.modal-type-confirm/alert/danger/wizard`
 - Toasts: `.toast-container`, `.toast-item`, `.toast-icon`, `.toast-content`, `.toast-close`, `.toast-progress`, `.toast-success/error/warning/info`
-- Table Builder: `.tb-wrapper`, `.tb-wrapper-sticky`, `.tb-table`, `.tb-header`, `.tb-th`, `.tb-th-sortable`, `.tb-th-sort-active`, `.tb-row`, `.tb-row-clickable`, `.tb-td`, `.tb-td-end`, `.tb-td-actions`, `.tb-empty`, `.tb-empty-icon`, `.tb-empty-text`, `.tb-empty-cta`, `.tb-loading`, `.tb-loading-row`
 
 **JS Functions — Modal:**
 - `Modal.show(config) → {el, close}` — open modal with custom content
@@ -130,31 +124,11 @@ Pages modified for shared/ dependencies:
 - `ActivityLog.error(config)` — log error
 - `ActivityLog.critical(config)` — log critical event
 
-**JS Functions — Table Builder (Phase 4):**
-- `TableBuilder.create(config) → TableInstance` — create managed table
-- `table.setData(rows)` — render data (empty array → emptyState)
-- `table.setLoading(isLoading)` — toggle skeleton loading
-- `table.updateRow(rowId, newData)` — re-render single row in-place
-- `table.removeRow(rowId)` — remove row (last → emptyState)
-- `table.getData() → array` — get current data copy
-- `table.destroy()` — clean up DOM + state
-
-**JS Functions — Permission UI (Phase 4):**
-- `PermissionUI.apply()` — scan document for [data-permission], hide/disable unauthorized
-- `PermissionUI.applyTo(container)` — scan container only (dynamic content)
-- `PermissionUI.check(permission) → boolean` — manual permission check
-
-**HTML Attributes — Permission UI (Phase 4):**
-- `data-permission="module.action"` — permission check (hide if no perm)
-- `data-permission="perm1|perm2"` — OR logic (visible if any match)
-- `data-permission-mode="disable"` — disable instead of hide (opacity 0.5 + tooltip)
-
 **RPC Functions (Phase 3 — new):**
 - `increment_paid_amount(p_doc_id, p_delta)` — atomic paid_amount update + status on supplier_documents
 - `increment_prepaid_used(p_deal_id, p_delta)` — atomic total_used/total_remaining update on prepaid_deals
 - `increment_shipment_counters(p_shipment_id, p_items_delta, p_value_delta)` — atomic items_count/total_value update on shipments
 
-### What Doesn't Exist Yet (Phase 5+)
-- Zero hardcoded values scan + migration
-- custom_fields JSONB on inventory
-- inventory.html full migration to shared/ components
+### What Doesn't Exist Yet (Phase 4+)
+- Table builder (table-builder.js)
+- Permission UI helpers (permission-ui.js)

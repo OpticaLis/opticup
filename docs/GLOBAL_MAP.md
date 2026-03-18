@@ -277,7 +277,7 @@ Backward-compat redirect to `shared/js/pin-modal.js` via `document.write()`. Wil
 
 ---
 
-## 4. Shared Components (shared/) — Phase 2 complete ✅
+## 4. Shared Components (shared/) — Phase 4 complete ✅
 
 ### shared/css/variables.css (157 lines)
 
@@ -391,6 +391,46 @@ Modal system test page: 5 sections — sizes (sm/md/lg/xl/fullscreen), types (co
 
 Toast system test page: 6 sections — types (success/error/warning/info), duration (1s/5s/persistent/dismiss), stack (5 toasts + 6th overflow), duplicate prevention (loading→done replace), XSS test, no-close-button. Log area for event output. RTL, Hebrew, self-contained.
 
+### shared/css/table.css (150 lines)
+
+Table builder styles. `.tb-wrapper` (overflow-x, border, radius), `.tb-table` (collapse, font), `.tb-header` (gray-50), `.tb-th` (sortable with ▲▼ via `data-sort-dir`), `.tb-th-sort-active`, `.tb-row` (zebra, hover), `.tb-td`/`.tb-td-end`/`.tb-td-actions`, `.tb-empty` (icon/text/CTA), `.tb-loading` (pulse skeleton), `.tb-wrapper-sticky` (sticky header). Responsive @640px. All via CSS variables.
+
+### shared/js/table-builder.js (296 lines)
+
+Table builder. Global `TableBuilder` object with `create(config) → TableInstance`.
+
+**Functions:**
+
+| Function | Parameters | Returns | Description |
+|----------|-----------|---------|-------------|
+| `TableBuilder.create` | `config: object` | `TableInstance` | Create managed table in containerId |
+| `table.setData` | `rows: array` | `void` | Render data rows (empty → emptyState) |
+| `table.setLoading` | `isLoading: boolean` | `void` | Toggle skeleton loading state |
+| `table.updateRow` | `rowId: string, newData: object` | `void` | Re-render single row in-place |
+| `table.removeRow` | `rowId: string` | `void` | Remove row (last → emptyState) |
+| `table.getData` | — | `array` | Get current data copy |
+| `table.destroy` | — | `void` | Clean up DOM + state |
+
+### shared/js/permission-ui.js (53 lines)
+
+Permission-aware UI. Global `PermissionUI` object: scans `[data-permission]` attributes, hides/disables unauthorized elements.
+
+**Functions:**
+
+| Function | Parameters | Returns | Description |
+|----------|-----------|---------|-------------|
+| `PermissionUI.apply` | — | `void` | Scan entire document for [data-permission] |
+| `PermissionUI.applyTo` | `container: HTMLElement` | `void` | Scan container only (dynamic content) |
+| `PermissionUI.check` | `permission: string` | `boolean` | Manual permission check |
+
+### shared/tests/table-test.html (235 lines)
+
+Table builder test page: 9 sections — basic (all 7 types), sort, empty state, loading, row ops, sticky header, row click, XSS, destroy. Mock data inline, self-contained.
+
+### shared/tests/permission-test.html (190 lines)
+
+Permission UI test page: 7 sections — hide, disable, OR logic, applyTo, manual check, no-hasPermission fallback, full reset. Mock hasPermission inline, self-contained.
+
 ### Integration Points — Redirect Files
 
 | File | Path | Lines | Purpose |
@@ -471,6 +511,10 @@ Pages modified for shared/ dependencies:
 | `ActivityLog.warning` | shared/js/activity-logger.js | `config: object` | `void` | Warning event logging |
 | `ActivityLog.error` | shared/js/activity-logger.js | `config: object` | `void` | Error event logging |
 | `ActivityLog.critical` | shared/js/activity-logger.js | `config: object` | `void` | Critical event logging |
+| `TableBuilder.create` | shared/js/table-builder.js | `config: object` | `TableInstance` | Create managed table (setData/setLoading/updateRow/removeRow/getData/destroy) |
+| `PermissionUI.apply` | shared/js/permission-ui.js | — | `void` | Scan document for [data-permission], hide/disable unauthorized |
+| `PermissionUI.applyTo` | shared/js/permission-ui.js | `container: HTMLElement` | `void` | Scan container only (dynamic content) |
+| `PermissionUI.check` | shared/js/permission-ui.js | `permission: string` | `boolean` | Manual permission check |
 | `escapeHtml` | shared.js | `str: string` | `string` | Every module (HTML rendering) |
 | `toast` | shared.js | `msg: string, type?: string` | `void` | Every module (user feedback) |
 | `formatILS` | shared.js | `amount: number` | `string` | Debt, PO, Receipts, Shipments |
@@ -500,7 +544,7 @@ Pages modified for shared/ dependencies:
 | Module | Status | Directory | HTML Pages | DB Tables (count) |
 |--------|--------|-----------|------------|-------------------|
 | Module 1 — Inventory Management | ✅ Complete | `modules/inventory/`, `modules/purchasing/`, `modules/goods-receipts/`, `modules/audit/`, `modules/brands/`, `modules/access-sync/`, `modules/admin/`, `modules/debt/`, `modules/debt/ai/`, `modules/permissions/`, `modules/shipments/`, `modules/stock-count/`, `modules/settings/` | `index.html`, `inventory.html`, `suppliers-debt.html`, `employees.html`, `shipments.html`, `settings.html` | 46 active + 4 stubs = 50 |
-| Module 1.5 — Shared Components | 🔨 In Progress (Phase 3 complete ✅) | `shared/css/`, `shared/js/`, `shared/tests/` | — | 1 (activity_log) + ui_config column on tenants |
+| Module 1.5 — Shared Components | 🔨 In Progress (Phase 4 complete ✅) | `shared/css/`, `shared/js/`, `shared/tests/` | — | 1 (activity_log) + ui_config column on tenants |
 
 ---
 

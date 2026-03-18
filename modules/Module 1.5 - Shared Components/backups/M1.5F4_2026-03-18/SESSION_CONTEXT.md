@@ -1,19 +1,9 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
-- **Phase:** 4 complete ✅. Phase 5 (Cleanup & Hardening) next.
+- **Phase:** 3 complete ✅. Phase 4 (Table Builder + Permissions) next.
 - **Branch:** develop
 - **Last session:** 2026-03-18
-
-## What Was Done — Phase 4 (Table Builder + Permissions)
-- Step 1: Created shared/css/table.css (150 lines) — wrapper, header, rows, sort indicators (▲▼ via data-sort-dir), empty/loading states, zebra striping, sticky header, RTL logical properties, responsive
-- Step 2: Created shared/js/table-builder.js (296 lines) — TableBuilder.create → TableInstance with setData/setLoading/updateRow/removeRow/getData/destroy. 7 column types (text/number/currency/date/badge/actions/custom), external sort via onSort callback, XSS-safe text columns via textContent
-- Step 3: Created shared/tests/table-test.html (235 lines) — 9 sections, 21 tests covering all column types, sort, empty state, loading skeleton, row operations, sticky header, row click, XSS, destroy/recreate
-- Step 4: Table Builder testing — 21/21 PASS. 3 bugs found and fixed: double-escaping (text renderer + textContent), sticky header (overflow-x creating scroll context), test page shared.js crash (requires Supabase lib)
-- Step 5: Created shared/js/permission-ui.js (53 lines) — PermissionUI.apply/applyTo/check. Wraps hasPermission() from auth-service.js. Supports hide mode (default), disable mode, OR logic (pipe separator). Safe fallback when hasPermission unavailable
-- Step 6: Created shared/tests/permission-test.html (190 lines) — 7 sections, 22 tests covering hide, disable, OR logic, applyTo dynamic content, manual check, no-hasPermission fallback, full reset
-- Step 7: PermissionUI testing — 22/22 PASS, zero fixes needed
-- Step 8: Regression on all 6 pages — 6/6 PASS, zero console errors. Documentation + Integration Ceremony
 
 ## What Was Done — Phase 3 (Data Layer)
 - Step 1: Created activity_log table + RLS (request.jwt.claims) + 5 indexes + T.ACTIVITY_LOG constant
@@ -47,9 +37,8 @@
 - Added Iron Rule #12 to CLAUDE.md: Global name collision check
 
 ## What's Next
-- Phase 5 Step 1: Zero hardcoded values scan (business names, addresses, VAT rates)
-- Phase 5 Step 2: custom_fields JSONB column on inventory
-- Phase 5 Step 3: inventory.html migration (CSS → shared/, modals → Modal.*, toasts → Toast.*)
+- Phase 4 Step 1: Table builder (shared/js/table-builder.js)
+- Phase 4 Step 2: Permission-aware UI helpers (shared/js/permission-ui.js)
 
 ## Open Issues
 - **promptPin name collision (pre-existing):** modules/access-sync/sync-details.js:85 declares global promptPin() (0 params, Promise-based) that overwrites shared/js/pin-modal.js promptPin(title, callback). Not caused by Phase 2. Fix: rename sync version to promptSyncPin() in a future hotfix.

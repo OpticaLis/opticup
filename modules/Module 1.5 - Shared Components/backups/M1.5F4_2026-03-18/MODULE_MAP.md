@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-03-18 (Phase 4 complete)
+> Last updated: 2026-03-18 (Phase 3 complete)
 
 ---
 
@@ -17,7 +17,6 @@
 | 5 | forms.css | shared/css/forms.css | 146 | Form layout: form-group (label+input wrapper), form-label, form-required (red asterisk), form-error/form-help text, form-row (multi-column flex), form-col-2 (2-col grid), form-actions (button container), form-inline (label+input same line), mobile responsive. |
 | 6 | modal.css | shared/css/modal.css | 233 | Modal system: overlay (fixed, z-modal), container (flex column, 90vh max), header/body/footer, close button. 5 sizes (sm 340px, md 500px, lg 700px, xl 900px, fullscreen 95vw). 5 types (default, confirm, alert, danger with red header, wizard with progress bar). Wizard step indicators (num/active/done). Animations (entering/leaving with scale+fade). Stack support (dimmed, pointer-events:none). Responsive (640px breakpoint). |
 | 7 | toast.css | shared/css/toast.css | 155 | Toast notifications: container (fixed, z-toast, top-start, flex column), toast item (border-inline-start colored by type, shadow, flex row), icon/content/close/progress bar. 4 types (success/error/warning/info). 3 keyframe animations (toast-enter slide+fade in, toast-leave slide+fade out, toast-progress countdown). CSS custom property --toast-duration for JS control. Responsive (480px breakpoint). Zero hardcoded colors. |
-| 8 | table.css | shared/css/table.css | 150 | Table builder styles. .tb-wrapper (overflow-x, border, radius), .tb-table (collapse, font), .tb-header (gray-50 bg), .tb-th (sticky opt-in via .tb-wrapper-sticky), .tb-th-sortable (cursor, hover, ::after arrow ↕/▲/▼ via data-sort-dir), .tb-th-sort-active (primary highlight), .tb-row (border, hover, zebra :nth-child), .tb-row-clickable, .tb-td/.tb-td-end/.tb-td-actions (flex), .tb-empty (icon/text/CTA), .tb-loading/.tb-loading-row (pulse animation). Responsive @640px. All via CSS variables. |
 
 ---
 
@@ -32,8 +31,6 @@
 | 5 | pin-modal.js | shared/js/pin-modal.js | 123 | PIN prompt modal — migration of js/pin-modal.js. Global `promptPin(title, callback)` — identical external API. Internally uses `Modal.show()` for overlay/backdrop/close. 5-digit split input with auto-advance, backspace, paste, auto-submit. Calls `verifyPinOnly()` from auth-service.js. PIN-specific styles injected once via `<style>` block. Depends on modal-builder.js. |
 | 6 | supabase-client.js | shared/js/supabase-client.js | 263 | Supabase wrapper. Global `DB` object: `select(table,filters?,opts?)`, `insert(table,data,opts?)`, `update(table,id,changes,opts?)`, `batchUpdate(table,records,opts?)`, `softDelete(table,id,opts?)`, `hardDelete(table,id,opts?)`, `rpc(fn,params?,opts?)`. CSS-only spinner (200ms debounce, counter for parallel calls). Error classification (RLS 42501, network, unique 23505, not-found). Auto tenant_id on insert/select. Toast optional dependency. Depends on sb + getTenantId(). |
 | 7 | activity-logger.js | shared/js/activity-logger.js | 90 | Activity log helper. Global `ActivityLog` object: `write(config)`, `warning(config)`, `error(config)`, `critical(config)`. Fire-and-forget (async, non-blocking). Auto-inject tenant_id from getTenantId(), user_id/branch_id from getCurrentEmployee(). Uses DB.insert if available, sb.from() fallback. Skips non-UUID branch_id. Zero CSS dependencies. |
-| 8 | table-builder.js | shared/js/table-builder.js | 296 | Table builder. Global `TableBuilder` object: `create(config)→TableInstance`. Instance methods: `setData(rows)`, `setLoading(bool)`, `updateRow(id,data)`, `removeRow(id)`, `getData()→array`, `destroy()`. Config: containerId, columns (key/label/type/sortable/render/width/cssClass), emptyState (icon/text/cta), onSort(key,dir), onRowClick(row,el), rowId, stickyHeader, skeletonRows. 7 column types: text (textContent safe), number (he-IL locale), currency (₪), date (DD/MM/YYYY), badge/actions/custom (render function). Sort is external — visual state only + onSort callback. Soft dep on escapeHtml(). Zero deps on DB/Modal/Toast. |
-| 9 | permission-ui.js | shared/js/permission-ui.js | 53 | Permission-aware UI. Global `PermissionUI` object: `apply()` (scan document), `applyTo(container)` (scan container), `check(permission)→boolean`. Reads `[data-permission]` attributes, supports OR via pipe `perm1|perm2`. Hide mode (default: display:none) or disable mode (`data-permission-mode="disable"`: disabled+opacity 0.5+title). Wraps `hasPermission()` from auth-service.js. Safe fallback: if hasPermission unavailable → console.warn + hide all guarded elements. Zero deps on CSS/DB/Modal/Toast/Table. |
 
 ---
 
@@ -46,8 +43,6 @@
 | 3 | toast-test.html | shared/tests/toast-test.html | 174 | Toast system test page: 6 sections — types (success/error/warning/info), duration (1s/5s/persistent/dismiss), stack (5 toasts + 6th overflow), duplicate prevention (loading→done replace), XSS test, no-close-button. Log area for event output. RTL, Hebrew, self-contained. |
 | 4 | db-test.html | shared/tests/db-test.html | 325 | DB wrapper test page: 9 sections — select (all/filter/order/single/count/rawFilters), insert (single/array), update, batchUpdate, softDelete/hardDelete, RPC, spinner (parallel/silent), error handling (missing field/silent), cleanup. Requires JWT session. |
 | 5 | activity-log-test.html | shared/tests/activity-log-test.html | 251 | Activity log test page: 8 sections — write (info), warning, error, critical, changeset format, fire-and-forget, validation (missing fields), cleanup. Uses waitAndFind polling. Requires JWT session. |
-| 6 | table-test.html | shared/tests/table-test.html | 235 | Table builder test page: 9 sections — basic table (all 7 column types, 20 rows, null/zero edge cases), sort (toggle asc/desc, single active column), empty state (icon/text/CTA toggle), loading (skeleton, auto 2s), row ops (updateRow/removeRow/getData), sticky header (100 rows, 400px scroll), row click (onRowClick + action button exclusion), XSS (script/img tags escaped), destroy/recreate. Mock data inline, RTL, Hebrew. |
-| 7 | permission-test.html | shared/tests/permission-test.html | 190 | Permission UI test page: 7 sections — hide mode (4 buttons, checkbox toggles, re-apply), disable mode (opacity + tooltip), OR logic (pipe separator), applyTo (dynamic content injection), manual check (input + result), no-hasPermission (remove/restore + console.warn), full reset (all off / CEO mode). Mock hasPermission inline, RTL, Hebrew. |
 
 ---
 
@@ -119,4 +114,3 @@ All variables defined in `shared/css/variables.css`:
 | 3 | — | CREATE FUNCTION `increment_paid_amount(p_doc_id, p_delta)` | Atomic paid_amount increment + status update on supplier_documents |
 | 3 | — | CREATE FUNCTION `increment_prepaid_used(p_deal_id, p_delta)` | Atomic total_used/total_remaining update on prepaid_deals |
 | 3 | — | CREATE FUNCTION `increment_shipment_counters(p_shipment_id, p_items_delta, p_value_delta)` | Atomic items_count/total_value update on shipments |
-| 4 | — | (none) | No DB changes in Phase 4 (JS + CSS only) |

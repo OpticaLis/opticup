@@ -71,7 +71,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 1 | ✅ | CSS Foundation | variables.css, components.css, layout.css, form classes, per-tenant theming |
 | 2 | ✅ | Core UI Components | Modal system (5 גדלים, 5 סוגים), Toast system, PIN modal migration |
 | 3 | ✅ | Data Layer | Supabase wrapper, Activity Log (DB + JS), Atomic RPC scan |
-| 4 | ⬜ | Table Builder + Permissions | Table builder רזה, Permission-aware UI helpers |
+| 4 | ✅ | Table Builder + Permissions | Table builder רזה, Permission-aware UI helpers |
 | 5 | ⬜ | Cleanup & Hardening | Zero hardcoded scan, custom_fields JSONB, inventory.html migration |
 | QA | ⬜ | Full Regression | regression tests, tenant isolation, visual consistency |
 
