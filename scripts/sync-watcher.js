@@ -87,6 +87,21 @@ function parseDateField(raw) {
   return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
 }
 
+// ── Wait for file lock release (Dropbox compatibility) ───────
+async function waitForFile(filepath, maxRetries = 5, delayMs = 1000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const fd = fs.openSync(filepath, 'r');
+      fs.closeSync(fd);
+      return; // File is readable
+    } catch (err) {
+      if (attempt === maxRetries) throw err;
+      log(`  File locked (attempt ${attempt}/${maxRetries}), retrying in ${delayMs}ms: ${path.basename(filepath)}`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
 // ── Parse CSV file (Access exports UTF-8 CSV with BOM) ──────
 function parseCSVFile(filepath) {
   let text = fs.readFileSync(filepath, 'utf-8').replace(/^\uFEFF/, '');
@@ -144,6 +159,9 @@ async function isDuplicateSyncLog(filename) {
 async function processFile(filepath, filename) {
   const ext = path.extname(filename).toLowerCase();
   let dataRows;
+
+  // Wait for file lock release (Dropbox may briefly hold a lock)
+  await waitForFile(filepath);
 
   if (ext === '.csv') {
     // CSV from Access — header + data rows, no metadata to skip
