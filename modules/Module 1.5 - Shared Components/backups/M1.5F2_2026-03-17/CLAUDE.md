@@ -72,20 +72,19 @@ After reading, confirm:
 9. **API Abstraction** — All database interactions must pass through `shared.js` helper functions (`fetchAll`, `batchCreate`, `batchUpdate`, etc.). Modules should never call `sb.from()` directly unless for specialized joins that cannot be expressed through the helpers.
 10. **Security & Sanitization** — Never use `innerHTML` with user-controlled input. Always use `escapeHtml()` or `textContent`. Note: PIN verification calls the pin-auth Edge Function which validates server-side and returns a signed JWT. Do not attempt to refactor PIN verification unless explicitly instructed.
 11. **No hardcoded business values** — Business name, address, tax rate, logo, phone, and any tenant-specific data must always be read from a variable or config, never from a hardcoded string in code. This ensures every tenant can customize without code changes.
-12. **Global name collision check** — Before creating, moving, or renaming any global function or variable, run: `grep -rn "functionName" --include="*.js" --include="*.html" .` If ANY other file defines the same name — resolve the collision BEFORE writing code. Report findings and wait for instructions.
 
 ### SaaS Rules — Mandatory from Phase 3.75 Onward
 
-13. **tenant_id on every table** — every new table MUST have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. No exceptions, ever.
-14. **RLS on every table** — every new table MUST have Row Level Security enabled with a tenant isolation policy. Use this template:
+11. **tenant_id on every table** — every new table MUST have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. No exceptions, ever.
+12. **RLS on every table** — every new table MUST have Row Level Security enabled with a tenant isolation policy. Use this template:
     ```sql
     CREATE POLICY tenant_isolation ON [table_name]
       USING (tenant_id = current_setting('app.tenant_id')::uuid);
     ```
-15. **Contracts** — every phase must define its public functions (contracts) in MODULE_SPEC.md. Other modules call only these contract functions — never access another module's tables directly.
-16. **Views for external access** — every phase must consider: "What does a supplier/customer/storefront need to see?" and plan Views accordingly.
-17. **No hardcoded values** — currencies, languages, payment types = configurable tables, not hardcoded enums. Build as if a second store joins tomorrow in a different country.
-18. **SaaS litmus test** — build every phase as if tomorrow a second optician chain joins that we've never met. If they can use the phase without any code changes — it was done right.
+13. **Contracts** — every phase must define its public functions (contracts) in MODULE_SPEC.md. Other modules call only these contract functions — never access another module's tables directly.
+14. **Views for external access** — every phase must consider: "What does a supplier/customer/storefront need to see?" and plan Views accordingly.
+15. **No hardcoded values** — currencies, languages, payment types = configurable tables, not hardcoded enums. Build as if a second store joins tomorrow in a different country.
+16. **SaaS litmus test** — build every phase as if tomorrow a second optician chain joins that we've never met. If they can use the phase without any code changes — it was done right.
 
 ---
 

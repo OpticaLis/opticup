@@ -1,36 +1,5 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
-## Phase 2 — Core UI Components (2026-03-17)
-
-### New Files
-- shared/css/modal.css (233 lines) — Modal CSS: overlay, 5 sizes, 5 types, animations, stack, wizard progress
-- shared/js/modal-builder.js (261 lines) — Modal.show/confirm/alert/danger/form/close/closeAll, stack, focus trap, scroll lock
-- shared/js/modal-wizard.js (144 lines) — Modal.wizard() extension, multi-step progress, validate/onEnter/onLeave
-- shared/css/toast.css (155 lines) — Toast CSS: 4 types, animations, progress bar, RTL
-- shared/js/toast.js (131 lines) — Toast.success/error/warning/info/dismiss/clear, max 5, dedup, XSS-safe
-- shared/js/pin-modal.js (123 lines) — PIN prompt migration, Modal.show() internally, identical promptPin(title, callback) API
-- shared/tests/modal-test.html (251 lines) — sizes, types, stack, keyboard, XSS tests
-- shared/tests/toast-test.html (155 lines) — types, duration, stack, dedup, XSS, no-close tests
-
-### Modified Files
-- js/pin-modal.js — replaced with 5-line redirect to shared/js/pin-modal.js
-- inventory.html — added shared/css/modal.css and shared/js/modal-builder.js
-- suppliers-debt.html — added shared/css/modal.css and shared/js/modal-builder.js
-- CLAUDE.md — added Iron Rule #12 (global name collision check)
-
-### Bug Fix
-- Wizard onFinish/onCancel mutual exclusivity: _finished flag prevents onCancel on successful finish
-
-### Testing
-- Modal: 17/17 PASS, Toast: 17/17 PASS, PIN: 8/8 PASS, Regression: 8/8 PASS
-
-### Phase Summary
-- 8 new files, ~1,450 lines of new code
-- 3 modified HTML files, 1 redirect file
-- 0 DB changes, 0 breaking changes
-
----
-
 ## Phase 1 — CSS Foundation ✅ (2026-03-17)
 
 ### Commits

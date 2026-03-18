@@ -1,34 +1,33 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
-- **Phase:** 1 complete ✅. Phase 2 (Core UI Components) next.
+- **Phase:** 2 complete ✅. Phase 3 (Data Layer) next.
 - **Branch:** develop
 - **Last session:** 2026-03-17
 
-## What Was Done
-- Phase 0 Steps 1-7 completed — audit, GLOBAL_MAP.md, GLOBAL_SCHEMA.sql, CLAUDE.md update
-- Phase 1 Step 1: ALTER TABLE tenants ADD COLUMN ui_config JSONB ✅
-- Phase 1 Step 2: Created shared/css/variables.css (70 CSS variables, 157 lines) ✅
-- Phase 1 Step 3: Created shared/css/components.css (254 lines) — buttons, inputs, badges, cards ✅
-- Phase 1 Step 3b: Created shared/css/components-extra.css (214 lines) — tables, slide panel, skeleton, accordion ✅
-- Phase 1 Step 4: Created shared/css/layout.css (201 lines) — page structure, flex/grid helpers, RTL, print ✅
-- Phase 1 Step 5: Created shared/css/forms.css (146 lines) — form groups, labels, errors, multi-col layout ✅
-- Phase 1 Step 6: Created shared/js/theme-loader.js (42 lines) — per-tenant CSS variable override ✅
-- Phase 1 Step 7: Created shared/tests/ui-test.html (252 lines) — 13 component sections, 3-palette theme switcher ✅
-- Phase 1 Step 8: Regression check (6 pages, 0 errors), verification checklist (all pass), Integration Ceremony ✅
-- Created docs/MODULE_MAP.md and docs/db-schema.sql ✅
-- Imported 8,519 inventory items, 38 suppliers, 231 brands ✅
-- Fixed Supabase 1,000-row limit bug in brands.js, po-items.js, inventory-reduction.js, item-history.js ✅
-- Brand management improvements: search filter, A-Z sort, inactive brand styling ✅
-- Branch restructure: main=production, develop=development ✅
-- Custom domain: app.opticalis.co.il ✅
+## What Was Done — Phase 2 (Core UI Components)
+- Step 1: Created shared/css/modal.css (233 lines) — overlay, 5 sizes, 5 types, animations, stack, wizard progress
+- Step 2: Created shared/js/modal-builder.js (261 lines) — Modal.show/confirm/alert/danger/form/close/closeAll
+- Step 2: Created shared/js/modal-wizard.js (144 lines) — Modal.wizard() extension, split from builder
+- Step 2 fix: Wizard onFinish/onCancel now mutually exclusive (flag-based)
+- Step 3: Created shared/tests/modal-test.html (251 lines) — 5 sections: sizes, types, stack, keyboard, XSS
+- Step 4: Modal testing — 17/17 PASS
+- Step 5: Created shared/css/toast.css (155 lines) — 4 types, animations, progress bar, RTL
+- Step 6: Created shared/js/toast.js (131 lines) — success/error/warning/info/dismiss/clear, XSS-safe
+- Step 7: Created shared/tests/toast-test.html (155 lines) — 6 sections: types, duration, stack, dedup, XSS, no-close
+- Step 8: Toast testing — 17/17 PASS
+- Step 9: Created shared/js/pin-modal.js (123 lines) — migration using Modal.show(), identical promptPin() API
+- Step 10: js/pin-modal.js → redirect one-liner. Added modal.css + modal-builder.js to inventory.html and suppliers-debt.html
+- Step 11: PIN testing — 8/8 PASS
+- Step 12: Regression — 8/8 PASS (all 6 pages + old modals + old toast coexistence)
+- Added Iron Rule #12 to CLAUDE.md: Global name collision check
 
 ## What's Next
-- Phase 2 Step 1: Create shared/js/modal-builder.js — Modal system (5 sizes × 5 types)
-- Phase 2 Step 2: Create shared/js/toast.js — Toast/notification system
-- Phase 2 Step 3: Migrate pin-modal.js to shared/js/ using Modal.form()
-- Phase 2 Step 4: Create shared/tests/modal-test.html + toast-test.html
-- Phase 2 Step 5: Verification + Integration Ceremony
+- Phase 3 Step 1: Supabase wrapper (shared/js/supabase-client.js)
+- Phase 3 Step 2: Activity Log DB table + shared/js/activity-logger.js
+- Phase 3 Step 3: Atomic RPC scan
 
 ## Open Issues
-- RLS permissive (USING true) on 9 tables: stock_count_items, roles, permissions, role_permissions, employee_roles + 4 future stubs (sales, customers, prescriptions, work_orders). Known debt — will be hardened in Module 2 (Platform Admin). Not a risk with single tenant.
+- **promptPin name collision (pre-existing):** modules/access-sync/sync-details.js:85 declares global promptPin() (0 params, Promise-based) that overwrites shared/js/pin-modal.js promptPin(title, callback). Not caused by Phase 2. Fix: rename sync version to promptSyncPin() in a future hotfix.
+- **Namespace decision for Phase 5:** When doing full migration in Phase 5, all shared/ functions must use namespace pattern (Modal.show, Toast.success, PinModal.prompt). No more bare global functions. This eliminates collision risk permanently.
+- **RLS permissive (carried forward):** USING true on 9 tables — deferred to Module 2.

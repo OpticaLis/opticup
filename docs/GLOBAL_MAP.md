@@ -262,16 +262,9 @@ File upload helper for supplier documents (Supabase Storage).
 
 ---
 
-### js/pin-modal.js (87 lines)
+### js/pin-modal.js (5 lines — redirect)
 
-Reusable PIN prompt modal with 5-digit split input.
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `promptPin` | `title: string, callback: function(pin, emp)` | `void` | Show PIN modal; on valid PIN calls callback with pin string and employee object |
-| `_promptPinSubmit` | `pin: string, callback: function, overlay: HTMLElement, digits: NodeList` | `Promise<void>` | Internal: verify PIN, call callback or show error |
+Backward-compat redirect to `shared/js/pin-modal.js` via `document.write()`. Will be removed in Phase 5 migration. Original PIN modal logic now lives in shared/js/pin-modal.js (123 lines).
 
 ---
 
@@ -284,7 +277,7 @@ Reusable PIN prompt modal with 5-digit split input.
 
 ---
 
-## 4. Shared Components (shared/) — Phase 1 complete ✅
+## 4. Shared Components (shared/) — Phase 2 complete ✅
 
 ### shared/css/variables.css (157 lines)
 
@@ -313,6 +306,14 @@ Page structure (.page-container, .page-header, .page-content), sticky header, fl
 
 Form layout: .form-group (label+input wrapper), .form-label, .form-required (red asterisk), .form-error/.form-help text, .form-row (multi-column flex), .form-col-2 (2-col grid), .form-actions (button container), .form-inline (label+input same line), mobile responsive.
 
+### shared/css/modal.css (233 lines)
+
+Modal system: overlay (fixed, z-modal), container (flex column, 90vh max), header/body/footer, close button. 5 sizes (sm 340px, md 500px, lg 700px, xl 900px, fullscreen 95vw). 5 types (default, confirm, alert, danger with red header, wizard with progress bar). Wizard step indicators (num/active/done). Animations (entering/leaving with scale+fade). Stack support (dimmed, pointer-events:none). Responsive (640px breakpoint).
+
+### shared/css/toast.css (155 lines)
+
+Toast notifications: container (fixed, z-toast, top-start, flex column), toast item (border-inline-start colored by type, shadow, flex row), icon/content/close/progress bar. 4 types (success/error/warning/info). 3 keyframe animations (toast-enter slide+fade in, toast-leave slide+fade out, toast-progress countdown). CSS custom property --toast-duration for JS control. Responsive (480px breakpoint). Zero hardcoded colors.
+
 ### shared/js/theme-loader.js (42 lines)
 
 **Functions:**
@@ -327,9 +328,81 @@ Form layout: .form-group (label+input wrapper), .form-label, .form-required (red
 |----------|------|-------------|
 | `window.loadTenantTheme` | `function` | Global reference to loadTenantTheme |
 
+### shared/js/modal-builder.js (261 lines)
+
+Modal system core. Global `Modal` object: `show(config)→{el,close}`, `confirm(config)`, `alert(config)`, `danger(config)` (typed word to enable), `form(config)→{el,close}`, `close()`, `closeAll()`. Stack management (_stack[]), focus trap, body scroll lock, Escape key, open/close animations. Private `_escapeHtml()` for plain text. Zero JS dependencies.
+
+**Functions:**
+
+| Function | Parameters | Returns | Description |
+|----------|-----------|---------|-------------|
+| `Modal.show` | `config: object` | `{el, close}` | Open modal with custom content |
+| `Modal.confirm` | `config: object` | `void` | Confirm dialog with onConfirm/onCancel |
+| `Modal.alert` | `config: object` | `void` | Informational alert with OK button |
+| `Modal.danger` | `config: object` | `void` | Danger confirmation requiring typed word |
+| `Modal.form` | `config: object` | `{el, close}` | Modal with form content |
+| `Modal.close` | — | `void` | Close topmost modal |
+| `Modal.closeAll` | — | `void` | Close all open modals |
+
+### shared/js/modal-wizard.js (145 lines)
+
+Wizard extension for Modal. Attaches `Modal.wizard(config)→{el,close}`. Multi-step progress bar (wizard-step-active/done), back/next/finish buttons, step validate/onEnter/onLeave callbacks. Depends on modal-builder.js (must load after).
+
+**Functions:**
+
+| Function | Parameters | Returns | Description |
+|----------|-----------|---------|-------------|
+| `Modal.wizard` | `config: object` | `{el, close}` | Multi-step wizard with progress bar |
+
+### shared/js/toast.js (147 lines)
+
+Toast notification system. Global `Toast` object: `success(msg,opts)`, `error(msg,opts)`, `warning(msg,opts)`, `info(msg,opts)`, `dismiss(id)`, `clear()`. Max 5 visible, duplicate prevention via id, auto-dismiss with CSS progress bar (--toast-duration), XSS-safe via _escapeHtml(). Zero dependencies.
+
+**Functions:**
+
+| Function | Parameters | Returns | Description |
+|----------|-----------|---------|-------------|
+| `Toast.success` | `msg: string, opts?: object` | `void` | Green success notification |
+| `Toast.error` | `msg: string, opts?: object` | `void` | Red error notification |
+| `Toast.warning` | `msg: string, opts?: object` | `void` | Orange warning notification |
+| `Toast.info` | `msg: string, opts?: object` | `void` | Blue info notification |
+| `Toast.dismiss` | `id: string` | `void` | Dismiss specific toast by id |
+| `Toast.clear` | — | `void` | Dismiss all toasts |
+
+### shared/js/pin-modal.js (123 lines)
+
+PIN prompt modal — migration of js/pin-modal.js. Global `promptPin(title, callback)` — identical external API. Internally uses `Modal.show()` for overlay/backdrop/close. 5-digit split input with auto-advance, backspace, paste, auto-submit. Calls `verifyPinOnly()` from auth-service.js. PIN-specific styles injected once via `<style>` block. Depends on modal-builder.js.
+
+**Functions:**
+
+| Function | Parameters | Returns | Description |
+|----------|-----------|---------|-------------|
+| `promptPin` | `title: string, callback: function(pin, emp)` | `void` | Show PIN modal; on valid PIN calls callback with pin string and employee object |
+
 ### shared/tests/ui-test.html (252 lines)
 
 Visual test page: 13 component sections (colors, typography, buttons, inputs, selects, textareas, badges, cards, tables, slide panel, skeleton, accordion, forms). 3-palette theme switcher (Default/Green/Purple) using loadTenantTheme(). RTL, Hebrew, self-contained. Loads only shared/css/ files — no styles.css dependency.
+
+### shared/tests/modal-test.html (251 lines)
+
+Modal system test page: 5 sections — sizes (sm/md/lg/xl/fullscreen), types (confirm/alert/danger/form/wizard), stack (3-layer), keyboard (escape/no-escape/no-backdrop), XSS test. Log area for event output. RTL, Hebrew, self-contained.
+
+### shared/tests/toast-test.html (174 lines)
+
+Toast system test page: 6 sections — types (success/error/warning/info), duration (1s/5s/persistent/dismiss), stack (5 toasts + 6th overflow), duplicate prevention (loading→done replace), XSS test, no-close-button. Log area for event output. RTL, Hebrew, self-contained.
+
+### Integration Points — Redirect Files
+
+| File | Path | Lines | Purpose |
+|------|------|-------|---------|
+| pin-modal.js (redirect) | js/pin-modal.js | 5 | Backward-compat redirect to shared/js/pin-modal.js via document.write(). Will be removed in Phase 5. |
+
+Pages modified for shared/ dependencies:
+
+| Page | Added CSS | Added JS |
+|------|-----------|----------|
+| inventory.html | shared/css/modal.css | shared/js/modal-builder.js |
+| suppliers-debt.html | shared/css/modal.css | shared/js/modal-builder.js |
 
 ---
 
@@ -369,7 +442,21 @@ Visual test page: 13 component sections (colors, typography, buttons, inputs, se
 | `batchUpdate` | supabase-ops.js | `tableName: string, records: object[]` | `Promise<object[]>` | Inventory edit, brands, PO items, receipts |
 | `generateNextBarcode` | supabase-ops.js | — | `Promise<string>` | Entry, Excel import, Receipt confirm |
 | `createAlert` | supabase-ops.js | `alertType, severity, title, ...` | `Promise<object\|null>` | Debt, OCR, Receipt-Debt |
-| `promptPin` | pin-modal.js | `title: string, callback: function` | `void` | Stock count, reduction, delete, debt payments, returns, shipments |
+| `promptPin` | shared/js/pin-modal.js | `title: string, callback: function` | `void` | Stock count, reduction, delete, debt payments, returns, shipments |
+| `Modal.show` | shared/js/modal-builder.js | `config: object` | `{el, close}` | Any module needing custom modal |
+| `Modal.confirm` | shared/js/modal-builder.js | `config: object` | `void` | Confirmation dialogs |
+| `Modal.alert` | shared/js/modal-builder.js | `config: object` | `void` | Informational alerts |
+| `Modal.danger` | shared/js/modal-builder.js | `config: object` | `void` | Danger confirmation with typed word |
+| `Modal.form` | shared/js/modal-builder.js | `config: object` | `{el, close}` | Form modals |
+| `Modal.wizard` | shared/js/modal-wizard.js | `config: object` | `{el, close}` | Multi-step wizard modals |
+| `Modal.close` | shared/js/modal-builder.js | — | `void` | Close topmost modal |
+| `Modal.closeAll` | shared/js/modal-builder.js | — | `void` | Close all open modals |
+| `Toast.success` | shared/js/toast.js | `msg: string, opts?: object` | `void` | Success notification |
+| `Toast.error` | shared/js/toast.js | `msg: string, opts?: object` | `void` | Error notification |
+| `Toast.warning` | shared/js/toast.js | `msg: string, opts?: object` | `void` | Warning notification |
+| `Toast.info` | shared/js/toast.js | `msg: string, opts?: object` | `void` | Info notification |
+| `Toast.dismiss` | shared/js/toast.js | `id: string` | `void` | Dismiss specific toast |
+| `Toast.clear` | shared/js/toast.js | — | `void` | Dismiss all toasts |
 | `escapeHtml` | shared.js | `str: string` | `string` | Every module (HTML rendering) |
 | `toast` | shared.js | `msg: string, type?: string` | `void` | Every module (user feedback) |
 | `formatILS` | shared.js | `amount: number` | `string` | Debt, PO, Receipts, Shipments |
@@ -399,7 +486,7 @@ Visual test page: 13 component sections (colors, typography, buttons, inputs, se
 | Module | Status | Directory | HTML Pages | DB Tables (count) |
 |--------|--------|-----------|------------|-------------------|
 | Module 1 — Inventory Management | ✅ Complete | `modules/inventory/`, `modules/purchasing/`, `modules/goods-receipts/`, `modules/audit/`, `modules/brands/`, `modules/access-sync/`, `modules/admin/`, `modules/debt/`, `modules/debt/ai/`, `modules/permissions/`, `modules/shipments/`, `modules/stock-count/`, `modules/settings/` | `index.html`, `inventory.html`, `suppliers-debt.html`, `employees.html`, `shipments.html`, `settings.html` | 46 active + 4 stubs = 50 |
-| Module 1.5 — Shared Components | 🔨 In Progress (Phase 1 complete ✅) | `shared/css/`, `shared/js/`, `shared/tests/` | — | 0 (ui_config JSONB column on tenants only) |
+| Module 1.5 — Shared Components | 🔨 In Progress (Phase 2 complete ✅) | `shared/css/`, `shared/js/`, `shared/tests/` | — | 0 (ui_config JSONB column on tenants only) |
 
 ---
 
