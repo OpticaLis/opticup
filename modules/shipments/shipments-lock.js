@@ -196,11 +196,12 @@ async function addItemToExistingBox(shipmentId, item) {
   var { error } = await sb.from(T.SHIP_ITEMS).insert(row);
   if (error) { toast('שגיאה בהוספת פריט: ' + error.message, 'e'); return false; }
 
-  // Update shipment summary
-  await sb.from(T.SHIPMENTS).update({
-    items_count: (box.items_count || 0) + 1,
-    total_value: (Number(box.total_value) || 0) + (Number(item.unit_cost) || 0)
-  }).eq('id', shipmentId).eq('tenant_id', tid);
+  // Update shipment summary (atomic RPC — Phase 3 fix)
+  await sb.rpc('increment_shipment_counters', {
+    p_shipment_id: shipmentId,
+    p_items_delta: 1,
+    p_value_delta: Number(item.unit_cost) || 0
+  });
 
   // Handle return items
   if (item.return_id && typeof handleReturnItemsOnCreate === 'function') {
