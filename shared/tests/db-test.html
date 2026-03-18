@@ -112,15 +112,17 @@ async function checkSession() {
     bar.className = 'status-err';
     return false;
   }
-  // Restore JWT client
+  // Restore JWT-authenticated client (same pattern as loadSession in auth-service.js)
   var jwt = sessionStorage.getItem('jwt_token');
   if (jwt) {
-    window.sb = supabase.createClient(
-      'https://tsxrrxzmdxaenlvocyit.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU',
-      { global: { headers: { Authorization: 'Bearer ' + jwt } } }
-    );
+    window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+      global: { headers: { Authorization: 'Bearer ' + jwt } }
+    });
     sb = window.sb;
+  } else {
+    bar.textContent = 'אין JWT token — התחבר דרך index.html קודם (נדרש PIN login)';
+    bar.className = 'status-err';
+    return false;
   }
   // Quick connectivity test
   var { data, error } = await DB.select('activity_log', {}, { limit: 1, silent: true });

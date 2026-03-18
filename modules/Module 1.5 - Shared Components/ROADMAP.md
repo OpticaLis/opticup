@@ -303,7 +303,7 @@ CREATE TABLE activity_log (
 -- RLS
 ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON activity_log
-  USING (tenant_id = current_setting('app.tenant_id')::uuid);
+  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
 
 -- Indexes
 CREATE INDEX idx_activity_log_tenant ON activity_log(tenant_id);
