@@ -367,35 +367,48 @@ async function startCamera() {
   document.getElementById('sc-cam-resume').addEventListener('click', function () { _scResumeScanning(); });
   document.getElementById('sc-cam-done').addEventListener('click', function () { stopCamera(); });
 
+  var debugEl = document.getElementById('sc-scan-debug');
   try {
     scCodeReader = new ZXing.BrowserMultiFormatReader();
+    if (debugEl) debugEl.innerHTML = 'ZXing initialized...<br>' + debugEl.innerHTML;
     var constraints = { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } };
     var stream = await navigator.mediaDevices.getUserMedia(constraints);
+    if (debugEl) debugEl.innerHTML = 'Camera stream acquired<br>' + debugEl.innerHTML;
     var videoEl = document.getElementById('sc-video-fs');
     videoEl.srcObject = stream;
     await scCodeReader.decodeFromVideoDevice(null, 'sc-video-fs', function (result) {
-      if (!result) return;
-      // TEMP DEBUG: log every detection to visible panel
-      var debugEl = document.getElementById('sc-scan-debug');
-      if (debugEl) {
-        var now = new Date().toLocaleTimeString('he-IL');
-        var raw = result.getText();
-        var fmt = result.getBarcodeFormat ? result.getBarcodeFormat() : 'unknown';
-        var line = now + ' | raw: "' + raw + '" | fmt: ' + fmt + ' | len: ' + raw.length;
-        debugEl.innerHTML = line + '<br>' + debugEl.innerHTML;
-        var lines = debugEl.innerHTML.split('<br>');
-        if (lines.length > 10) debugEl.innerHTML = lines.slice(0, 10).join('<br>');
+      try {
+        if (!result) return;
+        // TEMP DEBUG: log every detection to visible panel
+        var dbg = document.getElementById('sc-scan-debug');
+        if (dbg) {
+          var now = new Date().toLocaleTimeString('he-IL');
+          var raw = result.getText();
+          var fmt = result.getBarcodeFormat ? result.getBarcodeFormat() : 'unknown';
+          var line = now + ' | raw: "' + raw + '" | fmt: ' + fmt + ' | len: ' + raw.length;
+          dbg.innerHTML = line + '<br>' + dbg.innerHTML;
+          var lines = dbg.innerHTML.split('<br>');
+          if (lines.length > 10) dbg.innerHTML = lines.slice(0, 10).join('<br>');
+        }
+        if (_scanPaused) return;
+        var vf = document.getElementById('sc-viewfinder');
+        if (vf) { vf.style.borderColor = '#22c55e'; vf.style.boxShadow = '0 0 20px rgba(34,197,94,.6), 0 0 0 4000px rgba(0,0,0,.35)'; }
+        _scanPaused = true; // freeze scanning immediately
+        _scHandleCameraScan(result.getText());
+      } catch (cbErr) {
+        var dbg2 = document.getElementById('sc-scan-debug');
+        if (dbg2) dbg2.innerHTML = '<span style="color:red">CALLBACK ERR: ' + cbErr.message + '</span><br>' + dbg2.innerHTML;
+        _scanPaused = false;
       }
-      if (_scanPaused) return;
-      var vf = document.getElementById('sc-viewfinder');
-      if (vf) { vf.style.borderColor = '#22c55e'; vf.style.boxShadow = '0 0 20px rgba(34,197,94,.6), 0 0 0 4000px rgba(0,0,0,.35)'; }
-      _scanPaused = true; // freeze scanning immediately
-      _scHandleCameraScan(result.getText());
     });
+    if (debugEl) debugEl.innerHTML = 'Decode started — waiting for barcodes...<br>' + debugEl.innerHTML;
   } catch (err) {
-    toast('לא ניתן להפעיל מצלמה — השתמש בהזנה ידנית', 'w');
+    // Camera/ZXing failed — show error IN the debug panel, keep overlay open
     console.warn('Camera error:', err);
-    stopCamera();
+    var dbgErr = document.getElementById('sc-scan-debug');
+    if (dbgErr) dbgErr.innerHTML = '<span style="color:red">CAM ERROR: ' + err.message + '</span><br>' + dbgErr.innerHTML;
+    toast('שגיאת מצלמה: ' + err.message, 'w');
+    // Do NOT call stopCamera() — keep overlay open so user sees the error
   }
 }
 
