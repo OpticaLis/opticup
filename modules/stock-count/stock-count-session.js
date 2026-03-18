@@ -350,13 +350,29 @@ async function startCamera() {
     </div>
     <div id="sc-scan-debug" style="position:absolute;bottom:60px;left:10px;right:10px;background:rgba(0,0,0,0.8);color:#0f0;font-family:monospace;font-size:13px;padding:10px;border-radius:8px;max-height:150px;overflow-y:auto;z-index:10004;direction:ltr;text-align:left">סורק...</div>
     <div id="sc-cam-success" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10003;
-      display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)">
+      flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)">
       <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">
         <div style="font-size:2.5rem;margin-bottom:8px">✅</div>
         <div id="sc-cam-success-text" style="font-size:1rem;font-weight:600;color:var(--primary);margin-bottom:16px"></div>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
           <button id="sc-cam-resume" style="min-height:48px;padding:10px 24px;font-size:1rem;font-weight:600;border:none;border-radius:10px;background:var(--primary);color:#fff;cursor:pointer;flex:1;min-width:120px">המשך סריקה</button>
           <button id="sc-cam-done" style="min-height:48px;padding:10px 24px;font-size:1rem;font-weight:600;border:2px solid var(--g300);border-radius:10px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:100px">✕ סגור</button>
+        </div>
+      </div>
+    </div>
+    <div id="sc-cam-qty" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10003;
+      flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)">
+      <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+        <div style="font-size:1.8rem;margin-bottom:8px">🔄</div>
+        <div id="sc-cam-qty-info" style="font-size:.9rem;font-weight:600;color:var(--primary);margin-bottom:4px"></div>
+        <div id="sc-cam-qty-cur" style="font-size:.82rem;color:var(--g500);margin-bottom:12px"></div>
+        <label style="display:block;font-weight:600;margin-bottom:6px;font-size:.9rem">כמה יחידות יש מפריט זה?</label>
+        <input id="sc-cam-qty-input" type="number" min="0" inputmode="numeric"
+          style="width:100%;min-height:52px;font-size:22px;text-align:center;border:2px solid var(--g300);border-radius:8px;padding:10px;margin-bottom:14px">
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button id="sc-cam-qty-save" style="min-height:48px;padding:10px 24px;font-size:1rem;font-weight:600;border:none;border-radius:10px;background:var(--primary);color:#fff;cursor:pointer;flex:1;min-width:100px">עדכן</button>
+          <button id="sc-cam-qty-skip" style="min-height:48px;padding:10px 16px;font-size:.9rem;font-weight:600;border:2px solid var(--g300);border-radius:10px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:100px">המשך בלי שינוי</button>
+          <button id="sc-cam-qty-close" style="min-height:48px;padding:10px 16px;font-size:.9rem;font-weight:600;border:2px solid var(--g300);border-radius:10px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:80px">✕ סגור</button>
         </div>
       </div>
     </div>`;
@@ -366,6 +382,9 @@ async function startCamera() {
   document.getElementById('sc-cam-close').addEventListener('click', function () { stopCamera(); });
   document.getElementById('sc-cam-resume').addEventListener('click', function () { _scResumeScanning(); });
   document.getElementById('sc-cam-done').addEventListener('click', function () { stopCamera(); });
+  document.getElementById('sc-cam-qty-save').addEventListener('click', function () { _scCamQtySave(); });
+  document.getElementById('sc-cam-qty-skip').addEventListener('click', function () { _scCamQtyDismiss(); });
+  document.getElementById('sc-cam-qty-close').addEventListener('click', function () { stopCamera(); });
 
   var debugEl = document.getElementById('sc-scan-debug');
   try {
@@ -446,8 +465,19 @@ async function _scHandleCameraScan(barcode) {
     return;
   }
   if (item.status === 'counted') {
-    // Already counted — show qty modal, scanning stays paused
-    _showQtyModal(item, true); // true = from camera
+    // Already counted — show qty panel INSIDE camera overlay
+    _scCamQtyItem = item;
+    var infoEl = document.getElementById('sc-cam-qty-info');
+    if (infoEl) infoEl.textContent = (item.barcode || '') + ' — ' + (item.brand || '') + ' ' + (item.model || '');
+    var curEl = document.getElementById('sc-cam-qty-cur');
+    if (curEl) curEl.textContent = 'כבר נספר! כמות נוכחית: ' + (item.actual_qty || 0);
+    var inp = document.getElementById('sc-cam-qty-input');
+    if (inp) inp.value = item.actual_qty || 0;
+    var qtyPanel = document.getElementById('sc-cam-qty');
+    if (qtyPanel) qtyPanel.style.display = 'flex';
+    var hint = document.getElementById('sc-cam-hint');
+    if (hint) hint.style.display = 'none';
+    setTimeout(function () { if (inp) { inp.focus(); inp.select(); } }, 100);
     return;
   }
   // First scan — auto-count as 1, show success banner
@@ -462,9 +492,11 @@ async function _scHandleCameraScan(barcode) {
 
 function _scResumeScanning() {
   _scanPaused = false;
-  _lastScanCode = ''; _lastScanTime = 0; // clear dedup so same barcode can be scanned again next item
+  _lastScanCode = ''; _lastScanTime = 0;
   var banner = document.getElementById('sc-cam-success');
   if (banner) banner.style.display = 'none';
+  var qtyPanel = document.getElementById('sc-cam-qty');
+  if (qtyPanel) qtyPanel.style.display = 'none';
   var hint = document.getElementById('sc-cam-hint');
   if (hint) hint.style.display = '';
   _scResetViewfinder();
@@ -473,6 +505,25 @@ function _scResumeScanning() {
 function _scResetViewfinder() {
   var vf = document.getElementById('sc-viewfinder');
   if (vf) { vf.style.borderColor = 'rgba(255,255,255,.5)'; vf.style.boxShadow = '0 0 0 4000px rgba(0,0,0,.35)'; }
+}
+
+// ── Camera qty panel (re-scan inside overlay) ─────────────────
+var _scCamQtyItem = null;
+
+function _scCamQtySave() {
+  var inp = document.getElementById('sc-cam-qty-input');
+  var val = parseInt(inp?.value);
+  if (isNaN(val) || val < 0) { toast('כמות לא תקינה', 'e'); return; }
+  if (_scCamQtyItem) updateCountItem(_scCamQtyItem.id, val);
+  _scCamQtyItem = null;
+  _scCamQtyDismiss();
+}
+
+function _scCamQtyDismiss() {
+  _scCamQtyItem = null;
+  var qtyPanel = document.getElementById('sc-cam-qty');
+  if (qtyPanel) qtyPanel.style.display = 'none';
+  _scResumeScanning();
 }
 
 function stopCamera() {
