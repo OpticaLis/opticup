@@ -23,3 +23,43 @@ ALTER TABLE tenants
 -- Empty {} = use variables.css defaults (current Prizma design).
 -- No RLS change needed — tenants table already has tenant isolation policy.
 -- No index needed — one row per tenant, not searchable.
+
+-- =============================================================================
+-- Phase 3: Activity Log — system-level event log
+-- Executed: 2026-03-18
+-- Purpose: Central system event log for login, settings, permissions, cross-module
+--          events. Lives alongside inventory_logs (business audit). No migration.
+-- =============================================================================
+CREATE TABLE activity_log (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id),
+  branch_id UUID,
+  user_id UUID REFERENCES employees(id),
+  level TEXT NOT NULL DEFAULT 'info'
+    CHECK (level IN ('info', 'warning', 'error', 'critical')),
+  action TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id TEXT,
+  details JSONB DEFAULT '{}',
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- RLS
+ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON activity_log
+  USING (tenant_id = current_setting('app.tenant_id')::uuid);
+
+-- Indexes
+CREATE INDEX idx_activity_log_tenant
+  ON activity_log(tenant_id);
+CREATE INDEX idx_activity_log_entity
+  ON activity_log(tenant_id, entity_type, entity_id);
+CREATE INDEX idx_activity_log_action
+  ON activity_log(tenant_id, action);
+CREATE INDEX idx_activity_log_created
+  ON activity_log(tenant_id, created_at DESC);
+CREATE INDEX idx_activity_log_level
+  ON activity_log(tenant_id, level)
+  WHERE level IN ('warning', 'error', 'critical');

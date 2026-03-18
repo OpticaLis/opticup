@@ -106,3 +106,4 @@ All variables defined in `shared/css/variables.css`:
 | Phase | Table | Change | Description |
 |-------|-------|--------|-------------|
 | 1 | tenants | ADD COLUMN `ui_config JSONB DEFAULT '{}'` | Per-tenant CSS variable overrides for theming |
+| 3 | activity_log | CREATE TABLE | System-level event log: level (info/warning/error/critical), action, entity_type, entity_id, details JSONB. RLS + 5 indexes. |

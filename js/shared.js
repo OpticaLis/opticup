@@ -35,6 +35,7 @@ const T = {
   COURIERS: 'courier_companies',
   SHIPMENTS: 'shipments',
   SHIP_ITEMS: 'shipment_items',
+  ACTIVITY_LOG: 'activity_log',
 };
 
 // — STATE —

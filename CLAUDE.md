@@ -199,8 +199,9 @@ opticup/
 | `T.COURIERS`      | courier_companies        | id, tenant_id, name, phone, contact_person, is_active                    |
 | `T.SHIPMENTS`     | shipments                | id, tenant_id, box_number, shipment_type, supplier_id, courier_id, packed_by, locked_at, items_count, total_value, corrects_box_id, is_deleted |
 | `T.SHIP_ITEMS`    | shipment_items           | id, tenant_id, shipment_id, item_type, inventory_id, return_id, barcode, brand, model, category, unit_cost |
+| `T.ACTIVITY_LOG`  | activity_log             | id, tenant_id, branch_id, user_id, level, action, entity_type, entity_id, details (jsonb), ip_address, user_agent, created_at |
 
-**Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 45 tables.
+**Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 46 tables.
 
 ---
 
