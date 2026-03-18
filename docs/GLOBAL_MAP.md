@@ -377,7 +377,8 @@ PIN prompt modal — migration of js/pin-modal.js. Global `promptPin(title, call
 
 | Function | Parameters | Returns | Description |
 |----------|-----------|---------|-------------|
-| `promptPin` | `title: string, callback: function(pin, emp)` | `void` | Show PIN modal; on valid PIN calls callback with pin string and employee object |
+| `PinModal.prompt` | `title: string, callback: function(pin, emp)` | `void` | Show PIN modal; on valid PIN calls callback with pin string and employee object (new namespace) |
+| `promptPin` | `title: string, callback: function(pin, emp)` | `void` | Legacy alias for PinModal.prompt — backward compatible |
 
 ### shared/tests/ui-test.html (252 lines)
 

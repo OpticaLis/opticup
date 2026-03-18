@@ -1,45 +1,5 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
-## Phase 5 — Cleanup & Hardening ✅ (2026-03-18)
-
-### Commits
-- b8789ed: Phase 5 Step 0: migration map for all 5 pages
-- 653e217: Phase 5 Step 1: zero hardcoded business values scan and fix
-- b209a90: Phase 5 Step 2: custom_fields JSONB column on inventory
-- a98408c: Phase 5 Step 3: PinModal namespace + promptSyncPin collision fix
-- ff41a0b: Phase 5 Steps 4-5: theme hook + wrapper strategy + inventory CSS migration
-- cd8862a: Phase 5 Steps 6-8: inventory manual migrations (alerts, modals, permissions)
-- f7f6a56: Phase 5 Steps 9-12: inventory regression + employees/settings/index CSS migration
-- 8d51bb1: Phase 5 Steps 13-15: shipments.html full migration
-
-### New Files
-- css/inventory.css, css/employees.css, css/settings.css, css/shipments.css (page-specific styles)
-- PHASE_5_MIGRATION_MAP.md (140-item scan of all 5 pages)
-
-### DB Changes
-- ALTER TABLE inventory ADD COLUMN custom_fields JSONB DEFAULT '{}'
-
-### Modified Files (15)
-- js/shared.js — wrapper strategy (toast/confirmDialog/showInfoModal delegate to shared/)
-- js/auth-service.js — applyUIPermissions() delegates to PermissionUI.apply()
-- js/header.js — loadTenantTheme() hook
-- shared/js/pin-modal.js — PinModal namespace added
-- shared/js/permission-ui.js — data-tab-permission support
-- modules/access-sync/sync-details.js — promptSyncPin rename
-- modules/inventory/inventory-edit.js — PinModal.prompt() migration
-- modules/audit/audit-log.js — PinModal.prompt() migration
-- modules/shipments/shipments-lock.js — native confirm() replaced
-- inventory.html, employees.html, settings.html, index.html, shipments.html — CSS + JS migration
-
-### Phase Summary
-- 5 pages migrated to shared/ CSS + JS (suppliers-debt deferred)
-- Wrapper strategy covers ~200+ toast/confirm/modal call sites automatically
-- 2 PIN modals replaced with PinModal.prompt(), 2 native confirm() replaced
-- custom_fields JSONB ready for per-tenant dynamic fields
-- Zero console errors on all 6 pages
-
----
-
 ## Phase 4 — Table Builder + Permissions ✅ (2026-03-18)
 
 ### Commits

@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-03-18 (Phase 5 complete)
+> Last updated: 2026-03-18 (Phase 4 complete)
 
 ---
 
@@ -29,11 +29,11 @@
 | 2 | modal-builder.js | shared/js/modal-builder.js | 261 | Modal system core. Global `Modal` object: `show(config)→{el,close}`, `confirm(config)`, `alert(config)`, `danger(config)` (typed word to enable), `form(config)→{el,close}`, `close()`, `closeAll()`. Stack management (_stack[]), focus trap, body scroll lock, Escape key, open/close animations. Private `_escapeHtml()` for plain text. Zero JS dependencies. |
 | 3 | modal-wizard.js | shared/js/modal-wizard.js | 145 | Wizard extension for Modal. Attaches `Modal.wizard(config)→{el,close}`. Multi-step progress bar (wizard-step-active/done), back/next/finish buttons, step validate/onEnter/onLeave callbacks. Depends on modal-builder.js (must load after). |
 | 4 | toast.js | shared/js/toast.js | 147 | Toast notification system. Global `Toast` object: `success(msg,opts)`, `error(msg,opts)`, `warning(msg,opts)`, `info(msg,opts)`, `dismiss(id)`, `clear()`. Max 5 visible, duplicate prevention via id, auto-dismiss with CSS progress bar (--toast-duration), XSS-safe via _escapeHtml(). Zero dependencies. |
-| 5 | pin-modal.js | shared/js/pin-modal.js | 127 | PIN prompt modal — migration of js/pin-modal.js. Global `promptPin(title, callback)` — identical external API. Internally uses `Modal.show()` for overlay/backdrop/close. 5-digit split input with auto-advance, backspace, paste, auto-submit. Calls `verifyPinOnly()` from auth-service.js. PIN-specific styles injected once via `<style>` block. Depends on modal-builder.js. |
+| 5 | pin-modal.js | shared/js/pin-modal.js | 123 | PIN prompt modal — migration of js/pin-modal.js. Global `promptPin(title, callback)` — identical external API. Internally uses `Modal.show()` for overlay/backdrop/close. 5-digit split input with auto-advance, backspace, paste, auto-submit. Calls `verifyPinOnly()` from auth-service.js. PIN-specific styles injected once via `<style>` block. Depends on modal-builder.js. |
 | 6 | supabase-client.js | shared/js/supabase-client.js | 263 | Supabase wrapper. Global `DB` object: `select(table,filters?,opts?)`, `insert(table,data,opts?)`, `update(table,id,changes,opts?)`, `batchUpdate(table,records,opts?)`, `softDelete(table,id,opts?)`, `hardDelete(table,id,opts?)`, `rpc(fn,params?,opts?)`. CSS-only spinner (200ms debounce, counter for parallel calls). Error classification (RLS 42501, network, unique 23505, not-found). Auto tenant_id on insert/select. Toast optional dependency. Depends on sb + getTenantId(). |
 | 7 | activity-logger.js | shared/js/activity-logger.js | 90 | Activity log helper. Global `ActivityLog` object: `write(config)`, `warning(config)`, `error(config)`, `critical(config)`. Fire-and-forget (async, non-blocking). Auto-inject tenant_id from getTenantId(), user_id/branch_id from getCurrentEmployee(). Uses DB.insert if available, sb.from() fallback. Skips non-UUID branch_id. Zero CSS dependencies. |
 | 8 | table-builder.js | shared/js/table-builder.js | 296 | Table builder. Global `TableBuilder` object: `create(config)→TableInstance`. Instance methods: `setData(rows)`, `setLoading(bool)`, `updateRow(id,data)`, `removeRow(id)`, `getData()→array`, `destroy()`. Config: containerId, columns (key/label/type/sortable/render/width/cssClass), emptyState (icon/text/cta), onSort(key,dir), onRowClick(row,el), rowId, stickyHeader, skeletonRows. 7 column types: text (textContent safe), number (he-IL locale), currency (₪), date (DD/MM/YYYY), badge/actions/custom (render function). Sort is external — visual state only + onSort callback. Soft dep on escapeHtml(). Zero deps on DB/Modal/Toast. |
-| 9 | permission-ui.js | shared/js/permission-ui.js | 70 | Permission-aware UI. Global `PermissionUI` object: `apply()` (scan document), `applyTo(container)` (scan container), `check(permission)→boolean`. Reads `[data-permission]` attributes, supports OR via pipe `perm1|perm2`. Hide mode (default: display:none) or disable mode (`data-permission-mode="disable"`: disabled+opacity 0.5+title). Wraps `hasPermission()` from auth-service.js. Safe fallback: if hasPermission unavailable → console.warn + hide all guarded elements. Zero deps on CSS/DB/Modal/Toast/Table. |
+| 9 | permission-ui.js | shared/js/permission-ui.js | 53 | Permission-aware UI. Global `PermissionUI` object: `apply()` (scan document), `applyTo(container)` (scan container), `check(permission)→boolean`. Reads `[data-permission]` attributes, supports OR via pipe `perm1|perm2`. Hide mode (default: display:none) or disable mode (`data-permission-mode="disable"`: disabled+opacity 0.5+title). Wraps `hasPermission()` from auth-service.js. Safe fallback: if hasPermission unavailable → console.warn + hide all guarded elements. Zero deps on CSS/DB/Modal/Toast/Table. |
 
 ---
 
@@ -48,17 +48,6 @@
 | 5 | activity-log-test.html | shared/tests/activity-log-test.html | 251 | Activity log test page: 8 sections — write (info), warning, error, critical, changeset format, fire-and-forget, validation (missing fields), cleanup. Uses waitAndFind polling. Requires JWT session. |
 | 6 | table-test.html | shared/tests/table-test.html | 235 | Table builder test page: 9 sections — basic table (all 7 column types, 20 rows, null/zero edge cases), sort (toggle asc/desc, single active column), empty state (icon/text/CTA toggle), loading (skeleton, auto 2s), row ops (updateRow/removeRow/getData), sticky header (100 rows, 400px scroll), row click (onRowClick + action button exclusion), XSS (script/img tags escaped), destroy/recreate. Mock data inline, RTL, Hebrew. |
 | 7 | permission-test.html | shared/tests/permission-test.html | 190 | Permission UI test page: 7 sections — hide mode (4 buttons, checkbox toggles, re-apply), disable mode (opacity + tooltip), OR logic (pipe separator), applyTo (dynamic content injection), manual check (input + result), no-hasPermission (remove/restore + console.warn), full reset (all off / CEO mode). Mock hasPermission inline, RTL, Hebrew. |
-
----
-
-## 4. File Index — Page-Specific CSS (Phase 5)
-
-| # | File | Path | Lines | Responsibility |
-|---|------|------|-------|----------------|
-| 1 | inventory.css | css/inventory.css | 396 | Inventory page styles: nav tabs, cards, item cards, table (#inv-table), bulk bar, search-select, PO list, receipts, stock count, OCR, weekly report, AI config, help banners. Copied from styles.css as override layer on top of shared/css/*. |
-| 2 | employees.css | css/employees.css | 396 | Employees page styles (base from styles.css). Override layer on shared/css/*. |
-| 3 | settings.css | css/settings.css | 396 | Settings page styles: .settings-container, settings-section, settings-grid, settings-field, logo-preview. Override layer on shared/css/*. |
-| 4 | shipments.css | css/shipments.css | 396 | Shipments page styles (base from styles.css). Override layer on shared/css/*. Shipment-specific styles in inline <style>. |
 
 ---
 

@@ -1,11 +1,10 @@
 # Module 1.5 — Shared Components Refactor — MODULE_SPEC
 
-## Current State (Phase 5 complete)
+## Current State (Phase 4 complete)
 
 ### DB Changes
 - `tenants.ui_config` (JSONB, default '{}') — per-tenant CSS variable overrides. Keys must start with `--` to be injected.
 - `activity_log` table — system-level event log: level (info/warning/error/critical), action, entity_type, entity_id, details JSONB. RLS via request.jwt.claims + 5 indexes.
-- `inventory.custom_fields` (JSONB, default '{}') — per-tenant dynamic fields. No UI yet.
 
 ### shared/css/ (8 files, 1,510 lines)
 
@@ -28,11 +27,11 @@
 | modal-builder.js | 261 | Modal system core. Global `Modal` object: show/confirm/alert/danger/form/close/closeAll. Stack management, focus trap, body scroll lock, Escape key, open/close animations. Private `_escapeHtml()`. Zero JS dependencies. |
 | modal-wizard.js | 144 | Wizard extension for Modal. `Modal.wizard(config)`. Multi-step progress bar, back/next/finish buttons, step validate/onEnter/onLeave callbacks. Depends on modal-builder.js. |
 | toast.js | 131 | Toast notification system. Global `Toast` object: success/error/warning/info/dismiss/clear. Max 5 visible, duplicate prevention via id, auto-dismiss with CSS progress bar, XSS-safe. Zero dependencies. |
-| pin-modal.js | 127 | PIN prompt modal. Global `PinModal.prompt(title, callback)` + legacy `promptPin(title, callback)` alias. Uses Modal.show() internally. 5-digit split input with auto-advance, backspace, paste, auto-submit. Depends on modal-builder.js + auth-service.js. |
+| pin-modal.js | 123 | PIN prompt modal — migration of js/pin-modal.js. Global `promptPin(title, callback)` — identical external API. Uses Modal.show() internally. 5-digit split input with auto-advance, backspace, paste, auto-submit. Depends on modal-builder.js + auth-service.js. |
 | supabase-client.js | 263 | Supabase wrapper. Global `DB` object: select/insert/update/batchUpdate/softDelete/hardDelete/rpc. CSS-only spinner (200ms debounce), error classification (RLS/network/unique/not-found), tenant_id auto-inject, Toast optional. Depends on sb + getTenantId(). |
 | activity-logger.js | 90 | Activity log helper. Global `ActivityLog` object: write/warning/error/critical. Fire-and-forget, auto-inject tenant_id/user_id/branch_id. Uses DB.insert or sb.from() fallback. Zero CSS dependencies. |
 | table-builder.js | 296 | Table builder. Global `TableBuilder` object: create(config) → TableInstance with setData/setLoading/updateRow/removeRow/getData/destroy. 7 column types (text/number/currency/date/badge/actions/custom). External sort via onSort callback. XSS-safe text via textContent. Soft dep on escapeHtml(). |
-| permission-ui.js | 70 | Permission-aware UI. Global `PermissionUI` object: apply()/applyTo(container)/check(perm). Scans [data-permission] and [data-tab-permission] attributes, hide or disable elements. OR logic via pipe separator. Wraps hasPermission() from auth-service.js. Safe fallback when unavailable. |
+| permission-ui.js | 53 | Permission-aware UI. Global `PermissionUI` object: apply()/applyTo(container)/check(perm). Scans [data-permission] attributes, hide or disable elements. OR logic via pipe separator. Wraps hasPermission() from auth-service.js. Safe fallback when unavailable. |
 
 ### shared/tests/ (7 files, 1,659 lines)
 
@@ -50,27 +49,14 @@
 
 | File | Path | Lines | Purpose |
 |------|------|-------|---------|
-| pin-modal.js (redirect) | js/pin-modal.js | 5 | Backward-compat redirect to shared/js/pin-modal.js via document.write(). Kept for suppliers-debt.html. |
+| pin-modal.js (redirect) | js/pin-modal.js | 5 | Backward-compat redirect to shared/js/pin-modal.js via document.write(). Will be removed in Phase 5. |
 
-Pages migrated to shared/ components:
+Pages modified for shared/ dependencies:
 
-| Page | Shared CSS | Shared JS | Page CSS |
-|------|-----------|----------|----------|
-| inventory.html | All 8 shared/css/* | All 9 shared/js/* | css/inventory.css |
-| employees.html | All 8 shared/css/* | All 9 shared/js/* | css/employees.css |
-| settings.html | All 8 shared/css/* | All 9 shared/js/* | css/settings.css |
-| shipments.html | All 8 shared/css/* | All 9 shared/js/* | css/shipments.css |
-| index.html | 5 shared/css/* | 4 shared/js/* | inline styles |
-| suppliers-debt.html | shared/css/modal.css only | shared/js/modal-builder.js only | css/styles.css (legacy) |
-
-Wrapper functions (js/shared.js + js/auth-service.js):
-
-| Function | Delegates to | Fallback |
-|----------|-------------|----------|
-| toast(msg, type) | Toast.success/error/warning/info | Original DOM-based toast |
-| confirmDialog(title, text) | Modal.confirm() | Original #confirm-modal |
-| showInfoModal(title, html) | Modal.show() | Original overlay builder |
-| applyUIPermissions() | PermissionUI.apply() | Original querySelectorAll scan |
+| Page | Added CSS | Added JS |
+|------|-----------|----------|
+| inventory.html | shared/css/modal.css | shared/js/modal-builder.js |
+| suppliers-debt.html | shared/css/modal.css | shared/js/modal-builder.js |
 
 ### Contracts (Public API)
 
@@ -124,8 +110,7 @@ Wrapper functions (js/shared.js + js/auth-service.js):
 - `Toast.clear()` — dismiss all toasts
 
 **JS Functions — PIN:**
-- `PinModal.prompt(title, callback)` — PIN prompt modal (new namespace)
-- `promptPin(title, callback)` — legacy alias (backward compatible)
+- `promptPin(title, callback)` — PIN prompt modal (legacy API, uses Modal internally)
 
 **JS Functions — Theme:**
 - `loadTenantTheme(tenantRow)` — per-tenant CSS override injection
@@ -159,9 +144,8 @@ Wrapper functions (js/shared.js + js/auth-service.js):
 - `PermissionUI.applyTo(container)` — scan container only (dynamic content)
 - `PermissionUI.check(permission) → boolean` — manual permission check
 
-**HTML Attributes — Permission UI (Phase 4+5):**
+**HTML Attributes — Permission UI (Phase 4):**
 - `data-permission="module.action"` — permission check (hide if no perm)
-- `data-tab-permission="module.action"` — tab permission check (same logic)
 - `data-permission="perm1|perm2"` — OR logic (visible if any match)
 - `data-permission-mode="disable"` — disable instead of hide (opacity 0.5 + tooltip)
 
@@ -170,8 +154,7 @@ Wrapper functions (js/shared.js + js/auth-service.js):
 - `increment_prepaid_used(p_deal_id, p_delta)` — atomic total_used/total_remaining update on prepaid_deals
 - `increment_shipment_counters(p_shipment_id, p_items_delta, p_value_delta)` — atomic items_count/total_value update on shipments
 
-### Deferred Items
-- suppliers-debt.html migration → deferred to finance module
-- styles.css deletion → after suppliers-debt migration
-- js/pin-modal.js redirect deletion → after suppliers-debt migration
-- DB.* migration (supabase-ops.js → DB.*) → not Module 1.5 scope
+### What Doesn't Exist Yet (Phase 5+)
+- Zero hardcoded values scan + migration
+- custom_fields JSONB on inventory
+- inventory.html full migration to shared/ components
