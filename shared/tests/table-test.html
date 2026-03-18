@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Table Builder Test — Optic Up Shared</title>
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/table.css">
+  <style>
+    body { font-family: var(--font-family); background: var(--color-bg-page); color: var(--color-gray-900); padding: 24px; margin: 0; }
+    h1 { font-size: var(--font-size-2xl); margin-bottom: 24px; }
+    .ts { background: var(--color-bg-card); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 16px; }
+    .ts h2 { font-size: var(--font-size-lg); margin: 0 0 4px; color: var(--color-primary); }
+    .ts p { font-size: var(--font-size-sm); color: var(--color-gray-500); margin: 0 0 12px; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .btn-t { padding: 6px 14px; border: 1px solid var(--color-gray-300); border-radius: var(--radius-sm); background: var(--color-bg-card); cursor: pointer; font-size: var(--font-size-sm); }
+    .btn-t:hover { background: var(--color-gray-100); }
+    .badge-s { display:inline-block; padding:2px 8px; border-radius:var(--radius-full); font-size:var(--font-size-xs); }
+    .badge-active { background:var(--color-success-light); color:var(--color-success-dark); }
+    .badge-low { background:var(--color-warning-light); color:var(--color-warning-dark); }
+    .badge-out { background:var(--color-error-light); color:var(--color-error-dark); }
+    .action-btn { padding:2px 8px; border:1px solid var(--color-gray-300); border-radius:var(--radius-sm); background:var(--color-bg-card); cursor:pointer; font-size:var(--font-size-xs); }
+    pre.out { background: var(--color-gray-900); color: #0f0; font-family: monospace; font-size: 12px; padding: 10px; border-radius: var(--radius-md); max-height: 180px; overflow: auto; direction: ltr; text-align: left; margin-top: 8px; white-space: pre-wrap; }
+    .scroll-box { max-height: 400px; overflow-y: auto; border: 1px solid var(--color-gray-200); border-radius: var(--radius-md); }
+  </style>
+</head>
+<body>
+<h1>Table Builder Test</h1>
+<script src="../../js/shared.js"></script>
+<script src="../js/table-builder.js"></script>
+<script>
+// ========== Mock data generators ==========
+const brands = ['רייבאן','אוקלי','פראדה','גוצ\'י','טום פורד','וורסאצ\'ה','דולצ\'ה','ארמני','בולגרי','קרטייה'];
+const models = ['Classic','Sport','Aviator','Wayfarer','Round','Cat Eye','Square','Pilot','Rimless','Shield'];
+const statuses = ['active','low','out'];
+function mockRows(n) {
+  const rows = [];
+  for (let i = 1; i <= n; i++) {
+    rows.push({
+      id: 'r' + i, barcode: '00' + String(10000 + i),
+      brand: brands[i % brands.length], model: models[i % models.length],
+      cost: i === 3 ? null : Math.round(Math.random() * 2000 + 50),
+      quantity: i === 5 ? 0 : Math.floor(Math.random() * 100),
+      received_date: i === 7 ? null : new Date(2025, i % 12, (i % 28) + 1).toISOString(),
+      status: statuses[i % 3]
+    });
+  }
+  return rows;
+}
+const statusRender = (v) => {
+  const map = { active: ['במלאי','badge-active'], low: ['מלאי נמוך','badge-low'], out: ['אזל','badge-out'] };
+  const m = map[v] || ['—',''];
+  return '<span class="badge-s ' + m[1] + '">' + m[0] + '</span>';
+};
+const actionsRender = (v, row) =>
+  '<button class="action-btn" onclick="log(\'edit ' + row.id + '\')">ערוך</button>' +
+  '<button class="action-btn" onclick="log(\'delete ' + row.id + '\')">מחק</button>';
+const baseCols = [
+  { key: 'barcode', label: 'ברקוד', type: 'text', sortable: true },
+  { key: 'brand', label: 'מותג', type: 'text', sortable: true },
+  { key: 'model', label: 'דגם', type: 'text' },
+  { key: 'cost', label: 'עלות', type: 'currency', sortable: true },
+  { key: 'quantity', label: 'כמות', type: 'number', sortable: true },
+  { key: 'received_date', label: 'תאריך קבלה', type: 'date' },
+  { key: 'status', label: 'סטטוס', type: 'badge', render: statusRender },
+  { key: 'actions', label: '', type: 'actions', render: actionsRender }
+];
+function log(msg) {
+  const el = document.getElementById('log');
+  if (!el) return;
+  const d = document.createElement('div');
+  d.textContent = '[' + new Date().toLocaleTimeString('he-IL') + '] ' + msg;
+  el.prepend(d);
+}
+</script>
+
+<!-- Section 1: Basic Table -->
+<div class="ts">
+  <h2>1. טבלה בסיסית (כל סוגי העמודות)</h2>
+  <p>20 שורות — text, currency, number, date, badge, actions. כולל null וערך 0.</p>
+  <div id="t1"></div>
+</div>
+<script>
+  const t1 = TableBuilder.create({ containerId: 't1', columns: baseCols });
+  t1.setData(mockRows(20));
+</script>
+
+<!-- Section 2: Sort -->
+<div class="ts">
+  <h2>2. מיון (Sort)</h2>
+  <p>לחצו על כותרת עמודה — חץ מופיע, לחצו שוב — מתהפך, הנתונים מסודרים מחדש.</p>
+  <div id="t2"></div>
+  <pre class="out" id="sort-log"></pre>
+</div>
+<script>
+(function(){
+  let data2 = mockRows(20);
+  const t2 = TableBuilder.create({
+    containerId: 't2', columns: baseCols,
+    onSort(key, dir) {
+      data2.sort((a, b) => {
+        let va = a[key], vb = b[key];
+        if (va == null) va = '';
+        if (vb == null) vb = '';
+        if (typeof va === 'number' && typeof vb === 'number') return dir === 'asc' ? va - vb : vb - va;
+        return dir === 'asc' ? String(va).localeCompare(String(vb), 'he') : String(vb).localeCompare(String(va), 'he');
+      });
+      t2.setData(data2);
+      document.getElementById('sort-log').textContent = 'Sorted by: ' + key + ' ' + dir;
+    }
+  });
+  t2.setData(data2);
+})();
+</script>
+
+<!-- Section 3: Empty State -->
+<div class="ts">
+  <h2>3. מצב ריק (Empty State)</h2>
+  <p>כפתור CTA במצב ריק. הוספה/ניקוי דינמיים.</p>
+  <div class="btn-row">
+    <button class="btn-t" onclick="t3.setData(mockRows(5))">הוסף 5 שורות</button>
+    <button class="btn-t" onclick="t3.setData([])">נקה הכל</button>
+  </div>
+  <div id="t3"></div>
+</div>
+<script>
+  const t3 = TableBuilder.create({
+    containerId: 't3',
+    columns: baseCols.slice(0, 5),
+    emptyState: { icon: '📦', text: 'אין פריטים במלאי', cta: { label: 'הוסף פריט', onClick: () => alert('CTA clicked!') } }
+  });
+  t3.setData([]);
+</script>
+
+<!-- Section 4: Loading State -->
+<div class="ts">
+  <h2>4. טעינה (Loading)</h2>
+  <p>skeleton rows → אחרי 2 שניות נתונים מופיעים.</p>
+  <div class="btn-row">
+    <button class="btn-t" onclick="t4.setLoading(true)">הפעל טעינה</button>
+    <button class="btn-t" onclick="t4.setLoading(false); t4.setData(mockRows(8))">כבה טעינה</button>
+    <button class="btn-t" onclick="t4.setLoading(true); setTimeout(()=>{ t4.setData(mockRows(8)); },2000)">אוטו (2ש׳)</button>
+  </div>
+  <div id="t4"></div>
+</div>
+<script>
+  const t4 = TableBuilder.create({ containerId: 't4', columns: baseCols.slice(0, 5), skeletonRows: 6 });
+  t4.setData(mockRows(8));
+</script>
+
+<!-- Section 5: Row Operations -->
+<div class="ts">
+  <h2>5. פעולות שורה (Row Ops)</h2>
+  <p>updateRow — עדכון שורה ראשונה. removeRow — הסרת שורה ראשונה. getData — הצגת JSON.</p>
+  <div class="btn-row">
+    <button class="btn-t" onclick="t5.updateRow('r1',{quantity:999,status:'low'})">updateRow r1</button>
+    <button class="btn-t" onclick="t5.removeRow(t5.getData()[0]?.id || 'r1')">removeRow (first)</button>
+    <button class="btn-t" onclick="document.getElementById('data-out').textContent=JSON.stringify(t5.getData(),null,2)">getData</button>
+    <button class="btn-t" onclick="t5.setData(mockRows(5))">Reset 5</button>
+  </div>
+  <div id="t5"></div>
+  <pre class="out" id="data-out">getData output will appear here...</pre>
+</div>
+<script>
+  const t5 = TableBuilder.create({
+    containerId: 't5', columns: baseCols,
+    emptyState: { icon: '🗑️', text: 'כל השורות הוסרו' }
+  });
+  t5.setData(mockRows(5));
+</script>
+
+<!-- Section 6: Sticky Header -->
+<div class="ts">
+  <h2>6. כותרת דביקה (Sticky Header)</h2>
+  <p>100 שורות בתוך מיכל 400px. גללו — הכותרת נשארת קבועה.</p>
+  <div class="scroll-box"><div id="t6"></div></div>
+</div>
+<script>
+  const t6 = TableBuilder.create({ containerId: 't6', columns: baseCols.slice(0, 5), stickyHeader: true });
+  t6.setData(mockRows(100));
+</script>
+
+<!-- Section 7: Row Click -->
+<div class="ts">
+  <h2>7. לחיצה על שורה (Row Click)</h2>
+  <p>לחצו על שורה — נתוני השורה מוצגים למטה. כפתורי פעולה לא מפעילים row click.</p>
+  <div id="t7"></div>
+  <pre class="out" id="click-out">Click a row to see data...</pre>
+</div>
+<script>
+  const t7 = TableBuilder.create({
+    containerId: 't7', columns: baseCols,
+    onRowClick(row) { document.getElementById('click-out').textContent = JSON.stringify(row, null, 2); }
+  });
+  t7.setData(mockRows(5));
+</script>
+
+<!-- Section 8: XSS -->
+<div class="ts">
+  <h2>8. בדיקת XSS</h2>
+  <p>תגיות script ו-img חייבות להופיע כטקסט — לא להתבצע.</p>
+  <div id="t8"></div>
+</div>
+<script>
+  const t8 = TableBuilder.create({
+    containerId: 't8',
+    columns: [
+      { key: 'name', label: 'שם', type: 'text' },
+      { key: 'desc', label: 'תיאור', type: 'text' }
+    ]
+  });
+  t8.setData([
+    { id: 'x1', name: '<script>alert("xss")<\/script>', desc: 'should be escaped' },
+    { id: 'x2', name: '<img src=x onerror=alert(1)>', desc: '<b>bold?</b>' },
+    { id: 'x3', name: '&amp; &lt; &gt; "quotes"', desc: 'entities test' }
+  ]);
+</script>
+
+<!-- Section 9: Destroy -->
+<div class="ts">
+  <h2>9. הרס ויצירה מחדש (Destroy)</h2>
+  <div class="btn-row">
+    <button class="btn-t" onclick="t9.destroy(); log('destroyed t9')">destroy</button>
+    <button class="btn-t" onclick="t9 = TableBuilder.create({containerId:'t9',columns:baseCols.slice(0,4)}); t9.setData(mockRows(3)); log('recreated t9')">recreate</button>
+  </div>
+  <div id="t9"></div>
+</div>
+<script>
+  var t9 = TableBuilder.create({ containerId: 't9', columns: baseCols.slice(0, 4) });
+  t9.setData(mockRows(3));
+</script>
+
+<pre class="out" id="log">Action log...</pre>
+</body>
+</html>
