@@ -348,6 +348,7 @@ async function startCamera() {
       background:linear-gradient(transparent,rgba(0,0,0,.7))">
       <span style="color:rgba(255,255,255,.85);font-size:1rem;font-weight:500">כוון את המצלמה לברקוד</span>
     </div>
+    <div id="sc-scan-debug" style="position:absolute;bottom:60px;left:10px;right:10px;background:rgba(0,0,0,0.8);color:#0f0;font-family:monospace;font-size:13px;padding:10px;border-radius:8px;max-height:150px;overflow-y:auto;z-index:10004;direction:ltr;text-align:left">סורק...</div>
     <div id="sc-cam-success" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10003;
       display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)">
       <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">
@@ -373,7 +374,19 @@ async function startCamera() {
     var videoEl = document.getElementById('sc-video-fs');
     videoEl.srcObject = stream;
     await scCodeReader.decodeFromVideoDevice(null, 'sc-video-fs', function (result) {
-      if (!result || _scanPaused) return;
+      if (!result) return;
+      // TEMP DEBUG: log every detection to visible panel
+      var debugEl = document.getElementById('sc-scan-debug');
+      if (debugEl) {
+        var now = new Date().toLocaleTimeString('he-IL');
+        var raw = result.getText();
+        var fmt = result.getBarcodeFormat ? result.getBarcodeFormat() : 'unknown';
+        var line = now + ' | raw: "' + raw + '" | fmt: ' + fmt + ' | len: ' + raw.length;
+        debugEl.innerHTML = line + '<br>' + debugEl.innerHTML;
+        var lines = debugEl.innerHTML.split('<br>');
+        if (lines.length > 10) debugEl.innerHTML = lines.slice(0, 10).join('<br>');
+      }
+      if (_scanPaused) return;
       var vf = document.getElementById('sc-viewfinder');
       if (vf) { vf.style.borderColor = '#22c55e'; vf.style.boxShadow = '0 0 20px rgba(34,197,94,.6), 0 0 0 4000px rgba(0,0,0,.35)'; }
       _scanPaused = true; // freeze scanning immediately
@@ -389,6 +402,12 @@ async function startCamera() {
 // Handle camera scan result — show success banner or qty modal, keep overlay open
 async function _scHandleCameraScan(barcode) {
   var item = _scNormalizeBarcode(barcode);
+  // TEMP DEBUG: show normalization result
+  var debugEl = document.getElementById('sc-scan-debug');
+  if (debugEl) {
+    var matchLine = item ? '  ↳ MATCH → ' + item.barcode + ' (status: ' + item.status + ')' : '  ↳ NO MATCH (tried: ' + barcode + ')';
+    debugEl.innerHTML = matchLine + '<br>' + debugEl.innerHTML;
+  }
   if (!item) {
     // Not found — show error (with cooldown), resume scanning
     var errNow = Date.now();
