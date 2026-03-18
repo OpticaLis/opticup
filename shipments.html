@@ -50,8 +50,8 @@
   /* Empty state */
   .empty-state { text-align: center; padding: 48px 16px; color: var(--g400); font-size: .95rem; }
 
-  /* Slide panel */
-  .slide-panel { position: fixed; top: 0; left: 0; width: 460px; max-width: 100vw; height: 100vh; background: var(--white); box-shadow: -4px 0 24px rgba(0,0,0,.15); z-index: 900; overflow-y: auto; transform: translateX(-100%); transition: transform .3s; }
+  /* Slide panel — override shared/css/components-extra.css .slide-panel (right:-100%) */
+  .slide-panel { position: fixed; top: 0; left: 0; right: auto; width: 460px; max-width: 100vw; height: 100vh; background: var(--white); box-shadow: -4px 0 24px rgba(0,0,0,.15); z-index: 900; overflow-y: auto; transform: translateX(-100%); transition: transform .3s; flex-direction: column; }
   .slide-panel.open { transform: translateX(0); }
   .slide-panel.hidden { display: none; }
 
