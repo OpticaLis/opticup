@@ -87,21 +87,6 @@ function parseDateField(raw) {
   return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
 }
 
-// ── Wait for file lock release (Dropbox compatibility) ───────
-async function waitForFile(filepath, maxRetries = 5, delayMs = 1000) {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const fd = fs.openSync(filepath, 'r');
-      fs.closeSync(fd);
-      return; // File is readable
-    } catch (err) {
-      if (attempt === maxRetries) throw err;
-      log(`  File locked (attempt ${attempt}/${maxRetries}), retrying in ${delayMs}ms: ${path.basename(filepath)}`);
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-    }
-  }
-}
-
 // ── Parse CSV file (Access exports UTF-8 CSV with BOM) ──────
 function parseCSVFile(filepath) {
   let text = fs.readFileSync(filepath, 'utf-8').replace(/^\uFEFF/, '');
@@ -158,22 +143,31 @@ async function isDuplicateSyncLog(filename) {
 // ── Process a single sales file (CSV or XLSX) ────────────────
 async function processFile(filepath, filename) {
   const ext = path.extname(filename).toLowerCase();
+
+  // Retry file reading up to 5 times (Dropbox lock workaround)
   let dataRows;
-
-  // Wait for file lock release (Dropbox may briefly hold a lock)
-  await waitForFile(filepath);
-
-  if (ext === '.csv') {
-    // CSV from Access — header + data rows, no metadata to skip
-    dataRows = parseCSVFile(filepath);
-  } else {
-    // XLSX — legacy format with sales_template sheet + 2 metadata rows
-    let wb;
-    try { wb = XLSX.readFile(filepath); } catch (e) { throw new Error(`Not a valid Excel file: ${e.message}`); }
-    if (!wb.SheetNames.includes('sales_template')) throw new Error('Sheet "sales_template" not found');
-    const ws = wb.Sheets['sales_template'];
-    dataRows = XLSX.utils.sheet_to_json(ws, { defval: '', range: 0 }).slice(2);
+  let lastErr;
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      if (ext === '.csv') {
+        dataRows = parseCSVFile(filepath);
+      } else {
+        let wb;
+        try { wb = XLSX.readFile(filepath); } catch (e) { throw new Error(`Not a valid Excel file: ${e.message}`); }
+        if (!wb.SheetNames.includes('sales_template')) throw new Error('Sheet "sales_template" not found');
+        const ws = wb.Sheets['sales_template'];
+        dataRows = XLSX.utils.sheet_to_json(ws, { defval: '', range: 0 }).slice(2);
+      }
+      break; // success — exit retry loop
+    } catch (err) {
+      lastErr = err;
+      if (attempt < 5) {
+        log(`  File read failed (attempt ${attempt}/5), retrying in 2s...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
   }
+  if (!dataRows) throw lastErr;
 
   dataRows = dataRows.filter(r => String(r.barcode || '').trim());
   if (!dataRows.length) throw new Error('No data rows found in file');
