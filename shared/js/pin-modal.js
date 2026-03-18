@@ -118,6 +118,9 @@
     }
   }
 
-  // Expose globally — identical contract
+  // Namespace — new callers use PinModal.prompt()
+  window.PinModal = { prompt: promptPin };
+
+  // Legacy alias — backward compatible
   window.promptPin = promptPin;
 })();

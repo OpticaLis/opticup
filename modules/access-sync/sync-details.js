@@ -23,7 +23,7 @@ async function openSyncDetails(logId) {
 
     if (hasPending) {
       hideLoading();
-      const pin = await promptPin();
+      const pin = await promptSyncPin();
       if (!pin) return;
       showLoading('מאמת...');
       const emp = await verifyPinOnly(pin);
@@ -81,8 +81,8 @@ async function openSyncDetails(logId) {
   }
 }
 
-// ── promptPin ───────────────────────────────────────────────
-function promptPin() {
+// ── promptSyncPin — renamed from promptPin to avoid global collision ──
+function promptSyncPin() {
   return new Promise(resolve => {
     let overlay = $('sync-pin-overlay');
     if (!overlay) {
