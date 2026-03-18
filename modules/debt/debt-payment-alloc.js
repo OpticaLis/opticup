@@ -228,16 +228,14 @@ async function _wizSavePayment() {
       var allocCreated = await batchCreate(T.PAY_ALLOC, allocRecs);
       createdAllocIds = allocCreated.map(function(a) { return a.id; });
 
-      // 3. Update paid_amount + status on each allocated document
+      // 3. Update paid_amount + status on each allocated document (atomic RPC — Phase 3 fix)
       for (var i = 0; i < _wizState.allocations.length; i++) {
         var alloc = _wizState.allocations[i];
-        var doc = _wizState.openDocs.find(function(d) { return d.id === alloc.document_id; });
-        if (!doc) continue;
-        var newPaid = (Number(doc.paid_amount) || 0) + alloc.allocated_amount;
-        var newStatus = newPaid >= Number(doc.total_amount) ? 'paid' : 'partially_paid';
-        await batchUpdate(T.SUP_DOCS, [{
-          id: alloc.document_id, paid_amount: newPaid, status: newStatus
-        }]);
+        var { error: rpcErr } = await sb.rpc('increment_paid_amount', {
+          p_doc_id: alloc.document_id,
+          p_delta: alloc.allocated_amount
+        });
+        if (rpcErr) throw rpcErr;
       }
     }
 
