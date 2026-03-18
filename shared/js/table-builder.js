@@ -15,9 +15,9 @@
   }
   function _safe(v) { return v == null ? '' : v; }
 
-  // Built-in type renderers
+  // Built-in type renderers — return PLAIN TEXT (assigned via textContent, not innerHTML)
   const _renderers = {
-    text(v) { return _esc(_safe(v)); },
+    text(v) { return _safe(v); },
     number(v) {
       if (v == null || v === '') return '';
       return Number(v).toLocaleString('he-IL');
@@ -29,7 +29,7 @@
     date(v) {
       if (!v) return '';
       const d = new Date(v);
-      if (isNaN(d)) return _esc(String(v));
+      if (isNaN(d)) return String(v);
       const dd = String(d.getDate()).padStart(2, '0');
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       return `${dd}/${mm}/${d.getFullYear()}`;
@@ -163,8 +163,8 @@
           if (_endTypes[type]) td.classList.add('tb-td-end');
           td.textContent = _renderers[type](val);
         } else {
-          // badge, custom without render — show escaped text
-          td.textContent = _esc(_safe(val));
+          // badge, custom without render — textContent is auto-safe
+          td.textContent = _safe(val);
         }
 
         if (col.width) td.style.width = col.width;

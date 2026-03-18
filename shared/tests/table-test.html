@@ -26,7 +26,13 @@
 </head>
 <body>
 <h1>Table Builder Test</h1>
-<script src="../../js/shared.js"></script>
+<script>
+/* escapeHtml standalone — shared.js requires Supabase lib, not needed for this test */
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+</script>
 <script src="../js/table-builder.js"></script>
 <script>
 // ========== Mock data generators ==========
