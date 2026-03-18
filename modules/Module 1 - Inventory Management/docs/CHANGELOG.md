@@ -4,6 +4,31 @@
 
 ---
 
+## Stock Count Hotfixes — 2026-03-18
+
+> Extensive hotfix cycle for stock-count camera scanning, UX, unknown item flow, and mobile optimization.
+
+### Commits (in order)
+- **Commit:** `dbd6ee8` — hotfix: stock-count manual search — clickable filtered rows + single-result Enter
+- **Commit:** `9292568` — hotfix: stock-count pause button + cancel functionality
+- **Commit:** `68accf6` — hotfix: stock-count auto-count first scan + quantity modal for re-scan
+- **Commit:** `7599173` — hotfix: stock-count status filters + count confirmation + undo
+- **Commit:** `929d08f` — hotfix: stock-count fullscreen camera + error debounce + scan logging
+- **Commit:** `e7e4bf0` — hotfix: stock-count camera freeze-on-scan + fullscreen fix
+- **Commit:** `0573db0` — hotfix: stock-count barcode normalization — handle ZXing format differences
+- **Commit:** `c3d8b65` — hotfix: camera overlay stays open on error + defensive error handling
+- **Commit:** `53decc4` — temp: visible scan debug overlay for mobile diagnosis
+- **Commit:** `a7692eb` — hotfix: fix garbage barcode filter in ZXing callback
+- **Commit:** `63c525e` — hotfix: fix scan pause stuck + add zoom toggle + clean up debug UI
+- **Commit:** `bbe13d7` — hotfix: quantity input inside camera overlay for re-scanned items
+- **Commit:** `260dfad` — hotfix: unknown barcode flow + not-found panel + zoom cleanup
+- **Commit:** `984409a` — hotfix: unknown form timeout fix + size field + unknown items in report
+
+### DB Migration
+- `032_stock_count_unknown_items.sql` — status CHECK updated to include 'unknown', inventory_id made nullable
+
+---
+
 ## Phase QA — Module 1 Final Certification (2026-03-16)
 
 > Comprehensive QA phase: code scan, functional testing (~190 tests, 177 PASS), 9 end-to-end flows, security audit, performance review, UX/mobile/RTL audit, permissions expansion, and extensive bug fixing.

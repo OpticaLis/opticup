@@ -41,8 +41,8 @@
 | 28 | pending-panel.js | modules/access-sync/pending-panel.js | 32 | Legacy wrappers: renderPendingPanel (calls togglePendingFilter), closePendingPanel, updatePendingPanelCount (calls loadPendingBadge), searchBarcodeInInventory. **Note: all 4 functions are dead code — never called from current codebase** |
 | 29 | pending-resolve.js | modules/access-sync/pending-resolve.js | 132 | Pending resolution: syncDetailResolve (inline resolve in work center), checkFileCompletion (marks sync_log 'handled'), searchBarcodeInInventory, syncDetailSearchInInventory |
 | 30 | stock-count-list.js | modules/stock-count/stock-count-list.js | 148 | Stock count list screen: ensureStockCountListHTML, loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (PIN first, DB creation after), renderStockCountList |
-| 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 332 | Stock count session: worker PIN entry (openWorkerPin/confirmWorkerPin), camera barcode scanning (ZXing), manual barcode/smart search input, scan handler, item update, session UI |
-| 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 234 | Diff report screen (showDiffReport/renderReportScreen), empty count guard, manager PIN approval (confirmCount with role check), cancelCount, exportCountExcel (SheetJS) |
+| 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 875 | Stock count session: worker PIN entry, fullscreen camera overlay (ZXing + viewfinder + zoom), barcode normalization (5 strategies), scan freeze/resume, unknown item form, qty panel inside overlay, status filter boxes, row click confirmation, undo counted, pause/finish |
+| 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 262 | Diff report screen (showDiffReport/renderReportScreen), unknown items section (orange table), empty count guard, manager PIN approval (confirmCount with role check), cancelCount, exportCountExcel (SheetJS) |
 | 33 | sync-watcher.js | scripts/sync-watcher.js | 461 | Node.js Dropbox folder watcher: processes sales_template Excel/CSV files, CSV support with parseCSVFile + BOM stripping, atomic qty updates via RPC, pending_sales for unknown barcodes (with brand/model/size/color), idempotency guards, failed file upload to Supabase Storage, heartbeat every 60s, reverse sync export interval every 30s. Uses service_role key via OPTICUP_SERVICE_ROLE_KEY env var. Configurable OPTICUP_WATCH_DIR + OPTICUP_EXPORT_DIR |
 | 33b | sync-export.js | scripts/sync-export.js | 111 | Reverse sync: exports unexported inventory items (access_exported=false) as XLS (biff8 format via SheetJS) for Access import. Joins brand/supplier names, batch marks items as access_exported (groups of 100), writes sync_log entry with source_ref='export' |
 | 34 | admin.js | modules/admin/admin.js | 52 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
@@ -563,26 +563,51 @@
 |----------|------------|-------------|
 | `openWorkerPin` | `(countId)` | Shows fullscreen PIN modal ("מי סורק?"), stores countId for session |
 | `confirmWorkerPin` | `()` | Async. Verifies PIN against T.EMPLOYEES, stores activeWorker in sessionStorage, calls openCountSession |
+| `_createNewStockCount` | `()` | Async. Generates count number, creates stock_counts row, populates stock_count_items from filtered inventory |
+| `_scBuildFilterDesc` | `(fc)` | Builds human-readable filter description string from filter_criteria JSONB |
 | `openCountSession` | `(countId)` | Async. Fetches count header + items from T.STOCK_COUNT_ITEMS, calls renderSessionScreen |
-| `scRenderItemRow` | `(it)` | Returns HTML `<tr>` for one count item with row color class (ok/warn/diff/pending) |
-| `scCalcStats` | `(items)` | Returns {counted, total, diffs, pct} stats object from items array |
-| `renderSessionScreen` | `(countId, items)` | Replaces tab content with session UI: topbar, camera section, summary bar, items table |
-| `renderSessionTable` | `(items)` | Re-renders session table body from items array |
-| `filterSessionItems` | `(query)` | Filters session items by brand/model/color/barcode; digits-only waits for Enter |
-| `manualBarcodeSearch` | `()` | Reads smart search input, calls handleScan for digits |
-| `startCamera` | `()` | Async. Initializes ZXing BrowserMultiFormatReader, starts video decoding |
-| `stopCamera` | `()` | Stops ZXing reader, hides video element |
-| `handleScan` | `(countId, barcode)` | Async. Debounced scan handler: unknown → warning toast, counted → confirm +1, pending → qty prompt |
+| `scRenderItemRow` | `(it)` | Returns HTML `<tr>` for one count item — handles pending/counted/unknown statuses with color classes |
+| `scCalcStats` | `(items)` | Returns {counted, total, diffs, unknowns, pct} stats object from items array |
+| `renderSessionScreen` | `(countId, items)` | Replaces tab content with session UI: topbar, camera section, status filter boxes, items table |
+| `renderSessionTable` | `(items)` | Re-renders session table body applying status filters |
+| `_scApplyFilters` | `(items)` | Filters items by _scStatusFilter (pending/counted/diffs/unknown/null) |
+| `_scToggleStatusFilter` | `(filter)` | Toggles status filter box, updates active styling, refreshes table |
+| `_scRefreshTable` | `()` | Refreshes table combining search query + status filter |
+| `_scDebouncedFilter` | `(query)` | 300ms debounced wrapper for filterSessionItems |
+| `filterSessionItems` | `(query)` | Filters session items by barcode/brand/model/color text match |
+| `manualBarcodeSearch` | `()` | Reads smart search: digits → handleScan, text with 1 result → auto-count |
+| `scRowClick` | `(barcode)` | Row click handler: counted → qty modal, pending → Modal.confirm then handleScan |
+| `_scClearSearch` | `()` | Clears search input and refreshes table |
+| `startCamera` | `()` | Async. Creates fullscreen overlay, initializes ZXing, starts getUserMedia with rear camera constraints |
+| `stopCamera` | `()` | Stops ZXing reader, stops media tracks, removes overlay, restores body overflow |
+| `_scSetStatus` | `(text)` | Updates status line text inside camera overlay |
+| `_scDebugLog` | `(msg)` | Appends message to debug panel (only when SC_DEBUG=true) |
+| `_scStartPauseTimer` | `()` | Starts 10s safety timeout to auto-resume if _scanPaused gets stuck |
+| `_scClearPauseTimer` | `()` | Clears the safety pause timer |
+| `_scHandleCameraScan` | `(barcode)` | Async. Camera scan handler: normalizes barcode, shows success/qty/not-found panel |
+| `_scResumeScanning` | `()` | Resets _scanPaused, hides all overlay panels, restores viewfinder |
+| `_scResetViewfinder` | `()` | Resets viewfinder border color to default |
+| `_scCamQtySave` | `()` | Reads qty input from camera overlay, calls updateCountItem |
+| `_scCamQtyDismiss` | `()` | Hides camera qty panel, resumes scanning |
+| `_scShowUnknownForm` | `()` | Shows unknown item form inside camera overlay, clears pause timer |
+| `_scSaveUnknownItem` | `()` | Async. Saves unknown item to DB (status='unknown', inventory_id=null), updates local state |
+| `_scInitZoom` | `(stream)` | Checks MediaStream zoom capability, shows zoom button if supported |
+| `_scToggleZoom` | `()` | Toggles between 1x and 2x zoom via track.applyConstraints |
+| `_scNormalizeBarcode` | `(scanned)` | Tries 5 strategies to match ZXing read to DB barcode: exact, pad7, ean-strip, ean-inner, suffix |
+| `handleScan` | `(countId, barcode)` | Async. Manual scan handler with 2s dedup: unknown → toast, counted → qty modal, pending → auto-count |
+| `_showQtyModal` | `(item, fromCamera)` | Shows Modal.form for quantity update (used by manual row click path) |
 | `updateCountItem` | `(itemId, actualQty)` | Async. Updates T.STOCK_COUNT_ITEMS row, refreshes local array + UI |
-| `refreshSessionUI` | `()` | Updates summary stats + re-renders table body from scSessionItems |
+| `refreshSessionUI` | `()` | Updates all 5 stat counters + re-renders table |
+| `undoCountItem` | `(itemId)` | Async. Resets item to pending (actual_qty=null, status='pending') with confirmation |
+| `pauseSession` | `()` | Async. Stops camera, confirms, navigates back to list |
 | `finishSession` | `(countId)` | Stops camera, calls showDiffReport(countId) |
 
 ### modules/stock-count/stock-count-report.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `showDiffReport` | `(countId)` | Async. Fetches count header + items, splits into diff/all, guards empty count (toast + hide approve), calls renderReportScreen |
-| `renderReportScreen` | `(countId, diffItems, allItems, displayItems, nothingScanned)` | Renders diff report: summary cards (shortages/surpluses/uncounted), diff+pending items table, action buttons (approve hidden if nothingScanned) |
+| `showDiffReport` | `(countId)` | Async. Fetches count header + items, splits into diff/pending/unknown, guards empty count, calls renderReportScreen |
+| `renderReportScreen` | `(countId, diffItems, allItems, displayItems, nothingScanned, unknownItems)` | Renders diff report: summary cards, diff+pending table, unknown items orange section, action buttons |
 | `showConfirmPinForCount` | `(countId)` | Shows inline manager PIN input for count approval |
 | `confirmCount` | `(countId)` | Async. Verifies manager PIN (role IN admin/manager), updates inventory via set_inventory_qty RPC, writeLogs via Promise.all, marks count completed |
 | `cancelCount` | `(countId)` | Async. Confirms cancellation, updates count status to cancelled |

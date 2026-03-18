@@ -65,6 +65,7 @@
 --   030_settings_columns.sql — business/financial/display columns on tenants
 --   031_stock_count_filter_criteria.sql — filter_criteria JSONB on stock_counts
 --   031_tenants_update_policy.sql — tenant_update_own RLS policy on tenants
+--   032_stock_count_unknown_items.sql — status CHECK includes 'unknown', inventory_id nullable
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -510,12 +511,12 @@ CREATE POLICY "tenant_isolation" ON stock_counts FOR ALL
 CREATE POLICY "service_bypass" ON stock_counts FOR ALL TO service_role USING (true);
 
 -- ============================================================
--- 15. stock_count_items — שורות ספירה (013 + 014)
+-- 15. stock_count_items — שורות ספירה (013 + 014 + 032)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS stock_count_items (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   count_id        UUID NOT NULL REFERENCES stock_counts(id) ON DELETE CASCADE,
-  inventory_id    UUID NOT NULL REFERENCES inventory(id) ON DELETE CASCADE,
+  inventory_id    UUID REFERENCES inventory(id) ON DELETE CASCADE,  -- nullable for unknown items (032)
   barcode         TEXT,                                        -- ברקוד (snapshot)
   brand           TEXT,                                        -- מותג (snapshot)
   model           TEXT,                                        -- דגם (snapshot)
@@ -524,8 +525,8 @@ CREATE TABLE IF NOT EXISTS stock_count_items (
   expected_qty    INTEGER NOT NULL,                            -- כמות צפויה (מהמערכת)
   actual_qty      INTEGER,                                     -- כמות בפועל (מהספירה)
   difference      INTEGER GENERATED ALWAYS AS (actual_qty - expected_qty) STORED,  -- פער
-  status          TEXT NOT NULL DEFAULT 'pending'              -- pending | counted | skipped
-                  CHECK (status IN ('pending', 'counted', 'skipped')),
+  status          TEXT NOT NULL DEFAULT 'pending'              -- pending | counted | skipped | unknown (032)
+                  CHECK (status IN ('pending', 'counted', 'skipped', 'unknown')),
   notes           TEXT,                                        -- הערה לשורה
   counted_at      TIMESTAMPTZ,                                 -- מתי נספר
   scanned_by      TEXT,                                        -- מי סרק (014)

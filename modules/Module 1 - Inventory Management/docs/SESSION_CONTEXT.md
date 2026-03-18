@@ -1,9 +1,66 @@
 # Session Context
 
 ## Last Updated
-Post-QA Restructure — 2026-03-16
+Stock Count Hotfixes — 2026-03-18
 
 ## What Was Done This Session
+
+### Stock Count Hotfixes — 2026-03-18
+
+Extensive hotfix cycle for the stock-count module — camera scanning, UX improvements, unknown item handling, and mobile optimization. All changes merged to main and deployed.
+
+**Camera Scanning:**
+- Fullscreen camera overlay with viewfinder, rear camera (facingMode: environment), 1280x720 resolution
+- ZXing BrowserMultiFormatReader integration with garbage read filter (`/^\d{5,}$/` + non-printable stripping)
+- Barcode normalization: 5 strategies for ZXing→DB format mismatch (exact, pad7, ean-strip, ean-inner, suffix)
+- Scan freeze on success with "המשך סריקה" banner — prevents double-counting
+- Safety timeout: 10s auto-resume on banners, disabled for forms (qty/unknown where user types)
+- Error debounce: 3-second cooldown on "not found" toasts
+- Zoom toggle (1x/2x) when device supports MediaStream zoom API
+- Quantity input panel inside camera overlay for re-scanned items (avoids z-index conflicts with Modal)
+
+**Manual Search & Session UX:**
+- Clickable filtered rows + single-result Enter auto-count
+- Row click confirmation before counting (Modal.confirm)
+- Status filter boxes: pending/counted/diffs/unknown — clickable, toggleable
+- Undo counted item — return to pending status
+- Pause/Resume with explicit button + Cancel now functional
+
+**Unknown Item Flow:**
+- Not-found panel inside camera overlay with "הוסף פריט לא ידוע" button
+- Unknown item form inside camera overlay: barcode (pre-filled), brand, model, color, size, qty, notes
+- Saves to stock_count_items with status='unknown', inventory_id=NULL
+- Unknown items section in diff report (orange-bordered table)
+- Stats bar shows "לא ידועים" count
+
+**DB Migration:**
+- stock_count_items: status CHECK updated to include 'unknown', inventory_id made nullable (migration 032)
+
+**Commits (in order):**
+- `dbd6ee8` — manual search: clickable filtered rows + single-result Enter
+- `9292568` — pause button + cancel functionality
+- `68accf6` — auto-count first scan + quantity modal for re-scan
+- `7599173` — status filters + count confirmation + undo
+- `929d08f` — fullscreen camera + error debounce + scan logging
+- `e7e4bf0` — camera freeze-on-scan + fullscreen fix
+- `0573db0` — barcode normalization for ZXing format differences
+- `c3d8b65` — camera overlay stays open on error + defensive error handling
+- `53decc4` — visible scan debug overlay for mobile diagnosis (temp)
+- `a7692eb` — fix garbage barcode filter in ZXing callback
+- `63c525e` — fix scan pause stuck + zoom toggle + clean up debug UI
+- `bbe13d7` — quantity input inside camera overlay for re-scanned items
+- `260dfad` — unknown barcode flow + not-found panel + zoom cleanup
+- `984409a` — unknown form timeout fix + size field + unknown items in report
+
+**Deferred to Future Phase:**
+- Unknown items → add to inventory on approval (manager edits details, creates inventory row)
+- View completed counts (currently toast "בקרוב")
+- set_inventory_qty atomic fix (currently SET, should be increment — Iron Rule #1)
+- stock-count-session.js splitting (871 lines, 2.5x over 350-line limit)
+- Recount/re-open completed counts
+- Weekly quick-count flow
+
+### Previous Session: Post-QA Restructure (2026-03-16)
 
 ### Final Restructure (path-only, zero logic changes)
 - Renamed `modules/suppliers-debt/` → `modules/debt/` (21 files)
@@ -98,7 +155,11 @@ Comprehensive QA phase for Module 1 — final certification. Full code scan, fun
 - Dedup by filename: if Access sends sale + cancellation with same order number, second file is skipped
 - install-service.js in scripts/ folder missing --export-dir support (only watcher-deploy/ version has it)
 - Deployed watcher service runs from C:\Users\User\opticup\watcher-deploy\ — must manually copy updated files
-- **Stock Count Redesign** (deferred to future phase): employee assignment per count, pending approval workflow, manager approval screen with queue
+- **Stock Count: session.js at 871 lines** — needs splitting before further features (camera→stock-count-camera.js)
+- **Stock Count: unknown items not added to inventory on approval** — confirmCount ignores unknowns
+- **Stock Count: view completed counts** — button shows toast('בקרוב')
+- **Stock Count: set_inventory_qty** uses direct SET, should use atomic increment (Iron Rule #1)
+- **Stock Count: barcode 0002793** physically unreadable by ZXing (damaged/incompatible barcode print)
 - **Document linking auto-sum** (QAc-002 WARN): when linking delivery notes to invoice, auto-sum linked amounts and compare to invoice total
 - **Cascading payment settlement** (QAc-004 WARN): when payment fully covers a document, auto-close related linked documents
 
