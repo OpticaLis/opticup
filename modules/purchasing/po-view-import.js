@@ -144,7 +144,7 @@ async function importPOToInventory(poId) {
         let existing = null;
         if (item.barcode) {
           const { data } = await sb.from(T.INV)
-            .select('id, quantity')
+            .select('id')
             .eq('barcode', item.barcode)
             .eq('is_deleted', false)
             .limit(1).single();
@@ -154,7 +154,7 @@ async function importPOToInventory(poId) {
           const brandId = brandCache[item.brand];
           if (brandId) {
             const { data } = await sb.from(T.INV)
-              .select('id, quantity')
+              .select('id')
               .eq('brand_id', brandId)
               .eq('model', item.model)
               .eq('color', item.color || '')
@@ -166,10 +166,8 @@ async function importPOToInventory(poId) {
         }
 
         if (existing) {
-          // Update quantity
-          const { error } = await sb.from(T.INV)
-            .update({ quantity: (existing.quantity || 0) + qty })
-            .eq('id', existing.id);
+          // Update quantity (atomic RPC — Phase 3 fix)
+          const { error } = await sb.rpc('increment_inventory', { inv_id: existing.id, delta: qty });
           if (error) throw error;
           await writeLog('qty_add', existing.id, { delta: qty, reason: `קליטה מ-PO ${po.po_number}` });
           updated++;
