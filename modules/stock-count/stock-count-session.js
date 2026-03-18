@@ -379,26 +379,36 @@ async function startCamera() {
     await scCodeReader.decodeFromVideoDevice(null, 'sc-video-fs', function (result) {
       try {
         if (!result) return;
-        // TEMP DEBUG: log every detection to visible panel
+        var raw = result.getText();
         var dbg = document.getElementById('sc-scan-debug');
+        // ISSUE 1: Filter garbage reads — valid barcodes are 5+ digits only
+        if (!/^\d{5,}$/.test(raw)) {
+          if (dbg) {
+            var now0 = new Date().toLocaleTimeString('he-IL');
+            dbg.innerHTML = '<span style="color:#888">' + now0 + ' | IGNORED (invalid: "' + raw + '" len:' + raw.length + ')</span><br>' + dbg.innerHTML;
+            var ls0 = dbg.innerHTML.split('<br>'); if (ls0.length > 10) dbg.innerHTML = ls0.slice(0, 10).join('<br>');
+          }
+          return; // silently skip non-numeric / too-short reads
+        }
+        // TEMP DEBUG: log valid detection to visible panel
         if (dbg) {
           var now = new Date().toLocaleTimeString('he-IL');
-          var raw = result.getText();
           var fmt = result.getBarcodeFormat ? result.getBarcodeFormat() : 'unknown';
-          var line = now + ' | raw: "' + raw + '" | fmt: ' + fmt + ' | len: ' + raw.length;
+          var line = now + ' | raw: "' + raw + '" | fmt: ' + fmt + ' | len: ' + raw.length + (_scanPaused ? ' [PAUSED]' : '');
           dbg.innerHTML = line + '<br>' + dbg.innerHTML;
           var lines = dbg.innerHTML.split('<br>');
           if (lines.length > 10) dbg.innerHTML = lines.slice(0, 10).join('<br>');
         }
+        // ISSUE 2: Check pause flag — must be AFTER logging but BEFORE any processing
         if (_scanPaused) return;
         var vf = document.getElementById('sc-viewfinder');
         if (vf) { vf.style.borderColor = '#22c55e'; vf.style.boxShadow = '0 0 20px rgba(34,197,94,.6), 0 0 0 4000px rgba(0,0,0,.35)'; }
-        _scanPaused = true; // freeze scanning immediately
-        _scHandleCameraScan(result.getText());
+        _scanPaused = true; // freeze scanning SYNCHRONOUSLY before async handler
+        _scHandleCameraScan(raw);
       } catch (cbErr) {
         var dbg2 = document.getElementById('sc-scan-debug');
         if (dbg2) dbg2.innerHTML = '<span style="color:red">CALLBACK ERR: ' + cbErr.message + '</span><br>' + dbg2.innerHTML;
-        _scanPaused = false;
+        // Do NOT reset _scanPaused on error — keep frozen to prevent cascade
       }
     });
     if (debugEl) debugEl.innerHTML = 'Decode started — waiting for barcodes...<br>' + debugEl.innerHTML;
@@ -422,14 +432,13 @@ async function _scHandleCameraScan(barcode) {
     debugEl.innerHTML = matchLine + '<br>' + debugEl.innerHTML;
   }
   if (!item) {
-    // Not found — show error (with cooldown), resume scanning
+    // Not found — show error (with cooldown), resume after brief delay to avoid rapid re-trigger
     var errNow = Date.now();
     if (errNow - _lastErrorTime >= 3000) {
       toast('ברקוד לא קיים במלאי', 'w');
       _lastErrorTime = errNow;
     }
-    _scanPaused = false;
-    _scResetViewfinder();
+    setTimeout(function () { _scanPaused = false; _scResetViewfinder(); }, 500);
     return;
   }
   if (item.status === 'counted') {
