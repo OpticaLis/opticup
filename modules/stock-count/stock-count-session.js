@@ -10,6 +10,7 @@ let unknownBarcodes = [];
 let activeWorker = null;
 let scCodeReader = null;
 let _lastScanCode = '', _lastScanTime = 0;
+let _lastErrorTime = 0; // global error cooldown — suppress toast spam
 let _scStatusFilter = 'pending'; // 'pending' | 'counted' | 'diffs' | null (all)
 
 // ── Worker PIN entry ─────────────────────────────────────────
@@ -193,8 +194,6 @@ function renderSessionScreen(countId, items) {
       </div>
       <div class="sc-camera-section">
         <button class="sc-btn-camera" onclick="startCamera()" id="sc-cam-btn">&#128247; סרוק ברקוד</button>
-        <video id="sc-video" style="display:none" playsinline></video>
-        <button id="sc-cam-stop" style="display:none;margin:8px auto;min-height:40px;font-size:15px" class="btn btn-d" onclick="stopCamera()">&#10006; עצור מצלמה</button>
         <div class="sc-manual-bar">
           <input id="sc-smart-search" type="text" placeholder="ברקוד / מותג / דגם / צבע" oninput="_scDebouncedFilter(this.value)">
         </div>
@@ -327,30 +326,68 @@ function _scClearSearch() {
   _scRefreshTable();
 }
 
-// ── Camera / ZXing ───────────────────────────────────────────
+// ── Camera / ZXing — Fullscreen overlay ──────────────────────
 async function startCamera() {
-  const video = $('sc-video');
-  if (!video) return;
+  // Build fullscreen overlay
+  var overlay = document.createElement('div');
+  overlay.id = 'sc-cam-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center';
+  overlay.innerHTML = `
+    <video id="sc-video-fs" playsinline autoplay muted
+      style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"></video>
+    <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:flex-end;padding:12px;z-index:10002">
+      <button id="sc-cam-close" style="width:52px;height:52px;border-radius:50%;border:none;background:rgba(0,0,0,.55);
+        color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+        backdrop-filter:blur(4px)">✕</button>
+    </div>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10001">
+      <div id="sc-viewfinder" style="width:260px;height:120px;border:2px solid rgba(255,255,255,.5);border-radius:12px;box-shadow:0 0 0 4000px rgba(0,0,0,.35)"></div>
+    </div>
+    <div style="position:absolute;bottom:0;left:0;right:0;text-align:center;padding:28px 16px;z-index:10001;
+      background:linear-gradient(transparent,rgba(0,0,0,.7))">
+      <span style="color:rgba(255,255,255,.85);font-size:1rem;font-weight:500">כוון את המצלמה לברקוד</span>
+    </div>`;
+  document.body.appendChild(overlay);
+  // Prevent body scroll while overlay is open
+  document.body.style.overflow = 'hidden';
+
+  var closeBtn = document.getElementById('sc-cam-close');
+  closeBtn.addEventListener('click', function () { stopCamera(); });
+
   try {
-    video.style.display = 'block';
-    $('sc-cam-btn').style.display = 'none';
-    $('sc-cam-stop').style.display = 'block';
     scCodeReader = new ZXing.BrowserMultiFormatReader();
-    await scCodeReader.decodeFromVideoDevice(null, 'sc-video', (result) => {
-      if (result) handleScan(scCountId, result.getText());
+    var constraints = { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } };
+    var stream = await navigator.mediaDevices.getUserMedia(constraints);
+    var videoEl = document.getElementById('sc-video-fs');
+    videoEl.srcObject = stream;
+    await scCodeReader.decodeFromVideoDevice(null, 'sc-video-fs', function (result) {
+      if (result) {
+        // Green flash on scan success
+        var vf = document.getElementById('sc-viewfinder');
+        if (vf) { vf.style.borderColor = '#22c55e'; vf.style.boxShadow = '0 0 20px rgba(34,197,94,.6), 0 0 0 4000px rgba(0,0,0,.35)'; }
+        handleScan(scCountId, result.getText());
+        setTimeout(function () { stopCamera(); }, 500);
+      }
     });
   } catch (err) {
     toast('לא ניתן להפעיל מצלמה — השתמש בהזנה ידנית', 'w');
+    console.warn('Camera error:', err);
     stopCamera();
   }
 }
 
 function stopCamera() {
   if (scCodeReader) { scCodeReader.reset(); scCodeReader = null; }
-  const video = $('sc-video');
-  if (video) { video.style.display = 'none'; video.srcObject = null; }
-  if ($('sc-cam-btn')) $('sc-cam-btn').style.display = '';
-  if ($('sc-cam-stop')) $('sc-cam-stop').style.display = 'none';
+  var overlay = document.getElementById('sc-cam-overlay');
+  if (overlay) {
+    var videoEl = overlay.querySelector('video');
+    if (videoEl && videoEl.srcObject) {
+      videoEl.srcObject.getTracks().forEach(function (t) { t.stop(); });
+      videoEl.srcObject = null;
+    }
+    overlay.remove();
+  }
+  document.body.style.overflow = '';
 }
 
 // ── Barcode normalization (ZXing → DB format) ────────────────
@@ -383,7 +420,7 @@ function _scNormalizeBarcode(scanned) {
   // 5. Suffix match: scanned ends with DB barcode
   item = scSessionItems.find(i => i.barcode && raw.endsWith(i.barcode));
   if (item) { console.log('SCAN MATCH: suffix', raw, '→', item.barcode); return item; }
-  console.log('SCAN NO MATCH:', raw, 'len=' + raw.length);
+  console.warn('BARCODE NOT MATCHED:', raw, 'length:', raw.length, 'chars:', [...raw].map(function(c) { return c.charCodeAt(0); }));
   return null;
 }
 
@@ -396,7 +433,12 @@ async function handleScan(countId, barcode) {
   const item = _scNormalizeBarcode(barcode);
   if (!item) {
     unknownBarcodes.push({ barcode, time: new Date().toISOString() });
-    toast('ברקוד לא קיים במלאי — הנח את הפריט בצד לבדיקת מנהל', 'w');
+    // Global error cooldown — suppress toast spam from rapid misreads
+    var errNow = Date.now();
+    if (errNow - _lastErrorTime >= 3000) {
+      toast('ברקוד לא קיים במלאי — הנח את הפריט בצד לבדיקת מנהל', 'w');
+      _lastErrorTime = errNow;
+    }
     return;
   }
   if (item.status === 'counted') {
