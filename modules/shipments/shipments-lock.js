@@ -131,7 +131,8 @@ async function autoLockExpiredBoxes() {
 // --- CORRECTION BOX ---
 async function createCorrectionBox(originalBox) {
   if (!originalBox) return;
-  if (!confirm('ליצור ארגז תיקון עבור ' + originalBox.box_number + '?')) return;
+  var ok = await confirmDialog('ארגז תיקון', 'ליצור ארגז תיקון עבור ' + originalBox.box_number + '?');
+  if (!ok) return;
 
   var pin = prompt('הזן סיסמת עובד:');
   if (!pin) return;
@@ -217,7 +218,8 @@ async function addItemToExistingBox(shipmentId, item) {
 // --- REMOVE ITEM FROM EXISTING BOX (edit window) ---
 async function removeItemFromExistingBox(shipmentItemId, shipment) {
   if (!shipment || !isBoxEditable(shipment)) { toast('הארגז נעול — לא ניתן להסיר פריטים', 'e'); return false; }
-  if (!confirm('להסיר את הפריט מהארגז?')) return false;
+  var ok2 = await confirmDialog('הסרת פריט', 'להסיר את הפריט מהארגז?');
+  if (!ok2) return false;
 
   var tid = getTenantId();
   // Fetch the item before deleting
