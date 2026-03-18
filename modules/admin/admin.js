@@ -26,6 +26,12 @@ function showUserButton() {
 }
 
 function resumeAppInit() {
+  // Inject tenant name into UI (no hardcoded business names)
+  var tName = getTenantConfig('name') || '';
+  var loginEl = document.getElementById('login-tenant-name');
+  if (loginEl) loginEl.textContent = tName;
+  if (tName) document.title = tName + ' — מערכת מלאי';
+
   if (hasPermission('settings.edit')) activateAdmin();
   showUserButton();
   const dateEl = $('po-date');

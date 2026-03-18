@@ -75,7 +75,7 @@
   <div class="brand">
     <span class="brand-icon">&#9670;</span>
     <span class="brand-title">Optic Up</span>
-    <span class="brand-sub">אופטיקה פריזמה</span>
+    <span class="brand-sub" id="brand-sub-name"></span>
   </div>
   <div id="user-info" class="user-info hidden">
     <span id="user-display"></span>
@@ -99,7 +99,7 @@
   <div class="pm-card">
     <div class="pm-logo">&#9670;</div>
     <h2 class="pm-title">Optic Up</h2>
-    <p class="pm-sub">אופטיקה פריזמה</p>
+    <p class="pm-sub" id="pm-sub-name"></p>
     <p class="pm-instruction">הזן קוד עובד (5 ספרות)</p>
     <div class="pm-pins">
       <input id="hpin-0" class="pm-pin" type="password" inputmode="numeric" maxlength="1" autocomplete="off">
@@ -277,10 +277,23 @@ async function handlePinSubmit() {
 }
 
 // =========================================================
+// Tenant name injection (from config — no hardcoded business names)
+// =========================================================
+function applyTenantName() {
+  var name = getTenantConfig('name') || '';
+  var el1 = document.getElementById('brand-sub-name');
+  var el2 = document.getElementById('pm-sub-name');
+  if (el1) el1.textContent = name;
+  if (el2) el2.textContent = name;
+  if (name) document.title = name + ' — Optic Up';
+}
+
+// =========================================================
 // Post-login state
 // =========================================================
 function onLoginSuccess(emp) {
   loggedIn = true;
+  applyTenantName();
   document.getElementById('login-section').classList.add('hidden');
   document.getElementById('user-display').textContent = emp.name + ' \u2022 \u05E1\u05E0\u05D9\u05E3 ' + (emp.branch_id || '00');
   document.getElementById('user-info').classList.remove('hidden');
@@ -299,6 +312,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   updateClock();
   setInterval(updateClock, 1000);
   renderModules();
+  applyTenantName();
 
   // Check for existing session
   try {

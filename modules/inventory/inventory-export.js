@@ -187,7 +187,8 @@ async function exportInventoryExcel() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'מלאי');
   const today = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, `מלאי-פריזמה-${today}.xlsx`);
+  var tenantSlug = getTenantConfig('slug') || getTenantConfig('name') || 'export';
+  XLSX.writeFile(wb, `מלאי-${tenantSlug}-${today}.xlsx`);
   toast('\u{1F4E5} הקובץ הורד בהצלחה', 's');
 }
 

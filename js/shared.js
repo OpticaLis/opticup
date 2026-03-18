@@ -38,6 +38,10 @@ const T = {
   ACTIVITY_LOG: 'activity_log',
 };
 
+// Tenant slug — identifies which tenant this deployment serves.
+// In future multi-deploy: derive from URL subdomain or path.
+const TENANT_SLUG = 'prizma';
+
 // — STATE —
 let suppliers = [];
 let brands = [];

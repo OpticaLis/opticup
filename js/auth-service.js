@@ -31,7 +31,7 @@ async function verifyEmployeePIN(pin) {
   const res = await fetch(EDGE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pin: String(pin), slug: 'prizma' })
+    body: JSON.stringify({ pin: String(pin), slug: TENANT_SLUG })
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
