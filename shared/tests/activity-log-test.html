@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activity Log Test — Optic Up Shared</title>
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/toast.css">
+  <style>
+    body { font-family: var(--font-family); background: var(--color-bg-page); color: var(--color-gray-900); padding: 24px; margin: 0; }
+    h1 { font-size: var(--font-size-2xl); margin-bottom: 8px; }
+    .subtitle { color: var(--color-gray-500); margin-bottom: 20px; font-size: var(--font-size-sm); }
+    .test-section { background: var(--color-bg-card); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 12px; }
+    .test-section h2 { font-size: var(--font-size-lg); margin: 0 0 10px; color: var(--color-primary); }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .result { font-size: 13px; padding: 4px 0; font-family: monospace; direction: ltr; text-align: left; }
+    .pass { color: var(--color-success); }
+    .fail { color: var(--color-error); }
+    .info { color: var(--color-info); }
+    #status-bar { padding: 10px 16px; border-radius: var(--radius-md); margin-bottom: 16px; font-weight: 600; }
+    .status-ok { background: var(--color-success-light); color: var(--color-success-dark); }
+    .status-err { background: var(--color-error-light); color: var(--color-error-dark); }
+    #loading { display: none !important; }
+  </style>
+</head>
+<body>
+
+<h1>Activity Log Test</h1>
+<p class="subtitle">activity-logger.js — ActivityLog.write / warning / error / critical</p>
+<div id="status-bar">בודק חיבור...</div>
+
+<div class="test-section"><h2>1. ActivityLog.write (info)</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testWrite()">Write Info Event</button>
+</div><div id="results-write"></div></div>
+
+<div class="test-section"><h2>2. ActivityLog.warning</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testWarning()">Write Warning</button>
+</div><div id="results-warning"></div></div>
+
+<div class="test-section"><h2>3. ActivityLog.error</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testError()">Write Error</button>
+</div><div id="results-error"></div></div>
+
+<div class="test-section"><h2>4. ActivityLog.critical</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testCritical()">Write Critical</button>
+</div><div id="results-critical"></div></div>
+
+<div class="test-section"><h2>5. Changeset Format</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testChangeset()">Write with Changeset</button>
+</div><div id="results-changeset"></div></div>
+
+<div class="test-section"><h2>6. Fire & Forget</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testFireForget()">Non-blocking + Error Resilience</button>
+</div><div id="results-fire"></div></div>
+
+<div class="test-section"><h2>7. Validation</h2><div class="btn-row">
+  <button class="btn btn-secondary btn-sm" onclick="testValidation()">Missing Fields</button>
+</div><div id="results-validation"></div></div>
+
+<div class="test-section"><h2>8. Cleanup</h2><div class="btn-row">
+  <button class="btn btn-primary btn-sm" onclick="runAll()">Run All Tests</button>
+  <button class="btn btn-danger btn-sm" onclick="cleanup()">Delete All Test Rows</button>
+</div><div id="results-cleanup"></div></div>
+
+<div id="toast-c"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/shared.js"></script>
+<script src="../../js/supabase-ops.js"></script>
+<script src="../../js/auth-service.js"></script>
+<script src="../js/toast.js"></script>
+<script src="../js/supabase-client.js"></script>
+<script src="../js/activity-logger.js"></script>
+<script>
+var TEST_ACTION_PREFIX = 'alog_test.';
+var _testIds = [];
+
+function log(sectionId, pass, msg) {
+  var el = document.getElementById(sectionId);
+  var cls = pass === true ? 'pass' : pass === false ? 'fail' : 'info';
+  var icon = pass === true ? '✅' : pass === false ? '❌' : 'ℹ️';
+  el.innerHTML += '<div class="result ' + cls + '">' + icon + ' ' + msg + '</div>';
+}
+function clear(id) { document.getElementById(id).innerHTML = ''; }
+
+// -- Session check (same as db-test.html) --
+async function checkSession() {
+  var bar = document.getElementById('status-bar');
+  var tid = getTenantId();
+  if (!tid) { bar.textContent = 'אין session — התחבר דרך index.html קודם'; bar.className = 'status-err'; return false; }
+  var jwt = sessionStorage.getItem('jwt_token');
+  if (jwt) {
+    window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { global: { headers: { Authorization: 'Bearer ' + jwt } } });
+    sb = window.sb;
+  } else { bar.textContent = 'אין JWT — התחבר דרך index.html קודם'; bar.className = 'status-err'; return false; }
+  var { error } = await DB.select('activity_log', {}, { limit: 1, silent: true });
+  if (error) { bar.textContent = 'שגיאת חיבור: ' + (error.message || ''); bar.className = 'status-err'; return false; }
+  bar.textContent = 'מחובר ✓ — tenant: ' + tid.substring(0, 8) + '...';
+  bar.className = 'status-ok';
+  return true;
+}
+
+// Helper: wait for fire-and-forget write to land in DB
+async function waitAndFind(entityId, maxMs) {
+  var end = Date.now() + (maxMs || 2000);
+  while (Date.now() < end) {
+    var { data } = await DB.select('activity_log', { entity_id: entityId }, { silent: true });
+    if (data && data.length > 0) { _testIds.push(data[0].id); return data[0]; }
+    await new Promise(function(r) { setTimeout(r, 200); });
+  }
+  return null;
+}
+
+// ===== Section 1: write (info) =====
+async function testWrite() {
+  clear('results-write');
+  var eid = 'info-' + Date.now();
+  ActivityLog.write({ action: TEST_ACTION_PREFIX + 'info', entity_type: 'test', entity_id: eid, details: { hello: 'world' } });
+  var row = await waitAndFind(eid);
+  log('results-write', !!row, 'record created: ' + (row ? 'yes' : 'NOT FOUND'));
+  if (!row) return;
+  log('results-write', row.level === 'info', 'level=info: ' + row.level);
+  log('results-write', row.tenant_id === getTenantId(), 'tenant_id auto-injected: ' + (row.tenant_id ? row.tenant_id.substring(0, 8) : 'missing'));
+  var emp = getCurrentEmployee();
+  log('results-write', row.user_id === (emp && emp.id), 'user_id auto-injected: ' + (row.user_id ? row.user_id.substring(0, 8) : 'null'));
+}
+
+// ===== Section 2: warning =====
+async function testWarning() {
+  clear('results-warning');
+  var eid = 'warn-' + Date.now();
+  ActivityLog.warning({ action: TEST_ACTION_PREFIX + 'warn', entity_type: 'test', entity_id: eid });
+  var row = await waitAndFind(eid);
+  log('results-warning', row && row.level === 'warning', 'level=warning: ' + (row ? row.level : 'NOT FOUND'));
+}
+
+// ===== Section 3: error =====
+async function testError() {
+  clear('results-error');
+  var eid = 'err-' + Date.now();
+  ActivityLog.error({ action: TEST_ACTION_PREFIX + 'err', entity_type: 'test', entity_id: eid });
+  var row = await waitAndFind(eid);
+  log('results-error', row && row.level === 'error', 'level=error: ' + (row ? row.level : 'NOT FOUND'));
+}
+
+// ===== Section 4: critical =====
+async function testCritical() {
+  clear('results-critical');
+  var eid = 'crit-' + Date.now();
+  ActivityLog.critical({ action: TEST_ACTION_PREFIX + 'crit', entity_type: 'test', entity_id: eid });
+  var row = await waitAndFind(eid);
+  log('results-critical', row && row.level === 'critical', 'level=critical: ' + (row ? row.level : 'NOT FOUND'));
+}
+
+// ===== Section 5: changeset =====
+async function testChangeset() {
+  clear('results-changeset');
+  var eid = 'cs-' + Date.now();
+  var cs = { changes: [{ field: 'model', old: 'Classic', new: 'Pro' }] };
+  ActivityLog.write({ action: TEST_ACTION_PREFIX + 'changeset', entity_type: 'test', entity_id: eid, details: cs });
+  var row = await waitAndFind(eid);
+  if (!row) { log('results-changeset', false, 'record NOT FOUND'); return; }
+  var ok = row.details && row.details.changes && row.details.changes.length === 1;
+  log('results-changeset', ok, 'changeset stored: ' + JSON.stringify(row.details));
+  if (ok) {
+    var c = row.details.changes[0];
+    log('results-changeset', c.field === 'model' && c.old === 'Classic' && c.new === 'Pro', 'field/old/new correct');
+  }
+}
+
+// ===== Section 6: fire & forget =====
+async function testFireForget() {
+  clear('results-fire');
+  // Test 1: write returns immediately (no blocking)
+  var start = Date.now();
+  ActivityLog.write({ action: TEST_ACTION_PREFIX + 'ff', entity_type: 'test', entity_id: 'ff-' + Date.now() });
+  var elapsed = Date.now() - start;
+  log('results-fire', elapsed < 50, 'non-blocking: returned in ' + elapsed + 'ms (should be <50ms)');
+
+  // Test 2: error resilience — write with valid fields but we won't crash
+  var didCrash = false;
+  try {
+    // This will be caught internally by activity-logger (no action → console.warn)
+    ActivityLog.write({ entity_type: 'test' });
+  } catch (e) { didCrash = true; }
+  log('results-fire', !didCrash, 'error resilience: no crash on missing action');
+}
+
+// ===== Section 7: validation =====
+async function testValidation() {
+  clear('results-validation');
+  // Capture console.warn calls
+  var warns = [];
+  var origWarn = console.warn;
+  console.warn = function() { warns.push(Array.from(arguments).join(' ')); origWarn.apply(console, arguments); };
+
+  // Missing action
+  warns = [];
+  ActivityLog.write({ entity_type: 'test', entity_id: 'v1' });
+  log('results-validation', warns.some(function(w) { return w.indexOf('missing required') !== -1; }), 'missing action: console.warn fired');
+
+  // Missing entity_type
+  warns = [];
+  ActivityLog.write({ action: 'test.val' });
+  log('results-validation', warns.some(function(w) { return w.indexOf('missing required') !== -1; }), 'missing entity_type: console.warn fired');
+
+  // Both missing
+  warns = [];
+  ActivityLog.write({});
+  log('results-validation', warns.some(function(w) { return w.indexOf('missing required') !== -1; }), 'both missing: console.warn fired');
+
+  // Null config
+  warns = [];
+  ActivityLog.write(null);
+  log('results-validation', warns.some(function(w) { return w.indexOf('missing required') !== -1; }), 'null config: console.warn fired');
+
+  console.warn = origWarn;
+}
+
+// ===== Run All + Cleanup =====
+async function runAll() {
+  clear('results-cleanup');
+  if (!(await checkSession())) return;
+  ['results-write','results-warning','results-error','results-critical','results-changeset','results-fire','results-validation'].forEach(clear);
+  log('results-cleanup', null, 'Running all tests...');
+  await testWrite(); await testWarning(); await testError(); await testCritical();
+  await testChangeset(); await testFireForget(); await testValidation();
+  log('results-cleanup', null, 'Done. Tracked ' + _testIds.length + ' rows — click Cleanup to remove.');
+}
+
+async function cleanup() {
+  clear('results-cleanup');
+  // Find any remaining test rows
+  var { data } = await DB.select('activity_log', {}, { silent: true, rawFilters: function(q) { return q.like('action', TEST_ACTION_PREFIX + '%'); } });
+  if (data && data.length) {
+    data.forEach(function(r) { if (_testIds.indexOf(r.id) === -1) _testIds.push(r.id); });
+  }
+  var count = 0;
+  for (var i = 0; i < _testIds.length; i++) {
+    var { error } = await DB.hardDelete('activity_log', _testIds[i], { silent: true });
+    if (!error) count++;
+  }
+  log('results-cleanup', true, 'Deleted ' + count + '/' + _testIds.length + ' test rows');
+  _testIds = [];
+}
+
+window.addEventListener('DOMContentLoaded', checkSession);
+</script>
+</body>
+</html>
