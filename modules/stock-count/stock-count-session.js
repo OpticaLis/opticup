@@ -381,15 +381,19 @@ async function startCamera() {
         if (!result) return;
         var raw = result.getText();
         var dbg = document.getElementById('sc-scan-debug');
-        // ISSUE 1: Filter garbage reads — valid barcodes are 5+ digits only
-        if (!/^\d{5,}$/.test(raw)) {
+        // Filter garbage reads — strip control chars, then check: valid = 5+ digits only
+        var cleaned = raw.replace(/[^\x20-\x7E]/g, '').trim(); // remove non-printable chars
+        var isValid = /^\d{5,}$/.test(cleaned);
+        if (!isValid) {
           if (dbg) {
             var now0 = new Date().toLocaleTimeString('he-IL');
-            dbg.innerHTML = '<span style="color:#888">' + now0 + ' | IGNORED (invalid: "' + raw + '" len:' + raw.length + ')</span><br>' + dbg.innerHTML;
+            var safeRaw = raw.replace(/[^\x20-\x7E]/g, '?'); // show non-printable as ?
+            dbg.innerHTML = '<span style="color:#888">' + now0 + ' | IGNORED ("' + safeRaw + '" len:' + raw.length + ')</span><br>' + dbg.innerHTML;
             var ls0 = dbg.innerHTML.split('<br>'); if (ls0.length > 10) dbg.innerHTML = ls0.slice(0, 10).join('<br>');
           }
-          return; // silently skip non-numeric / too-short reads
+          return;
         }
+        raw = cleaned; // use cleaned version from here on
         // TEMP DEBUG: log valid detection to visible panel
         if (dbg) {
           var now = new Date().toLocaleTimeString('he-IL');
