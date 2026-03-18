@@ -14,9 +14,18 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<!-- Shared CSS -->
+<link rel="stylesheet" href="shared/css/variables.css">
+<link rel="stylesheet" href="shared/css/components.css">
+<link rel="stylesheet" href="shared/css/components-extra.css">
+<link rel="stylesheet" href="shared/css/layout.css">
+<link rel="stylesheet" href="shared/css/forms.css">
 <link rel="stylesheet" href="shared/css/modal.css">
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="shared/css/toast.css">
+<link rel="stylesheet" href="shared/css/table.css">
+<!-- Module CSS -->
 <link rel="stylesheet" href="css/header.css">
+<link rel="stylesheet" href="css/inventory.css">
 </head>
 <body>
 
@@ -828,11 +837,19 @@
   </div>
 </div>
 
+<!-- Shared JS -->
+<script src="shared/js/theme-loader.js"></script>
+<script src="shared/js/modal-builder.js"></script>
+<script src="shared/js/modal-wizard.js"></script>
+<script src="shared/js/toast.js"></script>
+<script src="shared/js/pin-modal.js"></script>
+<script src="shared/js/table-builder.js"></script>
+<script src="shared/js/permission-ui.js"></script>
+<script src="shared/js/supabase-client.js"></script>
+<script src="shared/js/activity-logger.js"></script>
+<!-- Core JS -->
 <script src="js/shared.js"></script>
 <script src="js/auth-service.js"></script>
-<script src="shared/js/modal-builder.js"></script>
-<script src="js/pin-modal.js"></script>
-
 <script src="js/supabase-ops.js"></script>
 <script src="js/data-loading.js"></script>
 <script src="js/search-select.js"></script>

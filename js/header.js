@@ -26,6 +26,8 @@ async function initHeader() {
     if (data) {
       tenantName = data.name || '';
       logoUrl = data.logo_url || '';
+      // Hook per-tenant CSS theme overrides (Phase 5)
+      if (typeof loadTenantTheme === 'function') loadTenantTheme(data);
     }
   }
 

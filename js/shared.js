@@ -218,23 +218,44 @@ function showLoading(t) { $('loading-text').textContent=t||'טוען...'; $('loa
 function hideLoading() { $('loading').style.display='none'; }
 function $(id) { return document.getElementById(id); }
 function toast(msg, type='s') {
-  const t = document.createElement('div');
-  t.className = `toast ${type}`;
+  if (typeof Toast !== 'undefined') {
+    var map = { s: 'success', e: 'error', w: 'warning', i: 'info' };
+    Toast[map[type] || 'success'](msg);
+    return;
+  }
+  // Fallback — when Toast not loaded (e.g. suppliers-debt.html)
+  var c = $('toast-c');
+  if (!c) return;
+  var t = document.createElement('div');
+  t.className = 'toast ' + type;
   t.textContent = msg;
-  $('toast-c').appendChild(t);
-  setTimeout(()=>t.remove(), 4500);
+  c.appendChild(t);
+  setTimeout(function() { t.remove(); }, 4500);
 }
 function setAlert(id, html, type) { $(id).innerHTML = `<div class="alert alert-${type}">${html}</div>`; }
 function clearAlert(id) { $(id).innerHTML = ''; }
 function closeModal(id) { $(id).style.display = 'none'; }
 
 function confirmDialog(title, text = '') {
-  return new Promise(res => {
+  if (typeof Modal !== 'undefined' && Modal.confirm) {
+    return new Promise(function(res) {
+      Modal.confirm({
+        title: title,
+        message: text,
+        confirmText: 'אישור',
+        cancelText: 'ביטול',
+        onConfirm: function() { res(true); },
+        onCancel: function() { res(false); }
+      });
+    });
+  }
+  // Fallback — when Modal not loaded (e.g. suppliers-debt.html)
+  return new Promise(function(res) {
     $('confirm-title').textContent = title;
     $('confirm-text').textContent = text;
     $('confirm-modal').style.display = 'flex';
-    $('confirm-yes').onclick = () => { closeModal('confirm-modal'); res(true); };
-    $('confirm-no').onclick = () => { closeModal('confirm-modal'); res(false); };
+    $('confirm-yes').onclick = function() { closeModal('confirm-modal'); res(true); };
+    $('confirm-no').onclick = function() { closeModal('confirm-modal'); res(false); };
   });
 }
 
@@ -283,6 +304,18 @@ function showEntryMode(mode) {
 
 // — INFO MODAL —
 function showInfoModal(title, bodyHTML) {
+  if (typeof Modal !== 'undefined' && Modal.show) {
+    Modal.show({
+      size: 'md',
+      title: title,
+      content: bodyHTML,
+      footer: '<button class="btn btn-primary" onclick="Modal.close()">\u05E1\u05D2\u05D5\u05E8</button>',
+      closeOnEscape: true,
+      closeOnBackdrop: true
+    });
+    return;
+  }
+  // Fallback — when Modal not loaded (e.g. suppliers-debt.html)
   var old = document.getElementById('info-modal-overlay');
   if (old) old.remove();
   var overlay = document.createElement('div');

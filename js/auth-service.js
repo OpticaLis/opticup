@@ -269,6 +269,11 @@ function checkBranchAccess(branchId) {
 // 9. applyUIPermissions()
 // =========================================================
 function applyUIPermissions() {
+  if (typeof PermissionUI !== 'undefined') {
+    PermissionUI.apply();
+  }
+  // Always run native data-permission + data-tab-permission scan
+  // (PermissionUI handles data-permission; we handle data-tab-permission here)
   document.querySelectorAll('[data-permission]').forEach(el => {
     el.style.display = hasPermission(el.getAttribute('data-permission')) ? '' : 'none';
   });
