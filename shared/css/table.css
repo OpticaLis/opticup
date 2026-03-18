@@ -1,0 +1,150 @@
+/* table.css — Table Builder styles (shared/js/table-builder.js)
+   Deps: variables.css. Prefix .tb- to avoid collision with .table classes.
+   Zero hardcoded colors/sizes — all from var(--...) */
+
+/* --- Wrapper + Table base --- */
+.tb-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+}
+.tb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+}
+
+/* --- Header --- */
+.tb-header { background: var(--color-gray-50); }
+
+.tb-th {
+  padding: var(--space-sm) var(--space-md);
+  text-align: start;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-700);
+  white-space: nowrap;
+  border-bottom: 2px solid var(--color-gray-200);
+  position: relative;
+}
+
+.tb-wrapper-sticky .tb-th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--color-gray-50);
+}
+
+/* --- Sortable header --- */
+.tb-th-sortable {
+  cursor: pointer;
+  user-select: none;
+  padding-inline-end: calc(var(--space-md) + 1em);
+  transition: background var(--transition-fast);
+}
+
+.tb-th-sortable:hover { background: var(--color-gray-100); }
+
+.tb-th-sortable::after {
+  position: absolute;
+  inset-inline-end: var(--space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-400);
+  content: "\2195"; /* ↕ — unsorted hint */
+}
+
+.tb-th-sortable[data-sort-dir="asc"]::after {
+  content: "\25B2"; /* ▲ */
+  color: var(--color-primary);
+}
+.tb-th-sortable[data-sort-dir="desc"]::after {
+  content: "\25BC"; /* ▼ */
+  color: var(--color-primary);
+}
+.tb-th-sort-active {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+/* --- Body rows --- */
+.tb-row {
+  border-bottom: 1px solid var(--color-gray-200);
+  transition: background var(--transition-fast);
+}
+
+.tb-row:hover { background: var(--color-gray-100); }
+.tb-row:nth-child(even) { background: var(--color-gray-50); }
+.tb-row:nth-child(even):hover { background: var(--color-gray-100); }
+.tb-row-clickable { cursor: pointer; }
+/* --- Body cells --- */
+.tb-td {
+  padding: var(--space-sm) var(--space-md);
+  vertical-align: middle;
+  color: var(--color-gray-800);
+}
+
+.tb-td-end { text-align: end; }
+.tb-td-actions {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* --- Empty state --- */
+.tb-empty {
+  padding: var(--space-2xl) var(--space-xl);
+  text-align: center;
+}
+
+.tb-empty-icon {
+  font-size: var(--font-size-2xl);
+  margin-block-end: var(--space-sm);
+}
+.tb-empty-text {
+  font-size: var(--font-size-md);
+  color: var(--color-gray-500);
+  margin-block-end: var(--space-md);
+}
+.tb-empty-cta {
+  display: inline-block;
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background var(--transition-normal);
+}
+
+.tb-empty-cta:hover { background: var(--color-primary-hover); }
+/* --- Loading state --- */
+.tb-loading { padding: var(--space-md); }
+.tb-loading-row {
+  height: var(--space-xl);
+  background: var(--color-gray-100);
+  border-radius: var(--radius-sm);
+  margin-block-end: var(--space-sm);
+  animation: tb-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes tb-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+/* --- Responsive --- */
+@media (max-width: 640px) {
+  .tb-th,
+  .tb-td {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--font-size-xs);
+  }
+
+  .tb-empty {
+    padding: var(--space-xl) var(--space-md);
+  }
+}
