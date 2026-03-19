@@ -151,10 +151,13 @@ async function initSecureSession(employee, jwtToken) {
   // Load and cache tenant config (VAT, currency, display settings)
   try {
     const { data: tenantRow } = await sb.from('tenants')
-      .select('vat_rate,withholding_tax_default,payment_terms_days,default_currency,rows_per_page,date_format,theme,business_name,logo_url')
+      .select('name,vat_rate,withholding_tax_default,payment_terms_days,default_currency,rows_per_page,date_format,theme,business_name,logo_url')
       .eq('id', employee.tenant_id)
       .single();
-    if (tenantRow) sessionStorage.setItem('tenant_config', JSON.stringify(tenantRow));
+    if (tenantRow) {
+      sessionStorage.setItem('tenant_config', JSON.stringify(tenantRow));
+      if (tenantRow.name) sessionStorage.setItem('tenant_name_cache', tenantRow.name);
+    }
   } catch (e) { console.warn('Failed to load tenant config:', e); }
 
   return { token, employee, permissions: permSnapshot, role: roleId, expires_at: expiresAt };

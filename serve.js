@@ -3,7 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml' };
 const server = http.createServer((req, res) => {
-  const filePath = path.join(__dirname, decodeURIComponent(req.url === '/' ? '/index.html' : req.url));
+  const urlPath = req.url.split('?')[0];
+  const filePath = path.join(__dirname, decodeURIComponent(urlPath === '/' ? '/index.html' : urlPath));
   const ext = path.extname(filePath);
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not found'); return; }

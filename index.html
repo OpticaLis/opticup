@@ -101,6 +101,17 @@
 <!-- Module cards -->
 <div class="modules-grid" id="modules-grid"></div>
 
+<!-- Tenant picker (shown when no slug in URL and no session) -->
+<div id="tenant-picker" class="hidden" style="position:fixed;inset:0;z-index:9998;background:rgba(26,39,68,.95);display:flex;align-items:center;justify-content:center;">
+  <div style="text-align:center;color:#fff;max-width:400px;width:90%;">
+    <div style="font-size:2rem;margin-bottom:0.5rem;">&#9670;</div>
+    <h2 style="margin:0 0 0.5rem;font-size:1.5rem;">Optic Up</h2>
+    <p style="margin:0 0 1.5rem;opacity:0.7;">בחר חנות</p>
+    <div id="tenant-picker-list" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
+    <p id="tenant-picker-error" class="hidden" style="color:#f87171;margin-top:1rem;"></p>
+  </div>
+</div>
+
 <!-- PIN Modal -->
 <div id="pin-modal" class="hidden">
   <div class="pm-card">
@@ -293,7 +304,7 @@ async function handlePinSubmit() {
 // Tenant name injection (from config — no hardcoded business names)
 // =========================================================
 function applyTenantName() {
-  var name = getTenantConfig('name') || '';
+  var name = getTenantConfig('name') || getTenantConfig('business_name') || sessionStorage.getItem('tenant_name_cache') || '';
   var el1 = document.getElementById('brand-sub-name');
   var el2 = document.getElementById('pm-sub-name');
   if (el1) el1.textContent = name;
@@ -319,13 +330,108 @@ async function doLogout() {
 }
 
 // =========================================================
+// Tenant resolution — slug from URL ?t= or sessionStorage
+// =========================================================
+async function resolveTenant() {
+  const params = new URLSearchParams(window.location.search);
+  const slugFromUrl = params.get('t');
+  const slugFromSession = sessionStorage.getItem('tenant_slug');
+  const slug = slugFromUrl || slugFromSession;
+
+  if (slug) {
+    // Resolve slug → tenant row (uses anon key, tenants table has public read RLS)
+    const { data: tenant, error } = await sb.from('tenants')
+      .select('id, name, slug, ui_config, is_active')
+      .eq('slug', slug)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (tenant) {
+      sessionStorage.setItem('tenant_slug', tenant.slug);
+      sessionStorage.setItem('tenant_id', tenant.id);
+      // Cache name for applyTenantName (before login, getTenantConfig won't have it yet)
+      sessionStorage.setItem('tenant_name_cache', tenant.name);
+      // Apply green theme for demo tenant (or any tenant theme)
+      if (typeof loadTenantTheme === 'function') loadTenantTheme(tenant);
+      return tenant;
+    } else {
+      // Slug not found
+      var errEl = document.getElementById('tenant-picker-error');
+      if (errEl) { errEl.textContent = 'חנות לא נמצאה: ' + slug; errEl.classList.remove('hidden'); }
+      sessionStorage.removeItem('tenant_slug');
+      sessionStorage.removeItem('tenant_id');
+      return null;
+    }
+  }
+
+  // No slug — check if there's already a tenant_id in session (returning user)
+  if (sessionStorage.getItem('tenant_id')) {
+    return { id: sessionStorage.getItem('tenant_id'), name: sessionStorage.getItem('tenant_name_cache') || '' };
+  }
+
+  // No slug, no session — show tenant picker
+  return null;
+}
+
+async function showTenantPicker() {
+  const { data: tenants } = await sb.from('tenants')
+    .select('id, name, slug')
+    .eq('is_active', true)
+    .order('name');
+
+  if (!tenants || tenants.length === 0) {
+    document.getElementById('tenant-picker-error').textContent = 'לא נמצאו חנויות פעילות';
+    document.getElementById('tenant-picker-error').classList.remove('hidden');
+    document.getElementById('tenant-picker').classList.remove('hidden');
+    document.getElementById('tenant-picker').style.display = 'flex';
+    return;
+  }
+
+  // If only 1 tenant, auto-select it (backward compatible)
+  if (tenants.length === 1) {
+    window.location.href = '?t=' + tenants[0].slug;
+    return;
+  }
+
+  var listEl = document.getElementById('tenant-picker-list');
+  listEl.innerHTML = '';
+  tenants.forEach(function(t) {
+    var btn = document.createElement('a');
+    btn.href = '?t=' + t.slug;
+    btn.textContent = t.name;
+    btn.style.cssText = 'display:block;padding:1rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#fff;text-decoration:none;font-size:1.1rem;transition:background 0.2s;';
+    btn.onmouseenter = function() { this.style.background = 'rgba(255,255,255,0.2)'; };
+    btn.onmouseleave = function() { this.style.background = 'rgba(255,255,255,0.1)'; };
+    listEl.appendChild(btn);
+  });
+
+  document.getElementById('tenant-picker').classList.remove('hidden');
+  document.getElementById('tenant-picker').style.display = 'flex';
+}
+
+// =========================================================
 // Init — page load
 // =========================================================
 document.addEventListener('DOMContentLoaded', async function() {
   updateClock();
   setInterval(updateClock, 1000);
   renderModules();
-  applyTenantName();
+
+  // Resolve tenant FIRST
+  const tenant = await resolveTenant();
+  if (!tenant) {
+    // No tenant resolved — show picker
+    await showTenantPicker();
+    return;
+  }
+
+  // Apply tenant name to login screen
+  var nameEl1 = document.getElementById('brand-sub-name');
+  var nameEl2 = document.getElementById('pm-sub-name');
+  var tName = tenant.name || sessionStorage.getItem('tenant_name_cache') || '';
+  if (nameEl1) nameEl1.textContent = tName;
+  if (nameEl2) nameEl2.textContent = tName;
+  if (tName) document.title = tName + ' — Optic Up';
 
   // Check for existing session
   try {

@@ -38,9 +38,18 @@ const T = {
   ACTIVITY_LOG: 'activity_log',
 };
 
-// Tenant slug — identifies which tenant this deployment serves.
-// In future multi-deploy: derive from URL subdomain or path.
-const TENANT_SLUG = 'prizma';
+// Tenant slug — resolved dynamically from URL ?t= param or sessionStorage.
+// index.html sets sessionStorage('tenant_slug') during tenant resolution.
+// Fallback: 'prizma' for backward compatibility.
+const TENANT_SLUG = (function() {
+  const params = new URLSearchParams(window.location.search);
+  const fromUrl = params.get('t');
+  if (fromUrl) {
+    sessionStorage.setItem('tenant_slug', fromUrl);
+    return fromUrl;
+  }
+  return sessionStorage.getItem('tenant_slug') || 'prizma';
+})();
 
 // — STATE —
 let suppliers = [];

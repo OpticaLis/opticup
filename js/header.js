@@ -20,7 +20,7 @@ async function initHeader() {
   const tid = getTenantId();
   if (tid) {
     const { data } = await sb.from('tenants')
-      .select('name, logo_url')
+      .select('name, logo_url, ui_config')
       .eq('id', tid)
       .single();
     if (data) {
