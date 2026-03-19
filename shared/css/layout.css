@@ -198,4 +198,9 @@
     max-width: 100%;
     padding: 0;
   }
+
+  .modal-overlay,
+  .toast-container {
+    display: none !important;
+  }
 }
