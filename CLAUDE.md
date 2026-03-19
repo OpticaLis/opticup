@@ -461,3 +461,45 @@ Both branches share one Supabase instance.
 - Never `git push` to `main` directly — always merge from `develop`
 - DB changes must be backward compatible with `main` until merge
 
+---
+
+## QA & Testing Protocol
+
+### Test Tenant
+
+| Field | Value |
+|-------|-------|
+| Name | אופטיקה דמו |
+| Slug | demo |
+| UUID | 0bf57a99-242e-461b-9e89-fe102db5f3aa |
+| Test employee PIN | 12345 (עובד בדיקה, role: ceo, full permissions) |
+| Theme | Green (#059669) — visually distinct from Prizma (blue) |
+| Barcodes | Prefixed with 'D' (e.g., D0012345) |
+| Data | Cloned from Prizma with "(דמו)" suffix on names |
+
+### Tenant Access via URL
+
+- Format: `?t={slug}` — e.g., `https://opticalis.github.io/opticup/?t=demo`
+- Tenant resolved from: URL `?t=` param → sessionStorage → default 'prizma'
+- Each tenant has isolated data, permissions, and theme via `tenant_id` + RLS
+- `js/shared.js` → `TENANT_SLUG` reads from URL param dynamically
+- `js/header.js` → loads `ui_config` from tenants table for theme
+- `shared/js/theme-loader.js` → applies CSS variables from `ui_config`
+
+### QA Rules — Mandatory
+
+1. **All QA and regression tests run on the test tenant (slug=demo)** — never on Prizma production data
+2. **Every new module** must be tested on the test tenant before merge to main
+3. **Clone/cleanup scripts** are in `modules/Module 1.5 - Shared Components/scripts/`:
+   - `clone-tenant.sql` — creates a full test tenant with FK-mapped data
+   - `cleanup-tenant.sql` — safely removes test tenant data
+   - `fix-permissions-schema.sql` — reference for permissions PK fix
+4. **Test tenant stays alive** after QA — useful for demos, onboarding, and future testing
+5. **When adding new tables:** update `clone-tenant.sql` to include them, or the test tenant will have missing data
+
+### Permissions Schema (Multi-Tenant)
+
+- `roles`, `permissions`, `role_permissions` — PKs include `tenant_id`
+- Each tenant has its own copy of roles/permissions with the same IDs (e.g., 'ceo', 'inventory.view')
+- FKs on `employee_roles` and `role_permissions` are composite references
+
