@@ -206,8 +206,10 @@ CREATE TEMP TABLE _employee_map (old_id UUID, new_id UUID) ON COMMIT DROP;
 INSERT INTO _employee_map (old_id, new_id)
 SELECT id, gen_random_uuid() FROM employees WHERE tenant_id = v_source_tenant;
 
+-- PIN=NULL לעובדים משוכפלים — רק עובד הבדיקה (PIN 12345) צריך גישת התחברות
+-- UNIQUE constraint על (tenant_id, pin) מונע כפילויות PIN באותו דייר
 INSERT INTO employees (id, name, pin, role, branch_id, is_active, tenant_id, email, phone, created_by, last_login, failed_attempts, locked_until)
-SELECT m.new_id, e.name || ' (דמו)', e.pin, e.role, e.branch_id, e.is_active, v_new_tenant,
+SELECT m.new_id, e.name || ' (דמו)', NULL, e.role, e.branch_id, e.is_active, v_new_tenant,
        e.email, e.phone, NULL, NULL, 0, NULL  -- created_by=NULL (self-ref, יעודכן בשלב הבא)
 FROM employees e
 JOIN _employee_map m ON m.old_id = e.id
