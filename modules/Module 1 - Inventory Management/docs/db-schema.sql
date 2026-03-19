@@ -25,6 +25,7 @@
 --   012_atomic_qty_rpc.sql  — increment_inventory + decrement_inventory RPC functions
 --   013_stock_count.sql  — stock_counts + stock_count_items tables + set_inventory_qty RPC
 --   033_apply_stock_count_delta.sql — atomic stock count confirmation RPC (FOR UPDATE lock)
+--   034_stock_count_reason_and_skipped.sql — reason TEXT column + skipped status on stock_count_items
 --   014_stock_count_scanned_by.sql  — scanned_by column on stock_count_items
 --   015_failed_sync_storage.sql  — storage_path + errors columns on sync_log, storage policy
 --   016_auth_permissions.sql  — roles, permissions, role_permissions, employee_roles, auth_sessions
@@ -495,7 +496,7 @@ CREATE POLICY "tenant_isolation" ON stock_counts FOR ALL
 CREATE POLICY "service_bypass" ON stock_counts FOR ALL TO service_role USING (true);
 
 -- ============================================================
--- 15. stock_count_items — שורות ספירה (013 + 014 + 032)
+-- 15. stock_count_items — שורות ספירה (013 + 014 + 032 + 034)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS stock_count_items (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -509,8 +510,9 @@ CREATE TABLE IF NOT EXISTS stock_count_items (
   expected_qty    INTEGER NOT NULL,                            -- כמות צפויה (מהמערכת)
   actual_qty      INTEGER,                                     -- כמות בפועל (מהספירה)
   difference      INTEGER GENERATED ALWAYS AS (actual_qty - expected_qty) STORED,  -- פער
-  status          TEXT NOT NULL DEFAULT 'pending'              -- pending | counted | skipped | unknown (032)
-                  CHECK (status IN ('pending', 'counted', 'skipped', 'unknown')),
+  status          TEXT NOT NULL DEFAULT 'pending'              -- pending | counted | matched | skipped | unknown (032 + 034)
+                  CHECK (status IN ('pending', 'counted', 'matched', 'unknown', 'skipped')),
+  reason          TEXT,                                        -- סיבת פער (034)
   notes           TEXT,                                        -- הערה לשורה
   counted_at      TIMESTAMPTZ,                                 -- מתי נספר
   scanned_by      TEXT,                                        -- מי סרק (014)
