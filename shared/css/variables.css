@@ -16,10 +16,10 @@
      1. COLORS — PRIMARY
      Source: styles.css :root (--primary, --primary-light, --primary-dark)
      ========================================================================= */
-  --color-primary:        #1a237e;  /* dark navy — headers, th bg, text highlights */
-  --color-primary-hover:  #283593;  /* from --primary-light — sortable th:hover, nav hover */
-  --color-primary-light:  #eef2ff;  /* DERIVED — from inv-bulk-bar gradient, editable:hover, selected-row bg */
-  --color-primary-dark:   #0d1642;  /* from --primary-dark — admin button bg */
+  --color-primary:        #4f46e5;  /* Indigo 600 — buttons, links, focus rings */
+  --color-primary-hover:  #4338ca;  /* Indigo 700 — hover state on primary */
+  --color-primary-light:  #eef2ff;  /* Indigo 50 — badges, selected rows, subtle highlights */
+  --color-primary-dark:   #3730a3;  /* Indigo 800 — header background, dark text on light bg */
 
   /* =========================================================================
      2. COLORS — SEMANTIC
@@ -60,16 +60,16 @@
      Missing: g600, g800, g900, g50, black — interpolated from Tailwind gray scale
      ========================================================================= */
   --color-white:          #ffffff;  /* from --white */
-  --color-gray-50:        #f8fafc;  /* INTERPOLATED — lightest bg, one step above gray-100 */
-  --color-gray-100:       #f9fafb;  /* from --g100 — hover bg, stat item bg */
-  --color-gray-200:       #e5e7eb;  /* from --g200 — borders, dividers, badge-gray bg */
-  --color-gray-300:       #d1d5db;  /* from --g300 — input borders, separators */
-  --color-gray-400:       #9ca3af;  /* from --g400 — placeholder text, no-img, muted icons */
-  --color-gray-500:       #6b7280;  /* from --g500 — label text, inactive nav, muted text */
-  --color-gray-600:       #4b5563;  /* INTERPOLATED — Tailwind gray-600, between g500/g700 */
-  --color-gray-700:       #374151;  /* from --g700 — body text, strong labels */
-  --color-gray-800:       #1f2937;  /* INTERPOLATED — Tailwind gray-800, dark text */
-  --color-gray-900:       #111827;  /* INTERPOLATED — Tailwind gray-900, headings, near-black */
+  --color-gray-50:        #f8fafc;  /* Slate 50 — lightest bg */
+  --color-gray-100:       #f1f5f9;  /* Slate 100 — hover bg, stat item bg */
+  --color-gray-200:       #e2e8f0;  /* Slate 200 — borders, dividers, badge-gray bg */
+  --color-gray-300:       #cbd5e1;  /* Slate 300 — input borders, separators */
+  --color-gray-400:       #94a3b8;  /* Slate 400 — placeholder text, no-img, muted icons */
+  --color-gray-500:       #64748b;  /* Slate 500 — label text, inactive nav, muted text */
+  --color-gray-600:       #475569;  /* Slate 600 — secondary text */
+  --color-gray-700:       #334155;  /* Slate 700 — body text, strong labels */
+  --color-gray-800:       #1e293b;  /* Slate 800 — dark text */
+  --color-gray-900:       #0f172a;  /* Slate 900 — headings, near-black */
   --color-black:          #000000;  /* pure black — used for camera video bg */
 
   /* =========================================================================
