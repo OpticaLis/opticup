@@ -12,6 +12,21 @@ async function showDiffReport(countId) {
     scCountNumber = countRow?.count_number || '';
     // Fetch all items
     const allItems = await fetchAll(T.STOCK_COUNT_ITEMS, [['count_id', 'eq', countId]]);
+
+    // Fetch current DB quantities for counted items (for "current at approval" column)
+    const countedWithInv = allItems.filter(i => i.status === 'counted' && i.inventory_id);
+    if (countedWithInv.length) {
+      const invIds = countedWithInv.map(i => i.inventory_id);
+      const { data: invRows } = await sb.from(T.INV).select('id, quantity').in('id', invIds);
+      const qtyMap = {};
+      (invRows || []).forEach(r => { qtyMap[r.id] = r.quantity; });
+      allItems.forEach(i => {
+        if (i.inventory_id && qtyMap[i.inventory_id] !== undefined) {
+          i._current_qty = qtyMap[i.inventory_id];
+        }
+      });
+    }
+
     const diffItems = allItems.filter(i => i.status === 'counted' && i.actual_qty !== i.expected_qty);
     const pendingItems = allItems.filter(i => i.status === 'pending');
     const unknownItems = allItems.filter(i => i.status === 'unknown');
@@ -33,8 +48,11 @@ function renderReportScreen(countId, diffItems, allItems, displayItems, nothingS
   const totalShortage = shortages.reduce((s, i) => s + (i.actual_qty - i.expected_qty), 0);
   const totalSurplus = surpluses.reduce((s, i) => s + (i.actual_qty - i.expected_qty), 0);
 
+  // Check if any item's current DB qty differs from expected (changes during count)
+  const hasQtyChanges = displayItems.some(it => it._current_qty !== undefined && it._current_qty !== it.expected_qty);
+
   const rows = displayItems.length === 0
-    ? '<tr><td colspan="7" style="text-align:center;padding:24px;color:#999">אין פערים — הכל תקין!</td></tr>'
+    ? '<tr><td colspan="8" style="text-align:center;padding:24px;color:#999">אין פערים — הכל תקין!</td></tr>'
     : displayItems.map(it => {
         if (it.status === 'pending') {
           return `<tr class="sc-row-pending">
@@ -42,6 +60,7 @@ function renderReportScreen(countId, diffItems, allItems, displayItems, nothingS
             <td>${escapeHtml(it.brand || '—')}</td>
             <td>${escapeHtml(it.model || '—')}</td>
             <td style="text-align:center">${it.expected_qty}</td>
+            <td style="text-align:center">${it._current_qty !== undefined ? it._current_qty : '—'}</td>
             <td style="text-align:center;font-weight:700">—</td>
             <td style="text-align:center;font-weight:700;color:var(--g400)">?</td>
             <td>לא נספר</td>
@@ -49,11 +68,14 @@ function renderReportScreen(countId, diffItems, allItems, displayItems, nothingS
         }
         const diff = it.actual_qty - it.expected_qty;
         const cls = diff < 0 ? 'sc-row-diff' : 'sc-row-warn';
+        const changed = it._current_qty !== undefined && it._current_qty !== it.expected_qty;
+        const curCell = it._current_qty !== undefined ? it._current_qty : '—';
         return `<tr class="${cls}">
           <td style="font-weight:600;font-size:.85rem">${escapeHtml(it.barcode || '—')}</td>
           <td>${escapeHtml(it.brand || '—')}</td>
           <td>${escapeHtml(it.model || '—')}</td>
           <td style="text-align:center">${it.expected_qty}</td>
+          <td style="text-align:center${changed ? ';color:#d97706;font-weight:600' : ''}">${curCell}${changed ? ' ⚠️' : ''}</td>
           <td style="text-align:center;font-weight:700">${it.actual_qty}</td>
           <td style="text-align:center;font-weight:700;color:${diff < 0 ? 'var(--error)' : '#2196F3'}">${diff > 0 ? '+' : ''}${diff}</td>
           <td>${escapeHtml(it.notes || '')}</td>
@@ -76,13 +98,16 @@ function renderReportScreen(countId, diffItems, allItems, displayItems, nothingS
           <span style="font-size:.78rem;color:var(--g500)">לא נספרו</span></div>
       </div>
 
+      ${hasQtyChanges ? '<div style="background:#fef3c7;border:1px solid #d97706;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.84rem;color:#92400e;text-align:center">⚠️ שינויים בזמן הספירה — כמויות במערכת השתנו מאז תחילת הספירה. עמודת "נוכחי" מציגה את הכמות הנוכחית ב-DB.</div>' : ''}
+
       <div id="sc-report-pin-area"></div>
 
       <div style="overflow-x:auto;border:1px solid var(--g200);border-radius:8px;margin-bottom:16px">
         <table style="width:100%;border-collapse:collapse;font-size:.82rem">
           <thead><tr style="background:var(--primary);color:white;text-align:right">
             <th style="padding:8px">ברקוד</th><th style="padding:8px">מותג</th><th style="padding:8px">דגם</th>
-            <th style="padding:8px;text-align:center">צפוי</th><th style="padding:8px;text-align:center">בפועל</th>
+            <th style="padding:8px;text-align:center">צפוי (התחלה)</th><th style="padding:8px;text-align:center">נוכחי (DB)</th>
+            <th style="padding:8px;text-align:center">נספר</th>
             <th style="padding:8px;text-align:center">פער</th><th style="padding:8px">הערה</th>
           </tr></thead>
           <tbody>${rows}</tbody>
@@ -152,7 +177,7 @@ function showConfirmPinForCount(countId) {
   $('sc-mgr-pin')?.addEventListener('keydown', e => { if (e.key === 'Enter') confirmCount(countId); });
 }
 
-// ── Confirm count — PIN + inventory update ───────────────────
+// ── Confirm count — PIN + atomic inventory update ────────────
 async function confirmCount(countId) {
   const pin = ($('sc-mgr-pin')?.value || '').trim();
   if (!pin) { $('sc-mgr-pin-error').textContent = 'יש להזין PIN'; return; }
@@ -172,21 +197,46 @@ async function confirmCount(countId) {
   sessionStorage.setItem('prizma_user', emp.name);
 
   const tab = document.getElementById('tab-stock-count');
-  const diffItems = tab._scReportDiffItems || [];
   const allItems = tab._scReportAllItems || [];
+  // Items to update: counted items with an inventory_id (skip unknown items)
+  const countedItems = allItems.filter(i => i.status === 'counted' && i.inventory_id);
+  const diffItems = countedItems.filter(i => i.actual_qty !== i.expected_qty);
 
   try {
     showLoading('מעדכן מלאי...');
-    // Update inventory quantities + writeLogs in parallel
     const logPromises = [];
-    for (const item of diffItems) {
-      await sb.rpc('set_inventory_qty', { inv_id: item.inventory_id, new_qty: item.actual_qty });
-      logPromises.push(writeLog('edit_qty', item.inventory_id, {
-        barcode: item.barcode, brand: item.brand, model: item.model,
-        qty_before: item.expected_qty, qty_after: item.actual_qty,
-        reason: 'ספירת מלאי', source_ref: scCountNumber
-      }));
+    let errorCount = 0;
+
+    for (const item of countedItems) {
+      try {
+        // Atomic RPC: locks row, reads current qty, sets counted_qty
+        const { data: result, error: rpcErr } = await sb.rpc('apply_stock_count_delta', {
+          p_inventory_id: item.inventory_id,
+          p_counted_qty: item.actual_qty,
+          p_tenant_id: getTenantId(),
+          p_user_id: activeWorker?.id || emp.id || null,
+          p_count_id: countId
+        });
+        if (rpcErr) throw rpcErr;
+
+        // Log with atomic result (previous_qty = DB qty at approval moment)
+        const r = result || {};
+        logPromises.push(writeLog('stock_count.apply', item.inventory_id, {
+          count_id: countId,
+          barcode: item.barcode, brand: item.brand, model: item.model,
+          previous_qty: r.previous_qty,
+          counted_qty: r.counted_qty,
+          delta: r.delta,
+          new_qty: r.new_qty,
+          expected_at_start: item.expected_qty,
+          reason: 'ספירת מלאי', source_ref: scCountNumber
+        }));
+      } catch (itemErr) {
+        console.warn('apply_stock_count_delta failed for', item.barcode, itemErr);
+        errorCount++;
+      }
     }
+
     // writeLogs fire in parallel (non-blocking pattern)
     await Promise.all(logPromises);
 
@@ -195,13 +245,17 @@ async function confirmCount(countId) {
     const { error } = await sb.from(T.STOCK_COUNTS).update({
       status: 'completed',
       completed_at: new Date().toISOString(),
-      total_items: allItems.filter(i => i.status === 'counted').length,
+      total_items: countedItems.length,
       total_diffs: diffItems.length,
       counted_by: worker.name || emp.name
     }).eq('id', countId);
     if (error) throw error;
 
-    toast('ספירה ' + scCountNumber + ' הושלמה. עודכנו ' + diffItems.length + ' פריטים.', 's');
+    if (errorCount > 0) {
+      toast('ספירה הושלמה עם ' + errorCount + ' שגיאות — בדוק לוג', 'w');
+    } else {
+      toast('ספירה ' + scCountNumber + ' הושלמה. עודכנו ' + countedItems.length + ' פריטים (' + diffItems.length + ' פערים).', 's');
+    }
     loadStockCountTab();
   } catch (err) {
     toast('שגיאה באישור ספירה: ' + err.message, 'e');
@@ -244,8 +298,9 @@ async function exportCountExcel(countId) {
     'דגם': it.model || '',
     'צבע': it.color || '',
     'גודל': it.size || '',
-    'צפוי': it.expected_qty,
-    'בפועל': it.actual_qty,
+    'צפוי (התחלה)': it.expected_qty,
+    'נוכחי (DB)': it._current_qty !== undefined ? it._current_qty : it.expected_qty,
+    'נספר': it.actual_qty,
     'פער': it.actual_qty - it.expected_qty,
     'הערה': it.notes || '',
     'נסרק ע"י': it.scanned_by || ''
@@ -255,7 +310,7 @@ async function exportCountExcel(countId) {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'ספירת מלאי');
   ws['!cols'] = [{ wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 8 },
-                 { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 20 }, { wch: 14 }];
+                 { wch: 12 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 20 }, { wch: 14 }];
   const filename = 'ספירת_מלאי_' + (scCountNumber || 'export') + '.xlsx';
   XLSX.writeFile(wb, filename);
   toast('קובץ Excel יוצא: ' + filename, 's');

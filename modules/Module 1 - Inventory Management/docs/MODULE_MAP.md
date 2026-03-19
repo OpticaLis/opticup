@@ -43,7 +43,7 @@
 | 30 | stock-count-list.js | modules/stock-count/stock-count-list.js | 148 | Stock count list screen: ensureStockCountListHTML, loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (PIN first, DB creation after), renderStockCountList |
 | 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 466 | Stock count session: state variables, worker PIN entry, session screen, status filter boxes, row click confirmation, manual search, qty modal, scan dispatch (handleScan), undo counted, pause/finish |
 | 31b | stock-count-camera.js | modules/stock-count/stock-count-camera.js | 409 | Camera scanning: fullscreen camera overlay (ZXing + viewfinder + zoom), barcode normalization (5 strategies), scan freeze/resume, unknown item form inside overlay, qty panel inside overlay. Depends on session.js globals |
-| 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 262 | Diff report screen (showDiffReport/renderReportScreen), unknown items section (orange table), empty count guard, manager PIN approval (confirmCount with role check), cancelCount, exportCountExcel (SheetJS) |
+| 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 317 | Diff report screen (showDiffReport/renderReportScreen), "expected at start" + "current DB" columns, qty-change warning banner, unknown items section (orange table), empty count guard, manager PIN approval (confirmCount with apply_stock_count_delta RPC), cancelCount, exportCountExcel (SheetJS with expected/current columns) |
 | 33 | sync-watcher.js | scripts/sync-watcher.js | 461 | Node.js Dropbox folder watcher: processes sales_template Excel/CSV files, CSV support with parseCSVFile + BOM stripping, atomic qty updates via RPC, pending_sales for unknown barcodes (with brand/model/size/color), idempotency guards, failed file upload to Supabase Storage, heartbeat every 60s, reverse sync export interval every 30s. Uses service_role key via OPTICUP_SERVICE_ROLE_KEY env var. Configurable OPTICUP_WATCH_DIR + OPTICUP_EXPORT_DIR |
 | 33b | sync-export.js | scripts/sync-export.js | 111 | Reverse sync: exports unexported inventory items (access_exported=false) as XLS (biff8 format via SheetJS) for Access import. Joins brand/supplier names, batch marks items as access_exported (groups of 100), writes sync_log entry with source_ref='export' |
 | 34 | admin.js | modules/admin/admin.js | 52 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
@@ -612,12 +612,12 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `showDiffReport` | `(countId)` | Async. Fetches count header + items, splits into diff/pending/unknown, guards empty count, calls renderReportScreen |
-| `renderReportScreen` | `(countId, diffItems, allItems, displayItems, nothingScanned, unknownItems)` | Renders diff report: summary cards, diff+pending table, unknown items orange section, action buttons |
+| `showDiffReport` | `(countId)` | Async. Fetches count header + items + current DB quantities for counted items, enriches items with _current_qty, calls renderReportScreen |
+| `renderReportScreen` | `(countId, diffItems, allItems, displayItems, nothingScanned, unknownItems)` | Renders diff report: summary cards, "expected at start" + "current DB" columns, qty-change warning banner, diff+pending table, unknown items orange section, action buttons |
 | `showConfirmPinForCount` | `(countId)` | Shows inline manager PIN input for count approval |
-| `confirmCount` | `(countId)` | Async. Verifies manager PIN (role IN admin/manager), updates inventory via set_inventory_qty RPC, writeLogs via Promise.all, marks count completed |
+| `confirmCount` | `(countId)` | Async. Verifies manager PIN, updates inventory via apply_stock_count_delta RPC (atomic FOR UPDATE lock), writeLogs with previous_qty/delta/new_qty, per-item error handling, marks count completed |
 | `cancelCount` | `(countId)` | Async. Confirms cancellation, updates count status to cancelled |
-| `exportCountExcel` | `(countId)` | Async. Exports all counted items to xlsx via SheetJS (10 columns) |
+| `exportCountExcel` | `(countId)` | Async. Exports all counted items to xlsx via SheetJS (11 columns: includes expected_at_start + current_db) |
 
 ### scripts/sync-watcher.js
 
@@ -1424,7 +1424,7 @@ stock-count-report.js
   → reads: T.EMPLOYEES, T.STOCK_COUNTS, T.STOCK_COUNT_ITEMS, scCountNumber [stock-count-session.js]
   → calls: fetchAll(), writeLog() [supabase-ops.js], showLoading(), hideLoading(), toast(), escapeHtml(), $(), confirmDialog() [shared.js]
   → calls: loadStockCountTab() [stock-count-list.js], openCountSession() [stock-count-session.js]
-  → calls: sb.rpc('set_inventory_qty') [Supabase RPC]
+  → calls: sb.rpc('apply_stock_count_delta') [Supabase RPC]
   → uses: XLSX (SheetJS, external CDN library)
 
 supabase-ops.js
@@ -1934,10 +1934,11 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 **✅ Fixed (Goal 0):** Migrated to Supabase RPC with atomic SQL increment/decrement:
 - `increment_inventory(inv_id, delta)` — `quantity = quantity + delta` (012)
 - `decrement_inventory(inv_id, delta)` — `quantity = GREATEST(0, quantity - delta)` (012)
-- `set_inventory_qty(inv_id, new_qty)` — `quantity = new_qty` (013, stock count approval)
-- Migrations: `012_atomic_qty_rpc.sql`, `013_stock_count.sql`
+- `set_inventory_qty(inv_id, new_qty)` — `quantity = new_qty` (013, legacy — no longer used by stock count)
+- `apply_stock_count_delta(p_inventory_id, p_counted_qty, p_tenant_id, p_user_id, p_count_id)` — Atomic stock count confirmation: locks row with FOR UPDATE, reads current qty, sets quantity = counted_qty, returns JSON {previous_qty, counted_qty, delta, new_qty}. SECURITY DEFINER. Prevents race conditions with concurrent sales/receipts. (033)
+- Migrations: `012_atomic_qty_rpc.sql`, `013_stock_count.sql`, `033_apply_stock_count_delta.sql`
 
-**Files updated:** qty-modal.js (`confirmQtyChange`), receipt-confirm.js (`confirmReceiptCore`), inventory-reduction.js (`processRedExcel`, `confirmReduction`), pending-resolve.js (`confirmResolvePending`), access-sales.js (`processAccessSalesFile`), stock-count-report.js (`confirmCount` via `set_inventory_qty`), sync-watcher.js (watcher uses `increment_inventory`/`decrement_inventory`)
+**Files updated:** qty-modal.js (`confirmQtyChange`), receipt-confirm.js (`confirmReceiptCore`), inventory-reduction.js (`processRedExcel`, `confirmReduction`), pending-resolve.js (`confirmResolvePending`), access-sales.js (`processAccessSalesFile`), stock-count-report.js (`confirmCount` via `apply_stock_count_delta`), sync-watcher.js (watcher uses `increment_inventory`/`decrement_inventory`)
 **Files remaining (future):** po-view-import.js (`importPOToInventory`)
 
 **✅ Phase 5f:** Daily alert generation RPC function:

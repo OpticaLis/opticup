@@ -24,6 +24,7 @@
 --   011_inventory_logs_sale_fields.sql  — 12 Access sale columns on inventory_logs
 --   012_atomic_qty_rpc.sql  — increment_inventory + decrement_inventory RPC functions
 --   013_stock_count.sql  — stock_counts + stock_count_items tables + set_inventory_qty RPC
+--   033_apply_stock_count_delta.sql — atomic stock count confirmation RPC (FOR UPDATE lock)
 --   014_stock_count_scanned_by.sql  — scanned_by column on stock_count_items
 --   015_failed_sync_storage.sql  — storage_path + errors columns on sync_log, storage policy
 --   016_auth_permissions.sql  — roles, permissions, role_permissions, employee_roles, auth_sessions
@@ -543,13 +544,51 @@ BEGIN
 END;
 $$;
 
--- Set inventory quantity directly (for stock count approval)
+-- Set inventory quantity directly (legacy — replaced by apply_stock_count_delta for stock counts)
 CREATE OR REPLACE FUNCTION set_inventory_qty(inv_id UUID, new_qty INTEGER)
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
   UPDATE inventory SET quantity = new_qty WHERE id = inv_id;
 END;
 $$;
+
+-- Atomic stock count confirmation (033) — locks row, reads current qty, sets counted_qty
+-- Returns JSON with previous_qty, counted_qty, delta, new_qty for audit logging
+CREATE OR REPLACE FUNCTION apply_stock_count_delta(
+  p_inventory_id UUID,
+  p_counted_qty INTEGER,
+  p_tenant_id UUID,
+  p_user_id UUID,
+  p_count_id UUID
+) RETURNS JSON AS $$
+DECLARE
+  v_current_qty INTEGER;
+  v_delta INTEGER;
+  v_new_qty INTEGER;
+BEGIN
+  SELECT quantity INTO v_current_qty
+  FROM inventory
+  WHERE id = p_inventory_id AND tenant_id = p_tenant_id
+  FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Inventory item not found: %', p_inventory_id;
+  END IF;
+  v_delta := p_counted_qty - v_current_qty;
+  v_new_qty := p_counted_qty;
+  IF v_new_qty < 0 THEN
+    RAISE EXCEPTION 'Quantity cannot go below zero (item: %, counted: %, current: %)',
+      p_inventory_id, p_counted_qty, v_current_qty;
+  END IF;
+  UPDATE inventory SET quantity = v_new_qty
+  WHERE id = p_inventory_id AND tenant_id = p_tenant_id;
+  RETURN json_build_object(
+    'previous_qty', v_current_qty,
+    'counted_qty', p_counted_qty,
+    'delta', v_delta,
+    'new_qty', v_new_qty
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
 -- Supabase Storage — failed sync files (015)
