@@ -72,6 +72,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 5.75 | ✅ | Communications & Knowledge Infrastructure | DB stubs: conversations, participants, messages, knowledge_base, reactions, notification_preferences |
 | 5.9 | ✅ | משלוחים וארגזים | shipments.html, ארגזים ממוספרים, 4 סוגים, staged picker, נעילה, manifest, הגדרות |
 | QA | ✅ | בדיקות מקיפות — Module 1 Final Certification | ~190 tests (177 PASS), 9 E2E flows, security audit, XSS fixes, permissions expansion (55), settings page, PIN modal, stock count filters, auto credit note, return timeline, 14 bug fixes |
+| 7 | ⬜ | שיפורי ספירת מלאי | פיצול session.js, atomic delta RPC, עודפים→מלאי, אישור חלקי, צפייה בספירות סגורות |
 | 6 | 🚫 נדחה | פורטל ספקים — ייבנה במודול עתידי | גישת ספק חיצונית, view-only מלאי לפי ספק |
 
 ---
@@ -213,6 +214,14 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - הגדרות שדות ארגז UI — 3 תתי-סעיפים מתקפלים
 - כרטיס מסך בית + 5 הרשאות: shipments.view/create/edit/lock/settings
 - 9 קבצי JS ב-modules/shipments/ (~2,258 שורות)
+
+### פאזה 7 ⬜ — שיפורי ספירת מלאי
+- פיצול stock-count-session.js (871→2 קבצים)
+- Atomic Delta RPC — counted_qty + FOR UPDATE lock, מונע race conditions
+- עודפים: unknown items → modal עריכה → הוספה למלאי (2 מסלולי ברקוד)
+- Reason per discrepancy + אישור חלקי (approve/skip per item)
+- צפייה בספירות סגורות — read-only panel + Excel export
+- פירוט מלא: `docs/PHASE_7_SPEC_UPDATED.md`
 
 ### פאזה 6 🚫 נדחה — פורטל ספקים (ייבנה במודול עתידי)
 - קישור ייחודי לכל ספק (token-based auth, לא PIN)
