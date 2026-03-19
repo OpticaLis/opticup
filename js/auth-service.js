@@ -93,13 +93,7 @@ async function getEffectivePermissions(employeeId) {
     .eq('granted', true);
 
   if (!perms) return [];
-  // Strip tenant-slug prefix from permission IDs (e.g., 'demo_inventory.view' → 'inventory.view')
-  // Multi-tenant clone creates prefixed IDs to avoid PK conflicts; app expects unprefixed IDs.
-  const prefix = TENANT_SLUG + '_';
-  return [...new Set(perms.map(p => {
-    const id = p.permission_id;
-    return id.startsWith(prefix) ? id.slice(prefix.length) : id;
-  }))];
+  return [...new Set(perms.map(p => p.permission_id))];
 }
 
 // =========================================================
@@ -131,10 +125,7 @@ async function initSecureSession(employee, jwtToken) {
     .eq('employee_id', employee.id)
     .limit(1)
     .maybeSingle();
-  let roleId = empRole?.role_id || LEGACY_ROLE_MAP[employee.role] || 'viewer';
-  // Strip tenant-slug prefix from role_id (e.g., 'demo_ceo' → 'ceo')
-  const rolePrefix = TENANT_SLUG + '_';
-  if (roleId.startsWith(rolePrefix)) roleId = roleId.slice(rolePrefix.length);
+  const roleId = empRole?.role_id || LEGACY_ROLE_MAP[employee.role] || 'viewer';
 
   // Expiry: 8 hours from now
   const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
