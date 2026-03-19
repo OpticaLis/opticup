@@ -18,7 +18,7 @@
   body { font-family: 'Heebo', sans-serif; background: #f0f2f5; color: #1a2744; min-height: 100vh; direction: rtl; }
 
   /* Header */
-  .home-header { background: #1a2744; color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .home-header { background: var(--primary, #1a2744); color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
   .home-header .brand { display: flex; align-items: center; gap: 10px; }
   .home-header .brand-icon { font-size: 1.8rem; }
   .home-header .brand-title { font-size: 1.5rem; font-weight: 700; }
@@ -34,8 +34,8 @@
   /* Login button */
   .login-section { text-align: center; margin: 20px 0 10px; }
   .login-section.hidden { display: none; }
-  .login-btn { background: #1a2744; color: white; border: none; padding: 14px 48px; font-size: 1.15rem; font-weight: 600; border-radius: 12px; cursor: pointer; font-family: 'Heebo', sans-serif; transition: background .2s, transform .15s; box-shadow: 0 4px 12px rgba(26,39,68,.25); }
-  .login-btn:hover { background: #253a5e; transform: translateY(-1px); }
+  .login-btn { background: var(--primary, #1a2744); color: white; border: none; padding: 14px 48px; font-size: 1.15rem; font-weight: 600; border-radius: 12px; cursor: pointer; font-family: 'Heebo', sans-serif; transition: background .2s, transform .15s; box-shadow: 0 4px 12px rgba(26,39,68,.25); }
+  .login-btn:hover { background: var(--primary-light, #253a5e); transform: translateY(-1px); }
 
   /* Module grid */
   .modules-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 780px; margin: 24px auto; padding: 0 20px; opacity: 0; transition: opacity 0.3s ease; }
@@ -60,13 +60,13 @@
   #pin-modal { display: flex; position: fixed; inset: 0; z-index: 9999; background: rgba(26,39,68,.92); align-items: center; justify-content: center; }
   #pin-modal.hidden { display: none; }
   .pm-card { background: white; border-radius: 16px; padding: 40px 32px 32px; max-width: 360px; width: 90%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,.3); }
-  .pm-logo { font-size: 2.5rem; margin-bottom: 4px; color: #1a2744; }
-  .pm-title { margin: 0 0 2px; color: #1a2744; font-size: 1.6rem; font-weight: 700; }
+  .pm-logo { font-size: 2.5rem; margin-bottom: 4px; color: var(--primary, #1a2744); }
+  .pm-title { margin: 0 0 2px; color: var(--primary, #1a2744); font-size: 1.6rem; font-weight: 700; }
   .pm-sub { margin: 0 0 28px; color: #666; font-size: .95rem; }
   .pm-instruction { margin: 0 0 16px; color: #444; font-size: .88rem; }
   .pm-pins { display: flex; gap: 10px; justify-content: center; direction: ltr; margin-bottom: 20px; }
   .pm-pin { width: 48px; height: 56px; text-align: center; font-size: 1.5rem; border: 2px solid #d0d5dd; border-radius: 10px; outline: none; font-family: 'Heebo', sans-serif; transition: border-color .2s; }
-  .pm-pin:focus { border-color: #1a2744; box-shadow: 0 0 0 3px rgba(26,39,68,.15); }
+  .pm-pin:focus { border-color: var(--primary, #1a2744); box-shadow: 0 0 0 3px rgba(26,39,68,.15); }
   .pm-pin:disabled { background: #f0f0f0; cursor: not-allowed; }
   #pm-error { display: none; color: #dc3545; font-size: .88rem; margin-bottom: 8px; font-weight: 600; }
   #pm-attempts { display: none; color: #888; font-size: .8rem; }

@@ -29,11 +29,24 @@ function loadTenantTheme(tenantRow) {
   const root = document.documentElement;
   const keys = Object.keys(config);
 
+  // Map --color-* (new system) → --* (legacy system) for backward compat
+  // header.css and styles.css use --primary, --primary-light, etc.
+  // shared/css/variables.css uses --color-primary, --color-primary-hover, etc.
+  const legacyMap = {
+    '--color-primary': '--primary',
+    '--color-primary-hover': '--primary-light',
+    '--color-primary-dark': '--primary-dark',
+  };
+
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
     // Security: only inject CSS custom properties (must start with --)
     if (typeof key === 'string' && key.startsWith('--')) {
       root.style.setProperty(key, config[key]);
+      // Also set legacy variable name if applicable
+      if (legacyMap[key]) {
+        root.style.setProperty(legacyMap[key], config[key]);
+      }
     }
   }
 }
