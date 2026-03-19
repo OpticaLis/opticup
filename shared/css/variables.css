@@ -21,6 +21,10 @@
   --color-primary-light:  #eef2ff;  /* Indigo 50 — badges, selected rows, subtle highlights */
   --color-primary-dark:   #3730a3;  /* Indigo 800 — header background, dark text on light bg */
 
+  /* Legacy alias — bridges old --primary consumers (header.css, index.html)
+     until full migration to --color-primary is complete */
+  --primary:              var(--color-primary);
+
   /* =========================================================================
      2. COLORS — SEMANTIC
      Source: styles.css :root (--success, --error, --warn, --accent)
