@@ -111,7 +111,7 @@ function renderStockCountList(counts) {
       actions = `<button class="btn btn-p btn-sm" onclick="openWorkerPin('${escapeHtml(c.id)}')">המשך</button>
         <button class="btn btn-d btn-sm" onclick="cancelCount('${escapeHtml(c.id)}')">ביטול</button>`;
     } else if (c.status === 'completed') {
-      actions = `<button class="btn btn-g btn-sm" onclick="toast('בקרוב','w')">צפייה</button>`;
+      actions = `<button class="btn btn-g btn-sm" onclick="openCompletedCountView('${escapeHtml(c.id)}')">צפייה</button>`;
     } else {
       actions = '—';
     }

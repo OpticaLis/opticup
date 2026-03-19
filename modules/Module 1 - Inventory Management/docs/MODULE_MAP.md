@@ -46,7 +46,8 @@
 | 31c | stock-count-scan.js | modules/stock-count/stock-count-scan.js | 176 | Scan logic: barcode normalization (5 strategies), manual search, row click, handleScan dispatch, qty modal, updateCountItem, refreshSessionUI, undo, pause/finish. Bridge between session.js and camera.js |
 | 31d | stock-count-unknown.js | modules/stock-count/stock-count-unknown.js | 222 | Unknown items in diff report: renderUnknownSection (orange table with edit buttons), openUnknownItemModal (brand/supplier dropdowns, barcode auto-gen), saveUnknownToInventory (insert + link + log), _removeUnknownRow (live UI update) |
 | 31e | stock-count-approve.js | modules/stock-count/stock-count-approve.js | 42 | Bulk selection helpers (scReportCheckAll, scReportUncheckAll, scReportCheckDiffsOnly) + _scCollectApprovalState (reads checkboxes + reason inputs from DOM). Supports partial approval in report.js |
-| 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 319 | Diff report with per-item checkbox (approve/skip) + reason column for discrepancies, bulk toolbar, delegates unknown section to stock-count-unknown.js, partial approval in confirmCount (approved → RPC, skipped → status='skipped', reasons → saved), cancelCount, exportCountExcel (includes reason column) |
+| 31f | stock-count-view.js | modules/stock-count/stock-count-view.js | 176 | Read-only view of completed stock counts: openCompletedCountView (fetch + render), status filter buttons (all/matched/shortages/surpluses/skipped), summary footer row, Excel export |
+| 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 314 | Diff report with per-item checkbox (approve/skip) + reason column for discrepancies, bulk toolbar, delegates unknown section to stock-count-unknown.js, partial approval in confirmCount (approved → RPC, skipped → status='skipped', reasons → saved), cancelCount, exportCountExcel (includes reason column) |
 | 33 | sync-watcher.js | scripts/sync-watcher.js | 461 | Node.js Dropbox folder watcher: processes sales_template Excel/CSV files, CSV support with parseCSVFile + BOM stripping, atomic qty updates via RPC, pending_sales for unknown barcodes (with brand/model/size/color), idempotency guards, failed file upload to Supabase Storage, heartbeat every 60s, reverse sync export interval every 30s. Uses service_role key via OPTICUP_SERVICE_ROLE_KEY env var. Configurable OPTICUP_WATCH_DIR + OPTICUP_EXPORT_DIR |
 | 33b | sync-export.js | scripts/sync-export.js | 111 | Reverse sync: exports unexported inventory items (access_exported=false) as XLS (biff8 format via SheetJS) for Access import. Joins brand/supplier names, batch marks items as access_exported (groups of 100), writes sync_log entry with source_ref='export' |
 | 34 | admin.js | modules/admin/admin.js | 52 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
@@ -633,6 +634,16 @@
 | `scReportUncheckAll` | `()` | Unchecks all `.sc-approve-cb` checkboxes |
 | `scReportCheckDiffsOnly` | `()` | Checks only rows where counted ≠ expected (diff items), unchecks the rest |
 | `_scCollectApprovalState` | `(allItems)` | Reads DOM checkboxes + reason inputs, returns `{ approved, skipped, reasons }` for confirmCount |
+
+### modules/stock-count/stock-count-view.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `openCompletedCountView` | `(countId)` | Async. Fetches completed count header + items, calls _renderCompletedView |
+| `_renderCompletedView` | `(countRow, allItems)` | Renders read-only view panel: header with count info, summary bar, filter buttons, table with tbody/tfoot, export + back buttons |
+| `_scViewFilter` | `(filter)` | Filters displayed rows by: all, matched, shortages, surpluses, skipped. Highlights active button |
+| `_scViewRenderRows` | `(items)` | Renders filtered item rows into tbody + summary footer into tfoot |
+| `_scViewExportExcel` | `()` | Exports counted+skipped items to xlsx via SheetJS (12 columns including reason and status) |
 
 ### modules/stock-count/stock-count-report.js
 
@@ -1461,6 +1472,12 @@ stock-count-unknown.js
 stock-count-approve.js
   → reads: tab._scReportAllItems [stock-count-report.js]
   → reads DOM: .sc-approve-cb checkboxes, .sc-reason-input text fields
+
+stock-count-view.js
+  → reads: SC_STATUS [stock-count-list.js]
+  → calls: fetchAll() [supabase-ops.js], showLoading(), hideLoading(), toast(), escapeHtml() [shared.js]
+  → calls: loadStockCountTab() [stock-count-list.js]
+  → uses: XLSX (SheetJS, external CDN library)
 
 stock-count-report.js
   → reads: T.STOCK_COUNTS, T.STOCK_COUNT_ITEMS, scCountNumber [stock-count-session.js]
