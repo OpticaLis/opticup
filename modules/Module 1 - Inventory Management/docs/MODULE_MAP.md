@@ -41,8 +41,9 @@
 | 28 | pending-panel.js | modules/access-sync/pending-panel.js | 32 | Legacy wrappers: renderPendingPanel (calls togglePendingFilter), closePendingPanel, updatePendingPanelCount (calls loadPendingBadge), searchBarcodeInInventory. **Note: all 4 functions are dead code — never called from current codebase** |
 | 29 | pending-resolve.js | modules/access-sync/pending-resolve.js | 132 | Pending resolution: syncDetailResolve (inline resolve in work center), checkFileCompletion (marks sync_log 'handled'), searchBarcodeInInventory, syncDetailSearchInInventory |
 | 30 | stock-count-list.js | modules/stock-count/stock-count-list.js | 148 | Stock count list screen: ensureStockCountListHTML, loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (PIN first, DB creation after), renderStockCountList |
-| 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 466 | Stock count session: state variables, worker PIN entry, session screen, status filter boxes, row click confirmation, manual search, qty modal, scan dispatch (handleScan), undo counted, pause/finish |
-| 31b | stock-count-camera.js | modules/stock-count/stock-count-camera.js | 409 | Camera scanning: fullscreen camera overlay (ZXing + viewfinder + zoom), barcode normalization (5 strategies), scan freeze/resume, unknown item form inside overlay, qty panel inside overlay. Depends on session.js globals |
+| 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 306 | Stock count session: all 14 state variables, worker PIN entry, session screen render, status filter boxes, text search/filter, scRenderItemRow, scCalcStats |
+| 31b | stock-count-camera.js | modules/stock-count/stock-count-camera.js | 376 | Camera hardware: fullscreen overlay (ZXing + viewfinder + zoom), scan freeze/resume, unknown item form inside overlay, qty panel inside overlay. Depends on session.js globals + scan.js functions |
+| 31c | stock-count-scan.js | modules/stock-count/stock-count-scan.js | 176 | Scan logic: barcode normalization (5 strategies), manual search, row click, handleScan dispatch, qty modal, updateCountItem, refreshSessionUI, undo, pause/finish. Bridge between session.js and camera.js |
 | 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 317 | Diff report screen (showDiffReport/renderReportScreen), "expected at start" + "current DB" columns, qty-change warning banner, unknown items section (orange table), empty count guard, manager PIN approval (confirmCount with apply_stock_count_delta RPC), cancelCount, exportCountExcel (SheetJS with expected/current columns) |
 | 33 | sync-watcher.js | scripts/sync-watcher.js | 461 | Node.js Dropbox folder watcher: processes sales_template Excel/CSV files, CSV support with parseCSVFile + BOM stripping, atomic qty updates via RPC, pending_sales for unknown barcodes (with brand/model/size/color), idempotency guards, failed file upload to Supabase Storage, heartbeat every 60s, reverse sync export interval every 30s. Uses service_role key via OPTICUP_SERVICE_ROLE_KEY env var. Configurable OPTICUP_WATCH_DIR + OPTICUP_EXPORT_DIR |
 | 33b | sync-export.js | scripts/sync-export.js | 111 | Reverse sync: exports unexported inventory items (access_exported=false) as XLS (biff8 format via SheetJS) for Access import. Joins brand/supplier names, batch marks items as access_exported (groups of 100), writes sync_log entry with source_ref='export' |
@@ -101,7 +102,7 @@
 
 | 79 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
 
-**Total: 79 JS files across 14 module folders + 9 global files + watcher-deploy/ (8-file standalone package), ~19,560 lines** (includes scripts/sync-watcher.js + sync-export.js)
+**Total: 80 JS files across 14 module folders + 9 global files + watcher-deploy/ (8-file standalone package), ~19,560 lines** (includes scripts/sync-watcher.js + sync-export.js)
 
 **Note (QA Phase):** Module 1 final certification. 4 new files: settings.html (tenant settings page), js/pin-modal.js (shared PIN prompt replacing inline HTML), modules/settings/settings-page.js (settings logic + logo management), modules/stock-count/stock-count-filters.js (brand/category pre-count filters). New functions: promptPin (pin-modal.js), getTenantConfig/storeTenantConfig (settings-page.js), handleLogoUpload/handleLogoDelete/renderLogoPreview (settings-page.js), openReturnTimeline (debt-returns-tab.js), _createCreditNoteForReturn (debt-returns-tab-actions.js), cancelDocument (debt-documents.js), cancelPayment (debt-payments.js). Bug fixes: settings save RLS policy, logo persistence, toast position, loadReturnsData error handling, loading spinners on all pages. DB: tenant_update_own RLS policy on tenants table, 3 migration files (030_settings_columns.sql, 031_stock_count_filter_criteria.sql, 031_tenants_update_policy.sql). 55 permissions across 15 modules (expanded from 29). Storage: tenant-logos bucket added.
 
@@ -576,16 +577,6 @@
 | `_scRefreshTable` | `()` | Refreshes table combining search query + status filter |
 | `_scDebouncedFilter` | `(query)` | 300ms debounced wrapper for filterSessionItems |
 | `filterSessionItems` | `(query)` | Filters session items by barcode/brand/model/color text match |
-| `manualBarcodeSearch` | `()` | Reads smart search: digits → handleScan, text with 1 result → auto-count |
-| `scRowClick` | `(barcode)` | Row click handler: counted → qty modal, pending → Modal.confirm then handleScan |
-| `_scClearSearch` | `()` | Clears search input and refreshes table |
-| `handleScan` | `(countId, barcode)` | Async. Manual scan handler with 2s dedup: unknown → toast, counted → qty modal, pending → auto-count |
-| `_showQtyModal` | `(item, fromCamera)` | Shows Modal.form for quantity update (used by manual row click path) |
-| `updateCountItem` | `(itemId, actualQty)` | Async. Updates T.STOCK_COUNT_ITEMS row, refreshes local array + UI |
-| `refreshSessionUI` | `()` | Updates all 5 stat counters + re-renders table |
-| `undoCountItem` | `(itemId)` | Async. Resets item to pending (actual_qty=null, status='pending') with confirmation |
-| `pauseSession` | `()` | Async. Stops camera, confirms, navigates back to list |
-| `finishSession` | `(countId)` | Stops camera, calls showDiffReport(countId) |
 
 ### modules/stock-count/stock-count-camera.js
 
@@ -606,7 +597,22 @@
 | `_scSaveUnknownItem` | `()` | Async. Saves unknown item to DB (status='unknown', inventory_id=null), updates local state |
 | `_scInitZoom` | `(stream)` | Checks MediaStream zoom capability, shows zoom button if supported |
 | `_scToggleZoom` | `()` | Toggles between 1x and 2x zoom via track.applyConstraints |
+
+### modules/stock-count/stock-count-scan.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
 | `_scNormalizeBarcode` | `(scanned)` | Tries 5 strategies to match ZXing read to DB barcode: exact, pad7, ean-strip, ean-inner, suffix |
+| `manualBarcodeSearch` | `()` | Reads smart search: digits → handleScan, text with 1 result → auto-count |
+| `scRowClick` | `(barcode)` | Row click handler: counted → qty modal, pending → Modal.confirm then handleScan |
+| `_scClearSearch` | `()` | Clears search input and refreshes table |
+| `handleScan` | `(countId, barcode)` | Async. Manual scan handler with 2s dedup: unknown → toast, counted → qty modal, pending → auto-count |
+| `_showQtyModal` | `(item, fromCamera)` | Shows Modal.form for quantity update (used by manual row click and camera re-scan) |
+| `updateCountItem` | `(itemId, actualQty)` | Async. Updates T.STOCK_COUNT_ITEMS row, refreshes local array + UI |
+| `refreshSessionUI` | `()` | Updates all 5 stat counters + re-renders table |
+| `undoCountItem` | `(itemId)` | Async. Resets item to pending (actual_qty=null, status='pending') with confirmation |
+| `pauseSession` | `()` | Async. Stops camera, confirms, navigates back to list |
+| `finishSession` | `(countId)` | Stops camera, calls showDiffReport(countId) |
 
 ### modules/stock-count/stock-count-report.js
 
@@ -1410,15 +1416,21 @@ stock-count-list.js
 
 stock-count-session.js
   → reads: T.EMPLOYEES, T.STOCK_COUNTS, T.STOCK_COUNT_ITEMS [shared.js]
-  → calls: fetchAll() [supabase-ops.js], showLoading(), hideLoading(), toast(), escapeHtml(), $(), confirmDialog() [shared.js]
-  → calls: loadStockCountTab() [stock-count-list.js], showDiffReport() [stock-count-report.js]
-  → calls: startCamera(), stopCamera(), _scNormalizeBarcode(), _scResumeScanning() [stock-count-camera.js]
+  → calls: fetchAll() [supabase-ops.js], showLoading(), hideLoading(), toast(), escapeHtml(), $() [shared.js]
+  → calls: manualBarcodeSearch() [stock-count-scan.js] (via Enter key handler)
 
 stock-count-camera.js
-  → reads: scSessionItems, scCountId, activeWorker, unknownBarcodes, scCodeReader, _scanPaused, _scanPauseTimer, _scCamStream, _scZoomLevel, SC_DEBUG, _lastScanCode, _lastScanTime [stock-count-session.js]
-  → calls: updateCountItem(), refreshSessionUI() [stock-count-session.js]
-  → calls: toast(), escapeHtml(), getTenantId() [shared.js]
+  → reads: scSessionItems, scCountId, activeWorker, unknownBarcodes, scCodeReader, _scanPaused, _scanPauseTimer, _scCamStream, _scZoomLevel, SC_DEBUG [stock-count-session.js]
+  → calls: _scNormalizeBarcode(), updateCountItem(), refreshSessionUI() [stock-count-scan.js]
+  → calls: toast(), getTenantId() [shared.js]
   → uses: ZXing.BrowserMultiFormatReader (external CDN library)
+
+stock-count-scan.js
+  → reads: scSessionItems, scCountId, activeWorker, unknownBarcodes, _lastScanCode, _lastScanTime, _lastErrorTime [stock-count-session.js]
+  → calls: _scRefreshTable(), scCalcStats() [stock-count-session.js]
+  → calls: startCamera(), stopCamera(), _scResumeScanning() [stock-count-camera.js]
+  → calls: showDiffReport() [stock-count-report.js], loadStockCountTab() [stock-count-list.js]
+  → calls: toast(), escapeHtml(), $(), confirmDialog() [shared.js]
 
 stock-count-report.js
   → reads: T.EMPLOYEES, T.STOCK_COUNTS, T.STOCK_COUNT_ITEMS, scCountNumber [stock-count-session.js]
