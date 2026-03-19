@@ -126,26 +126,7 @@ function renderReportScreen(countId, diffItems, allItems, displayItems, nothingS
         </table>
       </div>
 
-      ${unknownItems.length > 0 ? `
-      <h3 style="color:#d97706;margin:16px 0 8px;text-align:center">&#9888;&#65039; ${unknownItems.length} פריטים לא ידועים — ממתינים לאישור מנהל</h3>
-      <div style="overflow-x:auto;border:2px solid #d97706;border-radius:8px;margin-bottom:16px">
-        <table style="width:100%;border-collapse:collapse;font-size:.82rem">
-          <thead><tr style="background:#d97706;color:white;text-align:right">
-            <th style="padding:8px">ברקוד</th><th style="padding:8px">מותג</th><th style="padding:8px">דגם</th>
-            <th style="padding:8px">צבע</th><th style="padding:8px">גודל</th>
-            <th style="padding:8px;text-align:center">כמות</th><th style="padding:8px">הערה</th>
-          </tr></thead>
-          <tbody>${unknownItems.map(u => `<tr style="border-bottom:1px solid var(--g200)">
-            <td style="padding:8px;font-weight:600">${escapeHtml(u.barcode || '—')}</td>
-            <td style="padding:8px">${escapeHtml(u.brand || '—')}</td>
-            <td style="padding:8px">${escapeHtml(u.model || '—')}</td>
-            <td style="padding:8px">${escapeHtml(u.color || '—')}</td>
-            <td style="padding:8px">${escapeHtml(u.size || '—')}</td>
-            <td style="padding:8px;text-align:center;font-weight:700">${u.actual_qty || 0}</td>
-            <td style="padding:8px">${escapeHtml(u.notes || '')}</td>
-          </tr>`).join('')}</tbody>
-        </table>
-      </div>` : ''}
+      ${unknownItems.length > 0 ? renderUnknownSection(unknownItems, countId) : ''}
 
       <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding-bottom:20px">
         ${nothingScanned ? '' : `<button class="btn btn-p" style="min-height:48px;font-size:15px"
