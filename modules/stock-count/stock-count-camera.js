@@ -16,7 +16,7 @@ async function startCamera() {
   if (_scanPauseTimer) { clearTimeout(_scanPauseTimer); _scanPauseTimer = null; }
   var overlay = document.createElement('div');
   overlay.id = 'sc-cam-overlay';
-  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:-webkit-fill-available;z-index:9999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;height:100vh;height:-webkit-fill-available;z-index:9999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden';
   overlay.innerHTML = `
     <video id="sc-video-fs" playsinline autoplay muted
       style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;right:0;bottom:0"></video>
@@ -120,26 +120,29 @@ async function startCamera() {
     var stream = await navigator.mediaDevices.getUserMedia(constraints);
     _scCamStream = stream;
     _scDebugLog('Camera stream acquired');
-    // Check zoom support and show button if available
     _scInitZoom(stream);
     var videoEl = document.getElementById('sc-video-fs');
     videoEl.srcObject = stream;
-    await scCodeReader.decodeFromVideoDevice(null, 'sc-video-fs', function (result) {
+    await scCodeReader.decodeFromStream(stream, videoEl, function (result) {
       try {
         if (!result) return;
         var raw = result.getText();
         var cleaned = raw.replace(/[^\x20-\x7E]/g, '').trim();
-        if (!/^\d{5,}$/.test(cleaned)) {
+        if (!/^[A-Za-z0-9\-]{4,}$/.test(cleaned)) {
           _scDebugLog('IGNORED: "' + raw.replace(/[^\x20-\x7E]/g, '?') + '" len:' + raw.length);
           return;
         }
         raw = cleaned;
+        // Camera-level debounce: skip if same barcode within 2s
+        var now = Date.now();
+        if (raw === _lastScanCode && now - _lastScanTime < 2000) return;
+        _lastScanCode = raw; _lastScanTime = now;
         _scDebugLog('Read: ' + raw + (_scanPaused ? ' [PAUSED]' : ''));
         if (_scanPaused) return;
         var vf = document.getElementById('sc-viewfinder');
         if (vf) { vf.style.borderColor = '#22c55e'; vf.style.boxShadow = '0 0 20px rgba(34,197,94,.6), 0 0 0 4000px rgba(0,0,0,.35)'; }
         _scanPaused = true;
-        _scStartPauseTimer(); // safety: auto-resume after 10s if stuck
+        _scStartPauseTimer();
         _scHandleCameraScan(raw);
       } catch (cbErr) {
         _scDebugLog('CALLBACK ERR: ' + cbErr.message);
@@ -158,24 +161,22 @@ async function startCamera() {
 }
 
 // ── Minimal status line + optional debug ──────────────────────
-function _scSetStatus(text) {
-  var el = document.getElementById('sc-cam-status');
-  if (el) el.textContent = text;
-}
+function _scSetStatus(text) { var el = document.getElementById('sc-cam-status'); if (el) el.textContent = text; }
 
 function _scDebugLog(msg) {
   if (!SC_DEBUG) return;
   var dbg = document.getElementById('sc-scan-debug');
   if (!dbg) return;
-  var now = new Date().toLocaleTimeString('he-IL');
-  dbg.innerHTML = now + ' ' + msg + '<br>' + dbg.innerHTML;
+  dbg.innerHTML = new Date().toLocaleTimeString('he-IL') + ' ' + msg + '<br>' + dbg.innerHTML;
   var lines = dbg.innerHTML.split('<br>');
   if (lines.length > 10) dbg.innerHTML = lines.slice(0, 10).join('<br>');
 }
 
 // ── Safety timeout: auto-resume if _scanPaused stuck ──────────
+function _scClearPauseTimer() { if (_scanPauseTimer) { clearTimeout(_scanPauseTimer); _scanPauseTimer = null; } }
+
 function _scStartPauseTimer() {
-  if (_scanPauseTimer) clearTimeout(_scanPauseTimer);
+  _scClearPauseTimer();
   _scanPauseTimer = setTimeout(function () {
     if (_scanPaused && document.getElementById('sc-cam-overlay')) {
       console.warn('SCAN SAFETY: auto-resuming after 10s freeze');
@@ -186,10 +187,6 @@ function _scStartPauseTimer() {
   }, 10000);
 }
 
-function _scClearPauseTimer() {
-  if (_scanPauseTimer) { clearTimeout(_scanPauseTimer); _scanPauseTimer = null; }
-}
-
 // ── Camera scan handler (with try/catch safety) ───────────────
 async function _scHandleCameraScan(barcode) {
   try {
@@ -197,7 +194,6 @@ async function _scHandleCameraScan(barcode) {
     if (!item) {
       _scDebugLog('NO MATCH: ' + barcode);
       _scSetStatus('לא נמצא: ' + barcode);
-      // Show not-found panel inside overlay
       _scNotFoundBarcode = barcode;
       var nfBc = document.getElementById('sc-cam-nf-barcode');
       if (nfBc) nfBc.textContent = barcode;
@@ -205,12 +201,11 @@ async function _scHandleCameraScan(barcode) {
       if (nfPanel) nfPanel.style.display = 'flex';
       var hint = document.getElementById('sc-cam-hint');
       if (hint) hint.style.display = 'none';
-      // scanning stays paused until user clicks a button
       return;
     }
     _scDebugLog('MATCH: ' + item.barcode + ' (' + item.status + ')');
     if (item.status === 'counted') {
-      _scClearPauseTimer(); // user needs time to update qty — don't auto-resume
+      _scClearPauseTimer();
       _scCamQtyItem = item;
       var infoEl = document.getElementById('sc-cam-qty-info');
       if (infoEl) infoEl.textContent = (item.barcode || '') + ' — ' + (item.brand || '') + ' ' + (item.model || '');
@@ -247,21 +242,16 @@ async function _scHandleCameraScan(barcode) {
 function _scResumeScanning() {
   _scanPaused = false;
   _scClearPauseTimer();
-  _lastScanCode = ''; _lastScanTime = 0;
-  // Hide all overlay panels
+  // Do NOT reset _lastScanCode/_lastScanTime — keeps debounce active to prevent re-triggering same barcode
   ['sc-cam-success', 'sc-cam-qty', 'sc-cam-notfound', 'sc-cam-unknown'].forEach(function (id) {
     var el = document.getElementById(id); if (el) el.style.display = 'none';
   });
-  var hint = document.getElementById('sc-cam-hint');
-  if (hint) hint.style.display = '';
+  var hint = document.getElementById('sc-cam-hint'); if (hint) hint.style.display = '';
   _scResetViewfinder();
   _scSetStatus('סורק...');
 }
 
-function _scResetViewfinder() {
-  var vf = document.getElementById('sc-viewfinder');
-  if (vf) { vf.style.borderColor = 'rgba(255,255,255,.5)'; vf.style.boxShadow = '0 0 0 4000px rgba(0,0,0,.35)'; }
-}
+function _scResetViewfinder() { var vf = document.getElementById('sc-viewfinder'); if (vf) { vf.style.borderColor = 'rgba(255,255,255,.5)'; vf.style.boxShadow = '0 0 0 4000px rgba(0,0,0,.35)'; } }
 
 // ── Camera qty panel (re-scan inside overlay) ─────────────────
 function _scCamQtySave() {
@@ -269,32 +259,23 @@ function _scCamQtySave() {
   var val = parseInt(inp?.value);
   if (isNaN(val) || val < 0) { toast('כמות לא תקינה', 'e'); return; }
   if (_scCamQtyItem) updateCountItem(_scCamQtyItem.id, val);
-  _scCamQtyItem = null;
   _scCamQtyDismiss();
 }
 
 function _scCamQtyDismiss() {
   _scCamQtyItem = null;
-  var qtyPanel = document.getElementById('sc-cam-qty');
-  if (qtyPanel) qtyPanel.style.display = 'none';
+  var qtyPanel = document.getElementById('sc-cam-qty'); if (qtyPanel) qtyPanel.style.display = 'none';
   _scResumeScanning();
 }
 
 // ── Unknown barcode panels ────────────────────────────────────
 function _scShowUnknownForm() {
-  // Hide not-found panel, show unknown item form
-  _scClearPauseTimer(); // user is typing — don't auto-resume
-  var nfPanel = document.getElementById('sc-cam-notfound');
-  if (nfPanel) nfPanel.style.display = 'none';
-  var label = document.getElementById('sc-unk-barcode-label');
-  if (label) label.textContent = 'ברקוד: ' + _scNotFoundBarcode;
-  // Clear form
-  var ids = ['sc-unk-brand', 'sc-unk-model', 'sc-unk-color', 'sc-unk-size', 'sc-unk-notes'];
-  ids.forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
-  var qtyInp = document.getElementById('sc-unk-qty');
-  if (qtyInp) qtyInp.value = '1';
-  var unkPanel = document.getElementById('sc-cam-unknown');
-  if (unkPanel) unkPanel.style.display = 'flex';
+  _scClearPauseTimer();
+  var nfPanel = document.getElementById('sc-cam-notfound'); if (nfPanel) nfPanel.style.display = 'none';
+  var label = document.getElementById('sc-unk-barcode-label'); if (label) label.textContent = 'ברקוד: ' + _scNotFoundBarcode;
+  ['sc-unk-brand', 'sc-unk-model', 'sc-unk-color', 'sc-unk-size', 'sc-unk-notes'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+  var qtyInp = document.getElementById('sc-unk-qty'); if (qtyInp) qtyInp.value = '1';
+  var unkPanel = document.getElementById('sc-cam-unknown'); if (unkPanel) unkPanel.style.display = 'flex';
   setTimeout(function () { var b = document.getElementById('sc-unk-brand'); if (b) b.focus(); }, 100);
 }
 
@@ -316,7 +297,6 @@ async function _scSaveUnknownItem() {
     };
     var { data, error } = await sb.from(T.STOCK_COUNT_ITEMS).insert(row).select().single();
     if (error) throw error;
-    // Add to local session items
     scSessionItems.push(data);
     unknownBarcodes.push({ barcode: _scNotFoundBarcode, time: new Date().toISOString() });
     refreshSessionUI();
@@ -332,44 +312,27 @@ async function _scSaveUnknownItem() {
 
 // ── Zoom control ──────────────────────────────────────────────
 function _scInitZoom(stream) {
-  try {
-    var track = stream.getVideoTracks()[0];
-    var caps = track.getCapabilities ? track.getCapabilities() : {};
-    if (caps.zoom) {
-      var zoomBtn = document.getElementById('sc-cam-zoom');
-      if (zoomBtn) zoomBtn.style.display = '';
-    }
-  } catch (e) { /* zoom not supported — button stays hidden */ }
+  try { var caps = stream.getVideoTracks()[0].getCapabilities ? stream.getVideoTracks()[0].getCapabilities() : {};
+    if (caps.zoom) { var zb = document.getElementById('sc-cam-zoom'); if (zb) zb.style.display = ''; }
+  } catch (e) { /* zoom not supported */ }
 }
-
 function _scToggleZoom() {
   if (!_scCamStream) return;
-  try {
-    var track = _scCamStream.getVideoTracks()[0];
-    var caps = track.getCapabilities ? track.getCapabilities() : {};
+  try { var track = _scCamStream.getVideoTracks()[0], caps = track.getCapabilities ? track.getCapabilities() : {};
     if (!caps.zoom) return;
-    var minZ = caps.zoom.min || 1;
-    var maxZ = caps.zoom.max || 1;
-    _scZoomLevel = (_scZoomLevel === 1) ? Math.min(2 * minZ, maxZ) : 1;
+    _scZoomLevel = (_scZoomLevel === 1) ? Math.min(2 * (caps.zoom.min || 1), caps.zoom.max || 1) : 1;
     track.applyConstraints({ advanced: [{ zoom: _scZoomLevel }] });
-    var btn = document.getElementById('sc-cam-zoom');
-    if (btn) btn.textContent = (_scZoomLevel > 1) ? '2x' : '1x';
+    var btn = document.getElementById('sc-cam-zoom'); if (btn) btn.textContent = (_scZoomLevel > 1) ? '2x' : '1x';
   } catch (e) { console.warn('Zoom error:', e); }
 }
 
 function stopCamera() {
-  _scanPaused = false;
-  _scClearPauseTimer();
-  _scCamStream = null;
-  _scZoomLevel = 1;
+  _scanPaused = false; _scClearPauseTimer(); _scCamStream = null; _scZoomLevel = 1;
   if (scCodeReader) { scCodeReader.reset(); scCodeReader = null; }
   var overlay = document.getElementById('sc-cam-overlay');
   if (overlay) {
-    var videoEl = overlay.querySelector('video');
-    if (videoEl && videoEl.srcObject) {
-      videoEl.srcObject.getTracks().forEach(function (t) { t.stop(); });
-      videoEl.srcObject = null;
-    }
+    var v = overlay.querySelector('video');
+    if (v && v.srcObject) { v.srcObject.getTracks().forEach(function (t) { t.stop(); }); v.srcObject = null; }
     overlay.remove();
   }
   document.body.style.overflow = '';
