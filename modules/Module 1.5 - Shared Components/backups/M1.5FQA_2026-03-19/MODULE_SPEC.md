@@ -1,6 +1,6 @@
 # Module 1.5 — Shared Components Refactor — MODULE_SPEC
 
-## Current State (QA complete — Module 1.5 DONE)
+## Current State (Phase 5 complete)
 
 ### DB Changes
 - `tenants.ui_config` (JSONB, default '{}') — per-tenant CSS variable overrides. Keys must start with `--` to be injected.
@@ -170,36 +170,8 @@ Wrapper functions (js/shared.js + js/auth-service.js):
 - `increment_prepaid_used(p_deal_id, p_delta)` — atomic total_used/total_remaining update on prepaid_deals
 - `increment_shipment_counters(p_shipment_id, p_items_delta, p_value_delta)` — atomic items_count/total_value update on shipments
 
-### QA Phase Additions (2026-03-19)
-
-**Slug-based tenant resolution:**
-- `js/shared.js`: `TENANT_SLUG` dynamic from URL `?t=` param → sessionStorage → fallback 'prizma'
-- `index.html`: `resolveTenant()` + `showTenantPicker()` + tenant name on login screen
-- `js/header.js`: `ui_config` added to tenant SELECT for theme loading
-- `js/auth-service.js`: `name` added to tenant config query, `tenant_name_cache` in sessionStorage
-
-**Theme loading:**
-- `shared/js/theme-loader.js`: legacy variable mapping (`--color-primary` → `--primary`, etc.)
-- `index.html`: hardcoded colors → `var(--primary)` CSS variables
-
-**Permissions schema fix:**
-- `roles` PK: `(id)` → `(id, tenant_id)`
-- `permissions` PK: `(id)` → `(id, tenant_id)`
-- `role_permissions` PK: `(role_id, permission_id)` → `(role_id, permission_id, tenant_id)`
-- FKs updated to composite references
-
-**CSS fixes:**
-- `shared/css/layout.css`: `@media print` rules for `.modal-overlay`, `.toast-container`
-- `css/header.css`: `@media (max-width: 600px)` truncation for `.header-store-name`, `.header-emp-name`
-
-**Scripts:**
-- `scripts/clone-tenant.sql` — 1119 lines, clones 39 tables with FK mapping
-- `scripts/cleanup-tenant.sql` — 316 lines, reverse FK deletion
-- `scripts/fix-permissions-schema.sql` — PK alteration + demo tenant data
-
 ### Deferred Items
 - suppliers-debt.html migration → deferred to finance module
 - styles.css deletion → after suppliers-debt migration
 - js/pin-modal.js redirect deletion → after suppliers-debt migration
 - DB.* migration (supabase-ops.js → DB.*) → not Module 1.5 scope
-- fix-permissions-schema.sql execution → pending (demo tenant uses workaround)

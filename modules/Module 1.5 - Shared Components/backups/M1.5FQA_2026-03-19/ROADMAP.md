@@ -73,7 +73,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 3 | ✅ | Data Layer | Supabase wrapper, Activity Log (DB + JS), Atomic RPC scan |
 | 4 | ✅ | Table Builder + Permissions | Table builder רזה, Permission-aware UI helpers |
 | 5 | ✅ | Cleanup & Hardening | Zero hardcoded scan, custom_fields JSONB, all 5 pages migrated, wrapper strategy, PinModal namespace |
-| QA | ✅ | Full Regression | Clone tenant, slug resolution, tenant isolation, theme, visual consistency, RTL, mobile, print, feature regression — all pass |
+| QA | ⬜ | Full Regression | regression tests, tenant isolation, visual consistency |
 
 ---
 

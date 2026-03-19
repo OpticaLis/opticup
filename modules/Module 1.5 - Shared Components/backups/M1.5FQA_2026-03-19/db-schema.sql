@@ -116,27 +116,3 @@ $$;
 -- =============================================================================
 ALTER TABLE inventory
   ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}';
-
--- =============================================================================
--- QA Phase: Multi-tenant permissions schema fix
--- Executed: 2026-03-19
--- Purpose: PKs on roles, permissions, role_permissions must include tenant_id
---          to allow same role/permission IDs per tenant.
--- =============================================================================
-
--- roles: (id) → (id, tenant_id)
-ALTER TABLE roles DROP CONSTRAINT roles_pkey;
-ALTER TABLE roles ADD PRIMARY KEY (id, tenant_id);
-
--- permissions: (id) → (id, tenant_id)
-ALTER TABLE permissions DROP CONSTRAINT permissions_pkey;
-ALTER TABLE permissions ADD PRIMARY KEY (id, tenant_id);
-
--- role_permissions: (role_id, permission_id) → (role_id, permission_id, tenant_id)
-ALTER TABLE role_permissions DROP CONSTRAINT role_permissions_pkey;
-ALTER TABLE role_permissions ADD PRIMARY KEY (role_id, permission_id, tenant_id);
-
--- FKs updated to composite references:
--- role_permissions → roles(id, tenant_id) ON DELETE CASCADE
--- role_permissions → permissions(id, tenant_id) ON DELETE CASCADE
--- employee_roles → roles(id, tenant_id) ON DELETE CASCADE

@@ -131,18 +131,3 @@ All variables defined in `shared/css/variables.css`:
 | 3 | — | CREATE FUNCTION `increment_prepaid_used(p_deal_id, p_delta)` | Atomic total_used/total_remaining update on prepaid_deals |
 | 3 | — | CREATE FUNCTION `increment_shipment_counters(p_shipment_id, p_items_delta, p_value_delta)` | Atomic items_count/total_value update on shipments |
 | 4 | — | (none) | No DB changes in Phase 4 (JS + CSS only) |
-| QA | roles | ALTER PK `(id)` → `(id, tenant_id)` | Multi-tenant: same role name per tenant |
-| QA | permissions | ALTER PK `(id)` → `(id, tenant_id)` | Multi-tenant: same permission ID per tenant |
-| QA | role_permissions | ALTER PK `(role_id, permission_id)` → `(role_id, permission_id, tenant_id)` | Multi-tenant: per-tenant role→permission mappings |
-| QA | role_permissions | ALTER FKs to composite | role_permissions → roles(id, tenant_id), permissions(id, tenant_id) |
-| QA | employee_roles | ALTER FK to composite | employee_roles → roles(id, tenant_id) |
-
----
-
-## 7. QA Scripts
-
-| # | File | Path | Lines | Purpose |
-|---|------|------|-------|---------|
-| 1 | clone-tenant.sql | scripts/clone-tenant.sql | 1119 | Clone prizma → demo tenant: 39 tables, FK mapping, barcode D prefix, verification |
-| 2 | cleanup-tenant.sql | scripts/cleanup-tenant.sql | 316 | Delete demo tenant data in reverse FK order |
-| 3 | fix-permissions-schema.sql | scripts/fix-permissions-schema.sql | 146 | Alter PKs to include tenant_id, insert demo tenant permission rows |

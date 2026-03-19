@@ -1839,3 +1839,24 @@ BEGIN
     WHERE id = p_shipment_id;
 END;
 $$;
+
+-- Added in QA Phase: Multi-tenant permissions PK fix
+-- roles: (id) → (id, tenant_id)
+ALTER TABLE roles DROP CONSTRAINT roles_pkey;
+ALTER TABLE roles ADD PRIMARY KEY (id, tenant_id);
+
+-- permissions: (id) → (id, tenant_id)
+ALTER TABLE permissions DROP CONSTRAINT permissions_pkey;
+ALTER TABLE permissions ADD PRIMARY KEY (id, tenant_id);
+
+-- role_permissions: (role_id, permission_id) → (role_id, permission_id, tenant_id)
+ALTER TABLE role_permissions DROP CONSTRAINT role_permissions_pkey;
+ALTER TABLE role_permissions ADD PRIMARY KEY (role_id, permission_id, tenant_id);
+
+-- FKs updated to composite references
+ALTER TABLE role_permissions ADD CONSTRAINT role_permissions_role_fk
+  FOREIGN KEY (role_id, tenant_id) REFERENCES roles(id, tenant_id) ON DELETE CASCADE;
+ALTER TABLE role_permissions ADD CONSTRAINT role_permissions_permission_fk
+  FOREIGN KEY (permission_id, tenant_id) REFERENCES permissions(id, tenant_id) ON DELETE CASCADE;
+ALTER TABLE employee_roles ADD CONSTRAINT employee_roles_role_fk
+  FOREIGN KEY (role_id, tenant_id) REFERENCES roles(id, tenant_id) ON DELETE CASCADE;

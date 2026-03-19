@@ -1,39 +1,5 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
-## QA Phase — Full Regression ✅ (2026-03-19)
-
-### Commits
-- 9d2761d: QA Step 1: clone-tenant and cleanup-tenant SQL scripts
-- b1e7e67: QA Step 1: fix employees PIN uniqueness in clone script
-- 57410ed: QA Step 1: generate unique PINs for cloned employees
-- 85daa0d: QA Step 2: slug-based tenant resolution on login
-- 4ccf86a: QA: fix theme loading and permissions for multi-tenant
-- fd412b5: QA: proper multi-tenant permissions schema (no prefix hack)
-- d874b1f: QA: fix print rules, header mobile, modal RTL positioning
-
-### Changes
-- Clone tenant script: 39 tables with FK mapping, barcode D prefix, 19 temp mapping tables
-- Slug-based tenant resolution: ?t=demo URL param, tenant picker, dynamic TENANT_SLUG
-- Theme loading: legacy variable mapping (--color-primary → --primary), ui_config in header.js
-- Permissions schema: roles/permissions/role_permissions PK now includes tenant_id
-- Print rules: modal-overlay + toast-container hidden in @media print
-- Header mobile: truncation with ellipsis at 600px breakpoint
-- auth-service.js: tenant name caching, name in tenant config query
-
-### Test Results
-- Tenant isolation: 16/16 PASS
-- Visual consistency: 18/19 (1 fixed)
-- RTL: 5/5 PASS
-- Mobile: 4/4 PASS
-- Print: 3/3 PASS (1 fixed)
-- Inventory regression: 12/12 PASS
-- Shipments regression: 5/5 PASS
-- Employees regression: 7/7 PASS
-- Settings regression: 5/5 PASS
-- Suppliers debt backward compat: 8/8 PASS
-
----
-
 ## Phase 5 — Cleanup & Hardening ✅ (2026-03-18)
 
 ### Commits
