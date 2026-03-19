@@ -1,5 +1,5 @@
 # מלאי מסגרות — Module Spec
-## גרסה Phase 7 | מרץ 2026 | Stock Count Improvements
+## גרסה QA | מרץ 2026 | Module 1 Final Certification
 
 > **Authority:** Business logic flows and screen descriptions. For code details → MODULE_MAP.md. For DB schema → db-schema.sql. For rules → CLAUDE.md.
 
@@ -10,7 +10,7 @@
 **מודול מלאי מסגרות** הוא הליבה של מערכת Optic Up — מנהל את כל מחזור החיים של מסגרות משקפיים במלאי: כניסה, מעקב, עריכה, מכירה, מחיקה, שחזור, ספירת מלאי, סנכרון עם Access, ומעקב חובות ספקים.
 
 **סטאק טכנולוגי:**
-- Frontend: Vanilla JS (no framework), 83 JS modules + CSS
+- Frontend: Vanilla JS (no framework), 78 JS modules + CSS
 - Backend: Supabase (PostgreSQL + REST API + RPC + Edge Functions), client = `sb`
 - Auth: PIN → Edge Function (pin-auth) → signed JWT with tenant_id claim
 - Excel: SheetJS (xlsx) לייבוא/ייצוא
@@ -27,7 +27,7 @@ For complete file index → see MODULE_MAP.md section 1.
 
 לסכימה המלאה (columns, types, constraints, RLS) → ראה **db-schema.sql**.
 
-כל הטבלאות מכילות `tenant_id UUID NOT NULL` מאז פאזה 3.75. JWT-based RLS tenant isolation פעיל על כל 46 הטבלאות.
+כל הטבלאות מכילות `tenant_id UUID NOT NULL` מאז פאזה 3.75. JWT-based RLS tenant isolation פעיל על כל 45 הטבלאות.
 
 **טבלאות עיקריות (pre-Phase 4):** tenants, inventory, brands, suppliers, employees, inventory_logs, inventory_images, purchase_orders, purchase_order_items, goods_receipts, goods_receipt_items, sync_log, pending_sales, watcher_heartbeat, stock_counts, stock_count_items, roles, permissions, role_permissions, employee_roles, auth_sessions.
 
@@ -39,7 +39,7 @@ For complete file index → see MODULE_MAP.md section 1.
 
 **טבלאות Phase 5.9 (Shipments):** courier_companies, shipments, shipment_items.
 
-**RPC Functions:** `increment_inventory`, `decrement_inventory`, `set_inventory_qty`, `apply_stock_count_delta` (SECURITY DEFINER, FOR UPDATE lock — atomic stock count confirmation), `generate_daily_alerts`, `next_internal_doc_number`, `update_ocr_template_stats`, `next_box_number`.
+**RPC Functions:** `increment_inventory`, `decrement_inventory`, `set_inventory_qty`, `generate_daily_alerts`, `next_internal_doc_number`, `update_ocr_template_stats`, `next_box_number`.
 
 **pg_cron Jobs:** `daily-alert-generation` — runs at 05:00 UTC, calls generate_daily_alerts with fault isolation per alert type.
 
@@ -89,25 +89,17 @@ For complete file index → see MODULE_MAP.md section 1.
 - **Auto-deduct from active prepaid deal** if supplier has one (Phase 4f)
 - Export confirmed receipts as Access-compatible Excel
 
-### 3.6 ספירת מלאי (Stock Count) — Phase 2a + Phase 7
-- **9 files**: stock-count-list, stock-count-session, stock-count-camera, stock-count-scan, stock-count-filters, stock-count-unknown, stock-count-approve, stock-count-view, stock-count-report
-- **List screen**: summary cards (open/completed/diffs this month), stock count table, view button for completed counts
+### 3.6 ספירת מלאי (Stock Count) — Phase 2a
+- **List screen**: summary cards (open/completed/diffs this month), stock count table
 - **New count flow**: worker PIN → create count header + snapshot all active inventory items
 - **Session screen**: camera barcode scanning (ZXing), manual barcode/search input, real-time stats
-- **Camera** (camera.js): fullscreen overlay with ZXing, viewfinder, zoom toggle, freeze-on-scan, unknown item form inside overlay, qty panel inside overlay
-- **Scan logic** (scan.js): barcode normalization (5 strategies), manual search, row click, handleScan dispatch, qty modal, updateCountItem, refreshSessionUI, undo, pause/finish
-- **Scan handling**: unknown barcode → warning + form, already counted → confirm +1, pending → qty prompt
-- **Diff report**: shortages/surpluses/uncounted summary, per-item checkbox (approve/skip), reason input for discrepancies, bulk toolbar (check all/uncheck all/diffs only)
-- **Unknown items** (unknown.js): modal to edit unknown items (brand dropdown, model, barcode readonly or auto-gen BBDDDDD, prices, supplier, size, color), saves to inventory + updates stock_count_items to matched
-- **Partial approval** (approve.js + report.js): approved items → `apply_stock_count_delta` RPC, skipped items → status='skipped' (no inventory change), reasons saved per item
-- **Approval**: manager PIN (role=admin/manager) → atomic inventory update via `apply_stock_count_delta` RPC (FOR UPDATE row lock) → writeLog per item with delta details
-- **View completed counts** (view.js): read-only panel with count header + employee name + date, status filter buttons (הכל/התאמות/חוסרים/עודפים/נדלגו), 9-column table, summary footer, Excel export (12 columns)
+- **Scan handling**: unknown barcode → warning, already counted → confirm +1, pending → qty prompt
+- **Diff report**: shortages/surpluses/uncounted summary, items table
+- **Approval**: manager PIN (role=admin/manager) → update inventory via `set_inventory_qty` RPC → writeLog per diff item
 - **Cancel**: cancels count without changing quantities
-- **Export**: counted+skipped items to xlsx (12 columns including reason and status)
+- **Export**: all counted items to xlsx (10 columns including scanned_by)
 - **Brand/category filters** (QA): pre-count filter screen to select brands and product types for targeted counts (stock-count-filters.js). Builds filter_criteria JSONB stored on stock_counts
 - **Realtime search** (QA): debounced search in count session filters items by brand/model/barcode
-- **stock_count_items statuses**: pending, counted, matched, unknown, skipped
-- **reason column**: TEXT, optional per-item reason for discrepancies
 
 ### 3.7 סנכרון Access (Access Sync) — Phase 2b + Access Sync Fix
 - **Sync tab**: summary cards (syncs/items/errors today), last activity timestamp, watcher status indicator (green/yellow/red based on heartbeat), sync log table with pagination
@@ -289,22 +281,10 @@ Standalone page: `settings.html` with `modules/settings/settings-page.js`.
 3. Count number: SC-YYYY-NNNN (auto-generated)
 4. Camera scanning (ZXing) or manual barcode entry
 5. Smart search: text filters by brand/model/color, digits treated as barcode
-6. Unknown barcodes: form inside camera overlay → saves to stock_count_items with status='unknown'
-7. Diff report: shortages, surpluses, uncounted items, unknown items section
-8. Unknown items: modal to edit + add to inventory (brand, model, barcode auto-gen or readonly, prices, supplier)
-9. Per-item checkbox: approve (default) or skip, with optional reason per discrepancy
-10. Bulk toolbar: check all / uncheck all / diffs only
-11. Manager PIN approval (role = admin/manager)
-12. Approved items: atomic inventory update via `apply_stock_count_delta` RPC (FOR UPDATE lock) per item
-13. Skipped items: status updated to 'skipped', no inventory change
-14. Reasons saved per item to stock_count_items.reason
-15. writeLog('stock_count.apply') per approved item with previous_qty, counted_qty, delta, new_qty
-16. View completed counts: read-only panel with status filters + Excel export
-
-**Contracts:**
-- `openCompletedCountView(countId)` — open read-only view of completed count
-- `renderUnknownSection(unknownItems, countId)` — render unknown items in diff report
-- `confirmCount(countId)` — partial approval: approved → RPC, skipped → status='skipped'
+6. Diff report: shortages, surpluses, uncounted items
+7. Manager PIN approval (role = admin/manager)
+8. Inventory update via `set_inventory_qty` RPC per diff item
+9. writeLog('edit_qty') per diff item with reason='ספירת מלאי'
 
 ### 4.10 סנכרון Access — flow
 - **Two ingest paths**: manual CSV/Excel upload (web) + automated Dropbox watcher (Node.js)
@@ -544,8 +524,7 @@ Standalone page: `shipments.html` with 9 JS files in `modules/shipments/`.
 **RPC Functions:**
 - `increment_inventory(inv_id, delta)` — atomic qty increment
 - `decrement_inventory(inv_id, delta)` — atomic qty decrement (floor 0)
-- `set_inventory_qty(inv_id, new_qty)` — set qty directly (legacy — replaced by apply_stock_count_delta for stock counts)
-- `apply_stock_count_delta(p_inventory_id, p_counted_qty, p_tenant_id, p_user_id, p_count_id)` — atomic stock count confirmation: FOR UPDATE lock, returns JSON {previous_qty, counted_qty, delta, new_qty}. SECURITY DEFINER
+- `set_inventory_qty(inv_id, new_qty)` — set qty directly
 - `generate_daily_alerts(p_tenant_id)` — generates payment_due, payment_overdue, prepaid_low alerts (idempotent)
 - `next_internal_doc_number(p_tenant_id)` — atomic sequential DOC-NNNN generation (race-condition safe)
 - `update_ocr_template_stats(p_template_id, p_corrections, p_extracted_data)` — atomic template stats update (times_used, accuracy_rate, extraction_hints)

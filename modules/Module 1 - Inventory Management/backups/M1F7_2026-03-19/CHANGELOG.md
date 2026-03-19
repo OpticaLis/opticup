@@ -4,29 +4,6 @@
 
 ---
 
-## Phase 7 — Stock Count Improvements (2026-03-19)
-
-### Step 0: File Split
-- `86336c7` — split stock-count-session.js into session + camera (zero logic changes)
-- `7bea7de` — split scan logic into stock-count-scan.js — all files under 350 lines
-
-### Step 1: Atomic Delta RPC
-- `588b349` — apply_stock_count_delta with FOR UPDATE lock, replaces set_inventory_qty
-
-### Step 2: Unknown Items → Inventory
-- `a441555` — unknown items modal: edit and add to inventory from stock count report
-
-### Step 3: Reason + Partial Approval
-- `aef7671` — reason field + partial approval with approve/skip checkboxes per item
-
-### Step 4: View Completed Counts
-- `5423c48` — view completed stock counts: read-only panel with filters and Excel export
-
-### End of Phase
-- `[this commit]` — Phase 7 documentation, backup, ROADMAP ✅
-
----
-
 ## Stock Count Hotfixes — 2026-03-18
 
 > Extensive hotfix cycle for stock-count camera scanning, UX, unknown item flow, and mobile optimization.

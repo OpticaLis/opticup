@@ -423,19 +423,6 @@ git push origin v{phase}
 
 ---
 
-## Multi-Machine Development
-
-Two development machines are active:
-- **Windows 🖥️**: `C:\Users\User\opticup` (PowerShell/Git Bash, Watcher service runs here)
-- **Mac 🍎**: `/Users/danielsmac/opticup` (zsh/bash)
-
-**Every new Claude Code chat must:**
-1. Ask: "Which machine? 🖥️ or 🍎"
-2. Run `git pull origin develop` before any work
-3. Never work on both machines simultaneously on the same branch
-
----
-
 ## Commit Format
 ```
 git add -A && git commit -m "descriptive message in English" && git push
