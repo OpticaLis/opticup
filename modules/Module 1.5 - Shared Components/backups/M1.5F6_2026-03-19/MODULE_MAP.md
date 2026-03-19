@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in the shared/ directory.
 > Updated every commit that adds/changes code in shared/.
-> Last updated: 2026-03-19 (Phase 6 complete)
+> Last updated: 2026-03-18 (Phase 5 complete)
 
 ---
 
@@ -10,7 +10,7 @@
 
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
-| 1 | variables.css | shared/css/variables.css | 161 | Design tokens: colors (primary Indigo #4f46e5, semantic + dark text, neutral Slate scale, background), typography (family, sizes, weights, line-heights), spacing (6-step scale), border-radius, shadows, z-index, transitions, legacy --primary alias. Single source of truth for all visual values. |
+| 1 | variables.css | shared/css/variables.css | 157 | Design tokens: colors (primary, semantic + dark text, neutral, background), typography (family, sizes, weights, line-heights), spacing (6-step scale), border-radius, shadows, z-index, transitions. Single source of truth for all visual values. |
 | 2 | components.css | shared/css/components.css | 254 | UI components part 1: buttons (primary/secondary/danger/ghost × sm/md/lg), inputs, selects, textareas, badges (success/error/warning/info/neutral), cards (header/body/footer). All values via CSS variables. |
 | 3 | components-extra.css | shared/css/components-extra.css | 214 | UI components part 2: table base (header/row/cell/sortable), slide-in panel (RTL, overlay), skeleton loaders (text/circle/rect/row + pulse animation), accordion (CSS-only open/close). |
 | 4 | layout.css | shared/css/layout.css | 201 | Page structure (container/header/content), sticky header, flex helpers (flex/col/wrap, items, justify, gap), grid helpers (2/3/4 col), RTL utilities (logical properties), visibility (hidden/visible/sr-only), print styles (no-print, header hidden). |
@@ -51,14 +51,14 @@
 
 ---
 
-## 4. File Index — Page-Specific CSS (Phase 5, updated Phase 6)
+## 4. File Index — Page-Specific CSS (Phase 5)
 
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
-| 1 | inventory.css | css/inventory.css | 396 | Inventory page styles: nav tabs, cards, item cards, table (#inv-table), bulk bar, search-select, PO list, receipts, stock count, OCR, weekly report, AI config, help banners. :root --primary/--primary-light/--primary-dark reference var(--color-primary*) from variables.css (Phase 6). |
-| 2 | employees.css | css/employees.css | 396 | Employees page styles. :root primary vars reference var(--color-primary*) (Phase 6). |
-| 3 | settings.css | css/settings.css | 396 | Settings page styles: .settings-container, settings-section, settings-grid, settings-field, logo-preview. :root primary vars reference var(--color-primary*) (Phase 6). |
-| 4 | shipments.css | css/shipments.css | 396 | Shipments page styles. :root primary vars reference var(--color-primary*) (Phase 6). Shipment-specific styles in inline <style>. |
+| 1 | inventory.css | css/inventory.css | 396 | Inventory page styles: nav tabs, cards, item cards, table (#inv-table), bulk bar, search-select, PO list, receipts, stock count, OCR, weekly report, AI config, help banners. Copied from styles.css as override layer on top of shared/css/*. |
+| 2 | employees.css | css/employees.css | 396 | Employees page styles (base from styles.css). Override layer on shared/css/*. |
+| 3 | settings.css | css/settings.css | 396 | Settings page styles: .settings-container, settings-section, settings-grid, settings-field, logo-preview. Override layer on shared/css/*. |
+| 4 | shipments.css | css/shipments.css | 396 | Shipments page styles (base from styles.css). Override layer on shared/css/*. Shipment-specific styles in inline <style>. |
 
 ---
 
@@ -66,9 +66,8 @@
 
 All variables defined in `shared/css/variables.css`:
 
-### Colors — Primary (4 vars + 1 legacy alias)
-`--color-primary` (#4f46e5 Indigo), `--color-primary-hover` (#4338ca), `--color-primary-light` (#eef2ff), `--color-primary-dark` (#3730a3)
-`--primary: var(--color-primary)` — legacy alias for header.css, index.html, page CSS consumers
+### Colors — Primary (4 vars)
+`--color-primary`, `--color-primary-hover`, `--color-primary-light`, `--color-primary-dark`
 
 ### Colors — Semantic (16 vars)
 `--color-success`, `--color-success-light`, `--color-success-hover`, `--color-success-dark`
@@ -103,7 +102,7 @@ All variables defined in `shared/css/variables.css`:
 ### Transitions (3 vars)
 `--transition-fast`, `--transition-normal`, `--transition-slow`
 
-**Total: 69 CSS variables + 1 legacy alias (70 declarations)**
+**Total: 69 CSS variables**
 
 ---
 

@@ -1,31 +1,9 @@
 # Module 1.5 — Shared Components Refactor — SESSION_CONTEXT
 
 ## Current Status
-- **Phase:** 6 complete ✅. Module 1.5 DONE (including UI facelift).
+- **Phase:** QA complete ✅. Module 1.5 DONE.
 - **Branch:** develop
 - **Last session:** 2026-03-19
-
-## What Was Done — Phase 6 (UI Facelift)
-
-### Step 1: Indigo primary + Slate gray scale (commit 6767a2c)
-- variables.css: primary colors changed from dark navy (#1a237e) to Indigo (#4f46e5/#4338ca/#eef2ff/#3730a3)
-- variables.css: gray scale changed from Tailwind Gray (warm) to Tailwind Slate (cool) — 9 values updated
-- Total: 12 variables changed, 0 JS/HTML changes
-
-### Step 3b: Legacy --primary alias (commit a7a17ef)
-- variables.css: added `--primary: var(--color-primary)` alias so header.css and index.html pick up Indigo
-- theme-loader.js already maps --color-primary → --primary for tenants with ui_config overrides
-
-### Step 4b: Page CSS :root fix (commit 4e9949f)
-- inventory.css, shipments.css, employees.css, settings.css: replaced hardcoded `--primary:#1a237e` with `var(--color-primary)` in :root blocks
-- Same for --primary-light and --primary-dark
-
-### Verification
-- ui-test.html: 15/15 component sections ✅
-- All 6 pages × 2 tenants: CSS variables correct, zero console errors
-- Mobile viewport (375px): no breakage
-- Tenant theming: Prizma=Indigo (default), Demo=green (ui_config override) — both work
-- suppliers-debt.html: backward compat OK (uses styles.css, minor header shade difference)
 
 ## What Was Done — QA Phase (Full Regression)
 
@@ -79,13 +57,8 @@
 ## What Was Done — Phase 5 (Cleanup & Hardening)
 (see backups/M1.5FQA_2026-03-19/SESSION_CONTEXT.md for Phase 5 details)
 
-## Phase 6 Commits
-- `6767a2c` — Phase 6 Step 1: Indigo primary + Slate gray palette
-- `a7a17ef` — Phase 6 Step 3b: legacy --primary alias in variables.css
-- `4e9949f` — Phase 6 Step 4b: remove legacy :root overrides from page CSS files
-
 ## What's Next
-- **Module 1.5 complete (including Phase 6 facelift).** Next: Module 2 (Platform Admin) or feature modules per MASTER_ROADMAP.
+- **Module 1.5 complete.** Next: Module 2 (Platform Admin) or feature modules per MASTER_ROADMAP.
 - **Deferred:** suppliers-debt.html migration → finance module
 - **Deferred:** styles.css deletion → after suppliers-debt migration
 - **Deferred:** DB.* migration (supabase-ops.js → DB.*) → not Module 1.5 scope

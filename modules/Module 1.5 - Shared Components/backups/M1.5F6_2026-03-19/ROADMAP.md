@@ -74,7 +74,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 4 | ✅ | Table Builder + Permissions | Table builder רזה, Permission-aware UI helpers |
 | 5 | ✅ | Cleanup & Hardening | Zero hardcoded scan, custom_fields JSONB, all 5 pages migrated, wrapper strategy, PinModal namespace |
 | QA | ✅ | Full Regression | Clone tenant, slug resolution, tenant isolation, theme, visual consistency, RTL, mobile, print, feature regression — all pass |
-| 6 | ✅ | UI Facelift | Indigo primary palette, Slate gray scale, legacy --primary alias, page CSS var() references |
 
 ---
 

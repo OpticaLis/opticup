@@ -1,27 +1,5 @@
 # Module 1.5 — Shared Components Refactor — CHANGELOG
 
-## Phase 6 — UI Facelift ✅ (2026-03-19)
-
-### Commits
-- 6767a2c: Indigo primary palette (#4f46e5) + Slate gray scale in variables.css (12 variables changed)
-- a7a17ef: Legacy --primary alias in variables.css (bridges header.css/index.html)
-- 4e9949f: Page CSS :root blocks — replaced hardcoded --primary with var(--color-primary) in inventory.css, shipments.css, employees.css, settings.css
-
-### What Changed
-- **Primary colors:** dark navy (#1a237e) → Indigo (#4f46e5/#4338ca/#eef2ff/#3730a3)
-- **Gray scale:** Tailwind Gray (warm) → Tailwind Slate (cool) — 9 values updated for harmony with Indigo
-- **Legacy bridge:** `--primary: var(--color-primary)` alias ensures header.css and page CSS consume new values
-- **No JS/HTML changes.** No logic changes. No DB changes. CSS values only.
-
-### Verification
-- ui-test.html: 15/15 component sections passed
-- All 6 pages × 2 tenants: CSS variables correct, zero console errors
-- Mobile (375px), RTL, print: no breakage
-- Tenant theming: Prizma=Indigo default, Demo=green override — both work
-- suppliers-debt.html: backward compat (uses styles.css, minor shade difference — deferred)
-
----
-
 ## QA Phase — Full Regression ✅ (2026-03-19)
 
 ### Commits

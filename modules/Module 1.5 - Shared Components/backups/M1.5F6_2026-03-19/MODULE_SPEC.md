@@ -75,10 +75,9 @@ Wrapper functions (js/shared.js + js/auth-service.js):
 ### Contracts (Public API)
 
 **CSS Variables (70 tokens):**
-- `--color-primary` (#4f46e5 Indigo), `--color-primary-hover` (#4338ca), `--color-primary-light` (#eef2ff), `--color-primary-dark` (#3730a3)
-- `--primary: var(--color-primary)` — legacy alias for header.css, index.html, page CSS consumers
+- `--color-primary`, `--color-primary-hover`, `--color-primary-light`, `--color-primary-dark`
 - `--color-success[-light/-hover/-dark]`, `--color-error[-light/-hover/-dark]`, `--color-warning[-light/-hover/-dark]`, `--color-info[-light/-hover/-dark]`
-- `--color-white`, `--color-gray-50` through `--color-gray-900` (Tailwind Slate scale), `--color-black`
+- `--color-white`, `--color-gray-50` through `--color-gray-900`, `--color-black`
 - `--color-bg-page`, `--color-bg-card`, `--color-bg-input`
 - `--font-family`, `--font-size-xs` through `--font-size-2xl`, `--font-weight-normal/medium/semibold/bold`
 - `--line-height-tight/normal/relaxed`
