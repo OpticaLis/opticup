@@ -431,6 +431,7 @@ git push origin v{phase}
 5. **Verify after every change** — app must load with zero console errors after every file modification
 6. **Report before executing** — for any task touching more than one function, show the plan first and wait for approval
 7. **Never auto-proceed** — even if the next step seems obvious, stop and wait
+8. **No worktree branches** — all work happens directly on `develop`. Do not create branches like `claude/xxx`. Do not use the worktree feature. This is a solo developer project with step-by-step review — worktrees add unnecessary complexity and break multi-machine sync.
 
 ---
 
@@ -484,6 +485,7 @@ Both branches share one Supabase instance.
 - Every Claude Code session starts on `develop`: verify with `git branch` before any work
 - Never `git push` to `main` directly — always merge from `develop`
 - DB changes must be backward compatible with `main` until merge
+- Claude Code must NEVER use worktree branches — work directly on develop
 
 ---
 
