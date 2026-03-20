@@ -352,7 +352,7 @@
   }
 
   .alerts-panel {
-    width: calc(100vw - 16px);
+    width: auto;
     left: 8px !important;
     right: 8px;
   }
