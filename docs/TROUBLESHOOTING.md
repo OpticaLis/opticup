@@ -94,6 +94,24 @@ Updated clone-tenant.sql to copy barcodes as-is (no "D" prefix).
 
 **Commits:** 035_barcode_unique_per_tenant.sql migration (2026-03-20)
 
+### Stale session after tenant re-clone — mobile shows empty data
+
+**Symptom:** After deleting and re-creating demo tenant, mobile browser shows
+"אין מותגים", 0 items, empty screens — despite data existing in DB.
+Desktop works fine after refresh.
+
+**Root cause:** sessionStorage retains the OLD tenant UUID. The new tenant
+gets a new UUID. All queries run with the stale UUID → 0 results.
+
+**Fix:** Log out, close the browser tab completely, reopen and log in fresh.
+Clearing Safari cache also works.
+
+**Prevention:** When re-cloning a tenant, all connected devices must log out
+and back in. Consider adding a session validation check: if tenant_id in
+sessionStorage doesn't exist in the tenants table, force logout.
+
+**Status:** Documented. Session validation enhancement deferred.
+
 ---
 
 ## Template for new entries
