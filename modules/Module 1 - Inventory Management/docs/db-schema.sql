@@ -1206,7 +1206,7 @@ CREATE TABLE IF NOT EXISTS employee_roles (
   granted_by  UUID REFERENCES employees(id),
   granted_at  TIMESTAMPTZ DEFAULT NOW(),
   tenant_id   UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
-  PRIMARY KEY (employee_id, role_id, tenant_id)
+  PRIMARY KEY (employee_id, role_id)
 );
 ALTER TABLE employee_roles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_employee_roles" ON employee_roles FOR ALL USING (true) WITH CHECK (true);

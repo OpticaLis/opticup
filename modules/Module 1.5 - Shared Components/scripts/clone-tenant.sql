@@ -112,7 +112,7 @@ ON CONFLICT (role_id, permission_id, tenant_id) DO NOTHING;
 -- employee_roles — שיוך תפקיד CEO לעובד הבדיקה
 INSERT INTO employee_roles (employee_id, role_id, granted_by, tenant_id)
 VALUES (v_new_employee, 'ceo', v_new_employee, v_new_tenant)
-ON CONFLICT (employee_id, role_id, tenant_id) DO NOTHING;
+ON CONFLICT (employee_id, role_id) DO NOTHING;
 
 RAISE NOTICE 'roles + permissions + employee_roles — הועתקו';
 
@@ -236,7 +236,7 @@ SELECT em.new_id, er.role_id, v_new_employee, v_new_tenant
 FROM employee_roles er
 JOIN _employee_map em ON em.old_id = er.employee_id
 WHERE er.tenant_id = v_source_tenant
-ON CONFLICT (employee_id, role_id, tenant_id) DO NOTHING;
+ON CONFLICT (employee_id, role_id) DO NOTHING;
 
 GET DIAGNOSTICS v_count = ROW_COUNT;
 RAISE NOTICE 'employee_roles (cloned): % שורות', v_count;
