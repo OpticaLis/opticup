@@ -92,28 +92,27 @@ INSERT INTO roles (id, name_he, description, is_system, tenant_id)
 SELECT id, name_he, description, is_system, v_new_tenant
 FROM roles
 WHERE tenant_id = v_source_tenant
-ON CONFLICT (id) DO NOTHING;
--- הערה: roles.id הוא TEXT PK גלובלי — אם כבר קיימים, לא ניצור כפילות
--- ה-ON CONFLICT מבטיח שלא נשבור את ה-PK
+ON CONFLICT (id, tenant_id) DO NOTHING;
+-- הערה: roles PK הוא (id, tenant_id) — composite, כל דייר מקבל עותק משלו
 
--- permissions — אותו דבר, TEXT PK גלובלי
+-- permissions — PK הוא (id, tenant_id)
 INSERT INTO permissions (id, module, action, name_he, description, tenant_id)
 SELECT id, module, action, name_he, description, v_new_tenant
 FROM permissions
 WHERE tenant_id = v_source_tenant
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id, tenant_id) DO NOTHING;
 
--- role_permissions — composite PK (role_id, permission_id)
+-- role_permissions — composite PK (role_id, permission_id, tenant_id)
 INSERT INTO role_permissions (role_id, permission_id, granted, tenant_id)
 SELECT role_id, permission_id, granted, v_new_tenant
 FROM role_permissions
 WHERE tenant_id = v_source_tenant
-ON CONFLICT (role_id, permission_id) DO NOTHING;
+ON CONFLICT (role_id, permission_id, tenant_id) DO NOTHING;
 
 -- employee_roles — שיוך תפקיד CEO לעובד הבדיקה
 INSERT INTO employee_roles (employee_id, role_id, granted_by, tenant_id)
 VALUES (v_new_employee, 'ceo', v_new_employee, v_new_tenant)
-ON CONFLICT (employee_id, role_id) DO NOTHING;
+ON CONFLICT (employee_id, role_id, tenant_id) DO NOTHING;
 
 RAISE NOTICE 'roles + permissions + employee_roles — הועתקו';
 
@@ -237,7 +236,7 @@ SELECT em.new_id, er.role_id, v_new_employee, v_new_tenant
 FROM employee_roles er
 JOIN _employee_map em ON em.old_id = er.employee_id
 WHERE er.tenant_id = v_source_tenant
-ON CONFLICT (employee_id, role_id) DO NOTHING;
+ON CONFLICT (employee_id, role_id, tenant_id) DO NOTHING;
 
 GET DIAGNOSTICS v_count = ROW_COUNT;
 RAISE NOTICE 'employee_roles (cloned): % שורות', v_count;

@@ -1163,25 +1163,27 @@ CREATE POLICY "employees_delete" ON employees FOR DELETE USING (true);
 
 -- roles
 CREATE TABLE IF NOT EXISTS roles (
-  id          TEXT PRIMARY KEY,
+  id          TEXT NOT NULL,
   name_he     TEXT NOT NULL,
   description TEXT,
   is_system   BOOLEAN DEFAULT true,
   tenant_id   UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
-  created_at  TIMESTAMPTZ DEFAULT NOW()
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (id, tenant_id)
 );
 ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_roles" ON roles FOR ALL USING (true) WITH CHECK (true);
 
 -- permissions
 CREATE TABLE IF NOT EXISTS permissions (
-  id          TEXT PRIMARY KEY,
+  id          TEXT NOT NULL,
   module      TEXT NOT NULL,
   action      TEXT NOT NULL,
   name_he     TEXT NOT NULL,
   description TEXT,
   tenant_id   UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
-  created_at  TIMESTAMPTZ DEFAULT NOW()
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (id, tenant_id)
 );
 ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_permissions" ON permissions FOR ALL USING (true) WITH CHECK (true);
@@ -1192,7 +1194,7 @@ CREATE TABLE IF NOT EXISTS role_permissions (
   permission_id TEXT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
   granted       BOOLEAN NOT NULL DEFAULT true,
   tenant_id     UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
-  PRIMARY KEY (role_id, permission_id)
+  PRIMARY KEY (role_id, permission_id, tenant_id)
 );
 ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_role_permissions" ON role_permissions FOR ALL USING (true) WITH CHECK (true);
@@ -1204,7 +1206,7 @@ CREATE TABLE IF NOT EXISTS employee_roles (
   granted_by  UUID REFERENCES employees(id),
   granted_at  TIMESTAMPTZ DEFAULT NOW(),
   tenant_id   UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
-  PRIMARY KEY (employee_id, role_id)
+  PRIMARY KEY (employee_id, role_id, tenant_id)
 );
 ALTER TABLE employee_roles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_employee_roles" ON employee_roles FOR ALL USING (true) WITH CHECK (true);
