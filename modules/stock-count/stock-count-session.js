@@ -197,7 +197,7 @@ function renderSessionScreen(countId, items) {
   const s = scCalcStats(items);
   const tab = document.getElementById('tab-stock-count');
   tab.innerHTML = `
-    <div style="padding:8px 12px;max-width:800px;margin:0 auto">
+    <div style="padding:8px 6px;max-width:800px;margin:0 auto;overflow-x:hidden">
       <div class="sc-session-topbar">
         <div>
           <div style="font-size:1.1rem;font-weight:700">${escapeHtml(scCountNumber)}</div>
@@ -227,7 +227,7 @@ function renderSessionScreen(countId, items) {
           <strong id="sc-s-unknown" style="color:#d97706">${s.unknowns}</strong><span style="font-size:.78rem;color:var(--g500)">לא ידועים</span></div>
         <div class="sc-stat"><strong id="sc-s-pct">${s.pct}%</strong><span style="font-size:.78rem;color:var(--g500)">התקדמות</span></div>
       </div>
-      <div style="overflow-x:auto;border:1px solid var(--g200);border-radius:8px">
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--g200);border-radius:8px;max-width:100%">
         <table style="width:100%;border-collapse:collapse;font-size:.82rem">
           <thead><tr style="background:var(--primary);color:white;text-align:right">
             <th style="padding:8px">ברקוד</th><th style="padding:8px">מותג</th><th style="padding:8px">דגם</th>
