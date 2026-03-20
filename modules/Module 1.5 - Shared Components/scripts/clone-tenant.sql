@@ -258,7 +258,7 @@ INSERT INTO inventory (
 )
 SELECT
   im.new_id,
-  CASE WHEN i.barcode IS NOT NULL THEN 'D' || i.barcode ELSE NULL END,  -- ברקוד עם קידומת D למניעת התנגשות UNIQUE גלובלי
+  i.barcode,  -- ברקוד זהה — UNIQUE constraint כולל tenant_id אז אין התנגשות
   sm.new_id,  -- FK ספק ממופה
   bm.new_id,  -- FK מותג ממופה
   i.model, i.size, i.bridge, i.color, i.temple_length,
@@ -1108,7 +1108,7 @@ RAISE NOTICE '✅ שכפול הושלם בהצלחה!';
 RAISE NOTICE 'דייר חדש: אופטיקה דמו (slug: demo)';
 RAISE NOTICE 'עובד בדיקה: עובד בדיקה (PIN: 12345, role: ceo)';
 RAISE NOTICE 'ערכת צבעים: ירוק (#059669)';
-RAISE NOTICE 'ברקודים: קידומת D (למשל D0012345)';
+RAISE NOTICE 'ברקודים: זהים למקור (UNIQUE per tenant)';
 RAISE NOTICE '═══════════════════════════════════════════════════════════════';
 
 END;

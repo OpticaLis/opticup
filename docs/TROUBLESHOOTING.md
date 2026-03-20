@@ -83,15 +83,16 @@ ALTER TABLE stock_counts ADD CONSTRAINT stock_counts_count_number_tenant_key UNI
 
 **Root cause:** clone-tenant.sql prefixes all barcodes with "D" to avoid UNIQUE constraint violations (barcode was globally unique, not per-tenant).
 
-**Fix needed:** Make barcode UNIQUE per tenant, not globally:
+**Fix applied:**
 ```sql
--- TODO: Change barcode unique constraint to include tenant_id
-ALTER TABLE inventory DROP CONSTRAINT IF EXISTS inventory_barcode_key;
+DROP INDEX IF EXISTS idx_inventory_barcode_unique;
 ALTER TABLE inventory ADD CONSTRAINT inventory_barcode_tenant_key UNIQUE (barcode, tenant_id);
 ```
-Then update clone-tenant.sql to copy barcodes as-is without prefix.
+Updated clone-tenant.sql to copy barcodes as-is (no "D" prefix).
 
-**Status:** OPEN — fix pending.
+**Status:** RESOLVED
+
+**Commits:** 035_barcode_unique_per_tenant.sql migration (2026-03-20)
 
 ---
 

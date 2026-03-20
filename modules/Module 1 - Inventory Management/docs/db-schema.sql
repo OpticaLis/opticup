@@ -206,7 +206,7 @@ CREATE TABLE IF NOT EXISTS inventory (
 );
 
 -- אינדקסים
-CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_barcode_unique ON inventory (barcode) WHERE barcode IS NOT NULL;
+ALTER TABLE inventory ADD CONSTRAINT inventory_barcode_tenant_key UNIQUE (barcode, tenant_id);
 CREATE INDEX IF NOT EXISTS idx_inv_supplier        ON inventory (supplier_id);
 CREATE INDEX IF NOT EXISTS idx_inv_brand           ON inventory (brand_id);
 CREATE INDEX IF NOT EXISTS idx_inv_status          ON inventory (status);
