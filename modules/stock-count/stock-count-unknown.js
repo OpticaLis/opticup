@@ -132,19 +132,19 @@ async function saveUnknownToInventory(itemId, countId, hasBarcode) {
   if (!brandId) { toast('יש לבחור מותג', 'e'); return; }
   if (!model) { toast('יש להזין דגם', 'e'); return; }
 
-  const qty = parseInt(document.getElementById('sc-unk-qty')?.value) || 1;
-  const size = (document.getElementById('sc-unk-size')?.value || '').trim();
-  const color = (document.getElementById('sc-unk-color')?.value || '').trim();
-  const supplierId = document.getElementById('sc-unk-supplier')?.value || null;
-  const costPrice = parseFloat(document.getElementById('sc-unk-cost')?.value) || null;
-  const sellPrice = parseFloat(document.getElementById('sc-unk-sell')?.value) || null;
-
+  const formData = {
+    qty: parseInt(document.getElementById('sc-unk-qty')?.value) || 1,
+    size: (document.getElementById('sc-unk-size')?.value || '').trim(),
+    color: (document.getElementById('sc-unk-color')?.value || '').trim(),
+    supplierId: document.getElementById('sc-unk-supplier')?.value || null,
+    costPrice: parseFloat(document.getElementById('sc-unk-cost')?.value) || null,
+    sellPrice: parseFloat(document.getElementById('sc-unk-sell')?.value) || null,
+    brandId, model
+  };
   let barcode = (document.getElementById('sc-unk-barcode')?.value || '').trim();
 
   try {
-    showLoading('מוסיף פריט למלאי...');
-
-    // Generate barcode if item had none
+    showLoading('בודק ברקוד...');
     if (!hasBarcode || !barcode) {
       barcode = await generateNextBarcode();
     }
@@ -152,68 +152,130 @@ async function saveUnknownToInventory(itemId, countId, hasBarcode) {
     // Check if barcode already exists in this tenant's inventory
     const tenantId = getTenantId();
     const { data: existing } = await sb.from(T.INV)
-      .select('id,barcode')
+      .select('id,barcode,brand_id,model,size,color,brands(name)')
       .eq('tenant_id', tenantId)
       .eq('barcode', barcode)
       .eq('is_deleted', false)
       .maybeSingle();
+    hideLoading();
 
-    let invId;
     if (existing) {
-      // Barcode already exists — link to existing item instead of inserting
-      invId = existing.id;
-      writeLog('stock_count.link_unknown', invId, {
-        count_id: countId, barcode,
-        reason: 'פריט כבר קיים במלאי — קושר לפריט קיים'
-      });
+      // Show choice dialog — let user decide
+      _showBarcodeConflictDialog(existing, barcode, itemId, countId, formData);
     } else {
-      // Insert new inventory item
-      const insertObj = {
-        barcode,
-        brand_id: brandId,
-        model,
-        quantity: qty,
-        status: 'in_stock',
-        is_deleted: false,
-        tenant_id: tenantId
-      };
-      if (size) insertObj.size = size;
-      if (color) insertObj.color = color;
-      if (supplierId) insertObj.supplier_id = supplierId;
-      if (costPrice) insertObj.cost_price = costPrice;
-      if (sellPrice) insertObj.sell_price = sellPrice;
-
-      const { data: newRow, error: insErr } = await sb.from(T.INV)
-        .insert(insertObj).select().single();
-      if (insErr) throw insErr;
-      invId = newRow.id;
-
-      writeLog('stock_count.add_unknown', invId, {
-        count_id: countId, barcode, brand_id: brandId,
-        model, quantity: qty, reason: 'נמצא בספירת מלאי'
-      });
+      await _insertNewInventoryItem(barcode, itemId, countId, formData);
     }
+  } catch (err) {
+    hideLoading();
+    toast('שגיאה בהוספת פריט: ' + err.message, 'e');
+  }
+}
 
-    // Update stock_count_items: mark as matched with the inventory_id
-    const { error: updErr } = await sb.from(T.STOCK_COUNT_ITEMS).update({
-      status: 'matched',
-      inventory_id: invId
-    }).eq('id', itemId);
-    if (updErr) console.warn('Failed to update stock_count_item status:', updErr);
+// ── Barcode conflict dialog — ask user to link or create new ──
+function _showBarcodeConflictDialog(existing, barcode, itemId, countId, formData) {
+  const brandName = existing.brands?.name || '—';
+  const modal = Modal.show({
+    size: 'sm',
+    title: 'ברקוד כבר קיים במלאי',
+    content: `
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--primary);margin-bottom:8px">
+          ${escapeHtml(barcode)}</div>
+        <div style="background:var(--g100);border-radius:8px;padding:10px;font-size:.88rem;direction:rtl">
+          ${escapeHtml(brandName)} | ${escapeHtml(existing.model || '—')}
+          | גודל: ${escapeHtml(existing.size || '—')}
+          | צבע: ${escapeHtml(existing.color || '—')}
+        </div>
+        <p style="margin-top:12px;font-size:.85rem;color:var(--g600)">מה לעשות?</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button id="sc-conflict-link" class="btn btn-primary" style="width:100%;padding:10px">
+          &#128279; קשר לפריט הקיים</button>
+        <button id="sc-conflict-new" class="btn btn-secondary" style="width:100%;padding:10px">
+          &#10133; צור פריט חדש (ברקוד חדש)</button>
+      </div>`,
+    closeOnEscape: true,
+    closeOnBackdrop: true
+  });
 
-    // Close modal
-    const overlay = document.querySelector('.modal-overlay');
-    if (overlay) overlay.remove();
+  document.getElementById('sc-conflict-link').addEventListener('click', async function () {
+    modal.close();
+    await _linkToExistingItem(existing.id, barcode, itemId, countId);
+  });
+  document.getElementById('sc-conflict-new').addEventListener('click', async function () {
+    modal.close();
+    try {
+      showLoading('יוצר ברקוד חדש...');
+      const newBarcode = await generateNextBarcode();
+      await _insertNewInventoryItem(newBarcode, itemId, countId, formData);
+    } catch (err) {
+      hideLoading();
+      toast('שגיאה: ' + err.message, 'e');
+    }
+  });
+}
 
-    // Remove row from UI and update count
-    _removeUnknownRow(itemId);
-    const msg = existing
-      ? 'פריט כבר קיים במלאי — קושר בהצלחה. ברקוד: ' + barcode
-      : 'פריט נוסף למלאי בהצלחה — ברקוד: ' + barcode;
-    toast(msg, 's');
+// ── Link unknown item to an existing inventory item ───────────
+async function _linkToExistingItem(invId, barcode, itemId, countId) {
+  try {
+    showLoading('מקשר לפריט קיים...');
+    writeLog('stock_count.link_unknown', invId, {
+      count_id: countId, barcode,
+      reason: 'פריט כבר קיים במלאי — קושר לפריט קיים'
+    });
+    await _markItemMatched(itemId, invId);
+    _closeFormAndRemoveRow(itemId);
+    toast('קושר לפריט קיים בהצלחה — ברקוד: ' + barcode, 's');
+  } catch (err) {
+    toast('שגיאה בקישור: ' + err.message, 'e');
+  } finally { hideLoading(); }
+}
+
+// ── Insert a brand new inventory item ─────────────────────────
+async function _insertNewInventoryItem(barcode, itemId, countId, fd) {
+  try {
+    showLoading('מוסיף פריט למלאי...');
+    const tenantId = getTenantId();
+    const insertObj = {
+      barcode, brand_id: fd.brandId, model: fd.model,
+      quantity: fd.qty, status: 'in_stock',
+      is_deleted: false, tenant_id: tenantId
+    };
+    if (fd.size) insertObj.size = fd.size;
+    if (fd.color) insertObj.color = fd.color;
+    if (fd.supplierId) insertObj.supplier_id = fd.supplierId;
+    if (fd.costPrice) insertObj.cost_price = fd.costPrice;
+    if (fd.sellPrice) insertObj.sell_price = fd.sellPrice;
+
+    const { data: newRow, error: insErr } = await sb.from(T.INV)
+      .insert(insertObj).select().single();
+    if (insErr) throw insErr;
+
+    writeLog('stock_count.add_unknown', newRow.id, {
+      count_id: countId, barcode, brand_id: fd.brandId,
+      model: fd.model, quantity: fd.qty, reason: 'נמצא בספירת מלאי'
+    });
+    await _markItemMatched(itemId, newRow.id);
+    _closeFormAndRemoveRow(itemId);
+    toast('פריט נוסף למלאי בהצלחה — ברקוד: ' + barcode, 's');
   } catch (err) {
     toast('שגיאה בהוספת פריט: ' + err.message, 'e');
   } finally { hideLoading(); }
+}
+
+// ── Shared: mark stock_count_item as matched ──────────────────
+async function _markItemMatched(itemId, invId) {
+  const { error } = await sb.from(T.STOCK_COUNT_ITEMS).update({
+    status: 'matched', inventory_id: invId
+  }).eq('id', itemId);
+  if (error) console.warn('Failed to update stock_count_item status:', error);
+}
+
+// ── Shared: close form modal + remove unknown row ─────────────
+function _closeFormAndRemoveRow(itemId) {
+  const overlay = document.querySelector('.modal-overlay');
+  if (overlay) overlay.remove();
+  _removeUnknownRow(itemId);
 }
 
 // ── Remove unknown row from report UI ────────────────────────
