@@ -155,7 +155,7 @@ async function saveUnknownToInventory(itemId, countId, hasBarcode) {
       brand_id: brandId,
       model,
       quantity: qty,
-      status: 'active',
+      status: 'in_stock',
       is_deleted: false,
       tenant_id: getTenantId()
     };
