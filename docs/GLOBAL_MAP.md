@@ -275,6 +275,14 @@ Backward-compat redirect to `shared/js/pin-modal.js` via `document.write()`. Wil
 | `css/styles.css` | 392 | Main stylesheet: CSS variables, buttons, forms, tables, modals, toasts, cards, badges, alerts, stock count, admin, loading overlay, responsive breakpoints (768/640/600/480px) |
 | `css/header.css` | 349 | Sticky header: 60px height, z-index 1000, RTL 3-zone flex layout (tenant logo+name / "Optic Up" / employee+logout), alerts bell+badge+panel, mobile responsive |
 
+### Global Docs (docs/)
+
+| File | Description |
+|------|-------------|
+| `docs/GLOBAL_MAP.md` | Cross-module function registry, globals, DB table ownership |
+| `docs/GLOBAL_SCHEMA.sql` | Full DB schema across all modules |
+| `docs/TROUBLESHOOTING.md` | Troubleshooting knowledge base — resolved bugs with root cause, fix, and prevention |
+
 ---
 
 ## 4. Shared Components (shared/) — Phase 4 complete ✅

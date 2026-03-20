@@ -86,6 +86,7 @@ After reading, confirm:
 16. **Views for external access** — every phase must consider: "What does a supplier/customer/storefront need to see?" and plan Views accordingly.
 17. **No hardcoded values** — currencies, languages, payment types = configurable tables, not hardcoded enums. Build as if a second store joins tomorrow in a different country.
 18. **SaaS litmus test** — build every phase as if tomorrow a second optician chain joins that we've never met. If they can use the phase without any code changes — it was done right.
+19. **UNIQUE constraints must include tenant_id** — every UNIQUE constraint on any table must be scoped to the tenant. A global UNIQUE prevents multi-tenant data from coexisting. Example: `UNIQUE (barcode, tenant_id)` not `UNIQUE (barcode)`.
 
 ---
 
@@ -254,6 +255,16 @@ For complete globals list by file → see MODULE_MAP.md section 3.
 ## Known Issues
 
 Known issues are tracked in SESSION_CONTEXT.md — single home for all open issues.
+
+---
+
+## Troubleshooting Knowledge Base
+
+**File:** `docs/TROUBLESHOOTING.md`
+
+**Rule:** Before debugging any issue, check TROUBLESHOOTING.md first. If the issue or a similar pattern has been solved before, apply the documented fix.
+
+After resolving any non-trivial bug, add an entry to TROUBLESHOOTING.md with: symptom, root cause, fix, prevention, and commit reference.
 
 ---
 
