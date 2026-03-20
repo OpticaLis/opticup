@@ -149,41 +149,57 @@ async function saveUnknownToInventory(itemId, countId, hasBarcode) {
       barcode = await generateNextBarcode();
     }
 
-    // Insert into inventory
-    const insertObj = {
-      barcode,
-      brand_id: brandId,
-      model,
-      quantity: qty,
-      status: 'in_stock',
-      is_deleted: false,
-      tenant_id: getTenantId()
-    };
-    if (size) insertObj.size = size;
-    if (color) insertObj.color = color;
-    if (supplierId) insertObj.supplier_id = supplierId;
-    if (costPrice) insertObj.cost_price = costPrice;
-    if (sellPrice) insertObj.sell_price = sellPrice;
+    // Check if barcode already exists in this tenant's inventory
+    const tenantId = getTenantId();
+    const { data: existing } = await sb.from(T.INV)
+      .select('id,barcode')
+      .eq('tenant_id', tenantId)
+      .eq('barcode', barcode)
+      .eq('is_deleted', false)
+      .maybeSingle();
 
-    const { data: newRow, error: insErr } = await sb.from(T.INV).insert(insertObj).select().single();
-    if (insErr) throw insErr;
+    let invId;
+    if (existing) {
+      // Barcode already exists — link to existing item instead of inserting
+      invId = existing.id;
+      writeLog('stock_count.link_unknown', invId, {
+        count_id: countId, barcode,
+        reason: 'פריט כבר קיים במלאי — קושר לפריט קיים'
+      });
+    } else {
+      // Insert new inventory item
+      const insertObj = {
+        barcode,
+        brand_id: brandId,
+        model,
+        quantity: qty,
+        status: 'in_stock',
+        is_deleted: false,
+        tenant_id: tenantId
+      };
+      if (size) insertObj.size = size;
+      if (color) insertObj.color = color;
+      if (supplierId) insertObj.supplier_id = supplierId;
+      if (costPrice) insertObj.cost_price = costPrice;
+      if (sellPrice) insertObj.sell_price = sellPrice;
 
-    // Update stock_count_items: mark as matched with the new inventory_id
+      const { data: newRow, error: insErr } = await sb.from(T.INV)
+        .insert(insertObj).select().single();
+      if (insErr) throw insErr;
+      invId = newRow.id;
+
+      writeLog('stock_count.add_unknown', invId, {
+        count_id: countId, barcode, brand_id: brandId,
+        model, quantity: qty, reason: 'נמצא בספירת מלאי'
+      });
+    }
+
+    // Update stock_count_items: mark as matched with the inventory_id
     const { error: updErr } = await sb.from(T.STOCK_COUNT_ITEMS).update({
       status: 'matched',
-      inventory_id: newRow.id
+      inventory_id: invId
     }).eq('id', itemId);
     if (updErr) console.warn('Failed to update stock_count_item status:', updErr);
-
-    // Log the addition
-    writeLog('stock_count.add_unknown', newRow.id, {
-      count_id: countId,
-      barcode,
-      brand_id: brandId,
-      model,
-      quantity: qty,
-      reason: 'נמצא בספירת מלאי'
-    });
 
     // Close modal
     const overlay = document.querySelector('.modal-overlay');
@@ -191,7 +207,10 @@ async function saveUnknownToInventory(itemId, countId, hasBarcode) {
 
     // Remove row from UI and update count
     _removeUnknownRow(itemId);
-    toast('פריט נוסף למלאי בהצלחה — ברקוד: ' + barcode, 's');
+    const msg = existing
+      ? 'פריט כבר קיים במלאי — קושר בהצלחה. ברקוד: ' + barcode
+      : 'פריט נוסף למלאי בהצלחה — ברקוד: ' + barcode;
+    toast(msg, 's');
   } catch (err) {
     toast('שגיאה בהוספת פריט: ' + err.message, 'e');
   } finally { hideLoading(); }

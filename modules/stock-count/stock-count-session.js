@@ -82,21 +82,29 @@ async function confirmWorkerPin() {
 async function _createNewStockCount() {
   try {
     showLoading('יוצר ספירה חדשה...');
-    const countNumber = await generateCountNumber();
     const fc = (typeof _scFilterCriteria !== 'undefined') ? _scFilterCriteria : {};
     const hasFilters = fc.brands?.length || fc.product_types?.length || fc.supplier_id || fc.price_min || fc.price_max;
-    const insertObj = {
-      count_number: countNumber,
-      status: 'in_progress',
-      count_date: new Date().toISOString().slice(0, 10),
-      branch_id: branchCode || '00',
-      counted_by: activeWorker.name,
-      tenant_id: getTenantId()
-    };
-    if (hasFilters) insertObj.filter_criteria = fc;
 
-    const { data: count, error } = await sb.from(T.STOCK_COUNTS).insert(insertObj).select().single();
-    if (error) throw error;
+    // Retry up to 3 times in case of count_number collision (race condition)
+    let count = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const countNumber = await generateCountNumber();
+      const insertObj = {
+        count_number: countNumber,
+        status: 'in_progress',
+        count_date: new Date().toISOString().slice(0, 10),
+        branch_id: branchCode || '00',
+        counted_by: activeWorker.name,
+        tenant_id: getTenantId()
+      };
+      if (hasFilters) insertObj.filter_criteria = fc;
+
+      const { data, error } = await sb.from(T.STOCK_COUNTS).insert(insertObj).select().single();
+      if (!error) { count = data; break; }
+      if (error.code !== '23505') throw error; // not a duplicate — rethrow
+      console.warn('Count number collision, retrying...', countNumber);
+    }
+    if (!count) throw new Error('לא ניתן ליצור מספר ספירה ייחודי — נסה שוב');
 
     // Build inventory filters
     var invFilters = [['is_deleted', 'eq', false], ['quantity', 'gt', 0]];

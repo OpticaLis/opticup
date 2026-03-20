@@ -134,6 +134,7 @@ async function generateCountNumber() {
   const prefix = `SC-${year}-`;
   const { data } = await sb.from(T.STOCK_COUNTS)
     .select('count_number')
+    .eq('tenant_id', getTenantId())
     .like('count_number', `${prefix}%`)
     .order('count_number', { ascending: false })
     .limit(1);
