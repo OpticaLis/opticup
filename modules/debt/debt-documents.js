@@ -2,6 +2,7 @@
 let _docData = [], _docTypes = [], _docSuppliers = [];
 var _pendingNewDocFile = null;
 var _docPrepaidSet = {}; // Phase 8: supplier_id → deal object for active prepaid deals
+var _docSortField = 'created_at'; // default: sort by upload date (newest first)
 const DOC_STATUS_MAP = {
   open:            { he: '\u05E4\u05EA\u05D5\u05D7',        cls: 'dst-open' },
   partially_paid:  { he: '\u05E9\u05D5\u05DC\u05DD \u05D7\u05DC\u05E7\u05D9\u05EA',  cls: 'dst-partial' },
@@ -37,6 +38,17 @@ async function loadDocumentsTab() {
 }
 
 // renderDocFilterBar() and applyDocFilters() are in debt-doc-filters.js
+
+function setDocSort(field) {
+  _docSortField = field;
+  var btns = document.querySelectorAll('.doc-sort-btn');
+  btns.forEach(function(b) {
+    var active = b.getAttribute('data-sort') === field;
+    b.style.background = active ? '#1a73e8' : '#e5e7eb';
+    b.style.color = active ? '#fff' : '#1e293b';
+  });
+  if (typeof applyDocFilters === 'function') applyDocFilters();
+}
 
 function renderDocumentsTable(docs) {
   var wrap = $('doc-table-wrap');

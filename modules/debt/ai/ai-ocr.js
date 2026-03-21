@@ -260,14 +260,7 @@ async function _ocrSave(mode) {
   showLoading('שומר מסמך...');
   try {
     var emp = getCurrentEmployee();
-    // Update ocr_extractions record
-    if (_ocrExtractionId) {
-      await batchUpdate(T.OCR_EXTRACTIONS, [{
-        id: _ocrExtractionId, status: status,
-        corrections: hasCorr ? corrections : null, processed_by: emp ? emp.id : null
-      }]);
-    }
-    // Create supplier_document
+    // Create supplier_document first (this is the critical operation)
     var intNum = await generateDocInternalNumber();
     var created = await batchCreate(T.SUP_DOCS, [{
       supplier_id: supplierId, document_type_id: typeId, internal_number: intNum,
@@ -276,9 +269,14 @@ async function _ocrSave(mode) {
       total_amount: totalAmt, currency: currency, status: 'open',
       created_by: emp ? emp.id : null, notes: 'נוצר באמצעות סריקת AI'
     }]);
-    // Link extraction to created document
-    if (created && created[0] && _ocrExtractionId) {
-      await batchUpdate(T.OCR_EXTRACTIONS, [{ id: _ocrExtractionId, supplier_document_id: created[0].id }]);
+    // Update ocr_extractions record + link to document (non-blocking — RLS may block)
+    if (_ocrExtractionId) {
+      try {
+        var extUpdate = { id: _ocrExtractionId, status: status,
+          corrections: hasCorr ? corrections : null, processed_by: emp ? emp.id : null };
+        if (created && created[0]) extUpdate.supplier_document_id = created[0].id;
+        await batchUpdate(T.OCR_EXTRACTIONS, [extUpdate]);
+      } catch (e) { console.warn('OCR extraction update skipped (RLS):', e.message); }
     }
     await writeLog('doc_create', null, {
       reason: 'מסמך מסריקת AI — ' + docNumber, source_ref: intNum, ocr_extraction_id: _ocrExtractionId

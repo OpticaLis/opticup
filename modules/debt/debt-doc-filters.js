@@ -51,6 +51,11 @@ function renderDocFilterBar() {
       '<button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" id="doc-filter-toggle" onclick="_toggleDocFilters()">' +
         '\uD83D\uDD0D \u05E1\u05D9\u05E0\u05D5\u05DF [' + (collapsed ? '\u25BC' : '\u25B2') + ']</button>' +
       '<span id="doc-filter-count" style="font-size:.82rem;color:var(--g500)"></span>' +
+      '<span style="font-size:.78rem;color:var(--g500);margin-right:4px">\u05DE\u05D9\u05D9\u05DF:</span>' +
+      '<button class="btn-sm doc-sort-btn" data-sort="created_at" onclick="setDocSort(\'created_at\')" ' +
+        'style="background:#1a73e8;color:#fff;font-size:.75rem;padding:2px 8px;border:none;border-radius:3px;cursor:pointer">\u05D4\u05E2\u05DC\u05D0\u05D4</button>' +
+      '<button class="btn-sm doc-sort-btn" data-sort="document_date" onclick="setDocSort(\'document_date\')" ' +
+        'style="background:#e5e7eb;color:#1e293b;font-size:.75rem;padding:2px 8px;border:none;border-radius:3px;cursor:pointer">\u05EA\u05D0\u05E8\u05D9\u05DA</button>' +
       '<button class="btn doc-add-btn" style="background:#059669;color:#fff;margin-right:auto" onclick="openNewDocumentModal()">+ \u05DE\u05E1\u05DE\u05DA \u05D7\u05D3\u05E9</button>' +
     '</div>' +
     '<div id="doc-filter-panel" style="display:' + (collapsed ? 'none' : 'grid') + ';grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px;' +
@@ -165,7 +170,8 @@ function applyDocFilters() {
     if (f.is_historical === 'current' && d.is_historical === true) return false;
     return true;
   });
-  filtered.sort(function(a, b) { return (b.document_date || '').localeCompare(a.document_date || ''); });
+  var sf = (typeof _docSortField !== 'undefined') ? _docSortField : 'document_date';
+  filtered.sort(function(a, b) { return (b[sf] || '').localeCompare(a[sf] || ''); });
   _updateFilterCount(filtered.length, _docTotalCount);
   renderDocumentsTable(filtered);
 }
