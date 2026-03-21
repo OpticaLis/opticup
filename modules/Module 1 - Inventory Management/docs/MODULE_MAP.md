@@ -67,7 +67,8 @@
 | 46 | debt-payments.js | modules/debt/debt-payments.js | 229 | Payments tab: loadPaymentsTab (fetch payments+methods+suppliers+allocations+documents), renderPaymentsToolbar (filters + add button), applyPayFilters (client-side), renderPaymentsTable (with כנגד doc numbers), viewPayment (detail modal with allocation table) |
 | 47 | debt-payment-wizard.js | modules/debt/debt-payment-wizard.js | 146 | Payment wizard steps 1-2: openNewPaymentWizard (state reset + modal), supplier selection with debt summary + withholding tax rate lookup, payment details form with auto-calc withholding tax |
 | 48 | debt-payment-alloc.js | modules/debt/debt-payment-alloc.js | ~275 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status, rollback on failure) |
-| 49 | debt-prepaid.js | modules/debt/debt-prepaid.js | 428 | Prepaid deals tab: loadPrepaidTab (fetch deals+checks+suppliers), renderPrepaidToolbar (filters + add button), applyPrepaidFilters (client-side), renderPrepaidTable (progress bar, status badges), openNewDealModal (PIN-verified), openAddCheckModal, viewDealDetail (progress bar + checks table), updateCheckStatus |
+| 49 | debt-prepaid.js | modules/debt/debt-prepaid.js | 255 | Prepaid deals tab: loadPrepaidTab (fetch deals+checks+suppliers), renderPrepaidToolbar (filters + add button), applyPrepaidFilters (client-side), renderPrepaidTable (progress bar, status badges), openNewDealModal (PIN-verified), _dealAutoName, saveNewDeal |
+| 49b | debt-prepaid-detail.js | modules/debt/debt-prepaid-detail.js | 179 | Prepaid deal detail + check management: openAddCheckModal, saveNewCheck, viewDealDetail (progress bar + checks table), updateCheckStatus |
 | 50 | debt-supplier-detail.js | modules/debt/debt-supplier-detail.js | ~328 | Supplier detail view: openSupplierDetail (slide-in panel with summary + 4 sub-tabs), closeSupplierDetail, loadSupplierTimeline (merged docs+payments sorted by date), loadSupplierDocuments (filtered table), loadSupplierPayments (filtered table), loadSupplierReturns (delegates to debt-returns.js) |
 | 51 | debt-returns.js | modules/debt/debt-returns.js | 292 | Supplier returns tab (per-supplier): loadReturnsForSupplier (fetch+render), renderReturnsTable, viewReturnDetail (modal with items), promptReturnStatusUpdate (PIN-verified), updateReturnStatus (with timestamp fields), generateReturnNumber (RET-{supplier_number}-{seq}). RETURN_TRANSITIONS expanded for full status chain + agent_picked |
 | 52 | inventory-return.js | modules/inventory/inventory-return.js | ~218 | Supplier return initiation from inventory: openSupplierReturnModal (validates selection, same-supplier check, items preview), _doConfirmSupplierReturn (PIN-verified, creates return+items, decrements inventory, writeLog) |
@@ -145,7 +146,7 @@
 
 **Note (Phase 4g):** debt-supplier-detail.js added. debt-dashboard.js extended with loadSuppliersTab + renderSuppliersTable + openPaymentForSupplier. suppliers-debt.html restructured with debt-main-content wrapper + supplier-detail-panel div.
 
-**Note (Phase 4f):** debt-prepaid.js added. T.PREPAID_DEALS + T.PREPAID_CHECKS added to shared.js. Auto-deduction logic added to receipt-debt.js. Tab switching wired in suppliers-debt.html.
+**Note (Phase 4f):** debt-prepaid.js added (later split into debt-prepaid.js + debt-prepaid-detail.js). T.PREPAID_DEALS + T.PREPAID_CHECKS added to shared.js. Auto-deduction logic added to receipt-debt.js. Tab switching wired in suppliers-debt.html.
 
 **Note (Phase 4e):** debt-payments.js + debt-payment-wizard.js + debt-payment-alloc.js added. T.PAY_ALLOC + T.PAY_METHODS added to shared.js. Tab switching wired in suppliers-debt.html.
 
@@ -864,6 +865,11 @@
 | `openNewDealModal` | `()` | Modal: supplier, name, dates, amount, threshold, PIN |
 | `_dealAutoName` | `()` | Auto-generates deal name from supplier + year |
 | `saveNewDeal` | `()` | PIN verify → batchCreate prepaid_deals → writeLog → refresh |
+
+### modules/debt/debt-prepaid-detail.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
 | `openAddCheckModal` | `(dealId)` | Modal: check number, amount, date, notes |
 | `saveNewCheck` | `(dealId)` | batchCreate prepaid_checks → writeLog → refresh |
 | `viewDealDetail` | `(dealId)` | Detail modal: deal summary, progress bar, checks table with status actions |
@@ -1709,8 +1715,13 @@ debt-payment-alloc.js
 
 debt-prepaid.js
   → reads: T.PREPAID_DEALS, T.PREPAID_CHECKS, T.SUPPLIERS [shared.js]
-  → calls: fetchAll() [supabase-ops.js], batchCreate() [supabase-ops.js], batchUpdate() [supabase-ops.js]
+  → calls: fetchAll() [supabase-ops.js], batchCreate() [supabase-ops.js]
   → calls: writeLog() [supabase-ops.js], verifyPinOnly() [auth-service.js]
+
+debt-prepaid-detail.js
+  → reads: _prepaidDeals, _prepaidChecks, _prepaidSuppliers, DEAL_STATUS_MAP, CHECK_STATUS_MAP [debt-prepaid.js]
+  → calls: batchCreate() [supabase-ops.js], batchUpdate() [supabase-ops.js]
+  → calls: writeLog() [supabase-ops.js], loadPrepaidTab() [debt-prepaid.js]
   → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), setAlert(), formatILS() [shared.js]
   → calls: closeAndRemoveModal() [debt-documents.js]
   → provides: loadPrepaidTab(), openNewDealModal(), openAddCheckModal(), viewDealDetail(), updateCheckStatus()
