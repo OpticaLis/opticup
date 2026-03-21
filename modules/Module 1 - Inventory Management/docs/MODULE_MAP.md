@@ -9,7 +9,8 @@
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
 | 1 | shared.js | js/shared.js | 346 | Supabase client init, table constants (T), FIELD_MAP/ENUM_MAP, Hebrew↔English translation, UI helpers ($, toast, setAlert, confirmDialog, showLoading), tab navigation (showTab, showEntryMode), escapeHtml, showInfoModal, renderHelpBanner (collapsible help component), global variable declarations |
-| 2 | supabase-ops.js | js/supabase-ops.js | 348 | Database abstraction layer: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (individual updates, RLS-safe), writeLog, generateNextBarcode, OCR learning helpers (updateOCRTemplate, buildHintsFromCorrections), alert engine (createAlert, alertPriceAnomaly) |
+| 2 | supabase-ops.js | js/supabase-ops.js | 201 | Core DB abstraction: loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (individual updates, RLS-safe), generateNextBarcode, writeLog, batchWriteLog |
+| 2b | supabase-alerts-ocr.js | js/supabase-alerts-ocr.js | 181 | Alert creation + OCR template learning: createAlert, alertPriceAnomaly, alertPrepaidNewDocument, updateOCRTemplate, buildHintsFromCorrections, _detectDateFormat, validateOCRData |
 | 3 | data-loading.js | js/data-loading.js | 167 | App initialization: loadData, loadMaxBarcode, populateDropdowns, low stock alerts (loadLowStockAlerts, refreshLowStockBanner, openLowStockModal), helper functions (activeBrands, supplierOpts, getBrandType, getBrandSync) |
 | 4 | search-select.js | js/search-select.js | 136 | Reusable searchable dropdown component: createSearchSelect, closeAllDropdowns, repositionDropdown, MutationObserver cleanup |
 | 5 | inventory-table.js | modules/inventory/inventory-table.js | 291 | Main inventory table: server-side paginated loading, filtering (search/supplier/type/qty), sorting, rendering with inline edit cells, event delegation for row actions |
@@ -214,15 +215,21 @@
 | `fetchAll` | `(tableName, filters?)` | Async. Paginated query (1000/page). Auto-joins inventory_images for inventory table. Supports eq/in/ilike/neq/gt/gte/lt filters. Returns enriched rows |
 | `batchCreate` | `(tableName, records)` | Async. Inserts in batches of 100. Detects duplicate barcodes (within batch + existing DB). Returns enriched rows |
 | `batchUpdate` | `(tableName, records)` | Async. Individual .update().eq('id') per record (RLS-safe). Adds tenant_id. Handles duplicate barcode constraint errors. Returns enriched rows |
-| `writeLog` | `(action, inventoryId?, details?)` | Async. Inserts into inventory_logs. Reads prizma_user and prizma_branch from sessionStorage. Supports 20+ detail fields |
 | `generateNextBarcode` | `()` | Async. Shared helper — calls loadMaxBarcode(), increments maxBarcode, returns BBDDDDD barcode string. Used by receipt-form and receipt-confirm |
+| `writeLog` | `(action, inventoryId?, details?)` | Async. Inserts into inventory_logs. Reads prizma_user and prizma_branch from sessionStorage. Supports 20+ detail fields |
+| `batchWriteLog` | `(entries)` | Async. Bulk insert array of log entries into inventory_logs. Single DB call for batch operations. Each entry: {action, inventory_id, details}. Adds employee/branch from sessionStorage (Phase 5.5a-2) |
+
+### js/supabase-alerts-ocr.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
 | `_detectDateFormat` | `(dateStr)` | Detects date format from string (YYYY-MM-DD, DD/MM/YYYY, DD.MM.YYYY). Returns format string or null |
 | `buildHintsFromCorrections` | `(corrections, extractedData, existingHints)` | Builds extraction_hints JSONB from OCR corrections and extracted data. Merges with existing hints. Detects date format, supplier name pattern, document number examples |
-| `updateOCRTemplate` | `(supplierId, docTypeCode, corrections, extractedData, templateName?)` | Async. Finds or creates supplier_ocr_templates record. Increments times_used, times_corrected if corrections exist. Recalculates accuracy_rate. Merges extraction_hints via buildHintsFromCorrections. Shared between ai-ocr.js and receipt-ocr.js |
-| `createAlert` | `(alertType, severity, title, entityType, entityId, data?, expiresAt?)` | Async. Creates alert in DB. Checks ai_agent_config flags (alerts_enabled + per-type flags). Calls refreshAlertsBadge. Returns created alert or null. Shared across all pages |
-| `alertPriceAnomaly` | `(item, poPrice, receiptPrice, supplierId, docId)` | Async. Creates price_anomaly alert via createAlert. Called from receipt-confirm.js checkPoPriceDiscrepancies |
-| `batchWriteLog` | `(entries)` | Async. Bulk insert array of log entries into inventory_logs. Single DB call for batch operations. Each entry: {action, inventory_id, details}. Adds employee/branch from sessionStorage (Phase 5.5a-2) |
-| `validateOCRData` | `(extractedData, supplierId?)` | Validates OCR-extracted data against 7 business rules: required fields, positive amount, valid date, VAT consistency, supplier match, duplicate check, item validation. Returns {valid, errors[]} (Phase 5.5d) |
+| `updateOCRTemplate` | `(supplierId, docTypeCode, corrections, extractedData, tenantId?)` | Async. Calls update_ocr_template_stats RPC. Shared between ai-ocr.js and receipt-ocr.js |
+| `createAlert` | `(alertType, severity, title, entityType, entityId, data?, expiresAt?)` | Async. Creates alert in DB. Checks ai_agent_config flags (alerts_enabled + per-type flags). Skips historical documents. Calls refreshAlertsBadge. Returns created alert or null |
+| `alertPriceAnomaly` | `(item, poPrice, receiptPrice, supplierId, docId)` | Async. Creates price_anomaly alert via createAlert |
+| `alertPrepaidNewDocument` | `(supplierId, documentId, tenantId, supplierName, docNumber)` | Async. Creates prepaid_new_document alert. Called from receipt-debt.js |
+| `validateOCRData` | `(data)` | Validates OCR-extracted data against 7 business rules: amount math, future date, due before issue, negative amount, unusual VAT, missing supplier, suspicious total. Returns array of {field, level, msg} |
 
 ### js/data-loading.js
 
@@ -1507,6 +1514,11 @@ stock-count-report.js
 supabase-ops.js
   → reads/writes: sb, T, supplierCache, supplierCacheRev, supplierNumCache, brandCache, brandCacheRev [shared.js]
   → calls: toast() [shared.js]
+
+supabase-alerts-ocr.js
+  → reads: sb, T, getTenantId() [shared.js]
+  → calls: refreshAlertsBadge() [alerts-badge.js] (typeof check)
+  → provides: createAlert(), alertPriceAnomaly(), alertPrepaidNewDocument(), updateOCRTemplate(), buildHintsFromCorrections(), validateOCRData()
 
 data-loading.js
   → calls: loadLookupCaches() [supabase-ops.js]
