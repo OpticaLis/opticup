@@ -26,9 +26,12 @@ function scReportCheckDiffsOnly() {
 
 // ── Collect checkbox + reason state from DOM ─────────────────
 function _scCollectApprovalState(allItems) {
-  const approvedIds = new Set();
+  // Collect checked checkbox IDs (only diff items have checkboxes)
+  const checkedIds = new Set();
+  const uncheckedIds = new Set();
   document.querySelectorAll('.sc-approve-cb').forEach(cb => {
-    if (cb.checked) approvedIds.add(cb.dataset.itemId);
+    if (cb.checked) checkedIds.add(cb.dataset.itemId);
+    else uncheckedIds.add(cb.dataset.itemId);
   });
   const reasons = {};
   document.querySelectorAll('.sc-reason-input').forEach(inp => {
@@ -36,7 +39,8 @@ function _scCollectApprovalState(allItems) {
     if (val) reasons[inp.dataset.itemId] = val;
   });
   const countedItems = allItems.filter(i => i.status === 'counted' && i.inventory_id);
-  const approved = countedItems.filter(i => approvedIds.has(i.id));
-  const skipped = countedItems.filter(i => !approvedIds.has(i.id));
+  // Perfect-match items (no diff) have no checkbox — auto-approve them
+  const approved = countedItems.filter(i => checkedIds.has(i.id) || !uncheckedIds.has(i.id));
+  const skipped = countedItems.filter(i => uncheckedIds.has(i.id));
   return { approved, skipped, reasons };
 }

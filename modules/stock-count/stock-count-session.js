@@ -122,7 +122,7 @@ async function _createNewStockCount() {
       expected_qty: inv.quantity || 0, status: 'pending'
     }));
     if (items.length) await batchCreate(T.STOCK_COUNT_ITEMS, items);
-    toast('ספירה ' + countNumber + ' נוצרה — ' + items.length + ' פריטים', 's');
+    toast('ספירה ' + count.count_number + ' נוצרה — ' + items.length + ' פריטים', 's');
     openCountSession(count.id);
   } catch (err) {
     toast('שגיאה ביצירת ספירה: ' + err.message, 'e');
@@ -179,7 +179,7 @@ function scRenderItemRow(it) {
   const st = it.status === 'counted' ? 'נספר' : 'ממתין';
   const bc = escapeHtml(it.barcode || '');
   const undo = it.status === 'counted'
-    ? `<button class="btn btn-sm" onclick="event.stopPropagation();undoCountItem('${escapeHtml(it.id)}')" style="font-size:.72rem;padding:2px 6px;color:var(--g500)" title="ביטול ספירה">&#8617;&#65039;</button>`
+    ? `<button class="btn btn-s" onclick="event.stopPropagation();undoCountItem('${escapeHtml(it.id)}');return false;" style="font-size:.82rem;padding:4px 10px;min-height:32px;min-width:32px" title="ביטול ספירה">&#8617;&#65039;</button>`
     : '';
   return `<tr class="${cls}" data-barcode="${bc}"
     style="cursor:pointer" onclick="scRowClick('${bc}')"
