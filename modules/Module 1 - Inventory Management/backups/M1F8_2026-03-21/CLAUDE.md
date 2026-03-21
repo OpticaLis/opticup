@@ -116,7 +116,7 @@ opticup/
 ├── modules/
 │   ├── inventory/              — 10 files (table, entry, edit, export, reduction, excel-import, access-sales, inventory-return, inventory-returns-tab, inventory-returns-actions)
 │   ├── purchasing/             — 5 files (purchase-orders, po-form, po-items, po-actions, po-view-import)
-│   ├── goods-receipts/         — 10 files (goods-receipt, receipt-form, receipt-actions, receipt-confirm, receipt-debt, receipt-excel, receipt-ocr, receipt-ocr-review, receipt-po-compare)
+│   ├── goods-receipts/         — 7 files (goods-receipt, receipt-form, receipt-actions, receipt-confirm, receipt-debt, receipt-excel, receipt-ocr)
 │   ├── audit/                  — 3 files (audit-log, item-history, qty-modal)
 │   ├── brands/                 — 2 files (brands, suppliers)
 │   ├── access-sync/            — 4 files (access-sync, sync-details, pending-panel, pending-resolve)
@@ -126,7 +126,7 @@ opticup/
 │   ├── permissions/            — 1 file (employee-list)
 │   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
 │   ├── settings/               — 1 file (settings-page)
-│   └── stock-count/            — 9 files (list, session, camera, scan, filters, unknown, approve, view, report)
+│   └── stock-count/            — 4 files (stock-count-list, stock-count-session, stock-count-report, stock-count-filters)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
 │   ├── sync-export.js          — Reverse sync: export new inventory to XLS for Access

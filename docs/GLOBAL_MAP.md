@@ -79,7 +79,7 @@ Supabase init, constants, caches, UI helpers, navigation. **Loads FIRST on every
 
 ---
 
-### js/supabase-ops.js (348 lines)
+### js/supabase-ops.js (380 lines)
 
 DB operations: CRUD helpers, barcode generation, logging, OCR learning, alerts, validation.
 
@@ -97,6 +97,7 @@ DB operations: CRUD helpers, barcode generation, logging, OCR learning, alerts, 
 | `batchWriteLog` | `entries: object[]` | `Promise<void>` | Bulk insert log entries in single DB call |
 | `createAlert` | `alertType: string, severity: string, title: string, entityType?: string, entityId?: string, data?: object, expiresAt?: string` | `Promise<object\|null>` | Create system alert (checks ai_agent_config flags, skips historical docs) |
 | `alertPriceAnomaly` | `item: string, poPrice: number, receiptPrice: number, supplierId: string, docId: string` | `Promise<object\|null>` | Create price_anomaly alert |
+| `alertPrepaidNewDocument` | `supplierId: string, documentId: string, tenantId: string, supplierName: string, docNumber: string` | `Promise<void>` | Create prepaid_new_document info alert when receipt creates doc for supplier with active prepaid deal |
 | `validateOCRData` | `data: object` | `object[]` | Validate OCR-extracted data against 7 business rules |
 | `_detectDateFormat` | `dateStr: string` | `string\|null` | Detect date format pattern from string |
 | `buildHintsFromCorrections` | `corrections: object, extractedData: object, existingHints: object` | `object` | Build OCR extraction hints from user corrections |

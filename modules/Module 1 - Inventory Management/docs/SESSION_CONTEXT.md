@@ -1,130 +1,82 @@
 # Session Context
 
 ## Last Updated
-Phase 7 Complete (including hotfix cycle) — 2026-03-21
+Phase 8 Complete — 2026-03-21
 
 ## What Was Done This Session
 
-### Phase 7 — Stock Count Improvements (2026-03-19)
+### Phase 8 — OCR in Goods Receipt + Purchase Flow Improvements (2026-03-21)
 
-5 steps completed to upgrade stock count for weekly production use:
+**Step 1 — Per-field Confidence + PO Auto-suggestion:**
+- `22d2d41` — _rcptOcrFC, _rcptOcrAddConfDot (green/yellow/red dots on auto-filled fields), _rcptOcrSuggestPO (query open POs, auto-select if OCR finds PO number)
 
-**Step 0 — File Split:**
-- stock-count-session.js (871 lines) split into 3 files:
-  - stock-count-session.js (306 lines) — state, PIN, render, filters
-  - stock-count-camera.js (376 lines) — camera overlay, ZXing, zoom, unknown form
-  - stock-count-scan.js (201 lines) — barcode normalization, scan handling, qty modal, undo, pause/finish
-- Zero logic changes, pure structural split
+**Step 2a — Item Matching Review UI:**
+- `74095e1` — New file: receipt-ocr-review.js (295 lines). _rcptOcrParseDescription (brand alias map + regex extraction), _rcptOcrMatchItem (inventory search by brand+model), _rcptOcrClassifyItems, _rcptOcrShowReview (Modal with matched/new/unknown rows), _rcptOcrApplyToForm
 
-**Step 1 — Atomic Delta RPC:**
-- New RPC: apply_stock_count_delta with FOR UPDATE row lock
-- Replaces set_inventory_qty in confirmCount()
-- Returns previous_qty, counted_qty, delta, new_qty for logging
-- Diff report shows "expected at start" + "current at approval" columns
-- Warning banner when quantities changed during count
-- Migration: 033_apply_stock_count_delta.sql
+**Step 2b — Connect to Review UI:**
+- `b45b3c7` — Items now go through review UI instead of direct insert. Deleted _rcptOcrMatchInventory, _rcptOcrHighlightRow (receipt-ocr.js 341→286 lines)
 
-**Step 2 — Unknown Items → Inventory:**
-- New file: stock-count-unknown.js (222 lines)
-- Modal to edit unknown items: brand dropdown, model, barcode (readonly or auto-gen), prices, supplier, size, color
-- Two barcode paths: scanned (readonly) or auto-generate (BBDDDDD)
-- Saves to inventory, updates stock_count_items to matched
-- writeLog with reason "נמצא בספירת מלאי"
+**Step 3a — Prepaid Alert:**
+- `4238395` — Replaced auto-deduction in receipt-debt.js with alertPrepaidNewDocument
+- `c57e49a` — Moved alertPrepaidNewDocument to supabase-ops.js (available on all pages)
 
-**Step 3 — Reason + Partial Approval:**
-- New column: reason TEXT on stock_count_items
-- CHECK constraint updated: added 'skipped' status
-- Per-row checkbox (default checked) + reason input for discrepancies
-- Bulk toolbar: סמן הכל / בטל סימון / סמן רק פערים
-- New file: stock-count-approve.js (42 lines) — bulk selection helpers
-- Skipped items get status='skipped', no inventory change
-- Migration: 034_stock_count_reason_and_skipped.sql
+**Step 3b — Prepaid Deduction UI:**
+- `e772efb` — Badge "מקדמה" on supplier documents, "קזז מעסקה" button with PIN-verified deduction modal, auto-dismiss alerts
 
-**Step 4 — View Completed Counts:**
-- New file: stock-count-view.js (221 lines)
-- Read-only panel with count header, employee name, date
-- Status filter buttons: הכל / התאמות / חוסרים / עודפים / נדלגו
-- 9-column table with reason + status
-- Summary footer with totals
-- Excel export (12 columns)
-- Replaced toast("בקרוב") with real view
+**Step 4a — Migration 036:**
+- `de4a430` — price_decision TEXT + po_match_status TEXT on goods_receipt_items + FIELD_MAP
 
-**Commits:**
-- `86336c7` — Step 0: split session.js into session + camera
-- `7bea7de` — Step 0c: split scan.js from session
-- `588b349` — Step 1: atomic delta RPC
-- `a441555` — Step 2: unknown items modal (cherry-picked)
-- `aef7671` — Step 3: reason + partial approval
-- `5423c48` — Step 4: view completed counts
-- `fc685b7` — Phase 7 documentation, backup, ROADMAP
+**Step 4b — PO Comparison Report:**
+- `d6da7f8` — New file: receipt-po-compare.js (212 lines). Pre-confirm report: matched/shortage/priceGap/notInPo/missing. Per-item price decisions + auto-return for rejected items. Deleted checkPoPriceDiscrepancies
 
-### Phase 7 — Hotfix Cycle (2026-03-19 to 2026-03-21)
+**Step 5 — Learning Integration:**
+- `b92c876` — _rcptOcrBuildItemCorrections, _rcptOcrSaveItemLearning (item aliases in OCR templates), _poCompLearnPricePattern (VAT-inclusive detection)
 
-Extensive hotfix cycle covering camera scanning, CSS layout, DB constraints, stock count flow, unknown item handling, and documentation.
+**Step 6a — Migration 037:**
+- `f44b439` — opening_balance, opening_balance_date, opening_balance_notes, opening_balance_set_by on suppliers
 
-**Camera & Scanning:**
-- `666e1fd` — Camera fullscreen gap fix, barcode scan improvements, error toast debounce (3s cooldown)
+**Step 6b — Opening Balance UI:**
+- `7d409fd` — openSetOpeningBalance modal with PIN, dashboard calculation respects cutoff date, "יתרת פתיחה" column in suppliers table
 
-**CSS & Layout:**
-- `4a74fec` — Stock count mobile layout: right gap fix on Safari
-- `5a226eb` — Right margin gap on all pages: overflow-x:hidden on all CSS files
-- `107a711` — Persistent right margin gap: html overflow-x:hidden + remove all 100vw
+**QA-1 — Code Review:**
+- `7402765` — 2 critical fixes (inventory query limit, barcode-less item matching), 4 warning fixes (negative qty clamp, returned items total, deduction max validation, summary card opening balance)
 
-**Database Constraints:**
-- `03f2209` — Barcode UNIQUE per tenant (inventory_barcode_tenant_key), remove D prefix from clone-tenant.sql
-- `70f4d7a` — stock_counts count_number UNIQUE per tenant + collision retry in generateCountNumber
-- `d337763` — clone-tenant.sql ON CONFLICT composite PK fixes
-- `af5e87e` — clone-tenant.sql employee_roles PK fix (employee_id, role_id without tenant_id)
-
-**Stock Count Flow:**
-- `8e35120` — confirmCount all-items-skipped fix, countNumber scoping, undo button CSS
-- `1c0e1cd` — PIN modal centered overlay (not scroll-to-top), undo button fix, unknown items warning before approval
-- `a16d2c1` — Unknown item duplicate barcode handling, scroll-to-top before PIN, completed view shows unknowns
-- `b818379` — Uncounted items dialog: mark pending items as shortages (כמות 0) or leave uncounted
-- `3f17b77` — total_items includes matched unknowns in count list
-
-**Unknown Items:**
-- `770fbca` — Unknown item insert uses status `in_stock` instead of `active`
-- `c6e5fec` — Barcode conflict dialog: ask user to link existing or create new item
-- `da7cce6` — loadMaxBarcode silent failure fix + collision retry for generateNextBarcode
-- `6a7c143` — loadMaxBarcode uses server-side max (Supabase `.order().limit(1)`) instead of fetching all rows
-
-**Documentation & Rules:**
-- `1c0b517` — TROUBLESHOOTING.md knowledge base created + SaaS rule 19 (UNIQUE + tenant_id) in CLAUDE.md
-- `5030905` — TROUBLESHOOTING.md: stale session after tenant re-clone
-- `1894028` — TROUBLESHOOTING.md: barcode collision bug
-- `66c1ddd` — CLAUDE.md: no-worktree rule (rule 8 in Working Rules)
-- `fc685b7` — CLAUDE.md: multi-machine development rule
+**VAT Fix:**
+- `4026f4c` — Replace hardcoded 0.17 VAT rate with tenant config in price pattern learning
 
 ## Current State
 - **6 HTML pages**: index.html, inventory.html, suppliers-debt.html, employees.html, shipments.html, settings.html
 - **2 Edge Functions**: pin-auth, ocr-extract
-- **102 JS files** (~23,135 lines) across 14 module folders + 9 global files (js/) + 9 shared/js files (Module 1.5)
-- **Stock-count module**: 9 files (list 149, session 314, camera 350, scan 265, filters 245, unknown 374, approve 46, view 228, report 297) — 2,268 lines total
-- **46 DB tables** + 8 RPC functions (including apply_stock_count_delta)
+- **~106 JS files** across 14 module folders + 9 global files (js/) + 9 shared/js files (Module 1.5)
+- **goods-receipts module**: 10 files (goods-receipt, receipt-form, receipt-actions, receipt-confirm, receipt-debt, receipt-excel, receipt-ocr, receipt-ocr-review, receipt-po-compare)
+- **48 DB tables** + 8 RPC functions
+- **2 new migrations**: 036 (receipt item PO fields), 037 (supplier opening balance)
 - **55 permissions** across 15 modules, 5 roles
-- **41 migration files**
-- JWT-based RLS tenant isolation on all 46 tables
+- **43 migration files**
+- JWT-based RLS tenant isolation on all tables
 - Supabase Storage: 3 buckets (failed-sync-files, supplier-docs, tenant-logos)
 
 ## Open Issues
 - JWT secret exposed in dev chat — must rotate before production
 - Staging environment needed before second tenant onboards
-- Views for external access (supplier portal, storefront) are planned but not created yet
+- supabase-ops.js at 380 lines (over 350 limit) — tightly coupled unit, acceptable
+- debt-prepaid.js at 429 lines (over limit) — needs refactor in future phase
+- Views for external access (supplier portal, storefront) planned but not created yet
 - Edge Function deployment requires Supabase CLI (not automated)
-- weekly-reports Storage folder not created yet (uses supplier-docs bucket)
 - jsPDF/html2canvas loaded from CDN — consider self-hosting for reliability
 - Hebrew displays as squares in CMD/bat files (cosmetic, doesn't affect functionality)
 - Dedup by filename: if Access sends sale + cancellation with same order number, second file is skipped
-- install-service.js in scripts/ folder missing --export-dir support (only watcher-deploy/ version has it)
-- Deployed watcher service runs from C:\Users\User\opticup\watcher-deploy\ — must manually copy updated files
-- **Stock Count: barcode 0002793** physically unreadable by ZXing (damaged/incompatible barcode print)
-- **Stock Count: camera.js at 350 lines** — at the limit, acceptable as tightly coupled unit
-- **Stock Count: unknown.js at 374 lines** — slightly over 350 limit, acceptable as tightly coupled conflict resolution flow
-- **Document linking auto-sum** (QAc-002 WARN): when linking delivery notes to invoice, auto-sum linked amounts and compare to invoice total
-- **Cascading payment settlement** (QAc-004 WARN): when payment fully covers a document, auto-close related linked documents
+- install-service.js in scripts/ folder missing --export-dir support
+- Deployed watcher service runs from C:\Users\User\opticup\watcher-deploy\ — must manually copy
+- Stock Count: barcode 0002793 physically unreadable by ZXing
+- Stock Count: camera.js at 350 lines — at the limit
+- Stock Count: unknown.js at 374 lines — slightly over 350 limit
+- Document linking auto-sum (QAc-002 WARN): auto-sum linked amounts and compare to invoice total
+- Cascading payment settlement (QAc-004 WARN): auto-close related linked documents
+- Multiple active prepaid deals per supplier: last one wins in deduction UI
 
 ## Next Phase
-Phase 7 fully complete including all hotfixes. Next directions:
-1. Module 2 planning (Customer management, Sales/POS, Supplier portal, etc.)
-2. Consider rotating JWT secret before production use
+Phase 8 fully complete. Next directions:
+1. Module 2 planning (Platform Admin — SaaS infrastructure)
+2. JWT secret rotation before production
+3. debt-prepaid.js refactor (over 350 lines)

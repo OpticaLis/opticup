@@ -4,37 +4,6 @@
 
 ---
 
-## Phase 8 — OCR בקבלת סחורה + שיפורי פלואו רכש (2026-03-21)
-
-### Step 1: Per-field Confidence + PO Auto-suggestion
-- `22d2d41` — _rcptOcrFC, _rcptOcrAddConfDot, _rcptOcrSuggestPO in receipt-ocr.js
-
-### Step 2: Item Matching Review UI
-- `74095e1` — New file: receipt-ocr-review.js — parse, match, classify, review modal, apply
-- `b45b3c7` — Connect receipt-ocr.js to review UI, delete old matching functions
-
-### Step 3: Prepaid Separation (Operations vs Finance)
-- `4238395` — Replace auto-deduction with alertPrepaidNewDocument
-- `c57e49a` — Move alertPrepaidNewDocument to supabase-ops.js (cross-page)
-- `e772efb` — Prepaid badge + deduction button on supplier documents (debt-documents.js)
-
-### Step 4: PO Comparison Report
-- `de4a430` — Migration 036: price_decision + po_match_status on goods_receipt_items
-- `d6da7f8` — New file: receipt-po-compare.js — pre-confirm report, price decisions, auto-return
-
-### Step 5: Learning Integration
-- `b92c876` — Item alias learning + price pattern detection (VAT-inclusive suppliers)
-
-### Step 6: Supplier Opening Balance
-- `f44b439` — Migration 037: opening_balance fields on suppliers
-- `7d409fd` — Opening balance UI + dashboard calculation with cutoff date
-
-### QA + Fixes
-- `7402765` — QA-1: 2 critical fixes (query limit, barcode-less matching), 4 warning fixes
-- `4026f4c` — VAT hardcode fix in price pattern learning
-
----
-
 ## Phase 7 — Stock Count Improvements (2026-03-19)
 
 ### Step 0: File Split

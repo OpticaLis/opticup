@@ -1,5 +1,5 @@
 # מלאי מסגרות — Module Spec
-## גרסה Phase 8 | מרץ 2026 | OCR בקבלת סחורה + שיפורי פלואו רכש
+## גרסה Phase 7 | מרץ 2026 | Stock Count Improvements
 
 > **Authority:** Business logic flows and screen descriptions. For code details → MODULE_MAP.md. For DB schema → db-schema.sql. For rules → CLAUDE.md.
 
@@ -557,49 +557,6 @@ Standalone page: `shipments.html` with 9 JS files in `modules/shipments/`.
 **Edge Functions:**
 - `pin-auth` — PIN validation → signed JWT with tenant_id claim
 - `ocr-extract` (POST /functions/v1/ocr-extract) — Claude Vision OCR: accepts file_path + tenant JWT, returns extracted invoice fields with confidence scores
-
----
-
-## Phase 8 — OCR בקבלת סחורה + שיפורי פלואו רכש
-
-### OCR בקבלת סחורה
-- כפתור "סרוק עם AI" מופיע אחרי צירוף מסמך. קורא ל-Edge Function `ocr-extract`
-- Auto-fill: ספק (fuzzy match), סוג מסמך, מספר, תאריך. כל שדה מקבל confidence dot (ירוק/צהוב/אדום)
-- PO auto-suggestion: אם יש הזמנות פתוחות לספק → הצעת חיבור. אם OCR זיהה מספר PO → חיבור אוטומטי
-
-### Item Matching Review UI
-- פירוק תיאור OCR: brand (alias map), model (regex), size (mm pattern), color (remaining text)
-- חיפוש במלאי: ILIKE על model + brand_id, מצמצם לפי size/color
-- Modal סקירה: matched (ירוק, readonly), new (צהוב, brand dropdown), unknown (אדום, skip checkbox)
-- אישור → הוספה לטופס קבלה
-
-### דוח השוואה מול PO
-- מוצג לפני אישור קבלה כשמקושרת ל-PO. 5 קטגוריות: matched, shortage, price gap, not-in-PO, missing
-- החלטות מחיר per-item: מחיר PO vs חשבונית. ברירת מחדל = חשבונית
-- פריטים "לא בהזמנה": קבל / החזר (יוצר supplier_return אוטומטית)
-- שדות DB: price_decision, po_match_status על goods_receipt_items
-
-### הפרדת תפעול/פיננסים
-- קבלת סחורה (עובד): אישור → מלאי מתעדכן → מסמך ספק נוצר → alert למנהל כספים
-- מעקב חובות (מנהל כספים): רואה badge "מקדמה" → לוחץ "קזז" → PIN → קיזוז מתבצע
-- alertPrepaidNewDocument ב-supabase-ops.js (cross-page), auto-dismiss אחרי קיזוז
-
-### למידה
-- Header corrections: ספק, מספר מסמך, תאריך → updateOCRTemplate (קיים מפאזה 5)
-- Item corrections: brand aliases + item mappings → supplier_ocr_templates.extraction_hints
-- Price patterns: זיהוי ספקים עם מחירים כולל מע"מ → hints.price_pattern
-
-### יתרת פתיחה לספקים
-- 4 שדות חדשים על suppliers: opening_balance, opening_balance_date, opening_balance_notes, opening_balance_set_by
-- נוסחה: חוב = יתרת_פתיחה + מסמכים(אחרי cutoff) - תשלומים(אחרי cutoff)
-- UI: section בכרטיס ספק + modal הגדרה עם PIN + עמודה בטבלת ספקים + ⚠️ אם חסר cutoff date
-
-### Contracts (public functions)
-- `_rcptOcrClassifyItems(ocrItems, supplierId)` → classified items array
-- `_rcptOcrShowReview(classified, onConfirm)` → review modal
-- `_poCompBuildReport(receiptItems, poId)` → comparison report
-- `_poCompShowReport(report, poNumber, onConfirm)` → report modal
-- `alertPrepaidNewDocument(supplierId, docId, tenantId, supName, docNum)` → alert creation
 
 **Planned Views (Phase 6 — Supplier Portal):**
 - `v_supplier_inventory` — supplier sees their items in our inventory

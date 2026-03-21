@@ -73,7 +73,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 5.9 | ✅ | משלוחים וארגזים | shipments.html, ארגזים ממוספרים, 4 סוגים, staged picker, נעילה, manifest, הגדרות |
 | QA | ✅ | בדיקות מקיפות — Module 1 Final Certification | ~190 tests (177 PASS), 9 E2E flows, security audit, XSS fixes, permissions expansion (55), settings page, PIN modal, stock count filters, auto credit note, return timeline, 14 bug fixes |
 | 7 | ✅ | שיפורי ספירת מלאי | פיצול session.js, atomic delta RPC, עודפים→מלאי, אישור חלקי, צפייה בספירות סגורות |
-| 8 | ✅ | OCR בקבלת סחורה + שיפורי פלואו רכש | OCR button בקבלה, item matching review UI, הפרדת תפעול/פיננסים, דוח PO pre-confirm, למידת פריטים ומחירים, יתרת פתיחה לספקים |
 | 6 | 🚫 נדחה | פורטל ספקים — ייבנה במודול עתידי | גישת ספק חיצונית, view-only מלאי לפי ספק |
 
 ---
@@ -223,22 +222,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - Reason per discrepancy + אישור חלקי (approve/skip per item)
 - צפייה בספירות סגורות — read-only panel + Excel export
 - פירוט מלא: `docs/PHASE_7_SPEC_UPDATED.md`
-
-### פאזה 8 ✅ — OCR בקבלת סחורה + שיפורי פלואו רכש
-- כפתור "סרוק עם AI" בקבלת סחורה + auto-fill שדות (ספק, מספר מסמך, תאריך, סוג)
-- Per-field confidence indicators (ירוק/צהוב/אדום) על כל שדה שמולא ע"י AI
-- Item matching review UI: parsed description → match inventory → modal סקירה (matched/new/unknown)
-- PO auto-suggestion מתוך OCR + חיבור אוטומטי להזמנה פתוחה
-- הפרדת תפעול/פיננסים: קיזוז מקדמה עבר ל-suppliers-debt עם alert למנהל כספים
-- Badge "מקדמה" + כפתור "קזז מעסקה" על מסמכי ספק (PIN verified)
-- דוח השוואה מול PO לפני אישור: matched/shortage/price gap/not-in-PO/missing
-- החלטות מחיר per-item (PO vs חשבונית) + החזרה אוטומטית לספק
-- Item matching learning: brand corrections + item aliases נשמרים ב-OCR templates
-- Price pattern learning: זיהוי אוטומטי של ספקים שמציינים מחירים כולל מע"מ
-- יתרת פתיחה לספקים: סכום + תאריך cutoff + שילוב בדשבורד חובות
-- 2 קבצים חדשים: receipt-ocr-review.js, receipt-po-compare.js
-- 2 מיגרציות: 036 (price_decision, po_match_status), 037 (opening balance)
-- פירוט מלא: `docs/PHASE_8_SPEC.md`
 
 ### פאזה 6 🚫 נדחה — פורטל ספקים (ייבנה במודול עתידי)
 - קישור ייחודי לכל ספק (token-based auth, לא PIN)
