@@ -46,6 +46,39 @@ async function editDocument(docId) {
     }
   } catch (e) { console.warn('OCR items load skipped:', e.message); }
 
+  // Receipt line items (from goods_receipt_items via goods_receipt_id FK)
+  var receiptItemsHtml = '';
+  if (doc.goods_receipt_id) {
+    try {
+      var { data: rcptItems, error: riErr } = await sb.from(T.RCPT_ITEMS)
+        .select('barcode, brand, model, color, size, quantity, unit_cost, po_match_status')
+        .eq('receipt_id', doc.goods_receipt_id)
+        .eq('tenant_id', getTenantId());
+      if (!riErr && rcptItems && rcptItems.length) {
+        var riRows = rcptItems
+          .filter(function(ri) { return ri.po_match_status !== 'returned'; })
+          .map(function(ri) {
+            var lineTotal = ((ri.unit_cost || 0) * (ri.quantity || 0)).toFixed(2);
+            return '<tr>' +
+              '<td>' + escapeHtml(ri.barcode || '') + '</td>' +
+              '<td>' + escapeHtml(ri.brand || '') + '</td>' +
+              '<td>' + escapeHtml(ri.model || '') + '</td>' +
+              '<td style="text-align:center">' + (ri.quantity || 0) + '</td>' +
+              '<td style="text-align:center">' + (ri.unit_cost != null ? Number(ri.unit_cost).toFixed(2) : '') + '</td>' +
+              '<td style="text-align:center">' + lineTotal + '</td></tr>';
+          }).join('');
+        if (riRows) {
+          receiptItemsHtml = '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-top:10px">' +
+            '<strong style="font-size:.88rem">\u{1F4E6} \u05E4\u05E8\u05D9\u05D8\u05D9 \u05E7\u05D1\u05DC\u05D4</strong>' +
+            '<table class="data-table" style="width:100%;font-size:.82rem;margin-top:6px"><thead><tr>' +
+            '<th>\u05D1\u05E8\u05E7\u05D5\u05D3</th><th>\u05DE\u05D5\u05EA\u05D2</th><th>\u05D3\u05D2\u05DD</th>' +
+            '<th>\u05DB\u05DE\u05D5\u05EA</th><th>\u05DE\u05D7\u05D9\u05E8</th><th>\u05E1\u05D4"\u05DB</th>' +
+            '</tr></thead><tbody>' + riRows + '</tbody></table></div>';
+        }
+      }
+    } catch (e) { console.warn('Receipt items load skipped:', e.message); }
+  }
+
   // Type dropdown
   var typeOpts = _docTypes.map(function(t) {
     return '<option value="' + t.id + '"' + (t.id === doc.document_type_id ? ' selected' : '') + '>' + escapeHtml(t.name_he) + '</option>';
@@ -79,6 +112,7 @@ async function editDocument(docId) {
       // File preview
       (fileSection ? '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-top:10px">' + fileSection + '</div>' : '') +
       ocrItemsHtml +
+      receiptItemsHtml +
       // Buttons
       '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
         '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'edit-doc-modal\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
