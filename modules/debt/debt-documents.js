@@ -3,6 +3,7 @@ let _docData = [], _docTypes = [], _docSuppliers = [];
 var _pendingNewDocFile = null;
 var _docPrepaidSet = {}; // Phase 8: supplier_id → deal object for active prepaid deals
 var _docSortField = 'created_at'; // default: sort by upload date (newest first)
+var _docShowCancelled = false; // default: hide cancelled documents
 const DOC_STATUS_MAP = {
   open:            { he: '\u05E4\u05EA\u05D5\u05D7',        cls: 'dst-open' },
   partially_paid:  { he: '\u05E9\u05D5\u05DC\u05DD \u05D7\u05DC\u05E7\u05D9\u05EA',  cls: 'dst-partial' },

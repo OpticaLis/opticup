@@ -56,6 +56,8 @@ function renderDocFilterBar() {
         'style="background:#1a73e8;color:#fff;font-size:.75rem;padding:2px 8px;border:none;border-radius:3px;cursor:pointer">\u05D4\u05E2\u05DC\u05D0\u05D4</button>' +
       '<button class="btn-sm doc-sort-btn" data-sort="document_date" onclick="setDocSort(\'document_date\')" ' +
         'style="background:#e5e7eb;color:#1e293b;font-size:.75rem;padding:2px 8px;border:none;border-radius:3px;cursor:pointer">\u05EA\u05D0\u05E8\u05D9\u05DA</button>' +
+      '<label style="font-size:.75rem;color:var(--g500);display:flex;align-items:center;gap:3px;cursor:pointer">' +
+        '<input type="checkbox" onchange="_docShowCancelled=this.checked;applyDocFilters()">\u05DE\u05D1\u05D5\u05D8\u05DC\u05D9\u05DD</label>' +
       '<button class="btn doc-add-btn" style="background:#059669;color:#fff;margin-right:auto" onclick="openNewDocumentModal()">+ \u05DE\u05E1\u05DE\u05DA \u05D7\u05D3\u05E9</button>' +
     '</div>' +
     '<div id="doc-filter-panel" style="display:' + (collapsed ? 'none' : 'grid') + ';grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px;' +
@@ -158,7 +160,9 @@ function _applyDocFilterClick() {
 function applyDocFilters() {
   var f = _docFilterState || _readFilterValues();
   _docTotalCount = _docData.length;
+  var showCancelled = typeof _docShowCancelled !== 'undefined' ? _docShowCancelled : false;
   var filtered = _docData.filter(function(d) {
+    if (!showCancelled && !f.status && d.status === 'cancelled') return false;
     if (f.status && d.status !== f.status) return false;
     if (f.document_type_id && d.document_type_id !== f.document_type_id) return false;
     if (f.supplier_id && d.supplier_id !== f.supplier_id) return false;

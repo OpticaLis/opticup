@@ -10,7 +10,7 @@ var _histBatchId = null, _histUploadedPaths = [], _histPreviewUrl = null;
 function _openHistoricalImportModal() {
   _histFiles = []; _histSupplierId = null; _histDefaultStatus = 'paid';
   _histBatchId = null; _histUploadedPaths = [];
-  var supOpts = '<option value="">ללא ספק</option>';
+  var supOpts = '<option value="">\u05D1\u05D7\u05E8 \u05E1\u05E4\u05E7...</option>';
   (_docSuppliers || []).forEach(function(s) {
     supOpts += '<option value="' + escapeHtml(s.id) + '">' + escapeHtml(s.name) + '</option>';
   });
@@ -166,12 +166,17 @@ async function _histStartImport() {
   var progWrap = $('hist-progress'), progBar = $('hist-progress-bar'), progText = $('hist-progress-text');
   if (progWrap) progWrap.style.display = 'block';
   var btn = $('hist-start-btn'); if (btn) btn.disabled = true;
+  if (!_histSupplierId) { toast('\u05D9\u05E9 \u05DC\u05D1\u05D7\u05D5\u05E8 \u05E1\u05E4\u05E7', 'e'); return; }
+  var docTypes = _docTypes || await fetchAll(T.DOC_TYPES, [['is_active', 'eq', true]]);
+  var defaultType = docTypes.find(function(d) { return d.code === 'invoice'; }) || docTypes[0];
+  if (!defaultType) { toast('\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0\u05D5 \u05E1\u05D5\u05D2\u05D9 \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD', 'e'); return; }
+  var todayStr = new Date().toISOString().slice(0, 10);
   var docIds = [], logs = [];
   for (var i = 0; i < selected.length; i++) {
     var bf = selected[i];
     var pct = Math.round(((i + 1) / selected.length) * 100);
     if (progBar) progBar.style.width = pct + '%';
-    if (progText) progText.textContent = 'מעלה ' + (i + 1) + '/' + selected.length + '...';
+    if (progText) progText.textContent = '\u05DE\u05E2\u05DC\u05D4 ' + (i + 1) + '/' + selected.length + '...';
     try {
       var safeName = bf.file.name.replace(/[^a-zA-Z0-9._\u0590-\u05FF-]/g, '_');
       var filePath = tid + '/batch_' + timestamp + '/' + Date.now() + '_' + safeName;
@@ -180,11 +185,14 @@ async function _histStartImport() {
       if (upErr) throw upErr;
       _histUploadedPaths.push(filePath);
       var intNum = await generateDocInternalNumber();
-      var docStatus = _histDefaultStatus === 'per_doc' ? 'draft' : _histDefaultStatus;
+      var docStatus = _histDefaultStatus === 'per_doc' ? 'open' : (_histDefaultStatus === 'draft' ? 'open' : _histDefaultStatus);
+      var docNum = 'HIST-' + timestamp + '-' + (i + 1);
       var created = await batchCreate(T.SUP_DOCS, [{
-        internal_number: intNum, status: docStatus, file_url: filePath, file_name: bf.file.name,
-        file_hash: bf.hash, batch_id: _histBatchId, supplier_id: _histSupplierId || null,
-        is_historical: true
+        internal_number: intNum, document_number: docNum,
+        document_type_id: defaultType.id, supplier_id: _histSupplierId,
+        document_date: todayStr, subtotal: 0, vat_amount: 0, total_amount: 0,
+        status: docStatus, file_url: filePath, file_name: bf.file.name,
+        file_hash: bf.hash, batch_id: _histBatchId, is_historical: true
       }]);
       if (created && created[0]) docIds.push(created[0].id);
       logs.push({
