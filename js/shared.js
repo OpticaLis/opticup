@@ -95,6 +95,9 @@ const FIELD_MAP = {
   brands: {
     'שם חברה':'name','סוג מותג':'brand_type','סנכרון ברירת מחדל':'default_sync','פעיל':'active','מוחרג מאתר':'exclude_website','מלאי מינימום':'min_stock_qty'
   },
+  goods_receipt_items: {
+    'החלטת מחיר':'price_decision','סטטוס התאמה ל-PO':'po_match_status'
+  },
   suppliers: { 'שם':'name' },
   ai_agent_config: {
     'סריקה פעילה':'ocr_enabled','התאמת ספק אוטומטית':'auto_match_supplier',

@@ -52,6 +52,7 @@
 --   031_stock_count_filter_criteria.sql — filter_criteria JSONB on stock_counts
 --   031_tenants_update_policy.sql — tenant_update_own RLS policy on tenants
 --   032_stock_count_unknown_items.sql — status CHECK includes 'unknown', inventory_id nullable
+--   036_receipt_item_po_fields.sql — price_decision, po_match_status on goods_receipt_items
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -386,6 +387,8 @@ CREATE TABLE IF NOT EXISTS goods_receipt_items (
   unit_cost       DECIMAL(10,2),                                 -- מחיר עלות ליחידה
   sell_price      DECIMAL(10,2),                                 -- מחיר מכירה
   is_new_item     BOOLEAN NOT NULL DEFAULT false,                -- true = פריט חדש (לא היה במלאי)
+  price_decision  TEXT CHECK (price_decision IS NULL OR price_decision IN ('po_price', 'invoice_price')),  -- Phase 8: החלטת מחיר מול PO
+  po_match_status TEXT CHECK (po_match_status IS NULL OR po_match_status IN ('matched', 'not_in_po', 'returned')),  -- Phase 8: סטטוס התאמה ל-PO
   tenant_id       UUID NOT NULL REFERENCES tenants(id)           -- דייר (018)
 );
 CREATE INDEX IF NOT EXISTS idx_receipt_items ON goods_receipt_items(receipt_id);
