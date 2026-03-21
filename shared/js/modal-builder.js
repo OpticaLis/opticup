@@ -161,19 +161,21 @@
     footer.appendChild(confirmBtn);
     footer.appendChild(cancelBtn);
 
+    var _confirmed = false;
     var modal = show({
       size: config.size || 'sm', title: config.title,
       content: '<p>' + _escapeHtml(config.message || '') + '</p>',
       _footerEl: footer, _type: 'confirm',
-      closeOnEscape: true, closeOnBackdrop: true, onClose: config.onCancel || null
+      closeOnEscape: true, closeOnBackdrop: true,
+      onClose: function () { if (!_confirmed && typeof config.onCancel === 'function') config.onCancel(); }
     });
     confirmBtn.addEventListener('click', function () {
+      _confirmed = true;
       modal.close();
       if (typeof config.onConfirm === 'function') config.onConfirm();
     });
     cancelBtn.addEventListener('click', function () {
       modal.close();
-      if (typeof config.onCancel === 'function') config.onCancel();
     });
   }
 
@@ -231,10 +233,12 @@
     footer.appendChild(submitBtn);
     footer.appendChild(cancelBtn);
 
+    var _submitted = false;
     var modal = show({
       size: config.size || 'md', title: config.title, content: '',
       _footerEl: footer, _type: 'default',
-      closeOnEscape: true, closeOnBackdrop: true, onClose: config.onCancel || null
+      closeOnEscape: true, closeOnBackdrop: true,
+      onClose: function () { if (!_submitted && typeof config.onCancel === 'function') config.onCancel(); }
     });
 
     var body = modal.el.querySelector('.modal-body');
@@ -242,12 +246,12 @@
     body.appendChild(formEl);
 
     submitBtn.addEventListener('click', function () {
+      _submitted = true;
       if (typeof config.onSubmit === 'function') config.onSubmit(formEl);
       if (config.closeOnSubmit !== false) modal.close();
     });
     cancelBtn.addEventListener('click', function () {
       modal.close();
-      if (typeof config.onCancel === 'function') config.onCancel();
     });
     return { el: modal.el, close: modal.close };
   }

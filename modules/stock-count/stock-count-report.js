@@ -147,41 +147,13 @@ function renderReportScreen(countId, diffItems, allItems, displayItems, nothingS
 
 // ── Manager PIN for approval ─────────────────────────────────
 function showConfirmPinForCount(countId) {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  const area = $('sc-report-pin-area');
-  if (!area) return;
-  area.innerHTML = `
-    <div style="background:var(--white);border:2px solid var(--accent);border-radius:var(--radius);
-                padding:20px;margin-bottom:16px;text-align:center;box-shadow:var(--shadow)">
-      <div style="font-size:1.1rem;font-weight:700;color:var(--primary);margin-bottom:12px">&#128274; קוד מנהל לאישור</div>
-      <input id="sc-mgr-pin" type="password" inputmode="numeric" maxlength="5"
-             placeholder="PIN מנהל" autocomplete="off"
-             style="width:200px;min-height:48px;font-size:20px;text-align:center;border:2px solid var(--g300);
-                    border-radius:8px;padding:10px;letter-spacing:6px;margin-bottom:10px">
-      <div id="sc-mgr-pin-error" style="color:var(--error);font-size:.85rem;margin-bottom:10px;min-height:18px"></div>
-      <div style="display:flex;gap:10px;justify-content:center">
-        <button class="btn btn-p" style="min-height:48px;font-size:15px"
-                onclick="confirmCount('${escapeHtml(countId)}')">&#9989; אשר</button>
-        <button class="btn btn-g" style="min-height:48px;font-size:15px"
-                onclick="$('sc-report-pin-area').innerHTML=''">ביטול</button>
-      </div>
-    </div>`;
-  setTimeout(() => { const inp = $('sc-mgr-pin'); if (inp) inp.focus(); }, 100);
-  $('sc-mgr-pin')?.addEventListener('keydown', e => { if (e.key === 'Enter') confirmCount(countId); });
+  promptPin('קוד מנהל לאישור ספירה', function (pin, emp) {
+    _doConfirmCount(countId, emp);
+  });
 }
 
-// ── Confirm count — PIN + partial approval ───────────────────
-async function confirmCount(countId) {
-  const pin = ($('sc-mgr-pin')?.value || '').trim();
-  if (!pin) { $('sc-mgr-pin-error').textContent = 'יש להזין PIN'; return; }
-
-  const emp = await verifyPinOnly(pin);
-  if (!emp) {
-    $('sc-mgr-pin-error').textContent = 'PIN שגוי';
-    $('sc-mgr-pin').value = '';
-    $('sc-mgr-pin').focus();
-    return;
-  }
+// ── Confirm count — after PIN verified ────────────────────────
+async function _doConfirmCount(countId, emp) {
   if (!hasPermission('stock_count.approve')) {
     toast('אין הרשאה לאישור ספירה', 'e');
     return;
@@ -190,6 +162,16 @@ async function confirmCount(countId) {
 
   const tab = document.getElementById('tab-stock-count');
   const allItems = tab._scReportAllItems || [];
+
+  // BUG 2 fix: warn about unhandled unknown items
+  const unknownItems = tab._scReportUnknownItems || [];
+  if (unknownItems.length > 0) {
+    const yes = await confirmDialog(
+      'פריטים לא ידועים',
+      'יש ' + unknownItems.length + ' פריטים לא ידועים שלא טופלו. להמשיך?'
+    );
+    if (!yes) return;
+  }
   const { approved, skipped, reasons } = _scCollectApprovalState(allItems);
   const approvedDiffs = approved.filter(i => i.actual_qty !== i.expected_qty);
 

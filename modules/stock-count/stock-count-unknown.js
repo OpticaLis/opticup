@@ -149,18 +149,20 @@ async function saveUnknownToInventory(itemId, countId, hasBarcode) {
       barcode = await generateNextBarcode();
     }
 
-    // Check if barcode already exists in this tenant's inventory
+    // Check if barcode already exists in this tenant's inventory (include deleted — UNIQUE constraint covers all rows)
     const tenantId = getTenantId();
     const { data: existing } = await sb.from(T.INV)
-      .select('id,barcode,brand_id,model,size,color,brands(name)')
+      .select('id,barcode,brand_id,model,size,color,is_deleted,brands(name)')
       .eq('tenant_id', tenantId)
       .eq('barcode', barcode)
-      .eq('is_deleted', false)
       .maybeSingle();
     hideLoading();
 
-    if (existing) {
-      // Show choice dialog — let user decide
+    if (existing && existing.is_deleted) {
+      // Soft-deleted item with same barcode — restore it
+      _showDeletedBarcodeDialog(existing, barcode, itemId, countId, formData);
+    } else if (existing) {
+      // Active item with same barcode — show conflict dialog
       _showBarcodeConflictDialog(existing, barcode, itemId, countId, formData);
     } else {
       await _insertNewInventoryItem(barcode, itemId, countId, formData);
@@ -201,6 +203,62 @@ function _showBarcodeConflictDialog(existing, barcode, itemId, countId, formData
   document.getElementById('sc-conflict-link').addEventListener('click', async function () {
     modal.close();
     await _linkToExistingItem(existing.id, barcode, itemId, countId);
+  });
+  document.getElementById('sc-conflict-new').addEventListener('click', async function () {
+    modal.close();
+    try {
+      showLoading('יוצר ברקוד חדש...');
+      const newBarcode = await generateNextBarcode();
+      await _insertNewInventoryItem(newBarcode, itemId, countId, formData);
+    } catch (err) {
+      hideLoading();
+      toast('שגיאה: ' + err.message, 'e');
+    }
+  });
+}
+
+// ── Deleted barcode dialog — restore or create new ────────────
+function _showDeletedBarcodeDialog(existing, barcode, itemId, countId, formData) {
+  const brandName = existing.brands?.name || '—';
+  const modal = Modal.show({
+    size: 'sm',
+    title: 'ברקוד קיים (פריט מחוק)',
+    content: `
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:1.1rem;font-weight:700;color:var(--primary);margin-bottom:8px">
+          ${escapeHtml(barcode)}</div>
+        <div style="background:#fef3c7;border-radius:8px;padding:10px;font-size:.88rem;direction:rtl">
+          פריט מחוק: ${escapeHtml(brandName)} | ${escapeHtml(existing.model || '—')}
+        </div>
+        <p style="margin-top:12px;font-size:.85rem;color:var(--g600)">מה לעשות?</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button id="sc-conflict-restore" class="btn btn-primary" style="width:100%;padding:10px">
+          &#128260; שחזר פריט וקשר</button>
+        <button id="sc-conflict-new" class="btn btn-secondary" style="width:100%;padding:10px">
+          &#10133; צור פריט חדש (ברקוד חדש)</button>
+      </div>`,
+    closeOnEscape: true,
+    closeOnBackdrop: true
+  });
+
+  document.getElementById('sc-conflict-restore').addEventListener('click', async function () {
+    modal.close();
+    try {
+      showLoading('משחזר פריט...');
+      await sb.from(T.INV).update({
+        is_deleted: false, quantity: formData.qty, brand_id: formData.brandId,
+        model: formData.model, status: 'in_stock'
+      }).eq('id', existing.id);
+      writeLog('stock_count.restore_deleted', existing.id, {
+        count_id: countId, barcode, reason: 'שוחזר מספירת מלאי'
+      });
+      await _markItemMatched(itemId, existing.id);
+      _closeFormAndRemoveRow(itemId);
+      toast('פריט שוחזר וקושר בהצלחה — ברקוד: ' + barcode, 's');
+    } catch (err) {
+      toast('שגיאה בשחזור: ' + err.message, 'e');
+    } finally { hideLoading(); }
   });
   document.getElementById('sc-conflict-new').addEventListener('click', async function () {
     modal.close();
