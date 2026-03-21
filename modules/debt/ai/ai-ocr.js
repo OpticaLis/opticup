@@ -2,7 +2,7 @@
 // Load after: shared.js, supabase-ops.js, file-upload.js, debt-documents.js
 // Provides: triggerOCR(), showOCRReview(), _ocrSave(), _ocrCalcTotal(), _ocrAddItemRow()
 
-var _ocrExtractionId = null, _ocrOriginalData = null, _ocrCurrentFileUrl = null;
+var _ocrExtractionId = null, _ocrOriginalData = null, _ocrCurrentFileUrl = null, _ocrExistingDocId = null;
 
 // --- Confidence helpers ---
 function _ocrConfDot(c) {
@@ -20,7 +20,7 @@ function _ocrFC(ext, f) {
 // =========================================================
 // 1. Trigger OCR — call Edge Function
 // =========================================================
-async function triggerOCR(fileUrl, supplierId, documentTypeHint) {
+async function triggerOCR(fileUrl, supplierId, documentTypeHint, existingDocId) {
   if (!fileUrl) { toast('אין קובץ לסריקה', 'e'); return; }
   var jwt = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
   if (!jwt) { toast('נדרשת התחברות מחדש', 'e'); return; }
@@ -38,7 +38,7 @@ async function triggerOCR(fileUrl, supplierId, documentTypeHint) {
     }
     var result = await res.json();
     hideLoading();
-    if (result.success) showOCRReview(result, fileUrl);
+    if (result.success) showOCRReview(result, fileUrl, existingDocId);
     else toast(result.error || 'שגיאה בסריקה', 'e');
   } catch (e) {
     hideLoading(); console.error('triggerOCR error:', e);
@@ -49,13 +49,14 @@ async function triggerOCR(fileUrl, supplierId, documentTypeHint) {
 // =========================================================
 // 2. Review screen (modal)
 // =========================================================
-async function showOCRReview(result, fileUrl) {
+async function showOCRReview(result, fileUrl, existingDocId) {
   var ext = result.extracted_data || {};
   var conf = result.confidence_score || 0;
   var supMatch = result.supplier_match;
   _ocrExtractionId = result.extraction_id;
   _ocrOriginalData = JSON.parse(JSON.stringify(ext));
   _ocrCurrentFileUrl = fileUrl;
+  _ocrExistingDocId = existingDocId || null;
 
   var fv = function(f) { return _ocrFV(ext, f); };
   var fc = function(f) { var c = _ocrFC(ext, f); return c != null ? _ocrConfDot(c) : ''; };
@@ -247,12 +248,10 @@ async function _ocrSave(mode) {
   showLoading('שומר מסמך...');
   try {
     var emp = getCurrentEmployee();
-    // Check if document already exists (from batch upload) — UPDATE instead of INSERT
+    // Check if document already exists (from batch upload / scan icon) — UPDATE instead of INSERT
     var existingDoc = null, created = null;
-    if (_ocrCurrentFileUrl) {
-      var { data: found } = await sb.from(T.SUP_DOCS).select('id')
-        .eq('file_url', _ocrCurrentFileUrl).eq('tenant_id', getTenantId()).limit(1);
-      if (found && found.length) existingDoc = found[0];
+    if (_ocrExistingDocId) {
+      existingDoc = { id: _ocrExistingDocId };
     }
     var docFields = {
       supplier_id: supplierId, document_type_id: typeId,
@@ -314,7 +313,7 @@ function _injectOCRScanIcons(docs) {
     var btn = document.createElement('button');
     btn.className = 'btn-sm ocr-scan-btn'; btn.title = 'סרוק עם AI';
     btn.textContent = '\uD83E\uDD16';
-    btn.onclick = function() { triggerOCR(d.file_url, d.supplier_id, null); };
+    btn.onclick = function() { triggerOCR(d.file_url, d.supplier_id, null, d.id); };
     cell.insertBefore(btn, cell.firstChild);
   });
 }

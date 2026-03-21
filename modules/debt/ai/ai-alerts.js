@@ -198,7 +198,7 @@ function _patchPaymentSave() {
     // Wrap to intercept the result and check confidence
     var origShow = typeof showOCRReview === 'function' ? showOCRReview : null;
     if (origShow) {
-      window.showOCRReview = async function(result, fUrl) {
+      window.showOCRReview = async function(result, fUrl, docId) {
         // Check confidence threshold
         try {
           var conf = result.confidence_score || 0;
@@ -215,7 +215,7 @@ function _patchPaymentSave() {
         }
         // Restore and call original
         window.showOCRReview = origShow;
-        return origShow.call(this, result, fUrl);
+        return origShow.call(this, result, fUrl, docId);
       };
     }
     return _origTrigger.apply(this, arguments);
