@@ -239,7 +239,14 @@ async function _wizSavePayment() {
       }
     }
 
-    // 4. Write audit log
+    // 4. Cascade: auto-close linked child documents of newly-paid parents
+    var cascadeCount = 0;
+    if (_wizState.allocations.length) {
+      var allocDocIds = _wizState.allocations.map(function(a) { return a.document_id; });
+      cascadeCount = await _cascadeSettlement(allocDocIds);
+    }
+
+    // 5. Write audit log
     await writeLog('payment_create', null, {
       reason: 'תשלום חדש \u2014 ' + formatILS(_wizState.amount) +
         ' ל' + _wizState.supplierName,
@@ -248,6 +255,7 @@ async function _wizSavePayment() {
 
     closeAndRemoveModal('pay-wizard-modal');
     toast('תשלום נשמר בהצלחה');
+    if (cascadeCount > 0) toast('\u05E0\u05E1\u05D2\u05E8\u05D5 ' + cascadeCount + ' \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD \u05DE\u05E7\u05D5\u05E9\u05E8\u05D9\u05DD \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA');
     await loadPaymentsTab();
     await loadDebtSummary();
   } catch (e) {
@@ -269,4 +277,49 @@ async function _wizSavePayment() {
   } finally {
     hideLoading();
   }
+}
+
+// =========================================================
+// Cascading settlement — auto-close linked children of paid docs
+// =========================================================
+async function _cascadeSettlement(docIds) {
+  var closed = 0;
+  try {
+    var tid = getTenantId();
+    // Re-fetch allocated docs to check current status
+    var { data: freshDocs } = await sb.from(T.SUP_DOCS).select('id, status, total_amount, paid_amount')
+      .in('id', docIds).eq('tenant_id', tid);
+    var paidIds = (freshDocs || []).filter(function(d) {
+      return d.status === 'paid';
+    }).map(function(d) { return d.id; });
+    if (!paidIds.length) return 0;
+
+    // Find linked children of paid documents
+    var { data: links } = await sb.from(T.DOC_LINKS).select('child_document_id, parent_document_id')
+      .in('parent_document_id', paidIds).eq('tenant_id', tid);
+    if (!links || !links.length) return 0;
+
+    var childIds = [...new Set(links.map(function(l) { return l.child_document_id; }))];
+    var { data: children } = await sb.from(T.SUP_DOCS).select('id, status, total_amount, paid_amount')
+      .in('id', childIds).eq('tenant_id', tid);
+
+    for (var i = 0; i < (children || []).length; i++) {
+      var child = children[i];
+      // Skip already paid/cancelled
+      if (child.status === 'paid' || child.status === 'cancelled') continue;
+      // Close child: set paid_amount = total_amount, status = paid
+      await batchUpdate(T.SUP_DOCS, [{
+        id: child.id, status: 'paid',
+        paid_amount: child.total_amount
+      }]);
+      await writeLog('cascading_settlement', null, {
+        reason: '\u05DE\u05E1\u05DE\u05DA \u05E0\u05E1\u05D2\u05E8 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA \u2014 \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u05D0\u05D1 \u05E9\u05D5\u05DC\u05DE\u05D4',
+        source_ref: child.id
+      });
+      closed++;
+    }
+  } catch (e) {
+    console.warn('_cascadeSettlement error (non-blocking):', e);
+  }
+  return closed;
 }

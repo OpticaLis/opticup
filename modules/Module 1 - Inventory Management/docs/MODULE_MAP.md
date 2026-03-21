@@ -67,7 +67,7 @@
 | 45 | debt-doc-link.js | modules/debt/debt-doc-link.js | 109 | Delivery note → invoice linking: openLinkToInvoiceModal (shows supplier's invoices with auto-sum), linkDeliveryToInvoice (creates document_links record, updates status to linked), _renderLinkSummary (linked amounts vs invoice total comparison) |
 | 46 | debt-payments.js | modules/debt/debt-payments.js | 229 | Payments tab: loadPaymentsTab (fetch payments+methods+suppliers+allocations+documents), renderPaymentsToolbar (filters + add button), applyPayFilters (client-side), renderPaymentsTable (with כנגד doc numbers), viewPayment (detail modal with allocation table) |
 | 47 | debt-payment-wizard.js | modules/debt/debt-payment-wizard.js | 146 | Payment wizard steps 1-2: openNewPaymentWizard (state reset + modal), supplier selection with debt summary + withholding tax rate lookup, payment details form with auto-calc withholding tax |
-| 48 | debt-payment-alloc.js | modules/debt/debt-payment-alloc.js | ~275 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status, rollback on failure) |
+| 48 | debt-payment-alloc.js | modules/debt/debt-payment-alloc.js | 325 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status, cascading settlement of linked children, rollback on failure) |
 | 49 | debt-prepaid.js | modules/debt/debt-prepaid.js | 255 | Prepaid deals tab: loadPrepaidTab (fetch deals+checks+suppliers), renderPrepaidToolbar (filters + add button), applyPrepaidFilters (client-side), renderPrepaidTable (progress bar, status badges), openNewDealModal (PIN-verified), _dealAutoName, saveNewDeal |
 | 49b | debt-prepaid-detail.js | modules/debt/debt-prepaid-detail.js | 179 | Prepaid deal detail + check management: openAddCheckModal, saveNewCheck, viewDealDetail (progress bar + checks table), updateCheckStatus |
 | 50 | debt-supplier-detail.js | modules/debt/debt-supplier-detail.js | ~328 | Supplier detail view: openSupplierDetail (slide-in panel with summary + 4 sub-tabs), closeSupplierDetail, loadSupplierTimeline (merged docs+payments sorted by date), loadSupplierDocuments (filtered table), loadSupplierPayments (filtered table), loadSupplierReturns (delegates to debt-returns.js) |
@@ -863,7 +863,8 @@
 | `_wizClearAlloc` | `()` | Clears all allocation inputs and state |
 | `_wizGoStep4` | `()` | Validates allocation total vs net amount (warns on mismatch), renders step 4 |
 | `_wizRenderStep4` | `()` | Confirmation screen: payment summary grid + PIN input |
-| `_wizSavePayment` | `()` | Verifies PIN, creates supplier_payments record, creates payment_allocations, updates paid_amount/status on documents, writeLog, refreshes tab + summary cards. Rollback: deletes payment+allocations on failure |
+| `_wizSavePayment` | `()` | Verifies PIN, creates supplier_payments record, creates payment_allocations, updates paid_amount/status on documents, calls _cascadeSettlement, writeLog, refreshes tab + summary cards. Rollback: deletes payment+allocations on failure |
+| `_cascadeSettlement` | `(docIds)` | Async. Re-fetches allocated docs, finds those with status='paid', queries document_links for children, auto-closes linked children (status='paid', paid_amount=total_amount), writeLog per child. Non-blocking (try/catch). Returns count |
 
 ### modules/debt/debt-prepaid.js
 
