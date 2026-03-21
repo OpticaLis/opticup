@@ -228,10 +228,12 @@ async function _poCompLearnPricePattern(decisions, receiptItems, supplierId) {
   var invoiceCount = priceItems.filter(function(d) { return d.price_decision === 'invoice_price'; }).length;
   if (invoiceCount < priceItems.length * 0.7) return; // not a consistent pattern
   try {
+    var { data: tenant } = await sb.from(T.TENANTS).select('vat_rate').eq('id', getTenantId()).single();
+    var vatRate = (tenant && tenant.vat_rate) ? Number(tenant.vat_rate) / 100 : 0.17;
     var templates = await fetchAll(T.OCR_TEMPLATES, [['supplier_id', 'eq', supplierId]]);
     if (!templates.length) return;
     var hints = templates[0].extraction_hints || {};
-    hints.price_pattern = { includes_vat: true, vat_rate: 0.17, detected_at: new Date().toISOString() };
+    hints.price_pattern = { includes_vat: true, vat_rate: vatRate, detected_at: new Date().toISOString() };
     await batchUpdate(T.OCR_TEMPLATES, [{ id: templates[0].id, extraction_hints: hints }]);
   } catch (e) { console.warn('_poCompLearnPricePattern error:', e); }
 }
