@@ -101,19 +101,18 @@ async function createDocumentFromReceipt(receiptId, supplierId, receiptItems) {
     _pendingReceiptFile = null;
   }
 
-  // 10. Auto-deduct from active prepaid deal if exists
+  // 10. Phase 8: prepaid deduction moved to suppliers-debt. Alert finance manager instead.
   try {
     const deals = await fetchAll(T.PREPAID_DEALS, [
       ['supplier_id', 'eq', supplierId],
       ['status', 'eq', 'active'],
       ['is_deleted', 'eq', false]
     ]);
-    if (deals.length > 0) {
-      // Atomic RPC — Phase 3 fix
-      await sb.rpc('increment_prepaid_used', { p_deal_id: deals[0].id, p_delta: totalAmount });
+    if (deals.length > 0 && createdDoc && typeof alertPrepaidNewDocument === 'function') {
+      alertPrepaidNewDocument(supplierId, createdDoc.id, getTenantId(), supplier.name, docRow.document_number);
     }
   } catch (e) {
-    console.warn('Auto-deduct prepaid deal failed (non-blocking):', e);
+    console.warn('Prepaid alert failed (non-blocking):', e);
   }
 
   return createdDoc;
