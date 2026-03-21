@@ -194,8 +194,72 @@ async function pauseSession() {
   loadStockCountTab();
 }
 
-// ── Finish session → diff report ─────────────────────────────
-function finishSession(countId) {
+// ── Finish session → check uncounted → diff report ───────────
+async function finishSession(countId) {
   stopCamera();
+  const pendingItems = scSessionItems.filter(i => i.status === 'pending');
+  if (pendingItems.length === 0) {
+    showDiffReport(countId);
+    return;
+  }
+  // Show dialog asking what to do with uncounted items
+  await _showUncountedDialog(countId, pendingItems);
+}
+
+function _showUncountedDialog(countId, pendingItems) {
+  return new Promise(function (resolve) {
+    const count = pendingItems.length;
+    const modal = Modal.show({
+      size: 'sm',
+      title: 'פריטים שלא נסרקו',
+      content: `
+        <div style="text-align:center;margin-bottom:14px">
+          <div style="font-size:2rem;margin-bottom:8px">&#9888;&#65039;</div>
+          <p style="font-size:.92rem;color:var(--g700);margin-bottom:6px">
+            יש <strong>${count}</strong> פריטים שלא נסרקו מתוך הספירה.</p>
+          <p style="font-size:.85rem;color:var(--g500)">מה לעשות?</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button id="sc-uncounted-mark" class="btn btn-primary" style="width:100%;padding:10px;font-size:.9rem">
+            &#10060; סמן כחוסרים (כמות 0)</button>
+          <button id="sc-uncounted-leave" class="btn btn-secondary" style="width:100%;padding:10px;font-size:.9rem">
+            &#8594; השאר כלא נספר</button>
+        </div>`,
+      closeOnEscape: true,
+      closeOnBackdrop: true
+    });
+
+    document.getElementById('sc-uncounted-mark').addEventListener('click', async function () {
+      modal.close();
+      await _markUncountedAsShortages(countId, pendingItems);
+      resolve();
+    });
+    document.getElementById('sc-uncounted-leave').addEventListener('click', function () {
+      modal.close();
+      showDiffReport(countId);
+      resolve();
+    });
+  });
+}
+
+async function _markUncountedAsShortages(countId, pendingItems) {
+  try {
+    showLoading('מסמן חוסרים...');
+    const worker = activeWorker || JSON.parse(sessionStorage.getItem('activeWorker') || '{}');
+    const ids = pendingItems.map(i => i.id);
+    const { error } = await sb.from(T.STOCK_COUNT_ITEMS).update({
+      actual_qty: 0, status: 'counted',
+      counted_at: new Date().toISOString(), scanned_by: worker.name || ''
+    }).in('id', ids).eq('count_id', countId);
+    if (error) throw error;
+    // Update local state
+    pendingItems.forEach(function (p) {
+      p.actual_qty = 0; p.status = 'counted';
+      p.scanned_by = worker.name || '';
+    });
+    toast(ids.length + ' פריטים סומנו כחוסרים', 's');
+  } catch (err) {
+    toast('שגיאה בעדכון: ' + err.message, 'e');
+  } finally { hideLoading(); }
   showDiffReport(countId);
 }
