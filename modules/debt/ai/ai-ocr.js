@@ -25,7 +25,7 @@ function _ocrFC(ext, f) {
 // =========================================================
 async function triggerOCR(fileUrl, supplierId, documentTypeHint) {
   if (!fileUrl) { toast('אין קובץ לסריקה', 'e'); return; }
-  var jwt = sessionStorage.getItem('jwt_token');
+  var jwt = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
   if (!jwt) { toast('נדרשת התחברות מחדש', 'e'); return; }
   showLoading('סורק את המסמך...');
   try {
@@ -324,7 +324,8 @@ function _injectOCRToolbarBtn() {
   var toolbar = document.querySelector('.doc-toolbar');
   if (!toolbar || toolbar.querySelector('.ocr-toolbar-btn')) return;
   var btn = document.createElement('button');
-  btn.className = 'btn btn-s btn-sm ocr-toolbar-btn';
+  btn.className = 'btn btn-sm ocr-toolbar-btn';
+  btn.style.cssText = 'background:var(--success,#10b981);color:#fff';
   btn.innerHTML = '\uD83E\uDD16 סרוק מסמך';
   btn.title = 'העלה קובץ וסרוק עם AI';
   btn.onclick = function() {

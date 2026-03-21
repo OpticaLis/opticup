@@ -87,7 +87,7 @@ async function _processNextInQueue() {
 
 // --- Process single file OCR ---
 async function _processSingleOCR(item) {
-  var jwt = sessionStorage.getItem('jwt_token');
+  var jwt = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
   if (!jwt) { item.status = 'failed'; item.error = 'נדרשת התחברות מחדש'; return; }
   try {
     var res = await fetch(SUPABASE_URL + '/functions/v1/ocr-extract', {

@@ -334,8 +334,8 @@ function _injectBatchUploadBtn() {
   var addBtn = document.querySelector('.doc-add-btn');
   if (!addBtn || document.querySelector('.batch-upload-toolbar-btn')) return;
   var btn = document.createElement('button');
-  btn.className = 'btn btn-s btn-sm batch-upload-toolbar-btn';
-  btn.style.marginRight = '4px';
+  btn.className = 'btn btn-sm batch-upload-toolbar-btn';
+  btn.style.cssText = 'margin-right:4px;background:var(--success,#10b981);color:#fff';
   btn.textContent = '\uD83D\uDCE4 העלאה מרובה';
   btn.onclick = _openBatchUploadModal;
   addBtn.parentElement.insertBefore(btn, addBtn.nextSibling);

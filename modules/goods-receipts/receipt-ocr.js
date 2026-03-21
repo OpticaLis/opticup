@@ -56,7 +56,7 @@ function _rcptOcrUpdateBtn() {
 // --- 2. Trigger OCR scan — upload file, call Edge Function ---
 async function _rcptOcrScan() {
   if (!_pendingReceiptFile) { toast('\u05D0\u05D9\u05DF \u05E7\u05D5\u05D1\u05E5 \u05DC\u05E1\u05E8\u05D9\u05E7\u05D4', 'e'); return; }
-  var jwt = sessionStorage.getItem('jwt_token');
+  var jwt = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
   if (!jwt) { toast('\u05E0\u05D3\u05E8\u05E9\u05EA \u05D4\u05EA\u05D7\u05D1\u05E8\u05D5\u05EA \u05DE\u05D7\u05D3\u05E9', 'e'); return; }
 
   var supplierName = ($('rcpt-supplier') || {}).value || '';
