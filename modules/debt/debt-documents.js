@@ -1,6 +1,7 @@
-// debt-documents.js — Documents tab (Phase 4d+5.5e)
+// debt-documents.js — Documents tab (Phase 4d+5.5e+8)
 let _docData = [], _docTypes = [], _docSuppliers = [];
 var _pendingNewDocFile = null;
+var _docPrepaidSet = {}; // Phase 8: supplier_id → deal object for active prepaid deals
 const DOC_STATUS_MAP = {
   open:            { he: '\u05E4\u05EA\u05D5\u05D7',        cls: 'dst-open' },
   partially_paid:  { he: '\u05E9\u05D5\u05DC\u05DD \u05D7\u05DC\u05E7\u05D9\u05EA',  cls: 'dst-partial' },
@@ -14,14 +15,17 @@ async function loadDocumentsTab() {
   if (!tid) return;
   showLoading('\u05D8\u05D5\u05E2\u05DF \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD...');
   try {
-    const [docs, types, sups] = await Promise.all([
+    const [docs, types, sups, deals] = await Promise.all([
       fetchAll(T.SUP_DOCS, [['is_deleted', 'eq', false]]),
       fetchAll(T.DOC_TYPES, [['is_active', 'eq', true]]),
-      fetchAll(T.SUPPLIERS, [['active', 'eq', true]])
+      fetchAll(T.SUPPLIERS, [['active', 'eq', true]]),
+      fetchAll(T.PREPAID_DEALS, [['status', 'eq', 'active'], ['is_deleted', 'eq', false]])
     ]);
     _docData = docs;
     _docTypes = types;
     _docSuppliers = sups;
+    _docPrepaidSet = {};
+    deals.forEach(function(d) { _docPrepaidSet[d.supplier_id] = d; });
     renderDocFilterBar();
     applyDocFilters();
   } catch (e) {
@@ -48,12 +52,16 @@ function renderDocumentsTable(docs) {
     var isDeliveryNote = type.code === 'delivery_note';
     var linkBtn = (isDeliveryNote && d.status !== 'linked')
       ? ' <button class="btn-sm btn-lnk" onclick="openLinkToInvoiceModal(\'' + d.id + '\')">\u05E7\u05E9\u05E8 \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA</button>' : '';
+    var hasPrepaid = !!_docPrepaidSet[d.supplier_id];
+    var ppBadge = hasPrepaid ? '<span style="background:#f59e0b;color:#fff;padding:1px 6px;border-radius:4px;font-size:11px;margin-right:4px">\u05DE\u05E7\u05D3\u05DE\u05D4</span>' : '';
+    var ppBtn = (hasPrepaid && balance > 0 && (d.status === 'open' || d.status === 'partially_paid'))
+      ? ' <button class="btn-sm" style="background:#f59e0b;color:#fff" onclick="openPrepaidDeductModal(\'' + d.id + '\')">\u05E7\u05D6\u05D6 \u05DE\u05E2\u05E1\u05E7\u05D4</button>' : '';
     return '<tr>' +
       '<td>' + escapeHtml(d.document_date || '') + '</td>' +
       '<td>' + escapeHtml(type.name_he || '') + '</td>' +
       '<td>' + escapeHtml(d.document_number || '') + '</td>' +
       '<td>' + escapeHtml(d.internal_number || '') + '</td>' +
-      '<td>' + escapeHtml(supMap[d.supplier_id] || '') + '</td>' +
+      '<td>' + ppBadge + escapeHtml(supMap[d.supplier_id] || '') + '</td>' +
       '<td>' + formatILS(d.total_amount) + '</td>' +
       '<td>' + formatILS(d.paid_amount) + '</td>' +
       '<td>' + formatILS(balance) + '</td>' +
@@ -61,7 +69,7 @@ function renderDocumentsTable(docs) {
       '<td>' +
         '<button class="btn-sm" onclick="viewDocument(\'' + d.id + '\')">\u05E6\u05E4\u05D4</button> ' +
         '<button class="btn-sm" title="' + (d.file_url ? '\u05D4\u05D7\u05DC\u05E3 \u05DE\u05E1\u05DE\u05DA' : '\u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA') + '" onclick="_attachFileToDoc(\'' + d.id + '\',\'' + d.supplier_id + '\')">&#128206;</button> ' +
-        '<button class="btn-sm" onclick="switchDebtTab(\'payments\')">\u05E9\u05DC\u05DD</button>' + linkBtn +
+        '<button class="btn-sm" onclick="switchDebtTab(\'payments\')">\u05E9\u05DC\u05DD</button>' + linkBtn + ppBtn +
         (d.status === 'open' ? ' <button class="btn-sm btn-d" onclick="cancelDocument(\'' + d.id + '\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' : '') +
       '</td></tr>';
   }).join('');
@@ -290,5 +298,50 @@ async function cancelDocument(docId) {
     } finally {
       hideLoading();
     }
+  });
+}
+
+// --- Phase 8: Prepaid deduction modal ---
+function openPrepaidDeductModal(docId) {
+  var doc = _docData.find(function(d) { return d.id === docId; });
+  if (!doc) return;
+  var deal = _docPrepaidSet[doc.supplier_id];
+  if (!deal) { toast('\u05D0\u05D9\u05DF \u05E2\u05E1\u05E7\u05EA \u05DE\u05E7\u05D3\u05DE\u05D4 \u05E4\u05E2\u05D9\u05DC\u05D4', 'e'); return; }
+  var supName = ''; _docSuppliers.forEach(function(s) { if (s.id === doc.supplier_id) supName = s.name; });
+  var bal = (Number(doc.total_amount) || 0) - (Number(doc.paid_amount) || 0);
+  var rem = (Number(deal.total_prepaid) || 0) - (Number(deal.total_used) || 0);
+  var def = Math.min(bal, rem);
+  var m = document.createElement('div'); m.id = 'pp-deduct-modal'; m.className = 'modal-overlay'; m.style.display = 'flex';
+  m.onclick = function(e) { if (e.target === m) m.remove(); };
+  m.innerHTML = '<div class="modal" style="max-width:420px"><h3 style="margin:0 0 12px">\u05E7\u05D9\u05D6\u05D5\u05D6 \u05DE\u05E2\u05E1\u05E7\u05EA \u05DE\u05E7\u05D3\u05DE\u05D4</h3><div id="pp-deduct-alert"></div>' +
+    '<div style="font-size:.9rem;display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">' +
+    '<div>\u05E1\u05E4\u05E7: <strong>' + escapeHtml(supName) + '</strong></div><div>\u05E2\u05E1\u05E7\u05D4: <strong>' + escapeHtml(deal.deal_name || '') + '</strong></div>' +
+    '<div>\u05D9\u05EA\u05E8\u05D4 \u05D1\u05E2\u05E1\u05E7\u05D4: <strong>' + formatILS(rem) + '</strong></div><div>\u05D9\u05EA\u05E8\u05D4 \u05D1\u05DE\u05E1\u05DE\u05DA: <strong>' + formatILS(bal) + '</strong></div></div>' +
+    '<label>\u05E1\u05DB\u05D5\u05DD \u05DC\u05E7\u05D9\u05D6\u05D5\u05D6<input type="number" id="pp-deduct-amt" class="nd-field" step="0.01" min="0.01" max="' + def + '" value="' + def.toFixed(2) + '"></label>' +
+    '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
+    '<button class="btn btn-g" onclick="closeAndRemoveModal(\'pp-deduct-modal\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
+    '<button class="btn btn-s" style="background:#f59e0b" onclick="_doPrepaidDeduct(\'' + docId + '\',\'' + deal.id + '\')">\u05E7\u05D6\u05D6</button></div></div>';
+  document.body.appendChild(m);
+}
+
+function _doPrepaidDeduct(docId, dealId) {
+  var amt = Number(($('pp-deduct-amt') || {}).value) || 0;
+  if (amt <= 0) { setAlert('pp-deduct-alert', '\u05E1\u05DB\u05D5\u05DD \u05D7\u05D9\u05D9\u05D1 \u05DC\u05D4\u05D9\u05D5\u05EA \u05D7\u05D9\u05D5\u05D1\u05D9', 'e'); return; }
+  promptPin('\u05E7\u05D9\u05D6\u05D5\u05D6 \u05DE\u05E2\u05E1\u05E7\u05EA \u05DE\u05E7\u05D3\u05DE\u05D4 \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
+    showLoading('\u05DE\u05E7\u05D6\u05D6...'); try {
+      var doc = _docData.find(function(d) { return d.id === docId; });
+      if (!doc) throw new Error('doc not found');
+      await sb.rpc('increment_prepaid_used', { p_deal_id: dealId, p_delta: amt });
+      var newPaid = (Number(doc.paid_amount) || 0) + amt;
+      await batchUpdate(T.SUP_DOCS, [{ id: docId, paid_amount: newPaid, status: newPaid >= (Number(doc.total_amount) || 0) ? 'paid' : 'partially_paid' }]);
+      await writeLog('prepaid_deduction', null, { supplier_id: doc.supplier_id, document_id: docId, deal_id: dealId, amount: amt, deducted_by: emp.id });
+      await sb.from(T.ALERTS).update({ status: 'dismissed', dismissed_at: new Date().toISOString() })
+        .eq('entity_id', docId).eq('alert_type', 'prepaid_new_document').eq('tenant_id', getTenantId());
+      if (typeof refreshAlertsBadge === 'function') refreshAlertsBadge();
+      closeAndRemoveModal('pp-deduct-modal');
+      toast('\u05E7\u05D5\u05D6\u05D6 ' + formatILS(amt) + ' \u05DE\u05E2\u05E1\u05E7\u05EA \u05DE\u05E7\u05D3\u05DE\u05D4', 's');
+      await loadDocumentsTab();
+    } catch (e) { console.error('_doPrepaidDeduct error:', e); toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E7\u05D9\u05D6\u05D5\u05D6: ' + (e.message || ''), 'e');
+    } finally { hideLoading(); }
   });
 }
