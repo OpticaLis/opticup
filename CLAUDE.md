@@ -158,7 +158,7 @@ opticup/
 | `T.TENANTS`       | tenants                  | id, name, slug, default_currency, timezone, locale, is_active, shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config (JSONB), address, phone, email, tax_id, logo_url, vat_rate |
 | `T.INV`           | inventory                | id, barcode, brand_id, supplier_id, model, size, color, quantity, status, is_deleted, access_exported, tenant_id |
 | `T.BRANDS`        | brands                   | id, name, brand_type, default_sync, active, exclude_website, min_stock_qty, tenant_id |
-| `T.SUPPLIERS`     | suppliers                | id, name, active, supplier_number (UNIQUE, ≥ 10), payment_terms_days, withholding_tax_rate, tenant_id |
+| `T.SUPPLIERS`     | suppliers                | id, name, active, supplier_number (UNIQUE, ≥ 10), payment_terms_days, withholding_tax_rate, opening_balance, opening_balance_date, tenant_id |
 | `T.EMPLOYEES`     | employees                | id, name, pin, email, phone, branch_id, failed_attempts, locked_until, last_login, tenant_id |
 | `T.LOGS`          | inventory_logs           | id, action, inventory_id, details (jsonb), created_at, tenant_id        |
 | `T.IMAGES`        | inventory_images         | id, inventory_id, url, tenant_id                                        |

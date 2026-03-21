@@ -53,6 +53,7 @@
 --   031_tenants_update_policy.sql — tenant_update_own RLS policy on tenants
 --   032_stock_count_unknown_items.sql — status CHECK includes 'unknown', inventory_id nullable
 --   036_receipt_item_po_fields.sql — price_decision, po_match_status on goods_receipt_items
+--   037_supplier_opening_balance.sql — opening_balance fields on suppliers
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -142,6 +143,10 @@ CREATE TABLE IF NOT EXISTS suppliers (
   tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   branch_id       UUID,
   created_by      UUID,
+  opening_balance NUMERIC DEFAULT 0,                              -- Phase 8: יתרת פתיחה
+  opening_balance_date DATE,                                      -- Phase 8: תאריך חתך
+  opening_balance_notes TEXT,                                     -- Phase 8: הערות יתרת פתיחה
+  opening_balance_set_by UUID REFERENCES employees(id),           -- Phase 8: מי הגדיר
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

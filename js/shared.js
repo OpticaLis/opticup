@@ -98,7 +98,7 @@ const FIELD_MAP = {
   goods_receipt_items: {
     'החלטת מחיר':'price_decision','סטטוס התאמה ל-PO':'po_match_status'
   },
-  suppliers: { 'שם':'name' },
+  suppliers: { 'שם':'name', 'יתרת פתיחה':'opening_balance', 'תאריך יתרת פתיחה':'opening_balance_date', 'הערות יתרת פתיחה':'opening_balance_notes', 'הוגדר ע"י':'opening_balance_set_by' },
   ai_agent_config: {
     'סריקה פעילה':'ocr_enabled','התאמת ספק אוטומטית':'auto_match_supplier',
     'התאמת הזמנה אוטומטית':'auto_match_po','סף ביטחון':'confidence_threshold',
