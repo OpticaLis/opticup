@@ -314,8 +314,8 @@ function openSetOpeningBalance(supplierId) {
     '<div style="font-size:.78rem;color:var(--g500);margin:-6px 0 8px">\u05DE\u05E1\u05DE\u05DB\u05D9\u05DD \u05D5\u05EA\u05E9\u05DC\u05D5\u05DE\u05D9\u05DD \u05DC\u05E4\u05E0\u05D9 \u05EA\u05D0\u05E8\u05D9\u05DA \u05D6\u05D4 \u05DC\u05D0 \u05D9\u05D9\u05E1\u05E4\u05E8\u05D5. \u05E8\u05E7 \u05DE\u05D4 \u05E9\u05D0\u05D7\u05E8\u05D9.</div>' +
     '<label>\u05D4\u05E2\u05E8\u05D5\u05EA<textarea id="ob-notes" rows="2" class="nd-field">' + escapeHtml(curNotes) + '</textarea></label>' +
     '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-    '<button class="btn btn-g" onclick="closeAndRemoveModal(\'ob-modal\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
-    '<button class="btn btn-s" onclick="_saveOpeningBalance(\'' + supplierId + '\')">\u05E9\u05DE\u05D5\u05E8</button></div></div>';
+    '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'ob-modal\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
+    '<button class="btn" style="background:#059669;color:#fff" onclick="_saveOpeningBalance(\'' + supplierId + '\')">\u05E9\u05DE\u05D5\u05E8</button></div></div>';
   document.body.appendChild(m);
 }
 

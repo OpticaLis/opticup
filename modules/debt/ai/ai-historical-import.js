@@ -54,8 +54,8 @@ function _openHistoricalImportModal() {
           '<div id="hist-progress-bar" style="height:100%;background:var(--primary);border-radius:3px;' +
             'width:0%;transition:width .3s"></div></div></div>' +
       '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-        '<button class="btn btn-g" onclick="_closeHistImport()">ביטול</button>' +
-        '<button class="btn btn-s" id="hist-start-btn" onclick="_histStartImport()" disabled>' +
+        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="_closeHistImport()">ביטול</button>' +
+        '<button class="btn" style="background:#059669;color:#fff" id="hist-start-btn" onclick="_histStartImport()" disabled>' +
           '\u25B6 התחל ייבוא + סריקת AI</button></div>' +
     '</div></div>';
   var ex = $('hist-import-modal'); if (ex) ex.remove();
@@ -292,8 +292,8 @@ async function _histShowLearningSummary(docIds) {
       '<div style="background:#e8f5e9;border-radius:6px;padding:10px;font-size:.85rem;color:#2e7d32;margin-bottom:14px">' +
         '\uD83D\uDCA1 הסריקות הבאות מספקים אלו יהיו מדויקות משמעותית יותר!</div>' +
       '<div style="display:flex;gap:8px;justify-content:flex-end">' +
-        '<button class="btn btn-g" onclick="$(\'hist-learning-modal\').remove()">סגור</button>' +
-        '<button class="btn btn-s" onclick="$(\'hist-learning-modal\').remove();switchDebtTab(\'documents\')">' +
+        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="$(\'hist-learning-modal\').remove()">סגור</button>' +
+        '<button class="btn" style="background:#059669;color:#fff" onclick="$(\'hist-learning-modal\').remove();switchDebtTab(\'documents\')">' +
           '\uD83D\uDCCB צפה במסמכים</button></div>' +
     '</div></div>';
   var ex = $('hist-learning-modal'); if (ex) ex.remove();

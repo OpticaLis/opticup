@@ -41,8 +41,8 @@ function _wizRenderStep1() {
     '</select></label>' +
     '<div id="wiz-supplier-info" style="margin-top:12px"></div>' +
     '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-      '<button class="btn btn-g" onclick="closeAndRemoveModal(\'pay-wizard-modal\')">ביטול</button>' +
-      '<button class="btn btn-s" onclick="_wizGoStep2()">\u2190 הבא</button>' +
+      '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'pay-wizard-modal\')">ביטול</button>' +
+      '<button class="btn" style="background:#059669;color:#fff" onclick="_wizGoStep2()">\u2190 הבא</button>' +
     '</div>';
   if (_wizState.supplierId) {
     $('wiz-supplier').value = _wizState.supplierId;
@@ -130,8 +130,8 @@ function _wizRenderStep2() {
         'class="nd-field">' + escapeHtml(_wizState.notes) + '</textarea></label>' +
     '</div>' +
     '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-      '<button class="btn btn-g" onclick="_wizRenderStep1()">\u2192 חזרה</button>' +
-      '<button class="btn btn-s" onclick="_wizGoStep3()">\u2190 הבא</button>' +
+      '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="_wizRenderStep1()">\u2192 חזרה</button>' +
+      '<button class="btn" style="background:#059669;color:#fff" onclick="_wizGoStep3()">\u2190 הבא</button>' +
     '</div>';
   if (_wizState.paymentMethod) $('wiz-method').value = _wizState.paymentMethod;
   _wizCalcTax();

@@ -167,9 +167,9 @@ async function showOCRReview(result, fileUrl) {
         '<div class="ocr-conf-bar"><span style="font-size:.85rem;white-space:nowrap">רמת ביטחון: ' + confPct + '%</span>' +
           '<div style="flex:1;height:6px;background:var(--g200);border-radius:3px;overflow:hidden">' +
             '<div style="width:' + confPct + '%;height:100%;background:' + confClr + ';border-radius:3px"></div></div></div>' +
-        '<button class="btn btn-g" onclick="closeAndRemoveModal(\'ocr-review-modal\')">&#10060; בטל</button>' +
-        '<button class="btn btn-s" onclick="_ocrSave(\'corrected\')">&#9999;&#65039; ערוך ושמור</button>' +
-        '<button class="btn btn-s" style="background:#27ae60" onclick="_ocrSave(\'accepted\')">&#10004; אשר הכל</button>' +
+        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'ocr-review-modal\')">&#10060; בטל</button>' +
+        '<button class="btn" style="background:#059669;color:#fff" onclick="_ocrSave(\'corrected\')">&#9999;&#65039; ערוך ושמור</button>' +
+        '<button class="btn" style="background:#27ae60;color:#fff" onclick="_ocrSave(\'accepted\')">&#10004; אשר הכל</button>' +
       '</div>' +
     '</div></div>';
 
@@ -334,7 +334,6 @@ function _injectOCRToolbarBtn() {
   var addBtn = toolbar.querySelector('.doc-add-btn');
   if (addBtn) toolbar.insertBefore(btn, addBtn); else toolbar.appendChild(btn);
 }
-
 // Patch loadDocumentsTab to inject OCR UI after rendering
 (function() {
   var _origLoad = typeof loadDocumentsTab === 'function' ? loadDocumentsTab : null;

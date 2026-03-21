@@ -354,7 +354,7 @@ function openReturnTimeline(idx) {
         '</div>' +
         '<div style="padding:4px 8px">' + tlHtml + '</div>' +
         '<div style="text-align:center;margin-top:16px">' +
-          '<button class="btn btn-g" onclick="closeModal(\'dret-timeline-modal\')" style="padding:8px 24px">סגור</button>' +
+          '<button class="btn" style="background:#e5e7eb;color:#1e293b;padding:8px 24px" onclick="closeModal(\'dret-timeline-modal\')">סגור</button>' +
         '</div>' +
       '</div>' +
     '</div>';

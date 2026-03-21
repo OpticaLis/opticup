@@ -95,8 +95,8 @@ function _poCompShowReport(report, poNumber, onConfirm) {
   html += '</div>';
 
   var footer = '<div style="display:flex;gap:8px;justify-content:flex-end;padding:8px 0">' +
-    '<button class="btn btn-g" id="pc-cancel">\u2190 \u05D7\u05D6\u05E8\u05D4</button>' +
-    '<button class="btn btn-s" id="pc-confirm">\u05D0\u05E9\u05E8 \u05E7\u05D1\u05DC\u05D4 \u25B6</button></div>';
+    '<button class="btn" style="background:#e5e7eb;color:#1e293b" id="pc-cancel">\u2190 \u05D7\u05D6\u05E8\u05D4</button>' +
+    '<button class="btn" style="background:#059669;color:#fff" id="pc-confirm">\u05D0\u05E9\u05E8 \u05E7\u05D1\u05DC\u05D4 \u25B6</button></div>';
 
   var modal = Modal.show({
     title: '\uD83D\uDCCB \u05D4\u05E9\u05D5\u05D5\u05D0\u05D4 \u05DE\u05D5\u05DC \u05D4\u05D6\u05DE\u05E0\u05D4 ' + escapeHtml(poNumber || ''),

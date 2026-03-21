@@ -193,8 +193,8 @@ function _rcptOcrShowReview(classifiedItems, onConfirm) {
     '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
 
   var footer = '<div style="display:flex;gap:8px;justify-content:flex-end;padding:8px 0">' +
-    '<button class="btn btn-g" id="rcpt-rv-cancel">\u05D1\u05D8\u05DC</button>' +
-    '<button class="btn btn-s" id="rcpt-rv-confirm">\u05D0\u05E9\u05E8 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD</button></div>';
+    '<button class="btn" style="background:#e5e7eb;color:#1e293b" id="rcpt-rv-cancel">\u05D1\u05D8\u05DC</button>' +
+    '<button class="btn" style="background:#059669;color:#fff" id="rcpt-rv-confirm">\u05D0\u05E9\u05E8 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD</button></div>';
 
   var modal = Modal.show({
     title: '\u05E1\u05E7\u05D9\u05E8\u05EA \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DE-OCR (' + classifiedItems.length + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD)',

@@ -30,7 +30,7 @@ function initReceiptOCR() {
   if (!attachName || $('rcpt-ocr-btn')) return;
   var btn = document.createElement('button');
   btn.id = 'rcpt-ocr-btn';
-  btn.className = 'btn btn-s btn-sm';
+  btn.className = 'btn btn-sm'; btn.style.cssText = 'background:#059669;color:#fff';
   btn.style.cssText = 'width:100%;margin-top:4px;display:none';
   btn.innerHTML = '\uD83E\uDD16 \u05E1\u05E8\u05D5\u05E7 \u05E2\u05DD AI';
   btn.onclick = _rcptOcrScan;
@@ -205,7 +205,7 @@ function _rcptOcrShowBanner(confidence, matched, total, fileUrl, validationResul
   }
   b.innerHTML = t;
   if (fileUrl) {
-    var vb = document.createElement('button'); vb.className = 'btn btn-g btn-sm';
+    var vb = document.createElement('button'); vb.className = 'btn btn-sm'; vb.style.cssText = 'background:#e5e7eb;color:#1e293b';
     vb.style.cssText = 'margin-right:auto;font-size:.8rem';
     vb.textContent = '\uD83D\uDCC4 \u05E6\u05E4\u05D4 \u05D1\u05DE\u05E7\u05D5\u05E8';
     vb.onclick = function() { _rcptOcrPreviewDoc(fileUrl); }; b.appendChild(vb);
@@ -230,7 +230,7 @@ async function _rcptOcrPreviewDoc(fileUrl) {
   o.innerHTML = '<div style="background:#fff;border-radius:12px;padding:16px;max-width:90vw;max-height:90vh;overflow:auto">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
     '<strong>\uD83D\uDCC4 \u05DE\u05E1\u05DE\u05DA \u05DE\u05E7\u05D5\u05E8</strong>' +
-    '<button class="btn btn-g btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">\u05E1\u05D2\u05D5\u05E8</button></div>' + tag + '</div>';
+    '<button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" onclick="this.closest(\'.modal-overlay\').remove()">\u05E1\u05D2\u05D5\u05E8</button></div>' + tag + '</div>';
   document.body.appendChild(o);
 }
 

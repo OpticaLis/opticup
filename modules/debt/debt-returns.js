@@ -98,7 +98,7 @@ function renderReturnsTable(returns, container) {
     for (var ti = 0; ti < transitions.length; ti++) {
       var nextSt = transitions[ti];
       var nextLbl = RETURN_STATUS_MAP[nextSt] ? RETURN_STATUS_MAP[nextSt].he : nextSt;
-      actionBtns += ' <button class="btn-sm btn-lnk" onclick="promptReturnStatusUpdate(\'' +
+      actionBtns += ' <button class="btn-sm" style="background:#3b82f6;color:#fff" onclick="promptReturnStatusUpdate(\'' +
         r.id + '\',\'' + nextSt + '\')">העבר ל: ' + escapeHtml(nextLbl) + '</button>';
     }
 
@@ -178,7 +178,7 @@ async function viewReturnDetail(returnId) {
             '<div>סה"כ ערך: <strong>' + formatILS(totalValue) + '</strong></div>' +
           '</div>' +
           '<div style="text-align:left;margin-top:16px">' +
-            '<button class="btn btn-g" onclick="closeModal(\'return-detail-modal\')">סגור</button>' +
+            '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeModal(\'return-detail-modal\')">סגור</button>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -209,8 +209,8 @@ function promptReturnStatusUpdate(returnId, newStatus) {
           '<input type="password" id="ret-status-pin" maxlength="10" placeholder="הזן PIN">' +
         '</div>' +
         '<div style="display:flex;gap:8px;margin-top:12px">' +
-          '<button class="btn btn-p" onclick="_confirmReturnStatus(\'' + returnId + '\',\'' + newStatus + '\')">אשר</button>' +
-          '<button class="btn btn-g" onclick="closeModal(\'return-status-modal\')">ביטול</button>' +
+          '<button class="btn" style="background:#1a73e8;color:#fff" onclick="_confirmReturnStatus(\'' + returnId + '\',\'' + newStatus + '\')">אשר</button>' +
+          '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeModal(\'return-status-modal\')">ביטול</button>' +
         '</div>' +
       '</div>' +
     '</div>';

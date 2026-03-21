@@ -70,7 +70,7 @@ function renderPaymentsToolbar() {
       '</select>' +
       '<input type="date" id="pay-f-from" onchange="applyPayFilters()" class="doc-filter-input">' +
       '<input type="date" id="pay-f-to" onchange="applyPayFilters()" class="doc-filter-input">' +
-      '<button class="btn btn-s doc-add-btn" onclick="openNewPaymentWizard()">+ תשלום חדש</button>' +
+      '<button class="btn doc-add-btn" style="background:#059669;color:#fff" onclick="openNewPaymentWizard()">+ תשלום חדש</button>' +
     '</div>' +
     '<div id="pay-table-wrap"></div>';
 }
@@ -131,7 +131,7 @@ function renderPaymentsTable(payments) {
       '</td>' +
       '<td><span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></td>' +
       '<td><button class="btn-sm" onclick="viewPayment(\'' + p.id + '\')">צפה</button>' +
-        (p.status === 'approved' ? ' <button class="btn-sm btn-d" onclick="cancelPayment(\'' + p.id + '\')">ביטול</button>' : '') +
+        (p.status === 'approved' ? ' <button class="btn-sm" style="background:#ef4444;color:#fff" onclick="cancelPayment(\'' + p.id + '\')">ביטול</button>' : '') +
       '</td>' +
     '</tr>';
   }).join('');
@@ -192,7 +192,7 @@ function viewPayment(payId) {
         '<tbody>' + allocRows + '</tbody>' +
       '</table>' +
       '<div style="text-align:left;margin-top:14px">' +
-        '<button class="btn btn-g" onclick="closeAndRemoveModal(\'view-pay-modal\')">סגור</button>' +
+        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'view-pay-modal\')">סגור</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(modal);

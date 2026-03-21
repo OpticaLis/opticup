@@ -23,7 +23,7 @@ function _pickReceiptFile() {
       span.textContent = '\uD83D\uDCCE ' + displayName;
       nameEl.appendChild(span);
       var removeBtn = document.createElement('button');
-      removeBtn.className = 'btn btn-d btn-sm';
+      removeBtn.className = 'btn btn-sm'; removeBtn.style.cssText = 'background:#ef4444;color:#fff';
       removeBtn.style.cssText = 'margin-right:6px;font-size:.75rem';
       removeBtn.textContent = '\u2716 \u05D4\u05E1\u05E8';
       removeBtn.onclick = _removeReceiptFile;
@@ -227,7 +227,7 @@ function addReceiptItemRow(data) {
     <td>${isNew ? '<span class="rcpt-new-badge">חדש</span>' : '<span class="rcpt-existing-badge">קיים</span>'}
       <input type="hidden" class="rcpt-is-new" value="${isNew ? '1' : '0'}">
     </td>
-    <td><button class="btn btn-d btn-sm" onclick="this.closest('tr').remove();updateReceiptItemsStats()" title="הסר">✖</button></td>
+    <td><button class="btn btn-sm" style="background:#ef4444;color:#fff" onclick="this.closest('tr').remove();updateReceiptItemsStats()" title="הסר">✖</button></td>
   `;
   // Auto-set sync from brand default
   const brandName = data?.brand || '';
@@ -335,7 +335,7 @@ function showReceiptGuide() {
   box.textContent = RECEIPT_GUIDE_TEXT;
   const closeBtn = document.createElement('button');
   closeBtn.textContent = 'סגור';
-  closeBtn.className = 'btn btn-p';
+  closeBtn.className = 'btn'; closeBtn.style.cssText = 'background:#1a73e8;color:#fff';
   closeBtn.style.cssText = 'margin-top:16px;display:block;margin-right:auto';
   closeBtn.onclick = () => overlay.remove();
   box.appendChild(closeBtn);

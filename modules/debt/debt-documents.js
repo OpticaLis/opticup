@@ -51,7 +51,7 @@ function renderDocumentsTable(docs) {
     var st = DOC_STATUS_MAP[d.status] || { he: d.status, cls: '' };
     var isDeliveryNote = type.code === 'delivery_note';
     var linkBtn = (isDeliveryNote && d.status !== 'linked')
-      ? ' <button class="btn-sm btn-lnk" onclick="openLinkToInvoiceModal(\'' + d.id + '\')">\u05E7\u05E9\u05E8 \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA</button>' : '';
+      ? ' <button class="btn-sm" style="background:#3b82f6;color:#fff" onclick="openLinkToInvoiceModal(\'' + d.id + '\')">\u05E7\u05E9\u05E8 \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA</button>' : '';
     var hasPrepaid = !!_docPrepaidSet[d.supplier_id];
     var ppBadge = hasPrepaid ? '<span style="background:#f59e0b;color:#fff;padding:1px 6px;border-radius:4px;font-size:11px;margin-right:4px">\u05DE\u05E7\u05D3\u05DE\u05D4</span>' : '';
     var ppBtn = (hasPrepaid && balance > 0 && (d.status === 'open' || d.status === 'partially_paid'))
@@ -71,7 +71,7 @@ function renderDocumentsTable(docs) {
         '<button class="btn-sm" onclick="viewDocument(\'' + d.id + '\')">\u05E6\u05E4\u05D4</button> ' +
         '<button class="btn-sm" title="' + (d.file_url ? '\u05D4\u05D7\u05DC\u05E3 \u05DE\u05E1\u05DE\u05DA' : '\u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA') + '" onclick="_attachFileToDoc(\'' + d.id + '\',\'' + d.supplier_id + '\')">&#128206;</button> ' +
         '<button class="btn-sm" onclick="switchDebtTab(\'payments\')">\u05E9\u05DC\u05DD</button>' + linkBtn + ppBtn +
-        (d.status === 'open' ? ' <button class="btn-sm btn-d" onclick="cancelDocument(\'' + d.id + '\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' : '') +
+        (d.status === 'open' ? ' <button class="btn-sm" style="background:#ef4444;color:#fff" onclick="cancelDocument(\'' + d.id + '\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' : '') +
       '</td></tr>';
   }).join('');
   wrap.innerHTML =
@@ -133,13 +133,13 @@ function openNewDocumentModal() {
         '<label style="grid-column:1/-1">\u05D4\u05E2\u05E8\u05D5\u05EA<textarea id="nd-notes" rows="2" class="nd-field"></textarea></label>' +
       '</div>' +
       '<div style="margin-top:10px"><label>\u05DE\u05E1\u05DE\u05DA \u05DE\u05E6\u05D5\u05E8\u05E3</label>' +
-        '<button class="btn btn-g btn-sm" id="nd-attach-btn" onclick="_pickNewDocFile()" style="width:100%">&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA</button>' +
+        '<button class="btn btn-sm" id="nd-attach-btn" onclick="_pickNewDocFile()" style="background:#e5e7eb;color:#1e293b;width:100%">&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA</button>' +
         '<span id="nd-attach-name" style="font-size:.78rem;color:var(--g600);display:block;margin-top:2px"></span></div>' +
       '<label style="display:block;margin-top:10px">\u05E7\u05D5\u05D3 \u05E2\u05D5\u05D1\u05D3 (PIN)' +
         '<input type="password" id="nd-pin" maxlength="10" class="nd-field" inputmode="numeric"></label>' +
       '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-        '<button class="btn btn-g" onclick="closeAndRemoveModal(\'new-doc-modal\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
-        '<button class="btn btn-s" onclick="saveNewDocument()">\u05E9\u05DE\u05D5\u05E8</button></div></div>';
+        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'new-doc-modal\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
+        '<button class="btn" style="background:#059669;color:#fff" onclick="saveNewDocument()">\u05E9\u05DE\u05D5\u05E8</button></div></div>';
   document.body.appendChild(modal);
   $('nd-date').value = new Date().toISOString().slice(0, 10);
   var due = new Date(); due.setDate(due.getDate() + 30);
@@ -161,7 +161,7 @@ function _pickNewDocFile() {
     var span = document.createElement('span');
     span.textContent = '\uD83D\uDCCE ' + (f.name.length > 20 ? f.name.slice(0, 20) + '...' : f.name);
     var rb = document.createElement('button');
-    rb.className = 'btn btn-d btn-sm'; rb.style.cssText = 'margin-right:6px;font-size:.75rem';
+    rb.className = 'btn btn-sm'; rb.style.cssText = 'background:#ef4444;color:#fff;margin-right:6px;font-size:.75rem';
     rb.textContent = '\u2716 \u05D4\u05E1\u05E8'; rb.onclick = _removeNewDocFile;
     nm.appendChild(span); nm.appendChild(rb);
   };
@@ -283,8 +283,8 @@ function openPrepaidDeductModal(docId) {
     '<div>\u05D9\u05EA\u05E8\u05D4 \u05D1\u05E2\u05E1\u05E7\u05D4: <strong>' + formatILS(rem) + '</strong></div><div>\u05D9\u05EA\u05E8\u05D4 \u05D1\u05DE\u05E1\u05DE\u05DA: <strong>' + formatILS(bal) + '</strong></div></div>' +
     '<label>\u05E1\u05DB\u05D5\u05DD \u05DC\u05E7\u05D9\u05D6\u05D5\u05D6<input type="number" id="pp-deduct-amt" class="nd-field" step="0.01" min="0.01" max="' + def + '" value="' + def.toFixed(2) + '"></label>' +
     '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-    '<button class="btn btn-g" onclick="closeAndRemoveModal(\'pp-deduct-modal\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
-    '<button class="btn btn-s" style="background:#f59e0b" onclick="_doPrepaidDeduct(\'' + docId + '\',\'' + deal.id + '\')">\u05E7\u05D6\u05D6</button></div></div>';
+    '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'pp-deduct-modal\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
+    '<button class="btn" style="background:#f59e0b;color:#fff" onclick="_doPrepaidDeduct(\'' + docId + '\',\'' + deal.id + '\')">\u05E7\u05D6\u05D6</button></div></div>';
   document.body.appendChild(m);
 }
 

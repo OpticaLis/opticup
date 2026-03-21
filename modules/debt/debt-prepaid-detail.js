@@ -25,8 +25,8 @@ function openAddCheckModal(dealId) {
         '<label style="grid-column:1/-1">הערות<input id="chk-notes" class="nd-field"></label>' +
       '</div>' +
       '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-        '<button class="btn btn-g" onclick="closeAndRemoveModal(\'add-check-modal\')">ביטול</button>' +
-        '<button class="btn btn-s" onclick="saveNewCheck(\'' + dealId + '\')">שמור</button>' +
+        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'add-check-modal\')">ביטול</button>' +
+        '<button class="btn" style="background:#059669;color:#fff" onclick="saveNewCheck(\'' + dealId + '\')">שמור</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(modal);
@@ -100,7 +100,7 @@ function viewDealDetail(dealId) {
           ? ' <button class="btn-sm" onclick="updateCheckStatus(\'' + c.id + '\',\'cashed\')">נפרע</button>'
           : '';
         var bounceBtn = c.status === 'pending'
-          ? ' <button class="btn-sm pst-red" onclick="updateCheckStatus(\'' + c.id + '\',\'bounced\')">חזר</button>'
+          ? ' <button class="btn-sm" style="background:#ef4444;color:#fff" onclick="updateCheckStatus(\'' + c.id + '\',\'bounced\')">חזר</button>'
           : '';
         return '<tr>' +
           '<td>' + escapeHtml(c.check_number) + '</td>' +
@@ -148,7 +148,7 @@ function viewDealDetail(dealId) {
         '<tbody>' + checkRows + '</tbody>' +
       '</table></div>' +
       '<div style="text-align:left;margin-top:14px">' +
-        '<button class="btn btn-g" onclick="closeAndRemoveModal(\'deal-detail-modal\')">סגור</button>' +
+        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'deal-detail-modal\')">סגור</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(modal);

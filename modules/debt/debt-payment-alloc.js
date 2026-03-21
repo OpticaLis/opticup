@@ -98,8 +98,8 @@ function _wizRenderStep3() {
       '<button class="btn-sm" onclick="_wizClearAlloc()">נקה</button>' +
     '</div>' +
     '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-      '<button class="btn btn-g" onclick="_wizRenderStep2()">\u2192 חזרה</button>' +
-      '<button class="btn btn-s" onclick="_wizGoStep4()">\u2190 הבא</button>' +
+      '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="_wizRenderStep2()">\u2192 חזרה</button>' +
+      '<button class="btn" style="background:#059669;color:#fff" onclick="_wizGoStep4()">\u2190 הבא</button>' +
     '</div>';
 }
 
@@ -182,8 +182,8 @@ function _wizRenderStep4() {
       '<input type="password" id="wiz-pin" maxlength="10" class="nd-field" inputmode="numeric">' +
     '</label>' +
     '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-      '<button class="btn btn-g" onclick="_wizRenderStep3()">\u2192 חזרה</button>' +
-      '<button class="btn btn-s" onclick="_wizSavePayment()">אשר תשלום</button>' +
+      '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="_wizRenderStep3()">\u2192 חזרה</button>' +
+      '<button class="btn" style="background:#059669;color:#fff" onclick="_wizSavePayment()">אשר תשלום</button>' +
     '</div>';
 }
 

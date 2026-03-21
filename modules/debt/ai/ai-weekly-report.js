@@ -201,15 +201,15 @@ function _renderWeeklyReport(weekStart, weekEnd) {
 
   var ocr = d.ocr_stats || { scanned: 0, auto_filled: 0, corrected: 0, accuracy: 0 };
   var pdfBtn = d._pdf_url
-    ? '<button class="btn btn-s" onclick="window.open(\'' + escapeHtml(d._pdf_url) + '\',\'_blank\')">&#128196; פתח PDF</button>'
-    : '<button class="btn btn-s" onclick="exportWeeklyPDF()">&#128196; ייצוא PDF</button>';
+    ? '<button class="btn" style="background:#059669;color:#fff" onclick="window.open(\'' + escapeHtml(d._pdf_url) + '\',\'_blank\')">&#128196; פתח PDF</button>'
+    : '<button class="btn" style="background:#059669;color:#fff" onclick="exportWeeklyPDF()">&#128196; ייצוא PDF</button>';
 
   c.innerHTML =
     '<div id="weekly-report-wrap">' +
     '<div class="weekly-report-header">' +
-      '<button class="btn btn-g btn-sm" onclick="navigateWeek(-1)">&#9664; קודם</button>' +
+      '<button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" onclick="navigateWeek(-1)">&#9664; קודם</button>' +
       '<h3>&#128202; דוח שבועי &mdash; ' + _fdh(weekStart) + ' &ndash; ' + _fdh(weekEnd) + '</h3>' +
-      '<button class="btn btn-g btn-sm" onclick="navigateWeek(1)"' + (isCurWeek ? ' disabled' : '') + '>הבא &#9654;</button>' +
+      '<button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" onclick="navigateWeek(1)"' + (isCurWeek ? ' disabled' : '') + '>הבא &#9654;</button>' +
     '</div>' +
     _wrCard('סיכום',
       '<div class="weekly-stat"><span>חוב כולל:</span><strong>' + formatILS(d.total_debt) + '</strong>' + chgHtml + '</div>' +
@@ -228,7 +228,7 @@ function _renderWeeklyReport(weekStart, weekEnd) {
         '<span>דיוק: <strong>' + ocr.accuracy + '%</strong></span></div>'
     ) +
     '<div class="weekly-report-actions">' + pdfBtn +
-      '<button class="btn btn-g" onclick="toast(\'בקרוב\',\'i\')">&#128231; שלח במייל (בקרוב)</button>' +
+      '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="toast(\'בקרוב\',\'i\')">&#128231; שלח במייל (בקרוב)</button>' +
     '</div></div>';
 }
 

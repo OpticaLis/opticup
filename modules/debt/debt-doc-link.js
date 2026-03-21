@@ -39,8 +39,8 @@ function openLinkToInvoiceModal(docId) {
       '</label>' +
       '<div id="link-summary" style="margin-top:10px;font-size:.88rem"></div>' +
       '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-        '<button class="btn btn-g" onclick="closeAndRemoveModal(\'link-doc-modal\')">ביטול</button>' +
-        '<button class="btn btn-s" onclick="linkDeliveryToInvoice(\'' + docId + '\')">קשר</button>' +
+        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'link-doc-modal\')">ביטול</button>' +
+        '<button class="btn" style="background:#059669;color:#fff" onclick="linkDeliveryToInvoice(\'' + docId + '\')">קשר</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(modal);

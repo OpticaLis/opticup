@@ -228,7 +228,7 @@ function renderSuppliersToolbar(showAll) {
         (showAll ? ' checked' : '') + '>' +
       '\u05D4\u05E6\u05D2 \u05D0\u05EA \u05DB\u05DC \u05D4\u05E1\u05E4\u05E7\u05D9\u05DD' +
     '</label>' +
-    '<button class="btn btn-s sup-ob-btn" onclick="openQuickOpeningBalance()">\u05D4\u05D2\u05D3\u05E8 \u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</button>';
+    '<button class="btn sup-ob-btn" style="background:#059669;color:#fff" onclick="openQuickOpeningBalance()">\u05D4\u05D2\u05D3\u05E8 \u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</button>';
   wrap.prepend(toolbar);
 }
 
@@ -252,8 +252,8 @@ function openQuickOpeningBalance() {
       '<h3 style="margin:0 0 14px">\u05D4\u05D2\u05D3\u05E8\u05EA \u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</h3>' +
       '<label>\u05E1\u05E4\u05E7<div id="quick-ob-supplier-wrap"></div></label>' +
       '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-        '<button class="btn btn-g" onclick="closeAndRemoveModal(\'quick-ob-modal\')">ביטול</button>' +
-        '<button class="btn btn-s" id="quick-ob-go" disabled>המשך</button>' +
+        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'quick-ob-modal\')">ביטול</button>' +
+        '<button class="btn" style="background:#059669;color:#fff" id="quick-ob-go" disabled>המשך</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(modal);

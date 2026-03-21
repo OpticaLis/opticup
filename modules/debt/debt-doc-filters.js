@@ -39,7 +39,7 @@ function renderDocFilterBar() {
   if (favs.length > 0) {
     favHtml = '<div id="doc-fav-bar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">';
     favs.forEach(function(f, i) {
-      favHtml += '<button class="btn btn-g btn-sm doc-fav-btn" data-fav-idx="' + i + '" ' +
+      favHtml += '<button class="btn btn-sm doc-fav-btn" style="background:#e5e7eb;color:#1e293b" data-fav-idx="' + i + '" ' +
         'onclick="_applyFavorite(' + i + ')" oncontextmenu="_deleteFavorite(event,' + i + ')" ' +
         'title="\u05DC\u05D7\u05E5 \u05DC\u05D4\u05D7\u05DC\u05D4 | \u05DC\u05D7\u05D9\u05E6\u05D4 \u05D9\u05DE\u05E0\u05D9\u05EA \u05DC\u05DE\u05D7\u05D9\u05E7\u05D4">\u2B50 ' + escapeHtml(f.name) + '</button>';
     });
@@ -48,10 +48,10 @@ function renderDocFilterBar() {
   var collapsed = _docFilterCollapsed;
   var html = favHtml +
     '<div class="doc-toolbar" style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
-      '<button class="btn btn-g btn-sm" id="doc-filter-toggle" onclick="_toggleDocFilters()">' +
+      '<button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" id="doc-filter-toggle" onclick="_toggleDocFilters()">' +
         '\uD83D\uDD0D \u05E1\u05D9\u05E0\u05D5\u05DF [' + (collapsed ? '\u25BC' : '\u25B2') + ']</button>' +
       '<span id="doc-filter-count" style="font-size:.82rem;color:var(--g500)"></span>' +
-      '<button class="btn btn-s doc-add-btn" onclick="openNewDocumentModal()" style="margin-right:auto">+ \u05DE\u05E1\u05DE\u05DA \u05D7\u05D3\u05E9</button>' +
+      '<button class="btn doc-add-btn" style="background:#059669;color:#fff;margin-right:auto" onclick="openNewDocumentModal()">+ \u05DE\u05E1\u05DE\u05DA \u05D7\u05D3\u05E9</button>' +
     '</div>' +
     '<div id="doc-filter-panel" style="display:' + (collapsed ? 'none' : 'grid') + ';grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px;' +
       'background:var(--white);border:1px solid var(--g200);border-radius:8px;padding:12px">' +
@@ -82,9 +82,9 @@ function renderDocFilterBar() {
           '<option value="current">\uD83D\uDCCB \u05E9\u05D5\u05D8\u05E3</option>' +
         '</select></div>' +
       '<div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;margin-top:4px">' +
-        '<button class="btn btn-p btn-sm" onclick="_applyDocFilterClick()">\uD83D\uDD0D \u05E1\u05E0\u05DF</button>' +
-        '<button class="btn btn-g btn-sm" onclick="_clearDocFilters()">\u21BB \u05E0\u05E7\u05D4 \u05D4\u05DB\u05DC</button>' +
-        '<button class="btn btn-g btn-sm" onclick="_saveDocFilterFav()">\u2B50 \u05E9\u05DE\u05D5\u05E8 \u05DB\u05DE\u05D5\u05E2\u05D3\u05E3</button>' +
+        '<button class="btn btn-sm" style="background:#1a73e8;color:#fff" onclick="_applyDocFilterClick()">\uD83D\uDD0D \u05E1\u05E0\u05DF</button>' +
+        '<button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" onclick="_clearDocFilters()">\u21BB \u05E0\u05E7\u05D4 \u05D4\u05DB\u05DC</button>' +
+        '<button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" onclick="_saveDocFilterFav()">\u2B50 \u05E9\u05DE\u05D5\u05E8 \u05DB\u05DE\u05D5\u05E2\u05D3\u05E3</button>' +
       '</div>' +
     '</div>' +
     '<div id="doc-table-wrap"></div>';

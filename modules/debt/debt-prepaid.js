@@ -64,7 +64,7 @@ function renderPrepaidToolbar() {
         '<option value="completed">הושלם</option>' +
         '<option value="cancelled">מבוטל</option>' +
       '</select>' +
-      '<button class="btn btn-s doc-add-btn" onclick="openNewDealModal()">+ עסקה חדשה</button>' +
+      '<button class="btn doc-add-btn" style="background:#059669;color:#fff" onclick="openNewDealModal()">+ עסקה חדשה</button>' +
     '</div>' +
     '<div id="pp-table-wrap"></div>';
 }
@@ -178,8 +178,8 @@ function openNewDealModal() {
         '<input type="password" id="deal-pin" maxlength="10" class="nd-field" inputmode="numeric">' +
       '</label>' +
       '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-        '<button class="btn btn-g" onclick="closeAndRemoveModal(\'new-deal-modal\')">ביטול</button>' +
-        '<button class="btn btn-s" onclick="saveNewDeal()">שמור</button>' +
+        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'new-deal-modal\')">ביטול</button>' +
+        '<button class="btn" style="background:#059669;color:#fff" onclick="saveNewDeal()">שמור</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(modal);

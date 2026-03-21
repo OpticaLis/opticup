@@ -163,8 +163,8 @@ function _renderAIConfigModal(config, stats) {
 
       // Action buttons
       '<div class="ai-config-actions">' +
-        '<button class="btn btn-s" onclick="saveAIConfig()">\u05E9\u05DE\u05D5\u05E8 \u05D4\u05D2\u05D3\u05E8\u05D5\u05EA</button>' +
-        '<button class="btn btn-g" onclick="document.getElementById(\'ai-config-overlay\').remove()">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
+        '<button class="btn" style="background:#059669;color:#fff" onclick="saveAIConfig()">\u05E9\u05DE\u05D5\u05E8 \u05D4\u05D2\u05D3\u05E8\u05D5\u05EA</button>' +
+        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="document.getElementById(\'ai-config-overlay\').remove()">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
       '</div>' +
     '</div>';
 
