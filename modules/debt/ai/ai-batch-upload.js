@@ -227,7 +227,10 @@ async function _batchUploadOnly() {
   if (!_batchSupplierId) { toast('\u05D9\u05E9 \u05DC\u05D1\u05D7\u05D5\u05E8 \u05E1\u05E4\u05E7', 'e'); return null; }
   var selected = _batchFiles.filter(function(f) { return f.checked && f.status !== 'uploaded'; });
   if (!selected.length) { toast('\u05D0\u05D9\u05DF \u05E7\u05D1\u05E6\u05D9\u05DD \u05E0\u05D1\u05D7\u05E8\u05D9\u05DD', 'e'); return null; }
-  // TODO Module 2: checkPlanLimit('documents', selected.length)
+  // Resolve default document type
+  var docTypes = _docTypes || await fetchAll(T.DOC_TYPES, [['is_active', 'eq', true]]);
+  var defaultType = docTypes.find(function(d) { return d.code === 'invoice'; }) || docTypes[0];
+  if (!defaultType) { toast('\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0\u05D5 \u05E1\u05D5\u05D2\u05D9 \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD', 'e'); return null; }
   _batchId = crypto.randomUUID();
   _batchTimestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
   var tid = getTenantId();
@@ -255,7 +258,8 @@ async function _batchUploadOnly() {
       var intNum = await generateDocInternalNumber();
       var created = await batchCreate(T.SUP_DOCS, [{
         internal_number: intNum, status: 'draft', file_url: filePath, file_name: bf.file.name,
-        file_hash: bf.hash, batch_id: _batchId, supplier_id: _batchSupplierId || null
+        file_hash: bf.hash, batch_id: _batchId, supplier_id: _batchSupplierId,
+        document_type_id: defaultType.id
       }]);
       if (created && created[0]) { bf.docId = created[0].id; docIds.push(created[0].id); }
       bf.status = 'uploaded';
