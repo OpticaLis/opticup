@@ -3,6 +3,8 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
   if (siErr) throw siErr;
 
   for (const item of savedItems) {
+    // Phase 8: skip items marked as returned to supplier
+    if (item.po_match_status === 'returned') continue;
     if (!item.is_new_item) {
       const { data: invRow, error: findErr } = await sb.from('inventory')
         .select('id, quantity, barcode, brand_id, model, cost_price')
@@ -78,11 +80,6 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
     toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
   }
 
-  // PO vs Receipt price comparison warning
-  if (poId) {
-    await checkPoPriceDiscrepancies(poId, savedItems, receiptId);
-  }
-
   refreshLowStockBanner();
   await loadReceiptTab();
 }
@@ -124,19 +121,51 @@ async function confirmReceipt() {
   }
 
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
-  const ok = await confirmDialog('אישור קבלת סחורה',
-    `האם לאשר קבלה ${rcptNumber} עם ${items.length} פריטים (${totalQty} יח׳) ולעדכן מלאי?`);
-  if (!ok) return;
 
-  showLoading('מאשר קבלה ומעדכן מלאי...');
+  // Phase 8: If linked to PO, show comparison report before confirming
+  if (rcptLinkedPoId && typeof _poCompBuildReport === 'function') {
+    showLoading('\u05D1\u05D5\u05E0\u05D4 \u05D4\u05E9\u05D5\u05D5\u05D0\u05D4 \u05DE\u05D5\u05DC PO...');
+    try {
+      await saveReceiptDraftInternal();
+      var report = await _poCompBuildReport(items, rcptLinkedPoId);
+      hideLoading();
+      // If everything matches perfectly, skip report
+      if (report.priceGap.length === 0 && report.notInPo.length === 0 && report.shortage.length === 0) {
+        const ok = await confirmDialog('\u05D0\u05D9\u05E9\u05D5\u05E8 \u05E7\u05D1\u05DC\u05EA \u05E1\u05D7\u05D5\u05E8\u05D4',
+          '\u05DB\u05DC \u05D4\u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD \u05DC\u05D4\u05D6\u05DE\u05E0\u05D4. \u05DC\u05D0\u05E9\u05E8?');
+        if (!ok) return;
+        await _confirmReceiptWithDecisions(rcptNumber, null, items);
+      } else {
+        // Fetch PO number for display
+        var { data: poData } = await sb.from(T.PO).select('po_number').eq('id', rcptLinkedPoId).single();
+        _poCompShowReport(report, poData ? poData.po_number : '', async function(decisions) {
+          await _confirmReceiptWithDecisions(rcptNumber, decisions, items);
+        });
+      }
+    } catch (e) {
+      hideLoading(); console.error('PO compare error:', e);
+      toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05E9\u05D5\u05D5\u05D0\u05D4: ' + (e.message || ''), 'e');
+    }
+    return;
+  }
+
+  const ok = await confirmDialog('\u05D0\u05D9\u05E9\u05D5\u05E8 \u05E7\u05D1\u05DC\u05EA \u05E1\u05D7\u05D5\u05E8\u05D4',
+    `\u05D4\u05D0\u05DD \u05DC\u05D0\u05E9\u05E8 \u05E7\u05D1\u05DC\u05D4 ${rcptNumber} \u05E2\u05DD ${items.length} \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD (${totalQty} \u05D9\u05D7\u05F3) \u05D5\u05DC\u05E2\u05D3\u05DB\u05DF \u05DE\u05DC\u05D0\u05D9?`);
+  if (!ok) return;
+  await _confirmReceiptWithDecisions(rcptNumber, null, items);
+}
+
+async function _confirmReceiptWithDecisions(rcptNumber, decisions, items) {
+  showLoading('\u05DE\u05D0\u05E9\u05E8 \u05E7\u05D1\u05DC\u05D4 \u05D5\u05DE\u05E2\u05D3\u05DB\u05DF \u05DE\u05DC\u05D0\u05D9...');
   try {
-    await saveReceiptDraftInternal();
-    const receiptId = currentReceiptId;
+    var receiptId = currentReceiptId;
+    if (!receiptId) { await saveReceiptDraftInternal(); receiptId = currentReceiptId; }
     if (!receiptId) throw new Error('Receipt ID is missing');
+    if (decisions) await _poCompApplyDecisions(receiptId, decisions, items);
     await confirmReceiptCore(receiptId, rcptNumber, rcptLinkedPoId);
   } catch (e) {
     console.error('confirmReceipt error:', e);
-    toast('שגיאה באישור: ' + (e.message || ''), 'e');
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D0\u05D9\u05E9\u05D5\u05E8: ' + (e.message || ''), 'e');
   }
   hideLoading();
 }
@@ -182,68 +211,7 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
   });
 }
 
-async function checkPoPriceDiscrepancies(poId, receiptItems, receiptId) {
-  try {
-    const { data: poItems, error } = await sb.from(T.PO_ITEMS)
-      .select('*')
-      .eq('tenant_id', getTenantId())
-      .eq('po_id', poId);
-    if (error || !poItems?.length) return;
-
-    // Build PO price map: brand|model|size|color → unit_cost
-    const poMap = {};
-    for (const pi of poItems) {
-      const key = `${pi.brand || ''}|${pi.model || ''}|${pi.size || ''}|${pi.color || ''}`;
-      poMap[key] = parseFloat(pi.unit_cost) || 0;
-    }
-
-    const discrepancies = [];
-    for (const ri of receiptItems) {
-      const riCost = parseFloat(ri.unit_cost) || 0;
-      if (riCost <= 0) continue;
-      const key = `${ri.brand || ''}|${ri.model || ''}|${ri.size || ''}|${ri.color || ''}`;
-      const poPrice = poMap[key];
-      if (poPrice == null || poPrice <= 0) continue;
-
-      const diff = Math.abs(riCost - poPrice) / poPrice * 100;
-      if (diff > 5) {
-        discrepancies.push({
-          brand: ri.brand || '', model: ri.model || '',
-          poPrice, receiptPrice: riCost, diffPercent: diff.toFixed(1)
-        });
-      }
-    }
-
-    if (!discrepancies.length) return;
-
-    // Show warning dialog (informational — receipt already confirmed)
-    const lines = discrepancies.map(d =>
-      `• ${d.brand} ${d.model}: הוזמן ב-₪${d.poPrice.toLocaleString()}, התקבל ב-₪${d.receiptPrice.toLocaleString()} (${d.diffPercent}%)`
-    ).join('\n');
-    confirmDialog('חריגות מחיר מול הזמנת רכש',
-      `נמצאו חריגות מחיר:\n${lines}`);
-
-    // Add note to supplier_documents for finance review
-    const discNote = 'price_discrepancy: ' + discrepancies.map(d =>
-      `${d.brand} ${d.model}: PO ₪${d.poPrice} vs Receipt ₪${d.receiptPrice} (${d.diffPercent}%)`
-    ).join('; ');
-    const docs = await fetchAll(T.SUP_DOCS, [['goods_receipt_id', 'eq', receiptId]]);
-    if (docs.length > 0) {
-      const existing = docs[0].notes || '';
-      await batchUpdate(T.SUP_DOCS, [{ id: docs[0].id, notes: existing ? existing + '\n' + discNote : discNote }]);
-    }
-
-    // Create alerts for each price discrepancy
-    if (typeof alertPriceAnomaly === 'function') {
-      var alertDocId = docs.length > 0 ? docs[0].id : null;
-      for (const d of discrepancies) {
-        alertPriceAnomaly(d.brand + ' ' + d.model, d.poPrice, d.receiptPrice, null, alertDocId);
-      }
-    }
-  } catch (e) {
-    console.warn('checkPoPriceDiscrepancies error (non-blocking):', e);
-  }
-}
+// checkPoPriceDiscrepancies — deleted in Phase 8, replaced by receipt-po-compare.js pre-confirm report
 
 async function confirmReceiptById(receiptId) {
   const ok = await confirmDialog('אישור קבלה', 'האם לאשר קבלה זו ולעדכן מלאי?');
