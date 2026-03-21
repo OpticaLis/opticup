@@ -199,22 +199,94 @@ async function loadSuppliersTab() {
       return b.totalDebt - a.totalDebt;
     });
 
-    // Only show suppliers with open docs, active deals, or opening balance
-    var visible = _supTabData.filter(function(s) {
+    // Filter based on toggle state
+    var showAll = sessionStorage.getItem('debt_showAllSuppliers') === 'true';
+    var visible = showAll ? _supTabData : _supTabData.filter(function(s) {
       return s.openCount > 0 || s.hasDeal || s.openingBalance > 0;
     });
 
+    renderSuppliersToolbar(showAll);
     renderSuppliersTable(visible);
   } catch (e) {
     console.error('loadSuppliersTab error:', e);
   }
 }
 
+function renderSuppliersToolbar(showAll) {
+  var wrap = $('dtab-suppliers');
+  if (!wrap) return;
+  var existing = wrap.querySelector('.sup-toolbar');
+  if (existing) existing.remove();
+  var toolbar = document.createElement('div');
+  toolbar.className = 'sup-toolbar doc-toolbar';
+  toolbar.innerHTML =
+    '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.88rem">' +
+      '<input type="checkbox" id="sup-show-all" onchange="toggleShowAllSuppliers()"' +
+        (showAll ? ' checked' : '') + '>' +
+      '\u05D4\u05E6\u05D2 \u05D0\u05EA \u05DB\u05DC \u05D4\u05E1\u05E4\u05E7\u05D9\u05DD' +
+    '</label>' +
+    '<button class="btn btn-s doc-add-btn" onclick="openQuickOpeningBalance()">\u05D4\u05D2\u05D3\u05E8 \u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</button>';
+  wrap.prepend(toolbar);
+}
+
+function toggleShowAllSuppliers() {
+  var cb = $('sup-show-all');
+  var showAll = cb ? cb.checked : false;
+  sessionStorage.setItem('debt_showAllSuppliers', showAll ? 'true' : 'false');
+  var visible = showAll ? _supTabData : _supTabData.filter(function(s) {
+    return s.openCount > 0 || s.hasDeal || s.openingBalance > 0;
+  });
+  renderSuppliersTable(visible);
+}
+
+function openQuickOpeningBalance() {
+  var modal = document.createElement('div');
+  modal.id = 'quick-ob-modal';
+  modal.className = 'modal-overlay';
+  modal.style.display = 'flex';
+  modal.innerHTML =
+    '<div class="modal" style="max-width:400px">' +
+      '<h3 style="margin:0 0 14px">\u05D4\u05D2\u05D3\u05E8\u05EA \u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</h3>' +
+      '<label>\u05E1\u05E4\u05E7<div id="quick-ob-supplier-wrap"></div></label>' +
+      '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
+        '<button class="btn btn-g" onclick="closeAndRemoveModal(\'quick-ob-modal\')">ביטול</button>' +
+        '<button class="btn btn-s" id="quick-ob-go" disabled>המשך</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(modal);
+  var supItems = _supTabData.map(function(s) { return { value: s.id, label: s.name }; });
+  var selectedId = null;
+  createSearchSelect({
+    containerId: 'quick-ob-supplier-wrap',
+    items: supItems,
+    placeholder: '\u05D7\u05E4\u05E9 \u05E1\u05E4\u05E7...',
+    onSelect: function(item) {
+      selectedId = item.value;
+      var btn = $('quick-ob-go');
+      if (btn) btn.disabled = false;
+    }
+  });
+  var goBtn = $('quick-ob-go');
+  if (goBtn) goBtn.onclick = function() {
+    if (!selectedId) return;
+    closeAndRemoveModal('quick-ob-modal');
+    openSetOpeningBalance(selectedId);
+  };
+}
+
 function renderSuppliersTable(data) {
   var wrap = $('dtab-suppliers');
   if (!wrap) return;
+  // Preserve toolbar if it exists
+  var toolbar = wrap.querySelector('.sup-toolbar');
+  var tableWrap = wrap.querySelector('.sup-table-wrap');
+  if (!tableWrap) {
+    tableWrap = document.createElement('div');
+    tableWrap.className = 'sup-table-wrap';
+    wrap.appendChild(tableWrap);
+  }
   if (!data.length) {
-    wrap.innerHTML = '<div class="empty-state">אין ספקים עם חוב פתוח</div>';
+    tableWrap.innerHTML = '<div class="empty-state">\u05D0\u05D9\u05DF \u05E1\u05E4\u05E7\u05D9\u05DD \u05DC\u05D4\u05E6\u05D2\u05D4</div>';
     return;
   }
 
@@ -237,7 +309,7 @@ function renderSuppliersTable(data) {
         '<button class="btn-sm" onclick="event.stopPropagation();openPaymentForSupplier(\'' + s.id + '\')">תשלום חדש</button>' +
       '</td></tr>';
   }).join('');
-  wrap.innerHTML =
+  tableWrap.innerHTML =
     '<div style="overflow-x:auto"><table class="data-table" style="width:100%;font-size:.88rem">' +
       '<thead><tr><th>\u05E1\u05E4\u05E7</th><th>\u05E4\u05EA\u05D5\u05D7\u05D9\u05DD</th><th>\u05D7\u05D5\u05D1 \u05DB\u05D5\u05DC\u05DC</th><th>\u05D1\u05D0\u05D9\u05D7\u05D5\u05E8</th>' +
         '<th>\u05EA\u05E9\u05DC\u05D5\u05DD \u05D4\u05D1\u05D0</th><th>\u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</th><th>\u05DE\u05E7\u05D3\u05DE\u05D4</th><th>\u05E4\u05E2\u05D5\u05DC\u05D5\u05EA</th>' +

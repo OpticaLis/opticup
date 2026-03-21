@@ -62,9 +62,9 @@
 | 40 | header.css | css/header.css | 349 | Sticky header styles: 60px height, z-index 1000, RTL, 3-zone flex layout (right: logo+store, center: app name, left: employee+logout), responsive below 600px hides role |
 | 41 | header.js | js/header.js | 61 | Sticky header logic: initHeader (DOMContentLoaded, session check, tenant fetch), buildHeader (DOM injection, escapeHtml, clearSession logout) |
 | 42 | suppliers-debt.html | suppliers-debt.html | 233 | Supplier debt tracking page: summary cards, 5 tabs (suppliers, documents, payments, prepaid, weekly report), session check, tab switching. CDN: jsPDF + html2canvas. debt-main-content wrapper + supplier-detail-panel for detail view |
-| 43 | debt-dashboard.js | modules/debt/debt-dashboard.js | ~275 | Debt dashboard summary: loadDebtSummary (calls loadAgingReport), loadAgingReport (5-bucket aging breakdown), loadSuppliersTab (aggregated supplier table with debt/overdue/prepaid), renderSuppliersTable, openPaymentForSupplier |
+| 43 | debt-dashboard.js | modules/debt/debt-dashboard.js | 340 | Debt dashboard summary: loadDebtSummary (calls loadAgingReport), loadAgingReport (5-bucket aging breakdown), loadSuppliersTab (aggregated supplier table with debt/overdue/prepaid), renderSuppliersToolbar (toggle + opening balance button), renderSuppliersTable, toggleShowAllSuppliers, openQuickOpeningBalance, openPaymentForSupplier |
 | 44 | debt-documents.js | modules/debt/debt-documents.js | 294 | Documents tab: loadDocumentsTab (fetch docs+types+suppliers), renderDocFilterBar (supplier/type/status/date/overdue filters), applyDocFilters (client-side), renderDocumentsTable, viewDocument (file preview modal), _attachFileToDoc (file upload), openNewDocumentModal (PIN-verified CRUD), saveNewDocument, generateDocInternalNumber |
-| 45 | debt-doc-link.js | modules/debt/debt-doc-link.js | 72 | Delivery note → invoice linking: openLinkToInvoiceModal (shows supplier's invoices), linkDeliveryToInvoice (creates document_links record, updates status to linked) |
+| 45 | debt-doc-link.js | modules/debt/debt-doc-link.js | 109 | Delivery note → invoice linking: openLinkToInvoiceModal (shows supplier's invoices with auto-sum), linkDeliveryToInvoice (creates document_links record, updates status to linked), _renderLinkSummary (linked amounts vs invoice total comparison) |
 | 46 | debt-payments.js | modules/debt/debt-payments.js | 229 | Payments tab: loadPaymentsTab (fetch payments+methods+suppliers+allocations+documents), renderPaymentsToolbar (filters + add button), applyPayFilters (client-side), renderPaymentsTable (with כנגד doc numbers), viewPayment (detail modal with allocation table) |
 | 47 | debt-payment-wizard.js | modules/debt/debt-payment-wizard.js | 146 | Payment wizard steps 1-2: openNewPaymentWizard (state reset + modal), supplier selection with debt summary + withholding tax rate lookup, payment details form with auto-calc withholding tax |
 | 48 | debt-payment-alloc.js | modules/debt/debt-payment-alloc.js | ~275 | Payment wizard steps 3-4: document allocation with FIFO, manual override, allocation summary with mismatch warning, PIN confirmation, _wizSavePayment (creates payment + allocations, updates document paid_amount/status, rollback on failure) |
@@ -798,7 +798,10 @@
 |----------|------------|-------------|
 | `loadDebtSummary` | `()` | Queries supplier_documents (open, not deleted) and supplier_payments (this month). Calculates total debt, due this week, overdue, paid this month. Updates DOM cards. Adds 'overdue' class if overdue > 0. Calls loadAgingReport with fetched docs |
 | `loadAgingReport` | `(docs)` | Calculates 5 aging buckets (current, 1-30, 31-60, 61-90, 90+ days) from open docs by due_date. Renders colored bars proportional to total debt. No additional DB queries |
-| `loadSuppliersTab` | `()` | Fetches suppliers + open documents + active prepaid deals. Aggregates per-supplier: open doc count, total debt, overdue amount, next due date, prepaid deal remaining. Sorts overdue-first then by debt desc |
+| `loadSuppliersTab` | `()` | Fetches suppliers + open documents + active prepaid deals. Aggregates per-supplier: open doc count, total debt, overdue amount, next due date, prepaid deal remaining. Sorts overdue-first then by debt desc. Checks toggle state for show-all |
+| `renderSuppliersToolbar` | `(showAll)` | Renders toolbar with "show all suppliers" toggle checkbox and "set opening balance" button above table |
+| `toggleShowAllSuppliers` | `()` | Handles toggle change: persists to sessionStorage, re-filters and re-renders table |
+| `openQuickOpeningBalance` | `()` | Modal with searchable supplier dropdown. On select, closes and calls openSetOpeningBalance(supplierId) |
 | `renderSuppliersTable` | `(data)` | Renders supplier table with columns: name, open docs, total debt, overdue (red), next due, prepaid deal, action buttons. Row click opens supplier detail |
 | `openPaymentForSupplier` | `(supplierId)` | Opens payment wizard pre-filled with supplier (skips step 1). Ensures _payMethods loaded |
 
@@ -823,7 +826,8 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `openLinkToInvoiceModal` | `(docId)` | Shows modal for linking a delivery note to an invoice. Lists same-supplier invoices (not cancelled) as dropdown options |
+| `openLinkToInvoiceModal` | `(docId)` | Shows modal for linking a delivery note to an invoice. Lists same-supplier invoices (not cancelled) as dropdown options. Invoice selection triggers _renderLinkSummary |
+| `_renderLinkSummary` | `(invoiceId)` | Async. Fetches existing document_links for invoice, sums linked amounts, shows comparison line (warning if over, success if match, info if remaining) |
 | `linkDeliveryToInvoice` | `(deliveryNoteId)` | Creates document_links record (parent=invoice, child=delivery note), updates delivery note status to 'linked', writeLog, refresh tab |
 
 ### modules/debt/debt-payments.js
