@@ -24,6 +24,28 @@ async function editDocument(docId) {
       : '<img src="' + escapeHtml(fileUrl) + '" style="max-width:100%;max-height:250px;border-radius:6px;border:1px solid var(--g200)">';
   }
 
+  // OCR items (if any)
+  var ocrItemsHtml = '';
+  try {
+    var { data: ocrRows } = await sb.from('ocr_extractions').select('extracted_data')
+      .eq('supplier_document_id', docId).eq('tenant_id', getTenantId()).limit(1);
+    if (ocrRows && ocrRows.length && ocrRows[0].extracted_data) {
+      var ocrData = ocrRows[0].extracted_data;
+      var ocrItems = (ocrData.items && typeof ocrData.items === 'object' && 'value' in ocrData.items) ? ocrData.items.value : ocrData.items;
+      if (Array.isArray(ocrItems) && ocrItems.length) {
+        var rows = ocrItems.map(function(it) {
+          return '<tr><td>' + escapeHtml(it.description || '') + '</td><td>' + (it.quantity || '') +
+            '</td><td>' + (it.unit_price || '') + '</td><td>' + (it.total || '') + '</td></tr>';
+        }).join('');
+        ocrItemsHtml = '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-top:10px">' +
+          '<strong style="font-size:.88rem">\uD83E\uDD16 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DE\u05E1\u05E8\u05D9\u05E7\u05D4</strong>' +
+          '<table class="data-table" style="width:100%;font-size:.82rem;margin-top:6px"><thead><tr>' +
+          '<th>\u05EA\u05D9\u05D0\u05D5\u05E8</th><th>\u05DB\u05DE\u05D5\u05EA</th><th>\u05DE\u05D7\u05D9\u05E8 \u05DC\u05D9\u05D7\'</th><th>\u05E1\u05D4"\u05DB</th>' +
+          '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+      }
+    }
+  } catch (e) { console.warn('OCR items load skipped:', e.message); }
+
   // Type dropdown
   var typeOpts = _docTypes.map(function(t) {
     return '<option value="' + t.id + '"' + (t.id === doc.document_type_id ? ' selected' : '') + '>' + escapeHtml(t.name_he) + '</option>';
@@ -56,6 +78,7 @@ async function editDocument(docId) {
       '</div>' +
       // File preview
       (fileSection ? '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-top:10px">' + fileSection + '</div>' : '') +
+      ocrItemsHtml +
       // Buttons
       '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
         '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'edit-doc-modal\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +

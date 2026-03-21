@@ -2,22 +2,19 @@
 // Load after: shared.js, supabase-ops.js, file-upload.js, debt-documents.js
 // Provides: triggerOCR(), showOCRReview(), _ocrSave(), _ocrCalcTotal(), _ocrAddItemRow()
 
-var _ocrExtractionId = null, _ocrOriginalData = null;
+var _ocrExtractionId = null, _ocrOriginalData = null, _ocrCurrentFileUrl = null;
 
 // --- Confidence helpers ---
 function _ocrConfDot(c) {
-  if (c >= 0.9) return '<span class="ocr-conf-high" title="ביטחון גבוה">\u2705</span>';
-  if (c >= 0.7) return '<span class="ocr-conf-med" title="מומלץ לבדוק">\u26A0\uFE0F</span>';
-  return '<span class="ocr-conf-low" title="נדרשת בדיקה">\uD83D\uDD34</span>';
+  return c >= 0.9 ? '<span class="ocr-conf-high" title="ביטחון גבוה">\u2705</span>'
+    : c >= 0.7 ? '<span class="ocr-conf-med" title="מומלץ לבדוק">\u26A0\uFE0F</span>'
+    : '<span class="ocr-conf-low" title="נדרשת בדיקה">\uD83D\uDD34</span>';
 }
-function _ocrFV(ext, f) {
-  var v = ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v;
-}
+function _ocrFV(ext, f) { var v = ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v; }
 function _ocrFC(ext, f) {
   var v = ext[f];
   if (v && typeof v === 'object' && 'confidence' in v) return v.confidence;
-  if (ext.confidence && typeof ext.confidence === 'object' && typeof ext.confidence[f] === 'number') return ext.confidence[f];
-  return null;
+  return (ext.confidence && typeof ext.confidence[f] === 'number') ? ext.confidence[f] : null;
 }
 
 // =========================================================
@@ -58,6 +55,7 @@ async function showOCRReview(result, fileUrl) {
   var supMatch = result.supplier_match;
   _ocrExtractionId = result.extraction_id;
   _ocrOriginalData = JSON.parse(JSON.stringify(ext));
+  _ocrCurrentFileUrl = fileUrl;
 
   var fv = function(f) { return _ocrFV(ext, f); };
   var fc = function(f) { var c = _ocrFC(ext, f); return c != null ? _ocrConfDot(c) : ''; };
@@ -113,18 +111,14 @@ async function showOCRReview(result, fileUrl) {
 
   // Query OCR stats for this supplier (Phase 5e)
   var statsHtml = '';
-  if (supMatch && supMatch.id) {
-    try {
-      var templates = await fetchAll(T.OCR_TEMPLATES, [['supplier_id', 'eq', supMatch.id]]);
-      if (templates && templates.length > 0) {
-        var tmpl = templates[0];
-        var accPct = tmpl.accuracy_rate != null ? Math.round(tmpl.accuracy_rate) : '\u2014';
-        statsHtml = '<div class="ocr-stats-bar" style="background:#e8f5e9;border-radius:6px;padding:6px 12px;margin-bottom:8px;font-size:.85rem;color:#2e7d32">' +
-          '\uD83D\uDCCA \u05E1\u05E4\u05E7 \u05D6\u05D4 \u05E0\u05E1\u05E8\u05E7 ' + (tmpl.times_used || 0) +
-          ' \u05E4\u05E2\u05DE\u05D9\u05DD | \u05D3\u05D9\u05D5\u05E7: ' + accPct + '%</div>';
-      }
-    } catch (e) { /* ignore stats error */ }
-  }
+  if (supMatch && supMatch.id) { try {
+    var templates = await fetchAll(T.OCR_TEMPLATES, [['supplier_id', 'eq', supMatch.id]]);
+    if (templates && templates.length) { var tmpl = templates[0];
+      var accPct = tmpl.accuracy_rate != null ? Math.round(tmpl.accuracy_rate) : '\u2014';
+      statsHtml = '<div class="ocr-stats-bar" style="background:#e8f5e9;border-radius:6px;padding:6px 12px;margin-bottom:8px;font-size:.85rem;color:#2e7d32">' +
+        '\uD83D\uDCCA \u05E1\u05E4\u05E7 \u05D6\u05D4 \u05E0\u05E1\u05E8\u05E7 ' + (tmpl.times_used || 0) +
+        ' \u05E4\u05E2\u05DE\u05D9\u05DD | \u05D3\u05D9\u05D5\u05E7: ' + accPct + '%</div>'; }
+  } catch (e) { /* ignore stats error */ } }
 
   function fld(lbl, id, type, val, cf, ex) {
     return '<label class="ocr-flbl' + wc(cf) + '">' + escapeHtml(lbl) + ' ' + fc(cf) +
@@ -236,23 +230,16 @@ async function _ocrSave(mode) {
 
   // Gather items
   var items = [], tbody = $('ocr-items-body');
-  if (tbody) {
-    for (var i = 0; i < tbody.rows.length; i++) {
-      var it = {};
-      tbody.rows[i].querySelectorAll('.ocr-itm').forEach(function(inp) { it[inp.getAttribute('data-f')] = inp.value; });
-      if (it.description || it.quantity) items.push(it);
-    }
-  }
-
+  if (tbody) { for (var i = 0; i < tbody.rows.length; i++) { var it = {};
+    tbody.rows[i].querySelectorAll('.ocr-itm').forEach(function(inp) { it[inp.getAttribute('data-f')] = inp.value; });
+    if (it.description || it.quantity) items.push(it); } }
   // Build corrections diff
   var corrections = {};
   if (_ocrOriginalData) {
     [['document_number', docNumber], ['document_date', docDate], ['due_date', dueDate],
      ['subtotal', subtotal], ['vat_rate', vatRate], ['total_amount', totalAmt], ['currency', currency]
-    ].forEach(function(p) {
-      var orig = _ocrFV(_ocrOriginalData, p[0]);
-      if (orig != null && String(orig) !== String(p[1])) corrections[p[0]] = { ai: orig, user: p[1] };
-    });
+    ].forEach(function(p) { var orig = _ocrFV(_ocrOriginalData, p[0]);
+      if (orig != null && String(orig) !== String(p[1])) corrections[p[0]] = { ai: orig, user: p[1] }; });
   }
   var hasCorr = Object.keys(corrections).length > 0;
   var status = hasCorr ? 'corrected' : mode;
@@ -260,15 +247,29 @@ async function _ocrSave(mode) {
   showLoading('שומר מסמך...');
   try {
     var emp = getCurrentEmployee();
-    // Create supplier_document first (this is the critical operation)
-    var intNum = await generateDocInternalNumber();
-    var created = await batchCreate(T.SUP_DOCS, [{
-      supplier_id: supplierId, document_type_id: typeId, internal_number: intNum,
+    // Check if document already exists (from batch upload) — UPDATE instead of INSERT
+    var existingDoc = null, created = null;
+    if (_ocrCurrentFileUrl) {
+      var { data: found } = await sb.from(T.SUP_DOCS).select('id')
+        .eq('file_url', _ocrCurrentFileUrl).eq('tenant_id', getTenantId()).limit(1);
+      if (found && found.length) existingDoc = found[0];
+    }
+    var docFields = {
+      supplier_id: supplierId, document_type_id: typeId,
       document_number: docNumber, document_date: docDate, due_date: dueDate || null,
       subtotal: subtotal, vat_rate: vatRate, vat_amount: vatAmt,
       total_amount: totalAmt, currency: currency, status: 'open',
-      created_by: emp ? emp.id : null, notes: 'נוצר באמצעות סריקת AI'
-    }]);
+      notes: 'נוצר באמצעות סריקת AI'
+    };
+    if (existingDoc) {
+      docFields.id = existingDoc.id;
+      await batchUpdate(T.SUP_DOCS, [docFields]);
+      created = [{ id: existingDoc.id }];
+    } else {
+      docFields.internal_number = await generateDocInternalNumber();
+      docFields.created_by = emp ? emp.id : null;
+      created = await batchCreate(T.SUP_DOCS, [docFields]);
+    }
     // Update ocr_extractions record + link to document (non-blocking — RLS may block)
     if (_ocrExtractionId) {
       try {
@@ -278,8 +279,9 @@ async function _ocrSave(mode) {
         await batchUpdate(T.OCR_EXTRACTIONS, [extUpdate]);
       } catch (e) { console.warn('OCR extraction update skipped (RLS):', e.message); }
     }
-    await writeLog('doc_create', null, {
-      reason: 'מסמך מסריקת AI — ' + docNumber, source_ref: intNum, ocr_extraction_id: _ocrExtractionId
+    await writeLog(existingDoc ? 'doc_ocr_update' : 'doc_create', null, {
+      reason: (existingDoc ? 'מסמך עודכן מסריקת AI — ' : 'מסמך מסריקת AI — ') + docNumber,
+      source_ref: created && created[0] ? created[0].id : null, ocr_extraction_id: _ocrExtractionId
     });
     // Phase 5e: Update OCR learning template
     var docTypeCode = '';
@@ -337,12 +339,8 @@ function _injectOCRToolbarBtn() {
   var _origLoad = typeof loadDocumentsTab === 'function' ? loadDocumentsTab : null;
   if (!_origLoad) return;
   var _origRender = typeof renderDocumentsTable === 'function' ? renderDocumentsTable : null;
-  window.loadDocumentsTab = async function() {
-    await _origLoad();
-    _injectOCRToolbarBtn();
-    if (_origRender && renderDocumentsTable === _origRender) {
+  window.loadDocumentsTab = async function() { await _origLoad(); _injectOCRToolbarBtn();
+    if (_origRender && renderDocumentsTable === _origRender)
       window.renderDocumentsTable = function(docs) { _origRender(docs); _injectOCRScanIcons(docs); };
-    }
-    if (typeof applyDocFilters === 'function') applyDocFilters();
-  };
+    if (typeof applyDocFilters === 'function') applyDocFilters(); };
 })();
