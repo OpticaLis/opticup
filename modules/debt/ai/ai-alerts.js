@@ -195,10 +195,12 @@ function _patchPaymentSave() {
   if (typeof triggerOCR !== 'function') return;
   var _origTrigger = triggerOCR;
   window.triggerOCR = async function(fileUrl, supplierId, documentTypeHint) {
+    console.log('[OCR-DEBUG-4] triggerOCR wrapper. arguments:', Array.from(arguments), '| arguments[3] (existingDocId):', arguments[3]);
     // Wrap to intercept the result and check confidence
     var origShow = typeof showOCRReview === 'function' ? showOCRReview : null;
     if (origShow) {
       window.showOCRReview = async function(result, fUrl, docId) {
+        console.log('[OCR-DEBUG-5] temp showOCR wrapper. docId param:', docId);
         // Check confidence threshold
         try {
           var conf = result.confidence_score || 0;
