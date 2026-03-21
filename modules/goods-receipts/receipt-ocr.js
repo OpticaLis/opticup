@@ -1,9 +1,9 @@
-// receipt-ocr.js — OCR integration in goods receipt flow (Phase 5d + Phase 8 enhancements)
-// Load after: receipt-form.js, before receipt-actions.js
+// receipt-ocr.js — OCR integration in goods receipt flow (Phase 5d + Phase 8)
+// Load after: receipt-form.js, receipt-ocr-review.js; before receipt-actions.js
 // Provides: initReceiptOCR(), _rcptOcrScan(), _applyOCRToReceipt(), _rcptOcrShowBanner()
 // Phase 8: _rcptOcrFC(), _rcptOcrAddConfDot(), _rcptOcrSuggestPO()
-// Uses: _pendingReceiptFile, supplierCache/Rev, brandCacheRev, addReceiptItemRow,
-//   updateReceiptItemsStats, uploadSupplierFile, getSupplierFileUrl
+// Phase 8 Step 2b: items go through review UI (_rcptOcrClassifyItems → _rcptOcrShowReview)
+// Uses: _pendingReceiptFile, supplierCache/Rev, uploadSupplierFile, getSupplierFileUrl
 
 var _rcptOcrResult = null; // Phase 5e: stored when OCR applied, used for learning
 
@@ -105,8 +105,6 @@ async function _applyOCRToReceipt(result, fileUrl) {
   var fv = function(f) {
     var v = ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v;
   };
-  var matchedCount = 0, totalItems = 0;
-
   // Auto-fill supplier
   var supFilled = false;
   if (supMatch && supMatch.id) {
@@ -147,46 +145,19 @@ async function _applyOCRToReceipt(result, fileUrl) {
   // Phase 8: PO auto-suggestion
   if (supFilled) await _rcptOcrSuggestPO(ext);
 
-  // Process items
-  var items = fv('items') || [];
-  if (Array.isArray(items) && items.length > 0) {
-    totalItems = items.length;
-    var supplierId = supplierCache[($('rcpt-supplier') || {}).value] || null;
-    for (var i = 0; i < items.length; i++) {
-      var ocrItem = items[i];
-      var desc = ocrItem.description || ocrItem.model || '';
-      var qty = parseInt(ocrItem.quantity) || 1;
-      var unitPrice = parseFloat(ocrItem.unit_price) || null;
-      var invMatch = await _rcptOcrMatchInventory(desc, supplierId);
-      if (invMatch) {
-        matchedCount++;
-        addReceiptItemRow({
-          barcode: invMatch.barcode || '', brand: brandCacheRev[invMatch.brand_id] || '',
-          model: invMatch.model || '', color: invMatch.color || '', size: invMatch.size || '',
-          quantity: qty, unit_cost: unitPrice || invMatch.cost_price || '',
-          sell_price: invMatch.sell_price || '', is_new_item: false, inventory_id: invMatch.id
-        });
-        _rcptOcrHighlightRow('matched');
-      } else {
-        var newBarcode = await generateNextBarcode();
-        addReceiptItemRow({
-          barcode: newBarcode, brand: '', model: desc, color: '', size: '',
-          quantity: qty, unit_cost: unitPrice || '', sell_price: '', is_new_item: true
-        });
-        _rcptOcrHighlightRow('unmatched');
-      }
-    }
-    updateReceiptItemsStats();
-  }
-
-  // Validate OCR data and append warnings to banner
+  // Validate OCR data and show banner
   var _ocrValidation = [];
   if (typeof validateOCRData === 'function') {
     _ocrValidation = validateOCRData(Object.assign({}, ext, { supplier_match: supMatch }));
   }
-  _rcptOcrShowBanner(conf, matchedCount, totalItems, fileUrl, _ocrValidation);
-  if (totalItems > 0) {
-    toast('\u05D6\u05D5\u05D4\u05D5 ' + matchedCount + ' \u05DE\u05EA\u05D5\u05DA ' + totalItems + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD', 's');
+  _rcptOcrShowBanner(conf, 0, 0, fileUrl, _ocrValidation);
+
+  // Phase 8: Process items through review UI instead of direct insert
+  var items = fv('items') || [];
+  if (Array.isArray(items) && items.length > 0) {
+    var supplierId = supplierCache[($('rcpt-supplier') || {}).value] || null;
+    var classified = await _rcptOcrClassifyItems(items, supplierId);
+    _rcptOcrShowReview(classified, function(confirmed) { _rcptOcrApplyToForm(confirmed); });
   } else {
     toast('\u05D4\u05DE\u05E1\u05DE\u05DA \u05E0\u05E1\u05E8\u05E7 \u2014 \u05DC\u05D0 \u05D6\u05D5\u05D4\u05D5 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD', 'w');
   }
@@ -215,33 +186,7 @@ async function _rcptOcrSuggestPO(ext) {
   } catch (e) { console.warn('_rcptOcrSuggestPO error:', e); }
 }
 
-// --- 4. Match OCR item to existing inventory ---
-async function _rcptOcrMatchInventory(description, supplierId) {
-  if (!description || description.length < 2) return null;
-  try {
-    var query = sb.from('inventory')
-      .select('id, barcode, brand_id, supplier_id, model, color, size, cost_price, sell_price')
-      .eq('tenant_id', getTenantId()).eq('is_deleted', false)
-      .ilike('model', '%' + description.replace(/[%_]/g, '') + '%');
-    if (supplierId) query = query.eq('supplier_id', supplierId);
-    var { data, error } = await query.limit(5);
-    if (error) { console.warn('OCR inventory match error:', error); return null; }
-    return (data && data.length > 0) ? data[0] : null;
-  } catch (e) {
-    console.warn('_rcptOcrMatchInventory error:', e);
-    return null;
-  }
-}
-
-// --- 5. Highlight last added receipt row ---
-function _rcptOcrHighlightRow(type) {
-  var r = ($('rcpt-items-body') || {}).lastElementChild; if (!r) return;
-  r.style.backgroundColor = type === 'unmatched' ? '#fff9c4' : '#e8f5e9';
-  if (type === 'unmatched') r.title = '\u05DC\u05D0 \u05D6\u05D5\u05D4\u05D4 \u05D1\u05DE\u05DC\u05D0\u05D9 \u2014 \u05E0\u05D3\u05E8\u05E9 \u05D1\u05D7\u05D9\u05E8\u05D4 \u05D9\u05D3\u05E0\u05D9\u05EA';
-  else setTimeout(function() { if (r.parentNode) r.style.backgroundColor = ''; }, 5000);
-}
-
-// --- 6. Show OCR confidence banner at top of receipt form ---
+// --- 4. Show OCR confidence banner at top of receipt form ---
 function _rcptOcrShowBanner(confidence, matched, total, fileUrl, validationResults) {
   var ex = $('rcpt-ocr-banner'); if (ex) ex.remove();
   var hasErr = validationResults && validationResults.some(function(v) { return v.level === 'error'; });
