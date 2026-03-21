@@ -219,12 +219,13 @@ async function _doConfirmCount(countId, emp) {
     );
     await Promise.all([...logPromises, ...reasonUpdates]);
 
-    // Update count header
+    // Update count header — include matched unknowns in total
     const worker = activeWorker || JSON.parse(sessionStorage.getItem('activeWorker') || '{}');
+    const matchedCount = allItems.filter(i => i.status === 'matched').length;
     const { error } = await sb.from(T.STOCK_COUNTS).update({
       status: 'completed',
       completed_at: new Date().toISOString(),
-      total_items: approved.length,
+      total_items: approved.length + matchedCount,
       total_diffs: approvedDiffs.length,
       counted_by: worker.name || emp.name
     }).eq('id', countId);
