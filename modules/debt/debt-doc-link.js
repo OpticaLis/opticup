@@ -146,10 +146,11 @@ async function openLinkDeliveryNotesModal(invoiceId) {
     ]);
     links.forEach(function(l) { linkedIds[l.child_document_id] = true; });
     // AI matching from OCR data
+    var linkableCodes = { delivery_note: true, return_note: true };
     if (ocrRows.length && ocrRows[0].extracted_data) {
       var notes_for_match = _docData.filter(function(d) {
         return d.supplier_id === inv.supplier_id &&
-          (typeMap[d.document_type_id] || {}).code === 'delivery_note' &&
+          linkableCodes[(typeMap[d.document_type_id] || {}).code] &&
           d.status !== 'cancelled' && !linkedIds[d.id];
       });
       aiMatched = _extractDeliveryNoteRefs(ocrRows[0].extracted_data, notes_for_match);
@@ -158,8 +159,9 @@ async function openLinkDeliveryNotesModal(invoiceId) {
   hideLoading();
 
   var notes = _docData.filter(function(d) {
+    var code = (typeMap[d.document_type_id] || {}).code;
     return d.supplier_id === inv.supplier_id &&
-      (typeMap[d.document_type_id] || {}).code === 'delivery_note' &&
+      (code === 'delivery_note' || code === 'return_note') &&
       d.status !== 'cancelled' && !linkedIds[d.id];
   });
   var aiCount = Object.keys(aiMatched).length;
@@ -168,14 +170,19 @@ async function openLinkDeliveryNotesModal(invoiceId) {
 
   var noteRows = notes.map(function(n) {
     var isAi = !!aiMatched[n.id];
+    var code = (typeMap[n.document_type_id] || {}).code;
+    var isReturn = code === 'return_note';
+    var typeIcon = isReturn ? '\u21A9\uFE0F ' : '\uD83D\uDCE6 ';
+    var amt = Number(n.total_amount) || 0;
+    var signedAmt = isReturn ? -amt : amt;
     return '<tr' + (isAi ? ' style="background:#f5f3ff"' : '') + '><td><input type="checkbox" class="link-note-cb" data-id="' + n.id +
-      '" data-amt="' + (Number(n.total_amount) || 0) + '"' + (isAi ? ' checked' : '') +
+      '" data-amt="' + signedAmt + '"' + (isAi ? ' checked' : '') +
       ' onchange="_updateLinkNotesSum(\'' + invoiceId + '\')"></td>' +
-      '<td>' + (isAi ? aiBadge : '') + escapeHtml(n.document_number || '') + '</td>' +
+      '<td>' + (isAi ? aiBadge : '') + typeIcon + escapeHtml(n.document_number || '') + '</td>' +
       '<td>' + escapeHtml(n.document_date || '') + '</td>' +
-      '<td>' + formatILS(n.total_amount) + '</td></tr>';
+      '<td' + (isReturn ? ' style="color:#e74c3c"' : '') + '>' + (isReturn ? '-' : '') + formatILS(amt) + '</td></tr>';
   }).join('');
-  if (!noteRows) noteRows = '<tr><td colspan="4" style="text-align:center;color:var(--g500);padding:12px">\u05D0\u05D9\u05DF \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05DE\u05E9\u05DC\u05D5\u05D7 \u05DC\u05E7\u05D9\u05E9\u05D5\u05E8</td></tr>';
+  if (!noteRows) noteRows = '<tr><td colspan="4" style="text-align:center;color:var(--g500);padding:12px">\u05D0\u05D9\u05DF \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05DC\u05E7\u05D9\u05E9\u05D5\u05E8</td></tr>';
 
   var aiInfo = aiCount > 0 ? '<div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:.82rem;color:#6d28d9">' +
     '\uD83E\uDD16 AI \u05DE\u05E6\u05D0 ' + aiCount + ' \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05EA\u05D5\u05D0\u05DE\u05D5\u05EA</div>' : '';
@@ -185,7 +192,7 @@ async function openLinkDeliveryNotesModal(invoiceId) {
   m.onclick = function(e) { if (e.target === m) m.remove(); };
   m.innerHTML =
     '<div class="modal" style="max-width:550px;width:95%;max-height:90vh;overflow-y:auto">' +
-      '<h3 style="margin:0 0 8px">\u05E7\u05E9\u05E8 \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05DE\u05E9\u05DC\u05D5\u05D7 \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA</h3>' +
+      '<h3 style="margin:0 0 8px">\u05E7\u05E9\u05E8 \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05DE\u05E9\u05DC\u05D5\u05D7 \u05D5\u05D4\u05D7\u05D6\u05E8\u05D4 \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA</h3>' +
       '<div style="font-size:.88rem;color:var(--g600);margin-bottom:8px">' +
         '\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA: <strong>' + escapeHtml(inv.document_number || '') + '</strong> | ' +
         '\u05E1\u05E4\u05E7: <strong>' + escapeHtml(supName) + '</strong> | ' +
