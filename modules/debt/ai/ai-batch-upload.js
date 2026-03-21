@@ -248,8 +248,8 @@ async function _batchUploadOnly() {
     if (progText) progText.textContent = 'מעלה ' + (i + 1) + '/' + selected.length + '...';
     try {
       bf.status = 'uploading';
-      var safeName = bf.file.name.replace(/[^a-zA-Z0-9._\u0590-\u05FF-]/g, '_');
-      var filePath = tid + '/batch_' + _batchTimestamp + '/' + Date.now() + '_' + safeName;
+      var ext = (bf.file.name.match(/\.([a-zA-Z0-9]+)$/) || ['', 'bin'])[1].toLowerCase();
+      var filePath = tid + '/batch_' + _batchTimestamp + '/' + Date.now() + '_' + (i + 1) + '.' + ext;
       var { error: upErr } = await sb.storage.from('supplier-docs')
         .upload(filePath, bf.file, { cacheControl: '3600', upsert: false });
       if (upErr) throw upErr;

@@ -178,8 +178,8 @@ async function _histStartImport() {
     if (progBar) progBar.style.width = pct + '%';
     if (progText) progText.textContent = '\u05DE\u05E2\u05DC\u05D4 ' + (i + 1) + '/' + selected.length + '...';
     try {
-      var safeName = bf.file.name.replace(/[^a-zA-Z0-9._\u0590-\u05FF-]/g, '_');
-      var filePath = tid + '/batch_' + timestamp + '/' + Date.now() + '_' + safeName;
+      var ext = (bf.file.name.match(/\.([a-zA-Z0-9]+)$/) || ['', 'bin'])[1].toLowerCase();
+      var filePath = tid + '/batch_' + timestamp + '/' + Date.now() + '_' + (i + 1) + '.' + ext;
       var { error: upErr } = await sb.storage.from('supplier-docs')
         .upload(filePath, bf.file, { cacheControl: '3600', upsert: false });
       if (upErr) throw upErr;

@@ -28,8 +28,8 @@ async function uploadSupplierFile(file, supplierId) {
 
   var tid = getTenantId();
   var timestamp = Date.now();
-  var safeName = file.name.replace(/[^a-zA-Z0-9._\u0590-\u05FF-]/g, '_');
-  var filePath = tid + '/' + supplierId + '/' + timestamp + '_' + safeName;
+  var ext = (file.name.match(/\.([a-zA-Z0-9]+)$/) || ['', 'bin'])[1].toLowerCase();
+  var filePath = tid + '/' + supplierId + '/' + timestamp + '_' + Math.random().toString(36).slice(2, 8) + '.' + ext;
 
   try {
     var { error } = await sb.storage.from('supplier-docs').upload(filePath, file, {
