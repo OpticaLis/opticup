@@ -88,9 +88,11 @@ async function showOCRReview(result, fileUrl, existingDocId) {
   // Items rows
   var itemRows = '';
   (Array.isArray(items) ? items : []).forEach(function(it, i) {
+    var disc = it.discount || 0;
     itemRows += '<tr><td><input class="ocr-itm" data-i="' + i + '" data-f="description" value="' + escapeHtml(it.description || '') + '"></td>' +
-      '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="quantity" value="' + (it.quantity || '') + '" step="1" min="0"></td>' +
-      '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="unit_price" value="' + (it.unit_price || '') + '" step="0.01"></td>' +
+      '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="quantity" value="' + (it.quantity || '') + '" step="1" min="0" oninput="_ocrCalcItemRow(this)"></td>' +
+      '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="unit_price" value="' + (it.unit_price || '') + '" step="0.01" oninput="_ocrCalcItemRow(this)"></td>' +
+      '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="discount" value="' + disc + '" step="0.01" min="0" max="100" oninput="_ocrCalcItemRow(this)"></td>' +
       '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="total" value="' + (it.total || '') + '" step="0.01"></td></tr>';
   });
 
@@ -153,7 +155,7 @@ async function showOCRReview(result, fileUrl, existingDocId) {
             '<strong style="font-size:.9rem">פריטים</strong>' +
             '<button class="btn-sm" onclick="_ocrAddItemRow()">+ הוסף שורה</button></div>' +
           '<div style="overflow-x:auto"><table class="data-table ocr-items-tbl" style="width:100%;font-size:.85rem">' +
-            '<thead><tr><th>תיאור</th><th>כמות</th><th>מחיר ליח\'</th><th>סה"כ</th></tr></thead>' +
+            '<thead><tr><th>תיאור</th><th>כמות</th><th>מחיר ליח\'</th><th>% הנחה</th><th>סה"כ</th></tr></thead>' +
             '<tbody id="ocr-items-body">' + itemRows + '</tbody></table></div>' +
         '</div></div>' +
         '<div class="ocr-preview-panel">' + preview + '</div>' +
@@ -186,9 +188,7 @@ async function showOCRReview(result, fileUrl, existingDocId) {
   }
 }
 
-// =========================================================
 // Auto-calc VAT + total
-// =========================================================
 function _ocrCalcTotal() {
   var sub = Number(($('ocr-subtotal') || {}).value) || 0;
   var rate = Number(($('ocr-vat-rate') || {}).value) || 0;
@@ -197,17 +197,24 @@ function _ocrCalcTotal() {
   if ($('ocr-total')) $('ocr-total').value = (sub + vat).toFixed(2);
 }
 
-// =========================================================
 // Add item row
-// =========================================================
 function _ocrAddItemRow() {
   var tbody = $('ocr-items-body'); if (!tbody) return;
   var idx = tbody.rows.length;
   tbody.insertAdjacentHTML('beforeend',
     '<tr><td><input class="ocr-itm" data-i="' + idx + '" data-f="description"></td>' +
-    '<td><input type="number" class="ocr-itm" data-i="' + idx + '" data-f="quantity" step="1" min="0"></td>' +
-    '<td><input type="number" class="ocr-itm" data-i="' + idx + '" data-f="unit_price" step="0.01"></td>' +
+    '<td><input type="number" class="ocr-itm" data-i="' + idx + '" data-f="quantity" step="1" min="0" oninput="_ocrCalcItemRow(this)"></td>' +
+    '<td><input type="number" class="ocr-itm" data-i="' + idx + '" data-f="unit_price" step="0.01" oninput="_ocrCalcItemRow(this)"></td>' +
+    '<td><input type="number" class="ocr-itm" data-i="' + idx + '" data-f="discount" value="0" step="0.01" min="0" max="100" oninput="_ocrCalcItemRow(this)"></td>' +
     '<td><input type="number" class="ocr-itm" data-i="' + idx + '" data-f="total" step="0.01"></td></tr>');
+}
+
+// Auto-calc item row total: qty × price × (1 - discount/100)
+function _ocrCalcItemRow(inp) {
+  var row = inp.closest('tr'); if (!row) return;
+  var v = function(f) { return Number(row.querySelector('[data-f="' + f + '"]').value) || 0; };
+  var t = row.querySelector('[data-f="total"]');
+  if (t) t.value = (v('quantity') * v('unit_price') * (1 - v('discount') / 100)).toFixed(2);
 }
 
 // --- 3. Save OCR result + create supplier_document ---
@@ -227,7 +234,7 @@ async function _ocrSave(mode) {
   if (!typeId) { toast('יש לבחור סוג מסמך', 'e'); return; }
   if (!docNumber) { toast('יש להזין מספר מסמך', 'e'); return; }
   if (!docDate) { toast('יש להזין תאריך מסמך', 'e'); return; }
-  if (totalAmt <= 0) { toast('סכום חייב להיות חיובי', 'e'); return; }
+  if (totalAmt < 0) { toast('סכום לא יכול להיות שלילי', 'e'); return; }
 
   // Gather items
   var items = [], tbody = $('ocr-items-body');

@@ -233,7 +233,7 @@ async function saveNewDocument() {
   if (!typeId)     { setAlert('new-doc-alert', '\u05D9\u05E9 \u05DC\u05D1\u05D7\u05D5\u05E8 \u05E1\u05D5\u05D2 \u05DE\u05E1\u05DE\u05DA', 'e'); return; }
   if (!docNumber)  { setAlert('new-doc-alert', '\u05D9\u05E9 \u05DC\u05D4\u05D6\u05D9\u05DF \u05DE\u05E1\u05E4\u05E8 \u05DE\u05E1\u05DE\u05DA', 'e'); return; }
   if (!docDate)    { setAlert('new-doc-alert', '\u05D9\u05E9 \u05DC\u05D4\u05D6\u05D9\u05DF \u05EA\u05D0\u05E8\u05D9\u05DA \u05DE\u05E1\u05DE\u05DA', 'e'); return; }
-  if (subtotal <= 0) { setAlert('new-doc-alert', '\u05E1\u05DB\u05D5\u05DD \u05D7\u05D9\u05D9\u05D1 \u05DC\u05D4\u05D9\u05D5\u05EA \u05D7\u05D9\u05D5\u05D1\u05D9', 'e'); return; }
+  if (subtotal < 0) { setAlert('new-doc-alert', '\u05E1\u05DB\u05D5\u05DD \u05DC\u05D0 \u05D9\u05DB\u05D5\u05DC \u05DC\u05D4\u05D9\u05D5\u05EA \u05E9\u05DC\u05D9\u05DC\u05D9', 'e'); return; }
   if (!pin)        { setAlert('new-doc-alert', '\u05D9\u05E9 \u05DC\u05D4\u05D6\u05D9\u05DF \u05E7\u05D5\u05D3 \u05E2\u05D5\u05D1\u05D3', 'e'); return; }
   var dup = _docData.find(function(d) {
     return d.supplier_id === supplierId && d.document_number === docNumber && d.document_type_id === typeId;

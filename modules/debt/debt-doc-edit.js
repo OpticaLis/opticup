@@ -34,13 +34,14 @@ async function editDocument(docId) {
       var ocrItems = (ocrData.items && typeof ocrData.items === 'object' && 'value' in ocrData.items) ? ocrData.items.value : ocrData.items;
       if (Array.isArray(ocrItems) && ocrItems.length) {
         var rows = ocrItems.map(function(it) {
+          var disc = it.discount ? it.discount + '%' : '';
           return '<tr><td>' + escapeHtml(it.description || '') + '</td><td>' + (it.quantity || '') +
-            '</td><td>' + (it.unit_price || '') + '</td><td>' + (it.total || '') + '</td></tr>';
+            '</td><td>' + (it.unit_price || '') + '</td><td>' + disc + '</td><td>' + (it.total || '') + '</td></tr>';
         }).join('');
         ocrItemsHtml = '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-top:10px">' +
           '<strong style="font-size:.88rem">\uD83E\uDD16 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DE\u05E1\u05E8\u05D9\u05E7\u05D4</strong>' +
           '<table class="data-table" style="width:100%;font-size:.82rem;margin-top:6px"><thead><tr>' +
-          '<th>\u05EA\u05D9\u05D0\u05D5\u05E8</th><th>\u05DB\u05DE\u05D5\u05EA</th><th>\u05DE\u05D7\u05D9\u05E8 \u05DC\u05D9\u05D7\'</th><th>\u05E1\u05D4"\u05DB</th>' +
+          '<th>\u05EA\u05D9\u05D0\u05D5\u05E8</th><th>\u05DB\u05DE\u05D5\u05EA</th><th>\u05DE\u05D7\u05D9\u05E8 \u05DC\u05D9\u05D7\'</th><th>% \u05D4\u05E0\u05D7\u05D4</th><th>\u05E1\u05D4"\u05DB</th>' +
           '</tr></thead><tbody>' + rows + '</tbody></table></div>';
       }
     }
