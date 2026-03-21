@@ -17,7 +17,7 @@ function _openBatchUploadModal() {
   _batchSupplierId = null;
   _batchUploadedPaths = [];
   _batchTimestamp = '';
-  var supOpts = '<option value="">ללא ספק</option>';
+  var supOpts = '<option value="">\u05D1\u05D7\u05E8 \u05E1\u05E4\u05E7...</option>';
   (_docSuppliers || []).forEach(function(s) {
     supOpts += '<option value="' + escapeHtml(s.id) + '">' + escapeHtml(s.name) + '</option>';
   });
@@ -37,8 +37,8 @@ function _openBatchUploadModal() {
           'PDF, JPG, PNG (עד 10MB כל קובץ, עד 50 קבצים)</div></div>' +
       '<div id="batch-file-list"></div>' +
       '<div id="batch-summary" style="font-size:.85rem;color:var(--g600);margin:8px 0;display:none"></div>' +
-      '<div style="margin:10px 0"><label style="font-size:.85rem;color:var(--g600)">ספק (אופציונלי)</label>' +
-        '<select id="batch-supplier" class="nd-field" onchange="_batchSupplierId=this.value||null">' +
+      '<div style="margin:10px 0"><label style="font-size:.85rem;color:var(--g600)">\u05E1\u05E4\u05E7</label>' +
+        '<select id="batch-supplier" class="nd-field" onchange="_batchSupplierId=this.value||null;_updateBatchButtons()">' +
           supOpts + '</select></div>' +
       '<div id="batch-progress" style="display:none;margin:10px 0">' +
         '<div style="font-size:.82rem;color:var(--g600);margin-bottom:4px" id="batch-progress-text"></div>' +
@@ -217,14 +217,16 @@ function _updateBatchSummary() {
 
 function _updateBatchButtons() {
   var hasChecked = _batchFiles.some(function(f) { return f.checked; });
+  var ready = hasChecked && !!_batchSupplierId;
   var btn1 = $('batch-btn-upload'), btn2 = $('batch-btn-ocr');
-  if (btn1) btn1.disabled = !hasChecked;
-  if (btn2) btn2.disabled = !hasChecked;
+  if (btn1) btn1.disabled = !ready;
+  if (btn2) btn2.disabled = !ready;
 }
 
 async function _batchUploadOnly() {
+  if (!_batchSupplierId) { toast('\u05D9\u05E9 \u05DC\u05D1\u05D7\u05D5\u05E8 \u05E1\u05E4\u05E7', 'e'); return null; }
   var selected = _batchFiles.filter(function(f) { return f.checked && f.status !== 'uploaded'; });
-  if (!selected.length) { toast('אין קבצים נבחרים', 'e'); return null; }
+  if (!selected.length) { toast('\u05D0\u05D9\u05DF \u05E7\u05D1\u05E6\u05D9\u05DD \u05E0\u05D1\u05D7\u05E8\u05D9\u05DD', 'e'); return null; }
   // TODO Module 2: checkPlanLimit('documents', selected.length)
   _batchId = crypto.randomUUID();
   _batchTimestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
