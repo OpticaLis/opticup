@@ -40,14 +40,14 @@
 | 27 | sync-details.js | modules/access-sync/sync-details.js | 234 | Sync details work center: openSyncDetails (items table + error table + inline resolve), closeSyncDetails, downloadFailedFile (signed URL), toggleSyncDetailHelp, syncDetailSearchInInventory |
 | 28 | pending-panel.js | modules/access-sync/pending-panel.js | 32 | Legacy wrappers: renderPendingPanel (calls togglePendingFilter), closePendingPanel, updatePendingPanelCount (calls loadPendingBadge), searchBarcodeInInventory. **Note: all 4 functions are dead code — never called from current codebase** |
 | 29 | pending-resolve.js | modules/access-sync/pending-resolve.js | 132 | Pending resolution: syncDetailResolve (inline resolve in work center), checkFileCompletion (marks sync_log 'handled'), searchBarcodeInInventory, syncDetailSearchInInventory |
-| 30 | stock-count-list.js | modules/stock-count/stock-count-list.js | 148 | Stock count list screen: ensureStockCountListHTML, loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (PIN first, DB creation after), renderStockCountList |
-| 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 306 | Stock count session: all 14 state variables, worker PIN entry, session screen render, status filter boxes, text search/filter, scRenderItemRow, scCalcStats |
-| 31b | stock-count-camera.js | modules/stock-count/stock-count-camera.js | 376 | Camera hardware: fullscreen overlay (ZXing + viewfinder + zoom), scan freeze/resume, unknown item form inside overlay, qty panel inside overlay. Depends on session.js globals + scan.js functions |
-| 31c | stock-count-scan.js | modules/stock-count/stock-count-scan.js | 176 | Scan logic: barcode normalization (5 strategies), manual search, row click, handleScan dispatch, qty modal, updateCountItem, refreshSessionUI, undo, pause/finish. Bridge between session.js and camera.js |
-| 31d | stock-count-unknown.js | modules/stock-count/stock-count-unknown.js | 222 | Unknown items in diff report: renderUnknownSection (orange table with edit buttons), openUnknownItemModal (brand/supplier dropdowns, barcode auto-gen), saveUnknownToInventory (insert + link + log), _removeUnknownRow (live UI update) |
-| 31e | stock-count-approve.js | modules/stock-count/stock-count-approve.js | 42 | Bulk selection helpers (scReportCheckAll, scReportUncheckAll, scReportCheckDiffsOnly) + _scCollectApprovalState (reads checkboxes + reason inputs from DOM). Supports partial approval in report.js |
-| 31f | stock-count-view.js | modules/stock-count/stock-count-view.js | 176 | Read-only view of completed stock counts: openCompletedCountView (fetch + render), status filter buttons (all/matched/shortages/surpluses/skipped), summary footer row, Excel export |
-| 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 314 | Diff report with per-item checkbox (approve/skip) + reason column for discrepancies, bulk toolbar, delegates unknown section to stock-count-unknown.js, partial approval in confirmCount (approved → RPC, skipped → status='skipped', reasons → saved), cancelCount, exportCountExcel (includes reason column) |
+| 30 | stock-count-list.js | modules/stock-count/stock-count-list.js | 149 | Stock count list screen: ensureStockCountListHTML, loadStockCountTab (summary cards + table), generateCountNumber (SC-YYYY-NNNN), startNewCount (PIN first, DB creation after), renderStockCountList |
+| 31 | stock-count-session.js | modules/stock-count/stock-count-session.js | 314 | Stock count session: all 14 state variables, worker PIN entry, session screen render, status filter boxes, text search/filter, scRenderItemRow, scCalcStats |
+| 31b | stock-count-camera.js | modules/stock-count/stock-count-camera.js | 350 | Camera hardware: fullscreen overlay (ZXing + viewfinder + zoom), scan freeze/resume, unknown item form inside overlay, qty panel inside overlay. Depends on session.js globals + scan.js functions |
+| 31c | stock-count-scan.js | modules/stock-count/stock-count-scan.js | 265 | Scan logic: barcode normalization (5 strategies), manual search, row click, handleScan dispatch, qty modal, updateCountItem, refreshSessionUI, undo, pause/finish, uncounted items dialog (_showUncountedDialog, _markUncountedAsShortages). Bridge between session.js and camera.js |
+| 31d | stock-count-unknown.js | modules/stock-count/stock-count-unknown.js | 374 | Unknown items in diff report: renderUnknownSection, openUnknownItemModal (brand/supplier dropdowns, barcode auto-gen), saveUnknownToInventory (insert + link + log), barcode conflict resolution (_showBarcodeConflictDialog, _showDeletedBarcodeDialog), _linkToExistingItem, _insertNewInventoryItem, _markItemMatched, _closeFormAndRemoveRow, _removeUnknownRow |
+| 31e | stock-count-approve.js | modules/stock-count/stock-count-approve.js | 46 | Bulk selection helpers (scReportCheckAll, scReportUncheckAll, scReportCheckDiffsOnly) + _scCollectApprovalState (reads checkboxes + reason inputs from DOM). Supports partial approval in report.js |
+| 31f | stock-count-view.js | modules/stock-count/stock-count-view.js | 228 | Read-only view of completed stock counts: openCompletedCountView (fetch + render), status filter buttons (all/matched/shortages/surpluses/skipped/unknown), summary footer row, Excel export |
+| 32 | stock-count-report.js | modules/stock-count/stock-count-report.js | 297 | Diff report with per-item checkbox (approve/skip) + reason column for discrepancies, bulk toolbar, delegates unknown section to stock-count-unknown.js, _doConfirmCount (approved → RPC, skipped → status='skipped', reasons → saved, matched counted in total), cancelCount, exportCountExcel (includes reason column) |
 | 33 | sync-watcher.js | scripts/sync-watcher.js | 461 | Node.js Dropbox folder watcher: processes sales_template Excel/CSV files, CSV support with parseCSVFile + BOM stripping, atomic qty updates via RPC, pending_sales for unknown barcodes (with brand/model/size/color), idempotency guards, failed file upload to Supabase Storage, heartbeat every 60s, reverse sync export interval every 30s. Uses service_role key via OPTICUP_SERVICE_ROLE_KEY env var. Configurable OPTICUP_WATCH_DIR + OPTICUP_EXPORT_DIR |
 | 33b | sync-export.js | scripts/sync-export.js | 111 | Reverse sync: exports unexported inventory items (access_exported=false) as XLS (biff8 format via SheetJS) for Access import. Joins brand/supplier names, batch marks items as access_exported (groups of 100), writes sync_log entry with source_ref='export' |
 | 34 | admin.js | modules/admin/admin.js | 52 | Admin mode toggle (password 1234), DOMContentLoaded handler (app init: loadData → addEntryRow → refreshLowStockBanner), help modal |
@@ -105,7 +105,7 @@
 
 | 79 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
 
-**Total: 82 JS files across 14 module folders + 9 global files + watcher-deploy/ (8-file standalone package), ~19,840 lines** (includes scripts/sync-watcher.js + sync-export.js)
+**Total: 102 JS files across 14 module folders + 9 global files + 9 shared/js files + watcher-deploy/ (8-file standalone package), ~23,135 lines** (includes scripts/sync-watcher.js + sync-export.js)
 
 **Note (QA Phase):** Module 1 final certification. 4 new files: settings.html (tenant settings page), js/pin-modal.js (shared PIN prompt replacing inline HTML), modules/settings/settings-page.js (settings logic + logo management), modules/stock-count/stock-count-filters.js (brand/category pre-count filters). New functions: promptPin (pin-modal.js), getTenantConfig/storeTenantConfig (settings-page.js), handleLogoUpload/handleLogoDelete/renderLogoPreview (settings-page.js), openReturnTimeline (debt-returns-tab.js), _createCreditNoteForReturn (debt-returns-tab-actions.js), cancelDocument (debt-documents.js), cancelPayment (debt-payments.js). Bug fixes: settings save RLS policy, logo persistence, toast position, loadReturnsData error handling, loading spinners on all pages. DB: tenant_update_own RLS policy on tenants table, 3 migration files (030_settings_columns.sql, 031_stock_count_filter_criteria.sql, 031_tenants_update_policy.sql). 55 permissions across 15 modules (expanded from 29). Storage: tenant-logos bucket added.
 
@@ -615,7 +615,9 @@
 | `refreshSessionUI` | `()` | Updates all 5 stat counters + re-renders table |
 | `undoCountItem` | `(itemId)` | Async. Resets item to pending (actual_qty=null, status='pending') with confirmation |
 | `pauseSession` | `()` | Async. Stops camera, confirms, navigates back to list |
-| `finishSession` | `(countId)` | Stops camera, calls showDiffReport(countId) |
+| `finishSession` | `(countId)` | Async. Stops camera, checks for pending items → shows uncounted dialog or goes straight to report |
+| `_showUncountedDialog` | `(countId, pendingItems)` | Shows Modal.show with 2 buttons: mark as shortages (qty 0) or leave uncounted. Returns promise |
+| `_markUncountedAsShortages` | `(countId, pendingItems)` | Async. Bulk-updates all pending items to actual_qty=0, status='counted', then shows diff report |
 
 ### modules/stock-count/stock-count-unknown.js
 
@@ -623,7 +625,13 @@
 |----------|------------|-------------|
 | `renderUnknownSection` | `(unknownItems, countId)` | Returns HTML for unknown items table with edit/add buttons. Called from renderReportScreen |
 | `openUnknownItemModal` | `(itemId, countId)` | Async. Opens Modal.form with brand/supplier dropdowns, barcode (readonly or auto-gen), qty, size, color, cost/sell price |
-| `saveUnknownToInventory` | `(itemId, countId, hasBarcode)` | Async. Validates brand+model, generates barcode if needed (via generateNextBarcode), inserts into inventory, updates stock_count_items to matched, writeLog |
+| `saveUnknownToInventory` | `(itemId, countId, hasBarcode)` | Async. Validates brand+model, checks for barcode conflicts (active + soft-deleted), generates barcode if needed (via generateNextBarcode with retry), inserts into inventory, updates stock_count_items to matched, writeLog |
+| `_showBarcodeConflictDialog` | `(existing, barcode, itemId, countId, formData)` | Shows Modal.show for active barcode conflict: link to existing item or create with new barcode |
+| `_showDeletedBarcodeDialog` | `(existing, barcode, itemId, countId, formData)` | Shows Modal.show for soft-deleted barcode conflict: reuse barcode or create with new barcode |
+| `_linkToExistingItem` | `(invId, barcode, itemId, countId)` | Async. Links unknown item to existing inventory item, marks matched |
+| `_insertNewInventoryItem` | `(barcode, itemId, countId, fd)` | Async. Inserts new inventory row with status in_stock, marks matched |
+| `_markItemMatched` | `(itemId, invId)` | Async. Updates stock_count_items row to status=matched with inventory_id link |
+| `_closeFormAndRemoveRow` | `(itemId)` | Closes modal and removes unknown row from report UI |
 | `_removeUnknownRow` | `(itemId)` | Removes row from DOM, updates cached unknownItems array, hides section if empty |
 
 ### modules/stock-count/stock-count-approve.js
@@ -641,7 +649,7 @@
 |----------|------------|-------------|
 | `openCompletedCountView` | `(countId)` | Async. Fetches completed count header + items, calls _renderCompletedView |
 | `_renderCompletedView` | `(countRow, allItems)` | Renders read-only view panel: header with count info, summary bar, filter buttons, table with tbody/tfoot, export + back buttons |
-| `_scViewFilter` | `(filter)` | Filters displayed rows by: all, matched, shortages, surpluses, skipped. Highlights active button |
+| `_scViewFilter` | `(filter)` | Filters displayed rows by: all, matched, shortages, surpluses, skipped, unknown. Highlights active button |
 | `_scViewRenderRows` | `(items)` | Renders filtered item rows into tbody + summary footer into tfoot |
 | `_scViewExportExcel` | `()` | Exports counted+skipped items to xlsx via SheetJS (12 columns including reason and status) |
 
@@ -651,8 +659,8 @@
 |----------|------------|-------------|
 | `showDiffReport` | `(countId)` | Async. Fetches count header + items + current DB quantities for counted items, enriches items with _current_qty, calls renderReportScreen |
 | `renderReportScreen` | `(countId, diffItems, allItems, displayItems, nothingScanned, unknownItems)` | Renders diff report with per-item checkbox (approve/skip) + reason column for discrepancies, bulk toolbar, delegates unknown section to renderUnknownSection, action buttons |
-| `showConfirmPinForCount` | `(countId)` | Shows inline manager PIN input for count approval |
-| `confirmCount` | `(countId)` | Async. Partial approval: collects checkbox/reason state via _scCollectApprovalState, approved items → apply_stock_count_delta RPC, skipped items → status='skipped', reasons → saved to DB, marks count completed |
+| `showConfirmPinForCount` | `(countId)` | Calls promptPin() for manager PIN, then delegates to _doConfirmCount |
+| `_doConfirmCount` | `(countId, emp)` | Async. Partial approval: collects checkbox/reason state via _scCollectApprovalState, approved items → apply_stock_count_delta RPC, skipped items → status='skipped', reasons → saved to DB, total_items includes matched unknowns, marks count completed |
 | `cancelCount` | `(countId)` | Async. Confirms cancellation, updates count status to cancelled |
 | `exportCountExcel` | `(countId)` | Async. Exports counted+skipped items to xlsx via SheetJS (12 columns including reason) |
 

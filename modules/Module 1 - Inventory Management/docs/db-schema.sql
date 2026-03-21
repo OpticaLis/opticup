@@ -26,6 +26,7 @@
 --   013_stock_count.sql  — stock_counts + stock_count_items tables + set_inventory_qty RPC
 --   033_apply_stock_count_delta.sql — atomic stock count confirmation RPC (FOR UPDATE lock)
 --   034_stock_count_reason_and_skipped.sql — reason TEXT column + skipped status on stock_count_items
+--   035_barcode_unique_per_tenant.sql — inventory barcode + stock_counts count_number UNIQUE per tenant
 --   014_stock_count_scanned_by.sql  — scanned_by column on stock_count_items
 --   015_failed_sync_storage.sql  — storage_path + errors columns on sync_log, storage policy
 --   016_auth_permissions.sql  — roles, permissions, role_permissions, employee_roles, auth_sessions
@@ -473,7 +474,8 @@ INSERT INTO watcher_heartbeat (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 CREATE TABLE IF NOT EXISTS stock_counts (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  count_number    TEXT NOT NULL UNIQUE,                        -- SC-YYYY-NNNN (auto-generated)
+  count_number    TEXT NOT NULL,                               -- SC-YYYY-NNNN (auto-generated)
+  CONSTRAINT stock_counts_count_number_tenant_key UNIQUE (count_number, tenant_id),
   count_date      DATE NOT NULL DEFAULT CURRENT_DATE,          -- תאריך ספירה
   status          TEXT NOT NULL DEFAULT 'in_progress'          -- in_progress | completed | cancelled
                   CHECK (status IN ('in_progress', 'completed', 'cancelled')),

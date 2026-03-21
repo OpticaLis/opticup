@@ -23,7 +23,45 @@
 - `5423c48` — view completed stock counts: read-only panel with filters and Excel export
 
 ### End of Phase
-- `[this commit]` — Phase 7 documentation, backup, ROADMAP ✅
+- `fc685b7` — Phase 7 documentation, backup, ROADMAP ✅
+
+---
+
+## Phase 7 — Hotfix Cycle (2026-03-19 to 2026-03-21)
+
+### Camera & Scanning
+- `666e1fd` — camera fullscreen gap fix, barcode scan improvements, error toast debounce (3s cooldown)
+
+### CSS & Layout
+- `4a74fec` — stock count mobile layout: right gap fix on Safari
+- `5a226eb` — right margin gap on all pages: overflow-x:hidden on all CSS files
+- `107a711` — persistent right margin gap: html overflow-x:hidden + remove all 100vw
+
+### Database Constraints
+- `03f2209` — barcode UNIQUE per tenant (inventory_barcode_tenant_key), remove D prefix from clone-tenant.sql
+- `70f4d7a` — stock_counts count_number UNIQUE per tenant + collision retry in generateCountNumber
+- `d337763` — clone-tenant.sql ON CONFLICT composite PK fixes
+- `af5e87e` — clone-tenant.sql employee_roles PK fix (employee_id, role_id without tenant_id)
+
+### Stock Count Flow
+- `8e35120` — confirmCount all-items-skipped fix, countNumber scoping, undo button CSS
+- `1c0e1cd` — PIN modal centered overlay (not scroll-to-top), undo button fix, unknown items warning before approval
+- `a16d2c1` — unknown item duplicate barcode handling, scroll-to-top before PIN, completed view shows unknowns
+- `b818379` — uncounted items dialog: mark pending items as shortages (כמות 0) or leave uncounted
+- `3f17b77` — total_items includes matched unknowns in count list
+
+### Unknown Items
+- `770fbca` — unknown item insert uses status `in_stock` instead of `active`
+- `c6e5fec` — barcode conflict dialog: ask user to link existing or create new item
+- `da7cce6` — loadMaxBarcode silent failure fix + collision retry for generateNextBarcode
+- `6a7c143` — loadMaxBarcode uses server-side max (Supabase `.order().limit(1)`) instead of fetching all rows
+
+### Documentation & Rules
+- `1c0b517` — TROUBLESHOOTING.md knowledge base created + SaaS rule 19 (UNIQUE + tenant_id) in CLAUDE.md
+- `5030905` — TROUBLESHOOTING.md: stale session after tenant re-clone
+- `1894028` — TROUBLESHOOTING.md: barcode collision bug
+- `66c1ddd` — CLAUDE.md: no-worktree rule (rule 8 in Working Rules)
+- `fc685b7` — CLAUDE.md: multi-machine development rule
 
 ---
 

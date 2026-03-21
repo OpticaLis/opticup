@@ -89,25 +89,28 @@ For complete file index → see MODULE_MAP.md section 1.
 - **Auto-deduct from active prepaid deal** if supplier has one (Phase 4f)
 - Export confirmed receipts as Access-compatible Excel
 
-### 3.6 ספירת מלאי (Stock Count) — Phase 2a + Phase 7
-- **9 files**: stock-count-list, stock-count-session, stock-count-camera, stock-count-scan, stock-count-filters, stock-count-unknown, stock-count-approve, stock-count-view, stock-count-report
-- **List screen**: summary cards (open/completed/diffs this month), stock count table, view button for completed counts
-- **New count flow**: worker PIN → create count header + snapshot all active inventory items
+### 3.6 ספירת מלאי (Stock Count) — Phase 2a + Phase 7 + Hotfixes
+- **9 files**: stock-count-list (149), stock-count-session (314), stock-count-camera (350), stock-count-scan (265), stock-count-filters (245), stock-count-unknown (374), stock-count-approve (46), stock-count-view (228), stock-count-report (297) — 2,268 lines total
+- **List screen**: summary cards (open/completed/diffs this month), stock count table, view button for completed counts. total_items includes matched unknowns
+- **New count flow**: worker PIN → create count header + snapshot all active inventory items (quantity > 0, not deleted)
 - **Session screen**: camera barcode scanning (ZXing), manual barcode/search input, real-time stats
 - **Camera** (camera.js): fullscreen overlay with ZXing, viewfinder, zoom toggle, freeze-on-scan, unknown item form inside overlay, qty panel inside overlay
 - **Scan logic** (scan.js): barcode normalization (5 strategies), manual search, row click, handleScan dispatch, qty modal, updateCountItem, refreshSessionUI, undo, pause/finish
 - **Scan handling**: unknown barcode → warning + form, already counted → confirm +1, pending → qty prompt
+- **Uncounted items dialog** (scan.js): when finishing a count with pending items, dialog asks: "סמן כחוסרים (כמות 0)" → bulk-update all pending to actual_qty=0, status='counted' (appear as shortages), or "השאר כלא נספר" → leave as pending (old behavior)
 - **Diff report**: shortages/surpluses/uncounted summary, per-item checkbox (approve/skip), reason input for discrepancies, bulk toolbar (check all/uncheck all/diffs only)
 - **Unknown items** (unknown.js): modal to edit unknown items (brand dropdown, model, barcode readonly or auto-gen BBDDDDD, prices, supplier, size, color), saves to inventory + updates stock_count_items to matched
+- **Unknown item conflict resolution** (unknown.js): when barcode already exists — if active item: dialog to link or create new barcode; if soft-deleted item: dialog to reuse barcode or create new. generateNextBarcode uses server-side max with collision retry (up to 3 attempts)
 - **Partial approval** (approve.js + report.js): approved items → `apply_stock_count_delta` RPC, skipped items → status='skipped' (no inventory change), reasons saved per item
-- **Approval**: manager PIN (role=admin/manager) → atomic inventory update via `apply_stock_count_delta` RPC (FOR UPDATE row lock) → writeLog per item with delta details
-- **View completed counts** (view.js): read-only panel with count header + employee name + date, status filter buttons (הכל/התאמות/חוסרים/עודפים/נדלגו), 9-column table, summary footer, Excel export (12 columns)
+- **Approval**: manager PIN via promptPin() → _doConfirmCount → atomic inventory update via `apply_stock_count_delta` RPC (FOR UPDATE row lock) → writeLog per item with delta details. Warns about unhandled unknown items before proceeding
+- **View completed counts** (view.js): read-only panel with count header + employee name + date, status filter buttons (הכל/התאמות/חוסרים/עודפים/נדלגו/לא ידועים), 9-column table, summary footer, Excel export (12 columns)
 - **Cancel**: cancels count without changing quantities
 - **Export**: counted+skipped items to xlsx (12 columns including reason and status)
 - **Brand/category filters** (QA): pre-count filter screen to select brands and product types for targeted counts (stock-count-filters.js). Builds filter_criteria JSONB stored on stock_counts
 - **Realtime search** (QA): debounced search in count session filters items by brand/model/barcode
 - **stock_count_items statuses**: pending, counted, matched, unknown, skipped
 - **reason column**: TEXT, optional per-item reason for discrepancies
+- **DB constraints**: count_number UNIQUE per tenant, barcode UNIQUE per tenant (inventory_barcode_tenant_key)
 
 ### 3.7 סנכרון Access (Access Sync) — Phase 2b + Access Sync Fix
 - **Sync tab**: summary cards (syncs/items/errors today), last activity timestamp, watcher status indicator (green/yellow/red based on heartbeat), sync log table with pagination
