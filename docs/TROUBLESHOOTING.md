@@ -112,6 +112,21 @@ sessionStorage doesn't exist in the tenants table, force logout.
 
 **Status:** Documented. Session validation enhancement deferred.
 
+### inventory_barcode_tenant_key — duplicate key on unknown item "create new barcode"
+
+**Symptom:** Error "duplicate key value violates unique constraint inventory_barcode_tenant_key" when clicking "צור פריט חדש (ברקוד חדש)" in the unknown item flow during stock count.
+
+**Root cause:** `loadMaxBarcode()` in data-loading.js silently swallowed query errors via `catch(e) { console.warn(...) }`. When the query failed (RLS issue, network, stale JWT), `maxBarcode` was set to 0, causing `generateNextBarcode()` to return `0000001` — which already existed. Additionally, there was no collision verification or retry logic.
+
+**Fix:**
+1. `loadMaxBarcode()` — now throws on query error instead of silent catch
+2. `generateNextBarcode()` — verifies candidate barcode doesn't exist in DB before returning; retries up to 10 times if collision detected
+3. `_insertNewInventoryItem()` — retries with fresh barcode on unique constraint violation (PostgreSQL error code 23505)
+
+**Prevention:** Any function generating unique identifiers should verify uniqueness before returning. Never silently swallow errors in functions that produce values used for DB inserts.
+
+**Commits:** da7cce6 (2026-03-21)
+
 ---
 
 ## Template for new entries
