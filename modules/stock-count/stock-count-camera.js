@@ -252,7 +252,6 @@ function _scResumeScanning() {
 }
 
 function _scResetViewfinder() { var vf = document.getElementById('sc-viewfinder'); if (vf) { vf.style.borderColor = 'rgba(255,255,255,.5)'; vf.style.boxShadow = '0 0 0 4000px rgba(0,0,0,.35)'; } }
-
 // ── Camera qty panel (re-scan inside overlay) ─────────────────
 function _scCamQtySave() {
   var inp = document.getElementById('sc-cam-qty-input');
@@ -287,6 +286,18 @@ async function _scSaveUnknownItem() {
   var qty = parseInt(document.getElementById('sc-unk-qty')?.value) || 1;
   var notes = (document.getElementById('sc-unk-notes')?.value || '').trim();
   var worker = activeWorker || JSON.parse(sessionStorage.getItem('activeWorker') || '{}');
+
+  // Check if this barcode was already saved as unknown in this count
+  var existing = scSessionItems.find(function (i) {
+    return i.barcode === _scNotFoundBarcode && i.status === 'unknown';
+  });
+  if (existing) {
+    toast('ברקוד זה כבר נשמר כפריט לא ידוע בספירה זו', 'w');
+    _scNotFoundBarcode = '';
+    _scResumeScanning();
+    return;
+  }
+
   try {
     var row = {
       count_id: scCountId, inventory_id: null,

@@ -147,6 +147,7 @@ function renderReportScreen(countId, diffItems, allItems, displayItems, nothingS
 
 // ── Manager PIN for approval ─────────────────────────────────
 function showConfirmPinForCount(countId) {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   const area = $('sc-report-pin-area');
   if (!area) return;
   area.innerHTML = `
@@ -260,7 +261,7 @@ async function confirmCount(countId) {
 
 // ── Cancel count ─────────────────────────────────────────────
 async function cancelCount(countId) {
-  const yes = await confirmDialog('האם לבטל את הספירה? הכמויות לא ישתנו.');
+  const yes = await confirmDialog('ביטול ספירה', 'האם לבטל את הספירה? הכמויות במלאי לא ישתנו. פעולה זו לא ניתנת לביטול.');
   if (!yes) return;
   try {
     showLoading('מבטל ספירה...');

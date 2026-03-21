@@ -39,6 +39,7 @@ function _renderCompletedView(countRow, allItems) {
   const shortages = counted.filter(i => i.actual_qty < i.expected_qty);
   const surpluses = counted.filter(i => i.actual_qty > i.expected_qty);
   const skipped = allItems.filter(i => i.status === 'skipped');
+  const unknowns = allItems.filter(i => i.status === 'unknown');
   const totalDiff = counted.reduce((s, i) => s + Math.abs(i.actual_qty - i.expected_qty), 0);
 
   const tab = document.getElementById('tab-stock-count');
@@ -66,16 +67,19 @@ function _renderCompletedView(countRow, allItems) {
           <span style="font-size:.78rem;color:var(--g500)">עודפים</span></div>
         <div class="sc-stat"><strong style="color:#9e9e9e">${skipped.length}</strong>
           <span style="font-size:.78rem;color:var(--g500)">נדלגו</span></div>
+        ${unknowns.length ? `<div class="sc-stat"><strong style="color:#d97706">${unknowns.length}</strong>
+          <span style="font-size:.78rem;color:var(--g500)">לא ידועים</span></div>` : ''}
         <div class="sc-stat"><strong>${totalDiff}</strong>
           <span style="font-size:.78rem;color:var(--g500)">סה"כ פערים</span></div>
       </div>
 
       <div style="display:flex;gap:6px;justify-content:center;margin-bottom:10px;flex-wrap:wrap" id="sc-view-filters">
-        <button class="btn btn-p btn-sm sc-vf-btn" data-filter="all" onclick="_scViewFilter('all')">הכל (${allItems.filter(i => i.status === 'counted' || i.status === 'skipped').length})</button>
+        <button class="btn btn-p btn-sm sc-vf-btn" data-filter="all" onclick="_scViewFilter('all')">הכל (${allItems.filter(i => i.status !== 'pending').length})</button>
         <button class="btn btn-g btn-sm sc-vf-btn" data-filter="matched" onclick="_scViewFilter('matched')">התאמות (${matched.length})</button>
         <button class="btn btn-g btn-sm sc-vf-btn" data-filter="shortages" onclick="_scViewFilter('shortages')">חוסרים (${shortages.length})</button>
         <button class="btn btn-g btn-sm sc-vf-btn" data-filter="surpluses" onclick="_scViewFilter('surpluses')">עודפים (${surpluses.length})</button>
         <button class="btn btn-g btn-sm sc-vf-btn" data-filter="skipped" onclick="_scViewFilter('skipped')">נדלגו (${skipped.length})</button>
+        ${unknowns.length ? `<button class="btn btn-g btn-sm sc-vf-btn" data-filter="unknown" onclick="_scViewFilter('unknown')" style="border-color:#d97706;color:#d97706">לא ידועים (${unknowns.length})</button>` : ''}
       </div>
 
       <div style="overflow-x:auto;border:1px solid var(--g200);border-radius:8px;margin-bottom:16px">
@@ -122,13 +126,15 @@ function _scViewFilter(filter) {
   // Filter items
   const counted = allItems.filter(i => i.status === 'counted');
   const skipped = allItems.filter(i => i.status === 'skipped');
+  const unknowns = allItems.filter(i => i.status === 'unknown');
   let items;
   switch (filter) {
     case 'matched':  items = counted.filter(i => i.actual_qty === i.expected_qty); break;
     case 'shortages': items = counted.filter(i => i.actual_qty < i.expected_qty); break;
     case 'surpluses': items = counted.filter(i => i.actual_qty > i.expected_qty); break;
     case 'skipped':  items = skipped; break;
-    default:         items = [...counted, ...skipped]; break;
+    case 'unknown':  items = unknowns; break;
+    default:         items = [...counted, ...skipped, ...unknowns]; break;
   }
 
   _scViewRenderRows(items);
@@ -155,7 +161,8 @@ function _scViewRenderRows(items) {
 
     const statusMap = {
       counted: { text: 'נספר', color: '#4CAF50' },
-      skipped: { text: 'נדלג', color: '#9e9e9e' }
+      skipped: { text: 'נדלג', color: '#9e9e9e' },
+      unknown: { text: 'לא ידוע', color: '#d97706' }
     };
     const st = statusMap[it.status] || { text: it.status, color: '#888' };
 
