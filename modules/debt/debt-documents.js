@@ -86,9 +86,9 @@ function renderDocumentsTable(docs) {
     var type = typeMap[d.document_type_id] || {};
     var balance = (Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0);
     var st = DOC_STATUS_MAP[d.status] || { he: d.status, cls: '' };
-    var isDeliveryNote = type.code === 'delivery_note';
-    var linkBtn = (isDeliveryNote && d.status !== 'linked')
-      ? ' <button class="btn-sm" style="background:#3b82f6;color:#fff" onclick="openLinkToInvoiceModal(\'' + d.id + '\')">\u05E7\u05E9\u05E8 \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA</button>' : '';
+    var isInvoice = type.code === 'invoice' || type.code === 'tax_invoice';
+    var linkBtn = (isInvoice && (d.status === 'open' || d.status === 'partially_paid'))
+      ? ' <button class="btn-sm" style="background:#3b82f6;color:#fff" onclick="openLinkDeliveryNotesModal(\'' + d.id + '\')">\u05E7\u05E9\u05E8 \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA</button>' : '';
     var hasPrepaid = !!_docPrepaidSet[d.supplier_id];
     var ppBadge = hasPrepaid ? '<span style="background:#f59e0b;color:#fff;padding:1px 6px;border-radius:4px;font-size:11px;margin-right:4px">\u05DE\u05E7\u05D3\u05DE\u05D4</span>' : '';
     var ppBtn = (hasPrepaid && balance > 0 && (d.status === 'open' || d.status === 'partially_paid'))
