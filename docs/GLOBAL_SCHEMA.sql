@@ -1878,3 +1878,12 @@ ALTER TABLE suppliers
   ADD COLUMN IF NOT EXISTS opening_balance_date DATE,
   ADD COLUMN IF NOT EXISTS opening_balance_notes TEXT,
   ADD COLUMN IF NOT EXISTS opening_balance_set_by UUID REFERENCES employees(id);
+
+-- 039: return_note document type for all tenants
+-- INSERT INTO document_types (tenant_id, code, name_he, name_en, affects_debt, is_system)
+--   VALUES (<tenant_id>, 'return_note', 'תעודת החזרה', 'Return Note', 'decrease', true)
+--   for each active tenant. ON CONFLICT DO NOTHING.
+
+-- RLS fix: corrected RLS policies on 5 tables (roles, permissions, role_permissions,
+-- employee_roles, auth_sessions) — changed from permissive anon access to proper
+-- tenant_isolation using JWT current_setting('app.tenant_id').

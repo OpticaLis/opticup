@@ -81,7 +81,7 @@ Supabase init, constants, caches, UI helpers, navigation. **Loads FIRST on every
 
 ### js/supabase-ops.js (380 lines)
 
-DB operations: CRUD helpers, barcode generation, logging, OCR learning, alerts, validation.
+DB operations: CRUD helpers, barcode generation, logging. Alert/OCR functions moved to `js/supabase-alerts-ocr.js`.
 
 **Functions:**
 
@@ -95,6 +95,17 @@ DB operations: CRUD helpers, barcode generation, logging, OCR learning, alerts, 
 | `generateNextBarcode` | — | `Promise<string>` | Generate next BBDDDDD barcode for current branch |
 | `writeLog` | `action: string, inventoryId?: string, details?: object` | `Promise<void>` | Insert audit log entry (async, non-blocking) |
 | `batchWriteLog` | `entries: object[]` | `Promise<void>` | Bulk insert log entries in single DB call |
+
+---
+
+### js/supabase-alerts-ocr.js (181 lines)
+
+Alert creation + OCR template learning (split from supabase-ops.js). Load after shared.js, supabase-ops.js.
+
+**Functions:**
+
+| Function | Parameters | Returns | Description |
+|----------|-----------|---------|-------------|
 | `createAlert` | `alertType: string, severity: string, title: string, entityType?: string, entityId?: string, data?: object, expiresAt?: string` | `Promise<object\|null>` | Create system alert (checks ai_agent_config flags, skips historical docs) |
 | `alertPriceAnomaly` | `item: string, poPrice: number, receiptPrice: number, supplierId: string, docId: string` | `Promise<object\|null>` | Create price_anomaly alert |
 | `alertPrepaidNewDocument` | `supplierId: string, documentId: string, tenantId: string, supplierName: string, docNumber: string` | `Promise<void>` | Create prepaid_new_document info alert when receipt creates doc for supplier with active prepaid deal |
@@ -536,6 +547,13 @@ Pages modified for shared/ dependencies:
 | `refreshAlertsBadge` | alerts-badge.js | — | `Promise<void>` | After alert dismiss, payment save, OCR accept |
 | `initHeader` | header.js | — | `Promise<void>` | All pages (auto-init on DOMContentLoaded) |
 | `applyUIPermissions` | auth-service.js | — | `void` | All pages after login, tab switches |
+| `editDocument` | debt-doc-edit.js | `docId: string` | `void` | Opens editable document modal with field editing |
+| `saveDocumentEdits` | debt-doc-edit.js | `docId: string` | `Promise<void>` | Saves document edits + AI learning from corrections |
+| `openLinkDeliveryNotesModal` | debt-doc-link.js | `invoiceId: string` | `void` | Multi-select delivery note linking modal |
+| `_extractDeliveryNoteRefs` | debt-doc-link.js | `ocrData: object, notes: string` | `string[]` | AI matching of delivery note references from OCR data |
+| `toggleDocStatusFilter` | debt-documents.js | `key: string` | `void` | Multi-select status filter toggle for documents |
+| `openQuickOpeningBalance` | debt-dashboard.js | — | `void` | Quick opening balance modal for supplier setup |
+| `_cascadeSettlement` | debt-payment-alloc.js | `docId: string` | `Promise<void>` | Auto-close linked children when parent document is settled |
 
 ### Shipments Config Contracts
 
@@ -554,6 +572,14 @@ Pages modified for shared/ dependencies:
 | Module | Status | Directory | HTML Pages | DB Tables (count) |
 |--------|--------|-----------|------------|-------------------|
 | Module 1 — Inventory Management | ✅ Complete | `modules/inventory/`, `modules/purchasing/`, `modules/goods-receipts/`, `modules/audit/`, `modules/brands/`, `modules/access-sync/`, `modules/admin/`, `modules/debt/`, `modules/debt/ai/`, `modules/permissions/`, `modules/shipments/`, `modules/stock-count/`, `modules/settings/` | `index.html`, `inventory.html`, `suppliers-debt.html`, `employees.html`, `shipments.html`, `settings.html` | 46 active + 4 stubs = 50 |
+
+### Recently Added Module Files (Phase 8+)
+
+| File | Lines | Description |
+|------|-------|-------------|
+| `modules/debt/debt-prepaid-detail.js` | 179 | Deal detail + check management for prepaid supplier deals |
+| `modules/debt/debt-doc-edit.js` | 207 | Document edit modal with AI learning from corrections |
+| `js/supabase-alerts-ocr.js` | 181 | Alert creation + OCR template learning (split from supabase-ops.js) |
 | Module 1.5 — Shared Components | ✅ Complete (QA passed) | `shared/css/`, `shared/js/`, `shared/tests/`, `scripts/` | — | 1 (activity_log) + ui_config column + PK fixes on roles/permissions/role_permissions |
 
 ---

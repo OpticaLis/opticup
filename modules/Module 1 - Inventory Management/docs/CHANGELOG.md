@@ -4,6 +4,47 @@
 
 ---
 
+## Tech Debt + Bug Fixes + Features (2026-03-21)
+
+### Tech Debt
+- `85d2463` — Split debt-prepaid.js (429→255+179, new debt-prepaid-detail.js)
+- `14050c5` — Split supabase-ops.js (380→201+181, new supabase-alerts-ocr.js)
+- `92bfe91` — Show all suppliers toggle + opening balance button + document linking auto-sum
+- `c1a1a4a` — Cascading payment settlement (auto-close linked docs when parent paid)
+
+### Bug Fixes
+- `ad1cc20` — Fix supplier dropdown (createSearchSelect API) + show-all toggle
+- `1b7a3cf` — Fix AI buttons class collision (doc-add-btn → sup-ob-btn)
+- `ea582ce` — Batch upload: require supplier selection
+- `da0e75b` — Batch upload: default document_type_id
+- `bfccde0` — Batch upload: all NOT NULL fields (document_number, date, amounts)
+- `b56169b` — OCR auth token fix + button visibility (5 files)
+- `fc07569` — Button visibility in OCR modals + upload timestamp display
+- `b53d6ad` — Comprehensive white-on-white button sweep (19 files, all inline styles)
+- `b8704b5` — Hebrew filename sanitization for Supabase Storage (3 files)
+- `545557b` — Default hide cancelled docs + historical import required fields
+- `07827e7` — OCR save RLS error fix + sort documents by upload date
+- `1a06449` — OCR save: pass document ID through triggerOCR flow
+- `ade1b4e` — OCR save: fix showOCRReview wrappers dropping docId param
+- `a71dd7e` — OCR save: direct UPDATE instead of batchUpdate for existing docs
+- `2e2690d` — Cache-busting query params on AI module scripts
+
+### New Features
+- `299893b` — Document edit modal (debt-doc-edit.js) with AI learning from corrections
+- `5de358f` — OCR save updates existing documents + return_note doc type + OCR items in edit view
+- `33b1220` — Multi-select status filter buttons (פתוח/שולם/מבוטלים) replacing single checkbox
+- `8ac85a0` — Reverse document linking (invoice → delivery notes, multi-select with auto-sum)
+- `237d001` — AI auto-suggest delivery note linking from invoice OCR data
+- `b809dce` — Include return notes (תעודות החזרה) in invoice linking modal
+
+### Infrastructure
+- Migration 039: return_note document type for all tenants
+- RLS policy fix on 5 tables (app.tenant_id → JWT claims)
+- Demo tenant: payment_methods, document_types, ai_agent_config seed data
+- Storage policy on supplier-docs bucket
+
+---
+
 ## Phase 8 — OCR בקבלת סחורה + שיפורי פלואו רכש (2026-03-21)
 
 ### Step 1: Per-field Confidence + PO Auto-suggestion

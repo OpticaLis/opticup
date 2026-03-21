@@ -54,6 +54,7 @@
 --   032_stock_count_unknown_items.sql — status CHECK includes 'unknown', inventory_id nullable
 --   036_receipt_item_po_fields.sql — price_decision, po_match_status on goods_receipt_items
 --   037_supplier_opening_balance.sql — opening_balance fields on suppliers
+--   039_return_note_doc_type.sql — return_note document type for all tenants
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -931,8 +932,10 @@ INSERT INTO document_types (tenant_id, code, name_he, name_en, affects_debt, is_
   ((SELECT id FROM tenants WHERE slug='prizma'), 'invoice',       'חשבונית מס',     'Tax Invoice',    'increase', true),
   ((SELECT id FROM tenants WHERE slug='prizma'), 'delivery_note',  'תעודת משלוח',    'Delivery Note',  'increase', true),
   ((SELECT id FROM tenants WHERE slug='prizma'), 'credit_note',    'חשבונית זיכוי',  'Credit Note',    'decrease', true),
-  ((SELECT id FROM tenants WHERE slug='prizma'), 'receipt',        'קבלה',           'Receipt',        'none',     true)
+  ((SELECT id FROM tenants WHERE slug='prizma'), 'receipt',        'קבלה',           'Receipt',        'none',     true),
+  ((SELECT id FROM tenants WHERE slug='prizma'), 'return_note',    'תעודת החזרה',    'Return Note',    'decrease', true)
 ON CONFLICT (tenant_id, code) DO NOTHING;
+-- Note: 'return_note' added by migration 039_return_note_doc_type.sql for all tenants
 
 -- Seed payment_methods
 INSERT INTO payment_methods (tenant_id, code, name_he, name_en, is_system) VALUES
@@ -1810,3 +1813,10 @@ $$;
 -- employees (4), settings (2), debt (5), ai (4), returns (3),
 -- shipments (5), admin (2)
 -- 36 role_permissions assignments added for 5 roles (ceo, manager, team_lead, worker, viewer)
+
+-- ============================================================
+-- RLS Policy Fix (applied post-Phase 8)
+-- ============================================================
+-- Corrected RLS policies on 5 tables: roles, permissions, role_permissions,
+-- employee_roles, auth_sessions. Changed from permissive anon access to proper
+-- tenant_isolation using JWT current_setting('app.tenant_id').

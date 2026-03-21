@@ -105,7 +105,8 @@ opticup/
 │   └── header.css              — sticky header styles
 ├── js/
 │   ├── shared.js               — Supabase init, constants, caches, utilities (load FIRST)
-│   ├── supabase-ops.js         — DB operations: writeLog, fetchAll, batch ops, OCR learning, alerts
+│   ├── supabase-ops.js         — core DB operations: writeLog, fetchAll, batch ops, softDelete
+│   ├── supabase-alerts-ocr.js  — alert creation + OCR template learning (split from supabase-ops.js)
 │   ├── data-loading.js         — data loading + enrichment
 │   ├── search-select.js        — searchable dropdown component
 │   ├── auth-service.js         — PIN login, session management, permissions
@@ -121,7 +122,7 @@ opticup/
 │   ├── brands/                 — 2 files (brands, suppliers)
 │   ├── access-sync/            — 4 files (access-sync, sync-details, pending-panel, pending-resolve)
 │   ├── admin/                  — 2 files (admin, system-log)
-│   ├── debt/                   — 14 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-supplier-detail, debt-returns, debt-returns-tab, debt-returns-tab-actions, debt-info-content, debt-info-inject)
+│   ├── debt/                   — 16 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-prepaid-detail, debt-doc-edit, debt-supplier-detail, debt-returns, debt-returns-tab, debt-returns-tab-actions, debt-info-content, debt-info-inject)
 │   │   └── ai/                 — 7 files (ai-ocr, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import)
 │   ├── permissions/            — 1 file (employee-list)
 │   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)

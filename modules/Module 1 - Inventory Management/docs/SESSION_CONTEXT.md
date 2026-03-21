@@ -1,7 +1,7 @@
 # Session Context
 
 ## Last Updated
-Phase 8 Complete — 2026-03-21
+Phase 8 Complete + Tech Debt + Bug Fixes — 2026-03-21
 
 ## What Was Done This Session
 
@@ -44,39 +44,82 @@ Phase 8 Complete — 2026-03-21
 **VAT Fix:**
 - `4026f4c` — Replace hardcoded 0.17 VAT rate with tenant config in price pattern learning
 
+### Tech Debt Resolution (2026-03-21)
+- `85d2463` — Split debt-prepaid.js (429→255+179, new debt-prepaid-detail.js)
+- `14050c5` — Split supabase-ops.js (380→201+181, new supabase-alerts-ocr.js)
+- `92bfe91` — Show all suppliers toggle + opening balance button + document linking auto-sum
+- `c1a1a4a` — Cascading payment settlement (auto-close linked docs when parent paid)
+
+### Bug Fixes & UI Improvements (2026-03-21)
+- `ad1cc20` — Fix supplier dropdown (createSearchSelect API) + empty state div
+- `1b7a3cf` — Fix AI buttons class collision (doc-add-btn → sup-ob-btn)
+- `ea582ce` — Batch upload: require supplier selection
+- `da0e75b` — Batch upload: default document_type_id
+- `bfccde0` — Batch upload: all NOT NULL fields (document_number, date, amounts)
+- `b56169b` — OCR auth token fix (jwt_token → prizma_auth_token) + button visibility
+- `fc07569` — Button visibility in OCR modals + upload timestamp display
+- `b53d6ad` — Comprehensive white-on-white button sweep (19 files, all inline styles)
+- `b8704b5` — Hebrew filename sanitization for Supabase Storage (3 files)
+- `545557b` — Default hide cancelled docs + historical import required fields
+- `07827e7` — OCR save RLS error fix + sort documents by upload date
+- `1a06449` + `ade1b4e` — OCR save pass document ID through wrapper chain
+- `a71dd7e` — OCR save direct UPDATE instead of batchUpdate
+- `2e2690d` — Cache-busting query params on AI module scripts
+
+### New Features (2026-03-21)
+- `299893b` — Document edit modal (debt-doc-edit.js) with AI learning from corrections
+- `5de358f` — OCR save updates existing documents + return_note doc type + OCR items in edit view
+- `33b1220` — Multi-select status filter buttons (פתוח/שולם/מבוטלים)
+- `8ac85a0` — Reverse document linking (invoice → delivery notes, multi-select with auto-sum)
+- `237d001` — AI auto-suggest delivery note linking from invoice OCR data
+- `b809dce` — Include return notes in invoice linking modal
+
+### RLS Policy Fix (2026-03-21)
+Fixed 5 tables with old `current_setting('app.tenant_id')` pattern → updated to JWT claims:
+- ai_agent_config, alerts, ocr_extractions, supplier_ocr_templates, weekly_reports
+(Applied directly in Supabase Dashboard, no migration file)
+
+### Demo Tenant Data Fixes
+- Inserted 4 payment_methods + 6 document_types (were missing from clone)
+- Added Storage policy on supplier-docs bucket (was missing)
+- Inserted ai_agent_config row for demo tenant
+- Migration 039: return_note document type for all tenants
+
 ## Current State
 - **6 HTML pages**: index.html, inventory.html, suppliers-debt.html, employees.html, shipments.html, settings.html
 - **2 Edge Functions**: pin-auth, ocr-extract
-- **~106 JS files** across 14 module folders + 9 global files (js/) + 9 shared/js files (Module 1.5)
-- **goods-receipts module**: 10 files (goods-receipt, receipt-form, receipt-actions, receipt-confirm, receipt-debt, receipt-excel, receipt-ocr, receipt-ocr-review, receipt-po-compare)
+- **~112 JS files** across 14 module folders + 10 global files (js/) + 9 shared/js files (Module 1.5)
+- **debt module**: 16 files (was 14, added debt-prepaid-detail.js + debt-doc-edit.js)
+- **js/ global**: 10 files (was 9, added supabase-alerts-ocr.js)
+- **goods-receipts module**: 10 files
 - **48 DB tables** + 8 RPC functions
-- **2 new migrations**: 036 (receipt item PO fields), 037 (supplier opening balance)
+- **3 new migrations**: 036, 037, 039
 - **55 permissions** across 15 modules, 5 roles
-- **43 migration files**
-- JWT-based RLS tenant isolation on all tables
+- **44 migration files**
+- JWT-based RLS tenant isolation on all 48 tables
 - Supabase Storage: 3 buckets (failed-sync-files, supplier-docs, tenant-logos)
 
 ## Open Issues
-- JWT secret exposed in dev chat — must rotate before production
-- Staging environment needed before second tenant onboards
-- supabase-ops.js at 380 lines (over 350 limit) — tightly coupled unit, acceptable
-- debt-prepaid.js at 429 lines (over limit) — needs refactor in future phase
-- Views for external access (supplier portal, storefront) planned but not created yet
-- Edge Function deployment requires Supabase CLI (not automated)
-- jsPDF/html2canvas loaded from CDN — consider self-hosting for reliability
-- Hebrew displays as squares in CMD/bat files (cosmetic, doesn't affect functionality)
-- Dedup by filename: if Access sends sale + cancellation with same order number, second file is skipped
-- install-service.js in scripts/ folder missing --export-dir support
-- Deployed watcher service runs from C:\Users\User\opticup\watcher-deploy\ — must manually copy
-- Stock Count: barcode 0002793 physically unreadable by ZXing
-- Stock Count: camera.js at 350 lines — at the limit
-- Stock Count: unknown.js at 374 lines — slightly over 350 limit
-- Document linking auto-sum (QAc-002 WARN): auto-sum linked amounts and compare to invoice total
-- Cascading payment settlement (QAc-004 WARN): auto-close related linked documents
+
+### 🔴 CRITICAL
+- **OCR "ערוך ושמור" duplicate key error** — _ocrSave fails with unique constraint violation. Multiple fix attempts: file_url matching, docId passthrough via wrappers (debt-info-inject.js, ai-alerts.js), direct UPDATE, cache-busting. Needs deep debug — possibly another wrapper or code path issue.
+
+### 🟡 MEDIUM
+- JWT secret rotation — must rotate before second tenant / production
+- ai-ocr.js at 346 lines — near limit
+- jsPDF/html2canvas loaded from CDN — ORB blocking in some browsers
+- Stock Count: camera.js at 350 lines, unknown.js at 374 lines (over limit)
 - Multiple active prepaid deals per supplier: last one wins in deduction UI
 
-## Next Phase
-Phase 8 fully complete. Next directions:
-1. Module 2 planning (Platform Admin — SaaS infrastructure)
-2. JWT secret rotation before production
-3. debt-prepaid.js refactor (over 350 lines)
+### 🟢 LOW / DEFERRED
+- Views for external access (supplier portal, storefront) — planned for Module 2+
+- Edge Function deployment requires Supabase CLI (not automated)
+- Hebrew displays as squares in CMD/bat files (cosmetic)
+- install-service.js missing --export-dir support
+- Stock Count: barcode 0002793 physically unreadable by ZXing
+
+## Next Steps
+1. Deep debug OCR save duplicate key (strategic chat)
+2. Module 2 planning (Platform Admin — SaaS infrastructure)
+3. JWT secret rotation before second tenant
+4. Staging environment setup
