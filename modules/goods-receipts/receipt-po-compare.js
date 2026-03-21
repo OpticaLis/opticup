@@ -209,4 +209,27 @@ async function _poCompApplyDecisions(receiptId, decisions, receiptItems) {
       } catch (e) { console.warn('Auto-return creation failed:', e); }
     }
   }
+  // Phase 8 Step 5: learn price patterns
+  try { await _poCompLearnPricePattern(decisions, receiptItems, supplierId); } catch (e) { /* non-blocking */ }
+}
+
+// --- Phase 8 Step 5: Detect VAT-inclusive price pattern ---
+async function _poCompLearnPricePattern(decisions, receiptItems, supplierId) {
+  if (!supplierId) return;
+  var priceItems = [];
+  for (var idx in decisions) {
+    var dec = decisions[idx];
+    if (dec && dec.price_decision) priceItems.push(dec);
+  }
+  if (priceItems.length < 2) return; // need at least 2 items to detect pattern
+  // Check if invoice prices are consistently ~17% higher than PO prices (VAT pattern)
+  var invoiceCount = priceItems.filter(function(d) { return d.price_decision === 'invoice_price'; }).length;
+  if (invoiceCount < priceItems.length * 0.7) return; // not a consistent pattern
+  try {
+    var templates = await fetchAll(T.OCR_TEMPLATES, [['supplier_id', 'eq', supplierId]]);
+    if (!templates.length) return;
+    var hints = templates[0].extraction_hints || {};
+    hints.price_pattern = { includes_vat: true, vat_rate: 0.17, detected_at: new Date().toISOString() };
+    await batchUpdate(T.OCR_TEMPLATES, [{ id: templates[0].id, extraction_hints: hints }]);
+  } catch (e) { console.warn('_poCompLearnPricePattern error:', e); }
 }

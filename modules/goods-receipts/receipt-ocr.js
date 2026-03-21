@@ -157,7 +157,7 @@ async function _applyOCRToReceipt(result, fileUrl) {
   if (Array.isArray(items) && items.length > 0) {
     var supplierId = supplierCache[($('rcpt-supplier') || {}).value] || null;
     var classified = await _rcptOcrClassifyItems(items, supplierId);
-    _rcptOcrShowReview(classified, function(confirmed) { _rcptOcrApplyToForm(confirmed); });
+    _rcptOcrShowReview(classified, function(confirmed) { _rcptOcrApplyToForm(confirmed, items); });
   } else {
     toast('\u05D4\u05DE\u05E1\u05DE\u05DA \u05E0\u05E1\u05E8\u05E7 \u2014 \u05DC\u05D0 \u05D6\u05D5\u05D4\u05D5 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD', 'w');
   }
@@ -261,6 +261,15 @@ async function _rcptOcrUpdateTemplate() {
     var docType = fv('document_type') || 'delivery_note';
     await updateOCRTemplate(supplierId, docType,
       Object.keys(corrections).length > 0 ? corrections : null, ext);
+    // Phase 8 Step 5: save item-level corrections
+    if (window._lastOcrItemCorrections) {
+      var lc = window._lastOcrItemCorrections;
+      if (typeof _rcptOcrBuildItemCorrections === 'function') {
+        var itemCorr = _rcptOcrBuildItemCorrections(lc.original, lc.confirmed);
+        if (itemCorr.length > 0) await _rcptOcrSaveItemLearning(itemCorr, lc.supplierId || supplierId);
+      }
+      delete window._lastOcrItemCorrections;
+    }
   } catch (e) {
     console.warn('_rcptOcrUpdateTemplate error:', e);
   }

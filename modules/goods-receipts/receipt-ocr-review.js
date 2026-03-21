@@ -269,7 +269,7 @@ function _rcptOcrCollectReviewData(modalEl, classifiedItems) {
 }
 
 // --- 5. Apply confirmed items to receipt form ---
-function _rcptOcrApplyToForm(confirmedItems) {
+function _rcptOcrApplyToForm(confirmedItems, originalOcrItems) {
   var added = 0;
   confirmedItems.forEach(function(item) {
     if (item.skip) return;
@@ -292,4 +292,52 @@ function _rcptOcrApplyToForm(confirmedItems) {
   });
   updateReceiptItemsStats();
   if (added > 0) toast('\u05E0\u05D5\u05E1\u05E4\u05D5 ' + added + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DE\u05E1\u05E8\u05D9\u05E7\u05EA AI', 's');
+  // Phase 8 Step 5: store corrections for learning on confirm
+  var supName = ($('rcpt-supplier') || {}).value || '';
+  var supId = supName ? (supplierCache[supName] || null) : null;
+  if (supId && originalOcrItems) {
+    window._lastOcrItemCorrections = { original: originalOcrItems, confirmed: confirmedItems, supplierId: supId };
+  }
+}
+
+// --- Phase 8 Step 5: Item correction learning ---
+function _rcptOcrBuildItemCorrections(originalOcrItems, confirmedItems) {
+  var corrections = [];
+  for (var i = 0; i < confirmedItems.length; i++) {
+    var conf = confirmedItems[i];
+    if (conf.skip) continue;
+    var orig = originalOcrItems[i];
+    if (!orig) continue;
+    var ocrDesc = orig.description || orig.model || '';
+    if (!ocrDesc) continue;
+    // Check if user changed brand from what OCR/auto-match suggested
+    var parsed = _rcptOcrParseDescription(ocrDesc);
+    if (conf.brand_name && parsed.brand_name && conf.brand_name.toLowerCase() !== parsed.brand_name.toLowerCase()) {
+      corrections.push({ ocr_text: ocrDesc, type: 'brand', from: parsed.brand_name, to: conf.brand_name });
+    }
+    // Check if user matched to a specific inventory item that auto-match didn't find
+    if (conf.inventory_id && conf.status === 'matched') {
+      corrections.push({ ocr_text: ocrDesc, type: 'item_alias', maps_to: { brand: conf.brand_name, model: conf.model, barcode: conf.barcode || '' } });
+    }
+  }
+  return corrections;
+}
+
+async function _rcptOcrSaveItemLearning(corrections, supplierId) {
+  if (!corrections.length || !supplierId) return;
+  try {
+    var templates = await fetchAll(T.OCR_TEMPLATES, [['supplier_id', 'eq', supplierId]]);
+    if (!templates.length) return;
+    var tmpl = templates[0];
+    var hints = tmpl.extraction_hints || {};
+    if (!Array.isArray(hints.item_aliases)) hints.item_aliases = [];
+    corrections.forEach(function(c) {
+      // Avoid duplicates
+      var exists = hints.item_aliases.some(function(a) { return a.ocr_text === c.ocr_text && a.type === c.type; });
+      if (!exists) hints.item_aliases.push(c);
+    });
+    // Keep last 50 aliases to avoid bloat
+    if (hints.item_aliases.length > 50) hints.item_aliases = hints.item_aliases.slice(-50);
+    await batchUpdate(T.OCR_TEMPLATES, [{ id: tmpl.id, extraction_hints: hints }]);
+  } catch (e) { console.warn('_rcptOcrSaveItemLearning error:', e); }
 }
