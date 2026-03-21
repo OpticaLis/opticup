@@ -1,10 +1,28 @@
-// receipt-ocr.js — OCR integration in goods receipt flow (Phase 5d)
+// receipt-ocr.js — OCR integration in goods receipt flow (Phase 5d + Phase 8 enhancements)
 // Load after: receipt-form.js, before receipt-actions.js
 // Provides: initReceiptOCR(), _rcptOcrScan(), _applyOCRToReceipt(), _rcptOcrShowBanner()
+// Phase 8: _rcptOcrFC(), _rcptOcrAddConfDot(), _rcptOcrSuggestPO()
 // Uses: _pendingReceiptFile, supplierCache/Rev, brandCacheRev, addReceiptItemRow,
 //   updateReceiptItemsStats, uploadSupplierFile, getSupplierFileUrl
 
 var _rcptOcrResult = null; // Phase 5e: stored when OCR applied, used for learning
+
+// --- Phase 8: Per-field confidence helpers ---
+function _rcptOcrFC(ext, f) {
+  var v = ext[f];
+  if (v && typeof v === 'object' && 'confidence' in v) return v.confidence;
+  return (ext.confidence && typeof ext.confidence[f] === 'number') ? ext.confidence[f] : null;
+}
+function _rcptOcrAddConfDot(elId, conf) {
+  var el = $(elId); if (!el || conf == null) return;
+  var clr = conf >= 0.9 ? '#27ae60' : conf >= 0.7 ? '#f39c12' : '#e74c3c';
+  var dot = document.createElement('span');
+  dot.className = 'ocr-conf-dot';
+  dot.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;background:' + clr + ';margin:0 4px;vertical-align:middle';
+  dot.title = Math.round(conf * 100) + '%';
+  el.parentNode.insertBefore(dot, el.nextSibling);
+  el.addEventListener('change', function _rm() { if (dot.parentNode) dot.remove(); el.removeEventListener('change', _rm); });
+}
 
 // --- 1. Inject OCR button next to file attach button ---
 function initReceiptOCR() {
@@ -90,11 +108,12 @@ async function _applyOCRToReceipt(result, fileUrl) {
   var matchedCount = 0, totalItems = 0;
 
   // Auto-fill supplier
+  var supFilled = false;
   if (supMatch && supMatch.id) {
     var supName = supplierCacheRev[supMatch.id];
     if (supName) {
       var sel = $('rcpt-supplier');
-      if (sel) { sel.value = supName; sel.dispatchEvent(new Event('change')); }
+      if (sel) { sel.value = supName; sel.dispatchEvent(new Event('change')); supFilled = true; }
       await new Promise(function(r) { setTimeout(r, 300); });
     }
   } else if (fv('supplier_name')) {
@@ -107,22 +126,26 @@ async function _applyOCRToReceipt(result, fileUrl) {
     }
     if (bestMatch) {
       var sel = $('rcpt-supplier');
-      if (sel) { sel.value = bestMatch; sel.dispatchEvent(new Event('change')); }
+      if (sel) { sel.value = bestMatch; sel.dispatchEvent(new Event('change')); supFilled = true; }
       await new Promise(function(r) { setTimeout(r, 300); });
     }
   }
+  if (supFilled) _rcptOcrAddConfDot('rcpt-supplier', _rcptOcrFC(ext, 'supplier_name'));
 
   // Auto-fill document number, date, type
   var docNum = fv('document_number');
-  if (docNum) { var numEl = $('rcpt-number'); if (numEl && !numEl.value) numEl.value = docNum; }
+  if (docNum) { var numEl = $('rcpt-number'); if (numEl && !numEl.value) { numEl.value = docNum; _rcptOcrAddConfDot('rcpt-number', _rcptOcrFC(ext, 'document_number')); } }
   var docDate = fv('document_date');
-  if (docDate) { var dateEl = $('rcpt-date'); if (dateEl && !dateEl.value) dateEl.value = docDate; }
+  if (docDate) { var dateEl = $('rcpt-date'); if (dateEl && !dateEl.value) { dateEl.value = docDate; _rcptOcrAddConfDot('rcpt-date', _rcptOcrFC(ext, 'document_date')); } }
   var docType = fv('document_type');
   if (docType) {
     var typeEl = $('rcpt-type');
     var typeMap = { invoice: 'invoice', tax_invoice: 'tax_invoice', delivery_note: 'delivery_note' };
-    if (typeEl && typeMap[docType]) typeEl.value = typeMap[docType];
+    if (typeEl && typeMap[docType]) { typeEl.value = typeMap[docType]; _rcptOcrAddConfDot('rcpt-type', _rcptOcrFC(ext, 'document_type')); }
   }
+
+  // Phase 8: PO auto-suggestion
+  if (supFilled) await _rcptOcrSuggestPO(ext);
 
   // Process items
   var items = fv('items') || [];
@@ -169,6 +192,29 @@ async function _applyOCRToReceipt(result, fileUrl) {
   }
 }
 
+// --- Phase 8: PO auto-suggestion after supplier fill ---
+async function _rcptOcrSuggestPO(ext) {
+  var old = $('rcpt-ocr-po-hint'); if (old) old.remove();
+  var supName = ($('rcpt-supplier') || {}).value;
+  var supId = supName ? (supplierCache[supName] || null) : null;
+  if (!supId) return;
+  try {
+    var { data, error } = await sb.from(T.PO).select('id, po_number, status')
+      .eq('tenant_id', getTenantId()).eq('supplier_id', supId)
+      .in('status', ['sent', 'partial']).order('created_at', { ascending: false }).limit(10);
+    if (error || !data || !data.length) return;
+    var poSel = $('rcpt-po-select'), fv = function(f) { var v = ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v; };
+    var ocrPoRef = fv('po_number') || fv('order_number') || '', autoId = null;
+    if (ocrPoRef) { var m = data.find(function(p) { return p.po_number === ocrPoRef; }); if (m) autoId = m.id; }
+    if (autoId && poSel && !poSel.disabled) { poSel.value = autoId; poSel.dispatchEvent(new Event('change')); }
+    var hint = document.createElement('div'); hint.id = 'rcpt-ocr-po-hint';
+    hint.style.cssText = 'font-size:.82rem;color:#1565c0;margin-top:4px;cursor:pointer';
+    hint.textContent = '\uD83D\uDCCB \u05D9\u05E9 ' + data.length + ' \u05D4\u05D6\u05DE\u05E0\u05D5\u05EA \u05E4\u05EA\u05D5\u05D7\u05D5\u05EA \u05DC\u05E1\u05E4\u05E7 \u05D6\u05D4' + (autoId ? ' \u2014 \u05D4\u05D5\u05EA\u05D0\u05DE\u05D4 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA' : '');
+    if (!autoId && poSel && !poSel.disabled) hint.onclick = function() { poSel.value = data[0].id; poSel.dispatchEvent(new Event('change')); };
+    var se = $('rcpt-supplier'); if (se && se.parentNode) se.parentNode.appendChild(hint);
+  } catch (e) { console.warn('_rcptOcrSuggestPO error:', e); }
+}
+
 // --- 4. Match OCR item to existing inventory ---
 async function _rcptOcrMatchInventory(description, supplierId) {
   if (!description || description.length < 2) return null;
@@ -189,53 +235,40 @@ async function _rcptOcrMatchInventory(description, supplierId) {
 
 // --- 5. Highlight last added receipt row ---
 function _rcptOcrHighlightRow(type) {
-  var tbody = $('rcpt-items-body'); if (!tbody) return;
-  var lastRow = tbody.lastElementChild; if (!lastRow) return;
-  if (type === 'unmatched') {
-    lastRow.style.backgroundColor = '#fff9c4';
-    lastRow.title = '\u05DC\u05D0 \u05D6\u05D5\u05D4\u05D4 \u05D1\u05DE\u05DC\u05D0\u05D9 \u2014 \u05E0\u05D3\u05E8\u05E9 \u05D1\u05D7\u05D9\u05E8\u05D4 \u05D9\u05D3\u05E0\u05D9\u05EA';
-  } else {
-    lastRow.style.backgroundColor = '#e8f5e9';
-    setTimeout(function() { if (lastRow.parentNode) lastRow.style.backgroundColor = ''; }, 5000);
-  }
+  var r = ($('rcpt-items-body') || {}).lastElementChild; if (!r) return;
+  r.style.backgroundColor = type === 'unmatched' ? '#fff9c4' : '#e8f5e9';
+  if (type === 'unmatched') r.title = '\u05DC\u05D0 \u05D6\u05D5\u05D4\u05D4 \u05D1\u05DE\u05DC\u05D0\u05D9 \u2014 \u05E0\u05D3\u05E8\u05E9 \u05D1\u05D7\u05D9\u05E8\u05D4 \u05D9\u05D3\u05E0\u05D9\u05EA';
+  else setTimeout(function() { if (r.parentNode) r.style.backgroundColor = ''; }, 5000);
 }
 
 // --- 6. Show OCR confidence banner at top of receipt form ---
 function _rcptOcrShowBanner(confidence, matched, total, fileUrl, validationResults) {
-  var existing = $('rcpt-ocr-banner'); if (existing) existing.remove();
-  var hasErrors = validationResults && validationResults.some(function(v) { return v.level === 'error'; });
-  var confPct = Math.round((confidence || 0) * 100);
-  var confColor = hasErrors ? '#e74c3c' : (confPct >= 85 ? '#27ae60' : confPct >= 70 ? '#f39c12' : '#e74c3c');
-  var banner = document.createElement('div');
-  banner.id = 'rcpt-ocr-banner';
-  banner.style.cssText = 'background:' + (hasErrors ? '#fce4ec' : '#e3f2fd') + ';border:1px solid ' + (hasErrors ? '#ef9a9a' : '#90caf9') + ';border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.88rem';
-  var text = '\uD83E\uDD16 \u05DE\u05D5\u05DC\u05D0 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA \u05DE\u05E1\u05E8\u05D9\u05E7\u05D4 \u2014 ';
-  text += '\u05E8\u05DE\u05EA \u05D1\u05D9\u05D8\u05D7\u05D5\u05DF: <span style="color:' + confColor + ';font-weight:700">' + confPct + '%</span>';
-  if (total > 0) text += ' \u2014 \u05D6\u05D5\u05D4\u05D5 ' + matched + '/' + total + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD';
-  // Show validation warnings/errors
+  var ex = $('rcpt-ocr-banner'); if (ex) ex.remove();
+  var hasErr = validationResults && validationResults.some(function(v) { return v.level === 'error'; });
+  var pct = Math.round((confidence || 0) * 100);
+  var cc = hasErr ? '#e74c3c' : (pct >= 85 ? '#27ae60' : pct >= 70 ? '#f39c12' : '#e74c3c');
+  var b = document.createElement('div'); b.id = 'rcpt-ocr-banner';
+  b.style.cssText = 'background:' + (hasErr ? '#fce4ec' : '#e3f2fd') + ';border:1px solid ' + (hasErr ? '#ef9a9a' : '#90caf9') + ';border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.88rem';
+  var t = '\uD83E\uDD16 \u05DE\u05D5\u05DC\u05D0 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA \u05DE\u05E1\u05E8\u05D9\u05E7\u05D4 \u2014 \u05E8\u05DE\u05EA \u05D1\u05D9\u05D8\u05D7\u05D5\u05DF: <span style="color:' + cc + ';font-weight:700">' + pct + '%</span>';
+  if (total > 0) t += ' \u2014 \u05D6\u05D5\u05D4\u05D5 ' + matched + '/' + total + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD';
   if (validationResults && validationResults.length > 0) {
-    text += '<br>';
+    t += '<br>';
     validationResults.forEach(function(v) {
       var icon = v.level === 'error' ? '\uD83D\uDD34' : '\u26A0\uFE0F';
-      text += '<span style="color:' + (v.level === 'error' ? '#e74c3c' : '#f39c12') + '">' + icon + ' ' + escapeHtml(v.msg) + '</span> ';
+      t += '<span style="color:' + (v.level === 'error' ? '#e74c3c' : '#f39c12') + '">' + icon + ' ' + escapeHtml(v.msg) + '</span> ';
     });
   }
-  banner.innerHTML = text;
+  b.innerHTML = t;
   if (fileUrl) {
-    var viewBtn = document.createElement('button');
-    viewBtn.className = 'btn btn-g btn-sm';
-    viewBtn.style.cssText = 'margin-right:auto;font-size:.8rem';
-    viewBtn.textContent = '\uD83D\uDCC4 \u05E6\u05E4\u05D4 \u05D1\u05DE\u05E7\u05D5\u05E8';
-    viewBtn.onclick = function() { _rcptOcrPreviewDoc(fileUrl); };
-    banner.appendChild(viewBtn);
+    var vb = document.createElement('button'); vb.className = 'btn btn-g btn-sm';
+    vb.style.cssText = 'margin-right:auto;font-size:.8rem';
+    vb.textContent = '\uD83D\uDCC4 \u05E6\u05E4\u05D4 \u05D1\u05DE\u05E7\u05D5\u05E8';
+    vb.onclick = function() { _rcptOcrPreviewDoc(fileUrl); }; b.appendChild(vb);
   }
-  var closeBtn = document.createElement('button');
-  closeBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1rem;color:var(--g600)';
-  closeBtn.textContent = '\u2715';
-  closeBtn.onclick = function() { banner.remove(); };
-  banner.appendChild(closeBtn);
-  var step2 = $('rcpt-step2');
-  if (step2) step2.insertBefore(banner, step2.firstChild);
+  var cb = document.createElement('button');
+  cb.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1rem;color:var(--g600)';
+  cb.textContent = '\u2715'; cb.onclick = function() { b.remove(); }; b.appendChild(cb);
+  var s2 = $('rcpt-step2'); if (s2) s2.insertBefore(b, s2.firstChild);
 }
 
 // --- 7. Preview source document in modal ---
@@ -243,21 +276,17 @@ async function _rcptOcrPreviewDoc(fileUrl) {
   var signedUrl = await getSupplierFileUrl(fileUrl);
   if (!signedUrl) { toast('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D8\u05E2\u05D5\u05DF \u05EA\u05E6\u05D5\u05D2\u05D4 \u05DE\u05E7\u05D3\u05D9\u05DE\u05D4', 'e'); return; }
   var fext = (fileUrl || '').split('.').pop().toLowerCase();
-  var content = fext === 'pdf'
+  var tag = fext === 'pdf'
     ? '<iframe src="' + escapeHtml(signedUrl) + '" style="width:100%;height:80vh;border:none" title="PDF"></iframe>'
     : '<img src="' + escapeHtml(signedUrl) + '" style="max-width:100%;max-height:80vh;object-fit:contain">';
-  var overlay = document.createElement('div');
-  overlay.id = 'rcpt-ocr-preview-modal';
-  overlay.className = 'modal-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
-  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
-  var box = document.createElement('div');
-  box.style.cssText = 'background:#fff;border-radius:12px;padding:16px;max-width:90vw;max-height:90vh;overflow:auto;position:relative';
-  box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+  var o = document.createElement('div'); o.id = 'rcpt-ocr-preview-modal'; o.className = 'modal-overlay';
+  o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+  o.onclick = function(e) { if (e.target === o) o.remove(); };
+  o.innerHTML = '<div style="background:#fff;border-radius:12px;padding:16px;max-width:90vw;max-height:90vh;overflow:auto">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
     '<strong>\uD83D\uDCC4 \u05DE\u05E1\u05DE\u05DA \u05DE\u05E7\u05D5\u05E8</strong>' +
-    '<button class="btn btn-g btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">\u05E1\u05D2\u05D5\u05E8</button></div>' + content;
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
+    '<button class="btn btn-g btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">\u05E1\u05D2\u05D5\u05E8</button></div>' + tag + '</div>';
+  document.body.appendChild(o);
 }
 
 // --- 8. Compare OCR data to final form and update template (Phase 5e) ---
