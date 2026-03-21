@@ -199,7 +199,7 @@ function _batchOCRReviewDoc(idx) {
   var item = _batchOCRState[idx];
   if (!item || !item.ocrResult) return;
   if (typeof showOCRReview === 'function') {
-    showOCRReview(item.ocrResult, item.fileUrl);
+    showOCRReview(item.ocrResult, item.fileUrl, item.docId);
   } else {
     toast('מודול סריקה לא זמין', 'e');
   }

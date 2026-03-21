@@ -154,8 +154,8 @@ if (_origOpenHistImport) {
 // #11 OCR Review modal
 var _origShowOCRReview = typeof showOCRReview === 'function' ? showOCRReview : null;
 if (_origShowOCRReview) {
-  showOCRReview = async function(result, fileUrl) {
-    await _origShowOCRReview(result, fileUrl);
+  showOCRReview = async function(result, fileUrl, existingDocId) {
+    await _origShowOCRReview(result, fileUrl, existingDocId);
     _injectModalInfoBtn('ocr-review-modal', _showOCRReviewInfo);
   };
 }
