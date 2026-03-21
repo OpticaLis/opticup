@@ -108,8 +108,8 @@ async function createDocumentFromReceipt(receiptId, supplierId, receiptItems) {
       ['status', 'eq', 'active'],
       ['is_deleted', 'eq', false]
     ]);
-    if (deals.length > 0 && createdDoc && typeof alertPrepaidNewDocument === 'function') {
-      alertPrepaidNewDocument(supplierId, createdDoc.id, getTenantId(), supplier.name, docRow.document_number);
+    if (deals.length > 0 && createdDoc) {
+      await alertPrepaidNewDocument(supplierId, createdDoc.id, getTenantId(), supplier.name, docRow.document_number);
     }
   } catch (e) {
     console.warn('Prepaid alert failed (non-blocking):', e);

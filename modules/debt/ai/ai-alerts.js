@@ -49,25 +49,7 @@ async function alertOCRLowConfidence(fileName, extractionId, confidence) {
     { file_name: fileName, confidence: confidence }, expires.toISOString());
 }
 
-// --- Phase 8: Prepaid deal notification on new supplier document ---
-async function alertPrepaidNewDocument(supplierId, documentId, tenantId, supplierName, docNumber) {
-  try {
-    await sb.from(T.ALERTS).insert({
-      tenant_id: tenantId || getTenantId(),
-      alert_type: 'prepaid_new_document',
-      severity: 'info',
-      title: '\u05DE\u05E1\u05DE\u05DA \u05D7\u05D3\u05E9 \u05DE-' + (supplierName || '') + ' \u2014 \u05D9\u05E9 \u05E2\u05E1\u05E7\u05EA \u05DE\u05E7\u05D3\u05DE\u05D4 \u05E4\u05E2\u05D9\u05DC\u05D4',
-      message: '\u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 #' + (docNumber || '') + ' \u05E0\u05D5\u05E6\u05E8. \u05DC\u05E1\u05E4\u05E7 \u05D6\u05D4 \u05D9\u05E9 \u05E2\u05E1\u05E7\u05EA \u05DE\u05E7\u05D3\u05DE\u05D4 \u05E4\u05E2\u05D9\u05DC\u05D4. \u05D9\u05E9 \u05DC\u05D1\u05D3\u05D5\u05E7 \u05D0\u05DD \u05DC\u05E7\u05D6\u05D6.',
-      data: { supplier_id: supplierId, document_id: documentId },
-      status: 'unread',
-      entity_type: 'supplier_document',
-      entity_id: documentId
-    });
-    if (typeof refreshAlertsBadge === 'function') refreshAlertsBadge();
-  } catch (e) {
-    console.warn('alertPrepaidNewDocument error:', e);
-  }
-}
+// alertPrepaidNewDocument — moved to supabase-ops.js (needed on inventory.html)
 
 // =========================================================
 // 3. AUTO-DISMISS — resolve related alerts
