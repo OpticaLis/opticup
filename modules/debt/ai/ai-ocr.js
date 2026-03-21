@@ -57,7 +57,6 @@ async function showOCRReview(result, fileUrl, existingDocId) {
   _ocrOriginalData = JSON.parse(JSON.stringify(ext));
   _ocrCurrentFileUrl = fileUrl;
   _ocrExistingDocId = existingDocId || null;
-  console.log('[OCR-DEBUG-1] showOCRReview called. existingDocId param:', existingDocId, '→ _ocrExistingDocId set to:', _ocrExistingDocId);
 
   var fv = function(f) { return _ocrFV(ext, f); };
   var fc = function(f) { var c = _ocrFC(ext, f); return c != null ? _ocrConfDot(c) : ''; };
@@ -254,7 +253,6 @@ async function _ocrSave(mode) {
     if (_ocrExistingDocId) {
       existingDoc = { id: _ocrExistingDocId };
     }
-    console.log('[OCR-DEBUG-2] _ocrSave called. _ocrExistingDocId:', _ocrExistingDocId, '| Will use path:', _ocrExistingDocId ? 'UPDATE' : 'INSERT');
     var docFields = {
       supplier_id: supplierId, document_type_id: typeId,
       document_number: docNumber, document_date: docDate, due_date: dueDate || null,
@@ -268,7 +266,6 @@ async function _ocrSave(mode) {
       if (upErr) throw upErr;
       created = [{ id: existingDoc.id }];
     } else {
-      console.log('[OCR-DEBUG-3] INSERT path — about to batchCreate with doc_number:', docNumber, '| supplier_id:', supplierId);
       docFields.internal_number = await generateDocInternalNumber();
       docFields.created_by = emp ? emp.id : null;
       created = await batchCreate(T.SUP_DOCS, [docFields]);
