@@ -56,8 +56,9 @@ function renderDocumentsTable(docs) {
     var ppBadge = hasPrepaid ? '<span style="background:#f59e0b;color:#fff;padding:1px 6px;border-radius:4px;font-size:11px;margin-right:4px">\u05DE\u05E7\u05D3\u05DE\u05D4</span>' : '';
     var ppBtn = (hasPrepaid && balance > 0 && (d.status === 'open' || d.status === 'partially_paid'))
       ? ' <button class="btn-sm" style="background:#f59e0b;color:#fff" onclick="openPrepaidDeductModal(\'' + d.id + '\')">\u05E7\u05D6\u05D6 \u05DE\u05E2\u05E1\u05E7\u05D4</button>' : '';
+    var uploadedAt = d.created_at ? new Date(d.created_at).toLocaleString('he-IL') : '';
     return '<tr>' +
-      '<td>' + escapeHtml(d.document_date || '') + '</td>' +
+      '<td title="' + escapeHtml('\u05D4\u05D5\u05E2\u05DC\u05D4: ' + uploadedAt) + '">' + escapeHtml(d.document_date || '') + '</td>' +
       '<td>' + escapeHtml(type.name_he || '') + '</td>' +
       '<td>' + escapeHtml(d.document_number || '') + '</td>' +
       '<td>' + escapeHtml(d.internal_number || '') + '</td>' +
@@ -99,7 +100,7 @@ async function viewDocument(docId) {
     fileSection += '<div style="margin-top:6px;font-size:.82rem;color:var(--g500)">' + escapeHtml(doc.file_name || '') + '</div>';
   } else {
     fileSection = '<div style="text-align:center;padding:24px;color:var(--g400);font-size:.88rem">\u05D0\u05D9\u05DF \u05E7\u05D5\u05D1\u05E5 \u05DE\u05E6\u05D5\u05E8\u05E3' +
-      '<div style="margin-top:8px"><button class="btn btn-g btn-sm" onclick="_attachFileToDoc(\'' + doc.id + '\',\'' + doc.supplier_id + '\')">&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA</button></div></div>';
+      '<div style="margin-top:8px"><button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" onclick="_attachFileToDoc(\'' + doc.id + '\',\'' + doc.supplier_id + '\')">&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA</button></div></div>';
   }
   var html =
     '<div class="modal-overlay" id="view-doc-modal" style="display:flex" onclick="if(event.target===this)closeAndRemoveModal(\'view-doc-modal\')">' +
@@ -114,9 +115,10 @@ async function viewDocument(docId) {
           '<div>\u05E9\u05D5\u05DC\u05DD: <strong>' + formatILS(doc.paid_amount) + '</strong></div>' +
           '<div>\u05D9\u05EA\u05E8\u05D4: <strong>' + formatILS(balance) + '</strong></div>' +
           '<div>\u05E1\u05D8\u05D8\u05D5\u05E1: <span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></div>' +
+          (doc.created_at ? '<div style="grid-column:1/-1;color:var(--g500);font-size:.82rem">\u05D4\u05D5\u05E2\u05DC\u05D4: ' + escapeHtml(new Date(doc.created_at).toLocaleString('he-IL')) + '</div>' : '') +
         '</div>' +
         '<div style="border-top:1px solid var(--g200);padding-top:12px">' + fileSection + '</div>' +
-        '<div style="text-align:left;margin-top:14px"><button class="btn btn-g" onclick="closeAndRemoveModal(\'view-doc-modal\')">\u05E1\u05D2\u05D5\u05E8</button></div>' +
+        '<div style="text-align:left;margin-top:14px"><button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'view-doc-modal\')">\u05E1\u05D2\u05D5\u05E8</button></div>' +
       '</div></div>';
   var existing = $('view-doc-modal');
   if (existing) existing.remove();

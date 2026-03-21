@@ -45,14 +45,14 @@ function _showBatchOCRPanel() {
       '<div id="batch-ocr-progress" style="font-size:.85rem;color:var(--g600);margin-bottom:10px"></div>' +
       '<div id="batch-ocr-list"></div>' +
       '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
-        '<button class="btn btn-g btn-sm" id="batch-ocr-pause" onclick="_batchOCRTogglePause()">' +
-          '\u23F8 השהה תור</button>' +
-        '<button class="btn btn-g btn-sm" onclick="_batchOCRRetryFailed()">' +
-          '\uD83D\uDD04 נסה כושלים</button>' +
-        '<button class="btn btn-s btn-sm" id="batch-ocr-approve" onclick="_batchOCRApproveValid()" ' +
-          'style="display:none">\u2705 אשר הכל תקינים</button>' +
-        '<button class="btn btn-g btn-sm" id="batch-ocr-summary-btn" onclick="_batchOCRShowSummary()" ' +
-          'style="display:none">\uD83D\uDCCB סיכום</button>' +
+        '<button class="btn btn-sm" id="batch-ocr-pause" onclick="_batchOCRTogglePause()" ' +
+          'style="background:#e5e7eb;color:#1e293b">\u23F8 השהה תור</button>' +
+        '<button class="btn btn-sm" onclick="_batchOCRRetryFailed()" ' +
+          'style="background:#e5e7eb;color:#1e293b">\uD83D\uDD04 נסה כושלים</button>' +
+        '<button class="btn btn-sm" id="batch-ocr-approve" onclick="_batchOCRApproveValid()" ' +
+          'style="display:none;background:#059669;color:#fff">\u2705 אשר הכל תקינים</button>' +
+        '<button class="btn btn-sm" id="batch-ocr-summary-btn" onclick="_batchOCRShowSummary()" ' +
+          'style="display:none;background:#e5e7eb;color:#1e293b">\uD83D\uDCCB סיכום</button>' +
       '</div></div></div>';
   document.body.insertAdjacentHTML('beforeend', html);
   _updateBatchOCRUI();
@@ -290,7 +290,7 @@ function _batchOCRShowSummary() {
           '<div style="font-size:.8rem;color:var(--g500)">נכשלו</div></div></div>' +
       '<div style="font-size:.9rem;color:var(--g600);margin-bottom:14px">' +
         'ביטחון ממוצע: <strong>' + avgConf + '%</strong></div>' +
-      '<button class="btn btn-g" onclick="$(\'batch-ocr-summary\').remove()">סגור</button>' +
+      '<button class="btn" onclick="$(\'batch-ocr-summary\').remove()" style="background:#e5e7eb;color:#1e293b">סגור</button>' +
     '</div></div>';
   var ex = $('batch-ocr-summary'); if (ex) ex.remove();
   document.body.insertAdjacentHTML('beforeend', html);

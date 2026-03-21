@@ -46,11 +46,11 @@ function _openBatchUploadModal() {
           '<div id="batch-progress-bar" style="height:100%;background:var(--primary);border-radius:3px;' +
             'width:0%;transition:width .3s"></div></div></div>' +
       '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-        '<button class="btn btn-g" onclick="_closeBatchUpload()">ביטול</button>' +
-        '<button class="btn btn-s" id="batch-btn-upload" onclick="_batchUploadOnly()" disabled>' +
-          '\uD83D\uDCE4 העלה בלבד</button>' +
-        '<button class="btn btn-s" id="batch-btn-ocr" onclick="_batchUploadAndOCR()" disabled ' +
-          'style="background:#27ae60">\uD83D\uDCE4 העלה וסרוק עם AI</button>' +
+        '<button class="btn" onclick="_closeBatchUpload()" style="background:#e5e7eb;color:#1e293b">ביטול</button>' +
+        '<button class="btn" id="batch-btn-upload" onclick="_batchUploadOnly()" disabled ' +
+          'style="background:#059669;color:#fff">\uD83D\uDCE4 העלה בלבד</button>' +
+        '<button class="btn" id="batch-btn-ocr" onclick="_batchUploadAndOCR()" disabled ' +
+          'style="background:#27ae60;color:#fff">\uD83D\uDCE4 העלה וסרוק עם AI</button>' +
       '</div></div></div>';
   var ex = $('batch-upload-modal'); if (ex) ex.remove();
   document.body.insertAdjacentHTML('beforeend', html);
