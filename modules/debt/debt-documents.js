@@ -327,6 +327,8 @@ function openPrepaidDeductModal(docId) {
 function _doPrepaidDeduct(docId, dealId) {
   var amt = Number(($('pp-deduct-amt') || {}).value) || 0;
   if (amt <= 0) { setAlert('pp-deduct-alert', '\u05E1\u05DB\u05D5\u05DD \u05D7\u05D9\u05D9\u05D1 \u05DC\u05D4\u05D9\u05D5\u05EA \u05D7\u05D9\u05D5\u05D1\u05D9', 'e'); return; }
+  var maxAmt = Number(($('pp-deduct-amt') || {}).max) || Infinity;
+  if (amt > maxAmt) { setAlert('pp-deduct-alert', '\u05E1\u05DB\u05D5\u05DD \u05D7\u05D5\u05E8\u05D2 \u05DE\u05D4\u05DE\u05E7\u05E1\u05D9\u05DE\u05D5\u05DD', 'e'); return; }
   promptPin('\u05E7\u05D9\u05D6\u05D5\u05D6 \u05DE\u05E2\u05E1\u05E7\u05EA \u05DE\u05E7\u05D3\u05DE\u05D4 \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
     showLoading('\u05DE\u05E7\u05D6\u05D6...'); try {
       var doc = _docData.find(function(d) { return d.id === docId; });

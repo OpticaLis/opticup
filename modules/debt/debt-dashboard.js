@@ -28,21 +28,24 @@ async function loadDebtSummary() {
     String(today.getMonth() + 1).padStart(2, '0') + '-01';
 
   try {
-    // Fetch open documents (not paid, not cancelled, not deleted)
-    const { data: docs, error: docsErr } = await sb.from(T.SUP_DOCS)
-      .select('total_amount, paid_amount, due_date, exchange_rate, document_type_id')
-      .eq('tenant_id', tid)
-      .eq('is_deleted', false)
-      .not('status', 'in', '("paid","cancelled")');
-
+    // Fetch open documents + suppliers (for opening balance)
+    const [docsResult, supResult] = await Promise.all([
+      sb.from(T.SUP_DOCS).select('total_amount, paid_amount, due_date, exchange_rate, document_type_id, supplier_id, document_date')
+        .eq('tenant_id', tid).eq('is_deleted', false).not('status', 'in', '("paid","cancelled")'),
+      fetchAll(T.SUPPLIERS, [['active', 'eq', true]])
+    ]);
+    const docs = docsResult.data; const docsErr = docsResult.error;
     if (docsErr) { console.error('Debt summary docs error:', docsErr); return; }
-
-    // Calculate totals (convert to ILS via exchange_rate)
-    let totalDebt = 0;
+    // Phase 8: sum opening balances from all suppliers
+    var obMap = {}; (supResult || []).forEach(function(s) { obMap[s.id] = s; });
+    let totalDebt = (supResult || []).reduce(function(s, sup) { return s + (Number(sup.opening_balance) || 0); }, 0);
     let dueThisWeek = 0;
     let overdue = 0;
 
     (docs || []).forEach(function(doc) {
+      // Phase 8: skip docs before supplier's cutoff date
+      var sup = obMap[doc.supplier_id];
+      if (sup && sup.opening_balance_date && doc.document_date && doc.document_date < sup.opening_balance_date) return;
       const rate = Number(doc.exchange_rate) || 1;
       const remaining = (Number(doc.total_amount) - Number(doc.paid_amount)) * rate;
       if (remaining <= 0) return;

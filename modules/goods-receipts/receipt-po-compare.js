@@ -179,11 +179,13 @@ async function _poCompApplyDecisions(receiptId, decisions, receiptItems) {
     var update = { price_decision: dec.price_decision, po_match_status: dec.po_match_status };
     // Override price if user chose PO price
     if (dec.use_price != null) update.unit_cost = dec.use_price;
-    // Find the saved receipt item by matching index to barcode
+    // Find the saved receipt item — by barcode if available, else by row order
     var ri = receiptItems[parseInt(idx)];
-    if (ri && ri.barcode) {
-      var { data: savedItems } = await sb.from(T.RCPT_ITEMS).select('id').eq('receipt_id', receiptId)
-        .eq('barcode', ri.barcode).eq('tenant_id', tid).limit(1);
+    if (ri) {
+      var savedQuery = sb.from(T.RCPT_ITEMS).select('id').eq('receipt_id', receiptId).eq('tenant_id', tid);
+      if (ri.barcode) savedQuery = savedQuery.eq('barcode', ri.barcode);
+      else savedQuery = savedQuery.eq('model', ri.model || '').eq('brand', ri.brand || '');
+      var { data: savedItems } = await savedQuery.limit(1);
       if (savedItems && savedItems[0]) {
         await sb.from(T.RCPT_ITEMS).update(update).eq('id', savedItems[0].id);
       }

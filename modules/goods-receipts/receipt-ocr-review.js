@@ -15,7 +15,6 @@ var _RCPT_BRAND_ALIASES = {
   'ck': 'calvin klein', 'rl': 'ralph lauren', 'ph': 'polo',
   'vo': 'vogue', 'ps': 'police'
 };
-var _rcptBrandsLoaded = false;
 
 // --- 1. Parse OCR description into structured parts ---
 function _rcptOcrParseDescription(description) {
@@ -97,18 +96,13 @@ async function _rcptOcrMatchItem(parsed, supplierId) {
   if (!parsed.model) return base;
 
   try {
-    var filters = [
-      ['brand_id', 'eq', parsed.brand_id],
-      ['is_deleted', 'eq', false]
-    ];
-    if (supplierId) filters.push(['supplier_id', 'eq', supplierId]);
-    var rows = await fetchAll('inventory', filters);
-    // ILIKE match on model
-    var modelLower = parsed.model.toLowerCase();
-    var matches = rows.filter(function(r) {
-      return (r.model || '').toLowerCase().indexOf(modelLower) >= 0;
-    });
-    if (!matches.length) return base;
+    // Use direct query with ILIKE + limit instead of fetching all brand inventory
+    var q = sb.from('inventory').select('id, barcode, brand_id, supplier_id, model, color, size, cost_price, sell_price')
+      .eq('tenant_id', getTenantId()).eq('brand_id', parsed.brand_id).eq('is_deleted', false)
+      .ilike('model', '%' + parsed.model.replace(/[%_]/g, '') + '%');
+    if (supplierId) q = q.eq('supplier_id', supplierId);
+    var { data: matches, error: mErr } = await q.limit(20);
+    if (mErr || !matches || !matches.length) return base;
 
     // Narrow by size/color if available
     if (parsed.size && matches.length > 1) {
@@ -146,7 +140,7 @@ async function _rcptOcrClassifyItems(ocrItems, supplierId) {
       inventory_id: matched.inventory_id, barcode: matched.barcode,
       brand_id: matched.brand_id, brand_name: matched.brand_name || '',
       model: matched.model || '', size: matched.size || '', color: matched.color || '',
-      quantity: parseInt(item.quantity) || 1,
+      quantity: Math.max(1, parseInt(item.quantity) || 1),
       unit_price: parseFloat(item.unit_price) || null,
       raw_description: item.description || item.model || '',
       skip: false

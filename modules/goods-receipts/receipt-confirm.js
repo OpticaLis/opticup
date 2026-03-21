@@ -46,7 +46,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
     }
   }
 
-  const totalAmount = savedItems.reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
+  const totalAmount = savedItems.filter(i => i.po_match_status !== 'returned').reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
   const { error: confErr } = await sb.from(T.RECEIPTS).update({
     status: 'confirmed',
     total_amount: totalAmount || null,
