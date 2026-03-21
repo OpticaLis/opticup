@@ -1,0 +1,33 @@
+<service>
+	<id>opticupsyncwatcher.exe</id>
+	<name>OpticUp Sync Watcher</name>
+	<description>Watches Dropbox folder and syncs Access sales to Supabase</description>
+	<executable>C:\Program Files\nodejs\node.exe</executable>
+	<argument>C:\Users\User\opticup\watcher-deploy\node_modules\node-windows\lib\wrapper.js</argument>
+	<argument>--file</argument>
+	<argument>C:\Users\User\opticup\watcher-deploy\sync-watcher.js</argument>
+	<argument>--scriptoptions=</argument>
+	<argument>--log</argument>
+	<argument>OpticUp Sync Watcher wrapper</argument>
+	<argument>--grow</argument>
+	<argument>0.25</argument>
+	<argument>--wait</argument>
+	<argument>2</argument>
+	<argument>--maxrestarts</argument>
+	<argument>10</argument>
+	<argument>--abortonerror</argument>
+	<argument>n</argument>
+	<argument>--stopparentfirst</argument>
+	<argument>undefined</argument>
+	<logmode>rotate</logmode>
+	<stoptimeout>30sec</stoptimeout>
+	<env name="OPTICUP_SERVICE_ROLE_KEY" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mjk2MjE3MiwiZXhwIjoyMDg4NTM4MTcyfQ.e7W_vmmlt681bNOZ_Hjinu5AGT3uTnGcUs9m5TMS80o"/>
+	<env name="OPTICUP_WATCH_DIR" value="C:\Users\User\Dropbox\InventorySync\sales"/>
+	<env name="OPTICUP_EXPORT_DIR" value="C:\Users\User\Dropbox\InventorySync\new"/>
+	<serviceaccount>
+		<domain>DESKTOP-C6N6M28</domain>
+		<user>LocalSystem</user>
+		<password></password>
+	</serviceaccount>
+	<workingdirectory>C:\Users\User\opticup\watcher-deploy</workingdirectory>
+</service>

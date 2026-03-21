@@ -134,25 +134,25 @@ async function loadData() {
 
 async function loadMaxBarcode() {
   // Branch barcode format: BBDDDDD (2-digit branch + 5-digit sequence)
-  // Fetch all barcodes within the current branch prefix (includes soft-deleted — UNIQUE covers all rows)
+  // Use server-side ORDER + LIMIT(1) to find the highest barcode.
+  // Previous approach fetched all rows but Supabase defaults to 1000 rows,
+  // so tenants with >1000 items got a wrong (too low) max.
   const prefix = branchCode.padStart(2, '0');
   const { data, error } = await sb.from('inventory')
     .select('barcode')
     .eq('tenant_id', getTenantId())
     .not('barcode', 'is', null)
-    .like('barcode', `${prefix}%`);
+    .like('barcode', `${prefix}%`)
+    .order('barcode', { ascending: false })
+    .limit(1);
   if (error) {
     console.error('loadMaxBarcode query failed:', error);
     throw new Error('לא ניתן לטעון ברקודים — ' + (error.message || 'שגיאת שרת'));
   }
   let mx = 0;
-  if (data?.length) {
-    data.forEach(r => {
-      if (r.barcode.length === 7 && r.barcode.startsWith(prefix)) {
-        const seq = parseInt(r.barcode.slice(2), 10);
-        if (!isNaN(seq) && seq > mx) mx = seq;
-      }
-    });
+  if (data?.length && data[0].barcode.length === 7) {
+    const seq = parseInt(data[0].barcode.slice(2), 10);
+    if (!isNaN(seq)) mx = seq;
   }
   maxBarcode = mx;
 }

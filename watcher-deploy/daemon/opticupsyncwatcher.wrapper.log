@@ -1,0 +1,48 @@
+2026-03-14 16:23:22 - Starting C:\Program Files\nodejs\node.exe  C:\Users\User\opticup\watcher-deploy\node_modules\node-windows\lib\wrapper.js --file C:\Users\User\opticup\watcher-deploy\sync-watcher.js --scriptoptions= --log "OpticUp Sync Watcher wrapper" --grow 0.25 --wait 2 --maxrestarts 10 --abortonerror n --stopparentfirst undefined
+2026-03-14 16:23:22 - Started 1758020
+2026-03-15 14:10:11 - Stopping opticupsyncwatcher.exe
+2026-03-15 14:10:11 - ProcessKill 1758020
+2026-03-15 14:10:11 - Found child process: 680736 Name: conhost.exe
+2026-03-15 14:10:11 - Found child process: 352740 Name: node.exe
+2026-03-15 14:10:11 - Stopping process 680736
+2026-03-15 14:10:11 - Send SIGINT 680736
+2026-03-15 14:10:11 - SIGINT to 680736 failed - Killing as fallback
+2026-03-15 14:10:12 - Stopping process 352740
+2026-03-15 14:10:12 - Send SIGINT 352740
+2026-03-15 14:10:12 - SIGINT to 352740 failed - Killing as fallback
+2026-03-15 14:10:12 - Stopping process 1758020
+2026-03-15 14:10:12 - Send SIGINT 1758020
+2026-03-15 14:10:12 - SIGINT to 1758020 failed - Killing as fallback
+2026-03-15 14:10:12 - Finished opticupsyncwatcher.exe
+2026-03-15 14:10:15 - Starting C:\Program Files\nodejs\node.exe  C:\Users\User\opticup\watcher-deploy\node_modules\node-windows\lib\wrapper.js --file C:\Users\User\opticup\watcher-deploy\sync-watcher.js --scriptoptions= --log "OpticUp Sync Watcher wrapper" --grow 0.25 --wait 2 --maxrestarts 10 --abortonerror n --stopparentfirst undefined
+2026-03-15 14:10:15 - Started 1239340
+2026-03-15 14:19:00 - Stopping opticupsyncwatcher.exe
+2026-03-15 14:19:00 - ProcessKill 1239340
+2026-03-15 14:19:00 - Found child process: 501156 Name: conhost.exe
+2026-03-15 14:19:00 - Found child process: 1686264 Name: node.exe
+2026-03-15 14:19:00 - Stopping process 501156
+2026-03-15 14:19:00 - Send SIGINT 501156
+2026-03-15 14:19:00 - SIGINT to 501156 failed - Killing as fallback
+2026-03-15 14:19:00 - Stopping process 1686264
+2026-03-15 14:19:00 - Send SIGINT 1686264
+2026-03-15 14:19:00 - SIGINT to 1686264 failed - Killing as fallback
+2026-03-15 14:19:00 - Stopping process 1239340
+2026-03-15 14:19:00 - Send SIGINT 1239340
+2026-03-15 14:19:00 - SIGINT to 1239340 failed - Killing as fallback
+2026-03-15 14:19:00 - Finished opticupsyncwatcher.exe
+2026-03-15 14:19:03 - Starting C:\Program Files\nodejs\node.exe  C:\Users\User\opticup\watcher-deploy\node_modules\node-windows\lib\wrapper.js --file C:\Users\User\opticup\watcher-deploy\sync-watcher.js --scriptoptions= --log "OpticUp Sync Watcher wrapper" --grow 0.25 --wait 2 --maxrestarts 10 --abortonerror n --stopparentfirst undefined
+2026-03-15 14:19:03 - Started 339468
+2026-03-17 13:46:56 - Stopping opticupsyncwatcher.exe
+2026-03-17 13:46:56 - ProcessKill 339468
+2026-03-17 13:46:57 - Found child process: 153544 Name: conhost.exe
+2026-03-17 13:46:57 - Found child process: 22960 Name: node.exe
+2026-03-17 13:46:58 - Stopping process 153544
+2026-03-17 13:46:58 - Send SIGINT 153544
+2026-03-17 13:46:58 - SIGINT to 153544 failed - Killing as fallback
+2026-03-17 13:46:59 - Stopping process 22960
+2026-03-17 13:46:59 - Send SIGINT 22960
+2026-03-17 13:46:59 - SIGINT to 22960 failed - Killing as fallback
+2026-03-17 13:46:59 - Stopping process 339468
+2026-03-17 13:46:59 - Send SIGINT 339468
+2026-03-17 13:46:59 - SIGINT to 339468 failed - Killing as fallback
+2026-03-17 13:46:59 - Finished opticupsyncwatcher.exe
