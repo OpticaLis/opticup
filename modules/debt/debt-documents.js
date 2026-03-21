@@ -82,47 +82,9 @@ function renderDocumentsTable(docs) {
 }
 
 async function viewDocument(docId) {
-  var doc = _docData.find(function(d) { return d.id === docId; });
-  if (!doc) return;
-  var typeMap = {}, supMap = {};
-  _docTypes.forEach(function(t) { typeMap[t.id] = t; });
-  _docSuppliers.forEach(function(s) { supMap[s.id] = s.name; });
-  var type = typeMap[doc.document_type_id] || {};
-  var st = DOC_STATUS_MAP[doc.status] || { he: doc.status, cls: '' };
-  var balance = (Number(doc.total_amount) || 0) - (Number(doc.paid_amount) || 0);
-  var fileUrl = doc.file_url ? await getSupplierFileUrl(doc.file_url) : null;
-  var fileSection;
-  if (fileUrl) {
-    var ext = (doc.file_name || doc.file_url || '').split('.').pop().toLowerCase();
-    fileSection = (ext === 'pdf')
-      ? '<iframe src="' + escapeHtml(fileUrl) + '" style="width:100%;height:350px;border:1px solid var(--g200);border-radius:6px" title="PDF"></iframe>'
-      : '<img src="' + escapeHtml(fileUrl) + '" style="max-width:100%;max-height:350px;border-radius:6px;border:1px solid var(--g200)">';
-    fileSection += '<div style="margin-top:6px;font-size:.82rem;color:var(--g500)">' + escapeHtml(doc.file_name || '') + '</div>';
-  } else {
-    fileSection = '<div style="text-align:center;padding:24px;color:var(--g400);font-size:.88rem">\u05D0\u05D9\u05DF \u05E7\u05D5\u05D1\u05E5 \u05DE\u05E6\u05D5\u05E8\u05E3' +
-      '<div style="margin-top:8px"><button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" onclick="_attachFileToDoc(\'' + doc.id + '\',\'' + doc.supplier_id + '\')">&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA</button></div></div>';
-  }
-  var html =
-    '<div class="modal-overlay" id="view-doc-modal" style="display:flex" onclick="if(event.target===this)closeAndRemoveModal(\'view-doc-modal\')">' +
-      '<div class="modal" style="max-width:650px;width:95%">' +
-        '<h3 style="margin:0 0 12px">\u05DE\u05E1\u05DE\u05DA ' + escapeHtml(doc.document_number || doc.internal_number || '') + '</h3>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.88rem;margin-bottom:14px">' +
-          '<div>\u05E1\u05D5\u05D2: <strong>' + escapeHtml(type.name_he || '') + '</strong></div>' +
-          '<div>\u05E1\u05E4\u05E7: <strong>' + escapeHtml(supMap[doc.supplier_id] || '') + '</strong></div>' +
-          '<div>\u05EA\u05D0\u05E8\u05D9\u05DA: <strong>' + escapeHtml(doc.document_date || '') + '</strong></div>' +
-          '<div>\u05EA\u05D0\u05E8\u05D9\u05DA \u05EA\u05E9\u05DC\u05D5\u05DD: <strong>' + escapeHtml(doc.due_date || '') + '</strong></div>' +
-          '<div>\u05E1\u05DB\u05D5\u05DD: <strong>' + formatILS(doc.total_amount) + '</strong></div>' +
-          '<div>\u05E9\u05D5\u05DC\u05DD: <strong>' + formatILS(doc.paid_amount) + '</strong></div>' +
-          '<div>\u05D9\u05EA\u05E8\u05D4: <strong>' + formatILS(balance) + '</strong></div>' +
-          '<div>\u05E1\u05D8\u05D8\u05D5\u05E1: <span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></div>' +
-          (doc.created_at ? '<div style="grid-column:1/-1;color:var(--g500);font-size:.82rem">\u05D4\u05D5\u05E2\u05DC\u05D4: ' + escapeHtml(new Date(doc.created_at).toLocaleString('he-IL')) + '</div>' : '') +
-        '</div>' +
-        '<div style="border-top:1px solid var(--g200);padding-top:12px">' + fileSection + '</div>' +
-        '<div style="text-align:left;margin-top:14px"><button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'view-doc-modal\')">\u05E1\u05D2\u05D5\u05E8</button></div>' +
-      '</div></div>';
-  var existing = $('view-doc-modal');
-  if (existing) existing.remove();
-  document.body.insertAdjacentHTML('beforeend', html);
+  // Delegate to edit modal (debt-doc-edit.js)
+  if (typeof editDocument === 'function') return editDocument(docId);
+  toast('\u05DE\u05D5\u05D3\u05D5\u05DC \u05E2\u05E8\u05D9\u05DB\u05D4 \u05DC\u05D0 \u05E0\u05D8\u05E2\u05DF', 'e');
 }
 
 function _attachFileToDoc(docId, supplierId) {
