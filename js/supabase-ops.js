@@ -125,9 +125,22 @@ async function batchUpdate(tableName, records) {
 async function generateNextBarcode() {
   await loadMaxBarcode();
   const prefix = branchCode.padStart(2, '0');
-  maxBarcode++;
-  if (maxBarcode > 99999) throw new Error('חריגה — מקסימום ברקודים');
-  return prefix + String(maxBarcode).padStart(5, '0');
+  const tenantId = getTenantId();
+  // Retry loop: if generated barcode already exists (race condition or stale cache), skip to next
+  for (let attempt = 0; attempt < 10; attempt++) {
+    maxBarcode++;
+    if (maxBarcode > 99999) throw new Error('חריגה — מקסימום ברקודים');
+    const candidate = prefix + String(maxBarcode).padStart(5, '0');
+    // Verify barcode doesn't exist (active or soft-deleted — UNIQUE covers all rows)
+    const { data: exists } = await sb.from(T.INV)
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('barcode', candidate)
+      .maybeSingle();
+    if (!exists) return candidate;
+    // Barcode exists — try next number
+  }
+  throw new Error('לא ניתן ליצור ברקוד חדש — 10 ניסיונות נכשלו');
 }
 
 // =========================================================

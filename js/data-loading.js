@@ -133,26 +133,28 @@ async function loadData() {
 }
 
 async function loadMaxBarcode() {
-  try {
-    // Branch barcode format: BBDDDDD (2-digit branch + 5-digit sequence)
-    // Fetch all barcodes within the current branch prefix
-    const prefix = branchCode.padStart(2, '0');
-    const { data } = await sb.from('inventory')
-      .select('barcode')
-      .eq('tenant_id', getTenantId())
-      .not('barcode', 'is', null)
-      .like('barcode', `${prefix}%`);
-    let mx = 0;
-    if (data?.length) {
-      data.forEach(r => {
-        if (r.barcode.length === 7 && r.barcode.startsWith(prefix)) {
-          const seq = parseInt(r.barcode.slice(2), 10);
-          if (!isNaN(seq) && seq > mx) mx = seq;
-        }
-      });
-    }
-    maxBarcode = mx;
-  } catch(e) { console.warn('Could not load max barcode', e); }
+  // Branch barcode format: BBDDDDD (2-digit branch + 5-digit sequence)
+  // Fetch all barcodes within the current branch prefix (includes soft-deleted — UNIQUE covers all rows)
+  const prefix = branchCode.padStart(2, '0');
+  const { data, error } = await sb.from('inventory')
+    .select('barcode')
+    .eq('tenant_id', getTenantId())
+    .not('barcode', 'is', null)
+    .like('barcode', `${prefix}%`);
+  if (error) {
+    console.error('loadMaxBarcode query failed:', error);
+    throw new Error('לא ניתן לטעון ברקודים — ' + (error.message || 'שגיאת שרת'));
+  }
+  let mx = 0;
+  if (data?.length) {
+    data.forEach(r => {
+      if (r.barcode.length === 7 && r.barcode.startsWith(prefix)) {
+        const seq = parseInt(r.barcode.slice(2), 10);
+        if (!isNaN(seq) && seq > mx) mx = seq;
+      }
+    });
+  }
+  maxBarcode = mx;
 }
 
 function populateDropdowns() {

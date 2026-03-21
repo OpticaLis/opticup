@@ -289,33 +289,46 @@ async function _linkToExistingItem(invId, barcode, itemId, countId) {
   } finally { hideLoading(); }
 }
 
-// ── Insert a brand new inventory item ─────────────────────────
+// ── Insert a brand new inventory item (with barcode collision retry) ──
 async function _insertNewInventoryItem(barcode, itemId, countId, fd) {
   try {
     showLoading('מוסיף פריט למלאי...');
     const tenantId = getTenantId();
-    const insertObj = {
-      barcode, brand_id: fd.brandId, model: fd.model,
-      quantity: fd.qty, status: 'in_stock',
-      is_deleted: false, tenant_id: tenantId
-    };
-    if (fd.size) insertObj.size = fd.size;
-    if (fd.color) insertObj.color = fd.color;
-    if (fd.supplierId) insertObj.supplier_id = fd.supplierId;
-    if (fd.costPrice) insertObj.cost_price = fd.costPrice;
-    if (fd.sellPrice) insertObj.sell_price = fd.sellPrice;
+    let finalBarcode = barcode;
 
-    const { data: newRow, error: insErr } = await sb.from(T.INV)
-      .insert(insertObj).select().single();
-    if (insErr) throw insErr;
+    // Retry up to 3 times if barcode collides (unique constraint violation)
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const insertObj = {
+        barcode: finalBarcode, brand_id: fd.brandId, model: fd.model,
+        quantity: fd.qty, status: 'in_stock',
+        is_deleted: false, tenant_id: tenantId
+      };
+      if (fd.size) insertObj.size = fd.size;
+      if (fd.color) insertObj.color = fd.color;
+      if (fd.supplierId) insertObj.supplier_id = fd.supplierId;
+      if (fd.costPrice) insertObj.cost_price = fd.costPrice;
+      if (fd.sellPrice) insertObj.sell_price = fd.sellPrice;
 
-    writeLog('stock_count.add_unknown', newRow.id, {
-      count_id: countId, barcode, brand_id: fd.brandId,
-      model: fd.model, quantity: fd.qty, reason: 'נמצא בספירת מלאי'
-    });
-    await _markItemMatched(itemId, newRow.id);
-    _closeFormAndRemoveRow(itemId);
-    toast('פריט נוסף למלאי בהצלחה — ברקוד: ' + barcode, 's');
+      const { data: newRow, error: insErr } = await sb.from(T.INV)
+        .insert(insertObj).select().single();
+
+      if (insErr && insErr.code === '23505' && attempt < 2) {
+        // Unique constraint violation — generate a fresh barcode and retry
+        console.warn('Barcode collision on', finalBarcode, '— retrying with new barcode');
+        finalBarcode = await generateNextBarcode();
+        continue;
+      }
+      if (insErr) throw insErr;
+
+      writeLog('stock_count.add_unknown', newRow.id, {
+        count_id: countId, barcode: finalBarcode, brand_id: fd.brandId,
+        model: fd.model, quantity: fd.qty, reason: 'נמצא בספירת מלאי'
+      });
+      await _markItemMatched(itemId, newRow.id);
+      _closeFormAndRemoveRow(itemId);
+      toast('פריט נוסף למלאי בהצלחה — ברקוד: ' + finalBarcode, 's');
+      return;
+    }
   } catch (err) {
     toast('שגיאה בהוספת פריט: ' + err.message, 'e');
   } finally { hideLoading(); }
