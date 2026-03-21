@@ -215,6 +215,9 @@ async function loadSuppliersTab() {
 function renderSuppliersToolbar(showAll) {
   var wrap = $('dtab-suppliers');
   if (!wrap) return;
+  // Clear initial empty-state placeholder from HTML
+  var initEmpty = wrap.querySelector(':scope > .empty-state');
+  if (initEmpty) initEmpty.remove();
   var existing = wrap.querySelector('.sup-toolbar');
   if (existing) existing.remove();
   var toolbar = document.createElement('div');
@@ -254,18 +257,16 @@ function openQuickOpeningBalance() {
       '</div>' +
     '</div>';
   document.body.appendChild(modal);
-  var supItems = _supTabData.map(function(s) { return { value: s.id, label: s.name }; });
+  var supNames = _supTabData.map(function(s) { return s.name; });
   var selectedId = null;
-  createSearchSelect({
-    containerId: 'quick-ob-supplier-wrap',
-    items: supItems,
-    placeholder: '\u05D7\u05E4\u05E9 \u05E1\u05E4\u05E7...',
-    onSelect: function(item) {
-      selectedId = item.value;
-      var btn = $('quick-ob-go');
-      if (btn) btn.disabled = false;
-    }
+  var selectEl = createSearchSelect(supNames, '', function(name) {
+    var sup = _supTabData.find(function(s) { return s.name === name; });
+    selectedId = sup ? sup.id : null;
+    var btn = $('quick-ob-go');
+    if (btn) btn.disabled = !selectedId;
   });
+  var wrapDiv = $('quick-ob-supplier-wrap');
+  if (wrapDiv) wrapDiv.appendChild(selectEl);
   var goBtn = $('quick-ob-go');
   if (goBtn) goBtn.onclick = function() {
     if (!selectedId) return;
