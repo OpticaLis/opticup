@@ -261,8 +261,9 @@ async function _ocrSave(mode) {
       notes: 'נוצר באמצעות סריקת AI'
     };
     if (existingDoc) {
-      docFields.id = existingDoc.id;
-      await batchUpdate(T.SUP_DOCS, [docFields]);
+      var { error: upErr } = await sb.from(T.SUP_DOCS).update(docFields)
+        .eq('id', existingDoc.id).eq('tenant_id', getTenantId());
+      if (upErr) throw upErr;
       created = [{ id: existingDoc.id }];
     } else {
       docFields.internal_number = await generateDocInternalNumber();
