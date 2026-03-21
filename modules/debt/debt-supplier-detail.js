@@ -38,11 +38,14 @@ async function openSupplierDetail(supplierId) {
     var deals = results[2];
     _detailSupplierName = supplier ? supplier.name : '';
 
-    // Calculate summary
+    // Calculate summary (Phase 8: respects opening_balance + cutoff date)
     var todayStr = new Date().toISOString().slice(0, 10);
-    var totalDebt = 0, overdueAmt = 0;
+    var cutoff = supplier ? supplier.opening_balance_date : null;
+    var totalDebt = supplier ? (Number(supplier.opening_balance) || 0) : 0;
+    var overdueAmt = 0;
     docs.forEach(function(d) {
       if (d.status === 'paid' || d.status === 'cancelled') return;
+      if (cutoff && d.document_date && d.document_date < cutoff) return;
       var rate = Number(d.exchange_rate) || 1;
       var remaining = (Number(d.total_amount) - Number(d.paid_amount)) * rate;
       if (remaining <= 0) return;
@@ -60,6 +63,19 @@ async function openSupplierDetail(supplierId) {
       ? 'עסקה מראש: ' + formatILS(dealTotal) + ' (נותר: ' + formatILS(dealRemaining) + ')'
       : 'עסקה מראש: \u2014';
 
+    // Opening balance section
+    var ob = supplier ? (Number(supplier.opening_balance) || 0) : 0;
+    var obDate = supplier ? (supplier.opening_balance_date || '') : '';
+    var obNotes = supplier ? (supplier.opening_balance_notes || '') : '';
+    var obBtnLabel = ob > 0 || obDate ? '\u270F\uFE0F \u05E2\u05D3\u05DB\u05DF' : '\u05D4\u05D2\u05D3\u05E8';
+    var obLine = ob > 0 || obDate
+      ? '<strong>' + formatILS(ob) + '</strong>' + (obDate ? ' \u05E0\u05DB\u05D5\u05DF \u05DC-' + escapeHtml(obDate) : '') + (obNotes ? '<br><span style="color:var(--g500);font-size:.82rem">"' + escapeHtml(obNotes) + '"</span>' : '')
+      : '<span style="color:var(--g400)">\u05DC\u05D0 \u05D4\u05D5\u05D2\u05D3\u05E8\u05D4</span>';
+    var obSection = '<div style="background:var(--g100);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.88rem">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center"><strong>\u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</strong>' +
+      '<button class="btn-sm" onclick="openSetOpeningBalance(\'' + supplierId + '\')">' + obBtnLabel + '</button></div>' +
+      '<div style="margin-top:4px">' + obLine + '</div></div>';
+
     detailPanel.innerHTML =
       '<div style="margin-bottom:16px">' +
         '<a href="#" onclick="event.preventDefault();closeSupplierDetail()" ' +
@@ -67,6 +83,7 @@ async function openSupplierDetail(supplierId) {
         '<h2 style="margin:8px 0 0;font-size:1.15rem;color:var(--primary)">' +
           'כרטיס ספק: ' + escapeHtml(_detailSupplierName) + '</h2>' +
       '</div>' +
+      obSection +
       '<div style="display:flex;flex-wrap:wrap;gap:16px;font-size:.92rem;margin-bottom:16px">' +
         '<div>חוב כולל: <strong>' + formatILS(totalDebt) + '</strong></div>' +
         '<div style="' + overdueStyle + '">באיחור: <strong>' + formatILS(overdueAmt) + '</strong></div>' +
@@ -169,50 +186,27 @@ async function loadSupplierTimeline(supplierId) {
     var limited = entries.length > 50;
     var visible = limited ? entries.slice(0, 50) : entries;
 
-    var html = '<div style="padding:4px 0">';
-    visible.forEach(function(e) {
-      html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 4px;' +
-        'border-bottom:1px solid var(--g200);font-size:.88rem">' +
-        '<span style="font-size:1.1rem">' + e.icon + '</span>' +
-        '<span style="color:var(--g500);min-width:80px">' + escapeHtml(e.date || '') + '</span>' +
-        '<span style="flex:1">' + escapeHtml(e.label) + '</span>' +
-        '<span style="font-weight:600">' + e.amount + '</span>' +
-      '</div>';
-    });
-    html += '</div>';
-
+    content.innerHTML = _renderTimelineHtml(visible);
     if (limited) {
-      html += '<div style="text-align:center;padding:12px">' +
-        '<button class="btn-sm" onclick="_showAllTimeline()">הצג עוד (' +
-        (entries.length - 50) + ')</button></div>';
+      content.insertAdjacentHTML('beforeend', '<div style="text-align:center;padding:12px"><button class="btn-sm" onclick="_showAllTimeline()">\u05D4\u05E6\u05D2 \u05E2\u05D5\u05D3 (' + (entries.length - 50) + ')</button></div>');
+      content._allEntries = entries;
     }
-
-    content.innerHTML = html;
-
-    // Store full entries for "show more"
-    if (limited) content._allEntries = entries;
   } catch (e) {
     console.error('loadSupplierTimeline error:', e);
-    content.innerHTML = '<div class="empty-state">שגיאה בטעינת היסטוריה</div>';
+    content.innerHTML = '<div class="empty-state">\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D4</div>';
   }
 }
-
-function _showAllTimeline() {
-  var content = $('detail-tab-content');
-  if (!content || !content._allEntries) return;
-  var entries = content._allEntries;
-  var html = '<div style="padding:4px 0">';
+function _renderTimelineHtml(entries) {
+  var h = '<div style="padding:4px 0">';
   entries.forEach(function(e) {
-    html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 4px;' +
-      'border-bottom:1px solid var(--g200);font-size:.88rem">' +
-      '<span style="font-size:1.1rem">' + e.icon + '</span>' +
-      '<span style="color:var(--g500);min-width:80px">' + escapeHtml(e.date || '') + '</span>' +
-      '<span style="flex:1">' + escapeHtml(e.label) + '</span>' +
-      '<span style="font-weight:600">' + e.amount + '</span>' +
-    '</div>';
-  });
-  html += '</div>';
-  content.innerHTML = html;
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--g200);font-size:.88rem">' +
+      '<span style="font-size:1.1rem">' + e.icon + '</span><span style="color:var(--g500);min-width:80px">' + escapeHtml(e.date || '') + '</span>' +
+      '<span style="flex:1">' + escapeHtml(e.label) + '</span><span style="font-weight:600">' + e.amount + '</span></div>';
+  }); return h + '</div>';
+}
+function _showAllTimeline() {
+  var c = $('detail-tab-content'); if (!c || !c._allEntries) return;
+  c.innerHTML = _renderTimelineHtml(c._allEntries);
 }
 
 // =========================================================
@@ -238,29 +232,15 @@ async function loadSupplierDocuments(supplierId) {
     }
 
     var rows = docs.map(function(d) {
-      var type = typeMap[d.document_type_id] || {};
-      var balance = (Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0);
+      var type = typeMap[d.document_type_id] || {}; var bal = (Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0);
       var st = DOC_STATUS_MAP[d.status] || { he: d.status, cls: '' };
-      return '<tr>' +
-        '<td>' + escapeHtml(d.document_date || '') + '</td>' +
-        '<td>' + escapeHtml(type.name_he || '') + '</td>' +
-        '<td>' + escapeHtml(d.document_number || '') + '</td>' +
-        '<td>' + formatILS(d.total_amount) + '</td>' +
-        '<td>' + formatILS(d.paid_amount) + '</td>' +
-        '<td>' + formatILS(balance) + '</td>' +
-        '<td><span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></td>' +
-      '</tr>';
+      return '<tr><td>' + escapeHtml(d.document_date || '') + '</td><td>' + escapeHtml(type.name_he || '') + '</td><td>' + escapeHtml(d.document_number || '') + '</td>' +
+        '<td>' + formatILS(d.total_amount) + '</td><td>' + formatILS(d.paid_amount) + '</td><td>' + formatILS(bal) + '</td>' +
+        '<td><span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></td></tr>';
     }).join('');
-
-    content.innerHTML =
-      '<div style="overflow-x:auto">' +
-      '<table class="data-table" style="width:100%;font-size:.88rem">' +
-        '<thead><tr>' +
-          '<th>תאריך</th><th>סוג</th><th>מספר</th><th>סכום</th>' +
-          '<th>שולם</th><th>יתרה</th><th>סטטוס</th>' +
-        '</tr></thead>' +
-        '<tbody>' + rows + '</tbody>' +
-      '</table></div>';
+    content.innerHTML = '<div style="overflow-x:auto"><table class="data-table" style="width:100%;font-size:.88rem">' +
+      '<thead><tr><th>\u05EA\u05D0\u05E8\u05D9\u05DA</th><th>\u05E1\u05D5\u05D2</th><th>\u05DE\u05E1\u05E4\u05E8</th><th>\u05E1\u05DB\u05D5\u05DD</th><th>\u05E9\u05D5\u05DC\u05DD</th><th>\u05D9\u05EA\u05E8\u05D4</th><th>\u05E1\u05D8\u05D8\u05D5\u05E1</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>';
   } catch (e) {
     console.error('loadSupplierDocuments error:', e);
     content.innerHTML = '<div class="empty-state">שגיאה בטעינת מסמכים</div>';
@@ -292,25 +272,13 @@ async function loadSupplierPayments(supplierId) {
     var rows = payments.map(function(p) {
       var net = Number(p.net_amount) || (Number(p.amount) - (Number(p.withholding_tax_amount) || 0));
       var st = PAY_STATUS_MAP[p.status] || { he: p.status, cls: '' };
-      return '<tr>' +
-        '<td>' + escapeHtml(p.payment_date || '') + '</td>' +
-        '<td>' + formatILS(p.amount) + '</td>' +
-        '<td>' + formatILS(net) + '</td>' +
-        '<td>' + escapeHtml(methMap[p.payment_method] || p.payment_method || '') + '</td>' +
-        '<td>' + escapeHtml(p.reference_number || '\u2014') + '</td>' +
-        '<td><span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></td>' +
-      '</tr>';
+      return '<tr><td>' + escapeHtml(p.payment_date || '') + '</td><td>' + formatILS(p.amount) + '</td><td>' + formatILS(net) + '</td>' +
+        '<td>' + escapeHtml(methMap[p.payment_method] || p.payment_method || '') + '</td><td>' + escapeHtml(p.reference_number || '\u2014') + '</td>' +
+        '<td><span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></td></tr>';
     }).join('');
-
-    content.innerHTML =
-      '<div style="overflow-x:auto">' +
-      '<table class="data-table" style="width:100%;font-size:.88rem">' +
-        '<thead><tr>' +
-          '<th>תאריך</th><th>סכום</th><th>נטו</th><th>אמצעי</th>' +
-          '<th>אסמכתא</th><th>סטטוס</th>' +
-        '</tr></thead>' +
-        '<tbody>' + rows + '</tbody>' +
-      '</table></div>';
+    content.innerHTML = '<div style="overflow-x:auto"><table class="data-table" style="width:100%;font-size:.88rem">' +
+      '<thead><tr><th>\u05EA\u05D0\u05E8\u05D9\u05DA</th><th>\u05E1\u05DB\u05D5\u05DD</th><th>\u05E0\u05D8\u05D5</th><th>\u05D0\u05DE\u05E6\u05E2\u05D9</th><th>\u05D0\u05E1\u05DE\u05DB\u05EA\u05D0</th><th>\u05E1\u05D8\u05D8\u05D5\u05E1</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>';
   } catch (e) {
     console.error('loadSupplierPayments error:', e);
     content.innerHTML = '<div class="empty-state">שגיאה בטעינת תשלומים</div>';
@@ -325,6 +293,50 @@ function loadSupplierReturns(supplierId) {
     loadReturnsForSupplier(supplierId);
   } else {
     var content = $('detail-tab-content');
-    if (content) content.innerHTML = '<div class="empty-state">אין החזרות</div>';
+    if (content) content.innerHTML = '<div class="empty-state">\u05D0\u05D9\u05DF \u05D4\u05D7\u05D6\u05E8\u05D5\u05EA</div>';
   }
+}
+
+// --- Phase 8: Opening balance modal ---
+function openSetOpeningBalance(supplierId) {
+  var sup = null;
+  _docSuppliers.forEach(function(s) { if (s.id === supplierId) sup = s; });
+  var name = sup ? sup.name : _detailSupplierName;
+  var curBal = sup ? (Number(sup.opening_balance) || 0) : 0;
+  var curDate = sup ? (sup.opening_balance_date || '') : '';
+  var curNotes = sup ? (sup.opening_balance_notes || '') : '';
+  var m = document.createElement('div'); m.id = 'ob-modal'; m.className = 'modal-overlay'; m.style.display = 'flex';
+  m.onclick = function(e) { if (e.target === m) m.remove(); };
+  m.innerHTML = '<div class="modal" style="max-width:420px"><h3 style="margin:0 0 12px">\u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4 \u2014 ' + escapeHtml(name) + '</h3>' +
+    '<div id="ob-alert"></div>' +
+    '<label>\u05E1\u05DB\u05D5\u05DD (\u20AA)<input type="number" id="ob-amount" class="nd-field" step="0.01" min="0" value="' + curBal + '"></label>' +
+    '<label>\u05EA\u05D0\u05E8\u05D9\u05DA cutoff<input type="date" id="ob-date" class="nd-field" value="' + escapeHtml(curDate) + '"></label>' +
+    '<div style="font-size:.78rem;color:var(--g500);margin:-6px 0 8px">\u05DE\u05E1\u05DE\u05DB\u05D9\u05DD \u05D5\u05EA\u05E9\u05DC\u05D5\u05DE\u05D9\u05DD \u05DC\u05E4\u05E0\u05D9 \u05EA\u05D0\u05E8\u05D9\u05DA \u05D6\u05D4 \u05DC\u05D0 \u05D9\u05D9\u05E1\u05E4\u05E8\u05D5. \u05E8\u05E7 \u05DE\u05D4 \u05E9\u05D0\u05D7\u05E8\u05D9.</div>' +
+    '<label>\u05D4\u05E2\u05E8\u05D5\u05EA<textarea id="ob-notes" rows="2" class="nd-field">' + escapeHtml(curNotes) + '</textarea></label>' +
+    '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
+    '<button class="btn btn-g" onclick="closeAndRemoveModal(\'ob-modal\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
+    '<button class="btn btn-s" onclick="_saveOpeningBalance(\'' + supplierId + '\')">\u05E9\u05DE\u05D5\u05E8</button></div></div>';
+  document.body.appendChild(m);
+}
+
+function _saveOpeningBalance(supplierId) {
+  var amt = Number(($('ob-amount') || {}).value) || 0;
+  var dt = ($('ob-date') || {}).value || null;
+  var notes = (($('ob-notes') || {}).value || '').trim();
+  if (amt < 0) { setAlert('ob-alert', '\u05E1\u05DB\u05D5\u05DD \u05DC\u05D0 \u05D9\u05DB\u05D5\u05DC \u05DC\u05D4\u05D9\u05D5\u05EA \u05E9\u05DC\u05D9\u05DC\u05D9', 'e'); return; }
+  promptPin('\u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4 \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
+    showLoading('\u05E9\u05D5\u05DE\u05E8...'); try {
+      var prev = 0; var sups = await fetchAll(T.SUPPLIERS, [['id', 'eq', supplierId]]);
+      if (sups[0]) prev = Number(sups[0].opening_balance) || 0;
+      await batchUpdate(T.SUPPLIERS, [{ id: supplierId, opening_balance: amt, opening_balance_date: dt,
+        opening_balance_notes: notes || null, opening_balance_set_by: emp.id }]);
+      await writeLog('opening_balance_set', null, { supplier_id: supplierId, amount: amt, date: dt, notes: notes, previous_balance: prev, set_by: emp.id });
+      closeAndRemoveModal('ob-modal');
+      toast('\u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4 \u05E2\u05D5\u05D3\u05DB\u05E0\u05D4 \u2014 ' + formatILS(amt), 's');
+      await openSupplierDetail(supplierId);
+      if (typeof loadDebtSummary === 'function') loadDebtSummary();
+      if (typeof loadSuppliersTab === 'function') loadSuppliersTab();
+    } catch (e) { console.error('_saveOpeningBalance error:', e); toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
+    } finally { hideLoading(); }
+  });
 }

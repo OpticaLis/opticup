@@ -159,16 +159,17 @@ async function loadSuppliersTab() {
     var deals = results[2];
     var todayStr = new Date().toISOString().slice(0, 10);
 
-    // Build per-supplier aggregation
+    // Build per-supplier aggregation (Phase 8: opening_balance + cutoff date)
     _supTabData = suppliers.map(function(sup) {
+      var cutoff = sup.opening_balance_date || null;
       var supDocs = docs.filter(function(d) {
-        return d.supplier_id === sup.id && d.status !== 'paid' && d.status !== 'cancelled';
+        if (d.supplier_id !== sup.id || d.status === 'paid' || d.status === 'cancelled') return false;
+        if (cutoff && d.document_date && d.document_date < cutoff) return false;
+        return true;
       });
       var openCount = supDocs.length;
-      var totalDebt = 0;
-      var overdueAmt = 0;
-      var nextDue = null;
-
+      var totalDebt = Number(sup.opening_balance) || 0;
+      var overdueAmt = 0, nextDue = null;
       supDocs.forEach(function(d) {
         var rate = Number(d.exchange_rate) || 1;
         var remaining = (Number(d.total_amount) - Number(d.paid_amount)) * rate;
@@ -179,20 +180,12 @@ async function loadSuppliersTab() {
           if (!nextDue || d.due_date < nextDue) nextDue = d.due_date;
         }
       });
-
-      // Prepaid deal for this supplier
       var deal = deals.find(function(dl) { return dl.supplier_id === sup.id; });
       var dealRemaining = deal ? (Number(deal.total_prepaid) || 0) - (Number(deal.total_used) || 0) : 0;
-
       return {
-        id: sup.id,
-        name: sup.name,
-        openCount: openCount,
-        totalDebt: totalDebt,
-        overdueAmt: overdueAmt,
-        nextDue: nextDue,
-        hasDeal: !!deal,
-        dealRemaining: dealRemaining
+        id: sup.id, name: sup.name, openCount: openCount, totalDebt: totalDebt,
+        overdueAmt: overdueAmt, nextDue: nextDue, hasDeal: !!deal, dealRemaining: dealRemaining,
+        openingBalance: Number(sup.opening_balance) || 0, openingBalanceDate: cutoff
       };
     });
 
@@ -203,9 +196,9 @@ async function loadSuppliersTab() {
       return b.totalDebt - a.totalDebt;
     });
 
-    // Only show suppliers with open docs or active deals
+    // Only show suppliers with open docs, active deals, or opening balance
     var visible = _supTabData.filter(function(s) {
-      return s.openCount > 0 || s.hasDeal;
+      return s.openCount > 0 || s.hasDeal || s.openingBalance > 0;
     });
 
     renderSuppliersTable(visible);
@@ -224,34 +217,28 @@ function renderSuppliersTable(data) {
 
   var rows = data.map(function(s) {
     var overdueStyle = s.overdueAmt > 0 ? ' style="color:var(--error);font-weight:600"' : '';
-    var dealCell = s.hasDeal
-      ? '<span style="color:var(--success, #155724)">&#10003;</span> ' + formatILS(s.dealRemaining)
+    var dealCell = s.hasDeal ? '<span style="color:var(--success, #155724)">&#10003;</span> ' + formatILS(s.dealRemaining) : '\u2014';
+    var obCell = s.openingBalance > 0
+      ? formatILS(s.openingBalance) + (s.openingBalanceDate ? '' : ' <span title="\u05D7\u05E1\u05E8 \u05EA\u05D0\u05E8\u05D9\u05DA cutoff" style="color:#f59e0b">\u26A0\uFE0F</span>')
       : '\u2014';
-    var nextDueText = s.nextDue || '\u2014';
-
     return '<tr style="cursor:pointer" onclick="openSupplierDetail(\'' + s.id + '\')">' +
       '<td>' + escapeHtml(s.name) + '</td>' +
       '<td>' + s.openCount + '</td>' +
       '<td>' + formatILS(s.totalDebt) + '</td>' +
       '<td' + overdueStyle + '>' + formatILS(s.overdueAmt) + '</td>' +
-      '<td>' + escapeHtml(nextDueText) + '</td>' +
+      '<td>' + escapeHtml(s.nextDue || '\u2014') + '</td>' +
+      '<td>' + obCell + '</td>' +
       '<td>' + dealCell + '</td>' +
       '<td>' +
         '<button class="btn-sm" onclick="event.stopPropagation();openSupplierDetail(\'' + s.id + '\')">צפה</button> ' +
         '<button class="btn-sm" onclick="event.stopPropagation();openPaymentForSupplier(\'' + s.id + '\')">תשלום חדש</button>' +
-      '</td>' +
-    '</tr>';
+      '</td></tr>';
   }).join('');
-
   wrap.innerHTML =
-    '<div style="overflow-x:auto">' +
-    '<table class="data-table" style="width:100%;font-size:.88rem">' +
-      '<thead><tr>' +
-        '<th>ספק</th><th>מסמכים פתוחים</th><th>חוב כולל</th><th>באיחור</th>' +
-        '<th>תשלום הבא</th><th>עסקה מראש</th><th>פעולות</th>' +
-      '</tr></thead>' +
-      '<tbody>' + rows + '</tbody>' +
-    '</table></div>';
+    '<div style="overflow-x:auto"><table class="data-table" style="width:100%;font-size:.88rem">' +
+      '<thead><tr><th>\u05E1\u05E4\u05E7</th><th>\u05E4\u05EA\u05D5\u05D7\u05D9\u05DD</th><th>\u05D7\u05D5\u05D1 \u05DB\u05D5\u05DC\u05DC</th><th>\u05D1\u05D0\u05D9\u05D7\u05D5\u05E8</th>' +
+        '<th>\u05EA\u05E9\u05DC\u05D5\u05DD \u05D4\u05D1\u05D0</th><th>\u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</th><th>\u05DE\u05E7\u05D3\u05DE\u05D4</th><th>\u05E4\u05E2\u05D5\u05DC\u05D5\u05EA</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>';
 }
 
 /**
