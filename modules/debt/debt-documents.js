@@ -3,7 +3,7 @@ let _docData = [], _docTypes = [], _docSuppliers = [];
 var _pendingNewDocFile = null;
 var _docPrepaidSet = {}; // Phase 8: supplier_id → deal object for active prepaid deals
 var _docSortField = 'created_at'; // default: sort by upload date (newest first)
-var _docShowCancelled = false; // default: hide cancelled documents
+var _docStatusFilters = null; // { open: true, paid: false, cancelled: false } — loaded from sessionStorage
 const DOC_STATUS_MAP = {
   open:            { he: '\u05E4\u05EA\u05D5\u05D7',        cls: 'dst-open' },
   partially_paid:  { he: '\u05E9\u05D5\u05DC\u05DD \u05D7\u05DC\u05E7\u05D9\u05EA',  cls: 'dst-partial' },
@@ -49,6 +49,30 @@ function setDocSort(field) {
     b.style.color = active ? '#fff' : '#1e293b';
   });
   if (typeof applyDocFilters === 'function') applyDocFilters();
+}
+
+function _getDocStatusFilters() {
+  if (!_docStatusFilters) {
+    try { var raw = sessionStorage.getItem('debt_docStatusFilters'); _docStatusFilters = raw ? JSON.parse(raw) : null; } catch (e) {}
+    if (!_docStatusFilters) _docStatusFilters = { open: true, paid: false, cancelled: false };
+  }
+  return _docStatusFilters;
+}
+function toggleDocStatusFilter(key) {
+  var f = _getDocStatusFilters();
+  f[key] = !f[key];
+  try { sessionStorage.setItem('debt_docStatusFilters', JSON.stringify(f)); } catch (e) {}
+  _updateStatusBtnStyles();
+  if (typeof applyDocFilters === 'function') applyDocFilters();
+}
+function _updateStatusBtnStyles() {
+  var f = _getDocStatusFilters();
+  ['open', 'paid', 'cancelled'].forEach(function(k) {
+    var btn = document.querySelector('.doc-status-btn[data-status="' + k + '"]');
+    if (!btn) return;
+    btn.style.background = f[k] ? '#1a73e8' : '#e5e7eb';
+    btn.style.color = f[k] ? '#fff' : '#6b7280';
+  });
 }
 
 function renderDocumentsTable(docs) {
