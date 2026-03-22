@@ -120,6 +120,11 @@ async function confirmReceipt() {
     if (!attachOk) return;
   }
 
+  // PIN verification — required for all confirm paths
+  const pinEmp = await _receiptPinVerify('אישור קבלת סחורה');
+  if (!pinEmp) return;
+  sessionStorage.setItem('prizma_user', pinEmp.name);
+
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
 
   // Phase 8: If linked to PO, show comparison report before confirming
@@ -217,6 +222,10 @@ async function confirmReceiptById(receiptId) {
   const ok = await confirmDialog('אישור קבלה', 'האם לאשר קבלה זו ולעדכן מלאי?');
   if (!ok) return;
 
+  const pinEmp = await _receiptPinVerify('אישור קבלה');
+  if (!pinEmp) return;
+  sessionStorage.setItem('prizma_user', pinEmp.name);
+
   showLoading('מאשר קבלה...');
   try {
     const { data: rcpt } = await sb.from(T.RECEIPTS).select('receipt_number, po_id').eq('id', receiptId).single();
@@ -226,4 +235,60 @@ async function confirmReceiptById(receiptId) {
     toast('שגיאה באישור: ' + (e.message || ''), 'e');
   }
   hideLoading();
+}
+
+// PIN verification helper — shows modal, returns employee or null
+async function _receiptPinVerify(title) {
+  return new Promise(function(resolve) {
+    var modalId = 'rcpt-pin-modal';
+    var existing = $(modalId);
+    if (existing) existing.remove();
+    var html =
+      '<div class="modal-overlay" id="' + modalId + '" style="display:flex" ' +
+        'onclick="if(event.target===this){this.remove()}">' +
+        '<div class="modal" style="max-width:340px">' +
+          '<h3 style="margin:0 0 12px">' + escapeHtml(title) + '</h3>' +
+          '<div id="rcpt-pin-alert"></div>' +
+          '<div class="form-group" style="margin-bottom:12px">' +
+            '<label>\u05E1\u05D9\u05E1\u05DE\u05EA \u05E2\u05D5\u05D1\u05D3</label>' +
+            '<input type="password" id="rcpt-pin-input" maxlength="10" ' +
+              'placeholder="\u05D4\u05D6\u05DF PIN" inputmode="numeric" class="nd-field">' +
+          '</div>' +
+          '<div style="display:flex;gap:8px">' +
+            '<button class="btn btn-p" id="rcpt-pin-ok">\u05D0\u05E9\u05E8</button>' +
+            '<button class="btn btn-g" id="rcpt-pin-cancel">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    document.body.insertAdjacentHTML('beforeend', html);
+    var inp = $('rcpt-pin-input');
+    if (inp) inp.focus();
+
+    async function doVerify() {
+      var pin = ($('rcpt-pin-input') || {}).value || '';
+      if (!pin) {
+        var al = $('rcpt-pin-alert');
+        if (al) al.innerHTML = '<div class="alert alert-e">\u05D9\u05E9 \u05DC\u05D4\u05D6\u05D9\u05DF \u05E1\u05D9\u05E1\u05DE\u05D4</div>';
+        return;
+      }
+      var emp = await verifyPinOnly(pin);
+      if (!emp) {
+        var al2 = $('rcpt-pin-alert');
+        if (al2) al2.innerHTML = '<div class="alert alert-e">\u05E1\u05D9\u05E1\u05DE\u05D4 \u05E9\u05D2\u05D5\u05D9\u05D4</div>';
+        if (inp) { inp.value = ''; inp.focus(); }
+        return;
+      }
+      var m = $(modalId); if (m) m.remove();
+      resolve(emp);
+    }
+
+    $('rcpt-pin-ok').onclick = doVerify;
+    $('rcpt-pin-cancel').onclick = function() {
+      var m = $(modalId); if (m) m.remove();
+      resolve(null);
+    };
+    if (inp) inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') doVerify();
+    });
+  });
 }
