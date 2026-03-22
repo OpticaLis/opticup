@@ -1,6 +1,6 @@
 // debt-documents.js — Documents tab (Phase 4d+5.5e+8)
 let _docData = [], _docTypes = [], _docSuppliers = [];
-var _pendingNewDocFile = null;
+var _pendingNewDocFiles = [];
 var _docPrepaidSet = {}; // Phase 8: supplier_id → deal object for active prepaid deals
 var _docSortField = 'created_at'; // default: sort by upload date (newest first)
 var _docStatusFilters = null; // { open: true, paid: false, cancelled: false } — loaded from sessionStorage
@@ -32,6 +32,8 @@ async function loadDocumentsTab() {
     _docSuppliers = sups;
     _docPrepaidSet = {};
     deals.forEach(function(d) { _docPrepaidSet[d.supplier_id] = d; });
+    // Load file counts per document (non-blocking, for badge display)
+    _loadDocFileCounts(docs);
     renderDocFilterBar();
     applyDocFilters();
   } catch (e) {
@@ -40,6 +42,21 @@ async function loadDocumentsTab() {
   } finally {
     hideLoading();
   }
+}
+
+// Load file counts for all docs (sets doc._fileCount for badge display)
+async function _loadDocFileCounts(docs) {
+  try {
+    var { data } = await sb.from(T.DOC_FILES)
+      .select('document_id')
+      .eq('tenant_id', getTenantId());
+    if (!data) return;
+    var counts = {};
+    data.forEach(function(r) {
+      counts[r.document_id] = (counts[r.document_id] || 0) + 1;
+    });
+    docs.forEach(function(d) { d._fileCount = counts[d.id] || 0; });
+  } catch (e) { console.warn('_loadDocFileCounts error:', e.message); }
 }
 
 // renderDocFilterBar() and applyDocFilters() are in debt-doc-filters.js
@@ -110,7 +127,8 @@ function renderDocumentsTable(docs) {
       '<td><span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></td>' +
       '<td>' +
         '<button class="btn-sm" onclick="viewDocument(\'' + d.id + '\')">\u05E6\u05E4\u05D4</button> ' +
-        '<button class="btn-sm" title="' + (d.file_url ? '\u05D4\u05D7\u05DC\u05E3 \u05DE\u05E1\u05DE\u05DA' : '\u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA') + '" onclick="_attachFileToDoc(\'' + d.id + '\',\'' + d.supplier_id + '\')">&#128206;</button> ' +
+        '<button class="btn-sm" title="' + (d.file_url ? '\u05D4\u05D7\u05DC\u05E3 / \u05E6\u05E8\u05E3 \u05E7\u05D1\u05E6\u05D9\u05DD' : '\u05E6\u05E8\u05E3 \u05E7\u05D1\u05E6\u05D9\u05DD') + '" onclick="_attachFileToDoc(\'' + d.id + '\',\'' + d.supplier_id + '\')">' +
+          (d._fileCount > 1 ? '<span class="file-count-badge">' + d._fileCount + '</span>' : '') + '&#128206;</button> ' +
         (_isPayableDocType(type.code) ? '<button class="btn-sm" onclick="switchDebtTab(\'payments\')">\u05E9\u05DC\u05DD</button>' : '') + linkBtn + ppBtn +
         (d.status === 'open' ? ' <button class="btn-sm" style="background:#ef4444;color:#fff" onclick="cancelDocument(\'' + d.id + '\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' : '') +
       '</td></tr>';
@@ -129,24 +147,35 @@ async function viewDocument(docId) {
 }
 
 function _attachFileToDoc(docId, supplierId) {
-  pickAndUploadFile(supplierId, async function(result) {
+  pickAndUploadFiles(supplierId, async function(results) {
     try {
-      await batchUpdate(T.SUP_DOCS, [{ id: docId, file_url: result.url, file_name: result.fileName }]);
+      // Get current max sort_order from files table
+      var existingFiles = await fetchDocFiles(docId);
+      var maxSort = existingFiles.reduce(function(m, f) { return Math.max(m, f.sort_order || 0); }, -1);
+
+      for (var i = 0; i < results.length; i++) {
+        await saveDocFile(docId, results[i].url, results[i].fileName, maxSort + 1 + i);
+      }
+      // Update primary file_url if this is the first file
       var doc = _docData.find(function(d) { return d.id === docId; });
-      if (doc) { doc.file_url = result.url; doc.file_name = result.fileName; }
-      toast('\u05E7\u05D5\u05D1\u05E5 \u05E6\u05D5\u05E8\u05E3 \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4');
+      if (doc && !doc.file_url) {
+        await batchUpdate(T.SUP_DOCS, [{ id: docId, file_url: results[0].url, file_name: results[0].fileName }]);
+        doc.file_url = results[0].url;
+        doc.file_name = results[0].fileName;
+      }
+      toast(results.length + ' \u05E7\u05D1\u05E6\u05D9\u05DD \u05E6\u05D5\u05E8\u05E4\u05D5');
       var viewModal = $('view-doc-modal');
       if (viewModal) { viewModal.remove(); viewDocument(docId); }
       applyDocFilters();
     } catch (e) {
       console.error('_attachFileToDoc error:', e);
-      toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E6\u05D9\u05E8\u05D5\u05E3 \u05E7\u05D5\u05D1\u05E5: ' + (e.message || ''), 'e');
+      toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E6\u05D9\u05E8\u05D5\u05E3 \u05E7\u05D1\u05E6\u05D9\u05DD: ' + (e.message || ''), 'e');
     }
   });
 }
 
 function openNewDocumentModal() {
-  _pendingNewDocFile = null;
+  _pendingNewDocFiles = [];
   var supOpts = _docSuppliers.map(function(s) {
     return '<option value="' + escapeHtml(s.id) + '">' + escapeHtml(s.name) + '</option>';
   }).join('');
@@ -173,9 +202,9 @@ function openNewDocumentModal() {
         '<label>\u05E1\u05D4"\u05DB<input type="number" id="nd-total" step="0.01" min="0" class="nd-field" style="font-weight:700" oninput="calcNewDocFromTotal()"></label>' +
         '<label style="grid-column:1/-1">\u05D4\u05E2\u05E8\u05D5\u05EA<textarea id="nd-notes" rows="2" class="nd-field"></textarea></label>' +
       '</div>' +
-      '<div style="margin-top:10px"><label>\u05DE\u05E1\u05DE\u05DA \u05DE\u05E6\u05D5\u05E8\u05E3</label>' +
-        '<button class="btn btn-sm" id="nd-attach-btn" onclick="_pickNewDocFile()" style="background:#e5e7eb;color:#1e293b;width:100%">&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA</button>' +
-        '<span id="nd-attach-name" style="font-size:.78rem;color:var(--g600);display:block;margin-top:2px"></span></div>' +
+      '<div style="margin-top:10px"><label>\u05E7\u05D1\u05E6\u05D9\u05DD \u05DE\u05E6\u05D5\u05E8\u05E4\u05D9\u05DD</label>' +
+        '<button class="btn btn-sm" id="nd-attach-btn" onclick="_pickNewDocFiles()" style="background:#e5e7eb;color:#1e293b;width:100%">&#128206; \u05E6\u05E8\u05E3 \u05E7\u05D1\u05E6\u05D9\u05DD</button>' +
+        '<div id="nd-attach-list" style="font-size:.78rem;color:var(--g600);margin-top:2px"></div></div>' +
       '<label style="display:block;margin-top:10px">\u05E7\u05D5\u05D3 \u05E2\u05D5\u05D1\u05D3 (PIN)' +
         '<input type="password" id="nd-pin" maxlength="10" class="nd-field" inputmode="numeric"></label>' +
       '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
@@ -188,30 +217,35 @@ function openNewDocumentModal() {
 
 function closeAndRemoveModal(id) { var el = $(id); if (el) el.remove(); }
 
-function _pickNewDocFile() {
+function _pickNewDocFiles() {
   var inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = '.pdf,.jpg,.jpeg,.png';
+  inp.type = 'file'; inp.accept = '.pdf,.jpg,.jpeg,.png'; inp.multiple = true;
   inp.onchange = function() {
-    var f = inp.files[0]; if (!f) return;
-    if (f.size > 10 * 1024 * 1024) { toast('\u05E7\u05D5\u05D1\u05E5 \u05D2\u05D3\u05D5\u05DC \u05DE\u05D3\u05D9 \u2014 \u05DE\u05E7\u05E1\u05D9\u05DE\u05D5\u05DD 10MB', 'e'); return; }
-    _pendingNewDocFile = f;
-    var btn = $('nd-attach-btn'); if (btn) btn.style.display = 'none';
-    var nm = $('nd-attach-name'); if (!nm) return;
-    nm.innerHTML = '';
-    var span = document.createElement('span');
-    span.textContent = '\uD83D\uDCCE ' + (f.name.length > 20 ? f.name.slice(0, 20) + '...' : f.name);
-    var rb = document.createElement('button');
-    rb.className = 'btn btn-sm'; rb.style.cssText = 'background:#ef4444;color:#fff;margin-right:6px;font-size:.75rem';
-    rb.textContent = '\u2716 \u05D4\u05E1\u05E8'; rb.onclick = _removeNewDocFile;
-    nm.appendChild(span); nm.appendChild(rb);
+    var files = Array.from(inp.files);
+    files.forEach(function(f) {
+      if (f.size > 10 * 1024 * 1024) { toast(f.name + ' — \u05D2\u05D3\u05D5\u05DC \u05DE\u05D3\u05D9 (10MB)', 'e'); return; }
+      _pendingNewDocFiles.push(f);
+    });
+    _renderNewDocFileList();
   };
   inp.click();
 }
 
-function _removeNewDocFile() {
-  _pendingNewDocFile = null;
-  var btn = $('nd-attach-btn'); if (btn) btn.style.display = '';
-  var nm = $('nd-attach-name'); if (nm) nm.innerHTML = '';
+function _renderNewDocFileList() {
+  var wrap = $('nd-attach-list'); if (!wrap) return;
+  if (!_pendingNewDocFiles.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = _pendingNewDocFiles.map(function(f, i) {
+    var name = f.name.length > 25 ? f.name.slice(0, 22) + '...' : f.name;
+    return '<div style="display:flex;align-items:center;gap:4px;padding:2px 0">' +
+      '<span>\uD83D\uDCCE ' + escapeHtml(name) + '</span>' +
+      '<button class="btn-sm" style="background:#ef4444;color:#fff;font-size:.65rem;padding:1px 4px" ' +
+        'onclick="_removeNewDocFileAt(' + i + ')">\u2716</button></div>';
+  }).join('');
+}
+
+function _removeNewDocFileAt(idx) {
+  _pendingNewDocFiles.splice(idx, 1);
+  _renderNewDocFileList();
 }
 
 function calcNewDocTotal() {
@@ -271,22 +305,31 @@ async function saveNewDocument() {
     var internalNumber = await generateDocInternalNumber();
     var vatAmount = Math.round(subtotal * vatRate) / 100;
     var totalAmount = subtotal + vatAmount;
+    // Upload files
     var fileUrl = null, fileName = null;
-    if (_pendingNewDocFile) {
-      var uploadResult = await uploadSupplierFile(_pendingNewDocFile, supplierId);
-      if (uploadResult) { fileUrl = uploadResult.url; fileName = uploadResult.fileName; }
+    var uploadedFiles = [];
+    for (var fi = 0; fi < _pendingNewDocFiles.length; fi++) {
+      var uploadResult = await uploadSupplierFile(_pendingNewDocFiles[fi], supplierId);
+      if (uploadResult) uploadedFiles.push(uploadResult);
     }
-    await batchCreate(T.SUP_DOCS, [{
+    if (uploadedFiles.length) { fileUrl = uploadedFiles[0].url; fileName = uploadedFiles[0].fileName; }
+    var created = await batchCreate(T.SUP_DOCS, [{
       supplier_id: supplierId, document_type_id: typeId, internal_number: internalNumber,
       document_number: docNumber, document_date: docDate, due_date: dueDate || null,
       subtotal: subtotal, vat_rate: vatRate, vat_amount: vatAmount,
       total_amount: totalAmount, currency: 'ILS', status: 'open',
       notes: notes || null, created_by: emp.id, file_url: fileUrl, file_name: fileName
     }]);
+    // Save file records to supplier_document_files
+    if (created && created[0] && uploadedFiles.length) {
+      for (var fj = 0; fj < uploadedFiles.length; fj++) {
+        await saveDocFile(created[0].id, uploadedFiles[fj].url, uploadedFiles[fj].fileName, fj);
+      }
+    }
     await writeLog('doc_create', null, {
       reason: '\u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 \u05D7\u05D3\u05E9 \u2014 ' + docNumber, source_ref: internalNumber
     });
-    _pendingNewDocFile = null;
+    _pendingNewDocFiles = [];
     closeAndRemoveModal('new-doc-modal');
     toast('\u05DE\u05E1\u05DE\u05DA \u05E0\u05E9\u05DE\u05E8 \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4');
     await loadDocumentsTab();

@@ -94,6 +94,10 @@ async function createDocumentFromReceipt(receiptId, supplierId, receiptItems) {
         }]);
         createdDoc.file_url = uploadResult.url;
         createdDoc.file_name = uploadResult.fileName;
+        // Also save to supplier_document_files table
+        if (typeof saveDocFile === 'function') {
+          await saveDocFile(createdDoc.id, uploadResult.url, uploadResult.fileName, 0);
+        }
       }
     } catch (uploadErr) {
       console.warn('File upload for receipt document failed (non-blocking):', uploadErr);

@@ -36,6 +36,7 @@ const T = {
   SHIPMENTS: 'shipments',
   SHIP_ITEMS: 'shipment_items',
   ACTIVITY_LOG: 'activity_log',
+  DOC_FILES: 'supplier_document_files',
 };
 
 // Tenant slug — resolved dynamically from URL ?t= param or sessionStorage.
@@ -139,6 +140,10 @@ const FIELD_MAP = {
     'חתימת קובץ':'file_hash',
     'מזהה אצווה':'batch_id',
     'היסטורי':'is_historical'
+  },
+  supplier_document_files: {
+    'קובץ':'file_url','שם קובץ':'file_name','חתימת קובץ':'file_hash',
+    'סדר':'sort_order','מסמך':'document_id'
   },
   pending_sales: {
     'מותג':'brand','דגם':'model','גודל':'size','צבע':'color'

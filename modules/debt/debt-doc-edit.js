@@ -14,15 +14,8 @@ async function editDocument(docId) {
   var type = typeMap[doc.document_type_id] || {};
   var st = DOC_STATUS_MAP[doc.status] || { he: doc.status, cls: '' };
 
-  // File preview
-  var fileUrl = doc.file_url ? await getSupplierFileUrl(doc.file_url) : null;
-  var fileSection = '';
-  if (fileUrl) {
-    var ext = (doc.file_name || doc.file_url || '').split('.').pop().toLowerCase();
-    fileSection = (ext === 'pdf')
-      ? '<iframe src="' + escapeHtml(fileUrl) + '" style="width:100%;height:250px;border:1px solid var(--g200);border-radius:6px" title="PDF"></iframe>'
-      : '<img src="' + escapeHtml(fileUrl) + '" style="max-width:100%;max-height:250px;border-radius:6px;border:1px solid var(--g200)">';
-  }
+  // File gallery (multi-file support — loaded async after modal render)
+  var docFiles = await fetchDocFiles(docId, doc.file_url, doc.file_name);
 
   // OCR items (if any)
   var ocrItemsHtml = '';
@@ -110,8 +103,16 @@ async function editDocument(docId) {
         '<label>\u05E1\u05D4"\u05DB<input type="number" id="ed-total" class="nd-field" value="' + (Number(doc.total_amount) || 0).toFixed(2) + '" readonly style="background:var(--g100)"></label>' +
         '<label style="grid-column:1/-1">\u05D4\u05E2\u05E8\u05D5\u05EA<textarea id="ed-notes" rows="2" class="nd-field">' + escapeHtml(doc.notes || '') + '</textarea></label>' +
       '</div>' +
-      // File preview
-      (fileSection ? '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-top:10px">' + fileSection + '</div>' : '') +
+      // File gallery (rendered async)
+      '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-top:10px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+          '<strong style="font-size:.88rem">\uD83D\uDCCE \u05E7\u05D1\u05E6\u05D9\u05DD \u05DE\u05E6\u05D5\u05E8\u05E4\u05D9\u05DD' +
+            (docFiles.length ? ' (' + docFiles.length + ')' : '') + '</strong>' +
+          '<button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" ' +
+            'onclick="_editDocAttachMore(\'' + docId + '\',\'' + doc.supplier_id + '\')">\uD83D\uDCCE \u05E6\u05E8\u05E3 \u05E2\u05D5\u05D3</button>' +
+        '</div>' +
+        '<div id="edit-doc-files"></div>' +
+      '</div>' +
       ocrItemsHtml +
       receiptItemsHtml +
       // Buttons
@@ -124,6 +125,40 @@ async function editDocument(docId) {
   var existing = $('edit-doc-modal');
   if (existing) existing.remove();
   document.body.insertAdjacentHTML('beforeend', html);
+
+  // Render file gallery async
+  if (docFiles.length) {
+    renderFileGallery(docFiles, 'edit-doc-files');
+  }
+}
+
+// Attach more files from edit modal
+async function _editDocAttachMore(docId, supplierId) {
+  pickAndUploadFiles(supplierId, async function(results) {
+    try {
+      // Get current max sort_order
+      var existing = await fetchDocFiles(docId);
+      var maxSort = existing.reduce(function(m, f) { return Math.max(m, f.sort_order || 0); }, -1);
+
+      for (var i = 0; i < results.length; i++) {
+        await saveDocFile(docId, results[i].url, results[i].fileName, maxSort + 1 + i);
+      }
+      // Update primary file_url if this is the first file
+      var doc = _docData.find(function(d) { return d.id === docId; });
+      if (doc && !doc.file_url) {
+        await batchUpdate(T.SUP_DOCS, [{ id: docId, file_url: results[0].url, file_name: results[0].fileName }]);
+        doc.file_url = results[0].url;
+        doc.file_name = results[0].fileName;
+      }
+      toast(results.length + ' \u05E7\u05D1\u05E6\u05D9\u05DD \u05E6\u05D5\u05E8\u05E4\u05D5');
+      // Refresh modal
+      closeAndRemoveModal('edit-doc-modal');
+      editDocument(docId);
+    } catch (e) {
+      console.error('_editDocAttachMore error:', e);
+      toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E6\u05D9\u05E8\u05D5\u05E3: ' + (e.message || ''), 'e');
+    }
+  });
 }
 
 // =========================================================

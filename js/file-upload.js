@@ -2,7 +2,9 @@
 // file-upload.js — File upload helper for supplier documents
 // Load after: shared.js, supabase-ops.js
 // Provides: uploadSupplierFile(), getSupplierFileUrl(),
-//   renderFilePreview(), pickAndUploadFile()
+//   renderFilePreview(), pickAndUploadFile(),
+//   pickAndUploadFiles(), fetchDocFiles(), saveDocFile(),
+//   renderFileGallery()
 // =========================================================
 
 var UPLOAD_ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
@@ -65,7 +67,7 @@ async function getSupplierFileUrl(filePath) {
 }
 
 // =========================================================
-// Render file preview into a container
+// Render single file preview into a container (legacy)
 // =========================================================
 function renderFilePreview(fileUrl, fileName, containerId) {
   var container = $(containerId);
@@ -111,4 +113,141 @@ function pickAndUploadFile(supplierId, callback) {
     if (result && callback) callback(result);
   };
   input.click();
+}
+
+// =========================================================
+// Multi-file: pick multiple files, upload all, return results
+// callback receives array of { url, fileName, signedUrl }
+// =========================================================
+function pickAndUploadFiles(supplierId, callback) {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.pdf,.jpg,.jpeg,.png';
+  input.multiple = true;
+  input.onchange = async function() {
+    var files = Array.from(input.files);
+    if (!files.length) return;
+    showLoading('מעלה ' + files.length + ' קבצים...');
+    var results = [];
+    for (var i = 0; i < files.length; i++) {
+      var r = await uploadSupplierFile(files[i], supplierId);
+      if (r) results.push(r);
+    }
+    hideLoading();
+    if (results.length && callback) callback(results);
+  };
+  input.click();
+}
+
+// =========================================================
+// Fetch all files for a document from supplier_document_files
+// Fallback: if no rows, returns array with doc.file_url if present
+// =========================================================
+async function fetchDocFiles(docId, fallbackFileUrl, fallbackFileName) {
+  try {
+    var { data, error } = await sb.from(T.DOC_FILES)
+      .select('id, file_url, file_name, sort_order')
+      .eq('document_id', docId)
+      .eq('tenant_id', getTenantId())
+      .order('sort_order', { ascending: true });
+    if (!error && data && data.length) return data;
+  } catch (e) {
+    console.warn('fetchDocFiles error:', e.message);
+  }
+  // Fallback to legacy file_url column
+  if (fallbackFileUrl) {
+    return [{ id: null, file_url: fallbackFileUrl, file_name: fallbackFileName || '', sort_order: 0 }];
+  }
+  return [];
+}
+
+// =========================================================
+// Save a file record to supplier_document_files
+// Also updates supplier_documents.file_url if it's the first file
+// =========================================================
+async function saveDocFile(docId, fileUrl, fileName, sortOrder) {
+  var tid = getTenantId();
+  var emp = (typeof getCurrentEmployee === 'function') ? getCurrentEmployee() : null;
+  await batchCreate(T.DOC_FILES, [{
+    tenant_id: tid,
+    document_id: docId,
+    file_url: fileUrl,
+    file_name: fileName || null,
+    sort_order: sortOrder || 0,
+    created_by: emp ? emp.id : null
+  }]);
+}
+
+// =========================================================
+// Render file gallery: thumbnails with page navigation
+// files = [{ file_url, file_name, signedUrl? }]
+// containerId = DOM element id to render into
+// =========================================================
+async function renderFileGallery(files, containerId) {
+  var container = $(containerId);
+  if (!container) return;
+  if (!files || !files.length) {
+    container.innerHTML =
+      '<div style="color:var(--g400);font-size:.88rem;text-align:center;padding:16px">' +
+        'אין קבצים מצורפים</div>';
+    return;
+  }
+
+  // Resolve signed URLs
+  var resolved = [];
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    var signedUrl = f.signedUrl || await getSupplierFileUrl(f.file_url);
+    resolved.push({ url: signedUrl, name: f.file_name || f.file_url || '', path: f.file_url });
+  }
+
+  if (resolved.length === 1) {
+    // Single file — show full preview
+    _renderSingleFilePreview(resolved[0], container);
+    return;
+  }
+
+  // Multiple files — gallery with thumbnails and main preview
+  container.innerHTML =
+    '<div class="file-gallery">' +
+      '<div class="file-gallery-main" id="' + containerId + '-main"></div>' +
+      '<div class="file-gallery-thumbs" id="' + containerId + '-thumbs"></div>' +
+    '</div>';
+
+  var thumbsEl = $(containerId + '-thumbs');
+  resolved.forEach(function(rf, idx) {
+    var ext = (rf.name || rf.url || '').split('.').pop().toLowerCase();
+    var thumb = document.createElement('button');
+    thumb.className = 'file-gallery-thumb' + (idx === 0 ? ' active' : '');
+    thumb.title = rf.name || ('עמוד ' + (idx + 1));
+    thumb.textContent = ext === 'pdf' ? '\uD83D\uDCC4' : '\uD83D\uDDBC\uFE0F';
+    thumb.insertAdjacentHTML('beforeend',
+      '<span class="file-gallery-thumb-num">' + (idx + 1) + '</span>');
+    thumb.onclick = function() {
+      thumbsEl.querySelectorAll('.file-gallery-thumb').forEach(function(t) { t.classList.remove('active'); });
+      thumb.classList.add('active');
+      _renderSingleFilePreview(rf, $(containerId + '-main'));
+    };
+    thumbsEl.appendChild(thumb);
+  });
+
+  // Show first file
+  _renderSingleFilePreview(resolved[0], $(containerId + '-main'));
+}
+
+function _renderSingleFilePreview(rf, container) {
+  if (!container || !rf || !rf.url) return;
+  var ext = (rf.name || rf.url || '').split('.').pop().toLowerCase();
+  if (ext === 'pdf') {
+    container.innerHTML =
+      '<iframe src="' + escapeHtml(rf.url) + '" ' +
+        'style="width:100%;height:300px;border:1px solid var(--g200);border-radius:6px" ' +
+        'title="' + escapeHtml(rf.name || 'PDF') + '"></iframe>';
+  } else {
+    container.innerHTML =
+      '<img src="' + escapeHtml(rf.url) + '" ' +
+        'alt="' + escapeHtml(rf.name || 'Image') + '" ' +
+        'style="max-width:100%;max-height:300px;border-radius:6px;border:1px solid var(--g200);cursor:pointer" ' +
+        'onclick="window.open(\'' + escapeHtml(rf.url) + '\',\'_blank\')">';
+  }
 }

@@ -265,7 +265,13 @@ async function _batchUploadOnly() {
         status: 'open', file_url: filePath, file_name: bf.file.name,
         file_hash: bf.hash, batch_id: _batchId
       }]);
-      if (created && created[0]) { bf.docId = created[0].id; docIds.push(created[0].id); }
+      if (created && created[0]) {
+        bf.docId = created[0].id; docIds.push(created[0].id);
+        // Save to supplier_document_files table
+        if (typeof saveDocFile === 'function') {
+          try { await saveDocFile(created[0].id, filePath, bf.file.name, 0); } catch (e) { console.warn('saveDocFile skipped:', e.message); }
+        }
+      }
       bf.status = 'uploaded';
       logs.push({
         action: 'batch_upload',
