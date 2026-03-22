@@ -47,16 +47,30 @@ async function openSupplierReturnModal() {
       return;
     }
 
-    // Build items preview
-    var itemRows = validItems.map(function(item) {
+    // Build items preview with editable quantity
+    var totalReturnValue = 0;
+    var itemRows = validItems.map(function(item, idx) {
+      var maxQty = item.quantity || 1;
+      var cost = Number(item.cost_price) || 0;
+      totalReturnValue += cost; // default qty=1 per item
       return '<tr>' +
         '<td style="font-family:monospace">' + escapeHtml(item.barcode || '') + '</td>' +
         '<td>' + escapeHtml(brandCacheRev[item.brand_id] || '') + '</td>' +
         '<td>' + escapeHtml(item.model || '') + '</td>' +
         '<td>' + escapeHtml(item.color || '') + '</td>' +
         '<td>' + escapeHtml(item.size || '') + '</td>' +
-        '<td>' + (item.quantity || 0) + '</td>' +
-        '<td>' + formatILS(item.cost_price) + '</td>' +
+        '<td style="text-align:center;color:var(--g400)">' + maxQty + '</td>' +
+        '<td style="white-space:nowrap;text-align:center">' +
+          '<button type="button" class="btn-sm" style="padding:2px 7px;font-size:.85rem" ' +
+            'onclick="_retQtyChange(' + idx + ',-1)">−</button>' +
+          '<input type="number" id="ret-qty-' + idx + '" value="1" min="1" max="' + maxQty + '" ' +
+            'data-cost="' + cost + '" data-max="' + maxQty + '" ' +
+            'style="width:44px;text-align:center;margin:0 3px;font-size:.85rem" ' +
+            'oninput="_retQtyUpdate()">' +
+          '<button type="button" class="btn-sm" style="padding:2px 7px;font-size:.85rem" ' +
+            'onclick="_retQtyChange(' + idx + ',1)">+</button>' +
+        '</td>' +
+        '<td class="ret-line-val">' + formatILS(cost) + '</td>' +
       '</tr>';
     }).join('');
 
@@ -73,9 +87,12 @@ async function openSupplierReturnModal() {
           skippedNote +
           '<div style="overflow-x:auto;max-height:250px;margin-bottom:12px">' +
             '<table class="data-table" style="width:100%;font-size:.85rem">' +
-              '<thead><tr><th>ברקוד</th><th>מותג</th><th>דגם</th><th>צבע</th><th>גודל</th><th>כמות</th><th>עלות</th></tr></thead>' +
+              '<thead><tr><th>ברקוד</th><th>מותג</th><th>דגם</th><th>צבע</th><th>גודל</th><th>במלאי</th><th>כמות להחזרה</th><th>ערך</th></tr></thead>' +
               '<tbody>' + itemRows + '</tbody>' +
             '</table>' +
+          '</div>' +
+          '<div id="ret-total-line" style="text-align:left;font-weight:600;margin-bottom:10px;font-size:.9rem">' +
+            'סה"כ ערך החזרה: <span id="ret-total-val">' + formatILS(totalReturnValue) + '</span>' +
           '</div>' +
           '<div class="form-row" style="margin-bottom:12px">' +
             '<div class="form-group" style="flex:1">' +
@@ -159,19 +176,21 @@ async function _doConfirmSupplierReturn(supplierId) {
     if (!created || !created.length) throw new Error('Failed to create return record');
     var returnId = created[0].id;
 
-    // Create return items + decrement inventory
+    // Read quantities from modal inputs + validate
     var returnItems = [];
+    var totalQty = 0;
     for (var i = 0; i < items.length; i++) {
       var item = items[i];
+      var qtyInput = $('ret-qty-' + i);
+      var qty = qtyInput ? Math.max(1, Math.min(parseInt(qtyInput.value) || 1, item.quantity || 1)) : 1;
       var brandName = brandCacheRev[item.brand_id] || '';
 
-      // Snapshot item details
       returnItems.push({
         tenant_id: getTenantId(),
         return_id: returnId,
         inventory_id: item.id,
         barcode: item.barcode || '',
-        quantity: 1,
+        quantity: qty,
         brand_name: brandName,
         model: item.model || '',
         color: item.color || '',
@@ -179,30 +198,30 @@ async function _doConfirmSupplierReturn(supplierId) {
         cost_price: item.cost_price || 0
       });
 
-      // Decrement inventory quantity atomically
-      var decResult = await sb.rpc('decrement_inventory', { inv_id: item.id, delta: 1 });
+      // Decrement inventory by actual chosen quantity
+      var decResult = await sb.rpc('decrement_inventory', { inv_id: item.id, delta: qty });
       if (decResult.error) throw decResult.error;
 
-      // writeLog for each item
       writeLog('supplier_return', item.id, {
         barcode: item.barcode,
         brand: brandName,
         model: item.model,
+        qty_returned: qty,
         qty_before: item.quantity,
-        qty_after: (item.quantity || 1) - 1,
+        qty_after: (item.quantity || qty) - qty,
         return_number: returnNumber,
         return_type: returnType,
         reason: reason,
         source_ref: 'זיכוי לספק'
       });
+      totalQty += qty;
     }
 
-    // Batch create return items
     await batchCreate(T.SUP_RETURN_ITEMS, returnItems);
 
     closeModal('supplier-return-modal');
     window._pendingReturnItems = null;
-    toast('זיכוי #' + returnNumber + ' נוצר \u00B7 ' + items.length + ' פריטים הוצאו מהמלאי', 's');
+    toast('זיכוי #' + returnNumber + ' נוצר \u00B7 ' + totalQty + ' יחידות (' + items.length + ' פריטים) הוצאו מהמלאי', 's');
 
     // Clear selection and refresh inventory
     invSelected.clear();
@@ -214,4 +233,38 @@ async function _doConfirmSupplierReturn(supplierId) {
     if (btn) btn.disabled = false;
   }
   hideLoading();
+}
+
+// =========================================================
+// Quantity controls for return modal
+// =========================================================
+function _retQtyChange(idx, delta) {
+  var inp = $('ret-qty-' + idx);
+  if (!inp) return;
+  var max = parseInt(inp.getAttribute('data-max')) || 1;
+  var cur = parseInt(inp.value) || 1;
+  var next = Math.max(1, Math.min(cur + delta, max));
+  inp.value = next;
+  _retQtyUpdate();
+}
+
+function _retQtyUpdate() {
+  var items = window._pendingReturnItems || [];
+  var total = 0;
+  for (var i = 0; i < items.length; i++) {
+    var inp = $('ret-qty-' + i);
+    if (!inp) continue;
+    var max = parseInt(inp.getAttribute('data-max')) || 1;
+    var qty = Math.max(1, Math.min(parseInt(inp.value) || 1, max));
+    var cost = parseFloat(inp.getAttribute('data-cost')) || 0;
+    total += qty * cost;
+    // Update line value in same row
+    var row = inp.closest('tr');
+    if (row) {
+      var valCell = row.querySelector('.ret-line-val');
+      if (valCell) valCell.textContent = formatILS(qty * cost);
+    }
+  }
+  var totalEl = $('ret-total-val');
+  if (totalEl) totalEl.textContent = formatILS(total);
 }
