@@ -652,6 +652,7 @@ Pages modified for shared/ dependencies:
 | `prepaid_checks` | Debt — Prepaid | id, prepaid_deal_id, check_number, amount, status, tenant_id | Prepaid deal detail |
 | `supplier_returns` | Debt — Returns | id, supplier_id, return_number, return_type, status, tenant_id | Returns tabs (inventory + debt), Shipments (sendToBox) |
 | `supplier_return_items` | Debt — Returns | id, return_id, inventory_id, barcode, quantity, cost_price, tenant_id | Return detail modal, credit note creation |
+| `supplier_document_files` | Debt — Documents | id, document_id, file_url, file_name, file_hash, sort_order, tenant_id | Multi-file per document, gallery preview (Phase 8-QA, migration 040) |
 
 ### AI Agent (5 tables)
 

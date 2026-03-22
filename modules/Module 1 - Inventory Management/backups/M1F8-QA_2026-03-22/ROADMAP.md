@@ -74,7 +74,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | QA | ✅ | בדיקות מקיפות — Module 1 Final Certification | ~190 tests (177 PASS), 9 E2E flows, security audit, XSS fixes, permissions expansion (55), settings page, PIN modal, stock count filters, auto credit note, return timeline, 14 bug fixes |
 | 7 | ✅ | שיפורי ספירת מלאי | פיצול session.js, atomic delta RPC, עודפים→מלאי, אישור חלקי, צפייה בספירות סגורות |
 | 8 | ✅ | OCR בקבלת סחורה + שיפורי פלואו רכש | OCR button בקבלה, item matching review UI, הפרדת תפעול/פיננסים, דוח PO pre-confirm, למידת פריטים ומחירים, יתרת פתיחה לספקים |
-| 8-QA | ✅ | סקירת פלואו + תיקון באגים + תשתית | OCR fixes, 9 flow reviews, 13+ bugs fixed, multi-file support, tenant isolation, Access sync restriction, editable items, full doc management in supplier detail |
 | 6 | 🚫 נדחה | פורטל ספקים — ייבנה במודול עתידי | גישת ספק חיצונית, view-only מלאי לפי ספק |
 
 ---
@@ -240,21 +239,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - 2 קבצים חדשים: receipt-ocr-review.js, receipt-po-compare.js
 - 2 מיגרציות: 036 (price_decision, po_match_status), 037 (opening balance)
 - פירוט מלא: `docs/PHASE_8_SPEC.md`
-
-### פאזה 8-QA ✅ — סקירת פלואו + תיקון באגים + תשתית
-- סקירת 9 תהליכים עסקיים (כל הפלואווים מקצה לקצה)
-- 13+ תיקוני באגים (תשלומים, מע"מ, PO dropdown, OCR)
-- בידוד tenant קשיח: slug change → sessionStorage.clear() + re-login
-- הגבלת Access sync לפריזמה בלבד (UI + watcher)
-- תמיכת מולטי-קבצים: טבלת supplier_document_files, גלריה, "צרף עוד"
-- סריקת OCR בצירוף קבצים נוספים (שמור בלבד / שמור וסרוק)
-- ניהול מסמכים מלא בכרטיס ספק (כל הכפתורים)
-- פריטים ניתנים לעריכה במודל צפייה (כמות, מחיר, הנחה, סה"כ)
-- תיקון OCR duplicate key (UPDATE רק שדות פיננסיים, לא identity)
-- PO dropdown — חזרה ל-native select (createSearchSelect broke)
-- פיצול: debt-documents.js → debt-doc-new.js, debt-doc-items.js חדש
-- מיגרציה: 040 (supplier_document_files)
-- פירוט מלא: SESSION_CONTEXT.md
 
 ### פאזה 6 🚫 נדחה — פורטל ספקים (ייבנה במודול עתידי)
 - קישור ייחודי לכל ספק (token-based auth, לא PIN)

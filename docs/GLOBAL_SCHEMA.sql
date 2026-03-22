@@ -1887,3 +1887,22 @@ ALTER TABLE suppliers
 -- RLS fix: corrected RLS policies on 5 tables (roles, permissions, role_permissions,
 -- employee_roles, auth_sessions) — changed from permissive anon access to proper
 -- tenant_isolation using JWT current_setting('app.tenant_id').
+
+-- ============================================================
+-- 49. supplier_document_files — Multi-file support (Phase 8-QA, migration 040)
+-- Owner: Module 1 (Debt sub-module)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS supplier_document_files (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id),
+  document_id UUID NOT NULL REFERENCES supplier_documents(id) ON DELETE CASCADE,
+  file_url TEXT NOT NULL,          -- Storage path in supplier-docs bucket
+  file_name TEXT,                  -- Original filename
+  file_hash TEXT,                  -- SHA-256 for future dedup
+  sort_order INT NOT NULL DEFAULT 0,  -- Page order
+  created_at TIMESTAMPTZ DEFAULT now(),
+  created_by UUID REFERENCES employees(id)
+);
+CREATE INDEX IF NOT EXISTS idx_sdf_document ON supplier_document_files(document_id);
+CREATE INDEX IF NOT EXISTS idx_sdf_tenant ON supplier_document_files(tenant_id);
+-- RLS: JWT tenant isolation + service_role bypass
