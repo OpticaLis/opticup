@@ -108,7 +108,7 @@ async function _gatherReportData(tid, weekStart, weekEnd) {
       .eq('tenant_id', tid).eq('is_deleted', false).eq('status', 'active'),
     sb.from(T.OCR_EXTRACTIONS).select('id, status')
       .eq('tenant_id', tid).gte('created_at', ws + 'T00:00:00').lte('created_at', we + 'T23:59:59'),
-    sb.from(T.SUPPLIERS).select('id, name').eq('tenant_id', tid).eq('active', true),
+    sb.from(T.SUPPLIERS).select('id, name, opening_balance, opening_balance_date').eq('tenant_id', tid).eq('active', true),
     sb.from(T.WEEKLY_REPORTS).select('report_data')
       .eq('tenant_id', tid).eq('week_start', _fd(prevStart)).limit(1)
   ]);
@@ -119,11 +119,15 @@ async function _gatherReportData(tid, weekStart, weekEnd) {
   (r[6].data || []).forEach(function(s) { supMap[s.id] = s.name; });
   var prevSnap = r[7].data && r[7].data.length ? r[7].data[0].report_data : null;
 
-  // Summary
+  // Summary — include opening balances (match dashboard calculation)
   var totalDebt = 0, overdueAmt = 0, overdueCount = 0;
+  (r[6].data || []).forEach(function(s) { totalDebt += Number(s.opening_balance) || 0; });
   openDocs.forEach(function(d) {
     var rem = (Number(d.total_amount) - Number(d.paid_amount)) * (Number(d.exchange_rate) || 1);
     if (rem <= 0) return;
+    // Respect opening_balance_date cutoff (same as dashboard)
+    var sup = (r[6].data || []).find(function(s) { return s.id === d.supplier_id; });
+    if (sup && sup.opening_balance_date && d.document_date && d.document_date <= sup.opening_balance_date) return;
     totalDebt += rem;
     if (d.due_date && d.due_date < todayStr) { overdueAmt += rem; overdueCount++; }
   });

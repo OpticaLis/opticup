@@ -319,8 +319,10 @@ function _injectOCRScanIcons(docs) {
     var cell = row.cells[row.cells.length - 1];
     if (!cell || cell.querySelector('.ocr-scan-btn')) return;
     var btn = document.createElement('button');
-    btn.className = 'btn-sm ocr-scan-btn'; btn.title = 'סרוק עם AI';
+    btn.className = 'btn-sm ocr-scan-btn';
+    btn.title = '\u05E1\u05E8\u05D5\u05E7 \u05E2\u05DD AI';
     btn.textContent = '\uD83E\uDD16';
+    btn.style.cssText = 'min-width:36px;min-height:36px;font-size:18px;background:#7c3aed;color:#fff;border-radius:6px;cursor:pointer';
     btn.onclick = function() { triggerOCR(d.file_url, d.supplier_id, null, d.id); };
     cell.insertBefore(btn, cell.firstChild);
   });
@@ -328,13 +330,17 @@ function _injectOCRScanIcons(docs) {
 
 // --- 5. Add OCR toolbar button + patch documents rendering ---
 function _injectOCRToolbarBtn() {
-  var toolbar = document.querySelector('.doc-toolbar');
+  // Find the documents tab toolbar specifically (not suppliers/payments toolbars)
+  var docWrap = $('doc-table-wrap');
+  var toolbar = docWrap ? docWrap.closest('.tab-content, [id*="doc"]')?.querySelector('.doc-toolbar')
+    : document.querySelector('#documents-tab .doc-toolbar');
+  if (!toolbar) toolbar = document.querySelector('.doc-toolbar');
   if (!toolbar || toolbar.querySelector('.ocr-toolbar-btn')) return;
   var btn = document.createElement('button');
   btn.className = 'btn btn-sm ocr-toolbar-btn';
-  btn.style.cssText = 'background:var(--success,#10b981);color:#fff';
-  btn.innerHTML = '\uD83E\uDD16 סרוק מסמך';
-  btn.title = 'העלה קובץ וסרוק עם AI';
+  btn.style.cssText = 'background:#7c3aed;color:#fff;display:inline-flex;align-items:center;gap:4px';
+  btn.innerHTML = '\uD83E\uDD16 \u05E1\u05E8\u05D5\u05E7 \u05DE\u05E1\u05DE\u05DA';
+  btn.title = '\u05D4\u05E2\u05DC\u05D4 \u05E7\u05D5\u05D1\u05E5 \u05D5\u05E1\u05E8\u05D5\u05E7 \u05E2\u05DD AI';
   btn.onclick = function() {
     pickAndUploadFile('_ocr', function(r) { if (r && r.url) triggerOCR(r.url, null, null); });
   };

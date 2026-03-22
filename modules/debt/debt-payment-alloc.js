@@ -30,8 +30,16 @@ async function _wizGoStep3() {
       ['is_deleted', 'eq', false],
       ['supplier_id', 'eq', _wizState.supplierId]
     ]);
+    // Build payable type ID lookup from _docTypes (global)
+    var payableTypeIds = {};
+    if (typeof _docTypes !== 'undefined' && typeof _isPayableDocType === 'function') {
+      _docTypes.forEach(function(t) { if (_isPayableDocType(t.code)) payableTypeIds[t.id] = true; });
+    }
     _wizState.openDocs = docs.filter(function(d) {
-      return d.status === 'open' || d.status === 'partially_paid';
+      if (d.status !== 'open' && d.status !== 'partially_paid') return false;
+      // Only include payable document types (invoices, credit/debit notes — not delivery/return notes)
+      if (Object.keys(payableTypeIds).length && !payableTypeIds[d.document_type_id]) return false;
+      return true;
     }).sort(function(a, b) {
       return (a.document_date || '').localeCompare(b.document_date || '');
     });

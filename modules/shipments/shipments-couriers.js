@@ -31,8 +31,8 @@ function renderCourierModal() {
     '<h3 class="cm-title">&#9881; ניהול שליחויות</h3>' +
     '<button class="detail-close" onclick="closeCourierModal()" title="סגור">&times;</button></div>' +
     '<div class="cm-tabs">' +
-    '<button class="cm-tab' + tabC + '" onclick="switchCourierTab(\'couriers\')">חברות שליחויות</button>' +
-    '<button class="cm-tab' + tabS + '" onclick="switchCourierTab(\'settings\')">הגדרות משלוחים</button></div>' +
+    '<button class="cm-tab' + tabC + '" onclick="event.stopPropagation();switchCourierTab(\'couriers\')">חברות שליחויות</button>' +
+    '<button class="cm-tab' + tabS + '" onclick="event.stopPropagation();switchCourierTab(\'settings\')">הגדרות משלוחים</button></div>' +
     '<div id="cm-body"></div>';
   content.innerHTML = html;
 

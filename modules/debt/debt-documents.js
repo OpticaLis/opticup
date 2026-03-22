@@ -4,6 +4,10 @@ var _pendingNewDocFile = null;
 var _docPrepaidSet = {}; // Phase 8: supplier_id → deal object for active prepaid deals
 var _docSortField = 'created_at'; // default: sort by upload date (newest first)
 var _docStatusFilters = null; // { open: true, paid: false, cancelled: false } — loaded from sessionStorage
+// Payable doc types — only these get "שלם" button and appear in payment allocation
+var _PAYABLE_DOC_CODES = { invoice: true, tax_invoice: true, credit_note: true, debit_note: true };
+function _isPayableDocType(code) { return !!_PAYABLE_DOC_CODES[code]; }
+
 const DOC_STATUS_MAP = {
   open:            { he: '\u05E4\u05EA\u05D5\u05D7',        cls: 'dst-open' },
   partially_paid:  { he: '\u05E9\u05D5\u05DC\u05DD \u05D7\u05DC\u05E7\u05D9\u05EA',  cls: 'dst-partial' },
@@ -107,7 +111,7 @@ function renderDocumentsTable(docs) {
       '<td>' +
         '<button class="btn-sm" onclick="viewDocument(\'' + d.id + '\')">\u05E6\u05E4\u05D4</button> ' +
         '<button class="btn-sm" title="' + (d.file_url ? '\u05D4\u05D7\u05DC\u05E3 \u05DE\u05E1\u05DE\u05DA' : '\u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA') + '" onclick="_attachFileToDoc(\'' + d.id + '\',\'' + d.supplier_id + '\')">&#128206;</button> ' +
-        '<button class="btn-sm" onclick="switchDebtTab(\'payments\')">\u05E9\u05DC\u05DD</button>' + linkBtn + ppBtn +
+        (_isPayableDocType(type.code) ? '<button class="btn-sm" onclick="switchDebtTab(\'payments\')">\u05E9\u05DC\u05DD</button>' : '') + linkBtn + ppBtn +
         (d.status === 'open' ? ' <button class="btn-sm" style="background:#ef4444;color:#fff" onclick="cancelDocument(\'' + d.id + '\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' : '') +
       '</td></tr>';
   }).join('');
@@ -158,15 +162,15 @@ function openNewDocumentModal() {
       '<h3 style="margin:0 0 14px">\u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 \u05D7\u05D3\u05E9</h3>' +
       '<div id="new-doc-alert"></div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
-        '<label style="grid-column:1/-1">\u05E1\u05E4\u05E7<select id="nd-supplier" class="nd-field">' + supOpts + '</select></label>' +
+        '<label style="grid-column:1/-1">\u05E1\u05E4\u05E7<select id="nd-supplier" class="nd-field" onchange="_ndAutoCalcDueDate()">' + supOpts + '</select></label>' +
         '<label>\u05E1\u05D5\u05D2 \u05DE\u05E1\u05DE\u05DA<select id="nd-type" class="nd-field">' + typeOpts + '</select></label>' +
         '<label>\u05DE\u05E1\u05E4\u05E8 \u05DE\u05E1\u05DE\u05DA<input id="nd-number" class="nd-field" placeholder="\u05DE\u05E1\u05E4\u05E8 \u05DE\u05E1\u05DE\u05DA"></label>' +
-        '<label>\u05EA\u05D0\u05E8\u05D9\u05DA \u05DE\u05E1\u05DE\u05DA<input type="date" id="nd-date" class="nd-field"></label>' +
+        '<label>\u05EA\u05D0\u05E8\u05D9\u05DA \u05DE\u05E1\u05DE\u05DA<input type="date" id="nd-date" class="nd-field" onchange="_ndAutoCalcDueDate()"></label>' +
         '<label>\u05EA\u05D0\u05E8\u05D9\u05DA \u05EA\u05E9\u05DC\u05D5\u05DD<input type="date" id="nd-due" class="nd-field"></label>' +
         '<label>\u05E1\u05DB\u05D5\u05DD \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DD<input type="number" id="nd-subtotal" step="0.01" min="0" class="nd-field" oninput="calcNewDocTotal()"></label>' +
         '<label>% \u05DE\u05E2"\u05DD<input type="number" id="nd-vat-rate" value="' + (getTenantConfig('vat_rate') || 17) + '" step="0.01" class="nd-field" oninput="calcNewDocTotal()"></label>' +
         '<label>\u05DE\u05E2"\u05DD<input type="number" id="nd-vat" readonly class="nd-field" style="background:var(--g100)"></label>' +
-        '<label>\u05E1\u05D4"\u05DB<input type="number" id="nd-total" readonly class="nd-field" style="background:var(--g100);font-weight:700"></label>' +
+        '<label>\u05E1\u05D4"\u05DB<input type="number" id="nd-total" step="0.01" min="0" class="nd-field" style="font-weight:700" oninput="calcNewDocFromTotal()"></label>' +
         '<label style="grid-column:1/-1">\u05D4\u05E2\u05E8\u05D5\u05EA<textarea id="nd-notes" rows="2" class="nd-field"></textarea></label>' +
       '</div>' +
       '<div style="margin-top:10px"><label>\u05DE\u05E1\u05DE\u05DA \u05DE\u05E6\u05D5\u05E8\u05E3</label>' +
@@ -179,8 +183,7 @@ function openNewDocumentModal() {
         '<button class="btn" style="background:#059669;color:#fff" onclick="saveNewDocument()">\u05E9\u05DE\u05D5\u05E8</button></div></div>';
   document.body.appendChild(modal);
   $('nd-date').value = new Date().toISOString().slice(0, 10);
-  var due = new Date(); due.setDate(due.getDate() + 30);
-  $('nd-due').value = due.toISOString().slice(0, 10);
+  _ndAutoCalcDueDate();
 }
 
 function closeAndRemoveModal(id) { var el = $(id); if (el) el.remove(); }
@@ -217,6 +220,28 @@ function calcNewDocTotal() {
   var vat = Math.round(sub * rate) / 100;
   if ($('nd-vat')) $('nd-vat').value = vat.toFixed(2);
   if ($('nd-total')) $('nd-total').value = (sub + vat).toFixed(2);
+}
+
+// BUG-12 fix: reverse calc — total → pre-VAT + VAT
+function calcNewDocFromTotal() {
+  var total = Number(($('nd-total') || {}).value) || 0;
+  var rate = Number(($('nd-vat-rate') || {}).value) || 0;
+  var sub = rate > 0 ? Math.round(total / (1 + rate / 100) * 100) / 100 : total;
+  var vat = Math.round((total - sub) * 100) / 100;
+  if ($('nd-subtotal')) $('nd-subtotal').value = sub.toFixed(2);
+  if ($('nd-vat')) $('nd-vat').value = vat.toFixed(2);
+}
+
+// BUG-16 fix: auto-calc due_date from supplier payment_terms_days
+function _ndAutoCalcDueDate() {
+  var dateVal = ($('nd-date') || {}).value;
+  if (!dateVal) return;
+  var supplierId = ($('nd-supplier') || {}).value;
+  var sup = _docSuppliers.find(function(s) { return s.id === supplierId; });
+  var terms = (sup && sup.payment_terms_days != null) ? sup.payment_terms_days : 30;
+  var d = new Date(dateVal);
+  d.setDate(d.getDate() + terms);
+  if ($('nd-due')) $('nd-due').value = d.toISOString().slice(0, 10);
 }
 
 async function saveNewDocument() {

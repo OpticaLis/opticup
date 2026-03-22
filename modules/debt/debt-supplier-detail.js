@@ -76,6 +76,20 @@ async function openSupplierDetail(supplierId) {
       '<button class="btn-sm" onclick="openSetOpeningBalance(\'' + supplierId + '\')">' + obBtnLabel + '</button></div>' +
       '<div style="margin-top:4px">' + obLine + '</div></div>';
 
+    // Payment terms section
+    var ptDays = supplier ? (supplier.payment_terms_days != null ? supplier.payment_terms_days : '') : '';
+    var ptLabel = ptDays !== '' ? '\u05E9\u05D5\u05D8\u05E3 + ' + ptDays + ' \u05D9\u05D5\u05DD' : '\u05DC\u05D0 \u05D4\u05D5\u05D2\u05D3\u05E8 (\u05D1\u05E8\u05D9\u05E8\u05EA \u05DE\u05D7\u05D3\u05DC: 30)';
+    var ptSection = '<div style="background:var(--g100);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.88rem">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<strong>\u05EA\u05E0\u05D0\u05D9 \u05EA\u05E9\u05DC\u05D5\u05DD</strong>' +
+        '<div style="display:flex;align-items:center;gap:6px">' +
+          '<span>\u05E9\u05D5\u05D8\u05E3 +</span>' +
+          '<input type="number" id="sd-payment-terms" min="0" max="365" value="' + (ptDays !== '' ? ptDays : '') + '" ' +
+            'placeholder="30" style="width:60px;padding:4px 6px;border:1px solid var(--g300);border-radius:4px;text-align:center" ' +
+            'onchange="_savePaymentTerms(\'' + supplierId + '\')">' +
+          '<span>\u05D9\u05D5\u05DD</span></div></div>' +
+      '<div style="margin-top:4px;color:var(--g500);font-size:.82rem">' + ptLabel + '</div></div>';
+
     detailPanel.innerHTML =
       '<div style="margin-bottom:16px">' +
         '<a href="#" onclick="event.preventDefault();closeSupplierDetail()" ' +
@@ -83,7 +97,7 @@ async function openSupplierDetail(supplierId) {
         '<h2 style="margin:8px 0 0;font-size:1.15rem;color:var(--primary)">' +
           'כרטיס ספק: ' + escapeHtml(_detailSupplierName) + '</h2>' +
       '</div>' +
-      obSection +
+      obSection + ptSection +
       '<div style="display:flex;flex-wrap:wrap;gap:16px;font-size:.92rem;margin-bottom:16px">' +
         '<div>חוב כולל: <strong>' + formatILS(totalDebt) + '</strong></div>' +
         '<div style="' + overdueStyle + '">באיחור: <strong>' + formatILS(overdueAmt) + '</strong></div>' +
@@ -339,4 +353,14 @@ function _saveOpeningBalance(supplierId) {
     } catch (e) { console.error('_saveOpeningBalance error:', e); toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
     } finally { hideLoading(); }
   });
+}
+
+// BUG-15: save payment_terms_days inline
+async function _savePaymentTerms(supplierId) {
+  var inp = $('sd-payment-terms');
+  var val = inp ? (inp.value !== '' ? Number(inp.value) : null) : null;
+  try {
+    await batchUpdate(T.SUPPLIERS, [{ id: supplierId, payment_terms_days: val }]);
+    toast('\u05EA\u05E0\u05D0\u05D9 \u05EA\u05E9\u05DC\u05D5\u05DD \u05E2\u05D5\u05D3\u05DB\u05E0\u05D5');
+  } catch (e) { toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e'); }
 }
