@@ -65,9 +65,30 @@ async function loadWatcherStatus() {
   }
 }
 
+// ── isPrizmaSync ────────────────────────────────────────────
+// Access/Excel sync is a temporary feature only for Prizma Optics.
+// Other tenants see the tab but cannot use it.
+function isPrizmaSync() {
+  return typeof TENANT_SLUG !== 'undefined' && TENANT_SLUG === 'prizma';
+}
+
 // ── renderAccessSyncTab ─────────────────────────────────────
 function renderAccessSyncTab() {
   const c = $('access-sync-container');
+
+  // ── Non-Prizma tenants: show disabled message ──
+  if (!isPrizmaSync()) {
+    c.innerHTML = `
+      <div class="card" style="text-align:center;padding:40px 20px">
+        <div style="font-size:48px;margin-bottom:16px">🔒</div>
+        <h3 style="margin:0 0 8px 0">סנכרון Access זמין רק לאופטיקה פריזמה</h3>
+        <p style="color:#64748b;margin:0">פיצ'ר זה מסנכרן נתונים עם מערכת Access הפנימית של פריזמה.<br>
+        אם אתם זקוקים לסנכרון דומה, פנו לצוות התמיכה.</p>
+      </div>
+    `;
+    return;
+  }
+
   c.innerHTML = `
     <div class="card">
       <!-- Watcher status -->

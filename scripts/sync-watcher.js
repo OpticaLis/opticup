@@ -44,6 +44,15 @@ const EXPORT_DIR = process.env.OPTICUP_EXPORT_DIR || path.join(BASE_DIR, 'new');
 
 const TENANT_ID = process.env.OPTICUP_TENANT_ID || '6ad0781b-37f0-47a9-92e3-be9ed1477e1c';
 
+// ── Prizma-only guard ───────────────────────────────────────
+// Access sync is a temporary feature only for Prizma Optics.
+// If TENANT_ID is not Prizma's UUID, the watcher exits silently.
+const PRIZMA_TENANT_ID = '6ad0781b-37f0-47a9-92e3-be9ed1477e1c';
+if (TENANT_ID !== PRIZMA_TENANT_ID) {
+  console.log(`[sync-watcher] Tenant ${TENANT_ID} is not Prizma — Access sync disabled. Exiting.`);
+  process.exit(0);
+}
+
 // ── Init Supabase ───────────────────────────────────────────
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
