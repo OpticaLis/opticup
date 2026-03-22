@@ -44,11 +44,20 @@ const T = {
 const TENANT_SLUG = (function() {
   const params = new URLSearchParams(window.location.search);
   const fromUrl = params.get('t');
+  const storedSlug = sessionStorage.getItem('tenant_slug');
+
+  // CRITICAL: Hard tenant isolation — if URL slug differs from stored slug,
+  // clear ALL sessionStorage to prevent cross-tenant data leakage.
+  // This forces re-login on the new tenant.
+  if (fromUrl && storedSlug && fromUrl !== storedSlug) {
+    sessionStorage.clear();
+  }
+
   if (fromUrl) {
     sessionStorage.setItem('tenant_slug', fromUrl);
     return fromUrl;
   }
-  return sessionStorage.getItem('tenant_slug') || 'prizma';
+  return storedSlug || 'prizma';
 })();
 
 // — STATE —

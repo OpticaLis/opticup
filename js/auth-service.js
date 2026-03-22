@@ -170,6 +170,13 @@ async function loadSession() {
   const token = sessionStorage.getItem(SK.TOKEN);
   if (!token) return null;
 
+  // Verify session belongs to current tenant (defense-in-depth)
+  const storedSlug = sessionStorage.getItem('tenant_slug');
+  if (typeof TENANT_SLUG !== 'undefined' && storedSlug && storedSlug !== TENANT_SLUG) {
+    clearSessionLocal();
+    return null;
+  }
+
   // Restore JWT-authenticated client BEFORE querying (RLS requires tenant_id)
   const jwt = sessionStorage.getItem('jwt_token');
   if (jwt) {
@@ -236,8 +243,10 @@ async function clearSession() {
   if (token) {
     await sb.from(AT.SESSIONS).update({ is_active: false }).eq('token', token);
   }
+  // Preserve tenant slug for redirect, then clear everything
+  const slug = sessionStorage.getItem('tenant_slug') || TENANT_SLUG;
   clearSessionLocal();
-  window.location.href = '/';
+  window.location.href = slug ? '/?t=' + encodeURIComponent(slug) : '/';
 }
 
 // =========================================================

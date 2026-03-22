@@ -36,6 +36,10 @@ async function initHeader() {
 }
 
 function buildHeader(emp, tenantName, logoUrl, role) {
+  // Remove any existing header to prevent duplicate headers on tenant switch
+  const existing = document.getElementById('app-header');
+  if (existing) existing.remove();
+
   const logoHtml = logoUrl
     ? '<img class="header-logo" src="' + escapeHtml(logoUrl) +
       '" alt="' + escapeHtml(tenantName) + '">'
