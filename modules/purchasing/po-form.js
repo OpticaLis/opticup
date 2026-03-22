@@ -27,7 +27,11 @@ async function openNewPurchaseOrder() {
             <label style="display:block; margin-bottom:6px; font-weight:600">
               ספק <span style="color:#ef4444">*</span>
             </label>
-            <div id="po-step1-supplier-wrap"></div>
+            <select id="po-step1-supplier"
+                    style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid #ccc; font-size:14px">
+              <option value="">\u05D1\u05D7\u05E8 \u05E1\u05E4\u05E7...</option>
+              ${supplierOptions}
+            </select>
           </div>
           <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px">
             <div style="flex:1; min-width:160px">
@@ -53,15 +57,11 @@ async function openNewPurchaseOrder() {
         </div>
       </div>`;
 
-    // Searchable supplier dropdown (BUG-1 fix)
-    var supItems = suppliers.map(function(s) { return { value: s.id, label: s.name }; });
-    createSearchSelect({
-      containerId: 'po-step1-supplier-wrap',
-      inputId: 'po-step1-supplier',
-      items: supItems,
-      placeholder: 'בחר ספק...',
-      selectedValue: prevSupplier || ''
-    });
+    // Pre-select supplier if returning from edit
+    if (prevSupplier) {
+      var sel = document.getElementById('po-step1-supplier');
+      if (sel) sel.value = prevSupplier;
+    }
   } catch (err) {
     toast('שגיאה: ' + err.message, 'e');
   }
