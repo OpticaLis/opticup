@@ -17,30 +17,20 @@ async function editDocument(docId) {
   // File gallery (multi-file support — loaded async after modal render)
   var docFiles = await fetchDocFiles(docId, doc.file_url, doc.file_name);
 
-  // OCR items (if any)
-  var ocrItemsHtml = '';
+  // OCR / manual items (editable — via debt-doc-items.js)
+  var ocrItems = [];
   try {
     var { data: ocrRows } = await sb.from('ocr_extractions').select('extracted_data')
       .eq('supplier_document_id', docId).eq('tenant_id', getTenantId()).limit(1);
     if (ocrRows && ocrRows.length && ocrRows[0].extracted_data) {
       var ocrData = ocrRows[0].extracted_data;
-      var ocrItems = (ocrData.items && typeof ocrData.items === 'object' && 'value' in ocrData.items) ? ocrData.items.value : ocrData.items;
-      if (Array.isArray(ocrItems) && ocrItems.length) {
-        var rows = ocrItems.map(function(it) {
-          var disc = it.discount ? it.discount + '%' : '';
-          return '<tr><td>' + escapeHtml(it.description || '') + '</td><td>' + (it.quantity || '') +
-            '</td><td>' + (it.unit_price || '') + '</td><td>' + disc + '</td><td>' + (it.total || '') + '</td></tr>';
-        }).join('');
-        ocrItemsHtml = '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-top:10px">' +
-          '<strong style="font-size:.88rem">\uD83E\uDD16 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DE\u05E1\u05E8\u05D9\u05E7\u05D4</strong>' +
-          '<table class="data-table" style="width:100%;font-size:.82rem;margin-top:6px"><thead><tr>' +
-          '<th>\u05EA\u05D9\u05D0\u05D5\u05E8</th><th>\u05DB\u05DE\u05D5\u05EA</th><th>\u05DE\u05D7\u05D9\u05E8 \u05DC\u05D9\u05D7\'</th><th>% \u05D4\u05E0\u05D7\u05D4</th><th>\u05E1\u05D4"\u05DB</th>' +
-          '</tr></thead><tbody>' + rows + '</tbody></table></div>';
-      }
+      var rawItems = (ocrData.items && typeof ocrData.items === 'object' && 'value' in ocrData.items) ? ocrData.items.value : ocrData.items;
+      if (Array.isArray(rawItems)) ocrItems = rawItems;
     }
   } catch (e) { console.warn('OCR items load skipped:', e.message); }
+  var ocrItemsHtml = _buildEditableItemsHtml(ocrItems, docId);
 
-  // Receipt line items (from goods_receipt_items via goods_receipt_id FK)
+  // Receipt line items (read-only — via debt-doc-items.js)
   var receiptItemsHtml = '';
   if (doc.goods_receipt_id) {
     try {
@@ -49,26 +39,7 @@ async function editDocument(docId) {
         .eq('receipt_id', doc.goods_receipt_id)
         .eq('tenant_id', getTenantId());
       if (!riErr && rcptItems && rcptItems.length) {
-        var riRows = rcptItems
-          .filter(function(ri) { return ri.po_match_status !== 'returned'; })
-          .map(function(ri) {
-            var lineTotal = ((ri.unit_cost || 0) * (ri.quantity || 0)).toFixed(2);
-            return '<tr>' +
-              '<td>' + escapeHtml(ri.barcode || '') + '</td>' +
-              '<td>' + escapeHtml(ri.brand || '') + '</td>' +
-              '<td>' + escapeHtml(ri.model || '') + '</td>' +
-              '<td style="text-align:center">' + (ri.quantity || 0) + '</td>' +
-              '<td style="text-align:center">' + (ri.unit_cost != null ? Number(ri.unit_cost).toFixed(2) : '') + '</td>' +
-              '<td style="text-align:center">' + lineTotal + '</td></tr>';
-          }).join('');
-        if (riRows) {
-          receiptItemsHtml = '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-top:10px">' +
-            '<strong style="font-size:.88rem">\u{1F4E6} \u05E4\u05E8\u05D9\u05D8\u05D9 \u05E7\u05D1\u05DC\u05D4</strong>' +
-            '<table class="data-table" style="width:100%;font-size:.82rem;margin-top:6px"><thead><tr>' +
-            '<th>\u05D1\u05E8\u05E7\u05D5\u05D3</th><th>\u05DE\u05D5\u05EA\u05D2</th><th>\u05D3\u05D2\u05DD</th>' +
-            '<th>\u05DB\u05DE\u05D5\u05EA</th><th>\u05DE\u05D7\u05D9\u05E8</th><th>\u05E1\u05D4"\u05DB</th>' +
-            '</tr></thead><tbody>' + riRows + '</tbody></table></div>';
-        }
+        receiptItemsHtml = _buildReceiptItemsHtml(rcptItems);
       }
     } catch (e) { console.warn('Receipt items load skipped:', e.message); }
   }
@@ -130,6 +101,8 @@ async function editDocument(docId) {
   if (docFiles.length) {
     renderFileGallery(docFiles, 'edit-doc-files');
   }
+  // Calculate initial items total
+  if (typeof _edItemRecalcTotal === 'function') _edItemRecalcTotal();
 }
 
 // Attach more files from edit modal — with OCR scan option
@@ -255,6 +228,11 @@ async function saveDocumentEdits(docId) {
       total_amount: newTotal,
       notes: newNotes || null
     }]);
+
+    // Save edited items (non-blocking)
+    if (typeof _saveEditedItems === 'function') {
+      await _saveEditedItems(docId);
+    }
 
     await writeLog('document_edited', null, {
       reason: '\u05DE\u05E1\u05DE\u05DA \u05E2\u05D5\u05D3\u05DB\u05DF',

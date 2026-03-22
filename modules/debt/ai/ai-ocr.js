@@ -268,7 +268,14 @@ async function _ocrSave(mode) {
       notes: 'נוצר באמצעות סריקת AI'
     };
     if (existingDoc) {
-      var { error: upErr } = await sb.from(T.SUP_DOCS).update(docFields)
+      // Update existing doc — only financial fields + items, NOT identity fields
+      // that could trigger unique constraint (supplier_id, document_number)
+      var updateFields = {
+        document_type_id: typeId, document_date: docDate, due_date: dueDate || null,
+        subtotal: subtotal, vat_rate: vatRate, vat_amount: vatAmt,
+        total_amount: totalAmt, currency: currency
+      };
+      var { error: upErr } = await sb.from(T.SUP_DOCS).update(updateFields)
         .eq('id', existingDoc.id).eq('tenant_id', getTenantId());
       if (upErr) throw upErr;
       created = [{ id: existingDoc.id }];
