@@ -4,9 +4,44 @@
  *
  * Exports: createDocumentFromReceipt(receiptId, supplierId, receiptItems)
  * Uses: fetchAll(), batchCreate() from shared.js / supabase-ops.js
+ * Guards: client-side debounce + server-side goods_receipt_id duplicate check
  */
 
+let _creatingDocForReceipt = false; // client-side debounce flag
+
 async function createDocumentFromReceipt(receiptId, supplierId, receiptItems) {
+  // Guard A: client-side debounce (prevents double-click in same session)
+  if (_creatingDocForReceipt) {
+    console.warn('createDocumentFromReceipt: already in progress, skipping duplicate call');
+    return null;
+  }
+  _creatingDocForReceipt = true;
+
+  try {
+    return await _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems);
+  } finally {
+    _creatingDocForReceipt = false;
+  }
+}
+
+async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems) {
+  // Guard B: server-side duplicate check (prevents duplicate across sessions/refreshes)
+  const existing = await sb.from(T.SUP_DOCS)
+    .select('id, internal_number')
+    .eq('goods_receipt_id', receiptId)
+    .eq('tenant_id', getTenantId())
+    .eq('is_deleted', false)
+    .limit(1);
+  if (existing.data && existing.data.length > 0) {
+    console.warn('createDocumentFromReceipt: document already exists for receipt', receiptId, '→', existing.data[0].internal_number);
+    writeLog('debt_duplicate_prevented', null, {
+      receipt_id: receiptId,
+      existing_doc_id: existing.data[0].id,
+      existing_internal_number: existing.data[0].internal_number
+    });
+    return existing.data[0]; // return existing doc gracefully
+  }
+
   // 1. Calculate amounts from receiptItems
   const subtotal = receiptItems.reduce((sum, item) => {
     return sum + ((item.unit_cost || 0) * (item.quantity || 0));
