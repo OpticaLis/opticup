@@ -104,12 +104,12 @@ async function editDocument(docId) {
         '<label style="grid-column:1/-1">\u05D4\u05E2\u05E8\u05D5\u05EA<textarea id="ed-notes" rows="2" class="nd-field">' + escapeHtml(doc.notes || '') + '</textarea></label>' +
       '</div>' +
       // File gallery (rendered async)
-      '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-top:10px">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
-          '<strong style="font-size:.88rem">\uD83D\uDCCE \u05E7\u05D1\u05E6\u05D9\u05DD \u05DE\u05E6\u05D5\u05E8\u05E4\u05D9\u05DD' +
+      '<div style="background:var(--g100);border:1px solid var(--g200);border-radius:8px;padding:12px;margin-top:10px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+          '<strong style="font-size:.88rem">\uD83D\uDCCE \u05E7\u05D1\u05E6\u05D9\u05DD' +
             (docFiles.length ? ' (' + docFiles.length + ')' : '') + '</strong>' +
-          '<button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" ' +
-            'onclick="_editDocAttachMore(\'' + docId + '\',\'' + doc.supplier_id + '\')">\uD83D\uDCCE \u05E6\u05E8\u05E3 \u05E2\u05D5\u05D3</button>' +
+          '<button class="btn btn-sm" style="background:var(--primary,#1a73e8);color:#fff" ' +
+            'onclick="_editDocAttachMore(\'' + docId + '\',\'' + doc.supplier_id + '\')">\uD83D\uDCCE \u05E6\u05E8\u05E3 \u05E7\u05D1\u05E6\u05D9\u05DD</button>' +
         '</div>' +
         '<div id="edit-doc-files"></div>' +
       '</div>' +
@@ -132,33 +132,74 @@ async function editDocument(docId) {
   }
 }
 
-// Attach more files from edit modal
+// Attach more files from edit modal — with OCR scan option
 async function _editDocAttachMore(docId, supplierId) {
-  pickAndUploadFiles(supplierId, async function(results) {
-    try {
-      // Get current max sort_order
-      var existing = await fetchDocFiles(docId);
-      var maxSort = existing.reduce(function(m, f) { return Math.max(m, f.sort_order || 0); }, -1);
+  pickAndUploadFiles(supplierId, function(results) {
+    // Show choice: upload only vs upload + OCR scan
+    _showAttachChoiceModal(docId, supplierId, results);
+  });
+}
 
-      for (var i = 0; i < results.length; i++) {
-        await saveDocFile(docId, results[i].url, results[i].fileName, maxSort + 1 + i);
-      }
-      // Update primary file_url if this is the first file
-      var doc = _docData.find(function(d) { return d.id === docId; });
-      if (doc && !doc.file_url) {
-        await batchUpdate(T.SUP_DOCS, [{ id: docId, file_url: results[0].url, file_name: results[0].fileName }]);
-        doc.file_url = results[0].url;
-        doc.file_name = results[0].fileName;
-      }
-      toast(results.length + ' \u05E7\u05D1\u05E6\u05D9\u05DD \u05E6\u05D5\u05E8\u05E4\u05D5');
-      // Refresh modal
+// Choice modal: save only or save + OCR
+function _showAttachChoiceModal(docId, supplierId, uploadResults) {
+  var names = uploadResults.map(function(r) { return r.fileName; }).join(', ');
+  var old = $('attach-choice-modal'); if (old) old.remove();
+  var html =
+    '<div class="modal-overlay" id="attach-choice-modal" style="display:flex;z-index:10005" ' +
+      'onclick="if(event.target===this)closeAndRemoveModal(\'attach-choice-modal\')">' +
+    '<div class="modal" style="max-width:400px;text-align:center">' +
+      '<h3 style="margin:0 0 10px">\u05DE\u05D4 \u05DC\u05E2\u05E9\u05D5\u05EA \u05E2\u05DD \u05D4\u05E7\u05D1\u05E6\u05D9\u05DD?</h3>' +
+      '<div style="font-size:.85rem;color:var(--g500);margin-bottom:14px">' + escapeHtml(names) + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px">' +
+        '<button class="btn" style="background:#059669;color:#fff;width:100%" ' +
+          'onclick="_doAttachFiles(\'' + docId + '\',\'' + supplierId + '\',false)">' +
+          '\uD83D\uDCCE \u05E9\u05DE\u05D5\u05E8 \u05D1\u05DC\u05D1\u05D3</button>' +
+        '<button class="btn" style="background:#7c3aed;color:#fff;width:100%" ' +
+          'onclick="_doAttachFiles(\'' + docId + '\',\'' + supplierId + '\',true)">' +
+          '\uD83E\uDD16 \u05E9\u05DE\u05D5\u05E8 \u05D5\u05E1\u05E8\u05D5\u05E7 \u05E2\u05DD AI</button>' +
+      '</div>' +
+    '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  // Store results for the action handler
+  window._pendingAttachResults = uploadResults;
+}
+
+// Execute the attach action (save files + optional OCR)
+async function _doAttachFiles(docId, supplierId, withOCR) {
+  var results = window._pendingAttachResults || [];
+  window._pendingAttachResults = null;
+  closeAndRemoveModal('attach-choice-modal');
+  if (!results.length) return;
+
+  try {
+    // Save files to DB
+    var existingFiles = await fetchDocFiles(docId);
+    var maxSort = existingFiles.reduce(function(m, f) { return Math.max(m, f.sort_order || 0); }, -1);
+    for (var i = 0; i < results.length; i++) {
+      await saveDocFile(docId, results[i].url, results[i].fileName, maxSort + 1 + i);
+    }
+    // Update primary file_url if first file
+    var doc = _docData.find(function(d) { return d.id === docId; });
+    if (doc && !doc.file_url) {
+      await batchUpdate(T.SUP_DOCS, [{ id: docId, file_url: results[0].url, file_name: results[0].fileName }]);
+      doc.file_url = results[0].url;
+      doc.file_name = results[0].fileName;
+    }
+    toast(results.length + ' \u05E7\u05D1\u05E6\u05D9\u05DD \u05E6\u05D5\u05E8\u05E4\u05D5');
+
+    if (withOCR && typeof triggerOCR === 'function') {
+      // Trigger OCR on the first uploaded file
+      closeAndRemoveModal('edit-doc-modal');
+      triggerOCR(results[0].url, supplierId, null, docId);
+    } else {
+      // Refresh edit modal
       closeAndRemoveModal('edit-doc-modal');
       editDocument(docId);
-    } catch (e) {
-      console.error('_editDocAttachMore error:', e);
-      toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E6\u05D9\u05E8\u05D5\u05E3: ' + (e.message || ''), 'e');
     }
-  });
+  } catch (e) {
+    console.error('_doAttachFiles error:', e);
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E6\u05D9\u05E8\u05D5\u05E3: ' + (e.message || ''), 'e');
+  }
 }
 
 // =========================================================

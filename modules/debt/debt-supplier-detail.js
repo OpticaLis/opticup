@@ -224,41 +224,62 @@ function _showAllTimeline() {
 }
 
 // =========================================================
-// Documents sub-tab (filtered to this supplier)
+// Documents sub-tab — full management, reuses renderDocumentsTable
 // =========================================================
 async function loadSupplierDocuments(supplierId) {
   var content = $('detail-tab-content');
   if (!content) return;
   try {
-    var results = await Promise.all([
-      fetchAll(T.SUP_DOCS, [['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId]]),
-      fetchAll(T.DOC_TYPES, [['is_active', 'eq', true]])
-    ]);
-    var docs = results[0];
-    var typeMap = {};
-    results[1].forEach(function(t) { typeMap[t.id] = t; });
-
-    docs.sort(function(a, b) { return (b.document_date || '').localeCompare(a.document_date || ''); });
-
-    if (!docs.length) {
-      content.innerHTML = '<div class="empty-state">אין מסמכים לספק זה</div>';
-      return;
+    // Ensure _docTypes and _docSuppliers are loaded (may already be from main tab)
+    if (!_docTypes.length || !_docSuppliers.length) {
+      var [types, sups] = await Promise.all([
+        fetchAll(T.DOC_TYPES, [['is_active', 'eq', true]]),
+        fetchAll(T.SUPPLIERS, [['active', 'eq', true]])
+      ]);
+      _docTypes = types;
+      _docSuppliers = sups;
     }
+    // Fetch docs for this supplier + prepaid deals
+    var [docs, deals] = await Promise.all([
+      fetchAll(T.SUP_DOCS, [['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId]]),
+      fetchAll(T.PREPAID_DEALS, [['status', 'eq', 'active'], ['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId]])
+    ]);
+    // Update globals so action buttons (cancelDocument etc.) find the docs
+    _docData = docs;
+    _docPrepaidSet = {};
+    deals.forEach(function(d) { _docPrepaidSet[d.supplier_id] = d; });
+    _loadDocFileCounts(docs);
 
-    var rows = docs.map(function(d) {
-      var type = typeMap[d.document_type_id] || {}; var bal = (Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0);
-      var st = DOC_STATUS_MAP[d.status] || { he: d.status, cls: '' };
-      return '<tr><td>' + escapeHtml(d.document_date || '') + '</td><td>' + escapeHtml(type.name_he || '') + '</td><td>' + escapeHtml(d.document_number || '') + '</td>' +
-        '<td>' + formatILS(d.total_amount) + '</td><td>' + formatILS(d.paid_amount) + '</td><td>' + formatILS(bal) + '</td>' +
-        '<td><span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></td></tr>';
-    }).join('');
-    content.innerHTML = '<div style="overflow-x:auto"><table class="data-table" style="width:100%;font-size:.88rem">' +
-      '<thead><tr><th>\u05EA\u05D0\u05E8\u05D9\u05DA</th><th>\u05E1\u05D5\u05D2</th><th>\u05DE\u05E1\u05E4\u05E8</th><th>\u05E1\u05DB\u05D5\u05DD</th><th>\u05E9\u05D5\u05DC\u05DD</th><th>\u05D9\u05EA\u05E8\u05D4</th><th>\u05E1\u05D8\u05D8\u05D5\u05E1</th></tr></thead>' +
-      '<tbody>' + rows + '</tbody></table></div>';
+    docs.sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+
+    // Toolbar: new doc + status filters
+    content.innerHTML =
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">' +
+        '<button class="btn btn-sm" style="background:var(--primary);color:#fff" ' +
+          'onclick="_sdNewDoc(\'' + supplierId + '\')">+ \u05DE\u05E1\u05DE\u05DA \u05D7\u05D3\u05E9</button>' +
+      '</div>' +
+      '<div id="sd-doc-table"></div>';
+
+    // Render full table into the sub-tab container
+    renderDocumentsTable(docs, {
+      targetEl: $('sd-doc-table'),
+      hideSupplierCol: true
+    });
   } catch (e) {
     console.error('loadSupplierDocuments error:', e);
-    content.innerHTML = '<div class="empty-state">שגיאה בטעינת מסמכים</div>';
+    content.innerHTML = '<div class="empty-state">\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD</div>';
   }
+}
+
+// Open new document modal pre-filled with supplier
+function _sdNewDoc(supplierId) {
+  if (typeof openNewDocumentModal !== 'function') return;
+  openNewDocumentModal();
+  // Pre-select the supplier after modal renders
+  setTimeout(function() {
+    var sel = $('nd-supplier');
+    if (sel) { sel.value = supplierId; if (typeof _ndAutoCalcDueDate === 'function') _ndAutoCalcDueDate(); }
+  }, 100);
 }
 
 // =========================================================

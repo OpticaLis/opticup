@@ -95,8 +95,12 @@ function _updateStatusBtnStyles() {
   });
 }
 
-function renderDocumentsTable(docs) {
-  var wrap = $('doc-table-wrap');
+// Render documents table into a target element.
+// opts.targetEl — DOM element to render into (defaults to $('doc-table-wrap'))
+// opts.hideSupplierCol — if true, omit supplier column (for supplier detail view)
+function renderDocumentsTable(docs, opts) {
+  var o = opts || {};
+  var wrap = o.targetEl || $('doc-table-wrap');
   if (!wrap) return;
   if (!docs.length) { wrap.innerHTML = '<div class="empty-state">\u05D0\u05D9\u05DF \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD \u05DC\u05D4\u05E6\u05D2\u05D4</div>'; return; }
   var typeMap = {}, supMap = {};
@@ -119,7 +123,7 @@ function renderDocumentsTable(docs) {
       '<td>' + escapeHtml(type.name_he || '') + '</td>' +
       '<td>' + escapeHtml(d.document_number || '') + '</td>' +
       '<td>' + escapeHtml(d.internal_number || '') + '</td>' +
-      '<td>' + ppBadge + escapeHtml(supMap[d.supplier_id] || '') + '</td>' +
+      (o.hideSupplierCol ? '' : '<td>' + ppBadge + escapeHtml(supMap[d.supplier_id] || '') + '</td>') +
       '<td>' + formatILS(d.total_amount) + '</td>' +
       '<td>' + formatILS(d.paid_amount) + '</td>' +
       '<td>' + formatILS(balance) + '</td>' +
@@ -134,7 +138,8 @@ function renderDocumentsTable(docs) {
   }).join('');
   wrap.innerHTML =
     '<div style="overflow-x:auto"><table class="data-table" style="width:100%;font-size:.88rem">' +
-      '<thead><tr><th>\u05EA\u05D0\u05E8\u05D9\u05DA</th><th>\u05E1\u05D5\u05D2</th><th>\u05DE\u05E1\u05E4\u05E8</th><th>\u05DE\u05E1\u05E4\u05E8 \u05E4\u05E0\u05D9\u05DE\u05D9</th><th>\u05E1\u05E4\u05E7</th>' +
+      '<thead><tr><th>\u05EA\u05D0\u05E8\u05D9\u05DA</th><th>\u05E1\u05D5\u05D2</th><th>\u05DE\u05E1\u05E4\u05E8</th><th>\u05DE\u05E1\u05E4\u05E8 \u05E4\u05E0\u05D9\u05DE\u05D9</th>' +
+        (o.hideSupplierCol ? '' : '<th>\u05E1\u05E4\u05E7</th>') +
         '<th>\u05E1\u05DB\u05D5\u05DD</th><th>\u05E9\u05D5\u05DC\u05DD</th><th>\u05D9\u05EA\u05E8\u05D4</th><th>\u05E1\u05D8\u05D8\u05D5\u05E1</th><th>\u05E4\u05E2\u05D5\u05DC\u05D5\u05EA</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>';
 }
@@ -188,7 +193,13 @@ async function cancelDocument(docId) {
       await batchUpdate(T.SUP_DOCS, [{ id: docId, status: 'cancelled', total_amount: 0, paid_amount: 0 }]);
       await writeLog('doc_cancel', null, { document_id: docId, document_number: doc.document_number, cancelled_by: emp.id });
       toast('מסמך בוטל');
-      await loadDocumentsTab();
+      // Refresh: if in supplier detail view, reload that; otherwise reload main tab
+      if (_detailSupplierId) {
+        await openSupplierDetail(_detailSupplierId);
+        _switchDetailTab('docs');
+      } else {
+        await loadDocumentsTab();
+      }
     } catch (e) {
       console.error('cancelDocument error:', e);
       toast('שגיאה בביטול: ' + (e.message || ''), 'e');
@@ -239,7 +250,12 @@ function _doPrepaidDeduct(docId, dealId) {
       if (typeof refreshAlertsBadge === 'function') refreshAlertsBadge();
       closeAndRemoveModal('pp-deduct-modal');
       toast('\u05E7\u05D5\u05D6\u05D6 ' + formatILS(amt) + ' \u05DE\u05E2\u05E1\u05E7\u05EA \u05DE\u05E7\u05D3\u05DE\u05D4', 's');
-      await loadDocumentsTab();
+      if (_detailSupplierId) {
+        await openSupplierDetail(_detailSupplierId);
+        _switchDetailTab('docs');
+      } else {
+        await loadDocumentsTab();
+      }
     } catch (e) { console.error('_doPrepaidDeduct error:', e); toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E7\u05D9\u05D6\u05D5\u05D6: ' + (e.message || ''), 'e');
     } finally { hideLoading(); }
   });
