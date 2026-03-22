@@ -54,13 +54,25 @@ async function _wizGoStep3() {
 }
 
 function autoAllocateFIFO(paymentAmount, openDocs) {
-  var remaining = paymentAmount;
   var result = [];
+  // Phase 1: Apply credit notes first (negative remaining) — they increase available funds
+  var creditDocs = openDocs.filter(function(d) {
+    return (Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0) < 0;
+  });
+  var remaining = paymentAmount;
+  for (var c = 0; c < creditDocs.length; c++) {
+    var cd = creditDocs[c];
+    var creditRem = (Number(cd.total_amount) || 0) - (Number(cd.paid_amount) || 0); // negative
+    result.push({ document_id: cd.id, allocated_amount: creditRem });
+    remaining -= creditRem; // subtracting negative = adding to pool
+  }
+
+  // Phase 2: Apply to invoices/debit notes (positive remaining) in date order
   for (var i = 0; i < openDocs.length; i++) {
     if (remaining <= 0) break;
     var doc = openDocs[i];
     var docRem = (Number(doc.total_amount) || 0) - (Number(doc.paid_amount) || 0);
-    if (docRem <= 0) continue;
+    if (docRem <= 0) continue; // skip credits (already handled) and zero-balance
     var alloc = Math.min(remaining, docRem);
     result.push({ document_id: doc.id, allocated_amount: alloc });
     remaining -= alloc;
@@ -69,18 +81,34 @@ function autoAllocateFIFO(paymentAmount, openDocs) {
 }
 
 function _wizRenderStep3() {
+  // Build doc type lookup for credit note detection
+  var creditTypeIds = {};
+  if (typeof _docTypes !== 'undefined') {
+    _docTypes.forEach(function(t) { if (t.code === 'credit_note') creditTypeIds[t.id] = true; });
+  }
   var docRows = _wizState.openDocs.map(function(d) {
     var docRem = (Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0);
+    var isCredit = creditTypeIds[d.document_type_id] || docRem < 0;
     var alloc = _wizState.allocations.find(function(a) { return a.document_id === d.id; });
     var val = alloc ? alloc.allocated_amount.toFixed(2) : '';
-    return '<tr>' +
-      '<td>' + escapeHtml(d.document_number || d.internal_number || '') + '</td>' +
+    var docLabel = escapeHtml(d.document_number || d.internal_number || '');
+    if (isCredit) docLabel += ' <span style="color:#059669;font-size:.75rem">(זיכוי)</span>';
+    var rowStyle = isCredit ? ' style="background:#f0fdf4"' : '';
+    var amtStyle = isCredit ? ' style="color:#059669;font-weight:600"' : '';
+    // Credit notes: input allows negative values, no max constraint
+    var inputAttrs = isCredit
+      ? 'step="0.01" max="0" min="' + docRem.toFixed(2) + '"'
+      : 'step="0.01" min="0" max="' + docRem.toFixed(2) + '"';
+    return '<tr' + rowStyle + '>' +
+      '<td>' + docLabel + '</td>' +
       '<td>' + escapeHtml(d.document_date || '') + '</td>' +
-      '<td>' + formatILS(d.total_amount) + '</td>' +
-      '<td>' + formatILS(docRem) + '</td>' +
-      '<td><input type="number" step="0.01" min="0" max="' + docRem.toFixed(2) + '" ' +
-        'value="' + val + '" class="nd-field" style="width:100px" ' +
-        'data-doc-id="' + d.id + '" oninput="_wizUpdateAllocTotal()"></td>' +
+      '<td' + amtStyle + '>' + formatILS(d.total_amount) + '</td>' +
+      '<td' + amtStyle + '>' + formatILS(docRem) + '</td>' +
+      '<td><input type="number" ' + inputAttrs + ' ' +
+        'value="' + val + '" class="nd-field" style="width:100px' +
+        (isCredit ? ';color:#059669' : '') + '" ' +
+        'data-doc-id="' + d.id + '" data-is-credit="' + (isCredit ? '1' : '0') + '" ' +
+        'oninput="_wizUpdateAllocTotal()"></td>' +
     '</tr>';
   }).join('');
   if (!_wizState.openDocs.length) {
@@ -117,7 +145,9 @@ function _wizUpdateAllocTotal() {
   _wizState.allocations = [];
   inputs.forEach(function(inp) {
     var val = Number(inp.value) || 0;
-    if (val > 0) {
+    var isCredit = inp.getAttribute('data-is-credit') === '1';
+    // Include non-zero values: positive for invoices, negative for credits
+    if (val !== 0 && (val > 0 || isCredit)) {
       _wizState.allocations.push({
         document_id: inp.getAttribute('data-doc-id'), allocated_amount: val
       });

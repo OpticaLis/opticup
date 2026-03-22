@@ -182,6 +182,15 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
   const brandId = brandCache[item.brand] || null;
   const supplierId = supplierCache[$('rcpt-supplier').value] || null;
 
+  // Derive product_type from brand's brand_type (not hardcoded)
+  var productType = 'eyeglasses'; // default fallback
+  if (brandId) {
+    try {
+      var { data: brandRow } = await sb.from(T.BRANDS).select('brand_type').eq('id', brandId).single();
+      if (brandRow && brandRow.brand_type) productType = brandRow.brand_type;
+    } catch (e) { /* use default */ }
+  }
+
   const newRow = {
     barcode: newBarcode,
     brand_id: brandId,
@@ -194,7 +203,7 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
     quantity: item.quantity,
     status: 'in_stock',
     origin: 'goods_receipt',
-    product_type: 'eyeglasses',
+    product_type: productType,
     website_sync: heToEn('website_sync', getBrandSync(item.brand)) || 'none',
     is_deleted: false,
     tenant_id: getTenantId()
