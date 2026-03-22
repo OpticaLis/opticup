@@ -1,7 +1,8 @@
 // debt-payments.js — Payments tab for supplier debt (Phase 4e)
 // Load after: shared.js, supabase-ops.js, debt-dashboard.js
-// Provides: loadPaymentsTab(), applyPayFilters(), viewPayment()
+// Provides: loadPaymentsTab(), applyPayFilters(), viewPayment(), cancelPayment()
 // Wizard: see debt-payment-wizard.js
+// cancelPayment reverses paid_amount + cascade settlement before cancelling
 
 let _payData = [], _paySuppliers = [], _payMethods = [];
 let _payAllocMap = {}, _payDocMap = {};
@@ -206,19 +207,62 @@ async function cancelPayment(payId) {
   promptPin('ביטול תשלום — אימות עובד', async function(pin, emp) {
     showLoading('מבטל תשלום...');
     try {
-      // Delete allocations for this payment
+      var tid = getTenantId();
       var allocs = _payAllocMap[payId] || [];
-      if (allocs.length) {
-        var allocIds = allocs.map(function(a) { return a.id; });
-        for (var i = 0; i < allocIds.length; i++) {
-          await sb.from(T.PAY_ALLOC).delete().eq('id', allocIds[i]);
+      var reversedDocs = [];
+
+      // 1. Reverse paid_amount on each allocated document
+      for (var i = 0; i < allocs.length; i++) {
+        var alloc = allocs[i];
+        var { error: rpcErr } = await sb.rpc('increment_paid_amount', {
+          p_doc_id: alloc.document_id,
+          p_delta: -alloc.allocated_amount
+        });
+        if (rpcErr) throw rpcErr;
+
+        // RPC sets 'partially_paid' even when paid_amount drops to 0 — fix status
+        var { data: freshDoc } = await sb.from(T.SUP_DOCS)
+          .select('id, paid_amount, total_amount, status')
+          .eq('id', alloc.document_id).eq('tenant_id', tid).single();
+        if (freshDoc && (Number(freshDoc.paid_amount) || 0) <= 0) {
+          await batchUpdate(T.SUP_DOCS, [{ id: freshDoc.id, status: 'open', paid_amount: 0 }]);
         }
+        reversedDocs.push({
+          document_id: alloc.document_id,
+          reversed_amount: alloc.allocated_amount,
+          new_status: (freshDoc && (Number(freshDoc.paid_amount) || 0) <= 0) ? 'open' : (freshDoc ? freshDoc.status : 'unknown')
+        });
       }
+
+      // 2. Reverse cascade: reopen child documents that were auto-closed
+      var reopenedCount = 0;
+      if (allocs.length) {
+        var allocDocIds = allocs.map(function(a) { return a.document_id; });
+        reopenedCount = await _reverseCascadeSettlement(allocDocIds, tid);
+      }
+
+      // 3. Delete allocations
+      for (var j = 0; j < allocs.length; j++) {
+        await sb.from(T.PAY_ALLOC).delete().eq('id', allocs[j].id);
+      }
+
+      // 4. Cancel payment
       await batchUpdate(T.SUP_PAYMENTS, [{ id: payId, status: 'cancelled' }]);
-      await writeLog('payment_cancel', null, { payment_id: payId, amount: pay.amount, cancelled_by: emp.id });
-      toast('תשלום בוטל');
+
+      // 5. Audit log with full reversal details
+      await writeLog('payment_cancel', null, {
+        payment_id: payId,
+        amount: pay.amount,
+        cancelled_by: emp.id,
+        reversed_documents: reversedDocs,
+        reopened_children: reopenedCount
+      });
+
+      toast('תשלום בוטל — יתרות מסמכים עודכנו');
+      if (reopenedCount > 0) toast('נפתחו מחדש ' + reopenedCount + ' מסמכים מקושרים');
       closeAndRemoveModal('view-pay-modal');
       await loadPaymentsTab();
+      if (typeof loadDebtSummary === 'function') await loadDebtSummary();
     } catch (e) {
       console.error('cancelPayment error:', e);
       toast('שגיאה בביטול: ' + (e.message || ''), 'e');
@@ -226,4 +270,44 @@ async function cancelPayment(payId) {
       hideLoading();
     }
   });
+}
+
+// Reverse cascade settlement: reopen children that were auto-closed when parent was paid
+async function _reverseCascadeSettlement(parentDocIds, tid) {
+  var reopened = 0;
+  try {
+    // Find children linked to these parent documents
+    var { data: links } = await sb.from(T.DOC_LINKS).select('child_document_id, parent_document_id')
+      .in('parent_document_id', parentDocIds).eq('tenant_id', tid);
+    if (!links || !links.length) return 0;
+
+    var childIds = [...new Set(links.map(function(l) { return l.child_document_id; }))];
+    var { data: children } = await sb.from(T.SUP_DOCS)
+      .select('id, status, total_amount, paid_amount, document_type_id')
+      .in('id', childIds).eq('tenant_id', tid);
+
+    for (var i = 0; i < (children || []).length; i++) {
+      var child = children[i];
+      // Only reopen children that are 'paid' (were auto-closed by cascade)
+      // Skip children with actual payment allocations — they were paid independently
+      if (child.status !== 'paid') continue;
+
+      var { data: childAllocs } = await sb.from(T.PAY_ALLOC)
+        .select('id').eq('document_id', child.id).eq('tenant_id', tid).limit(1);
+      if (childAllocs && childAllocs.length > 0) continue; // has real allocations, skip
+
+      // Reopen: reset to 'linked' status with paid_amount = 0
+      await batchUpdate(T.SUP_DOCS, [{
+        id: child.id, status: 'open', paid_amount: 0
+      }]);
+      await writeLog('cascade_reversal', null, {
+        reason: 'מסמך נפתח מחדש — תשלום אב בוטל',
+        source_ref: child.id
+      });
+      reopened++;
+    }
+  } catch (e) {
+    console.warn('_reverseCascadeSettlement error (non-blocking):', e);
+  }
+  return reopened;
 }
