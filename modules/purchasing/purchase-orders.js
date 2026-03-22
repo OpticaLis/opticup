@@ -164,10 +164,24 @@ async function populatePoSupplierFilter() {
   } catch {}
 }
 
-// ── PO Number generation ─────────────────────────────────────
+// ── PO Number generation (atomic RPC with client-side fallback) ──
 async function generatePoNumber(supplierId) {
   const supNum = supplierNumCache[supplierId];
   if (!supNum) { toast('ספק ללא מספר — פנה למנהל', 'e'); return null; }
+
+  // Try atomic RPC first (migration 041)
+  try {
+    var { data: rpcResult, error: rpcErr } = await sb.rpc('next_po_number', {
+      p_tenant_id: getTenantId(),
+      p_supplier_number: String(supNum)
+    });
+    if (!rpcErr && rpcResult) return rpcResult;
+    if (rpcErr) console.warn('next_po_number RPC unavailable, using fallback:', rpcErr.message);
+  } catch (e) {
+    console.warn('next_po_number RPC failed, using fallback:', e.message);
+  }
+
+  // Fallback: client-side generation (race condition possible)
   const prefix = `PO-${supNum}-`;
   const { data } = await sb.from(T.PO)
     .select('po_number')

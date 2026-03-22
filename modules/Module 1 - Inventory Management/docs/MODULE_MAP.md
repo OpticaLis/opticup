@@ -353,7 +353,7 @@
 | `poSummaryCard` | `(label, value, color)` | Returns HTML for summary stat card |
 | `applyPoFilters` | `(data)` | Filters PO array by status and supplier |
 | `populatePoSupplierFilter` | `()` | Async. Populates supplier filter dropdown |
-| `generatePoNumber` | `(supplierId)` | Async. Generates PO-{supplierNum}-{4-digit-seq} format |
+| `generatePoNumber` | `(supplierId)` | Async. Generates PO-{supplierNum}-{4-digit-seq} via atomic RPC (next_po_number) with client-side fallback |
 
 ### modules/purchasing/po-form.js
 
@@ -915,7 +915,7 @@
 | `promptReturnStatusUpdate` | `(returnId, newStatus)` | PIN prompt modal for status transition |
 | `_confirmReturnStatus` | `(returnId, newStatus)` | Verifies PIN, calls updateReturnStatus, reloads returns tab |
 | `updateReturnStatus` | `(returnId, newStatus)` | Updates status + timestamps via batchUpdate, writeLog |
-| `generateReturnNumber` | `(supplierId)` | Generates RET-{supplier_number}-{seq 4-digit} (mirrors PO number pattern) |
+| `generateReturnNumber` | `(supplierId)` | Generates RET-{supplier_number}-{seq 4-digit} via atomic RPC (next_return_number) with client-side fallback |
 
 ### modules/debt/debt-returns-tab.js
 
@@ -2062,3 +2062,8 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 **✅ Phase 5.5c:** pg_cron daily alerts:
 - Job `daily-alert-generation`: runs at 05:00 UTC, calls generate_daily_alerts with fault isolation per alert type (each wrapped in BEGIN/EXCEPTION)
 - Migration: `phase5_5c_pgcron_alerts.sql`
+
+**⬜ Pending:** Atomic PO and Return number generation:
+- `next_po_number(p_tenant_id UUID, p_supplier_number TEXT)` — Atomic sequential PO-{sup}-{NNNN} generation. Uses SELECT MAX + FOR UPDATE lock within SECURITY DEFINER to prevent race conditions. JS fallback in purchase-orders.js if RPC not yet deployed.
+- `next_return_number(p_tenant_id UUID, p_supplier_number TEXT)` — Atomic sequential RET-{sup}-{NNNN} generation. Same pattern as next_po_number. JS fallback in debt-returns.js if RPC not yet deployed.
+- Migration: `041_atomic_po_number.sql`, `042_atomic_return_number.sql`

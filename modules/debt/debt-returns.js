@@ -271,6 +271,20 @@ async function generateReturnNumber(supplierId) {
     } catch (e) { /* ignore */ }
   }
   if (!supNum) { toast('ספק ללא מספר — פנה למנהל', 'e'); return null; }
+
+  // Try atomic RPC first (migration 042)
+  try {
+    var rpcResult = await sb.rpc('next_return_number', {
+      p_tenant_id: getTenantId(),
+      p_supplier_number: String(supNum)
+    });
+    if (!rpcResult.error && rpcResult.data) return rpcResult.data;
+    if (rpcResult.error) console.warn('next_return_number RPC unavailable, using fallback:', rpcResult.error.message);
+  } catch (e) {
+    console.warn('next_return_number RPC failed, using fallback:', e.message);
+  }
+
+  // Fallback: client-side generation (race condition possible)
   var prefix = 'RET-' + supNum + '-';
   var data = [];
   try {
