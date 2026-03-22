@@ -218,8 +218,28 @@ async function sendPurchaseOrder(id) {
 
 // ── Cancel PO ────────────────────────────────────────────────
 async function cancelPO(id) {
-  const confirmed = await confirmDialog('ביטול הזמנה', 'לבטל את ההזמנה? פעולה זו אינה הפיכה.');
-  if (!confirmed) return;
+  // Fetch current status — block received/cancelled, warn partial
+  try {
+    var { data: po, error: fetchErr } = await sb.from(T.PO)
+      .select('status').eq('id', id).single();
+    if (fetchErr || !po) { toast('שגיאה בטעינת הזמנה', 'e'); return; }
+
+    if (po.status === 'received') {
+      toast('לא ניתן לבטל הזמנה שכבר התקבלה', 'e'); return;
+    }
+    if (po.status === 'cancelled') {
+      toast('הזמנה זו כבר בוטלה', 'w'); return;
+    }
+    if (po.status === 'partial') {
+      var ok = await confirmDialog('ביטול הזמנה חלקית',
+        'הזמנה זו התקבלה חלקית. ביטול יעצור קבלת יתרת הפריטים. להמשיך?');
+      if (!ok) return;
+    } else {
+      var confirmed = await confirmDialog('ביטול הזמנה', 'לבטל את ההזמנה? פעולה זו אינה הפיכה.');
+      if (!confirmed) return;
+    }
+  } catch (e) { toast('שגיאה: ' + (e.message || ''), 'e'); return; }
+
   try {
     showLoading();
     const { error } = await sb.from(T.PO)
