@@ -50,7 +50,7 @@ function initReceiptOCR() {
 
 function _rcptOcrUpdateBtn() {
   var btn = $('rcpt-ocr-btn');
-  if (btn) btn.style.display = _pendingReceiptFile ? '' : 'none';
+  if (btn) btn.style.display = (_pendingReceiptFile && !rcptLinkedPoId) ? '' : 'none';
 }
 
 // --- 2. Trigger OCR scan — upload file, call Edge Function ---
