@@ -498,7 +498,7 @@ Both branches share one Supabase instance.
 |-------|-------|
 | Name | אופטיקה דמו |
 | Slug | demo |
-| UUID | 0bf57a99-242e-461b-9e89-fe102db5f3aa |
+| UUID | 8d8cfa7e-ef58-49af-9702-a862d459cccb |
 | Test employee PIN | 12345 (עובד בדיקה, role: ceo, full permissions) |
 | Theme | Green (#059669) — visually distinct from Prizma (blue) |
 | Barcodes | Prefixed with 'D' (e.g., D0012345) |

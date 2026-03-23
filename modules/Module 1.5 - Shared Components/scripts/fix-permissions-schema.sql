@@ -22,7 +22,7 @@ DELETE FROM roles WHERE id LIKE 'demo_%';
 UPDATE employee_roles
 SET role_id = REPLACE(role_id, 'demo_', '')
 WHERE role_id LIKE 'demo_%'
-  AND tenant_id = '0bf57a99-242e-461b-9e89-fe102db5f3aa';
+  AND tenant_id = '8d8cfa7e-ef58-49af-9702-a862d459cccb';
 
 -- ============================================================
 -- Step 2: Drop FK constraints that reference roles(id) and permissions(id)
@@ -72,21 +72,21 @@ ALTER TABLE employee_roles
 -- ============================================================
 -- Copy roles
 INSERT INTO roles (id, name_he, description, is_system, tenant_id)
-SELECT r.id, r.name_he, r.description, r.is_system, '0bf57a99-242e-461b-9e89-fe102db5f3aa'
+SELECT r.id, r.name_he, r.description, r.is_system, '8d8cfa7e-ef58-49af-9702-a862d459cccb'
 FROM roles r
 WHERE r.tenant_id = '6ad0781b-37f0-47a9-92e3-be9ed1477e1c'
 ON CONFLICT (id, tenant_id) DO NOTHING;
 
 -- Copy permissions
 INSERT INTO permissions (id, module, action, name_he, description, tenant_id)
-SELECT p.id, p.module, p.action, p.name_he, p.description, '0bf57a99-242e-461b-9e89-fe102db5f3aa'
+SELECT p.id, p.module, p.action, p.name_he, p.description, '8d8cfa7e-ef58-49af-9702-a862d459cccb'
 FROM permissions p
 WHERE p.tenant_id = '6ad0781b-37f0-47a9-92e3-be9ed1477e1c'
 ON CONFLICT (id, tenant_id) DO NOTHING;
 
 -- Copy role_permissions
 INSERT INTO role_permissions (role_id, permission_id, granted, tenant_id)
-SELECT rp.role_id, rp.permission_id, rp.granted, '0bf57a99-242e-461b-9e89-fe102db5f3aa'
+SELECT rp.role_id, rp.permission_id, rp.granted, '8d8cfa7e-ef58-49af-9702-a862d459cccb'
 FROM role_permissions rp
 WHERE rp.tenant_id = '6ad0781b-37f0-47a9-92e3-be9ed1477e1c'
 ON CONFLICT (role_id, permission_id, tenant_id) DO NOTHING;
@@ -96,9 +96,9 @@ ON CONFLICT (role_id, permission_id, tenant_id) DO NOTHING;
 -- ============================================================
 -- Test employee → CEO
 INSERT INTO employee_roles (employee_id, role_id, granted_by, tenant_id)
-SELECT e.id, 'ceo', e.id, '0bf57a99-242e-461b-9e89-fe102db5f3aa'
+SELECT e.id, 'ceo', e.id, '8d8cfa7e-ef58-49af-9702-a862d459cccb'
 FROM employees e
-WHERE e.tenant_id = '0bf57a99-242e-461b-9e89-fe102db5f3aa'
+WHERE e.tenant_id = '8d8cfa7e-ef58-49af-9702-a862d459cccb'
   AND e.name = 'עובד בדיקה'
 ON CONFLICT (employee_id, role_id) DO NOTHING;
 
@@ -106,11 +106,11 @@ ON CONFLICT (employee_id, role_id) DO NOTHING;
 -- Match by employee name pattern: demo employee name = prizma name + ' (דמו)'
 INSERT INTO employee_roles (employee_id, role_id, granted_by, tenant_id)
 SELECT demo_emp.id, er.role_id,
-  (SELECT id FROM employees WHERE tenant_id = '0bf57a99-242e-461b-9e89-fe102db5f3aa' AND name = 'עובד בדיקה' LIMIT 1),
-  '0bf57a99-242e-461b-9e89-fe102db5f3aa'
+  (SELECT id FROM employees WHERE tenant_id = '8d8cfa7e-ef58-49af-9702-a862d459cccb' AND name = 'עובד בדיקה' LIMIT 1),
+  '8d8cfa7e-ef58-49af-9702-a862d459cccb'
 FROM employee_roles er
 JOIN employees src_emp ON src_emp.id = er.employee_id AND src_emp.tenant_id = '6ad0781b-37f0-47a9-92e3-be9ed1477e1c'
-JOIN employees demo_emp ON demo_emp.tenant_id = '0bf57a99-242e-461b-9e89-fe102db5f3aa'
+JOIN employees demo_emp ON demo_emp.tenant_id = '8d8cfa7e-ef58-49af-9702-a862d459cccb'
   AND demo_emp.name = src_emp.name || ' (דמו)'
 WHERE er.tenant_id = '6ad0781b-37f0-47a9-92e3-be9ed1477e1c'
 ON CONFLICT (employee_id, role_id) DO NOTHING;
@@ -122,19 +122,19 @@ DO $$
 DECLARE v_r1 INT; v_r2 INT; v_p1 INT; v_p2 INT; v_rp1 INT; v_rp2 INT;
 BEGIN
   SELECT COUNT(*) INTO v_r1 FROM roles WHERE tenant_id = '6ad0781b-37f0-47a9-92e3-be9ed1477e1c';
-  SELECT COUNT(*) INTO v_r2 FROM roles WHERE tenant_id = '0bf57a99-242e-461b-9e89-fe102db5f3aa';
+  SELECT COUNT(*) INTO v_r2 FROM roles WHERE tenant_id = '8d8cfa7e-ef58-49af-9702-a862d459cccb';
   RAISE NOTICE 'roles:            prizma=%, demo=%', v_r1, v_r2;
 
   SELECT COUNT(*) INTO v_p1 FROM permissions WHERE tenant_id = '6ad0781b-37f0-47a9-92e3-be9ed1477e1c';
-  SELECT COUNT(*) INTO v_p2 FROM permissions WHERE tenant_id = '0bf57a99-242e-461b-9e89-fe102db5f3aa';
+  SELECT COUNT(*) INTO v_p2 FROM permissions WHERE tenant_id = '8d8cfa7e-ef58-49af-9702-a862d459cccb';
   RAISE NOTICE 'permissions:      prizma=%, demo=%', v_p1, v_p2;
 
   SELECT COUNT(*) INTO v_rp1 FROM role_permissions WHERE tenant_id = '6ad0781b-37f0-47a9-92e3-be9ed1477e1c';
-  SELECT COUNT(*) INTO v_rp2 FROM role_permissions WHERE tenant_id = '0bf57a99-242e-461b-9e89-fe102db5f3aa';
+  SELECT COUNT(*) INTO v_rp2 FROM role_permissions WHERE tenant_id = '8d8cfa7e-ef58-49af-9702-a862d459cccb';
   RAISE NOTICE 'role_permissions: prizma=%, demo=%', v_rp1, v_rp2;
 
   -- Check employee_roles for demo tenant
-  SELECT COUNT(*) INTO v_r1 FROM employee_roles WHERE tenant_id = '0bf57a99-242e-461b-9e89-fe102db5f3aa';
+  SELECT COUNT(*) INTO v_r1 FROM employee_roles WHERE tenant_id = '8d8cfa7e-ef58-49af-9702-a862d459cccb';
   RAISE NOTICE 'employee_roles (demo): %', v_r1;
 
   -- Check no demo_ prefixed data remains
