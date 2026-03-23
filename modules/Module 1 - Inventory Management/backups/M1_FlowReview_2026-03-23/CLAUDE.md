@@ -73,21 +73,20 @@ After reading, confirm:
 10. **Security & Sanitization** — Never use `innerHTML` with user-controlled input. Always use `escapeHtml()` or `textContent`. Note: PIN verification calls the pin-auth Edge Function which validates server-side and returns a signed JWT. Do not attempt to refactor PIN verification unless explicitly instructed.
 11. **No hardcoded business values** — Business name, address, tax rate, logo, phone, and any tenant-specific data must always be read from a variable or config, never from a hardcoded string in code. This ensures every tenant can customize without code changes.
 12. **Global name collision check** — Before creating, moving, or renaming any global function or variable, run: `grep -rn "functionName" --include="*.js" --include="*.html" .` If ANY other file defines the same name — resolve the collision BEFORE writing code. Report findings and wait for instructions.
-13. **Sequential number generation** — Every auto-generated sequential number (PO number, return number, document number, box number, etc.) MUST use an atomic Supabase RPC function with FOR UPDATE lock or equivalent serialization. Client-side SELECT MAX → +1 → INSERT is FORBIDDEN due to race conditions. Reference pattern: next_box_number, next_po_number, next_return_number RPCs.
 
 ### SaaS Rules — Mandatory from Phase 3.75 Onward
 
-14. **tenant_id on every table** — every new table MUST have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. No exceptions, ever.
-15. **RLS on every table** — every new table MUST have Row Level Security enabled with a tenant isolation policy. Use this template:
+13. **tenant_id on every table** — every new table MUST have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. No exceptions, ever.
+14. **RLS on every table** — every new table MUST have Row Level Security enabled with a tenant isolation policy. Use this template:
     ```sql
     CREATE POLICY tenant_isolation ON [table_name]
       USING (tenant_id = current_setting('app.tenant_id')::uuid);
     ```
-16. **Contracts** — every phase must define its public functions (contracts) in MODULE_SPEC.md. Other modules call only these contract functions — never access another module's tables directly.
-17. **Views for external access** — every phase must consider: "What does a supplier/customer/storefront need to see?" and plan Views accordingly.
-18. **No hardcoded values** — currencies, languages, payment types = configurable tables, not hardcoded enums. Build as if a second store joins tomorrow in a different country.
-19. **SaaS litmus test** — build every phase as if tomorrow a second optician chain joins that we've never met. If they can use the phase without any code changes — it was done right.
-20. **UNIQUE constraints must include tenant_id** — every UNIQUE constraint on any table must be scoped to the tenant. A global UNIQUE prevents multi-tenant data from coexisting. Example: `UNIQUE (barcode, tenant_id)` not `UNIQUE (barcode)`.
+15. **Contracts** — every phase must define its public functions (contracts) in MODULE_SPEC.md. Other modules call only these contract functions — never access another module's tables directly.
+16. **Views for external access** — every phase must consider: "What does a supplier/customer/storefront need to see?" and plan Views accordingly.
+17. **No hardcoded values** — currencies, languages, payment types = configurable tables, not hardcoded enums. Build as if a second store joins tomorrow in a different country.
+18. **SaaS litmus test** — build every phase as if tomorrow a second optician chain joins that we've never met. If they can use the phase without any code changes — it was done right.
+19. **UNIQUE constraints must include tenant_id** — every UNIQUE constraint on any table must be scoped to the tenant. A global UNIQUE prevents multi-tenant data from coexisting. Example: `UNIQUE (barcode, tenant_id)` not `UNIQUE (barcode)`.
 
 ---
 
