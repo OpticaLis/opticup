@@ -258,13 +258,22 @@ async function _batchUploadOnly() {
       var intNum = await generateDocInternalNumber();
       var docNum = 'BATCH-' + _batchTimestamp + '-' + (i + 1);
       var todayStr = new Date().toISOString().slice(0, 10);
-      var created = await batchCreate(T.SUP_DOCS, [{
+      var docRow = {
         internal_number: intNum, document_number: docNum,
         document_type_id: defaultType.id, supplier_id: _batchSupplierId,
         document_date: todayStr, subtotal: 0, vat_amount: 0, total_amount: 0,
         status: 'open', file_url: filePath, file_name: bf.file.name,
         file_hash: bf.hash, batch_id: _batchId
-      }]);
+      };
+      var created = null;
+      try {
+        created = await batchCreate(T.SUP_DOCS, [docRow]);
+      } catch (dupErr) {
+        if (dupErr.message && (dupErr.message.includes('unique') || dupErr.message.includes('duplicate') || dupErr.message.includes('23505'))) {
+          docRow.internal_number = await generateDocInternalNumber();
+          created = await batchCreate(T.SUP_DOCS, [docRow]);
+        } else { throw dupErr; }
+      }
       if (created && created[0]) {
         bf.docId = created[0].id; docIds.push(created[0].id);
         // Save to supplier_document_files table

@@ -1386,27 +1386,35 @@ CREATE INDEX idx_sup_docs_batch ON supplier_documents(tenant_id, batch_id) WHERE
 CREATE INDEX idx_sup_docs_historical ON supplier_documents(tenant_id, is_historical) WHERE is_historical = true;
 
 -- ============================================================
--- Phase 5.5a — RPC: next_internal_doc_number
+-- Phase 5.5a+044 — RPC: next_internal_doc_number (fixed: includes soft-deleted docs)
 -- ============================================================
 
-CREATE OR REPLACE FUNCTION next_internal_doc_number(p_tenant_id UUID)
+CREATE OR REPLACE FUNCTION next_internal_doc_number(
+  p_tenant_id UUID,
+  p_prefix TEXT DEFAULT 'DOC'
+)
 RETURNS TEXT
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_max_num INT;
+  v_max INTEGER;
   v_next TEXT;
 BEGIN
-  SELECT COALESCE(MAX(
-    CAST(SUBSTRING(internal_number FROM 5) AS INT)
-  ), 0) INTO v_max_num
+  -- Lock the tenant row to serialize numbering
+  PERFORM 1 FROM tenants WHERE id = p_tenant_id FOR UPDATE;
+
+  -- Find highest existing number (includes soft-deleted to avoid unique index collision)
+  SELECT COALESCE(
+    MAX(
+      CAST(SUBSTRING(internal_number FROM (LENGTH(p_prefix) + 2)) AS INTEGER)
+    ), 0)
+  INTO v_max
   FROM supplier_documents
   WHERE tenant_id = p_tenant_id
-    AND internal_number IS NOT NULL
-    AND internal_number LIKE 'DOC-%';
+    AND internal_number LIKE p_prefix || '-%';
 
-  v_next := 'DOC-' || LPAD((v_max_num + 1)::TEXT, 4, '0');
+  v_next := p_prefix || '-' || LPAD((v_max + 1)::TEXT, 5, '0');
   RETURN v_next;
 END;
 $$;

@@ -187,13 +187,23 @@ async function _histStartImport() {
       var intNum = await generateDocInternalNumber();
       var docStatus = _histDefaultStatus === 'per_doc' ? 'open' : (_histDefaultStatus === 'draft' ? 'open' : _histDefaultStatus);
       var docNum = 'HIST-' + timestamp + '-' + (i + 1);
-      var created = await batchCreate(T.SUP_DOCS, [{
+      var docRow = {
         internal_number: intNum, document_number: docNum,
         document_type_id: defaultType.id, supplier_id: _histSupplierId,
         document_date: todayStr, subtotal: 0, vat_amount: 0, total_amount: 0,
         status: docStatus, file_url: filePath, file_name: bf.file.name,
         file_hash: bf.hash, batch_id: _histBatchId, is_historical: true
-      }]);
+      };
+      var created = null;
+      try {
+        created = await batchCreate(T.SUP_DOCS, [docRow]);
+      } catch (dupErr) {
+        // Retry once with new internal_number if duplicate key
+        if (dupErr.message && (dupErr.message.includes('unique') || dupErr.message.includes('duplicate') || dupErr.message.includes('23505'))) {
+          docRow.internal_number = await generateDocInternalNumber();
+          created = await batchCreate(T.SUP_DOCS, [docRow]);
+        } else { throw dupErr; }
+      }
       if (created && created[0]) docIds.push(created[0].id);
       logs.push({
         action: 'historical_import',
