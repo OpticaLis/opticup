@@ -200,8 +200,8 @@ async function _histStartImport() {
         details: { batch_id: _histBatchId, file_name: bf.file.name, is_historical: true }
       });
     } catch (e) {
-      console.error('Historical upload error:', e);
-      toast('שגיאה בהעלאת ' + bf.file.name, 'e');
+      console.error('Historical upload error:', bf.file.name, e, JSON.stringify(e));
+      toast('שגיאה בהעלאת ' + bf.file.name + ': ' + (e.message || e.statusCode || 'unknown'), 'e');
     }
   }
   if (logs.length) { try { await batchWriteLog(logs); } catch (e) {} }

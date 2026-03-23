@@ -278,9 +278,9 @@ async function _batchUploadOnly() {
         details: { document_id: bf.docId, batch_id: _batchId, file_name: bf.file.name }
       });
     } catch (e) {
-      console.error('Batch upload error for ' + bf.file.name + ':', e);
+      console.error('Batch upload error:', bf.file.name, e, JSON.stringify(e));
       bf.status = 'failed';
-      toast('שגיאה בהעלאת ' + bf.file.name, 'e');
+      toast('שגיאה בהעלאת ' + bf.file.name + ': ' + (e.message || e.statusCode || 'unknown'), 'e');
     }
     _renderBatchFileList();
   }
