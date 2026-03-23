@@ -182,14 +182,9 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
   const brandId = brandCache[item.brand] || null;
   const supplierId = supplierCache[$('rcpt-supplier').value] || null;
 
-  // Derive product_type from brand's brand_type (not hardcoded)
-  var productType = 'eyeglasses'; // default fallback
-  if (brandId) {
-    try {
-      var { data: brandRow } = await sb.from(T.BRANDS).select('brand_type').eq('id', brandId).single();
-      if (brandRow && brandRow.brand_type) productType = brandRow.brand_type;
-    } catch (e) { /* use default */ }
-  }
+  // Derive product_type — brand_type is tier (luxury/brand/regular), not product category
+  // Valid product_type values: eyeglasses, sunglasses (per inventory_product_type_check)
+  var productType = 'eyeglasses';
 
   const newRow = {
     barcode: newBarcode,
