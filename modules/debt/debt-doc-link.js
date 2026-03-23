@@ -1,7 +1,7 @@
 // =========================================================
 // debt-doc-link.js — Document linking: invoice↔delivery notes (Phase 4d+8)
 // Load after: debt-documents.js
-// Provides: openLinkDeliveryNotesModal() (invoice→notes, primary flow),
+// Provides: openLinkDeliveryNotesModal() (invoice→notes, link+unlink flow),
 //   openLinkToInvoiceModal() (legacy note→invoice), linkDeliveryToInvoice(),
 //   _renderLinkSummary(), _toggleAllLinkNotes(), _updateLinkNotesSum(), _linkSelectedNotes()
 // =========================================================
@@ -158,27 +158,35 @@ async function openLinkDeliveryNotesModal(invoiceId) {
   } catch (e) { console.warn('link/OCR fetch error:', e); }
   hideLoading();
 
+  // Include BOTH unlinked notes AND already-linked notes (for unlinking)
+  var linkableCodes2 = { delivery_note: true, return_note: true };
   var notes = _docData.filter(function(d) {
     var code = (typeMap[d.document_type_id] || {}).code;
     return d.supplier_id === inv.supplier_id &&
-      (code === 'delivery_note' || code === 'return_note') &&
-      d.status !== 'cancelled' && !linkedIds[d.id];
+      linkableCodes2[code] &&
+      d.status !== 'cancelled';
   });
+  // Store linked IDs on window for _linkSelectedNotes to reference
+  window._linkOriginalLinkedIds = Object.assign({}, linkedIds);
   var aiCount = Object.keys(aiMatched).length;
   var invTotal = Number(inv.total_amount) || 0;
   var aiBadge = '<span style="background:#8b5cf6;color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;margin-right:4px">\uD83E\uDD16 AI</span>';
+  var linkBadge = '<span style="color:#2563eb;font-size:11px;margin-right:3px">\uD83D\uDD17</span>';
 
   var noteRows = notes.map(function(n) {
-    var isAi = !!aiMatched[n.id];
+    var isLinked = !!linkedIds[n.id];
+    var isAi = !isLinked && !!aiMatched[n.id];
     var code = (typeMap[n.document_type_id] || {}).code;
     var isReturn = code === 'return_note';
     var typeIcon = isReturn ? '\u21A9\uFE0F ' : '\uD83D\uDCE6 ';
     var amt = Number(n.total_amount) || 0;
     var signedAmt = isReturn ? -amt : amt;
-    return '<tr' + (isAi ? ' style="background:#f5f3ff"' : '') + '><td><input type="checkbox" class="link-note-cb" data-id="' + n.id +
-      '" data-amt="' + signedAmt + '"' + (isAi ? ' checked' : '') +
+    var bgStyle = isLinked ? ' style="background:#eff6ff"' : (isAi ? ' style="background:#f5f3ff"' : '');
+    var checked = isLinked || isAi ? ' checked' : '';
+    return '<tr' + bgStyle + '><td><input type="checkbox" class="link-note-cb" data-id="' + n.id +
+      '" data-amt="' + signedAmt + '" data-was-linked="' + (isLinked ? '1' : '0') + '"' + checked +
       ' onchange="_updateLinkNotesSum(\'' + invoiceId + '\')"></td>' +
-      '<td>' + (isAi ? aiBadge : '') + typeIcon + escapeHtml(n.document_number || '') + '</td>' +
+      '<td>' + (isLinked ? linkBadge : '') + (isAi ? aiBadge : '') + typeIcon + escapeHtml(n.document_number || '') + '</td>' +
       '<td>' + escapeHtml(n.document_date || '') + '</td>' +
       '<td' + (isReturn ? ' style="color:#e74c3c"' : '') + '>' + (isReturn ? '-' : '') + formatILS(amt) + '</td></tr>';
   }).join('');
@@ -223,40 +231,75 @@ function _toggleAllLinkNotes(invoiceId) {
 function _updateLinkNotesSum(invoiceId) {
   var inv = _docData.find(function(d) { return d.id === invoiceId; });
   var invTotal = inv ? (Number(inv.total_amount) || 0) : 0;
-  var sum = 0, count = 0;
+  var sum = 0, count = 0, unlinkCount = 0;
   document.querySelectorAll('.link-note-cb:checked').forEach(function(cb) {
     sum += Number(cb.getAttribute('data-amt')) || 0; count++;
+  });
+  // Count notes being unlinked (were linked, now unchecked)
+  document.querySelectorAll('.link-note-cb').forEach(function(cb) {
+    if (cb.getAttribute('data-was-linked') === '1' && !cb.checked) unlinkCount++;
   });
   var el = $('link-notes-sum'); if (!el) return;
   var diff = invTotal - sum;
   var clr = count === 0 ? 'var(--g500)' : Math.abs(diff) < 0.01 ? '#27ae60' : sum > invTotal ? '#e74c3c' : '#f59e0b';
   var icon = count === 0 ? '' : Math.abs(diff) < 0.01 ? '\u2705 ' : sum > invTotal ? '\u26A0\uFE0F ' : '\uD83D\uDCCB ';
+  var unlinkWarn = unlinkCount > 0 ? '<div style="color:#e74c3c;font-size:.82rem;margin-top:4px">\u26A0\uFE0F ' +
+    unlinkCount + ' \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05D9\u05E0\u05D5\u05EA\u05E7\u05D5 \u05DE\u05D4\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA</div>' : '';
   el.innerHTML = '<span style="color:' + clr + '">' + icon + '\u05E0\u05D1\u05D7\u05E8\u05D5: ' + count + ' \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA — ' +
     formatILS(sum) + ' \u05DE\u05EA\u05D5\u05DA ' + formatILS(invTotal) +
-    (count > 0 && Math.abs(diff) >= 0.01 ? ' (\u05E0\u05D5\u05EA\u05E8 ' + formatILS(diff) + ')' : '') + '</span>';
+    (count > 0 && Math.abs(diff) >= 0.01 ? ' (\u05E0\u05D5\u05EA\u05E8 ' + formatILS(diff) + ')' : '') + '</span>' + unlinkWarn;
 }
 
 async function _linkSelectedNotes(invoiceId) {
-  var ids = [];
-  document.querySelectorAll('.link-note-cb:checked').forEach(function(cb) { ids.push(cb.getAttribute('data-id')); });
-  if (!ids.length) { setAlert('link-notes-alert', '\u05D9\u05E9 \u05DC\u05D1\u05D7\u05D5\u05E8 \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05DE\u05E9\u05DC\u05D5\u05D7', 'e'); return; }
+  var originalLinked = window._linkOriginalLinkedIds || {};
+  var newLinkIds = [], unlinkIds = [], keepLinkedIds = [];
+  document.querySelectorAll('.link-note-cb').forEach(function(cb) {
+    var nId = cb.getAttribute('data-id');
+    var wasLinked = cb.getAttribute('data-was-linked') === '1';
+    if (cb.checked && !wasLinked) newLinkIds.push(nId);
+    else if (!cb.checked && wasLinked) unlinkIds.push(nId);
+    else if (cb.checked && wasLinked) keepLinkedIds.push(nId);
+  });
+  if (!newLinkIds.length && !unlinkIds.length) {
+    setAlert('link-notes-alert', '\u05DC\u05D0 \u05D1\u05D5\u05E6\u05E2\u05D5 \u05E9\u05D9\u05E0\u05D5\u05D9\u05D9\u05DD', 'w'); return;
+  }
   showLoading('\u05DE\u05E7\u05E9\u05E8...');
   try {
-    var linkRows = ids.map(function(nId) {
-      var note = _docData.find(function(d) { return d.id === nId; });
-      return { parent_document_id: invoiceId, child_document_id: nId,
-        amount_on_invoice: note ? (Number(note.total_amount) || 0) : 0 };
-    });
-    await batchCreate(T.DOC_LINKS, linkRows);
-    // Mark delivery notes as linked
-    var updates = ids.map(function(nId) { return { id: nId, status: 'linked' }; });
-    await batchUpdate(T.SUP_DOCS, updates);
-    await writeLog('doc_link_batch', null, {
-      reason: '\u05E7\u05D5\u05E9\u05E8\u05D5 ' + ids.length + ' \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05DE\u05E9\u05DC\u05D5\u05D7 \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA',
-      invoice_id: invoiceId, linked_notes: ids
-    });
+    // Unlink: delete document_links + reopen status
+    if (unlinkIds.length) {
+      for (var u = 0; u < unlinkIds.length; u++) {
+        await sb.from(T.DOC_LINKS).delete()
+          .eq('parent_document_id', invoiceId)
+          .eq('child_document_id', unlinkIds[u])
+          .eq('tenant_id', getTenantId());
+      }
+      var reopenUpdates = unlinkIds.map(function(nId) { return { id: nId, status: 'open' }; });
+      await batchUpdate(T.SUP_DOCS, reopenUpdates);
+      await writeLog('doc_unlink_batch', null, {
+        reason: '\u05E0\u05D5\u05EA\u05E7\u05D5 ' + unlinkIds.length + ' \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05DE\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA',
+        invoice_id: invoiceId, unlinked_notes: unlinkIds
+      });
+    }
+    // Link new notes
+    if (newLinkIds.length) {
+      var linkRows = newLinkIds.map(function(nId) {
+        var note = _docData.find(function(d) { return d.id === nId; });
+        return { parent_document_id: invoiceId, child_document_id: nId,
+          amount_on_invoice: note ? (Number(note.total_amount) || 0) : 0 };
+      });
+      await batchCreate(T.DOC_LINKS, linkRows);
+      var linkUpdates = newLinkIds.map(function(nId) { return { id: nId, status: 'linked' }; });
+      await batchUpdate(T.SUP_DOCS, linkUpdates);
+      await writeLog('doc_link_batch', null, {
+        reason: '\u05E7\u05D5\u05E9\u05E8\u05D5 ' + newLinkIds.length + ' \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05DE\u05E9\u05DC\u05D5\u05D7 \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA',
+        invoice_id: invoiceId, linked_notes: newLinkIds
+      });
+    }
     closeAndRemoveModal('link-notes-modal');
-    toast('\u05E7\u05D5\u05E9\u05E8\u05D5 ' + ids.length + ' \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05DE\u05E9\u05DC\u05D5\u05D7');
+    var msgs = [];
+    if (newLinkIds.length) msgs.push('\u05E7\u05D5\u05E9\u05E8\u05D5 ' + newLinkIds.length);
+    if (unlinkIds.length) msgs.push('\u05E0\u05D5\u05EA\u05E7\u05D5 ' + unlinkIds.length);
+    toast(msgs.join(', ') + ' \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA');
     await loadDocumentsTab();
   } catch (e) {
     console.error('_linkSelectedNotes error:', e);
