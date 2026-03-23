@@ -6,6 +6,10 @@
 // --- 1. Build comparison report ---
 async function _poCompBuildReport(receiptItems, poId) {
   var poItems = await fetchAll('purchase_order_items', [['po_id', 'eq', poId]]);
+  // Fetch supplier_id from PO for reorder functionality
+  var _poSupplierId = null;
+  try { var { data: _poRec } = await sb.from(T.PO).select('supplier_id').eq('id', poId).single();
+    if (_poRec) _poSupplierId = _poRec.supplier_id; } catch (e) {}
   // Build key map from PO items
   var poMap = {};
   poItems.forEach(function(pi) {
@@ -40,7 +44,7 @@ async function _poCompBuildReport(receiptItems, poId) {
     var key = _poCompKey(pi.brand || '', pi.model || '', pi.size || '', pi.color || '');
     if (!usedPoKeys[key]) missing.push({ pi: pi });
   });
-  return { matched: matched, shortage: shortage, priceGap: priceGap, notInPo: notInPo, missing: missing, poItems: poItems };
+  return { matched: matched, shortage: shortage, priceGap: priceGap, notInPo: notInPo, missing: missing, poItems: poItems, supplierId: _poSupplierId };
 }
 
 function _poCompKey(brand, model, size, color) {
@@ -92,6 +96,11 @@ function _poCompShowReport(report, poNumber, onConfirm) {
         '<td>' + (m.pi.qty_ordered || 0) + '</td><td>' + formatILS(m.pi.unit_cost) + '</td><td>\u05DE\u05DE\u05EA\u05D9\u05DF</td></tr>';
     }).join(''));
   }
+  // Reorder button for shortages + missing
+  if (counts.s > 0 || counts.x > 0) {
+    html += '<div style="text-align:center;padding:10px;border-top:1px solid var(--g200,#e5e7eb);margin-top:8px">' +
+      '<button class="btn" style="background:#2196F3;color:#fff" id="pc-reorder">\uD83D\uDCE6 \u05D4\u05D6\u05DE\u05DF \u05E9\u05D5\u05D1 \u05D7\u05D5\u05E1\u05E8\u05D9\u05DD</button></div>';
+  }
   html += '</div>';
 
   var footer = '<div style="display:flex;gap:8px;justify-content:flex-end;padding:8px 0">' +
@@ -111,6 +120,8 @@ function _poCompShowReport(report, poNumber, onConfirm) {
     modal.close();
     if (onConfirm) onConfirm(decisions);
   };
+  var reorderBtn = modal.el.querySelector('#pc-reorder');
+  if (reorderBtn) reorderBtn.onclick = function() { _poCompCreateReorderPO(report, poNumber); };
 }
 
 function _poCompSection(title, bg, rowsHtml) {
@@ -213,6 +224,60 @@ async function _poCompApplyDecisions(receiptId, decisions, receiptItems) {
   }
   // Phase 8 Step 5: learn price patterns
   try { await _poCompLearnPricePattern(decisions, receiptItems, supplierId); } catch (e) { /* non-blocking */ }
+}
+
+// --- Reorder: create draft PO for shortage + missing items ---
+async function _poCompCreateReorderPO(report, originalPoNumber) {
+  if (!report.supplierId) { toast('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D6\u05D4\u05D5\u05EA \u05E1\u05E4\u05E7 \u2014 \u05D4\u05D6\u05DE\u05E0\u05D4 \u05D7\u05D5\u05D6\u05E8\u05EA \u05DC\u05D0 \u05D0\u05E4\u05E9\u05E8\u05D9\u05EA', 'e'); return; }
+  var items = [];
+  // Shortage items: gap quantity
+  report.shortage.forEach(function(s) {
+    var gap = (s.ordered || 0) - (s.received || 0);
+    if (gap > 0) items.push({
+      brand: s.pi.brand || '', model: s.pi.model || '', color: s.pi.color || '', size: s.pi.size || '',
+      qty_ordered: gap, unit_cost: Number(s.pi.unit_cost) || 0, discount_pct: Number(s.pi.discount_pct) || 0
+    });
+  });
+  // Missing items: full quantity
+  report.missing.forEach(function(m) {
+    if (m.pi.qty_ordered > 0) items.push({
+      brand: m.pi.brand || '', model: m.pi.model || '', color: m.pi.color || '', size: m.pi.size || '',
+      qty_ordered: m.pi.qty_ordered, unit_cost: Number(m.pi.unit_cost) || 0, discount_pct: Number(m.pi.discount_pct) || 0
+    });
+  });
+  if (!items.length) { toast('\u05D0\u05D9\u05DF \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DC\u05D4\u05D6\u05DE\u05E0\u05D4 \u05D7\u05D5\u05D6\u05E8\u05EA', 'w'); return; }
+  showLoading('\u05D9\u05D5\u05E6\u05E8 \u05D4\u05D6\u05DE\u05E0\u05D4 \u05D7\u05D5\u05D6\u05E8\u05EA...');
+  try {
+    var newPoNum = await generatePoNumber(report.supplierId);
+    if (!newPoNum) throw new Error('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D9\u05E6\u05D5\u05E8 \u05DE\u05E1\u05E4\u05E8 \u05D4\u05D6\u05DE\u05E0\u05D4');
+    var { data: newPo, error: poErr } = await sb.from(T.PO).insert({
+      po_number: newPoNum, supplier_id: report.supplierId,
+      order_date: new Date().toISOString().split('T')[0],
+      status: 'draft', tenant_id: getTenantId(),
+      notes: '\u05D4\u05D6\u05DE\u05E0\u05D4 \u05D7\u05D5\u05D6\u05E8\u05EA \u05E2\u05D1\u05D5\u05E8 ' + (originalPoNumber || '')
+    }).select().single();
+    if (poErr) throw poErr;
+    var poItems = items.map(function(it) {
+      return {
+        po_id: newPo.id, tenant_id: getTenantId(),
+        brand: it.brand, model: it.model, color: it.color, size: it.size,
+        qty_ordered: it.qty_ordered, qty_received: 0,
+        unit_cost: it.unit_cost, discount_pct: it.discount_pct
+      };
+    });
+    var { error: itemErr } = await sb.from(T.PO_ITEMS).insert(poItems);
+    if (itemErr) throw itemErr;
+    await writeLog('po_reorder_created', null, {
+      original_po: originalPoNumber, new_po: newPoNum,
+      items_count: items.length, supplier_id: report.supplierId
+    });
+    hideLoading();
+    toast('\u05E0\u05D5\u05E6\u05E8\u05D4 \u05D4\u05D6\u05DE\u05E0\u05D4 \u05D7\u05D3\u05E9\u05D4 ' + newPoNum, 's');
+  } catch (e) {
+    hideLoading();
+    console.error('_poCompCreateReorderPO error:', e);
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
+  }
 }
 
 // --- Phase 8 Step 5: Detect VAT-inclusive price pattern ---

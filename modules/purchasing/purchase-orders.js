@@ -25,6 +25,24 @@ async function loadPurchaseOrdersTab() {
       .order('created_at', { ascending: false });
     if (error) throw error;
     poData = data || [];
+    // Fetch PO item aggregates (count + total value per PO)
+    try {
+      const { data: poItemsRaw } = await sb.from(T.PO_ITEMS)
+        .select('po_id, qty_ordered, unit_cost, discount_pct')
+        .eq('tenant_id', getTenantId());
+      var poAgg = {};
+      (poItemsRaw || []).forEach(function(it) {
+        if (!poAgg[it.po_id]) poAgg[it.po_id] = { count: 0, totalValue: 0 };
+        poAgg[it.po_id].count++;
+        var disc = Number(it.discount_pct) || 0;
+        poAgg[it.po_id].totalValue += (Number(it.qty_ordered) || 0) * (Number(it.unit_cost) || 0) * (1 - disc / 100);
+      });
+      poData.forEach(function(po) {
+        var a = poAgg[po.id];
+        po._itemCount = a ? a.count : 0;
+        po._totalValue = a ? Math.round(a.totalValue * 100) / 100 : 0;
+      });
+    } catch (e) { console.warn('PO item aggregates skipped:', e.message); }
     renderPoList(container);
   } catch (err) {
     container.innerHTML = `<p style="color:red;padding:20px">שגיאה: ${err.message}</p>`;
@@ -37,12 +55,14 @@ function renderPoList(container) {
 
   const drafts   = poData.filter(p => p.status === 'draft').length;
   const sent     = poData.filter(p => p.status === 'sent').length;
-  const partial  = poData.filter(p => p.status === 'partial').length;
-  const thisMonth = poData.filter(p => {
+  const now = new Date();
+  const thisMonthPOs = poData.filter(p => {
     const d = new Date(p.created_at);
-    const now = new Date();
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).length;
+  });
+  const thisMonth = thisMonthPOs.length;
+  const thisMonthValue = thisMonthPOs.reduce((s, p) => s + (p._totalValue || 0), 0);
+  const receivedThisMonth = thisMonthPOs.filter(p => p.status === 'received').length;
 
   const statusLabel = {
     draft:     { text: 'טיוטה',    color: '#9e9e9e' },
@@ -53,7 +73,7 @@ function renderPoList(container) {
   };
 
   const rows = filtered.length === 0
-    ? `<tr><td colspan="6" style="text-align:center;padding:20px;color:#888">אין הזמנות</td></tr>`
+    ? `<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">אין הזמנות</td></tr>`
     : filtered.map(po => {
         const s = statusLabel[po.status] || { text: po.status, color: '#888' };
         const supplierName = po.suppliers?.name || '—';
@@ -76,6 +96,8 @@ function renderPoList(container) {
           <td>${supplierName}</td>
           <td>${orderDate}</td>
           <td>${expectedDate}</td>
+          <td>${po._itemCount || 0}</td>
+          <td>${formatILS(po._totalValue || 0)}</td>
           <td><span style="color:${s.color};font-weight:600">${s.text}</span></td>
           <td>${actions}</td>
         </tr>`;
@@ -89,10 +111,10 @@ function renderPoList(container) {
       </div>
 
       <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap">
-        ${poSummaryCard('טיוטות', drafts, '#9e9e9e')}
-        ${poSummaryCard('ממתינות לקבלה', sent, '#2196F3')}
-        ${poSummaryCard('קבלה חלקית', partial, '#FF9800')}
-        ${poSummaryCard('החודש', thisMonth, '#4CAF50')}
+        ${poSummaryCard('\u05D4\u05D6\u05DE\u05E0\u05D5\u05EA \u05D4\u05D7\u05D5\u05D3\u05E9', thisMonth, '#4CAF50')}
+        ${poSummaryCard('\u05E1\u05D4"\u05DB \u20AA \u05D4\u05D7\u05D5\u05D3\u05E9', formatILS(thisMonthValue), '#1a73e8')}
+        ${poSummaryCard('\u05E4\u05EA\u05D5\u05D7\u05D5\u05EA', drafts + sent, '#FF9800')}
+        ${poSummaryCard('\u05D4\u05EA\u05E7\u05D1\u05DC\u05D5 \u05D4\u05D7\u05D5\u05D3\u05E9', receivedThisMonth, '#2196F3')}
       </div>
 
       <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap">
@@ -120,6 +142,8 @@ function renderPoList(container) {
               <th style="padding:10px">ספק</th>
               <th style="padding:10px">תאריך הזמנה</th>
               <th style="padding:10px">תאריך צפוי</th>
+              <th style="padding:10px">פריטים</th>
+              <th style="padding:10px">סכום ₪</th>
               <th style="padding:10px">סטטוס</th>
               <th style="padding:10px">פעולות</th>
             </tr>

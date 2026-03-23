@@ -159,11 +159,58 @@ function viewDealDetail(dealId) {
         '<thead><tr><th>מספר</th><th>סכום</th><th>תאריך</th><th>נפרע</th><th>סטטוס</th><th>פעולות</th></tr></thead>' +
         '<tbody>' + checkRows + '</tbody>' +
       '</table></div>' +
-      '<div style="text-align:left;margin-top:14px">' +
-        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'deal-detail-modal\')">סגור</button>' +
+      '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
+        (deal.status === 'active'
+          ? '<button class="btn" style="background:#059669;color:#fff" onclick="_completePrepaidDeal(\'' + dealId + '\')">\u05E1\u05D9\u05D9\u05DD \u05E2\u05E1\u05E7\u05D4</button>' +
+            '<button class="btn" style="background:#ef4444;color:#fff" onclick="_cancelPrepaidDeal(\'' + dealId + '\')">\u05D1\u05D8\u05DC \u05E2\u05E1\u05E7\u05D4</button>'
+          : '') +
+        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'deal-detail-modal\')">\u05E1\u05D2\u05D5\u05E8</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(modal);
+}
+
+// =========================================================
+// Complete / Cancel prepaid deal
+// =========================================================
+async function _completePrepaidDeal(dealId) {
+  var ok = await confirmDialog('\u05E1\u05D9\u05D5\u05DD \u05E2\u05E1\u05E7\u05D4', '\u05D4\u05D0\u05DD \u05DC\u05E1\u05D9\u05D9\u05DD \u05D0\u05EA \u05D4\u05E2\u05E1\u05E7\u05D4? \u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05D9\u05D4\u05D9\u05D4 \u05DC\u05D1\u05E6\u05E2 \u05E7\u05D9\u05D6\u05D5\u05D6\u05D9\u05DD \u05E0\u05D5\u05E1\u05E4\u05D9\u05DD.');
+  if (!ok) return;
+  promptPin('\u05E1\u05D9\u05D5\u05DD \u05E2\u05E1\u05E7\u05D4 \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
+    showLoading('\u05DE\u05E1\u05D9\u05D9\u05DD...');
+    try {
+      await batchUpdate(T.PREPAID_DEALS, [{ id: dealId, status: 'completed' }]);
+      await writeLog('prepaid_deal_completed', null, { deal_id: dealId, completed_by: emp.id });
+      closeAndRemoveModal('deal-detail-modal');
+      toast('\u05E2\u05E1\u05E7\u05D4 \u05E1\u05D5\u05D9\u05DE\u05D4 \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4');
+      await loadPrepaidTab();
+    } catch (e) {
+      console.error('_completePrepaidDeal error:', e);
+      toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
+    } finally { hideLoading(); }
+  });
+}
+
+async function _cancelPrepaidDeal(dealId) {
+  var deal = _prepaidDeals.find(function(d) { return d.id === dealId; });
+  var usedAmt = deal ? (Number(deal.total_used) || 0) : 0;
+  var warnText = '\u05D4\u05D0\u05DD \u05DC\u05D1\u05D8\u05DC \u05D0\u05EA \u05D4\u05E2\u05E1\u05E7\u05D4?';
+  if (usedAmt > 0) warnText += '\n\u05E9\u05D9\u05DD \u05DC\u05D1: \u05DB\u05D1\u05E8 \u05E0\u05D5\u05E6\u05DC\u05D5 ' + formatILS(usedAmt) + ' \u05DE\u05EA\u05D5\u05DA \u05D4\u05E2\u05E1\u05E7\u05D4.';
+  var ok = await confirmDialog('\u05D1\u05D9\u05D8\u05D5\u05DC \u05E2\u05E1\u05E7\u05D4', warnText);
+  if (!ok) return;
+  promptPin('\u05D1\u05D9\u05D8\u05D5\u05DC \u05E2\u05E1\u05E7\u05D4 \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
+    showLoading('\u05DE\u05D1\u05D8\u05DC...');
+    try {
+      await batchUpdate(T.PREPAID_DEALS, [{ id: dealId, status: 'cancelled' }]);
+      await writeLog('prepaid_deal_cancelled', null, { deal_id: dealId, cancelled_by: emp.id, used_amount: usedAmt });
+      closeAndRemoveModal('deal-detail-modal');
+      toast('\u05E2\u05E1\u05E7\u05D4 \u05D1\u05D5\u05D8\u05DC\u05D4');
+      await loadPrepaidTab();
+    } catch (e) {
+      console.error('_cancelPrepaidDeal error:', e);
+      toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
+    } finally { hideLoading(); }
+  });
 }
 
 // =========================================================
