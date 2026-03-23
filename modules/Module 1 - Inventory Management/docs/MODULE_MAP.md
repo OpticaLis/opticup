@@ -82,7 +82,7 @@
 | 52c | inventory-returns-actions.js | modules/inventory/inventory-returns-actions.js | 164 | Returns tab actions: markAgentPicked (PIN-verified), sendToBox (navigate to shipments wizard), bulkSendToBox (validates same supplier), bulkAction (bulk status update), exportReturnsExcel |
 | 51b | debt-returns-tab.js | modules/debt/debt-returns-tab.js | 365 | Global debt returns (credit tracking) tab: initDebtReturnsTab, loadDebtReturns (multi-status filtering), renderDebtReturnsList (accordion with bulk selection), renderDebtReturnsSummary, toggleDebtReturnsHistory |
 | 51c | debt-returns-tab-actions.js | modules/debt/debt-returns-tab-actions.js | 184 | Debt returns actions: markDebtCredited (modal + PIN), _execMarkCredited, bulkMarkCredited, exportDebtReturnsExcel |
-| 53 | file-upload.js | js/file-upload.js | 253 | File upload helper: uploadSupplierFile, getSupplierFileUrl (signed URLs), renderFilePreview, pickAndUploadFile, pickAndUploadFiles (multi-file), fetchDocFiles (with fallback to legacy file_url), saveDocFile (to supplier_document_files), renderFileGallery (thumbnails + page nav), _renderSingleFilePreview |
+| 53 | file-upload.js | js/file-upload.js | 308 | File upload helper: uploadSupplierFile, getSupplierFileUrl (signed URLs), renderFilePreview, pickAndUploadFile, pickAndUploadFiles (multi-file), fetchDocFiles (with fallback to legacy file_url), saveDocFile (to supplier_document_files), renderFileGallery (thumbnails + page nav + delete buttons), _deleteGalleryFile (confirm + delete from DB + re-render), _renderSingleFilePreview |
 | 54 | ai-ocr.js | modules/debt/ai/ai-ocr.js | 281 | OCR trigger + save (review split to ai-ocr-review.js): triggerOCR (multi-file merge: header from first, totals from last, items from all), _ocrSave (saves corrections + creates/updates supplier_document + updates OCR template), _ocrConfDot/_ocrFV/_ocrFC (confidence helpers), _injectOCRToolbarBtn, patches loadDocumentsTab |
 | 54b | ai-ocr-review.js | modules/debt/ai/ai-ocr-review.js | 262 | OCR review modal (split from ai-ocr.js): showOCRReview (side-by-side modal + supplier OCR stats + validation), _ocrCalcTotal, _ocrAddItemRow, _ocrCalcItemRow, delete + duplicate item buttons |
 
@@ -784,6 +784,12 @@
 | `getSupplierFileUrl` | `(filePath)` | Async. Creates 1-hour signed URL for viewing a stored file. Returns URL string or null |
 | `renderFilePreview` | `(fileUrl, fileName, containerId)` | Renders PDF iframe or img tag into container. Shows "אין קובץ מצורף" if no URL |
 | `pickAndUploadFile` | `(supplierId, callback)` | Opens hidden file input, uploads selected file, calls callback with result |
+| `pickAndUploadFiles` | `(supplierId, callback)` | Multi-file version. Opens hidden file input with multiple=true, uploads all, calls callback with results array |
+| `fetchDocFiles` | `(docId, fallbackFileUrl, fallbackFileName)` | Async. Queries supplier_document_files for document. Falls back to legacy file_url column if no rows. Returns array of file objects |
+| `saveDocFile` | `(docId, fileUrl, fileName, sortOrder)` | Async. Inserts record into supplier_document_files via batchCreate |
+| `renderFileGallery` | `(files, containerId)` | Async. Resolves signed URLs, renders single file preview or multi-file gallery with thumbnails. Each file has a ✕ delete button |
+| `_deleteGalleryFile` | `(fileId, containerId)` | Async. Confirms deletion via confirmDialog, deletes from supplier_document_files, re-renders gallery |
+| `_renderSingleFilePreview` | `(rf, container)` | Renders PDF iframe or clickable image into container element |
 
 ### index.html (inline script)
 

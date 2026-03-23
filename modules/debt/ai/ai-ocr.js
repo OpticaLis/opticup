@@ -152,7 +152,13 @@ async function _ocrSave(mode) {
       _ocrOriginalData, docTypeName || docTypeCode);
     closeAndRemoveModal('ocr-review-modal');
     toast('המסמך נשמר בהצלחה');
-    if (typeof loadDocumentsTab === 'function') await loadDocumentsTab();
+    // Refresh: if in supplier detail view, reload that; otherwise reload main documents tab
+    if (typeof _detailSupplierId !== 'undefined' && _detailSupplierId) {
+      if (typeof openSupplierDetail === 'function') await openSupplierDetail(_detailSupplierId);
+      if (typeof _switchDetailTab === 'function') _switchDetailTab('docs');
+    } else {
+      if (typeof loadDocumentsTab === 'function') await loadDocumentsTab();
+    }
   } catch (e) {
     console.error('_ocrSave error:', e);
     toast('שגיאה בשמירה: ' + (e.message || ''), 'e');
@@ -276,6 +282,6 @@ function _injectOCRToolbarBtn() {
   var _origRender = typeof renderDocumentsTable === 'function' ? renderDocumentsTable : null;
   window.loadDocumentsTab = async function() { await _origLoad(); _injectOCRToolbarBtn();
     if (_origRender && renderDocumentsTable === _origRender)
-      window.renderDocumentsTable = function(docs) { _origRender(docs); _injectOCRScanIcons(docs); };
+      window.renderDocumentsTable = function(docs, opts) { _origRender(docs, opts); _injectOCRScanIcons(docs); };
     if (typeof applyDocFilters === 'function') applyDocFilters(); };
 })();
