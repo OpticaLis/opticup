@@ -348,7 +348,8 @@ async function _softDeleteDocument(docId) {
   promptPin('\u05DE\u05D7\u05D9\u05E7\u05EA \u05DE\u05E1\u05DE\u05DA \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
     showLoading('\u05DE\u05D5\u05D7\u05E7...');
     try {
-      await batchUpdate(T.SUP_DOCS, [{ id: docId, is_deleted: true }]);
+      await batchUpdate(T.SUP_DOCS, [{ id: docId, is_deleted: true, updated_at: new Date().toISOString() }]);
+      // TODO: pg_cron job to permanently delete after 30 days
       await writeLog('doc_soft_delete', null, { document_id: docId, deleted_by: emp.id });
       closeAndRemoveModal('edit-doc-modal');
       toast('\u05DE\u05E1\u05DE\u05DA \u05E0\u05DE\u05D7\u05E7');

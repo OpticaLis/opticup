@@ -7,6 +7,8 @@ var _docFilterState = null; // persists across tab switches
 var _docFilterCollapsed = true;
 var _docFilterSupSelect = null; // searchSelect instance
 var _docTotalCount = 0; // total unfiltered docs
+var _recycleBinMode = false; // true = showing deleted docs
+var _deletedDocCount = 0;
 
 function _getFilterFavKey() {
   return 'opticup_doc_filters_' + getTenantId();
@@ -64,6 +66,8 @@ function renderDocFilterBar() {
       '<button class="doc-status-btn" data-status="cancelled" onclick="toggleDocStatusFilter(\'cancelled\')" ' +
         'style="font-size:.72rem;padding:2px 8px;border:none;border-radius:3px;cursor:pointer;background:#e5e7eb;color:#6b7280">\u05DE\u05D1\u05D5\u05D8\u05DC\u05D9\u05DD</button>' +
       '<button class="btn doc-add-btn" style="background:#059669;color:#fff;margin-right:auto" onclick="openNewDocumentModal()">+ \u05DE\u05E1\u05DE\u05DA \u05D7\u05D3\u05E9</button>' +
+      '<button class="btn btn-sm" id="recycle-bin-btn" style="background:#fee2e2;color:#991b1b;font-size:.78rem" onclick="_toggleRecycleBin()">' +
+        '\uD83D\uDDD1\uFE0F \u05E1\u05DC \u05DE\u05D7\u05D6\u05D5\u05E8 (<span id="recycle-count">0</span>)</button>' +
     '</div>' +
     '<div id="doc-filter-panel" style="display:' + (collapsed ? 'none' : 'grid') + ';grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px;' +
       'background:var(--white);border:1px solid var(--g200);border-radius:8px;padding:12px">' +
@@ -193,6 +197,7 @@ function applyDocFilters() {
   filtered.sort(function(a, b) { return (b[sf] || '').localeCompare(a[sf] || ''); });
   _updateFilterCount(filtered.length, _docTotalCount);
   renderDocumentsTable(filtered);
+  _loadDeletedDocCount(); // non-blocking — update recycle bin badge
 }
 
 function _updateFilterCount(shown, total) {
@@ -264,4 +269,97 @@ function _deleteFavorite(event, idx) {
   renderDocFilterBar();
   if (_docFilterState) _restoreFilterState(_docFilterState);
   applyDocFilters();
+}
+
+// =========================================================
+// Recycle Bin — deleted documents view
+// =========================================================
+async function _loadDeletedDocCount() {
+  try {
+    var { data, error } = await sb.from(T.SUP_DOCS).select('id', { count: 'exact', head: true })
+      .eq('is_deleted', true).eq('tenant_id', getTenantId());
+    _deletedDocCount = error ? 0 : (data ? data.length : 0);
+    // If head:true, count comes from the response header — fallback to query
+    if (_deletedDocCount === 0 && !error) {
+      var { data: d2 } = await sb.from(T.SUP_DOCS).select('id').eq('is_deleted', true).eq('tenant_id', getTenantId());
+      _deletedDocCount = d2 ? d2.length : 0;
+    }
+  } catch (e) { _deletedDocCount = 0; }
+  var el = $('recycle-count');
+  if (el) el.textContent = _deletedDocCount;
+}
+
+async function _toggleRecycleBin() {
+  if (_recycleBinMode) {
+    // Return to normal view
+    _recycleBinMode = false;
+    await loadDocumentsTab();
+    return;
+  }
+  _recycleBinMode = true;
+  showLoading('\u05D8\u05D5\u05E2\u05DF \u05E1\u05DC \u05DE\u05D7\u05D6\u05D5\u05E8...');
+  try {
+    var { data: deleted } = await sb.from(T.SUP_DOCS).select('*')
+      .eq('is_deleted', true).eq('tenant_id', getTenantId())
+      .order('updated_at', { ascending: false });
+    hideLoading();
+    _renderRecycleBin(deleted || []);
+  } catch (e) {
+    hideLoading();
+    console.error('_toggleRecycleBin error:', e);
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05E1\u05DC \u05DE\u05D7\u05D6\u05D5\u05E8', 'e');
+  }
+}
+
+function _renderRecycleBin(docs) {
+  var container = $('dtab-documents');
+  if (!container) return;
+  var typeMap = {}, supMap = {};
+  (_docTypes || []).forEach(function(t) { typeMap[t.id] = t; });
+  (_docSuppliers || []).forEach(function(s) { supMap[s.id] = s.name; });
+  var now = Date.now();
+
+  var rows = docs.map(function(d) {
+    var type = typeMap[d.document_type_id] || {};
+    var deletedAt = d.updated_at ? new Date(d.updated_at) : null;
+    var daysLeft = deletedAt ? Math.max(0, 30 - Math.floor((now - deletedAt.getTime()) / 86400000)) : '\u2014';
+    var deletedStr = deletedAt ? deletedAt.toLocaleDateString('he-IL') : '\u2014';
+    return '<tr>' +
+      '<td>' + escapeHtml(d.document_date || '') + '</td>' +
+      '<td>' + escapeHtml((type.name_he || '')) + '</td>' +
+      '<td>' + escapeHtml(d.document_number || '') + '</td>' +
+      '<td>' + escapeHtml(supMap[d.supplier_id] || '') + '</td>' +
+      '<td>' + formatILS(d.total_amount) + '</td>' +
+      '<td>' + escapeHtml(deletedStr) + '</td>' +
+      '<td style="color:' + (daysLeft <= 7 ? '#ef4444' : 'var(--g500)') + ';font-weight:600">' + daysLeft + ' \u05D9\u05DE\u05D9\u05DD</td>' +
+      '<td><button class="btn-sm" style="background:#059669;color:#fff" onclick="_restoreDocument(\'' + d.id + '\')">\u21A9\uFE0F \u05E9\u05D7\u05D6\u05E8</button></td>' +
+      '</tr>';
+  }).join('');
+
+  if (!rows) rows = '<tr><td colspan="8" style="text-align:center;color:var(--g500);padding:16px">\u05E1\u05DC \u05D4\u05DE\u05D7\u05D6\u05D5\u05E8 \u05E8\u05D9\u05E7</td></tr>';
+
+  container.innerHTML =
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">' +
+      '<button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" onclick="_toggleRecycleBin()">\u2192 \u05D7\u05D6\u05E8\u05D4 \u05DC\u05E8\u05E9\u05D9\u05DE\u05D4</button>' +
+      '<h3 style="margin:0;font-size:1rem;color:#991b1b">\uD83D\uDDD1\uFE0F \u05E1\u05DC \u05DE\u05D7\u05D6\u05D5\u05E8 (' + docs.length + ' \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD)</h3>' +
+    '</div>' +
+    '<div style="font-size:.82rem;color:var(--g500);margin-bottom:10px">\u05DE\u05E1\u05DE\u05DB\u05D9\u05DD \u05E9\u05E0\u05DE\u05D7\u05E7\u05D5 \u05E0\u05D9\u05EA\u05E0\u05D9\u05DD \u05DC\u05E9\u05D7\u05D6\u05D5\u05E8 \u05D1\u05DE\u05E9\u05DA 30 \u05D9\u05D5\u05DD.</div>' +
+    '<div style="overflow-x:auto"><table class="data-table" style="width:100%;font-size:.85rem">' +
+      '<thead><tr><th>\u05EA\u05D0\u05E8\u05D9\u05DA</th><th>\u05E1\u05D5\u05D2</th><th>\u05DE\u05E1\u05E4\u05E8</th><th>\u05E1\u05E4\u05E7</th><th>\u05E1\u05DB\u05D5\u05DD</th><th>\u05E0\u05DE\u05D7\u05E7</th><th>\u05D6\u05DE\u05DF \u05E0\u05D5\u05EA\u05E8</th><th>\u05E4\u05E2\u05D5\u05DC\u05D5\u05EA</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>';
+}
+
+function _restoreDocument(docId) {
+  promptPin('\u05E9\u05D7\u05D6\u05D5\u05E8 \u05DE\u05E1\u05DE\u05DA \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
+    showLoading('\u05DE\u05E9\u05D7\u05D6\u05E8...');
+    try {
+      await batchUpdate(T.SUP_DOCS, [{ id: docId, is_deleted: false }]);
+      await writeLog('doc_restored', null, { document_id: docId, restored_by: emp.id });
+      toast('\u05DE\u05E1\u05DE\u05DA \u05E9\u05D5\u05D7\u05D6\u05E8');
+      _toggleRecycleBin(); // reload recycle bin
+    } catch (e) {
+      console.error('_restoreDocument error:', e);
+      toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
+    } finally { hideLoading(); }
+  });
 }
