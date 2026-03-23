@@ -19,10 +19,17 @@ window._startBatchOCR = async function(batchId, docIds) {
       var { data } = await sb.from(T.SUP_DOCS).select('id, file_url, file_name, supplier_id')
         .eq('id', docIds[i]).single();
       if (data) {
+        // Fetch all files for this document (for multi-file scan)
+        var allFiles = [];
+        try {
+          allFiles = typeof fetchDocFiles === 'function' ? await fetchDocFiles(data.id) : [];
+        } catch (e) { /* fallback to single file */ }
         _batchOCRState.push({
           docId: data.id, fileName: data.file_name || '', fileUrl: data.file_url,
           supplierId: data.supplier_id, status: 'pending', ocrResult: null,
-          validationErrors: [], confidence: 0, extractionId: null
+          validationErrors: [], confidence: 0, extractionId: null,
+          allFiles: allFiles.length > 1 ? allFiles : null,
+          fileCount: allFiles.length > 1 ? allFiles.length : 1
         });
       }
     } catch (e) { console.warn('Failed to fetch doc ' + docIds[i], e); }
@@ -90,8 +97,8 @@ async function _processSingleOCR(item) {
   var jwt = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
   if (!jwt) { item.status = 'failed'; item.error = '\u05E0\u05D3\u05E8\u05E9\u05EA \u05D4\u05EA\u05D7\u05D1\u05E8\u05D5\u05EA \u05DE\u05D7\u05D3\u05E9'; return; }
   try {
-    // Check for multi-file document
-    var docFiles = typeof fetchDocFiles === 'function' ? await fetchDocFiles(item.docId) : [];
+    // Check for multi-file document (pre-fetched in _startBatchOCR, fallback to fetchDocFiles)
+    var docFiles = item.allFiles || (typeof fetchDocFiles === 'function' ? await fetchDocFiles(item.docId) : []);
     if (docFiles.length > 1) {
       // Multi-file: scan each page sequentially and merge
       docFiles.sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
@@ -175,10 +182,11 @@ function _updateBatchOCRUI() {
       statusIcon = '\u23F8'; statusText = 'ממתין';
     }
     var name = item.fileName.length > 25 ? item.fileName.slice(0, 22) + '...' : item.fileName;
+    var pageBadge = item.fileCount > 1 ? ' <span style="background:#e5e7eb;color:#374151;font-size:.7rem;padding:1px 4px;border-radius:3px">' + item.fileCount + ' \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD</span>' : '';
     return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;' +
       'border-bottom:1px solid var(--g100);font-size:.85rem">' +
       '<span>' + statusIcon + '</span>' +
-      '<span style="flex:1">' + escapeHtml(name) + '</span>' +
+      '<span style="flex:1">' + escapeHtml(name) + pageBadge + '</span>' +
       '<span style="color:var(--g500);font-size:.78rem">' + statusText + '</span>' +
       actions + '</div>';
   }).join('');
