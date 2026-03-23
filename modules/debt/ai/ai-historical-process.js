@@ -111,7 +111,7 @@ async function _histStartImport() {
         docIds.push(created[0].id);
         // Attach all files to supplier_document_files
         for (var ai = 0; ai < uploadedPaths.length; ai++) {
-          try { await saveDocFile(created[0].id, uploadedPaths[ai].path, uploadedPaths[ai].name, ai); } catch (e) { console.warn('saveDocFile skipped:', e.message); }
+          try { await saveDocFile(created[0].id, uploadedPaths[ai].path, uploadedPaths[ai].name, ai); } catch (e) { console.error('saveDocFile FAILED:', e.message, e); }
         }
       }
       logs.push({
@@ -158,7 +158,7 @@ async function _histStartImport() {
       }
       if (created && created[0]) {
         docIds.push(created[0].id);
-        try { await saveDocFile(created[0].id, filePath, bf.file.name, 0); } catch (e) { console.warn('saveDocFile skipped:', e.message); }
+        try { await saveDocFile(created[0].id, filePath, bf.file.name, 0); } catch (e) { console.error('saveDocFile FAILED:', e.message, e); }
       }
       logs.push({
         action: 'historical_import',

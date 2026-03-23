@@ -53,15 +53,50 @@ async function showOCRReview(result, fileUrl, existingDocId) {
   });
 
   // Document preview (signed URL)
+  // Build preview — single file or multi-page with navigation
   var signedUrl = await getSupplierFileUrl(fileUrl);
-  var preview;
-  if (signedUrl) {
+  var preview = '';
+  var _ocrPageFiles = []; // stored globally for page nav
+  if (result._merge_meta && result._merge_meta.total > 1 && existingDocId) {
+    // Multi-file: build page navigation
+    try {
+      var allFiles = typeof fetchDocFiles === 'function' ? await fetchDocFiles(existingDocId) : [];
+      if (allFiles.length > 1) {
+        allFiles.sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+        for (var pi = 0; pi < allFiles.length; pi++) {
+          var pUrl = await getSupplierFileUrl(allFiles[pi].file_url);
+          _ocrPageFiles.push({ url: pUrl, name: allFiles[pi].file_name || '\u05E2\u05DE\u05D5\u05D3 ' + (pi + 1), failed: result._merge_meta.failed.indexOf(allFiles[pi].file_name) !== -1 });
+        }
+      }
+    } catch (e) { /* fallback to single preview */ }
+  }
+  window._ocrPageFiles = _ocrPageFiles;
+  if (_ocrPageFiles.length > 1) {
+    var pageNav = '<div style="display:flex;gap:4px;justify-content:center;padding:6px 0">';
+    _ocrPageFiles.forEach(function(pf, idx) {
+      var bg = pf.failed ? '#ef4444' : (idx === 0 ? '#7c3aed' : '#e5e7eb');
+      var clr = idx === 0 || pf.failed ? '#fff' : '#374151';
+      pageNav += '<button class="btn-sm ocr-page-btn" data-page="' + idx + '" style="min-width:28px;background:' + bg + ';color:' + clr + '"' +
+        (pf.failed ? ' title="\u05E0\u05DB\u05E9\u05DC"' : ' title="' + escapeHtml(pf.name) + '"') +
+        ' onclick="_ocrSwitchPage(' + idx + ')">' + (idx + 1) + '</button>';
+    });
+    pageNav += '</div>';
+    var firstUrl = _ocrPageFiles[0].url;
     var fext = (fileUrl || '').split('.').pop().toLowerCase();
-    preview = fext === 'pdf'
-      ? '<iframe src="' + escapeHtml(signedUrl) + '" style="width:100%;height:100%;border:none" title="PDF"></iframe>'
-      : '<img src="' + escapeHtml(signedUrl) + '" style="max-width:100%;max-height:100%;object-fit:contain">';
+    preview = '<div id="ocr-preview-content">' + (firstUrl
+      ? (fext === 'pdf' ? '<iframe src="' + escapeHtml(firstUrl) + '" style="width:100%;height:calc(100% - 36px);border:none" title="PDF"></iframe>'
+        : '<img src="' + escapeHtml(firstUrl) + '" style="max-width:100%;max-height:calc(100% - 36px);object-fit:contain">')
+      : '<div style="text-align:center;color:var(--g400);padding:24px">\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D8\u05E2\u05D5\u05DF</div>') + '</div>' + pageNav;
   } else {
-    preview = '<div style="text-align:center;color:var(--g400);padding:24px">לא ניתן לטעון תצוגה מקדימה</div>';
+    // Single file preview (original behavior)
+    if (signedUrl) {
+      var fext = (fileUrl || '').split('.').pop().toLowerCase();
+      preview = fext === 'pdf'
+        ? '<iframe src="' + escapeHtml(signedUrl) + '" style="width:100%;height:100%;border:none" title="PDF"></iframe>'
+        : '<img src="' + escapeHtml(signedUrl) + '" style="max-width:100%;max-height:100%;object-fit:contain">';
+    } else {
+      preview = '<div style="text-align:center;color:var(--g400);padding:24px">\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D8\u05E2\u05D5\u05DF \u05EA\u05E6\u05D5\u05D2\u05D4 \u05DE\u05E7\u05D3\u05D9\u05DE\u05D4</div>';
+    }
   }
 
   var confPct = Math.round(conf * 100);
@@ -179,4 +214,28 @@ function _ocrCalcItemRow(inp) {
   var v = function(f) { return Number(row.querySelector('[data-f="' + f + '"]').value) || 0; };
   var t = row.querySelector('[data-f="total"]');
   if (t) t.value = (v('quantity') * v('unit_price') * (1 - v('discount') / 100)).toFixed(2);
+}
+
+// Switch OCR preview page (multi-file documents)
+function _ocrSwitchPage(pageIdx) {
+  var files = window._ocrPageFiles;
+  if (!files || !files[pageIdx]) return;
+  var pf = files[pageIdx];
+  var container = $('ocr-preview-content');
+  if (!container) return;
+  if (pf.url) {
+    var ext = (pf.name || '').split('.').pop().toLowerCase();
+    container.innerHTML = ext === 'pdf'
+      ? '<iframe src="' + escapeHtml(pf.url) + '" style="width:100%;height:calc(100% - 36px);border:none" title="PDF"></iframe>'
+      : '<img src="' + escapeHtml(pf.url) + '" style="max-width:100%;max-height:calc(100% - 36px);object-fit:contain">';
+  } else {
+    container.innerHTML = '<div style="text-align:center;color:var(--g400);padding:24px">\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D8\u05E2\u05D5\u05DF</div>';
+  }
+  // Update active button
+  document.querySelectorAll('.ocr-page-btn').forEach(function(btn) {
+    var idx = Number(btn.getAttribute('data-page'));
+    var isFailed = files[idx] && files[idx].failed;
+    btn.style.background = idx === pageIdx ? '#7c3aed' : (isFailed ? '#ef4444' : '#e5e7eb');
+    btn.style.color = idx === pageIdx || isFailed ? '#fff' : '#374151';
+  });
 }

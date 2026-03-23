@@ -99,9 +99,12 @@ async function editDocument(docId) {
   if (existing) existing.remove();
   document.body.insertAdjacentHTML('beforeend', html);
 
-  // Render file gallery async
+  // Render file gallery async + inject per-file scan buttons
   if (docFiles.length) {
-    renderFileGallery(docFiles, 'edit-doc-files');
+    await renderFileGallery(docFiles, 'edit-doc-files');
+    if (docFiles.length > 1 && typeof triggerOCR === 'function') {
+      _injectPerFileScanBtns(docFiles, doc.supplier_id, doc.id);
+    }
   }
   // Calculate initial items total
   if (typeof _edItemRecalcTotal === 'function') _edItemRecalcTotal();
@@ -175,6 +178,30 @@ async function _doAttachFiles(docId, supplierId, withOCR) {
     console.error('_doAttachFiles error:', e);
     toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E6\u05D9\u05E8\u05D5\u05E3: ' + (e.message || ''), 'e');
   }
+}
+
+// =========================================================
+// Per-file scan buttons in gallery
+// =========================================================
+function _injectPerFileScanBtns(docFiles, supplierId, docId) {
+  var thumbsEl = $('edit-doc-files-thumbs');
+  if (!thumbsEl) return;
+  var thumbBtns = thumbsEl.querySelectorAll('.file-gallery-thumb');
+  thumbBtns.forEach(function(thumb, idx) {
+    if (idx >= docFiles.length) return;
+    var scanBtn = document.createElement('button');
+    scanBtn.className = 'btn-sm';
+    scanBtn.style.cssText = 'position:absolute;top:1px;right:1px;font-size:.6rem;padding:1px 3px;background:#7c3aed;color:#fff;border-radius:3px;z-index:2';
+    scanBtn.textContent = '\uD83E\uDD16';
+    scanBtn.title = '\u05E1\u05E8\u05D5\u05E7 \u05E2\u05DE\u05D5\u05D3 ' + (idx + 1);
+    scanBtn.onclick = function(e) {
+      e.stopPropagation();
+      closeAndRemoveModal('edit-doc-modal');
+      triggerOCR(docFiles[idx].file_url, supplierId, null, docId);
+    };
+    thumb.style.position = 'relative';
+    thumb.appendChild(scanBtn);
+  });
 }
 
 // =========================================================
