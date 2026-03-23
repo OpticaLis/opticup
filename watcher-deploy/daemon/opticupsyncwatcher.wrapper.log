@@ -46,3 +46,7 @@
 2026-03-17 13:46:59 - Send SIGINT 339468
 2026-03-17 13:46:59 - SIGINT to 339468 failed - Killing as fallback
 2026-03-17 13:46:59 - Finished opticupsyncwatcher.exe
+2026-03-22 08:16:38 - Starting C:\Program Files\nodejs\node.exe  C:\Users\User\opticup\watcher-deploy\node_modules\node-windows\lib\wrapper.js --file C:\Users\User\opticup\watcher-deploy\sync-watcher.js --scriptoptions= --log "OpticUp Sync Watcher wrapper" --grow 0.25 --wait 2 --maxrestarts 10 --abortonerror n --stopparentfirst undefined
+2026-03-22 08:16:38 - Started 8680
+2026-03-22 08:17:24 - Starting C:\Program Files\nodejs\node.exe  C:\Users\User\opticup\watcher-deploy\node_modules\node-windows\lib\wrapper.js --file C:\Users\User\opticup\watcher-deploy\sync-watcher.js --scriptoptions= --log "OpticUp Sync Watcher wrapper" --grow 0.25 --wait 2 --maxrestarts 10 --abortonerror n --stopparentfirst undefined
+2026-03-22 08:17:24 - Started 8500

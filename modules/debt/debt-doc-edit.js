@@ -1,6 +1,7 @@
 // debt-doc-edit.js — Document edit modal with AI learning (split from debt-documents.js)
 // Load after: debt-documents.js, supabase-alerts-ocr.js
 // Provides: editDocument(), saveDocumentEdits(), _editDocCalc()
+// Note: Per-file scan buttons removed — single scan button via _buildDocActionToolbar()
 
 // =========================================================
 // Edit document modal
@@ -99,12 +100,9 @@ async function editDocument(docId) {
   if (existing) existing.remove();
   document.body.insertAdjacentHTML('beforeend', html);
 
-  // Render file gallery async + inject per-file scan buttons
+  // Render file gallery async
   if (docFiles.length) {
     await renderFileGallery(docFiles, 'edit-doc-files');
-    if (docFiles.length > 1 && typeof triggerOCR === 'function') {
-      _injectPerFileScanBtns(docFiles, doc.supplier_id, doc.id);
-    }
   }
   // Calculate initial items total
   if (typeof _edItemRecalcTotal === 'function') _edItemRecalcTotal();
@@ -181,30 +179,6 @@ async function _doAttachFiles(docId, supplierId, withOCR) {
 }
 
 // =========================================================
-// Per-file scan buttons in gallery
-// =========================================================
-function _injectPerFileScanBtns(docFiles, supplierId, docId) {
-  var thumbsEl = $('edit-doc-files-thumbs');
-  if (!thumbsEl) return;
-  var thumbBtns = thumbsEl.querySelectorAll('.file-gallery-thumb');
-  thumbBtns.forEach(function(thumb, idx) {
-    if (idx >= docFiles.length) return;
-    var scanBtn = document.createElement('button');
-    scanBtn.className = 'btn-sm';
-    scanBtn.style.cssText = 'position:absolute;top:1px;right:1px;font-size:.6rem;padding:1px 3px;background:#7c3aed;color:#fff;border-radius:3px;z-index:2';
-    scanBtn.textContent = '\uD83E\uDD16';
-    scanBtn.title = '\u05E1\u05E8\u05D5\u05E7 \u05E2\u05DE\u05D5\u05D3 ' + (idx + 1);
-    scanBtn.onclick = function(e) {
-      e.stopPropagation();
-      closeAndRemoveModal('edit-doc-modal');
-      triggerOCR(docFiles[idx].file_url, supplierId, null, docId);
-    };
-    thumb.style.position = 'relative';
-    thumb.appendChild(scanBtn);
-  });
-}
-
-// =========================================================
 // Auto-calc VAT + total
 // =========================================================
 function _editDocCalc() {
@@ -245,7 +219,7 @@ async function saveDocumentEdits(docId) {
     if (Number(doc.subtotal) !== newSubtotal) changes.subtotal = { old: doc.subtotal, new: newSubtotal };
     if (Number(doc.total_amount) !== newTotal) changes.total_amount = { old: doc.total_amount, new: newTotal };
 
-    await batchUpdate(T.SUP_DOCS, [{
+    var updateRow = {
       id: docId,
       document_type_id: newTypeId,
       document_number: newNumber,
@@ -256,7 +230,10 @@ async function saveDocumentEdits(docId) {
       vat_amount: newVat,
       total_amount: newTotal,
       notes: newNotes || null
-    }]);
+    };
+    // Draft → open transition on save
+    if (doc.status === 'draft') updateRow.status = 'open';
+    await batchUpdate(T.SUP_DOCS, [updateRow]);
 
     // Save edited items (non-blocking)
     if (typeof _saveEditedItems === 'function') {

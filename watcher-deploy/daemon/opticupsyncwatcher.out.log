@@ -92,3 +92,33 @@ InventorySync Watcher started. Watching: C:\Users\User\Dropbox\InventorySync\sal
 [2026-03-17 11:25:07] New file detected: 9349.csv
 [2026-03-17 11:25:08] 9349.csv | total: 1 | success: 1 | failed: 0
 [2026-03-17 11:25:08] Moved to processed: 9349.csv
+InventorySync Watcher started. Watching: C:\Users\User\Dropbox\InventorySync\sales
+[2026-03-22 06:16:39] Export error: Export query failed: TypeError: fetch failed
+InventorySync Watcher started. Watching: C:\Users\User\Dropbox\InventorySync\sales
+[2026-03-22 06:17:25] Export error: Export query failed: TypeError: fetch failed
+[2026-03-22 10:08:19] New file detected: 9390.csv
+[2026-03-22 10:08:20] 9390.csv | total: 1 | success: 1 | failed: 0
+[2026-03-22 10:08:20] Moved to processed: 9390.csv
+[2026-03-22 11:24:26] New file detected: 9391.csv
+[2026-03-22 11:24:27] 9391.csv | total: 1 | success: 1 | failed: 0
+[2026-03-22 11:24:27] Moved to processed: 9391.csv
+[2026-03-22 15:13:55] New file detected: 9392.csv
+[2026-03-22 15:13:56]   Skipping duplicate sync_log for 9392.csv
+[2026-03-22 15:13:56] 9392.csv | total: 1 | success: 1 | failed: 0
+[2026-03-22 15:13:56] Moved to processed: 9392.csv
+[2026-03-22 15:46:15] New file detected: 9394.csv
+[2026-03-22 15:46:16]   Skipping duplicate sync_log for 9394.csv
+[2026-03-22 15:46:16] 9394.csv | total: 1 | success: 1 | failed: 0
+[2026-03-22 15:46:16] Moved to processed: 9394.csv
+[2026-03-22 15:51:24] New file detected: 9395.csv
+[2026-03-22 15:51:25]   Skipping duplicate sync_log for 9395.csv
+[2026-03-22 15:51:25] 9395.csv | total: 1 | success: 1 | failed: 0
+[2026-03-22 15:51:25] Moved to processed: 9395.csv
+[2026-03-23 08:28:30] New file detected: 9396.csv
+[2026-03-23 08:28:31]   Skipping duplicate sync_log for 9396.csv
+[2026-03-23 08:28:31] 9396.csv | total: 1 | success: 1 | failed: 0
+[2026-03-23 08:28:31] Moved to processed: 9396.csv
+[2026-03-23 08:39:14] New file detected: 9398.csv
+[2026-03-23 08:39:14] Error processing 9398.csv: CSV file has no data rows
+[2026-03-23 08:39:14]   Uploaded to storage: 20260323_103914_9398.csv
+[2026-03-23 08:39:14] Moved to failed: 9398.csv

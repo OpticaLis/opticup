@@ -1,8 +1,9 @@
 // ai-historical-process.js — Historical import: file grouping + processing (split from ai-historical-import.js)
 // Load after: ai-historical-import.js
-// Provides: _groupFilesByBaseNumber(), _histStartImport(), _waitForHistOCRComplete(), _histShowLearningSummary()
-// Uses globals: _histFiles, _histSupplierId, _histDefaultStatus, _histBatchId, _histUploadedPaths,
+// Provides: _groupFilesByBaseNumber(), _histStartImport()
+// Uses globals: _histFiles, _histSupplierId, _histBatchId, _histUploadedPaths,
 //   _histFileGroups (from ai-historical-import.js)
+// Note: Import creates documents as 'draft' — NO OCR during import.
 
 // =========================================================
 // File grouping by base number (e.g. "1A.pdf" + "1B.pdf" → group "1")
@@ -58,7 +59,7 @@ async function _histStartImport() {
   var defaultType = docTypes.find(function(d) { return d.code === 'invoice'; }) || docTypes[0];
   if (!defaultType) { toast('\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0\u05D5 \u05E1\u05D5\u05D2\u05D9 \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD', 'e'); return; }
   var todayStr = new Date().toISOString().slice(0, 10);
-  var docStatus = _histDefaultStatus === 'per_doc' ? 'open' : (_histDefaultStatus === 'draft' ? 'open' : _histDefaultStatus);
+  var docStatus = 'draft';
   var docIds = [], logs = [];
 
   // Group selected files
@@ -173,94 +174,9 @@ async function _histStartImport() {
   if (logs.length) { try { await batchWriteLog(logs); } catch (e) {} }
   if (progWrap) progWrap.style.display = 'none';
   if (!docIds.length) { toast('\u05DC\u05D0 \u05D4\u05D5\u05E2\u05DC\u05D5 \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD', 'e'); return; }
-  toast(docIds.length + ' \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD \u05D4\u05D5\u05E2\u05DC\u05D5 \u2014 \u05DE\u05EA\u05D7\u05D9\u05DC \u05E1\u05E8\u05D9\u05E7\u05EA AI...');
+  var totalFiles = selected.length;
+  toast('\u05D4\u05D5\u05E2\u05DC\u05D5 ' + docIds.length + ' \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD (' + totalFiles + ' \u05E7\u05D1\u05E6\u05D9\u05DD)', 's');
   var modal = $('hist-import-modal'); if (modal) modal.remove();
-  if (typeof window._startBatchOCR === 'function') {
-    var origStartBatchOCR = window._startBatchOCR;
-    window._startBatchOCR = async function(batchId, ids) {
-      window._startBatchOCR = origStartBatchOCR;
-      await origStartBatchOCR(batchId, ids);
-      _waitForHistOCRComplete(ids);
-    };
-    window._startBatchOCR(_histBatchId, docIds);
-  } else { toast('\u05E1\u05E8\u05D9\u05E7\u05EA AI \u05DC\u05D0 \u05D6\u05DE\u05D9\u05E0\u05D4', 'e'); }
   if (typeof loadDocumentsTab === 'function') loadDocumentsTab();
 }
 
-// =========================================================
-// Wait for OCR completion + learning summary
-// =========================================================
-function _waitForHistOCRComplete(docIds) {
-  var checkInterval = setInterval(function() {
-    if (!_batchOCRState || !_batchOCRState.length) return;
-    var allDone = _batchOCRState.every(function(s) {
-      return s.status === 'done' || s.status === 'failed';
-    });
-    if (allDone) {
-      clearInterval(checkInterval);
-      setTimeout(function() { _histShowLearningSummary(docIds); }, 500);
-    }
-  }, 1000);
-  setTimeout(function() { clearInterval(checkInterval); }, 600000);
-}
-
-async function _histShowLearningSummary(docIds) {
-  var total = _batchOCRState.length;
-  var done = _batchOCRState.filter(function(s) { return s.status === 'done'; }).length;
-  var failed = _batchOCRState.filter(function(s) { return s.status === 'failed'; }).length;
-  var supplierStats = {};
-  for (var i = 0; i < _batchOCRState.length; i++) {
-    var item = _batchOCRState[i];
-    if (item.status !== 'done' || !item.supplierId) continue;
-    var sid = item.ocrResult && item.ocrResult.supplier_match ? item.ocrResult.supplier_match.id : item.supplierId;
-    if (!sid) continue;
-    if (!supplierStats[sid]) supplierStats[sid] = { count: 0, confSum: 0 };
-    supplierStats[sid].count++;
-    supplierStats[sid].confSum += item.confidence;
-  }
-  var statsHtml = '';
-  var sids = Object.keys(supplierStats);
-  for (var j = 0; j < sids.length; j++) {
-    var st = supplierStats[sids[j]];
-    var supName = '';
-    if (_docSuppliers) {
-      var sup = _docSuppliers.find(function(s) { return s.id === sids[j]; });
-      if (sup) supName = sup.name;
-    }
-    var avgConf = Math.round(st.confSum / st.count);
-    var accText = '';
-    try {
-      var { data: tmpls } = await sb.from(T.OCR_TEMPLATES).select('accuracy_rate')
-        .eq('supplier_id', sids[j]).eq('tenant_id', getTenantId()).limit(1);
-      if (tmpls && tmpls[0]) accText = ' \u2192 \u05D3\u05D9\u05D5\u05E7: ' + Math.round(tmpls[0].accuracy_rate) + '%';
-    } catch (e) {}
-    statsHtml += '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.88rem">' +
-      '<span>' + escapeHtml(supName || '\u05E1\u05E4\u05E7 \u05DC\u05D0 \u05D9\u05D3\u05D5\u05E2') + '</span>' +
-      '<span style="color:var(--g500)">' + st.count + ' \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD, \u05D1\u05D9\u05D8\u05D7\u05D5\u05DF: ' + avgConf + '%' + accText + '</span></div>';
-  }
-  if (!statsHtml) statsHtml = '<div style="color:var(--g400);font-size:.88rem">\u05D0\u05D9\u05DF \u05E0\u05EA\u05D5\u05E0\u05D9 \u05E1\u05E4\u05E7\u05D9\u05DD</div>';
-  var html =
-    '<div class="modal-overlay" id="hist-learning-modal" style="display:flex;z-index:10010" ' +
-      'onclick="if(event.target===this)this.remove()">' +
-    '<div class="modal" style="max-width:500px;width:90%">' +
-      '<h3 style="margin:0 0 12px">\uD83D\uDCCA \u05E1\u05D9\u05DB\u05D5\u05DD \u05D9\u05D9\u05D1\u05D5\u05D0 \u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9</h3>' +
-      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;text-align:center">' +
-        '<div><div style="font-size:1.4rem;font-weight:700;color:var(--primary)">' + total + '</div>' +
-          '<div style="font-size:.78rem;color:var(--g500)">\u05D4\u05D5\u05E2\u05DC\u05D5</div></div>' +
-        '<div><div style="font-size:1.4rem;font-weight:700;color:#27ae60">' + done + '</div>' +
-          '<div style="font-size:.78rem;color:var(--g500)">\u05E0\u05E1\u05E8\u05E7\u05D5</div></div>' +
-        '<div><div style="font-size:1.4rem;font-weight:700;color:#e74c3c">' + failed + '</div>' +
-          '<div style="font-size:.78rem;color:var(--g500)">\u05E0\u05DB\u05E9\u05DC\u05D5</div></div></div>' +
-      '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-bottom:10px">' +
-        '<div style="font-weight:600;font-size:.9rem;margin-bottom:6px">\uD83E\uDDE0 \u05DC\u05DE\u05D9\u05D3\u05EA AI \u05DC\u05E4\u05D9 \u05E1\u05E4\u05E7:</div>' +
-        statsHtml + '</div>' +
-      '<div style="background:#e8f5e9;border-radius:6px;padding:10px;font-size:.85rem;color:#2e7d32;margin-bottom:14px">' +
-        '\uD83D\uDCA1 \u05D4\u05E1\u05E8\u05D9\u05E7\u05D5\u05EA \u05D4\u05D1\u05D0\u05D5\u05EA \u05DE\u05E1\u05E4\u05E7\u05D9\u05DD \u05D0\u05DC\u05D5 \u05D9\u05D4\u05D9\u05D5 \u05DE\u05D3\u05D5\u05D9\u05E7\u05D5\u05EA \u05DE\u05E9\u05DE\u05E2\u05D5\u05EA\u05D9\u05EA \u05D9\u05D5\u05EA\u05E8!</div>' +
-      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
-        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="$(\'hist-learning-modal\').remove()">\u05E1\u05D2\u05D5\u05E8</button>' +
-        '<button class="btn" style="background:#059669;color:#fff" onclick="$(\'hist-learning-modal\').remove();switchDebtTab(\'documents\')">' +
-          '\uD83D\uDCCB \u05E6\u05E4\u05D4 \u05D1\u05DE\u05E1\u05DE\u05DB\u05D9\u05DD</button></div>' +
-    '</div></div>';
-  var ex = $('hist-learning-modal'); if (ex) ex.remove();
-  document.body.insertAdjacentHTML('beforeend', html);
-}

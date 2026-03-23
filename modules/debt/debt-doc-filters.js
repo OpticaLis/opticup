@@ -194,7 +194,13 @@ function applyDocFilters() {
     return true;
   });
   var sf = (typeof _docSortField !== 'undefined') ? _docSortField : 'document_date';
-  filtered.sort(function(a, b) { return (b[sf] || '').localeCompare(a[sf] || ''); });
+  filtered.sort(function(a, b) {
+    // Draft documents always appear first
+    var aDraft = a.status === 'draft' ? 0 : 1;
+    var bDraft = b.status === 'draft' ? 0 : 1;
+    if (aDraft !== bDraft) return aDraft - bDraft;
+    return (b[sf] || '').localeCompare(a[sf] || '');
+  });
   _updateFilterCount(filtered.length, _docTotalCount);
   renderDocumentsTable(filtered);
   _loadDeletedDocCount(); // non-blocking — update recycle bin badge

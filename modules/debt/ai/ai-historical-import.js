@@ -40,15 +40,8 @@ function _openHistoricalImportModal() {
             'PDF, JPG, PNG (\u05E2\u05D3 10MB, \u05E2\u05D3 50 \u05E7\u05D1\u05E6\u05D9\u05DD)</div></div></div>' +
       '<div id="hist-file-list"></div>' +
       '<div id="hist-summary" style="font-size:.85rem;color:var(--g600);margin:8px 0;display:none"></div>' +
-      '<div style="margin-bottom:12px">' +
-        '<div style="font-weight:600;font-size:.9rem;margin-bottom:6px">\u05E9\u05DC\u05D1 3: \u05E1\u05D8\u05D8\u05D5\u05E1 \u05D1\u05E8\u05D9\u05E8\u05EA \u05DE\u05D7\u05D3\u05DC</div>' +
-        '<div style="display:flex;gap:16px;font-size:.88rem">' +
-          '<label><input type="radio" name="hist-status" value="paid" checked ' +
-            'onchange="_histDefaultStatus=this.value"> \u05E9\u05D5\u05DC\u05DD</label>' +
-          '<label><input type="radio" name="hist-status" value="open" ' +
-            'onchange="_histDefaultStatus=this.value"> \u05DC\u05D0 \u05E9\u05D5\u05DC\u05DD</label>' +
-          '<label><input type="radio" name="hist-status" value="per_doc" ' +
-            'onchange="_histDefaultStatus=this.value"> \u05D0\u05D2\u05D3\u05D9\u05E8 \u05DC\u05DB\u05DC \u05DE\u05E1\u05DE\u05DA</label></div></div>' +
+      '<div style="margin-bottom:12px;font-size:.85rem;color:var(--g500)">' +
+        '\uD83D\uDCC4 \u05D4\u05DE\u05E1\u05DE\u05DB\u05D9\u05DD \u05D9\u05D9\u05D5\u05D5\u05E6\u05E8\u05D5 \u05DB\u05D8\u05D9\u05D5\u05D8\u05D4 \u2014 \u05EA\u05D5\u05DB\u05DC\u05D5 \u05DC\u05E2\u05E8\u05D5\u05DA/\u05DC\u05E1\u05E8\u05D5\u05E7 \u05DE\u05EA\u05D5\u05DA \u05D4\u05D8\u05D1\u05DC\u05D4</div>' +
       '<div id="hist-progress" style="display:none;margin:10px 0">' +
         '<div style="font-size:.82rem;color:var(--g600);margin-bottom:4px" id="hist-progress-text"></div>' +
         '<div style="height:6px;background:var(--g200);border-radius:3px;overflow:hidden">' +
@@ -57,7 +50,7 @@ function _openHistoricalImportModal() {
       '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
         '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="_closeHistImport()">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
         '<button class="btn" style="background:#059669;color:#fff" id="hist-start-btn" onclick="_histStartImport()" disabled>' +
-          '\u25B6 \u05D4\u05EA\u05D7\u05DC \u05D9\u05D9\u05D1\u05D5\u05D0 + \u05E1\u05E8\u05D9\u05E7\u05EA AI</button></div>' +
+          '\u25B6 \u05D4\u05EA\u05D7\u05DC \u05D9\u05D9\u05D1\u05D5\u05D0</button></div>' +
     '</div></div>';
   var ex = $('hist-import-modal'); if (ex) ex.remove();
   document.body.insertAdjacentHTML('beforeend', html);

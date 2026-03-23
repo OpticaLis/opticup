@@ -104,7 +104,7 @@ async function _ocrSave(mode) {
       var updateFields = {
         document_type_id: typeId, document_date: docDate, due_date: dueDate || null,
         subtotal: subtotal, vat_rate: vatRate, vat_amount: vatAmt,
-        total_amount: totalAmt, currency: currency
+        total_amount: totalAmt, currency: currency, status: 'open'
       };
       var { error: upErr } = await sb.from(T.SUP_DOCS).update(updateFields)
         .eq('id', existingDoc.id).eq('tenant_id', getTenantId());

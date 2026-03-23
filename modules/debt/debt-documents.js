@@ -8,6 +8,7 @@ var _PAYABLE_DOC_CODES = { invoice: true, tax_invoice: true, credit_note: true, 
 function _isPayableDocType(code) { return !!_PAYABLE_DOC_CODES[code]; }
 
 const DOC_STATUS_MAP = {
+  draft:           { he: '\u05DE\u05DE\u05EA\u05D9\u05DF \u05DC\u05D8\u05D9\u05E4\u05D5\u05DC', cls: 'dst-draft' },
   open:            { he: '\u05E4\u05EA\u05D5\u05D7',        cls: 'dst-open' },
   partially_paid:  { he: '\u05E9\u05D5\u05DC\u05DD \u05D7\u05DC\u05E7\u05D9\u05EA',  cls: 'dst-partial' },
   paid:            { he: '\u05E9\u05D5\u05DC\u05DD',        cls: 'dst-paid' },
@@ -118,10 +119,11 @@ function renderDocumentsTable(docs, opts) {
     if (_isPayableDocType(type.code)) {
       actionBtns += ' <button class="btn-sm" onclick="switchDebtTab(\'payments\')">\u05E9\u05DC\u05DD</button>';
     }
-    if (d.status === 'open' || d.status === 'partially_paid') {
+    if (d.status === 'open' || d.status === 'partially_paid' || d.status === 'draft') {
       actionBtns += ' <button class="btn-sm" style="background:#ef4444;color:#fff" onclick="cancelDocument(\'' + d.id + '\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>';
     }
-    return '<tr>' +
+    var rowClass = d.status === 'draft' ? ' class="row-draft"' : '';
+    return '<tr' + rowClass + '>' +
       '<td title="' + escapeHtml('\u05D4\u05D5\u05E2\u05DC\u05D4: ' + uploadedAt) + '">' + escapeHtml(d.document_date || '') + '</td>' +
       '<td>' + escapeHtml(type.name_he || '') + '</td>' +
       '<td>' + escapeHtml(d.document_number || '') + '</td>' +
