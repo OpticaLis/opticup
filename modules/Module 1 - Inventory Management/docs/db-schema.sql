@@ -1844,3 +1844,68 @@ CREATE POLICY "tenant_isolation" ON supplier_document_files FOR ALL
   USING (tenant_id = ((current_setting('request.jwt.claims'::text, true))::json->>'tenant_id')::uuid);
 CREATE POLICY "service_bypass" ON supplier_document_files FOR ALL
   USING (current_setting('role', true) = 'service_role');
+
+-- ============================================================
+-- Phase 8-QA-f — RPC: Atomic PO number generation (041)
+-- ============================================================
+CREATE OR REPLACE FUNCTION next_po_number(p_tenant_id UUID, p_supplier_number TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_prefix TEXT;
+  v_max_seq INT;
+BEGIN
+  v_prefix := 'PO-' || p_supplier_number || '-';
+  SELECT COALESCE(MAX(
+    CAST(SUBSTRING(po_number FROM LENGTH(v_prefix) + 1) AS INT)
+  ), 0) INTO v_max_seq
+  FROM purchase_orders
+  WHERE tenant_id = p_tenant_id
+    AND po_number LIKE v_prefix || '%'
+  FOR UPDATE;
+  RETURN v_prefix || LPAD((v_max_seq + 1)::TEXT, 4, '0');
+END;
+$$;
+
+-- ============================================================
+-- Phase 8-QA-f — RPC: Atomic return number generation (042)
+-- ============================================================
+CREATE OR REPLACE FUNCTION next_return_number(p_tenant_id UUID, p_supplier_number TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_prefix TEXT;
+  v_max_seq INT;
+BEGIN
+  v_prefix := 'RET-' || p_supplier_number || '-';
+  SELECT COALESCE(MAX(
+    CAST(SUBSTRING(return_number FROM LENGTH(v_prefix) + 1) AS INT)
+  ), 0) INTO v_max_seq
+  FROM supplier_returns
+  WHERE tenant_id = p_tenant_id
+    AND return_number LIKE v_prefix || '%'
+  FOR UPDATE;
+  RETURN v_prefix || LPAD((v_max_seq + 1)::TEXT, 4, '0');
+END;
+$$;
+
+-- ============================================================
+-- Phase 8-QA-f — RPC: PO item aggregates (043)
+-- ============================================================
+CREATE OR REPLACE FUNCTION get_po_aggregates(p_tenant_id UUID)
+RETURNS TABLE(po_id UUID, item_count BIGINT, total_value NUMERIC)
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT
+    poi.po_id,
+    COUNT(*) as item_count,
+    COALESCE(SUM(poi.qty_ordered * poi.unit_cost * (1 - COALESCE(poi.discount_pct, 0) / 100.0)), 0) as total_value
+  FROM purchase_order_items poi
+  WHERE poi.tenant_id = p_tenant_id
+  GROUP BY poi.po_id;
+$$;

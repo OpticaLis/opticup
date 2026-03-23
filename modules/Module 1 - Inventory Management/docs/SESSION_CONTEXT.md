@@ -1,117 +1,105 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-Phase 8-QA Complete — 2026-03-22
+Phase 8-QA-f — Flow Fixes + Infrastructure + UX Enhancements — 2026-03-23
 
 ## What Was Done This Session
 
-### Phase 8-QA — Comprehensive Flow Review + Bug Fixes + Infrastructure (2026-03-22)
+### Phase 8-QA-f — Critical Fixes, Infrastructure, File Splits, UX (2026-03-23)
 
-**8-QA-a — OCR Bug + Improvements:**
-- OCR duplicate key bug confirmed fixed (mapped full wrapper chain)
-- Added % הנחה (discount) column to OCR items table with auto-calculation
-- Removed validation blocking total_amount = 0
-- Added goods receipt line items display in document view modal
+**Bug Fixes (10 fixes):**
+- 75ee26d — cancelPayment reverses paid_amount + cascade settlement
+- d9f36bc — Supplier return uses actual quantity (was hardcoded 1)
+- 11ef7a6 — Atomic RPC for PO + Return number generation (migrations 041, 042)
+- d40b8a6 — Duplicate guard on createDocumentFromReceipt
+- 49f5f06 — PIN verification added to goods receipt confirmation
+- c8f8a78 — cancelPO validates status before allowing cancellation
+- 6caaa50 — product_type derived from brand + FIFO handles credit notes
+- e1394fd — Credit note status='open' with paid_amount=0 (was 'paid')
+- e1394fd — Prepaid deal validates start_date < end_date
+- e1394fd — Prepaid check rejects duplicate check_number per deal
 
-**8-QA-b/c/d — Full Flow Review (9 flows):**
-- Reviewed all 9 business flows in browser
-- Found 16 bugs, 19 improvement suggestions
+**Server-Side Duplicate Check (cfb4b99):**
+- saveNewDocument queries DB for duplicates (was client-side array check)
+- Confirm dialog allows override with audit trail
 
-**8-QA-e — Bug Fixes (13 bugs):**
-- BUG-13/14: Payment system filtered to payable doc types only
-- BUG-16: due_date auto-calc from invoice date + supplier payment_terms_days
-- BUG-15: Payment terms editable in supplier detail panel
-- BUG-12: Total field editable with reverse VAT calculation
-- BUG-7: Shipment settings tab click fixed
-- BUG-8: Weekly report includes opening balances
-- BUG-1: PO supplier dropdown (reverted to native select after createSearchSelect broke)
-- BUG-9/10: OCR buttons larger and more visible
+**Delivery Note Unlinking (cfb4b99):**
+- openLinkDeliveryNotesModal shows linked notes as enabled checkboxes with 🔗 badge
+- Unchecking deletes document_link + reopens note status to 'open'
+- Mixed link+unlink in single save operation
 
-**Tenant Session Isolation:**
-- Hard tenant isolation: slug change → sessionStorage.clear() + force re-login
-- Fixed duplicate headers on tenant switch
-- auth-service.js verifies stored tenant matches current slug
+**UI Improvements (f057a32):**
+- Action buttons (attach, OCR scan, link, prepaid deduct, delete) moved into View modal toolbar
+- Document table rows cleaned to show only view/pay/cancel
 
-**Access Sync Restriction:**
-- Disabled for non-Prizma tenants (UI locked message + watcher exit guard)
+**File Splits (8e4745c):**
+- ai-ocr.js (366→182+174) split into ai-ocr.js + ai-ocr-review.js
+- debt-supplier-detail.js (387→201+192) split into debt-supplier-detail.js + debt-supplier-tabs.js
+- All 4 files under 300 lines
 
-**Multi-File Support:**
-- New table supplier_document_files (migration 040)
-- Multi-file upload, gallery preview, "צרף עוד" button
-- OCR scan option on additional file attach ("שמור בלבד" vs "שמור וסרוק עם AI")
-- Backward compatible fallback to legacy file_url
+**Document Recycle Bin (8e4745c):**
+- 🗑️ סל מחזור toggle in documents toolbar with deleted count badge
+- Recycle bin view: deleted docs table with restore button + days remaining
+- Restore: PIN verification → is_deleted=false → writeLog('doc_restored')
+- Soft delete from View modal for cancelled docs (PIN required)
 
-**Full Document Management in Supplier Detail:**
-- Supplier card → מסמכים sub-tab now has ALL action buttons (צפה, שלם, ביטול, קשר, 📎, 🤖)
-- renderDocumentsTable accepts opts param (targetEl, hideSupplierCol)
-- "+ מסמך חדש" pre-filled with supplier
+**UX Enhancements (e5d1f7c):**
+- Prepaid deal: complete/cancel buttons with PIN + warning if funds used
+- PO table: added פריטים (item count) + סכום ₪ (total value) columns
+- PO summary cards: הזמנות החודש, סה"כ ₪ החודש, פתוחות, התקבלו החודש
+- Shortage reorder: "הזמן שוב חוסרים" button creates draft PO from gaps
 
-**Editable Document Items:**
-- Items in document edit modal are now editable (qty, price, discount, total)
-- Add/remove item rows, auto-calc totals
-- New file: debt-doc-items.js (157 lines)
-- Items saved to ocr_extractions.extracted_data.items
-- Receipt items stay read-only with note "לא ניתנים לעריכה"
+**Server-Side PO Aggregates (current commit):**
+- Migration 043: get_po_aggregates RPC for item count/total per PO
+- JS uses RPC with client-side fallback until migration deployed
 
-**OCR Duplicate Key Fix (second occurrence):**
-- _ocrSave UPDATE path now only updates financial fields, not identity fields
-- Root cause: OCR-extracted document_number collided with existing document
-
-**Hotfix — PO Supplier Dropdown:**
-- Reverted to native select after createSearchSelect API mismatch broke the form
-- Added cache buster to po-form.js script tag
-
-**File splits:**
-- debt-documents.js → debt-doc-new.js (new document modal functions)
-- debt-doc-items.js (editable items logic — new file)
-
-### Commits (Phase 8-QA)
-- fa58ba8 Fix OCR duplicate key on file attach + editable document items
-- 4f1779d Add cache buster to po-form.js script tag
-- 3aa8ab8 Hotfix: restore PO supplier dropdown
-- f9c924f Full document management in supplier detail + OCR scan on file attach
-- db53b12 Fix: restore closeAndRemoveModal removed during split
-- f326a68 Split debt-documents.js into debt-doc-new.js (244+196 lines)
-- 4b91c95 Multi-file support for supplier documents
-- 502ce0d Critical: hard tenant session isolation on slug change
-- bf5d629 Phase 8-QA-e: fix 10 bugs from flow review
-- 443e0c2 feat: restrict Access sync to Prizma tenant only
-- 6be1a16 chore: bump cache-bust params for ai-ocr, debt-documents, debt-doc-edit
-- a57246e feat: add discount column to OCR items + allow zero total amount
-- ef1df68 feat: show goods receipt line items in document view modal
-- 584e99b Remove OCR debug console.logs — bug confirmed fixed
-- 0787972 Phase 8-QA-a: add OCR save diagnostic console.logs
+### Commits (Phase 8-QA-f)
+- 75ee26d Fix: cancelPayment now reverses paid_amount and cascade settlement
+- d9f36bc Fix: supplier return uses actual quantity instead of hardcoded 1
+- 11ef7a6 Add atomic RPC for PO and Return number generation
+- d40b8a6 Add duplicate guard to createDocumentFromReceipt
+- 49f5f06 Add PIN verification to goods receipt confirmation
+- c8f8a78 Fix: cancelPO validates status before allowing cancellation
+- 6caaa50 Fix: product_type from brand + FIFO handles credit notes
+- f057a32 UI: move action buttons into View modal, clean document table rows
+- e1394fd Fix: credit note status open, prepaid date+check validations
+- cfb4b99 Fix: server-side duplicate check + unlink delivery notes from invoice
+- 8e4745c Split oversized files + add document recycle bin
+- e5d1f7c UX: prepaid deal actions, PO table enhancements, shortage reorder
+- (pending) Fix: server-side PO aggregates + full documentation update
 
 ## Current State
 - **6 HTML pages**: index, inventory, suppliers-debt, employees, shipments, settings
-- **~119 JS files**: added debt-doc-new.js, debt-doc-items.js, plus changes across 15+ files
-- **49 DB tables**: added supplier_document_files (migration 040, pending manual execution)
-- **45 migration files**: added 040_supplier_document_files.sql
-- **debt module**: 19 files (was 16, added debt-doc-new.js, debt-doc-items.js, plus existing ai/ 7 files)
+- **~121 JS files**: added ai-ocr-review.js, debt-supplier-tabs.js
+- **49 DB tables** + 3 new RPC functions (next_po_number, next_return_number, get_po_aggregates)
+- **46 migration files**: added 041, 042, 043
+- **debt module**: 21 files (added ai-ocr-review.js, debt-supplier-tabs.js)
 - Hard tenant session isolation (shared.js slug change detection)
 - JWT-based RLS on all 49 tables
+- Document recycle bin with restore capability
+- PO table with item aggregates (server-side RPC with client fallback)
 
-## Open Issues — Flow Fixes Needed (Next Session)
+## Open Issues
 
-### 🔴 CRITICAL — Flow Issues
-- **Cannot delete individual files from multi-file gallery** — when a document has 2+ files, there's no delete/remove button per file in the edit modal gallery
-- **🤖 OCR scan button visibility** — once a document has been scanned, the per-row 🤖 button should hide on the main documents table and only remain accessible inside "צפה" modal
+### 🔴 CRITICAL
+- **Migrations 041-043 pending manual execution** in Supabase Dashboard
+- **Migration 040 still pending** (supplier_document_files table)
 
 ### 🟡 MEDIUM
 - JWT secret rotation before second tenant
-- ai-ocr.js at 366 lines (over 350 limit)
-- debt-supplier-detail.js at 387 lines (over 350 limit)
-- PO supplier dropdown is native select (createSearchSelect integration failed — API mismatch)
-- Migration 040 (supplier_document_files) needs manual execution in Supabase Dashboard
+- PO supplier dropdown is native select (createSearchSelect integration failed)
+- Cannot delete individual files from multi-file gallery
+- OCR scan button should hide on main table once doc is scanned (show only in View modal)
 
 ### 🟢 LOW / DEFERRED
 - OCR multi-page scan (currently scans primary file only)
 - Drag-to-reorder files in gallery
 - File dedup via file_hash
-- Multiple prepaid deals per supplier edge case
+- pg_cron job for permanent delete after 30 days (recycle bin)
 
 ## Next Steps
-1. Execute migration 040 in Supabase Dashboard (supplier_document_files table)
-2. Fix flow issues listed above (new chat session)
-3. Module 2 planning (Platform Admin — SaaS infrastructure)
-4. JWT secret rotation
+1. Execute migrations 040-043 in Supabase Dashboard
+2. Browser testing on demo tenant — full flow regression
+3. Merge develop → main for production deploy
+4. Module 2 planning (Platform Admin — SaaS infrastructure)
+5. JWT secret rotation

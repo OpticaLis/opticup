@@ -25,23 +25,32 @@ async function loadPurchaseOrdersTab() {
       .order('created_at', { ascending: false });
     if (error) throw error;
     poData = data || [];
-    // Fetch PO item aggregates (count + total value per PO)
+    // Fetch PO item aggregates (server-side RPC with client-side fallback)
     try {
-      const { data: poItemsRaw } = await sb.from(T.PO_ITEMS)
-        .select('po_id, qty_ordered, unit_cost, discount_pct')
-        .eq('tenant_id', getTenantId());
-      var poAgg = {};
-      (poItemsRaw || []).forEach(function(it) {
-        if (!poAgg[it.po_id]) poAgg[it.po_id] = { count: 0, totalValue: 0 };
-        poAgg[it.po_id].count++;
-        var disc = Number(it.discount_pct) || 0;
-        poAgg[it.po_id].totalValue += (Number(it.qty_ordered) || 0) * (Number(it.unit_cost) || 0) * (1 - disc / 100);
-      });
-      poData.forEach(function(po) {
-        var a = poAgg[po.id];
-        po._itemCount = a ? a.count : 0;
-        po._totalValue = a ? Math.round(a.totalValue * 100) / 100 : 0;
-      });
+      var _aggDone = false;
+      try {
+        var { data: agg, error: aggErr } = await sb.rpc('get_po_aggregates', { p_tenant_id: getTenantId() });
+        if (!aggErr && agg) {
+          var aggMap = {};
+          agg.forEach(function(r) { aggMap[r.po_id] = { count: Number(r.item_count), value: Number(r.total_value) }; });
+          poData.forEach(function(po) { var a = aggMap[po.id]; po._itemCount = a ? a.count : 0; po._totalValue = a ? Math.round(a.value * 100) / 100 : 0; });
+          _aggDone = true;
+        } else { console.warn('get_po_aggregates RPC unavailable, using fallback:', aggErr?.message); }
+      } catch (e) { console.warn('get_po_aggregates RPC failed, using fallback:', e.message); }
+      // Fallback: client-side aggregation (until migration 043 is executed)
+      if (!_aggDone) {
+        var { data: poItemsRaw } = await sb.from(T.PO_ITEMS)
+          .select('po_id, qty_ordered, unit_cost, discount_pct')
+          .eq('tenant_id', getTenantId());
+        var poAgg = {};
+        (poItemsRaw || []).forEach(function(it) {
+          if (!poAgg[it.po_id]) poAgg[it.po_id] = { count: 0, totalValue: 0 };
+          poAgg[it.po_id].count++;
+          var disc = Number(it.discount_pct) || 0;
+          poAgg[it.po_id].totalValue += (Number(it.qty_ordered) || 0) * (Number(it.unit_cost) || 0) * (1 - disc / 100);
+        });
+        poData.forEach(function(po) { var a = poAgg[po.id]; po._itemCount = a ? a.count : 0; po._totalValue = a ? Math.round(a.totalValue * 100) / 100 : 0; });
+      }
     } catch (e) { console.warn('PO item aggregates skipped:', e.message); }
     renderPoList(container);
   } catch (err) {
