@@ -43,7 +43,7 @@ async function loadPOsForSupplier(supplierName) {
 
 async function onReceiptPoSelected() {
   const poId = $('rcpt-po-select').value;
-  if (!poId) { rcptLinkedPoId = null; return; }
+  if (!poId) { rcptLinkedPoId = null; if (typeof _rcptOcrUpdateBtn === 'function') _rcptOcrUpdateBtn(); return; }
 
   showLoading('טוען פריטי הזמנה...');
   try {
@@ -90,6 +90,7 @@ async function onReceiptPoSelected() {
     }
 
     rcptLinkedPoId = poId;
+    if (typeof _rcptOcrUpdateBtn === 'function') _rcptOcrUpdateBtn();
     updateReceiptItemsStats();
     toast('פריטי הזמנה נטענו', 's');
   } catch (e) {
