@@ -45,6 +45,13 @@ async function editDocument(docId) {
     } catch (e) { console.warn('Receipt items load skipped:', e.message); }
   }
 
+  // Comparison table (PO vs Receipt vs Invoice)
+  var comparisonHtml = '';
+  if (doc.goods_receipt_id && typeof buildComparisonSection === 'function') {
+    try { comparisonHtml = await buildComparisonSection(doc); }
+    catch (e) { console.warn('Comparison section skipped:', e.message); }
+  }
+
   // Type dropdown
   var typeOpts = _docTypes.map(function(t) {
     return '<option value="' + t.id + '"' + (t.id === doc.document_type_id ? ' selected' : '') + '>' + escapeHtml(t.name_he) + '</option>';
@@ -85,6 +92,7 @@ async function editDocument(docId) {
         '</div>' +
         '<div id="edit-doc-files"></div>' +
       '</div>' +
+      comparisonHtml +
       ocrItemsHtml +
       receiptItemsHtml +
       // Action toolbar — actions moved from table rows into this modal
