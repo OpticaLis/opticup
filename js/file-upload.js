@@ -241,13 +241,13 @@ function _renderSingleFilePreview(rf, container) {
   if (ext === 'pdf') {
     container.innerHTML =
       '<iframe src="' + escapeHtml(rf.url) + '" ' +
-        'style="width:100%;height:300px;border:1px solid var(--g200);border-radius:6px" ' +
+        'style="width:100%;height:450px;border:1px solid var(--g200);border-radius:6px" ' +
         'title="' + escapeHtml(rf.name || 'PDF') + '"></iframe>';
   } else {
     container.innerHTML =
       '<img src="' + escapeHtml(rf.url) + '" ' +
         'alt="' + escapeHtml(rf.name || 'Image') + '" ' +
-        'style="max-width:100%;max-height:300px;border-radius:6px;border:1px solid var(--g200);cursor:pointer" ' +
+        'style="max-width:100%;max-height:450px;border-radius:6px;border:1px solid var(--g200);cursor:pointer" ' +
         'onclick="window.open(\'' + escapeHtml(rf.url) + '\',\'_blank\')">';
   }
 }

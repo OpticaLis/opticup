@@ -115,10 +115,23 @@ async function _ocrSave(mode) {
       docFields.created_by = emp ? emp.id : null;
       created = await batchCreate(T.SUP_DOCS, [docFields]);
     }
-    // Update ocr_extractions record + link to document (non-blocking — RLS may block)
+    // Update ocr_extractions record + link to document + save edited items
     if (_ocrExtractionId) {
       try {
+        // Build updated extracted_data with user-edited items
+        var updatedData = _ocrOriginalData ? JSON.parse(JSON.stringify(_ocrOriginalData)) : {};
+        updatedData.items = items;
+        updatedData.document_number = docNumber;
+        updatedData.document_date = docDate;
+        updatedData.due_date = dueDate;
+        updatedData.subtotal = subtotal;
+        updatedData.vat_rate = vatRate;
+        updatedData.vat_amount = vatAmt;
+        updatedData.total_amount = totalAmt;
+        updatedData.currency = currency;
+
         var extUpdate = { id: _ocrExtractionId, status: status,
+          extracted_data: updatedData,
           corrections: hasCorr ? corrections : null, processed_by: emp ? emp.id : null };
         if (created && created[0]) extUpdate.supplier_document_id = created[0].id;
         await batchUpdate(T.OCR_EXTRACTIONS, [extUpdate]);
