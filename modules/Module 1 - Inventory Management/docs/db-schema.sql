@@ -727,7 +727,7 @@ CREATE TABLE IF NOT EXISTS supplier_documents (
   goods_receipt_id  UUID REFERENCES goods_receipts(id),
   po_id             UUID REFERENCES purchase_orders(id),
   status            TEXT NOT NULL DEFAULT 'open'
-                    CHECK (status IN ('open', 'partially_paid', 'paid', 'linked', 'cancelled')),
+                    CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled')),
   paid_amount       DECIMAL(12,2) DEFAULT 0,
   notes             TEXT,
   created_by        UUID REFERENCES employees(id),
