@@ -2105,3 +2105,9 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 - `next_return_number(p_tenant_id UUID, p_supplier_number TEXT)` — Atomic sequential RET-{sup}-{NNNN} generation. Same pattern as next_po_number. JS fallback in debt-returns.js if RPC not yet deployed.
 - `get_po_aggregates(p_tenant_id UUID)` — Returns per-PO item_count and total_value (SUM qty*cost*(1-discount/100)). Used by purchase-orders.js for table columns. JS client-side fallback if RPC not deployed.
 - Migration: `041_atomic_po_number.sql`, `042_atomic_return_number.sql`, `043_po_item_aggregates.sql`
+
+**✅ Phase 2a:** Database preparations for receipt/debt flow improvements:
+- Add `'pending_invoice'` to `supplier_documents` status CHECK constraint — new status for receipt-created docs awaiting invoice attachment
+- Add `missing_price BOOLEAN DEFAULT false` column to `supplier_documents` — flags documents with items missing cost prices
+- Add partial UNIQUE index `idx_supplier_documents_goods_receipt_unique` on `supplier_documents(goods_receipt_id) WHERE goods_receipt_id IS NOT NULL` — prevents duplicate document creation per receipt
+- Migration: `046_phase2_db_prep.sql`

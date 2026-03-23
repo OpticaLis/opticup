@@ -727,7 +727,8 @@ CREATE TABLE IF NOT EXISTS supplier_documents (
   goods_receipt_id  UUID REFERENCES goods_receipts(id),
   po_id             UUID REFERENCES purchase_orders(id),
   status            TEXT NOT NULL DEFAULT 'open'
-                    CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled')),
+                    CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled', 'pending_invoice')),
+  missing_price     BOOLEAN DEFAULT false,                          -- items with unknown cost price (Phase 2a)
   paid_amount       DECIMAL(12,2) DEFAULT 0,
   notes             TEXT,
   created_by        UUID REFERENCES employees(id),
@@ -746,6 +747,9 @@ CREATE INDEX IF NOT EXISTS idx_supdocs_parent ON supplier_documents(parent_invoi
 CREATE UNIQUE INDEX IF NOT EXISTS idx_supdocs_internal_unique
   ON supplier_documents(tenant_id, internal_number)
   WHERE internal_number IS NOT NULL;                         -- partial unique (022)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_documents_goods_receipt_unique
+  ON supplier_documents(goods_receipt_id)
+  WHERE goods_receipt_id IS NOT NULL;                         -- one doc per receipt (Phase 2a)
 
 -- ============================================================
 -- 22. document_links — maps delivery notes to monthly invoices (021)
