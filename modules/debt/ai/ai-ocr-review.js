@@ -45,11 +45,7 @@ async function showOCRReview(result, fileUrl, existingDocId) {
   var itemRows = '';
   (Array.isArray(items) ? items : []).forEach(function(it, i) {
     var disc = it.discount || 0;
-    itemRows += '<tr><td><input class="ocr-itm" data-i="' + i + '" data-f="description" value="' + escapeHtml(it.description || '') + '"></td>' +
-      '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="quantity" value="' + (it.quantity || '') + '" step="1" min="0" oninput="_ocrCalcItemRow(this)"></td>' +
-      '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="unit_price" value="' + (it.unit_price || '') + '" step="0.01" oninput="_ocrCalcItemRow(this)"></td>' +
-      '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="discount" value="' + disc + '" step="0.01" min="0" max="100" oninput="_ocrCalcItemRow(this)"></td>' +
-      '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="total" value="' + (it.total || '') + '" step="0.01"></td></tr>';
+    itemRows += _ocrBuildItemRow(i, escapeHtml(it.description || ''), it.quantity || '', it.unit_price || '', disc, it.total || '');
   });
 
   // Document preview (signed URL)
@@ -154,7 +150,7 @@ async function showOCRReview(result, fileUrl, existingDocId) {
             '<strong style="font-size:.9rem">פריטים</strong>' +
             '<button class="btn-sm" onclick="_ocrAddItemRow()">+ הוסף שורה</button></div>' +
           '<div style="overflow-x:auto"><table class="data-table ocr-items-tbl" style="width:100%;font-size:.85rem">' +
-            '<thead><tr><th>תיאור</th><th>כמות</th><th>מחיר ליח\'</th><th>% הנחה</th><th>סה"כ</th></tr></thead>' +
+            '<thead><tr><th style="width:52px"></th><th>תיאור</th><th>כמות</th><th>מחיר ליח\'</th><th>% הנחה</th><th>סה"כ</th></tr></thead>' +
             '<tbody id="ocr-items-body">' + itemRows + '</tbody></table></div>' +
         '</div></div>' +
         '<div class="ocr-preview-panel">' + preview + '</div>' +
@@ -196,16 +192,41 @@ function _ocrCalcTotal() {
   if ($('ocr-total')) $('ocr-total').value = (sub + vat).toFixed(2);
 }
 
-// Add item row
+// Build a single item row HTML (shared by initial render + add + duplicate)
+function _ocrBuildItemRow(i, desc, qty, price, disc, total) {
+  return '<tr>' +
+    '<td style="white-space:nowrap;width:52px">' +
+      '<button type="button" class="btn-sm" style="width:24px;height:24px;padding:0;font-size:.8rem;background:#fee2e2;border-color:#fca5a5" title="\u05DE\u05D7\u05E7 \u05E9\u05D5\u05E8\u05D4" onclick="_ocrDeleteItemRow(this)">\u274C</button>' +
+      '<button type="button" class="btn-sm" style="width:24px;height:24px;padding:0;font-size:.8rem;margin-right:2px;background:#e0e7ff;border-color:#a5b4fc" title="\u05E9\u05DB\u05E4\u05DC \u05E9\u05D5\u05E8\u05D4" onclick="_ocrDuplicateItemRow(this)">\uD83D\uDCCB</button>' +
+    '</td>' +
+    '<td><input class="ocr-itm" data-i="' + i + '" data-f="description" value="' + desc + '"></td>' +
+    '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="quantity" value="' + qty + '" step="1" min="0" oninput="_ocrCalcItemRow(this)"></td>' +
+    '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="unit_price" value="' + price + '" step="0.01" oninput="_ocrCalcItemRow(this)"></td>' +
+    '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="discount" value="' + disc + '" step="0.01" min="0" max="100" oninput="_ocrCalcItemRow(this)"></td>' +
+    '<td><input type="number" class="ocr-itm" data-i="' + i + '" data-f="total" value="' + total + '" step="0.01"></td></tr>';
+}
+
+// Add empty item row
 function _ocrAddItemRow() {
   var tbody = $('ocr-items-body'); if (!tbody) return;
   var idx = tbody.rows.length;
-  tbody.insertAdjacentHTML('beforeend',
-    '<tr><td><input class="ocr-itm" data-i="' + idx + '" data-f="description"></td>' +
-    '<td><input type="number" class="ocr-itm" data-i="' + idx + '" data-f="quantity" step="1" min="0" oninput="_ocrCalcItemRow(this)"></td>' +
-    '<td><input type="number" class="ocr-itm" data-i="' + idx + '" data-f="unit_price" step="0.01" oninput="_ocrCalcItemRow(this)"></td>' +
-    '<td><input type="number" class="ocr-itm" data-i="' + idx + '" data-f="discount" value="0" step="0.01" min="0" max="100" oninput="_ocrCalcItemRow(this)"></td>' +
-    '<td><input type="number" class="ocr-itm" data-i="' + idx + '" data-f="total" step="0.01"></td></tr>');
+  tbody.insertAdjacentHTML('beforeend', _ocrBuildItemRow(idx, '', '', '', 0, ''));
+}
+
+// Delete item row
+function _ocrDeleteItemRow(btn) {
+  var row = btn.closest('tr'); if (!row) return;
+  row.remove();
+}
+
+// Duplicate item row (clone values into a new row below)
+function _ocrDuplicateItemRow(btn) {
+  var row = btn.closest('tr'); if (!row) return;
+  var tbody = $('ocr-items-body'); if (!tbody) return;
+  var idx = tbody.rows.length;
+  var v = function(f) { var el = row.querySelector('[data-f="' + f + '"]'); return el ? el.value : ''; };
+  var newHtml = _ocrBuildItemRow(idx, escapeHtml(v('description')), v('quantity'), v('unit_price'), v('discount'), v('total'));
+  row.insertAdjacentHTML('afterend', newHtml);
 }
 
 // Auto-calc item row total: qty × price × (1 - discount/100)
