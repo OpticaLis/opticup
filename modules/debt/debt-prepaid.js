@@ -209,6 +209,7 @@ async function saveNewDeal() {
   if (!endDate)     { setAlert('deal-alert', 'יש להזין תאריך סיום', 'e'); return; }
   if (totalAmt <= 0){ setAlert('deal-alert', 'סכום חייב להיות חיובי', 'e'); return; }
   if (!pin)         { setAlert('deal-alert', 'יש להזין קוד עובד', 'e'); return; }
+  if (new Date(startDate) >= new Date(endDate)) { setAlert('deal-alert', 'תאריך סיום חייב להיות אחרי תאריך התחלה', 'e'); return; }
 
   var emp = await verifyPinOnly(pin);
   if (!emp) { setAlert('deal-alert', 'קוד עובד שגוי', 'e'); return; }

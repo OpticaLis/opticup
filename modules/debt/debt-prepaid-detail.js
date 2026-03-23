@@ -42,6 +42,18 @@ async function saveNewCheck(dealId) {
   if (amount <= 0) { setAlert('check-alert', 'סכום חייב להיות חיובי', 'e'); return; }
   if (!checkDate)  { setAlert('check-alert', 'יש להזין תאריך', 'e'); return; }
 
+  // Duplicate check number validation
+  var existing = await sb.from(T.PREPAID_CHECKS)
+    .select('id')
+    .eq('prepaid_deal_id', dealId)
+    .eq('check_number', checkNum)
+    .eq('tenant_id', getTenantId())
+    .limit(1);
+  if (existing.data && existing.data.length > 0) {
+    setAlert('check-alert', 'צ\u05F3ק מספר ' + escapeHtml(checkNum) + ' כבר קיים בעסקה זו', 'e');
+    return;
+  }
+
   showLoading('שומר צ\u05F3ק...');
   try {
     await batchCreate(T.PREPAID_CHECKS, [{

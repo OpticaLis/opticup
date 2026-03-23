@@ -75,7 +75,8 @@ async function _createCreditNoteForReturn(ret, returnId, empId) {
       vat_amount: vatAmount,
       total_amount: totalAmount,
       currency: 'ILS',
-      status: 'paid',
+      status: 'open',
+      paid_amount: 0,
       notes: 'זיכוי אוטומטי עבור ' + (ret.return_number || ''),
       internal_number: internalNumber,
       created_by: empId
