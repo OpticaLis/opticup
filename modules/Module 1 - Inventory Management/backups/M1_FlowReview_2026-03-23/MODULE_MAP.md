@@ -67,7 +67,7 @@
 | 44b | debt-doc-new.js | modules/debt/debt-doc-new.js | 205 | New document modal (split from debt-documents.js): openNewDocumentModal, _pickNewDocFiles, _renderNewDocFileList, _removeNewDocFileAt, calcNewDocTotal, calcNewDocFromTotal, _ndAutoCalcDueDate, saveNewDocument (server-side duplicate check with override + multi-file + saveDocFile), generateDocInternalNumber |
 | 44c | debt-doc-items.js | modules/debt/debt-doc-items.js | 157 | Editable document items: _buildEditableItemsHtml (editable inputs table), _edItemRowHtml, _edItemCalcRow (auto-calc), _edItemAddRow, _edItemRemoveRow, _edItemRecalcTotal (syncs with subtotal), _gatherEditedItems, _saveEditedItems (to ocr_extractions), _buildReceiptItemsHtml (read-only) |
 | 44d | debt-doc-edit.js | modules/debt/debt-doc-edit.js | 382 | Document edit modal: editDocument (editable form + file gallery + comparison + editable items), _editDocAttachMore (choice modal: save only vs save+OCR), _showAttachChoiceModal, _doAttachFiles, _editDocCalc, saveDocumentEdits (+_saveEditedItems), _learnFromDocumentEdits, _buildDocActionToolbar (action buttons in View modal), _softDeleteDocument (PIN-verified, sets is_deleted+updated_at) |
-| 44e | debt-doc-compare.js | modules/debt/debt-doc-compare.js | 244 | PO vs Receipt vs Invoice comparison: buildComparisonSection(doc), _cmpMatchItems (barcode+brand/model fallback), _cmpFindMatch, _cmpFindOcrMatch (fuzzy description), _cmpBuildRow, _cmpStatus (match/price-diff/missing/not-in-po/invoice-only), _cmpRenderSection (dynamic columns), _cmpCell, _cmpPrice |
+| 44e | debt-doc-compare.js | modules/debt/debt-doc-compare.js | 214 | PO vs Receipt vs Invoice comparison: buildComparisonSection(doc), _cmpMatchItems (barcode+brand/model fallback), _cmpFindMatch, _cmpFindOcrMatch (fuzzy description), _cmpBuildRow, _cmpStatus (match/price-diff/missing/not-in-po/invoice-only), _cmpRenderSection (dynamic columns), _cmpCell, _cmpPrice |
 | 45 | debt-doc-link.js | modules/debt/debt-doc-link.js | 292 | Delivery note → invoice linking: openLinkToInvoiceModal (shows supplier's invoices with auto-sum), linkDeliveryToInvoice (creates document_links record, updates status to linked), _renderLinkSummary (linked amounts vs invoice total comparison), openLinkDeliveryNotesModal, _extractDeliveryNoteRefs, _toggleAllLinkNotes, _updateLinkNotesSum, _linkSelectedNotes |
 | 46 | debt-payments.js | modules/debt/debt-payments.js | 229 | Payments tab: loadPaymentsTab (fetch payments+methods+suppliers+allocations+documents), renderPaymentsToolbar (filters + add button), applyPayFilters (client-side), renderPaymentsTable (with כנגד doc numbers), viewPayment (detail modal with allocation table) |
 | 47 | debt-payment-wizard.js | modules/debt/debt-payment-wizard.js | 146 | Payment wizard steps 1-2: openNewPaymentWizard (state reset + modal), supplier selection with debt summary + withholding tax rate lookup, payment details form with auto-calc withholding tax |
@@ -83,8 +83,8 @@
 | 51b | debt-returns-tab.js | modules/debt/debt-returns-tab.js | 365 | Global debt returns (credit tracking) tab: initDebtReturnsTab, loadDebtReturns (multi-status filtering), renderDebtReturnsList (accordion with bulk selection), renderDebtReturnsSummary, toggleDebtReturnsHistory |
 | 51c | debt-returns-tab-actions.js | modules/debt/debt-returns-tab-actions.js | 184 | Debt returns actions: markDebtCredited (modal + PIN), _execMarkCredited, bulkMarkCredited, exportDebtReturnsExcel |
 | 53 | file-upload.js | js/file-upload.js | 253 | File upload helper: uploadSupplierFile, getSupplierFileUrl (signed URLs), renderFilePreview, pickAndUploadFile, pickAndUploadFiles (multi-file), fetchDocFiles (with fallback to legacy file_url), saveDocFile (to supplier_document_files), renderFileGallery (thumbnails + page nav), _renderSingleFilePreview |
-| 54 | ai-ocr.js | modules/debt/ai/ai-ocr.js | 281 | OCR trigger + save (review split to ai-ocr-review.js): triggerOCR (multi-file merge: header from first, totals from last, items from all), _ocrSave (saves corrections + creates/updates supplier_document + updates OCR template), _ocrConfDot/_ocrFV/_ocrFC (confidence helpers), _injectOCRToolbarBtn, patches loadDocumentsTab |
-| 54b | ai-ocr-review.js | modules/debt/ai/ai-ocr-review.js | 262 | OCR review modal (split from ai-ocr.js): showOCRReview (side-by-side modal + supplier OCR stats + validation), _ocrCalcTotal, _ocrAddItemRow, _ocrCalcItemRow, delete + duplicate item buttons |
+| 54 | ai-ocr.js | modules/debt/ai/ai-ocr.js | 182 | OCR trigger + save (review split to ai-ocr-review.js): triggerOCR (calls ocr-extract Edge Function), _ocrSave (saves corrections + creates/updates supplier_document + updates OCR template), _ocrConfDot/_ocrFV/_ocrFC (confidence helpers), _injectOCRScanIcons (no-op), _injectOCRToolbarBtn, patches loadDocumentsTab |
+| 54b | ai-ocr-review.js | modules/debt/ai/ai-ocr-review.js | 174 | OCR review modal (split from ai-ocr.js): showOCRReview (side-by-side modal + supplier OCR stats + validation), _ocrCalcTotal, _ocrAddItemRow, _ocrCalcItemRow |
 
 | 55 | alerts-badge.js | js/alerts-badge.js | 338 | Bell icon + unread badge + dropdown panel on ALL pages: initAlertsBadge (inject bell into header), refreshAlertsBadge (poll unread count every 60s), toggleAlertsPanel/openAlertsPanel/closeAlertsPanel, loadAlertsList (last 10 unread), alertAction (view/dismiss), markAllAlertsRead, timeAgo (Hebrew relative time) |
 | 56 | ai-alerts.js | modules/debt/ai/ai-alerts.js | 223 | Event-driven alerts + auto-dismiss + hooks: checkDuplicateDocument, alertDuplicateDocument, alertAmountMismatch, alertOCRLowConfidence, autoDismissAlerts. Patches: saveNewDocument (duplicate check), linkDeliveryToInvoice (amount mismatch), _ocrSave (auto-dismiss OCR), _wizSavePayment (auto-dismiss payment), triggerOCR (low confidence check) |
@@ -93,8 +93,7 @@
 | 59 | debt-doc-filters.js | modules/debt/debt-doc-filters.js | 340 | Advanced document filtering + recycle bin: collapsible 8-criteria filter panel (status, type, supplier, date range, amount range, source), saved filter favorites (localStorage, max 5), filter count display. Recycle bin: _toggleRecycleBin (shows deleted docs), _renderRecycleBin (table with restore + days remaining), _restoreDocument (PIN-verified), _loadDeletedDocCount (badge) |
 | 60 | ai-batch-upload.js | modules/debt/ai/ai-batch-upload.js | 342 | Batch document upload: drag-drop modal, SHA-256 file hash dedup (within batch + against DB), upload-only or upload+OCR modes, progress bar, file preview, batch_id tracking. Injects toolbar button via monkey-patch |
 | 61 | ai-batch-ocr.js | modules/debt/ai/ai-batch-ocr.js | 297 | Batch OCR processing: sequential pipeline with pause/resume, retry failed, auto-approve above confidence threshold, review individual docs, summary modal with stats. Entry point: window._startBatchOCR(batchId, docIds) |
-| 62 | ai-historical-import.js | modules/debt/ai/ai-historical-import.js | 249 | Historical document import (upload-only, no OCR): drag-drop upload, file grouping by base number (1A+1B+1C → one doc), creates draft documents ("ממתין לטיפול"), progress tracking. OCR + processing split to ai-historical-process.js |
-| 62b | ai-historical-process.js | modules/debt/ai/ai-historical-process.js | 182 | Historical import processing (split from ai-historical-import.js): _processHistFiles (group files by base number, upload to storage, create draft supplier_documents), _groupFilesByBase (regex grouping), _uploadHistFile (storage upload helper) |
+| 62 | ai-historical-import.js | modules/debt/ai/ai-historical-import.js | 338 | Historical document import: drag-drop upload for old documents, marks is_historical=true (no inventory impact, no alerts), default status selection (paid/open/per_doc), OCR + learning for supplier templates, per-supplier accuracy summary |
 | 63 | debt-info-content.js | modules/debt/debt-info-content.js | 250 | Info modal content for all supplier debt screens; 12 _show*Info() functions + _injectInfoBtn helper |
 | 64 | debt-info-inject.js | modules/debt/debt-info-inject.js | 182 | Monkey-patches to inject ❓ buttons into supplier debt screens; _injectModalInfoBtn helper + all tab/modal patches |
 
@@ -116,9 +115,7 @@
 
 | 79 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
 
-**Total: ~106 JS files across 14 module folders + 9 global files + 9 shared/js files + watcher-deploy/ (8-file standalone package), ~23,500 lines** (includes scripts/sync-watcher.js + sync-export.js)
-
-**Note (Flow Review Session):** 4 new files: ai-historical-process.js (182 lines, split from ai-historical-import.js — file grouping + upload processing), ai-ocr-review.js updated (174→262, delete+duplicate buttons), debt-doc-compare.js (244 lines, PO vs Receipt vs Invoice comparison table), debt-supplier-tabs.js (192 lines, split from debt-supplier-detail.js). Updated: ai-ocr.js (182→281, multi-file OCR merge), ai-historical-import.js (338→249, OCR removed — upload-only with draft status), receipt-ocr.js (+20 lines, hide OCR button when PO linked), receipt-confirm.js (-5 lines, fixed product_type constraint). Migrations: 044 (atomic internal doc number), 045 (draft status CHECK constraint). Iron Rule #13 added to CLAUDE.md (atomic RPC for sequential numbers).
+**Total: 102 JS files across 14 module folders + 9 global files + 9 shared/js files + watcher-deploy/ (8-file standalone package), ~23,135 lines** (includes scripts/sync-watcher.js + sync-export.js)
 
 **Note (Phase 8-QA):** 3 new files: debt-doc-new.js (196 lines, split from debt-documents.js — new document modal), debt-doc-items.js (157 lines, editable items logic), migrations/040_supplier_document_files.sql. Updated: debt-documents.js (350→262), debt-doc-edit.js (207→296), debt-supplier-detail.js (342→387), file-upload.js (114→253), ai-ocr.js (353→366). New functions: pickAndUploadFiles, fetchDocFiles, saveDocFile, renderFileGallery (file-upload.js); _buildEditableItemsHtml, _edItemCalcRow/AddRow/RemoveRow, _edItemRecalcTotal, _gatherEditedItems, _saveEditedItems, _buildReceiptItemsHtml (debt-doc-items.js); _sdNewDoc (debt-supplier-detail.js); _showAttachChoiceModal, _doAttachFiles (debt-doc-edit.js); _loadDocFileCounts (debt-documents.js). New DB table: supplier_document_files (migration 040). New T constant: T.DOC_FILES. New FIELD_MAP: supplier_document_files. Tenant isolation: sessionStorage.clear() on slug change in shared.js. Access sync restricted to Prizma in access-sync.js + sync-watcher.js. PO dropdown reverted to native select in po-form.js.
 
@@ -1004,20 +1001,6 @@
 | `_cfgStat` | `(label, value)` | Returns HTML string for a stat item in the stats grid |
 | `saveAIConfig` | `()` | Async. Reads all form values, updates ai_agent_config row, closes modal |
 
-### modules/debt/debt-doc-compare.js
-
-| Function | Parameters | Description |
-|----------|------------|-------------|
-| `buildComparisonSection` | `(doc)` | Async. Main entry: fetches receipt, PO, OCR data and renders comparison table in View modal |
-| `_cmpMatchItems` | `(poItems, receiptItems, ocrItems)` | Matches items across 3 data sources by barcode then brand+model+size+color fallback |
-| `_cmpFindMatch` | `(item, candidates, matchedSet)` | Finds best match for an item in candidate list (barcode or normalized fields) |
-| `_cmpFindOcrMatch` | `(item, ocrItems, matchedSet)` | Fuzzy matches OCR items by description containing model number |
-| `_cmpBuildRow` | `(po, rcpt, ocr)` | Builds a comparison row object from matched items |
-| `_cmpStatus` | `(row)` | Determines status icon: ✅ match, ⚠️ price diff, 🔴 not in PO, 📦 missing, ❓ invoice only |
-| `_cmpRenderSection` | `(rows, totals, hasPO, hasOCR)` | Renders HTML table with dynamic columns based on available data sources |
-| `_cmpCell` | `(item, field)` | Renders a single comparison cell with diff highlighting |
-| `_cmpPrice` | `(amount)` | Formats price with ₪ symbol |
-
 ### modules/debt/debt-doc-filters.js
 
 | Function | Parameters | Description |
@@ -1069,22 +1052,16 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `_openHistoricalImportModal` | `()` | Opens upload-only import modal with supplier select, drag-drop zone |
+| `_openHistoricalImportModal` | `()` | Opens historical import modal with supplier select, status options, drag-drop zone |
 | `_histAddFiles` | `(fileList)` | Adds files to import list, validates types (PDF/JPG/PNG) |
-| `_histStartImport` | `()` | Async. Groups files by base number, uploads, creates draft documents |
+| `_histStartImport` | `()` | Async. Uploads files with is_historical=true, runs OCR, waits for completion |
+| `_waitForHistOCRComplete` | `(docIds)` | Async. Polls OCR status until all docs processed or timeout |
+| `_histShowLearningSummary` | `(docIds)` | Async. Shows per-supplier accuracy stats from processed historical docs |
 | `_closeHistImport` | `()` | Closes modal, cleans up preview URLs |
 | `_setupHistDragDrop` | `()` | Wires drag-and-drop events on historical import drop zone |
 | `_histPickFiles` | `()` | Opens hidden file input for file selection |
 | `_renderHistFileList` | `()` | Renders file list with status indicators and preview buttons |
 | `_injectHistImportBtn` | `()` | Injects "ייבוא היסטורי" button into documents tab toolbar via monkey-patch |
-
-### modules/debt/ai/ai-historical-process.js
-
-| Function | Parameters | Description |
-|----------|------------|-------------|
-| `_processHistFiles` | `(files, supplierId, tenantId)` | Async. Groups files by base number, uploads to storage, creates draft supplier_documents |
-| `_groupFilesByBase` | `(files)` | Groups files by base number regex (e.g., 1A+1B+1C → group "1") |
-| `_uploadHistFile` | `(file, supplierId, tenantId)` | Async. Uploads single file to Supabase Storage with unique path |
 
 ### modules/debt/debt-info-content.js
 
@@ -1854,25 +1831,14 @@ ai-batch-ocr.js
   → provides: window._startBatchOCR()
 
 ai-historical-import.js
-  → calls: _processHistFiles() [ai-historical-process.js]
+  → calls: uploadSupplierFile() [file-upload.js]
+  → calls: fetchAll(), batchCreate() [supabase-ops.js]
   → calls: showLoading(), hideLoading(), toast(), escapeHtml(), $(), getTenantId() [shared.js]
   → calls: loadDocumentsTab() [debt-documents.js]
-  → reads: _docSuppliers [debt-documents.js]
+  → calls: window._startBatchOCR() [ai-batch-ocr.js]
+  → reads: _docSuppliers [debt-documents.js], T.SUP_DOCS, T.OCR_EXTRACTIONS, T.OCR_TEMPLATES [shared.js]
   → patches: loadDocumentsTab() [debt-documents.js] (injects toolbar button)
   → provides: _openHistoricalImportModal()
-
-ai-historical-process.js
-  → calls: uploadSupplierFile() [file-upload.js]
-  → calls: fetchAll() [supabase-ops.js]
-  → calls: toast(), getTenantId() [shared.js]
-  → reads: T.SUP_DOCS [shared.js]
-  → provides: _processHistFiles(), _groupFilesByBase(), _uploadHistFile()
-
-debt-doc-compare.js
-  → calls: fetchAll() [supabase-ops.js]
-  → calls: $(), getTenantId() [shared.js]
-  → reads: T.RECEIPTS, T.RECEIPT_ITEMS, T.PO_ITEMS, T.INV, T.OCR_EXTRACTIONS [shared.js]
-  → provides: buildComparisonSection()
 
 debt-info-content.js
   → calls: showInfoModal() [shared.js]
