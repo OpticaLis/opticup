@@ -314,10 +314,14 @@ function _buildDocActionToolbar(doc, type, docFiles) {
   btns.push('<button class="btn btn-sm" style="background:var(--primary,#1a73e8);color:#fff" ' +
     'onclick="_editDocAttachMore(\'' + docId + '\',\'' + suppId + '\')">\uD83D\uDCCE \u05E6\u05E8\u05E3 \u05E7\u05D1\u05E6\u05D9\u05DD</button>');
   if (hasFiles && typeof triggerOCR === 'function') {
-    btns.push('<button class="btn btn-sm" style="background:#7c3aed;color:#fff" ' +
-      'onclick="closeAndRemoveModal(\'edit-doc-modal\');triggerOCR(\'' +
-      escapeHtml(doc.file_url || '') + '\',\'' + suppId + '\',null,\'' + docId + '\')">' +
-      '\uD83E\uDD16 \u05E1\u05E8\u05D5\u05E7 \u05E2\u05DD AI</button>');
+    // Use multi-file scan if document has multiple files, otherwise single scan
+    var ocrFn = docFiles && docFiles.length > 1 && typeof scanDocumentAllFiles === 'function'
+      ? 'closeAndRemoveModal(\'edit-doc-modal\');scanDocumentAllFiles(\'' + docId + '\',\'' + suppId + '\',null)'
+      : 'closeAndRemoveModal(\'edit-doc-modal\');triggerOCR(\'' + escapeHtml(doc.file_url || '') + '\',\'' + suppId + '\',null,\'' + docId + '\')';
+    var ocrLabel = docFiles && docFiles.length > 1
+      ? '\uD83E\uDD16 \u05E1\u05E8\u05D5\u05E7 ' + docFiles.length + ' \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD'
+      : '\uD83E\uDD16 \u05E1\u05E8\u05D5\u05E7 \u05E2\u05DD AI';
+    btns.push('<button class="btn btn-sm" style="background:#7c3aed;color:#fff" onclick="' + ocrFn + '">' + ocrLabel + '</button>');
   }
   // Group 2: Linking + Prepaid
   if (isInvoice && isOpen && typeof openLinkDeliveryNotesModal === 'function') {

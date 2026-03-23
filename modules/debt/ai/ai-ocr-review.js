@@ -91,6 +91,14 @@ async function showOCRReview(result, fileUrl, existingDocId) {
       '<div class="ocr-header"><h3 style="margin:0;font-size:1.1rem">\uD83E\uDD16 תוצאות סריקה</h3>' +
         '<button class="btn-sm" onclick="closeAndRemoveModal(\'ocr-review-modal\')">\u2715</button></div>' +
       statsHtml +
+      (result._merge_meta ? '<div style="background:' +
+        (result._merge_meta.failed.length ? '#fff3cd' : '#e8f5e9') +
+        ';border-radius:6px;padding:6px 12px;margin-bottom:8px;font-size:.82rem;color:' +
+        (result._merge_meta.failed.length ? '#856404' : '#2e7d32') + '">' +
+        '\uD83D\uDCE4 \u05E0\u05E1\u05E8\u05E7\u05D5 ' + result._merge_meta.scanned.length +
+        ' \u05DE\u05EA\u05D5\u05DA ' + result._merge_meta.total + ' \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD' +
+        (result._merge_meta.failed.length ? ' \u2014 \u26A0\uFE0F ' + result._merge_meta.failed.length + ' \u05E0\u05DB\u05E9\u05DC\u05D5' : '') +
+        '</div>' : '') +
       '<div class="ocr-body">' +
         '<div class="ocr-fields-panel"><div class="ocr-fields-grid">' +
           '<label class="ocr-flbl' + wc('supplier_name') + '">ספק ' + fc('supplier_name') +

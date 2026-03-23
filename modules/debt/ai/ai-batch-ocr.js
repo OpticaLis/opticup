@@ -85,25 +85,44 @@ async function _processNextInQueue() {
   _processNextInQueue();
 }
 
-// --- Process single file OCR ---
+// --- Process single/multi-file OCR ---
 async function _processSingleOCR(item) {
   var jwt = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
-  if (!jwt) { item.status = 'failed'; item.error = 'נדרשת התחברות מחדש'; return; }
+  if (!jwt) { item.status = 'failed'; item.error = '\u05E0\u05D3\u05E8\u05E9\u05EA \u05D4\u05EA\u05D7\u05D1\u05E8\u05D5\u05EA \u05DE\u05D7\u05D3\u05E9'; return; }
   try {
-    var res = await fetch(SUPABASE_URL + '/functions/v1/ocr-extract', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        file_url: item.fileUrl, supplier_id: item.supplierId || null,
-        document_type_hint: null, tenant_id: getTenantId()
-      })
-    });
-    if (!res.ok) {
-      var err = await res.json().catch(function() { return {}; });
-      throw new Error(err.error || 'שגיאה בסריקה');
+    // Check for multi-file document
+    var docFiles = typeof fetchDocFiles === 'function' ? await fetchDocFiles(item.docId) : [];
+    if (docFiles.length > 1) {
+      // Multi-file: scan each page sequentially and merge
+      docFiles.sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+      var pageResults = [];
+      for (var pi = 0; pi < docFiles.length; pi++) {
+        try {
+          var pRes = await fetch(SUPABASE_URL + '/functions/v1/ocr-extract', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file_url: docFiles[pi].file_url, supplier_id: item.supplierId || null,
+              document_type_hint: null, tenant_id: getTenantId() })
+          });
+          if (!pRes.ok) { pageResults.push(null); continue; }
+          var pResult = await pRes.json();
+          pageResults.push(pResult.success ? pResult : null);
+        } catch (e) { pageResults.push(null); }
+      }
+      var result = _mergeOCRResults(pageResults, docFiles);
+      if (!result.success) throw new Error('\u05DB\u05DC \u05D4\u05E1\u05E8\u05D9\u05E7\u05D5\u05EA \u05E0\u05DB\u05E9\u05DC\u05D5');
+    } else {
+      // Single file scan
+      var res = await fetch(SUPABASE_URL + '/functions/v1/ocr-extract', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_url: item.fileUrl, supplier_id: item.supplierId || null,
+          document_type_hint: null, tenant_id: getTenantId() })
+      });
+      if (!res.ok) { var err = await res.json().catch(function() { return {}; }); throw new Error(err.error || '\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E1\u05E8\u05D9\u05E7\u05D4'); }
+      var result = await res.json();
+      if (!result.success) throw new Error(result.error || '\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E1\u05E8\u05D9\u05E7\u05D4');
     }
-    var result = await res.json();
-    if (!result.success) throw new Error(result.error || 'שגיאה בסריקה');
     item.ocrResult = result;
     item.confidence = Math.round((result.confidence_score || 0) * 100);
     item.extractionId = result.extraction_id;
