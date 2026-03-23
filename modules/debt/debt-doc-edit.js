@@ -86,6 +86,8 @@ async function editDocument(docId) {
       '</div>' +
       ocrItemsHtml +
       receiptItemsHtml +
+      // Action toolbar — actions moved from table rows into this modal
+      _buildDocActionToolbar(doc, type, docFiles) +
       // Buttons
       '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
         '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'edit-doc-modal\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
@@ -293,4 +295,72 @@ async function _learnFromDocumentEdits(doc, docTypeCode, newValues) {
   if (!Object.keys(corrections).length) return;
   console.log('AI learning from document edit:', corrections);
   await updateOCRTemplate(doc.supplier_id, docTypeCode || 'invoice', corrections, ext);
+}
+
+// =========================================================
+// Action toolbar for View modal (buttons moved from table rows)
+// =========================================================
+function _buildDocActionToolbar(doc, type, docFiles) {
+  var docId = doc.id;
+  var suppId = doc.supplier_id;
+  var balance = (Number(doc.total_amount) || 0) - (Number(doc.paid_amount) || 0);
+  var isOpen = doc.status === 'open' || doc.status === 'partially_paid';
+  var isInvoice = type.code === 'invoice' || type.code === 'tax_invoice';
+  var hasFiles = docFiles && docFiles.length > 0;
+  var hasPrepaid = typeof _docPrepaidSet !== 'undefined' && !!_docPrepaidSet[suppId];
+
+  var btns = [];
+  // Group 1: Files
+  btns.push('<button class="btn btn-sm" style="background:var(--primary,#1a73e8);color:#fff" ' +
+    'onclick="_editDocAttachMore(\'' + docId + '\',\'' + suppId + '\')">\uD83D\uDCCE \u05E6\u05E8\u05E3 \u05E7\u05D1\u05E6\u05D9\u05DD</button>');
+  if (hasFiles && typeof triggerOCR === 'function') {
+    btns.push('<button class="btn btn-sm" style="background:#7c3aed;color:#fff" ' +
+      'onclick="closeAndRemoveModal(\'edit-doc-modal\');triggerOCR(\'' +
+      escapeHtml(doc.file_url || '') + '\',\'' + suppId + '\',null,\'' + docId + '\')">' +
+      '\uD83E\uDD16 \u05E1\u05E8\u05D5\u05E7 \u05E2\u05DD AI</button>');
+  }
+  // Group 2: Linking + Prepaid
+  if (isInvoice && isOpen && typeof openLinkDeliveryNotesModal === 'function') {
+    btns.push('<button class="btn btn-sm" style="background:#3b82f6;color:#fff" ' +
+      'onclick="closeAndRemoveModal(\'edit-doc-modal\');openLinkDeliveryNotesModal(\'' + docId + '\')">' +
+      '\u05E7\u05E9\u05E8 \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA</button>');
+  }
+  if (hasPrepaid && balance > 0 && isOpen && typeof openPrepaidDeductModal === 'function') {
+    btns.push('<button class="btn btn-sm" style="background:#f59e0b;color:#fff" ' +
+      'onclick="closeAndRemoveModal(\'edit-doc-modal\');openPrepaidDeductModal(\'' + docId + '\')">' +
+      '\u05E7\u05D6\u05D6 \u05DE\u05E2\u05E1\u05E7\u05D4</button>');
+  }
+  // Group 3: Delete (cancelled only, soft delete)
+  if (doc.status === 'cancelled') {
+    btns.push('<button class="btn btn-sm" style="background:#ef4444;color:#fff" ' +
+      'onclick="_softDeleteDocument(\'' + docId + '\')">\u05DE\u05D7\u05E7</button>');
+  }
+
+  if (!btns.length) return '';
+  return '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--g200)">' +
+    btns.join('') + '</div>';
+}
+
+// Soft delete a cancelled document (from View modal)
+async function _softDeleteDocument(docId) {
+  var ok = await confirmDialog('\u05DE\u05D7\u05D9\u05E7\u05EA \u05DE\u05E1\u05DE\u05DA', '\u05D4\u05D0\u05DD \u05DC\u05DE\u05D7\u05D5\u05E7 \u05DE\u05E1\u05DE\u05DA \u05D6\u05D4? \u05D4\u05DE\u05E1\u05DE\u05DA \u05DC\u05D0 \u05D9\u05D5\u05E6\u05D2 \u05D1\u05E8\u05E9\u05D9\u05DE\u05D5\u05EA.');
+  if (!ok) return;
+  promptPin('\u05DE\u05D7\u05D9\u05E7\u05EA \u05DE\u05E1\u05DE\u05DA \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
+    showLoading('\u05DE\u05D5\u05D7\u05E7...');
+    try {
+      await batchUpdate(T.SUP_DOCS, [{ id: docId, is_deleted: true }]);
+      await writeLog('doc_soft_delete', null, { document_id: docId, deleted_by: emp.id });
+      closeAndRemoveModal('edit-doc-modal');
+      toast('\u05DE\u05E1\u05DE\u05DA \u05E0\u05DE\u05D7\u05E7');
+      if (typeof _detailSupplierId !== 'undefined' && _detailSupplierId) {
+        await openSupplierDetail(_detailSupplierId);
+        _switchDetailTab('docs');
+      } else {
+        await loadDocumentsTab();
+      }
+    } catch (e) {
+      console.error('_softDeleteDocument error:', e);
+      toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
+    } finally { hideLoading(); }
+  });
 }

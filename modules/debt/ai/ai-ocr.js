@@ -315,25 +315,10 @@ async function _ocrSave(mode) {
   } finally { hideLoading(); }
 }
 
-// --- 4. Inject OCR scan buttons into documents table rows ---
-function _injectOCRScanIcons(docs) {
-  var wrap = $('doc-table-wrap'); if (!wrap) return;
-  var tbody = wrap.querySelector('tbody'); if (!tbody) return;
-  docs.forEach(function(d, i) {
-    if (!d.file_url) return;
-    if (d.total_amount && Number(d.total_amount) > 0 && d.status !== 'draft') return;
-    var row = tbody.rows[i]; if (!row) return;
-    var cell = row.cells[row.cells.length - 1];
-    if (!cell || cell.querySelector('.ocr-scan-btn')) return;
-    var btn = document.createElement('button');
-    btn.className = 'btn-sm ocr-scan-btn';
-    btn.title = '\u05E1\u05E8\u05D5\u05E7 \u05E2\u05DD AI';
-    btn.textContent = '\uD83E\uDD16';
-    btn.style.cssText = 'min-width:36px;min-height:36px;font-size:18px;background:#7c3aed;color:#fff;border-radius:6px;cursor:pointer';
-    btn.onclick = function() { triggerOCR(d.file_url, d.supplier_id, null, d.id); };
-    cell.insertBefore(btn, cell.firstChild);
-  });
-}
+// --- 4. OCR scan buttons — moved into View modal (debt-doc-edit.js) ---
+// _injectOCRScanIcons removed: OCR scan is now available inside the View modal
+// via _buildDocActionToolbar(), not as row-level buttons in the documents table.
+function _injectOCRScanIcons() { /* no-op — scan moved to View modal */ }
 
 // --- 5. Add OCR toolbar button + patch documents rendering ---
 function _injectOCRToolbarBtn() {

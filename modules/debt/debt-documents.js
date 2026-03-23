@@ -110,14 +110,17 @@ function renderDocumentsTable(docs, opts) {
     var type = typeMap[d.document_type_id] || {};
     var balance = (Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0);
     var st = DOC_STATUS_MAP[d.status] || { he: d.status, cls: '' };
-    var isInvoice = type.code === 'invoice' || type.code === 'tax_invoice';
-    var linkBtn = (isInvoice && (d.status === 'open' || d.status === 'partially_paid'))
-      ? ' <button class="btn-sm" style="background:#3b82f6;color:#fff" onclick="openLinkDeliveryNotesModal(\'' + d.id + '\')">\u05E7\u05E9\u05E8 \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA</button>' : '';
     var hasPrepaid = !!_docPrepaidSet[d.supplier_id];
     var ppBadge = hasPrepaid ? '<span style="background:#f59e0b;color:#fff;padding:1px 6px;border-radius:4px;font-size:11px;margin-right:4px">\u05DE\u05E7\u05D3\u05DE\u05D4</span>' : '';
-    var ppBtn = (hasPrepaid && balance > 0 && (d.status === 'open' || d.status === 'partially_paid'))
-      ? ' <button class="btn-sm" style="background:#f59e0b;color:#fff" onclick="openPrepaidDeductModal(\'' + d.id + '\')">\u05E7\u05D6\u05D6 \u05DE\u05E2\u05E1\u05E7\u05D4</button>' : '';
     var uploadedAt = d.created_at ? new Date(d.created_at).toLocaleString('he-IL') : '';
+    // Row actions: view + pay + cancel only. All other actions moved to View modal.
+    var actionBtns = '<button class="btn-sm" onclick="viewDocument(\'' + d.id + '\')">\u05E6\u05E4\u05D4</button>';
+    if (_isPayableDocType(type.code)) {
+      actionBtns += ' <button class="btn-sm" onclick="switchDebtTab(\'payments\')">\u05E9\u05DC\u05DD</button>';
+    }
+    if (d.status === 'open' || d.status === 'partially_paid') {
+      actionBtns += ' <button class="btn-sm" style="background:#ef4444;color:#fff" onclick="cancelDocument(\'' + d.id + '\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>';
+    }
     return '<tr>' +
       '<td title="' + escapeHtml('\u05D4\u05D5\u05E2\u05DC\u05D4: ' + uploadedAt) + '">' + escapeHtml(d.document_date || '') + '</td>' +
       '<td>' + escapeHtml(type.name_he || '') + '</td>' +
@@ -128,13 +131,7 @@ function renderDocumentsTable(docs, opts) {
       '<td>' + formatILS(d.paid_amount) + '</td>' +
       '<td>' + formatILS(balance) + '</td>' +
       '<td><span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></td>' +
-      '<td>' +
-        '<button class="btn-sm" onclick="viewDocument(\'' + d.id + '\')">\u05E6\u05E4\u05D4</button> ' +
-        '<button class="btn-sm" title="' + (d.file_url ? '\u05D4\u05D7\u05DC\u05E3 / \u05E6\u05E8\u05E3 \u05E7\u05D1\u05E6\u05D9\u05DD' : '\u05E6\u05E8\u05E3 \u05E7\u05D1\u05E6\u05D9\u05DD') + '" onclick="_attachFileToDoc(\'' + d.id + '\',\'' + d.supplier_id + '\')">' +
-          (d._fileCount > 1 ? '<span class="file-count-badge">' + d._fileCount + '</span>' : '') + '&#128206;</button> ' +
-        (_isPayableDocType(type.code) ? '<button class="btn-sm" onclick="switchDebtTab(\'payments\')">\u05E9\u05DC\u05DD</button>' : '') + linkBtn + ppBtn +
-        (d.status === 'open' ? ' <button class="btn-sm" style="background:#ef4444;color:#fff" onclick="cancelDocument(\'' + d.id + '\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' : '') +
-      '</td></tr>';
+      '<td>' + actionBtns + '</td></tr>';
   }).join('');
   wrap.innerHTML =
     '<div style="overflow-x:auto"><table class="data-table" style="width:100%;font-size:.88rem">' +
