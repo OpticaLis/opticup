@@ -141,7 +141,9 @@ async function openExistingReceipt(receiptId, viewOnly) {
         quantity: item.quantity || 1,
         unit_cost: item.unit_cost || '',
         sell_price: item.sell_price || '',
-        is_new_item: item.is_new_item || false
+        is_new_item: item.is_new_item || false,
+        from_po: item.from_po || !!rcpt.po_id,
+        receipt_status: item.receipt_status || 'ok'
       });
     }
     updateReceiptItemsStats();
@@ -250,9 +252,23 @@ function addReceiptItemRow(data) {
   const tr = document.createElement('tr');
   tr.dataset.row = rcptRowNum;
   if (data?.inventory_id) tr.dataset.inventoryId = data.inventory_id;
+  const fromPo = !!data?.from_po;
+  if (fromPo) tr.dataset.fromPo = '1';
 
   const isNew = data?.is_new_item ?? true;
   const isExisting = !isNew;
+  // Status dropdown for PO rows, delete button for non-PO rows
+  const rcptStatus = data?.receipt_status || (fromPo ? 'ok' : null);
+  var actionCol;
+  if (fromPo) {
+    actionCol = '<select class="rcpt-receipt-status" style="min-width:90px;font-size:.78rem" onchange="_onReceiptStatusChange(this)">' +
+      '<option value="ok"' + (rcptStatus === 'ok' ? ' selected' : '') + '>\u2705 \u05EA\u05E7\u05D9\u05DF</option>' +
+      '<option value="not_received"' + (rcptStatus === 'not_received' ? ' selected' : '') + '>\u274C \u05DC\u05D0 \u05D4\u05D2\u05D9\u05E2</option>' +
+      '<option value="return"' + (rcptStatus === 'return' ? ' selected' : '') + '>\uD83D\uDD04 \u05DC\u05D4\u05D7\u05D6\u05E8\u05D4</option>' +
+    '</select>';
+  } else {
+    actionCol = '<button class="btn btn-sm" style="background:#ef4444;color:#fff" onclick="this.closest(\'tr\').remove();updateReceiptItemsStats()" title="\u05D4\u05E1\u05E8">\u2716</button>';
+  }
 
   tr.innerHTML = `
     <td>${rcptRowNum}</td>
@@ -274,8 +290,16 @@ function addReceiptItemRow(data) {
     <td>${isNew ? '<span class="rcpt-new-badge">חדש</span>' : '<span class="rcpt-existing-badge">קיים</span>'}
       <input type="hidden" class="rcpt-is-new" value="${isNew ? '1' : '0'}">
     </td>
-    <td><button class="btn btn-sm" style="background:#ef4444;color:#fff" onclick="this.closest('tr').remove();updateReceiptItemsStats()" title="הסר">✖</button></td>
+    <td>${actionCol}</td>
   `;
+  // Apply dimmed state if loading with not_received status
+  if (rcptStatus === 'not_received') {
+    tr.classList.add('rcpt-row-dimmed');
+    setTimeout(function() {
+      var q = tr.querySelector('.rcpt-qty'); if (q) q.disabled = true;
+      var c = tr.querySelector('.rcpt-ucost'); if (c) c.disabled = true;
+    }, 0);
+  }
   // Auto-set sync from brand default
   const brandName = data?.brand || '';
   if (brandName) {
@@ -289,8 +313,10 @@ function addReceiptItemRow(data) {
 
 function getReceiptItems() {
   return Array.from($('rcpt-items-body').querySelectorAll('tr')).map(tr => {
+    var rcptStatus = tr.querySelector('.rcpt-receipt-status')?.value || null;
     const qtyVal = parseInt(tr.querySelector('.rcpt-qty')?.value);
-    if (!qtyVal || qtyVal < 1) {
+    // Allow qty 0 for not_received items (they won't enter inventory)
+    if (rcptStatus !== 'not_received' && (!qtyVal || qtyVal < 1)) {
       toast('כמות חייבת להיות לפחות 1', 'e');
       throw new Error('invalid qty');
     }
@@ -301,25 +327,48 @@ function getReceiptItems() {
       model: tr.querySelector('.rcpt-model')?.value?.trim() || '',
       color: tr.querySelector('.rcpt-color')?.value?.trim() || '',
       size: tr.querySelector('.rcpt-size')?.value?.trim() || '',
-      quantity: qtyVal,
+      quantity: qtyVal || 0,
       unit_cost: parseFloat(tr.querySelector('.rcpt-ucost')?.value) || null,
       sell_price: parseFloat(tr.querySelector('.rcpt-sprice')?.value) || null,
       sync: tr.querySelector('.rcpt-sync')?.value || '',
       images: tr.querySelector('.rcpt-images')?.files || [],
       is_new_item: tr.querySelector('.rcpt-is-new')?.value === '1',
-      inventory_id: tr.dataset.inventoryId || null
+      inventory_id: tr.dataset.inventoryId || null,
+      from_po: tr.dataset.fromPo === '1',
+      receipt_status: rcptStatus
     };
   });
+}
+
+function _onReceiptStatusChange(sel) {
+  var row = sel.closest('tr');
+  if (!row) return;
+  if (sel.value === 'not_received') {
+    row.classList.add('rcpt-row-dimmed');
+    var q = row.querySelector('.rcpt-qty'); if (q) q.disabled = true;
+    var c = row.querySelector('.rcpt-ucost'); if (c) c.disabled = true;
+  } else {
+    row.classList.remove('rcpt-row-dimmed');
+    var q2 = row.querySelector('.rcpt-qty'); if (q2) q2.disabled = false;
+    var c2 = row.querySelector('.rcpt-ucost'); if (c2) c2.disabled = false;
+  }
+  updateReceiptItemsStats();
 }
 
 function updateReceiptItemsStats() {
   let items;
   try { items = getReceiptItems(); } catch (e) { return; }
-  const total = items.reduce((s, i) => s + i.quantity, 0);
-  const newCount = items.filter(i => i.is_new_item).length;
-  const existCount = items.filter(i => !i.is_new_item).length;
+  var activeItems = items.filter(i => i.receipt_status !== 'not_received');
+  const total = activeItems.reduce((s, i) => s + i.quantity, 0);
+  const newCount = activeItems.filter(i => i.is_new_item).length;
+  const existCount = activeItems.filter(i => !i.is_new_item).length;
+  var notRecvd = items.filter(i => i.receipt_status === 'not_received').length;
+  var returnCnt = items.filter(i => i.receipt_status === 'return').length;
+  var extra = '';
+  if (notRecvd) extra += ' | ' + notRecvd + ' \u05DC\u05D0 \u05D4\u05D2\u05D9\u05E2\u05D5';
+  if (returnCnt) extra += ' | ' + returnCnt + ' \u05DC\u05D4\u05D7\u05D6\u05E8\u05D4';
   $('rcpt-items-stats').textContent = items.length
-    ? `סה"כ ${items.length} שורות | ${total} יחידות | ${existCount} קיימים | ${newCount} חדשים`
+    ? `\u05E1\u05D4"\u05DB ${items.length} \u05E9\u05D5\u05E8\u05D5\u05EA | ${total} \u05D9\u05D7\u05D9\u05D3\u05D5\u05EA | ${existCount} \u05E7\u05D9\u05D9\u05DE\u05D9\u05DD | ${newCount} \u05D7\u05D3\u05E9\u05D9\u05DD` + extra
     : '';
 }
 
@@ -333,60 +382,4 @@ async function addNewReceiptRow() {
     toast('שגיאה ביצירת ברקוד: ' + (e.message || ''), 'e');
   }
 }
-
-// =========================================================
-// INFO GUIDE — Employee quick reference
-// =========================================================
-const RECEIPT_GUIDE_TEXT = `
-\uD83D\uDCE6 קבלת סחורה — מדריך מהיר
-
-1. סחורה הגיעה? בדוק מה מצורף:
-   • חשבונית מס → בחר "חשבונית מס"
-   • תעודת משלוח → בחר "תעודת משלוח"
-
-2. סרוק או צלם את המסמך (שמירה לתיקייה משותפת)
-
-3. פתח "קבלה חדשה":
-   • בחר ספק (המערכת תזהה את סוג המסמך הרגיל שלו)
-   • הכנס מספר מסמך
-   • אם יש הזמנת רכש פתוחה — היא תופיע אוטומטית
-
-4. הוסף פריטים:
-   • פריט קיים → סרוק ברקוד או חפש
-   • פריט חדש → הכנס פרטים → ברקוד ייווצר אוטומטית
-   • ודא כמויות ומחירים
-
-5. בדוק את הסיכום ואשר עם PIN
-
-\u2705 המלאי יתעדכן, החוב לספק ייווצר אוטומטית
-
-\uD83E\uDD16 סריקה חכמה עם AI
-\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-1. צרף מסמך (PDF או תמונה) בלחיצה על "צרף מסמך"
-2. לחץ על "סרוק עם AI" — המערכת תזהה אוטומטית:
-   • שם הספק
-   • מספר מסמך ותאריך
-   • פריטים, כמויות ומחירים
-3. בדוק את הנתונים שזוהו ותקן במידת הצורך
-4. אשר עם PIN — המלאי מתעדכן אוטומטית
-
-\uD83D\uDCA1 ככל שתשתמש יותר, המערכת לומדת את הפורמט של כל ספק ומשתפרת!
-`.trim();
-
-function showReceiptGuide() {
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
-  const box = document.createElement('div');
-  box.style.cssText = 'background:#fff;border-radius:12px;padding:24px 28px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;direction:rtl;text-align:right;line-height:1.8;white-space:pre-line;font-size:.95rem;box-shadow:0 8px 32px rgba(0,0,0,.25)';
-  box.textContent = RECEIPT_GUIDE_TEXT;
-  const closeBtn = document.createElement('button');
-  closeBtn.textContent = 'סגור';
-  closeBtn.className = 'btn'; closeBtn.style.cssText = 'background:#1a73e8;color:#fff';
-  closeBtn.style.cssText = 'margin-top:16px;display:block;margin-right:auto';
-  closeBtn.onclick = () => overlay.remove();
-  box.appendChild(closeBtn);
-  overlay.appendChild(box);
-  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
-  document.body.appendChild(overlay);
-}
+// Guide text + showReceiptGuide() moved to receipt-guide.js

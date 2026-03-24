@@ -16,12 +16,27 @@ async function _poCompBuildReport(receiptItems, poId) {
     var key = _poCompKey(pi.brand || '', pi.model || '', pi.size || '', pi.color || '');
     poMap[key] = pi;
   });
-  var matched = [], shortage = [], priceGap = [], notInPo = [], usedPoKeys = {};
+  var matched = [], shortage = [], priceGap = [], notInPo = [], returnMarked = [], usedPoKeys = {};
 
   for (var i = 0; i < receiptItems.length; i++) {
     var ri = receiptItems[i];
     var key = _poCompKey(ri.brand || '', ri.model || '', ri.size || '', ri.color || '');
     var pi = poMap[key];
+
+    // Handle receipt_status from PO row dropdown (before normal matching)
+    if (ri.receipt_status === 'not_received') {
+      // Employee marked "didn't arrive" — treat as missing
+      if (pi) usedPoKeys[key] = true;
+      // Will be added to missing array below with employeeMarked flag
+      continue;
+    }
+    if (ri.receipt_status === 'return') {
+      // Employee marked "wrong item — return"
+      if (pi) usedPoKeys[key] = true;
+      returnMarked.push({ idx: i, ri: ri, pi: pi });
+      continue;
+    }
+
     if (!pi) {
       notInPo.push({ idx: i, ri: ri, pi: null });
       continue;
@@ -38,13 +53,25 @@ async function _poCompBuildReport(receiptItems, poId) {
       matched.push({ idx: i, ri: ri, pi: pi });
     }
   }
-  // Find PO items not in receipt (missing)
+  // Find PO items not in receipt (missing) — includes employee-marked not_received
   var missing = [];
   poItems.forEach(function(pi) {
     var key = _poCompKey(pi.brand || '', pi.model || '', pi.size || '', pi.color || '');
-    if (!usedPoKeys[key]) missing.push({ pi: pi });
+    if (!usedPoKeys[key]) {
+      // Check if this was employee-marked as not_received
+      var empMarked = receiptItems.some(function(ri) {
+        return ri.receipt_status === 'not_received' &&
+          _poCompKey(ri.brand || '', ri.model || '', ri.size || '', ri.color || '') === key;
+      });
+      var empIdx = empMarked ? receiptItems.findIndex(function(ri) {
+        return ri.receipt_status === 'not_received' &&
+          _poCompKey(ri.brand || '', ri.model || '', ri.size || '', ri.color || '') === key;
+      }) : -1;
+      missing.push({ pi: pi, employeeMarked: empMarked, idx: empIdx });
+    }
   });
-  return { matched: matched, shortage: shortage, priceGap: priceGap, notInPo: notInPo, missing: missing, poItems: poItems, supplierId: _poSupplierId };
+  return { matched: matched, shortage: shortage, priceGap: priceGap, notInPo: notInPo,
+    missing: missing, returnMarked: returnMarked, poItems: poItems, supplierId: _poSupplierId };
 }
 
 function _poCompKey(brand, model, size, color) {
@@ -53,8 +80,10 @@ function _poCompKey(brand, model, size, color) {
 
 // --- 2. Show comparison report modal ---
 function _poCompShowReport(report, poNumber, onConfirm) {
-  var counts = { m: report.matched.length, s: report.shortage.length, p: report.priceGap.length, n: report.notInPo.length, x: report.missing.length };
-  var summary = '\u2705 ' + counts.m + ' \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD \u2502 \u26A0\uFE0F ' + counts.s + ' \u05D7\u05D5\u05E1\u05E8\u05D9\u05DD \u2502 \uD83D\uDCB0 ' + counts.p + ' \u05E4\u05E2\u05E8\u05D9 \u05DE\u05D7\u05D9\u05E8 \u2502 \uD83D\uDD34 ' + counts.n + ' \u05DC\u05D0 \u05D1\u05D4\u05D6\u05DE\u05E0\u05D4 \u2502 \uD83D\uDCE6 ' + counts.x + ' \u05D8\u05E8\u05DD \u05D4\u05D2\u05D9\u05E2\u05D5';
+  var counts = { m: report.matched.length, s: report.shortage.length, p: report.priceGap.length, n: report.notInPo.length, x: report.missing.length, r: (report.returnMarked || []).length };
+  var summary = '\u2705 ' + counts.m + ' \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD \u2502 \u26A0\uFE0F ' + counts.s + ' \u05D7\u05D5\u05E1\u05E8\u05D9\u05DD \u2502 \uD83D\uDCB0 ' + counts.p + ' \u05E4\u05E2\u05E8\u05D9 \u05DE\u05D7\u05D9\u05E8 \u2502 \uD83D\uDD34 ' + counts.n + ' \u05DC\u05D0 \u05D1\u05D4\u05D6\u05DE\u05E0\u05D4';
+  if (counts.r > 0) summary += ' \u2502 \uD83D\uDD04 ' + counts.r + ' \u05DC\u05D4\u05D7\u05D6\u05E8\u05D4';
+  summary += ' \u2502 \uD83D\uDCE6 ' + counts.x + ' \u05DC\u05D0 \u05D4\u05D2\u05D9\u05E2\u05D5';
 
   var html = '<div style="margin-bottom:10px;font-size:.88rem">' + summary + '</div>';
   html += '<div style="max-height:55vh;overflow-y:auto">';
@@ -89,11 +118,18 @@ function _poCompShowReport(report, poNumber, onConfirm) {
         '<button class="btn-sm pc-nipo-btn" data-choice="return" onclick="_poCompPickNipo(this)" style="margin:1px">\u05D4\u05D7\u05D6\u05E8</button></td></tr>';
     }).join(''));
   }
+  // Return-marked section (employee marked for return in form)
+  if (counts.r > 0) {
+    html += _poCompSection('\uD83D\uDD04 \u05DE\u05E1\u05D5\u05DE\u05DF \u05DC\u05D4\u05D7\u05D6\u05E8\u05D4', '#e3f2fd', report.returnMarked.map(function(r) {
+      return _poCompRow(r.ri, '\u05EA\u05D9\u05D5\u05D5\u05E6\u05E8 \u05D4\u05D7\u05D6\u05E8\u05D4 \u05DC\u05E1\u05E4\u05E7', '');
+    }).join(''));
+  }
   // Missing section
   if (counts.x > 0) {
     html += _poCompSection('\uD83D\uDCE6 \u05D4\u05D5\u05D6\u05DE\u05DF \u05D5\u05DC\u05D0 \u05D4\u05D2\u05D9\u05E2', '#f5f5f5', report.missing.map(function(m) {
+      var label = m.employeeMarked ? '\u05D4\u05E2\u05D5\u05D1\u05D3 \u05E1\u05D9\u05DE\u05DF: \u05DC\u05D0 \u05D4\u05D2\u05D9\u05E2' : '\u05DE\u05DE\u05EA\u05D9\u05DF';
       return '<tr style="color:#999"><td>' + escapeHtml((m.pi.brand || '') + ' ' + (m.pi.model || '')) + '</td>' +
-        '<td>' + (m.pi.qty_ordered || 0) + '</td><td>' + formatILS(m.pi.unit_cost) + '</td><td>\u05DE\u05DE\u05EA\u05D9\u05DF</td></tr>';
+        '<td>' + (m.pi.qty_ordered || 0) + '</td><td>' + formatILS(m.pi.unit_cost) + '</td><td>' + label + '</td></tr>';
     }).join(''));
   }
   // Reorder button for shortages + missing
@@ -177,6 +213,20 @@ function _poCompCollectDecisions(modalEl, report) {
       use_price: null
     };
   });
+  // Return-marked items: auto-set to 'returned'
+  if (report.returnMarked) {
+    report.returnMarked.forEach(function(r) {
+      decisions[r.idx] = { price_decision: null, po_match_status: 'returned', use_price: null };
+    });
+  }
+  // Employee-marked missing items: auto-set to 'not_received'
+  if (report.missing) {
+    report.missing.forEach(function(m) {
+      if (m.employeeMarked && m.idx >= 0) {
+        decisions[m.idx] = { price_decision: null, po_match_status: 'not_received', use_price: null };
+      }
+    });
+  }
   return decisions;
 }
 
@@ -200,6 +250,13 @@ async function _poCompApplyDecisions(receiptId, decisions, receiptItems) {
       if (savedItems && savedItems[0]) {
         await sb.from(T.RCPT_ITEMS).update(update).eq('id', savedItems[0].id);
       }
+    }
+    // Write log for not_received items
+    if (dec.po_match_status === 'not_received' && ri) {
+      writeLog('receipt_item_not_received', null, {
+        barcode: ri.barcode, brand: ri.brand, model: ri.model,
+        receipt_id: receiptId, note: '\u05E4\u05E8\u05D9\u05D8 \u05E1\u05D5\u05DE\u05DF \u05DB\u05DC\u05D0 \u05D4\u05D2\u05D9\u05E2'
+      });
     }
     // Create supplier return for rejected items
     if (dec.po_match_status === 'returned' && ri && supplierId) {

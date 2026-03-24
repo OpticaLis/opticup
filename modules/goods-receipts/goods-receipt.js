@@ -85,7 +85,8 @@ async function onReceiptPoSelected() {
         unit_cost: item.unit_cost || '',
         sell_price: item.sell_price || '',
         is_new_item: !inventoryId,
-        inventory_id: inventoryId
+        inventory_id: inventoryId,
+        from_po: true
       });
     }
 
@@ -121,14 +122,16 @@ async function updatePOStatusAfterReceipt(poId) {
     if (receipts && receipts.length) {
       const receiptIds = receipts.map(r => r.id);
       const { data: rcptItems } = await sb.from(T.RCPT_ITEMS)
-        .select('barcode, brand, model, color, size, quantity')
+        .select('barcode, brand, model, color, size, quantity, receipt_status, po_match_status')
         .eq('tenant_id', getTenantId())
         .in('receipt_id', receiptIds);
 
       // Build lookup: by barcode first, then by model+color+size as fallback
+      // Skip items that didn't arrive or were returned
       const receivedByBarcode = {};
       const receivedByKey = {};
       for (const ri of (rcptItems || [])) {
+        if (ri.receipt_status === 'not_received' || ri.po_match_status === 'returned' || ri.po_match_status === 'not_received') continue;
         if (ri.barcode) receivedByBarcode[ri.barcode] = (receivedByBarcode[ri.barcode] || 0) + ri.quantity;
         const key = `${ri.brand}|${ri.model}|${ri.color}|${ri.size}`;
         receivedByKey[key] = (receivedByKey[key] || 0) + ri.quantity;

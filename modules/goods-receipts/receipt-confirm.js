@@ -7,8 +7,8 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
 
   try {
     for (const item of savedItems) {
-      // Phase 8: skip items marked as returned to supplier
-      if (item.po_match_status === 'returned') continue;
+      // Phase 8: skip items marked as returned to supplier or not received
+      if (item.po_match_status === 'returned' || item.po_match_status === 'not_received') continue;
       if (!item.is_new_item) {
         const { data: invRow, error: findErr } = await sb.from('inventory')
           .select('id, quantity, barcode, brand_id, model, cost_price')
@@ -69,7 +69,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
     return false;
   }
 
-  const totalAmount = savedItems.filter(i => i.po_match_status !== 'returned').reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
+  const totalAmount = savedItems.filter(i => i.po_match_status !== 'returned' && i.po_match_status !== 'not_received').reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
   const { error: confErr } = await sb.from(T.RECEIPTS).update({
     status: 'confirmed',
     total_amount: totalAmount || null,
@@ -170,7 +170,8 @@ async function confirmReceipt() {
       var report = await _poCompBuildReport(items, rcptLinkedPoId);
       hideLoading();
       // If everything matches perfectly, skip report
-      if (report.priceGap.length === 0 && report.notInPo.length === 0 && report.shortage.length === 0) {
+      if (report.priceGap.length === 0 && report.notInPo.length === 0 && report.shortage.length === 0 &&
+          report.missing.length === 0 && (!report.returnMarked || report.returnMarked.length === 0)) {
         const ok = await confirmDialog('\u05D0\u05D9\u05E9\u05D5\u05E8 \u05E7\u05D1\u05DC\u05EA \u05E1\u05D7\u05D5\u05E8\u05D4',
           '\u05DB\u05DC \u05D4\u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD \u05DC\u05D4\u05D6\u05DE\u05E0\u05D4. \u05DC\u05D0\u05E9\u05E8?');
         if (!ok) return;

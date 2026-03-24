@@ -394,7 +394,9 @@ CREATE TABLE IF NOT EXISTS goods_receipt_items (
   sell_price      DECIMAL(10,2),                                 -- מחיר מכירה
   is_new_item     BOOLEAN NOT NULL DEFAULT false,                -- true = פריט חדש (לא היה במלאי)
   price_decision  TEXT CHECK (price_decision IS NULL OR price_decision IN ('po_price', 'invoice_price')),  -- Phase 8: החלטת מחיר מול PO
-  po_match_status TEXT CHECK (po_match_status IS NULL OR po_match_status IN ('matched', 'not_in_po', 'returned')),  -- Phase 8: סטטוס התאמה ל-PO
+  po_match_status TEXT CHECK (po_match_status IS NULL OR po_match_status IN ('matched', 'not_in_po', 'returned', 'not_received')),  -- Phase 8: סטטוס התאמה ל-PO
+  receipt_status  TEXT CHECK (receipt_status IS NULL OR receipt_status IN ('ok', 'not_received', 'return')),  -- Flow Review: סטטוס קבלה (ok/לא הגיע/להחזרה)
+  from_po         BOOLEAN DEFAULT false,                         -- Flow Review: true = שורה שהגיעה מהזמנת רכש
   tenant_id       UUID NOT NULL REFERENCES tenants(id)           -- דייר (018)
 );
 CREATE INDEX IF NOT EXISTS idx_receipt_items ON goods_receipt_items(receipt_id);

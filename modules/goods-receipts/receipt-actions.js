@@ -84,6 +84,8 @@ async function saveReceiptDraft() {
       unit_cost: i.unit_cost,
       sell_price: i.sell_price,
       is_new_item: i.is_new_item,
+      receipt_status: i.receipt_status || null,
+      from_po: i.from_po || false,
       tenant_id: getTenantId()
     }));
 
@@ -151,6 +153,8 @@ async function saveReceiptDraftInternal() {
     unit_cost: i.unit_cost,
     sell_price: i.sell_price,
     is_new_item: i.is_new_item,
+    receipt_status: i.receipt_status || null,
+    from_po: i.from_po || false,
     tenant_id: getTenantId()
   }));
 
