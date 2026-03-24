@@ -47,10 +47,10 @@ function resumeAppInit() {
 document.addEventListener('DOMContentLoaded', async () => {
   $('help-modal')?.addEventListener('click', function(e) { if (e.target === this) closeHelpModal(); });
 
-  // Auth: check for existing session
+  // Auth: check for existing session — redirect to home if not logged in
   const session = await loadSession();
   if (!session) {
-    showLoginModal();
+    window.location.href = '/';
     return;
   }
   applyUIPermissions();

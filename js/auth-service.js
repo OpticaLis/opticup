@@ -151,6 +151,9 @@ async function initSecureSession(employee, jwtToken) {
   sessionStorage.setItem(SK.PERMS, JSON.stringify(permSnapshot));
   sessionStorage.setItem(SK.ROLE, roleId);
 
+  // Start periodic JWT validity check (every 30 minutes)
+  _startJwtCheck();
+
   // Load and cache tenant config (VAT, currency, display settings)
   try {
     const { data: tenantRow } = await sb.from('tenants')
@@ -183,6 +186,21 @@ async function loadSession() {
   // Restore JWT-authenticated client BEFORE querying (RLS requires tenant_id)
   const jwt = sessionStorage.getItem('jwt_token');
   if (jwt) {
+    // Verify JWT tenant_id matches sessionStorage tenant_id (tamper detection)
+    try {
+      var parts = jwt.split('.');
+      if (parts.length === 3) {
+        var payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        var jwtTid = payload.tenant_id;
+        var storedTid = getTenantId();
+        if (jwtTid && storedTid && jwtTid !== storedTid) {
+          console.warn('tenant_id mismatch: JWT=' + jwtTid + ' session=' + storedTid);
+          clearSessionLocal();
+          return null;
+        }
+      }
+    } catch (e) { console.warn('JWT decode failed:', e); }
+
     window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
       global: { headers: { Authorization: 'Bearer ' + jwt } }
     });
@@ -231,6 +249,7 @@ async function loadSession() {
 // 5. clearSession()
 // =========================================================
 function clearSessionLocal() {
+  _stopJwtCheck();
   sessionStorage.removeItem(SK.TOKEN);
   sessionStorage.removeItem(SK.EMPLOYEE);
   sessionStorage.removeItem(SK.PERMS);
@@ -239,6 +258,21 @@ function clearSessionLocal() {
   // Reset sb to anon client
   window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
   sb = window.sb;
+}
+
+// --- Periodic JWT validity check (30 min) ---
+function _startJwtCheck() {
+  _stopJwtCheck();
+  window._jwtCheckInterval = setInterval(async function() {
+    var s = await loadSession();
+    if (!s) { window.location.href = '/'; }
+  }, 30 * 60 * 1000);
+}
+function _stopJwtCheck() {
+  if (window._jwtCheckInterval) {
+    clearInterval(window._jwtCheckInterval);
+    window._jwtCheckInterval = null;
+  }
 }
 
 async function clearSession() {
