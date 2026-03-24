@@ -9,7 +9,7 @@
 
 let _creatingDocForReceipt = false; // client-side debounce flag
 
-async function createDocumentFromReceipt(receiptId, supplierId, receiptItems) {
+async function createDocumentFromReceipt(receiptId, supplierId, receiptItems, documentNumber) {
   // Guard A: client-side debounce (prevents double-click in same session)
   if (_creatingDocForReceipt) {
     console.warn('createDocumentFromReceipt: already in progress, skipping duplicate call');
@@ -18,13 +18,13 @@ async function createDocumentFromReceipt(receiptId, supplierId, receiptItems) {
   _creatingDocForReceipt = true;
 
   try {
-    return await _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems);
+    return await _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems, documentNumber);
   } finally {
     _creatingDocForReceipt = false;
   }
 }
 
-async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems) {
+async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems, documentNumber) {
   // Guard B: server-side duplicate check (prevents duplicate across sessions/refreshes)
   const existing = await sb.from(T.SUP_DOCS)
     .select('id, internal_number')
@@ -102,7 +102,7 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
     supplier_id: supplierId,
     document_type_id: docType.id,
     internal_number: internalNumber,
-    document_number: 'GR-' + receiptId.substring(0, 8),
+    document_number: documentNumber || ('GR-' + receiptId.substring(0, 8)),
     document_date: today,
     due_date: dueDateStr,
     received_date: today,

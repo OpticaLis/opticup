@@ -23,14 +23,14 @@
 | 12 | purchase-orders.js | modules/purchasing/purchase-orders.js | 215 | PO list: loadPurchaseOrdersTab (server-side RPC aggregates with client fallback), renderPoList (8-col table with item count + total value columns, monthly summary cards), poSummaryCard, applyPoFilters, populatePoSupplierFilter, generatePoNumber (atomic RPC + client fallback) |
 | 13 | po-form.js | modules/purchasing/po-form.js | 231 | PO creation wizard: openNewPurchaseOrder (step 1), proceedToPOItems (step 2 bridge), openEditPO, renderPOForm, resolveSupplierName |
 | 14 | po-items.js | modules/purchasing/po-items.js | 236 | PO item management: renderPOItemsTable, cascading brand→model→color/size datalists, addPOItemManual, addPOItemByBarcode, removePOItem, duplicatePOItem, updatePOTotals |
-| 15 | po-actions.js | modules/purchasing/po-actions.js | 235 | PO lifecycle actions: savePODraft (with duplicate row detection), sendPurchaseOrder, cancelPO, exportPOExcel, exportPOPdf |
-| 16 | po-view-import.js | modules/purchasing/po-view-import.js | 319 | Read-only PO view with received qty tracking, importPOToInventory (creates/updates inventory from PO items), createPOForBrand (from low stock modal), PO event delegation |
+| 15 | po-actions.js | modules/purchasing/po-actions.js | 254 | PO lifecycle actions: savePODraft (with duplicate row detection), sendPurchaseOrder, cancelPO (blocks partial POs with received items), exportPOExcel, exportPOPdf |
+| 16 | po-view-import.js | modules/purchasing/po-view-import.js | 374 | Read-only PO view with received qty tracking, cancelPOItem (per-item cancel on partial POs), importPOToInventory (creates/updates inventory from PO items), createPOForBrand (from low stock modal), PO event delegation |
 | 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 317 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (populates items from PO, passes from_po:true), updatePOStatusAfterReceipt (filters out not_received/returned items), openNewReceipt, _initRcptSupplierSelect (searchable supplier dropdown via createSearchSelect) |
 | 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 385 | Receipt form: openExistingReceipt (restores from_po+receipt_status), toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow (status dropdown for PO rows, delete for non-PO), getReceiptItems (includes from_po+receipt_status), updateReceiptItemsStats (shows not_received/return counts), addNewReceiptRow, _pickReceiptFile, _initReceiptDropzone, _stageReceiptFile, _removeReceiptFile, _onReceiptStatusChange (dims row on not_received) |
 | 18b | receipt-guide.js | modules/goods-receipts/receipt-guide.js | 59 | Employee quick reference guide (split from receipt-form.js): RECEIPT_GUIDE_TEXT constant, showReceiptGuide() |
 | 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 186 | Receipt save/cancel: saveReceiptDraft (persists receipt_status+from_po), saveReceiptDraftInternal (same), cancelReceipt, backToReceiptList |
 | 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 378 | Receipt confirmation: confirmReceipt (validations skip return/not_received items; hard-blocks without file; match dialog; checks missing+returnMarked in shortcut), _confirmReceiptWithDecisions, confirmReceiptCore (skips returned+not_received items, excludes from subtotal), confirmReceiptById, createNewInventoryFromReceiptItem, _showMatchConfirmDialog |
-| 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 167 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt. Excludes returned+not_received from subtotal. Always creates doc even when subtotal=0 (sets missing_price=true). Phase 8: alerts finance manager via alertPrepaidNewDocument |
+| 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 167 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt(receiptId, supplierId, receiptItems, documentNumber). Uses real document number from receipt form (fallback GR-xxx). Excludes returned+not_received from subtotal. Always creates doc even when subtotal=0 (sets missing_price=true). Phase 8: alerts finance manager via alertPrepaidNewDocument |
 | 19d | receipt-ocr.js | modules/goods-receipts/receipt-ocr.js | 295 | OCR integration: initReceiptOCR (injects scan button), _rcptOcrScan (upload + Edge Function call), _applyOCRToReceipt (auto-fill supplier/items, delegates items to review UI), _rcptOcrFC/_rcptOcrAddConfDot (per-field confidence dots), _rcptOcrSuggestPO (PO auto-suggestion), _rcptOcrShowBanner (confidence banner), _rcptOcrPreviewDoc (source doc modal), _rcptOcrUpdateTemplate (header + item learning), _patchReceiptConfirmForOCR |
 | 19e | receipt-ocr-review.js | modules/goods-receipts/receipt-ocr-review.js | 337 | Item matching + review UI: _rcptOcrParseDescription (brand alias map, regex extraction), _rcptOcrMatchItem (inventory ILIKE with limit), _rcptOcrClassifyItems (matched/new/unknown), _rcptOcrShowReview (Modal with color-coded table, brand search-select), _rcptOcrCollectReviewData, _rcptOcrApplyToForm, _rcptOcrBuildItemCorrections, _rcptOcrSaveItemLearning (item alias learning) |
 | 19f | receipt-po-compare.js | modules/goods-receipts/receipt-po-compare.js | 361 | PO comparison report: _poCompBuildReport (handles receipt_status: not_received→missing, return→returnMarked), _poCompShowReport (7-section modal: matched/shortage/priceGap/notInPo/returnMarked/missing + reorder), _poCompCollectDecisions (auto-sets returned/not_received for marked items), _poCompApplyDecisions (creates supplier_return for returned, logs not_received), _poCompLearnPricePattern (VAT detection), _poCompCreateReorderPO |
@@ -83,8 +83,8 @@
 | 52c | inventory-returns-actions.js | modules/inventory/inventory-returns-actions.js | 164 | Returns tab actions: markAgentPicked (PIN-verified), sendToBox (navigate to shipments wizard), bulkSendToBox (validates same supplier), bulkAction (bulk status update), exportReturnsExcel |
 | 52d | incoming-invoices.js | modules/inventory/incoming-invoices.js | 255 | Incoming invoices tab: loadIncomingInvoicesTab (drag-drop file upload + supplier select + submit to debt), _submitIncomingInvoice (upload + create pending_invoice doc), _loadRecentPendingInvoices (last 10 table) |
 | 51b | debt-returns-tab.js | modules/debt/debt-returns-tab.js | 365 | Global debt returns (credit tracking) tab: initDebtReturnsTab, loadDebtReturns (multi-status filtering), renderDebtReturnsList (accordion with bulk selection), renderDebtReturnsSummary, toggleDebtReturnsHistory |
-| 51c | debt-returns-tab-actions.js | modules/debt/debt-returns-tab-actions.js | 184 | Debt returns actions: markDebtCredited (modal + PIN), _execMarkCredited, bulkMarkCredited, exportDebtReturnsExcel |
-| 53 | file-upload.js | js/file-upload.js | 308 | File upload helper: uploadSupplierFile, getSupplierFileUrl (signed URLs), renderFilePreview, pickAndUploadFile, pickAndUploadFiles (multi-file), fetchDocFiles (with fallback to legacy file_url), saveDocFile (to supplier_document_files), renderFileGallery (thumbnails + page nav + delete buttons), _deleteGalleryFile (confirm + delete from DB + re-render), _renderSingleFilePreview |
+| 51c | debt-returns-tab-actions.js | modules/debt/debt-returns-tab-actions.js | 284 | Debt returns actions: markDebtCredited (requires file upload first via _promptCreditFileUpload, then PIN), _promptCreditFileUpload (drag-drop/pick modal), _createCreditNoteForReturn (now attaches uploaded file + links doc to return), bulkMarkCredited, exportDebtReturnsExcel |
+| 53 | file-upload.js | js/file-upload.js | 321 | File upload helper: uploadSupplierFile, getSupplierFileUrl (signed URLs), renderFilePreview, pickAndUploadFile, pickAndUploadFiles (multi-file), fetchDocFiles (with fallback to legacy file_url), saveDocFile (to supplier_document_files), renderFileGallery (thumbnails + page nav + delete buttons), _deleteGalleryFile (re-queries fresh files from DB after delete + cleans storage), _renderSingleFilePreview |
 | 54 | ai-ocr.js | modules/debt/ai/ai-ocr.js | 284 | OCR trigger + save (review split to ai-ocr-review.js): triggerOCR (multi-file merge: header from first, totals from last, items from all), _ocrSave (saves corrections + creates/updates supplier_document + updates OCR template, refreshes supplier detail if active), _ocrConfDot/_ocrFV/_ocrFC (confidence helpers), _injectOCRToolbarBtn, patches loadDocumentsTab. _injectOCRScanIcons removed (no-op cleanup) |
 | 54b | ai-ocr-review.js | modules/debt/ai/ai-ocr-review.js | 262 | OCR review modal (split from ai-ocr.js): showOCRReview (side-by-side modal + supplier OCR stats + validation), _ocrCalcTotal, _ocrAddItemRow, _ocrCalcItemRow, delete + duplicate item buttons |
 
@@ -396,13 +396,14 @@
 | `exportPOPdf` | `()` | Async. Generates HTML and opens print window for PDF export |
 | `savePODraft` | `()` | Async. Validates items, detects duplicate rows, inserts or updates PO + items |
 | `sendPurchaseOrder` | `(id)` | Async. Marks draft PO as 'sent' with confirm dialog and writeLog |
-| `cancelPO` | `(id)` | Async. Sets PO status to 'cancelled' with confirm dialog |
+| `cancelPO` | `(id)` | Async. Sets PO status to 'cancelled'. Blocks partial POs (use per-item cancel). Only allows draft/sent |
 
 ### modules/purchasing/po-view-import.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `openViewPO` | `(id)` | Async. Read-only PO view with ordered vs received qty, color-coded rows |
+| `openViewPO` | `(id)` | Async. Read-only PO view with ordered vs received qty, color-coded rows. Shows cancel button per item on partial POs |
+| `cancelPOItem` | `(itemId, poId, qtyReceived)` | Async. Sets qty_ordered=qty_received on a single PO item. Recalculates PO status (auto-completes if all items done) |
 | `importPOToInventory` | `(poId)` | Async. Creates/updates inventory from PO items, generates barcodes for new items |
 | `createPOForBrand` | `(brandId, brandName)` | Async. Creates PO pre-populated with brand items from low-stock modal |
 
@@ -462,7 +463,7 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `createDocumentFromReceipt` | `(receiptId, supplierId, receiptItems)` | Async. Auto-creates supplier_documents record from confirmed receipt. Always creates doc even with subtotal=0 (sets missing_price=true). Calculates subtotal/VAT/total from item costs, generates DOC-NNNN internal_number, uses supplier's default_document_type and payment_terms_days. Uploads _pendingReceiptFile if attached. Phase 2c: no longer skips zero-cost receipts |
+| `createDocumentFromReceipt` | `(receiptId, supplierId, receiptItems, documentNumber)` | Async. Auto-creates supplier_documents. Uses documentNumber from receipt form (fallback GR-xxx). Always creates doc even with subtotal=0 (sets missing_price=true). Calculates subtotal/VAT/total, generates DOC-NNNN internal_number. Uploads _pendingReceiptFile if attached |
 
 ### modules/goods-receipts/receipt-ocr.js
 
@@ -800,7 +801,7 @@
 | `fetchDocFiles` | `(docId, fallbackFileUrl, fallbackFileName)` | Async. Queries supplier_document_files for document. Falls back to legacy file_url column if no rows. Returns array of file objects |
 | `saveDocFile` | `(docId, fileUrl, fileName, sortOrder)` | Async. Inserts record into supplier_document_files via batchCreate |
 | `renderFileGallery` | `(files, containerId)` | Async. Resolves signed URLs, renders single file preview or multi-file gallery with thumbnails. Each file has a ✕ delete button |
-| `_deleteGalleryFile` | `(fileId, containerId)` | Async. Confirms deletion via confirmDialog, deletes from supplier_document_files, re-renders gallery |
+| `_deleteGalleryFile` | `(fileId, containerId)` | Async. Confirms deletion, deletes from DB + storage, re-queries fresh files via fetchDocFiles, re-renders gallery |
 | `_renderSingleFilePreview` | `(rf, container)` | Renders PDF iframe or clickable image into container element |
 
 ### index.html (inline script)
@@ -960,11 +961,11 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `markDebtCredited` | `(returnId, itemId)` | Show modal to mark single item as credited (זוכה) |
-| `_execMarkCredited` | `(returnId, itemId)` | Execute mark-as-credited with PIN verification and logging |
+| `markDebtCredited` | `(returnId, itemId)` | Step 1: file upload via _promptCreditFileUpload, Step 2: PIN, then creates credit note with attached file |
+| `_promptCreditFileUpload` | `(supplierId)` | Returns Promise with upload result or null. Drag-drop/pick modal for credit note file |
 | `bulkMarkCredited` | `()` | Show modal to bulk-mark selected items as credited |
 | `exportDebtReturnsExcel` | `()` | Export debt returns data to Excel with credit dates |
-| `_createCreditNoteForReturn` | `(returnId, supplierId, creditAmount)` | Async. Auto-creates credit_note document in supplier_documents when marking return as credited |
+| `_createCreditNoteForReturn` | `(ret, returnId, empId, uploadedFile)` | Async. Auto-creates credit_note document with attached file. Links doc to return via credit_document_id |
 
 ### modules/debt/ai/ai-ocr.js
 

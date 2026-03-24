@@ -9,18 +9,26 @@
 // Mark single item as credited (PIN required)
 // =========================================================
 async function markDebtCredited(returnId, itemId) {
+  // Step 1: Require credit note file upload
+  var item = window._debtReturnsData.find(function(d) { return d.id === itemId; });
+  var ret = item ? item.return : null;
+  var supplierId = ret ? ret.supplier_id : null;
+  if (!supplierId) { toast('לא נמצא ספק לזיכוי', 'e'); return; }
+
+  var uploadResult = await _promptCreditFileUpload(supplierId);
+  if (!uploadResult) return; // user cancelled
+
+  // Step 2: PIN verification
   promptPin('סימון כזוכה — אימות עובד', async function(pin, emp) {
     try {
       await updateReturnStatus(returnId, 'credited');
-      var item = window._debtReturnsData.find(function(d) { return d.id === itemId; });
       await writeLog('return_credited', null, {
         return_id: returnId, item_id: itemId,
         barcode: item ? item.barcode : '', source_ref: 'debt_module'
       });
-      // Auto-create credit note document
-      var ret = item ? item.return : null;
+      // Auto-create credit note document WITH the uploaded file
       if (ret) {
-        var creditDoc = await _createCreditNoteForReturn(ret, returnId, emp.id);
+        var creditDoc = await _createCreditNoteForReturn(ret, returnId, emp.id, uploadResult);
         if (creditDoc) {
           toast('זוכה + מסמך זיכוי נוצר: ' + creditDoc.docNumber, 's');
         } else {
@@ -37,10 +45,87 @@ async function markDebtCredited(returnId, itemId) {
   });
 }
 
+// Prompt user to upload credit note file before marking as credited
+function _promptCreditFileUpload(supplierId) {
+  return new Promise(function(resolve) {
+    var modalId = 'credit-file-modal';
+    var existing = document.getElementById(modalId);
+    if (existing) existing.remove();
+
+    var html =
+      '<div class="modal-overlay" id="' + modalId + '" style="display:flex" onclick="if(event.target===this){this.remove()}">' +
+        '<div class="modal" style="max-width:420px;text-align:right">' +
+          '<h3 style="margin:0 0 12px">\u05E6\u05E8\u05E3 \u05EA\u05E2\u05D5\u05D3\u05EA \u05D6\u05D9\u05DB\u05D5\u05D9 \u05DE\u05D4\u05E1\u05E4\u05E7</h3>' +
+          '<p style="font-size:.88rem;color:var(--g600,#4b5563);margin:0 0 12px">' +
+            '\u05DC\u05E1\u05D9\u05DE\u05D5\u05DF \u05DB\u05D6\u05D5\u05DB\u05D4 \u05D9\u05E9 \u05DC\u05E6\u05E8\u05E3 \u05D0\u05EA \u05EA\u05E2\u05D5\u05D3\u05EA \u05D4\u05D6\u05D9\u05DB\u05D5\u05D9 \u05DE\u05D4\u05E1\u05E4\u05E7</p>' +
+          '<div id="credit-file-dropzone" style="border:2px dashed var(--g300,#d1d5db);border-radius:8px;padding:20px 12px;text-align:center;cursor:pointer;margin-bottom:10px">' +
+            '<div style="font-size:1.2rem;margin-bottom:2px">&#128196;</div>' +
+            '<div style="font-size:.84rem;color:var(--g500,#6b7280)">\u05D2\u05E8\u05D5\u05E8 \u05E7\u05D5\u05D1\u05E5 \u05DC\u05DB\u05D0\u05DF \u05D0\u05D5 \u05DC\u05D7\u05E5 \u05DC\u05D1\u05D7\u05D9\u05E8\u05D4</div>' +
+            '<div style="font-size:.74rem;color:var(--g400);margin-top:2px">PDF, JPG, PNG</div>' +
+          '</div>' +
+          '<div id="credit-file-preview" style="display:none;align-items:center;gap:8px;padding:8px 10px;background:var(--g100,#f3f4f6);border-radius:6px;margin-bottom:10px"></div>' +
+          '<div style="display:flex;gap:8px">' +
+            '<button class="btn btn-p" id="credit-file-ok" style="flex:1" disabled>\u05D4\u05DE\u05E9\u05DA \u05DC\u05D0\u05D9\u05DE\u05D5\u05EA</button>' +
+            '<button class="btn btn-g" id="credit-file-cancel" style="flex:1">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    var _creditFile = null;
+    var zone = document.getElementById('credit-file-dropzone');
+    var preview = document.getElementById('credit-file-preview');
+    var okBtn = document.getElementById('credit-file-ok');
+
+    function stageFile(file) {
+      var allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowed.includes(file.type)) { toast('\u05E1\u05D5\u05D2 \u05E7\u05D5\u05D1\u05E5 \u05DC\u05D0 \u05E0\u05EA\u05DE\u05DA', 'e'); return; }
+      if (file.size > 10 * 1024 * 1024) { toast('\u05E7\u05D5\u05D1\u05E5 \u05D2\u05D3\u05D5\u05DC \u05DE\u05D3\u05D9', 'e'); return; }
+      _creditFile = file;
+      zone.style.display = 'none';
+      var ext = (file.name || '').split('.').pop().toLowerCase();
+      var icon = ext === 'pdf' ? '\uD83D\uDCC4' : '\uD83D\uDDBC\uFE0F';
+      preview.style.display = 'flex';
+      preview.innerHTML =
+        '<span style="font-size:1.2rem">' + icon + '</span>' +
+        '<span style="flex:1;font-size:.85rem">' + escapeHtml(file.name) + '</span>' +
+        '<button class="btn-sm" style="background:#ef4444;color:#fff" id="credit-file-clear">\u2715</button>';
+      document.getElementById('credit-file-clear').onclick = function() {
+        _creditFile = null;
+        preview.style.display = 'none';
+        zone.style.display = '';
+        okBtn.disabled = true;
+      };
+      okBtn.disabled = false;
+    }
+
+    zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.borderColor = 'var(--primary,#1a73e8)'; });
+    zone.addEventListener('dragleave', function() { zone.style.borderColor = 'var(--g300,#d1d5db)'; });
+    zone.addEventListener('drop', function(e) { e.preventDefault(); zone.style.borderColor = 'var(--g300,#d1d5db)'; if (e.dataTransfer.files[0]) stageFile(e.dataTransfer.files[0]); });
+    zone.addEventListener('click', function() {
+      var inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.pdf,.jpg,.jpeg,.png';
+      inp.onchange = function() { if (inp.files[0]) stageFile(inp.files[0]); }; inp.click();
+    });
+
+    function cleanup() { var m = document.getElementById(modalId); if (m) m.remove(); }
+
+    okBtn.onclick = async function() {
+      if (!_creditFile) return;
+      showLoading('\u05DE\u05E2\u05DC\u05D4 \u05E7\u05D5\u05D1\u05E5...');
+      var result = await uploadSupplierFile(_creditFile, supplierId);
+      hideLoading();
+      if (!result) { toast('\u05D4\u05E2\u05DC\u05D0\u05EA \u05E7\u05D5\u05D1\u05E5 \u05E0\u05DB\u05E9\u05DC\u05D4', 'e'); return; }
+      cleanup();
+      resolve(result);
+    };
+    document.getElementById('credit-file-cancel').onclick = function() { cleanup(); resolve(null); };
+  });
+}
+
 // =========================================================
 // Auto-create credit note document for a credited return
 // =========================================================
-async function _createCreditNoteForReturn(ret, returnId, empId) {
+async function _createCreditNoteForReturn(ret, returnId, empId, uploadedFile) {
   try {
     // Find credit_note document type
     var types = await fetchAll(T.DOC_TYPES, [['code', 'eq', 'credit_note'], ['is_active', 'eq', true]]);
@@ -64,7 +149,7 @@ async function _createCreditNoteForReturn(ret, returnId, empId) {
     var docNumber = 'CRD-' + (ret.return_number || returnId.slice(0, 8));
     var internalNumber = await generateDocInternalNumber();
 
-    await batchCreate(T.SUP_DOCS, [{
+    var docRow = {
       tenant_id: getTenantId(),
       supplier_id: ret.supplier_id,
       document_type_id: typeId,
@@ -80,11 +165,25 @@ async function _createCreditNoteForReturn(ret, returnId, empId) {
       notes: 'זיכוי אוטומטי עבור ' + (ret.return_number || ''),
       internal_number: internalNumber,
       created_by: empId
-    }]);
+    };
+    // Attach file if uploaded
+    if (uploadedFile && uploadedFile.url) {
+      docRow.file_url = uploadedFile.url;
+      docRow.file_name = uploadedFile.fileName || null;
+    }
+    var created = await batchCreate(T.SUP_DOCS, [docRow]);
+    var newDoc = created[0];
+
+    // Save file record to supplier_document_files
+    if (newDoc && uploadedFile && uploadedFile.url && typeof saveDocFile === 'function') {
+      await saveDocFile(newDoc.id, uploadedFile.url, uploadedFile.fileName || null, 0);
+    }
 
     // Link credit document to return
-    await sb.from(T.SUP_RETURNS).update({ credit_document_id: null })
-      .eq('id', returnId); // clear if needed, we don't have the doc id easily
+    if (newDoc) {
+      await sb.from(T.SUP_RETURNS).update({ credit_document_id: newDoc.id })
+        .eq('id', returnId);
+    }
 
     await writeLog('credit_note_auto', null, {
       return_id: returnId, return_number: ret.return_number || '',

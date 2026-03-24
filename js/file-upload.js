@@ -266,20 +266,33 @@ async function renderFileGallery(files, containerId) {
   _renderSingleFilePreview(resolved[0], $(containerId + '-main'));
 }
 
-// Delete a file from the gallery — confirms, deletes from DB, re-renders
+// Delete a file from the gallery — confirms, deletes from DB, re-queries fresh data
 async function _deleteGalleryFile(fileId, containerId) {
   if (!fileId) return;
   var ok = await confirmDialog('מחיקת קובץ', 'האם למחוק את הקובץ?');
   if (!ok) return;
   try {
     showLoading('מוחק קובץ...');
+    // Also get the storage path before deleting DB record
+    var { data: fileRow } = await sb.from('supplier_document_files')
+      .select('file_url, document_id').eq('id', fileId).single();
     var { error } = await sb.from('supplier_document_files').delete().eq('id', fileId);
     if (error) throw error;
-    // Re-render gallery with updated file list
-    var container = $(containerId);
-    if (container && container._galleryFiles) {
-      var updated = container._galleryFiles.filter(function(f) { return f.id !== fileId; });
-      await renderFileGallery(updated, containerId);
+    // Delete from storage too (non-blocking)
+    if (fileRow && fileRow.file_url) {
+      sb.storage.from('supplier-docs').remove([fileRow.file_url]).catch(function(e) {
+        console.warn('Storage delete failed (non-blocking):', e);
+      });
+    }
+    // Re-query fresh files from DB (not stale in-memory array)
+    var docId = fileRow ? fileRow.document_id : null;
+    if (docId) {
+      var freshFiles = await fetchDocFiles(docId);
+      await renderFileGallery(freshFiles, containerId);
+    } else {
+      // Fallback: clear gallery
+      var container = $(containerId);
+      if (container) container.innerHTML = '<div style="color:var(--g400);font-size:.88rem;text-align:center;padding:16px">אין קבצים מצורפים</div>';
     }
     toast('הקובץ נמחק');
   } catch (e) {

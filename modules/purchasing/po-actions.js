@@ -231,13 +231,11 @@ async function cancelPO(id) {
       toast('הזמנה זו כבר בוטלה', 'w'); return;
     }
     if (po.status === 'partial') {
-      var ok = await confirmDialog('ביטול הזמנה חלקית',
-        'הזמנה זו התקבלה חלקית. ביטול יעצור קבלת יתרת הפריטים. להמשיך?');
-      if (!ok) return;
-    } else {
-      var confirmed = await confirmDialog('ביטול הזמנה', 'לבטל את ההזמנה? פעולה זו אינה הפיכה.');
-      if (!confirmed) return;
+      toast('לא ניתן לבטל הזמנה שהתקבלה סחורה דרכה. ניתן לבטל שורות ספציפיות שלא הגיעו.', 'e');
+      return;
     }
+    var confirmed = await confirmDialog('ביטול הזמנה', 'לבטל את ההזמנה? פעולה זו אינה הפיכה.');
+    if (!confirmed) return;
   } catch (e) { toast('שגיאה: ' + (e.message || ''), 'e'); return; }
 
   try {
