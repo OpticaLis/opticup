@@ -82,6 +82,34 @@ Flow Review Phase 2 + QA Fixes — 2026-03-24
 - Fixed Iron Rule 13: generateNextBarcode() replaces maxBarcode++ in po-view-import.js
 - Blocked bulk credit without per-item file upload
 
+### QA Round 2 — Receipt Architecture (2026-03-24)
+
+**PO & Receipt improvements (c4b5854):**
+- PO qty expansion: one receipt row per PO item with correct quantity
+- Manual barcode generation: "יצירת ברקודים" button, no auto-generation
+- Barcode export to Excel (SheetJS) instead of HTML print
+- Exclude not_received items from debt document views
+- Live PO stock counter (📦 X במלאי, updates on model/color/size change)
+
+**Barcode & RPC fixes (72ca280):**
+- Batch barcode generation (loadMaxBarcode once, increment locally) prevents duplicates
+- Fixed next_po_number and next_return_number RPCs: FOR UPDATE separated from aggregate query (migration 049)
+
+**Receipt architecture overhaul (e903e88):**
+- Single receipt row per PO item with quantity field (not row-per-unit)
+- Multi-barcode: qty=3 generates 3 unique barcodes stored in barcodes_csv
+- "הגיע חלקית" (partial_received) status with qty input
+- confirmReceiptCore creates individual inventory records per barcode
+- Migration 050: barcodes_csv, ordered_qty columns, partial_received CHECK
+
+**Display fixes (64ca8d5):**
+- PO view: status badges for undelivered items (🔄 נשלח לזיכוי / ❌ לא הגיע)
+- Debt comparison: returned items show "לזיכוי" instead of "חסר"
+- Changed "פריטי קבלה" title to "פריטים שהוזמנו"
+
+**Infrastructure (fe425a5):**
+- Removed watcher log file from git tracking permanently (.gitignore)
+
 ### All Commits (Flow Review Phase 2 + QA)
 - 6230700 Add migration 046: pending_invoice status, missing_price column, goods_receipt_id unique index
 - c116a4c Fix: C1 supplier docs filter, C2 file gallery delete, C3 OCR icon state refresh
@@ -95,40 +123,44 @@ Flow Review Phase 2 + QA Fixes — 2026-03-24
 - 91fc03a Fix: skip sell_price validation for return items, fix return creation for marked items
 - 0df4232 Fix: file delete persist, doc number from form, credit requires document, PO partial item cancel, block full PO cancel
 - 5cc236c Security: add tenant_id to 26 queries, fix XSS risks, fix 3 bugs, block bulk credit without file
+- c4b5854 Fix: PO qty expansion, manual barcode generation, Excel barcode export, exclude not_received from debt, live PO stock counter
+- 72ca280 Fix: batch barcode generation prevents duplicates, fix PO/return number RPC aggregate lock
+- e903e88 Architecture: single receipt row per PO item with qty, multi-barcode generation, partial received status
+- 64ca8d5 Fix: PO item status reasons, debt comparison returned label, receipt items title
+- fe425a5 Fix: remove watcher log from git tracking
 
 ## Current State
 - **6 HTML pages**: index, inventory, suppliers-debt, employees, shipments, settings
-- **~131 JS files**: added incoming-invoices.js, receipt-guide.js
+- **~132 JS files**: added incoming-invoices.js, receipt-guide.js
 - **49 DB tables** + 14 RPC functions
-- **49 migration files**: 046, 047, 048 added this session
+- **50 migration files**: 046–050 added this session
 - **Full traceability loop**: item ↔ receipt ↔ document ↔ invoice ↔ payment
-- **6 goods receipt flows verified**: with PO match, with PO mismatch, without PO with OCR, blocked without file, incoming invoice, zero subtotal
+- **Receipt architecture**: single row per PO item with qty, multi-barcode generation, partial_received status
 - **Security hardened**: tenant_id on all queries, escapeHtml on all interpolated DB data
 
 ## Open Issues
 
-### 🟡 MEDIUM
-- 10 files over 350-line limit (borderline 350-400, most are cohesive units)
-- Nav bar overflow — "חשבוניות נכנסות" tab scrolled out of view on smaller viewports
-- GoTrueClient warnings — multiple Supabase client instances during auth
-- Stacking event listeners in _initReceiptDropzone (needs init guard)
-- 5 files use raw table name strings instead of T constants
+### 🔴 CRITICAL
+- Tenant data loading errors — confusion between tenants, needs dedicated debug session
+- receipt-form.js at 559 lines — must split (limit 350)
 
-### 🟢 LOW / DEFERRED TO MODULE 2
-- Generic next_sequence_number() RPC (consolidate 4 existing RPCs)
-- SELECT MAX audit (stock count number has no RPC)
-- 7 non-tenant UNIQUE constraints
-- PIN unification (receipt uses _receiptPinVerify, others use PinModal.prompt)
-- Monkey-patching refactor (10+ functions patched across debt/ai modules)
-- OCR verification on PO-linked receipts (AI flags price/model mismatches)
+### 🟡 MEDIUM
+- po-view-import.js at 419 lines (over 350)
+- 10+ files over 350-line limit
+- Stacking event listeners in _initReceiptDropzone (needs init guard)
+
+### 🟢 LOW / DEFERRED
+- OCR verification on PO-linked receipts (AI flags mismatches)
 - Cascading dropdowns on non-PO receipt items
-- OCR parsing to individual fields (brand/model/size/color)
-- "אחר" supplier category for non-optical invoices (utilities, rent)
-- "לבירור" status on debt documents for finance team
-- PO duplicate/clone feature
-- PO direct amount editing (instead of % discount only)
+- OCR parsing to individual fields
+- "אחר" supplier category for non-optical invoices
+- "לבירור" status on debt documents
+- Generic next_sequence_number() RPC
+- 7 non-tenant UNIQUE constraints
+- PIN unification
+- Monkey-patching refactor
 
 ## Next Steps
-1. **Integration Ceremony** (GLOBAL_MAP + GLOBAL_SCHEMA)
-2. **Merge develop → main** for production deploy
+1. **Critical: fix tenant data loading errors** — dedicated debug session
+2. **Critical: split receipt-form.js** (559 → 2 files)
 3. **Module 2 planning** (Platform Admin — SaaS infrastructure)

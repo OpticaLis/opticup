@@ -600,10 +600,16 @@ Pages modified for shared/ dependencies:
 
 | File | Lines | Key Changes |
 |------|-------|-------------|
-| `modules/goods-receipts/receipt-form.js` | 385 | Drag & drop file zone (_initReceiptDropzone, _stageReceiptFile), PO item status dropdown (_onReceiptStatusChange), from_po tracking |
-| `modules/goods-receipts/receipt-confirm.js` | 382 | Match confirmation dialog (_showMatchConfirmDialog), skip validation for return/not_received items, tenant_id on all queries |
-| `modules/goods-receipts/receipt-po-compare.js` | 362 | receipt_status handling (returnMarked/missing sections), return creation for marked items, tenant_id hardened |
-| `modules/purchasing/po-view-import.js` | 376 | cancelPOItem (per-item cancel on partial POs), barcode gen via generateNextBarcode (was maxBarcode++), XSS fixes, tenant_id on all queries |
+| `modules/goods-receipts/receipt-form.js` | 559 | Single receipt row per PO item with qty, multi-barcode generation (generateReceiptBarcodes), partial_received status with qty input, drag & drop file zone |
+| `modules/goods-receipts/receipt-confirm.js` | 460 | Multi-barcode confirm: reads barcodes_csv, creates 1 inventory per barcode, match confirmation dialog (_showMatchConfirmDialog) |
+| `modules/goods-receipts/receipt-excel.js` | 259 | exportReceiptBarcodes: expands multi-barcode rows to individual Excel rows via SheetJS |
+| `modules/goods-receipts/receipt-po-compare.js` | 384 | receipt_status handling (returnMarked/missing sections), return creation for marked items, tenant_id hardened |
+| `modules/goods-receipts/goods-receipt.js` | 352 | onReceiptPoSelected: ONE row per PO item with qty=remaining, matches existing inventory |
+| `modules/purchasing/po-view-import.js` | 419 | Receipt-based reason badges (לזיכוי/לא הגיע/ממתין/חסר), cancelPOItem, live stock counter |
+| `modules/purchasing/po-items.js` | 338 | _updatePOStockCounter (live inventory count per PO item row), _calcPOFinalPrice, _onPOFinalPriceChange |
+| `modules/purchasing/po-actions.js` | 310 | clonePO, block partial PO cancel when items received |
+| `modules/debt/debt-doc-compare.js` | 269 | Returned items show "לזיכוי" (was filtered out), _cmpStatus handles returned status |
+| `modules/debt/debt-doc-items.js` | 161 | Title changed: "פריטים שהוזמנו" (was "פריטי קבלה") |
 | `modules/debt/debt-returns-tab-actions.js` | 289 | _promptCreditFileUpload (file required before credit), _createCreditNoteForReturn (attaches file), bulkMarkCredited blocked |
 | `js/file-upload.js` | 321 | _deleteGalleryFile re-queries from DB after delete (was in-memory splice only) |
 

@@ -58,6 +58,8 @@
 --   046_phase2_db_prep.sql — pending_invoice status, missing_price column, goods_receipt_id UNIQUE index
 --   047_receipt_item_status.sql — receipt_status + from_po columns on goods_receipt_items
 --   048_return_items_nullable_inventory.sql — inventory_id nullable on supplier_return_items
+--   049_fix_po_return_number_rpc.sql — FOR UPDATE separated from aggregate in next_po_number + next_return_number RPCs
+--   050_receipt_architecture.sql — barcodes_csv, ordered_qty columns + partial_received CHECK on goods_receipt_items
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -398,8 +400,10 @@ CREATE TABLE IF NOT EXISTS goods_receipt_items (
   is_new_item     BOOLEAN NOT NULL DEFAULT false,                -- true = פריט חדש (לא היה במלאי)
   price_decision  TEXT CHECK (price_decision IS NULL OR price_decision IN ('po_price', 'invoice_price')),  -- Phase 8: החלטת מחיר מול PO
   po_match_status TEXT CHECK (po_match_status IS NULL OR po_match_status IN ('matched', 'not_in_po', 'returned', 'not_received')),  -- Phase 8: סטטוס התאמה ל-PO
-  receipt_status  TEXT CHECK (receipt_status IS NULL OR receipt_status IN ('ok', 'not_received', 'return')),  -- Flow Review: סטטוס קבלה (ok/לא הגיע/להחזרה)
+  receipt_status  TEXT CHECK (receipt_status IS NULL OR receipt_status IN ('ok', 'not_received', 'return', 'partial_received')),  -- Flow Review: סטטוס קבלה (ok/לא הגיע/להחזרה/הגיע חלקית)
   from_po         BOOLEAN DEFAULT false,                         -- Flow Review: true = שורה שהגיעה מהזמנת רכש
+  barcodes_csv    TEXT,                                          -- QA2: comma-separated barcodes for multi-unit rows (050)
+  ordered_qty     INTEGER,                                       -- QA2: original ordered quantity from PO (050)
   tenant_id       UUID NOT NULL REFERENCES tenants(id)           -- דייר (018)
 );
 CREATE INDEX IF NOT EXISTS idx_receipt_items ON goods_receipt_items(receipt_id);
