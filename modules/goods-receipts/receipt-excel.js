@@ -256,4 +256,7 @@ document.addEventListener('click', function(e) {
   // #12 printReceiptBarcodes
   const printBarBtn = e.target.closest('.btn-rcpt-print-barcodes');
   if (printBarBtn) { printReceiptBarcodes(printBarBtn.dataset.id); return; }
+  // #13 filterByReceipt (photo workflow)
+  const photoBtn = e.target.closest('.btn-rcpt-photo');
+  if (photoBtn) { filterByReceipt(photoBtn.dataset.id, photoBtn.dataset.number); return; }
 });

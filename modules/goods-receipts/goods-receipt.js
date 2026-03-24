@@ -262,6 +262,7 @@ async function loadReceiptTab() {
           if (r.status === 'confirmed') {
             actions += ` <button class="btn btn-p btn-sm btn-rcpt-export" data-id="${escapeHtml(r.id)}" title="ייצוא לAccess">📤</button>`;
             actions += ` <button class="btn btn-sm btn-rcpt-print-barcodes" data-id="${escapeHtml(r.id)}" title="\u05D9\u05D9\u05E6\u05D5\u05D0 \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD" style="background:#7c3aed;color:#fff">\uD83D\uDCCB</button>`;
+            actions += ` <button class="btn btn-sm btn-rcpt-photo" data-id="${escapeHtml(r.id)}" data-number="${escapeHtml(r.receipt_number)}" title="\u05E6\u05DC\u05DD \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD" style="background:#2196F3;color:#fff">\uD83D\uDCF7</button>`;
           }
         }
 

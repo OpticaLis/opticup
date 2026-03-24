@@ -135,6 +135,26 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
 
   refreshLowStockBanner();
   await loadReceiptTab();
+  // Photography prompt — show banner to navigate to inventory for photos
+  var confirmedCount = successfulOps.length;
+  if (confirmedCount > 0 && typeof filterByReceipt === 'function') {
+    _showPhotoPromptBanner(receiptId, rcptNumber, confirmedCount);
+  }
+}
+
+function _showPhotoPromptBanner(receiptId, rcptNumber, count) {
+  var old = $('rcpt-photo-prompt'); if (old) old.remove();
+  var banner = document.createElement('div');
+  banner.id = 'rcpt-photo-prompt';
+  banner.style.cssText = 'background:#dbeafe;border:1px solid #93c5fd;border-radius:8px;padding:12px 16px;margin:10px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px';
+  banner.innerHTML = '<span style="font-size:.92rem;color:#1e40af">\uD83D\uDCF7 \u05D4\u05D5\u05DB\u05E0\u05E1\u05D5 ' + count +
+    ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DE\u05E7\u05D1\u05DC\u05D4 #' + escapeHtml(rcptNumber) + ' \u2014 \u05E8\u05D5\u05E6\u05D4 \u05DC\u05E6\u05DC\u05DD?</span>' +
+    '<div style="display:flex;gap:6px">' +
+      '<button class="btn btn-sm" style="background:#2196F3;color:#fff" onclick="filterByReceipt(\'' + receiptId + '\',\'' + escapeHtml(rcptNumber) + '\')">\uD83D\uDCF7 \u05E6\u05DC\u05DD \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA</button>' +
+      '<button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" onclick="this.closest(\'#rcpt-photo-prompt\').remove()">\u05DC\u05D0 \u05E2\u05DB\u05E9\u05D9\u05D5</button>' +
+    '</div>';
+  var container = $('rcpt-step1');
+  if (container) container.insertBefore(banner, container.firstChild);
 }
 
 async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {

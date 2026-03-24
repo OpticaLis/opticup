@@ -1,23 +1,19 @@
-
-// =========================================================
-// TAB: FULL INVENTORY
-// =========================================================
+// inventory-table.js — Inventory tab: paginated loading, filtering, sorting, row rendering
 let invData = [];
 let invFiltered = [];
 let invChanges = {};
 let invSelected = new Set();
 let invSortField = '';
 let invSortDir = 0; // 0=none, 1=asc, -1=desc
-
-// =========================================================
-// SERVER-SIDE PAGINATION
-// =========================================================
 const INV_PAGE_SIZE = 50;
 let invPage = 0;
 let invTotalCount = 0;
 let invTotalPages = 0;
 let invCurrentFilters = {};
 let invDebounceTimer = null;
+var _receiptFilterIds = null;  // array of inventory IDs from receipt
+var _receiptFilterNumber = ''; // receipt number for banner
+var _noImagesFilter = false;   // show only items without images
 
 async function loadInventoryPage() {
   showLoading('טוען מלאי...');
@@ -33,88 +29,49 @@ async function loadInventoryPage() {
   invCurrentFilters = { search, supplier, ptype, qtyFilter };
 
   try {
-    // Build Supabase query with exact count
     let query = sb.from('inventory')
       .select('*, inventory_images(*), brands(name), suppliers(name)', { count: 'exact' })
       .eq('is_deleted', false);
 
-    // Supplier filter (name → UUID)
-    if (supplier) {
-      const suppId = supplierCache[supplier];
-      if (suppId) query = query.eq('supplier_id', suppId);
+    // Receipt filter — show only specific inventory IDs
+    if (_receiptFilterIds && _receiptFilterIds.length) {
+      query = query.in('id', _receiptFilterIds);
     }
-
-    // Product type filter (Hebrew → English enum)
-    if (ptype) {
-      query = query.eq('product_type', heToEn('product_type', ptype));
-    }
-
-    // Quantity filter
+    if (supplier) { const suppId = supplierCache[supplier]; if (suppId) query = query.eq('supplier_id', suppId); }
+    if (ptype) query = query.eq('product_type', heToEn('product_type', ptype));
     if (qtyFilter === '1') query = query.gt('quantity', 0);
     else if (qtyFilter === '0') query = query.lte('quantity', 0);
-
-    // Free-text search via .or() on text columns + brand/supplier ID pre-lookup
     if (search && search.length >= 2) {
       const safe = search.replace(/[,().\\]/g, '');
       if (safe) {
-        // Barcode search: exact prefix match (fast, uses index)
         const isNumeric = /^\d+$/.test(safe);
         const orParts = [];
-        if (isNumeric) {
-          // Numeric input — likely barcode, prioritize exact prefix
-          orParts.push(`barcode.ilike.${safe}%`);
-        } else {
-          orParts.push(`barcode.ilike.%${safe}%`);
-        }
-        orParts.push(
-          `model.ilike.%${safe}%`,
-          `color.ilike.%${safe}%`
-        );
-        // Only search size/notes for longer queries (reduce OR branches)
-        if (safe.length >= 3) {
-          orParts.push(`size.ilike.%${safe}%`, `notes.ilike.%${safe}%`);
-        }
-        // Pre-lookup brand IDs whose name matches the search term
-        const matchBrandIds = Object.entries(brandCache)
-          .filter(([name]) => name.toLowerCase().includes(safe))
-          .map(([, id]) => id);
+        orParts.push(isNumeric ? `barcode.ilike.${safe}%` : `barcode.ilike.%${safe}%`);
+        orParts.push(`model.ilike.%${safe}%`, `color.ilike.%${safe}%`);
+        if (safe.length >= 3) orParts.push(`size.ilike.%${safe}%`, `notes.ilike.%${safe}%`);
+        const matchBrandIds = Object.entries(brandCache).filter(([name]) => name.toLowerCase().includes(safe)).map(([, id]) => id);
         if (matchBrandIds.length) orParts.push(`brand_id.in.(${matchBrandIds.join(',')})`);
-        // Pre-lookup supplier IDs whose name matches the search term
-        const matchSupplierIds = Object.entries(supplierCache)
-          .filter(([name]) => name.toLowerCase().includes(safe))
-          .map(([, id]) => id);
+        const matchSupplierIds = Object.entries(supplierCache).filter(([name]) => name.toLowerCase().includes(safe)).map(([, id]) => id);
         if (matchSupplierIds.length) orParts.push(`supplier_id.in.(${matchSupplierIds.join(',')})`);
-
         query = query.or(orParts.join(','));
       }
     } else if (search && search.length === 1) {
-      // Single character — only search barcode prefix (fast)
       query = query.ilike('barcode', search + '%');
     }
-
-    // Sorting (Hebrew field → English column)
     if (invSortField && invSortDir !== 0) {
       const enCol = FIELD_MAP.inventory[invSortField];
       if (enCol && enCol !== '_images') {
         query = query.order(enCol, { ascending: invSortDir === 1 });
       }
-    } else {
-      query = query.order('created_at', { ascending: false });
-    }
-
-    // Pagination
+    } else { query = query.order('created_at', { ascending: false }); }
     const offset = invPage * INV_PAGE_SIZE;
     query = query.range(offset, offset + INV_PAGE_SIZE - 1);
 
     const { data, error, count } = await query;
     if (error) throw new Error(error.message);
-
-    // Update pagination state
     invTotalCount = count || 0;
     invTotalPages = Math.max(1, Math.ceil(invTotalCount / INV_PAGE_SIZE));
     if (invPage >= invTotalPages) invPage = Math.max(0, invTotalPages - 1);
-
-    // Enrich rows with display names + images
     invData = (data || []).map(row => ({
       ...row,
       brand_name: brandCacheRev[row.brand_id] || '',
@@ -127,22 +84,23 @@ async function loadInventoryPage() {
         }
       }))
     }));
-    invFiltered = invData; // Compatibility alias
-
-    // Populate supplier dropdown (preserves current selection)
-    const supplierSel = $('inv-filter-supplier');
-    const curVal = supplierSel.value;
+    // No-images client-side filter
+    if (_noImagesFilter) {
+      invData = invData.filter(function(r) { return !r._images || r._images.length === 0; });
+      invTotalCount = invData.length;
+      invTotalPages = Math.max(1, Math.ceil(invTotalCount / INV_PAGE_SIZE));
+    }
+    invFiltered = invData;
+    var supplierSel = $('inv-filter-supplier'); var curVal = supplierSel.value;
     supplierSel.innerHTML = '<option value="">הכל</option>' + suppliers.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
     supplierSel.value = curVal;
-
-    // Update UI
     $('inv-count').textContent = invTotalCount;
     renderInventoryRows(invData);
     updatePaginationUI();
     updateSelectionUI();
 
-    const isAdm = document.body.classList.contains('admin-mode');
-    $('inv-admin-bar').style.display = isAdm ? 'flex' : 'none';
+    var isAdm = document.body.classList.contains('admin-mode');
+    $('inv-admin-bar').style.display = isAdm ? 'flex' : 'none'; _renderReceiptBanner();
   } catch (e) {
     setAlert('inv-alerts', 'שגיאה בטעינת מלאי: ' + (e.message || ''), 'e');
   }
@@ -150,21 +108,15 @@ async function loadInventoryPage() {
 }
 
 function updatePaginationUI() {
-  const pag = $('inv-pagination');
-  if (!pag) return;
-
-  if (invTotalPages <= 1) {
-    pag.style.display = 'none';
-  } else {
+  var pag = $('inv-pagination'); if (!pag) return;
+  if (invTotalPages <= 1) { pag.style.display = 'none'; }
+  else {
     pag.style.display = 'flex';
     $('inv-page-info').textContent = `עמוד ${invPage + 1} מתוך ${invTotalPages} | סה"כ ${invTotalCount} פריטים`;
     $('inv-prev').disabled = invPage === 0;
     $('inv-next').disabled = invPage >= invTotalPages - 1;
   }
-
-  // Update the "shown" counter with range
-  const start = invPage * INV_PAGE_SIZE + 1;
-  const end = Math.min((invPage + 1) * INV_PAGE_SIZE, invTotalCount);
+  var start = invPage * INV_PAGE_SIZE + 1, end = Math.min((invPage + 1) * INV_PAGE_SIZE, invTotalCount);
   $('inv-shown').textContent = invTotalCount > 0 ? `${start}–${end}` : '0';
 }
 
@@ -208,9 +160,12 @@ function renderInventoryRows(recs) {
     const sel = invSelected.has(r.id) ? ' selected-row' : '';
     const chk = invSelected.has(r.id) ? ' checked' : '';
     const imgs = r._images || [];
+    const imgBadge = imgs.length > 0
+      ? `<span style="color:#2196F3;font-size:.75rem;font-weight:600">\uD83D\uDCF7${imgs.length}</span>`
+      : '<span style="color:var(--g400);font-size:.75rem">\uD83D\uDCF7</span>';
     const imgCell = imgs.length > 0
-      ? `<img class="img-thumb img-thumb-click" src="${encodeURI(imgs[0].thumbnails?.small?.url || imgs[0].url)}" data-id="${escapeHtml(r.id)}" title="${imgs.length} תמונות">`
-      : '<span class="no-img">—</span>';
+      ? `<img class="img-thumb img-thumb-click" src="${encodeURI(imgs[0].thumbnails?.small?.url || imgs[0].url)}" data-id="${escapeHtml(r.id)}" title="${imgs.length} תמונות"> ${imgBadge}`
+      : imgBadge;
     const syncVal = enToHe('website_sync', r.website_sync) || '';
     return `<tr data-id="${r.id}" class="${sel}">
       <td><button class="btn-item-history" style="background:none;border:none;cursor:pointer;font-size:1rem" data-id="${escapeHtml(r.id)}" data-barcode="${escapeHtml(bc)}" data-brand="${escapeHtml(r.brand_name||'')}" data-model="${escapeHtml(r.model||'')}" title="היסטוריה">📋</button></td>
@@ -237,28 +192,72 @@ function renderInventoryRows(recs) {
   }).join('');
 }
 
-// ---- Column sorting ----
 function sortInventory(th) {
-  const field = th.dataset.field;
-  // Toggle sort direction
+  var field = th.dataset.field;
   if (invSortField === field) {
     invSortDir = invSortDir === 1 ? -1 : invSortDir === -1 ? 0 : 1;
-  } else {
-    invSortField = field;
-    invSortDir = 1;
-  }
-  // Update header UI
+  } else { invSortField = field; invSortDir = 1; }
   document.querySelectorAll('#inv-table th.sortable').forEach(h => {
     h.classList.remove('sort-asc', 'sort-desc');
     h.querySelector('.sort-icon').innerHTML = '&#9650;';
   });
-  if (invSortDir !== 0) {
-    th.classList.add(invSortDir === 1 ? 'sort-asc' : 'sort-desc');
-    th.querySelector('.sort-icon').innerHTML = invSortDir === 1 ? '&#9650;' : '&#9660;';
+  if (invSortDir !== 0) { th.classList.add(invSortDir === 1 ? 'sort-asc' : 'sort-desc'); th.querySelector('.sort-icon').innerHTML = invSortDir === 1 ? '&#9650;' : '&#9660;'; }
+  invPage = 0; loadInventoryPage();
+}
+
+// --- Receipt filter + No-images filter ---
+async function filterByReceipt(receiptId, receiptNumber) {
+  showLoading('\u05D8\u05D5\u05E2\u05DF \u05E4\u05E8\u05D9\u05D8\u05D9 \u05E7\u05D1\u05DC\u05D4...');
+  try {
+    var { data: items } = await sb.from(T.RCPT_ITEMS).select('inventory_id')
+      .eq('receipt_id', receiptId).eq('tenant_id', getTenantId()).not('inventory_id', 'is', null);
+    var ids = (items || []).map(function(i) { return i.inventory_id; }).filter(Boolean);
+    hideLoading();
+    if (!ids.length) { toast('\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0\u05D5 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DE\u05E7\u05D1\u05DC\u05D4 \u05D6\u05D5', 'w'); return; }
+    _receiptFilterIds = ids;
+    _receiptFilterNumber = receiptNumber || '';
+    showTab('inventory');
+  } catch (e) {
+    hideLoading();
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
   }
-  // Server-side sort — reset to page 0 and re-fetch
+}
+
+function clearReceiptFilter() {
+  _receiptFilterIds = null;
+  _receiptFilterNumber = '';
+  _removeReceiptBanner();
   invPage = 0;
   loadInventoryPage();
+}
+
+function toggleNoImagesFilter() {
+  _noImagesFilter = !_noImagesFilter;
+  var btn = $('inv-filter-no-images');
+  if (btn) {
+    btn.style.background = _noImagesFilter ? '#2196F3' : '#e5e7eb';
+    btn.style.color = _noImagesFilter ? '#fff' : '#1e293b';
+  }
+  invPage = 0;
+  loadInventoryPage();
+}
+
+function _renderReceiptBanner() {
+  _removeReceiptBanner();
+  if (!_receiptFilterIds) return;
+  var banner = document.createElement('div');
+  banner.id = 'inv-receipt-banner';
+  banner.style.cssText = 'background:#dbeafe;border:1px solid #93c5fd;border-radius:8px;padding:10px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between';
+  banner.innerHTML = '<span style="font-size:.92rem;color:#1e40af">\uD83D\uDCF7 \u05DE\u05E6\u05D9\u05D2 ' + _receiptFilterIds.length +
+    ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DE\u05E7\u05D1\u05DC\u05D4 #' + escapeHtml(_receiptFilterNumber) + '</span>' +
+    '<button class="btn btn-sm" style="background:#1e40af;color:#fff" onclick="clearReceiptFilter()">\u2715 \u05D4\u05E1\u05E8 \u05E1\u05D9\u05E0\u05D5\u05DF</button>';
+  var table = $('inv-table');
+  if (table && table.parentNode) table.parentNode.insertBefore(banner, table);
+}
+
+function _removeReceiptBanner() {
+  var el = $('inv-receipt-banner');
+  if (el) el.remove();
 }
 
 // --- ⋯ Action Menu ---

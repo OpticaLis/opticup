@@ -291,8 +291,11 @@
 | `invPageNav` | `(delta)` | Navigates pages by delta, clamped to bounds |
 | `loadInventoryTab` | `()` | Async. Resets to page 0, clears selection, loads first page |
 | `filterInventoryTable` | `()` | Debounced (300ms) filter change handler, resets to page 0 |
-| `renderInventoryRows` | `(recs)` | Renders table body HTML with inline edit cells, qty buttons, image thumbs, delete buttons |
+| `renderInventoryRows` | `(recs)` | Renders table body HTML with inline edit cells, qty buttons, image badges, ⋯ action menu |
 | `sortInventory` | `(th)` | Toggles column sort (none→asc→desc→none), resets to page 0 |
+| `filterByReceipt` | `(receiptId, receiptNumber)` | Async. Queries receipt items, sets _receiptFilterIds, switches to inventory tab with banner |
+| `clearReceiptFilter` | `()` | Clears receipt filter, removes banner, reloads inventory |
+| `toggleNoImagesFilter` | `()` | Toggles client-side filter for items without images |
 
 ### modules/inventory/inventory-images.js
 
