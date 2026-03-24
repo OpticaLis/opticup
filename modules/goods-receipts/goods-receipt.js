@@ -124,11 +124,10 @@ async function onReceiptPoSelected() {
           inventory_id: existingInv.id,
           from_po: true
         });
-        // Additional units get new barcodes (each physical frame = unique barcode)
+        // Additional units — barcodes will be generated manually via "יצירת ברקודים" button
         for (var u = 1; u < remaining; u++) {
-          var newBc = await generateNextBarcode();
           addReceiptItemRow({
-            barcode: newBc,
+            barcode: '',
             brand: item.brand || '',
             model: item.model || '',
             color: item.color || '',
@@ -142,19 +141,22 @@ async function onReceiptPoSelected() {
         }
       } else {
         // Genuinely new item — no existing inventory match
-        addReceiptItemRow({
-          barcode: item.barcode || '',
-          brand: item.brand || '',
-          model: item.model || '',
-          color: item.color || '',
-          size: item.size || '',
-          quantity: remaining,
-          unit_cost: item.unit_cost || '',
-          sell_price: item.sell_price || '',
-          is_new_item: true,
-          inventory_id: null,
-          from_po: true
-        });
+        // Each physical frame needs its own barcode, so create one row per unit
+        for (var u = 0; u < remaining; u++) {
+          addReceiptItemRow({
+            barcode: '',
+            brand: item.brand || '',
+            model: item.model || '',
+            color: item.color || '',
+            size: item.size || '',
+            quantity: 1,
+            unit_cost: item.unit_cost || '',
+            sell_price: item.sell_price || '',
+            is_new_item: true,
+            inventory_id: null,
+            from_po: true
+          });
+        }
       }
     }
 
@@ -299,7 +301,7 @@ async function loadReceiptTab() {
           actions = `<button class="btn btn-g btn-sm btn-rcpt-view" data-id="${escapeHtml(r.id)}" title="צפה">👁</button>`;
           if (r.status === 'confirmed') {
             actions += ` <button class="btn btn-p btn-sm btn-rcpt-export" data-id="${escapeHtml(r.id)}" title="ייצוא לAccess">📤</button>`;
-            actions += ` <button class="btn btn-sm btn-rcpt-print-barcodes" data-id="${escapeHtml(r.id)}" title="\u05D4\u05D3\u05E4\u05E1 \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD" style="background:#7c3aed;color:#fff">\uD83D\uDDA8\uFE0F</button>`;
+            actions += ` <button class="btn btn-sm btn-rcpt-print-barcodes" data-id="${escapeHtml(r.id)}" title="\u05D9\u05D9\u05E6\u05D5\u05D0 \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD" style="background:#7c3aed;color:#fff">\uD83D\uDCCB</button>`;
           }
         }
 

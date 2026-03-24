@@ -135,7 +135,11 @@ async function _saveEditedItems(docId) {
 function _buildReceiptItemsHtml(rcptItems) {
   if (!rcptItems || !rcptItems.length) return '';
   var riRows = rcptItems
-    .filter(function(ri) { return ri.po_match_status !== 'returned'; })
+    .filter(function(ri) {
+      return ri.po_match_status !== 'returned' &&
+             ri.po_match_status !== 'not_received' &&
+             ri.receipt_status !== 'not_received';
+    })
     .map(function(ri) {
       var lineTotal = ((ri.unit_cost || 0) * (ri.quantity || 0)).toFixed(2);
       return '<tr>' +
