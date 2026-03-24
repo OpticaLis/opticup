@@ -282,14 +282,9 @@ function _deleteFavorite(event, idx) {
 // =========================================================
 async function _loadDeletedDocCount() {
   try {
-    var { data, error } = await sb.from(T.SUP_DOCS).select('id', { count: 'exact', head: true })
+    var { count, error } = await sb.from(T.SUP_DOCS).select('id', { count: 'exact', head: true })
       .eq('is_deleted', true).eq('tenant_id', getTenantId());
-    _deletedDocCount = error ? 0 : (data ? data.length : 0);
-    // If head:true, count comes from the response header — fallback to query
-    if (_deletedDocCount === 0 && !error) {
-      var { data: d2 } = await sb.from(T.SUP_DOCS).select('id').eq('is_deleted', true).eq('tenant_id', getTenantId());
-      _deletedDocCount = d2 ? d2.length : 0;
-    }
+    _deletedDocCount = error ? 0 : (count || 0);
   } catch (e) { _deletedDocCount = 0; }
   var el = $('recycle-count');
   if (el) el.textContent = _deletedDocCount;

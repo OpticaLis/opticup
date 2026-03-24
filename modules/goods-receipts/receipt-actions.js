@@ -61,7 +61,7 @@ async function saveReceiptDraft() {
       receiptId = currentReceiptId;
 
       // Delete old items and re-insert
-      await sb.from(T.RCPT_ITEMS).delete().eq('receipt_id', receiptId);
+      await sb.from(T.RCPT_ITEMS).delete().eq('receipt_id', receiptId).eq('tenant_id', getTenantId());
     } else {
       // Insert new receipt
       const { data, error } = await sb.from(T.RECEIPTS).insert(receiptRow).select().single();
@@ -132,7 +132,7 @@ async function saveReceiptDraftInternal() {
     const { error } = await sb.from(T.RECEIPTS).update(receiptRow).eq('id', currentReceiptId);
     if (error) throw error;
     receiptId = currentReceiptId;
-    await sb.from(T.RCPT_ITEMS).delete().eq('receipt_id', receiptId);
+    await sb.from(T.RCPT_ITEMS).delete().eq('receipt_id', receiptId).eq('tenant_id', getTenantId());
   } else {
     const { data, error } = await sb.from(T.RECEIPTS).insert(receiptRow).select().single();
     if (error) throw error;
@@ -168,7 +168,7 @@ async function cancelReceipt(receiptId) {
 
   showLoading('מבטל...');
   try {
-    const { error } = await sb.from(T.RECEIPTS).update({ status: 'cancelled' }).eq('id', receiptId);
+    const { error } = await sb.from(T.RECEIPTS).update({ status: 'cancelled' }).eq('id', receiptId).eq('tenant_id', getTenantId());
     if (error) throw error;
     toast('הקבלה בוטלה', 's');
     await loadReceiptTab();

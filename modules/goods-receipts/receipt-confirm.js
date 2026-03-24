@@ -1,5 +1,5 @@
 async function confirmReceiptCore(receiptId, rcptNumber, poId) {
-  const { data: savedItems, error: siErr } = await sb.from(T.RCPT_ITEMS).select('*').eq('receipt_id', receiptId);
+  const { data: savedItems, error: siErr } = await sb.from(T.RCPT_ITEMS).select('*').eq('receipt_id', receiptId).eq('tenant_id', getTenantId());
   if (siErr) throw siErr;
 
   // Phase 2c: Track successful inventory changes for rollback on failure
@@ -12,6 +12,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
       if (!item.is_new_item) {
         const { data: invRow, error: findErr } = await sb.from('inventory')
           .select('id, quantity, barcode, brand_id, model, cost_price')
+          .eq('tenant_id', getTenantId())
           .eq('barcode', item.barcode)
           .eq('is_deleted', false)
           .maybeSingle();
@@ -24,7 +25,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
           if (updErr) throw new Error('עדכון מלאי נכשל עבור ' + item.barcode + ': ' + updErr.message);
           successfulOps.push({ id: invRow.id, delta: item.quantity, isNew: false, oldCost: parseFloat(invRow.cost_price) || 0 });
 
-          await sb.from(T.RCPT_ITEMS).update({ inventory_id: invRow.id }).eq('id', item.id);
+          await sb.from(T.RCPT_ITEMS).update({ inventory_id: invRow.id }).eq('id', item.id).eq('tenant_id', getTenantId());
           writeLog('entry_receipt', invRow.id, {
             barcode: item.barcode, brand: item.brand, model: item.model,
             qty_before: oldQty, qty_after: newQty, source_ref: rcptNumber
@@ -82,7 +83,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
   }
 
   // Auto-create supplier document for debt tracking
-  const { data: rcptData } = await sb.from(T.RECEIPTS).select('supplier_id').eq('id', receiptId).single();
+  const { data: rcptData } = await sb.from(T.RECEIPTS).select('supplier_id').eq('id', receiptId).eq('tenant_id', getTenantId()).single();
   if (rcptData?.supplier_id) {
     try {
       const doc = await createDocumentFromReceipt(receiptId, rcptData.supplier_id, savedItems, rcptNumber);
@@ -249,7 +250,7 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
   if (cErr) throw cErr;
 
   // Update receipt item with inventory_id and barcode
-  await sb.from(T.RCPT_ITEMS).update({ inventory_id: created.id, barcode: newBarcode }).eq('id', item.id);
+  await sb.from(T.RCPT_ITEMS).update({ inventory_id: created.id, barcode: newBarcode }).eq('id', item.id).eq('tenant_id', getTenantId());
 
   writeLog('entry_receipt', created.id, {
     barcode: newBarcode,
@@ -275,7 +276,7 @@ async function confirmReceiptById(receiptId) {
 
   showLoading('מאשר קבלה...');
   try {
-    const { data: rcpt } = await sb.from(T.RECEIPTS).select('receipt_number, po_id').eq('id', receiptId).single();
+    const { data: rcpt } = await sb.from(T.RECEIPTS).select('receipt_number, po_id').eq('id', receiptId).eq('tenant_id', getTenantId()).single();
     await confirmReceiptCore(receiptId, rcpt?.receipt_number || '', rcpt?.po_id || null);
   } catch (e) {
     console.error('confirmReceiptById error:', e);

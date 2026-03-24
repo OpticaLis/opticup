@@ -42,6 +42,7 @@ async function openItemHistory(id, barcode, brand, model) {
     const { data: logs, error } = await sb
       .from('inventory_logs')
       .select('*')
+      .eq('tenant_id', getTenantId())
       .eq('inventory_id', id)
       .order('created_at', { ascending: false })
       .limit(100);
@@ -179,6 +180,7 @@ async function loadEntryHistory() {
     while (true) {
       const { data: batch, error: bErr } = await sb.from('inventory_logs')
         .select('*, inventory:inventory_id(id, barcode, model, color, size, brand_id, quantity, status)')
+        .eq('tenant_id', getTenantId())
         .in('action', ENTRY_ACTIONS)
         .gte('created_at', from + 'T00:00:00')
         .lte('created_at', to + 'T23:59:59')
@@ -239,7 +241,7 @@ function renderEntryHistory(logs) {
         color: inv?.color || ''
       };
     });
-    const exportJson = JSON.stringify(exportItems).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+    const exportDataAttr = escapeHtml(JSON.stringify(exportItems));
 
     // Build table rows
     let rowsHtml = '';
@@ -287,7 +289,7 @@ function renderEntryHistory(logs) {
           </table>
         </div>
         <div style="padding:10px">
-          <button onclick='exportDateGroupBarcodes(${exportJson})'
+          <button data-export-items="${exportDataAttr}" onclick="exportDateGroupBarcodes(JSON.parse(this.dataset.exportItems))"
                   style="width:100%;padding:10px;background:#FF9800;color:white;
                          border:none;border-radius:6px;cursor:pointer;font-size:14px">
             &#128424;&#65039; הורד ברקודים לתאריך זה
@@ -372,14 +374,14 @@ async function _loadEntryDocLink(inventoryId) {
     }
     if (!typeName) {
       // Fallback: query doc type
-      var { data: dtRows } = await sb.from(T.DOC_TYPES).select('name_he').eq('id', doc.document_type_id).limit(1);
+      var { data: dtRows } = await sb.from(T.DOC_TYPES).select('name_he').eq('id', doc.document_type_id).eq('tenant_id', getTenantId()).limit(1);
       if (dtRows && dtRows.length) typeName = dtRows[0].name_he;
     }
 
     var supName = '';
     if (typeof supplierCacheRev !== 'undefined') supName = supplierCacheRev[doc.supplier_id] || '';
     if (!supName) {
-      var { data: supRows } = await sb.from(T.SUPPLIERS).select('name').eq('id', doc.supplier_id).limit(1);
+      var { data: supRows } = await sb.from(T.SUPPLIERS).select('name').eq('id', doc.supplier_id).eq('tenant_id', getTenantId()).limit(1);
       if (supRows && supRows.length) supName = supRows[0].name;
     }
 

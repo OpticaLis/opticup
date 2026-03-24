@@ -194,7 +194,8 @@ function closeAndRemoveModal(id) { var el = $(id); if (el) el.remove(); }
 
 async function cancelDocument(docId) {
   var doc = _docData.find(function(d) { return d.id === docId; });
-  if (!doc || doc.status !== 'open') { toast('\u05E0\u05D9\u05EA\u05DF \u05DC\u05D1\u05D8\u05DC \u05E8\u05E7 \u05DE\u05E1\u05DE\u05DA \u05E4\u05EA\u05D5\u05D7', 'e'); return; }
+  var cancellable = ['open', 'draft', 'pending_invoice'];
+  if (!doc || cancellable.indexOf(doc.status) < 0) { toast('\u05E0\u05D9\u05EA\u05DF \u05DC\u05D1\u05D8\u05DC \u05E8\u05E7 \u05DE\u05E1\u05DE\u05DA \u05E4\u05EA\u05D5\u05D7/\u05D8\u05D9\u05D5\u05D8\u05D4/\u05DE\u05DE\u05EA\u05D9\u05DF', 'e'); return; }
   var ok = await confirmDialog('\u05D1\u05D9\u05D8\u05D5\u05DC \u05DE\u05E1\u05DE\u05DA', '\u05D4\u05D0\u05DD \u05DC\u05D1\u05D8\u05DC \u05D0\u05EA \u05D4\u05DE\u05E1\u05DE\u05DA? \u05E4\u05E2\u05D5\u05DC\u05D4 \u05D6\u05D5 \u05EA\u05D0\u05E4\u05E1 \u05D0\u05EA \u05D4\u05D9\u05EA\u05E8\u05D4');
   if (!ok) return;
   promptPin('ביטול מסמך — אימות עובד', async function(pin, emp) {

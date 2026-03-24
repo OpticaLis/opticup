@@ -2,7 +2,7 @@
 async function exportPOExcel() {
   if (!currentPOItems.length) { toast('אין פריטים להזמנה', 'e'); return; }
   const { data: sup } = await sb.from(T.SUPPLIERS)
-    .select('name').eq('id', currentPO.supplier_id).single();
+    .select('name').eq('id', currentPO.supplier_id).eq('tenant_id', getTenantId()).single();
   const supplierName = sup?.name || '';
   const headerRows = [
     ['הזמנת רכש', currentPO.po_number],
@@ -37,7 +37,7 @@ async function exportPOExcel() {
 async function exportPOPdf() {
   if (!currentPOItems.length) { toast('אין פריטים להזמנה', 'e'); return; }
   const { data: sup } = await sb.from(T.SUPPLIERS)
-    .select('name').eq('id', currentPO.supplier_id).single();
+    .select('name').eq('id', currentPO.supplier_id).eq('tenant_id', getTenantId()).single();
   const supplierName = sup?.name || '';
   const grandTotal = currentPOItems.reduce((sum, it) =>
     sum + (it.qty_ordered||0) * (it.unit_cost||0) * (1-(it.discount_pct||0)/100), 0);
@@ -72,7 +72,7 @@ async function exportPOPdf() {
     <span><strong>ספק:</strong> ${supplierName}</span>
     <span><strong>תאריך:</strong> ${currentPO.order_date || '—'}</span>
     <span><strong>הגעה צפויה:</strong> ${currentPO.expected_date || '—'}</span>
-    ${currentPO.notes ? `<span><strong>הערות:</strong> ${currentPO.notes}</span>` : ''}
+    ${currentPO.notes ? `<span><strong>הערות:</strong> ${escapeHtml(currentPO.notes)}</span>` : ''}
   </div>
   <table>
     <thead><tr>
@@ -156,7 +156,7 @@ async function savePODraft() {
         notes:         currentPO.notes
       }).eq('id', poId);
       if (error) throw error;
-      await sb.from(T.PO_ITEMS).delete().eq('po_id', poId);
+      await sb.from(T.PO_ITEMS).delete().eq('po_id', poId).eq('tenant_id', getTenantId());
     }
 
     if (currentPOItems.length > 0) {

@@ -9,7 +9,7 @@
 | Page | File | Owner Module | Description |
 |------|------|-------------|-------------|
 | Home Screen | `index.html` | Core | PIN login modal, module cards, session restore, live clock |
-| Inventory | `inventory.html` | Module 1 — Inventory | Full inventory app: 10 tabs (entry, reduction, table, PO, receipts, brands, suppliers, sync, stock count, returns) |
+| Inventory | `inventory.html` | Module 1 — Inventory | Full inventory app: 11 tabs (entry, reduction, table, PO, receipts, brands, suppliers, sync, stock count, returns, incoming invoices) |
 | Supplier Debt | `suppliers-debt.html` | Module 1 — Debt | 5 tabs: suppliers dashboard, documents, payments, prepaid deals, weekly report |
 | Employees | `employees.html` | Module 1 — Permissions | Standalone employee management (CRUD, role assignment) |
 | Shipments | `shipments.html` | Module 1 — Shipments | Box management: list, 3-step wizard, detail panel, courier settings |
@@ -19,7 +19,7 @@
 
 ## 2. Global JS Files (js/)
 
-### js/shared.js (346 lines)
+### js/shared.js (411 lines)
 
 Supabase init, constants, caches, UI helpers, navigation. **Loads FIRST on every page.**
 
@@ -586,6 +586,19 @@ Pages modified for shared/ dependencies:
 | `modules/debt/debt-doc-edit.js` | 388 | Document edit modal with AI learning, readonly amounts on receipt-linked docs, visual badges |
 | `js/supabase-alerts-ocr.js` | 181 | Alert creation + OCR template learning (split from supabase-ops.js) |
 | `modules/inventory/incoming-invoices.js` | 255 | Incoming invoices tab: drag-drop upload, creates pending_invoice supplier_documents |
+| `modules/goods-receipts/receipt-guide.js` | 59 | Employee quick reference guide (split from receipt-form.js): RECEIPT_GUIDE_TEXT, showReceiptGuide() |
+
+### QA Fix Changes (Flow Review Phase 2 Final)
+
+| File | Lines | Key Changes |
+|------|-------|-------------|
+| `modules/goods-receipts/receipt-form.js` | 385 | Drag & drop file zone (_initReceiptDropzone, _stageReceiptFile), PO item status dropdown (_onReceiptStatusChange), from_po tracking |
+| `modules/goods-receipts/receipt-confirm.js` | 382 | Match confirmation dialog (_showMatchConfirmDialog), skip validation for return/not_received items, tenant_id on all queries |
+| `modules/goods-receipts/receipt-po-compare.js` | 362 | receipt_status handling (returnMarked/missing sections), return creation for marked items, tenant_id hardened |
+| `modules/purchasing/po-view-import.js` | 376 | cancelPOItem (per-item cancel on partial POs), barcode gen via generateNextBarcode (was maxBarcode++), XSS fixes, tenant_id on all queries |
+| `modules/debt/debt-returns-tab-actions.js` | 289 | _promptCreditFileUpload (file required before credit), _createCreditNoteForReturn (attaches file), bulkMarkCredited blocked |
+| `js/file-upload.js` | 321 | _deleteGalleryFile re-queries from DB after delete (was in-memory splice only) |
+
 | Module 1.5 — Shared Components | ✅ Complete (QA passed) | `shared/css/`, `shared/js/`, `shared/tests/`, `scripts/` | — | 1 (activity_log) + ui_config column + PK fixes on roles/permissions/role_permissions |
 
 ---

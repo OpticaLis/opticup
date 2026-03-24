@@ -8,7 +8,7 @@ async function _poCompBuildReport(receiptItems, poId) {
   var poItems = await fetchAll('purchase_order_items', [['po_id', 'eq', poId]]);
   // Fetch supplier_id from PO for reorder functionality
   var _poSupplierId = null;
-  try { var { data: _poRec } = await sb.from(T.PO).select('supplier_id').eq('id', poId).single();
+  try { var { data: _poRec } = await sb.from(T.PO).select('supplier_id').eq('id', poId).eq('tenant_id', getTenantId()).single();
     if (_poRec) _poSupplierId = _poRec.supplier_id; } catch (e) {}
   // Build key map from PO items
   var poMap = {};
@@ -248,7 +248,7 @@ async function _poCompApplyDecisions(receiptId, decisions, receiptItems) {
       else savedQuery = savedQuery.eq('model', ri.model || '').eq('brand', ri.brand || '');
       var { data: savedItems } = await savedQuery.limit(1);
       if (savedItems && savedItems[0]) {
-        await sb.from(T.RCPT_ITEMS).update(update).eq('id', savedItems[0].id);
+        await sb.from(T.RCPT_ITEMS).update(update).eq('id', savedItems[0].id).eq('tenant_id', tid);
       }
     }
     // Write log for not_received items

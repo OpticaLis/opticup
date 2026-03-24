@@ -182,7 +182,7 @@ async function _createCreditNoteForReturn(ret, returnId, empId, uploadedFile) {
     // Link credit document to return
     if (newDoc) {
       await sb.from(T.SUP_RETURNS).update({ credit_document_id: newDoc.id })
-        .eq('id', returnId);
+        .eq('id', returnId).eq('tenant_id', getTenantId());
     }
 
     await writeLog('credit_note_auto', null, {
@@ -201,6 +201,10 @@ async function _createCreditNoteForReturn(ret, returnId, empId, uploadedFile) {
 // Bulk mark as credited
 // =========================================================
 async function bulkMarkCredited() {
+  // Block bulk credit — each return requires its own credit note file upload
+  toast('\u05DC\u05E1\u05D9\u05DE\u05D5\u05DF \u05D6\u05D9\u05DB\u05D5\u05D9 \u05D9\u05E9 \u05DC\u05D1\u05E6\u05E2 \u05E4\u05E2\u05D5\u05DC\u05D4 \u05E2\u05DC \u05DB\u05DC \u05E4\u05E8\u05D9\u05D8 \u05D1\u05E0\u05E4\u05E8\u05D3 \u2014 \u05E0\u05D3\u05E8\u05E9 \u05E6\u05D9\u05E8\u05D5\u05E3 \u05EA\u05E2\u05D5\u05D3\u05EA \u05D6\u05D9\u05DB\u05D5\u05D9', 'e');
+  return;
+  /* Original bulk logic disabled — credit requires file per item
   var cbs = document.querySelectorAll('.dret-cb:checked');
   if (!cbs.length) { toast('לא נבחרו פריטים', 'w'); return; }
 
@@ -249,6 +253,7 @@ async function bulkMarkCredited() {
       toast('שגיאה: ' + (e.message || ''), 'e');
     }
   });
+  */
 }
 
 // =========================================================

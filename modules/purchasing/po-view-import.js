@@ -4,10 +4,10 @@ async function openViewPO(id) {
     showLoading();
     const { data: po, error: e1 } = await sb.from(T.PO)
       .select('*, suppliers(name)')
-      .eq('id', id).single();
+      .eq('id', id).eq('tenant_id', getTenantId()).single();
     if (e1) throw e1;
     const { data: items, error: e2 } = await sb.from(T.PO_ITEMS)
-      .select('*').eq('po_id', id);
+      .select('*').eq('po_id', id).eq('tenant_id', getTenantId());
     if (e2) throw e2;
     hideLoading();
 
@@ -47,10 +47,10 @@ async function openViewPO(id) {
         actionCell = '';
       }
       return `<tr style="background:${rowColor}">
-        <td style="padding:8px">${item.brand||'—'}</td>
-        <td style="padding:8px">${item.model||'—'}</td>
-        <td style="padding:8px">${item.color||'—'}</td>
-        <td style="padding:8px">${item.size||'—'}</td>
+        <td style="padding:8px">${escapeHtml(item.brand||'—')}</td>
+        <td style="padding:8px">${escapeHtml(item.model||'—')}</td>
+        <td style="padding:8px">${escapeHtml(item.color||'—')}</td>
+        <td style="padding:8px">${escapeHtml(item.size||'—')}</td>
         <td style="padding:8px; text-align:center">${ordered}</td>
         <td style="padding:8px; text-align:center; font-weight:600">${received}</td>
         <td style="padding:8px; text-align:center">${item.unit_cost ? '₪'+Number(item.unit_cost).toFixed(2) : '—'}</td>
@@ -84,10 +84,10 @@ async function openViewPO(id) {
         </div>
         <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px;
                     background:white; padding:16px; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.1)">
-          <div><strong>ספק:</strong> ${po.suppliers?.name||'—'}</div>
+          <div><strong>ספק:</strong> ${escapeHtml(po.suppliers?.name||'—')}</div>
           <div><strong>תאריך הזמנה:</strong> ${po.order_date ? new Date(po.order_date).toLocaleDateString('he-IL') : '—'}</div>
           <div><strong>תאריך צפוי:</strong> ${po.expected_date ? new Date(po.expected_date).toLocaleDateString('he-IL') : '—'}</div>
-          ${po.notes ? `<div><strong>הערות:</strong> ${po.notes}</div>` : ''}
+          ${po.notes ? `<div><strong>הערות:</strong> ${escapeHtml(po.notes)}</div>` : ''}
         </div>
         <div style="background:white; padding:16px; border-radius:10px;
                     box-shadow:0 1px 4px rgba(0,0,0,0.1); overflow-x:auto">
@@ -162,6 +162,7 @@ async function importPOToInventory(poId) {
         if (item.barcode) {
           const { data } = await sb.from(T.INV)
             .select('id')
+            .eq('tenant_id', getTenantId())
             .eq('barcode', item.barcode)
             .eq('is_deleted', false)
             .limit(1).single();
@@ -172,6 +173,7 @@ async function importPOToInventory(poId) {
           if (brandId) {
             const { data } = await sb.from(T.INV)
               .select('id')
+              .eq('tenant_id', getTenantId())
               .eq('brand_id', brandId)
               .eq('model', item.model)
               .eq('color', item.color || '')
@@ -206,17 +208,16 @@ async function importPOToInventory(poId) {
             website_sync:  item.website_sync || null,
             bridge:        item.bridge || null,
             temple_length: item.temple_length || null,
-            status:        'במלאי',
-            source:        'הזמנת רכש',
+            status:        'in_stock',
+            origin:        'purchase_order',
             is_deleted:    false,
             tenant_id:     getTenantId()
           };
-          // Generate barcode if needed
+          // Generate barcode if needed (atomic RPC — Iron Rule 13)
           if (item.barcode) {
             newItem.barcode = item.barcode;
-          } else if (typeof maxBarcode !== 'undefined') {
-            maxBarcode++;
-            newItem.barcode = String(maxBarcode);
+          } else {
+            newItem.barcode = await generateNextBarcode();
           }
           const { data: created_item, error } = await sb.from(T.INV).insert(newItem).select('id').single();
           if (error) throw error;
@@ -246,6 +247,7 @@ async function createPOForBrand(brandId, brandName) {
     showLoading('מכין הזמנה...');
     const { data: invItems } = await sb.from('inventory')
       .select('supplier_id, brand_id, model, color, size, cost_price')
+      .eq('tenant_id', getTenantId())
       .eq('brand_id', brandId)
       .eq('is_deleted', false)
       .not('supplier_id', 'is', null)
