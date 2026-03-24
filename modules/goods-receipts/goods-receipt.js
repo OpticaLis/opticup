@@ -147,7 +147,7 @@ async function updatePOStatusAfterReceipt(poId) {
           rcvd = receivedByKey[key] || 0;
         }
         if (rcvd !== (pi.qty_received || 0)) {
-          await sb.from(T.PO_ITEMS).update({ qty_received: rcvd }).eq('id', pi.id);
+          await sb.from(T.PO_ITEMS).update({ qty_received: rcvd }).eq('id', pi.id).eq('tenant_id', getTenantId());
         }
         totalReceived += rcvd;
       }
@@ -164,7 +164,7 @@ async function updatePOStatusAfterReceipt(poId) {
       newStatus = 'sent'; // no items received yet
     }
 
-    await sb.from(T.PO).update({ status: newStatus }).eq('id', poId);
+    await sb.from(T.PO).update({ status: newStatus }).eq('id', poId).eq('tenant_id', getTenantId());
     writeLog('po_receipt_update', null, { total_ordered: totalOrdered, total_received: totalReceived, new_status: newStatus });
   } catch (e) {
     console.error('updatePOStatusAfterReceipt error:', e);

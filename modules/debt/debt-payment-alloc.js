@@ -301,11 +301,11 @@ async function _wizSavePayment() {
     try {
       if (createdAllocIds.length) {
         for (var j = 0; j < createdAllocIds.length; j++) {
-          await sb.from(T.PAY_ALLOC).delete().eq('id', createdAllocIds[j]);
+          await sb.from(T.PAY_ALLOC).delete().eq('id', createdAllocIds[j]).eq('tenant_id', getTenantId());
         }
       }
       if (paymentId) {
-        await sb.from(T.SUP_PAYMENTS).delete().eq('id', paymentId);
+        await sb.from(T.SUP_PAYMENTS).delete().eq('id', paymentId).eq('tenant_id', getTenantId());
       }
     } catch (rollbackErr) {
       console.error('Rollback failed:', rollbackErr);
