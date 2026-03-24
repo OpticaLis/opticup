@@ -850,7 +850,7 @@ CREATE TABLE IF NOT EXISTS supplier_return_items (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id       UUID NOT NULL REFERENCES tenants(id),
   return_id       UUID NOT NULL REFERENCES supplier_returns(id),
-  inventory_id    UUID NOT NULL REFERENCES inventory(id),
+  inventory_id    UUID REFERENCES inventory(id),                    -- nullable: returns from PO comparison may lack inventory_id (048)
   barcode         TEXT NOT NULL,
   quantity        INTEGER NOT NULL DEFAULT 1,
   brand_name      TEXT,
