@@ -28,8 +28,8 @@
 | 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 281 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (populates items from PO), updatePOStatusAfterReceipt, openNewReceipt |
 | 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 345 | Receipt form: openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow, getReceiptItems, updateReceiptItemsStats, addNewReceiptRow, showReceiptGuide, _pickReceiptFile (file attach) |
 | 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 182 | Receipt save/cancel: saveReceiptDraft, saveReceiptDraftInternal, cancelReceipt, backToReceiptList |
-| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 229 | Receipt confirmation: confirmReceipt (Phase 8: PO comparison before confirm), _confirmReceiptWithDecisions, confirmReceiptCore (skips returned items), confirmReceiptById, createNewInventoryFromReceiptItem. checkPoPriceDiscrepancies deleted — replaced by receipt-po-compare.js |
-| 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 119 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt. Uploads attached file. Phase 8: alerts finance manager via alertPrepaidNewDocument instead of auto-deducting |
+| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 324 | Receipt confirmation: confirmReceipt (hard-blocks without file), _confirmReceiptWithDecisions (handles rollback false), confirmReceiptCore (atomic with compensating rollback on failure), confirmReceiptById, createNewInventoryFromReceiptItem (returns created row). Phase 2c: mandatory file, atomic rollback |
+| 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 166 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt. Always creates doc even when subtotal=0 (sets missing_price=true). Uploads attached file. Phase 8: alerts finance manager via alertPrepaidNewDocument |
 | 19d | receipt-ocr.js | modules/goods-receipts/receipt-ocr.js | 295 | OCR integration: initReceiptOCR (injects scan button), _rcptOcrScan (upload + Edge Function call), _applyOCRToReceipt (auto-fill supplier/items, delegates items to review UI), _rcptOcrFC/_rcptOcrAddConfDot (per-field confidence dots), _rcptOcrSuggestPO (PO auto-suggestion), _rcptOcrShowBanner (confidence banner), _rcptOcrPreviewDoc (source doc modal), _rcptOcrUpdateTemplate (header + item learning), _patchReceiptConfirmForOCR |
 | 19e | receipt-ocr-review.js | modules/goods-receipts/receipt-ocr-review.js | 337 | Item matching + review UI: _rcptOcrParseDescription (brand alias map, regex extraction), _rcptOcrMatchItem (inventory ILIKE with limit), _rcptOcrClassifyItems (matched/new/unknown), _rcptOcrShowReview (Modal with color-coded table, brand search-select), _rcptOcrCollectReviewData, _rcptOcrApplyToForm, _rcptOcrBuildItemCorrections, _rcptOcrSaveItemLearning (item alias learning) |
 | 19f | receipt-po-compare.js | modules/goods-receipts/receipt-po-compare.js | 295 | PO comparison report: _poCompBuildReport (match by brand\|model\|size\|color key + adds supplierId to report), _poCompShowReport (5-section modal + reorder button for shortage/missing), _poCompCollectDecisions, _poCompApplyDecisions (write price_decision/po_match_status, auto-create supplier_return for rejected items), _poCompLearnPricePattern (VAT detection), _poCompCreateReorderPO (creates draft PO from shortage+missing items) |
@@ -441,17 +441,17 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Core confirmation: increments inventory quantities via `sb.rpc('increment_inventory')`, auto-updates cost_price from receipt via batchUpdate, creates new items, updates PO status, calls createDocumentFromReceipt, calls checkPoPriceDiscrepancies |
-| `confirmReceipt` | `()` | Async. UI-facing: validates, saves draft internally, then calls confirmReceiptCore |
-| `createNewInventoryFromReceiptItem` | `(item, receiptId, rcptNumber)` | Async. Creates inventory row using pre-assigned barcode from receipt item (falls back to generateNextBarcode) |
-| `checkPoPriceDiscrepancies` | `(poId, receiptItems, receiptId)` | Async. Compares receipt item prices vs PO item prices. Shows warning dialog if any item differs by >5%. Adds price_discrepancy note to supplier_documents record. Creates alertPriceAnomaly for each discrepancy (Phase 5f-2) |
+| `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Core confirmation with atomic rollback: tracks successful increments, rolls back all on failure (returns false). Increments inventory via `sb.rpc('increment_inventory')`, auto-updates cost_price, creates new items, updates PO status, calls createDocumentFromReceipt. Phase 2c: compensating rollback |
+| `confirmReceipt` | `()` | Async. UI-facing: validates (hard-blocks without file), PIN verification, saves draft, then calls confirmReceiptCore. Phase 2c: mandatory file attachment |
+| `_confirmReceiptWithDecisions` | `(rcptNumber, decisions, items)` | Async. Saves draft, applies PO decisions, calls confirmReceiptCore. Handles rollback (result===false) gracefully |
+| `createNewInventoryFromReceiptItem` | `(item, receiptId, rcptNumber)` | Async. Creates inventory row using pre-assigned barcode from receipt item (falls back to generateNextBarcode). Returns created row |
 | `confirmReceiptById` | `(receiptId)` | Async. Confirms receipt from list view without opening form |
 
 ### modules/goods-receipts/receipt-debt.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `createDocumentFromReceipt` | `(receiptId, supplierId, receiptItems)` | Async. Auto-creates supplier_documents record from confirmed receipt. Calculates subtotal/VAT/total from item costs, generates DOC-NNNN internal_number, uses supplier's default_document_type and payment_terms_days. Skips if no cost data. Uploads _pendingReceiptFile if attached. Phase 4f: auto-deducts totalAmount from active prepaid deal (updates total_used/total_remaining). Uses fetchAll/batchCreate/batchUpdate helpers. |
+| `createDocumentFromReceipt` | `(receiptId, supplierId, receiptItems)` | Async. Auto-creates supplier_documents record from confirmed receipt. Always creates doc even with subtotal=0 (sets missing_price=true). Calculates subtotal/VAT/total from item costs, generates DOC-NNNN internal_number, uses supplier's default_document_type and payment_terms_days. Uploads _pendingReceiptFile if attached. Phase 2c: no longer skips zero-cost receipts |
 
 ### modules/goods-receipts/receipt-ocr.js
 

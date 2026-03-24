@@ -43,14 +43,16 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   }
 
   // 1. Calculate amounts from receiptItems
-  const subtotal = receiptItems.reduce((sum, item) => {
-    return sum + ((item.unit_cost || 0) * (item.quantity || 0));
-  }, 0);
+  const subtotal = receiptItems
+    .filter(i => i.po_match_status !== 'returned')
+    .reduce((sum, item) => {
+      return sum + ((item.unit_cost || 0) * (item.quantity || 0));
+    }, 0);
 
-  // Skip if no pricing data (some receipts have no cost info)
-  if (!subtotal || subtotal <= 0) {
-    return null;
-  }
+  // Flag if any items are missing cost prices
+  const hasMissingPrice = subtotal <= 0 || receiptItems
+    .filter(i => i.po_match_status !== 'returned')
+    .some(i => !i.unit_cost || i.unit_cost <= 0);
 
   // 2. Fetch supplier's default_document_type and payment_terms_days
   const supplierRows = await fetchAll(T.SUPPLIERS, [['id', 'eq', supplierId]]);
@@ -109,6 +111,7 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
     vat_amount: vatAmount,
     total_amount: totalAmount,
     goods_receipt_id: receiptId,
+    missing_price: hasMissingPrice,
     status: 'open',
     created_by: emp.id || null
   };
@@ -140,7 +143,12 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
     _pendingReceiptFile = null;
   }
 
-  // 10. Phase 8: prepaid deduction moved to suppliers-debt. Alert finance manager instead.
+  // 10. Warn if document created with missing prices
+  if (hasMissingPrice && createdDoc) {
+    toast('\u26A0\uFE0F \u05D4\u05DE\u05E1\u05DE\u05DA \u05E0\u05D5\u05E6\u05E8 \u05DC\u05DC\u05D0 \u05DE\u05D7\u05D9\u05E8\u05D9\u05DD \u2014 \u05D9\u05E9 \u05DC\u05E2\u05D3\u05DB\u05DF \u05DB\u05E9\u05D4\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u05DE\u05D2\u05D9\u05E2\u05D4', 'w');
+  }
+
+  // 11. Phase 8: prepaid deduction moved to suppliers-debt. Alert finance manager instead.
   try {
     const deals = await fetchAll(T.PREPAID_DEALS, [
       ['supplier_id', 'eq', supplierId],

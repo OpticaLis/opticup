@@ -2,48 +2,71 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
   const { data: savedItems, error: siErr } = await sb.from(T.RCPT_ITEMS).select('*').eq('receipt_id', receiptId);
   if (siErr) throw siErr;
 
-  for (const item of savedItems) {
-    // Phase 8: skip items marked as returned to supplier
-    if (item.po_match_status === 'returned') continue;
-    if (!item.is_new_item) {
-      const { data: invRow, error: findErr } = await sb.from('inventory')
-        .select('id, quantity, barcode, brand_id, model, cost_price')
-        .eq('barcode', item.barcode)
-        .eq('is_deleted', false)
-        .maybeSingle();
-      if (findErr) throw findErr;
+  // Phase 2c: Track successful inventory changes for rollback on failure
+  const successfulOps = [];
 
-      if (invRow) {
-        const oldQty = invRow.quantity || 0;
-        const newQty = oldQty + item.quantity;
-        const { error: updErr } = await sb.rpc('increment_inventory', { inv_id: invRow.id, delta: item.quantity });
-        if (updErr) throw updErr;
-        await sb.from(T.RCPT_ITEMS).update({ inventory_id: invRow.id }).eq('id', item.id);
-        writeLog('entry_receipt', invRow.id, {
-          barcode: item.barcode, brand: item.brand, model: item.model,
-          qty_before: oldQty, qty_after: newQty, source_ref: rcptNumber
-        });
+  try {
+    for (const item of savedItems) {
+      // Phase 8: skip items marked as returned to supplier
+      if (item.po_match_status === 'returned') continue;
+      if (!item.is_new_item) {
+        const { data: invRow, error: findErr } = await sb.from('inventory')
+          .select('id, quantity, barcode, brand_id, model, cost_price')
+          .eq('barcode', item.barcode)
+          .eq('is_deleted', false)
+          .maybeSingle();
+        if (findErr) throw findErr;
 
-        // Auto-update cost_price from receipt
-        const rcptCost = parseFloat(item.unit_cost) || 0;
-        const oldCost = parseFloat(invRow.cost_price) || 0;
-        if (rcptCost > 0 && rcptCost !== oldCost) {
-          await batchUpdate('inventory', [{ id: invRow.id, cost_price: rcptCost }]);
-          writeLog('cost_update', invRow.id, {
-            field: 'cost_price',
-            old_value: oldCost,
-            new_value: rcptCost,
-            source: 'goods_receipt',
-            receipt_id: receiptId
+        if (invRow) {
+          const oldQty = invRow.quantity || 0;
+          const newQty = oldQty + item.quantity;
+          const { error: updErr } = await sb.rpc('increment_inventory', { inv_id: invRow.id, delta: item.quantity });
+          if (updErr) throw new Error('עדכון מלאי נכשל עבור ' + item.barcode + ': ' + updErr.message);
+          successfulOps.push({ id: invRow.id, delta: item.quantity, isNew: false, oldCost: parseFloat(invRow.cost_price) || 0 });
+
+          await sb.from(T.RCPT_ITEMS).update({ inventory_id: invRow.id }).eq('id', item.id);
+          writeLog('entry_receipt', invRow.id, {
+            barcode: item.barcode, brand: item.brand, model: item.model,
+            qty_before: oldQty, qty_after: newQty, source_ref: rcptNumber
           });
+
+          // Auto-update cost_price from receipt
+          const rcptCost = parseFloat(item.unit_cost) || 0;
+          const oldCost = parseFloat(invRow.cost_price) || 0;
+          if (rcptCost > 0 && rcptCost !== oldCost) {
+            await batchUpdate('inventory', [{ id: invRow.id, cost_price: rcptCost }]);
+            writeLog('cost_update', invRow.id, {
+              field: 'cost_price', old_value: oldCost, new_value: rcptCost,
+              source: 'goods_receipt', receipt_id: receiptId
+            });
+          }
+        } else {
+          console.warn('Barcode not found in inventory, treating as new:', item.barcode);
+          const newItem = await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
+          if (newItem) successfulOps.push({ id: newItem.id, delta: item.quantity, isNew: true });
         }
       } else {
-        console.warn('Barcode not found in inventory, treating as new:', item.barcode);
-        await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
+        const newItem = await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
+        if (newItem) successfulOps.push({ id: newItem.id, delta: item.quantity, isNew: true });
       }
-    } else {
-      await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
     }
+  } catch (loopErr) {
+    // ROLLBACK — reverse all successful inventory changes
+    console.error('Receipt confirm failed at inventory update, rolling back:', loopErr.message);
+    for (const op of successfulOps) {
+      try {
+        if (op.isNew) {
+          await sb.from(T.INV).delete().eq('id', op.id);
+        } else {
+          await sb.rpc('decrement_inventory', { inv_id: op.id, delta: op.delta });
+        }
+      } catch (rbErr) {
+        console.error('Rollback failed for', op.id, rbErr);
+        writeLog('rollback_failure', op.id, { error: rbErr.message, original_error: loopErr.message });
+      }
+    }
+    toast('שגיאה בעדכון מלאי — הפעולה בוטלה. נסה שוב.', 'e');
+    return false;
   }
 
   const totalAmount = savedItems.filter(i => i.po_match_status !== 'returned').reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
@@ -113,11 +136,10 @@ async function confirmReceipt() {
     return;
   }
 
-  // Warn if no file attached
+  // Hard-block: file must be attached before confirm
   if (!_pendingReceiptFile) {
-    const attachOk = await confirmDialog('לא צורף מסמך',
-      'לא צורף מסמך לקבלה זו. להמשיך בלי מסמך?');
-    if (!attachOk) return;
+    toast('חובה לצרף חשבונית או תעודת משלוח לפני אישור', 'e');
+    return;
   }
 
   // PIN verification — required for all confirm paths
@@ -167,7 +189,9 @@ async function _confirmReceiptWithDecisions(rcptNumber, decisions, items) {
     if (!receiptId) { await saveReceiptDraftInternal(); receiptId = currentReceiptId; }
     if (!receiptId) throw new Error('Receipt ID is missing');
     if (decisions) await _poCompApplyDecisions(receiptId, decisions, items);
-    await confirmReceiptCore(receiptId, rcptNumber, rcptLinkedPoId);
+    var result = await confirmReceiptCore(receiptId, rcptNumber, rcptLinkedPoId);
+    // confirmReceiptCore returns false if rollback happened — receipt stays as draft
+    if (result === false) return;
   } catch (e) {
     console.error('confirmReceipt error:', e);
     toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D0\u05D9\u05E9\u05D5\u05E8: ' + (e.message || ''), 'e');
@@ -218,6 +242,8 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
     qty_after: item.quantity,
     source_ref: rcptNumber
   });
+
+  return created;
 }
 
 // checkPoPriceDiscrepancies — deleted in Phase 8, replaced by receipt-po-compare.js pre-confirm report
