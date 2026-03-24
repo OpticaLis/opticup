@@ -1,11 +1,6 @@
 // debt-payment-alloc.js — Payment wizard steps 3-4: allocation + save (Phase 4e)
-// Load after: debt-payment-wizard.js
-// Provides: _wizGoStep3(), autoAllocateFIFO(), _wizSavePayment()
-// Uses: _wizState from debt-payment-wizard.js
 
-// =========================================================
-// Step 3 — Allocate to documents
-// =========================================================
+// --- Step 3: Allocate to documents ---
 async function _wizGoStep3() {
   var amount = Number(($('wiz-amount') || {}).value) || 0;
   if (amount <= 0) { setAlert('wiz-alert', 'סכום חייב להיות חיובי', 'e'); return; }
@@ -26,11 +21,7 @@ async function _wizGoStep3() {
 
   showLoading('טוען מסמכים פתוחים...');
   try {
-    var docs = await fetchAll(T.SUP_DOCS, [
-      ['is_deleted', 'eq', false],
-      ['supplier_id', 'eq', _wizState.supplierId]
-    ]);
-    // Build payable type ID lookup from _docTypes (global)
+    var docs = await fetchAll(T.SUP_DOCS, [['is_deleted', 'eq', false], ['supplier_id', 'eq', _wizState.supplierId]]);
     var payableTypeIds = {};
     if (typeof _docTypes !== 'undefined' && typeof _isPayableDocType === 'function') {
       _docTypes.forEach(function(t) { if (_isPayableDocType(t.code)) payableTypeIds[t.id] = true; });
@@ -55,24 +46,21 @@ async function _wizGoStep3() {
 
 function autoAllocateFIFO(paymentAmount, openDocs) {
   var result = [];
-  // Phase 1: Apply credit notes first (negative remaining) — they increase available funds
   var creditDocs = openDocs.filter(function(d) {
     return (Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0) < 0;
   });
   var remaining = paymentAmount;
   for (var c = 0; c < creditDocs.length; c++) {
     var cd = creditDocs[c];
-    var creditRem = (Number(cd.total_amount) || 0) - (Number(cd.paid_amount) || 0); // negative
+    var creditRem = (Number(cd.total_amount) || 0) - (Number(cd.paid_amount) || 0);
     result.push({ document_id: cd.id, allocated_amount: creditRem });
-    remaining -= creditRem; // subtracting negative = adding to pool
+    remaining -= creditRem;
   }
-
-  // Phase 2: Apply to invoices/debit notes (positive remaining) in date order
   for (var i = 0; i < openDocs.length; i++) {
     if (remaining <= 0) break;
     var doc = openDocs[i];
     var docRem = (Number(doc.total_amount) || 0) - (Number(doc.paid_amount) || 0);
-    if (docRem <= 0) continue; // skip credits (already handled) and zero-balance
+    if (docRem <= 0) continue;
     var alloc = Math.min(remaining, docRem);
     result.push({ document_id: doc.id, allocated_amount: alloc });
     remaining -= alloc;
@@ -81,7 +69,6 @@ function autoAllocateFIFO(paymentAmount, openDocs) {
 }
 
 function _wizRenderStep3() {
-  // Build doc type lookup for credit note detection
   var creditTypeIds = {};
   if (typeof _docTypes !== 'undefined') {
     _docTypes.forEach(function(t) { if (t.code === 'credit_note') creditTypeIds[t.id] = true; });
@@ -95,7 +82,6 @@ function _wizRenderStep3() {
     if (isCredit) docLabel += ' <span style="color:#059669;font-size:.75rem">(זיכוי)</span>';
     var rowStyle = isCredit ? ' style="background:#f0fdf4"' : '';
     var amtStyle = isCredit ? ' style="color:#059669;font-weight:600"' : '';
-    // Credit notes: input allows negative values, no max constraint
     var inputAttrs = isCredit
       ? 'step="0.01" max="0" min="' + docRem.toFixed(2) + '"'
       : 'step="0.01" min="0" max="' + docRem.toFixed(2) + '"';
@@ -146,7 +132,6 @@ function _wizUpdateAllocTotal() {
   inputs.forEach(function(inp) {
     var val = Number(inp.value) || 0;
     var isCredit = inp.getAttribute('data-is-credit') === '1';
-    // Include non-zero values: positive for invoices, negative for credits
     if (val !== 0 && (val > 0 || isCredit)) {
       _wizState.allocations.push({
         document_id: inp.getAttribute('data-doc-id'), allocated_amount: val
@@ -181,9 +166,7 @@ function _wizClearAlloc() {
   _wizUpdateAllocTotal();
 }
 
-// =========================================================
-// Step 4 — Confirm + save
-// =========================================================
+// --- Step 4: Confirm + save ---
 function _wizGoStep4() {
   var totalAlloc = _wizState.allocations.reduce(function(s, a) { return s + a.allocated_amount; }, 0);
   if (_wizState.openDocs.length && Math.abs(totalAlloc - _wizState.netAmount) >= 0.01) {
@@ -235,7 +218,6 @@ async function _wizSavePayment() {
   var paymentId = null;
   var createdAllocIds = [];
   try {
-    // 1. Create payment record
     var created = await batchCreate(T.SUP_PAYMENTS, [{
       supplier_id: _wizState.supplierId,
       amount: _wizState.amount,
@@ -253,8 +235,6 @@ async function _wizSavePayment() {
       created_by: emp.id
     }]);
     paymentId = created[0].id;
-
-    // 2. Create allocations
     if (_wizState.allocations.length) {
       var allocRecs = _wizState.allocations.map(function(a) {
         return {
@@ -265,8 +245,6 @@ async function _wizSavePayment() {
       });
       var allocCreated = await batchCreate(T.PAY_ALLOC, allocRecs);
       createdAllocIds = allocCreated.map(function(a) { return a.id; });
-
-      // 3. Update paid_amount + status on each allocated document (atomic RPC — Phase 3 fix)
       for (var i = 0; i < _wizState.allocations.length; i++) {
         var alloc = _wizState.allocations[i];
         var { error: rpcErr } = await sb.rpc('increment_paid_amount', {
@@ -276,15 +254,11 @@ async function _wizSavePayment() {
         if (rpcErr) throw rpcErr;
       }
     }
-
-    // 4. Cascade: auto-close linked child documents of newly-paid parents
     var cascadeCount = 0;
     if (_wizState.allocations.length) {
       var allocDocIds = _wizState.allocations.map(function(a) { return a.document_id; });
       cascadeCount = await _cascadeSettlement(allocDocIds);
     }
-
-    // 5. Write audit log
     await writeLog('payment_create', null, {
       reason: 'תשלום חדש \u2014 ' + formatILS(_wizState.amount) +
         ' ל' + _wizState.supplierName,
@@ -297,7 +271,6 @@ async function _wizSavePayment() {
     await loadDebtSummary();
   } catch (e) {
     console.error('_wizSavePayment error:', e);
-    // Rollback: delete allocations and payment if created
     try {
       if (createdAllocIds.length) {
         for (var j = 0; j < createdAllocIds.length; j++) {
@@ -316,35 +289,26 @@ async function _wizSavePayment() {
   }
 }
 
-// =========================================================
-// Cascading settlement — auto-close linked children of paid docs
-// =========================================================
+// --- Cascading settlement ---
 async function _cascadeSettlement(docIds) {
   var closed = 0;
   try {
     var tid = getTenantId();
-    // Re-fetch allocated docs to check current status
     var { data: freshDocs } = await sb.from(T.SUP_DOCS).select('id, status, total_amount, paid_amount')
       .in('id', docIds).eq('tenant_id', tid);
     var paidIds = (freshDocs || []).filter(function(d) {
       return d.status === 'paid';
     }).map(function(d) { return d.id; });
     if (!paidIds.length) return 0;
-
-    // Find linked children of paid documents
     var { data: links } = await sb.from(T.DOC_LINKS).select('child_document_id, parent_document_id')
       .in('parent_document_id', paidIds).eq('tenant_id', tid);
     if (!links || !links.length) return 0;
-
     var childIds = [...new Set(links.map(function(l) { return l.child_document_id; }))];
     var { data: children } = await sb.from(T.SUP_DOCS).select('id, status, total_amount, paid_amount')
       .in('id', childIds).eq('tenant_id', tid);
-
     for (var i = 0; i < (children || []).length; i++) {
       var child = children[i];
-      // Skip already paid/cancelled
       if (child.status === 'paid' || child.status === 'cancelled') continue;
-      // Close child: set paid_amount = total_amount, status = paid
       await batchUpdate(T.SUP_DOCS, [{
         id: child.id, status: 'paid',
         paid_amount: child.total_amount

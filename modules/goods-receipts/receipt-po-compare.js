@@ -1,26 +1,17 @@
-// receipt-po-compare.js — Pre-confirmation PO comparison report (Phase 8 Step 4b)
-// Load after: receipt-confirm.js
-// Provides: _poCompBuildReport(), _poCompShowReport(), _poCompApplyDecisions()
-// Uses: fetchAll, getTenantId, sb, T, Modal, escapeHtml, formatILS, brandCacheRev, batchCreate, writeLog
-
+// receipt-po-compare.js — PO comparison report (Phase 8 Step 4b)
 // --- 1. Build comparison report ---
 async function _poCompBuildReport(receiptItems, poId) {
   var poItems = await fetchAll('purchase_order_items', [['po_id', 'eq', poId]]);
-  // Fetch supplier_id from PO for reorder functionality
   var _poSupplierId = null;
   try { var { data: _poRec } = await sb.from(T.PO).select('supplier_id').eq('id', poId).eq('tenant_id', getTenantId()).single();
     if (_poRec) _poSupplierId = _poRec.supplier_id; } catch (e) {}
-  // Build key map from PO items
   var poMap = {};
   poItems.forEach(function(pi) {
     var key = _poCompKey(pi.brand || '', pi.model || '', pi.size || '', pi.color || '');
     poMap[key] = pi;
   });
   var matched = [], shortage = [], priceGap = [], notInPo = [], returnMarked = [], missing = [], usedPoKeys = {};
-
-  // Phase 1: Pre-filter employee-marked items BEFORE matching loop
-  // Items marked not_received → go directly to missing array
-  // Items marked return → go directly to returnMarked array
+  // Pre-filter employee-marked items (not_received → missing, return → returnMarked)
   var activeReceiptItems = [];
   for (var i = 0; i < receiptItems.length; i++) {
     var ri = receiptItems[i];
@@ -28,7 +19,6 @@ async function _poCompBuildReport(receiptItems, poId) {
     var pi = poMap[key];
 
     if (ri.receipt_status === 'not_received') {
-      // Employee marked "didn't arrive" — add directly to missing
       if (pi) {
         missing.push({ pi: pi, employeeMarked: true, idx: i });
         usedPoKeys[key] = true;
@@ -36,16 +26,13 @@ async function _poCompBuildReport(receiptItems, poId) {
       continue;
     }
     if (ri.receipt_status === 'return') {
-      // Employee marked "wrong item — return"
       if (pi) usedPoKeys[key] = true;
       returnMarked.push({ idx: i, ri: ri, pi: pi });
       continue;
     }
     activeReceiptItems.push({ idx: i, ri: ri });
   }
-
-  // Phase 2: Aggregate active receipt items by key, then compare to PO
-  // Multiple receipt rows with same brand|model|size|color = multiple physical frames
+  // Aggregate active items by key, compare to PO
   var activeByKey = {};
   for (var j = 0; j < activeReceiptItems.length; j++) {
     var item = activeReceiptItems[j];
@@ -55,7 +42,6 @@ async function _poCompBuildReport(receiptItems, poId) {
     activeByKey[key].items.push(item);
     activeByKey[key].totalQty += (ri.quantity || 1);
   }
-
   for (var aKey in activeByKey) {
     var group = activeByKey[aKey];
     var firstItem = group.items[0];
@@ -64,7 +50,6 @@ async function _poCompBuildReport(receiptItems, poId) {
     var pi = poMap[aKey];
 
     if (!pi) {
-      // All items in this group are not in PO
       for (var g = 0; g < group.items.length; g++) {
         notInPo.push({ idx: group.items[g].idx, ri: group.items[g].ri, pi: null });
       }
@@ -74,7 +59,6 @@ async function _poCompBuildReport(receiptItems, poId) {
     var riCost = parseFloat(ri.unit_cost) || 0;
     var piCost = parseFloat(pi.unit_cost) || 0;
     var priceDiff = piCost > 0 ? Math.abs(riCost - piCost) / piCost * 100 : 0;
-    // Use aggregated quantity for comparison
     var aggregatedRi = { brand: ri.brand, model: ri.model, color: ri.color, size: ri.size, unit_cost: ri.unit_cost, quantity: group.totalQty };
     if (priceDiff > 5 && riCost > 0) {
       priceGap.push({ idx: idx, ri: aggregatedRi, pi: pi, poPrice: piCost, rcptPrice: riCost, diffPct: priceDiff.toFixed(1) });
@@ -84,8 +68,7 @@ async function _poCompBuildReport(receiptItems, poId) {
       matched.push({ idx: idx, ri: aggregatedRi, pi: pi });
     }
   }
-
-  // Phase 3: Find PO items not in receipt (genuinely missing — not delivered and not marked)
+  // Find PO items not in receipt (genuinely missing)
   poItems.forEach(function(pi) {
     var key = _poCompKey(pi.brand || '', pi.model || '', pi.size || '', pi.color || '');
     if (!usedPoKeys[key]) {
@@ -95,7 +78,6 @@ async function _poCompBuildReport(receiptItems, poId) {
   return { matched: matched, shortage: shortage, priceGap: priceGap, notInPo: notInPo,
     missing: missing, returnMarked: returnMarked, poItems: poItems, supplierId: _poSupplierId };
 }
-
 function _poCompKey(brand, model, size, color) {
   return [brand, model, size, color].map(function(s) { return (s || '').toLowerCase().trim(); }).join('|');
 }
@@ -109,7 +91,6 @@ function _poCompShowReport(report, poNumber, onConfirm) {
 
   var html = '<div style="margin-bottom:10px;font-size:.88rem">' + summary + '</div>';
   html += '<div style="max-height:55vh;overflow-y:auto">';
-
   // Matched section
   if (counts.m > 0) {
     html += _poCompSection('\u2705 \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD', '#e8f5e9', report.matched.map(function(m) {
@@ -191,7 +172,6 @@ function _poCompRow(ri, info, extra) {
   return '<tr><td>' + escapeHtml((ri.brand || '') + ' ' + (ri.model || '')) + '</td><td>' + ri.quantity + '</td>' +
     '<td>' + formatILS(ri.unit_cost) + '</td><td style="font-size:.8rem;color:#666">' + info + extra + '</td></tr>';
 }
-
 // Button toggle helpers
 function _poCompPickPrice(btn) {
   var tr = btn.closest('tr'); if (!tr) return;
@@ -208,11 +188,8 @@ function _poCompPickNipo(btn) {
 // --- 3. Collect decisions from modal ---
 function _poCompCollectDecisions(modalEl, report) {
   var decisions = {};
-  // All matched items: auto-matched
   report.matched.forEach(function(m) { decisions[m.idx] = { price_decision: null, po_match_status: 'matched', use_price: null }; });
-  // Shortages: same as matched, PO stays partial
   report.shortage.forEach(function(s) { decisions[s.idx] = { price_decision: null, po_match_status: 'matched', use_price: null }; });
-  // Price gaps: read user choice
   modalEl.querySelectorAll('tr[data-type="price"]').forEach(function(tr) {
     var idx = parseInt(tr.dataset.idx);
     var active = tr.querySelector('.pc-price-btn.pc-active');
@@ -224,7 +201,6 @@ function _poCompCollectDecisions(modalEl, report) {
       use_price: choice === 'po_price' ? pg.poPrice : pg.rcptPrice
     };
   });
-  // Not in PO: read accept/return
   modalEl.querySelectorAll('tr[data-type="notinpo"]').forEach(function(tr) {
     var idx = parseInt(tr.dataset.idx);
     var active = tr.querySelector('.pc-nipo-btn.pc-active');
@@ -235,13 +211,11 @@ function _poCompCollectDecisions(modalEl, report) {
       use_price: null
     };
   });
-  // Return-marked items: auto-set to 'returned'
   if (report.returnMarked) {
     report.returnMarked.forEach(function(r) {
       decisions[r.idx] = { price_decision: null, po_match_status: 'returned', use_price: null };
     });
   }
-  // Employee-marked missing items: auto-set to 'not_received'
   if (report.missing) {
     report.missing.forEach(function(m) {
       if (m.employeeMarked && m.idx >= 0) {
@@ -252,7 +226,7 @@ function _poCompCollectDecisions(modalEl, report) {
   return decisions;
 }
 
-// --- 4. Apply decisions: override prices + create returns for rejected items ---
+// --- 4. Apply decisions: override prices + create returns ---
 async function _poCompApplyDecisions(receiptId, decisions, receiptItems) {
   var tid = getTenantId();
   var supplierId = supplierCache[($('rcpt-supplier') || {}).value] || null;
@@ -260,9 +234,7 @@ async function _poCompApplyDecisions(receiptId, decisions, receiptItems) {
     var dec = decisions[idx];
     if (!dec) continue;
     var update = { price_decision: dec.price_decision, po_match_status: dec.po_match_status };
-    // Override price if user chose PO price
     if (dec.use_price != null) update.unit_cost = dec.use_price;
-    // Find the saved receipt item — by barcode if available, else by row order
     var ri = receiptItems[parseInt(idx)];
     if (ri) {
       var savedQuery = sb.from(T.RCPT_ITEMS).select('id').eq('receipt_id', receiptId).eq('tenant_id', tid);
@@ -273,14 +245,12 @@ async function _poCompApplyDecisions(receiptId, decisions, receiptItems) {
         await sb.from(T.RCPT_ITEMS).update(update).eq('id', savedItems[0].id).eq('tenant_id', tid);
       }
     }
-    // Write log for not_received items
     if (dec.po_match_status === 'not_received' && ri) {
       writeLog('receipt_item_not_received', null, {
         barcode: ri.barcode, brand: ri.brand, model: ri.model,
         receipt_id: receiptId, note: '\u05E4\u05E8\u05D9\u05D8 \u05E1\u05D5\u05DE\u05DF \u05DB\u05DC\u05D0 \u05D4\u05D2\u05D9\u05E2'
       });
     }
-    // Create supplier return for rejected items
     if (dec.po_match_status === 'returned' && ri && supplierId) {
       try {
         var retNum = await generateReturnNumber(supplierId);
@@ -302,15 +272,13 @@ async function _poCompApplyDecisions(receiptId, decisions, receiptItems) {
       } catch (e) { console.warn('Auto-return creation failed:', e); }
     }
   }
-  // Phase 8 Step 5: learn price patterns
   try { await _poCompLearnPricePattern(decisions, receiptItems, supplierId); } catch (e) { /* non-blocking */ }
 }
 
-// --- Reorder: create draft PO for shortage + missing items ---
+// --- Reorder: create draft PO for shortage + missing ---
 async function _poCompCreateReorderPO(report, originalPoNumber) {
   if (!report.supplierId) { toast('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D6\u05D4\u05D5\u05EA \u05E1\u05E4\u05E7 \u2014 \u05D4\u05D6\u05DE\u05E0\u05D4 \u05D7\u05D5\u05D6\u05E8\u05EA \u05DC\u05D0 \u05D0\u05E4\u05E9\u05E8\u05D9\u05EA', 'e'); return; }
   var items = [];
-  // Shortage items: gap quantity
   report.shortage.forEach(function(s) {
     var gap = (s.ordered || 0) - (s.received || 0);
     if (gap > 0) items.push({
@@ -318,7 +286,6 @@ async function _poCompCreateReorderPO(report, originalPoNumber) {
       qty_ordered: gap, unit_cost: Number(s.pi.unit_cost) || 0, discount_pct: Number(s.pi.discount_pct) || 0
     });
   });
-  // Missing items: full quantity
   report.missing.forEach(function(m) {
     if (m.pi.qty_ordered > 0) items.push({
       brand: m.pi.brand || '', model: m.pi.model || '', color: m.pi.color || '', size: m.pi.size || '',
@@ -360,7 +327,7 @@ async function _poCompCreateReorderPO(report, originalPoNumber) {
   }
 }
 
-// --- Phase 8 Step 5: Detect VAT-inclusive price pattern ---
+// --- Detect VAT-inclusive price pattern ---
 async function _poCompLearnPricePattern(decisions, receiptItems, supplierId) {
   if (!supplierId) return;
   var priceItems = [];
@@ -368,10 +335,9 @@ async function _poCompLearnPricePattern(decisions, receiptItems, supplierId) {
     var dec = decisions[idx];
     if (dec && dec.price_decision) priceItems.push(dec);
   }
-  if (priceItems.length < 2) return; // need at least 2 items to detect pattern
-  // Check if invoice prices are consistently ~17% higher than PO prices (VAT pattern)
+  if (priceItems.length < 2) return;
   var invoiceCount = priceItems.filter(function(d) { return d.price_decision === 'invoice_price'; }).length;
-  if (invoiceCount < priceItems.length * 0.7) return; // not a consistent pattern
+  if (invoiceCount < priceItems.length * 0.7) return;
   try {
     var { data: tenant } = await sb.from(T.TENANTS).select('vat_rate').eq('id', getTenantId()).single();
     var vatRate = (tenant && tenant.vat_rate) ? Number(tenant.vat_rate) / 100 : 0.17;

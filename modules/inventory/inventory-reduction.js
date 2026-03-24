@@ -1,7 +1,5 @@
-// TAB 2: REDUCTION — Excel
-let redExcelData = [];
-let redExcelFileName = '';
-let redSearchResults = [];
+// inventory-reduction.js — Reduction tab (Excel + Manual)
+let redExcelData = [], redExcelFileName = '', redSearchResults = [];
 const REDUCE_REASONS = ['נמכר', 'נשבר', 'לא נמצא', 'נשלח לזיכוי', 'הועבר לסניף אחר'];
 let reduceModalState = {};
 function showSampleReport() { $('sample-modal').style.display = 'flex'; }

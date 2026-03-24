@@ -1,16 +1,8 @@
-// =============================================================================
 // supabase-client.js — Unified Supabase wrapper (Module 1.5, Phase 3)
-// =============================================================================
-// Global: DB object with select/insert/update/batchUpdate/softDelete/hardDelete/rpc
-// Dependencies: sb (Supabase client), getTenantId() — both from shared.js
-// Optional: Toast (from shared/js/toast.js) — used for error display if available
-// =============================================================================
 
 const DB = (function () {
 
-  // ---------------------------------------------------------------------------
-  // Spinner — CSS-only, injected inline on first use
-  // ---------------------------------------------------------------------------
+  // --- Spinner ---
   let _spinnerEl = null;
   let _spinnerTimer = null;
   let _activeCount = 0;
@@ -74,9 +66,7 @@ const DB = (function () {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Error handling
-  // ---------------------------------------------------------------------------
+  // --- Error handling ---
   function _reportError(message, originalError, silent) {
     if (silent) return;
     if (typeof Toast !== 'undefined' && Toast.error) {
@@ -103,16 +93,12 @@ const DB = (function () {
     return 'שגיאה: ' + msg;
   }
 
-  // ---------------------------------------------------------------------------
-  // Tenant helper
-  // ---------------------------------------------------------------------------
+  // --- Tenant helper ---
   function _tid() {
     return typeof getTenantId === 'function' ? getTenantId() : null;
   }
 
-  // ---------------------------------------------------------------------------
-  // DB.select
-  // ---------------------------------------------------------------------------
+  // --- DB.select ---
   async function select(table, filters, options) {
     var opts = options || {};
     var silent = opts.silent === true;
@@ -177,9 +163,7 @@ const DB = (function () {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // DB.insert — single or array (chunked to 100), auto tenant_id
-  // ---------------------------------------------------------------------------
+  // --- DB.insert ---
   async function insert(table, data, options) {
     var opts = options || {};
     var silent = opts.silent === true;
@@ -221,9 +205,7 @@ const DB = (function () {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // DB.update — single row by id
-  // ---------------------------------------------------------------------------
+  // --- DB.update ---
   async function update(table, id, changes, options) {
     var opts = options || {};
     var silent = opts.silent === true;
@@ -249,9 +231,7 @@ const DB = (function () {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // DB.batchUpdate — loop of DB.update, each record needs .id + changes
-  // ---------------------------------------------------------------------------
+  // --- DB.batchUpdate ---
   async function batchUpdate(table, records, options) {
     var opts = options || {};
     var silent = opts.silent === true;
@@ -292,16 +272,12 @@ const DB = (function () {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // DB.softDelete — set is_deleted = true
-  // ---------------------------------------------------------------------------
+  // --- DB.softDelete ---
   async function softDelete(table, id, options) {
     return update(table, id, { is_deleted: true }, options);
   }
 
-  // ---------------------------------------------------------------------------
-  // DB.hardDelete — permanent delete
-  // ---------------------------------------------------------------------------
+  // --- DB.hardDelete ---
   async function hardDelete(table, id, options) {
     var opts = options || {};
     var silent = opts.silent === true;
@@ -325,9 +301,7 @@ const DB = (function () {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // DB.rpc — call Supabase RPC function
-  // ---------------------------------------------------------------------------
+  // --- DB.rpc ---
   async function rpc(functionName, params, options) {
     var opts = options || {};
     var silent = opts.silent === true;
@@ -347,9 +321,7 @@ const DB = (function () {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Public API
-  // ---------------------------------------------------------------------------
+  // --- Public API ---
   return {
     select: select,
     insert: insert,

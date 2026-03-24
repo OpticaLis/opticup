@@ -7,13 +7,22 @@ async function openNewPurchaseOrder() {
     const { data: suppliers } = await sb.from('suppliers')
       .select('id, name').eq('active', true).order('name');
 
-    const supplierOptions = (suppliers || [])
-      .map(s => `<option value="${s.id}"${currentPO?.supplier_id === s.id ? ' selected' : ''}>${s.name}</option>`).join('');
+    // Build supplier name→id map for searchable dropdown
+    var _poSupMap = {};
+    (suppliers || []).forEach(function(s) { _poSupMap[s.name] = s.id; });
+    var supplierNames = (suppliers || []).map(function(s) { return s.name; });
 
     const prevDate = currentPO?.order_date || new Date().toISOString().split('T')[0];
     const prevExpected = currentPO?.expected_date || '';
     const prevNotes = currentPO?.notes || '';
     const prevSupplier = currentPO?.supplier_id || '';
+
+    // Resolve previous supplier name for pre-selection
+    var prevSupplierName = '';
+    if (prevSupplier) {
+      var prevSup = (suppliers || []).find(function(s) { return s.id === prevSupplier; });
+      if (prevSup) prevSupplierName = prevSup.name;
+    }
 
     container.innerHTML = `
       <div style="padding:16px; max-width:600px; margin:0 auto">
@@ -27,11 +36,7 @@ async function openNewPurchaseOrder() {
             <label style="display:block; margin-bottom:6px; font-weight:600">
               ספק <span style="color:#ef4444">*</span>
             </label>
-            <select id="po-step1-supplier"
-                    style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid #ccc; font-size:14px">
-              <option value="">\u05D1\u05D7\u05E8 \u05E1\u05E4\u05E7...</option>
-              ${supplierOptions}
-            </select>
+            <div id="po-step1-supplier-wrap"></div>
           </div>
           <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px">
             <div style="flex:1; min-width:160px">
@@ -57,10 +62,19 @@ async function openNewPurchaseOrder() {
         </div>
       </div>`;
 
-    // Pre-select supplier if returning from edit
-    if (prevSupplier) {
-      var sel = document.getElementById('po-step1-supplier');
-      if (sel) sel.value = prevSupplier;
+    // Mount searchable supplier dropdown
+    var supSelectEl = createSearchSelect(supplierNames, prevSupplierName, function(name) {
+      // Store resolved supplier_id on the wrapper for proceedToPOItems to read
+      var wrap = document.getElementById('po-step1-supplier-wrap');
+      if (wrap) wrap._selectedSupplierId = _poSupMap[name] || '';
+    });
+    var supWrap = document.getElementById('po-step1-supplier-wrap');
+    if (supWrap) {
+      supWrap.appendChild(supSelectEl);
+      // Pre-set supplier_id if returning from edit
+      if (prevSupplier && prevSupplierName) {
+        supWrap._selectedSupplierId = prevSupplier;
+      }
     }
   } catch (err) {
     toast('שגיאה: ' + err.message, 'e');
@@ -69,7 +83,8 @@ async function openNewPurchaseOrder() {
 }
 
 async function proceedToPOItems() {
-  const supplierId = document.getElementById('po-step1-supplier')?.value;
+  var supWrap = document.getElementById('po-step1-supplier-wrap');
+  var supplierId = supWrap ? supWrap._selectedSupplierId || '' : '';
   if (!supplierId) {
     toast('יש לבחור ספק', 'e');
     return;

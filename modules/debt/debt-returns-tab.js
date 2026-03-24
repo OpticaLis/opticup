@@ -1,18 +1,10 @@
-// =========================================================
 // debt-returns-tab.js — Global Returns/Credits Tab (suppliers-debt.html)
-// Load after: shared.js, supabase-ops.js, debt-returns.js
-// Provides: initDebtReturnsTab(), loadDebtReturns(), renderDebtReturnsFilters(),
-//   renderDebtReturnsList(), applyDebtReturnsFilters(), toggleDebtReturnsHistory()
-// Actions in: debt-returns-tab-actions.js
-// =========================================================
 
 window._debtReturnsData = [];
 window._debtReturnsShowHistory = false;
 window._debtRetExpandedIdx = -1;
 
-// =========================================================
-// Init — called when user clicks the returns tab
-// =========================================================
+// --- Init ---
 async function initDebtReturnsTab() {
   var container = $('debt-returns-tab-content');
   if (!container) return;
@@ -38,9 +30,7 @@ async function initDebtReturnsTab() {
   await loadDebtReturns();
 }
 
-// =========================================================
-// Load returns data with filters
-// =========================================================
+// --- Load returns data ---
 async function loadDebtReturns(filters) {
   var listEl = $('debt-ret-list');
   if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:30px;color:#999">טוען...</div>';
@@ -98,22 +88,17 @@ async function loadDebtReturns(filters) {
   }
 }
 
-// =========================================================
-// Render filters bar
-// =========================================================
+// --- Render filters bar ---
 function renderDebtReturnsFilters() {
   var el = $('debt-ret-filters');
   if (!el) return;
-
   var supOpts = '<option value="">ספק — הכל</option>';
   if (typeof allSuppliersData !== 'undefined' && allSuppliersData.length) {
     allSuppliersData.filter(function(s) { return s.active !== false; }).forEach(function(s) {
       supOpts += '<option value="' + s.id + '">' + escapeHtml(s.name) + '</option>';
     });
   }
-
   var histChecked = window._debtReturnsShowHistory ? ' checked' : '';
-
   el.innerHTML =
     '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px">' +
       '<select id="dret-filter-status" class="filter-select" onchange="applyDebtReturnsFilters()" style="padding:6px 8px;border:1px solid var(--g300);border-radius:6px;font-family:inherit;font-size:.88rem">' +
@@ -159,13 +144,10 @@ function applyDebtReturnsFilters() {
   loadDebtReturns(filters);
 }
 
-// =========================================================
-// Summary + supplier note
-// =========================================================
+// --- Summary + supplier note ---
 function renderDebtReturnsSummary(items, supplierId) {
   var summEl = $('debt-ret-summary');
   var noteEl = $('debt-ret-supplier-note');
-
   var pending = items.filter(function(i) {
     var st = i.return && i.return.status;
     return st === 'shipped' || st === 'agent_picked';
@@ -177,7 +159,6 @@ function renderDebtReturnsSummary(items, supplierId) {
     summEl.innerHTML = '<div style="font-size:.88rem;color:var(--g600)">' +
       pendingQty + ' פריטים ממתינים לזיכוי, סה"כ ' + formatILS(pendingVal) + '</div>';
   }
-
   if (noteEl) {
     if (supplierId && pending.length > 0) {
       var supName = pending[0].return && pending[0].return.supplier ? pending[0].return.supplier.name : '';
@@ -189,13 +170,10 @@ function renderDebtReturnsSummary(items, supplierId) {
   }
 }
 
-// =========================================================
-// Render returns table
-// =========================================================
+// --- Render returns table ---
 function renderDebtReturnsList(items) {
   var el = $('debt-ret-list');
   if (!el) return;
-
   if (!items.length) {
     el.innerHTML = '<div class="empty-state">אין זיכויים ממתינים</div>';
     return;
@@ -275,16 +253,12 @@ function toggleDebtRetSelectAll(checked) {
   document.querySelectorAll('.dret-cb:not(:disabled)').forEach(function(cb) { cb.checked = checked; });
 }
 
-// =========================================================
-// Return Credit Timeline Modal
-// =========================================================
+// --- Return Credit Timeline Modal ---
 function openReturnTimeline(idx) {
   var it = window._debtReturnsData[idx];
   if (!it) return;
   var ret = it.return || {};
   var sup = ret.supplier || {};
-
-  // Timeline steps
   var steps = [
     { key: 'created',              label: 'נוצר',              ts: ret.created_at,       detail: 'הורדת מלאי — נשלח לזיכוי', color: '#2196F3' },
     { key: 'ready_to_ship',        label: 'מוכן למשלוח',       ts: ret.ready_at,         detail: 'ממתין בחנות',               color: '#2196F3' },
@@ -293,17 +267,13 @@ function openReturnTimeline(idx) {
     { key: 'received_by_supplier', label: 'התקבל אצל הספק',    ts: ret.received_at,       detail: '',                          color: '#4CAF50' },
     { key: 'credited',             label: 'זוכה',              ts: ret.credited_at,       detail: '',                          color: '#4CAF50' }
   ];
-
-  // Determine which steps are reached based on status chain
   var statusOrder = ['pending', 'ready_to_ship', 'agent_picked', 'shipped', 'received_by_supplier', 'credited'];
   var currentIdx = statusOrder.indexOf(ret.status || 'pending');
-
   function fmtDate(ts) {
     if (!ts) return '';
     var d = new Date(ts);
     return d.toLocaleDateString('he-IL') + ' ' + d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
   }
-
   var tlHtml = '';
   for (var s = 0; s < steps.length; s++) {
     var step = steps[s];
@@ -330,10 +300,8 @@ function openReturnTimeline(idx) {
         '</div>' +
       '</div>';
   }
-
   var retType = RETURN_TYPE_MAP[ret.return_type] || ret.return_type || '';
   var stObj = RETURN_STATUS_MAP[ret.status] || { he: ret.status || '?', cls: '' };
-
   var html =
     '<div class="modal-overlay" id="dret-timeline-modal" style="display:flex" onclick="if(event.target===this)closeModal(\'dret-timeline-modal\')">' +
       '<div class="modal" style="max-width:480px;max-height:90vh;overflow-y:auto">' +
@@ -359,7 +327,6 @@ function openReturnTimeline(idx) {
       '</div>' +
     '</div>';
 
-  var existing = $('dret-timeline-modal');
-  if (existing) existing.remove();
+  var existing = $('dret-timeline-modal'); if (existing) existing.remove();
   document.body.insertAdjacentHTML('beforeend', html);
 }

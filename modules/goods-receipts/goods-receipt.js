@@ -1,13 +1,9 @@
-// System Log (Slog) logic moved to js/system-log.js
+// goods-receipt.js — Goods receipt tab logic
 
-// =========================================================
-// GOODS RECEIPT
-// =========================================================
 const RCPT_TYPE_LABELS = { delivery_note: 'תעודת משלוח', invoice: 'חשבונית', tax_invoice: 'חשבונית מס' };
 const RCPT_STATUS_LABELS = { draft: 'טיוטה', confirmed: 'אושרה', cancelled: 'בוטלה' };
 
-// --- PO linkage state ---
-let rcptLinkedPoId = null; // currently linked PO id
+let rcptLinkedPoId = null;
 
 async function loadPOsForSupplier(supplierName) {
   if (!supplierName) return;

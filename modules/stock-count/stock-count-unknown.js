@@ -1,11 +1,6 @@
-// ============================================================
 // stock-count-unknown.js — Unknown items: render, edit modal, add to inventory
-// Depends on: shared.js (T, getTenantId, escapeHtml, toast, showLoading, hideLoading)
-// Depends on: supabase-ops.js (writeLog, fetchAll, generateNextBarcode)
-// Depends on: stock-count-report.js (showDiffReport for refresh)
-// ============================================================
 
-// ── Render unknown items section for diff report ─────────────
+// --- Render unknown items section for diff report ---
 function renderUnknownSection(unknownItems, countId) {
   const rows = unknownItems.map(u => `<tr style="border-bottom:1px solid var(--g200)" id="sc-unknown-row-${u.id}">
     <td style="padding:8px;font-weight:600">${escapeHtml(u.barcode || '—')}</td>
@@ -37,26 +32,21 @@ function renderUnknownSection(unknownItems, countId) {
     </div>`;
 }
 
-// ── Open edit modal for unknown item ─────────────────────────
+// --- Open edit modal for unknown item ---
 async function openUnknownItemModal(itemId, countId) {
   const tab = document.getElementById('tab-stock-count');
   const unknownItems = tab._scReportUnknownItems || [];
   const item = unknownItems.find(u => u.id === itemId);
   if (!item) { toast('פריט לא נמצא', 'e'); return; }
-
-  // Load brands and suppliers for dropdowns
-  let brands = [];
-  let suppliers = [];
+  let brands = [], suppliers = [];
   try {
     brands = await fetchAll(T.BRANDS, [['active', 'eq', true]]);
     suppliers = await fetchAll(T.SUPPLIERS, [['active', 'eq', true]]);
   } catch (err) { console.warn('Failed to load brands/suppliers for unknown modal', err); }
-
   const hasBarcode = !!(item.barcode && item.barcode.trim());
   const barcodeNote = hasBarcode
     ? 'ברקוד שנסרק (לא נמצא במערכת)'
     : 'ברקוד ייווצר אוטומטית בפורמט BBDDDDD';
-
   const brandOptions = brands.map(b =>
     `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('');
   const supplierOptions = suppliers.map(s =>
@@ -125,13 +115,12 @@ async function openUnknownItemModal(itemId, countId) {
   });
 }
 
-// ── Save unknown item to inventory ───────────────────────────
+// --- Save unknown item to inventory ---
 async function saveUnknownToInventory(itemId, countId, hasBarcode) {
   const brandId = document.getElementById('sc-unk-brand')?.value;
   const model = (document.getElementById('sc-unk-model')?.value || '').trim();
   if (!brandId) { toast('יש לבחור מותג', 'e'); return; }
   if (!model) { toast('יש להזין דגם', 'e'); return; }
-
   const formData = {
     qty: parseInt(document.getElementById('sc-unk-qty')?.value) || 1,
     size: (document.getElementById('sc-unk-size')?.value || '').trim(),
@@ -142,14 +131,9 @@ async function saveUnknownToInventory(itemId, countId, hasBarcode) {
     brandId, model
   };
   let barcode = (document.getElementById('sc-unk-barcode')?.value || '').trim();
-
   try {
     showLoading('בודק ברקוד...');
-    if (!hasBarcode || !barcode) {
-      barcode = await generateNextBarcode();
-    }
-
-    // Check if barcode already exists in this tenant's inventory (include deleted — UNIQUE constraint covers all rows)
+    if (!hasBarcode || !barcode) barcode = await generateNextBarcode();
     const tenantId = getTenantId();
     const { data: existing } = await sb.from(T.INV)
       .select('id,barcode,brand_id,model,size,color,is_deleted,brands(name)')
@@ -157,12 +141,9 @@ async function saveUnknownToInventory(itemId, countId, hasBarcode) {
       .eq('barcode', barcode)
       .maybeSingle();
     hideLoading();
-
     if (existing && existing.is_deleted) {
-      // Soft-deleted item with same barcode — restore it
       _showDeletedBarcodeDialog(existing, barcode, itemId, countId, formData);
     } else if (existing) {
-      // Active item with same barcode — show conflict dialog
       _showBarcodeConflictDialog(existing, barcode, itemId, countId, formData);
     } else {
       await _insertNewInventoryItem(barcode, itemId, countId, formData);
@@ -173,7 +154,7 @@ async function saveUnknownToInventory(itemId, countId, hasBarcode) {
   }
 }
 
-// ── Barcode conflict dialog — ask user to link or create new ──
+// --- Barcode conflict dialog ---
 function _showBarcodeConflictDialog(existing, barcode, itemId, countId, formData) {
   const brandName = existing.brands?.name || '—';
   const modal = Modal.show({
@@ -217,7 +198,7 @@ function _showBarcodeConflictDialog(existing, barcode, itemId, countId, formData
   });
 }
 
-// ── Deleted barcode dialog — restore or create new ────────────
+// --- Deleted barcode dialog ---
 function _showDeletedBarcodeDialog(existing, barcode, itemId, countId, formData) {
   const brandName = existing.brands?.name || '—';
   const modal = Modal.show({
@@ -273,7 +254,7 @@ function _showDeletedBarcodeDialog(existing, barcode, itemId, countId, formData)
   });
 }
 
-// ── Link unknown item to an existing inventory item ───────────
+// --- Link unknown item to existing inventory item ---
 async function _linkToExistingItem(invId, barcode, itemId, countId) {
   try {
     showLoading('מקשר לפריט קיים...');
@@ -289,14 +270,12 @@ async function _linkToExistingItem(invId, barcode, itemId, countId) {
   } finally { hideLoading(); }
 }
 
-// ── Insert a brand new inventory item (with barcode collision retry) ──
+// --- Insert new inventory item (with barcode collision retry) ---
 async function _insertNewInventoryItem(barcode, itemId, countId, fd) {
   try {
     showLoading('מוסיף פריט למלאי...');
     const tenantId = getTenantId();
     let finalBarcode = barcode;
-
-    // Retry up to 3 times if barcode collides (unique constraint violation)
     for (let attempt = 0; attempt < 3; attempt++) {
       const insertObj = {
         barcode: finalBarcode, brand_id: fd.brandId, model: fd.model,
@@ -313,8 +292,7 @@ async function _insertNewInventoryItem(barcode, itemId, countId, fd) {
         .insert(insertObj).select().single();
 
       if (insErr && insErr.code === '23505' && attempt < 2) {
-        // Unique constraint violation — generate a fresh barcode and retry
-        console.warn('Barcode collision on', finalBarcode, '— retrying with new barcode');
+        console.warn('Barcode collision on', finalBarcode, '— retrying');
         finalBarcode = await generateNextBarcode();
         continue;
       }
@@ -334,7 +312,7 @@ async function _insertNewInventoryItem(barcode, itemId, countId, fd) {
   } finally { hideLoading(); }
 }
 
-// ── Shared: mark stock_count_item as matched ──────────────────
+// --- Mark stock_count_item as matched ---
 async function _markItemMatched(itemId, invId) {
   const { error } = await sb.from(T.STOCK_COUNT_ITEMS).update({
     status: 'matched', inventory_id: invId
@@ -342,30 +320,27 @@ async function _markItemMatched(itemId, invId) {
   if (error) console.warn('Failed to update stock_count_item status:', error);
 }
 
-// ── Shared: close form modal + remove unknown row ─────────────
+// --- Close form modal + remove unknown row ---
 function _closeFormAndRemoveRow(itemId) {
   const overlay = document.querySelector('.modal-overlay');
   if (overlay) overlay.remove();
   _removeUnknownRow(itemId);
 }
 
-// ── Remove unknown row from report UI ────────────────────────
+// --- Remove unknown row from report UI ---
 function _removeUnknownRow(itemId) {
   const row = document.getElementById('sc-unknown-row-' + itemId);
   if (row) row.remove();
-
   // Update cached unknown items
   const tab = document.getElementById('tab-stock-count');
   if (tab._scReportUnknownItems) {
     tab._scReportUnknownItems = tab._scReportUnknownItems.filter(u => u.id !== itemId);
   }
-
   // Update count badge
   const countEl = document.getElementById('sc-unknown-count');
   const tbody = document.getElementById('sc-unknown-tbody');
   const remaining = tbody ? tbody.querySelectorAll('tr').length : 0;
   if (countEl) countEl.textContent = remaining;
-
   // Hide section if no more unknowns
   if (remaining === 0) {
     const wrap = document.getElementById('sc-unknown-table-wrap');
