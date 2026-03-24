@@ -58,10 +58,8 @@ async function loadPOColorsAndSizes(i, brandName, model) {
   const row = document.querySelector(`tr[data-po-row="${i}"]`);
   row?.querySelector('.po-color-input')?.setAttribute('list', colorListId);
   row?.querySelector('.po-size-input')?.setAttribute('list', sizeListId);
-  const totalQty = (data||[]).reduce((sum, r) => sum + (r.quantity||0), 0);
-  if (totalQty > 0) {
-    toast(`⚠️ ${brandName} ${model} קיים במלאי (${totalQty} יח')`, 'w');
-  }
+  // Update live stock counter for this row
+  _updatePOStockCounter(i, brandName, model, '', '');
 }
 
 function renderPOItemsTable() {
@@ -82,9 +80,10 @@ function renderPOItemsTable() {
     return `
     <tr data-po-row="${i}">
       <td><input value="${escapeHtml(item.brand || '')}" list="po-brand-list" class="po-brand-input" oninput="currentPOItems[${i}].brand=this.value; loadPOModelsForBrand(${i},this.value)" placeholder="מותג..." style="width:110px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
-      <td><input value="${escapeHtml(item.model || '')}" class="po-model-input" oninput="currentPOItems[${i}].model=this.value; loadPOColorsAndSizes(${i},currentPOItems[${i}].brand,this.value)" style="width:90px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
-      <td><input value="${escapeHtml(item.color || '')}" class="po-color-input" oninput="currentPOItems[${i}].color=this.value" style="width:70px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
-      <td><input value="${escapeHtml(item.size || '')}" class="po-size-input" oninput="currentPOItems[${i}].size=this.value" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+      <td><input value="${escapeHtml(item.model || '')}" class="po-model-input" oninput="currentPOItems[${i}].model=this.value; loadPOColorsAndSizes(${i},currentPOItems[${i}].brand,this.value)" style="width:90px;padding:4px 6px;border:1px solid #ddd;border-radius:4px">
+        <div class="po-stock-counter" id="po-stock-${i}" style="font-size:.72rem;color:#888;margin-top:2px;min-height:14px"></div></td>
+      <td><input value="${escapeHtml(item.color || '')}" class="po-color-input" oninput="currentPOItems[${i}].color=this.value; _updatePOStockCounter(${i},currentPOItems[${i}].brand,currentPOItems[${i}].model,this.value,currentPOItems[${i}].size)" style="width:70px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+      <td><input value="${escapeHtml(item.size || '')}" class="po-size-input" oninput="currentPOItems[${i}].size=this.value; _updatePOStockCounter(${i},currentPOItems[${i}].brand,currentPOItems[${i}].model,currentPOItems[${i}].color,this.value)" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input type="number" min="1" value="${item.qty_ordered || 1}"
                  oninput="currentPOItems[${i}].qty_ordered=+this.value; updatePOTotals()" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input type="number" min="0" step="0.01" value="${item.unit_cost || ''}"
@@ -295,4 +294,45 @@ function duplicatePOItem(i) {
 function togglePOItemDetails(i) {
   const row = document.getElementById(`po-item-details-${i}`);
   if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+
+// ── Live stock counter — shows inventory count as PO fields are filled ──
+var _poStockCounterTimer = {};
+function _updatePOStockCounter(i, brandName, model, color, size) {
+  // Debounce — avoid rapid queries on every keystroke
+  if (_poStockCounterTimer[i]) clearTimeout(_poStockCounterTimer[i]);
+  _poStockCounterTimer[i] = setTimeout(function() { _doUpdatePOStockCounter(i, brandName, model, color, size); }, 300);
+}
+
+async function _doUpdatePOStockCounter(i, brandName, model, color, size) {
+  var el = document.getElementById('po-stock-' + i);
+  if (!el) return;
+  var brandId = brandCache[(brandName || '').trim()];
+  if (!brandId || !(model || '').trim()) { el.textContent = ''; return; }
+
+  try {
+    var query = sb.from(T.INV)
+      .select('id', { count: 'exact', head: true })
+      .eq('brand_id', brandId)
+      .ilike('model', (model || '').trim())
+      .eq('tenant_id', getTenantId())
+      .eq('is_deleted', false);
+    if ((color || '').trim()) query = query.ilike('color', (color || '').trim());
+    if ((size || '').trim()) query = query.ilike('size', (size || '').trim());
+    var { count } = await query;
+    var cnt = count || 0;
+
+    // Build label
+    var label = '';
+    if (cnt === 0) {
+      label = '\u2728 \u05D7\u05D3\u05E9'; // ✨ חדש
+      el.style.color = '#059669';
+    } else {
+      label = '\uD83D\uDCE6 ' + cnt + ' \u05D1\u05DE\u05DC\u05D0\u05D9'; // 📦 X במלאי
+      el.style.color = '#d97706';
+    }
+    el.textContent = label;
+  } catch (e) {
+    el.textContent = '';
+  }
 }

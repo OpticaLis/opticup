@@ -174,12 +174,12 @@ async function exportReceiptToAccess(receiptId) {
   }
 }
 
-// ── Print barcodes for confirmed receipt ─────────────────────────
-async function printReceiptBarcodes(receiptId) {
+// ── Export barcodes for confirmed receipt to Excel ───────────────
+async function exportReceiptBarcodes(receiptId) {
   showLoading('\u05D8\u05D5\u05E2\u05DF \u05E4\u05E8\u05D9\u05D8\u05D9 \u05E7\u05D1\u05DC\u05D4...');
   try {
     var { data: items, error } = await sb.from(T.RCPT_ITEMS)
-      .select('barcode, brand, model, size, color, quantity, receipt_status, po_match_status')
+      .select('barcode, brand, model, size, color, quantity, unit_cost, receipt_status, po_match_status')
       .eq('receipt_id', receiptId)
       .eq('tenant_id', getTenantId());
     if (error) throw error;
@@ -188,7 +188,7 @@ async function printReceiptBarcodes(receiptId) {
     var printItems = (items || []).filter(function(i) {
       return i.receipt_status !== 'not_received' && i.po_match_status !== 'returned' && i.po_match_status !== 'not_received';
     });
-    if (!printItems.length) { hideLoading(); toast('\u05D0\u05D9\u05DF \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DC\u05D4\u05D3\u05E4\u05E1\u05D4', 'w'); return; }
+    if (!printItems.length) { hideLoading(); toast('\u05D0\u05D9\u05DF \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DC\u05D9\u05D9\u05E6\u05D5\u05D0', 'w'); return; }
 
     // Expand qty > 1 into individual rows (one barcode per physical frame)
     var rows = [];
@@ -196,61 +196,38 @@ async function printReceiptBarcodes(receiptId) {
       var qty = item.quantity || 1;
       for (var q = 0; q < qty; q++) {
         rows.push({
-          barcode: item.barcode || '',
-          brand: item.brand || '',
-          model: item.model || '',
-          size: item.size || '',
-          color: item.color || ''
+          '\u05D1\u05E8\u05E7\u05D5\u05D3': item.barcode || '',
+          '\u05DE\u05D5\u05EA\u05D2': item.brand || '',
+          '\u05D3\u05D2\u05DD': item.model || '',
+          '\u05E6\u05D1\u05E2': item.color || '',
+          '\u05D2\u05D5\u05D3\u05DC': item.size || '',
+          '\u05DE\u05D7\u05D9\u05E8 \u05E2\u05DC\u05D5\u05EA': item.unit_cost || ''
         });
       }
     });
 
-    // Get receipt number for title
+    // Get receipt number for filename
     var { data: rcpt } = await sb.from(T.RECEIPTS).select('receipt_number').eq('id', receiptId).eq('tenant_id', getTenantId()).single();
-    var rcptNum = rcpt ? rcpt.receipt_number : '';
+    var rcptNum = rcpt ? rcpt.receipt_number : 'receipt';
+
+    var ws = XLSX.utils.json_to_sheet(rows);
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '\u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD');
+    var dateStr = new Date().toISOString().slice(0, 10);
+    var safeNum = (rcptNum || '').replace(/[^a-zA-Z0-9_\u0590-\u05FF-]/g, '_');
+    XLSX.writeFile(wb, 'barcodes_' + safeNum + '_' + dateStr + '.xlsx');
 
     hideLoading();
-
-    // Build print-friendly HTML
-    var tableRows = rows.map(function(r, idx) {
-      return '<tr>' +
-        '<td>' + (idx + 1) + '</td>' +
-        '<td style="font-family:monospace;font-size:16px;font-weight:700;letter-spacing:2px">' + escapeHtml(r.barcode) + '</td>' +
-        '<td>' + escapeHtml(r.brand) + '</td>' +
-        '<td>' + escapeHtml(r.model) + '</td>' +
-        '<td>' + escapeHtml(r.size) + '</td>' +
-        '<td>' + escapeHtml(r.color) + '</td></tr>';
-    }).join('');
-
-    var html = '<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8">' +
-      '<title>\u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD \u2014 ' + escapeHtml(rcptNum) + '</title>' +
-      '<style>body{font-family:Arial,sans-serif;padding:20px;direction:rtl}' +
-      'h2{margin-bottom:10px}' +
-      'table{width:100%;border-collapse:collapse;font-size:13px}' +
-      'th{background:#1a2744;color:white;padding:8px;text-align:right}' +
-      'td{padding:6px 8px;border-bottom:1px solid #eee;text-align:right}' +
-      'tr:nth-child(even) td{background:#f9f9f9}' +
-      '.summary{font-size:14px;margin:10px 0;color:#555}' +
-      '@media print{body{padding:5px}}</style></head><body>' +
-      '<h2>\uD83D\uDDA8\uFE0F \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD \u05DC\u05D4\u05D3\u05E4\u05E1\u05D4 \u2014 \u05E7\u05D1\u05DC\u05D4 ' + escapeHtml(rcptNum) + '</h2>' +
-      '<div class="summary">\u05E1\u05D4"\u05DB ' + rows.length + ' \u05EA\u05D5\u05D5\u05D9\u05D5\u05EA</div>' +
-      '<table><thead><tr><th>#</th><th>\u05D1\u05E8\u05E7\u05D5\u05D3</th><th>\u05DE\u05D5\u05EA\u05D2</th><th>\u05D3\u05D2\u05DD</th><th>\u05D2\u05D5\u05D3\u05DC</th><th>\u05E6\u05D1\u05E2</th></tr></thead>' +
-      '<tbody>' + tableRows + '</tbody></table>' +
-      '<div style="margin-top:20px;font-size:11px;color:#999">\u05D4\u05D5\u05E4\u05E7 \u05E2\u05DC \u05D9\u05D3\u05D9 \u05DE\u05E2\u05E8\u05DB\u05EA \u05D0\u05D5\u05E4\u05D8\u05D9\u05E7 \u05D0\u05E4 \u2022 ' + new Date().toLocaleDateString('he-IL') + '</div>' +
-      '</body></html>';
-
-    var w = window.open('', '_blank');
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    setTimeout(function() { w.print(); }, 400);
-    toast('\u05D3\u05E3 \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD \u05E0\u05E4\u05EA\u05D7 \u05DC\u05D4\u05D3\u05E4\u05E1\u05D4', 's');
+    toast(rows.length + ' \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD \u05D9\u05D5\u05E6\u05D0\u05D5 \u05DC-Excel', 's');
   } catch (e) {
     hideLoading();
-    console.error('printReceiptBarcodes error:', e);
-    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05D3\u05E4\u05E1\u05EA \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD: ' + (e.message || ''), 'e');
+    console.error('exportReceiptBarcodes error:', e);
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D9\u05D9\u05E6\u05D5\u05D0 \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD: ' + (e.message || ''), 'e');
   }
 }
+
+// Legacy alias for backward compatibility
+var printReceiptBarcodes = exportReceiptBarcodes;
 
 // ─── EVENT DELEGATION — goods-receipt.js ────────────────────────
 document.addEventListener('click', function(e) {

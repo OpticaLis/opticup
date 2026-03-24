@@ -44,28 +44,44 @@ async function _poCompBuildReport(receiptItems, poId) {
     activeReceiptItems.push({ idx: i, ri: ri });
   }
 
-  // Phase 2: Match only active (ok) receipt items against PO
+  // Phase 2: Aggregate active receipt items by key, then compare to PO
+  // Multiple receipt rows with same brand|model|size|color = multiple physical frames
+  var activeByKey = {};
   for (var j = 0; j < activeReceiptItems.length; j++) {
     var item = activeReceiptItems[j];
     var ri = item.ri;
-    var idx = item.idx;
     var key = _poCompKey(ri.brand || '', ri.model || '', ri.size || '', ri.color || '');
-    var pi = poMap[key];
+    if (!activeByKey[key]) activeByKey[key] = { items: [], totalQty: 0 };
+    activeByKey[key].items.push(item);
+    activeByKey[key].totalQty += (ri.quantity || 1);
+  }
+
+  for (var aKey in activeByKey) {
+    var group = activeByKey[aKey];
+    var firstItem = group.items[0];
+    var ri = firstItem.ri;
+    var idx = firstItem.idx;
+    var pi = poMap[aKey];
 
     if (!pi) {
-      notInPo.push({ idx: idx, ri: ri, pi: null });
+      // All items in this group are not in PO
+      for (var g = 0; g < group.items.length; g++) {
+        notInPo.push({ idx: group.items[g].idx, ri: group.items[g].ri, pi: null });
+      }
       continue;
     }
-    usedPoKeys[key] = true;
+    usedPoKeys[aKey] = true;
     var riCost = parseFloat(ri.unit_cost) || 0;
     var piCost = parseFloat(pi.unit_cost) || 0;
     var priceDiff = piCost > 0 ? Math.abs(riCost - piCost) / piCost * 100 : 0;
+    // Use aggregated quantity for comparison
+    var aggregatedRi = { brand: ri.brand, model: ri.model, color: ri.color, size: ri.size, unit_cost: ri.unit_cost, quantity: group.totalQty };
     if (priceDiff > 5 && riCost > 0) {
-      priceGap.push({ idx: idx, ri: ri, pi: pi, poPrice: piCost, rcptPrice: riCost, diffPct: priceDiff.toFixed(1) });
-    } else if (ri.quantity < (pi.qty_ordered || 0)) {
-      shortage.push({ idx: idx, ri: ri, pi: pi, ordered: pi.qty_ordered, received: ri.quantity });
+      priceGap.push({ idx: idx, ri: aggregatedRi, pi: pi, poPrice: piCost, rcptPrice: riCost, diffPct: priceDiff.toFixed(1) });
+    } else if (group.totalQty < (pi.qty_ordered || 0)) {
+      shortage.push({ idx: idx, ri: aggregatedRi, pi: pi, ordered: pi.qty_ordered, received: group.totalQty });
     } else {
-      matched.push({ idx: idx, ri: ri, pi: pi });
+      matched.push({ idx: idx, ri: aggregatedRi, pi: pi });
     }
   }
 

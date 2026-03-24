@@ -478,6 +478,7 @@
 
     <div class="btn-bar" style="display:flex;gap:8px;flex-wrap:wrap" id="rcpt-action-bar">
       <button class="btn btn-g" onclick="saveReceiptDraft()">&#128190; שמור טיוטה</button>
+      <button class="btn" id="rcpt-gen-barcodes-btn" onclick="generateReceiptBarcodes()" style="background:#7c3aed;color:#fff">&#127991; יצירת ברקודים</button>
       <button class="btn btn-s" onclick="confirmReceipt()" data-permission="goods_receipt.confirm">&#10004; אשר קבלה ועדכן מלאי</button>
       <button class="btn btn-g btn-sm" onclick="exportReceiptExcel()" data-permission="goods_receipt.export" style="margin-right:auto">&#128194; ייצוא Excel</button>
     </div>

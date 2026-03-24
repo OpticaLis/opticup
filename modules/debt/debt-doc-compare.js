@@ -14,11 +14,15 @@ async function buildComparisonSection(doc) {
       .eq('id', doc.goods_receipt_id).eq('tenant_id', getTenantId()).single();
     if (!receipt) return '';
 
-    // Fetch receipt items
-    var { data: rcptItems } = await sb.from(T.RCPT_ITEMS)
-      .select('barcode, brand, model, color, size, quantity, unit_cost')
+    // Fetch receipt items — exclude not_received and returned items
+    var { data: rcptItemsRaw } = await sb.from(T.RCPT_ITEMS)
+      .select('barcode, brand, model, color, size, quantity, unit_cost, receipt_status, po_match_status')
       .eq('receipt_id', receipt.id).eq('tenant_id', getTenantId());
-    rcptItems = rcptItems || [];
+    var rcptItems = (rcptItemsRaw || []).filter(function(ri) {
+      return ri.receipt_status !== 'not_received' &&
+             ri.po_match_status !== 'not_received' &&
+             ri.po_match_status !== 'returned';
+    });
 
     // Fetch PO items if PO linked
     var poItems = [];

@@ -265,9 +265,8 @@ async function searchReceiptBarcode() {
       });
       toast(`נמצא: ${brandName} ${data.model || ''}`, 's');
     } else {
-      const newBarcode = await generateNextBarcode();
-      addReceiptItemRow({ barcode: newBarcode, is_new_item: true, quantity: 1 });
-      toast(`ברקוד ${newBarcode} הוקצה לפריט חדש — הדפס תווית`, 's');
+      addReceiptItemRow({ barcode: '', is_new_item: true, quantity: 1 });
+      toast('פריט חדש נוסף — לחץ "יצירת ברקודים" לאחר מילוי הפרטים', 'i');
     }
 
     $('rcpt-barcode-search').value = '';
@@ -315,7 +314,7 @@ function addReceiptItemRow(data) {
 
   tr.innerHTML = `
     <td>${rcptRowNum}</td>
-    <td><input type="text" class="rcpt-barcode" value="${escapeHtml(data?.barcode || '')}" readonly style="background:#f0f0f0"></td>
+    <td><input type="text" class="rcpt-barcode" value="${escapeHtml(data?.barcode || '')}" readonly style="background:${data?.barcode ? '#f0f0f0' : '#fff8e1'}"></td>
     <td><input type="text" class="rcpt-brand" value="${escapeHtml(data?.brand || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
     <td><input type="text" class="rcpt-model" value="${escapeHtml(data?.model || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
     <td><input type="text" class="rcpt-color" value="${escapeHtml(data?.color || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
@@ -415,14 +414,61 @@ function updateReceiptItemsStats() {
     : '';
 }
 
-async function addNewReceiptRow() {
-  try {
-    const barcode = await generateNextBarcode();
-    addReceiptItemRow({ barcode, is_new_item: true, quantity: 1 });
-    toast(`ברקוד ${barcode} הוקצה לפריט חדש — הדפס תווית`, 's');
-  } catch (e) {
-    console.error('addNewReceiptRow error:', e);
-    toast('שגיאה ביצירת ברקוד: ' + (e.message || ''), 'e');
-  }
+function addNewReceiptRow() {
+  addReceiptItemRow({ barcode: '', is_new_item: true, quantity: 1 });
+  toast('פריט חדש נוסף — מלא פרטים ולחץ "יצירת ברקודים"', 'i');
 }
+// =========================================================
+// Manual barcode generation for receipt items
+// Same pattern as inventory-entry.js generateBarcodes()
+// Skips: not_received, return items. Keeps existing barcodes.
+// =========================================================
+async function generateReceiptBarcodes() {
+  var items;
+  try { items = getReceiptItems(); } catch (e) { return; }
+  if (!items.length) { toast('אין פריטים ליצירת ברקודים', 'w'); return; }
+
+  // Filter items that need barcodes: ok status + new items without barcode
+  var needBarcode = items.filter(function(i) {
+    if (i.receipt_status === 'not_received' || i.receipt_status === 'return') return false;
+    if (!i.is_new_item) return false; // existing items already have barcodes
+    if (i.barcode) return false; // already assigned
+    return true;
+  });
+
+  if (!needBarcode.length) {
+    toast('כל הפריטים כבר קיבלו ברקוד', 'i');
+    return;
+  }
+
+  // Validate required fields on items that need barcodes
+  var incomplete = needBarcode.filter(function(i) { return !i.brand || !i.model; });
+  if (incomplete.length) {
+    toast(incomplete.length + ' פריטים חסרים מותג או דגם — נדרש לפני יצירת ברקוד', 'e');
+    return;
+  }
+
+  showLoading('מייצר ברקודים...');
+  try {
+    var generated = 0;
+    for (var i = 0; i < needBarcode.length; i++) {
+      var item = needBarcode[i];
+      var newBc = await generateNextBarcode();
+      // Update the DOM row directly
+      var bcInput = item.tr.querySelector('.rcpt-barcode');
+      if (bcInput) {
+        bcInput.value = newBc;
+        bcInput.style.background = '#e8f5e9'; // green tint = barcode assigned
+      }
+      generated++;
+    }
+    toast(generated + ' ברקודים נוצרו — הדפס תוויות!', 's');
+    updateReceiptItemsStats();
+  } catch (e) {
+    console.error('generateReceiptBarcodes error:', e);
+    toast('שגיאה ביצירת ברקודים: ' + (e.message || ''), 'e');
+  }
+  hideLoading();
+}
+
 // Guide text + showReceiptGuide() moved to receipt-guide.js
