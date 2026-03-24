@@ -63,31 +63,99 @@ async function onReceiptPoSelected() {
       const remaining = ordered - received;
       if (remaining <= 0) continue; // skip fully received items
 
-      // Try to find inventory item by barcode for inventory_id
-      let inventoryId = null;
+      // Try to find existing inventory item — first by barcode, then by brand+model+size+color
+      let existingInv = null;
       if (item.barcode) {
         const { data: inv } = await sb.from('inventory')
-          .select('id')
+          .select('id, barcode')
           .eq('tenant_id', getTenantId())
           .eq('barcode', item.barcode)
           .eq('is_deleted', false)
           .maybeSingle();
-        if (inv) inventoryId = inv.id;
+        if (inv) existingInv = inv;
+      }
+      // Fallback: match by brand_id + model + size + color (case-insensitive)
+      if (!existingInv && item.brand) {
+        var lookupBrandId = brandCache[(item.brand || '').trim()] || null;
+        if (lookupBrandId) {
+          var lookupQuery = sb.from('inventory')
+            .select('id, barcode, quantity')
+            .eq('tenant_id', getTenantId())
+            .eq('brand_id', lookupBrandId)
+            .eq('is_deleted', false);
+          // Case-insensitive match on model/size/color via ilike
+          if (item.model) lookupQuery = lookupQuery.ilike('model', (item.model || '').trim());
+          if (item.size) lookupQuery = lookupQuery.ilike('size', (item.size || '').trim());
+          if (item.color) lookupQuery = lookupQuery.ilike('color', (item.color || '').trim());
+          lookupQuery = lookupQuery.gt('quantity', 0).limit(1);
+          var { data: invMatch } = await lookupQuery;
+          if (invMatch && invMatch.length > 0) existingInv = invMatch[0];
+        }
       }
 
-      addReceiptItemRow({
-        barcode: item.barcode || '',
-        brand: item.brand || '',
-        model: item.model || '',
-        color: item.color || '',
-        size: item.size || '',
-        quantity: remaining,
-        unit_cost: item.unit_cost || '',
-        sell_price: item.sell_price || '',
-        is_new_item: !inventoryId,
-        inventory_id: inventoryId,
-        from_po: true
-      });
+      // For qty > 1: first unit reuses existing barcode, additional get new barcodes
+      if (existingInv && remaining === 1) {
+        // Single unit — reuse existing
+        addReceiptItemRow({
+          barcode: existingInv.barcode || '',
+          brand: item.brand || '',
+          model: item.model || '',
+          color: item.color || '',
+          size: item.size || '',
+          quantity: 1,
+          unit_cost: item.unit_cost || '',
+          sell_price: item.sell_price || '',
+          is_new_item: false,
+          inventory_id: existingInv.id,
+          from_po: true
+        });
+      } else if (existingInv && remaining > 1) {
+        // First unit reuses existing inventory_id
+        addReceiptItemRow({
+          barcode: existingInv.barcode || '',
+          brand: item.brand || '',
+          model: item.model || '',
+          color: item.color || '',
+          size: item.size || '',
+          quantity: 1,
+          unit_cost: item.unit_cost || '',
+          sell_price: item.sell_price || '',
+          is_new_item: false,
+          inventory_id: existingInv.id,
+          from_po: true
+        });
+        // Additional units get new barcodes (each physical frame = unique barcode)
+        for (var u = 1; u < remaining; u++) {
+          var newBc = await generateNextBarcode();
+          addReceiptItemRow({
+            barcode: newBc,
+            brand: item.brand || '',
+            model: item.model || '',
+            color: item.color || '',
+            size: item.size || '',
+            quantity: 1,
+            unit_cost: item.unit_cost || '',
+            sell_price: item.sell_price || '',
+            is_new_item: true,
+            from_po: true
+          });
+        }
+      } else {
+        // Genuinely new item — no existing inventory match
+        addReceiptItemRow({
+          barcode: item.barcode || '',
+          brand: item.brand || '',
+          model: item.model || '',
+          color: item.color || '',
+          size: item.size || '',
+          quantity: remaining,
+          unit_cost: item.unit_cost || '',
+          sell_price: item.sell_price || '',
+          is_new_item: true,
+          inventory_id: null,
+          from_po: true
+        });
+      }
     }
 
     rcptLinkedPoId = poId;
@@ -231,6 +299,7 @@ async function loadReceiptTab() {
           actions = `<button class="btn btn-g btn-sm btn-rcpt-view" data-id="${escapeHtml(r.id)}" title="צפה">👁</button>`;
           if (r.status === 'confirmed') {
             actions += ` <button class="btn btn-p btn-sm btn-rcpt-export" data-id="${escapeHtml(r.id)}" title="ייצוא לAccess">📤</button>`;
+            actions += ` <button class="btn btn-sm btn-rcpt-print-barcodes" data-id="${escapeHtml(r.id)}" title="\u05D4\u05D3\u05E4\u05E1 \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD" style="background:#7c3aed;color:#fff">\uD83D\uDDA8\uFE0F</button>`;
           }
         }
 
@@ -301,7 +370,7 @@ function openNewReceipt() {
   clearAlert('rcpt-form-alerts');
 
   // Reset file attachment + init dropzone
-  _pendingReceiptFile = null;
+  _pendingReceiptFiles = [];
   _pendingReceiptFileUrl = null;
   var zone = $('rcpt-attach-dropzone');
   var preview = $('rcpt-attach-preview');

@@ -121,27 +121,35 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   const created = await batchCreate(T.SUP_DOCS, [docRow]);
   const createdDoc = created[0] || null;
 
-  // 9b. Upload attached file if exists
-  if (createdDoc && typeof _pendingReceiptFile !== 'undefined' && _pendingReceiptFile) {
-    try {
-      const uploadResult = await uploadSupplierFile(_pendingReceiptFile, supplierId);
-      if (uploadResult) {
-        await batchUpdate(T.SUP_DOCS, [{
-          id: createdDoc.id,
-          file_url: uploadResult.url,
-          file_name: uploadResult.fileName
-        }]);
-        createdDoc.file_url = uploadResult.url;
-        createdDoc.file_name = uploadResult.fileName;
-        // Also save to supplier_document_files table
-        if (typeof saveDocFile === 'function') {
-          await saveDocFile(createdDoc.id, uploadResult.url, uploadResult.fileName, 0);
+  // 9b. Upload attached files if exist (multi-file support)
+  var filesToUpload = (typeof _pendingReceiptFiles !== 'undefined' && _pendingReceiptFiles && _pendingReceiptFiles.length > 0)
+    ? _pendingReceiptFiles
+    : (typeof _pendingReceiptFile !== 'undefined' && _pendingReceiptFile) ? [_pendingReceiptFile] : [];
+  if (createdDoc && filesToUpload.length > 0) {
+    for (var fi = 0; fi < filesToUpload.length; fi++) {
+      try {
+        var uploadResult = await uploadSupplierFile(filesToUpload[fi], supplierId);
+        if (uploadResult) {
+          // Set first file as main file_url on document
+          if (fi === 0) {
+            await batchUpdate(T.SUP_DOCS, [{
+              id: createdDoc.id,
+              file_url: uploadResult.url,
+              file_name: uploadResult.fileName
+            }]);
+            createdDoc.file_url = uploadResult.url;
+            createdDoc.file_name = uploadResult.fileName;
+          }
+          // Save all files to supplier_document_files table
+          if (typeof saveDocFile === 'function') {
+            await saveDocFile(createdDoc.id, uploadResult.url, uploadResult.fileName, fi);
+          }
         }
+      } catch (uploadErr) {
+        console.warn('File upload for receipt document failed (non-blocking):', uploadErr);
       }
-    } catch (uploadErr) {
-      console.warn('File upload for receipt document failed (non-blocking):', uploadErr);
     }
-    _pendingReceiptFile = null;
+    if (typeof _pendingReceiptFiles !== 'undefined') _pendingReceiptFiles = [];
   }
 
   // 10. Warn if document created with missing prices

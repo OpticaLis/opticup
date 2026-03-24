@@ -77,7 +77,9 @@ function renderPOItemsTable() {
     return;
   }
 
-  tbody.innerHTML = currentPOItems.map((item, i) => `
+  tbody.innerHTML = currentPOItems.map((item, i) => {
+    var finalPrice = _calcPOFinalPrice(item);
+    return `
     <tr data-po-row="${i}">
       <td><input value="${escapeHtml(item.brand || '')}" list="po-brand-list" class="po-brand-input" oninput="currentPOItems[${i}].brand=this.value; loadPOModelsForBrand(${i},this.value)" placeholder="מותג..." style="width:110px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input value="${escapeHtml(item.model || '')}" class="po-model-input" oninput="currentPOItems[${i}].model=this.value; loadPOColorsAndSizes(${i},currentPOItems[${i}].brand,this.value)" style="width:90px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
@@ -86,9 +88,11 @@ function renderPOItemsTable() {
       <td><input type="number" min="1" value="${item.qty_ordered || 1}"
                  oninput="currentPOItems[${i}].qty_ordered=+this.value; updatePOTotals()" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input type="number" min="0" step="0.01" value="${item.unit_cost || ''}"
-                 oninput="currentPOItems[${i}].unit_cost=+this.value; updatePOTotals()" style="width:75px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+                 oninput="currentPOItems[${i}].unit_cost=+this.value; _onPOCostChange(${i}); updatePOTotals()" style="width:75px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input type="number" min="0" max="100" step="0.1" value="${item.discount_pct || 0}"
-                 oninput="currentPOItems[${i}].discount_pct=+this.value; updatePOTotals()" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+                 oninput="currentPOItems[${i}].discount_pct=+this.value; _onPODiscountChange(${i}); updatePOTotals()" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+      <td><input type="number" min="0" step="0.01" value="${finalPrice || ''}" class="po-final-price"
+                 oninput="_onPOFinalPriceChange(${i}, +this.value); updatePOTotals()" style="width:75px;padding:4px 6px;border:1px solid #ddd;border-radius:4px" placeholder="מחיר סופי"></td>
       <td id="po-row-total-${i}" style="text-align:center; font-weight:600; padding:8px">—</td>
       <td>
         <button class="btn-po-toggle" data-index="${i}" style="background:none;border:none;cursor:pointer;font-size:14px" title="פרטים נוספים">&#9660;</button>
@@ -97,7 +101,7 @@ function renderPOItemsTable() {
       </td>
     </tr>
     <tr id="po-item-details-${i}" style="display:none; background:#f8f9fa">
-      <td colspan="9" style="padding:8px 16px">
+      <td colspan="10" style="padding:8px 16px">
         <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:end">
           <div><label style="font-size:12px;display:block">מחיר מכירה ₪</label>
             <input type="number" min="0" step="0.01" value="${item.sell_price||''}"
@@ -131,18 +135,65 @@ function renderPOItemsTable() {
         </div>
       </td>
     </tr>
-  `).join('');
+  `}).join('');
 
   tfoot.innerHTML = `
     <tr style="font-weight:700; border-top:2px solid #1a2744">
-      <td colspan="4" style="padding:8px; text-align:left">סה"כ:</td>
+      <td colspan="4" style="padding:8px; text-align:left">\u05E1\u05D4"\u05DB:</td>
       <td id="po-total-qty" style="padding:8px"></td>
-      <td colspan="2" style="padding:8px; text-align:left">סכום:</td>
+      <td colspan="3" style="padding:8px; text-align:left">\u05E1\u05DB\u05D5\u05DD \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DE:</td>
       <td id="po-total-amount" style="padding:8px; font-size:15px"></td>
+      <td></td>
+    </tr>
+    <tr style="color:#666; font-size:.88rem">
+      <td colspan="8" style="padding:4px 8px; text-align:left">\u05DE\u05E2"\u05DE (<span id="po-vat-rate"></span>%):</td>
+      <td id="po-vat-amount" style="padding:4px 8px"></td>
+      <td></td>
+    </tr>
+    <tr style="font-weight:700; font-size:1.05rem; border-top:1px solid #ddd">
+      <td colspan="8" style="padding:8px; text-align:left">\u05E1\u05D4"\u05DB \u05DB\u05D5\u05DC\u05DC \u05DE\u05E2"\u05DE:</td>
+      <td id="po-total-with-vat" style="padding:8px; font-size:15px; color:#059669"></td>
       <td></td>
     </tr>`;
 
   updatePOTotals();
+}
+
+// ── Final price helpers ───────────────────────────────────────
+function _calcPOFinalPrice(item) {
+  var cost = item.unit_cost || 0;
+  var disc = item.discount_pct || 0;
+  if (!cost) return '';
+  return +(cost * (1 - disc / 100)).toFixed(2);
+}
+
+function _onPOFinalPriceChange(i, finalPrice) {
+  var cost = currentPOItems[i].unit_cost || 0;
+  if (cost > 0 && finalPrice >= 0) {
+    // Reverse-calc discount: ((cost - finalPrice) / cost) * 100
+    var disc = ((cost - finalPrice) / cost) * 100;
+    currentPOItems[i].discount_pct = Math.max(0, Math.min(100, +disc.toFixed(1)));
+    var row = document.querySelector('tr[data-po-row="' + i + '"]');
+    if (row) {
+      var discInput = row.querySelectorAll('input[type="number"]')[2]; // 3rd number input = discount
+      if (discInput) discInput.value = currentPOItems[i].discount_pct;
+    }
+  }
+}
+
+function _onPODiscountChange(i) {
+  // Recalc final price from current discount
+  var fp = _calcPOFinalPrice(currentPOItems[i]);
+  var row = document.querySelector('tr[data-po-row="' + i + '"]');
+  if (row) {
+    var fpInput = row.querySelector('.po-final-price');
+    if (fpInput) fpInput.value = fp || '';
+  }
+}
+
+function _onPOCostChange(i) {
+  // Recalc final price when cost_price changes
+  _onPODiscountChange(i);
 }
 
 // ── Totals ───────────────────────────────────────────────────
@@ -167,6 +218,17 @@ function updatePOTotals() {
   const amtEl = document.getElementById('po-total-amount');
   if (qtyEl) qtyEl.textContent = totalQty;
   if (amtEl) amtEl.textContent = `₪${totalAmount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  // VAT summary
+  var vatRate = Number(typeof getTenantConfig === 'function' ? getTenantConfig('vat_rate') : 0) || 17;
+  var vatAmount = totalAmount * vatRate / 100;
+  var totalWithVat = totalAmount + vatAmount;
+  var vatRateEl = document.getElementById('po-vat-rate');
+  var vatAmtEl = document.getElementById('po-vat-amount');
+  var totalVatEl = document.getElementById('po-total-with-vat');
+  if (vatRateEl) vatRateEl.textContent = vatRate;
+  if (vatAmtEl) vatAmtEl.textContent = `₪${vatAmount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (totalVatEl) totalVatEl.textContent = `₪${totalWithVat.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 // ── Add/remove items ─────────────────────────────────────────

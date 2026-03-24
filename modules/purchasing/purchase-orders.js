@@ -100,6 +100,8 @@ function renderPoList(container) {
         } else {
           actions = `<button class="btn btn-g btn-sm btn-po-view" data-id="${escapeHtml(po.id)}">צפייה</button>`;
         }
+        // Clone button available on all POs
+        actions += ` <button class="btn btn-sm btn-po-clone" data-id="${escapeHtml(po.id)}" title="\u05E9\u05DB\u05E4\u05DC" style="background:#6366f1;color:#fff">\uD83D\uDCCB</button>`;
         return `<tr>
           <td style="font-weight:600">${po.po_number || '—'}</td>
           <td>${supplierName}</td>

@@ -361,6 +361,9 @@ document.addEventListener('click', function(e) {
   // #15-17 openViewPO
   const viewBtn = e.target.closest('.btn-po-view');
   if (viewBtn) { openViewPO(viewBtn.dataset.id); return; }
+  // Clone PO
+  const cloneBtn = e.target.closest('.btn-po-clone');
+  if (cloneBtn) { clonePO(cloneBtn.dataset.id); return; }
   // #18 togglePOItemDetails (array index)
   const toggleBtn = e.target.closest('.btn-po-toggle');
   if (toggleBtn) { togglePOItemDetails(parseInt(toggleBtn.dataset.index)); return; }

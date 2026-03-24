@@ -216,6 +216,62 @@ async function sendPurchaseOrder(id) {
   }
 }
 
+// ── Clone PO ─────────────────────────────────────────────────
+async function clonePO(id) {
+  showLoading('\u05DE\u05E9\u05DB\u05E4\u05DC \u05D4\u05D6\u05DE\u05E0\u05D4...');
+  try {
+    // Fetch original PO + items
+    var { data: origPo, error: poErr } = await sb.from(T.PO)
+      .select('*').eq('id', id).eq('tenant_id', getTenantId()).single();
+    if (poErr) throw poErr;
+    var { data: origItems, error: itErr } = await sb.from(T.PO_ITEMS)
+      .select('*').eq('po_id', id).eq('tenant_id', getTenantId());
+    if (itErr) throw itErr;
+
+    // Generate new PO number for same supplier
+    var newPoNum = await generatePoNumber(origPo.supplier_id);
+    if (!newPoNum) throw new Error('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D9\u05E6\u05D5\u05E8 \u05DE\u05E1\u05E4\u05E8 \u05D4\u05D6\u05DE\u05E0\u05D4');
+
+    // Set up currentPO and currentPOItems for the form
+    currentPO = {
+      id: null,
+      po_number: newPoNum,
+      supplier_id: origPo.supplier_id,
+      order_date: new Date().toISOString().split('T')[0],
+      expected_date: origPo.expected_date || '',
+      notes: origPo.notes ? '\u05E9\u05D5\u05DB\u05E4\u05DC \u05DE ' + origPo.po_number + ' | ' + origPo.notes : '\u05E9\u05D5\u05DB\u05E4\u05DC \u05DE ' + origPo.po_number
+    };
+    currentPOItems = (origItems || []).map(function(it) {
+      return {
+        inventory_id: it.inventory_id || null,
+        barcode: it.barcode || '',
+        brand: it.brand || '',
+        model: it.model || '',
+        color: it.color || '',
+        size: it.size || '',
+        qty_ordered: it.qty_ordered || 1,
+        unit_cost: it.unit_cost || 0,
+        discount_pct: it.discount_pct || 0,
+        notes: it.notes || '',
+        sell_price: it.sell_price || null,
+        sell_discount: it.sell_discount || 0,
+        website_sync: it.website_sync || null,
+        product_type: it.product_type || null,
+        bridge: it.bridge || null,
+        temple_length: it.temple_length || null
+      };
+    });
+
+    hideLoading();
+    renderPOForm(false);
+    toast('\u05D4\u05D6\u05DE\u05E0\u05D4 \u05E9\u05D5\u05DB\u05E4\u05DC\u05D4 \u2014 ' + newPoNum + ' (\u05D8\u05D9\u05D5\u05D8\u05D4)', 's');
+  } catch (e) {
+    hideLoading();
+    console.error('clonePO error:', e);
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E9\u05DB\u05E4\u05D5\u05DC: ' + (e.message || ''), 'e');
+  }
+}
+
 // ── Cancel PO ────────────────────────────────────────────────
 async function cancelPO(id) {
   // Fetch current status — block received/cancelled, warn partial
