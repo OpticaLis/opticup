@@ -9,6 +9,7 @@ function _isPayableDocType(code) { return !!_PAYABLE_DOC_CODES[code]; }
 
 const DOC_STATUS_MAP = {
   draft:           { he: '\u05DE\u05DE\u05EA\u05D9\u05DF \u05DC\u05D8\u05D9\u05E4\u05D5\u05DC', cls: 'dst-draft' },
+  pending_invoice: { he: '\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u05DC\u05D8\u05D9\u05E4\u05D5\u05DC', cls: 'dst-draft' },
   open:            { he: '\u05E4\u05EA\u05D5\u05D7',        cls: 'dst-open' },
   partially_paid:  { he: '\u05E9\u05D5\u05DC\u05DD \u05D7\u05DC\u05E7\u05D9\u05EA',  cls: 'dst-partial' },
   paid:            { he: '\u05E9\u05D5\u05DC\u05DD',        cls: 'dst-paid' },

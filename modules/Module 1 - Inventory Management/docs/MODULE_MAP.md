@@ -62,7 +62,7 @@
 | 40 | header.css | css/header.css | 349 | Sticky header styles: 60px height, z-index 1000, RTL, 3-zone flex layout (right: logo+store, center: app name, left: employee+logout), responsive below 600px hides role |
 | 41 | header.js | js/header.js | 61 | Sticky header logic: initHeader (DOMContentLoaded, session check, tenant fetch), buildHeader (DOM injection, escapeHtml, clearSession logout) |
 | 42 | suppliers-debt.html | suppliers-debt.html | 233 | Supplier debt tracking page: summary cards, 5 tabs (suppliers, documents, payments, prepaid, weekly report), session check, tab switching. CDN: jsPDF + html2canvas. debt-main-content wrapper + supplier-detail-panel for detail view |
-| 43 | debt-dashboard.js | modules/debt/debt-dashboard.js | 341 | Debt dashboard summary: loadDebtSummary (calls loadAgingReport), loadAgingReport (5-bucket aging breakdown), loadSuppliersTab (aggregated supplier table with debt/overdue/prepaid), renderSuppliersToolbar (toggle + opening balance button), renderSuppliersTable, toggleShowAllSuppliers, openQuickOpeningBalance, openPaymentForSupplier |
+| 43 | debt-dashboard.js | modules/debt/debt-dashboard.js | 377 | Debt dashboard summary: loadDebtSummary (calls loadAgingReport + _loadPendingInvoiceBanner), loadAgingReport (5-bucket aging breakdown), _loadPendingInvoiceBanner (pending_invoice count badge), loadSuppliersTab (aggregated supplier table with debt/overdue/prepaid), renderSuppliersToolbar, renderSuppliersTable, toggleShowAllSuppliers, openQuickOpeningBalance, openPaymentForSupplier |
 | 44 | debt-documents.js | modules/debt/debt-documents.js | 271 | Documents tab: loadDocumentsTab, _loadDocFileCounts, renderDocumentsTable (source badges: receipt/standalone/missing_price), viewDocument, _attachFileToDoc (multi-file), closeAndRemoveModal, cancelDocument (refreshes supplier detail if open), openPrepaidDeductModal, _doPrepaidDeduct |
 | 44b | debt-doc-new.js | modules/debt/debt-doc-new.js | 205 | New document modal (split from debt-documents.js): openNewDocumentModal, _pickNewDocFiles, _renderNewDocFileList, _removeNewDocFileAt, calcNewDocTotal, calcNewDocFromTotal, _ndAutoCalcDueDate, saveNewDocument (server-side duplicate check with override + multi-file + saveDocFile), generateDocInternalNumber |
 | 44c | debt-doc-items.js | modules/debt/debt-doc-items.js | 157 | Editable document items: _buildEditableItemsHtml (editable inputs table), _edItemRowHtml, _edItemCalcRow (auto-calc), _edItemAddRow, _edItemRemoveRow, _edItemRecalcTotal (syncs with subtotal), _gatherEditedItems, _saveEditedItems (to ocr_extractions), _buildReceiptItemsHtml (read-only) |
@@ -80,6 +80,7 @@
 | 52 | inventory-return.js | modules/inventory/inventory-return.js | ~218 | Supplier return initiation from inventory: openSupplierReturnModal (validates selection, same-supplier check, items preview), _doConfirmSupplierReturn (PIN-verified, creates return+items, decrements inventory, writeLog) |
 | 52b | inventory-returns-tab.js | modules/inventory/inventory-returns-tab.js | 269 | Inventory returns (זיכויים) tab: initReturnsTab, loadReturnsData (status/supplier/date/search filtering), renderReturnsFilters, renderReturnsList (accordion table with bulk selection), toggleReturnsHistory, getReturnsCount (cached badge count) |
 | 52c | inventory-returns-actions.js | modules/inventory/inventory-returns-actions.js | 164 | Returns tab actions: markAgentPicked (PIN-verified), sendToBox (navigate to shipments wizard), bulkSendToBox (validates same supplier), bulkAction (bulk status update), exportReturnsExcel |
+| 52d | incoming-invoices.js | modules/inventory/incoming-invoices.js | 255 | Incoming invoices tab: loadIncomingInvoicesTab (drag-drop file upload + supplier select + submit to debt), _submitIncomingInvoice (upload + create pending_invoice doc), _loadRecentPendingInvoices (last 10 table) |
 | 51b | debt-returns-tab.js | modules/debt/debt-returns-tab.js | 365 | Global debt returns (credit tracking) tab: initDebtReturnsTab, loadDebtReturns (multi-status filtering), renderDebtReturnsList (accordion with bulk selection), renderDebtReturnsSummary, toggleDebtReturnsHistory |
 | 51c | debt-returns-tab-actions.js | modules/debt/debt-returns-tab-actions.js | 184 | Debt returns actions: markDebtCredited (modal + PIN), _execMarkCredited, bulkMarkCredited, exportDebtReturnsExcel |
 | 53 | file-upload.js | js/file-upload.js | 308 | File upload helper: uploadSupplierFile, getSupplierFileUrl (signed URLs), renderFilePreview, pickAndUploadFile, pickAndUploadFiles (multi-file), fetchDocFiles (with fallback to legacy file_url), saveDocFile (to supplier_document_files), renderFileGallery (thumbnails + page nav + delete buttons), _deleteGalleryFile (confirm + delete from DB + re-render), _renderSingleFilePreview |
@@ -1147,6 +1148,17 @@
 | `sendToBox` | `(returnId, supplierId)` | Navigate to shipments wizard with return pre-filled |
 | `bulkSendToBox` | `()` | Validate selected returns are same supplier, navigate to shipments wizard |
 | `exportReturnsExcel` | `()` | Export filtered returns data to Excel file |
+
+### modules/inventory/incoming-invoices.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `loadIncomingInvoicesTab` | `()` | Async. Renders incoming invoices form: supplier dropdown (createSearchSelect), drag-drop file zone, submit button, recent pending table. Called from showTab('incoming-invoices') |
+| `_submitIncomingInvoice` | `()` | Async. Validates supplier + file, uploads via uploadSupplierFile, generates INV-NNNNN internal number, creates supplier_document with status=pending_invoice + missing_price=true, saves file record, clears form, refreshes table |
+| `_loadRecentPendingInvoices` | `()` | Async. Queries last 10 pending_invoice documents, renders table with status badge |
+| `_initIncInvDropzone` | `()` | Sets up drag/drop and click-to-pick events on the drop zone |
+| `_stageIncInvFile` | `(file)` | Validates file type/size, stores in _incInvFile, shows preview with remove button |
+| `_clearIncInvFile` | `()` | Clears staged file and resets dropzone UI |
 
 ### modules/permissions/employee-list.js
 

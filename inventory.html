@@ -45,6 +45,7 @@
   <button data-tab="access-sync" data-tab-permission="sync.view" onclick="showTab('access-sync')">&#128260; סנכרון Access</button>
   <button data-tab="stock-count" data-tab-permission="stock_count.create" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
   <button data-tab="returns" onclick="showTab('returns')">&#128260; זיכויים</button>
+  <button data-tab="incoming-invoices" onclick="showTab('incoming-invoices')">&#128232; חשבוניות נכנסות</button>
 
 </nav>
 
@@ -535,6 +536,10 @@
   <div id="returns-tab"></div>
 </section>
 
+<!-- ========== TAB: INCOMING INVOICES ========== -->
+<section id="tab-incoming-invoices" class="tab">
+</section>
+
 </main>
 
 <!-- Login Modal -->
@@ -866,6 +871,7 @@
 <script src="modules/inventory/inventory-return.js"></script>
 <script src="modules/inventory/inventory-returns-tab.js"></script>
 <script src="modules/inventory/inventory-returns-actions.js"></script>
+<script src="modules/inventory/incoming-invoices.js"></script>
 <script src="modules/goods-receipts/goods-receipt.js"></script>
 <script src="modules/goods-receipts/receipt-form.js"></script>
 <script src="modules/goods-receipts/receipt-ocr.js"></script>

@@ -305,6 +305,7 @@ function showTab(name) {
   if (name === 'access-sync') { renderAccessSyncTab(); loadWatcherStatus(); loadSyncLog(); loadSyncSummary(); loadLastActivity(); loadPendingBadge(); }
   if (name === 'stock-count') loadStockCountTab();
   if (name === 'returns') initReturnsTab();
+  if (name === 'incoming-invoices' && typeof loadIncomingInvoicesTab === 'function') loadIncomingInvoicesTab();
   if (name === 'reduction') {
     var rw = $('reduction-help-wrap');
     if (rw && !rw.querySelector('.help-banner-wrap')) {

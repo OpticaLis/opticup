@@ -93,8 +93,44 @@ async function loadDebtSummary() {
     // Aging report — reuse already-fetched docs
     loadAgingReport(docs || []);
 
+    // Pending invoices banner (non-blocking)
+    _loadPendingInvoiceBanner();
+
   } catch (e) {
     console.error('loadDebtSummary error:', e);
+  }
+}
+
+/**
+ * Banner for pending_invoice documents — shown above summary cards
+ */
+async function _loadPendingInvoiceBanner() {
+  try {
+    var { count, error } = await sb.from(T.SUP_DOCS)
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', getTenantId())
+      .eq('status', 'pending_invoice')
+      .eq('is_deleted', false);
+    if (error) count = 0;
+    var el = document.getElementById('pending-invoice-banner');
+    if (!el) {
+      // Create banner element before debt-cards
+      var cards = document.querySelector('.debt-cards');
+      if (!cards) return;
+      el = document.createElement('div');
+      el.id = 'pending-invoice-banner';
+      cards.parentNode.insertBefore(el, cards);
+    }
+    if (count > 0) {
+      el.style.cssText = 'background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer';
+      el.innerHTML =
+        '<span style="font-size:.92rem;color:#92400e">\uD83D\uDCE8 ' + count + ' \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05D5\u05EA \u05DE\u05DE\u05EA\u05D9\u05E0\u05D5\u05EA \u05DC\u05D8\u05D9\u05E4\u05D5\u05DC</span>' +
+        '<button class="btn-sm" style="background:#f59e0b;color:#fff" onclick="switchDebtTab(\'documents\')">\u05E6\u05E4\u05D4</button>';
+    } else {
+      el.style.display = 'none';
+    }
+  } catch (e) {
+    console.warn('_loadPendingInvoiceBanner error:', e);
   }
 }
 

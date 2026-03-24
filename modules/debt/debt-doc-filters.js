@@ -178,7 +178,7 @@ function applyDocFilters() {
     } else {
       // Toolbar status buttons
       var pass = false;
-      if (sf.open && (d.status === 'open' || d.status === 'partially_paid' || d.status === 'draft' || d.status === 'linked')) pass = true;
+      if (sf.open && (d.status === 'open' || d.status === 'partially_paid' || d.status === 'draft' || d.status === 'linked' || d.status === 'pending_invoice')) pass = true;
       if (sf.paid && d.status === 'paid') pass = true;
       if (sf.cancelled && d.status === 'cancelled') pass = true;
       if (!pass) return false;
