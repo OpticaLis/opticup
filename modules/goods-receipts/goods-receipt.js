@@ -297,6 +297,15 @@ function openNewReceipt() {
   $('rcpt-barcode-search').value = '';
   clearAlert('rcpt-form-alerts');
 
+  // Reset file attachment + init dropzone
+  _pendingReceiptFile = null;
+  _pendingReceiptFileUrl = null;
+  var zone = $('rcpt-attach-dropzone');
+  var preview = $('rcpt-attach-preview');
+  if (zone) zone.style.display = '';
+  if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
+  _initReceiptDropzone();
+
   // Enable inputs
   toggleReceiptFormInputs(false);
 

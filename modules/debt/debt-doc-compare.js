@@ -41,8 +41,9 @@ async function buildComparisonSection(doc) {
       }
     } catch (e) { /* OCR data optional */ }
 
+    var vatRate = Number(doc.vat_rate) || 0;
     var matched = _cmpMatchItems(poItems, rcptItems, ocrItems);
-    return _cmpRenderSection(matched, poItems.length > 0, ocrItems.length > 0);
+    return _cmpRenderSection(matched, poItems.length > 0, ocrItems.length > 0, vatRate);
   } catch (e) {
     console.warn('buildComparisonSection error:', e);
     return '';
@@ -142,12 +143,13 @@ function _cmpBuildRow(po, rcpt, ocr) {
   var rcptQty = rcpt ? (rcpt.quantity || 0) : null;
   var ocrQty = ocr ? (ocr.quantity || 0) : null;
   var poPrice = po ? (po.unit_cost || 0) : null;
+  var rcptPrice = rcpt ? (rcpt.unit_cost || 0) : null;
   var ocrPrice = ocr ? (ocr.unit_price || 0) : null;
 
   var status = _cmpStatus(po, rcpt, ocr, poQty, rcptQty, ocrQty, poPrice, ocrPrice);
 
   return { label: label, poQty: poQty, rcptQty: rcptQty, ocrQty: ocrQty,
-           poPrice: poPrice, ocrPrice: ocrPrice, status: status };
+           poPrice: poPrice, rcptPrice: rcptPrice, ocrPrice: ocrPrice, status: status };
 }
 
 function _cmpStatus(po, rcpt, ocr, poQty, rcptQty, ocrQty, poPrice, ocrPrice) {
@@ -169,14 +171,17 @@ function _cmpStatus(po, rcpt, ocr, poQty, rcptQty, ocrQty, poPrice, ocrPrice) {
 // =========================================================
 // 5. Render HTML
 // =========================================================
-function _cmpRenderSection(rows, hasPO, hasOCR) {
+function _cmpRenderSection(rows, hasPO, hasOCR, vatRate) {
   if (!rows.length) return '';
+  vatRate = vatRate || 0;
+  var hasVAT = vatRate > 0;
 
   // Totals
   var totPO = 0, totRcpt = 0, totOCR = 0;
   rows.forEach(function(r) {
     if (r.poQty != null && r.poPrice != null) totPO += r.poQty * r.poPrice;
-    if (r.rcptQty != null) totRcpt += r.rcptQty * (r.poPrice || 0);
+    if (r.rcptQty != null && r.rcptPrice != null) totRcpt += r.rcptQty * r.rcptPrice;
+    else if (r.rcptQty != null) totRcpt += r.rcptQty * (r.poPrice || 0);
     if (r.ocrQty != null && r.ocrPrice != null) totOCR += r.ocrQty * r.ocrPrice;
   });
 
@@ -199,17 +204,31 @@ function _cmpRenderSection(rows, hasPO, hasOCR) {
   if (hasOCR) h += '<th style="text-align:center">\u05D1\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA</th>';
   if (hasPO) h += '<th style="text-align:center">\u05DE\u05D7\u05D9\u05E8 PO</th>';
   if (hasOCR) h += '<th style="text-align:center">\u05DE\u05D7\u05D9\u05E8 \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA</th>';
+  if (hasVAT) h += '<th style="text-align:center">\u05DE\u05E2"\u05DE</th>';
+  if (hasVAT) h += '<th style="text-align:center">\u05DE\u05D7\u05D9\u05E8 \u05DB\u05D5\u05DC\u05DC \u05DE\u05E2"\u05DE</th>';
   h += '<th style="text-align:center">\u05E1\u05D8\u05D8\u05D5\u05E1</th></tr></thead><tbody>';
 
+  var totVAT = 0, totInclVAT = 0;
   for (var i = 0; i < rows.length; i++) {
     var r = rows[i];
     var st = r.status || {};
+    // Use receipt price if available, else PO price, for VAT calc
+    var linePrice = r.rcptPrice != null ? r.rcptPrice : (r.poPrice || 0);
+    var lineQty = r.rcptQty != null ? r.rcptQty : (r.poQty || 0);
+    var lineSubtotal = lineQty * linePrice;
+    var lineVAT = hasVAT ? Math.round(lineSubtotal * vatRate) / 100 : 0;
+    var lineInclVAT = lineSubtotal + lineVAT;
+    totVAT += lineVAT;
+    totInclVAT += lineInclVAT;
+
     h += '<tr><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escapeHtml(r.label) + '">' + escapeHtml(r.label) + '</td>';
     if (hasPO) h += '<td style="text-align:center">' + _cmpCell(r.poQty) + '</td>';
     h += '<td style="text-align:center">' + _cmpCell(r.rcptQty) + '</td>';
     if (hasOCR) h += '<td style="text-align:center">' + _cmpCell(r.ocrQty) + '</td>';
     if (hasPO) h += '<td style="text-align:center">' + _cmpPrice(r.poPrice) + '</td>';
     if (hasOCR) h += '<td style="text-align:center">' + _cmpPrice(r.ocrPrice) + '</td>';
+    if (hasVAT) h += '<td style="text-align:center">' + _cmpPrice(lineVAT) + '</td>';
+    if (hasVAT) h += '<td style="text-align:center">' + _cmpPrice(lineInclVAT) + '</td>';
     h += '<td style="text-align:center;white-space:nowrap"><span title="' + escapeHtml(st.text || '') + '">' +
       (st.icon || '') + ' ' + escapeHtml(st.text || '') + '</span></td>';
     h += '</tr>';
@@ -228,6 +247,8 @@ function _cmpRenderSection(rows, hasPO, hasOCR) {
   }
   if (hasPO) h += '<td></td>';
   if (hasOCR) h += '<td></td>';
+  if (hasVAT) h += '<td style="text-align:center">\u20AA' + totVAT.toFixed(2) + '</td>';
+  if (hasVAT) h += '<td style="text-align:center">\u20AA' + totInclVAT.toFixed(2) + '</td>';
   h += '<td></td></tr>';
 
   h += '</tbody></table></div></div>';

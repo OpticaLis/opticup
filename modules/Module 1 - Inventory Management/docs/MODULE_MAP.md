@@ -26,9 +26,9 @@
 | 15 | po-actions.js | modules/purchasing/po-actions.js | 235 | PO lifecycle actions: savePODraft (with duplicate row detection), sendPurchaseOrder, cancelPO, exportPOExcel, exportPOPdf |
 | 16 | po-view-import.js | modules/purchasing/po-view-import.js | 319 | Read-only PO view with received qty tracking, importPOToInventory (creates/updates inventory from PO items), createPOForBrand (from low stock modal), PO event delegation |
 | 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 305 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (populates items from PO), updatePOStatusAfterReceipt, openNewReceipt, _initRcptSupplierSelect (searchable supplier dropdown via createSearchSelect) |
-| 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 345 | Receipt form: openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow, getReceiptItems, updateReceiptItemsStats, addNewReceiptRow, showReceiptGuide, _pickReceiptFile (file attach) |
+| 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 392 | Receipt form: openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow, getReceiptItems, updateReceiptItemsStats, addNewReceiptRow, showReceiptGuide, _pickReceiptFile (file picker), _initReceiptDropzone (drag&drop zone), _stageReceiptFile (validate+preview), _removeReceiptFile |
 | 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 182 | Receipt save/cancel: saveReceiptDraft, saveReceiptDraftInternal, cancelReceipt, backToReceiptList |
-| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 324 | Receipt confirmation: confirmReceipt (hard-blocks without file), _confirmReceiptWithDecisions (handles rollback false), confirmReceiptCore (atomic with compensating rollback on failure), confirmReceiptById, createNewInventoryFromReceiptItem (returns created row). Phase 2c: mandatory file, atomic rollback |
+| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 377 | Receipt confirmation: confirmReceipt (hard-blocks without file, match confirmation dialog), _confirmReceiptWithDecisions (handles rollback false), confirmReceiptCore (atomic with compensating rollback on failure), confirmReceiptById, createNewInventoryFromReceiptItem (returns created row), _showMatchConfirmDialog (match/mismatch/cancel before PIN). Phase 2c: mandatory file, atomic rollback |
 | 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 166 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt. Always creates doc even when subtotal=0 (sets missing_price=true). Uploads attached file. Phase 8: alerts finance manager via alertPrepaidNewDocument |
 | 19d | receipt-ocr.js | modules/goods-receipts/receipt-ocr.js | 295 | OCR integration: initReceiptOCR (injects scan button), _rcptOcrScan (upload + Edge Function call), _applyOCRToReceipt (auto-fill supplier/items, delegates items to review UI), _rcptOcrFC/_rcptOcrAddConfDot (per-field confidence dots), _rcptOcrSuggestPO (PO auto-suggestion), _rcptOcrShowBanner (confidence banner), _rcptOcrPreviewDoc (source doc modal), _rcptOcrUpdateTemplate (header + item learning), _patchReceiptConfirmForOCR |
 | 19e | receipt-ocr-review.js | modules/goods-receipts/receipt-ocr-review.js | 337 | Item matching + review UI: _rcptOcrParseDescription (brand alias map, regex extraction), _rcptOcrMatchItem (inventory ILIKE with limit), _rcptOcrClassifyItems (matched/new/unknown), _rcptOcrShowReview (Modal with color-coded table, brand search-select), _rcptOcrCollectReviewData, _rcptOcrApplyToForm, _rcptOcrBuildItemCorrections, _rcptOcrSaveItemLearning (item alias learning) |
@@ -67,7 +67,7 @@
 | 44b | debt-doc-new.js | modules/debt/debt-doc-new.js | 205 | New document modal (split from debt-documents.js): openNewDocumentModal, _pickNewDocFiles, _renderNewDocFileList, _removeNewDocFileAt, calcNewDocTotal, calcNewDocFromTotal, _ndAutoCalcDueDate, saveNewDocument (server-side duplicate check with override + multi-file + saveDocFile), generateDocInternalNumber |
 | 44c | debt-doc-items.js | modules/debt/debt-doc-items.js | 157 | Editable document items: _buildEditableItemsHtml (editable inputs table), _edItemRowHtml, _edItemCalcRow (auto-calc), _edItemAddRow, _edItemRemoveRow, _edItemRecalcTotal (syncs with subtotal), _gatherEditedItems, _saveEditedItems (to ocr_extractions), _buildReceiptItemsHtml (read-only) |
 | 44d | debt-doc-edit.js | modules/debt/debt-doc-edit.js | 388 | Document edit modal: editDocument (amounts readonly on receipt-linked docs unless missing_price, info notes), _editDocAttachMore (choice modal: save only vs save+OCR), _showAttachChoiceModal, _doAttachFiles, _editDocCalc, saveDocumentEdits (+_saveEditedItems), _learnFromDocumentEdits, _buildDocActionToolbar (OCR only on standalone docs), _softDeleteDocument |
-| 44e | debt-doc-compare.js | modules/debt/debt-doc-compare.js | 244 | PO vs Receipt vs Invoice comparison: buildComparisonSection(doc), _cmpMatchItems (barcode+brand/model fallback), _cmpFindMatch, _cmpFindOcrMatch (fuzzy description), _cmpBuildRow, _cmpStatus (match/price-diff/missing/not-in-po/invoice-only), _cmpRenderSection (dynamic columns), _cmpCell, _cmpPrice |
+| 44e | debt-doc-compare.js | modules/debt/debt-doc-compare.js | 265 | PO vs Receipt vs Invoice comparison: buildComparisonSection(doc), _cmpMatchItems (barcode+brand/model fallback), _cmpFindMatch, _cmpFindOcrMatch (fuzzy description), _cmpBuildRow (includes rcptPrice), _cmpStatus (match/price-diff/missing/not-in-po/invoice-only), _cmpRenderSection (dynamic columns + VAT + total incl VAT), _cmpCell, _cmpPrice |
 | 45 | debt-doc-link.js | modules/debt/debt-doc-link.js | 292 | Delivery note → invoice linking: openLinkToInvoiceModal (shows supplier's invoices with auto-sum), linkDeliveryToInvoice (creates document_links record, updates status to linked), _renderLinkSummary (linked amounts vs invoice total comparison), openLinkDeliveryNotesModal, _extractDeliveryNoteRefs, _toggleAllLinkNotes, _updateLinkNotesSum, _linkSelectedNotes |
 | 46 | debt-payments.js | modules/debt/debt-payments.js | 229 | Payments tab: loadPaymentsTab (fetch payments+methods+suppliers+allocations+documents), renderPaymentsToolbar (filters + add button), applyPayFilters (client-side), renderPaymentsTable (with כנגד doc numbers), viewPayment (detail modal with allocation table) |
 | 47 | debt-payment-wizard.js | modules/debt/debt-payment-wizard.js | 146 | Payment wizard steps 1-2: openNewPaymentWizard (state reset + modal), supplier selection with debt summary + withholding tax rate lookup, payment details form with auto-calc withholding tax |
@@ -427,7 +427,9 @@
 | `updateReceiptItemsStats` | `()` | Calculates and displays item/unit/new/existing counts |
 | `addNewReceiptRow` | `()` | Async. Generates barcode via generateNextBarcode(), then calls addReceiptItemRow(). Used by manual "שורה חדשה" button |
 | `showReceiptGuide` | `()` | Opens modal overlay with employee quick-reference guide (RECEIPT_GUIDE_TEXT constant) |
-| `_pickReceiptFile` | `()` | Opens hidden file input, stores selected file in _pendingReceiptFile, updates attach button label |
+| `_pickReceiptFile` | `()` | Opens hidden file input, delegates to _stageReceiptFile on selection |
+| `_initReceiptDropzone` | `()` | Adds drag/drop + click events to rcpt-attach-dropzone element. Called on openNewReceipt/openExistingReceipt |
+| `_stageReceiptFile` | `(file)` | Validates file type/size, stores in _pendingReceiptFile, shows preview with remove button, hides dropzone |
 
 ### modules/goods-receipts/receipt-actions.js
 
@@ -443,7 +445,8 @@
 | Function | Parameters | Description |
 |----------|------------|-------------|
 | `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Core confirmation with atomic rollback: tracks successful increments, rolls back all on failure (returns false). Increments inventory via `sb.rpc('increment_inventory')`, auto-updates cost_price, creates new items, updates PO status, calls createDocumentFromReceipt. Phase 2c: compensating rollback |
-| `confirmReceipt` | `()` | Async. UI-facing: validates (hard-blocks without file), PIN verification, saves draft, then calls confirmReceiptCore. Phase 2c: mandatory file attachment |
+| `confirmReceipt` | `()` | Async. UI-facing: validates (hard-blocks without file), match confirmation dialog, PIN verification, saves draft, then calls confirmReceiptCore. Phase 2c: mandatory file attachment |
+| `_showMatchConfirmDialog` | `(rcptNumber)` | Returns Promise: 'match' (all ok), 'mismatch' (acknowledged), or null (cancelled). Shown before PIN in confirmReceipt |
 | `_confirmReceiptWithDecisions` | `(rcptNumber, decisions, items)` | Async. Saves draft, applies PO decisions, calls confirmReceiptCore. Handles rollback (result===false) gracefully |
 | `createNewInventoryFromReceiptItem` | `(item, receiptId, rcptNumber)` | Async. Creates inventory row using pre-assigned barcode from receipt item (falls back to generateNextBarcode). Returns created row |
 | `confirmReceiptById` | `(receiptId)` | Async. Confirms receipt from list view without opening form |
@@ -1016,15 +1019,15 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `buildComparisonSection` | `(doc)` | Async. Main entry: fetches receipt, PO, OCR data and renders comparison table in View modal |
+| `buildComparisonSection` | `(doc)` | Async. Main entry: fetches receipt, PO, OCR data, reads doc.vat_rate, renders comparison table in View modal |
 | `_cmpMatchItems` | `(poItems, receiptItems, ocrItems)` | Matches items across 3 data sources by barcode then brand+model+size+color fallback |
 | `_cmpFindMatch` | `(item, candidates, matchedSet)` | Finds best match for an item in candidate list (barcode or normalized fields) |
 | `_cmpFindOcrMatch` | `(item, ocrItems, matchedSet)` | Fuzzy matches OCR items by description containing model number |
-| `_cmpBuildRow` | `(po, rcpt, ocr)` | Builds a comparison row object from matched items |
+| `_cmpBuildRow` | `(po, rcpt, ocr)` | Builds a comparison row object from matched items (includes rcptPrice) |
 | `_cmpStatus` | `(row)` | Determines status icon: ✅ match, ⚠️ price diff, 🔴 not in PO, 📦 missing, ❓ invoice only |
-| `_cmpRenderSection` | `(rows, totals, hasPO, hasOCR)` | Renders HTML table with dynamic columns based on available data sources |
-| `_cmpCell` | `(item, field)` | Renders a single comparison cell with diff highlighting |
-| `_cmpPrice` | `(amount)` | Formats price with ₪ symbol |
+| `_cmpRenderSection` | `(rows, hasPO, hasOCR, vatRate)` | Renders HTML table with dynamic columns. When vatRate>0, adds מע"מ and מחיר כולל מע"מ columns |
+| `_cmpCell` | `(val)` | Renders a single comparison cell (value or dash) |
+| `_cmpPrice` | `(val)` | Formats price with ₪ symbol |
 
 ### modules/debt/debt-doc-filters.js
 
