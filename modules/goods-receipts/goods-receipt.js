@@ -251,6 +251,30 @@ async function loadReceiptTab() {
   hideLoading();
 }
 
+// --- Searchable supplier dropdown for receipts ---
+function _initRcptSupplierSelect(initialValue) {
+  var wrap = $('rcpt-supplier-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  // Remove any previous hidden input with this id
+  var old = $('rcpt-supplier');
+  if (old && old !== wrap) old.id = '';
+  var supNames = (typeof suppliers !== 'undefined' ? suppliers : []).filter(Boolean);
+  var ss = createSearchSelect(supNames, initialValue || '', function(val) {
+    loadPOsForSupplier(val);
+  });
+  // Give the hidden input the id so all $('rcpt-supplier').value reads work
+  ss._hidden.id = 'rcpt-supplier';
+  ss._hidden.className = '';
+  // Listen for programmatic value changes (e.g., from OCR auto-fill)
+  ss._hidden.addEventListener('change', function() {
+    // Sync visible input with hidden value
+    if (ss._input) ss._input.value = ss._hidden.value;
+    loadPOsForSupplier(ss._hidden.value);
+  });
+  wrap.appendChild(ss);
+}
+
 function openNewReceipt() {
   currentReceiptId = null;
   rcptEditMode = false;
@@ -260,9 +284,8 @@ function openNewReceipt() {
   $('rcpt-form-title').textContent = '📦 קבלה חדשה';
   $('rcpt-type').value = 'delivery_note';
   $('rcpt-number').value = '';
-  $('rcpt-supplier').innerHTML = '<option value="">בחר ספק...</option>' + suppliers.map(s => `<option value="${s}">${s}</option>`).join('');
-  $('rcpt-supplier').value = '';
-  $('rcpt-supplier').onchange = () => loadPOsForSupplier($('rcpt-supplier').value);
+  _initRcptSupplierSelect('');
+
   $('rcpt-po-select').innerHTML = '<option value="">ללא — קבלה חופשית</option>';
   $('rcpt-po-select').disabled = true;
   $('rcpt-po-select').onchange = () => onReceiptPoSelected();

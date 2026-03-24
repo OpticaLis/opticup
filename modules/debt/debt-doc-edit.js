@@ -43,6 +43,12 @@ async function editDocument(docId) {
         receiptItemsHtml = _buildReceiptItemsHtml(rcptItems);
       }
     } catch (e) { console.warn('Receipt items load skipped:', e.message); }
+  } else if (doc.status === 'pending_invoice') {
+    receiptItemsHtml = '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-top:10px">' +
+      '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:10px 14px;font-size:.85rem;color:#92400e">' +
+        '\uD83D\uDCE8 \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u05D6\u05D5 \u05D8\u05E8\u05DD \u05E9\u05D5\u05D9\u05DB\u05D4 \u05DC\u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05DE\u05E9\u05DC\u05D5\u05D7 \u2014 ' +
+        '\u05DC\u05D0\u05D7\u05E8 \u05E1\u05E8\u05D9\u05E7\u05EA AI, \u05E7\u05E9\u05E8 \u05DC\u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05D3\u05E8\u05DA \u05DB\u05E4\u05EA\u05D5\u05E8 \'\u05E7\u05E9\u05E8 \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA\'' +
+      '</div></div>';
   }
 
   // Comparison table (PO vs Receipt vs Invoice)
@@ -70,16 +76,21 @@ async function editDocument(docId) {
         '<span>\u05E1\u05D8\u05D8\u05D5\u05E1: <span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></span>' +
         (uploadedAt ? '<span>\u05D4\u05D5\u05E2\u05DC\u05D4: ' + escapeHtml(uploadedAt) + '</span>' : '') +
       '</div>' +
-      // Editable fields
+      // Editable fields — amounts locked when receipt-linked (unless missing_price)
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.88rem">' +
         '<label>\u05E1\u05D5\u05D2 \u05DE\u05E1\u05DE\u05DA<select id="ed-type" class="nd-field">' + typeOpts + '</select></label>' +
         '<label>\u05DE\u05E1\u05E4\u05E8 \u05DE\u05E1\u05DE\u05DA<input id="ed-number" class="nd-field" value="' + escapeHtml(doc.document_number || '') + '"></label>' +
         '<label>\u05EA\u05D0\u05E8\u05D9\u05DA \u05DE\u05E1\u05DE\u05DA<input type="date" id="ed-date" class="nd-field" value="' + (doc.document_date || '') + '"></label>' +
         '<label>\u05EA\u05D0\u05E8\u05D9\u05DA \u05EA\u05E9\u05DC\u05D5\u05DD<input type="date" id="ed-due" class="nd-field" value="' + (doc.due_date || '') + '"></label>' +
-        '<label>\u05E1\u05DB\u05D5\u05DD \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DD<input type="number" id="ed-subtotal" step="0.01" class="nd-field" value="' + (Number(doc.subtotal) || 0) + '" oninput="_editDocCalc()"></label>' +
-        '<label>% \u05DE\u05E2"\u05DD<input type="number" id="ed-vat-rate" step="0.01" class="nd-field" value="' + (Number(doc.vat_rate) || 17) + '" oninput="_editDocCalc()"></label>' +
+        '<label>\u05E1\u05DB\u05D5\u05DD \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DD<input type="number" id="ed-subtotal" step="0.01" class="nd-field" value="' + (Number(doc.subtotal) || 0) + '" oninput="_editDocCalc()"' + (doc.goods_receipt_id && !doc.missing_price ? ' disabled style="background:var(--g100)"' : '') + '></label>' +
+        '<label>% \u05DE\u05E2"\u05DD<input type="number" id="ed-vat-rate" step="0.01" class="nd-field" value="' + (Number(doc.vat_rate) || 17) + '" oninput="_editDocCalc()"' + (doc.goods_receipt_id && !doc.missing_price ? ' disabled style="background:var(--g100)"' : '') + '></label>' +
         '<label>\u05DE\u05E2"\u05DD<input type="number" id="ed-vat" class="nd-field" value="' + (Number(doc.vat_amount) || 0).toFixed(2) + '" readonly style="background:var(--g100)"></label>' +
         '<label>\u05E1\u05D4"\u05DB<input type="number" id="ed-total" class="nd-field" value="' + (Number(doc.total_amount) || 0).toFixed(2) + '" readonly style="background:var(--g100)"></label>' +
+        (doc.goods_receipt_id
+          ? (doc.missing_price
+              ? '<div style="font-size:.8rem;color:#92400e;margin-top:2px;grid-column:1/-1">\u26A0\uFE0F \u05DE\u05D7\u05D9\u05E8\u05D9\u05DD \u05D7\u05E1\u05E8\u05D9\u05DD \u2014 \u05E2\u05D3\u05DB\u05DF \u05D0\u05EA \u05D4\u05E1\u05DB\u05D5\u05DE\u05D9\u05DD \u05DB\u05E9\u05D4\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u05DE\u05D2\u05D9\u05E2\u05D4</div>'
+              : '<div style="font-size:.8rem;color:var(--g500);margin-top:2px;grid-column:1/-1">\u05E1\u05DB\u05D5\u05DE\u05D9\u05DD \u05D7\u05D5\u05E9\u05D1\u05D5 \u05DE\u05E7\u05D1\u05DC\u05EA \u05D4\u05E1\u05D7\u05D5\u05E8\u05D4 \u2014 \u05DC\u05E2\u05E8\u05D9\u05DB\u05D4 \u05D9\u05E9 \u05DC\u05E9\u05E0\u05D5\u05EA \u05D1\u05E7\u05D1\u05DC\u05D4</div>')
+          : '') +
         '<label style="grid-column:1/-1">\u05D4\u05E2\u05E8\u05D5\u05EA<textarea id="ed-notes" rows="2" class="nd-field">' + escapeHtml(doc.notes || '') + '</textarea></label>' +
       '</div>' +
       // File gallery (rendered async)
@@ -325,7 +336,7 @@ function _buildDocActionToolbar(doc, type, docFiles) {
   // Group 1: Files
   btns.push('<button class="btn btn-sm" style="background:var(--primary,#1a73e8);color:#fff" ' +
     'onclick="_editDocAttachMore(\'' + docId + '\',\'' + suppId + '\')">\uD83D\uDCCE \u05E6\u05E8\u05E3 \u05E7\u05D1\u05E6\u05D9\u05DD</button>');
-  if (hasFiles && typeof triggerOCR === 'function') {
+  if (hasFiles && typeof triggerOCR === 'function' && !doc.goods_receipt_id) {
     // Use multi-file scan if document has multiple files, otherwise single scan
     var ocrFn = docFiles && docFiles.length > 1 && typeof scanDocumentAllFiles === 'function'
       ? 'closeAndRemoveModal(\'edit-doc-modal\');scanDocumentAllFiles(\'' + docId + '\',\'' + suppId + '\',null)'

@@ -9,6 +9,7 @@ function _isPayableDocType(code) { return !!_PAYABLE_DOC_CODES[code]; }
 
 const DOC_STATUS_MAP = {
   draft:           { he: '\u05DE\u05DE\u05EA\u05D9\u05DF \u05DC\u05D8\u05D9\u05E4\u05D5\u05DC', cls: 'dst-draft' },
+  pending_invoice: { he: '\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u05DC\u05D8\u05D9\u05E4\u05D5\u05DC', cls: 'dst-draft' },
   open:            { he: '\u05E4\u05EA\u05D5\u05D7',        cls: 'dst-open' },
   partially_paid:  { he: '\u05E9\u05D5\u05DC\u05DD \u05D7\u05DC\u05E7\u05D9\u05EA',  cls: 'dst-partial' },
   paid:            { he: '\u05E9\u05D5\u05DC\u05DD',        cls: 'dst-paid' },
@@ -114,6 +115,16 @@ function renderDocumentsTable(docs, opts) {
     var hasPrepaid = !!_docPrepaidSet[d.supplier_id];
     var ppBadge = hasPrepaid ? '<span style="background:#f59e0b;color:#fff;padding:1px 6px;border-radius:4px;font-size:11px;margin-right:4px">\u05DE\u05E7\u05D3\u05DE\u05D4</span>' : '';
     var uploadedAt = d.created_at ? new Date(d.created_at).toLocaleString('he-IL') : '';
+    // Source badge: receipt-linked vs standalone vs draft
+    var srcBadge = '';
+    if (d.status !== 'draft') {
+      srcBadge = d.goods_receipt_id
+        ? ' <span style="background:#dbeafe;color:#1e40af;padding:1px 5px;border-radius:3px;font-size:10px">\uD83D\uDCE6 \u05E7\u05D1\u05DC\u05D4</span>'
+        : ' <span style="background:#f3f4f6;color:#6b7280;padding:1px 5px;border-radius:3px;font-size:10px">\u270F\uFE0F \u05D9\u05D3\u05E0\u05D9</span>';
+    }
+    if (d.missing_price) {
+      srcBadge += ' <span style="background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:3px;font-size:10px">\u26A0\uFE0F \u05D7\u05E1\u05E8 \u05DE\u05D7\u05D9\u05E8</span>';
+    }
     // Row actions: view + pay + cancel only. All other actions moved to View modal.
     var actionBtns = '<button class="btn-sm" onclick="viewDocument(\'' + d.id + '\')">\u05E6\u05E4\u05D4</button>';
     if (_isPayableDocType(type.code)) {
@@ -125,7 +136,7 @@ function renderDocumentsTable(docs, opts) {
     var rowClass = d.status === 'draft' ? ' class="row-draft"' : '';
     return '<tr' + rowClass + '>' +
       '<td title="' + escapeHtml('\u05D4\u05D5\u05E2\u05DC\u05D4: ' + uploadedAt) + '">' + escapeHtml(d.document_date || '') + '</td>' +
-      '<td>' + escapeHtml(type.name_he || '') + '</td>' +
+      '<td>' + escapeHtml(type.name_he || '') + srcBadge + '</td>' +
       '<td>' + escapeHtml(d.document_number || '') + '</td>' +
       '<td>' + escapeHtml(d.internal_number || '') + '</td>' +
       (o.hideSupplierCol ? '' : '<td>' + ppBadge + escapeHtml(supMap[d.supplier_id] || '') + '</td>') +
@@ -233,13 +244,19 @@ function openPrepaidDeductModal(docId) {
 
 function _doPrepaidDeduct(docId, dealId) {
   var amt = Number(($('pp-deduct-amt') || {}).value) || 0;
-  if (amt <= 0) { setAlert('pp-deduct-alert', '\u05E1\u05DB\u05D5\u05DD \u05D7\u05D9\u05D9\u05D1 \u05DC\u05D4\u05D9\u05D5\u05EA \u05D7\u05D9\u05D5\u05D1\u05D9', 'e'); return; }
+  if (amt <= 0) { toast('\u05D9\u05E9 \u05DC\u05D4\u05D6\u05D9\u05DF \u05E1\u05DB\u05D5\u05DD \u05D7\u05D9\u05D5\u05D1\u05D9', 'e'); return; }
   var maxAmt = Number(($('pp-deduct-amt') || {}).max) || Infinity;
-  if (amt > maxAmt) { setAlert('pp-deduct-alert', '\u05E1\u05DB\u05D5\u05DD \u05D7\u05D5\u05E8\u05D2 \u05DE\u05D4\u05DE\u05E7\u05E1\u05D9\u05DE\u05D5\u05DD', 'e'); return; }
+  if (amt > maxAmt) { toast('\u05D4\u05E1\u05DB\u05D5\u05DD \u05D7\u05D5\u05E8\u05D2 \u05DE\u05D4\u05DE\u05E7\u05E1\u05D9\u05DE\u05D5\u05DD', 'e'); return; }
   promptPin('\u05E7\u05D9\u05D6\u05D5\u05D6 \u05DE\u05E2\u05E1\u05E7\u05EA \u05DE\u05E7\u05D3\u05DE\u05D4 \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
     showLoading('\u05DE\u05E7\u05D6\u05D6...'); try {
       var doc = _docData.find(function(d) { return d.id === docId; });
       if (!doc) throw new Error('doc not found');
+      // Server-side validation: check deal's actual remaining balance
+      var { data: dealRow, error: dealErr } = await sb.from(T.PREPAID_DEALS)
+        .select('total_prepaid, total_used').eq('id', dealId).eq('tenant_id', getTenantId()).single();
+      if (dealErr) throw dealErr;
+      var serverRemaining = (Number(dealRow.total_prepaid) || 0) - (Number(dealRow.total_used) || 0);
+      if (amt > serverRemaining) { toast('\u05D4\u05E1\u05DB\u05D5\u05DD \u05D7\u05D5\u05E8\u05D2 \u05DE\u05D9\u05EA\u05E8\u05EA \u05D4\u05E2\u05E1\u05E7\u05D4', 'e'); hideLoading(); return; }
       await sb.rpc('increment_prepaid_used', { p_deal_id: dealId, p_delta: amt });
       var newPaid = (Number(doc.paid_amount) || 0) + amt;
       await batchUpdate(T.SUP_DOCS, [{ id: docId, paid_amount: newPaid, status: newPaid >= (Number(doc.total_amount) || 0) ? 'paid' : 'partially_paid' }]);

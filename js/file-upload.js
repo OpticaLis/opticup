@@ -193,17 +193,28 @@ async function renderFileGallery(files, containerId) {
     return;
   }
 
-  // Resolve signed URLs
+  // Resolve signed URLs — carry file id for delete
   var resolved = [];
   for (var i = 0; i < files.length; i++) {
     var f = files[i];
     var signedUrl = f.signedUrl || await getSupplierFileUrl(f.file_url);
-    resolved.push({ url: signedUrl, name: f.file_name || f.file_url || '', path: f.file_url });
+    resolved.push({ id: f.id || null, url: signedUrl, name: f.file_name || f.file_url || '', path: f.file_url });
   }
 
+  // Store original files array for re-render after delete
+  container._galleryFiles = files;
+  container._galleryId = containerId;
+
   if (resolved.length === 1) {
-    // Single file — show full preview
-    _renderSingleFilePreview(resolved[0], container);
+    // Single file — show full preview with delete button
+    var rf = resolved[0];
+    var delHtml = rf.id ? '<div style="text-align:left;margin-bottom:4px">' +
+      '<button class="btn-sm" style="background:#ef4444;color:#fff;font-size:11px;padding:2px 8px" ' +
+      'onclick="_deleteGalleryFile(\'' + rf.id + '\',\'' + containerId + '\')">\u2715 מחק קובץ</button></div>' : '';
+    container.innerHTML = delHtml;
+    var previewDiv = document.createElement('div');
+    container.appendChild(previewDiv);
+    _renderSingleFilePreview(rf, previewDiv);
     return;
   }
 
@@ -217,22 +228,66 @@ async function renderFileGallery(files, containerId) {
   var thumbsEl = $(containerId + '-thumbs');
   resolved.forEach(function(rf, idx) {
     var ext = (rf.name || rf.url || '').split('.').pop().toLowerCase();
-    var thumb = document.createElement('button');
+    var thumb = document.createElement('div');
     thumb.className = 'file-gallery-thumb' + (idx === 0 ? ' active' : '');
+    thumb.style.position = 'relative';
     thumb.title = rf.name || ('עמוד ' + (idx + 1));
-    thumb.textContent = ext === 'pdf' ? '\uD83D\uDCC4' : '\uD83D\uDDBC\uFE0F';
-    thumb.insertAdjacentHTML('beforeend',
+    // Clickable area for selecting this file
+    var selectBtn = document.createElement('button');
+    selectBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1.2rem;padding:4px';
+    selectBtn.textContent = ext === 'pdf' ? '\uD83D\uDCC4' : '\uD83D\uDDBC\uFE0F';
+    selectBtn.insertAdjacentHTML('beforeend',
       '<span class="file-gallery-thumb-num">' + (idx + 1) + '</span>');
-    thumb.onclick = function() {
+    selectBtn.onclick = function() {
       thumbsEl.querySelectorAll('.file-gallery-thumb').forEach(function(t) { t.classList.remove('active'); });
       thumb.classList.add('active');
       _renderSingleFilePreview(rf, $(containerId + '-main'));
     };
+    thumb.appendChild(selectBtn);
+    // Delete button
+    if (rf.id) {
+      var delBtn = document.createElement('button');
+      delBtn.className = 'file-gallery-del';
+      delBtn.style.cssText = 'position:absolute;top:-4px;left:-4px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:1;padding:0;display:flex;align-items:center;justify-content:center';
+      delBtn.textContent = '\u2715';
+      delBtn.title = 'מחק קובץ';
+      delBtn.setAttribute('data-file-id', rf.id);
+      delBtn.setAttribute('data-container', containerId);
+      delBtn.onclick = function(e) {
+        e.stopPropagation();
+        _deleteGalleryFile(rf.id, containerId);
+      };
+      thumb.appendChild(delBtn);
+    }
     thumbsEl.appendChild(thumb);
   });
 
   // Show first file
   _renderSingleFilePreview(resolved[0], $(containerId + '-main'));
+}
+
+// Delete a file from the gallery — confirms, deletes from DB, re-renders
+async function _deleteGalleryFile(fileId, containerId) {
+  if (!fileId) return;
+  var ok = await confirmDialog('מחיקת קובץ', 'האם למחוק את הקובץ?');
+  if (!ok) return;
+  try {
+    showLoading('מוחק קובץ...');
+    var { error } = await sb.from('supplier_document_files').delete().eq('id', fileId);
+    if (error) throw error;
+    // Re-render gallery with updated file list
+    var container = $(containerId);
+    if (container && container._galleryFiles) {
+      var updated = container._galleryFiles.filter(function(f) { return f.id !== fileId; });
+      await renderFileGallery(updated, containerId);
+    }
+    toast('הקובץ נמחק');
+  } catch (e) {
+    console.error('_deleteGalleryFile error:', e);
+    toast('שגיאה במחיקת קובץ: ' + (e.message || ''), 'e');
+  } finally {
+    hideLoading();
+  }
 }
 
 function _renderSingleFilePreview(rf, container) {

@@ -4,40 +4,6 @@
 
 ---
 
-## Flow Review Phase 2 — 2026-03-24
-
-### DB
-- 046: pending_invoice status, missing_price column, goods_receipt_id UNIQUE partial index
-
-### Bug Fixes
-- C1: Supplier detail docs not showing (ai-ocr.js monkey-patch dropped opts)
-- C2: File gallery delete button added (confirmDialog + DB delete)
-- C3: OCR icon refresh (supplier-detail-aware reload)
-- PO supplier dropdown searchable (createSearchSelect with hidden input sync)
-- PO comparison "back to edit" button
-- Prepaid deduction server-side validation
-- OCR stub cleanup (_injectOCRScanIcons removed)
-
-### Improvements
-- Hard-block confirm without file attachment
-- Document always created even with subtotal=0 (missing_price flag)
-- Atomic confirm with compensating rollback
-- Visual badges on documents (📦 receipt / ✏️ manual / ⚠️ missing price)
-- OCR button hidden on receipt-linked documents
-- Amount fields readonly on receipt-linked documents
-- Cascade settlement info toast
-
-### New Features
-- "חשבוניות נכנסות" tab in inventory.html (incoming-invoices.js, 255 lines)
-- pending_invoice document status + dashboard banner
-- Receipt items displayed on document view
-- Entry doc link on inventory item history
-
-### Commits
-6230700, c116a4c, 3dd3bf8, 009e284, 43d878c, 16b947e, 39d0fda
-
----
-
 ## Phase 8-QA — Flow Review + Bug Fixes + Infrastructure (2026-03-22)
 
 ### OCR + Flow Review

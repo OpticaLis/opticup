@@ -74,9 +74,7 @@ async function openExistingReceipt(receiptId, viewOnly) {
     $('rcpt-form-title').textContent = viewOnly ? `📦 קבלה ${rcpt.receipt_number} (צפייה)` : `📦 עריכת קבלה ${rcpt.receipt_number}`;
     $('rcpt-type').value = rcpt.receipt_type || 'delivery_note';
     $('rcpt-number').value = rcpt.receipt_number || '';
-    $('rcpt-supplier').innerHTML = '<option value="">בחר ספק...</option>' + suppliers.map(s => `<option value="${s}">${s}</option>`).join('');
-    $('rcpt-supplier').value = rcpt.supplier_id ? (supplierCacheRev[rcpt.supplier_id] || '') : '';
-    $('rcpt-supplier').onchange = () => loadPOsForSupplier($('rcpt-supplier').value);
+    _initRcptSupplierSelect(rcpt.supplier_id ? (supplierCacheRev[rcpt.supplier_id] || '') : '');
     // Restore PO linkage
     rcptLinkedPoId = rcpt.po_id || null;
     if ($('rcpt-supplier').value) {

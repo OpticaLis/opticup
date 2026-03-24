@@ -78,41 +78,16 @@ For complete file index → see MODULE_MAP.md section 1.
 
 ### 3.5 קבלת סחורה (Goods Receipt)
 - Receipt list with status cards
-- Receipt form: document type + number + **searchable supplier dropdown** (createSearchSelect) + date
+- Receipt form: document type + number + supplier + date
 - Optional PO linkage (auto-populates items from PO)
 - Item entry: barcode search / manual / Excel import
 - Barcode mandatory on new items (pre-assigned via generateNextBarcode)
 - Employee quick-reference guide (ℹ️ button → modal)
 - Validation: sell price required, images for sync items
-- **Mandatory file attachment on confirm** (hard block — no bypass) (Phase Flow-Review-2)
-- **Atomic confirm with compensating rollback** — tracks successfulOps[], reverses on failure (Phase Flow-Review-2)
 - Confirm flow: qty update for existing items, create new items with barcode
-- **Auto-create supplier_documents** on receipt confirmation — always, even subtotal=0 (sets missing_price flag) (receipt-debt.js)
-- PO comparison report pre-confirm: matched/shortage/price gap/not-in-PO/missing + "✏️ חזור לעריכה" back button
-- **Auto-deduct from active prepaid deal** — moved to suppliers-debt with alert to finance (Phase 8)
+- **Auto-create supplier_documents** on receipt confirmation (receipt-debt.js)
+- **Auto-deduct from active prepaid deal** if supplier has one (Phase 4f)
 - Export confirmed receipts as Access-compatible Excel
-- **6 verified flows**: V1 (PO match), V2 (PO mismatch), V3 (no PO + OCR), V4 (blocked without file), V5 (incoming invoice), V6 (zero subtotal)
-
-### 3.5b חשבוניות נכנסות (Incoming Invoices) — Phase Flow-Review-2
-- Tab "📨 חשבוניות נכנסות" in inventory.html
-- Drag & drop file upload + searchable supplier dropdown
-- Creates supplier_document with status='pending_invoice', missing_price=true
-- Generates INV-NNNNN internal number via atomic RPC
-- Recent pending invoices table (last 10)
-- Processed in debt module: OCR scan → link to delivery notes → payment
-
-### 3.5c Document Types by Source — Phase Flow-Review-2
-- **Receipt-linked** (goods_receipt_id set): 📦 badge, OCR hidden, amounts readonly, receipt items visible
-- **Standalone** (goods_receipt_id null): ✏️ badge, OCR available, amounts editable
-- **Pending invoice** (status=pending_invoice): uploaded from inventory tab, missing_price=true, awaits OCR + linking
-- **Draft** (status=draft): historical import, yellow badge, awaits processing
-
-### 3.5d Traceability Chain — Phase Flow-Review-2
-```
-inventory item → goods_receipt_items → goods_receipt → supplier_document → document_links → payment
-```
-- Forward: item history shows "📄 נכנס עם: [doc type] #[number] מ-[supplier]"
-- Backward: document view shows receipt items (read-only) + PO comparison table
 
 ### 3.6 ספירת מלאי (Stock Count) — Phase 2a + Phase 7 + Hotfixes
 - **9 files**: stock-count-list (149), stock-count-session (314), stock-count-camera (350), stock-count-scan (265), stock-count-filters (245), stock-count-unknown (374), stock-count-approve (46), stock-count-view (228), stock-count-report (297) — 2,268 lines total
@@ -582,12 +557,6 @@ Standalone page: `shipments.html` with 9 JS files in `modules/shipments/`.
 **Edge Functions:**
 - `pin-auth` — PIN validation → signed JWT with tenant_id claim
 - `ocr-extract` (POST /functions/v1/ocr-extract) — Claude Vision OCR: accepts file_path + tenant JWT, returns extracted invoice fields with confidence scores
-
-**Cross-Module Contracts (Phase Flow-Review-2):**
-- incoming-invoices.js creates supplier_documents with status='pending_invoice', missing_price=true → debt module processes via OCR + delivery note linking
-- receipt-debt.js always creates supplier_document on confirm (even subtotal=0) → debt module shows with missing_price badge
-- item-history.js queries goods_receipt_items → supplier_documents for entry doc traceability
-- debt-doc-edit.js queries goods_receipt_items for receipt-linked document view (read-only items section)
 
 ---
 
