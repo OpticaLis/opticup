@@ -124,3 +124,33 @@ InventorySync Watcher started. Watching: C:\Users\User\Dropbox\InventorySync\sal
 [2026-03-23 08:39:14] Moved to failed: 9398.csv
 [2026-03-23 16:00:30] Exported 1 new items to export_20260323_180029.xls
 [2026-03-23 17:17:11] Export error: Export query failed: TypeError: fetch failed
+[2026-03-24 07:59:33] New file detected: 9400.csv
+[2026-03-24 07:59:33]   Barcode 0003989 not found — added to pending_sales
+[2026-03-24 07:59:33]   Warning: storage upload failed: The resource already exists
+[2026-03-24 07:59:34]   Skipping duplicate sync_log for 9400.csv
+[2026-03-24 07:59:34] 9400.csv | total: 1 | success: 0 | failed: 0
+[2026-03-24 07:59:34] Moved to processed: 9400.csv
+[2026-03-24 08:36:44] New file detected: 9401.csv
+[2026-03-24 08:36:44] Error processing 9401.csv: CSV file has no data rows
+[2026-03-24 08:36:44]   Uploaded to storage: 20260324_103644_9401.csv
+[2026-03-24 08:36:44] Moved to failed: 9401.csv
+[2026-03-24 08:58:59] New file detected: 9402.csv
+[2026-03-24 08:59:00]   Skipping duplicate inventory_log for 0001032
+[2026-03-24 08:59:00]   Skipping duplicate sync_log for 9402.csv
+[2026-03-24 08:59:00] 9402.csv | total: 1 | success: 1 | failed: 0
+[2026-03-24 08:59:00] Moved to processed: 9402.csv
+[2026-03-24 10:12:26] New file detected: 9396-.csv
+[2026-03-24 10:12:26]   Skipping duplicate sync_log for 9396-.csv
+[2026-03-24 10:12:26] 9396-.csv | total: 1 | success: 1 | failed: 0
+[2026-03-24 10:12:26] Moved to processed: 9396-.csv
+[2026-03-24 10:21:30] New file detected: 9403.csv
+[2026-03-24 10:21:30] 9403.csv | total: 1 | success: 1 | failed: 0
+[2026-03-24 10:21:30] Moved to processed: 9403.csv
+[2026-03-24 10:36:30] New file detected: 9404.csv
+[2026-03-24 10:36:31] 9404.csv | total: 1 | success: 1 | failed: 0
+[2026-03-24 10:36:31] Moved to processed: 9404.csv
+[2026-03-24 14:10:34] Export error: Export query failed: TypeError: fetch failed
+[2026-03-24 14:12:04] Export error: Export query failed: TypeError: fetch failed
+[2026-03-24 14:51:34] Export error: Export query failed: TypeError: fetch failed
+[2026-03-24 14:57:34] Export error: Export query failed: TypeError: fetch failed
+[2026-03-24 16:31:36] Export error: Export query failed: TypeError: fetch failed
