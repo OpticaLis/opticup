@@ -179,7 +179,7 @@ async function exportReceiptBarcodes(receiptId) {
   showLoading('\u05D8\u05D5\u05E2\u05DF \u05E4\u05E8\u05D9\u05D8\u05D9 \u05E7\u05D1\u05DC\u05D4...');
   try {
     var { data: items, error } = await sb.from(T.RCPT_ITEMS)
-      .select('barcode, brand, model, size, color, quantity, unit_cost, receipt_status, po_match_status')
+      .select('barcode, barcodes_csv, brand, model, size, color, quantity, unit_cost, receipt_status, po_match_status')
       .eq('receipt_id', receiptId)
       .eq('tenant_id', getTenantId());
     if (error) throw error;
@@ -190,13 +190,20 @@ async function exportReceiptBarcodes(receiptId) {
     });
     if (!printItems.length) { hideLoading(); toast('\u05D0\u05D9\u05DF \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DC\u05D9\u05D9\u05E6\u05D5\u05D0', 'w'); return; }
 
-    // Expand qty > 1 into individual rows (one barcode per physical frame)
+    // Expand barcodes into individual rows (one per physical frame)
     var rows = [];
     printItems.forEach(function(item) {
-      var qty = item.quantity || 1;
-      for (var q = 0; q < qty; q++) {
+      var barcodes = item.barcodes_csv ? item.barcodes_csv.split(',').filter(Boolean) : (item.barcode ? [item.barcode] : []);
+      // If no barcodes_csv, fall back to expanding by qty (legacy rows)
+      if (barcodes.length === 0) {
+        var qty = item.quantity || 1;
+        for (var q = 0; q < qty; q++) {
+          barcodes.push(item.barcode || '');
+        }
+      }
+      for (var b = 0; b < barcodes.length; b++) {
         rows.push({
-          '\u05D1\u05E8\u05E7\u05D5\u05D3': item.barcode || '',
+          '\u05D1\u05E8\u05E7\u05D5\u05D3': barcodes[b],
           '\u05DE\u05D5\u05EA\u05D2': item.brand || '',
           '\u05D3\u05D2\u05DD': item.model || '',
           '\u05E6\u05D1\u05E2': item.color || '',
