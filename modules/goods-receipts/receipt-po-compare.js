@@ -269,7 +269,8 @@ async function _poCompApplyDecisions(receiptId, decisions, receiptItems) {
         }]);
         if (ret && ret[0]) {
           await batchCreate(T.SUP_RETURN_ITEMS, [{
-            tenant_id: tid, return_id: ret[0].id, inventory_id: null,
+            tenant_id: tid, return_id: ret[0].id,
+            inventory_id: ri.inventory_id || null,
             barcode: ri.barcode || '', quantity: ri.quantity || 1,
             cost_price: parseFloat(ri.unit_cost) || 0,
             brand_name: ri.brand || '', model: ri.model || '', color: ri.color || '', size: ri.size || ''

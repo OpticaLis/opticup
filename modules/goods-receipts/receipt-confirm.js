@@ -117,20 +117,23 @@ async function confirmReceipt() {
   if (!supplierName) { toast('חובה לבחור ספק', 'e'); return; }
   if (!items.length) { toast('חובה להוסיף לפחות פריט אחד', 'e'); return; }
 
-  // Only require sell_price for new items — existing items already have sell_price in inventory
-  const newNoPrice = items.filter(i => i.is_new_item && (!i.sell_price || i.sell_price <= 0));
+  // Items entering inventory = new items that are NOT return/not_received
+  var enteringInventory = items.filter(i => i.is_new_item && i.receipt_status !== 'return' && i.receipt_status !== 'not_received');
+
+  // Only require sell_price for new items entering inventory
+  const newNoPrice = enteringInventory.filter(i => !i.sell_price || i.sell_price <= 0);
   if (newNoPrice.length) {
     toast(`${newNoPrice.length} פריטים חדשים חסרים מחיר מכירה`, 'e');
     return;
   }
 
-  const invalidItems = items.filter(i => i.is_new_item && (!i.brand || !i.model));
+  const invalidItems = enteringInventory.filter(i => !i.brand || !i.model);
   if (invalidItems.length) {
     toast('פריטים חדשים חייבים מותג ודגם', 'e');
     return;
   }
 
-  const noImg = items.filter(i => i.is_new_item && (i.sync === 'מלא' || i.sync === 'תדמית') && (!i.images || i.images.length === 0));
+  const noImg = enteringInventory.filter(i => (i.sync === 'מלא' || i.sync === 'תדמית') && (!i.images || i.images.length === 0));
   if (noImg.length) {
     toast(`${noImg.length} פריטים חדשים עם סנכרון חייבים תמונה`, 'e');
     return;
