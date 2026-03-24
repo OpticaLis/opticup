@@ -30,7 +30,8 @@
 | 18a | receipt-form-items.js | modules/goods-receipts/receipt-form-items.js | 282 | Receipt item row management (split from receipt-form.js): addReceiptItemRow (status dropdown with partial_received, partial qty input), getReceiptItems (returns barcodes[] array, effectiveQty, ordered_qty), _onReceiptStatusChange (handles partial_received with qty input), updateReceiptItemsStats (shows partial count), addNewReceiptRow, generateReceiptBarcodes (multi-barcode: N barcodes per row, tr.dataset.barcodes, "+N נוספים" indicator) |
 | 18b | receipt-guide.js | modules/goods-receipts/receipt-guide.js | 59 | Employee quick reference guide (split from receipt-form.js): RECEIPT_GUIDE_TEXT constant, showReceiptGuide() |
 | 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 190 | Receipt save/cancel: saveReceiptDraft (persists barcodes_csv+ordered_qty+receipt_status+from_po), saveReceiptDraftInternal (same), cancelReceipt, backToReceiptList |
-| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 460 | Receipt confirmation: confirmReceipt (validates barcodes count matches qty), confirmReceiptCore (multi-barcode: reads barcodes_csv, creates 1 inventory per barcode, first unit increments existing), createNewInventoryFromReceiptItem (always qty=1), _showMatchConfirmDialog, _confirmReceiptWithDecisions, confirmReceiptById |
+| 19b | receipt-confirm-items.js | modules/goods-receipts/receipt-confirm-items.js | 185 | Item-level inventory processing: confirmReceiptCore (multi-barcode: reads barcodes_csv, creates 1 inventory per barcode, first unit increments existing, rollback on failure, auto-create supplier doc), createNewInventoryFromReceiptItem (always qty=1) |
+| 19b2 | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 274 | Confirm flow orchestration: confirmReceipt (validates barcodes count matches qty), _confirmReceiptWithDecisions, confirmReceiptById, _receiptPinVerify, _showMatchConfirmDialog |
 | 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 167 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt(receiptId, supplierId, receiptItems, documentNumber). Uses real document number from receipt form (fallback GR-xxx). Excludes returned+not_received from subtotal. Always creates doc even when subtotal=0 (sets missing_price=true). Phase 8: alerts finance manager via alertPrepaidNewDocument |
 | 19d | receipt-ocr.js | modules/goods-receipts/receipt-ocr.js | 295 | OCR integration: initReceiptOCR (injects scan button), _rcptOcrScan (upload + Edge Function call), _applyOCRToReceipt (auto-fill supplier/items, delegates items to review UI), _rcptOcrFC/_rcptOcrAddConfDot (per-field confidence dots), _rcptOcrSuggestPO (PO auto-suggestion), _rcptOcrShowBanner (confidence banner), _rcptOcrPreviewDoc (source doc modal), _rcptOcrUpdateTemplate (header + item learning), _patchReceiptConfirmForOCR |
 | 19e | receipt-ocr-review.js | modules/goods-receipts/receipt-ocr-review.js | 337 | Item matching + review UI: _rcptOcrParseDescription (brand alias map, regex extraction), _rcptOcrMatchItem (inventory ILIKE with limit), _rcptOcrClassifyItems (matched/new/unknown), _rcptOcrShowReview (Modal with color-coded table, brand search-select), _rcptOcrCollectReviewData, _rcptOcrApplyToForm, _rcptOcrBuildItemCorrections, _rcptOcrSaveItemLearning (item alias learning) |
@@ -119,7 +120,7 @@
 
 | 79 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
 
-**Total: ~106 JS files across 14 module folders + 9 global files + 9 shared/js files + watcher-deploy/ (8-file standalone package), ~23,500 lines** (includes scripts/sync-watcher.js + sync-export.js)
+**Total: ~107 JS files across 14 module folders + 9 global files + 9 shared/js files + watcher-deploy/ (8-file standalone package), ~23,500 lines** (includes scripts/sync-watcher.js + sync-export.js)
 
 **Note (Flow Review Session):** 4 new files: ai-historical-process.js (182 lines, split from ai-historical-import.js — file grouping + upload processing), ai-ocr-review.js updated (174→262, delete+duplicate buttons), debt-doc-compare.js (244 lines, PO vs Receipt vs Invoice comparison table), debt-supplier-tabs.js (192 lines, split from debt-supplier-detail.js). Updated: ai-ocr.js (182→281, multi-file OCR merge), ai-historical-import.js (338→249, OCR removed — upload-only with draft status), receipt-ocr.js (+20 lines, hide OCR button when PO linked), receipt-confirm.js (-5 lines, fixed product_type constraint). Migrations: 044 (atomic internal doc number), 045 (draft status CHECK constraint). Iron Rule #13 added to CLAUDE.md (atomic RPC for sequential numbers).
 
@@ -459,16 +460,22 @@
 | `cancelReceipt` | `(receiptId)` | Async. Sets receipt status to 'cancelled' |
 | `backToReceiptList` | `()` | Resets form state, calls loadReceiptTab |
 
-### modules/goods-receipts/receipt-confirm.js
+### modules/goods-receipts/receipt-confirm-items.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
 | `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Multi-barcode confirm: reads barcodes_csv from saved items, creates one inventory record per barcode (qty=1 each). First barcode of existing items → increment_inventory, rest → createNewInventoryFromReceiptItem. Atomic rollback on failure. Skips not_received/returned/partial_received excess. Updates PO status, calls createDocumentFromReceipt |
-| `confirmReceipt` | `()` | Async. UI-facing: validates barcodes count matches qty, hard-blocks without file, match confirmation dialog, PIN verification, saves draft, then calls confirmReceiptCore |
-| `_showMatchConfirmDialog` | `(rcptNumber)` | Returns Promise: 'match'/'mismatch'/null. Shows status summary (ok/not_received/return counts). When non-ok items exist, defaults to mismatch button. Shown before PIN in confirmReceipt |
-| `_confirmReceiptWithDecisions` | `(rcptNumber, decisions, items)` | Async. Saves draft, applies PO decisions, calls confirmReceiptCore. Handles rollback (result===false) gracefully |
 | `createNewInventoryFromReceiptItem` | `(item, receiptId, rcptNumber)` | Async. Creates single inventory row (qty=1) using pre-assigned barcode. Called once per physical unit. Returns created row |
+
+### modules/goods-receipts/receipt-confirm.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `confirmReceipt` | `()` | Async. UI-facing: validates barcodes count matches qty, hard-blocks without file, match confirmation dialog, PIN verification, saves draft, then calls confirmReceiptCore |
+| `_confirmReceiptWithDecisions` | `(rcptNumber, decisions, items)` | Async. Saves draft, applies PO decisions, calls confirmReceiptCore. Handles rollback (result===false) gracefully |
 | `confirmReceiptById` | `(receiptId)` | Async. Confirms receipt from list view without opening form |
+| `_receiptPinVerify` | `(title)` | Returns Promise: employee object or null. PIN verification modal |
+| `_showMatchConfirmDialog` | `(rcptNumber)` | Returns Promise: 'match'/'mismatch'/null. Shows status summary (ok/not_received/return counts). When non-ok items exist, defaults to mismatch button. Shown before PIN in confirmReceipt |
 
 ### modules/goods-receipts/receipt-debt.js
 
@@ -1677,20 +1684,23 @@ receipt-actions.js
   → calls: getReceiptItems() [receipt-form.js]
   → calls: loadReceiptTab() [goods-receipt.js]
 
-receipt-confirm.js
-  → calls: getReceiptItems() [receipt-form.js]
-  → calls: saveReceiptDraftInternal() [receipt-actions.js]
+receipt-confirm-items.js
   → calls: createDocumentFromReceipt() [receipt-debt.js]
   → calls: loadReceiptTab(), updatePOStatusAfterReceipt() [goods-receipt.js]
   → calls: refreshLowStockBanner() [data-loading.js]
-  → calls: alertPriceAnomaly() [supabase-ops.js] (Phase 5f-2, optional)
+  → calls: generateNextBarcode() [shared.js]
+
+receipt-confirm.js
+  → calls: getReceiptItems() [receipt-form.js]
+  → calls: saveReceiptDraftInternal() [receipt-actions.js]
+  → calls: confirmReceiptCore() [receipt-confirm-items.js]
 
 receipt-ocr.js
   → calls: addReceiptItemRow(), updateReceiptItemsStats() [receipt-form.js]
   → calls: uploadSupplierFile(), getSupplierFileUrl() [file-upload.js]
   → calls: generateNextBarcode() [shared.js]
   → calls: updateOCRTemplate() [supabase-ops.js] (Phase 5e)
-  → patches: confirmReceiptCore() [receipt-confirm.js] (Phase 5e)
+  → patches: confirmReceiptCore() [receipt-confirm-items.js] (Phase 5e)
   → reads: supplierCache, supplierCacheRev, brandCacheRev [shared.js]
   → reads: _pendingReceiptFile [receipt-form.js]
   → globals: _rcptOcrResult
