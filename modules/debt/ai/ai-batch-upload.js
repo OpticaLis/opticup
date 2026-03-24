@@ -1,6 +1,4 @@
 // ai-batch-upload.js — Batch document upload with dedup and drag-drop (Phase 5.5g)
-// Load after: shared.js, supabase-ops.js, file-upload.js, debt-documents.js, ai-ocr.js, ai-alerts.js
-// Provides: _openBatchUploadModal()
 
 var _batchFiles = [], _batchId = null, _batchSupplierId = null;
 var _batchUploadedPaths = [], _batchTimestamp = '', _batchPreviewUrl = null;
@@ -107,7 +105,6 @@ async function _batchAddFiles(fileList) {
       dupType: dupType, dupDocId: dupDocId, checked: dupType === 'none', uploadPath: null
     });
   }
-  // Check DB for all new hashes
   if (newEntries.length > 0) {
     var hashes = newEntries.map(function(e) { return e.hash; });
     var dbDups = await _batchCheckDBDupes(hashes);
@@ -236,7 +233,6 @@ async function _batchUploadOnly() {
   var tid = getTenantId();
   var progWrap = $('batch-progress'), progBar = $('batch-progress-bar'), progText = $('batch-progress-text');
   if (progWrap) progWrap.style.display = 'block';
-  // Disable buttons during upload
   var btn1 = $('batch-btn-upload'), btn2 = $('batch-btn-ocr');
   if (btn1) btn1.disabled = true;
   if (btn2) btn2.disabled = true;
@@ -276,7 +272,6 @@ async function _batchUploadOnly() {
       }
       if (created && created[0]) {
         bf.docId = created[0].id; docIds.push(created[0].id);
-        // Save to supplier_document_files table
         if (typeof saveDocFile === 'function') {
           try { await saveDocFile(created[0].id, filePath, bf.file.name, 0); } catch (e) { console.warn('saveDocFile skipped:', e.message); }
         }
@@ -305,7 +300,6 @@ async function _batchUploadAndOCR() {
   var batchId = _batchId;
   var modal = $('batch-upload-modal'); if (modal) modal.remove();
   window.removeEventListener('beforeunload', _batchBeforeUnload);
-  // Trigger batch OCR (implemented in ai-batch-ocr.js)
   if (typeof window._startBatchOCR === 'function') {
     window._startBatchOCR(batchId, docIds);
   } else {
@@ -315,7 +309,6 @@ async function _batchUploadAndOCR() {
 }
 
 async function _closeBatchUpload() {
-  // Cleanup files uploaded to Storage but not saved as documents
   var unsaved = _batchFiles.filter(function(f) { return f.uploadPath && !f.docId; });
   if (unsaved.length > 0) {
     var paths = unsaved.map(function(f) { return f.uploadPath; });
@@ -335,7 +328,7 @@ function _batchBeforeUnload() {
   }
 }
 
-// --- Inject toolbar button ---
+// Inject toolbar button
 (function() {
   var _origRenderFilterBar = typeof renderDocFilterBar === 'function' ? renderDocFilterBar : null;
   if (!_origRenderFilterBar) return;

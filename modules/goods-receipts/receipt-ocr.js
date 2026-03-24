@@ -276,20 +276,12 @@ async function _rcptOcrUpdateTemplate() {
   _rcptOcrResult = null;
 }
 
-// Patch confirmReceiptCore to call template update after successful confirm
-function _patchReceiptConfirmForOCR() {
-  var orig = typeof confirmReceiptCore === 'function' ? confirmReceiptCore : null;
-  if (!orig) return;
-  window.confirmReceiptCore = async function(receiptId, rcptNumber, poId) {
-    await orig(receiptId, rcptNumber, poId);
-    await _rcptOcrUpdateTemplate();
-  };
-}
+// Listen for receipt confirmation → update OCR template (replaces monkey-patch)
+document.addEventListener('receipt-confirmed', function() {
+  _rcptOcrUpdateTemplate();
+});
 
 // --- 9. Initialize on DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(function() {
-    initReceiptOCR();
-    _patchReceiptConfirmForOCR();
-  }, 200);
+  setTimeout(function() { initReceiptOCR(); }, 200);
 });

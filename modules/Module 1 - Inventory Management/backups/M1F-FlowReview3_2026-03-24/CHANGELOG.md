@@ -4,43 +4,6 @@
 
 ---
 
-## Flow Review Phase 3 — 2026-03-24
-
-### Tenant Isolation Hardening
-- Added tenant_id to lookup caches, supplier number queries, permissions queries (02a3ccd)
-- JWT periodic check every 5 min with tenant claim verification (66c6bb0)
-- Hard tenant isolation: URL slug change clears all sessionStorage (66c6bb0)
-
-### File Splits & Trimming
-- Split receipt-form.js 559→283+282 (c4e06c7)
-- Split receipt-confirm.js 461→274+185 (a95035b)
-- Split 4 files: po-view-import, shared, item-history, debt-doc-edit (59a9574)
-- Trimmed 11 files under 350 lines — whitespace/comments only (4f1c178)
-- Fixed PO supplier dropdown searchable — correct createSearchSelect API (4f1c178)
-
-### Frame Images Feature
-- New: inventory-images.js — camera capture (rear), file picker, WEBP conversion (0.82 quality, max 1200px), Storage upload/delete (c9ec727)
-- New: inventory-images-bg.js — client-side white background removal via Canvas flood-fill with threshold slider (0e5b2d4)
-- ⋯ action menu on inventory table rows replacing inline buttons (c9ec727)
-- Migration 051: composite index on inventory_images, Storage bucket documentation (c9ec727)
-- T.IMAGES constant added to shared.js (c9ec727)
-
-### Photography Workflow
-- Receipt list: 📷 button on confirmed receipts → filter inventory to receipt items (f77d1cd)
-- filterByReceipt() switches to inventory tab with blue banner showing filtered count (f77d1cd)
-- Post-confirm banner: "📷 הוכנסו X פריטים — רוצה לצלם?" with action buttons (f77d1cd)
-- "📷 ללא תמונות" toggle filter in inventory filter bar (f77d1cd)
-- Image count badges (📷N) on every inventory row (f77d1cd)
-
-### Quick Improvements
-- Added pending_review (לבירור) status for debt documents — migration 052, toolbar toggle button, filter, CSS badge (dc200e2)
-- Replaced OCR monkey-patch with clean event dispatch (receipt-confirmed CustomEvent) (dc200e2)
-
-### Commits
-- 02a3ccd, 66c6bb0, c4e06c7, a95035b, 59a9574, 4f1c178, c9ec727, f77d1cd, 0e5b2d4, dc200e2
-
----
-
 ## Flow Review Phase 2 — 2026-03-24
 
 ### DB

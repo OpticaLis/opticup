@@ -1,19 +1,11 @@
-// debt-doc-filters.js — Advanced document filtering with saved presets (Phase 5.5f)
-// Load after: shared.js, search-select.js, debt-documents.js
-// Provides: renderDocFilterBar(), applyDocFilters(), getDocFilterState()
-// Replaces simple filter bar from debt-documents.js
-
-var _docFilterState = null; // persists across tab switches
+// debt-doc-filters.js — Advanced document filtering with saved presets
+var _docFilterState = null;
 var _docFilterCollapsed = true;
-var _docFilterSupSelect = null; // searchSelect instance
+var _docFilterSupSelect = null;
 var _docTotalCount = 0; // total unfiltered docs
 var _recycleBinMode = false; // true = showing deleted docs
 var _deletedDocCount = 0;
-
-function _getFilterFavKey() {
-  return 'opticup_doc_filters_' + getTenantId();
-}
-
+function _getFilterFavKey() { return 'opticup_doc_filters_' + getTenantId(); }
 function _loadFilterFavorites() {
   try {
     var raw = localStorage.getItem(_getFilterFavKey());
@@ -65,6 +57,8 @@ function renderDocFilterBar() {
         'style="font-size:.72rem;padding:2px 8px;border:none;border-radius:3px;cursor:pointer;background:#e5e7eb;color:#6b7280">\u05E9\u05D5\u05DC\u05DD</button>' +
       '<button class="doc-status-btn" data-status="cancelled" onclick="toggleDocStatusFilter(\'cancelled\')" ' +
         'style="font-size:.72rem;padding:2px 8px;border:none;border-radius:3px;cursor:pointer;background:#e5e7eb;color:#6b7280">\u05DE\u05D1\u05D5\u05D8\u05DC\u05D9\u05DD</button>' +
+      '<button class="doc-status-btn" data-status="pending_review" onclick="toggleDocStatusFilter(\'pending_review\')" ' +
+        'style="font-size:.72rem;padding:2px 8px;border:none;border-radius:3px;cursor:pointer;background:#e5e7eb;color:#6b7280">\u2753 \u05DC\u05D1\u05D9\u05E8\u05D5\u05E8</button>' +
       '<button class="btn doc-add-btn" style="background:#059669;color:#fff;margin-right:auto" onclick="openNewDocumentModal()">+ \u05DE\u05E1\u05DE\u05DA \u05D7\u05D3\u05E9</button>' +
       '<button class="btn btn-sm" id="recycle-bin-btn" style="background:#fee2e2;color:#991b1b;font-size:.78rem" onclick="_toggleRecycleBin()">' +
         '\uD83D\uDDD1\uFE0F \u05E1\u05DC \u05DE\u05D7\u05D6\u05D5\u05E8 (<span id="recycle-count">0</span>)</button>' +
@@ -172,15 +166,14 @@ function applyDocFilters() {
   _docTotalCount = _docData.length;
   var sf = (typeof _getDocStatusFilters === 'function') ? _getDocStatusFilters() : { open: true, paid: false, cancelled: false };
   var filtered = _docData.filter(function(d) {
-    // Status filter: advanced panel overrides toolbar buttons
     if (f.status) {
       if (d.status !== f.status) return false;
     } else {
-      // Toolbar status buttons
       var pass = false;
       if (sf.open && (d.status === 'open' || d.status === 'partially_paid' || d.status === 'draft' || d.status === 'linked' || d.status === 'pending_invoice')) pass = true;
       if (sf.paid && d.status === 'paid') pass = true;
       if (sf.cancelled && d.status === 'cancelled') pass = true;
+      if (sf.pending_review && d.status === 'pending_review') pass = true;
       if (!pass) return false;
     }
     if (f.document_type_id && d.document_type_id !== f.document_type_id) return false;
@@ -195,7 +188,6 @@ function applyDocFilters() {
   });
   var sf = (typeof _docSortField !== 'undefined') ? _docSortField : 'document_date';
   filtered.sort(function(a, b) {
-    // Draft documents always appear first
     var aDraft = a.status === 'draft' ? 0 : 1;
     var bDraft = b.status === 'draft' ? 0 : 1;
     if (aDraft !== bDraft) return aDraft - bDraft;
@@ -203,12 +195,11 @@ function applyDocFilters() {
   });
   _updateFilterCount(filtered.length, _docTotalCount);
   renderDocumentsTable(filtered);
-  _loadDeletedDocCount(); // non-blocking — update recycle bin badge
+  _loadDeletedDocCount();
 }
 
 function _updateFilterCount(shown, total) {
-  var el = $('doc-filter-count');
-  if (!el) return;
+  var el = $('doc-filter-count'); if (!el) return;
   if (shown === total) {
     el.textContent = '\u05DE\u05E6\u05D9\u05D2 ' + total + ' \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD';
   } else {
@@ -277,9 +268,7 @@ function _deleteFavorite(event, idx) {
   applyDocFilters();
 }
 
-// =========================================================
-// Recycle Bin — deleted documents view
-// =========================================================
+// --- Recycle Bin ---
 async function _loadDeletedDocCount() {
   try {
     var { count, error } = await sb.from(T.SUP_DOCS).select('id', { count: 'exact', head: true })
@@ -300,26 +289,20 @@ async function _toggleRecycleBin() {
   _recycleBinMode = true;
   showLoading('\u05D8\u05D5\u05E2\u05DF \u05E1\u05DC \u05DE\u05D7\u05D6\u05D5\u05E8...');
   try {
-    var { data: deleted } = await sb.from(T.SUP_DOCS).select('*')
-      .eq('is_deleted', true).eq('tenant_id', getTenantId())
-      .order('updated_at', { ascending: false });
-    hideLoading();
-    _renderRecycleBin(deleted || []);
+    var { data: deleted } = await sb.from(T.SUP_DOCS).select('*').eq('is_deleted', true).eq('tenant_id', getTenantId()).order('updated_at', { ascending: false });
+    hideLoading(); _renderRecycleBin(deleted || []);
   } catch (e) {
-    hideLoading();
-    console.error('_toggleRecycleBin error:', e);
+    hideLoading(); console.error('_toggleRecycleBin error:', e);
     toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05E1\u05DC \u05DE\u05D7\u05D6\u05D5\u05E8', 'e');
   }
 }
 
 function _renderRecycleBin(docs) {
-  var container = $('dtab-documents');
-  if (!container) return;
+  var container = $('dtab-documents'); if (!container) return;
   var typeMap = {}, supMap = {};
   (_docTypes || []).forEach(function(t) { typeMap[t.id] = t; });
   (_docSuppliers || []).forEach(function(s) { supMap[s.id] = s.name; });
   var now = Date.now();
-
   var rows = docs.map(function(d) {
     var type = typeMap[d.document_type_id] || {};
     var deletedAt = d.updated_at ? new Date(d.updated_at) : null;
@@ -336,7 +319,6 @@ function _renderRecycleBin(docs) {
       '<td><button class="btn-sm" style="background:#059669;color:#fff" onclick="_restoreDocument(\'' + d.id + '\')">\u21A9\uFE0F \u05E9\u05D7\u05D6\u05E8</button></td>' +
       '</tr>';
   }).join('');
-
   if (!rows) rows = '<tr><td colspan="8" style="text-align:center;color:var(--g500);padding:16px">\u05E1\u05DC \u05D4\u05DE\u05D7\u05D6\u05D5\u05E8 \u05E8\u05D9\u05E7</td></tr>';
 
   container.innerHTML =

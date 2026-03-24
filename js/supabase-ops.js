@@ -1,9 +1,14 @@
 async function loadLookupCaches() {
-  const { data: sups } = await sb.from('suppliers').select('id,name,supplier_number');
+  const tid = getTenantId();
+  let supQ = sb.from('suppliers').select('id,name,supplier_number');
+  if (tid) supQ = supQ.eq('tenant_id', tid);
+  const { data: sups } = await supQ;
   supplierCache = {}; supplierCacheRev = {}; supplierNumCache = {};
   (sups || []).forEach(s => { supplierCache[s.name] = s.id; supplierCacheRev[s.id] = s.name; supplierNumCache[s.id] = s.supplier_number; });
 
-  const { data: brs } = await sb.from('brands').select('id,name');
+  let brQ = sb.from('brands').select('id,name');
+  if (tid) brQ = brQ.eq('tenant_id', tid);
+  const { data: brs } = await brQ;
   brandCache = {}; brandCacheRev = {};
   (brs || []).forEach(b => { brandCache[b.name] = b.id; brandCacheRev[b.id] = b.name; });
 }

@@ -14,7 +14,8 @@ const DOC_STATUS_MAP = {
   partially_paid:  { he: '\u05E9\u05D5\u05DC\u05DD \u05D7\u05DC\u05E7\u05D9\u05EA',  cls: 'dst-partial' },
   paid:            { he: '\u05E9\u05D5\u05DC\u05DD',        cls: 'dst-paid' },
   linked:          { he: '\u05DE\u05E7\u05D5\u05E9\u05E8',       cls: 'dst-linked' },
-  cancelled:       { he: '\u05DE\u05D1\u05D5\u05D8\u05DC',       cls: 'dst-cancel' }
+  cancelled:       { he: '\u05DE\u05D1\u05D5\u05D8\u05DC',       cls: 'dst-cancel' },
+  pending_review:  { he: '\u05DC\u05D1\u05D9\u05E8\u05D5\u05E8',      cls: 'dst-review' }
 };
 
 async function loadDocumentsTab() {
@@ -76,7 +77,7 @@ function setDocSort(field) {
 function _getDocStatusFilters() {
   if (!_docStatusFilters) {
     try { var raw = sessionStorage.getItem('debt_docStatusFilters'); _docStatusFilters = raw ? JSON.parse(raw) : null; } catch (e) {}
-    if (!_docStatusFilters) _docStatusFilters = { open: true, paid: false, cancelled: false };
+    if (!_docStatusFilters) _docStatusFilters = { open: true, paid: false, cancelled: false, pending_review: false };
   }
   return _docStatusFilters;
 }
@@ -89,7 +90,7 @@ function toggleDocStatusFilter(key) {
 }
 function _updateStatusBtnStyles() {
   var f = _getDocStatusFilters();
-  ['open', 'paid', 'cancelled'].forEach(function(k) {
+  ['open', 'paid', 'cancelled', 'pending_review'].forEach(function(k) {
     var btn = document.querySelector('.doc-status-btn[data-status="' + k + '"]');
     if (!btn) return;
     btn.style.background = f[k] ? '#1a73e8' : '#e5e7eb';

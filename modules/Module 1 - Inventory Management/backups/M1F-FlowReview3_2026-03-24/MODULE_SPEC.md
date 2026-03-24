@@ -1,5 +1,5 @@
 # מלאי מסגרות — Module Spec
-## גרסה Phase 8 + Flow Review Phase 3 | מרץ 2026
+## גרסה Phase 8 + Flow Review Phase 2 + QA | מרץ 2026
 
 > **Authority:** Business logic flows and screen descriptions. For code details → MODULE_MAP.md. For DB schema → db-schema.sql. For rules → CLAUDE.md.
 
@@ -142,23 +142,7 @@ For complete file index → see MODULE_MAP.md section 1.
 - **Pending invoice** (status=pending_invoice): uploaded from inventory tab, missing_price=true, awaits OCR + linking
 - **Draft** (status=draft): historical import, yellow badge, awaits processing
 
-### 3.5d Frame Images — Phase Flow-Review-3
-- **Camera capture**: `capture="environment"` opens rear camera on mobile
-- **WEBP conversion**: client-side Canvas resize (max 1200px) + toBlob('image/webp', 0.82)
-- **Storage**: `frame-images` bucket, path `frames/{tenant_id}/{inventory_id}/{timestamp}.webp`
-- **Background removal**: client-side Canvas flood-fill from corners, threshold slider (30-100%), edge softening
-- **Photography workflow**: receipt confirm → banner → filter inventory → capture → upload
-- **No-images filter**: toggle button in inventory filter bar, image count badges (📷N) on rows
-- **⋯ action menu**: replaces inline buttons, contains: תמונות, היסטוריה, מחיקה (admin)
-
-### 3.5e Document Review Status — Phase Flow-Review-3
-- **pending_review** (לבירור): finance manager flags questionable documents
-- Toggle via action toolbar: "❓ סמן לבירור" / "✅ הסר סימון"
-- Dedicated filter button in document toolbar
-- Orange-border badge styling (.dst-review)
-- Returns to previous status (stored in _prevStatus) when cleared
-
-### 3.5f Traceability Chain — Phase Flow-Review-2
+### 3.5d Traceability Chain — Phase Flow-Review-2
 ```
 inventory item → goods_receipt_items → goods_receipt → supplier_document → document_links → payment
 ```

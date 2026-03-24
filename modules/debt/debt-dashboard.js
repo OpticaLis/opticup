@@ -1,20 +1,10 @@
-// =========================================================
 // debt-dashboard.js — Supplier Debt Dashboard (Phase 4c+4g)
-// Load after: shared.js, supabase-ops.js, auth-service.js
-// Provides: loadDebtSummary(), loadSuppliersTab(),
-//   renderSuppliersTable()
-// Note: formatILS() moved to shared.js (Phase 4d)
-// =========================================================
 
-var _supTabData = []; // aggregated supplier rows for the table
+var _supTabData = [];
 
-/**
- * Load summary card data from supplier_documents + supplier_payments
- */
 async function loadDebtSummary() {
   const tid = getTenantId();
   if (!tid) return;
-
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
 
@@ -36,7 +26,6 @@ async function loadDebtSummary() {
     ]);
     const docs = docsResult.data; const docsErr = docsResult.error;
     if (docsErr) { console.error('Debt summary docs error:', docsErr); return; }
-    // Phase 8: sum opening balances from all suppliers
     var obMap = {}; (supResult || []).forEach(function(s) { obMap[s.id] = s; });
     let totalDebt = (supResult || []).reduce(function(s, sup) { return s + (Number(sup.opening_balance) || 0); }, 0);
     let dueThisWeek = 0;
@@ -61,7 +50,6 @@ async function loadDebtSummary() {
       }
     });
 
-    // Fetch payments this month
     const { data: payments, error: payErr } = await sb.from(T.SUP_PAYMENTS)
       .select('amount, exchange_rate')
       .eq('tenant_id', tid)
@@ -69,31 +57,22 @@ async function loadDebtSummary() {
       .lte('payment_date', todayStr);
 
     if (payErr) { console.error('Debt summary payments error:', payErr); }
-
     let paidThisMonth = 0;
     (payments || []).forEach(function(p) {
       const rate = Number(p.exchange_rate) || 1;
       paidThisMonth += Number(p.amount) * rate;
     });
-
-    // Update DOM
     document.getElementById('val-total-debt').textContent = formatILS(totalDebt);
     document.getElementById('val-due-week').textContent = formatILS(dueThisWeek);
     document.getElementById('val-overdue').textContent = formatILS(overdue);
     document.getElementById('val-paid-month').textContent = formatILS(paidThisMonth);
-
-    // Overdue highlight
     const overdueCard = document.getElementById('card-overdue');
     if (overdue > 0) {
       overdueCard.classList.add('overdue');
     } else {
       overdueCard.classList.remove('overdue');
     }
-
-    // Aging report — reuse already-fetched docs
     loadAgingReport(docs || []);
-
-    // Pending invoices banner (non-blocking)
     _loadPendingInvoiceBanner();
 
   } catch (e) {
@@ -101,9 +80,6 @@ async function loadDebtSummary() {
   }
 }
 
-/**
- * Banner for pending_invoice documents — shown above summary cards
- */
 async function _loadPendingInvoiceBanner() {
   try {
     var { count, error } = await sb.from(T.SUP_DOCS)
@@ -134,17 +110,12 @@ async function _loadPendingInvoiceBanner() {
   }
 }
 
-/**
- * Aging report — break down open debt by due_date buckets.
- * Reuses docs already fetched by loadDebtSummary (no extra queries).
- */
+// Aging report — break down open debt by due_date buckets
 function loadAgingReport(docs) {
   var el = document.getElementById('aging-buckets');
   if (!el) return;
-
   var todayStr = new Date().toISOString().slice(0, 10);
   var today = new Date(todayStr);
-
   var buckets = [
     { label: 'שוטף', color: '#2e7d32', amount: 0 },
     { label: '1-30 יום', color: '#1a5fb4', amount: 0 },
@@ -157,7 +128,6 @@ function loadAgingReport(docs) {
     var rate = Number(doc.exchange_rate) || 1;
     var remaining = (Number(doc.total_amount) - Number(doc.paid_amount)) * rate;
     if (remaining <= 0) return;
-
     if (!doc.due_date || doc.due_date >= todayStr) {
       buckets[0].amount += remaining;
     } else {
@@ -168,9 +138,7 @@ function loadAgingReport(docs) {
       else buckets[4].amount += remaining;
     }
   });
-
   var totalDebt = buckets.reduce(function(s, b) { return s + b.amount; }, 0);
-
   el.innerHTML = buckets.map(function(b) {
     var pct = totalDebt > 0 ? Math.round(b.amount / totalDebt * 100) : 0;
     return '<div class="aging-bucket">' +
@@ -181,9 +149,7 @@ function loadAgingReport(docs) {
   }).join('');
 }
 
-// =========================================================
-// Suppliers tab — aggregated table (Phase 4g)
-// =========================================================
+// --- Suppliers tab ---
 async function loadSuppliersTab() {
   var tid = getTenantId();
   if (!tid) return;
@@ -198,7 +164,6 @@ async function loadSuppliersTab() {
     var deals = results[2];
     var todayStr = new Date().toISOString().slice(0, 10);
 
-    // Build per-supplier aggregation (Phase 8: opening_balance + cutoff date)
     _supTabData = suppliers.map(function(sup) {
       var cutoff = sup.opening_balance_date || null;
       var supDocs = docs.filter(function(d) {
@@ -228,14 +193,12 @@ async function loadSuppliersTab() {
       };
     });
 
-    // Sort: overdue first, then by total debt descending
     _supTabData.sort(function(a, b) {
       if (a.overdueAmt > 0 && b.overdueAmt === 0) return -1;
       if (b.overdueAmt > 0 && a.overdueAmt === 0) return 1;
       return b.totalDebt - a.totalDebt;
     });
 
-    // Filter based on toggle state
     var showAll = sessionStorage.getItem('debt_showAllSuppliers') === 'true';
     var visible = showAll ? _supTabData : _supTabData.filter(function(s) {
       return s.openCount > 0 || s.hasDeal || s.openingBalance > 0;
@@ -251,7 +214,6 @@ async function loadSuppliersTab() {
 function renderSuppliersToolbar(showAll) {
   var wrap = $('dtab-suppliers');
   if (!wrap) return;
-  // Clear initial empty-state placeholder from HTML
   var initEmpty = wrap.querySelector(':scope > .empty-state');
   if (initEmpty) initEmpty.remove();
   var existing = wrap.querySelector('.sup-toolbar');
@@ -314,7 +276,6 @@ function openQuickOpeningBalance() {
 function renderSuppliersTable(data) {
   var wrap = $('dtab-suppliers');
   if (!wrap) return;
-  // Preserve toolbar if it exists
   var toolbar = wrap.querySelector('.sup-toolbar');
   var tableWrap = wrap.querySelector('.sup-table-wrap');
   if (!tableWrap) {
@@ -353,11 +314,7 @@ function renderSuppliersTable(data) {
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
 }
 
-/**
- * Open payment wizard pre-filled with a supplier
- */
 async function openPaymentForSupplier(supplierId) {
-  // Ensure payment methods are loaded (wizard needs _payMethods)
   if (!_payMethods || !_payMethods.length) {
     _payMethods = await fetchAll(T.PAY_METHODS, [['is_active', 'eq', true]]);
   }
@@ -372,6 +329,5 @@ async function openPaymentForSupplier(supplierId) {
   modal.innerHTML = '<div class="modal" style="max-width:560px">' +
     '<div id="pay-wiz-content"></div></div>';
   document.body.appendChild(modal);
-  // Skip step 1 (supplier selection) — go directly to step 2
   _wizRenderStep2();
 }
