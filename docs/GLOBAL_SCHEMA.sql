@@ -1910,3 +1910,33 @@ CREATE TABLE IF NOT EXISTS supplier_document_files (
 CREATE INDEX IF NOT EXISTS idx_sdf_document ON supplier_document_files(document_id);
 CREATE INDEX IF NOT EXISTS idx_sdf_tenant ON supplier_document_files(tenant_id);
 -- RLS: JWT tenant isolation + service_role bypass
+
+-- ============================================================
+-- Flow Review Phase 2 QA — Migrations 046, 047, 048
+-- ============================================================
+
+-- 046: pending_invoice status + missing_price + goods_receipt_id UNIQUE
+-- (status CHECK already includes 'pending_invoice' in CREATE TABLE above)
+-- (missing_price column already in CREATE TABLE above)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_supdocs_receipt_unique
+  ON supplier_documents(goods_receipt_id)
+  WHERE goods_receipt_id IS NOT NULL;
+
+-- 047: Receipt item status tracking for PO-linked items
+ALTER TABLE goods_receipt_items
+  ADD COLUMN IF NOT EXISTS receipt_status TEXT
+    CHECK (receipt_status IS NULL OR receipt_status IN ('ok', 'not_received', 'return')),
+  ADD COLUMN IF NOT EXISTS from_po BOOLEAN DEFAULT false;
+-- Expand po_match_status to include 'not_received'
+-- (Original CHECK from 036 was: matched, not_in_po, returned)
+-- Updated CHECK: matched, not_in_po, returned, not_received, missing
+ALTER TABLE goods_receipt_items
+  DROP CONSTRAINT IF EXISTS goods_receipt_items_po_match_status_check;
+ALTER TABLE goods_receipt_items
+  ADD CONSTRAINT goods_receipt_items_po_match_status_check
+    CHECK (po_match_status IS NULL OR po_match_status IN ('matched', 'not_in_po', 'returned', 'not_received', 'missing'));
+
+-- 048: Nullable inventory_id on supplier_return_items
+-- Returns from PO comparison may not have an inventory entry yet
+ALTER TABLE supplier_return_items
+  ALTER COLUMN inventory_id DROP NOT NULL;
