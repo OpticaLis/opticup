@@ -54,7 +54,7 @@ Supabase init, constants, caches, UI helpers, navigation. **Loads FIRST on every
 | `SUPABASE_URL` | `const string` | Supabase project URL |
 | `SUPABASE_ANON` | `const string` | Supabase anon key |
 | `sb` | `SupabaseClient` | Supabase client instance (reassigned on JWT auth) |
-| `T` | `const object` | Table name constants (37 entries) |
+| `T` | `const object` | Table name constants (38 entries, includes T.IMAGES for inventory_images) |
 | `FIELD_MAP` | `const object` | Hebrew→English column name maps per table |
 | `FIELD_MAP_REV` | `const object` | English→Hebrew column name maps (auto-generated) |
 | `ENUM_MAP` | `const object` | Hebrew→English enum value maps per category |
@@ -76,6 +76,21 @@ Supabase init, constants, caches, UI helpers, navigation. **Loads FIRST on every
 | `currentReceiptId` | `string\|null` | Active receipt being edited |
 | `rcptEditMode` | `boolean` | Receipt edit mode flag |
 | `rcptViewOnly` | `boolean` | Receipt view-only flag |
+
+---
+
+### js/shared-ui.js (122 lines)
+
+Tab navigation and UI helpers extracted from shared.js. Load after shared.js.
+
+**Functions:**
+
+| Function | Parameters | Returns | Description |
+|----------|-----------|---------|-------------|
+| `showTab` | `name: string` | `void` | Main navigation: stops camera, deactivates all tabs, activates target, calls loader |
+| `showEntryMode` | `mode: string` | `void` | Switches between manual/excel/receipt entry sub-modes |
+| `showInfoModal` | `title: string, bodyHTML: string` | `void` | Creates overlay info modal with title, body HTML, close button, Escape handler |
+| `renderHelpBanner` | `parentEl: HTMLElement, storageKey: string, helpHTML: string` | `void` | Renders collapsible help banner with sessionStorage collapse state |
 
 ---
 
@@ -567,6 +582,20 @@ Pages modified for shared/ dependencies:
 | `_calcPOFinalPrice` | po-items.js | `item: object` | `number` | Calculate final price from cost_price × (1 - discount/100) |
 | `_onPOFinalPriceChange` | po-items.js | `i: number, finalPrice: number` | `void` | Reverse-calc discount from edited final price, update totals |
 | `onReceiptPoSelected` | goods-receipt.js | — | `Promise<void>` | Load PO items into receipt with existing inventory matching (barcode reuse) |
+| `importPOToInventory` | po-import.js | `poId: string` | `Promise<void>` | Creates/updates inventory from PO items with barcode generation |
+| `createPOForBrand` | po-import.js | `brandId: string, brandName: string` | `Promise<void>` | Creates PO pre-populated from low-stock modal |
+| `cancelPOItem` | po-import.js | `itemId: string, poId: string, qtyReceived: number` | `Promise<void>` | Per-item cancel on partial POs, recalculates PO status |
+| `openViewPO` | po-view.js | `id: string` | `Promise<void>` | Read-only PO view with received qty and reason badges |
+| `openEntryHistory` | entry-history.js | — | `void` | Opens entry history modal with date range and accordion view |
+| `openImageModal` | inventory-images.js | `inventoryId: string` | `Promise<void>` | Image capture/upload/delete modal for inventory item |
+| `confirmReceiptCore` | receipt-confirm-items.js | `receiptId, rcptNumber, poId` | `Promise<boolean>` | Multi-barcode receipt confirm with atomic rollback |
+| `showTab` | shared-ui.js | `name: string` | `void` | Main tab navigation (moved from shared.js) |
+| `showEntryMode` | shared-ui.js | `mode: string` | `void` | Entry sub-mode toggle (moved from shared.js) |
+| `showInfoModal` | shared-ui.js | `title: string, bodyHTML: string` | `void` | Informational modal (moved from shared.js) |
+| `renderHelpBanner` | shared-ui.js | `parentEl, storageKey, helpHTML` | `void` | Collapsible help banner (moved from shared.js) |
+| `filterByReceipt` | inventory-table.js | `receiptId: string, receiptNumber: string` | `Promise<void>` | Filter inventory table to receipt items with banner |
+| `_buildDocActionToolbar` | debt-doc-actions.js | `doc: object` | `string` | Document action toolbar HTML (OCR, pending_review toggle, delete) |
+| `_togglePendingReview` | debt-doc-actions.js | `docId: string` | `Promise<void>` | Toggle document pending_review status |
 
 ### Shipments Config Contracts
 
@@ -605,13 +634,34 @@ Pages modified for shared/ dependencies:
 | `modules/goods-receipts/receipt-excel.js` | 259 | exportReceiptBarcodes: expands multi-barcode rows to individual Excel rows via SheetJS |
 | `modules/goods-receipts/receipt-po-compare.js` | 384 | receipt_status handling (returnMarked/missing sections), return creation for marked items, tenant_id hardened |
 | `modules/goods-receipts/goods-receipt.js` | 352 | onReceiptPoSelected: ONE row per PO item with qty=remaining, matches existing inventory |
-| `modules/purchasing/po-view-import.js` | 419 | Receipt-based reason badges (לזיכוי/לא הגיע/ממתין/חסר), cancelPOItem, live stock counter |
+| `modules/purchasing/po-view-import.js` | 419 | **RENAMED in Flow-Review-3:** Split into `po-view.js` (204 lines) + `po-import.js` (214 lines). See new entries below |
 | `modules/purchasing/po-items.js` | 338 | _updatePOStockCounter (live inventory count per PO item row), _calcPOFinalPrice, _onPOFinalPriceChange |
 | `modules/purchasing/po-actions.js` | 310 | clonePO, block partial PO cancel when items received |
 | `modules/debt/debt-doc-compare.js` | 269 | Returned items show "לזיכוי" (was filtered out), _cmpStatus handles returned status |
 | `modules/debt/debt-doc-items.js` | 161 | Title changed: "פריטים שהוזמנו" (was "פריטי קבלה") |
 | `modules/debt/debt-returns-tab-actions.js` | 289 | _promptCreditFileUpload (file required before credit), _createCreditNoteForReturn (attaches file), bulkMarkCredited blocked |
 | `js/file-upload.js` | 321 | _deleteGalleryFile re-queries from DB after delete (was in-memory splice only) |
+
+### Flow Review Phase 3 — New & Split Files
+
+| File | Lines | Description |
+|------|-------|-------------|
+| `js/shared-ui.js` | 122 | Tab navigation (showTab, showEntryMode), showInfoModal, renderHelpBanner — extracted from shared.js |
+| `modules/purchasing/po-import.js` | 214 | PO import + actions: importPOToInventory, createPOForBrand, cancelPOItem (split from po-view-import.js) |
+| `modules/purchasing/po-view.js` | 204 | Read-only PO view with received qty tracking + receipt-based reason badges, event delegation (split from po-view-import.js) |
+| `modules/audit/entry-history.js` | 212 | Entry history accordion: openEntryHistory, loadEntryHistory, renderEntryHistory, toggleHistGroup, exportDateGroupBarcodes |
+| `modules/debt/debt-doc-actions.js` | 176 | Document action toolbar + file attach: _editDocAttachMore, _buildDocActionToolbar, _softDeleteDocument, _togglePendingReview |
+| `modules/inventory/inventory-images.js` | 209 | Frame image capture/upload/delete: openImageModal, _captureImage, _pickImage, _processAndPreview, _uploadPendingImages, _deleteImage |
+| `modules/inventory/inventory-images-bg.js` | 205 | Client-side white background removal: _bgRemoveStart, _bgProcess, _bgRemovePending, _bgRemoveSaved |
+| `modules/goods-receipts/receipt-confirm-items.js` | 185 | Item-level inventory processing: confirmReceiptCore (multi-barcode), createNewInventoryFromReceiptItem (split from receipt-confirm.js) |
+
+### Flow Review Phase 3 — New Functions on Existing Files
+
+| File | Function | Description |
+|------|----------|-------------|
+| `modules/inventory/inventory-table.js` | `filterByReceipt(receiptId, receiptNumber)` | Queries receipt items, sets filter, switches to inventory tab with banner |
+| `modules/inventory/inventory-table.js` | `clearReceiptFilter()` | Clears receipt filter, removes banner, reloads inventory |
+| `modules/inventory/inventory-table.js` | `toggleNoImagesFilter()` | Toggles client-side filter for items without images |
 
 | Module 1.5 — Shared Components | ✅ Complete (QA passed) | `shared/css/`, `shared/js/`, `shared/tests/`, `scripts/` | — | 1 (activity_log) + ui_config column + PK fixes on roles/permissions/role_permissions |
 
