@@ -75,7 +75,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 7 | ✅ | שיפורי ספירת מלאי | פיצול session.js, atomic delta RPC, עודפים→מלאי, אישור חלקי, צפייה בספירות סגורות |
 | 8 | ✅ | OCR בקבלת סחורה + שיפורי פלואו רכש | OCR button בקבלה, item matching review UI, הפרדת תפעול/פיננסים, דוח PO pre-confirm, למידת פריטים ומחירים, יתרת פתיחה לספקים |
 | 8-QA | ✅ | סקירת פלואו + תיקון באגים + תשתית | OCR fixes, 9 flow reviews, 13+ bugs fixed, multi-file support, tenant isolation, Access sync restriction, editable items, full doc management in supplier detail |
-| Flow-Review-2 | ✅ | סקירת פלואו + תיקונים + סגירת מעגל | חובת מסמך, atomic rollback, badges ויזואליים, חשבוניות נכנסות, תצוגת פריטים, 6 באגים |
 | 6 | 🚫 נדחה | פורטל ספקים — ייבנה במודול עתידי | גישת ספק חיצונית, view-only מלאי לפי ספק |
 
 ---
@@ -256,15 +255,6 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 - פיצול: debt-documents.js → debt-doc-new.js, debt-doc-items.js חדש
 - מיגרציה: 040 (supplier_document_files)
 - פירוט מלא: SESSION_CONTEXT.md
-
-### פאזה Flow-Review-2 ✅ — סקירת פלואו + תיקונים + סגירת מעגל תיעוד
-- **DB:** migration 046 — pending_invoice status, missing_price column, goods_receipt_id UNIQUE index
-- **קבלת סחורה:** חסימת confirm בלי קובץ (hard block), מסמך ספק גם עם subtotal=0 (missing_price flag), atomic confirm עם compensating rollback
-- **מעקב חובות:** badges ויזואליים (📦 קבלה / ✏️ ידני / ⚠️ חסר מחיר), OCR רק על מסמכים עצמאיים, סכומים readonly על מסמך מקבלה, cascade settlement notification
-- **סגירת מעגל:** לשונית "חשבוניות נכנסות" ב-inventory (pending_invoice status), banner "לטיפול" ב-debt dashboard, תצוגת פריטי קבלה על מסמך, לינק "מסמך כניסה" בכרטיס פריט
-- **באגים:** C1 supplier docs filter fix, C2 file gallery delete, C3 OCR icon refresh, PO searchable dropdown, PO comparison back button, prepaid deduction validation, OCR stub cleanup
-- **1 קובץ חדש:** modules/inventory/incoming-invoices.js (255 שורות)
-- **7 commits**
 
 ### פאזה 6 🚫 נדחה — פורטל ספקים (ייבנה במודול עתידי)
 - קישור ייחודי לכל ספק (token-based auth, לא PIN)

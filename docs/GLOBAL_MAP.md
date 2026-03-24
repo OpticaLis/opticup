@@ -252,9 +252,9 @@ Bell icon with unread badge and dropdown panel. Used on ALL pages.
 
 ---
 
-### js/file-upload.js (114 lines)
+### js/file-upload.js (308 lines)
 
-File upload helper for supplier documents (Supabase Storage).
+File upload helper for supplier documents (Supabase Storage). Multi-file gallery with delete.
 
 **Functions:**
 
@@ -264,6 +264,11 @@ File upload helper for supplier documents (Supabase Storage).
 | `getSupplierFileUrl` | `filePath: string` | `Promise<string\|null>` | Get 1-hour signed URL for stored file |
 | `renderFilePreview` | `fileUrl: string, fileName: string, containerId: string` | `void` | Render PDF iframe or image preview in container |
 | `pickAndUploadFile` | `supplierId: string, callback: function` | `void` | Open file picker, upload, call callback with result |
+| `pickAndUploadFiles` | `supplierId: string, callback: function` | `void` | Multi-file picker + upload, callback with results array |
+| `fetchDocFiles` | `docId: string, fallbackUrl?, fallbackName?` | `Promise<object[]>` | Fetch files from supplier_document_files, fallback to legacy file_url |
+| `saveDocFile` | `docId, fileUrl, fileName, sortOrder` | `Promise<void>` | Insert record into supplier_document_files |
+| `renderFileGallery` | `files: object[], containerId: string` | `Promise<void>` | Multi-file gallery with thumbnails + delete buttons |
+| `_deleteGalleryFile` | `fileId: string, containerId: string` | `Promise<void>` | Confirm + delete file from DB + re-render gallery |
 
 **Global Variables:**
 
@@ -578,8 +583,9 @@ Pages modified for shared/ dependencies:
 | File | Lines | Description |
 |------|-------|-------------|
 | `modules/debt/debt-prepaid-detail.js` | 179 | Deal detail + check management for prepaid supplier deals |
-| `modules/debt/debt-doc-edit.js` | 207 | Document edit modal with AI learning from corrections |
+| `modules/debt/debt-doc-edit.js` | 388 | Document edit modal with AI learning, readonly amounts on receipt-linked docs, visual badges |
 | `js/supabase-alerts-ocr.js` | 181 | Alert creation + OCR template learning (split from supabase-ops.js) |
+| `modules/inventory/incoming-invoices.js` | 255 | Incoming invoices tab: drag-drop upload, creates pending_invoice supplier_documents |
 | Module 1.5 — Shared Components | ✅ Complete (QA passed) | `shared/css/`, `shared/js/`, `shared/tests/`, `scripts/` | — | 1 (activity_log) + ui_config column + PK fixes on roles/permissions/role_permissions |
 
 ---

@@ -1,20 +1,3 @@
--- ═══════════════════════════════════════════════════════════════
--- Optic Up — Global Database Schema
--- Source of truth for all tables across all modules
--- Updated at end of each phase via Integration Ceremony
--- Last updated: 2026-03-17
---
--- Modules included:
---   Module 1: Inventory Management (Phase 0-5.9 + QA) ✅
---   Module 1.5: Shared Components (Phase 1 in progress)
---
--- Table count: 50 (46 active + 4 future stubs)
--- ═══════════════════════════════════════════════════════════════
-
--- ═══════════════════════════════════════════════════════════════
--- Module 1: Inventory Management
--- ═══════════════════════════════════════════════════════════════
-
 -- ============================================================
 -- Prizma Optics — מלאי מסגרות — Full DB Schema
 -- גרסה QA | מרץ 2026 | Module 1 Final Certification
@@ -41,6 +24,9 @@
 --   011_inventory_logs_sale_fields.sql  — 12 Access sale columns on inventory_logs
 --   012_atomic_qty_rpc.sql  — increment_inventory + decrement_inventory RPC functions
 --   013_stock_count.sql  — stock_counts + stock_count_items tables + set_inventory_qty RPC
+--   033_apply_stock_count_delta.sql — atomic stock count confirmation RPC (FOR UPDATE lock)
+--   034_stock_count_reason_and_skipped.sql — reason TEXT column + skipped status on stock_count_items
+--   035_barcode_unique_per_tenant.sql — inventory barcode + stock_counts count_number UNIQUE per tenant
 --   014_stock_count_scanned_by.sql  — scanned_by column on stock_count_items
 --   015_failed_sync_storage.sql  — storage_path + errors columns on sync_log, storage policy
 --   016_auth_permissions.sql  — roles, permissions, role_permissions, employee_roles, auth_sessions
@@ -66,6 +52,9 @@
 --   031_stock_count_filter_criteria.sql — filter_criteria JSONB on stock_counts
 --   031_tenants_update_policy.sql — tenant_update_own RLS policy on tenants
 --   032_stock_count_unknown_items.sql — status CHECK includes 'unknown', inventory_id nullable
+--   036_receipt_item_po_fields.sql — price_decision, po_match_status on goods_receipt_items
+--   037_supplier_opening_balance.sql — opening_balance fields on suppliers
+--   039_return_note_doc_type.sql — return_note document type for all tenants
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -155,6 +144,10 @@ CREATE TABLE IF NOT EXISTS suppliers (
   tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   branch_id       UUID,
   created_by      UUID,
+  opening_balance NUMERIC DEFAULT 0,                              -- Phase 8: יתרת פתיחה
+  opening_balance_date DATE,                                      -- Phase 8: תאריך חתך
+  opening_balance_notes TEXT,                                     -- Phase 8: הערות יתרת פתיחה
+  opening_balance_set_by UUID REFERENCES employees(id),           -- Phase 8: מי הגדיר
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -212,8 +205,6 @@ CREATE TABLE IF NOT EXISTS inventory (
   deleted_reason  TEXT,                                          -- סיבת מחיקה
   -- Reverse sync (Access export)
   access_exported BOOLEAN DEFAULT false,                         -- האם יוצא ל-Access
-  -- Custom fields (Module 1.5 Phase 5)
-  custom_fields   JSONB DEFAULT '{}',                            -- שדות מותאמים per-tenant (no UI yet)
   -- System fields
   tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   branch_id       UUID,                                          -- סניף
@@ -223,7 +214,7 @@ CREATE TABLE IF NOT EXISTS inventory (
 );
 
 -- אינדקסים
-CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_barcode_unique ON inventory (barcode) WHERE barcode IS NOT NULL;
+ALTER TABLE inventory ADD CONSTRAINT inventory_barcode_tenant_key UNIQUE (barcode, tenant_id);
 CREATE INDEX IF NOT EXISTS idx_inv_supplier        ON inventory (supplier_id);
 CREATE INDEX IF NOT EXISTS idx_inv_brand           ON inventory (brand_id);
 CREATE INDEX IF NOT EXISTS idx_inv_status          ON inventory (status);
@@ -402,6 +393,8 @@ CREATE TABLE IF NOT EXISTS goods_receipt_items (
   unit_cost       DECIMAL(10,2),                                 -- מחיר עלות ליחידה
   sell_price      DECIMAL(10,2),                                 -- מחיר מכירה
   is_new_item     BOOLEAN NOT NULL DEFAULT false,                -- true = פריט חדש (לא היה במלאי)
+  price_decision  TEXT CHECK (price_decision IS NULL OR price_decision IN ('po_price', 'invoice_price')),  -- Phase 8: החלטת מחיר מול PO
+  po_match_status TEXT CHECK (po_match_status IS NULL OR po_match_status IN ('matched', 'not_in_po', 'returned')),  -- Phase 8: סטטוס התאמה ל-PO
   tenant_id       UUID NOT NULL REFERENCES tenants(id)           -- דייר (018)
 );
 CREATE INDEX IF NOT EXISTS idx_receipt_items ON goods_receipt_items(receipt_id);
@@ -490,7 +483,8 @@ INSERT INTO watcher_heartbeat (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 CREATE TABLE IF NOT EXISTS stock_counts (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  count_number    TEXT NOT NULL UNIQUE,                        -- SC-YYYY-NNNN (auto-generated)
+  count_number    TEXT NOT NULL,                               -- SC-YYYY-NNNN (auto-generated)
+  CONSTRAINT stock_counts_count_number_tenant_key UNIQUE (count_number, tenant_id),
   count_date      DATE NOT NULL DEFAULT CURRENT_DATE,          -- תאריך ספירה
   status          TEXT NOT NULL DEFAULT 'in_progress'          -- in_progress | completed | cancelled
                   CHECK (status IN ('in_progress', 'completed', 'cancelled')),
@@ -513,7 +507,7 @@ CREATE POLICY "tenant_isolation" ON stock_counts FOR ALL
 CREATE POLICY "service_bypass" ON stock_counts FOR ALL TO service_role USING (true);
 
 -- ============================================================
--- 15. stock_count_items — שורות ספירה (013 + 014 + 032)
+-- 15. stock_count_items — שורות ספירה (013 + 014 + 032 + 034)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS stock_count_items (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -527,8 +521,9 @@ CREATE TABLE IF NOT EXISTS stock_count_items (
   expected_qty    INTEGER NOT NULL,                            -- כמות צפויה (מהמערכת)
   actual_qty      INTEGER,                                     -- כמות בפועל (מהספירה)
   difference      INTEGER GENERATED ALWAYS AS (actual_qty - expected_qty) STORED,  -- פער
-  status          TEXT NOT NULL DEFAULT 'pending'              -- pending | counted | skipped | unknown (032)
-                  CHECK (status IN ('pending', 'counted', 'skipped', 'unknown')),
+  status          TEXT NOT NULL DEFAULT 'pending'              -- pending | counted | matched | skipped | unknown (032 + 034)
+                  CHECK (status IN ('pending', 'counted', 'matched', 'unknown', 'skipped')),
+  reason          TEXT,                                        -- סיבת פער (034)
   notes           TEXT,                                        -- הערה לשורה
   counted_at      TIMESTAMPTZ,                                 -- מתי נספר
   scanned_by      TEXT,                                        -- מי סרק (014)
@@ -562,13 +557,51 @@ BEGIN
 END;
 $$;
 
--- Set inventory quantity directly (for stock count approval)
+-- Set inventory quantity directly (legacy — replaced by apply_stock_count_delta for stock counts)
 CREATE OR REPLACE FUNCTION set_inventory_qty(inv_id UUID, new_qty INTEGER)
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
   UPDATE inventory SET quantity = new_qty WHERE id = inv_id;
 END;
 $$;
+
+-- Atomic stock count confirmation (033) — locks row, reads current qty, sets counted_qty
+-- Returns JSON with previous_qty, counted_qty, delta, new_qty for audit logging
+CREATE OR REPLACE FUNCTION apply_stock_count_delta(
+  p_inventory_id UUID,
+  p_counted_qty INTEGER,
+  p_tenant_id UUID,
+  p_user_id UUID,
+  p_count_id UUID
+) RETURNS JSON AS $$
+DECLARE
+  v_current_qty INTEGER;
+  v_delta INTEGER;
+  v_new_qty INTEGER;
+BEGIN
+  SELECT quantity INTO v_current_qty
+  FROM inventory
+  WHERE id = p_inventory_id AND tenant_id = p_tenant_id
+  FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Inventory item not found: %', p_inventory_id;
+  END IF;
+  v_delta := p_counted_qty - v_current_qty;
+  v_new_qty := p_counted_qty;
+  IF v_new_qty < 0 THEN
+    RAISE EXCEPTION 'Quantity cannot go below zero (item: %, counted: %, current: %)',
+      p_inventory_id, p_counted_qty, v_current_qty;
+  END IF;
+  UPDATE inventory SET quantity = v_new_qty
+  WHERE id = p_inventory_id AND tenant_id = p_tenant_id;
+  RETURN json_build_object(
+    'previous_qty', v_current_qty,
+    'counted_qty', p_counted_qty,
+    'delta', v_delta,
+    'new_qty', v_new_qty
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
 -- Supabase Storage — failed sync files (015)
@@ -695,8 +728,8 @@ CREATE TABLE IF NOT EXISTS supplier_documents (
   po_id             UUID REFERENCES purchase_orders(id),
   status            TEXT NOT NULL DEFAULT 'open'
                     CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled', 'pending_invoice')),
+  missing_price     BOOLEAN DEFAULT false,                          -- items with unknown cost price (Phase 2a)
   paid_amount       DECIMAL(12,2) DEFAULT 0,
-  missing_price     BOOLEAN DEFAULT false,                   -- items with unknown cost price (Flow-Review-2)
   notes             TEXT,
   created_by        UUID REFERENCES employees(id),
   created_at        TIMESTAMPTZ DEFAULT now(),
@@ -716,7 +749,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_supdocs_internal_unique
   WHERE internal_number IS NOT NULL;                         -- partial unique (022)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_documents_goods_receipt_unique
   ON supplier_documents(goods_receipt_id)
-  WHERE goods_receipt_id IS NOT NULL;                         -- one doc per receipt (Flow-Review-2)
+  WHERE goods_receipt_id IS NOT NULL;                         -- one doc per receipt (Phase 2a)
 
 -- ============================================================
 -- 22. document_links — maps delivery notes to monthly invoices (021)
@@ -903,8 +936,10 @@ INSERT INTO document_types (tenant_id, code, name_he, name_en, affects_debt, is_
   ((SELECT id FROM tenants WHERE slug='prizma'), 'invoice',       'חשבונית מס',     'Tax Invoice',    'increase', true),
   ((SELECT id FROM tenants WHERE slug='prizma'), 'delivery_note',  'תעודת משלוח',    'Delivery Note',  'increase', true),
   ((SELECT id FROM tenants WHERE slug='prizma'), 'credit_note',    'חשבונית זיכוי',  'Credit Note',    'decrease', true),
-  ((SELECT id FROM tenants WHERE slug='prizma'), 'receipt',        'קבלה',           'Receipt',        'none',     true)
+  ((SELECT id FROM tenants WHERE slug='prizma'), 'receipt',        'קבלה',           'Receipt',        'none',     true),
+  ((SELECT id FROM tenants WHERE slug='prizma'), 'return_note',    'תעודת החזרה',    'Return Note',    'decrease', true)
 ON CONFLICT (tenant_id, code) DO NOTHING;
+-- Note: 'return_note' added by migration 039_return_note_doc_type.sql for all tenants
 
 -- Seed payment_methods
 INSERT INTO payment_methods (tenant_id, code, name_he, name_en, is_system) VALUES
@@ -1145,25 +1180,27 @@ CREATE POLICY "employees_delete" ON employees FOR DELETE USING (true);
 
 -- roles
 CREATE TABLE IF NOT EXISTS roles (
-  id          TEXT PRIMARY KEY,
+  id          TEXT NOT NULL,
   name_he     TEXT NOT NULL,
   description TEXT,
   is_system   BOOLEAN DEFAULT true,
   tenant_id   UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
-  created_at  TIMESTAMPTZ DEFAULT NOW()
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (id, tenant_id)
 );
 ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_roles" ON roles FOR ALL USING (true) WITH CHECK (true);
 
 -- permissions
 CREATE TABLE IF NOT EXISTS permissions (
-  id          TEXT PRIMARY KEY,
+  id          TEXT NOT NULL,
   module      TEXT NOT NULL,
   action      TEXT NOT NULL,
   name_he     TEXT NOT NULL,
   description TEXT,
   tenant_id   UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
-  created_at  TIMESTAMPTZ DEFAULT NOW()
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (id, tenant_id)
 );
 ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_permissions" ON permissions FOR ALL USING (true) WITH CHECK (true);
@@ -1174,7 +1211,7 @@ CREATE TABLE IF NOT EXISTS role_permissions (
   permission_id TEXT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
   granted       BOOLEAN NOT NULL DEFAULT true,
   tenant_id     UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
-  PRIMARY KEY (role_id, permission_id)
+  PRIMARY KEY (role_id, permission_id, tenant_id)
 );
 ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "all_role_permissions" ON role_permissions FOR ALL USING (true) WITH CHECK (true);
@@ -1353,27 +1390,35 @@ CREATE INDEX idx_sup_docs_batch ON supplier_documents(tenant_id, batch_id) WHERE
 CREATE INDEX idx_sup_docs_historical ON supplier_documents(tenant_id, is_historical) WHERE is_historical = true;
 
 -- ============================================================
--- Phase 5.5a — RPC: next_internal_doc_number
+-- Phase 5.5a+044 — RPC: next_internal_doc_number (fixed: includes soft-deleted docs)
 -- ============================================================
 
-CREATE OR REPLACE FUNCTION next_internal_doc_number(p_tenant_id UUID)
+CREATE OR REPLACE FUNCTION next_internal_doc_number(
+  p_tenant_id UUID,
+  p_prefix TEXT DEFAULT 'DOC'
+)
 RETURNS TEXT
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_max_num INT;
+  v_max INTEGER;
   v_next TEXT;
 BEGIN
-  SELECT COALESCE(MAX(
-    CAST(SUBSTRING(internal_number FROM 5) AS INT)
-  ), 0) INTO v_max_num
+  -- Lock the tenant row to serialize numbering
+  PERFORM 1 FROM tenants WHERE id = p_tenant_id FOR UPDATE;
+
+  -- Find highest existing number (includes soft-deleted to avoid unique index collision)
+  SELECT COALESCE(
+    MAX(
+      CAST(SUBSTRING(internal_number FROM (LENGTH(p_prefix) + 2)) AS INTEGER)
+    ), 0)
+  INTO v_max
   FROM supplier_documents
   WHERE tenant_id = p_tenant_id
-    AND internal_number IS NOT NULL
-    AND internal_number LIKE 'DOC-%';
+    AND internal_number LIKE p_prefix || '-%';
 
-  v_next := 'DOC-' || LPAD((v_max_num + 1)::TEXT, 4, '0');
+  v_next := p_prefix || '-' || LPAD((v_max + 1)::TEXT, 5, '0');
   RETURN v_next;
 END;
 $$;
@@ -1781,132 +1826,98 @@ $$;
 -- shipments (5), admin (2)
 -- 36 role_permissions assignments added for 5 roles (ceo, manager, team_lead, worker, viewer)
 
--- ═══════════════════════════════════════════════════════════════
--- Module 1.5: Shared Components
--- ═══════════════════════════════════════════════════════════════
--- Added in Phase 1:
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS ui_config JSONB DEFAULT '{}';
-
--- Added in Phase 3: activity_log table
-CREATE TABLE activity_log (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  tenant_id UUID NOT NULL REFERENCES tenants(id),
-  branch_id UUID,
-  user_id UUID REFERENCES employees(id),
-  level TEXT NOT NULL DEFAULT 'info'
-    CHECK (level IN ('info', 'warning', 'error', 'critical')),
-  action TEXT NOT NULL,
-  entity_type TEXT NOT NULL,
-  entity_id TEXT,
-  details JSONB DEFAULT '{}',
-  ip_address TEXT,
-  user_agent TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON activity_log
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE INDEX idx_activity_log_tenant ON activity_log(tenant_id);
-CREATE INDEX idx_activity_log_entity ON activity_log(tenant_id, entity_type, entity_id);
-CREATE INDEX idx_activity_log_action ON activity_log(tenant_id, action);
-CREATE INDEX idx_activity_log_created ON activity_log(tenant_id, created_at DESC);
-CREATE INDEX idx_activity_log_level ON activity_log(tenant_id, level) WHERE level IN ('warning', 'error', 'critical');
-
--- Added in Phase 3: Atomic RPC functions
-CREATE OR REPLACE FUNCTION increment_paid_amount(p_doc_id UUID, p_delta NUMERIC)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
-BEGIN
-  UPDATE supplier_documents
-    SET paid_amount = COALESCE(paid_amount, 0) + p_delta,
-        status = CASE WHEN COALESCE(paid_amount, 0) + p_delta >= total_amount THEN 'paid' ELSE 'partially_paid' END
-    WHERE id = p_doc_id;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION increment_prepaid_used(p_deal_id UUID, p_delta NUMERIC)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
-BEGIN
-  UPDATE prepaid_deals
-    SET total_used = COALESCE(total_used, 0) + p_delta,
-        total_remaining = total_prepaid - (COALESCE(total_used, 0) + p_delta),
-        updated_at = now()
-    WHERE id = p_deal_id;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION increment_shipment_counters(p_shipment_id UUID, p_items_delta INTEGER, p_value_delta NUMERIC)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
-BEGIN
-  UPDATE shipments
-    SET items_count = COALESCE(items_count, 0) + p_items_delta,
-        total_value = COALESCE(total_value, 0) + p_value_delta
-    WHERE id = p_shipment_id;
-END;
-$$;
-
--- Added in QA Phase: Multi-tenant permissions PK fix
--- roles: (id) → (id, tenant_id)
-ALTER TABLE roles DROP CONSTRAINT roles_pkey;
-ALTER TABLE roles ADD PRIMARY KEY (id, tenant_id);
-
--- permissions: (id) → (id, tenant_id)
-ALTER TABLE permissions DROP CONSTRAINT permissions_pkey;
-ALTER TABLE permissions ADD PRIMARY KEY (id, tenant_id);
-
--- role_permissions: (role_id, permission_id) → (role_id, permission_id, tenant_id)
-ALTER TABLE role_permissions DROP CONSTRAINT role_permissions_pkey;
-ALTER TABLE role_permissions ADD PRIMARY KEY (role_id, permission_id, tenant_id);
-
--- FKs updated to composite references
-ALTER TABLE role_permissions ADD CONSTRAINT role_permissions_role_fk
-  FOREIGN KEY (role_id, tenant_id) REFERENCES roles(id, tenant_id) ON DELETE CASCADE;
-ALTER TABLE role_permissions ADD CONSTRAINT role_permissions_permission_fk
-  FOREIGN KEY (permission_id, tenant_id) REFERENCES permissions(id, tenant_id) ON DELETE CASCADE;
-ALTER TABLE employee_roles ADD CONSTRAINT employee_roles_role_fk
-  FOREIGN KEY (role_id, tenant_id) REFERENCES roles(id, tenant_id) ON DELETE CASCADE;
-
--- ═══════════════════════════════════════════════════════════════
--- Phase 8: Receipt item PO fields + Supplier opening balance
--- ═══════════════════════════════════════════════════════════════
-
--- 036: PO comparison fields on goods_receipt_items
-ALTER TABLE goods_receipt_items
-  ADD COLUMN IF NOT EXISTS price_decision TEXT
-    CHECK (price_decision IS NULL OR price_decision IN ('po_price', 'invoice_price')),
-  ADD COLUMN IF NOT EXISTS po_match_status TEXT
-    CHECK (po_match_status IS NULL OR po_match_status IN ('matched', 'not_in_po', 'returned'));
-
--- 037: Supplier opening balance
-ALTER TABLE suppliers
-  ADD COLUMN IF NOT EXISTS opening_balance NUMERIC DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS opening_balance_date DATE,
-  ADD COLUMN IF NOT EXISTS opening_balance_notes TEXT,
-  ADD COLUMN IF NOT EXISTS opening_balance_set_by UUID REFERENCES employees(id);
-
--- 039: return_note document type for all tenants
--- INSERT INTO document_types (tenant_id, code, name_he, name_en, affects_debt, is_system)
---   VALUES (<tenant_id>, 'return_note', 'תעודת החזרה', 'Return Note', 'decrease', true)
---   for each active tenant. ON CONFLICT DO NOTHING.
-
--- RLS fix: corrected RLS policies on 5 tables (roles, permissions, role_permissions,
--- employee_roles, auth_sessions) — changed from permissive anon access to proper
+-- ============================================================
+-- RLS Policy Fix (applied post-Phase 8)
+-- ============================================================
+-- Corrected RLS policies on 5 tables: roles, permissions, role_permissions,
+-- employee_roles, auth_sessions. Changed from permissive anon access to proper
 -- tenant_isolation using JWT current_setting('app.tenant_id').
 
 -- ============================================================
 -- 49. supplier_document_files — Multi-file support (Phase 8-QA, migration 040)
--- Owner: Module 1 (Debt sub-module)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS supplier_document_files (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL REFERENCES tenants(id),
   document_id UUID NOT NULL REFERENCES supplier_documents(id) ON DELETE CASCADE,
-  file_url TEXT NOT NULL,          -- Storage path in supplier-docs bucket
-  file_name TEXT,                  -- Original filename
-  file_hash TEXT,                  -- SHA-256 for future dedup
-  sort_order INT NOT NULL DEFAULT 0,  -- Page order
+  file_url TEXT NOT NULL,
+  file_name TEXT,
+  file_hash TEXT,
+  sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT now(),
   created_by UUID REFERENCES employees(id)
 );
+
 CREATE INDEX IF NOT EXISTS idx_sdf_document ON supplier_document_files(document_id);
 CREATE INDEX IF NOT EXISTS idx_sdf_tenant ON supplier_document_files(tenant_id);
--- RLS: JWT tenant isolation + service_role bypass
+
+ALTER TABLE supplier_document_files ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "tenant_isolation" ON supplier_document_files FOR ALL
+  USING (tenant_id = ((current_setting('request.jwt.claims'::text, true))::json->>'tenant_id')::uuid);
+CREATE POLICY "service_bypass" ON supplier_document_files FOR ALL
+  USING (current_setting('role', true) = 'service_role');
+
+-- ============================================================
+-- Phase 8-QA-f — RPC: Atomic PO number generation (041)
+-- ============================================================
+CREATE OR REPLACE FUNCTION next_po_number(p_tenant_id UUID, p_supplier_number TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_prefix TEXT;
+  v_max_seq INT;
+BEGIN
+  v_prefix := 'PO-' || p_supplier_number || '-';
+  SELECT COALESCE(MAX(
+    CAST(SUBSTRING(po_number FROM LENGTH(v_prefix) + 1) AS INT)
+  ), 0) INTO v_max_seq
+  FROM purchase_orders
+  WHERE tenant_id = p_tenant_id
+    AND po_number LIKE v_prefix || '%'
+  FOR UPDATE;
+  RETURN v_prefix || LPAD((v_max_seq + 1)::TEXT, 4, '0');
+END;
+$$;
+
+-- ============================================================
+-- Phase 8-QA-f — RPC: Atomic return number generation (042)
+-- ============================================================
+CREATE OR REPLACE FUNCTION next_return_number(p_tenant_id UUID, p_supplier_number TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_prefix TEXT;
+  v_max_seq INT;
+BEGIN
+  v_prefix := 'RET-' || p_supplier_number || '-';
+  SELECT COALESCE(MAX(
+    CAST(SUBSTRING(return_number FROM LENGTH(v_prefix) + 1) AS INT)
+  ), 0) INTO v_max_seq
+  FROM supplier_returns
+  WHERE tenant_id = p_tenant_id
+    AND return_number LIKE v_prefix || '%'
+  FOR UPDATE;
+  RETURN v_prefix || LPAD((v_max_seq + 1)::TEXT, 4, '0');
+END;
+$$;
+
+-- ============================================================
+-- Phase 8-QA-f — RPC: PO item aggregates (043)
+-- ============================================================
+CREATE OR REPLACE FUNCTION get_po_aggregates(p_tenant_id UUID)
+RETURNS TABLE(po_id UUID, item_count BIGINT, total_value NUMERIC)
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT
+    poi.po_id,
+    COUNT(*) as item_count,
+    COALESCE(SUM(poi.qty_ordered * poi.unit_cost * (1 - COALESCE(poi.discount_pct, 0) / 100.0)), 0) as total_value
+  FROM purchase_order_items poi
+  WHERE poi.tenant_id = p_tenant_id
+  GROUP BY poi.po_id;
+$$;
