@@ -450,10 +450,20 @@ async function generateReceiptBarcodes() {
 
   showLoading('מייצר ברקודים...');
   try {
+    // Batch pattern (same as inventory-entry generateBarcodes):
+    // Load max barcode ONCE, then increment locally to avoid duplicates.
+    // generateNextBarcode() re-queries DB each call which resets maxBarcode
+    // causing duplicates when multiple items need barcodes.
+    await loadMaxBarcode();
+    var prefix = branchCode.padStart(2, '0');
+    var nextSeq = maxBarcode;
     var generated = 0;
+
     for (var i = 0; i < needBarcode.length; i++) {
       var item = needBarcode[i];
-      var newBc = await generateNextBarcode();
+      nextSeq++;
+      if (nextSeq > 99999) throw new Error('חריגה — מקסימום 99,999 ברקודים לסניף ' + prefix);
+      var newBc = prefix + String(nextSeq).padStart(5, '0');
       // Update the DOM row directly
       var bcInput = item.tr.querySelector('.rcpt-barcode');
       if (bcInput) {
@@ -462,6 +472,8 @@ async function generateReceiptBarcodes() {
       }
       generated++;
     }
+    // Update global so subsequent calls don't reuse these numbers
+    maxBarcode = nextSeq;
     toast(generated + ' ברקודים נוצרו — הדפס תוויות!', 's');
     updateReceiptItemsStats();
   } catch (e) {

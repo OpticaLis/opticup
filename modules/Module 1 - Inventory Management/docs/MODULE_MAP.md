@@ -435,7 +435,7 @@
 | `getReceiptItems` | `()` | Collects all receipt item data from DOM. Throws if qty < 1 |
 | `updateReceiptItemsStats` | `()` | Calculates and displays item/unit/new/existing counts |
 | `addNewReceiptRow` | `()` | Adds empty receipt row without barcode. Barcode assigned later via generateReceiptBarcodes() |
-| `generateReceiptBarcodes` | `()` | Async. Manual barcode generation for new receipt items. Skips not_received/return items, keeps existing barcodes. Validates brand+model before generating |
+| `generateReceiptBarcodes` | `()` | Async. Manual barcode generation for new receipt items. Uses batch pattern (loadMaxBarcode once + local increment) to prevent duplicate barcodes. Skips not_received/return items, keeps existing barcodes. Validates brand+model before generating |
 | `_pickReceiptFile` | `()` | Opens hidden file input (multi-select), delegates to _stageReceiptFile for each file |
 | `_initReceiptDropzone` | `()` | Adds drag/drop + click events to rcpt-attach-dropzone element. Init guard prevents stacking. Called on openNewReceipt/openExistingReceipt |
 | `_stageReceiptFile` | `(file)` | Validates file type/size, adds to _pendingReceiptFiles array, calls _renderReceiptFileList |
@@ -2147,6 +2147,7 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 - `next_return_number(p_tenant_id UUID, p_supplier_number TEXT)` — Atomic sequential RET-{sup}-{NNNN} generation. Same pattern as next_po_number. JS fallback in debt-returns.js if RPC not yet deployed.
 - `get_po_aggregates(p_tenant_id UUID)` — Returns per-PO item_count and total_value (SUM qty*cost*(1-discount/100)). Used by purchase-orders.js for table columns. JS client-side fallback if RPC not deployed.
 - Migration: `041_atomic_po_number.sql`, `042_atomic_return_number.sql`, `043_po_item_aggregates.sql`
+- Migration: `049_fix_po_return_number_rpc.sql` — Fixes "FOR UPDATE not allowed with aggregate functions" error. Locks tenants row first, then runs MAX() aggregate separately.
 
 **✅ Phase 2a:** Database preparations for receipt/debt flow improvements:
 - Add `'pending_invoice'` to `supplier_documents` status CHECK constraint — new status for receipt-created docs awaiting invoice attachment
