@@ -26,11 +26,26 @@ async function openViewPO(id) {
       received:'#4CAF50', cancelled:'#f44336'
     };
 
+    const isPartial = po.status === 'partial';
     const itemRows = (items || []).map(item => {
       const total = (item.qty_ordered||0) * (item.unit_cost||0) * (1 - (item.discount_pct||0)/100);
       const received = item.qty_received || 0;
       const ordered  = item.qty_ordered  || 0;
-      const rowColor = received >= ordered ? '#e8f5e9' : received > 0 ? '#fff8e1' : '';
+      const fullyReceived = received >= ordered;
+      const rowColor = fullyReceived ? '#e8f5e9' : received > 0 ? '#fff8e1' : '';
+      // Cancel button for undelivered items on partial POs
+      var actionCell = '';
+      if (isPartial && !fullyReceived) {
+        actionCell = '<td style="padding:8px;text-align:center"><button class="btn btn-sm btn-po-cancel-item" ' +
+          'data-item-id="' + escapeHtml(item.id) + '" data-po-id="' + escapeHtml(po.id) + '" ' +
+          'data-received="' + received + '" ' +
+          'style="background:#ef4444;color:#fff;font-size:11px;padding:2px 8px" ' +
+          'title="בטל שורה — קבל רק מה שהגיע">\u274C \u05D1\u05D8\u05DC</button></td>';
+      } else if (isPartial) {
+        actionCell = '<td style="padding:8px;text-align:center;color:#4CAF50">\u2705</td>';
+      } else {
+        actionCell = '';
+      }
       return `<tr style="background:${rowColor}">
         <td style="padding:8px">${item.brand||'—'}</td>
         <td style="padding:8px">${item.model||'—'}</td>
@@ -41,6 +56,7 @@ async function openViewPO(id) {
         <td style="padding:8px; text-align:center">${item.unit_cost ? '₪'+Number(item.unit_cost).toFixed(2) : '—'}</td>
         <td style="padding:8px; text-align:center">${item.discount_pct||0}%</td>
         <td style="padding:8px; text-align:center; font-weight:600">₪${total.toFixed(2)}</td>
+        ${actionCell}
       </tr>`;
     }).join('');
 
@@ -87,6 +103,7 @@ async function openViewPO(id) {
                 <th style="padding:8px">עלות</th>
                 <th style="padding:8px">הנחה</th>
                 <th style="padding:8px">סה"כ</th>
+                ${isPartial ? '<th style="padding:8px">פעולה</th>' : ''}
               </tr>
             </thead>
             <tbody>${itemRows}</tbody>
@@ -288,8 +305,48 @@ async function createPOForBrand(brandId, brandName) {
   }
 }
 
+// ── Cancel single PO item (set qty_ordered = qty_received) ──────
+async function cancelPOItem(itemId, poId, qtyReceived) {
+  var msg = qtyReceived > 0
+    ? 'הפריט התקבל חלקית (' + qtyReceived + '). ביטול יעדכן את הכמות המוזמנת למה שהתקבל בפועל.'
+    : 'הפריט לא הגיע כלל. ביטול יסיר אותו מההזמנה.';
+  var ok = await confirmDialog('ביטול שורה', msg + ' להמשיך?');
+  if (!ok) return;
+  try {
+    showLoading('מעדכן...');
+    var { error } = await sb.from(T.PO_ITEMS).update({ qty_ordered: qtyReceived })
+      .eq('id', itemId).eq('tenant_id', getTenantId());
+    if (error) throw error;
+    await writeLog('po_item_cancelled', null, {
+      po_item_id: itemId, po_id: poId,
+      qty_received: qtyReceived, reason: 'ביטול שורה בהזמנה חלקית'
+    });
+    // Recalculate PO status: if all items now fully received → 'received'
+    var { data: allItems } = await sb.from(T.PO_ITEMS).select('qty_ordered, qty_received')
+      .eq('po_id', poId).eq('tenant_id', getTenantId());
+    var allDone = (allItems || []).every(function(it) { return (it.qty_received || 0) >= (it.qty_ordered || 0); });
+    if (allDone) {
+      await sb.from(T.PO).update({ status: 'received' }).eq('id', poId);
+      toast('כל הפריטים התקבלו — ההזמנה סומנה כהתקבלה', 's');
+    } else {
+      toast('השורה בוטלה', 's');
+    }
+    hideLoading();
+    openViewPO(poId); // refresh view
+  } catch (e) {
+    hideLoading();
+    toast('שגיאה: ' + (e.message || ''), 'e');
+  }
+}
+
 // ─── EVENT DELEGATION — purchase-orders.js ──────────────────────
 document.addEventListener('click', function(e) {
+  // Cancel individual PO item
+  const cancelItemBtn = e.target.closest('.btn-po-cancel-item');
+  if (cancelItemBtn) {
+    cancelPOItem(cancelItemBtn.dataset.itemId, cancelItemBtn.dataset.poId, parseInt(cancelItemBtn.dataset.received) || 0);
+    return;
+  }
   // #12 openEditPO
   const editBtn = e.target.closest('.btn-po-edit');
   if (editBtn) { openEditPO(editBtn.dataset.id); return; }

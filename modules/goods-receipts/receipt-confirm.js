@@ -85,7 +85,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
   const { data: rcptData } = await sb.from(T.RECEIPTS).select('supplier_id').eq('id', receiptId).single();
   if (rcptData?.supplier_id) {
     try {
-      const doc = await createDocumentFromReceipt(receiptId, rcptData.supplier_id, savedItems);
+      const doc = await createDocumentFromReceipt(receiptId, rcptData.supplier_id, savedItems, rcptNumber);
       if (doc) {
         toast(`קבלה אושרה · מסמך ספק ${doc.internal_number} נוצר`, 's');
       } else {
