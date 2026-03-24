@@ -37,6 +37,7 @@ const T = {
   SHIP_ITEMS: 'shipment_items',
   ACTIVITY_LOG: 'activity_log',
   DOC_FILES: 'supplier_document_files',
+  IMAGES: 'inventory_images',
 };
 
 // Tenant slug — resolved dynamically from URL ?t= param or sessionStorage.

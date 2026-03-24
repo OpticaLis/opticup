@@ -232,7 +232,7 @@ function renderInventoryRows(recs) {
       <td style="font-weight:700;color:${qC}" data-qty-id="${r.id}">${qty}${isAdm?` <span class="qty-btns"><button class="qty-btn qty-plus" data-id="${escapeHtml(r.id)}" data-dir="add" title="הוסף כמות">➕</button><button class="qty-btn qty-minus" data-id="${escapeHtml(r.id)}" data-dir="remove" title="הוצא כמות">➖</button></span>`:''}</td>
       <td class="img-cell">${imgCell}</td>
       <td${isAdm?' class="editable" onclick="invEditSync(this)"':''}>${syncVal}</td>
-      ${isAdm?`<td><button class="btn btn-d btn-sm btn-inv-delete" data-id="${escapeHtml(r.id)}" title="מחק">🗑️</button></td>`:'<td class="admin-col"></td>'}
+      <td style="position:relative"><button class="btn-inv-menu" data-id="${escapeHtml(r.id)}" style="background:none;border:none;cursor:pointer;font-size:1.1rem;padding:4px 8px" title="פעולות">⋯</button></td>
     </tr>`;
   }).join('');
 }
@@ -261,8 +261,45 @@ function sortInventory(th) {
   loadInventoryPage();
 }
 
+// --- ⋯ Action Menu ---
+var _invMenuOpen = null;
+function _openInvMenu(btn) {
+  _closeInvMenu();
+  var id = btn.dataset.id;
+  var rec = invData.find(function(r) { return r.id === id; });
+  if (!rec) return;
+  var isAdm = document.body.classList.contains('admin-mode');
+  var items = [
+    { icon: '\uD83D\uDCF7', label: '\u05EA\u05DE\u05D5\u05E0\u05D5\u05EA', fn: 'openImageModal', id: id },
+    { icon: '\uD83D\uDCCB', label: '\u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D4', fn: 'openItemHistory', id: id, extra: "'" + escapeHtml(rec.barcode||'') + "','" + escapeHtml(rec.brand_name||'') + "','" + escapeHtml(rec.model||'') + "'" }
+  ];
+  if (isAdm) {
+    items.push({ icon: '\uD83D\uDDD1\uFE0F', label: '\u05DE\u05D7\u05D9\u05E7\u05D4', fn: 'deleteInvRow', id: id, cls: 'color:#ef4444' });
+  }
+  var dd = document.createElement('div');
+  dd.className = 'inv-action-menu';
+  dd.innerHTML = items.map(function(it) {
+    var args = it.extra ? "'" + it.id + "'," + it.extra : "'" + it.id + "'";
+    var style = it.cls ? ' style="' + it.cls + '"' : '';
+    return '<button' + style + ' onclick="_closeInvMenu();' + it.fn + '(' + args + ')">' + it.icon + ' ' + it.label + '</button>';
+  }).join('');
+  var rect = btn.getBoundingClientRect();
+  dd.style.cssText = 'position:fixed;z-index:9999;background:#fff;border:1px solid var(--g200,#e5e7eb);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:150px;padding:4px 0;' +
+    'top:' + (rect.bottom + 2) + 'px;right:' + (window.innerWidth - rect.right) + 'px';
+  document.body.appendChild(dd);
+  _invMenuOpen = dd;
+}
+function _closeInvMenu() {
+  if (_invMenuOpen) { _invMenuOpen.remove(); _invMenuOpen = null; }
+}
+
 // ─── EVENT DELEGATION — inventory-table.js ───────────────────────
 document.addEventListener('click', function(e) {
+  // ⋯ menu toggle
+  var menuBtn = e.target.closest('.btn-inv-menu');
+  if (menuBtn) { _openInvMenu(menuBtn); return; }
+  // Close menu on any outside click
+  if (_invMenuOpen && !e.target.closest('.inv-action-menu')) _closeInvMenu();
   // #3 openItemHistory
   const histBtn = e.target.closest('.btn-item-history');
   if (histBtn) {
@@ -272,17 +309,14 @@ document.addEventListener('click', function(e) {
   // #1 openReductionModal
   const reduceBtn = e.target.closest('.btn-reduce');
   if (reduceBtn) { openReductionModal(reduceBtn.dataset.id); return; }
-  // #2 showImagePreview
+  // #2 showImagePreview — click on thumbnail opens image modal
   const imgThumb = e.target.closest('.img-thumb-click');
-  if (imgThumb) { showImagePreview(imgThumb.dataset.id); return; }
+  if (imgThumb) { openImageModal(imgThumb.dataset.id); return; }
   // #4-5 openQtyModal (add / remove)
   const qtyPlus = e.target.closest('.qty-plus');
   if (qtyPlus) { openQtyModal(qtyPlus.dataset.id, qtyPlus.dataset.dir); return; }
   const qtyMinus = e.target.closest('.qty-minus');
   if (qtyMinus) { openQtyModal(qtyMinus.dataset.id, qtyMinus.dataset.dir); return; }
-  // #6 deleteInvRow
-  const delBtn = e.target.closest('.btn-inv-delete');
-  if (delBtn) { deleteInvRow(delBtn.dataset.id); return; }
 });
 
 document.addEventListener('change', function(e) {

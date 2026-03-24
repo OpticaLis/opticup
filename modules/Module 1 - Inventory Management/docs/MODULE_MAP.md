@@ -88,6 +88,7 @@
 | 52b | inventory-returns-tab.js | modules/inventory/inventory-returns-tab.js | 269 | Inventory returns (זיכויים) tab: initReturnsTab, loadReturnsData (status/supplier/date/search filtering), renderReturnsFilters, renderReturnsList (accordion table with bulk selection), toggleReturnsHistory, getReturnsCount (cached badge count) |
 | 52c | inventory-returns-actions.js | modules/inventory/inventory-returns-actions.js | 164 | Returns tab actions: markAgentPicked (PIN-verified), sendToBox (navigate to shipments wizard), bulkSendToBox (validates same supplier), bulkAction (bulk status update), exportReturnsExcel |
 | 52d | incoming-invoices.js | modules/inventory/incoming-invoices.js | 255 | Incoming invoices tab: loadIncomingInvoicesTab (drag-drop file upload + supplier select + submit to debt), _submitIncomingInvoice (upload + create pending_invoice doc), _loadRecentPendingInvoices (last 10 table) |
+| 52e | inventory-images.js | modules/inventory/inventory-images.js | 203 | Frame image capture/upload/delete: openImageModal (modal with grid + camera/upload buttons), _captureImage (rear camera via capture=environment), _pickImage (file picker), _processAndPreview (Canvas resize + WEBP conversion at 0.82 quality), _uploadPendingImages (Storage upload + DB insert), _deleteImage (Storage + DB delete) |
 | 51b | debt-returns-tab.js | modules/debt/debt-returns-tab.js | 365 | Global debt returns (credit tracking) tab: initDebtReturnsTab, loadDebtReturns (multi-status filtering), renderDebtReturnsList (accordion with bulk selection), renderDebtReturnsSummary, toggleDebtReturnsHistory |
 | 51c | debt-returns-tab-actions.js | modules/debt/debt-returns-tab-actions.js | 289 | Debt returns actions: markDebtCredited (requires file upload first via _promptCreditFileUpload, then PIN), _promptCreditFileUpload (drag-drop/pick modal), _createCreditNoteForReturn (now attaches uploaded file + links doc to return), bulkMarkCredited (blocked — requires per-item file upload), exportDebtReturnsExcel |
 | 53 | file-upload.js | js/file-upload.js | 321 | File upload helper: uploadSupplierFile, getSupplierFileUrl (signed URLs), renderFilePreview, pickAndUploadFile, pickAndUploadFiles (multi-file), fetchDocFiles (with fallback to legacy file_url), saveDocFile (to supplier_document_files), renderFileGallery (thumbnails + page nav + delete buttons), _deleteGalleryFile (re-queries fresh files from DB after delete + cleans storage), _renderSingleFilePreview |
@@ -124,7 +125,7 @@
 
 | 79 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
 
-**Total: ~111 JS files across 14 module folders + 10 global files + 9 shared/js files + watcher-deploy/ (8-file standalone package), ~23,500 lines** (includes scripts/sync-watcher.js + sync-export.js)
+**Total: ~112 JS files across 14 module folders + 10 global files + 9 shared/js files + watcher-deploy/ (8-file standalone package), ~23,700 lines** (includes scripts/sync-watcher.js + sync-export.js)
 
 **Note (Flow Review Session):** 4 new files: ai-historical-process.js (182 lines, split from ai-historical-import.js — file grouping + upload processing), ai-ocr-review.js updated (174→262, delete+duplicate buttons), debt-doc-compare.js (244 lines, PO vs Receipt vs Invoice comparison table), debt-supplier-tabs.js (192 lines, split from debt-supplier-detail.js). Updated: ai-ocr.js (182→281, multi-file OCR merge), ai-historical-import.js (338→249, OCR removed — upload-only with draft status), receipt-ocr.js (+20 lines, hide OCR button when PO linked), receipt-confirm.js (-5 lines, fixed product_type constraint). Migrations: 044 (atomic internal doc number), 045 (draft status CHECK constraint). Iron Rule #13 added to CLAUDE.md (atomic RPC for sequential numbers).
 
@@ -292,6 +293,17 @@
 | `filterInventoryTable` | `()` | Debounced (300ms) filter change handler, resets to page 0 |
 | `renderInventoryRows` | `(recs)` | Renders table body HTML with inline edit cells, qty buttons, image thumbs, delete buttons |
 | `sortInventory` | `(th)` | Toggles column sort (none→asc→desc→none), resets to page 0 |
+
+### modules/inventory/inventory-images.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `openImageModal` | `(inventoryId)` | Async. Shows modal with image grid, camera/upload buttons, save/delete per image |
+| `_captureImage` | `()` | Creates hidden file input with capture=environment for rear camera |
+| `_pickImage` | `()` | Creates hidden file input for gallery/file picker (multiple) |
+| `_processAndPreview` | `(file)` | Resizes to max 1200px, converts to WEBP 0.82 quality via Canvas, adds to pending array |
+| `_uploadPendingImages` | `(inventoryId)` | Async. Uploads pending blobs to Storage bucket, inserts DB rows, refreshes grid |
+| `_deleteImage` | `(imageId, storagePath)` | Async. Confirms, removes from Storage + DB, re-renders grid |
 
 ### modules/inventory/inventory-edit.js
 
