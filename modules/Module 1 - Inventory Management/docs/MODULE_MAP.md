@@ -25,16 +25,16 @@
 | 14 | po-items.js | modules/purchasing/po-items.js | 330 | PO item management: renderPOItemsTable, cascading brand→model→color/size datalists, addPOItemManual, addPOItemByBarcode, removePOItem, duplicatePOItem, updatePOTotals, _calcPOFinalPrice, _onPOFinalPriceChange, _onPODiscountChange, _onPOCostChange, _updatePOStockCounter (live inventory count per PO item row), _doUpdatePOStockCounter |
 | 15 | po-actions.js | modules/purchasing/po-actions.js | 254 | PO lifecycle actions: savePODraft (with duplicate row detection), sendPurchaseOrder, cancelPO (blocks partial POs with received items), exportPOExcel, exportPOPdf |
 | 16 | po-view-import.js | modules/purchasing/po-view-import.js | 376 | Read-only PO view with received qty tracking, cancelPOItem (per-item cancel on partial POs), importPOToInventory (creates/updates inventory from PO items, uses generateNextBarcode for atomic barcode gen), createPOForBrand (from low stock modal), PO event delegation. Security: tenant_id on all queries, escapeHtml on all interpolated fields |
-| 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 390 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (expands PO qty>1 to individual rows, defers barcode gen), updatePOStatusAfterReceipt (filters out not_received/returned items), openNewReceipt, _initRcptSupplierSelect (searchable supplier dropdown via createSearchSelect) |
-| 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 470 | Receipt form: openExistingReceipt (restores from_po+receipt_status), toggleReceiptFormInputs, searchReceiptBarcode, addReceiptItemRow (status dropdown for PO rows, delete for non-PO; yellow bg if no barcode), getReceiptItems (includes from_po+receipt_status), updateReceiptItemsStats (shows not_received/return counts), addNewReceiptRow (no auto-barcode), generateReceiptBarcodes (manual barcode gen for new items, skips not_received/return), _pickReceiptFile, _initReceiptDropzone, _stageReceiptFile, _removeReceiptFile, _onReceiptStatusChange (dims row on not_received) |
+| 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 352 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (ONE row per PO item with qty=remaining, matches existing inventory), updatePOStatusAfterReceipt (filters out not_received/returned items), openNewReceipt, _initRcptSupplierSelect (searchable supplier dropdown via createSearchSelect) |
+| 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 559 | Receipt form: openExistingReceipt, addReceiptItemRow (status dropdown with partial_received, partial qty input), getReceiptItems (returns barcodes[] array, effectiveQty, ordered_qty), generateReceiptBarcodes (multi-barcode: N barcodes per row, tr.dataset.barcodes, "+N נוספים" indicator), _onReceiptStatusChange (handles partial_received with qty input), updateReceiptItemsStats (shows partial count), file attachment (drag-drop, multi-file) |
 | 18b | receipt-guide.js | modules/goods-receipts/receipt-guide.js | 59 | Employee quick reference guide (split from receipt-form.js): RECEIPT_GUIDE_TEXT constant, showReceiptGuide() |
-| 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 186 | Receipt save/cancel: saveReceiptDraft (persists receipt_status+from_po), saveReceiptDraftInternal (same), cancelReceipt, backToReceiptList |
-| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 425 | Receipt confirmation: confirmReceipt (validations skip return/not_received items; hard-blocks without barcodes + without file; match dialog; checks missing+returnMarked in shortcut), _confirmReceiptWithDecisions, confirmReceiptCore (skips returned+not_received items, excludes from subtotal), confirmReceiptById, createNewInventoryFromReceiptItem, _showMatchConfirmDialog |
+| 19 | receipt-actions.js | modules/goods-receipts/receipt-actions.js | 190 | Receipt save/cancel: saveReceiptDraft (persists barcodes_csv+ordered_qty+receipt_status+from_po), saveReceiptDraftInternal (same), cancelReceipt, backToReceiptList |
+| 19b | receipt-confirm.js | modules/goods-receipts/receipt-confirm.js | 460 | Receipt confirmation: confirmReceipt (validates barcodes count matches qty), confirmReceiptCore (multi-barcode: reads barcodes_csv, creates 1 inventory per barcode, first unit increments existing), createNewInventoryFromReceiptItem (always qty=1), _showMatchConfirmDialog, _confirmReceiptWithDecisions, confirmReceiptById |
 | 19c | receipt-debt.js | modules/goods-receipts/receipt-debt.js | 167 | Auto-create supplier_documents on receipt confirmation: createDocumentFromReceipt(receiptId, supplierId, receiptItems, documentNumber). Uses real document number from receipt form (fallback GR-xxx). Excludes returned+not_received from subtotal. Always creates doc even when subtotal=0 (sets missing_price=true). Phase 8: alerts finance manager via alertPrepaidNewDocument |
 | 19d | receipt-ocr.js | modules/goods-receipts/receipt-ocr.js | 295 | OCR integration: initReceiptOCR (injects scan button), _rcptOcrScan (upload + Edge Function call), _applyOCRToReceipt (auto-fill supplier/items, delegates items to review UI), _rcptOcrFC/_rcptOcrAddConfDot (per-field confidence dots), _rcptOcrSuggestPO (PO auto-suggestion), _rcptOcrShowBanner (confidence banner), _rcptOcrPreviewDoc (source doc modal), _rcptOcrUpdateTemplate (header + item learning), _patchReceiptConfirmForOCR |
 | 19e | receipt-ocr-review.js | modules/goods-receipts/receipt-ocr-review.js | 337 | Item matching + review UI: _rcptOcrParseDescription (brand alias map, regex extraction), _rcptOcrMatchItem (inventory ILIKE with limit), _rcptOcrClassifyItems (matched/new/unknown), _rcptOcrShowReview (Modal with color-coded table, brand search-select), _rcptOcrCollectReviewData, _rcptOcrApplyToForm, _rcptOcrBuildItemCorrections, _rcptOcrSaveItemLearning (item alias learning) |
 | 19f | receipt-po-compare.js | modules/goods-receipts/receipt-po-compare.js | 380 | PO comparison report: _poCompBuildReport (aggregates multi-row receipt items by key for qty comparison; handles receipt_status: not_received→missing, return→returnMarked), _poCompShowReport (7-section modal: matched/shortage/priceGap/notInPo/returnMarked/missing + reorder), _poCompCollectDecisions (auto-sets returned/not_received for marked items), _poCompApplyDecisions (creates supplier_return for returned, logs not_received), _poCompLearnPricePattern (VAT detection), _poCompCreateReorderPO |
-| 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 210 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, exportReceiptBarcodes (Excel barcode export), receipt list event delegation |
+| 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 210 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, exportReceiptBarcodes (reads barcodes_csv for multi-barcode rows, one Excel row per barcode), receipt list event delegation |
 | 21 | audit-log.js | modules/audit/audit-log.js | 215 | Soft delete flow (deleteInvRow, confirmSoftDelete), recycle bin (openRecycleBin, restoreItem, permanentDelete with double PIN) |
 | 22 | item-history.js | modules/audit/item-history.js | 398 | Item timeline (openItemHistory + _loadEntryDocLink for entry doc traceability), ACTION_MAP constant (21 action types), entry history accordion (openEntryHistory, loadEntryHistory, renderEntryHistory), exports |
 | 23 | qty-modal.js | modules/audit/qty-modal.js | 114 | Quantity change modal: openQtyModal (add/remove with reason+PIN including "נשלח לזיכוי"), confirmQtyChange (calls _createReturnFromReduction when reason is credit) |
@@ -419,7 +419,7 @@
 | Function | Parameters | Description |
 |----------|------------|-------------|
 | `loadPOsForSupplier` | `(supplierName)` | Async. Populates PO dropdown with sent/partial POs for supplier |
-| `onReceiptPoSelected` | `()` | Async. Loads PO items, matches to existing inventory by brand+model+size+color, reuses existing barcodes/IDs. For qty>1: first unit reuses existing, additional get new barcodes |
+| `onReceiptPoSelected` | `()` | Async. Loads PO items as ONE row per PO item (qty=remaining). Matches to existing inventory by brand+model+size+color. Barcodes generated separately via generateReceiptBarcodes() |
 | `updatePOStatusAfterReceipt` | `(poId)` | Async. Recalculates PO qty_received per item, updates PO status (received/partial/sent) |
 | `loadReceiptTab` | `()` | Async. Shows receipt list with stats (draft count, confirmed this week, items received) |
 | `openNewReceipt` | `()` | Initializes new receipt form, populates supplier dropdown, resets all state |
@@ -432,16 +432,16 @@
 | `toggleReceiptFormInputs` | `(disabled)` | Enables/disables all form inputs and action bars |
 | `searchReceiptBarcode` | `()` | Async. Searches by barcode, adds as existing or new item row |
 | `addReceiptItemRow` | `(data)` | Adds <tr> to receipt items table. Different rendering for new vs existing items |
-| `getReceiptItems` | `()` | Collects all receipt item data from DOM. Throws if qty < 1 |
+| `getReceiptItems` | `()` | Collects all receipt item data from DOM. Returns barcodes[] array, effectiveQty (adjusted for partial_received), ordered_qty. Throws if qty < 1 |
 | `updateReceiptItemsStats` | `()` | Calculates and displays item/unit/new/existing counts |
 | `addNewReceiptRow` | `()` | Adds empty receipt row without barcode. Barcode assigned later via generateReceiptBarcodes() |
-| `generateReceiptBarcodes` | `()` | Async. Manual barcode generation for new receipt items. Skips not_received/return items, keeps existing barcodes. Validates brand+model before generating |
+| `generateReceiptBarcodes` | `()` | Async. Multi-barcode generation: generates N barcodes per row (N=effective qty). Stores all barcodes in tr.dataset.barcodes (comma-separated). Shows "(+N נוספים)" indicator for multi-barcode rows. Handles existing items with qty>1 (keeps first barcode, generates rest). Skips not_received/return items |
 | `_pickReceiptFile` | `()` | Opens hidden file input (multi-select), delegates to _stageReceiptFile for each file |
 | `_initReceiptDropzone` | `()` | Adds drag/drop + click events to rcpt-attach-dropzone element. Init guard prevents stacking. Called on openNewReceipt/openExistingReceipt |
 | `_stageReceiptFile` | `(file)` | Validates file type/size, adds to _pendingReceiptFiles array, calls _renderReceiptFileList |
 | `_renderReceiptFileList` | `()` | Renders multi-file list with per-file remove buttons and "add more" button |
 | `_removeReceiptFileAt` | `(idx)` | Removes single file from _pendingReceiptFiles by index, re-renders list |
-| `_onReceiptStatusChange` | `(sel)` | Handler for PO row status dropdown. Dims row + disables inputs on 'not_received', restores on 'ok'/'return' |
+| `_onReceiptStatusChange` | `(sel)` | Handler for PO row status dropdown. Dims row + disables inputs on 'not_received', shows partial qty input on 'partial_received', restores on 'ok'/'return' |
 
 ### modules/goods-receipts/receipt-guide.js
 
@@ -453,8 +453,8 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `saveReceiptDraft` | `()` | Async. Validates fields, creates or updates receipt + items |
-| `saveReceiptDraftInternal` | `()` | Async. Internal save without UI feedback, used before confirmReceipt |
+| `saveReceiptDraft` | `()` | Async. Validates fields, creates or updates receipt + items. Persists barcodes_csv and ordered_qty |
+| `saveReceiptDraftInternal` | `()` | Async. Internal save without UI feedback, used before confirmReceipt. Persists barcodes_csv and ordered_qty |
 | `cancelReceipt` | `(receiptId)` | Async. Sets receipt status to 'cancelled' |
 | `backToReceiptList` | `()` | Resets form state, calls loadReceiptTab |
 
@@ -462,11 +462,11 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Core confirmation with atomic rollback: tracks successful increments, rolls back all on failure (returns false). Increments inventory via `sb.rpc('increment_inventory')`, auto-updates cost_price, creates new items, updates PO status, calls createDocumentFromReceipt. Phase 2c: compensating rollback |
-| `confirmReceipt` | `()` | Async. UI-facing: validates (hard-blocks without file), match confirmation dialog, PIN verification, saves draft, then calls confirmReceiptCore. Phase 2c: mandatory file attachment |
+| `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Multi-barcode confirm: reads barcodes_csv from saved items, creates one inventory record per barcode (qty=1 each). First barcode of existing items → increment_inventory, rest → createNewInventoryFromReceiptItem. Atomic rollback on failure. Skips not_received/returned/partial_received excess. Updates PO status, calls createDocumentFromReceipt |
+| `confirmReceipt` | `()` | Async. UI-facing: validates barcodes count matches qty, hard-blocks without file, match confirmation dialog, PIN verification, saves draft, then calls confirmReceiptCore |
 | `_showMatchConfirmDialog` | `(rcptNumber)` | Returns Promise: 'match'/'mismatch'/null. Shows status summary (ok/not_received/return counts). When non-ok items exist, defaults to mismatch button. Shown before PIN in confirmReceipt |
 | `_confirmReceiptWithDecisions` | `(rcptNumber, decisions, items)` | Async. Saves draft, applies PO decisions, calls confirmReceiptCore. Handles rollback (result===false) gracefully |
-| `createNewInventoryFromReceiptItem` | `(item, receiptId, rcptNumber)` | Async. Creates inventory row using pre-assigned barcode from receipt item (falls back to generateNextBarcode). Returns created row |
+| `createNewInventoryFromReceiptItem` | `(item, receiptId, rcptNumber)` | Async. Creates single inventory row (qty=1) using pre-assigned barcode. Called once per physical unit. Returns created row |
 | `confirmReceiptById` | `(receiptId)` | Async. Confirms receipt from list view without opening form |
 
 ### modules/goods-receipts/receipt-debt.js
@@ -2147,6 +2147,7 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 - `next_return_number(p_tenant_id UUID, p_supplier_number TEXT)` — Atomic sequential RET-{sup}-{NNNN} generation. Same pattern as next_po_number. JS fallback in debt-returns.js if RPC not yet deployed.
 - `get_po_aggregates(p_tenant_id UUID)` — Returns per-PO item_count and total_value (SUM qty*cost*(1-discount/100)). Used by purchase-orders.js for table columns. JS client-side fallback if RPC not deployed.
 - Migration: `041_atomic_po_number.sql`, `042_atomic_return_number.sql`, `043_po_item_aggregates.sql`
+- Migration: `049_fix_po_return_number_rpc.sql` — Fixes "FOR UPDATE not allowed with aggregate functions" error. Locks tenants row first, then runs MAX() aggregate separately.
 
 **✅ Phase 2a:** Database preparations for receipt/debt flow improvements:
 - Add `'pending_invoice'` to `supplier_documents` status CHECK constraint — new status for receipt-created docs awaiting invoice attachment

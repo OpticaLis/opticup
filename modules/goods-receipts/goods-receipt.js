@@ -83,7 +83,6 @@ async function onReceiptPoSelected() {
             .eq('tenant_id', getTenantId())
             .eq('brand_id', lookupBrandId)
             .eq('is_deleted', false);
-          // Case-insensitive match on model/size/color via ilike
           if (item.model) lookupQuery = lookupQuery.ilike('model', (item.model || '').trim());
           if (item.size) lookupQuery = lookupQuery.ilike('size', (item.size || '').trim());
           if (item.color) lookupQuery = lookupQuery.ilike('color', (item.color || '').trim());
@@ -93,70 +92,35 @@ async function onReceiptPoSelected() {
         }
       }
 
-      // For qty > 1: first unit reuses existing barcode, additional get new barcodes
-      if (existingInv && remaining === 1) {
-        // Single unit — reuse existing
+      // ONE row per PO item — quantity = remaining units to receive
+      if (existingInv) {
         addReceiptItemRow({
           barcode: existingInv.barcode || '',
           brand: item.brand || '',
           model: item.model || '',
           color: item.color || '',
           size: item.size || '',
-          quantity: 1,
+          quantity: remaining,
           unit_cost: item.unit_cost || '',
           sell_price: item.sell_price || '',
           is_new_item: false,
           inventory_id: existingInv.id,
           from_po: true
         });
-      } else if (existingInv && remaining > 1) {
-        // First unit reuses existing inventory_id
-        addReceiptItemRow({
-          barcode: existingInv.barcode || '',
-          brand: item.brand || '',
-          model: item.model || '',
-          color: item.color || '',
-          size: item.size || '',
-          quantity: 1,
-          unit_cost: item.unit_cost || '',
-          sell_price: item.sell_price || '',
-          is_new_item: false,
-          inventory_id: existingInv.id,
-          from_po: true
-        });
-        // Additional units — barcodes will be generated manually via "יצירת ברקודים" button
-        for (var u = 1; u < remaining; u++) {
-          addReceiptItemRow({
-            barcode: '',
-            brand: item.brand || '',
-            model: item.model || '',
-            color: item.color || '',
-            size: item.size || '',
-            quantity: 1,
-            unit_cost: item.unit_cost || '',
-            sell_price: item.sell_price || '',
-            is_new_item: true,
-            from_po: true
-          });
-        }
       } else {
-        // Genuinely new item — no existing inventory match
-        // Each physical frame needs its own barcode, so create one row per unit
-        for (var u = 0; u < remaining; u++) {
-          addReceiptItemRow({
-            barcode: '',
-            brand: item.brand || '',
-            model: item.model || '',
-            color: item.color || '',
-            size: item.size || '',
-            quantity: 1,
-            unit_cost: item.unit_cost || '',
-            sell_price: item.sell_price || '',
-            is_new_item: true,
-            inventory_id: null,
-            from_po: true
-          });
-        }
+        addReceiptItemRow({
+          barcode: '',
+          brand: item.brand || '',
+          model: item.model || '',
+          color: item.color || '',
+          size: item.size || '',
+          quantity: remaining,
+          unit_cost: item.unit_cost || '',
+          sell_price: item.sell_price || '',
+          is_new_item: true,
+          inventory_id: null,
+          from_po: true
+        });
       }
     }
 

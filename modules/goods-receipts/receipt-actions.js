@@ -76,11 +76,13 @@ async function saveReceiptDraft() {
       receipt_id: receiptId,
       inventory_id: i.inventory_id || null,
       barcode: i.barcode || null,
+      barcodes_csv: (i.barcodes && i.barcodes.length > 0) ? i.barcodes.join(',') : (i.barcode || null),
       brand: i.brand || null,
       model: i.model || null,
       color: i.color || null,
       size: i.size || null,
       quantity: i.quantity,
+      ordered_qty: i.ordered_qty || i.quantity,
       unit_cost: i.unit_cost,
       sell_price: i.sell_price,
       is_new_item: i.is_new_item,
@@ -92,7 +94,7 @@ async function saveReceiptDraft() {
     const { error: iErr } = await sb.from(T.RCPT_ITEMS).insert(itemRows);
     if (iErr) throw iErr;
 
-    toast('טיוטה נשמרה בהצלחה', 's');
+    toast('\u05D8\u05D9\u05D5\u05D8\u05D4 \u05E0\u05E9\u05DE\u05E8\u05D4 \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4', 's');
   } catch (e) {
     console.error('saveReceiptDraft error:', e);
     toast('שגיאה בשמירה: ' + (e.message || ''), 'e');
@@ -145,11 +147,13 @@ async function saveReceiptDraftInternal() {
     receipt_id: receiptId,
     inventory_id: i.inventory_id || null,
     barcode: i.barcode || null,
+    barcodes_csv: (i.barcodes && i.barcodes.length > 0) ? i.barcodes.join(',') : (i.barcode || null),
     brand: i.brand || null,
     model: i.model || null,
     color: i.color || null,
     size: i.size || null,
     quantity: i.quantity,
+    ordered_qty: i.ordered_qty || i.quantity,
     unit_cost: i.unit_cost,
     sell_price: i.sell_price,
     is_new_item: i.is_new_item,

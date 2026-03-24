@@ -7,28 +7,36 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
 
   try {
     for (const item of savedItems) {
-      // Phase 8: skip items marked as returned to supplier or not received
+      // Skip items marked as returned to supplier or not received
       if (item.po_match_status === 'returned' || item.po_match_status === 'not_received') continue;
-      if (!item.is_new_item) {
+      if (item.receipt_status === 'not_received') continue;
+
+      // Parse barcodes: barcodes_csv holds comma-separated list, fallback to single barcode
+      var barcodes = item.barcodes_csv ? item.barcodes_csv.split(',').filter(Boolean) : (item.barcode ? [item.barcode] : []);
+      var effectiveQty = item.quantity || 1;
+
+      if (!item.is_new_item && barcodes.length > 0) {
+        // Existing item: first barcode increments existing inventory, rest create new records
+        var firstBarcode = barcodes[0];
         const { data: invRow, error: findErr } = await sb.from('inventory')
           .select('id, quantity, barcode, brand_id, model, cost_price')
           .eq('tenant_id', getTenantId())
-          .eq('barcode', item.barcode)
+          .eq('barcode', firstBarcode)
           .eq('is_deleted', false)
           .maybeSingle();
         if (findErr) throw findErr;
 
         if (invRow) {
+          // Increment existing inventory by 1 (first unit)
           const oldQty = invRow.quantity || 0;
-          const newQty = oldQty + item.quantity;
-          const { error: updErr } = await sb.rpc('increment_inventory', { inv_id: invRow.id, delta: item.quantity });
-          if (updErr) throw new Error('עדכון מלאי נכשל עבור ' + item.barcode + ': ' + updErr.message);
-          successfulOps.push({ id: invRow.id, delta: item.quantity, isNew: false, oldCost: parseFloat(invRow.cost_price) || 0 });
+          const { error: updErr } = await sb.rpc('increment_inventory', { inv_id: invRow.id, delta: 1 });
+          if (updErr) throw new Error('\u05E2\u05D3\u05DB\u05D5\u05DF \u05DE\u05DC\u05D0\u05D9 \u05E0\u05DB\u05E9\u05DC \u05E2\u05D1\u05D5\u05E8 ' + firstBarcode + ': ' + updErr.message);
+          successfulOps.push({ id: invRow.id, delta: 1, isNew: false, oldCost: parseFloat(invRow.cost_price) || 0 });
 
           await sb.from(T.RCPT_ITEMS).update({ inventory_id: invRow.id }).eq('id', item.id).eq('tenant_id', getTenantId());
           writeLog('entry_receipt', invRow.id, {
-            barcode: item.barcode, brand: item.brand, model: item.model,
-            qty_before: oldQty, qty_after: newQty, source_ref: rcptNumber
+            barcode: firstBarcode, brand: item.brand, model: item.model,
+            qty_before: oldQty, qty_after: oldQty + 1, source_ref: rcptNumber
           });
 
           // Auto-update cost_price from receipt
@@ -41,14 +49,35 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
               source: 'goods_receipt', receipt_id: receiptId
             });
           }
+
+          // Additional barcodes (units 2+) — create new inventory records
+          for (var bi = 1; bi < barcodes.length && bi < effectiveQty; bi++) {
+            var extraItem = Object.assign({}, item, { barcode: barcodes[bi], quantity: 1 });
+            var newInv = await createNewInventoryFromReceiptItem(extraItem, receiptId, rcptNumber);
+            if (newInv) successfulOps.push({ id: newInv.id, delta: 1, isNew: true });
+          }
         } else {
-          console.warn('Barcode not found in inventory, treating as new:', item.barcode);
-          const newItem = await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
-          if (newItem) successfulOps.push({ id: newItem.id, delta: item.quantity, isNew: true });
+          console.warn('Barcode not found in inventory, treating as new:', firstBarcode);
+          // Create all units as new inventory
+          for (var bi2 = 0; bi2 < barcodes.length && bi2 < effectiveQty; bi2++) {
+            var newItem = Object.assign({}, item, { barcode: barcodes[bi2], quantity: 1 });
+            var created = await createNewInventoryFromReceiptItem(newItem, receiptId, rcptNumber);
+            if (created) successfulOps.push({ id: created.id, delta: 1, isNew: true });
+          }
         }
-      } else {
-        const newItem = await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
-        if (newItem) successfulOps.push({ id: newItem.id, delta: item.quantity, isNew: true });
+      } else if (item.is_new_item) {
+        // New items: create one inventory record per barcode
+        if (barcodes.length > 0) {
+          for (var bi3 = 0; bi3 < barcodes.length && bi3 < effectiveQty; bi3++) {
+            var newItem2 = Object.assign({}, item, { barcode: barcodes[bi3], quantity: 1 });
+            var created2 = await createNewInventoryFromReceiptItem(newItem2, receiptId, rcptNumber);
+            if (created2) successfulOps.push({ id: created2.id, delta: 1, isNew: true });
+          }
+        } else {
+          // Fallback: single barcode (legacy or no barcode assigned)
+          var created3 = await createNewInventoryFromReceiptItem(item, receiptId, rcptNumber);
+          if (created3) successfulOps.push({ id: created3.id, delta: item.quantity, isNew: true });
+        }
       }
     }
   } catch (loopErr) {
@@ -66,11 +95,11 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
         writeLog('rollback_failure', op.id, { error: rbErr.message, original_error: loopErr.message });
       }
     }
-    toast('שגיאה בעדכון מלאי — הפעולה בוטלה. נסה שוב.', 'e');
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E2\u05D3\u05DB\u05D5\u05DF \u05DE\u05DC\u05D0\u05D9 \u2014 \u05D4\u05E4\u05E2\u05D5\u05DC\u05D4 \u05D1\u05D5\u05D8\u05DC\u05D4. \u05E0\u05E1\u05D4 \u05E9\u05D5\u05D1.', 'e');
     return false;
   }
 
-  const totalAmount = savedItems.filter(i => i.po_match_status !== 'returned' && i.po_match_status !== 'not_received').reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
+  const totalAmount = savedItems.filter(i => i.po_match_status !== 'returned' && i.po_match_status !== 'not_received' && i.receipt_status !== 'not_received').reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
   const { error: confErr } = await sb.from(T.RECEIPTS).update({
     status: 'confirmed',
     total_amount: totalAmount || null,
@@ -120,6 +149,7 @@ async function confirmReceipt() {
 
   // Items entering inventory = new items that are NOT return/not_received
   var enteringInventory = items.filter(i => i.is_new_item && i.receipt_status !== 'return' && i.receipt_status !== 'not_received');
+  // partial_received items also enter inventory (with reduced qty)
 
   // Only require sell_price for new items entering inventory
   const newNoPrice = enteringInventory.filter(i => !i.sell_price || i.sell_price <= 0);
@@ -140,12 +170,16 @@ async function confirmReceipt() {
     return;
   }
 
-  // Hard-block: barcodes must be generated for new items before confirm
-  var newNoBc = items.filter(function(i) {
-    return i.is_new_item && i.receipt_status !== 'not_received' && i.receipt_status !== 'return' && !i.barcode;
+  // Hard-block: barcodes must be generated for all items entering inventory
+  var itemsNeedBc = items.filter(function(i) {
+    if (i.receipt_status === 'not_received' || i.receipt_status === 'return') return false;
+    // Check: must have enough barcodes for quantity
+    var neededBc = i.quantity;
+    var hasBc = (i.barcodes && i.barcodes.length) || (i.barcode ? 1 : 0);
+    return hasBc < neededBc;
   });
-  if (newNoBc.length) {
-    toast(newNoBc.length + ' פריטים חדשים ללא ברקוד — לחץ "יצירת ברקודים" תחילה', 'e');
+  if (itemsNeedBc.length) {
+    toast(itemsNeedBc.length + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05D7\u05E1\u05E8\u05D9 \u05D1\u05E8\u05E7\u05D5\u05D3 \u2014 \u05DC\u05D7\u05E5 "\u05D9\u05E6\u05D9\u05E8\u05EA \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD" \u05EA\u05D7\u05D9\u05DC\u05D4', 'e');
     return;
   }
 
@@ -246,7 +280,7 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
     size: item.size || '',
     sell_price: item.sell_price || 0,
     cost_price: item.unit_cost || 0,
-    quantity: item.quantity,
+    quantity: 1, // Each physical frame = 1 inventory record
     status: 'in_stock',
     origin: 'goods_receipt',
     product_type: productType,
@@ -266,7 +300,7 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
     brand: item.brand,
     model: item.model,
     qty_before: 0,
-    qty_after: item.quantity,
+    qty_after: 1,
     source_ref: rcptNumber
   });
 
