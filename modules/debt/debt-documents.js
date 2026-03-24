@@ -114,6 +114,16 @@ function renderDocumentsTable(docs, opts) {
     var hasPrepaid = !!_docPrepaidSet[d.supplier_id];
     var ppBadge = hasPrepaid ? '<span style="background:#f59e0b;color:#fff;padding:1px 6px;border-radius:4px;font-size:11px;margin-right:4px">\u05DE\u05E7\u05D3\u05DE\u05D4</span>' : '';
     var uploadedAt = d.created_at ? new Date(d.created_at).toLocaleString('he-IL') : '';
+    // Source badge: receipt-linked vs standalone vs draft
+    var srcBadge = '';
+    if (d.status !== 'draft') {
+      srcBadge = d.goods_receipt_id
+        ? ' <span style="background:#dbeafe;color:#1e40af;padding:1px 5px;border-radius:3px;font-size:10px">\uD83D\uDCE6 \u05E7\u05D1\u05DC\u05D4</span>'
+        : ' <span style="background:#f3f4f6;color:#6b7280;padding:1px 5px;border-radius:3px;font-size:10px">\u270F\uFE0F \u05D9\u05D3\u05E0\u05D9</span>';
+    }
+    if (d.missing_price) {
+      srcBadge += ' <span style="background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:3px;font-size:10px">\u26A0\uFE0F \u05D7\u05E1\u05E8 \u05DE\u05D7\u05D9\u05E8</span>';
+    }
     // Row actions: view + pay + cancel only. All other actions moved to View modal.
     var actionBtns = '<button class="btn-sm" onclick="viewDocument(\'' + d.id + '\')">\u05E6\u05E4\u05D4</button>';
     if (_isPayableDocType(type.code)) {
@@ -125,7 +135,7 @@ function renderDocumentsTable(docs, opts) {
     var rowClass = d.status === 'draft' ? ' class="row-draft"' : '';
     return '<tr' + rowClass + '>' +
       '<td title="' + escapeHtml('\u05D4\u05D5\u05E2\u05DC\u05D4: ' + uploadedAt) + '">' + escapeHtml(d.document_date || '') + '</td>' +
-      '<td>' + escapeHtml(type.name_he || '') + '</td>' +
+      '<td>' + escapeHtml(type.name_he || '') + srcBadge + '</td>' +
       '<td>' + escapeHtml(d.document_number || '') + '</td>' +
       '<td>' + escapeHtml(d.internal_number || '') + '</td>' +
       (o.hideSupplierCol ? '' : '<td>' + ppBadge + escapeHtml(supMap[d.supplier_id] || '') + '</td>') +
