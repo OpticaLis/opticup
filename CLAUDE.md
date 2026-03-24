@@ -117,7 +117,7 @@ opticup/
 │   ├── alerts-badge.js         — bell icon + unread badge + dropdown panel (all pages)
 │   └── pin-modal.js            — reusable PIN prompt modal (shared promptPin())
 ├── modules/
-│   ├── inventory/              — 12 files (table, entry, edit, export, reduction, excel-import, access-sales, inventory-return, inventory-returns-tab, inventory-returns-actions, inventory-images, incoming-invoices)
+│   ├── inventory/              — 13 files (table, entry, edit, export, reduction, excel-import, access-sales, inventory-return, inventory-returns-tab, inventory-returns-actions, inventory-images, inventory-images-bg, incoming-invoices)
 │   ├── purchasing/             — 6 files (purchase-orders, po-form, po-items, po-actions, po-import, po-view)
 │   ├── goods-receipts/         — 11 files (goods-receipt, receipt-form, receipt-actions, receipt-confirm, receipt-confirm-items, receipt-debt, receipt-excel, receipt-ocr, receipt-ocr-review, receipt-po-compare, receipt-guide)
 │   ├── audit/                  — 4 files (audit-log, item-history, entry-history, qty-modal)

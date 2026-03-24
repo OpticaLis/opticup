@@ -88,7 +88,8 @@
 | 52b | inventory-returns-tab.js | modules/inventory/inventory-returns-tab.js | 269 | Inventory returns (זיכויים) tab: initReturnsTab, loadReturnsData (status/supplier/date/search filtering), renderReturnsFilters, renderReturnsList (accordion table with bulk selection), toggleReturnsHistory, getReturnsCount (cached badge count) |
 | 52c | inventory-returns-actions.js | modules/inventory/inventory-returns-actions.js | 164 | Returns tab actions: markAgentPicked (PIN-verified), sendToBox (navigate to shipments wizard), bulkSendToBox (validates same supplier), bulkAction (bulk status update), exportReturnsExcel |
 | 52d | incoming-invoices.js | modules/inventory/incoming-invoices.js | 255 | Incoming invoices tab: loadIncomingInvoicesTab (drag-drop file upload + supplier select + submit to debt), _submitIncomingInvoice (upload + create pending_invoice doc), _loadRecentPendingInvoices (last 10 table) |
-| 52e | inventory-images.js | modules/inventory/inventory-images.js | 203 | Frame image capture/upload/delete: openImageModal (modal with grid + camera/upload buttons), _captureImage (rear camera via capture=environment), _pickImage (file picker), _processAndPreview (Canvas resize + WEBP conversion at 0.82 quality), _uploadPendingImages (Storage upload + DB insert), _deleteImage (Storage + DB delete) |
+| 52e | inventory-images.js | modules/inventory/inventory-images.js | 209 | Frame image capture/upload/delete: openImageModal (modal with grid + camera/upload buttons), _captureImage (rear camera via capture=environment), _pickImage (file picker), _processAndPreview (Canvas resize + WEBP conversion at 0.82 quality), _uploadPendingImages (Storage upload + DB insert), _deleteImage (Storage + DB delete). Each image has 💫 bg-remove button |
+| 52f | inventory-images-bg.js | modules/inventory/inventory-images-bg.js | 205 | Client-side white background removal: _bgRemoveStart (loads image, opens comparison modal), _bgShowComparison (before/after with threshold slider), _bgProcess (Canvas flood-fill from corners, edge softening), _bgRemovePending (replace pending blob), _bgRemoveSaved (re-upload to Storage + update DB) |
 | 51b | debt-returns-tab.js | modules/debt/debt-returns-tab.js | 365 | Global debt returns (credit tracking) tab: initDebtReturnsTab, loadDebtReturns (multi-status filtering), renderDebtReturnsList (accordion with bulk selection), renderDebtReturnsSummary, toggleDebtReturnsHistory |
 | 51c | debt-returns-tab-actions.js | modules/debt/debt-returns-tab-actions.js | 289 | Debt returns actions: markDebtCredited (requires file upload first via _promptCreditFileUpload, then PIN), _promptCreditFileUpload (drag-drop/pick modal), _createCreditNoteForReturn (now attaches uploaded file + links doc to return), bulkMarkCredited (blocked — requires per-item file upload), exportDebtReturnsExcel |
 | 53 | file-upload.js | js/file-upload.js | 321 | File upload helper: uploadSupplierFile, getSupplierFileUrl (signed URLs), renderFilePreview, pickAndUploadFile, pickAndUploadFiles (multi-file), fetchDocFiles (with fallback to legacy file_url), saveDocFile (to supplier_document_files), renderFileGallery (thumbnails + page nav + delete buttons), _deleteGalleryFile (re-queries fresh files from DB after delete + cleans storage), _renderSingleFilePreview |
@@ -125,7 +126,7 @@
 
 | 79 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
 
-**Total: ~112 JS files across 14 module folders + 10 global files + 9 shared/js files + watcher-deploy/ (8-file standalone package), ~23,700 lines** (includes scripts/sync-watcher.js + sync-export.js)
+**Total: ~113 JS files across 14 module folders + 10 global files + 9 shared/js files + watcher-deploy/ (8-file standalone package), ~23,900 lines** (includes scripts/sync-watcher.js + sync-export.js)
 
 **Note (Flow Review Session):** 4 new files: ai-historical-process.js (182 lines, split from ai-historical-import.js — file grouping + upload processing), ai-ocr-review.js updated (174→262, delete+duplicate buttons), debt-doc-compare.js (244 lines, PO vs Receipt vs Invoice comparison table), debt-supplier-tabs.js (192 lines, split from debt-supplier-detail.js). Updated: ai-ocr.js (182→281, multi-file OCR merge), ai-historical-import.js (338→249, OCR removed — upload-only with draft status), receipt-ocr.js (+20 lines, hide OCR button when PO linked), receipt-confirm.js (-5 lines, fixed product_type constraint). Migrations: 044 (atomic internal doc number), 045 (draft status CHECK constraint). Iron Rule #13 added to CLAUDE.md (atomic RPC for sequential numbers).
 
@@ -307,6 +308,16 @@
 | `_processAndPreview` | `(file)` | Resizes to max 1200px, converts to WEBP 0.82 quality via Canvas, adds to pending array |
 | `_uploadPendingImages` | `(inventoryId)` | Async. Uploads pending blobs to Storage bucket, inserts DB rows, refreshes grid |
 | `_deleteImage` | `(imageId, storagePath)` | Async. Confirms, removes from Storage + DB, re-renders grid |
+
+### modules/inventory/inventory-images-bg.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `_bgRemoveStart` | `(imageUrl, onConfirm)` | Loads image, opens before/after comparison modal with threshold slider |
+| `_bgShowComparison` | `(img, originalUrl, onConfirm)` | Renders comparison UI with slider (30-100%), debounced re-processing |
+| `_bgProcess` | `(img, thresholdPct, callback)` | Core algorithm: flood-fill from 8 seed points (corners + edge midpoints), edge softening, outputs WEBP blob |
+| `_bgRemovePending` | `(idx)` | Replaces pending blob at index with bg-removed version |
+| `_bgRemoveSaved` | `(imageId, imageUrl, storagePath)` | Async. Re-uploads processed image to Storage, updates DB URL with cache-bust |
 
 ### modules/inventory/inventory-edit.js
 

@@ -107,7 +107,10 @@ function _renderImageGrid() {
         '<img src="' + encodeURI(im.url) + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block" loading="lazy">' +
         '<button onclick="_deleteImage(\'' + im.id + '\',\'' + escapeHtml(im.storage_path || '') + '\')" ' +
           'style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:14px" ' +
-          'title="\u05DE\u05D7\u05E7">\u2715</button></div>';
+          'title="\u05DE\u05D7\u05E7">\u2715</button>' +
+        '<button onclick="_bgRemoveSaved(\'' + im.id + '\',\'' + encodeURI(im.url) + '\',\'' + escapeHtml(im.storage_path || '') + '\')" ' +
+          'style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px" ' +
+          'title="\u05D4\u05E1\u05E8 \u05E8\u05E7\u05E2 \u05DC\u05D1\u05DF">\uD83D\uDCAB</button></div>';
     }
     // Pending images
     for (var j = 0; j < _imgPending.length; j++) {
@@ -116,7 +119,10 @@ function _renderImageGrid() {
         '<span style="position:absolute;bottom:0;left:0;right:0;background:rgba(76,175,80,.85);color:#fff;text-align:center;font-size:.75rem;padding:2px">\u05DE\u05DE\u05EA\u05D9\u05DF</span>' +
         '<button onclick="_removePending(' + j + ')" ' +
           'style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:14px" ' +
-          'title="\u05D4\u05E1\u05E8">\u2715</button></div>';
+          'title="\u05D4\u05E1\u05E8">\u2715</button>' +
+        '<button onclick="_bgRemovePending(' + j + ')" ' +
+          'style="position:absolute;bottom:22px;right:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px" ' +
+          'title="\u05D4\u05E1\u05E8 \u05E8\u05E7\u05E2 \u05DC\u05D1\u05DF">\uD83D\uDCAB</button></div>';
     }
     html += '</div>';
   }
