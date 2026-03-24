@@ -87,10 +87,13 @@ async function getEffectivePermissions(employeeId) {
     roleIds = [mapped];
   }
 
-  const { data: perms } = await sb.from(AT.ROLE_PERMS)
+  let permQ = sb.from(AT.ROLE_PERMS)
     .select('permission_id')
     .in('role_id', roleIds)
     .eq('granted', true);
+  const tid = getTenantId();
+  if (tid) permQ = permQ.eq('tenant_id', tid);
+  const { data: perms } = await permQ;
 
   if (!perms) return [];
   return [...new Set(perms.map(p => p.permission_id))];

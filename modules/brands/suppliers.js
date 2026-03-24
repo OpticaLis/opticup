@@ -134,9 +134,10 @@ async function saveSupplierNumbers() {
 }
 
 async function getNextSupplierNumber() {
-  const { data: rows } = await sb.from('suppliers')
-    .select('supplier_number')
-    .order('supplier_number', { ascending: true });
+  let q = sb.from('suppliers').select('supplier_number').order('supplier_number', { ascending: true });
+  const tid = getTenantId();
+  if (tid) q = q.eq('tenant_id', tid);
+  const { data: rows } = await q;
   const used = new Set((rows || []).map(r => r.supplier_number).filter(n => n != null));
   let n = 10;
   while (used.has(n)) n++;
