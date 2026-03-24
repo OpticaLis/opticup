@@ -487,6 +487,9 @@ Pages modified for shared/ dependencies:
 | `increment_paid_amount` | Module 1.5 (Phase 3) | `p_doc_id UUID, p_delta NUMERIC` | `void` | Debt Payment Allocation |
 | `increment_prepaid_used` | Module 1.5 (Phase 3) | `p_deal_id UUID, p_delta NUMERIC` | `void` | Receipt-Debt (prepaid auto-deduct) |
 | `increment_shipment_counters` | Module 1.5 (Phase 3) | `p_shipment_id UUID, p_items_delta INTEGER, p_value_delta NUMERIC` | `void` | Shipments Lock (item add) |
+| `next_po_number` | Purchasing | `p_tenant_id UUID, p_supplier_number TEXT` | `TEXT` (PO-{sup}-NNNN) | PO creation, clonePO |
+| `next_return_number` | Debt — Returns | `p_tenant_id UUID, p_supplier_number TEXT` | `TEXT` (RET-{sup}-NNNN) | Return creation (PO compare, debt returns) |
+| `get_po_aggregates` | Purchasing | `p_tenant_id UUID` | `TABLE(po_id, item_count, total_value)` | PO list table (server-side totals) |
 
 ### Edge Functions (Supabase)
 
@@ -559,6 +562,11 @@ Pages modified for shared/ dependencies:
 | `toggleDocStatusFilter` | debt-documents.js | `key: string` | `void` | Multi-select status filter toggle for documents |
 | `openQuickOpeningBalance` | debt-dashboard.js | — | `void` | Quick opening balance modal for supplier setup |
 | `_cascadeSettlement` | debt-payment-alloc.js | `docId: string` | `Promise<void>` | Auto-close linked children when parent document is settled |
+| `clonePO` | po-actions.js | `id: string` | `Promise<void>` | Duplicate PO with new number, opens in edit mode |
+| `printReceiptBarcodes` | receipt-excel.js | `receiptId: string` | `Promise<void>` | Print barcode list for confirmed receipt items (one row per physical frame) |
+| `_calcPOFinalPrice` | po-items.js | `item: object` | `number` | Calculate final price from cost_price × (1 - discount/100) |
+| `_onPOFinalPriceChange` | po-items.js | `i: number, finalPrice: number` | `void` | Reverse-calc discount from edited final price, update totals |
+| `onReceiptPoSelected` | goods-receipt.js | — | `Promise<void>` | Load PO items into receipt with existing inventory matching (barcode reuse) |
 
 ### Shipments Config Contracts
 
