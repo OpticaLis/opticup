@@ -20,8 +20,7 @@ async function buildComparisonSection(doc) {
       .eq('receipt_id', receipt.id).eq('tenant_id', getTenantId());
     var rcptItems = (rcptItemsRaw || []).filter(function(ri) {
       return ri.receipt_status !== 'not_received' &&
-             ri.po_match_status !== 'not_received' &&
-             ri.po_match_status !== 'returned';
+             ri.po_match_status !== 'not_received';
     });
 
     // Fetch PO items if PO linked
@@ -158,6 +157,7 @@ function _cmpBuildRow(po, rcpt, ocr) {
 
 function _cmpStatus(po, rcpt, ocr, poQty, rcptQty, ocrQty, poPrice, ocrPrice) {
   if (!rcpt && !po && ocr) return { icon: '\u2753', text: '\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u05D1\u05DC\u05D1\u05D3', cls: 'cmp-inv-only' };
+  if (rcpt && rcpt.po_match_status === 'returned') return { icon: '\uD83D\uDD04', text: '\u05DC\u05D6\u05D9\u05DB\u05D5\u05D9', cls: 'cmp-returned' };
   if (po && !rcpt) return { icon: '\uD83D\uDCE6', text: '\u05D7\u05E1\u05E8', cls: 'cmp-missing' };
   if (!po && rcpt) {
     // Not in PO but in receipt

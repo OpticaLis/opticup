@@ -26,25 +26,65 @@ async function openViewPO(id) {
       received:'#4CAF50', cancelled:'#f44336'
     };
 
-    const isPartial = po.status === 'partial';
+    const showStatusCol = po.status === 'partial' || po.status === 'received';
+
+    // Fetch receipt items for this PO to determine item-level reasons
+    var receiptItemMap = {};
+    if (showStatusCol) {
+      try {
+        var { data: receipts } = await sb.from(T.RECEIPTS).select('id')
+          .eq('po_id', id).eq('tenant_id', getTenantId());
+        if (receipts && receipts.length) {
+          var receiptIds = receipts.map(function(r) { return r.id; });
+          var { data: rItems } = await sb.from(T.RECEIPT_ITEMS)
+            .select('brand, model, color, size, receipt_status, po_match_status')
+            .in('receipt_id', receiptIds).eq('tenant_id', getTenantId());
+          (rItems || []).forEach(function(ri) {
+            var key = [ri.brand, ri.model, ri.size, ri.color].map(function(s) { return (s||'').trim().toLowerCase(); }).join('|');
+            if (!receiptItemMap[key]) receiptItemMap[key] = [];
+            receiptItemMap[key].push(ri);
+          });
+        }
+      } catch (e) { console.warn('Receipt items fetch skipped:', e); }
+    }
+
     const itemRows = (items || []).map(item => {
       const total = (item.qty_ordered||0) * (item.unit_cost||0) * (1 - (item.discount_pct||0)/100);
       const received = item.qty_received || 0;
       const ordered  = item.qty_ordered  || 0;
       const fullyReceived = received >= ordered;
       const rowColor = fullyReceived ? '#e8f5e9' : received > 0 ? '#fff8e1' : '';
-      // Cancel button for undelivered items on partial POs
       var actionCell = '';
-      if (isPartial && !fullyReceived) {
-        actionCell = '<td style="padding:8px;text-align:center"><button class="btn btn-sm btn-po-cancel-item" ' +
-          'data-item-id="' + escapeHtml(item.id) + '" data-po-id="' + escapeHtml(po.id) + '" ' +
-          'data-received="' + received + '" ' +
-          'style="background:#ef4444;color:#fff;font-size:11px;padding:2px 8px" ' +
-          'title="בטל שורה — קבל רק מה שהגיע">\u274C \u05D1\u05D8\u05DC</button></td>';
-      } else if (isPartial) {
-        actionCell = '<td style="padding:8px;text-align:center;color:#4CAF50">\u2705</td>';
-      } else {
-        actionCell = '';
+      if (showStatusCol) {
+        if (fullyReceived) {
+          actionCell = '<td style="padding:8px;text-align:center;color:#4CAF50">\u2705</td>';
+        } else {
+          // Determine reason from receipt items
+          var key = [item.brand, item.model, item.size, item.color].map(function(s) { return (s||'').trim().toLowerCase(); }).join('|');
+          var riList = receiptItemMap[key] || [];
+          var hasReturn = riList.some(function(ri) { return ri.receipt_status === 'return' || ri.po_match_status === 'returned'; });
+          var hasNotReceived = riList.some(function(ri) { return ri.receipt_status === 'not_received' || ri.po_match_status === 'not_received'; });
+          var badge = '';
+          if (hasReturn) {
+            badge = '<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-size:11px">\uD83D\uDD04 \u05E0\u05E9\u05DC\u05D7 \u05DC\u05D6\u05D9\u05DB\u05D5\u05D9</span>';
+          } else if (hasNotReceived) {
+            badge = '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-size:11px">\u274C \u05DC\u05D0 \u05D4\u05D2\u05D9\u05E2</span>';
+          } else if (riList.length === 0) {
+            badge = '<span style="background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:4px;font-size:11px">\u05DE\u05DE\u05EA\u05D9\u05DF</span>';
+          } else {
+            badge = '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:11px">\u05D7\u05E1\u05E8</span>';
+          }
+          // Cancel button only for partial POs
+          var cancelBtn = '';
+          if (po.status === 'partial') {
+            cancelBtn = ' <button class="btn btn-sm btn-po-cancel-item" ' +
+              'data-item-id="' + escapeHtml(item.id) + '" data-po-id="' + escapeHtml(po.id) + '" ' +
+              'data-received="' + received + '" ' +
+              'style="background:#ef4444;color:#fff;font-size:11px;padding:2px 8px" ' +
+              'title="\u05D1\u05D8\u05DC \u05E9\u05D5\u05E8\u05D4 \u2014 \u05E7\u05D1\u05DC \u05E8\u05E7 \u05DE\u05D4 \u05E9\u05D4\u05D2\u05D9\u05E2">\u274C \u05D1\u05D8\u05DC</button>';
+          }
+          actionCell = '<td style="padding:8px;text-align:center">' + badge + cancelBtn + '</td>';
+        }
       }
       return `<tr style="background:${rowColor}">
         <td style="padding:8px">${escapeHtml(item.brand||'—')}</td>
@@ -103,7 +143,7 @@ async function openViewPO(id) {
                 <th style="padding:8px">עלות</th>
                 <th style="padding:8px">הנחה</th>
                 <th style="padding:8px">סה"כ</th>
-                ${isPartial ? '<th style="padding:8px">פעולה</th>' : ''}
+                ${showStatusCol ? '<th style="padding:8px">סטטוס</th>' : ''}
               </tr>
             </thead>
             <tbody>${itemRows}</tbody>

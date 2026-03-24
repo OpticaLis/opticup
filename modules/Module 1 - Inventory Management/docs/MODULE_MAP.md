@@ -24,7 +24,7 @@
 | 13 | po-form.js | modules/purchasing/po-form.js | 231 | PO creation wizard: openNewPurchaseOrder (step 1), proceedToPOItems (step 2 bridge), openEditPO, renderPOForm, resolveSupplierName |
 | 14 | po-items.js | modules/purchasing/po-items.js | 330 | PO item management: renderPOItemsTable, cascading brand→model→color/size datalists, addPOItemManual, addPOItemByBarcode, removePOItem, duplicatePOItem, updatePOTotals, _calcPOFinalPrice, _onPOFinalPriceChange, _onPODiscountChange, _onPOCostChange, _updatePOStockCounter (live inventory count per PO item row), _doUpdatePOStockCounter |
 | 15 | po-actions.js | modules/purchasing/po-actions.js | 254 | PO lifecycle actions: savePODraft (with duplicate row detection), sendPurchaseOrder, cancelPO (blocks partial POs with received items), exportPOExcel, exportPOPdf |
-| 16 | po-view-import.js | modules/purchasing/po-view-import.js | 376 | Read-only PO view with received qty tracking, cancelPOItem (per-item cancel on partial POs), importPOToInventory (creates/updates inventory from PO items, uses generateNextBarcode for atomic barcode gen), createPOForBrand (from low stock modal), PO event delegation. Security: tenant_id on all queries, escapeHtml on all interpolated fields |
+| 16 | po-view-import.js | modules/purchasing/po-view-import.js | 419 | Read-only PO view with received qty tracking + receipt-based reason badges (לזיכוי/לא הגיע/ממתין/חסר), cancelPOItem (per-item cancel on partial POs), importPOToInventory (creates/updates inventory from PO items, uses generateNextBarcode for atomic barcode gen), createPOForBrand (from low stock modal), PO event delegation. Security: tenant_id on all queries, escapeHtml on all interpolated fields |
 | 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 352 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (ONE row per PO item with qty=remaining, matches existing inventory), updatePOStatusAfterReceipt (filters out not_received/returned items), openNewReceipt, _initRcptSupplierSelect (searchable supplier dropdown via createSearchSelect) |
 | 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 559 | Receipt form: openExistingReceipt, addReceiptItemRow (status dropdown with partial_received, partial qty input), getReceiptItems (returns barcodes[] array, effectiveQty, ordered_qty), generateReceiptBarcodes (multi-barcode: N barcodes per row, tr.dataset.barcodes, "+N נוספים" indicator), _onReceiptStatusChange (handles partial_received with qty input), updateReceiptItemsStats (shows partial count), file attachment (drag-drop, multi-file) |
 | 18b | receipt-guide.js | modules/goods-receipts/receipt-guide.js | 59 | Employee quick reference guide (split from receipt-form.js): RECEIPT_GUIDE_TEXT constant, showReceiptGuide() |
@@ -409,7 +409,7 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `openViewPO` | `(id)` | Async. Read-only PO view with ordered vs received qty, color-coded rows. Shows cancel button per item on partial POs |
+| `openViewPO` | `(id)` | Async. Read-only PO view with ordered vs received qty, color-coded rows. Fetches receipt items to show reason badges (נשלח לזיכוי / לא הגיע / ממתין / חסר) for undelivered items. Cancel button on partial POs |
 | `cancelPOItem` | `(itemId, poId, qtyReceived)` | Async. Sets qty_ordered=qty_received on a single PO item. Recalculates PO status (auto-completes if all items done) |
 | `importPOToInventory` | `(poId)` | Async. Creates/updates inventory from PO items, generates barcodes for new items |
 | `createPOForBrand` | `(brandId, brandName)` | Async. Creates PO pre-populated with brand items from low-stock modal |
@@ -1044,7 +1044,7 @@
 | `_cmpFindMatch` | `(item, candidates, matchedSet)` | Finds best match for an item in candidate list (barcode or normalized fields) |
 | `_cmpFindOcrMatch` | `(item, ocrItems, matchedSet)` | Fuzzy matches OCR items by description containing model number |
 | `_cmpBuildRow` | `(po, rcpt, ocr)` | Builds a comparison row object from matched items (includes rcptPrice) |
-| `_cmpStatus` | `(row)` | Determines status icon: ✅ match, ⚠️ price diff, 🔴 not in PO, 📦 missing, ❓ invoice only |
+| `_cmpStatus` | `(row)` | Determines status icon: ✅ match, ⚠️ price diff, 🔴 not in PO, 📦 missing, 🔄 לזיכוי (returned), ❓ invoice only |
 | `_cmpRenderSection` | `(rows, hasPO, hasOCR, vatRate)` | Renders HTML table with dynamic columns. When vatRate>0, adds מע"מ and מחיר כולל מע"מ columns |
 | `_cmpCell` | `(val)` | Renders a single comparison cell (value or dash) |
 | `_cmpPrice` | `(val)` | Formats price with ₪ symbol |

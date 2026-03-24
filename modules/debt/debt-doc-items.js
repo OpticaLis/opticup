@@ -152,8 +152,8 @@ function _buildReceiptItemsHtml(rcptItems) {
     }).join('');
   if (!riRows) return '';
   return '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-top:10px">' +
-    '<strong style="font-size:.88rem">\u{1F4E6} \u05E4\u05E8\u05D9\u05D8\u05D9 \u05E7\u05D1\u05DC\u05D4</strong>' +
-    '<div style="font-size:.78rem;color:var(--g500);margin:2px 0 6px">\u05E4\u05E8\u05D9\u05D8\u05D9 \u05E7\u05D1\u05DC\u05D4 \u2014 \u05DC\u05D0 \u05E0\u05D9\u05EA\u05E0\u05D9\u05DD \u05DC\u05E2\u05E8\u05D9\u05DB\u05D4</div>' +
+    '<strong style="font-size:.88rem">\uD83D\uDCE6 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05E9\u05D4\u05D5\u05D6\u05DE\u05E0\u05D5</strong>' +
+    '<div style="font-size:.78rem;color:var(--g500);margin:2px 0 6px">\u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05E9\u05D4\u05D5\u05D6\u05DE\u05E0\u05D5 \u2014 \u05DC\u05D0 \u05E0\u05D9\u05EA\u05E0\u05D9\u05DD \u05DC\u05E2\u05E8\u05D9\u05DB\u05D4</div>' +
     '<table class="data-table" style="width:100%;font-size:.82rem"><thead><tr>' +
     '<th>\u05D1\u05E8\u05E7\u05D5\u05D3</th><th>\u05DE\u05D5\u05EA\u05D2</th><th>\u05D3\u05D2\u05DD</th>' +
     '<th>\u05DB\u05DE\u05D5\u05EA</th><th>\u05DE\u05D7\u05D9\u05E8</th><th>\u05E1\u05D4"\u05DB</th>' +
