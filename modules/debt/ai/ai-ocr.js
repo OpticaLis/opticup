@@ -1,7 +1,7 @@
 // ai-ocr.js — OCR trigger, save, toolbar injection (Phase 5c)
 // Load after: shared.js, supabase-ops.js, file-upload.js, debt-documents.js
 // Provides: triggerOCR(), _ocrSave(), _ocrConfDot(), _ocrFV(), _ocrFC(),
-//   _injectOCRScanIcons(), _injectOCRToolbarBtn()
+//   _injectOCRToolbarBtn()
 // See also: ai-ocr-review.js (showOCRReview, calc helpers — load after this file)
 
 var _ocrExtractionId = null, _ocrOriginalData = null, _ocrCurrentFileUrl = null, _ocrExistingDocId = null;
@@ -251,12 +251,9 @@ function _mergeOCRResults(results, files) {
   };
 }
 
-// --- 4. OCR scan buttons — moved into View modal (debt-doc-edit.js) ---
-// _injectOCRScanIcons removed: OCR scan is now available inside the View modal
-// via _buildDocActionToolbar(), not as row-level buttons in the documents table.
-function _injectOCRScanIcons() { /* no-op — scan moved to View modal */ }
+// --- 4. OCR scan buttons removed — scan available via _buildDocActionToolbar() in View modal ---
 
-// --- 5. Add OCR toolbar button + patch documents rendering ---
+// --- 5. Add OCR toolbar button ---
 function _injectOCRToolbarBtn() {
   // Find the documents tab toolbar specifically (not suppliers/payments toolbars)
   var docWrap = $('doc-table-wrap');
@@ -275,13 +272,13 @@ function _injectOCRToolbarBtn() {
   var addBtn = toolbar.querySelector('.doc-add-btn');
   if (addBtn) toolbar.insertBefore(btn, addBtn); else toolbar.appendChild(btn);
 }
-// Patch loadDocumentsTab to inject OCR UI after rendering
+// Patch loadDocumentsTab to inject OCR toolbar button after rendering
 (function() {
   var _origLoad = typeof loadDocumentsTab === 'function' ? loadDocumentsTab : null;
   if (!_origLoad) return;
-  var _origRender = typeof renderDocumentsTable === 'function' ? renderDocumentsTable : null;
-  window.loadDocumentsTab = async function() { await _origLoad(); _injectOCRToolbarBtn();
-    if (_origRender && renderDocumentsTable === _origRender)
-      window.renderDocumentsTable = function(docs, opts) { _origRender(docs, opts); _injectOCRScanIcons(docs); };
-    if (typeof applyDocFilters === 'function') applyDocFilters(); };
+  window.loadDocumentsTab = async function() {
+    await _origLoad();
+    _injectOCRToolbarBtn();
+    if (typeof applyDocFilters === 'function') applyDocFilters();
+  };
 })();

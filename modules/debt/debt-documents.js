@@ -244,13 +244,19 @@ function openPrepaidDeductModal(docId) {
 
 function _doPrepaidDeduct(docId, dealId) {
   var amt = Number(($('pp-deduct-amt') || {}).value) || 0;
-  if (amt <= 0) { setAlert('pp-deduct-alert', '\u05E1\u05DB\u05D5\u05DD \u05D7\u05D9\u05D9\u05D1 \u05DC\u05D4\u05D9\u05D5\u05EA \u05D7\u05D9\u05D5\u05D1\u05D9', 'e'); return; }
+  if (amt <= 0) { toast('\u05D9\u05E9 \u05DC\u05D4\u05D6\u05D9\u05DF \u05E1\u05DB\u05D5\u05DD \u05D7\u05D9\u05D5\u05D1\u05D9', 'e'); return; }
   var maxAmt = Number(($('pp-deduct-amt') || {}).max) || Infinity;
-  if (amt > maxAmt) { setAlert('pp-deduct-alert', '\u05E1\u05DB\u05D5\u05DD \u05D7\u05D5\u05E8\u05D2 \u05DE\u05D4\u05DE\u05E7\u05E1\u05D9\u05DE\u05D5\u05DD', 'e'); return; }
+  if (amt > maxAmt) { toast('\u05D4\u05E1\u05DB\u05D5\u05DD \u05D7\u05D5\u05E8\u05D2 \u05DE\u05D4\u05DE\u05E7\u05E1\u05D9\u05DE\u05D5\u05DD', 'e'); return; }
   promptPin('\u05E7\u05D9\u05D6\u05D5\u05D6 \u05DE\u05E2\u05E1\u05E7\u05EA \u05DE\u05E7\u05D3\u05DE\u05D4 \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
     showLoading('\u05DE\u05E7\u05D6\u05D6...'); try {
       var doc = _docData.find(function(d) { return d.id === docId; });
       if (!doc) throw new Error('doc not found');
+      // Server-side validation: check deal's actual remaining balance
+      var { data: dealRow, error: dealErr } = await sb.from(T.PREPAID_DEALS)
+        .select('total_prepaid, total_used').eq('id', dealId).eq('tenant_id', getTenantId()).single();
+      if (dealErr) throw dealErr;
+      var serverRemaining = (Number(dealRow.total_prepaid) || 0) - (Number(dealRow.total_used) || 0);
+      if (amt > serverRemaining) { toast('\u05D4\u05E1\u05DB\u05D5\u05DD \u05D7\u05D5\u05E8\u05D2 \u05DE\u05D9\u05EA\u05E8\u05EA \u05D4\u05E2\u05E1\u05E7\u05D4', 'e'); hideLoading(); return; }
       await sb.rpc('increment_prepaid_used', { p_deal_id: dealId, p_delta: amt });
       var newPaid = (Number(doc.paid_amount) || 0) + amt;
       await batchUpdate(T.SUP_DOCS, [{ id: docId, paid_amount: newPaid, status: newPaid >= (Number(doc.total_amount) || 0) ? 'paid' : 'partially_paid' }]);
