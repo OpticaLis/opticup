@@ -4,3 +4,4 @@ scripts/upload_to_airtable.js
 scripts/config.json
 scripts/start-watcher.bat
 serve.js
+watcher-deploy/daemon/opticupsyncwatcher.out.log
