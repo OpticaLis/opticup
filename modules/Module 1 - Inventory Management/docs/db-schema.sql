@@ -55,6 +55,9 @@
 --   036_receipt_item_po_fields.sql — price_decision, po_match_status on goods_receipt_items
 --   037_supplier_opening_balance.sql — opening_balance fields on suppliers
 --   039_return_note_doc_type.sql — return_note document type for all tenants
+--   046_phase2_db_prep.sql — pending_invoice status, missing_price column, goods_receipt_id UNIQUE index
+--   047_receipt_item_status.sql — receipt_status + from_po columns on goods_receipt_items
+--   048_return_items_nullable_inventory.sql — inventory_id nullable on supplier_return_items
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

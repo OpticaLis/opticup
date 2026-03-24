@@ -1,5 +1,5 @@
 # מלאי מסגרות — Module Spec
-## גרסה Phase 8 | מרץ 2026 | OCR בקבלת סחורה + שיפורי פלואו רכש
+## גרסה Phase 8 + Flow Review Phase 2 + QA | מרץ 2026
 
 > **Authority:** Business logic flows and screen descriptions. For code details → MODULE_MAP.md. For DB schema → db-schema.sql. For rules → CLAUDE.md.
 
@@ -92,6 +92,41 @@ For complete file index → see MODULE_MAP.md section 1.
 - **Auto-deduct from active prepaid deal** — moved to suppliers-debt with alert to finance (Phase 8)
 - Export confirmed receipts as Access-compatible Excel
 - **6 verified flows**: V1 (PO match), V2 (PO mismatch), V3 (no PO + OCR), V4 (blocked without file), V5 (incoming invoice), V6 (zero subtotal)
+
+### 3.5a Receipt Item Status (PO-linked) — QA Fixes
+- Items loaded from a PO get a status dropdown instead of a delete button:
+  - **✅ תקין** (ok, default) — item received correctly, enters inventory
+  - **❌ לא הגיע** (not_received) — row dimmed, qty disabled, skipped in confirm and subtotal
+  - **🔄 להחזרה** (return) — supplier_return auto-created via _poCompApplyDecisions, item skipped in confirm
+- PO rows cannot be deleted — employee uses status dropdown instead
+- Non-PO rows (manually added) keep the normal delete button
+- DB: `receipt_status` TEXT CHECK + `from_po` BOOLEAN on goods_receipt_items (migration 047)
+
+### 3.5a2 Match Confirmation Dialog — QA Fixes
+- Shown after file attachment check, before PIN verification
+- Two options:
+  - "✅ הכל תואם — אשר קבלה" → proceeds to PIN
+  - "⚠️ יש אי-התאמה — אשר בכל זאת" → proceeds to PIN + logs writeLog('receipt_mismatch_acknowledged')
+- Cancel/close → return without confirming
+
+### 3.5a3 Drag & Drop File Attachment — QA Fixes
+- Receipt form has drop zone for PDF/JPG/PNG (max 10MB)
+- On drop/click: validates type/size, shows preview with filename + size + ✕ remove button
+- Replaces button-only file attachment
+- Drop zone hidden when file is staged; restored on remove
+
+### 3.5a4 PO Partial Item Cancel — QA Fixes
+- `cancelPOItem(itemId, poId, qtyReceived)` — on partial POs only
+- Sets qty_ordered = qty_received (effectively "accepting what arrived")
+- ❌ button shown on undelivered items; ✅ shown on fully received
+- If all items closed → PO auto-moves to 'received' status
+- Full PO cancel blocked when any items already received (toast error)
+
+### 3.5a5 Credit Requires Document — QA Fixes
+- `markDebtCredited()` requires credit note file upload via _promptCreditFileUpload before PIN
+- Drag-drop/pick modal → file uploaded via uploadSupplierFile → attached to credit note document
+- `bulkMarkCredited` blocked — must use per-item flow for audit evidence
+- Credit note document auto-linked to supplier_return via credit_document_id
 
 ### 3.5b חשבוניות נכנסות (Incoming Invoices) — Phase Flow-Review-2
 - Tab "📨 חשבוניות נכנסות" in inventory.html
