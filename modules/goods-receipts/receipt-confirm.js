@@ -7,8 +7,8 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
 
   try {
     for (const item of savedItems) {
-      // Phase 8: skip items marked as returned to supplier
-      if (item.po_match_status === 'returned') continue;
+      // Phase 8: skip items marked as returned to supplier or not received
+      if (item.po_match_status === 'returned' || item.po_match_status === 'not_received') continue;
       if (!item.is_new_item) {
         const { data: invRow, error: findErr } = await sb.from('inventory')
           .select('id, quantity, barcode, brand_id, model, cost_price')
@@ -69,7 +69,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
     return false;
   }
 
-  const totalAmount = savedItems.filter(i => i.po_match_status !== 'returned').reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
+  const totalAmount = savedItems.filter(i => i.po_match_status !== 'returned' && i.po_match_status !== 'not_received').reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
   const { error: confErr } = await sb.from(T.RECEIPTS).update({
     status: 'confirmed',
     total_amount: totalAmount || null,
@@ -142,10 +142,23 @@ async function confirmReceipt() {
     return;
   }
 
+  // Confirmation step: employee must confirm items match the document
+  var matchResult = await _showMatchConfirmDialog(rcptNumber);
+  if (!matchResult) return; // user closed dialog without choosing
+
   // PIN verification — required for all confirm paths
   const pinEmp = await _receiptPinVerify('אישור קבלת סחורה');
   if (!pinEmp) return;
   sessionStorage.setItem('prizma_user', pinEmp.name);
+
+  // If mismatch acknowledged, log it
+  if (matchResult === 'mismatch') {
+    writeLog('receipt_mismatch_acknowledged', null, {
+      receipt_number: rcptNumber,
+      employee: pinEmp.name,
+      note: 'העובד אישר אי-התאמה בין הסחורה למסמך'
+    });
+  }
 
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
 
@@ -157,7 +170,8 @@ async function confirmReceipt() {
       var report = await _poCompBuildReport(items, rcptLinkedPoId);
       hideLoading();
       // If everything matches perfectly, skip report
-      if (report.priceGap.length === 0 && report.notInPo.length === 0 && report.shortage.length === 0) {
+      if (report.priceGap.length === 0 && report.notInPo.length === 0 && report.shortage.length === 0 &&
+          report.missing.length === 0 && (!report.returnMarked || report.returnMarked.length === 0)) {
         const ok = await confirmDialog('\u05D0\u05D9\u05E9\u05D5\u05E8 \u05E7\u05D1\u05DC\u05EA \u05E1\u05D7\u05D5\u05E8\u05D4',
           '\u05DB\u05DC \u05D4\u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD \u05DC\u05D4\u05D6\u05DE\u05E0\u05D4. \u05DC\u05D0\u05E9\u05E8?');
         if (!ok) return;
@@ -320,5 +334,45 @@ async function _receiptPinVerify(title) {
     if (inp) inp.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') doVerify();
     });
+  });
+}
+
+// =========================================================
+// Match confirmation dialog — employee confirms items match document
+// Returns: 'match' | 'mismatch' | null (cancelled)
+// =========================================================
+function _showMatchConfirmDialog(rcptNumber) {
+  return new Promise(function(resolve) {
+    var modalId = 'rcpt-match-modal';
+    var existing = $(modalId);
+    if (existing) existing.remove();
+    var html =
+      '<div class="modal-overlay" id="' + modalId + '" style="display:flex" ' +
+        'onclick="if(event.target===this){this.remove()}">' +
+        '<div class="modal" style="max-width:420px;text-align:right">' +
+          '<h3 style="margin:0 0 14px">\u05D0\u05D9\u05E9\u05D5\u05E8 \u05E7\u05D1\u05DC\u05EA \u05E1\u05D7\u05D5\u05E8\u05D4</h3>' +
+          '<p style="font-size:.92rem;color:var(--g600,#4b5563);margin:0 0 16px;line-height:1.6">' +
+            '\u05D0\u05E0\u05D9 \u05DE\u05D0\u05E9\u05E8/\u05EA \u05E9\u05D4\u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05E9\u05E0\u05E8\u05E9\u05DE\u05D5 \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD \u05D0\u05EA \u05D4\u05DE\u05E1\u05DE\u05DA \u05D4\u05DE\u05E6\u05D5\u05E8\u05E3' +
+          '</p>' +
+          '<div style="display:flex;flex-direction:column;gap:8px">' +
+            '<button class="btn btn-p" id="rcpt-match-ok" style="width:100%">' +
+              '\u2705 \u05D4\u05DB\u05DC \u05EA\u05D5\u05D0\u05DD \u2014 \u05D0\u05E9\u05E8 \u05E7\u05D1\u05DC\u05D4</button>' +
+            '<button class="btn" id="rcpt-match-mismatch" style="width:100%;background:#f59e0b;color:#fff">' +
+              '\u26A0\uFE0F \u05D9\u05E9 \u05D0\u05D9-\u05D4\u05EA\u05D0\u05DE\u05D4 \u2014 \u05D0\u05E9\u05E8 \u05D1\u05DB\u05DC \u05D6\u05D0\u05EA</button>' +
+            '<button class="btn btn-g" id="rcpt-match-cancel" style="width:100%">' +
+              '\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    document.body.insertAdjacentHTML('beforeend', html);
+    $('rcpt-match-ok').onclick = function() {
+      var m = $(modalId); if (m) m.remove(); resolve('match');
+    };
+    $('rcpt-match-mismatch').onclick = function() {
+      var m = $(modalId); if (m) m.remove(); resolve('mismatch');
+    };
+    $('rcpt-match-cancel').onclick = function() {
+      var m = $(modalId); if (m) m.remove(); resolve(null);
+    };
   });
 }

@@ -42,16 +42,17 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
     return existing.data[0]; // return existing doc gracefully
   }
 
-  // 1. Calculate amounts from receiptItems
+  // 1. Calculate amounts from receiptItems (exclude returned + not_received)
+  var activeFilter = function(i) { return i.po_match_status !== 'returned' && i.po_match_status !== 'not_received'; };
   const subtotal = receiptItems
-    .filter(i => i.po_match_status !== 'returned')
+    .filter(activeFilter)
     .reduce((sum, item) => {
       return sum + ((item.unit_cost || 0) * (item.quantity || 0));
     }, 0);
 
   // Flag if any items are missing cost prices
   const hasMissingPrice = subtotal <= 0 || receiptItems
-    .filter(i => i.po_match_status !== 'returned')
+    .filter(activeFilter)
     .some(i => !i.unit_cost || i.unit_cost <= 0);
 
   // 2. Fetch supplier's default_document_type and payment_terms_days

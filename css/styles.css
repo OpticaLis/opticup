@@ -410,3 +410,6 @@ tr.row-err td{background:#fef2f2}
 .logo-preview{max-width:200px;max-height:80px;margin-top:8px;border-radius:6px;border:1px solid var(--g200)}
 .settings-actions{text-align:center;margin-top:8px}
 .settings-actions .btn-p{padding:12px 40px;font-size:1rem}
+/* Receipt row dimmed (not_received PO items) */
+.rcpt-row-dimmed{opacity:.45}
+.rcpt-row-dimmed input,.rcpt-row-dimmed select:not(.rcpt-receipt-status){pointer-events:none}

@@ -440,10 +440,16 @@
         <div class="form-group" style="flex:2;min-width:200px"><label>הערות</label>
           <input type="text" id="rcpt-notes" placeholder="הערות חופשיות...">
         </div>
-        <div class="form-group" style="min-width:140px">
+        <div class="form-group" style="min-width:200px">
           <label>מסמך מצורף</label>
-          <button class="btn btn-g btn-sm" id="rcpt-attach-btn" onclick="_pickReceiptFile()" style="width:100%">&#128206; צרף מסמך</button>
-          <span id="rcpt-attach-name" style="font-size:.78rem;color:var(--g600);display:block;margin-top:2px"></span>
+          <div id="rcpt-attach-dropzone" style="border:2px dashed var(--g300,#d1d5db);border-radius:8px;padding:16px 10px;text-align:center;cursor:pointer;transition:border-color .2s">
+            <div style="font-size:1.1rem;margin-bottom:2px">&#128206;</div>
+            <div style="font-size:.82rem;color:var(--g500,#6b7280)">גרור קובץ לכאן או לחץ לבחירה</div>
+            <div style="font-size:.72rem;color:var(--g400,#9ca3af);margin-top:2px">PDF, JPG, PNG — עד 10MB</div>
+          </div>
+          <div id="rcpt-attach-preview" style="display:none;align-items:center;gap:8px;padding:8px 10px;background:var(--g100,#f3f4f6);border-radius:6px;margin-top:4px"></div>
+          <button class="btn btn-g btn-sm" id="rcpt-attach-btn" onclick="_pickReceiptFile()" style="width:100%;display:none">&#128206; צרף מסמך</button>
+          <span id="rcpt-attach-name" style="font-size:.78rem;color:var(--g600);display:none"></span>
         </div>
       </div>
     </div>
@@ -462,7 +468,7 @@
       <div class="rcpt-items-wrap">
         <table>
           <thead><tr>
-            <th>#</th><th>ברקוד</th><th>מותג</th><th>דגם</th><th>צבע</th><th>גודל</th><th>כמות</th><th>מחיר עלות</th><th>מחיר מכירה</th><th>סנכרון</th><th>תמונות</th><th>סוג</th><th>&#10006;</th>
+            <th>#</th><th>ברקוד</th><th>מותג</th><th>דגם</th><th>צבע</th><th>גודל</th><th>כמות</th><th>מחיר עלות</th><th>מחיר מכירה</th><th>סנכרון</th><th>תמונות</th><th>סוג</th><th>פעולה</th>
           </tr></thead>
           <tbody id="rcpt-items-body"></tbody>
         </table>
@@ -875,6 +881,7 @@
 <script src="modules/inventory/incoming-invoices.js"></script>
 <script src="modules/goods-receipts/goods-receipt.js"></script>
 <script src="modules/goods-receipts/receipt-form.js"></script>
+<script src="modules/goods-receipts/receipt-guide.js"></script>
 <script src="modules/goods-receipts/receipt-ocr.js"></script>
 <script src="modules/goods-receipts/receipt-ocr-review.js"></script>
 <script src="modules/goods-receipts/receipt-actions.js"></script>
