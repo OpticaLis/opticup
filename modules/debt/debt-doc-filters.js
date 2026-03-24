@@ -1,16 +1,11 @@
-// debt-doc-filters.js — Advanced document filtering with saved presets (Phase 5.5f)
-
+// debt-doc-filters.js — Advanced document filtering with saved presets
 var _docFilterState = null;
 var _docFilterCollapsed = true;
-var _docFilterSupSelect = null; // searchSelect instance
+var _docFilterSupSelect = null;
 var _docTotalCount = 0; // total unfiltered docs
 var _recycleBinMode = false; // true = showing deleted docs
 var _deletedDocCount = 0;
-
-function _getFilterFavKey() {
-  return 'opticup_doc_filters_' + getTenantId();
-}
-
+function _getFilterFavKey() { return 'opticup_doc_filters_' + getTenantId(); }
 function _loadFilterFavorites() {
   try {
     var raw = localStorage.getItem(_getFilterFavKey());
@@ -62,6 +57,8 @@ function renderDocFilterBar() {
         'style="font-size:.72rem;padding:2px 8px;border:none;border-radius:3px;cursor:pointer;background:#e5e7eb;color:#6b7280">\u05E9\u05D5\u05DC\u05DD</button>' +
       '<button class="doc-status-btn" data-status="cancelled" onclick="toggleDocStatusFilter(\'cancelled\')" ' +
         'style="font-size:.72rem;padding:2px 8px;border:none;border-radius:3px;cursor:pointer;background:#e5e7eb;color:#6b7280">\u05DE\u05D1\u05D5\u05D8\u05DC\u05D9\u05DD</button>' +
+      '<button class="doc-status-btn" data-status="pending_review" onclick="toggleDocStatusFilter(\'pending_review\')" ' +
+        'style="font-size:.72rem;padding:2px 8px;border:none;border-radius:3px;cursor:pointer;background:#e5e7eb;color:#6b7280">\u2753 \u05DC\u05D1\u05D9\u05E8\u05D5\u05E8</button>' +
       '<button class="btn doc-add-btn" style="background:#059669;color:#fff;margin-right:auto" onclick="openNewDocumentModal()">+ \u05DE\u05E1\u05DE\u05DA \u05D7\u05D3\u05E9</button>' +
       '<button class="btn btn-sm" id="recycle-bin-btn" style="background:#fee2e2;color:#991b1b;font-size:.78rem" onclick="_toggleRecycleBin()">' +
         '\uD83D\uDDD1\uFE0F \u05E1\u05DC \u05DE\u05D7\u05D6\u05D5\u05E8 (<span id="recycle-count">0</span>)</button>' +
@@ -176,6 +173,7 @@ function applyDocFilters() {
       if (sf.open && (d.status === 'open' || d.status === 'partially_paid' || d.status === 'draft' || d.status === 'linked' || d.status === 'pending_invoice')) pass = true;
       if (sf.paid && d.status === 'paid') pass = true;
       if (sf.cancelled && d.status === 'cancelled') pass = true;
+      if (sf.pending_review && d.status === 'pending_review') pass = true;
       if (!pass) return false;
     }
     if (f.document_type_id && d.document_type_id !== f.document_type_id) return false;

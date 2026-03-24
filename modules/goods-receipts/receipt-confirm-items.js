@@ -133,6 +133,10 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
     toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
   }
 
+  // Notify other modules (OCR template learning, etc.)
+  document.dispatchEvent(new CustomEvent('receipt-confirmed', {
+    detail: { receiptId: receiptId, rcptNumber: rcptNumber, supplierId: rcptData?.supplier_id || null }
+  }));
   refreshLowStockBanner();
   await loadReceiptTab();
   // Photography prompt — show banner to navigate to inventory for photos

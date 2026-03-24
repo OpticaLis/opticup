@@ -108,7 +108,16 @@ function _buildDocActionToolbar(doc, type, docFiles) {
       'onclick="closeAndRemoveModal(\'edit-doc-modal\');openPrepaidDeductModal(\'' + docId + '\')">' +
       '\u05E7\u05D6\u05D6 \u05DE\u05E2\u05E1\u05E7\u05D4</button>');
   }
-  // Group 3: Delete (cancelled only, soft delete)
+  // Group 3: Review toggle
+  if (doc.status !== 'pending_review' && doc.status !== 'paid' && doc.status !== 'cancelled') {
+    btns.push('<button class="btn btn-sm" style="background:#f59e0b;color:#fff" ' +
+      'onclick="_togglePendingReview(\'' + docId + '\',true)">\u2753 \u05E1\u05DE\u05DF \u05DC\u05D1\u05D9\u05E8\u05D5\u05E8</button>');
+  }
+  if (doc.status === 'pending_review') {
+    btns.push('<button class="btn btn-sm" style="background:#059669;color:#fff" ' +
+      'onclick="_togglePendingReview(\'' + docId + '\',false)">\u2705 \u05D4\u05E1\u05E8 \u05E1\u05D9\u05DE\u05D5\u05DF</button>');
+  }
+  // Group 4: Delete (cancelled only, soft delete)
   if (doc.status === 'cancelled') {
     btns.push('<button class="btn btn-sm" style="background:#ef4444;color:#fff" ' +
       'onclick="_softDeleteDocument(\'' + docId + '\')">\u05DE\u05D7\u05E7</button>');
@@ -142,4 +151,26 @@ async function _softDeleteDocument(docId) {
       toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
     } finally { hideLoading(); }
   });
+}
+
+async function _togglePendingReview(docId, setReview) {
+  var doc = _docData.find(function(d) { return d.id === docId; });
+  if (!doc) return;
+  var newStatus = setReview ? 'pending_review' : (doc._prevStatus || 'open');
+  showLoading('\u05DE\u05E2\u05D3\u05DB\u05DF...');
+  try {
+    var update = { id: docId, status: newStatus };
+    await batchUpdate(T.SUP_DOCS, [update]);
+    if (setReview) doc._prevStatus = doc.status;
+    doc.status = newStatus;
+    await writeLog('doc_status_change', null, { document_id: docId, new_status: newStatus, reason: setReview ? '\u05E1\u05D5\u05DE\u05DF \u05DC\u05D1\u05D9\u05E8\u05D5\u05E8' : '\u05D4\u05D5\u05E1\u05E8 \u05DE\u05D1\u05D9\u05E8\u05D5\u05E8' });
+    closeAndRemoveModal('edit-doc-modal');
+    toast(setReview ? '\u05DE\u05E1\u05DE\u05DA \u05E1\u05D5\u05DE\u05DF \u05DC\u05D1\u05D9\u05E8\u05D5\u05E8' : '\u05E1\u05D9\u05DE\u05D5\u05DF \u05D4\u05D5\u05E1\u05E8');
+    if (typeof _detailSupplierId !== 'undefined' && _detailSupplierId) {
+      await openSupplierDetail(_detailSupplierId); _switchDetailTab('docs');
+    } else { await loadDocumentsTab(); }
+  } catch (e) {
+    console.error('_togglePendingReview error:', e);
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
+  } finally { hideLoading(); }
 }

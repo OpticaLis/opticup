@@ -736,7 +736,7 @@ CREATE TABLE IF NOT EXISTS supplier_documents (
   goods_receipt_id  UUID REFERENCES goods_receipts(id),
   po_id             UUID REFERENCES purchase_orders(id),
   status            TEXT NOT NULL DEFAULT 'open'
-                    CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled', 'pending_invoice')),
+                    CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled', 'pending_invoice', 'pending_review')),
   missing_price     BOOLEAN DEFAULT false,                          -- items with unknown cost price (Phase 2a)
   paid_amount       DECIMAL(12,2) DEFAULT 0,
   notes             TEXT,
