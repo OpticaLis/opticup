@@ -106,6 +106,7 @@ opticup/
 │   └── header.css              — sticky header styles
 ├── js/
 │   ├── shared.js               — Supabase init, constants, caches, utilities (load FIRST)
+│   ├── shared-ui.js            — navigation (showTab), info modal, help banner (load after shared.js)
 │   ├── supabase-ops.js         — core DB operations: writeLog, fetchAll, batch ops, softDelete
 │   ├── supabase-alerts-ocr.js  — alert creation + OCR template learning (split from supabase-ops.js)
 │   ├── data-loading.js         — data loading + enrichment
@@ -117,13 +118,13 @@ opticup/
 │   └── pin-modal.js            — reusable PIN prompt modal (shared promptPin())
 ├── modules/
 │   ├── inventory/              — 11 files (table, entry, edit, export, reduction, excel-import, access-sales, inventory-return, inventory-returns-tab, inventory-returns-actions, incoming-invoices)
-│   ├── purchasing/             — 5 files (purchase-orders, po-form, po-items, po-actions, po-view-import)
+│   ├── purchasing/             — 6 files (purchase-orders, po-form, po-items, po-actions, po-import, po-view)
 │   ├── goods-receipts/         — 11 files (goods-receipt, receipt-form, receipt-actions, receipt-confirm, receipt-confirm-items, receipt-debt, receipt-excel, receipt-ocr, receipt-ocr-review, receipt-po-compare, receipt-guide)
-│   ├── audit/                  — 3 files (audit-log, item-history, qty-modal)
+│   ├── audit/                  — 4 files (audit-log, item-history, entry-history, qty-modal)
 │   ├── brands/                 — 2 files (brands, suppliers)
 │   ├── access-sync/            — 4 files (access-sync, sync-details, pending-panel, pending-resolve)
 │   ├── admin/                  — 2 files (admin, system-log)
-│   ├── debt/                   — 16 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-prepaid-detail, debt-doc-edit, debt-supplier-detail, debt-returns, debt-returns-tab, debt-returns-tab-actions, debt-info-content, debt-info-inject)
+│   ├── debt/                   — 17 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-prepaid-detail, debt-doc-edit, debt-doc-actions, debt-supplier-detail, debt-returns, debt-returns-tab, debt-returns-tab-actions, debt-info-content, debt-info-inject)
 │   │   └── ai/                 — 7 files (ai-ocr, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import)
 │   ├── permissions/            — 1 file (employee-list)
 │   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)

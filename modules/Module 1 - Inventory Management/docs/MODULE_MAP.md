@@ -8,7 +8,8 @@
 
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
-| 1 | shared.js | js/shared.js | 346 | Supabase client init, table constants (T), FIELD_MAP/ENUM_MAP, Hebrew↔English translation, UI helpers ($, toast, setAlert, confirmDialog, showLoading), tab navigation (showTab, showEntryMode), escapeHtml, showInfoModal, renderHelpBanner (collapsible help component), global variable declarations |
+| 1 | shared.js | js/shared.js | 290 | Supabase client init, table constants (T), FIELD_MAP/ENUM_MAP, Hebrew↔English translation, UI helpers ($, toast, setAlert, confirmDialog, showLoading), escapeHtml, formatILS, global variable declarations |
+| 1b | shared-ui.js | js/shared-ui.js | 122 | Tab navigation (showTab, showEntryMode), showInfoModal, renderHelpBanner (collapsible help component) |
 | 2 | supabase-ops.js | js/supabase-ops.js | 201 | Core DB operations (alerts/OCR moved to supabase-alerts-ocr.js): loadLookupCaches, enrichRow, fetchAll (paginated), batchCreate (with duplicate barcode detection), batchUpdate (individual updates, RLS-safe), generateNextBarcode, writeLog, batchWriteLog |
 | 2b | supabase-alerts-ocr.js | js/supabase-alerts-ocr.js | 181 | Alert creation + OCR template learning: createAlert, alertPriceAnomaly, alertPrepaidNewDocument, updateOCRTemplate, buildHintsFromCorrections, _detectDateFormat, validateOCRData |
 | 3 | data-loading.js | js/data-loading.js | 167 | App initialization: loadData, loadMaxBarcode, populateDropdowns, low stock alerts (loadLowStockAlerts, refreshLowStockBanner, openLowStockModal), helper functions (activeBrands, supplierOpts, getBrandType, getBrandSync) |
@@ -24,7 +25,8 @@
 | 13 | po-form.js | modules/purchasing/po-form.js | 231 | PO creation wizard: openNewPurchaseOrder (step 1), proceedToPOItems (step 2 bridge), openEditPO, renderPOForm, resolveSupplierName |
 | 14 | po-items.js | modules/purchasing/po-items.js | 338 | PO item management: renderPOItemsTable, cascading brand→model→color/size datalists, addPOItemManual, addPOItemByBarcode, removePOItem, duplicatePOItem, updatePOTotals, _calcPOFinalPrice, _onPOFinalPriceChange, _onPODiscountChange, _onPOCostChange, _updatePOStockCounter (live inventory count per PO item row), _doUpdatePOStockCounter |
 | 15 | po-actions.js | modules/purchasing/po-actions.js | 310 | PO lifecycle actions: savePODraft (with duplicate row detection), sendPurchaseOrder, cancelPO (blocks partial POs with received items), exportPOExcel, exportPOPdf |
-| 16 | po-view-import.js | modules/purchasing/po-view-import.js | 419 | Read-only PO view with received qty tracking + receipt-based reason badges (לזיכוי/לא הגיע/ממתין/חסר), cancelPOItem (per-item cancel on partial POs), importPOToInventory (creates/updates inventory from PO items, uses generateNextBarcode for atomic barcode gen), createPOForBrand (from low stock modal), PO event delegation. Security: tenant_id on all queries, escapeHtml on all interpolated fields |
+| 16a | po-import.js | modules/purchasing/po-import.js | 214 | PO import + actions: importPOToInventory (creates/updates inventory from PO items, uses generateNextBarcode for atomic barcode gen), createPOForBrand (from low stock modal), cancelPOItem (per-item cancel on partial POs) |
+| 16b | po-view.js | modules/purchasing/po-view.js | 204 | Read-only PO view with received qty tracking + receipt-based reason badges (לזיכוי/לא הגיע/ממתין/חסר), PO event delegation. Security: tenant_id on all queries, escapeHtml on all interpolated fields |
 | 17 | goods-receipt.js | modules/goods-receipts/goods-receipt.js | 352 | Receipt list: loadReceiptTab, loadPOsForSupplier, onReceiptPoSelected (ONE row per PO item with qty=remaining, matches existing inventory), updatePOStatusAfterReceipt (filters out not_received/returned items), openNewReceipt, _initRcptSupplierSelect (searchable supplier dropdown via createSearchSelect) |
 | 18 | receipt-form.js | modules/goods-receipts/receipt-form.js | 283 | Receipt form setup: file attachment state (_pendingReceiptFiles), _pickReceiptFile, _initReceiptDropzone (drag-drop with init guard), _stageReceiptFile, _renderReceiptFileList, _removeReceiptFileAt, _removeReceiptFile, openExistingReceipt, toggleReceiptFormInputs, searchReceiptBarcode |
 | 18a | receipt-form-items.js | modules/goods-receipts/receipt-form-items.js | 282 | Receipt item row management (split from receipt-form.js): addReceiptItemRow (status dropdown with partial_received, partial qty input), getReceiptItems (returns barcodes[] array, effectiveQty, ordered_qty), _onReceiptStatusChange (handles partial_received with qty input), updateReceiptItemsStats (shows partial count), addNewReceiptRow, generateReceiptBarcodes (multi-barcode: N barcodes per row, tr.dataset.barcodes, "+N נוספים" indicator) |
@@ -38,7 +40,8 @@
 | 19f | receipt-po-compare.js | modules/goods-receipts/receipt-po-compare.js | 384 | PO comparison report: _poCompBuildReport (aggregates multi-row receipt items by key for qty comparison; handles receipt_status: not_received→missing, return→returnMarked), _poCompShowReport (7-section modal: matched/shortage/priceGap/notInPo/returnMarked/missing + reorder), _poCompCollectDecisions (auto-sets returned/not_received for marked items), _poCompApplyDecisions (creates supplier_return for returned, logs not_received), _poCompLearnPricePattern (VAT detection), _poCompCreateReorderPO |
 | 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 259 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, exportReceiptBarcodes (reads barcodes_csv for multi-barcode rows, one Excel row per barcode), receipt list event delegation |
 | 21 | audit-log.js | modules/audit/audit-log.js | 215 | Soft delete flow (deleteInvRow, confirmSoftDelete), recycle bin (openRecycleBin, restoreItem, permanentDelete with double PIN) |
-| 22 | item-history.js | modules/audit/item-history.js | 398 | Item timeline (openItemHistory + _loadEntryDocLink for entry doc traceability), ACTION_MAP constant (21 action types), entry history accordion (openEntryHistory, loadEntryHistory, renderEntryHistory), exports |
+| 22 | item-history.js | modules/audit/item-history.js | 189 | Item timeline (openItemHistory + _loadEntryDocLink for entry doc traceability), ACTION_MAP constant (21 action types), exportHistoryExcel |
+| 22b | entry-history.js | modules/audit/entry-history.js | 212 | Entry history accordion: openEntryHistory, loadEntryHistory, renderEntryHistory, toggleHistGroup, exportDateGroupBarcodes, ENTRY_ACTIONS constant |
 | 23 | qty-modal.js | modules/audit/qty-modal.js | 114 | Quantity change modal: openQtyModal (add/remove with reason+PIN including "נשלח לזיכוי"), confirmQtyChange (calls _createReturnFromReduction when reason is credit) |
 | 24 | brands.js | modules/brands/brands.js | 197 | Brand management: loadBrandsTab, renderBrandsTable (4 filters), setBrandActive (immediate save), addBrandRow, saveBrands, saveBrandField |
 | 25 | suppliers.js | modules/brands/suppliers.js | 167 | Supplier management: loadSuppliersTab, supplier number editing with temp-negative-swap, addSupplier with auto-number, getNextSupplierNumber (gap-filling) |
@@ -69,7 +72,8 @@
 | 44 | debt-documents.js | modules/debt/debt-documents.js | 271 | Documents tab: loadDocumentsTab, _loadDocFileCounts, renderDocumentsTable (source badges: receipt/standalone/missing_price), viewDocument, _attachFileToDoc (multi-file), closeAndRemoveModal, cancelDocument (refreshes supplier detail if open), openPrepaidDeductModal, _doPrepaidDeduct |
 | 44b | debt-doc-new.js | modules/debt/debt-doc-new.js | 205 | New document modal (split from debt-documents.js): openNewDocumentModal, _pickNewDocFiles, _renderNewDocFileList, _removeNewDocFileAt, calcNewDocTotal, calcNewDocFromTotal, _ndAutoCalcDueDate, saveNewDocument (server-side duplicate check with override + multi-file + saveDocFile), generateDocInternalNumber |
 | 44c | debt-doc-items.js | modules/debt/debt-doc-items.js | 161 | Editable document items: _buildEditableItemsHtml (editable inputs table), _edItemRowHtml, _edItemCalcRow (auto-calc), _edItemAddRow, _edItemRemoveRow, _edItemRecalcTotal (syncs with subtotal), _gatherEditedItems, _saveEditedItems (to ocr_extractions), _buildReceiptItemsHtml (read-only) |
-| 44d | debt-doc-edit.js | modules/debt/debt-doc-edit.js | 388 | Document edit modal: editDocument (amounts readonly on receipt-linked docs unless missing_price, info notes), _editDocAttachMore (choice modal: save only vs save+OCR), _showAttachChoiceModal, _doAttachFiles, _editDocCalc, saveDocumentEdits (+_saveEditedItems), _learnFromDocumentEdits, _buildDocActionToolbar (OCR only on standalone docs), _softDeleteDocument |
+| 44d | debt-doc-actions.js | modules/debt/debt-doc-actions.js | 145 | Document action toolbar + file attach: _editDocAttachMore, _showAttachChoiceModal, _doAttachFiles, _buildDocActionToolbar (OCR only on standalone docs), _softDeleteDocument |
+| 44d2 | debt-doc-edit.js | modules/debt/debt-doc-edit.js | 254 | Document edit modal: editDocument (amounts readonly on receipt-linked docs unless missing_price), _editDocCalc, saveDocumentEdits (+_saveEditedItems), _learnFromDocumentEdits |
 | 44e | debt-doc-compare.js | modules/debt/debt-doc-compare.js | 269 | PO vs Receipt vs Invoice comparison: buildComparisonSection(doc), _cmpMatchItems (barcode+brand/model fallback), _cmpFindMatch, _cmpFindOcrMatch (fuzzy description), _cmpBuildRow (includes rcptPrice), _cmpStatus (match/price-diff/missing/not-in-po/invoice-only), _cmpRenderSection (dynamic columns + VAT + total incl VAT), _cmpCell, _cmpPrice |
 | 45 | debt-doc-link.js | modules/debt/debt-doc-link.js | 292 | Delivery note → invoice linking: openLinkToInvoiceModal (shows supplier's invoices with auto-sum), linkDeliveryToInvoice (creates document_links record, updates status to linked), _renderLinkSummary (linked amounts vs invoice total comparison), openLinkDeliveryNotesModal, _extractDeliveryNoteRefs, _toggleAllLinkNotes, _updateLinkNotesSum, _linkSelectedNotes |
 | 46 | debt-payments.js | modules/debt/debt-payments.js | 229 | Payments tab: loadPaymentsTab (fetch payments+methods+suppliers+allocations+documents), renderPaymentsToolbar (filters + add button), applyPayFilters (client-side), renderPaymentsTable (with כנגד doc numbers), viewPayment (detail modal with allocation table) |
@@ -120,7 +124,7 @@
 
 | 79 | watcher-deploy/ | watcher-deploy/ | 8 files | Standalone deployment package: sync-watcher.js, sync-export.js, install-service.js (with --export-dir), uninstall-service.js, setup.bat (Hebrew interactive installer), uninstall.bat, package.json, README.txt (Hebrew UTF-8 BOM). Designed for USB/Dropbox copy to Windows machines without Git/IDE |
 
-**Total: ~107 JS files across 14 module folders + 9 global files + 9 shared/js files + watcher-deploy/ (8-file standalone package), ~23,500 lines** (includes scripts/sync-watcher.js + sync-export.js)
+**Total: ~111 JS files across 14 module folders + 10 global files + 9 shared/js files + watcher-deploy/ (8-file standalone package), ~23,500 lines** (includes scripts/sync-watcher.js + sync-export.js)
 
 **Note (Flow Review Session):** 4 new files: ai-historical-process.js (182 lines, split from ai-historical-import.js — file grouping + upload processing), ai-ocr-review.js updated (174→262, delete+duplicate buttons), debt-doc-compare.js (244 lines, PO vs Receipt vs Invoice comparison table), debt-supplier-tabs.js (192 lines, split from debt-supplier-detail.js). Updated: ai-ocr.js (182→281, multi-file OCR merge), ai-historical-import.js (338→249, OCR removed — upload-only with draft status), receipt-ocr.js (+20 lines, hide OCR button when PO linked), receipt-confirm.js (-5 lines, fixed product_type constraint). Migrations: 044 (atomic internal doc number), 045 (draft status CHECK constraint). Iron Rule #13 added to CLAUDE.md (atomic RPC for sequential numbers).
 
@@ -214,10 +218,15 @@
 | `clearAlert` | `(id)` | Clears inline alert |
 | `closeModal` | `(id)` | Hides modal by setting display:none |
 | `confirmDialog` | `(title, text='')` | Async confirm modal. Returns Promise\<boolean\>. text defaults to empty string |
-| `showTab` | `(name)` | Main navigation: stops camera if active, deactivates all tabs, activates target, calls appropriate loader |
-| `showEntryMode` | `(mode)` | Switches between manual/excel/receipt entry sub-modes |
 | `getTenantId` | `()` | Returns tenant_id UUID from sessionStorage ('prizma_tenant_id'). Used in every insert/select as defense-in-depth alongside RLS (Phase 3.75) |
 | `formatILS` | `(amount)` | Formats number as ILS currency string (₪1,234) with thousands separator. Moved from debt-dashboard.js in Phase 4d |
+
+### js/shared-ui.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `showTab` | `(name)` | Main navigation: stops camera if active, deactivates all tabs, activates target, calls appropriate loader |
+| `showEntryMode` | `(mode)` | Switches between manual/excel/receipt entry sub-modes |
 | `showInfoModal` | `(title, bodyHTML)` | Creates overlay info modal with title, body HTML, close button, Escape handler |
 | `renderHelpBanner` | `(parentEl, storageKey, helpHTML)` | Renders collapsible help banner with sessionStorage collapse state. Used on returns tabs, shipments list, wizard |
 
@@ -407,14 +416,19 @@
 | `clonePO` | `(id)` | Async. Clones existing PO: fetches PO+items, generates new PO number, loads into form as new draft |
 | `cancelPO` | `(id)` | Async. Sets PO status to 'cancelled'. Blocks partial POs (use per-item cancel). Only allows draft/sent |
 
-### modules/purchasing/po-view-import.js
+### modules/purchasing/po-import.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `importPOToInventory` | `(poId)` | Async. Creates/updates inventory from PO items, generates barcodes for new items |
+| `createPOForBrand` | `(brandId, brandName)` | Async. Creates PO pre-populated with brand items from low-stock modal |
+| `cancelPOItem` | `(itemId, poId, qtyReceived)` | Async. Sets qty_ordered=qty_received on a single PO item. Recalculates PO status (auto-completes if all items done) |
+
+### modules/purchasing/po-view.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
 | `openViewPO` | `(id)` | Async. Read-only PO view with ordered vs received qty, color-coded rows. Fetches receipt items to show reason badges (נשלח לזיכוי / לא הגיע / ממתין / חסר) for undelivered items. Cancel button on partial POs |
-| `cancelPOItem` | `(itemId, poId, qtyReceived)` | Async. Sets qty_ordered=qty_received on a single PO item. Recalculates PO status (auto-completes if all items done) |
-| `importPOToInventory` | `(poId)` | Async. Creates/updates inventory from PO items, generates barcodes for new items |
-| `createPOForBrand` | `(brandId, brandName)` | Async. Creates PO pre-populated with brand items from low-stock modal |
 
 ### modules/goods-receipts/goods-receipt.js
 
@@ -525,13 +539,18 @@
 |----------|------------|-------------|
 | `openItemHistory` | `(id, barcode, brand, model)` | Async. Fetches up to 100 logs, renders color-coded timeline |
 | `exportHistoryExcel` | `()` | Exports historyCache to xlsx with 13 columns |
+| `_loadEntryDocLink` | `(inventoryId)` | Async. Non-blocking. Queries goods_receipt_items → supplier_documents to find the entry document for an item. Renders a blue banner with doc type, number, supplier, and date inside #history-entry-doc. Shows nothing for manual-entry items |
+
+### modules/audit/entry-history.js
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
 | `openEntryHistory` | `()` | Creates entry-history modal if needed, sets default dates, shows modal |
 | `closeEntryHistory` | `()` | Hides entry-history modal |
 | `loadEntryHistory` | `()` | Async. Fetches entry logs within date range with inventory join |
 | `renderEntryHistory` | `(logs)` | Groups by date, renders accordion with tables per group |
 | `toggleHistGroup` | `(btn)` | Accordion toggle: closes others, toggles clicked group |
 | `exportDateGroupBarcodes` | `(items)` | Exports group items to xlsx |
-| `_loadEntryDocLink` | `(inventoryId)` | Async. Non-blocking. Queries goods_receipt_items → supplier_documents to find the entry document for an item. Renders a blue banner with doc type, number, supplier, and date inside #history-entry-doc. Shows nothing for manual-entry items |
 
 ### modules/audit/qty-modal.js
 
@@ -1609,7 +1628,7 @@ supabase-alerts-ocr.js
 data-loading.js
   → calls: loadLookupCaches() [supabase-ops.js]
   → calls: showLoading(), hideLoading(), toast(), enToHe(), escapeHtml(), $() [shared.js]
-  → references: createPOForBrand() [po-view-import.js] (via onclick in low stock modal)
+  → references: createPOForBrand() [po-import.js] (via onclick in low stock modal)
 
 search-select.js
   → calls: escapeHtml() [shared.js]
@@ -1663,12 +1682,17 @@ po-actions.js
   → calls: loadPurchaseOrdersTab() [purchase-orders.js]
   → calls: refreshLowStockBanner() [data-loading.js]
 
-po-view-import.js
+po-import.js
   → calls: generatePoNumber(), loadPurchaseOrdersTab() [purchase-orders.js]
-  → calls: openEditPO(), renderPOForm() [po-form.js]
+  → calls: renderPOForm() [po-form.js]
+  → calls: openViewPO() [po-view.js]
+  → calls: showTab() [shared-ui.js]
+
+po-view.js
+  → calls: openEditPO() [po-form.js]
   → calls: togglePOItemDetails(), duplicatePOItem(), removePOItem() [po-items.js]
-  → calls: sendPurchaseOrder(), cancelPO(), clonePO(), exportPOExcel(), exportPOPdf() [po-actions.js]
-  → calls: showTab() [shared.js]
+  → calls: sendPurchaseOrder(), cancelPO(), clonePO() [po-actions.js]
+  → calls: importPOToInventory(), cancelPOItem() [po-import.js]
 ```
 
 ### Goods Receipts Module
@@ -2133,7 +2157,7 @@ await sb.from('inventory').update({ quantity: newQty }).eq('id', id);
 - Migrations: `012_atomic_qty_rpc.sql`, `013_stock_count.sql`, `033_apply_stock_count_delta.sql`
 
 **Files updated:** qty-modal.js (`confirmQtyChange`), receipt-confirm.js (`confirmReceiptCore`), inventory-reduction.js (`processRedExcel`, `confirmReduction`), pending-resolve.js (`confirmResolvePending`), access-sales.js (`processAccessSalesFile`), stock-count-report.js (`confirmCount` via `apply_stock_count_delta`), sync-watcher.js (watcher uses `increment_inventory`/`decrement_inventory`)
-**Files remaining (future):** po-view-import.js (`importPOToInventory`)
+**Files remaining (future):** po-import.js (`importPOToInventory`)
 
 **✅ Phase 5f:** Daily alert generation RPC function:
 - `generate_daily_alerts(p_tenant_id)` — Creates alerts for: payment_overdue (critical), payment_due (warning, within reminder window), prepaid_low (warning, <20% remaining). Respects ai_agent_config flags. Returns JSON `{alerts_created: N}`. Skips if duplicate alert already exists for same entity.
