@@ -43,6 +43,12 @@ async function editDocument(docId) {
         receiptItemsHtml = _buildReceiptItemsHtml(rcptItems);
       }
     } catch (e) { console.warn('Receipt items load skipped:', e.message); }
+  } else if (doc.status === 'pending_invoice') {
+    receiptItemsHtml = '<div style="border-top:1px solid var(--g200);padding-top:10px;margin-top:10px">' +
+      '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:10px 14px;font-size:.85rem;color:#92400e">' +
+        '\uD83D\uDCE8 \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u05D6\u05D5 \u05D8\u05E8\u05DD \u05E9\u05D5\u05D9\u05DB\u05D4 \u05DC\u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05DE\u05E9\u05DC\u05D5\u05D7 \u2014 ' +
+        '\u05DC\u05D0\u05D7\u05E8 \u05E1\u05E8\u05D9\u05E7\u05EA AI, \u05E7\u05E9\u05E8 \u05DC\u05EA\u05E2\u05D5\u05D3\u05D5\u05EA \u05D3\u05E8\u05DA \u05DB\u05E4\u05EA\u05D5\u05E8 \'\u05E7\u05E9\u05E8 \u05EA\u05E2\u05D5\u05D3\u05D5\u05EA\'' +
+      '</div></div>';
   }
 
   // Comparison table (PO vs Receipt vs Invoice)

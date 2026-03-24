@@ -35,7 +35,7 @@
 | 19f | receipt-po-compare.js | modules/goods-receipts/receipt-po-compare.js | 295 | PO comparison report: _poCompBuildReport (match by brand\|model\|size\|color key + adds supplierId to report), _poCompShowReport (5-section modal + reorder button for shortage/missing), _poCompCollectDecisions, _poCompApplyDecisions (write price_decision/po_match_status, auto-create supplier_return for rejected items), _poCompLearnPricePattern (VAT detection), _poCompCreateReorderPO (creates draft PO from shortage+missing items) |
 | 20 | receipt-excel.js | modules/goods-receipts/receipt-excel.js | 195 | Receipt Excel: handleReceiptExcel (import items), exportReceiptExcel, exportReceiptToAccess, receipt list event delegation |
 | 21 | audit-log.js | modules/audit/audit-log.js | 215 | Soft delete flow (deleteInvRow, confirmSoftDelete), recycle bin (openRecycleBin, restoreItem, permanentDelete with double PIN) |
-| 22 | item-history.js | modules/audit/item-history.js | 323 | Item timeline (openItemHistory), ACTION_MAP constant (21 action types), entry history accordion (openEntryHistory, loadEntryHistory, renderEntryHistory), exports |
+| 22 | item-history.js | modules/audit/item-history.js | 398 | Item timeline (openItemHistory + _loadEntryDocLink for entry doc traceability), ACTION_MAP constant (21 action types), entry history accordion (openEntryHistory, loadEntryHistory, renderEntryHistory), exports |
 | 23 | qty-modal.js | modules/audit/qty-modal.js | 114 | Quantity change modal: openQtyModal (add/remove with reason+PIN including "נשלח לזיכוי"), confirmQtyChange (calls _createReturnFromReduction when reason is credit) |
 | 24 | brands.js | modules/brands/brands.js | 197 | Brand management: loadBrandsTab, renderBrandsTable (4 filters), setBrandActive (immediate save), addBrandRow, saveBrands, saveBrandField |
 | 25 | suppliers.js | modules/brands/suppliers.js | 167 | Supplier management: loadSuppliersTab, supplier number editing with temp-negative-swap, addSupplier with auto-number, getNextSupplierNumber (gap-filling) |
@@ -500,6 +500,7 @@
 | `renderEntryHistory` | `(logs)` | Groups by date, renders accordion with tables per group |
 | `toggleHistGroup` | `(btn)` | Accordion toggle: closes others, toggles clicked group |
 | `exportDateGroupBarcodes` | `(items)` | Exports group items to xlsx |
+| `_loadEntryDocLink` | `(inventoryId)` | Async. Non-blocking. Queries goods_receipt_items → supplier_documents to find the entry document for an item. Renders a blue banner with doc type, number, supplier, and date inside #history-entry-doc. Shows nothing for manual-entry items |
 
 ### modules/audit/qty-modal.js
 

@@ -31,7 +31,12 @@ async function openItemHistory(id, barcode, brand, model) {
 
   $('history-timeline').innerHTML = '<p style="text-align:center;padding:24px">טוען...</p>';
   $('history-export-btn').style.display = 'none';
+  var entryDocEl = $('history-entry-doc');
+  if (entryDocEl) entryDocEl.innerHTML = '';
   $('history-modal').style.display = 'flex';
+
+  // Non-blocking: load entry document link
+  _loadEntryDocLink(id);
 
   try {
     const { data: logs, error } = await sb
@@ -330,4 +335,64 @@ function exportDateGroupBarcodes(items) {
   XLSX.utils.book_append_sheet(wb, ws, 'ברקודים');
   XLSX.writeFile(wb, `barcodes-${new Date().toISOString().split('T')[0]}.xlsx`);
   toast(`${rows.length} ברקודים יורדים...`, 's');
+}
+
+// ── Entry document link — shows which supplier doc this item entered with ──
+async function _loadEntryDocLink(inventoryId) {
+  var el = $('history-entry-doc');
+  if (!el) return;
+  try {
+    var tid = getTenantId();
+    // Step 1: Find receipt item for this inventory item
+    var { data: riRows, error: riErr } = await sb.from(T.RCPT_ITEMS)
+      .select('receipt_id')
+      .eq('inventory_id', inventoryId)
+      .eq('tenant_id', tid)
+      .limit(1);
+    if (riErr || !riRows || !riRows.length) return; // no receipt — manual entry, show nothing
+
+    var receiptId = riRows[0].receipt_id;
+
+    // Step 2: Find supplier document linked to this receipt
+    var { data: docRows, error: docErr } = await sb.from(T.SUP_DOCS)
+      .select('id, document_number, internal_number, document_date, document_type_id, supplier_id')
+      .eq('goods_receipt_id', receiptId)
+      .eq('tenant_id', tid)
+      .eq('is_deleted', false)
+      .limit(1);
+    if (docErr || !docRows || !docRows.length) return;
+
+    var doc = docRows[0];
+
+    // Resolve type name and supplier name from caches
+    var typeName = '';
+    if (typeof _docTypes !== 'undefined' && _docTypes.length) {
+      var dt = _docTypes.find(function(t) { return t.id === doc.document_type_id; });
+      if (dt) typeName = dt.name_he;
+    }
+    if (!typeName) {
+      // Fallback: query doc type
+      var { data: dtRows } = await sb.from(T.DOC_TYPES).select('name_he').eq('id', doc.document_type_id).limit(1);
+      if (dtRows && dtRows.length) typeName = dtRows[0].name_he;
+    }
+
+    var supName = '';
+    if (typeof supplierCacheRev !== 'undefined') supName = supplierCacheRev[doc.supplier_id] || '';
+    if (!supName) {
+      var { data: supRows } = await sb.from(T.SUPPLIERS).select('name').eq('id', doc.supplier_id).limit(1);
+      if (supRows && supRows.length) supName = supRows[0].name;
+    }
+
+    var label = (typeName || '\u05DE\u05E1\u05DE\u05DA') + ' #' + (doc.document_number || doc.internal_number || '');
+    if (supName) label += ' \u05DE-' + supName;
+    if (doc.document_date) label += ' (' + doc.document_date + ')';
+
+    el.innerHTML =
+      '<div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:.85rem;color:#1e40af">' +
+        '\uD83D\uDCC4 \u05E0\u05DB\u05E0\u05E1 \u05E2\u05DD: ' + escapeHtml(label) +
+      '</div>';
+  } catch (e) {
+    console.warn('_loadEntryDocLink error:', e);
+    // Non-blocking — just hide on error
+  }
 }
