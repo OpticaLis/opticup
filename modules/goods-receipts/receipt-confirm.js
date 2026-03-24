@@ -141,8 +141,8 @@ async function confirmReceipt() {
   }
 
   // Hard-block: file must be attached before confirm
-  if (!_pendingReceiptFile) {
-    toast('חובה לצרף חשבונית או תעודת משלוח לפני אישור', 'e');
+  if (!_pendingReceiptFiles || _pendingReceiptFiles.length === 0) {
+    toast('\u05D7\u05D5\u05D1\u05D4 \u05DC\u05E6\u05E8\u05E3 \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u05D0\u05D5 \u05EA\u05E2\u05D5\u05D3\u05EA \u05DE\u05E9\u05DC\u05D5\u05D7 \u05DC\u05E4\u05E0\u05D9 \u05D0\u05D9\u05E9\u05D5\u05E8', 'e');
     return;
   }
 
@@ -347,22 +347,54 @@ async function _receiptPinVerify(title) {
 // =========================================================
 function _showMatchConfirmDialog(rcptNumber) {
   return new Promise(function(resolve) {
+    // Check item statuses from the form
+    var items;
+    try { items = getReceiptItems(); } catch (e) { items = []; }
+    var okCount = items.filter(function(i) { return !i.receipt_status || i.receipt_status === 'ok'; }).length;
+    var notRecvCount = items.filter(function(i) { return i.receipt_status === 'not_received'; }).length;
+    var returnCount = items.filter(function(i) { return i.receipt_status === 'return'; }).length;
+    var hasNonOk = notRecvCount > 0 || returnCount > 0;
+
+    // Build status summary line
+    var summaryHtml = '';
+    if (hasNonOk) {
+      var parts = [];
+      if (okCount > 0) parts.push('\u2705 ' + okCount + ' \u05EA\u05E7\u05D9\u05E0\u05D9\u05DD');
+      if (notRecvCount > 0) parts.push('\u274C ' + notRecvCount + ' \u05DC\u05D0 \u05D4\u05D2\u05D9\u05E2\u05D5');
+      if (returnCount > 0) parts.push('\uD83D\uDD04 ' + returnCount + ' \u05DC\u05D4\u05D7\u05D6\u05E8\u05D4');
+      summaryHtml = '<div style="background:#fff3e0;padding:8px 12px;border-radius:6px;margin:0 0 12px;font-size:.88rem;font-weight:600">' +
+        parts.join(' | ') + '</div>';
+    }
+
     var modalId = 'rcpt-match-modal';
     var existing = $(modalId);
     if (existing) existing.remove();
+
+    // If items have non-ok status, change default button to mismatch
+    var matchBtnLabel = hasNonOk
+      ? '\u26A0\uFE0F \u05D9\u05E9 \u05D0\u05D9-\u05D4\u05EA\u05D0\u05DE\u05D4 \u2014 \u05D0\u05E9\u05E8 \u05D1\u05DB\u05DC \u05D6\u05D0\u05EA'
+      : '\u2705 \u05D4\u05DB\u05DC \u05EA\u05D5\u05D0\u05DD \u2014 \u05D0\u05E9\u05E8 \u05E7\u05D1\u05DC\u05D4';
+    var matchBtnStyle = hasNonOk
+      ? 'width:100%;background:#f59e0b;color:#fff'
+      : 'width:100%';
+    var matchBtnClass = hasNonOk ? 'btn' : 'btn btn-p';
+    var matchResult = hasNonOk ? 'mismatch' : 'match';
+
     var html =
       '<div class="modal-overlay" id="' + modalId + '" style="display:flex" ' +
         'onclick="if(event.target===this){this.remove()}">' +
         '<div class="modal" style="max-width:420px;text-align:right">' +
           '<h3 style="margin:0 0 14px">\u05D0\u05D9\u05E9\u05D5\u05E8 \u05E7\u05D1\u05DC\u05EA \u05E1\u05D7\u05D5\u05E8\u05D4</h3>' +
+          summaryHtml +
           '<p style="font-size:.92rem;color:var(--g600,#4b5563);margin:0 0 16px;line-height:1.6">' +
             '\u05D0\u05E0\u05D9 \u05DE\u05D0\u05E9\u05E8/\u05EA \u05E9\u05D4\u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05E9\u05E0\u05E8\u05E9\u05DE\u05D5 \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD \u05D0\u05EA \u05D4\u05DE\u05E1\u05DE\u05DA \u05D4\u05DE\u05E6\u05D5\u05E8\u05E3' +
           '</p>' +
           '<div style="display:flex;flex-direction:column;gap:8px">' +
-            '<button class="btn btn-p" id="rcpt-match-ok" style="width:100%">' +
-              '\u2705 \u05D4\u05DB\u05DC \u05EA\u05D5\u05D0\u05DD \u2014 \u05D0\u05E9\u05E8 \u05E7\u05D1\u05DC\u05D4</button>' +
+            '<button class="' + matchBtnClass + '" id="rcpt-match-ok" style="' + matchBtnStyle + '">' +
+              matchBtnLabel + '</button>' +
+            (hasNonOk ? '' :
             '<button class="btn" id="rcpt-match-mismatch" style="width:100%;background:#f59e0b;color:#fff">' +
-              '\u26A0\uFE0F \u05D9\u05E9 \u05D0\u05D9-\u05D4\u05EA\u05D0\u05DE\u05D4 \u2014 \u05D0\u05E9\u05E8 \u05D1\u05DB\u05DC \u05D6\u05D0\u05EA</button>' +
+              '\u26A0\uFE0F \u05D9\u05E9 \u05D0\u05D9-\u05D4\u05EA\u05D0\u05DE\u05D4 \u2014 \u05D0\u05E9\u05E8 \u05D1\u05DB\u05DC \u05D6\u05D0\u05EA</button>') +
             '<button class="btn btn-g" id="rcpt-match-cancel" style="width:100%">' +
               '\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
           '</div>' +
@@ -370,11 +402,14 @@ function _showMatchConfirmDialog(rcptNumber) {
       '</div>';
     document.body.insertAdjacentHTML('beforeend', html);
     $('rcpt-match-ok').onclick = function() {
-      var m = $(modalId); if (m) m.remove(); resolve('match');
+      var m = $(modalId); if (m) m.remove(); resolve(matchResult);
     };
-    $('rcpt-match-mismatch').onclick = function() {
-      var m = $(modalId); if (m) m.remove(); resolve('mismatch');
-    };
+    var mismatchBtn = $('rcpt-match-mismatch');
+    if (mismatchBtn) {
+      mismatchBtn.onclick = function() {
+        var m = $(modalId); if (m) m.remove(); resolve('mismatch');
+      };
+    }
     $('rcpt-match-cancel').onclick = function() {
       var m = $(modalId); if (m) m.remove(); resolve(null);
     };

@@ -381,7 +381,11 @@
 | `loadPOModelsForBrand` | `(i, brandName)` | Async. Cascading: queries distinct models for brand, updates datalist |
 | `loadPOColorsAndSizes` | `(i, brandName, model)` | Async. Cascading: queries distinct colors+sizes, warns if stock exists |
 | `renderPOItemsTable` | `()` | Renders PO items table body+footer with inline inputs and expandable detail rows |
-| `updatePOTotals` | `()` | Recalculates per-row and grand totals (qty * cost * (1 - discount/100)) |
+| `updatePOTotals` | `()` | Recalculates per-row and grand totals (qty * cost * (1 - discount/100)). Adds VAT summary row (vat_rate from tenant config) |
+| `_calcPOFinalPrice` | `(item)` | Returns final price after discount: cost * (1 - discount/100) |
+| `_onPOFinalPriceChange` | `(i, finalPrice)` | Reverse-calcs discount from final price, updates UI |
+| `_onPODiscountChange` | `(i)` | Updates final_price input when discount changes |
+| `_onPOCostChange` | `(i)` | Updates final_price input when cost_price changes |
 | `addPOItemManual` | `()` | Pushes empty item to currentPOItems, re-renders |
 | `addPOItemByBarcode` | `()` | Async. Looks up barcode in inventory, pushes pre-populated item |
 | `removePOItem` | `(index)` | Removes item by index, re-renders |
@@ -396,6 +400,7 @@
 | `exportPOPdf` | `()` | Async. Generates HTML and opens print window for PDF export |
 | `savePODraft` | `()` | Async. Validates items, detects duplicate rows, inserts or updates PO + items |
 | `sendPurchaseOrder` | `(id)` | Async. Marks draft PO as 'sent' with confirm dialog and writeLog |
+| `clonePO` | `(id)` | Async. Clones existing PO: fetches PO+items, generates new PO number, loads into form as new draft |
 | `cancelPO` | `(id)` | Async. Sets PO status to 'cancelled'. Blocks partial POs (use per-item cancel). Only allows draft/sent |
 
 ### modules/purchasing/po-view-import.js
@@ -412,7 +417,7 @@
 | Function | Parameters | Description |
 |----------|------------|-------------|
 | `loadPOsForSupplier` | `(supplierName)` | Async. Populates PO dropdown with sent/partial POs for supplier |
-| `onReceiptPoSelected` | `()` | Async. Loads PO items, populates receipt item rows for items with remaining qty |
+| `onReceiptPoSelected` | `()` | Async. Loads PO items, matches to existing inventory by brand+model+size+color, reuses existing barcodes/IDs. For qty>1: first unit reuses existing, additional get new barcodes |
 | `updatePOStatusAfterReceipt` | `(poId)` | Async. Recalculates PO qty_received per item, updates PO status (received/partial/sent) |
 | `loadReceiptTab` | `()` | Async. Shows receipt list with stats (draft count, confirmed this week, items received) |
 | `openNewReceipt` | `()` | Initializes new receipt form, populates supplier dropdown, resets all state |
@@ -428,9 +433,11 @@
 | `getReceiptItems` | `()` | Collects all receipt item data from DOM. Throws if qty < 1 |
 | `updateReceiptItemsStats` | `()` | Calculates and displays item/unit/new/existing counts |
 | `addNewReceiptRow` | `()` | Async. Generates barcode via generateNextBarcode(), then calls addReceiptItemRow(). Used by manual "שורה חדשה" button |
-| `_pickReceiptFile` | `()` | Opens hidden file input, delegates to _stageReceiptFile on selection |
-| `_initReceiptDropzone` | `()` | Adds drag/drop + click events to rcpt-attach-dropzone element. Called on openNewReceipt/openExistingReceipt |
-| `_stageReceiptFile` | `(file)` | Validates file type/size, stores in _pendingReceiptFile, shows preview with remove button, hides dropzone |
+| `_pickReceiptFile` | `()` | Opens hidden file input (multi-select), delegates to _stageReceiptFile for each file |
+| `_initReceiptDropzone` | `()` | Adds drag/drop + click events to rcpt-attach-dropzone element. Init guard prevents stacking. Called on openNewReceipt/openExistingReceipt |
+| `_stageReceiptFile` | `(file)` | Validates file type/size, adds to _pendingReceiptFiles array, calls _renderReceiptFileList |
+| `_renderReceiptFileList` | `()` | Renders multi-file list with per-file remove buttons and "add more" button |
+| `_removeReceiptFileAt` | `(idx)` | Removes single file from _pendingReceiptFiles by index, re-renders list |
 | `_onReceiptStatusChange` | `(sel)` | Handler for PO row status dropdown. Dims row + disables inputs on 'not_received', restores on 'ok'/'return' |
 
 ### modules/goods-receipts/receipt-guide.js
@@ -454,7 +461,7 @@
 |----------|------------|-------------|
 | `confirmReceiptCore` | `(receiptId, rcptNumber, poId)` | Async. Core confirmation with atomic rollback: tracks successful increments, rolls back all on failure (returns false). Increments inventory via `sb.rpc('increment_inventory')`, auto-updates cost_price, creates new items, updates PO status, calls createDocumentFromReceipt. Phase 2c: compensating rollback |
 | `confirmReceipt` | `()` | Async. UI-facing: validates (hard-blocks without file), match confirmation dialog, PIN verification, saves draft, then calls confirmReceiptCore. Phase 2c: mandatory file attachment |
-| `_showMatchConfirmDialog` | `(rcptNumber)` | Returns Promise: 'match' (all ok), 'mismatch' (acknowledged), or null (cancelled). Shown before PIN in confirmReceipt |
+| `_showMatchConfirmDialog` | `(rcptNumber)` | Returns Promise: 'match'/'mismatch'/null. Shows status summary (ok/not_received/return counts). When non-ok items exist, defaults to mismatch button. Shown before PIN in confirmReceipt |
 | `_confirmReceiptWithDecisions` | `(rcptNumber, decisions, items)` | Async. Saves draft, applies PO decisions, calls confirmReceiptCore. Handles rollback (result===false) gracefully |
 | `createNewInventoryFromReceiptItem` | `(item, receiptId, rcptNumber)` | Async. Creates inventory row using pre-assigned barcode from receipt item (falls back to generateNextBarcode). Returns created row |
 | `confirmReceiptById` | `(receiptId)` | Async. Confirms receipt from list view without opening form |
@@ -463,7 +470,7 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `createDocumentFromReceipt` | `(receiptId, supplierId, receiptItems, documentNumber)` | Async. Auto-creates supplier_documents. Uses documentNumber from receipt form (fallback GR-xxx). Always creates doc even with subtotal=0 (sets missing_price=true). Calculates subtotal/VAT/total, generates DOC-NNNN internal_number. Uploads _pendingReceiptFile if attached |
+| `createDocumentFromReceipt` | `(receiptId, supplierId, receiptItems, documentNumber)` | Async. Auto-creates supplier_documents. Uses documentNumber from receipt form (fallback GR-xxx). Always creates doc even with subtotal=0 (sets missing_price=true). Calculates subtotal/VAT/total, generates DOC-NNNN internal_number. Uploads all _pendingReceiptFiles (multi-file), first file as main file_url |
 
 ### modules/goods-receipts/receipt-ocr.js
 
@@ -487,6 +494,7 @@
 | `handleReceiptExcel` | `(ev)` | Reads xlsx, maps columns, looks up barcodes, adds item rows |
 | `exportReceiptExcel` | `()` | Async. Exports current receipt items to xlsx |
 | `exportReceiptToAccess` | `(receiptId)` | Async. Exports confirmed receipt for Access DB import with English columns |
+| `printReceiptBarcodes` | `(receiptId)` | Async. Fetches receipt items, expands qty>1 to individual rows, opens print-friendly HTML with barcode/brand/model/size/color table |
 
 ### modules/audit/audit-log.js
 
@@ -1647,7 +1655,7 @@ po-view-import.js
   → calls: generatePoNumber(), loadPurchaseOrdersTab() [purchase-orders.js]
   → calls: openEditPO(), renderPOForm() [po-form.js]
   → calls: togglePOItemDetails(), duplicatePOItem(), removePOItem() [po-items.js]
-  → calls: sendPurchaseOrder(), cancelPO(), exportPOExcel(), exportPOPdf() [po-actions.js]
+  → calls: sendPurchaseOrder(), cancelPO(), clonePO(), exportPOExcel(), exportPOPdf() [po-actions.js]
   → calls: showTab() [shared.js]
 ```
 

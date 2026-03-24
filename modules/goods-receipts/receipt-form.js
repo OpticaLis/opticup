@@ -1,13 +1,24 @@
-// Pending file for receipt document attachment
-var _pendingReceiptFile = null;
+// Pending files for receipt document attachment (multi-file)
+var _pendingReceiptFiles = [];
+// Backward-compat getter: _pendingReceiptFile returns first file or null
+Object.defineProperty(window, '_pendingReceiptFile', {
+  get: function() { return _pendingReceiptFiles.length > 0 ? _pendingReceiptFiles[0] : null; },
+  set: function(v) {
+    if (v === null) { _pendingReceiptFiles = []; }
+    else if (v) { _pendingReceiptFiles = [v]; }
+  }
+});
 var _pendingReceiptFileUrl = null; // Storage path if uploaded (for cleanup on remove)
 
 function _pickReceiptFile() {
   var input = document.createElement('input');
   input.type = 'file';
   input.accept = '.pdf,.jpg,.jpeg,.png';
+  input.multiple = true;
   input.onchange = function() {
-    if (input.files[0]) _stageReceiptFile(input.files[0]);
+    for (var i = 0; i < input.files.length; i++) {
+      _stageReceiptFile(input.files[i]);
+    }
   };
   input.click();
 }
@@ -17,7 +28,8 @@ function _pickReceiptFile() {
 // =========================================================
 function _initReceiptDropzone() {
   var zone = $('rcpt-attach-dropzone');
-  if (!zone) return;
+  if (!zone || zone._dropzoneInit) return;
+  zone._dropzoneInit = true;
   zone.addEventListener('dragover', function(e) {
     e.preventDefault();
     zone.style.borderColor = 'var(--primary, #1a73e8)';
@@ -31,8 +43,9 @@ function _initReceiptDropzone() {
     e.preventDefault();
     zone.style.borderColor = 'var(--g300, #d1d5db)';
     zone.style.background = '';
-    var file = e.dataTransfer.files[0];
-    if (file) _stageReceiptFile(file);
+    for (var i = 0; i < e.dataTransfer.files.length; i++) {
+      _stageReceiptFile(e.dataTransfer.files[i]);
+    }
   });
   zone.addEventListener('click', function() { _pickReceiptFile(); });
 }
@@ -40,32 +53,66 @@ function _initReceiptDropzone() {
 function _stageReceiptFile(file) {
   var allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
   if (!allowed.includes(file.type)) {
-    toast('סוג קובץ לא נתמך — רק PDF, JPG, PNG', 'e');
+    toast('\u05E1\u05D5\u05D2 \u05E7\u05D5\u05D1\u05E5 \u05DC\u05D0 \u05E0\u05EA\u05DE\u05DA \u2014 \u05E8\u05E7 PDF, JPG, PNG', 'e');
     return;
   }
-  if (file.size > 10 * 1024 * 1024) { toast('קובץ גדול מדי — מקסימום 10MB', 'e'); return; }
-  _pendingReceiptFile = file;
-  _pendingReceiptFileUrl = null;
-
-  // Show preview, hide dropzone
-  var zone = $('rcpt-attach-dropzone');
-  var preview = $('rcpt-attach-preview');
-  if (zone) zone.style.display = 'none';
-  if (preview) {
-    var ext = (file.name || '').split('.').pop().toLowerCase();
-    var icon = ext === 'pdf' ? '\uD83D\uDCC4' : '\uD83D\uDDBC\uFE0F';
-    preview.style.display = 'flex';
-    preview.innerHTML =
-      '<span style="font-size:1.4rem">' + icon + '</span>' +
-      '<span style="flex:1;font-size:.88rem">' + escapeHtml(file.name) +
-        ' <span style="color:var(--g400, #9ca3af)">(' + (file.size / 1024).toFixed(0) + 'KB)</span></span>' +
-      '<button class="btn btn-sm" style="background:#ef4444;color:#fff;font-size:.75rem" onclick="_removeReceiptFile()">\u2715 \u05D4\u05E1\u05E8</button>';
+  if (file.size > 10 * 1024 * 1024) { toast('\u05E7\u05D5\u05D1\u05E5 \u05D2\u05D3\u05D5\u05DC \u05DE\u05D3\u05D9 \u2014 \u05DE\u05E7\u05E1\u05D9\u05DE\u05D5\u05DD 10MB', 'e'); return; }
+  // Avoid duplicate filenames
+  if (_pendingReceiptFiles.some(function(f) { return f.name === file.name && f.size === file.size; })) {
+    toast('\u05E7\u05D5\u05D1\u05E5 \u05D6\u05D4 \u05DB\u05D1\u05E8 \u05E6\u05D5\u05E8\u05E3', 'w');
+    return;
   }
+  _pendingReceiptFiles.push(file);
+  _pendingReceiptFileUrl = null;
+  _renderReceiptFileList();
+
   // Also update legacy rcpt-attach-name for OCR button visibility
   var btn = $('rcpt-attach-btn');
   if (btn) btn.style.display = 'none';
   var nameEl = $('rcpt-attach-name');
-  if (nameEl) nameEl.textContent = file.name;
+  if (nameEl) nameEl.textContent = _pendingReceiptFiles.map(function(f) { return f.name; }).join(', ');
+}
+
+function _renderReceiptFileList() {
+  var zone = $('rcpt-attach-dropzone');
+  var preview = $('rcpt-attach-preview');
+  if (_pendingReceiptFiles.length === 0) {
+    if (zone) zone.style.display = '';
+    if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
+    return;
+  }
+  if (zone) zone.style.display = 'none';
+  if (preview) {
+    preview.style.display = 'block';
+    preview.innerHTML = _pendingReceiptFiles.map(function(file, idx) {
+      var ext = (file.name || '').split('.').pop().toLowerCase();
+      var icon = ext === 'pdf' ? '\uD83D\uDCC4' : '\uD83D\uDDBC\uFE0F';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">' +
+        '<span style="font-size:1.2rem">' + icon + '</span>' +
+        '<span style="flex:1;font-size:.85rem">' + escapeHtml(file.name) +
+          ' <span style="color:var(--g400, #9ca3af)">(' + (file.size / 1024).toFixed(0) + 'KB)</span></span>' +
+        '<button class="btn btn-sm" style="background:#ef4444;color:#fff;font-size:.7rem;padding:2px 6px" ' +
+          'onclick="_removeReceiptFileAt(' + idx + ')">\u2715</button></div>';
+    }).join('') +
+    '<div style="padding:4px 0;text-align:center"><button class="btn btn-sm" style="font-size:.8rem" onclick="_pickReceiptFile()">+ \u05E7\u05D5\u05D1\u05E5 \u05E0\u05D5\u05E1\u05E3</button></div>';
+  }
+}
+
+function _removeReceiptFileAt(idx) {
+  _pendingReceiptFiles.splice(idx, 1);
+  _renderReceiptFileList();
+  if (_pendingReceiptFiles.length === 0) {
+    // Restore legacy attach button
+    var btn = $('rcpt-attach-btn');
+    if (btn) { btn.style.display = ''; btn.innerHTML = '&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA'; }
+    var nameEl = $('rcpt-attach-name');
+    if (nameEl) nameEl.innerHTML = '';
+    // Hide OCR button
+    var ocrBtn = $('rcpt-ocr-btn');
+    if (ocrBtn) ocrBtn.style.display = 'none';
+    var banner = $('rcpt-ocr-banner');
+    if (banner) banner.remove();
+  }
 }
 
 async function _removeReceiptFile() {
@@ -78,12 +125,8 @@ async function _removeReceiptFile() {
     }
     _pendingReceiptFileUrl = null;
   }
-  _pendingReceiptFile = null;
-  // Restore dropzone, hide preview
-  var zone = $('rcpt-attach-dropzone');
-  var preview = $('rcpt-attach-preview');
-  if (zone) zone.style.display = '';
-  if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
+  _pendingReceiptFiles = [];
+  _renderReceiptFileList();
   // Restore legacy attach button
   var btn = $('rcpt-attach-btn');
   if (btn) { btn.style.display = ''; btn.innerHTML = '&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA'; }
@@ -149,7 +192,7 @@ async function openExistingReceipt(receiptId, viewOnly) {
     updateReceiptItemsStats();
 
     // Reset file attachment + init dropzone
-    _pendingReceiptFile = null;
+    _pendingReceiptFiles = [];
     _pendingReceiptFileUrl = null;
     var _zone = $('rcpt-attach-dropzone');
     var _prev = $('rcpt-attach-preview');

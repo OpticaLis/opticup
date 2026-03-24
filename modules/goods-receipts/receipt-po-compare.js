@@ -16,18 +16,23 @@ async function _poCompBuildReport(receiptItems, poId) {
     var key = _poCompKey(pi.brand || '', pi.model || '', pi.size || '', pi.color || '');
     poMap[key] = pi;
   });
-  var matched = [], shortage = [], priceGap = [], notInPo = [], returnMarked = [], usedPoKeys = {};
+  var matched = [], shortage = [], priceGap = [], notInPo = [], returnMarked = [], missing = [], usedPoKeys = {};
 
+  // Phase 1: Pre-filter employee-marked items BEFORE matching loop
+  // Items marked not_received → go directly to missing array
+  // Items marked return → go directly to returnMarked array
+  var activeReceiptItems = [];
   for (var i = 0; i < receiptItems.length; i++) {
     var ri = receiptItems[i];
     var key = _poCompKey(ri.brand || '', ri.model || '', ri.size || '', ri.color || '');
     var pi = poMap[key];
 
-    // Handle receipt_status from PO row dropdown (before normal matching)
     if (ri.receipt_status === 'not_received') {
-      // Employee marked "didn't arrive" — treat as missing
-      if (pi) usedPoKeys[key] = true;
-      // Will be added to missing array below with employeeMarked flag
+      // Employee marked "didn't arrive" — add directly to missing
+      if (pi) {
+        missing.push({ pi: pi, employeeMarked: true, idx: i });
+        usedPoKeys[key] = true;
+      }
       continue;
     }
     if (ri.receipt_status === 'return') {
@@ -36,9 +41,19 @@ async function _poCompBuildReport(receiptItems, poId) {
       returnMarked.push({ idx: i, ri: ri, pi: pi });
       continue;
     }
+    activeReceiptItems.push({ idx: i, ri: ri });
+  }
+
+  // Phase 2: Match only active (ok) receipt items against PO
+  for (var j = 0; j < activeReceiptItems.length; j++) {
+    var item = activeReceiptItems[j];
+    var ri = item.ri;
+    var idx = item.idx;
+    var key = _poCompKey(ri.brand || '', ri.model || '', ri.size || '', ri.color || '');
+    var pi = poMap[key];
 
     if (!pi) {
-      notInPo.push({ idx: i, ri: ri, pi: null });
+      notInPo.push({ idx: idx, ri: ri, pi: null });
       continue;
     }
     usedPoKeys[key] = true;
@@ -46,28 +61,19 @@ async function _poCompBuildReport(receiptItems, poId) {
     var piCost = parseFloat(pi.unit_cost) || 0;
     var priceDiff = piCost > 0 ? Math.abs(riCost - piCost) / piCost * 100 : 0;
     if (priceDiff > 5 && riCost > 0) {
-      priceGap.push({ idx: i, ri: ri, pi: pi, poPrice: piCost, rcptPrice: riCost, diffPct: priceDiff.toFixed(1) });
+      priceGap.push({ idx: idx, ri: ri, pi: pi, poPrice: piCost, rcptPrice: riCost, diffPct: priceDiff.toFixed(1) });
     } else if (ri.quantity < (pi.qty_ordered || 0)) {
-      shortage.push({ idx: i, ri: ri, pi: pi, ordered: pi.qty_ordered, received: ri.quantity });
+      shortage.push({ idx: idx, ri: ri, pi: pi, ordered: pi.qty_ordered, received: ri.quantity });
     } else {
-      matched.push({ idx: i, ri: ri, pi: pi });
+      matched.push({ idx: idx, ri: ri, pi: pi });
     }
   }
-  // Find PO items not in receipt (missing) — includes employee-marked not_received
-  var missing = [];
+
+  // Phase 3: Find PO items not in receipt (genuinely missing — not delivered and not marked)
   poItems.forEach(function(pi) {
     var key = _poCompKey(pi.brand || '', pi.model || '', pi.size || '', pi.color || '');
     if (!usedPoKeys[key]) {
-      // Check if this was employee-marked as not_received
-      var empMarked = receiptItems.some(function(ri) {
-        return ri.receipt_status === 'not_received' &&
-          _poCompKey(ri.brand || '', ri.model || '', ri.size || '', ri.color || '') === key;
-      });
-      var empIdx = empMarked ? receiptItems.findIndex(function(ri) {
-        return ri.receipt_status === 'not_received' &&
-          _poCompKey(ri.brand || '', ri.model || '', ri.size || '', ri.color || '') === key;
-      }) : -1;
-      missing.push({ pi: pi, employeeMarked: empMarked, idx: empIdx });
+      missing.push({ pi: pi, employeeMarked: false, idx: -1 });
     }
   });
   return { matched: matched, shortage: shortage, priceGap: priceGap, notInPo: notInPo,

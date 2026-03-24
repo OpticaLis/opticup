@@ -1912,6 +1912,107 @@ CREATE INDEX IF NOT EXISTS idx_sdf_tenant ON supplier_document_files(tenant_id);
 -- RLS: JWT tenant isolation + service_role bypass
 
 -- ============================================================
+-- Migrations 041–045: Atomic RPCs + schema fixes
+-- ============================================================
+
+-- 041: Atomic PO number generation (FOR UPDATE lock)
+CREATE OR REPLACE FUNCTION next_po_number(p_tenant_id UUID, p_supplier_number TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_max_seq INT;
+  v_prefix TEXT;
+  v_new_number TEXT;
+BEGIN
+  v_prefix := 'PO-' || p_supplier_number || '-';
+  SELECT COALESCE(MAX(
+    CAST(SUBSTRING(po_number FROM LENGTH(v_prefix) + 1) AS INT)
+  ), 0)
+  INTO v_max_seq
+  FROM purchase_orders
+  WHERE tenant_id = p_tenant_id
+    AND po_number LIKE v_prefix || '%'
+  FOR UPDATE;
+  v_new_number := v_prefix || LPAD((v_max_seq + 1)::TEXT, 4, '0');
+  RETURN v_new_number;
+END;
+$$;
+
+-- 042: Atomic Return number generation (FOR UPDATE lock)
+CREATE OR REPLACE FUNCTION next_return_number(p_tenant_id UUID, p_supplier_number TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_max_seq INT;
+  v_prefix TEXT;
+  v_new_number TEXT;
+BEGIN
+  v_prefix := 'RET-' || p_supplier_number || '-';
+  SELECT COALESCE(MAX(
+    CAST(SUBSTRING(return_number FROM LENGTH(v_prefix) + 1) AS INT)
+  ), 0)
+  INTO v_max_seq
+  FROM supplier_returns
+  WHERE tenant_id = p_tenant_id
+    AND return_number LIKE v_prefix || '%'
+  FOR UPDATE;
+  v_new_number := v_prefix || LPAD((v_max_seq + 1)::TEXT, 4, '0');
+  RETURN v_new_number;
+END;
+$$;
+
+-- 043: Server-side PO item aggregates (count + total value per PO)
+CREATE OR REPLACE FUNCTION get_po_aggregates(p_tenant_id UUID)
+RETURNS TABLE(po_id UUID, item_count BIGINT, total_value NUMERIC)
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT
+    poi.po_id,
+    COUNT(*) as item_count,
+    COALESCE(SUM(poi.qty_ordered * poi.unit_cost * (1 - COALESCE(poi.discount_pct, 0) / 100.0)), 0) as total_value
+  FROM purchase_order_items poi
+  WHERE poi.tenant_id = p_tenant_id
+  GROUP BY poi.po_id;
+$$;
+
+-- 044: Fix next_internal_doc_number — include soft-deleted docs in MAX
+CREATE OR REPLACE FUNCTION next_internal_doc_number(
+  p_tenant_id UUID,
+  p_prefix TEXT DEFAULT 'DOC'
+)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_max INTEGER;
+  v_next TEXT;
+BEGIN
+  PERFORM 1 FROM tenants WHERE id = p_tenant_id FOR UPDATE;
+  SELECT COALESCE(
+    MAX(CAST(SUBSTRING(internal_number FROM (LENGTH(p_prefix) + 2)) AS INTEGER)), 0)
+  INTO v_max
+  FROM supplier_documents
+  WHERE tenant_id = p_tenant_id
+    AND internal_number LIKE p_prefix || '-%';
+  v_next := p_prefix || '-' || LPAD((v_max + 1)::TEXT, 5, '0');
+  RETURN v_next;
+END;
+$$;
+
+-- 045: Add 'draft' to supplier_documents status CHECK
+ALTER TABLE supplier_documents
+  DROP CONSTRAINT IF EXISTS supplier_documents_status_check;
+ALTER TABLE supplier_documents
+  ADD CONSTRAINT supplier_documents_status_check
+  CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled'));
+
+-- ============================================================
 -- Flow Review Phase 2 QA — Migrations 046, 047, 048
 -- ============================================================
 

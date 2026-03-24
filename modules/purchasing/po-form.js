@@ -196,6 +196,7 @@ function renderPOForm(isEdit) {
                 <th style="padding:8px; width:70px">כמות</th>
                 <th style="padding:8px; width:90px">עלות ₪</th>
                 <th style="padding:8px; width:70px">הנחה %</th>
+                <th style="padding:8px; width:90px">מחיר סופי</th>
                 <th style="padding:8px; width:80px">סה"כ</th>
                 <th style="padding:8px; width:40px"></th>
               </tr>
