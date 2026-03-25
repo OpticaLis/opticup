@@ -35,22 +35,22 @@ Deno.serve(async (req) => {
 
   // Parse input
   let imageBase64: string;
+  let sessionToken: string;
   try {
     const body = await req.json();
     imageBase64 = body.image_base64;
+    sessionToken = body.session_token;
   } catch { return errRes("Invalid JSON body", 400); }
   if (!imageBase64 || typeof imageBase64 !== "string") return errRes("Missing image_base64", 400);
+  if (!sessionToken || typeof sessionToken !== "string") return errRes("Missing session_token", 400);
 
-  // Validate JWT via auth_sessions
-  const auth = req.headers.get("authorization");
-  if (!auth?.startsWith("Bearer ")) return errRes("Missing authorization", 401);
-
+  // Validate session via auth_sessions (session_token from body, anon key in Authorization passes gateway)
   const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
   const { data: sess, error: sessErr } = await db.from("auth_sessions")
-    .select("id, employee_id, tenant_id").eq("token", auth.replace("Bearer ", ""))
+    .select("id, employee_id, tenant_id").eq("token", sessionToken)
     .eq("is_active", true).single();
   if (sessErr || !sess) return errRes("Invalid or expired session", 401);
 
