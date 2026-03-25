@@ -134,12 +134,13 @@ function _renderImageGrid() {
     for (var i = 0; i < _imgCurrentImages.length; i++) {
       var im = _imgCurrentImages[i];
       var displayUrl = im._signedUrl || im.url || '';
-      html += '<div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--g200)">' +
-        '<img src="' + encodeURI(displayUrl) + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block" loading="lazy">' +
-        '<button onclick="_deleteImage(\'' + im.id + '\',\'' + escapeHtml(im.storage_path || '') + '\')" ' +
+      var safeUrl = encodeURI(displayUrl);
+      html += '<div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--g200);cursor:pointer" onclick="_showFullImage(\'' + safeUrl + '\')">' +
+        '<img src="' + safeUrl + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block" loading="lazy">' +
+        '<button onclick="event.stopPropagation();_deleteImage(\'' + im.id + '\',\'' + escapeHtml(im.storage_path || '') + '\')" ' +
           'style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:14px" ' +
           'title="\u05DE\u05D7\u05E7">\u2715</button>' +
-        '<button onclick="_bgRemoveSaved(\'' + im.id + '\',\'' + encodeURI(displayUrl) + '\',\'' + escapeHtml(im.storage_path || '') + '\')" ' +
+        '<button onclick="event.stopPropagation();_bgRemoveSaved(\'' + im.id + '\',\'' + safeUrl + '\',\'' + escapeHtml(im.storage_path || '') + '\')" ' +
           'style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px" ' +
           'title="\u05D4\u05E1\u05E8 \u05E8\u05E7\u05E2 \u05DC\u05D1\u05DF">\uD83D\uDCAB</button></div>';
     }
@@ -211,6 +212,17 @@ async function _uploadPendingImages(inventoryId) {
     hideLoading();
     toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05E2\u05DC\u05D0\u05D4: ' + (e.message || ''), 'e');
   }
+}
+
+// Full-size image preview overlay
+function _showFullImage(url) {
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;cursor:pointer';
+  overlay.innerHTML =
+    '<img src="' + escapeHtml(url) + '" style="max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;touch-action:pinch-zoom">' +
+    '<button style="position:absolute;top:20px;right:20px;background:white;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer">\u2715</button>';
+  overlay.addEventListener('click', function() { overlay.remove(); });
+  document.body.appendChild(overlay);
 }
 
 async function _deleteImage(imageId, storagePath) {
