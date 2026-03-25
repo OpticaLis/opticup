@@ -30,7 +30,6 @@ function _bgShowChoiceDialog(img, originalUrl, onConfirm) {
         '<button id="bg-choice-ai" class="btn" style="flex:1;padding:16px 8px;background:#2563eb;color:#fff;border-radius:10px;font-size:14px;cursor:pointer;border:none;display:flex;flex-direction:column;align-items:center;gap:4px">' +
           '<span style="font-size:24px">\uD83E\uDD16</span>' +
           '<b>AI \u05DE\u05E7\u05E6\u05D5\u05E2\u05D9</b>' +
-          '<span style="font-size:.75rem;opacity:.85">remove.bg</span>' +
           '<span style="font-size:.7rem;opacity:.7">\u05D0\u05D9\u05DB\u05D5\u05EA \u05D2\u05D1\u05D5\u05D4\u05D4 \u00B7 2\u20135 \u05E9\u05E0\u05D9\u05D5\u05EA</span>' +
         '</button>' +
         '<button id="bg-choice-local" class="btn" style="flex:1;padding:16px 8px;background:#059669;color:#fff;border-radius:10px;font-size:14px;cursor:pointer;border:none;display:flex;flex-direction:column;align-items:center;gap:4px">' +
