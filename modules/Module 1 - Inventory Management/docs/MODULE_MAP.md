@@ -89,7 +89,7 @@
 | 52c | inventory-returns-actions.js | modules/inventory/inventory-returns-actions.js | 164 | Returns tab actions: markAgentPicked (PIN-verified), sendToBox (navigate to shipments wizard), bulkSendToBox (validates same supplier), bulkAction (bulk status update), exportReturnsExcel |
 | 52d | incoming-invoices.js | modules/inventory/incoming-invoices.js | 255 | Incoming invoices tab: loadIncomingInvoicesTab (drag-drop file upload + supplier select + submit to debt), _submitIncomingInvoice (upload + create pending_invoice doc), _loadRecentPendingInvoices (last 10 table) |
 | 52e | inventory-images.js | modules/inventory/inventory-images.js | 209 | Frame image capture/upload/delete: openImageModal (modal with grid + camera/upload buttons), _captureImage (rear camera via capture=environment), _pickImage (file picker), _processAndPreview (Canvas resize + WEBP conversion at 0.82 quality), _uploadPendingImages (Storage upload + DB insert), _deleteImage (Storage + DB delete). Each image has 💫 bg-remove button |
-| 52f | inventory-images-bg.js | modules/inventory/inventory-images-bg.js | 205 | Client-side white background removal: _bgRemoveStart (loads image, opens comparison modal), _bgShowComparison (before/after with threshold slider), _bgProcess (Canvas flood-fill from corners, edge softening), _bgRemovePending (replace pending blob), _bgRemoveSaved (re-upload to Storage + update DB) |
+| 52f | inventory-images-bg.js | modules/inventory/inventory-images-bg.js | 249 | Background removal: remove.bg API (primary) + Canvas fallback. _bgRemoveStart (loads image, opens comparison modal), _bgShowComparison (before/after comparison, no threshold slider), _bgProcess (calls remove.bg Edge Function, falls back to _bgProcessLocal on error), _bgProcessLocal (Canvas flood-fill fallback), _bgRemovePending (replace pending blob), _bgRemoveSaved (duplicate _nobg check, re-upload to Storage + update DB) |
 | 51b | debt-returns-tab.js | modules/debt/debt-returns-tab.js | 365 | Global debt returns (credit tracking) tab: initDebtReturnsTab, loadDebtReturns (multi-status filtering), renderDebtReturnsList (accordion with bulk selection), renderDebtReturnsSummary, toggleDebtReturnsHistory |
 | 51c | debt-returns-tab-actions.js | modules/debt/debt-returns-tab-actions.js | 289 | Debt returns actions: markDebtCredited (requires file upload first via _promptCreditFileUpload, then PIN), _promptCreditFileUpload (drag-drop/pick modal), _createCreditNoteForReturn (now attaches uploaded file + links doc to return), bulkMarkCredited (blocked — requires per-item file upload), exportDebtReturnsExcel |
 | 53 | file-upload.js | js/file-upload.js | 321 | File upload helper: uploadSupplierFile, getSupplierFileUrl (signed URLs), renderFilePreview, pickAndUploadFile, pickAndUploadFiles (multi-file), fetchDocFiles (with fallback to legacy file_url), saveDocFile (to supplier_document_files), renderFileGallery (thumbnails + page nav + delete buttons), _deleteGalleryFile (re-queries fresh files from DB after delete + cleans storage), _renderSingleFilePreview |
@@ -192,11 +192,13 @@
 |---|----------|------|-------|---------|
 | EF1 | pin-auth | supabase/functions/pin-auth/index.ts | 221 | PIN-based JWT authentication. POST {pin, slug} → validates employee PIN → returns signed JWT with tenant_id claim for RLS. Handles failed attempts + account lockout. |
 | EF2 | ocr-extract | supabase/functions/ocr-extract/index.ts | 349 | Claude Vision OCR for supplier documents. POST {file_url, tenant_id, supplier_id?, document_type_hint?} → fetches file from Storage → sends to Claude Vision API → parses structured data → fuzzy-matches supplier/PO → saves to ocr_extractions → returns extracted data with confidence scores. |
+| EF3 | remove-background | supabase/functions/remove-background/index.ts | 124 | Professional background removal via remove.bg API. POST {image_base64} → validates JWT via auth_sessions → sends image to remove.bg API → returns processed PNG as base64. Logs usage to activity_log. |
 
 **Environment variables (Edge Functions):**
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` — auto-available
 - `JWT_SECRET` — used by pin-auth for JWT signing
 - `ANTHROPIC_API_KEY` — used by ocr-extract for Claude Vision API (set in Supabase Secrets)
+- `REMOVE_BG_API_KEY` — used by remove-background for remove.bg API (set in Supabase Secrets)
 
 **Note (Phase 5b):** ocr-extract added. Uses service_role client for DB operations (bypasses RLS). Validates user JWT by checking auth_sessions table. Supports PDF and image files. Retry-once on Claude API timeout. Fuzzy supplier matching via Dice coefficient. PO matching by reference number or single-open-PO heuristic.
 
@@ -313,11 +315,13 @@
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `_bgRemoveStart` | `(imageUrl, onConfirm)` | Loads image, opens before/after comparison modal with threshold slider |
-| `_bgShowComparison` | `(img, originalUrl, onConfirm)` | Renders comparison UI with slider (30-100%), debounced re-processing |
-| `_bgProcess` | `(img, thresholdPct, callback)` | Core algorithm: flood-fill from 8 seed points (corners + edge midpoints), edge softening, outputs WEBP blob |
+| `_bgRemoveStart` | `(imageUrl, onConfirm)` | Loads image, opens before/after comparison modal |
+| `_bgShowComparison` | `(img, originalUrl, onConfirm)` | Renders comparison UI (no threshold slider — remove.bg handles automatically) |
+| `_bgProcess` | `(img, thresholdPct, callback)` | Primary: calls remove-background Edge Function (remove.bg API). On failure: falls back to _bgProcessLocal. Logs method used |
+| `_bgProcessLocal` | `(img, thresholdPct, callback)` | Fallback: Canvas flood-fill from 8 seed points (corners + edge midpoints), edge softening, outputs WEBP blob |
+| `_bgSetMethodInfo` | `(method)` | Shows which processing method was used in the comparison modal |
 | `_bgRemovePending` | `(idx)` | Replaces pending blob at index with bg-removed version |
-| `_bgRemoveSaved` | `(imageId, imageUrl, storagePath)` | Async. Re-uploads processed image to Storage, updates DB URL with cache-bust |
+| `_bgRemoveSaved` | `(imageId, imageUrl, storagePath)` | Async. Checks for existing _nobg duplicate, re-uploads processed image to Storage with _nobg suffix, updates DB |
 
 ### modules/inventory/inventory-edit.js
 
