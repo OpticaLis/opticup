@@ -1,83 +1,92 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-Flow Review Phase 3 Final — 2026-03-25
+Flow Review Phase 3 Complete — 2026-03-25
 
 ## What Was Done This Session
 
-### Flow Review Phase 3 (2026-03-24 to 2026-03-25) — 20 commits
+### Flow Review Phase 3 (2026-03-24 to 2026-03-25) — 25 commits
 
 **Phase 3a — Tenant isolation hardening (02a3ccd, 66c6bb0):**
-- Added tenant_id filter to lookup caches (supplierNumCache), supplier number queries, permissions queries
+- Added tenant_id filter to lookup caches, supplier number queries, permissions queries
 - JWT periodic check (every 5 min) with tenant claim verification
 - Standardized session redirect on auth failure across all pages
-- Hard tenant isolation: URL slug change clears all sessionStorage
 
 **Phase 3c — File splits (c4e06c7, a95035b, 59a9574, 4f1c178):**
-- Split receipt-form.js (559 to 283+282): receipt-form.js + receipt-form-items.js
-- Split receipt-confirm.js (461 to 274+185): receipt-confirm.js + receipt-confirm-items.js
-- Split 4 oversized files: po-view-import, shared, item-history, debt-doc-edit
-- Trimmed 11 borderline files under 350 lines (-178 lines total)
-- Fixed PO supplier dropdown searchable (createSearchSelect with correct API)
+- Split 6 oversized files, trimmed 11 borderline files under 350 lines
+- Fixed PO supplier dropdown searchable
 
 **Phase 3d — Frame images (c9ec727, f77d1cd, 0e5b2d4):**
-- New file: inventory-images.js — camera capture, file picker, WEBP conversion, Storage upload/delete
-- New file: inventory-images-bg.js — background removal (Canvas flood-fill)
-- Added T.IMAGES constant to shared.js
-- Migration 051: composite index on inventory_images(inventory_id, tenant_id)
-- Action menu (⋯) on inventory table rows (replaces inline delete button)
-- Receipt-to-images flow: camera button on confirmed receipts
-- "ללא תמונות" toggle filter, image count badges, photography workflow
+- inventory-images.js: camera capture, WEBP conversion, Storage upload/delete
+- inventory-images-bg.js: background removal (Canvas + remove.bg AI)
+- Action menu, receipt-to-images flow, photography workflow
 
-**Phase 3e — QA fixes (22de0b6, 61fb265, 12fbb16):**
-- Move action menu to first column, escapeHtml on IDs
-- createSignedUrl for private Storage bucket, store paths not URLs
-- pending_review status for debt docs, OCR event dispatch refactor
+**Phase 3e — QA + remove.bg (22de0b6 through cef3bb4, 11 commits):**
+- Edge Function remove-background with remove.bg API
+- Choice dialog (AI vs Canvas), auth fixes, image delete fix
+- Full-size preview overlay, download button, cascade delete
+- Auto-refresh image count badges, pending_review status
 
-**Phase 3f — remove.bg integration (a9a162f through cef3bb4, 8 commits):**
-- New Edge Function: supabase/functions/remove-background/index.ts (123 lines)
-- remove.bg API key stored as Supabase Edge Function secret
-- Choice dialog: AI (remove.bg) vs Canvas (local flood-fill)
-- Canvas path retains threshold slider; AI path shows before/after comparison
-- Auth fix: anon key in Authorization header + session_token in body for gateway
-- Image delete fix: Modal.confirm uses callbacks not Promises
-- Added: full-size preview overlay, download button, cascade delete on permanent item removal
-- Auto-refresh image count badges after upload/delete
+**Phase 3g — Barcode refactor (a91ab19):**
+- ONE barcode per product line (not per unit)
+- Receipt creates single inventory record with full quantity
+- Excel export repeats same barcode N times for label printing
+
+**Phase 3h — PO improvements (70b9ace):**
+- Fix receipt confirm barcode validation (no false error)
+- Receipt total cost summary in stats
+- Not-received items move to bottom of receipt table
+- PO View: editable sell price + discount columns with save
+- PO View: summary row (lines/units/total)
+- PO Creation: brand filter dropdown
+
+**Phase 3i — Product type flow (459ba69, 310f2c1):**
+- Migration 053: product_type column on goods_receipt_items
+- Product type dropdown in PO creation main row
+- PO View: editable product type column
+- Receipt from PO: auto-populates product_type
+- Receipt confirm: passes product_type to inventory (no more hardcoded eyeglasses)
+- Inventory table: editable product_type via invEditProductType()
 
 ### All Commits (Flow Review Phase 3)
-- 02a3ccd Tenant isolation: add tenant_id to lookup caches, supplier number, and permissions queries
-- 66c6bb0 Tenant isolation: JWT periodic check, tenant claim verification, standardize session redirect
-- c4e06c7 Split receipt-form.js into receipt-form.js + receipt-form-items.js (559 to 283+282)
-- a95035b Split receipt-confirm.js into receipt-confirm.js + receipt-confirm-items.js (461 to 274+185)
-- 59a9574 Split 4 oversized files: po-view-import, shared, item-history, debt-doc-edit
-- 4f1c178 Trim 11 oversized files under 350 lines, fix PO supplier dropdown searchable
-- c9ec727 Feature: frame images — DB migration, image modal with camera/upload/WEBP, action menu
-- f77d1cd Feature: receipt-to-images flow, no-images filter, image count badges
-- 0e5b2d4 Feature: white background removal button on frame images (client-side canvas)
-- dc200e2 Add pending_review status for debt docs, replace OCR monkey-patch with event dispatch
-- 22de0b6 QA fixes: move action menu to first column, escapeHtml on IDs, Storage URL handling
-- 61fb265 Fix: use createSignedUrl for private Storage bucket, store paths not URLs
-- 12fbb16 Phase Flow-Review-3 complete: tenant isolation, frame images, file splits, docs
-- a9a162f Feature: remove.bg integration via Edge Function for professional background removal
-- 9534b17 Fix: Edge Function import for Deno runtime
-- 2f2bb2d Add full-size image preview, verify upload/delete/bg-removal flow
-- 51df94f Fix: image delete, add download button, background removal choice dialog
-- 50e0bdc Fix: image delete from Storage+DB, cascade delete on permanent item removal
-- 8427523 Fix: remove-background Edge Function auth (anon key + session_token in body)
-- 4468124 Fix: add apikey header for Supabase Edge Function gateway
-- cef3bb4 Fix: remove branding from bg dialog, auto-refresh image badges
+- 02a3ccd Tenant isolation: lookup caches + supplier number + permissions
+- 66c6bb0 Tenant isolation: JWT periodic check + session redirect
+- c4e06c7 Split receipt-form.js
+- a95035b Split receipt-confirm.js
+- 59a9574 Split 4 oversized files
+- 4f1c178 Trim 11 files, fix PO supplier dropdown
+- c9ec727 Frame images: DB migration, image modal, action menu
+- f77d1cd Receipt-to-images flow, badges, photography workflow
+- 0e5b2d4 White background removal (Canvas)
+- dc200e2 pending_review status, OCR event dispatch
+- 22de0b6 QA: action menu first column, escapeHtml, Storage URL
+- 61fb265 createSignedUrl for private Storage
+- 12fbb16 Phase docs + backup
+- a9a162f remove.bg Edge Function integration
+- 9534b17 Edge Function import fix
+- 2f2bb2d Full-size preview, download button
+- 51df94f Image delete fix, choice dialog
+- 50e0bdc Image delete Storage+DB, cascade delete
+- 8427523 Edge Function auth fix
+- 4468124 apikey header for gateway
+- cef3bb4 Remove branding, auto-refresh badges
+- a91ab19 One barcode per product line
+- 70b9ace Receipt barcode validation, PO sell prices, summary, brand filter
+- 459ba69 Product type in PO + receipt flows
+- 310f2c1 Editable product type in inventory table
 
 ## Current State
 - **6 HTML pages**: index, inventory, suppliers-debt, employees, shipments, settings
-- **113 JS files** across 14 module folders + 10 global + 9 shared (26,871 lines total)
-- **All files <= 350 lines** (max = 350, 3 files at limit)
+- **113 JS files** across 14 module folders + 10 global + 9 shared (26,955 lines total)
+- **All files <= 350 lines** (max = 350, 4 files at limit)
 - **3 Edge Functions**: pin-auth, ocr-extract, remove-background
 - **49 DB tables** + 14 RPC functions
-- **57 migration files**: 051-052 added this phase
-- **Frame images**: camera capture (rear), WEBP conversion, Storage upload, background removal (AI + Canvas)
-- **remove.bg**: Edge Function deployed, choice dialog, end-to-end tested
-- **Photography workflow**: receipt confirm -> filter -> capture -> upload (end-to-end)
-- **Tenant isolation hardened**: JWT periodic check, tenant claim verification, session redirect
+- **58 migration files**: 051-053 added this phase
+- **Product type flow**: PO creation -> PO view -> receipt -> inventory (editable at all stages)
+- **Barcode logic**: ONE barcode per product line, qty on single inventory record
+- **Frame images**: camera, WEBP, remove.bg AI + Canvas, full-size preview, download, delete
+- **PO improvements**: sell prices, brand filter, summary row
+- **Tenant isolation**: JWT check, tenant claims, session redirect
 - **Zero console errors** on all 6 pages
 
 ## Open Issues
@@ -87,7 +96,6 @@ Flow Review Phase 3 Final — 2026-03-25
 - Cascading dropdowns on non-PO receipt items — deferred, most receipts use PO linkage
 - PIN unification (standardize to promptPin()) — deferred, works but inconsistent patterns
 - 7 non-tenant UNIQUE constraints — documented tech debt
-- Generic next_sequence_number() RPC — 3 RPCs work fine, not worth consolidating
 
 ## Next Steps
 1. **Module 2 planning** (Platform Admin — SaaS infrastructure)

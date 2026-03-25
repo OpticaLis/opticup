@@ -1,5 +1,4 @@
 // goods-receipt.js — Goods receipt tab logic
-
 const RCPT_TYPE_LABELS = { delivery_note: 'תעודת משלוח', invoice: 'חשבונית', tax_invoice: 'חשבונית מס' };
 const RCPT_STATUS_LABELS = { draft: 'טיוטה', confirmed: 'אושרה', cancelled: 'בוטלה' };
 
