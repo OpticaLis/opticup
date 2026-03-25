@@ -250,6 +250,35 @@ function invEditSync(td) {
   });
 }
 
+// ---- Product type cell edit (select dropdown) ----
+function invEditProductType(td) {
+  if (!isAdmin || td.classList.contains('editing')) return;
+  var tr = td.closest('tr'), recId = tr.dataset.id;
+  var rec = invData.find(r => r.id === recId);
+  if (!rec) return;
+  var curHe = enToHe('product_type', rec.product_type) || '';
+  td.classList.add('editing');
+  var sel = document.createElement('select');
+  ['\u05DE\u05E9\u05E7\u05E4\u05D9 \u05E8\u05D0\u05D9\u05D9\u05D4', '\u05DE\u05E9\u05E7\u05E4\u05D9 \u05E9\u05DE\u05E9'].forEach(function(v) {
+    var o = document.createElement('option'); o.value = v; o.textContent = v;
+    if (v === curHe) o.selected = true; sel.appendChild(o);
+  });
+  td.textContent = ''; td.appendChild(sel); sel.focus();
+  var save = function() {
+    td.classList.remove('editing');
+    var newEn = heToEn('product_type', sel.value) || 'eyeglasses';
+    if (newEn !== (rec.product_type || 'eyeglasses')) {
+      if (!invChanges[recId]) invChanges[recId] = {};
+      invChanges[recId].product_type = newEn; rec.product_type = newEn;
+      td.classList.add('changed'); $('inv-edit-notice').style.display = 'inline';
+    }
+    td.textContent = enToHe('product_type', rec.product_type) || '';
+  };
+  sel.addEventListener('blur', save);
+  sel.addEventListener('change', function() { sel.blur(); });
+  sel.addEventListener('keydown', function(e) { if (e.key === 'Escape') { td.classList.remove('editing'); td.textContent = curHe; } });
+}
+
 // ---- Image preview ----
 function showImagePreview(recId) {
   const rec = invData.find(r => r.id === recId);
