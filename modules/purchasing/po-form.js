@@ -214,8 +214,9 @@ function renderPOForm(isEdit) {
                 <th style="padding:8px">מותג</th>
                 <th style="padding:8px">דגם</th>
                 <th style="padding:8px">צבע</th>
-                <th style="padding:8px">גודל</th>
-                <th style="padding:8px; width:70px">כמות</th>
+                <th style="padding:8px">\u05D2\u05D5\u05D3\u05DC</th>
+                <th style="padding:8px; width:65px">\u05E1\u05D5\u05D2</th>
+                <th style="padding:8px; width:70px">\u05DB\u05DE\u05D5\u05EA</th>
                 <th style="padding:8px; width:90px">עלות ₪</th>
                 <th style="padding:8px; width:70px">הנחה %</th>
                 <th style="padding:8px; width:90px">מחיר סופי</th>

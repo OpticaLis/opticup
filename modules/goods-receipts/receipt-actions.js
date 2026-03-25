@@ -88,6 +88,7 @@ async function saveReceiptDraft() {
       is_new_item: i.is_new_item,
       receipt_status: i.receipt_status || null,
       from_po: i.from_po || false,
+      product_type: i.product_type || null,
       tenant_id: getTenantId()
     }));
 
@@ -159,6 +160,7 @@ async function saveReceiptDraftInternal() {
     is_new_item: i.is_new_item,
     receipt_status: i.receipt_status || null,
     from_po: i.from_po || false,
+    product_type: i.product_type || null,
     tenant_id: getTenantId()
   }));
 

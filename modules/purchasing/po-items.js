@@ -89,7 +89,7 @@ function renderPOItemsTable() {
   ensurePOBrandDatalist();
 
   if (currentPOItems.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">אין פריטים — לחץ "+ שורה ידנית" או חפש ברקוד</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:20px;color:#888">\u05D0\u05D9\u05DF \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u2014 \u05DC\u05D7\u05E5 "+ \u05E9\u05D5\u05E8\u05D4 \u05D9\u05D3\u05E0\u05D9\u05EA" \u05D0\u05D5 \u05D7\u05E4\u05E9 \u05D1\u05E8\u05E7\u05D5\u05D3</td></tr>`;
     tfoot.innerHTML = '';
     return;
   }
@@ -103,6 +103,10 @@ function renderPOItemsTable() {
         <div class="po-stock-counter" id="po-stock-${i}" style="font-size:.72rem;color:#888;margin-top:2px;min-height:14px"></div></td>
       <td><input value="${escapeHtml(item.color || '')}" class="po-color-input" oninput="currentPOItems[${i}].color=this.value; _updatePOStockCounter(${i},currentPOItems[${i}].brand,currentPOItems[${i}].model,this.value,currentPOItems[${i}].size)" style="width:70px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input value="${escapeHtml(item.size || '')}" class="po-size-input" oninput="currentPOItems[${i}].size=this.value; _updatePOStockCounter(${i},currentPOItems[${i}].brand,currentPOItems[${i}].model,currentPOItems[${i}].color,this.value)" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
+      <td><select oninput="currentPOItems[${i}].product_type=this.value" style="width:60px;padding:4px 2px;border:1px solid #ddd;border-radius:4px;font-size:12px">
+        <option value="eyeglasses" ${item.product_type!=='sunglasses'?'selected':''}>\u05E8\u05D0\u05D9\u05D9\u05D4</option>
+        <option value="sunglasses" ${item.product_type==='sunglasses'?'selected':''}>\u05E9\u05DE\u05E9</option>
+      </select></td>
       <td><input type="number" min="1" value="${item.qty_ordered || 1}"
                  oninput="currentPOItems[${i}].qty_ordered=+this.value; updatePOTotals()" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px"></td>
       <td><input type="number" min="0" step="0.01" value="${item.unit_cost || ''}"
@@ -119,7 +123,7 @@ function renderPOItemsTable() {
       </td>
     </tr>
     <tr id="po-item-details-${i}" style="display:none; background:#f8f9fa">
-      <td colspan="10" style="padding:8px 16px">
+      <td colspan="11" style="padding:8px 16px">
         <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:end">
           <div><label style="font-size:12px;display:block">מחיר מכירה ₪</label>
             <input type="number" min="0" step="0.01" value="${item.sell_price||''}"
@@ -157,19 +161,19 @@ function renderPOItemsTable() {
 
   tfoot.innerHTML = `
     <tr style="font-weight:700; border-top:2px solid #1a2744">
-      <td colspan="4" style="padding:8px; text-align:left">\u05E1\u05D4"\u05DB:</td>
+      <td colspan="5" style="padding:8px; text-align:left">\u05E1\u05D4"\u05DB:</td>
       <td id="po-total-qty" style="padding:8px"></td>
       <td colspan="3" style="padding:8px; text-align:left">\u05E1\u05DB\u05D5\u05DD \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DE:</td>
       <td id="po-total-amount" style="padding:8px; font-size:15px"></td>
       <td></td>
     </tr>
     <tr style="color:#666; font-size:.88rem">
-      <td colspan="8" style="padding:4px 8px; text-align:left">\u05DE\u05E2"\u05DE (<span id="po-vat-rate"></span>%):</td>
+      <td colspan="9" style="padding:4px 8px; text-align:left">\u05DE\u05E2"\u05DE (<span id="po-vat-rate"></span>%):</td>
       <td id="po-vat-amount" style="padding:4px 8px"></td>
       <td></td>
     </tr>
     <tr style="font-weight:700; font-size:1.05rem; border-top:1px solid #ddd">
-      <td colspan="8" style="padding:8px; text-align:left">\u05E1\u05D4"\u05DB \u05DB\u05D5\u05DC\u05DC \u05DE\u05E2"\u05DE:</td>
+      <td colspan="9" style="padding:8px; text-align:left">\u05E1\u05D4"\u05DB \u05DB\u05D5\u05DC\u05DC \u05DE\u05E2"\u05DE:</td>
       <td id="po-total-with-vat" style="padding:8px; font-size:15px; color:#059669"></td>
       <td></td>
     </tr>`;

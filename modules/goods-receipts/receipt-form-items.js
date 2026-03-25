@@ -46,6 +46,10 @@ function addReceiptItemRow(data) {
     <td><input type="text" class="rcpt-model" value="${escapeHtml(data?.model || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
     <td><input type="text" class="rcpt-color" value="${escapeHtml(data?.color || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
     <td><input type="text" class="rcpt-size" value="${escapeHtml(data?.size || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
+    <td><select class="rcpt-ptype" style="min-width:55px;font-size:.78rem" ${isExisting ? 'disabled' : ''}>
+      <option value="eyeglasses" ${(data?.product_type || '') !== 'sunglasses' ? 'selected' : ''}>\u05E8\u05D0\u05D9\u05D9\u05D4</option>
+      <option value="sunglasses" ${(data?.product_type || '') === 'sunglasses' ? 'selected' : ''}>\u05E9\u05DE\u05E9</option>
+    </select></td>
     <td><input type="number" class="rcpt-qty col-qty" min="1" value="${data?.quantity || 1}"></td>
     <td><input type="number" class="rcpt-ucost col-price" step="0.01" min="0" value="${data?.unit_cost || ''}"></td>
     <td><input type="number" class="rcpt-sprice col-price" step="0.01" min="0" value="${data?.sell_price || ''}"></td>
@@ -123,6 +127,7 @@ function getReceiptItems() {
       model: tr.querySelector('.rcpt-model')?.value?.trim() || '',
       color: tr.querySelector('.rcpt-color')?.value?.trim() || '',
       size: tr.querySelector('.rcpt-size')?.value?.trim() || '',
+      product_type: tr.querySelector('.rcpt-ptype')?.value || 'eyeglasses',
       quantity: effectiveQty,
       ordered_qty: qtyVal || 0,
       unit_cost: parseFloat(tr.querySelector('.rcpt-ucost')?.value) || null,

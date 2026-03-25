@@ -87,6 +87,13 @@ async function openViewPO(id) {
           actionCell = '<td style="padding:8px;text-align:center">' + badge + cancelBtn + '</td>';
         }
       }
+      // Product type cell (editable)
+      var ptLabel = item.product_type === 'sunglasses' ? '\u05E9\u05DE\u05E9' : '\u05E8\u05D0\u05D9\u05D9\u05D4';
+      var productTypeCell = canEditPrices
+        ? '<td style="padding:4px"><select class="po-view-ptype" data-idx="' + idx + '" style="font-size:12px;padding:2px;border:1px solid #d1d5db;border-radius:4px">' +
+          '<option value="eyeglasses"' + (item.product_type !== 'sunglasses' ? ' selected' : '') + '>\u05E8\u05D0\u05D9\u05D9\u05D4</option>' +
+          '<option value="sunglasses"' + (item.product_type === 'sunglasses' ? ' selected' : '') + '>\u05E9\u05DE\u05E9</option></select></td>'
+        : '<td style="padding:8px;text-align:center;font-size:12px">' + ptLabel + '</td>';
       // Sell price + discount columns (editable)
       var sellPriceCell = canEditPrices
         ? '<td style="padding:4px"><input type="number" class="po-view-sell" data-idx="' + idx + '" step="0.01" min="0" value="' + (item.sell_price || '') + '" style="width:80px;font-size:12px;text-align:center;border:1px solid #d1d5db;border-radius:4px;padding:4px"></td>'
@@ -100,6 +107,7 @@ async function openViewPO(id) {
         <td style="padding:8px">${escapeHtml(item.model||'\u2014')}</td>
         <td style="padding:8px">${escapeHtml(item.color||'\u2014')}</td>
         <td style="padding:8px">${escapeHtml(item.size||'\u2014')}</td>
+        ${productTypeCell}
         <td style="padding:8px; text-align:center">${ordered}</td>
         <td style="padding:8px; text-align:center; font-weight:600">${received}</td>
         <td style="padding:8px; text-align:center">${item.unit_cost ? '\u20AA'+Number(item.unit_cost).toFixed(2) : '\u2014'}</td>
@@ -150,6 +158,7 @@ async function openViewPO(id) {
                 <th style="padding:8px">\u05D3\u05D2\u05DD</th>
                 <th style="padding:8px">\u05E6\u05D1\u05E2</th>
                 <th style="padding:8px">\u05D2\u05D5\u05D3\u05DC</th>
+                <th style="padding:8px">\u05E1\u05D5\u05D2</th>
                 <th style="padding:8px">\u05D4\u05D5\u05D6\u05DE\u05DF</th>
                 <th style="padding:8px">\u05D4\u05EA\u05E7\u05D1\u05DC</th>
                 <th style="padding:8px">\u05E2\u05DC\u05D5\u05EA</th>
@@ -163,7 +172,7 @@ async function openViewPO(id) {
             <tbody>${itemRows}</tbody>
             <tfoot>
               <tr style="font-weight:700; border-top:2px solid #1a2744; background:#f8fafc">
-                <td colspan="4" style="padding:8px; text-align:right; font-size:13px">
+                <td colspan="5" style="padding:8px; text-align:right; font-size:13px">
                   \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD: ${totalLines} | \u05D9\u05D7\u05D9\u05D3\u05D5\u05EA: ${totalUnits}
                 </td>
                 <td colspan="4" style="padding:8px; text-align:left">\u05E1\u05D4"\u05DB \u05DC\u05D4\u05D6\u05DE\u05E0\u05D4:</td>
@@ -234,7 +243,9 @@ async function _savePOViewPrices(poId) {
     var sellPrice = parseFloat(inp.value) || 0;
     var discInput = document.querySelector('.po-view-selldisc[data-idx="' + idx + '"]');
     var sellDisc = discInput ? (parseFloat(discInput.value) || 0) / 100 : 0;
-    updates.push({ id: item.id, sell_price: sellPrice, sell_discount: sellDisc });
+    var ptypeInput = document.querySelector('.po-view-ptype[data-idx="' + idx + '"]');
+    var ptype = ptypeInput ? ptypeInput.value : (item.product_type || 'eyeglasses');
+    updates.push({ id: item.id, sell_price: sellPrice, sell_discount: sellDisc, product_type: ptype });
   });
   if (!updates.length) return;
   showLoading('\u05E9\u05D5\u05DE\u05E8 \u05DE\u05D7\u05D9\u05E8\u05D9\u05DD...');
