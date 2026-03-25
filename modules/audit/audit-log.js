@@ -156,6 +156,16 @@ async function permanentDelete(id) {
 
   PinModal.prompt('🔒 מחיקה לצמיתות — אימות עובד', async function(pin, emp) {
     try {
+      // Cascade: delete all images for this item from Storage + DB
+      var tid = getTenantId();
+      var { data: imgs } = await sb.from(T.IMAGES).select('id, storage_path')
+        .eq('inventory_id', id).eq('tenant_id', tid);
+      if (imgs && imgs.length) {
+        var paths = imgs.map(function(im) { return im.storage_path; }).filter(Boolean);
+        if (paths.length) await sb.storage.from('frame-images').remove(paths);
+        var ids = imgs.map(function(im) { return im.id; });
+        await sb.from(T.IMAGES).delete().in('id', ids).eq('tenant_id', tid);
+      }
       const { error } = await sb.from('inventory').delete().eq('id', id);
       if (error) {
         toast('שגיאה: ' + error.message, 'e');
