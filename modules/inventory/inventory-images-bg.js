@@ -84,8 +84,8 @@ function _bgRunAI(img, originalUrl, onConfirm) {
     var bytes = new Uint8Array(bin.length);
     for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     var blob = new Blob([bytes], { type: 'image/png' });
-    _bgShowResult(originalUrl, blob, URL.createObjectURL(blob), 'remove.bg', onConfirm);
-    writeLog('bg_removal', _imgCurrentInvId, { method: 'remove.bg' });
+    _bgShowResult(originalUrl, blob, URL.createObjectURL(blob), 'AI', onConfirm);
+    writeLog('bg_removal', _imgCurrentInvId, { method: 'ai' });
   })
   .catch(function(err) {
     hideLoading();
