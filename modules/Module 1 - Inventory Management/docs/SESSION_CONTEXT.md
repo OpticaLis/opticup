@@ -77,7 +77,7 @@ Flow Review Phase 3 Complete — 2026-03-25
 
 ## Current State
 - **6 HTML pages**: index, inventory, suppliers-debt, employees, shipments, settings
-- **113 JS files** across 14 module folders + 10 global + 9 shared (26,955 lines total)
+- **113 JS files** across 14 module folders + 11 global + 9 shared (27,066 lines total)
 - **All files <= 350 lines** (max = 350, 4 files at limit)
 - **3 Edge Functions**: pin-auth, ocr-extract, remove-background
 - **49 DB tables** + 14 RPC functions

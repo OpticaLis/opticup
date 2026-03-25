@@ -90,16 +90,16 @@ File structure:
     GLOBAL_MAP.md                   ← all shared functions, contracts, module registry
     GLOBAL_SCHEMA.sql               ← full DB schema across all modules
   shared/                           ← shared components (Module 1.5)
-    css/                            ← variables.css, components.css, components-extra.css, layout.css, forms.css
-    js/                             ← modal-builder.js, modal-wizard.js, toast.js, table-builder.js, supabase-client.js, activity-logger.js, permission-ui.js, pin-modal.js, theme-loader.js
-    tests/                          ← ui-test.html + component test pages
+    css/                            ← 8 files: variables.css, components.css, components-extra.css, layout.css, forms.css, modal.css, table.css, toast.css
+    js/                             ← 9 files: modal-builder.js, modal-wizard.js, toast.js, table-builder.js, supabase-client.js, activity-logger.js, permission-ui.js, pin-modal.js, theme-loader.js
   css/
     styles.css                      ← legacy (suppliers-debt still uses)
     header.css                      ← sticky header
-    modal.css, toast.css, table.css ← shared component styles
   js/                               ← global files (load first)
     shared.js                       ← Supabase init, constants, caches, utilities
+    shared-ui.js                    ← navigation (showTab), info modal, help banner
     supabase-ops.js                 ← DB operations: writeLog, fetchAll, batch ops
+    supabase-alerts-ocr.js          ← alert creation + OCR template learning
     data-loading.js                 ← data loading + enrichment
     search-select.js                ← searchable dropdown component
     auth-service.js                 ← PIN login, session, permissions
@@ -108,21 +108,23 @@ File structure:
     alerts-badge.js                 ← bell icon + alerts dropdown
     pin-modal.js                    ← redirect to shared/js/pin-modal.js
   modules/
-    inventory/                      ← 12 files (table, entry, edit, export, reduction, excel-import, access-sales, inventory-return, inventory-returns-tab, inventory-returns-actions, inventory-images, inventory-images-modal)
-    purchasing/                     ← 5 files (purchase-orders, po-form, po-items, po-actions, po-view-import)
-    goods-receipts/                 ← 7 files (goods-receipt, receipt-form, receipt-actions, receipt-confirm, receipt-debt, receipt-excel, receipt-ocr)
-    audit/                          ← 3 files (audit-log, item-history, qty-modal)
+    inventory/                      ← 13 files (table, entry, edit, export, reduction, excel-import, access-sales, inventory-return, inventory-returns-tab, inventory-returns-actions, inventory-images, inventory-images-bg, incoming-invoices)
+    purchasing/                     ← 6 files (purchase-orders, po-form, po-items, po-actions, po-import, po-view)
+    goods-receipts/                 ← 12 files (goods-receipt, receipt-form, receipt-form-items, receipt-actions, receipt-confirm, receipt-confirm-items, receipt-debt, receipt-excel, receipt-ocr, receipt-ocr-review, receipt-po-compare, receipt-guide)
+    audit/                          ← 4 files (audit-log, item-history, entry-history, qty-modal)
     brands/                         ← 2 files (brands, suppliers)
     access-sync/                    ← 4 files (access-sync, sync-details, pending-panel, pending-resolve)
     admin/                          ← 2 files (admin, system-log)
-    debt/                           ← 14 files (debt-dashboard, debt-documents, etc.)
-      ai/                           ← 7 files (ai-ocr, ai-alerts, ai-config, etc.)
+    debt/                           ← 21 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-doc-edit, debt-doc-actions, debt-doc-compare, debt-doc-items, debt-doc-new, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-prepaid-detail, debt-supplier-detail, debt-supplier-tabs, debt-returns, debt-returns-tab, debt-returns-tab-actions, debt-info-content, debt-info-inject)
+      ai/                           ← 9 files (ai-ocr, ai-ocr-review, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import, ai-historical-process)
     permissions/                    ← 1 file (employee-list)
-    shipments/                      ← 9 files (shipments-list, shipments-create, etc.)
+    shipments/                      ← 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
     settings/                       ← 1 file (settings-page)
     stock-count/                    ← 9 files (list, session, camera, scan, filters, unknown, approve, view, report)
-    Module 1 - Inventory Management/ ← Module 1 docs & roadmap
-    Module 1.5 - Shared Components/  ← Module 1.5 docs & roadmap
+  supabase/functions/
+    ocr-extract/index.ts            ← Edge Function (Claude Vision OCR)
+    pin-auth/index.ts               ← Edge Function (PIN authentication)
+    remove-background/index.ts      ← Edge Function (remove.bg API proxy)
 
 Task: [מה לעשות — ספציפי]
 
