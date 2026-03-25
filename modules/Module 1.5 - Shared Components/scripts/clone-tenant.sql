@@ -393,15 +393,17 @@ RAISE NOTICE 'goods_receipts: % שורות', v_count;
 -- 15. goods_receipt_items — שכבה 4 (תלוי ב-receipts, inventory)
 -- ============================================================
 INSERT INTO goods_receipt_items (
-  id, receipt_id, inventory_id, barcode, brand, model, color, size,
-  quantity, unit_cost, sell_price, is_new_item, tenant_id
+  id, receipt_id, inventory_id, barcode, barcodes_csv, brand, model, color, size,
+  quantity, ordered_qty, unit_cost, sell_price, is_new_item, product_type,
+  price_decision, po_match_status, receipt_status, from_po, tenant_id
 )
 SELECT
   gen_random_uuid(),
   rm.new_id,             -- FK receipt ממופה
   im.new_id,             -- FK inventory ממופה (nullable)
-  gri.barcode, gri.brand, gri.model, gri.color, gri.size,
-  gri.quantity, gri.unit_cost, gri.sell_price, gri.is_new_item, v_new_tenant
+  gri.barcode, gri.barcodes_csv, gri.brand, gri.model, gri.color, gri.size,
+  gri.quantity, gri.ordered_qty, gri.unit_cost, gri.sell_price, gri.is_new_item, gri.product_type,
+  gri.price_decision, gri.po_match_status, gri.receipt_status, gri.from_po, v_new_tenant
 FROM goods_receipt_items gri
 JOIN _receipt_map rm ON rm.old_id = gri.receipt_id
 LEFT JOIN _inventory_map im ON im.old_id = gri.inventory_id

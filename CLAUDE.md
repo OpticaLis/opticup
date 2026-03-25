@@ -166,9 +166,9 @@ opticup/
 | `T.LOGS`          | inventory_logs           | id, action, inventory_id, details (jsonb), created_at, tenant_id        |
 | `T.IMAGES`        | inventory_images         | id, inventory_id, url, tenant_id                                        |
 | `T.RECEIPTS`      | goods_receipts           | id, type, status, supplier_id, po_id, notes, created_at, tenant_id     |
-| `T.RECEIPT_ITEMS` | goods_receipt_items      | id, receipt_id, inventory_id, barcode, brand, model, color, size, quantity, unit_cost, sell_price, is_new_item, price_decision, po_match_status, receipt_status (ok/not_received/return/partial_received), from_po, barcodes_csv, ordered_qty, tenant_id |
+| `T.RECEIPT_ITEMS` | goods_receipt_items      | id, receipt_id, inventory_id, barcode, brand, model, color, size, quantity, unit_cost, sell_price, is_new_item, price_decision, po_match_status, receipt_status (ok/not_received/return/partial_received), from_po, barcodes_csv, ordered_qty, product_type, tenant_id |
 | `T.PO`            | purchase_orders          | id, po_number, supplier_id, status, notes, created_at, tenant_id       |
-| `T.PO_ITEMS`      | purchase_order_items     | id, po_id, brand_id, model, size, color, quantity, cost_price, tenant_id |
+| `T.PO_ITEMS`      | purchase_order_items     | id, po_id, brand_id, model, size, color, quantity, cost_price, sell_price, sell_discount, product_type, tenant_id |
 | `T.ROLES`         | roles                    | id, name_he, description, is_system, tenant_id                          |
 | `T.PERMISSIONS`   | permissions              | id, module, action, name_he, tenant_id                                   |
 | `T.ROLE_PERMS`    | role_permissions         | role_id, permission_id, granted, tenant_id                               |
