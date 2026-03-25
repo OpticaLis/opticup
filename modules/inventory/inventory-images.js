@@ -244,13 +244,16 @@ function _showFullImage(url) {
   document.body.appendChild(overlay);
 }
 
-async function _deleteImage(imageId, storagePath) {
-  var ok = await Modal.confirm({
+function _deleteImage(imageId, storagePath) {
+  Modal.confirm({
     title: '\u05DE\u05D7\u05D9\u05E7\u05EA \u05EA\u05DE\u05D5\u05E0\u05D4',
     message: '\u05DC\u05DE\u05D7\u05D5\u05E7 \u05EA\u05DE\u05D5\u05E0\u05D4 \u05D6\u05D5?',
-    confirmText: '\u05DE\u05D7\u05E7', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC'
+    confirmText: '\u05DE\u05D7\u05E7', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+    onConfirm: function() { _doDeleteImage(imageId, storagePath); }
   });
-  if (!ok) return;
+}
+
+async function _doDeleteImage(imageId, storagePath) {
   showLoading('\u05DE\u05D5\u05D7\u05E7...');
   try {
     if (storagePath) {

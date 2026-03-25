@@ -241,13 +241,18 @@ function _bgRemovePending(idx) {
 }
 
 // --- Apply to saved image ---
-async function _bgRemoveSaved(imageId, imageUrl, storagePath) {
+function _bgRemoveSaved(imageId, imageUrl, storagePath) {
   if (storagePath && storagePath.indexOf('_nobg') !== -1) {
-    var ok = await Modal.confirm({ title: '\u05EA\u05DE\u05D5\u05E0\u05D4 \u05DB\u05D1\u05E8 \u05DE\u05E2\u05D5\u05D1\u05D3\u05EA',
+    Modal.confirm({ title: '\u05EA\u05DE\u05D5\u05E0\u05D4 \u05DB\u05D1\u05E8 \u05DE\u05E2\u05D5\u05D1\u05D3\u05EA',
       message: '\u05DB\u05D1\u05E8 \u05E7\u05D9\u05D9\u05DE\u05EA \u05EA\u05DE\u05D5\u05E0\u05D4 \u05DE\u05E2\u05D5\u05D1\u05D3\u05EA \u2014 \u05DC\u05E2\u05D1\u05D3 \u05E9\u05D5\u05D1?',
-      confirmText: '\u05DB\u05DF', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC' });
-    if (!ok) return;
+      confirmText: '\u05DB\u05DF', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+      onConfirm: function() { _doBgRemoveSaved(imageId, imageUrl, storagePath); } });
+    return;
   }
+  _doBgRemoveSaved(imageId, imageUrl, storagePath);
+}
+
+function _doBgRemoveSaved(imageId, imageUrl, storagePath) {
   _bgRemoveStart(imageUrl, async function(newBlob) {
     showLoading('\u05E9\u05D5\u05DE\u05E8 \u05EA\u05DE\u05D5\u05E0\u05D4 \u05DE\u05E2\u05D5\u05D3\u05DB\u05E0\u05EA...');
     try {
