@@ -2,9 +2,38 @@
 // Load after: inventory-table.js, shared.js, supabase-ops.js
 var _imgPending = [];       // { blob, previewUrl }
 var _imgCurrentInvId = null;
-var _imgCurrentImages = [];  // rows from inventory_images
+var _imgCurrentImages = [];  // rows from inventory_images (with _signedUrl added)
 var _imgModalEl = null;
 var FRAME_IMAGES_BUCKET = 'frame-images';
+var _IMG_SIGN_EXPIRY = 3600; // 1 hour signed URL expiry
+
+// Generate signed URL from storage_path (private bucket)
+async function _getSignedUrl(storagePath) {
+  if (!storagePath) return '';
+  var { data, error } = await sb.storage.from(FRAME_IMAGES_BUCKET)
+    .createSignedUrl(storagePath, _IMG_SIGN_EXPIRY);
+  if (error) { console.warn('Signed URL error:', error.message); return ''; }
+  return data?.signedUrl || '';
+}
+
+// Sign all images in an array (adds _signedUrl property)
+async function _signImages(images) {
+  if (!images || !images.length) return;
+  var paths = images.map(function(im) { return im.storage_path; }).filter(Boolean);
+  if (!paths.length) return;
+  // Batch sign for efficiency
+  var { data, error } = await sb.storage.from(FRAME_IMAGES_BUCKET)
+    .createSignedUrls(paths, _IMG_SIGN_EXPIRY);
+  if (error || !data) { console.warn('Batch sign error:', error?.message); return; }
+  // Map signed URLs back to images by path
+  var urlMap = {};
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].signedUrl) urlMap[data[i].path] = data[i].signedUrl;
+  }
+  for (var j = 0; j < images.length; j++) {
+    images[j]._signedUrl = urlMap[images[j].storage_path] || '';
+  }
+}
 
 async function openImageModal(inventoryId) {
   _imgCurrentInvId = inventoryId;
@@ -17,6 +46,7 @@ async function openImageModal(inventoryId) {
       .order('sort_order', { ascending: true });
     if (imgErr) throw imgErr;
     _imgCurrentImages = imgs || [];
+    await _signImages(_imgCurrentImages);
     var { data: item } = await sb.from(T.INV)
       .select('barcode, brand_id, model').eq('id', inventoryId).eq('tenant_id', tid).single();
     var brandName = item ? (brandCacheRev[item.brand_id] || '') : '';
@@ -100,15 +130,16 @@ function _renderImageGrid() {
       '\u05D0\u05D9\u05DF \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA \u2014 \u05DC\u05D7\u05E5 \uD83D\uDCF8 \u05DC\u05E6\u05D9\u05DC\u05D5\u05DD</div>';
   } else {
     html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:8px 0">';
-    // Existing images
+    // Existing images (use signed URLs for private bucket)
     for (var i = 0; i < _imgCurrentImages.length; i++) {
       var im = _imgCurrentImages[i];
+      var displayUrl = im._signedUrl || im.url || '';
       html += '<div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--g200)">' +
-        '<img src="' + encodeURI(im.url) + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block" loading="lazy">' +
+        '<img src="' + encodeURI(displayUrl) + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block" loading="lazy">' +
         '<button onclick="_deleteImage(\'' + im.id + '\',\'' + escapeHtml(im.storage_path || '') + '\')" ' +
           'style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:14px" ' +
           'title="\u05DE\u05D7\u05E7">\u2715</button>' +
-        '<button onclick="_bgRemoveSaved(\'' + im.id + '\',\'' + encodeURI(im.url) + '\',\'' + escapeHtml(im.storage_path || '') + '\')" ' +
+        '<button onclick="_bgRemoveSaved(\'' + im.id + '\',\'' + encodeURI(displayUrl) + '\',\'' + escapeHtml(im.storage_path || '') + '\')" ' +
           'style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px" ' +
           'title="\u05D4\u05E1\u05E8 \u05E8\u05E7\u05E2 \u05DC\u05D1\u05DF">\uD83D\uDCAB</button></div>';
     }
@@ -155,12 +186,9 @@ async function _uploadPendingImages(inventoryId) {
         contentType: 'image/webp', upsert: false
       });
       if (upErr) { console.error('Upload error:', upErr); continue; }
-      var { data: urlData } = sb.storage.from(FRAME_IMAGES_BUCKET).getPublicUrl(storagePath);
-      var publicUrl = urlData ? urlData.publicUrl : '';
-      if (!publicUrl) continue;
       await sb.from(T.IMAGES).insert({
         inventory_id: inventoryId, storage_path: storagePath,
-        url: publicUrl, file_size: p.blob.size,
+        url: storagePath, file_size: p.blob.size,
         sort_order: _imgCurrentImages.length + i,
         tenant_id: tid
       });
@@ -168,11 +196,12 @@ async function _uploadPendingImages(inventoryId) {
       URL.revokeObjectURL(p.previewUrl);
     }
     _imgPending = [];
-    // Refresh images from DB
+    // Refresh images from DB + sign URLs
     var { data: fresh } = await sb.from(T.IMAGES).select('*')
       .eq('inventory_id', inventoryId).eq('tenant_id', tid)
       .order('sort_order', { ascending: true });
     _imgCurrentImages = fresh || [];
+    await _signImages(_imgCurrentImages);
     _renderImageGrid();
     _updateSaveBtn();
     hideLoading();
