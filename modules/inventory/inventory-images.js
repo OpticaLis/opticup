@@ -8,6 +8,20 @@ var _imgCurrentBarcode = '';
 var FRAME_IMAGES_BUCKET = 'frame-images';
 var _IMG_SIGN_EXPIRY = 3600; // 1 hour signed URL expiry
 
+// Update image count badge in the inventory table row
+function _updateImageBadge() {
+  var count = _imgCurrentImages.length;
+  var row = document.querySelector('tr[data-id="' + _imgCurrentInvId + '"]');
+  if (!row) return;
+  var cell = row.querySelector('.img-cell');
+  if (!cell) return;
+  if (count > 0) {
+    cell.innerHTML = '<span class="img-thumb-click" data-id="' + escapeHtml(_imgCurrentInvId) + '" style="cursor:pointer;color:#2196F3;font-size:.75rem;font-weight:600" title="' + count + ' \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA \u2014 \u05DC\u05D7\u05E5 \u05DC\u05E6\u05E4\u05D9\u05D9\u05D4">\uD83D\uDCF7' + count + '</span>';
+  } else {
+    cell.innerHTML = '<span style="color:var(--g400);font-size:.75rem">\uD83D\uDCF7</span>';
+  }
+}
+
 // Generate signed URL from storage_path (private bucket)
 async function _getSignedUrl(storagePath) {
   if (!storagePath) return '';
@@ -213,6 +227,7 @@ async function _uploadPendingImages(inventoryId) {
     _updateSaveBtn();
     hideLoading();
     Toast.success(uploaded + ' \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA \u05E0\u05E9\u05DE\u05E8\u05D5');
+    _updateImageBadge();
     writeLog('images_uploaded', inventoryId, { count: uploaded });
   } catch (e) {
     hideLoading();
@@ -264,6 +279,7 @@ async function _doDeleteImage(imageId, storagePath) {
     _renderImageGrid();
     hideLoading();
     Toast.success('\u05EA\u05DE\u05D5\u05E0\u05D4 \u05E0\u05DE\u05D7\u05E7\u05D4');
+    _updateImageBadge();
     writeLog('image_deleted', _imgCurrentInvId, { image_id: imageId });
   } catch (e) {
     hideLoading();
