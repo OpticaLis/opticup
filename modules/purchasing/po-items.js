@@ -1,3 +1,22 @@
+// ── Brand filter for PO items ────────────────────────────────
+var _poBrandFilter = '';
+function _filterPOByBrand(brand) {
+  _poBrandFilter = brand;
+  document.querySelectorAll('tr[data-po-row]').forEach(function(tr) {
+    var idx = parseInt(tr.dataset.poRow), item = currentPOItems[idx];
+    if (!item) return;
+    var show = !brand || (item.brand || '').trim() === brand;
+    tr.style.display = show ? '' : 'none';
+    if (!show) { var d = document.getElementById('po-item-details-' + idx); if (d) d.style.display = 'none'; }
+  });
+}
+function _updatePOBrandFilter() {
+  var sel = document.getElementById('po-brand-filter'); if (!sel) return;
+  var brands = [...new Set(currentPOItems.map(i => (i.brand||'').trim()).filter(Boolean))].sort();
+  var cur = sel.value;
+  sel.innerHTML = '<option value="">\u05D4\u05DB\u05DC</option>' + brands.map(function(b) { return '<option value="' + escapeHtml(b) + '"' + (b===cur?' selected':'') + '>' + escapeHtml(b) + '</option>'; }).join('');
+}
+
 // ── Items table render ───────────────────────────────────────
 function ensurePOBrandDatalist() {
   if (document.getElementById('po-brand-list')) return;
@@ -156,6 +175,9 @@ function renderPOItemsTable() {
     </tr>`;
 
   updatePOTotals();
+  _updatePOBrandFilter();
+  // Re-apply active brand filter
+  if (_poBrandFilter) _filterPOByBrand(_poBrandFilter);
 }
 
 // ── Final price helpers ───────────────────────────────────────
@@ -299,40 +321,22 @@ function togglePOItemDetails(i) {
 // ── Live stock counter — shows inventory count as PO fields are filled ──
 var _poStockCounterTimer = {};
 function _updatePOStockCounter(i, brandName, model, color, size) {
-  // Debounce — avoid rapid queries on every keystroke
   if (_poStockCounterTimer[i]) clearTimeout(_poStockCounterTimer[i]);
   _poStockCounterTimer[i] = setTimeout(function() { _doUpdatePOStockCounter(i, brandName, model, color, size); }, 300);
 }
-
 async function _doUpdatePOStockCounter(i, brandName, model, color, size) {
   var el = document.getElementById('po-stock-' + i);
   if (!el) return;
   var brandId = brandCache[(brandName || '').trim()];
   if (!brandId || !(model || '').trim()) { el.textContent = ''; return; }
-
   try {
-    var query = sb.from(T.INV)
-      .select('id', { count: 'exact', head: true })
-      .eq('brand_id', brandId)
-      .ilike('model', (model || '').trim())
-      .eq('tenant_id', getTenantId())
-      .eq('is_deleted', false);
-    if ((color || '').trim()) query = query.ilike('color', (color || '').trim());
-    if ((size || '').trim()) query = query.ilike('size', (size || '').trim());
+    var query = sb.from(T.INV).select('id', { count: 'exact', head: true })
+      .eq('brand_id', brandId).ilike('model', (model||'').trim())
+      .eq('tenant_id', getTenantId()).eq('is_deleted', false);
+    if ((color||'').trim()) query = query.ilike('color', (color||'').trim());
+    if ((size||'').trim()) query = query.ilike('size', (size||'').trim());
     var { count } = await query;
-    var cnt = count || 0;
-
-    // Build label
-    var label = '';
-    if (cnt === 0) {
-      label = '\u2728 \u05D7\u05D3\u05E9'; // ✨ חדש
-      el.style.color = '#059669';
-    } else {
-      label = '\uD83D\uDCE6 ' + cnt + ' \u05D1\u05DE\u05DC\u05D0\u05D9'; // 📦 X במלאי
-      el.style.color = '#d97706';
-    }
-    el.textContent = label;
-  } catch (e) {
-    el.textContent = '';
-  }
+    if (!count) { el.textContent = '\u2728 \u05D7\u05D3\u05E9'; el.style.color = '#059669'; }
+    else { el.textContent = '\uD83D\uDCE6 ' + count + ' \u05D1\u05DE\u05DC\u05D0\u05D9'; el.style.color = '#d97706'; }
+  } catch (e) { el.textContent = ''; }
 }

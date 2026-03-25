@@ -48,7 +48,10 @@ async function openViewPO(id) {
       } catch (e) { console.warn('Receipt items fetch skipped:', e); }
     }
 
-    const itemRows = (items || []).map(item => {
+    // Editable sell price: allowed on sent/partial POs
+    var canEditPrices = (po.status === 'sent' || po.status === 'partial' || po.status === 'draft');
+
+    const itemRows = (items || []).map((item, idx) => {
       const total = (item.qty_ordered||0) * (item.unit_cost||0) * (1 - (item.discount_pct||0)/100);
       const received = item.qty_received || 0;
       const ordered  = item.qty_ordered  || 0;
@@ -59,7 +62,6 @@ async function openViewPO(id) {
         if (fullyReceived) {
           actionCell = '<td style="padding:8px;text-align:center;color:#4CAF50">\u2705</td>';
         } else {
-          // Determine reason from receipt items
           var key = [item.brand, item.model, item.size, item.color].map(function(s) { return (s||'').trim().toLowerCase(); }).join('|');
           var riList = receiptItemMap[key] || [];
           var hasReturn = riList.some(function(ri) { return ri.receipt_status === 'return' || ri.po_match_status === 'returned'; });
@@ -74,7 +76,6 @@ async function openViewPO(id) {
           } else {
             badge = '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:11px">\u05D7\u05E1\u05E8</span>';
           }
-          // Cancel button only for partial POs
           var cancelBtn = '';
           if (po.status === 'partial') {
             cancelBtn = ' <button class="btn btn-sm btn-po-cancel-item" ' +
@@ -86,16 +87,25 @@ async function openViewPO(id) {
           actionCell = '<td style="padding:8px;text-align:center">' + badge + cancelBtn + '</td>';
         }
       }
+      // Sell price + discount columns (editable)
+      var sellPriceCell = canEditPrices
+        ? '<td style="padding:4px"><input type="number" class="po-view-sell" data-idx="' + idx + '" step="0.01" min="0" value="' + (item.sell_price || '') + '" style="width:80px;font-size:12px;text-align:center;border:1px solid #d1d5db;border-radius:4px;padding:4px"></td>'
+        : '<td style="padding:8px;text-align:center">' + (item.sell_price ? '\u20AA' + Number(item.sell_price).toFixed(2) : '\u2014') + '</td>';
+      var sellDiscCell = canEditPrices
+        ? '<td style="padding:4px"><input type="number" class="po-view-selldisc" data-idx="' + idx + '" step="0.1" min="0" max="100" value="' + (item.sell_discount ? (item.sell_discount * 100).toFixed(1) : '') + '" style="width:60px;font-size:12px;text-align:center;border:1px solid #d1d5db;border-radius:4px;padding:4px" placeholder="%"></td>'
+        : '<td style="padding:8px;text-align:center">' + (item.sell_discount ? (item.sell_discount * 100).toFixed(1) + '%' : '\u2014') + '</td>';
+
       return `<tr style="background:${rowColor}">
-        <td style="padding:8px">${escapeHtml(item.brand||'—')}</td>
-        <td style="padding:8px">${escapeHtml(item.model||'—')}</td>
-        <td style="padding:8px">${escapeHtml(item.color||'—')}</td>
-        <td style="padding:8px">${escapeHtml(item.size||'—')}</td>
+        <td style="padding:8px">${escapeHtml(item.brand||'\u2014')}</td>
+        <td style="padding:8px">${escapeHtml(item.model||'\u2014')}</td>
+        <td style="padding:8px">${escapeHtml(item.color||'\u2014')}</td>
+        <td style="padding:8px">${escapeHtml(item.size||'\u2014')}</td>
         <td style="padding:8px; text-align:center">${ordered}</td>
         <td style="padding:8px; text-align:center; font-weight:600">${received}</td>
-        <td style="padding:8px; text-align:center">${item.unit_cost ? '₪'+Number(item.unit_cost).toFixed(2) : '—'}</td>
+        <td style="padding:8px; text-align:center">${item.unit_cost ? '\u20AA'+Number(item.unit_cost).toFixed(2) : '\u2014'}</td>
         <td style="padding:8px; text-align:center">${item.discount_pct||0}%</td>
-        <td style="padding:8px; text-align:center; font-weight:600">₪${total.toFixed(2)}</td>
+        <td style="padding:8px; text-align:center; font-weight:600">\u20AA${total.toFixed(2)}</td>
+        ${sellPriceCell}${sellDiscCell}
         ${actionCell}
       </tr>`;
     }).join('');
@@ -103,6 +113,8 @@ async function openViewPO(id) {
     const grandTotal = (items||[]).reduce((sum, item) => {
       return sum + (item.qty_ordered||0) * (item.unit_cost||0) * (1-(item.discount_pct||0)/100);
     }, 0);
+    var totalLines = (items || []).length;
+    var totalUnits = (items || []).reduce((s, i) => s + (i.qty_ordered || 0), 0);
 
     const container = document.getElementById('po-list-container2');
     const importBtn = po.status === 'received'
@@ -134,30 +146,37 @@ async function openViewPO(id) {
           <table style="width:100%; border-collapse:collapse; font-size:13px">
             <thead>
               <tr style="background:#1a2744; color:white; text-align:right">
-                <th style="padding:8px">מותג</th>
-                <th style="padding:8px">דגם</th>
-                <th style="padding:8px">צבע</th>
-                <th style="padding:8px">גודל</th>
-                <th style="padding:8px">הוזמן</th>
-                <th style="padding:8px">התקבל</th>
-                <th style="padding:8px">עלות</th>
-                <th style="padding:8px">הנחה</th>
-                <th style="padding:8px">סה"כ</th>
-                ${showStatusCol ? '<th style="padding:8px">סטטוס</th>' : ''}
+                <th style="padding:8px">\u05DE\u05D5\u05EA\u05D2</th>
+                <th style="padding:8px">\u05D3\u05D2\u05DD</th>
+                <th style="padding:8px">\u05E6\u05D1\u05E2</th>
+                <th style="padding:8px">\u05D2\u05D5\u05D3\u05DC</th>
+                <th style="padding:8px">\u05D4\u05D5\u05D6\u05DE\u05DF</th>
+                <th style="padding:8px">\u05D4\u05EA\u05E7\u05D1\u05DC</th>
+                <th style="padding:8px">\u05E2\u05DC\u05D5\u05EA</th>
+                <th style="padding:8px">\u05D4\u05E0\u05D7\u05D4</th>
+                <th style="padding:8px">\u05E1\u05D4"\u05DB</th>
+                <th style="padding:8px">\u05DE\u05D7\u05D9\u05E8 \u05DE\u05DB\u05D9\u05E8\u05D4</th>
+                <th style="padding:8px">\u05D4\u05E0\u05D7\u05EA \u05DE\u05DB\u05D9\u05E8\u05D4</th>
+                ${showStatusCol ? '<th style="padding:8px">\u05E1\u05D8\u05D8\u05D5\u05E1</th>' : ''}
               </tr>
             </thead>
             <tbody>${itemRows}</tbody>
             <tfoot>
-              <tr style="font-weight:700; border-top:2px solid #1a2744">
-                <td colspan="8" style="padding:8px; text-align:left">סה"כ להזמנה:</td>
-                <td style="padding:8px; font-size:15px">₪${grandTotal.toFixed(2)}</td>
+              <tr style="font-weight:700; border-top:2px solid #1a2744; background:#f8fafc">
+                <td colspan="4" style="padding:8px; text-align:right; font-size:13px">
+                  \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD: ${totalLines} | \u05D9\u05D7\u05D9\u05D3\u05D5\u05EA: ${totalUnits}
+                </td>
+                <td colspan="4" style="padding:8px; text-align:left">\u05E1\u05D4"\u05DB \u05DC\u05D4\u05D6\u05DE\u05E0\u05D4:</td>
+                <td style="padding:8px; font-size:15px" colspan="2">\u20AA${grandTotal.toFixed(2)}</td>
+                ${showStatusCol ? '<td></td>' : ''}
               </tr>
             </tfoot>
           </table>
         </div>
         <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap">
-          <button onclick="exportPOExcel()" style="background:#217346; color:white; border:none; border-radius:6px; padding:9px 18px; cursor:pointer; font-size:14px">📊 ייצוא Excel</button>
-          <button onclick="exportPOPdf()" style="background:#c0392b; color:white; border:none; border-radius:6px; padding:9px 18px; cursor:pointer; font-size:14px">📄 ייצוא PDF</button>
+          ${canEditPrices ? '<button onclick="_savePOViewPrices(\'' + escapeHtml(po.id) + '\')" style="background:#2196F3; color:white; border:none; border-radius:6px; padding:9px 18px; cursor:pointer; font-size:14px">\uD83D\uDCBE \u05E9\u05DE\u05D5\u05E8 \u05DE\u05D7\u05D9\u05E8\u05D9\u05DD</button>' : ''}
+          <button onclick="exportPOExcel()" style="background:#217346; color:white; border:none; border-radius:6px; padding:9px 18px; cursor:pointer; font-size:14px">\uD83D\uDCCA \u05D9\u05D9\u05E6\u05D5\u05D0 Excel</button>
+          <button onclick="exportPOPdf()" style="background:#c0392b; color:white; border:none; border-radius:6px; padding:9px 18px; cursor:pointer; font-size:14px">\uD83D\uDCC4 \u05D9\u05D9\u05E6\u05D5\u05D0 PDF</button>
         </div>
       </div>`;
   } catch (err) {
@@ -202,3 +221,29 @@ document.addEventListener('click', function(e) {
   const importBtn = e.target.closest('.btn-po-import');
   if (importBtn) { importPOToInventory(importBtn.dataset.id); return; }
 });
+
+// Save sell prices from PO view
+async function _savePOViewPrices(poId) {
+  var inputs = document.querySelectorAll('.po-view-sell');
+  if (!inputs.length || !currentPOItems?.length) { toast('\u05D0\u05D9\u05DF \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DC\u05E9\u05DE\u05D9\u05E8\u05D4', 'w'); return; }
+  var updates = [];
+  inputs.forEach(function(inp) {
+    var idx = parseInt(inp.dataset.idx);
+    var item = currentPOItems[idx];
+    if (!item) return;
+    var sellPrice = parseFloat(inp.value) || 0;
+    var discInput = document.querySelector('.po-view-selldisc[data-idx="' + idx + '"]');
+    var sellDisc = discInput ? (parseFloat(discInput.value) || 0) / 100 : 0;
+    updates.push({ id: item.id, sell_price: sellPrice, sell_discount: sellDisc });
+  });
+  if (!updates.length) return;
+  showLoading('\u05E9\u05D5\u05DE\u05E8 \u05DE\u05D7\u05D9\u05E8\u05D9\u05DD...');
+  try {
+    await batchUpdate(T.PO_ITEMS, updates);
+    toast(updates.length + ' \u05DE\u05D7\u05D9\u05E8\u05D9 \u05DE\u05DB\u05D9\u05E8\u05D4 \u05E0\u05E9\u05DE\u05E8\u05D5', 's');
+  } catch (e) {
+    console.error('_savePOViewPrices error:', e);
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E9\u05DE\u05D9\u05E8\u05EA \u05DE\u05D7\u05D9\u05E8\u05D9\u05DD: ' + (e.message || ''), 'e');
+  }
+  hideLoading();
+}
