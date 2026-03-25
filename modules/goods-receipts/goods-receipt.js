@@ -341,10 +341,8 @@ function openNewReceipt() {
   if (zone) zone.style.display = '';
   if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
   _initReceiptDropzone();
-
   // Enable inputs
   toggleReceiptFormInputs(false);
-
   $('rcpt-step1').style.display = 'none';
   $('rcpt-step2').style.display = '';
 }
