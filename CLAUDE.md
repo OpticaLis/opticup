@@ -116,16 +116,23 @@ opticup/
 │   ├── file-upload.js          — supplier document file upload/preview
 │   ├── alerts-badge.js         — bell icon + unread badge + dropdown panel (all pages)
 │   └── pin-modal.js            — reusable PIN prompt modal (shared promptPin())
+├── shared/
+│   ├── css/                    — 8 files (variables, components, components-extra, layout, forms, modal, table, toast)
+│   └── js/                     — 9 files (modal-builder, modal-wizard, toast, table-builder, supabase-client, activity-logger, permission-ui, pin-modal, theme-loader)
+├── docs/
+│   ├── GLOBAL_MAP.md           — shared functions, contracts, module registry
+│   ├── GLOBAL_SCHEMA.sql       — full DB schema across all modules
+│   └── TROUBLESHOOTING.md      — known issues + solutions
 ├── modules/
 │   ├── inventory/              — 13 files (table, entry, edit, export, reduction, excel-import, access-sales, inventory-return, inventory-returns-tab, inventory-returns-actions, inventory-images, inventory-images-bg, incoming-invoices)
 │   ├── purchasing/             — 6 files (purchase-orders, po-form, po-items, po-actions, po-import, po-view)
-│   ├── goods-receipts/         — 11 files (goods-receipt, receipt-form, receipt-actions, receipt-confirm, receipt-confirm-items, receipt-debt, receipt-excel, receipt-ocr, receipt-ocr-review, receipt-po-compare, receipt-guide)
+│   ├── goods-receipts/         — 12 files (goods-receipt, receipt-form, receipt-form-items, receipt-actions, receipt-confirm, receipt-confirm-items, receipt-debt, receipt-excel, receipt-ocr, receipt-ocr-review, receipt-po-compare, receipt-guide)
 │   ├── audit/                  — 4 files (audit-log, item-history, entry-history, qty-modal)
 │   ├── brands/                 — 2 files (brands, suppliers)
 │   ├── access-sync/            — 4 files (access-sync, sync-details, pending-panel, pending-resolve)
 │   ├── admin/                  — 2 files (admin, system-log)
-│   ├── debt/                   — 17 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-prepaid-detail, debt-doc-edit, debt-doc-actions, debt-supplier-detail, debt-returns, debt-returns-tab, debt-returns-tab-actions, debt-info-content, debt-info-inject)
-│   │   └── ai/                 — 7 files (ai-ocr, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import)
+│   ├── debt/                   — 21 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-doc-edit, debt-doc-actions, debt-doc-compare, debt-doc-items, debt-doc-new, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-prepaid-detail, debt-supplier-detail, debt-supplier-tabs, debt-returns, debt-returns-tab, debt-returns-tab-actions, debt-info-content, debt-info-inject)
+│   │   └── ai/                 — 9 files (ai-ocr, ai-ocr-review, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import, ai-historical-process)
 │   ├── permissions/            — 1 file (employee-list)
 │   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
 │   ├── settings/               — 1 file (settings-page)
@@ -136,8 +143,10 @@ opticup/
 │   ├── install-service.js
 │   └── uninstall-service.js
 ├── watcher-deploy/               — Standalone deployment package (8 files, no Git needed)
-├── supabase/functions/ocr-extract/ — Edge Function (Claude Vision OCR)
-│   └── index.ts
+├── supabase/functions/
+│   ├── ocr-extract/index.ts    — Edge Function (Claude Vision OCR)
+│   ├── pin-auth/index.ts       — Edge Function (PIN authentication + JWT)
+│   └── remove-background/index.ts — Edge Function (remove.bg API proxy)
 ├── migrations/
 │   └── *.sql
 ├── modules/Module 1 - Inventory Management/
