@@ -88,8 +88,8 @@
 | 52b | inventory-returns-tab.js | modules/inventory/inventory-returns-tab.js | 269 | Inventory returns (זיכויים) tab: initReturnsTab, loadReturnsData (status/supplier/date/search filtering), renderReturnsFilters, renderReturnsList (accordion table with bulk selection), toggleReturnsHistory, getReturnsCount (cached badge count) |
 | 52c | inventory-returns-actions.js | modules/inventory/inventory-returns-actions.js | 164 | Returns tab actions: markAgentPicked (PIN-verified), sendToBox (navigate to shipments wizard), bulkSendToBox (validates same supplier), bulkAction (bulk status update), exportReturnsExcel |
 | 52d | incoming-invoices.js | modules/inventory/incoming-invoices.js | 255 | Incoming invoices tab: loadIncomingInvoicesTab (drag-drop file upload + supplier select + submit to debt), _submitIncomingInvoice (upload + create pending_invoice doc), _loadRecentPendingInvoices (last 10 table) |
-| 52e | inventory-images.js | modules/inventory/inventory-images.js | 250 | Frame image capture/upload/delete/preview: openImageModal (modal with grid + camera/upload buttons), _captureImage (rear camera via capture=environment), _pickImage (file picker), _processAndPreview (Canvas resize + WEBP conversion at 0.82 quality), _uploadPendingImages (Storage upload + DB insert), _showFullImage (full-screen overlay with pinch-zoom), _deleteImage (Storage + DB delete). Click thumbnail to view full-size. Each image has 💫 bg-remove button |
-| 52f | inventory-images-bg.js | modules/inventory/inventory-images-bg.js | 249 | Background removal: remove.bg API (primary) + Canvas fallback. _bgRemoveStart (loads image, opens comparison modal), _bgShowComparison (before/after comparison, no threshold slider), _bgProcess (calls remove.bg Edge Function, falls back to _bgProcessLocal on error), _bgProcessLocal (Canvas flood-fill fallback), _bgRemovePending (replace pending blob), _bgRemoveSaved (duplicate _nobg check, re-upload to Storage + update DB) |
+| 52e | inventory-images.js | modules/inventory/inventory-images.js | 269 | Frame image capture/upload/delete/preview/download: openImageModal, _captureImage, _pickImage, _processAndPreview, _uploadPendingImages, _showFullImage (full-screen overlay with download button), _downloadImage (fetch→blob download), _deleteImage. Click thumbnail for full-size, ⬇️ download, ✕ delete, 💫 bg-remove on each image |
+| 52f | inventory-images-bg.js | modules/inventory/inventory-images-bg.js | 270 | Background removal with choice dialog: _bgRemoveStart → _bgShowChoiceDialog (AI vs Canvas choice), _bgRunAI (remove.bg Edge Function), _bgRunLocal (Canvas with threshold slider), _bgShowResult (AI result comparison), _bgProcessLocal (flood-fill), _bgRemovePending, _bgRemoveSaved. Uses prizma_auth_token for Edge Function auth |
 | 51b | debt-returns-tab.js | modules/debt/debt-returns-tab.js | 365 | Global debt returns (credit tracking) tab: initDebtReturnsTab, loadDebtReturns (multi-status filtering), renderDebtReturnsList (accordion with bulk selection), renderDebtReturnsSummary, toggleDebtReturnsHistory |
 | 51c | debt-returns-tab-actions.js | modules/debt/debt-returns-tab-actions.js | 289 | Debt returns actions: markDebtCredited (requires file upload first via _promptCreditFileUpload, then PIN), _promptCreditFileUpload (drag-drop/pick modal), _createCreditNoteForReturn (now attaches uploaded file + links doc to return), bulkMarkCredited (blocked — requires per-item file upload), exportDebtReturnsExcel |
 | 53 | file-upload.js | js/file-upload.js | 321 | File upload helper: uploadSupplierFile, getSupplierFileUrl (signed URLs), renderFilePreview, pickAndUploadFile, pickAndUploadFiles (multi-file), fetchDocFiles (with fallback to legacy file_url), saveDocFile (to supplier_document_files), renderFileGallery (thumbnails + page nav + delete buttons), _deleteGalleryFile (re-queries fresh files from DB after delete + cleans storage), _renderSingleFilePreview |
@@ -309,18 +309,20 @@
 | `_pickImage` | `()` | Creates hidden file input for gallery/file picker (multiple) |
 | `_processAndPreview` | `(file)` | Resizes to max 1200px, converts to WEBP 0.82 quality via Canvas, adds to pending array |
 | `_uploadPendingImages` | `(inventoryId)` | Async. Uploads pending blobs to Storage bucket, inserts DB rows, refreshes grid |
-| `_showFullImage` | `(url)` | Opens full-screen overlay with image at full resolution. Click anywhere or ✕ to close. Supports pinch-to-zoom on mobile |
+| `_downloadImage` | `(url, filename)` | Downloads image via fetch→blob→object URL with specified filename |
+| `_showFullImage` | `(url)` | Opens full-screen overlay with image at full resolution, download button, ✕ close. Pinch-to-zoom on mobile |
 | `_deleteImage` | `(imageId, storagePath)` | Async. Confirms, removes from Storage + DB, re-renders grid |
 
 ### modules/inventory/inventory-images-bg.js
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
-| `_bgRemoveStart` | `(imageUrl, onConfirm)` | Loads image, opens before/after comparison modal |
-| `_bgShowComparison` | `(img, originalUrl, onConfirm)` | Renders comparison UI (no threshold slider — remove.bg handles automatically) |
-| `_bgProcess` | `(img, thresholdPct, callback)` | Primary: calls remove-background Edge Function (remove.bg API). On failure: falls back to _bgProcessLocal. Logs method used |
-| `_bgProcessLocal` | `(img, thresholdPct, callback)` | Fallback: Canvas flood-fill from 8 seed points (corners + edge midpoints), edge softening, outputs WEBP blob |
-| `_bgSetMethodInfo` | `(method)` | Shows which processing method was used in the comparison modal |
+| `_bgRemoveStart` | `(imageUrl, onConfirm)` | Loads image, shows method choice dialog (AI vs Canvas) |
+| `_bgShowChoiceDialog` | `(img, originalUrl, onConfirm)` | Modal with two buttons: AI מקצועי (remove.bg) and עיבוד מהיר (Canvas) |
+| `_bgRunAI` | `(img, originalUrl, onConfirm)` | Calls remove-background Edge Function using prizma_auth_token. Shows loading, error on failure (no auto-fallback) |
+| `_bgRunLocal` | `(img, originalUrl, onConfirm)` | Canvas path with threshold slider (30-100%), before/after comparison |
+| `_bgShowResult` | `(originalUrl, blob, resultUrl, method, onConfirm)` | AI result: before/after comparison, confirm/cancel |
+| `_bgProcessLocal` | `(img, thresholdPct, callback)` | Canvas flood-fill from 8 seed points, edge softening, outputs WEBP blob |
 | `_bgRemovePending` | `(idx)` | Replaces pending blob at index with bg-removed version |
 | `_bgRemoveSaved` | `(imageId, imageUrl, storagePath)` | Async. Checks for existing _nobg duplicate, re-uploads processed image to Storage with _nobg suffix, updates DB |
 
