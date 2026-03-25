@@ -110,7 +110,8 @@ function renderEntryHistory(logs) {
         brand: brandName,
         model: inv?.model || log.model || '',
         size: inv?.size || '',
-        color: inv?.color || ''
+        color: inv?.color || '',
+        qty: log.qty_after || 1
       };
     });
     const exportDataAttr = escapeHtml(JSON.stringify(exportItems));
@@ -200,9 +201,14 @@ function toggleHistGroup(btn) {
 
 function exportDateGroupBarcodes(items) {
   if (!items?.length) { toast('אין פריטים לייצוא', 'e'); return; }
-  const rows = items.filter(i => i.barcode).map(i => ({
-    'ברקוד': i.barcode, 'מותג': i.brand, 'דגם': i.model, 'גודל': i.size, 'צבע': i.color
-  }));
+  // Repeat each barcode N times (one row per physical unit for label printing)
+  const rows = [];
+  items.filter(i => i.barcode).forEach(i => {
+    var qty = i.qty || 1;
+    for (var q = 0; q < qty; q++) {
+      rows.push({ 'ברקוד': i.barcode, 'מותג': i.brand, 'דגם': i.model, 'גודל': i.size, 'צבע': i.color });
+    }
+  });
   if (!rows.length) { toast('אין פריטים עם ברקוד לייצוא', 'e'); return; }
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
