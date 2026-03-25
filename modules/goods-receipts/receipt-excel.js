@@ -190,20 +190,15 @@ async function exportReceiptBarcodes(receiptId) {
     });
     if (!printItems.length) { hideLoading(); toast('\u05D0\u05D9\u05DF \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DC\u05D9\u05D9\u05E6\u05D5\u05D0', 'w'); return; }
 
-    // Expand barcodes into individual rows (one per physical frame)
+    // Expand each item into N rows (one per unit) for label printing
+    // All rows for the same product share the SAME barcode
     var rows = [];
     printItems.forEach(function(item) {
-      var barcodes = item.barcodes_csv ? item.barcodes_csv.split(',').filter(Boolean) : (item.barcode ? [item.barcode] : []);
-      // If no barcodes_csv, fall back to expanding by qty (legacy rows)
-      if (barcodes.length === 0) {
-        var qty = item.quantity || 1;
-        for (var q = 0; q < qty; q++) {
-          barcodes.push(item.barcode || '');
-        }
-      }
-      for (var b = 0; b < barcodes.length; b++) {
+      var barcode = item.barcode || '';
+      var qty = item.quantity || 1;
+      for (var q = 0; q < qty; q++) {
         rows.push({
-          '\u05D1\u05E8\u05E7\u05D5\u05D3': barcodes[b],
+          '\u05D1\u05E8\u05E7\u05D5\u05D3': barcode,
           '\u05DE\u05D5\u05EA\u05D2': item.brand || '',
           '\u05D3\u05D2\u05DD': item.model || '',
           '\u05E6\u05D1\u05E2': item.color || '',

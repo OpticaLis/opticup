@@ -111,15 +111,14 @@ function getReceiptItems() {
       if (effectiveQty > qtyVal) effectiveQty = qtyVal;
       if (effectiveQty < 1) effectiveQty = 1;
     }
-    // Barcodes array: from dataset (comma-separated) or single barcode
+    // Single barcode per product line (from dataset or input field)
     var barcodesStr = tr.dataset.barcodes || '';
     var singleBarcode = tr.querySelector('.rcpt-barcode')?.value?.trim() || '';
-    var barcodes = barcodesStr ? barcodesStr.split(',').filter(Boolean) : (singleBarcode ? [singleBarcode] : []);
+    var barcode = barcodesStr || singleBarcode;
 
     return {
       tr,
-      barcode: singleBarcode,
-      barcodes: barcodes,
+      barcode: barcode,
       brand: tr.querySelector('.rcpt-brand')?.value?.trim() || '',
       model: tr.querySelector('.rcpt-model')?.value?.trim() || '',
       color: tr.querySelector('.rcpt-color')?.value?.trim() || '',
@@ -196,7 +195,8 @@ function addNewReceiptRow() {
 }
 // =========================================================
 // Manual barcode generation for receipt items
-// Same pattern as inventory-entry.js generateBarcodes()
+// ONE barcode per product line (brand+model+color+size).
+// qty=10 → 1 barcode, 1 inventory row with quantity=10.
 // Skips: not_received, return items. Keeps existing barcodes.
 // =========================================================
 async function generateReceiptBarcodes() {
@@ -204,16 +204,10 @@ async function generateReceiptBarcodes() {
   try { items = getReceiptItems(); } catch (e) { return; }
   if (!items.length) { toast('\u05D0\u05D9\u05DF \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DC\u05D9\u05E6\u05D9\u05E8\u05EA \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD', 'w'); return; }
 
-  // Filter items that need barcodes: new items with ok/partial_received status
-  // For existing items (is_new_item=false) with qty>1, we need additional barcodes for units beyond the first
+  // Filter: new items that need ONE barcode, skipping not_received/return
   var needBarcode = items.filter(function(i) {
     if (i.receipt_status === 'not_received' || i.receipt_status === 'return') return false;
-    // New items without any barcodes
-    if (i.is_new_item && i.barcodes.length === 0) return true;
-    // New items with fewer barcodes than qty
-    if (i.is_new_item && i.barcodes.length < i.quantity) return true;
-    // Existing items with qty > 1: first unit uses existing barcode, rest need new ones
-    if (!i.is_new_item && i.quantity > 1 && i.barcodes.length < i.quantity) return true;
+    if (i.is_new_item && !i.barcode) return true;
     return false;
   });
 
@@ -222,7 +216,7 @@ async function generateReceiptBarcodes() {
     return;
   }
 
-  // Validate required fields on new items that need barcodes
+  // Validate required fields
   var incomplete = needBarcode.filter(function(i) { return i.is_new_item && (!i.brand || !i.model); });
   if (incomplete.length) {
     toast(incomplete.length + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05D7\u05E1\u05E8\u05D9\u05DD \u05DE\u05D5\u05EA\u05D2 \u05D0\u05D5 \u05D3\u05D2\u05DD \u2014 \u05E0\u05D3\u05E8\u05E9 \u05DC\u05E4\u05E0\u05D9 \u05D9\u05E6\u05D9\u05E8\u05EA \u05D1\u05E8\u05E7\u05D5\u05D3', 'e');
@@ -238,37 +232,26 @@ async function generateReceiptBarcodes() {
 
     for (var i = 0; i < needBarcode.length; i++) {
       var item = needBarcode[i];
-      var qty = item.quantity;
-      var existingBarcodes = item.barcodes.slice(); // copy current barcodes
-      var barcodesNeeded = qty - existingBarcodes.length;
+      // ONE barcode per product line, regardless of quantity
+      nextSeq++;
+      if (nextSeq > 99999) throw new Error('\u05D7\u05E8\u05D9\u05D2\u05D4 \u2014 \u05DE\u05E7\u05E1\u05D9\u05DE\u05D5\u05DD 99,999 \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD \u05DC\u05E1\u05E0\u05D9\u05E3 ' + prefix);
+      var newBarcode = prefix + String(nextSeq).padStart(5, '0');
+      generated++;
 
-      for (var b = 0; b < barcodesNeeded; b++) {
-        nextSeq++;
-        if (nextSeq > 99999) throw new Error('\u05D7\u05E8\u05D9\u05D2\u05D4 \u2014 \u05DE\u05E7\u05E1\u05D9\u05DE\u05D5\u05DD 99,999 \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD \u05DC\u05E1\u05E0\u05D9\u05E3 ' + prefix);
-        existingBarcodes.push(prefix + String(nextSeq).padStart(5, '0'));
-        generated++;
-      }
-
-      // Store all barcodes in dataset
-      item.tr.dataset.barcodes = existingBarcodes.join(',');
+      // Store single barcode on the row
+      item.tr.dataset.barcodes = newBarcode;
 
       // Update barcode cell display
       var bcInput = item.tr.querySelector('.rcpt-barcode');
       if (bcInput) {
-        bcInput.value = existingBarcodes[0];
+        bcInput.value = newBarcode;
         bcInput.style.background = '#e8f5e9';
       }
-      // Show count indicator for multi-barcode rows
+      // Remove any old multi-barcode indicator
       var bcCell = bcInput?.parentElement;
-      if (bcCell && existingBarcodes.length > 1) {
+      if (bcCell) {
         var indicator = bcCell.querySelector('.rcpt-bc-count');
-        if (!indicator) {
-          indicator = document.createElement('span');
-          indicator.className = 'rcpt-bc-count';
-          indicator.style.cssText = 'font-size:.72rem;color:#1a73e8;display:block;margin-top:2px';
-          bcCell.appendChild(indicator);
-        }
-        indicator.textContent = '(+' + (existingBarcodes.length - 1) + ' \u05E0\u05D5\u05E1\u05E4\u05D9\u05DD)';
+        if (indicator) indicator.remove();
       }
     }
     maxBarcode = nextSeq;
