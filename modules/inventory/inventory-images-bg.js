@@ -197,15 +197,14 @@ async function _bgRemoveSaved(imageId, imageUrl, storagePath) {
         contentType: 'image/webp', upsert: true
       });
       if (upErr) throw upErr;
-      var { data: urlData } = sb.storage.from(FRAME_IMAGES_BUCKET).getPublicUrl(newPath);
-      var newUrl = urlData ? urlData.publicUrl : '';
-      // Update DB record with cache-busted URL
-      var bustUrl = newUrl + (newUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
-      await sb.from(T.IMAGES).update({ url: bustUrl, storage_path: newPath, file_size: newBlob.size })
+      // Store path in DB (not URL — bucket is private, URLs are signed on demand)
+      await sb.from(T.IMAGES).update({ url: newPath, storage_path: newPath, file_size: newBlob.size })
         .eq('id', imageId).eq('tenant_id', tid);
+      // Get fresh signed URL for display
+      var signedUrl = await _getSignedUrl(newPath);
       // Refresh local data
       var img = _imgCurrentImages.find(function(im) { return im.id === imageId; });
-      if (img) { img.url = bustUrl; img.storage_path = newPath; }
+      if (img) { img.url = newPath; img.storage_path = newPath; img._signedUrl = signedUrl; }
       _renderImageGrid();
       hideLoading();
       Toast.success('\u05E8\u05E7\u05E2 \u05D4\u05D5\u05D7\u05DC\u05E3 \u05D5\u05E0\u05E9\u05DE\u05E8');

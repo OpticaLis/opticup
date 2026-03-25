@@ -160,12 +160,9 @@ function renderInventoryRows(recs) {
     const sel = invSelected.has(r.id) ? ' selected-row' : '';
     const chk = invSelected.has(r.id) ? ' checked' : '';
     const imgs = r._images || [];
-    const imgBadge = imgs.length > 0
-      ? `<span style="color:#2196F3;font-size:.75rem;font-weight:600">\uD83D\uDCF7${imgs.length}</span>`
-      : '<span style="color:var(--g400);font-size:.75rem">\uD83D\uDCF7</span>';
     const imgCell = imgs.length > 0
-      ? `<img class="img-thumb img-thumb-click" src="${encodeURI(imgs[0].thumbnails?.small?.url || imgs[0].url)}" data-id="${escapeHtml(r.id)}" title="${imgs.length} תמונות"> ${imgBadge}`
-      : imgBadge;
+      ? `<span class="img-thumb-click" data-id="${escapeHtml(r.id)}" style="cursor:pointer;color:#2196F3;font-size:.75rem;font-weight:600" title="${imgs.length} תמונות — לחץ לצפייה">\uD83D\uDCF7${imgs.length}</span>`
+      : '<span style="color:var(--g400);font-size:.75rem">\uD83D\uDCF7</span>';
     const syncVal = enToHe('website_sync', r.website_sync) || '';
     return `<tr data-id="${r.id}" class="${sel}">
       <td style="position:relative"><button class="btn-inv-menu" data-id="${escapeHtml(r.id)}" style="background:none;border:none;cursor:pointer;font-size:1.1rem;padding:4px 8px" title="פעולות">⋯</button></td>
