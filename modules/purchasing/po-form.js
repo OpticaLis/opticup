@@ -200,6 +200,13 @@ function renderPOForm(isEdit) {
           </div>
         </div>
 
+        <div id="po-brand-filter-bar" style="margin-bottom:8px;display:flex;align-items:center;gap:8px">
+          <label style="font-size:13px;color:#555">\u05E1\u05E0\u05DF \u05DC\u05E4\u05D9 \u05DE\u05D5\u05EA\u05D2:</label>
+          <select id="po-brand-filter" onchange="_filterPOByBrand(this.value)" style="padding:4px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px">
+            <option value="">\u05D4\u05DB\u05DC</option>
+          </select>
+        </div>
+
         <div style="overflow-x:auto">
           <table style="width:100%; border-collapse:collapse; font-size:13px">
             <thead>

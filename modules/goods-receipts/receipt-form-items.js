@@ -146,9 +146,13 @@ function _onReceiptStatusChange(sel) {
 
   if (sel.value === 'not_received') {
     row.classList.add('rcpt-row-dimmed');
+    row.style.opacity = '0.5';
     if (qtyInput) qtyInput.disabled = true;
     if (costInput) costInput.disabled = true;
     if (partialInput) partialInput.style.display = 'none';
+    // Move to bottom of table
+    var tbody = row.parentElement;
+    if (tbody) tbody.appendChild(row);
   } else if (sel.value === 'partial_received') {
     row.classList.remove('rcpt-row-dimmed');
     if (qtyInput) qtyInput.disabled = true; // qty stays at ordered amount for reference
@@ -163,9 +167,16 @@ function _onReceiptStatusChange(sel) {
     }
   } else {
     row.classList.remove('rcpt-row-dimmed');
+    row.style.opacity = '';
     if (qtyInput) qtyInput.disabled = false;
     if (costInput) costInput.disabled = false;
     if (partialInput) partialInput.style.display = 'none';
+    // Move back above not-received rows
+    var tbody = row.parentElement;
+    if (tbody) {
+      var firstDimmed = tbody.querySelector('tr.rcpt-row-dimmed');
+      if (firstDimmed) tbody.insertBefore(row, firstDimmed);
+    }
   }
   updateReceiptItemsStats();
 }
@@ -180,10 +191,13 @@ function updateReceiptItemsStats() {
   var notRecvd = items.filter(i => i.receipt_status === 'not_received').length;
   var returnCnt = items.filter(i => i.receipt_status === 'return').length;
   var partialCnt = items.filter(i => i.receipt_status === 'partial_received').length;
+  // Total cost of active items
+  var totalCost = activeItems.reduce((s, i) => s + i.quantity * (i.unit_cost || 0), 0);
   var extra = '';
   if (partialCnt) extra += ' | ' + partialCnt + ' \u05D7\u05DC\u05E7\u05D9\u05EA';
   if (notRecvd) extra += ' | ' + notRecvd + ' \u05DC\u05D0 \u05D4\u05D2\u05D9\u05E2\u05D5';
   if (returnCnt) extra += ' | ' + returnCnt + ' \u05DC\u05D4\u05D7\u05D6\u05E8\u05D4';
+  if (totalCost > 0) extra += ' | \u05E1\u05D4"\u05DB \u05E2\u05DC\u05D5\u05EA: \u20AA' + totalCost.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   $('rcpt-items-stats').textContent = items.length
     ? `\u05E1\u05D4"\u05DB ${items.length} \u05E9\u05D5\u05E8\u05D5\u05EA | ${total} \u05D9\u05D7\u05D9\u05D3\u05D5\u05EA | ${existCount} \u05E7\u05D9\u05D9\u05DE\u05D9\u05DD | ${newCount} \u05D7\u05D3\u05E9\u05D9\u05DD` + extra
     : '';

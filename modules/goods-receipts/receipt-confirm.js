@@ -31,13 +31,11 @@ async function confirmReceipt() {
     return;
   }
 
-  // Hard-block: barcodes must be generated for all items entering inventory
+  // Hard-block: each item entering inventory must have a barcode (one per product line)
   var itemsNeedBc = items.filter(function(i) {
     if (i.receipt_status === 'not_received' || i.receipt_status === 'return') return false;
-    // Check: must have enough barcodes for quantity
-    var neededBc = i.quantity;
-    var hasBc = (i.barcodes && i.barcodes.length) || (i.barcode ? 1 : 0);
-    return hasBc < neededBc;
+    if (!i.is_new_item) return false; // existing items already have barcodes
+    return !i.barcode;
   });
   if (itemsNeedBc.length) {
     toast(itemsNeedBc.length + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05D7\u05E1\u05E8\u05D9 \u05D1\u05E8\u05E7\u05D5\u05D3 \u2014 \u05DC\u05D7\u05E5 "\u05D9\u05E6\u05D9\u05E8\u05EA \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD" \u05EA\u05D7\u05D9\u05DC\u05D4', 'e');
