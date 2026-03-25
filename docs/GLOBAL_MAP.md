@@ -512,6 +512,7 @@ Pages modified for shared/ dependencies:
 |-------------------|-------------|-----------|---------|---------|
 | `pin-auth` | Auth | `POST {pin, slug}` | `{token, employee}` | auth-service.js (`verifyEmployeePIN`) |
 | `ocr-extract` | AI Agent | `POST {file_path} + JWT` | `{extracted_data, confidence, ...}` | ai-ocr.js, ai-batch-ocr.js |
+| `remove-background` | Inventory Images | `POST {image_base64, session_token} + anon key` | `{image_base64, format, size}` | inventory-images-bg.js (`_bgRunAI`) |
 
 ### JS Contracts — Global Functions
 

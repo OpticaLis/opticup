@@ -696,27 +696,6 @@ Standalone page: `shipments.html` with 9 JS files in `modules/shipments/`.
 - **Background removed:** frames/{tenant_id}/{inventory_id}/{timestamp}_nobg.webp or .png
 - **Features:** Upload (WEBP 0.82 quality, max 1200px), delete (Storage + DB), full-size preview, download
 
-### Barcode Logic (Flow-Review-3 refactor)
-- **One barcode per product line** (brand+model+color+size), NOT per physical unit
-- qty=10 creates 1 inventory record with quantity=10 and 1 barcode
-- Excel barcode export repeats the same barcode N times (one row per sticker label)
-- generateReceiptBarcodes: ONE barcode per new item row, regardless of quantity
-
-### Product Type Flow
-- **PO creation:** product_type dropdown (ראייה/שמש) in main items row
-- **PO view:** editable product_type column, saved with _savePOViewPrices
-- **Receipt from PO:** auto-populated from PO item's product_type
-- **Receipt manual:** product_type dropdown on each item row
-- **Receipt confirm:** passes product_type to createNewInventoryFromReceiptItem (no hardcoded default)
-- **Inventory table:** editable via invEditProductType() inline dropdown
-- **Migration 053:** goods_receipt_items.product_type column
-
-### PO Sell Prices + Summary
-- PO View: editable sell_price + sell_discount columns on sent/partial POs
-- PO View: summary footer with line count, unit count, grand total
-- PO Creation: brand filter dropdown to focus on one brand at a time
-- Receipt from PO: sell_price auto-populated from PO item
-
 **Planned Views (Phase 6 — Supplier Portal):**
 - `v_supplier_inventory` — supplier sees their items in our inventory
 - `v_supplier_documents` — supplier sees their documents

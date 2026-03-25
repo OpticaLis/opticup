@@ -53,31 +53,9 @@
 - Auto-refresh image count badges in table after upload/delete (cef3bb4)
 - Removed "remove.bg" branding from UI (cef3bb4)
 
-### Barcode Refactor (a91ab19)
-- ONE barcode per product line (brand+model+color+size), not per unit (a91ab19)
-- Receipt creates single inventory record with full quantity (a91ab19)
-- Excel barcode export repeats same barcode N times for label printing (a91ab19)
-
-### PO Improvements (70b9ace)
-- Fix receipt confirm barcode validation: check new items have barcode, not count vs qty (70b9ace)
-- Receipt stats show total cost dynamically (70b9ace)
-- Not-received items move to bottom of receipt table with opacity (70b9ace)
-- PO View: editable sell price + sell discount columns on sent/partial POs (70b9ace)
-- PO View: summary row with line count, unit count, grand total (70b9ace)
-- PO Creation: brand filter dropdown to focus on one brand (70b9ace)
-
-### Product Type Flow (459ba69, 310f2c1)
-- Migration 053: product_type column on goods_receipt_items (459ba69)
-- PO creation: product type dropdown (ראייה/שמש) in main items row (459ba69)
-- PO View: editable product type column, saved with prices (459ba69)
-- Receipt from PO: auto-populates product_type from PO item (459ba69)
-- Receipt confirm: reads product_type from item, no more hardcoded eyeglasses (459ba69)
-- Inventory table: editable product_type via invEditProductType() (310f2c1)
-
 ### Commits
 - 02a3ccd, 66c6bb0, c4e06c7, a95035b, 59a9574, 4f1c178, c9ec727, f77d1cd, 0e5b2d4, dc200e2
 - 22de0b6, 61fb265, 12fbb16, a9a162f, 9534b17, 2f2bb2d, 51df94f, 50e0bdc, 8427523, 4468124, cef3bb4
-- a91ab19, 70b9ace, 459ba69, 310f2c1
 
 ---
 
