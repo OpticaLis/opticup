@@ -57,8 +57,8 @@ function _bgShowChoiceDialog(img, originalUrl, onConfirm) {
 
 // --- AI path: call remove.bg Edge Function ---
 function _bgRunAI(img, originalUrl, onConfirm) {
-  var token = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
-  if (!token) { Toast.error('\u05E0\u05D3\u05E8\u05E9\u05EA \u05D4\u05EA\u05D7\u05D1\u05E8\u05D5\u05EA \u05DE\u05D7\u05D3\u05E9'); return; }
+  var sessionToken = sessionStorage.getItem('prizma_auth_token');
+  if (!sessionToken) { Toast.error('\u05E0\u05D3\u05E8\u05E9\u05EA \u05D4\u05EA\u05D7\u05D1\u05E8\u05D5\u05EA \u05DE\u05D7\u05D3\u05E9'); return; }
   // Convert image to base64
   var canvas = document.createElement('canvas');
   var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
@@ -71,8 +71,8 @@ function _bgRunAI(img, originalUrl, onConfirm) {
   showLoading('\uD83E\uDD16 \u05DE\u05E2\u05D1\u05D3 \u05E2\u05DD AI...');
   fetch(SUPABASE_URL + '/functions/v1/remove-background', {
     method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image_base64: base64 })
+    headers: { 'Authorization': 'Bearer ' + SUPABASE_ANON, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image_base64: base64, session_token: sessionToken })
   })
   .then(function(res) {
     if (!res.ok) return res.json().then(function(d) { throw new Error(d.error || 'API ' + res.status); });
