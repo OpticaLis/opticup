@@ -168,6 +168,7 @@ function renderInventoryRows(recs) {
       : imgBadge;
     const syncVal = enToHe('website_sync', r.website_sync) || '';
     return `<tr data-id="${r.id}" class="${sel}">
+      <td style="position:relative"><button class="btn-inv-menu" data-id="${escapeHtml(r.id)}" style="background:none;border:none;cursor:pointer;font-size:1.1rem;padding:4px 8px" title="פעולות">⋯</button></td>
       <td><button class="btn-item-history" style="background:none;border:none;cursor:pointer;font-size:1rem" data-id="${escapeHtml(r.id)}" data-barcode="${escapeHtml(bc)}" data-brand="${escapeHtml(r.brand_name||'')}" data-model="${escapeHtml(r.model||'')}" title="היסטוריה">📋</button></td>
       <td><input type="checkbox"${chk} class="inv-row-check" data-id="${escapeHtml(r.id)}"></td>
       <td>${pageOffset+i+1}</td>
@@ -187,7 +188,6 @@ function renderInventoryRows(recs) {
       <td style="font-weight:700;color:${qC}" data-qty-id="${r.id}">${qty}${isAdm?` <span class="qty-btns"><button class="qty-btn qty-plus" data-id="${escapeHtml(r.id)}" data-dir="add" title="הוסף כמות">➕</button><button class="qty-btn qty-minus" data-id="${escapeHtml(r.id)}" data-dir="remove" title="הוצא כמות">➖</button></span>`:''}</td>
       <td class="img-cell">${imgCell}</td>
       <td${isAdm?' class="editable" onclick="invEditSync(this)"':''}>${syncVal}</td>
-      <td style="position:relative"><button class="btn-inv-menu" data-id="${escapeHtml(r.id)}" style="background:none;border:none;cursor:pointer;font-size:1.1rem;padding:4px 8px" title="פעולות">⋯</button></td>
     </tr>`;
   }).join('');
 }
@@ -278,13 +278,18 @@ function _openInvMenu(btn) {
   var dd = document.createElement('div');
   dd.className = 'inv-action-menu';
   dd.innerHTML = items.map(function(it) {
-    var args = it.extra ? "'" + it.id + "'," + it.extra : "'" + it.id + "'";
+    var safeId = escapeHtml(it.id);
+    var args = it.extra ? "'" + safeId + "'," + it.extra : "'" + safeId + "'";
     var style = it.cls ? ' style="' + it.cls + '"' : '';
     return '<button' + style + ' onclick="_closeInvMenu();' + it.fn + '(' + args + ')">' + it.icon + ' ' + it.label + '</button>';
   }).join('');
   var rect = btn.getBoundingClientRect();
+  var dropRight = window.innerWidth - rect.right;
+  var dropLeft = rect.left;
+  // If near right edge (RTL first column), open toward left; otherwise align right
+  var posStyle = dropRight < 160 ? 'left:' + dropLeft + 'px' : 'right:' + dropRight + 'px';
   dd.style.cssText = 'position:fixed;z-index:9999;background:#fff;border:1px solid var(--g200,#e5e7eb);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:150px;padding:4px 0;' +
-    'top:' + (rect.bottom + 2) + 'px;right:' + (window.innerWidth - rect.right) + 'px';
+    'top:' + (rect.bottom + 2) + 'px;' + posStyle;
   document.body.appendChild(dd);
   _invMenuOpen = dd;
 }
