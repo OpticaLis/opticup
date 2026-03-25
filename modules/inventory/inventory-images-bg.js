@@ -71,7 +71,7 @@ function _bgRunAI(img, originalUrl, onConfirm) {
   showLoading('\uD83E\uDD16 \u05DE\u05E2\u05D1\u05D3 \u05E2\u05DD AI...');
   fetch(SUPABASE_URL + '/functions/v1/remove-background', {
     method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + SUPABASE_ANON, 'Content-Type': 'application/json' },
+    headers: { 'Authorization': 'Bearer ' + SUPABASE_ANON, 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
     body: JSON.stringify({ image_base64: base64, session_token: sessionToken })
   })
   .then(function(res) {
