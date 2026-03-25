@@ -221,6 +221,7 @@
     <div class="table-wrap" style="max-height:60vh;overflow-y:auto">
       <table id="inv-table">
         <thead><tr>
+          <th style="width:40px"></th>
           <th style="width:30px">📋</th>
           <th style="width:36px"><input type="checkbox" id="inv-select-all" onchange="toggleSelectAll(this.checked)" title="בחר הכל"></th>
           <th>#</th>
@@ -239,7 +240,6 @@
           <th class="sortable" data-field="כמות" onclick="sortInventory(this)">כמות <span class="sort-icon">&#9650;</span></th>
           <th>תמונות</th>
           <th class="sortable" data-field="סנכרון אתר" onclick="sortInventory(this)">סנכרון <span class="sort-icon">&#9650;</span></th>
-          <th class="admin-col">פעולות</th>
         </tr></thead>
         <tbody id="inv-body"></tbody>
       </table>

@@ -8,7 +8,13 @@ function _bgRemoveStart(imageUrl, onConfirm) {
   var img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = function() { _bgShowComparison(img, imageUrl, onConfirm); };
-  img.onerror = function() { toast('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D8\u05E2\u05D5\u05DF \u05EA\u05DE\u05D5\u05E0\u05D4', 'e'); };
+  img.onerror = function() {
+    // Retry without crossOrigin — image will display but bg removal won't work
+    var img2 = new Image();
+    img2.onload = function() { _bgShowComparison(img2, imageUrl, onConfirm); };
+    img2.onerror = function() { toast('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D8\u05E2\u05D5\u05DF \u05EA\u05DE\u05D5\u05E0\u05D4', 'e'); };
+    img2.src = imageUrl;
+  };
   img.src = imageUrl;
 }
 
@@ -91,7 +97,14 @@ function _bgProcess(img, thresholdPct, callback) {
   canvas.width = w; canvas.height = h;
   var ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0, w, h);
-  var imageData = ctx.getImageData(0, 0, w, h);
+  var imageData;
+  try {
+    imageData = ctx.getImageData(0, 0, w, h);
+  } catch (e) {
+    // CORS / SecurityError — canvas tainted by cross-origin image
+    toast('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05E2\u05D1\u05D3 \u05EA\u05DE\u05D5\u05E0\u05D4 \u05D6\u05D5 \u2014 \u05D1\u05E2\u05D9\u05D9\u05EA \u05D4\u05E8\u05E9\u05D0\u05D5\u05EA', 'e');
+    return;
+  }
   var data = imageData.data;
   var dist = thresholdPct / 100 * 255; // max distance from white to count as "background"
   // Flood-fill from 4 corners
