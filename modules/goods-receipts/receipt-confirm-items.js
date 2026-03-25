@@ -147,9 +147,8 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
   const brandId = brandCache[item.brand] || null;
   const supplierId = supplierCache[$('rcpt-supplier').value] || null;
 
-  // Derive product_type — brand_type is tier (luxury/brand/regular), not product category
-  // Valid product_type values: eyeglasses, sunglasses (per inventory_product_type_check)
-  var productType = 'eyeglasses';
+  // product_type from receipt item (set via PO or manual dropdown)
+  var productType = item.product_type || 'eyeglasses';
 
   const newRow = {
     barcode: newBarcode,

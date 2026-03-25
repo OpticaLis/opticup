@@ -99,6 +99,7 @@ async function onReceiptPoSelected() {
           quantity: remaining,
           unit_cost: item.unit_cost || '',
           sell_price: item.sell_price || '',
+          product_type: item.product_type || 'eyeglasses',
           is_new_item: false,
           inventory_id: existingInv.id,
           from_po: true
@@ -113,6 +114,7 @@ async function onReceiptPoSelected() {
           quantity: remaining,
           unit_cost: item.unit_cost || '',
           sell_price: item.sell_price || '',
+          product_type: item.product_type || 'eyeglasses',
           is_new_item: true,
           inventory_id: null,
           from_po: true
