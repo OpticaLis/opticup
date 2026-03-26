@@ -69,13 +69,13 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 3 | ✅ | Dashboard + Management | רשימת tenants, עריכה, suspend, activity log viewer |
 | 4 | ✅ | Plans & Limits | טבלת plans, checkPlanLimit(), isFeatureEnabled(), feature flags |
 | 5 | ✅ | Slug Routing + Future Prep | error pages, routing hardening, storefront_config DB prep |
-| QA | ✅ | Full Test | provisioning, plan limits, admin auth, tenant isolation, multi-admin |
+| QA | ⬜ | Full Test | provisioning, plan limits, admin auth, tenant isolation, multi-admin |
 
 ---
 
 ## פירוט כל פאזה
 
-### פאזה 1 ✅ — DB + Admin Auth
+### פאזה 1 ⬜ — DB + Admin Auth
 
 **המטרה:** טבלאות DB למודול 2 + admin.html עם email+password login דרך Supabase Auth.
 
@@ -179,7 +179,7 @@ ALTER TABLE tenants ADD COLUMN last_active TIMESTAMPTZ;
 
 ---
 
-### פאזה 2 ✅ — Tenant Provisioning
+### פאזה 2 ⬜ — Tenant Provisioning
 
 **המטרה:** יצירת tenant חדש בלחיצת כפתור. Atomic — הכל או כלום.
 
@@ -245,7 +245,7 @@ $$ LANGUAGE plpgsql;
 
 ---
 
-### פאזה 3 ✅ — Dashboard + Management
+### פאזה 3 ⬜ — Dashboard + Management
 
 **המטרה:** Admin רואה ומנהל את כל ה-tenants. Support רואה activity log של tenant.
 
@@ -360,7 +360,7 @@ async function isFeatureEnabled(feature) {
 
 ---
 
-### פאזה 5 ✅ — Slug Routing + Future Prep
+### פאזה 5 ⬜ — Slug Routing + Future Prep
 
 **המטרה:** routing חסין-תקלות + טבלאות מוכנות ל-B2B ו-Storefront.
 
@@ -426,7 +426,7 @@ CREATE TABLE storefront_config (
 
 ---
 
-### פאזת QA ✅ — Full Test
+### פאזת QA ⬜ — Full Test
 
 **בדיקות:**
 

@@ -1,5 +1,5 @@
 -- Module 2: Platform Admin — DB Schema
--- Last updated: 2026-03-26 (MODULE COMPLETE — QA passed 88/92)
+-- Last updated: 2026-03-26 (Phase 4 complete)
 -- This reflects the ACTUAL deployed schema including all RPCs and RLS policies.
 
 -- ============================================================

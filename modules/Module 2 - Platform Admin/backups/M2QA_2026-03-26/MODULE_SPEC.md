@@ -1,7 +1,7 @@
 # Module 2 — Platform Admin — Module Spec
 
 > **Authority:** Current state of Module 2. Updated at end of each phase.
-> **Last updated:** 2026-03-26 (QA complete — MODULE COMPLETE ✅)
+> **Last updated:** 2026-03-26 (Phase 5 complete)
 
 ---
 
@@ -186,34 +186,3 @@ super_admin (3) > support (2) > viewer (1)
 - All action RPCs are SECURITY DEFINER — bypass RLS for cross-tenant operations
 - Suspended tenant blocking: shared.js checks tenant status on every ERP page load
 - Panel tab routing: admin-app.js manages tab switching, delegates content rendering to detail/activity/audit files
-
----
-
-## 6. QA Status
-
-**92 tests across 13 categories: 88 PASS / 0 FAIL / 4 SKIP**
-
-| Category | Tests | Result |
-|----------|-------|--------|
-| Admin Auth | 8 | 7 PASS, 1 SKIP |
-| Multi-Admin Roles | 6 | 6 PASS |
-| Tenant Provisioning | 10 | 10 PASS |
-| Dashboard + Management | 12 | 12 PASS |
-| Plan Limits | 9 | 7 PASS, 2 SKIP |
-| Feature Flags | 8 | 7 PASS, 1 SKIP |
-| Slug Routing | 10 | 10 PASS |
-| Activity & Audit Logs | 6 | 6 PASS |
-| Plans CRUD | 5 | 5 PASS |
-| last_active | 2 | 2 PASS |
-| Backward Compatibility | 8 | 8 PASS |
-| Mobile + RTL | 4 | 4 PASS |
-| Tenant Isolation | 4 | 4 PASS |
-
-### Test Artifacts (live in Supabase)
-- **test-store-qa**: tenant with basic plan, slug=test-store-qa, PIN=99999
-- **test-store-v2**: tenant with basic plan (created during provisioning tests)
-- **support@test.opticup.co.il**: platform admin, role=support
-- **viewer@test.opticup.co.il**: platform admin, role=viewer
-- **qa-test-plan**: deactivated test plan
-
-### Module 2 Status: COMPLETE ✅
