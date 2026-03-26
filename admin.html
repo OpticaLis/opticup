@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optic Up — Platform Admin</title>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="shared/css/variables.css">
+  <link rel="stylesheet" href="shared/css/layout.css">
+  <link rel="stylesheet" href="shared/css/components.css">
+  <link rel="stylesheet" href="shared/css/forms.css">
+  <link rel="stylesheet" href="shared/css/modal.css">
+  <link rel="stylesheet" href="shared/css/toast.css">
+
+  <style>
+    /* --- Login Screen --- */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--color-gray-50);
+    }
+
+    .admin-login-card {
+      background: var(--color-white);
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .admin-logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .admin-logo h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin: 0;
+    }
+
+    .admin-logo p {
+      font-size: 0.875rem;
+      color: var(--color-gray-500);
+      margin: 0.25rem 0 0;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .login-form input {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--color-gray-300);
+      border-radius: 8px;
+      font-size: 1rem;
+      direction: ltr;
+      text-align: left;
+    }
+
+    .login-form input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    .login-error {
+      color: var(--color-error);
+      font-size: 0.875rem;
+      text-align: center;
+      min-height: 1.25rem;
+    }
+
+    /* --- Admin Header --- */
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--color-white);
+      border-bottom: 1px solid var(--color-gray-200);
+      padding: 0.75rem 1.5rem;
+    }
+
+    .admin-header h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin: 0;
+    }
+
+    .admin-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    #admin-name {
+      font-size: 0.875rem;
+      color: var(--color-gray-700);
+    }
+
+    #admin-role {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+
+    /* --- Welcome --- */
+    .admin-welcome {
+      text-align: center;
+      padding: 4rem 1rem;
+    }
+
+    .admin-welcome h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-gray-900);
+      margin: 0 0 0.5rem;
+    }
+
+    .admin-welcome p {
+      color: var(--color-gray-500);
+      margin: 0.25rem 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="login-screen">
+    <div class="admin-login-card">
+      <div class="admin-logo">
+        <h1>Optic Up</h1>
+        <p>Platform Admin</p>
+      </div>
+      <div class="login-form">
+        <input type="email" id="admin-email" placeholder="אימייל" autocomplete="email">
+        <input type="password" id="admin-password" placeholder="סיסמה" autocomplete="current-password">
+        <button id="admin-login-btn" class="btn btn-primary btn-lg" style="width:100%;">כניסה</button>
+        <div id="login-error" class="login-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Panel (hidden until login) -->
+  <div id="admin-panel" style="display:none;">
+    <header class="admin-header">
+      <div class="admin-header-right">
+        <h2>Optic Up Admin</h2>
+      </div>
+      <div class="admin-header-left">
+        <span id="admin-name"></span>
+        <span id="admin-role"></span>
+        <button id="admin-logout-btn" class="btn btn-ghost">התנתק</button>
+      </div>
+    </header>
+
+    <main id="admin-content">
+      <div class="admin-welcome">
+        <h2>שלום, <span id="welcome-name"></span></h2>
+        <p>ברוכים הבאים ל-Platform Admin</p>
+        <p style="color: var(--color-gray-400);">Dashboard, ניהול tenants, ותוכניות — בפאזות הבאות</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Shared JS Components -->
+  <script src="shared/js/toast.js"></script>
+  <script src="shared/js/modal-builder.js"></script>
+
+  <!-- Admin JS -->
+  <script src="modules/admin-platform/admin-auth.js"></script>
+  <script src="modules/admin-platform/admin-db.js"></script>
+  <script src="modules/admin-platform/admin-audit.js"></script>
+  <script src="modules/admin-platform/admin-app.js"></script>
+</body>
+</html>
