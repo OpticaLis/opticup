@@ -150,7 +150,7 @@ async function openPlanEditor(planId) {
 
   Modal.show({
     title: title,
-    body: bodyHtml,
+    content: bodyHtml,
     size: 'lg',
     buttons: [
       { label: 'ביטול', variant: 'secondary', action: 'close' },
