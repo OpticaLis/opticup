@@ -150,7 +150,7 @@ CREATE POLICY provisioning_log_admin_read ON tenant_provisioning_log
   );
 
 -- ============================================================
--- tenants table extensions (10 new columns)
+-- tenants table extensions (9 new columns)
 -- ============================================================
 
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS plan_id UUID REFERENCES plans(id);
@@ -163,7 +163,6 @@ ALTER TABLE tenants ADD COLUMN IF NOT EXISTS owner_phone TEXT;
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES platform_admins(id);
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS suspended_reason TEXT;
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS last_active TIMESTAMPTZ;
 
 -- Migration: assign enterprise plan to existing tenants
 UPDATE tenants SET plan_id = (SELECT id FROM plans WHERE name = 'enterprise')

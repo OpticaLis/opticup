@@ -14,7 +14,7 @@
 | Employees | `employees.html` | Module 1 — Permissions | Standalone employee management (CRUD, role assignment) |
 | Shipments | `shipments.html` | Module 1 — Shipments | Box management: list, 3-step wizard, detail panel, courier settings |
 | Settings | `settings.html` | Module 1 — Settings | Tenant config: business info, financial settings, logo upload |
-| Platform Admin | `admin.html` | Module 2 — Platform Admin | Supabase Auth email+password login, admin panel shell. Separate world from ERP — no shared.js, no tenant context. |
+| Platform Admin | `admin.html` | Module 2 — Platform Admin | Supabase Auth login, full admin dashboard: tenant table, slide-in panel (4 tabs), audit log, provisioning wizard. Separate world from ERP — no shared.js, no tenant context. |
 
 ---
 
@@ -510,6 +510,14 @@ Pages modified for shared/ dependencies:
 | `create_tenant` | Platform Admin | `p_name, p_slug, p_owner_name, p_owner_email, p_plan_id, ...` | `UUID` | 10-step atomic provisioning (SECURITY DEFINER). Creates tenant + config + roles + permissions + employee + doc_types + payment_methods. |
 | `validate_slug` | Platform Admin | `p_slug TEXT` | `JSONB {valid, reason}` | Slug format (3-30 chars, a-z0-9-), 22 reserved words, uniqueness check (SECURITY DEFINER). |
 | `delete_tenant` | Platform Admin | `p_tenant_id UUID, p_deleted_by UUID` | `void` | Soft delete: status='deleted', deleted_at=now() (SECURITY DEFINER). |
+| `get_all_tenants_overview` | Platform Admin | — | `JSONB[]` | All non-deleted tenants with plan name, employee/inventory/supplier counts (SECURITY DEFINER). |
+| `get_tenant_stats` | Platform Admin | `p_tenant_id UUID` | `JSONB` | Single tenant resource counts: employees, inventory, suppliers, documents, brands (SECURITY DEFINER). |
+| `suspend_tenant` | Platform Admin | `p_tenant_id, p_reason, p_admin_id` | `void` | Verifies active, sets suspended + reason + audit (SECURITY DEFINER). |
+| `activate_tenant` | Platform Admin | `p_tenant_id, p_admin_id` | `void` | Verifies suspended/trial, sets active + audit (SECURITY DEFINER). |
+| `update_tenant` | Platform Admin | `p_tenant_id, p_updates JSONB, p_admin_id` | `void` | Whitelist field update with old/new audit diff (SECURITY DEFINER). |
+| `get_tenant_activity_log` | Platform Admin | `p_tenant_id, p_limit, p_offset, p_level, p_entity_type, p_date_from, p_date_to` | `JSONB {total, entries}` | Paginated activity_log per tenant (SECURITY DEFINER). |
+| `get_tenant_employees` | Platform Admin | `p_tenant_id UUID` | `JSONB[]` | Minimal employee list [{id, name}] for PIN reset (SECURITY DEFINER). |
+| `reset_employee_pin` | Platform Admin | `p_tenant_id, p_employee_id, p_new_pin, p_must_change, p_admin_id` | `void` | Reset PIN + unlock, audit (PIN not logged) (SECURITY DEFINER). |
 
 ### Edge Functions (Supabase)
 
@@ -623,6 +631,15 @@ Pages modified for shared/ dependencies:
 | `validateSlugRealtime` | admin-provisioning.js | `slug` | `void` | admin-provisioning.js (debounced slug input) |
 | `provisionTenant` | admin-provisioning.js | `params` | `void` | admin-provisioning.js (wizard onFinish) |
 | `checkMustChangePin` | auth-service.js | `employee` | `Promise<void>` | auth-service.js (end of initSecureSession) |
+| `hasAdminPermission` | admin-auth.js | `requiredRole` | `boolean` | admin-app.js, admin-tenant-detail.js (UI gating) |
+| `loadTenants` | admin-dashboard.js | — | `void` | admin-app.js (switchTab), admin-tenant-detail.js (refresh) |
+| `filterTenants` | admin-dashboard.js | — | `void` | admin-app.js (search/filter listeners) |
+| `initDashboard` | admin-dashboard.js | — | `void` | admin-app.js (switchTab first load) |
+| `loadTenantDetail` | admin-tenant-detail.js | `tenantId` | `void` | admin-app.js (openTenantPanel) |
+| `renderPanelTab` | admin-tenant-detail.js | `tabName` | `void` | admin-app.js (switchPanelTab) |
+| `loadTenantActivityLog` | admin-activity-viewer.js | `tenantId` | `void` | admin-tenant-detail.js (Tab 2) |
+| `loadPlatformAuditLog` | admin-audit.js | — | `void` | admin-app.js (switchTab 'audit') |
+| `showTenantBlocked` | shared.js (ERP) | `tenant` | `void` | index.html (resolveTenant), shared.js (DOMContentLoaded guard) |
 
 ### Shipments Config Contracts
 
@@ -691,19 +708,23 @@ Pages modified for shared/ dependencies:
 | `modules/inventory/inventory-table.js` | `toggleNoImagesFilter()` | Toggles client-side filter for items without images |
 
 | Module 1.5 — Shared Components | ✅ Complete (QA passed) | `shared/css/`, `shared/js/`, `shared/tests/`, `scripts/` | — | 1 (activity_log) + ui_config column + PK fixes on roles/permissions/role_permissions |
-| Module 2 — Platform Admin | Phase 2 ✅ | `modules/admin-platform/` | `admin.html` | 5 new tables + 4 RPCs + 10 columns on tenants/employees |
+| Module 2 — Platform Admin | Phase 3 ✅ | `modules/admin-platform/` | `admin.html` | 5 new tables + 12 RPCs + 10 columns on tenants/employees |
 
-### Module 2 — Platform Admin Files (Phase 1 + 2)
+### Module 2 — Platform Admin Files (Phase 1-3)
 
 | File | Lines | Description |
 |------|-------|-------------|
-| `admin.html` | 195 | Platform Admin HTML page — login, "חנות חדשה" wizard button, loads modal-wizard.js |
-| `modules/admin-platform/admin-auth.js` | 94 | adminSb client, login/logout/session, getCurrentAdmin, requireAdmin |
+| `admin.html` | 269 | Platform Admin: login, nav tabs (חנויות/Audit Log/הגדרות), tenant table, slide-in panel (4 tabs) |
+| `modules/admin-platform/admin-auth.js` | 105 | adminSb client, login/logout/session, getCurrentAdmin, requireAdmin, hasAdminPermission |
 | `modules/admin-platform/admin-db.js` | 63 | AdminDB wrapper (query, getById, insert, update, rpc) — no tenant_id |
-| `modules/admin-platform/admin-audit.js` | 20 | logAdminAction fire-and-forget audit logger |
+| `modules/admin-platform/admin-audit.js` | 143 | logAdminAction + platform audit log viewer with action filter (super_admin only) |
 | `modules/admin-platform/admin-provisioning.js` | 320 | 3-step wizard, slug auto-suggest + debounced validation, provisionTenant() RPC + logs |
-| `modules/admin-platform/admin-app.js` | 89 | App init, login/panel toggle, wires provisioning button |
-| `js/auth-service.js` (ERP — modified) | 341 | Added checkMustChangePin() — undismissible PIN change for new tenant employees |
+| `modules/admin-platform/admin-app.js` | 235 | Tab routing, panel open/close, search/filter wiring, role-based UI gating |
+| `modules/admin-platform/admin-dashboard.js` | 196 | Tenant table (TableBuilder), search, status/plan filters, sort, relative time |
+| `modules/admin-platform/admin-tenant-detail.js` | 355 | Slide-in panel: info/edit, suspend/activate/delete/reset PIN, provisioning log, audit log |
+| `modules/admin-platform/admin-activity-viewer.js` | 189 | Activity log per tenant: 4 filters, pagination 50/page |
+| `js/shared.js` (ERP — modified) | 337 | Phase 3k: showTenantBlocked() + DOMContentLoaded guard for suspended tenants |
+| `js/auth-service.js` (ERP — modified) | 341 | Phase 2: checkMustChangePin() — undismissible PIN change for new tenant employees |
 
 ---
 
@@ -825,7 +846,7 @@ Pages modified for shared/ dependencies:
 | `tenant_config` | Platform Admin — Config | id, tenant_id, key, value (JSONB), UNIQUE(tenant_id, key) | Per-tenant config, feature overrides (Phase 4) |
 | `tenant_provisioning_log` | Platform Admin — Provisioning | id, tenant_id, step, status, details (JSONB), error_message | createTenant RPC (Phase 2) |
 
-**tenants table extended with:** plan_id, status, trial_ends_at, owner_name, owner_email, owner_phone, created_by, suspended_reason, deleted_at
+**tenants table extended with:** plan_id, status, trial_ends_at, owner_name, owner_email, owner_phone, created_by, suspended_reason, deleted_at, last_active
 
 ---
 

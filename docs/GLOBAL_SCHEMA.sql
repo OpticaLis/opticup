@@ -2238,3 +2238,43 @@ CREATE POLICY provisioning_log_admin_insert ON tenant_provisioning_log
 -- delete_tenant(p_tenant_id, p_deleted_by) — soft delete
 -- Sets status='deleted', deleted_at=now()
 -- Full SQL in: modules/Module 2 - Platform Admin/docs/create_tenant_rpc.sql
+
+-- ============================================================
+-- Module 2: Platform Admin — Phase 3 (2026-03-26)
+-- ============================================================
+
+-- tenants.last_active column (Phase 3 fix)
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS last_active TIMESTAMPTZ;
+
+-- get_all_tenants_overview() → JSONB array
+-- All non-deleted tenants with plan name (LEFT JOIN), employees/inventory/suppliers counts.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3a-rpcs.sql
+
+-- get_tenant_stats(p_tenant_id UUID) → JSONB object
+-- Single tenant counts: employees, inventory, suppliers, documents, brands.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3a-rpcs.sql
+
+-- suspend_tenant(p_tenant_id, p_reason, p_admin_id) → void
+-- Verifies status='active', sets suspended + reason. Writes audit log.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3b-rpcs.sql
+
+-- activate_tenant(p_tenant_id, p_admin_id) → void
+-- Verifies status IN ('suspended','trial'), sets active. Writes audit log.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3b-rpcs.sql
+
+-- update_tenant(p_tenant_id, p_updates JSONB, p_admin_id) → void
+-- Whitelist: name, owner_name, owner_email, owner_phone, plan_id, trial_ends_at.
+-- Captures old values, applies per-field, writes audit with old+new diff.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3b-rpcs.sql
+
+-- get_tenant_activity_log(...) → JSONB {total, entries}
+-- Paginated activity_log for a tenant with optional filters.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3c-rpcs.sql
+
+-- get_tenant_employees(p_tenant_id) → JSONB array [{id, name}]
+-- Minimal employee list for PIN reset dropdown.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3c-rpcs.sql
+
+-- reset_employee_pin(p_tenant_id, p_employee_id, p_new_pin, p_must_change, p_admin_id) → void
+-- Verifies employee belongs to tenant, resets PIN + unlock. PIN not in audit.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3c-rpcs.sql

@@ -2,39 +2,6 @@
 
 ---
 
-## Phase 3 — Dashboard + Management (2026-03-26)
-
-### RPCs (SQL — run in Supabase Dashboard)
-- 10ce5da — get_all_tenants_overview(): JSONB array of all tenants with stats
-- 10ce5da — get_tenant_stats(tenant_id): 5 resource counts
-- 192b3b2 — suspend_tenant(tenant_id, reason, admin_id): set suspended + audit
-- 192b3b2 — activate_tenant(tenant_id, admin_id): set active + audit
-- 192b3b2 — update_tenant(tenant_id, updates, admin_id): whitelist update + audit with diff
-- 011436f — get_tenant_activity_log(...): paginated with 4 optional filters
-- 011436f — get_tenant_employees(tenant_id): minimal list for PIN reset
-- 011436f — reset_employee_pin(...): reset + unlock + audit (PIN not logged)
-
-### JS Files
-- 6aba3c1 — admin.html restructured: nav tabs, content areas, slide-in panel
-- 86c66f3 — admin-app.js: tab routing + panel lifecycle + filter wiring
-- 1c5c280 — admin-dashboard.js (NEW): tenant table, search, filters
-- 09c2d56 — admin-tenant-detail.js (NEW): slide-in panel, 4 tabs, edit, actions
-- b4854e9 — admin-activity-viewer.js (NEW): activity log viewer, filters, pagination
-- dc75687 — admin-audit.js expanded: platform audit log tab + action filter
-- 713084c — admin-auth.js: hasAdminPermission + global exports
-- 252409d — shared.js + index.html: suspended tenant blocking
-
-### Bug Fixes
-- last_active column added to tenants (was missing)
-- window.allTenants exposed globally (admin-dashboard.js)
-- c23d73f — edit save/cancel stale closure references fixed
-- c23d73f — suspend modal confirm button binding fixed (setTimeout → immediate)
-
-### Verification (Phase 3l)
-14 end-to-end tests: login, tenant table, search/filters, slide-in panel, details/edit, activity log, provisioning log, audit log, platform audit tab, suspend→block→activate, reset PIN, חנות חדשה, backward compatibility. 12/14 fully passed, 2 passed with bugs fixed in c23d73f.
-
----
-
 ## Phase 2 — Tenant Provisioning (2026-03-26)
 
 ### Commits

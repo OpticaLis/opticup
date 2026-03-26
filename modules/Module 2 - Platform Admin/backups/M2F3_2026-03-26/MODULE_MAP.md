@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in Module 2.
 > Updated every commit that adds/changes code.
-> Last updated: 2026-03-26 (Phase 3 complete)
+> Last updated: 2026-03-26 (Phase 3k)
 
 ---
 
@@ -10,14 +10,14 @@
 
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
-| 1 | admin.html | `/admin.html` | 269 | Platform Admin HTML page. Login screen + full dashboard layout. Header (logo + admin name/role + logout), nav tabs (חנויות/Audit Log/הגדרות), toolbar (new tenant + search + filters), content areas (tenants/audit/settings), slide-in panel (tenant detail with 4 tabs). Loads shared/css/ (8 files), shared/js/ (toast, modal-builder, modal-wizard, table-builder), 5 admin JS files. |
+| 1 | admin.html | `/admin.html` | 258 | Platform Admin HTML page. Login screen + full dashboard layout. Header (logo + admin name/role + logout), nav tabs (חנויות/Audit Log/הגדרות), toolbar (new tenant + search + filters), content areas (tenants/audit/settings), slide-in panel (tenant detail with 4 tabs). Loads shared/css/ (8 files), shared/js/ (toast, modal-builder, modal-wizard, table-builder), 5 admin JS files. |
 | 2 | admin-auth.js | `/modules/admin-platform/admin-auth.js` | 105 | Supabase client for admin context (adminSb). Login, logout, session check, getCurrentAdmin, requireAdmin, hasAdminPermission. ROLE_LEVELS constant. Exposes: getCurrentAdmin, hasAdminPermission. |
 | 3 | admin-db.js | `/modules/admin-platform/admin-db.js` | 63 | AdminDB global object. Lightweight DB wrapper with no tenant_id injection. Methods: query, getById, insert, update, rpc. All use adminSb. |
 | 4 | admin-audit.js | `/modules/admin-platform/admin-audit.js` | 143 | logAdminAction() audit logger + platform audit log viewer (top-level Audit Log tab). Action filter, Hebrew labels, admin+tenant JOINs. super_admin only. Exposes: loadPlatformAuditLog. |
 | 5 | admin-provisioning.js | `/modules/admin-platform/admin-provisioning.js` | 320 | 3-step wizard (store details → plan+PIN → summary). Slug auto-suggest + debounced real-time validation via validate_slug RPC. provisionTenant() calls create_tenant RPC, logs to provisioning_log + audit. Credentials modal on success. |
-| 6 | admin-app.js | `/modules/admin-platform/admin-app.js` | 235 | App init + tab routing + panel open/close. DOMContentLoaded → session check → showAdminPanel or showLoginScreen. switchTab (tenants/audit/settings), openTenantPanel/closeTenantPanel, switchPanelTab, search+filter event wiring. Exposes globals: switchTab, openTenantPanel, closeTenantPanel, switchPanelTab, selectedTenantId. |
-| 7 | admin-dashboard.js | `/modules/admin-platform/admin-dashboard.js` | 196 | Tenant list table + filters + search. loadTenants() calls get_all_tenants_overview RPC, filterTenants() applies client-side search/status/plan filters, renderTenantsTable() uses TableBuilder. Sort, relative time, plan filter population. Exposes: loadTenants, filterTenants, initDashboard. |
-| 8 | admin-tenant-detail.js | `/modules/admin-platform/admin-tenant-detail.js` | 355 | Slide-in panel content. loadTenantDetail loads stats + renders header. Tab 1 (info/edit/actions): details view, edit mode, suspend/activate/delete/reset PIN. Tab 3 (provisioning log). Tab 4 (audit log, super_admin only). Exposes: loadTenantDetail, renderPanelTab. |
+| 6 | admin-app.js | `/modules/admin-platform/admin-app.js` | 229 | App init + tab routing + panel open/close. DOMContentLoaded → session check → showAdminPanel or showLoginScreen. switchTab (tenants/audit/settings), openTenantPanel/closeTenantPanel, switchPanelTab, search+filter event wiring. Exposes globals: switchTab, openTenantPanel, closeTenantPanel, switchPanelTab, selectedTenantId. |
+| 7 | admin-dashboard.js | `/modules/admin-platform/admin-dashboard.js` | 194 | Tenant list table + filters + search. loadTenants() calls get_all_tenants_overview RPC, filterTenants() applies client-side search/status/plan filters, renderTenantsTable() uses TableBuilder. Sort, relative time, plan filter population. Exposes: loadTenants, filterTenants, initDashboard. |
+| 8 | admin-tenant-detail.js | `/modules/admin-platform/admin-tenant-detail.js` | 353 | Slide-in panel content. loadTenantDetail loads stats + renders header. Tab 1 (info/edit/actions): details view, edit mode, suspend/activate/delete/reset PIN. Tab 3 (provisioning log). Tab 4 (audit log, super_admin only). Exposes: loadTenantDetail, renderPanelTab. |
 | 9 | admin-activity-viewer.js | `/modules/admin-platform/admin-activity-viewer.js` | 189 | Activity log viewer per tenant (Tab 2). Filters: date range, entity type, level. Paginated 50/page via get_tenant_activity_log RPC. Exposes: loadTenantActivityLog. |
 | 10 | shared.js (ERP) | `/js/shared.js` | 337 | MODIFIED in Phase 3k: added showTenantBlocked() + DOMContentLoaded guard for non-index pages. Blocks suspended/deleted tenants with undismissible overlay. |
 | 11 | index.html (ERP) | `/index.html` | ~400 | MODIFIED in Phase 3k: resolveTenant() now checks tenant.status, calls showTenantBlocked() for suspended/deleted. |
@@ -84,8 +84,8 @@
 | `loadTenantDetail` | 29 | tenantId | void | Load stats, find tenant in allTenants, render header + info tab |
 | `renderPanelTab` | 63 | tabName | void | Route to info/activity/provisioning/audit tab renderer |
 | `_renderDetailsTab` | 73 | container, actionsEl | void | Info display + edit button + action buttons |
-| `_enterEditMode` | 148 | — | void | Gets fresh DOM refs, replaces info with input fields + save/cancel |
-| `_saveChanges` | 168 | — | void | Collect diffs, call update_tenant RPC, _refreshAfterAction re-renders |
+| `_enterEditMode` | 127 | container, actionsEl | void | Replace info with input fields + save/cancel |
+| `_saveChanges` | 143 | container, actionsEl | void | Collect diffs, call update_tenant RPC, refresh |
 | `_suspendTenant` | 162 | — | void | Modal with reason textarea, call suspend_tenant RPC |
 | `_activateTenant` | 181 | — | void | Modal.confirm, call activate_tenant RPC |
 | `_deleteTenant` | 195 | — | void | Modal.danger (type slug), call delete_tenant RPC, close panel |
@@ -162,8 +162,8 @@
 | `tenant_config` | Per-tenant | id, tenant_id, key, value (JSONB), UNIQUE(tenant_id, key) |
 | `tenant_provisioning_log` | Per-tenant ref (nullable) | id, tenant_id, step, status, details (JSONB), error_message |
 
-### tenants table extensions (10 columns added in Phase 1 + 3)
-plan_id, status, trial_ends_at, owner_name, owner_email, owner_phone, created_by, suspended_reason, deleted_at, last_active
+### tenants table extensions (9 columns added in Phase 1)
+plan_id, status, trial_ends_at, owner_name, owner_email, owner_phone, created_by, suspended_reason, deleted_at
 
 ### employees table extension (Phase 2)
 must_change_pin (BOOLEAN DEFAULT false)

@@ -4,15 +4,18 @@
 2026-03-26
 
 ## What Was Done This Session
-Phase 2 complete — Tenant Provisioning:
-- 3 RPCs: create_tenant (10-step atomic provisioning), validate_slug (format+reserved+unique), delete_tenant (soft delete)
-- admin-provisioning.js (320 lines): 3-step wizard (store details → plan+PIN → summary), slug auto-suggest + debounced real-time validation, provisionTenant() with audit + provisioning logs
-- must_change_pin flow in auth-service.js: undismissible PIN change overlay on first login for new tenant employees
-- employees.must_change_pin column added
-- tenant_provisioning_log.tenant_id made nullable (for failure logging)
-- provisioning_log INSERT RLS policy added for admins
-- Modal fix: credentials modal switched from Modal.alert (escapes HTML) to Modal.show
-- Full verification: 12/12 tests passed
+Phase 3 complete — Dashboard + Management:
+- 8 RPCs: get_all_tenants_overview, get_tenant_stats, get_tenant_activity_log, suspend_tenant, activate_tenant, update_tenant, reset_employee_pin, get_tenant_employees
+- admin-dashboard.js (196 lines): tenant table with TableBuilder, search (name/slug), status/plan filters, sort
+- admin-tenant-detail.js (355 lines): slide-in panel (480px, RTL), 4 tabs (details/activity/provisioning/audit), edit mode, suspend/activate/delete/reset PIN actions
+- admin-activity-viewer.js (189 lines): activity log per tenant with 4 filters (date range, entity type, level) + pagination (50/page)
+- admin-audit.js expanded (20→143 lines): platform audit log viewer with action filter + Hebrew labels
+- admin-app.js expanded (89→235 lines): tab routing, panel open/close, filter event wiring
+- admin-auth.js expanded (94→105 lines): hasAdminPermission() + global exports
+- admin.html restructured (195→269 lines): nav tabs, content areas, toolbar, slide-in panel container
+- Role enforcement: super_admin/support/viewer UI gating
+- Suspended tenant blocking: shared.js + index.html check tenant status, show undismissible overlay
+- Bug fixes: last_active column added, window.allTenants exposed, edit save/cancel stale closures fixed, suspend modal binding fixed
 
 ## Commits
 ### Phase 1 (DB + Admin Auth)
@@ -27,18 +30,32 @@ Phase 2 complete — Tenant Provisioning:
 - 3624239 — Module 2 Phase 2f: must_change_pin flow after first login
 - 92eb89d — Fix credentials modal HTML rendering (Modal.alert → Modal.show)
 
+### Phase 3 (Dashboard + Management)
+- 10ce5da — Phase 3a: get_all_tenants_overview + get_tenant_stats RPCs
+- 192b3b2 — Phase 3b: suspend_tenant + activate_tenant + update_tenant RPCs
+- 011436f — Phase 3c: get_tenant_activity_log + get_tenant_employees + reset_employee_pin RPCs
+- 6aba3c1 — Phase 3d: admin.html restructure — nav tabs, content areas, slide-in panel
+- 86c66f3 — Phase 3e: admin-app.js — tab routing, panel open/close, filter listeners
+- 1c5c280 — Phase 3f: admin-dashboard.js — tenant table, filters, search
+- 09c2d56 — Phase 3g: admin-tenant-detail.js — slide-in panel with info/edit/actions
+- b4854e9 — Phase 3h: admin-activity-viewer.js — activity log per tenant
+- dc75687 — Phase 3i: admin-audit.js — platform audit log viewer
+- 713084c — Phase 3j: role enforcement — hasAdminPermission + UI gating
+- 252409d — Phase 3k: suspended/deleted tenant blocking in ERP
+- c23d73f — Phase 3: fix edit save/cancel re-render + modal confirm binding
+
 ## Current State
-- admin.html: login, logout, session persistence, audit logging, "חנות חדשה" wizard
-- Tenant provisioning: 3-step wizard → create_tenant RPC → 57 permissions, 5 roles, admin employee, 5 doc types, 5 payment methods, 6 config entries
-- New tenant employees: forced PIN change on first login (must_change_pin=true)
-- Soft delete RPC ready (no UI yet — Phase 3)
-- Test tenant created and verified: test-store-v2 (basic plan)
+- admin.html: full dashboard with login, nav tabs (חנויות/Audit Log/הגדרות), tenant table, slide-in panel with 4 tabs
+- 9 files in modules/admin-platform/ (total ~1,806 lines)
+- 12 RPCs live in Supabase (4 from Phase 1-2 + 8 from Phase 3)
+- Role enforcement: 3-tier (super_admin > support > viewer) with UI gating
+- Suspended tenant blocking on all ERP pages via shared.js
+- last_active column added to tenants table
 
 ## Known Issues
-- Hebrew-only tenant names produce empty slug (slugify removes non-Latin) — manual slug entry works fine
-- Admin cannot read tenant-scoped ERP tables (roles, permissions, employees) due to RLS — by design (tenant data isolation)
-- RLS on platform_admins uses SECURITY DEFINER function is_platform_super_admin() to avoid infinite recursion
-- audit_log INSERT policy uses WITH CHECK (true) — acceptable since admin_id is set by code
+- Hebrew-only tenant names produce empty slug (manual entry works) — from Phase 2
+- admin-tenant-detail.js at 355 lines — slightly over 350, may need split if more features added
+- last_active column exists but never updated (no mechanism to set it on tenant login yet)
 
 ## Next Steps
-1. **Phase 3:** Dashboard + Management — tenant list table, edit tenant details, suspend/activate, activity log viewer per tenant
+1. **Phase 4:** Plans & Limits — plans CRUD, checkPlanLimit(), isFeatureEnabled(), feature flags
