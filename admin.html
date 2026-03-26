@@ -188,7 +188,7 @@
     <nav class="admin-tabs">
       <button class="admin-tab active" data-tab="tenants" id="tab-tenants">חנויות</button>
       <button class="admin-tab" data-tab="audit" id="tab-audit">Audit Log</button>
-      <button class="admin-tab" data-tab="settings" id="tab-settings" disabled title="בפאזה הבאה">הגדרות</button>
+      <button class="admin-tab" data-tab="settings" id="tab-settings">הגדרות</button>
     </nav>
 
     <!-- Content: Tenants -->
@@ -221,7 +221,7 @@
 
     <!-- Content: Settings (placeholder) -->
     <div id="content-settings" style="display:none;">
-      <div class="content-placeholder">ניהול תוכניות — בפאזה הבאה</div>
+      <div class="admin-content-area" id="settings-content-area"></div>
     </div>
   </div>
 
@@ -264,6 +264,7 @@
   <script src="modules/admin-platform/admin-dashboard.js"></script>
   <script src="modules/admin-platform/admin-tenant-detail.js"></script>
   <script src="modules/admin-platform/admin-activity-viewer.js"></script>
+  <script src="modules/admin-platform/admin-plans.js"></script>
   <script src="modules/admin-platform/admin-app.js"></script>
 </body>
 </html>

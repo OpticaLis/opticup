@@ -172,6 +172,8 @@ function switchTab(tabName) {
     window.initDashboard();
   } else if (tabName === 'audit' && typeof window.loadPlatformAuditLog === 'function') {
     window.loadPlatformAuditLog();
+  } else if (tabName === 'settings' && typeof window.loadPlansTab === 'function') {
+    window.loadPlansTab();
   }
 }
 
