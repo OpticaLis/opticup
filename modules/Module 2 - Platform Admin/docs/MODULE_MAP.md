@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in Module 2.
 > Updated every commit that adds/changes code.
-> Last updated: 2026-03-26 (Phase 3f)
+> Last updated: 2026-03-26 (Phase 3g)
 
 ---
 
@@ -17,7 +17,8 @@
 | 5 | admin-provisioning.js | `/modules/admin-platform/admin-provisioning.js` | 320 | 3-step wizard (store details → plan+PIN → summary). Slug auto-suggest + debounced real-time validation via validate_slug RPC. provisionTenant() calls create_tenant RPC, logs to provisioning_log + audit. Credentials modal on success. |
 | 6 | admin-app.js | `/modules/admin-platform/admin-app.js` | 229 | App init + tab routing + panel open/close. DOMContentLoaded → session check → showAdminPanel or showLoginScreen. switchTab (tenants/audit/settings), openTenantPanel/closeTenantPanel, switchPanelTab, search+filter event wiring. Exposes globals: switchTab, openTenantPanel, closeTenantPanel, switchPanelTab, selectedTenantId. |
 | 7 | admin-dashboard.js | `/modules/admin-platform/admin-dashboard.js` | 194 | Tenant list table + filters + search. loadTenants() calls get_all_tenants_overview RPC, filterTenants() applies client-side search/status/plan filters, renderTenantsTable() uses TableBuilder. Sort, relative time, plan filter population. Exposes: loadTenants, filterTenants, initDashboard. |
-| 8 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
+| 8 | admin-tenant-detail.js | `/modules/admin-platform/admin-tenant-detail.js` | 353 | Slide-in panel content. loadTenantDetail loads stats + renders header. Tab 1 (info/edit/actions): details view, edit mode, suspend/activate/delete/reset PIN. Tab 3 (provisioning log). Tab 4 (audit log, super_admin only). Exposes: loadTenantDetail, renderPanelTab. |
+| 9 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
 
 ---
 
@@ -71,6 +72,21 @@
 | `formatRelativeTime` | 139 | dateString | string | Relative time in Hebrew (דקות/שעות/ימים) or DD/MM/YYYY |
 | `populatePlanFilter` | 159 | — | void | Load plans from DB, populate #filter-plan dropdown |
 
+### Admin Tenant Detail (admin-tenant-detail.js)
+| Function | Line | Parameters | Returns | Description |
+|----------|------|-----------|---------|-------------|
+| `loadTenantDetail` | 29 | tenantId | void | Load stats, find tenant in allTenants, render header + info tab |
+| `renderPanelTab` | 63 | tabName | void | Route to info/activity/provisioning/audit tab renderer |
+| `_renderDetailsTab` | 73 | container, actionsEl | void | Info display + edit button + action buttons |
+| `_enterEditMode` | 127 | container, actionsEl | void | Replace info with input fields + save/cancel |
+| `_saveChanges` | 143 | container, actionsEl | void | Collect diffs, call update_tenant RPC, refresh |
+| `_suspendTenant` | 162 | — | void | Modal with reason textarea, call suspend_tenant RPC |
+| `_activateTenant` | 181 | — | void | Modal.confirm, call activate_tenant RPC |
+| `_deleteTenant` | 195 | — | void | Modal.danger (type slug), call delete_tenant RPC, close panel |
+| `_resetEmployeePin` | 210 | — | void | Load employees, Modal.form with dropdown + PIN, call reset_employee_pin RPC |
+| `_renderProvisioningTab` | 234 | container | void | Query tenant_provisioning_log, render simple table |
+| `_renderTenantAuditTab` | 257 | container | void | Query platform_audit_log for tenant, super_admin only |
+
 ### Admin App (admin-app.js)
 | Function | Line | Parameters | Returns | Description |
 |----------|------|-----------|---------|-------------|
@@ -109,6 +125,9 @@
 | `allTenants` | let array | admin-dashboard.js | Cached tenant overview data from RPC |
 | `_tenantsTable` | let TableInstance/null | admin-dashboard.js | TableBuilder instance for tenant list |
 | `_dashboardInited` | let boolean | admin-dashboard.js | One-time init guard |
+| `_currentTenant` | let object/null | admin-tenant-detail.js | Currently loaded tenant data |
+| `_currentStats` | let object/null | admin-tenant-detail.js | get_tenant_stats result for current tenant |
+| `_plansMap` | let object/null | admin-tenant-detail.js | Plans cache: id → {display_name, limits, features} |
 | `_slugDebounceTimer` | let number/null | admin-provisioning.js | Slug validation debounce timer |
 | `_slugValid` | let boolean | admin-provisioning.js | Current slug validation state |
 | `_plansCache` | let array/null | admin-provisioning.js | Cached plans from DB (loaded once) |
