@@ -2,40 +2,6 @@
 
 ---
 
-## Phase 4 — Plans & Limits (2026-03-26)
-
-### RPCs (SQL — run in Supabase Dashboard)
-- dde14ad — check_plan_limit(p_tenant_id, p_resource): counts usage vs plan limits, returns {allowed, current, limit, remaining, message}
-- dde14ad — is_feature_enabled(p_tenant_id, p_feature): priority check tenant_config overrides → plan features → fail-safe true
-
-### JS Files (New)
-- 5f06d77 — shared/js/plan-helpers.js (107 lines): checkPlanLimit, isFeatureEnabled, getPlanLimits, getPlanFeatures, invalidatePlanCache with 30s cache
-- 2c0d4e3 — admin-plans.js (261 lines): Plans CRUD in הגדרות tab, edit modal with 7 limits + 17 features + prices
-- 10f9b0b — admin-feature-overrides.js (97 lines): per-tenant feature override UI (3-state selects)
-
-### JS Files (Modified)
-- 70a3743 — employee-list.js, inventory-entry.js, suppliers.js, debt-doc-new.js, ai-ocr.js: checkPlanLimit calls before creation
-- 70a3743 — employees.html, inventory.html, suppliers-debt.html: plan-helpers.js script tags added
-- 911d430 — index.html: data-feature attrs on 3 module cards + applyFeatureFlags() + plan-helpers.js loaded
-- 911d430 — inventory.html: data-feature attrs on access-sync + stock-count tabs + applyFeatureFlags()
-- 911d430 — ai-ocr.js: isFeatureEnabled('ocr') check in _injectOCRToolbarBtn
-- 911d430 — inventory-images-bg.js: isFeatureEnabled('image_studio') check in _bgRemoveStart
-- 2c0d4e3 — admin-app.js: settings tab routing to loadPlansTab()
-- 2c0d4e3 — admin.html: admin-plans.js script tag + settings tab enabled
-- 10f9b0b — admin-tenant-detail.js: feature overrides container + renderFeatureOverrides call
-- 10f9b0b — admin.html: admin-feature-overrides.js script tag
-
-### Edge Function
-- 04ea518 — pin-auth/index.ts: last_active update on successful PIN verification (requires redeployment)
-
-### Bug Fixes
-- e27bebc — admin-plans.js: Modal.show body→content property fix (form was not rendering)
-
-### Verification (Phase 4h)
-6 end-to-end tests: ERP page load (4 pages, zero errors), plan-helpers functions exist on window, checkPlanLimit returns correct structure, feature flags display, plans tab + edit modal, last_active updates on login. 5/6 passed initially, 1 bug found (Modal property) and fixed.
-
----
-
 ## Phase 3 — Dashboard + Management (2026-03-26)
 
 ### RPCs (SQL — run in Supabase Dashboard)

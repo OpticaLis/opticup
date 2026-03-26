@@ -518,6 +518,8 @@ Pages modified for shared/ dependencies:
 | `get_tenant_activity_log` | Platform Admin | `p_tenant_id, p_limit, p_offset, p_level, p_entity_type, p_date_from, p_date_to` | `JSONB {total, entries}` | Paginated activity_log per tenant (SECURITY DEFINER). |
 | `get_tenant_employees` | Platform Admin | `p_tenant_id UUID` | `JSONB[]` | Minimal employee list [{id, name}] for PIN reset (SECURITY DEFINER). |
 | `reset_employee_pin` | Platform Admin | `p_tenant_id, p_employee_id, p_new_pin, p_must_change, p_admin_id` | `void` | Reset PIN + unlock, audit (PIN not logged) (SECURITY DEFINER). |
+| `check_plan_limit` | Platform Admin | `p_tenant_id UUID, p_resource TEXT` | `JSONB` | Counts usage vs plan limits. Returns {allowed, current, limit, remaining, message}. Fail-safe: unlimited if no plan (SECURITY DEFINER). |
+| `is_feature_enabled` | Platform Admin | `p_tenant_id UUID, p_feature TEXT` | `BOOLEAN` | Priority: tenant_config overrides → plan.features → true. Fail-safe (SECURITY DEFINER). |
 
 ### Edge Functions (Supabase)
 
@@ -640,6 +642,14 @@ Pages modified for shared/ dependencies:
 | `loadTenantActivityLog` | admin-activity-viewer.js | `tenantId` | `void` | admin-tenant-detail.js (Tab 2) |
 | `loadPlatformAuditLog` | admin-audit.js | — | `void` | admin-app.js (switchTab 'audit') |
 | `showTenantBlocked` | shared.js (ERP) | `tenant` | `void` | index.html (resolveTenant), shared.js (DOMContentLoaded guard) |
+| `loadPlansTab` | admin-plans.js | — | `void` | admin-app.js (switchTab 'settings') |
+| `openPlanEditor` | admin-plans.js | `planId?` | `void` | admin-plans.js (table row click, new plan button) |
+| `renderFeatureOverrides` | admin-feature-overrides.js | `tenantId, planId, container` | `void` | admin-tenant-detail.js (Tab 1 details) |
+| `checkPlanLimit` | plan-helpers.js | `resource` | `{ allowed, current, limit, remaining, message }` | 5 ERP modules (employee-list, inventory-entry, suppliers, debt-doc-new, ai-ocr) |
+| `isFeatureEnabled` | plan-helpers.js | `feature` | `boolean` | ai-ocr.js, inventory-images-bg.js |
+| `getPlanLimits` | plan-helpers.js | — | `object` | ERP pages (future use) |
+| `getPlanFeatures` | plan-helpers.js | — | `object` | index.html, inventory.html (applyFeatureFlags) |
+| `invalidatePlanCache` | plan-helpers.js | — | `void` | Admin panel after plan changes (future) |
 
 ### Shipments Config Contracts
 
@@ -708,21 +718,24 @@ Pages modified for shared/ dependencies:
 | `modules/inventory/inventory-table.js` | `toggleNoImagesFilter()` | Toggles client-side filter for items without images |
 
 | Module 1.5 — Shared Components | ✅ Complete (QA passed) | `shared/css/`, `shared/js/`, `shared/tests/`, `scripts/` | — | 1 (activity_log) + ui_config column + PK fixes on roles/permissions/role_permissions |
-| Module 2 — Platform Admin | Phase 3 ✅ | `modules/admin-platform/` | `admin.html` | 5 new tables + 12 RPCs + 10 columns on tenants/employees |
+| Module 2 — Platform Admin | Phase 4 ✅ | `modules/admin-platform/` | `admin.html` | 5 new tables + 14 RPCs + 10 columns on tenants/employees. Plans CRUD, plan limits, feature flags. |
 
-### Module 2 — Platform Admin Files (Phase 1-3)
+### Module 2 — Platform Admin Files (Phase 1-4)
 
 | File | Lines | Description |
 |------|-------|-------------|
-| `admin.html` | 269 | Platform Admin: login, nav tabs (חנויות/Audit Log/הגדרות), tenant table, slide-in panel (4 tabs) |
+| `admin.html` | 271 | Platform Admin: login, nav tabs (חנויות/Audit Log/הגדרות), tenant table, slide-in panel (4 tabs), plans management |
 | `modules/admin-platform/admin-auth.js` | 105 | adminSb client, login/logout/session, getCurrentAdmin, requireAdmin, hasAdminPermission |
 | `modules/admin-platform/admin-db.js` | 63 | AdminDB wrapper (query, getById, insert, update, rpc) — no tenant_id |
 | `modules/admin-platform/admin-audit.js` | 143 | logAdminAction + platform audit log viewer with action filter (super_admin only) |
 | `modules/admin-platform/admin-provisioning.js` | 320 | 3-step wizard, slug auto-suggest + debounced validation, provisionTenant() RPC + logs |
-| `modules/admin-platform/admin-app.js` | 235 | Tab routing, panel open/close, search/filter wiring, role-based UI gating |
+| `modules/admin-platform/admin-app.js` | 237 | Tab routing (incl. settings→loadPlansTab), panel open/close, search/filter wiring |
 | `modules/admin-platform/admin-dashboard.js` | 196 | Tenant table (TableBuilder), search, status/plan filters, sort, relative time |
-| `modules/admin-platform/admin-tenant-detail.js` | 355 | Slide-in panel: info/edit, suspend/activate/delete/reset PIN, provisioning log, audit log |
+| `modules/admin-platform/admin-tenant-detail.js` | 361 | Slide-in panel: info/edit + feature overrides, suspend/activate/delete/reset PIN |
+| `modules/admin-platform/admin-plans.js` | 261 | Plans CRUD in הגדרות tab: table + edit modal (limits/features/prices). FEATURE_LABELS. |
+| `modules/admin-platform/admin-feature-overrides.js` | 97 | Per-tenant feature override UI: 17 features × 3-state. Upserts tenant_config. |
 | `modules/admin-platform/admin-activity-viewer.js` | 189 | Activity log per tenant: 4 filters, pagination 50/page |
+| `shared/js/plan-helpers.js` | 107 | checkPlanLimit, isFeatureEnabled, getPlanLimits, getPlanFeatures, invalidatePlanCache (30s cache) |
 | `js/shared.js` (ERP — modified) | 337 | Phase 3k: showTenantBlocked() + DOMContentLoaded guard for suspended tenants |
 | `js/auth-service.js` (ERP — modified) | 341 | Phase 2: checkMustChangePin() — undismissible PIN change for new tenant employees |
 
