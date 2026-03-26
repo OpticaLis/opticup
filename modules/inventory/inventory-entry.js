@@ -232,11 +232,18 @@ async function submitEntry() {
     let attempt = 0;
     while (attempt < 3) {
       const currentRows = attempt === 0 ? rows : getEntryRows();
+      // Validate brand_id exists for all rows before insert
+      const invalidBrand = currentRows.find(r => !brandCache[r.brand]);
+      if (invalidBrand) {
+        Toast.error('מותג "' + escapeHtml(invalidBrand.brand) + '" לא נמצא במערכת — יש לבחור מותג תקין');
+        hideLoading();
+        return;
+      }
       const records = currentRows.map(r => {
         const rec = {
           barcode: r.barcode,
           supplier_id: supplierCache[r.supplier] || null,
-          brand_id: brandCache[r.brand] || null,
+          brand_id: brandCache[r.brand],
           model: r.model,
           size: r.size,
           color: r.color,

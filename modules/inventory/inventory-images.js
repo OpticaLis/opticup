@@ -22,16 +22,23 @@ function _updateImageBadge() {
   }
 }
 
-// Generate signed URL from storage_path (private bucket)
-async function _getSignedUrl(storagePath) {
+// Generate signed URL from storage_path (private bucket), with retry
+async function _getSignedUrl(storagePath, retries) {
   if (!storagePath) return '';
-  var { data, error } = await sb.storage.from(FRAME_IMAGES_BUCKET)
-    .createSignedUrl(storagePath, _IMG_SIGN_EXPIRY);
-  if (error) { console.warn('Signed URL error:', error.message); return ''; }
-  return data?.signedUrl || '';
+  var maxRetries = retries || 2;
+  for (var attempt = 0; attempt <= maxRetries; attempt++) {
+    var { data, error } = await sb.storage.from(FRAME_IMAGES_BUCKET)
+      .createSignedUrl(storagePath, _IMG_SIGN_EXPIRY);
+    if (!error && data?.signedUrl) return data.signedUrl;
+    if (attempt < maxRetries) {
+      await new Promise(function(r) { setTimeout(r, 400); });
+    }
+  }
+  console.warn('Signed URL failed after retries:', storagePath);
+  return '';
 }
 
-// Sign all images in an array (adds _signedUrl property)
+// Sign all images in an array (adds _signedUrl property), with retry for failures
 async function _signImages(images) {
   if (!images || !images.length) return;
   var paths = images.map(function(im) { return im.storage_path; }).filter(Boolean);
@@ -47,6 +54,14 @@ async function _signImages(images) {
   }
   for (var j = 0; j < images.length; j++) {
     images[j]._signedUrl = urlMap[images[j].storage_path] || '';
+  }
+  // Retry individually for any images that failed batch signing
+  var failed = images.filter(function(im) { return im.storage_path && !im._signedUrl; });
+  if (failed.length > 0) {
+    await new Promise(function(r) { setTimeout(r, 400); });
+    for (var k = 0; k < failed.length; k++) {
+      failed[k]._signedUrl = await _getSignedUrl(failed[k].storage_path, 1);
+    }
   }
 }
 
@@ -217,6 +232,8 @@ async function _uploadPendingImages(inventoryId) {
       URL.revokeObjectURL(p.previewUrl);
     }
     _imgPending = [];
+    // Brief delay to ensure Storage propagation before signing URLs
+    await new Promise(function(r) { setTimeout(r, 300); });
     // Refresh images from DB + sign URLs
     var { data: fresh } = await sb.from(T.IMAGES).select('*')
       .eq('inventory_id', inventoryId).eq('tenant_id', tid)

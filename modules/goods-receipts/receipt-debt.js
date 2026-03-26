@@ -34,7 +34,7 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
     .limit(1);
   if (existing.data && existing.data.length > 0) {
     console.warn('createDocumentFromReceipt: document already exists for receipt', receiptId, '→', existing.data[0].internal_number);
-    writeLog('debt_duplicate_prevented', null, {
+    await writeLog('debt_duplicate_prevented', null, {
       receipt_id: receiptId,
       existing_doc_id: existing.data[0].id,
       existing_internal_number: existing.data[0].internal_number
@@ -59,7 +59,8 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   const supplierRows = await fetchAll(T.SUPPLIERS, [['id', 'eq', supplierId]]);
   const supplier = supplierRows[0];
   if (!supplier) {
-    console.warn('createDocumentFromReceipt: supplier not found', supplierId);
+    console.error('createDocumentFromReceipt: supplier not found for receipt', receiptId, 'supplierId:', supplierId);
+    Toast.warning('לא נמצא ספק — המסמך לא נוצר בחובות');
     return null;
   }
 
@@ -71,7 +72,8 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   const docTypes = await fetchAll(T.DOC_TYPES, [['code', 'eq', docTypeCode]]);
   const docType = docTypes[0];
   if (!docType) {
-    console.warn('createDocumentFromReceipt: document_type not found for code', docTypeCode);
+    console.error('createDocumentFromReceipt: document_type not found for code', docTypeCode, 'tenant:', getTenantId());
+    Toast.warning('סוג מסמך "תעודת משלוח" לא נמצא — המסמך לא נוצר בחובות');
     return null;
   }
 
@@ -120,6 +122,11 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   // 9. Insert using batchCreate helper
   const created = await batchCreate(T.SUP_DOCS, [docRow]);
   const createdDoc = created[0] || null;
+  if (!createdDoc) {
+    console.error('createDocumentFromReceipt: batchCreate returned empty for receipt', receiptId);
+    Toast.error('יצירת מסמך ספק נכשלה — יש ליצור מסמך ידנית');
+    return null;
+  }
 
   // 9b. Upload attached files if exist (multi-file support)
   var filesToUpload = (typeof _pendingReceiptFiles !== 'undefined' && _pendingReceiptFiles && _pendingReceiptFiles.length > 0)

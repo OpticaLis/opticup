@@ -97,7 +97,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
       if (doc) {
         toast(`קבלה אושרה · מסמך ספק ${doc.internal_number} נוצר`, 's');
       } else {
-        toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
+        toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן, אך מסמך ספק לא נוצר`, 'w');
       }
     } catch (docErr) {
       console.error('createDocumentFromReceipt error:', docErr);
@@ -145,6 +145,11 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
   const itemQty = item.quantity || 1;
 
   const brandId = brandCache[item.brand] || null;
+  if (!brandId) {
+    console.error('createNewInventoryFromReceiptItem: brand not found in cache:', item.brand);
+    Toast.warning('מותג "' + escapeHtml(item.brand || '') + '" לא נמצא — פריט לא נכנס למלאי');
+    return null;
+  }
   const supplierId = supplierCache[$('rcpt-supplier').value] || null;
 
   // product_type from receipt item (set via PO or manual dropdown)
