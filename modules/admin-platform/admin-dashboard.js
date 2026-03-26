@@ -192,3 +192,5 @@ async function populatePlanFilter() {
 window.loadTenants = loadTenants;
 window.filterTenants = filterTenants;
 window.initDashboard = initDashboard;
+window.allTenants = null; // expose reference — updated by loadTenants
+Object.defineProperty(window, 'allTenants', { get: () => allTenants, enumerable: true });

@@ -115,7 +115,7 @@ function _renderDetailsTab(container, actionsEl) {
   `;
 
   const editBtn = container.querySelector('#_btn-edit');
-  if (editBtn) editBtn.addEventListener('click', () => _enterEditMode(container, actionsEl));
+  if (editBtn) editBtn.addEventListener('click', () => _enterEditMode());
 
   // Actions
   let actionsHtml = '';
@@ -145,8 +145,11 @@ function _usageRow(label, current, limit) {
 
 // ─── Edit Mode ─────────────────────────────────────────────
 
-function _enterEditMode(container, actionsEl) {
+function _enterEditMode() {
   const t = _currentTenant; if (!t) return;
+  const container = document.getElementById('panel-content');
+  const actionsEl = document.getElementById('panel-actions');
+  if (!container || !actionsEl) return;
   const planOptions = Object.values(_plansMap || {}).map(p =>
     `<option value="${_esc(p.id)}" ${p.id === t.plan_id ? 'selected' : ''}>${_esc(p.display_name)}</option>`
   ).join('');
@@ -161,11 +164,11 @@ function _enterEditMode(container, actionsEl) {
     </div>
   `;
   actionsEl.innerHTML = '<button class="btn btn-primary btn-sm" id="_btn-save">שמור</button> <button class="btn btn-secondary btn-sm" id="_btn-cancel">ביטול</button>';
-  actionsEl.querySelector('#_btn-save').addEventListener('click', () => _saveChanges(container, actionsEl));
-  actionsEl.querySelector('#_btn-cancel').addEventListener('click', () => _renderDetailsTab(container, actionsEl));
+  actionsEl.querySelector('#_btn-save').addEventListener('click', _saveChanges);
+  actionsEl.querySelector('#_btn-cancel').addEventListener('click', () => renderPanelTab('info'));
 }
 
-async function _saveChanges(container, actionsEl) {
+async function _saveChanges() {
   const t = _currentTenant; if (!t) return;
   const updates = {};
   const name = document.getElementById('_e-name').value.trim();
@@ -187,7 +190,6 @@ async function _saveChanges(container, actionsEl) {
     await AdminDB.rpc('update_tenant', { p_tenant_id: t.id, p_updates: updates, p_admin_id: admin.id });
     Toast.success('פרטים עודכנו');
     await _refreshAfterAction(t.id);
-    _renderDetailsTab(container, actionsEl);
   } catch (e) { Toast.error('שגיאה: ' + e.message); }
 }
 
@@ -195,25 +197,25 @@ async function _saveChanges(container, actionsEl) {
 
 function _suspendTenant() {
   const t = _currentTenant; if (!t) return;
-  Modal.show({
+  const modal = Modal.show({
     title: 'השהיית חנות',
     content: `<p>להשהות את <strong>${_esc(t.name)}</strong>?</p><textarea id="_suspend-reason" rows="3" class="input" placeholder="סיבת השהייה..." style="width:100%;margin-top:0.5rem"></textarea>`,
     size: 'sm',
-    footer: '<button class="btn btn-danger" id="_confirm-suspend">השהה</button> <button class="btn btn-secondary" onclick="Modal.close()">ביטול</button>'
+    footer: '<button class="btn btn-danger" id="_confirm-suspend">השהה</button> <button class="btn btn-secondary" id="_cancel-suspend">ביטול</button>'
   });
-  setTimeout(() => {
-    const btn = document.querySelector('#_confirm-suspend');
-    if (btn) btn.addEventListener('click', async () => {
-      const reason = document.getElementById('_suspend-reason')?.value?.trim() || '';
-      Modal.close();
-      try {
-        const admin = getCurrentAdmin();
-        await AdminDB.rpc('suspend_tenant', { p_tenant_id: t.id, p_reason: reason, p_admin_id: admin.id });
-        Toast.success('החנות הושהתה');
-        await _refreshAfterAction(t.id);
-      } catch (e) { Toast.error('שגיאה: ' + e.message); }
-    });
-  }, 100);
+  const confirmBtn = modal.el.querySelector('#_confirm-suspend');
+  const cancelBtn = modal.el.querySelector('#_cancel-suspend');
+  if (cancelBtn) cancelBtn.addEventListener('click', () => modal.close());
+  if (confirmBtn) confirmBtn.addEventListener('click', async () => {
+    const reason = modal.el.querySelector('#_suspend-reason')?.value?.trim() || '';
+    modal.close();
+    try {
+      const admin = getCurrentAdmin();
+      await AdminDB.rpc('suspend_tenant', { p_tenant_id: t.id, p_reason: reason, p_admin_id: admin.id });
+      Toast.success('החנות הושהתה');
+      await _refreshAfterAction(t.id);
+    } catch (e) { Toast.error('שגיאה: ' + e.message); }
+  });
 }
 
 function _activateTenant() {
