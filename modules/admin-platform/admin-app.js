@@ -162,8 +162,8 @@ function switchTab(tabName) {
   currentTab = tabName;
 
   // Trigger data load for the switched-to tab
-  if (tabName === 'tenants' && typeof window.loadTenants === 'function') {
-    window.loadTenants();
+  if (tabName === 'tenants' && typeof window.initDashboard === 'function') {
+    window.initDashboard();
   } else if (tabName === 'audit' && typeof window.loadPlatformAuditLog === 'function') {
     window.loadPlatformAuditLog();
   }

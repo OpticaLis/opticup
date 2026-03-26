@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in Module 2.
 > Updated every commit that adds/changes code.
-> Last updated: 2026-03-26 (Phase 3d)
+> Last updated: 2026-03-26 (Phase 3f)
 
 ---
 
@@ -16,7 +16,8 @@
 | 4 | admin-audit.js | `/modules/admin-platform/admin-audit.js` | 20 | logAdminAction() — fire-and-forget audit logger. Swallows errors. |
 | 5 | admin-provisioning.js | `/modules/admin-platform/admin-provisioning.js` | 320 | 3-step wizard (store details → plan+PIN → summary). Slug auto-suggest + debounced real-time validation via validate_slug RPC. provisionTenant() calls create_tenant RPC, logs to provisioning_log + audit. Credentials modal on success. |
 | 6 | admin-app.js | `/modules/admin-platform/admin-app.js` | 229 | App init + tab routing + panel open/close. DOMContentLoaded → session check → showAdminPanel or showLoginScreen. switchTab (tenants/audit/settings), openTenantPanel/closeTenantPanel, switchPanelTab, search+filter event wiring. Exposes globals: switchTab, openTenantPanel, closeTenantPanel, switchPanelTab, selectedTenantId. |
-| 7 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
+| 7 | admin-dashboard.js | `/modules/admin-platform/admin-dashboard.js` | 194 | Tenant list table + filters + search. loadTenants() calls get_all_tenants_overview RPC, filterTenants() applies client-side search/status/plan filters, renderTenantsTable() uses TableBuilder. Sort, relative time, plan filter population. Exposes: loadTenants, filterTenants, initDashboard. |
+| 8 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
 
 ---
 
@@ -59,6 +60,17 @@
 | `initProvisioningWizard` | 152 | — | void | Opens 3-step Modal.wizard, loads plans, validates, submits |
 | `provisionTenant` | 261 | params | void | Calls create_tenant RPC, provisioning log, audit log, credentials modal |
 
+### Admin Dashboard (admin-dashboard.js)
+| Function | Line | Parameters | Returns | Description |
+|----------|------|-----------|---------|-------------|
+| `initDashboard` | 14 | — | void | One-time init: populate plan filter + loadTenants. Subsequent calls just reload. |
+| `loadTenants` | 22 | — | void | Call get_all_tenants_overview RPC, store in allTenants, call filterTenants |
+| `filterTenants` | 36 | — | void | Read DOM filters, filter allTenants client-side, render table |
+| `renderTenantsTable` | 101 | tenants | void | Pass filtered data to TableBuilder instance |
+| `handleSort` | 106 | key, dir | void | Re-filter + sort allTenants, update table |
+| `formatRelativeTime` | 139 | dateString | string | Relative time in Hebrew (דקות/שעות/ימים) or DD/MM/YYYY |
+| `populatePlanFilter` | 159 | — | void | Load plans from DB, populate #filter-plan dropdown |
+
 ### Admin App (admin-app.js)
 | Function | Line | Parameters | Returns | Description |
 |----------|------|-----------|---------|-------------|
@@ -94,6 +106,9 @@
 | `currentTab` | let string | admin-app.js | Active top-level tab ('tenants'\|'audit'\|'settings') |
 | `selectedTenantId` | let string/null | admin-app.js | Currently open tenant in slide-in panel |
 | `_searchDebounceTimer` | let number/null | admin-app.js | Debounce timer for search input |
+| `allTenants` | let array | admin-dashboard.js | Cached tenant overview data from RPC |
+| `_tenantsTable` | let TableInstance/null | admin-dashboard.js | TableBuilder instance for tenant list |
+| `_dashboardInited` | let boolean | admin-dashboard.js | One-time init guard |
 | `_slugDebounceTimer` | let number/null | admin-provisioning.js | Slug validation debounce timer |
 | `_slugValid` | let boolean | admin-provisioning.js | Current slug validation state |
 | `_plansCache` | let array/null | admin-provisioning.js | Cached plans from DB (loaded once) |

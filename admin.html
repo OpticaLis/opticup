@@ -138,6 +138,9 @@
     .panel-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 600; }
     .panel-content { padding: 1rem 1.5rem; }
     .panel-actions { padding: 0.75rem 1.5rem; border-top: 1px solid var(--color-gray-200); }
+    /* --- Tenant name link --- */
+    .tenant-name-link { color: var(--color-primary); cursor: pointer; font-weight: 500; }
+    .tenant-name-link:hover { text-decoration: underline; }
     @media (max-width: 768px) {
       #tenant-detail-panel { width: 100%; }
     }
@@ -253,6 +256,7 @@
   <script src="modules/admin-platform/admin-db.js"></script>
   <script src="modules/admin-platform/admin-audit.js"></script>
   <script src="modules/admin-platform/admin-provisioning.js"></script>
+  <script src="modules/admin-platform/admin-dashboard.js"></script>
   <script src="modules/admin-platform/admin-app.js"></script>
 </body>
 </html>
