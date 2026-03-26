@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in Module 2.
 > Updated every commit that adds/changes code.
-> Last updated: 2026-03-26 (Phase 4 complete)
+> Last updated: 2026-03-26 (Phase 3 complete)
 
 ---
 
@@ -10,21 +10,18 @@
 
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
-| 1 | admin.html | `/admin.html` | 271 | Platform Admin HTML page. Login screen + full dashboard layout. Header (logo + admin name/role + logout), nav tabs (חנויות/Audit Log/הגדרות), toolbar (new tenant + search + filters), content areas (tenants/audit/settings), slide-in panel (tenant detail with 4 tabs). Loads shared/css/ (8 files), shared/js/ (toast, modal-builder, modal-wizard, table-builder), 11 admin JS files. |
+| 1 | admin.html | `/admin.html` | 269 | Platform Admin HTML page. Login screen + full dashboard layout. Header (logo + admin name/role + logout), nav tabs (חנויות/Audit Log/הגדרות), toolbar (new tenant + search + filters), content areas (tenants/audit/settings), slide-in panel (tenant detail with 4 tabs). Loads shared/css/ (8 files), shared/js/ (toast, modal-builder, modal-wizard, table-builder), 5 admin JS files. |
 | 2 | admin-auth.js | `/modules/admin-platform/admin-auth.js` | 105 | Supabase client for admin context (adminSb). Login, logout, session check, getCurrentAdmin, requireAdmin, hasAdminPermission. ROLE_LEVELS constant. Exposes: getCurrentAdmin, hasAdminPermission. |
 | 3 | admin-db.js | `/modules/admin-platform/admin-db.js` | 63 | AdminDB global object. Lightweight DB wrapper with no tenant_id injection. Methods: query, getById, insert, update, rpc. All use adminSb. |
 | 4 | admin-audit.js | `/modules/admin-platform/admin-audit.js` | 143 | logAdminAction() audit logger + platform audit log viewer (top-level Audit Log tab). Action filter, Hebrew labels, admin+tenant JOINs. super_admin only. Exposes: loadPlatformAuditLog. |
 | 5 | admin-provisioning.js | `/modules/admin-platform/admin-provisioning.js` | 320 | 3-step wizard (store details → plan+PIN → summary). Slug auto-suggest + debounced real-time validation via validate_slug RPC. provisionTenant() calls create_tenant RPC, logs to provisioning_log + audit. Credentials modal on success. |
-| 6 | admin-app.js | `/modules/admin-platform/admin-app.js` | 237 | App init + tab routing + panel open/close. DOMContentLoaded → session check → showAdminPanel or showLoginScreen. switchTab (tenants/audit/settings→loadPlansTab), openTenantPanel/closeTenantPanel, switchPanelTab, search+filter event wiring. Exposes globals: switchTab, openTenantPanel, closeTenantPanel, switchPanelTab, selectedTenantId. |
+| 6 | admin-app.js | `/modules/admin-platform/admin-app.js` | 235 | App init + tab routing + panel open/close. DOMContentLoaded → session check → showAdminPanel or showLoginScreen. switchTab (tenants/audit/settings), openTenantPanel/closeTenantPanel, switchPanelTab, search+filter event wiring. Exposes globals: switchTab, openTenantPanel, closeTenantPanel, switchPanelTab, selectedTenantId. |
 | 7 | admin-dashboard.js | `/modules/admin-platform/admin-dashboard.js` | 196 | Tenant list table + filters + search. loadTenants() calls get_all_tenants_overview RPC, filterTenants() applies client-side search/status/plan filters, renderTenantsTable() uses TableBuilder. Sort, relative time, plan filter population. Exposes: loadTenants, filterTenants, initDashboard. |
-| 8 | admin-tenant-detail.js | `/modules/admin-platform/admin-tenant-detail.js` | 361 | Slide-in panel content. loadTenantDetail loads stats + renders header. Tab 1 (info/edit/actions + feature overrides container): details view, edit mode, suspend/activate/delete/reset PIN. Tab 3 (provisioning log). Tab 4 (audit log, super_admin only). Exposes: loadTenantDetail, renderPanelTab. |
-| 9 | admin-plans.js | `/modules/admin-platform/admin-plans.js` | 261 | Plans CRUD UI in הגדרות tab. Table renders all plans with limits (∞ for -1). Click row → edit modal with 7 limit fields + 17 feature checkboxes + price/sort/active. FEATURE_LABELS global constant. Exposes: loadPlansTab, openPlanEditor, FEATURE_LABELS. |
-| 10 | admin-feature-overrides.js | `/modules/admin-platform/admin-feature-overrides.js` | 97 | Per-tenant feature override UI rendered in tenant detail Tab 1. Loads plan features + tenant_config overrides. 17 rows × 3-state select (plan/force-on/force-off). Save upserts/deletes tenant_config key='feature_overrides'. super_admin only. Exposes: renderFeatureOverrides. |
-| 11 | admin-activity-viewer.js | `/modules/admin-platform/admin-activity-viewer.js` | 189 | Activity log viewer per tenant (Tab 2). Filters: date range, entity type, level. Paginated 50/page via get_tenant_activity_log RPC. Exposes: loadTenantActivityLog. |
-| 12 | plan-helpers.js | `/shared/js/plan-helpers.js` | 107 | Client-side plan limit/feature checking for ERP pages. 30s cache (_getPlanData). Calls check_plan_limit + is_feature_enabled RPCs. Fail-safe on errors. Loaded by index.html, inventory.html, employees.html, suppliers-debt.html. Exposes: checkPlanLimit, isFeatureEnabled, getPlanLimits, getPlanFeatures, invalidatePlanCache. |
-| 13 | shared.js (ERP) | `/js/shared.js` | 337 | MODIFIED in Phase 3k: added showTenantBlocked() + DOMContentLoaded guard for non-index pages. Blocks suspended/deleted tenants with undismissible overlay. |
-| 14 | index.html (ERP) | `/index.html` | ~400 | MODIFIED in Phase 3k: tenant status check. Phase 4d: data-feature attrs on 3 module cards, applyFeatureFlags(), plan-helpers.js loaded. |
-| 15 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
+| 8 | admin-tenant-detail.js | `/modules/admin-platform/admin-tenant-detail.js` | 355 | Slide-in panel content. loadTenantDetail loads stats + renders header. Tab 1 (info/edit/actions): details view, edit mode, suspend/activate/delete/reset PIN. Tab 3 (provisioning log). Tab 4 (audit log, super_admin only). Exposes: loadTenantDetail, renderPanelTab. |
+| 9 | admin-activity-viewer.js | `/modules/admin-platform/admin-activity-viewer.js` | 189 | Activity log viewer per tenant (Tab 2). Filters: date range, entity type, level. Paginated 50/page via get_tenant_activity_log RPC. Exposes: loadTenantActivityLog. |
+| 10 | shared.js (ERP) | `/js/shared.js` | 337 | MODIFIED in Phase 3k: added showTenantBlocked() + DOMContentLoaded guard for non-index pages. Blocks suspended/deleted tenants with undismissible overlay. |
+| 11 | index.html (ERP) | `/index.html` | ~400 | MODIFIED in Phase 3k: resolveTenant() now checks tenant.status, calls showTenantBlocked() for suspended/deleted. |
+| 12 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
 
 ---
 
@@ -118,29 +115,6 @@
 | `closeTenantPanel` | 176 | — | void | Hide panel + overlay with transition, clear selectedTenantId |
 | `switchPanelTab` | 193 | tabName | void | Update panel tab active class, call renderPanelTab if exists |
 
-### Admin Plans (admin-plans.js)
-| Function | Line | Parameters | Returns | Description |
-|----------|------|-----------|---------|-------------|
-| `loadPlansTab` | 12 | — | void | Fetch all plans, render table with TableBuilder. ∞ for -1 values. super_admin: click row → edit. |
-| `openPlanEditor` | 98 | planId? | void | Modal with limits/features/prices form. Loads existing plan or blank. super_admin only. |
-| `_savePlanFromModal` | 167 | planId? | void | Collect form data, build limits/features JSONB, insert/update plan, confirm if affecting tenants. |
-| `togglePlanActive` | 225 | planId, currentState | void | Deactivate/activate plan. Checks no active tenants on deactivate. |
-
-### Admin Feature Overrides (admin-feature-overrides.js)
-| Function | Line | Parameters | Returns | Description |
-|----------|------|-----------|---------|-------------|
-| `renderFeatureOverrides` | 8 | tenantId, planId, container | void | Load plan features + tenant overrides, render 17 rows with 3-state selects + save button. |
-
-### Plan Helpers (shared/js/plan-helpers.js)
-| Function | Line | Parameters | Returns | Description |
-|----------|------|-----------|---------|-------------|
-| `_getPlanData` | 11 | — | `{ limits, features }` | Internal. Cached 30s. Queries tenants→plans JOIN. Fail-safe: empty objects. |
-| `checkPlanLimit` | 32 | resource | `{ allowed, current, limit, remaining, message }` | Calls check_plan_limit RPC. Fail-safe: allowed=true. |
-| `isFeatureEnabled` | 52 | feature | boolean | Calls is_feature_enabled RPC. Fail-safe: true. |
-| `getPlanLimits` | 68 | — | object | Returns cached plan limits JSONB. |
-| `getPlanFeatures` | 76 | — | object | Returns cached plan features JSONB. |
-| `invalidatePlanCache` | 84 | — | void | Reset _planCache + _planCacheTime. |
-
 ### ERP Auth (auth-service.js — Phase 2 addition)
 | Function | Line | Parameters | Returns | Description |
 |----------|------|-----------|---------|-------------|
@@ -175,12 +149,6 @@
 | `_slugDebounceTimer` | let number/null | admin-provisioning.js | Slug validation debounce timer |
 | `_slugValid` | let boolean | admin-provisioning.js | Current slug validation state |
 | `_plansCache` | let array/null | admin-provisioning.js | Cached plans from DB (loaded once) |
-| `_plansData` | let array | admin-plans.js | Cached plans data for table rendering |
-| `FEATURE_LABELS` | const object | admin-plans.js | 17-entry map: feature key → Hebrew label (global) |
-| `LIMIT_FIELDS` | const array | admin-plans.js | 7-entry array of {key, label} for limit form fields |
-| `_planCache` | let object/null | plan-helpers.js | Cached plan data ({limits, features}) |
-| `_planCacheTime` | let number | plan-helpers.js | Timestamp of last cache fill (30s TTL) |
-| `PLAN_CACHE_TTL` | const number | plan-helpers.js | Cache TTL: 30000ms |
 
 ---
 
@@ -215,5 +183,3 @@ must_change_pin (BOOLEAN DEFAULT false)
 | `get_tenant_activity_log(...)` | p_tenant_id UUID, p_limit INT, p_offset INT, p_level TEXT, p_entity_type TEXT, p_date_from TIMESTAMPTZ, p_date_to TIMESTAMPTZ | JSONB {total, entries} | SECURITY DEFINER. Paginated activity_log with optional filters. |
 | `get_tenant_employees(p_tenant_id)` | p_tenant_id UUID | JSONB array [{id, name}] | SECURITY DEFINER. Minimal employee list for PIN reset dropdown. |
 | `reset_employee_pin(...)` | p_tenant_id UUID, p_employee_id UUID, p_new_pin TEXT, p_must_change BOOLEAN, p_admin_id UUID | void | SECURITY DEFINER. Verifies employee∈tenant, resets PIN + unlock. PIN not in audit. |
-| `check_plan_limit(...)` | p_tenant_id UUID, p_resource TEXT | JSONB | SECURITY DEFINER. Maps resource→'max_'+resource, counts usage, returns {allowed, current, limit, remaining, message}. No plan/-1 = unlimited. |
-| `is_feature_enabled(...)` | p_tenant_id UUID, p_feature TEXT | BOOLEAN | SECURITY DEFINER. Priority: tenant_config feature_overrides → plan.features → fail-safe true. |

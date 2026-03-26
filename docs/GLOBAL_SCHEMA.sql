@@ -2278,3 +2278,17 @@ ALTER TABLE tenants ADD COLUMN IF NOT EXISTS last_active TIMESTAMPTZ;
 -- reset_employee_pin(p_tenant_id, p_employee_id, p_new_pin, p_must_change, p_admin_id) → void
 -- Verifies employee belongs to tenant, resets PIN + unlock. PIN not in audit.
 -- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3c-rpcs.sql
+
+-- ============================================================
+-- Phase 4: Plans & Limits RPCs (Module 2)
+-- ============================================================
+
+-- check_plan_limit(p_tenant_id UUID, p_resource TEXT) → JSONB
+-- SECURITY DEFINER. Counts current usage vs plan limits.
+-- Maps resource to 'max_' || p_resource. No plan/-1 = unlimited.
+-- Returns: { allowed, current, limit, remaining, message }
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase4a-rpcs.sql
+
+-- is_feature_enabled(p_tenant_id UUID, p_feature TEXT) → BOOLEAN
+-- SECURITY DEFINER. Priority: tenant_config feature_overrides → plan.features → true (fail-safe).
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase4a-rpcs.sql

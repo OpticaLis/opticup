@@ -4,58 +4,45 @@
 2026-03-26
 
 ## What Was Done This Session
-Phase 3 complete — Dashboard + Management:
-- 8 RPCs: get_all_tenants_overview, get_tenant_stats, get_tenant_activity_log, suspend_tenant, activate_tenant, update_tenant, reset_employee_pin, get_tenant_employees
-- admin-dashboard.js (196 lines): tenant table with TableBuilder, search (name/slug), status/plan filters, sort
-- admin-tenant-detail.js (355 lines): slide-in panel (480px, RTL), 4 tabs (details/activity/provisioning/audit), edit mode, suspend/activate/delete/reset PIN actions
-- admin-activity-viewer.js (189 lines): activity log per tenant with 4 filters (date range, entity type, level) + pagination (50/page)
-- admin-audit.js expanded (20→143 lines): platform audit log viewer with action filter + Hebrew labels
-- admin-app.js expanded (89→235 lines): tab routing, panel open/close, filter event wiring
-- admin-auth.js expanded (94→105 lines): hasAdminPermission() + global exports
-- admin.html restructured (195→269 lines): nav tabs, content areas, toolbar, slide-in panel container
-- Role enforcement: super_admin/support/viewer UI gating
-- Suspended tenant blocking: shared.js + index.html check tenant status, show undismissible overlay
-- Bug fixes: last_active column added, window.allTenants exposed, edit save/cancel stale closures fixed, suspend modal binding fixed
+Phase 4 complete — Plans & Limits:
+- 2 RPCs: check_plan_limit(tenant_id, resource) → JSONB, is_feature_enabled(tenant_id, feature) → BOOLEAN
+- shared/js/plan-helpers.js (107 lines): checkPlanLimit, isFeatureEnabled, getPlanLimits, getPlanFeatures, invalidatePlanCache with 30s client cache
+- admin-plans.js (261 lines): Plans CRUD UI in הגדרות tab — table with limits display (∞ for -1), edit modal with 7 limits + 17 feature checkboxes + prices
+- admin-feature-overrides.js (97 lines): per-tenant feature override UI in tenant detail panel — 3-state selects (plan/force-on/force-off)
+- checkPlanLimit integrated in 5 files: employee-list.js, inventory-entry.js, suppliers.js, debt-doc-new.js, ai-ocr.js
+- data-feature attributes on index.html (3 module cards) and inventory.html (2 tabs)
+- isFeatureEnabled checks in ai-ocr.js (OCR button inject), inventory-images-bg.js (remove BG)
+- applyFeatureFlags() on index.html and inventory.html (hides disabled feature cards/tabs)
+- plan-helpers.js loaded in 4 HTML pages (index, inventory, employees, suppliers-debt)
+- last_active update in pin-auth Edge Function (deployed)
+- Bug fix: Modal.show body→content property name in plan editor
 
 ## Commits
-### Phase 1 (DB + Admin Auth)
-- a68af24 — Module 2: fix directory structure to match project conventions
-- 9fb5bdd — Module 2 Phase 1i: admin.html + admin-auth.js
-- e6fca80 — Module 2 Phase 1j: admin-db.js + admin-audit.js
-- 5374b52 — Module 2 Phase 1k: admin-app.js — login/logout flow complete
-
-### Phase 2 (Tenant Provisioning)
-- 85b4695 — Module 2 Phase 2c: create_tenant() RPC SQL (reference)
-- 22c4320 — Module 2 Phase 2e: admin-provisioning.js — tenant creation wizard
-- 3624239 — Module 2 Phase 2f: must_change_pin flow after first login
-- 92eb89d — Fix credentials modal HTML rendering (Modal.alert → Modal.show)
-
-### Phase 3 (Dashboard + Management)
-- 10ce5da — Phase 3a: get_all_tenants_overview + get_tenant_stats RPCs
-- 192b3b2 — Phase 3b: suspend_tenant + activate_tenant + update_tenant RPCs
-- 011436f — Phase 3c: get_tenant_activity_log + get_tenant_employees + reset_employee_pin RPCs
-- 6aba3c1 — Phase 3d: admin.html restructure — nav tabs, content areas, slide-in panel
-- 86c66f3 — Phase 3e: admin-app.js — tab routing, panel open/close, filter listeners
-- 1c5c280 — Phase 3f: admin-dashboard.js — tenant table, filters, search
-- 09c2d56 — Phase 3g: admin-tenant-detail.js — slide-in panel with info/edit/actions
-- b4854e9 — Phase 3h: admin-activity-viewer.js — activity log per tenant
-- dc75687 — Phase 3i: admin-audit.js — platform audit log viewer
-- 713084c — Phase 3j: role enforcement — hasAdminPermission + UI gating
-- 252409d — Phase 3k: suspended/deleted tenant blocking in ERP
-- c23d73f — Phase 3: fix edit save/cancel re-render + modal confirm binding
+### Phase 4 (Plans & Limits)
+- dde14ad — Phase 4a: check_plan_limit + is_feature_enabled RPC SQL (reference)
+- 5f06d77 — Phase 4b: shared/js/plan-helpers.js — checkPlanLimit, isFeatureEnabled, cache
+- 70a3743 — Phase 4c: checkPlanLimit integration — 5 limit checks + plan-helpers.js in 3 HTML pages
+- 911d430 — Phase 4d: feature flags — data-feature attrs, applyFeatureFlags, isFeatureEnabled checks
+- 2c0d4e3 — Phase 4e: admin-plans.js — Plans CRUD UI + settings tab activation
+- 10f9b0b — Phase 4f: admin-feature-overrides.js — feature override UI in tenant detail
+- 04ea518 — Phase 4g: last_active update in pin-auth Edge Function
+- e27bebc — Phase 4e fix: Modal.show body→content in plan editor
 
 ## Current State
-- admin.html: full dashboard with login, nav tabs (חנויות/Audit Log/הגדרות), tenant table, slide-in panel with 4 tabs
-- 9 files in modules/admin-platform/ (total ~1,806 lines)
-- 12 RPCs live in Supabase (4 from Phase 1-2 + 8 from Phase 3)
+- admin.html: full dashboard with login, nav tabs (חנויות/Audit Log/הגדרות), plans management in settings tab
+- 10 files in modules/admin-platform/ (total ~1,972 lines)
+- 1 file in shared/js/ (plan-helpers.js, 107 lines)
+- 14 RPCs live in Supabase (12 from Phases 1-3 + 2 from Phase 4)
 - Role enforcement: 3-tier (super_admin > support > viewer) with UI gating
-- Suspended tenant blocking on all ERP pages via shared.js
-- last_active column added to tenants table
+- Plan limits enforced at 5 creation points across ERP
+- Feature flags controlling module visibility on index.html and inventory.html
+- Feature overrides per-tenant via admin panel
+- last_active updated on every PIN login via Edge Function
 
 ## Known Issues
 - Hebrew-only tenant names produce empty slug (manual entry works) — from Phase 2
-- admin-tenant-detail.js at 355 lines — slightly over 350, may need split if more features added
-- last_active column exists but never updated (no mechanism to set it on tenant login yet)
+- admin-tenant-detail.js at 361 lines — slightly over 350 limit
+- Demo/Prizma tenants on enterprise plan — limit testing requires temporary plan change to basic/premium
 
 ## Next Steps
-1. **Phase 4:** Plans & Limits — plans CRUD, checkPlanLimit(), isFeatureEnabled(), feature flags
+1. **Phase 5:** Slug Routing + Future Prep — error pages, routing hardening, B2B/Storefront DB prep
