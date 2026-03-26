@@ -166,7 +166,7 @@ function renderModules() {
   MODULES.forEach(m => {
     const a = document.createElement('a');
     a.className = 'module-card';
-    a.href = m.url;
+    a.href = TENANT_SLUG ? m.url + '?t=' + encodeURIComponent(TENANT_SLUG) : m.url;
 
     if (m.status === 'coming_soon') {
       a.classList.add('coming-soon');

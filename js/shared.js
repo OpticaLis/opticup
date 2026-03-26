@@ -40,9 +40,21 @@ const T = {
   IMAGES: 'inventory_images',
 };
 
-// Tenant slug — set by resolveTenant() during page init.
-// All ERP pages call resolveTenant() before any DB queries.
+// Tenant slug — set synchronously from URL/sessionStorage for immediate availability.
+// resolveTenant() then does the async DB check (status, redirect on error).
 let TENANT_SLUG = null;
+(function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlSlug = urlParams.get('t');
+  const storedSlug = sessionStorage.getItem('tenant_slug');
+  if (urlSlug && storedSlug && urlSlug !== storedSlug) {
+    sessionStorage.clear();
+  }
+  TENANT_SLUG = urlSlug || storedSlug || null;
+  if (TENANT_SLUG) {
+    sessionStorage.setItem('tenant_slug', TENANT_SLUG);
+  }
+})();
 
 /**
  * Centralized tenant resolution. Called once on page load.
@@ -52,10 +64,15 @@ let TENANT_SLUG = null;
  * @returns {Promise<object|null>} tenant row or null (redirect already triggered)
  */
 async function resolveTenant() {
-  if (TENANT_SLUG) return { id: sessionStorage.getItem('tenant_id'), slug: TENANT_SLUG, name: sessionStorage.getItem('tenant_name_cache') || '' };
-  const urlParams = new URLSearchParams(window.location.search);
-  let slug = urlParams.get('t');
-  if (!slug) slug = sessionStorage.getItem('tenant_slug');
+  // TENANT_SLUG already set synchronously at script load. If tenant_id is cached,
+  // skip the DB query (returning user navigating between pages).
+  if (TENANT_SLUG && sessionStorage.getItem('tenant_id')) {
+    if (typeof loadTenantTheme === 'function') {
+      try { const { data: t } = await sb.from('tenants').select('ui_config').eq('slug', TENANT_SLUG).single(); if (t) loadTenantTheme(t); } catch(_) {}
+    }
+    return { id: sessionStorage.getItem('tenant_id'), slug: TENANT_SLUG, name: sessionStorage.getItem('tenant_name_cache') || '' };
+  }
+  const slug = TENANT_SLUG;
   if (!slug) {
     const path = window.location.pathname;
     if (!path.endsWith('/landing.html') && !path.endsWith('/error.html') && !path.endsWith('/admin.html')) {
@@ -63,9 +80,6 @@ async function resolveTenant() {
     }
     return null;
   }
-  // Cross-tenant safety: if URL slug differs from stored, clear session
-  const storedSlug = sessionStorage.getItem('tenant_slug');
-  if (storedSlug && slug !== storedSlug) sessionStorage.clear();
   // Query tenant
   const { data: tenant, error } = await sb.from('tenants')
     .select('id, slug, name, status, ui_config, plan_id')
