@@ -231,3 +231,20 @@ CREATE POLICY provisioning_log_admin_insert ON tenant_provisioning_log
 -- get_tenant_stats(p_tenant_id UUID) → JSONB object
 -- SECURITY DEFINER. Returns employees_count, inventory_count (is_deleted=false),
 -- suppliers_count (active=true), documents_count, brands_count (active=true).
+
+-- ============================================================
+-- Phase 3b: Action RPCs
+-- Full SQL in: docs/phase3b-rpcs.sql
+-- ============================================================
+
+-- suspend_tenant(p_tenant_id UUID, p_reason TEXT, p_admin_id UUID) → void
+-- SECURITY DEFINER. Verifies status='active', sets status='suspended' + reason.
+-- Writes platform_audit_log with reason.
+
+-- activate_tenant(p_tenant_id UUID, p_admin_id UUID) → void
+-- SECURITY DEFINER. Verifies status IN ('suspended','trial'), sets status='active',
+-- clears suspended_reason. Writes platform_audit_log.
+
+-- update_tenant(p_tenant_id UUID, p_updates JSONB, p_admin_id UUID) → void
+-- SECURITY DEFINER. Whitelist: name, owner_name, owner_email, owner_phone, plan_id,
+-- trial_ends_at. Captures old values, applies per-field, writes audit with old+new diff.

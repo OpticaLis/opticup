@@ -118,3 +118,6 @@ must_change_pin (BOOLEAN DEFAULT false)
 | `delete_tenant(p_tenant_id, p_deleted_by)` | p_tenant_id UUID, p_deleted_by UUID | void | SECURITY DEFINER. Soft delete (status='deleted'). |
 | `get_all_tenants_overview()` | — | JSONB array | SECURITY DEFINER. All non-deleted tenants with plan name (LEFT JOIN), employees/inventory/suppliers counts. |
 | `get_tenant_stats(p_tenant_id)` | p_tenant_id UUID | JSONB object | SECURITY DEFINER. Single tenant counts: employees, inventory (is_deleted=false), suppliers (active=true), documents, brands (active=true). |
+| `suspend_tenant(...)` | p_tenant_id UUID, p_reason TEXT, p_admin_id UUID | void | SECURITY DEFINER. Verifies status='active', sets suspended + reason. Audit log. |
+| `activate_tenant(...)` | p_tenant_id UUID, p_admin_id UUID | void | SECURITY DEFINER. Verifies status IN ('suspended','trial'), sets active. Audit log. |
+| `update_tenant(...)` | p_tenant_id UUID, p_updates JSONB, p_admin_id UUID | void | SECURITY DEFINER. Whitelist fields, captures old values, applies updates, audit with old+new diff. |
