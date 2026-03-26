@@ -119,6 +119,7 @@ async function _createNewStockCount() {
       count_id: count.id, inventory_id: inv.id,
       barcode: inv.barcode || '', brand: brandCacheRev[inv.brand_id] || '',
       model: inv.model || '', color: inv.color || '', size: inv.size || '',
+      product_type: inv.product_type || '',
       expected_qty: inv.quantity || 0, status: 'pending'
     }));
     if (items.length) await batchCreate(T.STOCK_COUNT_ITEMS, items);
@@ -155,6 +156,14 @@ async function openCountSession(countId) {
     window._scActiveFilterDesc = _scBuildFilterDesc(countRow?.filter_criteria);
     const items = await fetchAll(T.STOCK_COUNT_ITEMS, [['count_id', 'eq', countId]]);
     scSessionItems = items || [];
+    // Enrich with product_type from inventory for items missing it
+    var needPt = scSessionItems.filter(i => i.inventory_id && !i.product_type);
+    if (needPt.length) {
+      var invIds = [...new Set(needPt.map(i => i.inventory_id))];
+      var { data: ptRows } = await sb.from(T.INV).select('id, product_type').in('id', invIds);
+      if (ptRows) { var ptMap = {}; ptRows.forEach(r => { ptMap[r.id] = r.product_type || ''; });
+        needPt.forEach(i => { i.product_type = ptMap[i.inventory_id] || ''; }); }
+    }
     renderSessionScreen(countId, scSessionItems);
   } catch (err) {
     toast('שגיאה בטעינת ספירה: ' + err.message, 'e');
@@ -163,14 +172,17 @@ async function openCountSession(countId) {
 
 // ── Shared row renderer ──────────────────────────────────────
 function scRenderItemRow(it) {
+  var ptLabel = { eyeglasses: '\u05E8\u05D0\u05D9\u05D9\u05D4', sunglasses: '\u05E9\u05DE\u05E9' };
   if (it.status === 'unknown') {
     const bc = escapeHtml(it.barcode || '');
     return `<tr style="background:#fef3c7;cursor:default">
       <td style="font-weight:600;font-size:.85rem">${bc || '—'}</td>
       <td>${escapeHtml(it.brand || '—')}</td><td>${escapeHtml(it.model || '—')}</td>
+      <td>${escapeHtml(it.color || '—')}</td><td>${escapeHtml(it.size || '—')}</td>
+      <td class="hide-mobile">${ptLabel[it.product_type] || '—'}</td>
       <td style="text-align:center;font-weight:700">${it.actual_qty || '—'}</td>
       <td style="text-align:center">—</td>
-      <td style="text-align:center;color:#d97706;font-weight:600">לא ידוע</td></tr>`;
+      <td class="hide-mobile" style="text-align:center;color:#d97706;font-weight:600">לא ידוע</td></tr>`;
   }
   const diff = it.status === 'counted' ? (it.actual_qty - it.expected_qty) : null;
   const cls = it.status === 'pending' ? 'sc-row-pending'
@@ -186,9 +198,11 @@ function scRenderItemRow(it) {
     onmouseenter="this.style.background='#e3edf9'" onmouseleave="this.style.background=''">
     <td style="font-weight:600;font-size:.85rem">${bc || '—'}</td>
     <td>${escapeHtml(it.brand || '—')}</td><td>${escapeHtml(it.model || '—')}</td>
+    <td>${escapeHtml(it.color || '—')}</td><td>${escapeHtml(it.size || '—')}</td>
+    <td class="hide-mobile">${ptLabel[it.product_type] || '—'}</td>
     <td style="text-align:center;font-weight:700">${it.status === 'counted' ? it.actual_qty : '—'}</td>
     <td style="text-align:center;font-weight:700">${diff !== null ? (diff > 0 ? '+' : '') + diff : '—'}</td>
-    <td style="text-align:center">${st} ${undo}</td></tr>`;
+    <td class="hide-mobile" style="text-align:center">${st} ${undo}</td></tr>`;
 }
 
 function scCalcStats(items) {
@@ -239,8 +253,10 @@ function renderSessionScreen(countId, items) {
         <table style="width:100%;border-collapse:collapse;font-size:.82rem">
           <thead><tr style="background:var(--primary);color:white;text-align:right">
             <th style="padding:8px">ברקוד</th><th style="padding:8px">מותג</th><th style="padding:8px">דגם</th>
+            <th style="padding:8px">צבע</th><th style="padding:8px">מידה</th>
+            <th class="hide-mobile" style="padding:8px">סוג</th>
             <th style="padding:8px;text-align:center">בפועל</th><th style="padding:8px;text-align:center">פער</th>
-            <th style="padding:8px;text-align:center">סטטוס</th>
+            <th class="hide-mobile" style="padding:8px;text-align:center">סטטוס</th>
           </tr></thead>
           <tbody id="sc-session-body">${_scApplyFilters(items).map(scRenderItemRow).join('')}</tbody>
         </table>

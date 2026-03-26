@@ -441,6 +441,7 @@ When running multi-step prompts in bypass permissions mode, follow these safety 
 - Verify branch = `develop` before ANY work (`git branch`)
 - Never `checkout main` or `push` to main
 - Run `git pull origin develop` at session start
+- All browser testing uses `?t=demo` (demo tenant, PIN: 12345). NEVER test on `?t=prizma` (production data).
 
 ### Checkpoints
 - Every 3 steps: update SESSION_CONTEXT.md with progress, then `git add -A && git commit -m "checkpoint: [description]" && git push`

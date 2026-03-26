@@ -415,3 +415,5 @@ tr.row-err td{background:#fef2f2}
 /* Receipt row dimmed (not_received PO items) */
 .rcpt-row-dimmed{opacity:.45}
 .rcpt-row-dimmed input,.rcpt-row-dimmed select:not(.rcpt-receipt-status){pointer-events:none}
+/* Utility: hide on mobile */
+@media(max-width:768px){.hide-mobile{display:none!important}}

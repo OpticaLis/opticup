@@ -26,6 +26,14 @@ async function showDiffReport(countId) {
       });
     }
 
+    // Enrich with product_type from inventory for items missing it
+    var needPt = allItems.filter(i => i.inventory_id && !i.product_type);
+    if (needPt.length) {
+      var invIds = [...new Set(needPt.map(i => i.inventory_id))];
+      var { data: ptRows } = await sb.from(T.INV).select('id, product_type').in('id', invIds);
+      if (ptRows) { var ptMap = {}; ptRows.forEach(r => { ptMap[r.id] = r.product_type || ''; });
+        needPt.forEach(i => { i.product_type = ptMap[i.inventory_id] || ''; }); }
+    }
     const diffItems = allItems.filter(i => i.status === 'counted' && i.actual_qty !== i.expected_qty);
     const pendingItems = allItems.filter(i => i.status === 'pending');
     const unknownItems = allItems.filter(i => i.status === 'unknown');
@@ -49,20 +57,21 @@ function renderReportScreen(countId, diffItems, allItems, displayItems, nothingS
   const hasQtyChanges = displayItems.some(it => it._current_qty !== undefined && it._current_qty !== it.expected_qty);
 
   const rows = displayItems.length === 0
-    ? '<tr><td colspan="10" style="text-align:center;padding:24px;color:#999">אין פערים — הכל תקין!</td></tr>'
+    ? '<tr><td colspan="13" style="text-align:center;padding:24px;color:#999">אין פערים — הכל תקין!</td></tr>'
     : displayItems.map(it => {
         if (it.status === 'pending') {
+          var ptL = { eyeglasses: '\u05E8\u05D0\u05D9\u05D9\u05D4', sunglasses: '\u05E9\u05DE\u05E9' };
           return `<tr class="sc-row-pending">
             <td></td>
             <td style="font-weight:600;font-size:.85rem">${escapeHtml(it.barcode || '—')}</td>
-            <td>${escapeHtml(it.brand || '—')}</td>
-            <td>${escapeHtml(it.model || '—')}</td>
+            <td>${escapeHtml(it.brand || '—')}</td><td>${escapeHtml(it.model || '—')}</td>
+            <td>${escapeHtml(it.color || '—')}</td><td>${escapeHtml(it.size || '—')}</td>
+            <td class="hide-mobile">${ptL[it.product_type] || '—'}</td>
             <td style="text-align:center">${it.expected_qty}</td>
             <td style="text-align:center">${it._current_qty !== undefined ? it._current_qty : '—'}</td>
             <td style="text-align:center;font-weight:700">—</td>
             <td style="text-align:center;font-weight:700;color:var(--g400)">?</td>
-            <td>לא נספר</td>
-            <td></td>
+            <td>לא נספר</td><td></td>
           </tr>`;
         }
         const diff = it.actual_qty - it.expected_qty;
@@ -70,11 +79,13 @@ function renderReportScreen(countId, diffItems, allItems, displayItems, nothingS
         const changed = it._current_qty !== undefined && it._current_qty !== it.expected_qty;
         const curCell = it._current_qty !== undefined ? it._current_qty : '—';
         const hasDiff = diff !== 0;
+        var ptL2 = { eyeglasses: '\u05E8\u05D0\u05D9\u05D9\u05D4', sunglasses: '\u05E9\u05DE\u05E9' };
         return `<tr class="${cls}">
           <td style="text-align:center"><input type="checkbox" class="sc-approve-cb" data-item-id="${it.id}" checked></td>
           <td style="font-weight:600;font-size:.85rem">${escapeHtml(it.barcode || '—')}</td>
-          <td>${escapeHtml(it.brand || '—')}</td>
-          <td>${escapeHtml(it.model || '—')}</td>
+          <td>${escapeHtml(it.brand || '—')}</td><td>${escapeHtml(it.model || '—')}</td>
+          <td>${escapeHtml(it.color || '—')}</td><td>${escapeHtml(it.size || '—')}</td>
+          <td class="hide-mobile">${ptL2[it.product_type] || '—'}</td>
           <td style="text-align:center">${it.expected_qty}</td>
           <td style="text-align:center${changed ? ';color:#d97706;font-weight:600' : ''}">${curCell}${changed ? ' ⚠️' : ''}</td>
           <td style="text-align:center;font-weight:700">${it.actual_qty}</td>
@@ -117,6 +128,8 @@ function renderReportScreen(countId, diffItems, allItems, displayItems, nothingS
           <thead><tr style="background:var(--primary);color:white;text-align:right">
             <th style="padding:8px;text-align:center;width:40px">אשר</th>
             <th style="padding:8px">ברקוד</th><th style="padding:8px">מותג</th><th style="padding:8px">דגם</th>
+            <th style="padding:8px">צבע</th><th style="padding:8px">מידה</th>
+            <th class="hide-mobile" style="padding:8px">סוג</th>
             <th style="padding:8px;text-align:center">צפוי</th><th style="padding:8px;text-align:center">נוכחי</th>
             <th style="padding:8px;text-align:center">נספר</th>
             <th style="padding:8px;text-align:center">פער</th><th style="padding:8px">הערה</th>
