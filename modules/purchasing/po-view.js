@@ -102,6 +102,9 @@ async function openViewPO(id) {
         ? '<td style="padding:4px"><input type="number" class="po-view-selldisc" data-idx="' + idx + '" step="0.1" min="0" max="100" value="' + (item.sell_discount ? (item.sell_discount * 100).toFixed(1) : '') + '" style="width:60px;font-size:12px;text-align:center;border:1px solid #d1d5db;border-radius:4px;padding:4px" placeholder="%"></td>'
         : '<td style="padding:8px;text-align:center">' + (item.sell_discount ? (item.sell_discount * 100).toFixed(1) + '%' : '\u2014') + '</td>';
 
+      var noteRow = item.notes
+        ? '<tr style="background:' + rowColor + '"><td colspan="' + (showStatusCol ? 13 : 12) + '" style="padding:2px 8px 8px 8px;font-size:12px;color:#6b7280;font-style:italic">\uD83D\uDCAC ' + escapeHtml(item.notes) + '</td></tr>'
+        : '';
       return `<tr style="background:${rowColor}">
         <td style="padding:8px">${escapeHtml(item.brand||'\u2014')}</td>
         <td style="padding:8px">${escapeHtml(item.model||'\u2014')}</td>
@@ -115,7 +118,7 @@ async function openViewPO(id) {
         <td style="padding:8px; text-align:center; font-weight:600">\u20AA${total.toFixed(2)}</td>
         ${sellPriceCell}${sellDiscCell}
         ${actionCell}
-      </tr>`;
+      </tr>${noteRow}`;
     }).join('');
 
     const grandTotal = (items||[]).reduce((sum, item) => {
@@ -217,6 +220,9 @@ document.addEventListener('click', function(e) {
   // Clone PO
   const cloneBtn = e.target.closest('.btn-po-clone');
   if (cloneBtn) { clonePO(cloneBtn.dataset.id); return; }
+  // Note button — open details and focus note textarea
+  const noteBtn = e.target.closest('.btn-po-note');
+  if (noteBtn) { togglePOItemNote(parseInt(noteBtn.dataset.index)); return; }
   // #18 togglePOItemDetails (array index)
   const toggleBtn = e.target.closest('.btn-po-toggle');
   if (toggleBtn) { togglePOItemDetails(parseInt(toggleBtn.dataset.index)); return; }

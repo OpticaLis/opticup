@@ -117,6 +117,7 @@ function renderPOItemsTable() {
                  oninput="_onPOFinalPriceChange(${i}, +this.value); updatePOTotals()" style="width:75px;padding:4px 6px;border:1px solid #ddd;border-radius:4px" placeholder="מחיר סופי"></td>
       <td id="po-row-total-${i}" style="text-align:center; font-weight:600; padding:8px">—</td>
       <td>
+        <button class="btn-po-note" data-index="${i}" style="background:none;border:none;cursor:pointer;font-size:14px;${item.notes ? 'color:#2196F3' : 'opacity:.4'}" title="הערה לפריט">${item.notes ? '\uD83D\uDCAC' : '\uD83D\uDCAD'}</button>
         <button class="btn-po-toggle" data-index="${i}" style="background:none;border:none;cursor:pointer;font-size:14px" title="פרטים נוספים">&#9660;</button>
         <button class="btn-po-dup" data-index="${i}" title="שכפל שורה" style="background:none;border:none;cursor:pointer;font-size:14px;color:#2196F3;padding:2px 4px">&#10697;</button>
         <button class="btn-po-remove" data-index="${i}" style="background:none;border:none;cursor:pointer;color:#f44336;font-size:16px">&#10005;</button>
@@ -155,28 +156,28 @@ function renderPOItemsTable() {
             <input type="text" value="${escapeHtml(item.temple_length||'')}" oninput="currentPOItems[${i}].temple_length=this.value"
                    style="width:60px;padding:4px 6px;border-radius:4px;border:1px solid #ccc"></div>
         </div>
+        <div style="margin-top:8px">
+          <label style="font-size:12px;display:block">הערה</label>
+          <textarea class="po-item-note" data-index="${i}" rows="2" maxlength="500"
+                    oninput="currentPOItems[${i}].notes=this.value; _updatePONoteBtn(${i})"
+                    placeholder="הערה לפריט..."
+                    style="width:100%;padding:6px 8px;border-radius:4px;border:1px solid #ccc;direction:rtl;resize:vertical;font-size:13px">${escapeHtml(item.notes||'')}</textarea>
+        </div>
       </td>
     </tr>
   `}).join('');
 
-  tfoot.innerHTML = `
-    <tr style="font-weight:700; border-top:2px solid #1a2744">
-      <td colspan="5" style="padding:8px; text-align:left">\u05E1\u05D4"\u05DB:</td>
-      <td id="po-total-qty" style="padding:8px"></td>
-      <td colspan="3" style="padding:8px; text-align:left">\u05E1\u05DB\u05D5\u05DD \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DE:</td>
-      <td id="po-total-amount" style="padding:8px; font-size:15px"></td>
-      <td></td>
-    </tr>
-    <tr style="color:#666; font-size:.88rem">
-      <td colspan="9" style="padding:4px 8px; text-align:left">\u05DE\u05E2"\u05DE (<span id="po-vat-rate"></span>%):</td>
-      <td id="po-vat-amount" style="padding:4px 8px"></td>
-      <td></td>
-    </tr>
-    <tr style="font-weight:700; font-size:1.05rem; border-top:1px solid #ddd">
-      <td colspan="9" style="padding:8px; text-align:left">\u05E1\u05D4"\u05DB \u05DB\u05D5\u05DC\u05DC \u05DE\u05E2"\u05DE:</td>
-      <td id="po-total-with-vat" style="padding:8px; font-size:15px; color:#059669"></td>
-      <td></td>
-    </tr>`;
+  tfoot.innerHTML = '<tr style="font-weight:700;border-top:2px solid #1a2744">' +
+    '<td colspan="5" style="padding:8px;text-align:left">\u05E1\u05D4"\u05DB:</td>' +
+    '<td id="po-total-qty" style="padding:8px"></td>' +
+    '<td colspan="3" style="padding:8px;text-align:left">\u05E1\u05DB\u05D5\u05DD \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DE:</td>' +
+    '<td id="po-total-amount" style="padding:8px;font-size:15px"></td><td></td></tr>' +
+    '<tr style="color:#666;font-size:.88rem">' +
+    '<td colspan="9" style="padding:4px 8px;text-align:left">\u05DE\u05E2"\u05DE (<span id="po-vat-rate"></span>%):</td>' +
+    '<td id="po-vat-amount" style="padding:4px 8px"></td><td></td></tr>' +
+    '<tr style="font-weight:700;font-size:1.05rem;border-top:1px solid #ddd">' +
+    '<td colspan="9" style="padding:8px;text-align:left">\u05E1\u05D4"\u05DB \u05DB\u05D5\u05DC\u05DC \u05DE\u05E2"\u05DE:</td>' +
+    '<td id="po-total-with-vat" style="padding:8px;font-size:15px;color:#059669"></td><td></td></tr>';
 
   updatePOTotals();
   _updatePOBrandFilter();
@@ -223,37 +224,27 @@ function _onPOCostChange(i) {
 
 // ── Totals ───────────────────────────────────────────────────
 function updatePOTotals() {
-  let totalQty = 0;
-  let totalAmount = 0;
-
-  currentPOItems.forEach((item, i) => {
-    const qty = item.qty_ordered || 0;
-    const cost = item.unit_cost || 0;
-    const disc = item.discount_pct || 0;
-    const rowTotal = qty * cost * (1 - disc / 100);
-
-    totalQty += qty;
-    totalAmount += rowTotal;
-
-    const cell = document.getElementById(`po-row-total-${i}`);
-    if (cell) cell.textContent = rowTotal > 0 ? `₪${rowTotal.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—';
+  var totalQty = 0, totalAmount = 0;
+  var fmt = function(n) { return '\u20AA' + n.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  currentPOItems.forEach(function(item, i) {
+    var qty = item.qty_ordered || 0, cost = item.unit_cost || 0, disc = item.discount_pct || 0;
+    var rowTotal = qty * cost * (1 - disc / 100);
+    totalQty += qty; totalAmount += rowTotal;
+    var cell = document.getElementById('po-row-total-' + i);
+    if (cell) cell.textContent = rowTotal > 0 ? fmt(rowTotal) : '\u2014';
   });
-
-  const qtyEl = document.getElementById('po-total-qty');
-  const amtEl = document.getElementById('po-total-amount');
+  var qtyEl = document.getElementById('po-total-qty');
+  var amtEl = document.getElementById('po-total-amount');
   if (qtyEl) qtyEl.textContent = totalQty;
-  if (amtEl) amtEl.textContent = `₪${totalAmount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-  // VAT summary
+  if (amtEl) amtEl.textContent = fmt(totalAmount);
   var vatRate = Number(typeof getTenantConfig === 'function' ? getTenantConfig('vat_rate') : 0) || 17;
-  var vatAmount = totalAmount * vatRate / 100;
-  var totalWithVat = totalAmount + vatAmount;
+  var vatAmount = totalAmount * vatRate / 100, totalWithVat = totalAmount + vatAmount;
   var vatRateEl = document.getElementById('po-vat-rate');
   var vatAmtEl = document.getElementById('po-vat-amount');
   var totalVatEl = document.getElementById('po-total-with-vat');
   if (vatRateEl) vatRateEl.textContent = vatRate;
-  if (vatAmtEl) vatAmtEl.textContent = `₪${vatAmount.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  if (totalVatEl) totalVatEl.textContent = `₪${totalWithVat.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (vatAmtEl) vatAmtEl.textContent = fmt(vatAmount);
+  if (totalVatEl) totalVatEl.textContent = fmt(totalWithVat);
 }
 
 // ── Add/remove items ─────────────────────────────────────────
@@ -303,23 +294,35 @@ function removePOItem(index) {
 }
 
 function duplicatePOItem(i) {
-  const orig = currentPOItems[i];
-  const copy = { ...orig, size: '' };
-  const key = `${copy.brand}|${copy.model}|${copy.color}|${copy.size}`;
-  const conflict = copy.size !== '' && currentPOItems.some((it, idx) =>
-    idx !== i && `${it.brand}|${it.model}|${it.color}|${it.size}` === key
-  );
-  if (conflict) {
-    toast('פריט זהה כבר קיים ברשימה', 'e');
-    return;
+  var copy = { ...currentPOItems[i], size: '' };
+  var key = [copy.brand, copy.model, copy.color, copy.size].join('|');
+  if (copy.size !== '' && currentPOItems.some(function(it, idx) { return idx !== i && [it.brand, it.model, it.color, it.size].join('|') === key; })) {
+    toast('פריט זהה כבר קיים ברשימה', 'e'); return;
   }
-  currentPOItems.splice(i + 1, 0, copy);
-  renderPOItemsTable();
+  currentPOItems.splice(i + 1, 0, copy); renderPOItemsTable();
 }
 
 function togglePOItemDetails(i) {
   const row = document.getElementById(`po-item-details-${i}`);
   if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+
+function togglePOItemNote(i) {
+  var row = document.getElementById('po-item-details-' + i);
+  if (row) {
+    if (row.style.display === 'none') row.style.display = '';
+    var ta = row.querySelector('.po-item-note');
+    if (ta) setTimeout(function() { ta.focus(); }, 50);
+  }
+}
+
+function _updatePONoteBtn(i) {
+  var btn = document.querySelector('.btn-po-note[data-index="' + i + '"]');
+  if (!btn) return;
+  var hasNote = !!(currentPOItems[i] && currentPOItems[i].notes);
+  btn.textContent = hasNote ? '\uD83D\uDCAC' : '\uD83D\uDCAD';
+  btn.style.color = hasNote ? '#2196F3' : '';
+  btn.style.opacity = hasNote ? '1' : '.4';
 }
 
 // ── Live stock counter — shows inventory count as PO fields are filled ──

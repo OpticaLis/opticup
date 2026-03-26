@@ -435,6 +435,8 @@
 | `removePOItem` | `(index)` | Removes item by index, re-renders |
 | `duplicatePOItem` | `(i)` | Duplicates item (clears size), checks for duplicate key conflicts |
 | `togglePOItemDetails` | `(i)` | Toggles expanded detail row visibility |
+| `togglePOItemNote` | `(i)` | Opens details row and focuses the notes textarea |
+| `_updatePONoteBtn` | `(i)` | Updates note button icon based on notes content |
 | `_updatePOStockCounter` | `(i, brand, model, color, size)` | Debounced live stock counter — queries inventory count as PO fields are filled |
 | `_doUpdatePOStockCounter` | `(i, brand, model, color, size)` | Async. Executes the stock count query and updates the po-stock-{i} element |
 
