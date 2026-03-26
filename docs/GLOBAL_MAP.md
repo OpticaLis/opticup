@@ -14,6 +14,7 @@
 | Employees | `employees.html` | Module 1 — Permissions | Standalone employee management (CRUD, role assignment) |
 | Shipments | `shipments.html` | Module 1 — Shipments | Box management: list, 3-step wizard, detail panel, courier settings |
 | Settings | `settings.html` | Module 1 — Settings | Tenant config: business info, financial settings, logo upload |
+| Platform Admin | `admin.html` | Module 2 — Platform Admin | Supabase Auth email+password login, admin panel shell. Separate world from ERP — no shared.js, no tenant context. |
 
 ---
 
@@ -505,6 +506,7 @@ Pages modified for shared/ dependencies:
 | `next_po_number` | Purchasing | `p_tenant_id UUID, p_supplier_number TEXT` | `TEXT` (PO-{sup}-NNNN) | PO creation, clonePO |
 | `next_return_number` | Debt — Returns | `p_tenant_id UUID, p_supplier_number TEXT` | `TEXT` (RET-{sup}-NNNN) | Return creation (PO compare, debt returns) |
 | `get_po_aggregates` | Purchasing | `p_tenant_id UUID` | `TABLE(po_id, item_count, total_value)` | PO list table (server-side totals) |
+| `is_platform_super_admin` | Platform Admin | — | `BOOLEAN` | RLS policies on plans, platform_admins (SECURITY DEFINER — avoids recursion) |
 
 ### Edge Functions (Supabase)
 
@@ -598,6 +600,22 @@ Pages modified for shared/ dependencies:
 | `_buildDocActionToolbar` | debt-doc-actions.js | `doc: object` | `string` | Document action toolbar HTML (OCR, pending_review toggle, delete) |
 | `_togglePendingReview` | debt-doc-actions.js | `docId: string` | `Promise<void>` | Toggle document pending_review status |
 
+### Module 2 — Platform Admin Contracts
+
+| Contract Function | Owner File | Parameters | Returns | Used By |
+|-------------------|-----------|-----------|---------|---------|
+| `adminLogin` | admin-auth.js | `email, password` | `{ id, email, display_name, role }` | admin-app.js (handleLogin) |
+| `adminLogout` | admin-auth.js | — | `void` | admin-app.js (handleLogout) |
+| `getAdminSession` | admin-auth.js | — | `admin object \| null` | admin-app.js (DOMContentLoaded) |
+| `getCurrentAdmin` | admin-auth.js | — | `admin object \| null` | admin-audit.js, admin-app.js |
+| `requireAdmin` | admin-auth.js | `minRole = 'viewer'` | `admin object \| throws` | Future admin panel features (Phase 3+) |
+| `AdminDB.query` | admin-db.js | `table, select?, filters?` | `data[]` | Admin panel features (Phase 3+) |
+| `AdminDB.getById` | admin-db.js | `table, id` | `row` | Admin panel features (Phase 3+) |
+| `AdminDB.insert` | admin-db.js | `table, data` | `row` | admin-audit.js, admin panel features |
+| `AdminDB.update` | admin-db.js | `table, id, data` | `row` | Admin panel features (Phase 3+) |
+| `AdminDB.rpc` | admin-db.js | `name, params?` | `data` | createTenant (Phase 2) |
+| `logAdminAction` | admin-audit.js | `action, targetTenantId?, details?` | `void` | admin-app.js (login/logout), all admin actions |
+
 ### Shipments Config Contracts
 
 | Contract Function | Owner File | Parameters | Returns | Used By |
@@ -665,6 +683,17 @@ Pages modified for shared/ dependencies:
 | `modules/inventory/inventory-table.js` | `toggleNoImagesFilter()` | Toggles client-side filter for items without images |
 
 | Module 1.5 — Shared Components | ✅ Complete (QA passed) | `shared/css/`, `shared/js/`, `shared/tests/`, `scripts/` | — | 1 (activity_log) + ui_config column + PK fixes on roles/permissions/role_permissions |
+| Module 2 — Platform Admin | Phase 1 ✅ | `modules/admin-platform/` | `admin.html` | 5 new (plans, platform_admins, platform_audit_log, tenant_config, tenant_provisioning_log) + 9 columns on tenants |
+
+### Module 2 — Platform Admin Files (Phase 1)
+
+| File | Lines | Description |
+|------|-------|-------------|
+| `admin.html` | 192 | Platform Admin HTML page — Supabase Auth login, shared CSS, no ERP dependencies |
+| `modules/admin-platform/admin-auth.js` | 94 | adminSb client, login/logout/session, getCurrentAdmin, requireAdmin |
+| `modules/admin-platform/admin-db.js` | 63 | AdminDB wrapper (query, getById, insert, update, rpc) — no tenant_id |
+| `modules/admin-platform/admin-audit.js` | 20 | logAdminAction fire-and-forget audit logger |
+| `modules/admin-platform/admin-app.js` | 88 | App init, login/panel toggle, handleLogin/handleLogout |
 
 ---
 
@@ -776,6 +805,18 @@ Pages modified for shared/ dependencies:
 | `prescriptions` (future) | Future Prescriptions | id, customer_id, prescription_date, od_sph, os_sph, tenant_id | — (⚠️ RLS permissive — future stub, will be fixed in Module 2) |
 | `work_orders` (future) | Future Work Orders | id, order_number, customer_id, prescription_id, status, tenant_id | — (⚠️ RLS permissive — future stub, will be fixed in Module 2) |
 
+### Platform Admin — Module 2 (5 tables + tenants extension)
+
+| Table Name | Owner Module | Key Columns | Used By |
+|------------|-------------|-------------|---------|
+| `plans` | Platform Admin — Plans | id, name, display_name, limits (JSONB), features (JSONB), price_monthly, is_active | Admin panel, checkPlanLimit (Phase 4), tenant provisioning |
+| `platform_admins` | Platform Admin — Auth | id, auth_user_id, email, display_name, role, status, last_login | Admin auth (admin-auth.js), RLS policies via is_platform_super_admin() |
+| `platform_audit_log` | Platform Admin — Audit | id, admin_id, action, target_tenant_id, details (JSONB) | Admin audit trail (admin-audit.js) |
+| `tenant_config` | Platform Admin — Config | id, tenant_id, key, value (JSONB), UNIQUE(tenant_id, key) | Per-tenant config, feature overrides (Phase 4) |
+| `tenant_provisioning_log` | Platform Admin — Provisioning | id, tenant_id, step, status, details (JSONB), error_message | createTenant RPC (Phase 2) |
+
+**tenants table extended with:** plan_id, status, trial_ends_at, owner_name, owner_email, owner_phone, created_by, suspended_reason, deleted_at
+
 ---
 
-**Table count verification:** 7 + 2 + 2 + 3 + 2 + 5 + 11 + 5 + 6 + 3 + 4 = **50 tables**
+**Table count verification:** 7 + 2 + 2 + 3 + 2 + 5 + 11 + 5 + 6 + 3 + 4 + 5 = **55 tables**

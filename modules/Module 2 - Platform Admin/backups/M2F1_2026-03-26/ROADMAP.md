@@ -64,7 +64,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 
 | פאזה | סטטוס | שם | מה כולל |
 |------|--------|----|---------|
-| 1 | ✅ | DB + Admin Auth | טבלאות, Supabase Auth setup, admin.html login |
+| 1 | ⬜ | DB + Admin Auth | טבלאות, Supabase Auth setup, admin.html login |
 | 2 | ⬜ | Tenant Provisioning | createTenant() RPC, טופס יצירה, slug validation |
 | 3 | ⬜ | Dashboard + Management | רשימת tenants, עריכה, suspend, activity log viewer |
 | 4 | ⬜ | Plans & Limits | טבלת plans, checkPlanLimit(), isFeatureEnabled(), feature flags |
