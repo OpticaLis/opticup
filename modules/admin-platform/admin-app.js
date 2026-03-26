@@ -69,6 +69,7 @@ function showAdminPanel(admin) {
 
   if (!_logoutListenerBound) {
     document.getElementById('admin-logout-btn').addEventListener('click', handleLogout);
+    document.getElementById('btn-new-tenant').addEventListener('click', initProvisioningWizard);
     _logoutListenerBound = true;
   }
 }

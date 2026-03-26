@@ -175,6 +175,7 @@
         <h2>שלום, <span id="welcome-name"></span></h2>
         <p>ברוכים הבאים ל-Platform Admin</p>
         <p style="color: var(--color-gray-400);">Dashboard, ניהול tenants, ותוכניות — בפאזות הבאות</p>
+        <button id="btn-new-tenant" class="btn btn-primary btn-lg" style="margin-top: 1.5rem;">➕ חנות חדשה</button>
       </div>
     </main>
   </div>
@@ -182,11 +183,13 @@
   <!-- Shared JS Components -->
   <script src="shared/js/toast.js"></script>
   <script src="shared/js/modal-builder.js"></script>
+  <script src="shared/js/modal-wizard.js"></script>
 
   <!-- Admin JS -->
   <script src="modules/admin-platform/admin-auth.js"></script>
   <script src="modules/admin-platform/admin-db.js"></script>
   <script src="modules/admin-platform/admin-audit.js"></script>
+  <script src="modules/admin-platform/admin-provisioning.js"></script>
   <script src="modules/admin-platform/admin-app.js"></script>
 </body>
 </html>
