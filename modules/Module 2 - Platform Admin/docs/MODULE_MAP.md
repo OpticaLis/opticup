@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in Module 2.
 > Updated every commit that adds/changes code.
-> Last updated: 2026-03-26 (Phase 2 complete)
+> Last updated: 2026-03-26 (Phase 3d)
 
 ---
 
@@ -10,7 +10,7 @@
 
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
-| 1 | admin.html | `/admin.html` | 195 | Platform Admin HTML page. Supabase Auth login/logout. Loads shared/css/ (6 files), shared/js/toast.js, modal-builder.js, modal-wizard.js, 5 admin JS files. "חנות חדשה" button in welcome section. Two sections: #login-screen and #admin-panel. |
+| 1 | admin.html | `/admin.html` | 258 | Platform Admin HTML page. Login screen + full dashboard layout. Header (logo + admin name/role + logout), nav tabs (חנויות/Audit Log/הגדרות), toolbar (new tenant + search + filters), content areas (tenants/audit/settings), slide-in panel (tenant detail with 4 tabs). Loads shared/css/ (8 files), shared/js/ (toast, modal-builder, modal-wizard, table-builder), 5 admin JS files. |
 | 2 | admin-auth.js | `/modules/admin-platform/admin-auth.js` | 94 | Supabase client for admin context (adminSb). Login, logout, session check, getCurrentAdmin, requireAdmin. ROLE_LEVELS constant. _fetchAdmin internal. |
 | 3 | admin-db.js | `/modules/admin-platform/admin-db.js` | 63 | AdminDB global object. Lightweight DB wrapper with no tenant_id injection. Methods: query, getById, insert, update, rpc. All use adminSb. |
 | 4 | admin-audit.js | `/modules/admin-platform/admin-audit.js` | 20 | logAdminAction() — fire-and-forget audit logger. Swallows errors. |
