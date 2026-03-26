@@ -34,11 +34,11 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
     .limit(1);
   if (existing.data && existing.data.length > 0) {
     console.warn('createDocumentFromReceipt: document already exists for receipt', receiptId, '→', existing.data[0].internal_number);
-    await writeLog('debt_duplicate_prevented', null, {
+    writeLog('debt_duplicate_prevented', null, {
       receipt_id: receiptId,
       existing_doc_id: existing.data[0].id,
       existing_internal_number: existing.data[0].internal_number
-    });
+    }).catch(err => console.error('writeLog failed in createDocumentFromReceipt:', err));
     return existing.data[0]; // return existing doc gracefully
   }
 
@@ -60,7 +60,6 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   const supplier = supplierRows[0];
   if (!supplier) {
     console.error('createDocumentFromReceipt: supplier not found for receipt', receiptId, 'supplierId:', supplierId);
-    Toast.warning('לא נמצא ספק — המסמך לא נוצר בחובות');
     return null;
   }
 
@@ -73,7 +72,6 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   const docType = docTypes[0];
   if (!docType) {
     console.error('createDocumentFromReceipt: document_type not found for code', docTypeCode, 'tenant:', getTenantId());
-    Toast.warning('סוג מסמך "תעודת משלוח" לא נמצא — המסמך לא נוצר בחובות');
     return null;
   }
 
