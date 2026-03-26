@@ -433,6 +433,33 @@ git push origin v{phase}
 
 ---
 
+## Autonomous Execution Mode
+
+When running multi-step prompts in bypass permissions mode, follow these safety rules:
+
+### Pre-flight
+- Verify branch = `develop` before ANY work (`git branch`)
+- Never `checkout main` or `push` to main
+- Run `git pull origin develop` at session start
+
+### Checkpoints
+- Every 3 steps: update SESSION_CONTEXT.md with progress, then `git add -A && git commit -m "checkpoint: [description]" && git push`
+- Track progress in SESSION_CONTEXT.md using a step tracking table:
+  | Step | Status | Notes |
+  |------|--------|-------|
+  | 1    | ✅/🔄/⬜ | description |
+
+### Blocked Items
+- If a step fails after 3 attempts → mark as BLOCKED in SESSION_CONTEXT.md, document the error, skip to next step
+- If a decision is needed that wasn't specified → mark as DECISION_NEEDED, choose the simpler option, document reasoning, continue
+
+### Verification
+- After every file change: app must load with zero console errors
+- After every DB change: verify with a test query
+- After every function creation: `grep -rn "functionName" --include="*.js" .` to check for name collisions
+
+---
+
 ## Working Rules (AI Sessions)
 
 0. **Branch verification** — Every prompt starts with: `git branch` → confirm on `develop`. If not: `git checkout develop`. No exceptions.
