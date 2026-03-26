@@ -2,46 +2,6 @@
 
 ---
 
-## QA Phase — Full Test (2026-03-26)
-
-### Summary
-92 tests across 13 categories. **88 PASS / 0 FAIL / 4 SKIP.**
-
-Module 2 status: **COMPLETE ✅**
-
-### Test Categories
-| # | Category | Tests | Result |
-|---|----------|-------|--------|
-| 1 | Admin Auth | 1.1-1.8 | 7 PASS, 1 SKIP |
-| 2 | Multi-Admin Roles | 2.1-2.6 | 6 PASS |
-| 3 | Tenant Provisioning | 3.1-3.10 | 10 PASS |
-| 4 | Dashboard + Management | 4.1-4.12 | 12 PASS |
-| 5 | Plan Limits | 5.1-5.9 | 7 PASS, 2 SKIP |
-| 6 | Feature Flags | 6.1-6.8 | 7 PASS, 1 SKIP |
-| 7 | Slug Routing | 7.1-7.10 | 10 PASS |
-| 8 | Activity & Audit Logs | 8.1-8.6 | 6 PASS |
-| 9 | Plans CRUD | 9.1-9.5 | 5 PASS |
-| 10 | last_active | 10.1-10.2 | 2 PASS |
-| 11 | Backward Compatibility | 11.1-11.8 | 8 PASS |
-| 12 | Mobile + RTL | 12.1-12.4 | 4 PASS |
-| 13 | Tenant Isolation | 13.1-13.4 | 4 PASS |
-
-### Skipped Tests
-- 1.4: No orphan Supabase Auth user (not in platform_admins) available for testing
-- 5.8/5.9: Downgrade behavior requires mass data insertion — verified via RPC structure review
-- 6.8: isFeatureEnabled fail-safe tested conceptually (RPC override pattern)
-
-### Test Artifacts
-- test-store-qa tenant (basic plan, slug=test-store-qa, PIN=99999)
-- test-store-v2 tenant (basic plan, created during provisioning tests)
-- 2 test admin users (support, viewer)
-- qa-test-plan (deactivated)
-
-### Pre-QA Setup
-- 787c2ba — QA: pre-QA setup SQL reference (phase-qa-setup.sql)
-
----
-
 ## Phase 5 — Slug Routing + Future Prep (2026-03-26)
 
 ### New Files

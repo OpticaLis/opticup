@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in Module 2.
 > Updated every commit that adds/changes code.
-> Last updated: 2026-03-26 (QA complete — MODULE COMPLETE ✅)
+> Last updated: 2026-03-26 (Phase 5 complete)
 
 ---
 
@@ -27,8 +27,6 @@
 | 15 | shared.js (ERP) | `/js/shared.js` | 343 | MODIFIED in Phase 5: sync TENANT_SLUG IIFE (URL/sessionStorage), resolveTenant() async (DB query + status check + redirect), auto-resolve for non-index pages. Removed: showTenantBlocked, suspended IIFE guard, 'prizma' default. |
 | 16 | index.html (ERP) | `/index.html` | ~375 | MODIFIED in Phase 5: removed local resolveTenant/showTenantPicker/tenant-picker HTML, module card hrefs with ?t=slug. Phase 4d: data-feature attrs, applyFeatureFlags, plan-helpers.js. |
 | 17 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
-| 18 | PHASE_QA_SPEC.md | `docs/PHASE_QA_SPEC.md` | ~200 | QA test specification: 92 tests across 13 categories. |
-| 19 | phase-qa-setup.sql | `docs/phase-qa-setup.sql` | ~40 | Pre-QA setup SQL: test admin user inserts, plan assignment reference. |
 
 ---
 
