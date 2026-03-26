@@ -92,10 +92,16 @@ function showAdminPanel(admin) {
   const welcomeEl = document.getElementById('welcome-name');
   if (welcomeEl) welcomeEl.textContent = admin.display_name;
 
+  // Role-based UI gating
+  const newTenantBtn = document.getElementById('btn-new-tenant');
+  if (newTenantBtn) newTenantBtn.style.display = hasAdminPermission('super_admin') ? '' : 'none';
+  const auditTab = document.getElementById('tab-audit');
+  if (auditTab) auditTab.style.display = hasAdminPermission('super_admin') ? '' : 'none';
+
   if (!_panelListenersBound) {
     // Logout + provisioning
     document.getElementById('admin-logout-btn').addEventListener('click', handleLogout);
-    document.getElementById('btn-new-tenant').addEventListener('click', initProvisioningWizard);
+    if (newTenantBtn) newTenantBtn.addEventListener('click', initProvisioningWizard);
 
     // Nav tabs
     document.querySelectorAll('.admin-tab:not(:disabled)').forEach(btn => {

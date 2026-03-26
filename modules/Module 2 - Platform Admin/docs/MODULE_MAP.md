@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in Module 2.
 > Updated every commit that adds/changes code.
-> Last updated: 2026-03-26 (Phase 3i)
+> Last updated: 2026-03-26 (Phase 3j)
 
 ---
 
@@ -11,7 +11,7 @@
 | # | File | Path | Lines | Responsibility |
 |---|------|------|-------|----------------|
 | 1 | admin.html | `/admin.html` | 258 | Platform Admin HTML page. Login screen + full dashboard layout. Header (logo + admin name/role + logout), nav tabs (חנויות/Audit Log/הגדרות), toolbar (new tenant + search + filters), content areas (tenants/audit/settings), slide-in panel (tenant detail with 4 tabs). Loads shared/css/ (8 files), shared/js/ (toast, modal-builder, modal-wizard, table-builder), 5 admin JS files. |
-| 2 | admin-auth.js | `/modules/admin-platform/admin-auth.js` | 94 | Supabase client for admin context (adminSb). Login, logout, session check, getCurrentAdmin, requireAdmin. ROLE_LEVELS constant. _fetchAdmin internal. |
+| 2 | admin-auth.js | `/modules/admin-platform/admin-auth.js` | 105 | Supabase client for admin context (adminSb). Login, logout, session check, getCurrentAdmin, requireAdmin, hasAdminPermission. ROLE_LEVELS constant. Exposes: getCurrentAdmin, hasAdminPermission. |
 | 3 | admin-db.js | `/modules/admin-platform/admin-db.js` | 63 | AdminDB global object. Lightweight DB wrapper with no tenant_id injection. Methods: query, getById, insert, update, rpc. All use adminSb. |
 | 4 | admin-audit.js | `/modules/admin-platform/admin-audit.js` | 143 | logAdminAction() audit logger + platform audit log viewer (top-level Audit Log tab). Action filter, Hebrew labels, admin+tenant JOINs. super_admin only. Exposes: loadPlatformAuditLog. |
 | 5 | admin-provisioning.js | `/modules/admin-platform/admin-provisioning.js` | 320 | 3-step wizard (store details → plan+PIN → summary). Slug auto-suggest + debounced real-time validation via validate_slug RPC. provisionTenant() calls create_tenant RPC, logs to provisioning_log + audit. Credentials modal on success. |
@@ -33,7 +33,8 @@
 | `getAdminSession` | 44 | — | admin object or null | Check existing Supabase Auth session |
 | `getCurrentAdmin` | 57 | — | admin object or null | Sync getter — return cached _currentAdmin |
 | `requireAdmin` | 61 | minRole = 'viewer' | admin object or throws | Role hierarchy check |
-| `_fetchAdmin` | 72 | authUserId | admin object or null | Internal — query platform_admins |
+| `hasAdminPermission` | 80 | requiredRole | boolean | Check if current admin role >= required role level |
+| `_fetchAdmin` | 86 | authUserId | admin object or null | Internal — query platform_admins |
 
 ### Admin DB (admin-db.js)
 | Function | Line | Parameters | Returns | Description |

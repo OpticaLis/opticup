@@ -76,6 +76,13 @@ function requireAdmin(minRole = 'viewer') {
   return _currentAdmin;
 }
 
+// --- Role Check ---
+
+function hasAdminPermission(requiredRole) {
+  if (!_currentAdmin) return false;
+  return (ROLE_LEVELS[_currentAdmin.role] || 0) >= (ROLE_LEVELS[requiredRole] || 0);
+}
+
 // --- Internal Helpers ---
 
 async function _fetchAdmin(authUserId) {
@@ -92,3 +99,7 @@ async function _fetchAdmin(authUserId) {
   }
   return data;
 }
+
+// --- Expose globals ---
+window.getCurrentAdmin = getCurrentAdmin;
+window.hasAdminPermission = hasAdminPermission;
