@@ -15,7 +15,7 @@
 | 3 | admin-db.js | `/modules/admin-platform/admin-db.js` | 63 | AdminDB global object. Lightweight DB wrapper with no tenant_id injection. Methods: query, getById, insert, update, rpc. All use adminSb. |
 | 4 | admin-audit.js | `/modules/admin-platform/admin-audit.js` | 20 | logAdminAction() — fire-and-forget audit logger. Swallows errors. |
 | 5 | admin-provisioning.js | `/modules/admin-platform/admin-provisioning.js` | 320 | 3-step wizard (store details → plan+PIN → summary). Slug auto-suggest + debounced real-time validation via validate_slug RPC. provisionTenant() calls create_tenant RPC, logs to provisioning_log + audit. Credentials modal on success. |
-| 6 | admin-app.js | `/modules/admin-platform/admin-app.js` | 89 | App init. DOMContentLoaded → getAdminSession → showAdminPanel or showLoginScreen. handleLogin/handleLogout. Wires btn-new-tenant → initProvisioningWizard. |
+| 6 | admin-app.js | `/modules/admin-platform/admin-app.js` | 229 | App init + tab routing + panel open/close. DOMContentLoaded → session check → showAdminPanel or showLoginScreen. switchTab (tenants/audit/settings), openTenantPanel/closeTenantPanel, switchPanelTab, search+filter event wiring. Exposes globals: switchTab, openTenantPanel, closeTenantPanel, switchPanelTab, selectedTenantId. |
 | 7 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
 
 ---
@@ -62,11 +62,15 @@
 ### Admin App (admin-app.js)
 | Function | Line | Parameters | Returns | Description |
 |----------|------|-----------|---------|-------------|
-| `showLoginScreen` | 17 | — | void | Show login form, hide admin panel |
-| `handleLogin` | 31 | — | void | Read inputs, validate, adminLogin, audit, show panel |
-| `showAdminPanel` | 62 | admin | void | Show admin panel, wire logout + provisioning buttons |
-| `handleLogout` | 76 | — | void | Audit log, adminLogout, show login |
-| `getRoleDisplayName` | 85 | role | string | Map role to Hebrew display name |
+| `showLoginScreen` | 24 | — | void | Show login form, hide admin panel |
+| `handleLogin` | 40 | — | void | Read inputs, validate, adminLogin, audit, show panel |
+| `handleLogout` | 67 | — | void | Close panel, audit log, adminLogout, show login |
+| `getRoleDisplayName` | 76 | role | string | Map role to Hebrew display name |
+| `showAdminPanel` | 82 | admin | void | Show admin panel, wire all listeners (tabs, panel, search, filters), call switchTab('tenants') |
+| `switchTab` | 142 | tabName | void | Tab routing: hide/show content areas, update active class, trigger data load |
+| `openTenantPanel` | 162 | tenantId | void | Show overlay + slide-in panel, set selectedTenantId, call loadTenantDetail if exists |
+| `closeTenantPanel` | 176 | — | void | Hide panel + overlay with transition, clear selectedTenantId |
+| `switchPanelTab` | 193 | tabName | void | Update panel tab active class, call renderPanelTab if exists |
 
 ### ERP Auth (auth-service.js — Phase 2 addition)
 | Function | Line | Parameters | Returns | Description |
@@ -86,7 +90,10 @@
 | `ROLE_LEVELS` | const object | admin-auth.js | Role hierarchy map |
 | `AdminDB` | const object | admin-db.js | DB wrapper object |
 | `_loginListenersBound` | let boolean | admin-app.js | Duplicate listener prevention |
-| `_logoutListenerBound` | let boolean | admin-app.js | Duplicate listener prevention |
+| `_panelListenersBound` | let boolean | admin-app.js | Duplicate listener prevention (tabs, panel, filters) |
+| `currentTab` | let string | admin-app.js | Active top-level tab ('tenants'\|'audit'\|'settings') |
+| `selectedTenantId` | let string/null | admin-app.js | Currently open tenant in slide-in panel |
+| `_searchDebounceTimer` | let number/null | admin-app.js | Debounce timer for search input |
 | `_slugDebounceTimer` | let number/null | admin-provisioning.js | Slug validation debounce timer |
 | `_slugValid` | let boolean | admin-provisioning.js | Current slug validation state |
 | `_plansCache` | let array/null | admin-provisioning.js | Cached plans from DB (loaded once) |
