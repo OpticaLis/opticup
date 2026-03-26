@@ -111,8 +111,14 @@ function _renderDetailsTab(container, actionsEl) {
       ${_usageRow('מסמכים', s.documents_count, limits.max_documents_per_month)}
       ${_usageRow('מותגים', s.brands_count, null)}
     </div>
+    <div id="feature-overrides-section"></div>
     ${isSuperAdmin ? '<button class="btn btn-ghost" style="font-size:0.8125rem" id="_btn-edit">✏️ ערוך</button>' : ''}
   `;
+
+  if (typeof window.renderFeatureOverrides === 'function') {
+    const ovEl = container.querySelector('#feature-overrides-section');
+    if (ovEl) window.renderFeatureOverrides(t.id, t.plan_id, ovEl);
+  }
 
   const editBtn = container.querySelector('#_btn-edit');
   if (editBtn) editBtn.addEventListener('click', () => _enterEditMode());
