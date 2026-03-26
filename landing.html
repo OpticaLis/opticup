@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optic Up — מערכת ניהול לחנויות אופטיקה</title>
+  <link rel="stylesheet" href="shared/css/variables.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-family); background: var(--color-bg-page); color: var(--color-gray-800); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; }
+    .card { background: var(--color-bg-card); border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.08); text-align: center; padding: 3rem 2.5rem 2.5rem; max-width: 420px; width: 100%; }
+    .logo { font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--color-primary-dark); margin-bottom: 1.5rem; }
+    h1 { font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); color: var(--color-gray-900); margin-bottom: .5rem; }
+    .subtitle { font-size: var(--font-size-md); color: var(--color-gray-500); margin-bottom: 2rem; }
+    .form { display: flex; flex-direction: column; gap: .75rem; }
+    .form input { width: 100%; padding: .75rem 1rem; border: 1px solid var(--color-gray-300); border-radius: 8px; font-size: var(--font-size-md); font-family: var(--font-family); outline: none; transition: border-color .15s; }
+    .form input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
+    .form button { padding: .75rem; border: none; border-radius: 8px; background: var(--color-primary); color: var(--color-white); font-size: var(--font-size-md); font-weight: var(--font-weight-semibold); font-family: var(--font-family); cursor: pointer; transition: background .15s; }
+    .form button:hover { background: var(--color-primary-hover); }
+    .err { color: var(--color-error); font-size: var(--font-size-sm); min-height: 1.25rem; }
+    footer { margin-top: 2rem; font-size: var(--font-size-xs); color: var(--color-gray-400); display: flex; gap: 1rem; align-items: center; }
+    footer a { color: var(--color-gray-400); text-decoration: none; }
+    footer a:hover { color: var(--color-primary); text-decoration: underline; }
+    @media (max-width: 480px) { .card { padding: 2rem 1.5rem 1.5rem; } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Optic Up</div>
+    <h1>ברוכים הבאים ל-Optic Up</h1>
+    <p class="subtitle">מערכת ניהול לחנויות אופטיקה</p>
+    <div class="form">
+      <input type="text" id="slug-input" placeholder="הכנס קוד חנות" autocomplete="off" dir="ltr">
+      <button id="slug-btn">כניסה →</button>
+      <div class="err" id="slug-err"></div>
+    </div>
+  </div>
+  <footer>
+    <span>© Optic Up</span>
+    <a href="/admin.html">ניהול פלטפורמה</a>
+  </footer>
+  <script>
+    const input = document.getElementById('slug-input');
+    const err = document.getElementById('slug-err');
+
+    function goToStore() {
+      const slug = input.value.trim().toLowerCase();
+      err.textContent = '';
+      if (!slug) { err.textContent = 'יש להכניס קוד חנות'; return; }
+      if (slug.length < 2 || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(slug)) {
+        err.textContent = 'קוד חנות יכול להכיל רק אותיות באנגלית, מספרים ומקפים';
+        return;
+      }
+      window.location.href = '/?t=' + encodeURIComponent(slug);
+    }
+
+    document.getElementById('slug-btn').addEventListener('click', goToStore);
+    input.addEventListener('keydown', function(e) { if (e.key === 'Enter') goToStore(); });
+    input.focus();
+  </script>
+</body>
+</html>

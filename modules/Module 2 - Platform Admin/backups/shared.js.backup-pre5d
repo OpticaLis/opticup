@@ -40,64 +40,26 @@ const T = {
   IMAGES: 'inventory_images',
 };
 
-// Tenant slug — set by resolveTenant() during page init.
-// All ERP pages call resolveTenant() before any DB queries.
-let TENANT_SLUG = null;
-
-/**
- * Centralized tenant resolution. Called once on page load.
- * Resolution: URL ?t= → sessionStorage → redirect to landing.
- * Queries tenants table for status check (suspended/deleted → error page).
- * Sets TENANT_SLUG global + sessionStorage.
- * @returns {Promise<object|null>} tenant row or null (redirect already triggered)
- */
-async function resolveTenant() {
-  if (TENANT_SLUG) return { id: sessionStorage.getItem('tenant_id'), slug: TENANT_SLUG, name: sessionStorage.getItem('tenant_name_cache') || '' };
-  const urlParams = new URLSearchParams(window.location.search);
-  let slug = urlParams.get('t');
-  if (!slug) slug = sessionStorage.getItem('tenant_slug');
-  if (!slug) {
-    const path = window.location.pathname;
-    if (!path.endsWith('/landing.html') && !path.endsWith('/error.html') && !path.endsWith('/admin.html')) {
-      window.location.href = '/landing.html';
-    }
-    return null;
-  }
-  // Cross-tenant safety: if URL slug differs from stored, clear session
+// Tenant slug — resolved dynamically from URL ?t= param or sessionStorage.
+// index.html sets sessionStorage('tenant_slug') during tenant resolution.
+// Fallback: 'prizma' for backward compatibility.
+const TENANT_SLUG = (function() {
+  const params = new URLSearchParams(window.location.search);
+  const fromUrl = params.get('t');
   const storedSlug = sessionStorage.getItem('tenant_slug');
-  if (storedSlug && slug !== storedSlug) sessionStorage.clear();
-  // Query tenant
-  const { data: tenant, error } = await sb.from('tenants')
-    .select('id, slug, name, status, ui_config, plan_id')
-    .eq('slug', slug).single();
-  if (error || !tenant) {
-    window.location.href = '/error.html?type=not-found&slug=' + encodeURIComponent(slug);
-    return null;
-  }
-  if (tenant.status === 'suspended') {
-    window.location.href = '/error.html?type=suspended&slug=' + encodeURIComponent(slug) + '&name=' + encodeURIComponent(tenant.name);
-    return null;
-  }
-  if (tenant.status === 'deleted') {
-    window.location.href = '/error.html?type=deleted&slug=' + encodeURIComponent(slug);
-    return null;
-  }
-  // Success — set globals
-  TENANT_SLUG = slug;
-  sessionStorage.setItem('tenant_slug', slug);
-  sessionStorage.setItem('tenant_id', tenant.id);
-  sessionStorage.setItem('tenant_name_cache', tenant.name);
-  if (typeof loadTenantTheme === 'function') loadTenantTheme(tenant);
-  return tenant;
-}
 
-// Auto-resolve tenant for non-index ERP pages
-(function() {
-  const path = window.location.pathname;
-  if (path.endsWith('/index.html') || path === '/' ||
-      path.endsWith('/admin.html') || path.endsWith('/landing.html') ||
-      path.endsWith('/error.html')) return;
-  document.addEventListener('DOMContentLoaded', function() { resolveTenant(); });
+  // CRITICAL: Hard tenant isolation — if URL slug differs from stored slug,
+  // clear ALL sessionStorage to prevent cross-tenant data leakage.
+  // This forces re-login on the new tenant.
+  if (fromUrl && storedSlug && fromUrl !== storedSlug) {
+    sessionStorage.clear();
+  }
+
+  if (fromUrl) {
+    sessionStorage.setItem('tenant_slug', fromUrl);
+    return fromUrl;
+  }
+  return storedSlug || 'prizma';
 })();
 
 // — STATE —
@@ -327,3 +289,53 @@ function confirmDialog(title, text = '') {
 // Navigation, info modal, help banner → js/shared-ui.js
 
 // PIN prompt modal → js/pin-modal.js
+
+// ─── Suspended / Deleted Tenant Blocking (Module 2 Phase 3k) ───
+// Covers all ERP pages. index.html also checks in resolveTenant().
+
+function showTenantBlocked(tenant) {
+  const msg = tenant.status === 'deleted' ? 'חנות לא פעילה' : 'החשבון מושהה';
+  const sub = tenant.status === 'deleted'
+    ? 'החנות כבר אינה פעילה במערכת.'
+    : 'פנו ל-support@opticup.co.il';
+  const name = (tenant && tenant.name) ? tenant.name : '';
+  const overlay = document.createElement('div');
+  overlay.id = 'tenant-blocked-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--color-gray-50,#f8fafc);direction:rtl;';
+  const box = document.createElement('div');
+  box.style.cssText = 'text-align:center;padding:3rem 2rem;max-width:420px;';
+  const icon = document.createElement('div');
+  icon.style.cssText = 'font-size:3rem;margin-bottom:1rem;';
+  icon.textContent = tenant.status === 'deleted' ? '🚫' : '⚠️';
+  const h2 = document.createElement('h2');
+  h2.style.cssText = 'font-size:1.5rem;font-weight:700;color:var(--color-gray-900,#0f172a);margin:0 0 0.5rem;';
+  h2.textContent = msg;
+  const pName = document.createElement('p');
+  pName.style.cssText = 'color:var(--color-gray-600,#475569);margin:0 0 1rem;';
+  pName.textContent = name ? 'החשבון של ' + name + (tenant.status === 'suspended' ? ' מושהה.' : ' לא פעיל.') : '';
+  const pSub = document.createElement('p');
+  pSub.style.cssText = 'color:var(--color-gray-500,#64748b);font-size:0.875rem;margin:0;';
+  pSub.textContent = sub;
+  box.appendChild(icon);
+  box.appendChild(h2);
+  if (name) box.appendChild(pName);
+  box.appendChild(pSub);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+// Guard for non-index pages: check tenant status on load
+(function() {
+  const tid = sessionStorage.getItem('tenant_id');
+  if (!tid || window.location.pathname.includes('admin.html')) return;
+  // Skip index.html — it has its own check in resolveTenant()
+  if (window.location.pathname === '/' || window.location.pathname.endsWith('index.html')) return;
+  document.addEventListener('DOMContentLoaded', async function() {
+    try {
+      const { data } = await sb.from('tenants').select('id, name, status').eq('id', tid).maybeSingle();
+      if (data && (data.status === 'suspended' || data.status === 'deleted')) {
+        showTenantBlocked(data);
+      }
+    } catch (_) { /* silent — don't block on network error */ }
+  });
+})();
