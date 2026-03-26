@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in Module 2.
 > Updated every commit that adds/changes code.
-> Last updated: 2026-03-26 (Phase 3g)
+> Last updated: 2026-03-26 (Phase 3h)
 
 ---
 
@@ -18,7 +18,8 @@
 | 6 | admin-app.js | `/modules/admin-platform/admin-app.js` | 229 | App init + tab routing + panel open/close. DOMContentLoaded → session check → showAdminPanel or showLoginScreen. switchTab (tenants/audit/settings), openTenantPanel/closeTenantPanel, switchPanelTab, search+filter event wiring. Exposes globals: switchTab, openTenantPanel, closeTenantPanel, switchPanelTab, selectedTenantId. |
 | 7 | admin-dashboard.js | `/modules/admin-platform/admin-dashboard.js` | 194 | Tenant list table + filters + search. loadTenants() calls get_all_tenants_overview RPC, filterTenants() applies client-side search/status/plan filters, renderTenantsTable() uses TableBuilder. Sort, relative time, plan filter population. Exposes: loadTenants, filterTenants, initDashboard. |
 | 8 | admin-tenant-detail.js | `/modules/admin-platform/admin-tenant-detail.js` | 353 | Slide-in panel content. loadTenantDetail loads stats + renders header. Tab 1 (info/edit/actions): details view, edit mode, suspend/activate/delete/reset PIN. Tab 3 (provisioning log). Tab 4 (audit log, super_admin only). Exposes: loadTenantDetail, renderPanelTab. |
-| 9 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
+| 9 | admin-activity-viewer.js | `/modules/admin-platform/admin-activity-viewer.js` | 189 | Activity log viewer per tenant (Tab 2). Filters: date range, entity type, level. Paginated 50/page via get_tenant_activity_log RPC. Exposes: loadTenantActivityLog. |
+| 10 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
 
 ---
 
@@ -87,6 +88,15 @@
 | `_renderProvisioningTab` | 234 | container | void | Query tenant_provisioning_log, render simple table |
 | `_renderTenantAuditTab` | 257 | container | void | Query platform_audit_log for tenant, super_admin only |
 
+### Admin Activity Viewer (admin-activity-viewer.js)
+| Function | Line | Parameters | Returns | Description |
+|----------|------|-----------|---------|-------------|
+| `loadTenantActivityLog` | 20 | tenantId | void | Init viewer: reset filters/page, render filters + fetch entries |
+| `_fetchAndRender` | 89 | — | void | Call get_tenant_activity_log RPC with current filters/page, render results |
+| `_renderEntries` | 107 | container, entries, total | void | Render entry cards + pagination controls |
+| `_formatTimestamp` | 146 | dateStr | string | DD/MM HH:mm or DD/MM/YYYY HH:mm if >7 days |
+| `_formatDetails` | 156 | details | string | First 3 keys from JSONB, truncated values |
+
 ### Admin App (admin-app.js)
 | Function | Line | Parameters | Returns | Description |
 |----------|------|-----------|---------|-------------|
@@ -128,6 +138,9 @@
 | `_currentTenant` | let object/null | admin-tenant-detail.js | Currently loaded tenant data |
 | `_currentStats` | let object/null | admin-tenant-detail.js | get_tenant_stats result for current tenant |
 | `_plansMap` | let object/null | admin-tenant-detail.js | Plans cache: id → {display_name, limits, features} |
+| `_actTenantId` | let string/null | admin-activity-viewer.js | Current tenant for activity log |
+| `_actPage` | let number | admin-activity-viewer.js | Current pagination page (0-indexed) |
+| `_actFilters` | let object | admin-activity-viewer.js | Filter state: level, entityType, dateFrom, dateTo |
 | `_slugDebounceTimer` | let number/null | admin-provisioning.js | Slug validation debounce timer |
 | `_slugValid` | let boolean | admin-provisioning.js | Current slug validation state |
 | `_plansCache` | let array/null | admin-provisioning.js | Cached plans from DB (loaded once) |
