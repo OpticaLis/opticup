@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in Module 2.
 > Updated every commit that adds/changes code.
-> Last updated: 2026-03-26 (Phase 3h)
+> Last updated: 2026-03-26 (Phase 3i)
 
 ---
 
@@ -13,7 +13,7 @@
 | 1 | admin.html | `/admin.html` | 258 | Platform Admin HTML page. Login screen + full dashboard layout. Header (logo + admin name/role + logout), nav tabs (חנויות/Audit Log/הגדרות), toolbar (new tenant + search + filters), content areas (tenants/audit/settings), slide-in panel (tenant detail with 4 tabs). Loads shared/css/ (8 files), shared/js/ (toast, modal-builder, modal-wizard, table-builder), 5 admin JS files. |
 | 2 | admin-auth.js | `/modules/admin-platform/admin-auth.js` | 94 | Supabase client for admin context (adminSb). Login, logout, session check, getCurrentAdmin, requireAdmin. ROLE_LEVELS constant. _fetchAdmin internal. |
 | 3 | admin-db.js | `/modules/admin-platform/admin-db.js` | 63 | AdminDB global object. Lightweight DB wrapper with no tenant_id injection. Methods: query, getById, insert, update, rpc. All use adminSb. |
-| 4 | admin-audit.js | `/modules/admin-platform/admin-audit.js` | 20 | logAdminAction() — fire-and-forget audit logger. Swallows errors. |
+| 4 | admin-audit.js | `/modules/admin-platform/admin-audit.js` | 143 | logAdminAction() audit logger + platform audit log viewer (top-level Audit Log tab). Action filter, Hebrew labels, admin+tenant JOINs. super_admin only. Exposes: loadPlatformAuditLog. |
 | 5 | admin-provisioning.js | `/modules/admin-platform/admin-provisioning.js` | 320 | 3-step wizard (store details → plan+PIN → summary). Slug auto-suggest + debounced real-time validation via validate_slug RPC. provisionTenant() calls create_tenant RPC, logs to provisioning_log + audit. Credentials modal on success. |
 | 6 | admin-app.js | `/modules/admin-platform/admin-app.js` | 229 | App init + tab routing + panel open/close. DOMContentLoaded → session check → showAdminPanel or showLoginScreen. switchTab (tenants/audit/settings), openTenantPanel/closeTenantPanel, switchPanelTab, search+filter event wiring. Exposes globals: switchTab, openTenantPanel, closeTenantPanel, switchPanelTab, selectedTenantId. |
 | 7 | admin-dashboard.js | `/modules/admin-platform/admin-dashboard.js` | 194 | Tenant list table + filters + search. loadTenants() calls get_all_tenants_overview RPC, filterTenants() applies client-side search/status/plan filters, renderTenantsTable() uses TableBuilder. Sort, relative time, plan filter population. Exposes: loadTenants, filterTenants, initDashboard. |
@@ -47,7 +47,9 @@
 ### Admin Audit (admin-audit.js)
 | Function | Line | Parameters | Returns | Description |
 |----------|------|-----------|---------|-------------|
-| `logAdminAction` | 5 | action, targetTenantId?, details? | void | Fire-and-forget audit log |
+| `logAdminAction` | 7 | action, targetTenantId?, details? | void | Fire-and-forget audit log |
+| `loadPlatformAuditLog` | 49 | — | void | Load all audit entries (100 limit), render table with action filter. super_admin only. |
+| `_renderAuditLog` | 72 | container | void | Render filter dropdown + entries table, wire filter change |
 
 ### Admin Provisioning (admin-provisioning.js)
 | Function | Line | Parameters | Returns | Description |
