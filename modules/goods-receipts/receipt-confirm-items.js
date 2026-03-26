@@ -18,7 +18,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
       if (!item.is_new_item && itemBarcode) {
         // Existing item: increment quantity by effectiveQty
         const { data: invRow, error: findErr } = await sb.from('inventory')
-          .select('id, quantity, barcode, brand_id, model, cost_price')
+          .select('id, quantity, barcode, brand_id, model, size, color, cost_price')
           .eq('tenant_id', getTenantId())
           .eq('barcode', itemBarcode)
           .eq('is_deleted', false)
@@ -46,6 +46,19 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
               field: 'cost_price', old_value: oldCost, new_value: rcptCost,
               source: 'goods_receipt', receipt_id: receiptId
             });
+          }
+          // Auto-update model/size/color if changed during receipt
+          var detailChanges = {};
+          if (item.model && item.model !== (invRow.model || '')) detailChanges.model = { from: invRow.model || '', to: item.model };
+          if (item.size && item.size !== (invRow.size || '')) detailChanges.size = { from: invRow.size || '', to: item.size };
+          if (item.color && item.color !== (invRow.color || '')) detailChanges.color = { from: invRow.color || '', to: item.color };
+          if (Object.keys(detailChanges).length) {
+            var detailUpdate = { id: invRow.id };
+            if (detailChanges.model) detailUpdate.model = item.model;
+            if (detailChanges.size) detailUpdate.size = item.size;
+            if (detailChanges.color) detailUpdate.color = item.color;
+            await batchUpdate('inventory', [detailUpdate]);
+            writeLog('edit_details', invRow.id, { source: 'goods_receipt', receipt_id: receiptId, changes: detailChanges });
           }
         } else {
           console.warn('Barcode not found in inventory, creating as new:', itemBarcode);
