@@ -108,7 +108,12 @@ function _buildDocActionToolbar(doc, type, docFiles) {
       'onclick="closeAndRemoveModal(\'edit-doc-modal\');openPrepaidDeductModal(\'' + docId + '\')">' +
       '\u05E7\u05D6\u05D6 \u05DE\u05E2\u05E1\u05E7\u05D4</button>');
   }
-  // Group 3: Change type (requires debt.edit permission)
+  // Group 3: Assign to folder (for general invoices without supplier)
+  if (!doc.supplier_id && typeof getExpenseFolders === 'function') {
+    btns.push('<button class="btn btn-sm" style="background:#8b5cf6;color:#fff" ' +
+      'onclick="assignToFolder(\'' + docId + '\')">\uD83D\uDCC1 \u05E9\u05D9\u05D9\u05DA \u05DC\u05EA\u05D9\u05E7\u05D9\u05D4</button>');
+  }
+  // Group 4: Change type (requires debt.edit permission)
   if (doc.status !== 'paid' && doc.status !== 'cancelled') {
     btns.push('<button class="btn btn-sm" style="background:#6366f1;color:#fff" ' +
       'onclick="changeDocumentType(\'' + docId + '\')">\uD83D\uDD00 \u05E9\u05E0\u05D4 \u05E1\u05D5\u05D2</button>');
@@ -155,6 +160,35 @@ async function _softDeleteDocument(docId) {
       console.error('_softDeleteDocument error:', e);
       toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
     } finally { hideLoading(); }
+  });
+}
+
+// ── Assign document to expense folder ────────────────────────
+async function assignToFolder(docId) {
+  var doc = _docData.find(function(d) { return d.id === docId; });
+  if (!doc) return;
+  var folders = typeof getExpenseFolders === 'function' ? getExpenseFolders() : [];
+  var opts = '<option value="">\u05DC\u05DC\u05D0 \u05EA\u05D9\u05E7\u05D9\u05D4</option>' +
+    folders.map(function(f) {
+      var sel = doc.expense_folder_id === f.id ? ' selected' : '';
+      return '<option value="' + f.id + '"' + sel + '>' + escapeHtml((f.icon || '') + ' ' + f.name) + '</option>';
+    }).join('');
+  Modal.form({
+    title: '\u05E9\u05D9\u05D9\u05DA \u05DC\u05EA\u05D9\u05E7\u05D9\u05D4',
+    size: 'sm', submitText: '\u05E9\u05DE\u05D5\u05E8', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+    content: '<label style="display:block;font-size:.9rem">\u05EA\u05D9\u05E7\u05D9\u05D4:<select id="atf-folder" class="nd-field">' + opts + '</select></label>',
+    onSubmit: async function() {
+      var folderId = document.getElementById('atf-folder').value || null;
+      try {
+        await batchUpdate(T.SUP_DOCS, [{ id: docId, expense_folder_id: folderId }]);
+        await writeLog('doc_folder_assigned', null, { document_id: docId, folder_id: folderId });
+        Toast.success(folderId ? '\u05DE\u05E1\u05DE\u05DA \u05E9\u05D5\u05D9\u05DA \u05DC\u05EA\u05D9\u05E7\u05D9\u05D4' : '\u05DE\u05E1\u05DE\u05DA \u05D4\u05D5\u05E1\u05E8 \u05DE\u05EA\u05D9\u05E7\u05D9\u05D4');
+        Modal.close(); closeAndRemoveModal('edit-doc-modal');
+        if (typeof _detailSupplierId !== 'undefined' && _detailSupplierId) {
+          await openSupplierDetail(_detailSupplierId); _switchDetailTab('docs');
+        } else { await loadDocumentsTab(); }
+      } catch (e) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || '')); }
+    }
   });
 }
 

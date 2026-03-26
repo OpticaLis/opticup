@@ -6,6 +6,7 @@
 
 var _incInvSupSelect = null; // searchable supplier dropdown instance
 var _incInvFile = null;      // staged File object
+var _incInvFolders = [];     // expense folders loaded inline (not from debt module)
 
 // =========================================================
 // Tab loader — called from showTab('incoming-invoices')
@@ -19,9 +20,9 @@ async function loadIncomingInvoicesTab() {
       '<p style="font-size:.92rem;color:var(--g600);margin-bottom:14px">' +
         '\uD83D\uDCE8 \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u05D4\u05D2\u05D9\u05E2\u05D4 \u05D1\u05DC\u05D9 \u05E1\u05D7\u05D5\u05E8\u05D4? \u05D4\u05E2\u05DC\u05D4 \u05D0\u05D5\u05EA\u05D4 \u05DB\u05D0\u05DF \u05D5\u05E9\u05DC\u05D7 \u05DC\u05D8\u05D9\u05E4\u05D5\u05DC' +
       '</p>' +
-      // Supplier dropdown
+      // Target dropdown (supplier or folder)
       '<div style="margin-bottom:12px">' +
-        '<label style="font-size:.88rem;font-weight:600;display:block;margin-bottom:4px">\u05E1\u05E4\u05E7</label>' +
+        '<label style="font-size:.88rem;font-weight:600;display:block;margin-bottom:4px">\u05E9\u05D9\u05D9\u05DA \u05DC:</label>' +
         '<div id="inc-inv-supplier-wrap"></div>' +
       '</div>' +
       // Drop zone
@@ -40,9 +41,18 @@ async function loadIncomingInvoicesTab() {
       '<div id="inc-inv-recent"></div>' +
     '</div>';
 
-  // Init supplier dropdown
-  var supNames = (typeof suppliers !== 'undefined' ? suppliers : []).filter(Boolean);
-  _incInvSupSelect = createSearchSelect(supNames, '', function() {});
+  // Load expense folders inline (inventory.html doesn't have debt-expense-folders.js)
+  try {
+    var { data: fRows } = await sb.from(T.EXPENSE_FOLDERS).select('id, name, icon')
+      .eq('tenant_id', getTenantId()).eq('is_active', true).order('sort_order');
+    _incInvFolders = fRows || [];
+  } catch (e) { _incInvFolders = []; }
+  // Build combined list: suppliers + folders
+  var supNames = (typeof suppliers !== 'undefined' ? suppliers : []).filter(Boolean)
+    .map(function(s) { return 'supplier:' + s; });
+  var folderNames = _incInvFolders.map(function(f) { return 'folder:' + (f.icon || '\uD83D\uDCC1') + ' ' + f.name; });
+  var allNames = supNames.concat(folderNames);
+  _incInvSupSelect = createSearchSelect(allNames, '', function() {});
   var wrap = $('inc-inv-supplier-wrap');
   if (wrap && _incInvSupSelect) wrap.appendChild(_incInvSupSelect);
 
@@ -124,19 +134,30 @@ function _clearIncInvFile() {
 // Submit — upload file + create pending_invoice document
 // =========================================================
 async function _submitIncomingInvoice() {
-  // Validate supplier
+  // Validate target (supplier or folder)
   var supHidden = _incInvSupSelect ? _incInvSupSelect.querySelector('input[type="hidden"]') : null;
-  var supName = supHidden ? supHidden.value : '';
-  var supplierId = supName ? supplierCache[supName] : null;
-  if (!supplierId) { Toast.error('\u05D9\u05E9 \u05DC\u05D1\u05D7\u05D5\u05E8 \u05E1\u05E4\u05E7'); return; }
+  var rawValue = supHidden ? supHidden.value : '';
+  var supplierId = null, folderId = null;
+  if (rawValue.startsWith('supplier:')) {
+    var supName = rawValue.substring(9);
+    supplierId = supName ? supplierCache[supName] : null;
+    if (!supplierId) { Toast.error('\u05D9\u05E9 \u05DC\u05D1\u05D7\u05D5\u05E8 \u05E1\u05E4\u05E7'); return; }
+  } else if (rawValue.startsWith('folder:')) {
+    var folderLabel = rawValue.substring(7).trim();
+    var match = _incInvFolders.find(function(f) { return ((f.icon || '\uD83D\uDCC1') + ' ' + f.name) === folderLabel; });
+    folderId = match ? match.id : null;
+    if (!folderId) { Toast.error('\u05D9\u05E9 \u05DC\u05D1\u05D7\u05D5\u05E8 \u05EA\u05D9\u05E7\u05D9\u05D4'); return; }
+  } else {
+    Toast.error('\u05D9\u05E9 \u05DC\u05D1\u05D7\u05D5\u05E8 \u05E1\u05E4\u05E7 \u05D0\u05D5 \u05EA\u05D9\u05E7\u05D9\u05D4'); return;
+  }
 
   // Validate file
   if (!_incInvFile) { Toast.error('\u05D9\u05E9 \u05DC\u05E6\u05E8\u05E3 \u05E7\u05D5\u05D1\u05E5'); return; }
 
   showLoading('\u05E9\u05D5\u05DC\u05D7 \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA...');
   try {
-    // 1. Upload file
-    var uploadResult = await uploadSupplierFile(_incInvFile, supplierId);
+    // 1. Upload file (use supplierId or 'general' for folder-based uploads)
+    var uploadResult = await uploadSupplierFile(_incInvFile, supplierId || 'general');
     if (!uploadResult) throw new Error('\u05D4\u05E2\u05DC\u05D0\u05EA \u05E7\u05D5\u05D1\u05E5 \u05E0\u05DB\u05E9\u05DC\u05D4');
 
     // 2. Generate internal number
@@ -155,7 +176,8 @@ async function _submitIncomingInvoice() {
     var emp = typeof getCurrentEmployee === 'function' ? getCurrentEmployee() : null;
     var docRow = {
       tenant_id: getTenantId(),
-      supplier_id: supplierId,
+      supplier_id: supplierId || null,
+      expense_folder_id: folderId || null,
       document_type_id: invoiceType.id,
       internal_number: internalNumber,
       document_number: '',
@@ -189,7 +211,8 @@ async function _submitIncomingInvoice() {
     writeLog('incoming_invoice', null, {
       document_id: newDoc.id,
       internal_number: internalNumber,
-      supplier_id: supplierId,
+      supplier_id: supplierId || null,
+      expense_folder_id: folderId || null,
       source_ref: 'incoming-invoices-tab'
     });
 
@@ -220,7 +243,7 @@ async function _loadRecentPendingInvoices() {
   if (!wrap) return;
   try {
     var { data: docs, error } = await sb.from(T.SUP_DOCS)
-      .select('id, internal_number, supplier_id, document_date, status, created_at')
+      .select('id, internal_number, supplier_id, expense_folder_id, document_date, status, created_at')
       .eq('tenant_id', getTenantId())
       .eq('status', 'pending_invoice')
       .eq('is_deleted', false)
@@ -236,10 +259,17 @@ async function _loadRecentPendingInvoices() {
     // Fallback: use supplierCacheRev if _docSuppliers not loaded (inventory page)
     if (!Object.keys(supMap).length && typeof supplierCacheRev !== 'undefined') supMap = supplierCacheRev;
 
+    var folderMap = {};
+    _incInvFolders.forEach(function(f) { folderMap[f.id] = f; });
     var rows = docs.map(function(d) {
+      var target = supMap[d.supplier_id] || '';
+      if (!target && d.expense_folder_id) {
+        var f = folderMap[d.expense_folder_id];
+        target = f ? (f.icon || '\uD83D\uDCC1') + ' ' + f.name : '\u05EA\u05D9\u05E7\u05D9\u05D4';
+      }
       return '<tr>' +
         '<td>' + escapeHtml(d.internal_number || '') + '</td>' +
-        '<td>' + escapeHtml(supMap[d.supplier_id] || '') + '</td>' +
+        '<td>' + escapeHtml(target) + '</td>' +
         '<td>' + escapeHtml(d.document_date || '') + '</td>' +
         '<td><span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:4px;font-size:11px">\u05DE\u05DE\u05EA\u05D9\u05DF \u05DC\u05D8\u05D9\u05E4\u05D5\u05DC</span></td>' +
       '</tr>';
@@ -247,7 +277,7 @@ async function _loadRecentPendingInvoices() {
     wrap.innerHTML =
       '<div style="font-size:.88rem;font-weight:600;margin-bottom:6px">\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05D5\u05EA \u05D0\u05D7\u05E8\u05D5\u05E0\u05D5\u05EA \u05E9\u05E0\u05E9\u05DC\u05D7\u05D5</div>' +
       '<div style="overflow-x:auto"><table class="data-table" style="width:100%;font-size:.85rem">' +
-        '<thead><tr><th>\u05DE\u05E1\u05E4\u05E8</th><th>\u05E1\u05E4\u05E7</th><th>\u05EA\u05D0\u05E8\u05D9\u05DA</th><th>\u05E1\u05D8\u05D8\u05D5\u05E1</th></tr></thead>' +
+        '<thead><tr><th>\u05DE\u05E1\u05E4\u05E8</th><th>\u05E9\u05D5\u05D9\u05DA \u05DC:</th><th>\u05EA\u05D0\u05E8\u05D9\u05DA</th><th>\u05E1\u05D8\u05D8\u05D5\u05E1</th></tr></thead>' +
         '<tbody>' + rows + '</tbody></table></div>';
   } catch (e) {
     console.warn('_loadRecentPendingInvoices error:', e);
