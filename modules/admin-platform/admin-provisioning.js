@@ -294,16 +294,14 @@ async function provisionTenant(params) {
 
     Toast.success('החנות \'' + params.p_name + '\' נוצרה בהצלחה!');
 
-    // Show credentials modal
-    Modal.alert({
-      title: 'פרטי כניסה לחנות חדשה',
-      message: '<div style="text-align:right;line-height:2;">' +
-        '<strong>קוד חנות:</strong> ' + _esc(params.p_slug) + '<br>' +
-        '<strong>כתובת:</strong> <span style="direction:ltr;display:inline-block;">app.opticalis.co.il/?t=' + _esc(params.p_slug) + '</span><br>' +
-        '<strong>PIN מנהל:</strong> ' + _esc(params.p_admin_pin) + '<br>' +
-        '<span style="color:var(--color-warning);">⚠️ PIN ישתנה בכניסה הראשונה</span>' +
-        '</div>'
-    });
+    // Show credentials modal (use Modal.show — Modal.alert escapes HTML)
+    const credBody = '<div style="text-align:right;line-height:2;padding:0.5rem 0;">' +
+      '<strong>קוד חנות:</strong> ' + _esc(params.p_slug) + '<br>' +
+      '<strong>כתובת:</strong> <span style="direction:ltr;display:inline-block;">app.opticalis.co.il/?t=' + _esc(params.p_slug) + '</span><br>' +
+      '<strong>PIN מנהל:</strong> ' + _esc(params.p_admin_pin) + '<br>' +
+      '<span style="color:var(--color-warning);">⚠️ PIN ישתנה בכניסה הראשונה</span>' +
+      '</div>';
+    const credModal = Modal.show({ title: 'פרטי כניסה לחנות חדשה', content: credBody, size: 'sm', closeOnEscape: true, closeOnBackdrop: true });
 
   } catch (err) {
     // Log failure
