@@ -121,6 +121,12 @@
       <button class="debt-tab-btn" data-tab="returns" onclick="switchDebtTab('returns')">&#128260; זיכויים</button>
     </div>
 
+    <!-- Expense folders toggle -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+      <button class="btn btn-sm" style="background:#f3f4f6;color:#374151;font-size:.82rem" onclick="toggleExpenseFolders()">📁 תיקיות הוצאות</button>
+    </div>
+    <div id="expense-folders-container" style="display:none"></div>
+
     <!-- Tab content areas -->
     <div id="dtab-suppliers" class="debt-tab-content active">
       <div class="empty-state">אין נתונים להצגה</div>
@@ -184,6 +190,7 @@
 <script src="modules/debt/debt-doc-filters.js"></script>
 <script src="modules/debt/debt-doc-items.js?v=20260322c"></script>
 <script src="modules/debt/debt-doc-actions.js"></script>
+<script src="modules/debt/debt-expense-folders.js"></script>
 <script src="modules/debt/debt-doc-edit.js?v=20260323a"></script>
 <script src="modules/debt/debt-doc-compare.js?v=20260323a"></script>
 <script src="modules/debt/debt-doc-link.js"></script>

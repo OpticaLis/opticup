@@ -1931,3 +1931,18 @@ AS $$
   WHERE poi.tenant_id = p_tenant_id
   GROUP BY poi.po_id;
 $$;
+
+-- 50. expense_folders — תיקיות הוצאות (Phase 4e)
+CREATE TABLE IF NOT EXISTS expense_folders (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id       UUID NOT NULL REFERENCES tenants(id),
+  name            TEXT NOT NULL,
+  icon            TEXT DEFAULT '📁',
+  is_active       BOOLEAN DEFAULT true,
+  sort_order      INTEGER DEFAULT 0,
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(tenant_id, name)
+);
+-- RLS: tenant_isolation + service_bypass
+-- Index: idx_expense_folders_tenant ON expense_folders(tenant_id)
+-- supplier_documents.expense_folder_id UUID REFERENCES expense_folders(id) added
