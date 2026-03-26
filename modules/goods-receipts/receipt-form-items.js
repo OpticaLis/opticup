@@ -301,3 +301,29 @@ async function generateReceiptBarcodes() {
   }
   hideLoading();
 }
+
+// ── Receipt items column sort (DOM reorder) ─────────────────
+var _rcptSortKeyMap = { barcode: '.rcpt-barcode', brand: '.rcpt-brand', model: '.rcpt-model', color: '.rcpt-color', size: '.rcpt-size', qty: '.rcpt-qty', cost: '.rcpt-ucost' };
+document.addEventListener('click', function(e) {
+  var th = e.target.closest('#rcpt-items-thead th[data-sort-key]');
+  if (!th || typeof SortUtils === 'undefined') return;
+  var s = SortUtils.toggle('rcpt-items', th.dataset.sortKey);
+  SortUtils.updateHeaders(document.getElementById('rcpt-items-thead'), s.key, s.dir);
+  var tbody = document.getElementById('rcpt-items-body');
+  if (!tbody) return;
+  var sel = _rcptSortKeyMap[s.key]; if (!sel) return;
+  var rows = Array.from(tbody.querySelectorAll('tr[data-row]'));
+  rows.sort(function(a, b) {
+    var va = (a.querySelector(sel) || {}).value || '';
+    var vb = (b.querySelector(sel) || {}).value || '';
+    var na = parseFloat(va), nb = parseFloat(vb);
+    if (!isNaN(na) && !isNaN(nb)) return s.dir === 'asc' ? na - nb : nb - na;
+    var cmp = va.localeCompare(vb, 'he');
+    return s.dir === 'asc' ? cmp : -cmp;
+  });
+  rows.forEach(function(tr) {
+    var noteRow = document.getElementById('rcpt-note-row-' + tr.dataset.row);
+    tbody.appendChild(tr);
+    if (noteRow) tbody.appendChild(noteRow);
+  });
+});

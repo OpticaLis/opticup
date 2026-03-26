@@ -181,9 +181,23 @@ function renderPOItemsTable() {
 
   updatePOTotals();
   _updatePOBrandFilter();
-  // Re-apply active brand filter
   if (_poBrandFilter) _filterPOByBrand(_poBrandFilter);
+  // Restore sort indicator if active
+  var poSt = typeof SortUtils !== 'undefined' ? SortUtils.getState('po-items') : null;
+  if (poSt) { var th = document.querySelector('#po-items-tbody')?.closest('table')?.querySelector('thead');
+    if (th) SortUtils.updateHeaders(th, poSt.key, poSt.dir); }
 }
+
+// ── PO items sort (delegated — click on th with data-sort-key inside PO table) ──
+document.addEventListener('click', function(e) {
+  var th = e.target.closest('th[data-sort-key]');
+  if (!th || typeof SortUtils === 'undefined') return;
+  var table = th.closest('table');
+  if (!table || !table.querySelector('#po-items-tbody')) return;
+  var s = SortUtils.toggle('po-items', th.dataset.sortKey);
+  SortUtils.sortArray(currentPOItems, s.key, s.dir);
+  renderPOItemsTable();
+});
 
 // ── Final price helpers ───────────────────────────────────────
 function _calcPOFinalPrice(item) {
@@ -295,10 +309,6 @@ function removePOItem(index) {
 
 function duplicatePOItem(i) {
   var copy = { ...currentPOItems[i], size: '' };
-  var key = [copy.brand, copy.model, copy.color, copy.size].join('|');
-  if (copy.size !== '' && currentPOItems.some(function(it, idx) { return idx !== i && [it.brand, it.model, it.color, it.size].join('|') === key; })) {
-    toast('פריט זהה כבר קיים ברשימה', 'e'); return;
-  }
   currentPOItems.splice(i + 1, 0, copy); renderPOItemsTable();
 }
 
@@ -309,41 +319,31 @@ function togglePOItemDetails(i) {
 
 function togglePOItemNote(i) {
   var row = document.getElementById('po-item-details-' + i);
-  if (row) {
-    if (row.style.display === 'none') row.style.display = '';
-    var ta = row.querySelector('.po-item-note');
-    if (ta) setTimeout(function() { ta.focus(); }, 50);
-  }
+  if (row) { if (row.style.display === 'none') row.style.display = '';
+    var ta = row.querySelector('.po-item-note'); if (ta) setTimeout(function() { ta.focus(); }, 50); }
 }
-
 function _updatePONoteBtn(i) {
-  var btn = document.querySelector('.btn-po-note[data-index="' + i + '"]');
-  if (!btn) return;
+  var btn = document.querySelector('.btn-po-note[data-index="' + i + '"]'); if (!btn) return;
   var hasNote = !!(currentPOItems[i] && currentPOItems[i].notes);
   btn.textContent = hasNote ? '\uD83D\uDCAC' : '\uD83D\uDCAD';
-  btn.style.color = hasNote ? '#2196F3' : '';
-  btn.style.opacity = hasNote ? '1' : '.4';
+  btn.style.color = hasNote ? '#2196F3' : ''; btn.style.opacity = hasNote ? '1' : '.4';
 }
 
-// ── Live stock counter — shows inventory count as PO fields are filled ──
+// ── Live stock counter ──
 var _poStockCounterTimer = {};
 function _updatePOStockCounter(i, brandName, model, color, size) {
   if (_poStockCounterTimer[i]) clearTimeout(_poStockCounterTimer[i]);
   _poStockCounterTimer[i] = setTimeout(function() { _doUpdatePOStockCounter(i, brandName, model, color, size); }, 300);
 }
-async function _doUpdatePOStockCounter(i, brandName, model, color, size) {
-  var el = document.getElementById('po-stock-' + i);
-  if (!el) return;
-  var brandId = brandCache[(brandName || '').trim()];
+async function _doUpdatePOStockCounter(i, bn, model, color, size) {
+  var el = document.getElementById('po-stock-' + i); if (!el) return;
+  var brandId = brandCache[(bn || '').trim()];
   if (!brandId || !(model || '').trim()) { el.textContent = ''; return; }
-  try {
-    var query = sb.from(T.INV).select('id', { count: 'exact', head: true })
-      .eq('brand_id', brandId).ilike('model', (model||'').trim())
-      .eq('tenant_id', getTenantId()).eq('is_deleted', false);
-    if ((color||'').trim()) query = query.ilike('color', (color||'').trim());
-    if ((size||'').trim()) query = query.ilike('size', (size||'').trim());
-    var { count } = await query;
-    if (!count) { el.textContent = '\u2728 \u05D7\u05D3\u05E9'; el.style.color = '#059669'; }
-    else { el.textContent = '\uD83D\uDCE6 ' + count + ' \u05D1\u05DE\u05DC\u05D0\u05D9'; el.style.color = '#d97706'; }
+  try { var q = sb.from(T.INV).select('id', { count: 'exact', head: true }).eq('brand_id', brandId).ilike('model', (model||'').trim()).eq('tenant_id', getTenantId()).eq('is_deleted', false);
+    if ((color||'').trim()) q = q.ilike('color', (color||'').trim());
+    if ((size||'').trim()) q = q.ilike('size', (size||'').trim());
+    var { count } = await q;
+    el.textContent = count ? '\uD83D\uDCE6 ' + count + ' \u05D1\u05DE\u05DC\u05D0\u05D9' : '\u2728 \u05D7\u05D3\u05E9';
+    el.style.color = count ? '#d97706' : '#059669';
   } catch (e) { el.textContent = ''; }
 }

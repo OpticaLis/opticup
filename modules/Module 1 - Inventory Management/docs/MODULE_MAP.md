@@ -123,6 +123,7 @@
 
 | 75 | settings.html | settings.html | 162 | Tenant settings page: 3 sections (business info, financial config, display preferences), logo upload/delete/preview via Supabase Storage bucket `tenant-logos`, session check, save/reset buttons |
 | 76 | pin-modal.js | js/pin-modal.js | 87 | Reusable 5-digit PIN prompt modal: promptPin() returns Promise with employee or null. Replaces inline PIN HTML across modules |
+| 76b | sort-utils.js | shared/js/sort-utils.js | 43 | Shared column sorting: SortUtils.sortArray(arr,key,dir), SortUtils.toggle(tableId,key), SortUtils.updateHeaders(thead,key,dir), SortUtils.getState(tableId). Handles Hebrew locale, numbers, nulls |
 | 77 | settings-page.js | modules/settings/settings-page.js | 227 | Settings page logic: getTenantConfig (fetch+cache), storeTenantConfig (save), handleLogoUpload (resize+upload to tenant-logos bucket), handleLogoDelete, renderLogoPreview, initSettingsPage (DOMContentLoaded wiring) |
 | 78 | stock-count-filters.js | modules/stock-count/stock-count-filters.js | 245 | Pre-count filter screen: brand/product-type filter selection before starting a new stock count, builds filter_criteria JSONB for stock_counts.filter_criteria column |
 

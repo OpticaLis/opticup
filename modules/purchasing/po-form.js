@@ -211,13 +211,13 @@ function renderPOForm(isEdit) {
           <table style="width:100%; border-collapse:collapse; font-size:13px">
             <thead>
               <tr style="background:#1a2744; color:white; text-align:right">
-                <th style="padding:8px">מותג</th>
-                <th style="padding:8px">דגם</th>
-                <th style="padding:8px">צבע</th>
-                <th style="padding:8px">\u05D2\u05D5\u05D3\u05DC</th>
+                <th style="padding:8px" data-sort-key="brand">מותג</th>
+                <th style="padding:8px" data-sort-key="model">דגם</th>
+                <th style="padding:8px" data-sort-key="color">צבע</th>
+                <th style="padding:8px" data-sort-key="size">\u05D2\u05D5\u05D3\u05DC</th>
                 <th style="padding:8px; width:65px">\u05E1\u05D5\u05D2</th>
-                <th style="padding:8px; width:70px">\u05DB\u05DE\u05D5\u05EA</th>
-                <th style="padding:8px; width:90px">עלות ₪</th>
+                <th style="padding:8px; width:70px" data-sort-key="qty_ordered">\u05DB\u05DE\u05D5\u05EA</th>
+                <th style="padding:8px; width:90px" data-sort-key="unit_cost">עלות ₪</th>
                 <th style="padding:8px; width:70px">הנחה %</th>
                 <th style="padding:8px; width:90px">מחיר סופי</th>
                 <th style="padding:8px; width:80px">סה"כ</th>

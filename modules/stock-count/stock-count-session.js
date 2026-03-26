@@ -251,11 +251,11 @@ function renderSessionScreen(countId, items) {
       </div>
       <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--g200);border-radius:8px;max-width:100%">
         <table style="width:100%;border-collapse:collapse;font-size:.82rem">
-          <thead><tr style="background:var(--primary);color:white;text-align:right">
-            <th style="padding:8px">ברקוד</th><th style="padding:8px">מותג</th><th style="padding:8px">דגם</th>
-            <th style="padding:8px">צבע</th><th style="padding:8px">מידה</th>
+          <thead id="sc-session-thead"><tr style="background:var(--primary);color:white;text-align:right">
+            <th style="padding:8px" data-sort-key="barcode">ברקוד</th><th style="padding:8px" data-sort-key="brand">מותג</th><th style="padding:8px" data-sort-key="model">דגם</th>
+            <th style="padding:8px" data-sort-key="color">צבע</th><th style="padding:8px" data-sort-key="size">מידה</th>
             <th class="hide-mobile" style="padding:8px">סוג</th>
-            <th style="padding:8px;text-align:center">בפועל</th><th style="padding:8px;text-align:center">פער</th>
+            <th style="padding:8px;text-align:center" data-sort-key="actual_qty">בפועל</th><th style="padding:8px;text-align:center">פער</th>
             <th class="hide-mobile" style="padding:8px;text-align:center">סטטוס</th>
           </tr></thead>
           <tbody id="sc-session-body">${_scApplyFilters(items).map(scRenderItemRow).join('')}</tbody>
@@ -328,3 +328,13 @@ function filterSessionItems(query) {
   if (tbody) tbody.innerHTML = _scApplyFilters(filtered).map(scRenderItemRow).join('');
   if (countEl) countEl.textContent = '\u05DE\u05E6\u05D9\u05D2 ' + filtered.length + ' \u05DE\u05EA\u05D5\u05DA ' + scSessionItems.length + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD';
 }
+
+// ── Stock count session column sort ─────────────────────────
+document.addEventListener('click', function(e) {
+  var th = e.target.closest('#sc-session-thead th[data-sort-key]');
+  if (!th || typeof SortUtils === 'undefined' || !scSessionItems.length) return;
+  var s = SortUtils.toggle('sc-session', th.dataset.sortKey);
+  SortUtils.sortArray(scSessionItems, s.key, s.dir);
+  SortUtils.updateHeaders(document.getElementById('sc-session-thead'), s.key, s.dir);
+  _scRefreshTable();
+});

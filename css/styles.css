@@ -417,3 +417,9 @@ tr.row-err td{background:#fef2f2}
 .rcpt-row-dimmed input,.rcpt-row-dimmed select:not(.rcpt-receipt-status){pointer-events:none}
 /* Utility: hide on mobile */
 @media(max-width:768px){.hide-mobile{display:none!important}}
+/* Sortable column headers (SortUtils) */
+th[data-sort-key]{cursor:pointer;user-select:none;position:relative}
+th[data-sort-key]::after{content:' \2195';opacity:.3;font-size:.75em}
+th[data-sort-key].sort-asc::after{content:' \25B2';opacity:1}
+th[data-sort-key].sort-desc::after{content:' \25BC';opacity:1}
+th[data-sort-key].sort-active{background:rgba(255,255,255,.12)}
