@@ -116,3 +116,5 @@ must_change_pin (BOOLEAN DEFAULT false)
 | `create_tenant(...)` | p_name, p_slug, p_owner_name, p_owner_email, p_owner_phone?, p_plan_id, p_admin_pin?, p_admin_name?, p_created_by? | UUID | SECURITY DEFINER. 10-step atomic provisioning. |
 | `validate_slug(p_slug)` | p_slug TEXT | JSONB {valid, reason} | SECURITY DEFINER. Format+reserved+uniqueness check. |
 | `delete_tenant(p_tenant_id, p_deleted_by)` | p_tenant_id UUID, p_deleted_by UUID | void | SECURITY DEFINER. Soft delete (status='deleted'). |
+| `get_all_tenants_overview()` | — | JSONB array | SECURITY DEFINER. All non-deleted tenants with plan name (LEFT JOIN), employees/inventory/suppliers counts. |
+| `get_tenant_stats(p_tenant_id)` | p_tenant_id UUID | JSONB object | SECURITY DEFINER. Single tenant counts: employees, inventory (is_deleted=false), suppliers (active=true), documents, brands (active=true). |

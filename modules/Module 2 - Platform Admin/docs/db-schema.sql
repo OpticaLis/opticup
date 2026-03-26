@@ -218,3 +218,16 @@ CREATE POLICY provisioning_log_admin_insert ON tenant_provisioning_log
 
 -- delete_tenant(p_tenant_id UUID, p_deleted_by UUID) → void
 -- SECURITY DEFINER. Soft delete: status='deleted', deleted_at=now().
+
+-- ============================================================
+-- Phase 3a: Dashboard RPCs
+-- Full SQL in: docs/phase3a-rpcs.sql
+-- ============================================================
+
+-- get_all_tenants_overview() → JSONB array
+-- SECURITY DEFINER. Returns all non-deleted tenants with plan name (LEFT JOIN),
+-- employees/inventory/suppliers counts. Ordered by created_at DESC.
+
+-- get_tenant_stats(p_tenant_id UUID) → JSONB object
+-- SECURITY DEFINER. Returns employees_count, inventory_count (is_deleted=false),
+-- suppliers_count (active=true), documents_count, brands_count (active=true).
