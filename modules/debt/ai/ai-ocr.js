@@ -24,6 +24,8 @@ function _ocrFC(ext, f) {
 // =========================================================
 async function triggerOCR(fileUrl, supplierId, documentTypeHint, existingDocId) {
   if (!fileUrl) { toast('אין קובץ לסריקה', 'e'); return; }
+  var ocrLimit = await checkPlanLimit('ocr_scans_monthly');
+  if (!ocrLimit.allowed) { toast(ocrLimit.message || 'הגעת למגבלה', 'w'); return; }
   var jwt = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
   if (!jwt) { toast('נדרשת התחברות מחדש', 'e'); return; }
   showLoading('סורק את המסמך...');
@@ -254,7 +256,9 @@ function _mergeOCRResults(results, files) {
 // --- 4. OCR scan buttons removed — scan available via _buildDocActionToolbar() in View modal ---
 
 // --- 5. Add OCR toolbar button ---
-function _injectOCRToolbarBtn() {
+async function _injectOCRToolbarBtn() {
+  var ocrEnabled = await isFeatureEnabled('ocr');
+  if (!ocrEnabled) return;
   // Find the documents tab toolbar specifically (not suppliers/payments toolbars)
   var docWrap = $('doc-table-wrap');
   var toolbar = docWrap ? docWrap.closest('.tab-content, [id*="doc"]')?.querySelector('.doc-toolbar')
@@ -278,7 +282,7 @@ function _injectOCRToolbarBtn() {
   if (!_origLoad) return;
   window.loadDocumentsTab = async function() {
     await _origLoad();
-    _injectOCRToolbarBtn();
+    await _injectOCRToolbarBtn();
     if (typeof applyDocFilters === 'function') applyDocFilters();
   };
 })();

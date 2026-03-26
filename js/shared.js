@@ -289,3 +289,53 @@ function confirmDialog(title, text = '') {
 // Navigation, info modal, help banner → js/shared-ui.js
 
 // PIN prompt modal → js/pin-modal.js
+
+// ─── Suspended / Deleted Tenant Blocking (Module 2 Phase 3k) ───
+// Covers all ERP pages. index.html also checks in resolveTenant().
+
+function showTenantBlocked(tenant) {
+  const msg = tenant.status === 'deleted' ? 'חנות לא פעילה' : 'החשבון מושהה';
+  const sub = tenant.status === 'deleted'
+    ? 'החנות כבר אינה פעילה במערכת.'
+    : 'פנו ל-support@opticup.co.il';
+  const name = (tenant && tenant.name) ? tenant.name : '';
+  const overlay = document.createElement('div');
+  overlay.id = 'tenant-blocked-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--color-gray-50,#f8fafc);direction:rtl;';
+  const box = document.createElement('div');
+  box.style.cssText = 'text-align:center;padding:3rem 2rem;max-width:420px;';
+  const icon = document.createElement('div');
+  icon.style.cssText = 'font-size:3rem;margin-bottom:1rem;';
+  icon.textContent = tenant.status === 'deleted' ? '🚫' : '⚠️';
+  const h2 = document.createElement('h2');
+  h2.style.cssText = 'font-size:1.5rem;font-weight:700;color:var(--color-gray-900,#0f172a);margin:0 0 0.5rem;';
+  h2.textContent = msg;
+  const pName = document.createElement('p');
+  pName.style.cssText = 'color:var(--color-gray-600,#475569);margin:0 0 1rem;';
+  pName.textContent = name ? 'החשבון של ' + name + (tenant.status === 'suspended' ? ' מושהה.' : ' לא פעיל.') : '';
+  const pSub = document.createElement('p');
+  pSub.style.cssText = 'color:var(--color-gray-500,#64748b);font-size:0.875rem;margin:0;';
+  pSub.textContent = sub;
+  box.appendChild(icon);
+  box.appendChild(h2);
+  if (name) box.appendChild(pName);
+  box.appendChild(pSub);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+// Guard for non-index pages: check tenant status on load
+(function() {
+  const tid = sessionStorage.getItem('tenant_id');
+  if (!tid || window.location.pathname.includes('admin.html')) return;
+  // Skip index.html — it has its own check in resolveTenant()
+  if (window.location.pathname === '/' || window.location.pathname.endsWith('index.html')) return;
+  document.addEventListener('DOMContentLoaded', async function() {
+    try {
+      const { data } = await sb.from('tenants').select('id, name, status').eq('id', tid).maybeSingle();
+      if (data && (data.status === 'suspended' || data.status === 'deleted')) {
+        showTenantBlocked(data);
+      }
+    } catch (_) { /* silent — don't block on network error */ }
+  });
+})();

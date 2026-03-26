@@ -3,7 +3,9 @@
 var _bgDebounceTimer = null;
 
 // --- Entry point: show method choice dialog ---
-function _bgRemoveStart(imageUrl, onConfirm) {
+async function _bgRemoveStart(imageUrl, onConfirm) {
+  var studioEnabled = await isFeatureEnabled('image_studio');
+  if (!studioEnabled) { Toast.info('פיצ׳ר לא זמין בתוכנית שלכם'); return; }
   var img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = function() { _bgShowChoiceDialog(img, imageUrl, onConfirm); };

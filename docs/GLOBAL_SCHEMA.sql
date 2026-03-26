@@ -2089,3 +2089,192 @@ ALTER TABLE supplier_documents
 ALTER TABLE supplier_documents
   ADD CONSTRAINT supplier_documents_status_check
   CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled', 'pending_invoice', 'pending_review'));
+
+-- ============================================================
+-- Module 2: Platform Admin — Phase 1 (2026-03-26)
+-- 5 new tables + tenants extension + RLS + indexes
+-- ============================================================
+
+-- SECURITY DEFINER function (avoids infinite recursion in RLS)
+CREATE OR REPLACE FUNCTION is_platform_super_admin()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM platform_admins
+    WHERE auth_user_id = auth.uid()
+    AND role = 'super_admin'
+    AND status = 'active'
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- plans (global — no tenant_id)
+CREATE TABLE plans (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  display_name TEXT NOT NULL,
+  limits JSONB NOT NULL DEFAULT '{}',
+  features JSONB NOT NULL DEFAULT '{}',
+  price_monthly DECIMAL(10,2),
+  price_yearly DECIMAL(10,2),
+  sort_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE plans ENABLE ROW LEVEL SECURITY;
+CREATE POLICY plans_read ON plans FOR SELECT USING (true);
+CREATE POLICY plans_admin_write ON plans FOR ALL USING (is_platform_super_admin());
+
+-- platform_admins (global — no tenant_id)
+CREATE TABLE platform_admins (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  auth_user_id UUID NOT NULL UNIQUE,
+  email TEXT NOT NULL UNIQUE,
+  display_name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'viewer' CHECK (role IN ('super_admin', 'support', 'viewer')),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended')),
+  last_login TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE platform_admins ENABLE ROW LEVEL SECURITY;
+CREATE POLICY platform_admins_read ON platform_admins FOR SELECT USING (auth.uid() = auth_user_id);
+CREATE POLICY platform_admins_super_write ON platform_admins FOR ALL USING (is_platform_super_admin());
+
+-- platform_audit_log (global — no tenant_id)
+CREATE TABLE platform_audit_log (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  admin_id UUID REFERENCES platform_admins(id),
+  action TEXT NOT NULL,
+  target_tenant_id UUID REFERENCES tenants(id),
+  details JSONB DEFAULT '{}',
+  ip_address TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE platform_audit_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY audit_log_admin_read ON platform_audit_log FOR SELECT USING (
+  auth.uid() IN (SELECT auth_user_id FROM platform_admins WHERE status = 'active')
+);
+CREATE POLICY audit_log_admin_insert ON platform_audit_log FOR INSERT WITH CHECK (true);
+
+-- tenant_config (tenant-scoped)
+CREATE TABLE tenant_config (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id),
+  key TEXT NOT NULL,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(tenant_id, key)
+);
+ALTER TABLE tenant_config ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_config_tenant_read ON tenant_config FOR SELECT USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
+CREATE POLICY tenant_config_admin_access ON tenant_config FOR ALL USING (
+  auth.uid() IN (SELECT auth_user_id FROM platform_admins WHERE status = 'active')
+);
+
+-- tenant_provisioning_log (admin-only)
+CREATE TABLE tenant_provisioning_log (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id),
+  step TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('started', 'completed', 'failed')),
+  details JSONB DEFAULT '{}',
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE tenant_provisioning_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY provisioning_log_admin_read ON tenant_provisioning_log FOR SELECT USING (
+  auth.uid() IN (SELECT auth_user_id FROM platform_admins WHERE status = 'active')
+);
+
+-- tenants table extensions (9 new columns)
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS plan_id UUID REFERENCES plans(id);
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active'
+  CHECK (status IN ('active', 'trial', 'suspended', 'deleted'));
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS owner_name TEXT;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS owner_email TEXT;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS owner_phone TEXT;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES platform_admins(id);
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS suspended_reason TEXT;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+
+-- Module 2 indexes
+CREATE INDEX idx_platform_admins_auth_user ON platform_admins(auth_user_id);
+CREATE INDEX idx_platform_admins_email ON platform_admins(email);
+CREATE INDEX idx_platform_audit_log_admin ON platform_audit_log(admin_id);
+CREATE INDEX idx_platform_audit_log_tenant ON platform_audit_log(target_tenant_id);
+CREATE INDEX idx_platform_audit_log_created ON platform_audit_log(created_at DESC);
+CREATE INDEX idx_tenant_config_tenant ON tenant_config(tenant_id);
+CREATE INDEX idx_tenant_config_key ON tenant_config(tenant_id, key);
+CREATE INDEX idx_provisioning_log_tenant ON tenant_provisioning_log(tenant_id);
+CREATE INDEX idx_tenants_plan ON tenants(plan_id);
+CREATE INDEX idx_tenants_status ON tenants(status);
+
+-- ============================================================
+-- Module 2: Platform Admin — Phase 2 (2026-03-26)
+-- Tenant Provisioning: RPCs + schema changes
+-- ============================================================
+
+-- employees.must_change_pin (forces PIN change on first login)
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS must_change_pin BOOLEAN DEFAULT false;
+
+-- tenant_provisioning_log.tenant_id nullable (for failure logging)
+ALTER TABLE tenant_provisioning_log ALTER COLUMN tenant_id DROP NOT NULL;
+
+-- provisioning_log INSERT policy for admins
+CREATE POLICY provisioning_log_admin_insert ON tenant_provisioning_log
+  FOR INSERT WITH CHECK (
+    auth.uid() IN (SELECT auth_user_id FROM platform_admins WHERE status = 'active')
+  );
+
+-- validate_slug(p_slug) — format + reserved words + uniqueness
+-- Returns JSONB {valid: boolean, reason: text|null}
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/create_tenant_rpc.sql
+
+-- create_tenant(...) — 10-step atomic provisioning
+-- Returns UUID (new tenant ID)
+-- Creates: tenant, 6 config entries, 5 roles, 57 permissions, role_permissions,
+--          1 employee (must_change_pin=true), employee_roles, 5 doc_types, 5 payment_methods
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/create_tenant_rpc.sql
+
+-- delete_tenant(p_tenant_id, p_deleted_by) — soft delete
+-- Sets status='deleted', deleted_at=now()
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/create_tenant_rpc.sql
+
+-- ============================================================
+-- Module 2: Platform Admin — Phase 3 (2026-03-26)
+-- ============================================================
+
+-- tenants.last_active column (Phase 3 fix)
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS last_active TIMESTAMPTZ;
+
+-- get_all_tenants_overview() → JSONB array
+-- All non-deleted tenants with plan name (LEFT JOIN), employees/inventory/suppliers counts.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3a-rpcs.sql
+
+-- get_tenant_stats(p_tenant_id UUID) → JSONB object
+-- Single tenant counts: employees, inventory, suppliers, documents, brands.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3a-rpcs.sql
+
+-- suspend_tenant(p_tenant_id, p_reason, p_admin_id) → void
+-- Verifies status='active', sets suspended + reason. Writes audit log.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3b-rpcs.sql
+
+-- activate_tenant(p_tenant_id, p_admin_id) → void
+-- Verifies status IN ('suspended','trial'), sets active. Writes audit log.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3b-rpcs.sql
+
+-- update_tenant(p_tenant_id, p_updates JSONB, p_admin_id) → void
+-- Whitelist: name, owner_name, owner_email, owner_phone, plan_id, trial_ends_at.
+-- Captures old values, applies per-field, writes audit with old+new diff.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3b-rpcs.sql
+
+-- get_tenant_activity_log(...) → JSONB {total, entries}
+-- Paginated activity_log for a tenant with optional filters.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3c-rpcs.sql
+
+-- get_tenant_employees(p_tenant_id) → JSONB array [{id, name}]
+-- Minimal employee list for PIN reset dropdown.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3c-rpcs.sql
+
+-- reset_employee_pin(p_tenant_id, p_employee_id, p_new_pin, p_must_change, p_admin_id) → void
+-- Verifies employee belongs to tenant, resets PIN + unlock. PIN not in audit.
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3c-rpcs.sql
