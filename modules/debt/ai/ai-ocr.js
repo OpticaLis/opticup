@@ -256,7 +256,9 @@ function _mergeOCRResults(results, files) {
 // --- 4. OCR scan buttons removed — scan available via _buildDocActionToolbar() in View modal ---
 
 // --- 5. Add OCR toolbar button ---
-function _injectOCRToolbarBtn() {
+async function _injectOCRToolbarBtn() {
+  var ocrEnabled = await isFeatureEnabled('ocr');
+  if (!ocrEnabled) return;
   // Find the documents tab toolbar specifically (not suppliers/payments toolbars)
   var docWrap = $('doc-table-wrap');
   var toolbar = docWrap ? docWrap.closest('.tab-content, [id*="doc"]')?.querySelector('.doc-toolbar')
@@ -280,7 +282,7 @@ function _injectOCRToolbarBtn() {
   if (!_origLoad) return;
   window.loadDocumentsTab = async function() {
     await _origLoad();
-    _injectOCRToolbarBtn();
+    await _injectOCRToolbarBtn();
     if (typeof applyDocFilters === 'function') applyDocFilters();
   };
 })();

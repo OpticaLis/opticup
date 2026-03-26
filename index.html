@@ -142,6 +142,7 @@
 <script src="shared/js/permission-ui.js"></script>
 <!-- Core JS -->
 <script src="js/shared.js"></script>
+<script src="shared/js/plan-helpers.js"></script>
 <script src="js/shared-ui.js"></script>
 <script src="js/auth-service.js"></script>
 <script src="js/header.js"></script>
@@ -153,12 +154,12 @@
 // status: 'active' | 'coming_soon' | 'locked'
 // =========================================================
 const MODULES = [
-  { id: 'inventory',  label: 'ניהול מלאי',   icon: '\uD83D\uDD76\uFE0F', url: 'inventory.html',           status: 'active', permission: 'inventory.view' },
+  { id: 'inventory',  label: 'ניהול מלאי',   icon: '\uD83D\uDD76\uFE0F', url: 'inventory.html',           status: 'active', permission: 'inventory.view', feature: 'inventory' },
   { id: 'customers',  label: 'ניהול לקוחות', icon: '\uD83D\uDC64',       url: 'customers.html',           status: 'coming_soon' },
   { id: 'finance',    label: 'פיננסים',       icon: '\uD83D\uDCB0',       url: 'finance.html',             status: 'coming_soon' },
   { id: 'lab',        label: 'מעבדה',         icon: '\uD83D\uDD2C',       url: 'lab.html',                 status: 'coming_soon' },
-  { id: 'debt',       label: 'מעקב חובות ספקים', icon: '\uD83D\uDCB0',    url: 'suppliers-debt.html',      status: 'active', permission: 'debt.view' },
-  { id: 'shipments', label: 'משלוחים וארגזים', icon: '\uD83D\uDE9A',     url: 'shipments.html',           status: 'active', permission: 'shipments.view' },
+  { id: 'debt',       label: 'מעקב חובות ספקים', icon: '\uD83D\uDCB0',    url: 'suppliers-debt.html',      status: 'active', permission: 'debt.view', feature: 'supplier_debt' },
+  { id: 'shipments', label: 'משלוחים וארגזים', icon: '\uD83D\uDE9A',     url: 'shipments.html',           status: 'active', permission: 'shipments.view', feature: 'shipments' },
   { id: 'employees',  label: '\u05E0\u05D9\u05D4\u05D5\u05DC \u05D4\u05E8\u05E9\u05D0\u05D5\u05EA', icon: '\uD83D\uDD10', url: 'employees.html', status: 'active', permission: 'employees.view' },
   { id: 'settings',   label: 'הגדרות',        icon: '\u2699\uFE0F',        url: 'settings.html',            status: 'active', permission: 'settings.view' },
   { id: 'attendance', label: 'שעון נוכחות',  icon: '\uD83D\uDD50',       url: 'attendance.html',          status: 'coming_soon' }
@@ -201,6 +202,8 @@ function renderModules() {
     let badge = '';
     if (m.status === 'coming_soon') badge = '<span class="badge badge-soon">בקרוב</span>';
     if (m.status === 'locked') badge = '<span class="badge badge-premium">\uD83D\uDC8E פרימיום</span>';
+
+    if (m.feature) a.dataset.feature = m.feature;
 
     a.innerHTML = badge + '<span class="card-icon">' + m.icon + '</span><span class="card-label">' + m.label + '</span>';
 
@@ -323,7 +326,22 @@ function onLoginSuccess(emp) {
   document.getElementById('user-display').textContent = emp.name + ' \u2022 \u05E1\u05E0\u05D9\u05E3 ' + (emp.branch_id || '00');
   document.getElementById('user-info').classList.remove('hidden');
   renderModules();
+  applyFeatureFlags();
   document.getElementById('modules-grid').style.opacity = '1';
+}
+
+async function applyFeatureFlags() {
+  try {
+    const features = await getPlanFeatures();
+    document.querySelectorAll('[data-feature]').forEach(el => {
+      const feature = el.dataset.feature;
+      if (features[feature] === false) {
+        el.style.display = 'none';
+      }
+    });
+  } catch (e) {
+    console.warn('applyFeatureFlags: failed, showing all features (fail-safe):', e);
+  }
 }
 
 async function doLogout() {

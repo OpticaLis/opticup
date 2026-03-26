@@ -42,8 +42,8 @@
   <button data-tab="brands" data-tab-permission="brands.view" onclick="showTab('brands')">&#127991; ניהול מותגים</button>
   <button data-tab="suppliers" data-tab-permission="suppliers.view" onclick="showTab('suppliers')">&#128101; ניהול ספקים</button>
   <button data-tab="systemlog" data-tab-permission="settings.view" class="admin-tab" onclick="showTab('systemlog')">&#128203; לוג מערכת</button>
-  <button data-tab="access-sync" data-tab-permission="sync.view" onclick="showTab('access-sync')">&#128260; סנכרון Access</button>
-  <button data-tab="stock-count" data-tab-permission="stock_count.create" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
+  <button data-tab="access-sync" data-tab-permission="sync.view" data-feature="access_sync" onclick="showTab('access-sync')">&#128260; סנכרון Access</button>
+  <button data-tab="stock-count" data-tab-permission="stock_count.create" data-feature="stock_count" onclick="showTab('stock-count')">&#128202; ספירת מלאי</button>
   <button data-tab="returns" onclick="showTab('returns')">&#128260; זיכויים</button>
   <button data-tab="incoming-invoices" onclick="showTab('incoming-invoices')">&#128232; חשבוניות נכנסות</button>
 
@@ -492,12 +492,12 @@
 </section>
 
 <!-- ========== TAB: ACCESS SYNC ========== -->
-<section id="tab-access-sync" class="tab">
+<section id="tab-access-sync" class="tab" data-feature="access_sync">
   <div id="access-sync-container">טוען...</div>
 </section>
 
 <!-- ========== TAB: STOCK COUNT ========== -->
-<section id="tab-stock-count" class="tab">
+<section id="tab-stock-count" class="tab" data-feature="stock_count">
   <div style="padding:16px">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px">
       <h2 style="margin:0">&#128202; ספירת מלאי</h2>

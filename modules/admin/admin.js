@@ -54,5 +54,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
   applyUIPermissions();
+  applyFeatureFlags();
   resumeAppInit();
 });
+
+async function applyFeatureFlags() {
+  try {
+    const features = await getPlanFeatures();
+    document.querySelectorAll('[data-feature]').forEach(el => {
+      const feature = el.dataset.feature;
+      if (features[feature] === false) {
+        el.style.display = 'none';
+      }
+    });
+  } catch (e) {
+    console.warn('applyFeatureFlags: failed, showing all features (fail-safe):', e);
+  }
+}
