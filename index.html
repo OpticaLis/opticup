@@ -342,12 +342,17 @@ async function resolveTenant() {
   if (slug) {
     // Resolve slug → tenant row (uses anon key, tenants table has public read RLS)
     const { data: tenant, error } = await sb.from('tenants')
-      .select('id, name, slug, ui_config, is_active')
+      .select('id, name, slug, ui_config, is_active, status')
       .eq('slug', slug)
       .eq('is_active', true)
       .maybeSingle();
 
     if (tenant) {
+      // Check suspended/deleted status (Module 2 Phase 3k)
+      if (tenant.status === 'suspended' || tenant.status === 'deleted') {
+        showTenantBlocked(tenant);
+        return null;
+      }
       sessionStorage.setItem('tenant_slug', tenant.slug);
       sessionStorage.setItem('tenant_id', tenant.id);
       // Cache name for applyTenantName (before login, getTenantConfig won't have it yet)

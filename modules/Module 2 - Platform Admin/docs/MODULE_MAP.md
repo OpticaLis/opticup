@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in Module 2.
 > Updated every commit that adds/changes code.
-> Last updated: 2026-03-26 (Phase 3j)
+> Last updated: 2026-03-26 (Phase 3k)
 
 ---
 
@@ -19,7 +19,9 @@
 | 7 | admin-dashboard.js | `/modules/admin-platform/admin-dashboard.js` | 194 | Tenant list table + filters + search. loadTenants() calls get_all_tenants_overview RPC, filterTenants() applies client-side search/status/plan filters, renderTenantsTable() uses TableBuilder. Sort, relative time, plan filter population. Exposes: loadTenants, filterTenants, initDashboard. |
 | 8 | admin-tenant-detail.js | `/modules/admin-platform/admin-tenant-detail.js` | 353 | Slide-in panel content. loadTenantDetail loads stats + renders header. Tab 1 (info/edit/actions): details view, edit mode, suspend/activate/delete/reset PIN. Tab 3 (provisioning log). Tab 4 (audit log, super_admin only). Exposes: loadTenantDetail, renderPanelTab. |
 | 9 | admin-activity-viewer.js | `/modules/admin-platform/admin-activity-viewer.js` | 189 | Activity log viewer per tenant (Tab 2). Filters: date range, entity type, level. Paginated 50/page via get_tenant_activity_log RPC. Exposes: loadTenantActivityLog. |
-| 10 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
+| 10 | shared.js (ERP) | `/js/shared.js` | 337 | MODIFIED in Phase 3k: added showTenantBlocked() + DOMContentLoaded guard for non-index pages. Blocks suspended/deleted tenants with undismissible overlay. |
+| 11 | index.html (ERP) | `/index.html` | ~400 | MODIFIED in Phase 3k: resolveTenant() now checks tenant.status, calls showTenantBlocked() for suspended/deleted. |
+| 12 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
 
 ---
 
