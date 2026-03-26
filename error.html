@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optic Up</title>
+  <link rel="stylesheet" href="shared/css/variables.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-family); background: var(--color-bg-page); color: var(--color-gray-800); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; }
+    .card { background: var(--color-bg-card); border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.08); text-align: center; padding: 3rem 2.5rem 2.5rem; max-width: 420px; width: 100%; }
+    .logo { font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--color-primary-dark); margin-bottom: 2rem; }
+    .icon { font-size: 3rem; margin-bottom: 1rem; }
+    h1 { font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); color: var(--color-gray-900); margin-bottom: .75rem; }
+    .msg { font-size: var(--font-size-md); color: var(--color-gray-600); line-height: 1.6; margin-bottom: 2rem; }
+    .back { display: inline-block; color: var(--color-primary); text-decoration: none; font-weight: var(--font-weight-medium); font-size: var(--font-size-md); }
+    .back:hover { color: var(--color-primary-hover); text-decoration: underline; }
+    footer { margin-top: 2rem; font-size: var(--font-size-xs); color: var(--color-gray-400); }
+    @media (max-width: 480px) { .card { padding: 2rem 1.5rem 1.5rem; } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Optic Up</div>
+    <div class="icon" id="icon"></div>
+    <h1 id="title"></h1>
+    <p class="msg" id="msg"></p>
+    <a href="/landing.html" class="back">← חזרה לדף הראשי</a>
+  </div>
+  <footer>© Optic Up</footer>
+  <script>
+    const p = new URLSearchParams(window.location.search);
+    const type = p.get('type') || 'not-found';
+    const slug = p.get('slug') || '';
+    const name = p.get('name') || '';
+    const states = {
+      'not-found': { icon: '\uD83D\uDD0D', title: 'החנות לא נמצאה', msg: slug ? 'לא נמצאה חנות עם הקוד "' + slug + '"' : 'לא נמצאה חנות עם הקוד שהוזן' },
+      'suspended': { icon: '\u26A0\uFE0F', title: 'החשבון מושהה', msg: 'החשבון של "' + (name || slug) + '" מושהה. פנו ל-support@opticup.co.il' },
+      'deleted':   { icon: '\u274C', title: 'החנות לא פעילה', msg: 'החנות שחיפשת כבר לא פעילה.' }
+    };
+    const s = states[type] || states['not-found'];
+    document.getElementById('icon').textContent = s.icon;
+    document.getElementById('title').textContent = s.title;
+    document.getElementById('msg').textContent = s.msg;
+    document.title = 'Optic Up \u2014 ' + s.title;
+  </script>
+</body>
+</html>
