@@ -121,3 +121,6 @@ must_change_pin (BOOLEAN DEFAULT false)
 | `suspend_tenant(...)` | p_tenant_id UUID, p_reason TEXT, p_admin_id UUID | void | SECURITY DEFINER. Verifies status='active', sets suspended + reason. Audit log. |
 | `activate_tenant(...)` | p_tenant_id UUID, p_admin_id UUID | void | SECURITY DEFINER. Verifies status IN ('suspended','trial'), sets active. Audit log. |
 | `update_tenant(...)` | p_tenant_id UUID, p_updates JSONB, p_admin_id UUID | void | SECURITY DEFINER. Whitelist fields, captures old values, applies updates, audit with old+new diff. |
+| `get_tenant_activity_log(...)` | p_tenant_id UUID, p_limit INT, p_offset INT, p_level TEXT, p_entity_type TEXT, p_date_from TIMESTAMPTZ, p_date_to TIMESTAMPTZ | JSONB {total, entries} | SECURITY DEFINER. Paginated activity_log with optional filters. |
+| `get_tenant_employees(p_tenant_id)` | p_tenant_id UUID | JSONB array [{id, name}] | SECURITY DEFINER. Minimal employee list for PIN reset dropdown. |
+| `reset_employee_pin(...)` | p_tenant_id UUID, p_employee_id UUID, p_new_pin TEXT, p_must_change BOOLEAN, p_admin_id UUID | void | SECURITY DEFINER. Verifies employee∈tenant, resets PIN + unlock. PIN not in audit. |

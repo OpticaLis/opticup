@@ -248,3 +248,19 @@ CREATE POLICY provisioning_log_admin_insert ON tenant_provisioning_log
 -- update_tenant(p_tenant_id UUID, p_updates JSONB, p_admin_id UUID) → void
 -- SECURITY DEFINER. Whitelist: name, owner_name, owner_email, owner_phone, plan_id,
 -- trial_ends_at. Captures old values, applies per-field, writes audit with old+new diff.
+
+-- ============================================================
+-- Phase 3c: Support RPCs
+-- Full SQL in: docs/phase3c-rpcs.sql
+-- ============================================================
+
+-- get_tenant_activity_log(p_tenant_id, p_limit, p_offset, p_level, p_entity_type, p_date_from, p_date_to) → JSONB {total, entries}
+-- SECURITY DEFINER. Paginated activity_log for a tenant with optional filters.
+-- Returns total count + entries array for pagination UI.
+
+-- get_tenant_employees(p_tenant_id UUID) → JSONB array [{id, name}]
+-- SECURITY DEFINER. Minimal employee list for PIN reset dropdown.
+
+-- reset_employee_pin(p_tenant_id, p_employee_id, p_new_pin, p_must_change, p_admin_id) → void
+-- SECURITY DEFINER. Verifies employee belongs to tenant, resets PIN + unlock.
+-- Audit log does NOT include new PIN (security).
