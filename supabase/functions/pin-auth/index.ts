@@ -141,6 +141,12 @@ Deno.serve(async (req) => {
     })
     .eq("id", employee.id);
 
+  // Update tenant last_active timestamp (Phase 4g)
+  await db
+    .from("tenants")
+    .update({ last_active: new Date().toISOString() })
+    .eq("id", tenantId);
+
   // --- Sign JWT ---
   const key = await getSigningKey();
 
