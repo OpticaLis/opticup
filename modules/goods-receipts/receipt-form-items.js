@@ -43,9 +43,9 @@ function addReceiptItemRow(data) {
     <td>${rcptRowNum}</td>
     <td><input type="text" class="rcpt-barcode" value="${escapeHtml(data?.barcode || '')}" readonly style="background:${data?.barcode ? '#f0f0f0' : '#fff8e1'}"></td>
     <td><input type="text" class="rcpt-brand" value="${escapeHtml(data?.brand || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
-    <td><input type="text" class="rcpt-model" value="${escapeHtml(data?.model || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
-    <td><input type="text" class="rcpt-color" value="${escapeHtml(data?.color || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
-    <td><input type="text" class="rcpt-size" value="${escapeHtml(data?.size || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
+    <td><input type="text" class="rcpt-model" value="${escapeHtml(data?.model || '')}" ${isExisting ? 'style="background:#f5f5f5"' : ''}></td>
+    <td><input type="text" class="rcpt-color" value="${escapeHtml(data?.color || '')}" ${isExisting ? 'style="background:#f5f5f5"' : ''}></td>
+    <td><input type="text" class="rcpt-size" value="${escapeHtml(data?.size || '')}" ${isExisting ? 'style="background:#f5f5f5"' : ''}></td>
     <td><select class="rcpt-ptype" style="min-width:55px;font-size:.78rem" ${isExisting ? 'disabled' : ''}>
       <option value="eyeglasses" ${(data?.product_type || '') !== 'sunglasses' ? 'selected' : ''}>\u05E8\u05D0\u05D9\u05D9\u05D4</option>
       <option value="sunglasses" ${(data?.product_type || '') === 'sunglasses' ? 'selected' : ''}>\u05E9\u05DE\u05E9</option>
@@ -63,8 +63,17 @@ function addReceiptItemRow(data) {
     <td>${isNew ? '<span class="rcpt-new-badge">חדש</span>' : '<span class="rcpt-existing-badge">קיים</span>'}
       <input type="hidden" class="rcpt-is-new" value="${isNew ? '1' : '0'}">
     </td>
-    <td>${actionCol}</td>
+    <td style="white-space:nowrap">
+      <button class="btn-rcpt-note" data-row="${rcptRowNum}" style="background:none;border:none;cursor:pointer;font-size:14px;${data?.note ? 'color:#2196F3' : 'opacity:.4'}" title="הערה לפריט" onclick="_toggleRcptNote(${rcptRowNum})">${data?.note ? '\uD83D\uDCAC' : '\uD83D\uDCAD'}</button>
+      ${actionCol}
+    </td>
   `;
+  // Note row (hidden by default)
+  var noteRow = document.createElement('tr');
+  noteRow.id = 'rcpt-note-row-' + rcptRowNum;
+  noteRow.style.display = data?.note ? '' : 'none';
+  noteRow.style.background = '#f8f9fa';
+  noteRow.innerHTML = '<td colspan="15" style="padding:4px 16px 8px"><textarea class="rcpt-item-note" data-row="' + rcptRowNum + '" rows="2" maxlength="500" placeholder="\u05D4\u05E2\u05E8\u05D4 \u05DC\u05E4\u05E8\u05D9\u05D8..." style="width:100%;padding:6px 8px;border-radius:4px;border:1px solid #ccc;direction:rtl;resize:vertical;font-size:13px">' + escapeHtml(data?.note || '') + '</textarea></td>';
   // Apply dimmed state if loading with not_received status
   if (rcptStatus === 'not_received') {
     tr.classList.add('rcpt-row-dimmed');
@@ -95,11 +104,20 @@ function addReceiptItemRow(data) {
   }
   if (data?.sync) tr.querySelector('.rcpt-sync').value = data.sync;
   tb.appendChild(tr);
+  tb.appendChild(noteRow);
   updateReceiptItemsStats();
 }
 
+function _toggleRcptNote(rowNum) {
+  var noteRow = document.getElementById('rcpt-note-row-' + rowNum);
+  if (!noteRow) return;
+  var showing = noteRow.style.display !== 'none';
+  noteRow.style.display = showing ? 'none' : '';
+  if (!showing) { var ta = noteRow.querySelector('.rcpt-item-note'); if (ta) setTimeout(function() { ta.focus(); }, 50); }
+}
+
 function getReceiptItems() {
-  return Array.from($('rcpt-items-body').querySelectorAll('tr')).map(tr => {
+  return Array.from($('rcpt-items-body').querySelectorAll('tr[data-row]')).map(tr => {
     var rcptStatus = tr.querySelector('.rcpt-receipt-status')?.value || null;
     const qtyVal = parseInt(tr.querySelector('.rcpt-qty')?.value);
     // Allow qty 0 for not_received items (they won't enter inventory)
@@ -137,7 +155,8 @@ function getReceiptItems() {
       is_new_item: tr.querySelector('.rcpt-is-new')?.value === '1',
       inventory_id: tr.dataset.inventoryId || null,
       from_po: tr.dataset.fromPo === '1',
-      receipt_status: rcptStatus
+      receipt_status: rcptStatus,
+      note: (function() { var nr = document.getElementById('rcpt-note-row-' + tr.dataset.row); var ta = nr ? nr.querySelector('.rcpt-item-note') : null; return ta ? ta.value.trim() : ''; })()
     };
   });
 }

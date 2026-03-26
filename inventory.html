@@ -428,6 +428,11 @@
         </div>
         <div class="form-group"><label>מספר מסמך <span class="req">*</span></label>
           <input type="text" id="rcpt-number" placeholder="מס׳ תעודת משלוח / חשבונית">
+          <div id="rcpt-extra-nums" style="margin-top:4px">
+            <div id="rcpt-extra-nums-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px"></div>
+            <div style="display:flex;gap:4px"><input type="text" id="rcpt-extra-num-input" placeholder="מספר מסמך נוסף..." style="flex:1;font-size:.85rem;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px">
+            <button type="button" class="btn btn-sm" style="font-size:.78rem;background:#e5e7eb" onclick="_addRcptExtraNum()">+ הוסף</button></div>
+          </div>
         </div>
         <div class="form-group"><label>ספק <span class="req">*</span></label>
           <div id="rcpt-supplier-wrap"></div>

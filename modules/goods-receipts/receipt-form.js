@@ -1,3 +1,38 @@
+// ── Multiple document numbers (RC-2) ────────────────────────
+var _rcptExtraNums = []; // additional doc numbers beyond the main rcpt-number
+
+function _addRcptExtraNum() {
+  var inp = document.getElementById('rcpt-extra-num-input');
+  var val = (inp ? inp.value : '').trim();
+  if (!val) return;
+  if (_rcptExtraNums.includes(val)) { Toast.warning('\u05DE\u05E1\u05E4\u05E8 \u05DB\u05D1\u05E8 \u05E7\u05D9\u05D9\u05DD'); return; }
+  _rcptExtraNums.push(val);
+  if (inp) inp.value = '';
+  _renderRcptExtraNums();
+}
+
+function _removeRcptExtraNum(idx) {
+  _rcptExtraNums.splice(idx, 1);
+  _renderRcptExtraNums();
+}
+
+function _renderRcptExtraNums() {
+  var container = document.getElementById('rcpt-extra-nums-tags');
+  if (!container) return;
+  container.innerHTML = _rcptExtraNums.map(function(n, i) {
+    return '<span style="display:inline-flex;align-items:center;gap:4px;background:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:4px;font-size:.82rem">' +
+      escapeHtml(n) + '<button type="button" onclick="_removeRcptExtraNum(' + i + ')" style="background:none;border:none;cursor:pointer;font-size:12px;color:#6366f1;padding:0">\u2715</button></span>';
+  }).join('');
+}
+
+function getRcptDocumentNumbers() {
+  var main = (document.getElementById('rcpt-number') || {}).value || '';
+  main = main.trim();
+  var all = main ? [main] : [];
+  _rcptExtraNums.forEach(function(n) { if (n && !all.includes(n)) all.push(n); });
+  return all;
+}
+
 // Pending files for receipt document attachment (multi-file)
 var _pendingReceiptFiles = [];
 // Backward-compat getter: _pendingReceiptFile returns first file or null
@@ -170,6 +205,12 @@ async function openExistingReceipt(receiptId, viewOnly) {
     $('rcpt-po-select').onchange = () => onReceiptPoSelected();
     $('rcpt-date').value = rcpt.receipt_date || '';
     $('rcpt-notes').value = rcpt.notes || '';
+    // Load extra document numbers
+    _rcptExtraNums = [];
+    var dbNums = rcpt.document_numbers || [];
+    var mainNum = rcpt.receipt_number || '';
+    dbNums.forEach(function(n) { if (n && n !== mainNum) _rcptExtraNums.push(n); });
+    _renderRcptExtraNums();
     clearAlert('rcpt-form-alerts');
 
     // Populate items
@@ -187,7 +228,8 @@ async function openExistingReceipt(receiptId, viewOnly) {
         product_type: item.product_type || 'eyeglasses',
         is_new_item: item.is_new_item || false,
         from_po: item.from_po || !!rcpt.po_id,
-        receipt_status: item.receipt_status || 'ok'
+        receipt_status: item.receipt_status || 'ok',
+        note: item.note || ''
       });
     }
     updateReceiptItemsStats();

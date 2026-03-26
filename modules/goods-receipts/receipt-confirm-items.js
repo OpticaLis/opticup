@@ -89,26 +89,35 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
     await updatePOStatusAfterReceipt(poId);
   }
 
-  // Auto-create supplier document for debt tracking
-  const { data: rcptData } = await sb.from(T.RECEIPTS).select('supplier_id').eq('id', receiptId).eq('tenant_id', getTenantId()).single();
+  // Auto-create supplier document(s) for debt tracking
+  const { data: rcptData } = await sb.from(T.RECEIPTS).select('supplier_id, document_numbers').eq('id', receiptId).eq('tenant_id', getTenantId()).single();
   if (rcptData?.supplier_id) {
+    // Create primary supplier document (linked to receipt)
+    var docNumbers = (rcptData.document_numbers && rcptData.document_numbers.length) ? rcptData.document_numbers : [rcptNumber];
     try {
-      const doc = await createDocumentFromReceipt(receiptId, rcptData.supplier_id, savedItems, rcptNumber);
+      var doc = await createDocumentFromReceipt(receiptId, rcptData.supplier_id, savedItems, docNumbers[0] || rcptNumber);
       if (doc) {
-        toast(`קבלה אושרה · מסמך ספק ${doc.internal_number} נוצר`, 's');
+        toast('\u05E7\u05D1\u05DC\u05D4 \u05D0\u05D5\u05E9\u05E8\u05D4 \u00B7 \u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 ' + (doc.internal_number || '') + ' \u05E0\u05D5\u05E6\u05E8', 's');
       } else {
-        toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן, אך מסמך ספק לא נוצר`, 'w');
+        toast('\u05E7\u05D1\u05DC\u05D4 ' + rcptNumber + ' \u05D0\u05D5\u05E9\u05E8\u05D4 \u2014 \u05DE\u05DC\u05D0\u05D9 \u05E2\u05D5\u05D3\u05DB\u05DF, \u05D0\u05DA \u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 \u05DC\u05D0 \u05E0\u05D5\u05E6\u05E8', 'w');
       }
     } catch (docErr) {
       console.error('createDocumentFromReceipt error:', docErr);
-      toast(`הקבלה אושרה אך יצירת מסמך ספק נכשלה — צור מסמך ידנית`, 'w');
+      toast('\u05D4\u05E7\u05D1\u05DC\u05D4 \u05D0\u05D5\u05E9\u05E8\u05D4 \u05D0\u05DA \u05D9\u05E6\u05D9\u05E8\u05EA \u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 \u05E0\u05DB\u05E9\u05DC\u05D4 \u2014 \u05E6\u05D5\u05E8 \u05DE\u05E1\u05DE\u05DA \u05D9\u05D3\u05E0\u05D9\u05EA', 'w');
       writeLog('debt_creation_failed', null, {
         receipt_id: receiptId, receipt_number: rcptNumber,
         supplier_id: rcptData.supplier_id, error: docErr.message || String(docErr)
       });
     }
+    // Log additional document numbers for manual follow-up
+    if (docNumbers.length > 1) {
+      writeLog('receipt_multi_docs', null, {
+        receipt_id: receiptId, document_numbers: docNumbers,
+        note: '\u05E7\u05D1\u05DC\u05D4 \u05E2\u05DD ' + docNumbers.length + ' \u05DE\u05E1\u05E4\u05E8\u05D9 \u05DE\u05E1\u05DE\u05DA \u2014 \u05D4\u05E8\u05D0\u05E9\u05D5\u05DF \u05E0\u05D5\u05E6\u05E8 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA'
+      });
+    }
   } else {
-    toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
+    toast('\u05E7\u05D1\u05DC\u05D4 ' + rcptNumber + ' \u05D0\u05D5\u05E9\u05E8\u05D4 \u2014 \u05DE\u05DC\u05D0\u05D9 \u05E2\u05D5\u05D3\u05DB\u05DF!', 's');
   }
 
   // Notify other modules (OCR template learning, etc.)

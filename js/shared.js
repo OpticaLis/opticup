@@ -160,7 +160,10 @@ const FIELD_MAP = {
     'שם חברה':'name','סוג מותג':'brand_type','סנכרון ברירת מחדל':'default_sync','פעיל':'active','מוחרג מאתר':'exclude_website','מלאי מינימום':'min_stock_qty'
   },
   goods_receipt_items: {
-    'החלטת מחיר':'price_decision','סטטוס התאמה ל-PO':'po_match_status'
+    'החלטת מחיר':'price_decision','סטטוס התאמה ל-PO':'po_match_status','הערה':'note'
+  },
+  goods_receipts: {
+    'מספרי מסמכים':'document_numbers'
   },
   expense_folders: {
     'שם':'name','אייקון':'icon','סדר מיון':'sort_order','פעיל':'is_active'

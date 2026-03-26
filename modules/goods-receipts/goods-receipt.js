@@ -320,6 +320,7 @@ function openNewReceipt() {
   $('rcpt-form-title').textContent = '📦 קבלה חדשה';
   $('rcpt-type').value = 'delivery_note';
   $('rcpt-number').value = '';
+  if (typeof _rcptExtraNums !== 'undefined') { _rcptExtraNums = []; if (typeof _renderRcptExtraNums === 'function') _renderRcptExtraNums(); }
   _initRcptSupplierSelect('');
 
   $('rcpt-po-select').innerHTML = '<option value="">ללא — קבלה חופשית</option>';

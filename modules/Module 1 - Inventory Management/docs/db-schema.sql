@@ -376,7 +376,8 @@ CREATE TABLE IF NOT EXISTS goods_receipts (
   status          TEXT NOT NULL DEFAULT 'draft',                 -- סטטוס: draft | confirmed | cancelled
   tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   created_by      TEXT,                                          -- מי יצר
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  document_numbers TEXT[] DEFAULT '{}'                           -- מספרי מסמכים נוספים (055)
 );
 CREATE INDEX IF NOT EXISTS idx_receipts_supplier ON goods_receipts(supplier_id);
 CREATE INDEX IF NOT EXISTS idx_receipts_status   ON goods_receipts(status);
@@ -405,6 +406,7 @@ CREATE TABLE IF NOT EXISTS goods_receipt_items (
   barcodes_csv    TEXT,                                          -- QA2: comma-separated barcodes for multi-unit rows (050)
   ordered_qty     INTEGER,                                       -- QA2: original ordered quantity from PO (050)
   product_type    TEXT CHECK (product_type IS NULL OR product_type IN ('eyeglasses', 'sunglasses')),  -- סוג מוצר (053)
+  note            TEXT,                                            -- הערה לפריט (055)
   tenant_id       UUID NOT NULL REFERENCES tenants(id)           -- דייר (018)
 );
 CREATE INDEX IF NOT EXISTS idx_receipt_items ON goods_receipt_items(receipt_id);
