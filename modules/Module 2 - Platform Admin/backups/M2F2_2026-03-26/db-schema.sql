@@ -1,6 +1,6 @@
 -- Module 2: Platform Admin — DB Schema
--- Last updated: 2026-03-26 (Phase 2 complete)
--- This reflects the ACTUAL deployed schema including all RPCs and RLS policies.
+-- Last updated: 2026-03-26 (Phase 1 complete)
+-- This reflects the ACTUAL deployed schema including fixed RLS policies.
 
 -- ============================================================
 -- SECURITY DEFINER function (must exist before RLS policies)
@@ -184,37 +184,3 @@ CREATE INDEX idx_tenant_config_key ON tenant_config(tenant_id, key);
 CREATE INDEX idx_provisioning_log_tenant ON tenant_provisioning_log(tenant_id);
 CREATE INDEX idx_tenants_plan ON tenants(plan_id);
 CREATE INDEX idx_tenants_status ON tenants(status);
-
--- ============================================================
--- Phase 2: Tenant Provisioning — Schema changes
--- ============================================================
-
--- employees.must_change_pin
-ALTER TABLE employees ADD COLUMN IF NOT EXISTS must_change_pin BOOLEAN DEFAULT false;
-
--- tenant_provisioning_log.tenant_id nullable (for failure logging)
-ALTER TABLE tenant_provisioning_log ALTER COLUMN tenant_id DROP NOT NULL;
-
--- provisioning_log INSERT policy for admins
-CREATE POLICY provisioning_log_admin_insert ON tenant_provisioning_log
-  FOR INSERT WITH CHECK (
-    auth.uid() IN (SELECT auth_user_id FROM platform_admins WHERE status = 'active')
-  );
-
--- ============================================================
--- Phase 2: RPCs
--- Full SQL in: docs/create_tenant_rpc.sql
--- ============================================================
-
--- validate_slug(p_slug TEXT) → JSONB {valid, reason}
--- SECURITY DEFINER. Checks format (3-30 chars, a-z0-9-), 22 reserved words, uniqueness.
-
--- create_tenant(...) → UUID
--- SECURITY DEFINER. 10-step atomic provisioning:
---   1. validate_slug  2. INSERT tenants  3. INSERT tenant_config (6)
---   4. INSERT roles (5)  5. INSERT permissions (57)  6. INSERT role_permissions
---   7. INSERT employees (1, must_change_pin=true)  8. INSERT employee_roles
---   9. INSERT document_types (5)  10. INSERT payment_methods (5)
-
--- delete_tenant(p_tenant_id UUID, p_deleted_by UUID) → void
--- SECURITY DEFINER. Soft delete: status='deleted', deleted_at=now().

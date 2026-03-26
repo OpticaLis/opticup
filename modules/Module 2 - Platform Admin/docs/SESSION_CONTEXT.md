@@ -4,33 +4,41 @@
 2026-03-26
 
 ## What Was Done This Session
-Phase 1 complete — DB + Admin Auth:
-- 5 new DB tables: plans, platform_admins, platform_audit_log, tenant_config, tenant_provisioning_log
-- tenants table extended with 9 columns (plan_id, status, trial_ends_at, owner_name, owner_email, owner_phone, created_by, suspended_reason, deleted_at)
-- 10 indexes across all new tables and tenants extensions
-- RLS enabled on all 5 tables with is_platform_super_admin() SECURITY DEFINER function
-- 3 plans seeded: basic, premium, enterprise
-- Existing tenants (Prizma + Demo) assigned enterprise plan
-- admin.html with Supabase Auth email+password login/logout
-- 4 JS files: admin-auth.js, admin-db.js, admin-audit.js, admin-app.js
-- Bootstrap admin user: dannylis669@gmail.com, super_admin
-- Full verification: 8/8 tests passed
+Phase 2 complete — Tenant Provisioning:
+- 3 RPCs: create_tenant (10-step atomic provisioning), validate_slug (format+reserved+unique), delete_tenant (soft delete)
+- admin-provisioning.js (320 lines): 3-step wizard (store details → plan+PIN → summary), slug auto-suggest + debounced real-time validation, provisionTenant() with audit + provisioning logs
+- must_change_pin flow in auth-service.js: undismissible PIN change overlay on first login for new tenant employees
+- employees.must_change_pin column added
+- tenant_provisioning_log.tenant_id made nullable (for failure logging)
+- provisioning_log INSERT RLS policy added for admins
+- Modal fix: credentials modal switched from Modal.alert (escapes HTML) to Modal.show
+- Full verification: 12/12 tests passed
 
 ## Commits
+### Phase 1 (DB + Admin Auth)
 - a68af24 — Module 2: fix directory structure to match project conventions
 - 9fb5bdd — Module 2 Phase 1i: admin.html + admin-auth.js
 - e6fca80 — Module 2 Phase 1j: admin-db.js + admin-audit.js
 - 5374b52 — Module 2 Phase 1k: admin-app.js — login/logout flow complete
 
+### Phase 2 (Tenant Provisioning)
+- 85b4695 — Module 2 Phase 2c: create_tenant() RPC SQL (reference)
+- 22c4320 — Module 2 Phase 2e: admin-provisioning.js — tenant creation wizard
+- 3624239 — Module 2 Phase 2f: must_change_pin flow after first login
+- 92eb89d — Fix credentials modal HTML rendering (Modal.alert → Modal.show)
+
 ## Current State
-- admin.html functional: login, logout, session persistence, audit logging
-- Admin panel shows welcome message only (dashboard/provisioning in later phases)
-- All verification tests passed (8/8)
+- admin.html: login, logout, session persistence, audit logging, "חנות חדשה" wizard
+- Tenant provisioning: 3-step wizard → create_tenant RPC → 57 permissions, 5 roles, admin employee, 5 doc types, 5 payment methods, 6 config entries
+- New tenant employees: forced PIN change on first login (must_change_pin=true)
+- Soft delete RPC ready (no UI yet — Phase 3)
+- Test tenant created and verified: test-store-v2 (basic plan)
 
 ## Known Issues
-- RLS on platform_admins uses SECURITY DEFINER function is_platform_super_admin() to avoid infinite recursion — documented pattern for all admin-referencing policies
-- audit_log INSERT policy uses WITH CHECK (true) — acceptable since admin_id is set by code, not RLS
-- platform_admins read policy limited to self-read (auth.uid() = auth_user_id) — super_admin reads all via SECURITY DEFINER function
+- Hebrew-only tenant names produce empty slug (slugify removes non-Latin) — manual slug entry works fine
+- Admin cannot read tenant-scoped ERP tables (roles, permissions, employees) due to RLS — by design (tenant data isolation)
+- RLS on platform_admins uses SECURITY DEFINER function is_platform_super_admin() to avoid infinite recursion
+- audit_log INSERT policy uses WITH CHECK (true) — acceptable since admin_id is set by code
 
 ## Next Steps
-1. **Phase 2:** Tenant Provisioning — createTenant() RPC, creation form, slug validation
+1. **Phase 3:** Dashboard + Management — tenant list table, edit tenant details, suspend/activate, activity log viewer per tenant

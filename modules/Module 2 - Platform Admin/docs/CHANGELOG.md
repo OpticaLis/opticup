@@ -2,6 +2,34 @@
 
 ---
 
+## Phase 2 — Tenant Provisioning (2026-03-26)
+
+### Commits
+- `85b4695` — Module 2 Phase 2c: create_tenant() RPC SQL (reference)
+- `22c4320` — Module 2 Phase 2e: admin-provisioning.js — tenant creation wizard
+- `3624239` — Module 2 Phase 2f: must_change_pin flow after first login
+- `92eb89d` — Fix credentials modal HTML rendering (Modal.alert → Modal.show)
+
+### DB Changes
+- **3 RPCs:** create_tenant (SECURITY DEFINER, 10-step atomic), validate_slug (format+reserved+unique), delete_tenant (soft delete)
+- **employees.must_change_pin** BOOLEAN column added (default false)
+- **tenant_provisioning_log.tenant_id** made nullable (for failure logging)
+- **provisioning_log_admin_insert** RLS policy added
+
+### Code Changes
+- `modules/admin-platform/admin-provisioning.js` (320 lines) — NEW: 3-step wizard, slug auto-suggest + debounced validation, provisionTenant() with audit + provisioning logs
+- `admin.html` (195 lines) — MODIFIED: added "חנות חדשה" button, modal-wizard.js + admin-provisioning.js script tags
+- `modules/admin-platform/admin-app.js` (89 lines) — MODIFIED: wired btn-new-tenant click → initProvisioningWizard
+- `js/auth-service.js` (341 lines) — MODIFIED: added checkMustChangePin() after initSecureSession
+
+### What create_tenant() provisions
+Per new tenant: 1 tenant row, 6 tenant_config entries, 5 roles, 57 permissions, role_permissions mapping (CEO=all 57, manager=54, senior=29, employee=8, viewer=6), 1 admin employee (must_change_pin=true), employee_roles (admin→ceo), 5 document_types, 5 payment_methods.
+
+### Verification
+All 12 tests passed: admin panel load, wizard open, slug auto-suggest, slug validation (duplicate/reserved/format/valid), step 2 plans, step 3 summary, tenant creation, DB verification, audit logs, new tenant login + PIN change, second login (no force-change), backward compatibility (Prizma/Demo).
+
+---
+
 ## Phase 1 — DB + Admin Auth (2026-03-26)
 
 ### Commits

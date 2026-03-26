@@ -507,6 +507,9 @@ Pages modified for shared/ dependencies:
 | `next_return_number` | Debt — Returns | `p_tenant_id UUID, p_supplier_number TEXT` | `TEXT` (RET-{sup}-NNNN) | Return creation (PO compare, debt returns) |
 | `get_po_aggregates` | Purchasing | `p_tenant_id UUID` | `TABLE(po_id, item_count, total_value)` | PO list table (server-side totals) |
 | `is_platform_super_admin` | Platform Admin | — | `BOOLEAN` | RLS policies on plans, platform_admins (SECURITY DEFINER — avoids recursion) |
+| `create_tenant` | Platform Admin | `p_name, p_slug, p_owner_name, p_owner_email, p_plan_id, ...` | `UUID` | 10-step atomic provisioning (SECURITY DEFINER). Creates tenant + config + roles + permissions + employee + doc_types + payment_methods. |
+| `validate_slug` | Platform Admin | `p_slug TEXT` | `JSONB {valid, reason}` | Slug format (3-30 chars, a-z0-9-), 22 reserved words, uniqueness check (SECURITY DEFINER). |
+| `delete_tenant` | Platform Admin | `p_tenant_id UUID, p_deleted_by UUID` | `void` | Soft delete: status='deleted', deleted_at=now() (SECURITY DEFINER). |
 
 ### Edge Functions (Supabase)
 
@@ -613,8 +616,13 @@ Pages modified for shared/ dependencies:
 | `AdminDB.getById` | admin-db.js | `table, id` | `row` | Admin panel features (Phase 3+) |
 | `AdminDB.insert` | admin-db.js | `table, data` | `row` | admin-audit.js, admin panel features |
 | `AdminDB.update` | admin-db.js | `table, id, data` | `row` | Admin panel features (Phase 3+) |
-| `AdminDB.rpc` | admin-db.js | `name, params?` | `data` | createTenant (Phase 2) |
-| `logAdminAction` | admin-audit.js | `action, targetTenantId?, details?` | `void` | admin-app.js (login/logout), all admin actions |
+| `AdminDB.rpc` | admin-db.js | `name, params?` | `data` | admin-provisioning.js (create_tenant, validate_slug) |
+| `logAdminAction` | admin-audit.js | `action, targetTenantId?, details?` | `void` | admin-app.js (login/logout), admin-provisioning.js (tenant.create) |
+| `initProvisioningWizard` | admin-provisioning.js | — | `void` | admin-app.js (btn-new-tenant click) |
+| `slugify` | admin-provisioning.js | `text` | `string` | admin-provisioning.js (tenant name → slug) |
+| `validateSlugRealtime` | admin-provisioning.js | `slug` | `void` | admin-provisioning.js (debounced slug input) |
+| `provisionTenant` | admin-provisioning.js | `params` | `void` | admin-provisioning.js (wizard onFinish) |
+| `checkMustChangePin` | auth-service.js | `employee` | `Promise<void>` | auth-service.js (end of initSecureSession) |
 
 ### Shipments Config Contracts
 
@@ -683,17 +691,19 @@ Pages modified for shared/ dependencies:
 | `modules/inventory/inventory-table.js` | `toggleNoImagesFilter()` | Toggles client-side filter for items without images |
 
 | Module 1.5 — Shared Components | ✅ Complete (QA passed) | `shared/css/`, `shared/js/`, `shared/tests/`, `scripts/` | — | 1 (activity_log) + ui_config column + PK fixes on roles/permissions/role_permissions |
-| Module 2 — Platform Admin | Phase 1 ✅ | `modules/admin-platform/` | `admin.html` | 5 new (plans, platform_admins, platform_audit_log, tenant_config, tenant_provisioning_log) + 9 columns on tenants |
+| Module 2 — Platform Admin | Phase 2 ✅ | `modules/admin-platform/` | `admin.html` | 5 new tables + 4 RPCs + 10 columns on tenants/employees |
 
-### Module 2 — Platform Admin Files (Phase 1)
+### Module 2 — Platform Admin Files (Phase 1 + 2)
 
 | File | Lines | Description |
 |------|-------|-------------|
-| `admin.html` | 192 | Platform Admin HTML page — Supabase Auth login, shared CSS, no ERP dependencies |
+| `admin.html` | 195 | Platform Admin HTML page — login, "חנות חדשה" wizard button, loads modal-wizard.js |
 | `modules/admin-platform/admin-auth.js` | 94 | adminSb client, login/logout/session, getCurrentAdmin, requireAdmin |
 | `modules/admin-platform/admin-db.js` | 63 | AdminDB wrapper (query, getById, insert, update, rpc) — no tenant_id |
 | `modules/admin-platform/admin-audit.js` | 20 | logAdminAction fire-and-forget audit logger |
-| `modules/admin-platform/admin-app.js` | 88 | App init, login/panel toggle, handleLogin/handleLogout |
+| `modules/admin-platform/admin-provisioning.js` | 320 | 3-step wizard, slug auto-suggest + debounced validation, provisionTenant() RPC + logs |
+| `modules/admin-platform/admin-app.js` | 89 | App init, login/panel toggle, wires provisioning button |
+| `js/auth-service.js` (ERP — modified) | 341 | Added checkMustChangePin() — undismissible PIN change for new tenant employees |
 
 ---
 

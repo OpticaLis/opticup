@@ -2207,3 +2207,34 @@ CREATE INDEX idx_tenant_config_key ON tenant_config(tenant_id, key);
 CREATE INDEX idx_provisioning_log_tenant ON tenant_provisioning_log(tenant_id);
 CREATE INDEX idx_tenants_plan ON tenants(plan_id);
 CREATE INDEX idx_tenants_status ON tenants(status);
+
+-- ============================================================
+-- Module 2: Platform Admin — Phase 2 (2026-03-26)
+-- Tenant Provisioning: RPCs + schema changes
+-- ============================================================
+
+-- employees.must_change_pin (forces PIN change on first login)
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS must_change_pin BOOLEAN DEFAULT false;
+
+-- tenant_provisioning_log.tenant_id nullable (for failure logging)
+ALTER TABLE tenant_provisioning_log ALTER COLUMN tenant_id DROP NOT NULL;
+
+-- provisioning_log INSERT policy for admins
+CREATE POLICY provisioning_log_admin_insert ON tenant_provisioning_log
+  FOR INSERT WITH CHECK (
+    auth.uid() IN (SELECT auth_user_id FROM platform_admins WHERE status = 'active')
+  );
+
+-- validate_slug(p_slug) — format + reserved words + uniqueness
+-- Returns JSONB {valid: boolean, reason: text|null}
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/create_tenant_rpc.sql
+
+-- create_tenant(...) — 10-step atomic provisioning
+-- Returns UUID (new tenant ID)
+-- Creates: tenant, 6 config entries, 5 roles, 57 permissions, role_permissions,
+--          1 employee (must_change_pin=true), employee_roles, 5 doc_types, 5 payment_methods
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/create_tenant_rpc.sql
+
+-- delete_tenant(p_tenant_id, p_deleted_by) — soft delete
+-- Sets status='deleted', deleted_at=now()
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/create_tenant_rpc.sql
