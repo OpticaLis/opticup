@@ -68,7 +68,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 2 | ✅ | Tenant Provisioning | createTenant() RPC, טופס יצירה, slug validation |
 | 3 | ✅ | Dashboard + Management | רשימת tenants, עריכה, suspend, activity log viewer |
 | 4 | ✅ | Plans & Limits | טבלת plans, checkPlanLimit(), isFeatureEnabled(), feature flags |
-| 5 | ✅ | Slug Routing + Future Prep | error pages, routing hardening, storefront_config DB prep |
+| 5 | ⬜ | Slug Routing + Future Prep | error pages, routing hardening, B2B/Storefront DB prep |
 | QA | ⬜ | Full Test | provisioning, plan limits, admin auth, tenant isolation, multi-admin |
 
 ---

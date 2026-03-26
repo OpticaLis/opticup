@@ -2,33 +2,6 @@
 
 ---
 
-## Phase 5 — Slug Routing + Future Prep (2026-03-26)
-
-### New Files
-- 24d8648 — error.html (48 lines): standalone error page with 3 states (not-found, suspended, deleted). Uses shared/css/variables.css only, no shared.js dependency.
-- 6329aad — landing.html (62 lines): store code entry page with slug validation + redirect. Standalone, no shared.js dependency.
-- 8d3554e — phase5a-storefront-config.sql: CREATE TABLE storefront_config + RLS + migration + updated create_tenant() with Step 11
-
-### Modified Files
-- 4cf8767 — js/shared.js: resolveTenant() centralized (async DB query + status check + redirects). Removed showTenantBlocked(), showTenantPicker IIFE guard, 'prizma' hardcoded default.
-- dbb28a6 — js/shared.js: sync TENANT_SLUG initialization from URL/sessionStorage (IIFE at script load)
-- 4cf8767 — index.html: removed local resolveTenant(), showTenantPicker(), tenant picker HTML
-- dbb28a6 — index.html: module card hrefs include ?t=slug for session preservation
-
-### DB Changes (SQL reference — not yet executed)
-- storefront_config table: tenant_id (UNIQUE), enabled, domain, subdomain, theme/categories/seo/pages JSONB
-- RLS: tenant reads own (JWT claims pattern), admin full access
-- Migration: seed existing tenants with enabled=false
-- create_tenant() updated: Step 11 inserts default storefront_config row
-
-### Bug Fixes
-- dbb28a6 — Cross-page navigation losing session: sync TENANT_SLUG + ?t= param in module card links
-
-### Verification (Phase 5f)
-8 tests on production: error pages (3 states), landing page (validation + redirect), no-slug redirect, invalid slug redirect, 6 ERP pages load, demo tenant login + navigation, admin panel intact (plans edit modal), storefront_config (deferred — SQL not yet run).
-
----
-
 ## Phase 4 — Plans & Limits (2026-03-26)
 
 ### RPCs (SQL — run in Supabase Dashboard)

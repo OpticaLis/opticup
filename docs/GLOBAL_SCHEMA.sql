@@ -2292,3 +2292,33 @@ ALTER TABLE tenants ADD COLUMN IF NOT EXISTS last_active TIMESTAMPTZ;
 -- is_feature_enabled(p_tenant_id UUID, p_feature TEXT) → BOOLEAN
 -- SECURITY DEFINER. Priority: tenant_config feature_overrides → plan.features → true (fail-safe).
 -- Full SQL in: modules/Module 2 - Platform Admin/docs/phase4a-rpcs.sql
+
+-- ============================================================
+-- Phase 5: Slug Routing + Future Prep (Module 2)
+-- ============================================================
+
+-- storefront_config — per-tenant, DB prep for Module 3 (Storefront)
+CREATE TABLE storefront_config (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) UNIQUE,
+  enabled BOOLEAN DEFAULT false,
+  domain TEXT,
+  subdomain TEXT,
+  theme JSONB DEFAULT '{}',
+  logo_url TEXT,
+  categories JSONB DEFAULT '[]',
+  seo JSONB DEFAULT '{}',
+  pages JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE storefront_config ENABLE ROW LEVEL SECURITY;
+CREATE POLICY storefront_config_tenant_read ON storefront_config
+  FOR SELECT USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
+CREATE POLICY storefront_config_admin_access ON storefront_config
+  FOR ALL USING (auth.uid() IN (SELECT auth_user_id FROM platform_admins WHERE status = 'active'));
+CREATE INDEX idx_storefront_config_tenant ON storefront_config(tenant_id);
+
+-- create_tenant() updated: Step 11 inserts default storefront_config row
+-- Full SQL in: modules/Module 2 - Platform Admin/docs/phase5a-storefront-config.sql

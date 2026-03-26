@@ -15,6 +15,8 @@
 | Shipments | `shipments.html` | Module 1 — Shipments | Box management: list, 3-step wizard, detail panel, courier settings |
 | Settings | `settings.html` | Module 1 — Settings | Tenant config: business info, financial settings, logo upload |
 | Platform Admin | `admin.html` | Module 2 — Platform Admin | Supabase Auth login, full admin dashboard: tenant table, slide-in panel (4 tabs), audit log, provisioning wizard. Separate world from ERP — no shared.js, no tenant context. |
+| Error Page | `error.html` | Module 2 — Platform Admin | Standalone error page. 3 states: not-found, suspended, deleted. No shared.js dependency. |
+| Landing Page | `landing.html` | Module 2 — Platform Admin | Store code entry page. Slug validation + redirect to /?t=slug. No shared.js dependency. |
 
 ---
 
@@ -28,6 +30,7 @@ Supabase init, constants, caches, UI helpers, navigation. **Loads FIRST on every
 
 | Function | Parameters | Returns | Description |
 |----------|-----------|---------|-------------|
+| `resolveTenant` | — | `Promise<object\|null>` | Centralized tenant resolution: URL ?t= → sessionStorage → redirect to landing/error. Sets TENANT_SLUG + sessionStorage. |
 | `getTenantId` | — | `string\|null` | Read tenant_id from sessionStorage |
 | `getTenantConfig` | `key?: string` | `any` | Read tenant config object or specific key from sessionStorage |
 | `escapeHtml` | `str: string` | `string` | Sanitize string for safe HTML insertion |

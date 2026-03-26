@@ -1,13 +1,13 @@
 # Module 2 — Platform Admin — Module Spec
 
 > **Authority:** Current state of Module 2. Updated at end of each phase.
-> **Last updated:** 2026-03-26 (Phase 5 complete)
+> **Last updated:** 2026-03-26 (Phase 4 complete)
 
 ---
 
 ## 1. Tables
 
-### New Tables (6)
+### New Tables (5)
 
 | Table | Scope | Description |
 |-------|-------|-------------|
@@ -16,7 +16,6 @@
 | `platform_audit_log` | Global (no tenant_id) | Every admin action logged: login, logout, tenant changes. |
 | `tenant_config` | Per-tenant (has tenant_id) | Key-value config per tenant. UNIQUE(tenant_id, key). |
 | `tenant_provisioning_log` | Per-tenant ref (nullable tenant_id) | Step-by-step log of tenant creation process. |
-| `storefront_config` | Per-tenant (has tenant_id, UNIQUE) | Storefront config per tenant. DB prep for Module 3. enabled, domain, subdomain, theme/categories/seo/pages JSONB. |
 
 ### Extended Tables
 
@@ -33,14 +32,13 @@ All 5 tables have RLS enabled.
 - `platform_audit_log` — SELECT for active admins, INSERT WITH CHECK (true)
 - `tenant_config` — SELECT by tenant_id (RLS) + admin bypass, write via admin
 - `tenant_provisioning_log` — SELECT + INSERT for active admins
-- `storefront_config` — SELECT by tenant_id (JWT claims) + admin full access
 
 ### RPC Functions (14)
 
 | Function | Type | Description |
 |----------|------|-------------|
 | `is_platform_super_admin()` | SECURITY DEFINER | Returns boolean — checks if auth.uid() is super_admin in platform_admins. |
-| `create_tenant(...)` | SECURITY DEFINER | 11-step atomic provisioning: tenant → config → roles → permissions → role_permissions → employee → employee_roles → doc_types → payment_methods → storefront_config. Returns UUID. |
+| `create_tenant(...)` | SECURITY DEFINER | 10-step atomic provisioning: tenant → config → roles → permissions → role_permissions → employee → employee_roles → doc_types → payment_methods. Returns UUID. |
 | `validate_slug(p_slug)` | SECURITY DEFINER | Validates slug format (3-30 chars, a-z0-9-), reserved words (22 words), uniqueness. Returns JSONB {valid, reason}. |
 | `delete_tenant(p_tenant_id, p_deleted_by)` | SECURITY DEFINER | Soft delete: sets status='deleted', deleted_at=now(). |
 | `get_all_tenants_overview()` | SECURITY DEFINER | All non-deleted tenants with plan name (LEFT JOIN), employees/inventory/suppliers counts. Returns JSONB array. |
@@ -61,8 +59,6 @@ All 5 tables have RLS enabled.
 | File | Path | Lines | Description |
 |------|------|-------|-------------|
 | admin.html | `/admin.html` | 271 | Login screen + full dashboard: header, nav tabs (חנויות/Audit Log/הגדרות), toolbar, tenant table, slide-in panel with 4 tabs. Loads shared/css (8), shared/js (4), admin JS (11). |
-| error.html | `/error.html` | 48 | Standalone error page. 3 states via ?type= param: not-found, suspended, deleted. Uses shared/css/variables.css only. No shared.js. |
-| landing.html | `/landing.html` | 62 | Standalone store code entry page. Slug validation + redirect to /?t=slug. Uses shared/css/variables.css only. No shared.js. |
 | admin-auth.js | `/modules/admin-platform/admin-auth.js` | 105 | Supabase client (adminSb), login/logout/session, getCurrentAdmin, requireAdmin, hasAdminPermission. ROLE_LEVELS. Exposes: getCurrentAdmin, hasAdminPermission. |
 | admin-db.js | `/modules/admin-platform/admin-db.js` | 63 | AdminDB wrapper — query, getById, insert, update, rpc (no tenant_id). |
 | admin-audit.js | `/modules/admin-platform/admin-audit.js` | 143 | logAdminAction() fire-and-forget + platform audit log viewer with action filter. super_admin only. Exposes: loadPlatformAuditLog. |
@@ -79,8 +75,8 @@ All 5 tables have RLS enabled.
 
 | File | Path | Change |
 |------|------|--------|
-| shared.js | `/js/shared.js` | Phase 5: resolveTenant() centralized, sync TENANT_SLUG IIFE, auto-resolve for non-index pages. Removed: showTenantBlocked(), suspended IIFE guard, 'prizma' default. (343 lines) |
-| index.html | `/index.html` | Phase 5: removed local resolveTenant/showTenantPicker/tenant-picker HTML, module card hrefs with ?t=slug. Phase 4d: data-feature attrs, applyFeatureFlags, plan-helpers.js. |
+| shared.js | `/js/shared.js` | Phase 3k: showTenantBlocked() + DOMContentLoaded guard for suspended/deleted tenants |
+| index.html | `/index.html` | Phase 3k: tenant status check. Phase 4d: data-feature attrs on 3 cards, applyFeatureFlags(), plan-helpers.js loaded |
 | inventory.html | `/inventory.html` | Phase 4c: plan-helpers.js loaded. Phase 4d: data-feature attrs on access-sync + stock-count tabs, applyFeatureFlags() |
 | employees.html | `/employees.html` | Phase 4c: plan-helpers.js loaded |
 | suppliers-debt.html | `/suppliers-debt.html` | Phase 4c: plan-helpers.js loaded |

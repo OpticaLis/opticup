@@ -2,7 +2,7 @@
 
 > Single reference document for all files, functions, and globals in Module 2.
 > Updated every commit that adds/changes code.
-> Last updated: 2026-03-26 (Phase 5 complete)
+> Last updated: 2026-03-26 (Phase 4 complete)
 
 ---
 
@@ -22,11 +22,9 @@
 | 10 | admin-feature-overrides.js | `/modules/admin-platform/admin-feature-overrides.js` | 97 | Per-tenant feature override UI rendered in tenant detail Tab 1. Loads plan features + tenant_config overrides. 17 rows × 3-state select (plan/force-on/force-off). Save upserts/deletes tenant_config key='feature_overrides'. super_admin only. Exposes: renderFeatureOverrides. |
 | 11 | admin-activity-viewer.js | `/modules/admin-platform/admin-activity-viewer.js` | 189 | Activity log viewer per tenant (Tab 2). Filters: date range, entity type, level. Paginated 50/page via get_tenant_activity_log RPC. Exposes: loadTenantActivityLog. |
 | 12 | plan-helpers.js | `/shared/js/plan-helpers.js` | 107 | Client-side plan limit/feature checking for ERP pages. 30s cache (_getPlanData). Calls check_plan_limit + is_feature_enabled RPCs. Fail-safe on errors. Loaded by index.html, inventory.html, employees.html, suppliers-debt.html. Exposes: checkPlanLimit, isFeatureEnabled, getPlanLimits, getPlanFeatures, invalidatePlanCache. |
-| 13 | error.html | `/error.html` | 48 | Standalone error page. 3 states via ?type= param: not-found (slug), suspended (name+support), deleted. Loads shared/css/variables.css only. No shared.js. Indigo palette, centered card. |
-| 14 | landing.html | `/landing.html` | 62 | Standalone store code entry page. Slug input (dir=ltr), goToStore() validates format + redirects to /?t=slug. Loads shared/css/variables.css only. No shared.js. |
-| 15 | shared.js (ERP) | `/js/shared.js` | 343 | MODIFIED in Phase 5: sync TENANT_SLUG IIFE (URL/sessionStorage), resolveTenant() async (DB query + status check + redirect), auto-resolve for non-index pages. Removed: showTenantBlocked, suspended IIFE guard, 'prizma' default. |
-| 16 | index.html (ERP) | `/index.html` | ~375 | MODIFIED in Phase 5: removed local resolveTenant/showTenantPicker/tenant-picker HTML, module card hrefs with ?t=slug. Phase 4d: data-feature attrs, applyFeatureFlags, plan-helpers.js. |
-| 17 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
+| 13 | shared.js (ERP) | `/js/shared.js` | 337 | MODIFIED in Phase 3k: added showTenantBlocked() + DOMContentLoaded guard for non-index pages. Blocks suspended/deleted tenants with undismissible overlay. |
+| 14 | index.html (ERP) | `/index.html` | ~400 | MODIFIED in Phase 3k: tenant status check. Phase 4d: data-feature attrs on 3 module cards, applyFeatureFlags(), plan-helpers.js loaded. |
+| 15 | auth-service.js (ERP) | `/js/auth-service.js` | 341 | MODIFIED in Phase 2: added checkMustChangePin() called at end of initSecureSession. Undismissible PIN change overlay for must_change_pin=true employees. |
 
 ---
 
@@ -143,11 +141,6 @@
 | `getPlanFeatures` | 76 | — | object | Returns cached plan features JSONB. |
 | `invalidatePlanCache` | 84 | — | void | Reset _planCache + _planCacheTime. |
 
-### Tenant Resolution (shared.js — Phase 5)
-| Function | Line | Parameters | Returns | Description |
-|----------|------|-----------|---------|-------------|
-| `resolveTenant` | 66 | — | `Promise<object\|null>` | Centralized tenant resolution. If TENANT_SLUG + tenant_id cached → early return. Else query tenants by slug, redirect on not-found/suspended/deleted. Sets TENANT_SLUG + sessionStorage. |
-
 ### ERP Auth (auth-service.js — Phase 2 addition)
 | Function | Line | Parameters | Returns | Description |
 |----------|------|-----------|---------|-------------|
@@ -200,7 +193,6 @@
 | `platform_audit_log` | Global | id, admin_id, action, target_tenant_id, details (JSONB), ip_address |
 | `tenant_config` | Per-tenant | id, tenant_id, key, value (JSONB), UNIQUE(tenant_id, key) |
 | `tenant_provisioning_log` | Per-tenant ref (nullable) | id, tenant_id, step, status, details (JSONB), error_message |
-| `storefront_config` | Per-tenant (UNIQUE) | id, tenant_id, enabled, domain, subdomain, theme (JSONB), logo_url, categories (JSONB), seo (JSONB), pages (JSONB) |
 
 ### tenants table extensions (10 columns added in Phase 1 + 3)
 plan_id, status, trial_ends_at, owner_name, owner_email, owner_phone, created_by, suspended_reason, deleted_at, last_active
@@ -212,7 +204,7 @@ must_change_pin (BOOLEAN DEFAULT false)
 | Function | Parameters | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_platform_super_admin()` | — | boolean | SECURITY DEFINER. Checks auth.uid() in platform_admins. |
-| `create_tenant(...)` | p_name, p_slug, p_owner_name, p_owner_email, p_owner_phone?, p_plan_id, p_admin_pin?, p_admin_name?, p_created_by? | UUID | SECURITY DEFINER. 11-step atomic provisioning (step 11: storefront_config). |
+| `create_tenant(...)` | p_name, p_slug, p_owner_name, p_owner_email, p_owner_phone?, p_plan_id, p_admin_pin?, p_admin_name?, p_created_by? | UUID | SECURITY DEFINER. 10-step atomic provisioning. |
 | `validate_slug(p_slug)` | p_slug TEXT | JSONB {valid, reason} | SECURITY DEFINER. Format+reserved+uniqueness check. |
 | `delete_tenant(p_tenant_id, p_deleted_by)` | p_tenant_id UUID, p_deleted_by UUID | void | SECURITY DEFINER. Soft delete (status='deleted'). |
 | `get_all_tenants_overview()` | — | JSONB array | SECURITY DEFINER. All non-deleted tenants with plan name (LEFT JOIN), employees/inventory/suppliers counts. |
