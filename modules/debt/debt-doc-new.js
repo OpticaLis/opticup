@@ -155,6 +155,8 @@ async function saveNewDocument() {
   }
   var emp = await verifyPinOnly(pin);
   if (!emp) { setAlert('new-doc-alert', '\u05E7\u05D5\u05D3 \u05E2\u05D5\u05D1\u05D3 \u05E9\u05D2\u05D5\u05D9', 'e'); return; }
+  var docLimit = await checkPlanLimit('documents_per_month');
+  if (!docLimit.allowed) { toast(docLimit.message || 'הגעת למגבלה', 'w'); return; }
   showLoading('\u05E9\u05D5\u05DE\u05E8 \u05DE\u05E1\u05DE\u05DA...');
   try {
     var internalNumber = await generateDocInternalNumber();

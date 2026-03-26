@@ -24,6 +24,8 @@ function _ocrFC(ext, f) {
 // =========================================================
 async function triggerOCR(fileUrl, supplierId, documentTypeHint, existingDocId) {
   if (!fileUrl) { toast('אין קובץ לסריקה', 'e'); return; }
+  var ocrLimit = await checkPlanLimit('ocr_scans_monthly');
+  if (!ocrLimit.allowed) { toast(ocrLimit.message || 'הגעת למגבלה', 'w'); return; }
   var jwt = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
   if (!jwt) { toast('נדרשת התחברות מחדש', 'e'); return; }
   showLoading('סורק את המסמך...');

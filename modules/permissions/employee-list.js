@@ -202,6 +202,8 @@ async function saveEmployee() {
     if (!/^\d{5}$/.test(pin)) { toast('PIN חייב להכיל 5 ספרות בדיוק', 'e'); return; }
     const { data: existing } = await sb.from(T.EMPLOYEES).select('id').eq('tenant_id', getTenantId()).eq('pin', pin).eq('is_active', true).maybeSingle();
     if (existing) { toast('PIN כבר בשימוש על ידי עובד אחר', 'e'); return; }
+    const limit = await checkPlanLimit('employees');
+    if (!limit.allowed) { Toast.warning(limit.message || 'הגעת למגבלה'); return; }
     const { data: newEmp, error } = await sb.from(T.EMPLOYEES)
       .insert({ name, pin, branch_id: branchId, is_active: true, created_by: getCurrentEmployee()?.id, tenant_id: getTenantId() })
       .select('id').single();

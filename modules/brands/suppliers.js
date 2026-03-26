@@ -149,6 +149,9 @@ async function addSupplier() {
   if (!name) { toast('יש להזין שם ספק', 'w'); return; }
   if (suppliers.includes(name)) { toast('ספק כבר קיים', 'w'); return; }
 
+  const limit = await checkPlanLimit('suppliers');
+  if (!limit.allowed) { Toast.warning(limit.message || 'הגעת למגבלה'); return; }
+
   showLoading('מוסיף ספק...');
   try {
     const nextNum = await getNextSupplierNumber();

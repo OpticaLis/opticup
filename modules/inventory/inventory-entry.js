@@ -221,6 +221,9 @@ async function submitEntry() {
   const ok = await confirmDialog('אישור שליחה', `האם הדבקת ברקודים על ${rows.length} המסגרות?`);
   if (!ok) return;
 
+  const limit = await checkPlanLimit('inventory');
+  if (!limit.allowed) { Toast.warning(limit.message || 'הגעת למגבלה'); return; }
+
   showLoading('שולח פריטים למלאי...');
   clearAlert('entry-alerts');
   try {
