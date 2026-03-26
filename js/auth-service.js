@@ -136,7 +136,51 @@ async function initSecureSession(employee, jwtToken) {
     }
   } catch (e) { console.warn('Failed to load tenant config:', e); }
 
+  // Check must_change_pin for new tenant employees
+  await checkMustChangePin(employee);
+
   return { token, employee, permissions: permSnapshot, role: roleId, expires_at: expiresAt };
+}
+
+// --- 3b. checkMustChangePin ---
+async function checkMustChangePin(employee) {
+  const { data: row } = await sb.from(T.EMPLOYEES)
+    .select('must_change_pin')
+    .eq('id', employee.id)
+    .maybeSingle();
+  if (!row || !row.must_change_pin) return;
+
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:12px;padding:2rem;width:90%;max-width:360px;text-align:center;">
+        <h3 style="margin:0 0 0.5rem;">הגדר PIN חדש</h3>
+        <p style="color:#666;font-size:0.875rem;margin:0 0 1.25rem;">זוהי הכניסה הראשונה — יש להגדיר PIN אישי</p>
+        <input id="mcp-new-pin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN חדש (5-6 ספרות)"
+               style="width:100%;padding:0.6rem;border:1px solid #ccc;border-radius:8px;text-align:center;font-size:1.1rem;direction:ltr;margin-bottom:0.75rem;">
+        <input id="mcp-confirm-pin" type="password" inputmode="numeric" maxlength="6" placeholder="אימות PIN"
+               style="width:100%;padding:0.6rem;border:1px solid #ccc;border-radius:8px;text-align:center;font-size:1.1rem;direction:ltr;margin-bottom:0.5rem;">
+        <div id="mcp-error" style="color:red;font-size:0.8rem;min-height:1.2rem;margin-bottom:0.5rem;"></div>
+        <button id="mcp-submit" style="width:100%;padding:0.7rem;border:none;border-radius:8px;background:var(--color-primary,#2563eb);color:#fff;font-size:1rem;cursor:pointer;">שמור PIN</button>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#mcp-submit').addEventListener('click', async function () {
+      const pin = overlay.querySelector('#mcp-new-pin').value.trim();
+      const confirm = overlay.querySelector('#mcp-confirm-pin').value.trim();
+      const errEl = overlay.querySelector('#mcp-error');
+      if (!/^\d{5,6}$/.test(pin)) { errEl.textContent = 'PIN חייב להיות 5-6 ספרות'; return; }
+      if (pin !== confirm) { errEl.textContent = 'הקודים לא תואמים'; return; }
+      errEl.textContent = '';
+      this.disabled = true;
+      this.textContent = 'שומר...';
+      await sb.from(T.EMPLOYEES).update({ pin, must_change_pin: false }).eq('id', employee.id);
+      overlay.remove();
+      if (typeof Toast !== 'undefined') Toast.success('PIN עודכן בהצלחה');
+      resolve();
+    });
+  });
 }
 
 // --- 4. loadSession ---
