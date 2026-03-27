@@ -157,17 +157,24 @@ async function loadSuppliersTab() {
     var results = await Promise.all([
       fetchAll(T.SUPPLIERS, [['active', 'eq', true]]),
       fetchAll(T.SUP_DOCS, [['is_deleted', 'eq', false]]),
-      fetchAll(T.PREPAID_DEALS, [['is_deleted', 'eq', false], ['status', 'eq', 'active']])
+      fetchAll(T.PREPAID_DEALS, [['is_deleted', 'eq', false], ['status', 'eq', 'active']]),
+      fetchAll(T.SUP_PAYMENTS, [['is_deleted', 'eq', false]])
     ]);
     var suppliers = results[0];
     var docs = results[1];
     var deals = results[2];
+    var payments = results[3];
     var todayStr = new Date().toISOString().slice(0, 10);
+
+    // Build per-supplier payment flag
+    var payBySup = {};
+    (payments || []).forEach(function(p) { payBySup[p.supplier_id] = true; });
 
     _supTabData = suppliers.map(function(sup) {
       var cutoff = sup.opening_balance_date || null;
-      var supDocs = docs.filter(function(d) {
-        if (d.supplier_id !== sup.id || d.status === 'paid' || d.status === 'cancelled') return false;
+      var allSupDocs = docs.filter(function(d) { return d.supplier_id === sup.id; });
+      var supDocs = allSupDocs.filter(function(d) {
+        if (d.status === 'paid' || d.status === 'cancelled') return false;
         if (cutoff && d.document_date && d.document_date < cutoff) return false;
         return true;
       });
@@ -186,10 +193,14 @@ async function loadSuppliersTab() {
       });
       var deal = deals.find(function(dl) { return dl.supplier_id === sup.id; });
       var dealRemaining = deal ? (Number(deal.total_prepaid) || 0) - (Number(deal.total_used) || 0) : 0;
+      // Filter enrichment: receipt-linked docs, total doc count, payment flag
+      var hasReceiptDocs = allSupDocs.some(function(d) { return !!d.goods_receipt_id; });
+      var hasHistory = allSupDocs.length > 0 || !!payBySup[sup.id] || !!deal;
       return {
         id: sup.id, name: sup.name, openCount: openCount, totalDebt: totalDebt,
         overdueAmt: overdueAmt, nextDue: nextDue, hasDeal: !!deal, dealRemaining: dealRemaining,
-        openingBalance: Number(sup.opening_balance) || 0, openingBalanceDate: cutoff
+        openingBalance: Number(sup.opening_balance) || 0, openingBalanceDate: cutoff,
+        hasReceiptDocs: hasReceiptDocs, hasHistory: hasHistory
       };
     });
 
@@ -199,19 +210,14 @@ async function loadSuppliersTab() {
       return b.totalDebt - a.totalDebt;
     });
 
-    var showAll = sessionStorage.getItem('debt_showAllSuppliers') === 'true';
-    var visible = showAll ? _supTabData : _supTabData.filter(function(s) {
-      return s.openCount > 0 || s.hasDeal || s.openingBalance > 0;
-    });
-
-    renderSuppliersToolbar(showAll);
-    renderSuppliersTable(visible);
+    renderSuppliersToolbar();
+    applySupplierFilters();
   } catch (e) {
     console.error('loadSuppliersTab error:', e);
   }
 }
 
-function renderSuppliersToolbar(showAll) {
+function renderSuppliersToolbar() {
   var wrap = $('dtab-suppliers');
   if (!wrap) return;
   var initEmpty = wrap.querySelector(':scope > .empty-state');
@@ -220,24 +226,15 @@ function renderSuppliersToolbar(showAll) {
   if (existing) existing.remove();
   var toolbar = document.createElement('div');
   toolbar.className = 'sup-toolbar doc-toolbar';
+  toolbar.style.cssText = 'flex-direction:column;align-items:stretch;gap:8px';
   toolbar.innerHTML =
-    '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.88rem">' +
-      '<input type="checkbox" id="sup-show-all" onchange="toggleShowAllSuppliers()"' +
-        (showAll ? ' checked' : '') + '>' +
-      '\u05D4\u05E6\u05D2 \u05D0\u05EA \u05DB\u05DC \u05D4\u05E1\u05E4\u05E7\u05D9\u05DD' +
-    '</label>' +
-    '<button class="btn sup-ob-btn" style="background:#059669;color:#fff" onclick="openQuickOpeningBalance()">\u05D4\u05D2\u05D3\u05E8 \u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</button>';
+    '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">' +
+      '<div id="sup-filter-chips"></div>' +
+      '<button class="btn sup-ob-btn" style="background:#059669;color:#fff;white-space:nowrap" onclick="openQuickOpeningBalance()">\u05D4\u05D2\u05D3\u05E8 \u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</button>' +
+    '</div>' +
+    '<div id="sup-filter-count" style="font-size:.82rem;color:var(--g500)"></div>';
   wrap.prepend(toolbar);
-}
-
-function toggleShowAllSuppliers() {
-  var cb = $('sup-show-all');
-  var showAll = cb ? cb.checked : false;
-  sessionStorage.setItem('debt_showAllSuppliers', showAll ? 'true' : 'false');
-  var visible = showAll ? _supTabData : _supTabData.filter(function(s) {
-    return s.openCount > 0 || s.hasDeal || s.openingBalance > 0;
-  });
-  renderSuppliersTable(visible);
+  if (typeof renderSupplierFilterChips === 'function') renderSupplierFilterChips();
 }
 
 function openQuickOpeningBalance() {
