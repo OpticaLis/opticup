@@ -192,13 +192,15 @@ async function loadSuppliersTab() {
         }
       });
       var deal = deals.find(function(dl) { return dl.supplier_id === sup.id; });
-      var dealRemaining = deal ? (Number(deal.total_prepaid) || 0) - (Number(deal.total_used) || 0) : 0;
-      // Filter enrichment: receipt-linked docs, total doc count, payment flag
+      var dealTotal = deal ? (Number(deal.total_prepaid) || 0) : 0;
+      var dealUsed = deal ? (Number(deal.total_used) || 0) : 0;
+      var dealRemaining = dealTotal - dealUsed;
       var hasReceiptDocs = allSupDocs.some(function(d) { return !!d.goods_receipt_id; });
       var hasHistory = allSupDocs.length > 0 || !!payBySup[sup.id] || !!deal;
       return {
         id: sup.id, name: sup.name, openCount: openCount, totalDebt: totalDebt,
-        overdueAmt: overdueAmt, nextDue: nextDue, hasDeal: !!deal, dealRemaining: dealRemaining,
+        overdueAmt: overdueAmt, nextDue: nextDue, hasDeal: !!deal,
+        dealTotal: dealTotal, dealUsed: dealUsed, dealRemaining: dealRemaining,
         openingBalance: Number(sup.opening_balance) || 0, openingBalanceDate: cutoff,
         hasReceiptDocs: hasReceiptDocs, hasHistory: hasHistory
       };
@@ -287,7 +289,14 @@ function renderSuppliersTable(data) {
 
   var rows = data.map(function(s) {
     var overdueStyle = s.overdueAmt > 0 ? ' style="color:var(--error);font-weight:600"' : '';
-    var dealCell = s.hasDeal ? '<span style="color:var(--success, #155724)">&#10003;</span> ' + formatILS(s.dealRemaining) : '\u2014';
+    var dealCell = '\u2014';
+    if (s.hasDeal) {
+      var usedFmt = s.dealUsed.toLocaleString('he-IL');
+      var totalFmt = s.dealTotal.toLocaleString('he-IL');
+      dealCell = '<span style="color:#059669;font-weight:600">' + usedFmt + '</span>' +
+        '<span style="color:var(--g400)"> / </span>' +
+        '<span style="color:#dc2626">' + totalFmt + '</span>';
+    }
     var obCell = s.openingBalance > 0
       ? formatILS(s.openingBalance) + (s.openingBalanceDate ? '' : ' <span title="\u05D7\u05E1\u05E8 \u05EA\u05D0\u05E8\u05D9\u05DA cutoff" style="color:#f59e0b">\u26A0\uFE0F</span>')
       : '\u2014';

@@ -142,11 +142,19 @@ function renderDocumentsTable(docs, opts) {
         ? '<input type="checkbox" class="sd-doc-cb" data-doc-id="' + d.id + '" onchange="_sdToggleDocCb(this)">'
         : '') + '</td>';
     }
+    // Multi-doc: show count badge + expand button if document_numbers has 2+ entries
+    var docNums = d.document_numbers;
+    var isMultiDoc = Array.isArray(docNums) && docNums.length > 1 && docNums[0];
+    var docNumCell = isMultiDoc
+      ? '<span style="background:#e0e7ff;color:#3730a3;padding:1px 6px;border-radius:4px;font-size:.78rem">' + docNums.length + ' \uD83D\uDCC4</span> ' +
+        '<button class="btn-sm" style="font-size:.7rem;padding:0 4px;background:#e5e7eb;color:#6b7280;border:none;cursor:pointer" ' +
+          'onclick="event.stopPropagation();_toggleDocSubRow(\'' + d.id + '\')">\u22EF</button>'
+      : escapeHtml(d.document_number || '');
     var rowClass = d.status === 'draft' ? ' class="row-draft"' : '';
-    return '<tr' + rowClass + '>' + cbCell +
+    return '<tr' + rowClass + ' data-doc-row="' + d.id + '">' + cbCell +
       '<td title="' + escapeHtml('\u05D4\u05D5\u05E2\u05DC\u05D4: ' + uploadedAt) + '">' + escapeHtml(d.document_date || '') + '</td>' +
       '<td>' + escapeHtml(type.name_he || '') + srcBadge + '</td>' +
-      '<td>' + escapeHtml(d.document_number || '') + '</td>' +
+      '<td>' + docNumCell + '</td>' +
       '<td>' + escapeHtml(d.internal_number || '') + '</td>' +
       (o.hideSupplierCol ? '' : '<td>' + ppBadge + escapeHtml(supMap[d.supplier_id] || '') + '</td>') +
       '<td>' + formatILS(d.total_amount) + '</td>' +
@@ -229,6 +237,34 @@ async function cancelDocument(docId) {
       hideLoading();
     }
   });
+}
+
+// --- Multi-doc sub-row expand/collapse ---
+function _toggleDocSubRow(docId) {
+  var existing = document.querySelector('tr[data-subrow="' + docId + '"]');
+  if (existing) { existing.remove(); return; }
+  var doc = _docData.find(function(d) { return d.id === docId; });
+  if (!doc) return;
+  var nums = doc.document_numbers || [];
+  var amts = doc.document_amounts || [];
+  var subRows = nums.map(function(n, i) {
+    var amt = amts[i] ? amts[i].amount : null;
+    return '<tr><td style="padding:2px 8px">' + (i + 1) + '</td>' +
+      '<td style="padding:2px 8px">' + escapeHtml(n || '') + '</td>' +
+      '<td style="padding:2px 8px">' + (amt != null ? formatILS(amt) : '\u2014') + '</td></tr>';
+  }).join('');
+  var parentRow = document.querySelector('tr[data-doc-row="' + docId + '"]');
+  if (!parentRow) return;
+  var colCount = parentRow.children.length;
+  var subTr = document.createElement('tr');
+  subTr.setAttribute('data-subrow', docId);
+  subTr.innerHTML = '<td colspan="' + colCount + '" style="background:#f9fafb;padding:6px 20px">' +
+    '<table style="font-size:.8rem;border-collapse:collapse"><thead><tr>' +
+    '<th style="padding:2px 8px;text-align:right">#</th>' +
+    '<th style="padding:2px 8px;text-align:right">\u05DE\u05E1\u05E4\u05E8 \u05DE\u05E1\u05DE\u05DA</th>' +
+    '<th style="padding:2px 8px;text-align:right">\u05E1\u05DB\u05D5\u05DD</th>' +
+    '</tr></thead><tbody>' + subRows + '</tbody></table></td>';
+  parentRow.parentNode.insertBefore(subTr, parentRow.nextSibling);
 }
 
 // --- Phase 8: Prepaid deduction modal ---
