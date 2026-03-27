@@ -417,9 +417,6 @@ tr.row-err td{background:#fef2f2}
 .rcpt-row-dimmed input,.rcpt-row-dimmed select:not(.rcpt-receipt-status){pointer-events:none}
 /* Utility: hide on mobile */
 @media(max-width:768px){.hide-mobile{display:none!important}}
-/* Column resize handles (inventory-resize.js) */
-.col-resize-handle{position:absolute;left:-3px;top:0;width:8px;height:100%;cursor:col-resize;z-index:2;background:transparent}
-.col-resize-handle:hover{background:rgba(26,39,68,.25)}
 /* Sortable column headers (SortUtils) */
 th[data-sort-key]{cursor:pointer;user-select:none;position:relative}
 th[data-sort-key]::after{content:' \2195';opacity:.3;font-size:.75em}

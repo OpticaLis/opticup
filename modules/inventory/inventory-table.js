@@ -171,7 +171,7 @@ function renderInventoryRows(recs) {
       <td>${pageOffset+i+1}</td>
       <td class="barcode-cell">${escapeHtml(bc)}</td>
       <td>${escapeHtml(r.supplier_name)||''}</td>
-      <td>${escapeHtml(r.brand_name)||''}${(window.lowStockData||[]).some(b=>b.name===r.brand_name)?' <span style="background:#f44336;color:white;border-radius:4px;padding:1px 5px;font-size:11px;margin-right:4px">&#9888;</span>':''}</td>
+      <td>${escapeHtml(r.brand_name)||''}</td>
       <td${isAdm?' class="editable" onclick="invEdit(this,\'model\')"':''}>${escapeHtml(r.model)||''}</td>
       <td${isAdm?' class="editable" onclick="invEdit(this,\'size\')"':''}>${escapeHtml(r.size)||''}</td>
       <td${isAdm?' class="editable" onclick="invEdit(this,\'bridge\')"':''}>${escapeHtml(r.bridge)||''}</td>
