@@ -18,7 +18,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
       if (!item.is_new_item && itemBarcode) {
         // Existing item: increment quantity by effectiveQty
         const { data: invRow, error: findErr } = await sb.from('inventory')
-          .select('id, quantity, barcode, brand_id, model, size, color, cost_price, bridge, temple_length')
+          .select('id, quantity, barcode, brand_id, model, size, color, cost_price, sell_price, sell_discount, bridge, temple_length')
           .eq('tenant_id', getTenantId())
           .eq('barcode', itemBarcode)
           .eq('is_deleted', false)
@@ -46,6 +46,18 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
               field: 'cost_price', old_value: oldCost, new_value: rcptCost,
               source: 'goods_receipt', receipt_id: receiptId
             });
+          }
+          // Auto-update sell_discount from receipt
+          var rcptDisc = parseFloat(item.sell_discount) || 0;
+          var oldDisc = parseFloat(invRow.sell_discount) || 0;
+          if (rcptDisc !== oldDisc) {
+            await batchUpdate('inventory', [{ id: invRow.id, sell_discount: rcptDisc }]);
+          }
+          // Auto-update sell_price from receipt
+          var rcptSellPrice = parseFloat(item.sell_price) || 0;
+          var oldSellPrice = parseFloat(invRow.sell_price) || 0;
+          if (rcptSellPrice > 0 && rcptSellPrice !== oldSellPrice) {
+            await batchUpdate('inventory', [{ id: invRow.id, sell_price: rcptSellPrice }]);
           }
           // Auto-update model/size/color if changed during receipt
           var detailChanges = {};
@@ -189,6 +201,7 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
     color: item.color || '',
     size: item.size || '',
     sell_price: item.sell_price || 0,
+    sell_discount: item.sell_discount || 0,
     cost_price: item.unit_cost || 0,
     quantity: itemQty, // One record per product line with full quantity
     status: 'in_stock',

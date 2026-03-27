@@ -225,6 +225,7 @@ async function openExistingReceipt(receiptId, viewOnly) {
         quantity: item.quantity || 1,
         unit_cost: item.unit_cost || '',
         sell_price: item.sell_price || '',
+        sell_discount: item.sell_discount || 0,
         product_type: item.product_type || 'eyeglasses',
         is_new_item: item.is_new_item || false,
         from_po: item.from_po || !!rcpt.po_id,

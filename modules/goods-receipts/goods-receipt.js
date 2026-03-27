@@ -98,6 +98,7 @@ async function onReceiptPoSelected() {
           quantity: remaining,
           unit_cost: item.unit_cost || '',
           sell_price: item.sell_price || '',
+          sell_discount: item.sell_discount || 0,
           product_type: item.product_type || 'eyeglasses',
           is_new_item: false,
           inventory_id: existingInv.id,
@@ -113,6 +114,7 @@ async function onReceiptPoSelected() {
           quantity: remaining,
           unit_cost: item.unit_cost || '',
           sell_price: item.sell_price || '',
+          sell_discount: item.sell_discount || 0,
           product_type: item.product_type || 'eyeglasses',
           is_new_item: true,
           inventory_id: null,
@@ -335,10 +337,8 @@ function openNewReceipt() {
   clearAlert('rcpt-form-alerts');
 
   // Reset file attachment + init dropzone
-  _pendingReceiptFiles = [];
-  _pendingReceiptFileUrl = null;
-  var zone = $('rcpt-attach-dropzone');
-  var preview = $('rcpt-attach-preview');
+  _pendingReceiptFiles = []; _pendingReceiptFileUrl = null;
+  var zone = $('rcpt-attach-dropzone'), preview = $('rcpt-attach-preview');
   if (zone) zone.style.display = '';
   if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
   _initReceiptDropzone();

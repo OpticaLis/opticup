@@ -87,6 +87,7 @@ async function saveReceiptDraft() {
       ordered_qty: i.ordered_qty || i.quantity,
       unit_cost: i.unit_cost,
       sell_price: i.sell_price,
+      sell_discount: i.sell_discount || 0,
       is_new_item: i.is_new_item,
       receipt_status: i.receipt_status || null,
       from_po: i.from_po || false,

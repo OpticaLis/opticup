@@ -53,6 +53,7 @@ function addReceiptItemRow(data) {
     <td><input type="number" class="rcpt-qty col-qty" min="1" value="${data?.quantity || 1}"></td>
     <td><input type="number" class="rcpt-ucost col-price" step="0.01" min="0" value="${data?.unit_cost || ''}"></td>
     <td><input type="number" class="rcpt-sprice col-price" step="0.01" min="0" value="${data?.sell_price || ''}"></td>
+    <td><input type="number" class="rcpt-sdisc" step="0.1" min="0" max="100" value="${data?.sell_discount ? (data.sell_discount * 100).toFixed(1) : ''}" placeholder="0" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:.82rem"></td>
     <td><select class="rcpt-sync" style="min-width:65px" ${isExisting ? 'disabled' : ''}>
       <option value="">—</option>
       <option value="מלא">מלא</option>
@@ -73,7 +74,7 @@ function addReceiptItemRow(data) {
   noteRow.id = 'rcpt-note-row-' + rcptRowNum;
   noteRow.style.display = data?.note ? '' : 'none';
   noteRow.style.background = '#f8f9fa';
-  noteRow.innerHTML = '<td colspan="15" style="padding:4px 16px 8px">' +
+  noteRow.innerHTML = '<td colspan="16" style="padding:4px 16px 8px">' +
     '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:4px">' +
       '<div><label style="font-size:11px;display:block;color:#666">גשר</label><input type="text" class="rcpt-bridge" value="' + escapeHtml(data?.bridge || '') + '" style="width:55px;padding:4px 6px;border-radius:4px;border:1px solid #ccc;font-size:13px"></div>' +
       '<div><label style="font-size:11px;display:block;color:#666">אורך מוט</label><input type="text" class="rcpt-temple" value="' + escapeHtml(data?.temple_length || '') + '" style="width:55px;padding:4px 6px;border-radius:4px;border:1px solid #ccc;font-size:13px"></div>' +
@@ -155,6 +156,7 @@ function getReceiptItems() {
       ordered_qty: qtyVal || 0,
       unit_cost: parseFloat(tr.querySelector('.rcpt-ucost')?.value) || null,
       sell_price: parseFloat(tr.querySelector('.rcpt-sprice')?.value) || null,
+      sell_discount: (function() { var v = parseFloat(tr.querySelector('.rcpt-sdisc')?.value); return v > 0 ? v / 100 : 0; })(),
       sync: tr.querySelector('.rcpt-sync')?.value || '',
       images: tr.querySelector('.rcpt-images')?.files || [],
       is_new_item: tr.querySelector('.rcpt-is-new')?.value === '1',

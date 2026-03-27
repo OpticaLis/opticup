@@ -407,6 +407,7 @@ CREATE TABLE IF NOT EXISTS goods_receipt_items (
   ordered_qty     INTEGER,                                       -- QA2: original ordered quantity from PO (050)
   product_type    TEXT CHECK (product_type IS NULL OR product_type IN ('eyeglasses', 'sunglasses')),  -- סוג מוצר (053)
   note            TEXT,                                            -- הערה לפריט (055)
+  sell_discount   NUMERIC(5,4) DEFAULT 0,                          -- הנחת מכירה (057)
   tenant_id       UUID NOT NULL REFERENCES tenants(id)           -- דייר (018)
 );
 CREATE INDEX IF NOT EXISTS idx_receipt_items ON goods_receipt_items(receipt_id);
