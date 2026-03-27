@@ -154,6 +154,7 @@ CREATE TABLE IF NOT EXISTS suppliers (
   opening_balance_date DATE,                                      -- Phase 8: תאריך חתך
   opening_balance_notes TEXT,                                     -- Phase 8: הערות יתרת פתיחה
   opening_balance_set_by UUID REFERENCES employees(id),           -- Phase 8: מי הגדיר
+  ai_has_po_pattern BOOLEAN DEFAULT NULL,                          -- Phase A-AI-1: דפוס הזמנות רכש
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -1300,6 +1301,7 @@ CREATE TABLE IF NOT EXISTS supplier_ocr_templates (
   times_used              INTEGER DEFAULT 0,
   times_corrected         INTEGER DEFAULT 0,
   accuracy_rate           DECIMAL(5,2),
+  supplier_name_aliases   TEXT[] DEFAULT '{}',
   last_used_at            TIMESTAMPTZ,
   is_active               BOOLEAN DEFAULT true,
   created_at              TIMESTAMPTZ DEFAULT now(),

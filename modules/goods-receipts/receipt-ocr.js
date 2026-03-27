@@ -105,8 +105,9 @@ async function _applyOCRToReceipt(result, fileUrl) {
   var fv = function(f) {
     var v = ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v;
   };
-  // Auto-fill supplier
+  // Auto-fill supplier via OcrSupplierMatch
   var supFilled = false;
+  var ocrSupName = fv('supplier_name') || '';
   if (supMatch && supMatch.id) {
     var supName = supplierCacheRev[supMatch.id];
     if (supName) {
@@ -114,21 +115,18 @@ async function _applyOCRToReceipt(result, fileUrl) {
       if (sel) { sel.value = supName; sel.dispatchEvent(new Event('change')); supFilled = true; }
       await new Promise(function(r) { setTimeout(r, 300); });
     }
-  } else if (fv('supplier_name')) {
-    var aiName = (fv('supplier_name') || '').trim().toLowerCase();
-    var bestMatch = null;
-    for (var sn in supplierCache) {
-      if (sn.toLowerCase() === aiName || sn.toLowerCase().includes(aiName) || aiName.includes(sn.toLowerCase())) {
-        bestMatch = sn; break;
-      }
-    }
-    if (bestMatch) {
+  } else if (ocrSupName && typeof OcrSupplierMatch !== 'undefined') {
+    var aiMatch = await OcrSupplierMatch.matchSupplier(ocrSupName, getTenantId());
+    if (aiMatch.supplierId && aiMatch.supplierName) {
       var sel = $('rcpt-supplier');
-      if (sel) { sel.value = bestMatch; sel.dispatchEvent(new Event('change')); supFilled = true; }
+      if (sel) { sel.value = aiMatch.supplierName; sel.dispatchEvent(new Event('change')); supFilled = true; }
       await new Promise(function(r) { setTimeout(r, 300); });
+      // Show confidence indicator
+      _rcptOcrShowSupplierHint(aiMatch.confidence, aiMatch.supplierName, aiMatch.matchType);
     }
   }
   if (supFilled) _rcptOcrAddConfDot('rcpt-supplier', _rcptOcrFC(ext, 'supplier_name'));
+  if (!supFilled && ocrSupName) _rcptOcrShowSupplierHint('low', ocrSupName, 'none');
 
   // Auto-fill document number, date, type
   var docNum = fv('document_number');
@@ -161,6 +159,24 @@ async function _applyOCRToReceipt(result, fileUrl) {
   } else {
     toast('\u05D4\u05DE\u05E1\u05DE\u05DA \u05E0\u05E1\u05E8\u05E7 \u2014 \u05DC\u05D0 \u05D6\u05D5\u05D4\u05D5 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD', 'w');
   }
+}
+
+// --- AI supplier confidence hint ---
+function _rcptOcrShowSupplierHint(confidence, name, matchType) {
+  var old = $('rcpt-ocr-sup-hint'); if (old) old.remove();
+  var hint = document.createElement('div'); hint.id = 'rcpt-ocr-sup-hint';
+  hint.style.cssText = 'font-size:.8rem;margin-top:3px';
+  if (confidence === 'high') {
+    hint.style.color = '#059669';
+    hint.textContent = '\u2705 AI \u05D6\u05D9\u05D4\u05D4: ' + name + (matchType === 'alias_exact' ? ' (\u05DC\u05DE\u05D3)' : '');
+  } else if (confidence === 'medium') {
+    hint.style.color = '#f59e0b';
+    hint.textContent = '\u26A0\uFE0F AI \u05DE\u05E6\u05D9\u05E2: ' + name + ' \u2014 \u05D0\u05DE\u05EA';
+  } else {
+    hint.style.color = '#ef4444';
+    hint.textContent = '\u2753 \u05E1\u05E4\u05E7 \u05DC\u05D0 \u05DE\u05D6\u05D5\u05D4\u05D4 \u2014 \u05D1\u05D7\u05E8 \u05D9\u05D3\u05E0\u05D9\u05EA';
+  }
+  var se = $('rcpt-supplier'); if (se && se.parentNode) se.parentNode.appendChild(hint);
 }
 
 // --- Phase 8: PO auto-suggestion after supplier fill ---
@@ -276,9 +292,30 @@ async function _rcptOcrUpdateTemplate() {
   _rcptOcrResult = null;
 }
 
-// Listen for receipt confirmation → update OCR template (replaces monkey-patch)
-document.addEventListener('receipt-confirmed', function() {
+// Listen for receipt confirmation → update OCR template + learn supplier alias
+document.addEventListener('receipt-confirmed', function(e) {
   _rcptOcrUpdateTemplate();
+  // Learn supplier alias from OCR if applicable
+  if (_rcptOcrResult && typeof OcrSupplierMatch !== 'undefined') {
+    var ext = _rcptOcrResult.extracted_data || {};
+    var fv = function(f) { var v = ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v; };
+    var ocrName = fv('supplier_name');
+    var finalSup = ($('rcpt-supplier') || {}).value;
+    var finalSupId = finalSup && typeof supplierCache !== 'undefined' ? supplierCache[finalSup] : null;
+    if (ocrName && finalSupId) {
+      OcrSupplierMatch.learnSupplierAlias(ocrName, finalSupId, getTenantId());
+    }
+    // Update ai_has_po_pattern
+    if (finalSupId) {
+      var hadPO = !!rcptLinkedPoId;
+      if (hadPO) {
+        sb.from(T.SUPPLIERS).update({ ai_has_po_pattern: true }).eq('id', finalSupId).eq('tenant_id', getTenantId()).then(function() {});
+      } else {
+        // Only set false if currently null (don't overwrite true)
+        sb.from(T.SUPPLIERS).update({ ai_has_po_pattern: false }).eq('id', finalSupId).eq('tenant_id', getTenantId()).is('ai_has_po_pattern', null).then(function() {});
+      }
+    }
+  }
 });
 
 // --- 9. Initialize on DOMContentLoaded ---

@@ -168,7 +168,7 @@ const FIELD_MAP = {
   expense_folders: {
     'שם':'name','אייקון':'icon','סדר מיון':'sort_order','פעיל':'is_active'
   },
-  suppliers: { 'שם':'name', 'יתרת פתיחה':'opening_balance', 'תאריך יתרת פתיחה':'opening_balance_date', 'הערות יתרת פתיחה':'opening_balance_notes', 'הוגדר ע"י':'opening_balance_set_by' },
+  suppliers: { 'שם':'name', 'יתרת פתיחה':'opening_balance', 'תאריך יתרת פתיחה':'opening_balance_date', 'הערות יתרת פתיחה':'opening_balance_notes', 'הוגדר ע"י':'opening_balance_set_by', 'דפוס הזמנות רכש':'ai_has_po_pattern' },
   ai_agent_config: {
     'סריקה פעילה':'ocr_enabled','התאמת ספק אוטומטית':'auto_match_supplier',
     'התאמת הזמנה אוטומטית':'auto_match_po','סף ביטחון':'confidence_threshold',
@@ -180,7 +180,8 @@ const FIELD_MAP = {
   supplier_ocr_templates: {
     'שם תבנית':'template_name','סוג מסמך':'document_type_code',
     'רמזי חילוץ':'extraction_hints','פעמים בשימוש':'times_used',
-    'פעמים תוקן':'times_corrected','אחוז דיוק':'accuracy_rate','פעיל':'is_active'
+    'פעמים תוקן':'times_corrected','אחוז דיוק':'accuracy_rate','פעיל':'is_active',
+    'שמות ספק חלופיים':'supplier_name_aliases'
   },
   ocr_extractions: {
     'קובץ':'file_url','שם קובץ':'file_name','תגובה גולמית':'raw_response',
