@@ -10,7 +10,7 @@ function _wizResetState() {
     supplierId: null, supplierName: '', taxRate: 0,
     amount: 0, withholdingAmount: 0, netAmount: 0,
     paymentDate: '', paymentMethod: '', referenceNumber: '', notes: '',
-    openDocs: [], allocations: []
+    openDocs: [], allocations: [], preSelectedDocIds: null
   };
 }
 

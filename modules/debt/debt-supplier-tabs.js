@@ -86,6 +86,7 @@ function _showAllTimeline() {
 // Documents sub-tab — full management with filters
 // =========================================================
 var _sdAllDocs = []; // all docs for this supplier (unfiltered)
+var _sdSelectedDocs = new Set(); // selected doc IDs for multi-pay
 
 async function loadSupplierDocuments(supplierId) {
   var content = $('detail-tab-content');
@@ -134,10 +135,12 @@ async function loadSupplierDocuments(supplierId) {
         '<div><label style="font-size:.75rem;color:var(--g600)">\u05E1\u05DB\u05D5\u05DD \u05E2\u05D3:</label>' +
           '<input type="number" id="sdf-amount-to" class="doc-filter-input" style="width:100%" step="0.01" min="0" onchange="_sdApplyFilters()"></div>' +
       '</div>' +
-      '<div id="sd-doc-table"></div>';
+      '<div id="sd-doc-table"></div>' +
+      '<div id="sd-select-bar" style="display:none;position:sticky;bottom:0;background:#1e40af;color:#fff;padding:8px 14px;border-radius:6px;margin-top:8px;display:none;align-items:center;justify-content:space-between;font-size:.88rem"></div>';
 
+    _sdSelectedDocs.clear();
     _sdUpdateCount(docs.length, docs.length);
-    renderDocumentsTable(docs, { targetEl: $('sd-doc-table'), hideSupplierCol: true });
+    renderDocumentsTable(docs, { targetEl: $('sd-doc-table'), hideSupplierCol: true, showCheckboxes: true });
   } catch (e) {
     console.error('loadSupplierDocuments error:', e);
     content.innerHTML = '<div class="empty-state">\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD</div>';
@@ -155,9 +158,11 @@ function _sdApplyFilters() {
   };
   var filtered = applyDocFilterSet(_sdAllDocs, f);
   filtered.sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+  _sdSelectedDocs.clear();
+  _sdUpdateSelectBar();
   _sdUpdateCount(filtered.length, _sdAllDocs.length);
   _docData = filtered;
-  renderDocumentsTable(filtered, { targetEl: $('sd-doc-table'), hideSupplierCol: true });
+  renderDocumentsTable(filtered, { targetEl: $('sd-doc-table'), hideSupplierCol: true, showCheckboxes: true });
 }
 
 function _sdUpdateCount(shown, total) {
@@ -178,6 +183,58 @@ function _sdNewDoc(supplierId) {
     var sel = $('nd-supplier');
     if (sel) { sel.value = supplierId; if (typeof _ndAutoCalcDueDate === 'function') _ndAutoCalcDueDate(); }
   }, 100);
+}
+
+// =========================================================
+// Multi-select checkboxes for docs — selection handlers
+// =========================================================
+function _sdToggleDocCb(cb) {
+  var docId = cb.getAttribute('data-doc-id');
+  if (cb.checked) _sdSelectedDocs.add(docId); else _sdSelectedDocs.delete(docId);
+  _sdUpdateSelectBar();
+}
+
+function _sdToggleAll(masterCb) {
+  var checkboxes = document.querySelectorAll('.sd-doc-cb');
+  checkboxes.forEach(function(cb) {
+    cb.checked = masterCb.checked;
+    var docId = cb.getAttribute('data-doc-id');
+    if (masterCb.checked) _sdSelectedDocs.add(docId); else _sdSelectedDocs.delete(docId);
+  });
+  _sdUpdateSelectBar();
+}
+
+function _sdUpdateSelectBar() {
+  var bar = $('sd-select-bar');
+  if (!bar) return;
+  var count = _sdSelectedDocs.size;
+  if (count === 0) { bar.style.display = 'none'; return; }
+  var totalBal = 0;
+  _sdSelectedDocs.forEach(function(id) {
+    var doc = _sdAllDocs.find(function(d) { return d.id === id; });
+    if (doc) totalBal += (Number(doc.total_amount) || 0) - (Number(doc.paid_amount) || 0);
+  });
+  bar.style.display = 'flex';
+  bar.innerHTML = '<span>\u05E0\u05D1\u05D7\u05E8\u05D5 ' + count + ' \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD | \u05E1\u05D4\u05F4\u05DB: ' + formatILS(totalBal) + '</span>' +
+    '<button class="btn btn-sm" style="background:#fff;color:#1e40af;font-weight:600" onclick="_sdPaySelected()">\u05E9\u05DC\u05DD \u05E0\u05D1\u05D7\u05E8\u05D9\u05DD</button>';
+}
+
+async function _sdPaySelected() {
+  if (!_sdSelectedDocs.size) return;
+  if (!_payMethods || !_payMethods.length) {
+    _payMethods = await fetchAll(T.PAY_METHODS, [['is_active', 'eq', true]]);
+  }
+  _wizResetState();
+  _wizState.supplierId = _detailSupplierId;
+  _wizState.supplierName = _detailSupplierName;
+  _wizState.preSelectedDocIds = Array.from(_sdSelectedDocs);
+  var modal = document.createElement('div');
+  modal.id = 'pay-wizard-modal';
+  modal.className = 'modal-overlay';
+  modal.style.display = 'flex';
+  modal.innerHTML = '<div class="modal" style="max-width:560px"><div id="pay-wiz-content"></div></div>';
+  document.body.appendChild(modal);
+  _wizRenderStep2();
 }
 
 // =========================================================

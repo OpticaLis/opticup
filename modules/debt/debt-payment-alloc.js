@@ -28,10 +28,14 @@ async function _wizGoStep3() {
     }
     _wizState.openDocs = docs.filter(function(d) {
       if (d.status !== 'open' && d.status !== 'partially_paid') return false;
-      // Only include payable document types (invoices, credit/debit notes — not delivery/return notes)
       if (Object.keys(payableTypeIds).length && !payableTypeIds[d.document_type_id]) return false;
       return true;
     }).sort(function(a, b) {
+      // Pre-selected docs sort first
+      var preIds = _wizState.preSelectedDocIds || [];
+      var aP = preIds.indexOf(a.id) >= 0 ? 0 : 1;
+      var bP = preIds.indexOf(b.id) >= 0 ? 0 : 1;
+      if (aP !== bP) return aP - bP;
       return (a.document_date || '').localeCompare(b.document_date || '');
     });
     _wizState.allocations = autoAllocateFIFO(_wizState.netAmount, _wizState.openDocs);
@@ -73,14 +77,18 @@ function _wizRenderStep3() {
   if (typeof _docTypes !== 'undefined') {
     _docTypes.forEach(function(t) { if (t.code === 'credit_note') creditTypeIds[t.id] = true; });
   }
+  var preIds = _wizState.preSelectedDocIds || [];
   var docRows = _wizState.openDocs.map(function(d) {
     var docRem = (Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0);
     var isCredit = creditTypeIds[d.document_type_id] || docRem < 0;
+    var isPre = preIds.indexOf(d.id) >= 0;
     var alloc = _wizState.allocations.find(function(a) { return a.document_id === d.id; });
     var val = alloc ? alloc.allocated_amount.toFixed(2) : '';
     var docLabel = escapeHtml(d.document_number || d.internal_number || '');
-    if (isCredit) docLabel += ' <span style="color:#059669;font-size:.75rem">(זיכוי)</span>';
-    var rowStyle = isCredit ? ' style="background:#f0fdf4"' : '';
+    if (isCredit) docLabel += ' <span style="color:#059669;font-size:.75rem">(\u05D6\u05D9\u05DB\u05D5\u05D9)</span>';
+    if (isPre) docLabel += ' <span style="color:#1a73e8;font-size:.75rem">\u2605</span>';
+    var rowBg = isCredit ? '#f0fdf4' : (isPre ? '#eff6ff' : '');
+    var rowStyle = rowBg ? ' style="background:' + rowBg + '"' : '';
     var amtStyle = isCredit ? ' style="color:#059669;font-weight:600"' : '';
     var inputAttrs = isCredit
       ? 'step="0.01" max="0" min="' + docRem.toFixed(2) + '"'
