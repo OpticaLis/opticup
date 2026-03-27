@@ -65,7 +65,6 @@ function addReceiptItemRow(data) {
     </td>
     <td style="white-space:nowrap">
       <button class="btn-rcpt-note" data-row="${rcptRowNum}" style="background:none;border:none;cursor:pointer;font-size:14px;${data?.note ? 'color:#2196F3' : 'opacity:.4'}" title="הערה לפריט" onclick="_toggleRcptNote(${rcptRowNum})">${data?.note ? '\uD83D\uDCAC' : '\uD83D\uDCAD'}</button>
-      <button class="btn-rcpt-camera" data-inv-id="${data?.inventory_id || ''}" style="background:none;border:none;cursor:pointer;font-size:14px;${data?.inventory_id ? 'color:#2196F3' : 'opacity:.3'}" title="${data?.inventory_id ? 'צלם / צפה בתמונות' : 'יש לאשר קבלה לפני צילום'}" onclick="_rcptOpenCamera(this)">📷</button>
       ${actionCol}
     </td>
   `;
@@ -74,7 +73,12 @@ function addReceiptItemRow(data) {
   noteRow.id = 'rcpt-note-row-' + rcptRowNum;
   noteRow.style.display = data?.note ? '' : 'none';
   noteRow.style.background = '#f8f9fa';
-  noteRow.innerHTML = '<td colspan="15" style="padding:4px 16px 8px"><textarea class="rcpt-item-note" data-row="' + rcptRowNum + '" rows="2" maxlength="500" placeholder="\u05D4\u05E2\u05E8\u05D4 \u05DC\u05E4\u05E8\u05D9\u05D8..." style="width:100%;padding:6px 8px;border-radius:4px;border:1px solid #ccc;direction:rtl;resize:vertical;font-size:13px">' + escapeHtml(data?.note || '') + '</textarea></td>';
+  noteRow.innerHTML = '<td colspan="15" style="padding:4px 16px 8px">' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:4px">' +
+      '<div><label style="font-size:11px;display:block;color:#666">גשר</label><input type="text" class="rcpt-bridge" value="' + escapeHtml(data?.bridge || '') + '" style="width:55px;padding:4px 6px;border-radius:4px;border:1px solid #ccc;font-size:13px"></div>' +
+      '<div><label style="font-size:11px;display:block;color:#666">אורך מוט</label><input type="text" class="rcpt-temple" value="' + escapeHtml(data?.temple_length || '') + '" style="width:55px;padding:4px 6px;border-radius:4px;border:1px solid #ccc;font-size:13px"></div>' +
+    '</div>' +
+    '<textarea class="rcpt-item-note" data-row="' + rcptRowNum + '" rows="2" maxlength="500" placeholder="\u05D4\u05E2\u05E8\u05D4 \u05DC\u05E4\u05E8\u05D9\u05D8..." style="width:100%;padding:6px 8px;border-radius:4px;border:1px solid #ccc;direction:rtl;resize:vertical;font-size:13px">' + escapeHtml(data?.note || '') + '</textarea></td>';
   // Apply dimmed state if loading with not_received status
   if (rcptStatus === 'not_received') {
     tr.classList.add('rcpt-row-dimmed');
@@ -107,13 +111,6 @@ function addReceiptItemRow(data) {
   tb.appendChild(tr);
   tb.appendChild(noteRow);
   updateReceiptItemsStats();
-}
-
-function _rcptOpenCamera(btn) {
-  var invId = btn.dataset.invId;
-  if (!invId) { toast('\u05D9\u05E9 \u05DC\u05D0\u05E9\u05E8 \u05D0\u05EA \u05D4\u05E7\u05D1\u05DC\u05D4 \u05DC\u05E4\u05E0\u05D9 \u05E6\u05D9\u05DC\u05D5\u05DD', 'i'); return; }
-  if (typeof openImageModal === 'function') openImageModal(invId, null);
-  else toast('\u05DE\u05D5\u05D3\u05D5\u05DC \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA \u05DC\u05D0 \u05E0\u05D8\u05E2\u05DF', 'w');
 }
 
 function _toggleRcptNote(rowNum) {
@@ -164,7 +161,9 @@ function getReceiptItems() {
       inventory_id: tr.dataset.inventoryId || null,
       from_po: tr.dataset.fromPo === '1',
       receipt_status: rcptStatus,
-      note: (function() { var nr = document.getElementById('rcpt-note-row-' + tr.dataset.row); var ta = nr ? nr.querySelector('.rcpt-item-note') : null; return ta ? ta.value.trim() : ''; })()
+      note: (function() { var nr = document.getElementById('rcpt-note-row-' + tr.dataset.row); var ta = nr ? nr.querySelector('.rcpt-item-note') : null; return ta ? ta.value.trim() : ''; })(),
+      bridge: (function() { var nr = document.getElementById('rcpt-note-row-' + tr.dataset.row); var inp = nr ? nr.querySelector('.rcpt-bridge') : null; return inp ? inp.value.trim() : ''; })(),
+      temple_length: (function() { var nr = document.getElementById('rcpt-note-row-' + tr.dataset.row); var inp = nr ? nr.querySelector('.rcpt-temple') : null; return inp ? inp.value.trim() : ''; })()
     };
   });
 }

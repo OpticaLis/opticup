@@ -259,7 +259,7 @@ function _removeReceiptBanner() {
 
 // --- Image modal with navigation ---
 function _openImageWithNav(id) {
-  var ids = Array.from(document.querySelectorAll('#inv-tbody tr[data-id]')).map(function(tr) { return tr.dataset.id; });
+  var ids = Array.from(document.querySelectorAll('#inv-body tr[data-id]')).map(function(tr) { return tr.dataset.id; });
   openImageModal(id, ids.length > 1 ? ids : null);
 }
 

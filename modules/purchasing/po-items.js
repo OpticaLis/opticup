@@ -134,13 +134,6 @@ function renderPOItemsTable() {
             <input type="number" min="0" max="100" step="0.1" value="${item.sell_discount ? item.sell_discount*100 : 0}"
                    oninput="currentPOItems[${i}].sell_discount=this.value/100"
                    style="width:70px;padding:4px 6px;border-radius:4px;border:1px solid #ccc"></div>
-          <div><label style="font-size:12px;display:block">סוג מוצר</label>
-            <select oninput="currentPOItems[${i}].product_type=this.value"
-                    style="padding:4px 6px;border-radius:4px;border:1px solid #ccc">
-              <option value="">—</option>
-              <option value="eyeglasses" ${item.product_type==='eyeglasses'?'selected':''}>משקפי ראייה</option>
-              <option value="sunglasses" ${item.product_type==='sunglasses'?'selected':''}>משקפי שמש</option>
-            </select></div>
           <div><label style="font-size:12px;display:block">סנכרון אתר</label>
             <select oninput="currentPOItems[${i}].website_sync=this.value"
                     style="padding:4px 6px;border-radius:4px;border:1px solid #ccc">

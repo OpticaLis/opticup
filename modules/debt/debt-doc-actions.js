@@ -216,6 +216,7 @@ async function changeDocumentType(docId) {
       var newTypeId = document.getElementById('cdt-new-type').value;
       if (!newTypeId) return;
       Modal.close();
+      setTimeout(function() {
       promptPin('\u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05D5\u05D2 \u05DE\u05E1\u05DE\u05DA \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
         showLoading('\u05DE\u05E2\u05D3\u05DB\u05DF \u05E1\u05D5\u05D2...');
         try {
@@ -235,6 +236,7 @@ async function changeDocumentType(docId) {
           Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''));
         } finally { hideLoading(); }
       });
+      }, 200);
     }
   });
 }

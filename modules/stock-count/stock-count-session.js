@@ -119,7 +119,6 @@ async function _createNewStockCount() {
       count_id: count.id, inventory_id: inv.id,
       barcode: inv.barcode || '', brand: brandCacheRev[inv.brand_id] || '',
       model: inv.model || '', color: inv.color || '', size: inv.size || '',
-      product_type: inv.product_type || '',
       expected_qty: inv.quantity || 0, status: 'pending'
     }));
     if (items.length) await batchCreate(T.STOCK_COUNT_ITEMS, items);

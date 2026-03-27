@@ -92,17 +92,14 @@ function addExpenseFolder() {
       '<label style="display:block;margin-bottom:10px;font-size:.9rem">\u05E9\u05DD \u05EA\u05D9\u05E7\u05D9\u05D4 <span style="color:red">*</span>' +
         '<input id="ef-name" class="nd-field" placeholder="\u05DC\u05DE\u05E9\u05DC: \u05D7\u05E9\u05DE\u05DC, \u05E9\u05DC\u05D9\u05D7\u05D5\u05D9\u05D5\u05EA..." required></label>' +
       '<label style="display:block;margin-bottom:10px;font-size:.9rem">\u05D0\u05D9\u05D9\u05E7\u05D5\u05DF' +
-        '<input id="ef-icon" class="nd-field" value="\uD83D\uDCC1" style="width:60px;font-size:1.2rem;text-align:center"></label>' +
-      '<label style="display:block;font-size:.9rem">\u05E1\u05D3\u05E8 \u05DE\u05D9\u05D5\u05DF' +
-        '<input id="ef-sort" type="number" class="nd-field" value="0" min="0" style="width:80px"></label>',
+        '<input id="ef-icon" class="nd-field" value="\uD83D\uDCC1" style="width:60px;font-size:1.2rem;text-align:center"></label>',
     onSubmit: async function() {
       var name = (document.getElementById('ef-name').value || '').trim();
       if (!name) { Toast.error('\u05E9\u05DD \u05EA\u05D9\u05E7\u05D9\u05D4 \u05D7\u05D5\u05D1\u05D4'); return; }
       var icon = (document.getElementById('ef-icon').value || '').trim() || '\uD83D\uDCC1';
-      var sort = parseInt(document.getElementById('ef-sort').value) || 0;
       try {
         await batchCreate(T.EXPENSE_FOLDERS, [{
-          tenant_id: getTenantId(), name: name, icon: icon, sort_order: sort, is_active: true
+          tenant_id: getTenantId(), name: name, icon: icon, is_active: true
         }]);
         writeLog('expense_folder_created', null, { name: name, icon: icon });
         Toast.success('\u05EA\u05D9\u05E7\u05D9\u05D4 \u05E0\u05D5\u05E6\u05E8\u05D4');
@@ -132,16 +129,13 @@ function editExpenseFolder(folderId) {
       '<label style="display:block;margin-bottom:10px;font-size:.9rem">\u05E9\u05DD \u05EA\u05D9\u05E7\u05D9\u05D4 <span style="color:red">*</span>' +
         '<input id="ef-name" class="nd-field" value="' + escapeHtml(folder.name) + '" required></label>' +
       '<label style="display:block;margin-bottom:10px;font-size:.9rem">\u05D0\u05D9\u05D9\u05E7\u05D5\u05DF' +
-        '<input id="ef-icon" class="nd-field" value="' + escapeHtml(folder.icon || '\uD83D\uDCC1') + '" style="width:60px;font-size:1.2rem;text-align:center"></label>' +
-      '<label style="display:block;font-size:.9rem">\u05E1\u05D3\u05E8 \u05DE\u05D9\u05D5\u05DF' +
-        '<input id="ef-sort" type="number" class="nd-field" value="' + (folder.sort_order || 0) + '" min="0" style="width:80px"></label>',
+        '<input id="ef-icon" class="nd-field" value="' + escapeHtml(folder.icon || '\uD83D\uDCC1') + '" style="width:60px;font-size:1.2rem;text-align:center"></label>',
     onSubmit: async function() {
       var name = (document.getElementById('ef-name').value || '').trim();
       if (!name) { Toast.error('\u05E9\u05DD \u05EA\u05D9\u05E7\u05D9\u05D4 \u05D7\u05D5\u05D1\u05D4'); return; }
       var icon = (document.getElementById('ef-icon').value || '').trim() || '\uD83D\uDCC1';
-      var sort = parseInt(document.getElementById('ef-sort').value) || 0;
       try {
-        await batchUpdate(T.EXPENSE_FOLDERS, [{ id: folderId, name: name, icon: icon, sort_order: sort }]);
+        await batchUpdate(T.EXPENSE_FOLDERS, [{ id: folderId, name: name, icon: icon }]);
         writeLog('expense_folder_edited', null, { folder_id: folderId, name: name });
         Toast.success('\u05EA\u05D9\u05E7\u05D9\u05D4 \u05E2\u05D5\u05D3\u05DB\u05E0\u05D4');
         Modal.close();

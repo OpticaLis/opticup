@@ -22,7 +22,7 @@ async function loadIncomingInvoicesTab() {
       '</p>' +
       // Target dropdown (supplier or folder)
       '<div style="margin-bottom:12px">' +
-        '<label style="font-size:.88rem;font-weight:600;display:block;margin-bottom:4px">\u05E9\u05D9\u05D9\u05DA \u05DC:</label>' +
+        '<label style="font-size:.88rem;font-weight:600;display:block;margin-bottom:4px">\u05EA\u05D9\u05E7\u05D9\u05D4:</label>' +
         '<div id="inc-inv-supplier-wrap"></div>' +
       '</div>' +
       // Drop zone
@@ -47,14 +47,16 @@ async function loadIncomingInvoicesTab() {
       .eq('tenant_id', getTenantId()).eq('is_active', true).order('sort_order');
     _incInvFolders = fRows || [];
   } catch (e) { _incInvFolders = []; }
-  // Build combined list: suppliers + folders
-  var supNames = (typeof suppliers !== 'undefined' ? suppliers : []).filter(Boolean)
-    .map(function(s) { return 'supplier:' + s; });
-  var folderNames = _incInvFolders.map(function(f) { return 'folder:' + (f.icon || '\uD83D\uDCC1') + ' ' + f.name; });
-  var allNames = supNames.concat(folderNames);
-  _incInvSupSelect = createSearchSelect(allNames, '', function() {});
-  var wrap = $('inc-inv-supplier-wrap');
-  if (wrap && _incInvSupSelect) wrap.appendChild(_incInvSupSelect);
+  // Build folders-only list
+  var folderNames = _incInvFolders.map(function(f) { return (f.icon || '\uD83D\uDCC1') + ' ' + f.name; });
+  if (folderNames.length) {
+    _incInvSupSelect = createSearchSelect(folderNames, '', function() {});
+    var wrap = $('inc-inv-supplier-wrap');
+    if (wrap && _incInvSupSelect) wrap.appendChild(_incInvSupSelect);
+  } else {
+    var wrap = $('inc-inv-supplier-wrap');
+    if (wrap) wrap.innerHTML = '<div style="font-size:.85rem;color:#d97706;padding:8px;background:#fffbeb;border-radius:6px">\u05D9\u05E9 \u05DC\u05D9\u05E6\u05D5\u05E8 \u05EA\u05D9\u05E7\u05D9\u05D5\u05EA \u05D1\u05DE\u05E2\u05E7\u05D1 \u05D7\u05D5\u05D1\u05D5\u05EA \u05E1\u05E4\u05E7\u05D9\u05DD</div>';
+  }
 
   // Init drop zone events
   _initIncInvDropzone();
@@ -138,18 +140,10 @@ async function _submitIncomingInvoice() {
   var supHidden = _incInvSupSelect ? _incInvSupSelect.querySelector('input[type="hidden"]') : null;
   var rawValue = supHidden ? supHidden.value : '';
   var supplierId = null, folderId = null;
-  if (rawValue.startsWith('supplier:')) {
-    var supName = rawValue.substring(9);
-    supplierId = supName ? supplierCache[supName] : null;
-    if (!supplierId) { Toast.error('\u05D9\u05E9 \u05DC\u05D1\u05D7\u05D5\u05E8 \u05E1\u05E4\u05E7'); return; }
-  } else if (rawValue.startsWith('folder:')) {
-    var folderLabel = rawValue.substring(7).trim();
-    var match = _incInvFolders.find(function(f) { return ((f.icon || '\uD83D\uDCC1') + ' ' + f.name) === folderLabel; });
-    folderId = match ? match.id : null;
-    if (!folderId) { Toast.error('\u05D9\u05E9 \u05DC\u05D1\u05D7\u05D5\u05E8 \u05EA\u05D9\u05E7\u05D9\u05D4'); return; }
-  } else {
-    Toast.error('\u05D9\u05E9 \u05DC\u05D1\u05D7\u05D5\u05E8 \u05E1\u05E4\u05E7 \u05D0\u05D5 \u05EA\u05D9\u05E7\u05D9\u05D4'); return;
-  }
+  // Folders only — match by icon+name label
+  var match = _incInvFolders.find(function(f) { return ((f.icon || '\uD83D\uDCC1') + ' ' + f.name) === rawValue; });
+  folderId = match ? match.id : null;
+  if (!folderId) { Toast.error('\u05D9\u05E9 \u05DC\u05D1\u05D7\u05D5\u05E8 \u05EA\u05D9\u05E7\u05D9\u05D4'); return; }
 
   // Validate file
   if (!_incInvFile) { Toast.error('\u05D9\u05E9 \u05DC\u05E6\u05E8\u05E3 \u05E7\u05D5\u05D1\u05E5'); return; }

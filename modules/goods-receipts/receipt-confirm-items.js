@@ -18,7 +18,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
       if (!item.is_new_item && itemBarcode) {
         // Existing item: increment quantity by effectiveQty
         const { data: invRow, error: findErr } = await sb.from('inventory')
-          .select('id, quantity, barcode, brand_id, model, size, color, cost_price')
+          .select('id, quantity, barcode, brand_id, model, size, color, cost_price, bridge, temple_length')
           .eq('tenant_id', getTenantId())
           .eq('barcode', itemBarcode)
           .eq('is_deleted', false)
@@ -52,11 +52,15 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
           if (item.model && item.model !== (invRow.model || '')) detailChanges.model = { from: invRow.model || '', to: item.model };
           if (item.size && item.size !== (invRow.size || '')) detailChanges.size = { from: invRow.size || '', to: item.size };
           if (item.color && item.color !== (invRow.color || '')) detailChanges.color = { from: invRow.color || '', to: item.color };
+          if (item.bridge && item.bridge !== (invRow.bridge || '')) detailChanges.bridge = { from: invRow.bridge || '', to: item.bridge };
+          if (item.temple_length && item.temple_length !== (invRow.temple_length || '')) detailChanges.temple_length = { from: invRow.temple_length || '', to: item.temple_length };
           if (Object.keys(detailChanges).length) {
             var detailUpdate = { id: invRow.id };
             if (detailChanges.model) detailUpdate.model = item.model;
             if (detailChanges.size) detailUpdate.size = item.size;
             if (detailChanges.color) detailUpdate.color = item.color;
+            if (detailChanges.bridge) detailUpdate.bridge = item.bridge;
+            if (detailChanges.temple_length) detailUpdate.temple_length = item.temple_length;
             await batchUpdate('inventory', [detailUpdate]);
             writeLog('edit_details', invRow.id, { source: 'goods_receipt', receipt_id: receiptId, changes: detailChanges });
           }
@@ -190,6 +194,8 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
     status: 'in_stock',
     origin: 'goods_receipt',
     product_type: productType,
+    bridge: item.bridge || null,
+    temple_length: item.temple_length || null,
     website_sync: heToEn('website_sync', getBrandSync(item.brand)) || 'none',
     is_deleted: false,
     tenant_id: getTenantId()
