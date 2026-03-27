@@ -76,21 +76,18 @@ async function editDocument(docId) {
         '<span>\u05E1\u05D8\u05D8\u05D5\u05E1: <span class="doc-badge ' + st.cls + '">' + escapeHtml(st.he) + '</span></span>' +
         (uploadedAt ? '<span>\u05D4\u05D5\u05E2\u05DC\u05D4: ' + escapeHtml(uploadedAt) + '</span>' : '') +
       '</div>' +
-      // Editable fields — amounts locked when receipt-linked (unless missing_price)
+      // Editable fields — all amounts editable
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.88rem">' +
         '<label>\u05E1\u05D5\u05D2 \u05DE\u05E1\u05DE\u05DA<select id="ed-type" class="nd-field">' + typeOpts + '</select></label>' +
         '<label>\u05DE\u05E1\u05E4\u05E8 \u05DE\u05E1\u05DE\u05DA<input id="ed-number" class="nd-field" value="' + escapeHtml(doc.document_number || '') + '"></label>' +
         '<label>\u05EA\u05D0\u05E8\u05D9\u05DA \u05DE\u05E1\u05DE\u05DA<input type="date" id="ed-date" class="nd-field" value="' + (doc.document_date || '') + '"></label>' +
         '<label>\u05EA\u05D0\u05E8\u05D9\u05DA \u05EA\u05E9\u05DC\u05D5\u05DD<input type="date" id="ed-due" class="nd-field" value="' + (doc.due_date || '') + '"></label>' +
-        '<label>\u05E1\u05DB\u05D5\u05DD \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DE<input type="number" id="ed-subtotal" step="0.01" class="nd-field" value="' + (Number(doc.subtotal) || 0) + '" oninput="_editDocCalc()"' + (doc.goods_receipt_id && !doc.missing_price ? ' disabled style="background:var(--g100)"' : '') + '></label>' +
-        '<label>% \u05DE\u05E2"\u05DE<input type="number" id="ed-vat-rate" step="0.01" class="nd-field" value="' + (Number(doc.vat_rate) || 17) + '" oninput="_editDocCalc()"' + (doc.goods_receipt_id && !doc.missing_price ? ' disabled style="background:var(--g100)"' : '') + '></label>' +
+        '<label>\u05E1\u05DB\u05D5\u05DD \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DE<input type="number" id="ed-subtotal" step="0.01" class="nd-field" value="' + (Number(doc.subtotal) || 0) + '" oninput="_editDocCalc()"></label>' +
+        '<label>% \u05DE\u05E2"\u05DE<input type="number" id="ed-vat-rate" step="0.01" class="nd-field" value="' + (Number(doc.vat_rate) || 17) + '" oninput="_editDocCalc()"></label>' +
         '<label>\u05DE\u05E2"\u05DE<input type="number" id="ed-vat" class="nd-field" value="' + (Number(doc.vat_amount) || 0).toFixed(2) + '" readonly style="background:var(--g100)"></label>' +
         '<label>\u05E1\u05D4"\u05DB<input type="number" id="ed-total" class="nd-field" value="' + (Number(doc.total_amount) || 0).toFixed(2) + '" readonly style="background:var(--g100)"></label>' +
-        (doc.goods_receipt_id
-          ? (doc.missing_price
-              ? '<div style="font-size:.8rem;color:#92400e;margin-top:2px;grid-column:1/-1">\u26A0\uFE0F \u05DE\u05D7\u05D9\u05E8\u05D9\u05DD \u05D7\u05E1\u05E8\u05D9\u05DD \u2014 \u05E2\u05D3\u05DB\u05DF \u05D0\u05EA \u05D4\u05E1\u05DB\u05D5\u05DE\u05D9\u05DD \u05DB\u05E9\u05D4\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u05DE\u05D2\u05D9\u05E2\u05D4</div>'
-              : '<div style="font-size:.8rem;color:var(--g500);margin-top:2px;grid-column:1/-1">\u05E1\u05DB\u05D5\u05DE\u05D9\u05DD \u05D7\u05D5\u05E9\u05D1\u05D5 \u05DE\u05E7\u05D1\u05DC\u05EA \u05D4\u05E1\u05D7\u05D5\u05E8\u05D4 \u2014 \u05DC\u05E2\u05E8\u05D9\u05DB\u05D4 \u05D9\u05E9 \u05DC\u05E9\u05E0\u05D5\u05EA \u05D1\u05E7\u05D1\u05DC\u05D4</div>')
-          : '') +
+        (doc.goods_receipt_id ? '<div style="font-size:.78rem;color:#92400e;grid-column:1/-1">\u26A0\uFE0F \u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05DB\u05D5\u05DD \u05E2\u05DC \u05DE\u05E1\u05DE\u05DA \u05DE\u05E7\u05D1\u05DC\u05EA \u05E1\u05D7\u05D5\u05E8\u05D4</div>' : '') +
+        '<label>\u05E1\u05D8\u05D8\u05D5\u05E1<select id="ed-status" class="nd-field">' + _buildStatusOpts(doc.status) + '</select></label>' +
         '<label style="grid-column:1/-1">\u05D4\u05E2\u05E8\u05D5\u05EA<textarea id="ed-notes" rows="2" class="nd-field">' + escapeHtml(doc.notes || '') + '</textarea></label>' +
       '</div>' +
       // File gallery (rendered async)
@@ -128,6 +125,32 @@ async function editDocument(docId) {
 }
 
 // File attach, choice modal, action toolbar, soft delete → debt-doc-actions.js
+
+// =========================================================
+// Status dropdown options (valid transitions only)
+// =========================================================
+var _STATUS_TRANSITIONS = {
+  draft: ['draft', 'open', 'cancelled'],
+  open: ['open', 'partially_paid', 'paid', 'cancelled', 'pending_review'],
+  partially_paid: ['partially_paid', 'paid', 'cancelled'],
+  paid: ['paid'],
+  cancelled: ['cancelled'],
+  pending_invoice: ['pending_invoice', 'open', 'cancelled'],
+  pending_review: ['pending_review', 'open', 'cancelled'],
+  linked: ['linked', 'open']
+};
+function _buildStatusOpts(currentStatus) {
+  var allowed = _STATUS_TRANSITIONS[currentStatus] || [currentStatus];
+  var labels = {
+    draft: '\u05D8\u05D9\u05D5\u05D8\u05D4', open: '\u05E4\u05EA\u05D5\u05D7',
+    partially_paid: '\u05E9\u05D5\u05DC\u05DD \u05D7\u05DC\u05E7\u05D9\u05EA', paid: '\u05E9\u05D5\u05DC\u05DD',
+    cancelled: '\u05DE\u05D1\u05D5\u05D8\u05DC', pending_invoice: '\u05DE\u05DE\u05EA\u05D9\u05DF \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA',
+    pending_review: '\u05DC\u05D1\u05D9\u05E8\u05D5\u05E8', linked: '\u05DE\u05E7\u05D5\u05E9\u05E8'
+  };
+  return allowed.map(function(s) {
+    return '<option value="' + s + '"' + (s === currentStatus ? ' selected' : '') + '>' + (labels[s] || s) + '</option>';
+  }).join('');
+}
 
 // =========================================================
 // Auto-calc VAT + total
@@ -170,6 +193,9 @@ async function saveDocumentEdits(docId) {
     if (Number(doc.subtotal) !== newSubtotal) changes.subtotal = { old: doc.subtotal, new: newSubtotal };
     if (Number(doc.total_amount) !== newTotal) changes.total_amount = { old: doc.total_amount, new: newTotal };
 
+    var newStatus = ($('ed-status') || {}).value || doc.status;
+    if (newStatus !== doc.status) changes.status = { old: doc.status, new: newStatus };
+
     var updateRow = {
       id: docId,
       document_type_id: newTypeId,
@@ -180,10 +206,9 @@ async function saveDocumentEdits(docId) {
       vat_rate: newVatRate,
       vat_amount: newVat,
       total_amount: newTotal,
-      notes: newNotes || null
+      notes: newNotes || null,
+      status: newStatus
     };
-    // Draft → open transition on save
-    if (doc.status === 'draft') updateRow.status = 'open';
     await batchUpdate(T.SUP_DOCS, [updateRow]);
 
     // Save edited items (non-blocking)

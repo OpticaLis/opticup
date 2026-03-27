@@ -108,10 +108,17 @@ function _buildDocActionToolbar(doc, type, docFiles) {
       'onclick="closeAndRemoveModal(\'edit-doc-modal\');openPrepaidDeductModal(\'' + docId + '\')">' +
       '\u05E7\u05D6\u05D6 \u05DE\u05E2\u05E1\u05E7\u05D4</button>');
   }
-  // Group 3: Assign to folder (for general invoices without supplier)
-  if (!doc.supplier_id && typeof getExpenseFolders === 'function') {
-    btns.push('<button class="btn btn-sm" style="background:#8b5cf6;color:#fff" ' +
-      'onclick="assignToFolder(\'' + docId + '\')">\uD83D\uDCC1 \u05E9\u05D9\u05D9\u05DA \u05DC\u05EA\u05D9\u05E7\u05D9\u05D4</button>');
+  // Group 3: Supplier management
+  if (!doc.supplier_id) {
+    btns.push('<button class="btn btn-sm" style="background:#059669;color:#fff" ' +
+      'onclick="changeDocSupplier(\'' + docId + '\')">\uD83D\uDCCC \u05E9\u05D9\u05D9\u05DA \u05DC\u05E1\u05E4\u05E7</button>');
+    if (typeof getExpenseFolders === 'function') {
+      btns.push('<button class="btn btn-sm" style="background:#8b5cf6;color:#fff" ' +
+        'onclick="assignToFolder(\'' + docId + '\')">\uD83D\uDCC1 \u05E9\u05D9\u05D9\u05DA \u05DC\u05EA\u05D9\u05E7\u05D9\u05D4</button>');
+    }
+  } else {
+    btns.push('<button class="btn btn-sm" style="background:#6b7280;color:#fff" ' +
+      'onclick="changeDocSupplier(\'' + docId + '\')">\uD83D\uDD04 \u05E9\u05E0\u05D4 \u05E1\u05E4\u05E7</button>');
   }
   // Group 4: Change type (requires debt.edit permission)
   if (doc.status !== 'paid' && doc.status !== 'cancelled') {
@@ -236,6 +243,51 @@ async function changeDocumentType(docId) {
           Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''));
         } finally { hideLoading(); }
       });
+      }, 200);
+    }
+  });
+}
+
+// ── Change supplier on a document (PIN required) ────────────
+async function changeDocSupplier(docId) {
+  var doc = _docData.find(function(d) { return d.id === docId; });
+  if (!doc) return;
+  var curSup = (_docSuppliers || []).find(function(s) { return s.id === doc.supplier_id; });
+  var curName = curSup ? curSup.name : '\u05DC\u05DC\u05D0 \u05E1\u05E4\u05E7 (\u05DB\u05DC\u05DC\u05D9)';
+  var supOpts = '<option value="">\u05DC\u05DC\u05D0 \u05E1\u05E4\u05E7 (\u05DB\u05DC\u05DC\u05D9)</option>' +
+    (_docSuppliers || []).map(function(s) {
+      return '<option value="' + s.id + '"' + (s.id === doc.supplier_id ? ' selected' : '') + '>' + escapeHtml(s.name) + '</option>';
+    }).join('');
+  Modal.form({
+    title: '\uD83D\uDD04 \u05E9\u05E0\u05D4 \u05E1\u05E4\u05E7',
+    size: 'sm', submitText: '\u05E9\u05E0\u05D4', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+    content:
+      '<div style="margin-bottom:10px;font-size:.88rem">\u05E1\u05E4\u05E7 \u05E0\u05D5\u05DB\u05D7\u05D9: <strong>' + escapeHtml(curName) + '</strong></div>' +
+      '<label style="display:block;font-size:.9rem">\u05E1\u05E4\u05E7 \u05D7\u05D3\u05E9:<select id="cds-new-sup" class="nd-field">' + supOpts + '</select></label>',
+    onSubmit: function() {
+      var newId = document.getElementById('cds-new-sup').value || null;
+      if (newId === doc.supplier_id) { Modal.close(); return; }
+      Modal.close();
+      setTimeout(function() {
+        promptPin('\u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05E4\u05E7 \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
+          showLoading('\u05DE\u05E2\u05D3\u05DB\u05DF...');
+          try {
+            var update = { id: docId, supplier_id: newId };
+            if (!doc.supplier_id && newId) update.expense_folder_id = null;
+            await batchUpdate(T.SUP_DOCS, [update]);
+            var newSup = (_docSuppliers || []).find(function(s) { return s.id === newId; });
+            await writeLog('doc_supplier_changed', null, {
+              document_id: docId, old_supplier: curName,
+              new_supplier: newSup ? newSup.name : '\u05DB\u05DC\u05DC\u05D9', changed_by: emp.name
+            });
+            Toast.success('\u05E1\u05E4\u05E7 \u05E2\u05D5\u05D3\u05DB\u05DF');
+            closeAndRemoveModal('edit-doc-modal');
+            if (typeof _detailSupplierId !== 'undefined' && _detailSupplierId) {
+              await openSupplierDetail(_detailSupplierId); _switchDetailTab('docs');
+            } else { await loadDocumentsTab(); }
+          } catch (e) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || '')); }
+          finally { hideLoading(); }
+        });
       }, 200);
     }
   });
