@@ -210,6 +210,12 @@
         <div class="bulk-field cost-field"><label>מחיר עלות</label><input type="number" id="bulk-cprice" placeholder="—"></div>
         <div class="bulk-field cost-field"><label>הנחה % עלות</label><input type="number" id="bulk-cdisc" placeholder="—" min="0" max="100"></div>
         <div class="bulk-field"><label>סנכרון</label><select id="bulk-sync"><option value="">—</option><option value="מלא">מלא</option><option value="תדמית">תדמית</option><option value="לא">לא</option></select></div>
+        <div class="bulk-field"><label>סוג</label><select id="bulk-ptype"><option value="">—</option><option value="eyeglasses">ראייה</option><option value="sunglasses">שמש</option></select></div>
+        <div class="bulk-field"><label>מותג</label><select id="bulk-brand"><option value="">—</option></select></div>
+        <div class="bulk-field"><label>ספק</label><select id="bulk-supplier"><option value="">—</option></select></div>
+        <div class="bulk-field"><label>צבע</label><input type="text" id="bulk-color" placeholder="—"></div>
+        <div class="bulk-field"><label>מידה</label><input type="text" id="bulk-size" placeholder="—"></div>
+        <div class="bulk-field"><label>סטטוס</label><select id="bulk-status"><option value="">—</option><option value="active">פעיל</option><option value="reserved">שמור</option><option value="sold">נמכר</option><option value="returned">הוחזר</option></select></div>
       </div>
       <div class="bulk-btns">
         <button class="btn btn-s btn-sm" onclick="applyBulkUpdate()" data-permission="inventory.edit">&#10004; עדכן נבחרים</button>
@@ -882,6 +888,7 @@
 <script src="modules/inventory/inventory-table.js"></script>
 <script src="modules/inventory/inventory-images.js"></script>
 <script src="modules/inventory/inventory-images-bg.js"></script>
+<script src="modules/inventory/inventory-resize.js"></script>
 <script src="modules/inventory/inventory-edit.js"></script>
 <script src="modules/inventory/inventory-entry.js"></script>
 <script src="modules/inventory/inventory-export.js"></script>
