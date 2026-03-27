@@ -429,23 +429,26 @@
     <div id="rcpt-form-alerts"></div>
     <div class="card" style="margin-bottom:16px">
       <div class="rcpt-header-form">
+        <div class="form-group"><label>ספק <span class="req">*</span></label>
+          <div id="rcpt-supplier-wrap"></div>
+        </div>
+        <div class="form-group"><label>הזמנת רכש (אופציונלי)</label>
+          <select id="rcpt-po-select" disabled><option value="">ללא — קבלה חופשית</option></select>
+        </div>
         <div class="form-group"><label>סוג מסמך <span class="req">*</span></label>
           <select id="rcpt-type"><option value="delivery_note">תעודת משלוח</option><option value="tax_invoice">חשבונית מס</option></select>
+        </div>
+        <div class="form-group" style="max-width:80px"><label>כמות מסמכים</label>
+          <input type="number" id="rcpt-doc-count" min="1" max="10" value="1" onchange="_onDocCountChange()" style="text-align:center">
         </div>
         <div class="form-group"><label>מספר מסמך <span class="req">*</span></label>
           <input type="text" id="rcpt-number" placeholder="מס׳ תעודת משלוח / חשבונית">
           <span id="rcpt-main-amount-wrap" style="display:none;align-items:center;gap:4px;margin-top:4px;font-size:.82rem;color:#3730a3"><span>₪</span><input type="number" step="0.01" min="0" placeholder="סכום" style="width:80px;padding:2px 4px;border:1px solid #c7d2fe;border-radius:3px;font-size:.78rem;text-align:center"></span>
           <div id="rcpt-extra-nums" style="margin-top:4px">
             <div id="rcpt-extra-nums-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px"></div>
-            <div style="display:flex;gap:4px"><input type="text" id="rcpt-extra-num-input" placeholder="מספר מסמך נוסף..." style="flex:1;font-size:.85rem;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px">
+            <div id="rcpt-extra-nums-add" style="display:flex;gap:4px"><input type="text" id="rcpt-extra-num-input" placeholder="מספר מסמך נוסף..." style="flex:1;font-size:.85rem;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px">
             <button type="button" class="btn btn-sm" style="font-size:.78rem;background:#e5e7eb" onclick="_addRcptExtraNum()">+ הוסף</button></div>
           </div>
-        </div>
-        <div class="form-group"><label>ספק <span class="req">*</span></label>
-          <div id="rcpt-supplier-wrap"></div>
-        </div>
-        <div class="form-group"><label>הזמנת רכש (אופציונלי)</label>
-          <select id="rcpt-po-select" disabled><option value="">ללא — קבלה חופשית</option></select>
         </div>
         <div class="form-group"><label>תאריך קבלה</label>
           <input type="date" id="rcpt-date">
@@ -900,6 +903,7 @@
 <script src="modules/inventory/inventory-returns-actions.js"></script>
 <script src="modules/inventory/incoming-invoices.js"></script>
 <script src="modules/goods-receipts/goods-receipt.js"></script>
+<script src="modules/goods-receipts/receipt-doc-numbers.js"></script>
 <script src="modules/goods-receipts/receipt-form.js"></script>
 <script src="modules/goods-receipts/receipt-form-items.js"></script>
 <script src="modules/goods-receipts/receipt-guide.js"></script>

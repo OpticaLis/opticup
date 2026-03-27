@@ -23,16 +23,23 @@ async function loadPOsForSupplier(supplierName) {
       .order('created_at', { ascending: false });
     if (error) throw error;
 
-    if (!data || !data.length) { sel.disabled = true; return; }
+    if (!data || !data.length) {
+      sel.disabled = true;
+      sel.style.borderColor = '#9ca3af';
+      sel.innerHTML = '<option value="">\u05DC\u05DC\u05D0 \u2014 \u05D0\u05D9\u05DF \u05D4\u05D6\u05DE\u05E0\u05D5\u05EA \u05E4\u05EA\u05D5\u05D7\u05D5\u05EA</option>';
+      return;
+    }
 
     for (const po of data) {
       const label = `${po.po_number} (${po.status === 'sent' ? 'נשלחה' : 'חלקי'})`;
       sel.innerHTML += `<option value="${po.id}">${label}</option>`;
     }
     sel.disabled = false;
+    sel.style.borderColor = '#059669';
   } catch (e) {
     console.error('loadPOsForSupplier error:', e);
     sel.disabled = true;
+    sel.style.borderColor = '#9ca3af';
   }
 }
 
@@ -325,9 +332,11 @@ function openNewReceipt() {
   if (typeof _rcptExtraNums !== 'undefined') { _rcptExtraNums = []; if (typeof _renderRcptExtraNums === 'function') _renderRcptExtraNums(); }
   _initRcptSupplierSelect('');
 
-  $('rcpt-po-select').innerHTML = '<option value="">ללא — קבלה חופשית</option>';
+  $('rcpt-po-select').innerHTML = '<option value="">\u05DC\u05DC\u05D0 \u2014 \u05E7\u05D1\u05DC\u05D4 \u05D7\u05D5\u05E4\u05E9\u05D9\u05EA</option>';
   $('rcpt-po-select').disabled = true;
+  $('rcpt-po-select').style.borderColor = '';
   $('rcpt-po-select').onchange = () => onReceiptPoSelected();
+  if ($('rcpt-doc-count')) $('rcpt-doc-count').value = 1;
   rcptLinkedPoId = null;
   $('rcpt-date').valueAsDate = new Date();
   $('rcpt-notes').value = '';
