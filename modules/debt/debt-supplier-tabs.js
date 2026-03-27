@@ -83,13 +83,14 @@ function _showAllTimeline() {
 }
 
 // =========================================================
-// Documents sub-tab — full management, reuses renderDocumentsTable
+// Documents sub-tab — full management with filters
 // =========================================================
+var _sdAllDocs = []; // all docs for this supplier (unfiltered)
+
 async function loadSupplierDocuments(supplierId) {
   var content = $('detail-tab-content');
   if (!content) return;
   try {
-    // Ensure _docTypes and _docSuppliers are loaded (may already be from main tab)
     if (!_docTypes.length || !_docSuppliers.length) {
       var [types, sups] = await Promise.all([
         fetchAll(T.DOC_TYPES, [['is_active', 'eq', true]]),
@@ -98,36 +99,74 @@ async function loadSupplierDocuments(supplierId) {
       _docTypes = types;
       _docSuppliers = sups;
     }
-    // Fetch docs for this supplier + prepaid deals
     var [docs, deals] = await Promise.all([
       fetchAll(T.SUP_DOCS, [['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId]]),
       fetchAll(T.PREPAID_DEALS, [['status', 'eq', 'active'], ['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId]])
     ]);
-    // Update globals so action buttons (cancelDocument etc.) find the docs
     _docData = docs;
+    _sdAllDocs = docs;
     _docPrepaidSet = {};
     deals.forEach(function(d) { _docPrepaidSet[d.supplier_id] = d; });
     _loadDocFileCounts(docs);
-
     docs.sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
 
-    // Toolbar: new doc + status filters
+    var typeOpts = '<option value="">\u05D4\u05DB\u05DC</option>';
+    (_docTypes || []).forEach(function(t) { typeOpts += '<option value="' + escapeHtml(t.id) + '">' + escapeHtml(t.name_he) + '</option>'; });
+
     content.innerHTML =
-      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">' +
         '<button class="btn btn-sm" style="background:var(--primary);color:#fff" ' +
           'onclick="_sdNewDoc(\'' + supplierId + '\')">+ \u05DE\u05E1\u05DE\u05DA \u05D7\u05D3\u05E9</button>' +
+        '<span id="sd-filter-count" style="font-size:.82rem;color:var(--g500)"></span>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin-bottom:10px;background:var(--white);border:1px solid var(--g200);border-radius:6px;padding:8px">' +
+        '<div><label style="font-size:.75rem;color:var(--g600)">\u05E1\u05D8\u05D8\u05D5\u05E1</label>' +
+          '<select id="sdf-status" class="doc-filter-input" style="width:100%" onchange="_sdApplyFilters()">' +
+            '<option value="">\u05D4\u05DB\u05DC</option><option value="draft">\u05D8\u05D9\u05D5\u05D8\u05D4</option>' +
+            '<option value="open">\u05E4\u05EA\u05D5\u05D7</option><option value="partially_paid">\u05D7\u05DC\u05E7\u05D9</option>' +
+            '<option value="paid">\u05E9\u05D5\u05DC\u05DD</option><option value="cancelled">\u05DE\u05D1\u05D5\u05D8\u05DC</option>' +
+          '</select></div>' +
+        '<div><label style="font-size:.75rem;color:var(--g600)">\u05E1\u05D5\u05D2 \u05DE\u05E1\u05DE\u05DA</label>' +
+          '<select id="sdf-type" class="doc-filter-input" style="width:100%" onchange="_sdApplyFilters()">' + typeOpts + '</select></div>' +
+        buildMonthPickerHtml('sdf', '_sdApplyFilters') +
+        '<div><label style="font-size:.75rem;color:var(--g600)">\u05E1\u05DB\u05D5\u05DD \u05DE:</label>' +
+          '<input type="number" id="sdf-amount-from" class="doc-filter-input" style="width:100%" step="0.01" min="0" onchange="_sdApplyFilters()"></div>' +
+        '<div><label style="font-size:.75rem;color:var(--g600)">\u05E1\u05DB\u05D5\u05DD \u05E2\u05D3:</label>' +
+          '<input type="number" id="sdf-amount-to" class="doc-filter-input" style="width:100%" step="0.01" min="0" onchange="_sdApplyFilters()"></div>' +
       '</div>' +
       '<div id="sd-doc-table"></div>';
 
-    // Render full table into the sub-tab container
-    renderDocumentsTable(docs, {
-      targetEl: $('sd-doc-table'),
-      hideSupplierCol: true
-    });
+    _sdUpdateCount(docs.length, docs.length);
+    renderDocumentsTable(docs, { targetEl: $('sd-doc-table'), hideSupplierCol: true });
   } catch (e) {
     console.error('loadSupplierDocuments error:', e);
     content.innerHTML = '<div class="empty-state">\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD</div>';
   }
+}
+
+function _sdApplyFilters() {
+  var f = {
+    status: ($('sdf-status') || {}).value || '',
+    document_type_id: ($('sdf-type') || {}).value || '',
+    date_from: ($('sdf-date-from') || {}).value || '',
+    date_to: ($('sdf-date-to') || {}).value || '',
+    amount_from: ($('sdf-amount-from') || {}).value || '',
+    amount_to: ($('sdf-amount-to') || {}).value || ''
+  };
+  var filtered = applyDocFilterSet(_sdAllDocs, f);
+  filtered.sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+  _sdUpdateCount(filtered.length, _sdAllDocs.length);
+  _docData = filtered;
+  renderDocumentsTable(filtered, { targetEl: $('sd-doc-table'), hideSupplierCol: true });
+}
+
+function _sdUpdateCount(shown, total) {
+  var el = $('sd-filter-count'); if (!el) return;
+  el.textContent = shown === total
+    ? '\u05DE\u05E6\u05D9\u05D2 ' + total + ' \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD'
+    : '\u05DE\u05E6\u05D9\u05D2 ' + shown + ' \u05DE\u05EA\u05D5\u05DA ' + total + ' \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD';
+  if (shown < total) { el.style.fontWeight = '600'; el.style.color = 'var(--primary)'; }
+  else { el.style.fontWeight = ''; el.style.color = 'var(--g500)'; }
 }
 
 // Open new document modal pre-filled with supplier
