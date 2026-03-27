@@ -119,12 +119,15 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
   }
 
   // Auto-create supplier document(s) for debt tracking
-  const { data: rcptData } = await sb.from(T.RECEIPTS).select('supplier_id, document_numbers').eq('id', receiptId).eq('tenant_id', getTenantId()).single();
+  const { data: rcptData } = await sb.from(T.RECEIPTS).select('supplier_id, document_numbers, receipt_type').eq('id', receiptId).eq('tenant_id', getTenantId()).single();
   if (rcptData?.supplier_id) {
     // Create primary supplier document (linked to receipt)
     var docNumbers = (rcptData.document_numbers && rcptData.document_numbers.length) ? rcptData.document_numbers : [rcptNumber];
+    var receiptType = rcptData.receipt_type || null;
+    // Per-doc amounts: read from form if available, otherwise null (UI coming in Phase A7)
+    var docAmounts = (typeof getRcptDocAmounts === 'function') ? getRcptDocAmounts() : null;
     try {
-      var doc = await createDocumentFromReceipt(receiptId, rcptData.supplier_id, savedItems, docNumbers[0] || rcptNumber);
+      var doc = await createDocumentFromReceipt(receiptId, rcptData.supplier_id, savedItems, docNumbers[0] || rcptNumber, receiptType, docNumbers, docAmounts);
       if (doc) {
         toast('\u05E7\u05D1\u05DC\u05D4 \u05D0\u05D5\u05E9\u05E8\u05D4 \u00B7 \u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 ' + (doc.internal_number || '') + ' \u05E0\u05D5\u05E6\u05E8', 's');
       } else {

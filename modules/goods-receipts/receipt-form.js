@@ -1,5 +1,6 @@
-// ── Multiple document numbers (RC-2) ────────────────────────
-var _rcptExtraNums = []; // additional doc numbers beyond the main rcpt-number
+// ── Multiple document numbers (RC-2) + per-doc amounts (Phase A-prep) ──
+var _rcptExtraNums = [];     // additional doc numbers beyond the main rcpt-number
+var _rcptDocAmounts = {};    // keyed by doc number → amount (₪)
 
 function _addRcptExtraNum() {
   var inp = document.getElementById('rcpt-extra-num-input');
@@ -7,22 +8,43 @@ function _addRcptExtraNum() {
   if (!val) return;
   if (_rcptExtraNums.includes(val)) { Toast.warning('\u05DE\u05E1\u05E4\u05E8 \u05DB\u05D1\u05E8 \u05E7\u05D9\u05D9\u05DD'); return; }
   _rcptExtraNums.push(val);
+  _rcptDocAmounts[val] = 0;
   if (inp) inp.value = '';
   _renderRcptExtraNums();
 }
 
 function _removeRcptExtraNum(idx) {
-  _rcptExtraNums.splice(idx, 1);
+  var removed = _rcptExtraNums.splice(idx, 1);
+  if (removed[0]) delete _rcptDocAmounts[removed[0]];
   _renderRcptExtraNums();
 }
+
+function _onDocAmountChange(docNum, el) { _rcptDocAmounts[docNum] = Number(el.value) || 0; }
 
 function _renderRcptExtraNums() {
   var container = document.getElementById('rcpt-extra-nums-tags');
   if (!container) return;
+  var showAmts = getRcptDocumentNumbers().length >= 2;
   container.innerHTML = _rcptExtraNums.map(function(n, i) {
+    var amt = showAmts ? '<input type="number" step="0.01" min="0" placeholder="\u20AA" value="' +
+      (_rcptDocAmounts[n] || '') + '" onchange="_onDocAmountChange(\'' + escapeHtml(n) + '\',this)" ' +
+      'style="width:70px;padding:2px 4px;border:1px solid #c7d2fe;border-radius:3px;font-size:.78rem;text-align:center;margin-right:4px">' : '';
     return '<span style="display:inline-flex;align-items:center;gap:4px;background:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:4px;font-size:.82rem">' +
-      escapeHtml(n) + '<button type="button" onclick="_removeRcptExtraNum(' + i + ')" style="background:none;border:none;cursor:pointer;font-size:12px;color:#6366f1;padding:0">\u2715</button></span>';
+      escapeHtml(n) + amt + '<button type="button" onclick="_removeRcptExtraNum(' + i + ')" style="background:none;border:none;cursor:pointer;font-size:12px;color:#6366f1;padding:0">\u2715</button></span>';
   }).join('');
+  // Show/hide main doc amount input
+  var wrap = document.getElementById('rcpt-main-amount-wrap');
+  if (wrap) {
+    wrap.style.display = showAmts ? 'inline-flex' : 'none';
+    var inp = wrap.querySelector('input');
+    if (inp && !inp._bound) {
+      inp._bound = true;
+      inp.addEventListener('change', function() {
+        var m = (document.getElementById('rcpt-number') || {}).value || '';
+        _rcptDocAmounts[m] = Number(inp.value) || 0;
+      });
+    }
+  }
 }
 
 function getRcptDocumentNumbers() {
@@ -31,6 +53,21 @@ function getRcptDocumentNumbers() {
   var all = main ? [main] : [];
   _rcptExtraNums.forEach(function(n) { if (n && !all.includes(n)) all.push(n); });
   return all;
+}
+
+// Returns per-doc amounts [{number, amount}] or null if single doc
+function getRcptDocAmounts() {
+  var allNums = getRcptDocumentNumbers();
+  if (allNums.length < 2) return null;
+  var wrap = document.getElementById('rcpt-main-amount-wrap');
+  if (wrap) {
+    var inp = wrap.querySelector('input');
+    if (inp) {
+      var main = (document.getElementById('rcpt-number') || {}).value || '';
+      _rcptDocAmounts[main] = Number(inp.value) || 0;
+    }
+  }
+  return allNums.map(function(n) { return { number: n, amount: _rcptDocAmounts[n] || 0 }; });
 }
 
 // Pending files for receipt document attachment (multi-file)
@@ -133,46 +170,29 @@ function _renderReceiptFileList() {
   }
 }
 
+function _resetReceiptAttachUI() {
+  var btn = $('rcpt-attach-btn');
+  if (btn) { btn.style.display = ''; btn.innerHTML = '&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA'; }
+  var nameEl = $('rcpt-attach-name'); if (nameEl) nameEl.innerHTML = '';
+  var ocrBtn = $('rcpt-ocr-btn'); if (ocrBtn) ocrBtn.style.display = 'none';
+  var banner = $('rcpt-ocr-banner'); if (banner) banner.remove();
+}
+
 function _removeReceiptFileAt(idx) {
   _pendingReceiptFiles.splice(idx, 1);
   _renderReceiptFileList();
-  if (_pendingReceiptFiles.length === 0) {
-    // Restore legacy attach button
-    var btn = $('rcpt-attach-btn');
-    if (btn) { btn.style.display = ''; btn.innerHTML = '&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA'; }
-    var nameEl = $('rcpt-attach-name');
-    if (nameEl) nameEl.innerHTML = '';
-    // Hide OCR button
-    var ocrBtn = $('rcpt-ocr-btn');
-    if (ocrBtn) ocrBtn.style.display = 'none';
-    var banner = $('rcpt-ocr-banner');
-    if (banner) banner.remove();
-  }
+  if (_pendingReceiptFiles.length === 0) _resetReceiptAttachUI();
 }
 
 async function _removeReceiptFile() {
-  // Delete from Storage if already uploaded (e.g. after OCR scan)
   if (_pendingReceiptFileUrl) {
-    try {
-      await sb.storage.from('supplier-docs').remove([_pendingReceiptFileUrl]);
-    } catch (e) {
-      console.warn('Failed to delete uploaded file:', e);
-    }
+    try { await sb.storage.from('supplier-docs').remove([_pendingReceiptFileUrl]); }
+    catch (e) { console.warn('Failed to delete uploaded file:', e); }
     _pendingReceiptFileUrl = null;
   }
   _pendingReceiptFiles = [];
   _renderReceiptFileList();
-  // Restore legacy attach button
-  var btn = $('rcpt-attach-btn');
-  if (btn) { btn.style.display = ''; btn.innerHTML = '&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA'; }
-  var nameEl = $('rcpt-attach-name');
-  if (nameEl) nameEl.innerHTML = '';
-  // Hide OCR button
-  var ocrBtn = $('rcpt-ocr-btn');
-  if (ocrBtn) ocrBtn.style.display = 'none';
-  // Remove OCR banner if exists
-  var banner = $('rcpt-ocr-banner');
-  if (banner) banner.remove();
+  _resetReceiptAttachUI();
 }
 
 async function openExistingReceipt(receiptId, viewOnly) {

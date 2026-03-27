@@ -199,7 +199,9 @@ const FIELD_MAP = {
   supplier_documents: {
     'חתימת קובץ':'file_hash',
     'מזהה אצווה':'batch_id',
-    'היסטורי':'is_historical'
+    'היסטורי':'is_historical',
+    'מספרי מסמכים':'document_numbers',
+    'פירוט סכומים':'document_amounts'
   },
   supplier_document_files: {
     'קובץ':'file_url','שם קובץ':'file_name','חתימת קובץ':'file_hash',

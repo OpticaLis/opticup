@@ -1,15 +1,15 @@
 /**
  * receipt-debt.js — Auto-create supplier_documents on receipt confirmation
- * Phase 4b: Enhanced Goods Receipt
+ * Phase 4b: Enhanced Goods Receipt | Phase A-prep: doc type pass-through + multi-doc
  *
- * Exports: createDocumentFromReceipt(receiptId, supplierId, receiptItems)
+ * Exports: createDocumentFromReceipt(receiptId, supplierId, receiptItems, documentNumber, documentType, allDocNumbers, docAmounts)
  * Uses: fetchAll(), batchCreate() from shared.js / supabase-ops.js
  * Guards: client-side debounce + server-side goods_receipt_id duplicate check
  */
 
 let _creatingDocForReceipt = false; // client-side debounce flag
 
-async function createDocumentFromReceipt(receiptId, supplierId, receiptItems, documentNumber) {
+async function createDocumentFromReceipt(receiptId, supplierId, receiptItems, documentNumber, documentType, allDocNumbers, docAmounts) {
   // Guard A: client-side debounce (prevents double-click in same session)
   if (_creatingDocForReceipt) {
     console.warn('createDocumentFromReceipt: already in progress, skipping duplicate call');
@@ -18,13 +18,13 @@ async function createDocumentFromReceipt(receiptId, supplierId, receiptItems, do
   _creatingDocForReceipt = true;
 
   try {
-    return await _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems, documentNumber);
+    return await _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems, documentNumber, documentType, allDocNumbers, docAmounts);
   } finally {
     _creatingDocForReceipt = false;
   }
 }
 
-async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems, documentNumber) {
+async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems, documentNumber, documentType, allDocNumbers, docAmounts) {
   // Guard B: server-side duplicate check (prevents duplicate across sessions/refreshes)
   const existing = await sb.from(T.SUP_DOCS)
     .select('id, internal_number')
@@ -55,7 +55,7 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
     .filter(activeFilter)
     .some(i => !i.unit_cost || i.unit_cost <= 0);
 
-  // 2. Fetch supplier's default_document_type and payment_terms_days
+  // 2. Fetch supplier's payment_terms_days and currency
   const supplierRows = await fetchAll(T.SUPPLIERS, [['id', 'eq', supplierId]]);
   const supplier = supplierRows[0];
   if (!supplier) {
@@ -63,7 +63,8 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
     return null;
   }
 
-  const docTypeCode = supplier.default_document_type || 'delivery_note';
+  // Document type: receipt form selection → supplier default → 'delivery_note'
+  const docTypeCode = documentType || supplier.default_document_type || 'delivery_note';
   const paymentTermsDays = supplier.payment_terms_days || 30;
   const currency = supplier.default_currency || 'ILS';
 
@@ -97,12 +98,16 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   const emp = JSON.parse(sessionStorage.getItem('prizma_employee') || '{}');
 
   // 8. Build document record
+  var primaryDocNum = documentNumber || ('GR-' + receiptId.substring(0, 8));
+  var docNumbersArr = (allDocNumbers && allDocNumbers.length > 0) ? allDocNumbers : [primaryDocNum];
   const docRow = {
     tenant_id: getTenantId(),
     supplier_id: supplierId,
     document_type_id: docType.id,
     internal_number: internalNumber,
-    document_number: documentNumber || ('GR-' + receiptId.substring(0, 8)),
+    document_number: primaryDocNum,
+    document_numbers: docNumbersArr,
+    document_amounts: (docAmounts && docAmounts.length > 0) ? docAmounts : [],
     document_date: today,
     due_date: dueDateStr,
     received_date: today,

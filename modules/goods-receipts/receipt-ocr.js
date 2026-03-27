@@ -138,7 +138,7 @@ async function _applyOCRToReceipt(result, fileUrl) {
   var docType = fv('document_type');
   if (docType) {
     var typeEl = $('rcpt-type');
-    var typeMap = { invoice: 'invoice', tax_invoice: 'tax_invoice', delivery_note: 'delivery_note' };
+    var typeMap = { invoice: 'tax_invoice', tax_invoice: 'tax_invoice', delivery_note: 'delivery_note' };
     if (typeEl && typeMap[docType]) { typeEl.value = typeMap[docType]; _rcptOcrAddConfDot('rcpt-type', _rcptOcrFC(ext, 'document_type')); }
   }
 

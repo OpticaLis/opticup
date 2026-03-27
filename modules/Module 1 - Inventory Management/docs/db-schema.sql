@@ -60,6 +60,7 @@
 --   048_return_items_nullable_inventory.sql — inventory_id nullable on supplier_return_items
 --   049_fix_po_return_number_rpc.sql — FOR UPDATE separated from aggregate in next_po_number + next_return_number RPCs
 --   050_receipt_architecture.sql — barcodes_csv, ordered_qty columns + partial_received CHECK on goods_receipt_items
+--   058_supplier_documents_multi_doc.sql — document_numbers TEXT[], document_amounts JSONB on supplier_documents
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -1949,3 +1950,10 @@ CREATE TABLE IF NOT EXISTS expense_folders (
 -- RLS: tenant_isolation + service_bypass
 -- Index: idx_expense_folders_tenant ON expense_folders(tenant_id)
 -- supplier_documents.expense_folder_id UUID REFERENCES expense_folders(id) added
+
+-- ============================================================
+-- 058: Multi-document support on supplier_documents
+-- ============================================================
+ALTER TABLE supplier_documents ADD COLUMN IF NOT EXISTS document_numbers TEXT[] DEFAULT '{}';
+ALTER TABLE supplier_documents ADD COLUMN IF NOT EXISTS document_amounts JSONB DEFAULT '[]';
+CREATE INDEX IF NOT EXISTS idx_supdocs_doc_numbers ON supplier_documents USING GIN(document_numbers) WHERE document_numbers != '{}';
