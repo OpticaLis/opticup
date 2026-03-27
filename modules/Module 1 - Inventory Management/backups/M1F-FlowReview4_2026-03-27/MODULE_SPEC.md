@@ -1,5 +1,5 @@
 # מלאי מסגרות — Module Spec
-## גרסה Phase 8 + Flow Review Phase 3 | מרץ 2026
+## גרסה Phase 8 + Flow Review Phase 4 | מרץ 2026
 
 > **Authority:** Business logic flows and screen descriptions. For code details → MODULE_MAP.md. For DB schema → db-schema.sql. For rules → CLAUDE.md.
 
@@ -10,7 +10,7 @@
 **מודול מלאי מסגרות** הוא הליבה של מערכת Optic Up — מנהל את כל מחזור החיים של מסגרות משקפיים במלאי: כניסה, מעקב, עריכה, מכירה, מחיקה, שחזור, ספירת מלאי, סנכרון עם Access, ומעקב חובות ספקים.
 
 **סטאק טכנולוגי:**
-- Frontend: Vanilla JS (no framework), 83 JS modules + CSS
+- Frontend: Vanilla JS (no framework), 128 JS modules + CSS
 - Backend: Supabase (PostgreSQL + REST API + RPC + Edge Functions), client = `sb`
 - Auth: PIN → Edge Function (pin-auth) → signed JWT with tenant_id claim
 - Excel: SheetJS (xlsx) לייבוא/ייצוא
@@ -27,7 +27,7 @@ For complete file index → see MODULE_MAP.md section 1.
 
 לסכימה המלאה (columns, types, constraints, RLS) → ראה **db-schema.sql**.
 
-כל הטבלאות מכילות `tenant_id UUID NOT NULL` מאז פאזה 3.75. JWT-based RLS tenant isolation פעיל על כל 46 הטבלאות.
+כל הטבלאות מכילות `tenant_id UUID NOT NULL` מאז פאזה 3.75. JWT-based RLS tenant isolation פעיל על כל 50 הטבלאות.
 
 **טבלאות עיקריות (pre-Phase 4):** tenants, inventory, brands, suppliers, employees, inventory_logs, inventory_images, purchase_orders, purchase_order_items, goods_receipts, goods_receipt_items, sync_log, pending_sales, watcher_heartbeat, stock_counts, stock_count_items, roles, permissions, role_permissions, employee_roles, auth_sessions.
 
@@ -158,7 +158,39 @@ For complete file index → see MODULE_MAP.md section 1.
 - Orange-border badge styling (.dst-review)
 - Returns to previous status (stored in _prevStatus) when cleared
 
-### 3.5f Traceability Chain — Phase Flow-Review-2
+### 3.5f Flow Review Phase 4 Features
+
+**Expense Folders (SD-1/SD-2/SD-3/SD-4):**
+- `expense_folders` table for non-supplier invoices (rent, utilities, services)
+- CRUD UI in debt-expense-folders.js: add/edit/deactivate folders with icons
+- Documents can be assigned to folders via assignToFolder()
+- General invoices view (debt-general-invoices.js) filters non-supplier documents
+- Combined supplier+folder dropdown in incoming-invoices.js
+- changeDocumentType() with PIN verification
+
+**PO Per-Item Notes (PO-1):**
+- 💬 button on each PO item row toggles notes textarea
+- Notes saved/loaded with PO items, displayed read-only in PO view
+
+**Receipt Improvements (RC-1/RC-2/RC-3):**
+- Per-item notes (note column, 💬 button)
+- Multiple document numbers (TEXT[] array, tag chip UI)
+- Editable model/size/color on existing items during receipt
+
+**Image Modal (IMG-2/IMG-3/IMG-4):**
+- Previous/Next navigation between inventory items
+- Full item details in header (brand, model, color, size, barcode)
+- Camera button in receipt item rows
+
+**Column Sorting (PO-2/RC-4/SC-2/INV-5):**
+- Shared utility: sort-utils.js (SortUtils.sortArray, toggle, updateHeaders)
+- Sortable columns on PO items, receipt items, stock count session tables
+
+**Inventory Improvements (INV-1b/INV-3):**
+- Bulk edit: product_type, brand, supplier, color, size, status fields
+- Drag-to-resize column widths (sessionStorage, RTL-aware)
+
+### 3.5g Traceability Chain — Phase Flow-Review-2
 ```
 inventory item → goods_receipt_items → goods_receipt → supplier_document → document_links → payment
 ```

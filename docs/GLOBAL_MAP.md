@@ -468,6 +468,19 @@ Permission-aware UI. Global `PermissionUI` object: scans `[data-permission]` att
 | `PermissionUI.applyTo` | `container: HTMLElement` | `void` | Scan container only (dynamic content) |
 | `PermissionUI.check` | `permission: string` | `boolean` | Manual permission check |
 
+### shared/js/sort-utils.js (43 lines) — Phase Flow-Review-4
+
+Client-side column sorting utility. Global `SortUtils` object.
+
+**Functions:**
+
+| Function | Parameters | Returns | Description |
+|----------|-----------|---------|-------------|
+| `SortUtils.sortArray` | `arr, key, dir` | `Array` | Sort array by key (Hebrew locale, numbers, nulls) |
+| `SortUtils.toggle` | `tableId, key` | `{key, dir}` | Toggle sort state asc/desc for a table |
+| `SortUtils.updateHeaders` | `thead, key, dir` | `void` | Set sort-asc/sort-desc CSS classes on th[data-sort-key] |
+| `SortUtils.getState` | `tableId` | `{key,dir}\|null` | Get current sort state for table |
+
 ### shared/tests/table-test.html (235 lines)
 
 Table builder test page: 9 sections — basic (all 7 types), sort, empty state, loading, row ops, sticky header, row click, XSS, destroy. Mock data inline, self-contained.

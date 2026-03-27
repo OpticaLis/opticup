@@ -4,6 +4,49 @@
 
 ---
 
+## Flow Review Phase 4 — 2026-03-27
+
+### Bug Fixes
+- INV-4: brand_id validation before inventory insert — entry.js, excel-import.js, pending-resolve.js, approve.js (8b31f45, f2e404e)
+- IMG-1: Image race condition — delay + retry after Storage upload in inventory-images.js (8b31f45)
+- SD-5: receipt-debt.js silent failure — console.error + Toast on all failure paths, non-blocking writeLog (8b31f45, f2e404e)
+
+### PO Notes (PO-1)
+- Per-item notes textarea in PO creation (po-items.js), read-only display in PO view (po-view.js) (3cb3804)
+
+### Stock Count Columns (SC-2)
+- Color, size, product_type columns in scan session table + approval table (5236014)
+- Mobile responsive: hide status + product_type on small screens (5236014)
+
+### Expense Folders (SD-1, SD-2, SD-3, SD-4)
+- New table: expense_folders with tenant_id, RLS, CRUD UI (2721dfc)
+- New file: debt-expense-folders.js — add/edit/deactivate folders (2721dfc)
+- SD-4: changeDocumentType() with PIN verification in debt-doc-actions.js (2721dfc)
+- assignToFolder() for non-supplier documents (1fc2550)
+- New file: debt-general-invoices.js — filterable general invoices view (1fc2550)
+- IN-1: Combined supplier+folder dropdown in incoming-invoices.js (1fc2550)
+
+### Receipt Improvements (RC-1, RC-2, RC-3)
+- RC-1: Per-item notes — note column on goods_receipt_items, 💬 button UI (1bf37a9)
+- RC-2: Multiple document numbers — TEXT[] array, tag chip UI (1bf37a9)
+- RC-3: Editable model/size/color on existing receipt items with writeLog (1bf37a9, d94dcb9)
+
+### Image Modal (IMG-2, IMG-3, IMG-4)
+- IMG-3: Model + color + size shown in modal header (9647c2d)
+- IMG-2: Previous/Next navigation between items in image modal (9647c2d)
+- IMG-4: Camera button in receipt item rows (acdd00f)
+
+### Column Sorting (PO-2, RC-4, INV-5, SC sort)
+- New file: shared/js/sort-utils.js — SortUtils.sortArray, toggle, updateHeaders (09786da)
+- Sorting on PO items (creation + view), receipt items (DOM reorder), stock count session (09786da)
+- Sort indicator CSS: ↕/▲/▼ on th[data-sort-key] (09786da)
+
+### Inventory Improvements (INV-1b, INV-3)
+- INV-1b: Bulk edit expanded — product_type, brand, supplier, color, size, status fields (acdd00f)
+- INV-3: New file: inventory-resize.js — drag-to-resize columns, sessionStorage, RTL-aware (acdd00f)
+
+---
+
 ## Flow Review Phase 3 — 2026-03-24
 
 ### Tenant Isolation Hardening

@@ -2322,3 +2322,28 @@ CREATE INDEX idx_storefront_config_tenant ON storefront_config(tenant_id);
 
 -- create_tenant() updated: Step 11 inserts default storefront_config row
 -- Full SQL in: modules/Module 2 - Platform Admin/docs/phase5a-storefront-config.sql
+
+-- ============================================================
+-- 50. expense_folders — תיקיות הוצאות (Flow Review Phase 4, migration 054)
+-- Owner: Module 1 (Debt)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS expense_folders (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id       UUID NOT NULL REFERENCES tenants(id),
+  name            TEXT NOT NULL,
+  icon            TEXT DEFAULT '📁',
+  is_active       BOOLEAN DEFAULT true,
+  sort_order      INTEGER DEFAULT 0,
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(tenant_id, name)
+);
+ALTER TABLE expense_folders ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON expense_folders FOR ALL
+  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
+CREATE POLICY service_bypass ON expense_folders FOR ALL TO service_role USING (true);
+CREATE INDEX idx_expense_folders_tenant ON expense_folders(tenant_id);
+
+-- Flow Review Phase 4 column additions (migrations 054, 055):
+-- supplier_documents.expense_folder_id UUID REFERENCES expense_folders(id)
+-- goods_receipt_items.note TEXT
+-- goods_receipts.document_numbers TEXT[] DEFAULT '{}'

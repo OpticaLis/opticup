@@ -77,6 +77,7 @@ Optic Up הוא **פלטפורמת SaaS** לניהול חנויות אופטיק
 | 8-QA | ✅ | סקירת פלואו + תיקון באגים + תשתית | OCR fixes, 9 flow reviews, 13+ bugs fixed, multi-file support, tenant isolation, Access sync restriction, editable items, full doc management in supplier detail |
 | Flow-Review-2 | ✅ | סקירת פלואו + תיקונים + סגירת מעגל | חובת מסמך, atomic rollback, badges ויזואליים, חשבוניות נכנסות, תצוגת פריטים, 6 באגים |
 | Flow-Review-3 | ✅ | Tenant + תמונות + remove.bg + barcode refactor + PO improvements + product type | 25 commits: tenant hardening, frame images (camera/WEBP/remove.bg+Canvas), file splits, barcode one-per-product, PO sell prices/brand filter/summary, product type flow (PO->receipt->inventory), editable product type, receipt improvements |
+| Flow-Review-4 | ✅ | סקירת פלואו + תיקונים + expense folders + sort + images | 18 fixes: 3 bugs (brand validation, image race, receipt-debt), PO notes, stock count columns, expense folders CRUD, general invoices, combined dropdown, receipt notes/doc numbers/edit details, image navigation, column sorting (shared utility), camera in receipts, bulk edit expansion, resizable columns |
 | 6 | 🚫 נדחה | פורטל ספקים — ייבנה במודול עתידי | גישת ספק חיצונית, view-only מלאי לפי ספק |
 
 ---
