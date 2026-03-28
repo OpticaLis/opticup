@@ -149,3 +149,15 @@
     padding: var(--space-xl) var(--space-md);
   }
 }
+
+/* --- Sticky horizontal scrollbar (table-resize.js) --- */
+.tbl-sticky-bar {
+  overflow-x: auto;
+  position: sticky;
+  bottom: 0;
+  height: 14px;
+  background: var(--g50, #f9fafb);
+  border-top: 1px solid var(--g200, #e5e7eb);
+  z-index: 5;
+}
+.tbl-sticky-spacer { height: 1px; }
