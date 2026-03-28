@@ -3,7 +3,7 @@
 // Provides: OcrPOMatch.findBestPO(), OcrPOMatch.compareItems()
 
 var OcrPOMatch = (function() {
-  function _norm(s) { return (s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+  // _norm() is now global — defined in receipt-ocr-supplier.js
 
   /**
    * Find the best matching PO for OCR items.

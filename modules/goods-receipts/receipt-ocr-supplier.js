@@ -1,10 +1,11 @@
 // receipt-ocr-supplier.js — AI supplier auto-detection from OCR (Phase A-AI-1)
-// Load before: receipt-ocr.js
-// Provides: OcrSupplierMatch.matchSupplier(), OcrSupplierMatch.learnSupplierAlias()
+// Load before: receipt-ocr-po.js, receipt-ocr.js
+// Provides: _norm() (global), OcrSupplierMatch.matchSupplier(), OcrSupplierMatch.learnSupplierAlias()
+
+// Global normalize — used by OcrSupplierMatch, OcrPOMatch, _applyOcrHighlights
+function _norm(s) { return (s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
 
 var OcrSupplierMatch = (function() {
-  // Normalize name for comparison (lowercase, trim, collapse whitespace)
-  function _norm(s) { return (s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
 
   /**
    * Match OCR-extracted supplier name to a known supplier.

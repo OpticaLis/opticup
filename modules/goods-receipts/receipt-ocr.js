@@ -45,7 +45,9 @@ function initReceiptOCR() {
 
 function _rcptOcrUpdateBtn() {
   var btn = $('rcpt-ocr-btn');
-  if (btn) btn.style.display = (_pendingReceiptFile && !rcptLinkedPoId) ? '' : 'none';
+  // Show OCR button whenever a file is attached — regardless of PO linkage.
+  // Scenario A (PO + invoice) needs scan to compare items.
+  if (btn) btn.style.display = _pendingReceiptFile ? '' : 'none';
 }
 
 // --- 2. Trigger OCR scan — upload file, call Edge Function ---
