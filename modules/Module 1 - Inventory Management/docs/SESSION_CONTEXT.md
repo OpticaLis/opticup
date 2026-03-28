@@ -1,97 +1,127 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-Flow Review Phase 4 Complete — 2026-03-27
+Debt Module Upgrades QA Complete — 2026-03-28
 
 ## What Was Done This Session
 
-### Flow Review Phase 4 (2026-03-27) — 13 commits
+### Debt Module Upgrades (2026-03-28) — 12 commits
 
-**Phase 4b — 3 critical bug fixes (8b31f45, f2e404e):**
-- INV-4: brand_id validation before inventory insert (entry.js + 3 more entry points)
-- IMG-1: Image race condition fix — delay + retry after Storage upload
-- SD-5: receipt-debt.js silent failure — console.error + Toast warnings on all failure paths
+**Phase A-prep — Migration + doc type fix (8fb0c12):**
+- Fix doc type pass-through: createDocumentFromReceipt now uses receipt's document type instead of supplier default
+- Remove plain "חשבונית" from receipt document type dropdown (keep only תעודת משלוח, חשבונית מס)
+- Migration 058: document_numbers TEXT[] and document_amounts JSONB on supplier_documents
+- FIELD_MAP additions: document_numbers, document_amounts
 
-**Phase 4c — PO per-item notes (3cb3804):**
-- 💬 button in PO item rows to toggle notes textarea
-- Notes saved with PO, displayed read-only in PO view
-- Visual indicator (blue 💬 vs faded 💭) when notes exist
+**Phase A1 — Supplier filter chips (258d029):**
+- New file: debt-supplier-filters.js (102 lines)
+- 3 filter groups: type (defined/general), history (with/without), debt (has_debt/overdue)
+- Client-side filtering on _supTabData with result count display
+- loadSuppliersTab now fetches payments + enriches with hasReceiptDocs/hasHistory flags
 
-**Phase 4d — Stock count columns (5236014):**
-- Added color, size, product_type columns to scan session table
-- Same columns added to diff/approval table
-- Mobile responsive: hide status + product_type on small screens
+**Phase A2 — Month picker + amount filters (ce8d33b):**
+- New file: debt-filter-utils.js — reusable month picker toggle + amount range filter
+- Month picker: toggle between date range and month/year dropdown
+- Amount range: min/max inputs on both main documents tab and supplier detail
+- Supplier detail → documents sub-tab now has full filter bar (status, doc type, date, amount)
 
-**Phase 4e-1 — Expense folders + change doc type (2721dfc):**
-- New table: expense_folders (with tenant_id, RLS)
-- CRUD UI: debt-expense-folders.js (add/edit/deactivate folders)
-- SD-4: changeDocumentType() with PIN verification in debt-doc-actions.js
-- expense_folder_id column added to supplier_documents
+**Phase A3 — Payment flow fixes (b74ab4b):**
+- Fix "שלם" button: now opens payment wizard pre-filled for specific document
+- New function: openPaymentForDocument(docId) with preSelectedDocIds in wizard state
+- Step 3 allocation: pre-selected docs sorted to top, highlighted blue with ★
+- Supplier detail docs: checkboxes on payable docs + "שלם נבחרים" action bar
 
-**Phase 4e-2 — Folder assignment + general invoices + combined dropdown (1fc2550):**
-- assignToFolder() for documents without supplier
-- debt-general-invoices.js: filterable view of non-supplier documents
-- IN-1: Combined supplier+folder dropdown in incoming-invoices.js
+**Phase A4+A5 — Prepaid display + doc count expand (845f21f):**
+- Prepaid column: shows USED / TOTAL (green/red) format
+- dealTotal + dealUsed enriched in _supTabData
+- Multi-doc expand: count badge "N 📄" + ⋯ toggle → sub-row with breakdown table
+- _toggleDocSubRow function for expand/collapse
 
-**Phase 4f — Receipt improvements (1bf37a9, d94dcb9):**
-- RC-1: Per-item notes on goods_receipt_items (note column, 💬 UI)
-- RC-2: Multiple document numbers per receipt (TEXT[] array, tag chips)
-- RC-3: Editable model/size/color on existing receipt items
-- writeLog on item detail edits during receipt confirm
+**Phase A6 — Full document editing (fb86a80):**
+- changeDocSupplier function with PIN + ActivityLog
+- "📌 שייך לספק" button on documents without supplier
+- Subtotal always editable (not disabled on receipt-linked docs)
+- Status dropdown with valid transition options
 
-**Phase 4g — Image modal improvements (9647c2d):**
-- IMG-3: Model + color + size in modal header
-- IMG-2: Previous/Next navigation between inventory items in image modal
+**Phase A7 — Receipt header redesign (eb7681f):**
+- Field order: ספק → הזמנת רכש → סוג מסמך → כמות מסמכים → מספר מסמך → תאריך
+- New file: receipt-doc-numbers.js — _onDocCountChange, getRcptDocAmounts
+- Dynamic multi-doc inputs: set count → N number+amount rows appear
+- PO availability indicator: green border if POs exist for supplier
 
-**Phase 4h — Column sorting (09786da):**
-- New shared utility: sort-utils.js (SortUtils.sortArray, toggle, updateHeaders)
-- Column sorting on PO items table (creation + view)
-- Column sorting on receipt items table (DOM reorder)
-- Column sorting on stock count session table
+**Quick fix — Prepaid display (4792eeb):**
+- Rename "מקדמה" → "עסקה" in table header
+- Fix display order: used FIRST (green), total SECOND (red)
 
-**Phase 4i — Final 3 fixes (acdd00f):**
-- IMG-4: Camera button in receipt item rows
-- INV-1b: Bulk edit expanded with product_type, brand, supplier, color, size, status
-- INV-3: Drag-to-resize column widths on inventory table (sessionStorage, RTL-aware)
+**Phase A-AI-1 — Supplier auto-detect (d40c23e):**
+- New file: receipt-ocr-supplier.js — OcrSupplierMatch module
+- matchSupplier: alias → exact → fuzzy → none matching pipeline
+- learnSupplierAlias: saves OCR name as alias for future matching
+- Migration 059: supplier_name_aliases on ocr_templates, ai_has_po_pattern on suppliers
 
-### All Commits (Flow Review Phase 4)
-- 496edd4 Add Autonomous Execution Mode section to CLAUDE.md
-- 8b31f45 Phase 4b: Fix 3 critical bugs — brand validation, image race condition, receipt-debt silent failure
-- f2e404e Phase 4b follow-up: brand validation 3 more entry points, fix double toast, writeLog non-blocking
-- 3cb3804 Phase 4c-PO1: Per-item notes UI in PO creation and view
-- 5236014 Phase 4d-SC2: Add color, size, product_type columns to stock count tables + CLAUDE.md testing rule
-- 2721dfc Phase 4e-1: expense_folders table, CRUD UI, change document type
-- 1fc2550 Phase 4e-2: folder assignment, general invoices view, combined incoming-invoices dropdown
-- 1bf37a9 Phase 4f: Receipt per-item notes, multiple doc numbers, editable item details
-- d94dcb9 Phase 4f follow-up: writeLog on item detail edits during receipt confirm
-- 9647c2d Phase 4g: Image modal navigation + model/color in header
-- 09786da Phase 4h: Shared sort utility + column sorting on PO, receipts, stock count tables
-- acdd00f Phase 4i: Camera in receipts, expanded bulk edit, resizable columns
-- 8be7748 Phase 4k: QA passed, documentation updated, backup created
+**Phase A-AI-2 — PO auto-match (3edbe00):**
+- New file: receipt-ocr-po.js — OcrPOMatch module
+- findBestPO: scores open POs by item count, amount, item matches (0-100)
+- compareItems: per-item status (match/qty_mismatch/price_mismatch/not_in_po/missing)
+- CSS classes: ocr-qty-warn, ocr-price-warn, ocr-not-in-po, ocr-missing
+
+**Phase A-AI-3 — Integration verification (2b0b499):**
+- Doc type auto-detection from OCR with confidence indicator
+- receipt-confirmed event listener: snapshots OCR result, learns aliases, saves corrections
+- ai_has_po_pattern updated on receipt confirm
+
+### All Commits (Debt Module Upgrades)
+- 8fb0c12 Phase A-prep: fix doc type pass-through, remove invoice option, multi-doc data model
+- 258d029 Phase A1: Supplier filter chips — type, history, debt
+- ce8d33b Phase A2: Month picker, reusable filter utils, supplier detail doc filters
+- b74ab4b Phase A3: Fix pay button, multi-select payment from supplier detail
+- 845f21f Phase A4+A5: Prepaid progress display, document count with expand sub-row
+- fb86a80 Phase A6: Full document editing — supplier change, amounts, status
+- eb7681f Phase A7: Receipt header redesign — field order, doc count, PO indicator
+- 4792eeb Fix prepaid display: rename to עסקה, fix order
+- d40c23e Phase A-AI-1: Supplier auto-detect from OCR + alias learning
+- 3edbe00 Phase A-AI-2: PO auto-match from OCR + discrepancy highlighting
+- 2b0b499 Phase A-AI-3: Doc type learning, listener bug fix, integration verification
 
 ## Current State
 - **9 HTML pages**: index, inventory, suppliers-debt, employees, shipments, settings, admin, error, landing
-- **128 JS files** across 15 module folders + 11 global + 11 shared (~30,028 lines total)
-- **All Module 1 files <= 350 lines** (1 Module 2 file at 361)
+- **~135 JS files** across 15 module folders + 11 global + 11 shared
+- **All Module 1 files <= 352 lines** (receipt-ocr.js at 352, goods-receipt.js at 360)
 - **3 Edge Functions**: pin-auth, ocr-extract, remove-background
-- **50 DB tables** (added: expense_folders) + 14 RPC functions
-- **55 migration files**: 054-055 added this phase
-- **New features**: expense folders, general invoices, column sorting, image navigation, resizable columns
-- **New shared utility**: sort-utils.js (client-side column sorting)
-- **New module files**: debt-expense-folders.js, debt-general-invoices.js, inventory-resize.js
-- **Zero console errors** on all 9 pages
+- **50+ DB tables** + 14 RPC functions
+- **59 migration files**: 058-059 added this phase
+- **New files this phase**: debt-supplier-filters.js, debt-filter-utils.js, receipt-doc-numbers.js, receipt-ocr-supplier.js, receipt-ocr-po.js
+- **Zero syntax errors** on all JS files
+- **Zero missing script references** on all 6 pages
+
+## QA Results (Code-Level — 2026-03-28)
+
+### Files Over 350 Lines
+| File | Lines | Notes |
+|------|-------|-------|
+| admin-tenant-detail.js | 361 | Module 2, not in scope |
+| goods-receipt.js | 360 | Close to limit, monitor |
+| shared.js | 353 | Constants file, acceptable |
+| receipt-ocr.js | 352 | Just over, AI flow complex |
+
+### Key Finding
+- DebtFilterUtils object NOT defined as a global — functions in debt-filter-utils.js are standalone globals (buildMonthOpts, toggleMonthPicker, etc.), not wrapped in a module object. This works but differs from the OcrSupplierMatch/OcrPOMatch pattern.
+
+### Missing Error Handling
+- receipt-ocr.js lines 118-127 and 146-161: OcrSupplierMatch.matchSupplier and OcrPOMatch.findBestPO calls lack try/catch. Internal functions handle errors, but caller should have guards.
 
 ## Open Issues
 
 ### LOW / DEFERRED
-- OCR verification on PO-linked receipts — deferred, PO comparison report adequate
-- Cascading dropdowns on non-PO receipt items — deferred, most receipts use PO linkage
-- PIN unification (standardize to promptPin()) — deferred, works but inconsistent patterns
+- DebtFilterUtils not wrapped as module object (functional, cosmetic inconsistency)
+- receipt-ocr.js missing try/catch around AI match calls (internal error handling exists)
+- goods-receipt.js at 360 lines — candidate for split
+- OCR verification on PO-linked receipts — deferred
+- PIN unification (standardize to promptPin()) — deferred
 - 7 non-tenant UNIQUE constraints — documented tech debt
-- admin-tenant-detail.js at 361 lines (Module 2, not in scope)
+- admin-tenant-detail.js at 361 lines (Module 2)
 
 ## Next Steps
-1. **Merge to main** after manual QA testing
-2. **Module 3 planning** (CRM / Orders / next major module)
-3. **Consider**: Reporting dashboard, stock count improvements
-4. **Future**: Storefront views, supplier portal
+1. **Manual QA testing** on demo tenant (browser-based, Supabase-connected)
+2. **Merge to main** after manual QA
+3. **Module 3 planning** (CRM / Orders / next major module)

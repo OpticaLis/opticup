@@ -4,53 +4,6 @@
 
 ---
 
-## Debt Module Upgrades — 2026-03-28
-
-### A-prep: Migration + Doc Type Fix (8fb0c12)
-- Fix doc type pass-through in createDocumentFromReceipt — uses receipt type not supplier default
-- Remove plain "חשבונית" from receipt doc type dropdown
-- Migration 058: document_numbers TEXT[], document_amounts JSONB on supplier_documents
-
-### A1: Supplier Filter Chips (258d029)
-- New file: debt-supplier-filters.js — 3 filter groups (type, history, debt)
-- loadSuppliersTab enriched with hasReceiptDocs, hasHistory, payments data
-
-### A2: Month Picker + Amount Filters (ce8d33b)
-- New file: debt-filter-utils.js — reusable month picker toggle, amount range
-- Filters added to main documents tab and supplier detail documents sub-tab
-
-### A3: Payment Flow Fix (b74ab4b)
-- openPaymentForDocument pre-fills wizard with specific document
-- Multi-select payment from supplier detail with checkboxes + action bar
-- Pre-selected docs highlighted blue with ★ in allocation step
-
-### A4+A5: Prepaid Display + Doc Count Expand (845f21f)
-- Prepaid column: USED/TOTAL format (green/red)
-- Multi-doc expand: count badge + ⋯ toggle → sub-row breakdown
-
-### A6: Full Document Editing (fb86a80)
-- changeDocSupplier with PIN + ActivityLog
-- Subtotal always editable, status dropdown with valid transitions
-
-### A7: Receipt Header Redesign (eb7681f)
-- New file: receipt-doc-numbers.js — dynamic multi-doc inputs
-- Field order: supplier → PO → type → count → number → date
-- PO availability indicator (green/gray border)
-
-### A-AI-1: Supplier Auto-Detect (d40c23e)
-- New file: receipt-ocr-supplier.js — OcrSupplierMatch (alias→exact→fuzzy)
-- learnSupplierAlias saves corrections for future matching
-
-### A-AI-2: PO Auto-Match (3edbe00)
-- New file: receipt-ocr-po.js — OcrPOMatch (scoring + compareItems)
-- Discrepancy highlighting: yellow/orange rows with tooltips
-
-### A-AI-3: Integration Verification (2b0b499)
-- Doc type auto-detection, receipt-confirmed learning hooks
-- ai_has_po_pattern tracking on suppliers
-
----
-
 ## Flow Review Phase 4 — 2026-03-27
 
 ### Bug Fixes
