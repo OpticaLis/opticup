@@ -233,43 +233,30 @@ function _rcptOcrShowBanner(confidence, matched, total, fileUrl, validationResul
   var cc = hasErr ? '#e74c3c' : (pct >= 85 ? '#27ae60' : pct >= 70 ? '#f39c12' : '#e74c3c');
   var b = document.createElement('div'); b.id = 'rcpt-ocr-banner';
   b.style.cssText = 'background:' + (hasErr ? '#fce4ec' : '#e3f2fd') + ';border:1px solid ' + (hasErr ? '#ef9a9a' : '#90caf9') + ';border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.88rem';
-  var t = '\uD83E\uDD16 \u05DE\u05D5\u05DC\u05D0 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA \u05DE\u05E1\u05E8\u05D9\u05E7\u05D4 \u2014 \u05E8\u05DE\u05EA \u05D1\u05D9\u05D8\u05D7\u05D5\u05DF: <span style="color:' + cc + ';font-weight:700">' + pct + '%</span>';
-  if (total > 0) t += ' \u2014 \u05D6\u05D5\u05D4\u05D5 ' + matched + '/' + total + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD';
+  var t = '\uD83E\uDD16 \u05E1\u05E8\u05D9\u05E7\u05D4 \u2014 \u05D1\u05D9\u05D8\u05D7\u05D5\u05DF: <span style="color:' + cc + ';font-weight:700">' + pct + '%</span>';
+  if (total > 0) t += ' \u2014 ' + matched + '/' + total + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD';
   if (validationResults && validationResults.length > 0) {
-    t += '<br>';
-    validationResults.forEach(function(v) {
-      var icon = v.level === 'error' ? '\uD83D\uDD34' : '\u26A0\uFE0F';
-      t += '<span style="color:' + (v.level === 'error' ? '#e74c3c' : '#f39c12') + '">' + icon + ' ' + escapeHtml(v.msg) + '</span> ';
+    t += '<br>'; validationResults.forEach(function(v) {
+      t += '<span style="color:' + (v.level === 'error' ? '#e74c3c' : '#f39c12') + '">' + (v.level === 'error' ? '\uD83D\uDD34' : '\u26A0\uFE0F') + ' ' + escapeHtml(v.msg) + '</span> ';
     });
   }
   b.innerHTML = t;
-  if (fileUrl) {
-    var vb = document.createElement('button'); vb.className = 'btn btn-sm'; vb.style.cssText = 'background:#e5e7eb;color:#1e293b';
-    vb.style.cssText = 'margin-right:auto;font-size:.8rem';
-    vb.textContent = '\uD83D\uDCC4 \u05E6\u05E4\u05D4 \u05D1\u05DE\u05E7\u05D5\u05E8';
-    vb.onclick = function() { _rcptOcrPreviewDoc(fileUrl); }; b.appendChild(vb);
-  }
-  var cb = document.createElement('button');
-  cb.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1rem;color:var(--g600)';
-  cb.textContent = '\u2715'; cb.onclick = function() { b.remove(); }; b.appendChild(cb);
+  if (fileUrl) { var vb = document.createElement('button'); vb.className = 'btn btn-sm'; vb.style.cssText = 'margin-right:auto;font-size:.8rem'; vb.textContent = '\uD83D\uDCC4 \u05E6\u05E4\u05D4 \u05D1\u05DE\u05E7\u05D5\u05E8'; vb.onclick = function() { _rcptOcrPreviewDoc(fileUrl); }; b.appendChild(vb); }
+  var cb = document.createElement('button'); cb.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1rem;color:var(--g600)'; cb.textContent = '\u2715'; cb.onclick = function() { b.remove(); }; b.appendChild(cb);
   var s2 = $('rcpt-step2'); if (s2) s2.insertBefore(b, s2.firstChild);
 }
 
 // --- 7. Preview source document in modal ---
 async function _rcptOcrPreviewDoc(fileUrl) {
   var signedUrl = await getSupplierFileUrl(fileUrl);
-  if (!signedUrl) { toast('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D8\u05E2\u05D5\u05DF \u05EA\u05E6\u05D5\u05D2\u05D4 \u05DE\u05E7\u05D3\u05D9\u05DE\u05D4', 'e'); return; }
-  var fext = (fileUrl || '').split('.').pop().toLowerCase();
-  var tag = fext === 'pdf'
-    ? '<iframe src="' + escapeHtml(signedUrl) + '" style="width:100%;height:80vh;border:none" title="PDF"></iframe>'
+  if (!signedUrl) { toast('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D8\u05E2\u05D5\u05DF \u05EA\u05E6\u05D5\u05D2\u05D4', 'e'); return; }
+  var isPdf = (fileUrl || '').toLowerCase().endsWith('.pdf');
+  var tag = isPdf ? '<iframe src="' + escapeHtml(signedUrl) + '" style="width:100%;height:80vh;border:none"></iframe>'
     : '<img src="' + escapeHtml(signedUrl) + '" style="max-width:100%;max-height:80vh;object-fit:contain">';
   var o = document.createElement('div'); o.id = 'rcpt-ocr-preview-modal'; o.className = 'modal-overlay';
   o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
   o.onclick = function(e) { if (e.target === o) o.remove(); };
-  o.innerHTML = '<div style="background:#fff;border-radius:12px;padding:16px;max-width:90vw;max-height:90vh;overflow:auto">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
-    '<strong>\uD83D\uDCC4 \u05DE\u05E1\u05DE\u05DA \u05DE\u05E7\u05D5\u05E8</strong>' +
-    '<button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" onclick="this.closest(\'.modal-overlay\').remove()">\u05E1\u05D2\u05D5\u05E8</button></div>' + tag + '</div>';
+  o.innerHTML = '<div style="background:#fff;border-radius:12px;padding:16px;max-width:90vw;max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong>\uD83D\uDCC4 \u05DE\u05E1\u05DE\u05DA \u05DE\u05E7\u05D5\u05E8</strong><button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" onclick="this.closest(\'.modal-overlay\').remove()">\u05E1\u05D2\u05D5\u05E8</button></div>' + tag + '</div>';
   document.body.appendChild(o);
 }
 
@@ -315,28 +302,46 @@ async function _rcptOcrUpdateTemplate() {
   _rcptOcrResult = null;
 }
 
-// Listen for receipt confirmation → update OCR template + learn supplier alias
+// Listen for receipt confirmation → learn from OCR BEFORE clearing result
 document.addEventListener('receipt-confirmed', function(e) {
-  _rcptOcrUpdateTemplate();
-  // Learn supplier alias from OCR if applicable
-  if (_rcptOcrResult && typeof OcrSupplierMatch !== 'undefined') {
-    var ext = _rcptOcrResult.extracted_data || {};
-    var fv = function(f) { var v = ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v; };
+  // Capture OCR result before _rcptOcrUpdateTemplate clears it
+  var ocrSnapshot = _rcptOcrResult ? {
+    ext: _rcptOcrResult.extracted_data || {},
+    supMatch: _rcptOcrResult.supplier_match
+  } : null;
+
+  _rcptOcrUpdateTemplate(); // clears _rcptOcrResult
+
+  if (!ocrSnapshot || typeof supplierCache === 'undefined') return;
+  var fv = function(f) { var v = ocrSnapshot.ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v; };
+  var finalSup = ($('rcpt-supplier') || {}).value;
+  var finalSupId = finalSup ? supplierCache[finalSup] : null;
+
+  // Learn supplier alias
+  if (typeof OcrSupplierMatch !== 'undefined') {
     var ocrName = fv('supplier_name');
-    var finalSup = ($('rcpt-supplier') || {}).value;
-    var finalSupId = finalSup && typeof supplierCache !== 'undefined' ? supplierCache[finalSup] : null;
     if (ocrName && finalSupId) {
       OcrSupplierMatch.learnSupplierAlias(ocrName, finalSupId, getTenantId());
     }
-    // Update ai_has_po_pattern
-    if (finalSupId) {
-      var hadPO = !!rcptLinkedPoId;
-      if (hadPO) {
-        sb.from(T.SUPPLIERS).update({ ai_has_po_pattern: true }).eq('id', finalSupId).eq('tenant_id', getTenantId()).then(function() {});
-      } else {
-        // Only set false if currently null (don't overwrite true)
-        sb.from(T.SUPPLIERS).update({ ai_has_po_pattern: false }).eq('id', finalSupId).eq('tenant_id', getTenantId()).is('ai_has_po_pattern', null).then(function() {});
-      }
+  }
+
+  // Learn doc type correction
+  if (finalSupId) {
+    var ocrType = fv('document_type');
+    var finalType = ($('rcpt-type') || {}).value || '';
+    if (ocrType && finalType && ocrType !== finalType) {
+      sb.from(T.OCR_TEMPLATES).update({ document_type_code: finalType })
+        .eq('supplier_id', finalSupId).eq('tenant_id', getTenantId()).then(function() {});
+    }
+  }
+
+  // Update ai_has_po_pattern
+  if (finalSupId) {
+    var hadPO = !!rcptLinkedPoId;
+    if (hadPO) {
+      sb.from(T.SUPPLIERS).update({ ai_has_po_pattern: true }).eq('id', finalSupId).eq('tenant_id', getTenantId()).then(function() {});
+    } else {
+      sb.from(T.SUPPLIERS).update({ ai_has_po_pattern: false }).eq('id', finalSupId).eq('tenant_id', getTenantId()).is('ai_has_po_pattern', null).then(function() {});
     }
   }
 });
