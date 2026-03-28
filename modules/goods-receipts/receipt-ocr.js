@@ -52,13 +52,13 @@ function _rcptOcrUpdateBtn() {
 
 // --- 2. Trigger OCR scan — upload file, call Edge Function ---
 async function _rcptOcrScan() {
+  // Cached re-scan: PO selected after first scan → compare without re-uploading
+  if (typeof _rcptOcrCachedRescan === 'function' && await _rcptOcrCachedRescan()) return;
   if (!_pendingReceiptFile) { toast('\u05D0\u05D9\u05DF \u05E7\u05D5\u05D1\u05E5 \u05DC\u05E1\u05E8\u05D9\u05E7\u05D4', 'e'); return; }
   var jwt = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
   if (!jwt) { toast('\u05E0\u05D3\u05E8\u05E9\u05EA \u05D4\u05EA\u05D7\u05D1\u05E8\u05D5\u05EA \u05DE\u05D7\u05D3\u05E9', 'e'); return; }
-
   var supplierName = ($('rcpt-supplier') || {}).value || '';
   var supplierId = supplierName ? (supplierCache[supplierName] || null) : null;
-
   showLoading('\u05DE\u05E2\u05DC\u05D4 \u05E7\u05D5\u05D1\u05E5 \u05D5\u05E1\u05D5\u05E8\u05E7...');
   try {
     var uploadResult = await uploadSupplierFile(_pendingReceiptFile, supplierId || 'ocr-pending');
@@ -182,27 +182,27 @@ async function _applyOCRToReceipt(result, fileUrl) {
       setTimeout(function() { if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights(); }, 300);
       _rcptOcrShowCompareBtn();
     } else {
-      var classified = await _rcptOcrClassifyItems(items, supplierId);
-      _rcptOcrShowReview(classified, function(confirmed) {
-        _rcptOcrApplyToForm(confirmed, items);
-        if (window._ocrPOComparison) setTimeout(_applyOcrHighlights, 200);
-      });
+      // Path B: check if open POs exist → offer choice
+      var poSel = $('rcpt-po-select');
+      var hasOpenPOs = poSel && poSel.options && poSel.options.length > 1 && !poSel.disabled;
+      if (hasOpenPOs) {
+        window._pendingOcrClassified = await _rcptOcrClassifyItems(items, supplierId);
+        window._pendingOcrRawItems = items;
+        _rcptOcrShowPOChoiceModal();
+      } else {
+        var classified = await _rcptOcrClassifyItems(items, supplierId);
+        _rcptOcrShowReview(classified, function(confirmed) {
+          _rcptOcrApplyToForm(confirmed, items);
+          if (window._ocrPOComparison) setTimeout(_applyOcrHighlights, 200);
+        });
+      }
     }
   } else {
     toast('\u05D4\u05DE\u05E1\u05DE\u05DA \u05E0\u05E1\u05E8\u05E7 \u2014 \u05DC\u05D0 \u05D6\u05D5\u05D4\u05D5 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD', 'w');
   }
 }
 
-function _rcptOcrShowCompareBtn() {
-  var old = $('rcpt-ocr-compare-btn'); if (old) old.remove();
-  var area = document.querySelector('.receipt-items-section') || document.querySelector('.receipt-form');
-  if (!area) return;
-  var btn = document.createElement('button'); btn.type = 'button'; btn.id = 'rcpt-ocr-compare-btn'; btn.className = 'btn';
-  btn.style.cssText = 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;font-size:.82rem;margin:8px 0';
-  btn.textContent = '\uD83D\uDD0D \u05D4\u05E9\u05D5\u05D5\u05D4 \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA';
-  btn.onclick = function() { if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights(); };
-  area.insertBefore(btn, area.firstChild);
-}
+// _rcptOcrShowPOChoiceModal, _rcptOcrChoosePO, _rcptOcrSkipPO, _rcptOcrShowCompareBtn → receipt-ocr-flow.js
 
 // --- AI supplier confidence hint ---
 function _rcptOcrShowSupplierHint(confidence, name, matchType) {
