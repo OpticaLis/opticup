@@ -2,27 +2,28 @@
 // Load after: receipt-ocr-po.js, receipt-ocr-review.js
 // Load before: receipt-ocr.js reads these functions
 
-// --- "Compare to invoice" button (shown when PO matched via OCR) ---
+// --- "Compare to invoice" button — show/hide the static wrapper in inventory.html ---
 function _rcptOcrShowCompareBtn() {
-  var old = $('rcpt-ocr-compare-btn'); if (old) old.remove();
-  var area = document.querySelector('.receipt-items-section') || document.querySelector('.receipt-form');
-  if (!area) return;
-  var btn = document.createElement('button'); btn.type = 'button'; btn.id = 'rcpt-ocr-compare-btn'; btn.className = 'btn';
-  btn.style.cssText = 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;font-size:.82rem;margin:8px 0';
-  btn.textContent = '\uD83D\uDD0D \u05D4\u05E9\u05D5\u05D5\u05D4 \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA';
-  btn.onclick = async function() {
-    var poSel = $('rcpt-po-select');
-    if (poSel && poSel.value && typeof _rcptOcrResult !== 'undefined' && _rcptOcrResult) {
-      var ocrItems = (_rcptOcrResult.extracted_data || {}).items || [];
-      if (ocrItems.length > 0 && typeof OcrPOMatch !== 'undefined') {
-        var r = await sb.from(T.PO_ITEMS).select('*').eq('tenant_id', getTenantId()).eq('po_id', poSel.value);
-        if (r.data) { window._ocrPOComparison = OcrPOMatch.compareItems(ocrItems, r.data); }
-      }
-    }
-    if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights();
-    toast('AI \u05D4\u05E9\u05D5\u05D5\u05D4 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u2014 \u05D1\u05D3\u05D5\u05E7 \u05E1\u05D9\u05DE\u05D5\u05E0\u05D9\u05DD \u05E6\u05D4\u05D5\u05D1\u05D9\u05DD', 's');
-  };
-  area.insertBefore(btn, area.firstChild);
+  var wrap = document.getElementById('rcpt-ocr-compare-wrap');
+  if (wrap) wrap.style.display = '';
+}
+function _rcptOcrHideCompareBtn() {
+  var wrap = document.getElementById('rcpt-ocr-compare-wrap');
+  if (wrap) wrap.style.display = 'none';
+}
+// Runs the actual comparison when button clicked
+async function _rcptOcrRunComparison() {
+  if (typeof _rcptOcrResult === 'undefined' || !_rcptOcrResult) {
+    toast('\u05D0\u05D9\u05DF \u05E0\u05EA\u05D5\u05E0\u05D9 \u05E1\u05E8\u05D9\u05E7\u05D4 \u2014 \u05E1\u05E8\u05D5\u05E7 \u05E7\u05D5\u05D3\u05DD \u05E2\u05DD AI', 'e'); return;
+  }
+  var poSel = $('rcpt-po-select');
+  var ocrItems = (_rcptOcrResult.extracted_data || {}).items || [];
+  if (poSel && poSel.value && ocrItems.length > 0 && typeof OcrPOMatch !== 'undefined') {
+    var r = await sb.from(T.PO_ITEMS).select('*').eq('tenant_id', getTenantId()).eq('po_id', poSel.value);
+    if (r.data) { window._ocrPOComparison = OcrPOMatch.compareItems(ocrItems, r.data); }
+  }
+  if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights();
+  toast('AI \u05D4\u05E9\u05D5\u05D5\u05D4 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u2014 \u05D1\u05D3\u05D5\u05E7 \u05E1\u05D9\u05DE\u05D5\u05E0\u05D9\u05DD \u05E6\u05D4\u05D5\u05D1\u05D9\u05DD', 's');
 }
 
 // --- Cached re-scan: if PO selected after first scan, compare without re-uploading ---
@@ -99,13 +100,15 @@ function _rcptOcrLearnDocNum(fv, supplierId) {
     }).catch(function(e) { console.warn('Doc number learning:', e); });
 }
 
-// --- PO dropdown change after OCR: show compare button ---
+// --- PO dropdown change after OCR: show/hide compare button ---
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(function() {
     var poSel = document.getElementById('rcpt-po-select');
     if (poSel) poSel.addEventListener('change', function() {
       if (typeof _rcptOcrResult !== 'undefined' && _rcptOcrResult && poSel.value) {
         _rcptOcrShowCompareBtn();
+      } else {
+        _rcptOcrHideCompareBtn();
       }
     });
   }, 500);
