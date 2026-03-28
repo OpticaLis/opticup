@@ -23,7 +23,13 @@ async function _rcptOcrRunComparison() {
     if (r.data) { window._ocrPOComparison = OcrPOMatch.compareItems(ocrItems, r.data); }
   }
   if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights();
-  toast('AI \u05D4\u05E9\u05D5\u05D5\u05D4 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u2014 \u05D1\u05D3\u05D5\u05E7 \u05E1\u05D9\u05DE\u05D5\u05E0\u05D9\u05DD \u05E6\u05D4\u05D5\u05D1\u05D9\u05DD', 's');
+  var comp = window._ocrPOComparison || [];
+  var issues = comp.filter(function(c) { return c.status !== 'match'; });
+  if (issues.length === 0) {
+    toast('\u2705 \u05DB\u05DC \u05D4\u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD \u2014 \u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0\u05D5 \u05D0\u05D9-\u05D4\u05EA\u05D0\u05DE\u05D5\u05EA', 's');
+  } else {
+    toast('\u05E0\u05DE\u05E6\u05D0\u05D5 ' + issues.length + ' \u05D0\u05D9-\u05D4\u05EA\u05D0\u05DE\u05D5\u05EA \u2014 \u05D1\u05D3\u05D5\u05E7 \u05E1\u05D9\u05DE\u05D5\u05E0\u05D9\u05DD \u05E6\u05D4\u05D5\u05D1\u05D9\u05DD', 'w');
+  }
 }
 
 // --- Cached re-scan: if PO selected after first scan, compare without re-uploading ---

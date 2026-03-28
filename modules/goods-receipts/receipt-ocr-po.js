@@ -126,38 +126,63 @@ function _rcptOcrShowPOHint(confidence, poNumber, score) {
   var se = $('rcpt-po-select'); if (se && se.parentNode) se.parentNode.appendChild(hint);
 }
 
-// --- Apply OCR vs PO discrepancy highlights to item rows ---
+// --- Apply OCR vs PO discrepancy highlights to receipt item rows ---
 function _applyOcrHighlights() {
   var comp = window._ocrPOComparison;
   if (!comp || !comp.length) return;
-  var rows = document.querySelectorAll('#rcpt-items-body tr');
+  var tbody = $('rcpt-items-body');
+  if (!tbody) return;
+  // Clear previous highlights
+  tbody.querySelectorAll('.ocr-not-in-po,.ocr-missing').forEach(function(el) {
+    if (el.classList.contains('ocr-missing')) el.remove();
+    else el.classList.remove('ocr-not-in-po');
+  });
+  tbody.querySelectorAll('.ocr-qty-warn').forEach(function(el) { el.classList.remove('ocr-qty-warn'); el.title = ''; });
+  tbody.querySelectorAll('.ocr-price-warn').forEach(function(el) { el.classList.remove('ocr-price-warn'); el.title = ''; });
+
+  var rows = Array.from(tbody.querySelectorAll('tr:not(.ocr-missing)'));
+  // Build row lookup by brand+model from DOM inputs
+  var rowMap = rows.map(function(row) {
+    var b = row.querySelector('.rcpt-brand'), m = row.querySelector('.rcpt-model');
+    return { row: row, brand: _norm(b ? b.value : ''), model: _norm(m ? m.value : '') };
+  });
+
   comp.forEach(function(c) {
-    if (c.ocrIdx < 0 || c.ocrIdx >= rows.length) return;
-    var row = rows[c.ocrIdx];
-    if (!row) return;
-    if (c.status === 'not_in_po') {
-      row.classList.add('ocr-not-in-po');
-      row.title = '\u05E4\u05E8\u05D9\u05D8 \u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0 \u05D1\u05D4\u05D6\u05DE\u05E0\u05EA \u05D4\u05E8\u05DB\u05E9';
-    } else if (c.status === 'qty_mismatch' || c.status === 'qty_price_mismatch') {
-      var qtyCell = row.querySelector('.rcpt-qty');
-      if (qtyCell) { qtyCell.classList.add('ocr-qty-warn'); qtyCell.title = '\u05D4\u05D5\u05D6\u05DE\u05E0\u05D5 ' + c.details.poQty + ', \u05D1\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA ' + c.details.ocrQty; }
+    if (c.status === 'missing_from_ocr') return; // handled below
+    // Find matching row by poItem brand+model (receipt rows = PO items)
+    var targetRow = null;
+    if (c.poItem) {
+      var pb = _norm(c.poItem.brand || ''), pm = _norm(c.poItem.model || '');
+      for (var r = 0; r < rowMap.length; r++) {
+        if (rowMap[r].brand === pb && rowMap[r].model === pm) { targetRow = rowMap[r].row; break; }
+        if (pm && rowMap[r].model === pm) { targetRow = rowMap[r].row; break; }
+      }
     }
-    if (c.status === 'price_mismatch' || c.status === 'qty_price_mismatch') {
-      var priceCell = row.querySelector('.rcpt-ucost');
-      if (priceCell) { priceCell.classList.add('ocr-price-warn'); priceCell.title = '\u05DE\u05D7\u05D9\u05E8 PO: ' + c.details.poPrice + '\u20AA, \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA: ' + c.details.ocrPrice + '\u20AA'; }
+    if (!targetRow && c.ocrIdx >= 0 && c.ocrIdx < rows.length) targetRow = rows[c.ocrIdx]; // fallback to index
+    if (!targetRow) return;
+
+    if (c.status === 'not_in_po') {
+      targetRow.classList.add('ocr-not-in-po');
+      targetRow.title = '\u05E4\u05E8\u05D9\u05D8 \u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0 \u05D1\u05D4\u05D6\u05DE\u05E0\u05EA \u05D4\u05E8\u05DB\u05E9';
+    }
+    if (c.details && (c.status === 'qty_mismatch' || c.status === 'qty_price_mismatch')) {
+      var qc = targetRow.querySelector('.rcpt-qty');
+      if (qc) { qc.classList.add('ocr-qty-warn'); qc.title = '\u05D4\u05D5\u05D6\u05DE\u05E0\u05D5 ' + c.details.poQty + ', \u05D1\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA ' + c.details.ocrQty; }
+    }
+    if (c.details && (c.status === 'price_mismatch' || c.status === 'qty_price_mismatch')) {
+      var pc = targetRow.querySelector('.rcpt-ucost');
+      if (pc) { pc.classList.add('ocr-price-warn'); pc.title = 'PO: ' + c.details.poPrice + '\u20AA, \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA: ' + c.details.ocrPrice + '\u20AA'; }
     }
   });
+  // Append missing-from-OCR rows
   var missing = comp.filter(function(c) { return c.status === 'missing_from_ocr'; });
   if (missing.length) {
-    var tbody = $('rcpt-items-body');
+    var colCount = rows[0] ? rows[0].children.length : 12;
     missing.forEach(function(m) {
-      var tr = document.createElement('tr');
-      tr.className = 'ocr-missing';
-      var colCount = tbody.querySelector('tr') ? tbody.querySelector('tr').children.length : 12;
+      var tr = document.createElement('tr'); tr.className = 'ocr-missing';
       tr.innerHTML = '<td colspan="' + colCount + '" style="text-align:center;padding:6px">' +
         '\u26A0\uFE0F \u05D7\u05E1\u05E8 \u05D1\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA: ' +
-        escapeHtml((m.poItem.brand || '') + ' ' + (m.poItem.model || '')) +
-        ' x' + (m.poItem.quantity || 0) + '</td>';
+        escapeHtml((m.poItem.brand || '') + ' ' + (m.poItem.model || '')) + ' x' + (m.poItem.quantity || 0) + '</td>';
       tbody.appendChild(tr);
     });
   }
