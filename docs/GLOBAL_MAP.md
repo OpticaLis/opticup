@@ -481,6 +481,17 @@ Client-side column sorting utility. Global `SortUtils` object.
 | `SortUtils.updateHeaders` | `thead, key, dir` | `void` | Set sort-asc/sort-desc CSS classes on th[data-sort-key] |
 | `SortUtils.getState` | `tableId` | `{key,dir}\|null` | Get current sort state for table |
 
+### shared/js/table-resize.js (103 lines) — Debt Module Upgrades
+
+Reusable column resizing with sticky scrollbar for all data tables. Extracted from debt module, generalized.
+
+**Functions:**
+
+| Function | Parameters | Returns | Description |
+|----------|-----------|---------|-------------|
+| `initResizableColumns` | `tableEl` | `void` | Adds resize handles to table headers, enables drag-to-resize |
+| `initStickyScrollbar` | `tableEl` | `void` | Adds a sticky scrollbar at viewport bottom for wide tables |
+
 ### shared/tests/table-test.html (235 lines)
 
 Table builder test page: 9 sections — basic (all 7 types), sort, empty state, loading, row ops, sticky header, row click, XSS, destroy. Mock data inline, self-contained.
@@ -732,6 +743,20 @@ Pages modified for shared/ dependencies:
 | `modules/inventory/inventory-table.js` | `filterByReceipt(receiptId, receiptNumber)` | Queries receipt items, sets filter, switches to inventory tab with banner |
 | `modules/inventory/inventory-table.js` | `clearReceiptFilter()` | Clears receipt filter, removes banner, reloads inventory |
 | `modules/inventory/inventory-table.js` | `toggleNoImagesFilter()` | Toggles client-side filter for items without images |
+
+### Debt Module Upgrades — New Files
+
+| File | Lines | Description |
+|------|-------|-------------|
+| `modules/debt/debt-supplier-filters.js` | 102 | Supplier filter chips: type, history, debt filters on dashboard |
+| `modules/debt/debt-filter-utils.js` | 110 | Reusable month picker toggle + amount range filter |
+| `modules/debt/debt-expense-folders.js` | ~80 | Expense folder CRUD in debt module |
+| `modules/debt/debt-general-invoices.js` | ~80 | General invoice handling |
+| `modules/goods-receipts/receipt-doc-numbers.js` | ~100 | Dynamic multi-doc number inputs: _onDocCountChange, getRcptDocAmounts |
+| `modules/goods-receipts/receipt-ocr-supplier.js` | 113 | AI supplier auto-detection: OcrSupplierMatch (alias/exact/fuzzy pipeline + learning) |
+| `modules/goods-receipts/receipt-ocr-po.js` | 167 | AI PO auto-matching: OcrPOMatch (scoring + item comparison) |
+| `modules/goods-receipts/receipt-ocr-flow.js` | 154 | OCR flow helpers: compare button, PO choice modal, cached re-scan, doc number learning |
+| `shared/js/table-resize.js` | 103 | Reusable column resizing with sticky scrollbar |
 
 | Module 1.5 — Shared Components | ✅ Complete (QA passed) | `shared/css/`, `shared/js/`, `shared/tests/`, `scripts/` | — | 1 (activity_log) + ui_config column + PK fixes on roles/permissions/role_permissions |
 | Module 2 — Platform Admin | Phase 4 ✅ | `modules/admin-platform/` | `admin.html` | 5 new tables + 14 RPCs + 10 columns on tenants/employees. Plans CRUD, plan limits, feature flags. |

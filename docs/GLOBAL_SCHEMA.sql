@@ -382,7 +382,8 @@ CREATE TABLE IF NOT EXISTS goods_receipts (
   status          TEXT NOT NULL DEFAULT 'draft',                 -- סטטוס: draft | confirmed | cancelled
   tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   created_by      TEXT,                                          -- מי יצר
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  document_numbers TEXT[] DEFAULT '{}'                           -- מספרי מסמכים נוספים (Debt-Upgrades)
 );
 CREATE INDEX IF NOT EXISTS idx_receipts_supplier ON goods_receipts(supplier_id);
 CREATE INDEX IF NOT EXISTS idx_receipts_status   ON goods_receipts(status);
@@ -703,7 +704,7 @@ CREATE TABLE IF NOT EXISTS supplier_documents (
   goods_receipt_id  UUID REFERENCES goods_receipts(id),
   po_id             UUID REFERENCES purchase_orders(id),
   status            TEXT NOT NULL DEFAULT 'open'
-                    CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled', 'pending_invoice')),
+                    CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled', 'pending_invoice', 'pending_review')),
   paid_amount       DECIMAL(12,2) DEFAULT 0,
   missing_price     BOOLEAN DEFAULT false,                   -- items with unknown cost price (Flow-Review-2)
   notes             TEXT,
@@ -712,6 +713,9 @@ CREATE TABLE IF NOT EXISTS supplier_documents (
   updated_at        TIMESTAMPTZ DEFAULT now(),
   internal_number   TEXT,                                    -- our internal reference number (022)
   is_deleted        BOOLEAN DEFAULT false,
+  document_numbers  TEXT[],                                   -- multi-doc: array of document numbers (058)
+  document_amounts  JSONB,                                    -- multi-doc: per-document amounts (058)
+  expense_folder_id UUID REFERENCES expense_folders(id),      -- expense folder link (Debt-Upgrades)
   CONSTRAINT supplier_documents_tenant_supplier_docnum_unique
     UNIQUE(tenant_id, supplier_id, document_number)          -- duplicate prevention (022)
 );
