@@ -10,7 +10,18 @@ function _rcptOcrShowCompareBtn() {
   var btn = document.createElement('button'); btn.type = 'button'; btn.id = 'rcpt-ocr-compare-btn'; btn.className = 'btn';
   btn.style.cssText = 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;font-size:.82rem;margin:8px 0';
   btn.textContent = '\uD83D\uDD0D \u05D4\u05E9\u05D5\u05D5\u05D4 \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA';
-  btn.onclick = function() { if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights(); };
+  btn.onclick = async function() {
+    var poSel = $('rcpt-po-select');
+    if (poSel && poSel.value && typeof _rcptOcrResult !== 'undefined' && _rcptOcrResult) {
+      var ocrItems = (_rcptOcrResult.extracted_data || {}).items || [];
+      if (ocrItems.length > 0 && typeof OcrPOMatch !== 'undefined') {
+        var r = await sb.from(T.PO_ITEMS).select('*').eq('tenant_id', getTenantId()).eq('po_id', poSel.value);
+        if (r.data) { window._ocrPOComparison = OcrPOMatch.compareItems(ocrItems, r.data); }
+      }
+    }
+    if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights();
+    toast('AI \u05D4\u05E9\u05D5\u05D5\u05D4 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u2014 \u05D1\u05D3\u05D5\u05E7 \u05E1\u05D9\u05DE\u05D5\u05E0\u05D9\u05DD \u05E6\u05D4\u05D5\u05D1\u05D9\u05DD', 's');
+  };
   area.insertBefore(btn, area.firstChild);
 }
 
@@ -73,3 +84,29 @@ function _rcptOcrSkipPO() {
   window._pendingOcrClassified = null;
   window._pendingOcrRawItems = null;
 }
+
+// --- Document number pattern learning ---
+function _rcptOcrLearnDocNum(fv, supplierId) {
+  var ocrNum = fv('document_number') || '', actualNum = ($('rcpt-number') || {}).value || '';
+  if (!ocrNum || !actualNum || ocrNum === actualNum || !supplierId) return;
+  var prefix = ''; for (var i = 0; i < ocrNum.length && i < actualNum.length && ocrNum[i] === actualNum[i]; i++) prefix += actualNum[i];
+  sb.from(T.OCR_TEMPLATES).select('id, extraction_hints').eq('supplier_id', supplierId).eq('tenant_id', getTenantId()).maybeSingle()
+    .then(function(r) {
+      if (!r.data) return;
+      var hints = r.data.extraction_hints || {};
+      hints.document_number_pattern = { example: actualNum, wrong_example: ocrNum, prefix: prefix, length: actualNum.length };
+      sb.from(T.OCR_TEMPLATES).update({ extraction_hints: hints }).eq('id', r.data.id).then(function() {});
+    }).catch(function(e) { console.warn('Doc number learning:', e); });
+}
+
+// --- PO dropdown change after OCR: show compare button ---
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    var poSel = document.getElementById('rcpt-po-select');
+    if (poSel) poSel.addEventListener('change', function() {
+      if (typeof _rcptOcrResult !== 'undefined' && _rcptOcrResult && poSel.value) {
+        _rcptOcrShowCompareBtn();
+      }
+    });
+  }, 500);
+});

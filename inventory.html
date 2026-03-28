@@ -481,10 +481,10 @@
         <button class="btn btn-g btn-sm" onclick="addNewReceiptRow()" style="margin-bottom:2px">&#10010; שורה חדשה</button>
         <label class="btn btn-g btn-sm" style="margin-bottom:2px;cursor:pointer">&#128194; ייבוא Excel<input type="file" accept=".xlsx,.xls,.csv" onchange="handleReceiptExcel(event)" style="display:none"></label>
       </div>
-      <div class="rcpt-items-wrap">
-        <table>
+      <div class="rcpt-items-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table style="min-width:1100px">
           <thead id="rcpt-items-thead"><tr>
-            <th>#</th><th data-sort-key="barcode">ברקוד</th><th data-sort-key="brand">מותג</th><th data-sort-key="model">דגם</th><th data-sort-key="color">צבע</th><th data-sort-key="size">גודל</th><th>סוג מוצר</th><th data-sort-key="qty">כמות</th><th data-sort-key="cost">מחיר עלות</th><th>מחיר מכירה</th><th>הנחה %</th><th>סנכרון</th><th>תמונות</th><th>סוג</th><th>פעולה</th>
+            <th style="min-width:30px">#</th><th data-sort-key="barcode" style="min-width:80px">ברקוד</th><th data-sort-key="brand" style="min-width:100px">מותג</th><th data-sort-key="model" style="min-width:90px">דגם</th><th data-sort-key="color" style="min-width:70px">צבע</th><th data-sort-key="size" style="min-width:45px">גודל</th><th style="min-width:70px">סוג מוצר</th><th data-sort-key="qty" style="min-width:50px">כמות</th><th data-sort-key="cost" style="min-width:80px">מחיר עלות</th><th style="min-width:80px">מחיר מכירה</th><th style="min-width:55px">הנחה %</th><th style="min-width:55px">סנכרון</th><th style="min-width:55px">תמונות</th><th style="min-width:55px">סוג</th><th style="min-width:60px">פעולה</th>
           </tr></thead>
           <tbody id="rcpt-items-body"></tbody>
         </table>

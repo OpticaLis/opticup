@@ -337,8 +337,12 @@ document.addEventListener('receipt-confirmed', function(e) {
     var hadPO = !!rcptLinkedPoId;
     if (hadPO) sb.from(T.SUPPLIERS).update({ ai_has_po_pattern: true }).eq('id', finalSupId).eq('tenant_id', getTenantId()).then(function() {});
     else sb.from(T.SUPPLIERS).update({ ai_has_po_pattern: false }).eq('id', finalSupId).eq('tenant_id', getTenantId()).is('ai_has_po_pattern', null).then(function() {});
+    // Learn document number pattern
+    _rcptOcrLearnDocNum(fv, finalSupId);
   }
 });
+
+// _rcptOcrLearnDocNum → receipt-ocr-flow.js
 
 // --- 9. Initialize on DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', function() {
