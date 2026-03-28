@@ -1,7 +1,5 @@
-// receipt-ocr.js — OCR integration in goods receipt flow (Phase 5d + 8 + AI)
+// receipt-ocr.js — OCR integration in goods receipt flow
 // Load after: receipt-form.js, receipt-ocr-supplier.js, receipt-ocr-po.js
-// Provides: initReceiptOCR, _rcptOcrScan, _applyOCRToReceipt, _rcptOcrShowBanner
-
 var _rcptOcrResult = null; // stored when OCR applied, used for learning
 
 // --- Per-field confidence helpers ---
@@ -181,8 +179,9 @@ async function _applyOCRToReceipt(result, fileUrl) {
       toast('AI \u05D4\u05E9\u05D5\u05D5\u05D4 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DC\u05D4\u05D6\u05DE\u05E0\u05EA \u05E8\u05DB\u05E9 \u2014 \u05D1\u05D3\u05D5\u05E7 \u05E1\u05D9\u05DE\u05D5\u05E0\u05D9\u05DD \u05E6\u05D4\u05D5\u05D1\u05D9\u05DD \u05D1\u05D8\u05D1\u05DC\u05D4', 'i');
       setTimeout(function() { if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights(); }, 300);
       _rcptOcrShowCompareBtn();
-    } else {
-      // Path B: check if open POs exist → offer choice
+    } else if (supFilled) {
+      // Path B: supplier known but no PO — check for open POs or open review
+      window._ocrReviewShown = true;
       var poSel = $('rcpt-po-select');
       var hasOpenPOs = poSel && poSel.options && poSel.options.length > 1 && !poSel.disabled;
       if (hasOpenPOs) {
@@ -196,13 +195,15 @@ async function _applyOCRToReceipt(result, fileUrl) {
           if (window._ocrPOComparison) setTimeout(_applyOcrHighlights, 200);
         });
       }
+    } else {
+      // Path C: supplier NOT identified — store items, wait for manual selection
+      window._pendingOcrRawItems = items;
+      window._ocrReviewShown = false;
     }
   } else {
     toast('\u05D4\u05DE\u05E1\u05DE\u05DA \u05E0\u05E1\u05E8\u05E7 \u2014 \u05DC\u05D0 \u05D6\u05D5\u05D4\u05D5 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD', 'w');
   }
 }
-
-// _rcptOcrShowPOChoiceModal, _rcptOcrChoosePO, _rcptOcrSkipPO, _rcptOcrShowCompareBtn → receipt-ocr-flow.js
 
 // --- AI supplier confidence hint ---
 function _rcptOcrShowSupplierHint(confidence, name, matchType) {
@@ -222,7 +223,6 @@ function _rcptOcrShowSupplierHint(confidence, name, matchType) {
   var se = $('rcpt-supplier'); if (se && se.parentNode) se.parentNode.appendChild(hint);
 }
 
-// _rcptOcrShowPOHint and _applyOcrHighlights are in receipt-ocr-po.js
 
 // --- Phase 8: PO auto-suggestion after supplier fill ---
 async function _rcptOcrSuggestPO(ext) {

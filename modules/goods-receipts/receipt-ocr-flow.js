@@ -107,6 +107,7 @@ function _rcptOcrLearnDocNum(fv, supplierId) {
 }
 
 // --- PO dropdown change after OCR: show/hide compare button ---
+// --- Supplier change after OCR: trigger PO choice or review ---
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(function() {
     var poSel = document.getElementById('rcpt-po-select');
@@ -116,6 +117,38 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         _rcptOcrHideCompareBtn();
       }
+    });
+    // Watch for supplier manual selection after OCR scan
+    var supWrap = document.getElementById('rcpt-supplier-wrap');
+    if (supWrap) supWrap.addEventListener('change', function() {
+      if (typeof _rcptOcrResult === 'undefined' || !_rcptOcrResult) return;
+      if (window._ocrReviewShown) return; // already handled
+      var rawItems = window._pendingOcrRawItems;
+      if (!rawItems || !rawItems.length) return;
+      // Wait for PO dropdown to load (loadPOsForSupplier is async)
+      setTimeout(function() {
+        window._ocrReviewShown = true;
+        var ps = document.getElementById('rcpt-po-select');
+        var hasOpen = ps && ps.options && ps.options.length > 1 && !ps.disabled;
+        if (hasOpen) {
+          var sid = typeof supplierCache !== 'undefined' ? supplierCache[($('rcpt-supplier') || {}).value] : null;
+          if (typeof _rcptOcrClassifyItems === 'function' && sid) {
+            _rcptOcrClassifyItems(rawItems, sid).then(function(cl) {
+              window._pendingOcrClassified = cl;
+              _rcptOcrShowPOChoiceModal();
+            });
+          } else { _rcptOcrShowPOChoiceModal(); }
+        } else {
+          var sid2 = typeof supplierCache !== 'undefined' ? supplierCache[($('rcpt-supplier') || {}).value] : null;
+          if (typeof _rcptOcrClassifyItems === 'function') {
+            _rcptOcrClassifyItems(rawItems, sid2).then(function(cl) {
+              _rcptOcrShowReview(cl, function(confirmed) {
+                _rcptOcrApplyToForm(confirmed, rawItems);
+              });
+            });
+          }
+        }
+      }, 1200);
     });
   }, 500);
 });

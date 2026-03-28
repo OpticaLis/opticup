@@ -340,6 +340,9 @@ function openNewReceipt() {
   if ($('rcpt-doc-count')) $('rcpt-doc-count').value = 1;
   rcptLinkedPoId = null;
   window._ocrPOComparison = null;
+  window._ocrReviewShown = false;
+  window._pendingOcrRawItems = null;
+  window._pendingOcrClassified = null;
   if (typeof _rcptOcrHideCompareBtn === 'function') _rcptOcrHideCompareBtn();
   $('rcpt-date').valueAsDate = new Date();
   $('rcpt-notes').value = '';
