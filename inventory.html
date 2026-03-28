@@ -486,7 +486,7 @@
         <label class="btn btn-g btn-sm" style="margin-bottom:2px;cursor:pointer">&#128194; ייבוא Excel<input type="file" accept=".xlsx,.xls,.csv" onchange="handleReceiptExcel(event)" style="display:none"></label>
       </div>
       <div class="rcpt-items-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-        <table style="min-width:1100px">
+        <table id="rcpt-items-table" style="min-width:1100px">
           <thead id="rcpt-items-thead"><tr>
             <th style="min-width:30px">#</th><th data-sort-key="barcode" style="min-width:80px">ברקוד</th><th data-sort-key="brand" style="min-width:100px">מותג</th><th data-sort-key="model" style="min-width:90px">דגם</th><th data-sort-key="color" style="min-width:70px">צבע</th><th data-sort-key="size" style="min-width:45px">גודל</th><th style="min-width:70px">סוג מוצר</th><th data-sort-key="qty" style="min-width:50px">כמות</th><th data-sort-key="cost" style="min-width:80px">מחיר עלות</th><th style="min-width:80px">מחיר מכירה</th><th style="min-width:55px">הנחה %</th><th style="min-width:55px">סנכרון</th><th style="min-width:55px">תמונות</th><th style="min-width:55px">סוג</th><th style="min-width:60px">פעולה</th>
           </tr></thead>

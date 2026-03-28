@@ -1,62 +1,56 @@
-// inventory-resize.js — Resizable column widths on #inv-table
+// inventory-resize.js — Resizable column widths for all data tables
 // Uses CSS resize:horizontal on <th> + sessionStorage persistence.
 (function() {
   'use strict';
-  var STORAGE_KEY = 'inv-col-widths';
+  var TABLES = [
+    { id: 'inv-table', key: 'inv-col-widths' },
+    { id: 'rcpt-items-table', key: 'rcpt-col-widths' },
+    { id: 'po-items-table', key: 'po-col-widths' },
+    { id: 'po-view-table', key: 'poview-col-widths' },
+    { id: 'sc-items-table', key: 'sc-col-widths' }
+  ];
 
-  function applyWidths() {
-    var table = document.getElementById('inv-table');
-    if (!table) return;
-    var saved = sessionStorage.getItem(STORAGE_KEY);
+  function applyWidths(table, key) {
+    var saved = sessionStorage.getItem(key);
     if (!saved) return;
     try {
-      var widths = JSON.parse(saved);
+      var w = JSON.parse(saved);
       table.querySelectorAll('thead th').forEach(function(th, i) {
-        if (widths[i]) { th.style.width = widths[i] + 'px'; th.style.minWidth = widths[i] + 'px'; }
+        if (w[i]) { th.style.width = w[i] + 'px'; th.style.minWidth = w[i] + 'px'; }
       });
-    } catch (e) { /* parse error */ }
+    } catch (e) {}
   }
 
-  function saveWidths() {
-    var table = document.getElementById('inv-table');
-    if (!table) return;
-    var widths = {};
-    table.querySelectorAll('thead th').forEach(function(th, i) {
-      widths[i] = th.offsetWidth;
-    });
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(widths));
+  function saveWidths(table, key) {
+    var w = {};
+    table.querySelectorAll('thead th').forEach(function(th, i) { w[i] = th.offsetWidth; });
+    sessionStorage.setItem(key, JSON.stringify(w));
   }
 
-  function init() {
-    var table = document.getElementById('inv-table');
-    if (!table) return;
+  function initTable(id, key) {
+    var table = document.getElementById(id);
+    if (!table || table.dataset.resizeInit) return;
     table.style.tableLayout = 'fixed';
     table.querySelectorAll('thead th').forEach(function(th) {
       th.style.resize = 'horizontal';
       th.style.overflow = 'hidden';
       if (!th.style.minWidth) th.style.minWidth = '40px';
     });
-    applyWidths();
-    table.addEventListener('mouseup', function() { setTimeout(saveWidths, 100); });
+    applyWidths(table, key);
+    table.addEventListener('mouseup', function() { setTimeout(function() { saveWidths(table, key); }, 100); });
+    table.dataset.resizeInit = 'true';
   }
 
-  // Init when table exists — either immediately or via observer
-  var _initDone = false;
-  function tryInit() {
-    if (_initDone) return;
-    if (document.getElementById('inv-table')) { _initDone = true; init(); }
+  function initAll() {
+    TABLES.forEach(function(t) { initTable(t.id, t.key); });
   }
-  document.addEventListener('DOMContentLoaded', function() { setTimeout(tryInit, 500); });
 
-  // Re-init after table re-render (inv-body content changes)
-  var _obs = null;
-  function watchTable() {
-    var tbody = document.getElementById('inv-body');
-    if (!tbody || _obs) return;
-    _obs = new MutationObserver(function() { applyWidths(); });
-    _obs.observe(tbody, { childList: true });
-  }
-  document.addEventListener('DOMContentLoaded', function() { setTimeout(watchTable, 600); });
+  // Re-init when tables are dynamically rendered
+  var obs = new MutationObserver(function() { initAll(); });
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(initAll, 500);
+    obs.observe(document.body, { childList: true, subtree: true });
+  });
 
-  window.invInitResize = function() { _initDone = false; tryInit(); };
+  window.invInitResize = initAll;
 })();

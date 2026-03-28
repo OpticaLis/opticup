@@ -208,7 +208,7 @@ function renderPOForm(isEdit) {
         </div>
 
         <div style="overflow-x:auto">
-          <table style="width:100%; border-collapse:collapse; font-size:13px">
+          <table id="po-items-table" style="width:100%; border-collapse:collapse; font-size:13px">
             <thead>
               <tr style="background:#1a2744; color:white; text-align:right">
                 <th style="padding:8px" data-sort-key="brand">מותג</th>

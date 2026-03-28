@@ -156,7 +156,7 @@ async function openViewPO(id) {
         </div>
         <div style="background:white; padding:16px; border-radius:10px;
                     box-shadow:0 1px 4px rgba(0,0,0,0.1); overflow-x:auto">
-          <table style="width:100%; border-collapse:collapse; font-size:13px">
+          <table id="po-view-table" style="width:100%; border-collapse:collapse; font-size:13px">
             <thead>
               <tr style="background:#1a2744; color:white; text-align:right">
                 <th style="padding:8px" data-sort-key="brand">\u05DE\u05D5\u05EA\u05D2</th>

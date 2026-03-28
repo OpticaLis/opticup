@@ -249,7 +249,7 @@ function renderSessionScreen(countId, items) {
         <div class="sc-stat"><strong id="sc-s-pct">${s.pct}%</strong><span style="font-size:.78rem;color:var(--g500)">התקדמות</span></div>
       </div>
       <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--g200);border-radius:8px;max-width:100%">
-        <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+        <table id="sc-items-table" style="width:100%;border-collapse:collapse;font-size:.82rem">
           <thead id="sc-session-thead"><tr style="background:var(--primary);color:white;text-align:right">
             <th style="padding:8px" data-sort-key="barcode">ברקוד</th><th style="padding:8px" data-sort-key="brand">מותג</th><th style="padding:8px" data-sort-key="model">דגם</th>
             <th style="padding:8px" data-sort-key="color">צבע</th><th style="padding:8px" data-sort-key="size">מידה</th>
