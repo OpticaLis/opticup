@@ -291,11 +291,11 @@ function renderSuppliersTable(data) {
     var overdueStyle = s.overdueAmt > 0 ? ' style="color:var(--error);font-weight:600"' : '';
     var dealCell = '\u2014';
     if (s.hasDeal) {
-      var usedFmt = s.dealUsed.toLocaleString('he-IL');
       var totalFmt = s.dealTotal.toLocaleString('he-IL');
-      dealCell = '<span style="color:#059669;font-weight:600">' + usedFmt + '</span>' +
+      var usedFmt = s.dealUsed.toLocaleString('he-IL');
+      dealCell = '<span style="color:#059669;font-weight:600">' + totalFmt + '</span>' +
         '<span style="color:var(--g400)"> / </span>' +
-        '<span style="color:#dc2626">' + totalFmt + '</span>';
+        '<span style="color:#dc2626;font-weight:600">' + usedFmt + '</span>';
     }
     var obCell = s.openingBalance > 0
       ? formatILS(s.openingBalance) + (s.openingBalanceDate ? '' : ' <span title="\u05D7\u05E1\u05E8 \u05EA\u05D0\u05E8\u05D9\u05DA cutoff" style="color:#f59e0b">\u26A0\uFE0F</span>')

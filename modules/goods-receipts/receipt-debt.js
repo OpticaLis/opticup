@@ -167,19 +167,36 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
     toast('\u26A0\uFE0F \u05D4\u05DE\u05E1\u05DE\u05DA \u05E0\u05D5\u05E6\u05E8 \u05DC\u05DC\u05D0 \u05DE\u05D7\u05D9\u05E8\u05D9\u05DD \u2014 \u05D9\u05E9 \u05DC\u05E2\u05D3\u05DB\u05DF \u05DB\u05E9\u05D4\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u05DE\u05D2\u05D9\u05E2\u05D4', 'w');
   }
 
-  // 11. Phase 8: prepaid deduction moved to suppliers-debt. Alert finance manager instead.
-  try {
-    const deals = await fetchAll(T.PREPAID_DEALS, [
-      ['supplier_id', 'eq', supplierId],
-      ['status', 'eq', 'active'],
-      ['is_deleted', 'eq', false]
-    ]);
-    if (deals.length > 0 && createdDoc) {
-      await alertPrepaidNewDocument(supplierId, createdDoc.id, getTenantId(), supplier.name, docRow.document_number);
-    }
-  } catch (e) {
-    console.warn('Prepaid alert failed (non-blocking):', e);
+  // 11. Auto-deduct from prepaid deal if supplier has one
+  if (createdDoc) {
+    try {
+      var deducted = await autoDeductPrepaid(supplierId, createdDoc.id, Number(docRow.total_amount) || 0, getTenantId());
+      if (!deducted) {
+        // Couldn't auto-deduct — alert finance manager
+        var deals = await fetchAll(T.PREPAID_DEALS, [['supplier_id', 'eq', supplierId], ['status', 'eq', 'active'], ['is_deleted', 'eq', false]]);
+        if (deals.length > 0) await alertPrepaidNewDocument(supplierId, createdDoc.id, getTenantId(), supplier.name, docRow.document_number);
+      }
+    } catch (e) { console.warn('Prepaid auto-deduct failed (non-blocking):', e); }
   }
 
   return createdDoc;
+}
+
+/**
+ * Auto-deduct document amount from supplier's active prepaid deal.
+ * Returns true if deduction was made, false otherwise.
+ */
+async function autoDeductPrepaid(supplierId, docId, amount, tenantId) {
+  if (!supplierId || !docId || !amount || amount <= 0) return false;
+  var { data: deals } = await sb.from(T.PREPAID_DEALS).select('id, total_prepaid, total_used, total_remaining')
+    .eq('tenant_id', tenantId).eq('supplier_id', supplierId).eq('status', 'active').eq('is_deleted', false).limit(1);
+  if (!deals || !deals.length) return false;
+  var deal = deals[0];
+  var remaining = (Number(deal.total_remaining) || 0) > 0 ? Number(deal.total_remaining) : (Number(deal.total_prepaid) || 0) - (Number(deal.total_used) || 0);
+  if (remaining < amount) return false; // insufficient — don't partial-deduct, alert instead
+  var { error: rpcErr } = await sb.rpc('increment_prepaid_used', { p_deal_id: deal.id, p_delta: amount });
+  if (rpcErr) { console.error('autoDeductPrepaid RPC error:', rpcErr); return false; }
+  await batchUpdate(T.SUP_DOCS, [{ id: docId, paid_amount: amount, status: 'paid' }]);
+  writeLog('prepaid_auto_deduct', null, { supplier_id: supplierId, document_id: docId, deal_id: deal.id, amount: amount });
+  return true;
 }

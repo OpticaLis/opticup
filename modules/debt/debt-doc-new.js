@@ -186,16 +186,38 @@ async function saveNewDocument() {
     await writeLog('doc_create', null, {
       reason: '\u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 \u05D7\u05D3\u05E9 \u2014 ' + docNumber, source_ref: internalNumber
     });
+    // Auto-deduct from prepaid deal if supplier has one
+    if (created && created[0] && supplierId) {
+      try { await _autoDeductFromPrepaid(supplierId, created[0].id, totalAmount); } catch (e) { console.warn('Prepaid auto-deduct:', e); }
+    }
     _pendingNewDocFiles = [];
     closeAndRemoveModal('new-doc-modal');
-    toast('\u05DE\u05E1\u05DE\u05DA \u05E0\u05E9\u05DE\u05E8 \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4');
+    toast('\u05DE\u05E1\u05DE\u05DA \u05E0\u05E9\u05DE\u05E8 \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4', 's');
     await loadDocumentsTab();
+    if (typeof loadSuppliersTab === 'function') loadSuppliersTab();
   } catch (e) {
     console.error('saveNewDocument error:', e);
     setAlert('new-doc-alert', '\u05E9\u05D2\u05D9\u05D0\u05D4: ' + escapeHtml(e.message), 'e');
   } finally {
     hideLoading();
   }
+}
+
+// --- Auto-deduct from prepaid deal ---
+async function _autoDeductFromPrepaid(supplierId, docId, amount) {
+  if (!supplierId || !docId || !amount || amount <= 0) return;
+  var tid = getTenantId();
+  var { data: deals } = await sb.from(T.PREPAID_DEALS).select('id, total_prepaid, total_used, total_remaining')
+    .eq('tenant_id', tid).eq('supplier_id', supplierId).eq('status', 'active').eq('is_deleted', false).limit(1);
+  if (!deals || !deals.length) return;
+  var deal = deals[0];
+  var rem = Number(deal.total_remaining) > 0 ? Number(deal.total_remaining) : (Number(deal.total_prepaid) || 0) - (Number(deal.total_used) || 0);
+  if (rem < amount) return; // insufficient — leave as open debt
+  var { error } = await sb.rpc('increment_prepaid_used', { p_deal_id: deal.id, p_delta: amount });
+  if (error) return;
+  await batchUpdate(T.SUP_DOCS, [{ id: docId, paid_amount: amount, status: 'paid' }]);
+  writeLog('prepaid_auto_deduct', null, { supplier_id: supplierId, document_id: docId, deal_id: deal.id, amount: amount });
+  toast('\u05E7\u05D5\u05D6\u05D6 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA \u05DE\u05E2\u05E1\u05E7\u05EA \u05DE\u05E7\u05D3\u05DE\u05D4: ' + formatILS(amount), 'i');
 }
 
 // =========================================================
