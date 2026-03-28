@@ -64,6 +64,9 @@ var OcrPOMatch = (function() {
    * Compare OCR items against PO items for discrepancy highlighting.
    * Returns array of {ocrIdx, poItem, status, details}
    */
+  // Unwrap {value,confidence} wrappers from OCR fields
+  function _uv(v) { return (v && typeof v === 'object' && 'value' in v) ? v.value : v; }
+
   function compareItems(ocrItems, poItems) {
     if (!ocrItems || !poItems) return [];
     var results = [];
@@ -71,25 +74,34 @@ var OcrPOMatch = (function() {
 
     for (var i = 0; i < ocrItems.length; i++) {
       var ocr = ocrItems[i];
-      var desc = _norm(ocr.description || ocr.brand || '');
-      var ocrQty = Number(ocr.quantity) || 1;
-      var ocrPrice = Number(ocr.unit_price) || 0;
+      var ocrDesc = _norm(_uv(ocr.description) || '');
+      var ocrModel = _norm(_uv(ocr.model) || '');
+      var ocrBrand = _norm(_uv(ocr.brand) || '');
+      var ocrQty = Number(_uv(ocr.quantity)) || 1;
+      var ocrPrice = Number(_uv(ocr.unit_price)) || 0;
       var matched = false;
 
       for (var j = 0; j < poItems.length; j++) {
         if (usedPO[j]) continue;
         var po = poItems[j];
-        var poDesc = _norm((po.brand || '') + ' ' + (po.model || ''));
-        if (!desc || !poDesc) continue;
-        if (!(desc.includes(poDesc) || poDesc.includes(desc) ||
-            (po.model && desc.includes(_norm(po.model))))) continue;
+        var poBrand = _norm(po.brand || ''); var poModel = _norm(po.model || '');
+        var poFull = _norm(poBrand + ' ' + poModel);
+        if (!poFull.trim()) continue; // skip PO items with no brand/model
+        // Match: model exact match OR brand+model substring in description
+        var hit = false;
+        if (ocrModel && poModel && ocrModel === poModel) hit = true;
+        else if (ocrModel && poModel && (ocrModel.includes(poModel) || poModel.includes(ocrModel))) hit = true;
+        else if (ocrDesc.length >= 3 && poFull.length >= 3 && ocrDesc.includes(poFull)) hit = true;
+        else if (ocrDesc.length >= 3 && poModel.length >= 3 && ocrDesc.includes(poModel)) hit = true;
+        else if (ocrBrand && poBrand && ocrBrand === poBrand && ocrModel && poModel) hit = ocrModel === poModel;
+        if (!hit) continue;
 
         usedPO[j] = true;
         matched = true;
         var poQty = Number(po.quantity) || 0;
         var poPrice = Number(po.cost_price) || 0;
         var qtyOk = ocrQty === poQty;
-        var priceOk = poPrice === 0 || Math.abs(ocrPrice - poPrice) / Math.max(poPrice, 1) <= 0.05;
+        var priceOk = poPrice === 0 || Math.abs(ocrPrice - poPrice) <= Math.max(poPrice * 0.05, 1);
         var status = (!qtyOk && !priceOk) ? 'qty_price_mismatch' : !qtyOk ? 'qty_mismatch' : !priceOk ? 'price_mismatch' : 'match';
         results.push({ ocrIdx: i, poItem: po, status: status,
           details: { ocrQty: ocrQty, poQty: poQty, ocrPrice: ocrPrice, poPrice: poPrice } });

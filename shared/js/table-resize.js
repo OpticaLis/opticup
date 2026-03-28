@@ -43,22 +43,22 @@ var TableResize = (function() {
     sessionStorage.setItem(key, JSON.stringify(w));
   }
 
-  // Sticky scrollbar: synced div at bottom of viewport
+  // Sticky scrollbar: fixed div at bottom of viewport, synced with table wrapper
   function _ensureStickyBar(table) {
     var wrap = table.parentElement;
     if (!wrap || wrap.dataset.stickyBar) return;
-    // Wrap must be scrollable
     var cs = getComputedStyle(wrap);
-    if (cs.overflowX !== 'auto' && cs.overflowX !== 'scroll') {
-      wrap.style.overflowX = 'auto';
-    }
-    // Create sticky bar
+    if (cs.overflowX !== 'auto' && cs.overflowX !== 'scroll') wrap.style.overflowX = 'auto';
+    // Hide wrapper's own scrollbar — sticky bar replaces it
+    wrap.style.scrollbarWidth = 'none'; // Firefox
+    wrap.classList.add('tbl-no-scroll');
+    // Create fixed bar
     var bar = document.createElement('div');
     bar.className = 'tbl-sticky-bar';
     var spacer = document.createElement('div');
     spacer.className = 'tbl-sticky-spacer';
     bar.appendChild(spacer);
-    wrap.parentNode.insertBefore(bar, wrap.nextSibling);
+    document.body.appendChild(bar);
     // Sync scroll
     var syncing = false;
     wrap.addEventListener('scroll', function() {
@@ -67,20 +67,21 @@ var TableResize = (function() {
     bar.addEventListener('scroll', function() {
       if (syncing) return; syncing = true; wrap.scrollLeft = bar.scrollLeft; syncing = false;
     });
-    // Match spacer width
-    function syncWidth() { spacer.style.width = table.scrollWidth + 'px'; }
-    syncWidth();
-    if (typeof ResizeObserver !== 'undefined') {
-      new ResizeObserver(syncWidth).observe(table);
+    // Update bar position and size
+    function updateBar() {
+      spacer.style.width = table.scrollWidth + 'px';
+      var rect = wrap.getBoundingClientRect();
+      var needsScroll = table.scrollWidth > wrap.clientWidth;
+      var inView = rect.bottom > 0 && rect.top < window.innerHeight;
+      if (!needsScroll || !inView) { bar.style.display = 'none'; return; }
+      bar.style.display = '';
+      bar.style.left = rect.left + 'px';
+      bar.style.width = wrap.clientWidth + 'px';
     }
-    // Hide bar when table fits without scroll
-    function checkVisibility() {
-      bar.style.display = table.scrollWidth > wrap.clientWidth ? '' : 'none';
-    }
-    checkVisibility();
-    if (typeof ResizeObserver !== 'undefined') {
-      new ResizeObserver(checkVisibility).observe(wrap);
-    }
+    updateBar();
+    window.addEventListener('scroll', updateBar, { passive: true });
+    window.addEventListener('resize', updateBar);
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateBar).observe(table);
     wrap.dataset.stickyBar = 'true';
   }
 
