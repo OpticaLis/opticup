@@ -138,6 +138,7 @@ async function _applyOCRToReceipt(result, fileUrl) {
   // PO auto-match via AI + fallback to suggestion
   var items = fv('items') || [];
   var supplierId = supplierCache[($('rcpt-supplier') || {}).value] || null;
+  var poMatched = false;
   if (supFilled && supplierId && typeof OcrPOMatch !== 'undefined' && items.length > 0) {
     var poMatch = { poId: null, score: 0, confidence: 'low' };
     try {
@@ -149,6 +150,7 @@ async function _applyOCRToReceipt(result, fileUrl) {
         poSel.value = poMatch.poId;
         poSel.dispatchEvent(new Event('change'));
         await new Promise(function(r) { setTimeout(r, 400); });
+        poMatched = true;
         _rcptOcrShowPOHint(poMatch.confidence, poMatch.poNumber, poMatch.score);
         var { data: poItems } = await sb.from(T.PO_ITEMS).select('*').eq('tenant_id', getTenantId()).eq('po_id', poMatch.poId);
         if (poItems) window._ocrPOComparison = OcrPOMatch.compareItems(items, poItems);
@@ -159,6 +161,11 @@ async function _applyOCRToReceipt(result, fileUrl) {
   } else if (supFilled) {
     await _rcptOcrSuggestPO(ext);
   }
+  // Also check if user had PO selected before OCR
+  if (!poMatched) {
+    var existingPO = ($('rcpt-po-select') || {}).value;
+    if (existingPO) poMatched = true;
+  }
 
   // Validate OCR data and show banner
   var _ocrValidation = [];
@@ -167,16 +174,34 @@ async function _applyOCRToReceipt(result, fileUrl) {
   }
   _rcptOcrShowBanner(conf, 0, 0, fileUrl, _ocrValidation);
 
-  // Process items through review UI
+  // Path A: PO matched — highlights in main table, no review modal
+  // Path B: No PO — open review modal for item matching
   if (Array.isArray(items) && items.length > 0) {
-    var classified = await _rcptOcrClassifyItems(items, supplierId);
-    _rcptOcrShowReview(classified, function(confirmed) {
-      _rcptOcrApplyToForm(confirmed, items);
-      if (window._ocrPOComparison) setTimeout(_applyOcrHighlights, 200);
-    });
+    if (poMatched && window._ocrPOComparison) {
+      toast('AI \u05D4\u05E9\u05D5\u05D5\u05D4 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DC\u05D4\u05D6\u05DE\u05E0\u05EA \u05E8\u05DB\u05E9 \u2014 \u05D1\u05D3\u05D5\u05E7 \u05E1\u05D9\u05DE\u05D5\u05E0\u05D9\u05DD \u05E6\u05D4\u05D5\u05D1\u05D9\u05DD \u05D1\u05D8\u05D1\u05DC\u05D4', 'i');
+      setTimeout(function() { if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights(); }, 300);
+      _rcptOcrShowCompareBtn();
+    } else {
+      var classified = await _rcptOcrClassifyItems(items, supplierId);
+      _rcptOcrShowReview(classified, function(confirmed) {
+        _rcptOcrApplyToForm(confirmed, items);
+        if (window._ocrPOComparison) setTimeout(_applyOcrHighlights, 200);
+      });
+    }
   } else {
     toast('\u05D4\u05DE\u05E1\u05DE\u05DA \u05E0\u05E1\u05E8\u05E7 \u2014 \u05DC\u05D0 \u05D6\u05D5\u05D4\u05D5 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD', 'w');
   }
+}
+
+function _rcptOcrShowCompareBtn() {
+  var old = $('rcpt-ocr-compare-btn'); if (old) old.remove();
+  var area = document.querySelector('.receipt-items-section') || document.querySelector('.receipt-form');
+  if (!area) return;
+  var btn = document.createElement('button'); btn.type = 'button'; btn.id = 'rcpt-ocr-compare-btn'; btn.className = 'btn';
+  btn.style.cssText = 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;font-size:.82rem;margin:8px 0';
+  btn.textContent = '\uD83D\uDD0D \u05D4\u05E9\u05D5\u05D5\u05D4 \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA';
+  btn.onclick = function() { if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights(); };
+  area.insertBefore(btn, area.firstChild);
 }
 
 // --- AI supplier confidence hint ---
@@ -269,21 +294,12 @@ async function _rcptOcrUpdateTemplate() {
       if (supName && typeof supplierCache !== 'undefined') supplierId = supplierCache[supName] || null;
     }
     if (!supplierId) { _rcptOcrResult = null; return; }
-    // Build corrections by comparing OCR original to final form values
-    var corrections = {};
-    var finalDocNum = (($('rcpt-number') || {}).value || '').trim();
-    var ocrDocNum = fv('document_number');
-    if (ocrDocNum && String(ocrDocNum) !== finalDocNum) {
-      corrections.document_number = { ai: ocrDocNum, user: finalDocNum };
-    }
-    var finalDate = ($('rcpt-date') || {}).value || '';
-    var ocrDate = fv('document_date');
-    if (ocrDate && String(ocrDate) !== finalDate) {
-      corrections.document_date = { ai: ocrDate, user: finalDate };
-    }
+    var corrections = {}, finalDocNum = (($('rcpt-number') || {}).value || '').trim(), ocrDocNum = fv('document_number');
+    if (ocrDocNum && String(ocrDocNum) !== finalDocNum) corrections.document_number = { ai: ocrDocNum, user: finalDocNum };
+    var finalDate = ($('rcpt-date') || {}).value || '', ocrDate = fv('document_date');
+    if (ocrDate && String(ocrDate) !== finalDate) corrections.document_date = { ai: ocrDate, user: finalDate };
     var docType = fv('document_type') || 'delivery_note';
-    await updateOCRTemplate(supplierId, docType,
-      Object.keys(corrections).length > 0 ? corrections : null, ext);
+    await updateOCRTemplate(supplierId, docType, Object.keys(corrections).length > 0 ? corrections : null, ext);
     // Phase 8 Step 5: save item-level corrections
     if (window._lastOcrItemCorrections) {
       var lc = window._lastOcrItemCorrections;
@@ -301,45 +317,26 @@ async function _rcptOcrUpdateTemplate() {
 
 // Listen for receipt confirmation → learn from OCR BEFORE clearing result
 document.addEventListener('receipt-confirmed', function(e) {
-  // Capture OCR result before _rcptOcrUpdateTemplate clears it
-  var ocrSnapshot = _rcptOcrResult ? {
-    ext: _rcptOcrResult.extracted_data || {},
-    supMatch: _rcptOcrResult.supplier_match
-  } : null;
-
-  _rcptOcrUpdateTemplate(); // clears _rcptOcrResult
-
+  var ocrSnapshot = _rcptOcrResult ? { ext: _rcptOcrResult.extracted_data || {}, supMatch: _rcptOcrResult.supplier_match } : null;
+  _rcptOcrUpdateTemplate();
   if (!ocrSnapshot || typeof supplierCache === 'undefined') return;
   var fv = function(f) { var v = ocrSnapshot.ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v; };
-  var finalSup = ($('rcpt-supplier') || {}).value;
-  var finalSupId = finalSup ? supplierCache[finalSup] : null;
+  var finalSup = ($('rcpt-supplier') || {}).value, finalSupId = finalSup ? supplierCache[finalSup] : null;
 
   // Learn supplier alias
   if (typeof OcrSupplierMatch !== 'undefined') {
     var ocrName = fv('supplier_name');
-    if (ocrName && finalSupId) {
-      OcrSupplierMatch.learnSupplierAlias(ocrName, finalSupId, getTenantId());
-    }
+    if (ocrName && finalSupId) OcrSupplierMatch.learnSupplierAlias(ocrName, finalSupId, getTenantId());
   }
-
-  // Learn doc type correction
+  // Learn doc type correction + ai_has_po_pattern
   if (finalSupId) {
-    var ocrType = fv('document_type');
-    var finalType = ($('rcpt-type') || {}).value || '';
+    var ocrType = fv('document_type'), finalType = ($('rcpt-type') || {}).value || '';
     if (ocrType && finalType && ocrType !== finalType) {
-      sb.from(T.OCR_TEMPLATES).update({ document_type_code: finalType })
-        .eq('supplier_id', finalSupId).eq('tenant_id', getTenantId()).then(function() {});
+      sb.from(T.OCR_TEMPLATES).update({ document_type_code: finalType }).eq('supplier_id', finalSupId).eq('tenant_id', getTenantId()).then(function() {});
     }
-  }
-
-  // Update ai_has_po_pattern
-  if (finalSupId) {
     var hadPO = !!rcptLinkedPoId;
-    if (hadPO) {
-      sb.from(T.SUPPLIERS).update({ ai_has_po_pattern: true }).eq('id', finalSupId).eq('tenant_id', getTenantId()).then(function() {});
-    } else {
-      sb.from(T.SUPPLIERS).update({ ai_has_po_pattern: false }).eq('id', finalSupId).eq('tenant_id', getTenantId()).is('ai_has_po_pattern', null).then(function() {});
-    }
+    if (hadPO) sb.from(T.SUPPLIERS).update({ ai_has_po_pattern: true }).eq('id', finalSupId).eq('tenant_id', getTenantId()).then(function() {});
+    else sb.from(T.SUPPLIERS).update({ ai_has_po_pattern: false }).eq('id', finalSupId).eq('tenant_id', getTenantId()).is('ai_has_po_pattern', null).then(function() {});
   }
 });
 

@@ -1,11 +1,11 @@
-// receipt-doc-numbers.js — Document number management for receipts (split from receipt-form.js)
+// receipt-doc-numbers.js — Document number management for receipts (Phase A7)
 // Load before: receipt-form.js
 // Provides: _addRcptExtraNum, _removeRcptExtraNum, _renderRcptExtraNums,
 //   getRcptDocumentNumbers, getRcptDocAmounts, _onDocCountChange,
 //   _onExtraNumEdit, _onExtraAmtEdit, _onDocAmountChange
 
 var _rcptExtraNums = [];     // additional doc numbers beyond the main rcpt-number
-var _rcptDocAmounts = {};    // keyed by doc number → amount (₪)
+var _rcptDocAmounts = {};    // keyed by doc number → amount
 
 function _addRcptExtraNum() {
   var inp = document.getElementById('rcpt-extra-num-input');
@@ -37,7 +37,6 @@ function _renderRcptExtraNums() {
     return '<span style="display:inline-flex;align-items:center;gap:4px;background:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:4px;font-size:.82rem">' +
       escapeHtml(n) + amt + '<button type="button" onclick="_removeRcptExtraNum(' + i + ')" style="background:none;border:none;cursor:pointer;font-size:12px;color:#6366f1;padding:0">\u2715</button></span>';
   }).join('');
-  // Show/hide main doc amount input
   var wrap = document.getElementById('rcpt-main-amount-wrap');
   if (wrap) {
     wrap.style.display = showAmts ? 'inline-flex' : 'none';
@@ -60,7 +59,6 @@ function getRcptDocumentNumbers() {
   return all;
 }
 
-// Returns per-doc amounts [{number, amount}] or null if single doc
 function getRcptDocAmounts() {
   var allNums = getRcptDocumentNumbers();
   if (allNums.length < 2) return null;
@@ -75,40 +73,49 @@ function getRcptDocAmounts() {
   return allNums.map(function(n) { return { number: n, amount: _rcptDocAmounts[n] || 0 }; });
 }
 
-// ── Doc count change handler (Phase A7) ──
+// ── Doc count change handler ──
 function _onDocCountChange() {
   var countEl = document.getElementById('rcpt-doc-count');
   var count = Math.max(1, Math.min(10, Number((countEl || {}).value) || 1));
-  var mainWrap = document.getElementById('rcpt-number');
+  var mainNum = document.getElementById('rcpt-number');
   var extraAdd = document.getElementById('rcpt-extra-nums-add');
+  var extraArea = document.getElementById('rcpt-extra-nums');
+  var amtWrap = document.getElementById('rcpt-main-amount-wrap');
   if (count === 1) {
-    if (mainWrap) mainWrap.style.display = '';
-    if (extraAdd) extraAdd.style.display = 'flex';
+    // Single doc: show main input only, hide everything else
+    if (mainNum) { mainNum.style.display = ''; mainNum.placeholder = '\u05DE\u05E1\u05F3 \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA'; }
+    if (extraAdd) extraAdd.style.display = 'none';
+    if (extraArea) extraArea.style.display = 'none';
+    if (amtWrap) amtWrap.style.display = 'none';
     _rcptExtraNums = [];
     _rcptDocAmounts = {};
-    _renderRcptExtraNums();
+    var tags = document.getElementById('rcpt-extra-nums-tags');
+    if (tags) tags.innerHTML = '';
     return;
   }
-  // Multi-doc mode: hide manual add, generate N-1 extra slots
+  // Multi-doc: show numbered vertical rows
   if (extraAdd) extraAdd.style.display = 'none';
-  if (mainWrap) mainWrap.style.display = '';
+  if (extraArea) extraArea.style.display = '';
+  if (amtWrap) amtWrap.style.display = 'none';
+  if (mainNum) mainNum.style.display = 'none';
   _rcptExtraNums = [];
   _rcptDocAmounts = {};
-  for (var i = 2; i <= count; i++) _rcptExtraNums.push('');
-  _renderRcptExtraNums();
+  for (var i = 0; i < count; i++) _rcptExtraNums.push('');
   var container = document.getElementById('rcpt-extra-nums-tags');
   if (!container) return;
   var rows = '';
-  for (var j = 0; j < _rcptExtraNums.length; j++) {
-    rows += '<div style="display:flex;gap:4px;align-items:center;margin-bottom:3px">' +
-      '<span style="font-size:.78rem;color:var(--g500);min-width:16px">' + (j + 2) + '.</span>' +
-      '<input type="text" placeholder="\u05DE\u05E1\u05E4\u05E8 \u05DE\u05E1\u05DE\u05DA" data-extra-idx="' + j + '" ' +
+  for (var j = 0; j < count; j++) {
+    rows += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;direction:rtl">' +
+      '<span style="min-width:24px;text-align:center;color:#6b7280;font-size:.82rem">' + (j + 1) + '</span>' +
+      '<input type="text" placeholder="\u05DE\u05E1\u05F3 \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA" data-doc-idx="' + j + '" ' +
         'onchange="_onExtraNumEdit(' + j + ',this.value)" ' +
         'style="flex:1;font-size:.85rem;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px">' +
-      '<input type="number" step="0.01" min="0" placeholder="\u20AA" data-extra-amt="' + j + '" ' +
+      '<span style="font-size:.82rem;color:#6b7280">\u05E1\u05DB\u05D5\u05DD</span>' +
+      '<input type="number" step="0.01" min="0" placeholder="0" data-doc-amt="' + j + '" ' +
         'onchange="_onExtraAmtEdit(' + j + ',this.value)" ' +
-        'style="width:80px;padding:2px 4px;border:1px solid #c7d2fe;border-radius:3px;font-size:.78rem;text-align:center">' +
-      '</div>';
+        'style="width:120px;padding:4px 8px;border:1px solid #c7d2fe;border-radius:4px;font-size:.85rem;text-align:center">' +
+      '<span style="font-size:.82rem;color:#6b7280">\u20AA</span>' +
+    '</div>';
   }
   container.innerHTML = rows;
 }

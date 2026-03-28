@@ -158,14 +158,14 @@ function _rcptOcrShowReview(classifiedItems, onConfirm) {
 
   // Build table rows
   var rowsHtml = classifiedItems.map(function(it, idx) {
-    var bg = it.status === 'matched' ? '#e8f5e9' : it.status === 'new' ? '#fff9c4' : '#ffebee';
+    var bg = it.status === 'matched' ? '#e8f5e9' : it.status === 'new' ? '#fff9c4' : '#fef9c3';
     var icon = it.status === 'matched' ? '\u2705' : it.status === 'new' ? '\u2795' : '\u2753';
     var readonly = it.status === 'matched' ? ' readonly style="background:#f0f0f0"' : '';
     var brandVal = escapeHtml(it.brand_name || '');
 
     return '<tr data-idx="' + idx + '" style="background:' + bg + '">' +
       '<td style="text-align:center;font-size:1.1rem">' + icon + '</td>' +
-      '<td style="font-size:.8rem;color:#666;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escapeHtml(it.raw_description) + '">' + escapeHtml(it.raw_description) + '</td>' +
+      '<td style="font-size:13px;color:#333;min-width:250px;word-wrap:break-word;white-space:normal" title="' + escapeHtml(it.raw_description) + '">' + escapeHtml(it.raw_description) + '</td>' +
       '<td>' + (it.status === 'matched'
         ? '<input class="rv-brand" value="' + brandVal + '"' + readonly + '>'
         : '<input class="rv-brand" value="' + brandVal + '" data-id="' + escapeHtml(it.brand_id || '') + '" placeholder="\u05DE\u05D5\u05EA\u05D2...">') + '</td>' +
@@ -183,7 +183,12 @@ function _rcptOcrShowReview(classifiedItems, onConfirm) {
   var summary = '\u2705 ' + counts.matched + ' \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD \u2502 \u2795 ' +
     counts['new'] + ' \u05D7\u05D3\u05E9\u05D9\u05DD \u2502 \u2753 ' + counts.unknown + ' \u05DC\u05D0 \u05DE\u05D6\u05D5\u05D4\u05D9\u05DD';
 
-  var content = '<div style="margin-bottom:10px;font-size:.9rem;color:#333">' + summary + '</div>' +
+  var helpBox = '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px;margin-bottom:12px;direction:rtl;font-size:13px">' +
+    '\uD83D\uDCA1 <strong>\u05E1\u05E7\u05D9\u05E8\u05EA \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD:</strong> ' +
+    '\u05D4-AI \u05E1\u05E8\u05E7 \u05D0\u05EA \u05D4\u05DE\u05E1\u05DE\u05DA \u05D5\u05D7\u05D9\u05DC\u05E5 \u05D0\u05EA \u05D4\u05E4\u05E8\u05D9\u05D8\u05D9\u05DD. \u05D4\u05EA\u05D0\u05DD \u05DB\u05DC \u05E4\u05E8\u05D9\u05D8 \u05DC\u05DE\u05D5\u05EA\u05D2 \u05D1\u05DE\u05E2\u05E8\u05DB\u05EA.' +
+    '<br>\u2705 = \u05EA\u05D5\u05D0\u05DD &nbsp; \u2795 = \u05D7\u05D3\u05E9 &nbsp; \u2753 = \u05DC\u05D0 \u05DE\u05D6\u05D5\u05D4\u05D4 \u2014 \u05E6\u05E8\u05D9\u05DA \u05D4\u05EA\u05D0\u05DE\u05D4 \u05D9\u05D3\u05E0\u05D9\u05EA' +
+    '<br>\u05EA\u05D9\u05E7\u05D5\u05E0\u05D9\u05DD \u05E9\u05DC\u05DA \u05E2\u05D5\u05D6\u05E8\u05D9\u05DD \u05DC-AI \u05DC\u05DC\u05DE\u05D5\u05D3 \u05D5\u05DC\u05D4\u05E9\u05EA\u05E4\u05E8.</div>';
+  var content = helpBox + '<div style="margin-bottom:10px;font-size:.9rem;color:#333">' + summary + '</div>' +
     '<div style="overflow-x:auto;max-height:55vh;overflow-y:auto">' +
     '<table class="data-table" style="width:100%;font-size:.85rem;border-collapse:collapse">' +
     '<thead style="position:sticky;top:0;background:#fff;z-index:1"><tr>' +
@@ -200,6 +205,8 @@ function _rcptOcrShowReview(classifiedItems, onConfirm) {
     title: '\u05E1\u05E7\u05D9\u05E8\u05EA \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DE-OCR (' + classifiedItems.length + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD)',
     content: content, footer: footer, size: 'lg'
   });
+  var mc = modal.el.querySelector('.modal-container');
+  if (mc) mc.style.cssText = 'width:90vw;max-width:1000px';
 
   // Wire brand search-select for non-matched rows
   var tbody = modal.el.querySelector('tbody');
