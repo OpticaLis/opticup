@@ -1,13 +1,10 @@
-// receipt-ocr.js — OCR integration in goods receipt flow (Phase 5d + Phase 8)
-// Load after: receipt-form.js, receipt-ocr-review.js; before receipt-actions.js
-// Provides: initReceiptOCR(), _rcptOcrScan(), _applyOCRToReceipt(), _rcptOcrShowBanner()
-// Phase 8: _rcptOcrFC(), _rcptOcrAddConfDot(), _rcptOcrSuggestPO()
-// Phase 8 Step 2b: items go through review UI (_rcptOcrClassifyItems → _rcptOcrShowReview)
-// Uses: _pendingReceiptFile, supplierCache/Rev, uploadSupplierFile, getSupplierFileUrl
+// receipt-ocr.js — OCR integration in goods receipt flow (Phase 5d + 8 + AI)
+// Load after: receipt-form.js, receipt-ocr-supplier.js, receipt-ocr-po.js
+// Provides: initReceiptOCR, _rcptOcrScan, _applyOCRToReceipt, _rcptOcrShowBanner
 
-var _rcptOcrResult = null; // Phase 5e: stored when OCR applied, used for learning
+var _rcptOcrResult = null; // stored when OCR applied, used for learning
 
-// --- Phase 8: Per-field confidence helpers ---
+// --- Per-field confidence helpers ---
 function _rcptOcrFC(ext, f) {
   var v = ext[f];
   if (v && typeof v === 'object' && 'confidence' in v) return v.confidence;
@@ -100,12 +97,8 @@ async function _applyOCRToReceipt(result, fileUrl) {
   var ext = result.extracted_data || {};
   var conf = result.confidence_score || 0;
   var supMatch = result.supplier_match;
-  // Phase 5e: store for learning on confirm
   _rcptOcrResult = { extracted_data: ext, supplier_match: supMatch, extraction_id: result.extraction_id };
-  var fv = function(f) {
-    var v = ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v;
-  };
-  // Auto-fill supplier via OcrSupplierMatch
+  var fv = function(f) { var v = ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v; };
   var supFilled = false;
   var ocrSupName = fv('supplier_name') || '';
   if (supMatch && supMatch.id) {
@@ -116,12 +109,14 @@ async function _applyOCRToReceipt(result, fileUrl) {
       await new Promise(function(r) { setTimeout(r, 300); });
     }
   } else if (ocrSupName && typeof OcrSupplierMatch !== 'undefined') {
-    var aiMatch = await OcrSupplierMatch.matchSupplier(ocrSupName, getTenantId());
+    var aiMatch = { supplierId: null, confidence: 'low', matchType: 'none' };
+    try {
+      aiMatch = await OcrSupplierMatch.matchSupplier(ocrSupName, getTenantId());
+    } catch (aiErr) { console.error('AI supplier match failed:', aiErr); }
     if (aiMatch.supplierId && aiMatch.supplierName) {
       var sel = $('rcpt-supplier');
       if (sel) { sel.value = aiMatch.supplierName; sel.dispatchEvent(new Event('change')); supFilled = true; }
       await new Promise(function(r) { setTimeout(r, 300); });
-      // Show confidence indicator
       _rcptOcrShowSupplierHint(aiMatch.confidence, aiMatch.supplierName, aiMatch.matchType);
     }
   }
@@ -144,7 +139,10 @@ async function _applyOCRToReceipt(result, fileUrl) {
   var items = fv('items') || [];
   var supplierId = supplierCache[($('rcpt-supplier') || {}).value] || null;
   if (supFilled && supplierId && typeof OcrPOMatch !== 'undefined' && items.length > 0) {
-    var poMatch = await OcrPOMatch.findBestPO(supplierId, items, getTenantId());
+    var poMatch = { poId: null, score: 0, confidence: 'low' };
+    try {
+      poMatch = await OcrPOMatch.findBestPO(supplierId, items, getTenantId());
+    } catch (poErr) { console.error('AI PO match failed:', poErr); }
     if (poMatch.poId && poMatch.score > 50) {
       var poSel = $('rcpt-po-select');
       if (poSel && !poSel.disabled) {
@@ -152,7 +150,6 @@ async function _applyOCRToReceipt(result, fileUrl) {
         poSel.dispatchEvent(new Event('change'));
         await new Promise(function(r) { setTimeout(r, 400); });
         _rcptOcrShowPOHint(poMatch.confidence, poMatch.poNumber, poMatch.score);
-        // Compare items for highlighting
         var { data: poItems } = await sb.from(T.PO_ITEMS).select('*').eq('tenant_id', getTenantId()).eq('po_id', poMatch.poId);
         if (poItems) window._ocrPOComparison = OcrPOMatch.compareItems(items, poItems);
       }
