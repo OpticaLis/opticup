@@ -274,9 +274,15 @@ async function _wizSavePayment() {
     });
 
     closeAndRemoveModal('pay-wizard-modal');
-    toast('תשלום נשמר בהצלחה');
+    toast('\u05EA\u05E9\u05DC\u05D5\u05DD \u05E0\u05E9\u05DE\u05E8 \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4', 's');
     await loadPaymentsTab();
     await loadDebtSummary();
+    if (typeof loadSuppliersTab === 'function') loadSuppliersTab();
+    if (typeof loadDocumentsTab === 'function') loadDocumentsTab();
+    // Refresh supplier detail if open
+    if (typeof _currentSupDetailId !== 'undefined' && _currentSupDetailId) {
+      if (typeof loadSupplierDetailTabs === 'function') loadSupplierDetailTabs(_currentSupDetailId);
+    }
   } catch (e) {
     console.error('_wizSavePayment error:', e);
     try {
