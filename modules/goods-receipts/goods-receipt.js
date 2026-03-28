@@ -44,6 +44,7 @@ async function loadPOsForSupplier(supplierName) {
 }
 
 async function onReceiptPoSelected() {
+  window._ocrPOComparison = null; // clear OCR highlights on PO change
   const poId = $('rcpt-po-select').value;
   if (!poId) { rcptLinkedPoId = null; if (typeof _rcptOcrUpdateBtn === 'function') _rcptOcrUpdateBtn(); return; }
 
@@ -338,6 +339,7 @@ function openNewReceipt() {
   $('rcpt-po-select').onchange = () => onReceiptPoSelected();
   if ($('rcpt-doc-count')) $('rcpt-doc-count').value = 1;
   rcptLinkedPoId = null;
+  window._ocrPOComparison = null;
   $('rcpt-date').valueAsDate = new Date();
   $('rcpt-notes').value = '';
   $('rcpt-items-body').innerHTML = '';

@@ -423,3 +423,8 @@ th[data-sort-key]::after{content:' \2195';opacity:.3;font-size:.75em}
 th[data-sort-key].sort-asc::after{content:' \25B2';opacity:1}
 th[data-sort-key].sort-desc::after{content:' \25BC';opacity:1}
 th[data-sort-key].sort-active{background:rgba(255,255,255,.12)}
+/* ── OCR vs PO discrepancy highlights ── */
+.ocr-qty-warn{background-color:#fef3c7 !important}
+.ocr-price-warn{background-color:#fef3c7 !important}
+.ocr-not-in-po{background-color:#fed7aa !important}
+.ocr-missing{background-color:#f3f4f6;color:#9ca3af;font-style:italic}

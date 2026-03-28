@@ -140,8 +140,28 @@ async function _applyOCRToReceipt(result, fileUrl) {
     if (typeEl && typeMap[docType]) { typeEl.value = typeMap[docType]; _rcptOcrAddConfDot('rcpt-type', _rcptOcrFC(ext, 'document_type')); }
   }
 
-  // Phase 8: PO auto-suggestion
-  if (supFilled) await _rcptOcrSuggestPO(ext);
+  // PO auto-match via AI + fallback to suggestion
+  var items = fv('items') || [];
+  var supplierId = supplierCache[($('rcpt-supplier') || {}).value] || null;
+  if (supFilled && supplierId && typeof OcrPOMatch !== 'undefined' && items.length > 0) {
+    var poMatch = await OcrPOMatch.findBestPO(supplierId, items, getTenantId());
+    if (poMatch.poId && poMatch.score > 50) {
+      var poSel = $('rcpt-po-select');
+      if (poSel && !poSel.disabled) {
+        poSel.value = poMatch.poId;
+        poSel.dispatchEvent(new Event('change'));
+        await new Promise(function(r) { setTimeout(r, 400); });
+        _rcptOcrShowPOHint(poMatch.confidence, poMatch.poNumber, poMatch.score);
+        // Compare items for highlighting
+        var { data: poItems } = await sb.from(T.PO_ITEMS).select('*').eq('tenant_id', getTenantId()).eq('po_id', poMatch.poId);
+        if (poItems) window._ocrPOComparison = OcrPOMatch.compareItems(items, poItems);
+      }
+    } else {
+      await _rcptOcrSuggestPO(ext);
+    }
+  } else if (supFilled) {
+    await _rcptOcrSuggestPO(ext);
+  }
 
   // Validate OCR data and show banner
   var _ocrValidation = [];
@@ -150,12 +170,13 @@ async function _applyOCRToReceipt(result, fileUrl) {
   }
   _rcptOcrShowBanner(conf, 0, 0, fileUrl, _ocrValidation);
 
-  // Phase 8: Process items through review UI instead of direct insert
-  var items = fv('items') || [];
+  // Process items through review UI
   if (Array.isArray(items) && items.length > 0) {
-    var supplierId = supplierCache[($('rcpt-supplier') || {}).value] || null;
     var classified = await _rcptOcrClassifyItems(items, supplierId);
-    _rcptOcrShowReview(classified, function(confirmed) { _rcptOcrApplyToForm(confirmed, items); });
+    _rcptOcrShowReview(classified, function(confirmed) {
+      _rcptOcrApplyToForm(confirmed, items);
+      if (window._ocrPOComparison) setTimeout(_applyOcrHighlights, 200);
+    });
   } else {
     toast('\u05D4\u05DE\u05E1\u05DE\u05DA \u05E0\u05E1\u05E8\u05E7 \u2014 \u05DC\u05D0 \u05D6\u05D5\u05D4\u05D5 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD', 'w');
   }
@@ -178,6 +199,8 @@ function _rcptOcrShowSupplierHint(confidence, name, matchType) {
   }
   var se = $('rcpt-supplier'); if (se && se.parentNode) se.parentNode.appendChild(hint);
 }
+
+// _rcptOcrShowPOHint and _applyOcrHighlights are in receipt-ocr-po.js
 
 // --- Phase 8: PO auto-suggestion after supplier fill ---
 async function _rcptOcrSuggestPO(ext) {
