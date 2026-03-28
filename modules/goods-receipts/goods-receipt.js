@@ -110,6 +110,7 @@ async function onReceiptPoSelected() {
           product_type: item.product_type || 'eyeglasses',
           is_new_item: false,
           inventory_id: existingInv.id,
+          po_item_id: item.id,
           from_po: true
         });
       } else {
@@ -126,6 +127,7 @@ async function onReceiptPoSelected() {
           product_type: item.product_type || 'eyeglasses',
           is_new_item: true,
           inventory_id: null,
+          po_item_id: item.id,
           from_po: true
         });
       }

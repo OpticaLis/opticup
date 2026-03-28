@@ -139,62 +139,96 @@ function _rcptOcrShowPOHint(confidence, poNumber, score) {
 }
 
 // --- Apply OCR vs PO discrepancy highlights to receipt item rows ---
+// Matches comparison results to table rows by PO item ID (primary)
+// with brand+model text fallback for rows without po_item_id.
 function _applyOcrHighlights() {
   var comp = window._ocrPOComparison;
   if (!comp || !comp.length) return;
   var tbody = $('rcpt-items-body');
   if (!tbody) return;
-  // Clear previous highlights
-  tbody.querySelectorAll('.ocr-not-in-po,.ocr-missing').forEach(function(el) {
-    if (el.classList.contains('ocr-missing')) el.remove();
-    else el.classList.remove('ocr-not-in-po');
-  });
-  tbody.querySelectorAll('.ocr-qty-warn').forEach(function(el) { el.classList.remove('ocr-qty-warn'); el.title = ''; });
-  tbody.querySelectorAll('.ocr-price-warn').forEach(function(el) { el.classList.remove('ocr-price-warn'); el.title = ''; });
 
-  var rows = Array.from(tbody.querySelectorAll('tr:not(.ocr-missing)'));
-  // Build row lookup by brand+model from DOM inputs
-  var rowMap = rows.map(function(row) {
+  // --- Step 1: Clear all previous highlights ---
+  tbody.querySelectorAll('.ocr-missing').forEach(function(el) { el.remove(); });
+  tbody.querySelectorAll('.ocr-status-badge').forEach(function(el) { el.remove(); });
+  var allRows = tbody.querySelectorAll('tr[data-row]');
+  allRows.forEach(function(tr) {
+    tr.classList.remove('ocr-not-in-po');
+    tr.title = '';
+    var qc = tr.querySelector('.rcpt-qty');
+    if (qc) { qc.classList.remove('ocr-qty-warn'); qc.title = ''; }
+    var pc = tr.querySelector('.rcpt-ucost');
+    if (pc) { pc.classList.remove('ocr-price-warn'); pc.title = ''; }
+  });
+
+  // --- Step 2: Build row lookup ---
+  var rows = Array.from(allRows);
+  // Primary: lookup by PO item ID (guaranteed unique)
+  var idMap = {};
+  // Fallback: lookup by normalized brand+model
+  var bmMap = {};
+  rows.forEach(function(row) {
+    var poId = row.dataset.poItemId;
+    if (poId) idMap[poId] = row;
     var b = row.querySelector('.rcpt-brand'), m = row.querySelector('.rcpt-model');
-    return { row: row, brand: _norm(b ? b.value : ''), model: _norm(m ? m.value : '') };
+    var key = _norm(b ? b.value : '') + '|' + _norm(m ? m.value : '');
+    if (!bmMap[key]) bmMap[key] = row;
   });
 
+  // --- Step 3: Apply highlights ---
   comp.forEach(function(c) {
-    if (c.status === 'missing_from_ocr') return; // handled below
-    // Find matching row by poItem brand+model (receipt rows = PO items)
-    var targetRow = null;
-    if (c.poItem) {
-      var pb = _norm(c.poItem.brand || ''), pm = _norm(c.poItem.model || '');
-      for (var r = 0; r < rowMap.length; r++) {
-        if (rowMap[r].brand === pb && rowMap[r].model === pm) { targetRow = rowMap[r].row; break; }
-        if (pm && rowMap[r].model === pm) { targetRow = rowMap[r].row; break; }
-      }
+    if (c.status === 'missing_from_ocr') return; // handled in step 4
+    if (c.status === 'not_in_po') return; // no table row for these
+
+    if (!c.poItem) return;
+    // Find row: by PO item ID first, then brand+model fallback
+    var targetRow = c.poItem.id ? idMap[c.poItem.id] : null;
+    if (!targetRow) {
+      var key = _norm(c.poItem.brand || '') + '|' + _norm(c.poItem.model || '');
+      targetRow = bmMap[key] || null;
     }
-    if (!targetRow && c.ocrIdx >= 0 && c.ocrIdx < rows.length) targetRow = rows[c.ocrIdx]; // fallback to index
     if (!targetRow) return;
 
-    if (c.status === 'not_in_po') {
-      targetRow.classList.add('ocr-not-in-po');
-      targetRow.title = '\u05E4\u05E8\u05D9\u05D8 \u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0 \u05D1\u05D4\u05D6\u05DE\u05E0\u05EA \u05D4\u05E8\u05DB\u05E9';
+    // Add status badge to first cell
+    var badge = document.createElement('span');
+    badge.className = 'ocr-status-badge';
+    badge.style.cssText = 'font-size:.75rem;margin-left:4px;white-space:nowrap';
+
+    if (c.status === 'match') {
+      badge.textContent = '\u2705';
+      badge.title = '\u05EA\u05D5\u05D0\u05DD \u05DC\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA';
     }
-    if (c.details && (c.status === 'qty_mismatch' || c.status === 'qty_price_mismatch')) {
+    if (c.status === 'qty_mismatch' || c.status === 'qty_price_mismatch') {
       var qc = targetRow.querySelector('.rcpt-qty');
-      if (qc) { qc.classList.add('ocr-qty-warn'); qc.title = '\u05D4\u05D5\u05D6\u05DE\u05E0\u05D5 ' + c.details.poQty + ', \u05D1\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA ' + c.details.ocrQty; }
+      if (qc) {
+        qc.classList.add('ocr-qty-warn');
+        qc.title = '\u05D4\u05D5\u05D6\u05DE\u05E0\u05D5 ' + c.details.poQty + ', \u05D1\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA ' + c.details.ocrQty;
+      }
+      badge.textContent = '\u26A0\uFE0F \u05DB\u05DE\u05D5\u05EA';
     }
-    if (c.details && (c.status === 'price_mismatch' || c.status === 'qty_price_mismatch')) {
+    if (c.status === 'price_mismatch' || c.status === 'qty_price_mismatch') {
       var pc = targetRow.querySelector('.rcpt-ucost');
-      if (pc) { pc.classList.add('ocr-price-warn'); pc.title = 'PO: ' + c.details.poPrice + '\u20AA, \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA: ' + c.details.ocrPrice + '\u20AA'; }
+      if (pc) {
+        pc.classList.add('ocr-price-warn');
+        pc.title = 'PO: ' + c.details.poPrice + '\u20AA, \u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA: ' + c.details.ocrPrice + '\u20AA';
+      }
+      if (c.status === 'price_mismatch') badge.textContent = '\u26A0\uFE0F \u05DE\u05D7\u05D9\u05E8';
+      if (c.status === 'qty_price_mismatch') badge.textContent = '\u26A0\uFE0F \u05DB\u05DE\u05D5\u05EA+\u05DE\u05D7\u05D9\u05E8';
     }
+    var firstTd = targetRow.querySelector('td');
+    if (firstTd && badge.textContent) firstTd.prepend(badge);
   });
-  // Append missing-from-OCR rows
+
+  // --- Step 4: Append missing-from-OCR indicator rows ---
   var missing = comp.filter(function(c) { return c.status === 'missing_from_ocr'; });
   if (missing.length) {
-    var colCount = rows[0] ? rows[0].children.length : 12;
+    var colCount = rows[0] ? rows[0].children.length : 15;
     missing.forEach(function(m) {
-      var tr = document.createElement('tr'); tr.className = 'ocr-missing';
+      var tr = document.createElement('tr');
+      tr.className = 'ocr-missing';
       tr.innerHTML = '<td colspan="' + colCount + '" style="text-align:center;padding:6px">' +
         '\u26A0\uFE0F \u05D7\u05E1\u05E8 \u05D1\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA: ' +
-        escapeHtml((m.poItem.brand || '') + ' ' + (m.poItem.model || '')) + ' x' + (m.poItem.quantity || 0) + '</td>';
+        escapeHtml((m.poItem.brand || '') + ' ' + (m.poItem.model || '')) +
+        ' x' + (m.poItem.quantity || 0) + '</td>';
       tbody.appendChild(tr);
     });
   }

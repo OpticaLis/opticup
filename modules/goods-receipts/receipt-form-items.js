@@ -19,6 +19,7 @@ function addReceiptItemRow(data) {
   const tr = document.createElement('tr');
   tr.dataset.row = rcptRowNum;
   if (data?.inventory_id) tr.dataset.inventoryId = data.inventory_id;
+  if (data?.po_item_id) tr.dataset.poItemId = data.po_item_id;
   const fromPo = !!data?.from_po;
   if (fromPo) tr.dataset.fromPo = '1';
 
