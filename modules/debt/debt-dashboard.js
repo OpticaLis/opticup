@@ -62,7 +62,16 @@ async function loadDebtSummary() {
       const rate = Number(p.exchange_rate) || 1;
       paidThisMonth += Number(p.amount) * rate;
     });
-    document.getElementById('val-total-debt').textContent = formatILS(totalDebt);
+    // Factor in prepaid deals: יתרה סופית = debt - deal totals
+    var { data: _dashDeals } = await sb.from(T.PREPAID_DEALS).select('total_prepaid')
+      .eq('tenant_id', tid).eq('status', 'active').eq('is_deleted', false);
+    var totalDealAmount = (_dashDeals || []).reduce(function(s, d) { return s + (Number(d.total_prepaid) || 0); }, 0);
+    var finalBalance = totalDebt - totalDealAmount;
+
+    document.getElementById('val-total-debt').textContent = formatILS(finalBalance);
+    // Color: positive (we owe) = red, negative (credit) = green
+    var balEl = document.getElementById('val-total-debt');
+    if (balEl) balEl.style.color = finalBalance < 0 ? '#059669' : (finalBalance > 0 ? '#dc2626' : '');
     document.getElementById('val-due-week').textContent = formatILS(dueThisWeek);
     document.getElementById('val-overdue').textContent = formatILS(overdue);
     document.getElementById('val-paid-month').textContent = formatILS(paidThisMonth);
@@ -197,8 +206,11 @@ async function loadSuppliersTab() {
       var dealRemaining = dealTotal - dealUsed;
       var hasReceiptDocs = allSupDocs.some(function(d) { return !!d.goods_receipt_id; });
       var hasHistory = allSupDocs.length > 0 || !!payBySup[sup.id] || !!deal;
+      // יתרה סופית = debt - deal total
+      var finalBalance = totalDebt - dealTotal;
       return {
         id: sup.id, name: sup.name, openCount: openCount, totalDebt: totalDebt,
+        finalBalance: finalBalance,
         overdueAmt: overdueAmt, nextDue: nextDue, hasDeal: !!deal,
         dealTotal: dealTotal, dealUsed: dealUsed, dealRemaining: dealRemaining,
         openingBalance: Number(sup.opening_balance) || 0, openingBalanceDate: cutoff,
@@ -209,7 +221,7 @@ async function loadSuppliersTab() {
     _supTabData.sort(function(a, b) {
       if (a.overdueAmt > 0 && b.overdueAmt === 0) return -1;
       if (b.overdueAmt > 0 && a.overdueAmt === 0) return 1;
-      return b.totalDebt - a.totalDebt;
+      return b.finalBalance - a.finalBalance;
     });
 
     renderSuppliersToolbar();
@@ -289,25 +301,18 @@ function renderSuppliersTable(data) {
 
   var rows = data.map(function(s) {
     var overdueStyle = s.overdueAmt > 0 ? ' style="color:var(--error);font-weight:600"' : '';
-    var dealCell = '\u2014';
-    if (s.hasDeal) {
-      var totalFmt = s.dealTotal.toLocaleString('he-IL');
-      var usedFmt = s.dealUsed.toLocaleString('he-IL');
-      dealCell = '<span style="color:#059669;font-weight:600">' + totalFmt + '</span>' +
-        '<span style="color:var(--g400)"> / </span>' +
-        '<span style="color:#dc2626;font-weight:600">' + usedFmt + '</span>';
-    }
+    // יתרה סופית: positive = red (we owe), negative = green (credit)
+    var balColor = s.finalBalance < 0 ? 'color:#059669;font-weight:600' : (s.finalBalance > 0 ? 'color:#dc2626;font-weight:600' : '');
     var obCell = s.openingBalance > 0
       ? formatILS(s.openingBalance) + (s.openingBalanceDate ? '' : ' <span title="\u05D7\u05E1\u05E8 \u05EA\u05D0\u05E8\u05D9\u05DA cutoff" style="color:#f59e0b">\u26A0\uFE0F</span>')
       : '\u2014';
     return '<tr style="cursor:pointer" onclick="openSupplierDetail(\'' + s.id + '\')">' +
       '<td>' + escapeHtml(s.name) + '</td>' +
       '<td>' + s.openCount + '</td>' +
-      '<td>' + formatILS(s.totalDebt) + '</td>' +
+      '<td style="' + balColor + '">' + formatILS(s.finalBalance) + '</td>' +
       '<td' + overdueStyle + '>' + formatILS(s.overdueAmt) + '</td>' +
       '<td>' + escapeHtml(s.nextDue || '\u2014') + '</td>' +
       '<td>' + obCell + '</td>' +
-      '<td>' + dealCell + '</td>' +
       '<td>' +
         '<button class="btn-sm" onclick="event.stopPropagation();openSupplierDetail(\'' + s.id + '\')">צפה</button> ' +
         '<button class="btn-sm" onclick="event.stopPropagation();openPaymentForSupplier(\'' + s.id + '\')">תשלום חדש</button>' +
@@ -315,8 +320,8 @@ function renderSuppliersTable(data) {
   }).join('');
   tableWrap.innerHTML =
     '<div style="overflow-x:auto"><table class="data-table" style="width:100%;font-size:.88rem">' +
-      '<thead><tr><th>\u05E1\u05E4\u05E7</th><th>\u05E4\u05EA\u05D5\u05D7\u05D9\u05DD</th><th>\u05D7\u05D5\u05D1 \u05DB\u05D5\u05DC\u05DC</th><th>\u05D1\u05D0\u05D9\u05D7\u05D5\u05E8</th>' +
-        '<th>\u05EA\u05E9\u05DC\u05D5\u05DD \u05D4\u05D1\u05D0</th><th>\u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</th><th>\u05E2\u05E1\u05E7\u05D4</th><th>\u05E4\u05E2\u05D5\u05DC\u05D5\u05EA</th>' +
+      '<thead><tr><th>\u05E1\u05E4\u05E7</th><th>\u05E4\u05EA\u05D5\u05D7\u05D9\u05DD</th><th>\u05D9\u05EA\u05E8\u05D4 \u05E1\u05D5\u05E4\u05D9\u05EA</th><th>\u05D1\u05D0\u05D9\u05D7\u05D5\u05E8</th>' +
+        '<th>\u05EA\u05E9\u05DC\u05D5\u05DD \u05D4\u05D1\u05D0</th><th>\u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</th><th>\u05E4\u05E2\u05D5\u05DC\u05D5\u05EA</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
 }
 
