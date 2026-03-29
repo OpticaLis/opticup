@@ -5,3 +5,8 @@ scripts/config.json
 scripts/start-watcher.bat
 serve.js
 watcher-deploy/daemon/opticupsyncwatcher.out.log
+
+# Environment files
+.env
+.env.*
+!.env.example

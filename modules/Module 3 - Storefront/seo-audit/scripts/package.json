@@ -1,0 +1,15 @@
+{
+  "name": "opticup-seo-audit",
+  "version": "1.0.0",
+  "description": "SEO site audit for Prizma Optic WordPress domains",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "crawl": "node crawl-wp-api.mjs",
+    "report": "node generate-report.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "node-fetch": "^3.3.2"
+  }
+}
