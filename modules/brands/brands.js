@@ -95,14 +95,21 @@ function renderBrandsTable() {
     const color = inactive ? 'color:#999' : (minQ == null ? '' : (isLow ? 'color:#e53935' : 'color:#2e7d32'));
     // Mark dirty on any field change
     var d = '_markDirty('+i+');';
-    // Delete button: enabled if qty=0, disabled if qty>0
+    // Action buttons based on state
     var delBtn = '';
     if (b.isNew) {
       delBtn = '<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;font-size:.75rem;padding:2px 6px" onclick="_cancelNewBrand(' + i + ')" title="\u05D1\u05D8\u05DC">\u2716</button>';
+    } else if (b.id && inactive) {
+      // Inactive brand: reactivate + permanent delete
+      delBtn = '<button class="btn btn-sm" style="background:#dcfce7;color:#16a34a;font-size:.72rem;padding:2px 5px;margin-left:2px" onclick="_reactivateBrand(\'' + b.id + '\',' + i + ')" title="\u05D4\u05E4\u05E2\u05DC \u05DE\u05D7\u05D3\u05E9">\u267B\uFE0F</button>' +
+        (qty > 0
+          ? '<button class="btn btn-sm" style="background:#f3f4f6;color:#9ca3af;font-size:.72rem;padding:2px 5px;cursor:not-allowed" disabled title="' + qty + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05D1\u05DE\u05DC\u05D0\u05D9">\u274C</button>'
+          : '<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;font-size:.72rem;padding:2px 5px" onclick="_permanentDeleteBrand(\'' + b.id + '\',' + i + ')" title="\u05DE\u05D7\u05E7 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA">\u274C</button>');
     } else if (b.id) {
+      // Active brand: soft-delete
       delBtn = qty > 0
         ? '<button class="btn btn-sm" style="background:#f3f4f6;color:#9ca3af;font-size:.75rem;padding:2px 6px;cursor:not-allowed" disabled title="\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05DE\u05D7\u05D5\u05E7 \u2014 ' + qty + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05D1\u05DE\u05DC\u05D0\u05D9">\uD83D\uDDD1\uFE0F</button>'
-        : '<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;font-size:.75rem;padding:2px 6px" onclick="_deleteBrand(\'' + b.id + '\',' + i + ')" title="\u05DE\u05D7\u05E7 \u05DE\u05D5\u05EA\u05D2">\uD83D\uDDD1\uFE0F</button>';
+        : '<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;font-size:.75rem;padding:2px 6px" onclick="_deleteBrand(\'' + b.id + '\',' + i + ')" title="\u05D4\u05E9\u05D1\u05EA \u05DE\u05D5\u05EA\u05D2">\uD83D\uDDD1\uFE0F</button>';
     }
     return `<tr data-idx="${i}"${inactive ? ' style="opacity:0.7"' : ''}>
       <td><input value="${escapeHtml(b.name)}" onchange="brandsEdited[${i}].name=this.value;${d}"></td>
@@ -203,6 +210,58 @@ async function _doDeleteBrand(brandId, brandName) {
   }
 }
 
+async function _reactivateBrand(brandId, filteredIdx) {
+  var b = brandsEdited[filteredIdx];
+  if (!b || !brandId) return;
+  try {
+    var { error } = await sb.from('brands').update({ active: true, updated_at: new Date().toISOString() })
+      .eq('id', brandId).eq('tenant_id', getTenantId());
+    if (error) throw error;
+    var local = allBrandsData.find(function(x) { return x.id === brandId; });
+    if (local) local.active = true;
+    writeLog('brand_reactivate', null, { brand_id: brandId, brand_name: b.name });
+    toast('\u05D4\u05DE\u05D5\u05EA\u05D2 "' + b.name + '" \u05D4\u05D5\u05E4\u05E2\u05DC \u05DE\u05D7\u05D3\u05E9', 's');
+    renderBrandsTable();
+    if (typeof refreshLowStockBanner === 'function') refreshLowStockBanner();
+  } catch (e) { toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e'); }
+}
+
+async function _permanentDeleteBrand(brandId, filteredIdx) {
+  var b = brandsEdited[filteredIdx];
+  if (!b || !brandId) return;
+  if (b.currentQty > 0) {
+    toast('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05DE\u05D7\u05D5\u05E7 \u2014 ' + b.currentQty + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05D1\u05DE\u05DC\u05D0\u05D9', 'e');
+    return;
+  }
+  var ok = await confirmDialog('\u05DE\u05D7\u05D9\u05E7\u05D4 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA',
+    '\u05DC\u05DE\u05D7\u05D5\u05E7 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA \u05D0\u05EA "' + escapeHtml(b.name) + '"?\n\u05E4\u05E2\u05D5\u05DC\u05D4 \u05D6\u05D5 \u05D1\u05DC\u05EA\u05D9 \u05D4\u05E4\u05D9\u05DB\u05D4!');
+  if (!ok) return;
+  // Double PIN (Iron Rule #3)
+  promptPin('\u05DE\u05D7\u05D9\u05E7\u05D4 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA \u2014 PIN \u05E8\u05D0\u05E9\u05D5\u05DF', function(pin1) {
+    verifyPinOnly(pin1).then(function(v1) {
+      if (!v1) { toast('PIN \u05E9\u05D2\u05D5\u05D9', 'e'); return; }
+      promptPin('\u05DE\u05D7\u05D9\u05E7\u05D4 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA \u2014 PIN \u05E9\u05E0\u05D9', function(pin2) {
+        verifyPinOnly(pin2).then(function(v2) {
+          if (!v2) { toast('PIN \u05E9\u05D2\u05D5\u05D9', 'e'); return; }
+          _doPermanentDelete(brandId, b.name);
+        });
+      });
+    });
+  });
+}
+
+async function _doPermanentDelete(brandId, brandName) {
+  try {
+    var { error } = await sb.from('brands').delete()
+      .eq('id', brandId).eq('tenant_id', getTenantId());
+    if (error) throw error;
+    writeLog('brand_permanent_delete', null, { brand_id: brandId, brand_name: brandName });
+    toast('\u05D4\u05DE\u05D5\u05EA\u05D2 "' + brandName + '" \u05E0\u05DE\u05D7\u05E7 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA', 's');
+    allBrandsData = allBrandsData.filter(function(x) { return x.id !== brandId; });
+    renderBrandsTable();
+  } catch (e) { toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e'); }
+}
+
 async function saveBrands() {
   showLoading('\u05E9\u05D5\u05DE\u05E8 \u05DE\u05D5\u05EA\u05D2\u05D9\u05DD...');
   try {
@@ -223,11 +282,27 @@ async function saveBrands() {
       updCount++;
     }
 
-    // Create new brands
+    // Create new brands — check for duplicates first
     const newBrands = allBrandsData.filter(b => b.isNew && b.name);
     if (newBrands.length) {
+      // Check each new name against DB (including inactive)
+      var dupes = [];
+      for (var ni = 0; ni < newBrands.length; ni++) {
+        var nm = newBrands[ni].name.trim();
+        var { data: dup } = await sb.from('brands').select('id, name, active')
+          .eq('tenant_id', getTenantId()).ilike('name', nm).maybeSingle();
+        if (dup) {
+          dupes.push(dup.active === false
+            ? '\u05D4\u05DE\u05D5\u05EA\u05D2 "' + nm + '" \u05E7\u05D9\u05D9\u05DD \u05D1\u05DC\u05D0 \u05E4\u05E2\u05D9\u05DC\u05D9\u05DD \u2014 \u05E1\u05E0\u05DF "\u05D4\u05DB\u05DC" \u05DC\u05D4\u05E4\u05E2\u05D9\u05DC'
+            : '\u05DE\u05D5\u05EA\u05D2 \u05D1\u05E9\u05DD "' + nm + '" \u05DB\u05D1\u05E8 \u05E7\u05D9\u05D9\u05DD');
+        }
+      }
+      if (dupes.length) {
+        toast(dupes[0], 'e');
+        hideLoading(); return;
+      }
       const rows = newBrands.map(b => ({
-        name: b.name,
+        name: b.name.trim(),
         brand_type: heToEn('brand_type', b.type) || null,
         default_sync: heToEn('website_sync', b.defaultSync) || null,
         active: b.active,
@@ -235,8 +310,14 @@ async function saveBrands() {
         min_stock_qty: b.minStockQty ?? null,
         tenant_id: getTenantId()
       }));
-      const { error } = await sb.from('brands').insert(rows);
-      if (error) throw new Error(error.message);
+      var { error: insErr } = await sb.from('brands').insert(rows);
+      if (insErr) {
+        if ((insErr.message || '').includes('duplicate') || (insErr.message || '').includes('unique')) {
+          toast('\u05DE\u05D5\u05EA\u05D2 \u05D1\u05E9\u05DD \u05D6\u05D4 \u05DB\u05D1\u05E8 \u05E7\u05D9\u05D9\u05DD \u2014 \u05D1\u05D3\u05D5\u05E7 \u05D1\u05DC\u05D0 \u05E4\u05E2\u05D9\u05DC\u05D9\u05DD', 'e');
+          hideLoading(); return;
+        }
+        throw new Error(insErr.message);
+      }
       createCount = newBrands.length;
     }
 
