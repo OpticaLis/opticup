@@ -67,9 +67,17 @@ async function loadReceiptTab() {
           }
         }
 
+        // Multi-doc badge: show "+N" if multiple document numbers
+        var docNums = r.document_numbers || [];
+        var extraCount = docNums.length > 1 ? docNums.length - 1 : 0;
+        var docNumDisplay = '<strong>' + escapeHtml(r.receipt_number) + '</strong>';
+        if (extraCount > 0) {
+          docNumDisplay += ' <span style="background:#e0e7ff;color:#3730a3;padding:1px 5px;border-radius:4px;font-size:.75rem">+' + extraCount + '</span>';
+        }
+
         return `<tr>
           <td>${idx + 1}</td>
-          <td><strong>${r.receipt_number}</strong></td>
+          <td>${docNumDisplay}</td>
           <td>${typeLabel}</td>
           <td>${supName}</td>
           <td>${dateStr}</td>
