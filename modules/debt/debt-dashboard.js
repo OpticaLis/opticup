@@ -18,63 +18,54 @@ async function loadDebtSummary() {
     String(today.getMonth() + 1).padStart(2, '0') + '-01';
 
   try {
-    // Fetch open documents + suppliers (for opening balance)
+    // Fetch ALL non-cancelled documents + suppliers (for opening balance + invoiced total)
     const [docsResult, supResult] = await Promise.all([
-      sb.from(T.SUP_DOCS).select('total_amount, paid_amount, due_date, exchange_rate, document_type_id, supplier_id, document_date')
-        .eq('tenant_id', tid).eq('is_deleted', false).not('status', 'in', '("paid","cancelled")'),
+      sb.from(T.SUP_DOCS).select('total_amount, paid_amount, due_date, exchange_rate, status, document_type_id, supplier_id, document_date')
+        .eq('tenant_id', tid).eq('is_deleted', false).not('status', 'eq', 'cancelled'),
       fetchAll(T.SUPPLIERS, [['active', 'eq', true]])
     ]);
     const docs = docsResult.data; const docsErr = docsResult.error;
     if (docsErr) { console.error('Debt summary docs error:', docsErr); return; }
     var obMap = {}; (supResult || []).forEach(function(s) { obMap[s.id] = s; });
-    let totalDebt = (supResult || []).reduce(function(s, sup) { return s + (Number(sup.opening_balance) || 0); }, 0);
+    // totalInvoiced = raw total_amount of all non-cancelled docs (NOT remaining)
+    let totalInvoiced = (supResult || []).reduce(function(s, sup) { return s + (Number(sup.opening_balance) || 0); }, 0);
     let dueThisWeek = 0;
     let overdue = 0;
 
     (docs || []).forEach(function(doc) {
-      // Phase 8: skip docs before supplier's cutoff date
       var sup = obMap[doc.supplier_id];
       if (sup && sup.opening_balance_date && doc.document_date && doc.document_date < sup.opening_balance_date) return;
       const rate = Number(doc.exchange_rate) || 1;
-      const remaining = (Number(doc.total_amount) - Number(doc.paid_amount)) * rate;
-      if (remaining <= 0) return;
-
-      totalDebt += remaining;
-
-      if (doc.due_date) {
-        if (doc.due_date < todayStr) {
-          overdue += remaining;
-        } else if (doc.due_date <= weekStr) {
-          dueThisWeek += remaining;
-        }
+      totalInvoiced += (Number(doc.total_amount) || 0) * rate;
+      // Overdue/due only for docs with remaining balance
+      const remaining = ((Number(doc.total_amount) || 0) - (Number(doc.paid_amount) || 0)) * rate;
+      if (remaining > 0 && doc.due_date) {
+        if (doc.due_date < todayStr) overdue += remaining;
+        else if (doc.due_date <= weekStr) dueThisWeek += remaining;
       }
     });
 
-    const { data: payments, error: payErr } = await sb.from(T.SUP_PAYMENTS)
+    const { data: monthPayments, error: payErr } = await sb.from(T.SUP_PAYMENTS)
       .select('amount, exchange_rate')
       .eq('tenant_id', tid)
       .gte('payment_date', monthStart)
       .lte('payment_date', todayStr);
-
     if (payErr) { console.error('Debt summary payments error:', payErr); }
     let paidThisMonth = 0;
-    (payments || []).forEach(function(p) {
+    (monthPayments || []).forEach(function(p) {
       const rate = Number(p.exchange_rate) || 1;
       paidThisMonth += Number(p.amount) * rate;
     });
-    // Factor in payments + deals + adjustments: יתרה = paid + deals - debt + adj
-    var [_dashDeals, _dashAdj] = await Promise.all([
+    // יתרה = totalPaid + deals - totalInvoiced + adjustments
+    var [_allPay, _dashDeals, _dashAdj] = await Promise.all([
+      sb.from(T.SUP_PAYMENTS).select('amount, exchange_rate').eq('tenant_id', tid),
       sb.from(T.PREPAID_DEALS).select('total_prepaid').eq('tenant_id', tid).eq('status', 'active').eq('is_deleted', false),
       sb.from(T.BAL_ADJ).select('amount').eq('tenant_id', tid)
     ]);
+    var totalAllPaid = (_allPay.data || []).reduce(function(s, p) { return s + (Number(p.amount) || 0) * (Number(p.exchange_rate) || 1); }, 0);
     var totalDealAmount = (_dashDeals.data || []).reduce(function(s, d) { return s + (Number(d.total_prepaid) || 0); }, 0);
     var totalAdjAmount = (_dashAdj.data || []).reduce(function(s, a) { return s + (Number(a.amount) || 0); }, 0);
-    var finalBalance = paidThisMonth + totalDealAmount - totalDebt + totalAdjAmount;
-    // Note: paidThisMonth is only this month's payments for the card; for overall balance
-    // we need total payments. Use a separate query:
-    var { data: _allPayments } = await sb.from(T.SUP_PAYMENTS).select('amount, exchange_rate').eq('tenant_id', tid);
-    var totalAllPaid = (_allPayments || []).reduce(function(s, p) { return s + (Number(p.amount) || 0) * (Number(p.exchange_rate) || 1); }, 0);
-    finalBalance = totalAllPaid + totalDealAmount - totalDebt + totalAdjAmount;
+    var finalBalance = totalAllPaid + totalDealAmount - totalInvoiced + totalAdjAmount;
 
     document.getElementById('val-total-debt').textContent = formatILS(finalBalance);
     // Positive = credit (green), Negative = we owe (red)
@@ -199,23 +190,26 @@ async function loadSuppliersTab() {
     _supTabData = suppliers.map(function(sup) {
       var cutoff = sup.opening_balance_date || null;
       var allSupDocs = docs.filter(function(d) { return d.supplier_id === sup.id; });
-      var supDocs = allSupDocs.filter(function(d) {
-        if (d.status === 'paid' || d.status === 'cancelled') return false;
+      // Non-cancelled docs (regardless of paid status) for total invoiced
+      var activeDocs = allSupDocs.filter(function(d) {
+        if (d.status === 'cancelled') return false;
         if (cutoff && d.document_date && d.document_date < cutoff) return false;
         return true;
       });
-      var openCount = supDocs.length;
-      // totalDebt = opening_balance + sum of open doc remaining amounts
-      var totalDebt = Number(sup.opening_balance) || 0;
+      // Open docs (not paid/cancelled) for count + overdue
+      var openDocs = activeDocs.filter(function(d) { return d.status !== 'paid'; });
+      var openCount = openDocs.length;
+      // totalInvoiced = raw total_amount of all non-cancelled docs (NOT remaining)
+      var totalInvoiced = Number(sup.opening_balance) || 0;
       var overdueAmt = 0, nextDue = null;
-      supDocs.forEach(function(d) {
+      activeDocs.forEach(function(d) {
         var rate = Number(d.exchange_rate) || 1;
-        var remaining = (Number(d.total_amount) - Number(d.paid_amount)) * rate;
-        if (remaining <= 0) return;
-        totalDebt += remaining;
-        if (d.due_date && d.due_date < todayStr) overdueAmt += remaining;
-        if (d.due_date && d.due_date >= todayStr) {
-          if (!nextDue || d.due_date < nextDue) nextDue = d.due_date;
+        totalInvoiced += (Number(d.total_amount) || 0) * rate;
+        // Overdue/due only for docs with remaining balance
+        var remaining = ((Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0)) * rate;
+        if (remaining > 0 && d.due_date) {
+          if (d.due_date < todayStr) overdueAmt += remaining;
+          else if (!nextDue || d.due_date < nextDue) nextDue = d.due_date;
         }
       });
       var deal = deals.find(function(dl) { return dl.supplier_id === sup.id; });
@@ -226,12 +220,13 @@ async function loadSuppliersTab() {
       var totalAdj = adjBySupplier[sup.id] || 0;
       var hasReceiptDocs = allSupDocs.some(function(d) { return !!d.goods_receipt_id; });
       var hasHistory = allSupDocs.length > 0 || totalPaid > 0 || !!deal;
-      // יתרה סופית = paid + deals - debt + adjustments
+      // יתרה סופית = paid + deals - invoiced + adjustments
+      // Uses raw total_amount (not remaining) to avoid double-counting payments
       // Positive = credit (green), Negative = we owe (red)
-      var finalBalance = totalPaid + dealTotal - totalDebt + totalAdj;
+      var finalBalance = totalPaid + dealTotal - totalInvoiced + totalAdj;
       return {
-        id: sup.id, name: sup.name, openCount: openCount, totalDebt: totalDebt,
-        finalBalance: finalBalance, totalPaid: totalPaid,
+        id: sup.id, name: sup.name, openCount: openCount,
+        totalInvoiced: totalInvoiced, finalBalance: finalBalance, totalPaid: totalPaid,
         overdueAmt: overdueAmt, nextDue: nextDue, hasDeal: !!deal,
         dealTotal: dealTotal, dealUsed: dealUsed, dealRemaining: dealRemaining,
         openingBalance: Number(sup.opening_balance) || 0, openingBalanceDate: cutoff,

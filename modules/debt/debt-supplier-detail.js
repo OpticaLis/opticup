@@ -41,19 +41,18 @@ async function openSupplierDetail(supplierId) {
     var detailAdj = results[4] || [];
     _detailSupplierName = supplier ? supplier.name : '';
 
-    // Calculate summary (Phase 8: respects opening_balance + cutoff date)
+    // Calculate summary — uses raw total_amount (not remaining) to avoid double-counting payments
     var todayStr = new Date().toISOString().slice(0, 10);
     var cutoff = supplier ? supplier.opening_balance_date : null;
-    var totalDebt = supplier ? (Number(supplier.opening_balance) || 0) : 0;
+    var totalInvoiced = supplier ? (Number(supplier.opening_balance) || 0) : 0;
     var overdueAmt = 0;
     docs.forEach(function(d) {
-      if (d.status === 'paid' || d.status === 'cancelled') return;
+      if (d.status === 'cancelled') return;
       if (cutoff && d.document_date && d.document_date < cutoff) return;
       var rate = Number(d.exchange_rate) || 1;
-      var remaining = (Number(d.total_amount) - Number(d.paid_amount)) * rate;
-      if (remaining <= 0) return;
-      totalDebt += remaining;
-      if (d.due_date && d.due_date < todayStr) overdueAmt += remaining;
+      totalInvoiced += (Number(d.total_amount) || 0) * rate;
+      var remaining = ((Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0)) * rate;
+      if (remaining > 0 && d.due_date && d.due_date < todayStr) overdueAmt += remaining;
     });
 
     var deal = deals[0];
@@ -61,8 +60,8 @@ async function openSupplierDetail(supplierId) {
     var dealRemaining = deal ? dealTotal - (Number(deal.total_used) || 0) : 0;
     var totalPaid = detailPayments.reduce(function(s, p) { return s + (Number(p.amount) || 0) * (Number(p.exchange_rate) || 1); }, 0);
     var totalAdj = detailAdj.reduce(function(s, a) { return s + (Number(a.amount) || 0); }, 0);
-    // יתרה סופית = paid + deals - debt + adjustments
-    var detailFinalBalance = totalPaid + dealTotal - totalDebt + totalAdj;
+    // יתרה סופית = paid + deals - invoiced + adjustments
+    var detailFinalBalance = totalPaid + dealTotal - totalInvoiced + totalAdj;
 
     // Render header
     var overdueStyle = overdueAmt > 0 ? 'color:var(--error);font-weight:600' : '';
