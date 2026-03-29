@@ -7,6 +7,8 @@ var _imgModalEl = null;
 var _imgCurrentBarcode = '';
 var FRAME_IMAGES_BUCKET = 'frame-images';
 var _IMG_SIGN_EXPIRY = 3600; // 1 hour signed URL expiry
+var _imgNavList = null;     // array of inventory IDs for prev/next navigation
+var _imgNavIndex = -1;
 
 // Update image count badge in the inventory table row
 function _updateImageBadge() {
@@ -22,16 +24,23 @@ function _updateImageBadge() {
   }
 }
 
-// Generate signed URL from storage_path (private bucket)
-async function _getSignedUrl(storagePath) {
+// Generate signed URL from storage_path (private bucket), with retry
+async function _getSignedUrl(storagePath, retries) {
   if (!storagePath) return '';
-  var { data, error } = await sb.storage.from(FRAME_IMAGES_BUCKET)
-    .createSignedUrl(storagePath, _IMG_SIGN_EXPIRY);
-  if (error) { console.warn('Signed URL error:', error.message); return ''; }
-  return data?.signedUrl || '';
+  var maxRetries = retries || 2;
+  for (var attempt = 0; attempt <= maxRetries; attempt++) {
+    var { data, error } = await sb.storage.from(FRAME_IMAGES_BUCKET)
+      .createSignedUrl(storagePath, _IMG_SIGN_EXPIRY);
+    if (!error && data?.signedUrl) return data.signedUrl;
+    if (attempt < maxRetries) {
+      await new Promise(function(r) { setTimeout(r, 400); });
+    }
+  }
+  console.warn('Signed URL failed after retries:', storagePath);
+  return '';
 }
 
-// Sign all images in an array (adds _signedUrl property)
+// Sign all images in an array (adds _signedUrl property), with retry for failures
 async function _signImages(images) {
   if (!images || !images.length) return;
   var paths = images.map(function(im) { return im.storage_path; }).filter(Boolean);
@@ -48,12 +57,22 @@ async function _signImages(images) {
   for (var j = 0; j < images.length; j++) {
     images[j]._signedUrl = urlMap[images[j].storage_path] || '';
   }
+  // Retry individually for any images that failed batch signing
+  var failed = images.filter(function(im) { return im.storage_path && !im._signedUrl; });
+  if (failed.length > 0) {
+    await new Promise(function(r) { setTimeout(r, 400); });
+    for (var k = 0; k < failed.length; k++) {
+      failed[k]._signedUrl = await _getSignedUrl(failed[k].storage_path, 1);
+    }
+  }
 }
 
-async function openImageModal(inventoryId) {
+async function openImageModal(inventoryId, navList) {
   _imgCurrentInvId = inventoryId;
   _imgPending = [];
-  showLoading('טוען תמונות...');
+  _imgNavList = (navList && navList.length > 1) ? navList : null;
+  _imgNavIndex = _imgNavList ? _imgNavList.indexOf(inventoryId) : -1;
+  showLoading('\u05D8\u05D5\u05E2\u05DF \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA...');
   try {
     var tid = getTenantId();
     var { data: imgs, error: imgErr } = await sb.from(T.IMAGES)
@@ -63,22 +82,28 @@ async function openImageModal(inventoryId) {
     _imgCurrentImages = imgs || [];
     await _signImages(_imgCurrentImages);
     var { data: item } = await sb.from(T.INV)
-      .select('barcode, brand_id, model').eq('id', inventoryId).eq('tenant_id', tid).single();
+      .select('barcode, brand_id, model, color, size').eq('id', inventoryId).eq('tenant_id', tid).single();
     _imgCurrentBarcode = item?.barcode || '';
-    var brandName = item ? (brandCacheRev[item.brand_id] || '') : '';
-    var title = '\uD83D\uDCF7 \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA \u2014 ' +
-      (brandName ? brandName + ' ' : '') + (item?.model || '') +
-      (item?.barcode ? ' (' + item.barcode + ')' : '');
+    var title = _buildImgTitle(item);
     hideLoading();
+    // Nav buttons
+    var navHtml = '';
+    if (_imgNavList) {
+      var prevDis = _imgNavIndex <= 0 ? ' disabled style="opacity:.4"' : '';
+      var nextDis = _imgNavIndex >= _imgNavList.length - 1 ? ' disabled style="opacity:.4"' : '';
+      navHtml = '<div style="display:flex;justify-content:space-between;margin-bottom:8px">' +
+        '<button class="btn btn-sm" id="img-btn-next"' + nextDis + ' onclick="_imgNavigate(1)">\u25C0 \u05D4\u05D1\u05D0</button>' +
+        '<span id="img-nav-counter" style="font-size:.78rem;color:var(--g500);align-self:center">' + (_imgNavIndex + 1) + '/' + _imgNavList.length + '</span>' +
+        '<button class="btn btn-sm" id="img-btn-prev"' + prevDis + ' onclick="_imgNavigate(-1)">\u05D4\u05E7\u05D5\u05D3\u05DD \u25B6</button></div>';
+    }
     var modal = Modal.show({
       title: title, size: 'lg',
-      content: '<div id="img-modal-grid"></div>',
+      content: navHtml + '<div id="img-modal-grid"></div>',
       footer: '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">' +
         '<button class="btn" style="background:#2196F3;color:#fff" id="img-btn-capture">\uD83D\uDCF8 \u05E6\u05DC\u05DD</button>' +
         '<button class="btn" style="background:#4CAF50;color:#fff" id="img-btn-pick">\uD83D\uDCC1 \u05D4\u05E2\u05DC\u05D4</button>' +
         '<button class="btn" style="background:#059669;color:#fff;display:none" id="img-btn-save">\u2B06\uFE0F \u05E9\u05DE\u05D5\u05E8 \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA</button>' +
-        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="Modal.close()">\u05E1\u05D2\u05D5\u05E8</button>' +
-        '</div>',
+        '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="Modal.close()">\u05E1\u05D2\u05D5\u05E8</button></div>',
       closeOnEscape: true, closeOnBackdrop: true
     });
     _imgModalEl = modal.el;
@@ -88,11 +113,55 @@ async function openImageModal(inventoryId) {
     var saveBtn = modal.el.querySelector('#img-btn-save');
     if (captureBtn) captureBtn.onclick = _captureImage;
     if (pickBtn) pickBtn.onclick = _pickImage;
-    if (saveBtn) saveBtn.onclick = function() { _uploadPendingImages(inventoryId); };
+    if (saveBtn) saveBtn.onclick = function() { _uploadPendingImages(_imgCurrentInvId); };
   } catch (e) {
-    hideLoading();
-    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA: ' + (e.message || ''), 'e');
+    hideLoading(); toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA: ' + (e.message || ''), 'e');
   }
+}
+
+function _buildImgTitle(item) {
+  var brandName = item ? (brandCacheRev[item.brand_id] || '') : '';
+  var parts = ['\uD83D\uDCF7'];
+  if (brandName) parts.push(brandName);
+  if (item?.model) parts.push(item.model);
+  var details = [item?.color, item?.size].filter(Boolean).join(' | ');
+  if (details) parts.push('\u2014 ' + details);
+  if (item?.barcode) parts.push('(' + item.barcode + ')');
+  return parts.join(' ');
+}
+
+async function _imgNavigate(dir) {
+  if (!_imgNavList) return;
+  var newIdx = _imgNavIndex + dir;
+  if (newIdx < 0 || newIdx >= _imgNavList.length) return;
+  _imgNavIndex = newIdx;
+  var newId = _imgNavList[_imgNavIndex];
+  _imgCurrentInvId = newId;
+  _imgPending = [];
+  // Update nav button state
+  var prevBtn = _imgModalEl ? _imgModalEl.querySelector('#img-btn-prev') : null;
+  var nextBtn = _imgModalEl ? _imgModalEl.querySelector('#img-btn-next') : null;
+  var counter = _imgModalEl ? _imgModalEl.querySelector('#img-nav-counter') : null;
+  if (prevBtn) { prevBtn.disabled = _imgNavIndex <= 0; prevBtn.style.opacity = _imgNavIndex <= 0 ? '.4' : ''; }
+  if (nextBtn) { nextBtn.disabled = _imgNavIndex >= _imgNavList.length - 1; nextBtn.style.opacity = _imgNavIndex >= _imgNavList.length - 1 ? '.4' : ''; }
+  if (counter) counter.textContent = (_imgNavIndex + 1) + '/' + _imgNavList.length;
+  // Reload content
+  showLoading('\u05D8\u05D5\u05E2\u05DF...');
+  try {
+    var tid = getTenantId();
+    var { data: imgs } = await sb.from(T.IMAGES).select('*').eq('inventory_id', newId).eq('tenant_id', tid).order('sort_order', { ascending: true });
+    _imgCurrentImages = imgs || [];
+    await _signImages(_imgCurrentImages);
+    var { data: item } = await sb.from(T.INV).select('barcode, brand_id, model, color, size').eq('id', newId).eq('tenant_id', tid).single();
+    _imgCurrentBarcode = item?.barcode || '';
+    // Update title
+    var titleEl = _imgModalEl ? _imgModalEl.querySelector('.modal-title, h3') : null;
+    if (titleEl) titleEl.textContent = _buildImgTitle(item);
+    _renderImageGrid(); _updateSaveBtn();
+    var saveBtn = _imgModalEl ? _imgModalEl.querySelector('#img-btn-save') : null;
+    if (saveBtn) saveBtn.onclick = function() { _uploadPendingImages(_imgCurrentInvId); };
+  } catch (e) { toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e'); }
+  hideLoading(); _updateImageBadge();
 }
 
 function _captureImage() {
@@ -217,6 +286,8 @@ async function _uploadPendingImages(inventoryId) {
       URL.revokeObjectURL(p.previewUrl);
     }
     _imgPending = [];
+    // Brief delay to ensure Storage propagation before signing URLs
+    await new Promise(function(r) { setTimeout(r, 300); });
     // Refresh images from DB + sign URLs
     var { data: fresh } = await sb.from(T.IMAGES).select('*')
       .eq('inventory_id', inventoryId).eq('tenant_id', tid)
@@ -235,37 +306,26 @@ async function _uploadPendingImages(inventoryId) {
   }
 }
 
-// Download image via fetch → blob → object URL
 function _downloadImage(url, filename) {
   fetch(url).then(function(r) { return r.blob(); }).then(function(blob) {
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename || 'image.webp';
-    a.click();
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename || 'image.webp'; a.click();
     setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
   }).catch(function() { toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05D5\u05E8\u05D3\u05D4', 'e'); });
 }
 
-// Full-size image preview overlay
 function _showFullImage(url) {
-  var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;cursor:pointer';
-  overlay.innerHTML =
-    '<img src="' + escapeHtml(url) + '" style="max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;touch-action:pinch-zoom">' +
-    '<button style="position:absolute;top:20px;right:20px;background:white;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer">\u2715</button>' +
-    '<button onclick="event.stopPropagation();_downloadImage(\'' + escapeHtml(url) + '\',\'' + escapeHtml(_imgCurrentBarcode || 'image') + '.webp\')" ' +
-      'style="position:absolute;top:20px;right:70px;background:white;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer" title="\u05D4\u05D5\u05E8\u05D3">\u2B07\uFE0F</button>';
-  overlay.addEventListener('click', function() { overlay.remove(); });
-  document.body.appendChild(overlay);
+  var o = document.createElement('div');
+  o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;cursor:pointer';
+  o.innerHTML = '<img src="' + escapeHtml(url) + '" style="max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;touch-action:pinch-zoom">' +
+    '<button style="position:absolute;top:20px;right:20px;background:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer">\u2715</button>' +
+    '<button onclick="event.stopPropagation();_downloadImage(\'' + escapeHtml(url) + '\',\'' + escapeHtml(_imgCurrentBarcode || 'image') + '.webp\')" style="position:absolute;top:20px;right:70px;background:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer" title="\u05D4\u05D5\u05E8\u05D3">\u2B07\uFE0F</button>';
+  o.onclick = function() { o.remove(); };
+  document.body.appendChild(o);
 }
 
 function _deleteImage(imageId, storagePath) {
-  Modal.confirm({
-    title: '\u05DE\u05D7\u05D9\u05E7\u05EA \u05EA\u05DE\u05D5\u05E0\u05D4',
-    message: '\u05DC\u05DE\u05D7\u05D5\u05E7 \u05EA\u05DE\u05D5\u05E0\u05D4 \u05D6\u05D5?',
-    confirmText: '\u05DE\u05D7\u05E7', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
-    onConfirm: function() { _doDeleteImage(imageId, storagePath); }
-  });
+  Modal.confirm({ title: '\u05DE\u05D7\u05D9\u05E7\u05EA \u05EA\u05DE\u05D5\u05E0\u05D4', message: '\u05DC\u05DE\u05D7\u05D5\u05E7 \u05EA\u05DE\u05D5\u05E0\u05D4 \u05D6\u05D5?',
+    confirmText: '\u05DE\u05D7\u05E7', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC', onConfirm: function() { _doDeleteImage(imageId, storagePath); } });
 }
 
 async function _doDeleteImage(imageId, storagePath) {

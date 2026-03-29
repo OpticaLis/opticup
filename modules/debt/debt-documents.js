@@ -101,6 +101,8 @@ function _updateStatusBtnStyles() {
 // Render documents table into a target element.
 // opts.targetEl — DOM element to render into (defaults to $('doc-table-wrap'))
 // opts.hideSupplierCol — if true, omit supplier column (for supplier detail view)
+// opts.showCheckboxes — if true, add checkbox column for multi-select (supplier detail)
+// opts.onSelectionChange — callback(selectedIds) when checkboxes change
 function renderDocumentsTable(docs, opts) {
   var o = opts || {};
   var wrap = o.targetEl || $('doc-table-wrap');
@@ -116,7 +118,6 @@ function renderDocumentsTable(docs, opts) {
     var hasPrepaid = !!_docPrepaidSet[d.supplier_id];
     var ppBadge = hasPrepaid ? '<span style="background:#f59e0b;color:#fff;padding:1px 6px;border-radius:4px;font-size:11px;margin-right:4px">\u05DE\u05E7\u05D3\u05DE\u05D4</span>' : '';
     var uploadedAt = d.created_at ? new Date(d.created_at).toLocaleString('he-IL') : '';
-    // Source badge: receipt-linked vs standalone vs draft
     var srcBadge = '';
     if (d.status !== 'draft') {
       srcBadge = d.goods_receipt_id
@@ -126,19 +127,34 @@ function renderDocumentsTable(docs, opts) {
     if (d.missing_price) {
       srcBadge += ' <span style="background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:3px;font-size:10px">\u26A0\uFE0F \u05D7\u05E1\u05E8 \u05DE\u05D7\u05D9\u05E8</span>';
     }
-    // Row actions: view + pay + cancel only. All other actions moved to View modal.
     var actionBtns = '<button class="btn-sm" onclick="viewDocument(\'' + d.id + '\')">\u05E6\u05E4\u05D4</button>';
-    if (_isPayableDocType(type.code)) {
-      actionBtns += ' <button class="btn-sm" onclick="switchDebtTab(\'payments\')">\u05E9\u05DC\u05DD</button>';
+    if (_isPayableDocType(type.code) && (d.status === 'open' || d.status === 'partially_paid')) {
+      actionBtns += ' <button class="btn-sm" onclick="openPaymentForDocument(\'' + d.id + '\')">\u05E9\u05DC\u05DD</button>';
     }
     if (d.status === 'open' || d.status === 'partially_paid' || d.status === 'draft') {
       actionBtns += ' <button class="btn-sm" style="background:#ef4444;color:#fff" onclick="cancelDocument(\'' + d.id + '\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>';
     }
+    // Checkbox column for multi-select
+    var cbCell = '';
+    if (o.showCheckboxes) {
+      var canSelect = _isPayableDocType(type.code) && (d.status === 'open' || d.status === 'partially_paid');
+      cbCell = '<td>' + (canSelect
+        ? '<input type="checkbox" class="sd-doc-cb" data-doc-id="' + d.id + '" onchange="_sdToggleDocCb(this)">'
+        : '') + '</td>';
+    }
+    // Multi-doc: show count badge + expand button if document_numbers has 2+ entries
+    var docNums = d.document_numbers;
+    var isMultiDoc = Array.isArray(docNums) && docNums.length > 1 && docNums[0];
+    var docNumCell = isMultiDoc
+      ? '<span style="background:#e0e7ff;color:#3730a3;padding:1px 6px;border-radius:4px;font-size:.78rem">' + docNums.length + ' \uD83D\uDCC4</span> ' +
+        '<button class="btn-sm" style="font-size:.7rem;padding:0 4px;background:#e5e7eb;color:#6b7280;border:none;cursor:pointer" ' +
+          'onclick="event.stopPropagation();_toggleDocSubRow(\'' + d.id + '\')">\u22EF</button>'
+      : escapeHtml(d.document_number || '');
     var rowClass = d.status === 'draft' ? ' class="row-draft"' : '';
-    return '<tr' + rowClass + '>' +
+    return '<tr' + rowClass + ' data-doc-row="' + d.id + '">' + cbCell +
       '<td title="' + escapeHtml('\u05D4\u05D5\u05E2\u05DC\u05D4: ' + uploadedAt) + '">' + escapeHtml(d.document_date || '') + '</td>' +
       '<td>' + escapeHtml(type.name_he || '') + srcBadge + '</td>' +
-      '<td>' + escapeHtml(d.document_number || '') + '</td>' +
+      '<td>' + docNumCell + '</td>' +
       '<td>' + escapeHtml(d.internal_number || '') + '</td>' +
       (o.hideSupplierCol ? '' : '<td>' + ppBadge + escapeHtml(supMap[d.supplier_id] || '') + '</td>') +
       '<td>' + formatILS(d.total_amount) + '</td>' +
@@ -149,7 +165,9 @@ function renderDocumentsTable(docs, opts) {
   }).join('');
   wrap.innerHTML =
     '<div style="overflow-x:auto"><table class="data-table" style="width:100%;font-size:.88rem">' +
-      '<thead><tr><th>\u05EA\u05D0\u05E8\u05D9\u05DA</th><th>\u05E1\u05D5\u05D2</th><th>\u05DE\u05E1\u05E4\u05E8</th><th>\u05DE\u05E1\u05E4\u05E8 \u05E4\u05E0\u05D9\u05DE\u05D9</th>' +
+      '<thead><tr>' +
+        (o.showCheckboxes ? '<th><input type="checkbox" id="sd-select-all" onchange="_sdToggleAll(this)"></th>' : '') +
+        '<th>\u05EA\u05D0\u05E8\u05D9\u05DA</th><th>\u05E1\u05D5\u05D2</th><th>\u05DE\u05E1\u05E4\u05E8</th><th>\u05DE\u05E1\u05E4\u05E8 \u05E4\u05E0\u05D9\u05DE\u05D9</th>' +
         (o.hideSupplierCol ? '' : '<th>\u05E1\u05E4\u05E7</th>') +
         '<th>\u05E1\u05DB\u05D5\u05DD</th><th>\u05E9\u05D5\u05DC\u05DD</th><th>\u05D9\u05EA\u05E8\u05D4</th><th>\u05E1\u05D8\u05D8\u05D5\u05E1</th><th>\u05E4\u05E2\u05D5\u05DC\u05D5\u05EA</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>';
@@ -221,6 +239,34 @@ async function cancelDocument(docId) {
   });
 }
 
+// --- Multi-doc sub-row expand/collapse ---
+function _toggleDocSubRow(docId) {
+  var existing = document.querySelector('tr[data-subrow="' + docId + '"]');
+  if (existing) { existing.remove(); return; }
+  var doc = _docData.find(function(d) { return d.id === docId; });
+  if (!doc) return;
+  var nums = doc.document_numbers || [];
+  var amts = doc.document_amounts || [];
+  var subRows = nums.map(function(n, i) {
+    var amt = amts[i] ? amts[i].amount : null;
+    return '<tr><td style="padding:2px 8px">' + (i + 1) + '</td>' +
+      '<td style="padding:2px 8px">' + escapeHtml(n || '') + '</td>' +
+      '<td style="padding:2px 8px">' + (amt != null ? formatILS(amt) : '\u2014') + '</td></tr>';
+  }).join('');
+  var parentRow = document.querySelector('tr[data-doc-row="' + docId + '"]');
+  if (!parentRow) return;
+  var colCount = parentRow.children.length;
+  var subTr = document.createElement('tr');
+  subTr.setAttribute('data-subrow', docId);
+  subTr.innerHTML = '<td colspan="' + colCount + '" style="background:#f9fafb;padding:6px 20px">' +
+    '<table style="font-size:.8rem;border-collapse:collapse"><thead><tr>' +
+    '<th style="padding:2px 8px;text-align:right">#</th>' +
+    '<th style="padding:2px 8px;text-align:right">\u05DE\u05E1\u05E4\u05E8 \u05DE\u05E1\u05DE\u05DA</th>' +
+    '<th style="padding:2px 8px;text-align:right">\u05E1\u05DB\u05D5\u05DD</th>' +
+    '</tr></thead><tbody>' + subRows + '</tbody></table></td>';
+  parentRow.parentNode.insertBefore(subTr, parentRow.nextSibling);
+}
+
 // --- Phase 8: Prepaid deduction modal ---
 function openPrepaidDeductModal(docId) {
   var doc = _docData.find(function(d) { return d.id === docId; });
@@ -242,6 +288,27 @@ function openPrepaidDeductModal(docId) {
     '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'pp-deduct-modal\')">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
     '<button class="btn" style="background:#f59e0b;color:#fff" onclick="_doPrepaidDeduct(\'' + docId + '\',\'' + deal.id + '\')">\u05E7\u05D6\u05D6</button></div></div>';
   document.body.appendChild(m);
+}
+
+// Open payment wizard pre-filled for a specific document
+async function openPaymentForDocument(docId) {
+  var doc = _docData.find(function(d) { return d.id === docId; });
+  if (!doc) { toast('\u05DE\u05E1\u05DE\u05DA \u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0', 'e'); return; }
+  if (!_payMethods || !_payMethods.length) {
+    _payMethods = await fetchAll(T.PAY_METHODS, [['is_active', 'eq', true]]);
+  }
+  _wizResetState();
+  _wizState.supplierId = doc.supplier_id;
+  var sup = _docSuppliers.find(function(s) { return s.id === doc.supplier_id; });
+  _wizState.supplierName = sup ? sup.name : '';
+  _wizState.preSelectedDocIds = [docId];
+  var modal = document.createElement('div');
+  modal.id = 'pay-wizard-modal';
+  modal.className = 'modal-overlay';
+  modal.style.display = 'flex';
+  modal.innerHTML = '<div class="modal" style="max-width:560px"><div id="pay-wiz-content"></div></div>';
+  document.body.appendChild(modal);
+  _wizRenderStep2();
 }
 
 function _doPrepaidDeduct(docId, dealId) {

@@ -18,7 +18,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
       if (!item.is_new_item && itemBarcode) {
         // Existing item: increment quantity by effectiveQty
         const { data: invRow, error: findErr } = await sb.from('inventory')
-          .select('id, quantity, barcode, brand_id, model, cost_price')
+          .select('id, quantity, barcode, brand_id, model, size, color, cost_price, sell_price, sell_discount, bridge, temple_length')
           .eq('tenant_id', getTenantId())
           .eq('barcode', itemBarcode)
           .eq('is_deleted', false)
@@ -46,6 +46,35 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
               field: 'cost_price', old_value: oldCost, new_value: rcptCost,
               source: 'goods_receipt', receipt_id: receiptId
             });
+          }
+          // Auto-update sell_discount from receipt
+          var rcptDisc = parseFloat(item.sell_discount) || 0;
+          var oldDisc = parseFloat(invRow.sell_discount) || 0;
+          if (rcptDisc !== oldDisc) {
+            await batchUpdate('inventory', [{ id: invRow.id, sell_discount: rcptDisc }]);
+          }
+          // Auto-update sell_price from receipt
+          var rcptSellPrice = parseFloat(item.sell_price) || 0;
+          var oldSellPrice = parseFloat(invRow.sell_price) || 0;
+          if (rcptSellPrice > 0 && rcptSellPrice !== oldSellPrice) {
+            await batchUpdate('inventory', [{ id: invRow.id, sell_price: rcptSellPrice }]);
+          }
+          // Auto-update model/size/color if changed during receipt
+          var detailChanges = {};
+          if (item.model && item.model !== (invRow.model || '')) detailChanges.model = { from: invRow.model || '', to: item.model };
+          if (item.size && item.size !== (invRow.size || '')) detailChanges.size = { from: invRow.size || '', to: item.size };
+          if (item.color && item.color !== (invRow.color || '')) detailChanges.color = { from: invRow.color || '', to: item.color };
+          if (item.bridge && item.bridge !== (invRow.bridge || '')) detailChanges.bridge = { from: invRow.bridge || '', to: item.bridge };
+          if (item.temple_length && item.temple_length !== (invRow.temple_length || '')) detailChanges.temple_length = { from: invRow.temple_length || '', to: item.temple_length };
+          if (Object.keys(detailChanges).length) {
+            var detailUpdate = { id: invRow.id };
+            if (detailChanges.model) detailUpdate.model = item.model;
+            if (detailChanges.size) detailUpdate.size = item.size;
+            if (detailChanges.color) detailUpdate.color = item.color;
+            if (detailChanges.bridge) detailUpdate.bridge = item.bridge;
+            if (detailChanges.temple_length) detailUpdate.temple_length = item.temple_length;
+            await batchUpdate('inventory', [detailUpdate]);
+            writeLog('edit_details', invRow.id, { source: 'goods_receipt', receipt_id: receiptId, changes: detailChanges });
           }
         } else {
           console.warn('Barcode not found in inventory, creating as new:', itemBarcode);
@@ -89,26 +118,38 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
     await updatePOStatusAfterReceipt(poId);
   }
 
-  // Auto-create supplier document for debt tracking
-  const { data: rcptData } = await sb.from(T.RECEIPTS).select('supplier_id').eq('id', receiptId).eq('tenant_id', getTenantId()).single();
+  // Auto-create supplier document(s) for debt tracking
+  const { data: rcptData } = await sb.from(T.RECEIPTS).select('supplier_id, document_numbers, receipt_type').eq('id', receiptId).eq('tenant_id', getTenantId()).single();
   if (rcptData?.supplier_id) {
+    // Create primary supplier document (linked to receipt)
+    var docNumbers = (rcptData.document_numbers && rcptData.document_numbers.length) ? rcptData.document_numbers : [rcptNumber];
+    var receiptType = rcptData.receipt_type || null;
+    // Per-doc amounts: read from form if available, otherwise null (UI coming in Phase A7)
+    var docAmounts = (typeof getRcptDocAmounts === 'function') ? getRcptDocAmounts() : null;
     try {
-      const doc = await createDocumentFromReceipt(receiptId, rcptData.supplier_id, savedItems, rcptNumber);
+      var doc = await createDocumentFromReceipt(receiptId, rcptData.supplier_id, savedItems, docNumbers[0] || rcptNumber, receiptType, docNumbers, docAmounts);
       if (doc) {
-        toast(`קבלה אושרה · מסמך ספק ${doc.internal_number} נוצר`, 's');
+        toast('\u05E7\u05D1\u05DC\u05D4 \u05D0\u05D5\u05E9\u05E8\u05D4 \u00B7 \u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 ' + (doc.internal_number || '') + ' \u05E0\u05D5\u05E6\u05E8', 's');
       } else {
-        toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
+        toast('\u05E7\u05D1\u05DC\u05D4 ' + rcptNumber + ' \u05D0\u05D5\u05E9\u05E8\u05D4 \u2014 \u05DE\u05DC\u05D0\u05D9 \u05E2\u05D5\u05D3\u05DB\u05DF, \u05D0\u05DA \u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 \u05DC\u05D0 \u05E0\u05D5\u05E6\u05E8', 'w');
       }
     } catch (docErr) {
       console.error('createDocumentFromReceipt error:', docErr);
-      toast(`הקבלה אושרה אך יצירת מסמך ספק נכשלה — צור מסמך ידנית`, 'w');
+      toast('\u05D4\u05E7\u05D1\u05DC\u05D4 \u05D0\u05D5\u05E9\u05E8\u05D4 \u05D0\u05DA \u05D9\u05E6\u05D9\u05E8\u05EA \u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 \u05E0\u05DB\u05E9\u05DC\u05D4 \u2014 \u05E6\u05D5\u05E8 \u05DE\u05E1\u05DE\u05DA \u05D9\u05D3\u05E0\u05D9\u05EA', 'w');
       writeLog('debt_creation_failed', null, {
         receipt_id: receiptId, receipt_number: rcptNumber,
         supplier_id: rcptData.supplier_id, error: docErr.message || String(docErr)
       });
     }
+    // Log additional document numbers for manual follow-up
+    if (docNumbers.length > 1) {
+      writeLog('receipt_multi_docs', null, {
+        receipt_id: receiptId, document_numbers: docNumbers,
+        note: '\u05E7\u05D1\u05DC\u05D4 \u05E2\u05DD ' + docNumbers.length + ' \u05DE\u05E1\u05E4\u05E8\u05D9 \u05DE\u05E1\u05DE\u05DA \u2014 \u05D4\u05E8\u05D0\u05E9\u05D5\u05DF \u05E0\u05D5\u05E6\u05E8 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA'
+      });
+    }
   } else {
-    toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
+    toast('\u05E7\u05D1\u05DC\u05D4 ' + rcptNumber + ' \u05D0\u05D5\u05E9\u05E8\u05D4 \u2014 \u05DE\u05DC\u05D0\u05D9 \u05E2\u05D5\u05D3\u05DB\u05DF!', 's');
   }
 
   // Notify other modules (OCR template learning, etc.)
@@ -145,6 +186,11 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
   const itemQty = item.quantity || 1;
 
   const brandId = brandCache[item.brand] || null;
+  if (!brandId) {
+    console.error('createNewInventoryFromReceiptItem: brand not found in cache:', item.brand);
+    Toast.warning('מותג "' + escapeHtml(item.brand || '') + '" לא נמצא — פריט לא נכנס למלאי');
+    return null;
+  }
   const supplierId = supplierCache[$('rcpt-supplier').value] || null;
 
   // product_type from receipt item (set via PO or manual dropdown)
@@ -158,11 +204,14 @@ async function createNewInventoryFromReceiptItem(item, receiptId, rcptNumber) {
     color: item.color || '',
     size: item.size || '',
     sell_price: item.sell_price || 0,
+    sell_discount: item.sell_discount || 0,
     cost_price: item.unit_cost || 0,
     quantity: itemQty, // One record per product line with full quantity
     status: 'in_stock',
     origin: 'goods_receipt',
     product_type: productType,
+    bridge: item.bridge || null,
+    temple_length: item.temple_length || null,
     website_sync: heToEn('website_sync', getBrandSync(item.brand)) || 'none',
     is_deleted: false,
     tenant_id: getTenantId()

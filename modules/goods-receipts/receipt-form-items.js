@@ -19,6 +19,7 @@ function addReceiptItemRow(data) {
   const tr = document.createElement('tr');
   tr.dataset.row = rcptRowNum;
   if (data?.inventory_id) tr.dataset.inventoryId = data.inventory_id;
+  if (data?.po_item_id) tr.dataset.poItemId = data.po_item_id;
   const fromPo = !!data?.from_po;
   if (fromPo) tr.dataset.fromPo = '1';
 
@@ -42,10 +43,10 @@ function addReceiptItemRow(data) {
   tr.innerHTML = `
     <td>${rcptRowNum}</td>
     <td><input type="text" class="rcpt-barcode" value="${escapeHtml(data?.barcode || '')}" readonly style="background:${data?.barcode ? '#f0f0f0' : '#fff8e1'}"></td>
-    <td><input type="text" class="rcpt-brand" value="${escapeHtml(data?.brand || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
-    <td><input type="text" class="rcpt-model" value="${escapeHtml(data?.model || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
-    <td><input type="text" class="rcpt-color" value="${escapeHtml(data?.color || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
-    <td><input type="text" class="rcpt-size" value="${escapeHtml(data?.size || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
+    <td>${(isNew && !fromPo) ? '<span class="rcpt-brand-cell"></span><input type="hidden" class="rcpt-brand" value="' + escapeHtml(data?.brand || '') + '">' : '<input type="text" class="rcpt-brand" value="' + escapeHtml(data?.brand || '') + '" ' + (isExisting ? 'readonly style="background:#f0f0f0"' : '') + '>'}</td>
+    <td><input type="text" class="rcpt-model" value="${escapeHtml(data?.model || '')}" ${isExisting ? 'style="background:#f5f5f5"' : ''}></td>
+    <td><input type="text" class="rcpt-color" value="${escapeHtml(data?.color || '')}" ${isExisting ? 'style="background:#f5f5f5"' : ''}></td>
+    <td><input type="text" class="rcpt-size" value="${escapeHtml(data?.size || '')}" ${isExisting ? 'style="background:#f5f5f5"' : ''}></td>
     <td><select class="rcpt-ptype" style="min-width:55px;font-size:.78rem" ${isExisting ? 'disabled' : ''}>
       <option value="eyeglasses" ${(data?.product_type || '') !== 'sunglasses' ? 'selected' : ''}>\u05E8\u05D0\u05D9\u05D9\u05D4</option>
       <option value="sunglasses" ${(data?.product_type || '') === 'sunglasses' ? 'selected' : ''}>\u05E9\u05DE\u05E9</option>
@@ -53,6 +54,7 @@ function addReceiptItemRow(data) {
     <td><input type="number" class="rcpt-qty col-qty" min="1" value="${data?.quantity || 1}"></td>
     <td><input type="number" class="rcpt-ucost col-price" step="0.01" min="0" value="${data?.unit_cost || ''}"></td>
     <td><input type="number" class="rcpt-sprice col-price" step="0.01" min="0" value="${data?.sell_price || ''}"></td>
+    <td><input type="number" class="rcpt-sdisc" step="0.1" min="0" max="100" value="${data?.sell_discount ? (data.sell_discount * 100).toFixed(1) : ''}" placeholder="0" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:.82rem"></td>
     <td><select class="rcpt-sync" style="min-width:65px" ${isExisting ? 'disabled' : ''}>
       <option value="">—</option>
       <option value="מלא">מלא</option>
@@ -63,8 +65,22 @@ function addReceiptItemRow(data) {
     <td>${isNew ? '<span class="rcpt-new-badge">חדש</span>' : '<span class="rcpt-existing-badge">קיים</span>'}
       <input type="hidden" class="rcpt-is-new" value="${isNew ? '1' : '0'}">
     </td>
-    <td>${actionCol}</td>
+    <td style="white-space:nowrap">
+      <button class="btn-rcpt-note" data-row="${rcptRowNum}" style="background:none;border:none;cursor:pointer;font-size:14px;${data?.note ? 'color:#2196F3' : 'opacity:.4'}" title="הערה לפריט" onclick="_toggleRcptNote(${rcptRowNum})">${data?.note ? '\uD83D\uDCAC' : '\uD83D\uDCAD'}</button>
+      ${actionCol}
+    </td>
   `;
+  // Note row (hidden by default)
+  var noteRow = document.createElement('tr');
+  noteRow.id = 'rcpt-note-row-' + rcptRowNum;
+  noteRow.style.display = data?.note ? '' : 'none';
+  noteRow.style.background = '#f8f9fa';
+  noteRow.innerHTML = '<td colspan="16" style="padding:4px 16px 8px">' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:4px">' +
+      '<div><label style="font-size:11px;display:block;color:#666">גשר</label><input type="text" class="rcpt-bridge" value="' + escapeHtml(data?.bridge || '') + '" style="width:55px;padding:4px 6px;border-radius:4px;border:1px solid #ccc;font-size:13px"></div>' +
+      '<div><label style="font-size:11px;display:block;color:#666">אורך מוט</label><input type="text" class="rcpt-temple" value="' + escapeHtml(data?.temple_length || '') + '" style="width:55px;padding:4px 6px;border-radius:4px;border:1px solid #ccc;font-size:13px"></div>' +
+    '</div>' +
+    '<textarea class="rcpt-item-note" data-row="' + rcptRowNum + '" rows="2" maxlength="500" placeholder="\u05D4\u05E2\u05E8\u05D4 \u05DC\u05E4\u05E8\u05D9\u05D8..." style="width:100%;padding:6px 8px;border-radius:4px;border:1px solid #ccc;direction:rtl;resize:vertical;font-size:13px">' + escapeHtml(data?.note || '') + '</textarea></td>';
   // Apply dimmed state if loading with not_received status
   if (rcptStatus === 'not_received') {
     tr.classList.add('rcpt-row-dimmed');
@@ -94,12 +110,39 @@ function addReceiptItemRow(data) {
     if (defSync) tr.querySelector('.rcpt-sync').value = defSync;
   }
   if (data?.sync) tr.querySelector('.rcpt-sync').value = data.sync;
+
+  // Add brand search-select for manual new rows (not PO, not barcode-matched)
+  if (isNew && !fromPo && typeof createSearchSelect === 'function' && typeof activeBrands === 'function') {
+    var brandCell = tr.querySelector('.rcpt-brand-cell');
+    var brandHidden = tr.querySelector('input.rcpt-brand[type="hidden"]');
+    if (brandCell && brandHidden) {
+      var brandNames = activeBrands().map(function(b) { return b.name; });
+      var ss = createSearchSelect(brandNames, data?.brand || '', function(val) {
+        brandHidden.value = val;
+        // Auto-set sync from brand default
+        var defSync = getBrandSync(val);
+        if (defSync) tr.querySelector('.rcpt-sync').value = defSync;
+      });
+      ss.style.minWidth = '100px';
+      brandCell.appendChild(ss);
+    }
+  }
+
   tb.appendChild(tr);
+  tb.appendChild(noteRow);
   updateReceiptItemsStats();
 }
 
+function _toggleRcptNote(rowNum) {
+  var noteRow = document.getElementById('rcpt-note-row-' + rowNum);
+  if (!noteRow) return;
+  var showing = noteRow.style.display !== 'none';
+  noteRow.style.display = showing ? 'none' : '';
+  if (!showing) { var ta = noteRow.querySelector('.rcpt-item-note'); if (ta) setTimeout(function() { ta.focus(); }, 50); }
+}
+
 function getReceiptItems() {
-  return Array.from($('rcpt-items-body').querySelectorAll('tr')).map(tr => {
+  return Array.from($('rcpt-items-body').querySelectorAll('tr[data-row]')).map(tr => {
     var rcptStatus = tr.querySelector('.rcpt-receipt-status')?.value || null;
     const qtyVal = parseInt(tr.querySelector('.rcpt-qty')?.value);
     // Allow qty 0 for not_received items (they won't enter inventory)
@@ -132,12 +175,16 @@ function getReceiptItems() {
       ordered_qty: qtyVal || 0,
       unit_cost: parseFloat(tr.querySelector('.rcpt-ucost')?.value) || null,
       sell_price: parseFloat(tr.querySelector('.rcpt-sprice')?.value) || null,
+      sell_discount: (function() { var v = parseFloat(tr.querySelector('.rcpt-sdisc')?.value); return v > 0 ? v / 100 : 0; })(),
       sync: tr.querySelector('.rcpt-sync')?.value || '',
       images: tr.querySelector('.rcpt-images')?.files || [],
       is_new_item: tr.querySelector('.rcpt-is-new')?.value === '1',
       inventory_id: tr.dataset.inventoryId || null,
       from_po: tr.dataset.fromPo === '1',
-      receipt_status: rcptStatus
+      receipt_status: rcptStatus,
+      note: (function() { var nr = document.getElementById('rcpt-note-row-' + tr.dataset.row); var ta = nr ? nr.querySelector('.rcpt-item-note') : null; return ta ? ta.value.trim() : ''; })(),
+      bridge: (function() { var nr = document.getElementById('rcpt-note-row-' + tr.dataset.row); var inp = nr ? nr.querySelector('.rcpt-bridge') : null; return inp ? inp.value.trim() : ''; })(),
+      temple_length: (function() { var nr = document.getElementById('rcpt-note-row-' + tr.dataset.row); var inp = nr ? nr.querySelector('.rcpt-temple') : null; return inp ? inp.value.trim() : ''; })()
     };
   });
 }
@@ -282,3 +329,29 @@ async function generateReceiptBarcodes() {
   }
   hideLoading();
 }
+
+// ── Receipt items column sort (DOM reorder) ─────────────────
+var _rcptSortKeyMap = { barcode: '.rcpt-barcode', brand: '.rcpt-brand', model: '.rcpt-model', color: '.rcpt-color', size: '.rcpt-size', qty: '.rcpt-qty', cost: '.rcpt-ucost' };
+document.addEventListener('click', function(e) {
+  var th = e.target.closest('#rcpt-items-thead th[data-sort-key]');
+  if (!th || typeof SortUtils === 'undefined') return;
+  var s = SortUtils.toggle('rcpt-items', th.dataset.sortKey);
+  SortUtils.updateHeaders(document.getElementById('rcpt-items-thead'), s.key, s.dir);
+  var tbody = document.getElementById('rcpt-items-body');
+  if (!tbody) return;
+  var sel = _rcptSortKeyMap[s.key]; if (!sel) return;
+  var rows = Array.from(tbody.querySelectorAll('tr[data-row]'));
+  rows.sort(function(a, b) {
+    var va = (a.querySelector(sel) || {}).value || '';
+    var vb = (b.querySelector(sel) || {}).value || '';
+    var na = parseFloat(va), nb = parseFloat(vb);
+    if (!isNaN(na) && !isNaN(nb)) return s.dir === 'asc' ? na - nb : nb - na;
+    var cmp = va.localeCompare(vb, 'he');
+    return s.dir === 'asc' ? cmp : -cmp;
+  });
+  rows.forEach(function(tr) {
+    var noteRow = document.getElementById('rcpt-note-row-' + tr.dataset.row);
+    tbody.appendChild(tr);
+    if (noteRow) tbody.appendChild(noteRow);
+  });
+});

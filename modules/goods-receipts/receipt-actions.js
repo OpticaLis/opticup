@@ -38,6 +38,7 @@ async function saveReceiptDraft() {
     const supplierId = supplierCache[supplierName] || null;
     const totalAmount = items.reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
 
+    var docNums = typeof getRcptDocumentNumbers === 'function' ? getRcptDocumentNumbers() : (rcptNumber ? [rcptNumber] : []);
     const receiptRow = {
       receipt_number: rcptNumber,
       receipt_type: rcptType,
@@ -46,6 +47,7 @@ async function saveReceiptDraft() {
       receipt_date: rcptDate || new Date().toISOString().slice(0, 10),
       notes: notes || null,
       total_amount: totalAmount || null,
+      document_numbers: docNums,
       status: 'draft',
       po_id: rcptLinkedPoId || null,
       created_by: sessionStorage.getItem('prizma_user') || 'system',
@@ -85,10 +87,12 @@ async function saveReceiptDraft() {
       ordered_qty: i.ordered_qty || i.quantity,
       unit_cost: i.unit_cost,
       sell_price: i.sell_price,
+      sell_discount: i.sell_discount || 0,
       is_new_item: i.is_new_item,
       receipt_status: i.receipt_status || null,
       from_po: i.from_po || false,
       product_type: i.product_type || null,
+      note: i.note || null,
       tenant_id: getTenantId()
     }));
 
@@ -115,6 +119,7 @@ async function saveReceiptDraftInternal() {
   const supplierId = supplierCache[supplierName] || null;
   const totalAmount = items.reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
 
+  var docNums2 = typeof getRcptDocumentNumbers === 'function' ? getRcptDocumentNumbers() : (rcptNumber ? [rcptNumber] : []);
   const receiptRow = {
     receipt_number: rcptNumber,
     receipt_type: rcptType,
@@ -123,6 +128,7 @@ async function saveReceiptDraftInternal() {
     receipt_date: rcptDate || new Date().toISOString().slice(0, 10),
     notes: notes || null,
     total_amount: totalAmount || null,
+    document_numbers: docNums2,
     status: 'draft',
     po_id: rcptLinkedPoId || null,
     created_by: sessionStorage.getItem('prizma_user') || 'system',

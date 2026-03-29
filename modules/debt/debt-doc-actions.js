@@ -108,7 +108,24 @@ function _buildDocActionToolbar(doc, type, docFiles) {
       'onclick="closeAndRemoveModal(\'edit-doc-modal\');openPrepaidDeductModal(\'' + docId + '\')">' +
       '\u05E7\u05D6\u05D6 \u05DE\u05E2\u05E1\u05E7\u05D4</button>');
   }
-  // Group 3: Review toggle
+  // Group 3: Supplier management
+  if (!doc.supplier_id) {
+    btns.push('<button class="btn btn-sm" style="background:#059669;color:#fff" ' +
+      'onclick="changeDocSupplier(\'' + docId + '\')">\uD83D\uDCCC \u05E9\u05D9\u05D9\u05DA \u05DC\u05E1\u05E4\u05E7</button>');
+    if (typeof getExpenseFolders === 'function') {
+      btns.push('<button class="btn btn-sm" style="background:#8b5cf6;color:#fff" ' +
+        'onclick="assignToFolder(\'' + docId + '\')">\uD83D\uDCC1 \u05E9\u05D9\u05D9\u05DA \u05DC\u05EA\u05D9\u05E7\u05D9\u05D4</button>');
+    }
+  } else {
+    btns.push('<button class="btn btn-sm" style="background:#6b7280;color:#fff" ' +
+      'onclick="changeDocSupplier(\'' + docId + '\')">\uD83D\uDD04 \u05E9\u05E0\u05D4 \u05E1\u05E4\u05E7</button>');
+  }
+  // Group 4: Change type (requires debt.edit permission)
+  if (doc.status !== 'paid' && doc.status !== 'cancelled') {
+    btns.push('<button class="btn btn-sm" style="background:#6366f1;color:#fff" ' +
+      'onclick="changeDocumentType(\'' + docId + '\')">\uD83D\uDD00 \u05E9\u05E0\u05D4 \u05E1\u05D5\u05D2</button>');
+  }
+  // Group 4: Review toggle
   if (doc.status !== 'pending_review' && doc.status !== 'paid' && doc.status !== 'cancelled') {
     btns.push('<button class="btn btn-sm" style="background:#f59e0b;color:#fff" ' +
       'onclick="_togglePendingReview(\'' + docId + '\',true)">\u2753 \u05E1\u05DE\u05DF \u05DC\u05D1\u05D9\u05E8\u05D5\u05E8</button>');
@@ -150,6 +167,129 @@ async function _softDeleteDocument(docId) {
       console.error('_softDeleteDocument error:', e);
       toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
     } finally { hideLoading(); }
+  });
+}
+
+// ── Assign document to expense folder ────────────────────────
+async function assignToFolder(docId) {
+  var doc = _docData.find(function(d) { return d.id === docId; });
+  if (!doc) return;
+  var folders = typeof getExpenseFolders === 'function' ? getExpenseFolders() : [];
+  var opts = '<option value="">\u05DC\u05DC\u05D0 \u05EA\u05D9\u05E7\u05D9\u05D4</option>' +
+    folders.map(function(f) {
+      var sel = doc.expense_folder_id === f.id ? ' selected' : '';
+      return '<option value="' + f.id + '"' + sel + '>' + escapeHtml((f.icon || '') + ' ' + f.name) + '</option>';
+    }).join('');
+  Modal.form({
+    title: '\u05E9\u05D9\u05D9\u05DA \u05DC\u05EA\u05D9\u05E7\u05D9\u05D4',
+    size: 'sm', submitText: '\u05E9\u05DE\u05D5\u05E8', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+    content: '<label style="display:block;font-size:.9rem">\u05EA\u05D9\u05E7\u05D9\u05D4:<select id="atf-folder" class="nd-field">' + opts + '</select></label>',
+    onSubmit: async function() {
+      var folderId = document.getElementById('atf-folder').value || null;
+      try {
+        await batchUpdate(T.SUP_DOCS, [{ id: docId, expense_folder_id: folderId }]);
+        await writeLog('doc_folder_assigned', null, { document_id: docId, folder_id: folderId });
+        Toast.success(folderId ? '\u05DE\u05E1\u05DE\u05DA \u05E9\u05D5\u05D9\u05DA \u05DC\u05EA\u05D9\u05E7\u05D9\u05D4' : '\u05DE\u05E1\u05DE\u05DA \u05D4\u05D5\u05E1\u05E8 \u05DE\u05EA\u05D9\u05E7\u05D9\u05D4');
+        Modal.close(); closeAndRemoveModal('edit-doc-modal');
+        if (typeof _detailSupplierId !== 'undefined' && _detailSupplierId) {
+          await openSupplierDetail(_detailSupplierId); _switchDetailTab('docs');
+        } else { await loadDocumentsTab(); }
+      } catch (e) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || '')); }
+    }
+  });
+}
+
+// ── Change document type (PIN required) ─────────────────────
+async function changeDocumentType(docId) {
+  var doc = _docData.find(function(d) { return d.id === docId; });
+  if (!doc) return;
+  var types = (_docTypes || []).filter(function(t) { return t.id !== doc.document_type_id; });
+  if (!types.length) { Toast.warning('\u05D0\u05D9\u05DF \u05E1\u05D5\u05D2\u05D9 \u05DE\u05E1\u05DE\u05DA \u05D0\u05D7\u05E8\u05D9\u05DD'); return; }
+  var curType = (_docTypes || []).find(function(t) { return t.id === doc.document_type_id; });
+  var opts = types.map(function(t) {
+    return '<option value="' + t.id + '">' + escapeHtml(t.name_he) + '</option>';
+  }).join('');
+  Modal.form({
+    title: '\u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05D5\u05D2 \u05DE\u05E1\u05DE\u05DA',
+    size: 'sm',
+    submitText: '\u05E9\u05E0\u05D4 \u05E1\u05D5\u05D2',
+    cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+    content:
+      '<div style="margin-bottom:12px;font-size:.88rem">\u05E1\u05D5\u05D2 \u05E0\u05D5\u05DB\u05D7\u05D9: <strong>' +
+        escapeHtml(curType ? curType.name_he : '—') + '</strong></div>' +
+      '<label style="display:block;font-size:.9rem">\u05E1\u05D5\u05D2 \u05D7\u05D3\u05E9:' +
+        '<select id="cdt-new-type" class="nd-field">' + opts + '</select></label>',
+    onSubmit: function() {
+      var newTypeId = document.getElementById('cdt-new-type').value;
+      if (!newTypeId) return;
+      Modal.close();
+      setTimeout(function() {
+      promptPin('\u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05D5\u05D2 \u05DE\u05E1\u05DE\u05DA \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
+        showLoading('\u05DE\u05E2\u05D3\u05DB\u05DF \u05E1\u05D5\u05D2...');
+        try {
+          await batchUpdate(T.SUP_DOCS, [{ id: docId, document_type_id: newTypeId }]);
+          var newType = types.find(function(t) { return t.id === newTypeId; });
+          await writeLog('doc_type_changed', null, {
+            document_id: docId, old_type: curType ? curType.name_he : '', new_type: newType ? newType.name_he : '',
+            changed_by: emp.name
+          });
+          Toast.success('\u05E1\u05D5\u05D2 \u05DE\u05E1\u05DE\u05DA \u05E2\u05D5\u05D3\u05DB\u05DF');
+          closeAndRemoveModal('edit-doc-modal');
+          if (typeof _detailSupplierId !== 'undefined' && _detailSupplierId) {
+            await openSupplierDetail(_detailSupplierId); _switchDetailTab('docs');
+          } else { await loadDocumentsTab(); }
+        } catch (e) {
+          console.error('changeDocumentType error:', e);
+          Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''));
+        } finally { hideLoading(); }
+      });
+      }, 200);
+    }
+  });
+}
+
+// ── Change supplier on a document (PIN required) ────────────
+async function changeDocSupplier(docId) {
+  var doc = _docData.find(function(d) { return d.id === docId; });
+  if (!doc) return;
+  var curSup = (_docSuppliers || []).find(function(s) { return s.id === doc.supplier_id; });
+  var curName = curSup ? curSup.name : '\u05DC\u05DC\u05D0 \u05E1\u05E4\u05E7 (\u05DB\u05DC\u05DC\u05D9)';
+  var supOpts = '<option value="">\u05DC\u05DC\u05D0 \u05E1\u05E4\u05E7 (\u05DB\u05DC\u05DC\u05D9)</option>' +
+    (_docSuppliers || []).map(function(s) {
+      return '<option value="' + s.id + '"' + (s.id === doc.supplier_id ? ' selected' : '') + '>' + escapeHtml(s.name) + '</option>';
+    }).join('');
+  Modal.form({
+    title: '\uD83D\uDD04 \u05E9\u05E0\u05D4 \u05E1\u05E4\u05E7',
+    size: 'sm', submitText: '\u05E9\u05E0\u05D4', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+    content:
+      '<div style="margin-bottom:10px;font-size:.88rem">\u05E1\u05E4\u05E7 \u05E0\u05D5\u05DB\u05D7\u05D9: <strong>' + escapeHtml(curName) + '</strong></div>' +
+      '<label style="display:block;font-size:.9rem">\u05E1\u05E4\u05E7 \u05D7\u05D3\u05E9:<select id="cds-new-sup" class="nd-field">' + supOpts + '</select></label>',
+    onSubmit: function() {
+      var newId = document.getElementById('cds-new-sup').value || null;
+      if (newId === doc.supplier_id) { Modal.close(); return; }
+      Modal.close();
+      setTimeout(function() {
+        promptPin('\u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05E4\u05E7 \u2014 \u05D0\u05D9\u05DE\u05D5\u05EA', async function(pin, emp) {
+          showLoading('\u05DE\u05E2\u05D3\u05DB\u05DF...');
+          try {
+            var update = { id: docId, supplier_id: newId };
+            if (!doc.supplier_id && newId) update.expense_folder_id = null;
+            await batchUpdate(T.SUP_DOCS, [update]);
+            var newSup = (_docSuppliers || []).find(function(s) { return s.id === newId; });
+            await writeLog('doc_supplier_changed', null, {
+              document_id: docId, old_supplier: curName,
+              new_supplier: newSup ? newSup.name : '\u05DB\u05DC\u05DC\u05D9', changed_by: emp.name
+            });
+            Toast.success('\u05E1\u05E4\u05E7 \u05E2\u05D5\u05D3\u05DB\u05DF');
+            closeAndRemoveModal('edit-doc-modal');
+            if (typeof _detailSupplierId !== 'undefined' && _detailSupplierId) {
+              await openSupplierDetail(_detailSupplierId); _switchDetailTab('docs');
+            } else { await loadDocumentsTab(); }
+          } catch (e) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || '')); }
+          finally { hideLoading(); }
+        });
+      }, 200);
+    }
   });
 }
 

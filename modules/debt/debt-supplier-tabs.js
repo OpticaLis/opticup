@@ -16,12 +16,14 @@ async function loadSupplierTimeline(supplierId) {
     var results = await Promise.all([
       fetchAll(T.SUP_DOCS, [['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId]]),
       fetchAll(T.SUP_PAYMENTS, [['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId]]),
-      fetchAll(T.DOC_TYPES, [['is_active', 'eq', true]])
+      fetchAll(T.DOC_TYPES, [['is_active', 'eq', true]]),
+      sb.from(T.BAL_ADJ).select('*').eq('tenant_id', getTenantId()).eq('supplier_id', supplierId).then(function(r) { return r.data || []; })
     ]);
     var docs = results[0];
     var payments = results[1];
     var typeMap = {};
     results[2].forEach(function(t) { typeMap[t.id] = t; });
+    var adjustments = results[3] || [];
 
     // Merge into timeline entries
     var entries = [];
@@ -39,9 +41,20 @@ async function loadSupplierTimeline(supplierId) {
       entries.push({
         date: p.payment_date,
         icon: '\uD83D\uDCB0',
-        label: 'תשלום' + (p.reference_number ? ' — ' + p.reference_number : ''),
+        label: '\u05EA\u05E9\u05DC\u05D5\u05DD' + (p.reference_number ? ' \u2014 ' + p.reference_number : ''),
         amount: formatILS(p.amount),
         sortDate: p.payment_date || (p.created_at || '').slice(0, 10)
+      });
+    });
+    adjustments.forEach(function(a) {
+      var amt = Number(a.amount) || 0;
+      var sign = amt > 0 ? '+' : '';
+      entries.push({
+        date: (a.created_at || '').slice(0, 10),
+        icon: '\u270F\uFE0F',
+        label: '\u05D4\u05EA\u05D0\u05DE\u05EA \u05D9\u05EA\u05E8\u05D4: ' + sign + formatILS(amt) + ' \u2014 \'' + escapeHtml(a.reason || '') + '\'' + (a.adjusted_by_name ? ' (\u05E2"\u05D9 ' + escapeHtml(a.adjusted_by_name) + ')' : ''),
+        amount: (amt > 0 ? '+' : '') + formatILS(amt),
+        sortDate: (a.created_at || '').slice(0, 10)
       });
     });
 
@@ -83,13 +96,15 @@ function _showAllTimeline() {
 }
 
 // =========================================================
-// Documents sub-tab — full management, reuses renderDocumentsTable
+// Documents sub-tab — full management with filters
 // =========================================================
+var _sdAllDocs = []; // all docs for this supplier (unfiltered)
+var _sdSelectedDocs = new Set(); // selected doc IDs for multi-pay
+
 async function loadSupplierDocuments(supplierId) {
   var content = $('detail-tab-content');
   if (!content) return;
   try {
-    // Ensure _docTypes and _docSuppliers are loaded (may already be from main tab)
     if (!_docTypes.length || !_docSuppliers.length) {
       var [types, sups] = await Promise.all([
         fetchAll(T.DOC_TYPES, [['is_active', 'eq', true]]),
@@ -98,36 +113,78 @@ async function loadSupplierDocuments(supplierId) {
       _docTypes = types;
       _docSuppliers = sups;
     }
-    // Fetch docs for this supplier + prepaid deals
     var [docs, deals] = await Promise.all([
       fetchAll(T.SUP_DOCS, [['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId]]),
       fetchAll(T.PREPAID_DEALS, [['status', 'eq', 'active'], ['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId]])
     ]);
-    // Update globals so action buttons (cancelDocument etc.) find the docs
     _docData = docs;
+    _sdAllDocs = docs;
     _docPrepaidSet = {};
     deals.forEach(function(d) { _docPrepaidSet[d.supplier_id] = d; });
     _loadDocFileCounts(docs);
-
     docs.sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
 
-    // Toolbar: new doc + status filters
+    var typeOpts = '<option value="">\u05D4\u05DB\u05DC</option>';
+    (_docTypes || []).forEach(function(t) { typeOpts += '<option value="' + escapeHtml(t.id) + '">' + escapeHtml(t.name_he) + '</option>'; });
+
     content.innerHTML =
-      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">' +
         '<button class="btn btn-sm" style="background:var(--primary);color:#fff" ' +
           'onclick="_sdNewDoc(\'' + supplierId + '\')">+ \u05DE\u05E1\u05DE\u05DA \u05D7\u05D3\u05E9</button>' +
+        '<span id="sd-filter-count" style="font-size:.82rem;color:var(--g500)"></span>' +
       '</div>' +
-      '<div id="sd-doc-table"></div>';
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin-bottom:10px;background:var(--white);border:1px solid var(--g200);border-radius:6px;padding:8px">' +
+        '<div><label style="font-size:.75rem;color:var(--g600)">\u05E1\u05D8\u05D8\u05D5\u05E1</label>' +
+          '<select id="sdf-status" class="doc-filter-input" style="width:100%" onchange="_sdApplyFilters()">' +
+            '<option value="">\u05D4\u05DB\u05DC</option><option value="draft">\u05D8\u05D9\u05D5\u05D8\u05D4</option>' +
+            '<option value="open">\u05E4\u05EA\u05D5\u05D7</option><option value="partially_paid">\u05D7\u05DC\u05E7\u05D9</option>' +
+            '<option value="paid">\u05E9\u05D5\u05DC\u05DD</option><option value="cancelled">\u05DE\u05D1\u05D5\u05D8\u05DC</option>' +
+          '</select></div>' +
+        '<div><label style="font-size:.75rem;color:var(--g600)">\u05E1\u05D5\u05D2 \u05DE\u05E1\u05DE\u05DA</label>' +
+          '<select id="sdf-type" class="doc-filter-input" style="width:100%" onchange="_sdApplyFilters()">' + typeOpts + '</select></div>' +
+        buildMonthPickerHtml('sdf', '_sdApplyFilters') +
+        '<div><label style="font-size:.75rem;color:var(--g600)">\u05E1\u05DB\u05D5\u05DD \u05DE:</label>' +
+          '<input type="number" id="sdf-amount-from" class="doc-filter-input" style="width:100%" step="0.01" min="0" onchange="_sdApplyFilters()"></div>' +
+        '<div><label style="font-size:.75rem;color:var(--g600)">\u05E1\u05DB\u05D5\u05DD \u05E2\u05D3:</label>' +
+          '<input type="number" id="sdf-amount-to" class="doc-filter-input" style="width:100%" step="0.01" min="0" onchange="_sdApplyFilters()"></div>' +
+      '</div>' +
+      '<div id="sd-doc-table"></div>' +
+      '<div id="sd-select-bar" style="display:none;position:sticky;bottom:0;background:#1e40af;color:#fff;padding:8px 14px;border-radius:6px;margin-top:8px;display:none;align-items:center;justify-content:space-between;font-size:.88rem"></div>';
 
-    // Render full table into the sub-tab container
-    renderDocumentsTable(docs, {
-      targetEl: $('sd-doc-table'),
-      hideSupplierCol: true
-    });
+    _sdSelectedDocs.clear();
+    _sdUpdateCount(docs.length, docs.length);
+    renderDocumentsTable(docs, { targetEl: $('sd-doc-table'), hideSupplierCol: true, showCheckboxes: true });
   } catch (e) {
     console.error('loadSupplierDocuments error:', e);
     content.innerHTML = '<div class="empty-state">\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD</div>';
   }
+}
+
+function _sdApplyFilters() {
+  var f = {
+    status: ($('sdf-status') || {}).value || '',
+    document_type_id: ($('sdf-type') || {}).value || '',
+    date_from: ($('sdf-date-from') || {}).value || '',
+    date_to: ($('sdf-date-to') || {}).value || '',
+    amount_from: ($('sdf-amount-from') || {}).value || '',
+    amount_to: ($('sdf-amount-to') || {}).value || ''
+  };
+  var filtered = applyDocFilterSet(_sdAllDocs, f);
+  filtered.sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+  _sdSelectedDocs.clear();
+  _sdUpdateSelectBar();
+  _sdUpdateCount(filtered.length, _sdAllDocs.length);
+  _docData = filtered;
+  renderDocumentsTable(filtered, { targetEl: $('sd-doc-table'), hideSupplierCol: true, showCheckboxes: true });
+}
+
+function _sdUpdateCount(shown, total) {
+  var el = $('sd-filter-count'); if (!el) return;
+  el.textContent = shown === total
+    ? '\u05DE\u05E6\u05D9\u05D2 ' + total + ' \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD'
+    : '\u05DE\u05E6\u05D9\u05D2 ' + shown + ' \u05DE\u05EA\u05D5\u05DA ' + total + ' \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD';
+  if (shown < total) { el.style.fontWeight = '600'; el.style.color = 'var(--primary)'; }
+  else { el.style.fontWeight = ''; el.style.color = 'var(--g500)'; }
 }
 
 // Open new document modal pre-filled with supplier
@@ -139,6 +196,58 @@ function _sdNewDoc(supplierId) {
     var sel = $('nd-supplier');
     if (sel) { sel.value = supplierId; if (typeof _ndAutoCalcDueDate === 'function') _ndAutoCalcDueDate(); }
   }, 100);
+}
+
+// =========================================================
+// Multi-select checkboxes for docs — selection handlers
+// =========================================================
+function _sdToggleDocCb(cb) {
+  var docId = cb.getAttribute('data-doc-id');
+  if (cb.checked) _sdSelectedDocs.add(docId); else _sdSelectedDocs.delete(docId);
+  _sdUpdateSelectBar();
+}
+
+function _sdToggleAll(masterCb) {
+  var checkboxes = document.querySelectorAll('.sd-doc-cb');
+  checkboxes.forEach(function(cb) {
+    cb.checked = masterCb.checked;
+    var docId = cb.getAttribute('data-doc-id');
+    if (masterCb.checked) _sdSelectedDocs.add(docId); else _sdSelectedDocs.delete(docId);
+  });
+  _sdUpdateSelectBar();
+}
+
+function _sdUpdateSelectBar() {
+  var bar = $('sd-select-bar');
+  if (!bar) return;
+  var count = _sdSelectedDocs.size;
+  if (count === 0) { bar.style.display = 'none'; return; }
+  var totalBal = 0;
+  _sdSelectedDocs.forEach(function(id) {
+    var doc = _sdAllDocs.find(function(d) { return d.id === id; });
+    if (doc) totalBal += (Number(doc.total_amount) || 0) - (Number(doc.paid_amount) || 0);
+  });
+  bar.style.display = 'flex';
+  bar.innerHTML = '<span>\u05E0\u05D1\u05D7\u05E8\u05D5 ' + count + ' \u05DE\u05E1\u05DE\u05DB\u05D9\u05DD | \u05E1\u05D4\u05F4\u05DB: ' + formatILS(totalBal) + '</span>' +
+    '<button class="btn btn-sm" style="background:#fff;color:#1e40af;font-weight:600" onclick="_sdPaySelected()">\u05E9\u05DC\u05DD \u05E0\u05D1\u05D7\u05E8\u05D9\u05DD</button>';
+}
+
+async function _sdPaySelected() {
+  if (!_sdSelectedDocs.size) return;
+  if (!_payMethods || !_payMethods.length) {
+    _payMethods = await fetchAll(T.PAY_METHODS, [['is_active', 'eq', true]]);
+  }
+  _wizResetState();
+  _wizState.supplierId = _detailSupplierId;
+  _wizState.supplierName = _detailSupplierName;
+  _wizState.preSelectedDocIds = Array.from(_sdSelectedDocs);
+  var modal = document.createElement('div');
+  modal.id = 'pay-wizard-modal';
+  modal.className = 'modal-overlay';
+  modal.style.display = 'flex';
+  modal.innerHTML = '<div class="modal" style="max-width:560px"><div id="pay-wiz-content"></div></div>';
+  document.body.appendChild(modal);
+  _wizRenderStep2();
 }
 
 // =========================================================

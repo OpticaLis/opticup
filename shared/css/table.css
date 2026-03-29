@@ -149,3 +149,20 @@
     padding: var(--space-xl) var(--space-md);
   }
 }
+
+/* Hide native scrollbar when sticky bar is active */
+.tbl-no-scroll::-webkit-scrollbar { height: 0; display: none; }
+
+/* --- Sticky horizontal scrollbar (table-resize.js) --- */
+.tbl-sticky-bar {
+  overflow-x: auto;
+  position: fixed;
+  bottom: 0;
+  height: 16px;
+  background: var(--g100, #f3f4f6);
+  border-top: 1px solid var(--g300, #d1d5db);
+  z-index: 100;
+}
+.tbl-sticky-bar::-webkit-scrollbar { height: 10px; }
+.tbl-sticky-bar::-webkit-scrollbar-thumb { background: var(--g400, #9ca3af); border-radius: 5px; }
+.tbl-sticky-spacer { height: 1px; }

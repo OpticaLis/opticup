@@ -1,3 +1,5 @@
+// receipt-form.js — Receipt form logic (doc number functions in receipt-doc-numbers.js)
+
 // Pending files for receipt document attachment (multi-file)
 var _pendingReceiptFiles = [];
 // Backward-compat getter: _pendingReceiptFile returns first file or null
@@ -98,46 +100,29 @@ function _renderReceiptFileList() {
   }
 }
 
+function _resetReceiptAttachUI() {
+  var btn = $('rcpt-attach-btn');
+  if (btn) { btn.style.display = ''; btn.innerHTML = '&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA'; }
+  var nameEl = $('rcpt-attach-name'); if (nameEl) nameEl.innerHTML = '';
+  var ocrBtn = $('rcpt-ocr-btn'); if (ocrBtn) ocrBtn.style.display = 'none';
+  var banner = $('rcpt-ocr-banner'); if (banner) banner.remove();
+}
+
 function _removeReceiptFileAt(idx) {
   _pendingReceiptFiles.splice(idx, 1);
   _renderReceiptFileList();
-  if (_pendingReceiptFiles.length === 0) {
-    // Restore legacy attach button
-    var btn = $('rcpt-attach-btn');
-    if (btn) { btn.style.display = ''; btn.innerHTML = '&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA'; }
-    var nameEl = $('rcpt-attach-name');
-    if (nameEl) nameEl.innerHTML = '';
-    // Hide OCR button
-    var ocrBtn = $('rcpt-ocr-btn');
-    if (ocrBtn) ocrBtn.style.display = 'none';
-    var banner = $('rcpt-ocr-banner');
-    if (banner) banner.remove();
-  }
+  if (_pendingReceiptFiles.length === 0) _resetReceiptAttachUI();
 }
 
 async function _removeReceiptFile() {
-  // Delete from Storage if already uploaded (e.g. after OCR scan)
   if (_pendingReceiptFileUrl) {
-    try {
-      await sb.storage.from('supplier-docs').remove([_pendingReceiptFileUrl]);
-    } catch (e) {
-      console.warn('Failed to delete uploaded file:', e);
-    }
+    try { await sb.storage.from('supplier-docs').remove([_pendingReceiptFileUrl]); }
+    catch (e) { console.warn('Failed to delete uploaded file:', e); }
     _pendingReceiptFileUrl = null;
   }
   _pendingReceiptFiles = [];
   _renderReceiptFileList();
-  // Restore legacy attach button
-  var btn = $('rcpt-attach-btn');
-  if (btn) { btn.style.display = ''; btn.innerHTML = '&#128206; \u05E6\u05E8\u05E3 \u05DE\u05E1\u05DE\u05DA'; }
-  var nameEl = $('rcpt-attach-name');
-  if (nameEl) nameEl.innerHTML = '';
-  // Hide OCR button
-  var ocrBtn = $('rcpt-ocr-btn');
-  if (ocrBtn) ocrBtn.style.display = 'none';
-  // Remove OCR banner if exists
-  var banner = $('rcpt-ocr-banner');
-  if (banner) banner.remove();
+  _resetReceiptAttachUI();
 }
 
 async function openExistingReceipt(receiptId, viewOnly) {
@@ -170,6 +155,18 @@ async function openExistingReceipt(receiptId, viewOnly) {
     $('rcpt-po-select').onchange = () => onReceiptPoSelected();
     $('rcpt-date').value = rcpt.receipt_date || '';
     $('rcpt-notes').value = rcpt.notes || '';
+    // Load extra document numbers and show container if multi-doc
+    _rcptExtraNums = [];
+    var dbNums = rcpt.document_numbers || [];
+    var mainNum = rcpt.receipt_number || '';
+    dbNums.forEach(function(n) { if (n && n !== mainNum) _rcptExtraNums.push(n); });
+    if (_rcptExtraNums.length > 0) {
+      var extraArea = document.getElementById('rcpt-extra-nums');
+      if (extraArea) extraArea.style.display = '';
+      var countEl = document.getElementById('rcpt-doc-count');
+      if (countEl) countEl.value = dbNums.length;
+    }
+    _renderRcptExtraNums();
     clearAlert('rcpt-form-alerts');
 
     // Populate items
@@ -184,22 +181,55 @@ async function openExistingReceipt(receiptId, viewOnly) {
         quantity: item.quantity || 1,
         unit_cost: item.unit_cost || '',
         sell_price: item.sell_price || '',
+        sell_discount: item.sell_discount || 0,
         product_type: item.product_type || 'eyeglasses',
         is_new_item: item.is_new_item || false,
         from_po: item.from_po || !!rcpt.po_id,
-        receipt_status: item.receipt_status || 'ok'
+        receipt_status: item.receipt_status || 'ok',
+        note: item.note || ''
       });
     }
     updateReceiptItemsStats();
 
-    // Reset file attachment + init dropzone
+    // File attachment area
     _pendingReceiptFiles = [];
     _pendingReceiptFileUrl = null;
     var _zone = $('rcpt-attach-dropzone');
     var _prev = $('rcpt-attach-preview');
     if (_zone) _zone.style.display = '';
     if (_prev) { _prev.style.display = 'none'; _prev.innerHTML = ''; }
-    _initReceiptDropzone();
+
+    if (viewOnly) {
+      // View mode: fetch and display files from linked supplier document
+      if (_zone) _zone.style.display = 'none';
+      try {
+        var { data: supDoc } = await sb.from(T.SUP_DOCS).select('id')
+          .eq('goods_receipt_id', receiptId).eq('tenant_id', getTenantId()).maybeSingle();
+        if (supDoc) {
+          var { data: docFiles } = await sb.from(T.DOC_FILES).select('file_url, file_name, sort_order')
+            .eq('document_id', supDoc.id).eq('tenant_id', getTenantId()).order('sort_order');
+          if (docFiles && docFiles.length && _prev) {
+            _prev.style.display = 'block';
+            var filesHtml = '';
+            for (var dfi = 0; dfi < docFiles.length; dfi++) {
+              var df = docFiles[dfi];
+              var ext = (df.file_name || df.file_url || '').split('.').pop().toLowerCase();
+              var icon = ext === 'pdf' ? '\uD83D\uDCC4' : '\uD83D\uDDBC\uFE0F';
+              filesHtml += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">' +
+                '<span style="font-size:1.2rem">' + icon + '</span>' +
+                '<a href="#" onclick="_rcptViewFile(\'' + escapeHtml(df.file_url) + '\');return false" style="flex:1;font-size:.85rem;color:#1565c0;text-decoration:underline;cursor:pointer">' +
+                escapeHtml(df.file_name || '\u05E7\u05D5\u05D1\u05E5 ' + (dfi + 1)) + '</a></div>';
+            }
+            _prev.innerHTML = filesHtml;
+          } else if (_prev) {
+            _prev.style.display = 'block';
+            _prev.innerHTML = '<div style="padding:8px;color:var(--g400);font-size:.82rem">\u05D0\u05D9\u05DF \u05E7\u05D1\u05E6\u05D9\u05DD \u05DE\u05E6\u05D5\u05E8\u05E4\u05D9\u05DD</div>';
+          }
+        }
+      } catch (fileErr) { console.warn('Failed to load receipt files:', fileErr); }
+    } else {
+      _initReceiptDropzone();
+    }
 
     // Toggle readonly for confirmed/cancelled
     toggleReceiptFormInputs(viewOnly);
@@ -277,6 +307,14 @@ async function searchReceiptBarcode() {
     toast('שגיאה בחיפוש: ' + (e.message || ''), 'e');
   }
   hideLoading();
+}
+
+// View file from receipt (reuses _rcptOcrPreviewDoc if available, fallback to new tab)
+async function _rcptViewFile(fileUrl) {
+  if (typeof _rcptOcrPreviewDoc === 'function') { _rcptOcrPreviewDoc(fileUrl); return; }
+  var signedUrl = typeof getSupplierFileUrl === 'function' ? await getSupplierFileUrl(fileUrl) : null;
+  if (signedUrl) window.open(signedUrl, '_blank');
+  else toast('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D8\u05E2\u05D5\u05DF \u05E7\u05D5\u05D1\u05E5', 'e');
 }
 
 // Item row management moved to receipt-form-items.js:

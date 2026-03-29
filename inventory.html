@@ -210,6 +210,12 @@
         <div class="bulk-field cost-field"><label>מחיר עלות</label><input type="number" id="bulk-cprice" placeholder="—"></div>
         <div class="bulk-field cost-field"><label>הנחה % עלות</label><input type="number" id="bulk-cdisc" placeholder="—" min="0" max="100"></div>
         <div class="bulk-field"><label>סנכרון</label><select id="bulk-sync"><option value="">—</option><option value="מלא">מלא</option><option value="תדמית">תדמית</option><option value="לא">לא</option></select></div>
+        <div class="bulk-field"><label>סוג</label><select id="bulk-ptype"><option value="">—</option><option value="eyeglasses">ראייה</option><option value="sunglasses">שמש</option></select></div>
+        <div class="bulk-field"><label>מותג</label><select id="bulk-brand"><option value="">—</option></select></div>
+        <div class="bulk-field"><label>ספק</label><select id="bulk-supplier"><option value="">—</option></select></div>
+        <div class="bulk-field"><label>צבע</label><input type="text" id="bulk-color" placeholder="—"></div>
+        <div class="bulk-field"><label>מידה</label><input type="text" id="bulk-size" placeholder="—"></div>
+        <div class="bulk-field"><label>סטטוס</label><select id="bulk-status"><option value="">—</option><option value="active">פעיל</option><option value="reserved">שמור</option><option value="sold">נמכר</option><option value="returned">הוחזר</option></select></div>
       </div>
       <div class="bulk-btns">
         <button class="btn btn-s btn-sm" onclick="applyBulkUpdate()" data-permission="inventory.edit">&#10004; עדכן נבחרים</button>
@@ -423,17 +429,21 @@
     <div id="rcpt-form-alerts"></div>
     <div class="card" style="margin-bottom:16px">
       <div class="rcpt-header-form">
-        <div class="form-group"><label>סוג מסמך <span class="req">*</span></label>
-          <select id="rcpt-type"><option value="delivery_note">תעודת משלוח</option><option value="invoice">חשבונית</option><option value="tax_invoice">חשבונית מס</option></select>
-        </div>
-        <div class="form-group"><label>מספר מסמך <span class="req">*</span></label>
-          <input type="text" id="rcpt-number" placeholder="מס׳ תעודת משלוח / חשבונית">
-        </div>
         <div class="form-group"><label>ספק <span class="req">*</span></label>
           <div id="rcpt-supplier-wrap"></div>
         </div>
         <div class="form-group"><label>הזמנת רכש (אופציונלי)</label>
           <select id="rcpt-po-select" disabled><option value="">ללא — קבלה חופשית</option></select>
+        </div>
+        <div class="form-group"><label>סוג מסמך <span class="req">*</span></label>
+          <select id="rcpt-type"><option value="delivery_note">תעודת משלוח</option><option value="tax_invoice">חשבונית מס</option></select>
+        </div>
+        <div class="form-group" style="max-width:80px"><label>כמות מסמכים</label>
+          <input type="number" id="rcpt-doc-count" min="1" max="10" value="1" onchange="_onDocCountChange()" style="text-align:center">
+        </div>
+        <div class="form-group"><label>מספר מסמך <span class="req">*</span></label>
+          <input type="text" id="rcpt-number" placeholder="מס׳ חשבונית">
+          <span id="rcpt-main-amount-wrap" style="display:none;align-items:center;gap:4px;margin-top:4px;font-size:.82rem;color:#3730a3"><span>₪</span><input type="number" step="0.01" min="0" placeholder="סכום" style="width:80px;padding:2px 4px;border:1px solid #c7d2fe;border-radius:3px;font-size:.78rem;text-align:center"></span>
         </div>
         <div class="form-group"><label>תאריך קבלה</label>
           <input type="date" id="rcpt-date">
@@ -453,10 +463,21 @@
           <span id="rcpt-attach-name" style="font-size:.78rem;color:var(--g600);display:none"></span>
         </div>
       </div>
+      <div id="rcpt-extra-nums" style="display:none;margin-top:8px;padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px">
+        <div id="rcpt-extra-nums-tags"></div>
+        <div id="rcpt-extra-nums-add" style="display:none;gap:6px;align-items:center">
+          <input type="text" id="rcpt-extra-num-input" placeholder="מספר מסמך נוסף..." style="flex:1;font-size:.85rem;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px">
+          <button type="button" class="btn btn-sm" style="font-size:.78rem;background:#e5e7eb" onclick="_addRcptExtraNum()">+ הוסף</button>
+        </div>
+      </div>
     </div>
 
     <div class="card" style="margin-bottom:16px">
       <h4 style="margin:0 0 10px">פריטים</h4>
+      <div id="rcpt-ocr-compare-wrap" style="display:none;margin-bottom:10px;padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;text-align:center;direction:rtl">
+        <button id="rcpt-ocr-compare-btn" type="button" onclick="_rcptOcrRunComparison()" style="padding:8px 20px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:600">&#128269; השווה לחשבונית (AI)</button>
+        <span style="margin-right:10px;font-size:12px;color:#6b7280">ה-AI ישווה פריטים בטבלה מול החשבונית שנסרקה</span>
+      </div>
       <div class="rcpt-search-bar">
         <div class="form-group" style="margin:0;flex:1;max-width:300px">
           <label>חיפוש ברקוד</label>
@@ -466,10 +487,10 @@
         <button class="btn btn-g btn-sm" onclick="addNewReceiptRow()" style="margin-bottom:2px">&#10010; שורה חדשה</button>
         <label class="btn btn-g btn-sm" style="margin-bottom:2px;cursor:pointer">&#128194; ייבוא Excel<input type="file" accept=".xlsx,.xls,.csv" onchange="handleReceiptExcel(event)" style="display:none"></label>
       </div>
-      <div class="rcpt-items-wrap">
-        <table>
-          <thead><tr>
-            <th>#</th><th>ברקוד</th><th>מותג</th><th>דגם</th><th>צבע</th><th>גודל</th><th>סוג מוצר</th><th>כמות</th><th>מחיר עלות</th><th>מחיר מכירה</th><th>סנכרון</th><th>תמונות</th><th>סוג</th><th>פעולה</th>
+      <div class="rcpt-items-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table id="rcpt-items-table" style="min-width:1100px">
+          <thead id="rcpt-items-thead"><tr>
+            <th style="min-width:30px">#</th><th data-sort-key="barcode" style="min-width:80px">ברקוד</th><th data-sort-key="brand" style="min-width:100px">מותג</th><th data-sort-key="model" style="min-width:90px">דגם</th><th data-sort-key="color" style="min-width:70px">צבע</th><th data-sort-key="size" style="min-width:45px">גודל</th><th style="min-width:70px">סוג מוצר</th><th data-sort-key="qty" style="min-width:50px">כמות</th><th data-sort-key="cost" style="min-width:80px">מחיר עלות</th><th style="min-width:80px">מחיר מכירה</th><th style="min-width:55px">הנחה %</th><th style="min-width:55px">סנכרון</th><th style="min-width:55px">תמונות</th><th style="min-width:55px">סוג</th><th style="min-width:60px">פעולה</th>
           </tr></thead>
           <tbody id="rcpt-items-body"></tbody>
         </table>
@@ -481,6 +502,7 @@
       <button class="btn btn-g" onclick="saveReceiptDraft()">&#128190; שמור טיוטה</button>
       <button class="btn" id="rcpt-gen-barcodes-btn" onclick="generateReceiptBarcodes()" style="background:#7c3aed;color:#fff">&#127991; יצירת ברקודים</button>
       <button class="btn btn-s" onclick="confirmReceipt()" data-permission="goods_receipt.confirm">&#10004; אשר קבלה ועדכן מלאי</button>
+      <button class="btn" id="rcpt-confirm-learn-btn" onclick="_rcptOcrConfirmAndLearn()" data-permission="goods_receipt.confirm" style="background:#7c3aed;color:#fff;display:none">&#129302; אשר ולמד את ה-AI</button>
       <button class="btn btn-g btn-sm" onclick="exportReceiptExcel()" data-permission="goods_receipt.export" style="margin-right:auto">&#128194; ייצוא Excel</button>
     </div>
   </div>
@@ -858,6 +880,7 @@
 <script src="shared/js/toast.js"></script>
 <script src="shared/js/pin-modal.js"></script>
 <script src="shared/js/table-builder.js"></script>
+<script src="shared/js/sort-utils.js"></script>
 <script src="shared/js/permission-ui.js"></script>
 <script src="shared/js/supabase-client.js"></script>
 <script src="shared/js/activity-logger.js"></script>
@@ -876,6 +899,8 @@
 <script src="modules/inventory/inventory-table.js"></script>
 <script src="modules/inventory/inventory-images.js"></script>
 <script src="modules/inventory/inventory-images-bg.js"></script>
+<script src="shared/js/table-resize.js"></script>
+<script>TableResize.register('inv-table');TableResize.register('rcpt-items-table');TableResize.register('po-items-table');TableResize.register('po-view-table');TableResize.register('sc-items-table');</script>
 <script src="modules/inventory/inventory-edit.js"></script>
 <script src="modules/inventory/inventory-entry.js"></script>
 <script src="modules/inventory/inventory-export.js"></script>
@@ -886,11 +911,18 @@
 <script src="modules/inventory/inventory-returns-actions.js"></script>
 <script src="modules/inventory/incoming-invoices.js"></script>
 <script src="modules/goods-receipts/goods-receipt.js"></script>
+<script src="modules/goods-receipts/receipt-list.js"></script>
+<script src="modules/goods-receipts/receipt-doc-numbers.js"></script>
 <script src="modules/goods-receipts/receipt-form.js"></script>
 <script src="modules/goods-receipts/receipt-form-items.js"></script>
 <script src="modules/goods-receipts/receipt-guide.js"></script>
+<script src="modules/goods-receipts/receipt-ocr-supplier.js"></script>
+<script src="modules/goods-receipts/receipt-ocr-po.js"></script>
+<script src="modules/goods-receipts/receipt-ocr-flow.js"></script>
 <script src="modules/goods-receipts/receipt-ocr.js"></script>
 <script src="modules/goods-receipts/receipt-ocr-review.js"></script>
+<script src="modules/goods-receipts/receipt-ocr-learn.js"></script>
+<script src="modules/goods-receipts/receipt-ocr-confirm-learn.js"></script>
 <script src="modules/goods-receipts/receipt-actions.js"></script>
 <script src="modules/goods-receipts/receipt-confirm-items.js"></script>
 <script src="modules/goods-receipts/receipt-confirm.js"></script>

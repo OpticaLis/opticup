@@ -29,38 +29,45 @@ async function openSupplierDetail(supplierId) {
     var results = await Promise.all([
       fetchAll(T.SUPPLIERS, [['id', 'eq', supplierId]]),
       fetchAll(T.SUP_DOCS, [['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId]]),
-      fetchAll(T.PREPAID_DEALS, [['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId], ['status', 'eq', 'active']])
+      fetchAll(T.PREPAID_DEALS, [['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId], ['status', 'eq', 'active']]),
+      fetchAll(T.SUP_PAYMENTS, [['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId]]),
+      sb.from(T.BAL_ADJ).select('amount').eq('tenant_id', getTenantId()).eq('supplier_id', supplierId).then(function(r) { return r.data || []; })
     ]);
 
     var supplier = results[0][0];
     var docs = results[1];
     var deals = results[2];
+    var detailPayments = results[3] || [];
+    var detailAdj = results[4] || [];
     _detailSupplierName = supplier ? supplier.name : '';
 
-    // Calculate summary (Phase 8: respects opening_balance + cutoff date)
+    // Calculate summary — uses raw total_amount (not remaining) to avoid double-counting payments
     var todayStr = new Date().toISOString().slice(0, 10);
     var cutoff = supplier ? supplier.opening_balance_date : null;
-    var totalDebt = supplier ? (Number(supplier.opening_balance) || 0) : 0;
+    var totalInvoiced = supplier ? (Number(supplier.opening_balance) || 0) : 0;
     var overdueAmt = 0;
     docs.forEach(function(d) {
-      if (d.status === 'paid' || d.status === 'cancelled') return;
+      if (d.status === 'cancelled') return;
       if (cutoff && d.document_date && d.document_date < cutoff) return;
       var rate = Number(d.exchange_rate) || 1;
-      var remaining = (Number(d.total_amount) - Number(d.paid_amount)) * rate;
-      if (remaining <= 0) return;
-      totalDebt += remaining;
-      if (d.due_date && d.due_date < todayStr) overdueAmt += remaining;
+      totalInvoiced += (Number(d.total_amount) || 0) * rate;
+      var remaining = ((Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0)) * rate;
+      if (remaining > 0 && d.due_date && d.due_date < todayStr) overdueAmt += remaining;
     });
 
     var deal = deals[0];
     var dealTotal = deal ? (Number(deal.total_prepaid) || 0) : 0;
     var dealRemaining = deal ? dealTotal - (Number(deal.total_used) || 0) : 0;
+    var totalPaid = detailPayments.reduce(function(s, p) { return s + (Number(p.amount) || 0) * (Number(p.exchange_rate) || 1); }, 0);
+    var totalAdj = detailAdj.reduce(function(s, a) { return s + (Number(a.amount) || 0); }, 0);
+    // יתרה סופית = paid + deals - invoiced + adjustments
+    var detailFinalBalance = totalPaid + dealTotal - totalInvoiced + totalAdj;
 
     // Render header
     var overdueStyle = overdueAmt > 0 ? 'color:var(--error);font-weight:600' : '';
     var dealLine = deal
-      ? 'עסקה מראש: ' + formatILS(dealTotal) + ' (נותר: ' + formatILS(dealRemaining) + ')'
-      : 'עסקה מראש: \u2014';
+      ? '\u05E2\u05E1\u05E7\u05D4 \u05DE\u05E8\u05D0\u05E9: ' + formatILS(dealTotal) + ' (\u05E0\u05D5\u05EA\u05E8: ' + formatILS(dealRemaining) + ')'
+      : '\u05E2\u05E1\u05E7\u05D4 \u05DE\u05E8\u05D0\u05E9: \u2014';
 
     // Opening balance section
     var ob = supplier ? (Number(supplier.opening_balance) || 0) : 0;
@@ -98,7 +105,8 @@ async function openSupplierDetail(supplierId) {
       '</div>' +
       obSection + ptSection +
       '<div style="display:flex;flex-wrap:wrap;gap:16px;font-size:.92rem;margin-bottom:16px">' +
-        '<div>חוב כולל: <strong>' + formatILS(totalDebt) + '</strong></div>' +
+        '<div>\u05D9\u05EA\u05E8\u05D4 \u05E1\u05D5\u05E4\u05D9\u05EA: <strong style="color:' + (detailFinalBalance > 0 ? '#059669' : (detailFinalBalance < 0 ? '#dc2626' : '')) + '">' + formatILS(detailFinalBalance) + '</strong> ' +
+          '<button class="btn-sm" style="background:#eff6ff;color:#1d4ed8;font-size:.72rem;padding:1px 5px;margin-right:4px" onclick="_openAdjustModal(\'' + supplierId + '\',\'' + escapeHtml(supplier.name || '') + '\')" title="\u05D4\u05EA\u05D0\u05DD \u05D9\u05EA\u05E8\u05D4">\u270F\uFE0F</button></div>' +
         '<div style="' + overdueStyle + '">באיחור: <strong>' + formatILS(overdueAmt) + '</strong></div>' +
         '<div>' + dealLine + '</div>' +
       '</div>' +

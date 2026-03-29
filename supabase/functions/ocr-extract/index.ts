@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ============================================================
 // ocr-extract — Claude Vision OCR for supplier documents
-// Phase 5b — Optic Up Multi-Tenant SaaS
+// Supports single file (file_url) and multi-file (file_urls array)
 // ============================================================
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -11,7 +11,9 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
 const CLAUDE_MODEL = "claude-sonnet-4-20250514";
 const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
-const TIMEOUT_MS = 30_000;
+const TIMEOUT_MS = 60_000; // 60s for multi-file
+const MAX_FILES = 10;
+const MAX_TOTAL_BYTES = 20 * 1024 * 1024; // 20MB
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,7 +43,6 @@ function fileName(url: string): string {
   return url.split("/").pop() || url;
 }
 
-/** Dice coefficient for fuzzy string matching. */
 function similarity(a: string, b: string): number {
   const an = a.trim().toLowerCase(), bn = b.trim().toLowerCase();
   if (an === bn) return 1;
@@ -60,7 +61,6 @@ function similarity(a: string, b: string): number {
   return (2 * m) / (an.length - 1 + bn.length - 1);
 }
 
-/** Parse JSON from Claude response, stripping markdown fences if present. */
 function parseJson(text: string): Record<string, unknown> | null {
   let t = text.trim();
   const m = t.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -68,7 +68,6 @@ function parseJson(text: string): Record<string, unknown> | null {
   try { return JSON.parse(t); } catch { return null; }
 }
 
-/** Extract a field value that may be a plain value or { value, confidence } object. */
 function fieldVal<T>(v: unknown): T | null {
   if (v == null) return null;
   if (typeof v === "object" && "value" in (v as Record<string, unknown>))
@@ -76,15 +75,35 @@ function fieldVal<T>(v: unknown): T | null {
   return v as T;
 }
 
-/** Call Claude Vision API with timeout + single retry. */
-async function callClaude(
-  base64: string, mediaType: string, prompt: string, attempt = 1
+// ============================================================
+// Fetch a file from Storage → base64
+// ============================================================
+async function fetchFileBase64(
+  db: ReturnType<typeof createClient>, fileUrl: string
+): Promise<{ base64: string; mediaType: string; bytes: number } | null> {
+  try {
+    const { data: signedData, error } = await db.storage
+      .from("supplier-docs").createSignedUrl(fileUrl, 300);
+    if (error || !signedData?.signedUrl) return null;
+    const fileRes = await fetch(signedData.signedUrl);
+    if (!fileRes.ok) return null;
+    const buf = new Uint8Array(await fileRes.arrayBuffer());
+    let bin = "";
+    for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+    return { base64: btoa(bin), mediaType: getMediaType(fileUrl), bytes: buf.length };
+  } catch { return null; }
+}
+
+// ============================================================
+// Call Claude Vision API — supports multiple content blocks
+// ============================================================
+async function callClaudeMulti(
+  contentBlocks: Array<Record<string, unknown>>,
+  attempt = 1
 ): Promise<{ response: Record<string, unknown>; ms: number }> {
   const start = Date.now();
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
-  const srcType = mediaType === "application/pdf" ? "document" : "image";
-
   try {
     const res = await fetch(CLAUDE_API_URL, {
       method: "POST",
@@ -94,14 +113,9 @@ async function callClaude(
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: CLAUDE_MODEL, max_tokens: 4096,
-        messages: [{
-          role: "user",
-          content: [
-            { type: srcType, source: { type: "base64", media_type: mediaType, data: base64 } },
-            { type: "text", text: prompt },
-          ],
-        }],
+        model: CLAUDE_MODEL,
+        max_tokens: contentBlocks.length > 2 ? 8192 : 4096,  // more tokens for multi-file
+        messages: [{ role: "user", content: contentBlocks }],
       }),
       signal: ctrl.signal,
     });
@@ -113,13 +127,17 @@ async function callClaude(
     clearTimeout(timer);
     const e = err as Error;
     if (e.name === "AbortError" && attempt === 1)
-      return callClaude(base64, mediaType, prompt, 2);
+      return callClaudeMulti(contentBlocks, 2);
     throw e;
   }
 }
 
-function buildPrompt(hints: string | null, typeHint: string | null): string {
-  let p = `You are an expert at reading Israeli supplier invoices and delivery notes for optical stores. Extract the following fields from this document:
+function buildPrompt(hints: string | null, typeHint: string | null, fileCount: number): string {
+  let p = `You are an expert at reading Israeli supplier invoices and delivery notes for optical stores.`;
+  if (fileCount > 1) {
+    p += ` You are given ${fileCount} pages/files of the same document. Extract data from ALL pages combined.`;
+  }
+  p += ` Extract the following fields:
 
 Required fields:
 - supplier_name: The supplier/company name
@@ -134,7 +152,7 @@ Required fields:
 - total_amount: Final total including VAT
 
 Optional fields:
-- items: Array of line items, each with: description, model, quantity, unit_price, total
+- items: Array of ALL line items from ALL pages, each with: description, model, quantity, unit_price, total
 - po_reference: If a PO number is mentioned
 - delivery_note_references: If invoice references delivery note numbers`;
   if (typeHint) p += `\n\nHint: This document is likely a ${typeHint}.`;
@@ -153,15 +171,25 @@ Deno.serve(async (req) => {
 
   const startTime = Date.now();
 
-  // Parse & validate input
-  let fileUrl: string, tenantId: string;
+  // Parse & validate input — support both single file_url and file_urls array
+  let fileUrls: string[] = [];
+  let tenantId: string;
   let supplierId: string | null = null, docTypeHint: string | null = null;
   try {
     const body = await req.json();
-    fileUrl = body.file_url; tenantId = body.tenant_id;
-    supplierId = body.supplier_id || null; docTypeHint = body.document_type_hint || null;
+    tenantId = body.tenant_id;
+    supplierId = body.supplier_id || null;
+    docTypeHint = body.document_type_hint || null;
+    // New format: file_urls array
+    if (Array.isArray(body.file_urls) && body.file_urls.length > 0) {
+      fileUrls = body.file_urls.slice(0, MAX_FILES);
+    }
+    // Old format: single file_url (backward compatible)
+    else if (body.file_url && typeof body.file_url === "string") {
+      fileUrls = [body.file_url];
+    }
   } catch { return errRes("Invalid JSON body", 400); }
-  if (!fileUrl || typeof fileUrl !== "string") return errRes("Missing file_url", 400);
+  if (!fileUrls.length) return errRes("Missing file_url or file_urls", 400);
   if (!tenantId || typeof tenantId !== "string") return errRes("Missing tenant_id", 400);
 
   // Validate JWT via auth_sessions
@@ -178,20 +206,20 @@ Deno.serve(async (req) => {
   if (sessErr || !sess) return errRes("Invalid or expired session", 401);
   if (sess.tenant_id !== tenantId) return errRes("Tenant mismatch", 403);
 
-  // Fetch file from Storage as base64
-  const { data: signedData, error: signErr } = await db.storage
-    .from("supplier-docs").createSignedUrl(fileUrl, 300);
-  if (signErr || !signedData?.signedUrl) return errRes("File not found in storage", 404);
-
-  let fileBase64: string;
-  try {
-    const fileRes = await fetch(signedData.signedUrl);
-    if (!fileRes.ok) return errRes("File not found in storage", 404);
-    const buf = new Uint8Array(await fileRes.arrayBuffer());
-    let bin = "";
-    for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-    fileBase64 = btoa(bin);
-  } catch { return errRes("Failed to fetch file from storage", 500); }
+  // Fetch all files from Storage as base64
+  const fetchedFiles: Array<{ base64: string; mediaType: string; url: string }> = [];
+  let totalBytes = 0;
+  for (const url of fileUrls) {
+    const fetched = await fetchFileBase64(db, url);
+    if (!fetched) { console.warn(`Skipping file ${url}: fetch failed`); continue; }
+    totalBytes += fetched.bytes;
+    if (totalBytes > MAX_TOTAL_BYTES) {
+      console.warn(`Total size ${totalBytes} exceeds ${MAX_TOTAL_BYTES}, stopping at ${fetchedFiles.length} files`);
+      break;
+    }
+    fetchedFiles.push({ base64: fetched.base64, mediaType: fetched.mediaType, url });
+  }
+  if (!fetchedFiles.length) return errRes("No files could be loaded from storage", 404);
 
   // Load OCR template hints for known supplier
   let supplierHints: string | null = null, templateId: string | null = null;
@@ -221,12 +249,22 @@ Deno.serve(async (req) => {
   const autoMatchSupplier = cfg?.auto_match_supplier ?? true;
   const autoMatchPo = cfg?.auto_match_po ?? true;
 
+  // Build Claude Vision content blocks — one per file + prompt at end
+  const contentBlocks: Array<Record<string, unknown>> = [];
+  for (const f of fetchedFiles) {
+    const srcType = f.mediaType === "application/pdf" ? "document" : "image";
+    contentBlocks.push({
+      type: srcType,
+      source: { type: "base64", media_type: f.mediaType, data: f.base64 },
+    });
+  }
+  const prompt = buildPrompt(supplierHints, docTypeHint, fetchedFiles.length);
+  contentBlocks.push({ type: "text", text: prompt });
+
   // Call Claude Vision
-  const prompt = buildPrompt(supplierHints, docTypeHint);
-  const mediaType = getMediaType(fileUrl);
   let claudeRes: Record<string, unknown>, processingMs: number;
   try {
-    const r = await callClaude(fileBase64, mediaType, prompt);
+    const r = await callClaudeMulti(contentBlocks);
     claudeRes = r.response; processingMs = r.ms;
   } catch (err: unknown) {
     const e = err as Error;
@@ -239,21 +277,30 @@ Deno.serve(async (req) => {
   const content = claudeRes.content as Array<{ type: string; text?: string }>;
   const textBlock = content?.find((c) => c.type === "text");
 
-  // Helper: save failed extraction for debugging
+  const primaryFileUrl = fileUrls[0];
   const saveFailedExtraction = async () => {
     await db.from("ocr_extractions").insert({
-      tenant_id: tenantId, file_url: fileUrl, file_name: fileName(fileUrl),
+      tenant_id: tenantId, file_url: primaryFileUrl, file_name: fileName(primaryFileUrl),
       raw_response: claudeRes, extracted_data: { raw_text: textBlock?.text || null },
       confidence_score: 0, status: "pending", template_id: templateId,
       processing_time_ms: Date.now() - startTime,
     });
   };
 
-  if (!textBlock?.text) { await saveFailedExtraction(); return errRes("לא הצלחנו לקרוא את המסמך", 422); }
+  if (!textBlock?.text) {
+    await saveFailedExtraction();
+    const stopReason = (claudeRes as Record<string, unknown>).stop_reason;
+    console.error("No text in Claude response. stop_reason:", stopReason, "content types:", content?.map(c => c.type));
+    return errRes("לא הצלחנו לקרוא את המסמך — Claude לא החזיר טקסט" + (stopReason ? ` (${stopReason})` : ""), 422);
+  }
   const extracted = parseJson(textBlock.text);
-  if (!extracted) { await saveFailedExtraction(); return errRes("לא הצלחנו לקרוא את המסמך", 422); }
+  if (!extracted) {
+    await saveFailedExtraction();
+    console.error("Failed to parse Claude response as JSON. First 200 chars:", textBlock.text.substring(0, 200));
+    return errRes("לא הצלחנו לקרוא את המסמך — תגובה לא תקינה מ-AI", 422);
+  }
 
-  // Calculate overall confidence from key fields
+  // Calculate overall confidence
   const confFields = ["supplier_name", "document_type", "document_number", "document_date", "total_amount"];
   let confSum = 0, confCount = 0;
   const confObj = extracted.confidence as Record<string, number> | undefined;
@@ -315,7 +362,7 @@ Deno.serve(async (req) => {
   // Save extraction
   const totalMs = Date.now() - startTime;
   const { data: ext, error: insErr } = await db.from("ocr_extractions").insert({
-    tenant_id: tenantId, file_url: fileUrl, file_name: fileName(fileUrl),
+    tenant_id: tenantId, file_url: primaryFileUrl, file_name: fileName(primaryFileUrl),
     raw_response: claudeRes, extracted_data: extracted, confidence_score: confidence,
     status: "pending", template_id: templateId, processing_time_ms: totalMs,
   }).select("id").single();
@@ -326,6 +373,7 @@ Deno.serve(async (req) => {
       success: true, extraction_id: null, extracted_data: extracted,
       confidence_score: confidence, supplier_match: supplierMatch,
       po_match: poMatch, template_used: !!templateId, processing_time_ms: totalMs,
+      files_scanned: fetchedFiles.length,
     });
   }
 
@@ -345,5 +393,6 @@ Deno.serve(async (req) => {
     success: true, extraction_id: ext.id, extracted_data: extracted,
     confidence_score: confidence, supplier_match: supplierMatch,
     po_match: poMatch, template_used: !!templateId, processing_time_ms: totalMs,
+    files_scanned: fetchedFiles.length,
   });
 });

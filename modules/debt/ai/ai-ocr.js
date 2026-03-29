@@ -168,7 +168,8 @@ async function _ocrSave(mode) {
 }
 
 // =========================================================
-// Multi-file OCR: scan all files for a document + merge results
+// Multi-file OCR: send ALL file URLs in single API call
+// The Edge Function handles multi-file natively via file_urls array
 // =========================================================
 async function scanDocumentAllFiles(docId, supplierId, docTypeHint) {
   var files = await fetchDocFiles(docId);
@@ -179,78 +180,43 @@ async function scanDocumentAllFiles(docId, supplierId, docTypeHint) {
     if (docRec && docRec.file_url) files = [{ file_url: docRec.file_url, file_name: docRec.file_name, sort_order: 0 }];
   }
   if (!files || !files.length) { toast('\u05D0\u05D9\u05DF \u05E7\u05D1\u05E6\u05D9\u05DD \u05DC\u05E1\u05E8\u05D9\u05E7\u05D4', 'e'); return; }
-  // Single file → standard scan
+  // Single file → standard scan (backward compat)
   if (files.length === 1) { triggerOCR(files[0].file_url, supplierId, docTypeHint, docId); return; }
-  // Multi-file sequential scan
+  // Multi-file → send all URLs in one request
   var jwt = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
   if (!jwt) { toast('\u05E0\u05D3\u05E8\u05E9\u05EA \u05D4\u05EA\u05D7\u05D1\u05E8\u05D5\u05EA \u05DE\u05D7\u05D3\u05E9', 'e'); return; }
   files.sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
-  showLoading('\uD83E\uDD16 \u05E1\u05D5\u05E8\u05E7 \u05E2\u05DE\u05D5\u05D3 1 \u05DE\u05EA\u05D5\u05DA ' + files.length + '...');
-  var results = [];
-  for (var i = 0; i < files.length; i++) {
-    showLoading('\uD83E\uDD16 \u05E1\u05D5\u05E8\u05E7 \u05E2\u05DE\u05D5\u05D3 ' + (i + 1) + ' \u05DE\u05EA\u05D5\u05DA ' + files.length + '...');
-    try {
-      var res = await fetch(SUPABASE_URL + '/functions/v1/ocr-extract', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file_url: files[i].file_url, supplier_id: supplierId || null,
-          document_type_hint: docTypeHint || null, tenant_id: getTenantId() })
-      });
-      if (!res.ok) { var err = await res.json().catch(function() { return {}; }); throw new Error(err.error || '\u05E9\u05D2\u05D9\u05D0\u05D4'); }
-      var result = await res.json();
-      results.push(result.success ? result : null);
-    } catch (e) {
-      console.warn('\u05E1\u05E8\u05D9\u05E7\u05EA \u05E2\u05DE\u05D5\u05D3 ' + (i + 1) + ' \u05E0\u05DB\u05E9\u05DC\u05D4:', e.message);
-      results.push(null);
+  var fileUrls = files.map(function(f) { return f.file_url; });
+  showLoading('\uD83E\uDD16 \u05E1\u05D5\u05E8\u05E7 ' + files.length + ' \u05E7\u05D1\u05E6\u05D9\u05DD \u05D1\u05E1\u05E8\u05D9\u05E7\u05D4 \u05D0\u05D7\u05EA...');
+  try {
+    var res = await fetch(SUPABASE_URL + '/functions/v1/ocr-extract', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        file_urls: fileUrls,
+        supplier_id: supplierId || null,
+        document_type_hint: docTypeHint || null,
+        tenant_id: getTenantId()
+      })
+    });
+    if (!res.ok) { var err = await res.json().catch(function() { return {}; }); throw new Error(err.error || '\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E1\u05E8\u05D9\u05E7\u05D4'); }
+    var result = await res.json();
+    hideLoading();
+    if (result.success) {
+      // Add multi-file metadata for the review UI
+      result._merge_meta = {
+        scanned: files.map(function(f) { return f.file_name || 'file'; }),
+        failed: [],
+        total: files.length
+      };
+      showOCRReview(result, files[0].file_url, docId);
+    } else {
+      toast(result.error || '\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E1\u05E8\u05D9\u05E7\u05D4', 'e');
     }
+  } catch (e) {
+    hideLoading(); console.error('scanDocumentAllFiles error:', e);
+    toast(e.message || '\u05E9\u05D2\u05D9\u05D0\u05D4', 'e');
   }
-  hideLoading();
-  var merged = _mergeOCRResults(results, files);
-  if (merged.success) showOCRReview(merged, files[0].file_url, docId);
-  else toast('\u05DB\u05DC \u05D4\u05E1\u05E8\u05D9\u05E7\u05D5\u05EA \u05E0\u05DB\u05E9\u05DC\u05D5', 'e');
-}
-
-function _mergeOCRResults(results, files) {
-  var mergedItems = [], scanned = [], failed = [];
-  var firstResult = null, lastResult = null;
-  var confSum = 0, confCount = 0;
-  for (var i = 0; i < results.length; i++) {
-    var r = results[i];
-    if (!r || !r.extracted_data) { failed.push(files[i].file_name || 'file ' + (i + 1)); continue; }
-    scanned.push(files[i].file_name || 'file ' + (i + 1));
-    if (!firstResult) firstResult = r;
-    lastResult = r;
-    if (r.confidence_score) { confSum += r.confidence_score; confCount++; }
-    // Collect items from every page, dedup by description+qty+price
-    var pageItems = r.extracted_data.items;
-    if (pageItems && typeof pageItems === 'object' && 'value' in pageItems) pageItems = pageItems.value;
-    if (Array.isArray(pageItems)) {
-      pageItems.forEach(function(item) {
-        var isDupe = mergedItems.some(function(ex) {
-          return ex.description === item.description && ex.quantity === item.quantity && ex.unit_price === item.unit_price;
-        });
-        if (!isDupe) mergedItems.push(item);
-      });
-    }
-  }
-  if (!firstResult) return { success: false };
-  var fv = function(d, f) { var v = d[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v; };
-  var fe = firstResult.extracted_data, le = lastResult.extracted_data;
-  return {
-    success: true,
-    extracted_data: {
-      supplier_name: fe.supplier_name, document_number: fv(fe, 'document_number'),
-      document_date: fv(fe, 'document_date'), document_type: fv(fe, 'document_type'),
-      due_date: fv(fe, 'due_date'),
-      subtotal: fv(le, 'subtotal'), vat_rate: fv(le, 'vat_rate'),
-      vat_amount: fv(le, 'vat_amount'), total_amount: fv(le, 'total_amount'),
-      currency: fv(le, 'currency'), items: mergedItems
-    },
-    confidence_score: confCount > 0 ? confSum / confCount : 0,
-    supplier_match: firstResult.supplier_match,
-    extraction_id: firstResult.extraction_id,
-    _merge_meta: { scanned: scanned, failed: failed, total: files.length }
-  };
 }
 
 // --- 4. OCR scan buttons removed — scan available via _buildDocActionToolbar() in View modal ---

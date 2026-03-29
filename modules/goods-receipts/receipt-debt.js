@@ -1,15 +1,15 @@
 /**
  * receipt-debt.js — Auto-create supplier_documents on receipt confirmation
- * Phase 4b: Enhanced Goods Receipt
+ * Phase 4b: Enhanced Goods Receipt | Phase A-prep: doc type pass-through + multi-doc
  *
- * Exports: createDocumentFromReceipt(receiptId, supplierId, receiptItems)
+ * Exports: createDocumentFromReceipt(receiptId, supplierId, receiptItems, documentNumber, documentType, allDocNumbers, docAmounts)
  * Uses: fetchAll(), batchCreate() from shared.js / supabase-ops.js
  * Guards: client-side debounce + server-side goods_receipt_id duplicate check
  */
 
 let _creatingDocForReceipt = false; // client-side debounce flag
 
-async function createDocumentFromReceipt(receiptId, supplierId, receiptItems, documentNumber) {
+async function createDocumentFromReceipt(receiptId, supplierId, receiptItems, documentNumber, documentType, allDocNumbers, docAmounts) {
   // Guard A: client-side debounce (prevents double-click in same session)
   if (_creatingDocForReceipt) {
     console.warn('createDocumentFromReceipt: already in progress, skipping duplicate call');
@@ -18,13 +18,13 @@ async function createDocumentFromReceipt(receiptId, supplierId, receiptItems, do
   _creatingDocForReceipt = true;
 
   try {
-    return await _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems, documentNumber);
+    return await _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems, documentNumber, documentType, allDocNumbers, docAmounts);
   } finally {
     _creatingDocForReceipt = false;
   }
 }
 
-async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems, documentNumber) {
+async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptItems, documentNumber, documentType, allDocNumbers, docAmounts) {
   // Guard B: server-side duplicate check (prevents duplicate across sessions/refreshes)
   const existing = await sb.from(T.SUP_DOCS)
     .select('id, internal_number')
@@ -38,7 +38,7 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
       receipt_id: receiptId,
       existing_doc_id: existing.data[0].id,
       existing_internal_number: existing.data[0].internal_number
-    });
+    }).catch(err => console.error('writeLog failed in createDocumentFromReceipt:', err));
     return existing.data[0]; // return existing doc gracefully
   }
 
@@ -55,15 +55,20 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
     .filter(activeFilter)
     .some(i => !i.unit_cost || i.unit_cost <= 0);
 
-  // 2. Fetch supplier's default_document_type and payment_terms_days
+  // 2. Fetch supplier's payment_terms_days and currency
   const supplierRows = await fetchAll(T.SUPPLIERS, [['id', 'eq', supplierId]]);
   const supplier = supplierRows[0];
   if (!supplier) {
-    console.warn('createDocumentFromReceipt: supplier not found', supplierId);
+    console.error('createDocumentFromReceipt: supplier not found for receipt', receiptId, 'supplierId:', supplierId);
+    toast('\u05E7\u05D1\u05DC\u05D4 \u05D0\u05D5\u05E9\u05E8\u05D4 \u2014 \u05E1\u05E4\u05E7 \u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0, \u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 \u05DC\u05D0 \u05E0\u05D5\u05E6\u05E8', 'w');
     return null;
   }
 
-  const docTypeCode = supplier.default_document_type || 'delivery_note';
+  // Document type: receipt form selection → supplier default → 'delivery_note'
+  // Map receipt form values to document_types table codes
+  var _docTypeMap = { 'tax_invoice': 'invoice', 'delivery_note': 'delivery_note', 'invoice': 'invoice', 'credit_note': 'credit_note' };
+  const rawDocTypeCode = documentType || supplier.default_document_type || 'delivery_note';
+  const docTypeCode = _docTypeMap[rawDocTypeCode] || rawDocTypeCode;
   const paymentTermsDays = supplier.payment_terms_days || 30;
   const currency = supplier.default_currency || 'ILS';
 
@@ -71,7 +76,8 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   const docTypes = await fetchAll(T.DOC_TYPES, [['code', 'eq', docTypeCode]]);
   const docType = docTypes[0];
   if (!docType) {
-    console.warn('createDocumentFromReceipt: document_type not found for code', docTypeCode);
+    console.error('createDocumentFromReceipt: document_type not found for code', rawDocTypeCode, '\u2192', docTypeCode, 'tenant:', getTenantId());
+    toast('\u05E7\u05D1\u05DC\u05D4 \u05D0\u05D5\u05E9\u05E8\u05D4 \u2014 \u05E1\u05D5\u05D2 \u05DE\u05E1\u05DE\u05DA "' + rawDocTypeCode + '" \u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0. \u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 \u05DC\u05D0 \u05E0\u05D5\u05E6\u05E8.', 'w');
     return null;
   }
 
@@ -97,12 +103,16 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   const emp = JSON.parse(sessionStorage.getItem('prizma_employee') || '{}');
 
   // 8. Build document record
+  var primaryDocNum = documentNumber || ('GR-' + receiptId.substring(0, 8));
+  var docNumbersArr = (allDocNumbers && allDocNumbers.length > 0) ? allDocNumbers : [primaryDocNum];
   const docRow = {
     tenant_id: getTenantId(),
     supplier_id: supplierId,
     document_type_id: docType.id,
     internal_number: internalNumber,
-    document_number: documentNumber || ('GR-' + receiptId.substring(0, 8)),
+    document_number: primaryDocNum,
+    document_numbers: docNumbersArr,
+    document_amounts: (docAmounts && docAmounts.length > 0) ? docAmounts : [],
     document_date: today,
     due_date: dueDateStr,
     received_date: today,
@@ -120,6 +130,11 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   // 9. Insert using batchCreate helper
   const created = await batchCreate(T.SUP_DOCS, [docRow]);
   const createdDoc = created[0] || null;
+  if (!createdDoc) {
+    console.error('createDocumentFromReceipt: batchCreate returned empty for receipt', receiptId);
+    Toast.error('יצירת מסמך ספק נכשלה — יש ליצור מסמך ידנית');
+    return null;
+  }
 
   // 9b. Upload attached files if exist (multi-file support)
   var filesToUpload = (typeof _pendingReceiptFiles !== 'undefined' && _pendingReceiptFiles && _pendingReceiptFiles.length > 0)
@@ -157,19 +172,36 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
     toast('\u26A0\uFE0F \u05D4\u05DE\u05E1\u05DE\u05DA \u05E0\u05D5\u05E6\u05E8 \u05DC\u05DC\u05D0 \u05DE\u05D7\u05D9\u05E8\u05D9\u05DD \u2014 \u05D9\u05E9 \u05DC\u05E2\u05D3\u05DB\u05DF \u05DB\u05E9\u05D4\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u05DE\u05D2\u05D9\u05E2\u05D4', 'w');
   }
 
-  // 11. Phase 8: prepaid deduction moved to suppliers-debt. Alert finance manager instead.
-  try {
-    const deals = await fetchAll(T.PREPAID_DEALS, [
-      ['supplier_id', 'eq', supplierId],
-      ['status', 'eq', 'active'],
-      ['is_deleted', 'eq', false]
-    ]);
-    if (deals.length > 0 && createdDoc) {
-      await alertPrepaidNewDocument(supplierId, createdDoc.id, getTenantId(), supplier.name, docRow.document_number);
-    }
-  } catch (e) {
-    console.warn('Prepaid alert failed (non-blocking):', e);
+  // 11. Auto-deduct from prepaid deal if supplier has one
+  if (createdDoc) {
+    try {
+      var deducted = await autoDeductPrepaid(supplierId, createdDoc.id, Number(docRow.total_amount) || 0, getTenantId());
+      if (!deducted) {
+        // Couldn't auto-deduct — alert finance manager
+        var deals = await fetchAll(T.PREPAID_DEALS, [['supplier_id', 'eq', supplierId], ['status', 'eq', 'active'], ['is_deleted', 'eq', false]]);
+        if (deals.length > 0) await alertPrepaidNewDocument(supplierId, createdDoc.id, getTenantId(), supplier.name, docRow.document_number);
+      }
+    } catch (e) { console.warn('Prepaid auto-deduct failed (non-blocking):', e); }
   }
 
   return createdDoc;
+}
+
+/**
+ * Auto-deduct document amount from supplier's active prepaid deal.
+ * Returns true if deduction was made, false otherwise.
+ */
+async function autoDeductPrepaid(supplierId, docId, amount, tenantId) {
+  if (!supplierId || !docId || !amount || amount <= 0) return false;
+  var { data: deals } = await sb.from(T.PREPAID_DEALS).select('id, total_prepaid, total_used, total_remaining')
+    .eq('tenant_id', tenantId).eq('supplier_id', supplierId).eq('status', 'active').eq('is_deleted', false).limit(1);
+  if (!deals || !deals.length) return false;
+  var deal = deals[0];
+  var remaining = (Number(deal.total_remaining) || 0) > 0 ? Number(deal.total_remaining) : (Number(deal.total_prepaid) || 0) - (Number(deal.total_used) || 0);
+  if (remaining < amount) return false; // insufficient — don't partial-deduct, alert instead
+  var { error: rpcErr } = await sb.rpc('increment_prepaid_used', { p_deal_id: deal.id, p_delta: amount });
+  if (rpcErr) { console.error('autoDeductPrepaid RPC error:', rpcErr); return false; }
+  await batchUpdate(T.SUP_DOCS, [{ id: docId, paid_amount: amount, status: 'paid' }]);
+  writeLog('prepaid_auto_deduct', null, { supplier_id: supplierId, document_id: docId, deal_id: deal.id, amount: amount });
+  return true;
 }

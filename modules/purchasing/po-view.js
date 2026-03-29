@@ -1,5 +1,7 @@
+var _currentViewPoId = null;
 // ── View PO (read-only) ─────────────────────────────────────
 async function openViewPO(id) {
+  _currentViewPoId = id;
   try {
     showLoading();
     const { data: po, error: e1 } = await sb.from(T.PO)
@@ -102,6 +104,9 @@ async function openViewPO(id) {
         ? '<td style="padding:4px"><input type="number" class="po-view-selldisc" data-idx="' + idx + '" step="0.1" min="0" max="100" value="' + (item.sell_discount ? (item.sell_discount * 100).toFixed(1) : '') + '" style="width:60px;font-size:12px;text-align:center;border:1px solid #d1d5db;border-radius:4px;padding:4px" placeholder="%"></td>'
         : '<td style="padding:8px;text-align:center">' + (item.sell_discount ? (item.sell_discount * 100).toFixed(1) + '%' : '\u2014') + '</td>';
 
+      var noteRow = item.notes
+        ? '<tr style="background:' + rowColor + '"><td colspan="' + (showStatusCol ? 13 : 12) + '" style="padding:2px 8px 8px 8px;font-size:12px;color:#6b7280;font-style:italic">\uD83D\uDCAC ' + escapeHtml(item.notes) + '</td></tr>'
+        : '';
       return `<tr style="background:${rowColor}">
         <td style="padding:8px">${escapeHtml(item.brand||'\u2014')}</td>
         <td style="padding:8px">${escapeHtml(item.model||'\u2014')}</td>
@@ -115,7 +120,7 @@ async function openViewPO(id) {
         <td style="padding:8px; text-align:center; font-weight:600">\u20AA${total.toFixed(2)}</td>
         ${sellPriceCell}${sellDiscCell}
         ${actionCell}
-      </tr>`;
+      </tr>${noteRow}`;
     }).join('');
 
     const grandTotal = (items||[]).reduce((sum, item) => {
@@ -151,17 +156,17 @@ async function openViewPO(id) {
         </div>
         <div style="background:white; padding:16px; border-radius:10px;
                     box-shadow:0 1px 4px rgba(0,0,0,0.1); overflow-x:auto">
-          <table style="width:100%; border-collapse:collapse; font-size:13px">
+          <table id="po-view-table" style="width:100%; border-collapse:collapse; font-size:13px">
             <thead>
               <tr style="background:#1a2744; color:white; text-align:right">
-                <th style="padding:8px">\u05DE\u05D5\u05EA\u05D2</th>
-                <th style="padding:8px">\u05D3\u05D2\u05DD</th>
-                <th style="padding:8px">\u05E6\u05D1\u05E2</th>
-                <th style="padding:8px">\u05D2\u05D5\u05D3\u05DC</th>
+                <th style="padding:8px" data-sort-key="brand">\u05DE\u05D5\u05EA\u05D2</th>
+                <th style="padding:8px" data-sort-key="model">\u05D3\u05D2\u05DD</th>
+                <th style="padding:8px" data-sort-key="color">\u05E6\u05D1\u05E2</th>
+                <th style="padding:8px" data-sort-key="size">\u05D2\u05D5\u05D3\u05DC</th>
                 <th style="padding:8px">\u05E1\u05D5\u05D2</th>
-                <th style="padding:8px">\u05D4\u05D5\u05D6\u05DE\u05DF</th>
+                <th style="padding:8px" data-sort-key="qty_ordered">\u05D4\u05D5\u05D6\u05DE\u05DF</th>
                 <th style="padding:8px">\u05D4\u05EA\u05E7\u05D1\u05DC</th>
-                <th style="padding:8px">\u05E2\u05DC\u05D5\u05EA</th>
+                <th style="padding:8px" data-sort-key="unit_cost">\u05E2\u05DC\u05D5\u05EA</th>
                 <th style="padding:8px">\u05D4\u05E0\u05D7\u05D4</th>
                 <th style="padding:8px">\u05E1\u05D4"\u05DB</th>
                 <th style="padding:8px">\u05DE\u05D7\u05D9\u05E8 \u05DE\u05DB\u05D9\u05E8\u05D4</th>
@@ -196,6 +201,18 @@ async function openViewPO(id) {
 
 // ─── EVENT DELEGATION — purchase-orders.js ──────────────────────
 document.addEventListener('click', function(e) {
+  // Sort PO view columns
+  var sortTh = e.target.closest('th[data-sort-key]');
+  if (sortTh && _currentViewPoId && typeof SortUtils !== 'undefined') {
+    var table = sortTh.closest('table');
+    var container2 = document.getElementById('po-list-container2');
+    if (table && container2 && container2.contains(table)) {
+      var s = SortUtils.toggle('po-view', sortTh.dataset.sortKey);
+      SortUtils.sortArray(currentPOItems, s.key, s.dir);
+      openViewPO(_currentViewPoId);
+      return;
+    }
+  }
   // Cancel individual PO item
   const cancelItemBtn = e.target.closest('.btn-po-cancel-item');
   if (cancelItemBtn) {
@@ -217,6 +234,9 @@ document.addEventListener('click', function(e) {
   // Clone PO
   const cloneBtn = e.target.closest('.btn-po-clone');
   if (cloneBtn) { clonePO(cloneBtn.dataset.id); return; }
+  // Note button — open details and focus note textarea
+  const noteBtn = e.target.closest('.btn-po-note');
+  if (noteBtn) { togglePOItemNote(parseInt(noteBtn.dataset.index)); return; }
   // #18 togglePOItemDetails (array index)
   const toggleBtn = e.target.closest('.btn-po-toggle');
   if (toggleBtn) { togglePOItemDetails(parseInt(toggleBtn.dataset.index)); return; }

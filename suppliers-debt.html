@@ -88,7 +88,7 @@
     <!-- Summary cards -->
     <div class="debt-cards">
       <div class="debt-card" id="card-total-debt">
-        <div class="dc-title">חוב כולל</div>
+        <div class="dc-title">יתרה סופית</div>
         <div class="dc-amount" id="val-total-debt">&#8362;0</div>
       </div>
       <div class="debt-card" id="card-due-week">
@@ -119,13 +119,23 @@
       <button class="debt-tab-btn" data-tab="prepaid" onclick="switchDebtTab('prepaid')">עסקאות מראש</button>
       <button class="debt-tab-btn" data-tab="weekly" onclick="switchDebtTab('weekly')">&#128202; דוח שבועי</button>
       <button class="debt-tab-btn" data-tab="returns" onclick="switchDebtTab('returns')">&#128260; זיכויים</button>
+      <button class="debt-tab-btn" data-tab="ai-learning" onclick="switchDebtTab('ai-learning')">&#129302; למידת AI</button>
     </div>
+
+    <!-- Expense folders toggle -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+      <button class="btn btn-sm" style="background:#f3f4f6;color:#374151;font-size:.82rem" onclick="toggleExpenseFolders()">📁 תיקיות הוצאות</button>
+    </div>
+    <div id="expense-folders-container" style="display:none"></div>
 
     <!-- Tab content areas -->
     <div id="dtab-suppliers" class="debt-tab-content active">
       <div class="empty-state">אין נתונים להצגה</div>
     </div>
     <div id="dtab-documents" class="debt-tab-content">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+        <button id="gen-inv-toggle" class="btn btn-sm" style="background:#f3f4f6;color:#374151;font-size:.82rem" onclick="toggleGeneralInvoicesView()">📁 חשבוניות כלליות</button>
+      </div>
       <div class="empty-state">אין נתונים להצגה</div>
     </div>
     <div id="dtab-payments" class="debt-tab-content">
@@ -139,6 +149,9 @@
     </div>
     <div id="dtab-returns" class="debt-tab-content">
       <div id="debt-returns-tab-content"><div class="empty-state">טוען...</div></div>
+    </div>
+    <div id="dtab-ai-learning" class="debt-tab-content">
+      <div class="empty-state">טוען נתוני למידה...</div>
     </div>
   </div>
 
@@ -167,6 +180,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/shared.js"></script>
 <script src="shared/js/plan-helpers.js"></script>
+<script src="shared/js/sort-utils.js"></script>
+<script src="shared/js/table-resize.js"></script>
 <script src="js/shared-ui.js"></script>
 <script src="js/supabase-ops.js"></script>
 <script src="js/supabase-alerts-ocr.js"></script>
@@ -179,11 +194,15 @@
 <script src="js/header.js"></script>
 <script src="js/alerts-badge.js"></script>
 <script src="modules/debt/debt-dashboard.js"></script>
+<script src="modules/debt/debt-supplier-filters.js"></script>
 <script src="modules/debt/debt-documents.js?v=20260322a"></script>
 <script src="modules/debt/debt-doc-new.js?v=20260322a"></script>
+<script src="modules/debt/debt-filter-utils.js"></script>
 <script src="modules/debt/debt-doc-filters.js"></script>
 <script src="modules/debt/debt-doc-items.js?v=20260322c"></script>
 <script src="modules/debt/debt-doc-actions.js"></script>
+<script src="modules/debt/debt-expense-folders.js"></script>
+<script src="modules/debt/debt-general-invoices.js"></script>
 <script src="modules/debt/debt-doc-edit.js?v=20260323a"></script>
 <script src="modules/debt/debt-doc-compare.js?v=20260323a"></script>
 <script src="modules/debt/debt-doc-link.js"></script>
@@ -206,6 +225,7 @@
 <script src="modules/debt/ai/ai-historical-process.js?v=20260323"></script>
 <script src="modules/debt/ai/ai-weekly-report.js?v=20260321c"></script>
 <script src="modules/debt/ai/ai-config.js?v=20260321c"></script>
+<script src="modules/debt/ai/ai-learning-dashboard.js"></script>
 <script src="modules/debt/debt-info-content.js?v=20260321c"></script>
 <script src="modules/debt/debt-info-inject.js?v=20260321c"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" defer></script>
@@ -228,6 +248,7 @@ function switchDebtTab(tabName) {
   if (tabName === 'prepaid') loadPrepaidTab();
   if (tabName === 'weekly') initWeeklyReport();
   if (tabName === 'returns') initDebtReturnsTab();
+  if (tabName === 'ai-learning') loadAILearningTab();
 }
 
 // =========================================================

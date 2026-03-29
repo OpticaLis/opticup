@@ -77,10 +77,7 @@ function renderDocFilterBar() {
       '<div><label style="font-size:.78rem;color:var(--g600)">\u05E1\u05D5\u05D2 \u05DE\u05E1\u05DE\u05DA</label>' +
         '<select id="docf-type" class="doc-filter-input" style="width:100%">' + typeOpts + '</select></div>' +
       '<div id="docf-supplier-wrap"><label style="font-size:.78rem;color:var(--g600)">\u05E1\u05E4\u05E7</label></div>' +
-      '<div><label style="font-size:.78rem;color:var(--g600)">\u05EA\u05D0\u05E8\u05D9\u05DA \u05DE:</label>' +
-        '<input type="date" id="docf-date-from" class="doc-filter-input" style="width:100%"></div>' +
-      '<div><label style="font-size:.78rem;color:var(--g600)">\u05EA\u05D0\u05E8\u05D9\u05DA \u05E2\u05D3:</label>' +
-        '<input type="date" id="docf-date-to" class="doc-filter-input" style="width:100%"></div>' +
+      buildMonthPickerHtml('docf', '_applyDocFilterClick') +
       '<div><label style="font-size:.78rem;color:var(--g600)">\u05E1\u05DB\u05D5\u05DD \u05DE:</label>' +
         '<input type="number" id="docf-amount-from" class="doc-filter-input" style="width:100%" step="0.01" min="0"></div>' +
       '<div><label style="font-size:.78rem;color:var(--g600)">\u05E1\u05DB\u05D5\u05DD \u05E2\u05D3:</label>' +
@@ -219,6 +216,9 @@ function _clearDocFilters() {
   }
   if ($('docf-date-from')) $('docf-date-from').value = '';
   if ($('docf-date-to')) $('docf-date-to').value = '';
+  if ($('docf-month')) $('docf-month').value = '';
+  if ($('docf-year')) $('docf-year').value = new Date().getFullYear();
+  if (_monthPickerStates['docf']) toggleMonthPicker('docf');
   if ($('docf-amount-from')) $('docf-amount-from').value = '';
   if ($('docf-amount-to')) $('docf-amount-to').value = '';
   if ($('docf-source')) $('docf-source').value = '';

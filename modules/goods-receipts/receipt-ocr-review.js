@@ -5,16 +5,35 @@
 // Uses: brands, brandCache, brandCacheRev, supplierCache, fetchAll, getTenantId,
 //   addReceiptItemRow, updateReceiptItemsStats, createSearchSelect, Modal, escapeHtml, toast
 
-// Brand alias map — common abbreviations → full brand name
+// Brand alias map — common abbreviations → full brand name (lowercase keys)
 var _RCPT_BRAND_ALIASES = {
   'rb': 'ray-ban', 'rayban': 'ray-ban', 'ray ban': 'ray-ban',
   'ox': 'oakley', 'oo': 'oakley',
   'tf': 'tom ford', 'tomford': 'tom ford',
   'gg': 'gucci', 'cd': 'dior', 'bb': 'burberry',
   'pr': 'prada', 'ea': 'emporio armani', 'ar': 'armani',
+  'dg': 'dolce & gabbana', 'dolce': 'dolce & gabbana',
   'ck': 'calvin klein', 'rl': 'ralph lauren', 'ph': 'polo',
   'vo': 'vogue', 'ps': 'police'
 };
+
+// Helper: find brand by name — exact first, then startsWith, then contains
+function _findBrandByName(nameLower) {
+  var best = null, bestLen = 0;
+  for (var i = 0; i < brands.length; i++) {
+    var bn = (brands[i].name || '').toLowerCase();
+    // Exact match (highest priority)
+    if (bn === nameLower) return brands[i];
+    // Brand starts with the target (e.g., "rayban (דמו)" starts with "rayban")
+    // Also handles target with hyphens: normalize both by removing hyphens/spaces
+    var bnClean = bn.replace(/[\s\-]+/g, '');
+    var targetClean = nameLower.replace(/[\s\-]+/g, '');
+    if (bnClean.startsWith(targetClean) && targetClean.length > bestLen) {
+      best = brands[i]; bestLen = targetClean.length;
+    }
+  }
+  return best;
+}
 
 // --- 1. Parse OCR description into structured parts ---
 function _rcptOcrParseDescription(description) {
@@ -23,61 +42,99 @@ function _rcptOcrParseDescription(description) {
   if (!raw) return result;
   var lower = raw.toLowerCase();
 
-  // Try to match brand from brands global (loaded by data-loading.js)
-  var bestBrand = null, bestLen = 0;
+  // --- Step 1: Brand detection ---
+  var bestBrand = null;
+  // Normalize: strip parenthesized suffixes, remove &/hyphens/spaces for comparison
+  var _brandClean = function(s) { return s.replace(/\s*\(.*?\)\s*/g, '').replace(/[\s\-&]+/g, '').toLowerCase(); };
+  var lowerClean = _brandClean(raw);
+
+  // 1a. Check if description starts with a known brand (normalized, longest wins)
+  var bestLen = 0;
   for (var i = 0; i < brands.length; i++) {
-    var bn = (brands[i].name || '').toLowerCase();
-    if (bn && lower.includes(bn) && bn.length > bestLen) {
-      bestBrand = brands[i]; bestLen = bn.length;
+    var bnClean = _brandClean(brands[i].name || '');
+    if (bnClean && bnClean.length > bestLen && lowerClean.startsWith(bnClean)) {
+      bestBrand = brands[i]; bestLen = bnClean.length;
     }
   }
-  // Try alias match if no direct match
+
+  // 1b. Check if description contains a known brand name (normalized)
+  if (!bestBrand) {
+    bestLen = 0;
+    for (var i2 = 0; i2 < brands.length; i2++) {
+      var bnClean2 = _brandClean(brands[i2].name || '');
+      if (bnClean2 && bnClean2.length > bestLen && lowerClean.includes(bnClean2)) {
+        bestBrand = brands[i2]; bestLen = bnClean2.length;
+      }
+    }
+  }
+
+  // 1c. Try prefix alias from model code (e.g., "RB" from "RB5154" → ray-ban)
+  if (!bestBrand) {
+    var modelCode = raw.match(/^([A-Za-z]{1,4})\d{3,6}/);
+    if (modelCode) {
+      var prefix = modelCode[1].toLowerCase();
+      var aliasName = _RCPT_BRAND_ALIASES[prefix];
+      if (aliasName) bestBrand = _findBrandByName(aliasName);
+    }
+  }
+
+  // 1d. Try word-based alias match (split by spaces/hyphens, check first few words)
   if (!bestBrand) {
     var words = lower.split(/[\s\-]+/);
     for (var w = 0; w < Math.min(words.length, 3); w++) {
-      var alias = _RCPT_BRAND_ALIASES[words[w]];
-      if (alias) {
-        for (var j = 0; j < brands.length; j++) {
-          if ((brands[j].name || '').toLowerCase() === alias) { bestBrand = brands[j]; break; }
-        }
+      var aliasHit = _RCPT_BRAND_ALIASES[words[w]];
+      if (aliasHit) {
+        bestBrand = _findBrandByName(aliasHit);
         if (bestBrand) break;
       }
     }
   }
+
   if (bestBrand) {
     result.brand_name = bestBrand.name;
     result.brand_id = bestBrand.id;
   }
 
-  // Remove brand name from remaining text for model/size/color extraction
+  // Remove brand text from remaining — try exact brand name first, then
+  // the cleaned version (handles "Ray-Ban" in OCR vs "Rayban (דמו)" in DB)
   var remaining = raw;
   if (bestBrand) {
-    var re = new RegExp(bestBrand.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    var brandNameClean = (bestBrand.name || '').replace(/\s*\(.*?\)\s*/g, '').trim();
+    // Build regex that matches the brand with optional hyphens/spaces/& between chars
+    var brandChars = brandNameClean.replace(/[\s\-&]+/g, '');
+    var reStr = brandChars.split('').map(function(c) {
+      return c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }).join('[\\s\\-&]*');
+    var re = new RegExp(reStr, 'i');
     remaining = remaining.replace(re, '').trim();
   }
 
-  // Extract size: pattern like "51mm", "51", or standalone 2-digit number
-  var sizeMatch = remaining.match(/(\d{2})\s*mm/i) || remaining.match(/\b(\d{2})\b(?![\d])/);
-  if (sizeMatch) {
-    result.size = sizeMatch[1];
-    remaining = remaining.replace(sizeMatch[0], '').trim();
-  }
-
-  // Extract model: first alphanumeric code (e.g., RB5154, OX8046)
+  // --- Step 2: Extract model code FIRST (before size, to protect digits inside model) ---
   var modelMatch = remaining.match(/([A-Za-z]{1,4}\d{3,6}[A-Za-z]?)/);
   if (modelMatch) {
     result.model = modelMatch[1];
     remaining = remaining.replace(modelMatch[0], '').trim();
-  } else {
-    // Fallback: first word as model
+  }
+
+  // --- Step 3: Extract size — ONLY standalone 2-digit numbers (not inside words) ---
+  // Match "51mm", "51 mm", or a standalone 2-digit number surrounded by spaces/start/end
+  var sizeMatch = remaining.match(/(\d{2})\s*mm/i) ||
+                  remaining.match(/(?:^|[\s\-\/])(\d{2})(?:[\s\-\/]|$)/);
+  if (sizeMatch) {
+    result.size = sizeMatch[1];
+    remaining = remaining.replace(sizeMatch[0], ' ').trim();
+  }
+
+  // --- Step 4: If no model found yet, first remaining word is model ---
+  if (!result.model) {
     var parts = remaining.split(/\s+/);
-    if (parts.length > 0) {
+    if (parts.length > 0 && parts[0]) {
       result.model = parts.shift();
       remaining = parts.join(' ').trim();
     }
   }
 
-  // Remaining text is color
+  // --- Step 5: Remaining text is color ---
   result.color = remaining.replace(/^[\s\-–,]+|[\s\-–,]+$/g, '');
   return result;
 }
@@ -158,14 +215,14 @@ function _rcptOcrShowReview(classifiedItems, onConfirm) {
 
   // Build table rows
   var rowsHtml = classifiedItems.map(function(it, idx) {
-    var bg = it.status === 'matched' ? '#e8f5e9' : it.status === 'new' ? '#fff9c4' : '#ffebee';
+    var bg = it.status === 'matched' ? '#e8f5e9' : it.status === 'new' ? '#fff9c4' : '#fef9c3';
     var icon = it.status === 'matched' ? '\u2705' : it.status === 'new' ? '\u2795' : '\u2753';
     var readonly = it.status === 'matched' ? ' readonly style="background:#f0f0f0"' : '';
     var brandVal = escapeHtml(it.brand_name || '');
 
     return '<tr data-idx="' + idx + '" style="background:' + bg + '">' +
       '<td style="text-align:center;font-size:1.1rem">' + icon + '</td>' +
-      '<td style="font-size:.8rem;color:#666;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escapeHtml(it.raw_description) + '">' + escapeHtml(it.raw_description) + '</td>' +
+      '<td style="font-size:13px;color:#333;min-width:250px;word-wrap:break-word;white-space:normal" title="' + escapeHtml(it.raw_description) + '">' + escapeHtml(it.raw_description) + '</td>' +
       '<td>' + (it.status === 'matched'
         ? '<input class="rv-brand" value="' + brandVal + '"' + readonly + '>'
         : '<input class="rv-brand" value="' + brandVal + '" data-id="' + escapeHtml(it.brand_id || '') + '" placeholder="\u05DE\u05D5\u05EA\u05D2...">') + '</td>' +
@@ -183,7 +240,12 @@ function _rcptOcrShowReview(classifiedItems, onConfirm) {
   var summary = '\u2705 ' + counts.matched + ' \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD \u2502 \u2795 ' +
     counts['new'] + ' \u05D7\u05D3\u05E9\u05D9\u05DD \u2502 \u2753 ' + counts.unknown + ' \u05DC\u05D0 \u05DE\u05D6\u05D5\u05D4\u05D9\u05DD';
 
-  var content = '<div style="margin-bottom:10px;font-size:.9rem;color:#333">' + summary + '</div>' +
+  var helpBox = '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px;margin-bottom:12px;direction:rtl;font-size:13px">' +
+    '\uD83D\uDCA1 <strong>\u05E1\u05E7\u05D9\u05E8\u05EA \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD:</strong> ' +
+    '\u05D4-AI \u05E1\u05E8\u05E7 \u05D0\u05EA \u05D4\u05DE\u05E1\u05DE\u05DA \u05D5\u05D7\u05D9\u05DC\u05E5 \u05D0\u05EA \u05D4\u05E4\u05E8\u05D9\u05D8\u05D9\u05DD. \u05D4\u05EA\u05D0\u05DD \u05DB\u05DC \u05E4\u05E8\u05D9\u05D8 \u05DC\u05DE\u05D5\u05EA\u05D2 \u05D1\u05DE\u05E2\u05E8\u05DB\u05EA.' +
+    '<br>\u2705 = \u05EA\u05D5\u05D0\u05DD &nbsp; \u2795 = \u05D7\u05D3\u05E9 &nbsp; \u2753 = \u05DC\u05D0 \u05DE\u05D6\u05D5\u05D4\u05D4 \u2014 \u05E6\u05E8\u05D9\u05DA \u05D4\u05EA\u05D0\u05DE\u05D4 \u05D9\u05D3\u05E0\u05D9\u05EA' +
+    '<br>\u05EA\u05D9\u05E7\u05D5\u05E0\u05D9\u05DD \u05E9\u05DC\u05DA \u05E2\u05D5\u05D6\u05E8\u05D9\u05DD \u05DC-AI \u05DC\u05DC\u05DE\u05D5\u05D3 \u05D5\u05DC\u05D4\u05E9\u05EA\u05E4\u05E8.</div>';
+  var content = helpBox + '<div style="margin-bottom:10px;font-size:.9rem;color:#333">' + summary + '</div>' +
     '<div style="overflow-x:auto;max-height:55vh;overflow-y:auto">' +
     '<table class="data-table" style="width:100%;font-size:.85rem;border-collapse:collapse">' +
     '<thead style="position:sticky;top:0;background:#fff;z-index:1"><tr>' +
@@ -200,6 +262,8 @@ function _rcptOcrShowReview(classifiedItems, onConfirm) {
     title: '\u05E1\u05E7\u05D9\u05E8\u05EA \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DE-OCR (' + classifiedItems.length + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD)',
     content: content, footer: footer, size: 'lg'
   });
+  var mc = modal.el.querySelector('.modal-container');
+  if (mc) mc.style.cssText = 'width:90vw;max-width:1000px';
 
   // Wire brand search-select for non-matched rows
   var tbody = modal.el.querySelector('tbody');

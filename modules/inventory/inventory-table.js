@@ -171,7 +171,7 @@ function renderInventoryRows(recs) {
       <td>${pageOffset+i+1}</td>
       <td class="barcode-cell">${escapeHtml(bc)}</td>
       <td>${escapeHtml(r.supplier_name)||''}</td>
-      <td>${escapeHtml(r.brand_name)||''}${(window.lowStockData||[]).some(b=>b.name===r.brand_name)?' <span style="background:#f44336;color:white;border-radius:4px;padding:1px 5px;font-size:11px;margin-right:4px">&#9888;</span>':''}</td>
+      <td>${escapeHtml(r.brand_name)||''}</td>
       <td${isAdm?' class="editable" onclick="invEdit(this,\'model\')"':''}>${escapeHtml(r.model)||''}</td>
       <td${isAdm?' class="editable" onclick="invEdit(this,\'size\')"':''}>${escapeHtml(r.size)||''}</td>
       <td${isAdm?' class="editable" onclick="invEdit(this,\'bridge\')"':''}>${escapeHtml(r.bridge)||''}</td>
@@ -257,6 +257,12 @@ function _removeReceiptBanner() {
   if (el) el.remove();
 }
 
+// --- Image modal with navigation ---
+function _openImageWithNav(id) {
+  var ids = Array.from(document.querySelectorAll('#inv-body tr[data-id]')).map(function(tr) { return tr.dataset.id; });
+  openImageModal(id, ids.length > 1 ? ids : null);
+}
+
 // --- ⋯ Action Menu ---
 var _invMenuOpen = null;
 function _openInvMenu(btn) {
@@ -266,7 +272,7 @@ function _openInvMenu(btn) {
   if (!rec) return;
   var isAdm = document.body.classList.contains('admin-mode');
   var items = [
-    { icon: '\uD83D\uDCF7', label: '\u05EA\u05DE\u05D5\u05E0\u05D5\u05EA', fn: 'openImageModal', id: id },
+    { icon: '\uD83D\uDCF7', label: '\u05EA\u05DE\u05D5\u05E0\u05D5\u05EA', fn: '_openImageWithNav', id: id },
     { icon: '\uD83D\uDCCB', label: '\u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D4', fn: 'openItemHistory', id: id, extra: "'" + escapeHtml(rec.barcode||'') + "','" + escapeHtml(rec.brand_name||'') + "','" + escapeHtml(rec.model||'') + "'" }
   ];
   if (isAdm) {
@@ -312,7 +318,7 @@ document.addEventListener('click', function(e) {
   if (reduceBtn) { openReductionModal(reduceBtn.dataset.id); return; }
   // #2 showImagePreview — click on thumbnail opens image modal
   const imgThumb = e.target.closest('.img-thumb-click');
-  if (imgThumb) { openImageModal(imgThumb.dataset.id); return; }
+  if (imgThumb) { _openImageWithNav(imgThumb.dataset.id); return; }
   // #4-5 openQtyModal (add / remove)
   const qtyPlus = e.target.closest('.qty-plus');
   if (qtyPlus) { openQtyModal(qtyPlus.dataset.id, qtyPlus.dataset.dir); return; }

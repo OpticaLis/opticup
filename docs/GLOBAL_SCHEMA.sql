@@ -382,7 +382,8 @@ CREATE TABLE IF NOT EXISTS goods_receipts (
   status          TEXT NOT NULL DEFAULT 'draft',                 -- סטטוס: draft | confirmed | cancelled
   tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
   created_by      TEXT,                                          -- מי יצר
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  document_numbers TEXT[] DEFAULT '{}'                           -- מספרי מסמכים נוספים (Debt-Upgrades)
 );
 CREATE INDEX IF NOT EXISTS idx_receipts_supplier ON goods_receipts(supplier_id);
 CREATE INDEX IF NOT EXISTS idx_receipts_status   ON goods_receipts(status);
@@ -703,7 +704,7 @@ CREATE TABLE IF NOT EXISTS supplier_documents (
   goods_receipt_id  UUID REFERENCES goods_receipts(id),
   po_id             UUID REFERENCES purchase_orders(id),
   status            TEXT NOT NULL DEFAULT 'open'
-                    CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled', 'pending_invoice')),
+                    CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled', 'pending_invoice', 'pending_review')),
   paid_amount       DECIMAL(12,2) DEFAULT 0,
   missing_price     BOOLEAN DEFAULT false,                   -- items with unknown cost price (Flow-Review-2)
   notes             TEXT,
@@ -712,6 +713,9 @@ CREATE TABLE IF NOT EXISTS supplier_documents (
   updated_at        TIMESTAMPTZ DEFAULT now(),
   internal_number   TEXT,                                    -- our internal reference number (022)
   is_deleted        BOOLEAN DEFAULT false,
+  document_numbers  TEXT[],                                   -- multi-doc: array of document numbers (058)
+  document_amounts  JSONB,                                    -- multi-doc: per-document amounts (058)
+  expense_folder_id UUID REFERENCES expense_folders(id),      -- expense folder link (Debt-Upgrades)
   CONSTRAINT supplier_documents_tenant_supplier_docnum_unique
     UNIQUE(tenant_id, supplier_id, document_number)          -- duplicate prevention (022)
 );
@@ -2322,3 +2326,28 @@ CREATE INDEX idx_storefront_config_tenant ON storefront_config(tenant_id);
 
 -- create_tenant() updated: Step 11 inserts default storefront_config row
 -- Full SQL in: modules/Module 2 - Platform Admin/docs/phase5a-storefront-config.sql
+
+-- ============================================================
+-- 50. expense_folders — תיקיות הוצאות (Flow Review Phase 4, migration 054)
+-- Owner: Module 1 (Debt)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS expense_folders (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id       UUID NOT NULL REFERENCES tenants(id),
+  name            TEXT NOT NULL,
+  icon            TEXT DEFAULT '📁',
+  is_active       BOOLEAN DEFAULT true,
+  sort_order      INTEGER DEFAULT 0,
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(tenant_id, name)
+);
+ALTER TABLE expense_folders ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON expense_folders FOR ALL
+  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
+CREATE POLICY service_bypass ON expense_folders FOR ALL TO service_role USING (true);
+CREATE INDEX idx_expense_folders_tenant ON expense_folders(tenant_id);
+
+-- Flow Review Phase 4 column additions (migrations 054, 055):
+-- supplier_documents.expense_folder_id UUID REFERENCES expense_folders(id)
+-- goods_receipt_items.note TEXT
+-- goods_receipts.document_numbers TEXT[] DEFAULT '{}'

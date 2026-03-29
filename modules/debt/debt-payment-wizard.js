@@ -10,7 +10,7 @@ function _wizResetState() {
     supplierId: null, supplierName: '', taxRate: 0,
     amount: 0, withholdingAmount: 0, netAmount: 0,
     paymentDate: '', paymentMethod: '', referenceNumber: '', notes: '',
-    openDocs: [], allocations: []
+    openDocs: [], allocations: [], preSelectedDocIds: null
   };
 }
 
@@ -41,7 +41,7 @@ function _wizRenderStep1() {
     '</select></label>' +
     '<div id="wiz-supplier-info" style="margin-top:12px"></div>' +
     '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
-      '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="closeAndRemoveModal(\'pay-wizard-modal\')">ביטול</button>' +
+      '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="_wizResetState();closeAndRemoveModal(\'pay-wizard-modal\')">ביטול</button>' +
       '<button class="btn" style="background:#059669;color:#fff" onclick="_wizGoStep2()">\u2190 הבא</button>' +
     '</div>';
   if (_wizState.supplierId) {

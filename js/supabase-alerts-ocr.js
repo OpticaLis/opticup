@@ -46,7 +46,7 @@ function buildHintsFromCorrections(corrections, extractedData, existingHints) {
   return hints;
 }
 
-async function updateOCRTemplate(supplierId, docTypeCode, corrections, extractedData, tenantId) {
+async function updateOCRTemplate(supplierId, docTypeCode, corrections, extractedData, tenantId, fieldsSuggested, fieldsAccepted) {
   if (!supplierId) return;
   var tid = tenantId || getTenantId();
   var wasCorrected = corrections && Object.keys(corrections).length > 0;
@@ -57,7 +57,9 @@ async function updateOCRTemplate(supplierId, docTypeCode, corrections, extracted
       p_supplier_id: supplierId,
       p_doc_type_code: docTypeCode || 'general',
       p_was_corrected: wasCorrected,
-      p_new_hints: Object.keys(hints).length > 0 ? hints : null
+      p_new_hints: Object.keys(hints).length > 0 ? hints : null,
+      p_fields_suggested: fieldsSuggested || 0,
+      p_fields_accepted: fieldsAccepted || 0
     });
     if (error) console.error('Template update failed:', error);
     return data;

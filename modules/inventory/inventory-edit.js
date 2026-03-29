@@ -32,7 +32,19 @@ function updateSelectionUI() {
   const isAdm = document.body.classList.contains('admin-mode');
   $('inv-sel-count').style.display = n > 0 ? 'inline' : 'none';
   $('inv-sel-num').textContent = n;
-  $('inv-bulk-bar').style.display = (n > 0 && isAdm) ? 'flex' : 'none';
+  var showBulk = n > 0 && isAdm;
+  $('inv-bulk-bar').style.display = showBulk ? 'flex' : 'none';
+  if (showBulk) _populateBulkDropdowns();
+}
+function _populateBulkDropdowns() {
+  _fillBulkSelect('bulk-brand', brandCache);
+  _fillBulkSelect('bulk-supplier', supplierCache);
+}
+function _fillBulkSelect(id, cache) {
+  var el = $(id); if (!el || el._filled) return;
+  el._filled = true; el.innerHTML = '<option value="">—</option>';
+  Object.entries(cache).sort(function(a,b){ return a[0].localeCompare(b[0],'he'); }).forEach(function(e) {
+    el.innerHTML += '<option value="' + escapeHtml(e[1]) + '">' + escapeHtml(e[0]) + '</option>'; });
 }
 
 async function applyBulkUpdate() {
@@ -51,6 +63,12 @@ async function applyBulkUpdate() {
   if (cp !== '') fields.cost_price = parseFloat(cp) || 0;
   if (cd !== '') fields.cost_discount = (parseFloat(cd) || 0) / 100;
   if (sync) fields.website_sync = heToEn('website_sync', sync);
+  var bulkPtype = $('bulk-ptype')?.value; if (bulkPtype) fields.product_type = bulkPtype;
+  var bulkBrand = $('bulk-brand')?.value; if (bulkBrand) fields.brand_id = bulkBrand;
+  var bulkSupplier = $('bulk-supplier')?.value; if (bulkSupplier) fields.supplier_id = bulkSupplier;
+  var bulkColor = ($('bulk-color')?.value || '').trim(); if (bulkColor) fields.color = bulkColor;
+  var bulkSize = ($('bulk-size')?.value || '').trim(); if (bulkSize) fields.size = bulkSize;
+  var bulkStatus = $('bulk-status')?.value; if (bulkStatus) fields.status = bulkStatus;
 
   if (!Object.keys(fields).length) { toast('לא הוזנו ערכים לעדכון', 'w'); return; }
 
@@ -83,12 +101,7 @@ async function applyBulkUpdate() {
   try {
     const updates = ids.map(id => ({ id, ...fields }));
     await batchUpdate(T.INV, updates);
-    // Clear bulk inputs
-    $('bulk-sprice').value = '';
-    $('bulk-sdisc').value = '';
-    $('bulk-cprice').value = '';
-    $('bulk-cdisc').value = '';
-    $('bulk-sync').value = '';
+    ['bulk-sprice','bulk-sdisc','bulk-cprice','bulk-cdisc','bulk-sync','bulk-ptype','bulk-brand','bulk-supplier','bulk-color','bulk-size','bulk-status'].forEach(function(id) { var el = $(id); if (el) el.value = ''; });
     clearSelection();
     await loadInventoryPage();
     toast(`${ids.length} פריטים עודכנו בהצלחה`, 's');
@@ -279,16 +292,11 @@ function invEditProductType(td) {
   sel.addEventListener('keydown', function(e) { if (e.key === 'Escape') { td.classList.remove('editing'); td.textContent = curHe; } });
 }
 
-// ---- Image preview ----
 function showImagePreview(recId) {
-  const rec = invData.find(r => r.id === recId);
-  if (!rec) return;
-  const imgs = rec._images || [];
-  if (!imgs.length) { toast('אין תמונות לפריט זה', 'w'); return; }
-  $('img-preview-title').textContent = `${rec.brand_name||''} ${rec.model||''} (${rec.barcode||''})`;
-  $('img-gallery').innerHTML = imgs.map(img =>
-    `<img src="${encodeURI(img.thumbnails?.large?.url || img.url)}" alt="תמונת פריט">`
-  ).join('');
+  var rec = invData.find(r => r.id === recId); if (!rec) return;
+  var imgs = rec._images || []; if (!imgs.length) { toast('אין תמונות לפריט זה', 'w'); return; }
+  $('img-preview-title').textContent = (rec.brand_name||'') + ' ' + (rec.model||'') + ' (' + (rec.barcode||'') + ')';
+  $('img-gallery').innerHTML = imgs.map(img => '<img src="' + encodeURI(img.thumbnails?.large?.url || img.url) + '" alt="תמונת פריט">').join('');
   $('image-preview-modal').style.display = 'flex';
 }
 

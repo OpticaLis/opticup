@@ -282,6 +282,14 @@ async function generatePendingBarcodes() {
     }
     maxBarcode = nextSeq;
 
+    // Validate brand_id before insert — skip rows with unknown brands
+    const invalidBrands = excelPendingRows.filter(r => r.brand && !brandCache[r.brand]);
+    if (invalidBrands.length) {
+      const names = [...new Set(invalidBrands.map(r => r.brand))].slice(0, 3).map(n => escapeHtml(n)).join(', ');
+      Toast.error('מותגים לא נמצאו: ' + names + (invalidBrands.length > 3 ? ' ועוד...' : ''));
+      excelPendingRows = excelPendingRows.filter(r => brandCache[r.brand]);
+      if (!excelPendingRows.length) { hideLoading(); return; }
+    }
     // Insert all pending items with their new barcodes
     const records = excelPendingRows.map(r => buildExcelRecordFields(r, r.barcode));
     const created = await batchCreate(T.INV, records);

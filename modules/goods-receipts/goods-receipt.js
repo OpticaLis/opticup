@@ -23,20 +23,28 @@ async function loadPOsForSupplier(supplierName) {
       .order('created_at', { ascending: false });
     if (error) throw error;
 
-    if (!data || !data.length) { sel.disabled = true; return; }
+    if (!data || !data.length) {
+      sel.disabled = true;
+      sel.style.borderColor = '#9ca3af';
+      sel.innerHTML = '<option value="">\u05DC\u05DC\u05D0 \u2014 \u05D0\u05D9\u05DF \u05D4\u05D6\u05DE\u05E0\u05D5\u05EA \u05E4\u05EA\u05D5\u05D7\u05D5\u05EA</option>';
+      return;
+    }
 
     for (const po of data) {
       const label = `${po.po_number} (${po.status === 'sent' ? 'נשלחה' : 'חלקי'})`;
       sel.innerHTML += `<option value="${po.id}">${label}</option>`;
     }
     sel.disabled = false;
+    sel.style.borderColor = '#059669';
   } catch (e) {
     console.error('loadPOsForSupplier error:', e);
     sel.disabled = true;
+    sel.style.borderColor = '#9ca3af';
   }
 }
 
 async function onReceiptPoSelected() {
+  window._ocrPOComparison = null; // clear OCR highlights on PO change
   const poId = $('rcpt-po-select').value;
   if (!poId) { rcptLinkedPoId = null; if (typeof _rcptOcrUpdateBtn === 'function') _rcptOcrUpdateBtn(); return; }
 
@@ -98,9 +106,11 @@ async function onReceiptPoSelected() {
           quantity: remaining,
           unit_cost: item.unit_cost || '',
           sell_price: item.sell_price || '',
+          sell_discount: item.sell_discount || 0,
           product_type: item.product_type || 'eyeglasses',
           is_new_item: false,
           inventory_id: existingInv.id,
+          po_item_id: item.id,
           from_po: true
         });
       } else {
@@ -113,9 +123,11 @@ async function onReceiptPoSelected() {
           quantity: remaining,
           unit_cost: item.unit_cost || '',
           sell_price: item.sell_price || '',
+          sell_discount: item.sell_discount || 0,
           product_type: item.product_type || 'eyeglasses',
           is_new_item: true,
           inventory_id: null,
+          po_item_id: item.id,
           from_po: true
         });
       }
@@ -201,91 +213,7 @@ async function updatePOStatusAfterReceipt(poId) {
     console.error('updatePOStatusAfterReceipt error:', e);
   }
 }
-
-async function loadReceiptTab() {
-  showLoading('טוען קבלות סחורה...');
-  try {
-    // Show step1, hide step2
-    $('rcpt-step1').style.display = '';
-    $('rcpt-step2').style.display = 'none';
-
-    // Summary cards
-    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
-    const weekStr = weekAgo.toISOString();
-
-    const [draftsRes, confirmedRes, itemsRes, listRes] = await Promise.all([
-      sb.from(T.RECEIPTS).select('id', { count: 'exact', head: true }).eq('tenant_id', getTenantId()).eq('status', 'draft'),
-      sb.from(T.RECEIPTS).select('id', { count: 'exact', head: true }).eq('tenant_id', getTenantId()).eq('status', 'confirmed').gte('created_at', weekStr),
-      sb.from(T.RCPT_ITEMS).select('quantity', { count: 'exact', head: false })
-        .eq('tenant_id', getTenantId())
-        .in('receipt_id',
-          (await sb.from(T.RECEIPTS).select('id').eq('tenant_id', getTenantId()).eq('status', 'confirmed').gte('created_at', weekStr)).data?.map(r => r.id) || []
-        ),
-      sb.from(T.RECEIPTS).select('*').eq('tenant_id', getTenantId()).order('created_at', { ascending: false }).limit(100)
-    ]);
-
-    $('rcpt-drafts').textContent = draftsRes.count || 0;
-    $('rcpt-confirmed-week').textContent = confirmedRes.count || 0;
-    const totalItems = (itemsRes.data || []).reduce((s, r) => s + (r.quantity || 0), 0);
-    $('rcpt-items-week').textContent = totalItems;
-
-    // Receipt list
-    const receipts = listRes.data || [];
-    const tb = $('rcpt-list-body');
-    if (!receipts.length) {
-      tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:#999">אין קבלות</td></tr>';
-    } else {
-      // Get item counts per receipt
-      const receiptIds = receipts.map(r => r.id);
-      const { data: itemCounts } = await sb.from(T.RCPT_ITEMS).select('receipt_id, quantity').eq('tenant_id', getTenantId());
-      const countMap = {};
-      (itemCounts || []).forEach(i => {
-        if (!countMap[i.receipt_id]) countMap[i.receipt_id] = { count: 0, total: 0 };
-        countMap[i.receipt_id].count++;
-        countMap[i.receipt_id].total += (i.quantity || 0);
-      });
-
-      tb.innerHTML = receipts.map((r, idx) => {
-        const c = countMap[r.id] || { count: 0, total: 0 };
-        const supName = r.supplier_id ? (supplierCacheRev[r.supplier_id] || '—') : '—';
-        const statusCls = `rcpt-status rcpt-status-${r.status}`;
-        const statusLabel = RCPT_STATUS_LABELS[r.status] || r.status;
-        const typeLabel = RCPT_TYPE_LABELS[r.receipt_type] || r.receipt_type;
-        const dateStr = r.receipt_date || '';
-
-        let actions = '';
-        if (r.status === 'draft') {
-          actions = `<button class="btn btn-g btn-sm btn-rcpt-edit" data-id="${escapeHtml(r.id)}" title="ערוך">✏️</button>
-            <button class="btn btn-s btn-sm btn-rcpt-confirm" data-id="${escapeHtml(r.id)}" title="אשר">✓</button>
-            <button class="btn btn-d btn-sm btn-rcpt-cancel" data-id="${escapeHtml(r.id)}" title="בטל">✖</button>`;
-        } else {
-          actions = `<button class="btn btn-g btn-sm btn-rcpt-view" data-id="${escapeHtml(r.id)}" title="צפה">👁</button>`;
-          if (r.status === 'confirmed') {
-            actions += ` <button class="btn btn-p btn-sm btn-rcpt-export" data-id="${escapeHtml(r.id)}" title="ייצוא לAccess">📤</button>`;
-            actions += ` <button class="btn btn-sm btn-rcpt-print-barcodes" data-id="${escapeHtml(r.id)}" title="\u05D9\u05D9\u05E6\u05D5\u05D0 \u05D1\u05E8\u05E7\u05D5\u05D3\u05D9\u05DD" style="background:#7c3aed;color:#fff">\uD83D\uDCCB</button>`;
-            actions += ` <button class="btn btn-sm btn-rcpt-photo" data-id="${escapeHtml(r.id)}" data-number="${escapeHtml(r.receipt_number)}" title="\u05E6\u05DC\u05DD \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD" style="background:#2196F3;color:#fff">\uD83D\uDCF7</button>`;
-          }
-        }
-
-        return `<tr>
-          <td>${idx + 1}</td>
-          <td><strong>${r.receipt_number}</strong></td>
-          <td>${typeLabel}</td>
-          <td>${supName}</td>
-          <td>${dateStr}</td>
-          <td>${c.count} (${c.total} יח׳)</td>
-          <td>${r.total_amount ? '₪' + Number(r.total_amount).toLocaleString() : '—'}</td>
-          <td><span class="${statusCls}">${statusLabel}</span></td>
-          <td style="white-space:nowrap">${actions}</td>
-        </tr>`;
-      }).join('');
-    }
-  } catch (e) {
-    console.error('loadReceiptTab error:', e);
-    setAlert('rcpt-list-alerts', 'שגיאה בטעינת קבלות: ' + (e.message || ''), 'e');
-  }
-  hideLoading();
-}
+// loadReceiptTab → receipt-list.js
 
 // --- Searchable supplier dropdown for receipts ---
 function _initRcptSupplierSelect(initialValue) {
@@ -320,12 +248,24 @@ function openNewReceipt() {
   $('rcpt-form-title').textContent = '📦 קבלה חדשה';
   $('rcpt-type').value = 'delivery_note';
   $('rcpt-number').value = '';
+  if (typeof _rcptExtraNums !== 'undefined') { _rcptExtraNums = []; if (typeof _renderRcptExtraNums === 'function') _renderRcptExtraNums(); }
   _initRcptSupplierSelect('');
 
-  $('rcpt-po-select').innerHTML = '<option value="">ללא — קבלה חופשית</option>';
+  $('rcpt-po-select').innerHTML = '<option value="">\u05DC\u05DC\u05D0 \u2014 \u05E7\u05D1\u05DC\u05D4 \u05D7\u05D5\u05E4\u05E9\u05D9\u05EA</option>';
   $('rcpt-po-select').disabled = true;
+  $('rcpt-po-select').style.borderColor = '';
   $('rcpt-po-select').onchange = () => onReceiptPoSelected();
+  if ($('rcpt-doc-count')) $('rcpt-doc-count').value = 1;
   rcptLinkedPoId = null;
+  window._ocrPOComparison = null;
+  window._ocrReviewShown = false;
+  window._pendingOcrRawItems = null;
+  window._pendingOcrClassified = null;
+  if (typeof _rcptOcrHideCompareBtn === 'function') _rcptOcrHideCompareBtn();
+  var _ocrBanner = $('rcpt-ocr-banner'); if (_ocrBanner) _ocrBanner.remove();
+  var _ocrStage = $('rcpt-ocr-stage'); if (_ocrStage) _ocrStage.remove();
+  window._rcptOcrStage = null;
+  if (typeof _rcptOcrToggleLearnBtn === 'function') _rcptOcrToggleLearnBtn();
   $('rcpt-date').valueAsDate = new Date();
   $('rcpt-notes').value = '';
   $('rcpt-items-body').innerHTML = '';
@@ -334,10 +274,8 @@ function openNewReceipt() {
   clearAlert('rcpt-form-alerts');
 
   // Reset file attachment + init dropzone
-  _pendingReceiptFiles = [];
-  _pendingReceiptFileUrl = null;
-  var zone = $('rcpt-attach-dropzone');
-  var preview = $('rcpt-attach-preview');
+  _pendingReceiptFiles = []; _pendingReceiptFileUrl = null;
+  var zone = $('rcpt-attach-dropzone'), preview = $('rcpt-attach-preview');
   if (zone) zone.style.display = '';
   if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
   _initReceiptDropzone();

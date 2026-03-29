@@ -216,7 +216,7 @@ function _renderWeeklyReport(weekStart, weekEnd) {
       '<button class="btn btn-sm" style="background:#e5e7eb;color:#1e293b" onclick="navigateWeek(1)"' + (isCurWeek ? ' disabled' : '') + '>הבא &#9654;</button>' +
     '</div>' +
     _wrCard('סיכום',
-      '<div class="weekly-stat"><span>חוב כולל:</span><strong>' + formatILS(d.total_debt) + '</strong>' + chgHtml + '</div>' +
+      '<div class="weekly-stat"><span>\u05D9\u05EA\u05E8\u05D4 \u05E1\u05D5\u05E4\u05D9\u05EA:</span><strong>' + formatILS(d.total_debt) + '</strong>' + chgHtml + '</div>' +
       '<div class="weekly-stat"><span>שולם השבוע:</span><strong>' + formatILS(d.paid_this_week) + '</strong>' +
         '<span style="margin-right:16px">מסמכים חדשים:</span><strong>' + d.new_documents + '</strong></div>' +
       '<div class="weekly-stat"><span>באיחור:</span><strong style="color:' + (d.overdue > 0 ? 'var(--error)' : 'inherit') + '">' +

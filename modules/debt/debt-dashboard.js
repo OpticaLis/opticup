@@ -18,51 +18,59 @@ async function loadDebtSummary() {
     String(today.getMonth() + 1).padStart(2, '0') + '-01';
 
   try {
-    // Fetch open documents + suppliers (for opening balance)
+    // Fetch ALL non-cancelled documents + suppliers (for opening balance + invoiced total)
     const [docsResult, supResult] = await Promise.all([
-      sb.from(T.SUP_DOCS).select('total_amount, paid_amount, due_date, exchange_rate, document_type_id, supplier_id, document_date')
-        .eq('tenant_id', tid).eq('is_deleted', false).not('status', 'in', '("paid","cancelled")'),
+      sb.from(T.SUP_DOCS).select('total_amount, paid_amount, due_date, exchange_rate, status, document_type_id, supplier_id, document_date')
+        .eq('tenant_id', tid).eq('is_deleted', false).not('status', 'eq', 'cancelled'),
       fetchAll(T.SUPPLIERS, [['active', 'eq', true]])
     ]);
     const docs = docsResult.data; const docsErr = docsResult.error;
     if (docsErr) { console.error('Debt summary docs error:', docsErr); return; }
     var obMap = {}; (supResult || []).forEach(function(s) { obMap[s.id] = s; });
-    let totalDebt = (supResult || []).reduce(function(s, sup) { return s + (Number(sup.opening_balance) || 0); }, 0);
+    // totalInvoiced = raw total_amount of all non-cancelled docs (NOT remaining)
+    let totalInvoiced = (supResult || []).reduce(function(s, sup) { return s + (Number(sup.opening_balance) || 0); }, 0);
     let dueThisWeek = 0;
     let overdue = 0;
 
     (docs || []).forEach(function(doc) {
-      // Phase 8: skip docs before supplier's cutoff date
       var sup = obMap[doc.supplier_id];
       if (sup && sup.opening_balance_date && doc.document_date && doc.document_date < sup.opening_balance_date) return;
       const rate = Number(doc.exchange_rate) || 1;
-      const remaining = (Number(doc.total_amount) - Number(doc.paid_amount)) * rate;
-      if (remaining <= 0) return;
-
-      totalDebt += remaining;
-
-      if (doc.due_date) {
-        if (doc.due_date < todayStr) {
-          overdue += remaining;
-        } else if (doc.due_date <= weekStr) {
-          dueThisWeek += remaining;
-        }
+      totalInvoiced += (Number(doc.total_amount) || 0) * rate;
+      // Overdue/due only for docs with remaining balance
+      const remaining = ((Number(doc.total_amount) || 0) - (Number(doc.paid_amount) || 0)) * rate;
+      if (remaining > 0 && doc.due_date) {
+        if (doc.due_date < todayStr) overdue += remaining;
+        else if (doc.due_date <= weekStr) dueThisWeek += remaining;
       }
     });
 
-    const { data: payments, error: payErr } = await sb.from(T.SUP_PAYMENTS)
+    const { data: monthPayments, error: payErr } = await sb.from(T.SUP_PAYMENTS)
       .select('amount, exchange_rate')
       .eq('tenant_id', tid)
       .gte('payment_date', monthStart)
       .lte('payment_date', todayStr);
-
     if (payErr) { console.error('Debt summary payments error:', payErr); }
     let paidThisMonth = 0;
-    (payments || []).forEach(function(p) {
+    (monthPayments || []).forEach(function(p) {
       const rate = Number(p.exchange_rate) || 1;
       paidThisMonth += Number(p.amount) * rate;
     });
-    document.getElementById('val-total-debt').textContent = formatILS(totalDebt);
+    // יתרה = totalPaid + deals - totalInvoiced + adjustments
+    var [_allPay, _dashDeals, _dashAdj] = await Promise.all([
+      sb.from(T.SUP_PAYMENTS).select('amount, exchange_rate').eq('tenant_id', tid),
+      sb.from(T.PREPAID_DEALS).select('total_prepaid').eq('tenant_id', tid).eq('status', 'active').eq('is_deleted', false),
+      sb.from(T.BAL_ADJ).select('amount').eq('tenant_id', tid)
+    ]);
+    var totalAllPaid = (_allPay.data || []).reduce(function(s, p) { return s + (Number(p.amount) || 0) * (Number(p.exchange_rate) || 1); }, 0);
+    var totalDealAmount = (_dashDeals.data || []).reduce(function(s, d) { return s + (Number(d.total_prepaid) || 0); }, 0);
+    var totalAdjAmount = (_dashAdj.data || []).reduce(function(s, a) { return s + (Number(a.amount) || 0); }, 0);
+    var finalBalance = totalAllPaid + totalDealAmount - totalInvoiced + totalAdjAmount;
+
+    document.getElementById('val-total-debt').textContent = formatILS(finalBalance);
+    // Positive = credit (green), Negative = we owe (red)
+    var balEl = document.getElementById('val-total-debt');
+    if (balEl) balEl.style.color = finalBalance > 0 ? '#059669' : (finalBalance < 0 ? '#dc2626' : '');
     document.getElementById('val-due-week').textContent = formatILS(dueThisWeek);
     document.getElementById('val-overdue').textContent = formatILS(overdue);
     document.getElementById('val-paid-month').textContent = formatILS(paidThisMonth);
@@ -157,61 +165,89 @@ async function loadSuppliersTab() {
     var results = await Promise.all([
       fetchAll(T.SUPPLIERS, [['active', 'eq', true]]),
       fetchAll(T.SUP_DOCS, [['is_deleted', 'eq', false]]),
-      fetchAll(T.PREPAID_DEALS, [['is_deleted', 'eq', false], ['status', 'eq', 'active']])
+      fetchAll(T.PREPAID_DEALS, [['is_deleted', 'eq', false], ['status', 'eq', 'active']]),
+      fetchAll(T.SUP_PAYMENTS, [['is_deleted', 'eq', false]]),
+      sb.from(T.BAL_ADJ).select('supplier_id, amount').eq('tenant_id', tid).then(function(r) { return r.data || []; })
     ]);
     var suppliers = results[0];
     var docs = results[1];
     var deals = results[2];
+    var payments = results[3];
+    // Balance adjustments grouped by supplier
+    var adjBySupplier = {};
+    (results[4] || []).forEach(function(a) {
+      adjBySupplier[a.supplier_id] = (adjBySupplier[a.supplier_id] || 0) + (Number(a.amount) || 0);
+    });
     var todayStr = new Date().toISOString().slice(0, 10);
+
+    // Sum payments per supplier (total amount paid)
+    var paidBySup = {};
+    (payments || []).forEach(function(p) {
+      var rate = Number(p.exchange_rate) || 1;
+      paidBySup[p.supplier_id] = (paidBySup[p.supplier_id] || 0) + (Number(p.amount) || 0) * rate;
+    });
 
     _supTabData = suppliers.map(function(sup) {
       var cutoff = sup.opening_balance_date || null;
-      var supDocs = docs.filter(function(d) {
-        if (d.supplier_id !== sup.id || d.status === 'paid' || d.status === 'cancelled') return false;
+      var allSupDocs = docs.filter(function(d) { return d.supplier_id === sup.id; });
+      // Non-cancelled docs (regardless of paid status) for total invoiced
+      var activeDocs = allSupDocs.filter(function(d) {
+        if (d.status === 'cancelled') return false;
         if (cutoff && d.document_date && d.document_date < cutoff) return false;
         return true;
       });
-      var openCount = supDocs.length;
-      var totalDebt = Number(sup.opening_balance) || 0;
+      // Open docs (not paid/cancelled) for count + overdue
+      var openDocs = activeDocs.filter(function(d) { return d.status !== 'paid'; });
+      var openCount = openDocs.length;
+      // totalInvoiced = raw total_amount of all non-cancelled docs (NOT remaining)
+      var totalInvoiced = Number(sup.opening_balance) || 0;
       var overdueAmt = 0, nextDue = null;
-      supDocs.forEach(function(d) {
+      activeDocs.forEach(function(d) {
         var rate = Number(d.exchange_rate) || 1;
-        var remaining = (Number(d.total_amount) - Number(d.paid_amount)) * rate;
-        if (remaining <= 0) return;
-        totalDebt += remaining;
-        if (d.due_date && d.due_date < todayStr) overdueAmt += remaining;
-        if (d.due_date && d.due_date >= todayStr) {
-          if (!nextDue || d.due_date < nextDue) nextDue = d.due_date;
+        totalInvoiced += (Number(d.total_amount) || 0) * rate;
+        // Overdue/due only for docs with remaining balance
+        var remaining = ((Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0)) * rate;
+        if (remaining > 0 && d.due_date) {
+          if (d.due_date < todayStr) overdueAmt += remaining;
+          else if (!nextDue || d.due_date < nextDue) nextDue = d.due_date;
         }
       });
       var deal = deals.find(function(dl) { return dl.supplier_id === sup.id; });
-      var dealRemaining = deal ? (Number(deal.total_prepaid) || 0) - (Number(deal.total_used) || 0) : 0;
+      var dealTotal = deal ? (Number(deal.total_prepaid) || 0) : 0;
+      var dealUsed = deal ? (Number(deal.total_used) || 0) : 0;
+      var dealRemaining = dealTotal - dealUsed;
+      var totalPaid = paidBySup[sup.id] || 0;
+      var totalAdj = adjBySupplier[sup.id] || 0;
+      var hasReceiptDocs = allSupDocs.some(function(d) { return !!d.goods_receipt_id; });
+      var hasHistory = allSupDocs.length > 0 || totalPaid > 0 || !!deal;
+      // יתרה סופית = paid + deals - invoiced + adjustments
+      // Uses raw total_amount (not remaining) to avoid double-counting payments
+      // Positive = credit (green), Negative = we owe (red)
+      var finalBalance = totalPaid + dealTotal - totalInvoiced + totalAdj;
       return {
-        id: sup.id, name: sup.name, openCount: openCount, totalDebt: totalDebt,
-        overdueAmt: overdueAmt, nextDue: nextDue, hasDeal: !!deal, dealRemaining: dealRemaining,
-        openingBalance: Number(sup.opening_balance) || 0, openingBalanceDate: cutoff
+        id: sup.id, name: sup.name, openCount: openCount,
+        totalInvoiced: totalInvoiced, finalBalance: finalBalance, totalPaid: totalPaid,
+        overdueAmt: overdueAmt, nextDue: nextDue, hasDeal: !!deal,
+        dealTotal: dealTotal, dealUsed: dealUsed, dealRemaining: dealRemaining,
+        openingBalance: Number(sup.opening_balance) || 0, openingBalanceDate: cutoff,
+        hasReceiptDocs: hasReceiptDocs, hasHistory: hasHistory
       };
     });
 
     _supTabData.sort(function(a, b) {
       if (a.overdueAmt > 0 && b.overdueAmt === 0) return -1;
       if (b.overdueAmt > 0 && a.overdueAmt === 0) return 1;
-      return b.totalDebt - a.totalDebt;
+      return b.finalBalance - a.finalBalance;
     });
 
-    var showAll = sessionStorage.getItem('debt_showAllSuppliers') === 'true';
-    var visible = showAll ? _supTabData : _supTabData.filter(function(s) {
-      return s.openCount > 0 || s.hasDeal || s.openingBalance > 0;
-    });
-
-    renderSuppliersToolbar(showAll);
-    renderSuppliersTable(visible);
+    renderSuppliersToolbar();
+    applySupplierFilters();
   } catch (e) {
     console.error('loadSuppliersTab error:', e);
   }
 }
 
-function renderSuppliersToolbar(showAll) {
+function renderSuppliersToolbar() {
   var wrap = $('dtab-suppliers');
   if (!wrap) return;
   var initEmpty = wrap.querySelector(':scope > .empty-state');
@@ -220,24 +256,15 @@ function renderSuppliersToolbar(showAll) {
   if (existing) existing.remove();
   var toolbar = document.createElement('div');
   toolbar.className = 'sup-toolbar doc-toolbar';
+  toolbar.style.cssText = 'flex-direction:column;align-items:stretch;gap:8px';
   toolbar.innerHTML =
-    '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.88rem">' +
-      '<input type="checkbox" id="sup-show-all" onchange="toggleShowAllSuppliers()"' +
-        (showAll ? ' checked' : '') + '>' +
-      '\u05D4\u05E6\u05D2 \u05D0\u05EA \u05DB\u05DC \u05D4\u05E1\u05E4\u05E7\u05D9\u05DD' +
-    '</label>' +
-    '<button class="btn sup-ob-btn" style="background:#059669;color:#fff" onclick="openQuickOpeningBalance()">\u05D4\u05D2\u05D3\u05E8 \u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</button>';
+    '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">' +
+      '<div id="sup-filter-chips"></div>' +
+      '<button class="btn sup-ob-btn" style="background:#059669;color:#fff;white-space:nowrap" onclick="openQuickOpeningBalance()">\u05D4\u05D2\u05D3\u05E8 \u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</button>' +
+    '</div>' +
+    '<div id="sup-filter-count" style="font-size:.82rem;color:var(--g500)"></div>';
   wrap.prepend(toolbar);
-}
-
-function toggleShowAllSuppliers() {
-  var cb = $('sup-show-all');
-  var showAll = cb ? cb.checked : false;
-  sessionStorage.setItem('debt_showAllSuppliers', showAll ? 'true' : 'false');
-  var visible = showAll ? _supTabData : _supTabData.filter(function(s) {
-    return s.openCount > 0 || s.hasDeal || s.openingBalance > 0;
-  });
-  renderSuppliersTable(visible);
+  if (typeof renderSupplierFilterChips === 'function') renderSupplierFilterChips();
 }
 
 function openQuickOpeningBalance() {
@@ -290,27 +317,29 @@ function renderSuppliersTable(data) {
 
   var rows = data.map(function(s) {
     var overdueStyle = s.overdueAmt > 0 ? ' style="color:var(--error);font-weight:600"' : '';
-    var dealCell = s.hasDeal ? '<span style="color:var(--success, #155724)">&#10003;</span> ' + formatILS(s.dealRemaining) : '\u2014';
+    // יתרה סופית: positive = red (we owe), negative = green (credit)
+    // Positive = credit (green), Negative = we owe (red)
+    var balColor = s.finalBalance > 0 ? 'color:#059669;font-weight:600' : (s.finalBalance < 0 ? 'color:#dc2626;font-weight:600' : '');
     var obCell = s.openingBalance > 0
       ? formatILS(s.openingBalance) + (s.openingBalanceDate ? '' : ' <span title="\u05D7\u05E1\u05E8 \u05EA\u05D0\u05E8\u05D9\u05DA cutoff" style="color:#f59e0b">\u26A0\uFE0F</span>')
       : '\u2014';
     return '<tr style="cursor:pointer" onclick="openSupplierDetail(\'' + s.id + '\')">' +
       '<td>' + escapeHtml(s.name) + '</td>' +
       '<td>' + s.openCount + '</td>' +
-      '<td>' + formatILS(s.totalDebt) + '</td>' +
+      '<td style="' + balColor + '">' + formatILS(s.finalBalance) + '</td>' +
       '<td' + overdueStyle + '>' + formatILS(s.overdueAmt) + '</td>' +
       '<td>' + escapeHtml(s.nextDue || '\u2014') + '</td>' +
       '<td>' + obCell + '</td>' +
-      '<td>' + dealCell + '</td>' +
-      '<td>' +
-        '<button class="btn-sm" onclick="event.stopPropagation();openSupplierDetail(\'' + s.id + '\')">צפה</button> ' +
-        '<button class="btn-sm" onclick="event.stopPropagation();openPaymentForSupplier(\'' + s.id + '\')">תשלום חדש</button>' +
+      '<td style="white-space:nowrap">' +
+        '<button class="btn-sm" onclick="event.stopPropagation();openSupplierDetail(\'' + s.id + '\')">\u05E6\u05E4\u05D4</button> ' +
+        '<button class="btn-sm" onclick="event.stopPropagation();openPaymentForSupplier(\'' + s.id + '\')">\u05EA\u05E9\u05DC\u05D5\u05DD</button> ' +
+        '<button class="btn-sm" style="background:#eff6ff;color:#1d4ed8;font-size:.72rem" onclick="event.stopPropagation();_openAdjustModal(\'' + s.id + '\',\'' + escapeHtml(s.name) + '\')" title="\u05D4\u05EA\u05D0\u05DD \u05D9\u05EA\u05E8\u05D4">\u270F\uFE0F</button>' +
       '</td></tr>';
   }).join('');
   tableWrap.innerHTML =
     '<div style="overflow-x:auto"><table class="data-table" style="width:100%;font-size:.88rem">' +
-      '<thead><tr><th>\u05E1\u05E4\u05E7</th><th>\u05E4\u05EA\u05D5\u05D7\u05D9\u05DD</th><th>\u05D7\u05D5\u05D1 \u05DB\u05D5\u05DC\u05DC</th><th>\u05D1\u05D0\u05D9\u05D7\u05D5\u05E8</th>' +
-        '<th>\u05EA\u05E9\u05DC\u05D5\u05DD \u05D4\u05D1\u05D0</th><th>\u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</th><th>\u05DE\u05E7\u05D3\u05DE\u05D4</th><th>\u05E4\u05E2\u05D5\u05DC\u05D5\u05EA</th>' +
+      '<thead><tr><th>\u05E1\u05E4\u05E7</th><th>\u05E4\u05EA\u05D5\u05D7\u05D9\u05DD</th><th>\u05D9\u05EA\u05E8\u05D4 \u05E1\u05D5\u05E4\u05D9\u05EA</th><th>\u05D1\u05D0\u05D9\u05D7\u05D5\u05E8</th>' +
+        '<th>\u05EA\u05E9\u05DC\u05D5\u05DD \u05D4\u05D1\u05D0</th><th>\u05D9\u05EA\u05E8\u05EA \u05E4\u05EA\u05D9\u05D7\u05D4</th><th>\u05E4\u05E2\u05D5\u05DC\u05D5\u05EA</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
 }
 
@@ -330,4 +359,66 @@ async function openPaymentForSupplier(supplierId) {
     '<div id="pay-wiz-content"></div></div>';
   document.body.appendChild(modal);
   _wizRenderStep2();
+}
+
+// =========================================================
+// Balance adjustment modal
+// =========================================================
+function _openAdjustModal(supplierId, supplierName) {
+  var html =
+    '<div style="direction:rtl;text-align:right">' +
+      '<h3 style="margin:0 0 14px">\u270F\uFE0F \u05D4\u05EA\u05D0\u05DE\u05EA \u05D9\u05EA\u05E8\u05D4 \u2014 ' + escapeHtml(supplierName) + '</h3>' +
+      '<div style="display:flex;gap:10px;margin-bottom:12px">' +
+        '<label style="flex:1;cursor:pointer"><input type="radio" name="adj-type" value="add" checked> \u2795 \u05D4\u05D5\u05E1\u05E3 \u05DC\u05D9\u05EA\u05E8\u05D4</label>' +
+        '<label style="flex:1;cursor:pointer"><input type="radio" name="adj-type" value="sub"> \u2796 \u05D4\u05E4\u05D7\u05EA \u05DE\u05D9\u05EA\u05E8\u05D4</label>' +
+      '</div>' +
+      '<div style="margin-bottom:10px"><label>\u05E1\u05DB\u05D5\u05DD (\u20AA)</label>' +
+        '<input type="number" id="adj-amount" min="0.01" step="0.01" class="nd-field" placeholder="0.00" style="width:100%"></div>' +
+      '<div style="margin-bottom:14px"><label>\u05E1\u05D9\u05D1\u05D4 <span style="color:#dc2626">*</span></label>' +
+        '<input type="text" id="adj-reason" class="nd-field" placeholder="\u05EA\u05D9\u05E7\u05D5\u05DF, \u05D4\u05E0\u05D7\u05D4, \u05E7\u05E0\u05E1..." style="width:100%"></div>' +
+    '</div>';
+  var footer = '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="Modal.close()">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
+    '<button class="btn" style="background:#2563eb;color:#fff" onclick="_submitAdjustment(\'' + supplierId + '\',\'' + escapeHtml(supplierName) + '\')">\u05D0\u05E9\u05E8</button>';
+  Modal.show({ title: '\u05D4\u05EA\u05D0\u05DE\u05EA \u05D9\u05EA\u05E8\u05D4', content: html, footer: footer, size: 'sm' });
+  setTimeout(function() { var el = document.getElementById('adj-amount'); if (el) el.focus(); }, 200);
+}
+
+function _submitAdjustment(supplierId, supplierName) {
+  var amountRaw = Number(document.getElementById('adj-amount')?.value) || 0;
+  var reason = (document.getElementById('adj-reason')?.value || '').trim();
+  var isAdd = document.querySelector('input[name="adj-type"]:checked')?.value === 'add';
+  if (amountRaw <= 0) { toast('\u05D9\u05E9 \u05DC\u05D4\u05D6\u05D9\u05DF \u05E1\u05DB\u05D5\u05DD', 'e'); return; }
+  if (!reason) { toast('\u05D7\u05D5\u05D1\u05D4 \u05DC\u05D4\u05D6\u05D9\u05DF \u05E1\u05D9\u05D1\u05D4', 'e'); return; }
+  var amount = isAdd ? amountRaw : -amountRaw;
+  Modal.close();
+  promptPin('\u05D0\u05D9\u05E9\u05D5\u05E8 \u05D4\u05EA\u05D0\u05DE\u05EA \u05D9\u05EA\u05E8\u05D4', function(pin) {
+    verifyPinOnly(pin).then(function(ok) {
+      if (!ok) { toast('PIN \u05E9\u05D2\u05D5\u05D9', 'e'); return; }
+      _saveAdjustment(supplierId, supplierName, amount, reason);
+    });
+  });
+}
+
+async function _saveAdjustment(supplierId, supplierName, amount, reason) {
+  try {
+    var emp = getCurrentEmployee();
+    var { error } = await sb.from(T.BAL_ADJ).insert({
+      tenant_id: getTenantId(), supplier_id: supplierId,
+      amount: amount, reason: reason,
+      adjusted_by: emp ? emp.id : null, adjusted_by_name: emp ? emp.name : null
+    });
+    if (error) throw error;
+    writeLog('balance_adjustment', null, {
+      supplier_id: supplierId, supplier_name: supplierName,
+      amount: amount, reason: reason, adjusted_by: emp ? emp.name : null
+    });
+    toast('\u05D9\u05EA\u05E8\u05D4 \u05E2\u05D5\u05D3\u05DB\u05E0\u05D4: ' + (amount > 0 ? '+' : '') + amount + '\u20AA \u2014 ' + reason, 's');
+    await loadSuppliersTab();
+    await loadDebtSummary();
+    if (typeof _detailSupplierId !== 'undefined' && _detailSupplierId === supplierId) {
+      openSupplierDetail(supplierId);
+    }
+  } catch (e) {
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
+  }
 }

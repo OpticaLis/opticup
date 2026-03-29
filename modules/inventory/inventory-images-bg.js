@@ -265,6 +265,8 @@ function _doBgRemoveSaved(imageId, imageUrl, storagePath) {
       if (upErr) throw upErr;
       await sb.from(T.IMAGES).update({ url: newPath, storage_path: newPath, file_size: newBlob.size })
         .eq('id', imageId).eq('tenant_id', tid);
+      // Brief delay for Storage propagation before signing
+      await new Promise(function(r) { setTimeout(r, 300); });
       var signedUrl = await _getSignedUrl(newPath);
       var im = _imgCurrentImages.find(function(x) { return x.id === imageId; });
       if (im) { im.url = newPath; im.storage_path = newPath; im._signedUrl = signedUrl; }

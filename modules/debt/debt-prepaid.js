@@ -4,19 +4,12 @@
 //   renderPrepaidTable(), openNewDealModal(), _dealAutoName(), saveNewDeal()
 // Globals: _prepaidDeals, _prepaidChecks, _prepaidSuppliers, DEAL_STATUS_MAP, CHECK_STATUS_MAP
 
-let _prepaidDeals = [], _prepaidChecks = [], _prepaidSuppliers = [];
+let _prepaidDeals = [], _prepaidSuppliers = [];
 
 const DEAL_STATUS_MAP = {
   active:    { he: 'פעיל',    cls: 'dst-paid' },
   completed: { he: 'הושלם',   cls: 'dst-cancel' },
   cancelled: { he: 'מבוטל',   cls: 'pst-red' }
-};
-
-const CHECK_STATUS_MAP = {
-  pending:   { he: 'ממתין',   cls: 'dst-open' },
-  cashed:    { he: 'נפרע',    cls: 'dst-paid' },
-  bounced:   { he: 'חזר',     cls: 'pst-red' },
-  cancelled: { he: 'מבוטל',   cls: 'dst-cancel' }
 };
 
 // =========================================================
@@ -29,12 +22,10 @@ async function loadPrepaidTab() {
   try {
     var results = await Promise.all([
       fetchAll(T.PREPAID_DEALS, [['is_deleted', 'eq', false]]),
-      fetchAll(T.PREPAID_CHECKS, []),
       fetchAll(T.SUPPLIERS, [['active', 'eq', true]])
     ]);
     _prepaidDeals = results[0];
-    _prepaidChecks = results[1];
-    _prepaidSuppliers = results[2];
+    _prepaidSuppliers = results[1];
     renderPrepaidToolbar();
     renderPrepaidTable(_prepaidDeals);
   } catch (e) {
@@ -127,8 +118,7 @@ function renderPrepaidTable(deals) {
           escapeHtml(st.he) + '</span>' +
       '</td>' +
       '<td>' +
-        '<button class="btn-sm" onclick="viewDealDetail(\'' + d.id + '\')">צפה</button> ' +
-        '<button class="btn-sm" onclick="openAddCheckModal(\'' + d.id + '\')">הוסף צ\u05F3ק</button>' +
+        '<button class="btn-sm" onclick="viewDealDetail(\'' + d.id + '\')">\u05E6\u05E4\u05D4</button>' +
       '</td>' +
     '</tr>';
   }).join('');
