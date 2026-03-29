@@ -110,6 +110,7 @@ function renderBrandsTable() {
       <td><input type="checkbox" ${b.excludeWebsite?'checked':''} onchange="brandsEdited[${i}].excludeWebsite=this.checked"></td>
       <td><input type="number" min="0" step="1" value="${b.minStockQty ?? ''}" placeholder="${b.type==='יוקרה'?'5':b.type==='מותג'?'15':'—'}" style="${minStockStyle}" data-id="${b.id||''}" data-field="min_stock_qty" class="brand-min-stock-input" onchange="brandsEdited[${i}].minStockQty=this.value===''?null:parseInt(this.value,10);${b.id?'saveBrandField(this)':''}"></td>
       <td style="text-align:center;font-weight:600;${color}">${qty}${isLow ? ' ⚠️' : ''}</td>
+      <td>${b.isNew ? '<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;font-size:.75rem;padding:2px 6px" onclick="_cancelNewBrand(' + i + ')" title="\u05D1\u05D8\u05DC">\u2716</button>' : ''}</td>
     </tr>`;
   }).join('');
 }
@@ -138,12 +139,22 @@ function addBrandRow() {
   const newBrand = { id: null, name: '', brand_type: '', type: '', defaultSync: '', active: true, excludeWebsite: false, minStockQty: null, currentQty: 0, isNew: true };
   allBrandsData.push(newBrand);
   renderBrandsTable();
-  const rows = $('brands-body').querySelectorAll('tr');
-  const last = rows[rows.length-1];
-  if (last) {
-    last.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    last.querySelector('input')?.focus();
+  // New row with empty name sorts to top — scroll there
+  var tb = $('brands-body');
+  var firstRow = tb ? tb.querySelector('tr') : null;
+  if (firstRow) {
+    firstRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    var inp = firstRow.querySelector('input');
+    if (inp) setTimeout(function() { inp.focus(); }, 300);
   }
+}
+
+function _cancelNewBrand(filteredIdx) {
+  var b = brandsEdited[filteredIdx];
+  if (!b || !b.isNew) return;
+  var realIdx = allBrandsData.indexOf(b);
+  if (realIdx >= 0) allBrandsData.splice(realIdx, 1);
+  renderBrandsTable();
 }
 
 async function saveBrands() {
