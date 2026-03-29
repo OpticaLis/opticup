@@ -39,6 +39,7 @@ const T = {
   DOC_FILES: 'supplier_document_files',
   IMAGES: 'inventory_images',
   EXPENSE_FOLDERS: 'expense_folders',
+  BAL_ADJ: 'supplier_balance_adjustments',
 };
 
 // Tenant slug — set synchronously from URL/sessionStorage for immediate availability.
@@ -167,6 +168,9 @@ const FIELD_MAP = {
   },
   expense_folders: {
     'שם':'name','אייקון':'icon','סדר מיון':'sort_order','פעיל':'is_active'
+  },
+  supplier_balance_adjustments: {
+    'סכום':'amount','סיבה':'reason','בוצע ע"י':'adjusted_by_name'
   },
   suppliers: { 'שם':'name', 'יתרת פתיחה':'opening_balance', 'תאריך יתרת פתיחה':'opening_balance_date', 'הערות יתרת פתיחה':'opening_balance_notes', 'הוגדר ע"י':'opening_balance_set_by', 'דפוס הזמנות רכש':'ai_has_po_pattern' },
   ai_agent_config: {

@@ -16,12 +16,14 @@ async function loadSupplierTimeline(supplierId) {
     var results = await Promise.all([
       fetchAll(T.SUP_DOCS, [['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId]]),
       fetchAll(T.SUP_PAYMENTS, [['is_deleted', 'eq', false], ['supplier_id', 'eq', supplierId]]),
-      fetchAll(T.DOC_TYPES, [['is_active', 'eq', true]])
+      fetchAll(T.DOC_TYPES, [['is_active', 'eq', true]]),
+      sb.from(T.BAL_ADJ).select('*').eq('tenant_id', getTenantId()).eq('supplier_id', supplierId).then(function(r) { return r.data || []; })
     ]);
     var docs = results[0];
     var payments = results[1];
     var typeMap = {};
     results[2].forEach(function(t) { typeMap[t.id] = t; });
+    var adjustments = results[3] || [];
 
     // Merge into timeline entries
     var entries = [];
@@ -39,9 +41,20 @@ async function loadSupplierTimeline(supplierId) {
       entries.push({
         date: p.payment_date,
         icon: '\uD83D\uDCB0',
-        label: 'תשלום' + (p.reference_number ? ' — ' + p.reference_number : ''),
+        label: '\u05EA\u05E9\u05DC\u05D5\u05DD' + (p.reference_number ? ' \u2014 ' + p.reference_number : ''),
         amount: formatILS(p.amount),
         sortDate: p.payment_date || (p.created_at || '').slice(0, 10)
+      });
+    });
+    adjustments.forEach(function(a) {
+      var amt = Number(a.amount) || 0;
+      var sign = amt > 0 ? '+' : '';
+      entries.push({
+        date: (a.created_at || '').slice(0, 10),
+        icon: '\u270F\uFE0F',
+        label: '\u05D4\u05EA\u05D0\u05DE\u05EA \u05D9\u05EA\u05E8\u05D4: ' + sign + formatILS(amt) + ' \u2014 \'' + escapeHtml(a.reason || '') + '\'' + (a.adjusted_by_name ? ' (\u05E2"\u05D9 ' + escapeHtml(a.adjusted_by_name) + ')' : ''),
+        amount: (amt > 0 ? '+' : '') + formatILS(amt),
+        sortDate: (a.created_at || '').slice(0, 10)
       });
     });
 

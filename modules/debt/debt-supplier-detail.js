@@ -98,7 +98,8 @@ async function openSupplierDetail(supplierId) {
       '</div>' +
       obSection + ptSection +
       '<div style="display:flex;flex-wrap:wrap;gap:16px;font-size:.92rem;margin-bottom:16px">' +
-        '<div>\u05D9\u05EA\u05E8\u05D4 \u05E1\u05D5\u05E4\u05D9\u05EA: <strong style="color:' + ((totalDebt - dealTotal) < 0 ? '#059669' : '#dc2626') + '">' + formatILS(totalDebt - dealTotal) + '</strong></div>' +
+        '<div>\u05D9\u05EA\u05E8\u05D4 \u05E1\u05D5\u05E4\u05D9\u05EA: <strong style="color:' + ((totalDebt - dealTotal) < 0 ? '#059669' : '#dc2626') + '">' + formatILS(totalDebt - dealTotal) + '</strong> ' +
+          '<button class="btn-sm" style="background:#eff6ff;color:#1d4ed8;font-size:.72rem;padding:1px 5px;margin-right:4px" onclick="_openAdjustModal(\'' + supplierId + '\',\'' + escapeHtml(supplier.name || '') + '\')" title="\u05D4\u05EA\u05D0\u05DD \u05D9\u05EA\u05E8\u05D4">\u270F\uFE0F</button></div>' +
         '<div style="' + overdueStyle + '">באיחור: <strong>' + formatILS(overdueAmt) + '</strong></div>' +
         '<div>' + dealLine + '</div>' +
       '</div>' +

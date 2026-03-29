@@ -62,11 +62,14 @@ async function loadDebtSummary() {
       const rate = Number(p.exchange_rate) || 1;
       paidThisMonth += Number(p.amount) * rate;
     });
-    // Factor in prepaid deals: יתרה סופית = debt - deal totals
-    var { data: _dashDeals } = await sb.from(T.PREPAID_DEALS).select('total_prepaid')
-      .eq('tenant_id', tid).eq('status', 'active').eq('is_deleted', false);
-    var totalDealAmount = (_dashDeals || []).reduce(function(s, d) { return s + (Number(d.total_prepaid) || 0); }, 0);
-    var finalBalance = totalDebt - totalDealAmount;
+    // Factor in prepaid deals + adjustments: יתרה סופית = debt - deals + adjustments
+    var [_dashDeals, _dashAdj] = await Promise.all([
+      sb.from(T.PREPAID_DEALS).select('total_prepaid').eq('tenant_id', tid).eq('status', 'active').eq('is_deleted', false),
+      sb.from(T.BAL_ADJ).select('amount').eq('tenant_id', tid)
+    ]);
+    var totalDealAmount = (_dashDeals.data || []).reduce(function(s, d) { return s + (Number(d.total_prepaid) || 0); }, 0);
+    var totalAdjAmount = (_dashAdj.data || []).reduce(function(s, a) { return s + (Number(a.amount) || 0); }, 0);
+    var finalBalance = totalDebt - totalDealAmount + totalAdjAmount;
 
     document.getElementById('val-total-debt').textContent = formatILS(finalBalance);
     // Color: positive (we owe) = red, negative (credit) = green
@@ -167,12 +170,18 @@ async function loadSuppliersTab() {
       fetchAll(T.SUPPLIERS, [['active', 'eq', true]]),
       fetchAll(T.SUP_DOCS, [['is_deleted', 'eq', false]]),
       fetchAll(T.PREPAID_DEALS, [['is_deleted', 'eq', false], ['status', 'eq', 'active']]),
-      fetchAll(T.SUP_PAYMENTS, [['is_deleted', 'eq', false]])
+      fetchAll(T.SUP_PAYMENTS, [['is_deleted', 'eq', false]]),
+      sb.from(T.BAL_ADJ).select('supplier_id, amount').eq('tenant_id', tid).then(function(r) { return r.data || []; })
     ]);
     var suppliers = results[0];
     var docs = results[1];
     var deals = results[2];
     var payments = results[3];
+    // Balance adjustments grouped by supplier
+    var adjBySupplier = {};
+    (results[4] || []).forEach(function(a) {
+      adjBySupplier[a.supplier_id] = (adjBySupplier[a.supplier_id] || 0) + (Number(a.amount) || 0);
+    });
     var todayStr = new Date().toISOString().slice(0, 10);
 
     // Build per-supplier payment flag
@@ -206,8 +215,9 @@ async function loadSuppliersTab() {
       var dealRemaining = dealTotal - dealUsed;
       var hasReceiptDocs = allSupDocs.some(function(d) { return !!d.goods_receipt_id; });
       var hasHistory = allSupDocs.length > 0 || !!payBySup[sup.id] || !!deal;
-      // יתרה סופית = debt - deal total
-      var finalBalance = totalDebt - dealTotal;
+      // יתרה סופית = debt - deal total + adjustments
+      var totalAdj = adjBySupplier[sup.id] || 0;
+      var finalBalance = totalDebt - dealTotal + totalAdj;
       return {
         id: sup.id, name: sup.name, openCount: openCount, totalDebt: totalDebt,
         finalBalance: finalBalance,
@@ -313,9 +323,10 @@ function renderSuppliersTable(data) {
       '<td' + overdueStyle + '>' + formatILS(s.overdueAmt) + '</td>' +
       '<td>' + escapeHtml(s.nextDue || '\u2014') + '</td>' +
       '<td>' + obCell + '</td>' +
-      '<td>' +
-        '<button class="btn-sm" onclick="event.stopPropagation();openSupplierDetail(\'' + s.id + '\')">צפה</button> ' +
-        '<button class="btn-sm" onclick="event.stopPropagation();openPaymentForSupplier(\'' + s.id + '\')">תשלום חדש</button>' +
+      '<td style="white-space:nowrap">' +
+        '<button class="btn-sm" onclick="event.stopPropagation();openSupplierDetail(\'' + s.id + '\')">\u05E6\u05E4\u05D4</button> ' +
+        '<button class="btn-sm" onclick="event.stopPropagation();openPaymentForSupplier(\'' + s.id + '\')">\u05EA\u05E9\u05DC\u05D5\u05DD</button> ' +
+        '<button class="btn-sm" style="background:#eff6ff;color:#1d4ed8;font-size:.72rem" onclick="event.stopPropagation();_openAdjustModal(\'' + s.id + '\',\'' + escapeHtml(s.name) + '\')" title="\u05D4\u05EA\u05D0\u05DD \u05D9\u05EA\u05E8\u05D4">\u270F\uFE0F</button>' +
       '</td></tr>';
   }).join('');
   tableWrap.innerHTML =
@@ -341,4 +352,66 @@ async function openPaymentForSupplier(supplierId) {
     '<div id="pay-wiz-content"></div></div>';
   document.body.appendChild(modal);
   _wizRenderStep2();
+}
+
+// =========================================================
+// Balance adjustment modal
+// =========================================================
+function _openAdjustModal(supplierId, supplierName) {
+  var html =
+    '<div style="direction:rtl;text-align:right">' +
+      '<h3 style="margin:0 0 14px">\u270F\uFE0F \u05D4\u05EA\u05D0\u05DE\u05EA \u05D9\u05EA\u05E8\u05D4 \u2014 ' + escapeHtml(supplierName) + '</h3>' +
+      '<div style="display:flex;gap:10px;margin-bottom:12px">' +
+        '<label style="flex:1;cursor:pointer"><input type="radio" name="adj-type" value="add" checked> \u2795 \u05D4\u05D5\u05E1\u05E3 \u05DC\u05D9\u05EA\u05E8\u05D4</label>' +
+        '<label style="flex:1;cursor:pointer"><input type="radio" name="adj-type" value="sub"> \u2796 \u05D4\u05E4\u05D7\u05EA \u05DE\u05D9\u05EA\u05E8\u05D4</label>' +
+      '</div>' +
+      '<div style="margin-bottom:10px"><label>\u05E1\u05DB\u05D5\u05DD (\u20AA)</label>' +
+        '<input type="number" id="adj-amount" min="0.01" step="0.01" class="nd-field" placeholder="0.00" style="width:100%"></div>' +
+      '<div style="margin-bottom:14px"><label>\u05E1\u05D9\u05D1\u05D4 <span style="color:#dc2626">*</span></label>' +
+        '<input type="text" id="adj-reason" class="nd-field" placeholder="\u05EA\u05D9\u05E7\u05D5\u05DF, \u05D4\u05E0\u05D7\u05D4, \u05E7\u05E0\u05E1..." style="width:100%"></div>' +
+    '</div>';
+  var footer = '<button class="btn" style="background:#e5e7eb;color:#1e293b" onclick="Modal.close()">\u05D1\u05D9\u05D8\u05D5\u05DC</button>' +
+    '<button class="btn" style="background:#2563eb;color:#fff" onclick="_submitAdjustment(\'' + supplierId + '\',\'' + escapeHtml(supplierName) + '\')">\u05D0\u05E9\u05E8</button>';
+  Modal.show({ title: '\u05D4\u05EA\u05D0\u05DE\u05EA \u05D9\u05EA\u05E8\u05D4', content: html, footer: footer, size: 'sm' });
+  setTimeout(function() { var el = document.getElementById('adj-amount'); if (el) el.focus(); }, 200);
+}
+
+function _submitAdjustment(supplierId, supplierName) {
+  var amountRaw = Number(document.getElementById('adj-amount')?.value) || 0;
+  var reason = (document.getElementById('adj-reason')?.value || '').trim();
+  var isAdd = document.querySelector('input[name="adj-type"]:checked')?.value === 'add';
+  if (amountRaw <= 0) { toast('\u05D9\u05E9 \u05DC\u05D4\u05D6\u05D9\u05DF \u05E1\u05DB\u05D5\u05DD', 'e'); return; }
+  if (!reason) { toast('\u05D7\u05D5\u05D1\u05D4 \u05DC\u05D4\u05D6\u05D9\u05DF \u05E1\u05D9\u05D1\u05D4', 'e'); return; }
+  var amount = isAdd ? amountRaw : -amountRaw;
+  Modal.close();
+  promptPin('\u05D0\u05D9\u05E9\u05D5\u05E8 \u05D4\u05EA\u05D0\u05DE\u05EA \u05D9\u05EA\u05E8\u05D4', function(pin) {
+    verifyPinOnly(pin).then(function(ok) {
+      if (!ok) { toast('PIN \u05E9\u05D2\u05D5\u05D9', 'e'); return; }
+      _saveAdjustment(supplierId, supplierName, amount, reason);
+    });
+  });
+}
+
+async function _saveAdjustment(supplierId, supplierName, amount, reason) {
+  try {
+    var emp = getCurrentEmployee();
+    var { error } = await sb.from(T.BAL_ADJ).insert({
+      tenant_id: getTenantId(), supplier_id: supplierId,
+      amount: amount, reason: reason,
+      adjusted_by: emp ? emp.id : null, adjusted_by_name: emp ? emp.name : null
+    });
+    if (error) throw error;
+    writeLog('balance_adjustment', null, {
+      supplier_id: supplierId, supplier_name: supplierName,
+      amount: amount, reason: reason, adjusted_by: emp ? emp.name : null
+    });
+    toast('\u05D9\u05EA\u05E8\u05D4 \u05E2\u05D5\u05D3\u05DB\u05E0\u05D4: ' + (amount > 0 ? '+' : '') + amount + '\u20AA \u2014 ' + reason, 's');
+    await loadSuppliersTab();
+    await loadDebtSummary();
+    if (typeof _detailSupplierId !== 'undefined' && _detailSupplierId === supplierId) {
+      openSupplierDetail(supplierId);
+    }
+  } catch (e) {
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
+  }
 }
