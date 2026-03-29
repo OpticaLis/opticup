@@ -93,24 +93,35 @@ function renderBrandsTable() {
     const minQ = b.minStockQty;
     const isLow = !inactive && minQ != null && qty < minQ;
     const color = inactive ? 'color:#999' : (minQ == null ? '' : (isLow ? 'color:#e53935' : 'color:#2e7d32'));
+    // Mark dirty on any field change
+    var d = '_markDirty('+i+');';
+    // Delete button: enabled if qty=0, disabled if qty>0
+    var delBtn = '';
+    if (b.isNew) {
+      delBtn = '<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;font-size:.75rem;padding:2px 6px" onclick="_cancelNewBrand(' + i + ')" title="\u05D1\u05D8\u05DC">\u2716</button>';
+    } else if (b.id) {
+      delBtn = qty > 0
+        ? '<button class="btn btn-sm" style="background:#f3f4f6;color:#9ca3af;font-size:.75rem;padding:2px 6px;cursor:not-allowed" disabled title="\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05DE\u05D7\u05D5\u05E7 \u2014 ' + qty + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05D1\u05DE\u05DC\u05D0\u05D9">\uD83D\uDDD1\uFE0F</button>'
+        : '<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;font-size:.75rem;padding:2px 6px" onclick="_deleteBrand(\'' + b.id + '\',' + i + ')" title="\u05DE\u05D7\u05E7 \u05DE\u05D5\u05EA\u05D2">\uD83D\uDDD1\uFE0F</button>';
+    }
     return `<tr data-idx="${i}"${inactive ? ' style="opacity:0.7"' : ''}>
-      <td><input value="${escapeHtml(b.name)}" onchange="brandsEdited[${i}].name=this.value"></td>
-      <td><select onchange="brandsEdited[${i}].type=this.value">
+      <td><input value="${escapeHtml(b.name)}" onchange="brandsEdited[${i}].name=this.value;${d}"></td>
+      <td><select onchange="brandsEdited[${i}].type=this.value;${d}">
         <option value="">—</option>
         <option value="יוקרה"${b.type==='יוקרה'?' selected':''}>יוקרה</option>
         <option value="מותג"${b.type==='מותג'?' selected':''}>מותג</option>
       </select></td>
-      <td><select onchange="brandsEdited[${i}].defaultSync=this.value">
+      <td><select onchange="brandsEdited[${i}].defaultSync=this.value;${d}">
         <option value="">—</option>
         <option value="מלא"${b.defaultSync==='מלא'?' selected':''}>מלא</option>
         <option value="תדמית"${b.defaultSync==='תדמית'?' selected':''}>תדמית</option>
         <option value="לא"${b.defaultSync==='לא'?' selected':''}>לא</option>
       </select></td>
       <td style="text-align:center"><input type="checkbox" ${b.active?'checked':''} onchange="setBrandActive('${b.id}',this.checked)" title="${b.active ? 'מותג פעיל' : 'מותג לא פעיל'}"></td>
-      <td><input type="checkbox" ${b.excludeWebsite?'checked':''} onchange="brandsEdited[${i}].excludeWebsite=this.checked"></td>
-      <td><input type="number" min="0" step="1" value="${b.minStockQty ?? ''}" placeholder="${b.type==='יוקרה'?'5':b.type==='מותג'?'15':'—'}" style="${minStockStyle}" data-id="${b.id||''}" data-field="min_stock_qty" class="brand-min-stock-input" onchange="brandsEdited[${i}].minStockQty=this.value===''?null:parseInt(this.value,10);${b.id?'saveBrandField(this)':''}"></td>
+      <td><input type="checkbox" ${b.excludeWebsite?'checked':''} onchange="brandsEdited[${i}].excludeWebsite=this.checked;${d}"></td>
+      <td><input type="number" min="0" step="1" value="${b.minStockQty ?? ''}" placeholder="${b.type==='יוקרה'?'5':b.type==='מותג'?'15':'—'}" style="${minStockStyle}" data-id="${b.id||''}" data-field="min_stock_qty" class="brand-min-stock-input" onchange="brandsEdited[${i}].minStockQty=this.value===''?null:parseInt(this.value,10);${d}${b.id?'saveBrandField(this)':''}"></td>
       <td style="text-align:center;font-weight:600;${color}">${qty}${isLow ? ' ⚠️' : ''}</td>
-      <td>${b.isNew ? '<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;font-size:.75rem;padding:2px 6px" onclick="_cancelNewBrand(' + i + ')" title="\u05D1\u05D8\u05DC">\u2716</button>' : ''}</td>
+      <td style="text-align:center">${delBtn}</td>
     </tr>`;
   }).join('');
 }
@@ -157,13 +168,48 @@ function _cancelNewBrand(filteredIdx) {
   renderBrandsTable();
 }
 
+function _markDirty(filteredIdx) {
+  var b = brandsEdited[filteredIdx];
+  if (b) b._dirty = true;
+}
+
+async function _deleteBrand(brandId, filteredIdx) {
+  var b = brandsEdited[filteredIdx];
+  if (!b || !brandId) return;
+  if (b.currentQty > 0) {
+    toast('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05DE\u05D7\u05D5\u05E7 \u2014 ' + b.currentQty + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05D1\u05DE\u05DC\u05D0\u05D9', 'w');
+    return;
+  }
+  var ok = await confirmDialog('\u05DE\u05D7\u05D9\u05E7\u05EA \u05DE\u05D5\u05EA\u05D2', '\u05DC\u05DE\u05D7\u05D5\u05E7 \u05D0\u05EA "' + escapeHtml(b.name) + '"?');
+  if (!ok) return;
+  promptPin('\u05DE\u05D7\u05D9\u05E7\u05EA \u05DE\u05D5\u05EA\u05D2', function(pin) {
+    verifyPinOnly(pin).then(function(valid) {
+      if (!valid) { toast('PIN \u05E9\u05D2\u05D5\u05D9', 'e'); return; }
+      _doDeleteBrand(brandId, b.name);
+    });
+  });
+}
+
+async function _doDeleteBrand(brandId, brandName) {
+  try {
+    var { error } = await sb.from('brands').update({ active: false })
+      .eq('id', brandId).eq('tenant_id', getTenantId());
+    if (error) throw error;
+    writeLog('brand_delete', null, { brand_id: brandId, brand_name: brandName });
+    toast('\u05D4\u05DE\u05D5\u05EA\u05D2 "' + brandName + '" \u05E0\u05DE\u05D7\u05E7', 's');
+    loadBrandsTab();
+  } catch (e) {
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e');
+  }
+}
+
 async function saveBrands() {
-  showLoading('שומר מותגים...');
+  showLoading('\u05E9\u05D5\u05DE\u05E8 \u05DE\u05D5\u05EA\u05D2\u05D9\u05DD...');
   try {
     let updCount = 0, createCount = 0;
-    // Update existing brands (from allBrandsData to capture all edits)
-    const existing = allBrandsData.filter(b => b.id && !b.isNew);
-    for (const b of existing) {
+    // Update only DIRTY existing brands
+    const dirtyExisting = allBrandsData.filter(b => b.id && !b.isNew && b._dirty);
+    for (const b of dirtyExisting) {
       const { error } = await sb.from('brands').update({
         name: b.name,
         brand_type: heToEn('brand_type', b.type) || null,
@@ -173,6 +219,7 @@ async function saveBrands() {
         min_stock_qty: b.minStockQty ?? null
       }).eq('id', b.id);
       if (error) throw new Error(error.message);
+      b._dirty = false;
       updCount++;
     }
 
@@ -193,6 +240,12 @@ async function saveBrands() {
       createCount = newBrands.length;
     }
 
+    var total = updCount + createCount;
+    if (total === 0) {
+      toast('\u05D0\u05D9\u05DF \u05E9\u05D9\u05E0\u05D5\u05D9\u05D9\u05DD \u05DC\u05E9\u05DE\u05D9\u05E8\u05D4', 'i');
+      hideLoading(); return;
+    }
+
     // Reload brands cache
     await loadLookupCaches();
     const { data: brandRows } = await sb.from('brands').select('*').eq('tenant_id', getTenantId());
@@ -208,10 +261,10 @@ async function saveBrands() {
     brands.forEach(b => { if (b.defaultSync) window.brandSyncCache[b.name] = b.defaultSync; });
 
     populateDropdowns();
-    toast(`נשמרו ${updCount + createCount} מותגים`, 's');
+    toast('\u05E0\u05E9\u05DE\u05E8\u05D5 ' + total + ' \u05DE\u05D5\u05EA\u05D2\u05D9\u05DD', 's');
     loadBrandsTab();
   } catch(e) {
-    setAlert('brands-alerts', 'שגיאה: '+(e.message||''), 'e');
+    setAlert('brands-alerts', '\u05E9\u05D2\u05D9\u05D0\u05D4: '+(e.message||''), 'e');
   }
   hideLoading();
 }
