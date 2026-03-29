@@ -60,11 +60,15 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   const supplier = supplierRows[0];
   if (!supplier) {
     console.error('createDocumentFromReceipt: supplier not found for receipt', receiptId, 'supplierId:', supplierId);
+    toast('\u05E7\u05D1\u05DC\u05D4 \u05D0\u05D5\u05E9\u05E8\u05D4 \u2014 \u05E1\u05E4\u05E7 \u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0, \u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 \u05DC\u05D0 \u05E0\u05D5\u05E6\u05E8', 'w');
     return null;
   }
 
   // Document type: receipt form selection → supplier default → 'delivery_note'
-  const docTypeCode = documentType || supplier.default_document_type || 'delivery_note';
+  // Map receipt form values to document_types table codes
+  var _docTypeMap = { 'tax_invoice': 'invoice', 'delivery_note': 'delivery_note', 'invoice': 'invoice', 'credit_note': 'credit_note' };
+  const rawDocTypeCode = documentType || supplier.default_document_type || 'delivery_note';
+  const docTypeCode = _docTypeMap[rawDocTypeCode] || rawDocTypeCode;
   const paymentTermsDays = supplier.payment_terms_days || 30;
   const currency = supplier.default_currency || 'ILS';
 
@@ -72,7 +76,8 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   const docTypes = await fetchAll(T.DOC_TYPES, [['code', 'eq', docTypeCode]]);
   const docType = docTypes[0];
   if (!docType) {
-    console.error('createDocumentFromReceipt: document_type not found for code', docTypeCode, 'tenant:', getTenantId());
+    console.error('createDocumentFromReceipt: document_type not found for code', rawDocTypeCode, '\u2192', docTypeCode, 'tenant:', getTenantId());
+    toast('\u05E7\u05D1\u05DC\u05D4 \u05D0\u05D5\u05E9\u05E8\u05D4 \u2014 \u05E1\u05D5\u05D2 \u05DE\u05E1\u05DE\u05DA "' + rawDocTypeCode + '" \u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0. \u05DE\u05E1\u05DE\u05DA \u05E1\u05E4\u05E7 \u05DC\u05D0 \u05E0\u05D5\u05E6\u05E8.', 'w');
     return null;
   }
 
