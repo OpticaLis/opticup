@@ -119,6 +119,7 @@
       <button class="debt-tab-btn" data-tab="prepaid" onclick="switchDebtTab('prepaid')">עסקאות מראש</button>
       <button class="debt-tab-btn" data-tab="weekly" onclick="switchDebtTab('weekly')">&#128202; דוח שבועי</button>
       <button class="debt-tab-btn" data-tab="returns" onclick="switchDebtTab('returns')">&#128260; זיכויים</button>
+      <button class="debt-tab-btn" data-tab="ai-learning" onclick="switchDebtTab('ai-learning')">&#129302; למידת AI</button>
     </div>
 
     <!-- Expense folders toggle -->
@@ -148,6 +149,9 @@
     </div>
     <div id="dtab-returns" class="debt-tab-content">
       <div id="debt-returns-tab-content"><div class="empty-state">טוען...</div></div>
+    </div>
+    <div id="dtab-ai-learning" class="debt-tab-content">
+      <div class="empty-state">טוען נתוני למידה...</div>
     </div>
   </div>
 
@@ -220,6 +224,7 @@
 <script src="modules/debt/ai/ai-historical-process.js?v=20260323"></script>
 <script src="modules/debt/ai/ai-weekly-report.js?v=20260321c"></script>
 <script src="modules/debt/ai/ai-config.js?v=20260321c"></script>
+<script src="modules/debt/ai/ai-learning-dashboard.js"></script>
 <script src="modules/debt/debt-info-content.js?v=20260321c"></script>
 <script src="modules/debt/debt-info-inject.js?v=20260321c"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" defer></script>
@@ -242,6 +247,7 @@ function switchDebtTab(tabName) {
   if (tabName === 'prepaid') loadPrepaidTab();
   if (tabName === 'weekly') initWeeklyReport();
   if (tabName === 'returns') initDebtReturnsTab();
+  if (tabName === 'ai-learning') loadAILearningTab();
 }
 
 // =========================================================
