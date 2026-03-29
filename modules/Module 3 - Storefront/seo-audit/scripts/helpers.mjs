@@ -112,9 +112,15 @@ export async function wpFetch(domain, endpoint, params = {}) {
     url.searchParams.set(k, String(v));
   }
   await sleep(config.delayMs);
-  return fetchWithRetry(url.toString(), {
+  // Try with Basic Auth first; fall back to no-auth for public endpoints
+  const result = await fetchWithRetry(url.toString(), {
     headers: { Authorization: basicAuthHeader() },
   });
+  if (result.status === 401) {
+    console.warn('  Auth failed, retrying without auth (public endpoint)...');
+    return fetchWithRetry(url.toString(), {});
+  }
+  return result;
 }
 
 export async function wcFetch(domain, endpoint, params = {}) {

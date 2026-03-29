@@ -1,0 +1,654 @@
+[
+  {
+    "id": 15,
+    "url": "https://ru.prizma-optic.co.il/",
+    "path": "/",
+    "slug": "home",
+    "title": "home",
+    "pageType": "homepage",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "оптика призма - ведущая оптика с 1985 года",
+      "metaDesc": "Более 40 лет опыта в подборе мультифокальных очков, детские проверки зрения и огромный выбор оправ от мировых брендов",
+      "canonical": "https://ru.prizma-optic.co.il/",
+      "ogImage": "https://ru.prizma-optic.co.il/wp-content/uploads/2024/09/cropped-פריזמה-פרופיל-1.png",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 3919,
+      "imageCount": 30
+    },
+    "categories": [],
+    "images": [
+      "https://ru.prizma-optic.co.il/wp-content/uploads/2024/09/cropped-פריזמה-פרופיל-1.png"
+    ],
+    "date": "2025-09-23T19:36:00",
+    "modified": "2025-11-18T11:16:01",
+    "lang": "ru"
+  },
+  {
+    "id": 8455,
+    "url": "https://ru.prizma-optic.co.il/%d0%bf%d1%80%d0%b0%d0%b2%d0%b8%d0%bb%d0%b0-%d0%bc%d0%be%d0%b1%d0%b8%d0%bb%d1%8c%d0%bd%d0%be%d0%b8-%d0%be%d0%bf%d1%82%d0%b8%d0%ba%d0%b8/",
+    "path": "/%d0%bf%d1%80%d0%b0%d0%b2%d0%b8%d0%bb%d0%b0-%d0%bc%d0%be%d0%b1%d0%b8%d0%bb%d1%8c%d0%bd%d0%be%d0%b8-%d0%be%d0%bf%d1%82%d0%b8%d0%ba%d0%b8/",
+    "slug": "%d0%bf%d1%80%d0%b0%d0%b2%d0%b8%d0%bb%d0%b0-%d0%bc%d0%be%d0%b1%d0%b8%d0%bb%d1%8c%d0%bd%d0%be%d0%b8-%d0%be%d0%bf%d1%82%d0%b8%d0%ba%d0%b8",
+    "title": "Правила обслуживания мобильной оптики «Prizma Optic»   «Призма Экспресс»",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Правила обслуживания мобильной оптики «Prizma Optic» - «Призма Экспресс» - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/правила-мобильнои-оптики/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 757,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2025-01-27T18:15:41",
+    "modified": "2025-01-27T18:23:22",
+    "lang": "ru"
+  },
+  {
+    "id": 8255,
+    "url": "https://ru.prizma-optic.co.il/terms-branches/",
+    "path": "/terms-branches/",
+    "slug": "terms-branches",
+    "title": "положение о филиале",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "положение о филиале - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/terms-branches/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 638,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2025-01-06T17:21:54",
+    "modified": "2025-01-27T20:00:41",
+    "lang": "ru"
+  },
+  {
+    "id": 8135,
+    "url": "https://ru.prizma-optic.co.il/deal/",
+    "path": "/deal/",
+    "slug": "deal",
+    "title": "Отмена транзакции",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Отмена транзакции - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/deal/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 438,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-12-18T16:37:55",
+    "modified": "2025-01-27T19:56:07",
+    "lang": "ru"
+  },
+  {
+    "id": 7506,
+    "url": "https://ru.prizma-optic.co.il/%d0%bb%d0%b8%d0%bd%d0%b7%d1%8b/",
+    "path": "/%d0%bb%d0%b8%d0%bd%d0%b7%d1%8b/",
+    "slug": "%d0%bb%d0%b8%d0%bd%d0%b7%d1%8b",
+    "title": "линзы",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "линзы - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/линзы/",
+      "ogImage": "https://ru.prizma-optic.co.il/wp-content/uploads/2024/11/1.jpg",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 199,
+      "imageCount": 15
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-12-05T15:52:23",
+    "modified": "2025-01-27T19:59:08",
+    "lang": "ru"
+  },
+  {
+    "id": 7483,
+    "url": "https://ru.prizma-optic.co.il/prizma-express-terms/",
+    "path": "/prizma-express-terms/",
+    "slug": "prizma-express-terms",
+    "title": "Регламент мобильной оптики",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Регламент мобильной оптики - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/prizma-express-terms/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 686,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-12-05T15:35:51",
+    "modified": "2025-01-27T20:00:18",
+    "lang": "ru"
+  },
+  {
+    "id": 6306,
+    "url": "https://ru.prizma-optic.co.il/%d1%81%d0%be%d0%b7%d0%b4%d0%b0%d0%bd%d0%b8%d0%b5-%d0%bf%d1%80%d0%be%d0%b4%d1%83%d0%ba%d1%82%d0%b0/",
+    "path": "/%d1%81%d0%be%d0%b7%d0%b4%d0%b0%d0%bd%d0%b8%d0%b5-%d0%bf%d1%80%d0%be%d0%b4%d1%83%d0%ba%d1%82%d0%b0/",
+    "slug": "%d1%81%d0%be%d0%b7%d0%b4%d0%b0%d0%bd%d0%b8%d0%b5-%d0%bf%d1%80%d0%be%d0%b4%d1%83%d0%ba%d1%82%d0%b0",
+    "title": "Создание продукта",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Создание продукта - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/создание-продукта/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 0,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-11-12T23:18:55",
+    "modified": "2025-01-27T19:57:22",
+    "lang": "ru"
+  },
+  {
+    "id": 6152,
+    "url": "https://ru.prizma-optic.co.il/multifocal/",
+    "path": "/multifocal/",
+    "slug": "multifocal",
+    "title": "Мультифокальные очки",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Мультифокальные очки - оптика призма",
+      "metaDesc": "Вся необходимая информация о мультифокальных очках — в одном месте: что такое Мультифокальные очки и всё, что нужно знать перед покупкой!",
+      "canonical": "https://ru.prizma-optic.co.il/multifocal/",
+      "ogImage": "https://ru.prizma-optic.co.il/wp-content/uploads/2025/01/5-2.jpg",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 4800,
+      "imageCount": 11
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-11-12T15:55:29",
+    "modified": "2025-03-23T15:35:24",
+    "lang": "ru"
+  },
+  {
+    "id": 5774,
+    "url": "https://ru.prizma-optic.co.il/prizmaexpress/",
+    "path": "/prizmaexpress/",
+    "slug": "prizmaexpress",
+    "title": "Призма Экспресс   Prizma Express",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Мобильная оптика – диагностика зрения у вас дома",
+      "metaDesc": "Prizma Express - Мобильная оптика – точная диагностика зрения и подбор очков у вас дома или в офисе, с учетом вашего образа жизни.",
+      "canonical": "https://ru.prizma-optic.co.il/prizmaexpress/",
+      "ogImage": "https://ru.prizma-optic.co.il/wp-content/uploads/2025/01/1-2.jpg",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 2545,
+      "imageCount": 37
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-10-20T18:28:24",
+    "modified": "2025-06-11T09:58:28",
+    "lang": "ru"
+  },
+  {
+    "id": 5761,
+    "url": "https://ru.prizma-optic.co.il/lab/",
+    "path": "/lab/",
+    "slug": "lab",
+    "title": "Рамочная лаборатория",
+    "pageType": "landing-page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Рамочная лаборатория - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/lab/",
+      "ogImage": "https://ru.prizma-optic.co.il/wp-content/uploads/2024/11/high-angle-man-putting-down-his-glasses-desk_23-2148429679.jpg",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 252,
+      "imageCount": 1
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-10-20T18:25:55",
+    "modified": "2025-02-03T15:57:37",
+    "lang": "ru"
+  },
+  {
+    "id": 5398,
+    "url": "https://ru.prizma-optic.co.il/%d1%81%d0%b2%d0%be%d0%b4%d0%ba%d0%b0-%d0%be-%d0%bf%d0%be%d0%ba%d1%83%d0%bf%d0%ba%d0%b5/",
+    "path": "/%d1%81%d0%b2%d0%be%d0%b4%d0%ba%d0%b0-%d0%be-%d0%bf%d0%be%d0%ba%d1%83%d0%bf%d0%ba%d0%b5/",
+    "slug": "%d1%81%d0%b2%d0%be%d0%b4%d0%ba%d0%b0-%d0%be-%d0%bf%d0%be%d0%ba%d1%83%d0%bf%d0%ba%d0%b5",
+    "title": "Сводка о покупке",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Сводка о покупке - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/сводка-о-покупке/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 0,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-10-01T10:54:53",
+    "modified": "2025-01-27T19:58:40",
+    "lang": "ru"
+  },
+  {
+    "id": 622,
+    "url": "https://ru.prizma-optic.co.il/sales/",
+    "path": "/sales/",
+    "slug": "sales",
+    "title": "акции",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "акции - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/sales/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 340,
+      "imageCount": 6
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-29T19:52:59",
+    "modified": "2025-02-17T14:04:11",
+    "lang": "ru"
+  },
+  {
+    "id": 394,
+    "url": "https://ru.prizma-optic.co.il/%d0%b2%d0%be%d0%bf%d1%80%d0%be%d1%81%d1%8b-%d0%b8-%d0%be%d1%82%d0%b2%d0%b5%d1%82%d1%8b/",
+    "path": "/%d0%b2%d0%be%d0%bf%d1%80%d0%be%d1%81%d1%8b-%d0%b8-%d0%be%d1%82%d0%b2%d0%b5%d1%82%d1%8b/",
+    "slug": "%d0%b2%d0%be%d0%bf%d1%80%d0%be%d1%81%d1%8b-%d0%b8-%d0%be%d1%82%d0%b2%d0%b5%d1%82%d1%8b",
+    "title": "Вопросы и ответы",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Вопросы и ответы - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/вопросы-и-ответы/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 1257,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-29T17:56:11",
+    "modified": "2025-01-27T20:00:07",
+    "lang": "ru"
+  },
+  {
+    "id": 29,
+    "url": "https://ru.prizma-optic.co.il/%d0%be%d1%82%d0%b3%d1%80%d1%83%d0%b7%d0%ba%d0%b8-%d0%b8-%d0%b2%d0%be%d0%b7%d0%b2%d1%80%d0%b0%d1%82%d1%8b/",
+    "path": "/%d0%be%d1%82%d0%b3%d1%80%d1%83%d0%b7%d0%ba%d0%b8-%d0%b8-%d0%b2%d0%be%d0%b7%d0%b2%d1%80%d0%b0%d1%82%d1%8b/",
+    "slug": "%d0%be%d1%82%d0%b3%d1%80%d1%83%d0%b7%d0%ba%d0%b8-%d0%b8-%d0%b2%d0%be%d0%b7%d0%b2%d1%80%d0%b0%d1%82%d1%8b",
+    "title": "Отгрузки и возвраты",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Отгрузки и возвраты - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/отгрузки-и-возвраты/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 607,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-29T17:53:22",
+    "modified": "2025-01-27T19:58:30",
+    "lang": "ru"
+  },
+  {
+    "id": 335,
+    "url": "https://ru.prizma-optic.co.il/%d0%b1%d0%bb%d0%be%d0%b3/",
+    "path": "/%d0%b1%d0%bb%d0%be%d0%b3/",
+    "slug": "%d0%b1%d0%bb%d0%be%d0%b3",
+    "title": "блог",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "блог - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/блог/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 0,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-29T17:36:46",
+    "modified": "2025-01-27T19:56:38",
+    "lang": "ru"
+  },
+  {
+    "id": 321,
+    "url": "https://ru.prizma-optic.co.il/%d1%81%d0%b2%d1%8f%d0%b7%d0%b0%d1%82%d1%8c%d1%81%d1%8f-%d1%81-%d0%bd%d0%b0%d0%bc%d0%b8/",
+    "path": "/%d1%81%d0%b2%d1%8f%d0%b7%d0%b0%d1%82%d1%8c%d1%81%d1%8f-%d1%81-%d0%bd%d0%b0%d0%bc%d0%b8/",
+    "slug": "%d1%81%d0%b2%d1%8f%d0%b7%d0%b0%d1%82%d1%8c%d1%81%d1%8f-%d1%81-%d0%bd%d0%b0%d0%bc%d0%b8",
+    "title": "Связаться с нами",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Связаться с нами - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/связаться-с-нами/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 68,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-29T17:31:46",
+    "modified": "2025-01-27T19:59:40",
+    "lang": "ru"
+  },
+  {
+    "id": 213,
+    "url": "https://ru.prizma-optic.co.il/brands/",
+    "path": "/brands/",
+    "slug": "brands",
+    "title": "Бренды",
+    "pageType": "landing-page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Бренды - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/brands/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 172,
+      "imageCount": 61
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-29T16:44:47",
+    "modified": "2025-01-27T19:58:08",
+    "lang": "ru"
+  },
+  {
+    "id": 31,
+    "url": "https://ru.prizma-optic.co.il/about/",
+    "path": "/about/",
+    "slug": "about",
+    "title": "о нас",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "о нас - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/about/",
+      "ogImage": "https://ru.prizma-optic.co.il/wp-content/uploads/2024/10/IMG_3728-scaled.jpg",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 493,
+      "imageCount": 2
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-23T19:43:31",
+    "modified": "2025-02-03T15:35:22",
+    "lang": "ru"
+  },
+  {
+    "id": 28,
+    "url": "https://ru.prizma-optic.co.il/account/",
+    "path": "/account/",
+    "slug": "account",
+    "title": "мой счет",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "мой счет - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/account/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 0,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-23T19:42:34",
+    "modified": "2025-01-27T19:56:48",
+    "lang": "ru"
+  },
+  {
+    "id": 27,
+    "url": "https://ru.prizma-optic.co.il/checkout/",
+    "path": "/checkout/",
+    "slug": "checkout",
+    "title": "оплата",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "оплата - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/checkout/",
+      "ogImage": "https://ru.prizma-optic.co.il/wp-content/plugins/gamapay/assets/images/cc.png",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 0,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-23T19:42:34",
+    "modified": "2025-01-27T20:00:51",
+    "lang": "ru"
+  },
+  {
+    "id": 26,
+    "url": "https://ru.prizma-optic.co.il/cart/",
+    "path": "/cart/",
+    "slug": "cart",
+    "title": "корзина",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "корзина - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/cart/",
+      "ogImage": "https://ru.prizma-optic.co.il/wp-content/uploads/2024/09/Dior-Diorbobby-B1U-300x300.png",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 0,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-23T19:42:34",
+    "modified": "2025-01-27T19:58:57",
+    "lang": "ru"
+  },
+  {
+    "id": 25,
+    "url": "https://ru.prizma-optic.co.il/shop/",
+    "path": "/shop/",
+    "slug": "shop",
+    "title": "магазин",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "магазин - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/shop/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 0,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-23T19:42:34",
+    "modified": "2025-01-27T19:57:31",
+    "lang": "ru"
+  },
+  {
+    "id": 13,
+    "url": "https://ru.prizma-optic.co.il/terms/",
+    "path": "/terms/",
+    "slug": "terms",
+    "title": "Регламент и условия использования сайта",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Регламент и условия использования сайта - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/terms/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 3486,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-23T19:36:25",
+    "modified": "2025-01-27T20:00:29",
+    "lang": "ru"
+  },
+  {
+    "id": 10,
+    "url": "https://ru.prizma-optic.co.il/accessibility/",
+    "path": "/accessibility/",
+    "slug": "accessibility",
+    "title": "Заявление о доступности",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "Заявление о доступности - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/accessibility/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 257,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-23T19:36:12",
+    "modified": "2025-01-27T19:57:48",
+    "lang": "ru"
+  },
+  {
+    "id": 3,
+    "url": "https://ru.prizma-optic.co.il/privacy/",
+    "path": "/privacy/",
+    "slug": "privacy",
+    "title": "политика конфиденциальности",
+    "pageType": "page",
+    "status": "publish",
+    "seo": {
+      "plugin": "yoast",
+      "metaTitle": "политика конфиденциальности - оптика призма",
+      "metaDesc": "",
+      "canonical": "https://ru.prizma-optic.co.il/privacy/",
+      "ogImage": "",
+      "schemaType": "WebPage"
+    },
+    "content": {
+      "wordCount": 824,
+      "imageCount": 0
+    },
+    "categories": [],
+    "images": [],
+    "date": "2024-09-22T14:26:18",
+    "modified": "2025-09-05T09:13:15",
+    "lang": "ru"
+  }
+]

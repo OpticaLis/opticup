@@ -1,0 +1,234 @@
+[
+  {
+    "id": 6,
+    "name": "אורך מוט",
+    "slug": "pa_אורך-מוט",
+    "type": "select",
+    "order_by": "menu_order",
+    "has_archives": false,
+    "_links": {
+      "self": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes/6",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes"
+        }
+      ]
+    }
+  },
+  {
+    "id": 5,
+    "name": "גודל",
+    "slug": "pa_גודל",
+    "type": "select",
+    "order_by": "menu_order",
+    "has_archives": false,
+    "_links": {
+      "self": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes/5",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes"
+        }
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "name": "חומר",
+    "slug": "pa_חומר",
+    "type": "select",
+    "order_by": "menu_order",
+    "has_archives": false,
+    "_links": {
+      "self": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes/3",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes"
+        }
+      ]
+    }
+  },
+  {
+    "id": 4,
+    "name": "סוג מסגרת",
+    "slug": "pa_סוג-מסגרת",
+    "type": "select",
+    "order_by": "menu_order",
+    "has_archives": false,
+    "_links": {
+      "self": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes/4",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes"
+        }
+      ]
+    }
+  },
+  {
+    "id": 1,
+    "name": "צבע",
+    "slug": "pa_צבע",
+    "type": "select",
+    "order_by": "menu_order",
+    "has_archives": false,
+    "_links": {
+      "self": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes/1",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes"
+        }
+      ]
+    }
+  },
+  {
+    "id": 8,
+    "name": "צבע עדשה",
+    "slug": "pa_צבע-עדשה",
+    "type": "select",
+    "order_by": "menu_order",
+    "has_archives": false,
+    "_links": {
+      "self": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes/8",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes"
+        }
+      ]
+    }
+  },
+  {
+    "id": 7,
+    "name": "צבע קוד",
+    "slug": "pa_צבע-קוד",
+    "type": "select",
+    "order_by": "menu_order",
+    "has_archives": false,
+    "_links": {
+      "self": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes/7",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes"
+        }
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "name": "צורה",
+    "slug": "pa_צורה",
+    "type": "select",
+    "order_by": "menu_order",
+    "has_archives": false,
+    "_links": {
+      "self": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes/2",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://prizma-optic.co.il/wp-json/wc/v3/products/attributes"
+        }
+      ]
+    }
+  }
+]
