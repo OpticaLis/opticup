@@ -444,11 +444,6 @@
         <div class="form-group"><label>מספר מסמך <span class="req">*</span></label>
           <input type="text" id="rcpt-number" placeholder="מס׳ חשבונית">
           <span id="rcpt-main-amount-wrap" style="display:none;align-items:center;gap:4px;margin-top:4px;font-size:.82rem;color:#3730a3"><span>₪</span><input type="number" step="0.01" min="0" placeholder="סכום" style="width:80px;padding:2px 4px;border:1px solid #c7d2fe;border-radius:3px;font-size:.78rem;text-align:center"></span>
-          <div id="rcpt-extra-nums" style="margin-top:4px;display:none">
-            <div id="rcpt-extra-nums-tags" style="margin-bottom:4px"></div>
-            <div id="rcpt-extra-nums-add" style="display:none"><input type="text" id="rcpt-extra-num-input" placeholder="מספר מסמך נוסף..." style="flex:1;font-size:.85rem;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px">
-            <button type="button" class="btn btn-sm" style="font-size:.78rem;background:#e5e7eb" onclick="_addRcptExtraNum()">+ הוסף</button></div>
-          </div>
         </div>
         <div class="form-group"><label>תאריך קבלה</label>
           <input type="date" id="rcpt-date">
@@ -466,6 +461,13 @@
           <div id="rcpt-attach-preview" style="display:none;align-items:center;gap:8px;padding:8px 10px;background:var(--g100,#f3f4f6);border-radius:6px;margin-top:4px"></div>
           <button class="btn btn-g btn-sm" id="rcpt-attach-btn" onclick="_pickReceiptFile()" style="width:100%;display:none">&#128206; צרף מסמך</button>
           <span id="rcpt-attach-name" style="font-size:.78rem;color:var(--g600);display:none"></span>
+        </div>
+      </div>
+      <div id="rcpt-extra-nums" style="display:none;margin-top:8px;padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px">
+        <div id="rcpt-extra-nums-tags"></div>
+        <div id="rcpt-extra-nums-add" style="display:none;gap:6px;align-items:center">
+          <input type="text" id="rcpt-extra-num-input" placeholder="מספר מסמך נוסף..." style="flex:1;font-size:.85rem;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px">
+          <button type="button" class="btn btn-sm" style="font-size:.78rem;background:#e5e7eb" onclick="_addRcptExtraNum()">+ הוסף</button>
         </div>
       </div>
     </div>
