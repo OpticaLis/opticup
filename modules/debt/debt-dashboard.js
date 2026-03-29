@@ -62,19 +62,24 @@ async function loadDebtSummary() {
       const rate = Number(p.exchange_rate) || 1;
       paidThisMonth += Number(p.amount) * rate;
     });
-    // Factor in prepaid deals + adjustments: יתרה סופית = debt - deals + adjustments
+    // Factor in payments + deals + adjustments: יתרה = paid + deals - debt + adj
     var [_dashDeals, _dashAdj] = await Promise.all([
       sb.from(T.PREPAID_DEALS).select('total_prepaid').eq('tenant_id', tid).eq('status', 'active').eq('is_deleted', false),
       sb.from(T.BAL_ADJ).select('amount').eq('tenant_id', tid)
     ]);
     var totalDealAmount = (_dashDeals.data || []).reduce(function(s, d) { return s + (Number(d.total_prepaid) || 0); }, 0);
     var totalAdjAmount = (_dashAdj.data || []).reduce(function(s, a) { return s + (Number(a.amount) || 0); }, 0);
-    var finalBalance = totalDebt - totalDealAmount + totalAdjAmount;
+    var finalBalance = paidThisMonth + totalDealAmount - totalDebt + totalAdjAmount;
+    // Note: paidThisMonth is only this month's payments for the card; for overall balance
+    // we need total payments. Use a separate query:
+    var { data: _allPayments } = await sb.from(T.SUP_PAYMENTS).select('amount, exchange_rate').eq('tenant_id', tid);
+    var totalAllPaid = (_allPayments || []).reduce(function(s, p) { return s + (Number(p.amount) || 0) * (Number(p.exchange_rate) || 1); }, 0);
+    finalBalance = totalAllPaid + totalDealAmount - totalDebt + totalAdjAmount;
 
     document.getElementById('val-total-debt').textContent = formatILS(finalBalance);
-    // Color: positive (we owe) = red, negative (credit) = green
+    // Positive = credit (green), Negative = we owe (red)
     var balEl = document.getElementById('val-total-debt');
-    if (balEl) balEl.style.color = finalBalance < 0 ? '#059669' : (finalBalance > 0 ? '#dc2626' : '');
+    if (balEl) balEl.style.color = finalBalance > 0 ? '#059669' : (finalBalance < 0 ? '#dc2626' : '');
     document.getElementById('val-due-week').textContent = formatILS(dueThisWeek);
     document.getElementById('val-overdue').textContent = formatILS(overdue);
     document.getElementById('val-paid-month').textContent = formatILS(paidThisMonth);
@@ -184,9 +189,12 @@ async function loadSuppliersTab() {
     });
     var todayStr = new Date().toISOString().slice(0, 10);
 
-    // Build per-supplier payment flag
-    var payBySup = {};
-    (payments || []).forEach(function(p) { payBySup[p.supplier_id] = true; });
+    // Sum payments per supplier (total amount paid)
+    var paidBySup = {};
+    (payments || []).forEach(function(p) {
+      var rate = Number(p.exchange_rate) || 1;
+      paidBySup[p.supplier_id] = (paidBySup[p.supplier_id] || 0) + (Number(p.amount) || 0) * rate;
+    });
 
     _supTabData = suppliers.map(function(sup) {
       var cutoff = sup.opening_balance_date || null;
@@ -197,6 +205,7 @@ async function loadSuppliersTab() {
         return true;
       });
       var openCount = supDocs.length;
+      // totalDebt = opening_balance + sum of open doc remaining amounts
       var totalDebt = Number(sup.opening_balance) || 0;
       var overdueAmt = 0, nextDue = null;
       supDocs.forEach(function(d) {
@@ -213,14 +222,16 @@ async function loadSuppliersTab() {
       var dealTotal = deal ? (Number(deal.total_prepaid) || 0) : 0;
       var dealUsed = deal ? (Number(deal.total_used) || 0) : 0;
       var dealRemaining = dealTotal - dealUsed;
-      var hasReceiptDocs = allSupDocs.some(function(d) { return !!d.goods_receipt_id; });
-      var hasHistory = allSupDocs.length > 0 || !!payBySup[sup.id] || !!deal;
-      // יתרה סופית = debt - deal total + adjustments
+      var totalPaid = paidBySup[sup.id] || 0;
       var totalAdj = adjBySupplier[sup.id] || 0;
-      var finalBalance = totalDebt - dealTotal + totalAdj;
+      var hasReceiptDocs = allSupDocs.some(function(d) { return !!d.goods_receipt_id; });
+      var hasHistory = allSupDocs.length > 0 || totalPaid > 0 || !!deal;
+      // יתרה סופית = paid + deals - debt + adjustments
+      // Positive = credit (green), Negative = we owe (red)
+      var finalBalance = totalPaid + dealTotal - totalDebt + totalAdj;
       return {
         id: sup.id, name: sup.name, openCount: openCount, totalDebt: totalDebt,
-        finalBalance: finalBalance,
+        finalBalance: finalBalance, totalPaid: totalPaid,
         overdueAmt: overdueAmt, nextDue: nextDue, hasDeal: !!deal,
         dealTotal: dealTotal, dealUsed: dealUsed, dealRemaining: dealRemaining,
         openingBalance: Number(sup.opening_balance) || 0, openingBalanceDate: cutoff,
@@ -312,7 +323,8 @@ function renderSuppliersTable(data) {
   var rows = data.map(function(s) {
     var overdueStyle = s.overdueAmt > 0 ? ' style="color:var(--error);font-weight:600"' : '';
     // יתרה סופית: positive = red (we owe), negative = green (credit)
-    var balColor = s.finalBalance < 0 ? 'color:#059669;font-weight:600' : (s.finalBalance > 0 ? 'color:#dc2626;font-weight:600' : '');
+    // Positive = credit (green), Negative = we owe (red)
+    var balColor = s.finalBalance > 0 ? 'color:#059669;font-weight:600' : (s.finalBalance < 0 ? 'color:#dc2626;font-weight:600' : '');
     var obCell = s.openingBalance > 0
       ? formatILS(s.openingBalance) + (s.openingBalanceDate ? '' : ' <span title="\u05D7\u05E1\u05E8 \u05EA\u05D0\u05E8\u05D9\u05DA cutoff" style="color:#f59e0b">\u26A0\uFE0F</span>')
       : '\u2014';
