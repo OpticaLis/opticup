@@ -175,13 +175,16 @@ const FIELD_MAP = {
     'התראות פעילות':'alerts_enabled','ימי תזכורת תשלום':'payment_reminder_days',
     'התראת איחור':'overdue_alert','התראת מקדמה':'prepaid_threshold_alert',
     'התראת חריגה':'anomaly_alert','דוח שבועי פעיל':'weekly_report_enabled',
-    'יום דוח שבועי':'weekly_report_day','מקור מפתח':'api_key_source'
+    'יום דוח שבועי':'weekly_report_day','מקור מפתח':'api_key_source',
+    'סריקות עד הצעה':'suggest_after_invoices','סריקות עד אוטומטי':'auto_after_invoices',
+    'סף דיוק מינימלי':'auto_min_accuracy'
   },
   supplier_ocr_templates: {
     'שם תבנית':'template_name','סוג מסמך':'document_type_code',
     'רמזי חילוץ':'extraction_hints','פעמים בשימוש':'times_used',
     'פעמים תוקן':'times_corrected','אחוז דיוק':'accuracy_rate','פעיל':'is_active',
-    'שמות ספק חלופיים':'supplier_name_aliases'
+    'שמות ספק חלופיים':'supplier_name_aliases','שלב למידה':'learning_stage',
+    'שדות שהוצעו':'fields_suggested','שדות שאושרו':'fields_accepted'
   },
   ocr_extractions: {
     'קובץ':'file_url','שם קובץ':'file_name','תגובה גולמית':'raw_response',

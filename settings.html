@@ -130,6 +130,28 @@
       </div>
     </div>
 
+    <!-- Section 4: AI Learning -->
+    <div class="settings-section">
+      <h2 class="settings-section-title">&#129302; למידת AI</h2>
+      <div class="settings-grid">
+        <div class="settings-field">
+          <label for="set-ai-suggest-after">סריקות עד הצעה</label>
+          <input type="number" id="set-ai-suggest-after" min="1" max="20" value="3">
+          <small style="color:var(--g400);font-size:.78rem">אחרי כמה סריקות מאותו ספק ה-AI יתחיל להציע מילוי</small>
+        </div>
+        <div class="settings-field">
+          <label for="set-ai-auto-after">סריקות עד אוטומטי</label>
+          <input type="number" id="set-ai-auto-after" min="3" max="50" value="7">
+          <small style="color:var(--g400);font-size:.78rem">אחרי כמה סריקות (עם דיוק גבוה) ה-AI ימלא אוטומטית</small>
+        </div>
+        <div class="settings-field">
+          <label for="set-ai-min-accuracy">סף דיוק מינימלי (%)</label>
+          <input type="number" id="set-ai-min-accuracy" min="50" max="100" step="1" value="85">
+          <small style="color:var(--g400);font-size:.78rem">ה-AI צריך להגיע לדיוק הזה לפני מעבר למצב אוטומטי</small>
+        </div>
+      </div>
+    </div>
+
     <div class="settings-actions">
       <button class="btn-p" id="save-settings" onclick="saveSettings()">&#128190; שמור הגדרות</button>
     </div>

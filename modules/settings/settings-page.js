@@ -39,6 +39,8 @@ async function loadSettings() {
     if (!data) { toast('שגיאה: דייר לא נמצא', 'e'); return; }
 
     renderSettings(data);
+    // Load AI learning config from separate table
+    await loadAIConfig();
   } catch (err) {
     console.error('loadSettings error:', err);
     toast('שגיאה בטעינת הגדרות: ' + err.message, 'e');
@@ -208,6 +210,9 @@ async function saveSettings() {
     // Update tenant_config in sessionStorage for VAT and other settings
     storeTenantConfig(updates);
 
+    // Save AI learning config (separate table)
+    var aiOk = await saveAIConfig();
+
     toast('ההגדרות נשמרו בהצלחה', 's');
   } catch (err) {
     console.error('saveSettings error:', err);
@@ -224,4 +229,68 @@ function storeTenantConfig(data) {
   const existing = JSON.parse(sessionStorage.getItem('tenant_config') || '{}');
   const merged = Object.assign(existing, data);
   sessionStorage.setItem('tenant_config', JSON.stringify(merged));
+}
+
+// =========================================================
+// AI Learning Config — separate table: ai_agent_config
+// =========================================================
+const AI_SETTINGS_FIELDS = [
+  { id: 'set-ai-suggest-after', col: 'suggest_after_invoices', type: 'number', min: 1, max: 20 },
+  { id: 'set-ai-auto-after',    col: 'auto_after_invoices',    type: 'number', min: 3, max: 50 },
+  { id: 'set-ai-min-accuracy',  col: 'auto_min_accuracy',      type: 'number', min: 50, max: 100 }
+];
+
+async function loadAIConfig() {
+  try {
+    var tid = getTenantId();
+    var { data, error } = await sb.from('ai_agent_config').select('suggest_after_invoices, auto_after_invoices, auto_min_accuracy').eq('tenant_id', tid).maybeSingle();
+    if (error) { console.warn('loadAIConfig:', error.message); return; }
+    if (!data) return; // no config row yet — defaults from HTML
+    AI_SETTINGS_FIELDS.forEach(function(f) {
+      var el = document.getElementById(f.id);
+      if (el && data[f.col] != null) el.value = data[f.col];
+    });
+  } catch (e) { console.warn('loadAIConfig error:', e); }
+}
+
+function validateAIConfig() {
+  var suggest = Number(document.getElementById('set-ai-suggest-after').value) || 3;
+  var auto = Number(document.getElementById('set-ai-auto-after').value) || 7;
+  var accuracy = Number(document.getElementById('set-ai-min-accuracy').value) || 85;
+  if (suggest >= auto) {
+    toast('\u05E1\u05E8\u05D9\u05E7\u05D5\u05EA \u05E2\u05D3 \u05D4\u05E6\u05E2\u05D4 \u05D7\u05D9\u05D9\u05D1 \u05DC\u05D4\u05D9\u05D5\u05EA \u05E7\u05D8\u05DF \u05DE\u05E1\u05E8\u05D9\u05E7\u05D5\u05EA \u05E2\u05D3 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9', 'e');
+    return false;
+  }
+  if (accuracy < 50 || accuracy > 100) {
+    toast('\u05E1\u05E3 \u05D3\u05D9\u05D5\u05E7 \u05D7\u05D9\u05D9\u05D1 \u05DC\u05D4\u05D9\u05D5\u05EA \u05D1\u05D9\u05DF 50 \u05DC-100', 'e');
+    return false;
+  }
+  return true;
+}
+
+async function saveAIConfig() {
+  if (!validateAIConfig()) return false;
+  try {
+    var tid = getTenantId();
+    var updates = {};
+    AI_SETTINGS_FIELDS.forEach(function(f) {
+      var el = document.getElementById(f.id);
+      if (el) updates[f.col] = Number(el.value) || null;
+    });
+    // Upsert: update if exists, insert if not
+    var { data: existing } = await sb.from('ai_agent_config').select('id').eq('tenant_id', tid).maybeSingle();
+    if (existing) {
+      var { error } = await sb.from('ai_agent_config').update(updates).eq('tenant_id', tid);
+      if (error) throw error;
+    } else {
+      updates.tenant_id = tid;
+      var { error: insErr } = await sb.from('ai_agent_config').insert(updates);
+      if (insErr) throw insErr;
+    }
+    return true;
+  } catch (e) {
+    console.error('saveAIConfig error:', e);
+    toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E9\u05DE\u05D9\u05E8\u05EA \u05D4\u05D2\u05D3\u05E8\u05D5\u05EA AI: ' + (e.message || ''), 'e');
+    return false;
+  }
 }
