@@ -1,6 +1,20 @@
 // receipt-ocr.js — OCR integration in goods receipt flow
 // Load after: receipt-form.js, receipt-ocr-supplier.js, receipt-ocr-po.js
 var _rcptOcrResult = null; // stored when OCR applied, used for learning
+var _rcptOcrStage = null;  // { learning_stage, times_used, accuracy_rate } for current supplier
+
+// --- Fetch supplier's learning stage from ocr_templates ---
+async function _getSupplierLearningStage(supplierId) {
+  try {
+    var { data } = await sb.from(T.OCR_TEMPLATES)
+      .select('learning_stage, times_used, accuracy_rate')
+      .eq('tenant_id', getTenantId())
+      .eq('supplier_id', supplierId)
+      .eq('is_active', true)
+      .maybeSingle();
+    return data || { learning_stage: 'learning', times_used: 0, accuracy_rate: 0 };
+  } catch (e) { return { learning_stage: 'learning', times_used: 0, accuracy_rate: 0 }; }
+}
 
 // --- Per-field confidence helpers ---
 function _rcptOcrFC(ext, f) {
@@ -174,36 +188,64 @@ async function _applyOCRToReceipt(result, fileUrl) {
   }
   _rcptOcrShowBanner(conf, 0, 0, fileUrl, _ocrValidation);
 
-  // Path A: PO matched — highlights in main table, no review modal
-  // Path B: No PO — open review modal for item matching
-  if (Array.isArray(items) && items.length > 0) {
-    if (poMatched && window._ocrPOComparison) {
-      toast('AI \u05D4\u05E9\u05D5\u05D5\u05D4 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DC\u05D4\u05D6\u05DE\u05E0\u05EA \u05E8\u05DB\u05E9 \u2014 \u05D1\u05D3\u05D5\u05E7 \u05E1\u05D9\u05DE\u05D5\u05E0\u05D9\u05DD \u05E6\u05D4\u05D5\u05D1\u05D9\u05DD \u05D1\u05D8\u05D1\u05DC\u05D4', 'i');
-      setTimeout(function() { if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights(); }, 300);
-      _rcptOcrShowCompareBtn();
-    } else if (supFilled) {
-      // Path B: supplier known but no PO — check for open POs or open review
-      window._ocrReviewShown = true;
-      var poSel = $('rcpt-po-select');
-      var hasOpenPOs = poSel && poSel.options && poSel.options.length > 1 && !poSel.disabled;
-      if (hasOpenPOs) {
-        window._pendingOcrClassified = await _rcptOcrClassifyItems(items, supplierId);
-        window._pendingOcrRawItems = items;
-        _rcptOcrShowPOChoiceModal();
-      } else {
-        var classified = await _rcptOcrClassifyItems(items, supplierId);
-        _rcptOcrShowReview(classified, function(confirmed) {
-          _rcptOcrApplyToForm(confirmed, items);
-          if (window._ocrPOComparison) setTimeout(_applyOcrHighlights, 200);
-        });
-      }
-    } else {
-      // Path C: supplier NOT identified — store items, wait for manual selection
-      window._pendingOcrRawItems = items;
-      window._ocrReviewShown = false;
-    }
-  } else {
+  // --- Fetch supplier's learning stage ---
+  _rcptOcrStage = supplierId ? await _getSupplierLearningStage(supplierId) : null;
+  var stage = _rcptOcrStage ? _rcptOcrStage.learning_stage : 'learning';
+
+  // Path A: PO matched — highlights in main table (stage doesn't affect PO compare)
+  if (Array.isArray(items) && items.length > 0 && poMatched && window._ocrPOComparison) {
+    toast('AI \u05D4\u05E9\u05D5\u05D5\u05D4 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05DC\u05D4\u05D6\u05DE\u05E0\u05EA \u05E8\u05DB\u05E9 \u2014 \u05D1\u05D3\u05D5\u05E7 \u05E1\u05D9\u05DE\u05D5\u05E0\u05D9\u05DD \u05E6\u05D4\u05D5\u05D1\u05D9\u05DD \u05D1\u05D8\u05D1\u05DC\u05D4', 'i');
+    setTimeout(function() { if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights(); }, 300);
+    _rcptOcrShowCompareBtn();
+    _rcptOcrShowStageIndicator(stage);
+    return;
+  }
+
+  // Path B/C: No PO — behavior depends on learning stage
+  if (!Array.isArray(items) || items.length === 0) {
     toast('\u05D4\u05DE\u05E1\u05DE\u05DA \u05E0\u05E1\u05E8\u05E7 \u2014 \u05DC\u05D0 \u05D6\u05D5\u05D4\u05D5 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD', 'w');
+    _rcptOcrShowStageIndicator(stage);
+    return;
+  }
+
+  if (!supFilled) {
+    // Supplier NOT identified — store items, wait for manual selection
+    window._pendingOcrRawItems = items;
+    window._ocrReviewShown = false;
+    _rcptOcrShowStageIndicator(stage);
+    return;
+  }
+
+  // --- Stage-aware item processing ---
+  if (stage === 'learning') {
+    // LEARNING: header filled, no items — user enters manually
+    _rcptOcrShowStageIndicator(stage);
+    toast('\uD83D\uDD34 AI \u05DC\u05D5\u05DE\u05D3 \u05E2\u05DC \u05D4\u05E1\u05E4\u05E7 \u05D4\u05D6\u05D4 \u2014 \u05D4\u05DB\u05E0\u05E1 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05D9\u05D3\u05E0\u05D9\u05EA', 'i');
+    // Store items for learning on confirm (even though we don't display them)
+    window._pendingOcrRawItems = items;
+  } else if (stage === 'auto') {
+    // AUTO: add items directly to table, skip review modal
+    _rcptOcrShowStageIndicator(stage);
+    var classified = await _rcptOcrClassifyItems(items, supplierId);
+    _rcptOcrApplyToForm(classified, items);
+    toast('\uD83D\uDFE2 AI \u05DE\u05D9\u05DC\u05D0 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA \u2014 \u05D1\u05D3\u05D5\u05E7 \u05D5\u05D0\u05E9\u05E8', 's');
+  } else {
+    // SUGGESTING (default): show review modal
+    _rcptOcrShowStageIndicator(stage);
+    window._ocrReviewShown = true;
+    var poSel2 = $('rcpt-po-select');
+    var hasOpenPOs = poSel2 && poSel2.options && poSel2.options.length > 1 && !poSel2.disabled;
+    if (hasOpenPOs) {
+      window._pendingOcrClassified = await _rcptOcrClassifyItems(items, supplierId);
+      window._pendingOcrRawItems = items;
+      _rcptOcrShowPOChoiceModal();
+    } else {
+      var classified2 = await _rcptOcrClassifyItems(items, supplierId);
+      _rcptOcrShowReview(classified2, function(confirmed) {
+        _rcptOcrApplyToForm(confirmed, items);
+        if (window._ocrPOComparison) setTimeout(_applyOcrHighlights, 200);
+      });
+    }
   }
 }
 
@@ -225,6 +267,30 @@ function _rcptOcrShowSupplierHint(confidence, name, matchType) {
   var se = $('rcpt-supplier'); if (se && se.parentNode) se.parentNode.appendChild(hint);
 }
 
+
+// --- Stage indicator: show learning/suggesting/auto near OCR banner ---
+function _rcptOcrShowStageIndicator(stage) {
+  var old = $('rcpt-ocr-stage'); if (old) old.remove();
+  if (!_rcptOcrStage) return;
+  var s = _rcptOcrStage;
+  var el = document.createElement('div'); el.id = 'rcpt-ocr-stage';
+  el.style.cssText = 'font-size:.82rem;padding:6px 12px;border-radius:6px;margin-bottom:8px;direction:rtl';
+  if (stage === 'learning') {
+    el.style.background = '#fef2f2'; el.style.color = '#991b1b'; el.style.border = '1px solid #fecaca';
+    el.textContent = '\uD83D\uDD34 AI \u05DC\u05D5\u05DE\u05D3 \u05E2\u05DC \u05D4\u05E1\u05E4\u05E7 \u05D4\u05D6\u05D4 (' + (s.times_used || 0) + ' \u05E1\u05E8\u05D9\u05E7\u05D5\u05EA) \u2014 \u05D4\u05DB\u05E0\u05E1 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05D9\u05D3\u05E0\u05D9\u05EA';
+  } else if (stage === 'auto') {
+    var acc = s.accuracy_rate != null ? Math.round(s.accuracy_rate) : '—';
+    el.style.background = '#f0fdf4'; el.style.color = '#166534'; el.style.border = '1px solid #bbf7d0';
+    el.textContent = '\uD83D\uDFE2 AI \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9 (\u05D3\u05D9\u05D5\u05E7 ' + acc + '%) \u2014 \u05D1\u05D3\u05D5\u05E7 \u05D5\u05D0\u05E9\u05E8';
+  } else {
+    var acc2 = s.accuracy_rate != null ? Math.round(s.accuracy_rate) : '—';
+    el.style.background = '#fffbeb'; el.style.color = '#92400e'; el.style.border = '1px solid #fde68a';
+    el.textContent = '\uD83D\uDFE1 AI \u05DE\u05E6\u05D9\u05E2 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD (' + (s.times_used || 0) + ' \u05E1\u05E8\u05D9\u05E7\u05D5\u05EA, \u05D3\u05D9\u05D5\u05E7 ' + acc2 + '%) \u2014 \u05D1\u05D3\u05D5\u05E7 \u05D5\u05EA\u05E7\u05DF';
+  }
+  var banner = $('rcpt-ocr-banner');
+  if (banner && banner.parentNode) banner.parentNode.insertBefore(el, banner.nextSibling);
+  else { var s2 = $('rcpt-step2'); if (s2) s2.insertBefore(el, s2.firstChild); }
+}
 
 // --- Phase 8: PO auto-suggestion after supplier fill ---
 async function _rcptOcrSuggestPO(ext) {
@@ -301,7 +367,29 @@ async function _rcptOcrUpdateTemplate() {
     var finalDate = ($('rcpt-date') || {}).value || '', ocrDate = fv('document_date');
     if (ocrDate && String(ocrDate) !== finalDate) corrections.document_date = { ai: ocrDate, user: finalDate };
     var docType = fv('document_type') || 'delivery_note';
-    await updateOCRTemplate(supplierId, docType, Object.keys(corrections).length > 0 ? corrections : null, ext);
+
+    // Count fields suggested vs accepted for per-field accuracy tracking
+    var fieldsSuggested = 0, fieldsAccepted = 0;
+    // Check each header field: if AI suggested a value, count it
+    var fieldChecks = [
+      { ocr: fv('supplier_name'), final: ($('rcpt-supplier') || {}).value },
+      { ocr: ocrDocNum, final: finalDocNum },
+      { ocr: fv('document_type'), final: ($('rcpt-type') || {}).value },
+      { ocr: ocrDate, final: finalDate },
+      { ocr: fv('subtotal'), final: null },  // no direct form field to compare
+      { ocr: fv('total_amount'), final: null }
+    ];
+    fieldChecks.forEach(function(fc) {
+      if (fc.ocr != null && String(fc.ocr).trim()) {
+        fieldsSuggested++;
+        // If no final value to compare (subtotal/total), count as accepted
+        if (fc.final == null || String(fc.ocr) === String(fc.final)) fieldsAccepted++;
+      }
+    });
+
+    await updateOCRTemplate(supplierId, docType,
+      Object.keys(corrections).length > 0 ? corrections : null, ext,
+      null, fieldsSuggested, fieldsAccepted);
     // Phase 8 Step 5: save item-level corrections
     if (window._lastOcrItemCorrections) {
       var lc = window._lastOcrItemCorrections;

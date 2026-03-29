@@ -346,6 +346,9 @@ function openNewReceipt() {
   window._pendingOcrRawItems = null;
   window._pendingOcrClassified = null;
   if (typeof _rcptOcrHideCompareBtn === 'function') _rcptOcrHideCompareBtn();
+  var _ocrBanner = $('rcpt-ocr-banner'); if (_ocrBanner) _ocrBanner.remove();
+  var _ocrStage = $('rcpt-ocr-stage'); if (_ocrStage) _ocrStage.remove();
+  window._rcptOcrStage = null;
   $('rcpt-date').valueAsDate = new Date();
   $('rcpt-notes').value = '';
   $('rcpt-items-body').innerHTML = '';
