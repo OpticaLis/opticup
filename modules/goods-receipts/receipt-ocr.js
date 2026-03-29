@@ -98,6 +98,8 @@ async function _applyOCRToReceipt(result, fileUrl) {
   var supMatch = result.supplier_match;
   _rcptOcrResult = { extracted_data: ext, supplier_match: supMatch, extraction_id: result.extraction_id };
   var fv = function(f) { var v = ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v; };
+  // Capture PO state BEFORE supplier auto-fill (which may reset the PO dropdown)
+  var _preOcrPoId = ($('rcpt-po-select') || {}).value || null;
   var supFilled = false;
   var ocrSupName = fv('supplier_name') || '';
   if (supMatch && supMatch.id) {
@@ -231,6 +233,22 @@ async function _applyOCRToReceipt(result, fileUrl) {
         if (window._ocrPOComparison) setTimeout(_applyOcrHighlights, 200);
       });
     }
+  }
+
+  // --- PO comparison: runs in ALL stages when a PO is linked ---
+  // Uses _preOcrPoId captured before supplier auto-fill reset the dropdown.
+  var poIdForCompare = ($('rcpt-po-select') || {}).value || _preOcrPoId || null;
+  if (poIdForCompare && Array.isArray(items) && items.length > 0 && typeof OcrPOMatch !== 'undefined') {
+    (async function() {
+      try {
+        var { data: poItems } = await sb.from(T.PO_ITEMS).select('*').eq('tenant_id', getTenantId()).eq('po_id', poIdForCompare);
+        if (poItems && poItems.length) {
+          window._ocrPOComparison = OcrPOMatch.compareItems(items, poItems);
+          if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights();
+          if (typeof _rcptOcrShowCompareBtn === 'function') _rcptOcrShowCompareBtn();
+        }
+      } catch (e) { console.warn('PO comparison in stage flow:', e); }
+    })();
   }
 }
 
