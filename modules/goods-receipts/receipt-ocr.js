@@ -49,7 +49,7 @@ function _rcptOcrUpdateBtn() {
   if (btn) btn.style.display = _pendingReceiptFile ? '' : 'none';
 }
 
-// --- 2. Trigger OCR scan — upload file, call Edge Function ---
+// --- 2. Trigger OCR scan — upload ALL staged files, call Edge Function ---
 async function _rcptOcrScan() {
   // Cached re-scan: PO selected after first scan → compare without re-uploading
   if (typeof _rcptOcrCachedRescan === 'function' && await _rcptOcrCachedRescan()) return;
@@ -58,21 +58,36 @@ async function _rcptOcrScan() {
   if (!jwt) { toast('\u05E0\u05D3\u05E8\u05E9\u05EA \u05D4\u05EA\u05D7\u05D1\u05E8\u05D5\u05EA \u05DE\u05D7\u05D3\u05E9', 'e'); return; }
   var supplierName = ($('rcpt-supplier') || {}).value || '';
   var supplierId = supplierName ? (supplierCache[supplierName] || null) : null;
-  showLoading('\u05DE\u05E2\u05DC\u05D4 \u05E7\u05D5\u05D1\u05E5 \u05D5\u05E1\u05D5\u05E8\u05E7...');
+  // Collect ALL staged files (not just first)
+  var filesToScan = (typeof _pendingReceiptFiles !== 'undefined' && _pendingReceiptFiles.length) ? _pendingReceiptFiles : [_pendingReceiptFile];
+  var fileCount = filesToScan.length;
+  showLoading('\u05DE\u05E2\u05DC\u05D4 ' + fileCount + ' \u05E7\u05D1\u05E6\u05D9\u05DD \u05D5\u05E1\u05D5\u05E8\u05E7...');
   try {
-    var uploadResult = await uploadSupplierFile(_pendingReceiptFile, supplierId || 'ocr-pending');
-    if (!uploadResult || !uploadResult.url) {
-      hideLoading(); toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05E2\u05DC\u05D0\u05EA \u05E7\u05D5\u05D1\u05E5', 'e'); return;
+    // Upload all files
+    var uploadedUrls = [];
+    for (var fi = 0; fi < filesToScan.length; fi++) {
+      var ur = await uploadSupplierFile(filesToScan[fi], supplierId || 'ocr-pending');
+      if (ur && ur.url) uploadedUrls.push(ur.url);
     }
-    var fileUrl = uploadResult.url;
-    _pendingReceiptFileUrl = fileUrl; // track for cleanup if user removes file
+    if (!uploadedUrls.length) {
+      hideLoading(); toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05E2\u05DC\u05D0\u05EA \u05E7\u05D1\u05E6\u05D9\u05DD', 'e'); return;
+    }
+    _pendingReceiptFileUrl = uploadedUrls[0];
     var rcptType = ($('rcpt-type') || {}).value || null;
+
+    // Send all file URLs in one request (Edge Function handles multi-file)
+    var body = {
+      supplier_id: supplierId,
+      document_type_hint: rcptType,
+      tenant_id: getTenantId()
+    };
+    if (uploadedUrls.length === 1) { body.file_url = uploadedUrls[0]; }
+    else { body.file_urls = uploadedUrls; }
 
     var res = await fetch(SUPABASE_URL + '/functions/v1/ocr-extract', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ file_url: fileUrl, supplier_id: supplierId,
-        document_type_hint: rcptType, tenant_id: getTenantId() })
+      body: JSON.stringify(body)
     });
     if (!res.ok) {
       var err = await res.json().catch(function() { return {}; });
@@ -81,7 +96,7 @@ async function _rcptOcrScan() {
     var result = await res.json();
     hideLoading();
     if (result.success && result.extracted_data) {
-      await _applyOCRToReceipt(result, fileUrl);
+      await _applyOCRToReceipt(result, uploadedUrls[0]);
     } else {
       toast(result.error || '\u05DC\u05D0 \u05D4\u05E6\u05DC\u05D7\u05E0\u05D5 \u05DC\u05E7\u05E8\u05D5\u05D0 \u05D0\u05EA \u05D4\u05DE\u05E1\u05DE\u05DA', 'e');
     }
