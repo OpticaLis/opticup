@@ -127,21 +127,54 @@ var TableResize = (function() {
     wrap.dataset.stickyBar = 'true';
   }
 
-  // --- Auto-discover tables with id on the page ---
-  function autoInit() {
-    // Find tables that have an id and a thead — these are data tables
-    document.querySelectorAll('table[id]').forEach(function(table) {
-      if (!table.querySelector('thead th')) return;
-      // Skip very small tables (e.g., layout tables)
-      var thCount = table.querySelectorAll('thead th').length;
-      if (thCount < 3) return;
-      register(table.id);
-    });
+  // --- Auto-ID counter for tables without id ---
+  var _autoId = 0;
+
+  // --- Check if a table should be initialized ---
+  function _shouldInit(table) {
+    if (!table || !table.querySelector('thead th')) return false;
+    if (table.dataset.resizeInit) return false;
+    // Skip tiny tables (layout, config)
+    if (table.querySelectorAll('thead th').length < 3) return false;
+    // Skip tables inside modal overlays (transient — rebuilt each time)
+    if (table.closest('.modal-overlay, .ocr-modal-box, [id*="review-modal"]')) return false;
+    return true;
   }
 
-  // Auto-init on page load
+  // --- Ensure table has an id, then init ---
+  function _autoInitTable(table) {
+    if (!_shouldInit(table)) return;
+    if (!table.id) {
+      var parent = table.closest('[id]');
+      table.id = parent ? parent.id + '-table' : 'auto-tbl-' + (++_autoId);
+    }
+    if (!_initialized[table.id]) {
+      _initialized[table.id] = true;
+      _initTable(table, table.id);
+    }
+  }
+
+  // --- Scan page for all data tables ---
+  function autoInit() {
+    document.querySelectorAll('table').forEach(_autoInitTable);
+  }
+
+  // --- MutationObserver: watch for dynamically added tables ---
+  var _obsTimer = null;
+  var _obs = new MutationObserver(function() {
+    // Debounce: many mutations fire in rapid succession during innerHTML renders.
+    // A short delay lets the full table DOM settle before we scan.
+    if (_obsTimer) return;
+    _obsTimer = setTimeout(function() {
+      _obsTimer = null;
+      document.querySelectorAll('table').forEach(_autoInitTable);
+    }, 300);
+  });
+
+  // Auto-init on page load + start observer
   document.addEventListener('DOMContentLoaded', function() {
     setTimeout(autoInit, 800);
+    _obs.observe(document.body, { childList: true, subtree: true });
   });
 
   // Backward compat
