@@ -113,7 +113,8 @@ async function callClaudeMulti(
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: CLAUDE_MODEL, max_tokens: 4096,
+        model: CLAUDE_MODEL,
+        max_tokens: contentBlocks.length > 2 ? 8192 : 4096,  // more tokens for multi-file
         messages: [{ role: "user", content: contentBlocks }],
       }),
       signal: ctrl.signal,
@@ -286,9 +287,18 @@ Deno.serve(async (req) => {
     });
   };
 
-  if (!textBlock?.text) { await saveFailedExtraction(); return errRes("לא הצלחנו לקרוא את המסמך", 422); }
+  if (!textBlock?.text) {
+    await saveFailedExtraction();
+    const stopReason = (claudeRes as Record<string, unknown>).stop_reason;
+    console.error("No text in Claude response. stop_reason:", stopReason, "content types:", content?.map(c => c.type));
+    return errRes("לא הצלחנו לקרוא את המסמך — Claude לא החזיר טקסט" + (stopReason ? ` (${stopReason})` : ""), 422);
+  }
   const extracted = parseJson(textBlock.text);
-  if (!extracted) { await saveFailedExtraction(); return errRes("לא הצלחנו לקרוא את המסמך", 422); }
+  if (!extracted) {
+    await saveFailedExtraction();
+    console.error("Failed to parse Claude response as JSON. First 200 chars:", textBlock.text.substring(0, 200));
+    return errRes("לא הצלחנו לקרוא את המסמך — תגובה לא תקינה מ-AI", 422);
+  }
 
   // Calculate overall confidence
   const confFields = ["supplier_name", "document_type", "document_number", "document_date", "total_amount"];

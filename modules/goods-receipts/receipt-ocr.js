@@ -72,6 +72,9 @@ async function _rcptOcrScan() {
     if (!uploadedUrls.length) {
       hideLoading(); toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D4\u05E2\u05DC\u05D0\u05EA \u05E7\u05D1\u05E6\u05D9\u05DD', 'e'); return;
     }
+    if (uploadedUrls.length < filesToScan.length) {
+      toast('\u05D4\u05D5\u05E2\u05DC\u05D5 ' + uploadedUrls.length + ' \u05DE\u05EA\u05D5\u05DA ' + filesToScan.length + ' \u05E7\u05D1\u05E6\u05D9\u05DD', 'w');
+    }
     _pendingReceiptFileUrl = uploadedUrls[0];
     var rcptType = ($('rcpt-type') || {}).value || null;
 
