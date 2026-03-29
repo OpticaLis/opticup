@@ -43,7 +43,7 @@ function addReceiptItemRow(data) {
   tr.innerHTML = `
     <td>${rcptRowNum}</td>
     <td><input type="text" class="rcpt-barcode" value="${escapeHtml(data?.barcode || '')}" readonly style="background:${data?.barcode ? '#f0f0f0' : '#fff8e1'}"></td>
-    <td><input type="text" class="rcpt-brand" value="${escapeHtml(data?.brand || '')}" ${isExisting ? 'readonly style="background:#f0f0f0"' : ''}></td>
+    <td>${(isNew && !fromPo) ? '<span class="rcpt-brand-cell"></span><input type="hidden" class="rcpt-brand" value="' + escapeHtml(data?.brand || '') + '">' : '<input type="text" class="rcpt-brand" value="' + escapeHtml(data?.brand || '') + '" ' + (isExisting ? 'readonly style="background:#f0f0f0"' : '') + '>'}</td>
     <td><input type="text" class="rcpt-model" value="${escapeHtml(data?.model || '')}" ${isExisting ? 'style="background:#f5f5f5"' : ''}></td>
     <td><input type="text" class="rcpt-color" value="${escapeHtml(data?.color || '')}" ${isExisting ? 'style="background:#f5f5f5"' : ''}></td>
     <td><input type="text" class="rcpt-size" value="${escapeHtml(data?.size || '')}" ${isExisting ? 'style="background:#f5f5f5"' : ''}></td>
@@ -110,6 +110,24 @@ function addReceiptItemRow(data) {
     if (defSync) tr.querySelector('.rcpt-sync').value = defSync;
   }
   if (data?.sync) tr.querySelector('.rcpt-sync').value = data.sync;
+
+  // Add brand search-select for manual new rows (not PO, not barcode-matched)
+  if (isNew && !fromPo && typeof createSearchSelect === 'function' && typeof activeBrands === 'function') {
+    var brandCell = tr.querySelector('.rcpt-brand-cell');
+    var brandHidden = tr.querySelector('input.rcpt-brand[type="hidden"]');
+    if (brandCell && brandHidden) {
+      var brandNames = activeBrands().map(function(b) { return b.name; });
+      var ss = createSearchSelect(brandNames, data?.brand || '', function(val) {
+        brandHidden.value = val;
+        // Auto-set sync from brand default
+        var defSync = getBrandSync(val);
+        if (defSync) tr.querySelector('.rcpt-sync').value = defSync;
+      });
+      ss.style.minWidth = '100px';
+      brandCell.appendChild(ss);
+    }
+  }
+
   tb.appendChild(tr);
   tb.appendChild(noteRow);
   updateReceiptItemsStats();
