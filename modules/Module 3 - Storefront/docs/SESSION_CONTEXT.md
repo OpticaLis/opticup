@@ -1,58 +1,54 @@
 # Module 3 — Storefront — Session Context
 
 ## Current Phase: Phase 0 — SEO Site Audit & URL Mapping
-## Status: 🔄 In Progress — BLOCKED at Steps 4-6 (need .env credentials)
+## Status: ✅ Complete
 
 ## Step Tracking
 
 | Step | Status | Description | Notes |
 |------|--------|-------------|-------|
 | 1 | ✅ | Setup: folders, .gitignore, dependencies | Commit 70c73f2 |
-| 2 | ✅ | Create helpers.mjs | 207 lines, 14 exports |
-| 3 | ✅ | Create crawl-wp-api.mjs | 233 lines, --help works |
-| 4 | BLOCKED | Test API connectivity | .env has REPLACE_ME — Daniel must fill credentials |
-| 5 | BLOCKED | Run full crawl: Hebrew + WooCommerce | Depends on Step 4 |
-| 6 | BLOCKED | Run crawl: English + Russian | Depends on Step 4 |
-| 7 | ✅ | Create generate-report.mjs | 230 lines, loads correctly |
-| 8 | BLOCKED | Generate reports | Depends on Steps 5-6 data |
-| 9 | 🔄 | Final review & documentation | MODULE_MAP + CHANGELOG created, final review pending |
+| 2 | ✅ | Create helpers.mjs | 213 lines, 15 exports |
+| 3 | ✅ | Create crawl-wp-api.mjs | 233 lines, CLI works |
+| 4 | ✅ | Test API connectivity | WP(no-auth fallback)+WC+EN+RU all 200. Yoast SEO detected. |
+| 5 | ✅ | Run full crawl: Hebrew + WooCommerce | 58 posts, 84 pages, 735 products, 12 cats, 1175 tags, 8 attrs |
+| 6 | ✅ | Run crawl: English + Russian | EN: 43 posts, 25 pages. RU: 42 posts, 25 pages |
+| 7 | ✅ | Create generate-report.mjs | 230 lines, generates JSON+MD+CSV |
+| 8 | ✅ | Generate reports | 1024 URLs total (889 HE, 68 EN, 67 RU) |
+| 9 | ✅ | Final review & documentation | Credential check passed, docs updated |
 
-## BLOCKED: Steps 4-6 — Need API Credentials
+## Crawl Summary
 
-**Action required by Daniel:**
-1. Open: `modules/Module 3 - Storefront/seo-audit/scripts/.env`
-2. Replace REPLACE_ME with real values:
-   - `WP_APP_PASSWORD` — WordPress Application Password for user daniel_725
-   - `WC_CONSUMER_KEY` — WooCommerce REST API Consumer Key
-   - `WC_CONSUMER_SECRET` — WooCommerce REST API Consumer Secret
-3. Save the file
-4. Start new Claude Code session with: `AUTONOMOUS_CONTINUE`
+| Domain | Posts | Pages | Products | Categories | Tags |
+|--------|-------|-------|----------|------------|------|
+| Hebrew (prizma-optic.co.il) | 58 | 84 | 735 | 12 WC + 9 WP | 1175 WC + 72 WP |
+| English (en.prizma-optic.co.il) | 43 | 25 | — | — | — |
+| Russian (ru.prizma-optic.co.il) | 42 | 25 | — | — | — |
+| **Total URLs** | | | **1024** | | |
 
-## To Continue (AUTONOMOUS_CONTINUE)
-1. Verify `.env` has real credentials (no REPLACE_ME)
-2. Run Step 4: test API connectivity
-3. Run Step 5: `node crawl-wp-api.mjs he`
-4. Run Step 6: `node crawl-wp-api.mjs en` + `node crawl-wp-api.mjs ru`
-5. Run Step 8: `node generate-report.mjs`
-6. Complete Step 9: final review, credential check, git tag
+## URL Type Breakdown
 
-## Last Commits
-- `70c73f2` — M3 Phase 0 Step 1: Setup folders, .gitignore, dependencies, SESSION_CONTEXT
-- `4a2a0bc` — M3 Phase 0 Steps 2-3: helpers.mjs + crawl-wp-api.mjs (checkpoint)
+| Type | Count |
+|------|-------|
+| product | 735 |
+| blog-post | 143 |
+| page | 124 |
+| product-category | 12 |
+| landing-page | 7 |
+| homepage | 3 |
 
-## Open Issues
-- BLOCKED: Steps 4-6 need .env credentials filled by Daniel
+## Commits
+- `70c73f2` — Step 1: Setup folders, .gitignore, dependencies
+- `4a2a0bc` — Steps 2-3: helpers.mjs + crawl-wp-api.mjs
+- `fb6ad27` — Steps 7+9: generate-report.mjs + docs
+- `a3b2b08` — Steps 4-6: API connectivity + full crawl data
 
 ## Decisions Made
-- Skipped Steps 4-6 (need credentials), proceeded to Step 7 (code-only)
-- Created generate-report.mjs independently since it doesn't need API access
+- WP Basic Auth returns 401 on Hebrew site → added no-auth fallback for public endpoints (works fine)
+- Skipped Steps 4-6 initially (no credentials), built Step 7 first, then resumed after credentials filled
 
-## Files Created
-- `seo-audit/scripts/helpers.mjs` — 207 lines, utilities + API helpers
-- `seo-audit/scripts/crawl-wp-api.mjs` — 233 lines, WP + WC crawl script
-- `seo-audit/scripts/generate-report.mjs` — 230 lines, report generator
-- `seo-audit/scripts/package.json` — dependencies: dotenv, node-fetch
-- `seo-audit/scripts/.env` — template with REPLACE_ME (NOT committed)
-- `docs/SESSION_CONTEXT.md` — this file
-- `docs/MODULE_MAP.md` — code map
-- `docs/CHANGELOG.md` — phase history
+## What's Next
+1. Daniel reviews `seo-audit/url-inventory.md`
+2. Daniel fills `seo-audit/url-mapping-template.csv` (old→new URL mapping)
+3. Strategic chat → URL structure decisions for Astro
+4. Phase 1 → Astro project setup
