@@ -97,6 +97,7 @@ async function _applyOCRToReceipt(result, fileUrl) {
   var conf = result.confidence_score || 0;
   var supMatch = result.supplier_match;
   _rcptOcrResult = { extracted_data: ext, supplier_match: supMatch, extraction_id: result.extraction_id };
+  if (typeof _rcptOcrToggleLearnBtn === 'function') _rcptOcrToggleLearnBtn();
   var fv = function(f) { var v = ext[f]; return (v && typeof v === 'object' && 'value' in v) ? v.value : v; };
   // Capture PO state BEFORE supplier auto-fill (which may reset the PO dropdown)
   var _preOcrPoId = ($('rcpt-po-select') || {}).value || null;

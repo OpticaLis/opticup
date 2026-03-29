@@ -265,6 +265,7 @@ function openNewReceipt() {
   var _ocrBanner = $('rcpt-ocr-banner'); if (_ocrBanner) _ocrBanner.remove();
   var _ocrStage = $('rcpt-ocr-stage'); if (_ocrStage) _ocrStage.remove();
   window._rcptOcrStage = null;
+  if (typeof _rcptOcrToggleLearnBtn === 'function') _rcptOcrToggleLearnBtn();
   $('rcpt-date').valueAsDate = new Date();
   $('rcpt-notes').value = '';
   $('rcpt-items-body').innerHTML = '';

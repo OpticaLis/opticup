@@ -500,6 +500,7 @@
       <button class="btn btn-g" onclick="saveReceiptDraft()">&#128190; שמור טיוטה</button>
       <button class="btn" id="rcpt-gen-barcodes-btn" onclick="generateReceiptBarcodes()" style="background:#7c3aed;color:#fff">&#127991; יצירת ברקודים</button>
       <button class="btn btn-s" onclick="confirmReceipt()" data-permission="goods_receipt.confirm">&#10004; אשר קבלה ועדכן מלאי</button>
+      <button class="btn" id="rcpt-confirm-learn-btn" onclick="_rcptOcrConfirmAndLearn()" data-permission="goods_receipt.confirm" style="background:#7c3aed;color:#fff;display:none">&#129302; אשר ולמד את ה-AI</button>
       <button class="btn btn-g btn-sm" onclick="exportReceiptExcel()" data-permission="goods_receipt.export" style="margin-right:auto">&#128194; ייצוא Excel</button>
     </div>
   </div>
@@ -919,6 +920,7 @@
 <script src="modules/goods-receipts/receipt-ocr.js"></script>
 <script src="modules/goods-receipts/receipt-ocr-review.js"></script>
 <script src="modules/goods-receipts/receipt-ocr-learn.js"></script>
+<script src="modules/goods-receipts/receipt-ocr-confirm-learn.js"></script>
 <script src="modules/goods-receipts/receipt-actions.js"></script>
 <script src="modules/goods-receipts/receipt-confirm-items.js"></script>
 <script src="modules/goods-receipts/receipt-confirm.js"></script>
