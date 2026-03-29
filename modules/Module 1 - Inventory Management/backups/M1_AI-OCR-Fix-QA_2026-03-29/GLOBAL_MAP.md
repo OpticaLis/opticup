@@ -481,24 +481,16 @@ Client-side column sorting utility. Global `SortUtils` object.
 | `SortUtils.updateHeaders` | `thead, key, dir` | `void` | Set sort-asc/sort-desc CSS classes on th[data-sort-key] |
 | `SortUtils.getState` | `tableId` | `{key,dir}\|null` | Get current sort state for table |
 
-### shared/js/table-resize.js (186 lines) — Rewritten AI OCR Fix + QA phase
+### shared/js/table-resize.js (103 lines) — Debt Module Upgrades
 
-Auto-discovery table resize + sticky scrollbar + per-user column width persistence. Loaded on all 4 data pages.
-
-**Features:**
-- Auto-discovers tables via MutationObserver (debounced 300ms scan on DOM changes)
-- Auto-generates IDs for tables without one (`parent-id + '-table'`)
-- Resizable columns via CSS `resize: horizontal`
-- Sticky scrollbar at viewport bottom for wide tables
-- Per-user localStorage persistence (`col-w-{employeeId}-{tableId}`)
-- 15 tables auto-initialized across inventory (9), suppliers-debt (4), employees (2)
+Reusable column resizing with sticky scrollbar for all data tables. Extracted from debt module, generalized.
 
 **Functions:**
 
 | Function | Parameters | Returns | Description |
 |----------|-----------|---------|-------------|
-| `TableResize.register` | `tableId: string` | `void` | Register a table by ID for resize + scrollbar + persistence |
-| `TableResize.autoInit` | — | `void` | Scan all tables on page, auto-register those with id + thead + ≥3 columns |
+| `initResizableColumns` | `tableEl` | `void` | Adds resize handles to table headers, enables drag-to-resize |
+| `initStickyScrollbar` | `tableEl` | `void` | Adds a sticky scrollbar at viewport bottom for wide tables |
 
 ### shared/tests/table-test.html (235 lines)
 
