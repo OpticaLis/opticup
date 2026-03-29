@@ -16,19 +16,36 @@ async function _rcptOcrRunComparison() {
   if (typeof _rcptOcrResult === 'undefined' || !_rcptOcrResult) {
     toast('\u05D0\u05D9\u05DF \u05E0\u05EA\u05D5\u05E0\u05D9 \u05E1\u05E8\u05D9\u05E7\u05D4 \u2014 \u05E1\u05E8\u05D5\u05E7 \u05E7\u05D5\u05D3\u05DD \u05E2\u05DD AI', 'e'); return;
   }
-  var poSel = $('rcpt-po-select');
-  var ocrItems = (_rcptOcrResult.extracted_data || {}).items || [];
-  if (poSel && poSel.value && ocrItems.length > 0 && typeof OcrPOMatch !== 'undefined') {
-    var r = await sb.from(T.PO_ITEMS).select('*').eq('tenant_id', getTenantId()).eq('po_id', poSel.value);
-    if (r.data) { window._ocrPOComparison = OcrPOMatch.compareItems(ocrItems, r.data); }
+  // Extract OCR items — unwrap {value, confidence} wrapper if present
+  var rawItems = (_rcptOcrResult.extracted_data || {}).items;
+  if (rawItems && typeof rawItems === 'object' && 'value' in rawItems) rawItems = rawItems.value;
+  var ocrItems = Array.isArray(rawItems) ? rawItems : [];
+  if (ocrItems.length === 0) {
+    toast('\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0\u05D5 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05D1\u05E1\u05E8\u05D9\u05E7\u05D4 \u2014 \u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D4\u05E9\u05D5\u05D5\u05EA', 'w'); return;
   }
+  // Find PO ID — try current dropdown, then rcptLinkedPoId fallback
+  var poId = ($('rcpt-po-select') || {}).value || null;
+  if (!poId && typeof rcptLinkedPoId !== 'undefined') poId = rcptLinkedPoId;
+  if (!poId) {
+    toast('\u05D0\u05D9\u05DF \u05D4\u05D6\u05DE\u05E0\u05EA \u05E8\u05DB\u05E9 \u05DE\u05E7\u05D5\u05E9\u05E8\u05EA \u2014 \u05D1\u05D7\u05E8 \u05D4\u05D6\u05DE\u05E0\u05D4 \u05E7\u05D5\u05D3\u05DD', 'w'); return;
+  }
+  if (typeof OcrPOMatch === 'undefined') { toast('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05E4\u05E0\u05D9\u05DE\u05D9\u05EA', 'e'); return; }
+  // Fetch PO items and run comparison
+  var r = await sb.from(T.PO_ITEMS).select('*').eq('tenant_id', getTenantId()).eq('po_id', poId);
+  if (!r.data || r.data.length === 0) {
+    toast('\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0\u05D5 \u05E4\u05E8\u05D9\u05D8\u05D9 \u05D4\u05D6\u05DE\u05E0\u05D4', 'w'); return;
+  }
+  window._ocrPOComparison = OcrPOMatch.compareItems(ocrItems, r.data);
   if (typeof _applyOcrHighlights === 'function') _applyOcrHighlights();
   var comp = window._ocrPOComparison || [];
+  if (comp.length === 0) {
+    toast('\u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D4\u05E9\u05D5\u05D5\u05EA \u2014 \u05D0\u05D9\u05DF \u05DE\u05E1\u05E4\u05D9\u05E7 \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD', 'w'); return;
+  }
   var issues = comp.filter(function(c) { return c.status !== 'match'; });
   if (issues.length === 0) {
     toast('\u2705 \u05DB\u05DC \u05D4\u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD \u2014 \u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0\u05D5 \u05D0\u05D9-\u05D4\u05EA\u05D0\u05DE\u05D5\u05EA', 's');
   } else {
-    toast('\u05E0\u05DE\u05E6\u05D0\u05D5 ' + issues.length + ' \u05D0\u05D9-\u05D4\u05EA\u05D0\u05DE\u05D5\u05EA \u2014 \u05D1\u05D3\u05D5\u05E7 \u05E1\u05D9\u05DE\u05D5\u05E0\u05D9\u05DD \u05E6\u05D4\u05D5\u05D1\u05D9\u05DD', 'w');
+    toast('\u05E0\u05DE\u05E6\u05D0\u05D5 ' + issues.length + ' \u05D0\u05D9-\u05D4\u05EA\u05D0\u05DE\u05D5\u05EA \u05DE\u05EA\u05D5\u05DA ' + comp.length + ' \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD \u2014 \u05D1\u05D3\u05D5\u05E7 \u05E1\u05D9\u05DE\u05D5\u05E0\u05D9\u05DD', 'w');
   }
 }
 
@@ -38,6 +55,7 @@ async function _rcptOcrCachedRescan() {
   var poSel = $('rcpt-po-select');
   if (!poSel || !poSel.value) return false;
   var cachedItems = (_rcptOcrResult.extracted_data || {}).items;
+  if (cachedItems && typeof cachedItems === 'object' && 'value' in cachedItems) cachedItems = cachedItems.value;
   if (!Array.isArray(cachedItems) || cachedItems.length === 0) return false;
   var { data: poItems } = await sb.from(T.PO_ITEMS).select('*').eq('tenant_id', getTenantId()).eq('po_id', poSel.value);
   if (poItems && typeof OcrPOMatch !== 'undefined') {
