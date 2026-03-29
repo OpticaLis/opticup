@@ -58,7 +58,7 @@ Supabase init, constants, caches, UI helpers, navigation. **Loads FIRST on every
 | `SUPABASE_URL` | `const string` | Supabase project URL |
 | `SUPABASE_ANON` | `const string` | Supabase anon key |
 | `sb` | `SupabaseClient` | Supabase client instance (reassigned on JWT auth) |
-| `T` | `const object` | Table name constants (38 entries, includes T.IMAGES for inventory_images) |
+| `T` | `const object` | Table name constants (37 entries, includes T.BAL_ADJ for supplier_balance_adjustments) |
 | `FIELD_MAP` | `const object` | Hebrew→English column name maps per table |
 | `FIELD_MAP_REV` | `const object` | English→Hebrew column name maps (auto-generated) |
 | `ENUM_MAP` | `const object` | Hebrew→English enum value maps per category |
@@ -533,7 +533,7 @@ Pages modified for shared/ dependencies:
 | `decrement_inventory` | Inventory | `inv_id UUID, delta INTEGER` | `void` | Reduction, Access Sync, Supplier Returns |
 | `set_inventory_qty` | Inventory | `inv_id UUID, new_qty INTEGER` | `void` | Stock Count (approval) |
 | `next_internal_doc_number` | Debt | `p_tenant_id UUID` | `TEXT` (DOC-NNNN) | Debt Documents, Receipt-Debt auto-create |
-| `update_ocr_template_stats` | AI Agent | `p_tenant_id UUID, p_supplier_id UUID, p_doc_type_code TEXT, p_was_corrected BOOLEAN, p_new_hints JSONB` | `void` | AI OCR, Historical Import |
+| `update_ocr_template_stats` | AI Agent | `p_tenant_id UUID, p_supplier_id UUID, p_doc_type_code TEXT, p_was_corrected BOOLEAN, p_new_hints JSONB, p_fields_suggested INT DEFAULT 0, p_fields_accepted INT DEFAULT 0` | `JSON {id, times_used, accuracy_rate, learning_stage}` | AI OCR, Historical Import, receipt-ocr-learn.js. Auto-advances learning_stage based on ai_agent_config thresholds. |
 | `next_box_number` | Shipments | `p_tenant_id UUID` | `TEXT` ({prefix}-NNNN) | Shipments Create |
 | `increment_paid_amount` | Module 1.5 (Phase 3) | `p_doc_id UUID, p_delta NUMERIC` | `void` | Debt Payment Allocation |
 | `increment_prepaid_used` | Module 1.5 (Phase 3) | `p_deal_id UUID, p_delta NUMERIC` | `void` | Receipt-Debt (prepaid auto-deduct) |
@@ -561,7 +561,7 @@ Pages modified for shared/ dependencies:
 | Contract Function | Owner Module | Parameters | Returns | Used By |
 |-------------------|-------------|-----------|---------|---------|
 | `pin-auth` | Auth | `POST {pin, slug}` | `{token, employee}` | auth-service.js (`verifyEmployeePIN`) |
-| `ocr-extract` | AI Agent | `POST {file_path} + JWT` | `{extracted_data, confidence, ...}` | ai-ocr.js, ai-batch-ocr.js |
+| `ocr-extract` | AI Agent (v4) | `POST {file_url OR file_urls[]} + JWT` | `{extracted_data, confidence, files_scanned, ...}` | ai-ocr.js, receipt-ocr.js. Multi-file: sends all files to Claude Vision in single call. max_tokens 8192 for multi-file. Deploy: `--no-verify-jwt`. |
 | `remove-background` | Inventory Images | `POST {image_base64, session_token} + anon key` | `{image_base64, format, size}` | inventory-images-bg.js (`_bgRunAI`) |
 
 ### JS Contracts — Global Functions
@@ -702,7 +702,7 @@ Pages modified for shared/ dependencies:
 
 | Module | Status | Directory | HTML Pages | DB Tables (count) |
 |--------|--------|-----------|------------|-------------------|
-| Module 1 — Inventory Management | ✅ Complete | `modules/inventory/`, `modules/purchasing/`, `modules/goods-receipts/`, `modules/audit/`, `modules/brands/`, `modules/access-sync/`, `modules/admin/`, `modules/debt/`, `modules/debt/ai/`, `modules/permissions/`, `modules/shipments/`, `modules/stock-count/`, `modules/settings/` | `index.html`, `inventory.html`, `suppliers-debt.html`, `employees.html`, `shipments.html`, `settings.html` | 46 active + 4 stubs = 50 |
+| Module 1 — Inventory Management | ✅ Complete (AI-OCR-Fix-QA) | `modules/inventory/`, `modules/purchasing/`, `modules/goods-receipts/`, `modules/audit/`, `modules/brands/`, `modules/access-sync/`, `modules/admin/`, `modules/debt/`, `modules/debt/ai/`, `modules/permissions/`, `modules/shipments/`, `modules/stock-count/`, `modules/settings/` | `index.html`, `inventory.html`, `suppliers-debt.html`, `employees.html`, `shipments.html`, `settings.html` | 47 active + 4 stubs = 51 (supplier_balance_adjustments added) |
 
 ### Recently Added Module Files (Phase 8+)
 
@@ -761,10 +761,14 @@ Pages modified for shared/ dependencies:
 | `modules/debt/debt-expense-folders.js` | ~80 | Expense folder CRUD in debt module |
 | `modules/debt/debt-general-invoices.js` | ~80 | General invoice handling |
 | `modules/goods-receipts/receipt-doc-numbers.js` | ~100 | Dynamic multi-doc number inputs: _onDocCountChange, getRcptDocAmounts |
-| `modules/goods-receipts/receipt-ocr-supplier.js` | 113 | AI supplier auto-detection: OcrSupplierMatch (alias/exact/fuzzy pipeline + learning) |
-| `modules/goods-receipts/receipt-ocr-po.js` | 167 | AI PO auto-matching: OcrPOMatch (scoring + item comparison) |
-| `modules/goods-receipts/receipt-ocr-flow.js` | 154 | OCR flow helpers: compare button, PO choice modal, cached re-scan, doc number learning |
-| `shared/js/table-resize.js` | 103 | Reusable column resizing with sticky scrollbar |
+| `modules/goods-receipts/receipt-ocr-supplier.js` | 114 | AI supplier auto-detection: _norm() global, OcrSupplierMatch (alias/exact/fuzzy pipeline + learning) |
+| `modules/goods-receipts/receipt-ocr-po.js` | 245 | AI PO matching: OcrPOMatch (parse descriptions via _rcptOcrParseDescription, score-based match by content), _applyOcrHighlights (UUID-based row matching) |
+| `modules/goods-receipts/receipt-ocr-flow.js` | 172 | OCR flow: compare button, PO choice modal, cached re-scan, comparison guards (unwrap {value}, empty items) |
+| `modules/goods-receipts/receipt-ocr-learn.js` | 120 | OCR learning: _getSupplierLearningStage, _rcptOcrShowStageIndicator (🔴/🟡/🟢), _rcptOcrUpdateTemplate (field counting), receipt-confirmed listener |
+| `modules/goods-receipts/receipt-ocr-confirm-learn.js` | 159 | Confirm & learn: _rcptOcrConfirmAndLearn, _matchOcrToTableItems (smart matching), _saveItemAliases |
+| `modules/goods-receipts/receipt-list.js` | 96 | Receipt list: loadReceiptTab (split from goods-receipt.js, multi-doc "+N" badges) |
+| `modules/debt/ai/ai-learning-dashboard.js` | 159 | AI learning dashboard: loadAILearningTab (summary cards + per-supplier table with stage badges + accuracy bars + reset) |
+| `shared/js/table-resize.js` | 186 | Auto-discovery table resize + sticky scrollbar + per-user localStorage persistence (MutationObserver, 15 tables across 4 pages) |
 
 | Module 1.5 — Shared Components | ✅ Complete (QA passed) | `shared/css/`, `shared/js/`, `shared/tests/`, `scripts/` | — | 1 (activity_log) + ui_config column + PK fixes on roles/permissions/role_permissions |
 | Module 2 — Platform Admin | Phase 4 ✅ | `modules/admin-platform/` | `admin.html` | 5 new tables + 14 RPCs + 10 columns on tenants/employees. Plans CRUD, plan limits, feature flags. |
