@@ -30,7 +30,7 @@ var OcrPOMatch = (function() {
       var countScore = Math.max(0, 30 - Math.abs(ocrItems.length - poItems.length) * 10);
 
       var ocrTotal = ocrItems.reduce(function(s, it) { return s + (Number(it.total) || Number(it.unit_price) * Number(it.quantity) || 0); }, 0);
-      var poTotal = poItems.reduce(function(s, it) { return s + (Number(it.cost_price) || 0) * (Number(it.quantity) || 0); }, 0);
+      var poTotal = poItems.reduce(function(s, it) { return s + (Number(it.unit_cost) || Number(it.cost_price) || 0) * (Number(it.qty_ordered) || Number(it.quantity) || 0); }, 0);
       var amtDiff = poTotal > 0 ? Math.abs(ocrTotal - poTotal) / poTotal : 1;
       var amtScore = Math.max(0, 30 - Math.round(amtDiff * 100));
 
@@ -62,60 +62,73 @@ var OcrPOMatch = (function() {
 
   /**
    * Compare OCR items against PO items for discrepancy highlighting.
-   * Returns array of {ocrIdx, poItem, status, details}
+   * Parses OCR descriptions using _rcptOcrParseDescription, then matches
+   * by model (primary) and brand+size (secondary). Returns array of
+   * {ocrIdx, poItem, status, details, parsed}.
    */
-  // Unwrap {value,confidence} wrappers from OCR fields
   function _uv(v) { return (v && typeof v === 'object' && 'value' in v) ? v.value : v; }
 
   function compareItems(ocrItems, poItems) {
     if (!ocrItems || !poItems) return [];
     var results = [];
-    var usedPO = {};
+    var available = poItems.map(function(p, idx) { return { po: p, idx: idx }; });
 
     for (var i = 0; i < ocrItems.length; i++) {
       var ocr = ocrItems[i];
-      var ocrDesc = _norm(_uv(ocr.description) || '');
-      var ocrModel = _norm(_uv(ocr.model) || '');
-      var ocrBrand = _norm(_uv(ocr.brand) || '');
+      // Parse the OCR description into structured fields
+      var desc = _uv(ocr.description) || _uv(ocr.model) || '';
+      var parsed = (typeof _rcptOcrParseDescription === 'function') ? _rcptOcrParseDescription(desc) : { model: desc };
+      var ocrModel = _norm(parsed.model || _uv(ocr.model) || '');
+      var ocrBrand = _norm(parsed.brand_name || _uv(ocr.brand) || '');
+      var ocrSize = (parsed.size || '').trim();
       var ocrQty = Number(_uv(ocr.quantity)) || 1;
-      var ocrPrice = Number(_uv(ocr.unit_price)) || 0;
-      var matched = false;
+      var ocrPrice = Number(_uv(ocr.unit_price)) || Number(_uv(ocr.price)) || 0;
 
-      for (var j = 0; j < poItems.length; j++) {
-        if (usedPO[j]) continue;
-        var po = poItems[j];
-        var poBrand = _norm(po.brand || ''); var poModel = _norm(po.model || '');
-        var poFull = _norm(poBrand + ' ' + poModel);
-        if (!poFull.trim()) continue; // skip PO items with no brand/model
-        // Match: model exact match OR brand+model substring in description
-        var hit = false;
-        if (ocrModel && poModel && ocrModel === poModel) hit = true;
-        else if (ocrModel && poModel && (ocrModel.includes(poModel) || poModel.includes(ocrModel))) hit = true;
-        else if (ocrDesc.length >= 3 && poFull.length >= 3 && ocrDesc.includes(poFull)) hit = true;
-        else if (ocrDesc.length >= 3 && poModel.length >= 3 && ocrDesc.includes(poModel)) hit = true;
-        else if (ocrBrand && poBrand && ocrBrand === poBrand && ocrModel && poModel) hit = ocrModel === poModel;
-        if (!hit) continue;
+      // Score each available PO item — pick best match
+      var descNorm = _norm(desc);
+      var bestIdx = -1, bestScore = 0;
+      for (var j = 0; j < available.length; j++) {
+        var po = available[j].po;
+        var poModel = _norm(po.model || '');
+        var poBrand = _norm(po.brand || '');
+        var poSize = (po.size || '').trim();
+        var score = 0;
 
-        usedPO[j] = true;
-        matched = true;
-        var poQty = Number(po.quantity) || 0;
-        var poPrice = Number(po.cost_price) || 0;
-        var qtyOk = ocrQty === poQty;
-        var priceOk = poPrice === 0 || Math.abs(ocrPrice - poPrice) <= Math.max(poPrice * 0.05, 1);
-        var status = (!qtyOk && !priceOk) ? 'qty_price_mismatch' : !qtyOk ? 'qty_mismatch' : !priceOk ? 'price_mismatch' : 'match';
-        results.push({ ocrIdx: i, poItem: po, status: status,
-          details: { ocrQty: ocrQty, poQty: poQty, ocrPrice: ocrPrice, poPrice: poPrice } });
-        break;
+        // Model match from parsed fields (strongest signal)
+        if (ocrModel && poModel) {
+          if (ocrModel === poModel) score += 10;
+          else if (ocrModel.includes(poModel) || poModel.includes(ocrModel)) score += 7;
+        }
+        // Fallback: PO model found as substring in raw description text
+        // Handles pure-numeric models like "4343" that parsing can't extract
+        if (score < 7 && poModel && poModel.length >= 3 && descNorm.includes(poModel)) {
+          score = Math.max(score, 8);
+        }
+        // Brand match (moderate signal)
+        if (ocrBrand && poBrand && (poBrand.includes(ocrBrand) || ocrBrand.includes(poBrand))) score += 3;
+        // Size match (weak but confirmatory)
+        if (ocrSize && poSize && ocrSize === poSize) score += 2;
+
+        if (score > bestScore) { bestScore = score; bestIdx = j; }
       }
-      if (!matched) {
-        results.push({ ocrIdx: i, poItem: null, status: 'not_in_po', details: null });
+
+      if (bestIdx >= 0 && bestScore >= 7) {
+        // Matched — compare qty and price
+        var matchedPO = available.splice(bestIdx, 1)[0].po;
+        var poQty = Number(matchedPO.qty_ordered) || Number(matchedPO.quantity) || 0;
+        var poPrice = Number(matchedPO.unit_cost) || Number(matchedPO.cost_price) || 0;
+        var qtyOk = ocrQty === poQty;
+        var priceOk = poPrice === 0 || ocrPrice === 0 || Math.abs(ocrPrice - poPrice) <= Math.max(poPrice * 0.05, 1);
+        var status = (!qtyOk && !priceOk) ? 'qty_price_mismatch' : !qtyOk ? 'qty_mismatch' : !priceOk ? 'price_mismatch' : 'match';
+        results.push({ ocrIdx: i, poItem: matchedPO, status: status, parsed: parsed,
+          details: { ocrQty: ocrQty, poQty: poQty, ocrPrice: ocrPrice, poPrice: poPrice } });
+      } else {
+        results.push({ ocrIdx: i, poItem: null, status: 'not_in_po', details: null, parsed: parsed });
       }
     }
-    // PO items not matched by any OCR item
-    for (var k = 0; k < poItems.length; k++) {
-      if (!usedPO[k]) {
-        results.push({ ocrIdx: -1, poItem: poItems[k], status: 'missing_from_ocr', details: null });
-      }
+    // Remaining PO items = missing from invoice
+    for (var k = 0; k < available.length; k++) {
+      results.push({ ocrIdx: -1, poItem: available[k].po, status: 'missing_from_ocr', details: null });
     }
     return results;
   }
