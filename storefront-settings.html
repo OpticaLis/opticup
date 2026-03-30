@@ -96,6 +96,72 @@
       </div>
     </div>
 
+    <!-- Section: Analytics -->
+    <div class="sf-section">
+      <h2 class="sf-section-title">📊 אנליטיקס וטראקינג</h2>
+      <div class="sf-grid">
+        <div class="sf-field">
+          <label for="sf-gtm-id">Google Tag Manager ID</label>
+          <input type="text" id="sf-gtm-id" dir="ltr" placeholder="GTM-XXXXXXX">
+          <small>מזהה GTM — טוען ראשון, מנהל את כל התגיות</small>
+        </div>
+        <div class="sf-field">
+          <label for="sf-ga-id">Google Analytics 4 ID</label>
+          <input type="text" id="sf-ga-id" dir="ltr" placeholder="G-XXXXXXXXXX">
+        </div>
+        <div class="sf-field">
+          <label for="sf-fb-pixel">Facebook Pixel ID</label>
+          <input type="text" id="sf-fb-pixel" dir="ltr" placeholder="123456789">
+        </div>
+        <div class="sf-field">
+          <label for="sf-tiktok-pixel">TikTok Pixel ID</label>
+          <input type="text" id="sf-tiktok-pixel" dir="ltr" placeholder="XXXXXXXXX">
+        </div>
+        <div class="sf-field">
+          <label for="sf-hotjar-id">Hotjar ID</label>
+          <input type="text" id="sf-hotjar-id" dir="ltr" placeholder="1234567">
+        </div>
+        <div class="sf-field">
+          <label for="sf-fb-capi">Facebook CAPI Token (server-side)</label>
+          <input type="password" id="sf-fb-capi" dir="ltr" placeholder="EAAxxxxxx...">
+        </div>
+        <div class="sf-field">
+          <label for="sf-google-mp">Google Measurement Protocol Secret</label>
+          <input type="password" id="sf-google-mp" dir="ltr" placeholder="xxxxxxxx">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Branding & Domain -->
+    <div class="sf-section">
+      <h2 class="sf-section-title">🎨 מיתוג ודומיין</h2>
+      <div class="sf-grid">
+        <div class="sf-field">
+          <label for="sf-custom-domain">דומיין מותאם</label>
+          <input type="text" id="sf-custom-domain" dir="ltr" placeholder="www.mystore.co.il">
+          <small>דומיין מותאם אישית לחנות. דורש הגדרת DNS ב-Vercel</small>
+        </div>
+        <div class="sf-field">
+          <label for="sf-hero-title">כותרת Hero (דריסה)</label>
+          <input type="text" id="sf-hero-title" placeholder="ברוכים הבאים לחנות שלנו">
+          <small>דורס את כותרת ברירת המחדל בעמוד הבית</small>
+        </div>
+        <div class="sf-field">
+          <label for="sf-hero-subtitle">תת-כותרת Hero (דריסה)</label>
+          <input type="text" id="sf-hero-subtitle" placeholder="המבחר הגדול ביותר של משקפיים">
+        </div>
+        <div class="sf-field">
+          <label for="sf-favicon-url">Favicon URL</label>
+          <input type="url" id="sf-favicon-url" dir="ltr" placeholder="https://...">
+        </div>
+        <div class="sf-field">
+          <label for="sf-og-image-url">OG Image URL</label>
+          <input type="url" id="sf-og-image-url" dir="ltr" placeholder="https://...">
+          <small>תמונה לשיתוף ברשתות חברתיות</small>
+        </div>
+      </div>
+    </div>
+
     <div class="sf-actions">
       <button class="btn-p" id="sf-save-btn" onclick="saveStorefrontSettings()">💾 שמור הגדרות</button>
     </div>
