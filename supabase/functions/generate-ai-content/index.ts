@@ -25,6 +25,42 @@ function errRes(message: string, status: number): Response {
   return jsonRes({ error: message, success: false }, status);
 }
 
+/* ── Detect image media type from file bytes (magic numbers) ── */
+function detectMediaTypeFromBytes(bytes: Uint8Array): string | null {
+  if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+    return "image/jpeg";
+  }
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+    return "image/png";
+  }
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+      bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+    return "image/webp";
+  }
+  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) {
+    return "image/gif";
+  }
+  return null;
+}
+
+/* ── Detect image media type from file extension ── */
+function getMediaTypeFromExt(storagePath: string): string {
+  const ext = storagePath.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "png":
+      return "image/png";
+    case "webp":
+      return "image/webp";
+    case "gif":
+      return "image/gif";
+    default:
+      return "image/jpeg";
+  }
+}
+
 /* ── Fetch product image as base64 ── */
 async function fetchImageBase64(
   db: ReturnType<typeof createClient>,
@@ -42,14 +78,9 @@ async function fetchImageBase64(
     const buf = new Uint8Array(await res.arrayBuffer());
     const base64 = btoa(String.fromCharCode(...buf));
 
-    const ext = storagePath.split(".").pop()?.toLowerCase() ?? "webp";
-    const mimeMap: Record<string, string> = {
-      webp: "image/webp",
-      png: "image/png",
-      jpg: "image/jpeg",
-      jpeg: "image/jpeg",
-    };
-    return { base64, mediaType: mimeMap[ext] ?? "image/webp" };
+    // Byte detection is authoritative; fall back to extension
+    const mediaType = detectMediaTypeFromBytes(buf) ?? getMediaTypeFromExt(storagePath);
+    return { base64, mediaType };
   } catch {
     return null;
   }
