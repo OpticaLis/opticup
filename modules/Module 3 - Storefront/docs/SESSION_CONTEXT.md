@@ -1,78 +1,87 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Phase 4 — Catalog/Shop + WhatsApp + Bulk Ops (4A + 4B)
-## Status: ✅ Complete
+## Current Phase: Phase 5 — AI Content Engine (5A + 5B + 5C)
+## Status: ✅ Complete (code done, pending SQL + Edge Function deploy)
 ## Date: 2026-03-30
 
 ---
 
-## Phase 4A — Catalog/Shop + WhatsApp + Booking (Storefront repo)
-
-| Step | Status | Description | Commit (storefront) |
-|------|--------|-------------|---------------------|
-| 0 | ✅ | Backup: 2026-03-30_pre-phase4a | — |
-| 1 | ✅ | SQL 006: storefront_mode cols, storefront_leads, config cols | `b8d9ec9` |
-| 2 | ✅ | SQL 007: v_storefront_products v3 with resolved_mode | `b8d9ec9` |
-| 3 | ✅ | SQL 008: submit_storefront_lead RPC | `b8d9ec9` |
-| 4 | ✅ | Updated product types + tenant config | `4edf1b7` |
-| 5 | ✅ | WhatsAppButton.astro component | `4edf1b7` |
-| 6 | ✅ | NotifyMe.astro component | `4edf1b7` |
-| 7 | ✅ | BookingButton.astro component | `4edf1b7` |
-| 8 | ✅ | Mode-aware product detail + card pages | `d1e706d` |
-| 9 | ✅ | Documentation + quality gate | `d90f866` |
-
-## Phase 4B — Bulk Operations (ERP repo)
+## Phase 5A — AI Content Engine + Product Content ✅
 
 | Step | Status | Description | Commit (ERP) |
 |------|--------|-------------|--------------|
-| 0 | ✅ | Backup: 2026-03-30_pre-phase4b | — |
-| 1 | ✅ | storefront-settings.html + JS | `15d048f` |
-| 2 | ✅ | storefront-brands.html + JS | `15d048f` |
-| 3 | ✅ | storefront-products.html + JS (bulk select) | `15d048f` |
-| 4 | ✅ | Navigation link in index.html | `15d048f` |
-| 5 | ✅ | Documentation (CLAUDE.md, SESSION_CONTEXT) | — |
+| 2 | ✅ | Edge Function: generate-ai-content | `6e39d9c` |
+| 3 | ✅ | storefront-content.html + JS (content manager) | `6e39d9c` |
+| 4 | ✅ | Bulk generate UI with progress bar | `6e39d9c` |
+| 5 | ✅ | Navigation links updated | `6e39d9c` |
+
+## Phase 5B — Blog System Rebuild ✅
+
+| Step | Status | Description | Commit (ERP) |
+|------|--------|-------------|--------------|
+| 4 | ✅ | Edge Function: generate-blog-post | `e80dff0` |
+| 5 | ✅ | storefront-blog.html + JS (blog editor) | `e80dff0` |
+
+## Phase 5C — Landing Page AI + Learning ✅
+
+| Step | Status | Description | Commit (ERP) |
+|------|--------|-------------|--------------|
+| 1 | ✅ | Edge Function: generate-landing-content | `213dd50` |
+| 3 | ✅ | storefront-landing-content.html + JS | `213dd50` |
+| 4 | ✅ | Navigation updated on all 6 storefront pages | `213dd50` |
 
 ---
 
-## ⚠️ SQL Migrations NOT RUN
+## ⚠️ PENDING — Daniel Must Do
 
-Daniel must run these in Supabase Dashboard SQL Editor before testing:
-1. `opticup-storefront/sql/006-phase4a-storefront-modes.sql` — columns + leads table
-2. `opticup-storefront/sql/007-v-storefront-products-v3.sql` — updated view with resolved_mode
-3. `opticup-storefront/sql/008-rpc-storefront-leads.sql` — RPC for NotifyMe form
+### SQL Migrations (Supabase Dashboard SQL Editor)
+1. `opticup-storefront/sql/013-phase5a-ai-content.sql` — ai_content + ai_content_corrections tables
+2. `opticup-storefront/sql/014-v-storefront-products-v4.sql` — view v4 with AI content columns
+3. `opticup-storefront/sql/015-blog-posts-table.sql` — blog_posts table + view
+4. Then run: `cd opticup-storefront && npx tsx scripts/seo/migrate-blog-to-db.ts` (migrates 143 blog posts)
 
-**Run in this order. 007 depends on 006. 008 depends on 006.**
+### Edge Function Deploy
+```bash
+supabase functions deploy generate-ai-content --no-verify-jwt
+supabase functions deploy generate-blog-post --no-verify-jwt
+supabase functions deploy generate-landing-content --no-verify-jwt
+```
+
+### Previous Phase SQL (if not already run)
+- `006-phase4a-storefront-modes.sql`
+- `007-v-storefront-products-v3.sql`
+- `008-rpc-storefront-leads.sql`
 
 ---
 
 ## Key Architecture
 
-### Display Mode Resolution
-```
-Product override (inventory.storefront_mode_override)
-  ↓ if null
-Brand default (brands.storefront_mode)
-  ↓ if null
-Fallback: 'catalog'
-```
+### New Edge Functions (Phase 5)
+| Function | Purpose | Input | Output |
+|----------|---------|-------|--------|
+| generate-ai-content | Product descriptions, SEO, alt text | product_data, image, corrections | Saved to ai_content |
+| generate-blog-post | Blog post drafts from topic | topic, keywords, length | Saved to blog_posts |
+| generate-landing-content | Landing page headlines, CTA | topic, tone, products | Saved to ai_content |
 
-### Modes
-| Mode | Price | WhatsApp | Notes |
-|------|-------|----------|-------|
-| catalog | Hidden | Primary CTA | Default for all products |
-| shop | Shown | Secondary CTA | Shows sell_price + discount |
-| hidden | — | — | Excluded from view entirely |
+### Learning System
+1. AI generates content → saved to `ai_content` (status: 'auto')
+2. Tenant edits in ERP → updated in `ai_content` (status: 'edited')
+3. Original + correction saved to `ai_content_corrections` (with brand_id)
+4. Next generation for same brand → corrections included in Claude prompt as examples
 
-### New ERP Pages
-- `/storefront-settings.html` — WhatsApp number, booking URL, notification method
-- `/storefront-brands.html` — Brand mode selector (catalog/shop/hidden per brand)
-- `/storefront-products.html` — Product override manager with bulk select
+### New ERP Pages (Phase 5)
+- `/storefront-content.html` — Product AI content manager (descriptions, SEO, alt text)
+- `/storefront-blog.html` — Blog editor (CRUD + AI generation)
+- `/storefront-landing-content.html` — Landing page content editor
+
+### Storefront Navigation (6 tabs)
+Settings → Brands → Products → AI Content → Blog → Landing Pages
 
 ---
 
 ## What's Next
 
-1. Daniel runs SQL migrations (006, 007, 008) in Supabase Dashboard
-2. Daniel tests storefront + ERP pages
+1. Daniel runs SQL migrations + deploys Edge Functions
+2. Daniel tests all features
 3. Merge develop → main (both repos)
-4. Phase 5 planning
+4. Phase 6 — i18n AI Translation (EN/RU)
