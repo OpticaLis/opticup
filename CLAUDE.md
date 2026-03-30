@@ -104,6 +104,7 @@ opticup/
 ├── storefront-settings.html    — storefront config: WhatsApp, booking, notifications (Phase 4B)
 ├── storefront-brands.html      — storefront brand mode manager (Phase 4B)
 ├── storefront-products.html    — storefront product overrides + bulk select (Phase 4B)
+├── storefront-glossary.html    — translation glossary management (Phase 6)
 ├── css/
 │   ├── styles.css              — all styles
 │   └── header.css              — sticky header styles
@@ -140,7 +141,7 @@ opticup/
 │   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
 │   ├── settings/               — 1 file (settings-page)
 │   ├── stock-count/            — 9 files (list, session, camera, scan, filters, unknown, approve, view, report)
-│   └── storefront/            — 3 files (storefront-settings, storefront-brands, storefront-products)
+│   └── storefront/            — 6 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
 │   ├── sync-export.js          — Reverse sync: export new inventory to XLS for Access
@@ -150,7 +151,11 @@ opticup/
 ├── supabase/functions/
 │   ├── ocr-extract/index.ts    — Edge Function (Claude Vision OCR)
 │   ├── pin-auth/index.ts       — Edge Function (PIN authentication + JWT)
-│   └── remove-background/index.ts — Edge Function (remove.bg API proxy)
+│   ├── remove-background/index.ts — Edge Function (remove.bg API proxy)
+│   ├── generate-ai-content/index.ts — Edge Function (AI product content + auto-translate)
+│   ├── generate-blog-post/index.ts — Edge Function (AI blog post generation)
+│   ├── generate-landing-content/index.ts — Edge Function (AI landing page content)
+│   └── translate-content/index.ts — Edge Function (Hebrew → EN/RU translation, Phase 6)
 ├── migrations/
 │   └── *.sql
 ├── modules/Module 1 - Inventory Management/
