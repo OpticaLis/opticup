@@ -1,0 +1,640 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "astro",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/product/saint-laurent-sl715/",
+      "destination": "/products/0004056/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl715",
+      "destination": "/products/0004056/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl736-2/",
+      "destination": "/products/0003127/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl736-2",
+      "destination": "/products/0003127/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl736/",
+      "destination": "/products/0003140/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl736",
+      "destination": "/products/0003140/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl402/",
+      "destination": "/products/0003241/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl402",
+      "destination": "/products/0003241/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl553/",
+      "destination": "/products/0003126/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl553",
+      "destination": "/products/0003126/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl550/",
+      "destination": "/products/0003131/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl550",
+      "destination": "/products/0003131/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl467/",
+      "destination": "/products/0003190/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl467",
+      "destination": "/products/0003190/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl551-2/",
+      "destination": "/products/0003128/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl551-2",
+      "destination": "/products/0003128/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl28-2/",
+      "destination": "/products/sl0017/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl28-2",
+      "destination": "/products/sl0017/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl716/",
+      "destination": "/products/0003123/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl716",
+      "destination": "/products/0003123/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl711/",
+      "destination": "/products/0002658/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl711",
+      "destination": "/products/0002658/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl474/",
+      "destination": "/products/0001388/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl474",
+      "destination": "/products/0001388/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl549-2/",
+      "destination": "/products/sl0009/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl549-2",
+      "destination": "/products/sl0009/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl28/",
+      "destination": "/products/sl0017/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl28",
+      "destination": "/products/sl0017/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl744/",
+      "destination": "/products/SL0999/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl744",
+      "destination": "/products/SL0999/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl551/",
+      "destination": "/products/0003128/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl551",
+      "destination": "/products/0003128/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl549/",
+      "destination": "/products/sl0009/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl549",
+      "destination": "/products/sl0009/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl578/",
+      "destination": "/products/sl0089/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl578",
+      "destination": "/products/sl0089/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl584/",
+      "destination": "/products/sl0002/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl584",
+      "destination": "/products/sl0002/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl585/",
+      "destination": "/products/sl0004/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl585",
+      "destination": "/products/sl0004/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl472/",
+      "destination": "/products/sl0091/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl472",
+      "destination": "/products/sl0091/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl578-2/",
+      "destination": "/products/sl0089/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl578-2",
+      "destination": "/products/sl0089/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl578-3/",
+      "destination": "/products/sl0089/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl578-3",
+      "destination": "/products/sl0089/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl436-opt/",
+      "destination": "/products/sl0015/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl436-opt",
+      "destination": "/products/sl0015/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl584-2/",
+      "destination": "/products/sl0002/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl584-2",
+      "destination": "/products/sl0002/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl386/",
+      "destination": "/products/sl0095/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl386",
+      "destination": "/products/sl0095/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl399/",
+      "destination": "/products/SL0070/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl399",
+      "destination": "/products/SL0070/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl514/",
+      "destination": "/products/sl0020/",
+      "permanent": true
+    },
+    {
+      "source": "/product/saint-laurent-sl514",
+      "destination": "/products/sl0020/",
+      "permanent": true
+    },
+    {
+      "source": "/%d7%90%d7%99%d7%a8%d7%95%d7%a2%d7%99-%d7%94%d7%9e%d7%95%d7%9c%d7%98%d7%99%d7%a4%d7%95%d7%a7%d7%9c-%d7%a9%d7%9c-%d7%90%d7%95%d7%a4%d7%98%d7%99%d7%a7%d7%94-%d7%a4%d7%a8%d7%99%d7%96%d7%9e%d7%94/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/vintage-frames/",
+      "destination": "/brands/vintage/",
+      "permanent": true
+    },
+    {
+      "source": "/%d1%8d%d0%ba%d1%81%d0%ba%d0%bb%d1%8e%d0%b7%d0%b8%d0%b2%d0%bd%d0%be%d0%b5-%d1%81%d0%be%d0%b1%d1%8b%d1%82%d0%b8%d0%b5-%d0%bc%d1%83%d0%bb%d1%8c%d1%82%d0%b8%d1%84%d0%be%d0%ba%d0%b0%d0%bb%d1%8c%d0%bd%d1%8b/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/%d7%9e%d7%95%d7%9c%d7%98%d7%99%d7%a4%d7%95%d7%a7%d7%9c-%d7%a8%d7%95%d7%a1%d7%99%d7%aa/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/%d7%a7%d7%9e%d7%a4%d7%99%d7%99%d7%9f-%d7%9b%d7%9c%d7%9c%d7%99-%d7%a8%d7%95%d7%a1%d7%99%d7%aa/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/%d7%9e%d7%a2%d7%91%d7%93%d7%aa-%d7%9e%d7%a1%d7%92%d7%95%d7%a8%d7%99%d7%9d-%d7%a8%d7%95%d7%a1%d7%99%d7%aa/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/gast/",
+      "destination": "/brands/gast/",
+      "permanent": true
+    },
+    {
+      "source": "/john-dalia/",
+      "destination": "/brands/john-dalia/",
+      "permanent": true
+    },
+    {
+      "source": "/matsuda/",
+      "destination": "/brands/matsuda/",
+      "permanent": true
+    },
+    {
+      "source": "/etniabarcelona/",
+      "destination": "/brands/etnia-barcelona/",
+      "permanent": true
+    },
+    {
+      "source": "/bolle/",
+      "destination": "/brands/bolle/",
+      "permanent": true
+    },
+    {
+      "source": "/jimmychoo/",
+      "destination": "/brands/jimmy-choo/",
+      "permanent": true
+    },
+    {
+      "source": "/celine/",
+      "destination": "/brands/celine/",
+      "permanent": true
+    },
+    {
+      "source": "/balenciaga/",
+      "destination": "/brands/balenciaga/",
+      "permanent": true
+    },
+    {
+      "source": "/mykita/",
+      "destination": "/brands/mykita/",
+      "permanent": true
+    },
+    {
+      "source": "/gucci/",
+      "destination": "/brands/gucci/",
+      "permanent": true
+    },
+    {
+      "source": "/fendi/",
+      "destination": "/brands/fendi/",
+      "permanent": true
+    },
+    {
+      "source": "/dior/",
+      "destination": "/brands/dior/",
+      "permanent": true
+    },
+    {
+      "source": "/dolcegabbana/",
+      "destination": "/brands/dolce-gabbana/",
+      "permanent": true
+    },
+    {
+      "source": "/swarovski/",
+      "destination": "/brands/swarovski/",
+      "permanent": true
+    },
+    {
+      "source": "/fred/",
+      "destination": "/brands/fred/",
+      "permanent": true
+    },
+    {
+      "source": "/moscot/",
+      "destination": "/brands/moscot/",
+      "permanent": true
+    },
+    {
+      "source": "/miumiu/",
+      "destination": "/brands/miu-miu/",
+      "permanent": true
+    },
+    {
+      "source": "/henryjullien/",
+      "destination": "/brands/henry-jullien/",
+      "permanent": true
+    },
+    {
+      "source": "/serengeti/",
+      "destination": "/brands/serengeti/",
+      "permanent": true
+    },
+    {
+      "source": "/yohjiyamamoto/",
+      "destination": "/brands/yohji-yamamoto/",
+      "permanent": true
+    },
+    {
+      "source": "/kamemannen/",
+      "destination": "/brands/kamemannen/",
+      "permanent": true
+    },
+    {
+      "source": "/burberry/",
+      "destination": "/brands/burberry/",
+      "permanent": true
+    },
+    {
+      "source": "/oakley/",
+      "destination": "/brands/oakley/",
+      "permanent": true
+    },
+    {
+      "source": "/versace/",
+      "destination": "/brands/versace/",
+      "permanent": true
+    },
+    {
+      "source": "/cazal/",
+      "destination": "/brands/cazal/",
+      "permanent": true
+    },
+    {
+      "source": "/blackfin/",
+      "destination": "/brands/blackfin/",
+      "permanent": true
+    },
+    {
+      "source": "/porsche-design/",
+      "destination": "/brands/porsche-design/",
+      "permanent": true
+    },
+    {
+      "source": "/prada/",
+      "destination": "/brands/prada/",
+      "permanent": true
+    },
+    {
+      "source": "/gotti-switzerland/",
+      "destination": "/brands/gotti/",
+      "permanent": true
+    },
+    {
+      "source": "/saint-laurent/",
+      "destination": "/brands/saint-laurent/",
+      "permanent": true
+    },
+    {
+      "source": "/talla/",
+      "destination": "/brands/talla/",
+      "permanent": true
+    },
+    {
+      "source": "/hublot/",
+      "destination": "/brands/hublot/",
+      "permanent": true
+    },
+    {
+      "source": "/tejesta/",
+      "destination": "/brands/tejesta/",
+      "permanent": true
+    },
+    {
+      "source": "/%d7%a1%d7%99%d7%9b%d7%95%d7%9d-%d7%a8%d7%9b%d7%99%d7%a9%d7%94/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/purchase-summary/",
+      "destination": "/en/",
+      "permanent": true
+    },
+    {
+      "source": "/sales/",
+      "destination": "/en/",
+      "permanent": true
+    },
+    {
+      "source": "/eyewear-brands/",
+      "destination": "/brands/",
+      "permanent": true
+    },
+    {
+      "source": "/account/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/checkout/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/cart/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/shop/",
+      "destination": "/products/",
+      "permanent": true
+    },
+    {
+      "source": "/%d1%81%d0%b2%d0%be%d0%b4%d0%ba%d0%b0-%d0%be-%d0%bf%d0%be%d0%ba%d1%83%d0%bf%d0%ba%d0%b5/",
+      "destination": "/ru/",
+      "permanent": true
+    },
+    {
+      "source": "/product-category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%9e%d7%92%d7%a2-%d7%99%d7%95%d7%9e%d7%99%d7%95%d7%aa/",
+      "destination": "/category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%9e%d7%92%d7%a2-%d7%99%d7%95%d7%9e%d7%99%d7%95%d7%aa/",
+      "permanent": true
+    },
+    {
+      "source": "/product-category/%d7%99%d7%9c%d7%93%d7%99%d7%9d/",
+      "destination": "/category/%d7%99%d7%9c%d7%93%d7%99%d7%9d/",
+      "permanent": true
+    },
+    {
+      "source": "/product-category/%d7%a7%d7%98%d7%9c%d7%95%d7%92-%d7%9e%d7%a9%d7%a7%d7%a4%d7%99%d7%99%d7%9d-%d7%9b%d7%9c%d7%9c%d7%99/",
+      "destination": "/category/%d7%a7%d7%98%d7%9c%d7%95%d7%92-%d7%9e%d7%a9%d7%a7%d7%a4%d7%99%d7%99%d7%9d-%d7%9b%d7%9c%d7%9c%d7%99/",
+      "permanent": true
+    },
+    {
+      "source": "/product-category/%d7%9e%d7%a9%d7%a7%d7%a4%d7%99-%d7%a9%d7%9e%d7%a9/",
+      "destination": "/category/%d7%9e%d7%a9%d7%a7%d7%a4%d7%99-%d7%a9%d7%9e%d7%a9/",
+      "permanent": true
+    },
+    {
+      "source": "/product-category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%9e%d7%92%d7%a2-%d7%97%d7%95%d7%93%d7%a9%d7%99%d7%95%d7%aa/",
+      "destination": "/category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%9e%d7%92%d7%a2-%d7%97%d7%95%d7%93%d7%a9%d7%99%d7%95%d7%aa/",
+      "permanent": true
+    },
+    {
+      "source": "/product-category/%d7%9e%d7%a1%d7%92%d7%a8%d7%95%d7%aa-%d7%a8%d7%90%d7%99%d7%99%d7%94/",
+      "destination": "/category/%d7%9e%d7%a1%d7%92%d7%a8%d7%95%d7%aa-%d7%a8%d7%90%d7%99%d7%99%d7%94/",
+      "permanent": true
+    },
+    {
+      "source": "/product-category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%93%d7%95-%d7%a9%d7%91%d7%95%d7%a2%d7%99%d7%95%d7%aa/",
+      "destination": "/category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%93%d7%95-%d7%a9%d7%91%d7%95%d7%a2%d7%99%d7%95%d7%aa/",
+      "permanent": true
+    },
+    {
+      "source": "/product-category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%9e%d7%92%d7%a2/",
+      "destination": "/category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%9e%d7%92%d7%a2/",
+      "permanent": true
+    },
+    {
+      "source": "/product-category/%d7%97%d7%95%d7%9e%d7%a8%d7%99-%d7%a0%d7%99%d7%a7%d7%95%d7%99/",
+      "destination": "/category/%d7%97%d7%95%d7%9e%d7%a8%d7%99-%d7%a0%d7%99%d7%a7%d7%95%d7%99/",
+      "permanent": true
+    },
+    {
+      "source": "/product-category/%d7%94%d7%a6%d7%a2%d7%95%d7%aa-%d7%9e%d7%97%d7%99%d7%a8/",
+      "destination": "/category/%d7%94%d7%a6%d7%a2%d7%95%d7%aa-%d7%9e%d7%97%d7%99%d7%a8/",
+      "permanent": true
+    },
+    {
+      "source": "/product-category/%d7%9e%d7%91%d7%a6%d7%a2%d7%99%d7%9d/",
+      "destination": "/category/%d7%9e%d7%91%d7%a6%d7%a2%d7%99%d7%9d/",
+      "permanent": true
+    },
+    {
+      "source": "/product-category/%d7%9e%d7%a9%d7%a7%d7%a4%d7%99-%d7%a4%d7%a8%d7%99%d7%9e%d7%99%d7%95%d7%9d/",
+      "destination": "/category/%d7%9e%d7%a9%d7%a7%d7%a4%d7%99-%d7%a4%d7%a8%d7%99%d7%9e%d7%99%d7%95%d7%9d/",
+      "permanent": true
+    },
+    {
+      "source": "/my-account/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/wishlist/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/blog/",
+      "destination": "/%D7%91%D7%9C%D7%95%D7%92/",
+      "permanent": true
+    },
+    {
+      "source": "/product-tag/:path*",
+      "destination": "/products/",
+      "permanent": true
+    },
+    {
+      "source": "/product-category/:path*",
+      "destination": "/products/",
+      "permanent": true
+    },
+    {
+      "source": "/product/:path*",
+      "destination": "/products/",
+      "permanent": true
+    },
+    {
+      "source": "/shop/:path*",
+      "destination": "/products/",
+      "permanent": true
+    }
+  ]
+}

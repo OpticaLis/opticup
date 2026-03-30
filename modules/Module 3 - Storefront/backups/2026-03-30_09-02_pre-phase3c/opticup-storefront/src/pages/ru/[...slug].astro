@@ -1,0 +1,48 @@
+---
+/**
+ * Catch-all route for Russian blog posts and landing pages.
+ * URL: /ru/[slug]/
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BlogPostComponent from '../../components/BlogPost.astro';
+import { getPostBySlug, getRelatedPosts } from '../../data/blog-posts';
+import { resolveTenant } from '../../lib/tenant';
+
+const slugParam = Astro.params.slug;
+if (!slugParam) return Astro.redirect('/ru/');
+
+const slug = decodeURIComponent(slugParam);
+const post = getPostBySlug(slugParam, 'ru') || getPostBySlug(slug, 'ru');
+
+// TODO: Check landing pages (Phase 3C)
+
+if (!post) {
+  return new Response('Not Found', { status: 404 });
+}
+
+const tenant = await resolveTenant();
+const tenantName = tenant?.name || '';
+const themeCSS = tenant?.storefront?.theme
+  ? Object.entries(tenant.storefront.theme).map(([k, v]) => `--color-${k}: ${v};`).join(' ')
+  : '';
+
+const related = getRelatedPosts(post, 3);
+---
+
+<BaseLayout
+  title={post.seo.title}
+  description={post.seo.description}
+  ogImage={post.seo.ogImage || undefined}
+  locale="ru"
+  tenantName={tenantName}
+  tenantLogo={tenant?.storefront?.logo_url}
+  themeCSS={themeCSS}
+  phone={tenant?.phone}
+>
+  <BlogPostComponent
+    post={post}
+    locale="ru"
+    relatedPosts={related}
+    tenantName={tenantName}
+  />
+</BaseLayout>

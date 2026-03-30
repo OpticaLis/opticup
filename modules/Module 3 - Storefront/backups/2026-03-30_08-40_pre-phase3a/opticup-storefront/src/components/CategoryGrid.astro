@@ -1,0 +1,57 @@
+---
+import type { Locale } from '../i18n';
+import { t } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  categories: Array<{
+    name: string;
+    count: number;
+  }>;
+}
+
+const { locale, categories } = Astro.props;
+const hasCategories = categories.length > 0;
+
+// Default categories to show when DB isn't connected yet
+const defaultCategories = [
+  { name: 'משקפי שמש', icon: '🕶️', slug: 'sunglasses' },
+  { name: 'משקפי ראייה', icon: '👓', slug: 'eyeglasses' },
+  { name: 'עדשות מגע', icon: '👁️', slug: 'contact-lenses' },
+  { name: 'אביזרים', icon: '🧴', slug: 'accessories' },
+];
+---
+
+<section class="py-14 sm:py-20 bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 text-center">
+      {t(locale, 'nav.categories')}
+    </h2>
+
+    {hasCategories ? (
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {categories.map((cat) => (
+          <a
+            href={`/category/${encodeURIComponent(cat.name.replace(/\s+/g, '-'))}`}
+            class="flex flex-col items-center justify-center p-6 bg-white rounded-xl border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all"
+          >
+            <span class="text-lg font-semibold text-gray-900">{cat.name}</span>
+            <span class="text-sm text-gray-400 mt-1">{cat.count} {locale === 'he' ? 'מוצרים' : 'products'}</span>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {defaultCategories.map((cat) => (
+          <a
+            href={`/category/${cat.slug}`}
+            class="flex flex-col items-center justify-center p-6 bg-white rounded-xl border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all"
+          >
+            <span class="text-3xl mb-2">{cat.icon}</span>
+            <span class="text-lg font-semibold text-gray-900">{cat.name}</span>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+</section>

@@ -1,0 +1,14 @@
+{
+  "stats": {
+    "totalTags": 1175,
+    "wildcardRule": 1,
+    "categoryTagRedirects": 0
+  },
+  "wildcardRule": {
+    "source": "/product-tag/:path*",
+    "destination": "/products/",
+    "permanent": true,
+    "comment": "Wildcard: all 1175 product tags → /products/ (thin content)"
+  },
+  "categoryTagRedirects": []
+}

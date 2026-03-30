@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/* Theme variables — injected dynamically from storefront_config */
+:root {
+  --color-primary: #1e3a5f;
+  --color-primary-light: #2a5a8f;
+  --color-primary-dark: #0f1f33;
+  --color-accent: #d4a853;
+  --color-bg: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-light: #6b7280;
+  --color-border: #e5e7eb;
+  --font-family-he: 'Assistant', 'Heebo', sans-serif;
+  --font-family-en: 'Inter', sans-serif;
+  --font-family-ru: 'Inter', sans-serif;
+}
+
+/* RTL base */
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family-he);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+[lang="en"] body,
+[lang="ru"] body {
+  font-family: var(--font-family-en);
+}
+
+/* Focus ring for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

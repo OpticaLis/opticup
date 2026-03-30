@@ -1,0 +1,81 @@
+{
+  "nav": {
+    "home": "Home",
+    "products": "Products",
+    "categories": "Categories",
+    "blog": "Blog",
+    "contact": "Contact",
+    "search": "Search"
+  },
+  "hero": {
+    "title": "Welcome",
+    "subtitle": "Wide selection of eyewear and contact lenses"
+  },
+  "product": {
+    "addToCart": "Add to Cart",
+    "askOnWhatsApp": "Ask on WhatsApp",
+    "whatsapp": "Message on WhatsApp",
+    "call": "Call us",
+    "outOfStock": "Out of Stock",
+    "inStock": "In Stock",
+    "notifyMe": "Notify me when available",
+    "contactForPrice": "Contact us for price",
+    "price": "Price",
+    "brand": "Brand",
+    "model": "Model",
+    "color": "Color",
+    "size": "Size",
+    "type": "Type",
+    "barcode": "Barcode",
+    "specs": "Specifications",
+    "related": "Related Products"
+  },
+  "products": {
+    "items": "products",
+    "browseAll": "Browse all products",
+    "searchPlaceholder": "Search brand, model, or barcode...",
+    "search": "Search",
+    "searchResults": "Search results",
+    "noResults": "No products found",
+    "clearFilters": "Clear filters",
+    "sort": "Sort",
+    "sortNewest": "Newest",
+    "sortPriceAsc": "Price: Low to High",
+    "sortPriceDesc": "Price: High to Low",
+    "sortBrand": "By Brand",
+    "categories": "Categories",
+    "allCategories": "All Categories",
+    "brands": "Brands",
+    "allBrands": "All Brands",
+    "prev": "Previous",
+    "next": "Next"
+  },
+  "brands": {
+    "title": "Our Brands",
+    "browseAll": "Browse all brands",
+    "productsCount": "products",
+    "viewProducts": "View products",
+    "noBrands": "No brands available"
+  },
+  "categories": {
+    "browseAll": "Browse all categories",
+    "viewAll": "View all products",
+    "noCategories": "No categories available"
+  },
+  "search": {
+    "title": "Search",
+    "heading": "Search products",
+    "noResults": "No results found for",
+    "tryAgain": "Try a different search"
+  },
+  "footer": {
+    "rights": "All rights reserved",
+    "poweredBy": "Powered by Optic Up"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "back": "Back",
+    "seeAll": "See all products"
+  }
+}

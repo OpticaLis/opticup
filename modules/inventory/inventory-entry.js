@@ -190,16 +190,7 @@ function validateEntryRows() {
       hasErr = true;
       errs.push(`שורה ${i+1}: מחיר עלות לא יכול להיות שלילי`);
     }
-    // Image required for luxury/brand types
-    if ((r.brandType === 'יוקרה' || r.brandType === 'מותג') && r.images.length === 0) {
-      hasErr = true;
-      errs.push(`שורה ${i+1}: חובה תמונה לסוג מותג "${r.brandType}"`);
-    }
-    // Image required for sync=מלא/תדמית
-    if ((r.sync === 'מלא' || r.sync === 'תדמית') && r.images.length === 0) {
-      hasErr = true;
-      errs.push(`שורה ${i+1}: חובה תמונה לסנכרון "${r.sync}"`);
-    }
+    // Image requirement removed — may be restored in future
     if (hasErr) r.tr.classList.add('row-err');
   });
   return errs;

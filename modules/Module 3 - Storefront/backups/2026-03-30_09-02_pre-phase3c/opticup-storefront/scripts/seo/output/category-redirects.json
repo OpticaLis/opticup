@@ -1,0 +1,111 @@
+{
+  "stats": {
+    "totalCategories": 12,
+    "specificRedirects": 12,
+    "wildcardRule": 1
+  },
+  "categoryRedirects": [
+    {
+      "source": "/product-category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%9e%d7%92%d7%a2-%d7%99%d7%95%d7%9e%d7%99%d7%95%d7%aa/",
+      "destination": "/category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%9e%d7%92%d7%a2-%d7%99%d7%95%d7%9e%d7%99%d7%95%d7%aa/",
+      "permanent": true,
+      "wpName": "עדשות מגע יומיות",
+      "wpId": 118,
+      "productCount": 0
+    },
+    {
+      "source": "/product-category/%d7%99%d7%9c%d7%93%d7%99%d7%9d/",
+      "destination": "/category/%d7%99%d7%9c%d7%93%d7%99%d7%9d/",
+      "permanent": true,
+      "wpName": "ילדים",
+      "wpId": 588,
+      "productCount": 12
+    },
+    {
+      "source": "/product-category/%d7%a7%d7%98%d7%9c%d7%95%d7%92-%d7%9e%d7%a9%d7%a7%d7%a4%d7%99%d7%99%d7%9d-%d7%9b%d7%9c%d7%9c%d7%99/",
+      "destination": "/category/%d7%a7%d7%98%d7%9c%d7%95%d7%92-%d7%9e%d7%a9%d7%a7%d7%a4%d7%99%d7%99%d7%9d-%d7%9b%d7%9c%d7%9c%d7%99/",
+      "permanent": true,
+      "wpName": "קטלוג משקפיים כללי",
+      "wpId": 1764,
+      "productCount": 3
+    },
+    {
+      "source": "/product-category/%d7%9e%d7%a9%d7%a7%d7%a4%d7%99-%d7%a9%d7%9e%d7%a9/",
+      "destination": "/category/%d7%9e%d7%a9%d7%a7%d7%a4%d7%99-%d7%a9%d7%9e%d7%a9/",
+      "permanent": true,
+      "wpName": "שמש",
+      "wpId": 16,
+      "productCount": 373
+    },
+    {
+      "source": "/product-category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%9e%d7%92%d7%a2-%d7%97%d7%95%d7%93%d7%a9%d7%99%d7%95%d7%aa/",
+      "destination": "/category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%9e%d7%92%d7%a2-%d7%97%d7%95%d7%93%d7%a9%d7%99%d7%95%d7%aa/",
+      "permanent": true,
+      "wpName": "עדשות מגע חודשיות",
+      "wpId": 119,
+      "productCount": 0
+    },
+    {
+      "source": "/product-category/%d7%9e%d7%a1%d7%92%d7%a8%d7%95%d7%aa-%d7%a8%d7%90%d7%99%d7%99%d7%94/",
+      "destination": "/category/%d7%9e%d7%a1%d7%92%d7%a8%d7%95%d7%aa-%d7%a8%d7%90%d7%99%d7%99%d7%94/",
+      "permanent": true,
+      "wpName": "ראייה",
+      "wpId": 26,
+      "productCount": 359
+    },
+    {
+      "source": "/product-category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%93%d7%95-%d7%a9%d7%91%d7%95%d7%a2%d7%99%d7%95%d7%aa/",
+      "destination": "/category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%93%d7%95-%d7%a9%d7%91%d7%95%d7%a2%d7%99%d7%95%d7%aa/",
+      "permanent": true,
+      "wpName": "עדשות דו שבועיות",
+      "wpId": 120,
+      "productCount": 1
+    },
+    {
+      "source": "/product-category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%9e%d7%92%d7%a2/",
+      "destination": "/category/%d7%a2%d7%93%d7%a9%d7%95%d7%aa-%d7%9e%d7%92%d7%a2/",
+      "permanent": true,
+      "wpName": "עדשות מגע",
+      "wpId": 25,
+      "productCount": 2
+    },
+    {
+      "source": "/product-category/%d7%97%d7%95%d7%9e%d7%a8%d7%99-%d7%a0%d7%99%d7%a7%d7%95%d7%99/",
+      "destination": "/category/%d7%97%d7%95%d7%9e%d7%a8%d7%99-%d7%a0%d7%99%d7%a7%d7%95%d7%99/",
+      "permanent": true,
+      "wpName": "חומרי ניקוי",
+      "wpId": 121,
+      "productCount": 0
+    },
+    {
+      "source": "/product-category/%d7%94%d7%a6%d7%a2%d7%95%d7%aa-%d7%9e%d7%97%d7%99%d7%a8/",
+      "destination": "/category/%d7%94%d7%a6%d7%a2%d7%95%d7%aa-%d7%9e%d7%97%d7%99%d7%a8/",
+      "permanent": true,
+      "wpName": "הצעות מחיר",
+      "wpId": 68,
+      "productCount": 0
+    },
+    {
+      "source": "/product-category/%d7%9e%d7%91%d7%a6%d7%a2%d7%99%d7%9d/",
+      "destination": "/category/%d7%9e%d7%91%d7%a6%d7%a2%d7%99%d7%9d/",
+      "permanent": true,
+      "wpName": "מבצעים",
+      "wpId": 221,
+      "productCount": 15
+    },
+    {
+      "source": "/product-category/%d7%9e%d7%a9%d7%a7%d7%a4%d7%99-%d7%a4%d7%a8%d7%99%d7%9e%d7%99%d7%95%d7%9d/",
+      "destination": "/category/%d7%9e%d7%a9%d7%a7%d7%a4%d7%99-%d7%a4%d7%a8%d7%99%d7%9e%d7%99%d7%95%d7%9d/",
+      "permanent": true,
+      "wpName": "משקפי פרימיום",
+      "wpId": 1768,
+      "productCount": 67
+    }
+  ],
+  "wildcardRule": {
+    "source": "/product-category/:path*",
+    "destination": "/products/",
+    "permanent": true,
+    "comment": "Catch-all for any product-category URLs not matched by specific rules"
+  }
+}

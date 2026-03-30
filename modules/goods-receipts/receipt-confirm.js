@@ -25,11 +25,7 @@ async function confirmReceipt() {
     return;
   }
 
-  const noImg = enteringInventory.filter(i => (i.sync === 'מלא' || i.sync === 'תדמית') && (!i.images || i.images.length === 0));
-  if (noImg.length) {
-    toast(`${noImg.length} פריטים חדשים עם סנכרון חייבים תמונה`, 'e');
-    return;
-  }
+  // Image requirement removed — may be restored in future
 
   // Hard-block: each item entering inventory must have a barcode (one per product line)
   var itemsNeedBc = items.filter(function(i) {
