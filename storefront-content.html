@@ -1,0 +1,210 @@
+<!--
+  Optic Up — Storefront AI Content Manager
+  View, edit, and bulk-generate AI product content
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optic Up — ניהול תוכן מוצרים</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/css/variables.css">
+<link rel="stylesheet" href="shared/css/components.css">
+<link rel="stylesheet" href="shared/css/components-extra.css">
+<link rel="stylesheet" href="shared/css/layout.css">
+<link rel="stylesheet" href="shared/css/forms.css">
+<link rel="stylesheet" href="shared/css/modal.css">
+<link rel="stylesheet" href="shared/css/toast.css">
+<link rel="stylesheet" href="shared/css/table.css">
+<link rel="stylesheet" href="css/header.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+.sf-container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+.sf-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+.sf-subtitle { color: var(--g400); font-size: .9rem; margin-bottom: 24px; }
+.sf-nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+.sf-nav a { padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: .9rem;
+  background: var(--g100); color: var(--g700); transition: all .2s; }
+.sf-nav a.active, .sf-nav a:hover { background: var(--primary); color: #fff; }
+.sf-section { background: #fff; border: 1px solid var(--g200); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+
+/* Filters */
+.content-filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+.content-filters select, .content-filters input { padding: 8px 12px; border: 1px solid var(--g300); border-radius: 8px; font-size: .9rem; font-family: inherit; }
+.content-filters select:focus, .content-filters input:focus { outline: none; border-color: var(--primary); }
+.content-filters .search-input { flex: 1; min-width: 200px; }
+
+/* Action buttons row */
+.content-actions { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.content-actions button { padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: .85rem; cursor: pointer; border: none; transition: all .2s; }
+.btn-ai { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+.btn-ai:hover { opacity: .9; }
+.btn-regen { background: var(--g200); color: var(--g700); }
+.btn-regen:hover { background: var(--g300); }
+
+/* Product table */
+.content-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.content-table th { background: var(--g50); padding: 10px 12px; text-align: right; font-weight: 600; border-bottom: 2px solid var(--g200); white-space: nowrap; }
+.content-table td { padding: 10px 12px; border-bottom: 1px solid var(--g100); vertical-align: middle; }
+.content-table tr:hover { background: var(--g50); cursor: pointer; }
+.content-table .thumb { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #fff; border: 1px solid var(--g200); }
+.content-table .no-thumb { width: 40px; height: 40px; border-radius: 6px; background: var(--g100); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.status-icon { font-size: 1rem; }
+.barcode-cell { font-family: monospace; font-size: .85rem; direction: ltr; text-align: left; }
+
+/* Pagination */
+.pagination { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 16px; }
+.pagination button { padding: 6px 14px; border: 1px solid var(--g300); border-radius: 6px; background: #fff; cursor: pointer; font-family: inherit; }
+.pagination button:hover { background: var(--g100); }
+.pagination button:disabled { opacity: .4; cursor: default; }
+.pagination .page-info { font-size: .85rem; color: var(--g500); }
+.count-label { font-size: .85rem; color: var(--g500); }
+
+/* Edit modal */
+.edit-modal { max-width: 640px; width: 95vw; }
+.edit-modal h3 { font-size: 1.15rem; margin-bottom: 16px; }
+.edit-field { margin-bottom: 16px; }
+.edit-field label { display: block; font-size: .85rem; font-weight: 600; color: var(--g600); margin-bottom: 4px; }
+.edit-field textarea, .edit-field input { width: 100%; padding: 10px 12px; border: 1px solid var(--g300); border-radius: 8px; font-size: .95rem; font-family: inherit; }
+.edit-field textarea { min-height: 100px; resize: vertical; }
+.edit-field .char-count { font-size: .75rem; color: var(--g400); text-align: left; margin-top: 2px; }
+.edit-field .char-count.warn { color: #dc2626; }
+.edit-actions { display: flex; gap: 12px; margin-top: 20px; }
+
+/* Progress bar */
+.progress-container { display: none; background: #fff; border: 1px solid var(--g200); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+.progress-container.active { display: block; }
+.progress-bar-track { height: 12px; background: var(--g100); border-radius: 6px; overflow: hidden; margin: 12px 0; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 6px; transition: width .3s; }
+.progress-stats { display: flex; gap: 16px; font-size: .85rem; color: var(--g500); }
+.progress-current { font-size: .9rem; color: var(--g600); margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<main>
+  <div class="sf-container">
+    <h1 class="sf-title">🤖 ניהול תוכן מוצרים</h1>
+    <p class="sf-subtitle">תיאורים, SEO ותמונות — ייצור AI וניהול תוכן</p>
+
+    <nav class="sf-nav">
+      <a href="storefront-settings.html">⚙️ הגדרות</a>
+      <a href="storefront-brands.html">🏷️ מותגים</a>
+      <a href="storefront-products.html">📦 מוצרים</a>
+      <a href="storefront-content.html" class="active">🤖 תוכן AI</a>
+      <a href="storefront-blog.html">📝 בלוג</a>
+    </nav>
+
+    <!-- Progress bar (hidden until bulk generate) -->
+    <div class="progress-container" id="progress-container">
+      <h3>מייצר תוכן באמצעות AI...</h3>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <div class="progress-stats">
+        <span id="progress-count">0/0</span>
+        <span>הצלחות: <strong id="progress-success">0</strong></span>
+        <span>שגיאות: <strong id="progress-errors">0</strong></span>
+      </div>
+      <div class="progress-current" id="progress-current"></div>
+      <button class="btn-regen" id="progress-stop" onclick="stopBulkGenerate()" style="margin-top:12px">⏸ עצור</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="sf-section">
+      <div class="content-filters">
+        <select id="filter-brand" onchange="filterContent()">
+          <option value="">כל המותגים</option>
+        </select>
+        <select id="filter-status" onchange="filterContent()">
+          <option value="">כל הסטטוסים</option>
+          <option value="has_content">✅ יש תוכן</option>
+          <option value="edited">✏️ נערך</option>
+          <option value="no_content">❌ ללא תוכן</option>
+        </select>
+        <input type="text" class="search-input" id="filter-search" placeholder="חיפוש לפי דגם או ברקוד..." oninput="filterContent()">
+      </div>
+      <div class="content-actions">
+        <button class="btn-ai" onclick="bulkGenerateMissing()">🤖 ייצר תוכן למוצרים חסרים</button>
+        <button class="btn-regen" onclick="bulkRegenerateSelected()">🔄 ייצר מחדש לנבחרים</button>
+        <span class="count-label" id="content-count"></span>
+      </div>
+
+      <!-- Products table -->
+      <div id="content-table-container"></div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</main>
+
+<!-- Edit content modal -->
+<div id="edit-modal" class="modal-overlay" style="display:none">
+  <div class="modal edit-modal">
+    <h3 id="edit-title">עריכת תוכן</h3>
+
+    <div class="edit-field">
+      <label>תיאור מוצר</label>
+      <textarea id="edit-description" oninput="updateCharCount('edit-description')"></textarea>
+    </div>
+
+    <div class="edit-field">
+      <label>SEO Title</label>
+      <input type="text" id="edit-seo-title" oninput="updateCharCount('edit-seo-title', 60)" maxlength="80">
+      <div class="char-count" id="edit-seo-title-count">0/60</div>
+    </div>
+
+    <div class="edit-field">
+      <label>SEO Description</label>
+      <textarea id="edit-seo-desc" oninput="updateCharCount('edit-seo-desc', 160)" style="min-height:60px"></textarea>
+      <div class="char-count" id="edit-seo-desc-count">0/160</div>
+    </div>
+
+    <div class="edit-field">
+      <label>Alt Text (תיאור תמונה)</label>
+      <input type="text" id="edit-alt-text" maxlength="200">
+    </div>
+
+    <div class="edit-actions">
+      <button class="btn-ai" onclick="regenerateForProduct()">🤖 ייצר מחדש</button>
+      <button class="btn-p" onclick="saveContentEdit()">💾 שמור</button>
+      <button class="btn-g" onclick="closeEditModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast + Loading -->
+<div id="toast-c"></div>
+<div id="loading" class="loading-overlay" style="display:none">
+  <div class="loading-box"><div class="spinner"></div><p id="loading-text">טוען...</p></div>
+</div>
+
+<!-- Shared JS -->
+<script src="shared/js/theme-loader.js"></script>
+<script src="shared/js/modal-builder.js"></script>
+<script src="shared/js/modal-wizard.js"></script>
+<script src="shared/js/toast.js"></script>
+<script src="shared/js/pin-modal.js"></script>
+<script src="shared/js/table-builder.js"></script>
+<script src="shared/js/permission-ui.js"></script>
+<script src="shared/js/supabase-client.js"></script>
+<script src="shared/js/activity-logger.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/shared-ui.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/supabase-ops.js"></script>
+<script src="js/header.js"></script>
+<script src="js/alerts-badge.js"></script>
+<script src="modules/storefront/storefront-content.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', async () => {
+  const session = await loadSession();
+  if (!session) { window.location.href = '/'; return; }
+  if (!hasPermission('settings.view')) { window.location.href = '/'; return; }
+  await loadContentPage();
+});
+</script>
+</body>
+</html>
