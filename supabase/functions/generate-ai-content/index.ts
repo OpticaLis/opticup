@@ -55,8 +55,8 @@ async function fetchImageBase64(
   }
 }
 
-/* ── Build Claude prompt ── */
-function buildPrompt(
+/* ── Build Claude prompt — Mode A (with images) ── */
+function buildPromptWithImages(
   product: {
     brand_name: string;
     model: string;
@@ -75,7 +75,8 @@ function buildPrompt(
 כתוב תיאורים שיווקיים למוצרי משקפיים.
 סגנון: מקצועי אך נגיש, כולל המלצות סטיילינג.
 שפה: עברית בלבד — כתוב הכל בעברית! אל תכתוב ברוסית או באנגלית.
-שמות מותגים ודגמים בלבד יכולים להישאר בשפה המקורית.`
+שמות מותגים ודגמים בלבד יכולים להישאר בשפה המקורית.
+תמונת המוצר מצורפת — השתמש בה לתיאור סגנון המסגרת, למי היא מתאימה, ולאילו אירועים.`
   );
 
   if (corrections.length > 0) {
@@ -90,10 +91,10 @@ function buildPrompt(
 
   const typeInstructions: Record<string, string> = {
     description:
-      "description — תיאור שיווקי (2-3 משפטים, כולל המלצת סטיילינג)",
+      "description — תיאור שיווקי מלא (2-3 משפטים, כולל סגנון המסגרת, למי מתאים, לאילו אירועים, והמלצת סטיילינג)",
     seo_title: "seo_title — כותרת SEO (50-60 תווים, כולל מותג + דגם)",
     seo_description: "seo_description — תיאור מטא SEO (150-160 תווים)",
-    alt_text: "alt_text — טקסט חלופי לתמונה (תיאורי, נגיש)",
+    alt_text: "alt_text — טקסט חלופי לתמונה (תיאורי ונגיש, מבוסס על מה שנראה בתמונה)",
   };
 
   for (const ct of contentTypes) {
@@ -109,6 +110,58 @@ function buildPrompt(
 
   parts.push(`\nהחזר JSON בלבד בפורמט הבא (בלי markdown, בלי backticks):
 {${contentTypes.map((t) => `"${t}": "..."`).join(", ")}}`);
+
+  return parts.join("\n");
+}
+
+/* ── Build Claude prompt — Mode B (no images) ── */
+function buildPromptNoImages(
+  product: {
+    brand_name: string;
+    model: string;
+    color: string;
+    size: string;
+    product_type: string;
+    sell_price?: number;
+  },
+  contentTypes: string[]
+): string {
+  const parts: string[] = [];
+
+  // Filter out alt_text — it's a simple template for no-image products
+  const filteredTypes = contentTypes.filter((t) => t !== "alt_text");
+
+  parts.push(
+    `אתה קופירייטר עבור אתר חנות אופטיקה ישראלית.
+כתוב תיאורים עובדתיים בלבד למוצרי משקפיים — ללא תמונה זמינה.
+אל תכתוב המלצות סטיילינג, אל תכתוב "נראה נהדר עם", אל תתאר איך המסגרת נראית.
+כתוב רק עובדות: מותג, דגם, צבע, חומר, סוג.
+שפה: עברית בלבד — כתוב הכל בעברית! אל תכתוב ברוסית או באנגלית.
+שמות מותגים ודגמים בלבד יכולים להישאר בשפה המקורית.`
+  );
+
+  parts.push(`\nייצר את התוכן הבא עבור המוצר:`);
+
+  const typeInstructions: Record<string, string> = {
+    description:
+      "description — תיאור עובדתי קצר (1-2 משפטים, מותג + דגם + צבע + סוג בלבד, ללא סטיילינג)",
+    seo_title: "seo_title — כותרת SEO (50-60 תווים, כולל מותג + דגם)",
+    seo_description: "seo_description — תיאור מטא SEO בסיסי (150-160 תווים, מבוסס על נתונים זמינים בלבד)",
+  };
+
+  for (const ct of filteredTypes) {
+    if (typeInstructions[ct]) parts.push(`- ${typeInstructions[ct]}`);
+  }
+
+  parts.push(
+    `\nמוצר: ${product.brand_name} ${product.model}, צבע: ${product.color}, מידה: ${product.size}, סוג: ${product.product_type}`
+  );
+  if (product.sell_price) {
+    parts.push(`מחיר: ₪${product.sell_price}`);
+  }
+
+  parts.push(`\nהחזר JSON בלבד בפורמט הבא (בלי markdown, בלי backticks):
+{${filteredTypes.map((t) => `"${t}": "..."`).join(", ")}}`);
 
   return parts.join("\n");
 }
@@ -203,6 +256,7 @@ Deno.serve(async (req: Request) => {
       product_data,
       image_storage_path,
       brand_corrections = [],
+      bulk = false,
     } = body;
 
     if (!tenant_id || !product_id || !product_data) {
@@ -211,15 +265,44 @@ Deno.serve(async (req: Request) => {
 
     const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    // Fetch image if storage path provided
+    // Determine if product has images
+    const hasImages = !!image_storage_path;
+
+    // Bulk generate: skip products without images entirely
+    if (bulk && !hasImages) {
+      return jsonRes({
+        success: true,
+        product_id,
+        skipped: true,
+        reason: "No images — skipped in bulk mode",
+        saved: {},
+      });
+    }
+
+    // Fetch image if available (Mode A)
     let imageData: { base64: string; mediaType: string } | null = null;
-    if (image_storage_path) {
+    if (hasImages) {
       imageData = await fetchImageBase64(db, image_storage_path);
     }
 
-    // Build prompt and call Claude
-    const prompt = buildPrompt(product_data, content_types, brand_corrections);
-    const aiResult = await callClaude(prompt, imageData);
+    // Build prompt based on mode
+    let prompt: string;
+    let aiResult: Record<string, string>;
+
+    if (imageData) {
+      // Mode A — with images: full marketing content via Claude Vision
+      prompt = buildPromptWithImages(product_data, content_types, brand_corrections);
+      aiResult = await callClaude(prompt, imageData);
+    } else {
+      // Mode B — no images: factual content only, no Vision
+      prompt = buildPromptNoImages(product_data, content_types);
+      aiResult = await callClaude(prompt, null);
+      // Alt text is a simple template for no-image products
+      if (content_types.includes("alt_text")) {
+        aiResult["alt_text"] =
+          `${product_data.brand_name} ${product_data.model} ${product_data.color} ${product_data.product_type}`;
+      }
+    }
 
     // Save results to ai_content table
     const saved: Record<string, string> = {};
