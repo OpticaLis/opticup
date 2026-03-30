@@ -1,8 +1,20 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Phase 6 — i18n AI Translation
-## Status: ✅ Complete (code done, pending SQL + Edge Function deploy)
+## Current Phase: Phase 7 — White-Label + Analytics + Theme
+## Status: ✅ Complete (code done, pending SQL 018 deploy)
 ## Date: 2026-03-30
+
+---
+
+## Phase 7 — White-Label + Analytics + Theme ✅
+
+| Step | Status | Description | Commit (ERP) |
+|------|--------|-------------|--------------|
+| 0 | ✅ | Backup | — |
+| 1-4 | ✅ | SQL 018, Partytown, analytics scripts, event tracking | `cbba53b` (storefront) |
+| 5-6 | ✅ | Multi-domain tenant resolution, per-tenant homepage/favicon/OG | `e3a653d` (storefront) |
+| 7 | ✅ | ERP analytics JSONB + branding settings UI | `5df7f7d` |
+| 8 | ✅ | Documentation | `c05ce7c` (storefront) |
 
 ---
 
@@ -33,6 +45,9 @@
 ---
 
 ## ⚠️ PENDING — Daniel Must Do
+
+### Phase 7 SQL Migration (Supabase Dashboard)
+1. `opticup-storefront/sql/018-phase7-white-label.sql` — analytics JSONB, custom_domain, hero/favicon/OG columns + v_storefront_config view update
 
 ### Phase 6 SQL Migrations (Supabase Dashboard)
 1. `opticup-storefront/sql/016-phase6-translation.sql` — translation_glossary + translation_corrections
@@ -66,6 +81,19 @@ supabase functions deploy generate-landing-content --no-verify-jwt
 
 ## Key Architecture
 
+### Analytics (Phase 7)
+- `storefront_config.analytics` — JSONB column with all analytics IDs per tenant
+- All scripts load via **Partytown** (Web Worker) for zero Lighthouse impact
+- Events via `dataLayer.push`: view_product, whatsapp_click, notify_me, booking_click, search
+- ERP settings: `storefront-settings.html` → analytics section saves as JSONB
+
+### Tenant Resolution (Phase 7)
+Resolution order: custom_domain → subdomain → ?t= → default
+1. Custom domain: `v_storefront_config.custom_domain` → tenant_id
+2. Subdomain: `[slug].opticalis.co.il`
+3. Query param: `?t=slug`
+4. Default: `PUBLIC_DEFAULT_TENANT` env var
+
 ### New Edge Functions (Phase 6)
 | Function | Purpose | Input | Output |
 |----------|---------|-------|--------|
@@ -78,14 +106,6 @@ supabase functions deploy generate-landing-content --no-verify-jwt
 4. Corrections saved to `translation_corrections` for learning
 5. Bulk translate: processes all missing translations with progress bar
 
-### New ERP Pages (Phase 6)
-- `/storefront-glossary.html` — Translation glossary management (EN/RU)
-- Translations tab added to `/storefront-content.html`
-
-### New JS Modules (Phase 6)
-- `modules/storefront/storefront-translations.js` — Translations tab logic
-- `modules/storefront/storefront-glossary.js` — Glossary CRUD
-
 ### Storefront Navigation (7 tabs)
 Settings → Brands → Products → AI Content → Blog → Landing Pages → Glossary
 
@@ -93,7 +113,7 @@ Settings → Brands → Products → AI Content → Blog → Landing Pages → G
 
 ## What's Next
 
-1. Daniel runs SQL migrations + deploys Edge Functions (Phase 5 + 6)
+1. Daniel runs SQL migrations + deploys Edge Functions (Phase 5 + 6 + 7)
 2. Daniel tests all features
 3. Merge develop → main (both repos)
-4. Phase 7+ TBD
+4. Phase 8+ TBD
