@@ -1,0 +1,162 @@
+<!--
+  Optic Up — Storefront Translation Glossary Manager
+  View, add, edit optical term translations (EN/RU)
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optic Up — מילון מונחים אופטי</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/css/variables.css">
+<link rel="stylesheet" href="shared/css/components.css">
+<link rel="stylesheet" href="shared/css/components-extra.css">
+<link rel="stylesheet" href="shared/css/layout.css">
+<link rel="stylesheet" href="shared/css/forms.css">
+<link rel="stylesheet" href="shared/css/modal.css">
+<link rel="stylesheet" href="shared/css/toast.css">
+<link rel="stylesheet" href="shared/css/table.css">
+<link rel="stylesheet" href="css/header.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+.sf-container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+.sf-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+.sf-subtitle { color: var(--g400); font-size: .9rem; margin-bottom: 24px; }
+.sf-nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+.sf-nav a { padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: .9rem;
+  background: var(--g100); color: var(--g700); transition: all .2s; }
+.sf-nav a.active, .sf-nav a:hover { background: var(--primary); color: #fff; }
+.sf-section { background: #fff; border: 1px solid var(--g200); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+.gl-filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+.gl-filters select, .gl-filters input { padding: 8px 12px; border: 1px solid var(--g300); border-radius: 8px; font-size: .9rem; font-family: inherit; }
+.gl-filters .search-input { flex: 1; min-width: 200px; }
+.gl-actions { display: flex; gap: 12px; margin-bottom: 16px; }
+.gl-actions button { padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: .85rem; cursor: pointer; border: none; }
+.btn-add { background: var(--primary); color: #fff; }
+.btn-add:hover { opacity: .9; }
+.gl-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.gl-table th { background: var(--g50); padding: 10px 12px; text-align: right; font-weight: 600; border-bottom: 2px solid var(--g200); }
+.gl-table td { padding: 10px 12px; border-bottom: 1px solid var(--g100); }
+.gl-table tr:hover { background: var(--g50); }
+.ctx-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: .75rem; font-weight: 600; background: var(--g100); color: var(--g600); }
+.src-badge { font-size: .75rem; }
+.src-badge.manual { color: #1e40af; }
+.src-badge.learned { color: #059669; }
+.gl-btn { padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: .8rem; }
+.gl-btn-edit { background: var(--g100); color: var(--g700); }
+.gl-btn-del { background: #fee2e2; color: #991b1b; }
+.count-label { font-size: .85rem; color: var(--g500); }
+</style>
+</head>
+<body>
+
+<main>
+  <div class="sf-container">
+    <h1 class="sf-title">📖 מילון מונחים אופטי</h1>
+    <p class="sf-subtitle">ניהול תרגומים עקביים למונחים מקצועיים — אנגלית ורוסית</p>
+
+    <nav class="sf-nav">
+      <a href="storefront-settings.html">⚙️ הגדרות</a>
+      <a href="storefront-brands.html">🏷️ מותגים</a>
+      <a href="storefront-products.html">📦 מוצרים</a>
+      <a href="storefront-content.html">🤖 תוכן AI</a>
+      <a href="storefront-blog.html">📝 בלוג</a>
+      <a href="storefront-landing-content.html">🎯 דפי נחיתה</a>
+      <a href="storefront-glossary.html" class="active">📖 מילון מונחים</a>
+    </nav>
+
+    <div class="sf-section">
+      <div class="gl-filters">
+        <select id="gl-lang" onchange="loadGlossary()">
+          <option value="en">🇬🇧 English</option>
+          <option value="ru">🇷🇺 Русский</option>
+        </select>
+        <select id="gl-context" onchange="renderGlossary()">
+          <option value="">כל הקטגוריות</option>
+          <option value="lens_type">סוגי עדשות</option>
+          <option value="material">חומרים</option>
+          <option value="eyewear_type">סוגי משקפיים</option>
+          <option value="part">חלקי משקפיים</option>
+          <option value="exam">בדיקת ראייה</option>
+          <option value="marketing">שיווק</option>
+          <option value="service">שירות</option>
+          <option value="general">כללי</option>
+        </select>
+        <select id="gl-source" onchange="renderGlossary()">
+          <option value="">כל המקורות</option>
+          <option value="manual">ידני</option>
+          <option value="learned">נלמד</option>
+        </select>
+        <input type="text" class="search-input" id="gl-search" placeholder="חיפוש..." oninput="renderGlossary()">
+      </div>
+      <div class="gl-actions">
+        <button class="btn-add" onclick="openAddTermModal()">+ הוסף מונח</button>
+        <span class="count-label" id="gl-count"></span>
+      </div>
+      <div id="gl-table-container"></div>
+    </div>
+  </div>
+</main>
+
+<!-- Add/Edit term modal -->
+<div id="gl-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:500px;width:90vw">
+    <h3 id="gl-modal-title">הוספת מונח</h3>
+    <div style="margin-bottom:12px">
+      <label style="font-weight:600;font-size:.85rem">מונח בעברית</label>
+      <input type="text" id="gl-term-he" style="width:100%;padding:8px 12px;border:1px solid var(--g300);border-radius:8px;font-family:inherit" dir="rtl">
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-weight:600;font-size:.85rem">תרגום</label>
+      <input type="text" id="gl-term-trans" style="width:100%;padding:8px 12px;border:1px solid var(--g300);border-radius:8px;font-family:inherit" dir="ltr">
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-weight:600;font-size:.85rem">קטגוריה</label>
+      <select id="gl-term-ctx" style="width:100%;padding:8px 12px;border:1px solid var(--g300);border-radius:8px;font-family:inherit">
+        <option value="general">כללי</option>
+        <option value="lens_type">סוגי עדשות</option>
+        <option value="material">חומרים</option>
+        <option value="eyewear_type">סוגי משקפיים</option>
+        <option value="part">חלקי משקפיים</option>
+        <option value="exam">בדיקת ראייה</option>
+        <option value="marketing">שיווק</option>
+        <option value="service">שירות</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:20px">
+      <button class="btn-add" onclick="saveGlossaryTerm()">💾 שמור</button>
+      <button class="btn-g" onclick="closeGlModal()" style="padding:8px 16px;border:1px solid var(--g300);border-radius:8px;cursor:pointer;background:#fff">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-c"></div>
+<div id="loading" class="loading-overlay" style="display:none">
+  <div class="loading-box"><div class="spinner"></div><p id="loading-text">טוען...</p></div>
+</div>
+
+<script src="shared/js/theme-loader.js"></script>
+<script src="shared/js/modal-builder.js"></script>
+<script src="shared/js/toast.js"></script>
+<script src="shared/js/pin-modal.js"></script>
+<script src="shared/js/permission-ui.js"></script>
+<script src="shared/js/supabase-client.js"></script>
+<script src="shared/js/activity-logger.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/shared-ui.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/supabase-ops.js"></script>
+<script src="js/header.js"></script>
+<script src="js/alerts-badge.js"></script>
+<script src="modules/storefront/storefront-glossary.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', async () => {
+  const session = await loadSession();
+  if (!session) { window.location.href = '/'; return; }
+  if (!hasPermission('settings.view')) { window.location.href = '/'; return; }
+  await loadGlossary();
+});
+</script>
+</body>
+</html>

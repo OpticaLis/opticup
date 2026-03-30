@@ -79,6 +79,18 @@
 .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 6px; transition: width .3s; }
 .progress-stats { display: flex; gap: 16px; font-size: .85rem; color: var(--g500); }
 .progress-current { font-size: .9rem; color: var(--g600); margin-top: 8px; }
+
+/* Sub-tabs */
+.sf-tab { padding: 10px 20px; border: 1px solid var(--g200); border-radius: 8px 8px 0 0; background: var(--g50); color: var(--g600);
+  font-weight: 600; font-size: .9rem; cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent; }
+.sf-tab.active { background: #fff; border-color: var(--g200); border-bottom-color: #fff; color: var(--primary); }
+
+/* Translation status badges */
+.trans-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: .75rem; font-weight: 600; }
+.trans-badge.auto { background: #dbeafe; color: #1e40af; }
+.trans-badge.edited { background: #fef3c7; color: #92400e; }
+.trans-badge.approved { background: #d1fae5; color: #065f46; }
+.trans-badge.missing { background: #fee2e2; color: #991b1b; }
 </style>
 </head>
 <body>
@@ -95,7 +107,17 @@
       <a href="storefront-content.html" class="active">🤖 תוכן AI</a>
       <a href="storefront-blog.html">📝 בלוג</a>
       <a href="storefront-landing-content.html">🎯 דפי נחיתה</a>
+      <a href="storefront-glossary.html">📖 מילון מונחים</a>
     </nav>
+
+    <!-- Sub-tabs: Content vs Translations -->
+    <div class="sf-tabs" style="display:flex;gap:4px;margin-bottom:20px;">
+      <button class="sf-tab active" id="tab-content" onclick="switchContentTab('content')">📝 תוכן מוצרים</button>
+      <button class="sf-tab" id="tab-translations" onclick="switchContentTab('translations')">🌐 תרגומים</button>
+    </div>
+
+    <!-- ═══ Content Tab ═══ -->
+    <div id="panel-content">
 
     <!-- Progress bar (hidden until bulk generate) -->
     <div class="progress-container" id="progress-container">
@@ -138,6 +160,55 @@
       <!-- Pagination -->
       <div class="pagination" id="pagination"></div>
     </div>
+
+    </div><!-- /panel-content -->
+
+    <!-- ═══ Translations Tab ═══ -->
+    <div id="panel-translations" style="display:none">
+      <!-- Translate progress bar -->
+      <div class="progress-container" id="translate-progress-container">
+        <h3>מתרגם תוכן...</h3>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="translate-progress-fill" style="width:0%"></div>
+        </div>
+        <div class="progress-stats">
+          <span id="translate-progress-count">0/0</span>
+          <span>הצלחות: <strong id="translate-progress-success">0</strong></span>
+          <span>שגיאות: <strong id="translate-progress-errors">0</strong></span>
+        </div>
+        <div class="progress-current" id="translate-progress-current"></div>
+        <button class="btn-regen" id="translate-progress-stop" onclick="stopBulkTranslate()" style="margin-top:12px">⏸ עצור</button>
+      </div>
+
+      <div class="sf-section">
+        <div class="content-filters">
+          <select id="trans-filter-lang" onchange="filterTranslations()">
+            <option value="">כל השפות</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="ru">🇷🇺 Русский</option>
+          </select>
+          <select id="trans-filter-status" onchange="filterTranslations()">
+            <option value="">כל הסטטוסים</option>
+            <option value="auto">🔄 אוטומטי</option>
+            <option value="edited">✏️ נערך</option>
+            <option value="approved">✅ אושר</option>
+            <option value="missing">❌ חסר תרגום</option>
+          </select>
+          <select id="trans-filter-brand" onchange="filterTranslations()">
+            <option value="">כל המותגים</option>
+          </select>
+          <input type="text" class="search-input" id="trans-filter-search" placeholder="חיפוש לפי דגם או ברקוד..." oninput="filterTranslations()">
+        </div>
+        <div class="content-actions">
+          <button class="btn-ai" onclick="bulkTranslateMissing()">🌐 תרגם הכל (חסרים)</button>
+          <span class="count-label" id="trans-count"></span>
+        </div>
+
+        <div id="trans-table-container"></div>
+        <div class="pagination" id="trans-pagination"></div>
+      </div>
+    </div><!-- /panel-translations -->
+
   </div>
 </main>
 
@@ -176,6 +247,37 @@
   </div>
 </div>
 
+<!-- Translation side-by-side edit modal -->
+<div id="trans-edit-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:800px;width:95vw">
+    <h3 id="trans-edit-title">תרגום</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <label style="font-weight:600;font-size:.85rem;color:var(--g600)">עברית (מקור)</label>
+        <textarea id="trans-source" readonly style="width:100%;min-height:120px;padding:10px;border:1px solid var(--g200);border-radius:8px;background:var(--g50);font-family:inherit;resize:vertical"></textarea>
+      </div>
+      <div>
+        <label id="trans-target-label" style="font-weight:600;font-size:.85rem;color:var(--g600)">תרגום</label>
+        <textarea id="trans-target" style="width:100%;min-height:120px;padding:10px;border:1px solid var(--g300);border-radius:8px;font-family:inherit;resize:vertical"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <select id="trans-edit-type" onchange="loadTransEditType()" style="padding:6px 10px;border:1px solid var(--g300);border-radius:6px;font-family:inherit">
+        <option value="description">תיאור</option>
+        <option value="seo_title">SEO Title</option>
+        <option value="seo_description">SEO Description</option>
+        <option value="alt_text">Alt Text</option>
+      </select>
+    </div>
+    <div class="edit-actions" style="margin-top:16px">
+      <button class="btn-ai" onclick="retranslateContent()">🤖 תרגם מחדש</button>
+      <button class="btn-p" onclick="saveTranslationEdit()">💾 שמור</button>
+      <button style="background:#059669;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer" onclick="approveTranslation()">✓ אשר</button>
+      <button class="btn-g" onclick="closeTransEditModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast + Loading -->
 <div id="toast-c"></div>
 <div id="loading" class="loading-overlay" style="display:none">
@@ -199,6 +301,7 @@
 <script src="js/header.js"></script>
 <script src="js/alerts-badge.js"></script>
 <script src="modules/storefront/storefront-content.js"></script>
+<script src="modules/storefront/storefront-translations.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', async () => {
   const session = await loadSession();
