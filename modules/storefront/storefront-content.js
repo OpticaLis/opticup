@@ -43,6 +43,8 @@ async function loadContentPage() {
       .sort((a, b) => a.name.localeCompare(b.name));
 
     const brandSelect = document.getElementById('filter-brand');
+    // Clear existing options (keep first "all" option) to prevent duplicates on reload
+    while (brandSelect.options.length > 1) brandSelect.remove(1);
     for (const b of contentBrands) {
       const opt = document.createElement('option');
       opt.value = b.name;

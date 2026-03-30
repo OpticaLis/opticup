@@ -22,6 +22,8 @@ async function loadStorefrontProducts() {
 
     // Populate brand filter (deduplicated by name to avoid duplicates from brand_type)
     const brandSelect = document.getElementById('filter-brand');
+    // Clear existing options (keep first "all" option) to prevent duplicates on reload
+    while (brandSelect.options.length > 1) brandSelect.remove(1);
     const seenBrandNames = new Set();
     for (const b of allBrands) {
       if (seenBrandNames.has(b.name)) continue;
