@@ -72,26 +72,7 @@ async function applyBulkUpdate() {
 
   if (!Object.keys(fields).length) { toast('לא הוזנו ערכים לעדכון', 'w'); return; }
 
-  // Validate sync change: require bridge, temple for מלא/תדמית
-  // Image requirement removed — may be restored in future
-  if (sync === 'מלא' || sync === 'תדמית') {
-    const problemItems = [];
-    ids.forEach(id => {
-      const rec = invData.find(r => r.id === id);
-      if (!rec) return;
-      const missing = [];
-      if (!(rec.bridge||'').toString().trim()) missing.push('גשר');
-      if (!(rec.temple_length||'').toString().trim()) missing.push('אורך מוט');
-      if (missing.length) problemItems.push(`${rec.barcode||'?'}: חסר ${missing.join(', ')}`);
-    });
-    if (problemItems.length) {
-      const show = problemItems.slice(0, 10).join('\n');
-      const more = problemItems.length > 10 ? `\n...ועוד ${problemItems.length - 10}` : '';
-      toast(`לא ניתן לסנכרן "${sync}" — ${problemItems.length} פריטים חסרי נתונים`, 'e');
-      setAlert('inv-alerts', `<strong>פריטים שלא ניתן לסנכרן:</strong><br>${show.replace(/\n/g,'<br>')}${more}`, 'e');
-      return;
-    }
-  }
+  // Bridge/temple/image requirement for sync removed — may be restored in future
 
   const desc = Object.entries(fields).map(([k,v]) => `${FIELD_MAP_REV.inventory?.[k]||k}: ${typeof v==='number' && k.includes('discount') ? Math.round(v*100)+'%' : v}`).join(', ');
   const ok = await confirmDialog('עדכון גורף', `לעדכן ${ids.length} פריטים?\n${desc}`);
@@ -231,20 +212,7 @@ function invEditSync(td) {
   const save = () => {
     td.classList.remove('editing');
     const newVal = sel.value;
-    // Validation: sync=מלא or תדמית requires bridge, temple length
-    // Image requirement removed — may be restored in future
-    if (newVal === 'מלא' || newVal === 'תדמית') {
-      const bridge = (rec.bridge || '').toString().trim();
-      const temple = (rec.temple_length || '').toString().trim();
-      const missing = [];
-      if (!bridge) missing.push('גשר');
-      if (!temple) missing.push('אורך מוט');
-      if (missing.length) {
-        toast(`לא ניתן לסנכרן "${newVal}" — חסרים: ${missing.join(', ')}`, 'e');
-        td.textContent = curVal;
-        return;
-      }
-    }
+    // Bridge/temple/image requirement for sync removed — may be restored in future
     if (newVal !== curVal) {
       if (!invChanges[recId]) invChanges[recId] = {};
       invChanges[recId].website_sync = heToEn('website_sync', newVal);
