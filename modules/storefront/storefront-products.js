@@ -20,9 +20,12 @@ async function loadStorefrontProducts() {
     if (brandErr) throw brandErr;
     allBrands = brands || [];
 
-    // Populate brand filter
+    // Populate brand filter (deduplicated by name to avoid duplicates from brand_type)
     const brandSelect = document.getElementById('filter-brand');
+    const seenBrandNames = new Set();
     for (const b of allBrands) {
+      if (seenBrandNames.has(b.name)) continue;
+      seenBrandNames.add(b.name);
       const opt = document.createElement('option');
       opt.value = b.id;
       opt.textContent = b.name;

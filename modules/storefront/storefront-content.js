@@ -18,44 +18,36 @@ async function loadContentPage() {
   try {
     const tid = getTenantId();
 
-    // Load brands for filter
-    const { data: brands } = await sb.from(T.BRANDS)
-      .select('id, name')
-      .eq('tenant_id', tid)
-      .eq('is_deleted', false)
-      .order('name');
-    contentBrands = brands || [];
+    // Load products from storefront view (only visible products)
+    const { data: products } = await sb.from('v_storefront_products')
+      .select('id, barcode, brand_name, brand_id, model, color, size, quantity, product_type, sell_price, images')
+      .eq('tenant_id', tid);
+    contentProducts = (products || []).map(p => {
+      // Extract first image storage path from view's images array
+      let imagePath = null;
+      if (p.images && p.images.length > 0) {
+        imagePath = p.images[0].replace('/api/image/', '');
+      }
+      return { ...p, brand_name: p.brand_name || '—', image_path: imagePath };
+    });
+
+    // Build deduplicated brand list from products (by name, to avoid duplicates from brand_type)
+    const brandNames = new Map();
+    for (const p of contentProducts) {
+      if (p.brand_name && p.brand_name !== '—' && !brandNames.has(p.brand_name)) {
+        brandNames.set(p.brand_name, p.brand_id);
+      }
+    }
+    contentBrands = Array.from(brandNames.entries())
+      .map(([name, id]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
 
     const brandSelect = document.getElementById('filter-brand');
     for (const b of contentBrands) {
       const opt = document.createElement('option');
-      opt.value = b.id;
+      opt.value = b.name;
       opt.textContent = b.name;
       brandSelect.appendChild(opt);
-    }
-
-    // Load products with images
-    const { data: products } = await sb.from(T.INV)
-      .select('id, barcode, model, color, size, brand_id, quantity, product_type, sell_price')
-      .eq('tenant_id', tid)
-      .eq('is_deleted', false)
-      .order('brand_id');
-    contentProducts = (products || []).map(p => {
-      const brand = contentBrands.find(b => b.id === p.brand_id);
-      return { ...p, brand_name: brand?.name || '—' };
-    });
-
-    // Load product images (first image per product)
-    const { data: images } = await sb.from(T.IMAGES)
-      .select('inventory_id, storage_path')
-      .eq('tenant_id', tid)
-      .order('sort_order');
-    const imgMap = {};
-    for (const img of (images || [])) {
-      if (!imgMap[img.inventory_id]) imgMap[img.inventory_id] = img.storage_path;
-    }
-    for (const p of contentProducts) {
-      p.image_path = imgMap[p.id] || null;
     }
 
     // Load AI content
@@ -75,6 +67,7 @@ async function loadAIContent(tid) {
     .select('entity_id, content_type, content, status, id')
     .eq('tenant_id', tid)
     .eq('entity_type', 'product')
+    .eq('language', 'he')
     .eq('is_deleted', false);
 
   contentMap = {};
@@ -96,7 +89,7 @@ function filterContent() {
 
   let filtered = contentProducts;
 
-  if (brandFilter) filtered = filtered.filter(p => p.brand_id === brandFilter);
+  if (brandFilter) filtered = filtered.filter(p => p.brand_name === brandFilter);
   if (searchFilter) {
     filtered = filtered.filter(p =>
       (p.model || '').toLowerCase().includes(searchFilter) ||
@@ -158,9 +151,9 @@ function renderContentTable(products) {
       <td>${escapeHtml(p.brand_name)}</td>
       <td>${escapeHtml(p.model || '—')}</td>
       <td class="barcode-cell">${escapeHtml(p.barcode || '')}</td>
-      <td class="status-icon">${descIcon}</td>
-      <td class="status-icon">${seoIcon}</td>
-      <td class="status-icon">${altIcon}</td>
+      <td class="status-icon" onclick="event.stopPropagation(); openEditModal('${p.id}','description')">${descIcon}</td>
+      <td class="status-icon" onclick="event.stopPropagation(); openEditModal('${p.id}','seo_title')">${seoIcon}</td>
+      <td class="status-icon" onclick="event.stopPropagation(); openEditModal('${p.id}','alt_text')">${altIcon}</td>
     </tr>`;
   }
 
@@ -180,7 +173,7 @@ function getFilteredProducts() {
   const searchFilter = document.getElementById('filter-search').value.trim().toLowerCase();
 
   let filtered = contentProducts;
-  if (brandFilter) filtered = filtered.filter(p => p.brand_id === brandFilter);
+  if (brandFilter) filtered = filtered.filter(p => p.brand_name === brandFilter);
   if (searchFilter) {
     filtered = filtered.filter(p =>
       (p.model || '').toLowerCase().includes(searchFilter) ||
@@ -229,7 +222,7 @@ function toggleSelectAllContent(cb) {
 }
 
 // ── Edit modal ──
-function openEditModal(productId) {
+function openEditModal(productId, focusField) {
   const product = contentProducts.find(p => p.id === productId);
   if (!product) return;
   editingProduct = product;
@@ -245,6 +238,18 @@ function openEditModal(productId) {
   updateCharCount('edit-seo-desc', 160);
 
   document.getElementById('edit-modal').style.display = 'flex';
+
+  // Focus the specific field if a content type was clicked
+  const fieldMap = {
+    description: 'edit-description',
+    seo_title: 'edit-seo-title',
+    seo_description: 'edit-seo-desc',
+    alt_text: 'edit-alt-text'
+  };
+  if (focusField && fieldMap[focusField]) {
+    const el = document.getElementById(fieldMap[focusField]);
+    if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); }
+  }
 }
 
 function closeEditModal() {

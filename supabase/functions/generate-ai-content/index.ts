@@ -74,7 +74,8 @@ function buildPrompt(
     `אתה קופירייטר מקצועי עבור אתר חנות אופטיקה ישראלית.
 כתוב תיאורים שיווקיים למוצרי משקפיים.
 סגנון: מקצועי אך נגיש, כולל המלצות סטיילינג.
-שפה: עברית בלבד.`
+שפה: עברית בלבד — כתוב הכל בעברית! אל תכתוב ברוסית או באנגלית.
+שמות מותגים ודגמים בלבד יכולים להישאר בשפה המקורית.`
   );
 
   if (corrections.length > 0) {
@@ -144,6 +145,11 @@ async function callClaude(
         body: JSON.stringify({
           model: CLAUDE_MODEL,
           max_tokens: 1024,
+          system:
+            "You are a professional Hebrew copywriter for an Israeli optical store. " +
+            "You MUST write ALL content in Hebrew (עברית) ONLY. " +
+            "Never write in English, Russian, or any other language. Every single word of your output must be in Hebrew. " +
+            "The only exception: brand names and model names may stay in their original language.",
           messages: [{ role: "user", content }],
         }),
       });
