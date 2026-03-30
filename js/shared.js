@@ -40,6 +40,8 @@ const T = {
   IMAGES: 'inventory_images',
   EXPENSE_FOLDERS: 'expense_folders',
   BAL_ADJ: 'supplier_balance_adjustments',
+  STOREFRONT_CONFIG: 'storefront_config',
+  STOREFRONT_LEADS: 'storefront_leads',
 };
 
 // Tenant slug — set synchronously from URL/sessionStorage for immediate availability.

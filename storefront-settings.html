@@ -1,0 +1,147 @@
+<!--
+  Optic Up — Storefront Management / ניהול חנות אונליין
+  Settings, brand modes, product overrides
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optic Up — ניהול חנות אונליין</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Shared CSS -->
+<link rel="stylesheet" href="shared/css/variables.css">
+<link rel="stylesheet" href="shared/css/components.css">
+<link rel="stylesheet" href="shared/css/components-extra.css">
+<link rel="stylesheet" href="shared/css/layout.css">
+<link rel="stylesheet" href="shared/css/forms.css">
+<link rel="stylesheet" href="shared/css/modal.css">
+<link rel="stylesheet" href="shared/css/toast.css">
+<link rel="stylesheet" href="shared/css/table.css">
+<link rel="stylesheet" href="css/header.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+.sf-container { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+.sf-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+.sf-subtitle { color: var(--g400); font-size: .9rem; margin-bottom: 24px; }
+.sf-nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+.sf-nav a { padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: .9rem;
+  background: var(--g100); color: var(--g700); transition: all .2s; }
+.sf-nav a.active, .sf-nav a:hover { background: var(--primary); color: #fff; }
+.sf-section { background: #fff; border: 1px solid var(--g200); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+.sf-section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.sf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.sf-field { display: flex; flex-direction: column; gap: 4px; }
+.sf-field label { font-size: .85rem; font-weight: 500; color: var(--g600); }
+.sf-field input, .sf-field select { padding: 10px 12px; border: 1px solid var(--g300); border-radius: 8px; font-size: .95rem; font-family: inherit; }
+.sf-field input:focus, .sf-field select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.sf-field small { color: var(--g400); font-size: .78rem; }
+.sf-actions { margin-top: 20px; display: flex; gap: 12px; }
+</style>
+</head>
+<body>
+
+<main>
+  <div class="sf-container">
+    <h1 class="sf-title">🌐 ניהול חנות אונליין</h1>
+    <p class="sf-subtitle">הגדרות, מותגים ומוצרים לחנות האונליין</p>
+
+    <!-- Navigation tabs -->
+    <nav class="sf-nav">
+      <a href="storefront-settings.html" class="active">⚙️ הגדרות</a>
+      <a href="storefront-brands.html">🏷️ מותגים</a>
+      <a href="storefront-products.html">📦 מוצרים</a>
+    </nav>
+
+    <!-- Section: WhatsApp -->
+    <div class="sf-section">
+      <h2 class="sf-section-title">💬 הגדרות WhatsApp</h2>
+      <div class="sf-grid">
+        <div class="sf-field">
+          <label for="sf-whatsapp">מספר WhatsApp</label>
+          <input type="tel" id="sf-whatsapp" dir="ltr" placeholder="0533645404">
+          <small>מספר ישראלי (05X-XXXXXXX). מופיע בכפתור WhatsApp בחנות</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Booking -->
+    <div class="sf-section">
+      <h2 class="sf-section-title">📅 הגדרות תור</h2>
+      <div class="sf-grid">
+        <div class="sf-field">
+          <label for="sf-booking-url">כתובת תורים (URL)</label>
+          <input type="url" id="sf-booking-url" dir="ltr" placeholder="https://yoman.co.il/...">
+          <small>קישור חיצוני לקביעת תור. השאירו ריק כדי להסתיר את הכפתור</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Notifications -->
+    <div class="sf-section">
+      <h2 class="sf-section-title">🔔 הגדרות עדכוני מלאי</h2>
+      <div class="sf-grid">
+        <div class="sf-field">
+          <label for="sf-notify-method">שיטת התראה</label>
+          <select id="sf-notify-method">
+            <option value="whatsapp">WhatsApp בלבד</option>
+            <option value="email">אימייל בלבד</option>
+            <option value="both">WhatsApp + אימייל</option>
+          </select>
+          <small>כיצד לקוחות שנרשמו ל"עדכנו אותי" יקבלו התראה</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="sf-actions">
+      <button class="btn-p" id="sf-save-btn" onclick="saveStorefrontSettings()">💾 שמור הגדרות</button>
+    </div>
+  </div>
+</main>
+
+<!-- Toast container -->
+<div id="toast-c"></div>
+
+<!-- Loading overlay -->
+<div id="loading" class="loading-overlay" style="display:none">
+  <div class="loading-box"><div class="spinner"></div><p id="loading-text">טוען...</p></div>
+</div>
+
+<!-- Confirm dialog modal -->
+<div id="confirm-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:400px;text-align:center">
+    <h3 id="confirm-title">אישור</h3>
+    <p id="confirm-text"></p>
+    <button class="btn btn-s" id="confirm-yes">כן</button>
+    <button class="btn btn-g" id="confirm-no">לא — חזור</button>
+  </div>
+</div>
+
+<!-- Shared JS -->
+<script src="shared/js/theme-loader.js"></script>
+<script src="shared/js/modal-builder.js"></script>
+<script src="shared/js/modal-wizard.js"></script>
+<script src="shared/js/toast.js"></script>
+<script src="shared/js/pin-modal.js"></script>
+<script src="shared/js/table-builder.js"></script>
+<script src="shared/js/permission-ui.js"></script>
+<script src="shared/js/supabase-client.js"></script>
+<script src="shared/js/activity-logger.js"></script>
+<!-- Core JS -->
+<script src="js/shared.js"></script>
+<script src="js/shared-ui.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/supabase-ops.js"></script>
+<script src="js/header.js"></script>
+<script src="js/alerts-badge.js"></script>
+<script src="modules/storefront/storefront-settings.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', async () => {
+  const session = await loadSession();
+  if (!session) { window.location.href = '/'; return; }
+  if (!hasPermission('settings.view')) { window.location.href = '/'; return; }
+  await loadStorefrontSettings();
+});
+</script>
+</body>
+</html>
