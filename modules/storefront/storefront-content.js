@@ -421,6 +421,8 @@ async function runBulkGenerate(products, label) {
   container.classList.add('active');
   updateProgress(0, total, success, errors, '');
 
+  const errorLog = [];
+
   for (let i = 0; i < total; i++) {
     if (bulkAbort) break;
 
@@ -428,19 +430,44 @@ async function runBulkGenerate(products, label) {
     const name = `${p.brand_name} ${p.model || ''} (${p.barcode || ''})`;
     updateProgress(i, total, success, errors, name);
 
-    try {
-      const result = await generateContentForProduct(p);
-      if (result?.success) success++;
-      else errors++;
-    } catch (e) {
-      console.error(`Bulk error for ${p.id}:`, e);
+    let result = null;
+    let lastErr = null;
+
+    // Try once, retry once after 5s on failure
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        result = await generateContentForProduct(p);
+        if (result?.success) break;
+        lastErr = result?.errors?.join(', ') || result?.error || 'Unknown error';
+        result = null;
+      } catch (e) {
+        lastErr = e.message || 'Network error';
+        result = null;
+      }
+      if (attempt === 0 && !bulkAbort) {
+        console.warn(`Retry in 5s: ${p.barcode || p.id} — ${lastErr}`);
+        await new Promise(r => setTimeout(r, 5000));
+      }
+    }
+
+    if (result?.success) {
+      success++;
+    } else {
       errors++;
+      const errMsg = `${p.barcode || p.id}: ${lastErr}`;
+      errorLog.push(errMsg);
+      console.error(`Bulk generate failed: ${errMsg}`);
     }
 
     // Rate limiting: 2 second delay between products
     if (i < total - 1 && !bulkAbort) {
       await new Promise(r => setTimeout(r, 2000));
     }
+  }
+
+  // Log all errors to console for debugging
+  if (errorLog.length) {
+    console.error('Bulk generate error summary:', errorLog);
   }
 
   updateProgress(total, total, success, errors, '');

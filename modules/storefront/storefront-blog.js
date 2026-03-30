@@ -1,10 +1,19 @@
 // Storefront Blog Manager — CRUD + AI generation
 // Phase 5B: Blog editor for managing blog_posts table
 
-let blogPosts = [];
+let blogPosts = [];     // raw rows from DB
+let groupedPosts = [];  // grouped by translation
 let editingPostId = null;
 
 const BLOG_EDGE_FN = 'https://tsxrrxzmdxaenlvocyit.supabase.co/functions/v1/generate-blog-post';
+
+// Decode HTML entities (same logic as content-cleaner)
+function decodeEntities(str) {
+  if (!str) return str;
+  const el = document.createElement('textarea');
+  el.innerHTML = str;
+  return el.value;
+}
 
 // ── Load posts ──
 async function loadBlogPosts() {
@@ -12,13 +21,14 @@ async function loadBlogPosts() {
   try {
     const tid = getTenantId();
     const { data, error } = await sb.from('blog_posts')
-      .select('id, slug, lang, title, status, source, categories, published_at, created_at')
+      .select('id, slug, lang, title, status, source, categories, published_at, created_at, translation_of')
       .eq('tenant_id', tid)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
     blogPosts = data || [];
+    groupedPosts = groupByTranslation(blogPosts);
     filterBlogPosts();
   } catch (e) {
     console.error('loadBlogPosts error:', e);
@@ -28,34 +38,55 @@ async function loadBlogPosts() {
   }
 }
 
+// Group posts: originals + their translations shown as one row
+function groupByTranslation(posts) {
+  const groups = new Map(); // key = original post id → { primary, langs: {he,en,ru} }
+  const originals = posts.filter(p => !p.translation_of);
+  const translations = posts.filter(p => p.translation_of);
+
+  for (const p of originals) {
+    groups.set(p.id, { primary: p, langs: { [p.lang]: p } });
+  }
+  for (const t of translations) {
+    const group = groups.get(t.translation_of);
+    if (group) {
+      group.langs[t.lang] = t;
+    } else {
+      // Orphan translation — show as its own group
+      groups.set(t.id, { primary: t, langs: { [t.lang]: t } });
+    }
+  }
+  return Array.from(groups.values());
+}
+
 function filterBlogPosts() {
   const statusFilter = document.getElementById('filter-status').value;
   const langFilter = document.getElementById('filter-lang').value;
 
-  let filtered = blogPosts;
-  if (statusFilter) filtered = filtered.filter(p => p.status === statusFilter);
-  if (langFilter) filtered = filtered.filter(p => p.lang === langFilter);
+  let filtered = groupedPosts;
+  if (statusFilter) filtered = filtered.filter(g => g.primary.status === statusFilter);
+  if (langFilter) filtered = filtered.filter(g => g.langs[langFilter]);
 
   renderBlogTable(filtered);
 }
 
-function renderBlogTable(posts) {
+function renderBlogTable(groups) {
   const container = document.getElementById('blog-table-container');
 
-  if (!posts.length) {
+  if (!groups.length) {
     container.innerHTML = '<p style="color:var(--g400);text-align:center;padding:24px">אין פוסטים</p>';
     return;
   }
 
   const statusLabels = { published: 'מפורסם', draft: 'טיוטה', archived: 'ארכיון' };
   const statusClasses = { published: 'status-published', draft: 'status-draft', archived: 'status-archived' };
-  const langLabels = { he: 'עב', en: 'EN', ru: 'RU' };
   const sourceIcons = { wordpress: '🔄', ai: '🤖', manual: '✍️' };
+  const langFlags = { he: '🇮🇱', en: '🇬🇧', ru: '🇷🇺' };
 
   let html = `<table class="blog-table">
     <thead><tr>
       <th>סטטוס</th>
-      <th>שפה</th>
+      <th>שפות</th>
       <th>כותרת</th>
       <th>מקור</th>
       <th>תאריך</th>
@@ -63,14 +94,23 @@ function renderBlogTable(posts) {
     </tr></thead>
     <tbody>`;
 
-  for (const p of posts) {
+  for (const g of groups) {
+    const p = g.primary;
     const dateStr = p.published_at || p.created_at;
     const date = dateStr ? new Date(dateStr).toLocaleDateString('he-IL') : '—';
 
+    // Language badges — one per available language
+    const langBadges = ['he', 'en', 'ru']
+      .filter(l => g.langs[l])
+      .map(l => `<span class="lang-badge" title="${l}" onclick="event.stopPropagation(); editBlogPost('${g.langs[l].id}')">${langFlags[l]}</span>`)
+      .join(' ');
+
+    const title = decodeEntities(p.title);
+
     html += `<tr>
       <td><span class="status-badge ${statusClasses[p.status] || ''}">${statusLabels[p.status] || p.status}</span></td>
-      <td>${langLabels[p.lang] || p.lang}</td>
-      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(p.title)}</td>
+      <td>${langBadges}</td>
+      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(title)}</td>
       <td>${sourceIcons[p.source] || ''}</td>
       <td style="font-size:.85rem">${date}</td>
       <td class="action-btns">
@@ -113,13 +153,13 @@ async function editBlogPost(postId) {
 
     editingPostId = postId;
     document.getElementById('blog-edit-title').textContent = 'עריכת פוסט';
-    document.getElementById('blog-title').value = data.title || '';
+    document.getElementById('blog-title').value = decodeEntities(data.title) || '';
     document.getElementById('blog-slug').value = data.slug || '';
     document.getElementById('blog-lang').value = data.lang || 'he';
     document.getElementById('blog-categories').value = (data.categories || []).join(', ');
     document.getElementById('blog-content').value = data.content || '';
-    document.getElementById('blog-seo-title').value = data.seo_title || '';
-    document.getElementById('blog-seo-desc').value = data.seo_description || '';
+    document.getElementById('blog-seo-title').value = decodeEntities(data.seo_title) || '';
+    document.getElementById('blog-seo-desc').value = decodeEntities(data.seo_description) || '';
     document.getElementById('blog-status').value = data.status || 'draft';
     document.getElementById('blog-excerpt').value = data.excerpt || '';
     document.getElementById('blog-edit-modal').style.display = 'flex';

@@ -6,11 +6,11 @@ async function loadStorefrontBrands() {
   try {
     const tid = getTenantId();
 
-    // Get brands with product counts
+    // Get brands with product counts (brands table has no is_deleted — use active)
     const { data: brands, error: brandErr } = await sb.from(T.BRANDS)
       .select('id, name, storefront_mode, default_sync, exclude_website, active')
       .eq('tenant_id', tid)
-      .eq('is_deleted', false)
+      .eq('active', true)
       .order('name');
 
     if (brandErr) throw brandErr;
