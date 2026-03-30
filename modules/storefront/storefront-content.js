@@ -144,8 +144,8 @@ function renderContentTable(products) {
     const altIcon = getStatusIcon(c.alt_text);
     const checked = selectedContentIds.has(p.id) ? 'checked' : '';
     const imgHtml = p.image_path
-      ? `<img class="thumb" src="https://tsxrrxzmdxaenlvocyit.supabase.co/storage/v1/object/sign/frame-images/${encodeURIComponent(p.image_path)}" onerror="this.outerHTML='<div class=no-thumb>📷</div>'">`
-      : '<div class="no-thumb">📷</div>';
+      ? `<img class="thumb" src="https://tsxrrxzmdxaenlvocyit.supabase.co/storage/v1/object/sign/frame-images/${encodeURIComponent(p.image_path)}" onerror="this.outerHTML='<div class=no-thumb>📷</div>'" onclick="event.stopPropagation(); openImagePreview('${p.id}')">`
+      : `<div class="no-thumb" onclick="event.stopPropagation(); openImagePreview('${p.id}')">📷</div>`;
 
     html += `<tr onclick="openEditModal('${p.id}')" data-pid="${p.id}">
       <td onclick="event.stopPropagation()"><input type="checkbox" class="row-cb-content" value="${p.id}" ${checked} onchange="toggleContentRow(this)"></td>
@@ -223,6 +223,55 @@ function toggleSelectAllContent(cb) {
   else rows.forEach(r => { r.checked = false; });
 }
 
+// ── Image preview ──
+async function getSignedImageUrls(product) {
+  if (!product.images || !product.images.length) return [];
+  const urls = [];
+  for (const img of product.images) {
+    const storagePath = img.replace('/api/image/', '');
+    try {
+      const { data } = await sb.storage.from('frame-images').createSignedUrl(storagePath, 3600);
+      if (data?.signedUrl) urls.push(data.signedUrl);
+    } catch { /* skip failed images */ }
+  }
+  return urls;
+}
+
+async function openImagePreview(productId) {
+  const product = contentProducts.find(p => p.id === productId);
+  if (!product) return;
+  const urls = await getSignedImageUrls(product);
+  if (!urls.length) { toast('אין תמונות למוצר זה', 'w'); return; }
+  showLightbox(urls[0]);
+}
+
+function showLightbox(url) {
+  const overlay = document.createElement('div');
+  overlay.className = 'lightbox-overlay';
+  overlay.onclick = () => overlay.remove();
+  const img = document.createElement('img');
+  img.src = url;
+  img.onclick = (e) => e.stopPropagation();
+  overlay.appendChild(img);
+  document.body.appendChild(overlay);
+}
+
+async function loadEditImages(product) {
+  const container = document.getElementById('edit-images');
+  const grid = document.getElementById('edit-images-grid');
+  grid.innerHTML = '';
+  const urls = await getSignedImageUrls(product);
+  if (!urls.length) { container.style.display = 'none'; return; }
+  container.style.display = 'block';
+  for (const url of urls) {
+    const img = document.createElement('img');
+    img.className = 'edit-img-thumb';
+    img.src = url;
+    img.onclick = () => showLightbox(url);
+    grid.appendChild(img);
+  }
+}
+
 // ── Edit modal ──
 function openEditModal(productId, focusField) {
   const product = contentProducts.find(p => p.id === productId);
@@ -238,6 +287,9 @@ function openEditModal(productId, focusField) {
 
   updateCharCount('edit-seo-title', 60);
   updateCharCount('edit-seo-desc', 160);
+
+  // Load product images into modal
+  loadEditImages(product);
 
   document.getElementById('edit-modal').style.display = 'flex';
 
@@ -380,8 +432,7 @@ async function generateContentForProduct(product) {
         model: product.model || '',
         color: product.color || '',
         size: product.size || '',
-        product_type: product.product_type || 'eyeglasses',
-        sell_price: product.sell_price
+        product_type: product.product_type || 'eyeglasses'
       },
       image_storage_path: product.image_path || null,
       brand_corrections: brandCorrections

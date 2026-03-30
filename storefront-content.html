@@ -91,6 +91,14 @@
 .trans-badge.edited { background: #fef3c7; color: #92400e; }
 .trans-badge.approved { background: #d1fae5; color: #065f46; }
 .trans-badge.missing { background: #fee2e2; color: #991b1b; }
+
+/* Image preview in edit modal */
+.edit-img-thumb { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; border: 2px solid var(--g200); cursor: pointer; transition: border-color .2s; }
+.edit-img-thumb:hover { border-color: var(--primary); }
+
+/* Lightbox overlay */
+.lightbox-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.lightbox-overlay img { max-width: 90vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
 </style>
 </head>
 <body>
@@ -217,25 +225,30 @@
   <div class="modal edit-modal">
     <h3 id="edit-title">עריכת תוכן</h3>
 
+    <!-- Product images preview -->
+    <div id="edit-images" style="display:none;margin-bottom:16px">
+      <div id="edit-images-grid" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    </div>
+
     <div class="edit-field">
-      <label>תיאור מוצר</label>
+      <label>תיאור מוצר <span style="font-weight:400;color:var(--g400);font-size:.8rem">— הטקסט שמופיע בעמוד המוצר באתר</span></label>
       <textarea id="edit-description" oninput="updateCharCount('edit-description')"></textarea>
     </div>
 
     <div class="edit-field">
-      <label>SEO Title</label>
+      <label>כותרת SEO <span style="font-weight:400;color:var(--g400);font-size:.8rem">(עד 60 תווים) — הכותרת שמופיעה בגוגל ובטאב הדפדפן</span></label>
       <input type="text" id="edit-seo-title" oninput="updateCharCount('edit-seo-title', 60)" maxlength="80">
       <div class="char-count" id="edit-seo-title-count">0/60</div>
     </div>
 
     <div class="edit-field">
-      <label>SEO Description</label>
+      <label>תיאור SEO <span style="font-weight:400;color:var(--g400);font-size:.8rem">(עד 160 תווים) — הטקסט שמופיע מתחת לכותרת בתוצאות גוגל</span></label>
       <textarea id="edit-seo-desc" oninput="updateCharCount('edit-seo-desc', 160)" style="min-height:60px"></textarea>
       <div class="char-count" id="edit-seo-desc-count">0/160</div>
     </div>
 
     <div class="edit-field">
-      <label>Alt Text (תיאור תמונה)</label>
+      <label>טקסט חלופי לתמונה (Alt) <span style="font-weight:400;color:var(--g400);font-size:.8rem">— תיאור לקורא מסך ולגוגל תמונות</span></label>
       <input type="text" id="edit-alt-text" maxlength="200">
     </div>
 
