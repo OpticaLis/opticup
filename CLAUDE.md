@@ -101,6 +101,9 @@ opticup/
 ├── employees.html              — standalone employee management page
 ├── shipments.html              — shipments & box management module
 ├── settings.html               — tenant settings (business info, financial config, display prefs)
+├── storefront-settings.html    — storefront config: WhatsApp, booking, notifications (Phase 4B)
+├── storefront-brands.html      — storefront brand mode manager (Phase 4B)
+├── storefront-products.html    — storefront product overrides + bulk select (Phase 4B)
 ├── css/
 │   ├── styles.css              — all styles
 │   └── header.css              — sticky header styles
@@ -136,7 +139,8 @@ opticup/
 │   ├── permissions/            — 1 file (employee-list)
 │   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
 │   ├── settings/               — 1 file (settings-page)
-│   └── stock-count/            — 9 files (list, session, camera, scan, filters, unknown, approve, view, report)
+│   ├── stock-count/            — 9 files (list, session, camera, scan, filters, unknown, approve, view, report)
+│   └── storefront/            — 3 files (storefront-settings, storefront-brands, storefront-products)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
 │   ├── sync-export.js          — Reverse sync: export new inventory to XLS for Access
@@ -213,6 +217,8 @@ opticup/
 | `T.SHIPMENTS`     | shipments                | id, tenant_id, box_number, shipment_type, supplier_id, courier_id, packed_by, locked_at, items_count, total_value, corrects_box_id, is_deleted |
 | `T.SHIP_ITEMS`    | shipment_items           | id, tenant_id, shipment_id, item_type, inventory_id, return_id, barcode, brand, model, category, unit_cost |
 | `T.ACTIVITY_LOG`  | activity_log             | id, tenant_id, branch_id, user_id, level, action, entity_type, entity_id, details (jsonb), ip_address, user_agent, created_at |
+| `T.STOREFRONT_CONFIG` | storefront_config  | id, tenant_id, whatsapp_number, booking_url, notification_method |
+| `T.STOREFRONT_LEADS` | storefront_leads    | id, tenant_id, inventory_id, contact_type, contact_value, status, created_at, notified_at, is_deleted |
 
 **Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 46 tables.
 

@@ -1,54 +1,78 @@
-# Module 3 — Storefront — Session Context
+# Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Phase 0 — SEO Site Audit & URL Mapping
+## Current Phase: Phase 4 — Catalog/Shop + WhatsApp + Bulk Ops (4A + 4B)
 ## Status: ✅ Complete
+## Date: 2026-03-30
 
-## Step Tracking
+---
 
-| Step | Status | Description | Notes |
-|------|--------|-------------|-------|
-| 1 | ✅ | Setup: folders, .gitignore, dependencies | Commit 70c73f2 |
-| 2 | ✅ | Create helpers.mjs | 213 lines, 15 exports |
-| 3 | ✅ | Create crawl-wp-api.mjs | 233 lines, CLI works |
-| 4 | ✅ | Test API connectivity | WP(no-auth fallback)+WC+EN+RU all 200. Yoast SEO detected. |
-| 5 | ✅ | Run full crawl: Hebrew + WooCommerce | 58 posts, 84 pages, 735 products, 12 cats, 1175 tags, 8 attrs |
-| 6 | ✅ | Run crawl: English + Russian | EN: 43 posts, 25 pages. RU: 42 posts, 25 pages |
-| 7 | ✅ | Create generate-report.mjs | 230 lines, generates JSON+MD+CSV |
-| 8 | ✅ | Generate reports | 1024 URLs total (889 HE, 68 EN, 67 RU) |
-| 9 | ✅ | Final review & documentation | Credential check passed, docs updated |
+## Phase 4A — Catalog/Shop + WhatsApp + Booking (Storefront repo)
 
-## Crawl Summary
+| Step | Status | Description | Commit (storefront) |
+|------|--------|-------------|---------------------|
+| 0 | ✅ | Backup: 2026-03-30_pre-phase4a | — |
+| 1 | ✅ | SQL 006: storefront_mode cols, storefront_leads, config cols | `b8d9ec9` |
+| 2 | ✅ | SQL 007: v_storefront_products v3 with resolved_mode | `b8d9ec9` |
+| 3 | ✅ | SQL 008: submit_storefront_lead RPC | `b8d9ec9` |
+| 4 | ✅ | Updated product types + tenant config | `4edf1b7` |
+| 5 | ✅ | WhatsAppButton.astro component | `4edf1b7` |
+| 6 | ✅ | NotifyMe.astro component | `4edf1b7` |
+| 7 | ✅ | BookingButton.astro component | `4edf1b7` |
+| 8 | ✅ | Mode-aware product detail + card pages | `d1e706d` |
+| 9 | ✅ | Documentation + quality gate | `d90f866` |
 
-| Domain | Posts | Pages | Products | Categories | Tags |
-|--------|-------|-------|----------|------------|------|
-| Hebrew (prizma-optic.co.il) | 58 | 84 | 735 | 12 WC + 9 WP | 1175 WC + 72 WP |
-| English (en.prizma-optic.co.il) | 43 | 25 | — | — | — |
-| Russian (ru.prizma-optic.co.il) | 42 | 25 | — | — | — |
-| **Total URLs** | | | **1024** | | |
+## Phase 4B — Bulk Operations (ERP repo)
 
-## URL Type Breakdown
+| Step | Status | Description | Commit (ERP) |
+|------|--------|-------------|--------------|
+| 0 | ✅ | Backup: 2026-03-30_pre-phase4b | — |
+| 1 | ✅ | storefront-settings.html + JS | `15d048f` |
+| 2 | ✅ | storefront-brands.html + JS | `15d048f` |
+| 3 | ✅ | storefront-products.html + JS (bulk select) | `15d048f` |
+| 4 | ✅ | Navigation link in index.html | `15d048f` |
+| 5 | ✅ | Documentation (CLAUDE.md, SESSION_CONTEXT) | — |
 
-| Type | Count |
-|------|-------|
-| product | 735 |
-| blog-post | 143 |
-| page | 124 |
-| product-category | 12 |
-| landing-page | 7 |
-| homepage | 3 |
+---
 
-## Commits
-- `70c73f2` — Step 1: Setup folders, .gitignore, dependencies
-- `4a2a0bc` — Steps 2-3: helpers.mjs + crawl-wp-api.mjs
-- `fb6ad27` — Steps 7+9: generate-report.mjs + docs
-- `a3b2b08` — Steps 4-6: API connectivity + full crawl data
+## ⚠️ SQL Migrations NOT RUN
 
-## Decisions Made
-- WP Basic Auth returns 401 on Hebrew site → added no-auth fallback for public endpoints (works fine)
-- Skipped Steps 4-6 initially (no credentials), built Step 7 first, then resumed after credentials filled
+Daniel must run these in Supabase Dashboard SQL Editor before testing:
+1. `opticup-storefront/sql/006-phase4a-storefront-modes.sql` — columns + leads table
+2. `opticup-storefront/sql/007-v-storefront-products-v3.sql` — updated view with resolved_mode
+3. `opticup-storefront/sql/008-rpc-storefront-leads.sql` — RPC for NotifyMe form
+
+**Run in this order. 007 depends on 006. 008 depends on 006.**
+
+---
+
+## Key Architecture
+
+### Display Mode Resolution
+```
+Product override (inventory.storefront_mode_override)
+  ↓ if null
+Brand default (brands.storefront_mode)
+  ↓ if null
+Fallback: 'catalog'
+```
+
+### Modes
+| Mode | Price | WhatsApp | Notes |
+|------|-------|----------|-------|
+| catalog | Hidden | Primary CTA | Default for all products |
+| shop | Shown | Secondary CTA | Shows sell_price + discount |
+| hidden | — | — | Excluded from view entirely |
+
+### New ERP Pages
+- `/storefront-settings.html` — WhatsApp number, booking URL, notification method
+- `/storefront-brands.html` — Brand mode selector (catalog/shop/hidden per brand)
+- `/storefront-products.html` — Product override manager with bulk select
+
+---
 
 ## What's Next
-1. Daniel reviews `seo-audit/url-inventory.md`
-2. Daniel fills `seo-audit/url-mapping-template.csv` (old→new URL mapping)
-3. Strategic chat → URL structure decisions for Astro
-4. Phase 1 → Astro project setup
+
+1. Daniel runs SQL migrations (006, 007, 008) in Supabase Dashboard
+2. Daniel tests storefront + ERP pages
+3. Merge develop → main (both repos)
+4. Phase 5 planning
