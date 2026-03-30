@@ -1,53 +1,63 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Phase 5 — AI Content Engine (5A + 5B + 5C)
+## Current Phase: Phase 6 — i18n AI Translation
 ## Status: ✅ Complete (code done, pending SQL + Edge Function deploy)
 ## Date: 2026-03-30
 
 ---
 
-## Phase 5A — AI Content Engine + Product Content ✅
+## Phase 6 — i18n AI Translation ✅
 
 | Step | Status | Description | Commit (ERP) |
 |------|--------|-------------|--------------|
-| 2 | ✅ | Edge Function: generate-ai-content | `6e39d9c` |
-| 3 | ✅ | storefront-content.html + JS (content manager) | `6e39d9c` |
-| 4 | ✅ | Bulk generate UI with progress bar | `6e39d9c` |
-| 5 | ✅ | Navigation links updated | `6e39d9c` |
+| 0 | ✅ | Backup | — |
+| 1-2 | ✅ | SQL 016-017: glossary + corrections tables, seed data | `a57d8af` (storefront) |
+| 3 | ✅ | Edge Function: translate-content | `a596c04` |
+| 4 | ✅ | Auto-translate in generate-ai-content | `a596c04` |
+| 5 | ✅ | Translations tab in storefront-content.html | `d070577` |
+| 6 | ✅ | Glossary management page (storefront-glossary.html) | `d070577` |
+| 7 | ✅ | Storefront EN/RU product pages | `dd91bf3` (storefront) |
+| 8 | ✅ | Bulk translate (in translations tab) | `d070577` |
+| 9 | ✅ | Documentation updated | `27b2436` |
 
-## Phase 5B — Blog System Rebuild ✅
+---
+
+## Phase 5 — AI Content Engine (5A + 5B + 5C) ✅
 
 | Step | Status | Description | Commit (ERP) |
 |------|--------|-------------|--------------|
-| 4 | ✅ | Edge Function: generate-blog-post | `e80dff0` |
-| 5 | ✅ | storefront-blog.html + JS (blog editor) | `e80dff0` |
-
-## Phase 5C — Landing Page AI + Learning ✅
-
-| Step | Status | Description | Commit (ERP) |
-|------|--------|-------------|--------------|
-| 1 | ✅ | Edge Function: generate-landing-content | `213dd50` |
-| 3 | ✅ | storefront-landing-content.html + JS | `213dd50` |
-| 4 | ✅ | Navigation updated on all 6 storefront pages | `213dd50` |
+| 5A | ✅ | generate-ai-content Edge Function + content manager | `6e39d9c` |
+| 5B | ✅ | generate-blog-post Edge Function + blog editor | `e80dff0` |
+| 5C | ✅ | generate-landing-content Edge Function + landing editor | `213dd50` |
 
 ---
 
 ## ⚠️ PENDING — Daniel Must Do
 
-### SQL Migrations (Supabase Dashboard SQL Editor)
-1. `opticup-storefront/sql/013-phase5a-ai-content.sql` — ai_content + ai_content_corrections tables
-2. `opticup-storefront/sql/014-v-storefront-products-v4.sql` — view v4 with AI content columns
-3. `opticup-storefront/sql/015-blog-posts-table.sql` — blog_posts table + view
-4. Then run: `cd opticup-storefront && npx tsx scripts/seo/migrate-blog-to-db.ts` (migrates 143 blog posts)
+### Phase 6 SQL Migrations (Supabase Dashboard)
+1. `opticup-storefront/sql/016-phase6-translation.sql` — translation_glossary + translation_corrections
+2. `opticup-storefront/sql/017-seed-glossary.sql` — seed 45 optical terms × EN+RU
 
-### Edge Function Deploy
+### Phase 6 Edge Function Deploy
+```bash
+supabase functions deploy translate-content --no-verify-jwt
+supabase functions deploy generate-ai-content --no-verify-jwt  # updated with auto-translate
+```
+
+### Phase 5 SQL Migrations (if not already run)
+1. `013-phase5a-ai-content.sql` — ai_content + ai_content_corrections tables
+2. `014-v-storefront-products-v4.sql` — view v4 with AI columns
+3. `015-blog-posts-table.sql` — blog_posts table + view
+4. Then: `cd opticup-storefront && npx tsx scripts/seo/migrate-blog-to-db.ts`
+
+### Phase 5 Edge Function Deploy (if not already done)
 ```bash
 supabase functions deploy generate-ai-content --no-verify-jwt
 supabase functions deploy generate-blog-post --no-verify-jwt
 supabase functions deploy generate-landing-content --no-verify-jwt
 ```
 
-### Previous Phase SQL (if not already run)
+### Phase 4A SQL (if not already run)
 - `006-phase4a-storefront-modes.sql`
 - `007-v-storefront-products-v3.sql`
 - `008-rpc-storefront-leads.sql`
@@ -56,32 +66,34 @@ supabase functions deploy generate-landing-content --no-verify-jwt
 
 ## Key Architecture
 
-### New Edge Functions (Phase 5)
+### New Edge Functions (Phase 6)
 | Function | Purpose | Input | Output |
 |----------|---------|-------|--------|
-| generate-ai-content | Product descriptions, SEO, alt text | product_data, image, corrections | Saved to ai_content |
-| generate-blog-post | Blog post drafts from topic | topic, keywords, length | Saved to blog_posts |
-| generate-landing-content | Landing page headlines, CTA | topic, tone, products | Saved to ai_content |
+| translate-content | Hebrew → EN/RU translation | source_content, target_lang, glossary | Saved to ai_content |
 
-### Learning System
-1. AI generates content → saved to `ai_content` (status: 'auto')
-2. Tenant edits in ERP → updated in `ai_content` (status: 'edited')
-3. Original + correction saved to `ai_content_corrections` (with brand_id)
-4. Next generation for same brand → corrections included in Claude prompt as examples
+### Translation System
+1. Hebrew content generated (Phase 5) → auto-translate to EN+RU
+2. Translations saved to `ai_content` with `language = 'en'` / `'ru'`
+3. Glossary terms enforced in every translation prompt
+4. Corrections saved to `translation_corrections` for learning
+5. Bulk translate: processes all missing translations with progress bar
 
-### New ERP Pages (Phase 5)
-- `/storefront-content.html` — Product AI content manager (descriptions, SEO, alt text)
-- `/storefront-blog.html` — Blog editor (CRUD + AI generation)
-- `/storefront-landing-content.html` — Landing page content editor
+### New ERP Pages (Phase 6)
+- `/storefront-glossary.html` — Translation glossary management (EN/RU)
+- Translations tab added to `/storefront-content.html`
 
-### Storefront Navigation (6 tabs)
-Settings → Brands → Products → AI Content → Blog → Landing Pages
+### New JS Modules (Phase 6)
+- `modules/storefront/storefront-translations.js` — Translations tab logic
+- `modules/storefront/storefront-glossary.js` — Glossary CRUD
+
+### Storefront Navigation (7 tabs)
+Settings → Brands → Products → AI Content → Blog → Landing Pages → Glossary
 
 ---
 
 ## What's Next
 
-1. Daniel runs SQL migrations + deploys Edge Functions
+1. Daniel runs SQL migrations + deploys Edge Functions (Phase 5 + 6)
 2. Daniel tests all features
 3. Merge develop → main (both repos)
-4. Phase 6 — i18n AI Translation (EN/RU)
+4. Phase 7+ TBD
