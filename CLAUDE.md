@@ -431,6 +431,12 @@ git tag v{phase} -m "Phase {phase}: {short description}"
 git push origin v{phase}
 ```
 
+### Storefront Backup Policy
+- Storefront backups are stored in `modules/Module 3 - Storefront/backups/`
+- Each backup is a timestamped directory containing the full opticup-storefront repo (minus node_modules/.git/.env)
+- Backups are created at the START of each storefront phase
+- See `opticup-storefront/CLAUDE.md` for restore instructions
+
 ---
 
 ## Autonomous Execution Mode
