@@ -10,26 +10,25 @@ async function loadStorefrontProducts() {
   try {
     const tid = getTenantId();
 
-    // Load brands for filter dropdown
+    // Load brands for filter dropdown (brands table has no is_deleted column — use active)
     const { data: brands, error: brandErr } = await sb.from(T.BRANDS)
       .select('id, name, storefront_mode')
       .eq('tenant_id', tid)
-      .eq('is_deleted', false)
+      .eq('active', true)
       .order('name');
 
     if (brandErr) throw brandErr;
     allBrands = brands || [];
 
-    // Populate brand filter (deduplicated by name to avoid duplicates from brand_type)
+    // Populate brand filter (deduplicated by name — use name as value for correct filtering)
     const brandSelect = document.getElementById('filter-brand');
-    // Clear existing options (keep first "all" option) to prevent duplicates on reload
     while (brandSelect.options.length > 1) brandSelect.remove(1);
     const seenBrandNames = new Set();
     for (const b of allBrands) {
       if (seenBrandNames.has(b.name)) continue;
       seenBrandNames.add(b.name);
       const opt = document.createElement('option');
-      opt.value = b.id;
+      opt.value = b.name;
       opt.textContent = b.name;
       brandSelect.appendChild(opt);
     }
@@ -69,7 +68,7 @@ function filterProducts() {
   let filtered = allProducts;
 
   if (brandFilter) {
-    filtered = filtered.filter(p => p.brand_id === brandFilter);
+    filtered = filtered.filter(p => p.brand_name === brandFilter);
   }
   if (modeFilter) {
     filtered = filtered.filter(p => p.resolved_mode === modeFilter);
