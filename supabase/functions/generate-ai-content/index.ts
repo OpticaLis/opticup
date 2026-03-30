@@ -249,11 +249,47 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Auto-translate saved Hebrew content to EN + RU
+    const translationErrors: string[] = [];
+    const translateUrl = `${SUPABASE_URL}/functions/v1/translate-content`;
+
+    for (const ct of Object.keys(saved)) {
+      for (const lang of ["en", "ru"]) {
+        try {
+          const tRes = await fetch(translateUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+            },
+            body: JSON.stringify({
+              tenant_id,
+              source_content: saved[ct],
+              target_lang: lang,
+              content_type: ct,
+              entity_type: "product",
+              entity_id: product_id,
+            }),
+          });
+          if (!tRes.ok) {
+            const tErr = await tRes.text();
+            translationErrors.push(`${ct}→${lang}: ${tErr}`);
+          }
+        } catch (e) {
+          translationErrors.push(
+            `${ct}→${lang}: ${e instanceof Error ? e.message : "fetch failed"}`
+          );
+        }
+      }
+    }
+
     return jsonRes({
       success: true,
       product_id,
       saved,
       errors: errors.length > 0 ? errors : undefined,
+      translation_errors:
+        translationErrors.length > 0 ? translationErrors : undefined,
     });
   } catch (e) {
     return errRes(e instanceof Error ? e.message : "Unknown error", 500);
