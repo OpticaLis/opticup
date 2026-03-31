@@ -85,18 +85,21 @@
 | `generateCsv(urls)` | urls: array | Generate CSV with UTF-8 BOM |
 | `main()` | (none) | Entry point |
 
-### ERP — modules/storefront/ (CMS-5)
+### ERP — modules/storefront/ (CMS-5 + CMS-7)
 
 | File | Lines | Description |
 |------|-------|-------------|
 | `studio-ai-prompt.js` | 216 | AI prompt bar, API calls (aiEditPage, aiEditComponent), prompt history, permission gating |
 | `studio-ai-diff.js` | 245 | AI diff view, block diff computation, apply/cancel, component AI editing |
+| `studio-product-picker.js` | 230 | Product picker modal: search, barcode paste, selection with reorder (CMS-7) |
+| `studio-reviews.js` | 275 | Reviews management: CRUD, visibility toggle, Google sync, Place ID setup (CMS-7) |
 
-### Supabase Edge Functions (CMS-5)
+### Supabase Edge Functions (CMS-5 + CMS-7)
 
 | File | Lines | Description |
 |------|-------|-------------|
-| `supabase/functions/cms-ai-edit/index.ts` | 163 | AI prompt editing — receives blocks/config + prompt, calls Claude API, returns updated JSON |
+| `supabase/functions/cms-ai-edit/index.ts` | 165 | AI prompt editing — receives blocks/config + prompt, calls Claude API, returns updated JSON |
+| `supabase/functions/fetch-google-reviews/index.ts` | 66 | Google Places API reviews fetch — returns rating + reviews for tenant (CMS-7) |
 
 ### studio-ai-prompt.js — Function Registry
 
@@ -126,8 +129,42 @@
 | `showComponentDiffView(original, new, explanation, id)` | objects, strings | Show component diff view |
 | `applyComponentAiChanges()` | (none) | Apply component AI changes and save |
 
-## Database Changes
-None — Phase 0 is read-only. CMS-5 adds no DB tables (uses existing storefront_pages/storefront_components).
+### studio-product-picker.js — Function Registry (CMS-7)
+
+| Function | Params | Description |
+|----------|--------|-------------|
+| `openProductPicker(current, onSave)` | current: string[], onSave: fn | Open product picker modal |
+| `ppSearch(query)` | query: string | Search products by brand/model/barcode |
+| `ppToggleProduct(barcode, add)` | barcode: string, add: bool | Toggle product selection |
+| `ppMoveProduct(idx, dir)` | idx: number, dir: number | Reorder selected product |
+| `ppRemoveProduct(idx)` | idx: number | Remove product from selection |
+| `ppProcessPaste()` | (none) | Process pasted barcodes |
+| `fetchProductsByBarcodes(barcodes)` | barcodes: string[] | Fetch product details by barcode list |
+| `ppSave()` | (none) | Save selection and close |
+
+### studio-reviews.js — Function Registry (CMS-7)
+
+| Function | Params | Description |
+|----------|--------|-------------|
+| `loadReviews()` | (none) | Load reviews for tenant |
+| `renderReviewsManager()` | (none) | Render reviews management UI |
+| `rvAddManual()` | (none) | Open add manual review modal |
+| `rvSaveManual()` | (none) | Save new manual review |
+| `rvEdit(id)` | id: string | Open edit review modal |
+| `rvUpdateReview(id)` | id: string | Update existing review |
+| `rvDelete(id)` | id: string | Delete review |
+| `rvToggleVisibility(id, current)` | id: string, current: bool | Toggle review visibility |
+| `rvMove(idx, dir)` | idx: number, dir: number | Reorder review |
+| `rvSyncGoogle()` | (none) | Sync reviews from Google Places API |
+| `rvSetupGooglePlaceId()` | (none) | Show Google Place ID setup modal |
+
+## Database Changes (CMS-7)
+- `storefront_reviews` — reviews table (manual + Google sourced) with RLS
+- `storefront_block_templates` — block templates table (global) with RLS
+- `v_storefront_reviews` — public view (visible only)
+- `v_admin_reviews` — admin view (all reviews)
+- `v_admin_product_picker` — all products view (no website_sync filter)
+- `storefront_config` columns: google_place_id, google_rating, google_review_count, google_api_key
 
 ## Dependencies
 - `dotenv` ^16.4.7

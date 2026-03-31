@@ -143,7 +143,7 @@ opticup/
 │   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
 │   ├── settings/               — 1 file (settings-page)
 │   ├── stock-count/            — 9 files (list, session, camera, scan, filters, unknown, approve, view, report)
-│   └── storefront/            — 16 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary, studio-block-schemas, studio-form-renderer, studio-pages, studio-editor, studio-components, studio-leads, studio-permissions, studio-templates, studio-ai-prompt, studio-ai-diff)
+│   └── storefront/            — 18 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary, studio-block-schemas, studio-form-renderer, studio-pages, studio-editor, studio-components, studio-leads, studio-permissions, studio-templates, studio-ai-prompt, studio-ai-diff, studio-product-picker, studio-reviews)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
 │   ├── sync-export.js          — Reverse sync: export new inventory to XLS for Access
@@ -158,7 +158,8 @@ opticup/
 │   ├── generate-blog-post/index.ts — Edge Function (AI blog post generation)
 │   ├── generate-landing-content/index.ts — Edge Function (AI landing page content)
 │   ├── translate-content/index.ts — Edge Function (Hebrew → EN/RU translation, Phase 6)
-│   └── cms-ai-edit/index.ts    — Edge Function (AI prompt editing for CMS blocks, CMS-5)
+│   ├── cms-ai-edit/index.ts    — Edge Function (AI prompt editing for CMS blocks, CMS-5)
+│   └── fetch-google-reviews/index.ts — Edge Function (Google Places reviews fetch, CMS-7)
 ├── migrations/
 │   └── *.sql
 ├── modules/Module 1 - Inventory Management/
@@ -361,6 +362,34 @@ supabase functions deploy cms-ai-edit --no-verify-jwt
 ### Permission gating:
 - **super_admin:** sends all blocks to AI
 - **tenant_admin:** sends only allowed block types, locked blocks are preserved via merge
+
+---
+
+## CMS-7 Enhancements
+
+### Reviews Block (Type #15)
+- Table: `storefront_reviews` (manual + Google sourced)
+- View: `v_storefront_reviews` (visible only), `v_admin_reviews` (all)
+- Config: `storefront_config.google_place_id`, `google_rating`, `google_review_count`, `google_api_key`
+- Edge Function: `fetch-google-reviews` (fetches from Google Places API)
+- Studio: reviews management tab with sync, visibility toggle, manual add, edit, reorder
+
+### Enhanced Products Block
+- Manual product selection: `selected_products` (barcode array)
+- Configurable grid: `grid_columns_desktop` (2-5), `grid_columns_mobile` (1-2)
+- Out of stock handling: `show_out_of_stock`, `out_of_stock_warning`
+- Product picker UI: search + barcode paste + thumbnail preview
+- View: `v_admin_product_picker` (all products, no website_sync filter)
+
+### Block Templates
+- Table: `storefront_block_templates` (global, no tenant_id)
+- Pre-configured blocks for quick insertion in "add block" dialog
+- Categories: products, content, media, marketing, layout
+- Shown above raw block types in the add dialog
+
+### CMS-7 Table Schemas
+- `storefront_reviews`: id, tenant_id, source, author_name, rating, text, review_date, google_review_id, is_visible, sort_order
+- `storefront_block_templates`: id, name, description, category, block_type, block_data, block_settings, icon, sort_order, is_active
 
 ---
 

@@ -28,7 +28,7 @@ Available block types and their data fields:
 2. text: { title, body (Markdown), alignment (right/center/left) }
 3. gallery: { images: [{src, alt, caption}], style (grid/slider), columns (2/3/4) }
 4. video: { videos: [{youtube_id, title}], style (standard/shorts), section_title }
-5. products: { filter (bestsellers/new/all), limit, style (carousel/grid), section_title, show_more_url }
+5. products: { filter (bestsellers/new/all), selected_products (barcode array for manual selection), limit, style (carousel/grid), section_title, show_more_url, grid_columns_desktop (2-5), grid_columns_mobile (1-2), show_out_of_stock, out_of_stock_warning }
 6. cta: { text, url, style (gold/primary/secondary/outline), description, target (_self/_blank) }
 7. lead_form: { title, fields: [{name, label, type, required}], submit_text, success_message, webhook_url }
 8. faq: { section_title, items: [{question, answer}] }
@@ -38,6 +38,7 @@ Available block types and their data fields:
 12. steps: { section_title, items: [{number, title, description, image, youtube_id}] }
 13. brands: { section_title, style (carousel/grid), limit, show_more_url }
 14. blog_carousel: { section_title, limit, style (carousel/grid), show_more_url }
+15. reviews: { section_title, style (carousel/grid), show_rating_summary (boolean), limit }
 
 Each block also has optional settings: { bg_color (white/black/gold/gray/transparent), padding, max_width (narrow/standard/wide/full), hidden, css_class }
 
