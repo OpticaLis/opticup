@@ -403,7 +403,7 @@ supabase functions deploy cms-ai-edit --no-verify-jwt
 - products: card_style (standard/campaign/minimal), image gallery arrows, price display (original + sale), badges
 - hero: status_text badge, title_size, subtitle_position
 
-### Total Block Types: 18
+### Total Block Types: 19 (after CMS-10)
 
 ### Block Templates: 25+ pre-configured blocks in storefront_block_templates
 ### Page Templates: 8+ complete pages in storefront_templates
@@ -435,6 +435,35 @@ Deploy after changes: `supabase functions deploy cms-ai-edit --no-verify-jwt`
 ### Key Files
 - `modules/storefront/studio-seo.js` — SEO scoring + AI auto-SEO + correction learning
 - `css/studio-seo.css` — SEO panel, search/filter, bulk actions, inline edit styles
+
+## CMS-10: Custom Block + Final QA
+
+### Custom Block (Type #19: `custom`)
+- Renders raw HTML + inline CSS via `set:html` in Astro
+- Optional: YouTube video background, image background, dark overlay
+- AI writing: "כתוב עם AI" button in Studio generates HTML+CSS from Hebrew prompt
+- Super admin only — tenant_admin cannot create/edit
+- Studio: `code` field type (monospace dark textarea)
+- Edge Function: cms-ai-edit mode='custom' for HTML+CSS generation
+- Use for: complex campaign pages, custom layouts beyond standard blocks
+
+### CTA Popup Lead Form
+- CTA block now supports `action: 'popup_form'` in addition to `action: 'link'`
+- Popup uses HTML `<dialog>` element with configurable form fields
+- Form submits to `/api/leads/submit` with UTM data
+- Schema fields: popup_form_title, popup_form_fields, popup_submit_text, popup_success_message, popup_webhook_url
+- showIf logic: popup fields shown only when action='popup_form'
+
+### Bug Fixes
+- Gold color: replaced all amber-600/500/700 with custom Tailwind gold (#D4A853) via @theme
+- Studio page list: added missing CSS for row-top, slug-time, edited, seo-score-mini
+- Templates: replaced raw JSON editor with friendly block list + individual block editing
+- Blog link: fixed href to storefront-blog.html
+- Place ID: changed update to upsert for missing config rows
+- Preview URL: added localhost detection (localhost:4321 when running locally)
+- Scrollbar: added scrollbar-hide utility CSS for image galleries
+
+### Total Block Types: 19
 
 ---
 

@@ -1,8 +1,44 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: CMS-5 — AI Prompt Editing
-## Status: ✅ Complete (pending Edge Function deploy)
-## Date: 2026-03-31
+## Current Phase: CMS-10 — Final Build + QA
+## Status: ✅ CMS COMPLETE
+## Date: 2026-04-01
+
+---
+
+## CMS Status: COMPLETE
+
+All phases done (CMS-1 through CMS-10).
+19 block types, Studio editor, AI editing, SEO scoring, product picker, Google reviews,
+custom HTML blocks, popup lead forms, campaign templates.
+
+**Next:** Design phase (WordPress visual parity) then DNS switch.
+
+---
+
+## CMS-10 — Custom Block + Bug Fixes + QA ✅
+
+| Step | Status | Description | Commit (ERP) | Commit (Storefront) |
+|------|--------|-------------|--------------|---------------------|
+| Build 1 | ✅ | Custom block type #19 (HTML+CSS) | — | `11f905f` |
+| Build 2 | ✅ | Studio schema, code editor, AI custom mode | `97fe894` | — |
+| Build 3 | ✅ | CTA popup lead form | `97fe894` | `11f905f` |
+| Build 4 | ✅ | Custom block SQL templates | — | `11f905f` |
+| Fix 1 | ✅ | Gold color (amber → #D4A853) across 12 files | — | `4ef4f6a` |
+| Fix 2 | ✅ | Image gallery scrollbar-hide CSS | — | `4ef4f6a` |
+| Fix 3 | ✅ | Studio page list layout CSS | `9f7a815` | — |
+| Fix 4 | ✅ | Templates UI (block list instead of JSON) | `9f7a815` | — |
+| Fix 5 | ✅ | Blog link (storefront-blog.html) | `9f7a815` | — |
+| Fix 6 | ✅ | Place ID save (upsert) | `9f7a815` | — |
+| Fix 7 | ✅ | Delete block already fixed (9dfd9fa) | — | — |
+| Fix 8 | ✅ | Preview URL (localhost detection) | `9f7a815` | — |
+| Fix 9-10 | ✅ | Spacing + meta tags verified OK | — | — |
+| QA | ✅ | Full QA: build, 19 blocks, routes, meta, SuperSale test | — | — |
+
+### Action Required
+- Run SQL: `sql/036-custom-block-templates.sql`
+- Deploy: `supabase functions deploy cms-ai-edit --no-verify-jwt`
+- See full QA report: `modules/Module 3 - Storefront/docs/CMS-QA-REPORT.md`
 
 ---
 
