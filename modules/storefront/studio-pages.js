@@ -157,15 +157,18 @@ function renderPageList(pages) {
 
 function toggleBulkSelect(id, checked) { checked ? bulkSelectedIds.add(id) : bulkSelectedIds.delete(id); renderFilteredPageList(); }
 
-async function bulkToggleStatus(newStatus) {
+function bulkToggleStatus(newStatus) {
   if (!bulkSelectedIds.size) return;
   const label = newStatus === 'published' ? '\u05DC\u05E4\u05E8\u05E1\u05DD' : '\u05DC\u05D4\u05E2\u05D1\u05D9\u05E8 \u05DC\u05D8\u05D9\u05D5\u05D8\u05D4';
-  if (!await Modal.confirm({ title: '\u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05D8\u05D8\u05D5\u05E1', message: `${label} ${bulkSelectedIds.size} \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD?`, confirmText: '\u05D0\u05D9\u05E9\u05D5\u05E8', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC' })) return;
-  try {
-    for (const id of bulkSelectedIds) await sb.from('storefront_pages').update({ status: newStatus }).eq('id', id).eq('tenant_id', getTenantId());
-    Toast.success(`${bulkSelectedIds.size} \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD \u05E2\u05D5\u05D3\u05DB\u05E0\u05D5`);
-    bulkSelectedIds.clear(); await loadStudioPages();
-  } catch (err) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E2\u05D3\u05DB\u05D5\u05DF \u05E1\u05D8\u05D8\u05D5\u05E1'); }
+  Modal.confirm({ title: '\u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05D8\u05D8\u05D5\u05E1', message: `${label} ${bulkSelectedIds.size} \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD?`, confirmText: '\u05D0\u05D9\u05E9\u05D5\u05E8', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+    onConfirm: async function() {
+      try {
+        for (const id of bulkSelectedIds) await sb.from('storefront_pages').update({ status: newStatus }).eq('id', id).eq('tenant_id', getTenantId());
+        Toast.success(`${bulkSelectedIds.size} \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD \u05E2\u05D5\u05D3\u05DB\u05E0\u05D5`);
+        bulkSelectedIds.clear(); await loadStudioPages();
+      } catch (err) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E2\u05D3\u05DB\u05D5\u05DF \u05E1\u05D8\u05D8\u05D5\u05E1'); }
+    }
+  });
 }
 
 /** Duplicate page */
@@ -194,9 +197,11 @@ async function duplicatePage(pageId) {
 }
 
 /** Select a page */
-async function selectPage(pageId) {
-  if (hasUnsavedChanges && !await Modal.confirm({ title: '\u05E9\u05D9\u05E0\u05D5\u05D9\u05D9\u05DD \u05DC\u05D0 \u05E0\u05E9\u05DE\u05E8\u05D5', message: '\u05D9\u05E9 \u05E9\u05D9\u05E0\u05D5\u05D9\u05D9\u05DD \u05E9\u05DC\u05D0 \u05E0\u05E9\u05DE\u05E8\u05D5. \u05DC\u05D4\u05DE\u05E9\u05D9\u05DA?', confirmText: '\u05D4\u05DE\u05E9\u05DA', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC' })) return;
-  selectedPageId = pageId; renderFilteredPageList(); await loadPageEditor(pageId);
+function selectPage(pageId) {
+  function doSelect() { selectedPageId = pageId; renderFilteredPageList(); loadPageEditor(pageId); }
+  if (hasUnsavedChanges) {
+    Modal.confirm({ title: '\u05E9\u05D9\u05E0\u05D5\u05D9\u05D9\u05DD \u05DC\u05D0 \u05E0\u05E9\u05DE\u05E8\u05D5', message: '\u05D9\u05E9 \u05E9\u05D9\u05E0\u05D5\u05D9\u05D9\u05DD \u05E9\u05DC\u05D0 \u05E0\u05E9\u05DE\u05E8\u05D5. \u05DC\u05D4\u05DE\u05E9\u05D9\u05DA?', confirmText: '\u05D4\u05DE\u05E9\u05DA', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC', onConfirm: doSelect });
+  } else { doSelect(); }
 }
 
 /** Create new page with auto-slug */
@@ -262,18 +267,21 @@ async function submitCreatePage() {
 }
 
 /** Delete page (soft) */
-async function deletePage(pageId) {
+function deletePage(pageId) {
   const page = studioPages.find(p => p.id === pageId);
   if (!page) return;
   if (page.is_system) { Toast.error('\u05E2\u05DE\u05D5\u05D3 \u05DE\u05E2\u05E8\u05DB\u05EA \u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05DE\u05D7\u05D9\u05E7\u05D4'); return; }
-  if (!await Modal.confirm({ title: '\u05DE\u05D7\u05D9\u05E7\u05EA \u05E2\u05DE\u05D5\u05D3', message: `\u05DC\u05DE\u05D7\u05D5\u05E7 \u05D0\u05EA "${escapeHtml(page.title || page.slug)}"?`, confirmText: '\u05DE\u05D7\u05E7', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC' })) return;
-  try {
-    const { error } = await sb.from('storefront_pages').update({ status: 'draft', slug: `[deleted]-${page.slug}` }).eq('id', pageId).eq('tenant_id', getTenantId());
-    if (error) throw error;
-    Toast.success('\u05D4\u05E2\u05DE\u05D5\u05D3 \u05E0\u05DE\u05D7\u05E7');
-    if (selectedPageId === pageId) { selectedPageId = null; hideEditor(); }
-    await loadStudioPages();
-  } catch (err) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05DE\u05D7\u05D9\u05E7\u05EA \u05E2\u05DE\u05D5\u05D3'); }
+  Modal.confirm({ title: '\u05DE\u05D7\u05D9\u05E7\u05EA \u05E2\u05DE\u05D5\u05D3', message: `\u05DC\u05DE\u05D7\u05D5\u05E7 \u05D0\u05EA "${escapeHtml(page.title || page.slug)}"?`, confirmText: '\u05DE\u05D7\u05E7', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+    onConfirm: async function() {
+      try {
+        const { error } = await sb.from('storefront_pages').update({ status: 'draft', slug: `[deleted]-${page.slug}` }).eq('id', pageId).eq('tenant_id', getTenantId());
+        if (error) throw error;
+        Toast.success('\u05D4\u05E2\u05DE\u05D5\u05D3 \u05E0\u05DE\u05D7\u05E7');
+        if (selectedPageId === pageId) { selectedPageId = null; hideEditor(); }
+        await loadStudioPages();
+      } catch (err) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05DE\u05D7\u05D9\u05E7\u05EA \u05E2\u05DE\u05D5\u05D3'); }
+    }
+  });
 }
 
 /** Toggle page status */

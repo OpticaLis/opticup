@@ -290,22 +290,23 @@ async function submitEditTemplate(templateId) {
 /**
  * Delete template
  */
-async function deleteTemplate(templateId) {
+function deleteTemplate(templateId) {
   const template = studioTemplates.find(t => t.id === templateId);
-  const ok = await Modal.confirm({
+  Modal.confirm({
     title: 'מחיקת תבנית',
     message: `למחוק את "${escapeHtml(template?.name || '')}"?`,
-    confirmText: 'מחק', cancelText: 'ביטול'
+    confirmText: 'מחק', cancelText: 'ביטול',
+    onConfirm: async function() {
+      try {
+        const { error } = await sb.from('storefront_templates')
+          .update({ is_active: false }).eq('id', templateId);
+        if (error) throw error;
+        Toast.success('התבנית נמחקה');
+        studioTemplates = [];
+        await renderTemplatesManager();
+      } catch (err) {
+        Toast.error('שגיאה במחיקת תבנית');
+      }
+    }
   });
-  if (!ok) return;
-  try {
-    const { error } = await sb.from('storefront_templates')
-      .update({ is_active: false }).eq('id', templateId);
-    if (error) throw error;
-    Toast.success('התבנית נמחקה');
-    studioTemplates = [];
-    await renderTemplatesManager();
-  } catch (err) {
-    Toast.error('שגיאה במחיקת תבנית');
-  }
 }

@@ -283,23 +283,24 @@ async function submitComponentSave(type, existingId) {
 /**
  * Delete component (set inactive)
  */
-async function deleteComponent(id) {
+function deleteComponent(id) {
   const comp = studioComponents.find(c => c.id === id);
-  const ok = await Modal.confirm({
+  Modal.confirm({
     title: 'מחיקת רכיב',
     message: `למחוק את "${escapeHtml(comp?.name || '')}"?`,
-    confirmText: 'מחק', cancelText: 'ביטול'
+    confirmText: 'מחק', cancelText: 'ביטול',
+    onConfirm: async function() {
+      try {
+        const { error } = await sb.from('storefront_components')
+          .update({ is_active: false }).eq('id', id).eq('tenant_id', getTenantId());
+        if (error) throw error;
+        Toast.success('הרכיב נמחק');
+        await loadComponents();
+      } catch (err) {
+        Toast.error('שגיאה במחיקת רכיב');
+      }
+    }
   });
-  if (!ok) return;
-  try {
-    const { error } = await sb.from('storefront_components')
-      .update({ is_active: false }).eq('id', id).eq('tenant_id', getTenantId());
-    if (error) throw error;
-    Toast.success('הרכיב נמחק');
-    await loadComponents();
-  } catch (err) {
-    Toast.error('שגיאה במחיקת רכיב');
-  }
 }
 
 /**

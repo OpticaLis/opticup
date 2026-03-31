@@ -274,15 +274,13 @@ function submitAddBlock(type) {
 }
 
 /** Delete block */
-async function deleteBlock(index) {
+function deleteBlock(index) {
   const block = editedBlocks[index];
   const schema = getBlockSchema(block?.type);
   const label = schema?.label || block?.type || '';
-  if (!await Modal.confirm({ title: '\u05DE\u05D7\u05D9\u05E7\u05EA \u05D1\u05DC\u05D5\u05E7', message: `\u05DC\u05DE\u05D7\u05D5\u05E7 \u05D0\u05EA \u05D4\u05D1\u05DC\u05D5\u05E7 "${label}"?`, confirmText: '\u05DE\u05D7\u05E7', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC' })) return;
-  pushUndo();
-  editedBlocks.splice(index, 1);
-  markUnsaved();
-  refreshBlockList();
+  Modal.confirm({ title: '\u05DE\u05D7\u05D9\u05E7\u05EA \u05D1\u05DC\u05D5\u05E7', message: `\u05DC\u05DE\u05D7\u05D5\u05E7 \u05D0\u05EA \u05D4\u05D1\u05DC\u05D5\u05E7 "${label}"?`, confirmText: '\u05DE\u05D7\u05E7', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+    onConfirm: function() { pushUndo(); editedBlocks.splice(index, 1); markUnsaved(); refreshBlockList(); }
+  });
 }
 
 /** Save all changes to DB */
@@ -299,15 +297,18 @@ async function saveBlocks() {
 }
 
 /** Rollback to previous version */
-async function rollbackBlocks() {
+function rollbackBlocks() {
   if (!currentPage) return;
-  if (!await Modal.confirm({ title: '\u05E9\u05D7\u05D6\u05D5\u05E8 \u05D2\u05E8\u05E1\u05D4 \u05E7\u05D5\u05D3\u05DE\u05EA', message: '\u05DC\u05D4\u05D7\u05D6\u05D9\u05E8 \u05DC\u05D2\u05E8\u05E1\u05D4 \u05D4\u05E7\u05D5\u05D3\u05DE\u05EA? \u05D4\u05E9\u05D9\u05E0\u05D5\u05D9\u05D9\u05DD \u05D4\u05E0\u05D5\u05DB\u05D7\u05D9\u05D9\u05DD \u05D9\u05D0\u05D1\u05D3\u05D5.', confirmText: '\u05E9\u05D7\u05D6\u05E8', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC' })) return;
-  try {
-    const { error } = await sb.from('storefront_pages').update({ blocks: currentPage.previous_blocks || [] }).eq('id', currentPage.id).eq('tenant_id', getTenantId());
-    if (error) throw error;
-    Toast.success('\u05D4\u05D2\u05E8\u05E1\u05D4 \u05D4\u05E7\u05D5\u05D3\u05DE\u05EA \u05E9\u05D5\u05D7\u05D6\u05E8\u05D4');
-    await loadPageEditor(currentPage.id);
-  } catch (err) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E9\u05D7\u05D6\u05D5\u05E8'); }
+  Modal.confirm({ title: '\u05E9\u05D7\u05D6\u05D5\u05E8 \u05D2\u05E8\u05E1\u05D4 \u05E7\u05D5\u05D3\u05DE\u05EA', message: '\u05DC\u05D4\u05D7\u05D6\u05D9\u05E8 \u05DC\u05D2\u05E8\u05E1\u05D4 \u05D4\u05E7\u05D5\u05D3\u05DE\u05EA? \u05D4\u05E9\u05D9\u05E0\u05D5\u05D9\u05D9\u05DD \u05D4\u05E0\u05D5\u05DB\u05D7\u05D9\u05D9\u05DD \u05D9\u05D0\u05D1\u05D3\u05D5.', confirmText: '\u05E9\u05D7\u05D6\u05E8', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+    onConfirm: async function() {
+      try {
+        const { error } = await sb.from('storefront_pages').update({ blocks: currentPage.previous_blocks || [] }).eq('id', currentPage.id).eq('tenant_id', getTenantId());
+        if (error) throw error;
+        Toast.success('\u05D4\u05D2\u05E8\u05E1\u05D4 \u05D4\u05E7\u05D5\u05D3\u05DE\u05EA \u05E9\u05D5\u05D7\u05D6\u05E8\u05D4');
+        await loadPageEditor(currentPage.id);
+      } catch (err) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E9\u05D7\u05D6\u05D5\u05E8'); }
+    }
+  });
 }
 
 /** Open preview in new tab */
