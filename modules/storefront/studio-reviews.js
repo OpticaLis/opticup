@@ -123,7 +123,7 @@ async function rvSaveManual() {
   const text = document.getElementById('rv-text')?.value?.trim();
   const reviewDate = document.getElementById('rv-date')?.value?.trim();
 
-  if (!author) { Toast.show('נא למלא שם כותב', 'error'); return; }
+  if (!author) { Toast.error('נא למלא שם כותב'); return; }
 
   const tid = getTenantId();
   const maxSort = studioReviews.reduce((m, r) => Math.max(m, r.sort_order || 0), 0);
@@ -136,12 +136,12 @@ async function rvSaveManual() {
     });
     if (error) throw error;
     Modal.close();
-    Toast.show('ביקורת נוספה', 'success');
+    Toast.success('ביקורת נוספה');
     reviewsLoaded = false;
     loadReviews();
   } catch (err) {
     console.error('Save review error:', err);
-    Toast.show('שגיאה בשמירה', 'error');
+    Toast.error('שגיאה בשמירה');
   }
 }
 
@@ -155,10 +155,10 @@ async function rvToggleVisibility(id, current) {
     const r = studioReviews.find(r => r.id === id);
     if (r) r.is_visible = !current;
     renderReviewsManager();
-    Toast.show(current ? 'ביקורת הוסתרה' : 'ביקורת מוצגת', 'success');
+    Toast.success(current ? 'ביקורת הוסתרה' : 'ביקורת מוצגת');
   } catch (err) {
     console.error('Toggle visibility error:', err);
-    Toast.show('שגיאה', 'error');
+    Toast.error('שגיאה');
   }
 }
 
@@ -229,7 +229,7 @@ async function rvUpdateReview(id) {
   const text = document.getElementById('rv-text')?.value?.trim();
   const reviewDate = document.getElementById('rv-date')?.value?.trim();
 
-  if (!author) { Toast.show('נא למלא שם כותב', 'error'); return; }
+  if (!author) { Toast.error('נא למלא שם כותב'); return; }
 
   try {
     const { error } = await sb.from('storefront_reviews')
@@ -237,12 +237,12 @@ async function rvUpdateReview(id) {
       .eq('id', id);
     if (error) throw error;
     Modal.close();
-    Toast.show('ביקורת עודכנה', 'success');
+    Toast.success('ביקורת עודכנה');
     reviewsLoaded = false;
     loadReviews();
   } catch (err) {
     console.error('Update review error:', err);
-    Toast.show('שגיאה בעדכון', 'error');
+    Toast.error('שגיאה בעדכון');
   }
 }
 
@@ -254,10 +254,10 @@ async function rvDelete(id) {
     if (error) throw error;
     studioReviews = studioReviews.filter(r => r.id !== id);
     renderReviewsManager();
-    Toast.show('ביקורת נמחקה', 'success');
+    Toast.success('ביקורת נמחקה');
   } catch (err) {
     console.error('Delete review error:', err);
-    Toast.show('שגיאה במחיקה', 'error');
+    Toast.error('שגיאה במחיקה');
   }
 }
 
@@ -277,11 +277,11 @@ async function rvSyncGoogle() {
   }
 
   if (!config?.google_api_key) {
-    Toast.show('נדרש Google API Key — הגדר בהגדרות החנות', 'warning');
+    Toast.warning('נדרש Google API Key — הגדר בהגדרות החנות');
     return;
   }
 
-  Toast.show('מסנכרן ביקורות מ-Google...', 'info');
+  Toast.info('מסנכרן ביקורות מ-Google...');
 
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/fetch-google-reviews`, {
@@ -321,12 +321,12 @@ async function rvSyncGoogle() {
       added++;
     }
 
-    Toast.show(`סונכרנו ${added} ביקורות חדשות מ-Google`, 'success');
+    Toast.success(`סונכרנו ${added} ביקורות חדשות מ-Google`);
     reviewsLoaded = false;
     loadReviews();
   } catch (err) {
     console.error('Google sync error:', err);
-    Toast.show('שגיאה בסנכרון מ-Google', 'error');
+    Toast.error('שגיאה בסנכרון מ-Google');
   }
 }
 
@@ -361,7 +361,7 @@ function rvSetupGooglePlaceId() {
 /** Save Google Place ID */
 async function rvSavePlaceId() {
   const placeId = document.getElementById('rv-place-id')?.value?.trim();
-  if (!placeId) { Toast.show('נא להזין Place ID', 'error'); return; }
+  if (!placeId) { Toast.error('נא להזין Place ID'); return; }
 
   try {
     const { error } = await sb.from('storefront_config')
@@ -369,9 +369,9 @@ async function rvSavePlaceId() {
       .eq('tenant_id', getTenantId());
     if (error) throw error;
     Modal.close();
-    Toast.show('Place ID נשמר — לחץ "סנכרן מגוגל" שוב', 'success');
+    Toast.success('Place ID נשמר — לחץ "סנכרן מגוגל" שוב');
   } catch (err) {
     console.error('Save place ID error:', err);
-    Toast.show('שגיאה בשמירה', 'error');
+    Toast.error('שגיאה בשמירה');
   }
 }

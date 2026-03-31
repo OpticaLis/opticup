@@ -261,9 +261,9 @@ async function ppProcessPaste() {
   ppSearch(''); // refresh results
 
   if (notFound.length > 0) {
-    Toast.show(`לא נמצאו: ${notFound.join(', ')}`, 'warning');
+    Toast.warning(`לא נמצאו: ${notFound.join(', ')}`);
   }
-  Toast.show(`נוספו ${products.length} מוצרים`, 'success');
+  Toast.success(`נוספו ${products.length} מוצרים`);
 }
 
 /** Fetch products by barcode list */
