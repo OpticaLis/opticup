@@ -246,11 +246,30 @@ async function submitTemplateFromPage(pageId) {
 }
 
 /**
- * Edit template — open JSON editor for blocks
+ * Edit template — friendly block list UI
  */
 async function editTemplate(templateId) {
   const template = studioTemplates.find(t => t.id === templateId);
   if (!template) return;
+
+  const blocks = Array.isArray(template.blocks) ? template.blocks : [];
+  let blockListHtml = '';
+  blocks.forEach((b, i) => {
+    const schema = getBlockSchema(b.type);
+    const icon = schema?.icon || '📦';
+    const label = schema?.label || b.type;
+    const summary = b.data?.title || b.data?.text || b.data?.section_title || '';
+    blockListHtml += `<div class="block-item" style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--g200);border-radius:8px;margin-bottom:4px">
+      <span>${icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:.85rem">${escapeHtml(label)}</div>
+        ${summary ? `<div style="font-size:.75rem;color:var(--g400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(summary)}</div>` : ''}
+      </div>
+      <button class="btn btn-sm" onclick="editTemplateBlock('${templateId}',${i})" title="ערוך">✎</button>
+    </div>`;
+  });
+
+  if (!blocks.length) blockListHtml = '<div style="color:var(--g400);padding:12px;text-align:center">אין בלוקים בתבנית</div>';
 
   Modal.show({
     title: 'עריכת תבנית: ' + escapeHtml(template.name),
@@ -259,11 +278,44 @@ async function editTemplate(templateId) {
         <input type="text" id="edit-tpl-name" class="studio-field" value="${escapeAttr(template.name)}"></div>
       <div class="studio-field-group"><label>תיאור</label>
         <textarea id="edit-tpl-desc" class="studio-field" rows="3">${escapeAttr(template.description || '')}</textarea></div>
-      <div class="studio-field-group"><label>בלוקים (JSON)</label>
-        <textarea id="edit-tpl-blocks" class="studio-field studio-json" rows="15" dir="ltr" style="font-family:monospace;font-size:.82rem">${escapeAttr(JSON.stringify(template.blocks || [], null, 2))}</textarea></div>`,
+      <div class="studio-field-group"><label>בלוקים (${blocks.length})</label>${blockListHtml}</div>
+      <details style="margin-top:12px"><summary style="cursor:pointer;font-size:.82rem;color:var(--g400)">📋 עריכת JSON מתקדמת</summary>
+        <textarea id="edit-tpl-blocks" class="studio-field studio-json" rows="12" dir="ltr" style="font-family:monospace;font-size:.82rem;margin-top:8px">${escapeAttr(JSON.stringify(blocks, null, 2))}</textarea>
+      </details>`,
     footer: `<button class="btn btn-primary" onclick="submitEditTemplate('${templateId}')">שמור</button>
       <button class="btn btn-ghost" onclick="Modal.close()">ביטול</button>`
   });
+}
+
+/** Edit a single block within a template */
+function editTemplateBlock(templateId, blockIndex) {
+  const template = studioTemplates.find(t => t.id === templateId);
+  if (!template) return;
+  const block = template.blocks?.[blockIndex];
+  if (!block) return;
+
+  const schema = getBlockSchema(block.type);
+  if (!schema) { Toast.error('אין סכמה לסוג זה'); return; }
+
+  const formHtml = renderBlockForm(schema.fields, block.data || {});
+  Modal.show({
+    title: `עריכת ${schema.label} בתבנית`,
+    size: 'md',
+    content: `<div class="studio-edit-form" id="tpl-block-form">${formHtml}</div>`,
+    footer: `<button class="btn btn-primary" onclick="saveTplBlock('${templateId}',${blockIndex})">אישור</button>
+      <button class="btn btn-ghost" onclick="editTemplate('${templateId}')">חזור</button>`
+  });
+}
+
+function saveTplBlock(templateId, blockIndex) {
+  const template = studioTemplates.find(t => t.id === templateId);
+  if (!template || !template.blocks?.[blockIndex]) return;
+  const schema = getBlockSchema(template.blocks[blockIndex].type);
+  if (!schema) return;
+  const container = document.getElementById('tpl-block-form');
+  if (!container) return;
+  template.blocks[blockIndex].data = collectBlockFormData(container, schema.fields);
+  editTemplate(templateId);
 }
 
 async function submitEditTemplate(templateId) {

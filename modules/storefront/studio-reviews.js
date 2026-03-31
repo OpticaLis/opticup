@@ -364,14 +364,14 @@ async function rvSavePlaceId() {
   if (!placeId) { Toast.error('נא להזין Place ID'); return; }
 
   try {
+    // Use upsert in case no config row exists yet
     const { error } = await sb.from('storefront_config')
-      .update({ google_place_id: placeId })
-      .eq('tenant_id', getTenantId());
+      .upsert({ tenant_id: getTenantId(), google_place_id: placeId }, { onConflict: 'tenant_id' });
     if (error) throw error;
     Modal.close();
     Toast.success('Place ID נשמר — לחץ "סנכרן מגוגל" שוב');
   } catch (err) {
     console.error('Save place ID error:', err);
-    Toast.error('שגיאה בשמירה');
+    Toast.error('שגיאה בשמירה: ' + (err.message || err));
   }
 }

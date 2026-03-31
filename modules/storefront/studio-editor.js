@@ -315,7 +315,10 @@ function rollbackBlocks() {
 function openPreview() {
   if (!currentPage) return;
   const slug = currentPage.slug === '/' ? '' : '/' + currentPage.slug;
-  window.open(`https://opticup-storefront.vercel.app${slug}?t=prizma`, '_blank');
+  const tenant = TENANT_SLUG || 'prizma';
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const baseUrl = isLocal ? 'http://localhost:4321' : 'https://opticup-storefront.vercel.app';
+  window.open(`${baseUrl}${slug}?t=${tenant}`, '_blank');
 }
 
 /** Show raw JSON editor */
