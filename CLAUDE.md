@@ -143,7 +143,7 @@ opticup/
 │   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
 │   ├── settings/               — 1 file (settings-page)
 │   ├── stock-count/            — 9 files (list, session, camera, scan, filters, unknown, approve, view, report)
-│   └── storefront/            — 12 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary, studio-block-schemas, studio-form-renderer, studio-pages, studio-editor, studio-components, studio-leads)
+│   └── storefront/            — 14 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary, studio-block-schemas, studio-form-renderer, studio-pages, studio-editor, studio-components, studio-leads, studio-permissions, studio-templates)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
 │   ├── sync-export.js          — Reverse sync: export new inventory to XLS for Access
@@ -286,6 +286,49 @@ For complete globals list by file → see MODULE_MAP.md section 3.
 > **DO NOT CONFUSE THESE TWO TABLES:**
 > - `cms_leads` = CMS lead forms, UTM tracking, webhooks
 > - `storefront_leads` = notify-me when product is back in stock
+
+### storefront_templates (page templates — CMS-4)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK |
+| name | TEXT | UNIQUE |
+| description | TEXT | |
+| page_type | TEXT | custom/campaign/etc |
+| blocks | JSONB | Template blocks |
+| thumbnail | TEXT | Preview image URL |
+| is_active | BOOLEAN | |
+| created_at | TIMESTAMPTZ | |
+
+No tenant_id — templates are global. Created by super_admin, used by all tenants.
+
+---
+
+## Studio Permissions (CMS-4)
+
+### Roles:
+- super_admin: full access (detected by tenant slug in SUPER_ADMIN_TENANTS)
+- tenant_admin: limited self-service (content editing, templates, own leads)
+
+### Key file: modules/storefront/studio-permissions.js
+- getStudioRole() → 'super_admin' | 'tenant_admin'
+- studioHasPermission(key) → boolean
+- canEditBlockType(type) → boolean
+- canSee(element) → boolean
+- getAllowedFields(type) → string[] | null
+- isSuperAdmin() → boolean
+
+### Tenant admin can:
+- Edit blocks: text, gallery, video, banner, faq, cta (content only)
+- Create pages from templates
+- View own leads + export CSV
+- Access blog management
+
+### Tenant admin cannot:
+- Change page structure (add/remove/reorder blocks)
+- Edit system blocks (hero, products, brands, steps, columns, contact, lead_form)
+- Publish/unpublish pages
+- Manage components or webhooks
+- Access JSON editor or rollback
 
 ---
 
