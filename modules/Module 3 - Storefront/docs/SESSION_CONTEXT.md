@@ -1,8 +1,31 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: CMS-2 — Studio Block Editor
-## Status: ✅ Complete
+## Current Phase: CMS-5 — AI Prompt Editing
+## Status: ✅ Complete (pending Edge Function deploy)
 ## Date: 2026-03-31
+
+---
+
+## CMS-5 — AI Prompt Editing ✅
+
+| Step | Status | Description | Commit (ERP) |
+|------|--------|-------------|--------------|
+| 1 | ✅ | Edge Function: supabase/functions/cms-ai-edit/index.ts | `e731da4` |
+| 2 | ✅ | Deploy instructions saved | `e731da4` |
+| 3 | ✅ | studio-ai-prompt.js — API calls, prompt bar, history, permission gating | `e731da4` |
+| 4 | ✅ | storefront-studio.html — AI prompt bar + diff modal added | `e731da4` |
+| 5 | ✅ | css/studio.css — AI prompt + diff styles | `e731da4` |
+| 5b | ✅ | studio-ai-diff.js — diff view split for file size compliance | `e731da4` |
+| 6 | ✅ | Permission gating (built into handleAiPrompt) | `e731da4` |
+| 7 | ⬜ | Integration testing — requires Edge Function deploy | — |
+| 8 | ✅ | Documentation (CLAUDE.md, MODULE_MAP, SESSION_CONTEXT) | final commit |
+
+### Action Required
+- Daniel must deploy Edge Function: see `modules/Module 3 - Storefront/docs/deploy-cms-ai-edit.md`
+- Daniel must set `ANTHROPIC_API_KEY` as Supabase secret (if not already set)
+
+### What's Next
+- CMS-6: QA + design polish
 
 ---
 
@@ -18,11 +41,6 @@
 | 6 | ✅ | css/studio.css — editor styles | `fe6f3b4` |
 | 7 | ✅ | Navigation link added to all storefront pages | final commit |
 | 9 | ✅ | Documentation updated (CLAUDE.md + SESSION_CONTEXT.md) | final commit |
-
-### What's Next
-- CMS-3: Reusable components (CTA/form builder)
-- CMS-4: Tenant permissions
-- CMS-5: AI prompt editing
 
 ---
 

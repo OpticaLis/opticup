@@ -143,7 +143,7 @@ opticup/
 │   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
 │   ├── settings/               — 1 file (settings-page)
 │   ├── stock-count/            — 9 files (list, session, camera, scan, filters, unknown, approve, view, report)
-│   └── storefront/            — 14 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary, studio-block-schemas, studio-form-renderer, studio-pages, studio-editor, studio-components, studio-leads, studio-permissions, studio-templates)
+│   └── storefront/            — 16 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary, studio-block-schemas, studio-form-renderer, studio-pages, studio-editor, studio-components, studio-leads, studio-permissions, studio-templates, studio-ai-prompt, studio-ai-diff)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
 │   ├── sync-export.js          — Reverse sync: export new inventory to XLS for Access
@@ -157,7 +157,8 @@ opticup/
 │   ├── generate-ai-content/index.ts — Edge Function (AI product content + auto-translate)
 │   ├── generate-blog-post/index.ts — Edge Function (AI blog post generation)
 │   ├── generate-landing-content/index.ts — Edge Function (AI landing page content)
-│   └── translate-content/index.ts — Edge Function (Hebrew → EN/RU translation, Phase 6)
+│   ├── translate-content/index.ts — Edge Function (Hebrew → EN/RU translation, Phase 6)
+│   └── cms-ai-edit/index.ts    — Edge Function (AI prompt editing for CMS blocks, CMS-5)
 ├── migrations/
 │   └── *.sql
 ├── modules/Module 1 - Inventory Management/
@@ -329,6 +330,37 @@ No tenant_id — templates are global. Created by super_admin, used by all tenan
 - Publish/unpublish pages
 - Manage components or webhooks
 - Access JSON editor or rollback
+
+---
+
+## AI Prompt Editing (CMS-5)
+
+### Edge Function: `supabase/functions/cms-ai-edit/index.ts`
+- Receives: `{ blocks/config, prompt, mode (page/component) }`
+- Calls Claude API (`claude-sonnet-4-20250514`)
+- Returns: `{ blocks/config (updated), explanation }`
+- Requires: `ANTHROPIC_API_KEY` secret in Supabase
+
+### Deploy:
+```powershell
+cd C:\Users\User\opticup
+supabase functions deploy cms-ai-edit --no-verify-jwt
+```
+
+### Studio modules:
+- `modules/storefront/studio-ai-prompt.js` — API calls, prompt bar, history, permission gating
+- `modules/storefront/studio-ai-diff.js` — diff computation, diff view, component AI, apply/cancel
+
+### How it works:
+1. User types instruction in Hebrew in the AI prompt bar
+2. Current blocks/config + prompt sent to Edge Function
+3. Edge Function calls Claude API, returns updated JSON + explanation
+4. Studio shows diff view (added/modified/removed blocks highlighted)
+5. User approves changes (still need to Save) or cancels
+
+### Permission gating:
+- **super_admin:** sends all blocks to AI
+- **tenant_admin:** sends only allowed block types, locked blocks are preserved via merge
 
 ---
 
