@@ -65,20 +65,49 @@ Deno.serve(async (req: Request) => {
       return errRes('ANTHROPIC_API_KEY not configured', 500);
     }
 
-    const { blocks, prompt, mode, config } = await req.json();
+    const body = await req.json();
+    const { blocks, prompt, mode, config } = body;
 
-    if (!prompt) {
+    // SEO mode doesn't require prompt/blocks
+    if (mode !== 'seo' && !prompt) {
       return errRes('Missing prompt', 400);
     }
 
-    const currentData = mode === 'component' ? config : blocks;
-    if (!currentData) {
-      return errRes('Missing blocks or config data', 400);
+    if (mode !== 'seo') {
+      const currentData = mode === 'component' ? config : blocks;
+      if (!currentData) {
+        return errRes('Missing blocks or config data', 400);
+      }
     }
 
     // Build system prompt based on mode
     let systemPrompt = '';
-    if (mode === 'component') {
+    let userMessage = '';
+
+    if (mode === 'seo') {
+      const { page_title, page_type, blocks_summary, current_meta_title,
+              current_meta_description, current_slug, lang, learning_context } = body;
+
+      systemPrompt = `You are an SEO expert for Optic Up, an Israeli optical store website.
+Generate optimized SEO metadata in Hebrew for the given page.
+Return ONLY valid JSON with: meta_title, meta_description, suggested_slug, explanation.
+
+Rules:
+- meta_title: 30-60 characters, include page name + business name "אופטיקה פריזמה"
+- meta_description: 120-160 characters, include value proposition, keywords, call to action
+- slug: short, readable, Hebrew OK, dashes between words, wrapped with /
+- All text in Hebrew
+- Focus on optical industry keywords: משקפיים, עדשות, מסגרות, בדיקת ראייה, אופטיקה
+${learning_context || ''}`;
+
+      userMessage = `Page: ${page_title || '(untitled)'}
+Type: ${page_type || 'custom'}
+Content summary: ${blocks_summary || '(empty)'}
+Current meta_title: ${current_meta_title || '(empty)'}
+Current meta_description: ${current_meta_description || '(empty)'}
+Current slug: ${current_slug || '/'}`;
+
+    } else if (mode === 'component') {
       systemPrompt = `You are a CMS editor assistant for Optic Up, an optical store website management system.
 You receive the current JSON config of a reusable component and a user instruction in Hebrew.
 Return a JSON object with exactly two keys:
@@ -106,9 +135,12 @@ Rules:
 - If the instruction asks to do something impossible (e.g., add an unsupported block type), explain why in the explanation field and return the original blocks unchanged.`;
     }
 
-    const userMessage = mode === 'component'
-      ? `Current component config:\n${JSON.stringify(currentData, null, 2)}\n\nInstruction: ${prompt}`
-      : `Current page blocks:\n${JSON.stringify(currentData, null, 2)}\n\nInstruction: ${prompt}`;
+    // Build user message for non-SEO modes (SEO sets userMessage above)
+    if (mode === 'component') {
+      userMessage = `Current component config:\n${JSON.stringify(config, null, 2)}\n\nInstruction: ${prompt}`;
+    } else if (mode !== 'seo') {
+      userMessage = `Current page blocks:\n${JSON.stringify(blocks, null, 2)}\n\nInstruction: ${prompt}`;
+    }
 
     const response = await fetch(CLAUDE_API_URL, {
       method: 'POST',
@@ -144,7 +176,14 @@ Rules:
     }
 
     // Validate and return
-    if (mode === 'component') {
+    if (mode === 'seo') {
+      return jsonRes({
+        meta_title: result.meta_title || '',
+        meta_description: result.meta_description || '',
+        suggested_slug: result.suggested_slug || '',
+        explanation: result.explanation || '',
+      });
+    } else if (mode === 'component') {
       const cfg = result.config || result;
       return jsonRes({
         config: cfg,

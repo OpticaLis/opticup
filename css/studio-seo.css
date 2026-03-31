@@ -1,0 +1,67 @@
+/* css/studio-seo.css — SEO panel, search/filter, bulk actions, shortcuts (CMS-9) */
+
+/* SEO Panel */
+.seo-panel { background: #f8fafc; border: 1px solid var(--g200); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+.seo-panel-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; user-select: none; }
+.seo-panel-header:hover { background: var(--g50); }
+.seo-score-badge { font-weight: 700; font-size: .9rem; padding: 4px 10px; border-radius: 8px; white-space: nowrap; }
+.seo-score-badge.seo-good { background: #dcfce7; color: #166534; }
+.seo-score-badge.seo-ok { background: #fef9c3; color: #854d0e; }
+.seo-score-badge.seo-poor { background: #fecaca; color: #991b1b; }
+.seo-panel-title { font-weight: 600; font-size: .85rem; color: var(--g500); flex: 1; }
+.seo-panel-toggle { font-size: .85rem; color: var(--g400); }
+.seo-panel-details { padding: 0 14px 14px; }
+.seo-check-item { padding: 4px 0; font-size: .82rem; line-height: 1.5; }
+.seo-check-pass { color: var(--g500); }
+.seo-check-fail { color: #991b1b; font-weight: 500; }
+.seo-check-hint { color: var(--g400); font-weight: 400; font-size: .78rem; }
+.seo-panel-actions { display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--g200); }
+
+/* SEO mini badge on page list */
+.seo-score-mini { font-size: .7rem; font-weight: 700; padding: 2px 6px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; }
+.seo-score-mini.seo-good { background: #dcfce7; color: #166534; }
+.seo-score-mini.seo-ok { background: #fef9c3; color: #854d0e; }
+.seo-score-mini.seo-poor { background: #fecaca; color: #991b1b; }
+
+/* Auto-SEO modal */
+.seo-auto-form { padding: 4px 0; }
+.seo-char-count { display: block; font-size: .78rem; margin-top: 4px; }
+.seo-len-ok { color: #166534; }
+.seo-len-warn { color: #991b1b; }
+.seo-explanation { background: #fef9c3; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; font-size: .85rem; margin-top: 12px; line-height: 1.5; }
+.seo-char-inline { font-size: .75rem; color: var(--g400); font-weight: 400; }
+
+/* Page list search/filter bar */
+.page-search-bar { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.page-search-input { flex: 1; min-width: 100px; padding: 6px 10px !important; font-size: .82rem !important; }
+.page-filter-select { width: auto !important; min-width: 80px; padding: 6px 8px !important; font-size: .78rem !important; }
+
+/* Enhanced page list items */
+.studio-page-row-top { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.studio-page-row-top input[type="checkbox"] { width: 14px; height: 14px; flex-shrink: 0; cursor: pointer; }
+.studio-page-slug-time { display: flex; gap: 8px; align-items: center; font-size: .75rem; }
+.studio-page-edited { color: var(--g400); white-space: nowrap; }
+.studio-page-item { flex-wrap: wrap; gap: 6px; }
+
+/* Bulk action bar */
+.bulk-action-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--primary); color: #fff; border-radius: 8px; margin-top: 8px; font-size: .85rem; font-weight: 600; }
+.bulk-action-bar .btn { font-size: .8rem; padding: 4px 12px; }
+.bulk-action-bar .btn-primary { background: #fff; color: var(--primary); }
+.bulk-action-bar .btn-ghost { background: rgba(255,255,255,.2); color: #fff; border: 1px solid rgba(255,255,255,.4); }
+
+/* Inline edit */
+.inline-edit-input { width: 100%; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 4px; font-family: inherit; font-size: .82rem; box-sizing: border-box; }
+
+/* Keyboard shortcuts hint */
+.shortcuts-hint { text-align: center; padding: 8px; font-size: .75rem; color: var(--g400); border-top: 1px solid var(--g100); margin-top: 8px; direction: ltr; }
+
+/* Slug link button */
+.slug-link-btn { background: none; border: none; cursor: pointer; font-size: .9rem; padding: 0 4px; vertical-align: middle; }
+
+/* SEO score transition */
+.seo-score-badge { transition: background .3s, color .3s; }
+
+@media (max-width: 768px) {
+  .page-search-bar { flex-direction: column; }
+  .page-search-input, .page-filter-select { width: 100% !important; }
+}
