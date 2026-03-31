@@ -109,7 +109,7 @@ opticup/
 ├── css/
 │   ├── styles.css              — all styles
 │   ├── header.css              — sticky header styles
-│   └── studio.css              — Studio editor styles (CMS-2)
+│   └── studio.css              — Studio editor styles (CMS-2/3)
 ├── js/
 │   ├── shared.js               — Supabase init, constants, caches, utilities (load FIRST)
 │   ├── shared-ui.js            — navigation (showTab), info modal, help banner (load after shared.js)
@@ -143,7 +143,7 @@ opticup/
 │   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
 │   ├── settings/               — 1 file (settings-page)
 │   ├── stock-count/            — 9 files (list, session, camera, scan, filters, unknown, approve, view, report)
-│   └── storefront/            — 10 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary, studio-block-schemas, studio-form-renderer, studio-pages, studio-editor)
+│   └── storefront/            — 12 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary, studio-block-schemas, studio-form-renderer, studio-pages, studio-editor, studio-components, studio-leads)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
 │   ├── sync-export.js          — Reverse sync: export new inventory to XLS for Access
