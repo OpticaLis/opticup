@@ -17,6 +17,13 @@ const BLOCK_SCHEMAS = {
       { key: 'cta_style', label: 'סגנון כפתור', type: 'select', options: [
         { value: 'gold', label: 'זהב' }, { value: 'primary', label: 'ראשי (שחור)' }
       ], default: 'gold' },
+      { key: 'status_text', label: 'טקסט סטטוס (תג מעל הכותרת)', type: 'text', placeholder: 'ההרשמה פתוחה' },
+      { key: 'status_bg', label: 'צבע תג סטטוס', type: 'select', options: [
+        { value: 'gold', label: 'זהב' }, { value: 'green', label: 'ירוק' }, { value: 'red', label: 'אדום' }
+      ], default: 'gold' },
+      { key: 'title_size', label: 'גודל כותרת', type: 'select', options: [
+        { value: 'normal', label: 'רגיל' }, { value: 'large', label: 'גדול' }, { value: 'huge', label: 'ענק' }
+      ], default: 'normal' },
     ]
   },
 
@@ -91,6 +98,19 @@ const BLOCK_SCHEMAS = {
       { key: 'show_out_of_stock', label: 'הצג מוצרים שאזלו', type: 'toggle', default: false },
       { key: 'out_of_stock_warning', label: 'הצג תג "אזל" על מוצרים חסרים', type: 'toggle', default: true },
       { key: 'show_more_url', label: 'קישור "הצג הכל"', type: 'url' },
+      { key: 'card_style', label: 'סגנון כרטיס', type: 'select', options: [
+        { value: 'standard', label: 'רגיל' },
+        { value: 'campaign', label: 'קמפיין (מחירים + תגים)' },
+        { value: 'minimal', label: 'מינימלי (ללא מחירים)' },
+      ], default: 'standard' },
+      { key: 'show_price', label: 'הצג מחיר', type: 'toggle', default: true },
+      { key: 'show_original_price', label: 'הצג מחיר מקורי (מחוק)', type: 'toggle', default: false },
+      { key: 'show_image_gallery', label: 'גלריית תמונות (חצים)', type: 'toggle', default: false },
+      { key: 'show_badges', label: 'הצג תגים', type: 'toggle', default: false },
+      { key: 'default_badge_text', label: 'טקסט תג ברירת מחדל', type: 'text', placeholder: 'מבצע!' },
+      { key: 'badge_bg_color', label: 'צבע תג', type: 'select', options: [
+        { value: 'red', label: 'אדום' }, { value: 'gold', label: 'זהב' }, { value: 'black', label: 'שחור' }
+      ], default: 'red' },
     ]
   },
 
@@ -249,6 +269,60 @@ const BLOCK_SCHEMAS = {
       ], default: 'carousel' },
       { key: 'show_rating_summary', label: 'הצג סיכום דירוג', type: 'toggle', default: true },
       { key: 'limit', label: 'מקסימום ביקורות', type: 'number' },
+    ]
+  },
+
+  sticky_bar: {
+    label: 'Sticky Bar',
+    icon: '📌',
+    fields: [
+      { key: 'text', label: 'טקסט', type: 'text', required: true },
+      { key: 'secondary_text', label: 'טקסט משני (צד שמאל)', type: 'text' },
+      { key: 'cta_text', label: 'טקסט כפתור', type: 'text' },
+      { key: 'cta_url', label: 'קישור כפתור', type: 'url' },
+      { key: 'position', label: 'מיקום', type: 'select', options: [
+        { value: 'top', label: 'למעלה' }, { value: 'bottom', label: 'למטה' }
+      ], default: 'top', required: true },
+      { key: 'bg_color', label: 'צבע רקע', type: 'select', options: [
+        { value: 'black', label: 'שחור' }, { value: 'gold', label: 'זהב' }, { value: 'white', label: 'לבן' }
+      ], default: 'black' },
+      { key: 'text_color', label: 'צבע טקסט', type: 'select', options: [
+        { value: 'white', label: 'לבן' }, { value: 'black', label: 'שחור' }
+      ], default: 'white' },
+      { key: 'dismissible', label: 'ניתן לסגירה', type: 'toggle', default: true },
+      { key: 'show_countdown', label: 'ספירה לאחור', type: 'toggle', default: false },
+      { key: 'countdown_to', label: 'תאריך סיום (ISO)', type: 'text', placeholder: '2026-12-31T23:59:59' },
+    ]
+  },
+
+  trust_badges: {
+    label: 'תגי אמון',
+    icon: '🛡️',
+    fields: [
+      { key: 'section_title', label: 'כותרת', type: 'text' },
+      { key: 'style', label: 'סגנון', type: 'select', options: [
+        { value: 'row', label: 'שורה' }, { value: 'grid', label: 'רשת' }
+      ], default: 'row' },
+      { key: 'badges', label: 'תגים', type: 'items', itemFields: [
+        { key: 'icon', label: 'אייקון (emoji)', type: 'text', required: true },
+        { key: 'title', label: 'כותרת', type: 'text', required: true },
+        { key: 'text', label: 'טקסט משני', type: 'text' },
+      ]},
+    ]
+  },
+
+  divider: {
+    label: 'מפריד',
+    icon: '➖',
+    fields: [
+      { key: 'style', label: 'סגנון', type: 'select', options: [
+        { value: 'line', label: 'קו' }, { value: 'space', label: 'רווח' },
+        { value: 'dots', label: 'נקודות' }, { value: 'wave', label: 'גל' }
+      ], default: 'line' },
+      { key: 'color', label: 'צבע (לקו)', type: 'select', options: [
+        { value: 'gold', label: 'זהב' }, { value: 'gray', label: 'אפור' }, { value: 'black', label: 'שחור' }
+      ], default: 'gold' },
+      { key: 'height', label: 'גובה (לרווח)', type: 'text', placeholder: '60px', default: '60px' },
     ]
   },
 

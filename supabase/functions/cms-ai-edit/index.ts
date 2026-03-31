@@ -24,11 +24,11 @@ function errRes(message: string, status: number): Response {
 const BLOCK_TYPE_REFERENCE = `
 Available block types and their data fields:
 
-1. hero: { youtube_id, image, overlay (0-1), title, subtitle, cta_text, cta_url, cta_style (gold/primary) }
+1. hero: { youtube_id, image, overlay (0-1), title, subtitle, cta_text, cta_url, cta_style (gold/primary), status_text (badge above title), status_bg (gold/green/red), title_size (normal/large/huge) }
 2. text: { title, body (Markdown), alignment (right/center/left) }
 3. gallery: { images: [{src, alt, caption}], style (grid/slider), columns (2/3/4) }
 4. video: { videos: [{youtube_id, title}], style (standard/shorts), section_title }
-5. products: { filter (bestsellers/new/all), selected_products (barcode array for manual selection), limit, style (carousel/grid), section_title, show_more_url, grid_columns_desktop (2-5), grid_columns_mobile (1-2), show_out_of_stock, out_of_stock_warning }
+5. products: { filter (bestsellers/new/all), selected_products (barcode array for manual selection), limit, style (carousel/grid), section_title, show_more_url, grid_columns_desktop (2-5), grid_columns_mobile (1-2), show_out_of_stock, out_of_stock_warning, card_style (standard/campaign/minimal), show_price, show_original_price, show_image_gallery, show_badges, default_badge_text, badge_bg_color (red/gold/black) }
 6. cta: { text, url, style (gold/primary/secondary/outline), description, target (_self/_blank) }
 7. lead_form: { title, fields: [{name, label, type, required}], submit_text, success_message, webhook_url }
 8. faq: { section_title, items: [{question, answer}] }
@@ -39,6 +39,9 @@ Available block types and their data fields:
 13. brands: { section_title, style (carousel/grid), limit, show_more_url }
 14. blog_carousel: { section_title, limit, style (carousel/grid), show_more_url }
 15. reviews: { section_title, style (carousel/grid), show_rating_summary (boolean), limit }
+16. sticky_bar: { text, secondary_text, cta_text, cta_url, position (top/bottom), bg_color (black/gold/white), text_color (white/black), dismissible, show_countdown, countdown_to (ISO date) }
+17. trust_badges: { section_title, badges: [{icon (emoji), title, text}], style (row/grid) }
+18. divider: { style (line/space/dots/wave), color (gold/gray/black), height (e.g. "60px") }
 
 Each block also has optional settings: { bg_color (white/black/gold/gray/transparent), padding, max_width (narrow/standard/wide/full), hidden, css_class }
 
