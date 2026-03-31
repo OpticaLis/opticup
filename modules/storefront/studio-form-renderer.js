@@ -14,11 +14,16 @@ function escapeAttr(str) {
  */
 function renderBlockForm(fields, data, prefix = '') {
   let html = '';
+  // Determine selection_mode for showIf
+  const selMode = data.selection_mode || 'filter';
   for (const field of fields) {
     const fullKey = prefix ? `${prefix}.${field.key}` : field.key;
     const val = data[field.key] ?? field.default ?? '';
     const req = field.required ? ' studio-field-required' : '';
-    html += `<div class="studio-field-group${req}">`;
+    // showIf: hide field if selection_mode doesn't match
+    const hidden = field.showIf && field.showIf !== selMode ? ' style="display:none"' : '';
+    const showIfAttr = field.showIf ? ` data-show-if="${escapeAttr(field.showIf)}"` : '';
+    html += `<div class="studio-field-group${req}"${hidden}${showIfAttr}>`;
 
     if (field.type !== 'toggle') {
       html += `<label for="sf-${fullKey}">${escapeAttr(field.label)}</label>`;
@@ -47,14 +52,16 @@ function renderBlockForm(fields, data, prefix = '') {
           <span class="studio-range-val">${val}</span></div>`;
         break;
 
-      case 'select':
-        html += `<select id="sf-${fullKey}" class="studio-field" data-key="${fullKey}">`;
+      case 'select': {
+        const changeHandler = field.key === 'selection_mode' ? ` onchange="studioToggleShowIf(this)"` : '';
+        html += `<select id="sf-${fullKey}" class="studio-field" data-key="${fullKey}"${changeHandler}>`;
         for (const opt of (field.options || [])) {
           const sel = String(val) === String(opt.value) ? ' selected' : '';
           html += `<option value="${escapeAttr(opt.value)}"${sel}>${escapeAttr(opt.label)}</option>`;
         }
         html += `</select>`;
         break;
+      }
 
       case 'toggle':
         html += `<label class="studio-toggle"><input type="checkbox" id="sf-${fullKey}" class="studio-field" data-key="${fullKey}" ${val ? 'checked' : ''}> ${escapeAttr(field.label)}</label>`;
@@ -69,6 +76,18 @@ function renderBlockForm(fields, data, prefix = '') {
       case 'items':
         html += renderItemsField(field, Array.isArray(val) ? val : [], fullKey);
         break;
+
+      case 'product_picker': {
+        const count = Array.isArray(val) ? val.length : 0;
+        html += `<input type="hidden" id="sf-${fullKey}" class="studio-field" data-key="${fullKey}" data-type="product_picker" value='${escapeAttr(JSON.stringify(val || []))}'>`;
+        html += `<button type="button" class="btn btn-sm btn-secondary" onclick="studioOpenProductPicker('${fullKey}')">בחר מוצרים (<span id="pp-field-count-${fullKey}">${count}</span> נבחרו)</button>`;
+        if (count > 0) {
+          html += `<div id="pp-field-summary-${fullKey}" class="mt-2" style="font-size:.82rem;color:var(--g400)">${(val || []).join(', ')}</div>`;
+        } else {
+          html += `<div id="pp-field-summary-${fullKey}" class="mt-2" style="font-size:.82rem;color:var(--g400)"></div>`;
+        }
+        break;
+      }
 
       case 'json':
         html += `<textarea id="sf-${fullKey}" class="studio-field studio-json" data-key="${fullKey}" rows="${field.rows || 8}">${escapeAttr(typeof val === 'string' ? val : JSON.stringify(val, null, 2))}</textarea>`;
@@ -164,6 +183,11 @@ function collectBlockFormData(container, fields, prefix = '') {
     const el = container.querySelector(`[data-key="${fullKey}"]`);
     if (!el) { data[field.key] = field.default ?? ''; continue; }
 
+    if (field.type === 'product_picker') {
+      try { data[field.key] = JSON.parse(el.value || '[]'); } catch { data[field.key] = []; }
+      continue;
+    }
+
     if (field.type === 'toggle') {
       data[field.key] = el.checked;
     } else if (field.type === 'number' || field.type === 'range') {
@@ -191,4 +215,33 @@ function renderSettingsForm(settings) {
  */
 function collectSettingsFormData(container) {
   return collectBlockFormData(container, BLOCK_SETTINGS_SCHEMA, 'settings');
+}
+
+/**
+ * Toggle showIf field visibility based on selection_mode value
+ */
+function studioToggleShowIf(selectEl) {
+  const mode = selectEl.value;
+  const form = selectEl.closest('.studio-edit-form') || selectEl.closest('.modal-body');
+  if (!form) return;
+  form.querySelectorAll('[data-show-if]').forEach(el => {
+    el.style.display = el.dataset.showIf === mode ? '' : 'none';
+  });
+}
+
+/**
+ * Open product picker from form field
+ */
+function studioOpenProductPicker(fieldKey) {
+  const input = document.getElementById(`sf-${fieldKey}`);
+  if (!input) return;
+  let current = [];
+  try { current = JSON.parse(input.value || '[]'); } catch { current = []; }
+  openProductPicker(current, (barcodes) => {
+    input.value = JSON.stringify(barcodes);
+    const countEl = document.getElementById(`pp-field-count-${fieldKey}`);
+    if (countEl) countEl.textContent = barcodes.length;
+    const summaryEl = document.getElementById(`pp-field-summary-${fieldKey}`);
+    if (summaryEl) summaryEl.textContent = barcodes.join(', ');
+  });
 }

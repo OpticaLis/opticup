@@ -70,13 +70,26 @@ const BLOCK_SCHEMAS = {
     icon: '👓',
     fields: [
       { key: 'section_title', label: 'כותרת מקטע', type: 'text' },
-      { key: 'filter', label: 'סינון', type: 'select', options: [
+      { key: 'selection_mode', label: 'בחירת מוצרים', type: 'select', options: [
+        { value: 'filter', label: 'אוטומטי (לפי פילטר)' },
+        { value: 'manual', label: 'ידני (בחירת מוצרים ספציפיים)' }
+      ], default: 'filter' },
+      { key: 'filter', label: 'סינון', type: 'select', showIf: 'filter', options: [
         { value: 'bestsellers', label: 'הנמכרים ביותר' }, { value: 'new', label: 'חדשים' }, { value: 'all', label: 'הכל' }
       ], default: 'bestsellers' },
-      { key: 'limit', label: 'מקסימום מוצרים', type: 'number', default: 8 },
+      { key: 'limit', label: 'מקסימום מוצרים', type: 'number', showIf: 'filter', default: 8 },
+      { key: 'selected_products', label: 'מוצרים נבחרים', type: 'product_picker', showIf: 'manual' },
       { key: 'style', label: 'סגנון', type: 'select', options: [
         { value: 'carousel', label: 'קרוסלה' }, { value: 'grid', label: 'רשת' }
       ], default: 'carousel' },
+      { key: 'grid_columns_desktop', label: 'עמודות (דסקטופ)', type: 'select', options: [
+        { value: 2, label: '2' }, { value: 3, label: '3' }, { value: 4, label: '4' }, { value: 5, label: '5' }
+      ], default: 4 },
+      { key: 'grid_columns_mobile', label: 'עמודות (מובייל)', type: 'select', options: [
+        { value: 1, label: '1' }, { value: 2, label: '2' }
+      ], default: 2 },
+      { key: 'show_out_of_stock', label: 'הצג מוצרים שאזלו', type: 'toggle', default: false },
+      { key: 'out_of_stock_warning', label: 'הצג תג "אזל" על מוצרים חסרים', type: 'toggle', default: true },
       { key: 'show_more_url', label: 'קישור "הצג הכל"', type: 'url' },
     ]
   },
@@ -223,6 +236,19 @@ const BLOCK_SCHEMAS = {
         { value: 'carousel', label: 'קרוסלה' }, { value: 'grid', label: 'רשת' }
       ], default: 'carousel' },
       { key: 'show_more_url', label: 'קישור "הצג הכל"', type: 'url' },
+    ]
+  },
+
+  reviews: {
+    label: 'ביקורות',
+    icon: '⭐',
+    fields: [
+      { key: 'section_title', label: 'כותרת מקטע', type: 'text', default: 'מה הלקוחות אומרים' },
+      { key: 'style', label: 'סגנון', type: 'select', options: [
+        { value: 'carousel', label: 'קרוסלה' }, { value: 'grid', label: 'רשת' }
+      ], default: 'carousel' },
+      { key: 'show_rating_summary', label: 'הצג סיכום דירוג', type: 'toggle', default: true },
+      { key: 'limit', label: 'מקסימום ביקורות', type: 'number' },
     ]
   },
 

@@ -108,6 +108,7 @@ function getBlockSummary(block) {
     case 'brands': return d.section_title || '';
     case 'blog_carousel': return d.section_title || '';
     case 'lead_form': return d.title || '';
+    case 'reviews': return d.section_title || '';
     default: return block.type;
   }
 }
@@ -213,17 +214,84 @@ function moveBlock(index, direction) {
 }
 
 /**
- * Add new block
+ * Add new block — shows templates + raw types
  */
-function addBlock() {
+let _blockTemplates = null;
+
+async function addBlock() {
+  // Load block templates once
+  if (!_blockTemplates) {
+    try {
+      const { data } = await sb.from('storefront_block_templates')
+        .select('*').eq('is_active', true).order('sort_order');
+      _blockTemplates = data || [];
+    } catch { _blockTemplates = []; }
+  }
+
+  const categories = ['products', 'content', 'media', 'marketing', 'layout'];
+  const catLabels = { products: 'מוצרים', content: 'תוכן', media: 'מדיה', marketing: 'שיווק', layout: 'פריסה' };
+
+  // Category tabs
+  const cats = categories.map(c =>
+    `<span class="bt-cat ${c === 'products' ? 'active' : ''}" data-cat="${c}" onclick="btFilterCat('${c}')">${catLabels[c]}</span>`
+  ).join('') + `<span class="bt-cat" data-cat="all" onclick="btFilterCat('all')">הכל</span>`;
+
+  // Template items
+  const templates = _blockTemplates.map(t =>
+    `<div class="bt-template" data-cat="${t.category}" onclick="submitAddFromTemplate('${t.id}')">
+      <span class="bt-template-icon">${t.icon || '📦'}</span>
+      <div class="bt-template-info">
+        <span class="bt-template-name">${escapeHtml(t.name)}</span>
+        <span class="bt-template-desc">${escapeHtml(t.description || '')}</span>
+      </div>
+    </div>`
+  ).join('');
+
+  // Raw block types
   const types = getBlockTypeList();
-  const options = types.map(t => `<div class="studio-type-option" onclick="submitAddBlock('${t.type}')">${t.icon} ${escapeHtml(t.label)}</div>`).join('');
+  const options = types.map(t =>
+    `<div class="studio-type-option" onclick="submitAddBlock('${t.type}')">${t.icon} ${escapeHtml(t.label)}</div>`
+  ).join('');
+
+  const hasTemplates = _blockTemplates.length > 0;
+
   Modal.show({
     title: 'הוסף בלוק',
-    size: 'sm',
-    content: `<div class="studio-type-grid">${options}</div>`,
+    size: 'md',
+    content: `
+      ${hasTemplates ? `
+        <div class="bt-section-title">תבניות מוכנות</div>
+        <div class="bt-cats">${cats}</div>
+        <div id="bt-template-list" style="max-height:250px;overflow-y:auto">${templates}</div>
+      ` : ''}
+      <div class="bt-section-title">בלוק ריק</div>
+      <div class="studio-type-grid">${options}</div>
+    `,
     footer: `<button class="btn btn-ghost" onclick="Modal.close()">ביטול</button>`
   });
+}
+
+/** Filter templates by category */
+function btFilterCat(cat) {
+  document.querySelectorAll('.bt-cat').forEach(el => el.classList.toggle('active', el.dataset.cat === cat));
+  document.querySelectorAll('#bt-template-list .bt-template').forEach(el => {
+    el.style.display = (cat === 'all' || el.dataset.cat === cat) ? '' : 'none';
+  });
+}
+
+/** Add block from template */
+function submitAddFromTemplate(templateId) {
+  const tpl = (_blockTemplates || []).find(t => t.id === templateId);
+  if (!tpl) return;
+  editedBlocks.push({
+    id: tpl.block_type + '-' + Date.now().toString(36),
+    type: tpl.block_type,
+    data: JSON.parse(JSON.stringify(tpl.block_data || {})),
+    settings: JSON.parse(JSON.stringify(tpl.block_settings || {}))
+  });
+  Modal.close();
+  markUnsaved();
+  document.getElementById('studio-block-list').innerHTML = renderBlockList();
 }
 
 function submitAddBlock(type) {
