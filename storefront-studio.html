@@ -1,0 +1,111 @@
+<!--
+  Optic Up — Storefront Studio (CMS-2)
+  Block editor for managing storefront pages
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optic Up — ניהול אתר Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/css/variables.css">
+<link rel="stylesheet" href="shared/css/components.css">
+<link rel="stylesheet" href="shared/css/components-extra.css">
+<link rel="stylesheet" href="shared/css/layout.css">
+<link rel="stylesheet" href="shared/css/forms.css">
+<link rel="stylesheet" href="shared/css/modal.css">
+<link rel="stylesheet" href="shared/css/toast.css">
+<link rel="stylesheet" href="shared/css/table.css">
+<link rel="stylesheet" href="css/header.css">
+<link rel="stylesheet" href="css/studio.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+.sf-container { max-width: 1400px; margin: 0 auto; padding: 24px 16px; }
+.sf-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+.sf-subtitle { color: var(--g400); font-size: .9rem; margin-bottom: 24px; }
+.sf-nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+.sf-nav a { padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: .9rem;
+  background: var(--g100); color: var(--g700); transition: all .2s; }
+.sf-nav a.active, .sf-nav a:hover { background: var(--primary); color: #fff; }
+</style>
+</head>
+<body>
+
+<main>
+  <div class="sf-container">
+    <h1 class="sf-title">🎨 ניהול אתר — Studio</h1>
+    <p class="sf-subtitle">עריכת עמודים ובלוקים — ניהול תוכן ויזואלי</p>
+
+    <nav class="sf-nav">
+      <a href="storefront-settings.html">⚙️ הגדרות</a>
+      <a href="storefront-brands.html">🏷️ מותגים</a>
+      <a href="storefront-products.html">📦 מוצרים</a>
+      <a href="storefront-content.html">🤖 תוכן AI</a>
+      <a href="storefront-blog.html">📝 בלוג</a>
+      <a href="storefront-landing-content.html">🎯 דפי נחיתה</a>
+      <a href="storefront-glossary.html">📖 מילון מונחים</a>
+      <a href="storefront-studio.html" class="active">🎨 Studio</a>
+    </nav>
+
+    <div class="studio-layout">
+      <!-- Sidebar: Page List -->
+      <aside class="studio-sidebar">
+        <div class="studio-sidebar-header">
+          <h3>עמודים</h3>
+          <button class="btn btn-sm btn-primary" onclick="createPage()">+ חדש</button>
+        </div>
+        <div id="studio-page-list" class="studio-page-list">
+          <div class="studio-empty">טוען...</div>
+        </div>
+      </aside>
+
+      <!-- Main: Block Editor -->
+      <section class="studio-main" id="studio-editor">
+        <div class="studio-empty-editor">
+          <p>בחר עמוד מהרשימה לעריכה</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<!-- Toast + Loading -->
+<div id="toast-c"></div>
+<div id="loading" class="loading-overlay" style="display:none">
+  <div class="loading-box"><div class="spinner"></div><p id="loading-text">טוען...</p></div>
+</div>
+
+<!-- Shared JS -->
+<script src="shared/js/theme-loader.js"></script>
+<script src="shared/js/modal-builder.js"></script>
+<script src="shared/js/modal-wizard.js"></script>
+<script src="shared/js/toast.js"></script>
+<script src="shared/js/pin-modal.js"></script>
+<script src="shared/js/table-builder.js"></script>
+<script src="shared/js/permission-ui.js"></script>
+<script src="shared/js/supabase-client.js"></script>
+<script src="shared/js/activity-logger.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/shared-ui.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/supabase-ops.js"></script>
+<script src="js/header.js"></script>
+<script src="js/alerts-badge.js"></script>
+
+<!-- Studio JS -->
+<script src="modules/storefront/studio-block-schemas.js"></script>
+<script src="modules/storefront/studio-form-renderer.js"></script>
+<script src="modules/storefront/studio-pages.js"></script>
+<script src="modules/storefront/studio-editor.js"></script>
+
+<script>
+window.addEventListener('DOMContentLoaded', async () => {
+  const session = await loadSession();
+  if (!session) { window.location.href = '/'; return; }
+  if (!hasPermission('settings.view')) { window.location.href = '/'; return; }
+  await loadStudioPages();
+});
+</script>
+</body>
+</html>
