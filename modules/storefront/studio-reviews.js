@@ -286,7 +286,7 @@ async function rvSyncGoogle() {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/fetch-google-reviews`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         google_place_id: config.google_place_id,
         google_api_key: config.google_api_key,
