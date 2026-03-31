@@ -41,6 +41,11 @@ function renderEditor() {
   html += renderToolbar();
   editor.innerHTML = html;
   updateSaveBtn();
+
+  // Render AI prompt bar (CMS-5)
+  if (typeof renderAiPromptBar === 'function') {
+    renderAiPromptBar('ai-prompt-container');
+  }
 }
 
 /**

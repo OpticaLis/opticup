@@ -80,6 +80,8 @@
             <p>בחר עמוד מהרשימה לעריכה</p>
           </div>
         </section>
+        <!-- AI Prompt Bar (rendered by renderAiPromptBar) -->
+        <div id="ai-prompt-container" class="hidden"></div>
       </div>
     </div>
 
@@ -105,6 +107,13 @@
     </div>
   </div>
 </main>
+
+<!-- AI Diff Modal -->
+<div id="modal-ai-diff" class="modal hidden">
+  <div class="modal-content modal-large">
+    <div id="ai-diff-content"></div>
+  </div>
+</div>
 
 <!-- Toast + Loading -->
 <div id="toast-c"></div>
@@ -138,6 +147,8 @@
 <script src="modules/storefront/studio-components.js"></script>
 <script src="modules/storefront/studio-leads.js"></script>
 <script src="modules/storefront/studio-templates.js"></script>
+<script src="modules/storefront/studio-ai-prompt.js"></script>
+<script src="modules/storefront/studio-ai-diff.js"></script>
 
 <script>
 function switchStudioTab(tab) {

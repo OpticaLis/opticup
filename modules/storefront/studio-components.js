@@ -129,11 +129,24 @@ function openComponentForm(type, existing) {
     </div>`;
   }
 
+  // AI prompt for component editing (CMS-5)
+  let aiPromptHtml = '';
+  if (existing && typeof handleComponentAiPrompt === 'function') {
+    aiPromptHtml = `<div class="ai-prompt-bar" style="margin-top:16px">
+      <div class="ai-prompt-header"><span class="ai-prompt-label">AI עריכה עם</span></div>
+      <div class="ai-prompt-input-row">
+        <textarea placeholder="כתוב הוראה... למשל: שנה את הטקסט לקבעו פגישה" rows="2" id="ai-component-prompt-input"></textarea>
+        <button class="btn btn-gold ai-send-btn" onclick="handleComponentAiPrompt(collectConfig('${type}'),'${existing.id}')">שלח</button>
+      </div>
+      <div id="ai-component-status" class="ai-status hidden"></div>
+    </div>`;
+  }
+
   const saveLabel = existing ? 'שמור' : 'צור';
   Modal.show({
     title: `${meta.icon} ${existing ? 'עריכת' : 'יצירת'} ${meta.label}`,
     size: 'lg',
-    content: `<div id="comp-edit-form">${formHtml}</div>`,
+    content: `<div id="comp-edit-form">${formHtml}${aiPromptHtml}</div>`,
     footer: `<button class="btn btn-primary" onclick="submitComponentSave('${type}','${existing?.id || ''}')">${saveLabel}</button>
       <button class="btn btn-ghost" onclick="Modal.close()">ביטול</button>`
   });
