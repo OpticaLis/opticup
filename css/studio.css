@@ -240,6 +240,14 @@
 .rv-actions button { background: var(--g100); border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: .85rem; }
 .rv-actions button:hover { background: var(--g200); }
 
+/* Code editor (CMS-10 custom block) */
+.studio-code-wrap { position: relative; }
+.studio-code-editor { font-family: 'Courier New', monospace; background: #1e1e2e; color: #cdd6f4; border: 1px solid #45475a; border-radius: 8px; padding: 12px; line-height: 1.5; tab-size: 2; resize: vertical; width: 100%; box-sizing: border-box; direction: ltr; text-align: left; }
+.studio-code-editor::placeholder { color: #6c7086; }
+.studio-ai-code-btn { position: absolute; bottom: 8px; left: 8px; background: #D4A853; color: #000; border: none; border-radius: 6px; padding: 4px 12px; font-size: .82rem; font-weight: 600; cursor: pointer; }
+.studio-ai-code-btn:hover { background: #c49a42; }
+.studio-ai-code-btn:disabled { opacity: .5; cursor: wait; }
+
 /* Responsive */
 @media (max-width: 768px) {
   .studio-layout { flex-direction: column; }

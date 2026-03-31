@@ -66,14 +66,18 @@ Deno.serve(async (req: Request) => {
     }
 
     const body = await req.json();
-    const { blocks, prompt, mode, config } = body;
+    const { blocks, prompt, mode, config, mode_data } = body;
 
-    // SEO mode doesn't require prompt/blocks
-    if (mode !== 'seo' && !prompt) {
+    // Custom mode uses mode_data.prompt instead of top-level prompt
+    if (mode !== 'seo' && mode !== 'custom' && !prompt) {
       return errRes('Missing prompt', 400);
     }
 
-    if (mode !== 'seo') {
+    if (mode === 'custom' && (!mode_data?.prompt)) {
+      return errRes('Missing mode_data.prompt for custom mode', 400);
+    }
+
+    if (mode !== 'seo' && mode !== 'custom') {
       const currentData = mode === 'component' ? config : blocks;
       if (!currentData) {
         return errRes('Missing blocks or config data', 400);
@@ -135,10 +139,34 @@ Rules:
 - If the instruction asks to do something impossible (e.g., add an unsupported block type), explain why in the explanation field and return the original blocks unchanged.`;
     }
 
+    // Custom mode: generate raw HTML+CSS
+    if (mode === 'custom') {
+      systemPrompt = `You are a web developer building custom HTML+CSS sections for Optic Up, an Israeli optical store website.
+You receive the current HTML+CSS code of a custom block and a user instruction in Hebrew.
+Return a JSON object with exactly two keys:
+1. "html" — the updated HTML+CSS code (include <style> tags for CSS within the HTML)
+2. "explanation" — a brief explanation in Hebrew of what you changed (1-3 sentences)
+
+Design rules:
+- Direction: RTL (Hebrew text)
+- Font: Rubik (already loaded globally via Google Fonts)
+- Colors: primarily white, black, gold (#D4A853). Avoid blue.
+- Mobile responsive: use @media (max-width: 768px) for mobile styles
+- Use class names prefixed with the block context to avoid collisions (e.g., .supersale-hero, .multi-grid)
+- Clean, modern, professional design
+- All text in Hebrew unless specified otherwise
+- Return ONLY valid JSON. No markdown backticks, no extra text.`;
+
+      userMessage = mode_data.prompt;
+      if (mode_data.current_html) {
+        userMessage = `Current code:\n${mode_data.current_html}\n\nInstruction: ${mode_data.prompt}`;
+      }
+    }
+
     // Build user message for non-SEO modes (SEO sets userMessage above)
     if (mode === 'component') {
       userMessage = `Current component config:\n${JSON.stringify(config, null, 2)}\n\nInstruction: ${prompt}`;
-    } else if (mode !== 'seo') {
+    } else if (mode !== 'seo' && mode !== 'custom') {
       userMessage = `Current page blocks:\n${JSON.stringify(blocks, null, 2)}\n\nInstruction: ${prompt}`;
     }
 
@@ -176,7 +204,13 @@ Rules:
     }
 
     // Validate and return
-    if (mode === 'seo') {
+    if (mode === 'custom') {
+      const html = result.html || rawText;
+      return jsonRes({
+        html,
+        explanation: result.explanation || 'הקוד עודכן',
+      });
+    } else if (mode === 'seo') {
       return jsonRes({
         meta_title: result.meta_title || '',
         meta_description: result.meta_description || '',

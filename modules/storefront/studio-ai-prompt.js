@@ -214,3 +214,48 @@ function fillPromptFromHistory(index, pageId) {
   }
   document.getElementById('ai-history-dropdown')?.classList.add('hidden');
 }
+
+/**
+ * AI writing for custom HTML blocks (CMS-10)
+ * Shows prompt dialog, sends to cms-ai-edit with mode='custom', updates textarea
+ */
+async function studioAiWriteCustom(fieldKey) {
+  if (!isSuperAdmin()) { Toast.error('אין הרשאה'); return; }
+
+  const textarea = document.getElementById(`sf-${fieldKey}`);
+  if (!textarea) return;
+
+  const currentHtml = textarea.value.trim();
+  const prompt = window.prompt('תאר מה אתה רוצה לבנות (עברית):');
+  if (!prompt) return;
+
+  const btn = textarea.closest('.studio-code-wrap')?.querySelector('.studio-ai-code-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ AI כותב...'; }
+
+  try {
+    const response = await fetch(AI_EDIT_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'custom',
+        mode_data: { prompt, current_html: currentHtml }
+      })
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || `HTTP ${response.status}`);
+    }
+    const result = await response.json();
+    if (result.html) {
+      textarea.value = result.html;
+      Toast.success('AI סיים לכתוב');
+    } else if (result.error) {
+      throw new Error(result.error);
+    }
+  } catch (err) {
+    console.error('AI custom error:', err);
+    Toast.error('שגיאה: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🤖 כתוב עם AI'; }
+  }
+}

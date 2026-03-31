@@ -14,15 +14,17 @@ function escapeAttr(str) {
  */
 function renderBlockForm(fields, data, prefix = '') {
   let html = '';
-  // Determine selection_mode for showIf
+  // Determine active toggle values for showIf
   const selMode = data.selection_mode || 'filter';
+  const actionMode = data.action || 'link';
   for (const field of fields) {
     const fullKey = prefix ? `${prefix}.${field.key}` : field.key;
     const val = data[field.key] ?? field.default ?? '';
     const req = field.required ? ' studio-field-required' : '';
-    // showIf: hide field if selection_mode doesn't match
-    const hidden = field.showIf && field.showIf !== selMode ? ' style="display:none"' : '';
-    const showIfAttr = field.showIf ? ` data-show-if="${escapeAttr(field.showIf)}"` : '';
+    // showIf: hide field if current mode doesn't match
+    const showIfVal = field.showIf;
+    const hidden = showIfVal && showIfVal !== selMode && showIfVal !== actionMode ? ' style="display:none"' : '';
+    const showIfAttr = showIfVal ? ` data-show-if="${escapeAttr(showIfVal)}"` : '';
     html += `<div class="studio-field-group${req}"${hidden}${showIfAttr}>`;
 
     if (field.type !== 'toggle') {
@@ -53,7 +55,7 @@ function renderBlockForm(fields, data, prefix = '') {
         break;
 
       case 'select': {
-        const changeHandler = field.key === 'selection_mode' ? ` onchange="studioToggleShowIf(this)"` : '';
+        const changeHandler = (field.key === 'selection_mode' || field.key === 'action') ? ` onchange="studioToggleShowIf(this)"` : '';
         html += `<select id="sf-${fullKey}" class="studio-field" data-key="${fullKey}"${changeHandler}>`;
         for (const opt of (field.options || [])) {
           const sel = String(val) === String(opt.value) ? ' selected' : '';
@@ -88,6 +90,12 @@ function renderBlockForm(fields, data, prefix = '') {
         }
         break;
       }
+
+      case 'code':
+        html += `<div class="studio-code-wrap">
+          <textarea id="sf-${fullKey}" class="studio-field studio-code-editor" data-key="${fullKey}" rows="${field.rows || 20}" placeholder="${escapeAttr(field.placeholder || '')}" spellcheck="false">${escapeAttr(val)}</textarea>
+          <button type="button" class="studio-ai-code-btn" onclick="studioAiWriteCustom('${fullKey}')">🤖 כתוב עם AI</button></div>`;
+        break;
 
       case 'json':
         html += `<textarea id="sf-${fullKey}" class="studio-field studio-json" data-key="${fullKey}" rows="${field.rows || 8}">${escapeAttr(typeof val === 'string' ? val : JSON.stringify(val, null, 2))}</textarea>`;
@@ -192,6 +200,8 @@ function collectBlockFormData(container, fields, prefix = '') {
       data[field.key] = el.checked;
     } else if (field.type === 'number' || field.type === 'range') {
       data[field.key] = el.value === '' ? (field.default ?? '') : Number(el.value);
+    } else if (field.type === 'code') {
+      data[field.key] = el.value;
     } else if (field.type === 'json') {
       try { data[field.key] = JSON.parse(el.value); } catch { data[field.key] = el.value; }
     } else if (field.type === 'select' && field.options?.some(o => typeof o.value === 'number')) {

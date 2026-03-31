@@ -119,15 +119,32 @@ const BLOCK_SCHEMAS = {
     icon: '🔘',
     fields: [
       { key: 'text', label: 'טקסט כפתור', type: 'text', required: true },
-      { key: 'url', label: 'קישור', type: 'url', required: true },
+      { key: 'action', label: 'פעולה', type: 'select', options: [
+        { value: 'link', label: 'קישור לעמוד' },
+        { value: 'popup_form', label: 'פתח טופס לידים (popup)' }
+      ], default: 'link' },
+      { key: 'url', label: 'קישור', type: 'url', showIf: 'link' },
       { key: 'description', label: 'טקסט מלווה', type: 'text' },
       { key: 'style', label: 'סגנון', type: 'select', options: [
         { value: 'gold', label: 'זהב' }, { value: 'primary', label: 'ראשי (שחור)' },
         { value: 'secondary', label: 'משני (לבן)' }, { value: 'outline', label: 'מסגרת בלבד' }
       ], default: 'gold' },
-      { key: 'target', label: 'פתיחה', type: 'select', options: [
+      { key: 'target', label: 'פתיחה', type: 'select', showIf: 'link', options: [
         { value: '_self', label: 'באותו חלון' }, { value: '_blank', label: 'בחלון חדש' }
       ], default: '_self' },
+      { key: 'popup_form_title', label: 'כותרת טופס', type: 'text', showIf: 'popup_form' },
+      { key: 'popup_form_fields', label: 'שדות טופס', type: 'items', showIf: 'popup_form', itemFields: [
+        { key: 'name', label: 'שם שדה', type: 'text', required: true },
+        { key: 'label', label: 'תווית', type: 'text', required: true },
+        { key: 'type', label: 'סוג', type: 'select', options: [
+          { value: 'text', label: 'טקסט' }, { value: 'tel', label: 'טלפון' },
+          { value: 'email', label: 'אימייל' }, { value: 'textarea', label: 'טקסט ארוך' }
+        ]},
+        { key: 'required', label: 'חובה', type: 'toggle' }
+      ]},
+      { key: 'popup_submit_text', label: 'טקסט כפתור שליחה', type: 'text', showIf: 'popup_form', default: 'שליחה' },
+      { key: 'popup_success_message', label: 'הודעת הצלחה', type: 'text', showIf: 'popup_form', default: 'תודה! ניצור קשר בקרוב' },
+      { key: 'popup_webhook_url', label: 'Webhook URL', type: 'url', showIf: 'popup_form' },
     ]
   },
 
@@ -323,6 +340,18 @@ const BLOCK_SCHEMAS = {
         { value: 'gold', label: 'זהב' }, { value: 'gray', label: 'אפור' }, { value: 'black', label: 'שחור' }
       ], default: 'gold' },
       { key: 'height', label: 'גובה (לרווח)', type: 'text', placeholder: '60px', default: '60px' },
+    ]
+  },
+
+  custom: {
+    label: 'בלוק מותאם אישית (HTML+CSS)',
+    icon: '🎨',
+    fields: [
+      { key: 'html', label: 'קוד HTML + CSS', type: 'code', rows: 20,
+        placeholder: '<style>\n  .my-section { background: #000; color: #fff; padding: 4rem 2rem; }\n</style>\n<div class="my-section">\n  <h1>כותרת</h1>\n  <p>תוכן</p>\n</div>' },
+      { key: 'youtube_bg', label: 'וידאו YouTube ברקע (ID)', type: 'text', placeholder: 'vHvX4zVcCls' },
+      { key: 'image_bg', label: 'תמונת רקע (URL)', type: 'image' },
+      { key: 'overlay', label: 'שכבה כהה (0-1)', type: 'range', min: 0, max: 1, step: 0.05, default: 0 },
     ]
   },
 
