@@ -48,24 +48,45 @@
       <a href="storefront-studio.html" class="active">🎨 Studio</a>
     </nav>
 
-    <div class="studio-layout">
-      <!-- Sidebar: Page List -->
-      <aside class="studio-sidebar">
-        <div class="studio-sidebar-header">
-          <h3>עמודים</h3>
-          <button class="btn btn-sm btn-primary" onclick="createPage()">+ חדש</button>
-        </div>
-        <div id="studio-page-list" class="studio-page-list">
-          <div class="studio-empty">טוען...</div>
-        </div>
-      </aside>
+    <!-- Studio Tabs -->
+    <div class="studio-tabs">
+      <button class="studio-tab active" data-tab="pages" onclick="switchStudioTab('pages')">📄 עמודים</button>
+      <button class="studio-tab" data-tab="components" onclick="switchStudioTab('components')">🔘 רכיבים</button>
+      <button class="studio-tab" data-tab="leads" onclick="switchStudioTab('leads')">📋 לידים</button>
+    </div>
 
-      <!-- Main: Block Editor -->
-      <section class="studio-main" id="studio-editor">
-        <div class="studio-empty-editor">
-          <p>בחר עמוד מהרשימה לעריכה</p>
-        </div>
-      </section>
+    <!-- Tab: Pages (existing) -->
+    <div class="studio-tab-content active" id="tab-pages">
+      <div class="studio-layout">
+        <aside class="studio-sidebar">
+          <div class="studio-sidebar-header">
+            <h3>עמודים</h3>
+            <button class="btn btn-sm btn-primary" onclick="createPage()">+ חדש</button>
+          </div>
+          <div id="studio-page-list" class="studio-page-list">
+            <div class="studio-empty">טוען...</div>
+          </div>
+        </aside>
+        <section class="studio-main" id="studio-editor">
+          <div class="studio-empty-editor">
+            <p>בחר עמוד מהרשימה לעריכה</p>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Tab: Components -->
+    <div class="studio-tab-content" id="tab-components">
+      <div id="studio-components-content">
+        <div class="studio-empty">טוען...</div>
+      </div>
+    </div>
+
+    <!-- Tab: Leads -->
+    <div class="studio-tab-content" id="tab-leads">
+      <div id="studio-leads-content">
+        <div class="studio-empty">טוען...</div>
+      </div>
     </div>
   </div>
 </main>
@@ -98,8 +119,17 @@
 <script src="modules/storefront/studio-form-renderer.js"></script>
 <script src="modules/storefront/studio-pages.js"></script>
 <script src="modules/storefront/studio-editor.js"></script>
+<script src="modules/storefront/studio-components.js"></script>
+<script src="modules/storefront/studio-leads.js"></script>
 
 <script>
+function switchStudioTab(tab) {
+  document.querySelectorAll('.studio-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
+  document.querySelectorAll('.studio-tab-content').forEach(el => el.classList.toggle('active', el.id === 'tab-' + tab));
+  if (tab === 'components' && !studioComponents.length) loadComponents();
+  if (tab === 'leads' && !studioLeads.length) loadLeads();
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
   const session = await loadSession();
   if (!session) { window.location.href = '/'; return; }
