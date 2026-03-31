@@ -1,8 +1,34 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Phase 7 — White-Label + Analytics + Theme
-## Status: ✅ Complete (code done, pending SQL 018 deploy)
-## Date: 2026-03-30
+## Current Phase: CMS-2 — Studio Block Editor
+## Status: ✅ Complete
+## Date: 2026-03-31
+
+---
+
+## CMS-2 — Studio Block Editor ✅
+
+| Step | Status | Description | Commit (ERP) |
+|------|--------|-------------|--------------|
+| 1 | ✅ | studio-block-schemas.js — 14 block schemas + settings | `a2208b1` |
+| 2 | ✅ | studio-form-renderer.js — generic form builder | `a2208b1` |
+| 3 | ✅ | studio-pages.js — page list + CRUD | `a2208b1` |
+| 4 | ✅ | studio-editor.js — block editor, reorder, save, rollback | `fe6f3b4` |
+| 5 | ✅ | storefront-studio.html — Studio page | `fe6f3b4` |
+| 6 | ✅ | css/studio.css — editor styles | `fe6f3b4` |
+| 7 | ✅ | Navigation link added to all storefront pages | final commit |
+| 9 | ✅ | Documentation updated (CLAUDE.md + SESSION_CONTEXT.md) | final commit |
+
+### What's Next
+- CMS-3: Reusable components (CTA/form builder)
+- CMS-4: Tenant permissions
+- CMS-5: AI prompt editing
+
+---
+
+## Previous Phase: Phase 7 — White-Label + Analytics + Theme
+## Previous Status: ✅ Complete (code done, pending SQL 018 deploy)
+## Previous Date: 2026-03-30
 
 ---
 
