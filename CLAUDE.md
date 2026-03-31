@@ -245,6 +245,50 @@ For complete globals list by file → see MODULE_MAP.md section 3.
 
 ---
 
+## Table Schemas (CMS)
+
+### cms_leads (general CMS lead forms — CMS-3)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK |
+| tenant_id | UUID | FK tenants |
+| name | TEXT | Lead name |
+| phone | TEXT | Lead phone |
+| email | TEXT | Lead email |
+| message | TEXT | Free text |
+| source | TEXT | 'lead_form' default |
+| page_url | TEXT | Which page |
+| product_id | UUID | Optional product ref |
+| component_id | UUID | FK storefront_components |
+| utm_source | TEXT | |
+| utm_medium | TEXT | |
+| utm_campaign | TEXT | |
+| utm_content | TEXT | |
+| utm_term | TEXT | |
+| webhook_url | TEXT | |
+| webhook_status | TEXT | none/sent/failed |
+| webhook_response | TEXT | |
+| created_at | TIMESTAMPTZ | |
+
+### storefront_leads (notify-me / back-in-stock ONLY — Phase 4)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK |
+| tenant_id | UUID | FK tenants |
+| inventory_id | UUID | FK inventory |
+| contact_type | TEXT | |
+| contact_value | TEXT | |
+| status | TEXT | |
+| created_at | TIMESTAMPTZ | |
+| notified_at | TIMESTAMPTZ | |
+| is_deleted | BOOLEAN | |
+
+> **DO NOT CONFUSE THESE TWO TABLES:**
+> - `cms_leads` = CMS lead forms, UTM tracking, webhooks
+> - `storefront_leads` = notify-me when product is back in stock
+
+---
+
 ## Conventions
 
 1. **Cascading dropdowns** — brand → model → size/color. Used in reduction search, entry forms, PO items, and receipt items. Each level queries Supabase for distinct values filtered by parent.
