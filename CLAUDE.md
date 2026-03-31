@@ -391,6 +391,22 @@ supabase functions deploy cms-ai-edit --no-verify-jwt
 - `storefront_reviews`: id, tenant_id, source, author_name, rating, text, review_date, google_review_id, is_visible, sort_order
 - `storefront_block_templates`: id, name, description, category, block_type, block_data, block_settings, icon, sort_order, is_active
 
+## CMS-8: Campaign Toolkit
+
+### New Block Types:
+- sticky_bar (#16): Fixed top/bottom bar with text + CTA + countdown
+- trust_badges (#17): Row of guarantee/trust icons
+- divider (#18): Visual separator (line, space, dots, wave)
+
+### Enhanced Blocks:
+- products: card_style (standard/campaign/minimal), image gallery arrows, price display (original + sale), badges
+- hero: status_text badge, title_size, subtitle_position
+
+### Total Block Types: 18
+
+### Block Templates: 25+ pre-configured blocks in storefront_block_templates
+### Page Templates: 8+ complete pages in storefront_templates
+
 ---
 
 ## Conventions
