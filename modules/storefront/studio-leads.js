@@ -98,7 +98,7 @@ function renderLeadsDashboard() {
       ${campaigns.map(c => `<option value="${escapeAttr(c)}" ${leadsFilters.campaign === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
     </select>
     <input type="text" id="leads-search" class="studio-field" placeholder="חיפוש שם/טלפון..." value="${escapeAttr(leadsFilters.search)}" oninput="leadsFilters.search=this.value;renderLeadsDashboard()">
-    <button class="btn btn-sm" onclick="exportLeadsCSV()" title="ייצוא CSV">📥 CSV</button>
+    ${canSee('leads_export') ? '<button class="btn btn-sm" onclick="exportLeadsCSV()" title="ייצוא CSV">📥 CSV</button>' : ''}
   </div>`;
 
   // Stats row

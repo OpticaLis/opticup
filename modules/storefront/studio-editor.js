@@ -50,23 +50,34 @@ function renderBlockList() {
   if (!editedBlocks.length) {
     return '<div class="studio-empty">אין בלוקים. הוסף בלוק ראשון!</div>';
   }
+  const showReorder = canSee('reorder_buttons');
+  const showDelete = canSee('delete_block_button');
+
   return editedBlocks.map((block, i) => {
     const schema = getBlockSchema(block.type);
     const icon = schema?.icon || '❓';
     const label = schema?.label || block.type;
     const summary = escapeHtml(getBlockSummary(block));
     const hidden = block.settings?.hidden ? ' studio-block-hidden' : '';
+    const editable = canEditBlockType(block.type);
+    const editBtn = editable
+      ? `<button title="ערוך" onclick="openBlockEditor(${i})">✎</button>`
+      : `<button title="בלוק מערכת — לעריכה פנה למנהל" disabled style="opacity:.5;cursor:default">🔒</button>`;
+
+    let actions = '';
+    if (showReorder) {
+      actions += `<button title="הזז למעלה" ${i === 0 ? 'disabled' : ''} onclick="moveBlock(${i},-1)">▲</button>`;
+      actions += `<button title="הזז למטה" ${i === editedBlocks.length - 1 ? 'disabled' : ''} onclick="moveBlock(${i},1)">▼</button>`;
+    }
+    actions += editBtn;
+    if (showDelete) actions += `<button title="מחק" onclick="deleteBlock(${i})">🗑</button>`;
+
     return `<div class="studio-block-card${hidden}" data-index="${i}">
       <div class="studio-block-info">
         <span class="studio-block-type-badge">${icon} ${escapeHtml(label)}</span>
         <span class="studio-block-summary">${summary}</span>
       </div>
-      <div class="studio-block-actions">
-        <button title="הזז למעלה" ${i === 0 ? 'disabled' : ''} onclick="moveBlock(${i},-1)">▲</button>
-        <button title="הזז למטה" ${i === editedBlocks.length - 1 ? 'disabled' : ''} onclick="moveBlock(${i},1)">▼</button>
-        <button title="ערוך" onclick="openBlockEditor(${i})">✎</button>
-        <button title="מחק" onclick="deleteBlock(${i})">🗑</button>
-      </div>
+      <div class="studio-block-actions">${actions}</div>
     </div>`;
   }).join('');
 }
@@ -99,12 +110,18 @@ function getBlockSummary(block) {
  * Render toolbar
  */
 function renderToolbar() {
+  const addBtn = canSee('add_block_button')
+    ? '<button class="btn btn-primary studio-add-block" onclick="addBlock()">+ הוסף בלוק</button>' : '';
+  const rollbackBtn = canSee('rollback_button')
+    ? '<button class="btn btn-ghost" onclick="rollbackBlocks()" title="החזר לגרסה קודמת">↩ Rollback</button>' : '';
+  const jsonBtn = canSee('json_editor_button')
+    ? '<button class="btn btn-ghost" onclick="showJsonEditor()" title="עריכת JSON">📋 JSON</button>' : '';
   return `<div class="studio-toolbar">
-    <button class="btn btn-primary studio-add-block" onclick="addBlock()">+ הוסף בלוק</button>
+    ${addBtn}
     <div class="studio-toolbar-right">
-      <button class="btn btn-ghost" onclick="rollbackBlocks()" title="החזר לגרסה קודמת">↩ Rollback</button>
+      ${rollbackBtn}
       <button class="btn btn-ghost" onclick="openPreview()" title="תצוגה מקדימה">👁 Preview</button>
-      <button class="btn btn-ghost" onclick="showJsonEditor()" title="עריכת JSON">📋 JSON</button>
+      ${jsonBtn}
       <button class="btn btn-primary btn-save" id="btn-save-blocks" onclick="saveBlocks()">💾 שמור</button>
     </div>
   </div>`;
@@ -128,20 +145,26 @@ function markUnsaved() {
 function openBlockEditor(blockIndex) {
   const block = editedBlocks[blockIndex];
   if (!block) return;
+  if (!canEditBlockType(block.type)) { Toast.warning('בלוק מערכת — לעריכה פנה למנהל'); return; }
   const schema = getBlockSchema(block.type);
   if (!schema) { Toast.error('סוג בלוק לא מוכר: ' + block.type); return; }
 
-  const formHtml = renderBlockForm(schema.fields, block.data || {});
-  const settingsHtml = renderSettingsForm(block.settings || {});
+  // Filter fields for tenant_admin
+  const allowedFields = getAllowedFields(block.type);
+  const fields = allowedFields ? schema.fields.filter(f => allowedFields.includes(f.key)) : schema.fields;
+
+  const formHtml = renderBlockForm(fields, block.data || {});
+  const settingsHtml = isSuperAdmin() ? renderSettingsForm(block.settings || {}) : '';
+
+  const settingsSection = settingsHtml ? `<div class="studio-settings-section">
+        <button type="button" class="studio-settings-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('show')">הגדרות מתקדמות ▾</button>
+        <div class="studio-settings-body" id="block-settings-form">${settingsHtml}</div>
+      </div>` : '';
 
   Modal.show({
     title: `עריכת בלוק: ${schema.icon} ${schema.label}`,
     size: 'lg',
-    content: `<div id="block-edit-form" class="studio-edit-form">${formHtml}
-      <div class="studio-settings-section">
-        <button type="button" class="studio-settings-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('show')">הגדרות מתקדמות ▾</button>
-        <div class="studio-settings-body" id="block-settings-form">${settingsHtml}</div>
-      </div></div>`,
+    content: `<div id="block-edit-form" class="studio-edit-form">${formHtml}${settingsSection}</div>`,
     footer: `<button class="btn btn-primary" onclick="saveBlockEdit(${blockIndex})">שמור</button>
       <button class="btn btn-ghost" onclick="Modal.close()">ביטול</button>`
   });
@@ -152,8 +175,18 @@ function saveBlockEdit(blockIndex) {
   const settingsEl = document.getElementById('block-settings-form');
   if (!formEl) return;
 
-  const schema = getBlockSchema(editedBlocks[blockIndex].type);
-  editedBlocks[blockIndex].data = collectBlockFormData(formEl, schema.fields);
+  const block = editedBlocks[blockIndex];
+  const schema = getBlockSchema(block.type);
+  const allowedFields = getAllowedFields(block.type);
+  const fields = allowedFields ? schema.fields.filter(f => allowedFields.includes(f.key)) : schema.fields;
+  const newData = collectBlockFormData(formEl, fields);
+
+  // Tenant admin: merge edited fields into existing data (preserve fields they can't see)
+  if (allowedFields) {
+    editedBlocks[blockIndex].data = { ...block.data, ...newData };
+  } else {
+    editedBlocks[blockIndex].data = newData;
+  }
   if (settingsEl) {
     editedBlocks[blockIndex].settings = collectSettingsFormData(settingsEl);
   }

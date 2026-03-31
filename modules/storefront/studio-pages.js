@@ -39,6 +39,9 @@ function renderPageList(pages) {
     return;
   }
 
+  const showSettings = canSee('page_settings_button');
+  const showToggle = canSee('status_toggle');
+
   container.innerHTML = pages.map(p => {
     const icon = PAGE_TYPE_ICONS[p.page_type] || '📄';
     const statusClass = p.status === 'published' ? 'badge-published' : 'badge-draft';
@@ -46,6 +49,10 @@ function renderPageList(pages) {
     const active = p.id === selectedPageId ? ' active' : '';
     const title = escapeHtml(p.title || p.slug);
     const slug = escapeHtml(p.slug);
+    const settingsBtn = showSettings ? `<button title="הגדרות" onclick="event.stopPropagation();editPageSettings('${p.id}')">⚙️</button>` : '';
+    const toggleBtn = showToggle
+      ? `<button title="${p.status === 'published' ? 'העבר לטיוטה' : 'פרסם'}" onclick="event.stopPropagation();togglePageStatus('${p.id}','${p.status}')">${p.status === 'published' ? '📤' : '📥'}</button>`
+      : '';
     return `<div class="studio-page-item${active}" data-id="${p.id}" onclick="selectPage('${p.id}')">
       <div class="studio-page-info">
         <span class="studio-page-icon">${icon}</span>
@@ -56,10 +63,7 @@ function renderPageList(pages) {
       </div>
       <div class="studio-page-meta">
         <span class="studio-badge ${statusClass}">${statusText}</span>
-        <div class="studio-page-actions-mini">
-          <button title="הגדרות" onclick="event.stopPropagation();editPageSettings('${p.id}')">⚙️</button>
-          <button title="${p.status === 'published' ? 'העבר לטיוטה' : 'פרסם'}" onclick="event.stopPropagation();togglePageStatus('${p.id}','${p.status}')">${p.status === 'published' ? '📤' : '📥'}</button>
-        </div>
+        ${(settingsBtn || toggleBtn) ? `<div class="studio-page-actions-mini">${settingsBtn}${toggleBtn}</div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -83,9 +87,13 @@ async function selectPage(pageId) {
 }
 
 /**
- * Create new page
+ * Create new page — super_admin gets free-form, tenant_admin gets template picker
  */
 async function createPage() {
+  if (studioHasPermission('pages_create_from_template_only')) {
+    showTemplatePicker();
+    return;
+  }
   Modal.show({
     title: '+ עמוד חדש',
     size: 'sm',
@@ -190,7 +198,7 @@ async function editPageSettings(pageId) {
         <option value="legal" ${page.page_type === 'legal' ? 'selected' : ''}>📜 משפטי</option></select></div>`,
     footer: `<button class="btn btn-primary" onclick="submitPageSettings('${pageId}')">שמור</button>
       <button class="btn btn-ghost" onclick="Modal.close()">ביטול</button>
-      ${!page.is_system ? `<button class="btn btn-danger" style="margin-right:auto" onclick="Modal.close();deletePage('${pageId}')">🗑 מחק</button>` : ''}`
+      ${!page.is_system && canSee('delete_page_button') ? `<button class="btn btn-danger" style="margin-right:auto" onclick="Modal.close();deletePage('${pageId}')">🗑 מחק</button>` : ''}`
   });
 }
 

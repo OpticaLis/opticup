@@ -28,6 +28,12 @@
 .sf-nav a { padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: .9rem;
   background: var(--g100); color: var(--g700); transition: all .2s; }
 .sf-nav a.active, .sf-nav a:hover { background: var(--primary); color: #fff; }
+.studio-template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.studio-template-card { padding: 16px; border: 1px solid var(--g200); border-radius: 10px; cursor: pointer; transition: all .2s; }
+.studio-template-card:hover { border-color: var(--primary); background: var(--g50); }
+.studio-template-name { font-weight: 600; margin-bottom: 4px; }
+.studio-template-desc { font-size: .85rem; color: var(--g500); margin-bottom: 8px; }
+.studio-template-meta { font-size: .75rem; color: var(--g400); }
 </style>
 </head>
 <body>
@@ -51,8 +57,10 @@
     <!-- Studio Tabs -->
     <div class="studio-tabs">
       <button class="studio-tab active" data-tab="pages" onclick="switchStudioTab('pages')">📄 עמודים</button>
-      <button class="studio-tab" data-tab="components" onclick="switchStudioTab('components')">🔘 רכיבים</button>
+      <button class="studio-tab" data-tab="components" id="tab-btn-components" onclick="switchStudioTab('components')">🔘 רכיבים</button>
       <button class="studio-tab" data-tab="leads" onclick="switchStudioTab('leads')">📋 לידים</button>
+      <button class="studio-tab" data-tab="templates" id="tab-btn-templates" onclick="switchStudioTab('templates')">📑 תבניות</button>
+      <a href="storefront-content.html" class="studio-tab" style="text-decoration:none">📝 ניהול בלוג</a>
     </div>
 
     <!-- Tab: Pages (existing) -->
@@ -88,6 +96,13 @@
         <div class="studio-empty">טוען...</div>
       </div>
     </div>
+
+    <!-- Tab: Templates (super_admin only) -->
+    <div class="studio-tab-content" id="tab-templates">
+      <div id="studio-templates-content">
+        <div class="studio-empty">טוען...</div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -115,25 +130,43 @@
 <script src="js/alerts-badge.js"></script>
 
 <!-- Studio JS -->
+<script src="modules/storefront/studio-permissions.js"></script>
 <script src="modules/storefront/studio-block-schemas.js"></script>
 <script src="modules/storefront/studio-form-renderer.js"></script>
 <script src="modules/storefront/studio-pages.js"></script>
 <script src="modules/storefront/studio-editor.js"></script>
 <script src="modules/storefront/studio-components.js"></script>
 <script src="modules/storefront/studio-leads.js"></script>
+<script src="modules/storefront/studio-templates.js"></script>
 
 <script>
 function switchStudioTab(tab) {
-  document.querySelectorAll('.studio-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
+  document.querySelectorAll('.studio-tab[data-tab]').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
   document.querySelectorAll('.studio-tab-content').forEach(el => el.classList.toggle('active', el.id === 'tab-' + tab));
   if (tab === 'components' && !studioComponents.length) loadComponents();
   if (tab === 'leads' && !studioLeads.length) loadLeads();
+  if (tab === 'templates') renderTemplatesManager();
+}
+
+function applyStudioPermissions() {
+  // Hide components tab for tenant_admin
+  const compBtn = document.getElementById('tab-btn-components');
+  if (compBtn) compBtn.style.display = canSee('components_tab') ? '' : 'none';
+
+  // Hide templates tab for tenant_admin
+  const tplBtn = document.getElementById('tab-btn-templates');
+  if (tplBtn) tplBtn.style.display = canSee('templates_tab') ? '' : 'none';
+
+  // Show/hide create page button
+  const createBtn = document.querySelector('.studio-sidebar-header .btn');
+  if (createBtn) createBtn.style.display = canSee('create_page_button') ? '' : 'none';
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
   const session = await loadSession();
   if (!session) { window.location.href = '/'; return; }
   if (!hasPermission('settings.view')) { window.location.href = '/'; return; }
+  applyStudioPermissions();
   await loadStudioPages();
 });
 </script>
