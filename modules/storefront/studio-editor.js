@@ -35,6 +35,7 @@ function renderEditor() {
     <h2>${title}</h2>
     <span class="studio-badge ${currentPage.status === 'published' ? 'badge-published' : 'badge-draft'}">${currentPage.status === 'published' ? 'פורסם' : 'טיוטה'}</span>
   </div>`;
+  html += `<div id="ai-prompt-container" class="hidden"></div>`;
   html += `<div class="studio-block-list" id="studio-block-list">`;
   html += renderBlockList();
   html += `</div>`;

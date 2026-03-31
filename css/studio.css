@@ -138,7 +138,7 @@
 .leads-detail-content code { background: var(--g200); padding: 2px 6px; border-radius: 4px; font-size: .8rem; }
 
 /* AI Prompt Bar (CMS-5) */
-.ai-prompt-bar { background: linear-gradient(135deg, #f0f0ff 0%, #f8f7ff 100%); border: 1px solid var(--g200); border-radius: 10px; padding: 14px; margin-top: 12px; }
+.ai-prompt-bar { background: linear-gradient(135deg, #f0f0ff 0%, #f8f7ff 100%); border: 1px solid var(--g200); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
 .ai-prompt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .ai-prompt-label { font-weight: 600; font-size: .85rem; color: var(--g600); }
 .ai-history-btn { background: var(--g100); border: 1px solid var(--g200); border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: .85rem; }

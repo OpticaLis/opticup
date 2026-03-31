@@ -62,13 +62,13 @@ function renderAiPromptBar(containerId) {
 
   container.innerHTML = `<div class="ai-prompt-bar">
     <div class="ai-prompt-header">
-      <span class="ai-prompt-label">AI עריכה עם</span>
-      <button class="ai-history-btn" title="היסטוריה" ${historyDisabled} onclick="showPromptHistoryDropdown('${pageId}')">&#128340;</button>
+      <span class="ai-prompt-label">\u{1F916} עריכה עם AI</span>
+      <button class="ai-history-btn" title="היסטוריה" ${historyDisabled} onclick="showPromptHistoryDropdown('${pageId}')">\u{1F550}</button>
     </div>
     <div class="ai-prompt-input-row">
       <textarea placeholder="כתוב הוראה... למשל: תחליף את הכותרת ב-hero לטקסט חדש"
         rows="2" id="ai-prompt-input"></textarea>
-      <button id="ai-prompt-send" class="btn btn-gold ai-send-btn" onclick="handleAiPrompt()">שלח</button>
+      <button id="ai-prompt-send" class="btn btn-gold ai-send-btn" onclick="handleAiPrompt()">שלח \u2728</button>
     </div>
     <div id="ai-prompt-status" class="ai-status hidden"></div>
     <div id="ai-history-dropdown" class="ai-history-dropdown hidden"></div>
