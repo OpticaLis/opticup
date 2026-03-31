@@ -109,7 +109,8 @@ opticup/
 ├── css/
 │   ├── styles.css              — all styles
 │   ├── header.css              — sticky header styles
-│   └── studio.css              — Studio editor styles (CMS-2/3)
+│   ├── studio.css              — Studio editor styles (CMS-2/3)
+│   └── studio-seo.css          — SEO panel, search/filter, bulk actions (CMS-9)
 ├── js/
 │   ├── shared.js               — Supabase init, constants, caches, utilities (load FIRST)
 │   ├── shared-ui.js            — navigation (showTab), info modal, help banner (load after shared.js)
@@ -143,7 +144,7 @@ opticup/
 │   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
 │   ├── settings/               — 1 file (settings-page)
 │   ├── stock-count/            — 9 files (list, session, camera, scan, filters, unknown, approve, view, report)
-│   └── storefront/            — 18 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary, studio-block-schemas, studio-form-renderer, studio-pages, studio-editor, studio-components, studio-leads, studio-permissions, studio-templates, studio-ai-prompt, studio-ai-diff, studio-product-picker, studio-reviews)
+│   └── storefront/            — 19 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary, studio-block-schemas, studio-form-renderer, studio-seo, studio-pages, studio-editor, studio-components, studio-leads, studio-permissions, studio-templates, studio-ai-prompt, studio-ai-diff, studio-product-picker, studio-reviews)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
 │   ├── sync-export.js          — Reverse sync: export new inventory to XLS for Access
@@ -406,6 +407,34 @@ supabase functions deploy cms-ai-edit --no-verify-jwt
 
 ### Block Templates: 25+ pre-configured blocks in storefront_block_templates
 ### Page Templates: 8+ complete pages in storefront_templates
+
+## CMS-9: Smart Studio Features
+
+### SEO Scoring (studio-seo.js)
+- Yoast-style scoring: green 80+ / orange 50-79 / red 0-49
+- 11 rules checking: meta title/description length, slug, content, CTA, images
+- AI Auto-SEO: generates meta_title, meta_description, suggested_slug via cms-ai-edit Edge Function (mode='seo')
+- AI learning: corrections saved in-memory, included in future prompts
+- Score shown on page list (mini badge) + detail panel (expandable checklist)
+
+### Quality of Life
+- Auto-slug from Hebrew title (link/unlink toggle)
+- Page duplication
+- Block duplication
+- Inline quick-edit (double-click summary text on hero/text/cta/banner/faq)
+- Keyboard shortcuts: Ctrl+S save, Ctrl+Z undo, Ctrl+Shift+A add block, Escape close modal
+- Undo stack (10 levels, in-memory)
+- Page search + filter (text, type, status)
+- Last edited relative time
+- Bulk status toggle (select multiple pages, publish/draft)
+
+### Edge Function Update
+cms-ai-edit supports mode='seo' for auto-SEO generation.
+Deploy after changes: `supabase functions deploy cms-ai-edit --no-verify-jwt`
+
+### Key Files
+- `modules/storefront/studio-seo.js` — SEO scoring + AI auto-SEO + correction learning
+- `css/studio-seo.css` — SEO panel, search/filter, bulk actions, inline edit styles
 
 ---
 
