@@ -53,10 +53,32 @@ serve(async (req) => {
       google_review_id: `${google_place_id}_${r.author_name}_${r.time}`,
     }))
 
+    const overallRating = result.rating || null
+    const reviewCount = result.user_ratings_total || 0
+
+    // Auto-sync overall rating into storefront_config
+    if (tenant_id && (overallRating !== null || reviewCount > 0)) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      await fetch(`${supabaseUrl}/rest/v1/storefront_config?tenant_id=eq.${tenant_id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseServiceKey,
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          google_rating: overallRating,
+          google_review_count: reviewCount,
+        }),
+      })
+    }
+
     return new Response(
       JSON.stringify({
-        rating: result.rating || null,
-        review_count: result.user_ratings_total || 0,
+        rating: overallRating,
+        review_count: reviewCount,
         reviews,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
