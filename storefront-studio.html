@@ -20,7 +20,9 @@
 <link rel="stylesheet" href="css/header.css">
 <link rel="stylesheet" href="css/studio.css">
 <link rel="stylesheet" href="css/studio-seo.css">
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <style>
 .sf-container { max-width: 1400px; margin: 0 auto; padding: 24px 16px; }
 .sf-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
@@ -35,6 +37,12 @@
 .studio-template-name { font-weight: 600; margin-bottom: 4px; }
 .studio-template-desc { font-size: .85rem; color: var(--g500); margin-bottom: 8px; }
 .studio-template-meta { font-size: .75rem; color: var(--g400); }
+/* Quill richtext editor styling */
+.studio-richtext-wrap { border: 1px solid var(--g200); border-radius: 8px; overflow: hidden; }
+.studio-richtext-wrap .ql-toolbar { border: none; border-bottom: 1px solid var(--g200); background: var(--g50); direction: ltr; }
+.studio-richtext-wrap .ql-container { border: none; font-family: 'Heebo', sans-serif; font-size: .95rem; min-height: 250px; }
+.studio-richtext-wrap .ql-editor { min-height: 250px; direction: rtl; text-align: right; }
+.studio-richtext-wrap .ql-editor p { margin-bottom: .5em; }
 </style>
 </head>
 <body>
@@ -150,6 +158,7 @@
 <script src="modules/storefront/studio-permissions.js"></script>
 <script src="modules/storefront/studio-block-schemas.js"></script>
 <script src="modules/storefront/studio-form-renderer.js"></script>
+<script src="modules/storefront/studio-richtext.js"></script>
 <script src="modules/storefront/studio-product-picker.js"></script>
 <script src="modules/storefront/studio-reviews.js"></script>
 <script src="modules/storefront/studio-seo.js"></script>

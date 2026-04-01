@@ -1,10 +1,9 @@
-// modules/storefront/studio-editor.js
-// Block editor: edit, reorder, add, delete, save, rollback, undo, shortcuts (CMS-2/CMS-9)
+// modules/storefront/studio-editor.js — Block editor (CMS-2/CMS-9)
 
 let currentPage = null;
 let editedBlocks = [];
 let hasUnsavedChanges = false;
-let undoStack = []; // CMS-9: max 10 entries
+let undoStack = [];
 
 /** Push current state to undo stack (call BEFORE every edit action) */
 function pushUndo() {
@@ -107,7 +106,7 @@ function getBlockSummary(block) {
   const d = block.data || {};
   switch (block.type) {
     case 'hero': return d.title || '';
-    case 'text': return (d.body || '').substring(0, 50);
+    case 'text': return (d.body || '').replace(/<[^>]*>/g, '').substring(0, 50);
     case 'products': return `${d.filter || 'all'} (${d.limit || '?'})`;
     case 'faq': return `${(d.items || []).length} \u05E9\u05D0\u05DC\u05D5\u05EA`;
     case 'columns': return `${(d.items || []).length} \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD`;
@@ -195,11 +194,13 @@ function openBlockEditor(blockIndex) {
   const formHtml = renderBlockForm(fields, block.data || {});
   const settingsHtml = isSuperAdmin() ? renderSettingsForm(block.settings || {}) : '';
   const settingsSection = settingsHtml ? `<div class="studio-settings-section"><button type="button" class="studio-settings-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('show')">\u05D4\u05D2\u05D3\u05E8\u05D5\u05EA \u05DE\u05EA\u05E7\u05D3\u05DE\u05D5\u05EA \u25BE</button><div class="studio-settings-body" id="block-settings-form">${settingsHtml}</div></div>` : '';
-  Modal.show({
+  const modal = Modal.show({
     title: `\u05E2\u05E8\u05D9\u05DB\u05EA \u05D1\u05DC\u05D5\u05E7: ${schema.icon} ${schema.label}`, size: 'lg',
     content: `<div id="block-edit-form" class="studio-edit-form">${formHtml}${settingsSection}</div>`,
-    footer: `<button class="btn btn-primary" onclick="saveBlockEdit(${blockIndex})">\u05E9\u05DE\u05D5\u05E8</button><button class="btn btn-ghost" onclick="Modal.close()">\u05D1\u05D9\u05D8\u05D5\u05DC</button>`
+    footer: `<button class="btn btn-primary" onclick="saveBlockEdit(${blockIndex})">\u05E9\u05DE\u05D5\u05E8</button><button class="btn btn-ghost" onclick="Modal.close()">\u05D1\u05D9\u05D8\u05D5\u05DC</button>`,
+    onClose: function() { if (typeof destroyRichtextEditors === 'function') destroyRichtextEditors(); }
   });
+  if (typeof initRichtextEditors === 'function') setTimeout(function() { initRichtextEditors(modal.el); }, 50);
 }
 
 function saveBlockEdit(blockIndex) {
@@ -311,7 +312,6 @@ function rollbackBlocks() {
   });
 }
 
-/** Open preview in new tab */
 function openPreview() {
   if (!currentPage) return;
   const slug = currentPage.slug === '/' ? '' : '/' + currentPage.slug;
@@ -338,9 +338,7 @@ function submitJsonEdit() {
   } catch (e) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05EA JSON: ' + e.message); }
 }
 
-// Keyboard shortcuts (CMS-9)
 document.addEventListener('keydown', (e) => {
-  // Only handle when on studio page
   if (!currentPage) return;
   if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveBlocks(); }
   else if (e.ctrlKey && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undoLastAction(); }

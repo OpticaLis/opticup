@@ -32,7 +32,7 @@ const BLOCK_SCHEMAS = {
     icon: '📝',
     fields: [
       { key: 'title', label: 'כותרת (אופציונלי)', type: 'text' },
-      { key: 'body', label: 'תוכן (Markdown)', type: 'textarea', rows: 15, required: true },
+      { key: 'body', label: 'תוכן', type: 'richtext', required: true },
       { key: 'alignment', label: 'יישור', type: 'select', options: [
         { value: 'right', label: 'ימין (RTL)' }, { value: 'center', label: 'מרכז' }, { value: 'left', label: 'שמאל' }
       ], default: 'right' },

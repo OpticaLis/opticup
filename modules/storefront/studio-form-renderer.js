@@ -40,6 +40,13 @@ function renderBlockForm(fields, data, prefix = '') {
         html += `<textarea id="sf-${fullKey}" class="studio-field" data-key="${fullKey}" rows="${field.rows || 5}" placeholder="${escapeAttr(field.placeholder || '')}">${escapeAttr(val)}</textarea>`;
         break;
 
+      case 'richtext':
+        html += `<div class="studio-richtext-wrap">
+          <div id="sf-${fullKey}-editor" class="studio-richtext-editor"></div>
+          <input type="hidden" id="sf-${fullKey}" class="studio-field" data-key="${fullKey}" data-type="richtext" value="${escapeAttr(val)}">
+        </div>`;
+        break;
+
       case 'url':
         html += `<input type="url" id="sf-${fullKey}" class="studio-field" data-key="${fullKey}" value="${escapeAttr(val)}" placeholder="${escapeAttr(field.placeholder || 'https://')}">`;
         break;
@@ -193,6 +200,12 @@ function collectBlockFormData(container, fields, prefix = '') {
 
     if (field.type === 'product_picker') {
       try { data[field.key] = JSON.parse(el.value || '[]'); } catch { data[field.key] = []; }
+      continue;
+    }
+
+    if (field.type === 'richtext') {
+      // Quill syncs HTML into the hidden input before collect
+      data[field.key] = el.value || '';
       continue;
     }
 
