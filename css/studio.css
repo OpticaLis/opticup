@@ -33,6 +33,8 @@
 .studio-badge { font-size: .7rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
 .badge-published { background: #22c55e; color: white; }
 .badge-draft { background: #9ca3af; color: white; }
+.badge-archived { background: #ef4444; color: white; }
+.btn-danger-text { color: #ef4444; font-weight: 600; }
 
 /* Editor header */
 .studio-editor-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--g200); }

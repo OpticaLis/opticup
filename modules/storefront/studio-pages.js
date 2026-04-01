@@ -5,7 +5,7 @@ let studioPages = [];
 let selectedPageId = null;
 let pageSearchText = '';
 let pageFilterType = 'all';
-let pageFilterStatus = 'all';
+let pageFilterStatus = 'active';
 let bulkSelectedIds = new Set();
 
 const PAGE_TYPE_ICONS = {
@@ -61,7 +61,8 @@ function renderFilteredPageList() {
       (p.title || '').toLowerCase().includes(q) || (p.slug || '').toLowerCase().includes(q));
   }
   if (pageFilterType !== 'all') filtered = filtered.filter(p => p.page_type === pageFilterType);
-  if (pageFilterStatus !== 'all') filtered = filtered.filter(p => p.status === pageFilterStatus);
+  if (pageFilterStatus === 'active') filtered = filtered.filter(p => p.status !== 'archived');
+  else if (pageFilterStatus !== 'all') filtered = filtered.filter(p => p.status === pageFilterStatus);
   renderPageList(filtered);
 }
 
@@ -79,9 +80,11 @@ function renderPageSearchBar() {
       <option value="custom" ${pageFilterType === 'custom' ? 'selected' : ''}>\u{1F4C4} \u05DE\u05D5\u05EA\u05D0\u05DD</option>
     </select>
     <select class="studio-field page-filter-select" onchange="pageFilterStatus=this.value;renderFilteredPageList()">
-      <option value="all">\u05DB\u05DC \u05D4\u05E1\u05D8\u05D8\u05D5\u05E1\u05D9\u05DD</option>
+      <option value="active" ${pageFilterStatus === 'active' ? 'selected' : ''}>\u05E4\u05E2\u05D9\u05DC\u05D9\u05DD</option>
+      <option value="all" ${pageFilterStatus === 'all' ? 'selected' : ''}>\u05D4\u05DB\u05DC</option>
       <option value="published" ${pageFilterStatus === 'published' ? 'selected' : ''}>\u05E4\u05D5\u05E8\u05E1\u05DD</option>
       <option value="draft" ${pageFilterStatus === 'draft' ? 'selected' : ''}>\u05D8\u05D9\u05D5\u05D8\u05D4</option>
+      <option value="archived" ${pageFilterStatus === 'archived' ? 'selected' : ''}>\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF</option>
     </select>
   </div>`;
 }
@@ -103,8 +106,8 @@ function renderPageList(pages) {
 
   html += pages.map(p => {
     const icon = PAGE_TYPE_ICONS[p.page_type] || '\u{1F4C4}';
-    const statusClass = p.status === 'published' ? 'badge-published' : 'badge-draft';
-    const statusText = p.status === 'published' ? '\u05E4\u05D5\u05E8\u05E1\u05DD' : '\u05D8\u05D9\u05D5\u05D8\u05D4';
+    const statusClass = p.status === 'published' ? 'badge-published' : p.status === 'archived' ? 'badge-archived' : 'badge-draft';
+    const statusText = p.status === 'published' ? '\u05E4\u05D5\u05E8\u05E1\u05DD' : p.status === 'archived' ? '\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF' : '\u05D8\u05D9\u05D5\u05D8\u05D4';
     const active = p.id === selectedPageId ? ' active' : '';
     const title = escapeHtml(p.title || p.slug);
     const slug = escapeHtml(p.slug);
@@ -124,6 +127,14 @@ function renderPageList(pages) {
       ? `<button title="${p.status === 'published' ? '\u05D4\u05E2\u05D1\u05E8 \u05DC\u05D8\u05D9\u05D5\u05D8\u05D4' : '\u05E4\u05E8\u05E1\u05DD'}" onclick="event.stopPropagation();togglePageStatus('${p.id}','${p.status}')">${p.status === 'published' ? '\u{1F4E4}' : '\u{1F4E5}'}</button>`
       : '';
 
+    const archiveBtn = !p.is_system && p.status !== 'archived'
+      ? `<button title="\u05D4\u05E2\u05D1\u05E8 \u05DC\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF" onclick="event.stopPropagation();archivePage('${p.id}')">\u{1F4E6}</button>` : '';
+    const restoreBtn = p.status === 'archived'
+      ? `<button title="\u05E9\u05D7\u05D6\u05E8" onclick="event.stopPropagation();restorePage('${p.id}')">\u{1F504}</button>` : '';
+    const permDeleteBtn = p.status === 'archived'
+      ? `<button title="\u05DE\u05D7\u05E7 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA" class="btn-danger-text" onclick="event.stopPropagation();permanentDeletePage('${p.id}')">\u{1F5D1}</button>` : '';
+    const systemLock = p.is_system ? `<span title="\u05E2\u05DE\u05D5\u05D3 \u05DE\u05E2\u05E8\u05DB\u05EA">\u{1F512}</span>` : '';
+
     const bulkChecked = bulkSelectedIds.has(p.id) ? 'checked' : '';
 
     return `<div class="studio-page-item${active}" data-id="${p.id}" onclick="selectPage('${p.id}')">
@@ -137,8 +148,8 @@ function renderPageList(pages) {
         ${seoBadge}
       </div>
       <div class="studio-page-meta">
-        <span class="studio-badge ${statusClass}">${statusText}</span>
-        <div class="studio-page-actions-mini">${dupBtn}${settingsBtn}${toggleBtn}</div>
+        <span class="studio-badge ${statusClass}">${statusText}</span>${systemLock}
+        <div class="studio-page-actions-mini">${dupBtn}${settingsBtn}${toggleBtn}${archiveBtn}${restoreBtn}${permDeleteBtn}</div>
       </div>
     </div>`;
   }).join('');
@@ -149,6 +160,7 @@ function renderPageList(pages) {
       \u05E0\u05D1\u05D7\u05E8\u05D5 ${bulkSelectedIds.size} \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD
       <button class="btn btn-sm btn-primary" onclick="bulkToggleStatus('published')">\u05E4\u05E8\u05E1\u05DD</button>
       <button class="btn btn-sm btn-ghost" onclick="bulkToggleStatus('draft')">\u05D8\u05D9\u05D5\u05D8\u05D4</button>
+      <button class="btn btn-sm btn-ghost" onclick="bulkToggleStatus('archived')">\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF</button>
     </div>`;
   }
 
@@ -266,23 +278,61 @@ async function submitCreatePage() {
   }
 }
 
-/** Delete page (soft) */
-function deletePage(pageId) {
+/** Archive page (move to archived status) */
+function archivePage(pageId) {
+  const page = studioPages.find(p => p.id === pageId);
+  if (!page) return;
+  if (page.is_system) { Toast.error('\u05E2\u05DE\u05D5\u05D3 \u05DE\u05E2\u05E8\u05DB\u05EA \u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF'); return; }
+  Modal.confirm({ title: '\u05D4\u05E2\u05D1\u05E8\u05D4 \u05DC\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF', message: `\u05DC\u05D4\u05E2\u05D1\u05D9\u05E8 \u05D0\u05EA "\u200F${escapeHtml(page.title || page.slug)}\u200F" \u05DC\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF?`, confirmText: '\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+    onConfirm: async function() {
+      try {
+        const { error } = await sb.from('storefront_pages').update({ status: 'archived' }).eq('id', pageId).eq('tenant_id', getTenantId());
+        if (error) throw error;
+        Toast.success('\u05D4\u05E2\u05DE\u05D5\u05D3 \u05D4\u05D5\u05E2\u05D1\u05E8 \u05DC\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF');
+        if (selectedPageId === pageId) { selectedPageId = null; hideEditor(); }
+        await loadStudioPages();
+      } catch (err) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF \u05E2\u05DE\u05D5\u05D3'); }
+    }
+  });
+}
+
+/** Restore page from archive (back to draft) */
+function restorePage(pageId) {
+  const page = studioPages.find(p => p.id === pageId);
+  if (!page) return;
+  Modal.confirm({ title: '\u05E9\u05D7\u05D6\u05D5\u05E8 \u05E2\u05DE\u05D5\u05D3', message: `\u05DC\u05E9\u05D7\u05D6\u05E8 \u05D0\u05EA "\u200F${escapeHtml(page.title || page.slug)}\u200F" \u05DE\u05D4\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF?`, confirmText: '\u05E9\u05D7\u05D6\u05E8', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+    onConfirm: async function() {
+      try {
+        const { error } = await sb.from('storefront_pages').update({ status: 'draft' }).eq('id', pageId).eq('tenant_id', getTenantId());
+        if (error) throw error;
+        Toast.success('\u05D4\u05E2\u05DE\u05D5\u05D3 \u05E9\u05D5\u05D7\u05D6\u05E8 \u05DB\u05D8\u05D9\u05D5\u05D8\u05D4');
+        await loadStudioPages();
+      } catch (err) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E9\u05D7\u05D6\u05D5\u05E8 \u05E2\u05DE\u05D5\u05D3'); }
+    }
+  });
+}
+
+/** Permanent delete (only for archived pages) */
+function permanentDeletePage(pageId) {
   const page = studioPages.find(p => p.id === pageId);
   if (!page) return;
   if (page.is_system) { Toast.error('\u05E2\u05DE\u05D5\u05D3 \u05DE\u05E2\u05E8\u05DB\u05EA \u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05DE\u05D7\u05D9\u05E7\u05D4'); return; }
-  Modal.confirm({ title: '\u05DE\u05D7\u05D9\u05E7\u05EA \u05E2\u05DE\u05D5\u05D3', message: `\u05DC\u05DE\u05D7\u05D5\u05E7 \u05D0\u05EA "${escapeHtml(page.title || page.slug)}"?`, confirmText: '\u05DE\u05D7\u05E7', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+  if (page.status !== 'archived') { Toast.error('\u05E0\u05D9\u05EA\u05DF \u05DC\u05DE\u05D7\u05D5\u05E7 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA \u05E8\u05E7 \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD \u05D1\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF'); return; }
+  Modal.confirm({ title: '\u05DE\u05D7\u05D9\u05E7\u05D4 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA', message: `\u05DC\u05DE\u05D7\u05D5\u05E7 \u05D0\u05EA "\u200F${escapeHtml(page.title || page.slug)}\u200F" \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA?\n\u05E4\u05E2\u05D5\u05DC\u05D4 \u05D6\u05D5 \u05DC\u05D0 \u05E0\u05D9\u05EA\u05E0\u05EA \u05DC\u05D1\u05D9\u05D8\u05D5\u05DC!`, confirmText: '\u05DE\u05D7\u05E7 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC', danger: true,
     onConfirm: async function() {
       try {
-        const { error } = await sb.from('storefront_pages').update({ status: 'draft', slug: `[deleted]-${page.slug}` }).eq('id', pageId).eq('tenant_id', getTenantId());
+        const { error } = await sb.from('storefront_pages').delete().eq('id', pageId).eq('tenant_id', getTenantId());
         if (error) throw error;
-        Toast.success('\u05D4\u05E2\u05DE\u05D5\u05D3 \u05E0\u05DE\u05D7\u05E7');
+        Toast.success('\u05D4\u05E2\u05DE\u05D5\u05D3 \u05E0\u05DE\u05D7\u05E7 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA');
         if (selectedPageId === pageId) { selectedPageId = null; hideEditor(); }
         await loadStudioPages();
       } catch (err) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05DE\u05D7\u05D9\u05E7\u05EA \u05E2\u05DE\u05D5\u05D3'); }
     }
   });
 }
+
+/** Delete page — legacy alias, now archives instead */
+function deletePage(pageId) { archivePage(pageId); }
 
 /** Toggle page status */
 async function togglePageStatus(pageId, currentStatus) {
@@ -318,7 +368,7 @@ async function editPageSettings(pageId) {
         <option value="legal" ${page.page_type === 'legal' ? 'selected' : ''}>\u{1F4DC} \u05DE\u05E9\u05E4\u05D8\u05D9</option></select></div>`,
     footer: `<button class="btn btn-primary" onclick="submitPageSettings('${pageId}')">\u05E9\u05DE\u05D5\u05E8</button>
       <button class="btn btn-ghost" onclick="Modal.close()">\u05D1\u05D9\u05D8\u05D5\u05DC</button>
-      ${!page.is_system && canSee('delete_page_button') ? `<button class="btn btn-danger" style="margin-right:auto" onclick="Modal.close();deletePage('${pageId}')">\u{1F5D1} \u05DE\u05D7\u05E7</button>` : ''}`
+      ${!page.is_system && canSee('delete_page_button') ? `<button class="btn btn-ghost" style="margin-right:auto" onclick="Modal.close();archivePage('${pageId}')">\u{1F4E6} \u05D0\u05E8\u05DB\u05D9\u05D5\u05DF</button>` : ''}`
   });
 }
 
