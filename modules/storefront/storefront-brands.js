@@ -1,5 +1,5 @@
 // Storefront Brand Mode Manager
-// Shows all brands with product count and storefront_mode selector
+// Shows only brands with storefront products (website_sync = full/display, has images)
 // + Brand Page Editor (hero, description, gallery, SEO)
 
 let _currentBrandId = null;
@@ -18,20 +18,23 @@ async function loadStorefrontBrands() {
 
     if (brandErr) throw brandErr;
 
-    // Get product counts per brand
-    const { data: products, error: prodErr } = await sb.from(T.INV)
-      .select('brand_id')
+    // Get storefront product counts per brand (only website_sync + has images)
+    const { data: sfProducts, error: prodErr } = await sb.from(T.INV)
+      .select('brand_id, inventory_images!inner(id)')
       .eq('tenant_id', tid)
-      .eq('is_deleted', false);
+      .eq('is_deleted', false)
+      .in('website_sync', ['full', 'display']);
 
     if (prodErr) throw prodErr;
 
     const countMap = {};
-    for (const p of (products || [])) {
+    for (const p of (sfProducts || [])) {
       countMap[p.brand_id] = (countMap[p.brand_id] || 0) + 1;
     }
 
-    renderBrandsTable(brands || [], countMap);
+    // Only show brands that have at least 1 storefront product
+    const sfBrands = (brands || []).filter(b => (countMap[b.id] || 0) > 0);
+    renderBrandsTable(sfBrands, countMap);
   } catch (e) {
     console.error('loadStorefrontBrands error:', e);
     toast('שגיאה בטעינת מותגים', 'e');

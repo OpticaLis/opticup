@@ -1,5 +1,6 @@
 // Storefront Product Manager — filter, override modes, bulk select
-// Uses inventory table + brands for resolved mode display
+// Shows ONLY products sent to website (website_sync = full/display, has images)
+// Updates go to inventory table (storefront_mode_override)
 
 let allProducts = [];
 let allBrands = [];
@@ -20,11 +21,23 @@ async function loadStorefrontProducts() {
     if (brandErr) throw brandErr;
     allBrands = brands || [];
 
-    // Populate brand filter (deduplicated by name — use name as value for correct filtering)
+    // Load only products sent to the website (website_sync set + has images)
+    const { data: products, error: prodErr } = await sb.from(T.INV)
+      .select('id, barcode, model, color, brand_id, storefront_mode_override, quantity, website_sync, inventory_images!inner(id)')
+      .eq('tenant_id', tid)
+      .eq('is_deleted', false)
+      .in('website_sync', ['full', 'display'])
+      .order('brand_id');
+
+    if (prodErr) throw prodErr;
+
+    // Populate brand filter — only brands that have storefront products
     const brandSelect = document.getElementById('filter-brand');
     while (brandSelect.options.length > 1) brandSelect.remove(1);
+    const brandIdsInProducts = new Set((products || []).map(p => p.brand_id));
     const seenBrandNames = new Set();
     for (const b of allBrands) {
+      if (!brandIdsInProducts.has(b.id)) continue;
       if (seenBrandNames.has(b.name)) continue;
       seenBrandNames.add(b.name);
       const opt = document.createElement('option');
@@ -33,14 +46,6 @@ async function loadStorefrontProducts() {
       brandSelect.appendChild(opt);
     }
 
-    // Load products (only non-deleted, with brand join)
-    const { data: products, error: prodErr } = await sb.from(T.INV)
-      .select('id, barcode, model, color, brand_id, storefront_mode_override, quantity')
-      .eq('tenant_id', tid)
-      .eq('is_deleted', false)
-      .order('brand_id');
-
-    if (prodErr) throw prodErr;
     allProducts = (products || []).map(p => {
       const brand = allBrands.find(b => b.id === p.brand_id);
       return {
