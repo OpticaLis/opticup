@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { brand_name, tenant_id } = await req.json();
+    const { brand_name, tenant_id, prompt, current_content } = await req.json();
 
     if (!brand_name || !tenant_id) {
       return jsonRes({ error: "Missing brand_name or tenant_id", success: false }, 400);
@@ -81,7 +81,32 @@ Part 2:
         messages: [
           {
             role: "user",
-            content: `${styleGuide}
+            content: prompt && current_content
+              ? `${styleGuide}
+
+---
+
+Brand: ${brand_name}
+
+Current content:
+- Tagline: ${current_content.tagline || '(empty)'}
+- Description Part 1: ${current_content.description1 || '(empty)'}
+- Description Part 2: ${current_content.description2 || '(empty)'}
+- SEO Title: ${current_content.seo_title || '(empty)'}
+- SEO Description: ${current_content.seo_description || '(empty)'}
+
+User instruction: ${prompt}
+
+Modify the content according to the user's instruction. Return ONLY a JSON object (no markdown, no backticks) with ALL fields, even those not changed:
+{
+  "tagline": "...",
+  "description1": "...",
+  "description2": "...",
+  "seo_title": "...",
+  "seo_description": "..."
+}
+Keep HTML <p> tags in descriptions. Follow the style guide.`
+              : `${styleGuide}
 
 ---
 
