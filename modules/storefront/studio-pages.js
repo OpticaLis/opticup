@@ -302,13 +302,23 @@ async function submitCreatePage() {
       tenant_id: getTenantId(), slug, title, page_type, lang,
       blocks: [], status: 'draft', is_system: false
     });
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23505' || (error.message && error.message.includes('unique'))) {
+        Toast.error('כתובת העמוד כבר קיימת. בחר כתובת אחרת.');
+        return;
+      }
+      throw error;
+    }
     Modal.close();
-    Toast.success('\u05D4\u05E2\u05DE\u05D5\u05D3 \u05E0\u05D5\u05E6\u05E8');
+    Toast.success('העמוד נוצר');
     await loadStudioPages();
   } catch (err) {
     console.error('Create page error:', err);
-    Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D9\u05E6\u05D9\u05E8\u05EA \u05E2\u05DE\u05D5\u05D3: ' + (err.message || ''));
+    if (err && err.code === '23505') {
+      Toast.error('כתובת העמוד כבר קיימת. בחר כתובת אחרת.');
+    } else {
+      Toast.error('שגיאה ביצירת עמוד: ' + (err.message || ''));
+    }
   }
 }
 
@@ -438,29 +448,35 @@ async function submitLandingPageWizard() {
     // No template — call AI Edge Function to generate blocks
     if (!blocks.length) {
       const edgeUrl = SUPABASE_URL + '/functions/v1/generate-landing-content';
-      const res = await fetch(edgeUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + SUPABASE_ANON
-        },
-        body: JSON.stringify({
-          tenant_id: getTenantId(),
-          title,
-          prompt: prompt || title,
-          references: refs || ''
-        })
-      });
+      console.log('[LP-Wizard] Calling AI Edge Function:', edgeUrl);
+      try {
+        const res = await fetch(edgeUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + SUPABASE_ANON
+          },
+          body: JSON.stringify({
+            tenant_id: getTenantId(),
+            title,
+            prompt: prompt || title,
+            references: refs || ''
+          })
+        });
 
-      const data = await res.json();
+        const data = await res.json();
+        console.log('[LP-Wizard] AI response:', { success: data.success, blockCount: data.blocks?.length, error: data.error });
 
-      if (data.success && Array.isArray(data.blocks) && data.blocks.length > 0) {
-        blocks = data.blocks;
-        if (data.seo_title) seoTitle = data.seo_title;
-        if (data.seo_description) seoDesc = data.seo_description;
-      } else {
-        // AI failed — fall back to minimal skeleton
-        console.warn('AI generation failed, using fallback:', data.error);
+        if (data.success && Array.isArray(data.blocks) && data.blocks.length > 0) {
+          blocks = data.blocks;
+          if (data.seo_title) seoTitle = data.seo_title;
+          if (data.seo_description) seoDesc = data.seo_description;
+        } else {
+          console.warn('[LP-Wizard] AI failed, using fallback:', data.error);
+          blocks = _fallbackCampaignBlocks(title, prompt);
+        }
+      } catch (fetchErr) {
+        console.warn('[LP-Wizard] Edge Function fetch failed:', fetchErr);
         blocks = _fallbackCampaignBlocks(title, prompt);
       }
     }
@@ -481,7 +497,14 @@ async function submitLandingPageWizard() {
       meta_description: seoDesc
     });
 
-    if (error) throw error;
+    if (error) {
+      // Friendly message for duplicate slug
+      if (error.code === '23505' || (error.message && error.message.includes('unique'))) {
+        Toast.error('כתובת העמוד כבר קיימת. בחר כתובת אחרת או מחק את העמוד הקיים מהארכיון.');
+        return;
+      }
+      throw error;
+    }
 
     closeLandingPageWizard();
     Toast.success('דף נחיתה AI נוצר! ערוך את הבלוקים ב-Studio');
@@ -491,7 +514,12 @@ async function submitLandingPageWizard() {
     if (newPage) selectPage(newPage.id);
   } catch (err) {
     console.error('Landing page wizard error:', err);
-    Toast.error('שגיאה ביצירת דף נחיתה: ' + (err.message || ''));
+    // Also catch duplicate slug from generic throw
+    if (err && err.code === '23505') {
+      Toast.error('כתובת העמוד כבר קיימת. בחר כתובת אחרת או מחק את העמוד הקיים מהארכיון.');
+    } else {
+      Toast.error('שגיאה ביצירת דף נחיתה: ' + (err.message || ''));
+    }
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '🤖 צור דף נחיתה'; }
   }

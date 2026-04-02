@@ -314,7 +314,10 @@ function rollbackBlocks() {
 
 function openPreview() {
   if (!currentPage) return;
-  const slug = currentPage.slug === '/' ? '' : '/' + currentPage.slug;
+  // Slug is stored with leading slash (e.g., "/summer-sale/") — don't add another
+  let slug = currentPage.slug || '/';
+  if (slug === '/') slug = '';
+  else if (!slug.startsWith('/')) slug = '/' + slug;
   const tenant = TENANT_SLUG || 'prizma';
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const baseUrl = isLocal ? 'http://localhost:4321' : 'https://opticup-storefront.vercel.app';
