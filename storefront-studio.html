@@ -179,6 +179,7 @@
 <script src="modules/storefront/studio-product-picker.js"></script>
 <script src="modules/storefront/studio-reviews.js"></script>
 <script src="modules/storefront/studio-seo.js"></script>
+<script src="modules/storefront/studio-tags.js"></script>
 <script src="modules/storefront/studio-pages.js"></script>
 <script src="modules/storefront/studio-editor.js"></script>
 <script src="modules/storefront/studio-components.js"></script>
@@ -219,6 +220,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (!session) { window.location.href = '/'; return; }
   if (!hasPermission('settings.view')) { window.location.href = '/'; return; }
   applyStudioPermissions();
+  if (typeof loadStudioTags === 'function') await loadStudioTags();
   await loadStudioPages();
 });
 </script>

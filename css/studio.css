@@ -479,6 +479,12 @@
 .seo-char-count { font-size: .75rem; color: var(--g400); text-align: left; margin-top: 4px; }
 .seo-char-count.over { color: #ef4444; }
 
+/* Tag badges */
+.studio-tag-row { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.studio-tag-badge { font-size: .65rem; padding: 1px 7px; border-radius: 999px; font-weight: 600; background: color-mix(in srgb, var(--tag-color) 15%, #fff); color: var(--tag-color); white-space: nowrap; }
+.tag-manager-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--g100); }
+.tag-color-btn.active { border-color: #000 !important; }
+
 /* Gallery grid */
 .gallery-grid { display: flex; gap: 8px; flex-wrap: wrap; }
 .gallery-thumb { position: relative; border-radius: 8px; overflow: visible; border: 1px solid var(--g200); }

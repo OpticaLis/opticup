@@ -117,10 +117,18 @@ async function loadStudioBrands() {
 
   try {
     const tid = getTenantId();
+    // Fetch from view (product counts + page fields) — tags come from brands table join
     const { data, error } = await sb.from('v_storefront_brands')
       .select('brand_id, brand_name, slug, product_count, brand_page_enabled, brand_description_short, logo_url, brand_description, video_url, hero_image, brand_gallery, seo_title, seo_description')
       .eq('tenant_id', tid)
       .order('brand_name');
+
+    // Fetch tags from brands table separately (view doesn't include tags)
+    const { data: brandTags } = await sb.from(T.BRANDS)
+      .select('id, tags')
+      .eq('tenant_id', tid);
+    const tagMap = {};
+    for (const bt of (brandTags || [])) { tagMap[bt.id] = bt.tags || []; }
 
     if (error) throw error;
 
@@ -131,7 +139,7 @@ async function loadStudioBrands() {
       if (existing) {
         existing.product_count += rowCount;
       } else {
-        brandMap.set(row.brand_id, { ...row, product_count: rowCount });
+        brandMap.set(row.brand_id, { ...row, product_count: rowCount, tags: tagMap[row.brand_id] || [] });
       }
     }
 
@@ -178,11 +186,14 @@ function renderStudioBrandList() {
       : `<div class="brand-list-logo-placeholder">${escapeHtml(b.brand_name.charAt(0))}</div>`;
     const score = calcBrandSeoScoreStatic(b);
 
+    const brandTagBadges = typeof renderTagBadges === 'function' ? renderTagBadges(b.tags) : '';
+
     return `<div class="brand-list-card" onclick="openStudioBrandEditor('${b.brand_id}')">
       ${logoHtml}
       <div class="brand-list-info">
         <div class="brand-list-name">${escapeHtml(b.brand_name)}</div>
         <div class="brand-list-count">${b.product_count} מוצרים</div>
+        ${brandTagBadges}
       </div>
       ${seoScoreBadge(score)}
       <span class="brand-list-status ${statusClass}">${statusText}</span>
@@ -359,6 +370,11 @@ function openStudioBrandEditor(brandId) {
         <div id="sbe-gp-desc" style="color:#545454; font-size:13px; margin-top:4px; line-height:1.4;">${googleDesc}</div>
       </div>
     </div>
+
+    ${studioTags.length ? `<div class="brand-editor-section">
+      <h4 style="font-weight:700; margin-bottom:8px;">תגיות</h4>
+      <div style="display:flex; flex-wrap:wrap; gap:4px;">${renderTagCheckboxes(brand.tags)}</div>
+    </div>` : ''}
 
     <div class="brand-editor-section" style="border-bottom:none;">
       <a href="${STOREFRONT_BASE}/brands/${encodeURIComponent(brand.slug || '')}/?t=prizma" target="_blank" style="display:inline-flex; align-items:center; gap:6px; color:var(--primary); font-weight:600; text-decoration:none;">
@@ -637,6 +653,7 @@ async function saveStudioBrandPage(brandId) {
     brand_gallery: window._studioGallery || [],
     seo_title: document.getElementById('sbe-seo-title')?.value.trim() || null,
     seo_description: document.getElementById('sbe-seo-desc')?.value.trim() || null,
+    tags: typeof getCheckedTags === 'function' ? getCheckedTags() : [],
   };
 
   try {

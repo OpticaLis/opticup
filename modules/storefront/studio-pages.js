@@ -63,6 +63,8 @@ function renderFilteredPageList() {
   if (pageFilterType !== 'all') filtered = filtered.filter(p => p.page_type === pageFilterType);
   if (pageFilterStatus === 'active') filtered = filtered.filter(p => p.status !== 'archived');
   else if (pageFilterStatus !== 'all') filtered = filtered.filter(p => p.status === pageFilterStatus);
+  // Tag filter
+  if (typeof filterByTag === 'function') filtered = filterByTag(filtered);
   renderPageList(filtered);
 }
 
@@ -86,6 +88,7 @@ function renderPageSearchBar() {
       <option value="draft" ${pageFilterStatus === 'draft' ? 'selected' : ''}>\u05D8\u05D9\u05D5\u05D8\u05D4</option>
       <option value="archived" ${pageFilterStatus === 'archived' ? 'selected' : ''}>\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF</option>
     </select>
+    ${typeof renderTagFilterDropdown === 'function' ? renderTagFilterDropdown() : ''}
   </div>`;
 }
 
@@ -137,6 +140,8 @@ function renderPageList(pages) {
 
     const bulkChecked = bulkSelectedIds.has(p.id) ? 'checked' : '';
 
+    const tagBadges = typeof renderTagBadges === 'function' ? renderTagBadges(p.tags) : '';
+
     return `<div class="studio-page-item${active}" data-id="${p.id}" onclick="selectPage('${p.id}')">
       <div class="studio-page-row-top">
         <input type="checkbox" class="page-bulk-check" ${bulkChecked} onclick="event.stopPropagation();toggleBulkSelect('${p.id}',this.checked)">
@@ -144,6 +149,7 @@ function renderPageList(pages) {
         <div class="studio-page-info">
           <div class="studio-page-title">${title}</div>
           <div class="studio-page-slug-time"><span class="studio-page-slug">/${slug}</span><span class="studio-page-edited">${edited}</span></div>
+          ${tagBadges}
         </div>
         ${seoBadge}
       </div>
@@ -393,7 +399,8 @@ async function editPageSettings(pageId) {
         <option value="custom" ${page.page_type === 'custom' ? 'selected' : ''}>\u{1F4C4} \u05DE\u05D5\u05EA\u05D0\u05DD \u05D0\u05D9\u05E9\u05D9\u05EA</option>
         <option value="campaign" ${page.page_type === 'campaign' ? 'selected' : ''}>\u{1F3AF} \u05E7\u05DE\u05E4\u05D9\u05D9\u05DF</option>
         <option value="guide" ${page.page_type === 'guide' ? 'selected' : ''}>\u{1F4D6} \u05DE\u05D3\u05E8\u05D9\u05DA</option>
-        <option value="legal" ${page.page_type === 'legal' ? 'selected' : ''}>\u{1F4DC} \u05DE\u05E9\u05E4\u05D8\u05D9</option></select></div>`,
+        <option value="legal" ${page.page_type === 'legal' ? 'selected' : ''}>\u{1F4DC} \u05DE\u05E9\u05E4\u05D8\u05D9</option></select></div>
+      ${studioTags.length ? `<div class="studio-field-group"><label>\u05EA\u05D2\u05D9\u05D5\u05EA</label><div style="display:flex; flex-wrap:wrap; gap:4px;">${renderTagCheckboxes(page.tags)}</div></div>` : ''}`,
     footer: `<button class="btn btn-primary" onclick="submitPageSettings('${pageId}')">\u05E9\u05DE\u05D5\u05E8</button>
       <button class="btn btn-ghost" onclick="Modal.close()">\u05D1\u05D9\u05D8\u05D5\u05DC</button>
       ${!page.is_system && canSee('delete_page_button') ? `<button class="btn btn-ghost" style="margin-right:auto" onclick="Modal.close();archivePage('${pageId}')">\u{1F4E6} \u05D0\u05E8\u05DB\u05D9\u05D5\u05DF</button>` : ''}`
@@ -407,7 +414,9 @@ async function submitPageSettings(pageId) {
     meta_title: document.getElementById('ps-meta-title')?.value.trim(),
     meta_description: document.getElementById('ps-meta-desc')?.value.trim(),
     page_type: document.getElementById('ps-type')?.value,
+    tags: typeof getCheckedTags === 'function' ? getCheckedTags() : undefined,
   };
+  if (updates.tags === undefined) delete updates.tags;
   try {
     const { error } = await sb.from('storefront_pages').update(updates)
       .eq('id', pageId).eq('tenant_id', getTenantId());
