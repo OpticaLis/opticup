@@ -161,9 +161,11 @@ function renderStudioBrandList() {
   }
 
   const enabledCount = studioBrands.filter(b => b.brand_page_enabled).length;
+  const inactiveBrands = studioBrands.filter(b => !b.brand_page_enabled);
 
-  let html = `<div style="padding:8px 12px; font-size:.8rem; color:var(--g400); border-bottom:1px solid var(--g200);">
-    ${enabledCount} מתוך ${studioBrands.length} עמודים פעילים
+  let html = `<div style="padding:8px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--g200);">
+    <span style="font-size:.8rem; color:var(--g400);">${enabledCount} מתוך ${studioBrands.length} עמודים פעילים</span>
+    <button class="btn-ai-generate" style="font-size:.75rem; padding:5px 12px;" onclick="showNewBrandPagePicker()">+ עמוד מותג חדש</button>
   </div>`;
 
   html += studioBrands.map(b => {
@@ -188,6 +190,46 @@ function renderStudioBrandList() {
   }).join('');
 
   container.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════
+// NEW BRAND PAGE PICKER
+// ═══════════════════════════════════════════════════
+
+function showNewBrandPagePicker() {
+  const inactive = studioBrands.filter(b => !b.brand_page_enabled && b.product_count > 0);
+
+  if (!inactive.length) {
+    Modal.show({
+      title: 'עמוד מותג חדש',
+      size: 'sm',
+      content: '<p style="text-align:center; color:var(--g500); padding:1rem;">כל המותגים כבר פעילים 🎉</p>',
+      footer: '<button class="btn btn-ghost" onclick="Modal.close()">סגור</button>'
+    });
+    return;
+  }
+
+  const listHtml = inactive.map(b => {
+    const resolvedLogo = resolveLogoUrl(b.logo_url);
+    const logoHtml = resolvedLogo
+      ? `<img src="${escapeAttr(resolvedLogo)}" alt="" style="width:36px; height:24px; object-fit:contain;" />`
+      : `<span style="width:36px; height:24px; display:inline-flex; align-items:center; justify-content:center; background:var(--g100); border-radius:4px; font-weight:700; font-size:.75rem; color:var(--g400);">${escapeHtml(b.brand_name.charAt(0))}</span>`;
+
+    return `<div class="brand-list-card" onclick="Modal.close();openStudioBrandEditor('${b.brand_id}')" style="padding:8px 12px;">
+      ${logoHtml}
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:600; font-size:.875rem;">${escapeHtml(b.brand_name)}</div>
+      </div>
+      <span style="font-size:.75rem; color:var(--g400);">${b.product_count} מוצרים</span>
+    </div>`;
+  }).join('');
+
+  Modal.show({
+    title: '+ עמוד מותג חדש',
+    size: 'sm',
+    content: `<p style="font-size:.85rem; color:var(--g500); margin-bottom:12px;">בחר מותג להפעלה:</p>${listHtml}`,
+    footer: '<button class="btn btn-ghost" onclick="Modal.close()">ביטול</button>'
+  });
 }
 
 // ═══════════════════════════════════════════════════
