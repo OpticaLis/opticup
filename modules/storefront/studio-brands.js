@@ -130,8 +130,8 @@ function openStudioBrandEditor(brandId) {
   const seoDescClass = seoDescLen > 160 ? 'seo-char-count over' : 'seo-char-count';
 
   const logoPreview = brand.logo_url
-    ? `<img src="${escapeAttr(brand.logo_url)}" alt="לוגו" style="max-height:60px; max-width:150px; object-fit:contain;" />`
-    : '<span style="color:var(--g400); font-size:.85rem;">אין לוגו</span>';
+    ? `<div style="border:1px solid #e5e5e5; border-radius:8px; padding:0.5rem; background:#fff; display:inline-block;"><img src="${escapeAttr(brand.logo_url)}" alt="לוגו" style="max-height:80px; max-width:200px; object-fit:contain; display:block;" /></div>`
+    : '<div style="border:1px solid #e5e5e5; border-radius:8px; padding:0.5rem 1rem; background:#fff; display:inline-block;"><span style="color:var(--g400); font-size:.85rem;">אין לוגו</span></div>';
 
   const galleryPreviewHtml = galleryArr.length > 0
     ? `<div class="gallery-grid">${galleryArr.map((url, i) => `<div class="gallery-thumb">
@@ -172,8 +172,11 @@ function openStudioBrandEditor(brandId) {
       <h4 style="font-weight:700; margin-bottom:8px;">תמונות קרוסלה</h4>
       <div id="sbe-gallery-preview">${galleryPreviewHtml}</div>
       <div style="margin-top:8px;">
-        <input type="text" id="sbe-gallery-url" class="brand-editor-input" dir="ltr" placeholder="הכנס URL תמונה..." style="display:inline-block; width:calc(100% - 90px);" />
-        <button type="button" class="btn btn-sm btn-primary" onclick="addStudioGalleryImage()" style="vertical-align:top;">+ הוסף</button>
+        <label class="btn-ai-generate" style="cursor:pointer;">
+          📤 העלאת תמונות
+          <input type="file" id="sbe-gallery-input" accept="image/*" multiple style="display:none;" onchange="handleStudioGalleryUpload(this, '${brandId}')" />
+        </label>
+        <span id="sbe-gallery-status" style="font-size:.8rem; margin-right:8px;"></span>
       </div>
       <span style="font-size:.8rem; color:var(--g400);">אם אין תמונות, ישתמש בתמונות מוצרים אוטומטית</span>
     </div>
@@ -244,15 +247,68 @@ function updateSeoCharCount(textarea) {
   }
 }
 
-/** Gallery management */
-function addStudioGalleryImage() {
-  const input = document.getElementById('sbe-gallery-url');
-  if (!input) return;
-  const url = input.value.trim();
-  if (!url) return;
-  window._studioGallery.push(url);
-  input.value = '';
+/** Gallery management — file upload to Supabase Storage */
+async function handleStudioGalleryUpload(input, brandId) {
+  const files = input.files;
+  if (!files || !files.length) return;
+
+  const statusEl = document.getElementById('sbe-gallery-status');
+  const tid = getTenantId();
+  let uploaded = 0;
+
+  if (statusEl) { statusEl.textContent = `מעלה ${files.length} תמונות...`; statusEl.style.color = '#666'; }
+
+  for (const file of files) {
+    try {
+      // Convert to WebP via canvas
+      const blob = await convertToWebp(file);
+      const timestamp = Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+      const path = `brands/${tid}/${brandId}/gallery/${timestamp}.webp`;
+
+      const { data, error } = await sb.storage
+        .from('tenant-logos')
+        .upload(path, blob, { contentType: 'image/webp', upsert: false });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: urlData } = sb.storage.from('tenant-logos').getPublicUrl(path);
+      if (urlData?.publicUrl) {
+        window._studioGallery.push(urlData.publicUrl);
+        uploaded++;
+      }
+    } catch (err) {
+      console.error('Gallery upload error:', err);
+    }
+  }
+
   refreshStudioGalleryPreview();
+  input.value = ''; // Reset file input
+  if (statusEl) {
+    statusEl.textContent = uploaded > 0 ? `✓ ${uploaded} תמונות הועלו` : '✗ שגיאה בהעלאה';
+    statusEl.style.color = uploaded > 0 ? '#22c55e' : '#ef4444';
+    setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
+  }
+}
+
+/** Convert image file to WebP blob via canvas */
+function convertToWebp(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(blob => {
+        if (blob) resolve(blob);
+        else reject(new Error('toBlob failed'));
+      }, 'image/webp', 0.85);
+    };
+    img.onerror = () => reject(new Error('Image load failed'));
+    img.src = URL.createObjectURL(file);
+  });
 }
 
 function removeStudioGalleryImage(index) {
@@ -300,7 +356,7 @@ async function handleStudioLogoUpload(input, brandId) {
       const data = await res.json();
       if (data.success) {
         const preview = document.getElementById('sbe-logo-preview');
-        if (preview) preview.innerHTML = `<img src="${data.url}" alt="לוגו" style="max-height:60px; max-width:150px; object-fit:contain;" />`;
+        if (preview) preview.innerHTML = `<div style="border:1px solid #e5e5e5; border-radius:8px; padding:0.5rem; background:#fff; display:inline-block;"><img src="${data.url}" alt="לוגו" style="max-height:80px; max-width:200px; object-fit:contain; display:block;" /></div>`;
         const urlField = document.getElementById('sbe-logo-url');
         if (urlField) urlField.value = data.url;
         if (statusEl) { statusEl.textContent = '✓ לוגו עודכן ונורמל'; statusEl.style.color = '#22c55e'; }
