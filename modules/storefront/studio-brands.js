@@ -1,49 +1,68 @@
 // modules/storefront/studio-brands.js
 // Brand Pages management inside Studio — "עמודי מותג" section in Pages tab
-// Loads brand list, opens editor modal for brand page content
 
 let studioBrands = [];
 let studioBrandsLoaded = false;
-let _brandPageView = false; // false = normal pages, true = brand pages view
+let _brandPageView = false;
 let _quillDesc1 = null;
 let _quillDesc2 = null;
+let _aiMode = 'new'; // 'new' or 'edit'
 
 const STOREFRONT_BASE = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
   ? 'http://localhost:4321'
   : 'https://opticup-storefront.vercel.app';
 
+/** Resolve logo URL — prefix local paths with storefront URL */
+function resolveLogoUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return STOREFRONT_BASE + url;
+}
+
 // ═══════════════════════════════════════════════════
-// SEO SCORE
+// SEO SCORE (live recalculation)
 // ═══════════════════════════════════════════════════
 
-function calcBrandSeoScore(brand) {
+function calcBrandSeoScoreLive() {
+  const title = document.getElementById('sbe-seo-title')?.value || '';
+  const desc = document.getElementById('sbe-seo-desc')?.value || '';
+  const body = getQuillHtml(_quillDesc1) + getQuillHtml(_quillDesc2);
+  const tagline = document.getElementById('sbe-tagline')?.value || '';
+  const video = document.getElementById('sbe-video')?.value || '';
+  const name = window._studioEditBrandName || '';
+
+  let score = 0;
+  if (title.length > 0) score += 10;
+  if (title.includes(name)) score += 10;
+  if (title.length >= 50 && title.length <= 60) score += 10;
+  if (desc.length > 0) score += 10;
+  if (desc.length >= 140 && desc.length <= 160) score += 10;
+  if ((body.match(/<\/p>/gi) || []).length >= 3) score += 10;
+  if (body.includes('משקפי')) score += 10;
+  if (body.includes('משקפי שמש')) score += 10;
+  if (tagline.length > 0) score += 10;
+  if (video.length > 0 || document.getElementById('sbe-enabled')?.checked) score += 10;
+
+  return score;
+}
+
+function calcBrandSeoScoreStatic(brand) {
   let score = 0;
   const title = brand.seo_title || '';
   const desc = brand.seo_description || '';
   const body = brand.brand_description || '';
   const name = brand.brand_name || '';
 
-  // Has seo_title (10)
   if (title.length > 0) score += 10;
-  // seo_title contains brand name in Hebrew AND English (10)
   if (title.includes(name)) score += 10;
-  // seo_title length 50-60 (10)
   if (title.length >= 50 && title.length <= 60) score += 10;
-  // Has seo_description (10)
   if (desc.length > 0) score += 10;
-  // seo_description length 140-160 (10)
   if (desc.length >= 140 && desc.length <= 160) score += 10;
-  // Has brand_description with 3+ paragraphs (10)
-  const pCount = (body.match(/<\/p>/gi) || []).length;
-  if (pCount >= 3) score += 10;
-  // brand_description contains "משקפי {brand}" (10)
-  if (body.includes('משקפי ' + name)) score += 10;
-  // brand_description contains "משקפי שמש" (10)
+  if ((body.match(/<\/p>/gi) || []).length >= 3) score += 10;
+  if (body.includes('משקפי')) score += 10;
   if (body.includes('משקפי שמש')) score += 10;
-  // Has tagline (10)
   if ((brand.brand_description_short || '').length > 0) score += 10;
-  // Has video_url (10)
-  if ((brand.video_url || '').length > 0) score += 10;
+  if ((brand.video_url || '').length > 0 || brand.brand_page_enabled) score += 10;
 
   return score;
 }
@@ -53,11 +72,17 @@ function seoScoreBadge(score) {
   return `<span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:${color}; color:#fff; font-size:.75rem; font-weight:700; flex-shrink:0;">${score}</span>`;
 }
 
+function recalculateSEO() {
+  const score = calcBrandSeoScoreLive();
+  const el = document.getElementById('sbe-seo-score');
+  if (el) el.innerHTML = seoScoreBadge(score) + ' SEO';
+  updateBrandGooglePreview();
+}
+
 // ═══════════════════════════════════════════════════
 // VIEW TOGGLE
 // ═══════════════════════════════════════════════════
 
-/** Toggle between pages view and brand pages view */
 function toggleBrandPagesView(showBrands) {
   _brandPageView = showBrands;
 
@@ -123,7 +148,7 @@ async function loadStudioBrands() {
 }
 
 // ═══════════════════════════════════════════════════
-// RENDER BRAND LIST (with SEO score)
+// RENDER BRAND LIST (with SEO score + resolved logo URLs)
 // ═══════════════════════════════════════════════════
 
 function renderStudioBrandList() {
@@ -145,10 +170,11 @@ function renderStudioBrandList() {
     const active = b.brand_page_enabled;
     const statusClass = active ? 'active' : 'inactive';
     const statusText = active ? 'פעיל' : 'כבוי';
-    const logoHtml = b.logo_url
-      ? `<img src="${escapeAttr(b.logo_url)}" alt="${escapeAttr(b.brand_name)}" class="brand-list-logo" />`
+    const resolvedLogo = resolveLogoUrl(b.logo_url);
+    const logoHtml = resolvedLogo
+      ? `<img src="${escapeAttr(resolvedLogo)}" alt="${escapeAttr(b.brand_name)}" class="brand-list-logo" />`
       : `<div class="brand-list-logo-placeholder">${escapeHtml(b.brand_name.charAt(0))}</div>`;
-    const score = calcBrandSeoScore(b);
+    const score = calcBrandSeoScoreStatic(b);
 
     return `<div class="brand-list-card" onclick="openStudioBrandEditor('${b.brand_id}')">
       ${logoHtml}
@@ -172,11 +198,10 @@ function openStudioBrandEditor(brandId) {
   const brand = studioBrands.find(b => b.brand_id === brandId);
   if (!brand) return;
 
-  // Destroy old Quill instances
   _quillDesc1 = null;
   _quillDesc2 = null;
+  _aiMode = 'new';
 
-  // Split description into two halves
   const allParagraphs = (brand.brand_description || '').split('</p>').filter(p => p.trim());
   const midpoint = Math.ceil(allParagraphs.length / 2);
   const desc1 = allParagraphs.slice(0, midpoint).map(p => p.includes('<p>') ? p + '</p>' : '<p>' + p + '</p>').join('');
@@ -185,14 +210,13 @@ function openStudioBrandEditor(brandId) {
   const galleryArr = Array.isArray(brand.brand_gallery) ? brand.brand_gallery : [];
   const seoDescLen = (brand.seo_description || '').length;
   const seoDescClass = seoDescLen > 160 ? 'seo-char-count over' : 'seo-char-count';
-  const seoScore = calcBrandSeoScore(brand);
+  const seoScore = calcBrandSeoScoreStatic(brand);
 
-  // Logo preview
-  const logoPreview = brand.logo_url
-    ? `<img src="${escapeAttr(brand.logo_url)}" alt="לוגו" style="max-width:200px; max-height:80px; object-fit:contain; display:block;" />`
+  const resolvedLogo = resolveLogoUrl(brand.logo_url);
+  const logoPreview = resolvedLogo
+    ? `<img src="${escapeAttr(resolvedLogo)}" alt="לוגו" style="max-width:200px; max-height:80px; object-fit:contain; display:block;" />`
     : '<span style="color:var(--g400); font-size:.85rem;">אין לוגו</span>';
 
-  // Gallery preview
   const galleryPreviewHtml = galleryArr.length > 0
     ? `<div class="gallery-grid">${galleryArr.map((url, i) => `<div class="gallery-thumb">
         <img src="${escapeAttr(url)}" alt="תמונה ${i + 1}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;" />
@@ -200,7 +224,6 @@ function openStudioBrandEditor(brandId) {
       </div>`).join('')}</div>`
     : '<span style="color:var(--g400); font-size:.85rem;">אין תמונות — ישתמש בתמונות מוצרים אוטומטית</span>';
 
-  // Google preview
   const googleTitle = escapeHtml(brand.seo_title || 'כותרת SEO');
   const googleDesc = escapeHtml(brand.seo_description || 'תיאור SEO');
   const googleUrl = `prizma-optic.co.il › brands › ${brand.slug || ''}`;
@@ -254,8 +277,13 @@ function openStudioBrandEditor(brandId) {
 
     <div class="brand-editor-section">
       <h4 style="font-weight:700; margin-bottom:8px;">תוכן</h4>
-      <label class="brand-editor-label">הנחיה ל-AI (אופציונלי)</label>
-      <input type="text" id="sbe-ai-prompt" class="brand-editor-input" placeholder="לדוגמה: שנה רק את הכותרת, או: כתוב מחדש את הטקסט השני בטון יותר חם" style="margin-bottom:8px;" />
+      <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
+        <button type="button" class="btn-ai-mode active" data-mode="new" onclick="switchAiMode('new')">יצירת תוכן חדש</button>
+        <button type="button" class="btn-ai-mode" data-mode="edit" onclick="switchAiMode('edit')">שינוי בפרומפט</button>
+      </div>
+      <div id="sbe-ai-prompt-area" style="display:none; margin-bottom:0.75rem;">
+        <textarea id="sbe-ai-prompt" class="brand-editor-textarea" style="min-height:70px;" placeholder="לדוגמה: שנה את הכותרת ל..., או: כתוב מחדש את הטקסט השני בטון יותר חם, או: הוסף משפט על המעבדה שלנו" rows="3"></textarea>
+      </div>
       <button type="button" class="btn-ai-generate" id="sbe-ai-btn" onclick="generateStudioBrandContent('${escapeAttr(brand.brand_name)}', '${brandId}')">
         🤖 יצירת תוכן AI
       </button>
@@ -277,14 +305,14 @@ function openStudioBrandEditor(brandId) {
     <div class="brand-editor-section">
       <h4 style="font-weight:700; margin-bottom:8px;">SEO</h4>
       <label class="brand-editor-label">כותרת SEO</label>
-      <input type="text" id="sbe-seo-title" class="brand-editor-input" value="${escapeAttr(brand.seo_title || '')}" oninput="updateBrandGooglePreview()" />
+      <input type="text" id="sbe-seo-title" class="brand-editor-input" value="${escapeAttr(brand.seo_title || '')}" />
 
       <label class="brand-editor-label" style="margin-top:8px;">תיאור SEO</label>
-      <textarea id="sbe-seo-desc" class="brand-editor-textarea" style="min-height:60px;" oninput="updateSeoCharCount(this);updateBrandGooglePreview()">${escapeHtml(brand.seo_description || '')}</textarea>
+      <textarea id="sbe-seo-desc" class="brand-editor-textarea" style="min-height:60px;">${escapeHtml(brand.seo_description || '')}</textarea>
       <div id="sbe-seo-count" class="${seoDescClass}">${seoDescLen}/160</div>
 
       <div id="sbe-google-preview" style="font-family:arial,sans-serif; max-width:600px; direction:ltr; text-align:left; margin-top:1rem; padding:1rem; background:#fff; border:1px solid #e5e5e5; border-radius:8px;">
-        <div id="sbe-gp-title" style="color:#1a0dab; font-size:18px; line-height:1.3; cursor:pointer;">${googleTitle}</div>
+        <div id="sbe-gp-title" style="color:#1a0dab; font-size:18px; line-height:1.3;">${googleTitle}</div>
         <div style="color:#006621; font-size:14px; margin-top:2px;">${googleUrl}</div>
         <div id="sbe-gp-desc" style="color:#545454; font-size:13px; margin-top:4px; line-height:1.4;">${googleDesc}</div>
       </div>
@@ -297,7 +325,6 @@ function openStudioBrandEditor(brandId) {
     </div>
   `;
 
-  // Store gallery in temp variable
   window._studioGallery = [...galleryArr];
   window._studioEditBrandId = brandId;
   window._studioEditBrandName = brand.brand_name;
@@ -320,8 +347,42 @@ function openStudioBrandEditor(brandId) {
     });
   }
 
-  // Initialize Quill editors
+  // Initialize Quill + attach live SEO listeners
   initBrandQuillEditors(desc1, desc2);
+  attachSeoListeners();
+}
+
+// ═══════════════════════════════════════════════════
+// LIVE SEO LISTENERS
+// ═══════════════════════════════════════════════════
+
+function attachSeoListeners() {
+  const fields = ['sbe-seo-title', 'sbe-seo-desc', 'sbe-tagline', 'sbe-video'];
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', recalculateSEO);
+  });
+  // SEO desc also updates char count
+  const seoDesc = document.getElementById('sbe-seo-desc');
+  if (seoDesc) seoDesc.addEventListener('input', function() { updateSeoCharCount(this); });
+  // Quill editors
+  if (_quillDesc1) _quillDesc1.on('text-change', recalculateSEO);
+  if (_quillDesc2) _quillDesc2.on('text-change', recalculateSEO);
+}
+
+// ═══════════════════════════════════════════════════
+// AI MODE TOGGLE
+// ═══════════════════════════════════════════════════
+
+function switchAiMode(mode) {
+  _aiMode = mode;
+  document.querySelectorAll('.btn-ai-mode').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  const promptArea = document.getElementById('sbe-ai-prompt-area');
+  const btn = document.getElementById('sbe-ai-btn');
+  if (promptArea) promptArea.style.display = mode === 'edit' ? 'block' : 'none';
+  if (btn) btn.textContent = mode === 'edit' ? '🤖 שלח הנחיה' : '🤖 יצירת תוכן AI';
 }
 
 // ═══════════════════════════════════════════════════
@@ -362,13 +423,12 @@ function initBrandQuillEditors(desc1Html, desc2Html) {
 function getQuillHtml(quill) {
   if (!quill) return '';
   const html = quill.root.innerHTML;
-  // Quill empty state is <p><br></p>
   if (html === '<p><br></p>' || html === '<p></p>') return '';
   return html;
 }
 
 // ═══════════════════════════════════════════════════
-// GOOGLE PREVIEW (live update)
+// GOOGLE PREVIEW + SEO CHAR COUNT
 // ═══════════════════════════════════════════════════
 
 function updateBrandGooglePreview() {
@@ -379,10 +439,6 @@ function updateBrandGooglePreview() {
   if (titleEl && titleInput) titleEl.textContent = titleInput.value || 'כותרת SEO';
   if (descEl && descInput) descEl.textContent = descInput.value || 'תיאור SEO';
 }
-
-// ═══════════════════════════════════════════════════
-// SEO CHAR COUNT
-// ═══════════════════════════════════════════════════
 
 function updateSeoCharCount(textarea) {
   const count = textarea.value.length;
@@ -504,8 +560,9 @@ async function handleStudioLogoUpload(input, brandId) {
       });
       const data = await res.json();
       if (data.success) {
+        const resolvedUrl = resolveLogoUrl(data.url);
         const preview = document.getElementById('sbe-logo-preview');
-        if (preview) preview.innerHTML = `<img src="${data.url}" alt="לוגו" style="max-width:200px; max-height:80px; object-fit:contain; display:block;" />`;
+        if (preview) preview.innerHTML = `<img src="${resolvedUrl}" alt="לוגו" style="max-width:200px; max-height:80px; object-fit:contain; display:block;" />`;
         const urlField = document.getElementById('sbe-logo-url');
         if (urlField) urlField.value = data.url;
         if (statusEl) { statusEl.textContent = '✓ לוגו עודכן ונורמל'; statusEl.style.color = '#22c55e'; }
@@ -560,7 +617,7 @@ async function saveStudioBrandPage(brandId) {
 }
 
 // ═══════════════════════════════════════════════════
-// AI CONTENT GENERATION (with optional prompt)
+// AI CONTENT GENERATION (two modes)
 // ═══════════════════════════════════════════════════
 
 async function generateStudioBrandContent(brandName, brandId) {
@@ -570,16 +627,17 @@ async function generateStudioBrandContent(brandName, brandId) {
   btn.textContent = '🤖 מייצר תוכן...';
 
   try {
-    const userPrompt = document.getElementById('sbe-ai-prompt')?.value.trim() || '';
-
-    // Build payload
     const payload = {
       brand_name: brandName,
       tenant_id: getTenantId()
     };
 
-    // If user provided a prompt, include current content for context
-    if (userPrompt) {
+    if (_aiMode === 'edit') {
+      const userPrompt = document.getElementById('sbe-ai-prompt')?.value.trim() || '';
+      if (!userPrompt) {
+        Toast.warning('יש לכתוב הנחיה לפני שליחה');
+        return;
+      }
       payload.prompt = userPrompt;
       payload.current_content = {
         tagline: document.getElementById('sbe-tagline')?.value || '',
@@ -614,9 +672,9 @@ async function generateStudioBrandContent(brandName, brandId) {
         seoDesc.value = data.seo_description || '';
         updateSeoCharCount(seoDesc);
       }
-      updateBrandGooglePreview();
+      recalculateSEO();
 
-      Toast.success(userPrompt ? 'תוכן AI עודכן לפי ההנחיה' : 'תוכן AI נוצר — עיין ועריך לפי הצורך');
+      Toast.success(_aiMode === 'edit' ? 'תוכן AI עודכן לפי ההנחיה' : 'תוכן AI נוצר — עיין ועריך לפי הצורך');
     } else {
       Toast.error('שגיאה ביצירת תוכן: ' + (data.error || 'Unknown'));
     }
@@ -626,7 +684,7 @@ async function generateStudioBrandContent(brandName, brandId) {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = '🤖 יצירת תוכן AI';
+      btn.textContent = _aiMode === 'edit' ? '🤖 שלח הנחיה' : '🤖 יצירת תוכן AI';
     }
   }
 }

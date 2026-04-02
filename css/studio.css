@@ -469,6 +469,11 @@
 .btn-ai-generate:hover { opacity: .9; }
 .btn-ai-generate:disabled { opacity: .5; cursor: not-allowed; }
 
+/* AI mode toggle buttons */
+.btn-ai-mode { padding: 6px 14px; border: 1.5px solid var(--g200); border-radius: 6px; background: #fff; font-size: .8rem; font-weight: 600; cursor: pointer; color: var(--g500); transition: all .2s; font-family: inherit; }
+.btn-ai-mode:hover { border-color: var(--g300); color: var(--g700); }
+.btn-ai-mode.active { background: #c9a555; border-color: #c9a555; color: #000; }
+
 /* SEO char counter */
 .seo-char-count { font-size: .75rem; color: var(--g400); text-align: left; margin-top: 4px; }
 .seo-char-count.over { color: #ef4444; }

@@ -156,11 +156,16 @@ function renderPageList(pages) {
 
   // Bulk action bar
   if (bulkSelectedIds.size > 0) {
+    const allArchived = [...bulkSelectedIds].every(id => {
+      const p = studioPages.find(pg => pg.id === id);
+      return p && p.status === 'archived';
+    });
     html += `<div class="bulk-action-bar">
       \u05E0\u05D1\u05D7\u05E8\u05D5 ${bulkSelectedIds.size} \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD
       <button class="btn btn-sm btn-primary" onclick="bulkToggleStatus('published')">\u05E4\u05E8\u05E1\u05DD</button>
       <button class="btn btn-sm btn-ghost" onclick="bulkToggleStatus('draft')">\u05D8\u05D9\u05D5\u05D8\u05D4</button>
       <button class="btn btn-sm btn-ghost" onclick="bulkToggleStatus('archived')">\u05D0\u05E8\u05DB\u05D9\u05D5\u05DF</button>
+      ${allArchived ? '<button class="btn btn-sm btn-danger-text" onclick="bulkPermanentDelete()">\u{1F5D1} \u05DE\u05D7\u05E7 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA</button>' : ''}
     </div>`;
   }
 
@@ -179,6 +184,29 @@ function bulkToggleStatus(newStatus) {
         Toast.success(`${bulkSelectedIds.size} \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD \u05E2\u05D5\u05D3\u05DB\u05E0\u05D5`);
         bulkSelectedIds.clear(); await loadStudioPages();
       } catch (err) { Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E2\u05D3\u05DB\u05D5\u05DF \u05E1\u05D8\u05D8\u05D5\u05E1'); }
+    }
+  });
+}
+
+function bulkPermanentDelete() {
+  if (!bulkSelectedIds.size) return;
+  Modal.confirm({
+    title: '\u05DE\u05D7\u05D9\u05E7\u05D4 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA',
+    message: `\u05DC\u05DE\u05D7\u05D5\u05E7 ${bulkSelectedIds.size} \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA?\n\u05E4\u05E2\u05D5\u05DC\u05D4 \u05D6\u05D5 \u05DC\u05D0 \u05E0\u05D9\u05EA\u05E0\u05EA \u05DC\u05D1\u05D9\u05D8\u05D5\u05DC!`,
+    confirmText: '\u05DE\u05D7\u05E7 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA',
+    cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+    danger: true,
+    onConfirm: async function() {
+      try {
+        for (const id of bulkSelectedIds) {
+          await sb.from('storefront_pages').delete().eq('id', id).eq('tenant_id', getTenantId());
+        }
+        Toast.success(`${bulkSelectedIds.size} \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD \u05E0\u05DE\u05D7\u05E7\u05D5 \u05DC\u05E6\u05DE\u05D9\u05EA\u05D5\u05EA`);
+        bulkSelectedIds.clear();
+        await loadStudioPages();
+      } catch (err) {
+        Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05DE\u05D7\u05D9\u05E7\u05D4');
+      }
     }
   });
 }
