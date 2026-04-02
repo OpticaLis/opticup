@@ -100,14 +100,16 @@ async function saveStorefrontSettings() {
       og_image_url: ogImageUrl || null
     };
 
-    const { data, error } = await sb.from(T.STOREFRONT_CONFIG)
+    console.log('[SF-SAVE] tenant_id:', tid, 'updates:', JSON.stringify(updates));
+    const { data, error, status, statusText } = await sb.from(T.STOREFRONT_CONFIG)
       .update(updates)
       .eq('tenant_id', tid)
       .select('tenant_id')
       .maybeSingle();
 
+    console.log('[SF-SAVE] response:', { data, error, status, statusText });
     if (error) throw error;
-    if (!data) throw new Error('Update returned no rows — check RLS policies');
+    if (!data) throw new Error('Update returned no rows — check RLS policies (GRANT UPDATE to authenticated?)');
     toast('הגדרות חנות נשמרו בהצלחה', 's');
   } catch (e) {
     console.error('saveStorefrontSettings error:', e);
