@@ -144,7 +144,7 @@ opticup/
 │   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
 │   ├── settings/               — 1 file (settings-page)
 │   ├── stock-count/            — 9 files (list, session, camera, scan, filters, unknown, approve, view, report)
-│   └── storefront/            — 19 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary, studio-block-schemas, studio-form-renderer, studio-seo, studio-pages, studio-editor, studio-components, studio-leads, studio-permissions, studio-templates, studio-ai-prompt, studio-ai-diff, studio-product-picker, studio-reviews)
+│   └── storefront/            — 20 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary, studio-block-schemas, studio-form-renderer, studio-seo, studio-pages, studio-editor, studio-components, studio-leads, studio-permissions, studio-templates, studio-ai-prompt, studio-ai-diff, studio-product-picker, studio-reviews, studio-brands)
 ├── scripts/
 │   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
 │   ├── sync-export.js          — Reverse sync: export new inventory to XLS for Access
@@ -160,7 +160,8 @@ opticup/
 │   ├── generate-landing-content/index.ts — Edge Function (AI landing page content)
 │   ├── translate-content/index.ts — Edge Function (Hebrew → EN/RU translation, Phase 6)
 │   ├── cms-ai-edit/index.ts    — Edge Function (AI prompt editing for CMS blocks, CMS-5)
-│   └── fetch-google-reviews/index.ts — Edge Function (Google Places reviews fetch, CMS-7)
+│   ├── fetch-google-reviews/index.ts — Edge Function (Google Places reviews fetch, CMS-7)
+│   └── generate-brand-content/index.ts — Edge Function (AI brand page content generation)
 ├── migrations/
 │   └── *.sql
 ├── modules/Module 1 - Inventory Management/
