@@ -430,7 +430,7 @@ async function submitLandingPageWizard() {
   if (!slug) { Toast.warning('יש להזין slug'); return; }
 
   const btn = document.getElementById('lp-create-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '🤖 AI מייצר עמוד...'; }
+  if (btn) { btn.disabled = true; btn.textContent = '🤖 AI מעצב את העמוד... עד דקה'; }
 
   try {
     let blocks = [];
@@ -534,12 +534,12 @@ async function submitLandingPageWizard() {
 
 /** Fallback blocks when AI Edge Function is unavailable */
 function _fallbackCampaignBlocks(title, prompt) {
-  const ts = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const ts = () => 'custom-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const safeTitle = escapeHtml(title || '');
+  const safePrompt = escapeHtml(prompt || 'תיאור הקמפיין');
   return [
-    { id: 'hero-' + ts(), type: 'hero', data: { title, subtitle: prompt ? prompt.slice(0, 80) : '', status_text: 'מבצע מיוחד', status_bg: 'gold', title_size: 'large' }, settings: { bg_color: '#1a1a1a', text_color: '#ffffff', padding: 'lg' } },
-    { id: 'text-' + ts(), type: 'text', data: { body: '<p>' + escapeHtml(prompt || 'תיאור הקמפיין') + '</p>' }, settings: { max_width: '800px', padding: 'md' } },
-    { id: 'cta-' + ts(), type: 'cta', data: { title: 'מעוניינים? דברו איתנו', action: 'whatsapp', label: 'שלחו הודעה בוואטסאפ' }, settings: { padding: 'md' } },
-    { id: 'lead_form-' + ts(), type: 'lead_form', data: { title: 'השאירו פרטים ונחזור אליכם', fields: ['name', 'phone'], submit_text: 'שלח' }, settings: { bg_color: '#f9fafb', padding: 'lg' } }
+    { id: ts(), type: 'custom', data: { html: `<div style="background:linear-gradient(135deg,#000,#1a1a1a);min-height:70vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:3rem 1.5rem;direction:rtl;"><div style="max-width:800px;"><span style="display:inline-block;padding:0.5rem 1.5rem;background:rgba(201,165,85,0.15);border:1px solid #c9a555;border-radius:999px;color:#e8da94;font-size:0.875rem;font-weight:600;margin-bottom:1.5rem;">מבצע מיוחד</span><h1 style="font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:#fff;line-height:1.2;margin:0 0 1rem;">${safeTitle}</h1><p style="font-size:1.25rem;color:rgba(255,255,255,0.8);max-width:600px;margin:0 auto 2rem;line-height:1.7;">${safePrompt.slice(0,120)}</p><a href="#lead-form" style="display:inline-block;padding:1rem 3rem;background:linear-gradient(135deg,#c9a555,#e8da94);color:#000;font-weight:700;font-size:1.125rem;border-radius:999px;text-decoration:none;">לפרטים נוספים</a></div></div>` }, settings: {} },
+    { id: ts(), type: 'custom', data: { html: `<div id="lead-form" style="background:#faf6ee;padding:3rem 1.5rem;text-align:center;direction:rtl;"><div style="max-width:500px;margin:0 auto;"><h2 style="font-size:1.75rem;font-weight:700;color:#1a1a1a;margin:0 0 0.5rem;">השאירו פרטים ונחזור אליכם</h2><p style="color:#6b7280;margin:0 0 1.5rem;">מלאו את הטופס ונציג יצור איתכם קשר בהקדם</p>[lead_form fields="name,phone" submit_text="שלחו לי פרטים" display="inline"]</div></div>` }, settings: {} }
   ];
 }
 
