@@ -94,8 +94,11 @@ function getCheckedTags() {
 // ═══════════════════════════════════════════════════
 
 const TAG_PRESET_COLORS = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280', '#c9a555'];
+const TAG_EXTRA_COLORS = ['#0d9488', '#d946ef', '#f97316', '#64748b', '#b45309', '#059669', '#7c3aed', '#be185d'];
 
 function openTagManager() {
+  const usedColors = new Set(studioTags.map(t => t.color));
+
   let html = `<div id="tag-manager-list">`;
   html += studioTags.map(t => `
     <div class="tag-manager-row" data-id="${t.id}">
@@ -107,15 +110,25 @@ function openTagManager() {
   html += `</div>
 
   <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--g200);">
-    <h4 style="font-weight:700; font-size:.85rem; margin-bottom:8px;">הוסף תגית חדשה</h4>
-    <div style="display:flex; gap:8px; align-items:center;">
+    <h4 style="font-weight:700; font-size:.85rem; margin-bottom:8px;">הוסף תגית חדשה</h4>`;
+
+  // Filter out used colors, fall back to extras if needed
+  let available = TAG_PRESET_COLORS.filter(c => !usedColors.has(c));
+  if (!available.length) available = TAG_EXTRA_COLORS.filter(c => !usedColors.has(c));
+
+  if (available.length) {
+    html += `<div style="display:flex; gap:8px; align-items:center;">
       <input type="text" id="new-tag-name" class="studio-field" placeholder="שם תגית" style="flex:1;" />
-      <div style="display:flex; gap:4px;" id="new-tag-colors">
-        ${TAG_PRESET_COLORS.map((c, i) => `<button type="button" class="tag-color-btn ${i === 0 ? 'active' : ''}" data-color="${c}" style="width:24px; height:24px; border-radius:50%; background:${c}; border:2px solid transparent; cursor:pointer;" onclick="selectTagColor(this)"></button>`).join('')}
+      <div style="display:flex; gap:4px; flex-wrap:wrap;" id="new-tag-colors">
+        ${available.map((c, i) => `<button type="button" class="tag-color-btn ${i === 0 ? 'active' : ''}" data-color="${c}" style="width:24px; height:24px; border-radius:50%; background:${c}; border:2px solid ${i === 0 ? '#000' : 'transparent'}; cursor:pointer;" onclick="selectTagColor(this)"></button>`).join('')}
       </div>
       <button type="button" class="btn btn-sm btn-primary" onclick="addNewTag()">הוסף</button>
-    </div>
-  </div>`;
+    </div>`;
+  } else {
+    html += `<p style="color:var(--g400); font-size:.85rem;">כל הצבעים בשימוש — מחק תגית קיימת כדי לפנות צבע</p>`;
+  }
+
+  html += `</div>`;
 
   Modal.show({
     title: '⚙️ ניהול תגיות',
