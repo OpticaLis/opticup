@@ -133,6 +133,18 @@ function openBrandPageModal(brandId) {
   document.getElementById('bp-video').value = brand.video_url || '';
   document.getElementById('bp-hero').value = brand.hero_image || '';
   document.getElementById('bp-logo').value = brand.logo_url || '';
+  // Update logo preview
+  const logoImg = document.getElementById('brand-logo-img');
+  const logoPlaceholder = document.getElementById('brand-logo-placeholder');
+  if (brand.logo_url) {
+    logoImg.src = brand.logo_url;
+    logoImg.style.display = 'block';
+    logoPlaceholder.style.display = 'none';
+  } else {
+    logoImg.style.display = 'none';
+    logoPlaceholder.style.display = 'block';
+  }
+  document.getElementById('brand-logo-status').textContent = '';
   document.getElementById('bp-seo-title').value = brand.seo_title || '';
   document.getElementById('bp-seo-desc').value = brand.seo_description || '';
 
@@ -186,3 +198,64 @@ async function saveBrandPage() {
     hideLoading();
   }
 }
+
+// ═══ Logo Upload with Auto-Normalization ═══
+
+const STOREFRONT_URL = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+  ? 'http://localhost:4321'
+  : 'https://opticup-storefront.vercel.app';
+
+document.addEventListener('DOMContentLoaded', () => {
+  const logoInput = document.getElementById('brand-logo-input');
+  if (!logoInput) return;
+
+  logoInput.addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const statusEl = document.getElementById('brand-logo-status');
+    statusEl.textContent = 'מעבד ומנרמל...';
+    statusEl.style.color = '#666';
+
+    const reader = new FileReader();
+    reader.onload = async function() {
+      const base64 = reader.result.split(',')[1];
+
+      try {
+        const res = await fetch(`${STOREFRONT_URL}/api/normalize-logo`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_base64: base64,
+            filename: file.name,
+            brand_id: _currentBrandId,
+            tenant_id: getTenantId(),
+            type: 'brand'
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          // Update preview
+          const img = document.getElementById('brand-logo-img');
+          img.src = data.url;
+          img.style.display = 'block';
+          document.getElementById('brand-logo-placeholder').style.display = 'none';
+          // Update URL field
+          document.getElementById('bp-logo').value = data.url;
+          statusEl.textContent = '✓ לוגו עודכן ונורמל';
+          statusEl.style.color = '#22c55e';
+        } else {
+          statusEl.textContent = '✗ שגיאה: ' + data.error;
+          statusEl.style.color = '#ef4444';
+        }
+      } catch (err) {
+        statusEl.textContent = '✗ שגיאה בהעלאה';
+        statusEl.style.color = '#ef4444';
+        console.error('Logo upload error:', err);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+});
