@@ -35,47 +35,45 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body = await req.json();
-    const {
-      tenant_id,
-      page_type = "campaign",
-      topic,
-      products_context = [],
-      tone = "promotional",
-      landing_page_id,
-    } = body;
+    const { tenant_id, title, prompt, references } = body;
 
-    if (!tenant_id || !topic) {
-      return errRes("Missing: tenant_id, topic", 400);
+    if (!tenant_id || !title) {
+      return errRes("Missing: tenant_id, title", 400);
     }
 
-    const toneDesc =
-      tone === "promotional"
-        ? "שיווקי ומושך, עם קריאה לפעולה ברורה"
-        : "מקצועי ואינפורמטיבי";
+    const userPrompt = `אתה מעצב דפי נחיתה מקצועי עבור אתר אופטיקה ישראלי (אופטיקה פריזמה אשקלון).
+צור דף נחיתה שיווקי ומקצועי בעברית.
 
-    const prompt = `אתה קופירייטר מקצועי עבור אתר חנות אופטיקה ישראלית.
-ייצר תוכן לדף נחיתה בנושא: ${topic}
-סוג דף: ${page_type}
-טון: ${toneDesc}
-שפה: עברית
-${products_context.length > 0 ? `מותגים/מוצרים רלוונטיים: ${products_context.join(", ")}` : ""}
+שם העמוד: ${title}
+${prompt ? `תיאור הקמפיין מהלקוח: ${prompt}` : ""}
+${references ? `כתובות לדוגמה/השראה: ${references}` : ""}
 
-ייצר את הפריטים הבאים:
-1. headline — כותרת ראשית (מושכת, 5-10 מילים)
-2. subheadline — כותרת משנה (משפט אחד)
-3. description — תיאור (2-3 פסקאות HTML, מקצועי ומושך)
-4. cta_text — טקסט כפתור קריאה לפעולה (2-4 מילים)
-5. seo_title — כותרת SEO (50-60 תווים)
-6. seo_description — תיאור מטא (150-160 תווים)
+צור בלוקים (blocks) לדף נחיתה. כל בלוק הוא אובייקט JSON עם type, data, settings.
+ייצר 5-7 בלוקים מהסוגים הבאים:
 
-החזר JSON בלבד (בלי markdown):
+1. hero — כותרת מושכת ותת-כותרת. data: { title, subtitle, status_text, status_bg: "gold", title_size: "large" }. settings: { bg_color: "#1a1a1a", text_color: "#ffffff", padding: "lg" }
+2. text — טקסט שיווקי ומשכנע ב-HTML עם <p> tags. data: { body: "<p>...</p><p>...</p>" }. settings: { max_width: "800px", padding: "md" }
+3. cta — קריאה לפעולה. data: { title, label, action: "whatsapp" }. settings: { padding: "md" }
+4. lead_form — טופס לידים. data: { title, fields: ["name","phone"], submit_text: "שלח" }. settings: { bg_color: "#f9fafb", padding: "lg" }
+5. trust_badges — אייקוני אמון. data: { badges: [{ emoji, title, subtitle },...] }. settings: { padding: "md" }
+6. faq — שאלות ותשובות. data: { title, items: [{question, answer},...] }. settings: { padding: "md" }
+7. products — בלוק מוצרים (אם רלוונטי). data: { title, limit: 6 }. settings: { padding: "md" }
+
+כללים:
+- כתוב עברית שיווקית, מקצועית, חמה — עם טריגרים רגשיים ודחיפות
+- ה-hero חייב לכלול כותרת מושכת (לא רק לחזור על השם) וכותרת משנה
+- הטקסט השיווקי חייב להיות 2-3 פסקאות עם ערך אמיתי
+- trust_badges חייב לכלול 3-4 אייקוני אמון עם emoji (למשל ✅, 🔬, 👁️, 💎)
+- כלול לפחות 3 שאלות ותשובות רלוונטיות ב-FAQ
+- הטופס חייב לכלול כותרת מזמינה
+- אל תחזיר markdown — רק JSON
+- כל בלוק חייב id ייחודי בפורמט: {type}-{random} (למשל hero-a1b2c3)
+
+החזר JSON בלבד (בלי backticks):
 {
-  "headline": "...",
-  "subheadline": "...",
-  "description": "<p>...</p>",
-  "cta_text": "...",
-  "seo_title": "...",
-  "seo_description": "..."
+  "blocks": [...],
+  "seo_title": "כותרת SEO (50-60 תווים)",
+  "seo_description": "תיאור מטא (150-160 תווים)"
 }`;
 
     const res = await fetch(CLAUDE_API_URL, {
@@ -87,8 +85,8 @@ ${products_context.length > 0 ? `מותגים/מוצרים רלוונטיים: $
       },
       body: JSON.stringify({
         model: CLAUDE_MODEL,
-        max_tokens: 2048,
-        messages: [{ role: "user", content: prompt }],
+        max_tokens: 6000,
+        messages: [{ role: "user", content: userPrompt }],
       }),
     });
 
@@ -105,42 +103,27 @@ ${products_context.length > 0 ? `מותגים/מוצרים רלוונטיים: $
         .replace(/^```(?:json)?\n?/, "")
         .replace(/\n?```$/, "");
     }
+
     const result = JSON.parse(cleaned);
 
-    // Save to ai_content table
-    const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-    const entityId = landing_page_id || crypto.randomUUID();
+    // Validate blocks array exists
+    if (!Array.isArray(result.blocks) || result.blocks.length === 0) {
+      return errRes("AI returned no blocks", 422);
+    }
 
-    const contentTypes = [
-      { type: "description", content: result.description },
-      { type: "seo_title", content: result.seo_title },
-      { type: "seo_description", content: result.seo_description },
-    ];
-
-    for (const ct of contentTypes) {
-      if (!ct.content) continue;
-      await db.from("ai_content").upsert(
-        {
-          tenant_id,
-          entity_type: "landing_page",
-          entity_id: entityId,
-          content_type: ct.type,
-          content: ct.content,
-          language: "he",
-          status: "auto",
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict:
-            "tenant_id,entity_type,entity_id,content_type,language",
-        }
-      );
+    // Ensure each block has an id
+    for (const block of result.blocks) {
+      if (!block.id) {
+        const rand = Math.random().toString(36).slice(2, 8);
+        block.id = `${block.type || "block"}-${rand}`;
+      }
     }
 
     return jsonRes({
       success: true,
-      entity_id: entityId,
-      ...result,
+      blocks: result.blocks,
+      seo_title: result.seo_title || "",
+      seo_description: result.seo_description || "",
     });
   } catch (e) {
     return errRes(e instanceof Error ? e.message : "Unknown error", 500);

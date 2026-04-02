@@ -417,12 +417,14 @@ async function submitLandingPageWizard() {
   if (!slug) { Toast.warning('יש להזין slug'); return; }
 
   const btn = document.getElementById('lp-create-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '🤖 יוצר עמוד...'; }
+  if (btn) { btn.disabled = true; btn.textContent = '🤖 AI מייצר עמוד...'; }
 
   try {
     let blocks = [];
+    let seoTitle = title;
+    let seoDesc = prompt ? prompt.slice(0, 160) : '';
 
-    // If a template was selected, use its blocks as the base
+    // If a template was selected, use its blocks
     if (templateId && typeof studioTemplates !== 'undefined') {
       const template = studioTemplates.find(t => t.id === templateId);
       if (template?.blocks) {
@@ -433,43 +435,59 @@ async function submitLandingPageWizard() {
       }
     }
 
-    // If no template or AI prompt given, generate blocks via AI
-    if (prompt && !blocks.length) {
-      // Generate a basic campaign page structure
-      blocks = generateCampaignBlocks(title, prompt);
-    }
-
-    // If still no blocks, create a minimal campaign skeleton
+    // No template — call AI Edge Function to generate blocks
     if (!blocks.length) {
-      blocks = generateCampaignBlocks(title, prompt || title);
-    }
+      const edgeUrl = SUPABASE_URL + '/functions/v1/generate-landing-content';
+      const res = await fetch(edgeUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_ANON
+        },
+        body: JSON.stringify({
+          tenant_id: getTenantId(),
+          title,
+          prompt: prompt || title,
+          references: refs || ''
+        })
+      });
 
-    // Determine tags — auto-tag as "דף נחיתה"
-    const tags = ['דף נחיתה'];
+      const data = await res.json();
+
+      if (data.success && Array.isArray(data.blocks) && data.blocks.length > 0) {
+        blocks = data.blocks;
+        if (data.seo_title) seoTitle = data.seo_title;
+        if (data.seo_description) seoDesc = data.seo_description;
+      } else {
+        // AI failed — fall back to minimal skeleton
+        console.warn('AI generation failed, using fallback:', data.error);
+        blocks = _fallbackCampaignBlocks(title, prompt);
+      }
+    }
 
     // Insert into storefront_pages
+    const pageSlug = slug.startsWith('/') ? slug : '/' + slug + '/';
     const { error } = await sb.from('storefront_pages').insert({
       tenant_id: getTenantId(),
-      slug: slug.startsWith('/') ? slug : '/' + slug + '/',
+      slug: pageSlug,
       title,
       page_type: 'campaign',
       lang: 'he',
       blocks,
       status: 'draft',
       is_system: false,
-      tags,
-      meta_title: title,
-      meta_description: prompt ? prompt.slice(0, 160) : ''
+      tags: ['דף נחיתה'],
+      meta_title: seoTitle,
+      meta_description: seoDesc
     });
 
     if (error) throw error;
 
     closeLandingPageWizard();
-    Toast.success('דף נחיתה נוצר! ערוך את הבלוקים ב-Studio');
+    Toast.success('דף נחיתה AI נוצר! ערוך את הבלוקים ב-Studio');
     await loadStudioPages();
 
-    // Auto-select the new page (it should be the latest)
-    const newPage = studioPages.find(p => p.slug === (slug.startsWith('/') ? slug : '/' + slug + '/'));
+    const newPage = studioPages.find(p => p.slug === pageSlug);
     if (newPage) selectPage(newPage.id);
   } catch (err) {
     console.error('Landing page wizard error:', err);
@@ -479,30 +497,14 @@ async function submitLandingPageWizard() {
   }
 }
 
-/** Generate campaign page blocks from title and prompt */
-function generateCampaignBlocks(title, prompt) {
+/** Fallback blocks when AI Edge Function is unavailable */
+function _fallbackCampaignBlocks(title, prompt) {
   const ts = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   return [
-    {
-      id: 'hero-' + ts(), type: 'hero',
-      data: { title: title, subtitle: prompt ? prompt.slice(0, 80) : '', status_text: 'מבצע מיוחד', status_bg: 'gold', title_size: 'large' },
-      settings: { bg_color: '#1a1a1a', text_color: '#ffffff', padding: 'lg' }
-    },
-    {
-      id: 'text-' + ts(), type: 'text',
-      data: { body: `<p>${escapeHtml(prompt || 'תיאור הקמפיין')}</p>` },
-      settings: { max_width: '800px', padding: 'md' }
-    },
-    {
-      id: 'cta-' + ts(), type: 'cta',
-      data: { title: 'רוצה לשמוע עוד?', action: 'whatsapp', label: 'דברו איתנו בוואטסאפ' },
-      settings: { padding: 'md' }
-    },
-    {
-      id: 'lead_form-' + ts(), type: 'lead_form',
-      data: { title: 'השאירו פרטים', fields: ['name', 'phone'], submit_text: 'שלח' },
-      settings: { bg_color: '#f9fafb', padding: 'lg' }
-    }
+    { id: 'hero-' + ts(), type: 'hero', data: { title, subtitle: prompt ? prompt.slice(0, 80) : '', status_text: 'מבצע מיוחד', status_bg: 'gold', title_size: 'large' }, settings: { bg_color: '#1a1a1a', text_color: '#ffffff', padding: 'lg' } },
+    { id: 'text-' + ts(), type: 'text', data: { body: '<p>' + escapeHtml(prompt || 'תיאור הקמפיין') + '</p>' }, settings: { max_width: '800px', padding: 'md' } },
+    { id: 'cta-' + ts(), type: 'cta', data: { title: 'מעוניינים? דברו איתנו', action: 'whatsapp', label: 'שלחו הודעה בוואטסאפ' }, settings: { padding: 'md' } },
+    { id: 'lead_form-' + ts(), type: 'lead_form', data: { title: 'השאירו פרטים ונחזור אליכם', fields: ['name', 'phone'], submit_text: 'שלח' }, settings: { bg_color: '#f9fafb', padding: 'lg' } }
   ];
 }
 
