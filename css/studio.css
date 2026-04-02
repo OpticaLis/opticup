@@ -428,6 +428,55 @@
   box-shadow: 0 0 0 2px rgba(201,165,85,0.2);
 }
 
+/* ═══ Page View Toggle (Pages vs Brand Pages) ═══ */
+.page-view-toggle { display: flex; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--g200); }
+.page-view-btn { background: var(--g100); border: none; padding: 6px 12px; border-radius: 6px; font-size: .8rem; font-weight: 600; cursor: pointer; color: var(--g500); transition: all .2s; font-family: inherit; }
+.page-view-btn:hover { background: var(--g200); color: var(--g700); }
+.page-view-btn.active { background: var(--primary); color: #fff; }
+
+/* ═══ Brand List Cards ═══ */
+.brand-list-card { display: flex; align-items: center; gap: 12px; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--g100); transition: background .15s; }
+.brand-list-card:hover { background: var(--g50); }
+.brand-list-logo { width: 48px; height: 32px; object-fit: contain; flex-shrink: 0; }
+.brand-list-logo-placeholder { width: 48px; height: 32px; background: var(--g200); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--g500); font-size: 1rem; flex-shrink: 0; }
+.brand-list-info { flex: 1; min-width: 0; }
+.brand-list-name { font-weight: 600; font-size: .875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand-list-count { color: var(--g400); font-size: .75rem; }
+.brand-list-status { font-size: .7rem; padding: 2px 8px; border-radius: 999px; font-weight: 600; flex-shrink: 0; }
+.brand-list-status.active { background: #dcfce7; color: #166534; }
+.brand-list-status.inactive { background: var(--g100); color: var(--g400); }
+
+/* ═══ Brand Page Editor Modal ═══ */
+.brand-editor-modal .modal-container { max-width: 700px; }
+.brand-editor-modal .modal-body { max-height: 75vh; overflow-y: auto; direction: rtl; }
+.brand-editor-section { margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--g100); }
+.brand-editor-section:last-child { border-bottom: none; }
+.brand-editor-label { display: block; font-weight: 600; font-size: .8rem; color: var(--g700); margin-bottom: 4px; }
+.brand-editor-input { width: 100%; border: 1px solid var(--g200); border-radius: 8px; padding: 8px 10px; font-size: .9rem; font-family: inherit; box-sizing: border-box; }
+.brand-editor-input:focus { border-color: #c9a555; outline: none; box-shadow: 0 0 0 2px rgba(201,165,85,.2); }
+.brand-editor-textarea { width: 100%; min-height: 140px; border: 1px solid var(--g200); border-radius: 8px; padding: 10px; font-size: .875rem; font-family: inherit; line-height: 1.6; resize: vertical; direction: rtl; box-sizing: border-box; }
+.brand-editor-textarea:focus { border-color: #c9a555; outline: none; box-shadow: 0 0 0 2px rgba(201,165,85,.2); }
+
+/* Toggle switch */
+.brand-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.brand-toggle input[type="checkbox"] { width: 44px; height: 24px; appearance: none; -webkit-appearance: none; background: var(--g200); border-radius: 12px; position: relative; cursor: pointer; transition: background .2s; flex-shrink: 0; }
+.brand-toggle input[type="checkbox"]:checked { background: #c9a555; }
+.brand-toggle input[type="checkbox"]::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform .2s; }
+.brand-toggle input[type="checkbox"]:checked::after { transform: translateX(20px); }
+
+/* AI generate button */
+.btn-ai-generate { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: linear-gradient(135deg, #c9a555, #e8da94); color: #000; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; font-size: .85rem; transition: opacity .2s; font-family: inherit; }
+.btn-ai-generate:hover { opacity: .9; }
+.btn-ai-generate:disabled { opacity: .5; cursor: not-allowed; }
+
+/* SEO char counter */
+.seo-char-count { font-size: .75rem; color: var(--g400); text-align: left; margin-top: 4px; }
+.seo-char-count.over { color: #ef4444; }
+
+/* Gallery grid */
+.gallery-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+.gallery-thumb { position: relative; border-radius: 8px; overflow: visible; border: 1px solid var(--g200); }
+
 /* Responsive */
 @media (max-width: 768px) {
   .studio-layout { flex-direction: column; }
@@ -437,4 +486,5 @@
   .leads-filters .studio-field { width: 100%; }
   .leads-stats { gap: 8px; }
   .leads-stat { min-width: 80px; padding: 8px 12px; }
+  .brand-editor-modal .modal-container { max-width: 95vw; }
 }

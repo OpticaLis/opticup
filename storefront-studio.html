@@ -85,9 +85,15 @@
             <h3>עמודים</h3>
             <button class="btn btn-sm btn-primary" onclick="createPage()">+ חדש</button>
           </div>
+          <!-- View toggle: Pages vs Brand Pages -->
+          <div class="page-view-toggle">
+            <button class="page-view-btn active" data-view="pages" onclick="toggleBrandPagesView(false)">כל העמודים</button>
+            <button class="page-view-btn" data-view="brands" onclick="toggleBrandPagesView(true)">🏷️ עמודי מותג</button>
+          </div>
           <div id="studio-page-list" class="studio-page-list">
             <div class="studio-empty">טוען...</div>
           </div>
+          <div id="studio-brand-list" class="studio-page-list" style="display:none;"></div>
         </aside>
         <section class="studio-main" id="studio-editor">
           <div class="studio-empty-editor">
@@ -179,6 +185,7 @@
 <script src="modules/storefront/studio-leads.js"></script>
 <script src="modules/storefront/studio-templates.js"></script>
 <script src="modules/storefront/studio-shortcodes.js"></script>
+<script src="modules/storefront/studio-brands.js"></script>
 <script src="modules/storefront/studio-ai-prompt.js"></script>
 <script src="modules/storefront/studio-ai-diff.js"></script>
 
