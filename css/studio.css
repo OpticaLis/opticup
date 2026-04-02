@@ -2,7 +2,7 @@
 
 /* Layout */
 .studio-layout { display: flex; gap: 20px; min-height: 70vh; }
-.studio-sidebar { width: 280px; flex-shrink: 0; background: #fff; border: 1px solid var(--g200); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
+.studio-sidebar { width: 300px; flex-shrink: 0; background: #fff; border: 1px solid var(--g200); border-radius: 12px; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto; }
 .studio-main { flex: 1; min-width: 0; background: #fff; border: 1px solid var(--g200); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; }
 
 /* Sidebar */
@@ -20,10 +20,11 @@
 .studio-page-slug-time { display: flex; align-items: center; gap: 6px; }
 .studio-page-slug { font-size: .72rem; color: var(--g400); direction: ltr; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
 .studio-page-edited { font-size: .68rem; color: var(--g300); white-space: nowrap; }
-.studio-page-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; padding-right: 28px; }
-.studio-page-actions-mini { display: flex; gap: 2px; }
+.studio-page-meta { display: flex; align-items: center; justify-content: space-between; gap: 4px; width: 100%; flex-wrap: wrap; }
+.studio-page-actions-mini { display: flex; gap: 2px; flex-wrap: wrap; }
 .studio-page-actions-mini button { background: none; border: none; cursor: pointer; font-size: .8rem; padding: 2px 4px; border-radius: 4px; opacity: .6; transition: opacity .15s; }
 .studio-page-actions-mini button:hover { opacity: 1; }
+.bulk-action-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px 12px; background: var(--g50); border-top: 1px solid var(--g200); font-size: .8rem; font-weight: 600; color: var(--g600); position: sticky; bottom: 0; }
 .seo-score-mini { font-size: .68rem; padding: 1px 6px; border-radius: 8px; font-weight: 700; flex-shrink: 0; }
 .seo-score-mini.green { background: #22c55e; color: white; }
 .seo-score-mini.orange { background: #f59e0b; color: white; }
