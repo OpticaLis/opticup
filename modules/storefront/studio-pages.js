@@ -312,6 +312,200 @@ async function submitCreatePage() {
   }
 }
 
+// ═══════════════════════════════════════════════════
+// LANDING PAGE WIZARD
+// ═══════════════════════════════════════════════════
+
+function openLandingPageWizard() {
+  // Load campaign templates for the dropdown
+  const templateOpts = (typeof studioTemplates !== 'undefined' ? studioTemplates : [])
+    .filter(t => t.page_type === 'campaign' || t.page_type === 'landing')
+    .map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`)
+    .join('');
+  const templateSelect = templateOpts
+    ? `<option value="">ללא תבנית — AI ייצר הכל</option>${templateOpts}`
+    : '<option value="">אין תבניות זמינות — AI ייצר הכל</option>';
+
+  const html = `<div class="lp-wizard-overlay" id="lp-wizard-overlay" onclick="if(event.target===this)closeLandingPageWizard()">
+    <div class="lp-wizard">
+      <div class="lp-wizard-header">
+        <h3>🎯 יצירת דף נחיתה חדש</h3>
+        <button class="close-btn" onclick="closeLandingPageWizard()">✕</button>
+      </div>
+      <div class="lp-wizard-body">
+        <div class="lp-wizard-section">
+          <label>כותרת העמוד</label>
+          <input type="text" id="lp-title" placeholder="מבצע סוף עונה — משקפי שמש" oninput="lpAutoSlug()">
+        </div>
+        <div class="lp-wizard-section">
+          <label>Slug (URL)</label>
+          <input type="text" id="lp-slug" dir="ltr" placeholder="summer-sale">
+        </div>
+        <div class="lp-wizard-section">
+          <label>תיאור הקמפיין — מה המטרה? מה המסר? מי קהל היעד?</label>
+          <textarea id="lp-prompt" rows="5" style="min-height:120px;" placeholder="לדוגמה: מבצע סוף עונה על משקפי שמש. 30% הנחה על כל המותגים. קהל יעד: גברים ונשים 25-45. המטרה: יצירת לידים דרך טופס. המסר: עיצוב איטלקי במחירים מיוחדים."></textarea>
+        </div>
+        <div class="lp-wizard-section">
+          <label>בחר תבנית (אופציונלי)</label>
+          <select id="lp-template">${templateSelect}</select>
+        </div>
+        <div class="lp-wizard-section">
+          <label>כתובות לדוגמה — עמודים שמעוניינים בסגנון שלהם (אופציונלי)</label>
+          <textarea id="lp-refs" rows="2" style="min-height:50px;" placeholder="https://example.com/sale-page"></textarea>
+        </div>
+        <div class="lp-wizard-section">
+          <label>תמונות השראה (אופציונלי)</label>
+          <div class="lp-wizard-drop" id="lp-drop" onclick="document.getElementById('lp-files').click()">
+            <div class="drop-icon">📤</div>
+            <p>גרור תמונות לכאן או לחץ לבחירה</p>
+            <input type="file" id="lp-files" multiple accept="image/*" style="display:none" onchange="lpFilesChanged(this)">
+          </div>
+          <div id="lp-file-list" style="font-size:.8rem;color:#6b7280;margin-top:6px;"></div>
+        </div>
+      </div>
+      <div class="lp-wizard-footer">
+        <button class="btn-create" id="lp-create-btn" onclick="submitLandingPageWizard()">🤖 צור דף נחיתה</button>
+        <button class="btn-cancel" onclick="closeLandingPageWizard()">ביטול</button>
+      </div>
+    </div>
+  </div>`;
+
+  // Insert into DOM
+  const container = document.createElement('div');
+  container.id = 'lp-wizard-container';
+  container.innerHTML = html;
+  document.body.appendChild(container);
+
+  // Drag and drop
+  const drop = document.getElementById('lp-drop');
+  if (drop) {
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragover'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+    drop.addEventListener('drop', e => {
+      e.preventDefault(); drop.classList.remove('dragover');
+      const input = document.getElementById('lp-files');
+      if (input) { input.files = e.dataTransfer.files; lpFilesChanged(input); }
+    });
+  }
+}
+
+function closeLandingPageWizard() {
+  const el = document.getElementById('lp-wizard-container');
+  if (el) el.remove();
+}
+
+function lpAutoSlug() {
+  const t = document.getElementById('lp-title');
+  const s = document.getElementById('lp-slug');
+  if (t && s && !s._manual) s.value = generateSlug(t.value);
+}
+
+function lpFilesChanged(input) {
+  const list = document.getElementById('lp-file-list');
+  if (!list || !input.files.length) return;
+  list.textContent = Array.from(input.files).map(f => f.name).join(', ');
+}
+
+async function submitLandingPageWizard() {
+  const title = document.getElementById('lp-title')?.value.trim();
+  const slug = document.getElementById('lp-slug')?.value.trim();
+  const prompt = document.getElementById('lp-prompt')?.value.trim();
+  const templateId = document.getElementById('lp-template')?.value;
+  const refs = document.getElementById('lp-refs')?.value.trim();
+
+  if (!title) { Toast.warning('יש להזין כותרת'); return; }
+  if (!slug) { Toast.warning('יש להזין slug'); return; }
+
+  const btn = document.getElementById('lp-create-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '🤖 יוצר עמוד...'; }
+
+  try {
+    let blocks = [];
+
+    // If a template was selected, use its blocks as the base
+    if (templateId && typeof studioTemplates !== 'undefined') {
+      const template = studioTemplates.find(t => t.id === templateId);
+      if (template?.blocks) {
+        blocks = JSON.parse(JSON.stringify(template.blocks));
+        for (const block of blocks) {
+          block.id = block.type + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        }
+      }
+    }
+
+    // If no template or AI prompt given, generate blocks via AI
+    if (prompt && !blocks.length) {
+      // Generate a basic campaign page structure
+      blocks = generateCampaignBlocks(title, prompt);
+    }
+
+    // If still no blocks, create a minimal campaign skeleton
+    if (!blocks.length) {
+      blocks = generateCampaignBlocks(title, prompt || title);
+    }
+
+    // Determine tags — auto-tag as "דף נחיתה"
+    const tags = ['דף נחיתה'];
+
+    // Insert into storefront_pages
+    const { error } = await sb.from('storefront_pages').insert({
+      tenant_id: getTenantId(),
+      slug: slug.startsWith('/') ? slug : '/' + slug + '/',
+      title,
+      page_type: 'campaign',
+      lang: 'he',
+      blocks,
+      status: 'draft',
+      is_system: false,
+      tags,
+      meta_title: title,
+      meta_description: prompt ? prompt.slice(0, 160) : ''
+    });
+
+    if (error) throw error;
+
+    closeLandingPageWizard();
+    Toast.success('דף נחיתה נוצר! ערוך את הבלוקים ב-Studio');
+    await loadStudioPages();
+
+    // Auto-select the new page (it should be the latest)
+    const newPage = studioPages.find(p => p.slug === (slug.startsWith('/') ? slug : '/' + slug + '/'));
+    if (newPage) selectPage(newPage.id);
+  } catch (err) {
+    console.error('Landing page wizard error:', err);
+    Toast.error('שגיאה ביצירת דף נחיתה: ' + (err.message || ''));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🤖 צור דף נחיתה'; }
+  }
+}
+
+/** Generate campaign page blocks from title and prompt */
+function generateCampaignBlocks(title, prompt) {
+  const ts = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  return [
+    {
+      id: 'hero-' + ts(), type: 'hero',
+      data: { title: title, subtitle: prompt ? prompt.slice(0, 80) : '', status_text: 'מבצע מיוחד', status_bg: 'gold', title_size: 'large' },
+      settings: { bg_color: '#1a1a1a', text_color: '#ffffff', padding: 'lg' }
+    },
+    {
+      id: 'text-' + ts(), type: 'text',
+      data: { body: `<p>${escapeHtml(prompt || 'תיאור הקמפיין')}</p>` },
+      settings: { max_width: '800px', padding: 'md' }
+    },
+    {
+      id: 'cta-' + ts(), type: 'cta',
+      data: { title: 'רוצה לשמוע עוד?', action: 'whatsapp', label: 'דברו איתנו בוואטסאפ' },
+      settings: { padding: 'md' }
+    },
+    {
+      id: 'lead_form-' + ts(), type: 'lead_form',
+      data: { title: 'השאירו פרטים', fields: ['name', 'phone'], submit_text: 'שלח' },
+      settings: { bg_color: '#f9fafb', padding: 'lg' }
+    }
+  ];
+}
+
 /** Archive page (move to archived status) */
 function archivePage(pageId) {
   const page = studioPages.find(p => p.id === pageId);

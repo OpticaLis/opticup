@@ -46,6 +46,28 @@
 .studio-richtext-wrap .ql-editor ol, .studio-richtext-wrap .ql-editor ul { padding-right: 1.5em !important; padding-left: 0 !important; }
 .studio-richtext-wrap .ql-editor li { padding-right: 1.5em !important; padding-left: 0 !important; }
 .studio-richtext-wrap .ql-editor li::before { margin-left: 0 !important; margin-right: -1.5em !important; text-align: left !important; }
+
+/* Landing page wizard modal */
+.lp-wizard-overlay { position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center; }
+.lp-wizard { max-width:600px;width:92vw;max-height:90vh;overflow-y:auto;background:#fff;border-radius:16px;padding:0; }
+.lp-wizard-header { padding:20px 28px;border-bottom:1px solid #e5e5e5;display:flex;align-items:center;gap:12px; }
+.lp-wizard-header h3 { margin:0;font-size:1.15rem;font-weight:700;flex:1; }
+.lp-wizard-header .close-btn { width:32px;height:32px;border:none;background:#f3f4f6;border-radius:8px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center; }
+.lp-wizard-body { padding:24px 28px; }
+.lp-wizard-section { margin-bottom:20px; }
+.lp-wizard-section label { display:block;font-size:.85rem;font-weight:600;color:#374151;margin-bottom:6px; }
+.lp-wizard-section input, .lp-wizard-section select { width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:.95rem;font-family:inherit;background:#fff; }
+.lp-wizard-section input:focus, .lp-wizard-section select:focus, .lp-wizard-section textarea:focus { outline:none;border-color:#c9a555;box-shadow:0 0 0 3px rgba(201,165,85,.12); }
+.lp-wizard-section textarea { width:100%;padding:12px;border:1px solid #e5e5e5;border-radius:8px;font-size:.95rem;font-family:inherit;resize:vertical;background:#fff; }
+.lp-wizard-drop { border:2px dashed #d1d5db;border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s; }
+.lp-wizard-drop:hover, .lp-wizard-drop.dragover { border-color:#c9a555;background:#fefdf8; }
+.lp-wizard-drop p { margin:0;color:#6b7280;font-size:.88rem; }
+.lp-wizard-drop .drop-icon { font-size:1.5rem;margin-bottom:4px; }
+.lp-wizard-footer { padding:16px 28px;border-top:1px solid #e5e5e5;display:flex;gap:10px;background:#fafafa;border-radius:0 0 16px 16px; }
+.lp-wizard-footer .btn-create { flex:1;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#c9a555,#e8da94);color:#1a1a1a;font-weight:700;font-size:1rem;cursor:pointer;transition:opacity .15s;font-family:inherit; }
+.lp-wizard-footer .btn-create:hover { opacity:.9; }
+.lp-wizard-footer .btn-create:disabled { opacity:.5;cursor:not-allowed; }
+.lp-wizard-footer .btn-cancel { padding:12px 20px;border:1px solid #e5e5e5;border-radius:10px;background:#fff;color:#374151;font-weight:600;cursor:pointer;font-family:inherit; }
 </style>
 </head>
 <body>
@@ -61,7 +83,6 @@
       <a href="storefront-products.html">📦 מוצרים</a>
       <a href="storefront-content.html">🤖 תוכן AI</a>
       <a href="storefront-blog.html">📝 בלוג</a>
-      <a href="storefront-landing-content.html">🎯 דפי נחיתה</a>
       <a href="storefront-glossary.html">📖 מילון מונחים</a>
       <a href="storefront-studio.html" class="active">🎨 Studio</a>
     </nav>
@@ -83,7 +104,10 @@
         <aside class="studio-sidebar">
           <div class="studio-sidebar-header">
             <h3>עמודים</h3>
-            <button class="btn btn-sm btn-primary" onclick="createPage()">+ חדש</button>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm btn-primary" onclick="createPage()">+ חדש</button>
+              <button class="btn btn-sm" onclick="openLandingPageWizard()" style="background:linear-gradient(135deg,#c9a555,#e8da94);color:#000;font-weight:700;border:none;">🎯 דף נחיתה</button>
+            </div>
           </div>
           <!-- View toggle: Pages vs Brand Pages -->
           <div class="page-view-toggle">
