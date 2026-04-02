@@ -417,11 +417,14 @@ function lpFilesChanged(input) {
 }
 
 async function submitLandingPageWizard() {
+  console.log('%c[LP-DEBUG] submitLandingPageWizard CALLED', 'color:red;font-size:14px;font-weight:bold');
   const title = document.getElementById('lp-title')?.value.trim();
   const slug = document.getElementById('lp-slug')?.value.trim();
   const prompt = document.getElementById('lp-prompt')?.value.trim();
   const templateId = document.getElementById('lp-template')?.value;
   const refs = document.getElementById('lp-refs')?.value.trim();
+
+  console.log('[LP-DEBUG] values:', { title, slug, prompt: prompt?.slice(0, 50), templateId, refs: refs?.slice(0, 50) });
 
   if (!title) { Toast.warning('יש להזין כותרת'); return; }
   if (!slug) { Toast.warning('יש להזין slug'); return; }
@@ -435,9 +438,11 @@ async function submitLandingPageWizard() {
     let seoDesc = prompt ? prompt.slice(0, 160) : '';
 
     // If a template was selected, use its blocks
+    console.log('[LP-DEBUG] templateId:', JSON.stringify(templateId), 'truthy:', !!templateId);
     if (templateId && typeof studioTemplates !== 'undefined') {
       const template = studioTemplates.find(t => t.id === templateId);
       if (template?.blocks) {
+        console.log('[LP-DEBUG] Using template blocks:', template.name, template.blocks.length);
         blocks = JSON.parse(JSON.stringify(template.blocks));
         for (const block of blocks) {
           block.id = block.type + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -446,9 +451,10 @@ async function submitLandingPageWizard() {
     }
 
     // No template — call AI Edge Function to generate blocks
+    console.log('[LP-DEBUG] blocks.length before AI:', blocks.length);
     if (!blocks.length) {
       const edgeUrl = SUPABASE_URL + '/functions/v1/generate-landing-content';
-      console.log('[LP-Wizard] Calling AI Edge Function:', edgeUrl);
+      console.log('%c[LP-DEBUG] About to call AI Edge Function: ' + edgeUrl, 'color:blue;font-weight:bold');
       try {
         const res = await fetch(edgeUrl, {
           method: 'POST',
@@ -464,8 +470,9 @@ async function submitLandingPageWizard() {
           })
         });
 
+        console.log('[LP-DEBUG] fetch status:', res.status, res.statusText);
         const data = await res.json();
-        console.log('[LP-Wizard] AI response:', { success: data.success, blockCount: data.blocks?.length, error: data.error });
+        console.log('%c[LP-DEBUG] AI response:', 'color:green;font-weight:bold', JSON.stringify({ success: data.success, blockCount: data.blocks?.length, error: data.error }));
 
         if (data.success && Array.isArray(data.blocks) && data.blocks.length > 0) {
           blocks = data.blocks;
