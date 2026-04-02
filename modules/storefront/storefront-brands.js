@@ -20,19 +20,30 @@ async function loadStorefrontBrands() {
 
     // Get storefront product counts per brand (only website_sync + has images)
     const { data: sfProducts, error: prodErr } = await sb.from(T.INV)
-      .select('brand_id, inventory_images!inner(id)')
+      .select('brand_id, quantity, website_sync, storefront_mode_override, inventory_images!inner(id)')
       .eq('tenant_id', tid)
       .eq('is_deleted', false)
       .in('website_sync', ['full', 'display']);
 
     if (prodErr) throw prodErr;
 
+    // Build brand lookup for resolved mode
+    const brandMap = {};
+    for (const b of (brands || [])) { brandMap[b.id] = b; }
+
+    // Apply same filters as v_storefront_products view
+    const excludedBrandIds = new Set((brands || []).filter(b => b.exclude_website).map(b => b.id));
     const countMap = {};
     for (const p of (sfProducts || [])) {
+      if (excludedBrandIds.has(p.brand_id)) continue;
+      if (p.website_sync === 'full' && p.quantity <= 0) continue;
+      const brand = brandMap[p.brand_id];
+      const resolved = p.storefront_mode_override || brand?.storefront_mode || 'catalog';
+      if (resolved === 'hidden') continue;
       countMap[p.brand_id] = (countMap[p.brand_id] || 0) + 1;
     }
 
-    // Only show brands that have at least 1 storefront product
+    // Only show brands that have at least 1 visible storefront product
     const sfBrands = (brands || []).filter(b => (countMap[b.id] || 0) > 0);
     renderBrandsTable(sfBrands, countMap);
   } catch (e) {

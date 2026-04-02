@@ -11,15 +11,18 @@ async function loadStorefrontProducts() {
   try {
     const tid = getTenantId();
 
-    // Load brands for filter dropdown (brands table has no is_deleted column — use active)
+    // Load brands (include exclude_website for filtering)
     const { data: brands, error: brandErr } = await sb.from(T.BRANDS)
-      .select('id, name, storefront_mode')
+      .select('id, name, storefront_mode, exclude_website')
       .eq('tenant_id', tid)
       .eq('active', true)
       .order('name');
 
     if (brandErr) throw brandErr;
     allBrands = brands || [];
+
+    // Brands excluded from website — their products should not appear
+    const excludedBrandIds = new Set(allBrands.filter(b => b.exclude_website).map(b => b.id));
 
     // Load only products sent to the website (website_sync set + has images)
     const { data: products, error: prodErr } = await sb.from(T.INV)
@@ -31,10 +34,23 @@ async function loadStorefrontProducts() {
 
     if (prodErr) throw prodErr;
 
-    // Populate brand filter — only brands that have storefront products
+    // Apply same filters as v_storefront_products view:
+    // - exclude brands with exclude_website
+    // - full sync: only if quantity > 0
+    // - exclude resolved_mode = 'hidden'
+    const visible = (products || []).filter(p => {
+      if (excludedBrandIds.has(p.brand_id)) return false;
+      if (p.website_sync === 'full' && p.quantity <= 0) return false;
+      const brand = allBrands.find(b => b.id === p.brand_id);
+      const resolved = p.storefront_mode_override || brand?.storefront_mode || 'catalog';
+      if (resolved === 'hidden') return false;
+      return true;
+    });
+
+    // Populate brand filter — only brands that have visible storefront products
     const brandSelect = document.getElementById('filter-brand');
     while (brandSelect.options.length > 1) brandSelect.remove(1);
-    const brandIdsInProducts = new Set((products || []).map(p => p.brand_id));
+    const brandIdsInProducts = new Set(visible.map(p => p.brand_id));
     const seenBrandNames = new Set();
     for (const b of allBrands) {
       if (!brandIdsInProducts.has(b.id)) continue;
@@ -46,7 +62,7 @@ async function loadStorefrontProducts() {
       brandSelect.appendChild(opt);
     }
 
-    allProducts = (products || []).map(p => {
+    allProducts = visible.map(p => {
       const brand = allBrands.find(b => b.id === p.brand_id);
       return {
         ...p,
