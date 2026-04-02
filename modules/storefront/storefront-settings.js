@@ -100,11 +100,14 @@ async function saveStorefrontSettings() {
       og_image_url: ogImageUrl || null
     };
 
-    const { error } = await sb.from(T.STOREFRONT_CONFIG)
+    const { data, error } = await sb.from(T.STOREFRONT_CONFIG)
       .update(updates)
-      .eq('tenant_id', tid);
+      .eq('tenant_id', tid)
+      .select('tenant_id')
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) throw new Error('Update returned no rows — check RLS policies');
     toast('הגדרות חנות נשמרו בהצלחה', 's');
   } catch (e) {
     console.error('saveStorefrontSettings error:', e);
