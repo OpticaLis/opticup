@@ -107,18 +107,19 @@
             <div style="display:flex;gap:6px;">
               <button class="btn btn-sm btn-primary" onclick="createPage()">+ חדש</button>
               <button class="btn btn-sm" onclick="openLandingPageWizard()" style="background:linear-gradient(135deg,#c9a555,#e8da94);color:#000;font-weight:700;border:none;">🎯 דף נחיתה</button>
-              <button class="btn btn-sm" onclick="openCampaignBuilder()" style="background:linear-gradient(135deg,#1a1a1a,#333);color:#e8da94;font-weight:700;border:1px solid #c9a555;">🚀 קמפיין AI</button>
             </div>
           </div>
-          <!-- View toggle: Pages vs Brand Pages -->
+          <!-- View toggle: Pages vs Brand Pages vs Campaigns -->
           <div class="page-view-toggle">
             <button class="page-view-btn active" data-view="pages" onclick="toggleBrandPagesView(false)">כל העמודים</button>
             <button class="page-view-btn" data-view="brands" onclick="toggleBrandPagesView(true)">🏷️ עמודי מותג</button>
+            <button class="page-view-btn" data-view="campaigns" onclick="toggleCampaignsView()">🎯 קמפיינים</button>
           </div>
           <div id="studio-page-list" class="studio-page-list">
             <div class="studio-empty">טוען...</div>
           </div>
           <div id="studio-brand-list" class="studio-page-list" style="display:none;"></div>
+          <div id="studio-campaign-list" class="studio-page-list" style="display:none;"></div>
         </aside>
         <section class="studio-main" id="studio-editor">
           <div class="studio-empty-editor">
@@ -214,6 +215,7 @@
 <script src="modules/storefront/studio-brands.js"></script>
 <script src="modules/storefront/studio-ai-prompt.js"></script>
 <script src="modules/storefront/studio-ai-diff.js"></script>
+<script src="modules/storefront/studio-campaigns.js"></script>
 <script src="modules/storefront/studio-campaign-builder.js"></script>
 
 <script>

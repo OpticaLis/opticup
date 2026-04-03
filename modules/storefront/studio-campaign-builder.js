@@ -201,6 +201,8 @@ function renderCampaignWizard() {
 function closeCampaignBuilder() {
   const el = document.getElementById('cb-wizard-container');
   if (el) el.remove();
+  // Clear campaign context
+  window._campaignBuilderTargetId = null;
 }
 
 function cbGoStep(step) {
@@ -281,6 +283,19 @@ async function cbGenerate() {
     if (data.success && data.page_id) {
       state.generatedPageId = data.page_id;
       state.generatedSlug = data.slug;
+
+      // If launched from a campaign context, link the page to that campaign
+      const targetCampaignId = window._campaignBuilderTargetId;
+      if (targetCampaignId) {
+        try {
+          await sb.from('storefront_pages')
+            .update({ campaign_id: targetCampaignId })
+            .eq('id', data.page_id);
+        } catch (_e) {
+          console.warn('[CampaignBuilder] Failed to link page to campaign:', _e);
+        }
+      }
+
       cbGoStep(4);
     } else {
       console.error('[CampaignBuilder] Edge Function error:', data);
@@ -349,9 +364,12 @@ async function cbPublish() {
 
     if (error) throw error;
     showToast('העמוד פורסם בהצלחה!', 'success');
+    const wasCampaignContext = !!window._campaignBuilderTargetId;
+    const targetCid = window._campaignBuilderTargetId;
     closeCampaignBuilder();
-    // Refresh pages list
+    // Refresh pages list and campaign if applicable
     if (typeof loadStudioPages === 'function') await loadStudioPages();
+    if (wasCampaignContext && typeof refreshCampaignData === 'function') refreshCampaignData(targetCid);
   } catch (e) {
     console.error('[CampaignBuilder] Publish error:', e);
     showToast('שגיאה בפרסום: ' + e.message, 'error');

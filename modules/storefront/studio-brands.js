@@ -92,7 +92,11 @@ function toggleBrandPagesView(showBrands) {
 
   const pageList = document.getElementById('studio-page-list');
   const brandList = document.getElementById('studio-brand-list');
+  const campaignList = document.getElementById('studio-campaign-list');
   const editorArea = document.getElementById('studio-editor');
+
+  // Always hide campaigns list when toggling pages/brands
+  if (campaignList) campaignList.style.display = 'none';
 
   if (showBrands) {
     if (pageList) pageList.style.display = 'none';
