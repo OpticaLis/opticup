@@ -222,7 +222,7 @@ async function duplicatePage(pageId) {
   const page = studioPages.find(p => p.id === pageId);
   if (!page) return;
   try {
-    const { error } = await sb.from('storefront_pages').insert({
+    const insertData = {
       tenant_id: getTenantId(),
       slug: (page.slug || '').replace(/\/$/, '') + '-copy/',
       title: (page.title || '') + ' (\u05E2\u05D5\u05EA\u05E7)',
@@ -233,7 +233,10 @@ async function duplicatePage(pageId) {
       is_system: false,
       meta_title: page.meta_title || '',
       meta_description: page.meta_description || ''
-    });
+    };
+    // Keep campaign_id so duplicated page stays in the same campaign
+    if (page.campaign_id) insertData.campaign_id = page.campaign_id;
+    const { error } = await sb.from('storefront_pages').insert(insertData);
     if (error) throw error;
     Toast.success('\u05D4\u05E2\u05DE\u05D5\u05D3 \u05E9\u05D5\u05DB\u05E4\u05DC! \u05E2\u05E8\u05D5\u05DA \u05D0\u05EA \u05D4\u05DB\u05D5\u05EA\u05E8\u05EA \u05D5\u05D4-slug');
     await loadStudioPages();

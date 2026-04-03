@@ -515,6 +515,7 @@
 .camp-ai-send { background: linear-gradient(135deg,#1a1a1a,#333); color: #e8da94; font-weight: 700; border: 1px solid #c9a555; font-size: .75rem; padding: 4px 14px; border-radius: 6px; cursor: pointer; }
 .camp-ai-send:hover { background: #333; }
 .camp-ai-send:disabled { opacity: .5; cursor: wait; }
+.camp-ai-textarea.camp-ai-expanded { min-height: 200px !important; }
 
 /* Responsive */
 @media (max-width: 768px) {

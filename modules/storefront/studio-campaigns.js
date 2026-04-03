@@ -131,6 +131,7 @@ function renderFolderBody(campaign) {
       }
 
       const dupBtn = `<button title="שכפל" onclick="event.stopPropagation();duplicatePage('${p.id}')">📋</button>`;
+      const moveBtn = `<button title="העבר לקמפיין" onclick="event.stopPropagation();campMovePage('${p.id}','${cid}')">↗️</button>`;
       const settingsBtn = showSettings ? `<button title="הגדרות" onclick="event.stopPropagation();editPageSettings('${p.id}')">⚙️</button>` : '';
       const toggleBtn = showToggle ? `<button title="${p.status==='published'?'טיוטה':'פרסם'}" onclick="event.stopPropagation();togglePageStatus('${p.id}','${p.status}')">${p.status==='published'?'📤':'📥'}</button>` : '';
       const archiveBtn = !p.is_system && p.status !== 'archived' ? `<button title="ארכיון" onclick="event.stopPropagation();archivePage('${p.id}')">📦</button>` : '';
@@ -139,7 +140,6 @@ function renderFolderBody(campaign) {
       const unlinkBtn = `<button title="הסר מקמפיין" onclick="event.stopPropagation();campUnlinkPage('${p.id}','${cid}')" style="color:#ef4444;">✕</button>`;
       const lock = p.is_system ? '<span title="מערכת">🔒</span>' : '';
 
-      // Same structure as studio-pages.js renderPageList
       return `<div class="studio-page-item${active}" data-id="${p.id}" onclick="event.stopPropagation();selectPage('${p.id}')">
         <div class="studio-page-row-top">
           <span class="studio-page-icon">${icon}</span>
@@ -151,17 +151,18 @@ function renderFolderBody(campaign) {
         </div>
         <div class="studio-page-meta">
           <span class="studio-badge ${stCls}">${stTxt}</span>${lock}
-          <div class="studio-page-actions-mini">${dupBtn}${settingsBtn}${toggleBtn}${archiveBtn}${restoreBtn}${permDeleteBtn}${unlinkBtn}</div>
+          <div class="studio-page-actions-mini">${dupBtn}${moveBtn}${settingsBtn}${toggleBtn}${archiveBtn}${restoreBtn}${permDeleteBtn}${unlinkBtn}</div>
         </div>
       </div>`;
     }).join('');
   }
 
-  // AI prompt box at the bottom
+  // AI prompt box at the bottom — dblclick toggles expanded size
   const aiBox = `<div class="camp-ai-box" onclick="event.stopPropagation();">
     <div class="camp-ai-label">🤖 AI — בנה עמוד לקמפיין</div>
     <textarea id="camp-ai-prompt-${cid}" class="camp-ai-textarea" rows="2"
-      placeholder="לדוגמא: תבנה עמוד תקנון..."></textarea>
+      ondblclick="this.classList.toggle('camp-ai-expanded')"
+      placeholder="לדוגמא: תבנה עמוד תקנון... (לחיצה כפולה להרחבה)"></textarea>
     <div class="camp-ai-row">
       <label class="camp-ai-ctx">
         <input type="checkbox" id="camp-ai-ctx-${cid}" checked> הקשר מעמודים קיימים
@@ -234,6 +235,50 @@ function campUnlinkPage(pageId, campaignId) {
   });
 }
 
+// ── Move page between campaigns ──────────────────────────────
+
+function campMovePage(pageId, currentCampaignId) {
+  // Build options: all campaigns (except current) + "ללא קמפיין"
+  const opts = [`<option value="">— בחר יעד —</option>`,
+    `<option value="__none__">כל העמודים (ללא קמפיין)</option>`];
+  for (const c of studioCampaigns) {
+    if (c.id === currentCampaignId) continue;
+    opts.push(`<option value="${c.id}">${escapeHtml(c.name)}</option>`);
+  }
+
+  Modal.show({
+    title: '↗️ העבר לקמפיין', size: 'sm',
+    content: `<div class="studio-field-group">
+      <label>בחר קמפיין יעד</label>
+      <select id="camp-move-target" class="studio-field">${opts.join('')}</select>
+    </div>`,
+    footer: `<button class="btn btn-primary" onclick="submitMovePage('${pageId}','${currentCampaignId}')">העבר</button>
+      <button class="btn btn-ghost" onclick="Modal.close()">ביטול</button>`,
+  });
+}
+
+async function submitMovePage(pageId, fromCampaignId) {
+  const target = document.getElementById('camp-move-target')?.value;
+  if (!target) { Toast.warning('בחר קמפיין יעד'); return; }
+
+  const newCampaignId = target === '__none__' ? null : target;
+  try {
+    const { error } = await sb.from('storefront_pages')
+      .update({ campaign_id: newCampaignId }).eq('id', pageId);
+    if (error) throw error;
+    Modal.close();
+    Toast.success('העמוד הועבר');
+    if (typeof loadStudioPages === 'function') loadStudioPages();
+    await refreshCampaignFolder(fromCampaignId);
+    // Also refresh target campaign if it's open
+    if (newCampaignId && campaignPages[newCampaignId]) {
+      await loadCampaignPages(newCampaignId);
+    }
+  } catch (e) {
+    Toast.error('שגיאה בהעברה: ' + e.message);
+  }
+}
+
 // ── AI prompt send ───────────────────────────────────────────
 
 async function campAISend(campaignId) {
@@ -251,14 +296,19 @@ async function campAISend(campaignId) {
     let fullPrompt = prompt;
     const pages = campaignPages[campaignId] || [];
 
-    // Add context from existing campaign pages
+    // (1) If checkbox checked — add current campaign's pages as context
     if (ctxEl?.checked && pages.length) {
       const lines = pages.map(p => {
         const txt = extractBlocksText(p.blocks || []);
         return `עמוד "${p.slug}" (${p.title || ''}) — ${txt.slice(0, 300)}`;
       });
-      fullPrompt += '\n\nהקשר — עמודי הקמפיין הקיימים:\n' + lines.join('\n');
+      fullPrompt += '\n\nהקשר — עמודי הקמפיין הנוכחי:\n' + lines.join('\n');
     }
+
+    // (2) Cross-campaign reference: scan prompt for other campaign names
+    //     Works whether checkbox is checked or not
+    const crossCtx = await buildCrossCampaignContext(prompt, campaignId);
+    if (crossCtx) fullPrompt += crossCtx;
 
     // Find a template
     let tplSlug = 'supersale';
@@ -268,13 +318,23 @@ async function campAISend(campaignId) {
       if (data?.length) tplSlug = data[0].slug;
     } catch (_) {}
 
+    // Add instruction for Claude to use campaign references
+    fullPrompt += '\n\nהוראה: אם המשתמש מזכיר קמפיין אחר בשמו, השתמש בהקשר שסופק על אותו קמפיין.';
+
+    const payload = {
+      template_slug: tplSlug, prompt: fullPrompt,
+      variables: {}, tenant_id: getTenantId(), campaign_id: campaignId,
+    };
+
+    // Debug log — verify context is being sent
+    console.log('%c[Campaigns AI] Full prompt being sent:', 'color:#c9a555;font-weight:bold');
+    console.log(fullPrompt);
+    console.log('[Campaigns AI] Payload:', JSON.stringify({ ...payload, prompt: payload.prompt.slice(0, 200) + '...' }));
+
     const res = await fetch(SUPABASE_URL + '/functions/v1/generate-campaign-page', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON },
-      body: JSON.stringify({
-        template_slug: tplSlug, prompt: fullPrompt,
-        variables: {}, tenant_id: getTenantId(), campaign_id: campaignId,
-      }),
+      body: JSON.stringify(payload),
     });
     const data = await res.json();
 
@@ -284,6 +344,7 @@ async function campAISend(campaignId) {
       if (typeof loadStudioPages === 'function') loadStudioPages();
       await refreshCampaignFolder(campaignId);
     } else {
+      console.error('[Campaigns AI] Edge Function error:', data);
       Toast.error('שגיאה: ' + (data.error || 'שגיאה לא ידועה'));
     }
   } catch (e) {
@@ -292,6 +353,54 @@ async function campAISend(campaignId) {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '🤖 שלח'; }
   }
+}
+
+/**
+ * Cross-campaign reference: scan the user's prompt for mentions of other
+ * campaign names. If found, fetch their pages and build context.
+ */
+async function buildCrossCampaignContext(userPrompt, currentCampaignId) {
+  const lower = userPrompt.toLowerCase();
+  const matched = [];
+
+  for (const c of studioCampaigns) {
+    if (c.id === currentCampaignId) continue;
+    // Match by campaign name (case-insensitive) or slug
+    const nameLower = (c.name || '').toLowerCase();
+    const slugLower = (c.slug || '').toLowerCase();
+    if (nameLower && lower.includes(nameLower)) matched.push(c);
+    else if (slugLower && lower.includes(slugLower)) matched.push(c);
+  }
+
+  if (!matched.length) return '';
+
+  // Fetch pages for matched campaigns
+  const contextParts = [];
+  for (const c of matched) {
+    try {
+      // Use cached pages if available, otherwise fetch
+      let pages = campaignPages[c.id];
+      if (!pages) {
+        const { data } = await sb.from('v_admin_pages')
+          .select('slug, title, blocks')
+          .eq('tenant_id', getTenantId())
+          .eq('campaign_id', c.id)
+          .order('sort_order', { ascending: true });
+        pages = data || [];
+      }
+      if (pages.length) {
+        const lines = pages.map(p => {
+          const txt = extractBlocksText(p.blocks || []);
+          return `  עמוד "${p.slug}" (${p.title || ''}) — ${txt.slice(0, 300)}`;
+        });
+        contextParts.push(`הקשר מקמפיין "${c.name}":\n${lines.join('\n')}`);
+      }
+    } catch (_) {}
+  }
+
+  if (!contextParts.length) return '';
+  console.log('[Campaigns AI] Cross-campaign reference found:', matched.map(c => c.name));
+  return '\n\n' + contextParts.join('\n\n');
 }
 
 function extractBlocksText(blocks) {
