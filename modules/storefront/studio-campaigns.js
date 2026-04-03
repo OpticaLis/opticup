@@ -290,7 +290,17 @@ async function campAISend(campaignId) {
   if (!prompt) { Toast.warning('יש להזין הוראה ל-AI'); return; }
   if (prompt.length < 10) { Toast.warning('יש להזין לפחות 10 תווים'); return; }
 
+  // Show loading state
   if (btn) { btn.disabled = true; btn.textContent = '🤖 עובד...'; }
+  const aiBox = btn?.closest('.camp-ai-box');
+  let loadingEl = null;
+  if (aiBox) {
+    loadingEl = document.createElement('div');
+    loadingEl.className = 'camp-ai-loading';
+    loadingEl.innerHTML = '<div class="camp-ai-spinner"></div><span>🤖 בונה את העמוד... (עד דקה)</span>';
+    aiBox.appendChild(loadingEl);
+  }
+  if (promptEl) promptEl.disabled = true;
 
   try {
     let fullPrompt = prompt;
@@ -352,6 +362,8 @@ async function campAISend(campaignId) {
     Toast.error('שגיאת תקשורת');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '🤖 שלח'; }
+    if (loadingEl) loadingEl.remove();
+    if (promptEl) promptEl.disabled = false;
   }
 }
 

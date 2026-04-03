@@ -516,6 +516,10 @@
 .camp-ai-send:hover { background: #333; }
 .camp-ai-send:disabled { opacity: .5; cursor: wait; }
 .camp-ai-textarea.camp-ai-expanded { min-height: 200px !important; }
+.camp-ai-loading { display: flex; align-items: center; gap: 10px; padding: 10px; margin-top: 8px; background: linear-gradient(135deg, #1a1a1a, #2a2a2a); border-radius: 8px; color: #e8da94; font-size: .82rem; font-weight: 600; animation: camp-pulse 2s ease-in-out infinite; }
+.camp-ai-spinner { width: 18px; height: 18px; border: 2.5px solid rgba(232,218,148,.3); border-top-color: #e8da94; border-radius: 50%; animation: camp-spin .8s linear infinite; flex-shrink: 0; }
+@keyframes camp-spin { to { transform: rotate(360deg); } }
+@keyframes camp-pulse { 0%,100% { opacity: 1; } 50% { opacity: .7; } }
 
 /* Responsive */
 @media (max-width: 768px) {
