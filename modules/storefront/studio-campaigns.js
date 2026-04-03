@@ -33,7 +33,11 @@ function toggleCampaignsView() {
   if (campaignList) campaignList.style.display = 'block';
   if (editorArea) editorArea.innerHTML = '<div class="studio-empty-editor"><p>בחר קמפיין מהרשימה</p></div>';
 
-  if (!campaignsLoaded) loadCampaigns();
+  if (!campaignsLoaded) {
+    loadCampaigns();
+  } else {
+    renderCampaignList();
+  }
 }
 
 // ============================================================
