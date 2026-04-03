@@ -676,80 +676,21 @@ async function refreshCampaignData(campaignId) {
 }
 
 // ============================================================
-// Campaign filter for "כל העמודים" view
+// Hide campaign pages from "כל העמודים" — they belong in the campaigns tab
 // ============================================================
 
-function renderCampaignFilterDropdown() {
-  if (!studioCampaigns.length && !campaignsLoaded) return '';
-
-  const options = studioCampaigns.map(c =>
-    `<option value="${c.id}"${window._pageFilterCampaignId === c.id ? ' selected' : ''}>${escapeHtml(c.name)}</option>`
-  ).join('');
-
-  return `<select class="studio-field page-filter-select" onchange="filterPagesByCampaign(this.value)" style="max-width:140px;">
-    <option value="">כל הקמפיינים</option>
-    ${options}
-  </select>`;
-}
-
-function filterPagesByCampaign(campaignId) {
-  window._pageFilterCampaignId = campaignId || null;
-  if (typeof renderFilteredPageList === 'function') renderFilteredPageList();
-}
-
-// Hook into existing page filtering — add campaign filter
-// This extends the existing renderFilteredPageList behavior
-const _origRenderFilteredPageList = typeof renderFilteredPageList === 'function' ? renderFilteredPageList : null;
-
-if (_origRenderFilteredPageList) {
-  window.renderFilteredPageList = function() {
-    _origRenderFilteredPageList();
-  };
-}
-
-// Monkey-patch renderPageSearchBar to add campaign dropdown
-const _origRenderPageSearchBar = typeof renderPageSearchBar === 'function' ? renderPageSearchBar : null;
-
-if (_origRenderPageSearchBar) {
-  window.renderPageSearchBar = function() {
-    let html = _origRenderPageSearchBar();
-    // Inject campaign filter dropdown before the closing </div>
-    const campDropdown = renderCampaignFilterDropdown();
-    if (campDropdown) {
-      html = html.replace(/<\/div>\s*$/, campDropdown + '</div>');
-    }
-    return html;
-  };
-}
-
-// Also hook filtering logic: filter by campaign_id if set
-const _origFilterFn = typeof filterByTag === 'function' ? filterByTag : null;
-
-window.filterByCampaign = function(pages) {
-  const cid = window._pageFilterCampaignId;
-  if (!cid) return pages;
-  return pages.filter(p => p.campaign_id === cid);
-};
-
-// Patch renderFilteredPageList to include campaign filter
 (function() {
-  // Wait for studio-pages.js to define renderFilteredPageList
   const patchInterval = setInterval(() => {
     if (typeof renderFilteredPageList !== 'function') return;
     clearInterval(patchInterval);
 
     const origFn = renderFilteredPageList;
     window.renderFilteredPageList = function() {
-      // Temporarily patch studioPages to include campaign filter
-      const cid = window._pageFilterCampaignId;
-      if (cid) {
-        const origPages = studioPages;
-        studioPages = origPages.filter(p => p.campaign_id === cid);
-        origFn();
-        studioPages = origPages;
-      } else {
-        origFn();
-      }
+      // Temporarily filter out pages that belong to a campaign
+      const origPages = studioPages;
+      studioPages = origPages.filter(p => !p.campaign_id);
+      origFn();
+      studioPages = origPages;
     };
   }, 100);
 })();
