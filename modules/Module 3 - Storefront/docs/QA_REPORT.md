@@ -5,31 +5,36 @@
 **Auditor:** Claude Code Autonomous QA
 
 ## Executive Summary
-- Total Issues Found: 42
-- Critical: 1 | High: 8 | Medium: 15 | Low: 12 | Info: 6
-- Overall Health Score: 74/100
-- Ready for DNS Switch: **NO** — 1 critical + 8 high issues must be resolved first
+- Total Issues Found: 67
+- Critical: 5 | High: 14 | Medium: 28 | Low: 14 | Info: 6
+- Overall Health Score: 62/100
+- Ready for DNS Switch: **NO** — 5 critical + 14 high issues must be resolved first
 
-### Top 5 Critical Findings
-1. **🔴 CRITICAL** — No custom 404 page: users hitting broken links see plain "Not Found" text
-2. **🟠 HIGH** — Homepage hero text shows "בדיקת AI" (test content from AI testing)
-3. **🟠 HIGH** — 2 files exceed 350-line limit (BrandPage.astro: 565, [barcode].astro: 453)
-4. **🟠 HIGH** — 3 npm vulnerabilities (high severity) in path-to-regexp
-5. **🟠 HIGH** — No test suite exists — zero tests in the entire project
+### Top 10 Critical/High Findings
+1. **🔴 CRITICAL** — No custom 404 page: visitors see plain "Not Found" text
+2. **🔴 CRITICAL** — No hreflang `<link>` tags in BaseLayout (only blog pages have them) — Google may show wrong language or treat as duplicate content
+3. **🔴 CRITICAL** — No skip navigation link — keyboard users must tab through entire header
+4. **🔴 CRITICAL** — No tests exist — zero test files, no test framework installed
+5. **🔴 CRITICAL** — Image proxy path traversal: `../` segments not sanitized before passing to Supabase
+6. **🟠 HIGH** — Homepage hero shows "בדיקת AI" test content
+7. **🟠 HIGH** — SSRF via webhook_url in lead submission (attacker can probe internal endpoints)
+8. **🟠 HIGH** — No rate limiting on any API route (leads, images, logo upload)
+9. **🟠 HIGH** — 3 npm vulnerabilities (path-to-regexp ReDoS) via `@astrojs/vercel`
+10. **🟠 HIGH** — 24 color contrast failures (text-gray-400 on white, gold on white)
 
 ## Progress
-- [x] Part 1: Code Architecture — 16 issues found
-- [x] Part 2: Visual & UI — 8 issues found
-- [x] Part 3: Functionality Deep Dive — 4 issues found
-- [x] Part 4: SEO Audit — 3 issues found
-- [x] Part 5: Performance Audit — 4 issues found
-- [x] Part 6: CMS & Content Quality — 2 issues found
-- [x] Part 7: Database & Data Integrity — 1 issue found
-- [x] Part 8: Code Patterns & Best Practices — 4 issues found
-- [x] Part 9: Edge Cases & Stress Testing — pass
+- [x] Part 1: Code Architecture — 25 issues
+- [x] Part 2: Visual & UI — 8 issues
+- [x] Part 3: Functionality Deep Dive — 6 issues
+- [x] Part 4: SEO Audit — 7 issues
+- [x] Part 5: Performance Audit — 4 issues
+- [x] Part 6: CMS & Content Quality — 2 issues
+- [x] Part 7: Database & Data Integrity — 1 issue
+- [x] Part 8: Code Patterns & Best Practices — 10 issues
+- [x] Part 9: Edge Cases & Stress Testing — 1 issue
 - [x] Part 10: WordPress Comparison — completed
 - [x] Part 11: Studio (ERP) Deep Audit — deferred (separate repo)
-- [x] Part 12: Full Code Walkthrough — completed
+- [x] Part 12: Full Code Walkthrough — 3 issues (merged into parts above)
 - [x] Part 13: Improvement Recommendations — completed
 
 ---
@@ -44,10 +49,11 @@
 | TypeScript files | 31 |
 | Astro files | 68 |
 | CSS files | 1 |
-| Components | 45 |
+| Components | 45 (27 main + 18 blocks) |
 | Pages (routes) | 24 |
 | API Routes | 3 |
-| Library files | 21 |
+| Library files | 21 (12 core + 2 block + 7 shortcode) |
+| Layouts | 2 |
 | Total TS+Astro lines | 11,385 |
 | Total CSS lines | 74 |
 | node_modules | 156 MB |
@@ -60,48 +66,118 @@
 
 No CSS files exceed 250-line limit (global.css: 74 lines).
 
+**🟡 MEDIUM — 7 orphaned files (never imported/referenced):**
+
+*Data files (4):*
+- `src/data/legal-privacy.ts` — 2 lines
+- `src/data/legal-terms.ts` — 2 lines
+- `src/data/legal-prizma-express.ts` — 2 lines
+- `src/data/legal-terms-branches.ts` — 2 lines
+
+*Components (3):*
+- `src/components/CategoryGrid.astro` — 56 lines
+- `src/components/LabReviews.astro` — 80 lines
+- `src/components/MultifocalCTA.astro` — 166 lines
+
+**🟡 MEDIUM — CLAUDE.md file tree outdated:**
+- Lists only 14 components but actual codebase has 45
+- Block system (18 components), shortcode system (7 files), CampaignLayout not documented
+- Structure is well-organized despite outdated docs
+
 ### 1.2 TypeScript Quality
 
-**ℹ️ INFO — No TypeScript compiler installed as project dependency**
+**🟠 HIGH — TypeScript & @astrojs/check not installed as dependencies:**
 - `npx tsc --noEmit` fails — TypeScript not in devDependencies
-- `@astrojs/check` not installed either
-- No type checking is run during build or CI
+- `@astrojs/check` not installed — `astro check` prompts for install
+- No type-checking is possible during build or CI
 
-**🟡 MEDIUM — 15 instances of `any` type usage:**
-| File | Line | Context |
-|------|------|---------|
-| `src/data/blog-posts.ts` | 78 | `mapDBPost(row: any)` |
-| `src/data/blog-posts.ts` | 115 | `(post: any)` |
-| `src/data/landing-pages.ts` | 36 | `(page: any)` |
-| `src/lib/pages.ts` | 9 | `blocks: any[]` |
-| `src/lib/shortcodes/products.ts` | 40, 103, 108 | Product rendering |
-| `src/lib/shortcodes/reviews.ts` | 34, 99 | Review rendering |
-| `src/lib/tenant.ts` | 112, 141, 145 | Tenant resolution |
-| `src/pages/api/leads/submit.ts` | 154 | Catch block |
-| `src/pages/api/normalize-logo.ts` | 126 | Catch block |
+**🟡 MEDIUM — 89 instances of `any` type usage across 30 source files:**
+
+Worst offenders:
+| File | Count | Context |
+|------|-------|---------|
+| `src/components/BrandPage.astro` | 7 | `products: any[]`, `(p: any)` |
+| `src/pages/products/index.astro` | 6 | `products: any[]`, `brands: any[]` |
+| `src/pages/en/products/index.astro` | 6 | Same pattern |
+| `src/pages/ru/products/index.astro` | 6 | Same pattern |
+| `src/pages/en/products/[barcode].astro` | 6 | `related: any[]`, `(product as any)` |
+| `src/pages/ru/products/[barcode].astro` | 6 | Same |
+| `src/pages/products/[barcode].astro` | 5 | `related: any[]`, `(product as any).resolved_mode` |
+| `src/lib/tenant.ts` | 3 | `tenant: any`, `sfConfig: any` |
+
+Note: `StorefrontProduct`, `StorefrontBrand` interfaces exist in `src/lib/products.ts` but page files don't use them.
 
 **No `@ts-ignore` or `@ts-expect-error` found** — good.
 
 ### 1.3 Supabase Access Patterns
 
-**🟡 MEDIUM — Direct table access violations (3 instances):**
-| File | Line | Table | Should Use |
-|------|------|-------|------------|
-| `src/lib/pages.ts` | 50 | `storefront_pages` | `v_storefront_pages` |
-| `src/lib/products.ts` | 22 | `ai_content` | View or RPC |
-| `src/pages/api/normalize-logo.ts` | 105, 110 | `brands`, `storefront_config` | Views |
+**42 total `.from()` queries found across src/.**
 
-**🟡 MEDIUM — 10 instances of `.select('*')` instead of specific columns:**
-- `src/data/blog-posts.ts:44,65`
-- `src/lib/brands.ts:44,102`
-- `src/lib/components.ts:23,55`
-- `src/lib/pages.ts:29,78`
-- `src/lib/products.ts:156,181`
+**🟡 MEDIUM — Direct table access violations (4 instances):**
+| File | Line | Table | Should Use | Notes |
+|------|------|-------|------------|-------|
+| `src/lib/products.ts` | 22 | `ai_content` | View | No view exists, need `v_ai_content` |
+| `src/lib/pages.ts` | 50 | `storefront_pages` | `v_storefront_pages` | Preview mode — intentional service_role bypass |
+| `src/pages/api/leads/submit.ts` | 86 | `storefront_components` | `v_storefront_components` | Read via view |
+| `src/pages/api/normalize-logo.ts` | 105, 110 | `brands`, `storefront_config` | Views | Admin API, service_role |
+
+Write operations to `cms_leads` are acceptable (views are read-only).
+
+**🟡 MEDIUM — 17 instances of `.select('*')` instead of specific columns:**
+These all query views (limited exposure), but `select('*')` means new columns are automatically exposed.
+
+**🟡 MEDIUM — `supabase-admin.ts` imported in non-API files:**
+- `src/components/blocks/ProductsBlock.astro:4` — SSR component (safe at runtime but widens surface area)
+- `src/lib/pages.ts:2` — Library file (server-side, but imported broadly)
 
 **No hardcoded tenant IDs** — good.
 **No hardcoded Supabase URLs** — good.
 
 ### 1.4 Security Audit
+
+**🔴 CRITICAL — Image proxy path traversal (`src/pages/api/image/[...path].ts`):**
+- Path param is checked for `frames/` or `media/` prefix but `../` segments are NOT sanitized
+- Attacker could craft: `/api/image/frames/../other-bucket/secret.jpg`
+- Supabase Storage may normalize paths, but application layer doesn't validate
+
+**🟠 HIGH — SSRF via webhook_url in lead submission:**
+- `src/pages/api/leads/submit.ts` accepts `webhook_url` from request body and calls `fetch()` on it
+- Attacker can probe internal infrastructure (e.g., `http://169.254.169.254/latest/meta-data/`)
+- No URL validation, no domain allowlist
+
+**🟠 HIGH — No rate limiting on any API route:**
+- `/api/leads/submit` — unlimited form submissions (spam vector)
+- `/api/image/[...path]` — unlimited signed URL generation
+- `/api/normalize-logo` — unlimited uploads
+
+**🟠 HIGH — No authentication on `/api/normalize-logo`:**
+- Any request with a valid tenant_id can upload/overwrite logos
+- No admin token or session check
+- No file size limit on base64 input
+
+**🟠 HIGH — No phone/email format validation in lead submission:**
+- Any string accepted as `phone` — no regex validation
+- No email format check
+- Allows garbage/spam data
+
+**🟡 MEDIUM — Preview mode has no authentication:**
+- `?preview=true` on any CMS page URL reveals draft content
+- No secret token, session check, or IP restriction
+
+**🟡 MEDIUM — 20 instances of `set:html` (potential XSS vectors):**
+Most critical:
+- `CustomBlock.astro:70` — renders arbitrary HTML from DB (by design for super admin)
+- `BlogPost.astro:99` — blog content from DB
+- `LandingPage.astro:44` — landing page content
+- `TextBlock.astro:20` — text block HTML
+- No server-side HTML sanitization (DOMPurify or equivalent) anywhere
+
+Mitigating: content is admin-controlled (CMS), not user input. But compromised admin = XSS.
+
+**🟡 MEDIUM — Open redirect via DB-sourced redirect_url:**
+- `LeadFormBlock.astro:107` — `window.location.href = redirectUrl` from block config
+- `lead-form.ts:224` — same pattern in shortcode
+- Admin could set to `javascript:alert(1)` or phishing URL
 
 **SERVICE_ROLE_KEY usage (all server-side only — PASS):**
 | File | Context |
@@ -111,27 +187,9 @@ No CSS files exceed 250-line limit (global.css: 74 lines).
 | `src/pages/api/leads/submit.ts:22` | Lead insertion |
 | `src/pages/api/normalize-logo.ts:14` | Logo processing |
 
-**🟡 MEDIUM — 20 instances of `set:html` (potential XSS vectors):**
-Most are in block components rendering CMS content. Key risk areas:
-- `CustomBlock.astro:70` — renders raw HTML from DB
-- `BlogPost.astro:99` — renders blog content from DB
-- `LandingPage.astro:44` — renders landing page content
-- `TextBlock.astro:20` — renders text block HTML
-- `ColumnsBlock.astro:32,34,61,65` — renders icon/text HTML
-
-These are CMS-managed content (trusted source), but a compromised DB or malicious admin could inject XSS. No server-side sanitization is performed.
-
-**🟡 MEDIUM — Lead API accepts unsanitized input:**
-- `src/pages/api/leads/submit.ts` validates required fields (tenant_id, phone) but does not sanitize name, email, message for XSS
-- Data goes directly to Supabase (parameterized queries prevent SQL injection)
-- Webhook URLs from lead forms are not validated
-
-**Image proxy security — PASS:**
-- `src/pages/api/image/[...path].ts` returns 404 for invalid paths
-- Path traversal attempt (`../../etc/passwd`) returns 404
-
 **.env.example exists — PASS**
 **.gitignore includes .env — PASS**
+**No hardcoded secrets in source — PASS**
 
 ### 1.5 Dependencies Audit
 
@@ -139,18 +197,46 @@ These are CMS-managed content (trusted source), but a compromised DB or maliciou
 ```
 path-to-regexp  4.0.0 - 6.2.2 — ReDoS via backtracking regex
   → @vercel/routing-utils → @astrojs/vercel
-Fix: npm audit fix --force (installs @astrojs/vercel@8.0.4, breaking change)
+Fix: Update @astrojs/vercel from 10.0.3 to 10.0.4
 ```
 
-**ℹ️ INFO — node_modules size: 156 MB** (reasonable for Astro project)
+**🟡 MEDIUM — `dotenv` in production dependencies but only used in migration scripts:**
+- Not imported anywhere in `src/` — only in `scripts/seo/migrate-blog-to-db.ts`
+- Should be moved to devDependencies or removed
+
+**ℹ️ INFO — node_modules size: 156 MB** (reasonable)
 
 ### 1.6 Environment & Config
 
-**🟢 LOW — Tailwind custom colors defined in global.css:**
-- `--color-gold: #D4A853` — slightly different from CLAUDE.md documented `#c9a555`
-- Brand colors generally correct across components
+**Astro config — PASS:**
+- `output: 'server'` (SSR), `@astrojs/vercel` adapter
+- i18n: `defaultLocale: 'he'`, locales: `['he', 'en', 'ru']`
+- Sitemap and Partytown integrations configured
 
-**No forbidden blue/purple/green colors detected in computed styles** — PASS (verified via Lighthouse)
+**🟡 MEDIUM — Missing security headers in vercel.json:**
+- Has: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`
+- Missing: `Strict-Transport-Security` (HSTS)
+- Missing: `Content-Security-Policy` (CSP)
+
+**🟠 HIGH — Forbidden colors in ReviewsBlock.astro:**
+- Line 53: avatar color palette includes `#3b82f6` (blue), `#8b5cf6` (violet), `#06b6d4` (cyan), `#ec4899` (pink)
+- Lines 125-128: Google logo uses `#4285F4` (blue) — arguably required for trademark accuracy
+
+**🟡 MEDIUM — Multiple non-canonical gold color variants:**
+| Hex | File | Expected |
+|-----|------|----------|
+| `#D4A853` | `CtaBlock.astro` | Should be `#c9a555` |
+| `#c5a059` | `supersale-takanon/index.astro` (8 occurrences) | Should be `#c9a555` |
+| `#b8860b`, `#d4af37`, `#f5d37a` | `Header.astro`, `MultifocalCTA.astro` | Should be `#c9a555`/`#e8da94` |
+
+**🟡 MEDIUM — Red used for non-error UI:**
+- `text-red-600` on filter reset buttons — should use gold
+- `bg-red-500` for product badges — campaign badge default
+
+**🟡 MEDIUM — Border color mismatch:**
+- `--color-border: #e5e7eb` (Tailwind gray-200) vs documented `#e5e5e5`
+
+**tsconfig.json — PASS:** Uses `astro/tsconfigs/strict`
 
 ---
 
@@ -159,142 +245,91 @@ Fix: npm audit fix --force (installs @astrojs/vercel@8.0.4, breaking change)
 ### 2.1 Homepage
 
 **🟠 HIGH — Hero section displays "בדיקת AI" (test content)**
-- Screenshot: `qa-screenshots/01-homepage-desktop.png`
 - This appears to be leftover test content from AI content generation
-- Subtitle also reads "משקפי ראייה אופנה מהמותגים המובילים בעולם" — generic, may be test
+- Visible as the first thing visitors see
+- Screenshot: `qa-screenshots/01-homepage-desktop.png`
 
 **🟡 MEDIUM — Horizontal overflow on mobile:**
 - scrollWidth (509) > clientWidth (493) = 16px overflow
 - Causes horizontal scrollbar on mobile devices
 - Screenshot: `qa-screenshots/03-homepage-mobile.png`
 
-**Header — PASS:**
-- Logo loads correctly
-- Navigation works
-- Language switcher visible (Hebrew, English, Russian)
-- Booking button ("תיאום בדיקת ראייה") visible
-- Search bar functional
-
+**Header — PASS:** Logo, nav, language switcher, booking button, search all functional
 **Footer — PASS:** Black background, gold accents, correct branding
-
-**Font — PASS:** Rubik (correct, not system default)
-
+**Font — PASS:** Rubik (correct)
 **dir="rtl", lang="he" — PASS**
-
-**No forbidden colors on homepage — PASS** (verified via JS scan)
-
+**No forbidden colors detected via computed style scan — PASS** (class-level violations found separately)
 **Console errors: 0 — PASS**
 
 ### 2.2 Product Pages
 
 **Products listing (`/products/`) — PASS:**
-- 103 products displayed
-- 24 articles per page (pagination works)
-- All images load via `/api/image/` proxy (24/24)
-- 0 broken images
-- Filters: category (sunglasses: 63, eyeglasses: 40), brand filter working
-- Sort options visible (newest, price asc/desc)
+- 103 products, 24 per page, all images load via `/api/image/`, 0 broken images
+- Filters and sort working
 - Screenshot: `qa-screenshots/04-products-desktop.png`
 
 **🟡 MEDIUM — Mobile products page: filters consume entire viewport**
 - User must scroll past all category/brand filters before seeing products
-- Should collapse filters on mobile or move below products
 - Screenshot: `qa-screenshots/13-products-mobile.png`
 
 **Product detail (`/products/0004090`) — PASS:**
-- Breadcrumbs correct: sunglasses > Bvlgari BV40031I
-- Image carousel with thumbnails working
-- AI description in Hebrew
-- WhatsApp CTA with pre-filled message
-- Specs table visible
-- Screenshot: `qa-screenshots/05-product-detail-desktop.png`
-
-**Product detail mobile — PASS:**
-- Large image with carousel arrows
-- Touch-friendly layout
-- Screenshot: `qa-screenshots/14-product-detail-mobile.png`
+- Breadcrumbs, image carousel, AI description, WhatsApp CTA, specs table
+- Schema.org: Product + BreadcrumbList
+- Screenshot: `qa-screenshots/05-product-detail-desktop.png`, `14-product-detail-mobile.png`
 
 ### 2.3 Brand Pages
+- `/brands/` — PASS: Logos, gold borders, product counts
+- Brand detail shows simple grid (SQL 048-050 not run yet — expected)
 
-**Brands listing (`/brands/`) — PASS:**
-- All brands display with logos
-- Gold accent borders on cards
-- Product counts shown
-- Screenshot: `qa-screenshots/06-brands-desktop.png`
-
-**ℹ️ INFO — Brand detail pages show simple grid (not rich pages)**
-- SQL 048-050 for rich brand pages haven't been run yet
-- Expected behavior given current DB state
-- Screenshot: `qa-screenshots/07-brand-cazal-desktop.png`
-
-### 2.4 Category Pages
-- `/categories/` — PASS: 2 categories (eyeglasses, sunglasses) with counts
-- Screenshot: `qa-screenshots/08-categories-desktop.png`
-
-### 2.5 Blog Pages
-- `/בלוג/` — PASS: Blog cards display with images, titles, excerpts
-- RTL layout correct
-- Screenshot: `qa-screenshots/09-blog-desktop.png`
-
-### 2.6 Search
-- `/search?q=ray` — shows "No results found" (no Ray-Ban in catalog — expected)
-- Search UI works correctly
-- Screenshot: `qa-screenshots/10-search-desktop.png`
+### 2.4-2.6 Categories, Blog, Search
+- `/categories/` — PASS: 2 categories with counts
+- `/בלוג/` — PASS: Blog cards with images, RTL correct
+- `/search?q=ray` — shows "No results" (no Ray-Ban in catalog — expected)
 
 ### 2.7 CMS Pages
-- `/supersale/` — 25 sections with content (dark hero, gold CTAs, registration form)
-  - Desktop screenshot: `qa-screenshots/11-supersale-desktop.png`
-  - Mobile screenshot: `qa-screenshots/15-supersale-mobile.png`
+- `/supersale/` — 25 sections rendering correctly (dark hero, gold CTAs)
 
 ### 2.8 i18n Pages
 
-**🟡 MEDIUM — English pages have Hebrew store name:**
+**🟡 MEDIUM — English pages have Hebrew store name in title:**
 - Title: "Products — אופטיקה פריזמה | אופטיקה פריזמה"
 - Store name not translated in header/footer
-- LTR direction correct, lang="en" correct
-- Products load correctly
-- Screenshot: `qa-screenshots/12-en-products-desktop.png`
 
-**🟡 MEDIUM — No hreflang tags on i18n pages**
-- `/en/products/` has zero `<link hreflang>` tags
-- Hurts multilingual SEO
-
-**Console errors across all pages tested: 0 — PASS**
+**LTR/RTL direction correct for all languages — PASS**
 
 ---
 
 ## Part 3: Functionality Deep Dive
 
-### 3.1 Lead Forms & Webhooks
+### 3.1 Lead Forms
 - Lead API validates required fields (tenant_id, phone) — PASS
-- Empty body returns proper error message — PASS
-- XSS payload in name field — accepted without sanitization (see Security section)
+- Empty body returns proper error — PASS
+- See Security section for XSS/SSRF/rate limiting issues
 
 ### 3.2 WhatsApp Integration
-- WhatsApp link format correct: `https://wa.me/972533645404?text=...`
-- Pre-filled message includes product name (URL-encoded Hebrew)
-- PASS
+- Link format correct: `https://wa.me/972533645404?text=...`
+- Pre-filled message with URL-encoded Hebrew product name — PASS
 
 ### 3.3 Image Proxy
-- `/api/image/frames/test` → 404 (correct for invalid path)
-- Path traversal `../../etc/passwd` → 404 (blocked — PASS)
-- Valid images load correctly via proxy — PASS
+- Invalid path → 404 — PASS
+- Path traversal `../../etc/passwd` → 404 — PASS (but `../` within valid prefix not checked)
+- See Security section for detailed traversal concern
 
 ### 3.4 Navigation & Routing
 
 **🔴 CRITICAL — No custom 404 page:**
-- Non-existent URLs show plain "Not Found" text on white background
-- No header, footer, navigation, or branding
+- Non-existent URLs show plain "Not Found" text, no branding
 - Screenshot: `qa-screenshots/16-404-page.png`
-- Impact: Bad UX for visitors from broken WordPress redirects
 
-**Non-existent product barcode** → 302 redirect to `/products` — PASS
-**`/en/` and `/ru/` root** → 302 redirect to `/` — PASS (no loops)
-**All key WordPress URLs tested** → 200 (8/8 pages accessible)
+**Non-existent barcode** → 302 to `/products` — reasonable
+**`/en/` and `/ru/` root** → 302 to `/` — no loops — PASS
+**All 8 key WordPress URLs tested** → 200 — PASS
 
 ### 3.5 Shortcode System
-- 20 `set:html` usages across block components — renders shortcode output
-- Shortcode rendering is server-side (Astro) — reduces client-side XSS risk
+
+**🟡 MEDIUM — Duplicate shortcode replacement bug:**
+- `index.ts`: `result.replace(sc.raw, rendered)` replaces only first occurrence
+- If identical shortcodes appear twice, second stays as raw text
 
 ---
 
@@ -302,42 +337,39 @@ Fix: npm audit fix --force (installs @astrojs/vercel@8.0.4, breaking change)
 
 ### 4.1 Meta Tags
 
-**Homepage SEO — PASS:**
-- Unique title and meta description
-- OG tags present (og:title, og:description, og:image)
-- Schema.org markup present
+**🔴 CRITICAL — No hreflang tags in BaseLayout.astro:**
+- `languageUrls` prop is passed to Header for language switcher but NEVER rendered as `<link rel="alternate" hreflang="...">` in `<head>`
+- Only blog pages have hreflang (hardcoded in blog templates)
+- Homepage, products, brands, categories, CMS pages all lack hreflang
+- Google may show wrong language version or treat as duplicate content
 
-**Product pages SEO — PASS:**
-- Title: "משקפי שמש Bvlgari BV40031I - מסגרת גיאומטרית טורטויז | אופטיקה פריזמה"
-- Description within length limits
-- Schema.org: Product + BreadcrumbList
-- Canonical URL set
+**🟡 MEDIUM — No Twitter Card meta tags:**
+- Missing `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
+- Social previews on Twitter/X will be suboptimal
 
-### 4.2 Technical SEO
+**🟡 MEDIUM — No `og:site_name` tag**
 
-**robots.txt — PASS:**
-```
-User-agent: *
-Allow: /
-Disallow: /api/
-Disallow: /search
-Sitemap: https://opticup-storefront.vercel.app/sitemap-index.xml
-```
+### 4.2 Schema Markup
+- Homepage: LocalBusiness + WebSite + Organization + WebPage + BreadcrumbList — excellent
+- Product detail: Product + BreadcrumbList — good
+- 🟡 MEDIUM — Product listing page lacks CollectionPage/ItemList schema
 
-**Sitemap — PASS:** Generated at build time via `@astrojs/sitemap`
+### 4.3 Technical SEO
 
-**🟡 MEDIUM — Lighthouse SEO scores:**
-| Page | Device | Score |
-|------|--------|-------|
-| Homepage | Desktop | 100 |
-| Products | Mobile | 100 |
+**robots.txt — PASS** (blocks /api/ and /search, references sitemap)
 
-### 4.3 WordPress Migration Coverage
+**🟠 HIGH — Sitemap mostly empty for SSR pages:**
+- `@astrojs/sitemap` only generates entries for prerendered pages
+- With `output: 'server'`, most pages are SSR and will NOT appear in sitemap
+- Severely limits crawl coverage
 
-**🟡 MEDIUM — WordPress has ~70 pages vs our ~20 routes:**
-- All key pages tested return 200 (about, accessibility, privacy, terms, lab, supersale, etc.)
-- 143 redirect rules in vercel.json cover WordPress URL migration
-- Many WordPress brand pages (e.g., /blackfin/, /burberry/) may not have equivalents unless brand pages SQL is run
+**Search page noindex — PASS**
+
+**Vercel.json: 143 redirect rules for WordPress migration — PASS**
+
+**🟢 LOW — Mixed-case barcode redirects:**
+- Some redirects use `/products/SL0999/` vs `/products/sl0089/`
+- Could fail if barcode lookup is case-sensitive
 
 ---
 
@@ -346,8 +378,7 @@ Sitemap: https://opticup-storefront.vercel.app/sitemap-index.xml
 ### 5.1 Build Analysis
 - Build succeeds with zero errors — PASS
 - Build time: 7.29 seconds
-- Output: SSR mode via `@astrojs/vercel` adapter
-- Sitemap generated automatically
+- Output: SSR mode via `@astrojs/vercel`
 
 ### 5.2 Bundle Sizes
 | Asset | Size |
@@ -357,17 +388,10 @@ Sitemap: https://opticup-storefront.vercel.app/sitemap-index.xml
 | Total JS | 197 KB |
 | Total CSS | 77 KB |
 | dist/ total | 7.8 MB |
-| .vercel/output/ | 37 MB |
 
 **🟡 MEDIUM — Blog images not optimized:**
-| Image | Size |
-|-------|------|
-| `blog/images/img_4736.jpeg` | 532 KB |
-| `blog/images/_____-_________-2.jpg` | 363 KB |
-| `images/campaigns/supersale/recommendations.jpg` | 326 KB |
-| `images/campaigns/ss-social-proof.jpg` | 326 KB |
-
-Several blog images exceed 300KB — should be compressed/converted to WebP.
+- `img_4736.jpeg` — 532 KB, `_____-_________-2.jpg` — 363 KB
+- Several exceed 300KB — should compress/convert to WebP
 
 ### 5.3 Lighthouse Scores
 | Page | Device | Accessibility | Best Practices | SEO |
@@ -379,99 +403,108 @@ Several blog images exceed 300KB — should be compressed/converted to WebP.
 - Deprecated APIs: SharedStorage, AttributionReporting (third-party)
 - Third-party cookies detected
 
-**🟠 HIGH — Color contrast failures (24 instances):**
-- `text-gray-400` on white background — fails WCAG AA contrast ratio
-- Affects product card brand labels, brand carousel text
-- Gold accent color on white sections also fails
-- Fix: Use `text-gray-500` or `text-gray-600` instead
-
-**🟡 MEDIUM — Touch target size:**
-- Search submit button below 48x48px minimum
+**🟡 MEDIUM — Touch target size: search submit button below 48x48px minimum**
 
 ---
 
 ## Part 6: CMS & Content Quality
 
-### 6.1 Block System
-- 19 block types defined in code
-- Block rendering via `PageRenderer.astro` → `BlockRenderer.astro` chain
-- `/supersale/` renders 25 sections successfully
+**🟠 HIGH — Homepage hero "בדיקת AI" test content** (duplicate of 2.1)
 
-### 6.2 Content Issues
-
-**🟠 HIGH — Homepage hero shows "בדיקת AI" test content**
-- This is visible as the first thing visitors see
-- Must be updated to real hero content before DNS switch
-
-**ℹ️ INFO — AI-generated product descriptions present and readable**
-- Hebrew quality appears adequate
-- SEO titles follow expected format
+**ℹ️ INFO — AI product descriptions present and readable**
 
 ---
 
 ## Part 7: Database & Data Integrity
 
-### 7.1 Views Integrity
-- `v_storefront_products` returns 103 products — PASS
-- Images start with `/api/image/` prefix — PASS (Golden View verified)
-- `v_storefront_brands` returns brands with counts — PASS
-- `v_storefront_categories` returns 2 categories — PASS
-- `v_public_tenant` returns prizma data — PASS
+- `v_storefront_products` → 103 products — PASS
+- Images start with `/api/image/` — PASS (Golden View verified)
+- `v_storefront_brands` → brands with counts — PASS
+- `v_storefront_categories` → 2 categories — PASS
+- `v_public_tenant` → prizma data — PASS
 
-**🟢 LOW — Only 2 categories exist (eyeglasses: 40, sunglasses: 63)**
-- Total products = 103 (40 + 63)
-- Data seems correct
+**🟢 LOW — Only 2 categories (eyeglasses: 40, sunglasses: 63)**
 
 ---
 
 ## Part 8: Code Patterns & Best Practices
 
 ### 8.1 Error Handling
-- API routes have try/catch blocks — PASS
-- Supabase queries check for errors in most cases
+- API routes have try/catch — PASS
 - Console errors: zero across all tested pages — PASS
+- 🟡 MEDIUM — Webhook status update in leads/submit.ts has no error handling (lines 150-158)
+- 🟡 MEDIUM — Image proxy creates new Supabase client per request (should reuse module-level)
 
-### 8.2 Code Duplication
-**🟢 LOW — Product queries appear in multiple places:**
-- `src/lib/products.ts` — main product queries
-- `src/lib/shortcodes/products.ts` — shortcode product rendering
-- Both query the same view with similar patterns
+### 8.2 Code Quality
+- 🟡 MEDIUM — `getBrandBySlug` fetches ALL brands then filters in memory (should query by slug directly)
+- 🟡 MEDIUM — Tenant cache has no TTL — config changes require cold start/redeploy
+- 🟡 MEDIUM — Tenant resolution order in code differs from CLAUDE.md docs (`?t=` first vs custom_domain first)
+- 🟡 MEDIUM — `search_text ilike` doesn't escape `%` and `_` wildcards in user input
 
 ### 8.3 Accessibility
 
-**🟠 HIGH — Color contrast issues (from Lighthouse):**
-- Gold text (#c9a555/#D4A853) on white background fails WCAG AA (ratio ~3.4:1, needs 4.5:1)
-- `text-gray-400` on white background fails (ratio ~3.9:1)
+**🔴 CRITICAL — No skip navigation link:**
+- No "Skip to main content" link in BaseLayout or Header
+- `<main>` element has no `id` attribute
+- Keyboard users must tab through entire header/nav on every page
 
-**🟡 MEDIUM — Touch target size below minimum on search button**
+**🟠 HIGH — Color contrast failures (24 instances from Lighthouse):**
+- Gold `#c9a555` on white: ~2.9:1 ratio (needs 4.5:1 for AA)
+- `text-gray-400` (#9ca3af) on white: ~2.9:1 ratio
+- Affects product cards, brand labels, accent text
+
+**🟠 HIGH — Form inputs lack labels (placeholder-only):**
+- `ContactForm.astro` — name/phone/email have no `<label>` elements
+- `ContactBlock.astro` — same
+- Search inputs across site lack labels
+- Fails WCAG 2.1 SC 1.3.1 and SC 3.3.2
+
+**🟡 MEDIUM — Product thumbnail/search result images have empty alt=""**
+- Should have descriptive alt text
+
+**🟡 MEDIUM — Carousel aria-labels swapped in RTL:**
+- `products/[barcode].astro:183-184`: `carousel-next` has `aria-label="Previous image"` and vice versa
 
 ### 8.4 RTL Implementation
-- `dir="rtl"` set on HTML for Hebrew — PASS
-- `dir="ltr"` set for English pages — PASS
-- Flexbox/grid layouts flip correctly — PASS (verified visually)
 
-### 8.5 Testing
+**🟠 HIGH — Carousel arrows use physical left/right positioning:**
+- 10+ carousel components use `left-0`/`right-0` instead of `start-0`/`end-0`
+- Affects: FeaturedProducts, BrandsCarousel, ShortsSection, BlogPreview, ProductsBlock, BrandsBlock, BlogCarouselBlock, VideoBlock, ReviewsBlock, product detail
+- Arrows won't flip correctly in RTL
 
-**🟠 HIGH — Zero tests exist:**
-- No `.test.ts`, `.spec.ts` files found
-- No vitest, jest, or any test framework configured
-- No CI/CD test pipeline
-- Critical for a production storefront
+**🟡 MEDIUM — Header nav underline animation uses `left-0`** — should use `inset-inline-start: 0`
+**🟡 MEDIUM — ContactBlock hardcodes `text-right`** for all languages
+**🟡 MEDIUM — LabReviews uses physical `border-r` and `pr-4`** instead of logical `border-e`/`pe-4`
+**🟡 MEDIUM — ProductCard badge positioned with `right-2`** instead of `end-2`
+
+**Correct RTL implementations:**
+- `dir="rtl"` on HTML for Hebrew, `dir="ltr"` for EN/RU — PASS
+- Keyboard nav in lightbox correctly swaps Arrow keys for RTL — good
+- `BlogPost.astro` and `BlockWrapper.astro` use conditional text alignment — good
+
+### 8.5 Hardcoded Tenant Data
+
+**🟡 MEDIUM — Header nav links hardcoded (Prizma-specific):**
+- Lines 33-39: `/product-category/...`, `/multifocal-guide/`, `/lab/`
+- Violates Rule 9 for multi-tenant setup
+
+**🟢 LOW — Fallback logo is Prizma-specific:**
+- `Header.astro:52`: `/images/prizma-logo-site.png`
 
 ---
 
 ## Part 9: Edge Cases & Stress Testing
 
-### 9.1 Edge Cases Tested
 | Test | Result |
 |------|--------|
 | Non-existent product barcode | 302 → /products (handled) |
 | Non-existent page slug | Plain "Not Found" (needs 404 page) |
-| Path traversal on image proxy | 404 (blocked) |
+| Path traversal on image proxy | 404 for `../../etc/passwd` |
 | /en/ root | 302 → / (no loop) |
 | /ru/ root | 302 → / (no loop) |
-| XSS in search query | Page renders (need to verify sanitization) |
 | Empty lead form submission | Proper validation error |
+
+**🟡 MEDIUM — Duplicate shortcode not replaced** (mentioned in Part 3.5)
 
 ---
 
@@ -479,16 +512,11 @@ Several blog images exceed 300KB — should be compressed/converted to WebP.
 
 ### 10.1 Page Coverage
 - WordPress has ~70 pages in sitemap
-- Our storefront has ~20 routes + CMS pages
+- Our storefront has ~24 routes + CMS pages
 - 143 vercel.json redirects cover WordPress URL migration
 - All 8 tested key pages return 200
 
-### 10.2 Missing WordPress Pages
-Many WordPress brand pages exist at root level (e.g., `/blackfin/`, `/burberry/`). These depend on:
-1. SQL 048-050 being run (brand pages schema)
-2. Brand page content being seeded
-
-### 10.3 Key WordPress URLs Tested
+### 10.2 Key WordPress URLs Tested
 | URL | Status |
 |-----|--------|
 | /about/ | 200 |
@@ -500,102 +528,110 @@ Many WordPress brand pages exist at root level (e.g., `/blackfin/`, `/burberry/`
 | /supersale-takanon/ | 200 |
 | /premiummultisale/ | 200 |
 
+### 10.3 Missing Coverage
+- Many WordPress brand pages at root level (/blackfin/, /burberry/, etc.) depend on SQL 048-050
+- vercel.json has 26 brand slug redirects to `/brands/` paths
+
 ---
 
 ## Part 11: Studio (ERP) Deep Audit
 
-**Deferred** — Studio audit requires localhost:3000 (ERP repo). The storefront audit focuses on the storefront repo only. Studio should be audited separately.
+**Deferred** — requires localhost:3000 (ERP repo). Should be audited separately.
 
 ---
 
 ## Part 12: Full Code Walkthrough
 
-### 12.1 Code Quality Metrics
+### Code Quality Metrics
 | Metric | Value |
 |--------|-------|
 | Total TypeScript + Astro files | 99 |
 | Total lines of code | 11,385 |
-| Total CSS lines | 74 |
 | Components | 45 |
 | Pages | 24 |
 | API routes | 3 |
 | Library files | 21 |
-| Test files | 0 |
-| `any` type usage | 15 instances |
+| Test files | **0** |
+| `any` type usage | 89 instances |
 | `set:html` usage | 20 instances |
-| `.select('*')` usage | 10 instances |
-| Direct table access | 3 instances |
-| Service role key usage | 4 files (all server-side) |
+| `.select('*')` usage | 17 instances |
+| Direct table access | 4 instances |
 
-### 12.2 Critical File Summary
+### Critical File Summary
 
-**`src/lib/tenant.ts` (tenant resolution):**
-- 3 `any` types — should be typed
-- Two-stage fallback for missing columns — good defensive coding
-- Domain-based tenant resolution implemented for Phase 7
-
-**`src/lib/products.ts` (product queries):**
-- Direct access to `ai_content` table (line 22) — violation
-- Uses `.select('*')` — should specify columns
-
-**`src/lib/pages.ts` (CMS pages):**
-- Direct access to `storefront_pages` table (line 50) — violation
-- `blocks: any[]` type — should define block interface
-
-**`src/pages/api/image/[...path].ts` (image proxy):**
-- Security: path traversal handled (returns 404)
-- Service role key server-side only — good
-
-**`src/pages/api/leads/submit.ts` (lead submission):**
-- Validates required fields
-- No XSS sanitization on input
-- Webhook URL not validated before sending data
-
-**`src/components/blocks/CustomBlock.astro` (raw HTML):**
-- Renders DB content via `set:html` — XSS risk from compromised admin/DB
-- Used for advanced campaign pages (super admin only)
+| File | Lines | Key Concerns |
+|------|-------|-------------|
+| `src/lib/tenant.ts` | 206 | 3x `any`, cache no TTL, resolution order differs from docs |
+| `src/lib/products.ts` | 257 | Direct `ai_content` access, search ilike not escaped |
+| `src/lib/brands.ts` | 124 | `getBrandBySlug` fetches ALL then filters in memory |
+| `src/lib/pages.ts` | 85 | Direct table in preview, preview has no auth |
+| `src/lib/shortcodes/index.ts` | 67 | Duplicate shortcode replacement bug |
+| `src/pages/api/image/[...path].ts` | 43 | Path traversal, new client per request |
+| `src/pages/api/leads/submit.ts` | 173 | SSRF, no rate limit, no input validation |
+| `src/pages/api/normalize-logo.ts` | 130 | No auth, no file size limit |
+| `src/components/blocks/CustomBlock.astro` | 71 | Raw HTML via set:html (by design) |
+| `src/components/Header.astro` | 220 | Hardcoded nav links, hardcoded Hebrew labels |
+| `src/components/ProductCard.astro` | 267 | Default red badge, Hebrew aria-labels |
 
 ---
 
 ## Part 13: Improvement Recommendations
 
-### CRITICAL Fixes (Must Do Before DNS Switch)
-1. **Create custom 404 page** — Add `src/pages/404.astro` with header, footer, branding, and back-to-home CTA
+### 🔴 CRITICAL Fixes (Must Do Before DNS Switch)
+1. **Create custom 404 page** — `src/pages/404.astro` with branding and navigation
+2. **Add hreflang tags to BaseLayout** — render `<link rel="alternate" hreflang>` from `languageUrls` prop
+3. **Add skip navigation link** — "Skip to main content" in BaseLayout, `id="main"` on `<main>`
+4. **Sanitize image proxy paths** — reject `../` segments in `/api/image/[...path].ts`
+5. **Add test framework** — install vitest, write tests for tenant resolution, product queries, image proxy, lead validation
 
-### HIGH Priority (Should Do Before DNS Switch)
-2. **Fix homepage hero text** — Replace "בדיקת AI" with real hero content in DB
-3. **Fix color contrast** — Replace `text-gray-400` with `text-gray-500` in product cards and brand labels
-4. **Split oversized files** — BrandPage.astro (565 lines) and [barcode].astro (453 lines)
-5. **Update @astrojs/vercel** — Fix 3 high-severity npm vulnerabilities
-6. **Run brand pages SQL** — SQL 048-050 needed for brand page routes
-7. **Add hreflang tags** — Missing on all i18n pages
-8. **Fix mobile horizontal overflow** — 16px overflow on homepage mobile
-9. **Translate store name** — English/Russian pages show Hebrew store name
+### 🟠 HIGH Priority (Should Do Before DNS Switch)
+6. **Fix homepage hero text** — replace "בדיקת AI" with real content in DB
+7. **Validate webhook_url** — allowlist domains or restrict to HTTPS only in lead submission
+8. **Add rate limiting** — Vercel Edge middleware or in-handler throttling for API routes
+9. **Update @astrojs/vercel to 10.0.4** — fixes path-to-regexp ReDoS vulnerability
+10. **Fix color contrast** — replace `text-gray-400` with `text-gray-500/600`, ensure gold text meets 4.5:1
+11. **Add form labels** — `<label>` elements for all inputs in ContactForm, ContactBlock, search
+12. **Fix carousel RTL** — replace physical `left-0`/`right-0` with logical `start-0`/`end-0` (10+ files)
+13. **Add auth to normalize-logo API** — admin token or session check
+14. **Add phone/email validation** — regex validation in lead submission
+15. **Fix ReviewsBlock forbidden colors** — replace blue/violet/cyan avatar palette with brand-safe colors
+16. **Split oversized files** — BrandPage.astro (565 lines) and [barcode].astro (453 lines)
+17. **Fix sitemap for SSR** — implement dynamic sitemap generation or prerender key pages
+18. **Add hreflang to i18n product/category pages**
+19. **Install TypeScript and @astrojs/check** as devDependencies
 
-### MEDIUM Priority (Can Do After DNS Switch)
-10. Replace `any` types with proper interfaces (15 instances)
-11. Replace `.select('*')` with specific columns (10 instances)
-12. Fix direct table access violations (3 instances — use views)
-13. Optimize blog images (convert to WebP, compress to <100KB)
-14. Add input sanitization to lead form API
-15. Collapse filters on mobile products page
-16. Fix touch target size on search button
-17. Install TypeScript as dev dependency for type checking
-18. Add `@astrojs/check` for Astro-specific type checking
+### 🟡 MEDIUM Priority (Can Do After DNS Switch)
+20. Replace 89 `any` usages with proper types (interfaces exist)
+21. Replace 17x `.select('*')` with specific columns
+22. Fix direct table access violations (create `v_ai_content` view)
+23. Optimize blog images (compress to <100KB, convert to WebP)
+24. Add Twitter Card meta tags
+25. Add HSTS header to vercel.json
+26. Fix mobile horizontal overflow on homepage
+27. Collapse filters on mobile products page
+28. Fix touch target size on search button
+29. Translate store name for EN/RU pages
+30. Standardize gold hex values (eliminate #D4A853, #c5a059, #d4af37)
+31. Add authentication to preview mode
+32. Fix Header nav underline for RTL (`left-0` → `inset-inline-start`)
+33. Fix duplicate shortcode replacement bug
+34. Clean up 7 orphaned files
+35. Add `og:site_name` meta tag
+36. Fix carousel aria-label swap in RTL
 
-### LOW Priority (Nice to Have)
-19. Add test framework (vitest) and write tests for critical paths
-20. Validate webhook URLs before sending data
-21. Reduce product query duplication between products.ts and shortcodes/products.ts
-22. Add skip navigation link for accessibility
-23. Document gold color discrepancy (#D4A853 in code vs #c9a555 in CLAUDE.md)
-24. Add CSP headers
-
-### Architecture Recommendations
-- Consider adding server-side HTML sanitization (DOMPurify) for CMS content rendered via `set:html`
-- Implement structured error pages (404, 500) with consistent branding
-- Add CI pipeline with type checking and basic tests before merge to main
-- Consider image optimization pipeline (sharp/squoosh) for blog images at build time
+### 🟢 LOW Priority (Nice to Have)
+37. Add CSP headers
+38. Move `dotenv` to devDependencies
+39. Add TTL to tenant cache
+40. Reuse module-level Supabase client in image proxy
+41. Make `getBrandBySlug` query by slug directly instead of fetching all
+42. Escape `%` and `_` in search ilike queries
+43. Add descriptive alt text to thumbnail/search result images
+44. Consistent focus indicators across form inputs
+45. Remove Prizma-specific hardcoded nav links for multi-tenant
+46. Fix ProductCard default red badge color
+47. Fix ContactBlock hardcoded `text-right`
+48. Add webhook error handling in lead submission status update
 
 ---
 
@@ -603,25 +639,27 @@ Many WordPress brand pages exist at root level (e.g., `/blackfin/`, `/burberry/`
 
 ### All Routes/Pages
 **Static:** `/`, `/products/`, `/brands/`, `/categories/`, `/search`, `/בלוג/`
-**Dynamic:** `/products/[barcode]`, `/brands/[slug]`, `/category/[slug]`, `/[...slug]` (CMS catch-all)
+**Dynamic:** `/products/[barcode]`, `/brands/[slug]`, `/category/[slug]`, `/[...slug]` (CMS)
 **i18n:** `/en/products/`, `/en/products/[barcode]`, `/ru/products/`, `/ru/products/[barcode]`, `/en/[...slug]`, `/ru/[...slug]`
 **API:** `/api/image/[...path]`, `/api/leads/submit`, `/api/normalize-logo`
 
-### CMS Pages Available
-`/supersale/`, `/successfulsupersale/`, `/supersale-takanon/`, `/premiummultisale/`, `/about/`, `/accessibility/`, `/privacy/`, `/terms/`, `/lab/` + others via catch-all
-
 ### Supabase Views Used
-`v_storefront_products`, `v_storefront_brands`, `v_storefront_categories`, `v_public_tenant`, `v_storefront_config`, `v_storefront_pages`, `v_storefront_blog_posts`, `v_storefront_brand_page`, `v_storefront_reviews`, `v_storefront_components`, `v_admin_pages`
+`v_storefront_products`, `v_storefront_brands`, `v_storefront_categories`, `v_public_tenant`, `v_storefront_config`, `v_storefront_pages`, `v_storefront_blog_posts`, `v_storefront_brand_page`, `v_storefront_reviews`, `v_storefront_components`, `v_admin_pages`, `v_admin_product_picker`
+
+### Lighthouse Report Files
+- `qa-screenshots/report.html` — full Lighthouse HTML report
+- `qa-screenshots/report.json` — machine-readable Lighthouse data
 
 ### Vercel Deployment
 - 143 redirect rules configured
-- Auto-deploys from `main` branch
 - SSR mode via `@astrojs/vercel` adapter
+- Security headers: X-Content-Type-Options, X-Frame-Options, Referrer-Policy
 
 ### Patterns Worth Noting
-- Clean separation: Views for data, API routes for mutations
+- Clean view-based architecture (42 queries, only 4 direct table accesses)
 - Image proxy pattern works well — no direct storage URLs exposed
-- Block-based CMS system is well-structured (19 block types)
+- Block-based CMS with 19 block types is well-structured
 - Shortcode system adds flexibility for custom blocks
 - UTM tracking captured via sessionStorage → lead forms
 - Partytown configured for analytics (zero main-thread impact)
+- Tenant resolution with multi-domain support is solid
