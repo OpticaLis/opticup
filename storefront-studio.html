@@ -94,6 +94,7 @@
       <button class="studio-tab" data-tab="reviews" onclick="switchStudioTab('reviews')">⭐ ביקורות</button>
       <button class="studio-tab" data-tab="templates" id="tab-btn-templates" onclick="switchStudioTab('templates')">📑 תבניות</button>
       <button class="studio-tab" data-tab="shortcodes" id="tab-btn-shortcodes" onclick="switchStudioTab('shortcodes')">📦 שורטקודים</button>
+      <button class="studio-tab" data-tab="media" onclick="switchStudioTab('media')">🖼️ מדיה</button>
       <a href="storefront-blog.html" class="studio-tab" style="text-decoration:none">📝 ניהול בלוג</a>
     </div>
 
@@ -154,6 +155,13 @@
         <div class="studio-empty">טוען...</div>
       </div>
     </div>
+
+    <!-- Tab: Media Library -->
+    <div class="studio-tab-content" id="tab-media">
+      <div id="studio-media-content">
+        <div class="studio-empty">טוען...</div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -201,6 +209,7 @@
 <script src="modules/storefront/studio-leads.js"></script>
 <script src="modules/storefront/studio-templates.js"></script>
 <script src="modules/storefront/studio-shortcodes.js"></script>
+<script src="modules/storefront/studio-media.js"></script>
 <script src="modules/storefront/studio-brands.js"></script>
 <script src="modules/storefront/studio-ai-prompt.js"></script>
 <script src="modules/storefront/studio-ai-diff.js"></script>
@@ -213,6 +222,7 @@ function switchStudioTab(tab) {
   if (tab === 'reviews') loadReviews();
   if (tab === 'templates') renderTemplatesManager();
   if (tab === 'shortcodes' && !shortcodePresets.length) loadShortcodePresets();
+  if (tab === 'media' && !mediaLoaded) loadMediaLibrary();
 }
 
 function applyStudioPermissions() {
