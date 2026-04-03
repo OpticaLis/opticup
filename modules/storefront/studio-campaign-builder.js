@@ -398,20 +398,26 @@ async function cbDelete() {
   const pageId = campaignBuilderState.generatedPageId;
   if (!pageId) return;
 
-  if (!confirm('למחוק את הטיוטה?')) return;
-
-  try {
-    await sb.from('storefront_pages')
-      .update({ status: 'archived' })
-      .eq('id', pageId);
-
-    showToast('הטיוטה נמחקה', 'info');
-    closeCampaignBuilder();
-    if (typeof loadStudioPages === 'function') await loadStudioPages();
-  } catch (e) {
-    console.error('[CampaignBuilder] Delete error:', e);
-    showToast('שגיאה במחיקה: ' + e.message, 'error');
-  }
+  Modal.confirm({
+    title: 'מחיקת טיוטה',
+    message: 'למחוק את הטיוטה?',
+    confirmText: 'מחק',
+    cancelText: 'ביטול',
+    danger: true,
+    onConfirm: async function() {
+      try {
+        await sb.from('storefront_pages')
+          .update({ status: 'archived' })
+          .eq('id', pageId);
+        showToast('הטיוטה נמחקה', 'info');
+        closeCampaignBuilder();
+        if (typeof loadStudioPages === 'function') await loadStudioPages();
+      } catch (e) {
+        console.error('[CampaignBuilder] Delete error:', e);
+        showToast('שגיאה במחיקה: ' + e.message, 'error');
+      }
+    }
+  });
 }
 
 function cbEditBlocks() {

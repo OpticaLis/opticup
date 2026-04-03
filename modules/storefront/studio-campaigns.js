@@ -1,6 +1,7 @@
 // modules/storefront/studio-campaigns.js
-// Campaigns management: list campaigns, view pages per campaign, CRUD, reorder
+// Campaigns management: list campaigns, view pages per campaign, CRUD
 // Integrated into the Pages tab as a third view (alongside "כל העמודים" and "עמודי מותג")
+// Campaign page list reuses the SAME renderPageList() from studio-pages.js
 
 let studioCampaigns = [];
 let selectedCampaignId = null;
@@ -12,6 +13,9 @@ const CAMPAIGN_STATUS = {
   paused: { label: 'מושהה', color: '#ca8a04', bg: '#fef9c3' },
   ended:  { label: 'הסתיים', color: '#6b7280', bg: '#f3f4f6' },
 };
+
+// Active campaign filter — when set, renderFilteredPageList filters by this campaign
+window.studioActiveCampaignId = null;
 
 // ============================================================
 // Toggle to campaigns view
@@ -32,6 +36,9 @@ function toggleCampaignsView() {
   if (brandList) brandList.style.display = 'none';
   if (campaignList) campaignList.style.display = 'block';
   if (editorArea) editorArea.innerHTML = '<div class="studio-empty-editor"><p>בחר קמפיין מהרשימה</p></div>';
+
+  // Clear campaign filter when entering campaigns view (pages show inside editor, not in page-list)
+  window.studioActiveCampaignId = null;
 
   if (!campaignsLoaded) {
     loadCampaigns();
@@ -135,7 +142,7 @@ async function selectCampaign(campaignId) {
   const editorArea = document.getElementById('studio-editor');
   if (!editorArea) return;
 
-  // Load this campaign's pages
+  // Load this campaign's pages into studioPages-compatible array
   let pages = [];
   try {
     const { data, error } = await sb.from('v_admin_pages')
@@ -145,7 +152,7 @@ async function selectCampaign(campaignId) {
       .order('sort_order', { ascending: true })
       .order('slug', { ascending: true });
     if (error) throw error;
-    pages = (data || []).filter(p => p.status !== 'archived');
+    pages = data || [];
   } catch (err) {
     console.error('[Campaigns] Load campaign pages error:', err);
   }
@@ -155,6 +162,7 @@ async function selectCampaign(campaignId) {
 
 // ============================================================
 // Render campaign detail (right panel)
+// Uses the SAME page card rendering as "כל העמודים"
 // ============================================================
 
 function renderCampaignDetail(campaign, pages) {
@@ -163,7 +171,7 @@ function renderCampaignDetail(campaign, pages) {
 
   const s = CAMPAIGN_STATUS[campaign.status] || CAMPAIGN_STATUS.active;
 
-  // Campaign header with editable fields
+  // Campaign header
   const headerHtml = `
     <div class="camp-detail-header">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
@@ -179,53 +187,45 @@ function renderCampaignDetail(campaign, pages) {
         <button class="btn btn-sm" onclick="editCampaignDetails('${campaign.id}')" style="background:var(--g100);">✏️ ערוך פרטים</button>
         <button class="btn btn-sm" onclick="changeCampaignStatus('${campaign.id}')" style="background:var(--g100);">🔄 שנה סטטוס</button>
         <button class="btn btn-sm" onclick="addPageToCampaign('${campaign.id}')" style="background:linear-gradient(135deg,#c9a555,#e8da94);color:#000;font-weight:700;border:none;">+ עמוד לקמפיין</button>
-        <button class="btn btn-sm" onclick="openCampaignAIBuilder('${campaign.id}')" style="background:linear-gradient(135deg,#1a1a1a,#333);color:#e8da94;font-weight:700;border:1px solid #c9a555;">🚀 קמפיין AI</button>
         <button class="btn btn-sm" onclick="deleteCampaign('${campaign.id}')" style="color:#ef4444;">🗑️</button>
       </div>
     </div>`;
 
-  // Pages list
+  // AI Prompt Box
+  const aiPromptHtml = `
+    <div class="camp-ai-box">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:1.1rem;">🤖</span>
+        <span style="font-weight:700;font-size:.95rem;">AI — בנה או ערוך עמודים בקמפיין</span>
+      </div>
+      <textarea id="camp-ai-prompt" class="studio-field" rows="3" placeholder="כתוב מה אתה רוצה...&#10;לדוגמא: &quot;תבנה עמוד תקנון לקמפיין&quot;&#10;&quot;תבנה עמוד הצלחה שמפנה לוואטסאפ&quot;" style="resize:vertical;min-height:80px;"></textarea>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:8px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--g500);cursor:pointer;">
+          <input type="checkbox" id="camp-ai-context" checked>
+          קח הקשר מעמודי הקמפיין הקיימים
+        </label>
+        <button class="btn btn-sm" onclick="campAISend('${campaign.id}')" id="camp-ai-send-btn"
+          style="background:linear-gradient(135deg,#1a1a1a,#333);color:#e8da94;font-weight:700;border:1px solid #c9a555;padding:6px 20px;">
+          🤖 שלח
+        </button>
+      </div>
+    </div>`;
+
+  // Page list — reuse the SAME rendering as "כל העמודים"
+  // We render into a dedicated container and use the shared renderPageList function
   let pagesHtml = '';
   if (pages.length === 0) {
-    pagesHtml = '<div style="text-align:center;padding:40px 20px;color:var(--g400);">אין עמודים בקמפיין הזה עדיין.<br>לחצו "+ עמוד לקמפיין" להוספה.</div>';
+    pagesHtml = '<div style="text-align:center;padding:40px 20px;color:var(--g400);">אין עמודים בקמפיין הזה עדיין.<br>לחצו "+ עמוד לקמפיין" להוספה, או השתמשו ב-AI.</div>';
   } else {
-    const PAGE_TYPE_ICONS = { homepage: '🏠', legal: '📜', campaign: '🎯', guide: '📖', custom: '📄' };
-    const STATUS_BADGES = {
-      published: { label: 'פורסם', cls: 'badge-published' },
-      draft:     { label: 'טיוטה', cls: 'badge-draft' },
-      archived:  { label: 'ארכיון', cls: 'badge-archived' },
-    };
-
-    const rows = pages.map((p, idx) => {
-      const icon = PAGE_TYPE_ICONS[p.page_type] || '📄';
-      const statusBadge = STATUS_BADGES[p.status] || STATUS_BADGES.draft;
-      const title = p.title || p.slug || '(ללא שם)';
-      const slug = (p.slug || '').replace(/^\/|\/$/g, '');
-
-      return `<div class="camp-page-row" draggable="true"
-        ondragstart="campDragStart(event,'${p.id}',${idx})"
-        ondragover="campDragOver(event)"
-        ondrop="campDrop(event,'${p.id}',${idx},'${campaign.id}')">
-        <div class="camp-drag-handle" title="גרור לשינוי סדר">⋮⋮</div>
-        <span style="font-size:1rem;">${icon}</span>
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(title)}</div>
-          <div style="font-size:.75rem;color:var(--g400);">/${escapeHtml(slug)}</div>
-        </div>
-        <span class="studio-badge ${statusBadge.cls}">${statusBadge.label}</span>
-        <div style="display:flex;gap:4px;">
-          <button class="btn btn-sm" onclick="event.stopPropagation();campOpenPage('${p.id}')" title="ערוך" style="padding:4px 8px;font-size:.75rem;background:var(--g100);">✏️</button>
-          <button class="btn btn-sm" onclick="event.stopPropagation();campRemovePage('${p.id}','${campaign.id}')" title="הסר מקמפיין" style="padding:4px 8px;font-size:.75rem;color:#ef4444;background:var(--g100);">✕</button>
-        </div>
-      </div>`;
-    }).join('');
-
-    pagesHtml = `<div class="camp-pages-list">${rows}</div>`;
+    pagesHtml = renderCampaignPageList(pages, campaign.id);
   }
 
   editorArea.innerHTML = `
     <div class="camp-detail" style="padding:20px;">
       ${headerHtml}
+      <div style="margin-top:16px;">
+        ${aiPromptHtml}
+      </div>
       <div style="margin-top:20px;border-top:1px solid var(--g200);padding-top:16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <h3 style="margin:0;font-size:1rem;font-weight:700;">עמודי הקמפיין (${pages.length})</h3>
@@ -235,84 +235,192 @@ function renderCampaignDetail(campaign, pages) {
     </div>
     <style>
       .camp-detail-header { padding-bottom: 16px; border-bottom: 1px solid var(--g200); }
-      .camp-page-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--g200); border-radius: 8px; margin-bottom: 6px; background: #fff; cursor: pointer; transition: all .15s; }
-      .camp-page-row:hover { border-color: var(--primary); background: var(--g50); }
-      .camp-page-row.drag-over { border-color: #c9a555; border-style: dashed; background: #fefdf8; }
-      .camp-drag-handle { cursor: grab; color: var(--g300); font-size: .8rem; user-select: none; padding: 0 2px; }
-      .camp-drag-handle:active { cursor: grabbing; }
+      .camp-ai-box { background: #fefdf8; border: 1px solid #e8da94; border-radius: 10px; padding: 16px; }
+      .camp-unlink-btn { padding: 2px 6px; font-size: .7rem; color: #ef4444; background: var(--g100); border: 1px solid var(--g200); border-radius: 4px; cursor: pointer; white-space: nowrap; }
+      .camp-unlink-btn:hover { background: #fee2e2; border-color: #ef4444; }
     </style>`;
 }
 
 // ============================================================
-// Drag and drop reorder
+// Render campaign page list using the SAME card format as "כל העמודים"
+// This is a clone of the renderPageList logic from studio-pages.js
+// with an extra "remove from campaign" button per page
 // ============================================================
 
-let _campDragId = null;
-let _campDragIdx = null;
+function renderCampaignPageList(pages, campaignId) {
+  const showSettings = typeof canSee === 'function' ? canSee('page_settings_button') : true;
+  const showToggle = typeof canSee === 'function' ? canSee('status_toggle') : true;
 
-function campDragStart(event, pageId, idx) {
-  _campDragId = pageId;
-  _campDragIdx = idx;
-  event.dataTransfer.effectAllowed = 'move';
-  event.dataTransfer.setData('text/plain', pageId);
-  // Slight delay to allow drag ghost
-  setTimeout(() => event.target.style.opacity = '0.5', 0);
+  const PAGE_TYPE_ICONS_LOCAL = { homepage: '🏠', legal: '📜', campaign: '🎯', guide: '📖', custom: '📄' };
+
+  return pages.map(p => {
+    const icon = PAGE_TYPE_ICONS_LOCAL[p.page_type] || '📄';
+    const statusClass = p.status === 'published' ? 'badge-published' : p.status === 'archived' ? 'badge-archived' : 'badge-draft';
+    const statusText = p.status === 'published' ? 'פורסם' : p.status === 'archived' ? 'ארכיון' : 'טיוטה';
+    const title = escapeHtml(p.title || p.slug);
+    const slug = escapeHtml(p.slug);
+    const edited = typeof timeAgo === 'function' ? timeAgo(p.updated_at) : '';
+
+    // SEO score badge
+    let seoBadge = '';
+    if (typeof calculateSeoScore === 'function') {
+      const { score } = calculateSeoScore(p);
+      const color = typeof getSeoScoreColor === 'function' ? getSeoScoreColor(score) : '';
+      seoBadge = `<span class="seo-score-mini ${color}">${score}</span>`;
+    }
+
+    const settingsBtn = showSettings ? `<button title="הגדרות" onclick="event.stopPropagation();editPageSettings('${p.id}')">⚙️</button>` : '';
+    const dupBtn = `<button title="שכפל" onclick="event.stopPropagation();duplicatePage('${p.id}')">📋</button>`;
+    const toggleBtn = showToggle
+      ? `<button title="${p.status === 'published' ? 'העבר לטיוטה' : 'פרסם'}" onclick="event.stopPropagation();togglePageStatus('${p.id}','${p.status}')">${p.status === 'published' ? '📤' : '📥'}</button>`
+      : '';
+    const archiveBtn = !p.is_system && p.status !== 'archived'
+      ? `<button title="העבר לארכיון" onclick="event.stopPropagation();archivePage('${p.id}')">📦</button>` : '';
+    const restoreBtn = p.status === 'archived'
+      ? `<button title="שחזר" onclick="event.stopPropagation();restorePage('${p.id}')">🔄</button>` : '';
+    const systemLock = p.is_system ? `<span title="עמוד מערכת">🔒</span>` : '';
+
+    // Extra: remove from campaign button
+    const unlinkBtn = `<button class="camp-unlink-btn" title="הסר מקמפיין" onclick="event.stopPropagation();campRemovePage('${p.id}','${campaignId}')">✕ הסר</button>`;
+
+    const tagBadges = typeof renderTagBadges === 'function' ? renderTagBadges(p.tags) : '';
+
+    return `<div class="studio-page-item" data-id="${p.id}" onclick="campOpenPage('${p.id}')">
+      <div class="studio-page-row-top">
+        <span class="studio-page-icon">${icon}</span>
+        <div class="studio-page-info">
+          <div class="studio-page-title">${title}</div>
+          <div class="studio-page-slug-time"><span class="studio-page-slug">/${slug}</span><span class="studio-page-edited">${edited}</span></div>
+          ${tagBadges}
+        </div>
+        ${seoBadge}
+      </div>
+      <div class="studio-page-meta">
+        <span class="studio-badge ${statusClass}">${statusText}</span>${systemLock}
+        <div class="studio-page-actions-mini">${dupBtn}${settingsBtn}${toggleBtn}${archiveBtn}${restoreBtn}${unlinkBtn}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function campDragOver(event) {
-  event.preventDefault();
-  event.dataTransfer.dropEffect = 'move';
-  // Visual feedback
-  const row = event.target.closest('.camp-page-row');
-  document.querySelectorAll('.camp-page-row').forEach(r => r.classList.remove('drag-over'));
-  if (row) row.classList.add('drag-over');
-}
+// ============================================================
+// AI Prompt Box — send prompt to generate-campaign-page Edge Function
+// ============================================================
 
-async function campDrop(event, targetId, targetIdx, campaignId) {
-  event.preventDefault();
-  document.querySelectorAll('.camp-page-row').forEach(r => {
-    r.classList.remove('drag-over');
-    r.style.opacity = '1';
-  });
+async function campAISend(campaignId) {
+  const promptEl = document.getElementById('camp-ai-prompt');
+  const contextCheck = document.getElementById('camp-ai-context');
+  const sendBtn = document.getElementById('camp-ai-send-btn');
+  const prompt = (promptEl?.value || '').trim();
 
-  if (!_campDragId || _campDragId === targetId) return;
-
-  // Reorder: swap sort_order values
-  try {
-    // Get current pages for this campaign
-    const { data: pages } = await sb.from('v_admin_pages')
-      .select('id, sort_order')
-      .eq('tenant_id', getTenantId())
-      .eq('campaign_id', campaignId)
-      .order('sort_order', { ascending: true })
-      .order('slug', { ascending: true });
-
-    if (!pages) return;
-
-    // Build new order
-    const ordered = pages.map(p => p.id);
-    const fromIdx = ordered.indexOf(_campDragId);
-    const toIdx = ordered.indexOf(targetId);
-    if (fromIdx === -1 || toIdx === -1) return;
-
-    ordered.splice(fromIdx, 1);
-    ordered.splice(toIdx, 0, _campDragId);
-
-    // Update sort_order for each
-    const updates = ordered.map((id, i) =>
-      sb.from('storefront_pages').update({ sort_order: i }).eq('id', id)
-    );
-    await Promise.all(updates);
-
-    // Refresh
-    await selectCampaign(campaignId);
-  } catch (err) {
-    console.error('[Campaigns] Reorder error:', err);
-    Toast.error('שגיאה בשינוי סדר');
+  if (!prompt) {
+    Toast.warning('יש להזין הוראה ל-AI');
+    return;
+  }
+  if (prompt.length < 10) {
+    Toast.warning('יש להזין לפחות 10 תווים');
+    return;
   }
 
-  _campDragId = null;
-  _campDragIdx = null;
+  // Disable button, show loading
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '🤖 AI עובד...'; }
+
+  try {
+    let fullPrompt = prompt;
+
+    // If context checkbox checked — fetch campaign pages content
+    if (contextCheck?.checked) {
+      try {
+        const { data: campPages } = await sb.from('v_admin_pages')
+          .select('slug, title, blocks')
+          .eq('tenant_id', getTenantId())
+          .eq('campaign_id', campaignId);
+
+        if (campPages && campPages.length > 0) {
+          const contextLines = campPages.map(p => {
+            const textContent = extractBlocksText(p.blocks || []);
+            return `עמוד "${escapeHtml(p.slug)}" (${escapeHtml(p.title || '')}) — ${textContent.slice(0, 300)}`;
+          });
+          fullPrompt += '\n\nהקשר — עמודי הקמפיין הקיימים:\n' + contextLines.join('\n');
+        }
+      } catch (_) {
+        console.warn('[Campaigns] Failed to load context pages');
+      }
+    }
+
+    // Find a suitable template — use the first campaign template available
+    let templateSlug = 'supersale';
+    try {
+      const { data: templates } = await sb.from('campaign_templates')
+        .select('slug')
+        .eq('is_deleted', false)
+        .limit(1);
+      if (templates && templates.length > 0) templateSlug = templates[0].slug;
+    } catch (_) {}
+
+    // Call Edge Function
+    const edgeUrl = SUPABASE_URL + '/functions/v1/generate-campaign-page';
+    const res = await fetch(edgeUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SUPABASE_ANON,
+      },
+      body: JSON.stringify({
+        template_slug: templateSlug,
+        prompt: fullPrompt,
+        variables: {},
+        tenant_id: getTenantId(),
+        campaign_id: campaignId,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.success && data.page_id) {
+      Toast.success('העמוד נוצר בהצלחה! לחץ על העמוד לצפייה ועריכה');
+      // Clear prompt
+      if (promptEl) promptEl.value = '';
+      // Refresh pages list and campaign view
+      if (typeof loadStudioPages === 'function') loadStudioPages();
+      await refreshCampaignData(campaignId);
+    } else {
+      console.error('[Campaigns] AI error:', data);
+      Toast.error('שגיאה ביצירת העמוד: ' + (data.error || 'שגיאה לא ידועה'));
+    }
+  } catch (err) {
+    console.error('[Campaigns] AI send error:', err);
+    Toast.error('שגיאת תקשורת — נסו שוב');
+  } finally {
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '🤖 שלח'; }
+  }
+}
+
+/** Extract text content from blocks for AI context */
+function extractBlocksText(blocks) {
+  if (!Array.isArray(blocks)) return '';
+  return blocks.map(b => {
+    const d = b.data || {};
+    // Collect all text-like fields
+    const parts = [];
+    if (d.title) parts.push(d.title);
+    if (d.subtitle) parts.push(d.subtitle);
+    if (d.text) parts.push(d.text);
+    if (d.html) {
+      // Strip HTML tags to get plain text
+      const tmp = document.createElement('div');
+      tmp.innerHTML = d.html;
+      parts.push(tmp.textContent || '');
+    }
+    if (d.content) parts.push(d.content);
+    if (d.items && Array.isArray(d.items)) {
+      d.items.forEach(item => {
+        if (item.title) parts.push(item.title);
+        if (item.text) parts.push(item.text);
+      });
+    }
+    return parts.join(' ');
+  }).filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
 }
 
 // ============================================================
@@ -332,20 +440,27 @@ function campOpenPage(pageId) {
 // Remove page from campaign (unlink, don't delete)
 // ============================================================
 
-async function campRemovePage(pageId, campaignId) {
-  if (!confirm('להסיר את העמוד מהקמפיין? (העמוד לא יימחק)')) return;
-
-  try {
-    const { error } = await sb.from('storefront_pages')
-      .update({ campaign_id: null })
-      .eq('id', pageId);
-    if (error) throw error;
-    Toast.success('העמוד הוסר מהקמפיין');
-    await refreshCampaignData(campaignId);
-  } catch (err) {
-    console.error('[Campaigns] Remove page error:', err);
-    Toast.error('שגיאה בהסרת העמוד');
-  }
+function campRemovePage(pageId, campaignId) {
+  Modal.confirm({
+    title: 'הסרה מקמפיין',
+    message: 'להסיר את העמוד מהקמפיין? (העמוד לא יימחק)',
+    confirmText: 'הסר',
+    cancelText: 'ביטול',
+    onConfirm: async function() {
+      try {
+        const { error } = await sb.from('storefront_pages')
+          .update({ campaign_id: null })
+          .eq('id', pageId);
+        if (error) throw error;
+        Toast.success('העמוד הוסר מהקמפיין');
+        if (typeof loadStudioPages === 'function') loadStudioPages();
+        await refreshCampaignData(campaignId);
+      } catch (err) {
+        console.error('[Campaigns] Remove page error:', err);
+        Toast.error('שגיאה בהסרת העמוד');
+      }
+    }
+  });
 }
 
 // ============================================================
@@ -618,45 +733,38 @@ async function submitChangeStatus(campaignId) {
 // Delete campaign (soft delete)
 // ============================================================
 
-async function deleteCampaign(campaignId) {
-  if (!confirm('למחוק את הקמפיין? (העמודים לא יימחקו, רק יוסר השיוך שלהם)')) return;
+function deleteCampaign(campaignId) {
+  Modal.confirm({
+    title: 'מחיקת קמפיין',
+    message: 'למחוק את הקמפיין? (העמודים לא יימחקו, רק יוסר השיוך שלהם)',
+    confirmText: 'מחק',
+    cancelText: 'ביטול',
+    danger: true,
+    onConfirm: async function() {
+      try {
+        // Unlink all pages first
+        await sb.from('storefront_pages')
+          .update({ campaign_id: null })
+          .eq('campaign_id', campaignId);
 
-  try {
-    // Unlink all pages first
-    await sb.from('storefront_pages')
-      .update({ campaign_id: null })
-      .eq('campaign_id', campaignId);
+        // Soft delete campaign
+        const { error } = await sb.from('campaigns')
+          .update({ is_deleted: true })
+          .eq('id', campaignId);
+        if (error) throw error;
 
-    // Soft delete campaign
-    const { error } = await sb.from('campaigns')
-      .update({ is_deleted: true })
-      .eq('id', campaignId);
-    if (error) throw error;
-
-    Toast.success('הקמפיין נמחק');
-    selectedCampaignId = null;
-    await loadCampaigns();
-    const editorArea = document.getElementById('studio-editor');
-    if (editorArea) editorArea.innerHTML = '<div class="studio-empty-editor"><p>בחר קמפיין מהרשימה</p></div>';
-  } catch (err) {
-    console.error('[Campaigns] Delete error:', err);
-    Toast.error('שגיאה במחיקה');
-  }
-}
-
-// ============================================================
-// AI Campaign Builder — launched from within a campaign context
-// ============================================================
-
-function openCampaignAIBuilder(campaignId) {
-  // Use the existing campaign builder but pass the campaign context
-  if (typeof openCampaignBuilder === 'function') {
-    // Set campaign context so generated page gets linked
-    window._campaignBuilderTargetId = campaignId;
-    openCampaignBuilder();
-  } else {
-    Toast.error('מודול AI Campaign Builder לא נטען');
-  }
+        Toast.success('הקמפיין נמחק');
+        selectedCampaignId = null;
+        await loadCampaigns();
+        if (typeof loadStudioPages === 'function') loadStudioPages();
+        const editorArea = document.getElementById('studio-editor');
+        if (editorArea) editorArea.innerHTML = '<div class="studio-empty-editor"><p>בחר קמפיין מהרשימה</p></div>';
+      } catch (err) {
+        console.error('[Campaigns] Delete error:', err);
+        Toast.error('שגיאה במחיקה');
+      }
+    }
+  });
 }
 
 // ============================================================

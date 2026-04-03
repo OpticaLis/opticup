@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { template_slug, prompt, variables, tenant_id, slug_override } =
+    const { template_slug, prompt, variables, tenant_id, slug_override, campaign_id } =
       await req.json();
 
     // Validate required fields
@@ -220,19 +220,25 @@ Deno.serve(async (req) => {
     }
 
     // 4. Create draft page in storefront_pages
+    const pageInsert: Record<string, unknown> = {
+      tenant_id,
+      slug: fullSlug,
+      title: eventName,
+      blocks: aiBlocks,
+      meta_title: metaTitle,
+      meta_description: metaDescription,
+      page_type: "campaign",
+      lang: "he",
+      status: "draft",
+    };
+    // Auto-link to campaign if campaign_id provided
+    if (campaign_id) {
+      pageInsert.campaign_id = campaign_id;
+    }
+
     const { data: page, error: pageError } = await supabaseAdmin
       .from("storefront_pages")
-      .insert({
-        tenant_id,
-        slug: fullSlug,
-        title: eventName,
-        blocks: aiBlocks,
-        meta_title: metaTitle,
-        meta_description: metaDescription,
-        page_type: "campaign",
-        lang: "he",
-        status: "draft",
-      })
+      .insert(pageInsert)
       .select("id, slug")
       .single();
 
