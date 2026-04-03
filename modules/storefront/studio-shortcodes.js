@@ -10,11 +10,12 @@ let scFormFields = [];
 let scFormCheckboxes = [];
 
 const SC_CATEGORY_META = {
-  cta:       { icon: '\u{1F518}', label: '\u05DB\u05E4\u05EA\u05D5\u05E8\u05D9\u05DD' },
-  whatsapp:  { icon: '\u{1F4AC}', label: '\u05D5\u05D5\u05D0\u05D8\u05E1\u05D0\u05E4' },
-  lead_form: { icon: '\u{1F4CB}', label: '\u05D8\u05E4\u05E1\u05D9\u05DD' },
-  reviews:   { icon: '\u2B50',    label: '\u05D1\u05D9\u05E7\u05D5\u05E8\u05D5\u05EA' },
-  products:  { icon: '\u{1F6CD}\uFE0F', label: '\u05DE\u05D5\u05E6\u05E8\u05D9\u05DD' }
+  cta:        { icon: '\u{1F518}', label: '\u05DB\u05E4\u05EA\u05D5\u05E8\u05D9\u05DD' },
+  whatsapp:   { icon: '\u{1F4AC}', label: '\u05D5\u05D5\u05D0\u05D8\u05E1\u05D0\u05E4' },
+  lead_form:  { icon: '\u{1F4CB}', label: '\u05D8\u05E4\u05E1\u05D9\u05DD' },
+  reviews:    { icon: '\u2B50',    label: '\u05D1\u05D9\u05E7\u05D5\u05E8\u05D5\u05EA' },
+  products:   { icon: '\u{1F6CD}\uFE0F', label: '\u05DE\u05D5\u05E6\u05E8\u05D9\u05DD' },
+  sticky_bar: { icon: '\u{1F4CC}', label: '\u05E1\u05D8\u05D9\u05E7\u05D9 \u05D1\u05E8' }
 };
 
 // === BUILT-IN CTA PRESETS ===
@@ -58,6 +59,14 @@ const BUILTIN_CTA_PRESETS = [
     description: '\u05EA\u05D2\u05D9\u05EA \u05E7\u05D8\u05E0\u05D4 \u05E2\u05DD \u05DE\u05E1\u05D2\u05E8\u05EA',
     shortcode: '[cta type="pill" text="\u05DC\u05D7\u05E6\u05D5 \u05DB\u05D0\u05DF" action="link" href="#"]',
     config: { type: 'pill', text: '\u05DC\u05D7\u05E6\u05D5 \u05DB\u05D0\u05DF', action: 'link', href: '#' }
+  },
+  {
+    id: '__cta_instagram',
+    category: 'cta',
+    name: '\u05DB\u05E4\u05EA\u05D5\u05E8 \u05D0\u05D9\u05E0\u05E1\u05D8\u05D2\u05E8\u05DD',
+    description: '\u05DB\u05E4\u05EA\u05D5\u05E8 \u05E2\u05DD \u05D2\u05E8\u05D3\u05D9\u05D0\u05E0\u05D8 \u05D0\u05D9\u05E0\u05E1\u05D8\u05D2\u05E8\u05DD \u05D5\u05D0\u05D9\u05E7\u05D5\u05DF',
+    shortcode: '[cta type="secondary" action="link" href="https://www.instagram.com/optic_prizma/" text="\u05E2\u05E7\u05D1\u05D5 \u05D1\u05D0\u05D9\u05E0\u05E1\u05D8\u05D2\u05E8\u05DD" icon="instagram"]',
+    config: { type: 'secondary', action: 'link', href: 'https://www.instagram.com/optic_prizma/', text: '\u05E2\u05E7\u05D1\u05D5 \u05D1\u05D0\u05D9\u05E0\u05E1\u05D8\u05D2\u05E8\u05DD', icon: 'instagram' }
   }
 ];
 
@@ -86,6 +95,24 @@ const BUILTIN_FORM_PRESETS = [
   }
 ];
 
+// === BUILT-IN STICKY BAR PRESETS ===
+const BUILTIN_STICKY_PRESETS = [
+  {
+    id: '__sticky_campaign_dark',
+    category: 'sticky_bar',
+    name: '\u05E1\u05D8\u05D9\u05E7\u05D9 \u05D1\u05E8 \u2014 \u05E7\u05DE\u05E4\u05D9\u05D9\u05DF (\u05DB\u05D4\u05D4)',
+    description: '\u05D1\u05E8 \u05EA\u05D7\u05EA\u05D5\u05DF \u05E7\u05D1\u05D5\u05E2 \u05E2\u05DD \u05DB\u05E4\u05EA\u05D5\u05E8\u05D9 WhatsApp \u05D5\u05D0\u05D9\u05E0\u05E1\u05D8\u05D2\u05E8\u05DD',
+    shortcode: '<!-- \u05E1\u05D8\u05D9\u05E7\u05D9 \u05D1\u05E8 \u05DB\u05D4\u05D4 \u2014 \u05DC\u05D4\u05D3\u05D1\u05D9\u05E7 \u05D1\u05D1\u05DC\u05D5\u05E7 \u05E7\u05E1\u05D8\u05DD -->\n<div style="position:fixed;bottom:0;left:0;right:0;z-index:99999;background:rgba(10,10,10,0.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid rgba(201,168,76,0.12);padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:10px;font-family:Heebo,sans-serif;">\n  <span style="font-size:12px;color:#999;white-space:nowrap;">\uD83D\uDCCB \u05E7\u05D8\u05DC\u05D5\u05D2 \u05DE\u05D5\u05EA\u05D2\u05D9\u05DD \u05D5\u05DE\u05D7\u05D9\u05E8\u05D9\u05DD</span>\n  <a href="https://wa.me/972533645404?text=\u05E9\u05DC\u05D5\u05DD" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;padding:9px 18px;border-radius:999px;font-weight:700;font-size:13px;white-space:nowrap;text-decoration:none;" target="_blank" rel="noopener">\uD83D\uDCAC \u05E9\u05DC\u05D7\u05D5 \u05DC\u05D9 \u05D0\u05EA \u05D4\u05E7\u05D8\u05DC\u05D5\u05D2</a>\n  <div style="width:1px;height:24px;background:rgba(255,255,255,0.1);"></div>\n  <a href="https://www.instagram.com/optic_prizma/" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#833AB4,#FD1D1D,#F77737);color:#fff;text-decoration:none;" target="_blank" rel="noopener">\uD83D\uDCF7</a>\n</div>',
+    config: {
+      wa_text: '\u05E9\u05DC\u05D7\u05D5 \u05DC\u05D9 \u05D0\u05EA \u05D4\u05E7\u05D8\u05DC\u05D5\u05D2',
+      wa_message: '\u05E9\u05DC\u05D5\u05DD',
+      ig_enabled: true,
+      ig_url: 'https://www.instagram.com/optic_prizma/',
+      label_text: '\uD83D\uDCCB \u05E7\u05D8\u05DC\u05D5\u05D2 \u05DE\u05D5\u05EA\u05D2\u05D9\u05DD \u05D5\u05DE\u05D7\u05D9\u05E8\u05D9\u05DD'
+    }
+  }
+];
+
 /**
  * Load shortcode presets from Supabase + merge built-in presets
  */
@@ -97,7 +124,7 @@ async function loadShortcodePresets() {
       .or(`tenant_id.is.null,tenant_id.eq.${tid}`);
     if (error) throw error;
     // Merge built-ins first, then DB presets
-    shortcodePresets = [...BUILTIN_CTA_PRESETS, ...BUILTIN_FORM_PRESETS, ...(data || [])];
+    shortcodePresets = [...BUILTIN_CTA_PRESETS, ...BUILTIN_FORM_PRESETS, ...BUILTIN_STICKY_PRESETS, ...(data || [])];
     renderShortcodeLibrary();
   } catch (err) {
     console.error('Load shortcode presets error:', err);
