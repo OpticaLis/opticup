@@ -320,11 +320,11 @@ async function campAISend(campaignId) {
     const crossCtx = await buildCrossCampaignContext(prompt, campaignId);
     if (crossCtx) fullPrompt += crossCtx;
 
-    // Find a template
-    let tplSlug = 'supersale';
+    // Find a template — query view to avoid RLS issues
+    let tplSlug = 'supersale-campaign';
     try {
-      const { data } = await sb.from('campaign_templates')
-        .select('slug').eq('is_deleted', false).limit(1);
+      const { data } = await sb.from('v_admin_campaign_templates')
+        .select('slug').limit(1);
       if (data?.length) tplSlug = data[0].slug;
     } catch (_) {}
 
