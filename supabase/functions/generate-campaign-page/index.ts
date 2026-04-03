@@ -37,220 +37,136 @@ function generateSlug(text: string): string {
     .replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
 }
 
-// ─── Block content extraction ────────────────────────────────
-// Strip CSS/style attributes from HTML, extract only text + shortcodes + structure.
+// ─── Text extraction: find text between HTML tags ────────────
+// These are the EXACT strings that appear in the HTML, so replacement
+// is a simple string.replace() — no regex matching issues.
 
-interface BlockSummary {
-  index: number;
-  id: string;
-  type: string;
-  texts: string[];       // visible text segments
-  shortcodes: string[];  // [cta], [lead_form], etc.
-  has_html: boolean;
-}
+function extractTextNodes(html: string): string[] {
+  // Remove style/script blocks first
+  const cleaned = html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
 
-/**
- * Extract readable text from HTML, stripping tags and inline styles.
- * Preserves shortcodes like [cta ...] and [lead_form ...].
- */
-function extractText(html: string): { texts: string[]; shortcodes: string[] } {
-  const shortcodes: string[] = [];
-  // Capture shortcodes
-  const scRegex = /\[[a-z_]+[^\]]*\]/g;
+  const texts: string[] = [];
+  // Match text content between > and <
+  const regex = />([^<]+)</g;
   let m;
-  while ((m = scRegex.exec(html)) !== null) {
-    shortcodes.push(m[0]);
+  while ((m = regex.exec(cleaned)) !== null) {
+    const text = m[1].trim();
+    // Skip empty, whitespace-only, or HTML entity fragments
+    if (text.length > 2 && !/^[\s&;#\d.,%]+$/.test(text) && !/^[\u200f\u200e\s]+$/.test(text)) {
+      texts.push(text);
+    }
   }
-
-  // Strip HTML tags → plain text
-  const plain = html
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')   // remove <style> blocks
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')  // remove <script> blocks
-    .replace(/<[^>]+>/g, ' ')                           // strip all tags
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  // Split into meaningful segments (filter out tiny fragments)
-  const texts = plain.split(/\s{2,}/).map(s => s.trim()).filter(s => s.length > 2);
-
-  return { texts, shortcodes };
+  return texts;
 }
 
-/**
- * Build a lightweight summary of template blocks for Claude.
- * No CSS, no raw HTML — just structure + text + shortcodes.
- */
-function summarizeBlocks(blocks: Array<Record<string, unknown>>): BlockSummary[] {
-  return blocks.map((block, index) => {
+function extractShortcodes(html: string): string[] {
+  const sc: string[] = [];
+  const regex = /\[[a-z_]+[^\]]*\]/g;
+  let m;
+  while ((m = regex.exec(html)) !== null) {
+    sc.push(m[0]);
+  }
+  return sc;
+}
+
+// ─── Apply text replacements back into HTML ──────────────────
+
+function replaceTextsInHtml(
+  html: string,
+  origTexts: string[],
+  newTexts: string[],
+): { html: string; replacements: number } {
+  let result = html;
+  let replacements = 0;
+  for (let i = 0; i < origTexts.length && i < newTexts.length; i++) {
+    const orig = origTexts[i];
+    const repl = newTexts[i];
+    if (orig !== repl && orig.length > 2) {
+      // Replace first occurrence — the text appears verbatim in the HTML
+      const idx = result.indexOf(orig);
+      if (idx !== -1) {
+        result = result.slice(0, idx) + repl + result.slice(idx + orig.length);
+        replacements++;
+      }
+    }
+  }
+  return { html: result, replacements };
+}
+
+// ─── Build Claude prompt ─────────────────────────────────────
+
+function buildPrompt(
+  blocks: Array<Record<string, unknown>>,
+  userPrompt: string,
+  variables: Record<string, string>,
+): { prompt: string; blockTextMap: Array<{ index: number; texts: string[]; shortcodes: string[] }> } {
+
+  const blockTextMap: Array<{ index: number; texts: string[]; shortcodes: string[] }> = [];
+
+  const blockDescriptions = blocks.map((block, index) => {
     const data = (block.data || {}) as Record<string, unknown>;
     const type = (block.type || 'custom') as string;
-    const id = (block.id || `block-${index}`) as string;
-
     const allTexts: string[] = [];
     const allShortcodes: string[] = [];
 
-    // Extract from HTML field (custom blocks)
+    // Extract from HTML
     if (typeof data.html === 'string') {
-      const { texts, shortcodes } = extractText(data.html);
-      allTexts.push(...texts);
-      allShortcodes.push(...shortcodes);
+      allTexts.push(...extractTextNodes(data.html));
+      allShortcodes.push(...extractShortcodes(data.html));
     }
 
-    // Extract from common text fields
+    // Extract from data fields
     for (const key of ['title', 'subtitle', 'text', 'content', 'description']) {
       if (typeof data[key] === 'string' && (data[key] as string).length > 0) {
-        allTexts.push(`${key}: ${data[key]}`);
+        allTexts.push(data[key] as string);
       }
     }
 
-    // Extract from items array
-    if (Array.isArray(data.items)) {
-      for (const item of data.items) {
-        if (typeof item === 'object' && item !== null) {
-          const it = item as Record<string, unknown>;
-          if (it.title) allTexts.push(`item: ${it.title}`);
-          if (it.text) allTexts.push(`  ${it.text}`);
-        }
-      }
-    }
+    blockTextMap.push({ index, texts: allTexts, shortcodes: allShortcodes });
 
-    return {
-      index,
-      id,
-      type,
-      texts: allTexts.slice(0, 20), // cap at 20 segments
-      shortcodes: allShortcodes,
-      has_html: typeof data.html === 'string',
-    };
-  });
-}
+    // Build numbered text list for Claude
+    const numberedTexts = allTexts.map((t, i) => `  ${i + 1}. "${t}"`).join('\n');
+    const scList = allShortcodes.length
+      ? `\n  Shortcodes: ${allShortcodes.map(s => `"${s}"`).join(', ')}`
+      : '';
 
-/**
- * Apply Claude's text modifications back into the original template blocks.
- * Claude returns an array of { index, texts } — we find each text in the
- * original HTML and replace it.
- */
-function applyModifications(
-  originalBlocks: Array<Record<string, unknown>>,
-  modifications: Array<{ index: number; texts: string[]; shortcodes?: string[] }>,
-): Array<Record<string, unknown>> {
-  // Deep clone
-  const blocks = JSON.parse(JSON.stringify(originalBlocks));
-
-  for (const mod of modifications) {
-    const block = blocks[mod.index];
-    if (!block) continue;
-    const data = (block.data || {}) as Record<string, unknown>;
-
-    // Get original summary to know what texts existed
-    const origData = (originalBlocks[mod.index]?.data || {}) as Record<string, unknown>;
-
-    // Replace simple text fields
-    const textFields = ['title', 'subtitle', 'text', 'content', 'description'];
-    let modTextIdx = 0;
-    for (const key of textFields) {
-      if (typeof origData[key] === 'string' && (origData[key] as string).length > 0) {
-        // Find matching mod text (skip ones that start with "key: ")
-        for (let i = modTextIdx; i < mod.texts.length; i++) {
-          const t = mod.texts[i];
-          if (t.startsWith(key + ': ')) {
-            data[key] = t.slice(key.length + 2);
-            modTextIdx = i + 1;
-            break;
-          }
-        }
-      }
-    }
-
-    // For HTML blocks: do text replacement in the HTML
-    if (typeof data.html === 'string' && typeof origData.html === 'string') {
-      let html = origData.html as string;
-      const { texts: origTexts } = extractText(origData.html as string);
-
-      // Build a mapping: original text → new text
-      // mod.texts contains the new text segments (for html blocks, these are plain texts)
-      // Filter out field-prefixed ones (title:, subtitle:, etc.)
-      const htmlTexts = mod.texts.filter(t => !textFields.some(f => t.startsWith(f + ': ')));
-
-      for (let i = 0; i < origTexts.length && i < htmlTexts.length; i++) {
-        const orig = origTexts[i];
-        const repl = htmlTexts[i];
-        if (orig !== repl && orig.length > 2) {
-          // Escape for regex
-          const escaped = orig.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          html = html.replace(new RegExp(escaped, 'g'), repl);
-        }
-      }
-
-      // Replace shortcodes if provided
-      if (mod.shortcodes && mod.shortcodes.length) {
-        const origSc = (origData.html as string).match(/\[[a-z_]+[^\]]*\]/g) || [];
-        for (let i = 0; i < origSc.length && i < mod.shortcodes.length; i++) {
-          if (origSc[i] !== mod.shortcodes[i]) {
-            html = html.replace(origSc[i], mod.shortcodes[i]);
-          }
-        }
-      }
-
-      data.html = html;
-    }
-
-    // Replace items
-    if (Array.isArray(origData.items) && Array.isArray(data.items)) {
-      const itemTexts = mod.texts.filter(t => t.startsWith('item: '));
-      let itemIdx = 0;
-      for (let i = 0; i < (data.items as Array<Record<string, unknown>>).length; i++) {
-        const item = (data.items as Array<Record<string, unknown>>)[i];
-        if (itemIdx < itemTexts.length) {
-          item.title = itemTexts[itemIdx].slice(6); // remove "item: "
-          itemIdx++;
-        }
-      }
-    }
-  }
-
-  return blocks;
-}
-
-function buildPrompt(
-  summaries: BlockSummary[],
-  userPrompt: string,
-  variables: Record<string, string>,
-): string {
-  const blockDesc = summaries.map(s => {
-    let desc = `Block ${s.index} (${s.type}, id="${s.id}"):`;
-    if (s.texts.length) desc += `\n  Texts: ${JSON.stringify(s.texts)}`;
-    if (s.shortcodes.length) desc += `\n  Shortcodes: ${JSON.stringify(s.shortcodes)}`;
-    return desc;
+    return `Block ${index} (type: ${type}, ${allTexts.length} texts):
+${numberedTexts}${scList}`;
   }).join('\n\n');
 
-  return `You are a campaign page builder for an Israeli optical store website.
-You receive a SUMMARY of template blocks (text content only, no CSS) and a user request.
+  const prompt = `You are rewriting campaign page content for an Israeli optical store website.
 
-Your job:
-1. Return a JSON array with one object per block: { "index": N, "texts": [...], "shortcodes": [...] }
-2. Each "texts" array must have the SAME number of elements as the input — replace content to match the campaign
-3. Each "shortcodes" array: keep shortcode syntax ([cta], [lead_form] etc.) but update text/attributes if needed
-4. All text must be in Hebrew
-5. Keep the SAME number of blocks — one entry per block index
-6. Output ONLY valid JSON array. No explanation, no markdown.
+CRITICAL INSTRUCTIONS:
+- You MUST rewrite ALL text to match the user's request below
+- Do NOT keep the original text. Every heading, paragraph, benefit, CTA must be rewritten
+- Replace ALL product names, event names, brand mentions, prices, descriptions
+- All text must be in Hebrew
+- Keep shortcode syntax ([cta], [lead_form], [whatsapp]) but update their text attributes
 
-Template block summaries:
-${blockDesc}
+The template has these text blocks. Rewrite EVERY text for the new campaign:
 
-User's campaign request:
+${blockDescriptions}
+
+USER'S REQUEST (this is what the page should be about):
 ${userPrompt}
 
-Variables:
-${JSON.stringify(variables)}
+Variables: ${JSON.stringify(variables)}
 
-Return ONLY the JSON array. Example format:
-[{"index":0,"texts":["new heading","new paragraph"],"shortcodes":["[cta text=\\"לחץ\\"]"]},{"index":1,"texts":["..."],"shortcodes":[]}]`;
+RESPOND with ONLY a JSON array. One object per block:
+[
+  {"index": 0, "texts": ["new text 1", "new text 2", ...], "shortcodes": ["[cta text=\\"new\\"]"]},
+  {"index": 1, "texts": ["..."], "shortcodes": []}
+]
+
+RULES:
+- Each block's "texts" array MUST have the SAME number of elements as the input
+- EVERY text MUST be different from the original — rewritten for the new campaign
+- Keep shortcodes functional but update their display text
+- Output valid JSON only. No markdown, no explanation.`;
+
+  return { prompt, blockTextMap };
 }
 
 // ─── Main handler ────────────────────────────────────────────
@@ -287,19 +203,20 @@ Deno.serve(async (req) => {
 
     const templateBlocks = template.blocks as Array<Record<string, unknown>>;
 
-    // 2. Summarize blocks (strip CSS, extract text + shortcodes)
-    const summaries = summarizeBlocks(templateBlocks);
-
-    // 3. Build lightweight prompt for Claude
+    // 2. Build prompt (extracts text nodes from HTML, builds numbered list)
     const vars = variables || {};
-    const claudePrompt = buildPrompt(summaries, prompt, vars);
+    const { prompt: claudePrompt, blockTextMap } = buildPrompt(templateBlocks, prompt, vars);
 
-    // 4. Call Claude API with timeout
-    let modifications: Array<{ index: number; texts: string[]; shortcodes?: string[] }> | null = null;
+    console.log(`[generate-campaign-page] Prompt length: ${claudePrompt.length} chars`);
+    console.log(`[generate-campaign-page] Blocks: ${blockTextMap.length}, total texts: ${blockTextMap.reduce((s, b) => s + b.texts.length, 0)}`);
+
+    // 3. Call Claude API with timeout
+    type Modification = { index: number; texts: string[]; shortcodes?: string[] };
+    let modifications: Modification[] | null = null;
     let lastError = "";
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120_000); // 120s timeout
+    const timeout = setTimeout(() => controller.abort(), 120_000);
 
     try {
       for (let attempt = 0; attempt < 2; attempt++) {
@@ -326,6 +243,9 @@ Deno.serve(async (req) => {
         const aiResponse = await response.json();
         const contentText = aiResponse.content?.[0]?.text || "";
 
+        console.log(`[generate-campaign-page] Claude response length: ${contentText.length}`);
+        console.log(`[generate-campaign-page] Claude response preview: ${contentText.slice(0, 500)}`);
+
         try {
           const cleanJson = contentText
             .replace(/```json\n?/g, "")
@@ -337,7 +257,8 @@ Deno.serve(async (req) => {
             break;
           }
         } catch (_e) {
-          lastError = `Parse attempt ${attempt + 1} failed. Raw: ${contentText.slice(0, 200)}`;
+          lastError = `Parse attempt ${attempt + 1} failed. Raw: ${contentText.slice(0, 300)}`;
+          console.log(`[generate-campaign-page] ${lastError}`);
         }
       }
     } finally {
@@ -348,10 +269,74 @@ Deno.serve(async (req) => {
       return jsonRes({ error: "Failed to parse AI response", details: lastError, success: false }, 500);
     }
 
-    // 5. Apply modifications back to original template blocks (with full CSS intact)
-    const finalBlocks = applyModifications(templateBlocks, modifications);
+    // 4. Apply modifications back into original blocks (CSS stays intact)
+    const finalBlocks = JSON.parse(JSON.stringify(templateBlocks));
+    let totalReplacements = 0;
 
-    // 6. Generate slug and page metadata
+    for (const mod of modifications) {
+      const block = finalBlocks[mod.index];
+      if (!block) {
+        console.log(`[generate-campaign-page] WARNING: mod.index ${mod.index} out of range`);
+        continue;
+      }
+      const data = (block.data || {}) as Record<string, unknown>;
+      const orig = blockTextMap[mod.index];
+      if (!orig) continue;
+
+      // Get the texts that came from HTML vs data fields
+      const origHtmlTexts: string[] = [];
+      const origFieldTexts: string[] = [];
+
+      if (typeof data.html === 'string') {
+        origHtmlTexts.push(...extractTextNodes(data.html));
+      }
+      const fieldKeys = ['title', 'subtitle', 'text', 'content', 'description'];
+      for (const key of fieldKeys) {
+        if (typeof data[key] === 'string' && (data[key] as string).length > 0) {
+          origFieldTexts.push(key);
+        }
+      }
+
+      const htmlTextCount = origHtmlTexts.length;
+      const newHtmlTexts = mod.texts.slice(0, htmlTextCount);
+      const newFieldTexts = mod.texts.slice(htmlTextCount);
+
+      // Replace text in HTML
+      if (typeof data.html === 'string' && newHtmlTexts.length > 0) {
+        const { html: newHtml, replacements } = replaceTextsInHtml(
+          data.html, origHtmlTexts, newHtmlTexts
+        );
+        data.html = newHtml;
+        totalReplacements += replacements;
+      }
+
+      // Replace shortcodes in HTML
+      if (typeof data.html === 'string' && mod.shortcodes && mod.shortcodes.length) {
+        const origSc = extractShortcodes(data.html);
+        for (let i = 0; i < origSc.length && i < mod.shortcodes.length; i++) {
+          if (origSc[i] !== mod.shortcodes[i]) {
+            data.html = (data.html as string).replace(origSc[i], mod.shortcodes[i]);
+            totalReplacements++;
+          }
+        }
+      }
+
+      // Replace data fields
+      for (let i = 0; i < origFieldTexts.length && i < newFieldTexts.length; i++) {
+        const key = origFieldTexts[i];
+        if (newFieldTexts[i] && newFieldTexts[i] !== data[key]) {
+          data[key] = newFieldTexts[i];
+          totalReplacements++;
+        }
+      }
+    }
+
+    console.log(`[generate-campaign-page] Total replacements applied: ${totalReplacements}`);
+    if (totalReplacements === 0) {
+      console.log(`[generate-campaign-page] WARNING: Zero replacements! Claude may have returned identical text.`);
+    }
+
+    // 5. Generate slug and page metadata
     const eventName = vars.event_name || vars.store_name || "campaign";
     const pageSlug = slug_override || generateSlug(eventName);
     const fullSlug = `/${pageSlug}/`;
@@ -367,7 +352,7 @@ Deno.serve(async (req) => {
       metaDescription = metaDescription.replace(re, value as string);
     }
 
-    // 7. Create draft page
+    // 6. Create draft page
     const pageInsert: Record<string, unknown> = {
       tenant_id, slug: fullSlug, title: eventName,
       blocks: finalBlocks, meta_title: metaTitle,
@@ -391,6 +376,7 @@ Deno.serve(async (req) => {
       page_id: page.id,
       slug: page.slug,
       preview_url: `${page.slug}?preview=true`,
+      stats: { blocks: modifications.length, replacements: totalReplacements },
     });
   } catch (error) {
     const msg = (error as Error).message || String(error);
