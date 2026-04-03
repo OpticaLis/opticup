@@ -489,17 +489,32 @@
 .gallery-grid { display: flex; gap: 8px; flex-wrap: wrap; }
 .gallery-thumb { position: relative; border-radius: 8px; overflow: visible; border: 1px solid var(--g200); }
 
-/* ========== CAMPAIGNS INLINE ========== */
-.camp-expanded-section { background: var(--g50); border-right: 3px solid #c9a555; margin: 0 -4px 6px; padding: 8px 8px 4px; border-radius: 0 0 8px 8px; }
-.camp-inline-actions { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
-.camp-ai-inline { background: #fefdf8; border: 1px solid #e8da94; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
-.camp-ai-inline textarea { width: 100% !important; box-sizing: border-box; }
-.camp-inline-pages .studio-page-item { margin-bottom: 3px; padding: 8px 10px; font-size: .88rem; }
-.camp-inline-pages .studio-page-title { font-size: .82rem; }
-.camp-inline-pages .studio-page-slug-time { font-size: .7rem; }
-.camp-inline-pages .studio-page-actions-mini button { font-size: .7rem; padding: 1px 4px; }
-.camp-inline-pages .studio-badge { font-size: .65rem; padding: 1px 6px; }
-.camp-inline-pages .seo-score-mini { font-size: .65rem; }
+/* ========== CAMPAIGNS — FOLDER ACCORDION ========== */
+.camp-header { padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--g200); font-weight: 600; font-size: .9rem; }
+.camp-folders { padding: 4px; overflow-y: auto; flex: 1; }
+.camp-folder-row { display: flex; align-items: center; gap: 6px; padding: 9px 10px; border-radius: 8px; cursor: pointer; transition: background .15s; margin-bottom: 2px; }
+.camp-folder-row:hover { background: var(--g50); }
+.camp-folder-row.open { background: var(--g100); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.camp-folder-icon { font-size: 1rem; flex-shrink: 0; }
+.camp-folder-name { flex: 1; min-width: 0; font-weight: 600; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.camp-folder-count { background: var(--g200); color: var(--g600); font-size: .7rem; font-weight: 700; padding: 1px 7px; border-radius: 10px; flex-shrink: 0; }
+.camp-folder-status { font-size: .65rem; padding: 1px 7px; border-radius: 10px; flex-shrink: 0; font-weight: 600; }
+.camp-folder-arrow { font-size: .6rem; color: var(--g400); flex-shrink: 0; }
+.camp-folder-body { background: var(--g50); border: 1px solid var(--g200); border-top: none; border-radius: 0 0 8px 8px; padding: 6px; margin-bottom: 6px; }
+.camp-folder-actions { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+.camp-act-btn { font-size: .72rem; padding: 3px 8px; background: var(--g100); border: 1px solid var(--g200); border-radius: 6px; cursor: pointer; }
+.camp-act-btn:hover { background: var(--g200); }
+.camp-act-add { background: linear-gradient(135deg,#c9a555,#e8da94); color: #000; font-weight: 600; border: none; }
+.camp-folder-pages .studio-page-item { margin-bottom: 3px; }
+.camp-ai-box { background: #fefdf8; border: 1px solid #e8da94; border-radius: 8px; padding: 8px; margin-top: 6px; }
+.camp-ai-label { font-weight: 600; font-size: .78rem; color: var(--g600); margin-bottom: 6px; }
+.camp-ai-textarea { width: 100% !important; box-sizing: border-box; resize: vertical; min-height: 44px; font-size: .8rem; }
+.camp-ai-row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; gap: 4px; }
+.camp-ai-ctx { display: flex; align-items: center; gap: 4px; font-size: .72rem; color: var(--g500); cursor: pointer; }
+.camp-ai-ctx input { width: 14px; height: 14px; }
+.camp-ai-send { background: linear-gradient(135deg,#1a1a1a,#333); color: #e8da94; font-weight: 700; border: 1px solid #c9a555; font-size: .75rem; padding: 4px 14px; border-radius: 6px; cursor: pointer; }
+.camp-ai-send:hover { background: #333; }
+.camp-ai-send:disabled { opacity: .5; cursor: wait; }
 
 /* Responsive */
 @media (max-width: 768px) {
