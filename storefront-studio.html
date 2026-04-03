@@ -90,7 +90,6 @@
     <!-- Studio Tabs -->
     <div class="studio-tabs">
       <button class="studio-tab active" data-tab="pages" onclick="switchStudioTab('pages')">📄 עמודים</button>
-      <button class="studio-tab" data-tab="components" id="tab-btn-components" onclick="switchStudioTab('components')">🔘 רכיבים</button>
       <button class="studio-tab" data-tab="leads" onclick="switchStudioTab('leads')">📋 לידים</button>
       <button class="studio-tab" data-tab="reviews" onclick="switchStudioTab('reviews')">⭐ ביקורות</button>
       <button class="studio-tab" data-tab="templates" id="tab-btn-templates" onclick="switchStudioTab('templates')">📑 תבניות</button>
@@ -125,13 +124,6 @@
           </div>
         </section>
         <!-- AI Prompt Bar container moved inside editor render -->
-      </div>
-    </div>
-
-    <!-- Tab: Components -->
-    <div class="studio-tab-content" id="tab-components">
-      <div id="studio-components-content">
-        <div class="studio-empty">טוען...</div>
       </div>
     </div>
 
@@ -206,7 +198,6 @@
 <script src="modules/storefront/studio-tags.js"></script>
 <script src="modules/storefront/studio-pages.js?v=20260402"></script>
 <script src="modules/storefront/studio-editor.js"></script>
-<script src="modules/storefront/studio-components.js"></script>
 <script src="modules/storefront/studio-leads.js"></script>
 <script src="modules/storefront/studio-templates.js"></script>
 <script src="modules/storefront/studio-shortcodes.js"></script>
@@ -218,7 +209,6 @@
 function switchStudioTab(tab) {
   document.querySelectorAll('.studio-tab[data-tab]').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
   document.querySelectorAll('.studio-tab-content').forEach(el => el.classList.toggle('active', el.id === 'tab-' + tab));
-  if (tab === 'components' && !studioComponents.length) loadComponents();
   if (tab === 'leads' && !studioLeads.length) loadLeads();
   if (tab === 'reviews') loadReviews();
   if (tab === 'templates') renderTemplatesManager();
@@ -226,10 +216,6 @@ function switchStudioTab(tab) {
 }
 
 function applyStudioPermissions() {
-  // Hide components tab for tenant_admin
-  const compBtn = document.getElementById('tab-btn-components');
-  if (compBtn) compBtn.style.display = canSee('components_tab') ? '' : 'none';
-
   // Hide templates tab for tenant_admin
   const tplBtn = document.getElementById('tab-btn-templates');
   if (tplBtn) tplBtn.style.display = canSee('templates_tab') ? '' : 'none';
