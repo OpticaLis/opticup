@@ -364,7 +364,7 @@ async function cbTryAgain() {
   if (pageId) {
     try {
       await sb.from('storefront_pages')
-        .update({ is_deleted: true })
+        .update({ status: 'archived' })
         .eq('id', pageId);
     } catch (e) {
       console.error('[CampaignBuilder] Delete draft error:', e);
@@ -384,7 +384,7 @@ async function cbDelete() {
 
   try {
     await sb.from('storefront_pages')
-      .update({ is_deleted: true })
+      .update({ status: 'archived' })
       .eq('id', pageId);
 
     showToast('הטיוטה נמחקה', 'info');
