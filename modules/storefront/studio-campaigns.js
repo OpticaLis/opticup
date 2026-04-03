@@ -341,7 +341,7 @@ async function campAISend(campaignId) {
     console.log(fullPrompt);
     console.log('[Campaigns AI] Payload:', JSON.stringify({ ...payload, prompt: payload.prompt.slice(0, 200) + '...' }));
 
-    const res = await fetch(SUPABASE_URL + '/functions/v1/generate-campaign-page', {
+    const res = await fetch(SUPABASE_URL + '/functions/v1/generate-campaign-page?_t=' + Date.now(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON },
       body: JSON.stringify(payload),
