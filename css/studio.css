@@ -489,6 +489,18 @@
 .gallery-grid { display: flex; gap: 8px; flex-wrap: wrap; }
 .gallery-thumb { position: relative; border-radius: 8px; overflow: visible; border: 1px solid var(--g200); }
 
+/* ========== CAMPAIGNS INLINE ========== */
+.camp-expanded-section { background: var(--g50); border-right: 3px solid #c9a555; margin: 0 -4px 6px; padding: 8px 8px 4px; border-radius: 0 0 8px 8px; }
+.camp-inline-actions { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+.camp-ai-inline { background: #fefdf8; border: 1px solid #e8da94; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+.camp-ai-inline textarea { width: 100% !important; box-sizing: border-box; }
+.camp-inline-pages .studio-page-item { margin-bottom: 3px; padding: 8px 10px; font-size: .88rem; }
+.camp-inline-pages .studio-page-title { font-size: .82rem; }
+.camp-inline-pages .studio-page-slug-time { font-size: .7rem; }
+.camp-inline-pages .studio-page-actions-mini button { font-size: .7rem; padding: 1px 4px; }
+.camp-inline-pages .studio-badge { font-size: .65rem; padding: 1px 6px; }
+.camp-inline-pages .seo-score-mini { font-size: .65rem; }
+
 /* Responsive */
 @media (max-width: 768px) {
   .studio-layout { flex-direction: column; }
