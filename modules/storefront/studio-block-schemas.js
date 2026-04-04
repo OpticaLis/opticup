@@ -383,6 +383,44 @@ const BLOCK_SCHEMAS = {
     ]
   },
 
+  campaign_tiers: {
+    label: 'מחירון קמפיין — כרטיסי רמות',
+    icon: '💰',
+    fields: [
+      { key: 'title', label: 'כותרת', type: 'text' },
+      { key: 'subtitle', label: 'תת כותרת', type: 'text' },
+      { key: 'tiers', label: 'רמות מחיר', type: 'items', itemFields: [
+        { key: 'id', label: 'מזהה', type: 'text', required: true },
+        { key: 'title', label: 'שם רמה', type: 'text', required: true },
+        { key: 'price', label: 'מחיר', type: 'number', required: true },
+        { key: 'original_price', label: 'מחיר מקורי (קו חוצה)', type: 'number' },
+        { key: 'currency', label: 'סמל מטבע', type: 'text', default: '₪' },
+        { key: 'price_label', label: 'תווית מחיר', type: 'text', placeholder: 'לזוג משקפיים' },
+        { key: 'features', label: 'תכונות (שורה לכל אחת)', type: 'textarea_list' },
+        { key: 'brands', label: 'מותגים (מופרדים בפסיק)', type: 'tags' },
+        { key: 'badge', label: 'תג (Badge)', type: 'text', placeholder: 'הכי נמכר' },
+        { key: 'highlighted', label: 'מודגש (מסגרת זהב)', type: 'checkbox' },
+        { key: 'cta_text', label: 'טקסט כפתור (דריסת ברירת מחדל)', type: 'text' },
+      ]},
+      { key: 'cta_text', label: 'טקסט כפתור (ברירת מחדל)', type: 'text', default: 'לפרטים בוואטסאפ' },
+      { key: 'cta_action', label: 'פעולת כפתור', type: 'select', options: [
+        { value: 'whatsapp', label: 'וואטסאפ' }, { value: 'link', label: 'קישור' }, { value: 'popup', label: 'טופס פופאפ' }
+      ], default: 'whatsapp' },
+      { key: 'cta_link', label: 'קישור כפתור (אם link)', type: 'url' },
+      { key: 'cta_whatsapp_message', label: 'הודעת וואטסאפ', type: 'text' },
+      { key: 'columns_desktop', label: 'עמודות דסקטופ', type: 'select', options: [
+        { value: 2, label: '2' }, { value: 3, label: '3' }, { value: 4, label: '4' }
+      ], default: 3 },
+      { key: 'columns_mobile', label: 'עמודות מובייל', type: 'select', options: [
+        { value: 1, label: '1' }, { value: 2, label: '2' }
+      ], default: 1 },
+      { key: 'theme', label: 'ערכת נושא', type: 'select', options: [
+        { value: 'light', label: 'בהיר' }, { value: 'dark', label: 'כהה' }
+      ], default: 'dark' },
+      { key: 'disclaimer_text', label: 'טקסט הבהרה', type: 'text' },
+    ]
+  },
+
   custom: {
     label: 'בלוק מותאם אישית (HTML+CSS)',
     icon: '🎨',
