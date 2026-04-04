@@ -343,6 +343,39 @@ const BLOCK_SCHEMAS = {
     ]
   },
 
+  campaign_cards: {
+    label: 'כרטיסיות קמפיין',
+    icon: '🎯',
+    fields: [
+      { key: 'title', label: 'כותרת מקטע', type: 'text' },
+      { key: 'subtitle', label: 'תת כותרת', type: 'text' },
+      { key: 'products', label: 'מוצרים', type: 'items', itemFields: [
+        { key: 'barcode', label: 'ברקוד', type: 'text', required: true },
+        { key: 'campaign_price', label: 'מחיר קמפיין', type: 'number', required: true },
+        { key: 'original_price', label: 'מחיר מקורי (מחוק)', type: 'number' },
+        { key: 'badge_text', label: 'תג (VIP / חדש / 1+1)', type: 'text' },
+      ]},
+      { key: 'cta_text', label: 'טקסט כפתור CTA', type: 'text', default: 'לבירור בוואטסאפ' },
+      { key: 'cta_action', label: 'פעולת CTA', type: 'select', options: [
+        { value: 'whatsapp', label: 'וואטסאפ' },
+        { value: 'link', label: 'קישור' },
+        { value: 'popup', label: 'טופס popup' }
+      ], default: 'whatsapp' },
+      { key: 'cta_link', label: 'קישור CTA', type: 'url', showIf: 'link' },
+      { key: 'cta_whatsapp_message', label: 'הודעת וואטסאפ ({product_name} = שם מוצר)', type: 'text',
+        default: 'היי, אשמח לברר לגבי {product_name} מהקמפיין' },
+      { key: 'columns_desktop', label: 'עמודות (דסקטופ)', type: 'select', options: [
+        { value: 2, label: '2' }, { value: 3, label: '3' }, { value: 4, label: '4' }
+      ], default: 4 },
+      { key: 'columns_mobile', label: 'עמודות (מובייל)', type: 'select', options: [
+        { value: 1, label: '1' }, { value: 2, label: '2' }
+      ], default: 2 },
+      { key: 'theme', label: 'ערכת נושא', type: 'select', options: [
+        { value: 'light', label: 'בהיר (רקע לבן)' }, { value: 'dark', label: 'כהה (רקע שחור)' }
+      ], default: 'light' },
+    ]
+  },
+
   custom: {
     label: 'בלוק מותאם אישית (HTML+CSS)',
     icon: '🎨',
