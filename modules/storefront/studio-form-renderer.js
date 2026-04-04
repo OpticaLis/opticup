@@ -27,7 +27,7 @@ function renderBlockForm(fields, data, prefix = '') {
     const showIfAttr = showIfVal ? ` data-show-if="${escapeAttr(showIfVal)}"` : '';
     html += `<div class="studio-field-group${req}"${hidden}${showIfAttr}>`;
 
-    if (field.type !== 'toggle') {
+    if (field.type !== 'toggle' && field.type !== 'checkbox') {
       html += `<label for="sf-${fullKey}">${escapeAttr(field.label)}</label>`;
     }
 
@@ -74,6 +74,10 @@ function renderBlockForm(fields, data, prefix = '') {
 
       case 'toggle':
         html += `<label class="studio-toggle"><input type="checkbox" id="sf-${fullKey}" class="studio-field" data-key="${fullKey}" ${val ? 'checked' : ''}> ${escapeAttr(field.label)}</label>`;
+        break;
+
+      case 'checkbox':
+        html += `<label class="studio-toggle"><input type="checkbox" id="sf-${fullKey}" class="studio-field" data-key="${fullKey}" data-type="checkbox" ${val ? 'checked' : ''} style="accent-color:#c9a555"> ${escapeAttr(field.label)}</label>`;
         break;
 
       case 'image':
@@ -209,7 +213,7 @@ function collectBlockFormData(container, fields, prefix = '') {
       continue;
     }
 
-    if (field.type === 'toggle') {
+    if (field.type === 'toggle' || field.type === 'checkbox') {
       data[field.key] = el.checked;
     } else if (field.type === 'number' || field.type === 'range') {
       data[field.key] = el.value === '' ? (field.default ?? '') : Number(el.value);
