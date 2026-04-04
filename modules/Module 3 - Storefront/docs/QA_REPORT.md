@@ -663,3 +663,59 @@ Fix: Update @astrojs/vercel from 10.0.3 to 10.0.4
 - UTM tracking captured via sessionStorage → lead forms
 - Partytown configured for analytics (zero main-thread impact)
 - Tenant resolution with multi-domain support is solid
+
+---
+
+## Post-Fix Verification (FIX-1/2/3)
+**Date:** 2026-04-04
+**Result:** PASS (with minor notes)
+
+| Check | Result | Notes |
+|-------|--------|-------|
+| Skip nav link | PASS | "דלג לתוכן הראשי" appears on Tab |
+| hreflang tags | PASS | he, en, ru, x-default present |
+| Twitter card tags | PASS | summary_large_image |
+| og:site_name | PASS | "אופטיקה פריזמה" |
+| Forbidden colors | PASS | No blue/purple/cyan found |
+| Custom 404 page | FAIL | Catch-all returns plain "Not Found" — 404.astro not reached |
+| Products load | PASS | 103 products with images |
+| Sitemap | PASS | 648 URLs in sitemap-dynamic.xml |
+| English products | PASS | Title shows "Prizma Optics" |
+| Product detail carousel | PASS | Arrows positioned correctly in RTL |
+| Mobile overflow (375px) | MINOR | ContactBlock -mx-4 causes ~9px horizontal overflow |
+
+---
+
+## FIX-4 Summary (Content + WordPress Parity)
+**Date:** 2026-04-04
+
+### Bugs Fixed
+1. **Phone placeholder RTL** — Added `dir="rtl"` and `text-start` to tel inputs in ContactForm.astro and ContactBlock.astro. Verified: placeholders now right-aligned.
+2. **Hero test content** — SQL created (`sql/UPDATE-fix-hero-test-content.sql`) to change "בדיקת AI" → "אופטיקה פריזמה אשקלון". Pending Daniel.
+
+### WordPress Comparison Results
+- Total WordPress pages found: ~70 (including brands, campaigns, Russian, success pages)
+- Pages we have and match: 20
+- Pages we have but need content enrichment: 1 (about — SQL created)
+- Pages missing entirely: 1 (vintage-frames — low priority)
+- Pages intentionally not migrated: ~48 (brand root pages, Russian campaign dupes, WooCommerce pages, test pages)
+- Full report: `WORDPRESS_COMPARISON.md`
+
+### Contact Page
+- Status: EXISTS — matches WordPress structure (hero, support options, contact methods, form)
+- No SQL changes needed
+
+### About Page
+- Status: EXISTS — content too thin vs WordPress
+- SQL file: `sql/UPDATE-about-page.sql` — adds history, vision, "why us" sections
+- Pending Daniel
+
+### Remaining Open Items for DNS Switch
+1. Hero title fix (SQL — Daniel)
+2. About page content enrichment (SQL — Daniel)
+3. Brand pages SQL 048/049/050 (SQL — Daniel)
+
+### Remaining Open Items Post-DNS Switch
+1. 404 page: catch-all route returns plain text instead of branded 404.astro
+2. Mobile horizontal overflow: ContactBlock -mx-4 on 375px viewport
+3. /vintage-frames/ page missing (low priority)
