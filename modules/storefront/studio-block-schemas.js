@@ -388,19 +388,43 @@ const BLOCK_SCHEMAS = {
     icon: '💰',
     fields: [
       { key: 'title', label: 'כותרת', type: 'text' },
+      { key: 'title_decoration', label: 'קישוט כותרת', type: 'select', options: [
+        { value: 'none', label: 'ללא' }, { value: 'line', label: 'קו' }, { value: 'dots', label: 'נקודות' }
+      ], default: 'none' },
       { key: 'subtitle', label: 'תת כותרת', type: 'text' },
       { key: 'tiers', label: 'רמות מחיר', type: 'items', itemFields: [
         { key: 'id', label: 'מזהה', type: 'text', required: true },
-        { key: 'title', label: 'שם רמה', type: 'text', required: true },
+        { key: 'badge_text', label: 'תגית עליונה', type: 'text', placeholder: 'PREMIUM / קטגוריה 1' },
+        { key: 'badge_style', label: 'סגנון תגית', type: 'select', options: [
+          { value: 'gold', label: 'זהב מלא' }, { value: 'outline', label: 'מסגרת בלבד' }
+        ], default: 'gold' },
         { key: 'price', label: 'מחיר', type: 'number', required: true },
+        { key: 'price_color', label: 'צבע מחיר', type: 'select', options: [
+          { value: 'white', label: 'לבן' }, { value: 'gold', label: 'זהב' }
+        ], default: 'white' },
         { key: 'original_price', label: 'מחיר מקורי (קו חוצה)', type: 'number' },
         { key: 'currency', label: 'סמל מטבע', type: 'text', default: '₪' },
         { key: 'price_label', label: 'תווית מחיר', type: 'text', placeholder: 'לזוג משקפיים' },
+        { key: 'brands_primary', label: 'מותגים (שורה לכל מותג)', type: 'textarea_list' },
+        { key: 'brands_primary_color', label: 'צבע מותגים', type: 'select', options: [
+          { value: 'white', label: 'לבן' }, { value: 'gold', label: 'זהב' }
+        ], default: 'white' },
+        { key: 'brands_secondary', label: 'מותגים נוספים (קולקציות חדשות)', type: 'textarea_list' },
+        { key: 'brands_secondary_color', label: 'צבע מותגים נוספים', type: 'select', options: [
+          { value: 'white', label: 'לבן' }, { value: 'gold', label: 'זהב' }
+        ], default: 'gold' },
+        { key: 'brands_secondary_label', label: 'כותרת לפני מותגים נוספים', type: 'text', placeholder: 'קולקציות חדשות' },
+        { key: 'brands_display', label: 'תצוגת מותגים', type: 'select', options: [
+          { value: 'text', label: 'טקסט (נקודות)' }, { value: 'chips', label: 'צ\'יפים' }, { value: 'hidden', label: 'מוסתר' }
+        ], default: 'text' },
         { key: 'features', label: 'תכונות (שורה לכל אחת)', type: 'textarea_list' },
-        { key: 'brands', label: 'מותגים (מופרדים בפסיק)', type: 'tags' },
-        { key: 'badge', label: 'תג (Badge)', type: 'text', placeholder: 'הכי נמכר' },
-        { key: 'highlighted', label: 'מודגש (מסגרת זהב)', type: 'checkbox' },
+        { key: 'highlighted', label: 'כרטיס מודגש (מסגרת זהב)', type: 'checkbox' },
+        { key: 'bottom_badge_text', label: 'תגית תחתונה', type: 'text', placeholder: 'פרטים בקרוב' },
+        { key: 'bottom_badge_style', label: 'סגנון תגית תחתונה', type: 'select', options: [
+          { value: 'gold', label: 'זהב מלא' }, { value: 'outline', label: 'מסגרת בלבד' }
+        ], default: 'gold' },
         { key: 'cta_text', label: 'טקסט כפתור (דריסת ברירת מחדל)', type: 'text' },
+        { key: 'cta_enabled', label: 'הצג כפתור CTA', type: 'checkbox', default: true },
       ]},
       { key: 'cta_text', label: 'טקסט כפתור (ברירת מחדל)', type: 'text', default: 'לפרטים בוואטסאפ' },
       { key: 'cta_action', label: 'פעולת כפתור', type: 'select', options: [
@@ -410,13 +434,14 @@ const BLOCK_SCHEMAS = {
       { key: 'cta_whatsapp_message', label: 'הודעת וואטסאפ', type: 'text' },
       { key: 'columns_desktop', label: 'עמודות דסקטופ', type: 'select', options: [
         { value: 2, label: '2' }, { value: 3, label: '3' }, { value: 4, label: '4' }
-      ], default: 3 },
+      ], default: 4 },
       { key: 'columns_mobile', label: 'עמודות מובייל', type: 'select', options: [
         { value: 1, label: '1' }, { value: 2, label: '2' }
       ], default: 1 },
       { key: 'theme', label: 'ערכת נושא', type: 'select', options: [
         { value: 'light', label: 'בהיר' }, { value: 'dark', label: 'כהה' }
       ], default: 'dark' },
+      { key: 'card_bg', label: 'רקע כרטיס (CSS)', type: 'text', placeholder: 'linear-gradient(to bottom, #1a1a1a, #111)' },
       { key: 'disclaimer_text', label: 'טקסט הבהרה', type: 'text' },
     ]
   },
