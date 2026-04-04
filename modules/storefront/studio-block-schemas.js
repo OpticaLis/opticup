@@ -353,7 +353,9 @@ const BLOCK_SCHEMAS = {
         { key: 'barcode', label: 'ברקוד', type: 'text', required: true },
         { key: 'campaign_price', label: 'מחיר קמפיין', type: 'number', required: true },
         { key: 'original_price', label: 'מחיר מקורי (מחוק)', type: 'number' },
-        { key: 'badge_text', label: 'תג (VIP / חדש / 1+1)', type: 'text' },
+        { key: 'badge_start', label: 'תג ימין (VIP / חדש / 1+1)', type: 'text' },
+        { key: 'badge_end', label: 'תג שמאל', type: 'text' },
+        { key: 'price_override', label: 'הסתר מחיר (מוצר יוקרה)', type: 'checkbox' },
       ]},
       { key: 'cta_text', label: 'טקסט כפתור CTA', type: 'text', default: 'לבירור בוואטסאפ' },
       { key: 'cta_action', label: 'פעולת CTA', type: 'select', options: [
@@ -370,6 +372,11 @@ const BLOCK_SCHEMAS = {
       { key: 'columns_mobile', label: 'עמודות (מובייל)', type: 'select', options: [
         { value: 1, label: '1' }, { value: 2, label: '2' }
       ], default: 2 },
+      { key: 'default_badge_start', label: 'תג ברירת מחדל (ימין)', type: 'text', placeholder: 'עם קופון' },
+      { key: 'default_badge_end', label: 'תג ברירת מחדל (שמאל)', type: 'text' },
+      { key: 'disclaimer_text', label: 'טקסט הבהרה (מתחת למחיר)', type: 'text', placeholder: '*בהצגת קופון אישי בלבד' },
+      { key: 'price_override_mode', label: 'הסתר מחירים (ברירת מחדל לכל המוצרים)', type: 'toggle', default: false },
+      { key: 'price_override_text', label: 'טקסט במקום מחיר', type: 'text', default: 'מחיר מיוחד לאירוע הקרוב' },
       { key: 'theme', label: 'ערכת נושא', type: 'select', options: [
         { value: 'light', label: 'בהיר (רקע לבן)' }, { value: 'dark', label: 'כהה (רקע שחור)' }
       ], default: 'light' },
