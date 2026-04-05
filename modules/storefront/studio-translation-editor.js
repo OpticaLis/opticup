@@ -261,11 +261,17 @@ const StudioTranslationEditor = (function () {
       }
     }
     if (!pairs.length) return;
+    const rows = pairs.map(p => ({
+      tenant_id: getTenantId(), source_lang: 'he', target_lang: targetLang,
+      source_text: p.source_text, translated_text: p.translated_text,
+      context: p.context || 'general', scope: 'tenant', confidence: 1.0,
+      approved_by: 'human', times_used: 0,
+    }));
     try {
-      await sb.rpc('save_translation_memory_batch', {
-        p_tenant_id: getTenantId(), p_source_lang: 'he', p_target_lang: targetLang,
-        p_pairs: pairs, p_approved_by: 'human', p_confidence: 1.0,
+      const { error } = await sb.from('translation_memory').upsert(rows, {
+        onConflict: 'tenant_id,source_lang,target_lang,source_text', ignoreDuplicates: false,
       });
+      if (error) throw error;
     } catch (e) { console.error('Save memory:', e); }
   }
 
