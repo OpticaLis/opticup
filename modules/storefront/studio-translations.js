@@ -31,7 +31,7 @@ const StudioTranslations = (function () {
         sb.from('v_storefront_config').select('supported_languages,default_language,auto_translate_languages,auto_publish_threshold').eq('tenant_id', tid).single(),
         sb.from('brands').select('id,name,brand_description,brand_description_short,seo_title,seo_description').eq('tenant_id', tid).eq('is_deleted', false),
         sb.from('content_translations').select('*').eq('tenant_id', tid).eq('entity_type', 'brand'),
-        sb.from('translation_glossary').select('*').eq('tenant_id', tid).order('he_term'),
+        sb.from('translation_glossary').select('*').eq('tenant_id', tid).order('term_he'),
       ]);
       dashData = d.data || []; tenantConfig = c.data || {}; brandsData = b.data || []; brandTr = bt.data || []; glossaryData = g.data || [];
       _loaded = true;
@@ -167,9 +167,26 @@ const StudioTranslations = (function () {
   }
 
   // ── API ──
+  function showTranslating(on) {
+    let ov = document.getElementById('trans-loading');
+    if (on) {
+      if (ov) return;
+      ov = document.createElement('div'); ov.id = 'trans-loading';
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999';
+      ov.innerHTML = `<div style="background:#fff;border-radius:12px;padding:32px 48px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+        <div style="width:40px;height:40px;border:4px solid #e5e5e5;border-top-color:#c9a555;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div>
+        <div style="font-size:1.1rem;font-weight:600">מתרגם עמוד...</div>
+        <div style="font-size:.85rem;color:#6b7280;margin-top:4px">העיבוד עשוי לקחת 10-30 שניות</div>
+      </div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
+      document.body.appendChild(ov);
+    } else { if (ov) ov.remove(); }
+  }
+
   async function callTranslateAPI(mode, params) {
+    const jwt = sessionStorage.getItem('jwt_token');
+    if (!jwt) throw new Error('לא מחובר — נא להתחבר מחדש');
     const r = await fetch(TRANSLATE_FN+'?_t='+Date.now(), {
-      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON},
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
       body: JSON.stringify({ mode, tenant_id: getTenantId(), ...params }),
     });
     if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error||'Translation failed'); }
@@ -177,34 +194,37 @@ const StudioTranslations = (function () {
   }
 
   async function translatePage(srcId, lang) {
+    showTranslating(true);
     try {
-      Toast.success('מתרגם...'); await callTranslateAPI('translate_page', { source_page_id: srcId, target_lang: lang });
+      await callTranslateAPI('translate_page', { source_page_id: srcId, target_lang: lang });
       Toast.success('התרגום הושלם'); _loaded = false; await init(containerId);
-    } catch(e) { Toast.error('שגיאה: '+e.message); }
+    } catch(e) { Toast.error('שגיאה: '+e.message); } finally { showTranslating(false); }
   }
 
   async function bulkTranslate(lang) {
     const todo = dashData.filter(r=>!r[lang+'_page_id']);
     if (!todo.length) { Toast.success('הכל מתורגם!'); return; }
+    showTranslating(true);
     const p = document.getElementById('trans-bulk-prog');
     for (let i=0;i<todo.length;i++) {
       if(p) p.textContent = `מתרגם ${i+1}/${todo.length}...`;
       try { await callTranslateAPI('translate_page',{source_page_id:todo[i].he_page_id,target_lang:lang}); } catch(e){ console.error(e); }
     }
+    showTranslating(false);
     if(p) p.textContent='הושלם!'; Toast.success(`תורגמו ${todo.length} עמו��ים`);
     _loaded=false; await init(containerId);
   }
 
   async function translateBrand(id) {
     const b = brandsData.find(x=>x.id===id); if(!b) return;
-    Toast.success('מתרגם מותג...');
+    showTranslating(true);
     for (const l of supported()) {
       for (const f of ['brand_description','brand_description_short','seo_title','seo_description']) {
         if(!b[f]) continue;
         try { await callTranslateAPI('translate_text',{text:b[f],target_lang:l,context:'brand_'+f}); } catch(e){ console.error(e); }
       }
     }
-    Toast.success('הושלם'); _loaded=false; await init(containerId);
+    showTranslating(false); Toast.success('הושלם'); _loaded=false; await init(containerId);
   }
 
   async function saveOverride(key, lang, val) {
