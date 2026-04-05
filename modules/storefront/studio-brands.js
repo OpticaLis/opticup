@@ -609,9 +609,13 @@ async function handleStudioLogoUpload(input, brandId) {
   reader.onload = async function() {
     const base64 = reader.result.split(',')[1];
     try {
+      const _jwt = sessionStorage.getItem('jwt_token') || '';
       const res = await fetch(`${STOREFRONT_BASE}/api/normalize-logo`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + _jwt
+        },
         body: JSON.stringify({
           image_base64: base64,
           filename: file.name,
