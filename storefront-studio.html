@@ -95,6 +95,7 @@
       <button class="studio-tab" data-tab="templates" id="tab-btn-templates" onclick="switchStudioTab('templates')">📑 תבניות</button>
       <button class="studio-tab" data-tab="shortcodes" id="tab-btn-shortcodes" onclick="switchStudioTab('shortcodes')">📦 שורטקודים</button>
       <button class="studio-tab" data-tab="media" onclick="switchStudioTab('media')">🖼️ מדיה</button>
+      <button class="studio-tab" data-tab="translations" onclick="switchStudioTab('translations')">🌐 שפות</button>
       <a href="storefront-blog.html" class="studio-tab" style="text-decoration:none">📝 ניהול בלוג</a>
     </div>
 
@@ -164,6 +165,13 @@
         <div class="studio-empty">טוען...</div>
       </div>
     </div>
+
+    <!-- Tab: Translations / Languages -->
+    <div class="studio-tab-content" id="tab-translations">
+      <div id="studio-translations-content">
+        <div class="studio-empty">טוען...</div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -217,6 +225,9 @@
 <script src="modules/storefront/studio-ai-diff.js"></script>
 <script src="modules/storefront/studio-campaigns.js"></script>
 <script src="modules/storefront/studio-campaign-builder.js"></script>
+<script src="modules/storefront/studio-translation-glossary.js"></script>
+<script src="modules/storefront/studio-translations.js"></script>
+<script src="modules/storefront/studio-translation-editor.js"></script>
 
 <script>
 function switchStudioTab(tab) {
@@ -227,6 +238,7 @@ function switchStudioTab(tab) {
   if (tab === 'templates') renderTemplatesManager();
   if (tab === 'shortcodes' && !shortcodePresets.length) loadShortcodePresets();
   if (tab === 'media' && !mediaLoaded) loadMediaLibrary();
+  if (tab === 'translations') StudioTranslations.init('studio-translations-content');
 }
 
 function applyStudioPermissions() {
