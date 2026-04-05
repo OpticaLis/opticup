@@ -74,7 +74,10 @@
 
 <main>
   <div class="sf-container">
-    <h1 class="sf-title">🎨 ניהול אתר — Studio</h1>
+    <div style="display:flex;align-items:center;gap:12px">
+      <h1 class="sf-title" style="margin:0">🎨 ניהול אתר — Studio</h1>
+      <button onclick="refreshCurrentTab()" title="רענן" style="background:none;border:1px solid #e5e5e5;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:1.1rem;transition:border-color .2s" onmouseover="this.style.borderColor='#c9a555'" onmouseout="this.style.borderColor='#e5e5e5'">🔄</button>
+    </div>
     <p class="sf-subtitle">עריכת עמודים ובלוקים — ניהול תוכן ויזואלי</p>
 
     <nav class="sf-nav">
@@ -230,6 +233,19 @@
 <script src="modules/storefront/studio-translation-editor.js"></script>
 
 <script>
+function refreshCurrentTab() {
+  const active = document.querySelector('.studio-tab.active[data-tab]');
+  if (!active) return;
+  const tab = active.dataset.tab;
+  if (tab === 'pages') loadStudioPages();
+  else if (tab === 'leads') loadLeads();
+  else if (tab === 'reviews') loadReviews();
+  else if (tab === 'templates') renderTemplatesManager();
+  else if (tab === 'media') { mediaLoaded = false; loadMediaLibrary(); }
+  else if (tab === 'translations') StudioTranslations.reload();
+  Toast.success('רוענן');
+}
+
 function switchStudioTab(tab) {
   document.querySelectorAll('.studio-tab[data-tab]').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
   document.querySelectorAll('.studio-tab-content').forEach(el => el.classList.toggle('active', el.id === 'tab-' + tab));

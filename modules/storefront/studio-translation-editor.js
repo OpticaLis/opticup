@@ -33,11 +33,16 @@ const StudioTranslationEditor = (function () {
     const { data: src } = await sb.from('v_admin_pages').select('*').eq('id', sourcePageId).single();
     if (!src) { Toast.error('עמוד מקור לא נמצא'); return; }
     sourcePage = src;
-    // Load target page (same translation_group_id + lang)
+    // Load target page: try translation_group_id first, fallback to slug+lang
     targetPage = null;
     if (src.translation_group_id) {
       const { data: tgt } = await sb.from('v_admin_pages').select('*')
         .eq('translation_group_id', src.translation_group_id).eq('lang', lang).eq('tenant_id', tid).single();
+      if (tgt) targetPage = tgt;
+    }
+    if (!targetPage && src.slug) {
+      const { data: tgt } = await sb.from('v_admin_pages').select('*')
+        .eq('slug', src.slug).eq('lang', lang).eq('tenant_id', tid).single();
       if (tgt) targetPage = tgt;
     }
     renderEditor();
@@ -197,9 +202,11 @@ const StudioTranslationEditor = (function () {
         }).eq('id', targetPage.id);
         if (error) throw error;
       } else {
+        const title = document.getElementById('te-seo-title')?.value || sourcePage?.title || '';
         const { data, error } = await sb.rpc('create_translated_page', {
-          p_source_page_id: sourcePage.id, p_target_lang: targetLang, p_translated_blocks: blocks,
-          p_meta_title: seoTitle, p_meta_description: seoDesc, p_slug: slug,
+          p_tenant_id: tid, p_source_page_id: sourcePage.id, p_target_lang: targetLang,
+          p_translated_blocks: blocks, p_title: title, p_slug: slug,
+          p_meta_title: seoTitle, p_meta_description: seoDesc,
         });
         if (error) throw error;
         // Update status after creation
@@ -233,13 +240,29 @@ const StudioTranslationEditor = (function () {
     } catch (e) { console.error('Save memory:', e); }
   }
 
+  // ── Loading overlay ──
+  function showTranslating(on) {
+    let ov = document.getElementById('te-loading');
+    if (on) {
+      if (ov) return;
+      ov = document.createElement('div'); ov.id = 'te-loading';
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999';
+      ov.innerHTML = `<div style="background:#fff;border-radius:12px;padding:32px 48px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+        <div style="width:40px;height:40px;border:4px solid #e5e5e5;border-top-color:#c9a555;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div>
+        <div style="font-size:1.1rem;font-weight:600">מתרגם...</div>
+        <div style="font-size:.85rem;color:#6b7280;margin-top:4px">העיבוד עשוי לקחת 10-30 שניות</div>
+      </div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
+      document.body.appendChild(ov);
+    } else { if (ov) ov.remove(); }
+  }
+
   // ── Translate block via AI ──
   async function translateBlock(idx) {
     const srcBlock = sourcePage?.blocks?.[idx]; if (!srcBlock) return;
+    showTranslating(true);
     try {
-      Toast.success('מתרגם בלוק...');
       const result = await StudioTranslations.callTranslateAPI('translate_blocks', {
-        source_blocks: [srcBlock], target_lang: targetLang,
+        blocks: [srcBlock], target_lang: targetLang,
       });
       if (result?.translated_blocks?.[0]?.data) {
         const td = result.translated_blocks[0].data;
@@ -247,20 +270,30 @@ const StudioTranslationEditor = (function () {
           const el = document.getElementById(`te-b${idx}-${f}`);
           if (el && td[f]) el.value = td[f];
         }
+        // Also fill array fields
+        for (const [arrName, arrFields] of Object.entries(TAF[srcBlock.type]||{})) {
+          const tItems = td[arrName]; if (!Array.isArray(tItems)) continue;
+          for (let j = 0; j < tItems.length; j++) {
+            for (const af of arrFields) {
+              const el = document.getElementById(`te-b${idx}-${arrName}-${j}-${af}`);
+              if (el && tItems[j]?.[af]) el.value = tItems[j][af];
+            }
+          }
+        }
       }
       Toast.success('בלוק תורגם');
-    } catch (e) { Toast.error('שגיאה: ' + e.message); }
+    } catch (e) { Toast.error('שגיאה: ' + e.message); } finally { showTranslating(false); }
   }
 
   async function translateAll() {
+    showTranslating(true);
     try {
-      Toast.success('מתרגם הכל...');
-      const result = await StudioTranslations.callTranslateAPI('translate_page', {
+      await StudioTranslations.callTranslateAPI('translate_page', {
         source_page_id: sourcePage.id, target_lang: targetLang,
       });
       Toast.success('התרגום הושלם — טוען מחדש...');
       await open(sourcePage.id, targetLang);
-    } catch (e) { Toast.error('שגיאה: ' + e.message); }
+    } catch (e) { Toast.error('שגיאה: ' + e.message); } finally { showTranslating(false); }
   }
 
   return { open, close, saveDraft, publish, translateBlock, translateAll };
