@@ -197,7 +197,9 @@ const StudioTranslations = (function () {
     showTranslating(true);
     try {
       await callTranslateAPI('translate_page', { source_page_id: srcId, target_lang: lang });
-      Toast.success('התרגום הושלם'); _loaded = false; await init(containerId);
+      _loaded = false;
+      if (window.StudioRefresh) await StudioRefresh.afterAction(Promise.resolve(), 'התרגום הושלם');
+      else { Toast.success('התרגום הושלם'); await init(containerId); }
     } catch(e) { Toast.error('שגיאה: '+e.message); } finally { showTranslating(false); }
   }
 
@@ -211,8 +213,10 @@ const StudioTranslations = (function () {
       try { await callTranslateAPI('translate_page',{source_page_id:todo[i].he_page_id,target_lang:lang}); } catch(e){ console.error(e); }
     }
     showTranslating(false);
-    if(p) p.textContent='הושלם!'; Toast.success(`תורגמו ${todo.length} עמו��ים`);
-    _loaded=false; await init(containerId);
+    if(p) p.textContent='הושלם!';
+    _loaded=false;
+    if (window.StudioRefresh) await StudioRefresh.afterAction(Promise.resolve(), `תורגמו ${todo.length} עמודים`);
+    else { Toast.success(`תורגמו ${todo.length} עמודים`); await init(containerId); }
   }
 
   async function translateBrand(id) {

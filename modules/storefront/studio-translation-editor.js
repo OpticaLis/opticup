@@ -244,8 +244,10 @@ const StudioTranslationEditor = (function () {
         if (data) await sb.from('storefront_pages').update({ status: pubStatus, translation_status: transStatus, noindex }).eq('id', data);
       }
       if (transStatus === 'approved') await saveToMemory(blocks);
-      Toast.success(pubStatus === 'published' ? 'פורסם בהצלחה' : 'טיוטה נשמרה');
+      const msg = pubStatus === 'published' ? 'פורסם בהצלחה' : 'טיוטה נשמרה';
       close();
+      if (window.StudioRefresh) await StudioRefresh.afterAction(Promise.resolve(), msg);
+      else Toast.success(msg);
     } catch (e) { console.error('Save translation:', e); Toast.error('שגיאה: ' + e.message); }
   }
 

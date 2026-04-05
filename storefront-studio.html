@@ -233,18 +233,32 @@
 <script src="modules/storefront/studio-translation-editor.js"></script>
 
 <script>
-function refreshCurrentTab() {
-  const active = document.querySelector('.studio-tab.active[data-tab]');
-  if (!active) return;
-  const tab = active.dataset.tab;
-  if (tab === 'pages') loadStudioPages();
-  else if (tab === 'leads') loadLeads();
-  else if (tab === 'reviews') loadReviews();
-  else if (tab === 'templates') renderTemplatesManager();
-  else if (tab === 'media') { mediaLoaded = false; loadMediaLibrary(); }
-  else if (tab === 'translations') StudioTranslations.reload();
-  Toast.success('רוענן');
-}
+// ── Global refresh system ──
+window.StudioRefresh = {
+  _tabs: {
+    pages: () => loadStudioPages(),
+    leads: () => loadLeads(),
+    reviews: () => loadReviews(),
+    templates: () => renderTemplatesManager(),
+    media: () => { mediaLoaded = false; loadMediaLibrary(); },
+    translations: () => StudioTranslations.reload(),
+  },
+  register(tab, fn) { this._tabs[tab] = fn; },
+  async refreshCurrentTab() {
+    const active = document.querySelector('.studio-tab.active[data-tab]');
+    if (!active) return;
+    const fn = this._tabs[active.dataset.tab];
+    if (fn) await fn();
+  },
+  async afterAction(promise, successMsg) {
+    const result = await promise;
+    if (successMsg) Toast.success(successMsg);
+    await this.refreshCurrentTab();
+    return result;
+  },
+};
+
+function refreshCurrentTab() { StudioRefresh.refreshCurrentTab(); Toast.success('רוענן'); }
 
 function switchStudioTab(tab) {
   document.querySelectorAll('.studio-tab[data-tab]').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
