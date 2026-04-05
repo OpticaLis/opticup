@@ -294,6 +294,11 @@ async function saveBlocks() {
     Toast.success('\u05D4\u05E9\u05D9\u05E0\u05D5\u05D9\u05D9\u05DD \u05E0\u05E9\u05DE\u05E8\u05D5');
     const { data } = await sb.from('v_admin_pages').select('*').eq('id', currentPage.id).single();
     if (data) currentPage = data;
+    // i18n: mark translations as stale when source page is edited
+    if (currentPage.translation_group_id && currentPage.lang === 'he') {
+      const { data: staleCount } = await sb.rpc('mark_translations_stale', { p_page_id: currentPage.id, p_changed_blocks: null });
+      if (staleCount > 0) Toast.success(staleCount + ' תרגומים סומנו לעדכון', 'info');
+    }
   } catch (err) { console.error('Save error:', err); Toast.error('\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E9\u05DE\u05D9\u05E8\u05D4: ' + (err.message || '')); }
 }
 
