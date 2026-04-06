@@ -280,11 +280,21 @@ async function saveBlogPost() {
   showLoading('שומר...');
   try {
     if (editingPostId) {
+      // Learning loop: fetch old values for non-Hebrew posts to capture corrections
+      let oldPost = null;
+      if (postData.lang && postData.lang !== 'he') {
+        const { data } = await sb.from('blog_posts')
+          .select('title, content, excerpt, seo_title, seo_description')
+          .eq('id', editingPostId)
+          .single();
+        oldPost = data;
+      }
       const { error } = await sb.from('blog_posts')
         .update(postData)
         .eq('id', editingPostId)
         .eq('tenant_id', tid);
       if (error) throw error;
+      if (oldPost) await saveBlogTranslationLearning(tid, postData, oldPost);
     } else {
       postData.source = 'manual';
       const { error } = await sb.from('blog_posts')
@@ -676,4 +686,63 @@ function updateBlogSeo() {
 // Keep legacy function name for backward compatibility
 function blogCharCount(fieldId, limit) {
   updateBlogSeo();
+}
+
+// ═══════════════════════════════════════════════════
+// LEARNING LOOP: capture blog translation edits
+// ═══════════════════════════════════════════════════
+async function saveBlogTranslationLearning(tid, newPost, oldPost) {
+  try {
+    const lang = newPost.lang;
+    const fields = ['title', 'excerpt', 'seo_title', 'seo_description', 'content'];
+    const corrections = [];
+    for (const f of fields) {
+      const o = (oldPost[f] || '').trim();
+      const n = (newPost[f] || '').trim();
+      if (o && n && o !== n) corrections.push({ field: f, original: o, corrected: n });
+    }
+    if (!corrections.length) return;
+
+    // Save corrections (human-edited overrides of previous translation)
+    const corrRows = corrections.map(c => ({
+      tenant_id: tid, lang,
+      original_translation: c.original,
+      corrected_translation: c.corrected,
+      is_deleted: false,
+    }));
+    try {
+      const { error } = await sb.from('translation_corrections').insert(corrRows);
+      if (error) console.error('Blog save corrections:', error.message);
+    } catch (e) { console.error('Blog save corrections:', e.message); }
+
+    // Save to translation_memory — look up matching Hebrew source by slug
+    try {
+      const { data: heSource } = await sb.from('blog_posts')
+        .select('title, excerpt, seo_title, seo_description, content')
+        .eq('tenant_id', tid).eq('slug', newPost.slug).eq('lang', 'he').maybeSingle();
+      if (!heSource) return;
+      const memRows = [];
+      for (const c of corrections) {
+        const src = (heSource[c.field] || '').trim();
+        if (!src) continue;
+        memRows.push({
+          tenant_id: tid,
+          source_lang: 'he', target_lang: lang,
+          source_text: src, translated_text: c.corrected,
+          context: 'blog_post.' + c.field,
+          scope: 'tenant', confidence: 1.0,
+          approved_by: 'human', times_used: 0,
+        });
+      }
+      if (memRows.length) {
+        const { error } = await sb.from('translation_memory').upsert(memRows, {
+          onConflict: 'tenant_id,source_lang,target_lang,source_hash',
+          ignoreDuplicates: false,
+        });
+        if (error) console.error('Blog save memory:', error.message);
+      }
+    } catch (e) { console.error('Blog save memory:', e.message); }
+  } catch (e) {
+    console.error('saveBlogTranslationLearning:', e.message);
+  }
 }
