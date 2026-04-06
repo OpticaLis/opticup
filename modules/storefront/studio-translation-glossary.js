@@ -6,18 +6,22 @@ const StudioTranslationGlossary = (function () {
   function groupData(data) {
     const grouped = {};
     (data || []).forEach(row => {
-      if (!grouped[row.term_he]) {
-        grouped[row.term_he] = {
-          term_he: row.term_he,
+      const termHe = (row.term_he || '').trim();
+      if (!termHe) return; // skip malformed rows
+      if (!grouped[termHe]) {
+        grouped[termHe] = {
+          term_he: termHe,
           context: row.context || '',
           en: '', ru: '',
           en_id: null, ru_id: null,
         };
       }
-      const g = grouped[row.term_he];
+      const g = grouped[termHe];
       if (row.context && !g.context) g.context = row.context;
-      if (row.lang === 'en') { g.en = row.term_translated || ''; g.en_id = row.id; }
-      if (row.lang === 'ru') { g.ru = row.term_translated || ''; g.ru_id = row.id; }
+      const lang = (row.lang || '').trim().toLowerCase();
+      const tr = row.term_translated || '';
+      if (lang === 'en') { g.en = tr; g.en_id = row.id; }
+      else if (lang === 'ru') { g.ru = tr; g.ru_id = row.id; }
     });
     return Object.values(grouped).sort((a, b) => a.term_he.localeCompare(b.term_he, 'he'));
   }
