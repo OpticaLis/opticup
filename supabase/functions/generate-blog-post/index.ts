@@ -41,6 +41,59 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body = await req.json();
+    const { mode } = body;
+
+    // ── Translate mode: translate an existing blog post to target_lang ──
+    if (mode === "translate") {
+      const { source_title, source_content, source_excerpt, target_lang } = body;
+      if (!source_content || !target_lang) {
+        return errRes("translate mode: source_content and target_lang required", 400);
+      }
+      const langName = target_lang === "en" ? "English" : target_lang === "ru" ? "Russian" : target_lang;
+      const tPrompt = `Translate the following Hebrew blog post to ${langName}.
+Preserve all HTML tags exactly (h2, p, ul, li, strong, a, etc.). Do not add new HTML.
+Keep brand names and proper nouns in their original form when common.
+Return JSON only (no markdown, no backticks):
+{
+  "title": "translated title",
+  "content": "translated HTML content",
+  "excerpt": "translated excerpt",
+  "seo_title": "translated SEO title (50-60 chars)",
+  "seo_description": "translated meta description (150-160 chars)"
+}
+
+SOURCE_TITLE: ${source_title || ""}
+SOURCE_EXCERPT: ${source_excerpt || ""}
+SOURCE_CONTENT:
+${source_content}`;
+
+      const tRes = await fetch(CLAUDE_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: CLAUDE_MODEL,
+          max_tokens: 4096,
+          messages: [{ role: "user", content: tPrompt }],
+        }),
+      });
+      if (!tRes.ok) {
+        const errText = await tRes.text();
+        return errRes(`Claude API error ${tRes.status}: ${errText}`, 502);
+      }
+      const tData = await tRes.json();
+      let tText = (tData.content?.[0]?.text ?? "").trim();
+      if (tText.startsWith("```")) {
+        tText = tText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+      }
+      const tResult = JSON.parse(tText);
+      return jsonRes({ success: true, ...tResult });
+    }
+
+    // ── Generate mode (default) ──
     const {
       tenant_id,
       topic,
