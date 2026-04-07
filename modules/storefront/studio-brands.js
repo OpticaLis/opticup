@@ -134,6 +134,17 @@ async function loadStudioBrands() {
     const tagMap = {};
     for (const bt of (brandTags || [])) { tagMap[bt.id] = bt.tags || []; }
 
+    // Fetch translation status (entity_id + lang) for language badges
+    const { data: trRows } = await sb.from('content_translations')
+      .select('entity_id, lang')
+      .eq('tenant_id', tid)
+      .eq('entity_type', 'brand');
+    const langMap = {};
+    for (const r of (trRows || [])) {
+      if (!langMap[r.entity_id]) langMap[r.entity_id] = { he: true };
+      langMap[r.entity_id][r.lang] = true;
+    }
+
     if (error) throw error;
 
     const brandMap = new Map();
@@ -143,7 +154,7 @@ async function loadStudioBrands() {
       if (existing) {
         existing.product_count += rowCount;
       } else {
-        brandMap.set(row.brand_id, { ...row, product_count: rowCount, tags: tagMap[row.brand_id] || [] });
+        brandMap.set(row.brand_id, { ...row, product_count: rowCount, tags: tagMap[row.brand_id] || [], _langs: langMap[row.brand_id] || { he: true } });
       }
     }
 
@@ -197,6 +208,7 @@ function renderStudioBrandList() {
       <div class="brand-list-info">
         <div class="brand-list-name">${escapeHtml(b.brand_name)}</div>
         <div class="brand-list-count">${b.product_count} מוצרים</div>
+        ${typeof renderLangBadges === 'function' ? renderLangBadges(b._langs) : ''}
         ${brandTagBadges}
       </div>
       ${seoScoreBadge(score)}
@@ -609,12 +621,14 @@ async function handleStudioLogoUpload(input, brandId) {
   reader.onload = async function() {
     const base64 = reader.result.split(',')[1];
     try {
-      const _jwt = sessionStorage.getItem('jwt_token') || '';
+      const _authToken = sessionStorage.getItem('jwt_token')
+        || sessionStorage.getItem('prizma_auth_token')
+        || '';
       const res = await fetch(`${STOREFRONT_BASE}/api/normalize-logo`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + _jwt
+          'Authorization': 'Bearer ' + _authToken
         },
         body: JSON.stringify({
           image_base64: base64,

@@ -236,12 +236,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const base64 = reader.result.split(',')[1];
 
       try {
-        const _jwt = sessionStorage.getItem('jwt_token') || '';
+        const _authToken = sessionStorage.getItem('jwt_token')
+          || sessionStorage.getItem('prizma_auth_token')
+          || '';
         const res = await fetch(`${STOREFRONT_URL}/api/normalize-logo`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + _jwt
+            'Authorization': 'Bearer ' + _authToken
           },
           body: JSON.stringify({
             image_base64: base64,
