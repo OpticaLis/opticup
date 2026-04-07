@@ -123,7 +123,7 @@ async function loadStudioBrands() {
     const tid = getTenantId();
     // Fetch from view (product counts + page fields) — tags come from brands table join
     const { data, error } = await sb.from('v_storefront_brands')
-      .select('brand_id, brand_name, slug, product_count, brand_page_enabled, brand_description_short, logo_url, brand_description, video_url, hero_image, brand_gallery, seo_title, seo_description')
+      .select('brand_id, brand_name, slug, product_count, brand_page_enabled, brand_description_short, logo_url, brand_description, video_url, hero_image, brand_gallery, seo_title, seo_description, display_mode, brand_page_visibility, show_brand_products')
       .eq('tenant_id', tid)
       .order('brand_name');
 
@@ -307,6 +307,30 @@ function openStudioBrandEditor(brandId) {
       <div id="sbe-seo-score" style="display:flex; align-items:center; gap:6px; font-size:.8rem; color:var(--g500);">
         ${seoScoreBadge(seoScore)} SEO
       </div>
+    </div>
+
+    <div class="brand-editor-section">
+      <h4 style="font-weight:700; margin-bottom:8px;">הגדרות תצוגה</h4>
+
+      <label class="brand-editor-label">תצוגת מוצרים</label>
+      <select id="sbe-display-mode" class="brand-editor-input">
+        <option value="catalog"   ${(brand.display_mode || 'store_all') === 'catalog'   ? 'selected' : ''}>קטלוג - כל הדגמים (להזמנה)</option>
+        <option value="store_all" ${(brand.display_mode || 'store_all') === 'store_all' ? 'selected' : ''}>חנות - הכל כולל אזל</option>
+        <option value="store"     ${(brand.display_mode || 'store_all') === 'store'     ? 'selected' : ''}>חנות - במלאי בלבד</option>
+        <option value="hidden"    ${(brand.display_mode || 'store_all') === 'hidden'    ? 'selected' : ''}>הסתר - לא מוצג באתר</option>
+      </select>
+
+      <label class="brand-editor-label" style="margin-top:12px;">נראות עמוד מותג</label>
+      <select id="sbe-page-visibility" class="brand-editor-input">
+        <option value="listed"   ${(brand.brand_page_visibility || 'listed') === 'listed'   ? 'selected' : ''}>פעיל - מופיע ברשימה</option>
+        <option value="unlisted" ${(brand.brand_page_visibility || 'listed') === 'unlisted' ? 'selected' : ''}>פעיל ומוסתר - לא ברשימה אבל URL עובד</option>
+        <option value="hidden"   ${(brand.brand_page_visibility || 'listed') === 'hidden'   ? 'selected' : ''}>מוסתר לגמרי - אין עמוד</option>
+      </select>
+
+      <label class="brand-toggle" style="display:flex; align-items:center; gap:8px; margin-top:12px;">
+        <input type="checkbox" id="sbe-show-products" ${brand.show_brand_products !== false ? 'checked' : ''} />
+        <span>הצג מוצרים בעמוד מותג</span>
+      </label>
     </div>
 
     <div class="brand-editor-section">
@@ -678,6 +702,9 @@ async function saveStudioBrandPage(brandId) {
     seo_title: document.getElementById('sbe-seo-title')?.value.trim() || null,
     seo_description: document.getElementById('sbe-seo-desc')?.value.trim() || null,
     tags: typeof getCheckedTags === 'function' ? getCheckedTags() : [],
+    display_mode: document.getElementById('sbe-display-mode')?.value || 'store_all',
+    brand_page_visibility: document.getElementById('sbe-page-visibility')?.value || 'listed',
+    show_brand_products: document.getElementById('sbe-show-products')?.checked !== false,
   };
 
   try {
