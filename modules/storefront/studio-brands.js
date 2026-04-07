@@ -621,8 +621,10 @@ async function handleStudioLogoUpload(input, brandId) {
   reader.onload = async function() {
     const base64 = reader.result.split(',')[1];
     try {
-      const _authToken = sessionStorage.getItem('jwt_token')
-        || sessionStorage.getItem('prizma_auth_token')
+      // prizma_auth_token is the canonical ERP session token (auth-service.js).
+      // jwt_token is only set in JWT-based logins and may be stale.
+      const _authToken = sessionStorage.getItem('prizma_auth_token')
+        || sessionStorage.getItem('jwt_token')
         || '';
       const res = await fetch(`${STOREFRONT_BASE}/api/normalize-logo`, {
         method: 'POST',

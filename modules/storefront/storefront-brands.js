@@ -236,8 +236,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const base64 = reader.result.split(',')[1];
 
       try {
-        const _authToken = sessionStorage.getItem('jwt_token')
-          || sessionStorage.getItem('prizma_auth_token')
+        // prizma_auth_token is the canonical ERP session token.
+        const _authToken = sessionStorage.getItem('prizma_auth_token')
+          || sessionStorage.getItem('jwt_token')
           || '';
         const res = await fetch(`${STOREFRONT_URL}/api/normalize-logo`, {
           method: 'POST',
