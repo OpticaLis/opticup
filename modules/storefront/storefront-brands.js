@@ -11,7 +11,7 @@ async function loadStorefrontBrands() {
 
     // Get brands with product counts + brand page fields
     const { data: brands, error: brandErr } = await sb.from(T.BRANDS)
-      .select('id, name, storefront_mode, default_sync, exclude_website, active, brand_page_enabled, brand_description, brand_description_short, video_url, hero_image, logo_url, brand_gallery, seo_title, seo_description')
+      .select('id, name, storefront_mode, display_mode, default_sync, exclude_website, active, brand_page_enabled, brand_description, brand_description_short, video_url, hero_image, logo_url, brand_gallery, seo_title, seo_description')
       .eq('tenant_id', tid)
       .eq('active', true)
       .order('name');
@@ -72,6 +72,7 @@ function renderBrandsTable(brands, countMap) {
         <th>מוצרים</th>
         <th>סנכרון</th>
         <th>מצב תצוגה</th>
+        <th>תצוגה באתר</th>
         <th>עמוד מותג</th>
       </tr>
     </thead>
@@ -80,6 +81,7 @@ function renderBrandsTable(brands, countMap) {
   for (const b of brands) {
     const count = countMap[b.id] || 0;
     const currentMode = b.storefront_mode || '';
+    const currentDisplay = b.display_mode || 'store_all';
     const syncLabel = b.exclude_website ? '🚫 מוסתר' :
       b.default_sync === 'full' ? '✅ מלא' :
       b.default_sync === 'display' ? '🖼️ תצוגה' : '—';
@@ -98,6 +100,13 @@ function renderBrandsTable(brands, countMap) {
         </select>
       </td>
       <td>
+        <select class="mode-select" data-brand-id="${b.id}" onchange="changeBrandDisplayMode(this)">
+          <option value="catalog" ${currentDisplay === 'catalog' ? 'selected' : ''}>קטלוג - כל הדגמים (להזמנה)</option>
+          <option value="store_all" ${currentDisplay === 'store_all' ? 'selected' : ''}>חנות - הכל כולל אזל</option>
+          <option value="store" ${currentDisplay === 'store' ? 'selected' : ''}>חנות - במלאי בלבד</option>
+        </select>
+      </td>
+      <td>
         <button class="btn-page ${pageActive ? 'active' : ''}" onclick="openBrandPageModal('${b.id}')">
           ${pageActive ? '✅ פעיל' : '📄 ערוך'}
         </button>
@@ -111,6 +120,23 @@ function renderBrandsTable(brands, countMap) {
   // Store brands data for modal
   window._brandsData = {};
   for (const b of brands) { window._brandsData[b.id] = b; }
+}
+
+async function changeBrandDisplayMode(selectEl) {
+  const brandId = selectEl.dataset.brandId;
+  const newMode = selectEl.value;
+  try {
+    const { error } = await sb.from(T.BRANDS)
+      .update({ display_mode: newMode })
+      .eq('id', brandId)
+      .eq('tenant_id', getTenantId());
+    if (error) throw error;
+    const label = { catalog: 'קטלוג', store_all: 'חנות (כולל אזל)', store: 'חנות (במלאי בלבד)' }[newMode];
+    toast(`תצוגה באתר עודכנה ל: ${label}`, 's');
+  } catch (e) {
+    console.error('changeBrandDisplayMode error:', e);
+    toast('שגיאה בעדכון תצוגה', 'e');
+  }
 }
 
 async function changeBrandMode(selectEl) {
