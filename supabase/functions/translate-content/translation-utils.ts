@@ -6,7 +6,7 @@ import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { SHORTCODE_TRANSLATABLE_ATTRS } from './field-maps.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')!;
-const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
+const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 
 export const LANG_NAMES: Record<string, string> = { en: 'English', ru: 'Russian' };
@@ -50,9 +50,11 @@ export async function loadContext(
 export function buildSystemPrompt(
   targetLang: string,
   glossary: any[],
-  corrections: any[]
+  corrections: any[],
+  sourceText: string
 ): string {
   const langName = LANG_NAMES[targetLang] ?? targetLang;
+  const relevantGlossary = glossary.filter((g) => sourceText.includes(g.term_he));
   const parts: string[] = [];
 
   parts.push(`You are writing website content for an Israeli optical store. The tone should be professional but warm and approachable — like a friendly store talking to its customers, not a lawyer drafting a contract.
@@ -90,9 +92,9 @@ PRESERVE EXACTLY:
 SEO: Write natural text optimized for search. No keyword stuffing — write for humans.
 ${targetLang === 'ru' ? 'RUSSIAN: Use formal "вы" form. Use natural Russian word order.' : 'ENGLISH: Use American English. Use active voice, short sentences.'}`);
 
-  if (glossary.length > 0) {
+  if (relevantGlossary.length > 0) {
     parts.push('\nGLOSSARY (use these exact translations):');
-    for (const g of glossary) {
+    for (const g of relevantGlossary) {
       parts.push(`  "${g.term_he}" → "${g.term_translated}"`);
     }
   }
@@ -185,7 +187,7 @@ export async function callClaude(
       body: JSON.stringify({
         model: CLAUDE_MODEL,
         max_tokens: maxTokens,
-        system: systemPrompt,
+        system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content: userContent }],
       }),
     });

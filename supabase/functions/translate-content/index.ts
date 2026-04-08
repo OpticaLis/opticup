@@ -124,11 +124,11 @@ async function translatePage(
   const blocks = Array.isArray(page.blocks) ? page.blocks : [];
   const { glossary, corrections } = await loadContext(db, tenantId, targetLang);
   console.log(`[translate] Context loaded: ${glossary.length} glossary terms, ${corrections.length} corrections`);
-  const systemPrompt = buildSystemPrompt(targetLang, glossary, corrections);
 
   // 2. Extract all translatable texts
   const blockTexts = extractBlockTexts(blocks);
   const allSourceTexts = blockTexts.map((e) => e.text);
+  const systemPrompt = buildSystemPrompt(targetLang, glossary, corrections, allSourceTexts.join('\n'));
 
   // 3. Check translation memory
   const memoryHits = await checkMemory(db, tenantId, targetLang, allSourceTexts);
@@ -268,10 +268,10 @@ async function translateBlocks(
   blocks: any[]
 ): Promise<Record<string, unknown>> {
   const { glossary, corrections } = await loadContext(db, tenantId, targetLang);
-  const systemPrompt = buildSystemPrompt(targetLang, glossary, corrections);
   const blockTexts = extractBlockTexts(blocks);
   const toTranslate: Record<string, string> = {};
   for (const entry of blockTexts) toTranslate[entry.path] = entry.text;
+  const systemPrompt = buildSystemPrompt(targetLang, glossary, corrections, blockTexts.map((e) => e.text).join('\n'));
 
   if (Object.keys(toTranslate).length === 0) {
     return { success: true, translated_blocks: blocks };
@@ -302,7 +302,7 @@ async function translateText(
   contextType: string
 ): Promise<Record<string, unknown>> {
   const { glossary, corrections } = await loadContext(db, tenantId, targetLang);
-  const systemPrompt = buildSystemPrompt(targetLang, glossary, corrections);
+  const systemPrompt = buildSystemPrompt(targetLang, glossary, corrections, text);
   const hints: Record<string, string> = {
     seo_title: 'SEO title. Keep 50-60 characters.',
     seo_description: 'SEO meta description. Keep 150-160 characters.',
