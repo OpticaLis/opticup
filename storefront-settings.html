@@ -151,6 +151,22 @@
           <label for="sf-hero-subtitle">תת-כותרת Hero (דריסה)</label>
           <input type="text" id="sf-hero-subtitle" placeholder="המבחר הגדול ביותר של משקפיים">
         </div>
+        <div class="sf-field" style="grid-column:1/-1;">
+          <label>לוגו אתר</label>
+          <small>הלוגו המוצג ב-header של החנות. שונה מהלוגו של ה-ERP — מומלץ לוגו עם רקע שקוף או על רקע לבן.</small>
+          <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+            <div id="sf-site-logo-preview" style="border:1px solid #e5e5e5; border-radius:8px; padding:12px; background:#fff; display:inline-flex; align-items:center; justify-content:center; min-width:200px; min-height:80px;">
+              <span style="color:#999; font-size:.85rem;">אין לוגו</span>
+            </div>
+            <div>
+              <button type="button" class="btn-p" onclick="document.getElementById('sf-site-logo-input').click()">📤 העלה לוגו</button>
+              <input type="file" id="sf-site-logo-input" accept="image/*" style="display:none;" onchange="handleSiteLogoUpload(this)" />
+              <button type="button" class="btn-p" style="background:#e5e5e5; color:#333; margin-right:6px;" onclick="clearSiteLogo()">מחק</button>
+              <div id="sf-site-logo-status" style="font-size:.8rem; margin-top:4px;"></div>
+            </div>
+          </div>
+          <input type="hidden" id="sf-site-logo-url" value="">
+        </div>
         <div class="sf-field">
           <label for="sf-favicon-url">Favicon URL</label>
           <input type="url" id="sf-favicon-url" dir="ltr" placeholder="https://...">

@@ -6,7 +6,7 @@ async function loadStorefrontSettings() {
   try {
     const tid = getTenantId();
     const { data, error } = await sb.from(T.STOREFRONT_CONFIG)
-      .select('whatsapp_number, booking_url, notification_method, analytics, custom_domain, hero_title, hero_subtitle, favicon_url, og_image_url')
+      .select('whatsapp_number, booking_url, notification_method, analytics, custom_domain, hero_title, hero_subtitle, favicon_url, og_image_url, site_logo_url')
       .eq('tenant_id', tid)
       .maybeSingle();
 
@@ -34,6 +34,16 @@ async function loadStorefrontSettings() {
       document.getElementById('sf-hero-subtitle').value = data.hero_subtitle || '';
       document.getElementById('sf-favicon-url').value = data.favicon_url || '';
       document.getElementById('sf-og-image-url').value = data.og_image_url || '';
+
+      // Site logo
+      const siteLogoUrl = data.site_logo_url || '';
+      document.getElementById('sf-site-logo-url').value = siteLogoUrl;
+      const preview = document.getElementById('sf-site-logo-preview');
+      if (preview) {
+        preview.innerHTML = siteLogoUrl
+          ? `<img src="${siteLogoUrl}" alt="לוגו אתר" style="max-width:240px; max-height:80px; object-fit:contain; display:block;" />`
+          : '<span style="color:#999; font-size:.85rem;">אין לוגו</span>';
+      }
     }
   } catch (e) {
     console.error('loadStorefrontSettings error:', e);
@@ -84,6 +94,7 @@ async function saveStorefrontSettings() {
   const heroSubtitle = document.getElementById('sf-hero-subtitle').value.trim();
   const faviconUrl = document.getElementById('sf-favicon-url').value.trim();
   const ogImageUrl = document.getElementById('sf-og-image-url').value.trim();
+  const siteLogoUrl = document.getElementById('sf-site-logo-url').value.trim();
 
   showLoading('שומר...');
   try {
@@ -97,7 +108,8 @@ async function saveStorefrontSettings() {
       hero_title: heroTitle || null,
       hero_subtitle: heroSubtitle || null,
       favicon_url: faviconUrl || null,
-      og_image_url: ogImageUrl || null
+      og_image_url: ogImageUrl || null,
+      site_logo_url: siteLogoUrl || null
     };
 
     const { data, error } = await sb.from(T.STOREFRONT_CONFIG)
@@ -116,3 +128,64 @@ async function saveStorefrontSettings() {
     hideLoading();
   }
 }
+
+// ═══════════════════════════════════════════════════
+// SITE LOGO UPLOAD — direct to Supabase Storage (no normalization,
+// preserves transparency / colors as-uploaded)
+// ═══════════════════════════════════════════════════
+
+async function handleSiteLogoUpload(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+
+  const statusEl = document.getElementById('sf-site-logo-status');
+  const preview = document.getElementById('sf-site-logo-preview');
+  const urlField = document.getElementById('sf-site-logo-url');
+
+  if (statusEl) { statusEl.textContent = 'מעלה...'; statusEl.style.color = '#666'; }
+
+  try {
+    const tid = getTenantId();
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+    const safeExt = ['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext) ? ext : 'png';
+    const path = `tenants/${tid}/site-logo_${Date.now()}.${safeExt}`;
+
+    const { error: upErr } = await sb.storage
+      .from('tenant-logos')
+      .upload(path, file, { contentType: file.type || 'image/png', upsert: false });
+    if (upErr) throw upErr;
+
+    const { data: urlData } = sb.storage.from('tenant-logos').getPublicUrl(path);
+    const publicUrl = urlData?.publicUrl || '';
+    if (!publicUrl) throw new Error('Failed to resolve public URL');
+
+    // Sanity check: reject suspiciously small files (corrupt upload)
+    if (file.size < 500) {
+      if (statusEl) { statusEl.textContent = '✗ קובץ קטן/פגום (מתחת ל-500 בייט)'; statusEl.style.color = '#ef4444'; }
+      return;
+    }
+
+    if (urlField) urlField.value = publicUrl;
+    if (preview) {
+      preview.innerHTML = `<img src="${publicUrl}" alt="לוגו אתר" style="max-width:240px; max-height:80px; object-fit:contain; display:block;" />`;
+    }
+    if (statusEl) { statusEl.textContent = '✓ הועלה. לחץ "שמור הגדרות" כדי לעדכן ב-DB'; statusEl.style.color = '#22c55e'; }
+  } catch (err) {
+    console.error('Site logo upload error:', err);
+    if (statusEl) { statusEl.textContent = '✗ שגיאה: ' + (err.message || 'unknown'); statusEl.style.color = '#ef4444'; }
+  } finally {
+    input.value = '';
+  }
+}
+
+function clearSiteLogo() {
+  const urlField = document.getElementById('sf-site-logo-url');
+  const preview = document.getElementById('sf-site-logo-preview');
+  if (urlField) urlField.value = '';
+  if (preview) preview.innerHTML = '<span style="color:#999; font-size:.85rem;">אין לוגו</span>';
+  const statusEl = document.getElementById('sf-site-logo-status');
+  if (statusEl) { statusEl.textContent = 'נמחק. לחץ "שמור הגדרות" לעדכון ה-DB'; statusEl.style.color = '#666'; }
+}
+
+window.handleSiteLogoUpload = handleSiteLogoUpload;
+window.clearSiteLogo = clearSiteLogo;
