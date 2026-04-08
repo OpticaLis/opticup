@@ -291,7 +291,10 @@ function openEditModal(productId, focusField) {
   // Load product images into modal
   loadEditImages(product);
 
-  document.getElementById('edit-modal').style.display = 'flex';
+  const editModalEl = document.getElementById('edit-modal');
+  // Force a visible gray backdrop so the title/text are readable (was transparent).
+  editModalEl.style.background = 'rgba(0,0,0,0.5)';
+  editModalEl.style.display = 'flex';
 
   // Focus the specific field if a content type was clicked
   const fieldMap = {

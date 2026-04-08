@@ -124,20 +124,25 @@ const StudioTranslationEditor = (function () {
       const val = data[f]; if (val === undefined || val === null || val === '') continue;
       const tVal = tData[f] || '';
       const isHtml = HTML_FIELDS.has(f) && typeof val === 'string' && (val.includes('<') || val.length > 100);
-      // Source side — render HTML visually
+      const isCustom = type === 'custom';
+      // Source side — custom blocks: raw HTML textarea; others: visual preview
       srcRows += `<div style="margin-bottom:8px">
         <div style="font-size:.75rem;color:#999;margin-bottom:2px">${f}</div>
-        <div style="${S.rendered}${isHtml?'':'white-space:pre-wrap;'}" dir="rtl">${isHtml ? val : escapeHtml(String(val).substring(0, 500))}</div></div>`;
+        ${isCustom && isHtml
+          ? `<textarea readonly dir="rtl" style="${S.input}min-height:120px;resize:vertical;font-size:.8rem;font-family:monospace;background:#f9f9f9">${escapeHtml(val)}</textarea>`
+          : `<div style="${S.rendered}${isHtml?'':'white-space:pre-wrap;'}" dir="rtl">${isHtml ? val : escapeHtml(String(val).substring(0, 500))}</div>`
+        }</div>`;
       // Translation side
       if (isHtml) {
         const teId = `te-b${idx}-${f}`;
+        const showRaw = isCustom;
         tgtRows += `<div style="margin-bottom:8px">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
             <span style="font-size:.75rem;color:#999">${f}</span>
-            <button class="btn btn-sm" onclick="StudioTranslationEditor.toggleRaw('${teId}')" style="font-size:.7rem;padding:1px 6px">✏️ HTML</button>
+            ${!isCustom ? `<button class="btn btn-sm" onclick="StudioTranslationEditor.toggleRaw('${teId}')" style="font-size:.7rem;padding:1px 6px">✏️ HTML</button>` : ''}
           </div>
-          <div id="${teId}-preview" style="${S.rendered}" dir="${dir}">${tVal || '<span style=color:#999>—</span>'}</div>
-          <textarea id="${teId}" dir="${dir}" style="${S.input}min-height:80px;resize:vertical;display:none">${escapeHtml(tVal)}</textarea></div>`;
+          <div id="${teId}-preview" style="${S.rendered}${showRaw?'display:none':''}" dir="${dir}">${tVal || '<span style=color:#999>—</span>'}</div>
+          <textarea id="${teId}" dir="${dir}" style="${S.input}min-height:120px;resize:vertical;font-family:${isCustom?'monospace':'inherit'};font-size:${isCustom?'.8rem':'.85rem'};${showRaw?'':'display:none'}">${escapeHtml(tVal)}</textarea></div>`;
       } else {
         tgtRows += `<div style="margin-bottom:8px">
           <div style="font-size:.75rem;color:#999;margin-bottom:2px">${f}</div>
@@ -226,6 +231,13 @@ const StudioTranslationEditor = (function () {
     const slug = document.getElementById('te-slug')?.value || sourcePage?.slug || '';
     const noindex = document.getElementById('te-noindex')?.checked || false;
     const tid = getTenantId();
+
+    // Collect corrections BEFORE saving (compare old DB blocks vs new form blocks)
+    let corrections = [];
+    if (transStatus === 'approved' && targetPage?.blocks) {
+      corrections = diffCorrections(targetPage.blocks, blocks);
+    }
+
     try {
       if (targetPage) {
         const { error } = await sb.from('storefront_pages').update({
@@ -243,12 +255,31 @@ const StudioTranslationEditor = (function () {
         if (error) throw error;
         if (data) await sb.from('storefront_pages').update({ status: pubStatus, translation_status: transStatus, noindex }).eq('id', data);
       }
-      if (transStatus === 'approved') await saveToMemory(blocks);
+      if (transStatus === 'approved') {
+        await saveToMemory(blocks);
+        if (corrections.length > 0) await saveCorrections(corrections);
+      }
       const msg = pubStatus === 'published' ? 'פורסם בהצלחה' : 'טיוטה נשמרה';
       close();
       if (window.StudioRefresh) await StudioRefresh.afterAction(Promise.resolve(), msg);
       else Toast.success(msg);
     } catch (e) { console.error('Save translation:', e); Toast.error('שגיאה: ' + e.message); }
+  }
+
+  function diffCorrections(oldBlocks, newBlocks) {
+    const diffs = [], fields = ['title','content','subtitle','description','button_text','body','html','text','cta_text','section_title'];
+    for (let i = 0; i < oldBlocks.length; i++) {
+      const ob = oldBlocks[i]?.data, nb = newBlocks[i]?.data;
+      if (!ob || !nb) continue;
+      for (const f of fields) { if (ob[f] && nb[f] && ob[f] !== nb[f]) diffs.push({ original_translation: ob[f], corrected_translation: nb[f] }); }
+    }
+    return diffs;
+  }
+
+  async function saveCorrections(corrections) {
+    const rows = corrections.map(c => ({ tenant_id: getTenantId(), lang: targetLang, original_translation: c.original_translation, corrected_translation: c.corrected_translation, is_deleted: false }));
+    try { const { error } = await sb.from('translation_corrections').insert(rows); if (error) console.error('Save corrections:', error); }
+    catch (e) { console.error('Save corrections:', e); }
   }
 
   async function saveToMemory(blocks) {
@@ -261,32 +292,18 @@ const StudioTranslationEditor = (function () {
       }
     }
     if (!pairs.length) return;
-    const rows = pairs.map(p => ({
-      tenant_id: getTenantId(), source_lang: 'he', target_lang: targetLang,
-      source_text: p.source_text, translated_text: p.translated_text,
-      context: p.context || 'general', scope: 'tenant', confidence: 1.0,
-      approved_by: 'human', times_used: 0,
-    }));
-    try {
-      const { error } = await sb.from('translation_memory').upsert(rows, {
-        onConflict: 'tenant_id,source_lang,target_lang,source_text', ignoreDuplicates: false,
-      });
-      if (error) throw error;
-    } catch (e) { console.error('Save memory:', e); }
+    const rows = pairs.map(p => ({ tenant_id: getTenantId(), source_lang: 'he', target_lang: targetLang, source_text: p.source_text, translated_text: p.translated_text, context: p.context || 'general', scope: 'tenant', confidence: 1.0, approved_by: 'human', times_used: 0 }));
+    try { const { error } = await sb.from('translation_memory').upsert(rows, { onConflict: 'tenant_id,source_lang,target_lang,source_hash', ignoreDuplicates: false }); if (error) throw error; }
+    catch (e) { console.error('Save memory:', e); }
   }
 
   // ── Loading overlay ──
   function showTranslating(on) {
     let ov = document.getElementById('te-loading');
     if (on) {
-      if (ov) return;
-      ov = document.createElement('div'); ov.id = 'te-loading';
+      if (ov) return; ov = document.createElement('div'); ov.id = 'te-loading';
       ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999';
-      ov.innerHTML = `<div style="background:#fff;border-radius:12px;padding:32px 48px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2)">
-        <div style="width:40px;height:40px;border:4px solid #e5e5e5;border-top-color:#c9a555;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div>
-        <div style="font-size:1.1rem;font-weight:600">מתרגם...</div>
-        <div style="font-size:.85rem;color:#6b7280;margin-top:4px">10-30 שניות</div>
-      </div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
+      ov.innerHTML = '<div style="background:#fff;border-radius:12px;padding:32px 48px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2)"><div style="width:40px;height:40px;border:4px solid #e5e5e5;border-top-color:#c9a555;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div><div style="font-size:1.1rem;font-weight:600">מתרגם...</div><div style="font-size:.85rem;color:#6b7280;margin-top:4px">10-30 שניות</div></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
       document.body.appendChild(ov);
     } else { if (ov) ov.remove(); }
   }
@@ -322,13 +339,8 @@ const StudioTranslationEditor = (function () {
 
   async function translateAll() {
     showTranslating(true);
-    try {
-      await StudioTranslations.callTranslateAPI('translate_page', {
-        source_page_id: sourcePage.id, target_lang: targetLang,
-      });
-      Toast.success('התרגום הושלם');
-      await open(sourcePage.id, targetLang);
-    } catch (e) { Toast.error('שגיאה: ' + e.message); } finally { showTranslating(false); }
+    try { await StudioTranslations.callTranslateAPI('translate_page', { source_page_id: sourcePage.id, target_lang: targetLang }); Toast.success('התרגום הושלם'); await open(sourcePage.id, targetLang); }
+    catch (e) { Toast.error('שגיאה: ' + e.message); } finally { showTranslating(false); }
   }
 
   return { open, close, saveDraft, publish, translateBlock, translateAll, toggleRaw };

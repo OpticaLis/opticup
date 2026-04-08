@@ -855,53 +855,59 @@ async function translateStudioBrandContent(brandName, brandId, targetLang) {
       return;
     }
 
-    // Save translations to ai_content (entity_type='brand')
+    // Save translations to content_translations — this is the table the storefront
+    // (src/pages/{en,ru}/brands/[slug].astro) and the translations dashboard read from.
+    // Field names must match what storefront expects: brand_description_short,
+    // brand_description, seo_title, seo_description.
     const tid = getTenantId();
-    const fields = [
-      { content_type: 'tagline', content: data.tagline },
-      { content_type: 'description1', content: data.description1 },
-      { content_type: 'description2', content: data.description2 },
-      { content_type: 'seo_title', content: data.seo_title },
-      { content_type: 'seo_description', content: data.seo_description },
-    ].filter(f => f.content);
+    const combinedDescription = [data.description1, data.description2].filter(Boolean).join('\n');
+    const ctRows = [
+      { field_name: 'brand_description_short', value: data.tagline },
+      { field_name: 'brand_description',        value: combinedDescription },
+      { field_name: 'seo_title',                value: data.seo_title },
+      { field_name: 'seo_description',          value: data.seo_description },
+    ]
+      .filter(r => r.value)
+      .map(r => ({
+        tenant_id: tid,
+        entity_type: 'brand',
+        entity_id: brandId,
+        field_name: r.field_name,
+        lang: targetLang,
+        value: r.value,
+        status: 'auto',
+        translated_by: 'ai',
+        confidence: 0.7,
+        updated_at: new Date().toISOString(),
+      }));
 
-    const rows = fields.map(f => ({
-      tenant_id: tid,
-      entity_type: 'brand',
-      entity_id: brandId,
-      content_type: f.content_type,
-      content: f.content,
-      language: targetLang,
-      status: 'auto',
-      version: 1,
-    }));
-
-    const { error: upErr } = await sb.from('ai_content').upsert(rows, {
-      onConflict: 'tenant_id,entity_type,entity_id,content_type,language',
+    const { error: upErr } = await sb.from('content_translations').upsert(ctRows, {
+      onConflict: 'tenant_id,entity_type,entity_id,field_name,lang',
     });
-    if (upErr) { console.error('ai_content upsert:', upErr); Toast.error('שגיאה בשמירה: ' + upErr.message); return; }
+    if (upErr) { console.error('content_translations upsert:', upErr); Toast.error('שגיאה בשמירה: ' + upErr.message); return; }
 
     // Save to translation_memory (auto, low confidence — human edits raise it)
-    const memRows = [];
-    for (const f of fields) {
-      const srcVal = source[f.content_type === 'description1' ? 'description1'
-        : f.content_type === 'description2' ? 'description2'
-        : f.content_type];
-      if (srcVal && f.content) {
-        memRows.push({
-          tenant_id: tid,
-          source_lang: 'he',
-          target_lang: targetLang,
-          source_text: srcVal,
-          translated_text: f.content,
-          context: 'brand.' + f.content_type,
-          scope: 'tenant',
-          confidence: 0.7,
-          approved_by: 'ai',
-          times_used: 0,
-        });
-      }
-    }
+    const memPairs = [
+      { src: source.tagline,         tgt: data.tagline,         ctx: 'brand.tagline' },
+      { src: source.description1,    tgt: data.description1,    ctx: 'brand.description1' },
+      { src: source.description2,    tgt: data.description2,    ctx: 'brand.description2' },
+      { src: source.seo_title,       tgt: data.seo_title,       ctx: 'brand.seo_title' },
+      { src: source.seo_description, tgt: data.seo_description, ctx: 'brand.seo_description' },
+    ];
+    const memRows = memPairs
+      .filter(p => p.src && p.tgt)
+      .map(p => ({
+        tenant_id: tid,
+        source_lang: 'he',
+        target_lang: targetLang,
+        source_text: p.src,
+        translated_text: p.tgt,
+        context: p.ctx,
+        scope: 'tenant',
+        confidence: 0.7,
+        approved_by: 'ai',
+        times_used: 0,
+      }));
     if (memRows.length) {
       const { error: memErr } = await sb.from('translation_memory').upsert(memRows, {
         onConflict: 'tenant_id,source_lang,target_lang,source_hash',

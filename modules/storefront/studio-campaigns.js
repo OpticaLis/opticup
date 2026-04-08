@@ -114,7 +114,21 @@ function renderFolderBody(campaign) {
     const showSettings = typeof canSee === 'function' && canSee('page_settings_button');
     const showToggle = typeof canSee === 'function' && canSee('status_toggle');
 
-    pagesHtml = pages.map(p => {
+    // Group by slug — show one row per logical page with language badges
+    const groups = new Map();
+    for (const p of pages) {
+      const key = p.slug || p.id;
+      if (!groups.has(key)) groups.set(key, {});
+      groups.get(key)[p.lang || 'he'] = p;
+    }
+    const groupedPages = [];
+    for (const langs of groups.values()) {
+      const main = langs.he || langs.en || langs.ru || Object.values(langs)[0];
+      main._langs = langs;
+      groupedPages.push(main);
+    }
+
+    pagesHtml = groupedPages.map(p => {
       const icon = ({ homepage:'🏠', legal:'📜', campaign:'🎯', guide:'📖', custom:'📄' })[p.page_type] || '📄';
       const stCls = p.status === 'published' ? 'badge-published' : p.status === 'archived' ? 'badge-archived' : 'badge-draft';
       const stTxt = p.status === 'published' ? 'פורסם' : p.status === 'archived' ? 'ארכיון' : 'טיוטה';
@@ -146,6 +160,7 @@ function renderFolderBody(campaign) {
           <div class="studio-page-info">
             <div class="studio-page-title">${title}</div>
             <div class="studio-page-slug-time"><span class="studio-page-slug">/${slug}</span><span class="studio-page-edited">${edited}</span></div>
+            ${typeof renderLangBadges === 'function' ? renderLangBadges(p._langs) : ''}
           </div>
           ${seoBadge}
         </div>

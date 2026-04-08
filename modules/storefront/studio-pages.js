@@ -65,7 +65,34 @@ function renderFilteredPageList() {
   else if (pageFilterStatus !== 'all') filtered = filtered.filter(p => p.status === pageFilterStatus);
   // Tag filter
   if (typeof filterByTag === 'function') filtered = filterByTag(filtered);
-  renderPageList(filtered);
+  // Group by slug — same slug across languages = one logical page.
+  // Pick Hebrew row as the representative; attach language map for badges.
+  const groups = new Map();
+  for (const p of filtered) {
+    const key = p.slug || p.id;
+    if (!groups.has(key)) groups.set(key, {});
+    groups.get(key)[p.lang || 'he'] = p;
+  }
+  const grouped = [];
+  for (const langs of groups.values()) {
+    const main = langs.he || langs.en || langs.ru || Object.values(langs)[0];
+    main._langs = langs;
+    grouped.push(main);
+  }
+  renderPageList(grouped);
+}
+
+/** Render language availability badges for a grouped page row */
+function renderLangBadges(langs) {
+  if (!langs) return '';
+  const order = ['he', 'en', 'ru'];
+  const items = order.map(l => {
+    const has = !!langs[l];
+    const bg = has ? '#EAF3DE' : '#FCEBEB';
+    const fg = has ? '#3B6D11' : '#A32D2D';
+    return `<span title="${l.toUpperCase()} ${has ? '\u2713' : '\u2717'}" style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:.65rem;font-weight:700;background:${bg};color:${fg};margin-inline-end:3px">${l.toUpperCase()}</span>`;
+  }).join('');
+  return `<div class="studio-page-langs" style="margin-top:3px">${items}</div>`;
 }
 
 /** Render search/filter bar */
@@ -149,6 +176,7 @@ function renderPageList(pages) {
         <div class="studio-page-info">
           <div class="studio-page-title">${title}</div>
           <div class="studio-page-slug-time"><span class="studio-page-slug">/${slug}</span><span class="studio-page-edited">${edited}</span></div>
+          ${renderLangBadges(p._langs)}
           ${tagBadges}
         </div>
         ${seoBadge}
