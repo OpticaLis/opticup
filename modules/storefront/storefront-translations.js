@@ -218,9 +218,36 @@ function openTransEditModal(productId, lang) {
   document.getElementById('trans-edit-type').value = 'description';
 
   loadTransEditType();
+  // Force overlay styles inline so the modal renders as a proper centered popup
+  // with a gray backdrop, regardless of whether the shared modal CSS is applied.
   const _tem = document.getElementById('trans-edit-modal');
-  _tem.style.background = 'rgba(0,0,0,0.5)';
-  _tem.style.display = 'flex';
+  Object.assign(_tem.style, {
+    position: 'fixed',
+    inset: '0',
+    top: '0', left: '0', right: '0', bottom: '0',
+    width: '100vw',
+    height: '100vh',
+    zIndex: '10000',
+    background: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflowY: 'auto',
+    padding: '20px',
+  });
+  const _temCard = _tem.querySelector('.modal');
+  if (_temCard) {
+    Object.assign(_temCard.style, {
+      background: '#fff',
+      borderRadius: '12px',
+      padding: '24px',
+      maxWidth: '800px',
+      width: '95%',
+      maxHeight: '90vh',
+      overflowY: 'auto',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+    });
+  }
 }
 
 function loadTransEditType() {

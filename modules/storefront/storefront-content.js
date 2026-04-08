@@ -291,10 +291,40 @@ function openEditModal(productId, focusField) {
   // Load product images into modal
   loadEditImages(product);
 
+  // Force ALL overlay styles inline. Some hosts strip or override the shared
+  // .modal-overlay class so the editor opened "inline" with no backdrop. Setting
+  // position/inset/z-index/background/display via inline style guarantees a
+  // proper centered modal with a gray backdrop regardless of CSS state.
   const editModalEl = document.getElementById('edit-modal');
-  // Force a visible gray backdrop so the title/text are readable (was transparent).
-  editModalEl.style.background = 'rgba(0,0,0,0.5)';
-  editModalEl.style.display = 'flex';
+  Object.assign(editModalEl.style, {
+    position: 'fixed',
+    inset: '0',
+    top: '0', left: '0', right: '0', bottom: '0',
+    width: '100vw',
+    height: '100vh',
+    zIndex: '10000',
+    background: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflowY: 'auto',
+    padding: '20px',
+  });
+  // Make sure the inner card has a solid white background and a sane width
+  // (the inner div uses class="modal edit-modal" which has no .modal rule).
+  const editCard = editModalEl.querySelector('.modal');
+  if (editCard) {
+    Object.assign(editCard.style, {
+      background: '#fff',
+      borderRadius: '12px',
+      padding: '24px',
+      maxWidth: '640px',
+      width: '95%',
+      maxHeight: '90vh',
+      overflowY: 'auto',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+    });
+  }
 
   // Focus the specific field if a content type was clicked
   const fieldMap = {
