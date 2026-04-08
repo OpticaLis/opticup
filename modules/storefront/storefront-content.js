@@ -397,10 +397,20 @@ async function regenerateForProduct() {
     }
   } catch (e) {
     console.error('regenerateForProduct error:', e);
-    toast('שגיאה בייצור תוכן', 'e');
+    if (e && e.message === 'AI_UNAVAILABLE') {
+      toast('שירות ה-AI אינו זמין כרגע', 'e');
+    } else {
+      toast('שגיאה בייצור תוכן', 'e');
+    }
   } finally {
     hideLoading();
   }
+}
+
+// Recognize errors caused by the AI service being unavailable (no API key, network down, etc.)
+function isAiUnavailableError(err) {
+  const m = (err && err.message) ? String(err.message) : String(err || '');
+  return /api[_ ]?key|anthropic|not configured|failed to fetch|networkerror|unexpected token|<!doctype|503|502/i.test(m);
 }
 
 // ── Generate content for one product ──
@@ -423,28 +433,36 @@ async function generateContentForProduct(product) {
     }));
   }
 
-  const res = await fetch(EDGE_FN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      tenant_id: tid,
-      product_id: product.id,
-      content_types: ['description', 'seo_title', 'seo_description', 'alt_text'],
-      product_data: {
-        brand_name: product.brand_name,
-        model: product.model || '',
-        color: product.color || '',
-        size: product.size || '',
-        product_type: product.product_type || 'eyeglasses'
-      },
-      image_storage_path: product.image_path || null,
-      brand_corrections: brandCorrections
-    })
-  });
-
-  const data = await res.json();
-  if (!data.success) {
-    console.error('AI generate failed:', data.error);
+  let data;
+  try {
+    const res = await fetch(EDGE_FN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenant_id: tid,
+        product_id: product.id,
+        content_types: ['description', 'seo_title', 'seo_description', 'alt_text'],
+        product_data: {
+          brand_name: product.brand_name,
+          model: product.model || '',
+          color: product.color || '',
+          size: product.size || '',
+          product_type: product.product_type || 'eyeglasses'
+        },
+        image_storage_path: product.image_path || null,
+        brand_corrections: brandCorrections
+      })
+    });
+    data = await res.json();
+  } catch (e) {
+    console.error('AI generate fetch failed:', e);
+    throw new Error('AI_UNAVAILABLE');
+  }
+  if (!data || !data.success) {
+    console.error('AI generate failed:', data && data.error);
+    if (data && /api[_ ]?key|anthropic|not configured/i.test(String(data.error || ''))) {
+      throw new Error('AI_UNAVAILABLE');
+    }
     return null;
   }
   return data;

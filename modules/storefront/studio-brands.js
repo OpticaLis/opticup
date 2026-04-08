@@ -849,9 +849,17 @@ async function translateStudioBrandContent(brandName, brandId, targetLang) {
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON}` },
       body: JSON.stringify(payload),
     });
-    const data = await res.json();
+    let data;
+    try { data = await res.json(); } catch (_e) {
+      Toast.error('שירות התרגום אינו זמין כרגע');
+      return;
+    }
     if (!data.success) {
-      Toast.error('שגיאת תרגום: ' + (data.error || 'unknown'));
+      if (/api[_ ]?key|anthropic|not configured/i.test(String(data.error || ''))) {
+        Toast.error('שירות התרגום אינו זמין כרגע');
+      } else {
+        Toast.error('שגיאת תרגום: ' + (data.error || 'unknown'));
+      }
       return;
     }
 
@@ -919,7 +927,11 @@ async function translateStudioBrandContent(brandName, brandId, targetLang) {
     Toast.success(`תרגום ל${langLabel} נשמר. עריכות אנושיות יעלו את ה-confidence ל-1.0`);
   } catch (err) {
     console.error('translate error:', err);
-    Toast.error('שגיאה בתרגום: ' + err.message);
+    if (/failed to fetch|networkerror|api[_ ]?key|anthropic|not configured/i.test(String(err.message || ''))) {
+      Toast.error('שירות התרגום אינו זמין כרגע');
+    } else {
+      Toast.error('שגיאה בתרגום: ' + err.message);
+    }
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = `🌐 תרגם ל${langLabel === 'אנגלית' ? 'אנגלית' : 'רוסית'}`; }
   }

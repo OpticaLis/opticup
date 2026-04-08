@@ -218,7 +218,9 @@ function openTransEditModal(productId, lang) {
   document.getElementById('trans-edit-type').value = 'description';
 
   loadTransEditType();
-  document.getElementById('trans-edit-modal').style.display = 'flex';
+  const _tem = document.getElementById('trans-edit-modal');
+  _tem.style.background = 'rgba(0,0,0,0.5)';
+  _tem.style.display = 'flex';
 }
 
 function loadTransEditType() {
@@ -313,22 +315,32 @@ async function translateAndSaveProductField(tenantId, productId, contentType, so
     seo_description: 'seo_description',
     alt_text: 'general',
   };
-  const res = await fetch(TRANSLATE_FN_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SUPABASE_ANON}`,
-    },
-    body: JSON.stringify({
-      mode: 'translate_text',
-      tenant_id: tenantId,
-      target_lang: targetLang,
-      text: sourceText,
-      context_type: ctxMap[contentType] || 'general',
-    }),
-  });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error || 'translate-content failed');
+  let data;
+  try {
+    const res = await fetch(TRANSLATE_FN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+      },
+      body: JSON.stringify({
+        mode: 'translate_text',
+        tenant_id: tenantId,
+        target_lang: targetLang,
+        text: sourceText,
+        context_type: ctxMap[contentType] || 'general',
+      }),
+    });
+    data = await res.json();
+  } catch (e) {
+    throw new Error('AI_UNAVAILABLE');
+  }
+  if (!data.success) {
+    if (/api[_ ]?key|anthropic|not configured/i.test(String(data.error || ''))) {
+      throw new Error('AI_UNAVAILABLE');
+    }
+    throw new Error(data.error || 'translate-content failed');
+  }
 
   // Persist to ai_content
   const { error: upErr } = await sb.from('ai_content').upsert({
@@ -358,7 +370,11 @@ async function retranslateContent() {
     toast('תורגם בהצלחה', 's');
   } catch (e) {
     console.error('retranslateContent:', e);
-    toast('שגיאה בתרגום: ' + (e.message || ''), 'e');
+    if (e && e.message === 'AI_UNAVAILABLE') {
+      toast('שירות התרגום אינו זמין כרגע', 'e');
+    } else {
+      toast('שגיאה בתרגום: ' + (e.message || ''), 'e');
+    }
   } finally {
     hideLoading();
   }

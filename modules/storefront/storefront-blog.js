@@ -200,7 +200,9 @@ function openNewPost() {
   // Hide translation section for new posts
   document.getElementById('blog-trans-section').style.display = 'none';
 
-  document.getElementById('blog-edit-modal').style.display = 'flex';
+  const _bem = document.getElementById('blog-edit-modal');
+  _bem.style.background = 'rgba(0,0,0,0.5)';
+  _bem.style.display = 'flex';
 
   initBlogQuill();
   setQuillDirection('he');
@@ -231,7 +233,9 @@ async function editBlogPost(postId) {
     document.getElementById('blog-status').value = data.status || 'draft';
     document.getElementById('blog-excerpt').value = data.excerpt || '';
 
-    document.getElementById('blog-edit-modal').style.display = 'flex';
+    const _bem2 = document.getElementById('blog-edit-modal');
+    _bem2.style.background = 'rgba(0,0,0,0.5)';
+    _bem2.style.display = 'flex';
 
     initBlogQuill();
     setQuillDirection(data.lang || 'he');
@@ -441,7 +445,9 @@ function openAIModal() {
   document.getElementById('ai-topic').value = '';
   document.getElementById('ai-keywords').value = '';
   document.getElementById('ai-length').value = 'medium';
-  document.getElementById('ai-topic-modal').style.display = 'flex';
+  const _aim = document.getElementById('ai-topic-modal');
+  _aim.style.background = 'rgba(0,0,0,0.5)';
+  _aim.style.display = 'flex';
 }
 
 function closeAIModal() {

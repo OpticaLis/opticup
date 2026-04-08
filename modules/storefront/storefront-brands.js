@@ -193,7 +193,9 @@ function openBrandPageModal(brandId) {
   const galleryText = Array.isArray(gallery) ? gallery.join('\n') : '';
   document.getElementById('bp-gallery').value = galleryText;
 
-  document.getElementById('brand-page-modal').style.display = 'flex';
+  const _bpm = document.getElementById('brand-page-modal');
+  _bpm.style.background = 'rgba(0,0,0,0.5)';
+  _bpm.style.display = 'flex';
 }
 
 function closeBrandPageModal() {
