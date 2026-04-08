@@ -305,6 +305,45 @@ async function approveTranslation() {
   }
 }
 
+// Call translate-content Edge Function in translate_text mode and persist to ai_content
+async function translateAndSaveProductField(tenantId, productId, contentType, sourceText, targetLang) {
+  const ctxMap = {
+    description: 'general',
+    seo_title: 'seo_title',
+    seo_description: 'seo_description',
+    alt_text: 'general',
+  };
+  const res = await fetch(TRANSLATE_FN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON}`,
+    },
+    body: JSON.stringify({
+      mode: 'translate_text',
+      tenant_id: tenantId,
+      target_lang: targetLang,
+      text: sourceText,
+      context_type: ctxMap[contentType] || 'general',
+    }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || 'translate-content failed');
+
+  // Persist to ai_content
+  const { error: upErr } = await sb.from('ai_content').upsert({
+    tenant_id: tenantId,
+    entity_type: 'product',
+    entity_id: productId,
+    content_type: contentType,
+    content: data.translated_text,
+    language: targetLang,
+    status: 'auto',
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'tenant_id,entity_type,entity_id,content_type,language' });
+  if (upErr) throw new Error(upErr.message);
+}
+
 async function retranslateContent() {
   if (!transEditProduct || !transEditLang) return;
   const ct = document.getElementById('trans-edit-type').value;
@@ -313,28 +352,13 @@ async function retranslateContent() {
 
   showLoading('מתרגם...');
   try {
-    const res = await fetch(TRANSLATE_FN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tenant_id: getTenantId(),
-        source_content: heContent,
-        target_lang: transEditLang,
-        content_type: ct,
-        entity_type: 'product',
-        entity_id: transEditProduct.id
-      })
-    });
-    const data = await res.json();
-    if (data.success) {
-      await loadTranslations();
-      loadTransEditType(); // refresh modal
-      toast('תורגם בהצלחה', 's');
-    } else {
-      toast('שגיאה בתרגום: ' + (data.error || ''), 'e');
-    }
+    await translateAndSaveProductField(getTenantId(), transEditProduct.id, ct, heContent, transEditLang);
+    await loadTranslations();
+    loadTransEditType(); // refresh modal
+    toast('תורגם בהצלחה', 's');
   } catch (e) {
-    toast('שגיאה בתרגום', 'e');
+    console.error('retranslateContent:', e);
+    toast('שגיאה בתרגום: ' + (e.message || ''), 'e');
   } finally {
     hideLoading();
   }
@@ -377,21 +401,9 @@ async function bulkTranslateMissing() {
     for (const ct of types) {
       if (transAbort) break;
       try {
-        const res = await fetch(TRANSLATE_FN_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tenant_id: tid,
-            source_content: contentMap[product.id][ct].content,
-            target_lang: lang,
-            content_type: ct,
-            entity_type: 'product',
-            entity_id: product.id
-          })
-        });
-        const data = await res.json();
-        if (!data.success) taskOk = false;
-      } catch {
+        await translateAndSaveProductField(tid, product.id, ct, contentMap[product.id][ct].content, lang);
+      } catch (err) {
+        console.error('bulk translate item:', err);
         taskOk = false;
       }
     }
