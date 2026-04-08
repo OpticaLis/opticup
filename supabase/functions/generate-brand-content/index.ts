@@ -27,14 +27,112 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { brand_name, tenant_id, prompt, current_content } = await req.json();
-
-    if (!brand_name || !tenant_id) {
-      return jsonRes({ error: "Missing brand_name or tenant_id", success: false }, 400);
-    }
+    const body = await req.json();
+    const { mode } = body;
 
     if (!ANTHROPIC_API_KEY) {
       return jsonRes({ error: "ANTHROPIC_API_KEY not configured", success: false }, 500);
+    }
+
+    // ── Translate mode: translate Hebrew brand content to target_lang ──
+    if (mode === "translate") {
+      const {
+        brand_name: tBrand,
+        source_description1,
+        source_description2,
+        source_tagline,
+        source_seo_title,
+        source_seo_description,
+        target_lang,
+      } = body;
+
+      if (!tBrand || !target_lang) {
+        return jsonRes({ error: "translate mode: brand_name and target_lang required", success: false }, 400);
+      }
+
+      const langName = target_lang === "en" ? "English" : target_lang === "ru" ? "Russian" : target_lang;
+
+      const tPrompt = `Translate the following Hebrew brand page content for "${tBrand}" to ${langName}.
+
+Rules:
+- Translate like a native speaker, not literally. Adapt tone for the target audience.
+- Keep brand names and proper nouns in their original Latin form (do NOT transliterate).
+- Use ONLY a short hyphen (-), never an em-dash or en-dash.
+- Tone: professional but warm, the same brand voice as the source.
+- Preserve all HTML <p> tags exactly. Do not add or remove tags.
+- For SEO title: keep the brand name visible, ~50-60 chars in target language.
+- For SEO description: ~150-160 chars, include the brand name and key selling points.
+
+SOURCE_TAGLINE: ${source_tagline || ""}
+SOURCE_DESCRIPTION1:
+${source_description1 || ""}
+SOURCE_DESCRIPTION2:
+${source_description2 || ""}
+SOURCE_SEO_TITLE: ${source_seo_title || ""}
+SOURCE_SEO_DESCRIPTION: ${source_seo_description || ""}
+
+Return ONLY a JSON object (no markdown, no backticks):
+{
+  "tagline": "...",
+  "description1": "<p>...</p><p>...</p><p>...</p>",
+  "description2": "<p>...</p><p>...</p><p>...</p>",
+  "seo_title": "...",
+  "seo_description": "..."
+}`;
+
+      const tRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: CLAUDE_MODEL,
+          max_tokens: 4096,
+          messages: [{ role: "user", content: tPrompt }],
+        }),
+      });
+
+      if (!tRes.ok) {
+        const errText = await tRes.text();
+        return jsonRes({ error: `Claude API error ${tRes.status}: ${errText}`, success: false }, 502);
+      }
+
+      const tData = await tRes.json();
+      let tText = (tData.content?.[0]?.text ?? "").trim();
+      if (tText.startsWith("```")) {
+        tText = tText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+      }
+      // Reuse the newline-in-string sanitizer used for generate mode below
+      let sanitized = "";
+      let inString = false;
+      let escapeNext = false;
+      for (let i = 0; i < tText.length; i++) {
+        const ch = tText[i];
+        if (escapeNext) { sanitized += ch; escapeNext = false; continue; }
+        if (ch === "\\") { sanitized += ch; escapeNext = true; continue; }
+        if (ch === '"') { inString = !inString; sanitized += ch; continue; }
+        if (inString) {
+          if (ch === "\n") { sanitized += "\\n"; continue; }
+          if (ch === "\r") { sanitized += "\\r"; continue; }
+          if (ch === "\t") { sanitized += "\\t"; continue; }
+        }
+        sanitized += ch;
+      }
+      try {
+        const tResult = JSON.parse(sanitized);
+        return jsonRes({ success: true, ...tResult });
+      } catch (_e) {
+        return jsonRes({ error: "Failed to parse translation response", raw: tText, success: false }, 500);
+      }
+    }
+
+    // ── Generate mode (default) ──
+    const { brand_name, tenant_id, prompt, current_content } = body;
+
+    if (!brand_name || !tenant_id) {
+      return jsonRes({ error: "Missing brand_name or tenant_id", success: false }, 400);
     }
 
     const styleGuide = `
@@ -132,11 +230,40 @@ Follow the style guide EXACTLY. Match the Gucci example tone and structure. Use 
 
     let parsed;
     try {
-      const cleanJson = contentText
+      let cleanJson = contentText
         .replace(/```json\n?/g, "")
         .replace(/```\n?/g, "")
         .trim();
-      parsed = JSON.parse(cleanJson);
+      // Escape literal newlines/tabs/CR that occur INSIDE JSON string values
+      // (Claude often emits unescaped newlines between <p> tags, which is invalid JSON)
+      let sanitized = "";
+      let inString = false;
+      let escapeNext = false;
+      for (let i = 0; i < cleanJson.length; i++) {
+        const ch = cleanJson[i];
+        if (escapeNext) {
+          sanitized += ch;
+          escapeNext = false;
+          continue;
+        }
+        if (ch === "\\") {
+          sanitized += ch;
+          escapeNext = true;
+          continue;
+        }
+        if (ch === '"') {
+          inString = !inString;
+          sanitized += ch;
+          continue;
+        }
+        if (inString) {
+          if (ch === "\n") { sanitized += "\\n"; continue; }
+          if (ch === "\r") { sanitized += "\\r"; continue; }
+          if (ch === "\t") { sanitized += "\\t"; continue; }
+        }
+        sanitized += ch;
+      }
+      parsed = JSON.parse(sanitized);
     } catch (_e) {
       return jsonRes(
         { error: "Failed to parse AI response", raw: contentText, success: false },

@@ -381,6 +381,15 @@ function openStudioBrandEditor(brandId) {
         🤖 יצירת תוכן AI
       </button>
 
+      <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+        <button type="button" class="btn btn-sm" id="sbe-translate-en-btn" onclick="translateStudioBrandContent('${escapeAttr(brand.brand_name)}', '${brandId}', 'en')" style="background:linear-gradient(135deg,#c9a555,#e8da94);border:none;color:#1a1a1a;font-weight:600;">
+          🌐 תרגם לאנגלית
+        </button>
+        <button type="button" class="btn btn-sm" id="sbe-translate-ru-btn" onclick="translateStudioBrandContent('${escapeAttr(brand.brand_name)}', '${brandId}', 'ru')" style="background:linear-gradient(135deg,#c9a555,#e8da94);border:none;color:#1a1a1a;font-weight:600;">
+          🌐 תרגם לרוסית
+        </button>
+      </div>
+
       <label class="brand-editor-label" style="margin-top:12px;">Tagline</label>
       <input type="text" id="sbe-tagline" class="brand-editor-input" value="${escapeAttr(brand.brand_description_short || '')}" />
 
@@ -798,3 +807,162 @@ async function generateStudioBrandContent(brandName, brandId) {
     }
   }
 }
+
+// ═══════════════════════════════════════════════════
+// AI BRAND TRANSLATION (EN/RU) — saves to ai_content + translation_memory
+// ═══════════════════════════════════════════════════
+
+async function translateStudioBrandContent(brandName, brandId, targetLang) {
+  const btnId = `sbe-translate-${targetLang}-btn`;
+  const btn = document.getElementById(btnId);
+  const langLabel = targetLang === 'en' ? 'אנגלית' : 'רוסית';
+  if (btn) { btn.disabled = true; btn.textContent = `🤖 מתרגם ל${langLabel}...`; }
+
+  try {
+    // Read current Hebrew content from the editor
+    const source = {
+      tagline: document.getElementById('sbe-tagline')?.value || '',
+      description1: getQuillHtml(_quillDesc1),
+      description2: getQuillHtml(_quillDesc2),
+      seo_title: document.getElementById('sbe-seo-title')?.value || '',
+      seo_description: document.getElementById('sbe-seo-desc')?.value || '',
+    };
+
+    if (!source.description1 && !source.description2 && !source.tagline) {
+      Toast.warning('יש ליצור תוכן בעברית לפני התרגום');
+      return;
+    }
+
+    const payload = {
+      mode: 'translate',
+      brand_name: brandName,
+      target_lang: targetLang,
+      source_tagline: source.tagline,
+      source_description1: source.description1,
+      source_description2: source.description2,
+      source_seo_title: source.seo_title,
+      source_seo_description: source.seo_description,
+    };
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-brand-content`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON}` },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.success) {
+      Toast.error('שגיאת תרגום: ' + (data.error || 'unknown'));
+      return;
+    }
+
+    // Save translations to ai_content (entity_type='brand')
+    const tid = getTenantId();
+    const fields = [
+      { content_type: 'tagline', content: data.tagline },
+      { content_type: 'description1', content: data.description1 },
+      { content_type: 'description2', content: data.description2 },
+      { content_type: 'seo_title', content: data.seo_title },
+      { content_type: 'seo_description', content: data.seo_description },
+    ].filter(f => f.content);
+
+    const rows = fields.map(f => ({
+      tenant_id: tid,
+      entity_type: 'brand',
+      entity_id: brandId,
+      content_type: f.content_type,
+      content: f.content,
+      language: targetLang,
+      status: 'auto',
+      version: 1,
+    }));
+
+    const { error: upErr } = await sb.from('ai_content').upsert(rows, {
+      onConflict: 'tenant_id,entity_type,entity_id,content_type,language',
+    });
+    if (upErr) { console.error('ai_content upsert:', upErr); Toast.error('שגיאה בשמירה: ' + upErr.message); return; }
+
+    // Save to translation_memory (auto, low confidence — human edits raise it)
+    const memRows = [];
+    for (const f of fields) {
+      const srcVal = source[f.content_type === 'description1' ? 'description1'
+        : f.content_type === 'description2' ? 'description2'
+        : f.content_type];
+      if (srcVal && f.content) {
+        memRows.push({
+          tenant_id: tid,
+          source_lang: 'he',
+          target_lang: targetLang,
+          source_text: srcVal,
+          translated_text: f.content,
+          context: 'brand.' + f.content_type,
+          scope: 'tenant',
+          confidence: 0.7,
+          approved_by: 'ai',
+          times_used: 0,
+        });
+      }
+    }
+    if (memRows.length) {
+      const { error: memErr } = await sb.from('translation_memory').upsert(memRows, {
+        onConflict: 'tenant_id,source_lang,target_lang,source_hash',
+        ignoreDuplicates: false,
+      });
+      if (memErr) console.error('translation_memory upsert:', memErr);
+    }
+
+    Toast.success(`תרגום ל${langLabel} נשמר. עריכות אנושיות יעלו את ה-confidence ל-1.0`);
+  } catch (err) {
+    console.error('translate error:', err);
+    Toast.error('שגיאה בתרגום: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = `🌐 תרגם ל${langLabel === 'אנגלית' ? 'אנגלית' : 'רוסית'}`; }
+  }
+}
+
+// Learning loop: when a saved brand translation is edited and re-saved,
+// diff old vs new and write to translation_corrections + raise translation_memory confidence to 1.0.
+async function saveBrandTranslationEdits(brandId, targetLang, oldFields, newFields) {
+  const tid = getTenantId();
+  const corrections = [];
+  for (const ct of Object.keys(newFields)) {
+    if (oldFields[ct] && newFields[ct] && oldFields[ct] !== newFields[ct]) {
+      corrections.push({
+        tenant_id: tid,
+        lang: targetLang,
+        original_translation: oldFields[ct],
+        corrected_translation: newFields[ct],
+        is_deleted: false,
+      });
+    }
+  }
+  if (corrections.length) {
+    const { error } = await sb.from('translation_corrections').insert(corrections);
+    if (error) console.error('translation_corrections insert:', error);
+  }
+
+  // Bump translation_memory to human-approved for the new versions
+  const memRows = Object.entries(newFields)
+    .filter(([_, v]) => !!v)
+    .map(([ct, v]) => ({
+      tenant_id: tid,
+      source_lang: 'he',
+      target_lang: targetLang,
+      source_text: oldFields[ct] || v,
+      translated_text: v,
+      context: 'brand.' + ct,
+      scope: 'tenant',
+      confidence: 1.0,
+      approved_by: 'human',
+      times_used: 0,
+    }));
+  if (memRows.length) {
+    const { error } = await sb.from('translation_memory').upsert(memRows, {
+      onConflict: 'tenant_id,source_lang,target_lang,source_hash',
+      ignoreDuplicates: false,
+    });
+    if (error) console.error('translation_memory upsert:', error);
+  }
+}
+
+window.translateStudioBrandContent = translateStudioBrandContent;
+window.saveBrandTranslationEdits = saveBrandTranslationEdits;
