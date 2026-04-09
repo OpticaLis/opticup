@@ -885,30 +885,89 @@ function closeImportModal() {
 }
 
 /**
- * Parse a markdown table from pasted text.
+ * Parse a table from pasted text. Auto-detects format:
+ * - Markdown (pipe-delimited): | col1 | col2 | col3 |
+ * - Tab-separated (Excel paste): col1\tcol2\tcol3
  */
 function parseMarkdownTable(text) {
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l.startsWith('|'));
-  if (lines.length < 3) return [];
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length < 2) return [];
 
-  const headerCells = lines[0].split('|').map(c => c.trim()).filter(c => c !== '');
+  let format = 'unknown';
+
+  for (const line of lines) {
+    if (line.includes('|') && line.split('|').length >= 4) {
+      format = 'pipe';
+      break;
+    }
+    if (line.includes('\t') && line.split('\t').length >= 4) {
+      format = 'tab';
+      break;
+    }
+  }
+
+  if (format === 'unknown') return [];
+  if (format === 'pipe') return parsePipeTable(lines);
+  return parseTabTable(lines);
+}
+
+/**
+ * Parse pipe-delimited markdown table.
+ */
+function parsePipeTable(lines) {
+  const pipeLines = lines.filter(l => l.startsWith('|') || l.includes('|'));
+  if (pipeLines.length < 2) return [];
+
+  const headerCells = splitPipeLine(pipeLines[0]);
+  if (headerCells.length < 4) return [];
 
   const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    if (/^\|[\s\-:]+\|/.test(line) && !line.match(/[a-zA-Zא-ת0-9]/)) continue;
-    const rawCells = line.split('|');
-    if (rawCells[0].trim() === '') rawCells.shift();
-    if (rawCells[rawCells.length - 1].trim() === '') rawCells.pop();
-    const cleanCells = rawCells.map(c => c.trim());
+  for (let i = 1; i < pipeLines.length; i++) {
+    const line = pipeLines[i];
+    if (/^[\s|:\-]+$/.test(line)) continue;
 
-    if (cleanCells.length >= headerCells.length - 1) {
-      const row = {};
-      headerCells.forEach((h, idx) => {
-        row[h.toLowerCase()] = (cleanCells[idx] || '').replace(/\\?\|/g, '|');
-      });
-      rows.push(row);
-    }
+    const cells = splitPipeLine(line);
+    if (cells.length < 4) continue;
+
+    const row = {};
+    headerCells.forEach((h, idx) => {
+      row[h] = (cells[idx] || '').replace(/\\?\|/g, '|').trim();
+    });
+    rows.push(row);
+  }
+  return rows;
+}
+
+/**
+ * Split a pipe-delimited line into cells.
+ */
+function splitPipeLine(line) {
+  const parts = line.split('|');
+  if (parts.length > 0 && parts[0].trim() === '') parts.shift();
+  if (parts.length > 0 && parts[parts.length - 1].trim() === '') parts.pop();
+  return parts.map(p => p.trim());
+}
+
+/**
+ * Parse tab-separated table (pasted from Excel/Sheets).
+ */
+function parseTabTable(lines) {
+  const tabLines = lines.filter(l => l.includes('\t'));
+  if (tabLines.length < 2) return [];
+
+  const headerCells = tabLines[0].split('\t').map(c => c.trim());
+  if (headerCells.length < 4) return [];
+
+  const rows = [];
+  for (let i = 1; i < tabLines.length; i++) {
+    const cells = tabLines[i].split('\t').map(c => c.trim());
+    if (cells.length < 4) continue;
+
+    const row = {};
+    headerCells.forEach((h, idx) => {
+      row[h] = (cells[idx] || '').trim();
+    });
+    rows.push(row);
   }
   return rows;
 }
