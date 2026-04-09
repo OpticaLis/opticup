@@ -65,20 +65,32 @@ async function loadContentPage() {
 }
 
 async function loadAIContent(tid) {
-  const { data } = await sb.from('ai_content')
-    .select('entity_id, content_type, content, status, id')
-    .eq('tenant_id', tid)
-    .eq('entity_type', 'product')
-    .eq('language', 'he')
-    .eq('is_deleted', false);
+  // Page through v_ai_content 1000 rows at a time — PostgREST caps a single
+  // request at 1000 even when .range() asks for more, so without this loop
+  // ~250/569 products silently fall out of contentMap (Fragile Area #7).
+  // Read from the view (not the table) to bypass RLS — Fragile Area #9.
+  const PAGE = 1000;
+  const all = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await sb.from('v_ai_content')
+      .select('entity_id, content_type, content, id')
+      .eq('tenant_id', tid)
+      .eq('entity_type', 'product')
+      .eq('language', 'he')
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    const rows = data || [];
+    all.push(...rows);
+    if (rows.length < PAGE) break;
+  }
 
   contentMap = {};
-  for (const row of (data || [])) {
+  for (const row of all) {
     if (!contentMap[row.entity_id]) contentMap[row.entity_id] = {};
     contentMap[row.entity_id][row.content_type] = {
       id: row.id,
       content: row.content,
-      status: row.status
+      status: 'auto'
     };
   }
 }
