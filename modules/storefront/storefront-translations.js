@@ -589,140 +589,541 @@ function stopBulkTranslate() {
   toast('עוצר תרגום...', 'w');
 }
 
-// ── Export untranslated products for external (human/Gemini) translation ──
+// ══════════════════════════════════════════════════════════════
+// EXTERNAL TRANSLATION — EXPORT
+// ══════════════════════════════════════════════════════════════
+
 function escapeMdCell(s) {
   if (!s) return '';
   return String(s).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim();
 }
 
-async function exportUntranslatedMd() {
-  const tid = getTenantId();
-  const scope = getTransFilteredProducts().filter(p => contentMap[p.id]?.description);
-  const rows = [];
-  for (const p of scope) {
-    const t = transContentMap[p.id] || { en: {}, ru: {} };
-    const missingEn = !t.en?.description;
-    const missingRu = !t.ru?.description;
-    if (!missingEn && !missingRu) continue;
-    rows.push({
-      brand: p.brand_name || '',
-      model: p.model || '',
-      barcode: p.barcode || '',
-      he_desc: contentMap[p.id]?.description?.content || '',
-      he_seo_title: contentMap[p.id]?.seo_title?.content || '',
-      he_seo_desc: contentMap[p.id]?.seo_description?.content || '',
-      missingEn,
-      missingRu,
-    });
-  }
+/**
+ * Download multiple files sequentially with 400ms delay between each.
+ * Uses Blob + temporary <a> element (same pattern as old export).
+ */
+function downloadMultipleFiles(files) {
+  files.forEach((file, i) => {
+    setTimeout(() => {
+      const blob = new Blob([file.content], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, i * 400);
+  });
+}
 
-  if (!rows.length) {
-    toast('אין מוצרים לייצוא — הכל מתורגם', 's');
+/**
+ * Main export handler. Called from HTML button: exportForTranslation('en') or ('ru').
+ * Generates: 1 prompt file + N data batch files.
+ */
+async function exportForTranslation(targetLang) {
+  const tid = getTenantId();
+  const langLabel = targetLang === 'en' ? 'English' : 'Russian';
+  const langCode = targetLang.toUpperCase();
+
+  // 1. Find products missing this language's description
+  const missingProducts = getTransFilteredProducts().filter(p => {
+    if (!contentMap[p.id]?.description) return false;
+    const t = transContentMap[p.id] || {};
+    return !t[targetLang]?.description;
+  });
+
+  if (!missingProducts.length) {
+    toast(`אין מוצרים חסרי תרגום ל-${langCode}`, 's');
     return;
   }
 
-  showLoading('בונה קובץ ייצוא...');
-  let glossaryEn = [];
-  let glossaryRu = [];
+  showLoading(`מכין קבצי ייצוא ל-${langCode}...`);
+
+  // 2. Load glossary
+  let glossary = [];
   try {
-    const [enRes, ruRes] = await Promise.all([
-      sb.from('translation_glossary')
-        .select('term_he, term_translated')
-        .eq('tenant_id', tid).eq('lang', 'en').eq('is_deleted', false).limit(20),
-      sb.from('translation_glossary')
-        .select('term_he, term_translated')
-        .eq('tenant_id', tid).eq('lang', 'ru').eq('is_deleted', false).limit(20),
-    ]);
-    glossaryEn = enRes.data || [];
-    glossaryRu = ruRes.data || [];
-  } catch (e) {
-    console.warn('glossary fetch failed:', e);
+    const { data } = await sb.from('translation_glossary')
+      .select('term_he, term_translated')
+      .eq('tenant_id', tid)
+      .eq('lang', targetLang)
+      .eq('is_deleted', false)
+      .order('context');
+    glossary = data || [];
+  } catch (e) { console.warn('glossary fetch failed:', e); }
+
+  // 3. Find 2-3 example products (have HE + target lang content for all 4 fields)
+  const exampleProducts = [];
+  for (const p of contentProducts) {
+    if (exampleProducts.length >= 3) break;
+    const he = contentMap[p.id];
+    const tr = (transContentMap[p.id] || {})[targetLang];
+    if (he?.description && he?.seo_title && he?.seo_description &&
+        tr?.description && tr?.seo_title && tr?.seo_description) {
+      exampleProducts.push({
+        brand: p.brand_name || '',
+        model: p.model || '',
+        barcode: p.barcode || '',
+        he_desc: he.description.content || '',
+        he_seo_title: he.seo_title.content || '',
+        he_seo_desc: he.seo_description.content || '',
+        he_alt: (he.alt_text?.content) || '',
+        tr_desc: tr.description.content || '',
+        tr_seo_title: tr.seo_title.content || '',
+        tr_seo_desc: tr.seo_description.content || '',
+        tr_alt: (tr.alt_text?.content) || '',
+      });
+    }
   }
 
-  const filterNote = transFilterIsActive() ? ' (filtered subset)' : ' (all untranslated)';
+  // 4. Build product rows for export
+  const rows = missingProducts.map(p => ({
+    brand: p.brand_name || '',
+    model: p.model || '',
+    barcode: p.barcode || '',
+    he_desc: contentMap[p.id]?.description?.content || '',
+    he_seo_title: contentMap[p.id]?.seo_title?.content || '',
+    he_seo_desc: contentMap[p.id]?.seo_description?.content || '',
+    he_alt: contentMap[p.id]?.alt_text?.content || '',
+  }));
+
+  // 5. Build prompt file
+  const promptContent = buildTranslationPrompt(targetLang, langLabel, langCode, glossary, exampleProducts);
+
+  // 6. Split into batches of 25
+  const BATCH_SIZE = 25;
+  const batches = [];
+  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+    batches.push(rows.slice(i, i + BATCH_SIZE));
+  }
+
+  // 7. Build data files
+  const dataFiles = batches.map((batch, idx) => ({
+    name: `PRODUCTS_${langCode}_BATCH_${String(idx + 1).padStart(2, '0')}.md`,
+    content: buildDataFile(batch, langCode, idx + 1, batches.length, idx * BATCH_SIZE)
+  }));
+
+  // 8. Download all files
+  const stamp = new Date().toISOString().slice(0, 10);
+  const allFiles = [
+    { name: `PROMPT_TRANSLATE_${langCode}_${stamp}.md`, content: promptContent },
+    ...dataFiles
+  ];
+
+  downloadMultipleFiles(allFiles);
+  hideLoading();
+  toast(`יוצאו ${allFiles.length} קבצים (${rows.length} מוצרים) ל-${langCode}`, 's');
+}
+
+/**
+ * Build the translation prompt file content (instructions, glossary, examples).
+ */
+function buildTranslationPrompt(targetLang, langLabel, langCode, glossary, examples) {
   const md = [];
-  md.push(`# Product Translations — Prizma Optic${filterNote}`);
+
+  md.push(`# Translation Task — Prizma Optic Products → ${langLabel}`);
   md.push('');
-  md.push(`Generated: ${new Date().toISOString()}`);
-  md.push(`Products to translate: **${rows.length}**`);
+  md.push(`> Generated: ${new Date().toISOString().slice(0, 10)}`);
   md.push('');
   md.push('---');
   md.push('');
-  md.push('## Translation Brief');
+
+  // Role
+  md.push('## Your Role');
   md.push('');
-  md.push('**Business:** Prizma Optic — premium optical store in Ashkelon, Israel. ~40 years in business. Authorized dealer for Zeiss, Leica, Rodenstock, Hoya, Essilor and luxury eyewear brands (Cazal, Gucci, Ray-Ban, etc.).');
+  md.push(`You are a professional marketing translator specializing in optical/eyewear products. You translate Hebrew product content into polished, natural ${langLabel}.`);
   md.push('');
-  md.push('**Audience:** Israeli customers seeking quality eyewear and professional multifocal fitting. Target languages are English and Russian — both consumed by an Israel-resident audience (use ₪ for prices, never USD/EUR).');
+
+  // Business context
+  md.push('## Business Context');
   md.push('');
-  md.push('**Tone:** Professional, warm, luxurious — like a trusted family store, not a discount chain. Avoid translation-ese; write as if originally authored in the target language.');
+  md.push('**Prizma Optic** (אופטיקה פריזמה) — premium optical store in Ashkelon, Israel. Approximately 40 years in business. Authorized dealer for Zeiss, Leica, Rodenstock, Hoya, Essilor, and luxury eyewear brands (Cazal, Gucci, Ray-Ban, Tom Ford, Saint Laurent, etc.).');
   md.push('');
-  md.push('**Russian:** use formal "вы" form. Natural Russian word order (no Hebrew syntax).');
-  md.push('**English:** American English. Active voice. Short sentences.');
+  md.push('**Audience:** Israeli customers seeking quality eyewear. Use ₪ for prices (never USD/EUR). The audience reads the website in Israel.');
   md.push('');
+
+  // Tone
+  md.push('## Tone & Style');
+  md.push('');
+  if (targetLang === 'en') {
+    md.push('- American English. Active voice. Short, punchy sentences.');
+    md.push('- Professional, warm, luxurious — like a trusted family store, not a discount chain.');
+    md.push('- Write as if the text was originally authored in English (no "translationese").');
+  } else {
+    md.push('- Formal "вы" form throughout. Natural Russian word order (no Hebrew syntax calques).');
+    md.push('- Professional, warm, luxurious — like a trusted family store, not a discount chain.');
+    md.push('- Write as if the text was originally authored in Russian (no "translationese").');
+  }
+  md.push('');
+
+  // Hard rules
   md.push('## Hard Rules');
   md.push('');
-  md.push('1. Do NOT use the word "plastic" — use **"acetate"** for frame material.');
-  md.push('2. Do NOT start every product with "The frame features…" or "These glasses feature…". Vary the openings.');
-  md.push('3. Use a short en-dash or hyphen (–, -) — never a long em-dash (—).');
-  md.push('4. Brand names, model codes, and barcodes — keep verbatim. Never translate "Cazal", "Ray-Ban", "Gucci", etc.');
-  md.push('5. Numbers, sizes, prices, and policy details must remain factually identical.');
-  md.push('6. SEO title: 50-60 characters. SEO description: 150-160 characters.');
-  md.push('7. Description: 2-3 sentences, marketing tone, informative not salesy.');
-  md.push('8. No emojis. No "shop now" / "click here" CTAs (the storefront handles those).');
+  md.push('1. **Never** use the word "plastic" — always use **"acetate"** for frame material.');
+  md.push('2. **Vary openings** — never start two consecutive products with the same phrase (e.g., "The frame features…", "These glasses…").');
+  md.push('3. Use a short hyphen **-** only — never em-dash (—) or en-dash (–).');
+  md.push('4. **Brand names, model codes, barcodes** — keep verbatim. Never translate or modify them.');
+  md.push('5. Numbers, sizes, prices, and measurements — keep factually identical to the Hebrew source.');
+  md.push('6. **Description:** 2-3 sentences. Marketing tone, informative, not salesy.');
+  md.push('7. **SEO Title:** 50-60 characters. Format: `[Brand] [Model] - [type keyword]`. Must be unique per product.');
+  md.push('8. **SEO Description:** 150-160 characters. Informative summary with brand + model + key feature. End with " - Prizma Optic, Ashkelon" or equivalent.');
+  md.push('9. **Alt Text:** Concise image description, max 125 characters. Format: `[Brand] [Model] [product type] [key visual feature]`. Never start with "Image of" or "Photo of".');
+  md.push('10. No emojis. No CTAs like "shop now" or "click here".');
+  md.push('11. If the Hebrew text appears cut off mid-sentence, complete the thought naturally in the translation.');
   md.push('');
 
-  if (glossaryEn.length || glossaryRu.length) {
-    md.push('## Glossary');
+  // Glossary
+  if (glossary.length) {
+    md.push('## Glossary — Use These Exact Translations');
     md.push('');
-    md.push('Use these exact translations for optical terminology:');
-    md.push('');
-    if (glossaryEn.length) {
-      md.push('### Hebrew → English');
-      md.push('');
-      md.push('| Hebrew | English |');
-      md.push('|---|---|');
-      for (const g of glossaryEn) {
-        md.push(`| ${escapeMdCell(g.term_he)} | ${escapeMdCell(g.term_translated)} |`);
-      }
-      md.push('');
+    md.push(`| Hebrew | ${langLabel} |`);
+    md.push('|---|---|');
+    for (const g of glossary) {
+      md.push(`| ${escapeMdCell(g.term_he)} | ${escapeMdCell(g.term_translated)} |`);
     }
-    if (glossaryRu.length) {
-      md.push('### Hebrew → Russian');
-      md.push('');
-      md.push('| Hebrew | Russian |');
-      md.push('|---|---|');
-      for (const g of glossaryRu) {
-        md.push(`| ${escapeMdCell(g.term_he)} | ${escapeMdCell(g.term_translated)} |`);
-      }
-      md.push('');
+    md.push('');
+  }
+
+  // Output format
+  md.push('## Task Format');
+  md.push('');
+  md.push('I will send you a markdown table with **8 columns:**');
+  md.push('');
+  md.push(`| # | Brand | Model | Barcode | HE Description | HE SEO Title | HE SEO Desc | HE Alt Text |`);
+  md.push('');
+  md.push(`You must return a **new table** with **8 columns:**`);
+  md.push('');
+  md.push(`| # | Brand | Model | Barcode | ${langCode} Description | ${langCode} SEO Title | ${langCode} SEO Desc | ${langCode} Alt Text |`);
+  md.push('');
+  md.push('**Rules:**');
+  md.push('- Return ALL rows. Do not skip any.');
+  md.push('- Keep #, Brand, Model, Barcode identical to the input.');
+  md.push(`- Fill all 4 ${langCode} columns for every row.`);
+  md.push('- Return ONLY the markdown table — no explanations, no commentary before or after.');
+  md.push('- Do not wrap the table in a code block.');
+  md.push('');
+
+  // Examples
+  if (examples.length) {
+    md.push('## Example');
+    md.push('');
+    md.push('**Input:**');
+    md.push('');
+    md.push('| # | Brand | Model | Barcode | HE Description | HE SEO Title | HE SEO Desc | HE Alt Text |');
+    md.push('|---|---|---|---|---|---|---|---|');
+    examples.forEach((ex, i) => {
+      md.push(`| ${i + 1} | ${escapeMdCell(ex.brand)} | ${escapeMdCell(ex.model)} | ${escapeMdCell(ex.barcode)} | ${escapeMdCell(ex.he_desc)} | ${escapeMdCell(ex.he_seo_title)} | ${escapeMdCell(ex.he_seo_desc)} | ${escapeMdCell(ex.he_alt)} |`);
+    });
+    md.push('');
+    md.push('**Expected output:**');
+    md.push('');
+    md.push(`| # | Brand | Model | Barcode | ${langCode} Description | ${langCode} SEO Title | ${langCode} SEO Desc | ${langCode} Alt Text |`);
+    md.push('|---|---|---|---|---|---|---|---|');
+    examples.forEach((ex, i) => {
+      md.push(`| ${i + 1} | ${escapeMdCell(ex.brand)} | ${escapeMdCell(ex.model)} | ${escapeMdCell(ex.barcode)} | ${escapeMdCell(ex.tr_desc)} | ${escapeMdCell(ex.tr_seo_title)} | ${escapeMdCell(ex.tr_seo_desc)} | ${escapeMdCell(ex.tr_alt)} |`);
+    });
+    md.push('');
+  }
+
+  // Ready handshake
+  md.push('---');
+  md.push('');
+  md.push('## Ready?');
+  md.push('');
+  md.push('Read all instructions above carefully.');
+  md.push('When you fully understand the task, reply with exactly:');
+  md.push('');
+  md.push(`**"Ready - send the ${langLabel} product table."**`);
+  md.push('');
+  md.push('I will then send you the products to translate in the next message.');
+
+  return md.join('\n');
+}
+
+/**
+ * Build a single data batch file.
+ */
+function buildDataFile(batch, langCode, batchNum, totalBatches, offset) {
+  const md = [];
+  md.push(`# Products to Translate — ${langCode} — Batch ${batchNum}/${totalBatches}`);
+  md.push('');
+  md.push(`Translate all 4 empty ${langCode} columns for each row. Return the complete output table.`);
+  md.push('');
+  md.push('| # | Brand | Model | Barcode | HE Description | HE SEO Title | HE SEO Desc | HE Alt Text |');
+  md.push('|---|---|---|---|---|---|---|---|');
+  batch.forEach((r, i) => {
+    const num = offset + i + 1;
+    md.push(`| ${num} | ${escapeMdCell(r.brand)} | ${escapeMdCell(r.model)} | ${escapeMdCell(r.barcode)} | ${escapeMdCell(r.he_desc)} | ${escapeMdCell(r.he_seo_title)} | ${escapeMdCell(r.he_seo_desc)} | ${escapeMdCell(r.he_alt)} |`);
+  });
+  return md.join('\n');
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXTERNAL TRANSLATION — IMPORT
+// ══════════════════════════════════════════════════════════════
+
+let importParsedRows = []; // validated rows ready for save
+
+function openImportModal() {
+  document.getElementById('import-textarea').value = '';
+  document.getElementById('import-preview').style.display = 'none';
+  document.getElementById('import-preview').innerHTML = '';
+  document.getElementById('import-status').style.display = 'none';
+  document.getElementById('import-save-btn').style.display = 'none';
+  importParsedRows = [];
+  document.getElementById('import-modal').style.display = 'flex';
+}
+
+function closeImportModal() {
+  document.getElementById('import-modal').style.display = 'none';
+  importParsedRows = [];
+}
+
+/**
+ * Parse a markdown table from pasted text.
+ */
+function parseMarkdownTable(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.startsWith('|'));
+  if (lines.length < 3) return [];
+
+  const headerCells = lines[0].split('|').map(c => c.trim()).filter(c => c !== '');
+
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^\|[\s\-:]+\|/.test(line) && !line.match(/[a-zA-Zא-ת0-9]/)) continue;
+    const rawCells = line.split('|');
+    if (rawCells[0].trim() === '') rawCells.shift();
+    if (rawCells[rawCells.length - 1].trim() === '') rawCells.pop();
+    const cleanCells = rawCells.map(c => c.trim());
+
+    if (cleanCells.length >= headerCells.length - 1) {
+      const row = {};
+      headerCells.forEach((h, idx) => {
+        row[h.toLowerCase()] = (cleanCells[idx] || '').replace(/\\?\|/g, '|');
+      });
+      rows.push(row);
+    }
+  }
+  return rows;
+}
+
+/**
+ * Find the column value by trying multiple possible header names.
+ */
+function findColumn(row, ...candidates) {
+  for (const c of candidates) {
+    const key = Object.keys(row).find(k => k.toLowerCase().includes(c.toLowerCase()));
+    if (key && row[key]) return row[key];
+  }
+  return '';
+}
+
+/**
+ * Validate pasted text: parse table, match barcodes, check fields.
+ */
+function validateImport() {
+  const text = document.getElementById('import-textarea').value;
+  const targetLang = document.getElementById('import-lang').value;
+  const langCode = targetLang.toUpperCase();
+
+  if (!text.trim()) {
+    showImportStatus('הדבק טבלה קודם', 'error');
+    return;
+  }
+
+  const rows = parseMarkdownTable(text);
+  if (!rows.length) {
+    showImportStatus('לא נמצאה טבלת Markdown בטקסט שהודבק', 'error');
+    return;
+  }
+
+  const barcodeMap = {};
+  for (const p of contentProducts) {
+    if (p.barcode) barcodeMap[p.barcode] = p;
+  }
+
+  const hebrewRegex = /[\u0590-\u05FF]/;
+
+  const validated = [];
+  let okCount = 0, warnCount = 0, errCount = 0;
+
+  for (const row of rows) {
+    const barcode = findColumn(row, 'barcode');
+    if (!barcode || barcode === '---' || barcode === '#') continue;
+
+    const product = barcodeMap[barcode];
+    const desc = findColumn(row, `${langCode} desc`, `${langCode.toLowerCase()} desc`, 'description', 'desc');
+    const seoTitle = findColumn(row, `${langCode} seo title`, `${langCode.toLowerCase()} seo title`, 'seo title', 'seo_title');
+    const seoDesc = findColumn(row, `${langCode} seo desc`, `${langCode.toLowerCase()} seo desc`, 'seo desc', 'seo_desc');
+    const altText = findColumn(row, `${langCode} alt`, `${langCode.toLowerCase()} alt`, 'alt text', 'alt_text', 'alt');
+
+    const brand = findColumn(row, 'brand') || product?.brand_name || '?';
+    const model = findColumn(row, 'model') || product?.model || '?';
+
+    const errors = [];
+    const warnings = [];
+
+    if (!product) {
+      errors.push(`ברקוד ${barcode} לא נמצא במוצרים`);
+    }
+
+    if (!desc) errors.push('חסר Description');
+    if (!seoTitle) errors.push('חסר SEO Title');
+    if (!seoDesc) errors.push('חסר SEO Desc');
+    if (!altText) warnings.push('חסר Alt Text');
+
+    if (desc && hebrewRegex.test(desc)) errors.push('Description מכיל עברית');
+    if (seoTitle && hebrewRegex.test(seoTitle)) errors.push('SEO Title מכיל עברית');
+    if (seoDesc && hebrewRegex.test(seoDesc)) errors.push('SEO Desc מכיל עברית');
+    if (altText && hebrewRegex.test(altText)) errors.push('Alt Text מכיל עברית');
+
+    if (seoTitle && seoTitle.length > 70) errors.push(`SEO Title ארוך מדי (${seoTitle.length} > 70)`);
+    else if (seoTitle && seoTitle.length > 60) warnings.push(`SEO Title ארוך (${seoTitle.length} > 60)`);
+
+    if (seoDesc && seoDesc.length > 200) errors.push(`SEO Desc ארוך מדי (${seoDesc.length} > 200)`);
+    else if (seoDesc && seoDesc.length > 160) warnings.push(`SEO Desc ארוך (${seoDesc.length} > 160)`);
+
+    if (altText && altText.length > 150) errors.push(`Alt Text ארוך מדי (${altText.length} > 150)`);
+    else if (altText && altText.length > 125) warnings.push(`Alt Text ארוך (${altText.length} > 125)`);
+
+    let status;
+    if (errors.length) { status = 'error'; errCount++; }
+    else if (warnings.length) { status = 'warning'; warnCount++; }
+    else { status = 'ok'; okCount++; }
+
+    validated.push({
+      barcode,
+      brand,
+      model,
+      entityId: product?.id || null,
+      desc,
+      seoTitle,
+      seoDesc,
+      altText,
+      status,
+      errors,
+      warnings,
+    });
+  }
+
+  importParsedRows = validated;
+
+  renderImportPreview(validated, langCode, okCount, warnCount, errCount);
+}
+
+function showImportStatus(msg, type) {
+  const el = document.getElementById('import-status');
+  el.style.display = 'block';
+  el.style.background = type === 'error' ? '#fee' : type === 'success' ? '#efe' : '#ffc';
+  el.style.color = '#333';
+  el.textContent = msg;
+}
+
+function renderImportPreview(rows, langCode, okCount, warnCount, errCount) {
+  const container = document.getElementById('import-preview');
+  const saveable = okCount + warnCount;
+
+  let html = `<table class="data-table" style="font-size:12px;direction:ltr;text-align:left;">`;
+  html += `<thead><tr><th>Status</th><th>Brand</th><th>Model</th><th>Barcode</th><th>${langCode} Description</th><th>Notes</th></tr></thead>`;
+  html += `<tbody>`;
+
+  for (const r of rows) {
+    const icon = r.status === 'ok' ? '✅' : r.status === 'warning' ? '⚠️' : '❌';
+    const notes = [...r.errors, ...r.warnings].join('; ') || '-';
+    const descPreview = (r.desc || '').substring(0, 60) + ((r.desc || '').length > 60 ? '...' : '');
+    const rowColor = r.status === 'error' ? '#fee' : r.status === 'warning' ? '#ffc' : '';
+    html += `<tr style="background:${rowColor}"><td>${icon}</td><td>${escImport(r.brand)}</td><td>${escImport(r.model)}</td><td>${escImport(r.barcode)}</td><td style="direction:ltr">${escImport(descPreview)}</td><td>${escImport(notes)}</td></tr>`;
+  }
+
+  html += `</tbody></table>`;
+  html += `<div style="margin-top:8px;font-weight:bold;">✅ ${okCount} תקין &nbsp; ⚠️ ${warnCount} אזהרות &nbsp; ❌ ${errCount} שגיאות &nbsp; | &nbsp; ${saveable} ישמרו</div>`;
+
+  container.innerHTML = html;
+  container.style.display = 'block';
+
+  document.getElementById('import-save-btn').style.display = saveable > 0 ? 'inline-block' : 'none';
+
+  if (errCount > 0) {
+    showImportStatus(`${errCount} שורות עם שגיאות ידלגו. ${saveable} ישמרו.`, 'warning');
+  } else {
+    showImportStatus(`הכל תקין! ${saveable} מוצרים מוכנים לשמירה.`, 'success');
+  }
+}
+
+// Minimal HTML escaper for preview table
+function escImport(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Save validated translations to ai_content.
+ */
+async function saveImport() {
+  const targetLang = document.getElementById('import-lang').value;
+  const tid = getTenantId();
+  const nowIso = new Date().toISOString();
+
+  const saveableRows = importParsedRows.filter(r =>
+    (r.status === 'ok' || r.status === 'warning') && r.entityId
+  );
+
+  if (!saveableRows.length) {
+    showImportStatus('אין שורות תקינות לשמירה', 'error');
+    return;
+  }
+
+  showLoading(`שומר ${saveableRows.length} תרגומים...`);
+
+  const records = [];
+  for (const r of saveableRows) {
+    const base = {
+      tenant_id: tid,
+      entity_type: 'product',
+      entity_id: r.entityId,
+      language: targetLang,
+      status: 'edited',
+      is_deleted: false,        // CRITICAL — Fragile Area #8
+      updated_at: nowIso,
+    };
+
+    if (r.desc) records.push({ ...base, content_type: 'description', content: r.desc });
+    if (r.seoTitle) records.push({ ...base, content_type: 'seo_title', content: r.seoTitle });
+    if (r.seoDesc) records.push({ ...base, content_type: 'seo_description', content: r.seoDesc });
+    if (r.altText) records.push({ ...base, content_type: 'alt_text', content: r.altText });
+  }
+
+  const UPSERT_BATCH = 100;
+  let saved = 0;
+  let errors = 0;
+
+  for (let i = 0; i < records.length; i += UPSERT_BATCH) {
+    const batch = records.slice(i, i + UPSERT_BATCH);
+    const { error } = await sb.from('ai_content').upsert(batch, {
+      onConflict: 'tenant_id,entity_type,entity_id,content_type,language',
+    });
+    if (error) {
+      console.error('Import upsert error:', error);
+      errors++;
+    } else {
+      saved += batch.length;
     }
   }
 
-  md.push('---');
-  md.push('');
-  md.push('## Products');
-  md.push('');
-  md.push('Fill the **EN Translation** and **RU Translation** columns. Each cell should contain three lines separated by `<br>`: description, SEO title, SEO description (in that order). Leave a column blank only if that language is already translated (the "needs" column tells you which).');
-  md.push('');
-  md.push('| # | Brand | Model | Barcode | Needs | Hebrew Description | Hebrew SEO Title | Hebrew SEO Description | EN Translation | RU Translation |');
-  md.push('|---|---|---|---|---|---|---|---|---|---|');
-  rows.forEach((r, i) => {
-    const needs = [r.missingEn ? 'EN' : '', r.missingRu ? 'RU' : ''].filter(Boolean).join('+');
-    md.push(`| ${i + 1} | ${escapeMdCell(r.brand)} | ${escapeMdCell(r.model)} | ${escapeMdCell(r.barcode)} | ${needs} | ${escapeMdCell(r.he_desc)} | ${escapeMdCell(r.he_seo_title)} | ${escapeMdCell(r.he_seo_desc)} |  |  |`);
-  });
-  md.push('');
-
-  const blob = new Blob([md.join('\n')], { type: 'text/markdown;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const stamp = new Date().toISOString().slice(0, 10);
-  a.href = url;
-  a.download = `prizma-translations-${stamp}-${rows.length}products.md`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-
   hideLoading();
-  toast(`יוצא ${rows.length} מוצרים`, 's');
+
+  if (errors) {
+    showImportStatus(`נשמרו ${saved} שדות, ${errors} שגיאות upsert — בדוק console`, 'warning');
+  } else {
+    showImportStatus(`✅ נשמרו ${saved} שדות (${saveableRows.length} מוצרים) בהצלחה!`, 'success');
+  }
+
+  await loadTranslations();
+  renderTransTable();
+
+  document.getElementById('import-save-btn').style.display = 'none';
+
+  toast(`יובאו ${saveableRows.length} תרגומים ל-${targetLang.toUpperCase()}`, 's');
 }

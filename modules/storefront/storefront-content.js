@@ -90,7 +90,7 @@ async function loadAIContent(tid) {
     contentMap[row.entity_id][row.content_type] = {
       id: row.id,
       content: row.content,
-      status: 'auto'
+      status: row.status || 'auto'
     };
   }
 }
