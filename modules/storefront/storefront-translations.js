@@ -332,6 +332,7 @@ async function saveTranslationEdit() {
       content: newVal,
       language: transEditLang,
       status: existing ? 'edited' : 'auto',
+      is_deleted: false,    // Fragile Area #8 — reset soft-delete on upsert
       updated_at: new Date().toISOString()
     }, { onConflict: 'tenant_id,entity_type,entity_id,content_type,language' });
 
