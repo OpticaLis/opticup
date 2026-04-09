@@ -766,9 +766,9 @@ function buildTranslationPrompt(targetLang, langLabel, langCode, glossary, examp
   md.push('4. **Brand names, model codes, barcodes** — keep verbatim. Never translate or modify them.');
   md.push('5. Numbers, sizes, prices, and measurements — keep factually identical to the Hebrew source.');
   md.push('6. **Description:** 2-3 sentences. Marketing tone, informative, not salesy.');
-  md.push('7. **SEO Title:** 50-60 characters. Format: `[Brand] [Model] - [type keyword]`. Must be unique per product.');
-  md.push('8. **SEO Description:** 150-160 characters. Informative summary with brand + model + key feature. End with " - Prizma Optic, Ashkelon" or equivalent.');
-  md.push('9. **Alt Text:** Concise image description, max 125 characters. Format: `[Brand] [Model] [product type] [key visual feature]`. Never start with "Image of" or "Photo of".');
+  md.push('7. **SEO Title:** 40-55 characters. Format: `[Brand] [Model] - [type keyword]`. Must be unique per product.');
+  md.push('8. **SEO Description:** 130-150 characters. Informative summary with brand + model + key feature. End with " - Prizma Optic, Ashkelon" or equivalent.');
+  md.push('9. **Alt Text:** Concise image description, max 100 characters. Format: `[Brand] [Model] [product type] [key visual feature]`. Never start with "Image of" or "Photo of".');
   md.push('10. No emojis. No CTAs like "shop now" or "click here".');
   md.push('11. If the Hebrew text appears cut off mid-sentence, complete the thought naturally in the translation.');
   md.push('12. Return your output as a **markdown table** (pipe-delimited). Do NOT return Excel, CSV, JSON, or any other format.');
