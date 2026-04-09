@@ -43,10 +43,15 @@ function _bDownloadFiles(files) {
 }
 
 function _bSplitPipeLine(line) {
-  const parts = line.split('|');
+  // Handle escaped pipes (\|) inside cell content: swap for a sentinel
+  // before splitting, then restore. The previous post-split replace was
+  // a no-op because the raw '|' in '\|' had already been split on.
+  const SENTINEL = '\u0001';
+  const safe = line.replace(/\\\|/g, SENTINEL);
+  const parts = safe.split('|');
   if (parts.length > 0 && parts[0].trim() === '') parts.shift();
   if (parts.length > 0 && parts[parts.length - 1].trim() === '') parts.pop();
-  return parts.map(p => p.trim());
+  return parts.map(p => p.split(SENTINEL).join('|').trim());
 }
 
 function _bParseMarkdownTable(text) {
@@ -422,10 +427,18 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
     md.push('- American English. Active voice. Short, punchy sentences.');
     md.push('- Professional, warm, luxurious — like a trusted family store, not a discount chain.');
     md.push('- Write as if the text was originally authored in English (no "translationese").');
+    md.push('- Never capitalize common nouns mid-sentence (titanium, acetate, metal, elegant, classic — lowercase unless starting a sentence).');
+    md.push('- "ייעוץ מקצועי" = "professional consultation" (not "fitting", not "advice").');
+    md.push('- Every seo_description must end with " - Prizma Optic, Ashkelon".');
+    md.push('- Vary sentence structure — do not start consecutive sentences the same way.');
   } else {
     md.push('- Formal "вы" form throughout. Natural Russian word order (no Hebrew syntax calques).');
     md.push('- Professional, warm, luxurious — like a trusted family store, not a discount chain.');
     md.push('- Write as if the text was originally authored in Russian (no "translationese").');
+    md.push('- Не используйте заглавные буквы в середине предложения для обычных существительных.');
+    md.push('- "ייעוץ מקצועי" = "профессиональная консультация".');
+    md.push('- Каждое seo_description должно заканчиваться " - Prizma Optic, Ашкелон".');
+    md.push('- Варьируйте структуру предложений.');
   }
   md.push('');
 
@@ -437,7 +450,7 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
   md.push('| Field | Where It Appears | Guidelines |');
   md.push('|---|---|---|');
   md.push('| `seo_title` | Browser tab, Google search result title | 40-60 characters. Must contain brand name + keyword (e.g., "sunglasses", "eyeglasses", "eyewear"). |');
-  md.push('| `seo_description` | Google search result snippet | 130-160 characters. Informative summary. End with " - Prizma Optic, Ashkelon" or similar. |');
+  md.push('| `seo_description` | Google search result snippet | 130-160 characters. Must end with " - Prizma Optic, Ashkelon". Include brand name + key feature + store name. |');
   md.push('| `brand_description_short` | Tagline under brand name on the brand page hero section | Max 200 characters. One punchy line — brand essence. |');
   md.push('| `brand_description` | Main body text on the brand page (below hero, next to gallery) | Preserve paragraph structure and length (±20% of Hebrew). Contains HTML tags — see Rule #2. |');
   md.push('');
@@ -446,15 +459,17 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
   md.push('## Hard Rules');
   md.push('');
   md.push('1. **Brand names** — keep verbatim. NEVER translate brand names (Gucci stays Gucci, Dior stays Dior, Cazal stays Cazal).');
-  md.push('2. **Preserve ALL HTML tags** exactly as they appear (`<p>`, `</p>`, `<strong>`, `</strong>`, `<br>`, `<ul>`, `<li>`, etc.). Translate ONLY the text content between tags. If the Hebrew has `<p>גוצ\'י הוא מותג יוקרה</p>`, return `<p>Gucci is a luxury brand</p>`.');
-  md.push('3. Use a short hyphen **-** only — never em-dash (—) or en-dash (–).');
-  md.push('4. Numbers, prices (₪), measurements — keep factually identical to the Hebrew source.');
-  md.push('5. **Do NOT add content** that doesn\'t exist in the Hebrew source.');
-  md.push('6. If the Hebrew text appears cut off mid-sentence, complete the thought naturally.');
-  md.push('7. No emojis. No CTAs like "shop now" or "click here".');
-  md.push('8. Return your output as a **markdown table** (pipe-delimited). Do NOT return Excel, CSV, JSON, or any other format.');
-  md.push('9. Do NOT wrap the output table in a code block (no ```). Just the raw markdown table.');
-  md.push('10. **Slugs must be returned exactly as provided** — they are URL identifiers, not text to translate.');
+  md.push('2. **Capitalization** — only capitalize proper nouns (brand names, place names) and sentence beginnings. Common nouns like titanium, acetate, metal, elegant, classic, rimless stay lowercase mid-sentence. WRONG: "Ultra-lightweight Italian Titanium frames with Elegant matte finish". CORRECT: "Ultra-lightweight Italian titanium frames with elegant matte finish".');
+  md.push('3. **Preserve ALL HTML tags** exactly as they appear (`<p>`, `</p>`, `<strong>`, `</strong>`, `<br>`, `<ul>`, `<li>`, etc.). Translate ONLY the text content between tags. If the Hebrew has `<p>גוצ\'י הוא מותג יוקרה</p>`, return `<p>Gucci is a luxury brand</p>`.');
+  md.push('4. Use a short hyphen **-** only — never em-dash (—) or en-dash (–).');
+  md.push('5. Numbers, prices (₪), measurements — keep factually identical to the Hebrew source.');
+  md.push('6. **Do NOT add content** that doesn\'t exist in the Hebrew source.');
+  md.push('7. If the Hebrew text appears cut off mid-sentence, complete the thought naturally.');
+  md.push('8. No emojis. No CTAs like "shop now" or "click here".');
+  md.push('9. Return your output as a **markdown table** (pipe-delimited). Do NOT return Excel, CSV, JSON, or any other format.');
+  md.push('10. Do NOT wrap the output table in a code block (no ```). Just the raw markdown table.');
+  md.push('11. **Slugs must be returned exactly as provided** — they are URL identifiers, not text to translate.');
+  md.push('12. **Empty HTML paragraphs** — when the Hebrew `brand_description` contains empty spacer paragraphs like `<p> </p>` or `<p>&nbsp;</p>`, REMOVE them in the translation. Use only meaningful `<p>...</p>` blocks with actual content.');
   md.push('');
 
   // Glossary
@@ -475,6 +490,9 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
     md.push(`| עדשות מגע | ${L('contact lenses', 'контактные линзы')} |`);
     md.push(`| קולקציה | ${L('collection', 'коллекция')} |`);
     md.push(`| מותג יוקרה | ${L('luxury brand', 'люксовый бренд')} |`);
+    md.push(`| ייעוץ מקצועי | ${L('professional consultation', 'профессиональная консультация')} |`);
+    md.push(`| התאמה אישית | ${L('custom fitting', 'индивидуальный подбор')} |`);
+    md.push(`| שירות מקצועי | ${L('professional service', 'профессиональное обслуживание')} |`);
     md.push('| אופטיקה פריזמה | Prizma Optics (NEVER translate the store name) |');
     md.push('| אשקלון | Ashkelon (NEVER translate the city name) |');
   }
