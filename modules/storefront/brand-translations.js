@@ -195,3 +195,238 @@ function buildBrandDataFile(batch, langCode, batchNum, totalBatches) {
   }
   return md.join('\n');
 }
+
+// ══════════════════════════════════════════════════════════════
+// BRAND TRANSLATION — IMPORT
+// ══════════════════════════════════════════════════════════════
+
+function openBrandImportModal() {
+  const modal = document.getElementById('brand-import-modal');
+  if (!modal) { alert('brand-import-modal not found'); return; }
+  document.getElementById('brand-import-textarea').value = '';
+  document.getElementById('brand-import-preview').style.display = 'none';
+  document.getElementById('brand-import-preview').innerHTML = '';
+  document.getElementById('brand-import-status').style.display = 'none';
+  document.getElementById('brand-import-save-btn').style.display = 'none';
+  brandImportParsed = [];
+
+  Object.assign(modal.style, {
+    position: 'fixed',
+    inset: '0', top: '0', left: '0', right: '0', bottom: '0',
+    width: '100vw', height: '100vh',
+    zIndex: '10000',
+    background: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center', justifyContent: 'center',
+    overflowY: 'auto', padding: '20px',
+  });
+  const card = modal.querySelector('.modal');
+  if (card) {
+    Object.assign(card.style, {
+      background: '#fff', borderRadius: '12px', padding: '24px',
+      maxWidth: '900px', width: '95%', maxHeight: '90vh',
+      overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+    });
+  }
+}
+
+function closeBrandImportModal() {
+  document.getElementById('brand-import-modal').style.display = 'none';
+  brandImportParsed = [];
+}
+
+function showBrandImportStatus(msg, type) {
+  const el = document.getElementById('brand-import-status');
+  el.style.display = 'block';
+  el.style.background = type === 'error' ? '#fee' : type === 'success' ? '#efe' : '#ffc';
+  el.style.color = '#333';
+  el.textContent = msg;
+}
+
+async function validateBrandImport() {
+  const text = document.getElementById('brand-import-textarea').value;
+  const lang = document.getElementById('brand-import-lang').value;
+  brandImportLang = lang;
+
+  if (!text.trim()) {
+    showBrandImportStatus('הדבק טבלה קודם', 'error');
+    return;
+  }
+
+  const rows = parseMarkdownTable(text);
+  if (!rows.length) {
+    showBrandImportStatus('לא נמצאה טבלה בטקסט שהודבק', 'error');
+    return;
+  }
+
+  const tid = getTenantId();
+  let brands;
+  try {
+    brands = await loadBrandsForTranslation(tid);
+  } catch (e) {
+    showBrandImportStatus('שגיאה בטעינת מותגים: ' + e.message, 'error');
+    return;
+  }
+  const slugMap = {};
+  for (const b of brands) slugMap[b.slug] = b;
+  const heBySlugField = {};
+  for (const b of brands) {
+    for (const f of BRAND_TRANS_FIELDS) {
+      heBySlugField[`${b.slug}|${f}`] = b[f] || '';
+    }
+  }
+
+  const hebrewRegex = /[\u0590-\u05FF]/;
+  const cyrillicRegex = /[\u0400-\u04FF]/;
+  const validFields = new Set(BRAND_TRANS_FIELDS);
+
+  const validated = [];
+  let ok = 0, warn = 0, err = 0;
+
+  for (const row of rows) {
+    const slug = (findColumn(row, 'brand_slug', 'slug') || '').trim();
+    const field = (findColumn(row, 'field') || '').trim();
+    const translation = (findColumn(row, 'translation') || '').trim();
+
+    // Skip separator / empty rows
+    if (!slug && !field && !translation) continue;
+    if (slug.startsWith('---') || field.startsWith('---')) continue;
+
+    const errors = [];
+    const warnings = [];
+    const brand = slugMap[slug];
+
+    if (!brand) errors.push(`מותג ${slug} לא נמצא`);
+    if (!validFields.has(field)) errors.push(`שדה לא חוקי: ${field}`);
+    if (!translation) errors.push('תרגום ריק');
+
+    if (translation && hebrewRegex.test(translation)) {
+      errors.push('תו עברי בתרגום');
+    }
+
+    if (translation) {
+      if (lang === 'en' && cyrillicRegex.test(translation)) {
+        errors.push('קירילית בתרגום EN');
+      }
+      if (lang === 'ru' && !cyrillicRegex.test(translation)) {
+        errors.push('אין קירילית בתרגום RU');
+      }
+    }
+
+    if (field === 'seo_title' && translation.length > 70) {
+      warnings.push(`seo_title ארוך (${translation.length} > 70)`);
+    }
+    if (field === 'seo_description' && translation.length > 200) {
+      warnings.push(`seo_description ארוך (${translation.length} > 200)`);
+    }
+    if (field === 'brand_description_short' && translation.length > 300) {
+      warnings.push(`brand_description_short ארוך (${translation.length} > 300)`);
+    }
+
+    if (field === 'brand_description' && translation && brand) {
+      const hebrew = heBySlugField[`${slug}|${field}`] || '';
+      const hebrewHasTags = /<[a-z]+/i.test(hebrew);
+      const transHasTags = /<[a-z]+/i.test(translation);
+      if (hebrewHasTags && !transHasTags) {
+        warnings.push('HTML tags may be missing');
+      }
+    }
+
+    let status;
+    if (errors.length) { status = 'error'; err++; }
+    else if (warnings.length) { status = 'warning'; warn++; }
+    else { status = 'ok'; ok++; }
+
+    validated.push({
+      slug, field, translation,
+      brandId: brand?.id || null,
+      status, errors, warnings,
+    });
+  }
+
+  brandImportParsed = validated;
+  renderBrandImportPreview(validated, lang.toUpperCase(), ok, warn, err);
+}
+
+function renderBrandImportPreview(rows, langCode, okCount, warnCount, errCount) {
+  const container = document.getElementById('brand-import-preview');
+  let html = `<table class="data-table" style="font-size:12px;direction:ltr;text-align:left;">`;
+  html += `<thead><tr><th>Status</th><th>brand_slug</th><th>field</th><th>${langCode} translation (preview)</th><th>Notes</th></tr></thead><tbody>`;
+
+  for (const r of rows) {
+    const icon = r.status === 'ok' ? '✅' : r.status === 'warning' ? '⚠️' : '❌';
+    const notes = [...r.errors, ...r.warnings].join('; ') || '-';
+    const preview = (r.translation || '').substring(0, 80) + ((r.translation || '').length > 80 ? '...' : '');
+    const rowColor = r.status === 'error' ? '#fee' : r.status === 'warning' ? '#ffc' : '';
+    html += `<tr style="background:${rowColor}"><td>${icon}</td><td>${escImport(r.slug)}</td><td>${escImport(r.field)}</td><td style="direction:ltr">${escImport(preview)}</td><td>${escImport(notes)}</td></tr>`;
+  }
+
+  html += `</tbody></table>`;
+  html += `<div style="margin-top:8px;font-weight:bold;">✅ ${okCount} תקין &nbsp; ⚠️ ${warnCount} אזהרות &nbsp; ❌ ${errCount} שגיאות</div>`;
+
+  container.innerHTML = html;
+  container.style.display = 'block';
+
+  const saveBtn = document.getElementById('brand-import-save-btn');
+  if (errCount > 0) {
+    saveBtn.style.display = 'none';
+    showBrandImportStatus('תקן שגיאות לפני שמירה', 'error');
+  } else {
+    saveBtn.style.display = 'inline-block';
+    showBrandImportStatus(`${okCount + warnCount} שורות מוכנות לשמירה`, 'success');
+  }
+}
+
+async function saveBrandImport() {
+  const lang = brandImportLang;
+  const tid = getTenantId();
+
+  const saveable = brandImportParsed.filter(r => r.status !== 'error' && r.brandId);
+  if (!saveable.length) {
+    showBrandImportStatus('אין שורות תקינות לשמירה', 'error');
+    return;
+  }
+
+  showLoading(`שומר ${saveable.length} תרגומי מותגים...`);
+  const nowIso = new Date().toISOString();
+
+  const records = saveable.map(r => ({
+    tenant_id: tid,
+    entity_type: 'brand',
+    entity_id: r.brandId,
+    field_name: r.field,
+    lang: lang,
+    value: r.translation,
+    status: 'approved',
+    translated_by: 'human',
+    updated_at: nowIso,
+  }));
+
+  const UPSERT_BATCH = 100;
+  let saved = 0, errors = 0;
+  for (let i = 0; i < records.length; i += UPSERT_BATCH) {
+    const batch = records.slice(i, i + UPSERT_BATCH);
+    const { error } = await sb
+      .from('content_translations')
+      .upsert(batch, {
+        onConflict: 'tenant_id,entity_type,entity_id,field_name,lang',
+      });
+    if (error) {
+      console.error('Brand import upsert error:', error);
+      errors++;
+    } else {
+      saved += batch.length;
+    }
+  }
+
+  hideLoading();
+
+  const uniqueBrands = new Set(saveable.map(r => r.slug)).size;
+  if (errors) {
+    showBrandImportStatus(`נשמרו ${saved} שדות, ${errors} שגיאות upsert — בדוק console`, 'warning');
+  } else {
+    showBrandImportStatus(`✅ נשמרו ${saved} תרגומים ל-${uniqueBrands} מותגים`, 'success');
+  }
+  toast(`נשמרו ${saved} תרגומים ל-${uniqueBrands} מותגים`, 's');
+  document.getElementById('brand-import-save-btn').style.display = 'none';
+}
