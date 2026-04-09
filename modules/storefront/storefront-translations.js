@@ -385,7 +385,9 @@ async function translateAndSaveProductField(tenantId, productId, contentType, so
     throw new Error(data.error || 'translate-content failed');
   }
 
-  // Persist to ai_content
+  // Persist to ai_content. is_deleted: false resets any soft-deleted row that
+  // matches the conflict key — otherwise the update would leave is_deleted=true
+  // and loadTranslations() would filter the row out.
   const { error: upErr } = await sb.from('ai_content').upsert({
     tenant_id: tenantId,
     entity_type: 'product',
@@ -394,6 +396,7 @@ async function translateAndSaveProductField(tenantId, productId, contentType, so
     content: data.translated_text,
     language: targetLang,
     status: 'auto',
+    is_deleted: false,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'tenant_id,entity_type,entity_id,content_type,language' });
   if (upErr) throw new Error(upErr.message);
@@ -439,6 +442,9 @@ async function translateProductBatch(tenantId, productId, fields, targetLang) {
       content,
       language: targetLang,
       status: 'auto',
+      // Reset is_deleted on conflict — otherwise upsert updates a soft-deleted
+      // row and loadTranslations() filters it out, masking the write.
+      is_deleted: false,
       updated_at: nowIso,
     }));
   if (rows.length === 0) return;
