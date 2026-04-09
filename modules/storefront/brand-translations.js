@@ -1,9 +1,11 @@
 // ══════════════════════════════════════════════════════════════
 // BRAND TRANSLATION — EXPORT / IMPORT
-// Depends on globals from storefront-translations.js:
-//   sb, getTenantId, toast, showLoading, hideLoading,
-//   escapeMdCell, downloadMultipleFiles, parseMarkdownTable,
-//   findColumn, escImport
+// Self-contained: only depends on shared globals available in
+// both Studio (storefront-studio.html) and the legacy content
+// page: sb, getTenantId, toast, showLoading, hideLoading, Modal.
+// All markdown / parsing helpers are defined locally with _b
+// prefix to avoid collisions and to work without
+// storefront-translations.js being loaded.
 // Stores translations in content_translations table (NOT ai_content).
 // ══════════════════════════════════════════════════════════════
 
@@ -11,6 +13,94 @@ const BRAND_TRANS_FIELDS = ['seo_title', 'seo_description', 'brand_description_s
 
 let brandImportParsed = [];
 let brandImportLang = 'en';
+
+// ── Local helpers (no dependency on storefront-translations.js) ──
+
+function _bEscapeMdCell(s) {
+  if (!s) return '';
+  return String(s).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim();
+}
+
+function _bEscHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function _bDownloadFiles(files) {
+  files.forEach((file, i) => {
+    setTimeout(() => {
+      const blob = new Blob([file.content], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, i * 400);
+  });
+}
+
+function _bSplitPipeLine(line) {
+  const parts = line.split('|');
+  if (parts.length > 0 && parts[0].trim() === '') parts.shift();
+  if (parts.length > 0 && parts[parts.length - 1].trim() === '') parts.pop();
+  return parts.map(p => p.trim());
+}
+
+function _bParseMarkdownTable(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length < 2) return [];
+
+  let format = 'unknown';
+  for (const line of lines) {
+    if (line.includes('|') && line.split('|').length >= 4) { format = 'pipe'; break; }
+    if (line.includes('\t') && line.split('\t').length >= 4) { format = 'tab'; break; }
+  }
+  if (format === 'unknown') return [];
+
+  if (format === 'pipe') {
+    const pipeLines = lines.filter(l => l.includes('|'));
+    if (pipeLines.length < 2) return [];
+    const header = _bSplitPipeLine(pipeLines[0]);
+    if (header.length < 4) return [];
+    const rows = [];
+    for (let i = 1; i < pipeLines.length; i++) {
+      const line = pipeLines[i];
+      if (/^[\s|:\-]+$/.test(line)) continue;
+      const cells = _bSplitPipeLine(line);
+      if (cells.length < 4) continue;
+      const row = {};
+      header.forEach((h, idx) => { row[h] = (cells[idx] || '').replace(/\\?\|/g, '|').trim(); });
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  // tab
+  const tabLines = lines.filter(l => l.includes('\t'));
+  if (tabLines.length < 2) return [];
+  const header = tabLines[0].split('\t').map(c => c.trim());
+  if (header.length < 4) return [];
+  const rows = [];
+  for (let i = 1; i < tabLines.length; i++) {
+    const cells = tabLines[i].split('\t').map(c => c.trim());
+    if (cells.length < 4) continue;
+    const row = {};
+    header.forEach((h, idx) => { row[h] = (cells[idx] || '').trim(); });
+    rows.push(row);
+  }
+  return rows;
+}
+
+function _bFindColumn(row, ...candidates) {
+  for (const c of candidates) {
+    const key = Object.keys(row).find(k => k.toLowerCase().includes(c.toLowerCase()));
+    if (key && row[key]) return row[key];
+  }
+  return '';
+}
 
 async function loadBrandsForTranslation(tid) {
   const { data, error } = await sb
@@ -114,7 +204,7 @@ async function exportBrandsForTranslation(lang) {
       ...dataFiles,
     ];
 
-    downloadMultipleFiles(allFiles);
+    _bDownloadFiles(allFiles);
     hideLoading();
 
     alert(
@@ -191,7 +281,7 @@ function buildBrandDataFile(batch, langCode, batchNum, totalBatches) {
   md.push('| brand_slug | field | hebrew | translation |');
   md.push('|---|---|---|---|');
   for (const r of batch) {
-    md.push(`| ${escapeMdCell(r.slug)} | ${escapeMdCell(r.field)} | ${escapeMdCell(r.hebrew)} |  |`);
+    md.push(`| ${_bEscapeMdCell(r.slug)} | ${_bEscapeMdCell(r.field)} | ${_bEscapeMdCell(r.hebrew)} |  |`);
   }
   return md.join('\n');
 }
@@ -201,38 +291,38 @@ function buildBrandDataFile(batch, langCode, batchNum, totalBatches) {
 // ══════════════════════════════════════════════════════════════
 
 function openBrandImportModal() {
-  const modal = document.getElementById('brand-import-modal');
-  if (!modal) { alert('brand-import-modal not found'); return; }
-  document.getElementById('brand-import-textarea').value = '';
-  document.getElementById('brand-import-preview').style.display = 'none';
-  document.getElementById('brand-import-preview').innerHTML = '';
-  document.getElementById('brand-import-status').style.display = 'none';
-  document.getElementById('brand-import-save-btn').style.display = 'none';
   brandImportParsed = [];
-
-  Object.assign(modal.style, {
-    position: 'fixed',
-    inset: '0', top: '0', left: '0', right: '0', bottom: '0',
-    width: '100vw', height: '100vh',
-    zIndex: '10000',
-    background: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    alignItems: 'center', justifyContent: 'center',
-    overflowY: 'auto', padding: '20px',
+  const body = `
+    <div style="margin-bottom:12px">
+      <label><strong>שפה:</strong></label>
+      <select id="brand-import-lang" style="margin-inline-start:8px;padding:6px 10px;border:1px solid #e5e5e5;border-radius:6px">
+        <option value="en">English (EN)</option>
+        <option value="ru">Russian (RU)</option>
+      </select>
+    </div>
+    <div style="margin-bottom:12px">
+      <label><strong>הדבק את טבלת תרגומי המותגים:</strong></label>
+      <textarea id="brand-import-textarea" rows="12" style="width:100%;font-family:monospace;font-size:12px;direction:ltr;text-align:left;padding:10px;border:1px solid #e5e5e5;border-radius:8px" placeholder="| brand_slug | field | hebrew | translation |"></textarea>
+    </div>
+    <div id="brand-import-preview" style="display:none;margin-bottom:12px;max-height:300px;overflow-y:auto"></div>
+    <div id="brand-import-status" style="display:none;margin-bottom:12px;padding:8px;border-radius:4px"></div>
+  `;
+  const footer = `
+    <button class="btn btn-sm" onclick="validateBrandImport()" style="background:linear-gradient(135deg,#c9a555,#e8da94);border:none;color:#1a1a1a;font-weight:600;padding:6px 14px">🔍 בדוק</button>
+    <button class="btn btn-sm" id="brand-import-save-btn" onclick="saveBrandImport()" style="display:none;background:linear-gradient(135deg,#c9a555,#e8da94);border:none;color:#1a1a1a;font-weight:600;padding:6px 14px;margin-inline-start:8px">💾 שמור</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeBrandImportModal()" style="margin-inline-start:8px">ביטול</button>
+  `;
+  Modal.show({
+    title: '📥 ייבוא תרגומי מותגים',
+    size: 'lg',
+    content: body,
+    footer: footer,
   });
-  const card = modal.querySelector('.modal');
-  if (card) {
-    Object.assign(card.style, {
-      background: '#fff', borderRadius: '12px', padding: '24px',
-      maxWidth: '900px', width: '95%', maxHeight: '90vh',
-      overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-    });
-  }
 }
 
 function closeBrandImportModal() {
-  document.getElementById('brand-import-modal').style.display = 'none';
   brandImportParsed = [];
+  if (typeof Modal !== 'undefined' && Modal.close) Modal.close();
 }
 
 function showBrandImportStatus(msg, type) {
@@ -253,7 +343,7 @@ async function validateBrandImport() {
     return;
   }
 
-  const rows = parseMarkdownTable(text);
+  const rows = _bParseMarkdownTable(text);
   if (!rows.length) {
     showBrandImportStatus('לא נמצאה טבלה בטקסט שהודבק', 'error');
     return;
@@ -284,9 +374,9 @@ async function validateBrandImport() {
   let ok = 0, warn = 0, err = 0;
 
   for (const row of rows) {
-    const slug = (findColumn(row, 'brand_slug', 'slug') || '').trim();
-    const field = (findColumn(row, 'field') || '').trim();
-    const translation = (findColumn(row, 'translation') || '').trim();
+    const slug = (_bFindColumn(row, 'brand_slug', 'slug') || '').trim();
+    const field = (_bFindColumn(row, 'field') || '').trim();
+    const translation = (_bFindColumn(row, 'translation') || '').trim();
 
     // Skip separator / empty rows
     if (!slug && !field && !translation) continue;
@@ -358,7 +448,7 @@ function renderBrandImportPreview(rows, langCode, okCount, warnCount, errCount) 
     const notes = [...r.errors, ...r.warnings].join('; ') || '-';
     const preview = (r.translation || '').substring(0, 80) + ((r.translation || '').length > 80 ? '...' : '');
     const rowColor = r.status === 'error' ? '#fee' : r.status === 'warning' ? '#ffc' : '';
-    html += `<tr style="background:${rowColor}"><td>${icon}</td><td>${escImport(r.slug)}</td><td>${escImport(r.field)}</td><td style="direction:ltr">${escImport(preview)}</td><td>${escImport(notes)}</td></tr>`;
+    html += `<tr style="background:${rowColor}"><td>${icon}</td><td>${_bEscHtml(r.slug)}</td><td>${_bEscHtml(r.field)}</td><td style="direction:ltr">${_bEscHtml(preview)}</td><td>${_bEscHtml(notes)}</td></tr>`;
   }
 
   html += `</tbody></table>`;

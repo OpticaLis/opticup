@@ -151,7 +151,8 @@ const StudioTranslations = (function () {
         : `<span style="font-size:.75rem;color:#9ca3af">אין תוכן בעברית</span>`;
       return `<tr><td style="font-weight:600;padding:8px">${escapeHtml(b.name)}</td><td>${badge(heHas?'approved':'missing')}</td>${cols}<td>${actions}</td></tr>`;
     }).join('');
-    return `<table style="width:100%;border-collapse:collapse;font-size:.9rem"><thead><tr style="border-bottom:2px solid #e5e5e5;text-align:right"><th style="padding:8px">מותג</th><th>עברית</th>${langs.map(l=>`<th>${LANGS[l]?.flag||''} ${LANGS[l]?.name||l}</th>`).join('')}<th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    const toolbar = `<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">${goldBtn('📤 ייצוא מותגים EN',`exportBrandsForTranslation('en')`)}${goldBtn('📤 ייצוא מותגים RU',`exportBrandsForTranslation('ru')`)}${goldBtn('📥 ייבוא תרגומי מותגים',`openBrandImportModal()`)}</div>`;
+    return `${toolbar}<table style="width:100%;border-collapse:collapse;font-size:.9rem"><thead><tr style="border-bottom:2px solid #e5e5e5;text-align:right"><th style="padding:8px">מותג</th><th>עברית</th>${langs.map(l=>`<th>${LANGS[l]?.flag||''} ${LANGS[l]?.name||l}</th>`).join('')}<th></th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   // ── Shortcodes ──
