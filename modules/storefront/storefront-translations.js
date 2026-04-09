@@ -627,11 +627,13 @@ async function exportForTranslation(targetLang) {
   const langLabel = targetLang === 'en' ? 'English' : 'Russian';
   const langCode = targetLang.toUpperCase();
 
-  // 1. Find products missing this language's description
+  // 1. Find products missing ANY of the 4 translatable fields in this language
+  //    (description, seo_title, seo_description, alt_text). Requires HE description.
+  const TRANS_FIELDS = ['description', 'seo_title', 'seo_description', 'alt_text'];
   const missingProducts = getTransFilteredProducts().filter(p => {
     if (!contentMap[p.id]?.description) return false;
-    const t = transContentMap[p.id] || {};
-    return !t[targetLang]?.description;
+    const t = (transContentMap[p.id] || {})[targetLang] || {};
+    return TRANS_FIELDS.some(f => !t[f]);
   });
 
   if (!missingProducts.length) {
