@@ -1037,6 +1037,7 @@ function validateImport() {
   }
 
   const hebrewRegex = /[\u0590-\u05FF]/;
+  const cyrillicRegex = /[\u0400-\u04FF]/;
 
   const validated = [];
   let okCount = 0, warnCount = 0, errCount = 0;
@@ -1077,6 +1078,19 @@ function validateImport() {
     if (seoTitle && hebrewRegex.test(seoTitle)) errors.push('SEO Title מכיל עברית');
     if (seoDesc && hebrewRegex.test(seoDesc)) errors.push('SEO Desc מכיל עברית');
     if (altText && hebrewRegex.test(altText)) errors.push('Alt Text מכיל עברית');
+
+    // Cross-language detection: Cyrillic in EN = wrong language, Latin in RU = wrong language
+    if (targetLang === 'en') {
+      if (desc && cyrillicRegex.test(desc)) errors.push('Description מכיל קירילית — אולי בחרת שפה לא נכונה?');
+      if (seoTitle && cyrillicRegex.test(seoTitle)) errors.push('SEO Title מכיל קירילית');
+      if (seoDesc && cyrillicRegex.test(seoDesc)) errors.push('SEO Desc מכיל קירילית');
+      if (altText && cyrillicRegex.test(altText)) errors.push('Alt Text מכיל קירילית');
+    }
+    if (targetLang === 'ru') {
+      if (desc && !cyrillicRegex.test(desc)) errors.push('Description לא מכיל קירילית — אולי בחרת שפה לא נכונה?');
+      if (seoTitle && !cyrillicRegex.test(seoTitle)) errors.push('SEO Title לא מכיל קירילית');
+      if (seoDesc && !cyrillicRegex.test(seoDesc)) errors.push('SEO Desc לא מכיל קירילית');
+    }
 
     if (seoTitle && seoTitle.length > 70) errors.push(`SEO Title ארוך מדי (${seoTitle.length} > 70)`);
     else if (seoTitle && seoTitle.length > 60) warnings.push(`SEO Title ארוך (${seoTitle.length} > 60)`);
