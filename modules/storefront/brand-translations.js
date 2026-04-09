@@ -450,7 +450,7 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
   md.push('| Field | Where It Appears | Guidelines |');
   md.push('|---|---|---|');
   md.push('| `seo_title` | Browser tab, Google search result title | 40-60 characters. Must contain brand name + keyword (e.g., "sunglasses", "eyeglasses", "eyewear"). |');
-  md.push('| `seo_description` | Google search result snippet | 130-160 characters. Must end with " - Prizma Optic, Ashkelon". Include brand name + key feature + store name. |');
+  md.push('| `seo_description` | Google search result snippet | Strictly 130-160 characters TOTAL (including the mandatory ending). Must end with " - Prizma Optic, Ashkelon". Count your characters — Google cuts off at ~160. Write a SHORT summary: brand name + one key feature + ending. |');
   md.push('| `brand_description_short` | Tagline under brand name on the brand page hero section | Max 200 characters. One punchy line — brand essence. |');
   md.push('| `brand_description` | Main body text on the brand page (below hero, next to gallery) | Preserve paragraph structure and length (±20% of Hebrew). Contains HTML tags — see Rule #2. |');
   md.push('');
@@ -470,6 +470,8 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
   md.push('10. Do NOT wrap the output table in a code block (no ```). Just the raw markdown table.');
   md.push('11. **Slugs must be returned exactly as provided** — they are URL identifiers, not text to translate.');
   md.push('12. **Empty HTML paragraphs** — when the Hebrew `brand_description` contains empty spacer paragraphs like `<p> </p>` or `<p>&nbsp;</p>`, REMOVE them in the translation. Use only meaningful `<p>...</p>` blocks with actual content.');
+  md.push('13. **seo_description length is strict** — MUST be 130-160 characters total. This includes the ending " - Prizma Optic, Ashkelon" (25 characters). So your actual content is only ~105-135 characters before the ending. If your draft exceeds 160 characters — shorten it. This is a strict limit, not a suggestion.');
+  md.push('14. **seo_description format** — `[Brand name] [eyewear type] at Prizma Optic Ashkelon. [One key selling point] - Prizma Optic, Ashkelon`. Keep it to TWO sentences maximum before the ending.');
   md.push('');
 
   // Glossary
@@ -563,15 +565,17 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
     md.push('|---|---|---|---|---|---|');
     if (isEn) {
       md.push('| 1 | Gucci | gucci | seo_title | משקפי גוצ\'י - קולקציה מלאה | Gucci Eyewear - Full Collection |');
-      md.push('| 2 | Gucci | gucci | seo_description | גלו את קולקציית משקפי גוצ\'י באופטיקה פריזמה אשקלון | Discover the full Gucci eyewear collection - Prizma Optic, Ashkelon |');
+      md.push('| 2 | Gucci | gucci | seo_description | גלו את קולקציית משקפי גוצ\'י באופטיקה פריזמה אשקלון | Gucci eyewear at Prizma Optic Ashkelon. Italian luxury sunglasses and prescription frames, full collection in stock - Prizma Optic, Ashkelon |');
       md.push('| 3 | Gucci | gucci | brand_description_short | מותג יוקרה איטלקי בעולם משקפי השמש | Italian luxury icon in the world of sunglasses |');
       md.push('| 4 | Gucci | gucci | brand_description | <p>גוצ\'י הוא מותג יוקרה איטלקי...</p> | <p>Gucci is an Italian luxury brand...</p> |');
     } else {
       md.push('| 1 | Gucci | gucci | seo_title | משקפי גוצ\'י - קולקציה מלאה | Очки Gucci - полная коллекция |');
-      md.push('| 2 | Gucci | gucci | seo_description | גלו את קולקציית משקפי גוצ\'י באופטיקה פריזמה אשקלון | Откройте для себя коллекцию очков Gucci - Prizma Optic, Ashkelon |');
+      md.push('| 2 | Gucci | gucci | seo_description | גלו את קולקציית משקפי גוצ\'י באופטיקה פריזמה אשקלון | Очки Gucci в Prizma Optic Ашкелон. Итальянский люксовый бренд - полная коллекция солнцезащитных и оптических очков - Prizma Optic, Ашкелон |');
       md.push('| 3 | Gucci | gucci | brand_description_short | מותג יוקרה איטלקי בעולם משקפי השמש | Итальянский люксовый бренд в мире солнцезащитных очков |');
       md.push('| 4 | Gucci | gucci | brand_description | <p>גוצ\'י הוא מותג יוקרה איטלקי...</p> | <p>Gucci - итальянский люксовый бренд...</p> |');
     }
+    md.push('');
+    md.push('> Note on row 2 (`seo_description`): the example above is **140 characters** for EN and **138 characters** for RU — both inside the strict 130-160 limit. Always count your characters before submitting.');
   }
   md.push('');
 
