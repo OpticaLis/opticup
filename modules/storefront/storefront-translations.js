@@ -771,6 +771,9 @@ function buildTranslationPrompt(targetLang, langLabel, langCode, glossary, examp
   md.push('9. **Alt Text:** Concise image description, max 125 characters. Format: `[Brand] [Model] [product type] [key visual feature]`. Never start with "Image of" or "Photo of".');
   md.push('10. No emojis. No CTAs like "shop now" or "click here".');
   md.push('11. If the Hebrew text appears cut off mid-sentence, complete the thought naturally in the translation.');
+  md.push('12. Return your output as a **markdown table** (pipe-delimited). Do NOT return Excel, CSV, JSON, or any other format.');
+  md.push('13. **Barcodes must be returned exactly as provided** — preserve leading zeros. Barcode `0001931` must stay `0001931`, not `1931`.');
+  md.push('14. Do NOT wrap the output table in a code block (no ```). Just the raw markdown table.');
   md.push('');
 
   // Glossary
@@ -801,6 +804,7 @@ function buildTranslationPrompt(targetLang, langLabel, langCode, glossary, examp
   md.push('- Keep #, Brand, Model, Barcode identical to the input.');
   md.push(`- Fill all 4 ${langCode} columns for every row.`);
   md.push('- Return ONLY the markdown table — no explanations, no commentary before or after.');
+  md.push('- Do NOT return the result as an Excel file, spreadsheet, or code block.');
   md.push('- Do not wrap the table in a code block.');
   md.push('');
 
@@ -953,7 +957,14 @@ function validateImport() {
     const barcode = findColumn(row, 'barcode');
     if (!barcode || barcode === '---' || barcode === '#') continue;
 
-    const product = barcodeMap[barcode];
+    // Smart barcode lookup: exact match first, then try zero-padded variations
+    let product = barcodeMap[barcode];
+    if (!product && /^\d+$/.test(barcode)) {
+      const padded7 = barcode.padStart(7, '0');
+      const padded6 = barcode.padStart(6, '0');
+      const padded8 = barcode.padStart(8, '0');
+      product = barcodeMap[padded7] || barcodeMap[padded6] || barcodeMap[padded8];
+    }
     const desc = findColumn(row, `${langCode} desc`, `${langCode.toLowerCase()} desc`, 'description', 'desc');
     const seoTitle = findColumn(row, `${langCode} seo title`, `${langCode.toLowerCase()} seo title`, 'seo title', 'seo_title');
     const seoDesc = findColumn(row, `${langCode} seo desc`, `${langCode.toLowerCase()} seo desc`, 'seo desc', 'seo_desc');
