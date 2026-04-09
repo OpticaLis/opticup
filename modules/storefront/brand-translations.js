@@ -660,6 +660,61 @@ function showBrandImportStatus(msg, type) {
   el.textContent = msg;
 }
 
+// Validation context shared between initial validate and per-row revalidate.
+let _brandValidationCtx = null;
+
+function _validateBrandRow(row, ctx) {
+  const { lang, slugMap, heBySlugField } = ctx;
+  const hebrewRegex = /[\u0590-\u05FF]/;
+  const cyrillicRegex = /[\u0400-\u04FF]/;
+  const validFields = new Set(BRAND_TRANS_FIELDS);
+
+  const translation = (row.translation || '').trim();
+  row.translation = translation;
+
+  const brand = slugMap[row.slug];
+  row.brandId = brand?.id || null;
+
+  const errors = [];
+  const warnings = [];
+
+  if (!brand) errors.push(`מותג ${row.slug} לא נמצא`);
+  if (!validFields.has(row.field)) errors.push(`שדה לא חוקי: ${row.field}`);
+  if (!translation) errors.push('תרגום ריק');
+
+  if (translation && hebrewRegex.test(translation)) {
+    errors.push('תו עברי בתרגום');
+  }
+  if (translation) {
+    if (lang === 'en' && cyrillicRegex.test(translation)) errors.push('קירילית בתרגום EN');
+    if (lang === 'ru' && !cyrillicRegex.test(translation)) errors.push('אין קירילית בתרגום RU');
+  }
+
+  if (row.field === 'seo_title' && translation.length > 70) {
+    warnings.push(`seo_title ארוך (${translation.length} > 70)`);
+  }
+  if (row.field === 'seo_description' && translation.length > 200) {
+    warnings.push(`seo_description ארוך (${translation.length} > 200)`);
+  }
+  if (row.field === 'brand_description_short' && translation.length > 300) {
+    warnings.push(`brand_description_short ארוך (${translation.length} > 300)`);
+  }
+
+  if (row.field === 'brand_description' && translation && brand) {
+    const hebrew = heBySlugField[`${row.slug}|${row.field}`] || '';
+    const hebrewHasTags = /<[a-z]+/i.test(hebrew);
+    const transHasTags = /<[a-z]+/i.test(translation);
+    if (hebrewHasTags && !transHasTags) warnings.push('HTML tags may be missing');
+  }
+
+  row.errors = errors;
+  row.warnings = warnings;
+  if (errors.length) row.status = 'error';
+  else if (warnings.length) row.status = 'warning';
+  else row.status = 'ok';
+  return row;
+}
+
 async function validateBrandImport() {
   const text = document.getElementById('brand-import-textarea').value;
   const lang = document.getElementById('brand-import-lang').value;
@@ -693,104 +748,120 @@ async function validateBrandImport() {
     }
   }
 
-  const hebrewRegex = /[\u0590-\u05FF]/;
-  const cyrillicRegex = /[\u0400-\u04FF]/;
-  const validFields = new Set(BRAND_TRANS_FIELDS);
+  _brandValidationCtx = { lang, slugMap, heBySlugField };
 
   const validated = [];
-  let ok = 0, warn = 0, err = 0;
-
-  for (const row of rows) {
-    const slug = (_bFindColumn(row, 'brand_slug', 'slug') || '').trim();
-    const field = (_bFindColumn(row, 'field') || '').trim();
-    const translation = (_bFindColumn(row, 'translation') || '').trim();
+  for (const raw of rows) {
+    const slug = (_bFindColumn(raw, 'brand_slug', 'slug') || '').trim();
+    const field = (_bFindColumn(raw, 'field') || '').trim();
+    const translation = (_bFindColumn(raw, 'translation') || '').trim();
 
     // Skip separator / empty rows
     if (!slug && !field && !translation) continue;
     if (slug.startsWith('---') || field.startsWith('---')) continue;
 
-    const errors = [];
-    const warnings = [];
-    const brand = slugMap[slug];
-
-    if (!brand) errors.push(`מותג ${slug} לא נמצא`);
-    if (!validFields.has(field)) errors.push(`שדה לא חוקי: ${field}`);
-    if (!translation) errors.push('תרגום ריק');
-
-    if (translation && hebrewRegex.test(translation)) {
-      errors.push('תו עברי בתרגום');
-    }
-
-    if (translation) {
-      if (lang === 'en' && cyrillicRegex.test(translation)) {
-        errors.push('קירילית בתרגום EN');
-      }
-      if (lang === 'ru' && !cyrillicRegex.test(translation)) {
-        errors.push('אין קירילית בתרגום RU');
-      }
-    }
-
-    if (field === 'seo_title' && translation.length > 70) {
-      warnings.push(`seo_title ארוך (${translation.length} > 70)`);
-    }
-    if (field === 'seo_description' && translation.length > 200) {
-      warnings.push(`seo_description ארוך (${translation.length} > 200)`);
-    }
-    if (field === 'brand_description_short' && translation.length > 300) {
-      warnings.push(`brand_description_short ארוך (${translation.length} > 300)`);
-    }
-
-    if (field === 'brand_description' && translation && brand) {
-      const hebrew = heBySlugField[`${slug}|${field}`] || '';
-      const hebrewHasTags = /<[a-z]+/i.test(hebrew);
-      const transHasTags = /<[a-z]+/i.test(translation);
-      if (hebrewHasTags && !transHasTags) {
-        warnings.push('HTML tags may be missing');
-      }
-    }
-
-    let status;
-    if (errors.length) { status = 'error'; err++; }
-    else if (warnings.length) { status = 'warning'; warn++; }
-    else { status = 'ok'; ok++; }
-
-    validated.push({
-      slug, field, translation,
-      brandId: brand?.id || null,
-      status, errors, warnings,
-    });
+    const row = { slug, field, translation, brandId: null, status: 'ok', errors: [], warnings: [] };
+    _validateBrandRow(row, _brandValidationCtx);
+    validated.push(row);
   }
 
   brandImportParsed = validated;
-  renderBrandImportPreview(validated, lang.toUpperCase(), ok, warn, err);
+  renderBrandImportPreview(lang.toUpperCase());
 }
 
-function renderBrandImportPreview(rows, langCode, okCount, warnCount, errCount) {
+function renderBrandImportPreview(langCode) {
   const container = document.getElementById('brand-import-preview');
-  let html = `<table class="data-table" style="font-size:12px;direction:ltr;text-align:left;">`;
-  html += `<thead><tr><th>Status</th><th>brand_slug</th><th>field</th><th>${langCode} translation (preview)</th><th>Notes</th></tr></thead><tbody>`;
+  const rows = brandImportParsed;
 
-  for (const r of rows) {
-    const icon = r.status === 'ok' ? '✅' : r.status === 'warning' ? '⚠️' : '❌';
-    const notes = [...r.errors, ...r.warnings].join('; ') || '-';
-    const preview = (r.translation || '').substring(0, 80) + ((r.translation || '').length > 80 ? '...' : '');
-    const rowColor = r.status === 'error' ? '#fee' : r.status === 'warning' ? '#ffc' : '';
-    html += `<tr style="background:${rowColor}"><td>${icon}</td><td>${_bEscHtml(r.slug)}</td><td>${_bEscHtml(r.field)}</td><td style="direction:ltr">${_bEscHtml(preview)}</td><td>${_bEscHtml(notes)}</td></tr>`;
-  }
+  let html = `<table class="data-table" style="font-size:12px;direction:ltr;text-align:left;width:100%">`;
+  html += `<thead><tr><th style="width:32px">Status</th><th>brand_slug</th><th>field</th><th>${langCode} translation (ניתן לעריכה)</th><th>Notes</th></tr></thead><tbody>`;
+
+  rows.forEach((r, idx) => {
+    html += `<tr id="brand-tr-${idx}" style="background:${_brandRowBg(r.status)}">`;
+    html += `<td id="brand-icon-${idx}" style="text-align:center;font-size:14px">${_brandRowIcon(r.status)}</td>`;
+    html += `<td style="white-space:nowrap">${_bEscHtml(r.slug)}</td>`;
+    html += `<td style="white-space:nowrap">${_bEscHtml(r.field)}</td>`;
+    html += `<td style="min-width:280px">`;
+    html += `<textarea data-row-idx="${idx}" rows="3" oninput="_brandRowEdit(${idx}, this.value)" onblur="_brandRowRevalidate(${idx})" style="width:100%;direction:ltr;text-align:left;font-family:inherit;font-size:12px;padding:6px;border:1px solid #d1d5db;border-radius:6px;resize:vertical">${_bEscHtml(r.translation || '')}</textarea>`;
+    html += `</td>`;
+    html += `<td id="brand-notes-${idx}" style="font-size:11px;color:#374151">${_bEscHtml([...r.errors, ...r.warnings].join('; ') || '-')}</td>`;
+    html += `</tr>`;
+  });
 
   html += `</tbody></table>`;
-  html += `<div style="margin-top:8px;font-weight:bold;">✅ ${okCount} תקין &nbsp; ⚠️ ${warnCount} אזהרות &nbsp; ❌ ${errCount} שגיאות</div>`;
+  html += `<div id="brand-import-counts" style="margin-top:8px;font-weight:bold"></div>`;
 
   container.innerHTML = html;
   container.style.display = 'block';
 
+  _updateBrandImportCounts();
+}
+
+function _brandRowIcon(status) {
+  return status === 'ok' ? '✅' : status === 'warning' ? '⚠️' : '❌';
+}
+function _brandRowBg(status) {
+  return status === 'error' ? '#fee' : status === 'warning' ? '#ffc' : '';
+}
+
+// Inline edit handler — keep brandImportParsed in sync with the textarea.
+function _brandRowEdit(idx, value) {
+  const row = brandImportParsed[idx];
+  if (!row) return;
+  row.translation = value;
+}
+
+// Re-run validation for a single edited row, then patch the UI in place.
+function _brandRowRevalidate(idx) {
+  const row = brandImportParsed[idx];
+  if (!row || !_brandValidationCtx) return;
+
+  // Pull the current textarea value (oninput may have been bypassed by paste/IME).
+  const ta = document.querySelector(`textarea[data-row-idx="${idx}"]`);
+  if (ta) row.translation = ta.value;
+
+  _validateBrandRow(row, _brandValidationCtx);
+
+  const iconEl = document.getElementById(`brand-icon-${idx}`);
+  const notesEl = document.getElementById(`brand-notes-${idx}`);
+  const trEl = document.getElementById(`brand-tr-${idx}`);
+  if (iconEl) iconEl.textContent = _brandRowIcon(row.status);
+  if (notesEl) notesEl.textContent = [...row.errors, ...row.warnings].join('; ') || '-';
+  if (trEl) trEl.style.background = _brandRowBg(row.status);
+
+  _updateBrandImportCounts();
+}
+
+function _updateBrandImportCounts() {
+  let ok = 0, warn = 0, err = 0;
+  for (const r of brandImportParsed) {
+    if (r.status === 'ok') ok++;
+    else if (r.status === 'warning') warn++;
+    else err++;
+  }
+  const saveable = ok + warn;
+
+  const counts = document.getElementById('brand-import-counts');
+  if (counts) {
+    counts.innerHTML = `✅ ${ok} תקין &nbsp; ⚠️ ${warn} אזהרות &nbsp; ❌ ${err} שגיאות`;
+  }
+
   const saveBtn = document.getElementById('brand-import-save-btn');
-  if (errCount > 0) {
-    saveBtn.style.display = 'none';
-    showBrandImportStatus('תקן שגיאות לפני שמירה', 'error');
+  if (saveBtn) {
+    if (saveable > 0) {
+      saveBtn.style.display = 'inline-block';
+      saveBtn.textContent = `💾 שמור ${saveable} תרגומים`;
+    } else {
+      saveBtn.style.display = 'none';
+    }
+  }
+
+  if (err > 0 && saveable > 0) {
+    showBrandImportStatus(`${saveable} שורות מוכנות לשמירה. ${err} שורות עם שגיאות ידלגו.`, 'warning');
+  } else if (saveable > 0) {
+    showBrandImportStatus(`${saveable} שורות מוכנות לשמירה`, 'success');
   } else {
-    saveBtn.style.display = 'inline-block';
-    showBrandImportStatus(`${okCount + warnCount} שורות מוכנות לשמירה`, 'success');
+    showBrandImportStatus('תקן שגיאות לפני שמירה', 'error');
   }
 }
 
@@ -799,6 +870,7 @@ async function saveBrandImport() {
   const tid = getTenantId();
 
   const saveable = brandImportParsed.filter(r => r.status !== 'error' && r.brandId);
+  const skipped = brandImportParsed.length - saveable.length;
   if (!saveable.length) {
     showBrandImportStatus('אין שורות תקינות לשמירה', 'error');
     return;
@@ -820,7 +892,7 @@ async function saveBrandImport() {
   }));
 
   const UPSERT_BATCH = 100;
-  let saved = 0, errors = 0;
+  let saved = 0, upsertErrors = 0;
   for (let i = 0; i < records.length; i += UPSERT_BATCH) {
     const batch = records.slice(i, i + UPSERT_BATCH);
     const { error } = await sb
@@ -830,7 +902,7 @@ async function saveBrandImport() {
       });
     if (error) {
       console.error('Brand import upsert error:', error);
-      errors++;
+      upsertErrors++;
     } else {
       saved += batch.length;
     }
@@ -839,11 +911,13 @@ async function saveBrandImport() {
   hideLoading();
 
   const uniqueBrands = new Set(saveable.map(r => r.slug)).size;
-  if (errors) {
-    showBrandImportStatus(`נשמרו ${saved} שדות, ${errors} שגיאות upsert — בדוק console`, 'warning');
+  if (upsertErrors) {
+    showBrandImportStatus(`נשמרו ${saved} שדות, ${upsertErrors} שגיאות upsert — בדוק console`, 'warning');
+    toast(`נשמרו ${saved} תרגומים. ${skipped} שורות דולגו (שגיאות).`, 'w');
   } else {
     showBrandImportStatus(`✅ נשמרו ${saved} תרגומים ל-${uniqueBrands} מותגים`, 'success');
+    toast(`נשמרו ${saved} תרגומים. ${skipped} שורות דולגו (שגיאות).`, 's');
   }
-  toast(`נשמרו ${saved} תרגומים ל-${uniqueBrands} מותגים`, 's');
-  document.getElementById('brand-import-save-btn').style.display = 'none';
+  const saveBtn = document.getElementById('brand-import-save-btn');
+  if (saveBtn) saveBtn.style.display = 'none';
 }
