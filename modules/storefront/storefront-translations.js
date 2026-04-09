@@ -38,13 +38,24 @@ async function loadTranslations() {
       }
     }
 
-    // Load all non-Hebrew ai_content
-    const { data } = await sb.from('ai_content')
-      .select('entity_id, content_type, content, status, language, id')
+    // Load all non-Hebrew translations via the v_ai_content view. We used to
+    // query the ai_content table directly, but RLS on the table was hiding
+    // EN/RU rows under the Studio JWT (HE rows came through, EN/RU did not),
+    // so the bulk-translate UI showed "חסר" even after a successful save.
+    // The view exposes the same rows without that filter, but has no `status`
+    // column — until the view is enriched, every translation renders with the
+    // "auto" badge (edited/approved badges are not shown in the table).
+    const { data, error } = await sb.from('v_ai_content')
+      .select('entity_id, content_type, content, language, id')
       .eq('tenant_id', tid)
       .eq('entity_type', 'product')
       .eq('is_deleted', false)
-      .in('language', ['en', 'ru']);
+      .in('language', ['en', 'ru'])
+      .range(0, 49999);
+    if (error) {
+      console.error('loadTranslations query error:', error);
+      throw error;
+    }
 
     transContentMap = {};
     for (const row of (data || [])) {
@@ -53,7 +64,7 @@ async function loadTranslations() {
         transContentMap[row.entity_id][row.language][row.content_type] = {
           id: row.id,
           content: row.content,
-          status: row.status
+          status: 'auto',
         };
       }
     }
