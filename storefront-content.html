@@ -208,7 +208,8 @@
           <input type="text" class="search-input" id="trans-filter-search" placeholder="חיפוש לפי דגם או ברקוד..." oninput="filterTranslations()">
         </div>
         <div class="content-actions">
-          <button class="btn-ai" onclick="bulkTranslateMissing()">🌐 תרגם הכל (חסרים)</button>
+          <button class="btn-ai" id="trans-translate-btn" onclick="bulkTranslateMissing()">🌐 תרגם הכל (חסרים)</button>
+          <button class="btn" id="trans-export-btn" onclick="exportUntranslatedMd()">📤 ייצא לתרגום חיצוני</button>
           <span class="count-label" id="trans-count"></span>
         </div>
 

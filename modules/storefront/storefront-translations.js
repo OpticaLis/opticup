@@ -105,6 +105,22 @@ function filterTranslations() {
   transCurrentPage = 1;
   renderTransTable(filtered);
   renderTransPagination(filtered.length);
+  updateTransActionLabels();
+}
+
+// Reflect filter scope in the bulk-translate button label
+function transFilterIsActive() {
+  const brand = document.getElementById('trans-filter-brand').value;
+  const search = document.getElementById('trans-filter-search').value.trim();
+  return brand !== '' || search !== '';
+}
+
+function updateTransActionLabels() {
+  const btn = document.getElementById('trans-translate-btn');
+  if (!btn) return;
+  btn.textContent = transFilterIsActive()
+    ? '🌐 תרגם מסוננים (חסרים)'
+    : '🌐 תרגם הכל (חסרים)';
 }
 
 function getTransFilteredProducts() {
@@ -458,13 +474,14 @@ async function retranslateContent() {
 }
 
 // ── Bulk translate missing ──
+// Operates on the currently filtered product list (brand/search/status). With
+// no filter active this still covers everything with Hebrew content.
 async function bulkTranslateMissing() {
   const tid = getTenantId();
-  // Find products with Hebrew content but missing translations
-  const withHebrew = contentProducts.filter(p => contentMap[p.id]?.description);
+  const scope = getTransFilteredProducts().filter(p => contentMap[p.id]?.description);
   const tasks = [];
 
-  for (const p of withHebrew) {
+  for (const p of scope) {
     const t = transContentMap[p.id] || { en: {}, ru: {} };
     for (const lang of ['en', 'ru']) {
       if (!t[lang]?.description) {
@@ -534,4 +551,142 @@ function updateTransProgress(current, total, success, errors, name) {
 function stopBulkTranslate() {
   transAbort = true;
   toast('עוצר תרגום...', 'w');
+}
+
+// ── Export untranslated products for external (human/Gemini) translation ──
+function escapeMdCell(s) {
+  if (!s) return '';
+  return String(s).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim();
+}
+
+async function exportUntranslatedMd() {
+  const tid = getTenantId();
+  const scope = getTransFilteredProducts().filter(p => contentMap[p.id]?.description);
+  const rows = [];
+  for (const p of scope) {
+    const t = transContentMap[p.id] || { en: {}, ru: {} };
+    const missingEn = !t.en?.description;
+    const missingRu = !t.ru?.description;
+    if (!missingEn && !missingRu) continue;
+    rows.push({
+      brand: p.brand_name || '',
+      model: p.model || '',
+      barcode: p.barcode || '',
+      he_desc: contentMap[p.id]?.description?.content || '',
+      he_seo_title: contentMap[p.id]?.seo_title?.content || '',
+      he_seo_desc: contentMap[p.id]?.seo_description?.content || '',
+      missingEn,
+      missingRu,
+    });
+  }
+
+  if (!rows.length) {
+    toast('אין מוצרים לייצוא — הכל מתורגם', 's');
+    return;
+  }
+
+  showLoading('בונה קובץ ייצוא...');
+  let glossaryEn = [];
+  let glossaryRu = [];
+  try {
+    const [enRes, ruRes] = await Promise.all([
+      sb.from('translation_glossary')
+        .select('term_he, term_translated')
+        .eq('tenant_id', tid).eq('lang', 'en').eq('is_deleted', false).limit(20),
+      sb.from('translation_glossary')
+        .select('term_he, term_translated')
+        .eq('tenant_id', tid).eq('lang', 'ru').eq('is_deleted', false).limit(20),
+    ]);
+    glossaryEn = enRes.data || [];
+    glossaryRu = ruRes.data || [];
+  } catch (e) {
+    console.warn('glossary fetch failed:', e);
+  }
+
+  const filterNote = transFilterIsActive() ? ' (filtered subset)' : ' (all untranslated)';
+  const md = [];
+  md.push(`# Product Translations — Prizma Optic${filterNote}`);
+  md.push('');
+  md.push(`Generated: ${new Date().toISOString()}`);
+  md.push(`Products to translate: **${rows.length}**`);
+  md.push('');
+  md.push('---');
+  md.push('');
+  md.push('## Translation Brief');
+  md.push('');
+  md.push('**Business:** Prizma Optic — premium optical store in Ashkelon, Israel. ~40 years in business. Authorized dealer for Zeiss, Leica, Rodenstock, Hoya, Essilor and luxury eyewear brands (Cazal, Gucci, Ray-Ban, etc.).');
+  md.push('');
+  md.push('**Audience:** Israeli customers seeking quality eyewear and professional multifocal fitting. Target languages are English and Russian — both consumed by an Israel-resident audience (use ₪ for prices, never USD/EUR).');
+  md.push('');
+  md.push('**Tone:** Professional, warm, luxurious — like a trusted family store, not a discount chain. Avoid translation-ese; write as if originally authored in the target language.');
+  md.push('');
+  md.push('**Russian:** use formal "вы" form. Natural Russian word order (no Hebrew syntax).');
+  md.push('**English:** American English. Active voice. Short sentences.');
+  md.push('');
+  md.push('## Hard Rules');
+  md.push('');
+  md.push('1. Do NOT use the word "plastic" — use **"acetate"** for frame material.');
+  md.push('2. Do NOT start every product with "The frame features…" or "These glasses feature…". Vary the openings.');
+  md.push('3. Use a short en-dash or hyphen (–, -) — never a long em-dash (—).');
+  md.push('4. Brand names, model codes, and barcodes — keep verbatim. Never translate "Cazal", "Ray-Ban", "Gucci", etc.');
+  md.push('5. Numbers, sizes, prices, and policy details must remain factually identical.');
+  md.push('6. SEO title: 50-60 characters. SEO description: 150-160 characters.');
+  md.push('7. Description: 2-3 sentences, marketing tone, informative not salesy.');
+  md.push('8. No emojis. No "shop now" / "click here" CTAs (the storefront handles those).');
+  md.push('');
+
+  if (glossaryEn.length || glossaryRu.length) {
+    md.push('## Glossary');
+    md.push('');
+    md.push('Use these exact translations for optical terminology:');
+    md.push('');
+    if (glossaryEn.length) {
+      md.push('### Hebrew → English');
+      md.push('');
+      md.push('| Hebrew | English |');
+      md.push('|---|---|');
+      for (const g of glossaryEn) {
+        md.push(`| ${escapeMdCell(g.term_he)} | ${escapeMdCell(g.term_translated)} |`);
+      }
+      md.push('');
+    }
+    if (glossaryRu.length) {
+      md.push('### Hebrew → Russian');
+      md.push('');
+      md.push('| Hebrew | Russian |');
+      md.push('|---|---|');
+      for (const g of glossaryRu) {
+        md.push(`| ${escapeMdCell(g.term_he)} | ${escapeMdCell(g.term_translated)} |`);
+      }
+      md.push('');
+    }
+  }
+
+  md.push('---');
+  md.push('');
+  md.push('## Products');
+  md.push('');
+  md.push('Fill the **EN Translation** and **RU Translation** columns. Each cell should contain three lines separated by `<br>`: description, SEO title, SEO description (in that order). Leave a column blank only if that language is already translated (the "needs" column tells you which).');
+  md.push('');
+  md.push('| # | Brand | Model | Barcode | Needs | Hebrew Description | Hebrew SEO Title | Hebrew SEO Description | EN Translation | RU Translation |');
+  md.push('|---|---|---|---|---|---|---|---|---|---|');
+  rows.forEach((r, i) => {
+    const needs = [r.missingEn ? 'EN' : '', r.missingRu ? 'RU' : ''].filter(Boolean).join('+');
+    md.push(`| ${i + 1} | ${escapeMdCell(r.brand)} | ${escapeMdCell(r.model)} | ${escapeMdCell(r.barcode)} | ${needs} | ${escapeMdCell(r.he_desc)} | ${escapeMdCell(r.he_seo_title)} | ${escapeMdCell(r.he_seo_desc)} |  |  |`);
+  });
+  md.push('');
+
+  const blob = new Blob([md.join('\n')], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `prizma-translations-${stamp}-${rows.length}products.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  hideLoading();
+  toast(`יוצא ${rows.length} מוצרים`, 's');
 }
