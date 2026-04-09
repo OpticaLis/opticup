@@ -383,6 +383,56 @@ async function translateAndSaveProductField(tenantId, productId, contentType, so
   if (upErr) throw new Error(upErr.message);
 }
 
+// Batch translate all product fields for one language in a single Edge Function call.
+async function translateProductBatch(tenantId, productId, fields, targetLang) {
+  let data;
+  try {
+    const res = await fetch(TRANSLATE_FN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+      },
+      body: JSON.stringify({
+        mode: 'translate_product',
+        tenant_id: tenantId,
+        target_lang: targetLang,
+        fields,
+      }),
+    });
+    data = await res.json();
+  } catch (e) {
+    throw new Error('AI_UNAVAILABLE');
+  }
+  if (!data.success) {
+    if (/api[_ ]?key|anthropic|not configured/i.test(String(data.error || ''))) {
+      throw new Error('AI_UNAVAILABLE');
+    }
+    throw new Error(data.error || 'translate-content failed');
+  }
+
+  const translated = data.fields || {};
+  const nowIso = new Date().toISOString();
+  const rows = Object.entries(translated)
+    .filter(([, v]) => typeof v === 'string' && v.trim())
+    .map(([contentType, content]) => ({
+      tenant_id: tenantId,
+      entity_type: 'product',
+      entity_id: productId,
+      content_type: contentType,
+      content,
+      language: targetLang,
+      status: 'auto',
+      updated_at: nowIso,
+    }));
+  if (rows.length === 0) return;
+
+  const { error: upErr } = await sb.from('ai_content').upsert(rows, {
+    onConflict: 'tenant_id,entity_type,entity_id,content_type,language',
+  });
+  if (upErr) throw new Error(upErr.message);
+}
+
 async function retranslateContent() {
   if (!transEditProduct || !transEditLang) return;
   const ct = document.getElementById('trans-edit-type').value;
@@ -441,14 +491,15 @@ async function bulkTranslateMissing() {
     updateTransProgress(i, total, success, errors, name);
 
     let taskOk = true;
+    const fields = {};
     for (const ct of types) {
-      if (transAbort) break;
-      try {
-        await translateAndSaveProductField(tid, product.id, ct, contentMap[product.id][ct].content, lang);
-      } catch (err) {
-        console.error('bulk translate item:', err);
-        taskOk = false;
-      }
+      fields[ct] = contentMap[product.id][ct].content;
+    }
+    try {
+      await translateProductBatch(tid, product.id, fields, lang);
+    } catch (err) {
+      console.error('bulk translate item:', err);
+      taskOk = false;
     }
     if (taskOk) success++; else errors++;
 
