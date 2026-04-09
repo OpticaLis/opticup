@@ -22,7 +22,30 @@ function switchContentTab(tab) {
 }
 
 // ── Load translations data ──
+// Page through v_ai_content for one language, 1000 rows at a time, until a
+// short page tells us we're done. The PostgREST default cap is 1000 even when
+// .range() asks for more, so we have to drive pagination explicitly.
+async function fetchAiContentPage(tid, lang) {
+  const PAGE = 1000;
+  const all = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await sb.from('v_ai_content')
+      .select('entity_id, content_type, content, language, id')
+      .eq('tenant_id', tid)
+      .eq('entity_type', 'product')
+      .eq('is_deleted', false)
+      .eq('language', lang)
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    const rows = data || [];
+    all.push(...rows);
+    if (rows.length < PAGE) break;
+  }
+  return all;
+}
+
 async function loadTranslations() {
+  console.log('[loadTrans] BUILD=2026-04-09-v4 — paginated per-language reads');
   showLoading('טוען תרגומים...');
   try {
     const tid = getTenantId();
@@ -45,17 +68,12 @@ async function loadTranslations() {
     // The view exposes the same rows without that filter, but has no `status`
     // column — until the view is enriched, every translation renders with the
     // "auto" badge (edited/approved badges are not shown in the table).
-    const { data, error } = await sb.from('v_ai_content')
-      .select('entity_id, content_type, content, language, id')
-      .eq('tenant_id', tid)
-      .eq('entity_type', 'product')
-      .eq('is_deleted', false)
-      .in('language', ['en', 'ru'])
-      .range(0, 49999);
-    if (error) {
-      console.error('loadTranslations query error:', error);
-      throw error;
-    }
+    const [enRows, ruRows] = await Promise.all([
+      fetchAiContentPage(tid, 'en'),
+      fetchAiContentPage(tid, 'ru'),
+    ]);
+    const data = [...enRows, ...ruRows];
+    console.log('[loadTrans] result:', { enRows: enRows.length, ruRows: ruRows.length, total: data.length });
 
     transContentMap = {};
     for (const row of (data || [])) {
