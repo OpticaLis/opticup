@@ -876,7 +876,36 @@ function openImportModal() {
   document.getElementById('import-status').style.display = 'none';
   document.getElementById('import-save-btn').style.display = 'none';
   importParsedRows = [];
-  document.getElementById('import-modal').style.display = 'flex';
+
+  // Force overlay styles inline (same pattern as openTransEditModal)
+  const _im = document.getElementById('import-modal');
+  Object.assign(_im.style, {
+    position: 'fixed',
+    inset: '0',
+    top: '0', left: '0', right: '0', bottom: '0',
+    width: '100vw',
+    height: '100vh',
+    zIndex: '10000',
+    background: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflowY: 'auto',
+    padding: '20px',
+  });
+  const _imCard = _im.querySelector('.modal');
+  if (_imCard) {
+    Object.assign(_imCard.style, {
+      background: '#fff',
+      borderRadius: '12px',
+      padding: '24px',
+      maxWidth: '900px',
+      width: '95%',
+      maxHeight: '90vh',
+      overflowY: 'auto',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+    });
+  }
 }
 
 function closeImportModal() {
