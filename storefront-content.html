@@ -212,6 +212,8 @@
           <button class="btn" onclick="exportForTranslation('en')">📤 ייצא EN</button>
           <button class="btn" onclick="exportForTranslation('ru')">📤 ייצא RU</button>
           <button class="btn" onclick="openImportModal()">📥 ייבא תרגומים</button>
+          <button class="btn" onclick="exportBrandsForTranslation('en')">📤 ייצוא מותגים EN</button>
+          <button class="btn" onclick="exportBrandsForTranslation('ru')">📤 ייצוא מותגים RU</button>
           <span class="count-label" id="trans-count"></span>
         </div>
 
@@ -343,6 +345,7 @@
 <script src="js/alerts-badge.js"></script>
 <script src="modules/storefront/storefront-content.js"></script>
 <script src="modules/storefront/storefront-translations.js"></script>
+<script src="modules/storefront/brand-translations.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', async () => {
   const session = await loadSession();
