@@ -314,6 +314,40 @@ async function translateText(
   return { success: true, translated_text: translated };
 }
 
+// ─── translate_product mode ──────────────────────────────────
+
+async function translateProduct(
+  db: SupabaseClient,
+  tenantId: string,
+  targetLang: string,
+  fields: Record<string, string>
+): Promise<Record<string, unknown>> {
+  const entries = Object.entries(fields).filter(([, v]) => typeof v === 'string' && v.trim());
+  if (entries.length === 0) {
+    return { success: true, fields: {} };
+  }
+  const cleanFields: Record<string, string> = Object.fromEntries(entries);
+
+  const { glossary, corrections } = await loadContext(db, tenantId, targetLang);
+  const sourceText = entries.map(([, v]) => v).join('\n');
+  const systemPrompt = buildSystemPrompt(targetLang, glossary, corrections, sourceText);
+
+  const langName = LANG_NAMES[targetLang] || targetLang;
+  const userContent = `Translate these product fields to ${langName}. Return ONLY a valid JSON object with the same keys and translated values. Do not add explanations.
+
+seo_title: keep 50-60 characters.
+seo_description: keep 150-160 characters.
+description: marketing copy, 2-3 sentences.
+alt_text: descriptive image alt text.
+
+${JSON.stringify(cleanFields, null, 2)}`;
+
+  console.log(`[translate] translate_product: ${entries.length} fields, ${sourceText.length} chars source`);
+  const response = await callClaude(systemPrompt, userContent, 2048);
+  const translations = parseClaudeJson(response);
+  return { success: true, fields: translations };
+}
+
 // ─── Main handler ────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
@@ -345,6 +379,12 @@ Deno.serve(async (req: Request) => {
     if (mode === 'translate_text') {
       if (!body.text) return errRes('translate_text requires text', 400);
       return jsonRes(await translateText(db, tenant_id, target_lang, body.text, body.context_type || 'general'));
+    }
+    if (mode === 'translate_product') {
+      if (!body.fields || typeof body.fields !== 'object') {
+        return errRes('translate_product requires fields object', 400);
+      }
+      return jsonRes(await translateProduct(db, tenant_id, target_lang, body.fields));
     }
 
     return errRes(`Unknown mode: ${mode}`, 400);
