@@ -103,6 +103,91 @@ Optic Up is RLS on the same Supabase, not separate credentials).
 **Why not now:** YAGNI. Building it before there's a second environment adds
 complexity with zero payoff.
 
+### #5 — 🟡 information_schema inaccessible via Supabase REST
+
+**Where:** `scripts/schema-diff.mjs` (Phase 0B), and any future schema
+introspection script in either repo.
+
+**Current state:** Supabase REST API does not expose
+`information_schema.tables` / `information_schema.views` / `pg_policies`.
+`schema-diff.mjs` falls back to probing each declared table individually via
+`.from('<name>').select('*', { head: true })`. This works for declared→live
+validation (catches columns missing from live, or column drift on declared
+tables) but is one-directional — it CANNOT detect tables, views, or policies
+that exist in the live DB but aren't declared in `GLOBAL_SCHEMA.sql`. View body
+comparison is also impossible.
+
+**Why it's debt:** Phase 0B achieves ~80% of the schema-diff goal. The missing
+20% is live-side extras: shadow tables, undocumented views, unlisted RLS
+policies. An undetected live-side extra could be legitimate-but-undocumented
+infrastructure, an abandoned experiment, or in the worst case a
+security-relevant misconfiguration (e.g., a table without RLS that was added
+outside the normal migration flow).
+
+**Why not fixed now:** Two viable paths exist, neither cheap:
+- **Option A:** Deploy a read-only Supabase Edge Function that queries
+  `information_schema` and returns JSON. `schema-diff.mjs` calls it instead of
+  REST probing. Pros: service role stays server-side. Cons: new Edge Function to
+  maintain, deployment overhead.
+- **Option B:** Direct pg connection from `schema-diff.mjs` using
+  `SUPABASE_SERVICE_ROLE_KEY` via a pg client (`pg` or `postgres` libs). Pros:
+  simpler. Cons: adds a new dependency, needs service role key in CI secrets,
+  broader credential footprint.
+
+Phase 0 decided on regex + REST as MVP (Decision 2). Upgrade is Phase 0.5
+material at the earliest.
+
+**Planned fix:** Decide between Option A / Option B when Phase 0.5 starts OR
+when a real drift incident exposes the gap — whichever comes first.
+
+**Effort:** ~2-3 hours for Option A, ~1 hour for Option B, + testing.
+
+### #6 — 🟡 GLOBAL_SCHEMA.sql declares zero views (rails gap, not doc gap)
+
+**Where:** `docs/GLOBAL_SCHEMA.sql` (2413 lines) declares tables + RLS policies
+but NO view definitions.
+
+**Current state:** All storefront-facing views (`v_storefront_products`,
+`v_storefront_brands`, `v_storefront_brand_page`, `v_storefront_categories`, and
+others) exist in the live DB but are not in `GLOBAL_SCHEMA.sql`.
+`schema-diff.mjs` cannot detect view drift — there is nothing to compare
+against.
+
+**Why it matters (architectural, not documentation):** Views are the contract
+layer between ERP and Storefront. Rule 13 of the ERP `CLAUDE.md` and Rule 24 of
+the Storefront `CLAUDE.md` both enforce "storefront reads ONLY from views".
+Without views in `GLOBAL_SCHEMA.sql`, schema-diff is structurally blind to view
+drift. Since Rule 13/24 enforces views-only reads from external consumers, an
+undocumented view failure is a silent contract break. **This is a gap in rails
+coverage, not a documentation miss.** A view can be altered, dropped, or
+replaced in live DB and no automated check would catch it until the storefront
+starts returning wrong data to end users.
+
+**Why not fixed now:** Extracting all current view definitions from live DB
+(which requires solving #5 first OR doing manual extraction via Supabase
+Dashboard), reviewing each, and placing them in `GLOBAL_SCHEMA.sql` in the
+correct dependency order (views that reference other views must come later in the
+file) is a 2-hour task minimum. Out of Phase 0 0A-0F scope. Belongs in Phase 0.5
+or a dedicated view consolidation task.
+
+**Planned fix:**
+1. (Requires #5 resolved OR manual extraction) Query `pg_views` for all views
+   in the public schema
+2. Extract each view's definition (SELECT body + WHERE clause + column aliases)
+3. Add definitions to `GLOBAL_SCHEMA.sql` in dependency order
+4. Re-run `schema-diff.mjs` — should now detect view drift at the existence
+   level
+5. (Optional enhancement) Extend `schema-diff.mjs` to compare view bodies, not
+   just existence. Body comparison is noisy but catches WHERE clause drift — a
+   known issue for this project.
+
+**Effort:** ~2 hours for steps 1-4. Step 5 is another ~1-2 hours and is
+optional.
+
+**Risk if ignored:** A view WHERE clause change that accidentally filters out
+products, brands, or categories would ship to production undetected. This is
+Fragile Area #1 (images view) repeating itself for other views.
+
 ---
 
 ## Resolved Debt
