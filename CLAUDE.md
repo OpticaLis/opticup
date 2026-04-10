@@ -116,7 +116,7 @@ Every type of information has ONE authoritative home. If you need to update it, 
 | DB tables quick reference (T constants) | `docs/DB_TABLES_REFERENCE.md` |
 | Code conventions (patterns, idioms) | `docs/CONVENTIONS.md` |
 | Known issues & fixes | `docs/TROUBLESHOOTING.md` |
-| Autonomous mode protocol | `docs/AUTONOMOUS_MODE.md` (TBD — Phase 0) |
+| Autonomous mode protocol | `docs/AUTONOMOUS_MODE.md` |
 | Module's code map (files, functions, globals) | `modules/Module X/docs/MODULE_MAP.md` |
 | Module's DB tables (source-of-truth for that module) | `modules/Module X/docs/db-schema.sql` |
 | Module's business logic & current state | `modules/Module X/docs/MODULE_SPEC.md` |
@@ -280,30 +280,25 @@ git push origin v{module}.{phase}
 
 ## 11. Autonomous Mode — Current State & Roadmap
 
+**Phase 0 status:** ✅ Complete (April 2026). See `docs/AUTONOMOUS_MODE.md` for the full protocol and `PHASE_0_PROGRESS.md` for the completion summary.
+
 **Current mode: Bounded Autonomy (see Section 9).**
 
 Claude Code executes approved plans end-to-end without per-step confirmation, stopping only on deviation from the stated success criteria. This is the default mode today.
 
-**Not yet built (Phase 0 — "rails"):**
-- Automated verify scripts per phase (`verify-phase.mjs`)
-- Visual regression snapshots for Storefront
-- Pre-commit hooks enforcing Rule 21 (No Orphans) and Rule 14 (tenant_id presence)
-- Schema diff validator comparing module `db-schema.sql` against live Supabase
-- Automatic backup before every migration
-- Dispatch integration for phone-based approvals when a deviation occurs
+**Built in Phase 0 (rails — active):**
+- ✅ Automated verify scripts (`scripts/verify.mjs` with `--staged` / `--full` / `--only` modes)
+- ✅ Pre-commit hooks enforcing file-size, Rule 14 (tenant_id), Rule 15 (RLS), Rule 18 (UNIQUE), Rule 21 (No Orphans), Rule 23 (secrets)
+- ✅ Schema diff validator comparing `docs/GLOBAL_SCHEMA.sql` against live Supabase (`scripts/schema-diff.mjs`)
+- ✅ Visual regression snapshots for Storefront (DOM-hash based, `scripts/visual-regression.mjs`)
+- ✅ GitHub Actions CI running `verify.mjs --full` + `schema-diff.mjs` on push/PR
+- ✅ Credentials isolation (`$HOME/.optic-up/credentials.env` — cargo stays with the product, keys stay with the environment)
 
 **Not yet attempted (Phase 1+):**
 - Cowork-as-orchestrator for full-phase autonomous runs
 - Visual UI checking via Claude in Chrome
 - Unattended overnight execution
-
-**Until Phase 0 is complete:**
-- Every task must include explicit success criteria. If the user doesn't provide them, ask once before starting.
-- No multi-session chained execution (one session = one task).
-- No `--dangerously-skip-permissions` on unreviewed tasks — even with bypass, stop-on-deviation rules still apply.
-- The user handles all merges to `main`, manually, after QA.
-
-See `docs/AUTONOMOUS_MODE.md` *(to be created in Phase 0)* for the full protocol once rails are built.
+- Dispatch integration for phone-based approvals when a deviation occurs
 
 ---
 
@@ -319,7 +314,7 @@ All detailed content lives here. Keep this file (CLAUDE.md) free of detail — a
 | `docs/DB_TABLES_REFERENCE.md` | Quick reference: `T.CONSTANT → table_name → key columns` |
 | `docs/CONVENTIONS.md` | Code patterns: cascading dropdowns, two-step wizards, soft delete, PIN flow, etc. |
 | `docs/TROUBLESHOOTING.md` | Known issues, root causes, fixes, prevention |
-| `docs/AUTONOMOUS_MODE.md` | Autonomous execution protocol *(TBD — Phase 0)* |
+| `docs/AUTONOMOUS_MODE.md` | Autonomous execution protocol (Bounded Autonomy) |
 | `modules/Module X/docs/SESSION_CONTEXT.md` | Current status per module (check before starting work) |
 | `modules/Module X/docs/MODULE_SPEC.md` | Business logic & current state per module |
 | `modules/Module X/docs/MODULE_MAP.md` | Code map per module |
