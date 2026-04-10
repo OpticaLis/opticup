@@ -188,6 +188,44 @@ optional.
 products, brands, or categories would ship to production undetected. This is
 Fragile Area #1 (images view) repeating itself for other views.
 
+### #7 — 🟢 verify.mjs warnings exit policy inconsistent between ERP and Storefront
+
+**Priority:** 🟢 LOW
+
+**Where:**
+- ERP: `scripts/verify.mjs` — warnings-only path returns exit 0 (deliberate,
+  with inline `// Warnings are advisory — do not block commits (exit 0)` comment)
+- Storefront: `scripts/verify.mjs` — warnings-only path returns exit 2 (matches
+  0A spec)
+
+**Current state:** The Phase 0A plan specified exit 2 on warnings-only as the
+blocking policy. The Storefront `verify.mjs` (built in Phase 0C) correctly
+implements this. The ERP `verify.mjs` (built in Phase 0A) deviates and returns
+exit 0 on warnings-only. Both behaviors were independently correct at the time of
+their respective phases — the discrepancy was only discovered during Phase 0D
+when both implementations were compared.
+
+**Why it matters:** CI (Phase 0E) will run `verify.mjs --full` on both repos. If
+the two repos use different exit codes for the same condition (warnings-only), CI
+policies must either:
+  (a) Accept inconsistency and document it per-repo, OR
+  (b) Harmonize to one policy (probably exit 2 = "warnings block CI but not
+  pre-commit hooks" OR exit 0 = "warnings are always advisory")
+Currently (a) is the de facto state. Neither behavior is wrong in isolation —
+both are defensible — but the inconsistency will cause confusion when someone
+reads one repo's `verify.mjs` expecting the behavior of the other.
+
+**Why not fixed now:** Harmonizing is a policy decision, not a code fix. Either
+direction requires a one-line change. The question is which direction, and that
+is best decided when CI is being configured in Phase 0E — at which point the
+preferred policy will be informed by how CI wants to treat warnings.
+
+**Planned fix:** In Phase 0E or immediately after, pick one policy and apply it
+to both repos. If unclear, default to exit 2 on warnings (0A spec) and let
+pre-commit hooks skip warnings-check via an env var or flag if they're too noisy.
+
+**Effort:** ~5 minutes of code change after the policy decision is made.
+
 ---
 
 ## Resolved Debt
