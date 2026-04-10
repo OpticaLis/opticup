@@ -303,3 +303,44 @@ export function validateTranslation(
 
   return { valid: true };
 }
+
+// ─── Validate+retry wrappers (wrapper contamination prevention) ────
+const STRICT_SUFFIX = `\n\nSTRICT MODE: Return ONLY the raw translated text. No headings (#), no bold (**), no horizontal rules (---), no "Alternative options", no "Character count", no "Recommendation", no "Why this works", no meta-commentary. Plain text only.`;
+
+function validateFields(data: Record<string, string>, resolver: (k: string) => string): { key: string; reason: string }[] {
+  const fails: { key: string; reason: string }[] = [];
+  for (const [key, value] of Object.entries(data)) {
+    const r = validateTranslation(value, resolver(key));
+    if (!r.valid) fails.push({ key, reason: r.reason! });
+  }
+  return fails;
+}
+
+/** Validates each value in a JSON translations object. Retries with STRICT MODE on failure, throws on double failure. */
+export async function validateAndRetryJson(
+  translations: Record<string, string>, resolver: (key: string) => string,
+  systemPrompt: string, userContent: string, maxTokens = 4096,
+): Promise<Record<string, string>> {
+  if (validateFields(translations, resolver).length === 0) return translations;
+  console.warn(`[translate] Validation failed, retrying with STRICT MODE`);
+  const retried = parseClaudeJson(await callClaude(systemPrompt, userContent + STRICT_SUFFIX, maxTokens));
+  const fails = validateFields(retried, resolver);
+  if (fails.length > 0) throw new Error(`Validation failed after retry: ${fails.map(f => `${f.key}: ${f.reason}`).join('; ')}`);
+  console.log(`[translate] Retry succeeded — all fields valid`);
+  return retried;
+}
+
+/** Validates a single translated string. Retries with STRICT MODE on failure, throws on double failure. */
+export async function validateAndRetryText(
+  translated: string, contentType: string,
+  systemPrompt: string, userContent: string, maxTokens = 4096,
+): Promise<string> {
+  const r = validateTranslation(translated, contentType);
+  if (r.valid) return translated;
+  console.warn(`[translate] Text validation failed: ${r.reason}, retrying`);
+  const retried = await callClaude(systemPrompt, userContent + STRICT_SUFFIX, maxTokens);
+  const r2 = validateTranslation(retried, contentType);
+  if (!r2.valid) throw new Error(`Text validation failed after retry: ${r2.reason}`);
+  console.log(`[translate] Text retry succeeded`);
+  return retried;
+}

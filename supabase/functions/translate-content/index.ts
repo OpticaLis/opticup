@@ -1,9 +1,6 @@
 /// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import {
-  TRANSLATABLE_FIELDS,
-  TRANSLATABLE_ARRAY_FIELDS,
-} from './field-maps.ts';
+import { extractBlockTexts, cleanRtlForLtr } from './block-utils.ts';
 import {
   extractShortcodes,
   collectShortcodeTexts,
@@ -19,7 +16,8 @@ import {
   callClaude,
   setNestedValue,
   parseClaudeJson,
-  validateTranslation,
+  validateAndRetryJson,
+  validateAndRetryText,
 } from './translation-utils.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -42,69 +40,7 @@ function errRes(message: string, status: number): Response {
   return jsonRes({ error: message, success: false }, status);
 }
 
-// ─── Strip RTL artifacts from translated HTML ───────────────
-function cleanRtlForLtr(html: string, targetLang: string): string {
-  if (targetLang === 'he') return html;
-  return html
-    .replace(/\s*class="ql-direction-rtl"/g, '')
-    .replace(/\s*dir="rtl"/g, '');
-}
-
-// ─── Extract translatable text from blocks ───────────────────
-
-interface TextEntry { path: string; text: string }
-
-function extractBlockTexts(blocks: any[]): TextEntry[] {
-  const entries: TextEntry[] = [];
-
-  for (let i = 0; i < blocks.length; i++) {
-    const block = blocks[i];
-    const blockType = block.type || 'unknown';
-    const data = block.data || {};
-
-    // Top-level fields
-    const fields = TRANSLATABLE_FIELDS[blockType] ?? [];
-    for (const field of fields) {
-      const val = data[field];
-      if (typeof val === 'string' && val.trim()) {
-        entries.push({ path: `blocks.${i}.data.${field}`, text: val });
-      }
-    }
-
-    // Array fields
-    const arrayFields = TRANSLATABLE_ARRAY_FIELDS[blockType] ?? {};
-    for (const [arrayKey, subFields] of Object.entries(arrayFields)) {
-      const arr = data[arrayKey];
-      if (!Array.isArray(arr)) continue;
-      for (let j = 0; j < arr.length; j++) {
-        const item = arr[j];
-        if (!item || typeof item !== 'object') continue;
-        for (const sf of subFields) {
-          const val = item[sf];
-          if (typeof val === 'string' && val.trim()) {
-            entries.push({ path: `blocks.${i}.data.${arrayKey}.${j}.${sf}`, text: val });
-          }
-        }
-        // String array fields (e.g. features in campaign_tiers)
-        if (blockType === 'campaign_tiers' && arrayKey === 'tiers' && Array.isArray(item.features)) {
-          for (let k = 0; k < item.features.length; k++) {
-            if (typeof item.features[k] === 'string' && item.features[k].trim()) {
-              entries.push({
-                path: `blocks.${i}.data.tiers.${j}.features.${k}`,
-                text: item.features[k],
-              });
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return entries;
-}
-
 // ─── translate_page mode ─────────────────────────────────────
-
 async function translatePage(
   db: SupabaseClient,
   tenantId: string,
@@ -120,11 +56,9 @@ async function translatePage(
     .single();
 
   if (pageErr || !page) throw new Error(`Source page not found: ${pageErr?.message}`);
-  console.log(`[translate] Source page loaded: "${page.title}" (${page.id}), ${Array.isArray(page.blocks) ? page.blocks.length : 0} blocks, lang=${page.lang}`);
-
   const blocks = Array.isArray(page.blocks) ? page.blocks : [];
+  console.log(`[translate] Page "${page.title}" (${page.id}): ${blocks.length} blocks, lang=${page.lang}`);
   const { glossary, corrections } = await loadContext(db, tenantId, targetLang);
-  console.log(`[translate] Context loaded: ${glossary.length} glossary terms, ${corrections.length} corrections`);
 
   // 2. Extract all translatable texts
   const blockTexts = extractBlockTexts(blocks);
@@ -163,8 +97,7 @@ async function translatePage(
   if (page.meta_description) toTranslate['meta_description'] = page.meta_description;
   if (page.title) toTranslate['title'] = page.title;
 
-  console.log(`[translate] Texts: ${blockTexts.length} block entries, ${fromMemory} from memory, ${Object.keys(toTranslate).length} to translate via AI`);
-  console.log(`[translate] Keys to translate:`, Object.keys(toTranslate));
+  console.log(`[translate] Texts: ${blockTexts.length} block, ${fromMemory} memory, ${Object.keys(toTranslate).length} AI:`, Object.keys(toTranslate));
 
   // 6. Call Claude API (one batch)
   let aiTranslations: Record<string, string> = {};
@@ -178,13 +111,11 @@ Do not add explanations.
 
 ${JSON.stringify(toTranslate, null, 2)}`;
 
-    console.log(`[translate] Calling Claude API: prompt ${systemPrompt.length} chars, user content ${userContent.length} chars, ${aiTranslated} texts`);
+    console.log(`[translate] Calling Claude API: ${aiTranslated} texts, prompt ${systemPrompt.length}+${userContent.length} chars`);
     const response = await callClaude(systemPrompt, userContent, 8192);
-    console.log(`[translate] Claude response: ${response.length} chars`);
-    console.log(`[translate] Claude response (first 500):`, response.slice(0, 500));
+    console.log(`[translate] Claude response: ${response.length} chars, first 500:`, response.slice(0, 500));
     aiTranslations = parseClaudeJson(response);
-    console.log(`[translate] Parsed ${Object.keys(aiTranslations).length} translated fields`);
-    console.log(`[translate] Translated keys:`, Object.keys(aiTranslations));
+    console.log(`[translate] Parsed ${Object.keys(aiTranslations).length} fields:`, Object.keys(aiTranslations));
 
     // Check for key mismatches
     const requestedKeys = Object.keys(toTranslate);
@@ -193,6 +124,15 @@ ${JSON.stringify(toTranslate, null, 2)}`;
     const extra = returnedKeys.filter(k => !requestedKeys.includes(k));
     if (missing.length > 0) console.warn(`[translate] ⚠ MISSING keys in Claude response:`, missing);
     if (extra.length > 0) console.warn(`[translate] ⚠ EXTRA keys in Claude response:`, extra);
+
+    // Validate for wrapper contamination. Page blocks use 'text' (no length
+    // bounds). SEO fields use their specific contentType for length validation.
+    const seoTypes: Record<string, string> = { meta_title: 'seo_title', meta_description: 'seo_description', title: 'text' };
+    aiTranslations = await validateAndRetryJson(
+      aiTranslations,
+      (key) => seoTypes[key] || 'text',
+      systemPrompt, userContent, 8192
+    );
   } else {
     console.log(`[translate] No texts to translate (all from memory or empty)`);
   }
@@ -233,9 +173,7 @@ ${JSON.stringify(toTranslate, null, 2)}`;
 
   // 8. Create translated page via RPC (handles translation_group_id linking)
   const translatedTitle = aiTranslations['title'] ?? page.title;
-  console.log(`[translate] Creating page via RPC: title="${translatedTitle}", slug="${page.slug}", lang=${targetLang}, ${translatedBlocks.length} blocks`);
-  if (translatedTitle === page.title) console.warn(`[translate] ⚠ Title NOT translated — still Hebrew: "${page.title}"`);
-
+  console.log(`[translate] RPC: title="${translatedTitle}", slug="${page.slug}", lang=${targetLang}, ${translatedBlocks.length} blocks`);
   const { data: newPageId, error: rpcErr } = await db.rpc('create_translated_page', {
     p_tenant_id: tenantId,
     p_source_page_id: sourcePageId,
@@ -261,7 +199,6 @@ ${JSON.stringify(toTranslate, null, 2)}`;
 }
 
 // ─── translate_blocks mode ───────────────────────────────────
-
 async function translateBlocks(
   db: SupabaseClient,
   tenantId: string,
@@ -279,13 +216,18 @@ async function translateBlocks(
   }
 
   const langName = LANG_NAMES[targetLang] || targetLang;
-  const response = await callClaude(systemPrompt,
-    `Translate the following JSON values from Hebrew to ${langName}.
+  const userContent = `Translate the following JSON values from Hebrew to ${langName}.
 Return ONLY a valid JSON object with the same keys and translated values.
 
-${JSON.stringify(toTranslate, null, 2)}`);
+${JSON.stringify(toTranslate, null, 2)}`;
 
-  const translations = parseClaudeJson(response);
+  const response = await callClaude(systemPrompt, userContent);
+  const translations = await validateAndRetryJson(
+    parseClaudeJson(response),
+    () => 'text', // block content — no length bounds, only FORBIDDEN_PATTERNS
+    systemPrompt, userContent
+  );
+
   const wrapper = { blocks: JSON.parse(JSON.stringify(blocks)) };
   for (const entry of blockTexts) {
     if (translations[entry.path]) setNestedValue(wrapper, entry.path, cleanRtlForLtr(translations[entry.path], targetLang));
@@ -310,9 +252,16 @@ async function translateText(
     page_title: 'Page title. Keep concise.',
     general: 'Translate naturally.',
   };
-  const translated = await callClaude(systemPrompt,
-    `${hints[contextType] || hints.general}\n\nTranslate:\n${text}`);
-  return { success: true, translated_text: translated };
+  const userContent = `${hints[contextType] || hints.general}\n\nTranslate:\n${text}`;
+  const translated = await callClaude(systemPrompt, userContent);
+
+  // Validate for wrapper contamination. Use the contextType directly for known
+  // LENGTH_BOUNDS keys (seo_title, seo_description, description, alt_text).
+  // For others (general, page_title), use 'text' — no length bounds, just pattern checks.
+  const validationKey = ['seo_title', 'seo_description', 'description', 'alt_text'].includes(contextType) ? contextType : 'text';
+  const validated = await validateAndRetryText(translated, validationKey, systemPrompt, userContent);
+
+  return { success: true, translated_text: validated };
 }
 
 // ─── translate_product mode ──────────────────────────────────
@@ -345,37 +294,11 @@ ${JSON.stringify(cleanFields, null, 2)}`;
 
   console.log(`[translate] translate_product: ${entries.length} fields, ${sourceText.length} chars source`);
   const response = await callClaude(systemPrompt, userContent, 2048);
-  let translations = parseClaudeJson(response);
-
-  // Validate translations for wrapper contamination
-  const failures: { field: string; reason: string }[] = [];
-  for (const [key, value] of Object.entries(translations)) {
-    const result = validateTranslation(value, key);
-    if (!result.valid) {
-      failures.push({ field: key, reason: result.reason! });
-    }
-  }
-
-  if (failures.length > 0) {
-    console.warn(`[translate] Validation failed on ${failures.length} fields: ${failures.map(f => `${f.field}: ${f.reason}`).join('; ')}`);
-    const strictPrompt = userContent + `\n\nSTRICT MODE: Return ONLY the raw translated text per field as JSON values. No headings (#), no bold (**), no horizontal rules (---), no "Alternative options", no "Character count", no "Recommendation", no "Why this works", no meta-commentary. Just the translation. Each field value must be plain text only.`;
-    const retryResponse = await callClaude(systemPrompt, strictPrompt, 2048);
-    translations = parseClaudeJson(retryResponse);
-
-    const retryFailures: { field: string; reason: string }[] = [];
-    for (const [key, value] of Object.entries(translations)) {
-      const result = validateTranslation(value, key);
-      if (!result.valid) {
-        retryFailures.push({ field: key, reason: result.reason! });
-      }
-    }
-
-    if (retryFailures.length > 0) {
-      const details = retryFailures.map(f => `${f.field}: ${f.reason}`).join('; ');
-      throw new Error(`Translation validation failed after retry for fields: ${details}`);
-    }
-    console.log(`[translate] Retry succeeded — all fields now valid`);
-  }
+  const translations = await validateAndRetryJson(
+    parseClaudeJson(response),
+    (key) => key, // product field names match LENGTH_BOUNDS keys directly
+    systemPrompt, userContent, 2048
+  );
 
   return { success: true, fields: translations };
 }
@@ -389,7 +312,7 @@ Deno.serve(async (req: Request) => {
   try {
     const body = await req.json();
     const { mode, tenant_id, target_lang } = body;
-    console.log(`[translate] Request: mode=${mode}, tenant_id=${tenant_id}, target_lang=${target_lang}, source_page_id=${body.source_page_id || 'N/A'}`);
+    console.log(`[translate] mode=${mode}, tenant=${tenant_id}, lang=${target_lang}`);
 
     if (!mode || !tenant_id || !target_lang) {
       return errRes('Missing: mode, tenant_id, target_lang', 400);
@@ -421,8 +344,8 @@ Deno.serve(async (req: Request) => {
 
     return errRes(`Unknown mode: ${mode}`, 400);
   } catch (error) {
-    console.error('[translate] ❌ ERROR:', error instanceof Error ? error.message : error);
-    console.error('[translate] Stack:', error instanceof Error ? error.stack : 'no stack');
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[translate] ❌ ERROR:', msg, error instanceof Error ? error.stack : '');
     return errRes(error instanceof Error ? error.message : 'Translation failed', 500);
   }
 });

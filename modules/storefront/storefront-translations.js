@@ -372,6 +372,11 @@ async function saveTranslationEdit() {
     }
 
     await loadTranslations();
+    // Clear unsaved indicator if present
+    const badge = document.getElementById('trans-unsaved-badge');
+    if (badge) badge.style.display = 'none';
+    const targetEl = document.getElementById('trans-target');
+    if (targetEl) { targetEl.style.borderColor = ''; targetEl.style.background = ''; }
     toast('תרגום נשמר', 's');
     closeTransEditModal();
   } catch (e) {
@@ -403,8 +408,10 @@ async function approveTranslation() {
   }
 }
 
-// Call translate-content Edge Function in translate_text mode and persist to ai_content
-async function translateAndSaveProductField(tenantId, productId, contentType, sourceText, targetLang) {
+// Call translate-content Edge Function in translate_text mode — fetch only, no DB save.
+// The user reviews the result in the modal textarea, then clicks save explicitly.
+// Pattern A: populate existing textarea + unsaved indicator.
+async function translateProductField(tenantId, contentType, sourceText, targetLang) {
   const ctxMap = {
     description: 'general',
     seo_title: 'seo_title',
@@ -437,22 +444,7 @@ async function translateAndSaveProductField(tenantId, productId, contentType, so
     }
     throw new Error(data.error || 'translate-content failed');
   }
-
-  // Persist to ai_content. is_deleted: false resets any soft-deleted row that
-  // matches the conflict key — otherwise the update would leave is_deleted=true
-  // and loadTranslations() would filter the row out.
-  const { error: upErr } = await sb.from('ai_content').upsert({
-    tenant_id: tenantId,
-    entity_type: 'product',
-    entity_id: productId,
-    content_type: contentType,
-    content: data.translated_text,
-    language: targetLang,
-    status: 'auto',
-    is_deleted: false,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'tenant_id,entity_type,entity_id,content_type,language' });
-  if (upErr) throw new Error(upErr.message);
+  return data.translated_text;
 }
 
 // Batch translate all product fields for one language in a single Edge Function call.
@@ -516,14 +508,31 @@ async function retranslateContent() {
 
   showLoading('מתרגם...');
   try {
-    await translateAndSaveProductField(getTenantId(), transEditProduct.id, ct, heContent, transEditLang);
-    await loadTranslations();
-    loadTransEditType(); // refresh modal
-    toast('תורגם בהצלחה', 's');
+    const translated = await translateProductField(getTenantId(), ct, heContent, transEditLang);
+    // Populate the modal textarea with the new translation — do NOT save to DB.
+    // User must review and click the save button explicitly.
+    const targetEl = document.getElementById('trans-target');
+    targetEl.value = translated;
+    targetEl.style.borderColor = '#c9a555';
+    targetEl.style.background = '#fffbea';
+    // Show unsaved indicator
+    let badge = document.getElementById('trans-unsaved-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.id = 'trans-unsaved-badge';
+      badge.style.cssText = 'display:inline-block;background:#c9a555;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;margin-inline-start:8px;';
+      const label = document.getElementById('trans-target-label');
+      if (label) label.parentNode.insertBefore(badge, label.nextSibling);
+    }
+    badge.textContent = '💾 לא נשמר — יש ללחוץ שמור';
+    badge.style.display = 'inline-block';
+    toast('תרגום התקבל — עיין ולחץ שמור', 's');
   } catch (e) {
     console.error('retranslateContent:', e);
     if (e && e.message === 'AI_UNAVAILABLE') {
       toast('שירות התרגום אינו זמין כרגע', 'e');
+    } else if (/validation failed/i.test(e.message || '')) {
+      toast('התרגום נכשל — הטקסט שהתקבל לא עבר ולידציה. נסה שוב או תרגם ידנית.', 'e');
     } else {
       toast('שגיאה בתרגום: ' + (e.message || ''), 'e');
     }

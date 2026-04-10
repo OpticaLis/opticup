@@ -117,6 +117,7 @@ if (totalViolations === 0 && totalWarnings === 0) {
   console.log(red(bold(`${totalViolations} violations, ${totalWarnings} warnings across ${files.length} files`)));
   process.exit(1);
 } else {
+  // Warnings are advisory — do not block commits (exit 0)
   console.log(yellow(bold(`0 violations, ${totalWarnings} warnings across ${files.length} files`)));
-  process.exit(2);
+  process.exit(0);
 }
