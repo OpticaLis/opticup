@@ -10,24 +10,19 @@
 
 When starting a new Claude Code session, do these steps in order. No exceptions.
 
-1. **Identify machine & repo:** Ask "Which machine? 🖥️ Windows or 🍎 Mac?" and confirm the working directory matches the task. Run `git remote -v` to verify you are in `opticalis/opticup` (ERP) vs `opticalis/opticup-storefront`. If the remote does not match the task — STOP and tell the user.
-2. **Verify branch:** `git branch` — must be on `develop`. If not: `git checkout develop`.
-3. **Pull latest:** `git pull origin develop`.
-4. **Clean repo check:** run `git status`. If there are uncommitted changes, deleted files, or untracked files that are NOT part of the current task:
-   - Report them to the user with a one-line summary of each file/group.
-   - Ask once: "I see pre-existing uncommitted changes in these files. Options: (a) stash them with `git stash` and restore after the task, (b) leave them alone and use selective `git add` by filename for this task, (c) they are intentional work-in-progress — just note them and continue with selective add. Which?"
-   - Wait for the user's choice, then proceed. Do NOT ask about them again later in the session.
-   - If the repo is clean — continue without saying anything.
-5. **Read this file** (CLAUDE.md) — rules, navigation, conventions.
-6. **Read the target module's SESSION_CONTEXT.md** — path pattern:
+1. **Identify machine:** Ask "Which machine? 🖥️ Windows or 🍎 Mac?" if not stated.
+2. **Pull latest:** `git pull origin develop`
+3. **Verify branch:** `git branch` — must be on `develop`. If not: `git checkout develop`.
+4. **Read this file** (CLAUDE.md) — rules, navigation, conventions.
+5. **Read the target module's SESSION_CONTEXT.md** — path pattern:
    `modules/Module X - [Name]/docs/SESSION_CONTEXT.md`
    Active modules with SESSION_CONTEXT: Module 1 (Inventory), Module 1.5 (Shared Components), Module 2 (Platform Admin). Module 3 (Storefront) lives in separate repo `opticup-storefront`.
-7. **Read `docs/GLOBAL_MAP.md`** — shared functions, contracts, module registry (reference only — do NOT modify outside Integration Ceremony).
+6. **Read `docs/GLOBAL_MAP.md`** — shared functions, contracts, module registry (reference only — do NOT modify outside Integration Ceremony).
 
 **Do NOT read at session start:** MODULE_MAP.md, GLOBAL_SCHEMA.sql, FILE_STRUCTURE.md, DB_TABLES_REFERENCE.md, CONVENTIONS.md. These are reference files — open only when needed for the specific task.
 
-After reading, confirm in one block:
-> "Repo: opticalis/opticup. Branch: develop. Machine: [🖥️/🍎]. Repo status: [clean / dirty-handled]. Module: [X]. Current status: [one line from SESSION_CONTEXT]. Ready."
+After reading, confirm:
+> "On branch: develop. Machine: [🖥️/🍎]. Module: [X]. Current status: [one line from SESSION_CONTEXT]. Ready."
 
 ---
 
@@ -146,90 +141,39 @@ Every type of information has ONE authoritative home. If you need to update it, 
 
 ---
 
-## 9. Working Rules — AI Sessions (Bounded Autonomy Model)
+## 9. Working Rules — AI Sessions
 
-### The Core Principle
-
-**An approved plan with explicit success criteria is a green light for end-to-end execution.** Stop on deviation, not on success. Checkpoints are reports, not requests for approval.
-
-### What Makes a Plan "Approved"
-
-A plan is considered approved when the user provides either:
-- An explicit task list with expected outcomes (file counts, line counts, git status, verify commands returning specific values, etc.), OR
-- A reference to a spec file (PHASE_X_SPEC.md, prompt file) that contains the above.
-
-If the plan has no success criteria — ask for them before starting. Do not guess.
-
-### Execution Loop
-
-For each step in an approved plan:
-1. Execute the step.
-2. Compare the actual result to the expected criterion.
-3. **Match → continue to the next step without asking.**
-4. **Mismatch → STOP immediately, report the deviation, wait for instructions.**
-5. At natural boundaries (every 3–5 steps, or between logical phases), emit a concise progress report. This is a report, not a question — keep executing.
-6. At the end of the full task, emit a final report: commits made, commit hashes, final `git status`, any warnings seen during execution.
-
-### Stop-on-Deviation Triggers (non-negotiable)
-
-Stop and wait for instructions if ANY of these happen:
-- Unexpected files modified, untracked, or deleted (beyond what was already handled in First Action step 4)
-- Line counts, file counts, or command outputs that do not match the stated expectation
-- Any error, warning, or non-zero exit code from any command
-- Ambiguity in how to proceed that isn't resolved by the plan
-- A new decision not covered by the original plan
-- Branch mismatch, repo mismatch, path mismatch
-- Any iron/SaaS/hygiene rule would be violated by the next step
-
-### Do NOT Stop When
-
-- A deterministic step in an approved plan completed exactly as expected.
-- The next step is "obvious" — if it's in the plan and the previous step matched expectations, execute it.
-- You feel uncertain in a "should I double-check with the user?" way — the answer is no. Safety comes from stopping on deviation, not from stopping on success. Double-checking on success is noise that erodes the user's trust in the autonomy.
-
-### Scope & Safety Rules
-
-1. **Branch verification** — every prompt starts with `git branch`. Must be `develop`. No exceptions.
-2. **One concern per task** — never touch files outside the stated scope, even if you notice a problem in them. Note unrelated issues in the final report; do not fix them.
-3. **Surgical edits only** — use `str_replace` and targeted edits. Never rewrite whole files unless the user explicitly says "rewrite from scratch."
-4. **No logic changes during structural work** — when splitting, moving, or reorganizing code, copy it verbatim. Zero behavior changes unless explicitly requested.
-5. **Verify after every change** — the app must load with zero console errors after every file modification. Run any available verify scripts.
-6. **Never wildcard git** — never `git add -A`, never `git add .`, never `git commit -am`. Always add files by explicit name. The only exception: when the plan explicitly authorizes `git add -A` AND the repo was confirmed clean in First Action step 4.
-7. **Never checkout main, never push to main, never merge to main.** Only the user merges to main, manually, after full QA.
-8. **No worktree branches** — all work happens directly on `develop`. Do not create branches like `claude/xxx`.
-9. **Backup before major restructuring** — before splitting a file, refactoring across files, or anything that touches >5 files, create a backup in `modules/Module X/backups/`. This is part of execution, not something to ask about.
-10. **Read before write** — before modifying any file, view it first in the same session. Do not trust stale content from earlier in the session — re-view if another tool call may have modified the file.
+0. **Branch verification** — every prompt starts with `git branch`. Confirm on `develop`. No exceptions.
+1. **One file at a time** — never touch multiple files in a single task unless explicitly instructed.
+2. **Backup before major change** — copy affected files to `modules/Module X/backups/` before splitting or refactoring.
+3. **Stop and report after every task** — do not proceed without explicit approval.
+4. **No logic changes during structural work** — when splitting or reorganizing, copy code verbatim. Zero behavior changes.
+5. **Verify after every change** — app must load with zero console errors.
+6. **Report before executing** — for any task touching more than one function, show the plan first and wait for approval.
+7. **Never auto-proceed** — even if the next step seems obvious, stop and wait.
+8. **No worktree branches** — all work happens directly on `develop`. Do not create branches like `claude/xxx`. This is a solo developer project with step-by-step review — worktrees add complexity and break multi-machine sync.
+9. **Surgical edits only** — use `str_replace` / targeted edits. Never rewrite whole files unless explicitly told "rewrite this file from scratch."
+10. **When in doubt — ask. When sure — still confirm.**
 
 ### Multi-Machine
-
 Two development machines:
 - **🖥️ Windows:** `C:\Users\User\opticup` (Watcher service runs here)
 - **🍎 Mac:** `/Users/danielsmac/opticup`
 
-Every new session: confirm which machine, `git pull origin develop` before any work, never work on both simultaneously on the same branch.
+Every new session: ask which machine, `git pull origin develop` before any work, never work on both simultaneously.
 
 ### Commits
-
 ```
-git commit -m "descriptive message in English"
-git push origin develop
+git add -A && git commit -m "descriptive message in English" && git push
 ```
-
-Commit messages are in English, present-tense verb, scoped: `type(scope): description`. Examples:
-- `feat(shipments): add box lock countdown timer`
-- `fix(debt): resolve race condition in payment allocation`
-- `refactor(docs): restructure CLAUDE.md as navigation hub`
-- `chore(deps): update Supabase JS to v2.44`
 
 ### Branching & Environments
-
 - **`main`** = Production (GitHub Pages). Do NOT push directly — merge only.
 - **`develop`** = Development. All Claude Code work happens here.
-- **Merge to main:** `git checkout main && git merge develop && git push && git checkout develop` — only by the user, only after QA on demo tenant.
+- **Merge to main:** `git checkout main && git merge develop && git push && git checkout develop` — only by Daniel, only after QA on demo tenant.
 - **DB changes:** must be backward-compatible with `main` until merge. Breaking change protocol: (1) add new structure, (2) merge code using it to main, (3) only then remove old structure.
 
 ### QA
-
 - All QA runs on **test tenant** (slug=`demo`, UUID `8d8cfa7e-ef58-49af-9702-a862d459cccb`, PIN 12345). Never on Prizma production data.
 - Every new module tested on demo before merge to main.
 - Clone/cleanup scripts: `modules/Module 1.5 - Shared Components/scripts/clone-tenant.sql`, `cleanup-tenant.sql`.
@@ -278,32 +222,18 @@ git push origin v{module}.{phase}
 
 ---
 
-## 11. Autonomous Mode — Current State & Roadmap
+## 11. Autonomous Mode — Placeholder
 
-**Current mode: Bounded Autonomy (see Section 9).**
-
-Claude Code executes approved plans end-to-end without per-step confirmation, stopping only on deviation from the stated success criteria. This is the default mode today.
-
-**Not yet built (Phase 0 — "rails"):**
-- Automated verify scripts per phase (`verify-phase.mjs`)
-- Visual regression snapshots for Storefront
-- Pre-commit hooks enforcing Rule 21 (No Orphans) and Rule 14 (tenant_id presence)
-- Schema diff validator comparing module `db-schema.sql` against live Supabase
-- Automatic backup before every migration
-- Dispatch integration for phone-based approvals when a deviation occurs
-
-**Not yet attempted (Phase 1+):**
-- Cowork-as-orchestrator for full-phase autonomous runs
-- Visual UI checking via Claude in Chrome
-- Unattended overnight execution
-
-**Until Phase 0 is complete:**
-- Every task must include explicit success criteria. If the user doesn't provide them, ask once before starting.
-- No multi-session chained execution (one session = one task).
-- No `--dangerously-skip-permissions` on unreviewed tasks — even with bypass, stop-on-deviation rules still apply.
-- The user handles all merges to `main`, manually, after QA.
-
-See `docs/AUTONOMOUS_MODE.md` *(to be created in Phase 0)* for the full protocol once rails are built.
+> ⚠️ **Autonomous multi-step execution is NOT currently enabled.**
+>
+> The infrastructure for safe autonomous runs (verify scripts, visual regression, rollback hooks, checkpoint protocol, BLOCKED/DECISION_NEEDED handling) is being built in Phase 0 — see `docs/AUTONOMOUS_MODE.md` *(to be created)*.
+>
+> **Until Phase 0 is complete:**
+> - Manual execution only.
+> - Per-step approval required.
+> - No multi-step autonomous runs.
+> - No `--dangerously-skip-permissions` on unreviewed tasks.
+> - If a user/prompt asks you to "run autonomously" or "do the whole thing" — stop and confirm step by step instead.
 
 ---
 
@@ -330,4 +260,4 @@ All detailed content lives here. Keep this file (CLAUDE.md) free of detail — a
 ---
 
 *End of CLAUDE.md. This file is a map. Detailed content lives in the reference files above.*
-*Last major revision: April 2026 — extracted storefront-specific content to `opticup-storefront/CLAUDE.md`, extracted file structure / DB tables / conventions to dedicated reference files, added Hygiene Rules (21–23), added Navigation Table, switched Working Rules to Bounded Autonomy model (stop on deviation, not on success), added clean-repo check to First Action.*
+*Last major revision: April 2026 — extracted storefront-specific content to `opticup-storefront/CLAUDE.md`, extracted file structure / DB tables / conventions to dedicated reference files, added Hygiene Rules (21–23), added Navigation Table.*
