@@ -133,3 +133,5 @@ Phase 2 (Dispatch integration):
 ---
 
 *Phase 0 complete. Rails active. Bounded Autonomy trusted.*
+
+*End-to-end pipeline smoke test: this line added in a trivial commit on 2026-04-10 to verify pre-commit hook → push → CI run. All layers active.*
