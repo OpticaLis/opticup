@@ -8,6 +8,7 @@ const TRANS_PAGE_SIZE = 50;
 let transAbort = false;
 let transEditProduct = null;
 let transEditLang = null;
+let _contaminationFilterActive = false;
 
 // ── Tab switching ──
 function switchContentTab(tab) {
@@ -88,6 +89,8 @@ async function loadTranslations() {
     }
 
     filterTranslations();
+    _injectContaminationFilter();
+    _updateContaminationUI('en');
   } catch (e) {
     console.error('loadTranslations error:', e);
     toast('שגיאה בטעינת תרגומים', 'e');
@@ -128,6 +131,17 @@ function filterTranslations() {
       if (lang === 'ru') return t?.ru?.description?.status === status;
       return t?.en?.description?.status === status || t?.ru?.description?.status === status;
     });
+  }
+
+  // Contamination filter — always update counter, filter only when active
+  const counterLang = lang === 'en' || lang === 'ru' ? lang : 'en';
+  _updateContaminationUI(counterLang);
+
+  if (_contaminationFilterActive) {
+    const filterLangs = lang === 'en' ? ['en'] : lang === 'ru' ? ['ru'] : ['en', 'ru'];
+    filtered = filtered.filter(p =>
+      filterLangs.some(l => _getContaminatedFields(p.id, l).length > 0)
+    );
   }
 
   document.getElementById('trans-count').textContent = `${filtered.length} מוצרים`;
@@ -183,6 +197,15 @@ function getTransFilteredProducts() {
       return t?.en?.description?.status === status || t?.ru?.description?.status === status;
     });
   }
+
+  // Contamination filter
+  if (_contaminationFilterActive) {
+    const filterLangs = lang === 'en' ? ['en'] : lang === 'ru' ? ['ru'] : ['en', 'ru'];
+    filtered = filtered.filter(p =>
+      filterLangs.some(l => _getContaminatedFields(p.id, l).length > 0)
+    );
+  }
+
   return filtered;
 }
 
@@ -627,17 +650,36 @@ async function exportForTranslation(targetLang) {
   const langLabel = targetLang === 'en' ? 'English' : 'Russian';
   const langCode = targetLang.toUpperCase();
 
-  // 1. Find products missing ANY of the 4 translatable fields in this language
-  //    (description, seo_title, seo_description, alt_text). Requires HE description.
+  // 1. Find products to export — either missing translations or contaminated ones
   const TRANS_FIELDS = ['description', 'seo_title', 'seo_description', 'alt_text'];
-  const missingProducts = getTransFilteredProducts().filter(p => {
-    if (!contentMap[p.id]?.description) return false;
-    const t = (transContentMap[p.id] || {})[targetLang] || {};
-    return TRANS_FIELDS.some(f => !t[f]);
-  });
 
-  if (!missingProducts.length) {
-    toast(`אין מוצרים חסרי תרגום ל-${langCode}`, 's');
+  let exportProducts;
+  let contaminationMap = {}; // productId → Set of contaminated field names
+
+  if (_contaminationFilterActive) {
+    // Contamination mode: export only products with contaminated fields
+    exportProducts = getTransFilteredProducts().filter(p => {
+      if (!contentMap[p.id]?.description) return false;
+      const contaminated = _getContaminatedFields(p.id, targetLang);
+      if (contaminated.length > 0) {
+        contaminationMap[p.id] = new Set(contaminated.map(c => c.field));
+        return true;
+      }
+      return false;
+    });
+  } else {
+    // Normal mode: export products missing ANY of the 4 translatable fields
+    exportProducts = getTransFilteredProducts().filter(p => {
+      if (!contentMap[p.id]?.description) return false;
+      const t = (transContentMap[p.id] || {})[targetLang] || {};
+      return TRANS_FIELDS.some(f => !t[f]);
+    });
+  }
+
+  if (!exportProducts.length) {
+    toast(_contaminationFilterActive
+      ? `אין מוצרים מזוהמים ב-${langCode}`
+      : `אין מוצרים חסרי תרגום ל-${langCode}`, 's');
     return;
   }
 
@@ -680,15 +722,19 @@ async function exportForTranslation(targetLang) {
   }
 
   // 4. Build product rows for export
-  const rows = missingProducts.map(p => ({
-    brand: p.brand_name || '',
-    model: p.model || '',
-    barcode: p.barcode || '',
-    he_desc: contentMap[p.id]?.description?.content || '',
-    he_seo_title: contentMap[p.id]?.seo_title?.content || '',
-    he_seo_desc: contentMap[p.id]?.seo_description?.content || '',
-    he_alt: contentMap[p.id]?.alt_text?.content || '',
-  }));
+  //    In contamination mode, only include HE source for contaminated fields (blank clean ones)
+  const rows = exportProducts.map(p => {
+    const dirty = contaminationMap[p.id]; // Set of contaminated field names, or undefined
+    return {
+      brand: p.brand_name || '',
+      model: p.model || '',
+      barcode: p.barcode || '',
+      he_desc: (!dirty || dirty.has('description')) ? (contentMap[p.id]?.description?.content || '') : '',
+      he_seo_title: (!dirty || dirty.has('seo_title')) ? (contentMap[p.id]?.seo_title?.content || '') : '',
+      he_seo_desc: (!dirty || dirty.has('seo_description')) ? (contentMap[p.id]?.seo_description?.content || '') : '',
+      he_alt: (!dirty || dirty.has('alt_text')) ? (contentMap[p.id]?.alt_text?.content || '') : '',
+    };
+  });
 
   // 5. Build prompt file
   const promptContent = buildTranslationPrompt(targetLang, langLabel, langCode, glossary, exampleProducts);
@@ -715,7 +761,8 @@ async function exportForTranslation(targetLang) {
 
   downloadMultipleFiles(allFiles);
   hideLoading();
-  toast(`יוצאו ${allFiles.length} קבצים (${rows.length} מוצרים) ל-${langCode}`, 's');
+  const modeLabel = _contaminationFilterActive ? ' [🧹 מזוהמים]' : '';
+  toast(`יוצאו ${allFiles.length} קבצים (${rows.length} מוצרים) ל-${langCode}${modeLabel}`, 's');
 }
 
 /**
@@ -1090,6 +1137,86 @@ function _detectWrapperContamination(value, fieldName) {
   }
 
   return null;
+}
+
+/**
+ * Get contaminated fields for a product in a given language.
+ * Returns array of { field, reason } for fields where _detectWrapperContamination found issues.
+ * Returns empty array if the product has no contaminated translations.
+ */
+function _getContaminatedFields(productId, lang) {
+  const FIELDS = ['description', 'seo_title', 'seo_description', 'alt_text'];
+  const t = (transContentMap[productId] || {})[lang] || {};
+  const results = [];
+  for (const f of FIELDS) {
+    const entry = t[f];
+    if (!entry || !entry.content) continue;
+    const reason = _detectWrapperContamination(entry.content, f);
+    if (reason) results.push({ field: f, reason });
+  }
+  return results;
+}
+
+/**
+ * Update the contamination filter counter and inject the UI if not yet present.
+ * Called when translations load and when the checkbox is toggled.
+ */
+function _updateContaminationUI(targetLang) {
+  const lang = targetLang || 'en';
+  const FIELDS = ['description', 'seo_title', 'seo_description', 'alt_text'];
+  let productCount = 0;
+  let fieldCount = 0;
+
+  const products = contentProducts.filter(p => contentMap[p.id]?.description);
+  for (const p of products) {
+    const contaminated = _getContaminatedFields(p.id, lang);
+    if (contaminated.length > 0) {
+      productCount++;
+      fieldCount += contaminated.length;
+    }
+  }
+
+  const counter = document.getElementById('contamination-counter');
+  if (counter) {
+    counter.textContent = `סה"כ: ${productCount} מוצרים, ${fieldCount} שדות מזוהמים`;
+  }
+  return { productCount, fieldCount };
+}
+
+/**
+ * Inject the contamination filter checkbox into the translations panel.
+ * Idempotent — safe to call multiple times.
+ */
+function _injectContaminationFilter() {
+  if (document.getElementById('contamination-filter-box')) return;
+
+  const actionsDiv = document.querySelector('#panel-translations .content-actions');
+  if (!actionsDiv) return;
+
+  const box = document.createElement('div');
+  box.id = 'contamination-filter-box';
+  box.style.cssText = 'background:#fff8e1;border:1px solid #e8da94;border-radius:8px;padding:10px 14px;margin-bottom:10px;direction:rtl;';
+  box.innerHTML = `
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px;">
+      <input type="checkbox" id="contamination-filter-cb" onchange="_onContaminationToggle()" style="width:18px;height:18px;accent-color:#c9a555;">
+      🧹 הצג רק מוצרים מזוהמים ב-markdown wrappers
+    </label>
+    <div style="font-size:12px;color:#6b7280;margin-top:4px;margin-right:26px;">
+      כשהאופציה דלוקה: רק מוצרים עם wrapper מזוהם יוצגו, ורק השדות המזוהמים יסומנו אוטומטית לייצוא.
+    </div>
+    <div id="contamination-counter" style="font-size:13px;font-weight:600;color:#c9a555;margin-top:6px;margin-right:26px;"></div>
+  `;
+
+  actionsDiv.parentNode.insertBefore(box, actionsDiv);
+}
+
+/**
+ * Checkbox toggle handler.
+ */
+function _onContaminationToggle() {
+  const cb = document.getElementById('contamination-filter-cb');
+  _contaminationFilterActive = cb ? cb.checked : false;
+  filterTranslations();
 }
 
 /**
