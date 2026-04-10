@@ -117,7 +117,7 @@ if (totalViolations === 0 && totalWarnings === 0) {
   console.log(red(bold(`${totalViolations} violations, ${totalWarnings} warnings across ${files.length} files`)));
   process.exit(1);
 } else {
-  // Warnings are advisory — do not block commits (exit 0)
+  // Warnings: exit 2 — informational, CI may treat as non-blocking via workflow config
   console.log(yellow(bold(`0 violations, ${totalWarnings} warnings across ${files.length} files`)));
-  process.exit(0);
+  process.exit(2);
 }
