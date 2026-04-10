@@ -10,3 +10,5 @@ watcher-deploy/daemon/opticupsyncwatcher.out.log
 .env
 .env.*
 !.env.example
+
+.mcp.json
