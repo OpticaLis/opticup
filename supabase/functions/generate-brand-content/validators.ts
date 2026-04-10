@@ -6,6 +6,12 @@ export function stripHtml(s: string): string {
 
 const REQUIRED_FIELDS = ["tagline", "description1", "description2", "seo_title", "seo_description"] as const;
 
+// Script detection regex — shared across validators
+const HEBREW_RE = /[\u0590-\u05FF]/;
+const CYRILLIC_RE = /[\u0400-\u04FF]/;
+const LATIN_RE = /[a-zA-Z]/g;
+const CYRILLIC_LETTER_RE = /[\u0400-\u04FF]/g;
+
 // Patterns that indicate wrapper contamination (markdown, commentary, meta-text)
 const WRAPPER_PATTERNS: RegExp[] = [
   /^#{1,3}\s/m,                        // Lines starting with #, ##, ###
@@ -35,7 +41,22 @@ interface ValidationResult {
   reasons: string[];
 }
 
-export function validateGenerateOutput(output: unknown): ValidationResult {
+export interface VerifiedFacts {
+  founder?: string;
+  founder_he?: string;
+  founded_year?: number;
+  country?: string;
+  country_he?: string;
+  city?: string;
+  city_he?: string;
+  design_signature?: string;
+  design_signature_he?: string;
+  verified_sources?: string[];
+  verified_at?: string;
+  verified_by?: string;
+}
+
+export function validateGenerateOutput(output: unknown, verifiedFacts?: VerifiedFacts | null): ValidationResult {
   const reasons: string[] = [];
   const obj = output as Record<string, unknown>;
 
@@ -116,6 +137,31 @@ export function validateGenerateOutput(output: unknown): ValidationResult {
     reasons.push(`description2 missing "\u05E4\u05E8\u05D9\u05D6\u05DE\u05D4" (Prizma)`);
   }
 
+  // Prose quality check (Rule 7)
+  // Build extra allowlist from verified facts (brand/founder names naturally repeat)
+  const extraAllow: string[] = [];
+  if (verifiedFacts) {
+    for (const field of ["founder_he", "country_he", "city_he"] as const) {
+      const val = verifiedFacts[field];
+      if (val) {
+        const heWords = val.match(/[\u0590-\u05FF]{4,}/g) || [];
+        extraAllow.push(...heWords);
+      }
+    }
+  }
+  const proseResult = validateProseQuality(output as Record<string, string>, extraAllow);
+  if (!proseResult.valid) {
+    reasons.push(...proseResult.reasons);
+  }
+
+  // Facts-respected check (only when verified facts provided)
+  if (verifiedFacts) {
+    const factsResult = validateFactsRespected(output as Record<string, string>, verifiedFacts);
+    if (!factsResult.valid) {
+      reasons.push(...factsResult.reasons);
+    }
+  }
+
   return { valid: reasons.length === 0, reasons };
 }
 
@@ -193,12 +239,7 @@ export function validateTranslateOutput(
     }
   }
 
-  // Language script check (replaces Hebrew keywords check)
-  const HEBREW_RE = /[\u0590-\u05FF]/;
-  const CYRILLIC_RE = /[\u0400-\u04FF]/;
-  const LATIN_RE = /[a-zA-Z]/g;
-  const CYRILLIC_LETTER_RE = /[\u0400-\u04FF]/g;
-
+  // Language script check
   for (const [name, value] of Object.entries(fields)) {
     const plain = stripHtml(value);
 
@@ -222,6 +263,83 @@ export function validateTranslateOutput(
         reasons.push(`${name}: contains Hebrew characters, forbidden in RU translation`);
       }
       // Latin allowed in RU (brand names)
+    }
+  }
+
+  return { valid: reasons.length === 0, reasons };
+}
+
+// ── Facts-respected validator (Phase C.1) ──
+
+/** Words allowed to repeat (brand/local SEO + core optical vocabulary) */
+const REPETITION_ALLOWLIST = [
+  "\u05E4\u05E8\u05D9\u05D6\u05DE\u05D4", "\u05D0\u05D5\u05E4\u05D8\u05D9\u05E7\u05D4", "\u05D0\u05E9\u05E7\u05DC\u05D5\u05DF", // local SEO
+  "\u05DE\u05E1\u05D2\u05E8\u05D5\u05EA", "\u05DE\u05E9\u05E7\u05E4\u05D9", "\u05E2\u05D3\u05E9\u05D5\u05EA", "\u05E2\u05D9\u05E6\u05D5\u05D1", // optical domain: frames, glasses, lenses, design
+];
+
+export function validateFactsRespected(
+  output: Record<string, string>,
+  facts: VerifiedFacts,
+): ValidationResult {
+  const reasons: string[] = [];
+  const desc1Plain = stripHtml(output.description1 || "");
+
+  // Founder name must appear in description1
+  if (facts.founder_he && !desc1Plain.includes(facts.founder_he)) {
+    reasons.push(`description1 missing verified founder_he "${facts.founder_he}"`);
+  }
+
+  // Founded year must appear in description1
+  if (facts.founded_year && !desc1Plain.includes(String(facts.founded_year))) {
+    reasons.push(`description1 missing verified founded_year "${facts.founded_year}"`);
+  }
+
+  // Country must appear in description1 (lenient: accept root form — e.g., בריטניה matches בריטי)
+  if (facts.country_he) {
+    const countryRoot = facts.country_he.length >= 4 ? facts.country_he.slice(0, 4) : facts.country_he;
+    if (!desc1Plain.includes(countryRoot)) {
+      reasons.push(`description1 missing verified country_he "${facts.country_he}" (checked root "${countryRoot}")`);
+    }
+  }
+
+  // No hallucinated years: find all 4-digit years 1800-2025, reject any not matching verified year
+  if (facts.founded_year) {
+    const yearMatches = desc1Plain.match(/\b(1[89]\d{2}|20[0-2]\d)\b/g) || [];
+    for (const y of yearMatches) {
+      if (Number(y) !== facts.founded_year) {
+        reasons.push(`description1 contains unverified year "${y}" (verified: ${facts.founded_year})`);
+      }
+    }
+  }
+
+  return { valid: reasons.length === 0, reasons };
+}
+
+// ── Prose quality validator (Rule 7, Phase C.1) ──
+
+export function validateProseQuality(
+  output: Record<string, string>,
+  extraAllowlist?: string[],
+): ValidationResult {
+  const reasons: string[] = [];
+  const fullAllowlist = [...REPETITION_ALLOWLIST, ...(extraAllowlist || [])];
+
+  // Check description1 and description2 for word repetition
+  for (const fieldName of ["description1", "description2"] as const) {
+    const plain = stripHtml(output[fieldName] || "");
+    // Extract Hebrew words 4+ chars and Latin words 4+ chars
+    const words = plain.match(/[\u0590-\u05FF]{4,}|[a-zA-Z]{4,}/g) || [];
+
+    // Sliding window: check if same word appears within 6-token window
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i].toLowerCase();
+      if (fullAllowlist.some((a) => a.toLowerCase() === word)) continue;
+      for (let j = i + 1; j < Math.min(i + 7, words.length); j++) {
+        if (words[j].toLowerCase() === word && !fullAllowlist.some((a) => a.toLowerCase() === words[j].toLowerCase())) {
+          reasons.push(`${fieldName}: word "${words[i]}" repeats within 6-token window (positions ${i},${j})`);
+          break; // one report per word occurrence
+        }
+      }
     }
   }
 

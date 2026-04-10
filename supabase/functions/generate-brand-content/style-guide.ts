@@ -45,6 +45,12 @@ BAD: "Berlinait", "Parizait" (city name used as culture in Hebrew awkwardly), "\
 GOOD: Standard nationality adjectives: "German", "French", "Swiss", "\u05D2\u05E8\u05DE\u05E0\u05D9", "\u05E6\u05E8\u05E4\u05EA\u05D9", "\u05E9\u05D5\u05D5\u05D9\u05E6\u05E8\u05D9"
 WHY: Sounds awkward in Hebrew, lowers tone, looks AI-generated.
 
+### RULE 7 - Hebrew Prose Quality (anti-AI tells)
+Subject consistency: within each sentence, the grammatical subject must be clear. Do not start consecutive sentences with the same word.
+Word repetition: never repeat the same word (4+ Hebrew characters) within 30 characters of its previous occurrence. Exceptions: brand name, פריזמה, אופטיקה, אשקלון.
+Paragraph cohesion: each paragraph should develop ONE idea. Do not cram two unrelated facts into the same sentence.
+Pre-output self-check: before returning your JSON, re-read description1 aloud in your head. If any sentence sounds like a list of adjectives with no verb — rewrite it.
+
 ### RULE 6 - Approved structure (4 paragraphs total - 3 brand + 1 Prizma)
 
 **description1** = 3 brand paragraphs:
@@ -75,6 +81,7 @@ WHY: Sounds awkward in Hebrew, lowers tone, looks AI-generated.
 ---
 
 ## FEW-SHOT EXAMPLE 1: Saint Laurent
+// WHY THIS IS GOOD: Paragraph 1 opens with founding story (1961, Yves Saint Laurent). No superlatives. Paragraph 2 describes design philosophy generically ("clean lines, angular frames, YSL logo") — no specific model names. Paragraph 3 uses broad category terms (Cat-Eye, Oversize) not proprietary line names. description2 mentions Prizma + Ashkelon + personal service. No word repeats within 30 chars.
 
 {
   "tagline": "\u05D0\u05DC\u05D2\u05E0\u05D8\u05D9\u05D5\u05EA \u05E6\u05E8\u05E4\u05EA\u05D9\u05EA \u05D7\u05D3\u05D4 \u05D5\u05D1\u05DC\u05EA\u05D9 \u05DE\u05EA\u05E4\u05E9\u05E8\u05EA. \u05E2\u05D9\u05E6\u05D5\u05D1 \u05E9\u05D7\u05D5\u05E8, \u05D0\u05E0\u05D2\u05D5\u05DC\u05E8\u05D9 \u05D5\u05DE\u05E7\u05E8\u05D9\u05DF \u05DB\u05D5\u05D7, \u05DE\u05D0\u05D6 1961.",
@@ -85,6 +92,7 @@ WHY: Sounds awkward in Hebrew, lowers tone, looks AI-generated.
 }
 
 ## FEW-SHOT EXAMPLE 2: Bottega Veneta
+// WHY THIS IS GOOD: Opens with founding story (1966, Vicenza). Paragraph 2 mentions Intrecciato weave — ALLOWED because it is a brand-defining element visible on most frames (Rule 2 exception). No "best" or "largest". description2 mentions Prizma + Ashkelon + on-site lab. Subject varies across sentences. Rule 7 satisfied — no same-word repetitions.
 
 {
   "tagline": "\u05D9\u05D5\u05E7\u05E8\u05D4 \u05E9\u05E7\u05D8\u05D4 \u05DE\u05D0\u05D9\u05D8\u05DC\u05D9\u05D4 \u05DE\u05D0\u05D6 1966. \u05D0\u05D5\u05DE\u05E0\u05D5\u05EA \u05DC\u05DC\u05D0 \u05DC\u05D5\u05D2\u05D5\u05D0\u05D9\u05DD - \u05DB\u05E9\u05D4\u05D0\u05D9\u05DB\u05D5\u05EA \u05DE\u05D3\u05D1\u05E8\u05EA \u05D1\u05E2\u05D3 \u05E2\u05E6\u05DE\u05D4.",
@@ -104,6 +112,37 @@ Return ONLY a single JSON object matching the few-shot examples above.
 - No preamble.
 - No "Alternative:" or "Notes:".
 - Plain JSON, parseable directly.
+`;
+
+export const FACTS_INJECTION_TEMPLATE = `
+
+---
+VERIFIED FACTS FOR THIS BRAND (use ONLY these — do NOT invent additional facts):
+
+Founder: {founder} ({founder_he})
+Founded: {founded_year}
+Country: {country} ({country_he})
+City: {city} ({city_he})
+Design signature: {design_signature} ({design_signature_he})
+
+STRICT RULES for verified facts:
+1. Use ONLY the facts listed above. If a field is empty or missing, do NOT invent a replacement.
+2. Founder name and founding year MUST appear in description1 paragraph 1.
+3. Country MUST appear in description1 paragraph 1.
+4. Do NOT add any year, founder, city, or award that is not listed above.
+5. The design signature may be paraphrased but must not be contradicted.
+`;
+
+export const NO_FACTS_GENERAL_MODE_SUFFIX = `
+
+---
+NO VERIFIED FACTS AVAILABLE for this brand. Generate in GENERAL MODE:
+- Do NOT mention any specific founder name.
+- Do NOT mention any specific founding year.
+- Do NOT mention specific cities, awards, or model names.
+- You MAY mention the country of origin ONLY if you are 99%+ certain (well-known brands).
+- Use general language: "בית האופנה", "המותג", "הקולקציה" — not specific biographical details.
+- All other rules (structure, SEO, no superlatives) still apply.
 `;
 
 export const STRICT_MODE_SUFFIX = `

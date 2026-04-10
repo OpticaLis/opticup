@@ -1,8 +1,9 @@
 /// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { STYLE_GUIDE, STRICT_MODE_SUFFIX } from "./style-guide.ts";
+import { STYLE_GUIDE, STRICT_MODE_SUFFIX, FACTS_INJECTION_TEMPLATE, NO_FACTS_GENERAL_MODE_SUFFIX } from "./style-guide.ts";
 import { validateGenerateOutput, validateTranslateOutput } from "./validators.ts";
+import type { VerifiedFacts } from "./validators.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -178,6 +179,35 @@ Return ONLY a JSON object (no markdown, no backticks):
       return jsonRes({ error: "Missing brand_name or tenant_id", success: false }, 400);
     }
 
+    // Fetch brand's verified facts
+    const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const { data: brandRow } = await supabaseAdmin
+      .from("brands")
+      .select("id, verified_facts, facts_status")
+      .ilike("name", `%${brand_name}%`)
+      .eq("tenant_id", tenant_id)
+      .single();
+
+    const verifiedFacts: VerifiedFacts | null =
+      brandRow?.facts_status === "verified" ? brandRow.verified_facts : null;
+
+    // Build facts block for the prompt
+    let factsBlock = "";
+    if (verifiedFacts) {
+      factsBlock = FACTS_INJECTION_TEMPLATE
+        .replace("{founder}", verifiedFacts.founder || "")
+        .replace("{founder_he}", verifiedFacts.founder_he || "")
+        .replace("{founded_year}", verifiedFacts.founded_year ? String(verifiedFacts.founded_year) : "")
+        .replace("{country}", verifiedFacts.country || "")
+        .replace("{country_he}", verifiedFacts.country_he || "")
+        .replace("{city}", verifiedFacts.city || "")
+        .replace("{city_he}", verifiedFacts.city_he || "")
+        .replace("{design_signature}", verifiedFacts.design_signature || "")
+        .replace("{design_signature_he}", verifiedFacts.design_signature_he || "");
+    } else {
+      factsBlock = NO_FACTS_GENERAL_MODE_SUFFIX;
+    }
+
     const userContent = prompt && current_content
       ? `${STYLE_GUIDE}
 
@@ -202,14 +232,16 @@ Modify the content according to the user's instruction. Return ONLY a JSON objec
   "seo_title": "...",
   "seo_description": "..."
 }
-Keep HTML <p> tags in descriptions. Follow the style guide.`
+Keep HTML <p> tags in descriptions. Follow the style guide.
+${factsBlock}`
       : `${STYLE_GUIDE}
 
 ---
 
 Generate brand page content for: ${brand_name}
 
-Follow the style guide EXACTLY. Use REAL facts about ${brand_name} — founding year, country, design philosophy, signature elements. The description2 must be about why buy at Prizma, adapted with the brand name.`;
+Follow the style guide EXACTLY. The description2 must be about why buy at Prizma, adapted with the brand name.
+${factsBlock}`;
 
     // Attempt 1
     let parsed: Record<string, unknown>;
@@ -219,7 +251,7 @@ Follow the style guide EXACTLY. Use REAL facts about ${brand_name} — founding 
       return jsonRes({ error: "Failed to parse AI response (attempt 1)", success: false }, 500);
     }
 
-    let validation = validateGenerateOutput(parsed);
+    let validation = validateGenerateOutput(parsed, verifiedFacts);
     let logStatus = "generated";
 
     if (!validation.valid) {
@@ -232,7 +264,7 @@ Follow the style guide EXACTLY. Use REAL facts about ${brand_name} — founding 
         return jsonRes({ error: "Failed to parse AI response (attempt 2)", success: false }, 500);
       }
 
-      const v2 = validateGenerateOutput(parsed);
+      const v2 = validateGenerateOutput(parsed, verifiedFacts);
       if (!v2.valid) {
         console.error(`[generate] ${brand_name}: DOUBLE FAILURE. A1: ${validation.reasons.join("; ")}. A2: ${v2.reasons.join("; ")}`);
         return jsonRes({
@@ -249,16 +281,7 @@ Follow the style guide EXACTLY. Use REAL facts about ${brand_name} — founding 
     }
 
     // Log the generation to brand_content_log
-    const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-
-    const { data: brand } = await supabaseAdmin
-      .from("brands")
-      .select("id")
-      .ilike("name", `%${brand_name}%`)
-      .eq("tenant_id", tenant_id)
-      .single();
-
-    if (brand) {
+    if (brandRow) {
       const fieldMap: Record<string, string> = {
         tagline: "brand_description_short",
         description1: "brand_description_part1",
@@ -270,15 +293,30 @@ Follow the style guide EXACTLY. Use REAL facts about ${brand_name} — founding 
       for (const [field, dbField] of Object.entries(fieldMap)) {
         await supabaseAdmin.from("brand_content_log").insert({
           tenant_id,
-          brand_id: brand.id,
+          brand_id: brandRow.id,
           field_name: dbField,
           ai_generated: parsed[field],
           status: logStatus,
         });
       }
+
+      // Auto-flip: 'none' → 'pending_review' after successful general-mode generation
+      if (brandRow.facts_status === "none") {
+        await supabaseAdmin
+          .from("brands")
+          .update({ facts_status: "pending_review" })
+          .eq("id", brandRow.id)
+          .eq("tenant_id", tenant_id);
+        console.log(`[generate] ${brand_name}: auto-flipped facts_status none → pending_review`);
+      }
     }
 
-    return jsonRes({ success: true, ...parsed });
+    return jsonRes({
+      success: true,
+      ...parsed,
+      facts_status: brandRow?.facts_status ?? "unknown",
+      used_verified_facts: !!verifiedFacts,
+    });
   } catch (error) {
     return jsonRes({ error: (error as Error).message, success: false }, 500);
   }
