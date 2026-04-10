@@ -731,6 +731,34 @@ function buildTranslationPrompt(targetLang, langLabel, langCode, glossary, examp
   md.push('---');
   md.push('');
 
+  // ABSOLUTE OUTPUT RULES — top of prompt
+  md.push('## 🛑 ABSOLUTE OUTPUT RULES — READ TWICE 🛑');
+  md.push('');
+  md.push('Return ONLY a markdown table. Each cell contains ONLY the raw translated text. Nothing else.');
+  md.push('');
+  md.push('YOU MUST NOT include any of the following in any cell:');
+  md.push('❌ Headings (#, ##, ###)');
+  md.push('❌ Bold or italic markdown (**, __, *, _)');
+  md.push('❌ Horizontal rules (---)');
+  md.push('❌ "Alternative options" / "Alternatives" / "Other options"');
+  md.push('❌ "Character count" / "(50 characters)" / "(45 chars)"');
+  md.push('❌ "Recommendation" / "Recommended" / "Why this works"');
+  md.push('❌ "Hebrew:" / "English:" / "Russian:" labels');
+  md.push('❌ "Note:" / "Notes on translation" / "Translation:"');
+  md.push('❌ Explanations of your choices');
+  md.push('❌ Multiple options separated by "or"');
+  md.push('');
+  md.push('Each cell = one translation. That is the entire output of that cell.');
+  md.push('');
+  md.push('EXAMPLE OF BAD OUTPUT (DO NOT DO THIS):');
+  md.push('| 1 | Fendi | fendi | seo_title | יפקשמ ידנפ | # SEO Title (50-60 chars)\\n\\n**Fendi FE40004U Sunglasses - Gold Green**\\n\\n*Character count: 45*\\n\\n## Alternative options:\\n- Fendi FE40004U Black\\n\\n**Recommendation:** Use the first |');
+  md.push('');
+  md.push('EXAMPLE OF GOOD OUTPUT (DO THIS):');
+  md.push('| 1 | Fendi | fendi | seo_title | יפקשמ ידנפ | Fendi FE40004U Sunglasses - Gold Green |');
+  md.push('');
+  md.push('If you violate these rules, your output will be REJECTED by the import validator and the translation work will be wasted. Be strict.');
+  md.push('');
+
   // Role
   md.push('## Your Role');
   md.push('');
@@ -1015,6 +1043,56 @@ function findColumn(row, ...candidates) {
 }
 
 /**
+ * Detect markdown wrapper contamination in a translated value.
+ * Returns null if clean, or a string reason if contaminated.
+ */
+function _detectWrapperContamination(value, fieldName) {
+  if (!value || typeof value !== 'string') return null;
+
+  const patterns = [
+    { test: (s) => /^\s*#/.test(s), reason: 'starts with # heading' },
+    { test: (s) => s.includes('## '), reason: "contains '## ' subheading" },
+    { test: (s) => s.includes('**'), reason: "contains '**' bold markdown" },
+    { test: (s) => s.includes('---'), reason: "contains '---' horizontal rule" },
+    { test: (s) => /alternative/i.test(s), reason: "contains 'Alternative'" },
+    { test: (s) => /character count/i.test(s), reason: "contains 'Character count'" },
+    { test: (s) => s.includes('(40-55 characters)'), reason: "contains '(40-55 characters)'" },
+    { test: (s) => s.includes('(50-60 characters)'), reason: "contains '(50-60 characters)'" },
+    { test: (s) => s.includes('(130-160 characters)'), reason: "contains '(130-160 characters)'" },
+    { test: (s) => s.includes('(150-160 characters)'), reason: "contains '(150-160 characters)'" },
+    { test: (s) => /recommendation/i.test(s), reason: "contains 'Recommendation'" },
+    { test: (s) => /why this works/i.test(s), reason: "contains 'Why this works'" },
+    { test: (s) => s.includes('Hebrew:'), reason: "contains 'Hebrew:'" },
+    { test: (s) => s.includes('Russian:'), reason: "contains 'Russian:'" },
+    { test: (s) => s.includes('English:'), reason: "contains 'English:'" },
+    { test: (s) => /notes on translation/i.test(s), reason: "contains 'Notes on translation'" },
+    { test: (s) => /^Note:/m.test(s), reason: "contains 'Note:' at start of line" },
+    { test: (s) => /^Translation:/m.test(s), reason: "contains 'Translation:' at start" },
+    { test: (s) => /^Output:/m.test(s), reason: "contains 'Output:' at start" },
+    { test: (s) => /translated text:/i.test(s), reason: "contains 'Translated text:'" },
+  ];
+
+  for (const p of patterns) {
+    if (p.test(value)) return p.reason;
+  }
+
+  const lengthBounds = {
+    seo_title: { min: 20, max: 80 },
+    seo_description: { min: 80, max: 200 },
+    description: { min: 100, max: 500 },
+    alt_text: { min: 30, max: 200 },
+  };
+
+  const bounds = lengthBounds[fieldName];
+  if (bounds) {
+    if (value.length < bounds.min) return `too short (${value.length} < ${bounds.min} for ${fieldName})`;
+    if (value.length > bounds.max) return `too long (${value.length} > ${bounds.max} for ${fieldName})`;
+  }
+
+  return null;
+}
+
+/**
  * Validate pasted text: parse table, match barcodes, check fields.
  */
 function validateImport() {
@@ -1092,6 +1170,20 @@ function validateImport() {
       if (desc && !cyrillicRegex.test(desc)) errors.push('Description לא מכיל קירילית — אולי בחרת שפה לא נכונה?');
       if (seoTitle && !cyrillicRegex.test(seoTitle)) errors.push('SEO Title לא מכיל קירילית');
       if (seoDesc && !cyrillicRegex.test(seoDesc)) errors.push('SEO Desc לא מכיל קירילית');
+    }
+
+    // Wrapper contamination detection
+    const wrapperChecks = [
+      { value: desc, field: 'description', label: 'Description' },
+      { value: seoTitle, field: 'seo_title', label: 'SEO Title' },
+      { value: seoDesc, field: 'seo_description', label: 'SEO Desc' },
+      { value: altText, field: 'alt_text', label: 'Alt Text' },
+    ];
+    for (const chk of wrapperChecks) {
+      if (chk.value) {
+        const wrapperReason = _detectWrapperContamination(chk.value, chk.field);
+        if (wrapperReason) errors.push(`${chk.label}: ${wrapperReason}`);
+      }
     }
 
     if (seoTitle && seoTitle.length > 70) errors.push(`SEO Title ארוך מדי (${seoTitle.length} > 70)`);

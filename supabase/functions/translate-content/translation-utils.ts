@@ -248,3 +248,58 @@ export function parseClaudeJson(response: string): Record<string, string> {
     throw new Error(`Failed to parse Claude JSON: ${jsonStr.slice(0, 200)}`);
   }
 }
+
+// ─── Translation validation (wrapper contamination prevention) ──
+
+const FORBIDDEN_PATTERNS: { test: (s: string) => boolean; reason: string }[] = [
+  { test: (s) => /^\s*#/.test(s), reason: 'starts with # heading' },
+  { test: (s) => s.includes('## '), reason: "contains '## ' subheading" },
+  { test: (s) => s.includes('**'), reason: "contains '**' bold markdown" },
+  { test: (s) => s.includes('---'), reason: "contains '---' horizontal rule" },
+  { test: (s) => /alternative/i.test(s), reason: "contains 'Alternative'" },
+  { test: (s) => /character count/i.test(s), reason: "contains 'Character count'" },
+  { test: (s) => s.includes('(40-55 characters)'), reason: "contains '(40-55 characters)'" },
+  { test: (s) => s.includes('(50-60 characters)'), reason: "contains '(50-60 characters)'" },
+  { test: (s) => s.includes('(130-160 characters)'), reason: "contains '(130-160 characters)'" },
+  { test: (s) => s.includes('(150-160 characters)'), reason: "contains '(150-160 characters)'" },
+  { test: (s) => /recommendation/i.test(s), reason: "contains 'Recommendation'" },
+  { test: (s) => /why this works/i.test(s), reason: "contains 'Why this works'" },
+  { test: (s) => s.includes('Hebrew:'), reason: "contains 'Hebrew:'" },
+  { test: (s) => s.includes('Russian:'), reason: "contains 'Russian:'" },
+  { test: (s) => s.includes('English:'), reason: "contains 'English:'" },
+  { test: (s) => /notes on translation/i.test(s), reason: "contains 'Notes on translation'" },
+  { test: (s) => /^Note:/m.test(s), reason: "contains 'Note:' at start of line" },
+  { test: (s) => /^Translation:/m.test(s), reason: "contains 'Translation:' at start" },
+  { test: (s) => /^Output:/m.test(s), reason: "contains 'Output:' at start" },
+  { test: (s) => /translated text:/i.test(s), reason: "contains 'Translated text:'" },
+];
+
+const LENGTH_BOUNDS: Record<string, { min: number; max: number }> = {
+  seo_title: { min: 20, max: 80 },
+  seo_description: { min: 80, max: 200 },
+  description: { min: 100, max: 500 },
+  alt_text: { min: 30, max: 200 },
+};
+
+export function validateTranslation(
+  content: string,
+  contentType: string
+): { valid: boolean; reason?: string } {
+  for (const pattern of FORBIDDEN_PATTERNS) {
+    if (pattern.test(content)) {
+      return { valid: false, reason: pattern.reason };
+    }
+  }
+
+  const bounds = LENGTH_BOUNDS[contentType];
+  if (bounds) {
+    if (content.length < bounds.min) {
+      return { valid: false, reason: `too short (${content.length} < ${bounds.min} for ${contentType})` };
+    }
+    if (content.length > bounds.max) {
+      return { valid: false, reason: `too long (${content.length} > ${bounds.max} for ${contentType})` };
+    }
+  }
+
+  return { valid: true };
+}

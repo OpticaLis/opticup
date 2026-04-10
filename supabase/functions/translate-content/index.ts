@@ -19,6 +19,7 @@ import {
   callClaude,
   setNestedValue,
   parseClaudeJson,
+  validateTranslation,
 } from './translation-utils.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -344,7 +345,38 @@ ${JSON.stringify(cleanFields, null, 2)}`;
 
   console.log(`[translate] translate_product: ${entries.length} fields, ${sourceText.length} chars source`);
   const response = await callClaude(systemPrompt, userContent, 2048);
-  const translations = parseClaudeJson(response);
+  let translations = parseClaudeJson(response);
+
+  // Validate translations for wrapper contamination
+  const failures: { field: string; reason: string }[] = [];
+  for (const [key, value] of Object.entries(translations)) {
+    const result = validateTranslation(value, key);
+    if (!result.valid) {
+      failures.push({ field: key, reason: result.reason! });
+    }
+  }
+
+  if (failures.length > 0) {
+    console.warn(`[translate] Validation failed on ${failures.length} fields: ${failures.map(f => `${f.field}: ${f.reason}`).join('; ')}`);
+    const strictPrompt = userContent + `\n\nSTRICT MODE: Return ONLY the raw translated text per field as JSON values. No headings (#), no bold (**), no horizontal rules (---), no "Alternative options", no "Character count", no "Recommendation", no "Why this works", no meta-commentary. Just the translation. Each field value must be plain text only.`;
+    const retryResponse = await callClaude(systemPrompt, strictPrompt, 2048);
+    translations = parseClaudeJson(retryResponse);
+
+    const retryFailures: { field: string; reason: string }[] = [];
+    for (const [key, value] of Object.entries(translations)) {
+      const result = validateTranslation(value, key);
+      if (!result.valid) {
+        retryFailures.push({ field: key, reason: result.reason! });
+      }
+    }
+
+    if (retryFailures.length > 0) {
+      const details = retryFailures.map(f => `${f.field}: ${f.reason}`).join('; ');
+      throw new Error(`Translation validation failed after retry for fields: ${details}`);
+    }
+    console.log(`[translate] Retry succeeded — all fields now valid`);
+  }
+
   return { success: true, fields: translations };
 }
 
