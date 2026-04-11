@@ -142,3 +142,66 @@ sessionStorage doesn't exist in the tenants table, force logout.
 **Prevention:**
 
 **Commits:**
+
+---
+
+## Phase 0 Rails — Process & Onboarding
+
+### First Action Protocol catches wrong-repo session attachment
+
+**Symptom:** A new Claude Code session is opened attached to the wrong repository (e.g., to `opticalis/opticup-storefront` while the task is in `opticalis/opticup`, or vice versa). If work begins before the mismatch is noticed, commits land in the wrong repo, file edits target the wrong tree, and recovery requires reverting and reapplying on the correct side.
+
+**Root cause:** Both repos live under the same user directory on each machine (e.g., `C:\Users\User\opticup` and `C:\Users\User\opticup-storefront`). A terminal opened in the wrong folder — or an IDE that remembered a previous working directory — gives Claude Code no implicit signal about which repo it is in. The repos have overlapping filenames (`CLAUDE.md`, `docs/`, `modules/`), so file-level inspection alone cannot disambiguate.
+
+**Fix:** `CLAUDE.md §1 — First Action Protocol` mandates that every new session starts with `git remote -v` to confirm the origin matches the task. This is the first step, before any file is read or modified. If the remote does not match, the session STOPS and reports to the user.
+
+**Prevention (and real-world validation):** On **2026-04-11**, during the launch of **Module 3.1 Phase 1A Foundation Audit**, a secondary chat was opened attached to `opticup-storefront` when the task required `opticup` (the ERP repo). The `git remote -v` check in step 1 of the First Action Protocol caught the mismatch **before any file was touched**. The session was terminated cleanly and reopened in the correct repo. See `modules/Module 3.1 - Project Reconstruction/docs/audit-reports/PHASE_1A_FOUNDATION_AUDIT_REPORT.md §2` ("CLAUDE.md — ALIVE — project constitution...First Action Protocol is the catch that saved the wrong-repo discovery session today") and `modules/Module 3.1 - Project Reconstruction/SESSION_CONTEXT.md` ("Lessons banked from Phase 1A — First Action Protocol works as designed — caught a wrong-repo session attachment before any file was touched"). This is the **first recorded real-world validation** of the protocol. Worth remembering: the protocol's value is proven by a single near-miss; do not shorten it.
+
+**Commits:** Protocol rails shipped in Phase 0 (April 2026); first validated incident logged 2026-04-11 in Module 3.1 Phase 1A.
+
+---
+
+### Secondary Chat activation antipattern ("what role am I playing?")
+
+**Symptom:** A new Secondary Chat is opened with its assigned template and SPEC, but instead of immediately executing the SPEC it asks the user meta-questions ("Am I a Secondary Chat? Should I be running the SPEC or reviewing it? What is my scope here?"). The chat stalls in role-clarification instead of producing its first Claude Code prompt. In severe cases the chat refuses to proceed entirely.
+
+**Root cause:** When `MODULE_3.1_SECONDARY_CHAT_TEMPLATE.md` is **attached as a file** (instead of pasted as the first message body), the chat treats it as reference material rather than as an activation prompt. The role-self-identification language at the top of the template is easy to miss when the template is opened as an attachment, leading to the chat reading the SPEC first and then second-guessing whether executing it is actually its job.
+
+**Fix:** Three steps, applied during the Module 3.1 Phase 1 launch sequence:
+1. **Template-as-text, SPEC-as-attachment** — paste the Secondary Chat template as the **first message body** in the new chat, then attach the phase SPEC as a file. The template body forces the chat to read "I am a Secondary Chat for Module X Phase Y" before seeing any other material.
+2. **Template hardened with a 🚨 activation block** at the top, stating explicitly "YOU ARE A SECONDARY CHAT. YOU DO NOT ASK WHAT YOUR ROLE IS. YOU READ THE SPEC AND PRODUCE A PROMPT." The emoji + all-caps + position-at-top pattern makes the block impossible to skim past.
+3. **Forbidden behaviors list** added to the template enumerating "asking what role I am playing" as explicitly off-limits.
+
+**Prevention:** The hardened template is the current `modules/Module 3.1 - Project Reconstruction/MODULE_3.1_SECONDARY_CHAT_TEMPLATE.md`. This fix was banked as a lesson after **three consecutive chats (Phase 1A, 1B, and a Phase 2 first attempt) all triggered the antipattern** — three failures in a row indicated a template defect, not chat caution. The new version was tested on the Phase 2 retry and succeeded. This pattern (template-as-text, SPEC-as-attachment, hardened 🚨 activation block) should be **canonized in the forthcoming `docs/Templates/UNIVERSAL_SECONDARY_CHAT_PROMPT.md`** (a Module 3.1 deliverable). Source: `modules/Module 3.1 - Project Reconstruction/SESSION_CONTEXT.md` — "Lessons banked from Phase 1A #2 — Secondary chat activation" and Decision Log entry for 2026-04-11 ("Secondary chat template fully rewritten (310 → 171 lines). New design: activation-first, sequential file loading, exact-format first response, explicit forbidden behaviors list. Three previous chats (1A, 1B, 2) all triggered the 'what role am I playing' antipattern with the old template. Three failures in a row = template defect, not chat caution. New version tested on Phase 2 retry — succeeded.").
+
+**Commits:** Template hardening landed 2026-04-11 during Module 3.1 Phase 1→2 transition.
+
+---
+
+### Stop-and-ask before assuming on parallel work (escalation protocol)
+
+**Symptom:** A Module Strategic Chat or Secondary Chat discovers, mid-audit, that another module or phase has been running **parallel work on the same files** without the current chat's knowledge. The discovery contradicts the current chat's mental model of the project. The obvious temptation is to "proceed anyway" or "merge both mental models on the fly," which always produces a plan built on a wrong premise.
+
+**Root cause:** In a multi-layer chat hierarchy (Main Strategic → Module Strategic → Secondary → Claude Code), state updates are manual. A Module Strategic chat can be started before news of a parallel remediation effort reaches it. Without an explicit "stop and ask" rule, the natural bias is to keep executing the plan already written.
+
+**Fix:** **Stop immediately, escalate to Daniel, and wait for a decision from Main Strategic Chat.** Do not attempt to reconcile the two worlds yourself. Do not proceed on any assumption about which one is authoritative. The cost of asking is 10–15 minutes; the cost of assuming is a full phase's work built on the wrong premise.
+
+**Prevention (real-world incident):** During **Module 3.1 Phase 1C (Module 3 Dual-Repo Audit)**, the secondary chat discovered that Module 3 Strategic Chat had been running **its own remediation effort in parallel** (a "Phase A" with 10 commits `50523b3 → 97846e8`) that had already rewritten 8 critical Module 3 doc files. The Phase 1C chat **stopped and escalated**, Daniel brought it to Main Strategic, and the R15 decision was made in ~15 minutes: "Module 3 Phase A was paused intentionally to wait for Module 3.1 — Phase A's 8 files are GROUND TRUTH (sealed, PASS sanity 18/18), Module 3.1 supplements but never replaces." If the chat had assumed "I was told Module 3.1 owns the Module 3 docs, so I should rewrite what I find," it would have overwritten sealed work. The stop-and-ask instinct saved the phase.
+
+**Prevention rule (project-wide):** When an audit or spec-writing chat finds something that **contradicts the strategic chat's mental model of the project**, it **escalates before proceeding** — no exceptions. This rule will be canonized in `docs/Templates/UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md` (Module 3.1 deliverable) as a permanent constraint. Related: "Module 3.1 does not duplicate work that has already been done in Module 3" (locked principle from Main, 2026-04-11).
+
+**Commits:** Incident logged 2026-04-11 in `modules/Module 3.1 - Project Reconstruction/SESSION_CONTEXT.md` Decision Log ("R15 RESOLVED by Main Strategic Chat" + "Broader principle locked by Main").
+
+---
+
+### One question at a time — batched question antipattern
+
+**Symptom:** A strategic chat needs multiple decisions from Daniel and presents them as a numbered list or table ("please answer (1), (2), and (3)"). Daniel's response is slower, less precise, and often resolves only one of the questions — leaving the chat blocked on the others. Repeated iterations of the same ask burn time on both sides.
+
+**Root cause:** Multi-question prompts create cognitive load for the decision-maker. When Daniel is reading a table of 3 decisions, he has to hold all three in working memory while weighing each. The natural response is to answer the one that's clearest and punt on the others — which leaves the chat in an ambiguous waiting state.
+
+**Fix:** **One question, one response, repeat.** When a strategic chat needs information from Daniel, it asks **exactly one question**, waits for the answer, processes it, then asks the next question. No tables of multiple questions. No `(1)(2)(3)` lists. If the chat has 5 decisions to make, that's 5 round trips, and that's fine — each round trip is fast because each question is focused.
+
+**Prevention (real-world incident):** Noted correctly by Daniel **on the third reminder** during Module 3.1 Phase 1→2 transition. The pattern of batching questions into tables was producing slow, incomplete answers. The new rule (ONE question at a time) was locked 2026-04-11 and will be canonized in `docs/Templates/UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md`. Source: `modules/Module 3.1 - Project Reconstruction/SESSION_CONTEXT.md` "Lessons banked from Phase 1C closure #5 — Strategic chat must ask one question at a time."
+
+**Commits:** Rule locked 2026-04-11, to be canonized in Module 3.1 Phase 3 deliverables.
