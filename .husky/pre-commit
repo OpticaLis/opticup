@@ -1,4 +1,5 @@
-node scripts/verify.mjs --staged
-status=$?
-if [ $status -ne 0 ] && [ $status -ne 2 ]; then exit $status; fi
+if ! node scripts/verify.mjs --staged; then
+  status=$?
+  if [ $status -ne 2 ]; then exit $status; fi
+fi
 exit 0
