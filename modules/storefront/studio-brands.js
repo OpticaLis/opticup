@@ -381,14 +381,9 @@ function openStudioBrandEditor(brandId) {
         🤖 יצירת תוכן AI
       </button>
 
-      <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-        <button type="button" class="btn btn-sm" id="sbe-translate-en-btn" onclick="translateStudioBrandContent('${escapeAttr(brand.brand_name)}', '${brandId}', 'en')" style="background:linear-gradient(135deg,#c9a555,#e8da94);border:none;color:#1a1a1a;font-weight:600;">
-          🌐 תרגם לאנגלית
-        </button>
-        <button type="button" class="btn btn-sm" id="sbe-translate-ru-btn" onclick="translateStudioBrandContent('${escapeAttr(brand.brand_name)}', '${brandId}', 'ru')" style="background:linear-gradient(135deg,#c9a555,#e8da94);border:none;color:#1a1a1a;font-weight:600;">
-          🌐 תרגם לרוסית
-        </button>
-      </div>
+      <!-- HF1: AI translate buttons (translateStudioBrandContent) removed as part of
+           the translate-content Edge Function retirement. Brand translations are
+           handled via the manual export/import flow in the Translations tab. -->
 
       <label class="brand-editor-label" style="margin-top:12px;">Tagline</label>
       <input type="text" id="sbe-tagline" class="brand-editor-input" value="${escapeAttr(brand.brand_description_short || '')}" />
@@ -808,134 +803,11 @@ async function generateStudioBrandContent(brandName, brandId) {
   }
 }
 
-// ═══════════════════════════════════════════════════
-// AI BRAND TRANSLATION (EN/RU) — saves to ai_content + translation_memory
-// ═══════════════════════════════════════════════════
-
-async function translateStudioBrandContent(brandName, brandId, targetLang) {
-  const btnId = `sbe-translate-${targetLang}-btn`;
-  const btn = document.getElementById(btnId);
-  const langLabel = targetLang === 'en' ? 'אנגלית' : 'רוסית';
-  if (btn) { btn.disabled = true; btn.textContent = `🤖 מתרגם ל${langLabel}...`; }
-
-  try {
-    // Read current Hebrew content from the editor
-    const source = {
-      tagline: document.getElementById('sbe-tagline')?.value || '',
-      description1: getQuillHtml(_quillDesc1),
-      description2: getQuillHtml(_quillDesc2),
-      seo_title: document.getElementById('sbe-seo-title')?.value || '',
-      seo_description: document.getElementById('sbe-seo-desc')?.value || '',
-    };
-
-    if (!source.description1 && !source.description2 && !source.tagline) {
-      Toast.warning('יש ליצור תוכן בעברית לפני התרגום');
-      return;
-    }
-
-    const payload = {
-      mode: 'translate',
-      brand_name: brandName,
-      target_lang: targetLang,
-      source_tagline: source.tagline,
-      source_description1: source.description1,
-      source_description2: source.description2,
-      source_seo_title: source.seo_title,
-      source_seo_description: source.seo_description,
-    };
-
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-brand-content`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON}` },
-      body: JSON.stringify(payload),
-    });
-    let data;
-    try { data = await res.json(); } catch (_e) {
-      Toast.error('שירות התרגום אינו זמין כרגע');
-      return;
-    }
-    if (!data.success) {
-      if (/api[_ ]?key|anthropic|not configured/i.test(String(data.error || ''))) {
-        Toast.error('שירות התרגום אינו זמין כרגע');
-      } else {
-        Toast.error('שגיאת תרגום: ' + (data.error || 'unknown'));
-      }
-      return;
-    }
-
-    // Save translations to content_translations — this is the table the storefront
-    // (src/pages/{en,ru}/brands/[slug].astro) and the translations dashboard read from.
-    // Field names must match what storefront expects: brand_description_short,
-    // brand_description, seo_title, seo_description.
-    const tid = getTenantId();
-    const combinedDescription = [data.description1, data.description2].filter(Boolean).join('\n');
-    const ctRows = [
-      { field_name: 'brand_description_short', value: data.tagline },
-      { field_name: 'brand_description',        value: combinedDescription },
-      { field_name: 'seo_title',                value: data.seo_title },
-      { field_name: 'seo_description',          value: data.seo_description },
-    ]
-      .filter(r => r.value)
-      .map(r => ({
-        tenant_id: tid,
-        entity_type: 'brand',
-        entity_id: brandId,
-        field_name: r.field_name,
-        lang: targetLang,
-        value: r.value,
-        status: 'auto',
-        translated_by: 'ai',
-        confidence: 0.7,
-        updated_at: new Date().toISOString(),
-      }));
-
-    const { error: upErr } = await sb.from('content_translations').upsert(ctRows, {
-      onConflict: 'tenant_id,entity_type,entity_id,field_name,lang',
-    });
-    if (upErr) { console.error('content_translations upsert:', upErr); Toast.error('שגיאה בשמירה: ' + upErr.message); return; }
-
-    // Save to translation_memory (auto, low confidence — human edits raise it)
-    const memPairs = [
-      { src: source.tagline,         tgt: data.tagline,         ctx: 'brand.tagline' },
-      { src: source.description1,    tgt: data.description1,    ctx: 'brand.description1' },
-      { src: source.description2,    tgt: data.description2,    ctx: 'brand.description2' },
-      { src: source.seo_title,       tgt: data.seo_title,       ctx: 'brand.seo_title' },
-      { src: source.seo_description, tgt: data.seo_description, ctx: 'brand.seo_description' },
-    ];
-    const memRows = memPairs
-      .filter(p => p.src && p.tgt)
-      .map(p => ({
-        tenant_id: tid,
-        source_lang: 'he',
-        target_lang: targetLang,
-        source_text: p.src,
-        translated_text: p.tgt,
-        context: p.ctx,
-        scope: 'tenant',
-        confidence: 0.7,
-        approved_by: 'ai',
-        times_used: 0,
-      }));
-    if (memRows.length) {
-      const { error: memErr } = await sb.from('translation_memory').upsert(memRows, {
-        onConflict: 'tenant_id,source_lang,target_lang,source_hash',
-        ignoreDuplicates: false,
-      });
-      if (memErr) console.error('translation_memory upsert:', memErr);
-    }
-
-    Toast.success(`תרגום ל${langLabel} נשמר. עריכות אנושיות יעלו את ה-confidence ל-1.0`);
-  } catch (err) {
-    console.error('translate error:', err);
-    if (/failed to fetch|networkerror|api[_ ]?key|anthropic|not configured/i.test(String(err.message || ''))) {
-      Toast.error('שירות התרגום אינו זמין כרגע');
-    } else {
-      Toast.error('שגיאה בתרגום: ' + err.message);
-    }
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = `🌐 תרגם ל${langLabel === 'אנגלית' ? 'אנגלית' : 'רוסית'}`; }
-  }
-}
+// HF1 (2026-04-10): translateStudioBrandContent removed as part of the
+// translate-content Edge Function retirement (translation pivot). The function
+// called `generate-brand-content` (a separate Edge Function — flagged as a
+// potential follow-up cleanup; not in HF1 scope). Manual export/import in the
+// Translations tab is the replacement workflow.
 
 // Learning loop: when a saved brand translation is edited and re-saved,
 // diff old vs new and write to translation_corrections + raise translation_memory confidence to 1.0.
@@ -982,5 +854,4 @@ async function saveBrandTranslationEdits(brandId, targetLang, oldFields, newFiel
   }
 }
 
-window.translateStudioBrandContent = translateStudioBrandContent;
 window.saveBrandTranslationEdits = saveBrandTranslationEdits;

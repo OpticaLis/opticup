@@ -208,7 +208,7 @@
           <input type="text" class="search-input" id="trans-filter-search" placeholder="חיפוש לפי דגם או ברקוד..." oninput="filterTranslations()">
         </div>
         <div class="content-actions">
-          <button class="btn-ai" id="trans-translate-btn" onclick="bulkTranslateMissing()">🌐 תרגם הכל (חסרים)</button>
+          <!-- HF1: AI bulk-translate button removed. Manual flow only. -->
           <button class="btn" onclick="exportForTranslation('en')">📤 ייצא EN</button>
           <button class="btn" onclick="exportForTranslation('ru')">📤 ייצא RU</button>
           <button class="btn" onclick="openImportModal()">📥 ייבא תרגומים</button>
@@ -286,7 +286,7 @@
       </select>
     </div>
     <div class="edit-actions" style="margin-top:16px">
-      <button class="btn-ai" onclick="retranslateContent()">🤖 תרגם מחדש</button>
+      <!-- HF1: "תרגם מחדש" (retranslateContent) removed; manual flow only. -->
       <button class="btn-p" onclick="saveTranslationEdit()">💾 שמור</button>
       <button style="background:#059669;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer" onclick="approveTranslation()">✓ אשר</button>
       <button class="btn-g" onclick="closeTransEditModal()">ביטול</button>

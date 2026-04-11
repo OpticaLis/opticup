@@ -3,7 +3,8 @@
 // Max 350 lines — glossary CRUD in studio-translation-glossary.js
 
 const StudioTranslations = (function () {
-  const TRANSLATE_FN = SUPABASE_URL + '/functions/v1/translate-content';
+  // HF1: AI translation API removed (translate-content Edge Function retired).
+  // Users use the "תרגום ידני" button + export/import flow instead.
   const LANGS = { en: { name: 'English', flag: '🇺🇸' }, ru: { name: 'Русский', flag: '🇷🇺' } };
   const STATUS_BG = { source:'#EAF3DE', approved:'#EAF3DE', translated:'#E1F5EE', draft:'#F1EFE8', needs_update:'#FAEEDA', missing:'#FCEBEB', published:'#EAF3DE' };
   const STATUS_FG = { source:'#3B6D11', approved:'#3B6D11', translated:'#085041', draft:'#5F5E5A', needs_update:'#854F0B', missing:'#A32D2D', published:'#3B6D11' };
@@ -95,9 +96,8 @@ const StudioTranslations = (function () {
     const pages = dashData.filter(r => camp ? r.page_type==='campaign' : r.page_type!=='campaign');
     if (!pages.length) return '<div class="studio-empty">אין עמוד��ם</div>';
     const langs = supported();
-    let bulk = '<div style="display:flex;gap:8px;margin-bottom:12px">';
-    for (const l of langs) bulk += goldBtn(`תרגם הכל ל-${LANGS[l]?.name||l}`, `StudioTranslations.bulkTranslate('${l}')`);
-    bulk += '<span id="trans-bulk-prog" style="font-size:.85rem;color:#6b7280;align-self:center"></span></div>';
+    // HF1: AI bulk-translate toolbar removed (manual translation only).
+    const bulk = '';
 
     const STOREFRONT_BASE = (typeof window !== 'undefined' && /localhost|127\.0\.0\.1/.test(window.location.hostname))
       ? 'http://localhost:4321'
@@ -120,7 +120,6 @@ const StudioTranslations = (function () {
           ${badge(st)}${stale?'<span style="font-size:.7rem;color:#854F0B;margin-right:4px"> ⚠ שונה</span>':''}
           <div style="margin-top:4px"><div style="height:4px;border-radius:2px;background:#e5e5e5;overflow:hidden"><div style="height:100%;width:${seo}%;background:${seo>70?'#3B6D11':seo>50?'#854F0B':'#A32D2D'}"></div></div><span style="font-size:.7rem;color:#6b7280">SEO ${seo}</span></div>
           <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">
-            ${goldBtn('תרגם',`StudioTranslations.translatePage('${row.he_page_id}','${l}')`)}
             <button class="btn btn-sm" onclick="StudioTranslations.manualTranslate('${row.he_page_id}','${l}')" style="font-size:.75rem;padding:2px 8px;border:1px solid #c9a555;color:#c9a555;background:transparent">תרגום ידני</button>
             ${row[l+'_page_id']?`<button class="btn btn-sm" onclick="StudioTranslationEditor.open('${row.he_page_id}','${l}')" style="font-size:.75rem;padding:2px 8px">ערוך</button><a href="${buildUrl(row.slug,l)}" target="_blank" rel="noopener" title="צפה באתר" style="font-size:.75rem;padding:2px 6px;border:1px solid #c9a555;color:#c9a555;background:transparent;border-radius:6px;text-decoration:none">👁</a><button class="btn btn-sm" title="מחק תרגום" onclick="StudioTranslations.deletePageTranslation('${row[l+'_page_id']}','${l}',${JSON.stringify(row.title||row.slug||'').replace(/"/g,'&quot;')})" style="font-size:.75rem;padding:2px 6px;color:#A32D2D;border:1px solid #fca5a5;background:transparent">🗑</button>`:''}
           </div></div>`;
@@ -147,7 +146,7 @@ const StudioTranslations = (function () {
       }
       const heHas = brandHasHebrew(b);
       const actions = heHas
-        ? `${goldBtn('תרגם',`StudioTranslations.translateBrand('${b.id}')`)} <button class="btn btn-sm" onclick="StudioTranslations.openBrandEditor('${b.id}')" style="font-size:.75rem;padding:2px 8px;border:1px solid #c9a555;color:#c9a555;background:transparent">ערוך</button>`
+        ? `<button class="btn btn-sm" onclick="StudioTranslations.openBrandEditor('${b.id}')" style="font-size:.75rem;padding:2px 8px;border:1px solid #c9a555;color:#c9a555;background:transparent">ערוך</button>`
         : `<span style="font-size:.75rem;color:#9ca3af">אין תוכן בעברית</span>`;
       return `<tr><td style="font-weight:600;padding:8px">${escapeHtml(b.name)}</td><td>${badge(heHas?'approved':'missing')}</td>${cols}<td>${actions}</td></tr>`;
     }).join('');
@@ -191,76 +190,9 @@ const StudioTranslations = (function () {
     </div>`;
   }
 
-  // ── API ──
-  function showTranslating(on) {
-    let ov = document.getElementById('trans-loading');
-    if (on) {
-      if (ov) return;
-      ov = document.createElement('div'); ov.id = 'trans-loading';
-      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999';
-      ov.innerHTML = `<div style="background:#fff;border-radius:12px;padding:32px 48px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2)">
-        <div style="width:40px;height:40px;border:4px solid #e5e5e5;border-top-color:#c9a555;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div>
-        <div style="font-size:1.1rem;font-weight:600">מתרגם עמוד...</div>
-        <div style="font-size:.85rem;color:#6b7280;margin-top:4px">העיבוד עשוי לקחת 10-30 שניות</div>
-      </div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
-      document.body.appendChild(ov);
-    } else { if (ov) ov.remove(); }
-  }
-
-  async function callTranslateAPI(mode, params) {
-    const jwt = sessionStorage.getItem('jwt_token');
-    if (!jwt) throw new Error('לא מחובר — נא להתחבר מחדש');
-    const r = await fetch(TRANSLATE_FN+'?_t='+Date.now(), {
-      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
-      body: JSON.stringify({ mode, tenant_id: getTenantId(), ...params }),
-    });
-    if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error||'Translation failed'); }
-    return r.json();
-  }
-
-  async function translatePage(srcId, lang) {
-    showTranslating(true);
-    try {
-      await callTranslateAPI('translate_page', { source_page_id: srcId, target_lang: lang });
-      _loaded = false;
-      if (window.StudioRefresh) await StudioRefresh.afterAction(Promise.resolve(), 'התרגום הושלם');
-      else { Toast.success('התרגום הושלם'); await init(containerId); }
-    } catch(e) { Toast.error('שגיאה: '+e.message); } finally { showTranslating(false); }
-  }
-
-  async function bulkTranslate(lang) {
-    const todo = dashData.filter(r=>!r[lang+'_page_id']);
-    if (!todo.length) { Toast.success('הכל מתורגם!'); return; }
-    showTranslating(true);
-    const p = document.getElementById('trans-bulk-prog');
-    for (let i=0;i<todo.length;i++) {
-      if(p) p.textContent = `מתרגם ${i+1}/${todo.length}...`;
-      try { await callTranslateAPI('translate_page',{source_page_id:todo[i].he_page_id,target_lang:lang}); } catch(e){ console.error(e); }
-    }
-    showTranslating(false);
-    if(p) p.textContent='הושלם!';
-    _loaded=false;
-    if (window.StudioRefresh) await StudioRefresh.afterAction(Promise.resolve(), `תורגמו ${todo.length} עמודים`);
-    else { Toast.success(`תורגמו ${todo.length} עמודים`); await init(containerId); }
-  }
-
-  async function translateBrand(id) {
-    const b = brandsData.find(x=>x.id===id); if(!b) return;
-    if (!brandHasHebrew(b)) { Toast.error('אין תוכן בעברית לתרגום'); return; }
-    showTranslating(true);
-    const errs = [];
-    for (const l of supported()) {
-      for (const f of BRAND_FIELDS) {
-        if(!b[f]) continue;
-        try { await callTranslateAPI('translate_text',{text:b[f],target_lang:l,context:'brand_'+f,entity_type:'brand',entity_id:id,field_name:f}); }
-        catch(e){ console.error('translateBrand', l, f, e); errs.push(`${LANGS[l]?.name||l}/${f}: ${e.message}`); }
-      }
-    }
-    showTranslating(false);
-    if (errs.length) { Toast.error('שגיאות בתרגום: ' + errs.slice(0,2).join(' | ')); }
-    else { Toast.success('הושלם'); }
-    _loaded=false; await init(containerId);
-  }
+  // HF1: callTranslateAPI / translatePage / bulkTranslate / translateBrand / showTranslating
+  // removed with the translate-content Edge Function. Manual flow (manualTranslate,
+  // export/import via brand-translations.js + storefront-translations.js) is the replacement.
 
   const BRAND_LABELS = { brand_description:'תיאור', brand_description_short:'תיאור קצר', seo_title:'SEO Title', seo_description:'SEO Description' };
   function openBrandEditor(brandId) {
@@ -372,5 +304,5 @@ const StudioTranslations = (function () {
     } catch (e) { Toast.error('שגיאה: ' + e.message); console.error(e); }
   }
 
-  return { init, setSubTab, translatePage, manualTranslate, bulkTranslate, translateBrand, openBrandEditor, saveBrandTranslation, saveOverride, toggleAuto, togglePublish, callTranslateAPI, reload, deletePageTranslation, deleteBrandTranslation, get glossaryData(){ return glossaryData; } };
+  return { init, setSubTab, manualTranslate, openBrandEditor, saveBrandTranslation, saveOverride, toggleAuto, togglePublish, reload, deletePageTranslation, deleteBrandTranslation, get glossaryData(){ return glossaryData; } };
 })();

@@ -1,11 +1,9 @@
 // Storefront Translations Tab — view, edit, bulk-translate product content
-// Phase 6: i18n AI Translation
+// Phase 6: i18n (manual translation flow — AI removed per HF1)
 
-const TRANSLATE_FN_URL = 'https://tsxrrxzmdxaenlvocyit.supabase.co/functions/v1/translate-content';
 let transContentMap = {};   // product_id → { en: { description: {id,content,status}, ... }, ru: { ... } }
 let transCurrentPage = 1;
 const TRANS_PAGE_SIZE = 50;
-let transAbort = false;
 let transEditProduct = null;
 let transEditLang = null;
 let _contaminationFilterActive = false;
@@ -408,221 +406,12 @@ async function approveTranslation() {
   }
 }
 
-// Call translate-content Edge Function in translate_text mode — fetch only, no DB save.
-// The user reviews the result in the modal textarea, then clicks save explicitly.
-// Pattern A: populate existing textarea + unsaved indicator.
-async function translateProductField(tenantId, contentType, sourceText, targetLang) {
-  const ctxMap = {
-    description: 'general',
-    seo_title: 'seo_title',
-    seo_description: 'seo_description',
-    alt_text: 'general',
-  };
-  let data;
-  try {
-    const res = await fetch(TRANSLATE_FN_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON}`,
-      },
-      body: JSON.stringify({
-        mode: 'translate_text',
-        tenant_id: tenantId,
-        target_lang: targetLang,
-        text: sourceText,
-        context_type: ctxMap[contentType] || 'general',
-      }),
-    });
-    data = await res.json();
-  } catch (e) {
-    throw new Error('AI_UNAVAILABLE');
-  }
-  if (!data.success) {
-    if (/api[_ ]?key|anthropic|not configured/i.test(String(data.error || ''))) {
-      throw new Error('AI_UNAVAILABLE');
-    }
-    throw new Error(data.error || 'translate-content failed');
-  }
-  return data.translated_text;
-}
-
-// Batch translate all product fields for one language in a single Edge Function call.
-async function translateProductBatch(tenantId, productId, fields, targetLang) {
-  let data;
-  try {
-    const res = await fetch(TRANSLATE_FN_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON}`,
-      },
-      body: JSON.stringify({
-        mode: 'translate_product',
-        tenant_id: tenantId,
-        target_lang: targetLang,
-        fields,
-      }),
-    });
-    data = await res.json();
-  } catch (e) {
-    throw new Error('AI_UNAVAILABLE');
-  }
-  if (!data.success) {
-    if (/api[_ ]?key|anthropic|not configured/i.test(String(data.error || ''))) {
-      throw new Error('AI_UNAVAILABLE');
-    }
-    throw new Error(data.error || 'translate-content failed');
-  }
-
-  const translated = data.fields || {};
-  const nowIso = new Date().toISOString();
-  const rows = Object.entries(translated)
-    .filter(([, v]) => typeof v === 'string' && v.trim())
-    .map(([contentType, content]) => ({
-      tenant_id: tenantId,
-      entity_type: 'product',
-      entity_id: productId,
-      content_type: contentType,
-      content,
-      language: targetLang,
-      status: 'auto',
-      // Reset is_deleted on conflict — otherwise upsert updates a soft-deleted
-      // row and loadTranslations() filters it out, masking the write.
-      is_deleted: false,
-      updated_at: nowIso,
-    }));
-  if (rows.length === 0) return;
-
-  const { error: upErr } = await sb.from('ai_content').upsert(rows, {
-    onConflict: 'tenant_id,entity_type,entity_id,content_type,language',
-  });
-  if (upErr) throw new Error(upErr.message);
-}
-
-async function retranslateContent() {
-  if (!transEditProduct || !transEditLang) return;
-  const ct = document.getElementById('trans-edit-type').value;
-  const heContent = contentMap[transEditProduct.id]?.[ct]?.content;
-  if (!heContent) { toast('אין תוכן עברית לתרגום', 'w'); return; }
-
-  showLoading('מתרגם...');
-  try {
-    const translated = await translateProductField(getTenantId(), ct, heContent, transEditLang);
-    // Populate the modal textarea with the new translation — do NOT save to DB.
-    // User must review and click the save button explicitly.
-    const targetEl = document.getElementById('trans-target');
-    targetEl.value = translated;
-    targetEl.style.borderColor = '#c9a555';
-    targetEl.style.background = '#fffbea';
-    // Show unsaved indicator
-    let badge = document.getElementById('trans-unsaved-badge');
-    if (!badge) {
-      badge = document.createElement('span');
-      badge.id = 'trans-unsaved-badge';
-      badge.style.cssText = 'display:inline-block;background:#c9a555;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;margin-inline-start:8px;';
-      const label = document.getElementById('trans-target-label');
-      if (label) label.parentNode.insertBefore(badge, label.nextSibling);
-    }
-    badge.textContent = '💾 לא נשמר — יש ללחוץ שמור';
-    badge.style.display = 'inline-block';
-    toast('תרגום התקבל — עיין ולחץ שמור', 's');
-  } catch (e) {
-    console.error('retranslateContent:', e);
-    if (e && e.message === 'AI_UNAVAILABLE') {
-      toast('שירות התרגום אינו זמין כרגע', 'e');
-    } else if (/validation failed/i.test(e.message || '')) {
-      toast('התרגום נכשל — הטקסט שהתקבל לא עבר ולידציה. נסה שוב או תרגם ידנית.', 'e');
-    } else {
-      toast('שגיאה בתרגום: ' + (e.message || ''), 'e');
-    }
-  } finally {
-    hideLoading();
-  }
-}
-
-// ── Bulk translate missing ──
-// Operates on the currently filtered product list (brand/search/status). With
-// no filter active this still covers everything with Hebrew content.
-async function bulkTranslateMissing() {
-  const tid = getTenantId();
-  const scope = getTransFilteredProducts().filter(p => contentMap[p.id]?.description);
-  const tasks = [];
-
-  for (const p of scope) {
-    const t = transContentMap[p.id] || { en: {}, ru: {} };
-    for (const lang of ['en', 'ru']) {
-      if (!t[lang]?.description) {
-        const types = ['description', 'seo_title', 'seo_description', 'alt_text']
-          .filter(ct => contentMap[p.id]?.[ct]?.content && !t[lang]?.[ct]);
-        if (types.length) tasks.push({ product: p, lang, types });
-      }
-    }
-  }
-
-  if (!tasks.length) { toast('כל המוצרים כבר מתורגמים', 's'); return; }
-
-  transAbort = false;
-  const total = tasks.length;
-  let success = 0, errors = 0;
-  const container = document.getElementById('translate-progress-container');
-  container.classList.add('active');
-  updateTransProgress(0, total, success, errors, '');
-
-  for (let i = 0; i < total; i++) {
-    if (transAbort) break;
-    const { product, lang, types } = tasks[i];
-    const name = `${product.brand_name} ${product.model || ''} → ${lang.toUpperCase()}`;
-    updateTransProgress(i, total, success, errors, name);
-
-    let taskOk = true;
-    const fields = {};
-    for (const ct of types) {
-      fields[ct] = contentMap[product.id][ct].content;
-    }
-    try {
-      await translateProductBatch(tid, product.id, fields, lang);
-    } catch (err) {
-      console.error('bulk translate item:', err);
-      taskOk = false;
-    }
-    if (taskOk) success++; else errors++;
-
-    // Rate limiting
-    if (i < total - 1 && !transAbort) {
-      await new Promise(r => setTimeout(r, 2000));
-    }
-  }
-
-  updateTransProgress(total, total, success, errors, '');
-  document.getElementById('translate-progress-current').textContent = transAbort ? '⏸ הופסק' : '✅ הושלם';
-  document.getElementById('translate-progress-stop').textContent = '✕ סגור';
-  document.getElementById('translate-progress-stop').onclick = () => {
-    container.classList.remove('active');
-    document.getElementById('translate-progress-stop').textContent = '⏸ עצור';
-    document.getElementById('translate-progress-stop').onclick = stopBulkTranslate;
-  };
-
-  await loadTranslations();
-  toast(`תרגום: ${success} הצלחות, ${errors} שגיאות`, success > 0 ? 's' : 'e');
-}
-
-function updateTransProgress(current, total, success, errors, name) {
-  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
-  document.getElementById('translate-progress-fill').style.width = pct + '%';
-  document.getElementById('translate-progress-count').textContent = `${current}/${total} (${pct}%)`;
-  document.getElementById('translate-progress-success').textContent = success;
-  document.getElementById('translate-progress-errors').textContent = errors;
-  document.getElementById('translate-progress-current').textContent = name ? `מתרגם: ${name}` : '';
-}
-
-function stopBulkTranslate() {
-  transAbort = true;
-  toast('עוצר תרגום...', 'w');
-}
+// HF1 (2026-04-10): AI translation API path removed — translate-content Edge Function
+// has been retired. The manual export/import flow below (buildManualTranslationPrompt +
+// downloadMultipleFiles + openImportModal) fully replaces it.
 
 // ══════════════════════════════════════════════════════════════
-// EXTERNAL TRANSLATION — EXPORT
+// EXTERNAL TRANSLATION — EXPORT (MANUAL FLOW)
 // ══════════════════════════════════════════════════════════════
 
 function escapeMdCell(s) {
@@ -746,7 +535,7 @@ async function exportForTranslation(targetLang) {
   });
 
   // 5. Build prompt file
-  const promptContent = buildTranslationPrompt(targetLang, langLabel, langCode, glossary, exampleProducts);
+  const promptContent = buildManualTranslationPrompt(targetLang, langLabel, langCode, glossary, exampleProducts);
 
   // 6. Split into batches of 25
   const BATCH_SIZE = 25;
@@ -775,9 +564,10 @@ async function exportForTranslation(targetLang) {
 }
 
 /**
- * Build the translation prompt file content (instructions, glossary, examples).
+ * Build the manual translation prompt file content (instructions, glossary, examples).
+ * Renamed from buildTranslationPrompt in HF1 to make the manual-flow intent explicit.
  */
-function buildTranslationPrompt(targetLang, langLabel, langCode, glossary, examples) {
+function buildManualTranslationPrompt(targetLang, langLabel, langCode, glossary, examples) {
   const md = [];
 
   md.push(`# Translation Task — Prizma Optic Products → ${langLabel}`);

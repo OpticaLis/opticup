@@ -77,7 +77,7 @@ const StudioTranslationEditor = (function () {
       <span style="padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:600;background:${stBg[status]||stBg.missing};color:${stFg[status]||stFg.missing}">${status}</span>
       <span style="font-size:.85rem;color:#6b7280">→ ${langName}</span>
       <div style="margin-right:auto;display:flex;gap:6px">
-        <button class="btn btn-sm" onclick="StudioTranslationEditor.translateAll()" style="${S.gold}">🤖 תרגם הכל</button>
+        <!-- HF1: AI "תרגם הכל" button removed — manual flow only -->
         <button class="btn btn-sm" onclick="StudioTranslationEditor.saveDraft()">שמור טיוטה</button>
         <button class="btn btn-sm btn-primary" onclick="StudioTranslationEditor.publish()">אשר ופרסם</button>
       </div></div>`;
@@ -170,7 +170,7 @@ const StudioTranslationEditor = (function () {
       <div style="${S.grid}gap:0">
         <div style="padding:6px 12px;background:#fff;border-bottom:1px solid #e5e5e5;border-right:3px solid #c9a555;display:flex;align-items:center;justify-content:space-between">
           <span style="font-weight:600;font-size:.85rem">בלוק ${idx+1}: ${type} ${staleMark}</span>
-          <button class="btn btn-sm" onclick="StudioTranslationEditor.translateBlock(${idx})" style="font-size:.7rem;padding:2px 8px;${S.gold}">🤖</button>
+          <!-- HF1: per-block AI translate button removed -->
         </div>
         <div style="padding:6px 12px;background:#eee;border-bottom:1px solid #e5e5e5;font-weight:600;font-size:.85rem;color:#6b7280">בלוק ${idx+1}: ${type}</div>
       </div>
@@ -297,51 +297,10 @@ const StudioTranslationEditor = (function () {
     catch (e) { console.error('Save memory:', e); }
   }
 
-  // ── Loading overlay ──
-  function showTranslating(on) {
-    let ov = document.getElementById('te-loading');
-    if (on) {
-      if (ov) return; ov = document.createElement('div'); ov.id = 'te-loading';
-      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999';
-      ov.innerHTML = '<div style="background:#fff;border-radius:12px;padding:32px 48px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2)"><div style="width:40px;height:40px;border:4px solid #e5e5e5;border-top-color:#c9a555;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div><div style="font-size:1.1rem;font-weight:600">מתרגם...</div><div style="font-size:.85rem;color:#6b7280;margin-top:4px">10-30 שניות</div></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
-      document.body.appendChild(ov);
-    } else { if (ov) ov.remove(); }
-  }
+  // HF1 (2026-04-10): showTranslating / translateBlock / translateAll removed.
+  // They depended on StudioTranslations.callTranslateAPI which was retired with
+  // the translate-content Edge Function. Editor users use the manual translation
+  // flow (copy Hebrew → paste translation) instead.
 
-  // ── AI translate ──
-  async function translateBlock(idx) {
-    const srcBlock = sourcePage?.blocks?.[idx]; if (!srcBlock) return;
-    showTranslating(true);
-    try {
-      const result = await StudioTranslations.callTranslateAPI('translate_blocks', {
-        blocks: [srcBlock], target_lang: targetLang,
-      });
-      if (result?.translated_blocks?.[0]?.data) {
-        const td = result.translated_blocks[0].data;
-        for (const f of (TF[srcBlock.type]||[])) {
-          const el = document.getElementById(`te-b${idx}-${f}`);
-          const preview = document.getElementById(`te-b${idx}-${f}-preview`);
-          if (el && td[f] !== undefined) { el.value = td[f]; if (preview) preview.innerHTML = td[f]; }
-        }
-        for (const [arrName, arrFields] of Object.entries(TAF[srcBlock.type]||{})) {
-          const tItems = td[arrName]; if (!Array.isArray(tItems)) continue;
-          for (let j = 0; j < tItems.length; j++) {
-            for (const af of arrFields) {
-              const el = document.getElementById(`te-b${idx}-${arrName}-${j}-${af}`);
-              if (el && tItems[j]?.[af]) el.value = tItems[j][af];
-            }
-          }
-        }
-      }
-      Toast.success('בלוק תורגם');
-    } catch (e) { Toast.error('שגיאה: ' + e.message); } finally { showTranslating(false); }
-  }
-
-  async function translateAll() {
-    showTranslating(true);
-    try { await StudioTranslations.callTranslateAPI('translate_page', { source_page_id: sourcePage.id, target_lang: targetLang }); Toast.success('התרגום הושלם'); await open(sourcePage.id, targetLang); }
-    catch (e) { Toast.error('שגיאה: ' + e.message); } finally { showTranslating(false); }
-  }
-
-  return { open, close, saveDraft, publish, translateBlock, translateAll, toggleRaw };
+  return { open, close, saveDraft, publish, toggleRaw };
 })();

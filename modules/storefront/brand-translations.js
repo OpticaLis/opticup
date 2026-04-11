@@ -393,7 +393,7 @@ async function loadExampleBrands(tid, lang, brands) {
 }
 
 /**
- * High-quality prompt — mirrors product buildTranslationPrompt() structure.
+ * High-quality prompt — mirrors product buildManualTranslationPrompt() structure.
  */
 function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands) {
   const isEn = lang === 'en';
