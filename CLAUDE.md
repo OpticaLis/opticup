@@ -101,6 +101,24 @@ These are hard rules. Breaking one is a bug, regardless of whether it "works."
 22. **Defense-in-depth on writes** — every `.insert()` / `.upsert()` must include `tenant_id: getTenantId()`. Every `.select()` should also filter `.eq('tenant_id', getTenantId())` even though RLS enforces it. Belt AND suspenders.
 23. **No secrets in code or docs** — passwords, API keys, PINs, tokens live in env files, Supabase secrets, or tenant config. Never in `.js`, `.md`, or git history. If you find one while editing — flag it, do not "just leave it there."
 
+### Cross-repo: Iron Rules 24–30 (Storefront-Scoped)
+
+Rules **1–23 above are the canonical source for all ERP, Studio, and Platform Admin work in this repo.** They apply everywhere inside `opticalis/opticup`.
+
+Rules **24–30 are defined in `opticup-storefront/CLAUDE.md`** (the sibling repo's own constitution) and apply **only when the working directory is `opticalis/opticup-storefront`**. They are listed here purely as a cross-reference so the full rule set is discoverable from either repo:
+
+- **24. Views and RPCs only — no direct table access.** The storefront touches tables only through the allow-listed Views in `opticup-storefront/CLAUDE.md §5`. Anything else → extend a View + `GRANT SELECT TO anon`.
+- **25. Image proxy mandatory.** All Supabase Storage images flow through `/api/image/[...path].ts` (server-side `SUPABASE_SERVICE_ROLE_KEY`). The `frame-images` bucket stays private.
+- **26. Product images have transparent backgrounds.** Always use `bg-white` containers in product cards — never colored/gray backgrounds.
+- **27. RTL-first.** Hebrew is the default locale. Every component must use logical CSS properties (`padding-inline-start`, `margin-inline-end`, `start`/`end`, never `left`/`right`).
+- **28. Mobile-first responsive.** Test the narrowest breakpoint first; every page must work on mobile.
+- **29. View Modification Protocol — CRITICAL.** Never modify a Supabase View without following the declared protocol in `opticup-storefront/CLAUDE.md §5`.
+- **30. Safety Net — mandatory testing.** Every storefront commit runs the safety-net scripts before landing.
+
+**If you are working in `opticalis/opticup` (this repo) — rules 1–23 govern, and rules 24–30 do not apply even if your task touches storefront-adjacent code (e.g., Storefront Studio under `modules/storefront/`). If you are working in `opticalis/opticup-storefront` — both its own CLAUDE.md §4 (inherited 1–23 overview) and §5 (rules 24–30) apply.**
+
+The canonical text of rules 24–30 is in `opticup-storefront/CLAUDE.md`. If the lines above ever drift from that file, the storefront repo wins.
+
 ---
 
 ## 7. Authority Matrix — Single Source of Truth
