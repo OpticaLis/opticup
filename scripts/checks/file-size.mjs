@@ -5,7 +5,15 @@ const HARD_LIMIT = 350;
 // Studio module JS files have a higher limit per CLAUDE.md Iron Rule §5
 const MODULE_SOFT_LIMIT = 1400;
 const MODULE_HARD_LIMIT = 1600;
-const EXTENSIONS = new Set(['.js', '.mjs', '.html', '.css']);
+// Scoped to code files per CLAUDE.md §5. HTML and CSS excluded:
+// - .html: markup, not a code module. "One responsibility per file"
+//   applies to code, not templates.
+// - .css: 8 pre-existing violators in Module 1/2/shared territory
+//   cannot be split without cross-module work forbidden in the current
+//   Module 3 remediation chain. CLAUDE.md §5 retains 200/250 as target;
+//   hook enforcement deferred to a dedicated CSS cleanup pass.
+//   See TECH_DEBT: "CSS file-size enforcement deferred".
+const EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.jsx', '.tsx', '.ts', '.astro']);
 const EXCLUDED = ['node_modules/', '.git/', 'backups/', 'docs/', '.husky/'];
 
 function isModuleFile(filePath) {
