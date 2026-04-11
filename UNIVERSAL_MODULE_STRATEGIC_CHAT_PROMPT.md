@@ -287,6 +287,26 @@ Daniel מעורב במפורש ב:
 
 ---
 
+## Lessons banked from real-world execution
+
+The 7 directives below were paid for in real mistakes (and one near-miss) during Module 3.1's parallel-audit run on 2026-04-11. Treat them as load-bearing — each one prevents a class of problem the strategic chat actually hit.
+
+1. **Never skip the First Action Protocol.** It catches real mistakes that look invisible in the chat. Module 3.1 Phase 1A opened a Claude Code session that was attached to `opticup-storefront` instead of `opticup`; the `git remote -v` check from CLAUDE.md §1 caught the mismatch before any file was touched. Instruct every secondary chat to make Claude Code run First Action at the start of *every* session, not just the first one. Treat any skipped First Action as a stop-the-line event.
+
+2. **Activate secondary chats correctly: paste the universal template as TEXT, not as an attachment, and use sequential file loading.** Three of Module 3.1's first secondary chats (1A, 1B, and the first attempt at 2) triggered the "what role am I playing" antipattern when the template was attached as a file rather than pasted as message text. Switching to text-paste fixed it immediately. Sequential loading (one file at a time, requested by the chat) is also non-negotiable — it forces the chat to actually read each file. Send the SPEC, then wait for an acknowledgment, then send the next file only if the chat asks for it.
+
+3. **READ-ONLY audit pattern is viable for any verification work.** Module 3.1 Phases 1A/1B/1C/2 produced ~600+ lines of structured findings each in 30–60 minutes, with zero file mutations and zero ambiguous results. When in doubt about whether to modify or audit, audit first. The pattern is safe to reuse for any future verification work in any module.
+
+4. **Stop and ask Daniel before assuming on parallel work.** Phase 1C discovered that Module 3 Strategic Chat had been running its own Phase A remediation in parallel with Module 3.1, possibly without coordination. The strategic chat stopped, asked Daniel, escalated to Main, and got a clean answer in ~15 minutes. The cost of asking was tiny; the cost of assuming would have been a Phase 2 SPEC built on a wrong premise. **Rule:** when an audit finding contradicts your mental model of the project, escalate to Daniel/Main *before* proceeding. Do not "work around" the contradiction.
+
+5. **One question at a time. CRITICAL — this is the rule Daniel cares about most.** When the strategic chat needs information from Daniel, it asks **ONE question at a time**, waits for the answer, then asks the next. **No tables of multiple questions. No (1)(2)(3) numbered lists. No "and also."** Daniel told Module 3.1's strategic chat this three times before it stuck. If you find yourself drafting a table of questions or a numbered list of asks — delete it, pick the most important one, send only that. The next question can wait until the answer to the first one arrives.
+
+6. **Do not duplicate sealed work.** When a meta/audit module operates on a project that has active feature modules, the meta module **verifies and supplements** but **never rewrites** sealed work products. Module 3.1 was explicitly told (by Main) that Module 3 Phase A's 8 output files passed an 18/18 sanity check, were tagged PASS, and are GROUND TRUTH. Module 3.1's job was to verify Phase A's outputs once, identify gaps, and create new artifacts — not to rewrite the existing ones. This is a project-wide rule from now on, not just for Module 3.1.
+
+7. **Decision presentation must include all real options, not just your preferred binary.** When presenting a decision to Daniel, enumerate all real alternatives — including hybrids — not just a "recommended vs default" pair. During Module 3.1's D3 decision (Phase 3 sub-phase ordering), the strategic chat presented two options. Main caught the omission and supplied a third (hybrid) option. **Daniel chose the hybrid.** If the strategic chat had not been corrected, Daniel would have been forced to pick from a smaller-than-real solution space. **Rule:** before presenting a decision, ask yourself "what's the third option, and what's the hybrid?" If you can't answer, you haven't thought about it long enough.
+
+---
+
 ## 14. קבצים לצרף לצ'אט הזה
 
 חובה (סבב 1):
