@@ -12,3 +12,10 @@ watcher-deploy/daemon/opticupsyncwatcher.out.log
 !.env.example
 
 .mcp.json
+
+# Module 3 Phase B §1.4 — exclude transient working folders
+# discovery/ and audit-reports/ remain TRACKED — they have archival value
+**/backups/
+**/old prompts/
+**/current prompt/
+**/archive/
