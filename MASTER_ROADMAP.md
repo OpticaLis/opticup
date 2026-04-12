@@ -221,16 +221,13 @@ is real and must be fixed before either module starts writing.
 
 ## 7. Next Step
 
-Module 3.1 Phase 3A is the immediate active work. After 3A completes, Phase 3D
-(closure ceremony) cross-links the rewritten foundation docs, produces the
-Module 3.1 closure commit, and tags `v3.1.closure`. After Module 3.1 closes,
-the Module 3 strategic chat resumes with the Phase B preamble checklist
-(Section 6 above) before resuming Phase B remediation code work.
+**Module 3.1 is COMPLETE** (closed April 11, 2026 — see §4 Decisions Log).
 
-The long-term sequence after Module 3 Phase B: Module 4 (CRM) → Module 5
-(Orders) → Module 6 (Prescriptions) → Module 7 (Payments). This ordering is
-driven by data dependencies: orders need customers, prescriptions need
-customers + orders, payments need orders.
+**Active:** Module 3 Phase B (gated on dual preamble — see §6 above).
+- First gate: ✅ Module 3.1 closure (this module)
+- Second gate: ⬜ Phase B preamble cleanup (security-critical items + TIER-C-PENDING)
+
+**On deck:** Module 4 (CRM) once Module 3 reaches DNS switch readiness.
 
 ---
 
