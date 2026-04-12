@@ -397,9 +397,11 @@ async function loadExampleBrands(tid, lang, brands) {
  */
 function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands) {
   const isEn = lang === 'en';
+  const storeName = getTenantConfig('name') || 'אופטיקה פריזמה';
+  const storeNameEn = getTenantConfig('name_en') || 'Prizma Optic';
   const md = [];
 
-  md.push(`# Translation Task — Prizma Optic Brand Pages → ${langLabel}`);
+  md.push(`# Translation Task — ${storeNameEn} Brand Pages → ${langLabel}`);
   md.push('');
   md.push(`> Generated: ${new Date().toISOString().slice(0, 10)}`);
   md.push('');
@@ -444,7 +446,7 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
   // Business context
   md.push('## Business Context');
   md.push('');
-  md.push('**Prizma Optic** (אופטיקה פריזמה) — premium optical store in Ashkelon, Israel. Approximately 40 years in business. Authorized dealer for Zeiss, Leica, Rodenstock, Hoya, Essilor, and luxury eyewear brands (Cazal, Gucci, Ray-Ban, Tom Ford, Saint Laurent, etc.).');
+  md.push(`**${storeNameEn}** (${storeName}) — premium optical store in Ashkelon, Israel. Approximately 40 years in business. Authorized dealer for Zeiss, Leica, Rodenstock, Hoya, Essilor, and luxury eyewear brands (Cazal, Gucci, Ray-Ban, Tom Ford, Saint Laurent, etc.).`);
   md.push('');
   md.push('**Audience:** Israeli customers seeking quality eyewear. Use ₪ for prices (never USD/EUR). The audience reads the website in Israel.');
   md.push('');
@@ -458,7 +460,7 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
     md.push('- Write as if the text was originally authored in English (no "translationese").');
     md.push('- Never capitalize common nouns mid-sentence (titanium, acetate, metal, elegant, classic — lowercase unless starting a sentence).');
     md.push('- "ייעוץ מקצועי" = "professional consultation" (not "fitting", not "advice").');
-    md.push('- Every seo_description must end with " - Prizma Optic, Ashkelon".');
+    md.push(`- Every seo_description must end with " - ${storeNameEn}, Ashkelon".`);
     md.push('- Vary sentence structure — do not start consecutive sentences the same way.');
   } else {
     md.push('- Formal "вы" form throughout. Natural Russian word order (no Hebrew syntax calques).');
@@ -466,7 +468,7 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
     md.push('- Write as if the text was originally authored in Russian (no "translationese").');
     md.push('- Не используйте заглавные буквы в середине предложения для обычных существительных.');
     md.push('- "ייעוץ מקצועי" = "профессиональная консультация".');
-    md.push('- Каждое seo_description должно заканчиваться " - Prizma Optic, Ашкелон".');
+    md.push(`- Каждое seo_description должно заканчиваться " - ${storeNameEn}, Ашкелон".`);
     md.push('- Варьируйте структуру предложений.');
   }
   md.push('');
@@ -479,7 +481,7 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
   md.push('| Field | Where It Appears | Guidelines |');
   md.push('|---|---|---|');
   md.push('| `seo_title` | Browser tab, Google search result title | 40-60 characters. Must contain brand name + keyword (e.g., "sunglasses", "eyeglasses", "eyewear"). |');
-  md.push('| `seo_description` | Google search result snippet | Strictly 130-160 characters TOTAL (including the mandatory ending). Must end with " - Prizma Optic, Ashkelon". Count your characters — Google cuts off at ~160. Write a SHORT summary: brand name + one key feature + ending. |');
+  md.push(`| \`seo_description\` | Google search result snippet | Strictly 130-160 characters TOTAL (including the mandatory ending). Must end with " - ${storeNameEn}, Ashkelon". Count your characters — Google cuts off at ~160. Write a SHORT summary: brand name + one key feature + ending. |`);
   md.push('| `brand_description_short` | Tagline under brand name on the brand page hero section | Max 200 characters. One punchy line — brand essence. |');
   md.push('| `brand_description` | Main body text on the brand page (below hero, next to gallery) | Preserve paragraph structure and length (±20% of Hebrew). Contains HTML tags — see Rule #2. |');
   md.push('');
@@ -499,8 +501,8 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
   md.push('10. Do NOT wrap the output table in a code block (no ```). Just the raw markdown table.');
   md.push('11. **Slugs must be returned exactly as provided** — they are URL identifiers, not text to translate.');
   md.push('12. **Empty HTML paragraphs** — when the Hebrew `brand_description` contains empty spacer paragraphs like `<p> </p>` or `<p>&nbsp;</p>`, REMOVE them in the translation. Use only meaningful `<p>...</p>` blocks with actual content.');
-  md.push('13. **seo_description length is strict** — MUST be 130-160 characters total. This includes the ending " - Prizma Optic, Ashkelon" (25 characters). So your actual content is only ~105-135 characters before the ending. If your draft exceeds 160 characters — shorten it. This is a strict limit, not a suggestion.');
-  md.push('14. **seo_description format** — `[Brand name] [eyewear type] at Prizma Optic Ashkelon. [One key selling point] - Prizma Optic, Ashkelon`. Keep it to TWO sentences maximum before the ending.');
+  md.push(`13. **seo_description length is strict** — MUST be 130-160 characters total. This includes the ending " - ${storeNameEn}, Ashkelon" (~25 characters). So your actual content is only ~105-135 characters before the ending. If your draft exceeds 160 characters — shorten it. This is a strict limit, not a suggestion.`);
+  md.push(`14. **seo_description format** — \`[Brand name] [eyewear type] at ${storeNameEn} Ashkelon. [One key selling point] - ${storeNameEn}, Ashkelon\`. Keep it to TWO sentences maximum before the ending.`);
   md.push('');
 
   // Glossary
@@ -524,7 +526,7 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
     md.push(`| ייעוץ מקצועי | ${L('professional consultation', 'профессиональная консультация')} |`);
     md.push(`| התאמה אישית | ${L('custom fitting', 'индивидуальный подбор')} |`);
     md.push(`| שירות מקצועי | ${L('professional service', 'профессиональное обслуживание')} |`);
-    md.push('| אופטיקה פריזמה | Prizma Optics (NEVER translate the store name) |');
+    md.push(`| ${storeName} | ${storeNameEn} (NEVER translate the store name) |`);
     md.push('| אשקלון | Ashkelon (NEVER translate the city name) |');
   }
   md.push('');
@@ -584,7 +586,7 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
     md.push('| # | Brand | Slug | Field | Hebrew | Translation |');
     md.push('|---|---|---|---|---|---|');
     md.push('| 1 | Gucci | gucci | seo_title | משקפי גוצ\'י - קולקציה מלאה |  |');
-    md.push('| 2 | Gucci | gucci | seo_description | גלו את קולקציית משקפי גוצ\'י באופטיקה פריזמה אשקלון |  |');
+    md.push(`| 2 | Gucci | gucci | seo_description | גלו את קולקציית משקפי גוצ'י ב${storeName} אשקלון |  |`);
     md.push('| 3 | Gucci | gucci | brand_description_short | מותג יוקרה איטלקי בעולם משקפי השמש |  |');
     md.push('| 4 | Gucci | gucci | brand_description | <p>גוצ\'י הוא מותג יוקרה איטלקי...</p> |  |');
     md.push('');
@@ -594,12 +596,12 @@ function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands
     md.push('|---|---|---|---|---|---|');
     if (isEn) {
       md.push('| 1 | Gucci | gucci | seo_title | משקפי גוצ\'י - קולקציה מלאה | Gucci Eyewear - Full Collection |');
-      md.push('| 2 | Gucci | gucci | seo_description | גלו את קולקציית משקפי גוצ\'י באופטיקה פריזמה אשקלון | Gucci eyewear at Prizma Optic Ashkelon. Italian luxury sunglasses and prescription frames, full collection in stock - Prizma Optic, Ashkelon |');
+      md.push(`| 2 | Gucci | gucci | seo_description | גלו את קולקציית משקפי גוצ'י ב${storeName} אשקלון | Gucci eyewear at ${storeNameEn} Ashkelon. Italian luxury sunglasses and prescription frames, full collection in stock - ${storeNameEn}, Ashkelon |`);
       md.push('| 3 | Gucci | gucci | brand_description_short | מותג יוקרה איטלקי בעולם משקפי השמש | Italian luxury icon in the world of sunglasses |');
       md.push('| 4 | Gucci | gucci | brand_description | <p>גוצ\'י הוא מותג יוקרה איטלקי...</p> | <p>Gucci is an Italian luxury brand...</p> |');
     } else {
       md.push('| 1 | Gucci | gucci | seo_title | משקפי גוצ\'י - קולקציה מלאה | Очки Gucci - полная коллекция |');
-      md.push('| 2 | Gucci | gucci | seo_description | גלו את קולקציית משקפי גוצ\'י באופטיקה פריזמה אשקלון | Очки Gucci в Prizma Optic Ашкелон. Итальянский люксовый бренд - полная коллекция солнцезащитных и оптических очков - Prizma Optic, Ашкелон |');
+      md.push(`| 2 | Gucci | gucci | seo_description | גלו את קולקציית משקפי גוצ'י ב${storeName} אשקלון | Очки Gucci в ${storeNameEn} Ашкелон. Итальянский люксовый бренд - полная коллекция солнцезащитных и оптических очков - ${storeNameEn}, Ашкелон |`);
       md.push('| 3 | Gucci | gucci | brand_description_short | מותג יוקרה איטלקי בעולם משקפי השמש | Итальянский люксовый бренд в мире солнцезащитных очков |');
       md.push('| 4 | Gucci | gucci | brand_description | <p>גוצ\'י הוא מותג יוקרה איטלקי...</p> | <p>Gucci - итальянский люксовый бренд...</p> |');
     }

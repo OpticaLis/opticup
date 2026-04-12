@@ -97,6 +97,8 @@ const BUILTIN_FORM_PRESETS = [
 
 // === BUILT-IN STICKY BAR PRESETS ===
 const BUILTIN_STICKY_PRESETS = [
+  // TODO(B4): Replace hardcoded WhatsApp (wa.me/972533645404) and Instagram (instagram.com/optic_prizma/) with configurable values
+  // These are template strings that users copy-paste into CMS blocks, so they need to be made configurable at the CMS level
   {
     id: '__sticky_campaign_dark',
     category: 'sticky_bar',

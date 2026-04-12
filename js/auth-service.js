@@ -127,7 +127,7 @@ async function initSecureSession(employee, jwtToken) {
   _startJwtCheck();
   try {
     const { data: tenantRow } = await sb.from('tenants')
-      .select('name,vat_rate,withholding_tax_default,payment_terms_days,default_currency,rows_per_page,date_format,theme,business_name,logo_url')
+      .select('name,name_en,name_ru,vat_rate,withholding_tax_default,payment_terms_days,default_currency,rows_per_page,date_format,theme,business_name,logo_url')
       .eq('id', employee.tenant_id)
       .single();
     if (tenantRow) {

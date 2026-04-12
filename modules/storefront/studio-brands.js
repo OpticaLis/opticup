@@ -267,6 +267,7 @@ function openStudioBrandEditor(brandId) {
   const brand = studioBrands.find(b => b.brand_id === brandId);
   if (!brand) return;
 
+  const storeName = getTenantConfig('name') || 'אופטיקה פריזמה';
   _quillDesc1 = null;
   _quillDesc2 = null;
   _aiMode = 'new';
@@ -295,6 +296,7 @@ function openStudioBrandEditor(brandId) {
 
   const googleTitle = escapeHtml(brand.seo_title || 'כותרת SEO');
   const googleDesc = escapeHtml(brand.seo_description || 'תיאור SEO');
+  // TODO(B4): replace hardcoded domain with getTenantConfig('custom_domain') when added to schema
   const googleUrl = `prizma-optic.co.il › brands › ${brand.slug || ''}`;
 
   const content = `
@@ -393,7 +395,7 @@ function openStudioBrandEditor(brandId) {
         <div id="sbe-desc1-editor"></div>
       </div>
 
-      <label class="brand-editor-label" style="margin-top:12px;">תיאור שני (למה באופטיקה פריזמה)</label>
+      <label class="brand-editor-label" style="margin-top:12px;">תיאור שני (למה ב${storeName})</label>
       <div class="studio-richtext-wrap" id="sbe-desc2-wrap">
         <div id="sbe-desc2-editor"></div>
       </div>
@@ -515,7 +517,7 @@ function initBrandQuillEditors(desc1Html, desc2Html) {
   }
 
   if (el2) {
-    _quillDesc2 = new Quill(el2, { theme: 'snow', modules: { toolbar: toolbarOpts }, placeholder: 'למה לקנות באופטיקה פריזמה — שירות, התאמה, ניסיון...' });
+    _quillDesc2 = new Quill(el2, { theme: 'snow', modules: { toolbar: toolbarOpts }, placeholder: `למה לקנות ב${storeName} — שירות, התאמה, ניסיון...` });
     _quillDesc2.root.setAttribute('dir', 'rtl');
     _quillDesc2.root.style.textAlign = 'right';
     if (desc2Html) _quillDesc2.root.innerHTML = desc2Html;

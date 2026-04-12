@@ -678,6 +678,7 @@ function updateBlogSeo() {
 
   if (gpTitle) gpTitle.textContent = seoTitle?.value || 'כותרת SEO';
   if (gpDesc) gpDesc.textContent = seoDesc?.value || 'תיאור SEO';
+  // TODO(B4): replace hardcoded domain with getTenantConfig('custom_domain') when added to schema
   if (gpUrl) gpUrl.textContent = `prizma-optic.co.il › בלוג › ${slug}`;
 
   // SEO score badge

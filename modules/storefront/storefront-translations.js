@@ -568,9 +568,11 @@ async function exportForTranslation(targetLang) {
  * Renamed from buildTranslationPrompt in HF1 to make the manual-flow intent explicit.
  */
 function buildManualTranslationPrompt(targetLang, langLabel, langCode, glossary, examples) {
+  const storeName = getTenantConfig('name') || 'אופטיקה פריזמה';
+  const storeNameEn = getTenantConfig('name_en') || 'Prizma Optic';
   const md = [];
 
-  md.push(`# Translation Task — Prizma Optic Products → ${langLabel}`);
+  md.push(`# Translation Task — ${storeNameEn} Products → ${langLabel}`);
   md.push('');
   md.push(`> Generated: ${new Date().toISOString().slice(0, 10)}`);
   md.push('');
@@ -614,7 +616,7 @@ function buildManualTranslationPrompt(targetLang, langLabel, langCode, glossary,
   // Business context
   md.push('## Business Context');
   md.push('');
-  md.push('**Prizma Optic** (אופטיקה פריזמה) — premium optical store in Ashkelon, Israel. Approximately 40 years in business. Authorized dealer for Zeiss, Leica, Rodenstock, Hoya, Essilor, and luxury eyewear brands (Cazal, Gucci, Ray-Ban, Tom Ford, Saint Laurent, etc.).');
+  md.push(`**${storeNameEn}** (${storeName}) — premium optical store in Ashkelon, Israel. Approximately 40 years in business. Authorized dealer for Zeiss, Leica, Rodenstock, Hoya, Essilor, and luxury eyewear brands (Cazal, Gucci, Ray-Ban, Tom Ford, Saint Laurent, etc.).`);
   md.push('');
   md.push('**Audience:** Israeli customers seeking quality eyewear. Use ₪ for prices (never USD/EUR). The audience reads the website in Israel.');
   md.push('');
@@ -643,7 +645,7 @@ function buildManualTranslationPrompt(targetLang, langLabel, langCode, glossary,
   md.push('5. Numbers, sizes, prices, and measurements — keep factually identical to the Hebrew source.');
   md.push('6. **Description:** 2-3 sentences. Marketing tone, informative, not salesy.');
   md.push('7. **SEO Title:** 40-55 characters. Format: `[Brand] [Model] - [type keyword]`. Must be unique per product.');
-  md.push('8. **SEO Description:** 130-150 characters. Informative summary with brand + model + key feature. End with " - Prizma Optic, Ashkelon" or equivalent.');
+  md.push(`8. **SEO Description:** 130-150 characters. Informative summary with brand + model + key feature. End with " - ${storeNameEn}, Ashkelon" or equivalent.`);
   md.push('9. **Alt Text:** Concise image description, max 100 characters. Format: `[Brand] [Model] [product type] [key visual feature]`. Never start with "Image of" or "Photo of".');
   md.push('10. No emojis. No CTAs like "shop now" or "click here".');
   md.push('11. If the Hebrew text appears cut off mid-sentence, complete the thought naturally in the translation.');
