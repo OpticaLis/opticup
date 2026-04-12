@@ -246,6 +246,11 @@ is real and must be fixed before either module starts writing.
 | Per-module specs and roadmaps | `opticup/modules/Module N - .../docs/MODULE_SPEC.md` and `ROADMAP.md` |
 | Storefront architecture | `opticup-storefront/ARCHITECTURE.md` |
 | Storefront view contracts | `opticup-storefront/VIEW_CONTRACTS.md` |
+| Original 28-module project vision (historical) | `opticup/docs/PROJECT_VISION.md` |
+| Module Strategic Chat opening prompt | `opticup/UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md` |
+| Secondary Chat operating instructions | `opticup/UNIVERSAL_SECONDARY_CHAT_PROMPT.md` |
+| Documentation ownership schema (6 rules, dual-repo) | `opticup/MODULE_DOCUMENTATION_SCHEMA.md` |
+| Daniel's quick reference (4-layer cheat sheet) | `opticup/DANIEL_QUICK_REFERENCE.md` |
 
 ---
 
