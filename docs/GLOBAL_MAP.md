@@ -1,919 +1,249 @@
-# GLOBAL_MAP.md — Optic Up Global Project Reference
+# GLOBAL_MAP.md — Optic Up Architectural Map
 
-> **Authority:** Cross-module reference document. For Module 1 internals (modules/inventory/\*, modules/debt/\*, etc.) see Module 1's local MODULE_MAP.md.
-
----
-
-## 1. HTML Pages
-
-| Page | File | Owner Module | Description |
-|------|------|-------------|-------------|
-| Home Screen | `index.html` | Core | PIN login modal, module cards, session restore, live clock |
-| Inventory | `inventory.html` | Module 1 — Inventory | Full inventory app: 11 tabs (entry, reduction, table, PO, receipts, brands, suppliers, sync, stock count, returns, incoming invoices) |
-| Supplier Debt | `suppliers-debt.html` | Module 1 — Debt | 5 tabs: suppliers dashboard, documents, payments, prepaid deals, weekly report |
-| Employees | `employees.html` | Module 1 — Permissions | Standalone employee management (CRUD, role assignment) |
-| Shipments | `shipments.html` | Module 1 — Shipments | Box management: list, 3-step wizard, detail panel, courier settings |
-| Settings | `settings.html` | Module 1 — Settings | Tenant config: business info, financial settings, logo upload |
-| Platform Admin | `admin.html` | Module 2 — Platform Admin | Supabase Auth login, full admin dashboard: tenant table, slide-in panel (4 tabs), audit log, provisioning wizard. Separate world from ERP — no shared.js, no tenant context. |
-| Error Page | `error.html` | Module 2 — Platform Admin | Standalone error page. 3 states: not-found, suspended, deleted. No shared.js dependency. |
-| Landing Page | `landing.html` | Module 2 — Platform Admin | Store code entry page. Slug validation + redirect to /?t=slug. No shared.js dependency. |
+> **Last reconciled:** 2026-04-11 (Module 3.1 Phase 3A)
+>
+> This document is the **architectural map** of the Optic Up platform.
+> For the data model see `docs/GLOBAL_SCHEMA.sql`.
+> For the build sequence and decisions see `MASTER_ROADMAP.md`.
+> For function-level code maps see each module's `MODULE_MAP.md`.
 
 ---
 
-## 2. Global JS Files (js/)
+## 1. Platform Identity
 
-### js/shared.js (411 lines)
+**Optic Up** is a multi-tenant SaaS ERP + storefront platform for Israeli optical chains.
 
-Supabase init, constants, caches, UI helpers, navigation. **Loads FIRST on every page.**
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `resolveTenant` | — | `Promise<object\|null>` | Centralized tenant resolution: URL ?t= → sessionStorage → redirect to landing/error. Sets TENANT_SLUG + sessionStorage. |
-| `getTenantId` | — | `string\|null` | Read tenant_id from sessionStorage |
-| `getTenantConfig` | `key?: string` | `any` | Read tenant config object or specific key from sessionStorage |
-| `escapeHtml` | `str: string` | `string` | Sanitize string for safe HTML insertion |
-| `formatILS` | `amount: number` | `string` | Format number as ILS currency string (e.g. "₪1,234") |
-| `showLoading` | `text?: string` | `void` | Show full-screen loading overlay |
-| `hideLoading` | — | `void` | Hide loading overlay |
-| `$` | `id: string` | `HTMLElement\|null` | Shortcut for `document.getElementById` |
-| `toast` | `msg: string, type?: string` | `void` | Show toast notification (type: 's'=success, 'e'=error) |
-| `setAlert` | `id: string, html: string, type: string` | `void` | Set alert HTML inside element |
-| `clearAlert` | `id: string` | `void` | Clear alert content |
-| `closeModal` | `id: string` | `void` | Hide modal by setting display:none |
-| `confirmDialog` | `title: string, text?: string` | `Promise<boolean>` | Show yes/no confirmation modal |
-| `showTab` | `name: string` | `void` | Switch active tab + trigger tab-specific data load |
-| `showEntryMode` | `mode: string` | `void` | Toggle entry sub-mode (manual/excel/receipt) |
-| `showInfoModal` | `title: string, bodyHTML: string` | `void` | Show informational modal with HTML body |
-| `renderHelpBanner` | `parentEl: HTMLElement, storageKey: string, helpHTML: string` | `void` | Render collapsible help banner (state persisted in sessionStorage) |
-| `heToEn` | `cat: string, val: string` | `string` | Translate Hebrew enum value to English |
-| `enToHe` | `cat: string, val: string` | `string` | Translate English enum value to Hebrew |
-| `enumCatForCol` | `tableName: string, enCol: string` | `string\|null` | Determine which enum category a column belongs to |
-
-**Global Variables:**
-
-| Variable | Type | Description |
-|----------|------|-------------|
-| `SUPABASE_URL` | `const string` | Supabase project URL |
-| `SUPABASE_ANON` | `const string` | Supabase anon key |
-| `sb` | `SupabaseClient` | Supabase client instance (reassigned on JWT auth) |
-| `T` | `const object` | Table name constants (37 entries, includes T.BAL_ADJ for supplier_balance_adjustments) |
-| `FIELD_MAP` | `const object` | Hebrew→English column name maps per table |
-| `FIELD_MAP_REV` | `const object` | English→Hebrew column name maps (auto-generated) |
-| `ENUM_MAP` | `const object` | Hebrew→English enum value maps per category |
-| `ENUM_REV` | `const object` | English→Hebrew enum value maps (auto-generated) |
-| `suppliers` | `string[]` | Cached supplier names (loaded by loadData) |
-| `brands` | `object[]` | Cached brand objects with id, name, type, defaultSync, active |
-| `isAdmin` | `boolean` | Admin mode flag |
-| `maxBarcode` | `number` | Highest barcode sequence number for current branch |
-| `branchCode` | `string` | Current branch code from sessionStorage (default '00') |
-| `supplierCache` | `object` | name→UUID lookup |
-| `supplierCacheRev` | `object` | UUID→name lookup |
-| `supplierNumCache` | `object` | UUID→supplier_number lookup |
-| `brandCache` | `object` | name→UUID lookup |
-| `brandCacheRev` | `object` | UUID→name lookup |
-| `slogPage` | `number` | System log current page |
-| `slogTotalPages` | `number` | System log total pages |
-| `slogCurrentFilters` | `object` | System log active filters |
-| `rcptRowNum` | `number` | Goods receipt row counter |
-| `currentReceiptId` | `string\|null` | Active receipt being edited |
-| `rcptEditMode` | `boolean` | Receipt edit mode flag |
-| `rcptViewOnly` | `boolean` | Receipt view-only flag |
+- **First tenant:** אופטיקה פריזמה (Prizma Optics) — production
+- **Test tenant:** אופטיקה דמו (demo, slug `demo`) — all QA runs here, never on production data
+- **Supabase project:** `tsxrrxzmdxaenlvocyit.supabase.co` — single shared instance
+- **Tenant isolation:** RLS on every table using `tenant_id` column + JWT-based policies
+  (see `docs/GLOBAL_SCHEMA.sql` CONVENTIONS section for the 3 RLS idioms and known debt)
 
 ---
 
-### js/shared-ui.js (122 lines)
+## 2. Dual-Repo Architecture
 
-Tab navigation and UI helpers extracted from shared.js. Load after shared.js.
+Optic Up is split across two GitHub repositories. Both share one Supabase backend.
 
-**Functions:**
+```
+┌──────────────────────────────────┐    ┌──────────────────────────────────┐
+│  opticalis/opticup               │    │  opticalis/opticup-storefront    │
+│  (ERP — internal, staff)         │    │  (Storefront — public, customers)│
+│                                  │    │                                  │
+│  Stack: Vanilla JS + HTML        │    │  Stack: Astro 6 + TypeScript     │
+│  Deploy: GitHub Pages            │    │         + Tailwind CSS 4         │
+│  URL: https://app.opticalis.co.il│    │  Deploy: Vercel (auto from main) │
+│                                  │    │                                  │
+│  Houses: Module 1 (Inventory)    │    │  Houses: Module 3 (Storefront)   │
+│          Module 1.5 (Shared)     │    │                                  │
+│          Module 2 (Platform Admin)│   │  Reads ONLY via Views + RPC      │
+│          Module 3.1 (Recon meta) │    │  (Iron Rules #13, #24)           │
+│                                  │    │                                  │
+│  🖥️ Win: C:\Users\User\opticup   │    │  🖥️ Win: C:\Users\User\          │
+│  🍎 Mac: /Users/danielsmac/opticup│   │         opticup-storefront       │
+└────────────────┬─────────────────┘    └───────────────┬──────────────────┘
+                 │                                      │
+                 └─────────► Supabase ◄─────────────────┘
+                          (tenant_id + RLS)
+```
 
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `showTab` | `name: string` | `void` | Main navigation: stops camera, deactivates all tabs, activates target, calls loader |
-| `showEntryMode` | `mode: string` | `void` | Switches between manual/excel/receipt entry sub-modes |
-| `showInfoModal` | `title: string, bodyHTML: string` | `void` | Creates overlay info modal with title, body HTML, close button, Escape handler |
-| `renderHelpBanner` | `parentEl: HTMLElement, storageKey: string, helpHTML: string` | `void` | Renders collapsible help banner with sessionStorage collapse state |
+**Why two repos:** The split was introduced when Module 3 (Storefront) chose Astro
+as its framework. Keeping the Astro build pipeline isolated from the ERP's
+static-site deployment prevents build-system coupling. The split is by deployment
+target, not by tenant.
 
----
-
-### js/supabase-ops.js (380 lines)
-
-DB operations: CRUD helpers, barcode generation, logging. Alert/OCR functions moved to `js/supabase-alerts-ocr.js`.
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `loadLookupCaches` | — | `Promise<void>` | Load supplier/brand name↔UUID caches from DB |
-| `enrichRow` | `row: object` | `object` | Add brand_name, supplier_name to a Supabase row |
-| `fetchAll` | `tableName: string, filters?: Array` | `Promise<object[]>` | Paginated fetch (1000/page) with tenant_id filter + enrichment |
-| `batchCreate` | `tableName: string, records: object[]` | `Promise<object[]>` | Insert records in batches of 100, with barcode dedup for inventory |
-| `batchUpdate` | `tableName: string, records: object[]` | `Promise<object[]>` | Update records individually (RLS-compatible), each must have `id` |
-| `generateNextBarcode` | — | `Promise<string>` | Generate next BBDDDDD barcode for current branch |
-| `writeLog` | `action: string, inventoryId?: string, details?: object` | `Promise<void>` | Insert audit log entry (async, non-blocking) |
-| `batchWriteLog` | `entries: object[]` | `Promise<void>` | Bulk insert log entries in single DB call |
-
----
-
-### js/supabase-alerts-ocr.js (181 lines)
-
-Alert creation + OCR template learning (split from supabase-ops.js). Load after shared.js, supabase-ops.js.
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `createAlert` | `alertType: string, severity: string, title: string, entityType?: string, entityId?: string, data?: object, expiresAt?: string` | `Promise<object\|null>` | Create system alert (checks ai_agent_config flags, skips historical docs) |
-| `alertPriceAnomaly` | `item: string, poPrice: number, receiptPrice: number, supplierId: string, docId: string` | `Promise<object\|null>` | Create price_anomaly alert |
-| `alertPrepaidNewDocument` | `supplierId: string, documentId: string, tenantId: string, supplierName: string, docNumber: string` | `Promise<void>` | Create prepaid_new_document info alert when receipt creates doc for supplier with active prepaid deal |
-| `validateOCRData` | `data: object` | `object[]` | Validate OCR-extracted data against 7 business rules |
-| `_detectDateFormat` | `dateStr: string` | `string\|null` | Detect date format pattern from string |
-| `buildHintsFromCorrections` | `corrections: object, extractedData: object, existingHints: object` | `object` | Build OCR extraction hints from user corrections |
-| `updateOCRTemplate` | `supplierId: string, docTypeCode: string, corrections: object, extractedData: object, tenantId?: string` | `Promise<any>` | Update OCR template stats via RPC |
+**Coordination rules:**
+- Both repos use `develop` for active work. `main` is production on each side.
+- Only Daniel merges to `main` — after QA on demo tenant.
+- Never work on both repos simultaneously on the same machine/branch.
 
 ---
 
-### js/auth-service.js (309 lines)
+## 3. Modules at a Glance
 
-PIN authentication, session management, permission checks.
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `verifyEmployeePIN` | `pin: string` | `Promise<{token, employee}>` | Call pin-auth Edge Function, return JWT + employee |
-| `verifyPinOnly` | `pin: string` | `Promise<object\|null>` | Lightweight PIN check — returns employee or null |
-| `incrementFailedAttempts` | `employeeId: string` | `Promise<void>` | Increment failed PIN counter; lock after 5 |
-| `getEffectivePermissions` | `employeeId: string` | `Promise<string[]>` | Resolve permissions from role assignments (with legacy fallback) |
-| `initSecureSession` | `employee: object, jwtToken?: string` | `Promise<object>` | Create auth session: JWT client, DB row, sessionStorage, tenant config |
-| `loadSession` | — | `Promise<object\|null>` | Restore session from sessionStorage + validate against DB |
-| `clearSessionLocal` | — | `void` | Clear sessionStorage keys, reset sb to anon client |
-| `clearSession` | — | `Promise<void>` | Deactivate DB session + clearSessionLocal + redirect to / |
-| `hasPermission` | `permissionKey: string` | `boolean` | Check if current session has a permission |
-| `requirePermission` | `permissionKey: string` | `void` | Throw + toast if permission missing |
-| `checkBranchAccess` | `branchId: string` | `boolean` | Check branch access (ceo/manager=all, others=own branch) |
-| `applyUIPermissions` | — | `void` | Show/hide elements with data-permission / data-tab-permission attributes |
-| `getCurrentEmployee` | — | `object\|null` | Read employee object from sessionStorage |
-| `assignRoleToEmployee` | `employeeId: string, roleId: string` | `Promise<void>` | Upsert employee_roles + writeLog + toast |
-| `forceLogout` | `employeeId: string` | `Promise<void>` | Deactivate all sessions for an employee |
-
-**Global Variables:**
-
-| Variable | Type | Description |
-|----------|------|-------------|
-| `AT` | `const object` | Auth table name constants (ROLES, PERMISSIONS, ROLE_PERMS, EMP_ROLES, SESSIONS) |
-| `SK` | `const object` | SessionStorage key constants (TOKEN, EMPLOYEE, PERMS, ROLE) |
-| `LEGACY_ROLE_MAP` | `const object` | Maps legacy role names to new system (admin→ceo, manager→manager, employee→worker) |
+| Module | Name | Status | Repo | Scope |
+|--------|------|--------|------|-------|
+| 1 | Inventory Management | ✅ Complete | opticup | Full ERP: inventory, purchasing, receipts, debt, returns, shipments, AI-OCR, alerts, stock counts, Access sync |
+| 1.5 | Shared Components | ✅ Complete | opticup | Cross-module UI/JS infrastructure: activity_log, auth/permissions, Modal/Toast/TableBuilder components, PIN modal, plan helpers, tenant config |
+| 2 | Platform Admin | ✅ Complete (v2.0) | opticup | Super-admin control plane: tenant provisioning, plans/limits/features, audit log, PIN reset, suspend/activate/delete |
+| 3 | Storefront | 🟡 Phase B remediation | opticup-storefront | Public storefront: CMS pages, campaigns, blog, AI content, translations, media library, lead forms, brand pages, SEO |
+| 3.1 | Project Reconstruction | 🟡 In execution | opticup | Meta-module: foundation doc rewrites, DB audit, roadmap reconciliation. Does not own code — owns documentation accuracy. |
 
 ---
 
-### js/data-loading.js (171 lines)
+## 4. Cross-Repo Contracts
 
-Data loading, dropdown population, low-stock alerts.
+The two repos are bound by a shared Supabase instance with Views as the contract
+layer. Nothing crosses the repo boundary except through these contracts.
 
-**Functions:**
+### 4.1 Database Views (contract surface)
 
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `loadData` | — | `Promise<void>` | Main data loader: session check, caches, brands, maxBarcode, dropdowns |
-| `loadMaxBarcode` | — | `Promise<void>` | Query max barcode sequence for current branch |
-| `populateDropdowns` | — | `void` | Fill reduction brand + receipt supplier dropdowns |
-| `activeBrands` | — | `object[]` | Filter brands array to active only |
-| `supplierOpts` | — | `string` | Generate supplier `<option>` HTML |
-| `productTypeOpts` | — | `string` | Generate product type `<option>` HTML |
-| `syncOpts` | — | `string` | Generate sync mode `<option>` HTML |
-| `getBrandType` | `name: string` | `string` | Lookup brand type by name |
-| `getBrandSync` | `name: string` | `string` | Lookup brand default sync by name |
-| `loadLowStockAlerts` | — | `Promise<object[]>` | Query brands below min_stock_qty threshold |
-| `refreshLowStockBanner` | — | `Promise<void>` | Update low-stock banner visibility + text |
-| `openLowStockModal` | — | `void` | Show low-stock details modal with "create PO" buttons |
-| `closeLowStockModal` | — | `void` | Remove low-stock modal from DOM |
+The storefront reads exclusively through Supabase Views granted to `anon`.
+Full view definitions live in `modules/Module 3.1 - Project Reconstruction/db-audit/03-views.md`.
+Summary in `docs/GLOBAL_SCHEMA.sql` VIEWS section.
 
-**Global Variables:**
+**Key views consumed by the storefront:**
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `window.lowStockData` | `object[]` | Cached low-stock brand data |
-| `window.brandSyncCache` | `object` | brand name→default sync lookup (set in loadData) |
+| View | Purpose | Consumer in storefront |
+|------|---------|----------------------|
+| `v_public_tenant` | Secure tenant resolution (10-column projection of tenants + storefront_config) | `src/lib/tenant.ts` |
+| `v_storefront_products` | Product catalog — GOLDEN REFERENCE (images subquery, website_sync filter, resolved_mode) | `src/lib/products.ts` |
+| `v_storefront_brands` | Brand index with product_count filter | `src/lib/brands.ts` |
+| `v_storefront_brand_page` | Brand landing pages (brand_page_enabled + has-products check) | `src/lib/brands.ts` |
+| `v_storefront_pages` | Published CMS pages only | `src/lib/pages.ts` |
+| `v_storefront_blog_posts` | Published blog posts | `src/lib/blog-posts.ts` |
+| `v_storefront_categories` | Product type aggregates | `src/lib/products.ts` |
+| `v_storefront_components` | Active CTA/lead-form/banner/sticky-bar components | `src/lib/components.ts` |
+| `v_storefront_config` | Per-tenant storefront settings (WhatsApp, analytics, hero, i18n) | `src/lib/tenant.ts` |
+| `v_storefront_reviews` | Visible Google/manual reviews | (reviews component) |
+| `v_storefront_media` | Media library (public shape, is_deleted filtered) | (media rendering) |
+| `v_content_translations` | Approved + draft content translations | `src/lib/content-translations.ts` |
+| `v_ai_content` | Active AI-generated content rows | (product descriptions) |
+| `v_tenant_i18n_overrides` | Per-tenant i18n string overrides | `src/lib/tenant-i18n.ts` |
 
----
+### 4.2 RPCs consumed cross-repo
 
-### js/search-select.js (135 lines)
+| RPC | Direction | Purpose |
+|-----|-----------|---------|
+| `submit_storefront_lead` | Storefront → DB | Lead form submission (SECURITY DEFINER) |
+| `create_translated_page` | ERP Studio → DB | Creates translated page variant |
+| `mark_translations_stale` | ERP Studio → DB | Flags translations after source edit |
 
-Searchable dropdown component with fixed positioning.
+### 4.3 Image proxy
 
-**Functions:**
+Supabase Storage bucket `frame-images` is **private** (not public).
+All product images are served through the storefront's server-side proxy:
+`/api/image/[...path].ts` — uses `SUPABASE_SERVICE_ROLE_KEY` (env var, never in code).
+The `images` column in `v_storefront_products` outputs paths prefixed with `/api/image/`
+(this is the GOLDEN REFERENCE subquery — do not modify without regression test).
 
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `createSearchSelect` | `items: string[], value?: string, onChange?: function` | `HTMLElement` | Create searchable dropdown component |
-| `closeAllDropdowns` | — | `void` | Close all open search-select dropdowns |
-| `repositionDropdown` | — | `void` | Reposition active dropdown on scroll/resize |
+### 4.4 View modification protocol
 
-**Global Variables:**
-
-| Variable | Type | Description |
-|----------|------|-------------|
-| `activeDropdown` | `object\|null` | Currently open dropdown reference {input, dropdown} |
-| `_searchSelectCleanups` | `Set` | Cleanup functions for removed search-select instances |
-| `window._sharedSearchObserver` | `MutationObserver` | Shared observer for orphaned dropdown cleanup |
-
----
-
-### js/header.js (61 lines)
-
-Sticky header rendered on all pages when session is active.
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `initHeader` | — | `Promise<void>` | Load tenant name/logo, build header (runs on DOMContentLoaded) |
-| `buildHeader` | `emp: object, tenantName: string, logoUrl: string, role: string` | `void` | Create header DOM: tenant logo + name \| "Optic Up" \| employee + logout |
-
-**Global Variables:**
-
-| Variable | Type | Description |
-|----------|------|-------------|
-| `FALLBACK_LOGO` | `const string` | SVG glasses icon used when no tenant logo |
+Changing any Supabase View used by the storefront requires the protocol defined in
+`opticup-storefront/CLAUDE.md §5` (Iron Rule #29):
+1. Read current definition from `db-audit/03-views.md`
+2. Write the new CREATE OR REPLACE VIEW
+3. Run the storefront safety-net scripts
+4. Verify no runtime regressions
 
 ---
 
-### js/alerts-badge.js (338 lines)
+## 5. ERP Internal Contracts (summary)
 
-Bell icon with unread badge and dropdown panel. Used on ALL pages.
+> Detailed per-function contracts with parameters, return types, and consumers
+> are documented in each module's MODULE_MAP.md. This section is a
+> category-level summary for orientation only.
 
-**Functions:**
+### 5.1 RPC functions (Supabase — 41 project functions)
 
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `initAlertsBadge` | — | `Promise<void>` | Inject bell icon into header, wire click, start 60s polling |
-| `refreshAlertsBadge` | — | `Promise<void>` | Fetch unread alert count, update badge number + shake animation |
-| `toggleAlertsPanel` | — | `void` | Toggle alerts dropdown open/close |
-| `openAlertsPanel` | — | `Promise<void>` | Position + show alerts panel, load alerts list |
-| `closeAlertsPanel` | — | `void` | Hide alerts panel |
-| `loadAlertsList` | — | `Promise<void>` | Fetch last 10 unread alerts from DB |
-| `renderAlertsPanel` | — | `void` | Render alerts list HTML into panel |
-| `buildAlertActions` | `alert: object` | `string` | Generate action buttons HTML for an alert |
-| `alertAction` | `alertId: string, action: string` | `Promise<void>` | Handle alert view (mark read + navigate) or dismiss |
-| `markAllAlertsRead` | — | `Promise<void>` | Mark all unread alerts as read |
-| `timeAgo` | `dateStr: string` | `string` | Convert timestamp to Hebrew relative time string |
+| Category | Functions | Count |
+|----------|-----------|-------|
+| Tenant lifecycle | activate/create/delete/suspend/update_tenant, get_all_tenants_overview, get_tenant_* (3), validate_slug | 10 |
+| Plan / feature gates | check_plan_limit, is_feature_enabled, is_platform_super_admin | 3 |
+| Inventory atomics | increment/decrement/set_inventory_qty, apply_stock_count_delta, get_low_stock_brands | 5 |
+| Sequential numbers (Iron Rule #13) | next_po_number, next_return_number, next_box_number, next_internal_doc_number | 4 |
+| Shipments / debt / payments | increment_shipment_counters, increment_paid_amount, increment_prepaid_used, get_po_aggregates | 4 |
+| Auth | reset_employee_pin | 1 |
+| Alerts | generate_daily_alerts | 1 |
+| Storefront / content / translation | submit_storefront_lead, create_translated_page, mark_translations_stale, get_translation_context, save_translation_memory_batch (×2), promote_to_platform | 7 |
+| OCR | update_ocr_template_stats (×2) | 2 |
+| Triggers | save_previous_blocks, update_*_updated_at (×3), update_updated_at | 5 |
 
-**Global Variables:**
+Full signatures: `docs/GLOBAL_SCHEMA.sql` FUNCTIONS section.
+Full parameter/return detail: `modules/Module 3.1 - Project Reconstruction/db-audit/05-functions.md`.
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `_alertsPanelOpen` | `boolean` | Panel open state |
-| `_alertsRefreshTimer` | `number\|null` | setInterval ID for 60s polling |
-| `_alertsCache` | `object[]` | Cached alerts for current panel render |
+### 5.2 Edge Functions (Supabase)
 
----
+| Function | Purpose |
+|----------|---------|
+| `pin-auth` | PIN authentication — returns JWT + employee |
+| `ocr-extract` | Claude Vision OCR for supplier documents |
+| `remove-background` | Server-side background removal for product images |
 
-### js/file-upload.js (308 lines)
+### 5.3 ERP HTML Pages
 
-File upload helper for supplier documents (Supabase Storage). Multi-file gallery with delete.
+| Page | File | Owner Module |
+|------|------|-------------|
+| Home Screen | `index.html` | Core (PIN login, module cards) |
+| Inventory | `inventory.html` | Module 1 (11 tabs) |
+| Supplier Debt | `suppliers-debt.html` | Module 1 — Debt (5 tabs) |
+| Employees | `employees.html` | Module 1 — Permissions |
+| Shipments | `shipments.html` | Module 1 — Shipments |
+| Settings | `settings.html` | Module 1 — Settings |
+| Platform Admin | `admin.html` | Module 2 (Supabase Auth, no shared.js) |
+| Error Page | `error.html` | Module 2 (not-found/suspended/deleted) |
+| Landing Page | `landing.html` | Module 2 (slug entry + redirect) |
 
-**Functions:**
+### 5.4 Key JS globals (ERP)
 
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `uploadSupplierFile` | `file: File, supplierId: string` | `Promise<{url, fileName, signedUrl}\|null>` | Upload PDF/JPG/PNG to supplier-docs bucket (max 10MB) |
-| `getSupplierFileUrl` | `filePath: string` | `Promise<string\|null>` | Get 1-hour signed URL for stored file |
-| `renderFilePreview` | `fileUrl: string, fileName: string, containerId: string` | `void` | Render PDF iframe or image preview in container |
-| `pickAndUploadFile` | `supplierId: string, callback: function` | `void` | Open file picker, upload, call callback with result |
-| `pickAndUploadFiles` | `supplierId: string, callback: function` | `void` | Multi-file picker + upload, callback with results array |
-| `fetchDocFiles` | `docId: string, fallbackUrl?, fallbackName?` | `Promise<object[]>` | Fetch files from supplier_document_files, fallback to legacy file_url |
-| `saveDocFile` | `docId, fileUrl, fileName, sortOrder` | `Promise<void>` | Insert record into supplier_document_files |
-| `renderFileGallery` | `files: object[], containerId: string` | `Promise<void>` | Multi-file gallery with thumbnails + delete buttons |
-| `_deleteGalleryFile` | `fileId: string, containerId: string` | `Promise<void>` | Confirm + delete file from DB + re-render gallery |
-
-**Global Variables:**
-
-| Variable | Type | Description |
-|----------|------|-------------|
-| `UPLOAD_ALLOWED_TYPES` | `string[]` | Allowed MIME types: PDF, JPEG, PNG |
-| `UPLOAD_MAX_SIZE` | `number` | Max file size: 10MB |
-
----
-
-### js/pin-modal.js (5 lines — redirect)
-
-Backward-compat redirect to `shared/js/pin-modal.js` via `document.write()`. Will be removed in Phase 5 migration. Original PIN modal logic now lives in shared/js/pin-modal.js (123 lines).
-
----
-
-## 3. Global CSS Files (css/)
-
-| File | Lines | Description |
-|------|-------|-------------|
-| `css/styles.css` | 392 | Main stylesheet: CSS variables, buttons, forms, tables, modals, toasts, cards, badges, alerts, stock count, admin, loading overlay, responsive breakpoints (768/640/600/480px) |
-| `css/header.css` | 349 | Sticky header: 60px height, z-index 1000, RTL 3-zone flex layout (tenant logo+name / "Optic Up" / employee+logout), alerts bell+badge+panel, mobile responsive |
-
-### Global Docs (docs/)
-
-| File | Description |
-|------|-------------|
-| `docs/GLOBAL_MAP.md` | Cross-module function registry, globals, DB table ownership |
-| `docs/GLOBAL_SCHEMA.sql` | Full DB schema across all modules |
-| `docs/TROUBLESHOOTING.md` | Troubleshooting knowledge base — resolved bugs with root cause, fix, and prevention |
+| Global | File | Purpose |
+|--------|------|---------|
+| `sb` | shared.js | Supabase client instance |
+| `T` | shared.js | Table name constants (37 entries) |
+| `FIELD_MAP` / `FIELD_MAP_REV` | shared.js | Hebrew↔English column mappings |
+| `getTenantId()` | shared.js | Read tenant UUID from session |
+| `fetchAll()` / `batchCreate()` / `batchUpdate()` | supabase-ops.js | DB operation helpers |
+| `writeLog()` | supabase-ops.js | Audit trail (async, non-blocking) |
+| `verifyEmployeePIN()` / `hasPermission()` | auth-service.js | Auth contract |
+| `DB.*` | shared/js/supabase-client.js | Module 1.5 DB wrapper |
+| `Modal.*` | shared/js/modal-builder.js | Module 1.5 modal system |
+| `Toast.*` | shared/js/toast.js | Module 1.5 toast system |
+| `TableBuilder.create()` | shared/js/table-builder.js | Module 1.5 table component |
+| `ActivityLog.*` | shared/js/activity-logger.js | Module 1.5 activity logging |
+| `checkPlanLimit()` / `isFeatureEnabled()` | shared/js/plan-helpers.js | Module 2 plan gates |
 
 ---
 
-## 4. Shared Components (shared/) — Phase 4 complete ✅
-
-### shared/css/variables.css (157 lines)
-
-70 CSS custom properties (design tokens) extracted from styles.css. Categories:
-- Colors — primary (4), semantic (16 incl. dark text), neutral (12), background (3)
-- Typography — font-family (1), font-sizes (6), font-weights (4), line-heights (3)
-- Spacing — 6-step scale (xs through 2xl)
-- Borders — radius (4: sm/md/lg/full)
-- Shadows — sm/md/lg (3)
-- Z-index — dropdown/sticky/overlay/modal/toast (5)
-- Transitions — fast/normal/slow (3)
-
-### shared/css/components.css (254 lines)
-
-UI components part 1: buttons (primary/secondary/danger/ghost × sm/md/lg + disabled/hover states), inputs (.input, .input-error, .input-disabled), selects (.select, .select-error), textareas (.textarea, .textarea-error), badges (success/error/warning/info/neutral), cards (header/body/footer). All values via CSS variables.
-
-### shared/css/components-extra.css (214 lines)
-
-UI components part 2: table base (.table, .table-header, .table-row, .table-cell, .table-sortable, .table-sort-active), slide-in panel (RTL, overlay, header/body), skeleton loaders (text/circle/rect/row + pulse animation), accordion (CSS-only open/close via .accordion-open).
-
-### shared/css/layout.css (201 lines)
-
-Page structure (.page-container, .page-header, .page-content), sticky header, flex helpers (flex/col/wrap, items, justify, gap), grid helpers (2/3/4 col), RTL utilities (logical margin/padding/inset), visibility (hidden/visible/sr-only), print styles (no-print, header hidden).
-
-### shared/css/forms.css (146 lines)
-
-Form layout: .form-group (label+input wrapper), .form-label, .form-required (red asterisk), .form-error/.form-help text, .form-row (multi-column flex), .form-col-2 (2-col grid), .form-actions (button container), .form-inline (label+input same line), mobile responsive.
-
-### shared/css/modal.css (233 lines)
-
-Modal system: overlay (fixed, z-modal), container (flex column, 90vh max), header/body/footer, close button. 5 sizes (sm 340px, md 500px, lg 700px, xl 900px, fullscreen 95vw). 5 types (default, confirm, alert, danger with red header, wizard with progress bar). Wizard step indicators (num/active/done). Animations (entering/leaving with scale+fade). Stack support (dimmed, pointer-events:none). Responsive (640px breakpoint).
-
-### shared/css/toast.css (155 lines)
-
-Toast notifications: container (fixed, z-toast, top-start, flex column), toast item (border-inline-start colored by type, shadow, flex row), icon/content/close/progress bar. 4 types (success/error/warning/info). 3 keyframe animations (toast-enter slide+fade in, toast-leave slide+fade out, toast-progress countdown). CSS custom property --toast-duration for JS control. Responsive (480px breakpoint). Zero hardcoded colors.
-
-### shared/js/theme-loader.js (42 lines)
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `loadTenantTheme` | `tenantRow: object` | `void` | Read ui_config JSONB from tenant row, inject CSS variable overrides to :root via setProperty(). Only keys starting with `--` are injected (security). Zero DB calls, standalone, no innerHTML. |
-
-**Global Variables:**
-
-| Variable | Type | Description |
-|----------|------|-------------|
-| `window.loadTenantTheme` | `function` | Global reference to loadTenantTheme |
-
-### shared/js/modal-builder.js (261 lines)
-
-Modal system core. Global `Modal` object: `show(config)→{el,close}`, `confirm(config)`, `alert(config)`, `danger(config)` (typed word to enable), `form(config)→{el,close}`, `close()`, `closeAll()`. Stack management (_stack[]), focus trap, body scroll lock, Escape key, open/close animations. Private `_escapeHtml()` for plain text. Zero JS dependencies.
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `Modal.show` | `config: object` | `{el, close}` | Open modal with custom content |
-| `Modal.confirm` | `config: object` | `void` | Confirm dialog with onConfirm/onCancel |
-| `Modal.alert` | `config: object` | `void` | Informational alert with OK button |
-| `Modal.danger` | `config: object` | `void` | Danger confirmation requiring typed word |
-| `Modal.form` | `config: object` | `{el, close}` | Modal with form content |
-| `Modal.close` | — | `void` | Close topmost modal |
-| `Modal.closeAll` | — | `void` | Close all open modals |
-
-### shared/js/modal-wizard.js (145 lines)
-
-Wizard extension for Modal. Attaches `Modal.wizard(config)→{el,close}`. Multi-step progress bar (wizard-step-active/done), back/next/finish buttons, step validate/onEnter/onLeave callbacks. Depends on modal-builder.js (must load after).
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `Modal.wizard` | `config: object` | `{el, close}` | Multi-step wizard with progress bar |
-
-### shared/js/toast.js (147 lines)
-
-Toast notification system. Global `Toast` object: `success(msg,opts)`, `error(msg,opts)`, `warning(msg,opts)`, `info(msg,opts)`, `dismiss(id)`, `clear()`. Max 5 visible, duplicate prevention via id, auto-dismiss with CSS progress bar (--toast-duration), XSS-safe via _escapeHtml(). Zero dependencies.
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `Toast.success` | `msg: string, opts?: object` | `void` | Green success notification |
-| `Toast.error` | `msg: string, opts?: object` | `void` | Red error notification |
-| `Toast.warning` | `msg: string, opts?: object` | `void` | Orange warning notification |
-| `Toast.info` | `msg: string, opts?: object` | `void` | Blue info notification |
-| `Toast.dismiss` | `id: string` | `void` | Dismiss specific toast by id |
-| `Toast.clear` | — | `void` | Dismiss all toasts |
-
-### shared/js/pin-modal.js (123 lines)
-
-PIN prompt modal — migration of js/pin-modal.js. Global `promptPin(title, callback)` — identical external API. Internally uses `Modal.show()` for overlay/backdrop/close. 5-digit split input with auto-advance, backspace, paste, auto-submit. Calls `verifyPinOnly()` from auth-service.js. PIN-specific styles injected once via `<style>` block. Depends on modal-builder.js.
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `PinModal.prompt` | `title: string, callback: function(pin, emp)` | `void` | Show PIN modal; on valid PIN calls callback with pin string and employee object (new namespace) |
-| `promptPin` | `title: string, callback: function(pin, emp)` | `void` | Legacy alias for PinModal.prompt — backward compatible |
-
-### shared/tests/ui-test.html (252 lines)
-
-Visual test page: 13 component sections (colors, typography, buttons, inputs, selects, textareas, badges, cards, tables, slide panel, skeleton, accordion, forms). 3-palette theme switcher (Default/Green/Purple) using loadTenantTheme(). RTL, Hebrew, self-contained. Loads only shared/css/ files — no styles.css dependency.
-
-### shared/tests/modal-test.html (251 lines)
-
-Modal system test page: 5 sections — sizes (sm/md/lg/xl/fullscreen), types (confirm/alert/danger/form/wizard), stack (3-layer), keyboard (escape/no-escape/no-backdrop), XSS test. Log area for event output. RTL, Hebrew, self-contained.
-
-### shared/tests/toast-test.html (174 lines)
-
-Toast system test page: 6 sections — types (success/error/warning/info), duration (1s/5s/persistent/dismiss), stack (5 toasts + 6th overflow), duplicate prevention (loading→done replace), XSS test, no-close-button. Log area for event output. RTL, Hebrew, self-contained.
-
-### shared/css/table.css (150 lines)
-
-Table builder styles. `.tb-wrapper` (overflow-x, border, radius), `.tb-table` (collapse, font), `.tb-header` (gray-50), `.tb-th` (sortable with ▲▼ via `data-sort-dir`), `.tb-th-sort-active`, `.tb-row` (zebra, hover), `.tb-td`/`.tb-td-end`/`.tb-td-actions`, `.tb-empty` (icon/text/CTA), `.tb-loading` (pulse skeleton), `.tb-wrapper-sticky` (sticky header). Responsive @640px. All via CSS variables.
-
-### shared/js/table-builder.js (296 lines)
-
-Table builder. Global `TableBuilder` object with `create(config) → TableInstance`.
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `TableBuilder.create` | `config: object` | `TableInstance` | Create managed table in containerId |
-| `table.setData` | `rows: array` | `void` | Render data rows (empty → emptyState) |
-| `table.setLoading` | `isLoading: boolean` | `void` | Toggle skeleton loading state |
-| `table.updateRow` | `rowId: string, newData: object` | `void` | Re-render single row in-place |
-| `table.removeRow` | `rowId: string` | `void` | Remove row (last → emptyState) |
-| `table.getData` | — | `array` | Get current data copy |
-| `table.destroy` | — | `void` | Clean up DOM + state |
-
-### shared/js/permission-ui.js (53 lines)
-
-Permission-aware UI. Global `PermissionUI` object: scans `[data-permission]` attributes, hides/disables unauthorized elements.
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `PermissionUI.apply` | — | `void` | Scan entire document for [data-permission] |
-| `PermissionUI.applyTo` | `container: HTMLElement` | `void` | Scan container only (dynamic content) |
-| `PermissionUI.check` | `permission: string` | `boolean` | Manual permission check |
-
-### shared/js/sort-utils.js (43 lines) — Phase Flow-Review-4
-
-Client-side column sorting utility. Global `SortUtils` object.
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `SortUtils.sortArray` | `arr, key, dir` | `Array` | Sort array by key (Hebrew locale, numbers, nulls) |
-| `SortUtils.toggle` | `tableId, key` | `{key, dir}` | Toggle sort state asc/desc for a table |
-| `SortUtils.updateHeaders` | `thead, key, dir` | `void` | Set sort-asc/sort-desc CSS classes on th[data-sort-key] |
-| `SortUtils.getState` | `tableId` | `{key,dir}\|null` | Get current sort state for table |
-
-### shared/js/table-resize.js (186 lines) — Rewritten AI OCR Fix + QA phase
-
-Auto-discovery table resize + sticky scrollbar + per-user column width persistence. Loaded on all 4 data pages.
-
-**Features:**
-- Auto-discovers tables via MutationObserver (debounced 300ms scan on DOM changes)
-- Auto-generates IDs for tables without one (`parent-id + '-table'`)
-- Resizable columns via CSS `resize: horizontal`
-- Sticky scrollbar at viewport bottom for wide tables
-- Per-user localStorage persistence (`col-w-{employeeId}-{tableId}`)
-- 15 tables auto-initialized across inventory (9), suppliers-debt (4), employees (2)
-
-**Functions:**
-
-| Function | Parameters | Returns | Description |
-|----------|-----------|---------|-------------|
-| `TableResize.register` | `tableId: string` | `void` | Register a table by ID for resize + scrollbar + persistence |
-| `TableResize.autoInit` | — | `void` | Scan all tables on page, auto-register those with id + thead + ≥3 columns |
-
-### shared/tests/table-test.html (235 lines)
-
-Table builder test page: 9 sections — basic (all 7 types), sort, empty state, loading, row ops, sticky header, row click, XSS, destroy. Mock data inline, self-contained.
-
-### shared/tests/permission-test.html (190 lines)
-
-Permission UI test page: 7 sections — hide, disable, OR logic, applyTo, manual check, no-hasPermission fallback, full reset. Mock hasPermission inline, self-contained.
-
-### Integration Points — Redirect Files
-
-| File | Path | Lines | Purpose |
-|------|------|-------|---------|
-| pin-modal.js (redirect) | js/pin-modal.js | 5 | Backward-compat redirect to shared/js/pin-modal.js via document.write(). Will be removed in Phase 5. |
-
-Pages modified for shared/ dependencies:
-
-| Page | Added CSS | Added JS |
-|------|-----------|----------|
-| inventory.html | shared/css/modal.css | shared/js/modal-builder.js |
-| suppliers-debt.html | shared/css/modal.css | shared/js/modal-builder.js |
+## 6. Documentation Map
+
+| What you need | Where to find it |
+|---------------|-----------------|
+| Architectural map (this file) | `opticup/docs/GLOBAL_MAP.md` |
+| Data model (tables, views, RLS, functions) | `opticup/docs/GLOBAL_SCHEMA.sql` |
+| Build sequence, decisions, roadmap | `opticup/MASTER_ROADMAP.md` |
+| Iron Rules 1–23 (all ERP work) | `opticup/CLAUDE.md` §4–§6 |
+| Iron Rules 24–30 (storefront work) | `opticup-storefront/CLAUDE.md` §5 |
+| Storefront architecture (layer model, tenant resolution, image proxy) | `opticup-storefront/ARCHITECTURE.md` |
+| Storefront CMS table schemas | `opticup-storefront/SCHEMAS.md` |
+| Storefront view contracts | `opticup-storefront/VIEW_CONTRACTS.md` |
+| DB audit baseline (live DB as of 2026-04-11) | `opticup/modules/Module 3.1 - Project Reconstruction/db-audit/01-tables.md` .. `06-sequences.md` |
+| Code conventions (UI patterns, idioms) | `opticup/docs/CONVENTIONS.md` |
+| File tree | `opticup/docs/FILE_STRUCTURE.md` |
+| DB tables quick reference (T constants) | `opticup/docs/DB_TABLES_REFERENCE.md` |
+| Known issues | `opticup/docs/TROUBLESHOOTING.md` |
+| Autonomous mode protocol | `opticup/docs/AUTONOMOUS_MODE.md` |
+| Per-module specs | `opticup/modules/Module N - .../docs/MODULE_SPEC.md` |
+| Per-module code maps | `opticup/modules/Module N - .../docs/MODULE_MAP.md` |
+| Per-module DB schema | `opticup/modules/Module N - .../docs/db-schema.sql` |
+| Per-module session status | `opticup/modules/Module N - .../docs/SESSION_CONTEXT.md` |
 
 ---
 
-## 5. Cross-Module Contracts
+## 7. Known Security Debt
 
-### RPC Functions (Supabase)
+Three classes of security findings are documented in `docs/GLOBAL_SCHEMA.sql`
+with `SECURITY-FINDING` blocks. Do not duplicate the details here — this is a
+pointer only.
 
-| Contract Function | Owner Module | Parameters | Returns | Used By |
-|-------------------|-------------|-----------|---------|---------|
-| `increment_inventory` | Inventory | `inv_id UUID, delta INTEGER` | `void` | Goods Receipts, Access Sync, Pending Resolve |
-| `decrement_inventory` | Inventory | `inv_id UUID, delta INTEGER` | `void` | Reduction, Access Sync, Supplier Returns |
-| `set_inventory_qty` | Inventory | `inv_id UUID, new_qty INTEGER` | `void` | Stock Count (approval) |
-| `next_internal_doc_number` | Debt | `p_tenant_id UUID` | `TEXT` (DOC-NNNN) | Debt Documents, Receipt-Debt auto-create |
-| `update_ocr_template_stats` | AI Agent | `p_tenant_id UUID, p_supplier_id UUID, p_doc_type_code TEXT, p_was_corrected BOOLEAN, p_new_hints JSONB, p_fields_suggested INT DEFAULT 0, p_fields_accepted INT DEFAULT 0` | `JSON {id, times_used, accuracy_rate, learning_stage}` | AI OCR, Historical Import, receipt-ocr-learn.js. Auto-advances learning_stage based on ai_agent_config thresholds. |
-| `next_box_number` | Shipments | `p_tenant_id UUID` | `TEXT` ({prefix}-NNNN) | Shipments Create |
-| `increment_paid_amount` | Module 1.5 (Phase 3) | `p_doc_id UUID, p_delta NUMERIC` | `void` | Debt Payment Allocation |
-| `increment_prepaid_used` | Module 1.5 (Phase 3) | `p_deal_id UUID, p_delta NUMERIC` | `void` | Receipt-Debt (prepaid auto-deduct) |
-| `increment_shipment_counters` | Module 1.5 (Phase 3) | `p_shipment_id UUID, p_items_delta INTEGER, p_value_delta NUMERIC` | `void` | Shipments Lock (item add) |
-| `next_po_number` | Purchasing | `p_tenant_id UUID, p_supplier_number TEXT` | `TEXT` (PO-{sup}-NNNN) | PO creation, clonePO |
-| `next_return_number` | Debt — Returns | `p_tenant_id UUID, p_supplier_number TEXT` | `TEXT` (RET-{sup}-NNNN) | Return creation (PO compare, debt returns) |
-| `get_po_aggregates` | Purchasing | `p_tenant_id UUID` | `TABLE(po_id, item_count, total_value)` | PO list table (server-side totals) |
-| `is_platform_super_admin` | Platform Admin | — | `BOOLEAN` | RLS policies on plans, platform_admins (SECURITY DEFINER — avoids recursion) |
-| `create_tenant` | Platform Admin | `p_name, p_slug, p_owner_name, p_owner_email, p_plan_id, ...` | `UUID` | 10-step atomic provisioning (SECURITY DEFINER). Creates tenant + config + roles + permissions + employee + doc_types + payment_methods. |
-| `validate_slug` | Platform Admin | `p_slug TEXT` | `JSONB {valid, reason}` | Slug format (3-30 chars, a-z0-9-), 22 reserved words, uniqueness check (SECURITY DEFINER). |
-| `delete_tenant` | Platform Admin | `p_tenant_id UUID, p_deleted_by UUID` | `void` | Soft delete: status='deleted', deleted_at=now() (SECURITY DEFINER). |
-| `get_all_tenants_overview` | Platform Admin | — | `JSONB[]` | All non-deleted tenants with plan name, employee/inventory/supplier counts (SECURITY DEFINER). |
-| `get_tenant_stats` | Platform Admin | `p_tenant_id UUID` | `JSONB` | Single tenant resource counts: employees, inventory, suppliers, documents, brands (SECURITY DEFINER). |
-| `suspend_tenant` | Platform Admin | `p_tenant_id, p_reason, p_admin_id` | `void` | Verifies active, sets suspended + reason + audit (SECURITY DEFINER). |
-| `activate_tenant` | Platform Admin | `p_tenant_id, p_admin_id` | `void` | Verifies suspended/trial, sets active + audit (SECURITY DEFINER). |
-| `update_tenant` | Platform Admin | `p_tenant_id, p_updates JSONB, p_admin_id` | `void` | Whitelist field update with old/new audit diff (SECURITY DEFINER). |
-| `get_tenant_activity_log` | Platform Admin | `p_tenant_id, p_limit, p_offset, p_level, p_entity_type, p_date_from, p_date_to` | `JSONB {total, entries}` | Paginated activity_log per tenant (SECURITY DEFINER). |
-| `get_tenant_employees` | Platform Admin | `p_tenant_id UUID` | `JSONB[]` | Minimal employee list [{id, name}] for PIN reset (SECURITY DEFINER). |
-| `reset_employee_pin` | Platform Admin | `p_tenant_id, p_employee_id, p_new_pin, p_must_change, p_admin_id` | `void` | Reset PIN + unlock, audit (PIN not logged) (SECURITY DEFINER). |
-| `check_plan_limit` | Platform Admin | `p_tenant_id UUID, p_resource TEXT` | `JSONB` | Counts usage vs plan limits. Returns {allowed, current, limit, remaining, message}. Fail-safe: unlimited if no plan (SECURITY DEFINER). |
-| `is_feature_enabled` | Platform Admin | `p_tenant_id UUID, p_feature TEXT` | `BOOLEAN` | Priority: tenant_config overrides → plan.features → true. Fail-safe (SECURITY DEFINER). |
+1. **SECURITY-FINDING #1** — Four pre-multitenancy tables (`customers`,
+   `prescriptions`, `sales`, `work_orders`) have `anon_all_*` RLS policies
+   granting unrestricted public read/write. These tables also lack `tenant_id`.
 
-### Edge Functions (Supabase)
+2. **SECURITY-FINDING #2** — `supplier_balance_adjustments.service_bypass`
+   policy is misnamed: it grants access to any connection without a session
+   variable, not just `service_role`.
 
-| Contract Function | Owner Module | Parameters | Returns | Used By |
-|-------------------|-------------|-----------|---------|---------|
-| `pin-auth` | Auth | `POST {pin, slug}` | `{token, employee}` | auth-service.js (`verifyEmployeePIN`) |
-| `ocr-extract` | AI Agent (v4) | `POST {file_url OR file_urls[]} + JWT` | `{extracted_data, confidence, files_scanned, ...}` | ai-ocr.js, receipt-ocr.js. Multi-file: sends all files to Claude Vision in single call. max_tokens 8192 for multi-file. Deploy: `--no-verify-jwt`. |
-| `remove-background` | Inventory Images | `POST {image_base64, session_token} + anon key` | `{image_base64, format, size}` | inventory-images-bg.js (`_bgRunAI`) |
+3. **SECURITY-FINDING #3** — Three tables (`brand_content_log`,
+   `storefront_component_presets`, `storefront_page_tags`) use `auth.uid()`
+   as tenant_id in their RLS policies — an architectural bug where user UUID
+   is compared against tenant UUID.
 
-### JS Contracts — Global Functions
-
-| Contract Function | Owner File | Parameters | Returns | Used By |
-|-------------------|-----------|-----------|---------|---------|
-| `getTenantId` | shared.js | — | `string\|null` | Every module (all DB writes/reads) |
-| `getTenantConfig` | shared.js | `key?: string` | `any` | Debt (VAT), Settings, Shipments |
-| `getCurrentEmployee` | auth-service.js | — | `object\|null` | writeLog, PIN flows, header, session checks |
-| `verifyEmployeePIN` | auth-service.js | `pin: string` | `Promise<{token, employee}>` | Login flows (index.html, inventory.html) |
-| `verifyPinOnly` | auth-service.js | `pin: string` | `Promise<object\|null>` | pin-modal.js, all mid-session PIN checks |
-| `hasPermission` | auth-service.js | `permissionKey: string` | `boolean` | All modules (UI guards, action guards) |
-| `writeLog` | supabase-ops.js | `action: string, inventoryId?: string, details?: object` | `Promise<void>` | Every module that mutates data |
-| `fetchAll` | supabase-ops.js | `tableName: string, filters?: Array` | `Promise<object[]>` | Inventory table, brands, suppliers, PO, receipts, debt, sync |
-| `batchCreate` | supabase-ops.js | `tableName: string, records: object[]` | `Promise<object[]>` | Entry, Excel import, receipts, debt docs |
-| `batchUpdate` | supabase-ops.js | `tableName: string, records: object[]` | `Promise<object[]>` | Inventory edit, brands, PO items, receipts |
-| `generateNextBarcode` | supabase-ops.js | — | `Promise<string>` | Entry, Excel import, Receipt confirm |
-| `createAlert` | supabase-ops.js | `alertType, severity, title, ...` | `Promise<object\|null>` | Debt, OCR, Receipt-Debt |
-| `promptPin` | shared/js/pin-modal.js | `title: string, callback: function` | `void` | Stock count, reduction, delete, debt payments, returns, shipments |
-| `Modal.show` | shared/js/modal-builder.js | `config: object` | `{el, close}` | Any module needing custom modal |
-| `Modal.confirm` | shared/js/modal-builder.js | `config: object` | `void` | Confirmation dialogs |
-| `Modal.alert` | shared/js/modal-builder.js | `config: object` | `void` | Informational alerts |
-| `Modal.danger` | shared/js/modal-builder.js | `config: object` | `void` | Danger confirmation with typed word |
-| `Modal.form` | shared/js/modal-builder.js | `config: object` | `{el, close}` | Form modals |
-| `Modal.wizard` | shared/js/modal-wizard.js | `config: object` | `{el, close}` | Multi-step wizard modals |
-| `Modal.close` | shared/js/modal-builder.js | — | `void` | Close topmost modal |
-| `Modal.closeAll` | shared/js/modal-builder.js | — | `void` | Close all open modals |
-| `Toast.success` | shared/js/toast.js | `msg: string, opts?: object` | `void` | Success notification |
-| `Toast.error` | shared/js/toast.js | `msg: string, opts?: object` | `void` | Error notification |
-| `Toast.warning` | shared/js/toast.js | `msg: string, opts?: object` | `void` | Warning notification |
-| `Toast.info` | shared/js/toast.js | `msg: string, opts?: object` | `void` | Info notification |
-| `Toast.dismiss` | shared/js/toast.js | `id: string` | `void` | Dismiss specific toast |
-| `Toast.clear` | shared/js/toast.js | — | `void` | Dismiss all toasts |
-| `DB.select` | shared/js/supabase-client.js | `table, filters?, opts?` | `{ data, error, count }` | Any module (DB queries) |
-| `DB.insert` | shared/js/supabase-client.js | `table, data, opts?` | `{ data, error }` | Any module (DB inserts) |
-| `DB.update` | shared/js/supabase-client.js | `table, id, changes, opts?` | `{ data, error }` | Any module (DB updates) |
-| `DB.batchUpdate` | shared/js/supabase-client.js | `table, records, opts?` | `{ data, error }` | Any module (batch DB updates) |
-| `DB.softDelete` | shared/js/supabase-client.js | `table, id, opts?` | `{ data, error }` | Any module (soft delete) |
-| `DB.hardDelete` | shared/js/supabase-client.js | `table, id, opts?` | `{ data, error }` | Any module (permanent delete) |
-| `DB.rpc` | shared/js/supabase-client.js | `fn, params?, opts?` | `{ data, error }` | Any module (RPC calls) |
-| `ActivityLog.write` | shared/js/activity-logger.js | `config: object` | `void` | System event logging (fire-and-forget) |
-| `ActivityLog.warning` | shared/js/activity-logger.js | `config: object` | `void` | Warning event logging |
-| `ActivityLog.error` | shared/js/activity-logger.js | `config: object` | `void` | Error event logging |
-| `ActivityLog.critical` | shared/js/activity-logger.js | `config: object` | `void` | Critical event logging |
-| `TableBuilder.create` | shared/js/table-builder.js | `config: object` | `TableInstance` | Create managed table (setData/setLoading/updateRow/removeRow/getData/destroy) |
-| `PermissionUI.apply` | shared/js/permission-ui.js | — | `void` | Scan document for [data-permission], hide/disable unauthorized |
-| `PermissionUI.applyTo` | shared/js/permission-ui.js | `container: HTMLElement` | `void` | Scan container only (dynamic content) |
-| `PermissionUI.check` | shared/js/permission-ui.js | `permission: string` | `boolean` | Manual permission check |
-| `escapeHtml` | shared.js | `str: string` | `string` | Every module (HTML rendering) |
-| `toast` | shared.js | `msg: string, type?: string` | `void` | Every module (user feedback) |
-| `formatILS` | shared.js | `amount: number` | `string` | Debt, PO, Receipts, Shipments |
-| `loadLookupCaches` | supabase-ops.js | — | `Promise<void>` | data-loading.js (loadData), inventory flows |
-| `enrichRow` | supabase-ops.js | `row: object` | `object` | fetchAll (internal), batchCreate, batchUpdate |
-| `createSearchSelect` | search-select.js | `items: string[], value?: string, onChange?: function` | `HTMLElement` | Entry, PO items, Receipt items |
-| `uploadSupplierFile` | file-upload.js | `file: File, supplierId: string` | `Promise<object\|null>` | Debt documents, batch upload |
-| `initAlertsBadge` | alerts-badge.js | — | `Promise<void>` | All pages (auto-init on DOMContentLoaded) |
-| `refreshAlertsBadge` | alerts-badge.js | — | `Promise<void>` | After alert dismiss, payment save, OCR accept |
-| `initHeader` | header.js | — | `Promise<void>` | All pages (auto-init on DOMContentLoaded) |
-| `applyUIPermissions` | auth-service.js | — | `void` | All pages after login, tab switches |
-| `editDocument` | debt-doc-edit.js | `docId: string` | `void` | Opens editable document modal with field editing |
-| `saveDocumentEdits` | debt-doc-edit.js | `docId: string` | `Promise<void>` | Saves document edits + AI learning from corrections |
-| `openLinkDeliveryNotesModal` | debt-doc-link.js | `invoiceId: string` | `void` | Multi-select delivery note linking modal |
-| `_extractDeliveryNoteRefs` | debt-doc-link.js | `ocrData: object, notes: string` | `string[]` | AI matching of delivery note references from OCR data |
-| `toggleDocStatusFilter` | debt-documents.js | `key: string` | `void` | Multi-select status filter toggle for documents |
-| `openQuickOpeningBalance` | debt-dashboard.js | — | `void` | Quick opening balance modal for supplier setup |
-| `_cascadeSettlement` | debt-payment-alloc.js | `docId: string` | `Promise<void>` | Auto-close linked children when parent document is settled |
-| `clonePO` | po-actions.js | `id: string` | `Promise<void>` | Duplicate PO with new number, opens in edit mode |
-| `printReceiptBarcodes` | receipt-excel.js | `receiptId: string` | `Promise<void>` | Print barcode list for confirmed receipt items (one row per physical frame) |
-| `_calcPOFinalPrice` | po-items.js | `item: object` | `number` | Calculate final price from cost_price × (1 - discount/100) |
-| `_onPOFinalPriceChange` | po-items.js | `i: number, finalPrice: number` | `void` | Reverse-calc discount from edited final price, update totals |
-| `onReceiptPoSelected` | goods-receipt.js | — | `Promise<void>` | Load PO items into receipt with existing inventory matching (barcode reuse) |
-| `importPOToInventory` | po-import.js | `poId: string` | `Promise<void>` | Creates/updates inventory from PO items with barcode generation |
-| `createPOForBrand` | po-import.js | `brandId: string, brandName: string` | `Promise<void>` | Creates PO pre-populated from low-stock modal |
-| `cancelPOItem` | po-import.js | `itemId: string, poId: string, qtyReceived: number` | `Promise<void>` | Per-item cancel on partial POs, recalculates PO status |
-| `openViewPO` | po-view.js | `id: string` | `Promise<void>` | Read-only PO view with received qty and reason badges |
-| `openEntryHistory` | entry-history.js | — | `void` | Opens entry history modal with date range and accordion view |
-| `openImageModal` | inventory-images.js | `inventoryId: string` | `Promise<void>` | Image capture/upload/delete modal for inventory item |
-| `confirmReceiptCore` | receipt-confirm-items.js | `receiptId, rcptNumber, poId` | `Promise<boolean>` | Multi-barcode receipt confirm with atomic rollback |
-| `showTab` | shared-ui.js | `name: string` | `void` | Main tab navigation (moved from shared.js) |
-| `showEntryMode` | shared-ui.js | `mode: string` | `void` | Entry sub-mode toggle (moved from shared.js) |
-| `showInfoModal` | shared-ui.js | `title: string, bodyHTML: string` | `void` | Informational modal (moved from shared.js) |
-| `renderHelpBanner` | shared-ui.js | `parentEl, storageKey, helpHTML` | `void` | Collapsible help banner (moved from shared.js) |
-| `filterByReceipt` | inventory-table.js | `receiptId: string, receiptNumber: string` | `Promise<void>` | Filter inventory table to receipt items with banner |
-| `_buildDocActionToolbar` | debt-doc-actions.js | `doc: object` | `string` | Document action toolbar HTML (OCR, pending_review toggle, delete) |
-| `_togglePendingReview` | debt-doc-actions.js | `docId: string` | `Promise<void>` | Toggle document pending_review status |
-
-### Module 2 — Platform Admin Contracts
-
-| Contract Function | Owner File | Parameters | Returns | Used By |
-|-------------------|-----------|-----------|---------|---------|
-| `adminLogin` | admin-auth.js | `email, password` | `{ id, email, display_name, role }` | admin-app.js (handleLogin) |
-| `adminLogout` | admin-auth.js | — | `void` | admin-app.js (handleLogout) |
-| `getAdminSession` | admin-auth.js | — | `admin object \| null` | admin-app.js (DOMContentLoaded) |
-| `getCurrentAdmin` | admin-auth.js | — | `admin object \| null` | admin-audit.js, admin-app.js |
-| `requireAdmin` | admin-auth.js | `minRole = 'viewer'` | `admin object \| throws` | Future admin panel features (Phase 3+) |
-| `AdminDB.query` | admin-db.js | `table, select?, filters?` | `data[]` | Admin panel features (Phase 3+) |
-| `AdminDB.getById` | admin-db.js | `table, id` | `row` | Admin panel features (Phase 3+) |
-| `AdminDB.insert` | admin-db.js | `table, data` | `row` | admin-audit.js, admin panel features |
-| `AdminDB.update` | admin-db.js | `table, id, data` | `row` | Admin panel features (Phase 3+) |
-| `AdminDB.rpc` | admin-db.js | `name, params?` | `data` | admin-provisioning.js (create_tenant, validate_slug) |
-| `logAdminAction` | admin-audit.js | `action, targetTenantId?, details?` | `void` | admin-app.js (login/logout), admin-provisioning.js (tenant.create) |
-| `initProvisioningWizard` | admin-provisioning.js | — | `void` | admin-app.js (btn-new-tenant click) |
-| `slugify` | admin-provisioning.js | `text` | `string` | admin-provisioning.js (tenant name → slug) |
-| `validateSlugRealtime` | admin-provisioning.js | `slug` | `void` | admin-provisioning.js (debounced slug input) |
-| `provisionTenant` | admin-provisioning.js | `params` | `void` | admin-provisioning.js (wizard onFinish) |
-| `checkMustChangePin` | auth-service.js | `employee` | `Promise<void>` | auth-service.js (end of initSecureSession) |
-| `hasAdminPermission` | admin-auth.js | `requiredRole` | `boolean` | admin-app.js, admin-tenant-detail.js (UI gating) |
-| `loadTenants` | admin-dashboard.js | — | `void` | admin-app.js (switchTab), admin-tenant-detail.js (refresh) |
-| `filterTenants` | admin-dashboard.js | — | `void` | admin-app.js (search/filter listeners) |
-| `initDashboard` | admin-dashboard.js | — | `void` | admin-app.js (switchTab first load) |
-| `loadTenantDetail` | admin-tenant-detail.js | `tenantId` | `void` | admin-app.js (openTenantPanel) |
-| `renderPanelTab` | admin-tenant-detail.js | `tabName` | `void` | admin-app.js (switchPanelTab) |
-| `loadTenantActivityLog` | admin-activity-viewer.js | `tenantId` | `void` | admin-tenant-detail.js (Tab 2) |
-| `loadPlatformAuditLog` | admin-audit.js | — | `void` | admin-app.js (switchTab 'audit') |
-| `showTenantBlocked` | shared.js (ERP) | `tenant` | `void` | index.html (resolveTenant), shared.js (DOMContentLoaded guard) |
-| `loadPlansTab` | admin-plans.js | — | `void` | admin-app.js (switchTab 'settings') |
-| `openPlanEditor` | admin-plans.js | `planId?` | `void` | admin-plans.js (table row click, new plan button) |
-| `renderFeatureOverrides` | admin-feature-overrides.js | `tenantId, planId, container` | `void` | admin-tenant-detail.js (Tab 1 details) |
-| `checkPlanLimit` | plan-helpers.js | `resource` | `{ allowed, current, limit, remaining, message }` | 5 ERP modules (employee-list, inventory-entry, suppliers, debt-doc-new, ai-ocr) |
-| `isFeatureEnabled` | plan-helpers.js | `feature` | `boolean` | ai-ocr.js, inventory-images-bg.js |
-| `getPlanLimits` | plan-helpers.js | — | `object` | ERP pages (future use) |
-| `getPlanFeatures` | plan-helpers.js | — | `object` | index.html, inventory.html (applyFeatureFlags) |
-| `invalidatePlanCache` | plan-helpers.js | — | `void` | Admin panel after plan changes (future) |
-
-### Shipments Config Contracts
-
-| Contract Function | Owner File | Parameters | Returns | Used By |
-|-------------------|-----------|-----------|---------|---------|
-| `getFieldConfig` | shipments-settings.js | `type: string, field: string` | `string` | shipments-create.js, shipments-items.js |
-| `getCustomField` | shipments-settings.js | `type: string, index: number` | `object` | shipments-items.js |
-| `getVisibleCategories` | shipments-settings.js | — | `string[]` | shipments-items.js, shipments-items-table.js |
-| `getCategoryLabel` | shipments-settings.js | `key: string` | `string` | shipments-items.js, shipments-items-table.js |
-| `getStep3Config` | shipments-settings.js | `field: string` | `string` | shipments-create.js |
+All three are tracked for remediation in `MASTER_ROADMAP.md` (Module 3 Phase B
+preamble checklist, pending Step 9 rewrite).
 
 ---
 
-## 6. Module Registry
-
-| Module | Status | Directory | HTML Pages | DB Tables (count) |
-|--------|--------|-----------|------------|-------------------|
-| Module 1 — Inventory Management | ✅ Complete (AI-OCR-Fix-QA) | `modules/inventory/`, `modules/purchasing/`, `modules/goods-receipts/`, `modules/audit/`, `modules/brands/`, `modules/access-sync/`, `modules/admin/`, `modules/debt/`, `modules/debt/ai/`, `modules/permissions/`, `modules/shipments/`, `modules/stock-count/`, `modules/settings/` | `index.html`, `inventory.html`, `suppliers-debt.html`, `employees.html`, `shipments.html`, `settings.html` | 47 active + 4 stubs = 51 (supplier_balance_adjustments added) |
-
-### Recently Added Module Files (Phase 8+)
-
-| File | Lines | Description |
-|------|-------|-------------|
-| `modules/debt/debt-prepaid-detail.js` | 179 | Deal detail + check management for prepaid supplier deals |
-| `modules/debt/debt-doc-edit.js` | 388 | Document edit modal with AI learning, readonly amounts on receipt-linked docs, visual badges |
-| `js/supabase-alerts-ocr.js` | 181 | Alert creation + OCR template learning (split from supabase-ops.js) |
-| `modules/inventory/incoming-invoices.js` | 255 | Incoming invoices tab: drag-drop upload, creates pending_invoice supplier_documents |
-| `modules/goods-receipts/receipt-guide.js` | 59 | Employee quick reference guide (split from receipt-form.js): RECEIPT_GUIDE_TEXT, showReceiptGuide() |
-
-### QA Fix Changes (Flow Review Phase 2 Final)
-
-| File | Lines | Key Changes |
-|------|-------|-------------|
-| `modules/goods-receipts/receipt-form.js` | 559 | Single receipt row per PO item with qty, multi-barcode generation (generateReceiptBarcodes), partial_received status with qty input, drag & drop file zone |
-| `modules/goods-receipts/receipt-confirm.js` | 460 | Multi-barcode confirm: reads barcodes_csv, creates 1 inventory per barcode, match confirmation dialog (_showMatchConfirmDialog) |
-| `modules/goods-receipts/receipt-excel.js` | 259 | exportReceiptBarcodes: expands multi-barcode rows to individual Excel rows via SheetJS |
-| `modules/goods-receipts/receipt-po-compare.js` | 384 | receipt_status handling (returnMarked/missing sections), return creation for marked items, tenant_id hardened |
-| `modules/goods-receipts/goods-receipt.js` | 352 | onReceiptPoSelected: ONE row per PO item with qty=remaining, matches existing inventory |
-| `modules/purchasing/po-view-import.js` | 419 | **RENAMED in Flow-Review-3:** Split into `po-view.js` (204 lines) + `po-import.js` (214 lines). See new entries below |
-| `modules/purchasing/po-items.js` | 338 | _updatePOStockCounter (live inventory count per PO item row), _calcPOFinalPrice, _onPOFinalPriceChange |
-| `modules/purchasing/po-actions.js` | 310 | clonePO, block partial PO cancel when items received |
-| `modules/debt/debt-doc-compare.js` | 269 | Returned items show "לזיכוי" (was filtered out), _cmpStatus handles returned status |
-| `modules/debt/debt-doc-items.js` | 161 | Title changed: "פריטים שהוזמנו" (was "פריטי קבלה") |
-| `modules/debt/debt-returns-tab-actions.js` | 289 | _promptCreditFileUpload (file required before credit), _createCreditNoteForReturn (attaches file), bulkMarkCredited blocked |
-| `js/file-upload.js` | 321 | _deleteGalleryFile re-queries from DB after delete (was in-memory splice only) |
-
-### Flow Review Phase 3 — New & Split Files
-
-| File | Lines | Description |
-|------|-------|-------------|
-| `js/shared-ui.js` | 122 | Tab navigation (showTab, showEntryMode), showInfoModal, renderHelpBanner — extracted from shared.js |
-| `modules/purchasing/po-import.js` | 214 | PO import + actions: importPOToInventory, createPOForBrand, cancelPOItem (split from po-view-import.js) |
-| `modules/purchasing/po-view.js` | 204 | Read-only PO view with received qty tracking + receipt-based reason badges, event delegation (split from po-view-import.js) |
-| `modules/audit/entry-history.js` | 212 | Entry history accordion: openEntryHistory, loadEntryHistory, renderEntryHistory, toggleHistGroup, exportDateGroupBarcodes |
-| `modules/debt/debt-doc-actions.js` | 176 | Document action toolbar + file attach: _editDocAttachMore, _buildDocActionToolbar, _softDeleteDocument, _togglePendingReview |
-| `modules/inventory/inventory-images.js` | 209 | Frame image capture/upload/delete: openImageModal, _captureImage, _pickImage, _processAndPreview, _uploadPendingImages, _deleteImage |
-| `modules/inventory/inventory-images-bg.js` | 205 | Client-side white background removal: _bgRemoveStart, _bgProcess, _bgRemovePending, _bgRemoveSaved |
-| `modules/goods-receipts/receipt-confirm-items.js` | 185 | Item-level inventory processing: confirmReceiptCore (multi-barcode), createNewInventoryFromReceiptItem (split from receipt-confirm.js) |
-
-### Flow Review Phase 3 — New Functions on Existing Files
-
-| File | Function | Description |
-|------|----------|-------------|
-| `modules/inventory/inventory-table.js` | `filterByReceipt(receiptId, receiptNumber)` | Queries receipt items, sets filter, switches to inventory tab with banner |
-| `modules/inventory/inventory-table.js` | `clearReceiptFilter()` | Clears receipt filter, removes banner, reloads inventory |
-| `modules/inventory/inventory-table.js` | `toggleNoImagesFilter()` | Toggles client-side filter for items without images |
-
-### Debt Module Upgrades — New Files
-
-| File | Lines | Description |
-|------|-------|-------------|
-| `modules/debt/debt-supplier-filters.js` | 102 | Supplier filter chips: type, history, debt filters on dashboard |
-| `modules/debt/debt-filter-utils.js` | 110 | Reusable month picker toggle + amount range filter |
-| `modules/debt/debt-expense-folders.js` | ~80 | Expense folder CRUD in debt module |
-| `modules/debt/debt-general-invoices.js` | ~80 | General invoice handling |
-| `modules/goods-receipts/receipt-doc-numbers.js` | ~100 | Dynamic multi-doc number inputs: _onDocCountChange, getRcptDocAmounts |
-| `modules/goods-receipts/receipt-ocr-supplier.js` | 114 | AI supplier auto-detection: _norm() global, OcrSupplierMatch (alias/exact/fuzzy pipeline + learning) |
-| `modules/goods-receipts/receipt-ocr-po.js` | 245 | AI PO matching: OcrPOMatch (parse descriptions via _rcptOcrParseDescription, score-based match by content), _applyOcrHighlights (UUID-based row matching) |
-| `modules/goods-receipts/receipt-ocr-flow.js` | 172 | OCR flow: compare button, PO choice modal, cached re-scan, comparison guards (unwrap {value}, empty items) |
-| `modules/goods-receipts/receipt-ocr-learn.js` | 120 | OCR learning: _getSupplierLearningStage, _rcptOcrShowStageIndicator (🔴/🟡/🟢), _rcptOcrUpdateTemplate (field counting), receipt-confirmed listener |
-| `modules/goods-receipts/receipt-ocr-confirm-learn.js` | 159 | Confirm & learn: _rcptOcrConfirmAndLearn, _matchOcrToTableItems (smart matching), _saveItemAliases |
-| `modules/goods-receipts/receipt-list.js` | 96 | Receipt list: loadReceiptTab (split from goods-receipt.js, multi-doc "+N" badges) |
-| `modules/debt/ai/ai-learning-dashboard.js` | 159 | AI learning dashboard: loadAILearningTab (summary cards + per-supplier table with stage badges + accuracy bars + reset) |
-| `shared/js/table-resize.js` | 186 | Auto-discovery table resize + sticky scrollbar + per-user localStorage persistence (MutationObserver, 15 tables across 4 pages) |
-
-| Module 1.5 — Shared Components | ✅ Complete (QA passed) | `shared/css/`, `shared/js/`, `shared/tests/`, `scripts/` | — | 1 (activity_log) + ui_config column + PK fixes on roles/permissions/role_permissions |
-| Module 2 — Platform Admin | Phase 4 ✅ | `modules/admin-platform/` | `admin.html` | 5 new tables + 14 RPCs + 10 columns on tenants/employees. Plans CRUD, plan limits, feature flags. |
-
-### Module 2 — Platform Admin Files (Phase 1-4)
-
-| File | Lines | Description |
-|------|-------|-------------|
-| `admin.html` | 271 | Platform Admin: login, nav tabs (חנויות/Audit Log/הגדרות), tenant table, slide-in panel (4 tabs), plans management |
-| `modules/admin-platform/admin-auth.js` | 105 | adminSb client, login/logout/session, getCurrentAdmin, requireAdmin, hasAdminPermission |
-| `modules/admin-platform/admin-db.js` | 63 | AdminDB wrapper (query, getById, insert, update, rpc) — no tenant_id |
-| `modules/admin-platform/admin-audit.js` | 143 | logAdminAction + platform audit log viewer with action filter (super_admin only) |
-| `modules/admin-platform/admin-provisioning.js` | 320 | 3-step wizard, slug auto-suggest + debounced validation, provisionTenant() RPC + logs |
-| `modules/admin-platform/admin-app.js` | 237 | Tab routing (incl. settings→loadPlansTab), panel open/close, search/filter wiring |
-| `modules/admin-platform/admin-dashboard.js` | 196 | Tenant table (TableBuilder), search, status/plan filters, sort, relative time |
-| `modules/admin-platform/admin-tenant-detail.js` | 361 | Slide-in panel: info/edit + feature overrides, suspend/activate/delete/reset PIN |
-| `modules/admin-platform/admin-plans.js` | 261 | Plans CRUD in הגדרות tab: table + edit modal (limits/features/prices). FEATURE_LABELS. |
-| `modules/admin-platform/admin-feature-overrides.js` | 97 | Per-tenant feature override UI: 17 features × 3-state. Upserts tenant_config. |
-| `modules/admin-platform/admin-activity-viewer.js` | 189 | Activity log per tenant: 4 filters, pagination 50/page |
-| `shared/js/plan-helpers.js` | 107 | checkPlanLimit, isFeatureEnabled, getPlanLimits, getPlanFeatures, invalidatePlanCache (30s cache) |
-| `js/shared.js` (ERP — modified) | 337 | Phase 3k: showTenantBlocked() + DOMContentLoaded guard for suspended tenants |
-| `js/auth-service.js` (ERP — modified) | 341 | Phase 2: checkMustChangePin() — undismissible PIN change for new tenant employees |
-
----
-
-## 7. DB Table Ownership
-
-### Core (7 tables)
-
-| Table Name | Owner Module | Key Columns | Used By |
-|------------|-------------|-------------|---------|
-| `tenants` | Multi-tenant Infrastructure | id, name, slug, vat_rate, default_currency, logo_url | Every module (getTenantId, getTenantConfig) |
-| `brands` | Inventory — Brands | id, name, brand_type, active, min_stock_qty, tenant_id | Entry, PO, Receipts, Reduction, Stock Count, Low-Stock Alerts |
-| `suppliers` | Inventory — Suppliers | id, name, supplier_number, active, tenant_id | PO, Receipts, Debt, Returns, Shipments |
-| `employees` | Auth & Permissions | id, name, pin, role, branch_id, tenant_id | Auth (PIN login), writeLog, session management |
-| `inventory` | Inventory — Core | id, barcode, brand_id, supplier_id, quantity, status, is_deleted, tenant_id | Every inventory flow, Sync, Stock Count, Returns, Shipments |
-| `inventory_images` | Inventory — Images | id, inventory_id, url, tenant_id | Inventory table (image preview), Entry, Receipts |
-| `inventory_logs` | Audit Trail | id, action, inventory_id, qty_before, qty_after, performed_by, tenant_id | System Log, Item History, Sync details |
-
-### Purchase Orders (2 tables)
-
-| Table Name | Owner Module | Key Columns | Used By |
-|------------|-------------|-------------|---------|
-| `purchase_orders` | Purchasing | id, po_number, supplier_id, status, tenant_id | Receipts (PO linkage), Inventory import |
-| `purchase_order_items` | Purchasing | id, po_id, brand_id, model, quantity, cost_price, tenant_id | Receipt items (auto-populate from PO) |
-
-### Goods Receipts (2 tables)
-
-| Table Name | Owner Module | Key Columns | Used By |
-|------------|-------------|-------------|---------|
-| `goods_receipts` | Goods Receipts | id, receipt_number, supplier_id, po_id, status, tenant_id | Debt (auto-create document), Export |
-| `goods_receipt_items` | Goods Receipts | id, receipt_id, inventory_id, quantity, tenant_id | Receipt confirm (qty update) |
-
-### Sync & Watcher (3 tables)
-
-| Table Name | Owner Module | Key Columns | Used By |
-|------------|-------------|-------------|---------|
-| `sync_log` | Access Sync | id, filename, source_ref, status, rows_total, tenant_id | Sync tab (log table), Pending badge |
-| `pending_sales` | Access Sync | id, barcode_received, quantity, status, brand, model, tenant_id | Pending resolve panel |
-| `watcher_heartbeat` | Access Sync (Watcher) | id, last_beat, watcher_version, host, tenant_id | Sync tab (watcher status indicator) |
-
-### Stock Count (2 tables)
-
-| Table Name | Owner Module | Key Columns | Used By |
-|------------|-------------|-------------|---------|
-| `stock_counts` | Stock Count | id, count_number, status, counted_by, filter_criteria, tenant_id | Stock count list, report |
-| `stock_count_items` | Stock Count | id, count_id, inventory_id, expected_qty, actual_qty, difference, tenant_id | Stock count session, diff report (⚠️ RLS permissive — will be fixed in Module 2) |
-
-### Auth & Permissions (5 tables)
-
-| Table Name | Owner Module | Key Columns | Used By |
-|------------|-------------|-------------|---------|
-| `roles` | Permissions | id, name_he, is_system, tenant_id | Employee management, role assignment (⚠️ RLS permissive — will be fixed in Module 2) |
-| `permissions` | Permissions | id, module, action, name_he, tenant_id | Role management (⚠️ RLS permissive — will be fixed in Module 2) |
-| `role_permissions` | Permissions | role_id, permission_id, granted, tenant_id | getEffectivePermissions (⚠️ RLS permissive — will be fixed in Module 2) |
-| `employee_roles` | Permissions | employee_id, role_id, granted_by, tenant_id | initSecureSession, getEffectivePermissions (⚠️ RLS permissive — will be fixed in Module 2) |
-| `auth_sessions` | Auth Service | id, employee_id, token, permissions, role_id, tenant_id | loadSession, clearSession |
-
-### Supplier Debt (11 tables)
-
-| Table Name | Owner Module | Key Columns | Used By |
-|------------|-------------|-------------|---------|
-| `document_types` | Debt — Config | id, code, name_he, affects_debt, is_system, tenant_id | Document creation modal, Receipt-Debt |
-| `payment_methods` | Debt — Config | id, code, name_he, is_system, tenant_id | Payment wizard |
-| `currencies` | Debt — Config | id, code, symbol, is_default, tenant_id | Future multi-currency |
-| `supplier_documents` | Debt — Documents | id, supplier_id, document_type_id, document_number, total_amount, paid_amount, status, tenant_id | Debt dashboard, payments, OCR, batch upload |
-| `document_links` | Debt — Linking | id, parent_document_id, child_document_id, amount_on_invoice, tenant_id | Invoice linking (delivery note → monthly invoice) |
-| `supplier_payments` | Debt — Payments | id, supplier_id, amount, payment_date, payment_method, status, tenant_id | Debt dashboard, supplier detail |
-| `payment_allocations` | Debt — Payments | id, payment_id, document_id, allocated_amount, tenant_id | Payment wizard (FIFO allocation) |
-| `prepaid_deals` | Debt — Prepaid | id, supplier_id, total_prepaid, total_used, total_remaining, status, tenant_id | Prepaid tab, Receipt-Debt (auto-deduct) |
-| `prepaid_checks` | Debt — Prepaid | id, prepaid_deal_id, check_number, amount, status, tenant_id | Prepaid deal detail |
-| `supplier_returns` | Debt — Returns | id, supplier_id, return_number, return_type, status, tenant_id | Returns tabs (inventory + debt), Shipments (sendToBox) |
-| `supplier_return_items` | Debt — Returns | id, return_id, inventory_id, barcode, quantity, cost_price, tenant_id | Return detail modal, credit note creation |
-| `supplier_document_files` | Debt — Documents | id, document_id, file_url, file_name, file_hash, sort_order, tenant_id | Multi-file per document, gallery preview (Phase 8-QA, migration 040) |
-
-### AI Agent (5 tables)
-
-| Table Name | Owner Module | Key Columns | Used By |
-|------------|-------------|-------------|---------|
-| `ai_agent_config` | AI Agent — Config | id, tenant_id, ocr_enabled, confidence_threshold, alerts_enabled | createAlert (flag check), OCR flows, weekly report |
-| `supplier_ocr_templates` | AI Agent — OCR Learning | id, tenant_id, supplier_id, document_type_code, accuracy_rate | OCR scan (template matching), historical import |
-| `ocr_extractions` | AI Agent — OCR Log | id, tenant_id, file_url, extracted_data, confidence_score, status | Batch OCR, review modal |
-| `alerts` | AI Agent — Alerts | id, tenant_id, alert_type, severity, title, status, entity_type, entity_id | alerts-badge.js (all pages), debt dashboard |
-| `weekly_reports` | AI Agent — Reports | id, tenant_id, week_start, week_end, report_data | Weekly report tab |
-
-### Communications & Knowledge (6 tables — stubs, no UI)
-
-| Table Name | Owner Module | Key Columns | Used By |
-|------------|-------------|-------------|---------|
-| `conversations` | Communications (future) | id, tenant_id, channel_type, context_type, context_id, status | — |
-| `conversation_participants` | Communications (future) | id, tenant_id, conversation_id, participant_type, participant_id, unread_count | — |
-| `messages` | Communications (future) | id, tenant_id, conversation_id, sender_type, content, status | — |
-| `knowledge_base` | Communications (future) | id, tenant_id, title, answer, category, tags, ai_usable | — |
-| `message_reactions` | Communications (future) | id, tenant_id, message_id, employee_id, reaction | — |
-| `notification_preferences` | Communications (future) | id, tenant_id, employee_id, in_app, email, whatsapp | — |
-
-### Shipments (3 tables)
-
-| Table Name | Owner Module | Key Columns | Used By |
-|------------|-------------|-------------|---------|
-| `courier_companies` | Shipments — Couriers | id, tenant_id, name, phone, is_active | Shipments wizard (step 3) |
-| `shipments` | Shipments — Core | id, tenant_id, box_number, shipment_type, supplier_id, courier_id, locked_at, is_deleted | Shipments list, detail panel, manifest |
-| `shipment_items` | Shipments — Items | id, tenant_id, shipment_id, item_type, inventory_id, return_id, barcode, category | Shipments detail, items table |
-
-### Future Stubs (4 tables — DB only, no code)
-
-| Table Name | Owner Module | Key Columns | Used By |
-|------------|-------------|-------------|---------|
-| `sales` (future) | Future Sales Module | id, inventory_id, barcode, quantity_sold, sale_price, tenant_id | — (⚠️ RLS permissive — future stub, will be fixed in Module 2) |
-| `customers` (future) | Future CRM | id, full_name, id_number, phone, email, tenant_id | — (⚠️ RLS permissive — future stub, will be fixed in Module 2) |
-| `prescriptions` (future) | Future Prescriptions | id, customer_id, prescription_date, od_sph, os_sph, tenant_id | — (⚠️ RLS permissive — future stub, will be fixed in Module 2) |
-| `work_orders` (future) | Future Work Orders | id, order_number, customer_id, prescription_id, status, tenant_id | — (⚠️ RLS permissive — future stub, will be fixed in Module 2) |
-
-### Platform Admin — Module 2 (5 tables + tenants extension)
-
-| Table Name | Owner Module | Key Columns | Used By |
-|------------|-------------|-------------|---------|
-| `plans` | Platform Admin — Plans | id, name, display_name, limits (JSONB), features (JSONB), price_monthly, is_active | Admin panel, checkPlanLimit (Phase 4), tenant provisioning |
-| `platform_admins` | Platform Admin — Auth | id, auth_user_id, email, display_name, role, status, last_login | Admin auth (admin-auth.js), RLS policies via is_platform_super_admin() |
-| `platform_audit_log` | Platform Admin — Audit | id, admin_id, action, target_tenant_id, details (JSONB) | Admin audit trail (admin-audit.js) |
-| `tenant_config` | Platform Admin — Config | id, tenant_id, key, value (JSONB), UNIQUE(tenant_id, key) | Per-tenant config, feature overrides (Phase 4) |
-| `tenant_provisioning_log` | Platform Admin — Provisioning | id, tenant_id, step, status, details (JSONB), error_message | createTenant RPC (Phase 2) |
-
-**tenants table extended with:** plan_id, status, trial_ends_at, owner_name, owner_email, owner_phone, created_by, suspended_reason, deleted_at, last_active
-
----
-
-**Table count verification:** 7 + 2 + 2 + 3 + 2 + 5 + 11 + 5 + 6 + 3 + 4 + 5 = **55 tables**
+*End of GLOBAL_MAP.md. Detailed function-level contracts live in per-module
+MODULE_MAP.md files. The prior 919-line version (with function-level detail
+for all ERP code) is backed up under
+`modules/Module 3.1 - Project Reconstruction/backups/M3.1-3A_2026-04-11/GLOBAL_MAP.md`.*
