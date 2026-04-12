@@ -86,6 +86,39 @@ These are hard rules. Breaking one is a bug, regardless of whether it "works."
     CREATE POLICY tenant_isolation ON [table_name]
       USING (tenant_id = current_setting('app.tenant_id')::uuid);
     ```
+
+    #### Canonical RLS Pattern (Reference Implementation)
+
+    The reference implementation for tenant-isolated RLS policies in
+    Optic Up uses JWT claims, not `auth.uid()`. The canonical pattern
+    lives in `pending_sales` table policies and was verified against
+    the live DB on 2026-04-11. Every new RLS policy in the project
+    must use this exact `USING` clause for tenant isolation:
+
+    ```sql
+    tenant_id = (((current_setting('request.jwt.claims'::text, true))::json ->> 'tenant_id'::text))::uuid
+    ```
+
+    **Why this pattern (and not `auth.uid()`):** Optic Up uses PIN-based
+    authentication via the `pin-auth` Edge Function, which mints JWTs
+    with `tenant_id` as a claim. The `auth.uid()` Postgres function
+    returns the Supabase Auth user ID — which is NULL or wrong for
+    Optic Up's tenant context. Using `auth.uid()` in a tenant_id slot
+    silently breaks multi-tenant isolation.
+
+    **The canonical two-policy pattern:** Every multi-tenant table uses
+    TWO RLS policies together: (1) a `service_bypass` policy applied to
+    `service_role` (which is trusted and bypasses RLS by design), and
+    (2) a `tenant_isolation` policy applied to `public` that uses the
+    JWT-claim USING clause above. The reference implementation is the
+    policy pair on `pending_sales`. Copy both, not just one. Note that
+    `service_bypass` here is the policy name, not a column name.
+
+    **For fixing existing broken policies:** copy the USING clause
+    above verbatim. Do not invent variations. Do not parameterize.
+    The clause is the policy. Any deviation from this pattern in a
+    policy is a finding for the next DB audit.
+
 16. **Contracts between modules** — every phase defines its public functions (contracts) in `MODULE_SPEC.md`. Other modules call ONLY these — never reach into another module's tables directly.
 17. **Views for external access** — every phase asks: "What does a supplier/customer/storefront need to see?" and plans Views accordingly.
 18. **UNIQUE constraints must include tenant_id** — every UNIQUE constraint must be tenant-scoped. Example: `UNIQUE (barcode, tenant_id)` not `UNIQUE (barcode)`. A global UNIQUE prevents multi-tenant coexistence.
