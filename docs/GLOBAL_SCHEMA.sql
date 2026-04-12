@@ -310,35 +310,15 @@ CREATE OR REPLACE VIEW v_storefront_products AS
 -- storefront_pages, storefront_reviews, storefront_templates, tenant_config,
 -- tenant_provisioning_log, tenants, translation_memory.
 
--- ╔══════════════════════════════════════════════════════════╗
--- ║ SECURITY-FINDING #2 — MISNAMED BYPASS ON                 ║
--- ║ supplier_balance_adjustments                             ║
--- ╠══════════════════════════════════════════════════════════╣
--- ║ db-audit/04-policies.md row for                          ║
--- ║ public.supplier_balance_adjustments / service_bypass:    ║
--- ║                                                          ║
--- ║   command:      ALL                                      ║
--- ║   roles:        {public}            ← not service_role   ║
--- ║   using_clause: (current_setting('app.tenant_id', true)  ║
--- ║                  IS NULL)                                ║
--- ║                                                          ║
--- ║ Despite the name "service_bypass", this policy is        ║
--- ║ granted to {public}, not {service_role}, and its USING   ║
--- ║ clause matches ANY connection that has not yet set the   ║
--- ║ app.tenant_id session variable. In practice that is      ║
--- ║ every anonymous or freshly-opened connection. Such a     ║
--- ║ connection gets full cross-tenant SELECT/INSERT/UPDATE/  ║
--- ║ DELETE on supplier_balance_adjustments.                  ║
--- ║                                                          ║
--- ║ The companion "tenant_isolation" policy on the same      ║
--- ║ table DOES use Pattern 2 correctly (session var), but    ║
--- ║ the bypass policy above renders it moot for any caller   ║
--- ║ that simply skips the session setting.                   ║
--- ║                                                          ║
--- ║ Policy text: db-audit/04-policies.md line 148            ║
--- ║ Remediation: tracked in MASTER_ROADMAP.md under          ║
--- ║              Module 3 Phase B preamble checklist.        ║
--- ╚══════════════════════════════════════════════════════════╝
+-- NOTE ON supplier_balance_adjustments.service_bypass:
+-- `service_bypass` is the canonical policy name for the service_role bypass
+-- half of the canonical two-policy RLS pattern. Reference implementation:
+-- the policy pair on `pending_sales`. See CLAUDE.md Iron Rule #15
+-- Canonical RLS Pattern. This was initially flagged as SECURITY-FINDING #2
+-- ("misnamed bypass") by Phase 3A; Daniel's verification on 2026-04-11
+-- confirmed it is a false positive — the name is correct and matches the
+-- project convention. The original FINDING block was removed by Phase 3D.
+-- Policy text: db-audit/04-policies.md line 148.
 
 -- ╔══════════════════════════════════════════════════════════╗
 -- ║ SECURITY-FINDING #3 — auth.uid() USED AS tenant_id ON    ║
