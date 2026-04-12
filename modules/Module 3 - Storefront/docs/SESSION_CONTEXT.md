@@ -1,8 +1,45 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: CMS-10 — Final Build + QA
-## Status: ✅ CMS COMPLETE
-## Date: 2026-04-01
+## Current Phase: Phase B — SaaS Hardening
+## Status: 🔴 FROZEN at §1.1 Gate 2 — scope correction approved, awaiting unfreeze
+## Date: 2026-04-12
+
+---
+
+## Phase B Core — SaaS Hardening
+
+### Status: FROZEN at §1.1 (RLS fixes)
+
+**Completed:**
+- TC-Cleanup: 5 commits on develop, sealed
+- §1.0 Infrastructure: optic_readonly DB role created, 4 tests passed
+
+**Frozen at §1.1:**
+Gate 2 discovered 4 tables (customers, prescriptions, sales, work_orders) have NO tenant_id column.
+Secondary Chat correctly stopped. Scope correction decided and approved:
+
+Original SPEC had 7 tables. Corrected scope = 12 tables:
+- 4 tables need ALTER TABLE + canonical RLS (customers, prescriptions, sales, work_orders)
+- 3 tables have auth.uid bug (brand_content_log, storefront_component_presets, storefront_page_tags)
+- 1 extra leak discovered (storefront_component_presets RLS-08)
+- 4 tables have legacy session-var pattern (media_library, supplier_balance_adjustments, campaigns, campaign_templates)
+
+**SPEC file:** MODULE_3_B_SPEC_saas_core_2026-04-12.md (1713 lines, corrected)
+
+**To resume:** Daniel must approve unfreeze. SQL execution is Level 3 (Daniel runs it).
+
+### Remaining B Core sections after §1.1:
+§1.3 RLS audit script → §1.4 .gitignore + CLAUDE.md update → §1.5 TIER-C → §1.6 run-audit.mjs → §2 B-items
+
+### B6 sub-phase:
+SPEC written and reviewed. NOT in execution. Waits for B Core PASS.
+Highest-risk item: sessionStorage key rename.
+
+### Phases C and D:
+Not started, not SPEC'd. C = WordPress content migration. D = dead code cleanup.
+
+### Open issue:
+MASTER_ROADMAP §5/§6 contradiction on SF-2 (supplier_balance_adjustments) — needs RETRACTED marker.
 
 ---
 

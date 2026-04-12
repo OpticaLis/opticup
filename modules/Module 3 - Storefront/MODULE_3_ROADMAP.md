@@ -104,18 +104,48 @@
 
 ## מפת פאזות
 
-| פאזה | סטטוס | שם | מה כולל | זמן משוער |
-|------|--------|----|---------|-----------|
-| 1 | ⬜ | Astro Setup + Infrastructure | Repo, Vercel, domain, Supabase Views, storefront_config, tenant resolution | 2 ימים |
-| 2 | ⬜ | Product Catalog + ERP Integration | Views, auto-sync, product pages, category pages, search, ERP bulk ops | 3 ימים |
-| 3 | ⬜ | SEO Migration | WordPress scraping, URL mapping, blog, landing pages, redirects, schema, validator | 3 ימים |
-| 4 | ⬜ | Catalog/Shop + WhatsApp + Landing Pages | Catalog/shop modes, WhatsApp CTA, ghosting, booking, event landing pages | 3 ימים |
-| 5 | ⬜ | AI Content Engine | Product descriptions, meta, alt text, blog generator, landing page content, learning | 3 ימים |
-| 6 | ⬜ | i18n — AI Translation | 3 טבלאות, Claude translation, glossary, review UI, URL routing, hreflang | 3 ימים |
-| 7 | ⬜ | White-Label + Analytics + Theme | Multi-tenant, subdomain, custom domain, GA/Pixel/GTM, theme engine | 2 ימים |
-| QA | ⬜ | Full Test | SEO validation, 3 שפות, 2 tenants, mobile, performance, Lighthouse | 2 ימים |
+### CMS (ERP-side, completed)
 
-**סה"כ: ~21 ימי עבודה. ב-autonomous mode (Claude Code רץ 24/7): ~10-14 ימים.**
+| פאזה | סטטוס | שם | מה כולל |
+|------|--------|----|---------|
+| CMS-1 | ✅ | Content Manager | Content pages CRUD, SEO settings |
+| CMS-2 | ✅ | Studio Block Editor | 14 block schemas, form renderer, page editor |
+| CMS-3 | ✅ | Product Picker + Google Reviews | Product selection blocks, Google Places integration |
+| CMS-4 | ✅ | Blog System | Blog editor, categories, tags |
+| CMS-5 | ✅ | AI Prompt Editing | Edge Function cms-ai-edit, prompt bar, diff view |
+| CMS-6 | ✅ | QA + Design Polish | Bug fixes, UI refinements |
+| CMS-7 | ✅ | Campaign Templates | Template blocks, popup lead forms |
+| CMS-8 | ✅ | SEO Scoring | SEO analysis per page |
+| CMS-9 | ✅ | Translations | Content translation UI |
+| CMS-10 | ✅ | Final Build + QA | Custom HTML block #19, full QA pass |
+
+### Storefront Phases (opticup-storefront repo, completed)
+
+| פאזה | סטטוס | שם | מה כולל |
+|------|--------|----|---------|
+| 1 | ✅ | Astro Setup + Infrastructure | Repo, Vercel, domain, Views, tenant resolution |
+| 2 | ✅ | Product Catalog + ERP Integration | Views, auto-sync, product pages, search |
+| 3 | ✅ | SEO Migration | WordPress scraping, URL mapping, blog, redirects |
+| 4 | ✅ | Catalog/Shop + WhatsApp + Landing Pages | Catalog/shop modes, WhatsApp CTA, ghosting |
+| 5 | ✅ | AI Content Engine | Product descriptions, meta, alt text, blog generator |
+| 6 | ✅ | i18n — AI Translation | 3 tables, Claude translation, glossary, review UI |
+| 7 | ✅ | White-Label + Analytics + Theme | Multi-tenant, analytics, theme engine |
+
+### SaaS Hardening (Phase B chain, in progress)
+
+| פאזה | סטטוס | שם | מה כולל |
+|------|--------|----|---------|
+| B Core | 🔴 | SaaS Security Hardening | RLS fixes (12 tables), audit script, TIER-C cleanup |
+| B6 | ⬜ | Session Key Rename | sessionStorage key standardization (waits for B Core PASS) |
+| C | ⬜ | WordPress Content Migration | Content migration from WordPress (not SPEC'd) |
+| D | ⬜ | Dead Code Cleanup | Remove orphaned code (not SPEC'd) |
+| QA | ⬜ | Full Module QA | SEO validation, 3 languages, 2 tenants, mobile, Lighthouse |
+
+**B Core status:** Frozen at §1.1 Gate 2. Scope corrected from 7 to 12 tables. SPEC ready. Awaiting Daniel's unfreeze.
+
+---
+
+**סה"כ CMS + Storefront phases = COMPLETE. SaaS hardening chain = IN PROGRESS.**
 
 ---
 
