@@ -67,7 +67,7 @@ target, not by tenant.
 | 1.5 | Shared Components | ✅ Complete | opticup | Cross-module UI/JS infrastructure: activity_log, auth/permissions, Modal/Toast/TableBuilder components, PIN modal, plan helpers, tenant config |
 | 2 | Platform Admin | ✅ Complete (v2.0) | opticup | Super-admin control plane: tenant provisioning, plans/limits/features, audit log, PIN reset, suspend/activate/delete |
 | 3 | Storefront | 🟡 Phase B remediation | opticup-storefront | Public storefront: CMS pages, campaigns, blog, AI content, translations, media library, lead forms, brand pages, SEO |
-| 3.1 | Project Reconstruction | 🟡 In execution | opticup | Meta-module: foundation doc rewrites, DB audit, roadmap reconciliation. Does not own code — owns documentation accuracy. |
+| 3.1 | Project Reconstruction | ✅ Complete (closed April 11, 2026) | opticup | Meta-module: foundation doc rewrites, DB audit, roadmap reconciliation. Does not own code — owns documentation accuracy. |
 
 ---
 
@@ -216,6 +216,11 @@ Full parameter/return detail: `modules/Module 3.1 - Project Reconstruction/db-au
 | Per-module code maps | `opticup/modules/Module N - .../docs/MODULE_MAP.md` |
 | Per-module DB schema | `opticup/modules/Module N - .../docs/db-schema.sql` |
 | Per-module session status | `opticup/modules/Module N - .../docs/SESSION_CONTEXT.md` |
+| Original 28-module project vision (historical) | `opticup/docs/PROJECT_VISION.md` |
+| Module Strategic Chat opening prompt | `opticup/UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md` |
+| Secondary Chat operating instructions | `opticup/UNIVERSAL_SECONDARY_CHAT_PROMPT.md` |
+| Documentation ownership schema (6 rules, dual-repo) | `opticup/MODULE_DOCUMENTATION_SCHEMA.md` |
+| Daniel's quick reference (4-layer cheat sheet) | `opticup/DANIEL_QUICK_REFERENCE.md` |
 
 ---
 
