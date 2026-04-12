@@ -134,39 +134,86 @@ Items are tracked — not fixed — in this document.
 
 ## 6. Module 3 Phase B — Preamble Checklist
 
-This checklist MUST be completed by the Module 3 strategic chat BEFORE starting
-Phase B code work. Each item is a prerequisite, not optional cleanup.
+### First preamble actions (SECURITY-CRITICAL — must run before any other Phase B work)
 
-- [ ] **Build `run-audit.mjs` script**
-  Requires `DATABASE_URL` added to `~/.optic-up/credentials.env`.
-  Connect via Session pooler (port 6543, IPv4).
-  Execute the 6 audit blocks from `db-audit/audit-queries.sql`.
-  Write results to `db-audit/01-tables.md` ... `06-sequences.md`
-  in the same format as the manual baseline from 2026-04-11.
-  Once built, this script becomes the canonical way to refresh
-  the DB audit baseline and eliminates the manual SQL Editor workflow.
+These items came out of Module 3.1 Phase 3A's live DB audit, with
+post-execution verification by Daniel on 2026-04-11. Tables involved
+are currently empty (modules not yet built), but the underlying
+patterns are architecturally broken and will become production data
+leaks the moment those modules start writing data.
 
-- [ ] **Security debt cleanup: retrofit 4 legacy tables with tenant_id**
-  Add `tenant_id UUID NOT NULL REFERENCES tenants(id)` to `customers`,
-  `prescriptions`, `sales`, `work_orders`. Replace `anon_all_*` policies
-  with standard `tenant_isolation` policies (Pattern 1 — JWT claim).
-  See `docs/GLOBAL_SCHEMA.sql` SECURITY-FINDING #1 and
-  `db-audit/04-policies.md` for current policy text.
+**The canonical reference pattern** for fixing all of these is in
+`opticup/CLAUDE.md` Iron Rule #15 under "Canonical RLS Pattern".
+The reference implementation lives in `pending_sales` policies and
+should be copied verbatim, not reinvented.
 
-- [ ] **RLS pattern cleanup: migrate 4 session-var tables + fix 3 auth.uid() tables**
-  Migrate `media_library`, `supplier_balance_adjustments`, `campaigns`,
-  `campaign_templates` from session-var pattern (`current_setting('app.tenant_id')`)
-  to JWT-claim pattern (standard).
-  Fix the 3 tables using `auth.uid()` as tenant_id
-  (`storefront_component_presets`, `brand_content_log`, `storefront_page_tags`)
-  — this is a bug, see SECURITY-FINDING #3.
+1. **Replace `anon_all_*` policies on confirmed leak tables** (4 tables, all verified):
+   - `customers` — verified leak (using `true`, no tenant filter)
+   - `prescriptions` — verified leak (using `true`, no tenant filter)
+   - `sales` — verified leak (using `true`, no tenant filter) — Phase 3D Manual Action #2
+   - `work_orders` — verified leak (using `true`, no tenant filter) — Phase 3D Manual Action #2
+   Replace each with the canonical two-policy pattern from CLAUDE.md
+   (service_bypass policy on service_role + tenant_isolation policy
+   on public with the JWT-claim USING clause).
 
-- [ ] **Fix supplier_balance_adjustments.service_bypass policy**
-  Currently defined as `(current_setting('app.tenant_id', true) IS NULL)`
-  which grants access to anyone without session context instead of only
-  `service_role`. Replace with a proper service-role bypass:
-  `FOR ALL TO service_role USING (true)`.
-  See `docs/GLOBAL_SCHEMA.sql` SECURITY-FINDING #2.
+2. **Fix `auth.uid as tenant_id` policies on 3 tables** (verified by Phase 3D Manual Action #1):
+   - `brand_content_log`
+   - `storefront_component_presets`
+   - `storefront_page_tags`
+   These tables use `auth.uid()` in the tenant_id slot, which is
+   architecturally wrong: `auth.uid()` is the Supabase Auth user ID,
+   not a tenant identifier. Optic Up uses PIN auth via the
+   `pin-auth` Edge Function (not Supabase Auth directly), so
+   `auth.uid()` returns NULL or wrong values for tenant context.
+   Rewrite each policy using the canonical pattern from CLAUDE.md.
+
+3. **Add RLS audit to `scripts/verify.mjs`** — to catch these
+   patterns automatically in future modules. The audit should flag:
+   (a) any policy that grants ALL operations to `anon` role with
+   `using (true)` or no tenant_id filter,
+   (b) any policy that uses `auth.uid()` in a tenant comparison.
+   This prevents the same bug class from re-entering the project.
+
+### Other preamble items (non-security)
+
+4. **Build `run-audit.mjs`** (Module 3.1 deferred deliverable from
+   Phase 3A). Requires `DATABASE_URL` added to
+   `~/.optic-up/credentials.env`. The script should connect via
+   Session pooler (port 6543, IPv4), execute the 6 audit blocks
+   from `db-audit/audit-queries.sql`, and write results to
+   `db-audit/01-tables.md` ... `06-sequences.md` in the same
+   format as the manual baseline from 2026-04-11. Once built,
+   this script becomes the canonical way to refresh the DB audit
+   baseline and eliminates the manual SQL Editor workflow.
+
+5. **TIER-C-PENDING cleanup round** — addresses the markers across
+   VIEW_CONTRACTS, ARCHITECTURE, SCHEMAS, and TROUBLESHOOTING
+   that Phase A deferred. These are NOT Module 3.1's responsibility
+   and were intentionally left untouched.
+
+### NOT a finding — explicitly removed from this list
+
+The `service_bypass` name on `supplier_balance_adjustments` was
+initially flagged by Phase 3A as a misleading name. Daniel's
+verification on 2026-04-11 confirmed this is a **false positive**:
+`service_bypass` is the canonical project naming for legitimate
+`service_role` bypass policies. `pending_sales` uses the same name
+with the canonical pattern. This is not a finding and does not
+need a rename. It is the policy name, not a column name.
+
+### Verification status (from Phase 3D Manual Action #2)
+
+`sales` and `work_orders` were initially "suspected" by Phase 3A
+based on naming-pattern similarity to `customers`/`prescriptions`.
+Phase 3D Manual Action #2 (executed 2026-04-11) ran live SQL
+against `pg_policies` and confirmed both tables have:
+- `anon_all_sales` policy with `qual = true` (no tenant filter)
+- `anon_all_work_orders` policy with `qual = true` (no tenant filter)
+
+A separate row-count check (Phase 3D Step 6.5) confirmed both
+tables are empty at the time of verification, so the leak is
+not yet active in production data — but the architectural bug
+is real and must be fixed before either module starts writing.
 
 ---
 
