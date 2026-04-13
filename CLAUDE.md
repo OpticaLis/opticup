@@ -23,6 +23,7 @@ When starting a new Claude Code session, do these steps in order. No exceptions.
    `modules/Module X - [Name]/docs/SESSION_CONTEXT.md`
    Active modules with SESSION_CONTEXT: Module 1 (Inventory), Module 1.5 (Shared Components), Module 2 (Platform Admin). Module 3 (Storefront) lives in separate repo `opticup-storefront`.
 7. **Read `docs/GLOBAL_MAP.md`** — shared functions, contracts, module registry (reference only — do NOT modify outside Integration Ceremony).
+8. **Read `docs/guardian/GUARDIAN_ALERTS.md`** — the Sentinel's active alerts. If there are CRITICAL or HIGH alerts that relate to the files you will work on — report them to Daniel before starting. If "ALL CLEAR" — continue.
 
 **Do NOT read at session start:** MODULE_MAP.md, GLOBAL_SCHEMA.sql, FILE_STRUCTURE.md, DB_TABLES_REFERENCE.md, CONVENTIONS.md. These are reference files — open only when needed for the specific task.
 
