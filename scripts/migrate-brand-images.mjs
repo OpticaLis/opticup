@@ -195,7 +195,7 @@ async function migrateStaticLogo(brand, localPath) {
   if (dryRun) {
     console.log(`  [DRY] Would fetch ${fullUrl} → media/${tid}/${LOGO_FOLDER}/...`);
     staticLogos++; logosMigrated++;
-    return `${DST_BUCKET}/media/${tid}/${LOGO_FOLDER}/${sanitizeFilename(brand.name)}.png`;
+    return `media/${tid}/${LOGO_FOLDER}/${sanitizeFilename(brand.name)}.png`;
   }
 
   const response = await fetch(fullUrl);
@@ -215,7 +215,7 @@ async function migrateStaticLogo(brand, localPath) {
 
   staticLogos++; logosMigrated++;
   console.log(`  ✓ Uploaded to ${storagePath}`);
-  return `${DST_BUCKET}/${storagePath}`;
+  return storagePath;
 }
 
 async function migrateStorageLogo(brand, publicUrl) {
@@ -232,7 +232,7 @@ async function migrateStorageLogo(brand, publicUrl) {
   if (dryRun) {
     console.log(`  [DRY] Would copy ${SRC_BUCKET}/${srcPath} → ${DST_BUCKET}/${dstPath}`);
     logosMigrated++;
-    return `${DST_BUCKET}/${dstPath}`;
+    return dstPath;
   }
 
   // Download from source bucket
@@ -250,7 +250,7 @@ async function migrateStorageLogo(brand, publicUrl) {
 
   logosMigrated++;
   console.log(`  ✓ Uploaded to ${dstPath}`);
-  return `${DST_BUCKET}/${dstPath}`;
+  return dstPath;
 }
 
 async function migrateGalleryImage(brand, galleryUrl) {
@@ -271,7 +271,7 @@ async function migrateGalleryImage(brand, galleryUrl) {
   if (dryRun) {
     console.log(`  [DRY] Would copy ${SRC_BUCKET}/${srcPath} → ${DST_BUCKET}/${dstPath}`);
     galleriesMigrated++;
-    return `${DST_BUCKET}/${dstPath}`;
+    return dstPath;
   }
 
   const { data, error: dlErr } = await sb.storage.from(SRC_BUCKET).download(srcPath);
@@ -287,7 +287,7 @@ async function migrateGalleryImage(brand, galleryUrl) {
 
   galleriesMigrated++;
   console.log(`  ✓ Uploaded to ${dstPath}`);
-  return `${DST_BUCKET}/${dstPath}`;
+  return dstPath;
 }
 
 function makeMediaRow(tenantId, filename, originalFilename, storagePath, mimeType, fileSize, folder, brandId) {

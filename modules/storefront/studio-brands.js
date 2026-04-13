@@ -592,8 +592,8 @@ async function handleStudioGalleryUpload(input, brandId) {
       });
       if (dbErr) console.warn('media_library insert warning:', dbErr.message);
 
-      // Store the storage reference (not full URL) — resolved at render time
-      const ref = `media-library/${storagePath}`;
+      // Store storage path (not full URL) — resolved at render time via /api/image/ proxy
+      const ref = storagePath;
       window._studioGallery.push(ref);
       uploaded++;
     } catch (err) {
