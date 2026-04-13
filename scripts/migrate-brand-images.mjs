@@ -23,11 +23,11 @@ const rollbackFile = args.find(a => a.startsWith('--from='))?.split('=')[1];
 
 const SRC_BUCKET = 'tenant-logos';
 const DST_BUCKET = 'media-library';
-const LOGO_FOLDER = 'לוגו';
-const GALLERY_FOLDER = 'דוגמנים';
+const LOGO_FOLDER = 'logos';
+const GALLERY_FOLDER = 'models';
 
-// Storefront URL for fetching static logos (from repo's /public/images/brands/)
-const STOREFRONT_URL = 'https://prizma-optic.co.il';
+// Vercel deployment serves static files from /public/
+const STATIC_LOGO_BASE = 'https://opticup-storefront.vercel.app';
 
 // ── Rollback ────────────────────────────────────────
 if (rollbackMode) {
@@ -188,8 +188,8 @@ async function migrateLogo(brand) {
 }
 
 async function migrateStaticLogo(brand, localPath) {
-  // Fetch from live storefront
-  const fullUrl = STOREFRONT_URL + localPath;
+  // Fetch from GitHub raw (storefront repo /public/images/brands/)
+  const fullUrl = STATIC_LOGO_BASE + localPath;
   console.log(`  Logo (static): ${localPath}`);
 
   if (dryRun) {

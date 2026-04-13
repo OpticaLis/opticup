@@ -16,8 +16,8 @@ const MEDIA_FOLDERS = [
   { value: 'store', label: 'חנות' },
   { value: 'products', label: 'מוצרים' },
   { value: 'blog', label: 'בלוג' },
-  { value: 'לוגו', label: 'לוגו מותגים' },
-  { value: 'דוגמנים', label: 'דוגמנים' }
+  { value: 'logos', label: 'לוגו מותגים' },
+  { value: 'models', label: 'דוגמנים' }
 ];
 
 const MEDIA_BUCKET = 'media-library';

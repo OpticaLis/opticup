@@ -570,7 +570,7 @@ async function handleStudioGalleryUpload(input, brandId) {
     try {
       const blob = await convertToWebp(file);
       const timestamp = Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-      const storagePath = `media/${tid}/דוגמנים/${timestamp}.webp`;
+      const storagePath = `media/${tid}/models/${timestamp}.webp`;
 
       const { data, error } = await sb.storage
         .from('media-library')
@@ -586,7 +586,7 @@ async function handleStudioGalleryUpload(input, brandId) {
         storage_path: storagePath,
         mime_type: 'image/webp',
         file_size: blob.size,
-        folder: 'דוגמנים',
+        folder: 'models',
         tags: ['brand-gallery', brandId],
         uploaded_by: sessionStorage.getItem('current_user_name') || 'studio'
       });

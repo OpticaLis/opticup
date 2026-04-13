@@ -47,8 +47,8 @@ This means: if the same image is needed in two places, Daniel must upload it twi
 
 ### 4.1 New Media Library Folders
 Create two new folders recognized by the Studio Media Gallery:
-- `לוגו` (logos) — brand logos
-- `דוגמנים` (models) — brand page carousel/hero images
+- `logos` (logos) — brand logos
+- `models` (models) — brand page carousel/hero images
 
 Folders are implicit (no table — just `folder` TEXT column on `media_library`). Add to the hardcoded folder list in `studio-media.js`.
 
@@ -58,9 +58,9 @@ Folders are implicit (no table — just `folder` TEXT column on `media_library`)
 
 | Source | Count | Target folder in `media-library` |
 |---|---|---|
-| `tenant-logos/brands/{tid}/{brand_id}_*.png` (logo files) | 21 | `media/{tid}/לוגו/{filename}.png` |
-| `tenant-logos/brands/{tid}/{brand_id}/gallery/*.webp` | ~75 | `media/{tid}/דוגמנים/{filename}.webp` |
-| Repo: `/public/images/brands/*.png` (static logos) | 19 | `media/{tid}/לוגו/{filename}.png` |
+| `tenant-logos/brands/{tid}/{brand_id}_*.png` (logo files) | 21 | `media/{tid}/logos/{filename}.png` |
+| `tenant-logos/brands/{tid}/{brand_id}/gallery/*.webp` | ~75 | `media/{tid}/models/{filename}.webp` |
+| Repo: `/public/images/brands/*.png` (static logos) | 19 | `media/{tid}/logos/{filename}.png` |
 
 **Orphan handling:** The 2 duplicate logos (Moscot, Mykita) — migrate only the referenced file, leave orphans behind for Stage 4 cleanup.
 
@@ -87,7 +87,7 @@ This is the bucket + path — a stable reference that never changes even if the 
 A small resolver utility `resolveMediaUrl(storagePath, context)` will live in `shared.js` (ERP side) and in a storefront helper. This keeps DB values domain-agnostic.
 
 **Migration update targets:**
-- `brands.logo_url` — replace public URL / static path with `media-library/media/{tid}/לוגו/{filename}`
+- `brands.logo_url` — replace public URL / static path with `media-library/media/{tid}/logos/{filename}`
 - `brands.brand_gallery` (array) — same treatment for each element
 
 Wrap the UPDATE in a single transaction. Keep a pre-migration backup of `brands.logo_url` and `brands.brand_gallery` in `backups/brands_pre_unification_{date}.json` per Rule 9.9.
@@ -102,14 +102,14 @@ Wrap the UPDATE in a single transaction. Keep a pre-migration backup of `brands.
 
 **`modules/storefront/studio-brands.js` — `handleStudioGalleryUpload`:**
 - Change upload target bucket from `tenant-logos` to `media-library`
-- Change path from `brands/{tid}/{brandId}/gallery/...` to `media/{tid}/דוגמנים/...`
+- Change path from `brands/{tid}/{brandId}/gallery/...` to `media/{tid}/models/...`
 - After upload, INSERT a `media_library` row (this is the key change — makes new uploads discoverable in the Media Gallery)
 - Returned URL → proxy URL, not direct public URL
 
 **Logo upload flow:** Same pattern — write to `media-library` bucket + `media_library` row.
 
 **Studio Media Gallery (`studio-media.js`):**
-- Add `'לוגו'` and `'דוגמנים'` to the folder list
+- Add `'logos'` and `'models'` to the folder list
 - No other changes — the existing Gallery already reads from `media_library` table
 
 **Brand-image picker (new small feature):**
@@ -127,7 +127,7 @@ After migration verified on Prizma:
 
 ### Stage 1 — Infrastructure + Demo Dry Run (2-3h)
 
-1. Add `'לוגו'` and `'דוגמנים'` folders to `studio-media.js` folder list
+1. Add `'logos'` and `'models'` folders to `studio-media.js` folder list
 2. Write migration script: `scripts/migrate-brand-images.mjs`
    - Reads `brands` table for target tenant
    - Downloads each logo/gallery file from `tenant-logos` (or repo for static)
@@ -171,7 +171,7 @@ After migration verified on Prizma:
 - Migrating non-brand images (products, campaigns, blog, store) — they're already in `media-library`.
 - Moving the tenant's own store logo out of `tenant-logos` — that bucket keeps its original purpose.
 - Building a bulk-import UI for historical brand images — script-only.
-- Adding new folders beyond "לוגו" and "דוגמנים" in this spec.
+- Adding new folders beyond "logos" and "models" in this spec.
 
 ## 7. Rules Compliance Check
 
@@ -191,7 +191,7 @@ After migration verified on Prizma:
 
 **Stage 1 (demo):**
 - [ ] `media_library` table has exactly N new rows for demo tenant (N = demo logos + gallery count)
-- [ ] Studio → Media Gallery → "לוגו" folder shows all migrated logos; "דוגמנים" shows all gallery images
+- [ ] Studio → Media Gallery → "logos" folder shows all migrated logos; "models" shows all gallery images
 - [ ] A random brand page on demo storefront loads with console clean
 - [ ] Image proxy returns 200 for 3 spot-checked migrated paths
 - [ ] Migration script's backup JSON exists and is complete
