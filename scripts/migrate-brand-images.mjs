@@ -54,26 +54,15 @@ const tid = tenant.id;
 console.log(`Tenant: ${tenant.name} (${tid})\n`);
 
 // ── Load brands (exclude_website IS NOT TRUE = null OR false) ──
-const { data: rawBrands, error: bErr } = await sb.rpc('exec_sql', {
-  query: `SELECT id, name, logo_url, brand_gallery FROM brands
-           WHERE tenant_id = '${tid}' AND is_deleted = false AND active = true
-           AND exclude_website IS NOT TRUE ORDER BY name`
-}).catch(() => ({ data: null, error: { message: 'rpc unavailable' } }));
-
-// Fallback: two queries if RPC unavailable
-let allBrands;
-if (rawBrands) {
-  allBrands = rawBrands;
-} else {
-  const { data: b1 } = await sb.from('brands').select('id, name, logo_url, brand_gallery')
-    .eq('tenant_id', tid).eq('is_deleted', false).eq('active', true).is('exclude_website', null);
-  const { data: b2 } = await sb.from('brands').select('id, name, logo_url, brand_gallery')
-    .eq('tenant_id', tid).eq('is_deleted', false).eq('active', true).eq('exclude_website', false);
-  const map = new Map();
-  for (const b of [...(b1 || []), ...(b2 || [])]) map.set(b.id, b);
-  allBrands = [...map.values()];
-}
-if (bErr && !allBrands?.length) { console.error('Failed to load brands:', bErr.message); process.exit(1); }
+// Two queries needed: Supabase JS has no IS NOT TRUE filter
+const { data: b1, error: bErr } = await sb.from('brands').select('id, name, logo_url, brand_gallery')
+  .eq('tenant_id', tid).eq('is_deleted', false).eq('active', true).is('exclude_website', null).order('name');
+const { data: b2 } = await sb.from('brands').select('id, name, logo_url, brand_gallery')
+  .eq('tenant_id', tid).eq('is_deleted', false).eq('active', true).eq('exclude_website', false).order('name');
+const brandMap = new Map();
+for (const b of [...(b1 || []), ...(b2 || [])]) brandMap.set(b.id, b);
+const allBrands = [...brandMap.values()];
+if (bErr && !allBrands.length) { console.error('Failed to load brands:', bErr.message); process.exit(1); }
 
 const brandsWithImages = allBrands.filter(b => b.logo_url || (b.brand_gallery && b.brand_gallery.length));
 console.log(`Brands total: ${allBrands.length}, with images: ${brandsWithImages.length}\n`);
