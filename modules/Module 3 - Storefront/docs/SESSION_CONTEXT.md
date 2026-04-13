@@ -1,45 +1,41 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
 ## Current Phase: Phase B — SaaS Hardening
-## Status: 🔴 FROZEN at §1.1 Gate 2 — scope correction approved, awaiting unfreeze
-## Date: 2026-04-12
+## Status: ✅ B Core + B6 COMPLETE — awaiting Phase C scoping
+## Date: 2026-04-13
 
 ---
 
-## Phase B Core — SaaS Hardening
+## Phase B — SaaS Hardening ✅
 
-### Status: FROZEN at §1.1 (RLS fixes)
+### Status: COMPLETE on develop (not yet merged to main — Module 3 still open)
 
-**Completed:**
-- TC-Cleanup: 5 commits on develop, sealed
+**B Core — RLS canonical pattern rollout:**
 - §1.0 Infrastructure: optic_readonly DB role created, 4 tests passed
+- §1.1 RLS fixes: all 11 tables fixed to canonical JWT-claim pattern
+  (customers, prescriptions, sales, work_orders, brand_content_log,
+  storefront_component_presets, storefront_page_tags, media_library,
+  supplier_balance_adjustments, campaigns, campaign_templates)
+- §1.3–§1.6: RLS audit script, TIER-C cleanup, run-audit harness
+- B1–B8 items closed; Manual Action #2 executed
 
-**Frozen at §1.1:**
-Gate 2 discovered 4 tables (customers, prescriptions, sales, work_orders) have NO tenant_id column.
-Secondary Chat correctly stopped. Scope correction decided and approved:
+**B6 — sessionStorage Key Rename (commit `7e99030`):**
+- Atomic rename `prizma_*` → `tenant_*` across entire ERP
+- 22 files changed, 44 replacements (keys: auth_token, employee, permissions, role, user, branch, login_locked, admin)
+- Sanity Check §5.1–§5.8 PASS on demo tenant
+- Login round-trip verified via Chrome MCP: login → module nav → logout → re-login, zero console errors
+- Daniel-side visual verification: PASS
 
-Original SPEC had 7 tables. Corrected scope = 12 tables:
-- 4 tables need ALTER TABLE + canonical RLS (customers, prescriptions, sales, work_orders)
-- 3 tables have auth.uid bug (brand_content_log, storefront_component_presets, storefront_page_tags)
-- 1 extra leak discovered (storefront_component_presets RLS-08)
-- 4 tables have legacy session-var pattern (media_library, supplier_balance_adjustments, campaigns, campaign_templates)
+**SPEC files (reference):**
+- MODULE_3_B_SPEC_saas_core_2026-04-12.md (B Core)
+- MODULE_3_B_SPEC_saas_session_keys_2026-04-12.md (B6)
 
-**SPEC file:** MODULE_3_B_SPEC_saas_core_2026-04-12.md (1713 lines, corrected)
+### Pending (not blocking Phase C)
+- §4.3 Prizma tenant safety check — run before any merge to main (deferred until Module 3 closes)
+- MASTER_ROADMAP §5/§6 RETRACTED marker on SF-2 (supplier_balance_adjustments)
 
-**To resume:** Daniel must approve unfreeze. SQL execution is Level 3 (Daniel runs it).
-
-### Remaining B Core sections after §1.1:
-§1.3 RLS audit script → §1.4 .gitignore + CLAUDE.md update → §1.5 TIER-C → §1.6 run-audit.mjs → §2 B-items
-
-### B6 sub-phase:
-SPEC written and reviewed. NOT in execution. Waits for B Core PASS.
-Highest-risk item: sessionStorage key rename.
-
-### Phases C and D:
+### Phases C and D
 Not started, not SPEC'd. C = WordPress content migration. D = dead code cleanup.
-
-### Open issue:
-MASTER_ROADMAP §5/§6 contradiction on SF-2 (supplier_balance_adjustments) — needs RETRACTED marker.
 
 ---
 

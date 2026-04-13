@@ -131,17 +131,17 @@
 | 6 | ✅ | i18n — AI Translation | 3 tables, Claude translation, glossary, review UI |
 | 7 | ✅ | White-Label + Analytics + Theme | Multi-tenant, analytics, theme engine |
 
-### SaaS Hardening (Phase B chain, in progress)
+### SaaS Hardening (Phase B chain)
 
 | פאזה | סטטוס | שם | מה כולל |
 |------|--------|----|---------|
-| B Core | 🔴 | SaaS Security Hardening | RLS fixes (12 tables), audit script, TIER-C cleanup |
-| B6 | ⬜ | Session Key Rename | sessionStorage key standardization (waits for B Core PASS) |
+| B Core | ✅ | SaaS Security Hardening | RLS canonical pattern on 11 tables, audit script, TIER-C cleanup |
+| B6 | ✅ | Session Key Rename | `prizma_*` → `tenant_*` across ERP (commit `7e99030`) |
 | C | ⬜ | WordPress Content Migration | Content migration from WordPress (not SPEC'd) |
 | D | ⬜ | Dead Code Cleanup | Remove orphaned code (not SPEC'd) |
 | QA | ⬜ | Full Module QA | SEO validation, 3 languages, 2 tenants, mobile, Lighthouse |
 
-**B Core status:** Frozen at §1.1 Gate 2. Scope corrected from 7 to 12 tables. SPEC ready. Awaiting Daniel's unfreeze.
+**B Core + B6 status:** ✅ Complete on develop (2026-04-13). §4.3 Prizma tenant safety check deferred until Module 3 closes and ready for main merge.
 
 ---
 
