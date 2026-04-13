@@ -10,7 +10,7 @@
 
 When starting a new Claude Code session, do these steps in order. No exceptions.
 
-1. **Identify machine & repo:** Ask "Which machine? 🖥️ Windows or 🍎 Mac?" and confirm the working directory matches the task. Run `git remote -v` to verify you are in `opticalis/opticup` (ERP) vs `opticalis/opticup-storefront`. If the remote does not match the task — STOP and tell the user.
+1. **Identify machine & repo:** Ask "Which of the three machines? 🖥️ Windows desktop, 🖥️ Windows laptop, or 🍎 Mac?" (see §9 Multi-Machine for paths) and confirm the working directory matches the task. Run `git remote -v` to verify you are in `opticalis/opticup` (ERP) vs `opticalis/opticup-storefront`. If the remote does not match the task — STOP and tell the user.
 2. **Verify branch:** `git branch` — must be on `develop`. If not: `git checkout develop`.
 3. **Pull latest:** `git pull origin develop`.
 4. **Clean repo check:** run `git status`. If there are uncommitted changes, deleted files, or untracked files that are NOT part of the current task:
@@ -175,8 +175,11 @@ Every type of information has ONE authoritative home. If you need to update it, 
 | Module's phase map & progress | `modules/Module X/ROADMAP.md` |
 | Module's commit history per phase | `modules/Module X/docs/CHANGELOG.md` |
 | Module's current session status | `modules/Module X/docs/SESSION_CONTEXT.md` |
+| **Any new SPEC, phase plan, or task prompt** (e.g. `PHASE_X_SPEC.md`, `FEATURE_SPEC.md`, `MIGRATION_SPEC.md`) | **`modules/Module X - [Name]/docs/`** — same folder as that module's other docs. Never at repo root. Never in the storefront repo if the SPEC drives changes to Module 3 (Studio) — Module 3 docs live here in the ERP repo under `modules/Module 3 - Storefront/docs/`, NOT in `opticup-storefront/docs/`. |
 
 **Rule:** If you find the same information in two places — one of them is wrong. Fix it, per Rule 21.
+
+**SPEC location discipline (addition, 2026-04-13):** SPEC files (`*_SPEC.md`, `*_REPORT.md`, phase plans, migration plans) MUST live inside the owning module's `docs/` folder. Before creating any SPEC file, list `modules/Module X - [Name]/docs/` and match the existing naming convention (underscores, UPPER_CASE). Never put a SPEC at repo root. Never put a Module 3 SPEC inside `opticup-storefront/` — Module 3 lives in this repo, even if the SPEC drives storefront work.
 
 ## 8. Navigation Table — "I Need To… → Open This"
 
@@ -254,11 +257,12 @@ Stop and wait for instructions if ANY of these happen:
 
 ### Multi-Machine
 
-Two development machines:
-- **🖥️ Windows:** `C:\Users\User\opticup` (Watcher service runs here)
+Three development machines:
+- **🖥️ Windows desktop (stationary):** `C:\Users\User\opticup` (Watcher service runs here)
+- **🖥️ Windows laptop (mobile):** `C:\Users\Admin\opticup-workspace\opticup`
 - **🍎 Mac:** `/Users/danielsmac/opticup`
 
-Every new session: confirm which machine, `git pull origin develop` before any work, never work on both simultaneously on the same branch.
+Every new session: confirm WHICH of the three machines (never assume — Daniel rotates between all three), `git pull origin develop` before any work, never work on two machines simultaneously on the same branch.
 
 ### Commits
 
