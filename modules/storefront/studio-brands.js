@@ -12,11 +12,10 @@ const STOREFRONT_BASE = location.hostname === 'localhost' || location.hostname =
   ? 'http://localhost:4321'
   : 'https://opticup-storefront.vercel.app';
 
-/** Resolve logo URL — prefix local paths with storefront URL */
+/** Resolve logo/media URL — handles storage paths, local paths, and full URLs */
 function resolveLogoUrl(url) {
   if (!url) return '';
-  if (url.startsWith('http')) return url;
-  return STOREFRONT_BASE + url;
+  return resolveMediaUrl(url, STOREFRONT_BASE);
 }
 
 // ═══════════════════════════════════════════════════
@@ -289,7 +288,7 @@ function openStudioBrandEditor(brandId) {
 
   const galleryPreviewHtml = galleryArr.length > 0
     ? `<div class="gallery-grid">${galleryArr.map((url, i) => `<div class="gallery-thumb">
-        <img src="${escapeAttr(url)}" alt="תמונה ${i + 1}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;" />
+        <img src="${escapeAttr(resolveLogoUrl(url))}" alt="תמונה ${i + 1}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;" />
         <button type="button" onclick="removeStudioGalleryImage(${i})" style="position:absolute; top:-5px; right:-5px; width:20px; height:20px; border-radius:50%; background:#ef4444; color:#fff; border:none; font-size:.75rem; cursor:pointer;">✕</button>
       </div>`).join('')}</div>`
     : '<span style="color:var(--g400); font-size:.85rem;">אין תמונות — ישתמש בתמונות מוצרים אוטומטית</span>';
@@ -571,19 +570,32 @@ async function handleStudioGalleryUpload(input, brandId) {
     try {
       const blob = await convertToWebp(file);
       const timestamp = Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-      const path = `brands/${tid}/${brandId}/gallery/${timestamp}.webp`;
+      const storagePath = `media/${tid}/דוגמנים/${timestamp}.webp`;
 
       const { data, error } = await sb.storage
-        .from('tenant-logos')
-        .upload(path, blob, { contentType: 'image/webp', upsert: false });
+        .from('media-library')
+        .upload(storagePath, blob, { contentType: 'image/webp', upsert: false });
 
       if (error) throw error;
 
-      const { data: urlData } = sb.storage.from('tenant-logos').getPublicUrl(path);
-      if (urlData?.publicUrl) {
-        window._studioGallery.push(urlData.publicUrl);
-        uploaded++;
-      }
+      // Register in media_library table for Gallery reuse
+      const { error: dbErr } = await sb.from('media_library').insert({
+        tenant_id: tid,
+        filename: `${timestamp}.webp`,
+        original_filename: file.name,
+        storage_path: storagePath,
+        mime_type: 'image/webp',
+        file_size: blob.size,
+        folder: 'דוגמנים',
+        tags: ['brand-gallery', brandId],
+        uploaded_by: sessionStorage.getItem('current_user_name') || 'studio'
+      });
+      if (dbErr) console.warn('media_library insert warning:', dbErr.message);
+
+      // Store the storage reference (not full URL) — resolved at render time
+      const ref = `media-library/${storagePath}`;
+      window._studioGallery.push(ref);
+      uploaded++;
     } catch (err) {
       console.error('Gallery upload error:', err);
     }
@@ -631,7 +643,7 @@ function refreshStudioGalleryPreview() {
     return;
   }
   container.innerHTML = `<div class="gallery-grid">${arr.map((url, i) => `<div class="gallery-thumb">
-    <img src="${escapeAttr(url)}" alt="תמונה ${i + 1}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;" />
+    <img src="${escapeAttr(resolveLogoUrl(url))}" alt="תמונה ${i + 1}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;" />
     <button type="button" onclick="removeStudioGalleryImage(${i})" style="position:absolute; top:-5px; right:-5px; width:20px; height:20px; border-radius:50%; background:#ef4444; color:#fff; border:none; font-size:.75rem; cursor:pointer;">✕</button>
   </div>`).join('')}</div>`;
 }

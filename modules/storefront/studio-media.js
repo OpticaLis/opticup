@@ -15,7 +15,9 @@ const MEDIA_FOLDERS = [
   { value: 'campaigns', label: 'קמפיינים' },
   { value: 'store', label: 'חנות' },
   { value: 'products', label: 'מוצרים' },
-  { value: 'blog', label: 'בלוג' }
+  { value: 'blog', label: 'בלוג' },
+  { value: 'לוגו', label: 'לוגו מותגים' },
+  { value: 'דוגמנים', label: 'דוגמנים' }
 ];
 
 const MEDIA_BUCKET = 'media-library';

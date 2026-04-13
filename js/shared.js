@@ -294,6 +294,23 @@ function getTenantConfig(key) {
   return key ? config[key] : config;
 }
 
+/**
+ * Resolve a media-library storage path to a full URL.
+ * Storage paths look like: "media-library/media/{tid}/{folder}/{filename}"
+ * In storefront context (same domain) → "/api/image/{path}"
+ * In ERP context (different domain) → "{storefrontDomain}/api/image/{path}"
+ * Falls through for full URLs (http/https) — returned as-is.
+ */
+function resolveMediaUrl(storagePath, storefrontDomain) {
+  if (!storagePath) return '';
+  if (storagePath.startsWith('http')) return storagePath;
+  if (storagePath.startsWith('/images/')) {
+    return storefrontDomain ? storefrontDomain + storagePath : storagePath;
+  }
+  const proxyPath = '/api/image/' + storagePath;
+  return storefrontDomain ? storefrontDomain + proxyPath : proxyPath;
+}
+
 function escapeHtml(str) {
   if (str == null) return '';
   return String(str)
