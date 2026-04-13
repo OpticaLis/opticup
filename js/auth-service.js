@@ -11,10 +11,10 @@ const AT = {
 
 // SessionStorage keys
 const SK = {
-  TOKEN: 'prizma_auth_token',
-  EMPLOYEE: 'prizma_employee',
-  PERMS: 'prizma_permissions',
-  ROLE: 'prizma_role'
+  TOKEN: 'tenant_auth_token',
+  EMPLOYEE: 'tenant_employee',
+  PERMS: 'tenant_permissions',
+  ROLE: 'tenant_role'
 };
 
 // Map legacy employees.role → new role system

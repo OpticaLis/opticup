@@ -110,7 +110,7 @@ async function confirmReceiptCore(receiptId, rcptNumber, poId) {
   const { error: confErr } = await sb.from(T.RECEIPTS).update({
     status: 'confirmed',
     total_amount: totalAmount || null,
-    created_by: sessionStorage.getItem('prizma_user') || 'system'
+    created_by: sessionStorage.getItem('tenant_user') || 'system'
   }).eq('id', receiptId);
   if (confErr) throw confErr;
 

@@ -51,7 +51,7 @@ async function confirmReceipt() {
   // PIN verification — required for all confirm paths
   const pinEmp = await _receiptPinVerify('אישור קבלת סחורה');
   if (!pinEmp) return;
-  sessionStorage.setItem('prizma_user', pinEmp.name);
+  sessionStorage.setItem('tenant_user', pinEmp.name);
 
   // If mismatch acknowledged, log it
   if (matchResult === 'mismatch') {
@@ -123,7 +123,7 @@ async function confirmReceiptById(receiptId) {
 
   const pinEmp = await _receiptPinVerify('אישור קבלה');
   if (!pinEmp) return;
-  sessionStorage.setItem('prizma_user', pinEmp.name);
+  sessionStorage.setItem('tenant_user', pinEmp.name);
 
   showLoading('מאשר קבלה...');
   try {

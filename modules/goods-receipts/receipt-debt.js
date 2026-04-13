@@ -100,7 +100,7 @@ async function _createDocumentFromReceiptInner(receiptId, supplierId, receiptIte
   const dueDateStr = dueDate.toISOString().slice(0, 10);
 
   // 7. Get current employee ID
-  const emp = JSON.parse(sessionStorage.getItem('prizma_employee') || '{}');
+  const emp = JSON.parse(sessionStorage.getItem('tenant_employee') || '{}');
 
   // 8. Build document record
   var primaryDocNum = documentNumber || ('GR-' + receiptId.substring(0, 8));

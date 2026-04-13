@@ -9,7 +9,7 @@
 // 1. PERMISSION CHECK + GEAR BUTTON INJECTION
 // =========================================================
 function _aiCfgHasAccess() {
-  var role = sessionStorage.getItem('prizma_role');
+  var role = sessionStorage.getItem('tenant_role');
   return role === 'ceo' || role === 'manager';
 }
 

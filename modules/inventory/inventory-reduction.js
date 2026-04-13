@@ -286,7 +286,7 @@ async function confirmReduction() {
   // Verify PIN
   const emp = await verifyPinOnly(pin);
   if (!emp) { toast('סיסמת עובד שגויה', 'e'); $('reduce-modal-pin').value = ''; $('reduce-modal-pin').focus(); return; }
-  sessionStorage.setItem('prizma_user', emp.name);
+  sessionStorage.setItem('tenant_user', emp.name);
 
   const newQty = currentQty - amount;
 

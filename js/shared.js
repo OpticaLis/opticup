@@ -123,7 +123,7 @@ let suppliers = [];
 let brands = [];
 let isAdmin = false;
 let maxBarcode = 0;
-let branchCode = sessionStorage.getItem('prizma_branch') || '00';
+let branchCode = sessionStorage.getItem('tenant_branch') || '00';
 
 // System Log state
 let slogPage = 0, slogTotalPages = 0, slogCurrentFilters = {};

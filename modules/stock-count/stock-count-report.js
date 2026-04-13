@@ -171,7 +171,7 @@ async function _doConfirmCount(countId, emp) {
     toast('אין הרשאה לאישור ספירה', 'e');
     return;
   }
-  sessionStorage.setItem('prizma_user', emp.name);
+  sessionStorage.setItem('tenant_user', emp.name);
 
   const tab = document.getElementById('tab-stock-count');
   const allItems = tab._scReportAllItems || [];
