@@ -422,7 +422,7 @@ function openStudioBrandEditor(brandId) {
     </div>` : ''}
 
     <div class="brand-editor-section" style="border-bottom:none;">
-      <a href="${STOREFRONT_BASE}/brands/${encodeURIComponent(brand.slug || '')}/?t=prizma" target="_blank" style="display:inline-flex; align-items:center; gap:6px; color:var(--primary); font-weight:600; text-decoration:none;">
+      <a href="${STOREFRONT_BASE}/brands/${encodeURIComponent(brand.slug || '')}/?t=${encodeURIComponent(TENANT_SLUG || '')}" target="_blank" style="display:inline-flex; align-items:center; gap:6px; color:var(--primary); font-weight:600; text-decoration:none;">
         👁 פתח עמוד מותג
       </a>
     </div>
