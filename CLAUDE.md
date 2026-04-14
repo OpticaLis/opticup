@@ -21,7 +21,7 @@ When starting a new Claude Code session, do these steps in order. No exceptions.
 5. **Read this file** (CLAUDE.md) — rules, navigation, conventions.
 6. **Read the target module's SESSION_CONTEXT.md** — path pattern:
    `modules/Module X - [Name]/docs/SESSION_CONTEXT.md`
-   Active modules with SESSION_CONTEXT: Module 1 (Inventory), Module 1.5 (Shared Components), Module 2 (Platform Admin). Module 3 (Storefront) lives in separate repo `opticup-storefront`.
+   Active modules with SESSION_CONTEXT: Module 1 (Inventory), Module 1.5 (Shared Components), Module 2 (Platform Admin), Module 3 (Storefront). **For Module 3 specifically:** read BOTH `modules/Module 3 - Storefront/docs/SESSION_CONTEXT.md` (this repo, ERP-side, authoritative for Module 3 phase status) AND `[sibling repo]/opticup-storefront/SESSION_CONTEXT.md` (storefront working state). If they disagree on phase status, this repo wins per §7 Authority Matrix. Flag drift to Daniel before proceeding. Phase letters (A/B/C/D) may appear ONLY in the ERP-side file — never in the storefront file.
 7. **Read `docs/GLOBAL_MAP.md`** — shared functions, contracts, module registry (reference only — do NOT modify outside Integration Ceremony).
 8. **Read `docs/guardian/GUARDIAN_ALERTS.md`** — the Sentinel's active alerts. If there are CRITICAL or HIGH alerts that relate to the files you will work on — report them to Daniel before starting. If "ALL CLEAR" — continue.
 
@@ -180,6 +180,10 @@ Every type of information has ONE authoritative home. If you need to update it, 
 **Rule:** If you find the same information in two places — one of them is wrong. Fix it, per Rule 21.
 
 **SPEC location discipline (addition, 2026-04-13):** SPEC files (`*_SPEC.md`, `*_REPORT.md`, phase plans, migration plans) MUST live inside the owning module's `docs/` folder. Before creating any SPEC file, list `modules/Module X - [Name]/docs/` and match the existing naming convention (underscores, UPPER_CASE). Never put a SPEC at repo root. Never put a Module 3 SPEC inside `opticup-storefront/` — Module 3 lives in this repo, even if the SPEC drives storefront work.
+
+**Phase-label ownership (addition, 2026-04-14):** Module 3 phase letters (A / B / C / D and any future letters) are owned **exclusively** by the ERP-side `modules/Module 3 - Storefront/docs/SESSION_CONTEXT.md` and `modules/Module 3 - Storefront/MODULE_3_ROADMAP.md`. The sibling storefront repo (`opticup-storefront`) MUST NOT use Module 3 phase letters in its `SESSION_CONTEXT.md`, SPEC filenames, or commit messages — it uses **descriptive names** only (e.g., "DNS Switch Readiness", "Translation Workflow", "Campaign Cards Block"). Rationale: a prior collision where both repos used "Phase C+D" for unrelated work streams caused documentation drift on 2026-04-13. If you ever see a Module 3 phase letter inside the storefront repo — that is a bug, fix it and report it.
+
+**Multi-repo SESSION_CONTEXT drift detection (addition, 2026-04-14):** When starting a Module 3 session in EITHER repo, read BOTH `modules/Module 3 - Storefront/docs/SESSION_CONTEXT.md` (this repo) AND `opticup-storefront/SESSION_CONTEXT.md` (sibling repo) during First Action step 6. If they disagree on phase status, this file (ERP-side) wins per the Authority Matrix. Flag any drift to Daniel before proceeding.
 
 ## 8. Navigation Table — "I Need To… → Open This"
 
@@ -382,3 +386,4 @@ All detailed content lives here. Keep this file (CLAUDE.md) free of detail — a
 
 *End of CLAUDE.md. This file is a map. Detailed content lives in the reference files above.*
 *Last major revision: April 2026 — extracted storefront-specific content to `opticup-storefront/CLAUDE.md`, extracted file structure / DB tables / conventions to dedicated reference files, added Hygiene Rules (21–23), added Navigation Table, switched Working Rules to Bounded Autonomy model (stop on deviation, not on success), added clean-repo check to First Action.*
+                                                 
