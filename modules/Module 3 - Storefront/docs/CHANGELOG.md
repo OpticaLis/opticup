@@ -1,5 +1,26 @@
 # Module 3 — Storefront — Changelog
 
+## SuperSale campaign_cards fixes [Fix 1+2]
+**Status:** Fix 1+2 complete on develop | Fix 3 pending
+**Date:** 2026-04-14
+**Commit:** f89babd (opticup-storefront, branch: develop)
+
+### Changes
+- **Fix 1:** CTA button hidden when cta_text is empty string - replaced falsy || fallback with explicit null/empty check in CampaignCardsBlock.astro
+- **Fix 2:** Removed disclaimerText prop from CampaignCard per-card iteration - disclaimer no longer appears inside every card
+- **Fix 3 (pending):** Disclaimer once at bottom of block - deferred to next session
+
+### QA
+- CTA buttons: 0 visible (verified via DOM)
+- Disclaimer inside cards: removed (verified via DOM)
+- Images: loading correctly after SUPABASE_SERVICE_ROLE_KEY added to .env
+- No regressions on other blocks
+
+### Pending before merge to main
+- Fix 3: disclaimer once at bottom of campaign_cards block
+- og:image missing on supersale page (MEDIUM)
+
+---
 ## Phase B — SaaS Hardening ✅
 
 **Status:** ✅ Complete on develop
