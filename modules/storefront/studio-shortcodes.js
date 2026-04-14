@@ -65,8 +65,8 @@ const BUILTIN_CTA_PRESETS = [
     category: 'cta',
     name: '\u05DB\u05E4\u05EA\u05D5\u05E8 \u05D0\u05D9\u05E0\u05E1\u05D8\u05D2\u05E8\u05DD',
     description: '\u05DB\u05E4\u05EA\u05D5\u05E8 \u05E2\u05DD \u05D2\u05E8\u05D3\u05D9\u05D0\u05E0\u05D8 \u05D0\u05D9\u05E0\u05E1\u05D8\u05D2\u05E8\u05DD \u05D5\u05D0\u05D9\u05E7\u05D5\u05DF',
-    shortcode: '[cta type="secondary" action="link" href="https://www.instagram.com/optic_prizma/" text="\u05E2\u05E7\u05D1\u05D5 \u05D1\u05D0\u05D9\u05E0\u05E1\u05D8\u05D2\u05E8\u05DD" icon="instagram"]',
-    config: { type: 'secondary', action: 'link', href: 'https://www.instagram.com/optic_prizma/', text: '\u05E2\u05E7\u05D1\u05D5 \u05D1\u05D0\u05D9\u05E0\u05E1\u05D8\u05D2\u05E8\u05DD', icon: 'instagram' }
+    shortcode: '[cta type="secondary" action="link" href="#" text="\u05E2\u05E7\u05D1\u05D5 \u05D1\u05D0\u05D9\u05E0\u05E1\u05D8\u05D2\u05E8\u05DD" icon="instagram"]',
+    config: { type: 'secondary', action: 'link', href: '#', text: '\u05E2\u05E7\u05D1\u05D5 \u05D1\u05D0\u05D9\u05E0\u05E1\u05D8\u05D2\u05E8\u05DD', icon: 'instagram' }
   }
 ];
 
@@ -131,8 +131,14 @@ async function loadShortcodePresets() {
     const cfg = configRes.data || {};
     const igUrl = cfg.footer_config?.social?.find?.(s => s.type === 'instagram')?.url || null;
     const stickyPresets = buildBuiltinStickyPresets(cfg.whatsapp_number || null, igUrl);
+    // Patch Instagram CTA preset with tenant's URL from storefront_config.footer_config.social
+    const ctaPresets = igUrl
+      ? BUILTIN_CTA_PRESETS.map(p => p.id === '__cta_instagram'
+          ? { ...p, shortcode: p.shortcode.replace('href="#"', `href="${igUrl}"`), config: { ...p.config, href: igUrl } }
+          : p)
+      : BUILTIN_CTA_PRESETS;
     // Merge built-ins first, then DB presets
-    shortcodePresets = [...BUILTIN_CTA_PRESETS, ...BUILTIN_FORM_PRESETS, ...stickyPresets, ...(presetsRes.data || [])];
+    shortcodePresets = [...ctaPresets, ...BUILTIN_FORM_PRESETS, ...stickyPresets, ...(presetsRes.data || [])];
     renderShortcodeLibrary();
   } catch (err) {
     console.error('Load shortcode presets error:', err);
