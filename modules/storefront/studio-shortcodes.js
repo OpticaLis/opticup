@@ -96,24 +96,26 @@ const BUILTIN_FORM_PRESETS = [
 ];
 
 // === BUILT-IN STICKY BAR PRESETS ===
-const BUILTIN_STICKY_PRESETS = [
-  // TODO(B4): Replace hardcoded WhatsApp (wa.me/972533645404) and Instagram (instagram.com/optic_prizma/) with configurable values
-  // These are template strings that users copy-paste into CMS blocks, so they need to be made configurable at the CMS level
+function buildBuiltinStickyPresets(waNumber, igUrl) {
+  const _wa = waNumber ? '972' + waNumber.replace(/^0/, '') : '';
+  const _ig = igUrl || '';
+  return [
   {
     id: '__sticky_campaign_dark',
     category: 'sticky_bar',
     name: '\u05E1\u05D8\u05D9\u05E7\u05D9 \u05D1\u05E8 \u2014 \u05E7\u05DE\u05E4\u05D9\u05D9\u05DF (\u05DB\u05D4\u05D4)',
     description: '\u05D1\u05E8 \u05EA\u05D7\u05EA\u05D5\u05DF \u05E7\u05D1\u05D5\u05E2 \u05E2\u05DD \u05DB\u05E4\u05EA\u05D5\u05E8\u05D9 WhatsApp \u05D5\u05D0\u05D9\u05E0\u05E1\u05D8\u05D2\u05E8\u05DD',
-    shortcode: '<!-- \u05E1\u05D8\u05D9\u05E7\u05D9 \u05D1\u05E8 \u05DB\u05D4\u05D4 \u2014 \u05DC\u05D4\u05D3\u05D1\u05D9\u05E7 \u05D1\u05D1\u05DC\u05D5\u05E7 \u05E7\u05E1\u05D8\u05DD -->\n<div style="position:fixed;bottom:0;left:0;right:0;z-index:99999;background:rgba(10,10,10,0.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid rgba(201,168,76,0.12);padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:10px;font-family:Heebo,sans-serif;">\n  <span style="font-size:12px;color:#999;white-space:nowrap;">\uD83D\uDCCB \u05E7\u05D8\u05DC\u05D5\u05D2 \u05DE\u05D5\u05EA\u05D2\u05D9\u05DD \u05D5\u05DE\u05D7\u05D9\u05E8\u05D9\u05DD</span>\n  <a href="https://wa.me/972533645404?text=\u05E9\u05DC\u05D5\u05DD" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;padding:9px 18px;border-radius:999px;font-weight:700;font-size:13px;white-space:nowrap;text-decoration:none;" target="_blank" rel="noopener">\uD83D\uDCAC \u05E9\u05DC\u05D7\u05D5 \u05DC\u05D9 \u05D0\u05EA \u05D4\u05E7\u05D8\u05DC\u05D5\u05D2</a>\n  <div style="width:1px;height:24px;background:rgba(255,255,255,0.1);"></div>\n  <a href="https://www.instagram.com/optic_prizma/" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#833AB4,#FD1D1D,#F77737);color:#fff;text-decoration:none;" target="_blank" rel="noopener">\uD83D\uDCF7</a>\n</div>',
+    shortcode: '<!-- \u05E1\u05D8\u05D9\u05E7\u05D9 \u05D1\u05E8 \u05DB\u05D4\u05D4 \u2014 \u05DC\u05D4\u05D3\u05D1\u05D9\u05E7 \u05D1\u05D1\u05DC\u05D5\u05E7 \u05E7\u05E1\u05D8\u05DD -->\n<div style="position:fixed;bottom:0;left:0;right:0;z-index:99999;background:rgba(10,10,10,0.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid rgba(201,168,76,0.12);padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:10px;font-family:Heebo,sans-serif;">\n  <span style="font-size:12px;color:#999;white-space:nowrap;">\uD83D\uDCCB \u05E7\u05D8\u05DC\u05D5\u05D2 \u05DE\u05D5\u05EA\u05D2\u05D9\u05DD \u05D5\u05DE\u05D7\u05D9\u05E8\u05D9\u05DD</span>\n  <a href="https://wa.me/' + _wa + '?text=\u05E9\u05DC\u05D5\u05DD" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;padding:9px 18px;border-radius:999px;font-weight:700;font-size:13px;white-space:nowrap;text-decoration:none;" target="_blank" rel="noopener">\uD83D\uDCAC \u05E9\u05DC\u05D7\u05D5 \u05DC\u05D9 \u05D0\u05EA \u05D4\u05E7\u05D8\u05DC\u05D5\u05D2</a>\n  <div style="width:1px;height:24px;background:rgba(255,255,255,0.1);"></div>\n  <a href="' + _ig + '" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#833AB4,#FD1D1D,#F77737);color:#fff;text-decoration:none;" target="_blank" rel="noopener">\uD83D\uDCF7</a>\n</div>',
     config: {
       wa_text: '\u05E9\u05DC\u05D7\u05D5 \u05DC\u05D9 \u05D0\u05EA \u05D4\u05E7\u05D8\u05DC\u05D5\u05D2',
       wa_message: '\u05E9\u05DC\u05D5\u05DD',
       ig_enabled: true,
-      ig_url: 'https://www.instagram.com/optic_prizma/',
+      ig_url: _ig,
       label_text: '\uD83D\uDCCB \u05E7\u05D8\u05DC\u05D5\u05D2 \u05DE\u05D5\u05EA\u05D2\u05D9\u05DD \u05D5\u05DE\u05D7\u05D9\u05E8\u05D9\u05DD'
     }
   }
-];
+  ];
+}
 
 /**
  * Load shortcode presets from Supabase + merge built-in presets
@@ -121,12 +123,16 @@ const BUILTIN_STICKY_PRESETS = [
 async function loadShortcodePresets() {
   try {
     const tid = getTenantId();
-    const { data, error } = await sb.from('v_admin_component_presets')
-      .select('*')
-      .or(`tenant_id.is.null,tenant_id.eq.${tid}`);
-    if (error) throw error;
+    const [presetsRes, configRes] = await Promise.all([
+      sb.from('v_admin_component_presets').select('*').or(`tenant_id.is.null,tenant_id.eq.${tid}`),
+      sb.from('storefront_config').select('whatsapp_number, footer_config').eq('tenant_id', tid).single()
+    ]);
+    if (presetsRes.error) throw presetsRes.error;
+    const cfg = configRes.data || {};
+    const igUrl = cfg.footer_config?.social?.find?.(s => s.type === 'instagram')?.url || null;
+    const stickyPresets = buildBuiltinStickyPresets(cfg.whatsapp_number || null, igUrl);
     // Merge built-ins first, then DB presets
-    shortcodePresets = [...BUILTIN_CTA_PRESETS, ...BUILTIN_FORM_PRESETS, ...BUILTIN_STICKY_PRESETS, ...(data || [])];
+    shortcodePresets = [...BUILTIN_CTA_PRESETS, ...BUILTIN_FORM_PRESETS, ...stickyPresets, ...(presetsRes.data || [])];
     renderShortcodeLibrary();
   } catch (err) {
     console.error('Load shortcode presets error:', err);
