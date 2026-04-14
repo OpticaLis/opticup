@@ -323,7 +323,8 @@ function openPreview() {
   let slug = currentPage.slug || '/';
   if (slug === '/') slug = '';
   else if (!slug.startsWith('/')) slug = '/' + slug;
-  const tenant = TENANT_SLUG || 'prizma';
+  if (!TENANT_SLUG) { console.warn('[studio-editor] TENANT_SLUG not set; preview unavailable'); return; }
+  const tenant = TENANT_SLUG;
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const baseUrl = isLocal ? 'http://localhost:4321' : 'https://opticup-storefront.vercel.app';
   const preview = currentPage.status !== 'published' ? '&preview=true' : '';
