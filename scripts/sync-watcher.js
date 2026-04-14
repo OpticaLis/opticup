@@ -460,30 +460,57 @@ if (existing.length) {
   })();
 }
 
-// Watch for new files (ignoreInitial=true since we handle existing above)
-const watcher = chokidar.watch(CONFIG.watchDir, {
-  persistent: true,
-  ignoreInitial: true,
-  awaitWriteFinish: { stabilityThreshold: 2000, pollInterval: 500 },
-  ignored: /(^|[\/\\])\../,
-}).on('add', filepath => handleNewFile(filepath));
+async function main() {
+  // Feature-flag gate: require tenants.access_sync_enabled = true for this tenant.
+  const { data: tenantRow, error: tenantErr } = await sb
+    .from('tenants')
+    .select('slug, access_sync_enabled')
+    .eq('id', TENANT_ID)
+    .single();
 
-// ── Reverse sync: export new inventory every 30s ────────────
-async function runExport() {
-  try {
-    await exportNewInventoryToAccess(sb, TENANT_ID, EXPORT_DIR, log);
-  } catch (err) {
-    log(`Export error: ${err.message}`);
+  if (tenantErr) {
+    console.error(`[sync-watcher] Failed to load tenant config for ${TENANT_ID}: ${tenantErr.message}`);
+    process.exit(1);
   }
-}
-runExport();
-setInterval(runExport, 30 * 1000);
+  if (!tenantRow || tenantRow.access_sync_enabled !== true) {
+    console.log(`[sync-watcher] access_sync_enabled=false for tenant ${tenantRow?.slug || TENANT_ID} — Access sync disabled. Exiting.`);
+    process.exit(0);
+  }
 
-// Graceful shutdown
-function shutdown() {
-  log('Shutting down...');
-  watcher.close();
-  process.exit(0);
+  log(`[sync-watcher] Access sync enabled for tenant '${tenantRow.slug}'. Starting watcher…`);
+
+  // ── Original watcher startup (unchanged behavior) ──────────
+
+  // Watch for new files (ignoreInitial=true since we handle existing above)
+  const watcher = chokidar.watch(CONFIG.watchDir, {
+    persistent: true,
+    ignoreInitial: true,
+    awaitWriteFinish: { stabilityThreshold: 2000, pollInterval: 500 },
+    ignored: /(^|[\/\\])\../,
+  }).on('add', filepath => handleNewFile(filepath));
+
+  // ── Reverse sync: export new inventory every 30s ────────────
+  async function runExport() {
+    try {
+      await exportNewInventoryToAccess(sb, TENANT_ID, EXPORT_DIR, log);
+    } catch (err) {
+      log(`Export error: ${err.message}`);
+    }
+  }
+  runExport();
+  setInterval(runExport, 30 * 1000);
+
+  // Graceful shutdown
+  function shutdown() {
+    log('Shutting down...');
+    watcher.close();
+    process.exit(0);
+  }
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT',  shutdown);
 }
-process.on('SIGTERM', shutdown);
-process.on('SIGINT',  shutdown);
+
+main().catch((err) => {
+  console.error(`[sync-watcher] Fatal error during startup: ${err.stack || err}`);
+  process.exit(1);
+});
