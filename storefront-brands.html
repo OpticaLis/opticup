@@ -184,6 +184,7 @@
 <script src="js/shared-ui.js"></script>
 <script src="js/auth-service.js"></script>
 <script src="js/supabase-ops.js"></script>
+<script src="shared/js/plan-helpers.js"></script>
 <script src="js/header.js"></script>
 <script src="js/alerts-badge.js"></script>
 <script src="modules/storefront/storefront-brands.js"></script>
@@ -192,6 +193,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const session = await loadSession();
   if (!session) { window.location.href = '/'; return; }
   if (!hasPermission('settings.view')) { window.location.href = '/'; return; }
+  if (!await isFeatureEnabled('cms_studio')) { renderFeatureLockedState('cms_studio'); return; }
   await loadStorefrontBrands();
 });
 </script>
