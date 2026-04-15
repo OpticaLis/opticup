@@ -1,0 +1,4 @@
+_downloads/
+_catalog.json
+node_modules/
+*.log
