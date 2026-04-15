@@ -1,0 +1,42 @@
+{
+  "executed": "2026-04-15",
+  "executor": "blog-migration-2026-04-15",
+  "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+  "bucket": "media-library",
+  "folder": "blog",
+  "storage_prefix": "media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/",
+  "summary": {
+    "total_unique_wp_urls": 23,
+    "uploaded": 19,
+    "reused": 0,
+    "skipped_404": 4,
+    "errors": 0
+  },
+  "skipped_404_urls": [
+    "https://prizma-optic.co.il/wp-content/uploads/2022/05/Screen-Shot-2022-05-10-at-14.59.22-1024x613.png",
+    "https://prizma-optic.co.il/wp-content/uploads/2022/05/Screen-Shot-2022-05-10-at-15.04.05-300x300.png",
+    "https://prizma-optic.co.il/wp-content/uploads/2022/05/אופטיקה-באשקלון-1024x722.png",
+    "https://prizma-optic.co.il/wp-content/uploads/2024/04/האם-אתם-עיוורי-צבעים-300x212.jpg"
+  ],
+  "uploaded_entries": [
+    { "rawFilename": "איך-לבחור-משקפיים-אופטיקה-פריזמה-289x300.png", "sanitized": "ayk-lbhvr-mshkpyym-avptykh-pryzmh-289x300.png", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/ayk-lbhvr-mshkpyym-avptykh-pryzmh-289x300.png", "mime": "image/png", "fileSize": 44356 },
+    { "rawFilename": "בליינד-ספוט.png", "sanitized": "blyynd-spvt.png", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/blyynd-spvt.png", "mime": "image/png", "fileSize": 6514 },
+    { "rawFilename": "IMG_3728-1024x683.jpg", "sanitized": "img_3728-1024x683.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img_3728-1024x683.jpg", "mime": "image/jpeg", "fileSize": 62765 },
+    { "rawFilename": "IMG_3753-683x1024.jpg", "sanitized": "img_3753-683x1024.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img_3753-683x1024.jpg", "mime": "image/jpeg", "fileSize": 72286 },
+    { "rawFilename": "בדיקת-עיניים-לילדים-1024x681.jpg", "sanitized": "bdykt-aynyym-lyldym-1024x681.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/bdykt-aynyym-lyldym-1024x681.jpg", "mime": "image/jpeg", "fileSize": 47270 },
+    { "rawFilename": "ABCDEFG-1-768x1024.jpg", "sanitized": "abcdefg-1-768x1024.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/abcdefg-1-768x1024.jpg", "mime": "image/jpeg", "fileSize": 70178 },
+    { "rawFilename": "Geny-Multi-768x1024.jpg", "sanitized": "geny-multi-768x1024.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/geny-multi-768x1024.jpg", "mime": "image/jpeg", "fileSize": 70886 },
+    { "rawFilename": "IMG-20241230-WA0064-683x1024.jpg", "sanitized": "img-20241230-wa0064-683x1024.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img-20241230-wa0064-683x1024.jpg", "mime": "image/jpeg", "fileSize": 80358 },
+    { "rawFilename": "Multi-768x1024.jpg", "sanitized": "multi-768x1024.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/multi-768x1024.jpg", "mime": "image/jpeg", "fileSize": 75061 },
+    { "rawFilename": "מה-זה-מולטיפוקל-576x1024.jpg", "sanitized": "mh-zh-mvltypvkl-576x1024.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/mh-zh-mvltypvkl-576x1024.jpg", "mime": "image/jpeg", "fileSize": 43679 },
+    { "rawFilename": "IMG-20241230-WA0068-683x1024.jpg", "sanitized": "img-20241230-wa0068-683x1024.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img-20241230-wa0068-683x1024.jpg", "mime": "image/jpeg", "fileSize": 72020 },
+    { "rawFilename": "IMG-20241230-WA0062-1024x683.jpg", "sanitized": "img-20241230-wa0062-1024x683.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img-20241230-wa0062-1024x683.jpg", "mime": "image/jpeg", "fileSize": 85986 },
+    { "rawFilename": "IMG-20241230-WA0065-683x1024.jpg", "sanitized": "img-20241230-wa0065-683x1024.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img-20241230-wa0065-683x1024.jpg", "mime": "image/jpeg", "fileSize": 87246 },
+    { "rawFilename": "IMG-20241230-WA0067-683x1024.jpg", "sanitized": "img-20241230-wa0067-683x1024.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img-20241230-wa0067-683x1024.jpg", "mime": "image/jpeg", "fileSize": 75712 },
+    { "rawFilename": "IMG-20241230-WA0069-683x1024.jpg", "sanitized": "img-20241230-wa0069-683x1024.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img-20241230-wa0069-683x1024.jpg", "mime": "image/jpeg", "fileSize": 95812 },
+    { "rawFilename": "IMG-20241230-WA0072-1024x683.jpg", "sanitized": "img-20241230-wa0072-1024x683.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img-20241230-wa0072-1024x683.jpg", "mime": "image/jpeg", "fileSize": 80532 },
+    { "rawFilename": "IMG-20241230-WA0077-1024x683.jpg", "sanitized": "img-20241230-wa0077-1024x683.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img-20241230-wa0077-1024x683.jpg", "mime": "image/jpeg", "fileSize": 65622 },
+    { "rawFilename": "IMG-20241230-WA0098-683x1024.jpg", "sanitized": "img-20241230-wa0098-683x1024.jpg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img-20241230-wa0098-683x1024.jpg", "mime": "image/jpeg", "fileSize": 88783 },
+    { "rawFilename": "IMG_4736-300x300.jpeg", "sanitized": "img_4736-300x300.jpeg", "contentUrl": "/api/image/media/6ad0781b-37f0-47a9-92e3-be9ed1477e1c/blog/img_4736-300x300.jpeg", "mime": "image/jpeg", "fileSize": 20742 }
+  ]
+}
