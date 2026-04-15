@@ -34,9 +34,12 @@
 
 ## Informational (MEDIUM, not blockers)
 - M3-SAAS-09: 3 migration scripts hardcode Prizma tenant UUID → parameterize via env var.
-- M3-SAAS-10: `studio-editor.js:326` fallback `TENANT_SLUG || 'prizma'` — silent cross-tenant leak risk → drop fallback.
-- M3-SAAS-11: Three files fall back to literal "אופטיקה פריזמה" when `getTenantConfig('name')` is missing (studio-brands.js:269, storefront-translations.js:571, brand-translations.js:400).
-- M3-SAAS-05b: `BUILTIN_CTA_PRESETS` lines 68-69 in studio-shortcodes.js retain `optic_prizma` hardcoding — fix in next work package.
-- M3-SAAS-12: `storefront-blog.js:682` hardcodes `prizma-optic.co.il` as preview domain in blog SEO preview widget → replace with `getTenantConfig('custom_domain')` when column added to schema (has TODO(B4) comment). Fix in Phase C/D.
-- M1-SAAS-01: `modules/Module 1 - Inventory Management/inventory.html:12,277` — hardcoded Prizma name in `<title>` and logo div. Rule 9 violation. Out of scope for M3; fix in Module 1 next work package.
 - M5-DEBT-05: `scripts/sync-watcher.js` now 516 lines (over 350 limit; pre-existing debt, delta +27 from this SPEC's main() wrapper — split on next touch).
+
+## Resolved in MODULE_3_CLOSEOUT run (2026-04-15)
+
+- **[M3-SAAS-05b] RESOLVED** — `BUILTIN_CTA_PRESETS` Instagram preset (`__cta_instagram`) now uses `href="#"` as placeholder; `loadShortcodePresets()` patches it with the tenant's URL from `storefront_config.footer_config.social[instagram].url`. Commit `a115b5a`.
+- **[M3-SAAS-10] RESOLVED** — `studio-editor.js:326` fallback `TENANT_SLUG || 'prizma'` removed. Function now returns early with console.warn if TENANT_SLUG is not set. Commit `5de07d6`.
+- **[M3-SAAS-11] RESOLVED** — Literal "אופטיקה פריזמה" fallbacks replaced with `getTenantConfig('name') || ''` in studio-brands.js, storefront-translations.js, brand-translations.js. Commit `5a0a561`.
+- **[M3-SAAS-12] RESOLVED** — `storefront-blog.js:682` now reads `getTenantConfig('custom_domain') || 'domain.co.il'` for SEO preview domain. Commit `67468ed`.
+- **[M1-SAAS-01] RESOLVED** — `inventory.html` title and logo now dynamic: DOMContentLoaded handler reads `sessionStorage.getItem('tenant_name_cache')` and sets `document.title` + `#inv-store-name` element. Commit `6ce4b67`.
