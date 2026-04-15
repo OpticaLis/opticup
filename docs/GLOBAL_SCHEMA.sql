@@ -122,6 +122,18 @@
 
 --   plans, platform_admins, platform_audit_log,
 --   tenant_config, tenant_provisioning_log
+--
+-- plans.features JSONB — 21 feature keys as of 2026-04-15:
+--   Core ERP: inventory, purchasing, goods_receipts, supplier_debt, stock_count,
+--             shipments, ocr, whatsapp, ai_alerts, access_sync
+--   Storefront: storefront, image_studio, white_label, custom_domain
+--   CMS/Studio (added 2026-04-15, migration 067):
+--     cms_studio (true: premium+enterprise)
+--     cms_custom_blocks (true: enterprise only)
+--     cms_landing_pages (true: enterprise only)
+--     cms_ai_tools (true: enterprise only)
+--   API/Integration: api_access, b2b_marketplace, advanced_reports
+-- Full reference: modules/Module 1.5 - Shared Components/docs/plans-features-reference.md
 
 -- ------------------------------------------------------------
 -- Module 3 — Storefront (25 tables, in opticup-storefront repo at runtime)
