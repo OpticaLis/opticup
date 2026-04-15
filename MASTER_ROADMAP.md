@@ -1,6 +1,6 @@
 # Optic Up — Master Roadmap
 
-> **Last reconciled:** 2026-04-11 (Module 3.1 Phase 3A Part 2)
+> **Last reconciled:** 2026-04-15 (Module 3 Close-Out SPEC)
 >
 > This document is the canonical **build sequence**, **decision log**, and
 > **known-debt register** for the Optic Up platform.
@@ -36,8 +36,8 @@ backend with RLS-based tenant isolation.
 | 1 | Inventory ERP | ✅ Complete | opticup | Full ERP: inventory, purchasing, receipts, supplier debt, returns, shipments, AI-OCR, alerts, stock counts, Access sync. 12 phases (0 → 5.9 + QA). 36 tables. |
 | 1.5 | Shared Components | ✅ Complete | opticup | Cross-module infrastructure: shared JS/CSS components (Modal, Toast, TableBuilder, PIN modal), activity_log, auth/permissions refactor, plan helpers, design tokens. 14 tables. |
 | 2 | Platform Admin | ✅ Complete (v2.0) | opticup | Super-admin control plane: tenant provisioning, plans/limits/features, audit log, PIN reset, suspend/activate/delete. 4 phases. 5 tables + tenants extension. |
-| 3 | Storefront | 🟡 Phase B remediation | opticup-storefront | Public storefront: CMS pages, campaigns, blog, AI content, translations (he/en/ru), media library, lead forms, brand pages, SEO. Phase A sealed 2026-04-11. 25 tables. |
-| 3.1 | Project Reconstruction | 🟡 In execution | opticup | Meta-module: foundation doc rewrites, DB audit baseline, roadmap reconciliation. Does not own code — owns documentation accuracy. Phase 3A in progress; 3B/3C complete. |
+| 3 | Storefront | 🟢 Code-complete — awaiting Daniel QA + DNS switch | opticup-storefront | Public storefront: CMS pages, campaigns, blog, AI content, translations (he/en/ru), media library, lead forms, brand pages, SEO. Phase B + Pre-Launch Hardening + Close-Out complete 2026-04-15. 25 tables. |
+| 3.1 | Project Reconstruction | ✅ Complete | opticup | Meta-module: foundation doc rewrites, DB audit baseline, roadmap reconciliation. Does not own code — owns documentation accuracy. 3A/3B/3C/3D all complete. |
 | 4 | CRM | ⬜ Not started | opticup (planned) | Customer management — replaces Monday.com for leads. Prerequisite for orders + prescriptions. |
 | 5–22 | Future modules | ⬜ Not started | — | Orders, prescriptions, payments, lab/KDS, lenses, branches, WhatsApp, reports, supplier portal, content hub, B2B network, AI support, WooCommerce sync, POS. |
 
@@ -48,18 +48,22 @@ under `opticup/modules/Module N - .../`.
 
 ## 3. Current State (April 2026)
 
-Module 3.1 (Project Reconstruction) is the active meta-module. Its Phase 3A is
-rewriting the 7 foundation docs that drifted during the rapid build-out of
-Modules 1 through 3. Phases 3B (mandatory artifacts) and 3C (Module 1
-housekeeping + Module 3 Side-A archive) ran in parallel with 3A — both
-complete. Phase 3D (closure ceremony) follows after 3A finishes.
+Module 3 (Storefront) is **code-complete** as of 2026-04-15. The full chain —
+Phase B Core (RLS hardening), B6 (session key rename), Pre-Launch Hardening
+SPEC (2026-04-14), and Close-Out SPEC (2026-04-15) — is committed to `develop`.
+All tenant-hardcoding findings resolved, translate-content wrapper regression
+fixed, WordPress parity pages inserted, Guardian alerts up to date.
 
-Module 3 (Storefront) is paused at Phase B remediation. Phase A sealed
-2026-04-11 with 15 reference files in the storefront repo (CLAUDE.md,
-ARCHITECTURE.md, VIEW_CONTRACTS.md, SCHEMAS.md, etc.). Before Phase B code
-work resumes, the Phase B preamble checklist (Section 6 below) must be
-completed — it addresses security debt and tooling gaps discovered during the
-Module 3.1 DB audit.
+The sole remaining gate for DNS switch is **Daniel-run QA** on localhost
+(runbook: `modules/Module 3 - Storefront/docs/QA_HANDOFF_2026-04-14.md`).
+After QA passes, Daniel merges `develop → main` in both repos, then switches
+DNS for `www.prizma-optic.co.il`.
+
+Module 3.1 (Project Reconstruction) is **complete** — all phases 3A/3B/3C/3D
+done. Foundation docs are accurate and current.
+
+**On deck:** Module 4 (CRM) — customer management to replace Monday.com for
+leads. Prerequisite for orders + prescriptions modules.
 
 The dual-repo split is stable. Both repos use `develop` for active work.
 Merges to `main` happen only after Daniel's manual QA on the demo tenant.
@@ -108,15 +112,15 @@ Items are tracked — not fixed — in this document.
 
 | ID | Description | Source | Tracked for |
 |----|-------------|--------|-------------|
-| SF-1 | **4 pre-multitenancy tables** (`customers`, `prescriptions`, `sales`, `work_orders`) lack `tenant_id` and have `anon_all_*` RLS policies granting unrestricted public read/write | `docs/GLOBAL_SCHEMA.sql` SECURITY-FINDING #1 + `db-audit/04-policies.md` | Module 3 Phase B preamble |
-| SF-2 | **supplier_balance_adjustments.service_bypass** is misnamed — grants access to any connection without `app.tenant_id` session var, not just service_role | `docs/GLOBAL_SCHEMA.sql` SECURITY-FINDING #2 | Module 3 Phase B preamble |
-| SF-3 | **3 tables use auth.uid() as tenant_id** (`brand_content_log`, `storefront_component_presets`, `storefront_page_tags`) — architecturally broken; user UUID compared against tenant UUID | `docs/GLOBAL_SCHEMA.sql` SECURITY-FINDING #3 | Module 3 Phase B preamble |
+| SF-1 | ~~**4 pre-multitenancy tables** (`customers`, `prescriptions`, `sales`, `work_orders`) lack `tenant_id` and have `anon_all_*` RLS policies granting unrestricted public read/write~~ | ✅ **RESOLVED** — Phase B Core 2026-04-12. All 4 tables converted to canonical JWT-claim RLS pattern. | — |
+| SF-2 | ~~**supplier_balance_adjustments.service_bypass** is misnamed — grants access to any connection without `app.tenant_id` session var, not just service_role~~ | ✅ **RESOLVED** — Phase B Core 2026-04-12. RLS rewritten to canonical JWT-claim pattern. | — |
+| SF-3 | ~~**3 tables use auth.uid() as tenant_id** (`brand_content_log`, `storefront_component_presets`, `storefront_page_tags`) — architecturally broken; user UUID compared against tenant UUID~~ | ✅ **RESOLVED** — Phase B Core 2026-04-12. All 3 tables converted to canonical JWT-claim RLS pattern. | — |
 
 ### RLS pattern debt
 
 | ID | Description | Source | Tracked for |
 |----|-------------|--------|-------------|
-| RLS-1 | **4 tables use legacy session-var pattern** (`media_library`, `supplier_balance_adjustments`, `campaigns`, `campaign_templates`) instead of standard JWT-claim pattern | `docs/GLOBAL_SCHEMA.sql` CONVENTIONS section + `db-audit/04-policies.md` | Module 3 Phase B preamble |
+| RLS-1 | ~~**4 tables use legacy session-var pattern** (`media_library`, `supplier_balance_adjustments`, `campaigns`, `campaign_templates`) instead of standard JWT-claim pattern~~ | ✅ **RESOLVED** — Phase B Core 2026-04-12. All 4 tables + 7 additional tables (11 total) converted to canonical JWT-claim pattern in commits landing on `develop`. | — |
 
 ### Tooling debt
 

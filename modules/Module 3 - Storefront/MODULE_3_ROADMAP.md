@@ -137,15 +137,17 @@
 |------|--------|----|---------|
 | B Core | ✅ | SaaS Security Hardening | RLS canonical pattern on 11 tables, audit script, TIER-C cleanup |
 | B6 | ✅ | Session Key Rename | `prizma_*` → `tenant_*` across ERP (commit `7e99030`) |
-| C | ⬜ | WordPress Content Migration | Content migration from WordPress (not SPEC'd) |
-| D | ⬜ | Dead Code Cleanup | Remove orphaned code (not SPEC'd) |
-| QA | ⬜ | Full Module QA | SEO validation, 3 languages, 2 tenants, mobile, Lighthouse |
+| Pre-Launch | ✅ | Pre-Launch Hardening | storefront RLS (components/pages/reviews), SAAS-01/04/05, R09-01 (commits `66acfc7`–`d2fe4d3`, 2026-04-14) |
+| Close-Out | ✅ | Module 3 Close-Out | 5 hardcoding fixes, translate-content wrapper fix, WP parity pages, Guardian alerts (commits `a115b5a`–`ba81a3b`, 2026-04-15) |
+| C | ✅ | WordPress Content Migration | Integrated into Close-Out via Supabase MCP DB inserts (migrations 065, 066) |
+| D | ⬜ | Dead Code Cleanup | Addressed in SPEC 2 (TENANT_FEATURE_GATING_AND_CLEANUP) |
+| QA | ⬜ | Full Module QA — **GATE FOR DNS SWITCH** | Daniel-run localhost QA per `docs/QA_HANDOFF_2026-04-14.md` |
 
-**B Core + B6 status:** ✅ Complete on develop (2026-04-13). §4.3 Prizma tenant safety check deferred until Module 3 closes and ready for main merge.
+**Module 3 code-complete as of 2026-04-15.** Phase B + Pre-Launch + Close-Out all committed to develop. Sole remaining gate = Daniel QA on localhost → merge develop → main → DNS switch.
 
 ---
 
-**סה"כ CMS + Storefront phases = COMPLETE. SaaS hardening chain = IN PROGRESS.**
+**סה"כ CMS + Storefront phases = COMPLETE. SaaS hardening chain = COMPLETE.**
 
 ---
 

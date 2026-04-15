@@ -1,8 +1,34 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Phase B — SaaS Hardening
-## Status: ✅ B Core + B6 COMPLETE — awaiting Phase C scoping
-## Date: 2026-04-13
+## Current Phase: Close-Out — COMPLETE
+## Status: 🟢 Code-complete on develop — awaiting Daniel QA + DNS switch
+## Date: 2026-04-15
+
+---
+
+## Close-Out SPEC ✅ (2026-04-15)
+
+All remaining blockers for DNS switch resolved:
+
+- **M3-SAAS-05b** — `BUILTIN_CTA_PRESETS` Instagram href reads from tenant config (commit `a115b5a`)
+- **M3-SAAS-10** — `studio-editor.js` TENANT_SLUG fallback removed; early-exit if unset (commit `5de07d6`)
+- **M3-SAAS-11** — Hardcoded Hebrew store name literals replaced with `getTenantConfig('name') || ''` in storefront-translations, brand-translations, studio-brands (commit `5a0a561`)
+- **M3-SAAS-12** — Blog SEO preview domain reads `getTenantConfig('custom_domain') || 'domain.co.il'` (commit `67468ed`)
+- **M1-SAAS-01** — inventory.html title + logo now dynamic from `tenant_name_cache` sessionStorage (commit `6ce4b67`)
+- **WP parity** — `/קופח-כללית/` and `/vintage-frames/` pages inserted via migrations 065/066 (commit `b55de5a`)
+- **translate-content v2** — `stripWrappers()` added, FORBIDDEN_PATTERNS extended, deployed as v2
+- **Guardian alerts** — M3-SAAS-05b/10/11/12 + M1-SAAS-01 moved to Resolved (commit `ba81a3b`)
+
+**Next gate:** Daniel runs QA on localhost per `docs/QA_HANDOFF_2026-04-14.md`, then merges develop → main in both repos, then DNS switch.
+
+---
+
+## Pre-Launch Hardening SPEC ✅ (2026-04-14)
+
+Resolved in commits `66acfc7`–`d2fe4d3`:
+- storefront_components, storefront_pages, storefront_reviews RLS rewritten to JWT-claim canonical pattern
+- M3-SAAS-01, M3-SAAS-04, M3-SAAS-05 (Part A), M1-R09-01 resolved
+- HaveIBeenPwned: flagged as M6-AUTH-01 (requires manual Supabase dashboard toggle)
 
 ---
 

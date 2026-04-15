@@ -1,5 +1,34 @@
 # Module 3 — Storefront — Changelog
 
+---
+
+## Close-Out SPEC — Module 3 Code-Complete
+**Status:** ✅ All commits on develop
+**Date:** 2026-04-15
+**Commits:** `a115b5a`, `5de07d6`, `5a0a561`, `67468ed`, `6ce4b67`, `b55de5a`, `ba81a3b`
+
+### Changes
+
+| Commit | Scope | Description |
+|--------|-------|-------------|
+| `a115b5a` | studio-shortcodes | M3-SAAS-05b: Instagram preset href reads from tenant config at runtime |
+| `5de07d6` | studio-editor | M3-SAAS-10: remove `prizma` TENANT_SLUG fallback in openPreview(), early-exit with console.warn |
+| `5a0a561` | translations | M3-SAAS-11: replace hardcoded Hebrew store name with `getTenantConfig('name') \|\| ''` in 3 files |
+| `67468ed` | storefront-blog | M3-SAAS-12: blog SEO preview domain reads `getTenantConfig('custom_domain') \|\| 'domain.co.il'` |
+| `6ce4b67` | inventory-html | M1-SAAS-01: inventory.html title + logo dynamic from `tenant_name_cache` sessionStorage |
+| `b55de5a` | migration | WP parity: migrations 065 (קופח-כללית) + 066 (vintage-frames) inserted via Supabase MCP |
+| `ba81a3b` | guardian | Moved M3-SAAS-05b/10/11/12 + M1-SAAS-01 to Resolved in GUARDIAN_ALERTS.md |
+
+### Edge Function (not a git commit — deployed via Supabase MCP)
+- `translate-content` v2: added `stripWrappers()`, extended FORBIDDEN_PATTERNS, deployed 2026-04-15
+
+### QA Note
+- All 18 ROADMAP QA steps deferred to Daniel on localhost (BLOCKED: ENVIRONMENT — Cowork cloud session cannot reach localhost:4321 or localhost:3000)
+- Criterion #11 (Contact 500 curl) — deferred to Daniel's morning QA by SPEC design
+- QA runbook: `docs/QA_HANDOFF_2026-04-14.md`
+
+---
+
 ## SuperSale campaign_cards fixes [Fix 1+2]
 **Status:** Fix 1+2 complete on develop | Fix 3 pending
 **Date:** 2026-04-14
