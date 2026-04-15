@@ -1,6 +1,6 @@
 # Sentinel Alerts
 **Last updated:** 2026-04-15 (full Missions 3, 4, 5, 8 + incremental 1, 2 + daily 6, 7, 9)
-**Status:** ⚠️ 6 ACTIVE HIGH ALERTS (2 resolved in same-day fix)
+**Status:** ⚠️ 5 ACTIVE HIGH ALERTS (3 resolved in same-day fix)
 
 > This file is checked by the working chat before every commit.
 > If alerts appear here — stop and notify Daniel before proceeding.
@@ -10,7 +10,6 @@
 
 ## HIGH
 
-- **[M6-AUTH-01] Leaked-password protection disabled** — Supabase Auth HaveIBeenPwned check is OFF; users can set known-breached passwords → enable toggle in Auth settings (no code change) → Supabase Auth dashboard
 - **[M1-R12-01] Oversized non-storefront files** — 7 files exceed 350-line limit (debt-dashboard.js 424, receipt-ocr-review.js 401, shared.js 379, brands.js 371, admin-tenant-detail.js 361, receipt-ocr.js 358, receipt-form-items.js 357) → split on next touch
 - **[M1-R12-02] Oversized storefront studio files** — 14 files in `modules/storefront/` exceed 350 lines (worst: storefront-translations.js 1264) → do not add to these files; split on next touch
 - **[M8-XMOD-01] Cross-module: 4 direct table boundary violations** — access-sync, admin, brands, audit modules query tables they don't own (inventory_logs, purchase_orders, supplier_documents) → create contract functions → see M8 report
@@ -51,3 +50,4 @@
 - **[M3-SAAS-12] RESOLVED** — Blog SEO preview domain reads from tenant config. Commit `67468ed`.
 - **[M3-SAAS-13] RESOLVED** — `studio-permissions.js` legacy `SUPER_ADMIN_TENANTS_LEGACY = ['prizma']` array and slug fallback removed. `getStudioRole()` now reads exclusively from `tenants.is_super_admin` DB column. Resolved 2026-04-15.
 - **[M6-DB-01] RESOLVED** — `plans_backup_20260415` dropped via migration `drop_plans_backup_20260415`. Backup table no longer exposed via anon key. Resolved 2026-04-15.
+- **[M6-AUTH-01] RESOLVED (mitigated via different control)** — HaveIBeenPwned leaked-password check is a Supabase Pro-plan feature; Optic Up is on Free plan. Since Optic Up does NOT use Supabase email/password auth at all (staff auth is PIN-based via `pin-auth` Edge Function; storefront is anon read-only; no customer accounts), the attack surface this toggle protects does not exist for us. Mitigation applied: **"Allow new users to sign up"** disabled in Supabase Auth → Sign In / Providers (Daniel, 2026-04-15). No one can register an email/password account → the leaked-password risk is structurally closed. Future note: if Optic Up adds customer (B2C) email/password login in CRM, revisit — either upgrade to Pro for this toggle or implement password strength checks in application code. Do NOT re-open this alert on future Sentinel runs unless "Allow new users" is re-enabled. Resolved 2026-04-15.
