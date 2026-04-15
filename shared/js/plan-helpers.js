@@ -99,9 +99,42 @@ function invalidatePlanCache() {
   _planCacheTime = 0;
 }
 
+/**
+ * Render a graceful "feature locked" state in the page body.
+ * Replaces page content with a centred lock card and upgrade prompt.
+ * Call when isFeatureEnabled() returns false before loading page data.
+ * @param {string} featureName — e.g. 'cms_studio', 'cms_landing_pages'
+ */
+function renderFeatureLockedState(featureName) {
+  const labels = {
+    cms_studio:         'Storefront Studio',
+    cms_custom_blocks:  'Custom Block Builder',
+    cms_landing_pages:  'Landing Page Editor',
+    cms_ai_tools:       'AI Content & Translation Tools',
+    storefront:         'Storefront Module',
+    image_studio:       'Image Studio',
+  };
+  const label = labels[featureName] || featureName;
+  const container = document.querySelector('main') || document.body;
+  container.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                min-height:60vh;gap:16px;text-align:center;padding:24px;font-family:Heebo,sans-serif;">
+      <div style="font-size:3rem;">🔒</div>
+      <h2 style="font-size:1.4rem;font-weight:700;color:#1a1a2e;margin:0;">${label}</h2>
+      <p style="color:#6b7280;max-width:360px;line-height:1.6;margin:0;">
+        תכונה זו אינה כלולה בחבילה הנוכחית שלך.
+        לשדרוג והפעלת הגישה, פנה לצוות Optic Up.
+      </p>
+      <p style="color:#9ca3af;font-size:.85rem;margin:0;">
+        Feature: <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">${featureName}</code>
+      </p>
+    </div>`;
+}
+
 // --- Global exports ---
 window.checkPlanLimit = checkPlanLimit;
 window.isFeatureEnabled = isFeatureEnabled;
 window.getPlanLimits = getPlanLimits;
 window.getPlanFeatures = getPlanFeatures;
 window.invalidatePlanCache = invalidatePlanCache;
+window.renderFeatureLockedState = renderFeatureLockedState;

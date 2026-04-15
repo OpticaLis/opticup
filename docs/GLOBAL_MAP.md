@@ -191,6 +191,7 @@ Full parameter/return detail: `modules/Module 3.1 - Project Reconstruction/db-au
 | `TableBuilder.create()` | shared/js/table-builder.js | Module 1.5 table component |
 | `ActivityLog.*` | shared/js/activity-logger.js | Module 1.5 activity logging |
 | `checkPlanLimit()` / `isFeatureEnabled()` | shared/js/plan-helpers.js | Module 2 plan gates |
+| `renderFeatureLockedState(featureName)` | shared/js/plan-helpers.js | Show lock UI when isFeatureEnabled() returns false; used by 8 storefront-*.html gates (added 2026-04-15) |
 
 ---
 
