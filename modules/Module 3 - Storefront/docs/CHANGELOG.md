@@ -2,6 +2,39 @@
 
 ---
 
+## Tenant Feature Gating & Cleanup SPEC (Track 2)
+**Status:** ✅ All commits on develop
+**Date:** 2026-04-15
+**Commits:** `ea08602`, `44a7625`, `f28db3c`, `8b960fe`
+
+### Changes
+
+| Commit | Scope | Description |
+|--------|-------|-------------|
+| `ea08602` | plans/migrations | migration 067: add cms_studio/cms_custom_blocks/cms_landing_pages/cms_ai_tools keys to basic/premium/enterprise plans |
+| `44a7625` | shared/plan-helpers | Added `renderFeatureLockedState(featureName)` helper; updated GLOBAL_MAP.md |
+| `f28db3c` | storefront-*.html | Gate 8 storefront HTML pages via isFeatureEnabled; plan-helpers.js script tag added to each |
+| `8b960fe` | cleanup | Archive + git-remove old prompts/ and mar30-phase-specs/ from Module 3 docs |
+
+### Feature Key Mapping
+- `storefront-settings.html` → `storefront`
+- `storefront-products.html` → `storefront`
+- `storefront-brands.html` → `cms_studio`
+- `storefront-studio.html` → `cms_studio`
+- `storefront-blog.html` → `cms_studio`
+- `storefront-content.html` → `cms_ai_tools`
+- `storefront-glossary.html` → `cms_ai_tools`
+- `storefront-landing-content.html` → `cms_landing_pages`
+
+### Blocked Criteria (environment)
+- Criterion #15 (stale M3 backup purge): FUSE mount prevents `git rm --cached` from persisting; Daniel to run from local machine
+- Criterion #16, #21 (storefront repo unused components + build): storefront repo not mounted in this session
+
+### Reference
+- Plans feature reference: `modules/Module 1.5 - Shared Components/docs/plans-features-reference.md`
+
+---
+
 ## Close-Out SPEC — Module 3 Code-Complete
 **Status:** ✅ All commits on develop
 **Date:** 2026-04-15

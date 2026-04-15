@@ -6,6 +6,18 @@
 
 ---
 
+## Tenant Feature Gating & Cleanup SPEC ✅ (2026-04-15)
+
+4 new CMS feature keys added to plans table; 8 storefront HTML pages gated via `isFeatureEnabled()` + `renderFeatureLockedState()`:
+
+- **migration 067** — `cms_studio`, `cms_custom_blocks`, `cms_landing_pages`, `cms_ai_tools` keys added to basic/premium/enterprise plans (commit `ea08602`)
+- **renderFeatureLockedState** — new helper in `shared/js/plan-helpers.js`; GLOBAL_MAP.md updated (commit `44a7625`)
+- **8 pages gated** — storefront-settings, storefront-products (→ `storefront`); storefront-brands, storefront-studio, storefront-blog (→ `cms_studio`); storefront-content, storefront-glossary (→ `cms_ai_tools`); storefront-landing-content (→ `cms_landing_pages`) (commit `f28db3c`)
+- **Dead code cleaned** — `old prompts/` + `mar30-phase-specs/` archived + removed from git index (commit `8b960fe`)
+- **Blocked (environment):** stale M3 backup folder purge requires `git rm -r` from Daniel's local machine; storefront unused component cleanup deferred
+
+---
+
 ## Close-Out SPEC ✅ (2026-04-15)
 
 All remaining blockers for DNS switch resolved:

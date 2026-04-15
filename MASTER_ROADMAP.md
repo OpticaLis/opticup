@@ -1,6 +1,6 @@
 # Optic Up — Master Roadmap
 
-> **Last reconciled:** 2026-04-15 (Module 3 Close-Out SPEC)
+> **Last reconciled:** 2026-04-15 (Module 3 Tenant Feature Gating & Cleanup SPEC)
 >
 > This document is the canonical **build sequence**, **decision log**, and
 > **known-debt register** for the Optic Up platform.
@@ -50,9 +50,11 @@ under `opticup/modules/Module N - .../`.
 
 Module 3 (Storefront) is **code-complete** as of 2026-04-15. The full chain —
 Phase B Core (RLS hardening), B6 (session key rename), Pre-Launch Hardening
-SPEC (2026-04-14), and Close-Out SPEC (2026-04-15) — is committed to `develop`.
-All tenant-hardcoding findings resolved, translate-content wrapper regression
-fixed, WordPress parity pages inserted, Guardian alerts up to date.
+SPEC (2026-04-14), Close-Out SPEC (2026-04-15), and Tenant Feature Gating &
+Cleanup SPEC (2026-04-15) — is committed to `develop`. All tenant-hardcoding
+findings resolved, translate-content wrapper regression fixed, WordPress parity
+pages inserted, 8 storefront HTML pages gated via plan feature flags, Guardian
+alerts up to date.
 
 The sole remaining gate for DNS switch is **Daniel-run QA** on localhost
 (runbook: `modules/Module 3 - Storefront/docs/QA_HANDOFF_2026-04-14.md`).
