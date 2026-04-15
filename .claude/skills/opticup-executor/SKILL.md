@@ -238,6 +238,14 @@ view, new RPC, new migration, or even new field in an existing table), you MUST:
 7. **FIELD_MAP / T-constant plan:** for every new DB field, plan its entry in
    `js/shared.js` FIELD_MAP and `docs/DB_TABLES_REFERENCE.md`. Skipping this
    violates Rule 5.
+8. **storefront_pages INSERT pre-flight:** Before any INSERT into
+   `storefront_pages`, grep `opticup-storefront/vercel.json` for the target
+   slug. If a permanent redirect already exists for that slug → do NOT insert
+   the page row. Log the finding in `EXECUTION_REPORT.md` §Deviations and mark
+   the criterion as "redirect already handled in vercel.json — DB row not
+   needed." Inserting a DB page row when a vercel.json redirect already covers
+   the URL creates a conflict (redirect vs rendered page) and contradicts the
+   Foreman's architectural choice to use a redirect.
 
 Log the result of the Pre-Flight Check in `EXECUTION_REPORT.md` §6 Iron-Rule
 Self-Audit (Rule 21 row) with evidence of the greps you ran. An empty Rule 21

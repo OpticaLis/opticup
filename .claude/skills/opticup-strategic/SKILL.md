@@ -214,6 +214,20 @@ Before writing a single line of SPEC content, you MUST:
    Duplicates) means you must know what already exists.
 6. **Read `docs/guardian/GUARDIAN_ALERTS.md`** — active Sentinel alerts that
    may affect scope.
+6.5. **Abandoned-items & vercel.json check (WP parity tasks):** Before
+   including any WP-parity page, redirect, or URL-handling task in a SPEC,
+   you MUST:
+   - Check `SESSION_CONTEXT.md` for any mention of "ויתרנו / dropped /
+     abandoned / לא רוצה" for that URL. If the decision to drop is not
+     documented, ask Daniel explicitly before adding it to SPEC scope.
+   - Grep `opticup-storefront/vercel.json` for the slug. If a permanent
+     redirect already exists → the criterion is already met. Mark it "already
+     handled in vercel.json" in the SPEC and do NOT add a DB storefront_pages
+     criterion for it.
+   - Every WP-parity page that IS added to SPEC scope must cite an explicit
+     Daniel approval (conversation date or GitHub issue number). "It was on
+     the WP site" is not sufficient — Daniel may have decided to drop it
+     without documenting that decision. When in doubt, ask before speccing.
 7. **Harvest lessons from prior SPECs in this module:** list all folders under
    `modules/Module X/docs/specs/`, open the 3 most recent `FOREMAN_REVIEW.md`
    files, and apply any "executor improvement proposals" or "author improvement
