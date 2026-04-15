@@ -1,10 +1,7 @@
 // modules/storefront/studio-permissions.js
 // Role-based permissions for Studio (CMS-4)
-
-// Legacy slug list — used ONLY as fallback until tenants.is_super_admin column
-// is added (Manual Action #2, Phase B Sanity Check). After that, the DB column
-// is the single source of truth and this array is dead code.
-const SUPER_ADMIN_TENANTS_LEGACY = ['prizma'];
+// Source of truth: tenants.is_super_admin (DB column, populated by Manual Action #2).
+// If the value is missing/unknown → defaults to tenant_admin (safe fallback).
 
 const STUDIO_PERMISSIONS = {
   super_admin: {
@@ -62,13 +59,9 @@ const STUDIO_PERMISSIONS = {
  * @returns {'super_admin' | 'tenant_admin'}
  */
 function getStudioRole() {
-  // Primary: DB column (available after Manual Action #2)
-  const isSuperAdminDB = getTenantConfig('is_super_admin');
-  if (isSuperAdminDB === true) return 'super_admin';
-  if (isSuperAdminDB === false) return 'tenant_admin';
-  // Fallback: legacy slug list (before column exists)
-  const slug = TENANT_SLUG || sessionStorage.getItem('tenant_slug') || '';
-  return SUPER_ADMIN_TENANTS_LEGACY.includes(slug) ? 'super_admin' : 'tenant_admin';
+  // Single source of truth: tenants.is_super_admin (DB column).
+  // Missing/null → tenant_admin (safe default — no hidden super_admin escalation).
+  return getTenantConfig('is_super_admin') === true ? 'super_admin' : 'tenant_admin';
 }
 
 /**
