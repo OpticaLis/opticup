@@ -1,0 +1,30 @@
+{
+  "generated_at": "2026-04-15T19:55:34.958Z",
+  "all_404": false,
+  "probes": [
+    {
+      "path": "/this-page-does-not-exist-1776282932929-xyz/",
+      "status": 404,
+      "content_type": "text/html",
+      "has_noindex_meta": true,
+      "has_404_text": true,
+      "length": 157023
+    },
+    {
+      "path": "/en/unknown-article-1776282932929/",
+      "status": 302,
+      "content_type": null,
+      "has_noindex_meta": false,
+      "has_404_text": false,
+      "length": 0
+    },
+    {
+      "path": "/ru/nonexistent-1776282932929/",
+      "status": 302,
+      "content_type": null,
+      "has_noindex_meta": false,
+      "has_404_text": false,
+      "length": 0
+    }
+  ]
+}

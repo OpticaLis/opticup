@@ -1,0 +1,392 @@
+{
+  "generated_at": "2026-04-15T20:17:41.777Z",
+  "top20_count": 20,
+  "averages": {
+    "performance": 0.595,
+    "accessibility": 0.9450000000000003,
+    "best-practices": 0.8110000000000002,
+    "seo": 0.9165000000000003
+  },
+  "per_url": [
+    {
+      "url": "https://prizma-optic.co.il/",
+      "localPath": "/",
+      "clicks": 516,
+      "slug": "prizma-optic.co.il__0",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il__0.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/",
+        "requestedUrl": "http://localhost:4321/",
+        "scores": {
+          "performance": 0.61,
+          "accessibility": 0.96,
+          "best-practices": 0.79,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%A6%D7%91%D7%A2%D7%99-%D7%A2%D7%99%D7%A0%D7%99%D7%99%D7%9D-%D7%9C%D7%A4%D7%99-%D7%90%D7%97%D7%95%D7%96%D7%99%D7%9D/",
+      "localPath": "/צבעי-עיניים-לפי-אחוזים/",
+      "clicks": 479,
+      "slug": "prizma-optic.co.il_D7A6D791D7A2D799-D7A2D799D7A0D799D799D79D-D79CD7A4D799-D790D7_1",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_D7A6D791D7A2D799-D7A2D799D7A0D799D799D79D-D79CD7A4D799-D790D7_1.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/%D7%A6%D7%91%D7%A2%D7%99-%D7%A2%D7%99%D7%A0%D7%99%D7%99%D7%9D-%D7%9C%D7%A4%D7%99-%D7%90%D7%97%D7%95%D7%96%D7%99%D7%9D/",
+        "requestedUrl": "http://localhost:4321/%D7%A6%D7%91%D7%A2%D7%99-%D7%A2%D7%99%D7%A0%D7%99%D7%99%D7%9D-%D7%9C%D7%A4%D7%99-%D7%90%D7%97%D7%95%D7%96%D7%99%D7%9D/",
+        "scores": {
+          "performance": 0.64,
+          "accessibility": 0.96,
+          "best-practices": 0.82,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%A4%D7%A8%D7%99%D7%96%D7%9E%D7%94-%D7%91%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D/",
+      "localPath": "/פריזמה-במשקפיים/",
+      "clicks": 178,
+      "slug": "prizma-optic.co.il_D7A4D7A8D799D796D79ED794-D791D79ED7A9D7A7D7A4D799D799D79D__2",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_D7A4D7A8D799D796D79ED794-D791D79ED7A9D7A7D7A4D799D799D79D__2.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/%D7%A4%D7%A8%D7%99%D7%96%D7%9E%D7%94-%D7%91%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D/",
+        "requestedUrl": "http://localhost:4321/%D7%A4%D7%A8%D7%99%D7%96%D7%9E%D7%94-%D7%91%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D/",
+        "scores": {
+          "performance": 0.59,
+          "accessibility": 0.96,
+          "best-practices": 0.82,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D-%D7%96%D7%94-%D7%91%D7%9C%D7%A9%D7%95%D7%9F-%D7%96%D7%9B%D7%A8-%D7%90%D7%95-%D7%A0%D7%A7%D7%91%D7%94-%F0%9F%A4%94/",
+      "localPath": "/משקפיים-זה-בלשון-זכר-או-נקבה-🤔/",
+      "clicks": 151,
+      "slug": "prizma-optic.co.il_D79ED7A9D7A7D7A4D799D799D79D-D796D794-D791D79CD7A9D795D79F-D7_3",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_D79ED7A9D7A7D7A4D799D799D79D-D796D794-D791D79CD7A9D795D79F-D7_3.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D-%D7%96%D7%94-%D7%91%D7%9C%D7%A9%D7%95%D7%9F-%D7%96%D7%9B%D7%A8-%D7%90%D7%95-%D7%A0%D7%A7%D7%91%D7%94-%F0%9F%A4%94/",
+        "requestedUrl": "http://localhost:4321/%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D-%D7%96%D7%94-%D7%91%D7%9C%D7%A9%D7%95%D7%9F-%D7%96%D7%9B%D7%A8-%D7%90%D7%95-%D7%A0%D7%A7%D7%91%D7%94-%F0%9F%A4%94/",
+        "scores": {
+          "performance": 0.6,
+          "accessibility": 0.96,
+          "best-practices": 0.82,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/%D1%81%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE-%D1%81%D1%82%D0%BE%D1%8F%D1%82-%D0%BC%D1%83%D0%BB%D1%8C%D1%82%D0%B8%D1%84%D0%BE%D0%BA%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B5-%D0%BE%D1%87%D0%BA%D0%B8-%D0%B8/",
+      "localPath": "/ru/сколько-стоят-мультифокальные-очки-и/",
+      "clicks": 108,
+      "slug": "ru.prizma-optic.co.il_D181D0BAD0BED0BBD18CD0BAD0BE-D181D182D0BED18FD182-D0BCD183_4",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\ru.prizma-optic.co.il_D181D0BAD0BED0BBD18CD0BAD0BE-D181D182D0BED18FD182-D0BCD183_4.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/ru/%D1%81%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE-%D1%81%D1%82%D0%BE%D1%8F%D1%82-%D0%BC%D1%83%D0%BB%D1%8C%D1%82%D0%B8%D1%84%D0%BE%D0%BA%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B5-%D0%BE%D1%87%D0%BA%D0%B8-%D0%B8/",
+        "requestedUrl": "http://localhost:4321/ru/%D1%81%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE-%D1%81%D1%82%D0%BE%D1%8F%D1%82-%D0%BC%D1%83%D0%BB%D1%8C%D1%82%D0%B8%D1%84%D0%BE%D0%BA%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B5-%D0%BE%D1%87%D0%BA%D0%B8-%D0%B8/",
+        "scores": {
+          "performance": 0.59,
+          "accessibility": 0.94,
+          "best-practices": 0.82,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://en.prizma-optic.co.il/rodenstock-multifocal-lenses-prices-types-and-benefits/",
+      "localPath": "/en/rodenstock-multifocal-lenses-prices-types-and-benefits/",
+      "clicks": 104,
+      "slug": "en.prizma-optic.co.il_rodenstock-multifocal-lenses-prices-types-and-benefits__5",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\en.prizma-optic.co.il_rodenstock-multifocal-lenses-prices-types-and-benefits__5.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/en/rodenstock-multifocal-lenses-prices-types-and-benefits/",
+        "requestedUrl": "http://localhost:4321/en/rodenstock-multifocal-lenses-prices-types-and-benefits/",
+        "scores": {
+          "performance": 0.64,
+          "accessibility": 0.94,
+          "best-practices": 0.82,
+          "seo": 0.85
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/fred/",
+      "localPath": "/brands/fred/",
+      "clicks": 83,
+      "slug": "prizma-optic.co.il_fred__6",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_fred__6.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/brands/fred/",
+        "requestedUrl": "http://localhost:4321/brands/fred/",
+        "scores": {
+          "performance": 0.58,
+          "accessibility": 0.92,
+          "best-practices": 0.79,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/serengeti/",
+      "localPath": "/brands/serengeti/",
+      "clicks": 77,
+      "slug": "prizma-optic.co.il_serengeti__7",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_serengeti__7.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/brands/serengeti/",
+        "requestedUrl": "http://localhost:4321/brands/serengeti/",
+        "scores": {
+          "performance": 0.6,
+          "accessibility": 0.92,
+          "best-practices": 0.79,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9B%D7%9C%D7%9C%D7%99%D7%AA-%D7%A4%D7%9C%D7%98%D7%99%D7%A0%D7%95%D7%9D-%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D/",
+      "localPath": "/כללית-פלטינום-משקפיים/",
+      "clicks": 65,
+      "slug": "prizma-optic.co.il_D79BD79CD79CD799D7AA-D7A4D79CD798D799D7A0D795D79D-D79ED7A9D7A_8",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_D79BD79CD79CD799D7AA-D7A4D79CD798D799D7A0D795D79D-D79ED7A9D7A_8.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/%D7%9B%D7%9C%D7%9C%D7%99%D7%AA-%D7%A4%D7%9C%D7%98%D7%99%D7%A0%D7%95%D7%9D-%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D/",
+        "requestedUrl": "http://localhost:4321/%D7%9B%D7%9C%D7%9C%D7%99%D7%AA-%D7%A4%D7%9C%D7%98%D7%99%D7%A0%D7%95%D7%9D-%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D/",
+        "scores": {
+          "performance": 0.59,
+          "accessibility": 0.96,
+          "best-practices": 0.82,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/product_brand/john-dalia/",
+      "localPath": "/brands/john-dalia/",
+      "clicks": 63,
+      "slug": "prizma-optic.co.il_product_brand_john-dalia__9",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_product_brand_john-dalia__9.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/brands/john-dalia/",
+        "requestedUrl": "http://localhost:4321/brands/john-dalia/",
+        "scores": {
+          "performance": 0.59,
+          "accessibility": 0.92,
+          "best-practices": 0.79,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/mykita/",
+      "localPath": "/brands/mykita/",
+      "clicks": 52,
+      "slug": "prizma-optic.co.il_mykita__10",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_mykita__10.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/brands/mykita/",
+        "requestedUrl": "http://localhost:4321/brands/mykita/",
+        "scores": {
+          "performance": 0.62,
+          "accessibility": 0.92,
+          "best-practices": 0.79,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/gast/",
+      "localPath": "/brands/gast/",
+      "clicks": 49,
+      "slug": "prizma-optic.co.il_gast__11",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_gast__11.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/brands/gast/",
+        "requestedUrl": "http://localhost:4321/brands/gast/",
+        "scores": {
+          "performance": 0.6,
+          "accessibility": 0.96,
+          "best-practices": 0.82,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%91%D7%97%D7%A0%D7%95-%D7%90%D7%AA-%D7%A2%D7%A6%D7%9E%D7%9B%D7%9D-%D7%94%D7%90%D7%9D-%D7%90%D7%AA%D7%9D-%D7%A2%D7%99%D7%95%D7%95%D7%A8%D7%99-%D7%A6%D7%91%D7%A2%D7%99%D7%9D/",
+      "localPath": "/בחנו-את-עצמכם-האם-אתם-עיוורי-צבעים/",
+      "clicks": 46,
+      "slug": "prizma-optic.co.il_D791D797D7A0D795-D790D7AA-D7A2D7A6D79ED79BD79D-D794D790D79D-D_12",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_D791D797D7A0D795-D790D7AA-D7A2D7A6D79ED79BD79D-D794D790D79D-D_12.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/%D7%91%D7%97%D7%A0%D7%95-%D7%90%D7%AA-%D7%A2%D7%A6%D7%9E%D7%9B%D7%9D-%D7%94%D7%90%D7%9D-%D7%90%D7%AA%D7%9D-%D7%A2%D7%99%D7%95%D7%95%D7%A8%D7%99-%D7%A6%D7%91%D7%A2%D7%99%D7%9D/",
+        "requestedUrl": "http://localhost:4321/%D7%91%D7%97%D7%A0%D7%95-%D7%90%D7%AA-%D7%A2%D7%A6%D7%9E%D7%9B%D7%9D-%D7%94%D7%90%D7%9D-%D7%90%D7%AA%D7%9D-%D7%A2%D7%99%D7%95%D7%95%D7%A8%D7%99-%D7%A6%D7%91%D7%A2%D7%99%D7%9D/",
+        "scores": {
+          "performance": 0.61,
+          "accessibility": 0.96,
+          "best-practices": 0.82,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/multifocal/",
+      "localPath": "/multifocal-guide/",
+      "clicks": 44,
+      "slug": "ru.prizma-optic.co.il_multifocal__13",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\ru.prizma-optic.co.il_multifocal__13.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/multifocal-guide/",
+        "requestedUrl": "http://localhost:4321/multifocal-guide/",
+        "scores": {
+          "performance": 0.58,
+          "accessibility": 0.97,
+          "best-practices": 0.82,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%97%D7%99%D7%A8%D7%99-%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%A9%D7%9E%D7%99%D7%A8/",
+      "localPath": "/מחירי-עדשות-מולטיפוקל-שמיר/",
+      "clicks": 40,
+      "slug": "prizma-optic.co.il_D79ED797D799D7A8D799-D7A2D793D7A9D795D7AA-D79ED795D79CD798D79_14",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_D79ED797D799D7A8D799-D7A2D793D7A9D795D7AA-D79ED795D79CD798D79_14.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/%D7%9E%D7%97%D7%99%D7%A8%D7%99-%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%A9%D7%9E%D7%99%D7%A8/",
+        "requestedUrl": "http://localhost:4321/%D7%9E%D7%97%D7%99%D7%A8%D7%99-%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%A9%D7%9E%D7%99%D7%A8/",
+        "scores": {
+          "performance": 0.59,
+          "accessibility": 0.94,
+          "best-practices": 0.82,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/celine/",
+      "localPath": "/brands/celine/",
+      "clicks": 40,
+      "slug": "prizma-optic.co.il_celine__15",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_celine__15.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/brands/celine/",
+        "requestedUrl": "http://localhost:4321/brands/celine/",
+        "scores": {
+          "performance": 0.59,
+          "accessibility": 0.96,
+          "best-practices": 0.82,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/kamemannen/",
+      "localPath": "/brands/kamemannen/",
+      "clicks": 40,
+      "slug": "prizma-optic.co.il_kamemannen__16",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_kamemannen__16.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/brands/kamemannen/",
+        "requestedUrl": "http://localhost:4321/brands/kamemannen/",
+        "scores": {
+          "performance": 0.56,
+          "accessibility": 0.92,
+          "best-practices": 0.79,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%97%D7%99%D7%A8-%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%9E%D7%94-%D7%91%D7%90%D7%9E%D7%AA-%D7%A7%D7%95%D7%91%D7%A2/",
+      "localPath": "/מחיר-משקפיים-מולטיפוקל-מה-באמת-קובע/",
+      "clicks": 38,
+      "slug": "prizma-optic.co.il_D79ED797D799D7A8-D79ED7A9D7A7D7A4D799D799D79D-D79ED795D79CD79_17",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_D79ED797D799D7A8-D79ED7A9D7A7D7A4D799D799D79D-D79ED795D79CD79_17.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/%D7%9E%D7%97%D7%99%D7%A8-%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%9E%D7%94-%D7%91%D7%90%D7%9E%D7%AA-%D7%A7%D7%95%D7%91%D7%A2/",
+        "requestedUrl": "http://localhost:4321/%D7%9E%D7%97%D7%99%D7%A8-%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%9E%D7%94-%D7%91%D7%90%D7%9E%D7%AA-%D7%A7%D7%95%D7%91%D7%A2/",
+        "scores": {
+          "performance": 0.59,
+          "accessibility": 0.94,
+          "best-practices": 0.82,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%97%D7%99%D7%A8%D7%99-%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%90%D7%95%D7%A4%D7%98%D7%99%D7%9E%D7%99%D7%99%D7%96/",
+      "localPath": "/מחירי-עדשות-מולטיפוקל-אופטימייז/",
+      "clicks": 34,
+      "slug": "prizma-optic.co.il_D79ED797D799D7A8D799-D7A2D793D7A9D795D7AA-D79ED795D79CD798D79_18",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_D79ED797D799D7A8D799-D7A2D793D7A9D795D7AA-D79ED795D79CD798D79_18.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/%D7%9E%D7%97%D7%99%D7%A8%D7%99-%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%90%D7%95%D7%A4%D7%98%D7%99%D7%9E%D7%99%D7%99%D7%96/",
+        "requestedUrl": "http://localhost:4321/%D7%9E%D7%97%D7%99%D7%A8%D7%99-%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%90%D7%95%D7%A4%D7%98%D7%99%D7%9E%D7%99%D7%99%D7%96/",
+        "scores": {
+          "performance": 0.5,
+          "accessibility": 0.94,
+          "best-practices": 0.82,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    },
+    {
+      "url": "https://prizma-optic.co.il/prizmaexpress/",
+      "localPath": "/prizmaexpress/",
+      "clicks": 32,
+      "slug": "prizma-optic.co.il_prizmaexpress__19",
+      "outPath": "C:\\Users\\User\\opticup\\modules\\Module 3 - Storefront\\docs\\specs\\PRE_MERGE_SEO_OVERNIGHT_QA\\artifacts\\lighthouse\\prizma-optic.co.il_prizmaexpress__19.json",
+      "exit_code": 1,
+      "parsed": {
+        "finalUrl": "http://localhost:4321/prizmaexpress/",
+        "requestedUrl": "http://localhost:4321/prizmaexpress/",
+        "scores": {
+          "performance": 0.63,
+          "accessibility": 0.95,
+          "best-practices": 0.82,
+          "seo": 0.92
+        }
+      },
+      "stderr_tail": "t/chrome-launcher.js:39:18)\n    at runLighthouse (file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/run.js:217:21)\n    at async file:///C:/Users/User/opticup/modules/Module%203%20-%20Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/scripts/seo-overnight/node_modules/lighthouse/cli/index.js:10:1\n"
+    }
+  ]
+}

@@ -2,6 +2,29 @@
 
 ---
 
+## Pre-Merge SEO Overnight QA SPEC
+**Status:** ✅ Audit-only; no code changes
+**Date:** 2026-04-15
+
+### Changes
+
+| Scope | Description |
+|-------|-------------|
+| `modules/Module 3 - Storefront/docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/` | Full overnight SEO audit vs GSC ground truth — 10 Node scripts + 12 JSON/CSV artifacts + `SEO_QA_REPORT.md` (38.5 KB) + `EXECUTION_REPORT.md` + `FINDINGS.md` (14 findings) |
+
+### Key Metrics
+
+- GSC URLs audited: **1000** (OK_200=96, OK_301_REDIRECT=863, MISSING=41)
+- MISSING URLs with ≥10 clicks: **0** (all 41 MISSING combined carry 4 clicks)
+- GSC queries analyzed: **1000** (954 landing-matched, 195 HIGH/MEDIUM term appearance)
+- Sitemap `<loc>` entries: **245** / broken: **58** (all `/בלוג/*` Hebrew-slug leftovers from pre-transliteration WP)
+- Top-100 on-page: canonical_ok **97**, hreflang≥3 **100**, jsonld **92**, og_complete **27**, noindex **0**
+- Internal links checked: **758** / broken: **0**
+- Lighthouse (top-20, mobile, dev): Perf 59.5 / A11y 94.5 / BP 81.1 / SEO 91.7
+- **DNS verdict: GREEN** — audit is not a launch blocker
+
+---
+
 ## Blog Pre-Merge Fixes SPEC
 **Status:** ✅ All commits on develop
 **Date:** 2026-04-15

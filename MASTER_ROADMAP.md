@@ -50,16 +50,28 @@ under `opticup/modules/Module N - .../`.
 
 Module 3 (Storefront) is **code-complete** as of 2026-04-15. The full chain —
 Phase B Core (RLS hardening), B6 (session key rename), Pre-Launch Hardening
-SPEC (2026-04-14), Close-Out SPEC (2026-04-15), and Tenant Feature Gating &
-Cleanup SPEC (2026-04-15) — is committed to `develop`. All tenant-hardcoding
+SPEC (2026-04-14), Close-Out SPEC (2026-04-15), Tenant Feature Gating &
+Cleanup SPEC (2026-04-15), and **BLOG_PRE_MERGE_FIXES SPEC** (2026-04-15,
+commits `678a82e`→`3e92f7f`) — is committed to `develop`. All tenant-hardcoding
 findings resolved, translate-content wrapper regression fixed, WordPress parity
 pages inserted, 8 storefront HTML pages gated via plan feature flags, Guardian
-alerts up to date.
+alerts up to date. **Blog pre-merge content cleanup complete**: 19 WordPress
+images migrated into Studio Media (`media-library` bucket, folder "בלוג") with
+dedup, 132 posts rewritten to new image URLs, grammar-article en+ru variants
+soft-deleted (he preserved), 58 Hebrew slugs transliterated (19 en → ASCII,
+39 ru → Cyrillic). 82 posts with hardcoded Instagram handle `optic_prizma`
+deferred to post-merge SPEC `BLOG_INSTAGRAM_TEMPLATIZE` (non-blocker).
 
 The sole remaining gate for DNS switch is **Daniel-run QA** on localhost
 (runbook: `modules/Module 3 - Storefront/docs/QA_HANDOFF_2026-04-14.md`).
 After QA passes, Daniel merges `develop → main` in both repos, then switches
 DNS for `www.prizma-optic.co.il`.
+
+Overnight SEO audit complete (SPEC `PRE_MERGE_SEO_OVERNIGHT_QA`) —
+**verdict: GREEN**, 41 MISSING URLs (0 high-traffic, ≥10 clicks) queued for a
+follow-up FIXES SPEC. 14 findings total (0 CRITICAL / 3 HIGH / 6 MEDIUM /
+3 LOW / 2 INFO); HIGH items are `og:image` coverage, broken sitemap `<loc>`s,
+and locale-fallback 302s — quality debt, **not** DNS-switch blockers.
 
 Module 3.1 (Project Reconstruction) is **complete** — all phases 3A/3B/3C/3D
 done. Foundation docs are accurate and current.

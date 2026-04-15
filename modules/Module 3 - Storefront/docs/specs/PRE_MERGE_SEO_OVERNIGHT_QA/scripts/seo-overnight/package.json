@@ -1,0 +1,15 @@
+{
+  "name": "seo-overnight-qa",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Scoped deps for PRE_MERGE_SEO_OVERNIGHT_QA audit (read-only, ephemeral).",
+  "dependencies": {
+    "csv-parse": "^5.5.6",
+    "jsdom": "^24.1.0",
+    "p-limit": "^5.0.0"
+  },
+  "devDependencies": {
+    "lighthouse": "^12.2.1"
+  }
+}

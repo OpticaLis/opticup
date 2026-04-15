@@ -6,6 +6,18 @@
 
 ---
 
+## Pre-Merge SEO Overnight QA SPEC ✅ (2026-04-15)
+
+Read-only SEO audit against GSC ground truth (1000 Pages + 1000 Queries CSV exports). 10 Node scripts, 1 atomic commit, 14 findings (0 CRITICAL / 3 HIGH / 6 MEDIUM / 3 LOW / 2 INFO).
+
+- **DNS verdict:** 🟢 **GREEN** — 41 MISSING URLs total, **0** carry ≥10 clicks (combined traffic of MISSING: 4 clicks)
+- **Coverage:** OK_200=96, OK_301_REDIRECT=863, MISSING=41 (of 1000 GSC URLs)
+- **HIGH findings** (not launch blockers, candidates for `PRE_MERGE_SEO_FIXES` SPEC): `og:image` missing on 73/100 top pages; 58/245 sitemap `<loc>`s return 404 (WP Hebrew slugs superseded by BLOG_PRE_MERGE_FIXES transliteration); `/en/*` and `/ru/*` return 302 soft-redirect instead of 404 on unknown paths
+- **Report:** `docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/SEO_QA_REPORT.md` (38.5 KB, 11 sections)
+- **Retrospective:** `docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/{EXECUTION_REPORT,FINDINGS}.md`
+
+---
+
 ## Blog Pre-Merge Fixes SPEC ✅ (2026-04-15)
 
 All CRITICAL/HIGH blog findings resolved. Multilingual blog (he/en/ru, 174 posts) is production-safe for DNS switch.

@@ -1,0 +1,8 @@
+{
+  "generated_at": "2026-04-15",
+  "criterion": 23,
+  "status": "SKIPPED",
+  "reason": "opticup-storefront/scripts/validate-redirects.mjs not present. Only build-wp-redirect-map.mjs and apply-wp-redirects.mjs exist.",
+  "action_per_spec": "SPEC §5: 'continue the audit WITHOUT comparing to it; log a finding'. See FINDINGS.md.",
+  "finding_severity": "LOW"
+}
