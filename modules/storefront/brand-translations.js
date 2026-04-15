@@ -397,8 +397,8 @@ async function loadExampleBrands(tid, lang, brands) {
  */
 function buildBrandPrompt(lang, langLabel, langCode, glossaryRows, exampleBrands) {
   const isEn = lang === 'en';
-  const storeName = getTenantConfig('name') || 'אופטיקה פריזמה';
-  const storeNameEn = getTenantConfig('name_en') || 'Prizma Optic';
+  const storeName = getTenantConfig('name') || '';
+  const storeNameEn = getTenantConfig('name_en') || '';
   const md = [];
 
   md.push(`# Translation Task — ${storeNameEn} Brand Pages → ${langLabel}`);

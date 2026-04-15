@@ -266,7 +266,7 @@ function openStudioBrandEditor(brandId) {
   const brand = studioBrands.find(b => b.brand_id === brandId);
   if (!brand) return;
 
-  const storeName = getTenantConfig('name') || 'אופטיקה פריזמה';
+  const storeName = getTenantConfig('name') || '';
   _quillDesc1 = null;
   _quillDesc2 = null;
   _aiMode = 'new';

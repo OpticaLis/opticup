@@ -568,8 +568,8 @@ async function exportForTranslation(targetLang) {
  * Renamed from buildTranslationPrompt in HF1 to make the manual-flow intent explicit.
  */
 function buildManualTranslationPrompt(targetLang, langLabel, langCode, glossary, examples) {
-  const storeName = getTenantConfig('name') || 'אופטיקה פריזמה';
-  const storeNameEn = getTenantConfig('name_en') || 'Prizma Optic';
+  const storeName = getTenantConfig('name') || '';
+  const storeNameEn = getTenantConfig('name_en') || '';
   const md = [];
 
   md.push(`# Translation Task — ${storeNameEn} Products → ${langLabel}`);
