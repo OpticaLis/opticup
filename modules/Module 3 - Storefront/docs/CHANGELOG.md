@@ -2,6 +2,42 @@
 
 ---
 
+## Blog Pre-Merge Fixes SPEC
+**Status:** ✅ All commits on develop
+**Date:** 2026-04-15
+**Commits:** `678a82e`, `4738191`, `dd0fe6f`
+
+### Changes
+
+| Commit | Scope | Description |
+|--------|-------|-------------|
+| `678a82e` | scripts | Add WP image migration scripts 01-06 + README under `scripts/blog-migration/` |
+| `4738191` | media-library | Migrate 19 WP images to Supabase Storage `media-library/blog`; insert 19 `media_library` rows; catalog 4 confirmed-404 images |
+| `dd0fe6f` | blog_posts DB | Rewrite 132 posts' WP img URLs to `/api/image/media/` proxy; strip 4 broken img tags + WP `<a href>` links (two-pass regex); soft-delete grammar article en+ru; transliterate 58 Hebrew slugs (19 en→ASCII, 39 ru→Cyrillic) |
+
+### Key Metrics
+- WP image URLs in published content: **0** (was 23 URLs across posts)
+- media_library blog rows: **19** (19 uploaded, 4 confirmed 404 stripped)
+- Hebrew slugs on active en/ru posts: **0** (was 58)
+- Grammar article: en=soft-deleted, ru=soft-deleted, he=preserved ✓
+- Duplicate slugs: **0**
+- WP `<a href>` links remaining: **0**
+
+### Deviations
+- Hebrew slug count: SPEC expected 41 (from audit sample); actual was 60 non-deleted → 58 updated (2 grammar excluded post-soft-delete). Criteria verified ✓
+- Commits 3+4+5 combined into one (all DB-only operations)
+- Hardcoded tenant scope: SPEC expected 7 posts; actual 82 (Instagram href) — flagged in FINDINGS_TENANT.md, not fixed (deferred to BLOG_INSTAGRAM_TEMPLATIZE SPEC)
+
+### UNVERIFIED Criteria (require localhost:4321)
+- C14: Browser spot-check of blog post pages
+- C15: Storefront build passes
+- C16: Blog pages return 200
+
+### Reference
+- Full retrospective: `modules/Module 3 - Storefront/docs/specs/BLOG_PRE_MERGE_FIXES/`
+
+---
+
 ## Tenant Feature Gating & Cleanup SPEC (Track 2)
 **Status:** ✅ All commits on develop
 **Date:** 2026-04-15

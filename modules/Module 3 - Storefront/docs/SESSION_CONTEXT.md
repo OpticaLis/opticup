@@ -6,6 +6,20 @@
 
 ---
 
+## Blog Pre-Merge Fixes SPEC ✅ (2026-04-15)
+
+All CRITICAL/HIGH blog findings resolved. Multilingual blog (he/en/ru, 174 posts) is production-safe for DNS switch.
+
+- **19 WP images migrated** to `media-library/blog` bucket + `media_library` rows inserted; 4 confirmed 404 stripped (commits `678a82e`, `4738191`)
+- **132 posts rewritten** — WP image URLs replaced with `/api/image/media/` proxy paths; 4 broken img tags stripped; WP `<a href>` links stripped (commit `dd0fe6f`)
+- **Grammar article** — en + ru soft-deleted; he variant preserved (commit `dd0fe6f`)
+- **58 Hebrew slugs transliterated** — 19 en → English ASCII, 39 ru → Russian Cyrillic (commit `dd0fe6f`)
+- **Retrospective:** `modules/Module 3 - Storefront/docs/specs/BLOG_PRE_MERGE_FIXES/`
+- **Remaining (UNVERIFIED, localhost):** build passes, browser spot-check, 200 responses — per existing `docs/QA_HANDOFF_2026-04-14.md`
+- **Follow-up SPEC flagged:** `BLOG_INSTAGRAM_TEMPLATIZE` — 82 posts contain hardcoded `optic_prizma` Instagram href (LOW, not a blocker)
+
+---
+
 ## Tenant Feature Gating & Cleanup SPEC ✅ (2026-04-15)
 
 4 new CMS feature keys added to plans table; 8 storefront HTML pages gated via `isFeatureEnabled()` + `renderFeatureLockedState()`:
