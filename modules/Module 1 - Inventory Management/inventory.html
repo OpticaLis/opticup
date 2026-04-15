@@ -9,7 +9,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>אופטיקה פריזמה — מערכת מלאי</title>
+<title>Optic Up — מערכת מלאי</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -274,7 +274,7 @@ tr.row-err td{background:#fef2f2}
 <body>
 
 <header>
-  <div class="logo"><span>&#9670;</span> אופטיקה פריזמה</div>
+  <div class="logo"><span>&#9670;</span> <span id="inv-store-name">Optic Up</span></div>
   <span style="font-size:.8rem;opacity:.6">Supabase</span>
 </header>
 
@@ -4616,6 +4616,13 @@ function backToReceiptList() {
 // INIT
 // =========================================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Dynamic store branding from auth session (Rule 9 — no hardcoded tenant names)
+  const _tn = sessionStorage.getItem('tenant_name_cache');
+  if (_tn) {
+    document.title = _tn + ' — מערכת מלאי';
+    const _logo = document.getElementById('inv-store-name');
+    if (_logo) _logo.textContent = _tn;
+  }
   if (sessionStorage.getItem('tenant_admin') === '1') activateAdmin();
   const dateEl = $('po-date');
   if (dateEl) dateEl.valueAsDate = new Date();
