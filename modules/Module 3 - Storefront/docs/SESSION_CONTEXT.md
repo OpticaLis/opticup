@@ -1,8 +1,43 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Luxury-Positioning Redesign → Executor complete on develop; awaiting FOREMAN_REVIEW + Daniel QA
-## Status: 🟢 Executor complete (CMS-native Option D executed end-to-end); FOREMAN_REVIEW.md pending
-## Date: 2026-04-16 (re-scoped + executed same session)
+## Current Phase: Phase D Content Iteration — HOMEPAGE_LUXURY_REVISIONS SPEC authored, awaiting dispatch to Windows
+## Status: 🟢 Luxury Redesign CLOSED 🟡 with follow-ups (FOREMAN_REVIEW written); Revisions SPEC READY for executor
+## Date: 2026-04-16 (same session — SPEC closed + next SPEC authored)
+
+---
+
+## Revised Follow-Up Queue (Daniel's direction, 2026-04-16 late)
+
+After viewing the deployed luxury redesign, Daniel re-sequenced the pre-DNS queue:
+
+1. **HOMEPAGE_LUXURY_REVISIONS** (Hebrew ONLY) — SPEC authored, awaiting Windows dispatch. Block-by-block revisions: new hero video `lz55pwuy9wc`, darker overlay (0.8), rewritten hero copy, Tier1Spotlight REMOVED from HE row (renderer + schema retained for Rule 20), Story block rewritten with Daniel's anchor phrase + store photo, Tier2Grid converted to auto-scrolling carousel. Scope: Prizma tenant, `lang='he'`, slug='/' — EN + RU explicitly deferred.
+2. **NAV_FIX** — Transitions to `/about/` and `/optometry/` don't work from homepage + header. Needs investigation first.
+3. **LANGUAGES_FIX** — EN + RU locales don't render correctly. Data migrations populated all 3 locales previously (stored OK in DB); defect is in rendering/routing layer. Needs investigation.
+4. **CONTACT_FORM_FIX** — Launch blocker (was previously #1, now #4). "בואו נדבר" form shows success but data silently lost. Needs Edge Function + SMTP/transactional-email.
+
+**Side queue (infra, non-blocking):**
+- `M3_STOREFRONT_PAGES_BACKUPS_TABLE` — schedule before next CMS-content SPEC (de-risks #1)
+- `MODULE_3_SEO_LEGACY_URL_REMAPS` — LOW
+- `M3_SEO_SAFETY_NET` — MEDIUM
+
+---
+
+## HOMEPAGE_LUXURY_REVISIONS SPEC — Authored 2026-04-16 (Cowork session)
+
+**Location:** `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS/SPEC.md`
+**Status:** ✅ Authored, pending Daniel's dispatch to Windows Claude Code in `opticup-storefront` repo.
+**Executor constraints:**
+- Prizma-scoped Level 2 SQL only (`tenant_id='6ad0781b-...'` AND `lang='he'`)
+- EN + RU rows must remain unchanged (Criteria 8–9 enforced)
+- Tier1Spotlight renderer + Studio schema STAY on disk (Rule 20 — Author Proposal A1 applied)
+- Mandatory pre-migration JSONB snapshot embedded in migration 125 header (Executor Proposal E1 applied)
+- Vercel-Preview-only criteria separated from localhost criteria (Author Proposal A2 + Executor Proposal E2 applied)
+
+**Key technical open question (executor resolves):** whether `BrandStripBlock.astro` actually rotates when `data.style='carousel'` is set. If yes → no renderer change needed. If no → SPEC allows up to ~100 lines of carousel implementation; more than that = Stop-on-Deviation.
+
+---
+
+## Execution Close-Out 2026-04-16 — HOMEPAGE_HEADER_LUXURY_REDESIGN (🟡 CLOSED WITH FOLLOW-UPS)
 
 ---
 
@@ -31,9 +66,15 @@
 **Retrospective artifacts:**
 - `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_HEADER_LUXURY_REDESIGN/EXECUTION_REPORT.md`
 - `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_HEADER_LUXURY_REDESIGN/FINDINGS.md` (4 findings: 1 SPEC-pattern fix, 2 MEDIUM tech-debt, 1 LOW housekeeping)
-- FOREMAN_REVIEW.md — pending (opticup-strategic layer)
+- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_HEADER_LUXURY_REDESIGN/FOREMAN_REVIEW.md` — **✅ written 2026-04-16 by Cowork Foreman; verdict 🟡 CLOSED WITH FOLLOW-UPS**
 
-**Next gate:** Foreman reads retrospective + writes review → Daniel runs QA on localhost:4321 + on Vercel Preview → Daniel merges develop → main in both repos → author `CONTACT_FORM_FIX` SPEC → DNS switch.
+**Foreman proposals produced (all applied to HOMEPAGE_LUXURY_REVISIONS SPEC):**
+- A1: Rule 20 vs Rule 21 Deletion Check — in author SKILL Step 1.5
+- A2: Vercel Platform-Layer Caveat — in SPEC_TEMPLATE §3
+- E1: Mandatory pre-migration SELECT snapshot — in STOREFRONT_CMS_ARCHITECTURE.md §4
+- E2: `git show` verification + Vercel Preview pattern — in STOREFRONT_CMS_ARCHITECTURE.md §3.5
+
+**Next gate:** Daniel dispatches HOMEPAGE_LUXURY_REVISIONS SPEC to Windows Claude Code (see that SPEC's §13).
 
 ---
 
@@ -300,70 +341,4 @@ custom HTML blocks, popup lead forms, campaign templates.
 | 0 | ✅ | Backup | — |
 | 1-2 | ✅ | SQL 016-017: glossary + corrections tables, seed data | `a57d8af` (storefront) |
 | 3 | ✅ | Edge Function: translate-content | `a596c04` |
-| 4 | ✅ | Auto-translate in generate-ai-content | `a596c04` |
-| 5 | ✅ | Translations tab in storefront-content.html | `d070577` |
-| 6 | ✅ | Glossary management page (storefront-glossary.html) | `d070577` |
-| 7 | ✅ | Storefront EN/RU product pages | `dd91bf3` (storefront) |
-| 8 | ✅ | Bulk translate (in translations tab) | `d070577` |
-| 9 | ✅ | Documentation updated | `27b2436` |
-
----
-
-## Phase 5 — AI Content Engine (5A + 5B + 5C) ✅
-
-| Step | Status | Description | Commit (ERP) |
-|------|--------|-------------|--------------|
-| 5A | ✅ | generate-ai-content Edge Function + content manager | `6e39d9c` |
-| 5B | ✅ | generate-blog-post Edge Function + blog editor | `e80dff0` |
-| 5C | ✅ | generate-landing-content Edge Function + landing editor | `213dd50` |
-
----
-
-## ⚠️ PENDING — Daniel Must Do
-
-### Phase 7 SQL Migration (Supabase Dashboard)
-1. `opticup-storefront/sql/018-phase7-white-label.sql` — analytics JSONB, custom_domain, hero/favicon/OG columns + v_storefront_config view update
-
-### Phase 6 SQL Migrations (Supabase Dashboard)
-1. `opticup-storefront/sql/016-phase6-translation.sql` — translation_glossary + translation_corrections
-2. `opticup-storefront/sql/017-seed-glossary.sql` — seed 45 optical terms × EN+RU
-
-### Phase 6 Edge Function Deploy
-```bash
-supabase functions deploy translate-content --no-verify-jwt
-supabase functions deploy generate-ai-content --no-verify-jwt  # updated with auto-translate
-```
-
-### Phase 5 SQL Migrations (if not already run)
-1. `013-phase5a-ai-content.sql` — ai_content + ai_content_corrections tables
-2. `014-v-storefront-products-v4.sql` — view v4 with AI columns
-3. `015-blog-posts-table.sql` — blog_posts table + view
-4. Then: `cd opticup-storefront && npx tsx scripts/seo/migrate-blog-to-db.ts`
-
-### Phase 5 Edge Function Deploy (if not already done)
-```bash
-supabase functions deploy generate-ai-content --no-verify-jwt
-supabase functions deploy generate-blog-post --no-verify-jwt
-supabase functions deploy generate-landing-content --no-verify-jwt
-```
-
-### Phase 4A SQL (if not already run)
-- `006-phase4a-storefront-modes.sql`
-- `007-v-storefront-products-v3.sql`
-- `008-rpc-storefront-leads.sql`
-
----
-
-## Key Architecture
-
-### Analytics (Phase 7)
-- `storefront_config.analytics` — JSONB column with all analytics IDs per tenant
-- All scripts load via **Partytown** (Web Worker) for zero Lighthouse impact
-- Events via `dataLayer.push`: view_product, whatsapp_click, notify_me, booking_click, search
-- ERP settings: `storefront-settings.html` → analytics section saves as JSONB
-
-### Tenant Resolution (Phase 7)
-Resolution order: custom_domain → subdomain → ?t= → default
-1. Custom domain: `v_storefront_config.custom_domain` → tenant_id
-2. Subdomain: `[slug].opticalis.co.il`
-3. Query param: `?t=slug`
+| 4 | ✅ | Auto-translate in generate-ai-content 
