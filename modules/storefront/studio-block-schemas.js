@@ -536,7 +536,10 @@ const BLOCK_SCHEMAS = {
     fields: [
       { key: 'section_title', label: 'כותרת מקטע', type: 'text' },
       { key: 'subtitle', label: 'תת כותרת', type: 'textarea', rows: 2 },
-      { key: 'columns_desktop', label: 'עמודות דסקטופ', type: 'select', options: [
+      { key: 'style', label: 'סגנון', type: 'select', options: [
+        { value: 'grid', label: 'רשת' }, { value: 'carousel', label: 'קרוסלה אוטומטית' }
+      ], default: 'grid' },
+      { key: 'columns_desktop', label: 'עמודות דסקטופ (במצב רשת)', type: 'select', options: [
         { value: 3, label: '3' }, { value: 4, label: '4' }, { value: 5, label: '5' }, { value: 6, label: '6' }
       ], default: 6 },
       { key: 'brands', label: 'מותגים', type: 'items', itemFields: [
