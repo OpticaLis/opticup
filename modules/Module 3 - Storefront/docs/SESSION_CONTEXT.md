@@ -43,7 +43,13 @@
 
 **Execution quality score (Foreman-adjusted):** **9.6/10** (executor self-score 9.5 was honest; 0.1 over-deduction on "docs currency" for a file that actually existed).
 
-**Next gate:** Commit this FOREMAN_REVIEW + SESSION_CONTEXT update to `develop`. Then 4 proposals apply to skills. Then dispatch `NAV_FIX` SPEC (Daniel's priority #2 — broken `/about/` and `/optometry/` transitions from header).
+**Next gate:** Commit FOREMAN_REVIEW + SESSION_CONTEXT + skill edits to `develop`. Then 🔁 another pass on the homepage with fresh eyes (Daniel: "זה לא כמו שרציתי") — a HOMEPAGE_LUXURY_REVISIONS_R2 SPEC will capture round-2 revisions. Only after that → dispatch `NAV_FIX`.
+
+**2026-04-16 skill improvements APPLIED (ahead of next dispatch):**
+- `.claude/skills/opticup-strategic/SKILL.md` — added Step 1 sub-rule 9 (A1 — migration-path pre-flight detection) + Step 3 sub-section "§11 Path Disambiguator Rule" (A2 — repo vs plugin-install path notation in §11 references)
+- `.claude/skills/opticup-executor/SKILL.md` — added First Action step 5.5 (E1 — skill-reference file lookup rule: always repo path, never plugin install) + Step 1.5 DB Pre-Flight sub-item 9 (E2 — migration folder convention auto-detect via `git rev-parse --show-toplevel` + `ls`)
+
+All 4 proposals now live in the skill files themselves — the next SPEC dispatch automatically benefits.
 
 ---
 
