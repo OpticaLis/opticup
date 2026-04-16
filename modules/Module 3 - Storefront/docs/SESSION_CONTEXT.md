@@ -1,8 +1,37 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Phase D Content Iteration — STOREFRONT_S2S3_QA ✅ EXECUTED (2026-04-16)
-## Status: SPEC executed. DB fixes applied + verified (EN optometry title ✅, RU FAQ em-dash ✅). /about/ DB structure verified (criteria 11–17 all PASS). Storefront file criteria 1–10 + 20–21 NOT verified (opticup-storefront folder not mounted in executor session) — Daniel to confirm locally. Awaiting Foreman review. Next: NAV_FIX → LANGUAGES_FIX → CONTACT_FORM_FIX.
+## Current Phase: Pre-DNS-Switch Final QA — DNS_SWITCH_READINESS_QA 🔴 EXECUTED, AWAITING FOREMAN REVIEW (2026-04-16)
+## Status: Multi-agent overnight audit complete. Verdict: 🔴 NOT READY FOR DNS SWITCH. 4 CRITICAL blockers + 10 HIGH + 14 MEDIUM identified across 66 pages / 32 blocks / 10 views / 3 routes / 31 Studio files / 36 EN+RU language reviews. Hebrew content launch-ready; multilingual routing 84% dark (EN/RU serve 3 of 18 slugs each). `/api/leads/submit` 404s on Vercel. `/prizmaexpress/` RU has words with embedded Hebrew letters. `/optometry/` still draft.
 ## Date: 2026-04-16
+
+---
+
+## Execution Close-Out 2026-04-16 — DNS_SWITCH_READINESS_QA
+
+**Deliverables (all inside `docs/specs/DNS_SWITCH_READINESS_QA/`):**
+- `DNS_SWITCH_READINESS_REPORT.md` — master report with 🔴 verdict, scoring table, path-to-green plan
+- `PAGES_HE_QA_REPORT.md` — 66-page/lang HTTP + meta + HE-content audit
+- `BLOCK_RENDERER_AUDIT.md` — 32 .astro files, 13 findings (0 CRITICAL / 0 HIGH / 3 MED / 10 LOW)
+- `VIEW_CONTRACTS_AUDIT.md` — 10 views, 2 HIGH (brand hero NULLs, anon grants broader than SELECT)
+- `API_ROUTES_AUDIT.md` — 3 routes (1 CRITICAL: leads 404 matches CONTACT_FORM_FIX)
+- `ERP_STUDIO_AUDIT.md` — 31 JS files, 3 HIGH Rule 22 gaps (templates, reviews, media), systemic Rule 2 (writeLog) missing across the module
+- `LANG_QUALITY_EN.md` — 18 pages, overall grade B, 1 page (`/about/`) grade C, recommend targeted editor pass on 4 pages
+- `LANG_QUALITY_RU.md` — 18 pages, overall grade B+, 1 page (`/prizmaexpress/`) grade D (Hebrew letters embedded in Russian words — CRITICAL)
+- `EXECUTION_REPORT.md` — retrospective (self-score 9.25/10), 2 executor-skill proposals (E-1 pre-dispatch UUID verify, E-2 master report template)
+- `FINDINGS.md` — 6 meta-findings for Foreman (SPEC UUID drift, stop-trigger grammar, etc.)
+
+**Method:** 6 parallel background sub-agents + main executor for Mission 4. Total wall-clock ~17 minutes. Zero code changes, zero DB writes. 14/14 success criteria met.
+
+**4 CRITICAL blockers for DNS switch:**
+1. EN/RU routing serves only 3 of 18 published slugs per language (28 pages 404 with DB content ready)
+2. `/en/` and `/ru/` lang-root 302-redirect to HE homepage
+3. `/api/leads/submit` returns 404 on Vercel (contact forms broken — matches already-queued CONTACT_FORM_FIX)
+4. `/prizmaexpress/` RU page has 2 words with embedded Hebrew letters (`лиןз`, `каталоגים`) — 5-min SQL fix, but blocked until CRITICAL-1 is resolved (page 404s today)
+5. `/optometry/` is `status='draft'` on all 3 langs — flip to published or remove from sitemap
+
+**Awaiting Foreman review.** Foreman should: (a) disposition 6 FINDINGS.md entries, (b) apply 2 executor-skill proposals, (c) prioritize the 4 CRITICAL blockers and queue remediation SPECs. CONTACT_FORM_FIX SPEC (already authored earlier) is directly actionable; EN/RU routing fix may warrant a new LANGUAGES_FIX_R2 or ROUTING_FIX SPEC.
+
+---
 
 ---
 
@@ -35,7 +64,9 @@
 - `modules/Module 3 - Storefront/docs/specs/STOREFRONT_S2S3_QA/EXECUTION_REPORT.md`
 - `modules/Module 3 - Storefront/docs/specs/STOREFRONT_S2S3_QA/FINDINGS.md` (2 findings: M3-QA-01 MEDIUM, M3-SPEC-01 LOW)
 
-**Next gate:** Awaiting Foreman review (`FOREMAN_REVIEW.md`). After that → dispatch **NAV_FIX**.
+**Foreman review:** 🟢 CLOSED (session `cool-jolly-franklin`, 2026-04-16). All 3 spot-checks pass. 2 findings: M3-QA-01 DISMISS (storefront file criteria — Daniel verifies locally), M3-SPEC-01 TECH_DEBT (Rollback Plan labeling in SPEC_TEMPLATE). 4 skill proposals queued (A1+A2+E1+E2). See `FOREMAN_REVIEW.md` in this SPEC folder.
+
+**Next gate:** Apply 4 skill-file edits (proposals from this review + R2 review if any pending) → author **NAV_FIX** SPEC.
 
 ---
 
