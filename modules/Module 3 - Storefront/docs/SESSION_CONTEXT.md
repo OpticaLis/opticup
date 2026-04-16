@@ -1,8 +1,41 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Phase D Content Iteration — STOREFRONT_S2S3_QA 🟡 READY FOR EXECUTOR DISPATCH
-## Status: QA SPEC authored (2026-04-16). Verifies sessions 2+3 storefront changes (Header fixed, ContactForm hidden, /about/ pages, BaseLayout pt-16) + 2 language fixes (EN optometry title, RU FAQ em-dash). Daniel's storefront file changes uncommitted — executor verifies files on disk, applies DB fixes, commits SPEC artifacts to ERP only. Daniel pushes storefront changes from CMD.
+## Current Phase: Phase D Content Iteration — STOREFRONT_S2S3_QA ✅ EXECUTED (2026-04-16)
+## Status: SPEC executed. DB fixes applied + verified (EN optometry title ✅, RU FAQ em-dash ✅). /about/ DB structure verified (criteria 11–17 all PASS). Storefront file criteria 1–10 + 20–21 NOT verified (opticup-storefront folder not mounted in executor session) — Daniel to confirm locally. Awaiting Foreman review. Next: NAV_FIX → LANGUAGES_FIX → CONTACT_FORM_FIX.
 ## Date: 2026-04-16
+
+---
+
+## Execution Close-Out 2026-04-16 — STOREFRONT_S2S3_QA
+
+**DB fixes applied (via Supabase MCP — CMS content UPDATE, no migration file):**
+
+- **Fix A — EN optometry page title:** `storefront_pages` `slug='/optometry/' AND lang='en'` — hero block title updated from "40 years of expertise. Vision that finds the precision." → "40 years of expertise. Precision vision, personal care." Pre-state verified → UPDATE applied → post-state verified ✅
+- **Fix B — RU FAQ em-dash:** `storefront_pages` `slug='/שאלות-ותשובות/' AND lang='ru'` — all ` - до` occurrences replaced with ` — до` (typographic em-dash). `has_hyphen_issue = true` before → `still_broken = false` after ✅
+
+**DB structure verification (criteria 11–17):**
+
+| Criterion | Expected | Actual | Result |
+|-----------|----------|--------|--------|
+| /about/ HE block count | 2 story_teaser | 2 story_teaser | ✅ |
+| /about/ EN block count | 2 story_teaser | 2 story_teaser | ✅ |
+| /about/ RU block count | 2 story_teaser | 2 story_teaser | ✅ |
+| HE block 1 layout | image-start | image-start | ✅ |
+| HE block 2 layout | image-end | image-end | ✅ |
+| EN block 1 layout | image-start | image-start | ✅ |
+| Em-dashes in /about/ | 0 | 0 | ✅ |
+
+**Storefront file criteria (1–10, 20–21): NOT VERIFIED** — `opticup-storefront` folder not mounted in this Cowork session. Verification pending (Daniel local check or re-run in session with both folders mounted). See FINDINGS M3-QA-01.
+
+**ERP commits:** (pending — close-out commit is this SESSION_CONTEXT + CHANGELOG + EXECUTION_REPORT + FINDINGS)
+**Storefront changes:** uncommitted on Daniel's disk; Daniel to push via CMD. Suggested message: `feat(storefront): fixed header, mobile booking CTA, ContactForm build, /about/ pages, i18n fix`
+
+**Retrospective artifacts:**
+- `modules/Module 3 - Storefront/docs/specs/STOREFRONT_S2S3_QA/SPEC.md` (authored `93505f0`)
+- `modules/Module 3 - Storefront/docs/specs/STOREFRONT_S2S3_QA/EXECUTION_REPORT.md`
+- `modules/Module 3 - Storefront/docs/specs/STOREFRONT_S2S3_QA/FINDINGS.md` (2 findings: M3-QA-01 MEDIUM, M3-SPEC-01 LOW)
+
+**Next gate:** Awaiting Foreman review (`FOREMAN_REVIEW.md`). After that → dispatch **NAV_FIX**.
 
 ---
 
