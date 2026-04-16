@@ -302,7 +302,7 @@ async function handleMediaUpload(files) {
 
       const ext = isSVG ? 'svg' : 'webp';
       const mimeType = isSVG ? 'image/svg+xml' : 'image/webp';
-      const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_\u0590-\u05FF-]/g, '_');
+      const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
       const timestamp = Date.now();
       const filename = `${baseName}_${timestamp}.${ext}`;
       const folder = mediaFilter.folder !== 'all' ? mediaFilter.folder : 'general';
