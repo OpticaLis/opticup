@@ -1,8 +1,16 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Phase D Content Iteration — HOMEPAGE_LUXURY_REVISIONS_R2 🟢 CLOSED (executor retrospective committed); awaiting Foreman review
-## Status: 🟢 R2 SPEC executor-complete — 21 criteria, HE row UPDATE applied (8 blocks incl. new exhibitions + StoryTeaser rewrite), 2 storefront commits (marquee reduced-motion + contrast/font), 1 ERP commit (this close)
-## Date: 2026-04-16 (same session as R1 close)
+## Current Phase: Phase D Content Iteration — STOREFRONT_S2S3_QA 🟡 READY FOR EXECUTOR DISPATCH
+## Status: QA SPEC authored (2026-04-16). Verifies sessions 2+3 storefront changes (Header fixed, ContactForm hidden, /about/ pages, BaseLayout pt-16) + 2 language fixes (EN optometry title, RU FAQ em-dash). Daniel's storefront file changes uncommitted — executor verifies files on disk, applies DB fixes, commits SPEC artifacts to ERP only. Daniel pushes storefront changes from CMD.
+## Date: 2026-04-16
+
+---
+
+## FOREMAN_REVIEW 2026-04-16 — HOMEPAGE_LUXURY_REVISIONS_R2 🟢 CLOSED
+
+R2 foreman review complete. All 4 findings processed (2 TECH_DEBT, 1 queued SPEC stub, 1 dismiss). 2 author-skill + 2 executor-skill proposals filed. See `docs/specs/HOMEPAGE_LUXURY_REVISIONS_R2/FOREMAN_REVIEW.md` for full review.
+
+**Next SPEC in queue: STOREFRONT_S2S3_QA** (authored this session, ready to dispatch). After that: NAV_FIX → LANGUAGES_FIX → CONTACT_FORM_FIX.
 
 ---
 
@@ -258,82 +266,4 @@ All CRITICAL/HIGH blog findings resolved. Multilingual blog (he/en/ru, 174 posts
 - **migration 067** — `cms_studio`, `cms_custom_blocks`, `cms_landing_pages`, `cms_ai_tools` keys added to basic/premium/enterprise plans (commit `ea08602`)
 - **renderFeatureLockedState** — new helper in `shared/js/plan-helpers.js`; GLOBAL_MAP.md updated (commit `44a7625`)
 - **8 pages gated** — storefront-settings, storefront-products (→ `storefront`); storefront-brands, storefront-studio, storefront-blog (→ `cms_studio`); storefront-content, storefront-glossary (→ `cms_ai_tools`); storefront-landing-content (→ `cms_landing_pages`) (commit `f28db3c`)
-- **Dead code cleaned** — `old prompts/` + `mar30-phase-specs/` archived + removed from git index (commit `8b960fe`)
-- **Blocked (environment):** stale M3 backup folder purge requires `git rm -r` from Daniel's local machine; storefront unused component cleanup deferred
-
----
-
-## Close-Out SPEC ✅ (2026-04-15)
-
-All remaining blockers for DNS switch resolved:
-
-- **M3-SAAS-05b** — `BUILTIN_CTA_PRESETS` Instagram href reads from tenant config (commit `a115b5a`)
-- **M3-SAAS-10** — `studio-editor.js` TENANT_SLUG fallback removed; early-exit if unset (commit `5de07d6`)
-- **M3-SAAS-11** — Hardcoded Hebrew store name literals replaced with `getTenantConfig('name') || ''` in storefront-translations, brand-translations, studio-brands (commit `5a0a561`)
-- **M3-SAAS-12** — Blog SEO preview domain reads `getTenantConfig('custom_domain') || 'domain.co.il'` (commit `67468ed`)
-- **M1-SAAS-01** — inventory.html title + logo now dynamic from `tenant_name_cache` sessionStorage (commit `6ce4b67`)
-- **WP parity** — `/קופח-כללית/` and `/vintage-frames/` pages inserted via migrations 065/066 (commit `b55de5a`)
-- **translate-content v2** — `stripWrappers()` added, FORBIDDEN_PATTERNS extended, deployed as v2
-- **Guardian alerts** — M3-SAAS-05b/10/11/12 + M1-SAAS-01 moved to Resolved (commit `ba81a3b`)
-
-**Next gate:** Daniel runs QA on localhost per `docs/QA_HANDOFF_2026-04-14.md`, then merges develop → main in both repos, then DNS switch.
-
----
-
-## Pre-Launch Hardening SPEC ✅ (2026-04-14)
-
-Resolved in commits `66acfc7`–`d2fe4d3`:
-- storefront_components, storefront_pages, storefront_reviews RLS rewritten to JWT-claim canonical pattern
-- M3-SAAS-01, M3-SAAS-04, M3-SAAS-05 (Part A), M1-R09-01 resolved
-- HaveIBeenPwned: flagged as M6-AUTH-01 (requires manual Supabase dashboard toggle)
-
----
-
-## Phase B — SaaS Hardening ✅
-
-### Status: COMPLETE on develop (not yet merged to main — Module 3 still open)
-
-**B Core — RLS canonical pattern rollout:**
-- §1.0 Infrastructure: optic_readonly DB role created, 4 tests passed
-- §1.1 RLS fixes: all 11 tables fixed to canonical JWT-claim pattern
-  (customers, prescriptions, sales, work_orders, brand_content_log,
-  storefront_component_presets, storefront_page_tags, media_library,
-  supplier_balance_adjustments, campaigns, campaign_templates)
-- §1.3–§1.6: RLS audit script, TIER-C cleanup, run-audit harness
-- B1–B8 items closed; Manual Action #2 executed
-
-**B6 — sessionStorage Key Rename (commit `7e99030`):**
-- Atomic rename `prizma_*` → `tenant_*` across entire ERP
-- 22 files changed, 44 replacements (keys: auth_token, employee, permissions, role, user, branch, login_locked, admin)
-- Sanity Check §5.1–§5.8 PASS on demo tenant
-- Login round-trip verified via Chrome MCP: login → module nav → logout → re-login, zero console errors
-- Daniel-side visual verification: PASS
-
-**SPEC files (reference):**
-- MODULE_3_B_SPEC_saas_core_2026-04-12.md (B Core)
-- MODULE_3_B_SPEC_saas_session_keys_2026-04-12.md (B6)
-
-### Pending (not blocking Phase C)
-- §4.3 Prizma tenant safety check — run before any merge to main (deferred until Module 3 closes)
-- MASTER_ROADMAP §5/§6 RETRACTED marker on SF-2 (supplier_balance_adjustments)
-
-### Phases C and D
-Not started, not SPEC'd. C = WordPress content migration. D = dead code cleanup.
-
----
-
-## CMS Status: COMPLETE
-
-All phases done (CMS-1 through CMS-10).
-19 block types, Studio editor, AI editing, SEO scoring, product picker, Google reviews,
-custom HTML blocks, popup lead forms, campaign templates.
-
-**Next:** Design phase (WordPress visual parity) then DNS switch.
-
----
-
-## CMS-10 — Custom Block + Bug Fixes + QA ✅
-
-| Step | Status | Description | Commit (ERP) | Commit (Storefront) |
-|------|--------|-------------|--------------|---------------------|
-| Build 1 | ✅ | Custom bloc
+- **Dead code cleaned** — `old prompts/` + `mar30-phase-specs/` archived + r
