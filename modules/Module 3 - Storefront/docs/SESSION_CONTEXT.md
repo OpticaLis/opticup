@@ -1,8 +1,37 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Phase D Content Iteration — HOMEPAGE_LUXURY_REVISIONS 🟢 CLOSED (FOREMAN_REVIEW signed); Vercel-Preview visual QA deferred to Daniel
-## Status: 🟢 Revisions SPEC CLOSED — all 42 criteria independently verified, 1 finding DISMISSED (false positive), 1 finding → NEW_SPEC queued; 4 self-improvement proposals (2 author + 2 executor) to land before next dispatch
-## Date: 2026-04-16 (same session — SPEC dispatched, executed, retrospective written, Foreman review signed)
+## Current Phase: Phase D Content Iteration — HOMEPAGE_LUXURY_REVISIONS_R2 🟢 CLOSED (executor retrospective committed); awaiting Foreman review
+## Status: 🟢 R2 SPEC executor-complete — 21 criteria, HE row UPDATE applied (8 blocks incl. new exhibitions + StoryTeaser rewrite), 2 storefront commits (marquee reduced-motion + contrast/font), 1 ERP commit (this close)
+## Date: 2026-04-16 (same session as R1 close)
+
+---
+
+## Execution Close-Out 2026-04-16 — HOMEPAGE_LUXURY_REVISIONS_R2
+
+**Deliverables shipped to `develop` (both repos):**
+
+- **Marquee `prefers-reduced-motion` compliance** — `global.css` swapped `animation: none` → `animation-play-state: paused` to match SPEC criterion #13 verify literal. The twin-duplicated translateX(-50%) infinite track was already correct in R1 (commits `2547df6` + `0c1bc42`); Daniel's "blank wrap frame" report from R1 review may have been a cache or pre-deploy view — code-level investigation confirmed no structural change needed.
+- **Dark-on-dark contrast fix (criterion #15)** — added 5 CSS rules in `global.css` targeting `section.bg-black` descendants, overriding `text-gray-900/700/600` to white/gray-200/300 with specificity (0,2,1) that wins over single-utility classes (0,1,0). Tenant-agnostic, applies wherever `bg_color: 'black'` is set. The HE row's `events-showcase-home-he` (only block with `bg_color: 'black'`) now renders heading + body legibly.
+- **Font unification (criterion #21)** — removed Tailwind `font-serif` (Georgia/Times default) from h1/h2/h3 in 7 luxury renderers (`HeroLuxuryBlock`, `StoryTeaserBlock`, `OptometryTeaserBlock`, `Tier1SpotlightBlock` ×2, `Tier2GridBlock`, `VisitUsBlock`, `EventsShowcaseBlock`). Headings now inherit canonical Rubik (HE) / Inter (EN/RU) from body. Decorative "40" span in `StoryTeaserBlock.astro:59` kept as documented exception (only renders when `data.image` is missing — never the case for live HE row).
+- **HE homepage JSONB UPDATE (1 row)** — block count 7 → 8. New `events_showcase`-typed block `exhibitions-home-he` inserted at index 2 with section_title "מהתערוכות בעולם — לחנות שלנו" + 3 YouTube Shorts (Paris `XvfUYI87jso` / Milano `E8xt6Oj-QQw` / Israel `hOCxDNFEjWA`). StoryTeaser rewritten: title `נעים מאוד, אופטיקה פריזמה`, body opens with `<strong class="text-gold">אופטיקה פריזמה</strong>` (gold via `@theme { --color-gold: #c9a555 }`), narrative reframed around "introduction + heritage + process" (exhibitions theme moved to dedicated block above). Image kept verbatim per Daniel 2026-04-16 deferral.
+- **EN + RU homepage rows EXPLICITLY UNCHANGED** — `updated_at` baseline `2026-04-16 09:17:23.065827+00` preserved on both. Verified via post-UPDATE SELECT.
+
+**Storefront commits (2):** `faa31c5` (reduced-motion fix) → `2d4173f` (contrast + font unification on 7 renderers + global.css)
+**ERP commits:** (this commit) — SESSION_CONTEXT + CHANGELOG + EXECUTION_REPORT + FINDINGS for R2
+
+**Build + verification:**
+- `npm run build` (storefront): PASS (4.10s, 0 errors)
+- `npm run verify:full` (storefront): exit 1 from 55 PRE-EXISTING violations in `docs/*.html` and `scripts/seo/*` files — ZERO violations in any of the 8 files this SPEC touched (pre-commit hook confirmed "0 violations across 8 files" on commit `2d4173f`). Documented in FINDINGS as M3-EXEC-DEBT-02.
+- DB post-UPDATE: HE block_count=8, types/ids exact match SPEC §3 criterion #4, EN/RU `updated_at` unchanged.
+- Manual `localhost:4321` smoke deferred to Daniel (autonomous flow does not start dev server). Documented in FINDINGS.
+
+**Retrospective artifacts:**
+- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS_R2/SPEC.md`
+- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS_R2/PRE_STATE_BACKUP.json` (pre-UPDATE HE blocks JSONB for rollback per §6)
+- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS_R2/EXECUTION_REPORT.md`
+- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS_R2/FINDINGS.md`
+
+**Next gate:** Awaiting Foreman review (`FOREMAN_REVIEW.md` to be written by opticup-strategic). Then 🔁 dispatch **NAV_FIX** (broken transitions to `/about/` and `/optometry/` from homepage + header). After NAV_FIX → LANGUAGES_FIX → CONTACT_FORM_FIX.
 
 ---
 

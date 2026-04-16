@@ -2,6 +2,50 @@
 
 ---
 
+## Homepage Luxury Revisions R2 SPEC
+**Status:** ✅ Executor complete on develop (both repos); awaiting FOREMAN_REVIEW
+**Date:** 2026-04-16
+**Foreman verdict:** pending
+**Scope:** Hebrew homepage row only (`tenant_id='6ad0781b-...' AND slug='/' AND lang='he'`). EN + RU rows EXPLICITLY UNCHANGED (verified via `updated_at` baseline preserved).
+
+### Commits
+
+**Storefront (`opticup-storefront/develop`, 2 commits):**
+
+| Commit | Scope |
+|--------|-------|
+| `faa31c5` | fix(blocks): marquee respects prefers-reduced-motion via animation-play-state |
+| `2d4173f` | fix(blocks): dark-on-dark contrast + font unification on luxury homepage blocks (7 renderers + global.css) |
+
+**ERP (`opticup/develop`, 1 commit):**
+
+| Commit | Scope |
+|--------|-------|
+| (this commit) | docs(m3): close HOMEPAGE_LUXURY_REVISIONS_R2 retrospective + SESSION_CONTEXT + CHANGELOG (HE row UPDATE applied via Supabase MCP, no migration file) |
+
+### Block deltas (Prizma HE row, before R2 → after R2)
+
+| Block | Change |
+|-------|--------|
+| hero_luxury | UNCHANGED (Daniel R2 directive: "keep") |
+| brand_strip | UNCHANGED data (renderer-only `prefers-reduced-motion` polish in `faa31c5`) |
+| **NEW exhibitions** (`events_showcase` type, id `exhibitions-home-he`) | INSERTED at index 2. section_title "מהתערוכות בעולם — לחנות שלנו"; subtitle "פעמיים בשנה אנחנו טסים לתערוכות בפריז ובמילאנו, ועוצרים גם בתערוכה הישראלית. ככה זה נראה משם."; 3 events: Paris (`XvfUYI87jso`) / Milano (`E8xt6Oj-QQw`) / Israel (`hOCxDNFEjWA`), all `aspect_ratio: 9/16`, `autoplay_muted: true`. `bg_color: white` to avoid stacking with the black `events-showcase` below. |
+| story_teaser | REWRITTEN. title `40 שנה של בחירה` → `נעים מאוד, אופטיקה פריזמה`. body re-themed: opens with `<strong class="text-gold">אופטיקה פריזמה</strong>` (gold via `@theme { --color-gold }`), narrative shifts from "we travel to curate" (now in exhibitions block) to "introduction + heritage + process". Image UNCHANGED (`IMG-20241230-WA0096_1775230678239.webp`) per Daniel 2026-04-16 deferral. CTA, layout, eyebrow unchanged. |
+| events_showcase | UNCHANGED data; renderer dark-bg contrast handled via `section.bg-black` rules in `global.css` (commit `2d4173f`). |
+| tier2_grid | UNCHANGED data (renderer font-serif removed in `2d4173f`). |
+| optometry_teaser | UNCHANGED data (renderer font-serif removed in `2d4173f`). |
+| visit_us | UNCHANGED data (renderer font-serif removed in `2d4173f`). |
+
+### Cross-cutting fixes (apply to ALL pages using these renderers, not just homepage)
+
+| Concern | Fix |
+|---------|-----|
+| Marquee `prefers-reduced-motion` | `animation: none` → `animation-play-state: paused` in `global.css` (matches SPEC criterion #13 verify literal) |
+| Dark-on-dark headings on `bg_color: black` sections | 5 CSS rules in `global.css` (`section.bg-black h1/h2/h3 → white`, `text-gray-900/700/600` → light variants) — wins on specificity (0,2,1) over single utility class (0,1,0) |
+| Tailwind `font-serif` (Georgia/Times) on luxury renderers' headings | Removed from 8 occurrences across 7 renderers; headings inherit canonical Rubik (HE) / Inter (EN/RU) from body. One documented exception: decorative "40" span in `StoryTeaserBlock.astro:59` (only renders when `data.image` is missing — never live for HE row) |
+
+---
+
 ## Homepage Luxury Revisions SPEC
 **Status:** ✅ Executor complete on develop (both repos); awaiting FOREMAN_REVIEW
 **Date:** 2026-04-16
