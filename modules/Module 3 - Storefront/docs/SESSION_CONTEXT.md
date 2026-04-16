@@ -1,8 +1,41 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Close-Out — COMPLETE
-## Status: 🟢 Code-complete on develop — awaiting Daniel QA + DNS switch
+## Current Phase: Luxury-Positioning Redesign (pre-DNS-switch content layer)
+## Status: 🟡 SPEC authored + dispatched — executor work pending (Windows Claude Code)
 ## Date: 2026-04-16
+
+---
+
+## Homepage / Header / Story / Optometry Redesign — SPEC authored 2026-04-16
+
+**SPEC:** `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_HEADER_LUXURY_REDESIGN/SPEC.md`
+**Status:** ✅ Authored, all 6 Author Questions resolved with Daniel, READY FOR DISPATCH
+**Execution repo:** `opticup-storefront` (NOT this repo — Windows Claude Code only; Cowork cannot run `npm run build` + `localhost:4321`)
+
+**Scope:**
+- Positioning shift: "lab / Rx / multifocal" → "luxury-boutique curator of 5 Tier-1 brands (John Dalia, Cazal, Kame Mannen, Henry Jullien, Matsuda) + 6+ Tier-2 (Prada, Miu Miu, Moscot, Montblanc, Gast, Serengeti)"
+- **Homepage:** 8 sections (HeroLuxury → BrandStrip → Tier1Spotlight → StoryTeaser → Tier2Grid → EventsShowcase → OptometryTeaser → VisitUs)
+- **Header:** 6 items (משקפי ראייה / משקפי שמש / מותגים / אופטומטריה / הסיפור שלנו / יצירת קשר); REMOVED Blog + מולטיפוקל links
+- **NEW page** `הסיפור שלנו` — 40-year narrative + 3 exhibition videos (Paris/Milan/Israel YouTube Shorts IDs embedded)
+- **NEW page** `אופטומטריה` — absorbs multifocal content; old slug 301-redirects
+- **NEW Events block** — YouTube Shorts `40f1I0eOR7s` (tadmit) + `-hJjVIK3BZM` (testimonials)
+- **All 3 locales (he/en/ru) ship in parity** — no placeholder copy allowed
+- Hero copy: Elison-inspired structure, NOT a copy; executor drafts using Prizma's own vocabulary ("40 שנה", Paris/Milan sourcing hint); Daniel reviews post-commit
+
+**Author's anchor decisions (for continuity):**
+- Q1 exhibition videos: SILMO Paris `XvfUYI87jso`, MIDO Milan `E8xt6Oj-QQw`, Israel `hOCxDNFEjWA`
+- Q2 hero copy: Elison-inspired, not copied; candidate draft in SPEC §10
+- Q3 i18n: all 3 locales in THIS SPEC, not a follow-up
+- Q4 story narrative: executor drafts → commits → Daniel reviews after
+- Q5 contact form: separate SPEC `CONTACT_FORM_FIX` immediately after this closes (both land before DNS switch)
+- Q6 events block: added as 6th Homepage section per Daniel's addendum mid-authoring
+
+**Follow-up SPECs queued:**
+- `CONTACT_FORM_FIX` — launch blocker; "בואו נדבר" form shows success but data silently lost (likely missing Edge Function + SMTP integration). Author immediately after this SPEC closes.
+- `MODULE_3_SEO_LEGACY_URL_REMAPS` — FINDING-seo-fixes-01 deferred (from PRE_MERGE_SEO_FIXES).
+- `M3_SEO_SAFETY_NET` — FINDING-seo-fixes-06 deferred (Rule 30).
+
+**Dispatch gate:** None remaining — all 6 Q&A resolved. Executor may start as soon as Daniel runs the SPEC commit from Windows CMD.
 
 ---
 

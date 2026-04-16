@@ -16,9 +16,13 @@ Replace the storefront's current "lab / Rx / multifocal" positioning with a
 **luxury-boutique curator** positioning that foregrounds the five Tier-1 brands
 (John Dalia, Cazal, Kame Mannen, Henry Jullien, Matsuda), demotes optometry
 services from site-hero to trust-builder, and restructures the header to a
-6-item nav optimised for brand discovery. Deliverable is a redesigned Homepage,
-a restructured Header, a new "הסיפור שלנו" page (replacing the current About),
-and a new "אופטומטריה" page (absorbing the old "משקפי מולטיפוקל" content).
+6-item nav optimised for brand discovery. Deliverable is a redesigned Homepage
+(8 sections including an **Events & Testimonials** block with launch / clearance
+videos), a restructured Header, a new "הסיפור שלנו" page (replacing the
+current About), and a new "אופטומטריה" page (absorbing the old "משקפי
+מולטיפוקל" content). **All 3 locales (he / en / ru) ship in parity** in this
+SPEC — Hebrew-first with placeholder copy in en/ru is NOT acceptable (per
+Daniel's Q3 answer 2026-04-16).
 
 ---
 
@@ -62,10 +66,12 @@ Environment Check.
 | 8 | Homepage Hero has **exactly two** CTA buttons | 2 | Count of `<a>` or `<button>` elements inside the `HeroSection` that have class matching the site's CTA pattern → 2 |
 | 9 | Homepage contains a Tier-1 spotlight section with **5 brand cards** | 5 | Executor inspects the Homepage component and confirms 5 cards are rendered, one for each Tier-1 brand slug (John Dalia, Cazal, Kame Mannen, Henry Jullien, Matsuda). See §11 Pre-flight — brand slugs must be re-enumerated from the live DB before drafting component. |
 | 10 | Homepage contains a Tier-2 brand section with **≥6 brand logos or cards** | ≥6 | Executor inspects; Prada, Miu Miu, Moscot, Montblanc, Gast, Serengeti minimum. Exact slugs re-enumerated pre-flight. |
+| 10b | Homepage contains an **Events & Testimonials** block with ≥2 embedded videos | 2 YouTube Shorts IDs `40f1I0eOR7s` + `-hJjVIK3BZM` present, plus room for more | `curl -s http://localhost:4321/ \| grep -cE '(40f1I0eOR7s\|hJjVIK3BZM)'` → 2 |
 | 11 | Homepage has a "הסיפור שלנו" teaser section that links to `/about` (or locale equivalent) | 1 internal link to `/about`, `/he/about`, `/en/about`, `/ru/about` paths | `curl -s http://localhost:4321/ \| grep -cE 'href="/(he\|en\|ru)?/about' → ≥1` |
 | 12 | Homepage has an Optometry teaser section that links to `/optometry` | 1 internal link | `curl -s http://localhost:4321/ \| grep -cE 'href="/(he\|en\|ru)?/optometry' → ≥1` |
+| 12b | All 3 locales (he, en, ru) ship in full parity — no placeholder copy | 3 populated Homepage/Header/About/Optometry per locale | `curl -s http://localhost:4321/{he,en,ru}/about \| grep -cE '(TODO\|PLACEHOLDER\|Lorem)'` → 0 hits across all 3 |
 | 13 | Page `/he/about` responds 200 and contains the 40-year narrative | 200 + text "40" present | `curl -s -o /dev/null -w "%{http_code}" http://localhost:4321/he/about → 200`; `curl -s http://localhost:4321/he/about \| grep -cE '40'` → ≥1 |
-| 14 | `/he/about` contains the **3 exhibition-video YouTube IDs** Daniel supplied | 3 unique IDs | Executor verifies 3 `youtube.com/embed/...` or equivalent iframe/video sources for Paris + Milan + Israel clips. Daniel supplies the IDs in the pre-flight clarification step (see §11). |
+| 14 | `/he/about` contains the **3 exhibition-video YouTube IDs** Daniel supplied | 3 unique IDs present | `curl -s http://localhost:4321/he/about \| grep -cE '(XvfUYI87jso\|E8xt6Oj-QQw\|hOCxDNFEjWA)'` → 3. Same check on `/en/about` and `/ru/about`. |
 | 15 | Page `/he/optometry` responds 200 and contains multifocal content | 200 + text "מולטיפוקל" present | Same pattern as #13 |
 | 16 | Old `/he/multifocal` (or existing multifocal page route) redirects to `/he/optometry` with HTTP 301 | 301 redirect, single hop | `curl -sI http://localhost:4321/he/{current-multifocal-slug} \| head -1` → starts with `HTTP/1.1 301` — executor confirms current slug before writing redirect |
 | 17 | `npm run build` passes with 0 errors | exit 0, 0 errors | `cd opticup-storefront && npm run build` → exit 0; stderr contains 0 lines matching `/error/i` |
@@ -130,8 +136,9 @@ If the SPEC fails partway through and must be reverted:
 4. **Title-length tail** (3/20 pages still >60 chars — FINDING-seo-fixes-04). Goes to Studio backlog.
 5. **Studio CMS changes** (block registry, preset editor, shortcodes). If the current Homepage is a Studio-driven `landing_page` record, the SPEC STOPS (see §5). We do not extend the block registry as part of this redesign.
 6. **Product catalog pages, brand detail pages, PDP pages.** Only the *Homepage*, *Header*, *About→הסיפור שלנו*, and *new Optometry* pages are in scope. The rest of the site is frozen.
-7. **i18n content for English and Russian locales.** Initial redesign targets **Hebrew first** (primary locale). English and Russian get structural parity (same components, same layout) but translated copy is a follow-up SPEC if Daniel wants parity — see §11 Author Question 3.
-8. **Visual design system overhaul.** Colors, fonts, spacing tokens remain untouched. We redesign *composition and content*, not the design system itself.
+7. **Visual design system overhaul.** Colors, fonts, spacing tokens remain untouched. We redesign *composition and content*, not the design system itself.
+
+> ~~i18n Hebrew-first~~ — REVERSED per Daniel's Q3 answer on 2026-04-16. All 3 locales ship in full parity in this SPEC. See §3 Criterion 12b.
 
 ---
 
@@ -142,10 +149,11 @@ After the executor finishes, the repo should contain:
 ### New files (opticup-storefront)
 
 - `src/components/homepage/HeroLuxury.astro` — video-backed hero with copy + 2 CTAs (replaces current hero component; target ≤ 150 lines)
-- `src/components/homepage/Tier1Spotlight.astro` — 5-card spotlight section (target ≤ 120 lines)
 - `src/components/homepage/BrandStrip.astro` — catalog-brand logo row (target ≤ 80 lines)
-- `src/components/homepage/Tier2Grid.astro` — Tier-2 brand grid (target ≤ 100 lines)
+- `src/components/homepage/Tier1Spotlight.astro` — 5-card spotlight section (target ≤ 120 lines)
 - `src/components/homepage/StoryTeaser.astro` — "הסיפור שלנו" teaser card (target ≤ 80 lines)
+- `src/components/homepage/Tier2Grid.astro` — Tier-2 brand grid (target ≤ 100 lines)
+- `src/components/homepage/EventsShowcase.astro` — **NEW** — launch events / stock clearance / testimonials block with ≥2 YouTube Shorts embeds (target ≤ 100 lines)
 - `src/components/homepage/OptometryTeaser.astro` — optometry trust-builder section (target ≤ 80 lines)
 - `src/components/homepage/VisitUs.astro` — store CTA section (target ≤ 80 lines)
 - `src/pages/he/optometry.astro` — new Optometry page
@@ -198,12 +206,12 @@ listed filenames without per-file deltas").
 
 | # | Commit | Scope | Files |
 |---|--------|-------|-------|
-| 1 | `feat(homepage): add 7 section components for luxury-boutique layout` | 7 new components | `src/components/homepage/*.astro` (Hero, Tier1, Strip, Tier2, Story, Optometry, Visit) |
-| 2 | `feat(homepage): compose new index.astro from luxury sections` | Homepage recomposition | `src/pages/index.astro`, locale mirrors |
+| 1 | `feat(homepage): add 8 section components for luxury-boutique layout` | 8 new components | `src/components/homepage/*.astro` (HeroLuxury, BrandStrip, Tier1Spotlight, StoryTeaser, Tier2Grid, EventsShowcase, OptometryTeaser, VisitUs) |
+| 2 | `feat(homepage): compose new index.astro from luxury sections (he/en/ru)` | Homepage recomposition | `src/pages/index.astro`, locale mirrors (`src/pages/en/index.astro`, `src/pages/ru/index.astro`) |
 | 3 | `feat(header): restructure nav to 6 luxury-boutique items; remove Blog + Multifocal` | Header | `src/components/Header.astro` (+ any sub-components) |
-| 4 | `feat(about): rewrite Our Story page with 40-year arc + exhibition videos` | About pages | `src/pages/{he,en,ru}/about.astro` |
-| 5 | `feat(optometry): new Optometry page absorbing multifocal content` | Optometry pages | `src/pages/{he,en,ru}/optometry.astro` |
-| 6 | `chore(redirects): 301 old multifocal slug → /optometry (single-hop)` | vercel.json | `vercel.json` |
+| 4 | `feat(about): rewrite Our Story page with 40-year arc + 3 exhibition videos (he/en/ru)` | About pages | `src/pages/{he,en,ru}/about.astro` |
+| 5 | `feat(optometry): new Optometry page absorbing multifocal content (he/en/ru)` | Optometry pages | `src/pages/{he,en,ru}/optometry.astro` |
+| 6 | `chore(redirects): 301 old multifocal slug → /optometry (single-hop, per locale)` | vercel.json | `vercel.json` |
 | 7 | `chore(orphans): delete old hero + multifocal page components` | Rule 21 cleanup | deletions only |
 | 8 (optional) | `fix(homepage): post-build / Lighthouse adjustments if score dips below 91` | Safety-net regression | any file |
 
@@ -247,11 +255,45 @@ If either returns unexpected values → STOP, do not proceed, hand SPEC back.
 - Storefront safety-net scripts (`scripts/visual-regression.mjs`, `npm run build`) runnable on the execution machine.
 - 3 exhibition YouTube video IDs (Paris, Milan, Israel) — Daniel to supply in the pre-flight clarification step (§11 Author Question 1). If Daniel hasn't supplied IDs by executor start, the executor uses placeholders and opens FINDING-01 on pre-flight gap.
 
-### Content assets (Daniel supplies at pre-flight)
+### Content assets (resolved with Daniel 2026-04-16)
 
-- 3 exhibition video IDs or YouTube URLs
-- Confirmation of which hero copy variant — A, B, or C — to use (see §11 Author Question 2)
-- 40-year story text — if Daniel wants to review/edit the proposed narrative before the executor commits it, that's Author Question 4
+**Exhibition videos for the "הסיפור שלנו" page (carousel or vertically stacked):**
+- **SILMO Paris:** https://www.youtube.com/shorts/XvfUYI87jso  → ID `XvfUYI87jso`
+- **MIDO Milan:** https://www.youtube.com/shorts/E8xt6Oj-QQw  → ID `E8xt6Oj-QQw`
+- **Israel exhibition:** https://youtube.com/shorts/hOCxDNFEjWA?si=BPiBboXy2u_nC8Ur  → ID `hOCxDNFEjWA`
+
+**Events & Testimonials block videos** (new Homepage section):
+- **Tadmit / launch ambience clip:** https://www.youtube.com/shorts/40f1I0eOR7s  → ID `40f1I0eOR7s`
+- **Testimonials-in-one-clip-plus-tadmit:** https://youtube.com/shorts/-hJjVIK3BZM  → ID `-hJjVIK3BZM`
+
+Executor: embed as YouTube Shorts iframe or `<lite-youtube>` facade (lazy-load
+preferred). Aspect ratio 9:16. Autoplay muted + loop on hover for the ambience
+clip; click-to-play for the testimonial clip.
+
+**Hero copy direction (Q2 resolved):** "Elison-inspired but NOT a copy." The
+executor drafts Hebrew copy that keeps Elison's structural formula (curation
+phrase + optometry-team phrase + service-quality phrase) but uses **Prizma's
+own vocabulary** — specifically: mention "40 שנה", hint at global sourcing
+(Paris / Milan), and avoid verbatim phrases from Elison. Draft candidate the
+executor should start from (subject to Daniel's post-draft review per Q4):
+
+> "אוסף נדיר של מסגרות מעצבים, נבחר ביד בתערוכות פריז ומילאנו, לצד צוות
+> אופטומטריסטים עם 40 שנות ניסיון בהתאמת עדשות ובדיקות ראייה מתקדמות.
+> כל זוג — סיפור. כל ביקור — אישי."
+
+Two CTAs: `גלה את הקולקציה` → `/brands` (locale-aware) and `קבע תור` →
+contact / booking route.
+
+**40-year Story page narrative (Q4 resolved):** executor drafts the narrative
+using the arc *Roots (pure optometry, 40+ years) → Pivot (addition of luxury
+curation) → Global sourcing (3 exhibition videos embedded here) → Philosophy
+(why curation + optometry together matters)*. Daniel reviews AFTER the commit
+lands and iterates via follow-up commits. **No placeholder text** — the
+executor's draft must read as shippable Hebrew prose; en/ru translated at
+parity per Q3.
+
+**Q5 resolved** — `CONTACT_FORM_FIX` is a separate SPEC, to be authored
+immediately after this SPEC closes. Both must land before the DNS switch.
 
 ---
 
@@ -296,26 +338,16 @@ partially delegates to the executor's Step 1 Pre-Flight:
 - **Current header nav item count** — unknown from ERP side. Executor counts in Step 1 and reports before modifying.
 - **Current homepage section count** — unknown from ERP side. Executor inventories in Step 1.
 
-### Author questions for Daniel (pre-execution clarification)
+### Author questions — RESOLVED WITH DANIEL 2026-04-16
 
-These answers must be supplied BEFORE the executor is dispatched. The executor
-should NOT proceed with placeholders for these specific items.
-
-**Q1. Exhibition video IDs** — Daniel: please supply the 3 YouTube URLs or IDs for:
-- Paris exhibition clip
-- Milan exhibition clip
-- Israel exhibition clip
-
-**Q2. Hero copy choice** — pick one of the 3 variants from the 2026-04-16 Foreman chat:
-- A — Glassworks-style ("בפריזמה תגלו משקפיים שלא תמצאו במקום אחר...")
-- B — Tier-1-explicit ("אוסף נדיר של מסגרות מחבר בישראל — John Dalia, Kame Mannen...")
-- C — Elison-style ("קולקציה מובחרת של מסגרות יוקרה ממותגים מובילים, וצוות אופטומטריסטים...")
-
-**Q3. i18n scope** — should English and Russian locales ship with translated copy in this SPEC, or is Hebrew-first + structural-parity stubs acceptable for now?
-
-**Q4. Story narrative review** — does Daniel want to review the 40-year story text before the executor commits it, or approve the narrative arc in §11 and let the executor draft?
-
-**Q5. Contact form** — confirm that the `CONTACT_FORM_FIX` stub is a separate SPEC (not bundled here) and will be authored immediately after this one closes, to ship as a parallel DNS-switch-readiness item.
+| # | Question | Answer |
+|---|----------|--------|
+| Q1 | 3 exhibition video URLs | Supplied — see §10 Content Assets |
+| Q2 | Hero copy direction | Elison-inspired structure, NOT a copy. Executor drafts using Prizma vocabulary. Candidate in §10. |
+| Q3 | i18n scope | **All 3 locales (he, en, ru) ship in this SPEC with translated copy.** No placeholders. Hebrew-first-only allowance REMOVED from §7. |
+| Q4 | Story narrative review flow | Executor drafts → commits → Daniel reviews + follow-up commits. No pre-draft approval gate. |
+| Q5 | Contact form fix | Separate SPEC (`CONTACT_FORM_FIX`), authored after this closes. Both land before DNS switch. |
+| Q6 (added by Daniel) | Events / launches / clearance block | **NEW section added** — `EventsShowcase.astro` with 2 YouTube Shorts embeds (see §8, §9 Commit 1; §10 Content Assets). |
 
 ---
 
@@ -331,6 +363,16 @@ should NOT proceed with placeholders for these specific items.
 
 ---
 
-*End of SPEC. Executor may not proceed until Author Questions §11 Q1–Q5 have
-been answered by Daniel. Dispatch is gated on Q1 (exhibition video IDs) and Q2
-(hero copy variant) at minimum.*
+*End of SPEC. All 6 Author Questions RESOLVED with Daniel on 2026-04-16.
+SPEC is READY FOR EXECUTOR DISPATCH. Execution must happen from Windows
+Claude Code (NOT Cowork) — see §10 Execution Environment (CRITICAL).*
+
+**Homepage section order (final):**
+1. HeroLuxury (video + Elison-inspired-not-copied copy + 2 CTAs)
+2. BrandStrip (catalog brand logos)
+3. Tier1Spotlight (5 brand cards)
+4. StoryTeaser (40-year arc + exhibition teaser)
+5. Tier2Grid (6+ brand logos)
+6. EventsShowcase (launches / clearance / testimonials — ≥2 YouTube Shorts)
+7. OptometryTeaser (trust-builder)
+8. VisitUs (CTA)
