@@ -188,6 +188,85 @@ optional.
 products, brands, or categories would ship to production undetected. This is
 Fragile Area #1 (images view) repeating itself for other views.
 
+### M3-BLOG-05 — 🟢 Four WordPress blog images permanently 404
+
+**Where:** Blog posts migrated from WordPress in SPEC
+`modules/Module 3 - Storefront/docs/specs/BLOG_PRE_MERGE_FIXES/` (commits
+`678a82e`→`3e92f7f`, executed 2026-04-15).
+
+**What happened:** During the blog image migration, 23 unique WordPress image
+URLs were catalogued across 132 posts. 19 were downloaded and re-uploaded to
+Supabase Storage (`media-library/blog/`) with matching `media_library` rows.
+**4 returned HTTP 404** from the legacy WordPress host at migration time and
+could not be recovered. Their `<img>` tags were stripped from post content;
+the posts (he/en/ru variants) now render without those images.
+
+**Lost image filenames:**
+- `Screen-Shot-2022-05-10-at-14.59.22-1024x613.png`
+- `Screen-Shot-2022-05-10-at-15.04.05-300x300.png`
+- `אופטיקה-באשקלון-1024x722.png`
+- `האם-אתם-עיוורי-צבעים-300x212.jpg`
+
+**Why it's debt:** Content completeness — posts referencing these images
+render without the illustrative figure. Not a functional or SEO regression
+(alt text + surrounding content preserved); purely a visual gap.
+
+**Why not fixed now:** The legacy WordPress host no longer has the files. No
+alternate backup has been surfaced.
+
+**Planned fix (if Prizma has originals):**
+1. Daniel locates original copies in Prizma's local WP media backup or
+   original blog-post source drafts.
+2. Upload via Studio → Media → folder "בלוג" (this routes through the
+   canonical `media_library` dedup check and assigns a new
+   `/api/image/media/<tenant>/blog/<sanitized>` URL).
+3. Edit the affected posts via Studio → Blog editor to re-insert the
+   `<img>` tags against the new URLs.
+
+**Effort:** ~30 min per image if originals are available (upload + post
+edit × 4). Zero effort (dismiss) if originals cannot be located.
+
+**Source:** `FINDINGS.md` FINDING-005 in the SPEC folder.
+
+### #8 — 🟢 SPEC templates reference `npm run safety-net` which is not a real script (M3-DEBT-DOC-03)
+
+**Where:** SPEC authoring templates and Rule 30 wording in `CLAUDE.md` §6 both reference a `safety-net` verification step. The storefront `package.json` has `verify`, `verify:staged`, `verify:full` but **no `safety-net` script**. R2 criterion #18 cited `npm run safety-net` and forced the executor to substitute `verify:full` mid-execution.
+
+**Why it's debt:** Every future Module 3 SPEC that uses the default template will hit the same substitution. Wastes ~3 minutes per SPEC and weakens the "literal verify command" discipline that makes criteria reliable.
+
+**Why not fixed now:** Two possible fixes (rename an npm script to `safety-net`, OR update the template to use `verify:full`) are both trivial but belong in the same commit as the opticup-strategic skill pre-flight check (§6 Proposal 2 of `HOMEPAGE_LUXURY_REVISIONS_R2/FOREMAN_REVIEW.md`).
+
+**Planned fix:** Decide (a) or (b) with Daniel at the start of NAV_FIX. Likely (b) because the existing script names are more precise. Update SPEC_TEMPLATE.md + any inherited verify-column language. Also add the author-side pre-flight grep of `package.json` per FOREMAN_REVIEW §6 Proposal 2.
+
+**Effort:** ~15 min doc edit + ~10 min skill-file edit.
+
+**Source:** `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS_R2/FINDINGS.md` finding M3-DOC-DRIFT-02
+
+### #9 — 🟡 HE vs EN/RU homepage structural divergence (M3-DEBT-LOCALE-01)
+
+**Where:** `storefront_pages` rows for `tenant_id='6ad0781b-…'`, `slug='/'`:
+
+| Locale | Block at index 2 | Block at index 4 |
+|--------|------------------|------------------|
+| HE | `exhibitions-home-he` (events_showcase) | `events-showcase-home-he` |
+| EN | `tier1-spotlight-home-en` | `tier2-grid-home-en` |
+| RU | `tier1-spotlight-home-ru` | `tier2-grid-home-ru` |
+
+Block counts match (all 3 = 8), but block TYPES and ORDER diverge. R1 removed tier1_spotlight from HE and added events_showcase; R2 added the new exhibitions block only to HE.
+
+**Why it's debt:** Three locale rows with different homepage information architectures means content governance becomes per-locale. A future translation effort can't simply localize strings — it has to decide *which blocks* exist per locale.
+
+**Why not fixed now:** Daniel's explicit R1 + R2 scope was HE only. EN and RU are not yet in active content iteration. No user is hurt today.
+
+**Planned fix:** During **LANGUAGES_FIX** (next-next gate after NAV_FIX), decide:
+  - (a) Port the exhibitions block to EN + RU (keep HE-led information architecture),
+  - (b) Accept HE-only by design (HE is the primary market; EN + RU are secondary),
+  - (c) Parity both ways — give HE back a tier1_spotlight slot.
+
+**Effort:** ~30 min DB work + copy writing, once the strategic decision is made. Strategic decision: ~10 min with Daniel.
+
+**Source:** `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS_R2/FOREMAN_REVIEW.md` finding M3-LOCALE-PARITY-01 (Foreman-added during 2026-04-16 review)
+
 ---
 
 ## Resolved Debt
