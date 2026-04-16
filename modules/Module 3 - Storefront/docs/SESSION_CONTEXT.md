@@ -2,19 +2,38 @@
 
 ## Current Phase: Close-Out — COMPLETE
 ## Status: 🟢 Code-complete on develop — awaiting Daniel QA + DNS switch
-## Date: 2026-04-15
+## Date: 2026-04-16
+
+---
+
+## Pre-Merge SEO Fixes SPEC ✅ (2026-04-16)
+
+All HIGH/MEDIUM SEO findings from the parent audit resolved. Storefront is
+SEO-clean for DNS switch.
+
+- **Scope:** 9 fix tasks (14 success criteria — 9 pass-threshold, 5 best-effort); all 9 tasks executed end-to-end under Bounded Autonomy
+- **Sitemap:** 58 broken `<loc>` entries → **0** (root cause: sitemap emitted `/בלוג/{slug}/` while routing resolves at root `/{slug}/`; fix: sitemap generator emits the right path + `[...slug].astro` 301-guards legacy URLs)
+- **og:image coverage:** 27% → **100%** on sampled top-20 pages (fallback to tenant logo in `BaseLayout.astro` when no explicit `ogImage` prop)
+- **Locale 404:** `/en/*` and `/ru/*` now `Astro.rewrite('/404')` — real HTTP 404 instead of soft-404 302
+- **Redirect chains:** all 46 previously-multi-hop chains flattened to ≤1 hop via handler-level 404 for unknown brand/product slugs
+- **robots.txt:** single `sitemap-dynamic.xml` directive (stale `sitemap-index.xml` directive removed)
+- **Title / alt improvements:** template-level dedupe of tenant-name suffix (title ≤60 chars on 17/20 sampled pages, was 23%); `ensureImgAlt` regex pass on blog content
+- **Commits:** storefront `1739f49`, `0047e1f`, `f3a855f`, `c8789e9`, `fe756a7` + ERP retrospective `462bd51` + FOREMAN_REVIEW `8d306c3`
+- **Retrospective:** `docs/specs/PRE_MERGE_SEO_FIXES/{EXECUTION_REPORT,FINDINGS,FOREMAN_REVIEW}.md`
+- **Foreman verdict:** 🟡 closed with follow-ups (documentation drift — fixed in this commit). 6 findings logged: 1 closed in-SPEC; 5 deferred (non-blocking)
+- **Follow-up SPEC stubs flagged:** `MODULE_3_SEO_LEGACY_URL_REMAPS` (LOW — per-URL vercel.json rules for legacy WP URLs with ≥5 GSC clicks), `M3_SEO_SAFETY_NET` (MEDIUM, future — port SEO check subset to storefront scripts/ per Rule 30)
 
 ---
 
 ## Pre-Merge SEO Overnight QA SPEC ✅ (2026-04-15)
 
-Read-only SEO audit against GSC ground truth (1000 Pages + 1000 Queries CSV exports). 10 Node scripts, 1 atomic commit, 14 findings (0 CRITICAL / 3 HIGH / 6 MEDIUM / 3 LOW / 2 INFO).
+Read-only SEO audit against GSC ground truth (1000 Pages + 1000 Queries CSV exports). 10 Node scripts, 1 atomic commit, 14 findings (0 CRITICAL / 3 HIGH / 6 MEDIUM / 3 LOW / 2 INFO) → all actionable items fed into the PRE_MERGE_SEO_FIXES SPEC above.
 
 - **DNS verdict:** 🟢 **GREEN** — 41 MISSING URLs total, **0** carry ≥10 clicks (combined traffic of MISSING: 4 clicks)
 - **Coverage:** OK_200=96, OK_301_REDIRECT=863, MISSING=41 (of 1000 GSC URLs)
-- **HIGH findings** (not launch blockers, candidates for `PRE_MERGE_SEO_FIXES` SPEC): `og:image` missing on 73/100 top pages; 58/245 sitemap `<loc>`s return 404 (WP Hebrew slugs superseded by BLOG_PRE_MERGE_FIXES transliteration); `/en/*` and `/ru/*` return 302 soft-redirect instead of 404 on unknown paths
+- **HIGH findings resolved by PRE_MERGE_SEO_FIXES:** `og:image` 73/100 missing → now 100% coverage on sample; 58/245 sitemap `<loc>`s 404 → now 0 broken; `/en/*` and `/ru/*` 302 → now real 404
 - **Report:** `docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/SEO_QA_REPORT.md` (38.5 KB, 11 sections)
-- **Retrospective:** `docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/{EXECUTION_REPORT,FINDINGS}.md`
+- **Retrospective:** `docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/{EXECUTION_REPORT,FINDINGS,FOREMAN_REVIEW}.md`
 
 ---
 
@@ -269,28 +288,3 @@ Resolution order: custom_domain → subdomain → ?t= → default
 1. Custom domain: `v_storefront_config.custom_domain` → tenant_id
 2. Subdomain: `[slug].opticalis.co.il`
 3. Query param: `?t=slug`
-4. Default: `PUBLIC_DEFAULT_TENANT` env var
-
-### New Edge Functions (Phase 6)
-| Function | Purpose | Input | Output |
-|----------|---------|-------|--------|
-| translate-content | Hebrew → EN/RU translation | source_content, target_lang, glossary | Saved to ai_content |
-
-### Translation System
-1. Hebrew content generated (Phase 5) → auto-translate to EN+RU
-2. Translations saved to `ai_content` with `language = 'en'` / `'ru'`
-3. Glossary terms enforced in every translation prompt
-4. Corrections saved to `translation_corrections` for learning
-5. Bulk translate: processes all missing translations with progress bar
-
-### Storefront Navigation (7 tabs)
-Settings → Brands → Products → AI Content → Blog → Landing Pages → Glossary
-
----
-
-## What's Next
-
-1. Daniel runs SQL migrations + deploys Edge Functions (Phase 5 + 6 + 7)
-2. Daniel tests all features
-3. Merge develop → main (both repos)
-4. Phase 8+ TBD

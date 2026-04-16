@@ -68,10 +68,21 @@ After QA passes, Daniel merges `develop → main` in both repos, then switches
 DNS for `www.prizma-optic.co.il`.
 
 Overnight SEO audit complete (SPEC `PRE_MERGE_SEO_OVERNIGHT_QA`) —
-**verdict: GREEN**, 41 MISSING URLs (0 high-traffic, ≥10 clicks) queued for a
-follow-up FIXES SPEC. 14 findings total (0 CRITICAL / 3 HIGH / 6 MEDIUM /
-3 LOW / 2 INFO); HIGH items are `og:image` coverage, broken sitemap `<loc>`s,
-and locale-fallback 302s — quality debt, **not** DNS-switch blockers.
+**verdict: GREEN**, 41 MISSING URLs (0 high-traffic, ≥10 clicks). 14 findings
+total (0 CRITICAL / 3 HIGH / 6 MEDIUM / 3 LOW / 2 INFO) fed into a follow-up
+fixes SPEC.
+
+**SEO pre-merge fixes complete** (SPEC `PRE_MERGE_SEO_FIXES`, closed
+2026-04-16): all 9 fix tasks landed in 5 storefront commits
+(`1739f49`→`fe756a7`) plus ERP retrospective `462bd51` + FOREMAN_REVIEW
+`8d306c3`. Sitemap broken entries 58→0, og:image coverage on sampled top-20
+pages 27%→100%, all 46 multi-hop redirect chains flattened to ≤1 hop,
+`robots.txt` reduced to a single `sitemap-dynamic.xml` directive, `/en/*` and
+`/ru/*` catch-alls now return real HTTP 404, `npm run build` green. 6
+findings logged in the SPEC's retrospective — 1 closed in-SPEC, 5 deferred
+(non-blocking: legacy-URL UX remaps, sitemap plugin cleanup, title/alt
+Studio work, SEO safety-net scripts port). FOREMAN verdict 🟡 closed with
+follow-ups.
 
 Module 3.1 (Project Reconstruction) is **complete** — all phases 3A/3B/3C/3D
 done. Foundation docs are accurate and current.
@@ -267,10 +278,4 @@ is real and must be fixed before either module starts writing.
 | Original 28-module project vision (historical) | `opticup/docs/PROJECT_VISION.md` |
 | Module Strategic Chat opening prompt | `opticup/UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md` |
 | Secondary Chat operating instructions | `opticup/UNIVERSAL_SECONDARY_CHAT_PROMPT.md` |
-| Documentation ownership schema (6 rules, dual-repo) | `opticup/MODULE_DOCUMENTATION_SCHEMA.md` |
-| Daniel's quick reference (4-layer cheat sheet) | `opticup/DANIEL_QUICK_REFERENCE.md` |
-
----
-
-*End of MASTER_ROADMAP.md. Prior version (March 2026, Hebrew, 382 lines) backed up
-under `modules/Module 3.1 - Project Reconstruction/backups/M3.1-3A_2026-04-11/MASTER_ROADMAP.md`.*
+| 

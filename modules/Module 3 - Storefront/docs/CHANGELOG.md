@@ -2,6 +2,60 @@
 
 ---
 
+## Pre-Merge SEO Fixes SPEC
+**Status:** ✅ All 9 fix tasks on develop (both repos)
+**Date:** 2026-04-16
+**Foreman verdict:** 🟡 closed with follow-ups (documentation drift fixed in close-out sync commit)
+
+### Commits
+
+**Storefront (`opticup-storefront/develop`, 5 commits):**
+
+| Commit | Scope |
+|--------|-------|
+| `1739f49` | fix(seo): fix blog sitemap broken entries + locale 404 handling (Tasks 1, 3, 6) |
+| `0047e1f` | fix(seo): add og:image fallback to tenant logo in BaseLayout (Task 2) |
+| `f3a855f` | fix(seo): flatten redirect chains via handler-level 404 for unknown slugs (Tasks 4, 5) |
+| `c8789e9` | chore(seo): dedupe title suffix + guarantee img alt on blog content (Tasks 7, 8, 9) |
+| `fe756a7` | fix(seo): collapse double-hyphens in sitemap brand slug generation (verification follow-up) |
+
+**ERP (`opticup/develop`, 2 commits):**
+
+| Commit | Scope |
+|--------|-------|
+| `462bd51` | docs(m3-seo): close PRE_MERGE_SEO_FIXES with retrospective (EXECUTION_REPORT + FINDINGS) |
+| `8d306c3` | docs(m3-seo): FOREMAN_REVIEW for PRE_MERGE_SEO_FIXES |
+
+### Key Metrics (before → after)
+
+- Sitemap broken `<loc>` entries: **58 → 0** (100% fixed)
+- og:image coverage on sampled top-20 pages: **27% → 100%**
+- Multi-hop redirect chains (from 1000 GSC URLs): **46 → 0** (all flattened to ≤1 hop)
+- robots.txt Sitemap directives: **2 → 1** (stale `sitemap-index.xml` removed)
+- `/en/*` and `/ru/*` unknown-path handling: **302 soft-redirect → real HTTP 404**
+- Title ≤60 chars on sampled pages: **23% → 85%**
+- `npm run build`: passes, zero errors
+- **Zero Iron Rule violations.** Largest touched file: `[...slug].astro` at 107 lines (well under the 300 target)
+
+### Findings (6 total, from FINDINGS.md)
+
+- 1 closed in-SPEC (sitemap brand slug double-hyphen — fixed in `fe756a7`)
+- 5 deferred (non-blocking):
+  - FINDING-01 MEDIUM: legacy WP URLs with GSC clicks now 404 — queue `MODULE_3_SEO_LEGACY_URL_REMAPS`
+  - FINDING-03 LOW: `@astrojs/sitemap` plugin still generates unused `sitemap-0.xml` / `sitemap-index.xml` at build — tech-debt
+  - FINDING-04 LOW: 3/20 pages have base title >60 chars — Studio backlog (`meta_title` override field)
+  - FINDING-05 INFO: programmatic `alt=""` passes metric but masks accessibility quality — Studio backlog
+  - FINDING-06 INFO: SEO verification scripts live in ERP repo, not storefront repo — queue `M3_SEO_SAFETY_NET`
+
+### Retrospective Paths
+
+- SPEC: `modules/Module 3 - Storefront/docs/specs/PRE_MERGE_SEO_FIXES/SPEC.md`
+- Executor report: `.../PRE_MERGE_SEO_FIXES/EXECUTION_REPORT.md`
+- Findings: `.../PRE_MERGE_SEO_FIXES/FINDINGS.md`
+- Foreman review: `.../PRE_MERGE_SEO_FIXES/FOREMAN_REVIEW.md`
+
+---
+
 ## Pre-Merge SEO Overnight QA SPEC
 **Status:** ✅ Audit-only; no code changes
 **Date:** 2026-04-15
@@ -191,25 +245,4 @@ Scanned all 3 WordPress domains (HE/EN/RU) via WP REST API + WooCommerce REST AP
 
 ### Output Files
 - `seo-audit/url-inventory.json` — structured inventory (1024 URLs)
-- `seo-audit/url-inventory.md` — human-readable report (316 lines)
-- `seo-audit/url-mapping-template.csv` — mapping template for migration (1024 rows, UTF-8 BOM)
-
-### Commits
-- `70c73f2` — Step 1: Setup folders, .gitignore, dependencies, SESSION_CONTEXT
-- `4a2a0bc` — Steps 2-3: helpers.mjs + crawl-wp-api.mjs
-- `fb6ad27` — Steps 7+9: generate-report.mjs + MODULE_MAP + CHANGELOG
-- `a3b2b08` — Steps 4-6: API connectivity verified + full crawl HE/EN/RU
-
-### Technical Notes
-- WP Basic Auth returns 401 on Hebrew site — public endpoint fallback works fine
-- WC API uses query-string auth (consumer_key/secret) — works correctly
-- Rate limiting: 500ms between requests
-- All API calls are GET only (read-only audit)
-
-### Files Created
-| File | Lines | Description |
-|------|-------|-------------|
-| `seo-audit/scripts/helpers.mjs` | 213 | Config, HTTP helpers, pagination, SEO extraction |
-| `seo-audit/scripts/crawl-wp-api.mjs` | 233 | CLI crawler for WP + WC REST APIs |
-| `seo-audit/scripts/generate-report.mjs` | 230 | Report generator (JSON, MD, CSV) |
-| `seo-audit/scripts/package.json` | 16 | Node.js project (dotenv, node-fetch) |
+- `seo-audit/url-inventory.md` — human-readable r
