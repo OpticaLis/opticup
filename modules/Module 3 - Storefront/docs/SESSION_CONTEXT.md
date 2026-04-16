@@ -1,8 +1,8 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Phase D Content Iteration — HOMEPAGE_LUXURY_REVISIONS executed end-to-end; awaiting Foreman review + Vercel-Preview visual QA
-## Status: 🟢 Revisions SPEC EXECUTED on develop (5 commits across both repos); EXECUTION_REPORT + FINDINGS landed; awaiting FOREMAN_REVIEW
-## Date: 2026-04-16 (same session — SPEC dispatched, executed, retrospective written)
+## Current Phase: Phase D Content Iteration — HOMEPAGE_LUXURY_REVISIONS 🟢 CLOSED (FOREMAN_REVIEW signed); Vercel-Preview visual QA deferred to Daniel
+## Status: 🟢 Revisions SPEC CLOSED — all 42 criteria independently verified, 1 finding DISMISSED (false positive), 1 finding → NEW_SPEC queued; 4 self-improvement proposals (2 author + 2 executor) to land before next dispatch
+## Date: 2026-04-16 (same session — SPEC dispatched, executed, retrospective written, Foreman review signed)
 
 ---
 
@@ -26,16 +26,24 @@
 - DB post-migration: HE block_count=7, EN/RU block_count=8, EN/RU `updated_at` unchanged from baseline
 - **Vercel Preview criteria deferred** (§3.F: hero video render, BrandStrip rotation visual, Tier2Grid carousel visual, Lighthouse ≥85) — Daniel's post-commit visual review
 
-**Retrospective artifacts:**
+**Retrospective artifacts (lifecycle complete):**
 - `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS/EXECUTION_REPORT.md` (10 sections, executor self-score 9.5/10)
-- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS/FINDINGS.md` (2 findings: M3-EXEC-DEBT-01 missing reference file LOW, M3-REPO-DRIFT-01 untracked SPEC artifacts LOW; 1 historical observation on continued Rule 12 debt M3-R12-STUDIO-01)
-- `FOREMAN_REVIEW.md` — pending Cowork Foreman authoring
+- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS/FINDINGS.md` (2 findings: M3-EXEC-DEBT-01 LOW, M3-REPO-DRIFT-01 LOW)
+- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS/FOREMAN_REVIEW.md` — 🟢 CLOSED (Cowork Foreman session `relaxed-dreamy-gates`, 2026-04-16)
 
-**Executor proposals to opticup-executor skill (2):**
-- E-prop-1: Pre-flight reference-file existence check in SKILL.md First Action — log a finding when SPEC names a missing `references/{file}.md`
-- E-prop-2: Migration folder convention auto-detect in SKILL.md Step 1.5 DB Pre-Flight — `ls $REPO/sql && ls $REPO/supabase/migrations` before writing migration files
+**Foreman disposition of findings:**
+- M3-EXEC-DEBT-01 (missing `STOREFRONT_CMS_ARCHITECTURE.md`) → **DISMISSED as FALSE POSITIVE**. File exists at exact path SPEC §11 referenced (committed in `9df084e`); executor checked Windows plugin-install path instead of repo path. Lesson captured as executor-skill Proposal E1.
+- M3-REPO-DRIFT-01 (5 untracked SPEC artifacts in ERP) → **ACCEPTED — NEW_SPEC `M3_SPEC_FOLDER_SWEEP` scheduled** (≤30 min, run before NAV_FIX).
 
-**Next gate:** Foreman writes `FOREMAN_REVIEW.md` for this SPEC. Then queue moves to `NAV_FIX` (broken `/about/` and `/optometry/` transitions from header).
+**4 self-improvement proposals to land before next SPEC dispatch:**
+- Author A1: Migration-path pre-flight check (detect `sql/` vs `supabase/migrations/` before prescribing §8 path)
+- Author A2: Skill-reference path disambiguator (`.claude/skills/` references are always repo paths, not plugin-install paths)
+- Executor E1: Repo-vs-plugin path resolution rule (use `git show HEAD:<path>` or `$(git rev-parse --show-toplevel)/<path>`, never `%USERPROFILE%\.claude\...`)
+- Executor E2: Migration folder auto-detect pre-migration-file creation (promote executor's own Proposal 2 verbatim)
+
+**Execution quality score (Foreman-adjusted):** **9.6/10** (executor self-score 9.5 was honest; 0.1 over-deduction on "docs currency" for a file that actually existed).
+
+**Next gate:** Commit this FOREMAN_REVIEW + SESSION_CONTEXT update to `develop`. Then 4 proposals apply to skills. Then dispatch `NAV_FIX` SPEC (Daniel's priority #2 — broken `/about/` and `/optometry/` transitions from header).
 
 ---
 
@@ -293,89 +301,4 @@ custom HTML blocks, popup lead forms, campaign templates.
 
 | Step | Status | Description | Commit (ERP) | Commit (Storefront) |
 |------|--------|-------------|--------------|---------------------|
-| Build 1 | ✅ | Custom block type #19 (HTML+CSS) | — | `11f905f` |
-| Build 2 | ✅ | Studio schema, code editor, AI custom mode | `97fe894` | — |
-| Build 3 | ✅ | CTA popup lead form | `97fe894` | `11f905f` |
-| Build 4 | ✅ | Custom block SQL templates | — | `11f905f` |
-| Fix 1 | ✅ | Gold color (amber → #D4A853) across 12 files | — | `4ef4f6a` |
-| Fix 2 | ✅ | Image gallery scrollbar-hide CSS | — | `4ef4f6a` |
-| Fix 3 | ✅ | Studio page list layout CSS | `9f7a815` | — |
-| Fix 4 | ✅ | Templates UI (block list instead of JSON) | `9f7a815` | — |
-| Fix 5 | ✅ | Blog link (storefront-blog.html) | `9f7a815` | — |
-| Fix 6 | ✅ | Place ID save (upsert) | `9f7a815` | — |
-| Fix 7 | ✅ | Delete block already fixed (9dfd9fa) | — | — |
-| Fix 8 | ✅ | Preview URL (localhost detection) | `9f7a815` | — |
-| Fix 9-10 | ✅ | Spacing + meta tags verified OK | — | — |
-| QA | ✅ | Full QA: build, 19 blocks, routes, meta, SuperSale test | — | — |
-
-### Action Required
-- Run SQL: `sql/036-custom-block-templates.sql`
-- Deploy: `supabase functions deploy cms-ai-edit --no-verify-jwt`
-- See full QA report: `modules/Module 3 - Storefront/docs/CMS-QA-REPORT.md`
-
----
-
-## CMS-5 — AI Prompt Editing ✅
-
-| Step | Status | Description | Commit (ERP) |
-|------|--------|-------------|--------------|
-| 1 | ✅ | Edge Function: supabase/functions/cms-ai-edit/index.ts | `e731da4` |
-| 2 | ✅ | Deploy instructions saved | `e731da4` |
-| 3 | ✅ | studio-ai-prompt.js — API calls, prompt bar, history, permission gating | `e731da4` |
-| 4 | ✅ | storefront-studio.html — AI prompt bar + diff modal added | `e731da4` |
-| 5 | ✅ | css/studio.css — AI prompt + diff styles | `e731da4` |
-| 5b | ✅ | studio-ai-diff.js — diff view split for file size compliance | `e731da4` |
-| 6 | ✅ | Permission gating (built into handleAiPrompt) | `e731da4` |
-| 7 | ⬜ | Integration testing — requires Edge Function deploy | — |
-| 8 | ✅ | Documentation (CLAUDE.md, MODULE_MAP, SESSION_CONTEXT) | final commit |
-
-### Action Required
-- Daniel must deploy Edge Function: see `modules/Module 3 - Storefront/docs/deploy-cms-ai-edit.md`
-- Daniel must set `ANTHROPIC_API_KEY` as Supabase secret (if not already set)
-
-### What's Next
-- CMS-6: QA + design polish
-
----
-
-## CMS-2 — Studio Block Editor ✅
-
-| Step | Status | Description | Commit (ERP) |
-|------|--------|-------------|--------------|
-| 1 | ✅ | studio-block-schemas.js — 14 block schemas + settings | `a2208b1` |
-| 2 | ✅ | studio-form-renderer.js — generic form builder | `a2208b1` |
-| 3 | ✅ | studio-pages.js — page list + CRUD | `a2208b1` |
-| 4 | ✅ | studio-editor.js — block editor, reorder, save, rollback | `fe6f3b4` |
-| 5 | ✅ | storefront-studio.html — Studio page | `fe6f3b4` |
-| 6 | ✅ | css/studio.css — editor styles | `fe6f3b4` |
-| 7 | ✅ | Navigation link added to all storefront pages | final commit |
-| 9 | ✅ | Documentation updated (CLAUDE.md + SESSION_CONTEXT.md) | final commit |
-
----
-
-## Previous Phase: Phase 7 — White-Label + Analytics + Theme
-## Previous Status: ✅ Complete (code done, pending SQL 018 deploy)
-## Previous Date: 2026-03-30
-
----
-
-## Phase 7 — White-Label + Analytics + Theme ✅
-
-| Step | Status | Description | Commit (ERP) |
-|------|--------|-------------|--------------|
-| 0 | ✅ | Backup | — |
-| 1-4 | ✅ | SQL 018, Partytown, analytics scripts, event tracking | `cbba53b` (storefront) |
-| 5-6 | ✅ | Multi-domain tenant resolution, per-tenant homepage/favicon/OG | `e3a653d` (storefront) |
-| 7 | ✅ | ERP analytics JSONB + branding settings UI | `5df7f7d` |
-| 8 | ✅ | Documentation | `c05ce7c` (storefront) |
-
----
-
-## Phase 6 — i18n AI Translation ✅
-
-| Step | Status | Description | Commit (ERP) |
-|------|--------|-------------|--------------|
-| 0 | ✅ | Backup | — |
-| 1-2 | ✅ | SQL 016-017: glossary + corrections tables, seed data | `a57d8af` (storefront) |
-| 3 | ✅ | Edge Function: translate-content | `a596c04` |
-| 4 | ✅ | Auto-translate in generate-ai-content 
+| Build 1 | ✅ | Custom bloc
