@@ -1,16 +1,27 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
 ## Current Phase: Luxury-Positioning Redesign (pre-DNS-switch content layer)
-## Status: 🟡 SPEC authored + dispatched — executor work pending (Windows Claude Code)
-## Date: 2026-04-16
+## Status: 🟡 SPEC authored + re-scoped to CMS-native (Option D) — executor in flight (Windows Claude Code)
+## Date: 2026-04-16 (re-scope applied 2026-04-16 after executor Step 1 inventory)
 
 ---
 
-## Homepage / Header / Story / Optometry Redesign — SPEC authored 2026-04-16
+## Homepage / Header / Story / Optometry Redesign — SPEC authored + re-scoped 2026-04-16
 
 **SPEC:** `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_HEADER_LUXURY_REDESIGN/SPEC.md`
-**Status:** ✅ Authored, all 6 Author Questions resolved with Daniel, READY FOR DISPATCH
+**Status:** ✅ Authored + re-scoped to **CMS-native block architecture (Option D)** after executor's Step 1 inventory fired Stop-on-Deviation trigger §5 bullet 1. Daniel approved Option D on 2026-04-16. All 6 pre-flight Author Questions still resolved; plus §13 Re-scope section added directing executor to block-renderer implementation.
 **Execution repo:** `opticup-storefront` (NOT this repo — Windows Claude Code only; Cowork cannot run `npm run build` + `localhost:4321`)
+
+**Architectural discovery (2026-04-16):** Prizma Homepage, About, and Multifocal-Guide are **CMS records in `storefront_pages`**, not Astro source files. 9 rows total (3 locales × 3 page types). `src/pages/index.astro:31-41` contains a `getPageBySlug` branch that short-circuits the Astro composition and renders via `<PageRenderer blocks={cmsPage.blocks} />`. Any edit to `.astro` files alone would be invisible in production. Lesson persisted as: (a) §13 Re-scope in this SPEC, (b) new reference `.claude/skills/opticup-executor/references/STOREFRONT_CMS_ARCHITECTURE.md`, (c) new "Storefront CMS Architecture — Mandatory Pre-Flight" section in `.claude/skills/opticup-executor/SKILL.md`.
+
+**Option D implementation path:**
+- Build 8 block renderers under `opticup-storefront/src/components/blocks/` (NOT `src/components/homepage/`)
+- Register 8 block types in Studio block registry + `PageRenderer` dispatch
+- Author content via SQL UPDATE to `storefront_pages.blocks` JSONB (Level 2 SQL autonomy, Prizma-scoped)
+- Header stays hand-coded Astro (no CMS) — 6-item restructure unchanged
+- `/optometry` created as CMS page (INSERT 3 rows), not a new `.astro` file
+- `/about/` updated via UPDATE of existing CMS rows (3 locales)
+- Old `/multifocal-guide/` 301s to `/optometry` via `vercel.json`
 
 **Scope:**
 - Positioning shift: "lab / Rx / multifocal" → "luxury-boutique curator of 5 Tier-1 brands (John Dalia, Cazal, Kame Mannen, Henry Jullien, Matsuda) + 6+ Tier-2 (Prada, Miu Miu, Moscot, Montblanc, Gast, Serengeti)"

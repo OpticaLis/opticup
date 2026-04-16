@@ -324,6 +324,36 @@ speaks to Daniel in strategic terms.
 
 ---
 
+## Storefront CMS Architecture — Mandatory Pre-Flight
+
+**If your SPEC touches any page under `opticup-storefront/src/pages/`, read
+[`references/STOREFRONT_CMS_ARCHITECTURE.md`](references/STOREFRONT_CMS_ARCHITECTURE.md)
+BEFORE editing any `.astro` file.**
+
+Short version — the trap:
+
+> Storefront routes can render via TWO paths. If a `storefront_pages` row
+> exists for `(tenant_id, slug, locale)`, the CMS branch wins and the Astro
+> source is ignored in production. Editing `.astro` will be invisible in
+> production for those routes.
+
+Required Pre-Flight for any storefront-content SPEC (full detail in the
+reference):
+
+1. Run `SELECT slug, locale, page_type FROM storefront_pages WHERE tenant_id = '<target>'`.
+2. Grep for the renderer fork: `grep -rn "getPageBySlug\|PageRenderer" src/pages/ src/components/`.
+3. Decide per-route: CMS path (UPDATE `blocks` JSONB) vs Astro path (edit `.astro`).
+4. Log the table in `EXECUTION_REPORT.md §Pre-Flight`.
+
+If the SPEC assumes Astro-only and Step 1 returns rows for any in-scope
+route → **STOP, report to Foreman** (this is a SPEC-authoring gap, not an
+executor decision).
+
+Applies to SPECs on: homepage, about, guides, landing pages, brand pages if
+CMS-backed, any route whose `pages/*.astro` contains a `getPageBySlug` call.
+
+---
+
 ## Self-Improvement Mandate
 
 Every EXECUTION_REPORT.md must carry 2 concrete proposals to improve this
@@ -355,4 +385,5 @@ session applies accepted proposals to the skill files as real edits.
 | `shared/js/modal-builder.js` | Modal.* system |
 | `shared/js/toast.js` | Toast.* notifications |
 | `shared/js/table-builder.js` | TableBuilder.create() |
+| `references/STOREFRONT_CMS_ARCHITECTURE.md` | Mandatory pre-flight for any storefront-content SPEC (CMS vs Astro rendering fork) |
 | `scripts/verify.mjs` | Pre-commit rule verification |

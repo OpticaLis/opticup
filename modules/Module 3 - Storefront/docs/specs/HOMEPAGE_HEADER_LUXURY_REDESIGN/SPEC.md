@@ -363,11 +363,9 @@ partially delegates to the executor's Step 1 Pre-Flight:
 
 ---
 
-*End of SPEC. All 6 Author Questions RESOLVED with Daniel on 2026-04-16.
-SPEC is READY FOR EXECUTOR DISPATCH. Execution must happen from Windows
-Claude Code (NOT Cowork) — see §10 Execution Environment (CRITICAL).*
+*End of original SPEC body. See §13 below for the 2026-04-16 re-scope.*
 
-**Homepage section order (final):**
+**Homepage section order (final — unchanged by re-scope, only rendering location changes):**
 1. HeroLuxury (video + Elison-inspired-not-copied copy + 2 CTAs)
 2. BrandStrip (catalog brand logos)
 3. Tier1Spotlight (5 brand cards)
@@ -376,3 +374,155 @@ Claude Code (NOT Cowork) — see §10 Execution Environment (CRITICAL).*
 6. EventsShowcase (launches / clearance / testimonials — ≥2 YouTube Shorts)
 7. OptometryTeaser (trust-builder)
 8. VisitUs (CTA)
+
+---
+
+## 13. Re-scope 2026-04-16 — Option D Approved (CMS-Native Block Architecture)
+
+**Trigger:** The executor's Step 1 inventory on 2026-04-16 fired Stop-on-Deviation
+Trigger §5 bullet 1 ("current Homepage uses a layout/content system"). Live-DB
+inspection of the Prizma tenant (`tenant_id = 6ad0781b-...`) revealed that
+Homepage, About, and Multifocal-guide are **CMS records in the database**, not
+Astro source files:
+
+| Slug | Locales | page_type | Status |
+|------|---------|-----------|--------|
+| `/` | he, en, ru | homepage | published |
+| `/about/` | he, en, ru | custom | published |
+| `/multifocal-guide/` | he, en, ru | guide | published |
+
+**Total: 9 `storefront_pages` rows** overriding any Astro-file changes. Code
+evidence: `src/pages/index.astro:31–41` contains a `getPageBySlug(tenant.id,
+'/', 'he')` branch that, when it resolves, renders `<PageRenderer blocks={cmsPage.blocks} />`
+and **skips any hard-coded Astro composition**. Editing `.astro` files alone
+would be invisible in production.
+
+**Executor's options surfaced (summary):**
+- A — proceed anyway, edit Astro files (BROKEN: CMS branch wins, changes invisible).
+- B — take the "Astro-first, CMS-off" shortcut by clearing the `blocks` arrays (BREAKS Rule 20 SaaS litmus — next tenant inherits empty CMS records).
+- C — half-measure hybrid (BREAKS Rule 21 — code and CMS duplicate each other).
+- **D — CMS-native: build new block renderers in `src/components/blocks/`, register block types in Studio, author content via `storefront_pages.blocks` JSONB. Preserves multi-tenancy and avoids duplication.** ✅ APPROVED BY DANIEL 2026-04-16.
+
+### 13.1 What changes from the original SPEC
+
+**Component location:** `src/components/homepage/*.astro` → `src/components/blocks/*.astro`.
+Each of the 8 homepage sections becomes a **block renderer** reachable by
+`<PageRenderer>` via its block `type` discriminator. Block slug convention
+(Studio-facing): `hero_luxury`, `brand_strip`, `tier1_spotlight`, `story_teaser`,
+`tier2_grid`, `events_showcase`, `optometry_teaser`, `visit_us`.
+
+**Header stays hand-coded Astro.** `src/components/Header.astro` is NOT a CMS
+record — the 6-item nav restructure proceeds as originally planned (Commit 3 in
+§9). Header work is unaffected by this re-scope.
+
+**New page `/optometry` (3 locales):** must be created as a **CMS page** via
+Studio (`INSERT` into `storefront_pages` with `tenant_id`, `slug`, `locale`,
+`page_type`, `blocks`), NOT as `src/pages/{he,en,ru}/optometry.astro`. The
+Astro router resolves `/optometry` → catch-all handler → `PageRenderer`. If a
+`storefront_pages` row exists for that `(tenant_id, slug, locale)` it renders;
+otherwise a 404 is correct. Executor MUST verify the catch-all route exists
+before seeding DB rows.
+
+**Existing `/about` page:** already exists as a CMS `custom` page per §13 table.
+The executor's task becomes **replacing the `blocks` array** with the new 40-year
+narrative + 3 exhibition-video blocks, not creating a new Astro file. Old
+blocks are deleted in the same UPDATE — Rule 21 No Orphans.
+
+**Existing `/multifocal-guide/` page:** already a CMS `guide` page per §13
+table. The redirect plan in original §8 (`vercel.json` 301) remains correct —
+once `/optometry` is populated, `/multifocal-guide/` 301s to it platform-side.
+Optional cleanup: set the old page's `is_published = false` AFTER the 301 is
+verified in production. Daniel decides in close-out.
+
+**Homepage `/` composition:** replace the `blocks` JSONB array on the 3
+Homepage rows (he/en/ru) with the new 8-block sequence. Each locale gets its
+own `UPDATE storefront_pages SET blocks = $1 WHERE tenant_id = $2 AND slug = '/' AND locale = $3`.
+
+### 13.2 New success criteria (addition to §3; originals still apply where meaningful)
+
+| # | Criterion | Expected value | Verify command |
+|---|-----------|---------------|----------------|
+| 21 | 8 new block renderers exist in `src/components/blocks/` | 8 files | `ls src/components/blocks/*.astro \| wc -l` → 8 |
+| 22 | `PageRenderer` dispatches all 8 new block types | 8 case branches | Executor greps `PageRenderer.astro` (or `.tsx`) for the 8 block-type strings |
+| 23 | Studio block registry contains 8 new block type definitions | 8 registrations | Executor reports the Studio file path + diff; criterion closes on visual confirmation in Studio UI |
+| 24 | Prizma `storefront_pages` Homepage rows (he/en/ru) use new blocks | 3 rows, each with ≥8 blocks matching new types | SQL: `SELECT locale, jsonb_array_length(blocks), (SELECT array_agg(b->>'type') FROM jsonb_array_elements(blocks) b) FROM storefront_pages WHERE tenant_id = '6ad0781b-...' AND slug = '/'` |
+| 25 | Prizma `/about/` rows (he/en/ru) updated with 40-year narrative blocks | 3 rows, updated_at within the SPEC window | Same SQL pattern |
+| 26 | Prizma `/optometry` rows (he/en/ru) created as CMS pages | 3 new rows | SQL: `SELECT count(*) FROM storefront_pages WHERE tenant_id = '6ad0781b-...' AND slug = '/optometry' AND is_published = true` → 3 |
+| 27 | `localhost:4321/` renders the 8 new blocks via CMS path | visible blocks in DOM | `curl -s localhost:4321/ \| grep -c 'data-block-type'` → ≥8 (or executor-chosen block-identifier attribute) |
+| 28 | No NEW Astro page files created for `/optometry` or `/about` | 0 new `.astro` under `src/pages/*/optometry.astro` or `src/pages/*/about.astro` | `git diff --stat origin/develop..HEAD -- 'src/pages/**/optometry.astro' 'src/pages/**/about.astro'` → 0 added files |
+| 29 | Rule 21 — old `homepage/*.astro` scaffolds not committed | 0 files under `src/components/homepage/` | `ls src/components/homepage/ 2>/dev/null \| wc -l` → 0 |
+| 30 | Rule 20 — the new block types are tenant-agnostic (no hard-coded Prizma strings inside renderers) | 0 matches | `grep -rnE '(prizma\|פריזמה\|6ad0781b)' src/components/blocks/` → 0 hits |
+
+§3 Criterion 4 (Header nav count = 6) still applies — Header is untouched by
+re-scope. Criteria 7, 8, 9, 10, 10b, 11, 12, 12b, 13, 14, 15 now verify via
+the rendered CMS output (same `curl localhost:4321/*` checks — the block HTML
+output must satisfy them). Criterion 16 (301 redirect) unchanged. Criterion
+17 (`npm run build` passes) unchanged. Criterion 19 (file size ≤300 lines)
+applies to each new block renderer.
+
+### 13.3 Revised commit plan (supersedes §9 for storefront side)
+
+| # | Commit | Scope | Files |
+|---|--------|-------|-------|
+| 1 | `feat(blocks): add 8 luxury-boutique block renderers` | 8 new CMS blocks | `src/components/blocks/{HeroLuxury,BrandStrip,Tier1Spotlight,StoryTeaser,Tier2Grid,EventsShowcase,OptometryTeaser,VisitUs}.astro` |
+| 2 | `feat(PageRenderer): dispatch new block types` | Renderer wiring | `src/components/PageRenderer.astro` (or equivalent — executor locates) |
+| 3 | `feat(studio): register 8 new block types in editor` | Studio CMS | ERP-side Studio block registry files — executor locates via `grep -rn "block_type\|blockType" modules/storefront/` |
+| 4 | `feat(header): restructure nav to 6 luxury-boutique items; remove Blog + Multifocal` | Header (hand-coded, no CMS) | `src/components/Header.astro` |
+| 5 | `chore(content): populate Prizma Homepage CMS blocks (he/en/ru)` | SQL migration or Studio UPDATE — executor chooses; must preserve Rule 20 | migration file OR Studio transaction |
+| 6 | `chore(content): rewrite Prizma About page blocks — 40-year narrative + 3 exhibition videos (he/en/ru)` | CMS content | same |
+| 7 | `chore(content): seed Prizma Optometry page (he/en/ru)` | New CMS pages | same |
+| 8 | `chore(redirects): 301 /multifocal-guide → /optometry (single-hop, per locale)` | Platform-level | `vercel.json` |
+| 9 | `chore(orphans): remove any unused legacy hero/multifocal Astro components` | Rule 21 cleanup | deletions |
+| 10 (optional) | `fix(blocks): post-build Lighthouse adjustments if SEO drops below 91` | Safety net | any file |
+
+**opticup (ERP) side — single close-out commit:** unchanged from original §9.
+
+### 13.4 Autonomy envelope addition
+
+Executor may, without asking, execute parameterized `UPDATE` and `INSERT`
+statements against `storefront_pages` scoped to `tenant_id =
+'6ad0781b-...'` (Prizma) for Homepage / About / Optometry content authoring.
+This is Level 2 SQL autonomy (non-destructive writes on data tables) and is
+explicitly approved for this SPEC. Rationale: the content IS the deliverable,
+and Studio UI authoring is not practical for ~27 structured blocks across 3
+locales and 3 pages.
+
+**Every write MUST:**
+- Include `tenant_id = '6ad0781b-...'` in WHERE/VALUES (Rule 22, defense-in-depth).
+- Write a backup row to a migration file in `supabase/migrations/` before any
+  UPDATE, so rollback is `git revert` + apply inverse migration.
+- Leave the demo tenant's `storefront_pages` rows untouched unless explicitly
+  listed in the SPEC.
+
+### 13.5 Stop-on-Deviation additions (SPEC-specific)
+
+- If `PageRenderer` architecture cannot accept a new block type without ALSO
+  modifying a central registry file that affects OTHER tenants' rendering →
+  STOP (that's a platform change, not a content change).
+- If any new block renderer exceeds 300 lines → STOP and split before commit
+  (Iron Rule 12).
+- If the demo tenant's Homepage blocks change in any way → STOP. This SPEC
+  only modifies Prizma content.
+- If the executor cannot locate a `PageRenderer` dispatch file in ≤3 grep
+  attempts → STOP and ask Foreman for a pointer.
+
+### 13.6 Lesson captured to opticup-executor skill
+
+This re-scope itself is a lesson. The opticup-strategic session adds a new
+reference `STOREFRONT_CMS_ARCHITECTURE.md` under the opticup-executor skill
+(`.claude/skills/opticup-executor/references/`) and a short pointer section in
+SKILL.md so every future executor checks `storefront_pages` before assuming an
+Astro source file is the rendering path. See that reference for the exact
+Pre-Flight check any storefront content SPEC must run.
+
+### 13.7 Unchanged
+
+Sections §1, §2, §6 Rollback Plan, §7 Out of Scope, §10 Execution Environment
+(Windows Claude Code required), §11 Lessons and Pre-Flight, §12 Open Items
+remain in force. Where original §3 criteria say "homepage contains X", the
+criterion is now satisfied by the rendered CMS output rather than by the Astro
+source — the HTTP-level curl checks stay meaningful.
+
+*End of §13 Re-scope. SPEC status: READY FOR EXECUTOR DISPATCH (Windows Claude
+Code). Executor's original Step 1 report stands as acknowledged; proceed with
+Step 2 execution under the revised §13 plan.*
