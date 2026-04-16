@@ -458,6 +458,148 @@ const BLOCK_SCHEMAS = {
     ]
   },
 
+  // Luxury-boutique blocks (SPEC HOMEPAGE_HEADER_LUXURY_REDESIGN, 2026-04-16).
+  // Advanced nested fields (primary_cta, secondary_cta, cards[], events[], brands[])
+  // are currently authored via SQL migration — Studio shows top-level fields.
+
+  hero_luxury: {
+    label: 'Hero יוקרה (וידאו + 2 CTA)',
+    icon: '✨',
+    fields: [
+      { key: 'eyebrow', label: 'טקסט עליון (uppercase label)', type: 'text', placeholder: 'קולקציית בוטיק יוקרתית' },
+      { key: 'title', label: 'כותרת ראשית', type: 'text', required: true },
+      { key: 'subtitle', label: 'תת כותרת', type: 'textarea', rows: 3 },
+      { key: 'video_youtube_id', label: 'YouTube ID לרקע', type: 'text', placeholder: 'vHvX4zVcCls' },
+      { key: 'image', label: 'תמונת רקע (אם אין וידאו)', type: 'image' },
+      { key: 'overlay', label: 'שכבה כהה (0-1)', type: 'range', min: 0, max: 1, step: 0.05, default: 0.65 },
+      { key: 'primary_cta_text', label: 'CTA ראשי — טקסט', type: 'text' },
+      { key: 'primary_cta_url', label: 'CTA ראשי — קישור', type: 'url' },
+      { key: 'secondary_cta_text', label: 'CTA משני — טקסט', type: 'text' },
+      { key: 'secondary_cta_url', label: 'CTA משני — קישור', type: 'url' },
+    ]
+  },
+
+  brand_strip: {
+    label: 'רצועת מותגים',
+    icon: '🏷️',
+    fields: [
+      { key: 'section_title', label: 'כותרת מקטע', type: 'text' },
+      { key: 'style', label: 'סגנון', type: 'select', options: [
+        { value: 'carousel', label: 'קרוסלה' }, { value: 'row', label: 'שורה גולשת' }
+      ], default: 'carousel' },
+      { key: 'brands', label: 'מותגים', type: 'items', itemFields: [
+        { key: 'slug', label: 'Slug מותג', type: 'text', required: true },
+        { key: 'name', label: 'שם תצוגה', type: 'text', required: true },
+        { key: 'logo_url', label: 'URL לוגו (אופציונלי — אחרת נטען מהמותג)', type: 'text' },
+        { key: 'href', label: 'קישור (אופציונלי)', type: 'url' },
+      ]},
+    ]
+  },
+
+  tier1_spotlight: {
+    label: 'מותגי פלאגשיפ (Tier-1)',
+    icon: '⭐',
+    fields: [
+      { key: 'section_title', label: 'כותרת מקטע', type: 'text' },
+      { key: 'subtitle', label: 'תת כותרת', type: 'textarea', rows: 2 },
+      { key: 'cards', label: 'כרטיסי מותג', type: 'items', itemFields: [
+        { key: 'brand_slug', label: 'Slug מותג', type: 'text', required: true },
+        { key: 'brand_name', label: 'שם תצוגה (אופציונלי — אחרת מה-DB)', type: 'text' },
+        { key: 'tagline', label: 'טקסט קצר מתחת ללוגו', type: 'text' },
+        { key: 'image_url', label: 'תמונת רקע (אופציונלי — אחרת hero_image)', type: 'text' },
+        { key: 'logo_url', label: 'לוגו (אופציונלי — אחרת מה-DB)', type: 'text' },
+        { key: 'video_youtube_id', label: 'YouTube ID (אופציונלי)', type: 'text' },
+        { key: 'href', label: 'קישור (אופציונלי)', type: 'url' },
+      ]},
+    ]
+  },
+
+  story_teaser: {
+    label: 'טיזר הסיפור שלנו',
+    icon: '📖',
+    fields: [
+      { key: 'eyebrow', label: 'טקסט עליון', type: 'text', placeholder: '40 שנה' },
+      { key: 'title', label: 'כותרת', type: 'text', required: true },
+      { key: 'body', label: 'גוף (Markdown / HTML קצר)', type: 'richtext' },
+      { key: 'image', label: 'תמונה', type: 'image' },
+      { key: 'layout', label: 'פריסה', type: 'select', options: [
+        { value: 'image-end', label: 'תמונה בסוף' }, { value: 'image-start', label: 'תמונה בהתחלה' }
+      ], default: 'image-end' },
+      { key: 'cta_text', label: 'CTA — טקסט', type: 'text' },
+      { key: 'cta_url', label: 'CTA — קישור', type: 'url' },
+    ]
+  },
+
+  tier2_grid: {
+    label: 'רשת Tier-2',
+    icon: '◽',
+    fields: [
+      { key: 'section_title', label: 'כותרת מקטע', type: 'text' },
+      { key: 'subtitle', label: 'תת כותרת', type: 'textarea', rows: 2 },
+      { key: 'columns_desktop', label: 'עמודות דסקטופ', type: 'select', options: [
+        { value: 3, label: '3' }, { value: 4, label: '4' }, { value: 5, label: '5' }, { value: 6, label: '6' }
+      ], default: 6 },
+      { key: 'brands', label: 'מותגים', type: 'items', itemFields: [
+        { key: 'slug', label: 'Slug מותג', type: 'text', required: true },
+        { key: 'name', label: 'שם תצוגה', type: 'text', required: true },
+        { key: 'logo_url', label: 'URL לוגו (אופציונלי)', type: 'text' },
+        { key: 'href', label: 'קישור (אופציונלי)', type: 'url' },
+      ]},
+    ]
+  },
+
+  events_showcase: {
+    label: 'אירועים וסרטונים',
+    icon: '🎬',
+    fields: [
+      { key: 'section_title', label: 'כותרת מקטע', type: 'text' },
+      { key: 'subtitle', label: 'תת כותרת', type: 'textarea', rows: 2 },
+      { key: 'events', label: 'אירועים', type: 'items', itemFields: [
+        { key: 'youtube_id', label: 'YouTube ID', type: 'text', required: true },
+        { key: 'title', label: 'כותרת', type: 'text' },
+        { key: 'description', label: 'תיאור', type: 'textarea', rows: 2 },
+        { key: 'aspect_ratio', label: 'יחס', type: 'select', options: [
+          { value: '9/16', label: 'Shorts (9:16)' }, { value: '16/9', label: 'רגיל (16:9)' }
+        ], default: '9/16' },
+        { key: 'autoplay_muted', label: 'הפעלה אוטומטית (מושתק)', type: 'toggle' },
+      ]},
+    ]
+  },
+
+  optometry_teaser: {
+    label: 'טיזר אופטומטריה',
+    icon: '👁️',
+    fields: [
+      { key: 'eyebrow', label: 'טקסט עליון', type: 'text', placeholder: 'צוות אופטומטרי' },
+      { key: 'title', label: 'כותרת', type: 'text', required: true },
+      { key: 'body', label: 'גוף', type: 'richtext' },
+      { key: 'image', label: 'תמונה', type: 'image' },
+      { key: 'bullet_points', label: 'נקודות (שורה לכל אחת)', type: 'textarea_list' },
+      { key: 'layout', label: 'פריסה', type: 'select', options: [
+        { value: 'image-start', label: 'תמונה בהתחלה' }, { value: 'image-end', label: 'תמונה בסוף' }
+      ], default: 'image-start' },
+      { key: 'cta_text', label: 'CTA — טקסט', type: 'text' },
+      { key: 'cta_url', label: 'CTA — קישור', type: 'url' },
+    ]
+  },
+
+  visit_us: {
+    label: 'בקרו אותנו',
+    icon: '📍',
+    fields: [
+      { key: 'section_title', label: 'כותרת מקטע', type: 'text' },
+      { key: 'subtitle', label: 'תת כותרת', type: 'textarea', rows: 2 },
+      { key: 'address', label: 'כתובת', type: 'text' },
+      { key: 'phone', label: 'טלפון', type: 'text' },
+      { key: 'hours', label: 'שעות פתיחה (\\n בין שורות)', type: 'textarea', rows: 3 },
+      { key: 'map_embed_url', label: 'Google Maps Embed URL', type: 'url' },
+      { key: 'primary_cta_text', label: 'CTA ראשי — טקסט', type: 'text' },
+      { key: 'primary_cta_url', label: 'CTA ראשי — קישור', type: 'url' },
+      { key: 'secondary_cta_text', label: 'CTA משני — טקסט', type: 'text' },
+      { key: 'secondary_cta_url', label: 'CTA משני — קישור', type: 'url' },
+    ]
+  },
+
 };
 
 const BLOCK_SETTINGS_SCHEMA = [
