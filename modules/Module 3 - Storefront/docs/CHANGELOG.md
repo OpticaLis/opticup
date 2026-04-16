@@ -2,6 +2,79 @@
 
 ---
 
+## Homepage + Header Luxury Redesign SPEC
+**Status:** ✅ Executor complete on develop (both repos); awaiting FOREMAN_REVIEW
+**Date:** 2026-04-16
+**Foreman verdict:** pending (retrospective just landed)
+**Re-scope:** Option D (CMS-native block architecture) — original plan assumed Astro source files, §5 stop-trigger fired when executor's Step 1 inventory revealed Homepage, About, and Multifocal-Guide are CMS records in `storefront_pages`
+
+### Commits
+
+**Storefront (`opticup-storefront/develop`, 7 commits):**
+
+| Commit | Scope |
+|--------|-------|
+| `ac7ea8a` | feat(blocks): add 8 luxury-boutique block renderers + type defs |
+| `caa5b5b` | feat(blocks): dispatch 8 luxury block types + split types-luxury + i18n |
+| `383cb89` | refactor(blocks): flatten luxury CTA data shapes to match Studio schema |
+| `0a361c0` | feat(header): restructure nav to 6 luxury-boutique items; remove Blog + Multifocal + Lab |
+| `f7afae9` | chore(content): populate Prizma Homepage CMS blocks (he/en/ru) — migration 123 |
+| `329d5e6` | chore(content): rewrite About + seed Optometry CMS pages (he/en/ru) — migration 124 |
+| `b94554f` | chore(redirects): 301 /multifocal-guide → /optometry (single-hop, per locale) |
+
+**ERP (`opticup/develop`, 2 commits):**
+
+| Commit | Scope |
+|--------|-------|
+| `1b5d822` | feat(studio): register 8 luxury-boutique block types in editor |
+| (this commit) | docs(m3-redesign): close HOMEPAGE_HEADER_LUXURY_REDESIGN with retrospective |
+
+### Key Content (before → after)
+
+| Route | Before | After |
+|-------|--------|-------|
+| `/` (he/en/ru) | 9 blocks: hero, 2×columns, steps, products, brands, video, blog_carousel, contact (WP-parity) | 8 blocks: hero_luxury, brand_strip, tier1_spotlight, story_teaser, tier2_grid, events_showcase, optometry_teaser, visit_us |
+| `/about/` (he/en/ru) | Legacy copy | 5 blocks: hero_luxury + 2×story_teaser (Roots + Pivot) + events_showcase (3 exhibition YouTube Shorts: `XvfUYI87jso`/`E8xt6Oj-QQw`/`hOCxDNFEjWA`) + optometry_teaser closing |
+| `/optometry/` (he/en/ru) | Did not exist | NEW 5 blocks: hero_luxury + optometry_teaser + text (multifocal explainer) + steps (4-step fitting process) + visit_us |
+| `/multifocal-guide/` (he/en/ru) | CMS page | Still a CMS page, but vercel.json 301s all public traffic to `/optometry/` |
+
+### Header (before → after)
+
+| Position | Before (6 items) | After (6 items) |
+|---|---|---|
+| 1 | משקפי שמש | משקפי ראייה |
+| 2 | מסגרות ראייה | משקפי שמש |
+| 3 | מותגים | מותגים |
+| 4 | בלוג (removed) | אופטומטריה (NEW) |
+| 5 | משקפי מולטיפוקל (removed) | הסיפור שלנו (NEW) |
+| 6 | מעבדת מסגורים (removed) | יצירת קשר (NEW — anchors to `#contact`) |
+
+### Key Architecture
+
+- **New block types:** hero_luxury, brand_strip, tier1_spotlight, story_teaser, tier2_grid, events_showcase, optometry_teaser, visit_us (8 types total). Registered in `src/components/blocks/BlockRenderer.astro` dispatch + `src/lib/blocks/types-luxury.ts` + ERP `modules/storefront/studio-block-schemas.js`.
+- **All renderers tenant-agnostic** (Rule 20): content flows via `block.data` JSONB; brand enrichment queries `v_storefront_brands` by slug using provided `tenantId` prop.
+- **Type file split:** `types.ts` exceeded Rule 12's 350-line limit after the 8 new block classes were added; split `types-luxury.ts` brings `types.ts` to 348 lines.
+- **Multifocal 301 chain:** all `/multifocal-guide/` routes (he/en/ru) + `/multifocal/` + `/multifocal-glasses` now 301 to `/optometry/` (single-hop per SPEC §3 criterion 16).
+
+### Findings Logged (4)
+
+- **M3-SPEC-REDESIGN-01** LOW — `vercel.json` redirects don't fire on `npm run dev`; SPEC criterion 16 unverifiable locally (verify on Vercel Preview post-deploy).
+- **M3-CMS-DEBT-01** MEDIUM — `storefront_pages_backups` table does not exist; recommend NEW_SPEC to create it before next CMS-content-heavy SPEC.
+- **M3-R12-STUDIO-01** MEDIUM — `modules/storefront/studio-block-schemas.js` now 627 lines (pre-existing oversized per M1-R12-02 Guardian alert; my +142 lines made it worse).
+- **M3-CMS-DEBT-02** LOW — stale `/multifocal-guide/` CMS rows remain `status='published'` after 301 redirect; suggest archiving in follow-up sweep.
+
+### Action Required
+- Daniel runs QA on localhost:4321 (/, /about/, /optometry/, multifocal-guide → /optometry/ 301 verification against Vercel Preview)
+- Daniel reviews hero copy + story narrative + Tier-1 tag-lines (Q4 post-commit review per SPEC §10)
+- Authoring follow-up SPEC `CONTACT_FORM_FIX` (launch blocker, per SPEC §7 Out of Scope #1)
+
+### Next
+- FOREMAN_REVIEW.md (opticup-strategic adds after reading this + EXECUTION_REPORT + FINDINGS)
+- Merge develop → main in both repos once Daniel's QA passes
+- DNS switch
+
+---
+
 ## Pre-Merge SEO Fixes SPEC
 **Status:** ✅ All 9 fix tasks on develop (both repos)
 **Date:** 2026-04-16

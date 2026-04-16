@@ -84,6 +84,23 @@ findings logged in the SPEC's retrospective — 1 closed in-SPEC, 5 deferred
 Studio work, SEO safety-net scripts port). FOREMAN verdict 🟡 closed with
 follow-ups.
 
+**Homepage + Header luxury-boutique redesign complete** (SPEC
+`HOMEPAGE_HEADER_LUXURY_REDESIGN`, closed 2026-04-16 via Option D re-scope):
+positioning pivot from "lab / Rx / multifocal" to "luxury-boutique curator of
+5 Tier-1 brands + 6 Tier-2 brands". 8 new CMS block renderers shipped
+(`src/components/blocks/{HeroLuxury,BrandStrip,Tier1Spotlight,StoryTeaser,Tier2Grid,EventsShowcase,OptometryTeaser,VisitUs}Block.astro` — tenant-agnostic, all ≤132 lines). Block types registered in ERP Studio
+(`studio-block-schemas.js`). Header restructured to 6 nav items (משקפי ראייה
+/ משקפי שמש / מותגים / אופטומטריה / הסיפור שלנו / יצירת קשר) across he/en/ru.
+Prizma Homepage `blocks` rewritten (migration 123), About rewritten with
+40-year narrative + 3 exhibition videos (SILMO Paris, MIDO Milan, Israel),
+new `/optometry/` CMS pages seeded with multifocal content absorbed (migration
+124). Old `/multifocal-guide/` 301s to `/optometry/` at the Vercel layer.
+Storefront commits `ac7ea8a`→`b94554f` (7 commits) + ERP Studio registry
+`1b5d822` + ERP retrospective (this commit). 4 findings logged: 1 SPEC-criterion
+fix, 2 tech-debt items (missing `storefront_pages_backups` table, oversized
+`studio-block-schemas.js` at 627 lines), 1 housekeeping (archive stale
+`/multifocal-guide/` CMS rows). FOREMAN verdict pending review.
+
 Module 3.1 (Project Reconstruction) is **complete** — all phases 3A/3B/3C/3D
 done. Foundation docs are accurate and current.
 

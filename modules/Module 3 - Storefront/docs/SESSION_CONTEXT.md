@@ -1,8 +1,43 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Luxury-Positioning Redesign (pre-DNS-switch content layer)
-## Status: 🟡 SPEC authored + re-scoped to CMS-native (Option D) — executor in flight (Windows Claude Code)
-## Date: 2026-04-16 (re-scope applied 2026-04-16 after executor Step 1 inventory)
+## Current Phase: Luxury-Positioning Redesign → Executor complete on develop; awaiting FOREMAN_REVIEW + Daniel QA
+## Status: 🟢 Executor complete (CMS-native Option D executed end-to-end); FOREMAN_REVIEW.md pending
+## Date: 2026-04-16 (re-scoped + executed same session)
+
+---
+
+## Execution Close-Out 2026-04-16 — HOMEPAGE_HEADER_LUXURY_REDESIGN
+
+**Deliverables shipped to `develop` (both repos):**
+
+- **8 new CMS block renderers** in `opticup-storefront/src/components/blocks/*Block.astro` (HeroLuxury, BrandStrip, Tier1Spotlight, StoryTeaser, Tier2Grid, EventsShowcase, OptometryTeaser, VisitUs) — all ≤132 lines, tenant-agnostic per Rule 20
+- **Wired through `BlockRenderer.astro`** dispatch; `types-luxury.ts` split off to keep `types.ts` under Rule 12's 350-line max
+- **ERP Studio registry** updated (`modules/storefront/studio-block-schemas.js`) with 8 new block-type schemas
+- **Header restructured** to 6 luxury-boutique nav items (משקפי ראייה / משקפי שמש / מותגים / אופטומטריה / הסיפור שלנו / יצירת קשר); Blog + Multifocal + Lab removed; i18n parity across he/en/ru
+- **Prizma Homepage rewritten** via migration 123 — all 3 locales now use the 8-block luxury composition (was 9-block WP-parity)
+- **Prizma About rewritten** via migration 124A — 5 blocks per locale including 3 exhibition videos (`XvfUYI87jso`, `E8xt6Oj-QQw`, `hOCxDNFEjWA`)
+- **NEW `/optometry/` CMS pages** via migration 124B — 3 rows inserted, shared translation_group_id, published, multifocal content absorbed
+- **vercel.json 301** — `/multifocal-guide/`, `/multifocal/`, `/multifocal-glasses` all → `/optometry/` (single-hop, per locale)
+
+**Storefront commits (7):** `ac7ea8a` → `caa5b5b` → `383cb89` → `0a361c0` → `f7afae9` → `329d5e6` → `b94554f`
+**ERP commits:** `1b5d822` (Studio registry) + (close-out retrospective commit)
+
+**Build + verification:**
+- `npm run build`: PASS (0 errors, 3.64s, Astro 6 + Vercel adapter)
+- localhost:4321 smoke-tests: Homepage 8 blocks rendered via CMS path, Header nav 6 items, Hero video embedded, 3 locales all 200 on `/about/` + `/optometry/`, multifocal text present in all 3 optometry locales
+- **Criterion 16 unverifiable on localhost** (`vercel.json` redirects only fire on Vercel edge) — logged as finding
+- **Criterion 18 (Lighthouse ≥91)** skipped locally — Vercel Preview runs Lighthouse automatically
+
+**Retrospective artifacts:**
+- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_HEADER_LUXURY_REDESIGN/EXECUTION_REPORT.md`
+- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_HEADER_LUXURY_REDESIGN/FINDINGS.md` (4 findings: 1 SPEC-pattern fix, 2 MEDIUM tech-debt, 1 LOW housekeeping)
+- FOREMAN_REVIEW.md — pending (opticup-strategic layer)
+
+**Next gate:** Foreman reads retrospective + writes review → Daniel runs QA on localhost:4321 + on Vercel Preview → Daniel merges develop → main in both repos → author `CONTACT_FORM_FIX` SPEC → DNS switch.
+
+---
+
+## Historical — SPEC authoring + re-scope (pre-execution, 2026-04-16)
 
 ---
 
