@@ -1,8 +1,45 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Phase D Content Iteration — HOMEPAGE_LUXURY_REVISIONS SPEC authored, awaiting dispatch to Windows
-## Status: 🟢 Luxury Redesign CLOSED 🟡 with follow-ups (FOREMAN_REVIEW written); Revisions SPEC READY for executor
-## Date: 2026-04-16 (same session — SPEC closed + next SPEC authored)
+## Current Phase: Phase D Content Iteration — HOMEPAGE_LUXURY_REVISIONS executed end-to-end; awaiting Foreman review + Vercel-Preview visual QA
+## Status: 🟢 Revisions SPEC EXECUTED on develop (5 commits across both repos); EXECUTION_REPORT + FINDINGS landed; awaiting FOREMAN_REVIEW
+## Date: 2026-04-16 (same session — SPEC dispatched, executed, retrospective written)
+
+---
+
+## Execution Close-Out 2026-04-16 — HOMEPAGE_LUXURY_REVISIONS
+
+**Deliverables shipped to `develop` (both repos):**
+
+- **BrandStripBlock auto-rotating carousel** — replaced the manual snap-x scroll (which Daniel saw as static on the deployed site) with a CSS-only marquee that translates a duplicated brand list 0 → -50% in linear infinite, paused on hover/focus, honors `prefers-reduced-motion`
+- **Tier2GridBlock now supports `data.style: 'grid' | 'carousel'`** — default `'grid'` preserves backward compat (Rule 20) for any tenant without the field; `'carousel'` reuses the same shared marquee CSS as BrandStrip (Rule 21 — single `@keyframes marquee-x` in `global.css`)
+- **Studio editor schema** — `tier2_grid` block in `modules/storefront/studio-block-schemas.js` now exposes the `style` select field with options `[grid (default), carousel]` so non-engineers can toggle from the Studio UI
+- **Prizma Hebrew homepage rewritten via migration 125** — new hero video `lz55pwuy9wc`, overlay `0.65 → 0.80`, copy rewritten ("משקפי יוקרה ממיטב המותגים..."), `tier1_spotlight` REMOVED from JSONB array (renderer + Studio schema RETAINED on disk per Rule 20), Story block re-titled `40 שנה של בחירה` and rewritten with Daniel's anchor phrase ("הסבירות שלא תמצאו את המסגרת ההכי מתאימה לכם היא אפסית"), Story image set to existing Prizma store photo (`media_library.id=a2fcf78a-...`, IMG-20241230-WA0096 landscape webp), Tier2Grid `data.style="carousel"` for auto-marquee
+- **EN + RU homepage rows EXPLICITLY UNCHANGED** — verified post-migration (`updated_at` 09:17:23 baseline preserved, 8 blocks intact including `tier1_spotlight`). Deferred to `LANGUAGES_FIX` SPEC.
+- **Migration 125 embeds full pre-update HE JSONB as `/* SNAPSHOT */` block** in the file header — rollback source-of-truth per Executor Proposal E1
+
+**Storefront commits (3):** `2547df6` (BrandStrip auto-marquee) → `0c1bc42` (Tier2Grid carousel + types) → `1e4347a` (migration 125)
+**ERP commits:** `8c6e69c` (Studio schema register style:carousel) + (close-out retrospective in this commit)
+
+**Build + verification:**
+- `npm run build`: PASS (3.95s, Astro 6 + Vercel adapter, 0 errors)
+- localhost:4321 smoke-tests: HE renders 7 blocks in correct order with new hero video, removed Tier1Spotlight (0 hits), auto-marquee CSS class present (5×), new story title + anchor phrase + section_title + CTA all present, story image URL correct. EN + RU still render 8 blocks each with `tier1_spotlight` retained and old hero video `40f1I0eOR7s` × 2 (hero+events) — confirmed unchanged
+- DB post-migration: HE block_count=7, EN/RU block_count=8, EN/RU `updated_at` unchanged from baseline
+- **Vercel Preview criteria deferred** (§3.F: hero video render, BrandStrip rotation visual, Tier2Grid carousel visual, Lighthouse ≥85) — Daniel's post-commit visual review
+
+**Retrospective artifacts:**
+- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS/EXECUTION_REPORT.md` (10 sections, executor self-score 9.5/10)
+- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS/FINDINGS.md` (2 findings: M3-EXEC-DEBT-01 missing reference file LOW, M3-REPO-DRIFT-01 untracked SPEC artifacts LOW; 1 historical observation on continued Rule 12 debt M3-R12-STUDIO-01)
+- `FOREMAN_REVIEW.md` — pending Cowork Foreman authoring
+
+**Executor proposals to opticup-executor skill (2):**
+- E-prop-1: Pre-flight reference-file existence check in SKILL.md First Action — log a finding when SPEC names a missing `references/{file}.md`
+- E-prop-2: Migration folder convention auto-detect in SKILL.md Step 1.5 DB Pre-Flight — `ls $REPO/sql && ls $REPO/supabase/migrations` before writing migration files
+
+**Next gate:** Foreman writes `FOREMAN_REVIEW.md` for this SPEC. Then queue moves to `NAV_FIX` (broken `/about/` and `/optometry/` transitions from header).
+
+---
+
+## Historical — pre-execution (SPEC authored 2026-04-16)
 
 ---
 

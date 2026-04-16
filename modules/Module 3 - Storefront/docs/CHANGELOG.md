@@ -2,6 +2,54 @@
 
 ---
 
+## Homepage Luxury Revisions SPEC
+**Status:** ✅ Executor complete on develop (both repos); awaiting FOREMAN_REVIEW
+**Date:** 2026-04-16
+**Foreman verdict:** pending (retrospective just landed)
+**Scope:** Hebrew homepage row only (`tenant_id='6ad0781b-...' AND slug='/' AND lang='he'`). EN + RU rows EXPLICITLY UNCHANGED — deferred to `LANGUAGES_FIX` SPEC.
+
+### Commits
+
+**Storefront (`opticup-storefront/develop`, 3 commits):**
+
+| Commit | Scope |
+|--------|-------|
+| `2547df6` | fix(storefront): BrandStripBlock auto-rotating carousel via shared marquee CSS |
+| `0c1bc42` | feat(storefront): Tier2GridBlock supports style="carousel" via shared marquee |
+| `1e4347a` | data(prizma): homepage HE revisions — new hero video, tier1_spotlight removed, story rewritten, tier2 carousel (migration 125, embeds pre-migration JSONB snapshot) |
+
+**ERP (`opticup/develop`, 2 commits):**
+
+| Commit | Scope |
+|--------|-------|
+| `8c6e69c` | chore(studio): register style:carousel option for tier2_grid block schema |
+| (this commit) | docs(m3): close HOMEPAGE_LUXURY_REVISIONS retrospective + SESSION_CONTEXT + CHANGELOG + MASTER_ROADMAP |
+
+### Block deltas (Prizma HE row, before → after migration 125)
+
+| Block | Change |
+|-------|--------|
+| hero_luxury | NEW video `lz55pwuy9wc` (was `40f1I0eOR7s`); overlay 0.65 → 0.80; title rewritten ("משקפי יוקרה ממיטב המותגים..."); subtitle simplified; primary CTA "מעבר לקולקציות"; secondary "תיאום בדיקת ראיה"; eyebrow KEPT (judgment call D1) |
+| brand_strip | section_title → "מיטב המותגים המובילים בעולם"; style stays "carousel" but now actually rotates (renderer fix in 2547df6); 11 brands unchanged |
+| tier1_spotlight | **REMOVED from JSONB array.** Renderer file `Tier1SpotlightBlock.astro` + Studio schema entry `tier1_spotlight` RETAINED on disk per Rule 20 (other tenants/locales may use them) |
+| story_teaser | title → "40 שנה של בחירה" (judgment call D2 — aligns with new body theme of choice); body rewritten in 3 paragraphs containing Daniel's anchor phrase "הסבירות שלא תמצאו את המסגרת ההכי מתאימה לכם היא אפסית"; image set to existing Prizma store photo `media_library.id=a2fcf78a-...` (IMG-20241230-WA0096 landscape webp, judgment call D3) |
+| events_showcase | UNCHANGED |
+| tier2_grid | NEW `data.style="carousel"` (auto-marquee via 0c1bc42); existing 6 brands unchanged; section_title unchanged |
+| optometry_teaser | UNCHANGED |
+| visit_us | UNCHANGED |
+
+**Final block_count: 7** (was 8). Order: `[hero_luxury, brand_strip, story_teaser, events_showcase, tier2_grid, optometry_teaser, visit_us]`.
+
+### Retrospective + findings
+
+- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS/EXECUTION_REPORT.md` (executor self-score 9.5/10, 2 executor-skill proposals)
+- `modules/Module 3 - Storefront/docs/specs/HOMEPAGE_LUXURY_REVISIONS/FINDINGS.md`:
+  - **M3-EXEC-DEBT-01** (LOW) — `STOREFRONT_CMS_ARCHITECTURE.md` reference file named in SPEC §11 doesn't exist on disk → TECH_DEBT (Foreman authors)
+  - **M3-REPO-DRIFT-01** (LOW) — 5 pre-existing untracked SPEC artifacts in ERP repo from earlier sessions → NEW_SPEC sweep
+  - Continued tech-debt note: `studio-block-schemas.js` 627 → 630 lines (Rule 12), already-known M3-R12-STUDIO-01 — no re-file
+
+---
+
 ## Homepage + Header Luxury Redesign SPEC
 **Status:** ✅ Executor complete on develop (both repos); awaiting FOREMAN_REVIEW
 **Date:** 2026-04-16
