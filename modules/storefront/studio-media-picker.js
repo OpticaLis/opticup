@@ -12,6 +12,7 @@ let _pickerSearchTimer = null;
 let _pickerPage = 0;
 let _pickerHasMore = false;
 let _pickerLoading = false;
+let _pickerTotalCount = 0;
 const PICKER_PAGE_SIZE = 30;
 
 const PICKER_FOLDERS = [
@@ -104,19 +105,26 @@ async function loadPickerItems(reset) {
     const from = _pickerPage * PICKER_PAGE_SIZE;
     const to = from + PICKER_PAGE_SIZE - 1;
 
-    let query = sb.from('media_library')
-      .select('id, storage_path, original_filename, filename, title, alt_text, tags, folder, created_at')
-      .eq('tenant_id', getTenantId())
-      .eq('is_deleted', false);
-
-    if (_pickerFilter.folder !== 'all') {
-      query = query.eq('folder', _pickerFilter.folder);
+    // Helper: apply shared filters
+    function applyPickerFilters(q) {
+      q = q.eq('tenant_id', getTenantId()).eq('is_deleted', false);
+      if (_pickerFilter.folder !== 'all') q = q.eq('folder', _pickerFilter.folder);
+      if (_pickerFilter.search) {
+        const s = _pickerFilter.search;
+        q = q.or(`title.ilike.%${s}%,original_filename.ilike.%${s}%,alt_text.ilike.%${s}%,filename.ilike.%${s}%`);
+      }
+      return q;
     }
 
-    if (_pickerFilter.search) {
-      const s = _pickerFilter.search;
-      query = query.or(`title.ilike.%${s}%,original_filename.ilike.%${s}%,alt_text.ilike.%${s}%,filename.ilike.%${s}%`);
+    // On reset: fetch exact total count
+    if (reset) {
+      const countQ = applyPickerFilters(sb.from('media_library').select('id', { count: 'exact', head: true }));
+      const { count: totalCount } = await countQ;
+      _pickerTotalCount = totalCount || 0;
     }
+
+    let query = applyPickerFilters(sb.from('media_library')
+      .select('id, storage_path, original_filename, filename, title, alt_text, tags, folder, created_at'));
 
     query = query.order('created_at', { ascending: false }).range(from, to);
 
@@ -142,7 +150,7 @@ function renderPickerGrid(fullRender) {
   const countEl = document.getElementById('mp-count');
   if (!grid) return;
 
-  if (countEl) countEl.textContent = `${_pickerItems.length}${_pickerHasMore ? '+' : ''} תמונות`;
+  if (countEl) countEl.textContent = `${_pickerTotalCount > 0 ? _pickerTotalCount : _pickerItems.length} תמונות`;
 
   if (!_pickerItems.length) {
     grid.innerHTML = '<div class="studio-empty">לא נמצאו תמונות</div>';
