@@ -12,6 +12,7 @@ let mediaSearchTimer = null;
 let _mediaPage = 0;
 let _mediaHasMore = false;
 let _mediaLoading = false;
+let _mediaTotalCount = 0;
 const MEDIA_PAGE_SIZE = 30;
 
 const MEDIA_FOLDERS = [
@@ -66,30 +67,35 @@ async function loadMediaLibrary(reset) {
     const from = _mediaPage * MEDIA_PAGE_SIZE;
     const to = from + MEDIA_PAGE_SIZE - 1;
 
-    let query = sb.from(MEDIA_TABLE)
-      .select('*')
-      .eq('tenant_id', getTenantId())
-      .eq('is_deleted', false);
-
-    if (mediaFilter.folder !== 'all') {
-      query = query.eq('folder', mediaFilter.folder);
+    // Helper: apply shared filters to any query builder
+    function applyMediaFilters(q) {
+      q = q.eq('tenant_id', getTenantId()).eq('is_deleted', false);
+      if (mediaFilter.folder !== 'all') q = q.eq('folder', mediaFilter.folder);
+      if (mediaFilter.search) {
+        const s = mediaFilter.search;
+        q = q.or(`title.ilike.%${s}%,description.ilike.%${s}%,alt_text.ilike.%${s}%,original_filename.ilike.%${s}%`);
+      }
+      if (mediaFilter.date === 'this_month') {
+        const start = new Date(); start.setDate(1); start.setHours(0,0,0,0);
+        q = q.gte('created_at', start.toISOString());
+      } else if (mediaFilter.date === 'last_month') {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const end = new Date(now.getFullYear(), now.getMonth(), 1);
+        q = q.gte('created_at', start.toISOString()).lt('created_at', end.toISOString());
+      }
+      return q;
     }
 
-    if (mediaFilter.search) {
-      const s = mediaFilter.search;
-      query = query.or(`title.ilike.%${s}%,description.ilike.%${s}%,alt_text.ilike.%${s}%,original_filename.ilike.%${s}%`);
+    // On reset: fetch exact total count (single lightweight query)
+    if (reset !== false) {
+      const countQ = applyMediaFilters(sb.from(MEDIA_TABLE).select('id', { count: 'exact', head: true }));
+      const { count: totalCount } = await countQ;
+      _mediaTotalCount = totalCount || 0;
     }
 
-    // Date filter
-    if (mediaFilter.date === 'this_month') {
-      const start = new Date(); start.setDate(1); start.setHours(0,0,0,0);
-      query = query.gte('created_at', start.toISOString());
-    } else if (mediaFilter.date === 'last_month') {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const end = new Date(now.getFullYear(), now.getMonth(), 1);
-      query = query.gte('created_at', start.toISOString()).lt('created_at', end.toISOString());
-    }
+    // Data query with pagination + sort
+    let query = applyMediaFilters(sb.from(MEDIA_TABLE).select('*'));
 
     if (mediaFilter.sort === 'newest') query = query.order('created_at', { ascending: false });
     else if (mediaFilter.sort === 'oldest') query = query.order('created_at', { ascending: true });
@@ -144,7 +150,7 @@ function renderMediaLibrary() {
   const gridActive = mediaViewMode === 'grid' ? 'media-view-btn-active' : '';
   const listActive = mediaViewMode === 'list' ? 'media-view-btn-active' : '';
 
-  const countLabel = `${mediaItems.length}${_mediaHasMore ? '+' : ''}`;
+  const countLabel = _mediaTotalCount > 0 ? `${_mediaTotalCount}` : `${mediaItems.length}`;
   const itemsHtml = mediaItems.length === 0
     ? '<div class="studio-empty" style="grid-column:1/-1;">אין תמונות</div>'
     : mediaViewMode === 'grid'
