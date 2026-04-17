@@ -5,10 +5,14 @@
 
 let mediaItems = [];
 let mediaLoaded = false;
-let mediaSignedUrls = {}; // cache: id → signedUrl
+let mediaSignedUrls = {}; // cache: id → signedUrl (used only for edit modal)
 let mediaViewMode = 'grid'; // 'grid' | 'list'
 let mediaFilter = { folder: 'all', sort: 'newest', search: '', date: 'all' };
 let mediaSearchTimer = null;
+let _mediaPage = 0;
+let _mediaHasMore = false;
+let _mediaLoading = false;
+const MEDIA_PAGE_SIZE = 30;
 
 const MEDIA_FOLDERS = [
   { value: 'general', label: 'כללי' },
@@ -44,13 +48,24 @@ async function preloadMediaSignedUrls(items) {
 
 // ========== LOAD ==========
 
-async function loadMediaLibrary() {
-  const container = document.getElementById('studio-media-content');
-  if (!container) return;
+async function loadMediaLibrary(reset) {
+  if (_mediaLoading) return;
+  _mediaLoading = true;
 
-  container.innerHTML = '<div class="studio-empty">טוען מדיה...</div>';
+  const container = document.getElementById('studio-media-content');
+  if (!container) { _mediaLoading = false; return; }
+
+  if (reset !== false) {
+    // Default: full reset (backwards compatible with existing callers)
+    mediaItems = [];
+    _mediaPage = 0;
+    container.innerHTML = '<div class="studio-empty">טוען מדיה...</div>';
+  }
 
   try {
+    const from = _mediaPage * MEDIA_PAGE_SIZE;
+    const to = from + MEDIA_PAGE_SIZE - 1;
+
     let query = sb.from(MEDIA_TABLE)
       .select('*')
       .eq('tenant_id', getTenantId())
@@ -81,18 +96,23 @@ async function loadMediaLibrary() {
     else if (mediaFilter.sort === 'name') query = query.order('title', { ascending: true });
     else if (mediaFilter.sort === 'size') query = query.order('file_size', { ascending: false });
 
+    query = query.range(from, to);
+
     const { data, error } = await query;
     if (error) throw error;
 
-    mediaItems = data || [];
+    const newItems = data || [];
+    _mediaHasMore = newItems.length === MEDIA_PAGE_SIZE;
+    mediaItems = reset === false ? [...mediaItems, ...newItems] : newItems;
+    _mediaPage++;
     mediaLoaded = true;
 
-    // Pre-load signed URLs then render
-    await preloadMediaSignedUrls(mediaItems);
     renderMediaLibrary();
   } catch (err) {
     console.error('Media load error:', err);
-    container.innerHTML = '<div class="studio-empty">שגיאה בטעינת מדיה</div>';
+    if (reset !== false) container.innerHTML = '<div class="studio-empty">שגיאה בטעינת מדיה</div>';
+  } finally {
+    _mediaLoading = false;
   }
 }
 
@@ -124,6 +144,7 @@ function renderMediaLibrary() {
   const gridActive = mediaViewMode === 'grid' ? 'media-view-btn-active' : '';
   const listActive = mediaViewMode === 'list' ? 'media-view-btn-active' : '';
 
+  const countLabel = `${mediaItems.length}${_mediaHasMore ? '+' : ''}`;
   const itemsHtml = mediaItems.length === 0
     ? '<div class="studio-empty" style="grid-column:1/-1;">אין תמונות</div>'
     : mediaViewMode === 'grid'
@@ -132,7 +153,7 @@ function renderMediaLibrary() {
 
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-      <h2 style="margin:0;font-size:1.2rem;font-weight:700;">🖼️ מדיה <span style="font-size:.85rem;font-weight:400;color:var(--g400);">(${mediaItems.length})</span></h2>
+      <h2 style="margin:0;font-size:1.2rem;font-weight:700;">🖼️ מדיה <span style="font-size:.85rem;font-weight:400;color:var(--g400);">(${countLabel})</span></h2>
       <button class="btn btn-sm btn-primary" onclick="document.getElementById('media-file-input').click()">+ העלאה</button>
       <input type="file" id="media-file-input" multiple accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml" style="display:none" onchange="handleMediaUpload(this.files)">
     </div>
@@ -158,8 +179,11 @@ function renderMediaLibrary() {
 
     <div id="media-upload-progress" style="display:none;margin-bottom:12px;"></div>
 
-    <div id="media-grid" class="${mediaViewMode === 'grid' ? 'media-grid' : 'media-list'}">
-      ${itemsHtml}
+    <div id="media-scroll-wrap" style="max-height:500px; overflow-y:auto;">
+      <div id="media-grid" class="${mediaViewMode === 'grid' ? 'media-grid' : 'media-list'}">
+        ${itemsHtml}
+      </div>
+      ${_mediaHasMore ? '<div style="text-align:center; padding:12px; color:var(--g400); font-size:.85rem;">גולל למטה לעוד...</div>' : ''}
     </div>
 
     <div id="media-dropzone" class="media-dropzone"
@@ -172,19 +196,34 @@ function renderMediaLibrary() {
       <p style="font-size:.75rem;color:var(--g400);margin-top:4px;">JPEG, PNG, GIF, WebP, SVG — עד 10MB</p>
     </div>
   `;
+
+  // Attach infinite scroll
+  const scrollWrap = document.getElementById('media-scroll-wrap');
+  if (scrollWrap) {
+    scrollWrap.addEventListener('scroll', onMediaScroll);
+  }
+}
+
+function onMediaScroll() {
+  if (!_mediaHasMore || _mediaLoading) return;
+  const wrap = document.getElementById('media-scroll-wrap');
+  if (!wrap) return;
+  if (wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 100) {
+    loadMediaLibrary(false);
+  }
 }
 
 // Grid view thumbnail
 function renderMediaThumbGrid(item) {
-  const signedUrl = mediaSignedUrls[item.storage_path] || '';
+  const imgUrl = resolveMediaUrl(item.storage_path, STOREFRONT_BASE);
   const title = item.title || item.original_filename || item.filename;
   const truncTitle = title.length > 20 ? title.slice(0, 18) + '...' : title;
 
   return `
     <div class="media-thumb" onclick="openMediaEdit('${item.id}')">
       <div class="media-thumb-img">
-        ${signedUrl
-          ? `<img src="${signedUrl}" alt="${escHtml(item.alt_text || title)}" loading="lazy">`
+        ${imgUrl
+          ? `<img src="${imgUrl}" alt="${escHtml(item.alt_text || title)}" loading="lazy">`
           : '<div style="color:var(--g300);font-size:1.5rem;">🖼️</div>'}
       </div>
       <div class="media-thumb-title">${escHtml(truncTitle)}</div>
@@ -198,7 +237,7 @@ function renderMediaThumbGrid(item) {
 
 // List view row
 function renderMediaThumbList(item) {
-  const signedUrl = mediaSignedUrls[item.storage_path] || '';
+  const imgUrl = resolveMediaUrl(item.storage_path, STOREFRONT_BASE);
   const title = item.title || item.original_filename || item.filename;
   const sizeKB = item.file_size ? Math.round(item.file_size / 1024) + ' KB' : '';
   const dims = (item.width && item.height) ? `${item.width}×${item.height}` : '';
@@ -208,8 +247,8 @@ function renderMediaThumbList(item) {
   return `
     <div class="media-list-row" onclick="openMediaEdit('${item.id}')">
       <div class="media-list-thumb">
-        ${signedUrl
-          ? `<img src="${signedUrl}" alt="${escHtml(item.alt_text || title)}" loading="lazy">`
+        ${imgUrl
+          ? `<img src="${imgUrl}" alt="${escHtml(item.alt_text || title)}" loading="lazy">`
           : '<div style="color:var(--g300);font-size:1.2rem;">🖼️</div>'}
       </div>
       <div class="media-list-info">
