@@ -9,6 +9,10 @@ let _pickerFilter = { folder: 'models', search: '' };
 let _pickerCallback = null;
 let _pickerMulti = false;
 let _pickerSearchTimer = null;
+let _pickerPage = 0;
+let _pickerHasMore = false;
+let _pickerLoading = false;
+const PICKER_PAGE_SIZE = 30;
 
 const PICKER_FOLDERS = [
   { value: 'all', label: 'כל התיקיות' },
@@ -37,6 +41,9 @@ function openMediaPicker(opts = {}) {
   _pickerCallback = opts.onSelect || null;
   _pickerSelected.clear();
   _pickerItems = [];
+  _pickerPage = 0;
+  _pickerHasMore = false;
+  _pickerLoading = false;
 
   const folderOpts = PICKER_FOLDERS
     .map(f => `<option value="${f.value}" ${_pickerFilter.folder === f.value ? 'selected' : ''}>${f.label}</option>`)
@@ -69,17 +76,34 @@ function openMediaPicker(opts = {}) {
     `
   });
 
-  loadPickerItems();
+  // Attach infinite scroll listener
+  const grid = document.getElementById('mp-grid');
+  if (grid) {
+    grid.addEventListener('scroll', onPickerScroll);
+  }
+
+  loadPickerItems(true);
 }
 
 // ========== LOAD & RENDER ==========
 
-async function loadPickerItems() {
+async function loadPickerItems(reset) {
+  if (_pickerLoading) return;
+  _pickerLoading = true;
+
   const grid = document.getElementById('mp-grid');
-  if (!grid) return;
-  grid.innerHTML = '<div class="studio-empty">טוען מדיה...</div>';
+  if (!grid) { _pickerLoading = false; return; }
+
+  if (reset) {
+    _pickerItems = [];
+    _pickerPage = 0;
+    grid.innerHTML = '<div class="studio-empty">טוען מדיה...</div>';
+  }
 
   try {
+    const from = _pickerPage * PICKER_PAGE_SIZE;
+    const to = from + PICKER_PAGE_SIZE - 1;
+
     let query = sb.from('media_library')
       .select('id, storage_path, original_filename, filename, title, alt_text, tags, folder, created_at')
       .eq('tenant_id', getTenantId())
@@ -94,44 +118,54 @@ async function loadPickerItems() {
       query = query.or(`title.ilike.%${s}%,original_filename.ilike.%${s}%,alt_text.ilike.%${s}%,filename.ilike.%${s}%`);
     }
 
-    query = query.order('created_at', { ascending: false }).limit(200);
+    query = query.order('created_at', { ascending: false }).range(from, to);
 
     const { data, error } = await query;
     if (error) throw error;
 
-    _pickerItems = data || [];
-    renderPickerGrid();
+    const newItems = data || [];
+    _pickerHasMore = newItems.length === PICKER_PAGE_SIZE;
+    _pickerItems = reset ? newItems : [..._pickerItems, ...newItems];
+    _pickerPage++;
+
+    renderPickerGrid(reset);
   } catch (err) {
     console.error('Picker load error:', err);
-    if (grid) grid.innerHTML = '<div class="studio-empty">שגיאה בטעינת מדיה</div>';
+    if (reset && grid) grid.innerHTML = '<div class="studio-empty">שגיאה בטעינת מדיה</div>';
+  } finally {
+    _pickerLoading = false;
   }
 }
 
-function renderPickerGrid() {
+function renderPickerGrid(fullRender) {
   const grid = document.getElementById('mp-grid');
   const countEl = document.getElementById('mp-count');
   if (!grid) return;
 
-  if (countEl) countEl.textContent = `${_pickerItems.length} תמונות`;
+  if (countEl) countEl.textContent = `${_pickerItems.length}${_pickerHasMore ? '+' : ''} תמונות`;
 
   if (!_pickerItems.length) {
     grid.innerHTML = '<div class="studio-empty">לא נמצאו תמונות</div>';
     return;
   }
 
-  grid.innerHTML = `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:8px;">
-    ${_pickerItems.map(item => {
-      const url = resolveMediaUrl(item.storage_path, STOREFRONT_BASE);
-      const isSelected = _pickerSelected.has(item.id);
-      const label = escapeHtml(item.title || item.original_filename || item.filename || '');
-      return `<div class="mp-item ${isSelected ? 'mp-selected' : ''}"
-        data-id="${item.id}" onclick="togglePickerItem('${item.id}')"
-        style="position:relative; cursor:pointer; border:2px solid ${isSelected ? '#c9a555' : '#e5e5e5'}; border-radius:8px; overflow:hidden; aspect-ratio:1; background:#f9f9f9;">
-        ${url ? `<img src="${escapeAttr(url)}" alt="${escapeAttr(label)}" style="width:100%; height:100%; object-fit:cover;" loading="lazy" />` : '<div style="display:flex; align-items:center; justify-content:center; height:100%; color:#999; font-size:.75rem;">אין תצוגה</div>'}
-        ${isSelected ? '<div style="position:absolute; top:4px; right:4px; width:22px; height:22px; background:#c9a555; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:.8rem; font-weight:700;">✓</div>' : ''}
-        <div style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.55); color:#fff; font-size:.65rem; padding:2px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${label}</div>
-      </div>`;
-    }).join('')}
+  const itemsHtml = _pickerItems.map(item => renderPickerItem(item)).join('');
+
+  grid.innerHTML = `<div id="mp-grid-inner" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:8px;">
+    ${itemsHtml}
+  </div>${_pickerHasMore ? '<div id="mp-loader" style="text-align:center; padding:12px; color:var(--g400); font-size:.85rem;">גולל למטה לעוד...</div>' : ''}`;
+}
+
+function renderPickerItem(item) {
+  const url = resolveMediaUrl(item.storage_path, STOREFRONT_BASE);
+  const isSelected = _pickerSelected.has(item.id);
+  const label = escapeHtml(item.title || item.original_filename || item.filename || '');
+  return `<div class="mp-item ${isSelected ? 'mp-selected' : ''}"
+    data-id="${item.id}" onclick="togglePickerItem('${item.id}')"
+    style="position:relative; cursor:pointer; border:2px solid ${isSelected ? '#c9a555' : '#e5e5e5'}; border-radius:8px; overflow:hidden; aspect-ratio:1; background:#f9f9f9;">
+    ${url ? `<img src="${escapeAttr(url)}" alt="${escapeAttr(label)}" style="width:100%; height:100%; object-fit:cover;" loading="lazy" />` : '<div style="display:flex; align-items:center; justify-content:center; height:100%; color:#999; font-size:.75rem;">אין תצוגה</div>'}
+    ${isSelected ? '<div style="position:absolute; top:4px; right:4px; width:22px; height:22px; background:#c9a555; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:.8rem; font-weight:700;">✓</div>' : ''}
+    <div style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.55); color:#fff; font-size:.65rem; padding:2px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${label}</div>
   </div>`;
 }
 
@@ -140,7 +174,17 @@ function renderPickerGrid() {
 // External URLs (WordPress) pass through as-is.
 // Supabase storage paths route through /api/image/ proxy.
 
-// ========== INTERACTION ==========
+// ========== SCROLL & INTERACTION ==========
+
+function onPickerScroll() {
+  if (!_pickerHasMore || _pickerLoading) return;
+  const grid = document.getElementById('mp-grid');
+  if (!grid) return;
+  // Load more when scrolled within 100px of the bottom
+  if (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 100) {
+    loadPickerItems(false);
+  }
+}
 
 function togglePickerItem(id) {
   if (_pickerMulti) {
@@ -150,7 +194,24 @@ function togglePickerItem(id) {
     _pickerSelected.clear();
     _pickerSelected.add(id);
   }
-  renderPickerGrid();
+  // Update only the affected items instead of full re-render
+  document.querySelectorAll('.mp-item').forEach(el => {
+    const itemId = el.getAttribute('data-id');
+    const selected = _pickerSelected.has(itemId);
+    el.style.borderColor = selected ? '#c9a555' : '#e5e5e5';
+    el.className = `mp-item ${selected ? 'mp-selected' : ''}`;
+    // Toggle checkmark
+    let check = el.querySelector('.mp-check');
+    if (selected && !check) {
+      const div = document.createElement('div');
+      div.className = 'mp-check';
+      div.style.cssText = 'position:absolute; top:4px; right:4px; width:22px; height:22px; background:#c9a555; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:.8rem; font-weight:700;';
+      div.textContent = '✓';
+      el.appendChild(div);
+    } else if (!selected && check) {
+      check.remove();
+    }
+  });
   updatePickerSelectionBar();
 }
 
@@ -162,14 +223,14 @@ function updatePickerSelectionBar() {
 function onPickerFolderChange(val) {
   _pickerFilter.folder = val;
   _pickerSelected.clear();
-  loadPickerItems();
+  loadPickerItems(true);
 }
 
 function onPickerSearchInput(val) {
   clearTimeout(_pickerSearchTimer);
   _pickerSearchTimer = setTimeout(() => {
     _pickerFilter.search = val.trim();
-    loadPickerItems();
+    loadPickerItems(true);
   }, 300);
 }
 
