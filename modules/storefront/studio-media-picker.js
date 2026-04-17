@@ -5,7 +5,6 @@
 
 let _pickerItems = [];
 let _pickerSelected = new Set();
-let _pickerSignedUrls = {};
 let _pickerFilter = { folder: 'models', search: '' };
 let _pickerCallback = null;
 let _pickerMulti = false;
@@ -101,7 +100,6 @@ async function loadPickerItems() {
     if (error) throw error;
 
     _pickerItems = data || [];
-    await preloadPickerSignedUrls(_pickerItems);
     renderPickerGrid();
   } catch (err) {
     console.error('Picker load error:', err);
@@ -123,7 +121,7 @@ function renderPickerGrid() {
 
   grid.innerHTML = `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:8px;">
     ${_pickerItems.map(item => {
-      const url = _pickerSignedUrls[item.storage_path] || '';
+      const url = resolveMediaUrl(item.storage_path, STOREFRONT_BASE);
       const isSelected = _pickerSelected.has(item.id);
       const label = escapeHtml(item.title || item.original_filename || item.filename || '');
       return `<div class="mp-item ${isSelected ? 'mp-selected' : ''}"
@@ -137,32 +135,10 @@ function renderPickerGrid() {
   </div>`;
 }
 
-// ========== SIGNED URLS ==========
-
-async function getPickerSignedUrl(storagePath) {
-  if (_pickerSignedUrls[storagePath]) return _pickerSignedUrls[storagePath];
-  // External URLs (e.g. old WordPress images) — use directly, no signed URL needed
-  if (storagePath.startsWith('http')) {
-    _pickerSignedUrls[storagePath] = storagePath;
-    return storagePath;
-  }
-  try {
-    const { data, error } = await sb.storage.from('media-library').createSignedUrl(storagePath, 3600);
-    if (error || !data?.signedUrl) return '';
-    _pickerSignedUrls[storagePath] = data.signedUrl;
-    return data.signedUrl;
-  } catch { return ''; }
-}
-
-async function preloadPickerSignedUrls(items) {
-  const uncached = items.filter(i => i.storage_path && !_pickerSignedUrls[i.storage_path]);
-  if (!uncached.length) return;
-  // Chunk requests to avoid overwhelming the browser (10 at a time)
-  for (let i = 0; i < uncached.length; i += 10) {
-    const chunk = uncached.slice(i, i + 10);
-    await Promise.all(chunk.map(item => getPickerSignedUrl(item.storage_path)));
-  }
-}
+// ========== URL RESOLUTION ==========
+// Uses resolveMediaUrl() from shared.js — instant, no network calls.
+// External URLs (WordPress) pass through as-is.
+// Supabase storage paths route through /api/image/ proxy.
 
 // ========== INTERACTION ==========
 
@@ -221,7 +197,7 @@ function confirmPickerSelection() {
 // ========== UUID RESOLUTION HELPER ==========
 
 /**
- * Resolve an array of media_library UUIDs to their storage_paths + signed URLs.
+ * Resolve an array of media_library UUIDs to their storage_paths + display URLs.
  * Used by gallery preview to display images from UUID references.
  * @param {string[]} uuids - Array of media_library IDs
  * @returns {Promise<Array<{id, storage_path, signedUrl}>>}
@@ -243,16 +219,15 @@ async function resolveMediaUUIDs(uuids) {
     if (error) throw error;
 
     const items = data || [];
-    await preloadPickerSignedUrls(items);
 
-    // Return in same order as input
+    // Return in same order as input — use proxy URLs, no signed URL calls
     return validIds.map(uuid => {
       const item = items.find(i => i.id === uuid);
       if (!item) return null;
       return {
         id: item.id,
         storage_path: item.storage_path,
-        signedUrl: _pickerSignedUrls[item.storage_path] || ''
+        signedUrl: resolveMediaUrl(item.storage_path, STOREFRONT_BASE)
       };
     }).filter(Boolean);
   } catch (err) {
