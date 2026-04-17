@@ -286,12 +286,7 @@ function openStudioBrandEditor(brandId) {
     ? `<img src="${escapeAttr(resolvedLogo)}" alt="לוגו" style="max-width:200px; max-height:80px; object-fit:contain; display:block;" />`
     : '<span style="color:var(--g400); font-size:.85rem;">אין לוגו</span>';
 
-  const galleryPreviewHtml = galleryArr.length > 0
-    ? `<div class="gallery-grid">${galleryArr.map((url, i) => `<div class="gallery-thumb">
-        <img src="${escapeAttr(resolveLogoUrl(url))}" alt="תמונה ${i + 1}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;" />
-        <button type="button" onclick="removeStudioGalleryImage(${i})" style="position:absolute; top:-5px; right:-5px; width:20px; height:20px; border-radius:50%; background:#ef4444; color:#fff; border:none; font-size:.75rem; cursor:pointer;">✕</button>
-      </div>`).join('')}</div>`
-    : '<span style="color:var(--g400); font-size:.85rem;">אין תמונות — ישתמש בתמונות מוצרים אוטומטית</span>';
+  // Gallery preview is loaded async after modal opens (UUIDs → signed URLs)
 
   const googleTitle = escapeHtml(brand.seo_title || 'כותרת SEO');
   const googleDesc = escapeHtml(brand.seo_description || 'תיאור SEO');
@@ -358,12 +353,9 @@ function openStudioBrandEditor(brandId) {
 
     <div class="brand-editor-section">
       <h4 style="font-weight:700; margin-bottom:8px;">תמונות קרוסלה</h4>
-      <div id="sbe-gallery-preview">${galleryPreviewHtml}</div>
+      <div id="sbe-gallery-preview"><div class="studio-empty" style="font-size:.85rem;">טוען תמונות...</div></div>
       <div style="margin-top:8px;">
-        <label class="btn-ai-generate" style="cursor:pointer;">
-          📤 העלאת תמונות
-          <input type="file" id="sbe-gallery-input" accept="image/*" multiple style="display:none;" onchange="handleStudioGalleryUpload(this, '${brandId}')" />
-        </label>
+        <button type="button" class="btn-ai-generate" onclick="openGalleryMediaPicker()">🖼 בחר ממדיה</button>
         <span id="sbe-gallery-status" style="font-size:.8rem; margin-right:8px;"></span>
       </div>
       <span style="font-size:.8rem; color:var(--g400);">אם אין תמונות, ישתמש בתמונות מוצרים אוטומטית</span>
@@ -453,6 +445,9 @@ function openStudioBrandEditor(brandId) {
   // Initialize Quill + attach live SEO listeners
   initBrandQuillEditors(desc1, desc2);
   attachSeoListeners();
+
+  // Load gallery preview async (UUIDs → signed URLs)
+  refreshStudioGalleryPreview();
 }
 
 // ═══════════════════════════════════════════════════
@@ -552,63 +547,8 @@ function updateSeoCharCount(textarea) {
   }
 }
 
-// ═══════════════════════════════════════════════════
-// GALLERY — FILE UPLOAD
-// ═══════════════════════════════════════════════════
-
-async function handleStudioGalleryUpload(input, brandId) {
-  const files = input.files;
-  if (!files || !files.length) return;
-
-  const statusEl = document.getElementById('sbe-gallery-status');
-  const tid = getTenantId();
-  let uploaded = 0;
-
-  if (statusEl) { statusEl.textContent = `מעלה ${files.length} תמונות...`; statusEl.style.color = '#666'; }
-
-  for (const file of files) {
-    try {
-      const blob = await convertToWebp(file);
-      const timestamp = Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-      const storagePath = `media/${tid}/models/${timestamp}.webp`;
-
-      const { data, error } = await sb.storage
-        .from('media-library')
-        .upload(storagePath, blob, { contentType: 'image/webp', upsert: false });
-
-      if (error) throw error;
-
-      // Register in media_library table for Gallery reuse
-      const { error: dbErr } = await sb.from('media_library').insert({
-        tenant_id: tid,
-        filename: `${timestamp}.webp`,
-        original_filename: file.name,
-        storage_path: storagePath,
-        mime_type: 'image/webp',
-        file_size: blob.size,
-        folder: 'models',
-        tags: ['brand-gallery', brandId],
-        uploaded_by: sessionStorage.getItem('current_user_name') || 'studio'
-      });
-      if (dbErr) console.warn('media_library insert warning:', dbErr.message);
-
-      // Store storage path (not full URL) — resolved at render time via /api/image/ proxy
-      const ref = storagePath;
-      window._studioGallery.push(ref);
-      uploaded++;
-    } catch (err) {
-      console.error('Gallery upload error:', err);
-    }
-  }
-
-  refreshStudioGalleryPreview();
-  input.value = '';
-  if (statusEl) {
-    statusEl.textContent = uploaded > 0 ? `✓ ${uploaded} תמונות הועלו` : '✗ שגיאה בהעלאה';
-    statusEl.style.color = uploaded > 0 ? '#22c55e' : '#ef4444';
-    setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
-  }
-}
+// Gallery upload removed — images are now selected from media library via picker.
+// New uploads go through the Media tab; gallery uses openGalleryMediaPicker().
 
 function convertToWebp(file) {
   return new Promise((resolve, reject) => {
@@ -634,7 +574,22 @@ function removeStudioGalleryImage(index) {
   refreshStudioGalleryPreview();
 }
 
-function refreshStudioGalleryPreview() {
+function openGalleryMediaPicker() {
+  openMediaPicker({
+    folder: 'models',
+    multi: true,
+    onSelect: (selected) => {
+      const newIds = selected.map(s => s.id);
+      const existing = window._studioGallery || [];
+      // Avoid duplicates
+      const merged = [...existing, ...newIds.filter(id => !existing.includes(id))];
+      window._studioGallery = merged;
+      refreshStudioGalleryPreview();
+    }
+  });
+}
+
+async function refreshStudioGalleryPreview() {
   const container = document.getElementById('sbe-gallery-preview');
   if (!container) return;
   const arr = window._studioGallery || [];
@@ -642,8 +597,12 @@ function refreshStudioGalleryPreview() {
     container.innerHTML = '<span style="color:var(--g400); font-size:.85rem;">אין תמונות — ישתמש בתמונות מוצרים אוטומטית</span>';
     return;
   }
-  container.innerHTML = `<div class="gallery-grid">${arr.map((url, i) => `<div class="gallery-thumb">
-    <img src="${escapeAttr(resolveLogoUrl(url))}" alt="תמונה ${i + 1}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;" />
+
+  // Gallery stores media_library UUIDs — resolve to signed URLs for preview
+  const resolved = await resolveMediaUUIDs(arr);
+
+  container.innerHTML = `<div class="gallery-grid">${resolved.map((item, i) => `<div class="gallery-thumb">
+    <img src="${escapeAttr(item.signedUrl || '')}" alt="תמונה ${i + 1}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;" />
     <button type="button" onclick="removeStudioGalleryImage(${i})" style="position:absolute; top:-5px; right:-5px; width:20px; height:20px; border-radius:50%; background:#ef4444; color:#fff; border:none; font-size:.75rem; cursor:pointer;">✕</button>
   </div>`).join('')}</div>`;
 }
