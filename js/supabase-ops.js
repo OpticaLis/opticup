@@ -154,7 +154,7 @@ async function generateNextBarcode() {
 async function writeLog(action, inventoryId, details = {}) {
   try {
     const emp    = getCurrentEmployee();
-    const branch = emp?.branch_id || sessionStorage.getItem('prizma_branch') || '00';
+    const branch = emp?.branch_id || sessionStorage.getItem('tenant_branch') || '00';
     await sb.from('inventory_logs').insert({
       action,
       inventory_id:  inventoryId || null,
@@ -167,7 +167,7 @@ async function writeLog(action, inventoryId, details = {}) {
       price_after:   details.price_after   ?? null,
       reason:        details.reason        || null,
       source_ref:    details.source_ref    || null,
-      performed_by:  emp?.name || sessionStorage.getItem('prizma_user') || 'unknown',
+      performed_by:  emp?.name || sessionStorage.getItem('tenant_user') || 'unknown',
       branch_id:     branch,
       // Access sale fields (011)
       sale_amount:   details.sale_amount   ?? null,

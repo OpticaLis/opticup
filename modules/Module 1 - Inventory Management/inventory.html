@@ -9,7 +9,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>אופטיקה פריזמה — מערכת מלאי</title>
+<title>Optic Up — מערכת מלאי</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -274,7 +274,7 @@ tr.row-err td{background:#fef2f2}
 <body>
 
 <header>
-  <div class="logo"><span>&#9670;</span> אופטיקה פריזמה</div>
+  <div class="logo"><span>&#9670;</span> <span id="inv-store-name">Optic Up</span></div>
   <span style="font-size:.8rem;opacity:.6">Supabase</span>
 </header>
 
@@ -881,7 +881,7 @@ let currentPONum = '';
 let currentPOSupplier = '';
 let selectedPOForEntry = null;
 let maxBarcode = 0;
-let branchCode = sessionStorage.getItem('prizma_branch') || '00';
+let branchCode = sessionStorage.getItem('tenant_branch') || '00';
 
 // System Log state
 let slogPage = 0, slogTotalPages = 0, slogCurrentFilters = {};
@@ -1127,8 +1127,8 @@ async function batchUpdate(tableName, records) {
 // =========================================================
 async function writeLog(action, inventoryId, details = {}) {
   try {
-    const performer = sessionStorage.getItem('prizma_user') || 'system';
-    const branch    = sessionStorage.getItem('prizma_branch') || '00';
+    const performer = sessionStorage.getItem('tenant_user') || 'system';
+    const branch    = sessionStorage.getItem('tenant_branch') || '00';
     await sb.from('inventory_logs').insert({
       action,
       inventory_id:  inventoryId || null,
@@ -1238,13 +1238,13 @@ function showEntryMode(mode) {
 function toggleAdmin() {
   if (isAdmin) {
     isAdmin = false;
-    sessionStorage.removeItem('prizma_admin');
+    sessionStorage.removeItem('tenant_admin');
     document.body.classList.remove('admin-mode');
     $('adminBtn').classList.remove('unlocked');
     $('adminBtn').innerHTML = '&#128274; מנהל';
     toast('יצאת ממצב מנהל', 'i');
   } else {
-    if (sessionStorage.getItem('prizma_admin') === '1') {
+    if (sessionStorage.getItem('tenant_admin') === '1') {
       activateAdmin();
     } else {
       $('admin-modal').style.display = 'flex';
@@ -1256,7 +1256,7 @@ function toggleAdmin() {
 function checkAdmin() {
   if ($('admin-pass').value === '1234') {
     closeModal('admin-modal');
-    sessionStorage.setItem('prizma_admin', '1');
+    sessionStorage.setItem('tenant_admin', '1');
     activateAdmin();
   } else {
     toast('סיסמה שגויה', 'e');
@@ -3479,7 +3479,7 @@ async function confirmQtyChange() {
   if (!emp) { toast('❌ סיסמת עובד שגויה', 'e'); $('qty-modal-pin').value = ''; $('qty-modal-pin').focus(); return; }
 
   // Store performer name
-  sessionStorage.setItem('prizma_user', emp.name);
+  sessionStorage.setItem('tenant_user', emp.name);
 
   const newQty = mode === 'add' ? currentQty + amount : currentQty - amount;
   const fullReason = note ? reason + ' — ' + note : reason;
@@ -4184,7 +4184,7 @@ async function saveReceiptDraft() {
       notes: notes || null,
       total_amount: totalAmount || null,
       status: 'draft',
-      created_by: sessionStorage.getItem('prizma_user') || 'system'
+      created_by: sessionStorage.getItem('tenant_user') || 'system'
     };
 
     let receiptId;
@@ -4311,7 +4311,7 @@ async function confirmReceipt() {
     const { error: confErr } = await sb.from(T.RECEIPTS).update({
       status: 'confirmed',
       total_amount: totalAmount || null,
-      created_by: sessionStorage.getItem('prizma_user') || 'system'
+      created_by: sessionStorage.getItem('tenant_user') || 'system'
     }).eq('id', receiptId);
     if (confErr) throw confErr;
 
@@ -4389,7 +4389,7 @@ async function saveReceiptDraftInternal() {
     notes: notes || null,
     total_amount: totalAmount || null,
     status: 'draft',
-    created_by: sessionStorage.getItem('prizma_user') || 'system'
+    created_by: sessionStorage.getItem('tenant_user') || 'system'
   };
 
   let receiptId;
@@ -4463,7 +4463,7 @@ async function confirmReceiptById(receiptId) {
     const totalAmount = (items || []).reduce((s, i) => s + (i.unit_cost || 0) * i.quantity, 0);
     await sb.from(T.RECEIPTS).update({
       status: 'confirmed', total_amount: totalAmount || null,
-      created_by: sessionStorage.getItem('prizma_user') || 'system'
+      created_by: sessionStorage.getItem('tenant_user') || 'system'
     }).eq('id', receiptId);
 
     toast(`קבלה ${rcptNumber} אושרה — מלאי עודכן!`, 's');
@@ -4616,7 +4616,14 @@ function backToReceiptList() {
 // INIT
 // =========================================================
 document.addEventListener('DOMContentLoaded', () => {
-  if (sessionStorage.getItem('prizma_admin') === '1') activateAdmin();
+  // Dynamic store branding from auth session (Rule 9 — no hardcoded tenant names)
+  const _tn = sessionStorage.getItem('tenant_name_cache');
+  if (_tn) {
+    document.title = _tn + ' — מערכת מלאי';
+    const _logo = document.getElementById('inv-store-name');
+    if (_logo) _logo.textContent = _tn;
+  }
+  if (sessionStorage.getItem('tenant_admin') === '1') activateAdmin();
   const dateEl = $('po-date');
   if (dateEl) dateEl.valueAsDate = new Date();
   const rcptDateEl = $('rcpt-date');

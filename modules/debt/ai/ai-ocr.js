@@ -26,7 +26,7 @@ async function triggerOCR(fileUrl, supplierId, documentTypeHint, existingDocId) 
   if (!fileUrl) { toast('אין קובץ לסריקה', 'e'); return; }
   var ocrLimit = await checkPlanLimit('ocr_scans_monthly');
   if (!ocrLimit.allowed) { toast(ocrLimit.message || 'הגעת למגבלה', 'w'); return; }
-  var jwt = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
+  var jwt = sessionStorage.getItem('tenant_auth_token') || sessionStorage.getItem('jwt_token');
   if (!jwt) { toast('נדרשת התחברות מחדש', 'e'); return; }
   showLoading('סורק את המסמך...');
   try {
@@ -183,7 +183,7 @@ async function scanDocumentAllFiles(docId, supplierId, docTypeHint) {
   // Single file → standard scan (backward compat)
   if (files.length === 1) { triggerOCR(files[0].file_url, supplierId, docTypeHint, docId); return; }
   // Multi-file → send all URLs in one request
-  var jwt = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
+  var jwt = sessionStorage.getItem('tenant_auth_token') || sessionStorage.getItem('jwt_token');
   if (!jwt) { toast('\u05E0\u05D3\u05E8\u05E9\u05EA \u05D4\u05EA\u05D7\u05D1\u05E8\u05D5\u05EA \u05DE\u05D7\u05D3\u05E9', 'e'); return; }
   files.sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
   var fileUrls = files.map(function(f) { return f.file_url; });

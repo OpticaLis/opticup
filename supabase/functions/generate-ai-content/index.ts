@@ -25,6 +25,42 @@ function errRes(message: string, status: number): Response {
   return jsonRes({ error: message, success: false }, status);
 }
 
+/* ── Detect image media type from file bytes (magic numbers) ── */
+function detectMediaTypeFromBytes(bytes: Uint8Array): string | null {
+  if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+    return "image/jpeg";
+  }
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+    return "image/png";
+  }
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+      bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+    return "image/webp";
+  }
+  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) {
+    return "image/gif";
+  }
+  return null;
+}
+
+/* ── Detect image media type from file extension ── */
+function getMediaTypeFromExt(storagePath: string): string {
+  const ext = storagePath.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "png":
+      return "image/png";
+    case "webp":
+      return "image/webp";
+    case "gif":
+      return "image/gif";
+    default:
+      return "image/jpeg";
+  }
+}
+
 /* ── Fetch product image as base64 ── */
 async function fetchImageBase64(
   db: ReturnType<typeof createClient>,
@@ -42,14 +78,9 @@ async function fetchImageBase64(
     const buf = new Uint8Array(await res.arrayBuffer());
     const base64 = btoa(String.fromCharCode(...buf));
 
-    const ext = storagePath.split(".").pop()?.toLowerCase() ?? "webp";
-    const mimeMap: Record<string, string> = {
-      webp: "image/webp",
-      png: "image/png",
-      jpg: "image/jpeg",
-      jpeg: "image/jpeg",
-    };
-    return { base64, mediaType: mimeMap[ext] ?? "image/webp" };
+    // Byte detection is authoritative; fall back to extension
+    const mediaType = detectMediaTypeFromBytes(buf) ?? getMediaTypeFromExt(storagePath);
+    return { base64, mediaType };
   } catch {
     return null;
   }
@@ -63,7 +94,6 @@ function buildPromptWithImages(
     color: string;
     size: string;
     product_type: string;
-    sell_price?: number;
   },
   contentTypes: string[],
   corrections: { original: string; corrected: string }[]
@@ -71,12 +101,34 @@ function buildPromptWithImages(
   const parts: string[] = [];
 
   parts.push(
-    `אתה קופירייטר מקצועי עבור אתר חנות אופטיקה ישראלית.
-כתוב תיאורים שיווקיים למוצרי משקפיים.
-סגנון: מקצועי אך נגיש, כולל המלצות סטיילינג.
+    `אתה כותב תיאורי מוצרים לאתר אופטיקה. הכללים:
+
+1. התחל תמיד עם: "[סוג מוצר] של [מותג], דגם [מספר דגם]"
+   דוגמה: "משקפי ראייה של Gucci, דגם GG1212O"
+
+2. נתונים מהמערכת — השתמש בהם תמיד (אם קיימים):
+   - שם מותג, מספר דגם, צבע, חומר, סוג (ראייה/שמש), מידה
+
+3. נתונים מהתמונה — תאר רק מה שאתה רואה בפועל:
+   - צורת המסגרת (עגולה, מרובעת, חתולית, אובלית, טייסים וכו')
+   - עובי המסגרת (דקה, עבה, חצי-מסגרת, ללא מסגרת)
+   - צבע ודוגמה (חד-צבעי, מנומר, שקוף, גרדיאנט)
+   - פרטים בולטים (לוגו, עיטורים, ציריות חשופות)
+
+4. אסור בהחלט:
+   - לא לכתוב למי מתאים (לא "לפנים עגולות", לא "למראה עסקי")
+   - לא לכתוב לאילו אירועים מתאים (לא "למשרד", לא "לאירועים")
+   - לא לכתוב "מושלם ל...", "אידיאלי ל...", "מתאים ל..."
+   - לא להמליץ על שילובי לבוש
+   - לא לכתוב משפטים שיווקיים ריקים ("ביטוי אמיתי של סגנון")
+   - אסור לציין מחירים בשום מקרה! לא מחיר מלא, לא מחיר מבצע, לא טווח מחירים. המחיר מופיע בעמוד המוצר בנפרד.
+
+5. מותר:
+   - לציין את סגנון העיצוב הכללי (רטרו, מודרני, מינימליסטי, קלאסי) אם ברור מהתמונה
+   - לציין אם המסגרת נראית קלה/כבדה/גמישה מהתמונה
+
 שפה: עברית בלבד — כתוב הכל בעברית! אל תכתוב ברוסית או באנגלית.
-שמות מותגים ודגמים בלבד יכולים להישאר בשפה המקורית.
-תמונת המוצר מצורפת — השתמש בה לתיאור סגנון המסגרת, למי היא מתאימה, ולאילו אירועים.`
+שמות מותגים ודגמים בלבד יכולים להישאר בשפה המקורית.`
   );
 
   if (corrections.length > 0) {
@@ -91,10 +143,13 @@ function buildPromptWithImages(
 
   const typeInstructions: Record<string, string> = {
     description:
-      "description — תיאור שיווקי מלא (2-3 משפטים, כולל סגנון המסגרת, למי מתאים, לאילו אירועים, והמלצת סטיילינג)",
-    seo_title: "seo_title — כותרת SEO (50-60 תווים, כולל מותג + דגם)",
-    seo_description: "seo_description — תיאור מטא SEO (150-160 תווים)",
-    alt_text: "alt_text — טקסט חלופי לתמונה (תיאורי ונגיש, מבוסס על מה שנראה בתמונה)",
+      "description — תיאור מוצר (2-3 משפטים, מבוסס על נתוני המערכת ומה שנראה בתמונה בלבד)",
+    seo_title:
+      'seo_title — כותרת SEO: עד 60 תווים. פורמט: "[סוג] [מותג] [דגם] [מאפיין בולט]". דוגמה: "משקפי ראייה Gucci GG1212O - מסגרת עגולה שחורה". אסור לציין מחירים.',
+    seo_description:
+      "seo_description — תיאור SEO: עד 160 תווים. כלול מותג + דגם + סוג + מאפיין בולט אחד מהתמונה. לא לכתוב \"מושלם ל...\" או המלצות styling. אסור לציין מחירים.",
+    alt_text:
+      'alt_text — Alt text: תיאור ויזואלי טכני בלבד. מה רואים בתמונה. דוגמה: "משקפי ראייה Gucci עם מסגרת עגולה שחורה על רקע לבן". אסור לציין מחירים.',
   };
 
   for (const ct of contentTypes) {
@@ -104,9 +159,6 @@ function buildPromptWithImages(
   parts.push(
     `\nמוצר: ${product.brand_name} ${product.model}, צבע: ${product.color}, מידה: ${product.size}, סוג: ${product.product_type}`
   );
-  if (product.sell_price) {
-    parts.push(`מחיר: ₪${product.sell_price}`);
-  }
 
   parts.push(`\nהחזר JSON בלבד בפורמט הבא (בלי markdown, בלי backticks):
 {${contentTypes.map((t) => `"${t}": "..."`).join(", ")}}`);
@@ -122,7 +174,6 @@ function buildPromptNoImages(
     color: string;
     size: string;
     product_type: string;
-    sell_price?: number;
   },
   contentTypes: string[]
 ): string {
@@ -136,6 +187,7 @@ function buildPromptNoImages(
 כתוב תיאורים עובדתיים בלבד למוצרי משקפיים — ללא תמונה זמינה.
 אל תכתוב המלצות סטיילינג, אל תכתוב "נראה נהדר עם", אל תתאר איך המסגרת נראית.
 כתוב רק עובדות: מותג, דגם, צבע, חומר, סוג.
+אסור לציין מחירים בשום מקרה. לא מחיר מלא, לא מחיר מבצע, לא טווח מחירים.
 שפה: עברית בלבד — כתוב הכל בעברית! אל תכתוב ברוסית או באנגלית.
 שמות מותגים ודגמים בלבד יכולים להישאר בשפה המקורית.`
   );
@@ -144,9 +196,9 @@ function buildPromptNoImages(
 
   const typeInstructions: Record<string, string> = {
     description:
-      "description — תיאור עובדתי קצר (1-2 משפטים, מותג + דגם + צבע + סוג בלבד, ללא סטיילינג)",
-    seo_title: "seo_title — כותרת SEO (50-60 תווים, כולל מותג + דגם)",
-    seo_description: "seo_description — תיאור מטא SEO בסיסי (150-160 תווים, מבוסס על נתונים זמינים בלבד)",
+      "description — תיאור עובדתי קצר (1-2 משפטים, מותג + דגם + צבע + סוג בלבד, ללא סטיילינג). אסור לציין מחירים.",
+    seo_title: 'seo_title — כותרת SEO (עד 60 תווים, כולל מותג + דגם). אסור לציין מחירים.',
+    seo_description: "seo_description — תיאור מטא SEO בסיסי (עד 160 תווים, מבוסס על נתונים זמינים בלבד). אסור לציין מחירים.",
   };
 
   for (const ct of filteredTypes) {
@@ -156,9 +208,6 @@ function buildPromptNoImages(
   parts.push(
     `\nמוצר: ${product.brand_name} ${product.model}, צבע: ${product.color}, מידה: ${product.size}, סוג: ${product.product_type}`
   );
-  if (product.sell_price) {
-    parts.push(`מחיר: ₪${product.sell_price}`);
-  }
 
   parts.push(`\nהחזר JSON בלבד בפורמט הבא (בלי markdown, בלי backticks):
 {${filteredTypes.map((t) => `"${t}": "..."`).join(", ")}}`);

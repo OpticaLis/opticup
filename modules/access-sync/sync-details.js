@@ -30,7 +30,7 @@ async function openSyncDetails(logId) {
       if (!emp) { toast('סיסמת עובד שגויה', 'e'); hideLoading(); return; }
       _syncDetailPinVerified = true;
       _syncDetailEmployee = emp;
-      sessionStorage.setItem('prizma_user', emp.name);
+      sessionStorage.setItem('tenant_user', emp.name);
     }
 
     // Fetch successful items from inventory_logs

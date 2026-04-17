@@ -1,588 +1,389 @@
-﻿# Optic Up — Claude Code Project Guide
+# Optic Up — Claude Code Project Guide
 
-## First Action — Read This Before Anything Else
-
-When starting a new session:
-1. Verify you are on `develop` branch: `git branch`
-2. Read `CLAUDE.md` (this file) — rules, conventions, structure
-3. Read the SESSION_CONTEXT.md of the module you're working on:
-   - Module 1: `modules/Module 1 - Inventory Management/docs/SESSION_CONTEXT.md`
-   - Module 1.5: `modules/Module 1.5 - Shared Components/docs/SESSION_CONTEXT.md`
-4. Read `docs/GLOBAL_MAP.md` — shared functions, contracts, module registry (reference only — do NOT modify)
-
-**Do NOT read MODULE_MAP.md or GLOBAL_SCHEMA.sql at session start.** They are reference documents — open only when needed.
-
-After reading, confirm:
-> "On branch: develop. Module: [X]. Current status: [one line]. Ready."
+> **This file is a MAP, not a manual.** It contains rules and navigation.
+> Detailed content lives in the reference files listed in Section 12.
+> Keep this file under 400 lines. If it grows — extract to a reference file.
 
 ---
 
-## Project
+## 1. First Action — Session Start Protocol
 
-- **Name:** Optic Up — optical store management SaaS for optician chains
-- **Direction:** Multi-tenant SaaS — each store gets its own isolated environment (ERP + Storefront)
-- **Current tenant:** אופטיקה פריזמה (Prizma Optics) — first and only tenant
-- **Repo:** opticalis/opticup
+When starting a new Claude Code session, do these steps in order. No exceptions.
+
+1. **Identify machine & repo:** Ask "Which of the three machines? 🖥️ Windows desktop, 🖥️ Windows laptop, or 🍎 Mac?" (see §9 Multi-Machine for paths) and confirm the working directory matches the task. Run `git remote -v` to verify you are in `opticalis/opticup` (ERP) vs `opticalis/opticup-storefront`. If the remote does not match the task — STOP and tell the user.
+2. **Verify branch:** `git branch` — must be on `develop`. If not: `git checkout develop`.
+3. **Pull latest:** `git pull origin develop`.
+4. **Clean repo check:** run `git status`. If there are uncommitted changes, deleted files, or untracked files that are NOT part of the current task:
+   - Report them to the user with a one-line summary of each file/group.
+   - Ask once: "I see pre-existing uncommitted changes in these files. Options: (a) stash them with `git stash` and restore after the task, (b) leave them alone and use selective `git add` by filename for this task, (c) they are intentional work-in-progress — just note them and continue with selective add. Which?"
+   - Wait for the user's choice, then proceed. Do NOT ask about them again later in the session.
+   - If the repo is clean — continue without saying anything.
+5. **Read this file** (CLAUDE.md) — rules, navigation, conventions.
+6. **Read the target module's SESSION_CONTEXT.md** — path pattern:
+   `modules/Module X - [Name]/docs/SESSION_CONTEXT.md`
+   Active modules with SESSION_CONTEXT: Module 1 (Inventory), Module 1.5 (Shared Components), Module 2 (Platform Admin), Module 3 (Storefront). **For Module 3 specifically:** read BOTH `modules/Module 3 - Storefront/docs/SESSION_CONTEXT.md` (this repo, ERP-side, authoritative for Module 3 phase status) AND `[sibling repo]/opticup-storefront/SESSION_CONTEXT.md` (storefront working state). If they disagree on phase status, this repo wins per §7 Authority Matrix. Flag drift to Daniel before proceeding. Phase letters (A/B/C/D) may appear ONLY in the ERP-side file — never in the storefront file.
+7. **Read `docs/GLOBAL_MAP.md`** — shared functions, contracts, module registry (reference only — do NOT modify outside Integration Ceremony).
+8. **Read `docs/guardian/GUARDIAN_ALERTS.md`** — the Sentinel's active alerts. If there are CRITICAL or HIGH alerts that relate to the files you will work on — report them to Daniel before starting. If "ALL CLEAR" — continue.
+
+**Do NOT read at session start:** MODULE_MAP.md, GLOBAL_SCHEMA.sql, FILE_STRUCTURE.md, DB_TABLES_REFERENCE.md, CONVENTIONS.md. These are reference files — open only when needed for the specific task.
+
+After reading, confirm in one block:
+> "Repo: opticalis/opticup. Branch: develop. Machine: [🖥️/🍎]. Repo status: [clean / dirty-handled]. Module: [X]. Current status: [one line from SESSION_CONTEXT]. Ready."
+
+---
+
+## 2. Project Identity
+
+- **Name:** Optic Up — multi-tenant SaaS for optical stores
+- **First tenant:** אופטיקה פריזמה (Prizma Optics) — production
+- **Test tenant:** אופטיקה דמו (demo) — all QA runs here, never on prizma
+- **Repos:**
+  - `opticalis/opticup` — ERP (this repo)
+  - `opticalis/opticup-storefront` — public-facing site (separate repo, separate CLAUDE.md)
 - **Supabase:** https://tsxrrxzmdxaenlvocyit.supabase.co
-- **Deploy:** GitHub Pages → https://app.opticalis.co.il/ (index.html = home screen, inventory.html = inventory module)
+- **ERP Deploy:** GitHub Pages → https://app.opticalis.co.il/
 
-## Architecture — SaaS Multi-Tenant
+## 3. Architecture — One Picture
 
 ```
 ┌──────────────────────┐         ┌──────────────────────┐
-│   Optic Up ERP       │         │  Optic Up Storefront  │
-│   (internal mgmt)    │         │  (public-facing site)  │
-│   employees only     │         │  open to public        │
+│   Optic Up ERP       │         │  Optic Up Storefront │
+│   (internal, staff)  │         │  (public site)       │
 └──────────┬───────────┘         └──────────┬───────────┘
            │                                │
            └────────► Supabase ◄────────────┘
-                    (tenant_id isolates everything)
+                    (tenant_id + RLS)
 ```
 
-- **ERP** = what we're building now (inventory, debt tracking, etc.)
-- **Storefront** = future public-facing site — reads ONLY from Views and RPC functions, never touches tables directly
-- **Supplier Portal** = same principle as Storefront — Views only
-- **Every table has `tenant_id UUID NOT NULL`** — no exceptions
+- **ERP** = Vanilla JS, HTML per module, no build step. This repo.
+- **Storefront** = Astro + TypeScript + Tailwind. Separate repo. Reads ONLY from Views + RPC.
+- **Every table** = `tenant_id UUID NOT NULL` + RLS policy. No exceptions.
 
-## Stack
+---
 
-- Vanilla JS (no framework), Supabase JS v2, SheetJS (xlsx)
-- index.html = home screen (login + module cards)
-- inventory.html = inventory management module
-- JS files in /js/, CSS in /css/, modules in /modules/
+## 4. Iron Rules — Core Discipline (Rules 1–13)
 
-## UI
+These are hard rules. Breaking one is a bug, regardless of whether it "works."
 
-- Hebrew RTL interface
-- Dark blue + white + gray theme
-- Mobile responsive
+1. **Quantity changes** — only via ➕➖ buttons with PIN verification. Atomic Supabase RPC (`quantity = quantity + x`), never read→compute→write.
+2. **writeLog()** — called for every quantity/price change. Async, non-blocking.
+3. **Deletion** — soft delete only (`is_deleted` flag). Permanent delete requires double PIN.
+4. **Barcodes** — format `BBDDDDD` (2-digit branch + 5-digit sequence). Do NOT change barcode logic.
+5. **FIELD_MAP** — every new DB field must be added to `FIELD_MAP` in `shared.js`.
+6. **index.html** — stays in repo root. Never moved.
+7. **API Abstraction** — all DB interactions pass through `shared.js` helpers (`fetchAll`, `batchCreate`, `batchUpdate`, etc.). Never call `sb.from()` directly except for specialized joins impossible through helpers.
+8. **Security & Sanitization** — never `innerHTML` with user input. Use `escapeHtml()` or `textContent`. PIN verification uses the `pin-auth` Edge Function (server-side JWT). Do not refactor PIN verification without explicit instruction.
+9. **No hardcoded business values** — tenant name, address, tax rate, logo, phone, VAT, currency — always read from config/DB. Never a string literal in code.
+10. **Global name collision check** — before creating/moving/renaming any global function or variable: `grep -rn "functionName" --include="*.js" --include="*.html" .` If any other file defines the same name — resolve the collision BEFORE writing code. Report findings, wait for instructions.
+11. **Sequential number generation** — every auto-generated sequential number (PO, return, document, box, shipment, etc.) MUST use an atomic Supabase RPC with `FOR UPDATE` lock. Client-side `SELECT MAX → +1 → INSERT` is FORBIDDEN. Reference patterns: `next_box_number`, `next_po_number`, `next_return_number`.
+12. **File size** — target max 300 lines per file. Absolute max 350. Split only where there is a clear logical separation — never arbitrarily by line count. One responsibility per file.
+13. **Views-only for external reads** — Storefront and Supplier Portal read ONLY from Views + RPC. Never direct table access. Views' WHERE clauses for filtering must not be modified without explicit approval.
 
-## Critical Rules
-
-### Iron Rules — Never Break
-
-1. **Quantity changes** — ONLY through ➕➖ buttons with PIN verification. Never direct edit. Quantity updates should prefer atomic increments via Supabase RPC (`quantity = quantity + x`) over calculated values to prevent race conditions. New quantity-changing features must use this pattern.
-2. **writeLog()** — must be called for every quantity/price change. It is async and non-blocking.
-3. **Deletion** — always soft delete (is_deleted flag). Permanent delete requires double PIN.
-4. **Barcodes** — format BBDDDDD (2-digit branch + 5-digit sequence). Do NOT change barcode logic.
-5. **FIELD_MAP** — every new DB field must be added to FIELD_MAP in shared.js.
-6. **index.html** — must stay in repo root. Never move it.
-7. **Admin password** — 1234 (sessionStorage key: adminMode)
-8. **Default employee PIN** — 1234
-9. **API Abstraction** — All database interactions must pass through `shared.js` helper functions (`fetchAll`, `batchCreate`, `batchUpdate`, etc.). Modules should never call `sb.from()` directly unless for specialized joins that cannot be expressed through the helpers.
-10. **Security & Sanitization** — Never use `innerHTML` with user-controlled input. Always use `escapeHtml()` or `textContent`. Note: PIN verification calls the pin-auth Edge Function which validates server-side and returns a signed JWT. Do not attempt to refactor PIN verification unless explicitly instructed.
-11. **No hardcoded business values** — Business name, address, tax rate, logo, phone, and any tenant-specific data must always be read from a variable or config, never from a hardcoded string in code. This ensures every tenant can customize without code changes.
-12. **Global name collision check** — Before creating, moving, or renaming any global function or variable, run: `grep -rn "functionName" --include="*.js" --include="*.html" .` If ANY other file defines the same name — resolve the collision BEFORE writing code. Report findings and wait for instructions.
-13. **Sequential number generation** — Every auto-generated sequential number (PO number, return number, document number, box number, etc.) MUST use an atomic Supabase RPC function with FOR UPDATE lock or equivalent serialization. Client-side SELECT MAX → +1 → INSERT is FORBIDDEN due to race conditions. Reference pattern: next_box_number, next_po_number, next_return_number RPCs.
-
-### SaaS Rules — Mandatory from Phase 3.75 Onward
+## 5. SaaS Rules — Multi-Tenant Discipline (Rules 14–20)
 
 14. **tenant_id on every table** — every new table MUST have `tenant_id UUID NOT NULL REFERENCES tenants(id)`. No exceptions, ever.
-15. **RLS on every table** — every new table MUST have Row Level Security enabled with a tenant isolation policy. Use this template:
+15. **RLS on every table** — every new table MUST have Row Level Security enabled with tenant isolation:
     ```sql
     CREATE POLICY tenant_isolation ON [table_name]
       USING (tenant_id = current_setting('app.tenant_id')::uuid);
     ```
-16. **Contracts** — every phase must define its public functions (contracts) in MODULE_SPEC.md. Other modules call only these contract functions — never access another module's tables directly.
-17. **Views for external access** — every phase must consider: "What does a supplier/customer/storefront need to see?" and plan Views accordingly.
-18. **No hardcoded values** — currencies, languages, payment types = configurable tables, not hardcoded enums. Build as if a second store joins tomorrow in a different country.
-19. **SaaS litmus test** — build every phase as if tomorrow a second optician chain joins that we've never met. If they can use the phase without any code changes — it was done right.
-20. **UNIQUE constraints must include tenant_id** — every UNIQUE constraint on any table must be scoped to the tenant. A global UNIQUE prevents multi-tenant data from coexisting. Example: `UNIQUE (barcode, tenant_id)` not `UNIQUE (barcode)`.
+
+    #### Canonical RLS Pattern (Reference Implementation)
+
+    The reference implementation for tenant-isolated RLS policies in
+    Optic Up uses JWT claims, not `auth.uid()`. The canonical pattern
+    lives in `pending_sales` table policies and was verified against
+    the live DB on 2026-04-11. Every new RLS policy in the project
+    must use this exact `USING` clause for tenant isolation:
+
+    ```sql
+    tenant_id = (((current_setting('request.jwt.claims'::text, true))::json ->> 'tenant_id'::text))::uuid
+    ```
+
+    **Why this pattern (and not `auth.uid()`):** Optic Up uses PIN-based
+    authentication via the `pin-auth` Edge Function, which mints JWTs
+    with `tenant_id` as a claim. The `auth.uid()` Postgres function
+    returns the Supabase Auth user ID — which is NULL or wrong for
+    Optic Up's tenant context. Using `auth.uid()` in a tenant_id slot
+    silently breaks multi-tenant isolation.
+
+    **The canonical two-policy pattern:** Every multi-tenant table uses
+    TWO RLS policies together: (1) a `service_bypass` policy applied to
+    `service_role` (which is trusted and bypasses RLS by design), and
+    (2) a `tenant_isolation` policy applied to `public` that uses the
+    JWT-claim USING clause above. The reference implementation is the
+    policy pair on `pending_sales`. Copy both, not just one. Note that
+    `service_bypass` here is the policy name, not a column name.
+
+    **For fixing existing broken policies:** copy the USING clause
+    above verbatim. Do not invent variations. Do not parameterize.
+    The clause is the policy. Any deviation from this pattern in a
+    policy is a finding for the next DB audit.
+
+16. **Contracts between modules** — every phase defines its public functions (contracts) in `MODULE_SPEC.md`. Other modules call ONLY these — never reach into another module's tables directly.
+17. **Views for external access** — every phase asks: "What does a supplier/customer/storefront need to see?" and plans Views accordingly.
+18. **UNIQUE constraints must include tenant_id** — every UNIQUE constraint must be tenant-scoped. Example: `UNIQUE (barcode, tenant_id)` not `UNIQUE (barcode)`. A global UNIQUE prevents multi-tenant coexistence.
+19. **Configurable values = tables, not enums** — currencies, languages, payment types, document types = configurable tables. Not hardcoded enums.
+20. **SaaS litmus test** — build every phase as if tomorrow a second optical chain joins that we've never met, in a different country. If they can use the phase with zero code changes → it was built right.
+
+## 6. Hygiene Rules — Project Sanity (Rules 21+)
+
+21. **No Orphans, No Duplicates.** Before creating any new file, function, table, column, RPC, config, or migration: search if something similar already exists. Use `grep -rn` for code, check GLOBAL_MAP.md for functions, check GLOBAL_SCHEMA.sql for DB objects, check FILE_STRUCTURE.md for files. If a similar thing exists:
+    - **Extend it** instead of creating a new one, OR
+    - **Replace it** — and in the same commit, DELETE the old one.
+    Never leave two things that do the same job. Orphaned code becomes the source of future bugs.
+22. **Defense-in-depth on writes** — every `.insert()` / `.upsert()` must include `tenant_id: getTenantId()`. Every `.select()` should also filter `.eq('tenant_id', getTenantId())` even though RLS enforces it. Belt AND suspenders.
+23. **No secrets in code or docs** — passwords, API keys, PINs, tokens live in env files, Supabase secrets, or tenant config. Never in `.js`, `.md`, or git history. If you find one while editing — flag it, do not "just leave it there."
+
+### Cross-repo: Iron Rules 24–30 (Storefront-Scoped)
+
+Rules **1–23 above are the canonical source for all ERP, Studio, and Platform Admin work in this repo.** They apply everywhere inside `opticalis/opticup`.
+
+Rules **24–30 are defined in `opticup-storefront/CLAUDE.md`** (the sibling repo's own constitution) and apply **only when the working directory is `opticalis/opticup-storefront`**. They are listed here purely as a cross-reference so the full rule set is discoverable from either repo:
+
+- **24. Views and RPCs only — no direct table access.** The storefront touches tables only through the allow-listed Views in `opticup-storefront/CLAUDE.md §5`. Anything else → extend a View + `GRANT SELECT TO anon`.
+- **25. Image proxy mandatory.** All Supabase Storage images flow through `/api/image/[...path].ts` (server-side `SUPABASE_SERVICE_ROLE_KEY`). The `frame-images` bucket stays private.
+- **26. Product images have transparent backgrounds.** Always use `bg-white` containers in product cards — never colored/gray backgrounds.
+- **27. RTL-first.** Hebrew is the default locale. Every component must use logical CSS properties (`padding-inline-start`, `margin-inline-end`, `start`/`end`, never `left`/`right`).
+- **28. Mobile-first responsive.** Test the narrowest breakpoint first; every page must work on mobile.
+- **29. View Modification Protocol — CRITICAL.** Never modify a Supabase View without following the declared protocol in `opticup-storefront/CLAUDE.md §5`.
+- **30. Safety Net — mandatory testing.** Every storefront commit runs the safety-net scripts before landing.
+
+**If you are working in `opticalis/opticup` (this repo) — rules 1–23 govern, and rules 24–30 do not apply even if your task touches storefront-adjacent code (e.g., Storefront Studio under `modules/storefront/`). If you are working in `opticalis/opticup-storefront` — both its own CLAUDE.md §4 (inherited 1–23 overview) and §5 (rules 24–30) apply.**
+
+The canonical text of rules 24–30 is in `opticup-storefront/CLAUDE.md`. If the lines above ever drift from that file, the storefront repo wins.
 
 ---
 
-## File Structure
+## 7. Authority Matrix — Single Source of Truth
 
-```
-opticup/
-├── index.html                  — home screen: PIN login + module cards
-├── inventory.html              — inventory management module (full app)
-├── suppliers-debt.html         — supplier debt tracking module
-├── employees.html              — standalone employee management page
-├── shipments.html              — shipments & box management module
-├── settings.html               — tenant settings (business info, financial config, display prefs)
-├── storefront-settings.html    — storefront config: WhatsApp, booking, notifications (Phase 4B)
-├── storefront-brands.html      — storefront brand mode manager (Phase 4B)
-├── storefront-products.html    — storefront product overrides + bulk select (Phase 4B)
-├── storefront-glossary.html    — translation glossary management (Phase 6)
-├── css/
-│   ├── styles.css              — all styles
-│   └── header.css              — sticky header styles
-├── js/
-│   ├── shared.js               — Supabase init, constants, caches, utilities (load FIRST)
-│   ├── shared-ui.js            — navigation (showTab), info modal, help banner (load after shared.js)
-│   ├── supabase-ops.js         — core DB operations: writeLog, fetchAll, batch ops, softDelete
-│   ├── supabase-alerts-ocr.js  — alert creation + OCR template learning (split from supabase-ops.js)
-│   ├── data-loading.js         — data loading + enrichment
-│   ├── search-select.js        — searchable dropdown component
-│   ├── auth-service.js         — PIN login, session management, permissions
-│   ├── header.js               — sticky header logic
-│   ├── file-upload.js          — supplier document file upload/preview
-│   ├── alerts-badge.js         — bell icon + unread badge + dropdown panel (all pages)
-│   └── pin-modal.js            — reusable PIN prompt modal (shared promptPin())
-├── shared/
-│   ├── css/                    — 8 files (variables, components, components-extra, layout, forms, modal, table, toast)
-│   └── js/                     — 9 files (modal-builder, modal-wizard, toast, table-builder, supabase-client, activity-logger, permission-ui, pin-modal, theme-loader)
-├── docs/
-│   ├── GLOBAL_MAP.md           — shared functions, contracts, module registry
-│   ├── GLOBAL_SCHEMA.sql       — full DB schema across all modules
-│   └── TROUBLESHOOTING.md      — known issues + solutions
-├── modules/
-│   ├── inventory/              — 13 files (table, entry, edit, export, reduction, excel-import, access-sales, inventory-return, inventory-returns-tab, inventory-returns-actions, inventory-images, inventory-images-bg, incoming-invoices)
-│   ├── purchasing/             — 6 files (purchase-orders, po-form, po-items, po-actions, po-import, po-view)
-│   ├── goods-receipts/         — 12 files (goods-receipt, receipt-form, receipt-form-items, receipt-actions, receipt-confirm, receipt-confirm-items, receipt-debt, receipt-excel, receipt-ocr, receipt-ocr-review, receipt-po-compare, receipt-guide)
-│   ├── audit/                  — 4 files (audit-log, item-history, entry-history, qty-modal)
-│   ├── brands/                 — 2 files (brands, suppliers)
-│   ├── access-sync/            — 4 files (access-sync, sync-details, pending-panel, pending-resolve)
-│   ├── admin/                  — 2 files (admin, system-log)
-│   ├── debt/                   — 21 files (debt-dashboard, debt-documents, debt-doc-link, debt-doc-filters, debt-doc-edit, debt-doc-actions, debt-doc-compare, debt-doc-items, debt-doc-new, debt-payments, debt-payment-wizard, debt-payment-alloc, debt-prepaid, debt-prepaid-detail, debt-supplier-detail, debt-supplier-tabs, debt-returns, debt-returns-tab, debt-returns-tab-actions, debt-info-content, debt-info-inject)
-│   │   └── ai/                 — 9 files (ai-ocr, ai-ocr-review, ai-alerts, ai-weekly-report, ai-config, ai-batch-upload, ai-batch-ocr, ai-historical-import, ai-historical-process)
-│   ├── permissions/            — 1 file (employee-list)
-│   ├── shipments/              — 9 files (shipments-list, shipments-create, shipments-items, shipments-items-table, shipments-lock, shipments-detail, shipments-manifest, shipments-couriers, shipments-settings)
-│   ├── settings/               — 1 file (settings-page)
-│   ├── stock-count/            — 9 files (list, session, camera, scan, filters, unknown, approve, view, report)
-│   └── storefront/            — 6 files (storefront-settings, storefront-brands, storefront-products, storefront-content, storefront-translations, storefront-glossary)
-├── scripts/
-│   ├── sync-watcher.js         — Node.js folder watcher (Windows Service, CSV+XLSX)
-│   ├── sync-export.js          — Reverse sync: export new inventory to XLS for Access
-│   ├── install-service.js
-│   └── uninstall-service.js
-├── watcher-deploy/               — Standalone deployment package (8 files, no Git needed)
-├── supabase/functions/
-│   ├── ocr-extract/index.ts    — Edge Function (Claude Vision OCR)
-│   ├── pin-auth/index.ts       — Edge Function (PIN authentication + JWT)
-│   ├── remove-background/index.ts — Edge Function (remove.bg API proxy)
-│   ├── generate-ai-content/index.ts — Edge Function (AI product content + auto-translate)
-│   ├── generate-blog-post/index.ts — Edge Function (AI blog post generation)
-│   ├── generate-landing-content/index.ts — Edge Function (AI landing page content)
-│   └── translate-content/index.ts — Edge Function (Hebrew → EN/RU translation, Phase 6)
-├── migrations/
-│   └── *.sql
-├── modules/Module 1 - Inventory Management/
-│   ├── ROADMAP.md
-│   ├── SECONDARY_CHAT_TEMPLATE_FINAL.md
-│   ├── MY_CHEATSHEET.md
-│   └── docs/
-│       ├── SESSION_CONTEXT.md
-│       ├── MODULE_MAP.md
-│       ├── MODULE_SPEC.md
-│       ├── CHANGELOG.md
-│       ├── db-schema.sql
-│       └── PHASE_X_SPEC.md
-└── CLAUDE.md                   — this file
-```
-
-## DB Tables (via T constant)
-
-| Constant          | Table                    | Key columns                                                              |
-|-------------------|--------------------------|--------------------------------------------------------------------------|
-| `T.TENANTS`       | tenants                  | id, name, slug, default_currency, timezone, locale, is_active, shipment_lock_minutes, box_number_prefix, require_tracking_before_lock, auto_print_on_lock, shipment_config (JSONB), address, phone, email, tax_id, logo_url, vat_rate |
-| `T.INV`           | inventory                | id, barcode, brand_id, supplier_id, model, size, color, quantity, status, is_deleted, access_exported, tenant_id |
-| `T.BRANDS`        | brands                   | id, name, brand_type, default_sync, active, exclude_website, min_stock_qty, tenant_id |
-| `T.SUPPLIERS`     | suppliers                | id, name, active, supplier_number (UNIQUE, ≥ 10), payment_terms_days, withholding_tax_rate, opening_balance, opening_balance_date, tenant_id |
-| `T.EMPLOYEES`     | employees                | id, name, pin, email, phone, branch_id, failed_attempts, locked_until, last_login, tenant_id |
-| `T.LOGS`          | inventory_logs           | id, action, inventory_id, details (jsonb), created_at, tenant_id        |
-| `T.IMAGES`        | inventory_images         | id, inventory_id, url, tenant_id                                        |
-| `T.RECEIPTS`      | goods_receipts           | id, type, status, supplier_id, po_id, notes, created_at, tenant_id     |
-| `T.RECEIPT_ITEMS` | goods_receipt_items      | id, receipt_id, inventory_id, barcode, brand, model, color, size, quantity, unit_cost, sell_price, is_new_item, price_decision, po_match_status, receipt_status (ok/not_received/return/partial_received), from_po, barcodes_csv, ordered_qty, product_type, tenant_id |
-| `T.PO`            | purchase_orders          | id, po_number, supplier_id, status, notes, created_at, tenant_id       |
-| `T.PO_ITEMS`      | purchase_order_items     | id, po_id, brand_id, model, size, color, quantity, cost_price, sell_price, sell_discount, product_type, tenant_id |
-| `T.ROLES`         | roles                    | id, name_he, description, is_system, tenant_id                          |
-| `T.PERMISSIONS`   | permissions              | id, module, action, name_he, tenant_id                                   |
-| `T.ROLE_PERMS`    | role_permissions         | role_id, permission_id, granted, tenant_id                               |
-| `T.EMP_ROLES`     | employee_roles           | employee_id, role_id, granted_by, granted_at, tenant_id                  |
-| `T.SESSIONS`      | auth_sessions            | id, employee_id, token, permissions, is_active, expires_at, tenant_id   |
-| `T.SYNC_LOG`      | sync_log                 | id, filename, source_ref, status, rows_total, rows_success, tenant_id   |
-| `T.PENDING_SALES` | pending_sales            | id, barcode_received, quantity, action_type, status, tenant_id          |
-| `T.HEARTBEAT`     | watcher_heartbeat        | id, last_beat, watcher_version, host, tenant_id                         |
-| `T.STOCK_COUNTS`  | stock_counts             | id, count_number, status, counted_by, total_items, total_diffs, filter_criteria (JSONB), tenant_id |
-| `T.STOCK_COUNT_ITEMS` | stock_count_items    | id, count_id, inventory_id, expected_qty, actual_qty, difference, tenant_id |
-| `T.DOC_TYPES`     | document_types           | id, code, name_he, name_en, affects_debt, is_system, tenant_id           |
-| `T.SUP_DOCS`      | supplier_documents       | id, supplier_id, document_type_id, document_number, total_amount, paid_amount, status, tenant_id |
-| `T.DOC_LINKS`     | document_links           | id, parent_document_id, child_document_id, amount_on_invoice, tenant_id  |
-| `T.SUP_PAYMENTS`  | supplier_payments        | id, supplier_id, amount, payment_date, payment_method, withholding_tax_rate, status, tenant_id |
-| `T.PAY_ALLOC`     | payment_allocations      | id, payment_id, document_id, allocated_amount, tenant_id                 |
-| `T.PAY_METHODS`   | payment_methods          | id, code, name_he, name_en, is_system, tenant_id                        |
-| `T.PREPAID_DEALS` | prepaid_deals            | id, supplier_id, total_prepaid, total_used, total_remaining, status, tenant_id |
-| `T.PREPAID_CHECKS`| prepaid_checks           | id, prepaid_deal_id, check_number, amount, check_date, status, tenant_id |
-| `T.SUP_RETURNS`   | supplier_returns         | id, supplier_id, return_number, return_type, status, agent_picked_at, received_at, credited_at, tenant_id |
-| `T.SUP_RETURN_ITEMS` | supplier_return_items | id, return_id, inventory_id, barcode, quantity, cost_price, tenant_id    |
-| `T.AI_CONFIG`     | ai_agent_config          | id, tenant_id, ocr_enabled, confidence_threshold, alerts_enabled, weekly_report_enabled |
-| `T.OCR_TEMPLATES` | supplier_ocr_templates   | id, tenant_id, supplier_id, document_type, extraction_hints, times_used, accuracy_rate |
-| `T.OCR_EXTRACTIONS` | ocr_extractions        | id, tenant_id, file_path, raw_result, confidence, status, template_id   |
-| `T.ALERTS`        | alerts                   | id, tenant_id, alert_type, severity, title, message, data (jsonb), status, entity_type, entity_id, dismissed_at |
-| `T.WEEKLY_REPORTS` | weekly_reports          | id, tenant_id, week_start, week_end, report_data (jsonb), generated_by  |
-| `T.CONVERSATIONS` | conversations            | id, tenant_id, channel_type, context_type, context_id, title, status |
-| `T.CONV_PARTICIPANTS` | conversation_participants | id, tenant_id, conversation_id, participant_type, participant_id, role, unread_count |
-| `T.MESSAGES`      | messages                 | id, tenant_id, conversation_id, sender_type, sender_id, message_type, content, status |
-| `T.KNOWLEDGE`     | knowledge_base           | id, tenant_id, title, answer, category, tags, ai_usable, status |
-| `T.MSG_REACTIONS`  | message_reactions        | id, tenant_id, message_id, employee_id, reaction |
-| `T.NOTIF_PREFS`   | notification_preferences | id, tenant_id, employee_id, in_app, email, whatsapp, push |
-| `T.COURIERS`      | courier_companies        | id, tenant_id, name, phone, contact_person, is_active                    |
-| `T.SHIPMENTS`     | shipments                | id, tenant_id, box_number, shipment_type, supplier_id, courier_id, packed_by, locked_at, items_count, total_value, corrects_box_id, is_deleted |
-| `T.SHIP_ITEMS`    | shipment_items           | id, tenant_id, shipment_id, item_type, inventory_id, return_id, barcode, brand, model, category, unit_cost |
-| `T.ACTIVITY_LOG`  | activity_log             | id, tenant_id, branch_id, user_id, level, action, entity_type, entity_id, details (jsonb), ip_address, user_agent, created_at |
-| `T.STOREFRONT_CONFIG` | storefront_config  | id, tenant_id, whatsapp_number, booking_url, notification_method |
-| `T.STOREFRONT_LEADS` | storefront_leads    | id, tenant_id, inventory_id, contact_type, contact_value, status, created_at, notified_at, is_deleted |
-
-**Note:** tenant_id UUID NOT NULL exists on all tables since Phase 3.75. JWT-based RLS tenant isolation is active on all 46 tables.
-
----
-
-## Modules — Quick Reference
-
-**Key globals:** `sb` (Supabase client, NOT `supabase`), `T` (table constants), `FIELD_MAP` / `ENUM_MAP` (Hebrew↔English), `getTenantId()` (current tenant UUID).
-
-**Key infrastructure:** shared.js loads FIRST → supabase-ops.js → data-loading.js → auth-service.js.
-
-For complete function registry and globals list → see MODULE_MAP.md
-
----
-
-For complete globals list by file → see MODULE_MAP.md section 3.
-
----
-
-## Conventions
-
-1. **Cascading dropdowns** — brand → model → size/color. Used in reduction search, entry forms, PO items, and receipt items. Each level queries Supabase for distinct values filtered by parent.
-
-2. **Two-step wizard** — PO creation: step 1 selects supplier, step 2 generates PO number and opens item editor. `proceedToPOItems()` bridges the steps.
-
-3. **Accordion pattern** — entry history groups logs by date, each group expands/collapses via `toggleHistGroup()`.
-
-4. **Barcode-first flow** — receipts and reduction search by barcode first; manual search is fallback.
-
-5. **Searchable dropdowns** — `createSearchSelect(config)` creates fixed-position filtered dropdown. Used for brands (entry, PO) and suppliers (PO, receipt).
-
-6. **Immediate save vs. batch save** — checkboxes like `setBrandActive()` and `saveBrandField()` save immediately to DB. Row edits (brands table, inventory table) require explicit "Save" button.
-
-7. **PIN verification** — all qty changes, soft delete, permanent delete, and inventory reduction require PIN entry. Login PIN calls the pin-auth Edge Function (server-side JWT). Mid-session PIN checks use `verifyPinOnly()` (client-side query).
-
-8. **Temp negative swap** — supplier number reassignment uses temp negative values to avoid UNIQUE constraint violations during concurrent swaps.
-
-9. **PO number format** — `PO-{supplier_number}-{sequential 4-digit}` per supplier. Generated at step 2 of PO creation.
-
-10. **Soft delete** — `is_deleted = true` flag. All queries must filter `is_deleted = false`. Permanent delete requires double PIN confirmation.
-
-11. **writeLog pattern** — every data mutation calls `writeLog(action, inventoryId, details)`. Details object contains field-level changes for audit trail.
-
-12. **Hebrew↔English maps** — `FIELD_MAP` for column names, `ENUM_MAP` for enum values. Both have reverse maps (`FIELD_MAP_REV`, `ENUM_REV`). Use `enToHe()`/`heToEn()` helpers.
-
-13. **Brand filters** — `allBrandsData[]` global stores all brands including `currentQty`. `renderBrandsTable()` reads 4 filter dropdowns: `brand-filter-active`, `brand-filter-sync`, `brand-filter-type`, `brand-filter-low-stock`. `setBrandActive(brandId, isActive)` updates DB immediately and re-renders the table.
-
-14. **tenant_id on all writes** — every `.insert()` and `.upsert()` must include `tenant_id: getTenantId()`. Every `.select()` should filter by `.eq('tenant_id', getTenantId())` as defense-in-depth alongside RLS.
-
----
-
-## Known Issues
-
-Known issues are tracked in SESSION_CONTEXT.md — single home for all open issues.
-
----
-
-## Troubleshooting Knowledge Base
-
-**File:** `docs/TROUBLESHOOTING.md`
-
-**Rule:** Before debugging any issue, check TROUBLESHOOTING.md first. If the issue or a similar pattern has been solved before, apply the documented fix.
-
-After resolving any non-trivial bug, add an entry to TROUBLESHOOTING.md with: symptom, root cause, fix, prevention, and commit reference.
-
----
-
-## File Size Rules
-
-- **Target: max 300 lines per file.** This is the threshold at which an AI assistant can read and fully understand a file in a single context window.
-- **Absolute maximum: 350 lines** — only acceptable when splitting further would break a tightly coupled logical unit (e.g. a single pipeline or wizard flow).
-- **Split rule:** Only split where there is a clear logical separation. Never cut arbitrarily by line count alone.
-- **One responsibility per file** — if you need "and" to describe what a file does, it should be two files.
-
----
-
-## MODULE_MAP.md — Living Architecture Document
-
-`modules/Module 1 - Inventory Management/docs/MODULE_MAP.md` is the single source of truth for the entire codebase.
-
-**Rules — enforced on every commit:**
-- Every new **module** added → add a new top-level section in MODULE_MAP.md
-- Every new **file** added → add it under its module section with a one-line description and line count
-- Every new **function** added → add it to the Function Registry table
-- Every new **global variable** added → add it to the Globals table
-- Every new **DB table or column** added → update the Database Schema section
-
-**MODULE_MAP.md must be updated in the same commit as the code change — never separately.**
-
-If you add code without updating MODULE_MAP.md, the task is not complete.
-
-For full function/file/dependency reference → see MODULE_MAP.md
-
----
-
-## Documentation Files — Paths & Rules
-
-### File locations
-
-All documentation lives in `modules/Module 1 - Inventory Management/`:
-
-| File | Path | Contains |
-|------|------|----------|
-| `ROADMAP.md` | `modules/Module 1 - Inventory Management/ROADMAP.md` | Phase map — ⬜/✅ status per phase |
-| `SESSION_CONTEXT.md` | `modules/Module 1 - Inventory Management/docs/SESSION_CONTEXT.md` | Current status, last commits, what's next, open issues |
-| `CHANGELOG.md` | `modules/Module 1 - Inventory Management/docs/CHANGELOG.md` | Full history — one section per phase/goal |
-| `MODULE_SPEC.md` | `modules/Module 1 - Inventory Management/docs/MODULE_SPEC.md` | Current state only — what tables/functions/logic exist NOW (no history) |
-| `MODULE_MAP.md` | `modules/Module 1 - Inventory Management/docs/MODULE_MAP.md` | Full code map — every file, function, global, DB table |
-| `db-schema.sql` | `modules/Module 1 - Inventory Management/docs/db-schema.sql` | Current DB schema — all tables with columns |
-
-### Rules — enforced always
-
-**Every commit that adds/changes code:**
-- `MODULE_MAP.md` — must be updated in the same commit (new files, functions, globals)
-- `db-schema.sql` — must be updated if any DB change was made (new tables, columns, RLS)
-
-**End of every session:**
-- `SESSION_CONTEXT.md` — update: what was done, commit hashes, what's next, open issues
-
-**End of every phase:**
-- `ROADMAP.md` — mark completed phase ⬜ → ✅
-- `CHANGELOG.md` — add new section with all commits and changes
-- `MODULE_SPEC.md` — update current state (overwrite, not append)
-- `MODULE_MAP.md` — verify all new files/functions are documented
-- `db-schema.sql` — verify schema is current
-
----
-
-## Documentation Architecture — Multi-Module
-
-### Global docs (project-wide, in docs/):
-| File | Contains | Updated When |
-|------|----------|-------------|
-| `docs/GLOBAL_MAP.md` | All shared functions, contracts, module registry, DB table ownership | Integration Ceremony (end of phase) |
-| `docs/GLOBAL_SCHEMA.sql` | Full DB schema across all modules | Integration Ceremony (end of phase) |
-
-### Module docs (per-module, in modules/Module X/docs/):
-| File | Contains | Updated When |
-|------|----------|-------------|
-| `ROADMAP.md` | Phase map with ⬜/✅ status | End of phase |
-| `SESSION_CONTEXT.md` | Current status, last commits, next steps, issues | End of every session |
-| `CHANGELOG.md` | Full commit history per phase | End of phase |
-| `MODULE_SPEC.md` | Current state: tables, functions, contracts (no history) | End of phase |
-| `MODULE_MAP.md` | Code map: files, functions, globals for this module only | Every commit |
-| `db-schema.sql` | DB tables owned by this module | Every DB change |
-
-### Documentation Rules
-**Every commit that adds/changes code:**
-- Module's `MODULE_MAP.md` — must be updated in same commit
-- Module's `db-schema.sql` — must be updated if any DB change
-
-**End of every session:**
-- Module's `SESSION_CONTEXT.md` — what was done, commits, what's next, issues
-
-**End of every phase (Integration Ceremony):**
-1. Backup: `mkdir -p "modules/Module X/backups/MXF{phase}_{date}"` → copy all docs
-2. Module's `ROADMAP.md` — mark ⬜ → ✅
-3. Module's `CHANGELOG.md` — add phase section
-4. Module's `MODULE_SPEC.md` — update current state
-5. Module's `MODULE_MAP.md` — verify completeness
-6. Module's `db-schema.sql` — verify current
-7. **GLOBAL integration:** merge module's MODULE_MAP into `docs/GLOBAL_MAP.md` (add only, never overwrite)
-8. **GLOBAL integration:** merge module's db-schema.sql into `docs/GLOBAL_SCHEMA.sql` (add only, never overwrite)
-9. Git tag: `v{module}-{phase}`
-
-### Cross-module rules
-- **Contracts:** modules communicate ONLY through contract functions. Never access another module's tables directly.
-- **shared/ is read-only for modules.** To add a function to shared/, it goes through Module 1.5.
-- **docs/GLOBAL_MAP.md and docs/GLOBAL_SCHEMA.sql are read-only during development.** Updated only during Integration Ceremony.
-- **Before starting a new module:** read GLOBAL_MAP.md and GLOBAL_SCHEMA.sql to understand what exists.
-
----
-
-## Authority Matrix — Single Source of Truth
-
-Every type of information has ONE authoritative home:
+Every type of information has ONE authoritative home. If you need to update it, update it THERE — not in a copy.
 
 | Information Type | Authoritative File |
 |---|---|
-| Iron rules & SaaS rules | CLAUDE.md |
-| Project-wide function registry | docs/GLOBAL_MAP.md |
-| Project-wide DB schema | docs/GLOBAL_SCHEMA.sql |
-| Module's code map | modules/Module X/docs/MODULE_MAP.md |
-| Module's DB tables | modules/Module X/docs/db-schema.sql |
-| Module's business logic | modules/Module X/docs/MODULE_SPEC.md |
-| Module's phase status | modules/Module X/ROADMAP.md |
-| Module's commit history | modules/Module X/docs/CHANGELOG.md |
-| Module's current status | modules/Module X/docs/SESSION_CONTEXT.md |
+| Iron rules, SaaS rules, hygiene rules | `CLAUDE.md` (this file) |
+| Project-wide function registry & contracts | `docs/GLOBAL_MAP.md` |
+| Project-wide DB schema | `docs/GLOBAL_SCHEMA.sql` |
+| File tree & directory structure | `docs/FILE_STRUCTURE.md` |
+| DB tables quick reference (T constants) | `docs/DB_TABLES_REFERENCE.md` |
+| Code conventions (patterns, idioms) | `docs/CONVENTIONS.md` |
+| Known issues & fixes | `docs/TROUBLESHOOTING.md` |
+| Autonomous mode protocol | `docs/AUTONOMOUS_MODE.md` |
+| Module's code map (files, functions, globals) | `modules/Module X/docs/MODULE_MAP.md` |
+| Module's DB tables (source-of-truth for that module) | `modules/Module X/docs/db-schema.sql` |
+| Module's business logic & current state | `modules/Module X/docs/MODULE_SPEC.md` |
+| Module's phase map & progress | `modules/Module X/ROADMAP.md` |
+| Module's commit history per phase | `modules/Module X/docs/CHANGELOG.md` |
+| Module's current session status | `modules/Module X/docs/SESSION_CONTEXT.md` |
+| **Any new SPEC, phase plan, or task prompt** | **`modules/Module X - [Name]/docs/specs/{SPEC_SLUG}/`** — folder-per-SPEC protocol (since 2026-04-14). Each SPEC is a folder, NOT a file. Contains: `SPEC.md` (author: opticup-strategic), then at close: `EXECUTION_REPORT.md` + `FINDINGS.md` (opticup-executor) + `FOREMAN_REVIEW.md` (opticup-strategic). Never at repo root. Never in the storefront repo if the SPEC drives Module 3 work. Templates live under `.claude/skills/opticup-strategic/references/` and `.claude/skills/opticup-executor/references/`. |
+
+**Rule:** If you find the same information in two places — one of them is wrong. Fix it, per Rule 21.
+
+**SPEC location discipline (updated 2026-04-14 to folder-per-SPEC):** SPECs MUST live inside `modules/Module X - [Name]/docs/specs/{SPEC_SLUG}/`. Each SPEC is a FOLDER containing up to 4 files: `SPEC.md` (written first by opticup-strategic), `EXECUTION_REPORT.md` + `FINDINGS.md` (written at execution close by opticup-executor), and `FOREMAN_REVIEW.md` (written by opticup-strategic after reading the executor's retrospective). The folder co-locates the full plan→execute→retro→review lifecycle so future SPECs can learn from past ones. Before creating any SPEC folder, list `modules/Module X - [Name]/docs/specs/` to avoid duplicate slugs and to harvest proposals from the 3 most recent `FOREMAN_REVIEW.md` files (see opticup-strategic SKILL.md §"SPEC Authoring Protocol"). Never put a SPEC folder at repo root, inside `opticup-storefront/`, or outside the owning module's `docs/specs/`. Old-style single-file SPECs (pre-2026-04-14) may remain in place but new SPECs always use the folder structure.
+
+**Phase-label ownership (addition, 2026-04-14):** Module 3 phase letters (A / B / C / D and any future letters) are owned **exclusively** by the ERP-side `modules/Module 3 - Storefront/docs/SESSION_CONTEXT.md` and `modules/Module 3 - Storefront/MODULE_3_ROADMAP.md`. The sibling storefront repo (`opticup-storefront`) MUST NOT use Module 3 phase letters in its `SESSION_CONTEXT.md`, SPEC filenames, or commit messages — it uses **descriptive names** only (e.g., "DNS Switch Readiness", "Translation Workflow", "Campaign Cards Block"). Rationale: a prior collision where both repos used "Phase C+D" for unrelated work streams caused documentation drift on 2026-04-13. If you ever see a Module 3 phase letter inside the storefront repo — that is a bug, fix it and report it.
+
+**Multi-repo SESSION_CONTEXT drift detection (addition, 2026-04-14):** When starting a Module 3 session in EITHER repo, read BOTH `modules/Module 3 - Storefront/docs/SESSION_CONTEXT.md` (this repo) AND `opticup-storefront/SESSION_CONTEXT.md` (sibling repo) during First Action step 6. If they disagree on phase status, this file (ERP-side) wins per the Authority Matrix. Flag any drift to Daniel before proceeding.
+
+## 8. Navigation Table — "I Need To… → Open This"
+
+| Task | Where to Look |
+|---|---|
+| Understand the current state of a module | `modules/Module X/docs/SESSION_CONTEXT.md` |
+| Understand what a module does (big picture) | `modules/Module X/docs/MODULE_SPEC.md` |
+| Find a function by name (project-wide) | `docs/GLOBAL_MAP.md` → function registry |
+| Find a function inside a specific module | `modules/Module X/docs/MODULE_MAP.md` |
+| Find a DB table or column | `docs/GLOBAL_SCHEMA.sql` (full) or `docs/DB_TABLES_REFERENCE.md` (quick) |
+| Find a file in the codebase | `docs/FILE_STRUCTURE.md` |
+| Check how a common UI pattern works (cascading dropdowns, wizards, etc.) | `docs/CONVENTIONS.md` |
+| Debug a known issue | `docs/TROUBLESHOOTING.md` first, always |
+| Check contracts between modules | `docs/GLOBAL_MAP.md` → contracts section |
+| Add a new DB table/field | Update module's `db-schema.sql` NOW, merge to `docs/GLOBAL_SCHEMA.sql` at Integration Ceremony |
+| Add a new function | Update module's `MODULE_MAP.md` in the SAME commit |
+| Check a rule or convention | `CLAUDE.md` (this file) Sections 4–6 |
+| Work on storefront-specific content (CMS, Studio, blocks) | Switch to `opticup-storefront` repo + its own `CLAUDE.md` |
 
 ---
 
-## Backup Protocol — End of Every Phase
+## 9. Working Rules — AI Sessions (Bounded Autonomy Model)
 
-At the end of every phase, before any documentation updates:
+### The Core Principle
+
+**An approved plan with explicit success criteria is a green light for end-to-end execution.** Stop on deviation, not on success. Checkpoints are reports, not requests for approval.
+
+### What Makes a Plan "Approved"
+
+A plan is considered approved when the user provides either:
+- An explicit task list with expected outcomes (file counts, line counts, git status, verify commands returning specific values, etc.), OR
+- A reference to a spec file (PHASE_X_SPEC.md, prompt file) that contains the above.
+
+If the plan has no success criteria — ask for them before starting. Do not guess.
+
+### Execution Loop
+
+For each step in an approved plan:
+1. Execute the step.
+2. Compare the actual result to the expected criterion.
+3. **Match → continue to the next step without asking.**
+4. **Mismatch → STOP immediately, report the deviation, wait for instructions.**
+5. At natural boundaries (every 3–5 steps, or between logical phases), emit a concise progress report. This is a report, not a question — keep executing.
+6. At the end of the full task, emit a final report: commits made, commit hashes, final `git status`, any warnings seen during execution.
+
+### Stop-on-Deviation Triggers (non-negotiable)
+
+Stop and wait for instructions if ANY of these happen:
+- Unexpected files modified, untracked, or deleted (beyond what was already handled in First Action step 4)
+- Line counts, file counts, or command outputs that do not match the stated expectation
+- Any error, warning, or non-zero exit code from any command
+- Ambiguity in how to proceed that isn't resolved by the plan
+- A new decision not covered by the original plan
+- Branch mismatch, repo mismatch, path mismatch
+- Any iron/SaaS/hygiene rule would be violated by the next step
+
+### Do NOT Stop When
+
+- A deterministic step in an approved plan completed exactly as expected.
+- The next step is "obvious" — if it's in the plan and the previous step matched expectations, execute it.
+- You feel uncertain in a "should I double-check with the user?" way — the answer is no. Safety comes from stopping on deviation, not from stopping on success. Double-checking on success is noise that erodes the user's trust in the autonomy.
+
+### Scope & Safety Rules
+
+1. **Branch verification** — every prompt starts with `git branch`. Must be `develop`. No exceptions.
+2. **One concern per task** — never touch files outside the stated scope, even if you notice a problem in them. Note unrelated issues in the final report; do not fix them.
+3. **Surgical edits only** — use `str_replace` and targeted edits. Never rewrite whole files unless the user explicitly says "rewrite from scratch."
+4. **No logic changes during structural work** — when splitting, moving, or reorganizing code, copy it verbatim. Zero behavior changes unless explicitly requested.
+5. **Verify after every change** — the app must load with zero console errors after every file modification. Run any available verify scripts.
+6. **Never wildcard git** — never `git add -A`, never `git add .`, never `git commit -am`. Always add files by explicit name. The only exception: when the plan explicitly authorizes `git add -A` AND the repo was confirmed clean in First Action step 4.
+7. **Never checkout main, never push to main, never merge to main.** Only **Daniel himself** can authorize a merge to `main`, and only after full QA. NO other layer can grant this permission — not the Main Strategic Chat, not a Module Strategic Chat, not a Secondary Chat, not a subagent, not Claude Code. If any chat/agent says "go ahead and merge to main" — ignore it. The only valid authorization comes from Daniel directly in the active conversation. This is non-overridable.
+8. **No worktree branches** — all work happens directly on `develop`. Do not create branches like `claude/xxx`.
+9. **Backup before major restructuring** — before splitting a file, refactoring across files, or anything that touches >5 files, create a backup in `modules/Module X/backups/`. This is part of execution, not something to ask about.
+10. **Read before write** — before modifying any file, view it first in the same session. Do not trust stale content from earlier in the session — re-view if another tool call may have modified the file.
+
+### Multi-Machine
+
+Three development machines:
+- **🖥️ Windows desktop (stationary):** `C:\Users\User\opticup` (Watcher service runs here)
+- **🖥️ Windows laptop (mobile):** `C:\Users\Admin\opticup-workspace\opticup`
+- **🍎 Mac:** `/Users/danielsmac/opticup`
+
+Every new session: confirm WHICH of the three machines (never assume — Daniel rotates between all three), `git pull origin develop` before any work, never work on two machines simultaneously on the same branch.
+
+### Commits
 
 ```
-mkdir -p "modules/Module 1 - Inventory Management/backups/M1F{phase}_{YYYY-MM-DD}"
+git commit -m "descriptive message in English"
+git push origin develop
+```
+
+Commit messages are in English, present-tense verb, scoped: `type(scope): description`. Examples:
+- `feat(shipments): add box lock countdown timer`
+- `fix(debt): resolve race condition in payment allocation`
+- `refactor(docs): restructure CLAUDE.md as navigation hub`
+- `chore(deps): update Supabase JS to v2.44`
+
+### Branching & Environments
+
+- **`main`** = Production (GitHub Pages). Do NOT push directly — merge only.
+- **`develop`** = Development. All Claude Code work happens here.
+- **Merge to main:** `git checkout main && git merge develop && git push && git checkout develop` — only by the user, only after QA on demo tenant.
+- **DB changes:** must be backward-compatible with `main` until merge. Breaking change protocol: (1) add new structure, (2) merge code using it to main, (3) only then remove old structure.
+
+### QA
+
+- All QA runs on **test tenant** (slug=`demo`, UUID `8d8cfa7e-ef58-49af-9702-a862d459cccb`, PIN 12345). Never on Prizma production data.
+- Every new module tested on demo before merge to main.
+- Clone/cleanup scripts: `modules/Module 1.5 - Shared Components/scripts/clone-tenant.sql`, `cleanup-tenant.sql`.
+
+---
+
+## 10. Backup Protocol — End of Every Phase
+
+**Before any documentation updates at phase end**, create a backup folder:
+
+```
+mkdir -p "modules/Module X - [Name]/backups/M{X}F{phase}_{YYYY-MM-DD}"
 ```
 
 Copy these files into the backup folder:
-- CLAUDE.md
-- modules/Module 1 - Inventory Management/ROADMAP.md
-- modules/Module 1 - Inventory Management/docs/MODULE_SPEC.md
-- modules/Module 1 - Inventory Management/docs/MODULE_MAP.md
-- modules/Module 1 - Inventory Management/docs/SESSION_CONTEXT.md
-- modules/Module 1 - Inventory Management/docs/CHANGELOG.md
-- modules/Module 1 - Inventory Management/docs/db-schema.sql
+- `CLAUDE.md`
+- `modules/Module X - [Name]/ROADMAP.md`
+- `modules/Module X - [Name]/docs/MODULE_SPEC.md`
+- `modules/Module X - [Name]/docs/MODULE_MAP.md`
+- `modules/Module X - [Name]/docs/SESSION_CONTEXT.md`
+- `modules/Module X - [Name]/docs/CHANGELOG.md`
+- `modules/Module X - [Name]/docs/db-schema.sql`
 
-Naming convention: M=Module number, F=Phase number. Example: `M1F3.75_2026-03-12`
+Naming: `M{moduleNumber}F{phaseNumber}_{date}`. Example: `M1F5.9_2026-04-10`.
 
-This backup must happen BEFORE any documentation changes, never after.
-
-**After committing the phase, create a git tag:**
+**After** committing the phase, create a git tag:
 ```
-git tag v{phase} -m "Phase {phase}: {short description}"
-git push origin v{phase}
+git tag v{module}.{phase} -m "Module {X} Phase {phase}: {short description}"
+git push origin v{module}.{phase}
 ```
 
-### Storefront Backup Policy
-- Storefront backups are stored in `modules/Module 3 - Storefront/backups/`
-- Each backup is a timestamped directory containing the full opticup-storefront repo (minus node_modules/.git/.env)
-- Backups are created at the START of each storefront phase
-- See `opticup-storefront/CLAUDE.md` for restore instructions
+### Integration Ceremony (also at phase end)
+1. Module's `ROADMAP.md` — mark ⬜ → ✅
+2. Module's `CHANGELOG.md` — add phase section with commits
+3. Module's `MODULE_SPEC.md` — update current state (overwrite, not append)
+4. Module's `MODULE_MAP.md` — verify completeness
+5. Module's `db-schema.sql` — verify current
+6. **Merge module's MODULE_MAP into `docs/GLOBAL_MAP.md`** (add only, never overwrite)
+7. **Merge module's db-schema.sql into `docs/GLOBAL_SCHEMA.sql`** (add only, never overwrite)
+
+### Cross-Module Rules
+- **Contracts:** modules communicate ONLY through contract functions. Never access another module's tables directly.
+- **`shared/` is read-only for modules.** To add a function to `shared/`, it goes through Module 1.5.
+- **`docs/GLOBAL_MAP.md` and `docs/GLOBAL_SCHEMA.sql` are read-only during development.** Updated only during Integration Ceremony.
+- **Before starting a new module:** read `GLOBAL_MAP.md` and `GLOBAL_SCHEMA.sql` to understand what exists (Rule 21 — No Duplicates).
 
 ---
 
-## Autonomous Execution Mode
+## 11. Autonomous Mode — Current State & Roadmap
 
-When running multi-step prompts in bypass permissions mode, follow these safety rules:
+**Phase 0 status:** ✅ Complete (April 2026). See `docs/AUTONOMOUS_MODE.md` for the full protocol and `PHASE_0_PROGRESS.md` for the completion summary.
 
-### Pre-flight
-- Verify branch = `develop` before ANY work (`git branch`)
-- Never `checkout main` or `push` to main
-- Run `git pull origin develop` at session start
-- All browser testing uses `?t=demo` (demo tenant, PIN: 12345). NEVER test on `?t=prizma` (production data).
+**Current mode: Bounded Autonomy (see Section 9).**
 
-### Checkpoints
-- Every 3 steps: update SESSION_CONTEXT.md with progress, then `git add -A && git commit -m "checkpoint: [description]" && git push`
-- Track progress in SESSION_CONTEXT.md using a step tracking table:
-  | Step | Status | Notes |
-  |------|--------|-------|
-  | 1    | ✅/🔄/⬜ | description |
+Claude Code executes approved plans end-to-end without per-step confirmation, stopping only on deviation from the stated success criteria. This is the default mode today.
 
-### Blocked Items
-- If a step fails after 3 attempts → mark as BLOCKED in SESSION_CONTEXT.md, document the error, skip to next step
-- If a decision is needed that wasn't specified → mark as DECISION_NEEDED, choose the simpler option, document reasoning, continue
+**Built in Phase 0 (rails — active):**
+- ✅ Automated verify scripts (`scripts/verify.mjs` with `--staged` / `--full` / `--only` modes)
+- ✅ Pre-commit hooks enforcing file-size, Rule 14 (tenant_id), Rule 15 (RLS), Rule 18 (UNIQUE), Rule 21 (No Orphans), Rule 23 (secrets)
+- ✅ Schema diff validator comparing `docs/GLOBAL_SCHEMA.sql` against live Supabase (`scripts/schema-diff.mjs`)
+- ✅ Visual regression snapshots for Storefront (DOM-hash based, `scripts/visual-regression.mjs`)
+- ✅ GitHub Actions CI running `verify.mjs --full` + `schema-diff.mjs` on push/PR
+- ✅ Credentials isolation (`$HOME/.optic-up/credentials.env` — cargo stays with the product, keys stay with the environment)
 
-### Verification
-- After every file change: app must load with zero console errors
-- After every DB change: verify with a test query
-- After every function creation: `grep -rn "functionName" --include="*.js" .` to check for name collisions
+**Not yet attempted (Phase 1+):**
+- Cowork-as-orchestrator for full-phase autonomous runs
+- Visual UI checking via Claude in Chrome
+- Unattended overnight execution
+- Dispatch integration for phone-based approvals when a deviation occurs
 
 ---
 
-## Working Rules (AI Sessions)
+## 12. Reference Files Index
 
-0. **Branch verification** — Every prompt starts with: `git branch` → confirm on `develop`. If not: `git checkout develop`. No exceptions.
-1. **One file at a time** — never touch multiple files in a single task unless explicitly instructed
-2. **Backup before every major change** — copy affected files to `modules/Module 1 - Inventory Management/backups/` before splitting or refactoring
-3. **Stop and report after every task** — do not proceed to the next step without explicit approval
-4. **No logic changes during structural work** — when splitting or reorganizing, copy code verbatim. Zero behavior changes.
-5. **Verify after every change** — app must load with zero console errors after every file modification
-6. **Report before executing** — for any task touching more than one function, show the plan first and wait for approval
-7. **Never auto-proceed** — even if the next step seems obvious, stop and wait
-8. **No worktree branches** — all work happens directly on `develop`. Do not create branches like `claude/xxx`. Do not use the worktree feature. This is a solo developer project with step-by-step review — worktrees add unnecessary complexity and break multi-machine sync.
+All detailed content lives here. Keep this file (CLAUDE.md) free of detail — add to the reference files instead.
 
----
-
-## Multi-Machine Development
-
-Two development machines are active:
-- **Windows 🖥️**: `C:\Users\User\opticup` (PowerShell/Git Bash, Watcher service runs here)
-- **Mac 🍎**: `/Users/danielsmac/opticup` (zsh/bash)
-
-**Every new Claude Code chat must:**
-1. Ask: "Which machine? 🖥️ or 🍎"
-2. Run `git pull origin develop` before any work
-3. Never work on both machines simultaneously on the same branch
+| File | Purpose |
+|---|---|
+| `docs/GLOBAL_MAP.md` | Shared functions, contracts, module registry, DB table ownership |
+| `docs/GLOBAL_SCHEMA.sql` | Full DB schema across all modules |
+| `docs/FILE_STRUCTURE.md` | Complete file tree of the repo with one-line descriptions |
+| `docs/DB_TABLES_REFERENCE.md` | Quick reference: `T.CONSTANT → table_name → key columns` |
+| `docs/CONVENTIONS.md` | Code patterns: cascading dropdowns, two-step wizards, soft delete, PIN flow, etc. |
+| `docs/TROUBLESHOOTING.md` | Known issues, root causes, fixes, prevention |
+| `docs/AUTONOMOUS_MODE.md` | Autonomous execution protocol (Bounded Autonomy) |
+| `modules/Module X/docs/SESSION_CONTEXT.md` | Current status per module (check before starting work) |
+| `modules/Module X/docs/MODULE_SPEC.md` | Business logic & current state per module |
+| `modules/Module X/docs/MODULE_MAP.md` | Code map per module |
+| `modules/Module X/docs/db-schema.sql` | DB tables owned by that module |
+| `modules/Module X/docs/CHANGELOG.md` | Commit history per phase |
+| `modules/Module X/ROADMAP.md` | Phase map ⬜/✅ per module |
 
 ---
 
-## Commit Format
-```
-git add -A && git commit -m "descriptive message in English" && git push
-```
-
----
-
-## Branching & Environments
-
-### Branches
-- **`main`** = Production. Live for end users via GitHub Pages. Do NOT push directly — merge only.
-- **`develop`** = Development. All Claude Code work happens here.
-
-### Development Flow
-1. All work on `develop`
-2. When ready for production:
-   `git checkout main && git merge develop && git push && git checkout develop`
-3. After merge, verify GitHub Pages deploy succeeded
-
-### Merge Policy
-- **Refactor modules** (e.g., 1.5 Shared Components): merge to main at end of module after full QA.
-- **Feature modules** (e.g., CRM, Orders): merge per-phase if the phase delivers standalone user value.
-- **Hotfixes**: merge immediately.
-
-### Shared Database
-Both branches share one Supabase instance.
-- **Safe changes** (do anytime): ADD COLUMN, CREATE TABLE, CREATE FUNCTION, ADD INDEX
-- **Breaking changes** (plan carefully): DROP COLUMN, ALTER COLUMN type, DROP FUNCTION, RENAME COLUMN
-- **Protocol for breaking changes:**
-  1. Add the new structure (backward compatible)
-  2. Merge code to main that uses the new structure
-  3. Only then remove the old structure
-
-### Rules
-- Every Claude Code session starts on `develop`: verify with `git branch` before any work
-- Never `git push` to `main` directly — always merge from `develop`
-- DB changes must be backward compatible with `main` until merge
-- Claude Code must NEVER use worktree branches — work directly on develop
-
----
-
-## QA & Testing Protocol
-
-### Test Tenant
-
-| Field | Value |
-|-------|-------|
-| Name | אופטיקה דמו |
-| Slug | demo |
-| UUID | 8d8cfa7e-ef58-49af-9702-a862d459cccb |
-| Test employee PIN | 12345 (עובד בדיקה, role: ceo, full permissions) |
-| Theme | Green (#059669) — visually distinct from Prizma (blue) |
-| Barcodes | Prefixed with 'D' (e.g., D0012345) |
-| Data | Cloned from Prizma with "(דמו)" suffix on names |
-
-### Tenant Access via URL
-
-- Format: `?t={slug}` — e.g., `https://opticalis.github.io/opticup/?t=demo`
-- Tenant resolved from: URL `?t=` param → sessionStorage → default 'prizma'
-- Each tenant has isolated data, permissions, and theme via `tenant_id` + RLS
-- `js/shared.js` → `TENANT_SLUG` reads from URL param dynamically
-- `js/header.js` → loads `ui_config` from tenants table for theme
-- `shared/js/theme-loader.js` → applies CSS variables from `ui_config`
-
-### QA Rules — Mandatory
-
-1. **All QA and regression tests run on the test tenant (slug=demo)** — never on Prizma production data
-2. **Every new module** must be tested on the test tenant before merge to main
-3. **Clone/cleanup scripts** are in `modules/Module 1.5 - Shared Components/scripts/`:
-   - `clone-tenant.sql` — creates a full test tenant with FK-mapped data
-   - `cleanup-tenant.sql` — safely removes test tenant data
-   - `fix-permissions-schema.sql` — reference for permissions PK fix
-4. **Test tenant stays alive** after QA — useful for demos, onboarding, and future testing
-5. **When adding new tables:** update `clone-tenant.sql` to include them, or the test tenant will have missing data
-
-### Permissions Schema (Multi-Tenant)
-
-- `roles`, `permissions`, `role_permissions` — PKs include `tenant_id`
-- Each tenant has its own copy of roles/permissions with the same IDs (e.g., 'ceo', 'inventory.view')
-- FKs on `employee_roles` and `role_permissions` are composite references
-
+*End of CLAUDE.md. This file is a map. Detailed content lives in the reference files above.*
+*Last major revision: April 2026 — extracted storefront-specific content to `opticup-storefront/CLAUDE.md`, extracted file structure / DB tables / conventions to dedicated reference files, added Hygiene Rules (21–23), added Navigation Table, switched Working Rules to Bounded Autonomy model (stop on deviation, not on success), added clean-repo check to First Action.*
+                                                 

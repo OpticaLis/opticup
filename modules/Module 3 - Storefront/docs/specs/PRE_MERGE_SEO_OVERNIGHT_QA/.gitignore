@@ -1,0 +1,7 @@
+# Scoped deps — reinstall with `cd scripts/seo-overnight && npm install`
+scripts/seo-overnight/node_modules/
+scripts/seo-overnight/package-lock.json
+
+# Bulky per-URL Lighthouse JSONs (~20 MB). Scores are captured in
+# artifacts/lighthouse-summary.json — re-run 08_lighthouse.mjs to regenerate.
+artifacts/lighthouse/*.json

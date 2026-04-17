@@ -1,0 +1,809 @@
+{
+  "generated_at": "2026-04-15T20:01:43.267Z",
+  "total_links": 758,
+  "broken_count": 0,
+  "redirect_count": 0,
+  "broken_list": [],
+  "per_page": [
+    {
+      "url": "https://prizma-optic.co.il/",
+      "localPath": "/",
+      "clicks": 516,
+      "total_links": 47,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%A6%D7%91%D7%A2%D7%99-%D7%A2%D7%99%D7%A0%D7%99%D7%99%D7%9D-%D7%9C%D7%A4%D7%99-%D7%90%D7%97%D7%95%D7%96%D7%99%D7%9D/",
+      "localPath": "/צבעי-עיניים-לפי-אחוזים/",
+      "clicks": 479,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%A4%D7%A8%D7%99%D7%96%D7%9E%D7%94-%D7%91%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D/",
+      "localPath": "/פריזמה-במשקפיים/",
+      "clicks": 178,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D-%D7%96%D7%94-%D7%91%D7%9C%D7%A9%D7%95%D7%9F-%D7%96%D7%9B%D7%A8-%D7%90%D7%95-%D7%A0%D7%A7%D7%91%D7%94-%F0%9F%A4%94/",
+      "localPath": "/משקפיים-זה-בלשון-זכר-או-נקבה-🤔/",
+      "clicks": 151,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/%D1%81%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE-%D1%81%D1%82%D0%BE%D1%8F%D1%82-%D0%BC%D1%83%D0%BB%D1%8C%D1%82%D0%B8%D1%84%D0%BE%D0%BA%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B5-%D0%BE%D1%87%D0%BA%D0%B8-%D0%B8/",
+      "localPath": "/ru/сколько-стоят-мультифокальные-очки-и/",
+      "clicks": 108,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://en.prizma-optic.co.il/rodenstock-multifocal-lenses-prices-types-and-benefits/",
+      "localPath": "/en/rodenstock-multifocal-lenses-prices-types-and-benefits/",
+      "clicks": 104,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/fred/",
+      "localPath": "/brands/fred/",
+      "clicks": 83,
+      "total_links": 27,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/serengeti/",
+      "localPath": "/brands/serengeti/",
+      "clicks": 77,
+      "total_links": 32,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9B%D7%9C%D7%9C%D7%99%D7%AA-%D7%A4%D7%9C%D7%98%D7%99%D7%A0%D7%95%D7%9D-%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D/",
+      "localPath": "/כללית-פלטינום-משקפיים/",
+      "clicks": 65,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/product_brand/john-dalia/",
+      "localPath": "/brands/john-dalia/",
+      "clicks": 63,
+      "total_links": 42,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/mykita/",
+      "localPath": "/brands/mykita/",
+      "clicks": 52,
+      "total_links": 31,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/gast/",
+      "localPath": "/brands/gast/",
+      "clicks": 49,
+      "total_links": 50,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%91%D7%97%D7%A0%D7%95-%D7%90%D7%AA-%D7%A2%D7%A6%D7%9E%D7%9B%D7%9D-%D7%94%D7%90%D7%9D-%D7%90%D7%AA%D7%9D-%D7%A2%D7%99%D7%95%D7%95%D7%A8%D7%99-%D7%A6%D7%91%D7%A2%D7%99%D7%9D/",
+      "localPath": "/בחנו-את-עצמכם-האם-אתם-עיוורי-צבעים/",
+      "clicks": 46,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/multifocal/",
+      "localPath": "/multifocal-guide/",
+      "clicks": 44,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%97%D7%99%D7%A8%D7%99-%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%A9%D7%9E%D7%99%D7%A8/",
+      "localPath": "/מחירי-עדשות-מולטיפוקל-שמיר/",
+      "clicks": 40,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/celine/",
+      "localPath": "/brands/celine/",
+      "clicks": 40,
+      "total_links": 29,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/kamemannen/",
+      "localPath": "/brands/kamemannen/",
+      "clicks": 40,
+      "total_links": 37,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%97%D7%99%D7%A8-%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%9E%D7%94-%D7%91%D7%90%D7%9E%D7%AA-%D7%A7%D7%95%D7%91%D7%A2/",
+      "localPath": "/מחיר-משקפיים-מולטיפוקל-מה-באמת-קובע/",
+      "clicks": 38,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%97%D7%99%D7%A8%D7%99-%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%90%D7%95%D7%A4%D7%98%D7%99%D7%9E%D7%99%D7%99%D7%96/",
+      "localPath": "/מחירי-עדשות-מולטיפוקל-אופטימייז/",
+      "clicks": 34,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/prizmaexpress/",
+      "localPath": "/prizmaexpress/",
+      "clicks": 32,
+      "total_links": 29,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/onsitelab/",
+      "localPath": "/lab/",
+      "clicks": 31,
+      "total_links": 19,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%97%D7%99%D7%A8%D7%99-%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%94%D7%95%D7%99%D7%94-hoya/",
+      "localPath": "/מחירי-עדשות-מולטיפוקל-הויה-hoya/",
+      "clicks": 30,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%97%D7%99%D7%A8%D7%99-%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%A8%D7%95%D7%93%D7%A0%D7%A9%D7%98%D7%95%D7%A7-rodenstock/",
+      "localPath": "/מחירי-עדשות-מולטיפוקל-רודנשטוק-rodenstock/",
+      "clicks": 29,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/shop/",
+      "localPath": "/products/",
+      "clicks": 27,
+      "total_links": 96,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/matsuda/",
+      "localPath": "/brands/matsuda/",
+      "clicks": 26,
+      "total_links": 31,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/tag/%D7%9E%D7%A9%D7%A7%D7%A4%D7%99-%D7%A8%D7%90%D7%99%D7%99%D7%94/",
+      "localPath": "/%D7%91%D7%9C%D7%95%D7%92/",
+      "clicks": 25,
+      "total_links": 77,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/porsche-design/",
+      "localPath": "/brands/porsche-design/",
+      "clicks": 25,
+      "total_links": 28,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%A6%D7%99%D7%99%D7%A1/",
+      "localPath": "/עדשות-מולטיפוקל-צייס/",
+      "clicks": 23,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%9C%D7%99%D7%99%D7%A7%D7%94-leica-%D7%A4%D7%A1%D7%92%D7%AA-%D7%94%D7%98%D7%9B%D7%A0%D7%95%D7%9C%D7%95%D7%92/",
+      "localPath": "/עדשות-מולטיפוקל-לייקה-leica-פסגת-הטכנולוג/",
+      "clicks": 23,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/fendi/",
+      "localPath": "/brands/fendi/",
+      "clicks": 22,
+      "total_links": 45,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://en.prizma-optic.co.il/hoya-multifocal-lenses-prices-types-and-benefits/",
+      "localPath": "/en/hoya-multifocal-lenses-prices-types-and-benefits/",
+      "clicks": 21,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%AA%D7%96%D7%95%D7%A0%D7%94-%D7%95%D7%91%D7%A8%D7%99%D7%90%D7%95%D7%AA-%D7%94%D7%A2%D7%99%D7%9F-%D7%9E%D7%94-%D7%9B%D7%93%D7%90%D7%99-%D7%9C%D7%90%D7%9B%D7%95%D7%9C-%D7%91%D7%A9%D7%91%D7%99%D7%9C/",
+      "localPath": "/תזונה-ובריאות-העין-מה-כדאי-לאכול-בשביל/",
+      "clicks": 21,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%A1%D7%92%D7%A8%D7%95%D7%AA-%D7%9C%D7%9E%D7%A9%D7%A7%D7%A4%D7%99-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C/",
+      "localPath": "/מסגרות-למשקפי-מולטיפוקל/",
+      "clicks": 21,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/etniabarcelona/",
+      "localPath": "/brands/etnia/",
+      "clicks": 21,
+      "total_links": 58,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/john-dalia/",
+      "localPath": "/brands/john-dalia/",
+      "clicks": 21,
+      "total_links": 42,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/henryjullien/",
+      "localPath": "/brands/henry-jullien/",
+      "clicks": 20,
+      "total_links": 28,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/product/baviera/",
+      "localPath": "/products/",
+      "clicks": 19,
+      "total_links": 96,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/tag/%D7%9E%D7%A9%D7%A7%D7%A4%D7%99-%D7%A9%D7%9E%D7%A9/",
+      "localPath": "/%D7%91%D7%9C%D7%95%D7%92/",
+      "clicks": 18,
+      "total_links": 77,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/product_brand/mykita/",
+      "localPath": "/brands/mykita/",
+      "clicks": 18,
+      "total_links": 31,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%A1%D7%95%D7%92%D7%99-%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C/",
+      "localPath": "/סוגי-עדשות-מולטיפוקל/",
+      "clicks": 17,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%A9%D7%A7%D7%A4%D7%99-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%A2%D7%91%D7%95%D7%A8-%D7%9C%D7%A7%D7%95%D7%97%D7%95%D7%AA-%D7%9B%D7%9C%D7%9C%D7%99%D7%AA-%D7%9E%D7%95%D7%A9/",
+      "localPath": "/משקפי-מולטיפוקל-עבור-לקוחות-כללית-מוש/",
+      "clicks": 17,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/cazal/",
+      "localPath": "/brands/cazal/",
+      "clicks": 17,
+      "total_links": 61,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://en.prizma-optic.co.il/shamir-multifocal-lenses-prices-types-and-advantages/",
+      "localPath": "/en/shamir-multifocal-lenses-prices-types-and-advantages/",
+      "clicks": 16,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/terms-branches/",
+      "localPath": "/terms-branches/",
+      "clicks": 16,
+      "total_links": 19,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%A9%D7%A7%D7%A4%D7%99-%D7%A4%D7%A8%D7%99%D7%96%D7%9E%D7%94/",
+      "localPath": "/משקפי-פריזמה/",
+      "clicks": 15,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%98%D7%99%D7%A4%D7%95%D7%9C-%D7%93%D7%97%D7%95%D7%A3-%D7%91%D7%A2%D7%99%D7%9F-%D7%9E%D7%94-%D7%9C%D7%A2%D7%A9%D7%95%D7%AA/",
+      "localPath": "/טיפול-דחוף-בעין-מה-לעשות/",
+      "clicks": 14,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%91%D7%97%D7%A0%D7%95-%D7%90%D7%AA-%D7%A2%D7%A6%D7%9E%D7%9B%D7%9D-%D7%97%D7%99%D7%93%D7%95%D7%9F-%D7%98%D7%A8%D7%99%D7%95%D7%95%D7%99%D7%94/",
+      "localPath": "/בחנו-את-עצמכם-חידון-טריוויה/",
+      "clicks": 14,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/product_brand/milo-me/",
+      "localPath": "/brands/milo-me/",
+      "clicks": 14,
+      "total_links": 58,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/product_brand/kamemannen/",
+      "localPath": "/brands/kamemannen/",
+      "clicks": 14,
+      "total_links": 37,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/%D1%86%D0%B5%D0%BD%D0%B0-%D0%BC%D1%83%D0%BB%D1%8C%D1%82%D0%B8%D1%84%D0%BE%D0%BA%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D1%85-%D0%BB%D0%B8%D0%BD%D0%B7-optimize-%D0%B2%D0%B8%D0%B4%D1%8B-%D0%B8-%D0%BF/",
+      "localPath": "/ru/цена-мультифокальных-линз-optimize-виды-и-п/",
+      "clicks": 14,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%91%D7%97%D7%99%D7%A8%D7%AA-%D7%9E%D7%A9%D7%A7%D7%A4%D7%99-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C/",
+      "localPath": "/בחירת-משקפי-מולטיפוקל/",
+      "clicks": 13,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://en.prizma-optic.co.il/zeiss-multifocal-lenses-prices-types-and-advantages/",
+      "localPath": "/en/zeiss-multifocal-lenses-prices-types-and-advantages/",
+      "clicks": 13,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/%D0%BA%D0%B0%D0%BA-%D0%BF%D1%80%D0%B0%D0%B2%D0%B8%D0%BB%D1%8C%D0%BD%D0%BE-%D0%B2%D1%8B%D0%B1%D1%80%D0%B0%D1%82%D1%8C-%D0%BE%D0%BF%D1%80%D0%B0%D0%B2%D1%83-%D0%B4%D0%BB%D1%8F-%D0%BC%D1%83%D0%BB%D1%8C/",
+      "localPath": "/ru/как-правильно-выбрать-оправу-для-муль/",
+      "clicks": 13,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/product_brand/fred/",
+      "localPath": "/brands/fred/",
+      "clicks": 12,
+      "total_links": 27,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/%D0%BE%D1%87%D0%BA%D0%B8-%D0%BD%D0%B0-%D0%B4%D0%BE%D0%BC-%D1%80%D0%B5%D0%B2%D0%BE%D0%BB%D1%8E%D1%86%D0%B8%D1%8F-%D0%B2-%D0%BC%D0%B8%D1%80%D0%B5-%D0%BE%D0%BF%D1%82%D0%B8%D0%BA%D0%B8/",
+      "localPath": "/ru/очки-на-дом-революция-в-мире-оптики/",
+      "clicks": 12,
+      "total_links": 22,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D-%D7%9C%D7%99%D7%9C%D7%93%D7%99%D7%9D-%D7%93%D7%A8%D7%9A-%D7%9B%D7%9C%D7%9C%D7%99%D7%AA/",
+      "localPath": "/משקפיים-לילדים-דרך-כללית/",
+      "clicks": 11,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%90%D7%99%D7%9A-%D7%9C%D7%91%D7%97%D7%95%D7%A8-%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D/",
+      "localPath": "/איך-לבחור-משקפיים/",
+      "clicks": 11,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://en.prizma-optic.co.il/prizma-optics-the-go-to-destination-for-multifocal-glasses-in-israel/",
+      "localPath": "/en/",
+      "clicks": 11,
+      "total_links": 48,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/lab/",
+      "localPath": "/lab/",
+      "clicks": 10,
+      "total_links": 19,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/oakley/",
+      "localPath": "/brands/oakley/",
+      "clicks": 10,
+      "total_links": 29,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/shop/page/5/",
+      "localPath": "/products/",
+      "clicks": 10,
+      "total_links": 96,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%90%D7%95%D7%A4%D7%98%D7%99%D7%A7%D7%94-%D7%91%D7%94%D7%A1%D7%93%D7%A8-%D7%A2%D7%9D-%D7%9B%D7%9C%D7%9C%D7%99%D7%AA-%D7%91%D7%90%D7%A9%D7%A7%D7%9C%D7%95%D7%9F/",
+      "localPath": "/אופטיקה-בהסדר-עם-כללית-באשקלון/",
+      "clicks": 10,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/%D1%86%D0%B5%D0%BD%D0%B0-%D0%BC%D1%83%D0%BB%D1%8C%D1%82%D0%B8%D1%84%D0%BE%D0%BA%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D1%85-%D0%BB%D0%B8%D0%BD%D0%B7-shamir-%D0%B8%D0%BD%D0%BD%D0%BE%D0%B2%D0%B0%D1%86/",
+      "localPath": "/ru/цена-мультифокальных-линз-shamir-инновац/",
+      "clicks": 10,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/product_brand/hublot/",
+      "localPath": "/brands/hublot/",
+      "clicks": 10,
+      "total_links": 30,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://en.prizma-optic.co.il/multifocal-lens-prices-how-to-choose-the-right-lenses-at-the-best-value/",
+      "localPath": "/en/multifocal-lens-prices-how-to-choose-the-right-lenses-at-the-best-value/",
+      "clicks": 9,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%A6%D7%A8%D7%95-%D7%A7%D7%A9%D7%A8/",
+      "localPath": "/צרו-קשר/",
+      "clicks": 9,
+      "total_links": 19,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%A9%D7%A7%D7%A4%D7%99-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C-%D7%91%D7%94%D7%AA%D7%90%D7%9E%D7%94-%D7%90%D7%99%D7%A9%D7%99%D7%AA/",
+      "localPath": "/משקפי-מולטיפוקל-בהתאמה-אישית/",
+      "clicks": 9,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/",
+      "localPath": "/ru/",
+      "clicks": 9,
+      "total_links": 48,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/%D7%91%D7%93%D7%99%D7%A7%D7%AA-%D7%A8%D7%90%D7%99%D7%99%D7%94-%D7%91%D7%90%D7%A9%D7%A7%D7%9C%D7%95%D7%9F/",
+      "localPath": "/ru/בדיקת-ראייה-באשקלון/",
+      "clicks": 9,
+      "total_links": 21,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/product_brand/henryjullien/",
+      "localPath": "/brands/henryjullien/",
+      "clicks": 9,
+      "total_links": 58,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/product_brand/blackfin/",
+      "localPath": "/brands/blackfin/",
+      "clicks": 9,
+      "total_links": 29,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%99%D7%95%D7%A4%D7%99%D7%94/",
+      "localPath": "/מיופיה/",
+      "clicks": 8,
+      "total_links": 0,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/brands/",
+      "localPath": "/brands/",
+      "clicks": 8,
+      "total_links": 58,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://en.prizma-optic.co.il/how-to-choose-the-right-frames-for-multifocal-glasses-why-it-matters-for-your-vision/",
+      "localPath": "/en/how-to-choose-the-right-frames-for-multifocal-glasses-why-it-matters-for-your-vision/",
+      "clicks": 8,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/balenciaga/",
+      "localPath": "/brands/balenciaga/",
+      "clicks": 8,
+      "total_links": 36,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/hublot/",
+      "localPath": "/brands/hublot/",
+      "clicks": 8,
+      "total_links": 30,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/gotti-switzerland/",
+      "localPath": "/brands/gotti/",
+      "clicks": 8,
+      "total_links": 36,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://en.prizma-optic.co.il/blue-green-or-brown-eye-color-distribution-by-percentage/",
+      "localPath": "/en/blue-green-or-brown-eye-color-distribution-by-percentage/",
+      "clicks": 7,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9B%D7%9C%D7%9C%D7%99%D7%AA-%D7%A4%D7%9C%D7%98%D7%99%D7%A0%D7%95%D7%9D-%D7%9E%D7%A9%D7%A7%D7%A4%D7%99%D7%99%D7%9D-%D7%9C%D7%9E%D7%91%D7%95%D7%92%D7%A8%D7%99%D7%9D/",
+      "localPath": "/כללית-פלטינום-משקפיים-למבוגרים/",
+      "clicks": 7,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/%D0%B2%D0%B8%D0%B4%D1%8B-%D0%BC%D1%83%D0%BB%D1%8C%D1%82%D0%B8%D1%84%D0%BE%D0%BA%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D1%85-%D0%BB%D0%B8%D0%BD%D0%B7/",
+      "localPath": "/ru/виды-мультифокальных-линз/",
+      "clicks": 7,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/product-category/%D7%9E%D7%A9%D7%A7%D7%A4%D7%99-%D7%A9%D7%9E%D7%A9/",
+      "localPath": "/products/",
+      "clicks": 7,
+      "total_links": 96,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/talla/",
+      "localPath": "/brands/talla/",
+      "clicks": 7,
+      "total_links": 27,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/tejesta/",
+      "localPath": "/brands/tejesta/",
+      "clicks": 7,
+      "total_links": 38,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/product_brand/porsche-design/",
+      "localPath": "/brands/porsche-design/",
+      "clicks": 7,
+      "total_links": 28,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://en.prizma-optic.co.il/multifocal-glasses/",
+      "localPath": "/multifocal-guide/",
+      "clicks": 6,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%A9%D7%A7%D7%A4%D7%99-%D7%9E%D7%95%D7%9C%D7%98%D7%99%D7%A4%D7%95%D7%A7%D7%9C/",
+      "localPath": "/משקפי-מולטיפוקל/",
+      "clicks": 6,
+      "total_links": 20,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%90%D7%99%D7%9A-%D7%9C%D7%91%D7%97%D7%95%D7%A8-%D7%9E%D7%A9%D7%A7%D7%A4%D7%99-%D7%A8%D7%90%D7%99%D7%99%D7%94/",
+      "localPath": "/איך-לבחור-משקפי-ראייה/",
+      "clicks": 6,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/miumiu/",
+      "localPath": "/brands/miumiu/",
+      "clicks": 6,
+      "total_links": 35,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%94%D7%A2%D7%99%D7%9F-%D7%94%D7%90%D7%A0%D7%95%D7%A9%D7%99%D7%AA/",
+      "localPath": "/העין-האנושית/",
+      "clicks": 6,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/moscot/",
+      "localPath": "/brands/moscot/",
+      "clicks": 6,
+      "total_links": 61,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://en.prizma-optic.co.il/",
+      "localPath": "/en/",
+      "clicks": 6,
+      "total_links": 48,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/%D1%86%D0%B5%D0%BD%D0%B0-%D0%BC%D1%83%D0%BB%D1%8C%D1%82%D0%B8%D1%84%D0%BE%D0%BA%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D1%85-%D0%BB%D0%B8%D0%BD%D0%B7-rodenstock-%D0%BE%D0%B1%D0%B7%D0%BE%D1%80-%D0%BC/",
+      "localPath": "/ru/цена-мультифокальных-линз-rodenstock-обзор-м/",
+      "clicks": 6,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://ru.prizma-optic.co.il/%D1%86%D0%B5%D0%BD%D0%B0-%D0%BC%D1%83%D0%BB%D1%8C%D1%82%D0%B8%D1%84%D0%BE%D0%BA%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D1%85-%D0%BB%D0%B8%D0%BD%D0%B7-hoya-%D0%B2%D0%B8%D0%B4%D1%8B-%D0%B8-%D0%BF%D1%80/",
+      "localPath": "/ru/цена-мультифокальных-линз-hoya-виды-и-пр/",
+      "clicks": 6,
+      "total_links": 24,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/product_brand/gotti/",
+      "localPath": "/brands/gotti/",
+      "clicks": 6,
+      "total_links": 36,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/premiummultisale/",
+      "localPath": "/premiummultisale/",
+      "clicks": 6,
+      "total_links": 2,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/product/dg-dg6184/",
+      "localPath": "/products/",
+      "clicks": 6,
+      "total_links": 96,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%9E%D7%A2%D7%91%D7%93%D7%AA-%D7%AA%D7%99%D7%A7%D7%95%D7%9F-%D7%9E%D7%A9%D7%A7%D7%A4%D7%99-%D7%A8%D7%90%D7%99%D7%99%D7%94-%D7%91%D7%90%D7%A9%D7%A7%D7%9C%D7%95%D7%9F-2/",
+      "localPath": "/מעבדת-תיקון-משקפי-ראייה-באשקלון-2/",
+      "clicks": 5,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%90%D7%99%D7%9A-%D7%9C%D7%94%D7%92%D7%9F-%D7%A2%D7%9C-%D7%94%D7%A2%D7%99%D7%A0%D7%99%D7%99%D7%9D-%D7%9E%D7%A4%D7%A0%D7%99-%D7%94%D7%A9%D7%9E%D7%A9/",
+      "localPath": "/איך-להגן-על-העיניים-מפני-השמש/",
+      "clicks": 5,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%94%D7%90%D7%98%D7%AA-%D7%94%D7%AA%D7%A7%D7%93%D7%9E%D7%95%D7%AA-%D7%A7%D7%95%D7%A6%D7%A8-%D7%A8%D7%90%D7%99%D7%99%D7%94/",
+      "localPath": "/האטת-התקדמות-קוצר-ראייה/",
+      "clicks": 5,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    },
+    {
+      "url": "https://prizma-optic.co.il/%D7%A2%D7%93%D7%A9%D7%95%D7%AA-%D7%9C%D7%9E%D7%A0%D7%99%D7%A2%D7%AA-%D7%94%D7%97%D7%9E%D7%A8%D7%AA-%D7%9E%D7%99%D7%95%D7%A4%D7%99%D7%94/",
+      "localPath": "/עדשות-למניעת-החמרת-מיופיה/",
+      "clicks": 5,
+      "total_links": 23,
+      "broken_links": 0,
+      "broken_sample": []
+    }
+  ]
+}

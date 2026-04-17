@@ -149,7 +149,7 @@ async function _doConfirmSupplierReturn(supplierId) {
   // Verify PIN
   var emp = await verifyPinOnly(pin);
   if (!emp) { toast('סיסמת עובד שגויה', 'e'); $('ret-pin').value = ''; return; }
-  sessionStorage.setItem('prizma_user', emp.name);
+  sessionStorage.setItem('tenant_user', emp.name);
 
   // Disable button to prevent double-click
   var btn = $('ret-confirm-btn');

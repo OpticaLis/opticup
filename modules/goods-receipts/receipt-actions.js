@@ -50,7 +50,7 @@ async function saveReceiptDraft() {
       document_numbers: docNums,
       status: 'draft',
       po_id: rcptLinkedPoId || null,
-      created_by: sessionStorage.getItem('prizma_user') || 'system',
+      created_by: sessionStorage.getItem('tenant_user') || 'system',
       tenant_id: getTenantId()
     };
 
@@ -131,7 +131,7 @@ async function saveReceiptDraftInternal() {
     document_numbers: docNums2,
     status: 'draft',
     po_id: rcptLinkedPoId || null,
-    created_by: sessionStorage.getItem('prizma_user') || 'system',
+    created_by: sessionStorage.getItem('tenant_user') || 'system',
     tenant_id: getTenantId()
   };
 

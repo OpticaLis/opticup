@@ -1,2413 +1,535 @@
 -- ═══════════════════════════════════════════════════════════════
--- Optic Up — Global Database Schema
--- Source of truth for all tables across all modules
--- Updated at end of each phase via Integration Ceremony
--- Last updated: 2026-03-24
+-- GLOBAL SCHEMA — Optic Up
+-- Reconciled from live DB: 2026-04-11 (Phase 3A Part 2)
+-- Sources: modules/Module 3.1 - Project Reconstruction/db-audit/
+--            01-tables.md     — 84 base tables
+--            02-columns.md    — column-level detail (base tables + view columns)
+--            03-views.md      — 24 views with full definitions
+--            04-policies.md   — 162 RLS policies
+--            05-functions.md  — 72 functions (41 project + 31 extension)
+--            06-sequences.md  — 0 sequences (by design — UUID + RPC)
 --
--- Modules included:
---   Module 1: Inventory Management (Phase 0-5.9 + QA) ✅
---   Module 1.5: Shared Components (Phase 1 in progress)
+-- AUTHORITATIVE for table / view / policy / function declarations.
+-- Per-module db-schema.sql files reference THIS file, not the reverse.
 --
--- Table count: 50 (46 active + 4 future stubs)
+-- This file is a MAP. Column types, defaults, CHECK constraints, and full
+-- policy / function / view bodies live in the db-audit/*.md source files.
+-- Do not duplicate that content here — keep this file scannable.
+--
+-- Prior version: 2026-03-24 snapshot, stale at table level (missing 24 tables,
+-- missing all 24 views, missing the AI content / translation / storefront CMS
+-- surface). Backed up under
+-- modules/Module 3.1 - Project Reconstruction/backups/M3.1-3A_2026-04-11/.
 -- ═══════════════════════════════════════════════════════════════
 
--- ═══════════════════════════════════════════════════════════════
--- Module 1: Inventory Management
--- ═══════════════════════════════════════════════════════════════
 
 -- ============================================================
--- Prizma Optics — מלאי מסגרות — Full DB Schema
--- גרסה QA | מרץ 2026 | Module 1 Final Certification
--- ============================================================
--- סדר יצירה לפי תלויות (FK)
--- 1. brands  2. suppliers  3. employees
--- 4. inventory  5. inventory_images  6. inventory_logs
--- 7. purchase_orders  8. purchase_order_items
--- 9. goods_receipts  10. goods_receipt_items
--- 11. sync_log  12. pending_sales  13. watcher_heartbeat
--- 14. stock_counts  15. stock_count_items
--- ============================================================
--- Migrations applied:
---   supabase_schema.sql  — initial tables
---   002_logs_and_soft_delete.sql  — employees, inventory_logs, soft delete
---   003_goods_receipts.sql  — goods_receipts + items
---   004_v2_prep.sql  — min_stock_qty, remove contact_lenses
---   005_purchase_orders.sql  — purchase_orders + items + po_id on receipts
---   006_brand_min_stock.sql  — (duplicate of 004, idempotent)
---   007_po_items_extended.sql  — extra columns on po items
---   008_supplier_number.sql  — supplier_number UNIQUE
---   009_brands_active.sql  — brands.active
---   010_access_bridge.sql  — sync_log + pending_sales + watcher_heartbeat
---   011_inventory_logs_sale_fields.sql  — 12 Access sale columns on inventory_logs
---   012_atomic_qty_rpc.sql  — increment_inventory + decrement_inventory RPC functions
---   013_stock_count.sql  — stock_counts + stock_count_items tables + set_inventory_qty RPC
---   014_stock_count_scanned_by.sql  — scanned_by column on stock_count_items
---   015_failed_sync_storage.sql  — storage_path + errors columns on sync_log, storage policy
---   016_auth_permissions.sql  — roles, permissions, role_permissions, employee_roles, auth_sessions
---   017_tenants.sql  — tenants table + Prizma seed
---   018_add_tenant_id.sql  — tenant_id UUID column on all 20 tables + backfill
---   019_tenant_id_constraints.sql  — NOT NULL + FK constraints + 25 indexes
---   020_rls_tenant_isolation.sql  — JWT-based tenant isolation on all 20 tables
---   021_phase4a_supplier_debt_tables.sql  — 11 new tables for supplier debt tracking + seed data
---   022_phase4a_plus_patch.sql  — withholding tax, internal numbering, duplicate prevention, payment approval
---   add_pending_sales_product_columns.sql  — brand, model, size, color on pending_sales
---   add_inventory_access_exported.sql  — access_exported BOOLEAN + partial index on inventory
---   add_sync_log_export_source.sql  — 'export' added to sync_log source_ref CHECK
---   add_sync_log_handled_status.sql — 'handled' added to sync_log status CHECK
---   fix_supplier_returns_columns.sql — agent_picked_at, received_at, credited_at on supplier_returns
---   phase5a_ai_agent_tables.sql — ai_agent_config, supplier_ocr_templates, ocr_extractions, alerts, weekly_reports
---   phase5f_alert_generation.sql — generate_daily_alerts RPC + pg_cron job
---   phase5_5a_atomic_rpcs.sql — next_internal_doc_number, update_ocr_template_stats RPCs
---   phase5_5b_schema_additions.sql — file_hash, batch_id, is_historical columns + indexes
---   phase5_5c_pgcron_alerts.sql — pg_cron scheduling
---   phase5_75_communications_knowledge.sql — 6 communications tables
---   phase5_9_shipments.sql — courier_companies, shipments, shipment_items + next_box_number RPC
---   030_settings_columns.sql — business/financial/display columns on tenants
---   031_stock_count_filter_criteria.sql — filter_criteria JSONB on stock_counts
---   031_tenants_update_policy.sql — tenant_update_own RLS policy on tenants
---   032_stock_count_unknown_items.sql — status CHECK includes 'unknown', inventory_id nullable
---   051_inventory_images_storage.sql — composite index on inventory_images(inventory_id, tenant_id), frame-images Storage bucket
---   052_doc_pending_review_status.sql — 'pending_review' added to supplier_documents status CHECK
--- ============================================================
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-
--- ============================================================
--- 0. tenants — דיירים (017)
--- ============================================================
-CREATE TABLE IF NOT EXISTS tenants (
-  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name             TEXT NOT NULL,
-  slug             TEXT UNIQUE NOT NULL,
-  logo_url         TEXT,
-  default_currency TEXT DEFAULT 'ILS',
-  timezone         TEXT DEFAULT 'Asia/Jerusalem',
-  locale           TEXT DEFAULT 'he-IL',
-  is_active        BOOLEAN DEFAULT true,
-  created_at       TIMESTAMPTZ DEFAULT now(),
-  updated_at       TIMESTAMPTZ DEFAULT now(),
-  -- Business settings (030)
-  business_name    TEXT,
-  business_address TEXT,
-  business_phone   TEXT,
-  business_email   TEXT,
-  business_id      TEXT,                          -- מספר עוסק מורשה / ח.פ.
-  -- Financial settings (030)
-  vat_rate                  NUMERIC DEFAULT 17,
-  withholding_tax_default   NUMERIC DEFAULT 0,
-  payment_terms_days        INTEGER DEFAULT 30,
-  -- Display settings (030)
-  rows_per_page    INTEGER DEFAULT 50,
-  date_format      TEXT DEFAULT 'DD/MM/YYYY',
-  theme            TEXT DEFAULT 'light'
-);
-
-ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "service_bypass_tenants" ON tenants FOR ALL TO service_role USING (true);
-CREATE POLICY "anon_read_tenants" ON tenants FOR SELECT USING (true);
--- QA phase: allow tenant to update its own row (settings page)
-CREATE POLICY "tenant_update_own" ON tenants FOR UPDATE
-  USING (id = current_setting('app.tenant_id')::uuid);
-
--- Seed Prizma as tenant #1
-INSERT INTO tenants (name, slug, default_currency)
-VALUES ('אופטיקה פריזמה', 'prizma', 'ILS')
-ON CONFLICT (slug) DO NOTHING;
-
--- ============================================================
--- 1. brands — מותגים
--- ============================================================
-CREATE TABLE IF NOT EXISTS brands (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name            TEXT NOT NULL UNIQUE,                          -- שם חברה
-  brand_type      TEXT CHECK (brand_type IN ('luxury', 'brand', 'regular')),  -- סוג מותג
-  default_sync    TEXT CHECK (default_sync IN ('full', 'display', 'none')),   -- סנכרון ברירת מחדל
-  active          BOOLEAN NOT NULL DEFAULT TRUE,                 -- פעיל (009)
-  exclude_website BOOLEAN NOT NULL DEFAULT FALSE,                -- מוחרג מאתר WooCommerce
-  min_stock_qty   INTEGER DEFAULT NULL,                          -- סף מלאי מינימלי (004/006)
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
-  branch_id       UUID,
-  created_by      UUID,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-COMMENT ON COLUMN brands.exclude_website IS 'excluded from WooCommerce sync';
-COMMENT ON COLUMN brands.min_stock_qty   IS 'Minimum stock threshold. When total qty across inventory falls below this, a low-stock alert is triggered.';
-CREATE INDEX IF NOT EXISTS idx_brands_name   ON brands (name);
-CREATE INDEX IF NOT EXISTS idx_brands_active ON brands (active);
-
--- ============================================================
--- 2. suppliers — ספקים
--- ============================================================
-CREATE TABLE IF NOT EXISTS suppliers (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name            TEXT NOT NULL UNIQUE,                          -- שם ספק
-  supplier_number INTEGER UNIQUE,                                -- מספר ספק (≥ 10, gap-filled) (008)
-  contact         TEXT,                                          -- איש קשר
-  phone           TEXT,                                          -- טלפון
-  mobile          TEXT,                                          -- נייד
-  email           TEXT,                                          -- אימייל
-  address         TEXT,                                          -- כתובת
-  tax_id          TEXT,                                          -- ח.פ. / עוסק מורשה
-  payment_terms   TEXT,                                          -- תנאי תשלום
-  rating          SMALLINT CHECK (rating BETWEEN 1 AND 5),       -- דירוג 1-5
-  notes           TEXT,                                          -- הערות
-  active          BOOLEAN NOT NULL DEFAULT TRUE,                 -- פעיל
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
-  branch_id       UUID,
-  created_by      UUID,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_suppliers_name   ON suppliers (name);
-CREATE INDEX IF NOT EXISTS idx_suppliers_active ON suppliers (active);
-
--- ============================================================
--- 3. employees — עובדים עם PIN לאימות פעולות רגישות
--- ============================================================
-CREATE TABLE IF NOT EXISTS employees (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name            TEXT NOT NULL,                                 -- שם עובד
-  pin             TEXT NOT NULL,                                 -- קוד PIN לאימות
-  role            TEXT NOT NULL DEFAULT 'employee',              -- תפקיד: employee | manager | admin
-  branch_id       TEXT,                                          -- קוד סניף
-  is_active       BOOLEAN NOT NULL DEFAULT true,                 -- פעיל
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- עובד ברירת מחדל לבדיקות (PIN: 1234)
-INSERT INTO employees (name, pin, role, branch_id)
-VALUES ('מנהל ראשי', '1234', 'admin', '00')
-ON CONFLICT DO NOTHING;
-
--- ============================================================
--- 4. inventory — מלאי ראשי
--- ============================================================
-CREATE TABLE IF NOT EXISTS inventory (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  barcode         TEXT,                                          -- ברקוד BBDDDDD (2 ספרות סניף + 5 ספרות רצות)
-  supplier_id     UUID REFERENCES suppliers(id),                 -- FK ספק
-  brand_id        UUID REFERENCES brands(id),                    -- FK מותג
-  model           TEXT,                                          -- דגם
-  size            TEXT,                                          -- גודל
-  bridge          TEXT,                                          -- גשר
-  color           TEXT,                                          -- צבע
-  temple_length   TEXT,                                          -- אורך מוט
-  product_type    TEXT CHECK (product_type IN ('eyeglasses', 'sunglasses')),  -- סוג מוצר (004: removed contact_lenses)
-  sell_price      NUMERIC(10,2) DEFAULT 0,                       -- מחיר מכירה
-  sell_discount   NUMERIC(5,4) DEFAULT 0,                        -- הנחה מכירה (0.0000-1.0000)
-  cost_price      NUMERIC(10,2) DEFAULT 0,                       -- מחיר עלות
-  cost_discount   NUMERIC(5,4) DEFAULT 0,                        -- הנחה עלות
-  quantity        INTEGER NOT NULL DEFAULT 0,                    -- כמות במלאי
-  website_sync    TEXT CHECK (website_sync IN ('full', 'display', 'none')),  -- סנכרון אתר
-  status          TEXT CHECK (status IN ('in_stock', 'sold', 'ordered', 'pending_barcode', 'pending_images')),  -- סטטוס
-  brand_type      TEXT CHECK (brand_type IN ('luxury', 'brand', 'regular')),  -- סוג מותג
-  origin          TEXT,                                          -- מקור (כניסת מלאי / goods_receipt / ...)
-  woocommerce_id  INTEGER,                                       -- מזהה WooCommerce
-  notes           TEXT,                                          -- הערות
-  -- Soft Delete fields (002)
-  is_deleted      BOOLEAN NOT NULL DEFAULT false,                -- האם נמחק (soft delete)
-  deleted_at      TIMESTAMPTZ,                                   -- מתי נמחק
-  deleted_by      TEXT,                                          -- מי מחק (שם עובד)
-  deleted_reason  TEXT,                                          -- סיבת מחיקה
-  -- Reverse sync (Access export)
-  access_exported BOOLEAN DEFAULT false,                         -- האם יוצא ל-Access
-  -- Custom fields (Module 1.5 Phase 5)
-  custom_fields   JSONB DEFAULT '{}',                            -- שדות מותאמים per-tenant (no UI yet)
-  -- System fields
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
-  branch_id       UUID,                                          -- סניף
-  created_by      UUID,                                          -- יוצר
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- אינדקסים
-CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_barcode_unique ON inventory (barcode) WHERE barcode IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_inv_supplier        ON inventory (supplier_id);
-CREATE INDEX IF NOT EXISTS idx_inv_brand           ON inventory (brand_id);
-CREATE INDEX IF NOT EXISTS idx_inv_status          ON inventory (status);
-CREATE INDEX IF NOT EXISTS idx_inv_product_type    ON inventory (product_type);
-CREATE INDEX IF NOT EXISTS idx_inv_quantity        ON inventory (quantity);
-CREATE INDEX IF NOT EXISTS idx_inv_model_trgm      ON inventory USING GIN (model gin_trgm_ops);   -- חיפוש טקסט מטושטש
-CREATE INDEX IF NOT EXISTS idx_inv_color_trgm      ON inventory USING GIN (color gin_trgm_ops);   -- חיפוש טקסט מטושטש
-CREATE INDEX IF NOT EXISTS idx_inventory_not_deleted ON inventory (is_deleted) WHERE is_deleted = false;  -- פריטים פעילים בלבד
-CREATE INDEX IF NOT EXISTS idx_inventory_access_unexported ON inventory (tenant_id, access_exported) WHERE access_exported = false AND is_deleted = false;
-
--- ============================================================
--- 5. inventory_images — תמונות פריטי מלאי
--- ============================================================
-CREATE TABLE IF NOT EXISTS inventory_images (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  inventory_id    UUID NOT NULL REFERENCES inventory(id) ON DELETE CASCADE,  -- FK פריט מלאי
-  storage_path    TEXT NOT NULL,                                 -- נתיב אחסון
-  url             TEXT NOT NULL,                                 -- כתובת תמונה
-  thumbnail_url   TEXT,                                          -- כתובת תמונה ממוזערת
-  file_name       TEXT,                                          -- שם קובץ
-  file_size       INTEGER,                                       -- גודל בבתים
-  sort_order      SMALLINT DEFAULT 0,                            -- סדר מיון
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_inv_images_inv ON inventory_images (inventory_id);
-
--- ============================================================
--- 6. inventory_logs — לוג פעולות (Audit Trail)
--- ============================================================
--- כל פעולה שמשנה מלאי נכתבת כאן — audit trail מלא (002)
-CREATE TABLE IF NOT EXISTS inventory_logs (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  -- סוג הפעולה (19 סוגים)
-  action          TEXT NOT NULL,
-  -- כניסות:  entry_manual | entry_po | entry_excel | entry_receipt | transfer_in
-  -- יציאות:  sale | credit_return | manual_remove | transfer_out
-  -- עריכות:  edit_qty | edit_price | edit_details | edit_barcode | edit_sync
-  -- מחיקה:   soft_delete | restore | permanent_delete
-  -- בדיקה:   test
-
-  -- על מה הפעולה
-  inventory_id    UUID REFERENCES inventory(id) ON DELETE SET NULL,  -- FK פריט (NULL אם נמחק לצמיתות)
-  barcode         TEXT,                                          -- ברקוד (snapshot)
-  brand           TEXT,                                          -- מותג (snapshot)
-  model           TEXT,                                          -- דגם (snapshot)
-
-  -- שינוי כמות
-  qty_before      INTEGER,                                       -- כמות לפני
-  qty_after       INTEGER,                                       -- כמות אחרי
-
-  -- שינוי מחיר
-  price_before    NUMERIC,                                       -- מחיר לפני
-  price_after     NUMERIC,                                       -- מחיר אחרי
-
-  -- פרטי הפעולה
-  reason          TEXT,                                          -- סיבה
-  source_ref      TEXT,                                          -- מקור: watcher | manual | null לפעולות רגילות
-
-  -- Access sale fields (011)
-  sale_amount     NUMERIC(10,2),                                 -- מחיר לפני הנחות
-  discount        NUMERIC(10,2),                                 -- הנחה קבועה (חיילים וכו')
-  discount_1      NUMERIC(10,2),                                 -- הנחה נוספת 1
-  discount_2      NUMERIC(10,2),                                 -- הנחה נוספת 2
-  final_amount    NUMERIC(10,2),                                 -- מחיר סופי ששולם
-  coupon_code     TEXT,                                          -- קוד קופון
-  campaign        TEXT,                                          -- שם מבצע
-  employee_id     TEXT,                                          -- עובד שביצע מכירה (Access)
-  lens_included   BOOLEAN,                                       -- עדשות כלולות
-  lens_category   TEXT,                                          -- קטגוריית עדשה
-  order_number    TEXT,                                          -- מספר הזמנה POS
-  sync_filename   TEXT,                                          -- שם קובץ Excel מ-Access
-
-  -- מי ומתי
-  performed_by    TEXT NOT NULL DEFAULT 'system',                 -- מבצע הפעולה (שם עובד)
-  branch_id       TEXT,                                          -- קוד סניף
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_logs_inventory_id  ON inventory_logs (inventory_id);
-CREATE INDEX IF NOT EXISTS idx_logs_action        ON inventory_logs (action);
-CREATE INDEX IF NOT EXISTS idx_logs_created_at    ON inventory_logs (created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_logs_branch        ON inventory_logs (branch_id);
-CREATE INDEX IF NOT EXISTS idx_logs_performed_by  ON inventory_logs (performed_by);
-
--- ============================================================
--- 7. purchase_orders — הזמנות רכש (005)
--- ============================================================
--- PO number format: PO-{supplier_number}-{4-digit-seq}
-CREATE TABLE IF NOT EXISTS purchase_orders (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  po_number       TEXT NOT NULL UNIQUE,                          -- מספר הזמנה: PO-{sup_num}-{seq}
-  supplier_id     UUID NOT NULL REFERENCES suppliers(id),        -- FK ספק
-  order_date      DATE NOT NULL DEFAULT CURRENT_DATE,            -- תאריך הזמנה
-  expected_date   DATE,                                          -- תאריך משלוח צפוי
-  status          TEXT NOT NULL DEFAULT 'draft'                  -- סטטוס
-                  CHECK (status IN ('draft', 'sent', 'partial', 'received', 'cancelled')),
-  notes           TEXT,                                          -- הערות
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
-  branch_id       TEXT,                                          -- קוד סניף
-  created_by      TEXT,                                          -- מי יצר
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_po_supplier ON purchase_orders(supplier_id);
-CREATE INDEX IF NOT EXISTS idx_po_status   ON purchase_orders(status);
-CREATE INDEX IF NOT EXISTS idx_po_number   ON purchase_orders(po_number);
-
--- ============================================================
--- 8. purchase_order_items — פריטי הזמנת רכש (005 + 007)
--- ============================================================
-CREATE TABLE IF NOT EXISTS purchase_order_items (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  po_id           UUID NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE,  -- FK הזמנה
-  inventory_id    UUID REFERENCES inventory(id) ON DELETE SET NULL,                -- FK פריט מלאי (אם נוצר מברקוד)
-  barcode         TEXT,                                          -- ברקוד
-  brand           TEXT,                                          -- מותג (denormalized)
-  model           TEXT,                                          -- דגם
-  color           TEXT,                                          -- צבע
-  size            TEXT,                                          -- גודל
-  bridge          TEXT,                                          -- גשר (007)
-  temple_length   TEXT,                                          -- אורך מוט (007)
-  product_type    TEXT CHECK (product_type IN ('eyeglasses', 'sunglasses')),  -- סוג מוצר (007)
-  qty_ordered     INTEGER NOT NULL DEFAULT 1,                    -- כמות מוזמנת
-  qty_received    INTEGER NOT NULL DEFAULT 0,                    -- כמות שהתקבלה
-  unit_cost       DECIMAL(10,2),                                 -- מחיר עלות ליחידה
-  discount_pct    DECIMAL(5,2) DEFAULT 0,                        -- אחוז הנחה עלות
-  sell_price      DECIMAL(10,2),                                 -- מחיר מכירה (007)
-  sell_discount   DECIMAL(5,4) DEFAULT 0,                        -- הנחה מכירה (007)
-  website_sync    TEXT CHECK (website_sync IN ('full', 'display', 'none')),  -- סנכרון אתר (007)
-  notes           TEXT,                                          -- הערות
-  tenant_id       UUID NOT NULL REFERENCES tenants(id)           -- דייר (018)
-);
-
-CREATE INDEX IF NOT EXISTS idx_poi_po_id ON purchase_order_items(po_id);
-
--- ============================================================
--- 9. goods_receipts — קבלות סחורה (003 + 005)
--- ============================================================
--- תעודת משלוח / חשבונית שהגיעו מספק — draft → confirmed / cancelled
-CREATE TABLE IF NOT EXISTS goods_receipts (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  receipt_number  TEXT NOT NULL,                                  -- מספר קבלה / תעודת משלוח
-  receipt_type    TEXT NOT NULL DEFAULT 'delivery_note',          -- סוג: delivery_note | invoice | tax_invoice
-  supplier_id     UUID REFERENCES suppliers(id),                 -- FK ספק
-  po_id           UUID REFERENCES purchase_orders(id) ON DELETE SET NULL,  -- FK הזמנת רכש (005)
-  branch_id       TEXT,                                          -- קוד סניף
-  receipt_date    DATE NOT NULL DEFAULT CURRENT_DATE,             -- תאריך קבלה
-  received_date   DATE DEFAULT CURRENT_DATE,                     -- תאריך קליטה בפועל
-  total_amount    DECIMAL(10,2),                                 -- סכום כולל
-  notes           TEXT,                                          -- הערות
-  status          TEXT NOT NULL DEFAULT 'draft',                 -- סטטוס: draft | confirmed | cancelled
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),          -- דייר (018)
-  created_by      TEXT,                                          -- מי יצר
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  document_numbers TEXT[] DEFAULT '{}'                           -- מספרי מסמכים נוספים (Debt-Upgrades)
-);
-CREATE INDEX IF NOT EXISTS idx_receipts_supplier ON goods_receipts(supplier_id);
-CREATE INDEX IF NOT EXISTS idx_receipts_status   ON goods_receipts(status);
-CREATE INDEX IF NOT EXISTS idx_receipts_po       ON goods_receipts(po_id);
-
--- ============================================================
--- 10. goods_receipt_items — פריטי קבלת סחורה (003)
--- ============================================================
-CREATE TABLE IF NOT EXISTS goods_receipt_items (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  receipt_id      UUID NOT NULL REFERENCES goods_receipts(id) ON DELETE CASCADE,  -- FK קבלה
-  inventory_id    UUID REFERENCES inventory(id) ON DELETE SET NULL,               -- FK פריט מלאי (אחרי אישור)
-  barcode         TEXT,                                          -- ברקוד
-  brand           TEXT,                                          -- מותג (denormalized)
-  model           TEXT,                                          -- דגם
-  color           TEXT,                                          -- צבע
-  size            TEXT,                                          -- גודל
-  quantity        INTEGER NOT NULL DEFAULT 1,                    -- כמות
-  unit_cost       DECIMAL(10,2),                                 -- מחיר עלות ליחידה
-  sell_price      DECIMAL(10,2),                                 -- מחיר מכירה
-  is_new_item     BOOLEAN NOT NULL DEFAULT false,                -- true = פריט חדש (לא היה במלאי)
-  price_decision  TEXT CHECK (price_decision IS NULL OR price_decision IN ('po_price', 'invoice_price')),  -- Phase 8: החלטת מחיר מול PO
-  po_match_status TEXT CHECK (po_match_status IS NULL OR po_match_status IN ('matched', 'not_in_po', 'returned', 'not_received')),  -- Phase 8: סטטוס התאמה ל-PO
-  receipt_status  TEXT CHECK (receipt_status IS NULL OR receipt_status IN ('ok', 'not_received', 'return', 'partial_received')),  -- Flow Review: סטטוס קבלה
-  from_po         BOOLEAN DEFAULT false,                         -- Flow Review: true = שורה שהגיעה מהזמנת רכש
-  barcodes_csv    TEXT,                                          -- QA2: comma-separated barcodes for multi-unit rows (050)
-  ordered_qty     INTEGER,                                       -- QA2: original ordered quantity from PO (050)
-  product_type    TEXT CHECK (product_type IS NULL OR product_type IN ('eyeglasses', 'sunglasses')),  -- סוג מוצר (053)
-  tenant_id       UUID NOT NULL REFERENCES tenants(id)           -- דייר (018)
-);
-CREATE INDEX IF NOT EXISTS idx_receipt_items ON goods_receipt_items(receipt_id);
-
--- ============================================================
--- 11. sync_log — לוג סנכרונים Access (010)
--- ============================================================
-CREATE TABLE IF NOT EXISTS sync_log (
-  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at       TIMESTAMPTZ DEFAULT now(),
-  filename         TEXT NOT NULL,                                  -- שם קובץ Excel
-  source_ref       TEXT NOT NULL CHECK (source_ref IN ('watcher', 'manual', 'export')),  -- מקור: watcher אוטומטי | manual ידני | export ייצוא
-  status           TEXT NOT NULL CHECK (status IN ('success', 'partial', 'error', 'handled')),  -- סטטוס עיבוד
-  rows_total       INTEGER DEFAULT 0,                              -- סה"כ שורות
-  rows_success     INTEGER DEFAULT 0,                              -- שורות שהצליחו
-  rows_pending     INTEGER DEFAULT 0,                              -- שורות ממתינות (ברקוד לא נמצא)
-  rows_error       INTEGER DEFAULT 0,                              -- שורות שנכשלו
-  error_message    TEXT,                                           -- הודעת שגיאה כללית
-  errors           JSONB,                                          -- מערך שגיאות מפורט (015)
-  storage_path     TEXT,                                           -- נתיב קובץ ב-Supabase Storage (015)
-  tenant_id        UUID NOT NULL REFERENCES tenants(id),           -- דייר (018)
-  processed_at     TIMESTAMPTZ                                     -- זמן סיום עיבוד
-);
-
-CREATE INDEX IF NOT EXISTS idx_sync_log_created  ON sync_log(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_sync_log_filename ON sync_log(filename);
-
--- ============================================================
--- 12. pending_sales — מכירות ממתינות לטיפול (010)
--- ============================================================
--- שורות מ-Access שהברקוד שלהן לא נמצא במלאי — ממתינות להתאמה ידנית
-CREATE TABLE IF NOT EXISTS pending_sales (
-  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at       TIMESTAMPTZ DEFAULT now(),
-  sync_log_id      UUID REFERENCES sync_log(id),                   -- FK לוג סנכרון
-  source_ref       TEXT NOT NULL CHECK (source_ref IN ('watcher', 'manual')),
-  filename         TEXT NOT NULL,                                  -- שם קובץ מקור
-  barcode_received TEXT NOT NULL,                                  -- ברקוד שהתקבל מ-Access
-  quantity         INTEGER NOT NULL,                               -- כמות
-  action_type      TEXT NOT NULL CHECK (action_type IN ('sale', 'return')),  -- מכירה או החזרה
-  transaction_date DATE NOT NULL,                                  -- תאריך עסקה
-  order_number     TEXT NOT NULL,                                  -- מספר הזמנה POS
-  employee_id      TEXT,                                           -- עובד מוכר
-  sale_amount      NUMERIC(10,2),                                  -- מחיר לפני הנחות
-  discount         NUMERIC(10,2) DEFAULT 0,                        -- הנחה קבועה
-  discount_1       NUMERIC(10,2) DEFAULT 0,                        -- הנחה נוספת 1
-  discount_2       NUMERIC(10,2) DEFAULT 0,                        -- הנחה נוספת 2
-  final_amount     NUMERIC(10,2),                                  -- מחיר סופי
-  coupon_code      TEXT,                                           -- קוד קופון
-  campaign         TEXT,                                           -- שם מבצע
-  lens_included    BOOLEAN DEFAULT false,                          -- עדשות כלולות
-  lens_category    TEXT,                                           -- קטגוריית עדשה
-  brand            TEXT,                                           -- מותג (מ-Access CSV)
-  model            TEXT,                                           -- דגם (מ-Access CSV)
-  size             TEXT,                                           -- גודל (מ-Access CSV)
-  color            TEXT,                                           -- צבע (מ-Access CSV)
-  reason           TEXT NOT NULL,                                  -- סיבת המתנה
-  status           TEXT NOT NULL DEFAULT 'pending'                 -- סטטוס: pending | resolved | ignored
-                   CHECK (status IN ('pending', 'resolved', 'ignored')),
-  resolved_at      TIMESTAMPTZ,                                    -- מתי טופל
-  resolved_by      TEXT,                                           -- מי טיפל
-  resolved_inventory_id UUID REFERENCES inventory(id),             -- FK פריט שהותאם
-  resolution_note  TEXT,                                           -- הערת פתרון
-  tenant_id        UUID NOT NULL REFERENCES tenants(id)            -- דייר (018)
-);
-
-CREATE INDEX IF NOT EXISTS idx_pending_sales_status ON pending_sales(status);
-CREATE INDEX IF NOT EXISTS idx_pending_sales_order  ON pending_sales(order_number);
-
--- ============================================================
--- 13. watcher_heartbeat — מוניטור Watcher (010)
--- ============================================================
--- שורה אחת בלבד (id=1) — מתעדכנת כל 5 דקות ע"י ה-watcher
-CREATE TABLE IF NOT EXISTS watcher_heartbeat (
-  id              INTEGER PRIMARY KEY DEFAULT 1,                   -- תמיד 1
-  last_beat       TIMESTAMPTZ DEFAULT now(),                       -- דופק אחרון
-  watcher_version TEXT,                                            -- גרסת watcher
-  host            TEXT,                                            -- שם מחשב
-  tenant_id       UUID NOT NULL REFERENCES tenants(id)             -- דייר (018)
-);
-
-INSERT INTO watcher_heartbeat (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
-
--- ============================================================
--- 14. stock_counts — ספירות מלאי (013)
--- ============================================================
-CREATE TABLE IF NOT EXISTS stock_counts (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  count_number    TEXT NOT NULL UNIQUE,                        -- SC-YYYY-NNNN (auto-generated)
-  count_date      DATE NOT NULL DEFAULT CURRENT_DATE,          -- תאריך ספירה
-  status          TEXT NOT NULL DEFAULT 'in_progress'          -- in_progress | completed | cancelled
-                  CHECK (status IN ('in_progress', 'completed', 'cancelled')),
-  counted_by      TEXT,                                        -- מי ספר (שם עובד)
-  notes           TEXT,                                        -- הערות
-  total_items     INTEGER DEFAULT 0,                           -- סה"כ פריטים שנספרו
-  total_diffs     INTEGER DEFAULT 0,                           -- סה"כ פערים שנמצאו
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),        -- דייר (018)
-  branch_id       TEXT,                                        -- קוד סניף
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  completed_at    TIMESTAMPTZ,                                 -- מתי הושלם
-  filter_criteria JSONB DEFAULT '{}'                            -- סינון: brands, product_types, supplier_id, price range (031)
-);
-CREATE INDEX IF NOT EXISTS idx_sc_status ON stock_counts(status);
-CREATE INDEX IF NOT EXISTS idx_sc_date ON stock_counts(count_date DESC);
-
-ALTER TABLE stock_counts ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON stock_counts FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON stock_counts FOR ALL TO service_role USING (true);
-
--- ============================================================
--- 15. stock_count_items — שורות ספירה (013 + 014 + 032)
--- ============================================================
-CREATE TABLE IF NOT EXISTS stock_count_items (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  count_id        UUID NOT NULL REFERENCES stock_counts(id) ON DELETE CASCADE,
-  inventory_id    UUID REFERENCES inventory(id) ON DELETE CASCADE,  -- nullable for unknown items (032)
-  barcode         TEXT,                                        -- ברקוד (snapshot)
-  brand           TEXT,                                        -- מותג (snapshot)
-  model           TEXT,                                        -- דגם (snapshot)
-  color           TEXT,                                        -- צבע (snapshot)
-  size            TEXT,                                        -- גודל (snapshot)
-  expected_qty    INTEGER NOT NULL,                            -- כמות צפויה (מהמערכת)
-  actual_qty      INTEGER,                                     -- כמות בפועל (מהספירה)
-  difference      INTEGER GENERATED ALWAYS AS (actual_qty - expected_qty) STORED,  -- פער
-  status          TEXT NOT NULL DEFAULT 'pending'              -- pending | counted | skipped | unknown (032)
-                  CHECK (status IN ('pending', 'counted', 'skipped', 'unknown')),
-  notes           TEXT,                                        -- הערה לשורה
-  counted_at      TIMESTAMPTZ,                                 -- מתי נספר
-  scanned_by      TEXT,                                        -- מי סרק (014)
-  tenant_id       UUID NOT NULL REFERENCES tenants(id)         -- דייר (018)
-);
-CREATE INDEX IF NOT EXISTS idx_sci_count ON stock_count_items(count_id);
-CREATE INDEX IF NOT EXISTS idx_sci_inventory ON stock_count_items(inventory_id);
-
-ALTER TABLE stock_count_items ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "all_sc_items" ON stock_count_items FOR ALL USING (true) WITH CHECK (true);
-
--- ============================================================
--- RPC Functions — Atomic quantity updates (012 + 013)
--- ============================================================
-
--- Increment inventory quantity by delta (for receipts, manual additions)
-CREATE OR REPLACE FUNCTION increment_inventory(inv_id UUID, delta INTEGER)
-RETURNS void LANGUAGE plpgsql AS $$
-BEGIN
-  UPDATE inventory SET quantity = quantity + delta WHERE id = inv_id;
-END;
-$$;
-
--- Decrement inventory quantity by delta, floor at 0 (for sales, reductions)
-CREATE OR REPLACE FUNCTION decrement_inventory(inv_id UUID, delta INTEGER)
-RETURNS void LANGUAGE plpgsql AS $$
-BEGIN
-  UPDATE inventory
-  SET quantity = GREATEST(0, quantity - delta)
-  WHERE id = inv_id;
-END;
-$$;
-
--- Set inventory quantity directly (for stock count approval)
-CREATE OR REPLACE FUNCTION set_inventory_qty(inv_id UUID, new_qty INTEGER)
-RETURNS void LANGUAGE plpgsql AS $$
-BEGIN
-  UPDATE inventory SET quantity = new_qty WHERE id = inv_id;
-END;
-$$;
-
--- ============================================================
--- Supabase Storage — failed sync files (015)
--- ============================================================
--- Bucket: failed-sync-files (created via Supabase dashboard)
-CREATE POLICY "allow_all_failed_files"
-ON storage.objects FOR ALL
-USING (bucket_id = 'failed-sync-files')
-WITH CHECK (bucket_id = 'failed-sync-files');
-
--- ============================================================
--- 16. document_types — configurable document type registry (021)
--- ============================================================
-CREATE TABLE IF NOT EXISTS document_types (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),
-  code            TEXT NOT NULL,
-  name_he         TEXT NOT NULL,
-  name_en         TEXT NOT NULL,
-  affects_debt    TEXT NOT NULL CHECK (affects_debt IN ('increase', 'decrease', 'none')),
-  is_system       BOOLEAN DEFAULT true,
-  is_active       BOOLEAN DEFAULT true,
-  created_at      TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(tenant_id, code)
-);
-CREATE INDEX IF NOT EXISTS idx_doctype_tenant ON document_types(tenant_id);
-
--- ============================================================
--- 17. payment_methods — configurable payment method registry (021)
--- ============================================================
-CREATE TABLE IF NOT EXISTS payment_methods (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),
-  code            TEXT NOT NULL,
-  name_he         TEXT NOT NULL,
-  name_en         TEXT NOT NULL,
-  is_system       BOOLEAN DEFAULT true,
-  is_active       BOOLEAN DEFAULT true,
-  created_at      TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(tenant_id, code)
-);
-CREATE INDEX IF NOT EXISTS idx_paymeth_tenant ON payment_methods(tenant_id);
-
--- ============================================================
--- 18. currencies — configurable currency registry (021)
--- ============================================================
-CREATE TABLE IF NOT EXISTS currencies (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),
-  code            TEXT NOT NULL,
-  name_he         TEXT NOT NULL,
-  symbol          TEXT NOT NULL,
-  is_default      BOOLEAN DEFAULT false,
-  is_active       BOOLEAN DEFAULT true,
-  created_at      TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(tenant_id, code)
-);
-CREATE INDEX IF NOT EXISTS idx_currency_tenant ON currencies(tenant_id);
-
--- ============================================================
--- 19. prepaid_deals — prepaid check deals with suppliers (021)
--- ============================================================
-CREATE TABLE IF NOT EXISTS prepaid_deals (
-  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id             UUID NOT NULL REFERENCES tenants(id),
-  supplier_id           UUID NOT NULL REFERENCES suppliers(id),
-  deal_name             TEXT,
-  start_date            DATE NOT NULL,
-  end_date              DATE NOT NULL,
-  total_prepaid         DECIMAL(12,2) NOT NULL,
-  currency              TEXT NOT NULL DEFAULT 'ILS',
-  total_used            DECIMAL(12,2) DEFAULT 0,
-  total_remaining       DECIMAL(12,2),
-  alert_threshold_pct   DECIMAL(5,2) DEFAULT 20.0,
-  alert_threshold_amt   DECIMAL(12,2),
-  status                TEXT DEFAULT 'active' CHECK (status IN ('active', 'completed', 'cancelled')),
-  notes                 TEXT,
-  created_by            UUID REFERENCES employees(id),
-  created_at            TIMESTAMPTZ DEFAULT now(),
-  updated_at            TIMESTAMPTZ DEFAULT now(),
-  is_deleted            BOOLEAN DEFAULT false
-);
-CREATE INDEX IF NOT EXISTS idx_prepaid_tenant_supplier ON prepaid_deals(tenant_id, supplier_id);
-
--- ============================================================
--- 20. prepaid_checks — individual checks within a prepaid deal (021)
--- ============================================================
-CREATE TABLE IF NOT EXISTS prepaid_checks (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  prepaid_deal_id   UUID NOT NULL REFERENCES prepaid_deals(id),
-  check_number      TEXT NOT NULL,
-  amount            DECIMAL(12,2) NOT NULL,
-  check_date        DATE NOT NULL,
-  status            TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'cashed', 'bounced', 'cancelled')),
-  cashed_date       DATE,
-  notes             TEXT,
-  created_at        TIMESTAMPTZ DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS idx_prepaid_checks_deal ON prepaid_checks(prepaid_deal_id);
-
--- ============================================================
--- 21. supplier_documents — invoices, delivery notes, credit notes (021)
--- ============================================================
-CREATE TABLE IF NOT EXISTS supplier_documents (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  supplier_id       UUID NOT NULL REFERENCES suppliers(id),
-  document_type_id  UUID NOT NULL REFERENCES document_types(id),
-  document_number   TEXT NOT NULL,
-  document_date     DATE NOT NULL,
-  due_date          DATE,
-  received_date     DATE DEFAULT CURRENT_DATE,
-  currency          TEXT NOT NULL DEFAULT 'ILS',
-  exchange_rate     DECIMAL(10,4) DEFAULT 1.0,
-  subtotal          DECIMAL(12,2) NOT NULL,
-  vat_rate          DECIMAL(5,2) DEFAULT 17.0,
-  vat_amount        DECIMAL(12,2) NOT NULL,
-  total_amount      DECIMAL(12,2) NOT NULL,
-  parent_invoice_id UUID REFERENCES supplier_documents(id),
-  file_url          TEXT,
-  file_name         TEXT,
-  goods_receipt_id  UUID REFERENCES goods_receipts(id),
-  po_id             UUID REFERENCES purchase_orders(id),
-  status            TEXT NOT NULL DEFAULT 'open'
-                    CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled', 'pending_invoice', 'pending_review')),
-  paid_amount       DECIMAL(12,2) DEFAULT 0,
-  missing_price     BOOLEAN DEFAULT false,                   -- items with unknown cost price (Flow-Review-2)
-  notes             TEXT,
-  created_by        UUID REFERENCES employees(id),
-  created_at        TIMESTAMPTZ DEFAULT now(),
-  updated_at        TIMESTAMPTZ DEFAULT now(),
-  internal_number   TEXT,                                    -- our internal reference number (022)
-  is_deleted        BOOLEAN DEFAULT false,
-  document_numbers  TEXT[],                                   -- multi-doc: array of document numbers (058)
-  document_amounts  JSONB,                                    -- multi-doc: per-document amounts (058)
-  expense_folder_id UUID REFERENCES expense_folders(id),      -- expense folder link (Debt-Upgrades)
-  CONSTRAINT supplier_documents_tenant_supplier_docnum_unique
-    UNIQUE(tenant_id, supplier_id, document_number)          -- duplicate prevention (022)
-);
-CREATE INDEX IF NOT EXISTS idx_supdocs_tenant ON supplier_documents(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_supdocs_tenant_supplier ON supplier_documents(tenant_id, supplier_id);
-CREATE INDEX IF NOT EXISTS idx_supdocs_tenant_status ON supplier_documents(tenant_id, status);
-CREATE INDEX IF NOT EXISTS idx_supdocs_tenant_due ON supplier_documents(tenant_id, due_date);
-CREATE INDEX IF NOT EXISTS idx_supdocs_parent ON supplier_documents(parent_invoice_id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_supdocs_internal_unique
-  ON supplier_documents(tenant_id, internal_number)
-  WHERE internal_number IS NOT NULL;                         -- partial unique (022)
-CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_documents_goods_receipt_unique
-  ON supplier_documents(goods_receipt_id)
-  WHERE goods_receipt_id IS NOT NULL;                         -- one doc per receipt (Flow-Review-2)
-
--- ============================================================
--- 22. document_links — maps delivery notes to monthly invoices (021)
--- ============================================================
-CREATE TABLE IF NOT EXISTS document_links (
-  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id           UUID NOT NULL REFERENCES tenants(id),
-  parent_document_id  UUID NOT NULL REFERENCES supplier_documents(id),
-  child_document_id   UUID NOT NULL REFERENCES supplier_documents(id),
-  amount_on_invoice   DECIMAL(12,2),
-  created_at          TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(parent_document_id, child_document_id)
-);
-CREATE INDEX IF NOT EXISTS idx_doclinks_parent ON document_links(parent_document_id);
-CREATE INDEX IF NOT EXISTS idx_doclinks_child ON document_links(child_document_id);
-
--- ============================================================
--- 23. supplier_payments — payments made to suppliers (021)
--- ============================================================
-CREATE TABLE IF NOT EXISTS supplier_payments (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  supplier_id       UUID NOT NULL REFERENCES suppliers(id),
-  amount            DECIMAL(12,2) NOT NULL,
-  currency          TEXT NOT NULL DEFAULT 'ILS',
-  exchange_rate     DECIMAL(10,4) DEFAULT 1.0,
-  payment_date      DATE NOT NULL,
-  payment_method    TEXT NOT NULL,
-  reference_number  TEXT,
-  prepaid_deal_id   UUID REFERENCES prepaid_deals(id),
-  withholding_tax_rate   DECIMAL(5,2) DEFAULT 0,             -- ניכוי מס במקור % (022)
-  withholding_tax_amount DECIMAL(12,2) DEFAULT 0,            -- סכום ניכוי (022)
-  net_amount        DECIMAL(12,2),                           -- סכום נטו לאחר ניכוי (022)
-  status            TEXT NOT NULL DEFAULT 'approved',        -- approved / pending / rejected (022)
-  approved_by       UUID REFERENCES employees(id),           -- מי אישר (022)
-  approved_at       TIMESTAMPTZ,                             -- מתי אושר (022)
-  notes             TEXT,
-  created_by        UUID REFERENCES employees(id),
-  created_at        TIMESTAMPTZ DEFAULT now(),
-  is_deleted        BOOLEAN DEFAULT false
-);
-CREATE INDEX IF NOT EXISTS idx_suppay_tenant ON supplier_payments(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_suppay_tenant_supplier ON supplier_payments(tenant_id, supplier_id);
-CREATE INDEX IF NOT EXISTS idx_suppay_status ON supplier_payments(tenant_id, status);  -- (022)
-
--- ============================================================
--- 24. payment_allocations — maps payments to documents (021)
--- ============================================================
-CREATE TABLE IF NOT EXISTS payment_allocations (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  payment_id        UUID NOT NULL REFERENCES supplier_payments(id),
-  document_id       UUID NOT NULL REFERENCES supplier_documents(id),
-  allocated_amount  DECIMAL(12,2) NOT NULL,
-  created_at        TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(payment_id, document_id)
-);
-CREATE INDEX IF NOT EXISTS idx_payalloc_tenant ON payment_allocations(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_payalloc_payment ON payment_allocations(payment_id);
-CREATE INDEX IF NOT EXISTS idx_payalloc_document ON payment_allocations(document_id);
-
--- ============================================================
--- 25. supplier_returns — return headers (021)
--- ============================================================
-CREATE TABLE IF NOT EXISTS supplier_returns (
-  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id           UUID NOT NULL REFERENCES tenants(id),
-  supplier_id         UUID NOT NULL REFERENCES suppliers(id),
-  return_number       TEXT NOT NULL,
-  return_type         TEXT NOT NULL CHECK (return_type IN ('agent_pickup', 'ship_to_supplier', 'pending_in_store')),
-  reason              TEXT,
-  status              TEXT DEFAULT 'pending'
-                      CHECK (status IN ('pending', 'ready_to_ship', 'shipped', 'agent_picked', 'received_by_supplier', 'credited')),
-  created_at          TIMESTAMPTZ DEFAULT now(),
-  ready_at            TIMESTAMPTZ,
-  shipped_at          TIMESTAMPTZ,
-  agent_picked_at     TIMESTAMPTZ,
-  received_at         TIMESTAMPTZ,
-  credited_at         TIMESTAMPTZ,
-  credit_note_number  TEXT,
-  credit_amount       DECIMAL(12,2),
-  credit_document_id  UUID REFERENCES supplier_documents(id),
-  notes               TEXT,
-  created_by          UUID REFERENCES employees(id),
-  updated_at          TIMESTAMPTZ DEFAULT now(),
-  is_deleted          BOOLEAN DEFAULT false
-);
-CREATE INDEX IF NOT EXISTS idx_supret_tenant ON supplier_returns(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_supret_tenant_supplier ON supplier_returns(tenant_id, supplier_id);
-CREATE INDEX IF NOT EXISTS idx_supret_tenant_status ON supplier_returns(tenant_id, status);
-
--- ============================================================
--- 26. supplier_return_items — items within a return (021)
--- ============================================================
-CREATE TABLE IF NOT EXISTS supplier_return_items (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),
-  return_id       UUID NOT NULL REFERENCES supplier_returns(id),
-  inventory_id    UUID NOT NULL REFERENCES inventory(id),
-  barcode         TEXT NOT NULL,
-  quantity        INTEGER NOT NULL DEFAULT 1,
-  brand_name      TEXT,
-  model           TEXT,
-  color           TEXT,
-  size            TEXT,
-  cost_price      DECIMAL(10,2),
-  notes           TEXT,
-  created_at      TIMESTAMPTZ DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS idx_supret_items_return ON supplier_return_items(return_id);
-CREATE INDEX IF NOT EXISTS idx_supret_items_inventory ON supplier_return_items(inventory_id);
-
--- ============================================================
--- ALTER suppliers — Phase 4a new columns (021)
--- ============================================================
-ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS default_document_type TEXT DEFAULT 'invoice';
-ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS default_currency TEXT DEFAULT 'ILS';
-ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS payment_terms_days INTEGER DEFAULT 30;
-ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS has_prepaid_deal BOOLEAN DEFAULT false;
-ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS withholding_tax_rate DECIMAL(5,2) DEFAULT 0;  -- ניכוי מס % (022)
-ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS tax_exempt_certificate TEXT;                   -- תעודת פטור (022)
-ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS tax_exempt_until DATE;                         -- פטור עד תאריך (022)
-
--- ============================================================
--- RLS — Phase 4a tables (021)
--- ============================================================
-ALTER TABLE document_types ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON document_types FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON document_types FOR ALL TO service_role USING (true);
-
-ALTER TABLE payment_methods ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON payment_methods FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON payment_methods FOR ALL TO service_role USING (true);
-
-ALTER TABLE currencies ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON currencies FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON currencies FOR ALL TO service_role USING (true);
-
-ALTER TABLE supplier_documents ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON supplier_documents FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON supplier_documents FOR ALL TO service_role USING (true);
-
-ALTER TABLE document_links ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON document_links FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON document_links FOR ALL TO service_role USING (true);
-
-ALTER TABLE supplier_payments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON supplier_payments FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON supplier_payments FOR ALL TO service_role USING (true);
-
-ALTER TABLE payment_allocations ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON payment_allocations FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON payment_allocations FOR ALL TO service_role USING (true);
-
-ALTER TABLE prepaid_deals ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON prepaid_deals FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON prepaid_deals FOR ALL TO service_role USING (true);
-
-ALTER TABLE prepaid_checks ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON prepaid_checks FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON prepaid_checks FOR ALL TO service_role USING (true);
-
-ALTER TABLE supplier_returns ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON supplier_returns FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON supplier_returns FOR ALL TO service_role USING (true);
-
-ALTER TABLE supplier_return_items ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON supplier_return_items FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON supplier_return_items FOR ALL TO service_role USING (true);
-
--- Seed document_types
-INSERT INTO document_types (tenant_id, code, name_he, name_en, affects_debt, is_system) VALUES
-  ((SELECT id FROM tenants WHERE slug='prizma'), 'invoice',       'חשבונית מס',     'Tax Invoice',    'increase', true),
-  ((SELECT id FROM tenants WHERE slug='prizma'), 'delivery_note',  'תעודת משלוח',    'Delivery Note',  'increase', true),
-  ((SELECT id FROM tenants WHERE slug='prizma'), 'credit_note',    'חשבונית זיכוי',  'Credit Note',    'decrease', true),
-  ((SELECT id FROM tenants WHERE slug='prizma'), 'receipt',        'קבלה',           'Receipt',        'none',     true)
-ON CONFLICT (tenant_id, code) DO NOTHING;
-
--- Seed payment_methods
-INSERT INTO payment_methods (tenant_id, code, name_he, name_en, is_system) VALUES
-  ((SELECT id FROM tenants WHERE slug='prizma'), 'bank_transfer', 'העברה בנקאית',  'Bank Transfer', true),
-  ((SELECT id FROM tenants WHERE slug='prizma'), 'check',         'צ׳ק',           'Check',         true),
-  ((SELECT id FROM tenants WHERE slug='prizma'), 'cash',          'מזומן',          'Cash',          true),
-  ((SELECT id FROM tenants WHERE slug='prizma'), 'credit_card',   'כרטיס אשראי',   'Credit Card',   true)
-ON CONFLICT (tenant_id, code) DO NOTHING;
-
--- Seed currencies
-INSERT INTO currencies (tenant_id, code, name_he, symbol, is_default) VALUES
-  ((SELECT id FROM tenants WHERE slug='prizma'), 'ILS', 'שקל חדש',       '₪', true),
-  ((SELECT id FROM tenants WHERE slug='prizma'), 'USD', 'דולר אמריקאי',  '$', false),
-  ((SELECT id FROM tenants WHERE slug='prizma'), 'EUR', 'אירו',          '€', false)
-ON CONFLICT (tenant_id, code) DO NOTHING;
-
--- ============================================================
--- FUTURE TABLES (stubs — not yet used by app)
--- ============================================================
-
-CREATE TABLE IF NOT EXISTS sales (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  inventory_id    UUID REFERENCES inventory(id),
-  barcode         TEXT,
-  quantity_sold   INTEGER NOT NULL DEFAULT 1,
-  sale_price      NUMERIC(10,2),
-  sale_date       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  notes           TEXT,
-  branch_id       UUID,
-  created_by      UUID,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS customers (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  full_name       TEXT NOT NULL,
-  id_number       TEXT,
-  phone           TEXT,
-  email           TEXT,
-  address         TEXT,
-  city            TEXT,
-  birth_date      DATE,
-  health_fund     TEXT,
-  member_number   TEXT,
-  notes           TEXT,
-  branch_id       UUID,
-  created_by      UUID,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS prescriptions (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  customer_id     UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-  prescription_date DATE,
-  expiry_date     DATE,
-  od_sph TEXT, od_cyl TEXT, od_axis INTEGER, od_add TEXT, od_pd NUMERIC(4,1),
-  os_sph TEXT, os_cyl TEXT, os_axis INTEGER, os_add TEXT, os_pd NUMERIC(4,1),
-  optometrist     TEXT,
-  notes           TEXT,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS work_orders (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  order_number    TEXT NOT NULL UNIQUE,
-  customer_id     UUID REFERENCES customers(id),
-  prescription_id UUID REFERENCES prescriptions(id),
-  order_type      TEXT,
-  status          TEXT,
-  order_date      DATE,
-  expected_date   DATE,
-  delivery_date   DATE,
-  total_before_discount NUMERIC(10,2),
-  discount_pct    NUMERIC(5,2),
-  total_amount    NUMERIC(10,2),
-  payment_method  TEXT,
-  installments    INTEGER,
-  paid            BOOLEAN DEFAULT FALSE,
-  notes           TEXT,
-  branch_id       UUID,
-  created_by      UUID,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- ============================================================
--- AUTO-UPDATE updated_at trigger
--- ============================================================
-CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_suppliers_updated') THEN
-    CREATE TRIGGER trg_suppliers_updated BEFORE UPDATE ON suppliers FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_brands_updated') THEN
-    CREATE TRIGGER trg_brands_updated BEFORE UPDATE ON brands FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_inventory_updated') THEN
-    CREATE TRIGGER trg_inventory_updated BEFORE UPDATE ON inventory FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_po_updated') THEN
-    CREATE TRIGGER trg_po_updated BEFORE UPDATE ON purchase_orders FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-  END IF;
-END $$;
-
--- ============================================================
--- RLS — Row Level Security (020: JWT-based tenant isolation)
--- ============================================================
--- כל טבלה מקבלת שתי פוליסות:
---   1. tenant_isolation — מבטיחה שכל שאילתה רואה רק שורות של ה-tenant מה-JWT
---   2. service_bypass — מאפשרת ל-service_role (migrations, admin) גישה מלאה
-
-ALTER TABLE brands ENABLE ROW LEVEL SECURITY;
-ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inventory ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inventory_images ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inventory_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE purchase_orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE purchase_order_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE goods_receipts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE goods_receipt_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sync_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE pending_sales ENABLE ROW LEVEL SECURITY;
-ALTER TABLE watcher_heartbeat ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
-ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE prescriptions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE work_orders ENABLE ROW LEVEL SECURITY;
-
--- Tenant isolation pattern (applied to all 20 active tables):
---   USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid)
-
--- brands
-CREATE POLICY "tenant_isolation" ON brands FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON brands FOR ALL TO service_role USING (true);
-
--- suppliers
-CREATE POLICY "tenant_isolation" ON suppliers FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON suppliers FOR ALL TO service_role USING (true);
-
--- employees
-CREATE POLICY "tenant_isolation" ON employees FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON employees FOR ALL TO service_role USING (true);
-
--- inventory
-CREATE POLICY "tenant_isolation" ON inventory FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON inventory FOR ALL TO service_role USING (true);
-
--- inventory_images
-CREATE POLICY "tenant_isolation" ON inventory_images FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON inventory_images FOR ALL TO service_role USING (true);
-
--- inventory_logs
-CREATE POLICY "tenant_isolation" ON inventory_logs FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON inventory_logs FOR ALL TO service_role USING (true);
-
--- purchase_orders
-CREATE POLICY "tenant_isolation" ON purchase_orders FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON purchase_orders FOR ALL TO service_role USING (true);
-
--- purchase_order_items
-CREATE POLICY "tenant_isolation" ON purchase_order_items FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON purchase_order_items FOR ALL TO service_role USING (true);
-
--- goods_receipts
-CREATE POLICY "tenant_isolation" ON goods_receipts FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON goods_receipts FOR ALL TO service_role USING (true);
-
--- goods_receipt_items
-CREATE POLICY "tenant_isolation" ON goods_receipt_items FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON goods_receipt_items FOR ALL TO service_role USING (true);
-
--- sync_log
-CREATE POLICY "tenant_isolation" ON sync_log FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON sync_log FOR ALL TO service_role USING (true);
-
--- pending_sales
-CREATE POLICY "tenant_isolation" ON pending_sales FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON pending_sales FOR ALL TO service_role USING (true);
-
--- watcher_heartbeat
-CREATE POLICY "tenant_isolation" ON watcher_heartbeat FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON watcher_heartbeat FOR ALL TO service_role USING (true);
-
--- sales (future)
-CREATE POLICY "anon_all_sales" ON sales FOR ALL USING (true) WITH CHECK (true);
-
--- customers (future)
-CREATE POLICY "anon_all_customers" ON customers FOR ALL USING (true) WITH CHECK (true);
-
--- prescriptions (future)
-CREATE POLICY "anon_all_prescriptions" ON prescriptions FOR ALL USING (true) WITH CHECK (true);
-
--- work_orders (future)
-CREATE POLICY "anon_all_work_orders" ON work_orders FOR ALL USING (true) WITH CHECK (true);
-
--- ============================================================
--- Migration 016 — Phase 3: Auth & Permissions
--- ============================================================
-
--- ALTER employees table
-ALTER TABLE employees ADD COLUMN IF NOT EXISTS email TEXT;
-ALTER TABLE employees ADD COLUMN IF NOT EXISTS phone TEXT;
-ALTER TABLE employees ADD COLUMN IF NOT EXISTS branch_id TEXT DEFAULT '00';
-ALTER TABLE employees ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES employees(id);
-ALTER TABLE employees ADD COLUMN IF NOT EXISTS last_login TIMESTAMPTZ;
-ALTER TABLE employees ADD COLUMN IF NOT EXISTS failed_attempts INTEGER DEFAULT 0;
-ALTER TABLE employees ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ;
-
--- RLS policies added to employees
-CREATE POLICY "employees_insert" ON employees FOR INSERT WITH CHECK (true);
-CREATE POLICY "employees_update" ON employees FOR UPDATE USING (true) WITH CHECK (true);
-CREATE POLICY "employees_delete" ON employees FOR DELETE USING (true);
-
--- TODO: uncomment before production (all PINs must be 5 digits first)
--- ALTER TABLE employees ADD CONSTRAINT pin_length CHECK (LENGTH(pin) = 5);
-
--- roles
-CREATE TABLE IF NOT EXISTS roles (
-  id          TEXT PRIMARY KEY,
-  name_he     TEXT NOT NULL,
-  description TEXT,
-  is_system   BOOLEAN DEFAULT true,
-  tenant_id   UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
-  created_at  TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "all_roles" ON roles FOR ALL USING (true) WITH CHECK (true);
-
--- permissions
-CREATE TABLE IF NOT EXISTS permissions (
-  id          TEXT PRIMARY KEY,
-  module      TEXT NOT NULL,
-  action      TEXT NOT NULL,
-  name_he     TEXT NOT NULL,
-  description TEXT,
-  tenant_id   UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
-  created_at  TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "all_permissions" ON permissions FOR ALL USING (true) WITH CHECK (true);
-
--- role_permissions
-CREATE TABLE IF NOT EXISTS role_permissions (
-  role_id       TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-  permission_id TEXT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
-  granted       BOOLEAN NOT NULL DEFAULT true,
-  tenant_id     UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
-  PRIMARY KEY (role_id, permission_id)
-);
-ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "all_role_permissions" ON role_permissions FOR ALL USING (true) WITH CHECK (true);
-
--- employee_roles
-CREATE TABLE IF NOT EXISTS employee_roles (
-  employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-  role_id     TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-  granted_by  UUID REFERENCES employees(id),
-  granted_at  TIMESTAMPTZ DEFAULT NOW(),
-  tenant_id   UUID NOT NULL REFERENCES tenants(id),            -- דייר (018)
-  PRIMARY KEY (employee_id, role_id)
-);
-ALTER TABLE employee_roles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "all_employee_roles" ON employee_roles FOR ALL USING (true) WITH CHECK (true);
-
--- auth_sessions
-CREATE TABLE IF NOT EXISTS auth_sessions (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  employee_id  UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-  token        TEXT NOT NULL UNIQUE,
-  permissions  JSONB NOT NULL,
-  role_id      TEXT NOT NULL,
-  branch_id    TEXT NOT NULL DEFAULT '00',
-  created_at   TIMESTAMPTZ DEFAULT NOW(),
-  expires_at   TIMESTAMPTZ NOT NULL,
-  last_active  TIMESTAMPTZ DEFAULT NOW(),
-  is_active    BOOLEAN DEFAULT true,
-  tenant_id    UUID NOT NULL REFERENCES tenants(id)             -- דייר (018)
-);
-ALTER TABLE auth_sessions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "all_auth_sessions" ON auth_sessions FOR ALL USING (true) WITH CHECK (true);
-
--- ============================================================
--- Phase 5a — AI Agent Tables
--- ============================================================
-
--- ai_agent_config (one row per tenant)
-CREATE TABLE IF NOT EXISTS ai_agent_config (
-  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id               UUID UNIQUE NOT NULL REFERENCES tenants(id),
-  ocr_enabled             BOOLEAN DEFAULT true,
-  auto_match_supplier     BOOLEAN DEFAULT true,
-  auto_match_po           BOOLEAN DEFAULT true,
-  confidence_threshold    DECIMAL(3,2) DEFAULT 0.80,
-  alerts_enabled          BOOLEAN DEFAULT true,
-  payment_reminder_days   INTEGER DEFAULT 7,
-  overdue_alert           BOOLEAN DEFAULT true,
-  prepaid_threshold_alert BOOLEAN DEFAULT true,
-  anomaly_alert           BOOLEAN DEFAULT true,
-  weekly_report_enabled   BOOLEAN DEFAULT true,
-  weekly_report_day       INTEGER DEFAULT 1,
-  api_key_source          TEXT DEFAULT 'platform',
-  tenant_api_key          TEXT,
-  created_at              TIMESTAMPTZ DEFAULT now(),
-  updated_at              TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE ai_agent_config ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON ai_agent_config
-  USING (tenant_id = current_setting('app.tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON ai_agent_config
-  FOR ALL TO service_role USING (true) WITH CHECK (true);
-
--- supplier_ocr_templates (learning from corrections)
-CREATE TABLE IF NOT EXISTS supplier_ocr_templates (
-  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id               UUID NOT NULL REFERENCES tenants(id),
-  supplier_id             UUID NOT NULL REFERENCES suppliers(id),
-  template_name           TEXT,
-  document_type_code      TEXT,
-  extraction_hints        JSONB NOT NULL DEFAULT '{}',
-  times_used              INTEGER DEFAULT 0,
-  times_corrected         INTEGER DEFAULT 0,
-  accuracy_rate           DECIMAL(5,2),
-  last_used_at            TIMESTAMPTZ,
-  is_active               BOOLEAN DEFAULT true,
-  created_at              TIMESTAMPTZ DEFAULT now(),
-  updated_at              TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(tenant_id, supplier_id, document_type_code)
-);
-ALTER TABLE supplier_ocr_templates ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON supplier_ocr_templates
-  USING (tenant_id = current_setting('app.tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON supplier_ocr_templates
-  FOR ALL TO service_role USING (true) WITH CHECK (true);
-
--- ocr_extractions (log of every OCR scan)
-CREATE TABLE IF NOT EXISTS ocr_extractions (
-  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id               UUID NOT NULL REFERENCES tenants(id),
-  file_url                TEXT NOT NULL,
-  file_name               TEXT,
-  raw_response            JSONB NOT NULL,
-  model_used              TEXT DEFAULT 'claude-sonnet-4-20250514',
-  extracted_data          JSONB NOT NULL,
-  confidence_score        DECIMAL(3,2),
-  status                  TEXT DEFAULT 'pending',
-  corrections             JSONB,
-  supplier_document_id    UUID REFERENCES supplier_documents(id),
-  template_id             UUID REFERENCES supplier_ocr_templates(id),
-  processed_by            UUID REFERENCES employees(id),
-  processing_time_ms      INTEGER,
-  created_at              TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE ocr_extractions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON ocr_extractions
-  USING (tenant_id = current_setting('app.tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON ocr_extractions
-  FOR ALL TO service_role USING (true) WITH CHECK (true);
-
--- alerts
-CREATE TABLE IF NOT EXISTS alerts (
-  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id               UUID NOT NULL REFERENCES tenants(id),
-  alert_type              TEXT NOT NULL,
-  severity                TEXT DEFAULT 'info',
-  title                   TEXT NOT NULL,
-  message                 TEXT,
-  data                    JSONB,
-  status                  TEXT DEFAULT 'unread',
-  read_at                 TIMESTAMPTZ,
-  dismissed_at            TIMESTAMPTZ,
-  dismissed_by            UUID REFERENCES employees(id),
-  action_taken            TEXT,
-  entity_type             TEXT,
-  entity_id               UUID,
-  expires_at              TIMESTAMPTZ,
-  created_at              TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE alerts ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON alerts
-  USING (tenant_id = current_setting('app.tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON alerts
-  FOR ALL TO service_role USING (true) WITH CHECK (true);
-
--- weekly_reports
-CREATE TABLE IF NOT EXISTS weekly_reports (
-  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id               UUID NOT NULL REFERENCES tenants(id),
-  week_start              DATE NOT NULL,
-  week_end                DATE NOT NULL,
-  report_data             JSONB NOT NULL,
-  pdf_url                 TEXT,
-  pdf_generated_at        TIMESTAMPTZ,
-  created_at              TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE weekly_reports ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_isolation" ON weekly_reports
-  USING (tenant_id = current_setting('app.tenant_id')::uuid);
-CREATE POLICY "service_bypass" ON weekly_reports
-  FOR ALL TO service_role USING (true) WITH CHECK (true);
-
--- Phase 5a indexes
-CREATE INDEX idx_ocr_extractions_tenant ON ocr_extractions(tenant_id);
-CREATE INDEX idx_ocr_extractions_status ON ocr_extractions(tenant_id, status);
-CREATE INDEX idx_ocr_templates_tenant_supplier ON supplier_ocr_templates(tenant_id, supplier_id);
-CREATE INDEX idx_alerts_tenant ON alerts(tenant_id);
-CREATE INDEX idx_alerts_tenant_status ON alerts(tenant_id, status);
-CREATE INDEX idx_alerts_tenant_type ON alerts(tenant_id, alert_type);
-CREATE INDEX idx_alerts_expires ON alerts(expires_at) WHERE expires_at IS NOT NULL;
-CREATE INDEX idx_weekly_reports_tenant ON weekly_reports(tenant_id);
-CREATE INDEX idx_weekly_reports_period ON weekly_reports(tenant_id, week_start);
-
--- ============================================================
--- Phase 5.5a — Schema additions for batch operations
--- ============================================================
-
--- 3 new columns on supplier_documents
-ALTER TABLE supplier_documents ADD COLUMN IF NOT EXISTS file_hash TEXT;
-ALTER TABLE supplier_documents ADD COLUMN IF NOT EXISTS batch_id TEXT;
-ALTER TABLE supplier_documents ADD COLUMN IF NOT EXISTS is_historical BOOLEAN DEFAULT false;
-
--- 3 new indexes
-CREATE INDEX idx_sup_docs_file_hash ON supplier_documents(tenant_id, file_hash) WHERE file_hash IS NOT NULL;
-CREATE INDEX idx_sup_docs_batch ON supplier_documents(tenant_id, batch_id) WHERE batch_id IS NOT NULL;
-CREATE INDEX idx_sup_docs_historical ON supplier_documents(tenant_id, is_historical) WHERE is_historical = true;
-
--- ============================================================
--- Phase 5.5a — RPC: next_internal_doc_number
--- ============================================================
-
-CREATE OR REPLACE FUNCTION next_internal_doc_number(p_tenant_id UUID)
-RETURNS TEXT
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  v_max_num INT;
-  v_next TEXT;
-BEGIN
-  SELECT COALESCE(MAX(
-    CAST(SUBSTRING(internal_number FROM 5) AS INT)
-  ), 0) INTO v_max_num
-  FROM supplier_documents
-  WHERE tenant_id = p_tenant_id
-    AND internal_number IS NOT NULL
-    AND internal_number LIKE 'DOC-%';
-
-  v_next := 'DOC-' || LPAD((v_max_num + 1)::TEXT, 4, '0');
-  RETURN v_next;
-END;
-$$;
-
--- ============================================================
--- Phase 5.5a → Updated in Migration 060: update_ocr_template_stats
--- Now includes field-level accuracy tracking + auto stage advancement
--- ============================================================
-
-CREATE OR REPLACE FUNCTION update_ocr_template_stats(
-  p_tenant_id UUID,
-  p_supplier_id UUID,
-  p_doc_type_code TEXT,
-  p_was_corrected BOOLEAN,
-  p_new_hints JSONB DEFAULT NULL,
-  p_fields_suggested INTEGER DEFAULT 0,
-  p_fields_accepted INTEGER DEFAULT 0
-)
-RETURNS JSON
-LANGUAGE plpgsql
-AS $$
-DECLARE
-  v_template supplier_ocr_templates%ROWTYPE;
-  v_config ai_agent_config%ROWTYPE;
-  v_new_stage TEXT;
-  v_result JSON;
-BEGIN
-  SELECT * INTO v_config FROM ai_agent_config WHERE tenant_id = p_tenant_id;
-  SELECT * INTO v_template FROM supplier_ocr_templates
-    WHERE tenant_id = p_tenant_id AND supplier_id = p_supplier_id
-    AND document_type_code = p_doc_type_code AND is_active = true;
-
-  IF v_template.id IS NOT NULL THEN
-    v_new_stage := v_template.learning_stage;
-    IF v_template.times_used + 1 >= COALESCE(v_config.auto_after_invoices, 7)
-       AND v_template.accuracy_rate >= COALESCE(v_config.auto_min_accuracy, 85) THEN
-      v_new_stage := 'auto';
-    ELSIF v_template.times_used + 1 >= COALESCE(v_config.suggest_after_invoices, 3) THEN
-      v_new_stage := 'suggesting';
-    END IF;
-
-    UPDATE supplier_ocr_templates SET
-      times_used = times_used + 1,
-      times_corrected = times_corrected + CASE WHEN p_was_corrected THEN 1 ELSE 0 END,
-      fields_suggested = fields_suggested + COALESCE(p_fields_suggested, 0),
-      fields_accepted = fields_accepted + COALESCE(p_fields_accepted, 0),
-      accuracy_rate = CASE
-        WHEN (fields_suggested + COALESCE(p_fields_suggested, 0)) > 0
-        THEN ROUND(((fields_accepted + COALESCE(p_fields_accepted, 0))::NUMERIC
-              / (fields_suggested + COALESCE(p_fields_suggested, 0))::NUMERIC) * 100, 2)
-        ELSE ROUND((1.0 - ((times_corrected + CASE WHEN p_was_corrected THEN 1 ELSE 0 END)::NUMERIC
-              / (times_used + 1)::NUMERIC)) * 100, 2)
-      END,
-      learning_stage = v_new_stage,
-      extraction_hints = CASE WHEN p_new_hints IS NOT NULL THEN extraction_hints || p_new_hints ELSE extraction_hints END,
-      last_used_at = now(), updated_at = now()
-    WHERE id = v_template.id
-    RETURNING json_build_object('id', id, 'times_used', times_used, 'accuracy_rate', accuracy_rate, 'learning_stage', learning_stage) INTO v_result;
-  ELSE
-    INSERT INTO supplier_ocr_templates (tenant_id, supplier_id, document_type_code, template_name, extraction_hints,
-      times_used, times_corrected, fields_suggested, fields_accepted, accuracy_rate, learning_stage, last_used_at, is_active)
-    VALUES (p_tenant_id, p_supplier_id, p_doc_type_code, p_doc_type_code, COALESCE(p_new_hints, '{}'),
-      1, CASE WHEN p_was_corrected THEN 1 ELSE 0 END, COALESCE(p_fields_suggested, 0), COALESCE(p_fields_accepted, 0),
-      CASE WHEN p_was_corrected THEN 0 ELSE 100 END, 'learning', now(), true)
-    RETURNING json_build_object('id', id, 'times_used', times_used, 'accuracy_rate', accuracy_rate, 'learning_stage', learning_stage) INTO v_result;
-  END IF;
-  RETURN v_result;
-END;
-$$;
-
--- ============================================================
--- Phase 5.5c — pg_cron daily alerts
--- ============================================================
-
--- Requires pg_cron extension to be enabled in Supabase dashboard
--- SELECT cron.schedule(
---   'daily-alert-generation',
---   '0 5 * * *',  -- 05:00 UTC daily
---   $$
---   DO $body$
---   DECLARE
---     t RECORD;
---   BEGIN
---     FOR t IN SELECT id FROM tenants WHERE is_active = true LOOP
---       BEGIN
---         PERFORM set_config('app.tenant_id', t.id::TEXT, true);
---         PERFORM generate_daily_alerts(t.id);
---       EXCEPTION WHEN OTHERS THEN
---         RAISE WARNING 'Alert generation failed for tenant %: %', t.id, SQLERRM;
---       END;
---     END LOOP;
---   END;
---   $body$;
---   $$
--- );
-
--- ============================================================
--- Phase 5.75: Communications & Knowledge Infrastructure
--- 6 new tables (DB stubs only, zero UI)
--- Migration: phase5_75_communications_knowledge.sql
--- ============================================================
-
--- 37. conversations
-CREATE TABLE IF NOT EXISTS conversations (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  channel_type      TEXT NOT NULL,
-  context_type      TEXT,
-  context_id        UUID,
-  context_label     TEXT,
-  title             TEXT,
-  last_message_at   TIMESTAMPTZ,
-  last_message_text TEXT,
-  message_count     INTEGER DEFAULT 0,
-  status            TEXT DEFAULT 'active',
-  is_pinned         BOOLEAN DEFAULT false,
-  created_by        UUID REFERENCES employees(id),
-  created_at        TIMESTAMPTZ DEFAULT now(),
-  updated_at        TIMESTAMPTZ DEFAULT now(),
-  is_deleted        BOOLEAN DEFAULT false
-);
-
-CREATE INDEX idx_conversations_tenant ON conversations(tenant_id);
-CREATE INDEX idx_conversations_tenant_channel ON conversations(tenant_id, channel_type);
-CREATE INDEX idx_conversations_tenant_context ON conversations(tenant_id, context_type, context_id);
-CREATE INDEX idx_conversations_tenant_last_msg ON conversations(tenant_id, last_message_at DESC);
-
-ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON conversations FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY service_bypass ON conversations FOR ALL TO service_role USING (true);
-
--- 38. conversation_participants
-CREATE TABLE IF NOT EXISTS conversation_participants (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  conversation_id   UUID NOT NULL REFERENCES conversations(id),
-  participant_type  TEXT NOT NULL,
-  participant_id    UUID NOT NULL,
-  participant_name  TEXT,
-  role              TEXT DEFAULT 'member',
-  last_read_at      TIMESTAMPTZ,
-  unread_count      INTEGER DEFAULT 0,
-  muted             BOOLEAN DEFAULT false,
-  notification_pref TEXT DEFAULT 'all',
-  joined_at         TIMESTAMPTZ DEFAULT now(),
-  left_at           TIMESTAMPTZ,
-  is_active         BOOLEAN DEFAULT true,
-  UNIQUE(conversation_id, participant_type, participant_id)
-);
-
-CREATE INDEX idx_conv_participants_tenant ON conversation_participants(tenant_id);
-CREATE INDEX idx_conv_participants_conv ON conversation_participants(conversation_id);
-CREATE INDEX idx_conv_participants_user ON conversation_participants(tenant_id, participant_type, participant_id);
-CREATE INDEX idx_conv_participants_unread ON conversation_participants(tenant_id, participant_id, unread_count)
-  WHERE unread_count > 0 AND is_active = true;
-
-ALTER TABLE conversation_participants ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON conversation_participants FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY service_bypass ON conversation_participants FOR ALL TO service_role USING (true);
-
--- 39. messages
-CREATE TABLE IF NOT EXISTS messages (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  conversation_id   UUID NOT NULL REFERENCES conversations(id),
-  sender_type       TEXT NOT NULL,
-  sender_id         UUID,
-  sender_name       TEXT,
-  message_type      TEXT DEFAULT 'text',
-  content           TEXT,
-  content_html      TEXT,
-  file_url          TEXT,
-  file_name         TEXT,
-  file_size         INTEGER,
-  file_mime_type    TEXT,
-  ref_entity_type   TEXT,
-  ref_entity_id     UUID,
-  ref_entity_label  TEXT,
-  is_ai_generated   BOOLEAN DEFAULT false,
-  ai_confidence     DECIMAL(3,2),
-  ai_source_ids     UUID[],
-  ai_approved_by    UUID REFERENCES employees(id),
-  ai_approved_at    TIMESTAMPTZ,
-  reply_to_id       UUID REFERENCES messages(id),
-  thread_count      INTEGER DEFAULT 0,
-  status            TEXT DEFAULT 'sent',
-  edited_at         TIMESTAMPTZ,
-  edited_content    TEXT,
-  created_at        TIMESTAMPTZ DEFAULT now(),
-  is_deleted        BOOLEAN DEFAULT false
-);
-
-CREATE INDEX idx_messages_tenant ON messages(tenant_id);
-CREATE INDEX idx_messages_conversation ON messages(conversation_id, created_at);
-CREATE INDEX idx_messages_tenant_sender ON messages(tenant_id, sender_type, sender_id);
-CREATE INDEX idx_messages_reply ON messages(reply_to_id) WHERE reply_to_id IS NOT NULL;
-CREATE INDEX idx_messages_ai ON messages(tenant_id, is_ai_generated) WHERE is_ai_generated = true;
-
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON messages FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY service_bypass ON messages FOR ALL TO service_role USING (true);
-
--- 40. knowledge_base
-CREATE TABLE IF NOT EXISTS knowledge_base (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  title             TEXT NOT NULL,
-  question          TEXT,
-  answer            TEXT NOT NULL,
-  answer_html       TEXT,
-  category          TEXT,
-  tags              TEXT[],
-  language          TEXT DEFAULT 'he',
-  source_type       TEXT DEFAULT 'manual',
-  source_message_id UUID REFERENCES messages(id),
-  source_conversation_id UUID REFERENCES conversations(id),
-  ai_usable         BOOLEAN DEFAULT true,
-  ai_use_count      INTEGER DEFAULT 0,
-  ai_last_used_at   TIMESTAMPTZ,
-  ai_effectiveness  DECIMAL(3,2),
-  embedding_vector  TEXT,
-  approved_by       UUID REFERENCES employees(id),
-  approved_at       TIMESTAMPTZ,
-  status            TEXT DEFAULT 'draft',
-  version           INTEGER DEFAULT 1,
-  previous_version_id UUID REFERENCES knowledge_base(id),
-  created_by        UUID REFERENCES employees(id),
-  created_at        TIMESTAMPTZ DEFAULT now(),
-  updated_at        TIMESTAMPTZ DEFAULT now(),
-  is_deleted        BOOLEAN DEFAULT false
-);
-
-CREATE INDEX idx_knowledge_tenant ON knowledge_base(tenant_id);
-CREATE INDEX idx_knowledge_tenant_category ON knowledge_base(tenant_id, category);
-CREATE INDEX idx_knowledge_tenant_status ON knowledge_base(tenant_id, status);
-CREATE INDEX idx_knowledge_tenant_tags ON knowledge_base USING GIN(tags);
-CREATE INDEX idx_knowledge_ai_usable ON knowledge_base(tenant_id, ai_usable)
-  WHERE ai_usable = true AND status = 'approved' AND is_deleted = false;
-
-ALTER TABLE knowledge_base ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON knowledge_base FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY service_bypass ON knowledge_base FOR ALL TO service_role USING (true);
-
--- 41. message_reactions
-CREATE TABLE IF NOT EXISTS message_reactions (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  message_id        UUID NOT NULL REFERENCES messages(id),
-  employee_id       UUID NOT NULL REFERENCES employees(id),
-  reaction          TEXT NOT NULL,
-  created_at        TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(message_id, employee_id, reaction)
-);
-
-CREATE INDEX idx_reactions_message ON message_reactions(message_id);
-
-ALTER TABLE message_reactions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON message_reactions FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY service_bypass ON message_reactions FOR ALL TO service_role USING (true);
-
--- 42. notification_preferences
-CREATE TABLE IF NOT EXISTS notification_preferences (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  employee_id       UUID NOT NULL REFERENCES employees(id),
-  in_app            BOOLEAN DEFAULT true,
-  email             BOOLEAN DEFAULT false,
-  whatsapp          BOOLEAN DEFAULT false,
-  push              BOOLEAN DEFAULT false,
-  notify_direct_messages    BOOLEAN DEFAULT true,
-  notify_group_messages     BOOLEAN DEFAULT true,
-  notify_mentions           BOOLEAN DEFAULT true,
-  notify_ai_suggestions     BOOLEAN DEFAULT true,
-  notify_context_updates    BOOLEAN DEFAULT true,
-  quiet_hours_enabled BOOLEAN DEFAULT false,
-  quiet_hours_start   TIME,
-  quiet_hours_end     TIME,
-  daily_digest        BOOLEAN DEFAULT false,
-  created_at        TIMESTAMPTZ DEFAULT now(),
-  updated_at        TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(tenant_id, employee_id)
-);
-
-CREATE INDEX idx_notif_prefs_tenant ON notification_preferences(tenant_id);
-
-ALTER TABLE notification_preferences ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON notification_preferences FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY service_bypass ON notification_preferences FOR ALL TO service_role USING (true);
-
--- ============================================================
--- Phase 5.9 — Shipments & Box Management
--- ============================================================
-
--- ALTER tenants — shipment config columns (Phase 5.9e/5.9g)
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS shipment_lock_minutes INTEGER DEFAULT 30;
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS box_number_prefix TEXT DEFAULT 'BOX';
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS require_tracking_before_lock BOOLEAN DEFAULT false;
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS auto_print_on_lock BOOLEAN DEFAULT false;
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS shipment_config JSONB;
-
--- ============================================================
--- 43. courier_companies — חברות שליחויות (Phase 5.9a)
--- ============================================================
-CREATE TABLE IF NOT EXISTS courier_companies (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  name              TEXT NOT NULL,
-  phone             TEXT,
-  contact_person    TEXT,
-  is_active         BOOLEAN DEFAULT true,
-  created_at        TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(tenant_id, name)
-);
-CREATE INDEX IF NOT EXISTS idx_courier_tenant ON courier_companies(tenant_id);
-
-ALTER TABLE courier_companies ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON courier_companies FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY service_bypass ON courier_companies FOR ALL TO service_role USING (true);
-
--- ============================================================
--- 44. shipments — ארגזים/משלוחים (Phase 5.9a)
--- ============================================================
-CREATE TABLE IF NOT EXISTS shipments (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  box_number        TEXT NOT NULL,
-  shipment_type     TEXT NOT NULL CHECK (shipment_type IN ('framing', 'return', 'repair', 'delivery')),
-  supplier_id       UUID REFERENCES suppliers(id),
-  customer_name     TEXT,
-  customer_phone    TEXT,
-  customer_address  TEXT,
-  courier_id        UUID REFERENCES courier_companies(id),
-  tracking_number   TEXT,
-  packed_by         UUID REFERENCES employees(id),
-  packed_at         TIMESTAMPTZ DEFAULT now(),
-  locked_at         TIMESTAMPTZ,
-  locked_by         UUID REFERENCES employees(id),
-  items_count       INTEGER DEFAULT 0,
-  total_value       DECIMAL(12,2) DEFAULT 0,
-  corrects_box_id   UUID REFERENCES shipments(id),
-  notes             TEXT,
-  is_deleted        BOOLEAN DEFAULT false,
-  created_at        TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(tenant_id, box_number)
-);
-CREATE INDEX IF NOT EXISTS idx_shipment_tenant ON shipments(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_shipment_tenant_type ON shipments(tenant_id, shipment_type);
-CREATE INDEX IF NOT EXISTS idx_shipment_tenant_supplier ON shipments(tenant_id, supplier_id);
-CREATE INDEX IF NOT EXISTS idx_shipment_tenant_courier ON shipments(tenant_id, courier_id);
-CREATE INDEX IF NOT EXISTS idx_shipment_packed_at ON shipments(tenant_id, packed_at DESC);
-CREATE INDEX IF NOT EXISTS idx_shipment_locked ON shipments(tenant_id, locked_at) WHERE locked_at IS NULL;
-
-ALTER TABLE shipments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON shipments FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY service_bypass ON shipments FOR ALL TO service_role USING (true);
-
--- ============================================================
--- 45. shipment_items — פריטים בארגז (Phase 5.9a)
--- ============================================================
-CREATE TABLE IF NOT EXISTS shipment_items (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id         UUID NOT NULL REFERENCES tenants(id),
-  shipment_id       UUID NOT NULL REFERENCES shipments(id),
-  item_type         TEXT DEFAULT 'order' CHECK (item_type IN ('inventory', 'order', 'repair')),
-  inventory_id      UUID REFERENCES inventory(id),
-  return_id         UUID REFERENCES supplier_returns(id),
-  order_number      TEXT,
-  customer_name     TEXT,
-  customer_number   TEXT,
-  barcode           TEXT,
-  brand             TEXT,
-  model             TEXT,
-  size              TEXT,
-  color             TEXT,
-  category          TEXT,
-  unit_cost         DECIMAL(10,2),
-  notes             TEXT,
-  created_at        TIMESTAMPTZ DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS idx_shipitem_tenant ON shipment_items(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_shipitem_shipment ON shipment_items(shipment_id);
-CREATE INDEX IF NOT EXISTS idx_shipitem_inventory ON shipment_items(inventory_id) WHERE inventory_id IS NOT NULL;
-
-ALTER TABLE shipment_items ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON shipment_items FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY service_bypass ON shipment_items FOR ALL TO service_role USING (true);
-
--- ============================================================
--- RPC: next_box_number — atomic box number generation (Phase 5.9a)
--- ============================================================
-CREATE OR REPLACE FUNCTION next_box_number(p_tenant_id UUID)
-RETURNS TEXT
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  v_prefix TEXT;
-  v_max_num INTEGER;
-  v_next TEXT;
-BEGIN
-  SELECT COALESCE(box_number_prefix, 'BOX') INTO v_prefix
-    FROM tenants WHERE id = p_tenant_id;
-
-  SELECT COALESCE(MAX(
-    CAST(SUBSTRING(box_number FROM LENGTH(v_prefix) + 2) AS INTEGER)
-  ), 0) INTO v_max_num
-  FROM shipments
-  WHERE tenant_id = p_tenant_id
-    AND box_number LIKE v_prefix || '-%';
-
-  v_next := v_prefix || '-' || LPAD((v_max_num + 1)::TEXT, 4, '0');
-  RETURN v_next;
-END;
-$$;
-
--- ============================================================
--- Supabase Storage Buckets
--- ============================================================
--- failed-sync-files — failed Access sync files for manual retry
--- supplier-docs — scanned invoices and supplier document attachments
--- tenant-logos — public bucket, 2MB max, jpg/png/webp only (QA phase)
-
--- ============================================================
--- QA Phase: Permissions Expansion
--- ============================================================
--- 55 total permissions across 15 modules:
--- inventory (6), purchasing (4), receipts (4), stock_count (4),
--- access_sync (3), brands (3), suppliers (3), audit (3),
--- employees (4), settings (2), debt (5), ai (4), returns (3),
--- shipments (5), admin (2)
--- 36 role_permissions assignments added for 5 roles (ceo, manager, team_lead, worker, viewer)
+-- CONVENTIONS — read this before adding or changing anything
+-- ============================================================
+--
+-- TENANT ISOLATION — three RLS idioms exist in the live DB today:
+--
+--   Pattern 1 — JWT claim                   (STANDARD — ~140 policies)
+--     (tenant_id = (((current_setting('request.jwt.claims', true))::json
+--                    ->> 'tenant_id'))::uuid)
+--     Used by every table in Modules 1, 1.5, 2, and most of Module 3.
+--     All NEW tables MUST use this pattern.
+--
+--   Pattern 2 — Postgres session variable   (LEGACY — migrate to Pattern 1)
+--     (tenant_id = (current_setting('app.tenant_id', true))::uuid)
+--     Currently used by: media_library, campaigns, campaign_templates,
+--                        supplier_balance_adjustments.
+--     Functional, but inconsistent with the rest of the codebase.
+--     Migration tracked in MASTER_ROADMAP.md (Module 3 Phase B preamble).
+--
+--   Pattern 3 — auth.uid() as tenant_id     (BUG — do not copy)
+--     Currently used by: brand_content_log, storefront_component_presets,
+--                        storefront_page_tags.
+--     auth.uid() returns the authenticated USER uuid, not the tenant uuid,
+--     so every signed-in user becomes their own "tenant" on these tables.
+--     Works today only because service_role bypasses RLS on every write.
+--     See SECURITY-FINDING block under RLS POLICIES below.
+--
+-- EVERY NEW TABLE MUST:
+--   - have tenant_id UUID NOT NULL REFERENCES tenants(id)    (Iron Rule #14)
+--   - have ENABLE ROW LEVEL SECURITY                          (Iron Rule #15)
+--   - use Pattern 1 for its tenant_isolation policy
+--   - carry tenant_id in every UNIQUE constraint               (Iron Rule #18)
+--
+-- PRIMARY KEYS — UUID everywhere (gen_random_uuid() or uuid_generate_v4()).
+-- Sequential numbers (PO / return / box / internal doc) are generated by
+-- SECURITY DEFINER RPCs, not by Postgres sequences (Iron Rule #13).
+-- See FUNCTIONS and SEQUENCES sections below.
+--
+-- EXTENSIONS REQUIRED — uuid-ossp, pg_trgm.
+
+
+-- ============================================================
+-- TABLES (84 total, grouped by owning module)
+-- Full column lists live in db-audit/02-columns.md.
+-- Every table has rls_enabled=true (see db-audit/01-tables.md).
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- Module 1 — Inventory Management / Core ERP (36 tables)
+-- ------------------------------------------------------------
+-- Catalog, purchasing, receiving, sales sync, debt tracking, OCR, shipments.
+
+--   Brands & catalog:
+--     brands, inventory, inventory_images, inventory_logs,
+--     suppliers, supplier_documents, supplier_document_files,
+--     supplier_ocr_templates, supplier_payments, supplier_returns,
+--     supplier_return_items, supplier_balance_adjustments
+--
+--   Purchasing & receiving:
+--     purchase_orders, purchase_order_items,
+--     goods_receipts, goods_receipt_items,
+--     document_types, document_links, payment_methods, payment_allocations,
+--     currencies, prepaid_deals, prepaid_checks, expense_folders
+--
+--   Sync & stock counting:
+--     sync_log, pending_sales, watcher_heartbeat,
+--     stock_counts, stock_count_items
+--
+--   AI agent + OCR + alerts:
+--     ai_agent_config, ocr_extractions, alerts, weekly_reports
+--
+--   Shipments (Phase 5.9):
+--     courier_companies, shipments, shipment_items
+
+-- ------------------------------------------------------------
+-- Module 1.5 — Shared Components (14 tables)
+-- ------------------------------------------------------------
+-- Multi-tenant identity, auth, messaging, knowledge, activity audit.
+
+--   Tenancy & employees:
+--     tenants, employees
+--
+--   Auth & permissions:
+--     roles, permissions, role_permissions, employee_roles, auth_sessions
+--
+--   Activity / audit:
+--     activity_log
+--
+--   Messaging & knowledge:
+--     conversations, conversation_participants, messages, message_reactions,
+--     knowledge_base, notification_preferences
+
+-- ------------------------------------------------------------
+-- Module 2 — Platform Admin (5 tables)
+-- ------------------------------------------------------------
+-- Super-admin control plane over all tenants.
+
+--   plans, platform_admins, platform_audit_log,
+--   tenant_config, tenant_provisioning_log
+--
+-- plans.features JSONB — 21 feature keys as of 2026-04-15:
+--   Core ERP: inventory, purchasing, goods_receipts, supplier_debt, stock_count,
+--             shipments, ocr, whatsapp, ai_alerts, access_sync
+--   Storefront: storefront, image_studio, white_label, custom_domain
+--   CMS/Studio (added 2026-04-15, migration 067):
+--     cms_studio (true: premium+enterprise)
+--     cms_custom_blocks (true: enterprise only)
+--     cms_landing_pages (true: enterprise only)
+--     cms_ai_tools (true: enterprise only)
+--   API/Integration: api_access, b2b_marketplace, advanced_reports
+-- Full reference: modules/Module 1.5 - Shared Components/docs/plans-features-reference.md
+
+-- ------------------------------------------------------------
+-- Module 3 — Storefront (25 tables, in opticup-storefront repo at runtime)
+-- ------------------------------------------------------------
+-- CMS, campaigns, AI content, translations, media library, leads.
+--
+-- NOTE: the ERP repo owns these DEFINITIONS (this file + db-audit),
+-- but the CONSUMER code lives in the sibling repo opticup-storefront.
+-- Storefront consumers read via Views + RPC only (Iron Rules #13, #24).
+
+--   Storefront CMS:
+--     storefront_pages, storefront_config, storefront_leads,
+--     storefront_block_templates, storefront_components,
+--     storefront_component_presets, storefront_templates,
+--     storefront_page_tags, storefront_reviews
+--
+--   CMS + campaigns + media:
+--     cms_leads, media_library, blog_posts,
+--     campaigns, campaign_templates, brand_content_log
+--
+--   AI content & SEO:
+--     ai_content, ai_content_corrections, content_performance,
+--     content_versions, seo_targets
+--
+--   Translation system:
+--     content_translations, translation_memory, translation_glossary,
+--     translation_corrections, tenant_i18n_overrides
+
+-- ------------------------------------------------------------
+-- Pre-multitenancy (4 tables) — SECURITY DEBT
+-- ------------------------------------------------------------
+-- customers, prescriptions, sales, work_orders
+--
+-- ╔══════════════════════════════════════════════════════════╗
+-- ║ SECURITY-FINDING #1 — ANON READ/WRITE ON 4 LEGACY TABLES ║
+-- ╠══════════════════════════════════════════════════════════╣
+-- ║ These 4 tables each have a single RLS policy of the form:║
+-- ║                                                          ║
+-- ║   policy_name:       anon_all_{table}                    ║
+-- ║   command:           ALL                                 ║
+-- ║   roles:             {public}                            ║
+-- ║   using_clause:      true                                ║
+-- ║   with_check_clause: true                                ║
+-- ║                                                          ║
+-- ║ Meaning: anyone holding the Supabase anon key (a public  ║
+-- ║ key by design) can SELECT / INSERT / UPDATE / DELETE     ║
+-- ║ every row in customers, prescriptions, sales, and        ║
+-- ║ work_orders across every tenant, with no filtering.      ║
+-- ║                                                          ║
+-- ║ Compounding factor: these are ALSO the only 4 tables in  ║
+-- ║ the live DB that lack a tenant_id column (confirmed via  ║
+-- ║ db-audit/02-columns.md against db-audit/01-tables.md).   ║
+-- ║ The missing tenant_id and the anon_all_* policies are    ║
+-- ║ the same problem wearing two masks — these tables were   ║
+-- ║ created before multi-tenancy was enforced and never      ║
+-- ║ retrofitted.                                             ║
+-- ║                                                          ║
+-- ║ Tables affected: customers, prescriptions, sales,        ║
+-- ║                  work_orders                             ║
+-- ║ Policy text:     db-audit/04-policies.md (rows for       ║
+-- ║                  customers, prescriptions, sales,        ║
+-- ║                  work_orders)                            ║
+-- ║ Remediation:     tracked in MASTER_ROADMAP.md under      ║
+-- ║                  Module 3 Phase B preamble checklist.    ║
+-- ║                                                          ║
+-- ║ DO NOT "FIX" THIS IN THIS FILE. Phase 3A is read-only    ║
+-- ║ on the DB. This block DOCUMENTS reality.                 ║
+-- ╚══════════════════════════════════════════════════════════╝
+
+
+-- ============================================================
+-- VIEWS (24 total)
+-- Full definitions: db-audit/03-views.md (authoritative).
+-- This section is a summary index + the ONE golden-reference view.
+-- ============================================================
+
+--   Admin views (8) — used by ERP Studio / Platform Admin UIs:
+--     v_admin_campaign_templates  — active campaign templates (is_deleted=false)
+--     v_admin_campaigns           — active campaigns + page_count subquery
+--     v_admin_component_presets   — component presets (is_deleted=false)
+--     v_admin_components          — all storefront_components
+--     v_admin_leads               — all cms_leads, newest first
+--     v_admin_media               — media_library (is_deleted=false)
+--     v_admin_pages               — storefront_pages including drafts
+--     v_admin_product_picker      — inventory + brand + images for admin picker
+--     v_admin_reviews             — all storefront_reviews, by sort_order
+--
+--   Storefront read views (13) — anon-facing, all Views-only per Iron Rule #13:
+--     v_public_tenant             — tenant + storefront_config resolution
+--     v_storefront_blog_posts     — published blog posts
+--     v_storefront_brand_page     — brand landing pages (brand_page_enabled=true)
+--     v_storefront_brands         — brand index + product_count filter
+--     v_storefront_categories     — product_type aggregates
+--     v_storefront_components     — active components only
+--     v_storefront_config         — per-tenant storefront settings
+--     v_storefront_media          — media_library (is_deleted=false, public shape)
+--     v_storefront_pages          — published pages only
+--     v_storefront_products       — GOLDEN REFERENCE — see verbatim below
+--     v_storefront_reviews        — visible reviews only
+--     v_ai_content                — active ai_content rows
+--     v_content_translations      — approved + draft translations
+--
+--   Other (3):
+--     v_tenant_i18n_overrides     — passthrough of tenant_i18n_overrides
+--     v_translation_dashboard     — pivoted storefront_pages he/en/ru status
+--     (+ the admin / storefront views above total 24 with these 3)
+
+-- ------------------------------------------------------------
+-- GOLDEN REFERENCE — v_storefront_products
+-- DO NOT MODIFY WITHOUT A REGRESSION TEST.
+-- This view's `images` subquery is the single source of truth for
+-- storefront product image URLs, and its website_sync filter is the
+-- single source of truth for which inventory rows are visible to the
+-- storefront. Per CLAUDE.md §4 Iron Rule #13 and §11 regression rules
+-- and per opticup-storefront/CLAUDE.md §5 View Modification Protocol.
+-- Verbatim from db-audit/03-views.md row `v_storefront_products`.
+-- ------------------------------------------------------------
+CREATE OR REPLACE VIEW v_storefront_products AS
+ SELECT i.id,
+    i.tenant_id,
+    i.barcode,
+    b.name AS brand_name,
+    b.id AS brand_id,
+    b.brand_type,
+    i.model,
+    i.color,
+    i.size,
+    i.quantity,
+    i.product_type,
+    i.sell_price,
+    i.sell_discount,
+    i.website_sync,
+    b.display_mode,
+    i.display_mode_override,
+    COALESCE(( SELECT json_agg(('/api/image/'::text || img.storage_path) ORDER BY img.sort_order, img.created_at) AS json_agg
+           FROM inventory_images img
+          WHERE (img.inventory_id = i.id)), '[]'::json) AS images,
+    lower(((((((COALESCE(b.name, ''::text) || ' '::text) || COALESCE(i.model, ''::text)) || ' '::text) || COALESCE(i.color, ''::text)) || ' '::text) || COALESCE(i.barcode, ''::text))) AS search_text,
+    COALESCE(i.storefront_mode_override, b.storefront_mode, 'catalog'::text) AS resolved_mode,
+    ( SELECT ai_content.content
+           FROM ai_content
+          WHERE ((ai_content.entity_type = 'product'::text) AND (ai_content.entity_id = i.id) AND (ai_content.content_type = 'description'::text) AND (ai_content.language = 'he'::text) AND (ai_content.is_deleted = false))
+          ORDER BY ai_content.version DESC
+         LIMIT 1) AS ai_description,
+    ( SELECT ai_content.content
+           FROM ai_content
+          WHERE ((ai_content.entity_type = 'product'::text) AND (ai_content.entity_id = i.id) AND (ai_content.content_type = 'seo_title'::text) AND (ai_content.language = 'he'::text) AND (ai_content.is_deleted = false))
+          ORDER BY ai_content.version DESC
+         LIMIT 1) AS ai_seo_title,
+    ( SELECT ai_content.content
+           FROM ai_content
+          WHERE ((ai_content.entity_type = 'product'::text) AND (ai_content.entity_id = i.id) AND (ai_content.content_type = 'seo_description'::text) AND (ai_content.language = 'he'::text) AND (ai_content.is_deleted = false))
+          ORDER BY ai_content.version DESC
+         LIMIT 1) AS ai_seo_description
+   FROM (inventory i
+     JOIN brands b ON ((i.brand_id = b.id)))
+  WHERE ((i.is_deleted = false) AND (b.active = true) AND (b.exclude_website IS NOT TRUE) AND (COALESCE(i.storefront_mode_override, b.storefront_mode, 'catalog'::text) <> 'hidden'::text) AND (i.website_sync = ANY (ARRAY['full'::text, 'display'::text])) AND ((i.website_sync = 'display'::text) OR ((i.website_sync = 'full'::text) AND (i.quantity > 0))) AND (EXISTS ( SELECT 1
+           FROM inventory_images img
+          WHERE (img.inventory_id = i.id))));
+
+
+-- ============================================================
+-- RLS POLICIES (162 total across all 84 tables)
+-- Full policy text: db-audit/04-policies.md (authoritative).
+-- ============================================================
+--
+-- Every table in db-audit/01-tables.md has rls_enabled = true (none forced).
+-- The standard shape across ~75 tables is:
+--
+--     CREATE POLICY tenant_isolation ON <table>
+--       FOR ALL TO public
+--       USING (tenant_id = (((current_setting('request.jwt.claims', true))::json
+--                             ->> 'tenant_id'))::uuid);
+--
+--     CREATE POLICY service_bypass ON <table>
+--       FOR ALL TO service_role
+--       USING (true);
+--
+-- Exceptions and outliers are flagged as SECURITY-FINDING blocks below.
+-- Policy-count exceptions (tables with more or fewer than the standard
+-- two policies) are listed in db-audit/04-policies.md and include:
+-- campaign_templates, campaigns, cms_leads, content_performance,
+-- content_translations, content_versions, media_library, plans,
+-- platform_admins, platform_audit_log, storefront_block_templates,
+-- storefront_component_presets, storefront_components, storefront_config,
+-- storefront_pages, storefront_reviews, storefront_templates, tenant_config,
+-- tenant_provisioning_log, tenants, translation_memory.
+
+-- NOTE ON supplier_balance_adjustments.service_bypass:
+-- `service_bypass` is the canonical policy name for the service_role bypass
+-- half of the canonical two-policy RLS pattern. Reference implementation:
+-- the policy pair on `pending_sales`. See CLAUDE.md Iron Rule #15
+-- Canonical RLS Pattern. This was initially flagged as SECURITY-FINDING #2
+-- ("misnamed bypass") by Phase 3A; Daniel's verification on 2026-04-11
+-- confirmed it is a false positive — the name is correct and matches the
+-- project convention. The original FINDING block was removed by Phase 3D.
+-- Policy text: db-audit/04-policies.md line 148.
+
+-- ╔══════════════════════════════════════════════════════════╗
+-- ║ SECURITY-FINDING #3 — auth.uid() USED AS tenant_id ON    ║
+-- ║ THREE TABLES (Pattern 3 bug)                             ║
+-- ╠══════════════════════════════════════════════════════════╣
+-- ║ The following three tables use `auth.uid()` as the       ║
+-- ║ tenant-isolation check, instead of a JWT claim or        ║
+-- ║ session variable:                                        ║
+-- ║                                                          ║
+-- ║  1. brand_content_log                                    ║
+-- ║     policy: "Tenant brand content log" / ALL / {public}  ║
+-- ║     using:  ((tenant_id = auth.uid()) OR                 ║
+-- ║              EXISTS (SELECT 1 FROM tenants               ║
+-- ║               WHERE tenants.id = brand_content_log       ║
+-- ║                                     .tenant_id))         ║
+-- ║                                                          ║
+-- ║  2. storefront_component_presets                         ║
+-- ║     policy: "Tenant or global presets visible" / SELECT  ║
+-- ║     using:  ((tenant_id IS NULL) OR                      ║
+-- ║              (tenant_id = auth.uid()))                   ║
+-- ║     (also: "Tenant can manage own presets" / ALL /       ║
+-- ║      using (tenant_id IS NOT NULL) — equally permissive) ║
+-- ║                                                          ║
+-- ║  3. storefront_page_tags                                 ║
+-- ║     policy: "Tenant page tags" / ALL / {public}          ║
+-- ║     using:  ((tenant_id = auth.uid()) OR                 ║
+-- ║              EXISTS (SELECT 1 FROM tenants               ║
+-- ║               WHERE tenants.id = storefront_page_tags    ║
+-- ║                                     .tenant_id))         ║
+-- ║                                                          ║
+-- ║ WHY THIS IS A BUG: auth.uid() returns the signed-in      ║
+-- ║ Supabase user UUID, not the Optic Up tenant UUID. The    ║
+-- ║ check `tenant_id = auth.uid()` is therefore comparing    ║
+-- ║ a tenant id against a user id — they are distinct        ║
+-- ║ namespaces and will almost never match. The secondary    ║
+-- ║ EXISTS-over-tenants clause in #1 and #3 additionally     ║
+-- ║ matches ANY row whose tenant_id points at any existing   ║
+-- ║ tenant, i.e. it resolves to "true" in every real row,    ║
+-- ║ which nullifies isolation entirely.                      ║
+-- ║                                                          ║
+-- ║ Why this has not caused an incident yet: writes to       ║
+-- ║ these three tables currently go through service_role     ║
+-- ║ code paths only (Storefront Studio admin + brand content ║
+-- ║ generator), and service_role bypasses RLS. The broken    ║
+-- ║ isolation is latent until a public-facing write path     ║
+-- ║ is added to any of these tables.                         ║
+-- ║                                                          ║
+-- ║ Policy text: db-audit/04-policies.md lines 22-24         ║
+-- ║              (brand_content_log),                        ║
+-- ║              lines 125-126 (storefront_component_presets)║
+-- ║              lines 136-138 (storefront_page_tags)        ║
+-- ║ Remediation: tracked in MASTER_ROADMAP.md under          ║
+-- ║              Module 3 Phase B preamble checklist.        ║
+-- ╚══════════════════════════════════════════════════════════╝
+
+-- MINOR OUTLIER (not a security finding):
+--   public.tenant_config.tenant_config_tenant_read uses `::jsonb` cast,
+--   while every other JWT-based policy uses `::json`. Both work — pg
+--   casts text to either. Flagged here only so a future migration sweep
+--   picks it up. See db-audit/04-policies.md line 169.
+
+
+-- ============================================================
+-- FUNCTIONS (72 total in public schema)
+-- Full list with signatures: db-audit/05-functions.md.
+-- Split into two subsections: project code vs extension noise.
+-- Function BODIES are not exposed by information_schema; verifying
+-- implementation details (FOR UPDATE, SECURITY DEFINER logic, etc.)
+-- is SEPARATE WORK, not performed by this audit.
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- 1. Project functions (41) — plpgsql / sql, Optic Up code
+-- ------------------------------------------------------------
+
+--   Tenant lifecycle (Module 2 — Platform Admin):
+--     activate_tenant(p_tenant_id, p_admin_id) -> void
+--     create_tenant(p_name, p_slug, p_owner_name, p_owner_email,
+--                   p_owner_phone, p_plan_id, p_admin_pin, p_admin_name,
+--                   p_created_by) -> uuid
+--     delete_tenant(p_tenant_id, p_deleted_by) -> void
+--     suspend_tenant(p_tenant_id, p_reason, p_admin_id) -> void
+--     update_tenant(p_tenant_id, p_updates, p_admin_id) -> void
+--     get_all_tenants_overview() -> jsonb
+--     get_tenant_activity_log(...) -> jsonb
+--     get_tenant_employees(p_tenant_id) -> jsonb
+--     get_tenant_stats(p_tenant_id) -> jsonb
+--     validate_slug(p_slug) -> jsonb
+--
+--   Plan / feature gates:
+--     check_plan_limit(p_tenant_id, p_resource) -> jsonb
+--     is_feature_enabled(p_tenant_id, p_feature) -> boolean
+--     is_platform_super_admin() -> boolean
+--
+--   Inventory (atomic writes — Iron Rule #1 atomicity):
+--     decrement_inventory(inv_id, delta) -> void
+--     increment_inventory(inv_id, delta) -> void
+--     set_inventory_qty(inv_id, new_qty) -> void
+--     apply_stock_count_delta(p_inventory_id, p_counted_qty, p_tenant_id,
+--                             p_user_id, p_count_id) -> json
+--     get_low_stock_brands() -> TABLE(...)
+--
+--   Sequential number generators (Iron Rule #13):
+--     next_box_number(p_tenant_id uuid) -> text
+--     next_internal_doc_number(p_tenant_id uuid, p_prefix text) -> text
+--     next_po_number(p_tenant_id uuid, p_supplier_number text) -> text
+--     next_return_number(p_tenant_id uuid, p_supplier_number text) -> text
+--     NOTE: information_schema does not expose function bodies, so this
+--     audit does NOT confirm FOR UPDATE locking. Verifying Iron Rule #13
+--     compliance is a separate task tracked outside Phase 3A.
+--
+--   Shipments / debt / payments:
+--     increment_shipment_counters(p_shipment_id, p_items_delta,
+--                                 p_value_delta) -> void
+--     increment_paid_amount(p_doc_id, p_delta) -> void
+--     increment_prepaid_used(p_deal_id, p_delta) -> void
+--     get_po_aggregates(p_tenant_id) -> TABLE(po_id, item_count, total_value)
+--
+--   Auth:
+--     reset_employee_pin(p_tenant_id, p_employee_id, p_new_pin,
+--                        p_must_change, p_admin_id) -> void
+--
+--   Alerts:
+--     generate_daily_alerts(p_tenant_id) -> json
+--
+--   Storefront leads / content / translations (Module 3):
+--     submit_storefront_lead(p_tenant_id, p_inventory_id, p_contact_type,
+--                            p_contact_value) -> uuid
+--     create_translated_page(p_tenant_id, p_source_page_id, p_target_lang,
+--                            p_translated_blocks, p_title, p_slug,
+--                            p_meta_title, p_meta_description) -> uuid
+--     mark_translations_stale(p_page_id, p_changed_blocks) -> integer
+--     get_translation_context(p_tenant_id, p_target_lang, p_limit) -> jsonb
+--     save_translation_memory_batch(p_entries jsonb) -> void            -- overload #1
+--     save_translation_memory_batch(p_tenant_id, p_entries) -> integer  -- overload #2
+--     promote_to_platform(p_memory_ids uuid[]) -> integer
+--
+--   OCR templates:
+--     update_ocr_template_stats(p_tenant_id, p_supplier_id, p_doc_type_code,
+--                               p_was_corrected, p_new_hints) -> json     -- overload #1
+--     update_ocr_template_stats(p_tenant_id, p_supplier_id, p_doc_type_code,
+--                               p_was_corrected, p_new_hints,
+--                               p_fields_suggested, p_fields_accepted) -> json   -- overload #2
+--
+--   Triggers (trigger functions, no direct call):
+--     save_previous_blocks() -> trigger
+--     update_storefront_components_updated_at() -> trigger
+--     update_storefront_pages_updated_at() -> trigger
+--     update_storefront_reviews_updated_at() -> trigger
+--     update_updated_at() -> trigger
+
+-- ------------------------------------------------------------
+-- 2. Extension functions (31) — pg_trgm, NOT Optic Up code
+-- ------------------------------------------------------------
+-- Installed automatically by `CREATE EXTENSION pg_trgm`. Language `c`,
+-- IMMUTABLE volatility, not security definer. Managed by the extension.
+-- These appear in db-audit/05-functions.md only because the audit query
+-- scans all functions in the public schema. Do NOT document them here.
+-- Full list: db-audit/05-functions.md rows where language = 'c'.
+--
+-- Family summary:
+--   GiST operator-class support:
+--     gtrgm_in, gtrgm_out, gtrgm_compress, gtrgm_decompress,
+--     gtrgm_consistent, gtrgm_distance, gtrgm_options,
+--     gtrgm_penalty, gtrgm_picksplit, gtrgm_same, gtrgm_union
+--   GIN operator-class support:
+--     gin_extract_query_trgm, gin_extract_value_trgm,
+--     gin_trgm_consistent, gin_trgm_triconsistent
+--   Similarity scalars & operators:
+--     similarity, similarity_dist, similarity_op, show_trgm,
+--     word_similarity, word_similarity_commutator_op,
+--     word_similarity_dist_commutator_op, word_similarity_dist_op,
+--     word_similarity_op, strict_word_similarity,
+--     strict_word_similarity_commutator_op,
+--     strict_word_similarity_dist_commutator_op,
+--     strict_word_similarity_dist_op, strict_word_similarity_op,
+--     set_limit, show_limit
+
+
+-- ============================================================
+-- SEQUENCES
+-- ============================================================
+-- No Postgres sequences exist in the public schema (confirmed 2026-04-11
+-- via pg_sequences query — see db-audit/06-sequences.md). This is a
+-- deliberate architectural choice, not a gap:
+--
+--   * All primary keys use UUIDs (gen_random_uuid / uuid_generate_v4).
+--   * All human-readable sequential numbers (PO, return, box, internal
+--     doc) are generated by SECURITY DEFINER RPCs. See the
+--     `next_*_number` entries in the FUNCTIONS section above and the
+--     signatures in db-audit/05-functions.md.
+--   * Iron Rule #13 requires that these RPCs use `FOR UPDATE` locking
+--     internally. Verifying that the actual function bodies comply is
+--     SEPARATE WORK and is NOT confirmed by this audit — information_schema
+--     does not expose function bodies.
+--
+-- If a future migration ever adds a CREATE SEQUENCE to public, update
+-- this section and file a follow-up to reassess the RPC-only pattern.
 
 -- ═══════════════════════════════════════════════════════════════
--- Module 1.5: Shared Components
+-- End of GLOBAL_SCHEMA.sql
 -- ═══════════════════════════════════════════════════════════════
--- Added in Phase 1:
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS ui_config JSONB DEFAULT '{}';
-
--- Added in Phase 3: activity_log table
-CREATE TABLE activity_log (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  tenant_id UUID NOT NULL REFERENCES tenants(id),
-  branch_id UUID,
-  user_id UUID REFERENCES employees(id),
-  level TEXT NOT NULL DEFAULT 'info'
-    CHECK (level IN ('info', 'warning', 'error', 'critical')),
-  action TEXT NOT NULL,
-  entity_type TEXT NOT NULL,
-  entity_id TEXT,
-  details JSONB DEFAULT '{}',
-  ip_address TEXT,
-  user_agent TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON activity_log
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE INDEX idx_activity_log_tenant ON activity_log(tenant_id);
-CREATE INDEX idx_activity_log_entity ON activity_log(tenant_id, entity_type, entity_id);
-CREATE INDEX idx_activity_log_action ON activity_log(tenant_id, action);
-CREATE INDEX idx_activity_log_created ON activity_log(tenant_id, created_at DESC);
-CREATE INDEX idx_activity_log_level ON activity_log(tenant_id, level) WHERE level IN ('warning', 'error', 'critical');
-
--- Added in Phase 3: Atomic RPC functions
-CREATE OR REPLACE FUNCTION increment_paid_amount(p_doc_id UUID, p_delta NUMERIC)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
-BEGIN
-  UPDATE supplier_documents
-    SET paid_amount = COALESCE(paid_amount, 0) + p_delta,
-        status = CASE WHEN COALESCE(paid_amount, 0) + p_delta >= total_amount THEN 'paid' ELSE 'partially_paid' END
-    WHERE id = p_doc_id;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION increment_prepaid_used(p_deal_id UUID, p_delta NUMERIC)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
-BEGIN
-  UPDATE prepaid_deals
-    SET total_used = COALESCE(total_used, 0) + p_delta,
-        total_remaining = total_prepaid - (COALESCE(total_used, 0) + p_delta),
-        updated_at = now()
-    WHERE id = p_deal_id;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION increment_shipment_counters(p_shipment_id UUID, p_items_delta INTEGER, p_value_delta NUMERIC)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
-BEGIN
-  UPDATE shipments
-    SET items_count = COALESCE(items_count, 0) + p_items_delta,
-        total_value = COALESCE(total_value, 0) + p_value_delta
-    WHERE id = p_shipment_id;
-END;
-$$;
-
--- Added in QA Phase: Multi-tenant permissions PK fix
--- roles: (id) → (id, tenant_id)
-ALTER TABLE roles DROP CONSTRAINT roles_pkey;
-ALTER TABLE roles ADD PRIMARY KEY (id, tenant_id);
-
--- permissions: (id) → (id, tenant_id)
-ALTER TABLE permissions DROP CONSTRAINT permissions_pkey;
-ALTER TABLE permissions ADD PRIMARY KEY (id, tenant_id);
-
--- role_permissions: (role_id, permission_id) → (role_id, permission_id, tenant_id)
-ALTER TABLE role_permissions DROP CONSTRAINT role_permissions_pkey;
-ALTER TABLE role_permissions ADD PRIMARY KEY (role_id, permission_id, tenant_id);
-
--- FKs updated to composite references
-ALTER TABLE role_permissions ADD CONSTRAINT role_permissions_role_fk
-  FOREIGN KEY (role_id, tenant_id) REFERENCES roles(id, tenant_id) ON DELETE CASCADE;
-ALTER TABLE role_permissions ADD CONSTRAINT role_permissions_permission_fk
-  FOREIGN KEY (permission_id, tenant_id) REFERENCES permissions(id, tenant_id) ON DELETE CASCADE;
-ALTER TABLE employee_roles ADD CONSTRAINT employee_roles_role_fk
-  FOREIGN KEY (role_id, tenant_id) REFERENCES roles(id, tenant_id) ON DELETE CASCADE;
-
--- ═══════════════════════════════════════════════════════════════
--- Phase 8: Receipt item PO fields + Supplier opening balance
--- ═══════════════════════════════════════════════════════════════
-
--- 036: PO comparison fields on goods_receipt_items
-ALTER TABLE goods_receipt_items
-  ADD COLUMN IF NOT EXISTS price_decision TEXT
-    CHECK (price_decision IS NULL OR price_decision IN ('po_price', 'invoice_price')),
-  ADD COLUMN IF NOT EXISTS po_match_status TEXT
-    CHECK (po_match_status IS NULL OR po_match_status IN ('matched', 'not_in_po', 'returned'));
-
--- 037: Supplier opening balance
-ALTER TABLE suppliers
-  ADD COLUMN IF NOT EXISTS opening_balance NUMERIC DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS opening_balance_date DATE,
-  ADD COLUMN IF NOT EXISTS opening_balance_notes TEXT,
-  ADD COLUMN IF NOT EXISTS opening_balance_set_by UUID REFERENCES employees(id);
-
--- 039: return_note document type for all tenants
--- INSERT INTO document_types (tenant_id, code, name_he, name_en, affects_debt, is_system)
---   VALUES (<tenant_id>, 'return_note', 'תעודת החזרה', 'Return Note', 'decrease', true)
---   for each active tenant. ON CONFLICT DO NOTHING.
-
--- RLS fix: corrected RLS policies on 5 tables (roles, permissions, role_permissions,
--- employee_roles, auth_sessions) — changed from permissive anon access to proper
--- tenant_isolation using JWT current_setting('app.tenant_id').
-
--- ============================================================
--- 49. supplier_document_files — Multi-file support (Phase 8-QA, migration 040)
--- Owner: Module 1 (Debt sub-module)
--- ============================================================
-CREATE TABLE IF NOT EXISTS supplier_document_files (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID NOT NULL REFERENCES tenants(id),
-  document_id UUID NOT NULL REFERENCES supplier_documents(id) ON DELETE CASCADE,
-  file_url TEXT NOT NULL,          -- Storage path in supplier-docs bucket
-  file_name TEXT,                  -- Original filename
-  file_hash TEXT,                  -- SHA-256 for future dedup
-  sort_order INT NOT NULL DEFAULT 0,  -- Page order
-  created_at TIMESTAMPTZ DEFAULT now(),
-  created_by UUID REFERENCES employees(id)
-);
-CREATE INDEX IF NOT EXISTS idx_sdf_document ON supplier_document_files(document_id);
-CREATE INDEX IF NOT EXISTS idx_sdf_tenant ON supplier_document_files(tenant_id);
--- RLS: JWT tenant isolation + service_role bypass
-
--- ============================================================
--- Migrations 041–045: Atomic RPCs + schema fixes
--- ============================================================
-
--- 041: Atomic PO number generation (FOR UPDATE lock)
-CREATE OR REPLACE FUNCTION next_po_number(p_tenant_id UUID, p_supplier_number TEXT)
-RETURNS TEXT
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  v_max_seq INT;
-  v_prefix TEXT;
-  v_new_number TEXT;
-BEGIN
-  v_prefix := 'PO-' || p_supplier_number || '-';
-  SELECT COALESCE(MAX(
-    CAST(SUBSTRING(po_number FROM LENGTH(v_prefix) + 1) AS INT)
-  ), 0)
-  INTO v_max_seq
-  FROM purchase_orders
-  WHERE tenant_id = p_tenant_id
-    AND po_number LIKE v_prefix || '%'
-  FOR UPDATE;
-  v_new_number := v_prefix || LPAD((v_max_seq + 1)::TEXT, 4, '0');
-  RETURN v_new_number;
-END;
-$$;
-
--- 042: Atomic Return number generation (FOR UPDATE lock)
-CREATE OR REPLACE FUNCTION next_return_number(p_tenant_id UUID, p_supplier_number TEXT)
-RETURNS TEXT
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  v_max_seq INT;
-  v_prefix TEXT;
-  v_new_number TEXT;
-BEGIN
-  v_prefix := 'RET-' || p_supplier_number || '-';
-  SELECT COALESCE(MAX(
-    CAST(SUBSTRING(return_number FROM LENGTH(v_prefix) + 1) AS INT)
-  ), 0)
-  INTO v_max_seq
-  FROM supplier_returns
-  WHERE tenant_id = p_tenant_id
-    AND return_number LIKE v_prefix || '%'
-  FOR UPDATE;
-  v_new_number := v_prefix || LPAD((v_max_seq + 1)::TEXT, 4, '0');
-  RETURN v_new_number;
-END;
-$$;
-
--- 043: Server-side PO item aggregates (count + total value per PO)
-CREATE OR REPLACE FUNCTION get_po_aggregates(p_tenant_id UUID)
-RETURNS TABLE(po_id UUID, item_count BIGINT, total_value NUMERIC)
-LANGUAGE sql
-SECURITY DEFINER
-AS $$
-  SELECT
-    poi.po_id,
-    COUNT(*) as item_count,
-    COALESCE(SUM(poi.qty_ordered * poi.unit_cost * (1 - COALESCE(poi.discount_pct, 0) / 100.0)), 0) as total_value
-  FROM purchase_order_items poi
-  WHERE poi.tenant_id = p_tenant_id
-  GROUP BY poi.po_id;
-$$;
-
--- 044: Fix next_internal_doc_number — include soft-deleted docs in MAX
-CREATE OR REPLACE FUNCTION next_internal_doc_number(
-  p_tenant_id UUID,
-  p_prefix TEXT DEFAULT 'DOC'
-)
-RETURNS TEXT
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  v_max INTEGER;
-  v_next TEXT;
-BEGIN
-  PERFORM 1 FROM tenants WHERE id = p_tenant_id FOR UPDATE;
-  SELECT COALESCE(
-    MAX(CAST(SUBSTRING(internal_number FROM (LENGTH(p_prefix) + 2)) AS INTEGER)), 0)
-  INTO v_max
-  FROM supplier_documents
-  WHERE tenant_id = p_tenant_id
-    AND internal_number LIKE p_prefix || '-%';
-  v_next := p_prefix || '-' || LPAD((v_max + 1)::TEXT, 5, '0');
-  RETURN v_next;
-END;
-$$;
-
--- 045: Add 'draft' to supplier_documents status CHECK
-ALTER TABLE supplier_documents
-  DROP CONSTRAINT IF EXISTS supplier_documents_status_check;
-ALTER TABLE supplier_documents
-  ADD CONSTRAINT supplier_documents_status_check
-  CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled'));
-
--- ============================================================
--- Flow Review Phase 2 QA — Migrations 046, 047, 048
--- ============================================================
-
--- 046: pending_invoice status + missing_price + goods_receipt_id UNIQUE
--- (status CHECK already includes 'pending_invoice' in CREATE TABLE above)
--- (missing_price column already in CREATE TABLE above)
-CREATE UNIQUE INDEX IF NOT EXISTS idx_supdocs_receipt_unique
-  ON supplier_documents(goods_receipt_id)
-  WHERE goods_receipt_id IS NOT NULL;
-
--- 047: Receipt item status tracking for PO-linked items
-ALTER TABLE goods_receipt_items
-  ADD COLUMN IF NOT EXISTS receipt_status TEXT
-    CHECK (receipt_status IS NULL OR receipt_status IN ('ok', 'not_received', 'return')),
-  ADD COLUMN IF NOT EXISTS from_po BOOLEAN DEFAULT false;
--- Expand po_match_status to include 'not_received'
--- (Original CHECK from 036 was: matched, not_in_po, returned)
--- Updated CHECK: matched, not_in_po, returned, not_received, missing
-ALTER TABLE goods_receipt_items
-  DROP CONSTRAINT IF EXISTS goods_receipt_items_po_match_status_check;
-ALTER TABLE goods_receipt_items
-  ADD CONSTRAINT goods_receipt_items_po_match_status_check
-    CHECK (po_match_status IS NULL OR po_match_status IN ('matched', 'not_in_po', 'returned', 'not_received', 'missing'));
-
--- 048: Nullable inventory_id on supplier_return_items
--- Returns from PO comparison may not have an inventory entry yet
-ALTER TABLE supplier_return_items
-  ALTER COLUMN inventory_id DROP NOT NULL;
-
--- 049: Fix PO/return number RPCs — FOR UPDATE separated from aggregate
--- (Prevents deadlock/race condition: SELECT FOR UPDATE + MAX() in same query)
--- See migrations/049_fix_po_return_number_rpc.sql for full RPC replacement
-
--- 050: Receipt architecture — multi-barcode support + partial_received status
-ALTER TABLE goods_receipt_items
-  ADD COLUMN IF NOT EXISTS barcodes_csv TEXT;
-ALTER TABLE goods_receipt_items
-  ADD COLUMN IF NOT EXISTS ordered_qty INTEGER;
-ALTER TABLE goods_receipt_items
-  DROP CONSTRAINT IF EXISTS goods_receipt_items_receipt_status_check;
-ALTER TABLE goods_receipt_items
-  ADD CONSTRAINT goods_receipt_items_receipt_status_check
-    CHECK (receipt_status IS NULL OR receipt_status IN ('ok', 'not_received', 'return', 'partial_received'));
-
--- ============================================================
--- Flow Review Phase 3 — Migrations 051, 052
--- ============================================================
-
--- 051: Inventory Images — composite index for tenant-scoped lookups
--- (Replaces simple idx_inv_images_inv index)
-DROP INDEX IF EXISTS idx_inv_images_inv;
-CREATE INDEX IF NOT EXISTS idx_inventory_images_lookup
-  ON inventory_images(inventory_id, tenant_id);
-
--- NOTE: Storage bucket "frame-images" must be created manually in Supabase Dashboard > Storage
---   Bucket name: frame-images
---   Public: YES
---   File size limit: 5MB
---   Allowed MIME types: image/webp, image/jpeg, image/png
-
--- 052: Add 'pending_review' status to supplier_documents
--- Allows finance manager to flag documents as "needs clarification"
-ALTER TABLE supplier_documents
-  DROP CONSTRAINT IF EXISTS supplier_documents_status_check;
-ALTER TABLE supplier_documents
-  ADD CONSTRAINT supplier_documents_status_check
-  CHECK (status IN ('draft', 'open', 'partially_paid', 'paid', 'linked', 'cancelled', 'pending_invoice', 'pending_review'));
-
--- ============================================================
--- Module 2: Platform Admin — Phase 1 (2026-03-26)
--- 5 new tables + tenants extension + RLS + indexes
--- ============================================================
-
--- SECURITY DEFINER function (avoids infinite recursion in RLS)
-CREATE OR REPLACE FUNCTION is_platform_super_admin()
-RETURNS BOOLEAN AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM platform_admins
-    WHERE auth_user_id = auth.uid()
-    AND role = 'super_admin'
-    AND status = 'active'
-  );
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
-
--- plans (global — no tenant_id)
-CREATE TABLE plans (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
-  display_name TEXT NOT NULL,
-  limits JSONB NOT NULL DEFAULT '{}',
-  features JSONB NOT NULL DEFAULT '{}',
-  price_monthly DECIMAL(10,2),
-  price_yearly DECIMAL(10,2),
-  sort_order INTEGER DEFAULT 0,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE plans ENABLE ROW LEVEL SECURITY;
-CREATE POLICY plans_read ON plans FOR SELECT USING (true);
-CREATE POLICY plans_admin_write ON plans FOR ALL USING (is_platform_super_admin());
-
--- platform_admins (global — no tenant_id)
-CREATE TABLE platform_admins (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  auth_user_id UUID NOT NULL UNIQUE,
-  email TEXT NOT NULL UNIQUE,
-  display_name TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'viewer' CHECK (role IN ('super_admin', 'support', 'viewer')),
-  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended')),
-  last_login TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE platform_admins ENABLE ROW LEVEL SECURITY;
-CREATE POLICY platform_admins_read ON platform_admins FOR SELECT USING (auth.uid() = auth_user_id);
-CREATE POLICY platform_admins_super_write ON platform_admins FOR ALL USING (is_platform_super_admin());
-
--- platform_audit_log (global — no tenant_id)
-CREATE TABLE platform_audit_log (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  admin_id UUID REFERENCES platform_admins(id),
-  action TEXT NOT NULL,
-  target_tenant_id UUID REFERENCES tenants(id),
-  details JSONB DEFAULT '{}',
-  ip_address TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE platform_audit_log ENABLE ROW LEVEL SECURITY;
-CREATE POLICY audit_log_admin_read ON platform_audit_log FOR SELECT USING (
-  auth.uid() IN (SELECT auth_user_id FROM platform_admins WHERE status = 'active')
-);
-CREATE POLICY audit_log_admin_insert ON platform_audit_log FOR INSERT WITH CHECK (true);
-
--- tenant_config (tenant-scoped)
-CREATE TABLE tenant_config (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  tenant_id UUID NOT NULL REFERENCES tenants(id),
-  key TEXT NOT NULL,
-  value JSONB NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(tenant_id, key)
-);
-ALTER TABLE tenant_config ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_config_tenant_read ON tenant_config FOR SELECT USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
-CREATE POLICY tenant_config_admin_access ON tenant_config FOR ALL USING (
-  auth.uid() IN (SELECT auth_user_id FROM platform_admins WHERE status = 'active')
-);
-
--- tenant_provisioning_log (admin-only)
-CREATE TABLE tenant_provisioning_log (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  tenant_id UUID NOT NULL REFERENCES tenants(id),
-  step TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('started', 'completed', 'failed')),
-  details JSONB DEFAULT '{}',
-  error_message TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE tenant_provisioning_log ENABLE ROW LEVEL SECURITY;
-CREATE POLICY provisioning_log_admin_read ON tenant_provisioning_log FOR SELECT USING (
-  auth.uid() IN (SELECT auth_user_id FROM platform_admins WHERE status = 'active')
-);
-
--- tenants table extensions (9 new columns)
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS plan_id UUID REFERENCES plans(id);
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active'
-  CHECK (status IN ('active', 'trial', 'suspended', 'deleted'));
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS owner_name TEXT;
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS owner_email TEXT;
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS owner_phone TEXT;
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES platform_admins(id);
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS suspended_reason TEXT;
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
-
--- Module 2 indexes
-CREATE INDEX idx_platform_admins_auth_user ON platform_admins(auth_user_id);
-CREATE INDEX idx_platform_admins_email ON platform_admins(email);
-CREATE INDEX idx_platform_audit_log_admin ON platform_audit_log(admin_id);
-CREATE INDEX idx_platform_audit_log_tenant ON platform_audit_log(target_tenant_id);
-CREATE INDEX idx_platform_audit_log_created ON platform_audit_log(created_at DESC);
-CREATE INDEX idx_tenant_config_tenant ON tenant_config(tenant_id);
-CREATE INDEX idx_tenant_config_key ON tenant_config(tenant_id, key);
-CREATE INDEX idx_provisioning_log_tenant ON tenant_provisioning_log(tenant_id);
-CREATE INDEX idx_tenants_plan ON tenants(plan_id);
-CREATE INDEX idx_tenants_status ON tenants(status);
-
--- ============================================================
--- Module 2: Platform Admin — Phase 2 (2026-03-26)
--- Tenant Provisioning: RPCs + schema changes
--- ============================================================
-
--- employees.must_change_pin (forces PIN change on first login)
-ALTER TABLE employees ADD COLUMN IF NOT EXISTS must_change_pin BOOLEAN DEFAULT false;
-
--- tenant_provisioning_log.tenant_id nullable (for failure logging)
-ALTER TABLE tenant_provisioning_log ALTER COLUMN tenant_id DROP NOT NULL;
-
--- provisioning_log INSERT policy for admins
-CREATE POLICY provisioning_log_admin_insert ON tenant_provisioning_log
-  FOR INSERT WITH CHECK (
-    auth.uid() IN (SELECT auth_user_id FROM platform_admins WHERE status = 'active')
-  );
-
--- validate_slug(p_slug) — format + reserved words + uniqueness
--- Returns JSONB {valid: boolean, reason: text|null}
--- Full SQL in: modules/Module 2 - Platform Admin/docs/create_tenant_rpc.sql
-
--- create_tenant(...) — 10-step atomic provisioning
--- Returns UUID (new tenant ID)
--- Creates: tenant, 6 config entries, 5 roles, 57 permissions, role_permissions,
---          1 employee (must_change_pin=true), employee_roles, 5 doc_types, 5 payment_methods
--- Full SQL in: modules/Module 2 - Platform Admin/docs/create_tenant_rpc.sql
-
--- delete_tenant(p_tenant_id, p_deleted_by) — soft delete
--- Sets status='deleted', deleted_at=now()
--- Full SQL in: modules/Module 2 - Platform Admin/docs/create_tenant_rpc.sql
-
--- ============================================================
--- Module 2: Platform Admin — Phase 3 (2026-03-26)
--- ============================================================
-
--- tenants.last_active column (Phase 3 fix)
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS last_active TIMESTAMPTZ;
-
--- get_all_tenants_overview() → JSONB array
--- All non-deleted tenants with plan name (LEFT JOIN), employees/inventory/suppliers counts.
--- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3a-rpcs.sql
-
--- get_tenant_stats(p_tenant_id UUID) → JSONB object
--- Single tenant counts: employees, inventory, suppliers, documents, brands.
--- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3a-rpcs.sql
-
--- suspend_tenant(p_tenant_id, p_reason, p_admin_id) → void
--- Verifies status='active', sets suspended + reason. Writes audit log.
--- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3b-rpcs.sql
-
--- activate_tenant(p_tenant_id, p_admin_id) → void
--- Verifies status IN ('suspended','trial'), sets active. Writes audit log.
--- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3b-rpcs.sql
-
--- update_tenant(p_tenant_id, p_updates JSONB, p_admin_id) → void
--- Whitelist: name, owner_name, owner_email, owner_phone, plan_id, trial_ends_at.
--- Captures old values, applies per-field, writes audit with old+new diff.
--- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3b-rpcs.sql
-
--- get_tenant_activity_log(...) → JSONB {total, entries}
--- Paginated activity_log for a tenant with optional filters.
--- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3c-rpcs.sql
-
--- get_tenant_employees(p_tenant_id) → JSONB array [{id, name}]
--- Minimal employee list for PIN reset dropdown.
--- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3c-rpcs.sql
-
--- reset_employee_pin(p_tenant_id, p_employee_id, p_new_pin, p_must_change, p_admin_id) → void
--- Verifies employee belongs to tenant, resets PIN + unlock. PIN not in audit.
--- Full SQL in: modules/Module 2 - Platform Admin/docs/phase3c-rpcs.sql
-
--- ============================================================
--- Phase 4: Plans & Limits RPCs (Module 2)
--- ============================================================
-
--- check_plan_limit(p_tenant_id UUID, p_resource TEXT) → JSONB
--- SECURITY DEFINER. Counts current usage vs plan limits.
--- Maps resource to 'max_' || p_resource. No plan/-1 = unlimited.
--- Returns: { allowed, current, limit, remaining, message }
--- Full SQL in: modules/Module 2 - Platform Admin/docs/phase4a-rpcs.sql
-
--- is_feature_enabled(p_tenant_id UUID, p_feature TEXT) → BOOLEAN
--- SECURITY DEFINER. Priority: tenant_config feature_overrides → plan.features → true (fail-safe).
--- Full SQL in: modules/Module 2 - Platform Admin/docs/phase4a-rpcs.sql
-
--- ============================================================
--- Phase 5: Slug Routing + Future Prep (Module 2)
--- ============================================================
-
--- storefront_config — per-tenant, DB prep for Module 3 (Storefront)
-CREATE TABLE storefront_config (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  tenant_id UUID NOT NULL REFERENCES tenants(id) UNIQUE,
-  enabled BOOLEAN DEFAULT false,
-  domain TEXT,
-  subdomain TEXT,
-  theme JSONB DEFAULT '{}',
-  logo_url TEXT,
-  categories JSONB DEFAULT '[]',
-  seo JSONB DEFAULT '{}',
-  pages JSONB DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-
-ALTER TABLE storefront_config ENABLE ROW LEVEL SECURITY;
-CREATE POLICY storefront_config_tenant_read ON storefront_config
-  FOR SELECT USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY storefront_config_admin_access ON storefront_config
-  FOR ALL USING (auth.uid() IN (SELECT auth_user_id FROM platform_admins WHERE status = 'active'));
-CREATE INDEX idx_storefront_config_tenant ON storefront_config(tenant_id);
-
--- create_tenant() updated: Step 11 inserts default storefront_config row
--- Full SQL in: modules/Module 2 - Platform Admin/docs/phase5a-storefront-config.sql
-
--- ============================================================
--- 50. expense_folders — תיקיות הוצאות (Flow Review Phase 4, migration 054)
--- Owner: Module 1 (Debt)
--- ============================================================
-CREATE TABLE IF NOT EXISTS expense_folders (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),
-  name            TEXT NOT NULL,
-  icon            TEXT DEFAULT '📁',
-  is_active       BOOLEAN DEFAULT true,
-  sort_order      INTEGER DEFAULT 0,
-  created_at      TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(tenant_id, name)
-);
-ALTER TABLE expense_folders ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON expense_folders FOR ALL
-  USING (tenant_id = (current_setting('request.jwt.claims', true)::json->>'tenant_id')::uuid);
-CREATE POLICY service_bypass ON expense_folders FOR ALL TO service_role USING (true);
-CREATE INDEX idx_expense_folders_tenant ON expense_folders(tenant_id);
-
--- Flow Review Phase 4 column additions (migrations 054, 055):
--- supplier_documents.expense_folder_id UUID REFERENCES expense_folders(id)
--- goods_receipt_items.note TEXT
--- goods_receipts.document_numbers TEXT[] DEFAULT '{}'
-
--- ============================================================
--- 51. supplier_balance_adjustments — manual balance adjustments (AI OCR Fix phase, migration 062)
--- Owner: Module 1 (Debt)
--- ============================================================
-CREATE TABLE IF NOT EXISTS supplier_balance_adjustments (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id       UUID NOT NULL REFERENCES tenants(id),
-  supplier_id     UUID NOT NULL REFERENCES suppliers(id),
-  amount          DECIMAL(12,2) NOT NULL,
-  reason          TEXT NOT NULL,
-  adjusted_by     UUID REFERENCES employees(id),
-  adjusted_by_name TEXT,
-  created_at      TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE supplier_balance_adjustments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON supplier_balance_adjustments
-  USING (tenant_id = current_setting('app.tenant_id')::uuid);
-CREATE POLICY service_bypass ON supplier_balance_adjustments
-  FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE INDEX idx_sba_tenant_supplier ON supplier_balance_adjustments(tenant_id, supplier_id);
-
--- AI OCR Fix + QA column additions (migrations 060, 061, 062):
--- supplier_ocr_templates: learning_stage TEXT, fields_suggested INT, fields_accepted INT
--- ai_agent_config: suggest_after_invoices INT, auto_after_invoices INT, auto_min_accuracy DECIMAL
--- brands: UNIQUE(name, tenant_id) replaces UNIQUE(name)

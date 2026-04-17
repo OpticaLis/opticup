@@ -58,7 +58,7 @@ function _bgShowChoiceDialog(img, originalUrl, onConfirm) {
 
 // --- AI path: call remove.bg Edge Function ---
 function _bgRunAI(img, originalUrl, onConfirm) {
-  var sessionToken = sessionStorage.getItem('prizma_auth_token');
+  var sessionToken = sessionStorage.getItem('tenant_auth_token');
   if (!sessionToken) { Toast.error('\u05E0\u05D3\u05E8\u05E9\u05EA \u05D4\u05EA\u05D7\u05D1\u05E8\u05D5\u05EA \u05DE\u05D7\u05D3\u05E9'); return; }
   // Convert image to base64
   var canvas = document.createElement('canvas');

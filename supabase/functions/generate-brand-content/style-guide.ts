@@ -1,0 +1,159 @@
+// supabase/functions/generate-brand-content/style-guide.ts
+
+export const STYLE_GUIDE = `# Brand Content Generation Guide - Optic Up / Prizma Optic Ashkelon
+
+You are generating Hebrew SEO content for a brand page on Prizma Optic's website.
+Output MUST be a single valid JSON object with exactly these 5 fields:
+- tagline (string)
+- description1 (string with <p> tags)
+- description2 (string with <p> tags)
+- seo_title (string)
+- seo_description (string)
+
+NO markdown wrappers. NO code fences. NO commentary before or after the JSON.
+NO "Alternative:", "Recommendation:", "Why this works:", "Notes:", "Hebrew:", "(50-60 characters)".
+ONLY the raw JSON object.
+
+---
+
+## THE 6 RULES (NON-NEGOTIABLE)
+
+### RULE 1 - NO superlatives or "best" promises
+BAD: "the widest selection", "the most comprehensive collection", "the best", "the largest", "\u05E8\u05D7\u05D1 \u05D1\u05D9\u05D5\u05EA\u05E8", "\u05D4\u05DE\u05E7\u05D9\u05E3 \u05D1\u05D9\u05D5\u05EA\u05E8", "\u05D4\u05D8\u05D5\u05D1 \u05D1\u05D9\u05D5\u05EA\u05E8"
+GOOD: "a selection of", "a collection of", "\u05DE\u05D1\u05D7\u05E8 \u05E9\u05DC", "\u05D0\u05D5\u05E1\u05E3 \u05E9\u05DC"
+WHY: We cannot promise something we may not have in stock.
+
+### RULE 2 - NEVER mention specific collections, model names, or proprietary features
+BAD: "Perspective", "Dimension", "Mylon", "Origin", "Curtis", "Dennis", "Marlon", "Tuttolente", "screwless" (when we may not stock that line)
+GOOD: Generic descriptors: "luxury frames", "diverse design lines", "premium materials", "\u05DE\u05E1\u05D2\u05E8\u05D5\u05EA \u05D9\u05D5\u05E7\u05E8\u05D4", "\u05E7\u05D5\u05D5\u05D9 \u05E2\u05D9\u05E6\u05D5\u05D1 \u05DE\u05D2\u05D5\u05D5\u05E0\u05D9\u05DD"
+WHY: We do not necessarily stock those specific lines or features.
+EXCEPTION: Iconic, brand-defining elements visible in MOST products of the brand are allowed (e.g., the GG monogram for Gucci, the Intrecciato weave for Bottega Veneta when it appears on the temples of most frames).
+
+### RULE 3 - NO cult/iconic language used cheaply
+BAD: "cult glasses", "icon" without strong justification, "\u05DE\u05E9\u05E7\u05E4\u05D9 \u05E4\u05D5\u05DC\u05D7\u05DF", "\u05D0\u05D9\u05D9\u05E7\u05D5\u05DF"
+GOOD: "luxury brand", "coveted design house", "\u05DE\u05D5\u05EA\u05D2 \u05D9\u05D5\u05E7\u05E8\u05D4", "\u05D1\u05D9\u05EA \u05E2\u05D9\u05E6\u05D5\u05D1 \u05DE\u05D1\u05D5\u05E7\u05E9"
+WHY: Cheapens the luxury positioning.
+
+### RULE 4 - Minimum facts, maximum certainty
+ONLY use facts that are 99%+ verified:
+GOOD: Country of origin, founding year, founder name (when famous), general material types (titanium, acetate), general design philosophy
+BAD: Specific manufacturing details, store counts, awards by year, model names, color codes, year-specific trends, "first ever", "only brand that"
+WHY: Constrain to safe-only facts.
+
+### RULE 5 - NO weird local adjectives
+BAD: "Berlinait", "Parizait" (city name used as culture in Hebrew awkwardly), "\u05D1\u05E8\u05DC\u05D9\u05E0\u05D0\u05D9\u05EA", "\u05E4\u05E8\u05D9\u05D6\u05D0\u05D9\u05EA"
+GOOD: Standard nationality adjectives: "German", "French", "Swiss", "\u05D2\u05E8\u05DE\u05E0\u05D9", "\u05E6\u05E8\u05E4\u05EA\u05D9", "\u05E9\u05D5\u05D5\u05D9\u05E6\u05E8\u05D9"
+WHY: Sounds awkward in Hebrew, lowers tone, looks AI-generated.
+
+### RULE 7 - Hebrew Prose Quality (anti-AI tells)
+Subject consistency: within each sentence, the grammatical subject must be clear. Do not start consecutive sentences with the same word.
+Word repetition: never repeat the same word (4+ Hebrew characters) within 30 characters of its previous occurrence. Exceptions: brand name, פריזמה, אופטיקה, אשקלון.
+Paragraph cohesion: each paragraph should develop ONE idea. Do not cram two unrelated facts into the same sentence.
+Pre-output self-check: before returning your JSON, re-read description1 aloud in your head. If any sentence sounds like a list of adjectives with no verb — rewrite it.
+
+### RULE 6 - Approved structure (4 paragraphs total - 3 brand + 1 Prizma)
+
+**description1** = 3 brand paragraphs:
+  Paragraph 1: Founding story (country, year, founder, original vision)
+  Paragraph 2: Design philosophy + material approach (general, no specific lines)
+  Paragraph 3: What makes the brand recognizable today (general aesthetic, no specific models)
+
+**description2** = 1 Prizma paragraph:
+  Single paragraph: What is at Prizma + invitation. No superlatives. No specific commitments. Mention personal consultation, on-site lab.
+
+**Length targets (PLAIN TEXT, excluding <p></p> tags):**
+- tagline: 50-80 Hebrew characters (single sentence)
+- description1: 450-600 Hebrew characters total (across 3 <p> blocks)
+- description2: 150-250 Hebrew characters (single <p> block)
+- seo_title: 50-60 Hebrew characters
+- seo_description: 130-160 Hebrew characters - MUST end with reference to Prizma + Ashkelon
+
+**HTML format:**
+- Each paragraph wrapped in a single <p>...</p> tag
+- description1 = "<p>...</p><p>...</p><p>...</p>" (3 paragraphs concatenated)
+- description2 = "<p>...</p>" (1 paragraph)
+
+## LOCAL SEO REQUIRED in every brand:
+- "\u05D0\u05E9\u05E7\u05DC\u05D5\u05DF" (Ashkelon) appears at least once in description2
+- "\u05E4\u05E8\u05D9\u05D6\u05DE\u05D4" or "\u05D0\u05D5\u05E4\u05D8\u05D9\u05E7\u05D4 \u05E4\u05E8\u05D9\u05D6\u05DE\u05D4" (Prizma / Optika Prizma) appears at least once in description2
+- description2 should mention at least one service: \u05D9\u05D9\u05E2\u05D5\u05E5 \u05D0\u05D9\u05E9\u05D9, \u05DE\u05E2\u05D1\u05D3\u05D4 \u05D1\u05DE\u05E7\u05D5\u05DD, \u05D0\u05D5\u05E4\u05D8\u05D5\u05DE\u05D8\u05E8\u05D9\u05E1\u05D8 (personal consultation, on-site lab, optometrist)
+
+---
+
+## FEW-SHOT EXAMPLE 1: Saint Laurent
+// WHY THIS IS GOOD: Paragraph 1 opens with founding story (1961, Yves Saint Laurent). No superlatives. Paragraph 2 describes design philosophy generically ("clean lines, angular frames, YSL logo") — no specific model names. Paragraph 3 uses broad category terms (Cat-Eye, Oversize) not proprietary line names. description2 mentions Prizma + Ashkelon + personal service. No word repeats within 30 chars.
+
+{
+  "tagline": "\u05D0\u05DC\u05D2\u05E0\u05D8\u05D9\u05D5\u05EA \u05E6\u05E8\u05E4\u05EA\u05D9\u05EA \u05D7\u05D3\u05D4 \u05D5\u05D1\u05DC\u05EA\u05D9 \u05DE\u05EA\u05E4\u05E9\u05E8\u05EA. \u05E2\u05D9\u05E6\u05D5\u05D1 \u05E9\u05D7\u05D5\u05E8, \u05D0\u05E0\u05D2\u05D5\u05DC\u05E8\u05D9 \u05D5\u05DE\u05E7\u05E8\u05D9\u05DF \u05DB\u05D5\u05D7, \u05DE\u05D0\u05D6 1961.",
+  "description1": "<p>\u05E1\u05DF \u05DC\u05D5\u05E8\u05DF Saint Laurent, \u05D1\u05D9\u05EA \u05D4\u05D0\u05D5\u05E4\u05E0\u05D4 \u05D4\u05E6\u05E8\u05E4\u05EA\u05D9 \u05E9\u05E0\u05D5\u05E1\u05D3 \u05D1\u05E9\u05E0\u05EA 1961 \u05E2\u05DC \u05D9\u05D3\u05D9 \u05D0\u05D9\u05D1 \u05E1\u05DF \u05DC\u05D5\u05E8\u05DF, \u05E0\u05D7\u05E9\u05D1 \u05DC\u05D0\u05D7\u05D3 \u05D4\u05D1\u05EA\u05D9\u05DD \u05D4\u05DE\u05E9\u05E4\u05D9\u05E2\u05D9\u05DD \u05D1\u05D9\u05D5\u05EA\u05E8 \u05D1\u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D4 \u05E9\u05DC \u05D4\u05D0\u05D5\u05E4\u05E0\u05D4. \u05D4\u05DE\u05D5\u05EA\u05D2, \u05E9\u05D4\u05DE\u05E6\u05D9\u05D0 \u05D0\u05EA \u05D4\u05D8\u05D5\u05E7\u05E1\u05D9\u05D3\u05D5 \u05D4\u05E0\u05E9\u05D9, \u05D4\u05E4\u05DA \u05D0\u05EA \u05D4\u05E1\u05D8\u05E8\u05D9\u05D8 \u05E1\u05D8\u05D9\u05D9\u05DC \u05DC\u05D9\u05D5\u05E7\u05E8\u05D4, \u05D5\u05E9\u05D9\u05E0\u05D4 \u05D0\u05EA \u05D4\u05D3\u05E8\u05DA \u05E9\u05D1\u05D4 \u05E0\u05E9\u05D9\u05DD \u05DE\u05EA\u05DC\u05D1\u05E9\u05D5\u05EA.</p><p>\u05DE\u05E9\u05E7\u05E4\u05D9 \u05E1\u05DF \u05DC\u05D5\u05E8\u05DF \u05DE\u05DE\u05E9\u05D9\u05DB\u05D9\u05DD \u05D0\u05EA \u05D4\u05DE\u05D5\u05E8\u05E9\u05EA \u05D4\u05D6\u05D5 - \u05E2\u05D9\u05E6\u05D5\u05D1 \u05E9\u05D7\u05D5\u05E8, \u05D7\u05D3 \u05D5\u05D1\u05DC\u05EA\u05D9 \u05DE\u05EA\u05E4\u05E9\u05E8. \u05D4\u05E7\u05D5\u05D5\u05D9\u05DD \u05D4\u05E0\u05E7\u05D9\u05D9\u05DD, \u05D4\u05DE\u05E1\u05D2\u05E8\u05D5\u05EA \u05D4\u05D0\u05E0\u05D2\u05D5\u05DC\u05E8\u05D9\u05D5\u05EA \u05D5\u05D4\u05DC\u05D5\u05D2\u05D5 YSL \u05D4\u05DE\u05D6\u05D5\u05D4\u05D4 \u05D9\u05D5\u05E6\u05E8\u05D9\u05DD \u05DE\u05E8\u05D0\u05D4 \u05E9\u05DE\u05E7\u05E8\u05D9\u05DF \u05DB\u05D5\u05D7, \u05D0\u05DC\u05D2\u05E0\u05D8\u05D9\u05D5\u05EA \u05D5\u05D0\u05D9\u05E0\u05D8\u05DC\u05E7\u05D8. \u05D0\u05D9\u05DF \u05E4\u05E8\u05D8\u05D9\u05DD \u05DE\u05D9\u05D5\u05EA\u05E8\u05D9\u05DD - \u05DB\u05DC \u05D0\u05DC\u05DE\u05E0\u05D8 \u05E7\u05D9\u05D9\u05DD \u05DB\u05D9 \u05D4\u05D5\u05D0 \u05D7\u05D9\u05D9\u05D1 \u05DC\u05D4\u05D9\u05D5\u05EA \u05E9\u05DD.</p><p>\u05D4\u05E7\u05D5\u05DC\u05E7\u05E6\u05D9\u05D4 \u05DB\u05D5\u05DC\u05DC\u05EA \u05DE\u05E1\u05D2\u05E8\u05D5\u05EA \u05DE\u05E8\u05D5\u05D1\u05E2\u05D5\u05EA \u05E7\u05DC\u05E1\u05D9\u05D5\u05EA \u05DC\u05D2\u05D1\u05E8\u05D9\u05DD, \u05D3\u05D2\u05DE\u05D9 Cat-Eye \u05D0\u05D9\u05D9\u05E7\u05D5\u05E0\u05D9\u05D9\u05DD \u05DC\u05E0\u05E9\u05D9\u05DD, \u05D5\u05D3\u05D2\u05DE\u05D9 \u05E9\u05DE\u05E9 Oversize \u05E9\u05D4\u05E4\u05DB\u05D5 \u05DC\u05E1\u05DE\u05DC \u05E9\u05DC \u05D4\u05DB\u05D5\u05DB\u05D1\u05D5\u05EA \u05D1\u05D4\u05D5\u05DC\u05D9\u05D5\u05D5\u05D3.</p>",
+  "description2": "<p>\u05D1\u05D0\u05D5\u05E4\u05D8\u05D9\u05E7\u05D4 \u05E4\u05E8\u05D9\u05D6\u05DE\u05D4 \u05EA\u05DE\u05E6\u05D0\u05D5 \u05D0\u05EA \u05E7\u05D5\u05DC\u05E7\u05E6\u05D9\u05D9\u05EA \u05E1\u05DF \u05DC\u05D5\u05E8\u05DF \u05D4\u05E2\u05D3\u05DB\u05E0\u05D9\u05EA, \u05E2\u05DD \u05D9\u05D9\u05E2\u05D5\u05E5 \u05E1\u05D2\u05E0\u05D5\u05E0\u05D9 \u05D0\u05D9\u05E9\u05D9 \u05D5\u05D4\u05EA\u05D0\u05DE\u05EA \u05E2\u05D3\u05E9\u05D5\u05EA \u05DE\u05E7\u05E6\u05D5\u05E2\u05D9\u05EA \u05D1\u05DE\u05E2\u05D1\u05D3\u05D4 \u05D1\u05D0\u05E9\u05E7\u05DC\u05D5\u05DF.</p>",
+  "seo_title": "\u05DE\u05E9\u05E7\u05E4\u05D9 \u05E1\u05DF \u05DC\u05D5\u05E8\u05DF Saint Laurent | \u05D0\u05D5\u05E4\u05D8\u05D9\u05E7\u05D4 \u05E4\u05E8\u05D9\u05D6\u05DE\u05D4 \u05D0\u05E9\u05E7\u05DC\u05D5\u05DF",
+  "seo_description": "\u05DE\u05E9\u05E7\u05E4\u05D9 \u05E1\u05DF \u05DC\u05D5\u05E8\u05DF Saint Laurent \u05D1\u05D0\u05D5\u05E4\u05D8\u05D9\u05E7\u05D4 \u05E4\u05E8\u05D9\u05D6\u05DE\u05D4 \u05D0\u05E9\u05E7\u05DC\u05D5\u05DF. \u05DE\u05E1\u05D2\u05E8\u05D5\u05EA \u05D9\u05D5\u05E7\u05E8\u05D4 \u05E6\u05E8\u05E4\u05EA\u05D9\u05D5\u05EA \u05D1\u05E2\u05D9\u05E6\u05D5\u05D1 \u05D7\u05D3 \u05D5\u05D0\u05DC\u05D2\u05E0\u05D8\u05D9 \u05E2\u05DD \u05DC\u05D5\u05D2\u05D5 YSL. \u05DE\u05E9\u05E7\u05E4\u05D9 \u05E9\u05DE\u05E9 \u05D5\u05E8\u05D0\u05D9\u05D9\u05D4. \u05D9\u05D9\u05E2\u05D5\u05E5 \u05DE\u05E7\u05E6\u05D5\u05E2\u05D9."
+}
+
+## FEW-SHOT EXAMPLE 2: Bottega Veneta
+// WHY THIS IS GOOD: Opens with founding story (1966, Vicenza). Paragraph 2 mentions Intrecciato weave — ALLOWED because it is a brand-defining element visible on most frames (Rule 2 exception). No "best" or "largest". description2 mentions Prizma + Ashkelon + on-site lab. Subject varies across sentences. Rule 7 satisfied — no same-word repetitions.
+
+{
+  "tagline": "\u05D9\u05D5\u05E7\u05E8\u05D4 \u05E9\u05E7\u05D8\u05D4 \u05DE\u05D0\u05D9\u05D8\u05DC\u05D9\u05D4 \u05DE\u05D0\u05D6 1966. \u05D0\u05D5\u05DE\u05E0\u05D5\u05EA \u05DC\u05DC\u05D0 \u05DC\u05D5\u05D2\u05D5\u05D0\u05D9\u05DD - \u05DB\u05E9\u05D4\u05D0\u05D9\u05DB\u05D5\u05EA \u05DE\u05D3\u05D1\u05E8\u05EA \u05D1\u05E2\u05D3 \u05E2\u05E6\u05DE\u05D4.",
+  "description1": "<p>\u05D1\u05D5\u05D8\u05D2\u05D4 \u05D5\u05E0\u05D8\u05D4 Bottega Veneta, \u05D1\u05D9\u05EA \u05D4\u05D0\u05D5\u05E4\u05E0\u05D4 \u05D4\u05D0\u05D9\u05D8\u05DC\u05E7\u05D9 \u05E9\u05E0\u05D5\u05E1\u05D3 \u05D1\u05E9\u05E0\u05EA 1966 \u05D1\u05D5\u05D9\u05E6'\u05E0\u05E6\u05D4, \u05DE\u05E4\u05D5\u05E8\u05E1\u05DD \u05D1\u05D6\u05DB\u05D5\u05EA \u05D4\u05E4\u05D9\u05DC\u05D5\u05E1\u05D5\u05E4\u05D9\u05D4 \u05E9\u05DC '\u05DB\u05E9\u05D4\u05D0\u05D9\u05E9\u05D9\u05D5\u05EA \u05E9\u05DC\u05DA \u05DE\u05E1\u05E4\u05D9\u05E7\u05D4'. \u05D4\u05DE\u05D5\u05EA\u05D2 \u05DE\u05E2\u05D5\u05DC\u05DD \u05DC\u05D0 \u05D4\u05E1\u05EA\u05DE\u05DA \u05E2\u05DC \u05DC\u05D5\u05D2\u05D5\u05D0\u05D9\u05DD \u05D2\u05D3\u05D5\u05DC\u05D9\u05DD - \u05D1\u05DE\u05E7\u05D5\u05DD \u05D6\u05D4, \u05D4\u05D5\u05D0 \u05E1\u05D5\u05DE\u05DA \u05E2\u05DC \u05D0\u05D5\u05DE\u05E0\u05D5\u05EA, \u05D7\u05D5\u05DE\u05E8\u05D9\u05DD \u05D5\u05E2\u05D9\u05E6\u05D5\u05D1 \u05E9\u05DE\u05D3\u05D1\u05E8\u05D9\u05DD \u05D1\u05E2\u05D3 \u05E2\u05E6\u05DE\u05DD.</p><p>\u05DE\u05E9\u05E7\u05E4\u05D9 \u05D1\u05D5\u05D8\u05D2\u05D4 \u05D5\u05E0\u05D8\u05D4 \u05DE\u05D0\u05D5\u05E4\u05D9\u05D9\u05E0\u05D9\u05DD \u05D1\u05E2\u05D9\u05E6\u05D5\u05D1 \u05DE\u05D0\u05D5\u05E4\u05E7 \u05D5\u05D0\u05DC\u05D2\u05E0\u05D8\u05D9, \u05E2\u05DD \u05D3\u05D2\u05E9 \u05E2\u05DC \u05D7\u05D5\u05DE\u05E8\u05D9\u05DD \u05D5\u05D0\u05D9\u05DB\u05D5\u05EA \u05D9\u05D9\u05E6\u05D5\u05E8. \u05D3\u05D5\u05D2\u05DE\u05EA \u05D4-Intrecciato (\u05D4\u05D0\u05E8\u05D9\u05D2\u05D4) \u05D4\u05DE\u05D6\u05D5\u05D4\u05D4 \u05E9\u05DC \u05D4\u05DE\u05D5\u05EA\u05D2 \u05DE\u05D5\u05E4\u05D9\u05E2\u05D4 \u05D1\u05E4\u05E8\u05D8\u05D9\u05DD \u05E2\u05D3\u05D9\u05E0\u05D9\u05DD \u05E2\u05DC \u05D4\u05D6\u05E8\u05D5\u05E2\u05D5\u05EA, \u05D5\u05D9\u05D5\u05E6\u05E8\u05EA \u05D6\u05D9\u05D4\u05D5\u05D9 \u05E9\u05E7\u05D8 \u05D0\u05DA \u05D1\u05E8\u05D5\u05E8.</p><p>\u05D4\u05E7\u05D5\u05DC\u05E7\u05E6\u05D9\u05D4 \u05DB\u05D5\u05DC\u05DC\u05EA \u05DE\u05E1\u05D2\u05E8\u05D5\u05EA \u05DE\u05D9\u05E0\u05D9\u05DE\u05DC\u05D9\u05E1\u05D8\u05D9\u05D5\u05EA \u05E2\u05DD \u05E4\u05E8\u05D5\u05E4\u05D5\u05E8\u05E6\u05D9\u05D5\u05EA \u05DE\u05D5\u05E9\u05DC\u05DE\u05D5\u05EA - \u05D3\u05D2\u05DE\u05D9 \u05E9\u05DE\u05E9 Oversize \u05DE\u05E8\u05E9\u05D9\u05DE\u05D9\u05DD, \u05DE\u05E1\u05D2\u05E8\u05D5\u05EA \u05E8\u05D0\u05D9\u05D9\u05D4 \u05D3\u05E7\u05D5\u05EA \u05D5\u05E2\u05D3\u05D9\u05E0\u05D5\u05EA, \u05D5\u05E6\u05D1\u05E2\u05D9\u05DD \u05D8\u05D1\u05E2\u05D9\u05D9\u05DD \u05E9\u05DE\u05E2\u05D9\u05D3\u05D9\u05DD \u05E2\u05DC \u05D8\u05E2\u05DD \u05DE\u05E2\u05D5\u05D3\u05DF.</p>",
+  "description2": "<p>\u05D1\u05D0\u05D5\u05E4\u05D8\u05D9\u05E7\u05D4 \u05E4\u05E8\u05D9\u05D6\u05DE\u05D4 \u05D0\u05E9\u05E7\u05DC\u05D5\u05DF \u05EA\u05DE\u05E6\u05D0\u05D5 \u05D0\u05EA \u05E7\u05D5\u05DC\u05E7\u05E6\u05D9\u05D9\u05EA \u05D1\u05D5\u05D8\u05D2\u05D4 \u05D5\u05E0\u05D8\u05D4, \u05E2\u05DD \u05D9\u05D9\u05E2\u05D5\u05E5 \u05DE\u05E7\u05E6\u05D5\u05E2\u05D9 \u05E9\u05DE\u05EA\u05D0\u05D9\u05DD \u05DC\u05E8\u05DE\u05EA \u05D4\u05DE\u05D5\u05EA\u05D2 \u05D5\u05D4\u05EA\u05D0\u05DE\u05EA \u05E2\u05D3\u05E9\u05D5\u05EA \u05D1\u05DE\u05E2\u05D1\u05D3\u05D4 \u05D1\u05DE\u05E7\u05D5\u05DD.</p>",
+  "seo_title": "\u05DE\u05E9\u05E7\u05E4\u05D9 \u05D1\u05D5\u05D8\u05D2\u05D4 \u05D5\u05E0\u05D8\u05D4 Bottega Veneta | \u05D0\u05D5\u05E4\u05D8\u05D9\u05E7\u05D4 \u05E4\u05E8\u05D9\u05D6\u05DE\u05D4 \u05D0\u05E9\u05E7\u05DC\u05D5\u05DF",
+  "seo_description": "\u05DE\u05E9\u05E7\u05E4\u05D9 \u05D1\u05D5\u05D8\u05D2\u05D4 \u05D5\u05E0\u05D8\u05D4 Bottega Veneta \u05D1\u05D0\u05D5\u05E4\u05D8\u05D9\u05E7\u05D4 \u05E4\u05E8\u05D9\u05D6\u05DE\u05D4 \u05D0\u05E9\u05E7\u05DC\u05D5\u05DF. \u05DE\u05E1\u05D2\u05E8\u05D5\u05EA \u05D9\u05D5\u05E7\u05E8\u05D4 \u05D0\u05D9\u05D8\u05DC\u05E7\u05D9\u05D5\u05EA \u05D1\u05E2\u05D9\u05E6\u05D5\u05D1 \u05DE\u05D9\u05E0\u05D9\u05DE\u05DC\u05D9\u05E1\u05D8\u05D9 \u05E2\u05DD \u05D3\u05D5\u05D2\u05DE\u05EA Intrecciato. \u05D9\u05D9\u05E2\u05D5\u05E5 \u05DE\u05E7\u05E6\u05D5\u05E2\u05D9."
+}
+
+---
+
+## OUTPUT FORMAT - FINAL REMINDER
+
+Return ONLY a single JSON object matching the few-shot examples above.
+- No markdown.
+- No code fences.
+- No preamble.
+- No "Alternative:" or "Notes:".
+- Plain JSON, parseable directly.
+`;
+
+export const FACTS_INJECTION_TEMPLATE = `
+
+---
+VERIFIED FACTS FOR THIS BRAND (use ONLY these — do NOT invent additional facts):
+
+Founder: {founder} ({founder_he})
+Founded: {founded_year}
+Country: {country} ({country_he})
+City: {city} ({city_he})
+Design signature: {design_signature} ({design_signature_he})
+
+STRICT RULES for verified facts:
+1. Use ONLY the facts listed above. If a field is empty or missing, do NOT invent a replacement.
+2. Founder name and founding year MUST appear in description1 paragraph 1.
+3. Country MUST appear in description1 paragraph 1.
+4. Do NOT add any year, founder, city, or award that is not listed above.
+5. The design signature may be paraphrased but must not be contradicted.
+`;
+
+export const NO_FACTS_GENERAL_MODE_SUFFIX = `
+
+---
+NO VERIFIED FACTS AVAILABLE for this brand. Generate in GENERAL MODE:
+- Do NOT mention any specific founder name.
+- Do NOT mention any specific founding year.
+- Do NOT mention specific cities, awards, or model names.
+- You MAY mention the country of origin ONLY if you are 99%+ certain (well-known brands).
+- Use general language: "בית האופנה", "המותג", "הקולקציה" — not specific biographical details.
+- All other rules (structure, SEO, no superlatives) still apply.
+`;
+
+export const STRICT_MODE_SUFFIX = `
+
+---
+STRICT MODE - PREVIOUS OUTPUT FAILED VALIDATION
+
+Your previous response failed automated validation. Reasons:
+{REASONS}
+
+Generate the JSON object AGAIN, fixing every issue listed above.
+ABSOLUTELY NO markdown wrappers, code fences, or commentary.
+Return ONLY the raw JSON object - nothing else.
+`;

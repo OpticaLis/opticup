@@ -1,0 +1,3251 @@
+{
+  "generated_at": "2026-04-11T06:49:00.018Z",
+  "spec": "MODULE_3_A_SPEC_docs_reconciliation_2026-04-11.md A0",
+  "strategy": "PostgREST OpenAPI spec with service_role key for column metadata; anon probes for GRANT inference",
+  "source_views": [
+    "v_storefront_products",
+    "v_storefront_brands",
+    "v_storefront_brand_page",
+    "v_storefront_categories",
+    "v_storefront_blog_posts",
+    "v_storefront_config",
+    "v_storefront_pages",
+    "v_storefront_reviews",
+    "v_storefront_components",
+    "v_public_tenant",
+    "v_content_translations",
+    "v_ai_content",
+    "v_tenant_i18n_overrides",
+    "v_translation_dashboard",
+    "v_admin_pages",
+    "v_admin_components",
+    "v_admin_leads",
+    "v_admin_campaigns",
+    "v_admin_campaign_templates",
+    "v_admin_component_presets",
+    "v_admin_product_picker",
+    "v_cms_blocks"
+  ],
+  "source_tables": [
+    "storefront_pages",
+    "storefront_config",
+    "storefront_components",
+    "storefront_templates",
+    "storefront_reviews",
+    "storefront_media",
+    "storefront_page_tags",
+    "storefront_component_presets",
+    "storefront_block_templates",
+    "brands",
+    "campaigns",
+    "blog_posts",
+    "ai_content",
+    "ai_content_corrections",
+    "content_translations",
+    "translation_corrections",
+    "translation_memory",
+    "translation_glossary",
+    "tenant_i18n_overrides",
+    "cms_leads"
+  ],
+  "openapi_fetch": {
+    "ok": true,
+    "status": 200,
+    "definition_count": 108
+  },
+  "Q1a_view_columns": {
+    "v_storefront_products": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "barcode",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "brand_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "model",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "color",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "size",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "quantity",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "product_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "sell_price",
+          "data_type": "numeric",
+          "description": null
+        },
+        {
+          "column_name": "sell_discount",
+          "data_type": "numeric",
+          "description": null
+        },
+        {
+          "column_name": "website_sync",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "display_mode",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "display_mode_override",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "images",
+          "data_type": "json",
+          "description": null
+        },
+        {
+          "column_name": "search_text",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "resolved_mode",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "ai_description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "ai_seo_title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "ai_seo_description",
+          "data_type": "text",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_storefront_brands": {
+      "columns": [
+        {
+          "column_name": "brand_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "brand_name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "slug",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "hero_image",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "video_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "logo_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_description_short",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_gallery",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "seo_title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "seo_description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_page_enabled",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "display_mode",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_page_visibility",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "show_brand_products",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "product_count",
+          "data_type": "bigint",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_storefront_brand_page": {
+      "columns": [
+        {
+          "column_name": "brand_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "brand_name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "slug",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "hero_image",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "video_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "logo_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_description_short",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_gallery",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "seo_title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "seo_description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_page_enabled",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "brand_page_visibility",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "show_brand_products",
+          "data_type": "boolean",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_storefront_categories": {
+      "columns": [
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "count",
+          "data_type": "bigint",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_storefront_blog_posts": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "slug",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "lang",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "content",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "excerpt",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "featured_image",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "categories",
+          "data_type": "text[]",
+          "description": null
+        },
+        {
+          "column_name": "tags",
+          "data_type": "text[]",
+          "description": null
+        },
+        {
+          "column_name": "seo_title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "seo_description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "og_image",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "source",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "translation_of",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `blog_posts.id`.<fk table='blog_posts' column='id'/>"
+        },
+        {
+          "column_name": "published_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_storefront_config": {
+      "columns": [
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "whatsapp_number",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "booking_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "notification_method",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "analytics",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "custom_domain",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "hero_title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "hero_subtitle",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "hero_image_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "favicon_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "og_image_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "google_place_id",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "google_rating",
+          "data_type": "numeric",
+          "description": null
+        },
+        {
+          "column_name": "google_review_count",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "footer_config",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "site_logo_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "supported_languages",
+          "data_type": "text[]",
+          "description": null
+        },
+        {
+          "column_name": "default_language",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "auto_translate_languages",
+          "data_type": "text[]",
+          "description": null
+        },
+        {
+          "column_name": "auto_publish_threshold",
+          "data_type": "real",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_storefront_pages": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "slug",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "blocks",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "page_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "lang",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "meta_title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "meta_description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "sort_order",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "tags",
+          "data_type": "text[]",
+          "description": null
+        },
+        {
+          "column_name": "translation_group_id",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_storefront_reviews": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "source",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "author_name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "rating",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "text",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "review_date",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "sort_order",
+          "data_type": "integer",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_storefront_components": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "config",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "placements",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "is_active",
+          "data_type": "boolean",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_public_tenant": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "slug",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "enabled",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "theme",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "logo_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "categories",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "seo",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "phone",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "email",
+          "data_type": "text",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_content_translations": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "entity_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "entity_id",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "field_name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "lang",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "value",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "translated_by",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "confidence",
+          "data_type": "real",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_ai_content": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "entity_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "entity_id",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "content_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "language",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "content",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "version",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "is_deleted",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_tenant_i18n_overrides": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "lang",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "key_path",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "value",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_translation_dashboard": {
+      "columns": [
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "translation_group_id",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "slug",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "page_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "he_page_id",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "he_status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "he_seo_score",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "he_noindex",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "en_page_id",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "en_status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "en_publish_status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "en_seo_score",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "en_noindex",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "en_stale_since",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "ru_page_id",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "ru_status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "ru_publish_status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "ru_seo_score",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "ru_noindex",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "ru_stale_since",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_admin_pages": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "slug",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "blocks",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "previous_blocks",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "meta_title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "meta_description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "page_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "is_system",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "lang",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "updated_by",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "updated_via",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "sort_order",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "tags",
+          "data_type": "text[]",
+          "description": null
+        },
+        {
+          "column_name": "campaign_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `campaigns.id`.<fk table='campaigns' column='id'/>"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_admin_components": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "config",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "placements",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "is_active",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_admin_leads": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "phone",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "email",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "message",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "source",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "page_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "product_id",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "component_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `storefront_components.id`.<fk table='storefront_components' column='id'/>"
+        },
+        {
+          "column_name": "utm_source",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "utm_medium",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "utm_campaign",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "utm_content",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "utm_term",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "webhook_status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_admin_campaigns": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "slug",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "start_date",
+          "data_type": "date",
+          "description": null
+        },
+        {
+          "column_name": "end_date",
+          "data_type": "date",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "is_deleted",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "page_count",
+          "data_type": "bigint",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_admin_campaign_templates": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "slug",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "preview_image",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "category",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "blocks",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "meta_template",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "variables",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "is_global",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "is_deleted",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_admin_component_presets": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "category",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "shortcode",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "config",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "sort_order",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "is_deleted",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_admin_product_picker": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "barcode",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "model",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "color",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "quantity",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "product_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "sell_price",
+          "data_type": "numeric",
+          "description": null
+        },
+        {
+          "column_name": "sell_discount",
+          "data_type": "numeric",
+          "description": null
+        },
+        {
+          "column_name": "original_price",
+          "data_type": "numeric",
+          "description": null
+        },
+        {
+          "column_name": "sale_label",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "website_sync",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "images",
+          "data_type": "json",
+          "description": null
+        }
+      ],
+      "required": []
+    },
+    "v_cms_blocks": {
+      "error": "not in OpenAPI definitions"
+    }
+  },
+  "Q1a_anon_grants": {
+    "v_storefront_products": {
+      "granted": true
+    },
+    "v_storefront_brands": {
+      "granted": true
+    },
+    "v_storefront_brand_page": {
+      "granted": true
+    },
+    "v_storefront_categories": {
+      "granted": true
+    },
+    "v_storefront_blog_posts": {
+      "granted": true
+    },
+    "v_storefront_config": {
+      "granted": true
+    },
+    "v_storefront_pages": {
+      "granted": true
+    },
+    "v_storefront_reviews": {
+      "granted": true
+    },
+    "v_storefront_components": {
+      "granted": true
+    },
+    "v_public_tenant": {
+      "granted": true
+    },
+    "v_content_translations": {
+      "granted": true
+    },
+    "v_ai_content": {
+      "granted": true
+    },
+    "v_tenant_i18n_overrides": {
+      "granted": true
+    },
+    "v_translation_dashboard": {
+      "granted": true
+    },
+    "v_admin_pages": {
+      "granted": true
+    },
+    "v_admin_components": {
+      "granted": true
+    },
+    "v_admin_leads": {
+      "granted": true
+    },
+    "v_admin_campaigns": {
+      "granted": true
+    },
+    "v_admin_campaign_templates": {
+      "granted": true
+    },
+    "v_admin_component_presets": {
+      "granted": true
+    },
+    "v_admin_product_picker": {
+      "granted": true
+    },
+    "v_cms_blocks": {
+      "granted": true
+    }
+  },
+  "Q2_table_columns": {
+    "storefront_pages": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "slug",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "blocks",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "previous_blocks",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "meta_title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "meta_description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "page_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "is_system",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "lang",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "updated_by",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "updated_via",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "sort_order",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "tags",
+          "data_type": "text[]",
+          "description": null
+        },
+        {
+          "column_name": "campaign_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `campaigns.id`.<fk table='campaigns' column='id'/>"
+        },
+        {
+          "column_name": "translation_group_id",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "translation_status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "translated_from_page_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `storefront_pages.id`.<fk table='storefront_pages' column='id'/>"
+        },
+        {
+          "column_name": "stale_since",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "stale_blocks",
+          "data_type": "text[]",
+          "description": null
+        },
+        {
+          "column_name": "noindex",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "seo_score",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "is_deleted",
+          "data_type": "boolean",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id",
+        "slug",
+        "title",
+        "blocks",
+        "status",
+        "page_type",
+        "is_system",
+        "lang",
+        "is_deleted"
+      ]
+    },
+    "storefront_config": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "enabled",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "domain",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "subdomain",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "theme",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "logo_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "categories",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "seo",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "pages",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "whatsapp_number",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "booking_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "notification_method",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "analytics",
+          "data_type": "jsonb",
+          "description": "Per-tenant analytics config. Keys: gtm_id, ga_id, facebook_pixel_id, tiktok_pixel_id, hotjar_id, fb_capi_token, google_mp_secret, custom_scripts[]"
+        },
+        {
+          "column_name": "custom_domain",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "hero_title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "hero_subtitle",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "hero_image_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "favicon_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "og_image_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "google_place_id",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "google_rating",
+          "data_type": "numeric",
+          "description": null
+        },
+        {
+          "column_name": "google_review_count",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "google_api_key",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "footer_config",
+          "data_type": "jsonb",
+          "description": "Footer content: columns, links, contact, social — editable from Studio"
+        },
+        {
+          "column_name": "site_logo_url",
+          "data_type": "text",
+          "description": "Tenant site logo URL — used in Header, Footer, Marquee"
+        },
+        {
+          "column_name": "site_logo_white_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "supported_languages",
+          "data_type": "text[]",
+          "description": null
+        },
+        {
+          "column_name": "default_language",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "auto_translate_languages",
+          "data_type": "text[]",
+          "description": null
+        },
+        {
+          "column_name": "auto_publish_threshold",
+          "data_type": "real",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id"
+      ]
+    },
+    "storefront_components": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "config",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "placements",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "is_active",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id",
+        "type",
+        "name",
+        "config",
+        "is_active"
+      ]
+    },
+    "storefront_templates": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "page_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "blocks",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "thumbnail",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "is_active",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "name",
+        "page_type",
+        "blocks",
+        "is_active"
+      ]
+    },
+    "storefront_reviews": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "source",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "author_name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "rating",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "text",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "review_date",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "google_review_id",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "is_visible",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "sort_order",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id",
+        "source",
+        "author_name",
+        "rating",
+        "is_visible"
+      ]
+    },
+    "storefront_media": {
+      "error": "not in OpenAPI definitions (table missing or not exposed)"
+    },
+    "storefront_page_tags": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "color",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "sort_order",
+          "data_type": "integer",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "storefront_component_presets": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "category",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "shortcode",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "config",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "sort_order",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "is_deleted",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "category",
+        "name",
+        "shortcode"
+      ]
+    },
+    "storefront_block_templates": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "category",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "block_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "block_data",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "block_settings",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "icon",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "sort_order",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "is_active",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "name",
+        "category",
+        "block_type",
+        "block_data",
+        "is_active"
+      ]
+    },
+    "brands": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "default_sync",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "active",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "branch_id",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "created_by",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "exclude_website",
+          "data_type": "boolean",
+          "description": "excluded from WooCommerce sync"
+        },
+        {
+          "column_name": "min_stock_qty",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "storefront_mode",
+          "data_type": "text",
+          "description": "Storefront display mode. NULL = catalog (default). Per-brand setting managed by tenant in ERP."
+        },
+        {
+          "column_name": "slug",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "is_deleted",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "hero_image",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "video_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "logo_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_description_short",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_gallery",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "seo_title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "seo_description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_page_enabled",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "tags",
+          "data_type": "text[]",
+          "description": null
+        },
+        {
+          "column_name": "display_mode",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_page_visibility",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "show_brand_products",
+          "data_type": "boolean",
+          "description": null
+        },
+        {
+          "column_name": "verified_facts",
+          "data_type": "jsonb",
+          "description": null
+        },
+        {
+          "column_name": "facts_status",
+          "data_type": "text",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "name",
+        "active",
+        "created_at",
+        "updated_at",
+        "exclude_website",
+        "tenant_id",
+        "display_mode",
+        "brand_page_visibility",
+        "show_brand_products",
+        "facts_status"
+      ]
+    },
+    "campaigns": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "slug",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "start_date",
+          "data_type": "date",
+          "description": null
+        },
+        {
+          "column_name": "end_date",
+          "data_type": "date",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "is_deleted",
+          "data_type": "boolean",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id",
+        "name",
+        "slug",
+        "status"
+      ]
+    },
+    "blog_posts": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "slug",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "lang",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "content",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "excerpt",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "featured_image",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "categories",
+          "data_type": "text[]",
+          "description": null
+        },
+        {
+          "column_name": "tags",
+          "data_type": "text[]",
+          "description": null
+        },
+        {
+          "column_name": "seo_title",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "seo_description",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "og_image",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "source",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "translation_of",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `blog_posts.id`.<fk table='blog_posts' column='id'/>"
+        },
+        {
+          "column_name": "published_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "is_deleted",
+          "data_type": "boolean",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id",
+        "slug",
+        "lang",
+        "title",
+        "content",
+        "status",
+        "source",
+        "created_at",
+        "updated_at",
+        "is_deleted"
+      ]
+    },
+    "ai_content": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "entity_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "entity_id",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "content_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "content",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "language",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "version",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "is_deleted",
+          "data_type": "boolean",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id",
+        "entity_type",
+        "entity_id",
+        "content_type",
+        "content",
+        "language",
+        "status",
+        "version",
+        "created_at",
+        "updated_at",
+        "is_deleted"
+      ]
+    },
+    "ai_content_corrections": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "ai_content_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `ai_content.id`.<fk table='ai_content' column='id'/>"
+        },
+        {
+          "column_name": "original_content",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "corrected_content",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `brands.id`.<fk table='brands' column='id'/>"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "is_deleted",
+          "data_type": "boolean",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id",
+        "ai_content_id",
+        "original_content",
+        "corrected_content",
+        "created_at",
+        "is_deleted"
+      ]
+    },
+    "content_translations": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "entity_type",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "entity_id",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "field_name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "lang",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "value",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "translated_by",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "confidence",
+          "data_type": "real",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id",
+        "entity_type",
+        "entity_id",
+        "field_name",
+        "lang",
+        "value",
+        "status"
+      ]
+    },
+    "translation_corrections": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "ai_content_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `ai_content.id`.<fk table='ai_content' column='id'/>"
+        },
+        {
+          "column_name": "lang",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "original_translation",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "corrected_translation",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "brand_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `brands.id`.<fk table='brands' column='id'/>"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "is_deleted",
+          "data_type": "boolean",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id",
+        "lang",
+        "original_translation",
+        "corrected_translation",
+        "created_at",
+        "is_deleted"
+      ]
+    },
+    "translation_memory": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "source_lang",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "target_lang",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "source_text",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "translated_text",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "context",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "scope",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "confidence",
+          "data_type": "real",
+          "description": null
+        },
+        {
+          "column_name": "approved_by",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "times_used",
+          "data_type": "integer",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "source_hash",
+          "data_type": "text",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id",
+        "source_lang",
+        "target_lang",
+        "source_text",
+        "translated_text",
+        "scope"
+      ]
+    },
+    "translation_glossary": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "lang",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "term_he",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "term_translated",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "context",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "source",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "is_deleted",
+          "data_type": "boolean",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id",
+        "lang",
+        "term_he",
+        "term_translated",
+        "created_at",
+        "is_deleted"
+      ]
+    },
+    "tenant_i18n_overrides": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "lang",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "key_path",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "value",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id",
+        "lang",
+        "key_path",
+        "value"
+      ]
+    },
+    "cms_leads": {
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Primary Key.<pk/>"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `tenants.id`.<fk table='tenants' column='id'/>"
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "phone",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "email",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "message",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "source",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "page_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "product_id",
+          "data_type": "uuid",
+          "description": null
+        },
+        {
+          "column_name": "component_id",
+          "data_type": "uuid",
+          "description": "Note:\nThis is a Foreign Key to `storefront_components.id`.<fk table='storefront_components' column='id'/>"
+        },
+        {
+          "column_name": "utm_source",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "utm_medium",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "utm_campaign",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "utm_content",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "utm_term",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "webhook_url",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "webhook_status",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "webhook_response",
+          "data_type": "text",
+          "description": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "description": null
+        }
+      ],
+      "required": [
+        "id",
+        "tenant_id"
+      ]
+    }
+  },
+  "Q6_unique_constraints": {
+    "status": "deferred_to_manual",
+    "reason": "information_schema.table_constraints + key_column_usage not reliably exposed via PostgREST; safer to run in Dashboard",
+    "manual_query_ref": "tier_c_manual_queries.sql Q6_unique_constraints section"
+  },
+  "Q8_storefront_media_exists": {
+    "in_openapi_definitions": false,
+    "anon_probe": {
+      "ok": true
+    },
+    "conclusion": "not exposed / likely does not exist as a public-schema table",
+    "hf3_reuse_note": "HF3 step 2 verified same via information_schema.tables probe — see hotfix_execution_log_2026-04-10.md HF3 entry"
+  },
+  "summary": {
+    "views_with_columns": 21,
+    "views_anon_granted": 22,
+    "tables_with_columns": 19,
+    "total_views_probed": 22,
+    "total_tables_probed": 20
+  }
+}

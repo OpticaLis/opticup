@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Login submit
 // =========================================================
 async function handlePinSubmit() {
-  if (sessionStorage.getItem('prizma_login_locked') === 'true') return;
+  if (sessionStorage.getItem('tenant_login_locked') === 'true') return;
   const pin = getPin();
   if (pin.length < 5) return;
 
@@ -281,7 +281,7 @@ async function handlePinSubmit() {
     failCount++;
     document.getElementById('pm-error').style.display = 'block';
     if (failCount >= 5) {
-      sessionStorage.setItem('prizma_login_locked', 'true');
+      sessionStorage.setItem('tenant_login_locked', 'true');
       document.getElementById('pm-error').textContent = '\u05D4\u05D7\u05E9\u05D1\u05D5\u05DF \u05E0\u05E2\u05D5\u05DC. \u05E4\u05E0\u05D4 \u05DC\u05DE\u05E0\u05D4\u05DC.';
       for (let i = 0; i < 5; i++) document.getElementById('hpin-' + i).disabled = true;
       document.getElementById('pm-attempts').style.display = 'none';

@@ -61,7 +61,7 @@ async function confirmQtyChange() {
   if (!emp) { toast('❌ סיסמת עובד שגויה', 'e'); $('qty-modal-pin').value = ''; $('qty-modal-pin').focus(); return; }
 
   // Store performer name
-  sessionStorage.setItem('prizma_user', emp.name);
+  sessionStorage.setItem('tenant_user', emp.name);
 
   const newQty = mode === 'add' ? currentQty + amount : currentQty - amount;
   const fullReason = note ? reason + ' — ' + note : reason;

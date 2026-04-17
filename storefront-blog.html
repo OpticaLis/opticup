@@ -1,6 +1,6 @@
 <!--
   Optic Up — Storefront Blog Manager
-  Create, edit, publish blog posts + AI generation
+  Create, edit, publish blog posts + AI generation + Quill WYSIWYG
 -->
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
@@ -18,6 +18,8 @@
 <link rel="stylesheet" href="shared/css/toast.css">
 <link rel="stylesheet" href="shared/css/table.css">
 <link rel="stylesheet" href="css/header.css">
+<!-- Quill WYSIWYG -->
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 .sf-container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
@@ -29,6 +31,7 @@
 .sf-nav a.active, .sf-nav a:hover { background: var(--primary); color: #fff; }
 .sf-section { background: #fff; border: 1px solid var(--g200); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
 
+/* Blog actions */
 .blog-actions { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .blog-actions button { padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: .85rem; cursor: pointer; border: none; transition: all .2s; }
 .btn-new { background: var(--primary); color: #fff; }
@@ -36,39 +39,125 @@
 .btn-ai { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
 .btn-ai:hover { opacity: .9; }
 
+/* Filters */
 .blog-filters { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-.blog-filters select { padding: 8px 12px; border: 1px solid var(--g300); border-radius: 8px; font-size: .9rem; font-family: inherit; }
+.blog-filters select { padding: 8px 12px; border: 1px solid var(--g300); border-radius: 8px; font-size: .9rem; font-family: inherit; background: #fff; }
 
-.blog-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-.blog-table th { background: var(--g50); padding: 10px 12px; text-align: right; font-weight: 600; border-bottom: 2px solid var(--g200); }
-.blog-table td { padding: 10px 12px; border-bottom: 1px solid var(--g100); vertical-align: middle; }
-.blog-table tr:hover { background: var(--g50); }
+/* Post list cards */
+.blog-card { background: #f9fafb; border: 1px solid #e5e5e5; border-radius: 10px; padding: 14px 18px; margin-bottom: 10px;
+  display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 12px; align-items: center; transition: box-shadow .2s; }
+.blog-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
 
-.status-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: .8rem; font-weight: 600; }
+.blog-card-title { font-weight: 600; font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 340px; }
+.blog-card-meta { font-size: .8rem; color: var(--g400); display: flex; gap: 8px; align-items: center; }
+
+/* Status badges */
+.status-badge { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: .78rem; font-weight: 700; letter-spacing: .02em; }
 .status-published { background: #d1fae5; color: #059669; }
 .status-draft { background: #fef3c7; color: #b45309; }
 .status-archived { background: var(--g100); color: var(--g500); }
 
+/* Language pills */
+.lang-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: .72rem; font-weight: 700; color: #fff; cursor: pointer; transition: opacity .15s; }
+.lang-pill:hover { opacity: .8; }
+.lang-he { background: #3b82f6; }
+.lang-en { background: #22c55e; }
+.lang-ru { background: #8b5cf6; }
+
+/* Translation badges in list */
+.trans-badges { display: flex; gap: 4px; align-items: center; }
+.trans-badge { display: inline-flex; align-items: center; gap: 2px; font-size: .7rem; padding: 1px 6px; border-radius: 8px; font-weight: 600; }
+.trans-badge.exists { background: #d1fae5; color: #059669; }
+.trans-badge.missing { background: #f3f4f6; color: #9ca3af; }
+
+/* Source icon */
+.source-icon { font-size: .9rem; }
+
+/* Action buttons */
 .action-btns { display: flex; gap: 6px; }
-.action-btns button { padding: 4px 8px; border-radius: 4px; border: 1px solid var(--g300); background: #fff; cursor: pointer; font-size: .85rem; }
-.action-btns button:hover { background: var(--g100); }
+.action-btns button { padding: 5px 10px; border-radius: 6px; border: 1px solid #e5e5e5; background: #fff; cursor: pointer; font-size: .85rem; transition: all .15s; }
+.action-btns button:hover { background: var(--g100); border-color: var(--g300); }
 
-.lang-badge { display: inline-block; cursor: pointer; font-size: 1.1rem; opacity: .8; transition: opacity .15s; }
-.lang-badge:hover { opacity: 1; }
+/* Table header */
+.blog-list-header { display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 12px; padding: 8px 18px;
+  font-size: .78rem; font-weight: 700; color: var(--g400); text-transform: uppercase; letter-spacing: .04em; }
 
-/* Edit modal */
-.blog-edit-modal { max-width: 800px; width: 95vw; max-height: 90vh; overflow-y: auto; }
-.edit-field { margin-bottom: 16px; }
-.edit-field label { display: block; font-size: .85rem; font-weight: 600; color: var(--g600); margin-bottom: 4px; }
-.edit-field input, .edit-field select { width: 100%; padding: 10px 12px; border: 1px solid var(--g300); border-radius: 8px; font-size: .95rem; font-family: inherit; }
-.edit-field textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--g300); border-radius: 8px; font-size: .95rem; font-family: inherit; min-height: 300px; resize: vertical; direction: rtl; }
-.edit-field .char-count { font-size: .75rem; color: var(--g400); text-align: left; margin-top: 2px; }
-.edit-field .char-count.warn { color: #dc2626; }
+/* ═══ Edit modal ═══ */
+.blog-edit-modal { max-width: 860px; width: 95vw; max-height: 92vh; overflow-y: auto; background: #fff; border-radius: 16px; padding: 0; }
+
+.blog-edit-header { padding: 20px 28px; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; gap: 12px; }
+.blog-edit-header h3 { margin: 0; font-size: 1.15rem; font-weight: 700; flex: 1; }
+.blog-edit-header .close-btn { width: 32px; height: 32px; border: none; background: var(--g100); border-radius: 8px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.blog-edit-header .close-btn:hover { background: var(--g200); }
+
+.blog-edit-body { padding: 24px 28px; }
+
+.blog-section { margin-bottom: 24px; }
+.blog-section-title { font-size: 1rem; font-weight: 700; color: #1a1a1a; padding-bottom: 8px; margin-bottom: 14px; border-bottom: 2px solid #f0f0f0; }
+
+.edit-field { margin-bottom: 14px; }
+.edit-field label { display: block; font-size: .82rem; font-weight: 600; color: var(--g600); margin-bottom: 5px; }
+.edit-field input, .edit-field select { width: 100%; padding: 10px 12px; border: 1px solid #e5e5e5; border-radius: 8px; font-size: .95rem; font-family: inherit; background: #fff; transition: border-color .15s; }
+.edit-field input:focus, .edit-field select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.08); }
+.edit-field textarea { width: 100%; padding: 10px 12px; border: 1px solid #e5e5e5; border-radius: 8px; font-size: .95rem; font-family: inherit; background: #fff; resize: vertical; direction: rtl; }
+.edit-field .char-count { font-size: .75rem; color: var(--g400); text-align: left; margin-top: 3px; }
+.edit-field .char-count.warn { color: #dc2626; font-weight: 600; }
 .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.edit-actions { display: flex; gap: 12px; margin-top: 20px; }
+
+/* Quill editor */
+.quill-wrap { border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; background: #fff; }
+.quill-wrap .ql-toolbar { border: none; border-bottom: 1px solid #e5e5e5; background: #fafafa; }
+.quill-wrap .ql-container { border: none; font-family: 'Heebo', sans-serif; font-size: .95rem; min-height: 280px; }
+.quill-wrap .ql-editor { min-height: 280px; }
+
+/* AI buttons in editor */
+.ai-bar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+.btn-ai-mode { padding: 6px 14px; border-radius: 8px; border: 1px solid #e5e5e5; background: #fff; font-size: .82rem; font-weight: 600; cursor: pointer; transition: all .15s; font-family: inherit; }
+.btn-ai-mode.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border-color: transparent; }
+.btn-ai-mode:not(.active):hover { background: #f9fafb; }
+.btn-ai-generate { padding: 8px 16px; border-radius: 8px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; font-size: .85rem; font-weight: 600; cursor: pointer; transition: opacity .15s; font-family: inherit; }
+.btn-ai-generate:hover { opacity: .9; }
+.btn-ai-generate:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Translation section */
+.trans-section { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.trans-status { display: flex; gap: 6px; }
+.trans-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 8px; font-size: .8rem; font-weight: 600; }
+.trans-chip.exists { background: #d1fae5; color: #059669; }
+.trans-chip.missing { background: #fef2f2; color: #9ca3af; }
+.btn-translate { padding: 8px 16px; border-radius: 8px; border: none; background: #0ea5e9; color: #fff; font-size: .85rem; font-weight: 600; cursor: pointer; transition: opacity .15s; font-family: inherit; }
+.btn-translate:hover { opacity: .9; }
+.btn-translate:disabled { opacity: .5; cursor: not-allowed; }
+
+/* SEO score badge */
+.seo-score-badge { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; color: #fff; font-size: .78rem; font-weight: 700; flex-shrink: 0; }
+
+/* Google preview */
+.google-preview { font-family: arial, sans-serif; max-width: 600px; direction: ltr; text-align: left; margin-top: 12px; padding: 14px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; }
+.google-preview .gp-title { color: #1a0dab; font-size: 18px; line-height: 1.3; }
+.google-preview .gp-url { color: #006621; font-size: 14px; margin-top: 2px; }
+.google-preview .gp-desc { color: #545454; font-size: 13px; margin-top: 4px; line-height: 1.4; }
+
+/* Edit modal footer */
+.blog-edit-footer { padding: 16px 28px; border-top: 1px solid #e5e5e5; display: flex; gap: 10px; background: #fafafa; border-radius: 0 0 16px 16px; }
+.blog-edit-footer .btn-p { padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: .9rem; cursor: pointer; border: none; transition: all .15s; }
+.blog-edit-footer .btn-save { background: var(--primary); color: #fff; }
+.blog-edit-footer .btn-save:hover { opacity: .9; }
+.blog-edit-footer .btn-publish { background: #059669; color: #fff; }
+.blog-edit-footer .btn-publish:hover { opacity: .9; }
+.blog-edit-footer .btn-cancel { background: var(--g100); color: var(--g700); }
+.blog-edit-footer .btn-cancel:hover { background: var(--g200); }
 
 /* AI topic modal */
-.ai-modal { max-width: 500px; width: 90vw; }
+.ai-modal { max-width: 500px; width: 90vw; background: #fff; border-radius: 16px; padding: 24px; }
+.ai-modal h3 { margin: 0 0 16px; font-size: 1.1rem; }
+
+/* Responsive */
+@media (max-width: 700px) {
+  .edit-row { grid-template-columns: 1fr; }
+  .blog-card { grid-template-columns: 1fr; gap: 8px; }
+  .blog-list-header { display: none; }
+}
 </style>
 </head>
 <body>
@@ -84,7 +173,7 @@
       <a href="storefront-products.html">📦 מוצרים</a>
       <a href="storefront-content.html">🤖 תוכן AI</a>
       <a href="storefront-blog.html" class="active">📝 בלוג</a>
-      <a href="storefront-landing-content.html">🎯 דפי נחיתה</a>
+      <a href="storefront-studio.html">🎨 Studio</a>
     </nav>
 
     <div class="sf-section">
@@ -96,9 +185,9 @@
       <div class="blog-filters">
         <select id="filter-status" onchange="filterBlogPosts()">
           <option value="">כל הסטטוסים</option>
-          <option value="published">🟢 מפורסם</option>
-          <option value="draft">🟡 טיוטה</option>
-          <option value="archived">⚫ ארכיון</option>
+          <option value="published">מפורסם</option>
+          <option value="draft">טיוטה</option>
+          <option value="archived">ארכיון</option>
         </select>
         <select id="filter-lang" onchange="filterBlogPosts()">
           <option value="">כל השפות</option>
@@ -116,79 +205,115 @@
 <!-- Blog edit modal -->
 <div id="blog-edit-modal" class="modal-overlay" style="display:none">
   <div class="modal blog-edit-modal">
-    <h3 id="blog-edit-title">עריכת פוסט</h3>
+    <div class="blog-edit-header">
+      <h3 id="blog-edit-title">עריכת פוסט</h3>
+      <div id="blog-seo-score-header"></div>
+      <button class="close-btn" onclick="closeBlogEditModal()">✕</button>
+    </div>
 
-    <div class="edit-row">
-      <div class="edit-field">
-        <label>כותרת</label>
-        <input type="text" id="blog-title">
+    <div class="blog-edit-body">
+      <!-- Basic info -->
+      <div class="blog-section">
+        <div class="blog-section-title">פרטי פוסט</div>
+        <div class="edit-row">
+          <div class="edit-field">
+            <label>כותרת</label>
+            <input type="text" id="blog-title">
+          </div>
+          <div class="edit-field">
+            <label>Slug (URL)</label>
+            <input type="text" id="blog-slug" dir="ltr">
+          </div>
+        </div>
+        <div class="edit-row">
+          <div class="edit-field">
+            <label>שפה</label>
+            <select id="blog-lang">
+              <option value="he">עברית</option>
+              <option value="en">English</option>
+              <option value="ru">Русский</option>
+            </select>
+          </div>
+          <div class="edit-field">
+            <label>קטגוריות (מופרדות בפסיקים)</label>
+            <input type="text" id="blog-categories" placeholder="אופטיקה, עדשות, טיפים">
+          </div>
+        </div>
+        <div class="edit-row">
+          <div class="edit-field">
+            <label>סטטוס</label>
+            <select id="blog-status">
+              <option value="draft">טיוטה</option>
+              <option value="published">מפורסם</option>
+              <option value="archived">ארכיון</option>
+            </select>
+          </div>
+          <div class="edit-field">
+            <label>תקציר</label>
+            <input type="text" id="blog-excerpt">
+          </div>
+        </div>
       </div>
-      <div class="edit-field">
-        <label>Slug (URL)</label>
-        <input type="text" id="blog-slug" dir="ltr">
+
+      <!-- Content + AI -->
+      <div class="blog-section">
+        <div class="blog-section-title">תוכן</div>
+        <div class="ai-bar">
+          <button type="button" class="btn-ai-mode active" data-mode="new" onclick="switchBlogAiMode('new')">יצירת תוכן חדש</button>
+          <button type="button" class="btn-ai-mode" data-mode="edit" onclick="switchBlogAiMode('edit')">שינוי בפרומפט</button>
+          <div style="flex:1"></div>
+          <button type="button" class="btn-ai-generate" id="blog-ai-btn" onclick="generateBlogAI()">🤖 יצירת תוכן AI</button>
+        </div>
+        <div id="blog-ai-prompt-area" style="display:none; margin-bottom: 12px;">
+          <textarea id="blog-ai-prompt" style="width:100%;padding:10px 12px;border:1px solid #e5e5e5;border-radius:8px;font-family:inherit;font-size:.9rem;min-height:60px;resize:vertical;" placeholder="לדוגמה: כתוב מחדש בטון יותר חם, הוסף פסקה על עדשות מולטיפוקל..."></textarea>
+        </div>
+        <div class="quill-wrap">
+          <div id="blog-content-editor"></div>
+        </div>
+      </div>
+
+      <!-- Translation -->
+      <div class="blog-section" id="blog-trans-section" style="display:none">
+        <div class="blog-section-title">תרגומים</div>
+        <div class="trans-section">
+          <div class="trans-status" id="blog-trans-status"></div>
+          <button type="button" class="btn-translate" id="blog-translate-btn" onclick="translateBlogPost()">🌐 תרגום אוטומטי</button>
+        </div>
+      </div>
+
+      <!-- SEO -->
+      <div class="blog-section">
+        <div class="blog-section-title">SEO</div>
+        <div class="edit-field">
+          <label>כותרת SEO</label>
+          <input type="text" id="blog-seo-title" maxlength="80" oninput="updateBlogSeo()">
+          <div class="char-count" id="blog-seo-title-count">0/60</div>
+        </div>
+        <div class="edit-field">
+          <label>תיאור SEO</label>
+          <textarea id="blog-seo-desc" rows="3" style="min-height:60px" maxlength="200" oninput="updateBlogSeo()"></textarea>
+          <div class="char-count" id="blog-seo-desc-count">0/160</div>
+        </div>
+        <div class="google-preview">
+          <div class="gp-title" id="blog-gp-title">כותרת SEO</div>
+          <div class="gp-url" id="blog-gp-url">prizma-optic.co.il › בלוג › slug</div>
+          <div class="gp-desc" id="blog-gp-desc">תיאור SEO</div>
+        </div>
       </div>
     </div>
 
-    <div class="edit-row">
-      <div class="edit-field">
-        <label>שפה</label>
-        <select id="blog-lang">
-          <option value="he">עברית</option>
-          <option value="en">English</option>
-          <option value="ru">Русский</option>
-        </select>
-      </div>
-      <div class="edit-field">
-        <label>קטגוריות (מופרדות בפסיקים)</label>
-        <input type="text" id="blog-categories" placeholder="אופטיקה, עדשות, טיפים">
-      </div>
-    </div>
-
-    <div class="edit-field">
-      <label>תוכן (HTML)</label>
-      <textarea id="blog-content"></textarea>
-    </div>
-
-    <div class="edit-row">
-      <div class="edit-field">
-        <label>SEO Title</label>
-        <input type="text" id="blog-seo-title" maxlength="80" oninput="blogCharCount('blog-seo-title', 60)">
-        <div class="char-count" id="blog-seo-title-count">0/60</div>
-      </div>
-      <div class="edit-field">
-        <label>SEO Description</label>
-        <input type="text" id="blog-seo-desc" maxlength="200" oninput="blogCharCount('blog-seo-desc', 160)">
-        <div class="char-count" id="blog-seo-desc-count">0/160</div>
-      </div>
-    </div>
-
-    <div class="edit-row">
-      <div class="edit-field">
-        <label>סטטוס</label>
-        <select id="blog-status">
-          <option value="draft">טיוטה</option>
-          <option value="published">מפורסם</option>
-          <option value="archived">ארכיון</option>
-        </select>
-      </div>
-      <div class="edit-field">
-        <label>תקציר</label>
-        <input type="text" id="blog-excerpt">
-      </div>
-    </div>
-
-    <div class="edit-actions">
-      <button class="btn-p" onclick="saveBlogPost()">💾 שמור</button>
-      <button class="btn-p" onclick="publishBlogPost()" style="background:#059669">🚀 פרסם</button>
-      <button class="btn-g" onclick="closeBlogEditModal()">ביטול</button>
+    <div class="blog-edit-footer">
+      <button class="btn-p btn-save" onclick="saveBlogPost()">💾 שמור</button>
+      <button class="btn-p btn-publish" onclick="publishBlogPost()">🚀 פרסם</button>
+      <button class="btn-p btn-cancel" onclick="closeBlogEditModal()">ביטול</button>
     </div>
   </div>
 </div>
 
-<!-- AI topic modal -->
+<!-- AI topic modal (for new posts from scratch) -->
 <div id="ai-topic-modal" class="modal-overlay" style="display:none">
   <div class="modal ai-modal">
-    <h3>🤖 ייצור פוסט AI</h3>
+    <h3>🤖 ייצור פוסט AI חדש</h3>
     <div class="edit-field">
       <label>נושא</label>
       <input type="text" id="ai-topic" placeholder="מדריך לבחירת משקפי מולטיפוקל">
@@ -205,9 +330,9 @@
         <option value="long">ארוך (~2000 מילים)</option>
       </select>
     </div>
-    <div class="edit-actions">
-      <button class="btn-ai" onclick="generateAIBlogPost()">🤖 ייצר</button>
-      <button class="btn-g" onclick="closeAIModal()">ביטול</button>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn-ai" onclick="generateAIBlogPost()" style="flex:1">🤖 ייצר</button>
+      <button class="btn-p btn-cancel" onclick="closeAIModal()">ביטול</button>
     </div>
   </div>
 </div>
@@ -232,14 +357,18 @@
 <script src="js/shared-ui.js"></script>
 <script src="js/auth-service.js"></script>
 <script src="js/supabase-ops.js"></script>
+<script src="shared/js/plan-helpers.js"></script>
 <script src="js/header.js"></script>
 <script src="js/alerts-badge.js"></script>
+<!-- Quill -->
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script src="modules/storefront/storefront-blog.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', async () => {
   const session = await loadSession();
   if (!session) { window.location.href = '/'; return; }
   if (!hasPermission('settings.view')) { window.location.href = '/'; return; }
+  if (!await isFeatureEnabled('cms_studio')) { renderFeatureLockedState('cms_studio'); return; }
   await loadBlogPosts();
 });
 </script>

@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-04-15T19:57:07.681Z",
+  "status": 200,
+  "bytes": 265,
+  "disallow_all": false,
+  "sitemap_directive_present": true,
+  "sitemap_directives": [
+    "https://prizma-optic.co.il/sitemap-dynamic.xml",
+    "https://prizma-optic.co.il/sitemap-index.xml"
+  ],
+  "sitemap_url_resolves": true,
+  "text_preview": "User-agent: *\r\nAllow: /\r\n\r\n# Block internal/system paths\r\nDisallow: /api/\r\nDisallow: /search\r\n\r\n\r\nDisallow: /ru/search\r\nDisallow: /en/search\r\n# Sitemap\r\nSitemap: https://prizma-optic.co.il/sitemap-dynamic.xml\r\nSitemap: https://prizma-optic.co.il/sitemap-index.xml\r\n"
+}

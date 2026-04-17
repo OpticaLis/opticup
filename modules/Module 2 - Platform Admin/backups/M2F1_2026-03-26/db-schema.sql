@@ -1,2 +1,0 @@
--- Module 2: Platform Admin — DB Schema
--- To be populated in Phase 1.

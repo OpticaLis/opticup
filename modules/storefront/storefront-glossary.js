@@ -88,7 +88,9 @@ function openAddTermModal() {
   document.getElementById('gl-term-he').value = '';
   document.getElementById('gl-term-trans').value = '';
   document.getElementById('gl-term-ctx').value = 'general';
-  document.getElementById('gl-modal').style.display = 'flex';
+  const _glm = document.getElementById('gl-modal');
+  _glm.style.background = 'rgba(0,0,0,0.5)';
+  _glm.style.display = 'flex';
 }
 
 function openEditTermModal(termId) {
@@ -99,7 +101,9 @@ function openEditTermModal(termId) {
   document.getElementById('gl-term-he').value = term.term_he;
   document.getElementById('gl-term-trans').value = term.term_translated;
   document.getElementById('gl-term-ctx').value = term.context || 'general';
-  document.getElementById('gl-modal').style.display = 'flex';
+  const _glm2 = document.getElementById('gl-modal');
+  _glm2.style.background = 'rgba(0,0,0,0.5)';
+  _glm2.style.display = 'flex';
 }
 
 function closeGlModal() {

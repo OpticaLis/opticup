@@ -1,0 +1,66 @@
+# Optic Up ERP — Continuous Verification
+#
+# Runs verify.mjs --full and schema-diff.mjs on every push to develop
+# and every PR targeting main or develop.
+#
+# PHASE 0 NOTE (remove after baseline cleanup):
+# Both verify.mjs --full and schema-diff.mjs currently produce baseline
+# violations (~400 rule violations, ~312 schema drift items) from
+# pre-existing code per Phase 0 Plan Decision 5. Until these baselines
+# are cleaned up, both steps use continue-on-error to avoid permanently
+# red CI. The value in Phase 0 is catching NEW violations during local
+# development (pre-commit hooks) and ensuring the verify infrastructure
+# runs in a clean environment (this workflow).
+#
+# Post-Phase-0 cleanup plan:
+# 1. Address ERP TECH_DEBT #3 (baseline file-size cluster) via archive
+#    directory exclusion or file cleanup.
+# 2. Address GLOBAL_SCHEMA.sql drift (ERP TECH_DEBT #5, #6).
+# 3. Remove continue-on-error from the two verify steps below.
+# 4. Add required-status-check on main branch in branch protection (0F).
+
+name: verify
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  verify:
+    name: Verify (ERP)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run verify.mjs --full
+        continue-on-error: true
+        run: node scripts/verify.mjs --full
+
+      - name: Run schema-diff.mjs
+        continue-on-error: true
+        env:
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PUBLIC_DEFAULT_TENANT: ${{ secrets.PUBLIC_DEFAULT_TENANT }}
+        run: node scripts/schema-diff.mjs
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Phase 0 Verification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Both verify.mjs and schema-diff.mjs ran. Baselines are" >> $GITHUB_STEP_SUMMARY
+          echo "pre-existing per Plan Decision 5 — see workflow comment." >> $GITHUB_STEP_SUMMARY

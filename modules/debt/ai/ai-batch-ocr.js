@@ -94,7 +94,7 @@ async function _processNextInQueue() {
 
 // --- Process single/multi-file OCR ---
 async function _processSingleOCR(item) {
-  var jwt = sessionStorage.getItem('prizma_auth_token') || sessionStorage.getItem('jwt_token');
+  var jwt = sessionStorage.getItem('tenant_auth_token') || sessionStorage.getItem('jwt_token');
   if (!jwt) { item.status = 'failed'; item.error = '\u05E0\u05D3\u05E8\u05E9\u05EA \u05D4\u05EA\u05D7\u05D1\u05E8\u05D5\u05EA \u05DE\u05D7\u05D3\u05E9'; return; }
   try {
     // Check for multi-file document (pre-fetched in _startBatchOCR, fallback to fetchDocFiles)

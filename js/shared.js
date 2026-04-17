@@ -123,7 +123,7 @@ let suppliers = [];
 let brands = [];
 let isAdmin = false;
 let maxBarcode = 0;
-let branchCode = sessionStorage.getItem('prizma_branch') || '00';
+let branchCode = sessionStorage.getItem('tenant_branch') || '00';
 
 // System Log state
 let slogPage = 0, slogTotalPages = 0, slogCurrentFilters = {};
@@ -292,6 +292,23 @@ function getTenantId() {
 function getTenantConfig(key) {
   const config = JSON.parse(sessionStorage.getItem('tenant_config') || '{}');
   return key ? config[key] : config;
+}
+
+/**
+ * Resolve a media-library storage path to a full URL.
+ * Storage paths look like: "media-library/media/{tid}/{folder}/{filename}"
+ * In storefront context (same domain) → "/api/image/{path}"
+ * In ERP context (different domain) → "{storefrontDomain}/api/image/{path}"
+ * Falls through for full URLs (http/https) — returned as-is.
+ */
+function resolveMediaUrl(storagePath, storefrontDomain) {
+  if (!storagePath) return '';
+  if (storagePath.startsWith('http')) return storagePath;
+  if (storagePath.startsWith('/images/')) {
+    return storefrontDomain ? storefrontDomain + storagePath : storagePath;
+  }
+  const proxyPath = '/api/image/' + storagePath;
+  return storefrontDomain ? storefrontDomain + proxyPath : proxyPath;
 }
 
 function escapeHtml(str) {

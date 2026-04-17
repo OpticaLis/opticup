@@ -1,5 +1,12 @@
 node_modules/
 .claude/
+# Track the Optic Up project skills — they're part of the codebase, not
+# per-user Claude config. Everything else under .claude/ stays ignored
+# (settings.local.json, session transcripts, etc.).
+!.claude/
+!.claude/skills/
+!.claude/skills/opticup-*/
+!.claude/skills/opticup-*/**
 scripts/upload_to_airtable.js
 scripts/config.json
 scripts/start-watcher.bat
@@ -10,3 +17,15 @@ watcher-deploy/daemon/opticupsyncwatcher.out.log
 .env
 .env.*
 !.env.example
+
+.mcp.json
+
+# Cowork plugin build artifacts — rebuild via scripts/build-cowork-plugin.ps1
+opticup-skills.plugin
+
+# Module 3 Phase B §1.4 — exclude transient working folders
+# discovery/ and audit-reports/ remain TRACKED — they have archival value
+**/backups/
+**/old prompts/
+**/current prompt/
+**/archive/

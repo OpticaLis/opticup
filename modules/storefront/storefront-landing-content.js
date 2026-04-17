@@ -144,7 +144,9 @@ function openLandingEdit(pageId, title) {
   landingCharCount('landing-seo-title', 60);
   landingCharCount('landing-seo-desc', 160);
 
-  document.getElementById('landing-edit-modal').style.display = 'flex';
+  const _lem = document.getElementById('landing-edit-modal');
+  _lem.style.background = 'rgba(0,0,0,0.5)';
+  _lem.style.display = 'flex';
 }
 
 function closeLandingEditModal() {

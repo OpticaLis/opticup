@@ -1,5 +1,5 @@
 <!--
-  Optic Up — Prizma Optics Inventory System
+  Optic Up — Inventory Module
   Version: 2.0 — Inventory Module Complete
   Stack: Vanilla JS + Supabase + SheetJS
   Features: Barcode mgmt (BBDDDDD), Excel import/export, Mobile responsive
@@ -999,7 +999,7 @@ function onPinKeydown(e, idx) {
 }
 
 async function handleLoginSubmit() {
-  if (sessionStorage.getItem('prizma_login_locked') === 'true') return;
+  if (sessionStorage.getItem('tenant_login_locked') === 'true') return;
 
   const pin = Array.from({ length: 5 }, (_, i) => $('pin-box-' + i).value).join('');
   if (pin.length < 5) return;
@@ -1017,7 +1017,7 @@ async function handleLoginSubmit() {
     loginFailCount++;
     $('login-error').style.display = 'block';
     if (loginFailCount >= 5) {
-      sessionStorage.setItem('prizma_login_locked', 'true');
+      sessionStorage.setItem('tenant_login_locked', 'true');
       $('login-error').textContent = 'החשבון נעול. פנה למנהל.';
       for (let i = 0; i < 5; i++) {
         $('pin-box-' + i).disabled = true;

@@ -11,10 +11,10 @@ const AT = {
 
 // SessionStorage keys
 const SK = {
-  TOKEN: 'prizma_auth_token',
-  EMPLOYEE: 'prizma_employee',
-  PERMS: 'prizma_permissions',
-  ROLE: 'prizma_role'
+  TOKEN: 'tenant_auth_token',
+  EMPLOYEE: 'tenant_employee',
+  PERMS: 'tenant_permissions',
+  ROLE: 'tenant_role'
 };
 
 // Map legacy employees.role → new role system
@@ -127,7 +127,7 @@ async function initSecureSession(employee, jwtToken) {
   _startJwtCheck();
   try {
     const { data: tenantRow } = await sb.from('tenants')
-      .select('name,vat_rate,withholding_tax_default,payment_terms_days,default_currency,rows_per_page,date_format,theme,business_name,logo_url')
+      .select('name,name_en,name_ru,is_super_admin,vat_rate,withholding_tax_default,payment_terms_days,default_currency,rows_per_page,date_format,theme,business_name,logo_url')
       .eq('id', employee.tenant_id)
       .single();
     if (tenantRow) {

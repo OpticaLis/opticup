@@ -65,20 +65,32 @@ async function loadContentPage() {
 }
 
 async function loadAIContent(tid) {
-  const { data } = await sb.from('ai_content')
-    .select('entity_id, content_type, content, status, id')
-    .eq('tenant_id', tid)
-    .eq('entity_type', 'product')
-    .eq('language', 'he')
-    .eq('is_deleted', false);
+  // Page through v_ai_content 1000 rows at a time — PostgREST caps a single
+  // request at 1000 even when .range() asks for more, so without this loop
+  // ~250/569 products silently fall out of contentMap (Fragile Area #7).
+  // Read from the view (not the table) to bypass RLS — Fragile Area #9.
+  const PAGE = 1000;
+  const all = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await sb.from('v_ai_content')
+      .select('entity_id, content_type, content, id')
+      .eq('tenant_id', tid)
+      .eq('entity_type', 'product')
+      .eq('language', 'he')
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    const rows = data || [];
+    all.push(...rows);
+    if (rows.length < PAGE) break;
+  }
 
   contentMap = {};
-  for (const row of (data || [])) {
+  for (const row of all) {
     if (!contentMap[row.entity_id]) contentMap[row.entity_id] = {};
     contentMap[row.entity_id][row.content_type] = {
       id: row.id,
       content: row.content,
-      status: row.status
+      status: row.status || 'auto'
     };
   }
 }
@@ -144,8 +156,8 @@ function renderContentTable(products) {
     const altIcon = getStatusIcon(c.alt_text);
     const checked = selectedContentIds.has(p.id) ? 'checked' : '';
     const imgHtml = p.image_path
-      ? `<img class="thumb" src="https://tsxrrxzmdxaenlvocyit.supabase.co/storage/v1/object/sign/frame-images/${encodeURIComponent(p.image_path)}" onerror="this.outerHTML='<div class=no-thumb>📷</div>'">`
-      : '<div class="no-thumb">📷</div>';
+      ? `<img class="thumb" src="https://tsxrrxzmdxaenlvocyit.supabase.co/storage/v1/object/sign/frame-images/${encodeURIComponent(p.image_path)}" onerror="this.outerHTML='<div class=no-thumb>📷</div>'" onclick="event.stopPropagation(); openImagePreview('${p.id}')">`
+      : `<div class="no-thumb" onclick="event.stopPropagation(); openImagePreview('${p.id}')">📷</div>`;
 
     html += `<tr onclick="openEditModal('${p.id}')" data-pid="${p.id}">
       <td onclick="event.stopPropagation()"><input type="checkbox" class="row-cb-content" value="${p.id}" ${checked} onchange="toggleContentRow(this)"></td>
@@ -223,6 +235,55 @@ function toggleSelectAllContent(cb) {
   else rows.forEach(r => { r.checked = false; });
 }
 
+// ── Image preview ──
+async function getSignedImageUrls(product) {
+  if (!product.images || !product.images.length) return [];
+  const urls = [];
+  for (const img of product.images) {
+    const storagePath = img.replace('/api/image/', '');
+    try {
+      const { data } = await sb.storage.from('frame-images').createSignedUrl(storagePath, 3600);
+      if (data?.signedUrl) urls.push(data.signedUrl);
+    } catch { /* skip failed images */ }
+  }
+  return urls;
+}
+
+async function openImagePreview(productId) {
+  const product = contentProducts.find(p => p.id === productId);
+  if (!product) return;
+  const urls = await getSignedImageUrls(product);
+  if (!urls.length) { toast('אין תמונות למוצר זה', 'w'); return; }
+  showLightbox(urls[0]);
+}
+
+function showLightbox(url) {
+  const overlay = document.createElement('div');
+  overlay.className = 'lightbox-overlay';
+  overlay.onclick = () => overlay.remove();
+  const img = document.createElement('img');
+  img.src = url;
+  img.onclick = (e) => e.stopPropagation();
+  overlay.appendChild(img);
+  document.body.appendChild(overlay);
+}
+
+async function loadEditImages(product) {
+  const container = document.getElementById('edit-images');
+  const grid = document.getElementById('edit-images-grid');
+  grid.innerHTML = '';
+  const urls = await getSignedImageUrls(product);
+  if (!urls.length) { container.style.display = 'none'; return; }
+  container.style.display = 'block';
+  for (const url of urls) {
+    const img = document.createElement('img');
+    img.className = 'edit-img-thumb';
+    img.src = url;
+    img.onclick = () => showLightbox(url);
+    grid.appendChild(img);
+  }
+}
+
 // ── Edit modal ──
 function openEditModal(productId, focusField) {
   const product = contentProducts.find(p => p.id === productId);
@@ -239,7 +300,43 @@ function openEditModal(productId, focusField) {
   updateCharCount('edit-seo-title', 60);
   updateCharCount('edit-seo-desc', 160);
 
-  document.getElementById('edit-modal').style.display = 'flex';
+  // Load product images into modal
+  loadEditImages(product);
+
+  // Force ALL overlay styles inline. Some hosts strip or override the shared
+  // .modal-overlay class so the editor opened "inline" with no backdrop. Setting
+  // position/inset/z-index/background/display via inline style guarantees a
+  // proper centered modal with a gray backdrop regardless of CSS state.
+  const editModalEl = document.getElementById('edit-modal');
+  Object.assign(editModalEl.style, {
+    position: 'fixed',
+    inset: '0',
+    top: '0', left: '0', right: '0', bottom: '0',
+    width: '100vw',
+    height: '100vh',
+    zIndex: '10000',
+    background: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflowY: 'auto',
+    padding: '20px',
+  });
+  // Make sure the inner card has a solid white background and a sane width
+  // (the inner div uses class="modal edit-modal" which has no .modal rule).
+  const editCard = editModalEl.querySelector('.modal');
+  if (editCard) {
+    Object.assign(editCard.style, {
+      background: '#fff',
+      borderRadius: '12px',
+      padding: '24px',
+      maxWidth: '640px',
+      width: '95%',
+      maxHeight: '90vh',
+      overflowY: 'auto',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+    });
+  }
 
   // Focus the specific field if a content type was clicked
   const fieldMap = {
@@ -342,10 +439,20 @@ async function regenerateForProduct() {
     }
   } catch (e) {
     console.error('regenerateForProduct error:', e);
-    toast('שגיאה בייצור תוכן', 'e');
+    if (e && e.message === 'AI_UNAVAILABLE') {
+      toast('שירות ה-AI אינו זמין כרגע', 'e');
+    } else {
+      toast('שגיאה בייצור תוכן', 'e');
+    }
   } finally {
     hideLoading();
   }
+}
+
+// Recognize errors caused by the AI service being unavailable (no API key, network down, etc.)
+function isAiUnavailableError(err) {
+  const m = (err && err.message) ? String(err.message) : String(err || '');
+  return /api[_ ]?key|anthropic|not configured|failed to fetch|networkerror|unexpected token|<!doctype|503|502/i.test(m);
 }
 
 // ── Generate content for one product ──
@@ -368,29 +475,36 @@ async function generateContentForProduct(product) {
     }));
   }
 
-  const res = await fetch(EDGE_FN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      tenant_id: tid,
-      product_id: product.id,
-      content_types: ['description', 'seo_title', 'seo_description', 'alt_text'],
-      product_data: {
-        brand_name: product.brand_name,
-        model: product.model || '',
-        color: product.color || '',
-        size: product.size || '',
-        product_type: product.product_type || 'eyeglasses',
-        sell_price: product.sell_price
-      },
-      image_storage_path: product.image_path || null,
-      brand_corrections: brandCorrections
-    })
-  });
-
-  const data = await res.json();
-  if (!data.success) {
-    console.error('AI generate failed:', data.error);
+  let data;
+  try {
+    const res = await fetch(EDGE_FN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenant_id: tid,
+        product_id: product.id,
+        content_types: ['description', 'seo_title', 'seo_description', 'alt_text'],
+        product_data: {
+          brand_name: product.brand_name,
+          model: product.model || '',
+          color: product.color || '',
+          size: product.size || '',
+          product_type: product.product_type || 'eyeglasses'
+        },
+        image_storage_path: product.image_path || null,
+        brand_corrections: brandCorrections
+      })
+    });
+    data = await res.json();
+  } catch (e) {
+    console.error('AI generate fetch failed:', e);
+    throw new Error('AI_UNAVAILABLE');
+  }
+  if (!data || !data.success) {
+    console.error('AI generate failed:', data && data.error);
+    if (data && /api[_ ]?key|anthropic|not configured/i.test(String(data.error || ''))) {
+      throw new Error('AI_UNAVAILABLE');
+    }
     return null;
   }
   return data;
