@@ -276,7 +276,8 @@ function openStudioBrandEditor(brandId) {
   const desc1 = allParagraphs.slice(0, midpoint).map(p => p.includes('<p>') ? p + '</p>' : '<p>' + p + '</p>').join('');
   const desc2 = allParagraphs.slice(midpoint).map(p => p.includes('<p>') ? p + '</p>' : '<p>' + p + '</p>').join('');
 
-  const galleryArr = Array.isArray(brand.brand_gallery) ? brand.brand_gallery : [];
+  // View returns storage paths (resolved from UUIDs) — store for preview display
+  const galleryPaths = Array.isArray(brand.brand_gallery) ? brand.brand_gallery : [];
   const seoDescLen = (brand.seo_description || '').length;
   const seoDescClass = seoDescLen > 160 ? 'seo-char-count over' : 'seo-char-count';
   const seoScore = calcBrandSeoScoreStatic(brand);
@@ -420,7 +421,10 @@ function openStudioBrandEditor(brandId) {
     </div>
   `;
 
-  window._studioGallery = [...galleryArr];
+  // Store view's storage paths for immediate preview rendering
+  window._studioGalleryPaths = [...galleryPaths];
+  // Raw UUIDs for saving back — fetched async from brands table below
+  window._studioGallery = [];
   window._studioEditBrandId = brandId;
   window._studioEditBrandName = brand.brand_name;
 
@@ -446,8 +450,18 @@ function openStudioBrandEditor(brandId) {
   initBrandQuillEditors(desc1, desc2);
   attachSeoListeners();
 
-  // Load gallery preview async (UUIDs → signed URLs)
+  // Render gallery preview immediately from storage paths (no network call)
   refreshStudioGalleryPreview();
+
+  // Fetch raw UUIDs from brands table for saving back correctly.
+  // The view resolves UUIDs → storage paths, but we need raw UUIDs for save.
+  sb.from(T.BRANDS).select('brand_gallery').eq('id', brandId).eq('tenant_id', getTenantId()).single()
+    .then(({ data }) => {
+      if (data && Array.isArray(data.brand_gallery)) {
+        window._studioGallery = [...data.brand_gallery];
+      }
+    })
+    .catch(err => console.error('Failed to fetch raw gallery UUIDs:', err));
 }
 
 // ═══════════════════════════════════════════════════
@@ -571,6 +585,9 @@ function convertToWebp(file) {
 
 function removeStudioGalleryImage(index) {
   window._studioGallery.splice(index, 1);
+  if (window._studioGalleryPaths && index < window._studioGalleryPaths.length) {
+    window._studioGalleryPaths.splice(index, 1);
+  }
   refreshStudioGalleryPreview();
 }
 
@@ -580,10 +597,20 @@ function openGalleryMediaPicker() {
     multi: true,
     onSelect: (selected) => {
       const newIds = selected.map(s => s.id);
+      const newPaths = selected.map(s => s.storage_path);
       const existing = window._studioGallery || [];
+      const existingPaths = window._studioGalleryPaths || [];
       // Avoid duplicates
-      const merged = [...existing, ...newIds.filter(id => !existing.includes(id))];
+      const addIndices = [];
+      const merged = [...existing];
+      for (let i = 0; i < newIds.length; i++) {
+        if (!existing.includes(newIds[i])) {
+          merged.push(newIds[i]);
+          addIndices.push(i);
+        }
+      }
       window._studioGallery = merged;
+      window._studioGalleryPaths = [...existingPaths, ...addIndices.map(i => newPaths[i])];
       refreshStudioGalleryPreview();
     }
   });
@@ -592,17 +619,35 @@ function openGalleryMediaPicker() {
 async function refreshStudioGalleryPreview() {
   const container = document.getElementById('sbe-gallery-preview');
   if (!container) return;
-  const arr = window._studioGallery || [];
-  if (!arr.length) {
+  const paths = window._studioGalleryPaths || [];
+  const uuids = window._studioGallery || [];
+  if (!paths.length && !uuids.length) {
     container.innerHTML = '<span style="color:var(--g400); font-size:.85rem;">אין תמונות — ישתמש בתמונות מוצרים אוטומטית</span>';
     return;
   }
 
-  // Gallery stores media_library UUIDs — resolve to signed URLs for preview
-  const resolved = await resolveMediaUUIDs(arr);
+  // Prefer storage paths (from view, already resolved) — instant, no network call.
+  // Fall back to UUID resolution only for newly-added items from media picker.
+  let items = [];
+  if (paths.length) {
+    items = paths.map((p, i) => ({
+      index: i,
+      url: resolveMediaUrl(p, STOREFRONT_BASE)
+    }));
+  }
 
-  container.innerHTML = `<div class="gallery-grid">${resolved.map((item, i) => `<div class="gallery-thumb">
-    <img src="${escapeAttr(item.signedUrl || '')}" alt="תמונה ${i + 1}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;" />
+  // If there are more UUIDs than paths (user added new ones via picker),
+  // resolve the extra UUIDs and append.
+  if (uuids.length > paths.length) {
+    const extraUuids = uuids.slice(paths.length);
+    const resolved = await resolveMediaUUIDs(extraUuids);
+    for (const r of resolved) {
+      items.push({ index: items.length, url: r.signedUrl || '' });
+    }
+  }
+
+  container.innerHTML = `<div class="gallery-grid">${items.map((item, i) => `<div class="gallery-thumb">
+    <img src="${escapeAttr(item.url || '')}" alt="תמונה ${i + 1}" style="width:80px; height:80px; object-fit:cover; border-radius:8px;" />
     <button type="button" onclick="removeStudioGalleryImage(${i})" style="position:absolute; top:-5px; right:-5px; width:20px; height:20px; border-radius:50%; background:#ef4444; color:#fff; border:none; font-size:.75rem; cursor:pointer;">✕</button>
   </div>`).join('')}</div>`;
 }
