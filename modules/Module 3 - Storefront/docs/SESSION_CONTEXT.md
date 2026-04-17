@@ -1,8 +1,54 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Pre-DNS-Switch Final QA — DNS_SWITCH_READINESS_QA 🔴 EXECUTED, AWAITING FOREMAN REVIEW (2026-04-16)
-## Status: Multi-agent overnight audit complete. Verdict: 🔴 NOT READY FOR DNS SWITCH. 4 CRITICAL blockers + 10 HIGH + 14 MEDIUM identified across 66 pages / 32 blocks / 10 views / 3 routes / 31 Studio files / 36 EN+RU language reviews. Hebrew content launch-ready; multilingual routing 84% dark (EN/RU serve 3 of 18 slugs each). `/api/leads/submit` 404s on Vercel. `/prizmaexpress/` RU has words with embedded Hebrew letters. `/optometry/` still draft.
-## Date: 2026-04-16
+## Current Phase: Pre-DNS-Switch Fixes — STOREFRONT_LANG_AND_VIDEO_FIX 🟡 EXECUTED (2026-04-17)
+## Status: 2 of 3 SPEC tasks shipped. YouTube nocookie removed (3 hits across StepsBlock + VideoBlock — storefront commit `45cd329`). `/prizmaexpress/` RU corrupted words fixed via targeted DB UPDATE (`лиןз` → `линз`, `каталоגים` → `каталоге`). EN/RU routing 404s on Vercel prod diagnosed as **develop→main merge gap**, NOT a code bug — localhost serves 58/58 tested pages at 200 on develop; Vercel prod runs stale main with blog-only catchall. Remedy requires Daniel-authorized merge. Awaiting Foreman review + merge decision.
+## Date: 2026-04-17
+
+---
+
+## Execution Close-Out 2026-04-17 — STOREFRONT_LANG_AND_VIDEO_FIX
+
+**Deliverables (inside `docs/specs/STOREFRONT_LANG_AND_VIDEO_FIX/`):**
+- `SPEC.md` — Foreman-authored, 3-issue SPEC (YouTube, RU text, EN/RU routing)
+- `EXECUTION_REPORT.md` — retrospective (self-score 9.5/10), 2 executor-skill proposals
+- `FINDINGS.md` — 4 findings (1 HIGH routing merge-gap, 1 MEDIUM malformed slug data, 1 LOW SC-11 criterion precision, 1 INFO stale page inventory)
+
+**Storefront commits landed:**
+- `45cd329` — `fix(storefront): replace youtube-nocookie with youtube in StepsBlock and VideoBlock` — 2 files, 3 replacements + `iv_load_policy=3` appended.
+
+**DB operation (no git commit — logged in EXECUTION_REPORT §2):**
+- Targeted text REPLACE on `storefront_pages` id `3456519e-0bc9-4ec2-9951-64d8fab0bc3d` (RU `/prizmaexpress/`). Pre-state captured in EXECUTION_REPORT. Post: `has_linz_bug=false`, `has_catalog_bug=false`. SC-11 intent satisfied; literal regex still matches legitimate Hebrew CSS comments (see M3-LANG-SPEC-01).
+
+**EN/RU routing diagnosis (main finding — M3-ROUTING-01, HIGH):**
+- Localhost on develop: **58/58 tested slugs HTTP 200** (24 EN + 24 RU + 10 HE)
+- Vercel prod: 3 EN/RU slugs 200 (hardcoded page files on main), 40+ 404
+- Root cause: `main`'s `[...slug].astro` is a blog-only catchall. Develop's version queries `v_storefront_pages` first (added in `f68c68e`, Phase 3B blog migration). Main is 20+ commits behind develop.
+- Remedy: Daniel-authorized `develop → main` merge. Not an agent-executable action (CLAUDE.md §9 rule 7). STOP-ESCALATE per SPEC §5a.
+
+**Success criteria: 15 PASS / 1 PARTIAL / 1 pending-on-retro-commit.**
+- SC-1..SC-10 ✅ on localhost (develop code is correct)
+- SC-11 🟡 (corrupted words gone; CSS comments keep regex true)
+- SC-12..SC-14 ✅ (youtube-nocookie absent)
+- SC-15 ✅ (`npm run build` exit 0 in 5.42s)
+- SC-16 ✅ (`full-test.mjs --no-build` 18/18 PASS)
+- SC-17 — pending on this commit
+
+**Lessons incorporated from prior Foreman reviews applied during execution:**
+- DNS_SWITCH_READINESS_QA → A-1 (runtime UUID verification): live-verified Prizma UUID `6ad0781b-37f0-47a9-92e3-be9ed1477e1c` before any DB write.
+- DNS_SWITCH_READINESS_QA → A-2 (two-tier stop triggers): applied STOP-ESCALATE for routing finding, STOP-SUMMARIZE consideration for SC-11 PARTIAL.
+- HOMEPAGE_LUXURY_REVISIONS_R2 → Executor Proposal 1 (§1 Goal reality check): grepped youtube-nocookie count, queried corrupted-word presence, verified routing file existence — all before any edit.
+- HOMEPAGE_LUXURY_REVISIONS_R2 → Executor Proposal 2 (JSONB partial update): used scoped text-level REPLACE(REPLACE(...)) — would have used `jsonb_set` if path was known; REPLACE is a conservative equivalent for unique corruption strings.
+- STOREFRONT_S2S3_QA → Executor Proposal E1 (mount pre-check): confirmed both repos accessible at First Action step 1.
+
+**Awaiting Foreman review.** Foreman should: (a) disposition the 4 FINDINGS.md entries (M3-ROUTING-01 HIGH → likely NEW_SPEC for develop→main sync or direct Daniel merge; M3-DATA-01 MEDIUM → TECH_DEBT; others DISMISS/TECH_DEBT), (b) apply or reject the 2 executor-skill proposals in EXECUTION_REPORT §8, (c) decide DNS switch strategy: (i) wait for merge then DNS, (ii) DNS to Vercel preview branch `develop`, or (iii) hold DNS switch and QA develop-as-prod staging first.
+
+---
+
+## Prior — DNS_SWITCH_READINESS_QA 🔴 EXECUTED, AWAITING FOREMAN REVIEW (2026-04-16)
+
+Multi-agent overnight audit complete. Verdict: 🔴 NOT READY FOR DNS SWITCH. 4 CRITICAL blockers + 10 HIGH + 14 MEDIUM identified across 66 pages / 32 blocks / 10 views / 3 routes / 31 Studio files / 36 EN+RU language reviews. Hebrew content launch-ready; multilingual routing 84% dark (EN/RU serve 3 of 18 slugs each). `/api/leads/submit` 404s on Vercel. `/prizmaexpress/` RU has words with embedded Hebrew letters. `/optometry/` still draft.
+
+**Status update (2026-04-17, this session):** STOREFRONT_LANG_AND_VIDEO_FIX closed 2 of the 4 CRITICAL blockers (YouTube + prizmaexpress RU text) and diagnosed the third (EN/RU routing — see above). Remaining: `/api/leads/submit` (queued in CONTACT_FORM_FIX SPEC, deferred by Daniel) and `/optometry/` draft status (also deferred).
 
 ---
 
