@@ -141,6 +141,11 @@ function renderPickerGrid() {
 
 async function getPickerSignedUrl(storagePath) {
   if (_pickerSignedUrls[storagePath]) return _pickerSignedUrls[storagePath];
+  // External URLs (e.g. old WordPress images) — use directly, no signed URL needed
+  if (storagePath.startsWith('http')) {
+    _pickerSignedUrls[storagePath] = storagePath;
+    return storagePath;
+  }
   try {
     const { data, error } = await sb.storage.from('media-library').createSignedUrl(storagePath, 3600);
     if (error || !data?.signedUrl) return '';
@@ -152,7 +157,11 @@ async function getPickerSignedUrl(storagePath) {
 async function preloadPickerSignedUrls(items) {
   const uncached = items.filter(i => i.storage_path && !_pickerSignedUrls[i.storage_path]);
   if (!uncached.length) return;
-  await Promise.all(uncached.map(i => getPickerSignedUrl(i.storage_path)));
+  // Chunk requests to avoid overwhelming the browser (10 at a time)
+  for (let i = 0; i < uncached.length; i += 10) {
+    const chunk = uncached.slice(i, i + 10);
+    await Promise.all(chunk.map(item => getPickerSignedUrl(item.storage_path)));
+  }
 }
 
 // ========== INTERACTION ==========
