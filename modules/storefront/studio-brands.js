@@ -525,7 +525,8 @@ function initBrandQuillEditors(desc1Html, desc2Html) {
   }
 
   if (el2) {
-    _quillDesc2 = new Quill(el2, { theme: 'snow', modules: { toolbar: toolbarOpts }, placeholder: `למה לקנות ב${storeName} — שירות, התאמה, ניסיון...` });
+    const sName = getTenantConfig('name') || '';
+    _quillDesc2 = new Quill(el2, { theme: 'snow', modules: { toolbar: toolbarOpts }, placeholder: `למה לקנות ב${sName} — שירות, התאמה, ניסיון...` });
     _quillDesc2.root.setAttribute('dir', 'rtl');
     _quillDesc2.root.style.textAlign = 'right';
     if (desc2Html) _quillDesc2.root.innerHTML = desc2Html;
