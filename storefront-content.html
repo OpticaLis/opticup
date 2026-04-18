@@ -345,4 +345,13 @@
 <script src="modules/storefront/storefront-content.js"></script>
 <script src="modules/storefront/storefront-translations.js"></script>
 <script>
-window.addEventListener('DOMContentLoaded',
+window.addEventListener('DOMContentLoaded', async () => {
+  const session = await loadSession();
+  if (!session) { window.location.href = '/'; return; }
+  if (!hasPermission('settings.view')) { window.location.href = '/'; return; }
+  if (!await isFeatureEnabled('cms_ai_tools')) { renderFeatureLockedState('cms_ai_tools'); return; }
+  await loadContentPage();
+});
+</script>
+</body>
+</html>
