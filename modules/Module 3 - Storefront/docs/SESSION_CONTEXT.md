@@ -1,8 +1,35 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: POST-DNS — production stable, develop reset to main (2026-04-18)
-## Status: 🟢 DNS live on Vercel. POST_DNS_PERF_AND_SEO SPEC caused PageSpeed regression (89→47), reverted from main (`8c362c1`). **As of this evening, develop has also been reset to match main** (`b1a7312`) — the perf work is preserved on tag `perf-post-dns-reverted` in the storefront repo for future cherry-picking with per-change measurement. Build passes, working tree clean, both branches in sync at production. Next: Foreman authors the cherry-pick SPEC — one perf change per commit with before/after PageSpeed.
+## Current Phase: POST-DNS — hero video self-hosted, awaiting mobile verification (2026-04-18)
+## Status: 🟢 DNS live on Vercel. Hero video replaced (YouTube iframe → self-hosted MP4) so it plays on mobile+desktop without the 800KB YouTube JS penalty. Storefront develop at `6145ef9`, build passes (5.27s), full-test.mjs 18/18 PASS. Three assets under `public/videos/`: hero-mobile.mp4 (1.61 MB), hero-desktop.mp4 (3.88 MB), hero-poster.webp (71 KB). Next: Daniel verifies playback on mobile at localhost:4321 before merging storefront develop → main.
 ## Date: 2026-04-18
+
+---
+
+## Execution Close-Out 2026-04-18 (night) — HERO_VIDEO_SELF_HOSTED
+
+**Deliverables (inside `docs/specs/HERO_VIDEO_SELF_HOSTED/`):**
+- `SPEC.md` — Foreman-authored (Cowork session awesome-cool-faraday), 14 measurable SCs, 1-commit plan
+- `EXECUTION_REPORT.md` — retrospective (self-score 9.3/10), 13/14 SCs strictly met (SC-11 regex conflicts with §7's "keep `video_youtube_id` prop" directive), 2 executor-skill proposals
+- `FINDINGS.md` — 2 findings: `M3-DEBT-11` (pre-existing misplaced hero-*.mp4 at storefront repo root — resolved in First Action), `M3-DOC-03` (SPEC stale about file truncation — file was already intact)
+
+**Storefront operations executed:**
+- First Action: 3 untracked `hero-*.mp4/.webp` files at repo root (from prior incomplete attempt) → Daniel selected option (a) → deleted, fresh copies pulled from ERP SPEC folder into `public/videos/`
+- `HeroLuxuryBlock.astro` rewritten: YouTube facade + 27-line `<script>` removed, replaced with `<img fetchpriority="high">` + `<video autoplay muted loop playsinline preload="none">` with `<source media="(min-width:768px)">` for desktop and mobile MP4s. File went 120→97 lines (well under the 130 cap).
+- `data.video_youtube_id` prop retained as the truthiness trigger (per SPEC §7 + SaaS Rule 20 backward compat)
+- Commit `6145ef9` on storefront `develop` — `feat(hero): self-hosted MP4 video replacing YouTube iframe for mobile+desktop` — pushed to origin
+- `npm run build` → exit 0 in 5.27s; `node scripts/full-test.mjs --no-build` → 18/18 PASS; pre-commit hooks (file-size, frozen-files, rule-23-secrets, rule-24-views-only) → 0 violations
+
+**Key design decisions locked in:**
+- `preload="none"` on the `<video>` — video does NOT block page load; browser decides when to stream
+- Separate `<img>` with `fetchpriority="high"` — guarantees poster.webp is the LCP element before video arrives
+- `<source media="(min-width: 768px)">` first → browser picks desktop MP4 only on ≥768px, mobile serves the 1.6 MB variant
+- Zero external JS — native browser `<video>` element, no YouTube player library
+- `video_youtube_id` JSONB field in DB unchanged — no migration needed, all existing pages continue to render the hero video
+
+**Expected PageSpeed behaviour:** stays ~89 (baseline) because no YouTube JS loaded, poster.webp renders instantly for LCP, video streams after page is interactive. Daniel to verify on mobile.
+
+**Next step:** Awaiting Foreman review → `FOREMAN_REVIEW.md`. After Daniel confirms mobile playback, storefront `develop` → `main` merge by Daniel.
 
 ---
 
