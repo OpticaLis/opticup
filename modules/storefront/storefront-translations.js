@@ -1,18 +1,29 @@
 // Storefront Translations Tab — view, edit, bulk-translate product content
 // Phase 6: i18n (manual translation flow — AI removed per HF1)
-var transContentMap = {};
-var transCurrentPage = 1;
-var TRANS_PAGE_SIZE = 50;
-var transEditProduct = null;
-var transEditLang = null;
-var _contaminationFilterActive = false;
+
+let transContentMap = {};   // product_id → { en: { description: {id,content,status}, ... }, ru: { ... } }
+let transCurrentPage = 1;
+const TRANS_PAGE_SIZE = 50;
+let transEditProduct = null;
+let transEditLang = null;
+let _contaminationFilterActive = false;
+
+// ── Tab switching ──
 function switchContentTab(tab) {
   document.getElementById('panel-content').style.display = tab === 'content' ? '' : 'none';
   document.getElementById('panel-translations').style.display = tab === 'translations' ? '' : 'none';
   document.getElementById('tab-content').classList.toggle('active', tab === 'content');
   document.getElementById('tab-translations').classList.toggle('active', tab === 'translations');
-  if (tab === 'translations' && !Object.keys(transContentMap).length) loadTranslations();
+
+  if (tab === 'translations' && !Object.keys(transContentMap).length) {
+    loadTranslations();
+  }
 }
+
+// ── Load translations data ──
+// Page through v_ai_content for one language, 1000 rows at a time, until a
+// short page tells us we're done. The PostgREST default cap is 1000 even when
+// .range() asks for more, so we have to drive pagination explicitly.
 async function fetchAiContentPage(tid, lang) {
   const PAGE = 1000;
   const all = [];
@@ -37,6 +48,8 @@ async function loadTranslations() {
   showLoading('טוען תרגומים...');
   try {
     const tid = getTenantId();
+
+    // Populate brand filter if not done
     const brandSelect = document.getElementById('trans-filter-brand');
     if (brandSelect.options.length <= 1) {
       for (const b of contentBrands) {
@@ -46,12 +59,21 @@ async function loadTranslations() {
         brandSelect.appendChild(opt);
       }
     }
+
+    // Load all non-Hebrew translations via the v_ai_content view. We used to
+    // query the ai_content table directly, but RLS on the table was hiding
+    // EN/RU rows under the Studio JWT (HE rows came through, EN/RU did not),
+    // so the bulk-translate UI showed "חסר" even after a successful save.
+    // The view exposes the same rows without that filter, but has no `status`
+    // column — until the view is enriched, every translation renders with the
+    // "auto" badge (edited/approved badges are not shown in the table).
     const [enRows, ruRows] = await Promise.all([
       fetchAiContentPage(tid, 'en'),
       fetchAiContentPage(tid, 'ru'),
     ]);
     const data = [...enRows, ...ruRows];
     console.log('[loadTrans] result:', { enRows: enRows.length, ruRows: ruRows.length, total: data.length });
+
     transContentMap = {};
     for (const row of (data || [])) {
       if (!transContentMap[row.entity_id]) transContentMap[row.entity_id] = { en: {}, ru: {} };
@@ -63,6 +85,7 @@ async function loadTranslations() {
         };
       }
     }
+
     filterTranslations();
     _injectContaminationFilter();
     _updateContaminationUI('en');
@@ -74,12 +97,16 @@ async function loadTranslations() {
   }
 }
 
+// ── Filter translations ──
 function filterTranslations() {
   const lang = document.getElementById('trans-filter-lang').value;
   const status = document.getElementById('trans-filter-status').value;
   const brand = document.getElementById('trans-filter-brand').value;
   const search = document.getElementById('trans-filter-search').value.trim().toLowerCase();
+
+  // Only show products that have Hebrew content
   let filtered = contentProducts.filter(p => contentMap[p.id]?.description);
+
   if (brand) filtered = filtered.filter(p => p.brand_id === brand);
   if (search) {
     filtered = filtered.filter(p =>
@@ -103,14 +130,18 @@ function filterTranslations() {
       return t?.en?.description?.status === status || t?.ru?.description?.status === status;
     });
   }
+
+  // Contamination filter — always update counter, filter only when active
   const counterLang = lang === 'en' || lang === 'ru' ? lang : 'en';
   _updateContaminationUI(counterLang);
+
   if (_contaminationFilterActive) {
     const filterLangs = lang === 'en' ? ['en'] : lang === 'ru' ? ['ru'] : ['en', 'ru'];
     filtered = filtered.filter(p =>
       filterLangs.some(l => _getContaminatedFields(p.id, l).length > 0)
     );
   }
+
   document.getElementById('trans-count').textContent = `${filtered.length} מוצרים`;
   transCurrentPage = 1;
   renderTransTable(filtered);
@@ -118,6 +149,7 @@ function filterTranslations() {
   updateTransActionLabels();
 }
 
+// Reflect filter scope in the bulk-translate button label
 function transFilterIsActive() {
   const brand = document.getElementById('trans-filter-brand').value;
   const search = document.getElementById('trans-filter-search').value.trim();
@@ -133,10 +165,12 @@ function updateTransActionLabels() {
 }
 
 function getTransFilteredProducts() {
+  // Re-apply filters to get current filtered list
   const lang = document.getElementById('trans-filter-lang').value;
   const status = document.getElementById('trans-filter-status').value;
   const brand = document.getElementById('trans-filter-brand').value;
   const search = document.getElementById('trans-filter-search').value.trim().toLowerCase();
+
   let filtered = contentProducts.filter(p => contentMap[p.id]?.description);
   if (brand) filtered = filtered.filter(p => p.brand_id === brand);
   if (search) {
@@ -161,33 +195,41 @@ function getTransFilteredProducts() {
       return t?.en?.description?.status === status || t?.ru?.description?.status === status;
     });
   }
+
+  // Contamination filter
   if (_contaminationFilterActive) {
     const filterLangs = lang === 'en' ? ['en'] : lang === 'ru' ? ['ru'] : ['en', 'ru'];
     filtered = filtered.filter(p =>
       filterLangs.some(l => _getContaminatedFields(p.id, l).length > 0)
     );
   }
+
   return filtered;
 }
 
+// ── Render translations table ──
 function renderTransTable(products) {
   const container = document.getElementById('trans-table-container');
   const start = (transCurrentPage - 1) * TRANS_PAGE_SIZE;
   const list = products || getTransFilteredProducts();
   const slice = list.slice(start, start + TRANS_PAGE_SIZE);
+
   if (!slice.length) {
     container.innerHTML = '<p style="color:var(--g400);text-align:center;padding:24px">לא נמצאו תרגומים</p>';
     return;
   }
+
   let html = `<table class="content-table">
     <thead><tr>
       <th>מותג</th><th>דגם</th><th>ברקוד</th><th>עברית</th><th>EN</th><th>RU</th>
     </tr></thead><tbody>`;
+
   for (const p of slice) {
     const heOk = contentMap[p.id]?.description ? '✅' : '❌';
     const t = transContentMap[p.id] || { en: {}, ru: {} };
     const enBadge = getTransBadge(t.en?.description);
     const ruBadge = getTransBadge(t.ru?.description);
+
     html += `<tr style="cursor:pointer">
       <td>${escapeHtml(p.brand_name)}</td>
       <td>${escapeHtml(p.model || '—')}</td>
@@ -208,6 +250,7 @@ function getTransBadge(entry) {
   return '<span class="trans-badge auto">אוטומטי</span>';
 }
 
+// ── Pagination ──
 function renderTransPagination(total) {
   const pages = Math.ceil(total / TRANS_PAGE_SIZE);
   const container = document.getElementById('trans-pagination');
@@ -227,17 +270,22 @@ function goToTransPage(page) {
   renderTransPagination(filtered.length);
 }
 
+// ── Translation edit modal ──
 function openTransEditModal(productId, lang) {
   const product = contentProducts.find(p => p.id === productId);
   if (!product) return;
   transEditProduct = product;
   transEditLang = lang;
+
   const langLabel = lang === 'en' ? 'English' : 'Русский';
   document.getElementById('trans-edit-title').textContent =
     `${product.brand_name} ${product.model || ''} — תרגום ל${langLabel}`;
   document.getElementById('trans-target-label').textContent = langLabel;
   document.getElementById('trans-edit-type').value = 'description';
+
   loadTransEditType();
+  // Force overlay styles inline so the modal renders as a proper centered popup
+  // with a gray backdrop, regardless of whether the shared modal CSS is applied.
   const _tem = document.getElementById('trans-edit-modal');
   Object.assign(_tem.style, {
     position: 'fixed',
@@ -273,6 +321,7 @@ function loadTransEditType() {
   const ct = document.getElementById('trans-edit-type').value;
   const heContent = contentMap[transEditProduct.id]?.[ct]?.content || '';
   const transContent = transContentMap[transEditProduct.id]?.[transEditLang]?.[ct]?.content || '';
+
   document.getElementById('trans-source').value = heContent;
   document.getElementById('trans-target').value = transContent;
 }
@@ -290,10 +339,12 @@ async function saveTranslationEdit() {
   const ct = document.getElementById('trans-edit-type').value;
   const newVal = document.getElementById('trans-target').value.trim();
   if (!newVal) { toast('התרגום ריק', 'w'); return; }
+
   showLoading('שומר תרגום...');
   try {
     const existing = transContentMap[pid]?.[transEditLang]?.[ct];
     const originalContent = existing?.content || '';
+
     await sb.from('ai_content').upsert({
       tenant_id: tid,
       entity_type: 'product',
@@ -302,9 +353,11 @@ async function saveTranslationEdit() {
       content: newVal,
       language: transEditLang,
       status: existing ? 'edited' : 'auto',
-      is_deleted: false,
+      is_deleted: false,    // Fragile Area #8 — reset soft-delete on upsert
       updated_at: new Date().toISOString()
     }, { onConflict: 'tenant_id,entity_type,entity_id,content_type,language' });
+
+    // Save correction for learning if changed
     if (existing && originalContent && originalContent !== newVal) {
       await sb.from('translation_corrections').insert({
         tenant_id: tid,
@@ -315,7 +368,9 @@ async function saveTranslationEdit() {
         brand_id: transEditProduct.brand_id || null
       });
     }
+
     await loadTranslations();
+    // Clear unsaved indicator if present
     const badge = document.getElementById('trans-unsaved-badge');
     if (badge) badge.style.display = 'none';
     const targetEl = document.getElementById('trans-target');
@@ -336,4 +391,874 @@ async function approveTranslation() {
   const ct = document.getElementById('trans-edit-type').value;
   const existing = transContentMap[transEditProduct.id]?.[transEditLang]?.[ct];
   if (!existing) { toast('אין תרגום לאשר', 'w'); return; }
-  showLoading('מא
+
+  showLoading('מאשר...');
+  try {
+    await sb.from('ai_content').update({ status: 'approved', updated_at: new Date().toISOString() })
+      .eq('id', existing.id);
+    await loadTranslations();
+    toast('תרגום אושר', 's');
+    closeTransEditModal();
+  } catch (e) {
+    toast('שגיאה באישור', 'e');
+  } finally {
+    hideLoading();
+  }
+}
+
+// HF1 (2026-04-10): AI translation API path removed — translate-content Edge Function
+// has been retired. The manual export/import flow below (buildManualTranslationPrompt +
+// downloadMultipleFiles + openImportModal) fully replaces it.
+
+// ══════════════════════════════════════════════════════════════
+// EXTERNAL TRANSLATION — EXPORT (MANUAL FLOW)
+// ══════════════════════════════════════════════════════════════
+
+function escapeMdCell(s) {
+  if (!s) return '';
+  return String(s).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim();
+}
+
+/**
+ * Download multiple files sequentially with 400ms delay between each.
+ * Uses Blob + temporary <a> element (same pattern as old export).
+ */
+function downloadMultipleFiles(files) {
+  files.forEach((file, i) => {
+    setTimeout(() => {
+      const blob = new Blob([file.content], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, i * 400);
+  });
+}
+
+/**
+ * Main export handler. Called from HTML button: exportForTranslation('en') or ('ru').
+ * Generates: 1 prompt file + N data batch files.
+ */
+async function exportForTranslation(targetLang) {
+  const tid = getTenantId();
+  const langLabel = targetLang === 'en' ? 'English' : 'Russian';
+  const langCode = targetLang.toUpperCase();
+
+  // 1. Find products to export — either missing translations or contaminated ones
+  const TRANS_FIELDS = ['description', 'seo_title', 'seo_description', 'alt_text'];
+
+  let exportProducts;
+  let contaminationMap = {}; // productId → Set of contaminated field names
+
+  if (_contaminationFilterActive) {
+    // Contamination mode: export only products with contaminated fields
+    exportProducts = getTransFilteredProducts().filter(p => {
+      if (!contentMap[p.id]?.description) return false;
+      const contaminated = _getContaminatedFields(p.id, targetLang);
+      if (contaminated.length > 0) {
+        contaminationMap[p.id] = new Set(contaminated.map(c => c.field));
+        return true;
+      }
+      return false;
+    });
+  } else {
+    // Normal mode: export products missing ANY of the 4 translatable fields
+    exportProducts = getTransFilteredProducts().filter(p => {
+      if (!contentMap[p.id]?.description) return false;
+      const t = (transContentMap[p.id] || {})[targetLang] || {};
+      return TRANS_FIELDS.some(f => !t[f]);
+    });
+  }
+
+  if (!exportProducts.length) {
+    toast(_contaminationFilterActive
+      ? `אין מוצרים מזוהמים ב-${langCode}`
+      : `אין מוצרים חסרי תרגום ל-${langCode}`, 's');
+    return;
+  }
+
+  showLoading(`מכין קבצי ייצוא ל-${langCode}...`);
+
+  // 2. Load glossary
+  let glossary = [];
+  try {
+    const { data } = await sb.from('translation_glossary')
+      .select('term_he, term_translated')
+      .eq('tenant_id', tid)
+      .eq('lang', targetLang)
+      .eq('is_deleted', false)
+      .order('context');
+    glossary = data || [];
+  } catch (e) { console.warn('glossary fetch failed:', e); }
+
+  // 3. Find 2-3 example products (have HE + target lang content for all 4 fields)
+  const exampleProducts = [];
+  for (const p of contentProducts) {
+    if (exampleProducts.length >= 3) break;
+    const he = contentMap[p.id];
+    const tr = (transContentMap[p.id] || {})[targetLang];
+    if (he?.description && he?.seo_title && he?.seo_description &&
+        tr?.description && tr?.seo_title && tr?.seo_description) {
+      exampleProducts.push({
+        brand: p.brand_name || '',
+        model: p.model || '',
+        barcode: p.barcode || '',
+        he_desc: he.description.content || '',
+        he_seo_title: he.seo_title.content || '',
+        he_seo_desc: he.seo_description.content || '',
+        he_alt: (he.alt_text?.content) || '',
+        tr_desc: tr.description.content || '',
+        tr_seo_title: tr.seo_title.content || '',
+        tr_seo_desc: tr.seo_description.content || '',
+        tr_alt: (tr.alt_text?.content) || '',
+      });
+    }
+  }
+
+  // 4. Build product rows for export
+  //    In contamination mode, only include HE source for contaminated fields (blank clean ones)
+  const rows = exportProducts.map(p => {
+    const dirty = contaminationMap[p.id]; // Set of contaminated field names, or undefined
+    return {
+      brand: p.brand_name || '',
+      model: p.model || '',
+      barcode: p.barcode || '',
+      he_desc: (!dirty || dirty.has('description')) ? (contentMap[p.id]?.description?.content || '') : '',
+      he_seo_title: (!dirty || dirty.has('seo_title')) ? (contentMap[p.id]?.seo_title?.content || '') : '',
+      he_seo_desc: (!dirty || dirty.has('seo_description')) ? (contentMap[p.id]?.seo_description?.content || '') : '',
+      he_alt: (!dirty || dirty.has('alt_text')) ? (contentMap[p.id]?.alt_text?.content || '') : '',
+    };
+  });
+
+  // 5. Build prompt file
+  const promptContent = buildManualTranslationPrompt(targetLang, langLabel, langCode, glossary, exampleProducts);
+
+  // 6. Split into batches of 25
+  const BATCH_SIZE = 25;
+  const batches = [];
+  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+    batches.push(rows.slice(i, i + BATCH_SIZE));
+  }
+
+  // 7. Build data files
+  const dataFiles = batches.map((batch, idx) => ({
+    name: `PRODUCTS_${langCode}_BATCH_${String(idx + 1).padStart(2, '0')}.md`,
+    content: buildDataFile(batch, langCode, idx + 1, batches.length, idx * BATCH_SIZE)
+  }));
+
+  // 8. Download all files
+  const stamp = new Date().toISOString().slice(0, 10);
+  const allFiles = [
+    { name: `PROMPT_TRANSLATE_${langCode}_${stamp}.md`, content: promptContent },
+    ...dataFiles
+  ];
+
+  downloadMultipleFiles(allFiles);
+  hideLoading();
+  const modeLabel = _contaminationFilterActive ? ' [🧹 מזוהמים]' : '';
+  toast(`יוצאו ${allFiles.length} קבצים (${rows.length} מוצרים) ל-${langCode}${modeLabel}`, 's');
+}
+
+/**
+ * Build the manual translation prompt file content (instructions, glossary, examples).
+ * Renamed from buildTranslationPrompt in HF1 to make the manual-flow intent explicit.
+ */
+function buildManualTranslationPrompt(targetLang, langLabel, langCode, glossary, examples) {
+  const storeName = getTenantConfig('name') || '';
+  const storeNameEn = getTenantConfig('name_en') || '';
+  const md = [];
+
+  md.push(`# Translation Task — ${storeNameEn} Products → ${langLabel}`);
+  md.push('');
+  md.push(`> Generated: ${new Date().toISOString().slice(0, 10)}`);
+  md.push('');
+  md.push('---');
+  md.push('');
+
+  // ABSOLUTE OUTPUT RULES — top of prompt
+  md.push('## 🛑 ABSOLUTE OUTPUT RULES — READ TWICE 🛑');
+  md.push('');
+  md.push('Return ONLY a markdown table. Each cell contains ONLY the raw translated text. Nothing else.');
+  md.push('');
+  md.push('YOU MUST NOT include any of the following in any cell:');
+  md.push('❌ Headings (#, ##, ###)');
+  md.push('❌ Bold or italic markdown (**, __, *, _)');
+  md.push('❌ Horizontal rules (---)');
+  md.push('❌ "Alternative options" / "Alternatives" / "Other options"');
+  md.push('❌ "Character count" / "(50 characters)" / "(45 chars)"');
+  md.push('❌ "Recommendation" / "Recommended" / "Why this works"');
+  md.push('❌ "Hebrew:" / "English:" / "Russian:" labels');
+  md.push('❌ "Note:" / "Notes on translation" / "Translation:"');
+  md.push('❌ Explanations of your choices');
+  md.push('❌ Multiple options separated by "or"');
+  md.push('');
+  md.push('Each cell = one translation. That is the entire output of that cell.');
+  md.push('');
+  md.push('EXAMPLE OF BAD OUTPUT (DO NOT DO THIS):');
+  md.push('| 1 | Fendi | fendi | seo_title | יפקשמ ידנפ | # SEO Title (50-60 chars)\\n\\n**Fendi FE40004U Sunglasses - Gold Green**\\n\\n*Character count: 45*\\n\\n## Alternative options:\\n- Fendi FE40004U Black\\n\\n**Recommendation:** Use the first |');
+  md.push('');
+  md.push('EXAMPLE OF GOOD OUTPUT (DO THIS):');
+  md.push('| 1 | Fendi | fendi | seo_title | יפקשמ ידנפ | Fendi FE40004U Sunglasses - Gold Green |');
+  md.push('');
+  md.push('If you violate these rules, your output will be REJECTED by the import validator and the translation work will be wasted. Be strict.');
+  md.push('');
+
+  // Role
+  md.push('## Your Role');
+  md.push('');
+  md.push(`You are a professional marketing translator specializing in optical/eyewear products. You translate Hebrew product content into polished, natural ${langLabel}.`);
+  md.push('');
+
+  // Business context
+  md.push('## Business Context');
+  md.push('');
+  md.push(`**${storeNameEn}** (${storeName}) — premium optical store in Ashkelon, Israel. Approximately 40 years in business. Authorized dealer for Zeiss, Leica, Rodenstock, Hoya, Essilor, and luxury eyewear brands (Cazal, Gucci, Ray-Ban, Tom Ford, Saint Laurent, etc.).`);
+  md.push('');
+  md.push('**Audience:** Israeli customers seeking quality eyewear. Use ₪ for prices (never USD/EUR). The audience reads the website in Israel.');
+  md.push('');
+
+  // Tone
+  md.push('## Tone & Style');
+  md.push('');
+  if (targetLang === 'en') {
+    md.push('- American English. Active voice. Short, punchy sentences.');
+    md.push('- Professional, warm, luxurious — like a trusted family store, not a discount chain.');
+    md.push('- Write as if the text was originally authored in English (no "translationese").');
+  } else {
+    md.push('- Formal "вы" form throughout. Natural Russian word order (no Hebrew syntax calques).');
+    md.push('- Professional, warm, luxurious — like a trusted family store, not a discount chain.');
+    md.push('- Write as if the text was originally authored in Russian (no "translationese").');
+  }
+  md.push('');
+
+  // Hard rules
+  md.push('## Hard Rules');
+  md.push('');
+  md.push('1. **Never** use the word "plastic" — always use **"acetate"** for frame material.');
+  md.push('2. **Vary openings** — never start two consecutive products with the same phrase (e.g., "The frame features…", "These glasses…").');
+  md.push('3. Use a short hyphen **-** only — never em-dash (—) or en-dash (–).');
+  md.push('4. **Brand names, model codes, barcodes** — keep verbatim. Never translate or modify them.');
+  md.push('5. Numbers, sizes, prices, and measurements — keep factually identical to the Hebrew source.');
+  md.push('6. **Description:** 2-3 sentences. Marketing tone, informative, not salesy.');
+  md.push('7. **SEO Title:** 40-55 characters. Format: `[Brand] [Model] - [type keyword]`. Must be unique per product.');
+  md.push(`8. **SEO Description:** 130-150 characters. Informative summary with brand + model + key feature. End with " - ${storeNameEn}, Ashkelon" or equivalent.`);
+  md.push('9. **Alt Text:** Concise image description, max 100 characters. Format: `[Brand] [Model] [product type] [key visual feature]`. Never start with "Image of" or "Photo of".');
+  md.push('10. No emojis. No CTAs like "shop now" or "click here".');
+  md.push('11. If the Hebrew text appears cut off mid-sentence, complete the thought naturally in the translation.');
+  md.push('12. Return your output as a **markdown table** (pipe-delimited). Do NOT return Excel, CSV, JSON, or any other format.');
+  md.push('13. **Barcodes must be returned exactly as provided** — preserve leading zeros. Barcode `0001931` must stay `0001931`, not `1931`.');
+  md.push('14. Do NOT wrap the output table in a code block (no ```). Just the raw markdown table.');
+  md.push('');
+
+  // Glossary
+  if (glossary.length) {
+    md.push('## Glossary — Use These Exact Translations');
+    md.push('');
+    md.push(`| Hebrew | ${langLabel} |`);
+    md.push('|---|---|');
+    for (const g of glossary) {
+      md.push(`| ${escapeMdCell(g.term_he)} | ${escapeMdCell(g.term_translated)} |`);
+    }
+    md.push('');
+  }
+
+  // Output format
+  md.push('## Task Format');
+  md.push('');
+  md.push('I will send you a markdown table with **8 columns:**');
+  md.push('');
+  md.push(`| # | Brand | Model | Barcode | HE Description | HE SEO Title | HE SEO Desc | HE Alt Text |`);
+  md.push('');
+  md.push(`You must return a **new table** with **8 columns:**`);
+  md.push('');
+  md.push(`| # | Brand | Model | Barcode | ${langCode} Description | ${langCode} SEO Title | ${langCode} SEO Desc | ${langCode} Alt Text |`);
+  md.push('');
+  md.push('**Rules:**');
+  md.push('- Return ALL rows. Do not skip any.');
+  md.push('- Keep #, Brand, Model, Barcode identical to the input.');
+  md.push(`- Fill all 4 ${langCode} columns for every row.`);
+  md.push('- Return ONLY the markdown table — no explanations, no commentary before or after.');
+  md.push('- Do NOT return the result as an Excel file, spreadsheet, or code block.');
+  md.push('- Do not wrap the table in a code block.');
+  md.push('');
+
+  // Examples
+  if (examples.length) {
+    md.push('## Example');
+    md.push('');
+    md.push('**Input:**');
+    md.push('');
+    md.push('| # | Brand | Model | Barcode | HE Description | HE SEO Title | HE SEO Desc | HE Alt Text |');
+    md.push('|---|---|---|---|---|---|---|---|');
+    examples.forEach((ex, i) => {
+      md.push(`| ${i + 1} | ${escapeMdCell(ex.brand)} | ${escapeMdCell(ex.model)} | ${escapeMdCell(ex.barcode)} | ${escapeMdCell(ex.he_desc)} | ${escapeMdCell(ex.he_seo_title)} | ${escapeMdCell(ex.he_seo_desc)} | ${escapeMdCell(ex.he_alt)} |`);
+    });
+    md.push('');
+    md.push('**Expected output:**');
+    md.push('');
+    md.push(`| # | Brand | Model | Barcode | ${langCode} Description | ${langCode} SEO Title | ${langCode} SEO Desc | ${langCode} Alt Text |`);
+    md.push('|---|---|---|---|---|---|---|---|');
+    examples.forEach((ex, i) => {
+      md.push(`| ${i + 1} | ${escapeMdCell(ex.brand)} | ${escapeMdCell(ex.model)} | ${escapeMdCell(ex.barcode)} | ${escapeMdCell(ex.tr_desc)} | ${escapeMdCell(ex.tr_seo_title)} | ${escapeMdCell(ex.tr_seo_desc)} | ${escapeMdCell(ex.tr_alt)} |`);
+    });
+    md.push('');
+  }
+
+  // Ready handshake
+  md.push('---');
+  md.push('');
+  md.push('## Ready?');
+  md.push('');
+  md.push('Read all instructions above carefully.');
+  md.push('When you fully understand the task, reply with exactly:');
+  md.push('');
+  md.push(`**"Ready - send the ${langLabel} product table."**`);
+  md.push('');
+  md.push('I will then send you the products to translate in the next message.');
+
+  return md.join('\n');
+}
+
+/**
+ * Build a single data batch file.
+ */
+function buildDataFile(batch, langCode, batchNum, totalBatches, offset) {
+  const md = [];
+  md.push(`# Products to Translate — ${langCode} — Batch ${batchNum}/${totalBatches}`);
+  md.push('');
+  md.push(`Translate all 4 empty ${langCode} columns for each row. Return the complete output table.`);
+  md.push('');
+  md.push('| # | Brand | Model | Barcode | HE Description | HE SEO Title | HE SEO Desc | HE Alt Text |');
+  md.push('|---|---|---|---|---|---|---|---|');
+  batch.forEach((r, i) => {
+    const num = offset + i + 1;
+    md.push(`| ${num} | ${escapeMdCell(r.brand)} | ${escapeMdCell(r.model)} | ${escapeMdCell(r.barcode)} | ${escapeMdCell(r.he_desc)} | ${escapeMdCell(r.he_seo_title)} | ${escapeMdCell(r.he_seo_desc)} | ${escapeMdCell(r.he_alt)} |`);
+  });
+  return md.join('\n');
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXTERNAL TRANSLATION — IMPORT
+// ══════════════════════════════════════════════════════════════
+
+let importParsedRows = []; // validated rows ready for save
+
+function openImportModal() {
+  document.getElementById('import-textarea').value = '';
+  document.getElementById('import-preview').style.display = 'none';
+  document.getElementById('import-preview').innerHTML = '';
+  document.getElementById('import-status').style.display = 'none';
+  document.getElementById('import-save-btn').style.display = 'none';
+  importParsedRows = [];
+
+  // Force overlay styles inline (same pattern as openTransEditModal)
+  const _im = document.getElementById('import-modal');
+  Object.assign(_im.style, {
+    position: 'fixed',
+    inset: '0',
+    top: '0', left: '0', right: '0', bottom: '0',
+    width: '100vw',
+    height: '100vh',
+    zIndex: '10000',
+    background: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflowY: 'auto',
+    padding: '20px',
+  });
+  const _imCard = _im.querySelector('.modal');
+  if (_imCard) {
+    Object.assign(_imCard.style, {
+      background: '#fff',
+      borderRadius: '12px',
+      padding: '24px',
+      maxWidth: '900px',
+      width: '95%',
+      maxHeight: '90vh',
+      overflowY: 'auto',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+    });
+  }
+}
+
+function closeImportModal() {
+  document.getElementById('import-modal').style.display = 'none';
+  importParsedRows = [];
+}
+
+/**
+ * Parse a table from pasted text. Auto-detects format:
+ * - Markdown (pipe-delimited): | col1 | col2 | col3 |
+ * - Tab-separated (Excel paste): col1\tcol2\tcol3
+ */
+function parseMarkdownTable(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length < 2) return [];
+
+  let format = 'unknown';
+
+  for (const line of lines) {
+    if (line.includes('|') && line.split('|').length >= 4) {
+      format = 'pipe';
+      break;
+    }
+    if (line.includes('\t') && line.split('\t').length >= 4) {
+      format = 'tab';
+      break;
+    }
+  }
+
+  if (format === 'unknown') return [];
+  if (format === 'pipe') return parsePipeTable(lines);
+  return parseTabTable(lines);
+}
+
+/**
+ * Parse pipe-delimited markdown table.
+ */
+function parsePipeTable(lines) {
+  const pipeLines = lines.filter(l => l.startsWith('|') || l.includes('|'));
+  if (pipeLines.length < 2) return [];
+
+  const headerCells = splitPipeLine(pipeLines[0]);
+  if (headerCells.length < 4) return [];
+
+  const rows = [];
+  for (let i = 1; i < pipeLines.length; i++) {
+    const line = pipeLines[i];
+    if (/^[\s|:\-]+$/.test(line)) continue;
+
+    const cells = splitPipeLine(line);
+    if (cells.length < 4) continue;
+
+    const row = {};
+    headerCells.forEach((h, idx) => {
+      row[h] = (cells[idx] || '').replace(/\\?\|/g, '|').trim();
+    });
+    rows.push(row);
+  }
+  return rows;
+}
+
+/**
+ * Split a pipe-delimited line into cells.
+ */
+function splitPipeLine(line) {
+  const parts = line.split('|');
+  if (parts.length > 0 && parts[0].trim() === '') parts.shift();
+  if (parts.length > 0 && parts[parts.length - 1].trim() === '') parts.pop();
+  return parts.map(p => p.trim());
+}
+
+/**
+ * Parse tab-separated table (pasted from Excel/Sheets).
+ */
+function parseTabTable(lines) {
+  const tabLines = lines.filter(l => l.includes('\t'));
+  if (tabLines.length < 2) return [];
+
+  const headerCells = tabLines[0].split('\t').map(c => c.trim());
+  if (headerCells.length < 4) return [];
+
+  const rows = [];
+  for (let i = 1; i < tabLines.length; i++) {
+    const cells = tabLines[i].split('\t').map(c => c.trim());
+    if (cells.length < 4) continue;
+
+    const row = {};
+    headerCells.forEach((h, idx) => {
+      row[h] = (cells[idx] || '').trim();
+    });
+    rows.push(row);
+  }
+  return rows;
+}
+
+/**
+ * Find the column value by trying multiple possible header names.
+ */
+function findColumn(row, ...candidates) {
+  for (const c of candidates) {
+    const key = Object.keys(row).find(k => k.toLowerCase().includes(c.toLowerCase()));
+    if (key && row[key]) return row[key];
+  }
+  return '';
+}
+
+/**
+ * Detect markdown wrapper contamination in a translated value.
+ * Returns null if clean, or a string reason if contaminated.
+ */
+function _detectWrapperContamination(value, fieldName) {
+  if (!value || typeof value !== 'string') return null;
+
+  const patterns = [
+    { test: (s) => /^\s*#/.test(s), reason: 'starts with # heading' },
+    { test: (s) => s.includes('## '), reason: "contains '## ' subheading" },
+    { test: (s) => s.includes('**'), reason: "contains '**' bold markdown" },
+    { test: (s) => s.includes('---'), reason: "contains '---' horizontal rule" },
+    { test: (s) => /alternative/i.test(s), reason: "contains 'Alternative'" },
+    { test: (s) => /character count/i.test(s), reason: "contains 'Character count'" },
+    { test: (s) => s.includes('(40-55 characters)'), reason: "contains '(40-55 characters)'" },
+    { test: (s) => s.includes('(50-60 characters)'), reason: "contains '(50-60 characters)'" },
+    { test: (s) => s.includes('(130-160 characters)'), reason: "contains '(130-160 characters)'" },
+    { test: (s) => s.includes('(150-160 characters)'), reason: "contains '(150-160 characters)'" },
+    { test: (s) => /recommendation/i.test(s), reason: "contains 'Recommendation'" },
+    { test: (s) => /why this works/i.test(s), reason: "contains 'Why this works'" },
+    { test: (s) => s.includes('Hebrew:'), reason: "contains 'Hebrew:'" },
+    { test: (s) => s.includes('Russian:'), reason: "contains 'Russian:'" },
+    { test: (s) => s.includes('English:'), reason: "contains 'English:'" },
+    { test: (s) => /notes on translation/i.test(s), reason: "contains 'Notes on translation'" },
+    { test: (s) => /^Note:/m.test(s), reason: "contains 'Note:' at start of line" },
+    { test: (s) => /^Translation:/m.test(s), reason: "contains 'Translation:' at start" },
+    { test: (s) => /^Output:/m.test(s), reason: "contains 'Output:' at start" },
+    { test: (s) => /translated text:/i.test(s), reason: "contains 'Translated text:'" },
+  ];
+
+  for (const p of patterns) {
+    if (p.test(value)) return p.reason;
+  }
+
+  const lengthBounds = {
+    seo_title: { min: 20, max: 80 },
+    seo_description: { min: 80, max: 200 },
+    description: { min: 100, max: 500 },
+    alt_text: { min: 30, max: 200 },
+  };
+
+  const bounds = lengthBounds[fieldName];
+  if (bounds) {
+    if (value.length < bounds.min) return `too short (${value.length} < ${bounds.min} for ${fieldName})`;
+    if (value.length > bounds.max) return `too long (${value.length} > ${bounds.max} for ${fieldName})`;
+  }
+
+  return null;
+}
+
+/**
+ * Get contaminated fields for a product in a given language.
+ * Returns array of { field, reason } for fields where _detectWrapperContamination found issues.
+ * Returns empty array if the product has no contaminated translations.
+ */
+function _getContaminatedFields(productId, lang) {
+  const FIELDS = ['description', 'seo_title', 'seo_description', 'alt_text'];
+  const t = (transContentMap[productId] || {})[lang] || {};
+  const results = [];
+  for (const f of FIELDS) {
+    const entry = t[f];
+    if (!entry || !entry.content) continue;
+    const reason = _detectWrapperContamination(entry.content, f);
+    if (reason) results.push({ field: f, reason });
+  }
+  return results;
+}
+
+/**
+ * Update the contamination filter counter and inject the UI if not yet present.
+ * Called when translations load and when the checkbox is toggled.
+ */
+function _updateContaminationUI(targetLang) {
+  const lang = targetLang || 'en';
+  const FIELDS = ['description', 'seo_title', 'seo_description', 'alt_text'];
+  let productCount = 0;
+  let fieldCount = 0;
+
+  const products = contentProducts.filter(p => contentMap[p.id]?.description);
+  for (const p of products) {
+    const contaminated = _getContaminatedFields(p.id, lang);
+    if (contaminated.length > 0) {
+      productCount++;
+      fieldCount += contaminated.length;
+    }
+  }
+
+  const counter = document.getElementById('contamination-counter');
+  if (counter) {
+    counter.textContent = `סה"כ: ${productCount} מוצרים, ${fieldCount} שדות מזוהמים`;
+  }
+  return { productCount, fieldCount };
+}
+
+/**
+ * Inject the contamination filter checkbox into the translations panel.
+ * Idempotent — safe to call multiple times.
+ */
+function _injectContaminationFilter() {
+  if (document.getElementById('contamination-filter-box')) return;
+
+  const actionsDiv = document.querySelector('#panel-translations .content-actions');
+  if (!actionsDiv) return;
+
+  const box = document.createElement('div');
+  box.id = 'contamination-filter-box';
+  box.style.cssText = 'background:#fff8e1;border:1px solid #e8da94;border-radius:8px;padding:10px 14px;margin-bottom:10px;direction:rtl;';
+  box.innerHTML = `
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px;">
+      <input type="checkbox" id="contamination-filter-cb" onchange="_onContaminationToggle()" style="width:18px;height:18px;accent-color:#c9a555;">
+      🧹 הצג רק מוצרים מזוהמים ב-markdown wrappers
+    </label>
+    <div style="font-size:12px;color:#6b7280;margin-top:4px;margin-right:26px;">
+      כשהאופציה דלוקה: רק מוצרים עם wrapper מזוהם יוצגו, ורק השדות המזוהמים יסומנו אוטומטית לייצוא.
+    </div>
+    <div id="contamination-counter" style="font-size:13px;font-weight:600;color:#c9a555;margin-top:6px;margin-right:26px;"></div>
+  `;
+
+  actionsDiv.parentNode.insertBefore(box, actionsDiv);
+}
+
+/**
+ * Checkbox toggle handler.
+ */
+function _onContaminationToggle() {
+  const cb = document.getElementById('contamination-filter-cb');
+  _contaminationFilterActive = cb ? cb.checked : false;
+  filterTranslations();
+}
+
+/**
+ * Validate pasted text: parse table, match barcodes, check fields.
+ */
+function validateImport() {
+  const text = document.getElementById('import-textarea').value;
+  const targetLang = document.getElementById('import-lang').value;
+  const langCode = targetLang.toUpperCase();
+
+  if (!text.trim()) {
+    showImportStatus('הדבק טבלה קודם', 'error');
+    return;
+  }
+
+  const rows = parseMarkdownTable(text);
+  if (!rows.length) {
+    showImportStatus('לא נמצאה טבלת Markdown בטקסט שהודבק', 'error');
+    return;
+  }
+
+  const barcodeMap = {};
+  for (const p of contentProducts) {
+    if (p.barcode) barcodeMap[p.barcode] = p;
+  }
+
+  const hebrewRegex = /[\u0590-\u05FF]/;
+  const cyrillicRegex = /[\u0400-\u04FF]/;
+
+  const validated = [];
+  let okCount = 0, warnCount = 0, errCount = 0;
+
+  for (const row of rows) {
+    const barcode = findColumn(row, 'barcode');
+    if (!barcode || barcode === '---' || barcode === '#') continue;
+
+    // Smart barcode lookup: exact match first, then try zero-padded variations
+    let product = barcodeMap[barcode];
+    if (!product && /^\d+$/.test(barcode)) {
+      const padded7 = barcode.padStart(7, '0');
+      const padded6 = barcode.padStart(6, '0');
+      const padded8 = barcode.padStart(8, '0');
+      product = barcodeMap[padded7] || barcodeMap[padded6] || barcodeMap[padded8];
+    }
+    const desc = findColumn(row, `${langCode} desc`, `${langCode.toLowerCase()} desc`, 'description', 'desc');
+    const seoTitle = findColumn(row, `${langCode} seo title`, `${langCode.toLowerCase()} seo title`, 'seo title', 'seo_title');
+    const seoDesc = findColumn(row, `${langCode} seo desc`, `${langCode.toLowerCase()} seo desc`, 'seo desc', 'seo_desc');
+    const altText = findColumn(row, `${langCode} alt`, `${langCode.toLowerCase()} alt`, 'alt text', 'alt_text', 'alt');
+
+    const brand = findColumn(row, 'brand') || product?.brand_name || '?';
+    const model = findColumn(row, 'model') || product?.model || '?';
+
+    const errors = [];
+    const warnings = [];
+
+    if (!product) {
+      errors.push(`ברקוד ${barcode} לא נמצא במוצרים`);
+    }
+
+    if (!desc) errors.push('חסר Description');
+    if (!seoTitle) errors.push('חסר SEO Title');
+    if (!seoDesc) errors.push('חסר SEO Desc');
+    if (!altText) warnings.push('חסר Alt Text');
+
+    if (desc && hebrewRegex.test(desc)) errors.push('Description מכיל עברית');
+    if (seoTitle && hebrewRegex.test(seoTitle)) errors.push('SEO Title מכיל עברית');
+    if (seoDesc && hebrewRegex.test(seoDesc)) errors.push('SEO Desc מכיל עברית');
+    if (altText && hebrewRegex.test(altText)) errors.push('Alt Text מכיל עברית');
+
+    // Cross-language detection: Cyrillic in EN = wrong language, Latin in RU = wrong language
+    if (targetLang === 'en') {
+      if (desc && cyrillicRegex.test(desc)) errors.push('Description מכיל קירילית — אולי בחרת שפה לא נכונה?');
+      if (seoTitle && cyrillicRegex.test(seoTitle)) errors.push('SEO Title מכיל קירילית');
+      if (seoDesc && cyrillicRegex.test(seoDesc)) errors.push('SEO Desc מכיל קירילית');
+      if (altText && cyrillicRegex.test(altText)) errors.push('Alt Text מכיל קירילית');
+    }
+    if (targetLang === 'ru') {
+      if (desc && !cyrillicRegex.test(desc)) errors.push('Description לא מכיל קירילית — אולי בחרת שפה לא נכונה?');
+      if (seoTitle && !cyrillicRegex.test(seoTitle)) errors.push('SEO Title לא מכיל קירילית');
+      if (seoDesc && !cyrillicRegex.test(seoDesc)) errors.push('SEO Desc לא מכיל קירילית');
+    }
+
+    // Wrapper contamination detection
+    const wrapperChecks = [
+      { value: desc, field: 'description', label: 'Description' },
+      { value: seoTitle, field: 'seo_title', label: 'SEO Title' },
+      { value: seoDesc, field: 'seo_description', label: 'SEO Desc' },
+      { value: altText, field: 'alt_text', label: 'Alt Text' },
+    ];
+    for (const chk of wrapperChecks) {
+      if (chk.value) {
+        const wrapperReason = _detectWrapperContamination(chk.value, chk.field);
+        if (wrapperReason) errors.push(`${chk.label}: ${wrapperReason}`);
+      }
+    }
+
+    if (seoTitle && seoTitle.length > 70) errors.push(`SEO Title ארוך מדי (${seoTitle.length} > 70)`);
+    else if (seoTitle && seoTitle.length > 60) warnings.push(`SEO Title ארוך (${seoTitle.length} > 60)`);
+
+    if (seoDesc && seoDesc.length > 200) errors.push(`SEO Desc ארוך מדי (${seoDesc.length} > 200)`);
+    else if (seoDesc && seoDesc.length > 160) warnings.push(`SEO Desc ארוך (${seoDesc.length} > 160)`);
+
+    if (altText && altText.length > 150) errors.push(`Alt Text ארוך מדי (${altText.length} > 150)`);
+    else if (altText && altText.length > 125) warnings.push(`Alt Text ארוך (${altText.length} > 125)`);
+
+    let status;
+    if (errors.length) { status = 'error'; errCount++; }
+    else if (warnings.length) { status = 'warning'; warnCount++; }
+    else { status = 'ok'; okCount++; }
+
+    validated.push({
+      barcode,
+      brand,
+      model,
+      entityId: product?.id || null,
+      desc,
+      seoTitle,
+      seoDesc,
+      altText,
+      status,
+      errors,
+      warnings,
+    });
+  }
+
+  importParsedRows = validated;
+
+  renderImportPreview(validated, langCode, okCount, warnCount, errCount);
+}
+
+function showImportStatus(msg, type) {
+  const el = document.getElementById('import-status');
+  el.style.display = 'block';
+  el.style.background = type === 'error' ? '#fee' : type === 'success' ? '#efe' : '#ffc';
+  el.style.color = '#333';
+  el.textContent = msg;
+}
+
+function renderImportPreview(rows, langCode, okCount, warnCount, errCount) {
+  const container = document.getElementById('import-preview');
+  const saveable = okCount + warnCount;
+
+  let html = `<table class="data-table" style="font-size:12px;direction:ltr;text-align:left;">`;
+  html += `<thead><tr><th>Status</th><th>Brand</th><th>Model</th><th>Barcode</th><th>${langCode} Description</th><th>Notes</th></tr></thead>`;
+  html += `<tbody>`;
+
+  for (const r of rows) {
+    const icon = r.status === 'ok' ? '✅' : r.status === 'warning' ? '⚠️' : '❌';
+    const notes = [...r.errors, ...r.warnings].join('; ') || '-';
+    const descPreview = (r.desc || '').substring(0, 60) + ((r.desc || '').length > 60 ? '...' : '');
+    const rowColor = r.status === 'error' ? '#fee' : r.status === 'warning' ? '#ffc' : '';
+    html += `<tr style="background:${rowColor}"><td>${icon}</td><td>${escImport(r.brand)}</td><td>${escImport(r.model)}</td><td>${escImport(r.barcode)}</td><td style="direction:ltr">${escImport(descPreview)}</td><td>${escImport(notes)}</td></tr>`;
+  }
+
+  html += `</tbody></table>`;
+  html += `<div style="margin-top:8px;font-weight:bold;">✅ ${okCount} תקין &nbsp; ⚠️ ${warnCount} אזהרות &nbsp; ❌ ${errCount} שגיאות &nbsp; | &nbsp; ${saveable} ישמרו</div>`;
+
+  container.innerHTML = html;
+  container.style.display = 'block';
+
+  document.getElementById('import-save-btn').style.display = saveable > 0 ? 'inline-block' : 'none';
+
+  if (errCount > 0) {
+    showImportStatus(`${errCount} שורות עם שגיאות ידלגו. ${saveable} ישמרו.`, 'warning');
+  } else {
+    showImportStatus(`הכל תקין! ${saveable} מוצרים מוכנים לשמירה.`, 'success');
+  }
+}
+
+// Minimal HTML escaper for preview table
+function escImport(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Save validated translations to ai_content.
+ */
+async function saveImport() {
+  const targetLang = document.getElementById('import-lang').value;
+  const tid = getTenantId();
+  const nowIso = new Date().toISOString();
+
+  const saveableRows = importParsedRows.filter(r =>
+    (r.status === 'ok' || r.status === 'warning') && r.entityId
+  );
+
+  if (!saveableRows.length) {
+    showImportStatus('אין שורות תקינות לשמירה', 'error');
+    return;
+  }
+
+  showLoading(`שומר ${saveableRows.length} תרגומים...`);
+
+  const records = [];
+  for (const r of saveableRows) {
+    const base = {
+      tenant_id: tid,
+      entity_type: 'product',
+      entity_id: r.entityId,
+      language: targetLang,
+      status: 'edited',
+      is_deleted: false,        // CRITICAL — Fragile Area #8
+      updated_at: nowIso,
+    };
+
+    if (r.desc) records.push({ ...base, content_type: 'description', content: r.desc });
+    if (r.seoTitle) records.push({ ...base, content_type: 'seo_title', content: r.seoTitle });
+    if (r.seoDesc) records.push({ ...base, content_type: 'seo_description', content: r.seoDesc });
+    if (r.altText) records.push({ ...base, content_type: 'alt_text', content: r.altText });
+  }
+
+  const UPSERT_BATCH = 100;
+  let saved = 0;
+  let errors = 0;
+
+  for (let i = 0; i < records.length; i += UPSERT_BATCH) {
+    const batch = records.slice(i, i + UPSERT_BATCH);
+    const { error } = await sb.from('ai_content').upsert(batch, {
+      onConflict: 'tenant_id,entity_type,entity_id,content_type,language',
+    });
+    if (error) {
+      console.error('Import upsert error:', error);
+      errors++;
+    } else {
+      saved += batch.length;
+    }
+  }
+
+  hideLoading();
+
+  if (errors) {
+    showImportStatus(`נשמרו ${saved} שדות, ${errors} שגיאות upsert — בדוק console`, 'warning');
+  } else {
+    showImportStatus(`✅ נשמרו ${saved} שדות (${saveableRows.length} מוצרים) בהצלחה!`, 'success');
+  }
+
+  await loadTranslations();
+  renderTransTable();
+
+  document.getElementById('import-save-btn').style.display = 'none';
+
+  toast(`יובאו ${saveableRows.length} תרגומים ל-${targetLang.toUpperCase()}`, 's');
+}
