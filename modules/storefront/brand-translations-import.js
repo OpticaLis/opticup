@@ -96,7 +96,7 @@ function _detectBrandWrapperContamination(value, fieldName) {
 }
 
 // Validation context shared between initial validate and per-row revalidate.
-let _brandValidationCtx = null;
+var _brandValidationCtx = null;
 
 function _validateBrandRow(row, ctx) {
   const { lang, slugMap, heBySlugField } = ctx;
@@ -341,10 +341,4 @@ async function saveBrandImport() {
   if (upsertErrors) {
     showBrandImportStatus(`נשמרו ${saved} שדות, ${upsertErrors} שגיאות upsert — בדוק console`, 'warning');
     toast(`נשמרו ${saved} תרגומים. ${skipped} שורות דולגו (שגיאות).`, 'w');
-  } else {
-    showBrandImportStatus(`✅ נשמרו ${saved} תרגומים ל-${uniqueBrands} מותגים`, 'success');
-    toast(`נשמרו ${saved} תרגומים. ${skipped} שורות דולגו (שגיאות).`, 's');
-  }
-  const saveBtn = document.getElementById('brand-import-save-btn');
-  if (saveBtn) saveBtn.style.display = 'none';
-}
+  } e

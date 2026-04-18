@@ -11,10 +11,10 @@
 // Loads BEFORE: brand-translations-export.js, brand-translations-import.js
 // ══════════════════════════════════════════════════════════════
 
-const BRAND_TRANS_FIELDS = ['seo_title', 'seo_description', 'brand_description_short', 'brand_description'];
+var BRAND_TRANS_FIELDS = ['seo_title', 'seo_description', 'brand_description_short', 'brand_description'];
 
-let brandImportParsed = [];
-let brandImportLang = 'en';
+var brandImportParsed = [];
+var brandImportLang = 'en';
 
 // ── Local helpers (no dependency on storefront-translations.js) ──
 
@@ -133,7 +133,7 @@ async function loadExistingBrandTranslations(tid, lang) {
 }
 
 // Module-scoped state for the export selection modal flow.
-let _brandExportCtx = null;
+var _brandExportCtx = null;
 
 /**
  * Step 1 of export: open the selection modal listing brands that
@@ -259,13 +259,4 @@ async function confirmBrandExport() {
 
 // ── Small helpers used by brand-translations-import.js ──
 function _brandRowIcon(status) {
-  return status === 'ok' ? '✅' : status === 'warning' ? '⚠️' : '❌';
-}
-function _brandRowBg(status) {
-  return status === 'error' ? '#fee' : status === 'warning' ? '#ffc' : '';
-}
-function _brandRowEdit(idx, value) {
-  const row = brandImportParsed[idx];
-  if (!row) return;
-  row.translation = value;
-}
+  return status === 'ok' ? '✅' : status === 'wa
