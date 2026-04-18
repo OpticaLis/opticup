@@ -262,12 +262,9 @@ Object.assign(BLOCK_SCHEMAS, {
 
 });
 
-const BLOCK_SETTINGS_SCHEMA = [
+var BLOCK_SETTINGS_SCHEMA = [
   { key: 'bg_color', label: 'צבע רקע', type: 'select', options: [
     { value: 'transparent', label: 'שקוף (ברירת מחדל)' }, { value: 'white', label: 'לבן' },
     { value: 'black', label: 'שחור' }, { value: 'gold', label: 'זהב' }, { value: 'gray', label: 'אפור' }
   ], default: 'transparent' },
-  { key: 'padding', label: 'ריווח (Tailwind class)', type: 'text', placeholder: 'py-12 md:py-16' },
-  { key: 'max_width', label: 'רוחב מקסימלי (rem)', type: 'text', placeholder: '72' },
-  { key: 'custom_css', label: 'CSS מותאם אישית', type: 'code', rows: 8 },
-];
+  { key: 'padding', 

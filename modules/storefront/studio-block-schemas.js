@@ -3,7 +3,7 @@
 // Part 1: Basic blocks (hero through sticky_bar)
 // Part 2: Extended blocks (campaign_cards onward) loaded via studio-block-schemas-ext.js
 
-const BLOCK_SCHEMAS = {
+var BLOCK_SCHEMAS = {
 
   hero: {
     label: 'Hero — באנר ראשי',
@@ -338,11 +338,4 @@ const BLOCK_SCHEMAS = {
         { value: 'line', label: 'קו' }, { value: 'space', label: 'רווח' },
         { value: 'dots', label: 'נקודות' }, { value: 'wave', label: 'גל' }
       ], default: 'line' },
-      { key: 'color', label: 'צבע (לקו)', type: 'select', options: [
-        { value: 'gold', label: 'זהב' }, { value: 'gray', label: 'אפור' }, { value: 'black', label: 'שחור' }
-      ], default: 'gold' },
-      { key: 'height', label: 'גובה (לרווח)', type: 'text', placeholder: '60px', default: '60px' },
-    ]
-  },
-
-};
+      {

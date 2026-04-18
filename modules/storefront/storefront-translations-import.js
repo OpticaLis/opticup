@@ -1,6 +1,6 @@
 // EXTERNAL TRANSLATION — IMPORT
 
-let importParsedRows = [];
+var importParsedRows = [];
 
 function openImportModal() {
   document.getElementById('import-textarea').value = '';
@@ -207,11 +207,4 @@ function _injectContaminationFilter() {
     </div>
     <div id="contamination-counter" style="font-size:13px;font-weight:600;color:#c9a555;margin-top:6px;margin-right:26px;"></div>
   `;
-  actionsDiv.parentNode.insertBefore(box, actionsDiv);
-}
-
-function _onContaminationToggle() {
-  const cb = document.getElementById('contamination-filter-cb');
-  _contaminationFilterActive = cb ? cb.checked : false;
-  filterTranslations();
-}
+  actionsDiv.parentNode.insertBe

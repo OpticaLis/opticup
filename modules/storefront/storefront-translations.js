@@ -1,11 +1,11 @@
 // Storefront Translations Tab — view, edit, bulk-translate product content
 // Phase 6: i18n (manual translation flow — AI removed per HF1)
-let transContentMap = {};
-let transCurrentPage = 1;
-const TRANS_PAGE_SIZE = 50;
-let transEditProduct = null;
-let transEditLang = null;
-let _contaminationFilterActive = false;
+var transContentMap = {};
+var transCurrentPage = 1;
+var TRANS_PAGE_SIZE = 50;
+var transEditProduct = null;
+var transEditLang = null;
+var _contaminationFilterActive = false;
 function switchContentTab(tab) {
   document.getElementById('panel-content').style.display = tab === 'content' ? '' : 'none';
   document.getElementById('panel-translations').style.display = tab === 'translations' ? '' : 'none';
@@ -336,14 +336,4 @@ async function approveTranslation() {
   const ct = document.getElementById('trans-edit-type').value;
   const existing = transContentMap[transEditProduct.id]?.[transEditLang]?.[ct];
   if (!existing) { toast('אין תרגום לאשר', 'w'); return; }
-  showLoading('מאשר...');
-  try {
-    await sb.from('ai_content').update({ status: 'approved', updated_at: new Date().toISOString() })
-      .eq('id', existing.id);
-    await loadTranslations();
-    toast('תרגום אושר', 's');
-    closeTransEditModal();
-  } catch (e) {
-    toast('שגיאה באישור', 'e');
-  } finally { hideLoading(); }
-}
+  showLoading('מא
