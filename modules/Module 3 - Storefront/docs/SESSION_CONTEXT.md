@@ -1,7 +1,7 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
 ## Current Phase: POST-DNS — production stable, hero video live (2026-04-18)
-## Status: 🟢 PRODUCTION LIVE. DNS switched, hero video self-hosted (MP4), merged to main (`6145ef9`). develop = main. PageSpeed baseline ~89. Storefront SESSION_CONTEXT.md is STALE (pre-reset content) — update in next storefront commit.
+## Status: 🟢 PRODUCTION LIVE. DNS switched, hero video self-hosted (MP4), ISR caching enabled (24h). Storefront SESSION_CONTEXT updated. PageSpeed baseline ~89.
 ## Date: 2026-04-18
 
 ---
@@ -20,13 +20,14 @@
 - DNS: `prizma-optic.co.il` → Vercel, SSL active
 
 **Remaining post-launch queue:**
-1. Perf/SEO individual fixes — JSON-LD URLs, supersale h1, edge caching, image dimensions (cherry-pick from tag `perf-post-dns-reverted`, one at a time with PageSpeed measurement)
-2. ISR caching — TTFB ~2s, target <200ms
-3. CSP header — missing (5/6 security headers present)
-4. 13 DB rows — Hebrew titles stuck in EN/RU pages
-5. BrandShowcase scroll fixes — 3 open issues
-6. Homepage revisions — Daniel's block-by-block feedback
-7. Contact form Resend integration — form shows success but data lost
+1. ~~JSON-LD URLs~~ — ✅ DONE (2026-04-18). 6 files fixed, pending commit+push.
+2. ~~ISR caching~~ — ✅ DONE (2026-04-18). `isr: { expiration: 86400 }`, live on production.
+3. ~~CSP header~~ — ✅ DONE (2026-04-18). Report-Only added to vercel.json, pending commit+push.
+4. ~~Hebrew titles in EN/RU~~ — ✅ DONE (2026-04-18). 9 DB rows fixed, zero Hebrew remains.
+5. Perf/SEO remaining — supersale h1+schema, CMS page h1, image w/h, WebP brand logos (cherry-pick from tag `perf-post-dns-reverted`, one at a time)
+6. BrandShowcase scroll fixes — 3 open issues
+7. Homepage revisions — Daniel's block-by-block feedback
+8. Contact form — intentionally hidden (WhatsApp only). Resend integration deferred.
 
 **None of the above are blockers. Site is live and functional.**
 
