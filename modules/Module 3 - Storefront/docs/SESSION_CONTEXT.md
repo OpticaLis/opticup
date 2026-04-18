@@ -1,8 +1,35 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: POST-DNS — production stable, perf regression reverted (2026-04-18)
-## Status: 🟢 DNS live on Vercel. POST_DNS_PERF_AND_SEO SPEC was executed but caused PageSpeed regression (89→47). All changes reverted from main (commit 8c362c1). Main now matches 62ebe0e + eye favicon. develop still has the reverted commits (not deployed). Next: re-apply safe changes one at a time with before/after measurement.
+## Current Phase: POST-DNS — production stable, develop reset to main (2026-04-18)
+## Status: 🟢 DNS live on Vercel. POST_DNS_PERF_AND_SEO SPEC caused PageSpeed regression (89→47), reverted from main (`8c362c1`). **As of this evening, develop has also been reset to match main** (`b1a7312`) — the perf work is preserved on tag `perf-post-dns-reverted` in the storefront repo for future cherry-picking with per-change measurement. Build passes, working tree clean, both branches in sync at production. Next: Foreman authors the cherry-pick SPEC — one perf change per commit with before/after PageSpeed.
 ## Date: 2026-04-18
+
+---
+
+## Execution Close-Out 2026-04-18 (late evening) — STOREFRONT_DEVELOP_RESET
+
+**Deliverables (inside `docs/specs/STOREFRONT_DEVELOP_RESET/`):**
+- `SPEC.md` — Foreman-authored, 6-step reset plan with full success criteria and rollback path
+- `EXECUTION_REPORT.md` — retrospective (self-score 9.8/10) + 2 executor-skill proposals (numeric tolerance encoding, cross-repo SPEC pattern reference)
+- `FINDINGS.md` — no out-of-scope findings (pure mechanical cleanup SPEC; all state already catalogued by the predecessor snapshot SPEC `c36a8b3`)
+
+**Storefront operations executed:**
+- Commit `9582a2f` on storefront — `docs(storefront): preserve post-regression SESSION_CONTEXT updates` (the one uncommitted doc file preserved before reset)
+- Annotated tag `perf-post-dns-reverted` → `9582a2f` — pushed to origin. Full perf history (`0a04ccf` ← `dd7ddcf` ← `9056307` ← `8106116` ← all POST_DNS_PERF_AND_SEO commits) reachable via `git log perf-post-dns-reverted` for future cherry-picking.
+- `git reset --hard origin/main` on storefront develop → HEAD = `b1a7312`
+- `git push --force-with-lease origin develop` — succeeded, forced-update `9582a2f...b1a7312`
+- `npm run build` — exit 0, "Complete!" in 4.94s
+- Critical files verified: vercel.json (8601 lines), tsconfig.json (5), global.css (128 — main's pre-perf version), index.astro + BaseLayout.astro present
+
+**Final state (storefront):**
+- `origin/develop` = `origin/main` = `b1a7312`
+- Tag `perf-post-dns-reverted` = `9582a2f` (published to origin)
+- `main` untouched throughout (still `b1a7312`)
+- Working tree clean, build passes
+
+**Rollback path (if ever needed):** `git checkout develop && git reset --hard perf-post-dns-reverted && git push --force-with-lease origin develop`
+
+**Next step:** Awaiting Foreman review → `FOREMAN_REVIEW.md` → new SPEC for per-change cherry-pick with PageSpeed measurement. Out of scope for this SPEC: any perf change re-application.
 
 ---
 
