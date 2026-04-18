@@ -212,6 +212,7 @@
 <!-- Studio JS -->
 <script src="modules/storefront/studio-permissions.js"></script>
 <script src="modules/storefront/studio-block-schemas.js"></script>
+<script src="modules/storefront/studio-block-schemas-ext.js"></script>
 <script src="modules/storefront/studio-form-renderer.js"></script>
 <script src="modules/storefront/studio-richtext.js"></script>
 <script src="modules/storefront/studio-product-picker.js"></script>
@@ -234,6 +235,8 @@
 <script src="modules/storefront/studio-translations.js"></script>
 <script src="modules/storefront/studio-translation-editor.js"></script>
 <script src="modules/storefront/brand-translations.js"></script>
+<script src="modules/storefront/brand-translations-export.js"></script>
+<script src="modules/storefront/brand-translations-import.js"></script>
 
 <script>
 // ── Global refresh system ──
@@ -287,12 +290,4 @@ function applyStudioPermissions() {
 window.addEventListener('DOMContentLoaded', async () => {
   const session = await loadSession();
   if (!session) { window.location.href = '/'; return; }
-  if (!hasPermission('settings.view')) { window.location.href = '/'; return; }
-  if (!await isFeatureEnabled('cms_studio')) { renderFeatureLockedState('cms_studio'); return; }
-  applyStudioPermissions();
-  if (typeof loadStudioTags === 'function') await loadStudioTags();
-  await loadStudioPages();
-});
-</script>
-</body>
-</html>
+  if (!hasPermission('settings.view')) {
