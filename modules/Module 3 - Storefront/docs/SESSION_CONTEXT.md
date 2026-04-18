@@ -1,8 +1,63 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Pre-DNS-Switch Fixes — STOREFRONT_LANG_AND_VIDEO_FIX 🟡 EXECUTED (2026-04-17)
-## Status: 2 of 3 SPEC tasks shipped. YouTube nocookie removed (3 hits across StepsBlock + VideoBlock — storefront commit `45cd329`). `/prizmaexpress/` RU corrupted words fixed via targeted DB UPDATE (`лиןз` → `линз`, `каталоגים` → `каталоге`). EN/RU routing 404s on Vercel prod diagnosed as **develop→main merge gap**, NOT a code bug — localhost serves 58/58 tested pages at 200 on develop; Vercel prod runs stale main with blog-only catchall. Remedy requires Daniel-authorized merge. Awaiting Foreman review + merge decision.
-## Date: 2026-04-17
+## Current Phase: POST-DNS — production stable, perf regression reverted (2026-04-18)
+## Status: 🟢 DNS live on Vercel. POST_DNS_PERF_AND_SEO SPEC was executed but caused PageSpeed regression (89→47). All changes reverted from main (commit 8c362c1). Main now matches 62ebe0e + eye favicon. develop still has the reverted commits (not deployed). Next: re-apply safe changes one at a time with before/after measurement.
+## Date: 2026-04-18
+
+---
+
+## Execution Close-Out 2026-04-18 (evening) — STOREFRONT_REPO_STATE_SNAPSHOT
+
+**Deliverables (inside `docs/specs/STOREFRONT_REPO_STATE_SNAPSHOT/`):**
+- `SPEC.md` — Foreman-authored, 8-mission read-only diagnostic
+- `SNAPSHOT_REPORT.md` — raw output of all 8 missions + executive summary + 4 cleanup options
+- `EXECUTION_REPORT.md` — retrospective (self-score 9.5/10) + 2 executor-skill proposals
+- `FINDINGS.md` — 3 findings (1 INFO state drift, 1 LOW uncommitted docs on storefront develop, 1 MEDIUM autocrlf × .gitattributes conflict)
+
+**Key conclusions from the snapshot:**
+- The "messy state" described in the dispatch prompt (250+ modified files, staged deletions) was **no longer present** at execution time — likely resolved between Cowork observation and executor start.
+- Actual state: 0 staged changes, 1 modified file (`SESSION_CONTEXT.md` with real post-regression docs), 0 untracked, build passes, critical files all intact.
+- **develop is a commit-graph ancestor of main** (zero unique commits), but its **working tree differs from main** by 48 files / +398/-105 lines — this is the reverted POST_DNS_PERF_AND_SEO scope.
+- **Cleanup options documented** in SNAPSHOT_REPORT.md — Foreman to author the cleanup SPEC next. Recommend Option C (cherry-pick one perf change per commit with before/after PageSpeed) as aligned with the "never batch perf changes" lesson.
+- Prerequisite before any `--force` push: commit storefront's one uncommitted `SESSION_CONTEXT.md` change so it isn't lost.
+
+**Next step:** Awaiting Foreman review → FOREMAN_REVIEW.md → cleanup SPEC.
+
+---
+
+## POST_DNS_PERF_AND_SEO — Regression & Revert (2026-04-18)
+
+**What happened:** 18 perf/SEO fixes applied in one session → PageSpeed mobile dropped 89→47. Two hotfix attempts made it worse. Full revert to `62ebe0e`.
+**Root causes:** (1) YouTube iframe on mobile = ~800KB JS penalty, (2) broken cache middleware, (3) 18 changes batched without measurement.
+**Revert:** commit `8c362c1` on main. Eye favicon added as `b1a7312`.
+**Post-mortem:** `docs/specs/POST_DNS_PERF_AND_SEO/REVERT_POST_MORTEM.md`
+**Rule going forward:** One perf change per commit, measure before/after. No batching.
+**Still want:** JSON-LD fix, supersale h1, edge caching, image dimensions — re-apply individually.
+
+---
+
+## DNS Switch Preflight Audit 🟢 COMPLETE (2026-04-18)
+
+**SPEC:** `docs/specs/DNS_SWITCH_PREFLIGHT_AUDIT/`
+**Verdict:** GO — 0 blockers, 4 SHOULD FIX, 3 NICE TO HAVE, 7 ALREADY RESOLVED.
+**Key findings:**
+- `astro.config.mjs` site = `https://prizma-optic.co.il` ✅
+- develop→main: 0 commits divergent ✅
+- 76 published pages (HE/EN/RU) all serve 200 ✅
+- og:image 100% coverage, hreflang on all pages, sitemap 245 URLs clean ✅
+- 1,671 redirects from old WP site in vercel.json ✅
+- Security headers 5/6 present, zero Hebrew leak in EN/RU titles ✅
+- Partytown fully removed, YouTube facade active ✅
+
+**DNS switch EXECUTED (2026-04-18):**
+- Vercel custom domains registered: `prizma-optic.co.il` + `www.prizma-optic.co.il` ✅
+- DreamVPS cPanel Zone Editor updated: A record `@` → `216.198.79.1`, CNAME `www` → `c727e6a69a4a41da.vercel-dns-017.com.` ✅
+- MX, TXT (SPF), DKIM records untouched — Google Workspace email unaffected ✅
+- Awaiting DNS propagation (minutes to hours) + Vercel auto-SSL provisioning
+
+**Post-launch queue:** ISR caching (2s TTFB → <200ms), CSP header, 13 EN/RU DB title cleanups, BrandShowcase scroll fixes, homepage revisions, contact form Resend integration.
+
+**Full report:** `docs/specs/DNS_SWITCH_PREFLIGHT_AUDIT/PREFLIGHT_REPORT.md`
 
 ---
 
@@ -376,4 +431,4 @@ All CRITICAL/HIGH blog findings resolved. Multilingual blog (he/en/ru, 174 posts
 - **migration 067** — `cms_studio`, `cms_custom_blocks`, `cms_landing_pages`, `cms_ai_tools` keys added to basic/premium/enterprise plans (commit `ea08602`)
 - **renderFeatureLockedState** — new helper in `shared/js/plan-helpers.js`; GLOBAL_MAP.md updated (commit `44a7625`)
 - **8 pages gated** — storefront-settings, storefront-products (→ `storefront`); storefront-brands, storefront-studio, storefront-blog (→ `cms_studio`); storefront-content, storefront-glossary (→ `cms_ai_tools`); storefront-landing-content (→ `cms_landing_pages`) (commit `f28db3c`)
-- **Dead code cleaned** — `old prompts/` + `mar30-phase-specs/` archived + r
+- **Dead code cleaned** — `old prompts/` + `mar30-phase-specs/` archived + r                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
