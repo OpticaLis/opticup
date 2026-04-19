@@ -272,39 +272,4 @@ async function cancelCount(countId) {
   } finally { hideLoading(); }
 }
 
-// ── Export Excel ──────────────────────────────────────────────
-async function exportCountExcel(countId) {
-  const tab = document.getElementById('tab-stock-count');
-  let allItems = tab._scReportAllItems;
-  if (!allItems || !allItems.length) {
-    try {
-      allItems = await fetchAll(T.STOCK_COUNT_ITEMS, [['count_id', 'eq', countId]]);
-    } catch (err) { toast('שגיאה בטעינת נתונים: ' + err.message, 'e'); return; }
-  }
-  const countedItems = allItems.filter(i => i.status === 'counted' || i.status === 'skipped');
-  if (!countedItems.length) { toast('אין פריטים שנספרו לייצוא', 'w'); return; }
-
-  const rows = countedItems.map(it => ({
-    'ברקוד': it.barcode || '',
-    'מותג': it.brand || '',
-    'דגם': it.model || '',
-    'צבע': it.color || '',
-    'גודל': it.size || '',
-    'צפוי (התחלה)': it.expected_qty,
-    'נוכחי (DB)': it._current_qty !== undefined ? it._current_qty : it.expected_qty,
-    'נספר': it.actual_qty,
-    'פער': it.actual_qty - it.expected_qty,
-    'סיבה': it.reason || '',
-    'הערה': it.notes || '',
-    'נסרק ע"י': it.scanned_by || ''
-  }));
-
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'ספירת מלאי');
-  ws['!cols'] = [{ wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 8 },
-                 { wch: 12 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 16 }, { wch: 20 }, { wch: 14 }];
-  const filename = 'ספירת_מלאי_' + (scCountNumber || 'export') + '.xlsx';
-  XLSX.writeFile(wb, filename);
-  toast('קובץ Excel יוצא: ' + filename, 's');
-}
+// ── Export Excel — moved to stock-count-export.js ───────────

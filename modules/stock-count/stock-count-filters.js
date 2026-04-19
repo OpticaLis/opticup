@@ -238,8 +238,16 @@ async function _scUpdateFilterPreview() {
 
 function _scConfirmFilters() {
   _scFilterCriteria = _scCollectFilters();
-  var hasFilters = _scFilterCriteria.brands.length || _scFilterCriteria.product_types.length ||
-    _scFilterCriteria.supplier_id || _scFilterCriteria.price_min || _scFilterCriteria.price_max;
-  if (!hasFilters) _scFilterCriteria = {};
+  // Brands are mandatory — must select at least one
+  if (!_scFilterCriteria.brands.length) {
+    toast('יש לבחור לפחות מותג אחד לפני יצירת ספירה', 'e');
+    // Highlight the brands section briefly
+    var brandsDiv = document.getElementById('sc-filter-brands');
+    if (brandsDiv) {
+      brandsDiv.style.border = '2px solid var(--error)';
+      setTimeout(function() { brandsDiv.style.border = '1px solid var(--g200)'; }, 2000);
+    }
+    return;
+  }
   openWorkerPin(null);
 }

@@ -229,7 +229,6 @@
       <table id="inv-table">
         <thead><tr>
           <th style="width:40px"></th>
-          <th style="width:30px">📋</th>
           <th style="width:36px"><input type="checkbox" id="inv-select-all" onchange="toggleSelectAll(this.checked)" title="בחר הכל"></th>
           <th>#</th>
           <th class="sortable" data-field="ברקוד" onclick="sortInventory(this)">ברקוד <span class="sort-icon">&#9650;</span></th>
@@ -237,9 +236,7 @@
           <th class="sortable" data-field="חברה / מותג" onclick="sortInventory(this)">חברה / מותג <span class="sort-icon">&#9650;</span></th>
           <th class="sortable" data-field="דגם" onclick="sortInventory(this)">דגם <span class="sort-icon">&#9650;</span></th>
           <th class="sortable" data-field="גודל" onclick="sortInventory(this)">גודל <span class="sort-icon">&#9650;</span></th>
-          <th class="sortable" data-field="גשר" onclick="sortInventory(this)">גשר <span class="sort-icon">&#9650;</span></th>
           <th>צבע</th>
-          <th class="sortable" data-field="אורך מוט" onclick="sortInventory(this)">אורך מוט <span class="sort-icon">&#9650;</span></th>
           <th class="sortable" data-field="סוג מוצר" onclick="sortInventory(this)">סוג מוצר <span class="sort-icon">&#9650;</span></th>
           <th class="sortable" data-field="מחיר מכירה" onclick="sortInventory(this)">מ.מכירה <span class="sort-icon">&#9650;</span></th>
           <th>הנחה%</th>
@@ -899,6 +896,7 @@
 <script src="modules/inventory/inventory-reduction.js"></script>
 <script src="modules/inventory/access-sales.js"></script>
 <script src="modules/inventory/inventory-table.js"></script>
+<script src="modules/inventory/inventory-actions.js"></script>
 <script src="modules/inventory/inventory-images.js"></script>
 <script src="modules/inventory/inventory-images-bg.js"></script>
 <script src="shared/js/table-resize.js"></script>
@@ -953,6 +951,7 @@
 <script src="modules/stock-count/stock-count-approve.js"></script>
 <script src="modules/stock-count/stock-count-view.js"></script>
 <script src="modules/stock-count/stock-count-report.js"></script>
+<script src="modules/stock-count/stock-count-export.js"></script>
 <script src="modules/access-sync/access-sync.js"></script>
 <script src="modules/access-sync/sync-details.js"></script>
 <script src="modules/access-sync/pending-panel.js"></script>

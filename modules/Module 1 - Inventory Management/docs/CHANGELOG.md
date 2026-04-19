@@ -4,6 +4,39 @@
 
 ---
 
+## Inventory Fixes + Subrow Feature — 2026-04-19
+
+### Stock Count Fixes (9b44831, 7781de7)
+- Case-insensitive barcode matching in stock-count-scan.js
+- Brand selection required before creating a count in stock-count-filters.js
+- Excel export: diffs-only option + sort picker — extracted to stock-count-export.js (new file)
+
+### Inventory Entry Improvements (9b44831)
+- Field reorder: color before size, temple_length to first card-row
+- Auto-calculated final price field (readonly)
+- Auto-fill from previous row
+
+### Inventory Export Fix (9b44831)
+- Final price column added to barcode Excel export
+
+### History Column Removal (9b43976, 6c11d3c)
+- Removed duplicate history column (already in ⋯ menu)
+- Extracted action menu + event delegation to inventory-actions.js (new file)
+
+### Shared Table Resize Fix (3ee7a56, dfd36c9)
+- Explicit width calculation for all tables (overrides CSS width:100%)
+- Hidden tab guard + ResizeObserver recalc on tab switch
+
+### Subrow Feature (8399d46)
+- Bridge + temple_length moved to hidden subrow (toggled via "עוד" in ⋯ menu)
+- Inline editing in subrow (admin only)
+
+### New Files
+- `modules/inventory/inventory-actions.js` (107 lines) — action menu, event delegation, subrow toggle + edit
+- `modules/stock-count/stock-count-export.js` (99 lines) — Excel export with diffs-only + sort picker
+
+---
+
 ## Debt Module Upgrades — 2026-03-28
 
 ### A-prep: Migration + Doc Type Fix (8fb0c12)

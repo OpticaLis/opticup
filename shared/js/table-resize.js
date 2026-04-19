@@ -39,6 +39,8 @@ var TableResize = (function() {
   function _initTable(table, tableId) {
     if (table.dataset.resizeInit) return;
     table.style.tableLayout = 'fixed';
+    // Override CSS width:100% — let _recalcTableWidth control width
+    table.style.minWidth = '100%';
 
     // Make each th resizable via CSS resize
     table.querySelectorAll('thead th').forEach(function(th) {
@@ -47,18 +49,39 @@ var TableResize = (function() {
       if (!th.style.minWidth) th.style.minWidth = '40px';
     });
 
-    // Restore saved widths
+    // Restore saved widths and recalc table width
     _restoreWidths(table, tableId);
+    _recalcTableWidth(table);
 
-    // Save on mouseup (after resize drag ends)
+    // Save on mouseup (after resize drag ends) + recalc table width
     table.addEventListener('mouseup', function() {
-      setTimeout(function() { _saveWidths(table, tableId); }, 100);
+      setTimeout(function() {
+        _recalcTableWidth(table);
+        _saveWidths(table, tableId);
+      }, 100);
     });
 
     // Sticky scrollbar
     _ensureStickyBar(table);
 
+    // Recalc when table becomes visible (tab switch)
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(function() { _recalcTableWidth(table); }).observe(table);
+    }
+
     table.dataset.resizeInit = 'true';
+  }
+
+  // --- Recalculate table width from column widths ---
+  function _recalcTableWidth(table) {
+    var wrap = table.parentElement;
+    var wrapWidth = wrap ? wrap.clientWidth : 0;
+    // Skip if table is hidden (in inactive tab) — offsetWidth returns 0
+    if (!wrapWidth) return;
+    var total = 0;
+    table.querySelectorAll('thead th').forEach(function(th) { total += th.offsetWidth; });
+    // Always set explicit width — overrides CSS width:100% so overflow-x works
+    table.style.width = Math.max(total, wrapWidth) + 'px';
   }
 
   // --- Save column widths to localStorage ---

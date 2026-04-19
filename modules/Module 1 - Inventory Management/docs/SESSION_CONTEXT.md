@@ -1,9 +1,52 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-AI OCR Fix + Final QA Complete — 2026-03-29
+Inventory Fixes + Subrow Feature — 2026-04-19
 
 ## What Was Done This Session
+
+### Inventory Module Fixes + UX Improvements (8 commits)
+
+**Stock Count Fixes (3 commits: 9b44831, 7781de7):**
+- Case-insensitive barcode matching in stock count scan (stock-count-scan.js)
+- Brand selection required before creating a stock count (stock-count-filters.js)
+- Excel export refactored: diffs-only option + sort picker (stock-count-export.js — new file, extracted from stock-count-report.js for file-size compliance)
+
+**Inventory Entry Improvements (1 commit: 9b44831):**
+- Field reorder: color before size, temple_length to first card-row
+- Auto-calculated final price field (readonly, from sell_price × discount)
+- Auto-fill from previous row for faster entry
+
+**Inventory Export Fix (1 commit: 9b44831):**
+- Final price column added to barcode Excel export
+
+**History Column Removal (2 commits: 9b43976, 6c11d3c):**
+- Removed duplicate history column from main table (already in ⋯ menu)
+- Extracted action menu + event delegation to inventory-actions.js (file-size compliance)
+
+**Shared Table Resize Fix (2 commits: 3ee7a56, dfd36c9):**
+- TableResize: explicit width calculation overrides CSS width:100% for all tables
+- Hidden tab guard: skip recalc when offsetWidth=0, ResizeObserver triggers recalc on tab switch
+
+**Subrow Feature (1 commit: 8399d46):**
+- Bridge + temple_length moved from main table columns to hidden subrow
+- "עוד" button in ⋯ menu toggles subrow (toggle open/close)
+- Inline editing for bridge + temple_length in subrow (admin only)
+- New file: inventory-actions.js (action menu, event delegation, subrow toggle + edit)
+
+### All Commits (Inventory Fixes + Subrow)
+- 9b44831 fix(inventory): items 5-9 from handoff list
+- 7781de7 refactor(stock-count): extract Excel export to stock-count-export.js
+- 9b43976 fix(inventory): remove duplicate history column
+- 6c11d3c refactor(inventory): extract action menu to inventory-actions.js
+- 6d5afe3 fix(shared): table scroll — allow tables to grow beyond viewport
+- 3ee7a56 fix(shared): table resize — explicit width override for all tables
+- dfd36c9 fix(shared): table resize — skip hidden tabs, ResizeObserver recalc
+- 8399d46 feat(inventory): add subrow for bridge + temple_length
+
+---
+
+## Previous Session
 
 ### AI OCR Fix + Learning System + QA (27 commits)
 

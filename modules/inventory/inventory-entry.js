@@ -25,15 +25,16 @@ function addEntryRow(copyFrom) {
       <div class="card-field brand-cell" style="min-width:150px"><label>חברה/מותג <span class="req">*</span></label></div>
       <div class="card-field" style="min-width:90px"><label>סוג מותג</label><input class="col-brand-type" readonly placeholder="אוטו" tabindex="-1"></div>
       <div class="card-field"><label>דגם <span class="req">*</span></label><input class="col-model" placeholder="דגם"></div>
+      <div class="card-field"><label>צבע <span class="req">*</span></label><input class="col-color" placeholder="צבע"></div>
       <div class="card-field" style="min-width:80px"><label>גודל <span class="req">*</span></label><input class="col-size" placeholder="גודל"></div>
       <div class="card-field" style="min-width:70px"><label>גשר</label><input class="col-bridge" placeholder="גשר"></div>
-      <div class="card-field"><label>צבע <span class="req">*</span></label><input class="col-color" placeholder="צבע"></div>
+      <div class="card-field" style="min-width:80px"><label>אורך מוט</label><input class="col-temple" placeholder="אורך מוט"></div>
     </div>
     <div class="card-row">
-      <div class="card-field" style="min-width:80px"><label>אורך מוט</label><input class="col-temple" placeholder="אורך מוט"></div>
       <div class="card-field" style="min-width:120px"><label>סוג מוצר <span class="req">*</span></label><select class="col-ptype">${productTypeOpts()}</select></div>
       <div class="card-field" style="min-width:100px"><label>מחיר מכירה <span class="req">*</span></label><input type="number" class="col-sprice" placeholder="₪" step="0.01" min="0"></div>
       <div class="card-field" style="min-width:80px"><label>הנחה % <span class="req">*</span></label><input type="number" class="col-sdisc" placeholder="%" min="0" max="100" value="0"></div>
+      <div class="card-field" style="min-width:100px"><label>מחיר סופי</label><input type="number" class="col-fprice" readonly placeholder="—" tabindex="-1" style="background:#f5f7fa;font-weight:600"></div>
       <div class="card-field cost-field" style="min-width:100px"><label>מחיר עלות</label><input type="number" class="col-cprice" placeholder="₪" step="0.01" min="0"></div>
       <div class="card-field cost-field" style="min-width:80px"><label>הנחה % עלות</label><input type="number" class="col-cdisc" placeholder="%" min="0" max="100"></div>
       <div class="card-field" style="min-width:90px"><label>סנכרון <span class="req">*</span></label><select class="col-sync">${syncOpts()}</select></div>
@@ -84,6 +85,24 @@ function addEntryRow(copyFrom) {
   if (pModel) tr.querySelector('.col-model').value = pModel;
   if (pColor) tr.querySelector('.col-color').value = pColor;
   if (pTemple) tr.querySelector('.col-temple').value = pTemple;
+
+  // Calculate final price after auto-fill
+  if (pSprice) {
+    var _initPrice = parseFloat(pSprice) || 0;
+    var _initDisc = parseFloat(pSdisc) || 0;
+    var _fpEl = tr.querySelector('.col-fprice');
+    if (_fpEl && _initPrice > 0) _fpEl.value = Math.round(_initPrice * (1 - _initDisc / 100));
+  }
+
+  // Final price calculation
+  function _calcFinalPrice() {
+    var price = parseFloat(tr.querySelector('.col-sprice')?.value) || 0;
+    var disc = parseFloat(tr.querySelector('.col-sdisc')?.value) || 0;
+    var fp = tr.querySelector('.col-fprice');
+    if (fp) fp.value = price > 0 ? Math.round(price * (1 - disc / 100)) : '';
+  }
+  tr.querySelector('.col-sprice')?.addEventListener('input', _calcFinalPrice);
+  tr.querySelector('.col-sdisc')?.addEventListener('input', _calcFinalPrice);
 
   // Image preview
   tr.querySelector('.col-images').onchange = function() {
