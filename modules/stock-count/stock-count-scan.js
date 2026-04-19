@@ -7,32 +7,34 @@
 // ── Barcode normalization (ZXing → DB format) ────────────────
 function _scNormalizeBarcode(scanned) {
   const raw = (scanned || '').trim();
-  // 1. Exact match
-  var item = scSessionItems.find(i => i.barcode === raw);
+  const rawLower = raw.toLowerCase();
+  // 1. Exact match (case-insensitive)
+  var item = scSessionItems.find(i => (i.barcode || '').toLowerCase() === rawLower);
   if (item) { console.log('SCAN MATCH: exact', raw); return item; }
   // 2. Strip leading zeros and re-pad to 7 digits (BBDDDDD)
   var stripped = raw.replace(/^0+/, '') || '0';
-  var padded7 = stripped.padStart(7, '0');
-  item = scSessionItems.find(i => i.barcode === padded7);
+  var padded7 = stripped.padStart(7, '0').toLowerCase();
+  item = scSessionItems.find(i => (i.barcode || '').toLowerCase() === padded7);
   if (item) { console.log('SCAN MATCH: pad7', raw, '→', padded7); return item; }
   // 3. EAN-13: last digit is check digit — try without it
   if (raw.length >= 8) {
     var noCheck = raw.slice(0, -1);
-    var noCheckPad = noCheck.replace(/^0+/, '').padStart(7, '0');
-    item = scSessionItems.find(i => i.barcode === noCheckPad);
+    var noCheckPad = noCheck.replace(/^0+/, '').padStart(7, '0').toLowerCase();
+    item = scSessionItems.find(i => (i.barcode || '').toLowerCase() === noCheckPad);
     if (item) { console.log('SCAN MATCH: ean-strip', raw, '→', noCheckPad); return item; }
   }
   // 4. EAN-13 embedded: last 7 non-check digits
   if (raw.length >= 8) {
     var inner = raw.slice(-8, -1);  // 7 digits before check digit
-    item = scSessionItems.find(i => i.barcode === inner);
+    var innerLower = inner.toLowerCase();
+    item = scSessionItems.find(i => (i.barcode || '').toLowerCase() === innerLower);
     if (item) { console.log('SCAN MATCH: ean-inner', raw, '→', inner); return item; }
-    var innerPad = inner.replace(/^0+/, '').padStart(7, '0');
-    item = scSessionItems.find(i => i.barcode === innerPad);
+    var innerPad = inner.replace(/^0+/, '').padStart(7, '0').toLowerCase();
+    item = scSessionItems.find(i => (i.barcode || '').toLowerCase() === innerPad);
     if (item) { console.log('SCAN MATCH: ean-inner-pad', raw, '→', innerPad); return item; }
   }
-  // 5. Suffix match: scanned ends with DB barcode
-  item = scSessionItems.find(i => i.barcode && raw.endsWith(i.barcode));
+  // 5. Suffix match: scanned ends with DB barcode (case-insensitive)
+  item = scSessionItems.find(i => i.barcode && rawLower.endsWith(i.barcode.toLowerCase()));
   if (item) { console.log('SCAN MATCH: suffix', raw, '→', item.barcode); return item; }
   console.warn('BARCODE NOT MATCHED:', raw, 'length:', raw.length, 'chars:', [...raw].map(function(c) { return c.charCodeAt(0); }));
   return null;
