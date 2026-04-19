@@ -206,6 +206,23 @@ function _processAndPreview(file) {
   img.src = objectUrl;
 }
 
+async function _swapImageOrder(idx, dir) {
+  var other = idx + dir;
+  if (other < 0 || other >= _imgCurrentImages.length) return;
+  var a = _imgCurrentImages[idx], b = _imgCurrentImages[other], tid = getTenantId();
+  var aOrd = a.sort_order, bOrd = b.sort_order;
+  if (aOrd === bOrd) bOrd = aOrd + dir;
+  showLoading('\u05DE\u05E2\u05D3\u05DB\u05DF \u05E1\u05D3\u05E8...');
+  try {
+    await Promise.all([sb.from(T.IMAGES).update({ sort_order: bOrd }).eq('id', a.id).eq('tenant_id', tid),
+      sb.from(T.IMAGES).update({ sort_order: aOrd }).eq('id', b.id).eq('tenant_id', tid)]);
+    a.sort_order = bOrd; b.sort_order = aOrd;
+    _imgCurrentImages.splice(idx, 1); _imgCurrentImages.splice(other, 0, a);
+    _renderImageGrid(); hideLoading();
+    writeLog('image_reorder', _imgCurrentInvId, { image_id: a.id, from: aOrd, to: bOrd });
+  } catch (e) { hideLoading(); toast('\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || ''), 'e'); }
+}
+
 function _renderImageGrid() {
   var container = _imgModalEl ? _imgModalEl.querySelector('#img-modal-grid') : null;
   if (!container) return;
@@ -214,36 +231,30 @@ function _renderImageGrid() {
     html = '<div style="text-align:center;padding:32px;color:var(--g500)">' +
       '\u05D0\u05D9\u05DF \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA \u2014 \u05DC\u05D7\u05E5 \uD83D\uDCF8 \u05DC\u05E6\u05D9\u05DC\u05D5\u05DD</div>';
   } else {
+    var _ob = 'background:rgba(0,0,0,.6);color:#fff;border:none;cursor:pointer;font-size:14px';
+    var _obr = _ob + ';border-radius:50%;width:26px;height:26px'; // round overlay btn
+    var _obs = _ob + ';border-radius:4px;width:26px;height:26px'; // square overlay btn
     html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:8px 0">';
-    // Existing images (use signed URLs for private bucket)
     for (var i = 0; i < _imgCurrentImages.length; i++) {
-      var im = _imgCurrentImages[i];
-      var displayUrl = im._signedUrl || im.url || '';
+      var im = _imgCurrentImages[i], displayUrl = im._signedUrl || im.url || '';
       var safeUrl = encodeURI(displayUrl);
       var dlName = (_imgCurrentBarcode || 'img') + '_' + (i + 1) + (im.storage_path && im.storage_path.endsWith('.png') ? '.png' : '.webp');
+      var esc_sp = escapeHtml(im.storage_path || '');
       html += '<div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--g200);cursor:pointer" onclick="_showFullImage(\'' + safeUrl + '\')">' +
         '<img src="' + safeUrl + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block" loading="lazy">' +
-        '<button onclick="event.stopPropagation();_deleteImage(\'' + im.id + '\',\'' + escapeHtml(im.storage_path || '') + '\')" ' +
-          'style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:14px" ' +
-          'title="\u05DE\u05D7\u05E7">\u2715</button>' +
-        '<button onclick="event.stopPropagation();_downloadImage(\'' + safeUrl + '\',\'' + escapeHtml(dlName) + '\')" ' +
-          'style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:14px" ' +
-          'title="\u05D4\u05D5\u05E8\u05D3">\u2B07\uFE0F</button>' +
-        '<button onclick="event.stopPropagation();_bgRemoveSaved(\'' + im.id + '\',\'' + safeUrl + '\',\'' + escapeHtml(im.storage_path || '') + '\')" ' +
-          'style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px" ' +
-          'title="\u05D4\u05E1\u05E8 \u05E8\u05E7\u05E2 \u05DC\u05D1\u05DF">\uD83D\uDCAB</button></div>';
+        '<button onclick="event.stopPropagation();_deleteImage(\'' + im.id + '\',\'' + esc_sp + '\')" style="position:absolute;top:4px;left:4px;' + _obr + '" title="\u05DE\u05D7\u05E7">\u2715</button>' +
+        '<button onclick="event.stopPropagation();_downloadImage(\'' + safeUrl + '\',\'' + escapeHtml(dlName) + '\')" style="position:absolute;top:4px;right:4px;' + _obr + '" title="\u05D4\u05D5\u05E8\u05D3">\u2B07\uFE0F</button>' +
+        '<button onclick="event.stopPropagation();_bgRemoveSaved(\'' + im.id + '\',\'' + safeUrl + '\',\'' + esc_sp + '\')" style="position:absolute;bottom:4px;right:4px;' + _ob + ';border-radius:4px;padding:2px 6px;font-size:11px" title="\u05D4\u05E1\u05E8 \u05E8\u05E7\u05E2 \u05DC\u05D1\u05DF">\uD83D\uDCAB</button>' +
+        (i > 0 ? '<button onclick="event.stopPropagation();_swapImageOrder(' + i + ',-1)" style="position:absolute;bottom:4px;left:4px;' + _obs + '" title="\u05D4\u05D6\u05D6 \u05E7\u05D5\u05D3\u05DD">\u25B6</button>' : '') +
+        (i < _imgCurrentImages.length - 1 ? '<button onclick="event.stopPropagation();_swapImageOrder(' + i + ',1)" style="position:absolute;bottom:4px;left:34px;' + _obs + '" title="\u05D4\u05D6\u05D6 \u05D0\u05D7\u05E8\u05D4">\u25C0</button>' : '') +
+        '</div>';
     }
-    // Pending images
     for (var j = 0; j < _imgPending.length; j++) {
       html += '<div style="position:relative;border-radius:8px;overflow:hidden;border:2px dashed #4CAF50">' +
         '<img src="' + _imgPending[j].previewUrl + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block">' +
         '<span style="position:absolute;bottom:0;left:0;right:0;background:rgba(76,175,80,.85);color:#fff;text-align:center;font-size:.75rem;padding:2px">\u05DE\u05DE\u05EA\u05D9\u05DF</span>' +
-        '<button onclick="_removePending(' + j + ')" ' +
-          'style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:14px" ' +
-          'title="\u05D4\u05E1\u05E8">\u2715</button>' +
-        '<button onclick="_bgRemovePending(' + j + ')" ' +
-          'style="position:absolute;bottom:22px;right:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px" ' +
-          'title="\u05D4\u05E1\u05E8 \u05E8\u05E7\u05E2 \u05DC\u05D1\u05DF">\uD83D\uDCAB</button></div>';
+        '<button onclick="_removePending(' + j + ')" style="position:absolute;top:4px;left:4px;' + _obr + '" title="\u05D4\u05E1\u05E8">\u2715</button>' +
+        '<button onclick="_bgRemovePending(' + j + ')" style="position:absolute;bottom:22px;right:4px;' + _ob + ';border-radius:4px;padding:2px 6px;font-size:11px" title="\u05D4\u05E1\u05E8 \u05E8\u05E7\u05E2 \u05DC\u05D1\u05DF">\uD83D\uDCAB</button></div>';
     }
     html += '</div>';
   }
@@ -272,26 +283,15 @@ async function _uploadPendingImages(inventoryId) {
       var p = _imgPending[i];
       var ts = Date.now() + '_' + Math.random().toString(36).slice(2, 6);
       var storagePath = 'frames/' + tid + '/' + inventoryId + '/' + ts + '.webp';
-      var { error: upErr } = await sb.storage.from(FRAME_IMAGES_BUCKET).upload(storagePath, p.blob, {
-        contentType: 'image/webp', upsert: false
-      });
+      var { error: upErr } = await sb.storage.from(FRAME_IMAGES_BUCKET).upload(storagePath, p.blob, { contentType: 'image/webp', upsert: false });
       if (upErr) { console.error('Upload error:', upErr); continue; }
-      await sb.from(T.IMAGES).insert({
-        inventory_id: inventoryId, storage_path: storagePath,
-        url: storagePath, file_size: p.blob.size,
-        sort_order: _imgCurrentImages.length + i,
-        tenant_id: tid
-      });
+      await sb.from(T.IMAGES).insert({ inventory_id: inventoryId, storage_path: storagePath, url: storagePath, file_size: p.blob.size, sort_order: _imgCurrentImages.length + i, tenant_id: tid });
       uploaded++;
       URL.revokeObjectURL(p.previewUrl);
     }
     _imgPending = [];
-    // Brief delay to ensure Storage propagation before signing URLs
-    await new Promise(function(r) { setTimeout(r, 300); });
-    // Refresh images from DB + sign URLs
-    var { data: fresh } = await sb.from(T.IMAGES).select('*')
-      .eq('inventory_id', inventoryId).eq('tenant_id', tid)
-      .order('sort_order', { ascending: true });
+    await new Promise(function(r) { setTimeout(r, 300); }); // Storage propagation delay
+    var { data: fresh } = await sb.from(T.IMAGES).select('*').eq('inventory_id', inventoryId).eq('tenant_id', tid).order('sort_order', { ascending: true });
     _imgCurrentImages = fresh || [];
     await _signImages(_imgCurrentImages);
     _renderImageGrid();
