@@ -68,11 +68,17 @@ function exportBarcodesExcel(source) {
   let data = [];
   if (source === 'entry') {
     getEntryRows().forEach(r => {
-      if (r.barcode) data.push({
-        'ברקוד': r.barcode, 'ספק': r.supplier, 'חברה': r.brand, 'דגם': r.model,
-        'גודל': r.size, 'גשר': r.bridge, 'צבע': r.color, 'אורך מוט': r.temple,
-        'סוג מוצר': r.ptype, 'מחיר מכירה': r.sprice, 'הנחה %': r.sdisc
-      });
+      if (r.barcode) {
+        var price = parseFloat(r.sprice) || 0;
+        var disc = parseFloat(r.sdisc) || 0;
+        var finalPrice = disc > 0 ? Math.round(price * (1 - disc / 100)) : price;
+        data.push({
+          'ברקוד': r.barcode, 'ספק': r.supplier, 'חברה': r.brand, 'דגם': r.model,
+          'גודל': r.size, 'גשר': r.bridge, 'צבע': r.color, 'אורך מוט': r.temple,
+          'סוג מוצר': r.ptype, 'מחיר מכירה': price, 'הנחה %': disc,
+          'מחיר סופי': finalPrice
+        });
+      }
     });
   }
   if (!data.length) { toast('אין ברקודים לייצוא', 'w'); return; }
