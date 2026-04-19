@@ -39,8 +39,7 @@ var TableResize = (function() {
   function _initTable(table, tableId) {
     if (table.dataset.resizeInit) return;
     table.style.tableLayout = 'fixed';
-    // Allow table to grow beyond container when columns are resized
-    table.style.width = '';
+    // Override CSS width:100% — let _recalcTableWidth control width
     table.style.minWidth = '100%';
 
     // Make each th resizable via CSS resize
@@ -74,8 +73,8 @@ var TableResize = (function() {
     table.querySelectorAll('thead th').forEach(function(th) { total += th.offsetWidth; });
     var wrap = table.parentElement;
     var wrapWidth = wrap ? wrap.clientWidth : 0;
-    // If columns exceed container, set explicit width so overflow-x kicks in
-    table.style.width = total > wrapWidth ? total + 'px' : '';
+    // Always set explicit width — overrides CSS width:100% so overflow-x works
+    table.style.width = Math.max(total, wrapWidth) + 'px';
   }
 
   // --- Save column widths to localStorage ---
