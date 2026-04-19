@@ -108,6 +108,7 @@ var TableResize = (function() {
   }
 
   // --- Sticky scrollbar: fixed at bottom of viewport, synced with table wrapper ---
+  var _barUpdaters = []; // collect all updateBar fns for refreshAll
   function _ensureStickyBar(table) {
     var wrap = table.parentElement;
     if (!wrap || wrap.dataset.stickyBar) return;
@@ -135,6 +136,7 @@ var TableResize = (function() {
 
     function updateBar() {
       spacer.style.width = table.scrollWidth + 'px';
+      _recalcTableWidth(table);
       var rect = wrap.getBoundingClientRect();
       var needsScroll = table.scrollWidth > wrap.clientWidth;
       var inView = rect.bottom > 0 && rect.top < window.innerHeight;
@@ -143,11 +145,17 @@ var TableResize = (function() {
       bar.style.left = rect.left + 'px';
       bar.style.width = wrap.clientWidth + 'px';
     }
+    _barUpdaters.push(updateBar);
     updateBar();
     window.addEventListener('scroll', updateBar, { passive: true });
     window.addEventListener('resize', updateBar);
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateBar).observe(table);
     wrap.dataset.stickyBar = 'true';
+  }
+
+  // --- Refresh all sticky bars (call on tab switch) ---
+  function refreshAll() {
+    _barUpdaters.forEach(function(fn) { fn(); });
   }
 
   // --- Auto-ID counter for tables without id ---
@@ -203,5 +211,5 @@ var TableResize = (function() {
   // Backward compat
   window.invInitResize = autoInit;
 
-  return { register: register, autoInit: autoInit };
+  return { register: register, autoInit: autoInit, refreshAll: refreshAll };
 })();

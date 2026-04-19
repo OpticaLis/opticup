@@ -9,6 +9,8 @@ function showTab(name) {
   if (btn) btn.classList.add('active');
   // Close any open dropdowns when switching tabs
   closeAllDropdowns();
+  // Refresh sticky scrollbars after tab becomes visible
+  setTimeout(function() { if (typeof TableResize !== 'undefined') TableResize.refreshAll(); }, 200);
   if (name === 'inventory') loadInventoryTab();
   if (name === 'brands') loadBrandsTab();
   if (name === 'suppliers') loadSuppliersTab();
