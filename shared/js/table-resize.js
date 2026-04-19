@@ -64,15 +64,22 @@ var TableResize = (function() {
     // Sticky scrollbar
     _ensureStickyBar(table);
 
+    // Recalc when table becomes visible (tab switch)
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(function() { _recalcTableWidth(table); }).observe(table);
+    }
+
     table.dataset.resizeInit = 'true';
   }
 
   // --- Recalculate table width from column widths ---
   function _recalcTableWidth(table) {
-    var total = 0;
-    table.querySelectorAll('thead th').forEach(function(th) { total += th.offsetWidth; });
     var wrap = table.parentElement;
     var wrapWidth = wrap ? wrap.clientWidth : 0;
+    // Skip if table is hidden (in inactive tab) — offsetWidth returns 0
+    if (!wrapWidth) return;
+    var total = 0;
+    table.querySelectorAll('thead th').forEach(function(th) { total += th.offsetWidth; });
     // Always set explicit width — overrides CSS width:100% so overflow-x works
     table.style.width = Math.max(total, wrapWidth) + 'px';
   }
