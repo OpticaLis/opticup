@@ -4,6 +4,7 @@
 let studioBrands = [];
 let studioBrandsLoaded = false;
 let _brandPageView = false;
+let brandSearchText = '';
 let _quillDesc1 = null;
 let _quillDesc2 = null;
 let _aiMode = 'new'; // 'new' or 'edit'
@@ -182,15 +183,32 @@ function renderStudioBrandList() {
     return;
   }
 
+  // Ensure search bar exists; only replace items area to preserve input focus
+  let itemsEl = container.querySelector('.brand-list-items');
+  if (!itemsEl) {
+    container.innerHTML = `<div class="page-search-bar" style="padding:8px 12px; border-bottom:1px solid var(--g200);">
+      <input type="text" class="studio-field page-search-input" placeholder="\u{1F50D} \u05D7\u05E4\u05E9 \u05DE\u05D5\u05EA\u05D2..."
+        value="${escapeAttr(brandSearchText)}" oninput="brandSearchText=this.value;renderStudioBrandList()">
+    </div><div class="brand-list-items"></div>`;
+    itemsEl = container.querySelector('.brand-list-items');
+  }
+
+  // Filter by search text
+  let filtered = studioBrands;
+  if (brandSearchText) {
+    const q = brandSearchText.toLowerCase();
+    filtered = filtered.filter(b =>
+      (b.brand_name || '').toLowerCase().includes(q));
+  }
+
   const enabledCount = studioBrands.filter(b => b.brand_page_enabled).length;
-  const inactiveBrands = studioBrands.filter(b => !b.brand_page_enabled);
 
   let html = `<div style="padding:8px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--g200);">
-    <span style="font-size:.8rem; color:var(--g400);">${enabledCount} מתוך ${studioBrands.length} עמודים פעילים</span>
+    <span style="font-size:.8rem; color:var(--g400);">${brandSearchText ? filtered.length + ' תוצאות' : enabledCount + ' מתוך ' + studioBrands.length + ' עמודים פעילים'}</span>
     <button class="btn-ai-generate" style="font-size:.75rem; padding:5px 12px;" onclick="showNewBrandPagePicker()">+ עמוד מותג חדש</button>
   </div>`;
 
-  html += studioBrands.map(b => {
+  html += filtered.map(b => {
     const active = b.brand_page_enabled;
     const statusClass = active ? 'active' : 'inactive';
     const statusText = active ? 'פעיל' : 'כבוי';
@@ -215,7 +233,7 @@ function renderStudioBrandList() {
     </div>`;
   }).join('');
 
-  container.innerHTML = html;
+  itemsEl.innerHTML = html;
 }
 
 // ═══════════════════════════════════════════════════

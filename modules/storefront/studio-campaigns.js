@@ -8,6 +8,7 @@ let studioCampaigns = [];
 let selectedCampaignId = null;   // which folder is open
 let campaignPages = {};          // { campaignId: [pages] }
 let campaignsLoaded = false;
+let campaignSearchText = '';
 
 const CAMPAIGN_STATUS = {
   active: { label: 'פעיל', color: '#16a34a', bg: '#dcfce7' },
@@ -56,18 +57,46 @@ function renderCampaignList() {
   const el = document.getElementById('studio-campaign-list');
   if (!el) return;
 
+  // Ensure search bar exists; only replace items area to preserve input focus
+  let itemsEl = el.querySelector('.camp-list-items');
+  if (!itemsEl) {
+    el.innerHTML = `<div class="page-search-bar" style="padding:8px 12px; border-bottom:1px solid var(--g200);">
+      <input type="text" class="studio-field page-search-input" placeholder="\u{1F50D} \u05D7\u05E4\u05E9 \u05E7\u05DE\u05E4\u05D9\u05D9\u05DF \u05D0\u05D5 \u05E2\u05DE\u05D5\u05D3..."
+        value="${escapeAttr(campaignSearchText)}" oninput="campaignSearchText=this.value;renderCampaignList()">
+    </div><div class="camp-list-items"></div>`;
+    itemsEl = el.querySelector('.camp-list-items');
+  }
+
   let html = `<div class="camp-header">
     <span>קמפיינים (${studioCampaigns.length})</span>
     <button class="btn btn-sm btn-primary" onclick="createCampaign()">+ קמפיין</button>
   </div>`;
 
   if (!studioCampaigns.length) {
-    el.innerHTML = html + '<div class="studio-empty" style="padding:30px;">אין קמפיינים עדיין</div>';
+    itemsEl.innerHTML = html + '<div class="studio-empty" style="padding:30px;">אין קמפיינים עדיין</div>';
+    return;
+  }
+
+  // Filter: match campaign name OR page titles/slugs inside
+  const q = campaignSearchText ? campaignSearchText.toLowerCase() : '';
+  let filtered = studioCampaigns;
+  if (q) {
+    filtered = studioCampaigns.filter(c => {
+      if ((c.name || '').toLowerCase().includes(q)) return true;
+      const pages = campaignPages[c.id] || [];
+      return pages.some(p =>
+        (p.title || '').toLowerCase().includes(q) ||
+        (p.slug || '').toLowerCase().includes(q));
+    });
+  }
+
+  if (q && !filtered.length) {
+    itemsEl.innerHTML = html + '<div class="studio-empty" style="padding:30px;">אין תוצאות</div>';
     return;
   }
 
   html += '<div class="camp-folders">';
-  for (const c of studioCampaigns) {
+  for (const c of filtered) {
     const open = c.id === selectedCampaignId;
     const s = CAMPAIGN_STATUS[c.status] || CAMPAIGN_STATUS.active;
     const cnt = c.page_count || 0;
@@ -84,19 +113,26 @@ function renderCampaignList() {
 
     // Accordion body (pages + actions + AI prompt)
     if (open) {
-      html += renderFolderBody(c);
+      html += renderFolderBody(c, q);
     }
   }
   html += '</div>';
 
-  el.innerHTML = html;
+  itemsEl.innerHTML = html;
 }
 
 // ── Folder body: actions bar + pages + AI prompt ─────────────
 
-function renderFolderBody(campaign) {
+function renderFolderBody(campaign, searchQuery) {
   const cid = campaign.id;
-  const pages = campaignPages[cid] || [];
+  let pages = campaignPages[cid] || [];
+
+  // Filter pages inside the folder when searching
+  if (searchQuery) {
+    pages = pages.filter(p =>
+      (p.title || '').toLowerCase().includes(searchQuery) ||
+      (p.slug || '').toLowerCase().includes(searchQuery));
+  }
 
   // Action buttons
   const actions = `<div class="camp-folder-actions">

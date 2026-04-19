@@ -28,6 +28,7 @@
 6. BrandShowcase scroll fixes — 3 open issues
 7. Homepage revisions — Daniel's block-by-block feedback
 8. Contact form — intentionally hidden (WhatsApp only). Resend integration deferred.
+9. Studio file split (Guardian M1-R12-02) — `studio-pages.js` (702), `studio-brands.js` (891), `studio-campaigns.js` (731) all exceed 350-line limit. Added quick-search to brands+campaigns (2026-04-19) and fixed focus-loss bug in all 3. Split deferred to dedicated SPEC.
 
 **None of the above are blockers. Site is live and functional.**
 
@@ -441,4 +442,4 @@ After viewing the deployed luxury redesign, Daniel re-sequenced the pre-DNS queu
 - **NEW page** `אופטומטריה` — absorbs multifocal content; old slug 301-redirects
 - **NEW Events block** — YouTube Shorts `40f1I0eOR7s` (tadmit) + `-hJjVIK3BZM` (testimonials)
 - **All 3 locales (he/en/ru) ship in parity** — no placeholder copy allowed
-- Hero copy: Elison-inspired structure, NOT a copy; executor drafts using Prizma's own vocabulary ("40 שנה
+- Hero copy: Elison-inspired structure, NOT a copy; executor drafts using Prizma's own vocabulary ("40 שנה                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
