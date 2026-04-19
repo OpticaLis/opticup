@@ -133,10 +133,18 @@ async function exportInventoryExcel() {
     return;
   }
 
+  // If items are selected, export only those
+  if (invSelected && invSelected.size > 0) {
+    exportData = exportData.filter(function(r) { return invSelected.has(r.id); });
+  }
+
   if (!exportData.length) { toast('אין פריטים לייצוא', 'w'); return; }
 
-  const headers = ['ברקוד','חברה/מותג','דגם','גודל','גשר','צבע','סוג מוצר','מחיר מכירה','הנחה%','כמות','סנכרון'];
+  const headers = ['ברקוד','חברה/מותג','דגם','גודל','גשר','צבע','סוג מוצר','מחיר מכירה','הנחה%','מ.סופי','כמות','סנכרון'];
   const rows = exportData.map(r => {
+    var sp = parseFloat(r.sell_price) || 0;
+    var sd = r.sell_discount != null ? Math.round((parseFloat(r.sell_discount) || 0) * 100) : 0;
+    var finalPrice = sd > 0 ? Math.round(sp * (1 - sd / 100)) : sp;
     return [
       r.barcode || '',
       r.brand_name || '',
@@ -145,8 +153,9 @@ async function exportInventoryExcel() {
       r.bridge || '',
       r.color || '',
       r.product_type ? enToHe('product_type', r.product_type) : '',
-      parseFloat(r.sell_price) || 0,
-      r.sell_discount != null ? Math.round((parseFloat(r.sell_discount) || 0) * 100) : 0,
+      sp,
+      sd,
+      finalPrice,
       parseInt(r.quantity) || 0,
       r.website_sync ? enToHe('website_sync', r.website_sync) : ''
     ];
@@ -171,13 +180,15 @@ async function exportInventoryExcel() {
     ws[ref].s = headerStyle;
   });
 
-  // Number format for price column (col index 7) and discount (8) and quantity (9)
+  // Number format for price (7), discount (8), final price (9), quantity (10)
   for (let ri = 1; ri <= rows.length; ri++) {
     const priceRef = XLSX.utils.encode_cell({ r: ri, c: 7 });
     if (ws[priceRef]) ws[priceRef].t = 'n';
     const discRef = XLSX.utils.encode_cell({ r: ri, c: 8 });
     if (ws[discRef]) ws[discRef].t = 'n';
-    const qtyRef = XLSX.utils.encode_cell({ r: ri, c: 9 });
+    const finalRef = XLSX.utils.encode_cell({ r: ri, c: 9 });
+    if (ws[finalRef]) ws[finalRef].t = 'n';
+    const qtyRef = XLSX.utils.encode_cell({ r: ri, c: 10 });
     if (ws[qtyRef]) ws[qtyRef].t = 'n';
   }
 

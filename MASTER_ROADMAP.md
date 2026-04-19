@@ -1,6 +1,6 @@
 # Optic Up — Master Roadmap
 
-> **Last reconciled:** 2026-04-15 (Module 3 Tenant Feature Gating & Cleanup SPEC)
+> **Last reconciled:** 2026-04-18 (DNS Switch Preflight Audit — GO verdict)
 >
 > This document is the canonical **build sequence**, **decision log**, and
 > **known-debt register** for the Optic Up platform.
@@ -36,7 +36,7 @@ backend with RLS-based tenant isolation.
 | 1 | Inventory ERP | ✅ Complete | opticup | Full ERP: inventory, purchasing, receipts, supplier debt, returns, shipments, AI-OCR, alerts, stock counts, Access sync. 12 phases (0 → 5.9 + QA). 36 tables. |
 | 1.5 | Shared Components | ✅ Complete | opticup | Cross-module infrastructure: shared JS/CSS components (Modal, Toast, TableBuilder, PIN modal), activity_log, auth/permissions refactor, plan helpers, design tokens. 14 tables. |
 | 2 | Platform Admin | ✅ Complete (v2.0) | opticup | Super-admin control plane: tenant provisioning, plans/limits/features, audit log, PIN reset, suspend/activate/delete. 4 phases. 5 tables + tenants extension. |
-| 3 | Storefront | 🟢 Code-complete — awaiting Daniel QA + DNS switch | opticup-storefront | Public storefront: CMS pages, campaigns, blog, AI content, translations (he/en/ru), media library, lead forms, brand pages, SEO. Phase B + Pre-Launch Hardening + Close-Out complete 2026-04-15. 25 tables. |
+| 3 | Storefront | 🟢 DNS SWITCH EXECUTED (2026-04-18) — propagation pending | opticup-storefront | Public storefront: CMS pages, campaigns, blog, AI content, translations (he/en/ru), media library, lead forms, brand pages, SEO. All phases complete. develop→main merged. DNS switched from DreamVPS to Vercel. 25 tables. |
 | 3.1 | Project Reconstruction | ✅ Complete | opticup | Meta-module: foundation doc rewrites, DB audit baseline, roadmap reconciliation. Does not own code — owns documentation accuracy. 3A/3B/3C/3D all complete. |
 | 4 | CRM | ⬜ Not started | opticup (planned) | Customer management — replaces Monday.com for leads. Prerequisite for orders + prescriptions. |
 | 5–22 | Future modules | ⬜ Not started | — | Orders, prescriptions, payments, lab/KDS, lenses, branches, WhatsApp, reports, supplier portal, content hub, B2B network, AI support, WooCommerce sync, POS. |
@@ -48,24 +48,22 @@ under `opticup/modules/Module N - .../`.
 
 ## 3. Current State (April 2026)
 
-Module 3 (Storefront) is **code-complete** as of 2026-04-15. The full chain —
-Phase B Core (RLS hardening), B6 (session key rename), Pre-Launch Hardening
-SPEC (2026-04-14), Close-Out SPEC (2026-04-15), Tenant Feature Gating &
-Cleanup SPEC (2026-04-15), and **BLOG_PRE_MERGE_FIXES SPEC** (2026-04-15,
-commits `678a82e`→`3e92f7f`) — is committed to `develop`. All tenant-hardcoding
-findings resolved, translate-content wrapper regression fixed, WordPress parity
-pages inserted, 8 storefront HTML pages gated via plan feature flags, Guardian
-alerts up to date. **Blog pre-merge content cleanup complete**: 19 WordPress
-images migrated into Studio Media (`media-library` bucket, folder "בלוג") with
-dedup, 132 posts rewritten to new image URLs, grammar-article en+ru variants
-soft-deleted (he preserved), 58 Hebrew slugs transliterated (19 en → ASCII,
-39 ru → Cyrillic). 82 posts with hardcoded Instagram handle `optic_prizma`
-deferred to post-merge SPEC `BLOG_INSTAGRAM_TEMPLATIZE` (non-blocker).
+**Module 3 (Storefront) has received a GO verdict for DNS switch** as of
+2026-04-18. A comprehensive 15-mission preflight audit (`DNS_SWITCH_PREFLIGHT_AUDIT`)
+found **0 blockers**. All prior issues are resolved:
 
-The sole remaining gate for DNS switch is **Daniel-run QA** on localhost
-(runbook: `modules/Module 3 - Storefront/docs/QA_HANDOFF_2026-04-14.md`).
-After QA passes, Daniel merges `develop → main` in both repos, then switches
-DNS for `www.prizma-optic.co.il`.
+- **develop→main merge: CLOSED** (0 commits divergent)
+- **Canonical domain:** `astro.config.mjs` site = `https://prizma-optic.co.il` ✅
+- **SEO:** og:image 100% coverage, hreflang on all pages, sitemap 245 URLs clean, 1,671 redirects from old WP site
+- **Languages:** HE/EN/RU all serve correctly (76 published pages, all 200)
+- **Performance:** YouTube facade, Partytown removed, static assets cached 1yr
+- **Security:** 5/6 headers present, all RLS policies canonical JWT-claim pattern
+
+**Remaining SHOULD FIX (not blocking):** `/sitemap.xml` redirect, HTML edge caching (ISR), 13 DB rows with Hebrew titles in EN/RU, 3 cosmetic `/404` hrefs on brand page.
+
+**DNS switch EXECUTED (2026-04-18):** Daniel registered `prizma-optic.co.il` + `www.prizma-optic.co.il` in Vercel Dashboard, then updated DNS records at DreamVPS cPanel: A record `@` → `216.198.79.1` (Vercel), CNAME `www` → `c727e6a69a4a41da.vercel-dns-017.com.`. MX/TXT/DKIM untouched. Awaiting propagation + Vercel auto-SSL.
+
+**Full preflight report:** `modules/Module 3 - Storefront/docs/specs/DNS_SWITCH_PREFLIGHT_AUDIT/PREFLIGHT_REPORT.md`
 
 Overnight SEO audit complete (SPEC `PRE_MERGE_SEO_OVERNIGHT_QA`) —
 **verdict: GREEN**, 41 MISSING URLs (0 high-traffic, ≥10 clicks). 14 findings
@@ -270,13 +268,19 @@ is real and must be fixed before either module starts writing.
 
 ## 7. Next Step
 
-**Module 3.1 is COMPLETE** (closed April 11, 2026 — see §4 Decisions Log).
+**Module 3 DNS switch: GO** (preflight audit 2026-04-18, 0 blockers).
 
-**Active:** Module 3 Phase B (gated on dual preamble — see §6 above).
-- First gate: ✅ Module 3.1 closure (this module)
-- Second gate: ⬜ Phase B preamble cleanup (security-critical items + TIER-C-PENDING)
+**Immediate:** DNS switch execution — Daniel verifies Vercel domain config, then flips DNS records.
 
-**On deck:** Module 4 (CRM) once Module 3 reaches DNS switch readiness.
+**Post-launch polish (Module 3):**
+- HTML edge caching (ISR) for faster page loads
+- Content-Security-Policy header
+- DB title cleanup (13 EN/RU rows with Hebrew titles)
+- BrandShowcase scroll behavior fixes
+- Homepage revisions queue (Daniel's remaining feedback)
+- Contact form lead-capture (Resend integration — deferred by Daniel)
+
+**On deck:** Module 4 (CRM) — customer management to replace Monday.com for leads.
 
 ---
 
@@ -294,8 +298,4 @@ is real and must be fixed before either module starts writing.
 | Known issues | `opticup/docs/TROUBLESHOOTING.md` |
 | Per-module specs and roadmaps | `opticup/modules/Module N - .../docs/MODULE_SPEC.md` and `ROADMAP.md` |
 | Storefront architecture | `opticup-storefront/ARCHITECTURE.md` |
-| Storefront view contracts | `opticup-storefront/VIEW_CONTRACTS.md` |
-| Original 28-module project vision (historical) | `opticup/docs/PROJECT_VISION.md` |
-| Module Strategic Chat opening prompt | `opticup/UNIVERSAL_MODULE_STRATEGIC_CHAT_PROMPT.md` |
-| Secondary Chat operating instructions | `opticup/UNIVERSAL_SECONDARY_CHAT_PROMPT.md` |
-| 
+| Storefront view contracts | `opticup-storefro

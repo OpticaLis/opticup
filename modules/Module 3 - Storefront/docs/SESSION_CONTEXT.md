@@ -1,8 +1,144 @@
 # Module 3 — Storefront — ERP-Side Session Context
 
-## Current Phase: Pre-DNS-Switch Fixes — STOREFRONT_LANG_AND_VIDEO_FIX 🟡 EXECUTED (2026-04-17)
-## Status: 2 of 3 SPEC tasks shipped. YouTube nocookie removed (3 hits across StepsBlock + VideoBlock — storefront commit `45cd329`). `/prizmaexpress/` RU corrupted words fixed via targeted DB UPDATE (`лиןз` → `линз`, `каталоגים` → `каталоге`). EN/RU routing 404s on Vercel prod diagnosed as **develop→main merge gap**, NOT a code bug — localhost serves 58/58 tested pages at 200 on develop; Vercel prod runs stale main with blog-only catchall. Remedy requires Daniel-authorized merge. Awaiting Foreman review + merge decision.
-## Date: 2026-04-17
+## Current Phase: POST-DNS — production stable, hero video live (2026-04-18)
+## Status: 🟢 PRODUCTION LIVE. DNS switched, hero video self-hosted (MP4), ISR caching enabled (24h). Storefront SESSION_CONTEXT updated. PageSpeed baseline ~89.
+## Date: 2026-04-18
+
+---
+
+## Session Summary 2026-04-18 (Cowork) — 3 SPECs closed + merge to main
+
+**What was done this session:**
+1. **STOREFRONT_REPO_STATE_SNAPSHOT** — read-only diagnostic of dirty repo state. Found: 250+ modified files were CRLF/LF artifacts (resolved), 1 real uncommitted file, develop had reverted perf commits.
+2. **STOREFRONT_DEVELOP_RESET** — committed uncommitted docs, tagged perf work as `perf-post-dns-reverted`, reset develop to match main (`b1a7312`). develop = main = production.
+3. **HERO_VIDEO_SELF_HOSTED** — replaced YouTube iframe with self-hosted MP4 (`<video autoplay muted loop playsinline>`). 720p/1.6MB mobile, 1280p/3.9MB desktop, 70KB poster. Zero external JS. Daniel verified on localhost, merged to main (`6145ef9`).
+
+**Current production state (main = `6145ef9`):**
+- Hero video plays on mobile + desktop via native `<video>` element
+- PageSpeed expected ~89 (no YouTube JS penalty)
+- All 76 published pages serving 200
+- DNS: `prizma-optic.co.il` → Vercel, SSL active
+
+**Remaining post-launch queue:**
+1. ~~JSON-LD URLs~~ — ✅ DONE (2026-04-18). 6 files fixed, pending commit+push.
+2. ~~ISR caching~~ — ✅ DONE (2026-04-18). `isr: { expiration: 86400 }`, live on production.
+3. ~~CSP header~~ — ✅ DONE (2026-04-18). Report-Only added to vercel.json, pending commit+push.
+4. ~~Hebrew titles in EN/RU~~ — ✅ DONE (2026-04-18). 9 DB rows fixed, zero Hebrew remains.
+5. Perf/SEO remaining — supersale h1+schema, CMS page h1, image w/h, WebP brand logos (cherry-pick from tag `perf-post-dns-reverted`, one at a time)
+6. BrandShowcase scroll fixes — 3 open issues
+7. Homepage revisions — Daniel's block-by-block feedback
+8. Contact form — intentionally hidden (WhatsApp only). Resend integration deferred.
+
+**None of the above are blockers. Site is live and functional.**
+
+---
+
+## Execution Close-Out 2026-04-18 (night) — HERO_VIDEO_SELF_HOSTED
+
+**Deliverables (inside `docs/specs/HERO_VIDEO_SELF_HOSTED/`):**
+- `SPEC.md` — Foreman-authored (Cowork session awesome-cool-faraday), 14 measurable SCs, 1-commit plan
+- `EXECUTION_REPORT.md` — retrospective (self-score 9.3/10), 13/14 SCs strictly met (SC-11 regex conflicts with §7's "keep `video_youtube_id` prop" directive), 2 executor-skill proposals
+- `FINDINGS.md` — 2 findings: `M3-DEBT-11` (pre-existing misplaced hero-*.mp4 at storefront repo root — resolved in First Action), `M3-DOC-03` (SPEC stale about file truncation — file was already intact)
+
+**Storefront operations executed:**
+- First Action: 3 untracked `hero-*.mp4/.webp` files at repo root (from prior incomplete attempt) → Daniel selected option (a) → deleted, fresh copies pulled from ERP SPEC folder into `public/videos/`
+- `HeroLuxuryBlock.astro` rewritten: YouTube facade + 27-line `<script>` removed, replaced with `<img fetchpriority="high">` + `<video autoplay muted loop playsinline preload="none">` with `<source media="(min-width:768px)">` for desktop and mobile MP4s. File went 120→97 lines (well under the 130 cap).
+- `data.video_youtube_id` prop retained as the truthiness trigger (per SPEC §7 + SaaS Rule 20 backward compat)
+- Commit `6145ef9` on storefront `develop` — `feat(hero): self-hosted MP4 video replacing YouTube iframe for mobile+desktop` — pushed to origin
+- `npm run build` → exit 0 in 5.27s; `node scripts/full-test.mjs --no-build` → 18/18 PASS; pre-commit hooks (file-size, frozen-files, rule-23-secrets, rule-24-views-only) → 0 violations
+
+**Key design decisions locked in:**
+- `preload="none"` on the `<video>` — video does NOT block page load; browser decides when to stream
+- Separate `<img>` with `fetchpriority="high"` — guarantees poster.webp is the LCP element before video arrives
+- `<source media="(min-width: 768px)">` first → browser picks desktop MP4 only on ≥768px, mobile serves the 1.6 MB variant
+- Zero external JS — native browser `<video>` element, no YouTube player library
+- `video_youtube_id` JSONB field in DB unchanged — no migration needed, all existing pages continue to render the hero video
+
+**Expected PageSpeed behaviour:** stays ~89 (baseline) because no YouTube JS loaded, poster.webp renders instantly for LCP, video streams after page is interactive. Daniel to verify on mobile.
+
+**Next step:** Awaiting Foreman review → `FOREMAN_REVIEW.md`. After Daniel confirms mobile playback, storefront `develop` → `main` merge by Daniel.
+
+---
+
+## Execution Close-Out 2026-04-18 (late evening) — STOREFRONT_DEVELOP_RESET
+
+**Deliverables (inside `docs/specs/STOREFRONT_DEVELOP_RESET/`):**
+- `SPEC.md` — Foreman-authored, 6-step reset plan with full success criteria and rollback path
+- `EXECUTION_REPORT.md` — retrospective (self-score 9.8/10) + 2 executor-skill proposals (numeric tolerance encoding, cross-repo SPEC pattern reference)
+- `FINDINGS.md` — no out-of-scope findings (pure mechanical cleanup SPEC; all state already catalogued by the predecessor snapshot SPEC `c36a8b3`)
+
+**Storefront operations executed:**
+- Commit `9582a2f` on storefront — `docs(storefront): preserve post-regression SESSION_CONTEXT updates` (the one uncommitted doc file preserved before reset)
+- Annotated tag `perf-post-dns-reverted` → `9582a2f` — pushed to origin. Full perf history (`0a04ccf` ← `dd7ddcf` ← `9056307` ← `8106116` ← all POST_DNS_PERF_AND_SEO commits) reachable via `git log perf-post-dns-reverted` for future cherry-picking.
+- `git reset --hard origin/main` on storefront develop → HEAD = `b1a7312`
+- `git push --force-with-lease origin develop` — succeeded, forced-update `9582a2f...b1a7312`
+- `npm run build` — exit 0, "Complete!" in 4.94s
+- Critical files verified: vercel.json (8601 lines), tsconfig.json (5), global.css (128 — main's pre-perf version), index.astro + BaseLayout.astro present
+
+**Final state (storefront):**
+- `origin/develop` = `origin/main` = `b1a7312`
+- Tag `perf-post-dns-reverted` = `9582a2f` (published to origin)
+- `main` untouched throughout (still `b1a7312`)
+- Working tree clean, build passes
+
+**Rollback path (if ever needed):** `git checkout develop && git reset --hard perf-post-dns-reverted && git push --force-with-lease origin develop`
+
+**Next step:** Awaiting Foreman review → `FOREMAN_REVIEW.md` → new SPEC for per-change cherry-pick with PageSpeed measurement. Out of scope for this SPEC: any perf change re-application.
+
+---
+
+## Execution Close-Out 2026-04-18 (evening) — STOREFRONT_REPO_STATE_SNAPSHOT
+
+**Deliverables (inside `docs/specs/STOREFRONT_REPO_STATE_SNAPSHOT/`):**
+- `SPEC.md` — Foreman-authored, 8-mission read-only diagnostic
+- `SNAPSHOT_REPORT.md` — raw output of all 8 missions + executive summary + 4 cleanup options
+- `EXECUTION_REPORT.md` — retrospective (self-score 9.5/10) + 2 executor-skill proposals
+- `FINDINGS.md` — 3 findings (1 INFO state drift, 1 LOW uncommitted docs on storefront develop, 1 MEDIUM autocrlf × .gitattributes conflict)
+
+**Key conclusions from the snapshot:**
+- The "messy state" described in the dispatch prompt (250+ modified files, staged deletions) was **no longer present** at execution time — likely resolved between Cowork observation and executor start.
+- Actual state: 0 staged changes, 1 modified file (`SESSION_CONTEXT.md` with real post-regression docs), 0 untracked, build passes, critical files all intact.
+- **develop is a commit-graph ancestor of main** (zero unique commits), but its **working tree differs from main** by 48 files / +398/-105 lines — this is the reverted POST_DNS_PERF_AND_SEO scope.
+- **Cleanup options documented** in SNAPSHOT_REPORT.md — Foreman to author the cleanup SPEC next. Recommend Option C (cherry-pick one perf change per commit with before/after PageSpeed) as aligned with the "never batch perf changes" lesson.
+- Prerequisite before any `--force` push: commit storefront's one uncommitted `SESSION_CONTEXT.md` change so it isn't lost.
+
+**Next step:** Awaiting Foreman review → FOREMAN_REVIEW.md → cleanup SPEC.
+
+---
+
+## POST_DNS_PERF_AND_SEO — Regression & Revert (2026-04-18)
+
+**What happened:** 18 perf/SEO fixes applied in one session → PageSpeed mobile dropped 89→47. Two hotfix attempts made it worse. Full revert to `62ebe0e`.
+**Root causes:** (1) YouTube iframe on mobile = ~800KB JS penalty, (2) broken cache middleware, (3) 18 changes batched without measurement.
+**Revert:** commit `8c362c1` on main. Eye favicon added as `b1a7312`.
+**Post-mortem:** `docs/specs/POST_DNS_PERF_AND_SEO/REVERT_POST_MORTEM.md`
+**Rule going forward:** One perf change per commit, measure before/after. No batching.
+**Still want:** JSON-LD fix, supersale h1, edge caching, image dimensions — re-apply individually.
+
+---
+
+## DNS Switch Preflight Audit 🟢 COMPLETE (2026-04-18)
+
+**SPEC:** `docs/specs/DNS_SWITCH_PREFLIGHT_AUDIT/`
+**Verdict:** GO — 0 blockers, 4 SHOULD FIX, 3 NICE TO HAVE, 7 ALREADY RESOLVED.
+**Key findings:**
+- `astro.config.mjs` site = `https://prizma-optic.co.il` ✅
+- develop→main: 0 commits divergent ✅
+- 76 published pages (HE/EN/RU) all serve 200 ✅
+- og:image 100% coverage, hreflang on all pages, sitemap 245 URLs clean ✅
+- 1,671 redirects from old WP site in vercel.json ✅
+- Security headers 5/6 present, zero Hebrew leak in EN/RU titles ✅
+- Partytown fully removed, YouTube facade active ✅
+
+**DNS switch EXECUTED (2026-04-18):**
+- Vercel custom domains registered: `prizma-optic.co.il` + `www.prizma-optic.co.il` ✅
+- DreamVPS cPanel Zone Editor updated: A record `@` → `216.198.79.1`, CNAME `www` → `c727e6a69a4a41da.vercel-dns-017.com.` ✅
+- MX, TXT (SPF), DKIM records untouched — Google Workspace email unaffected ✅
+- Awaiting DNS propagation (minutes to hours) + Vercel auto-SSL provisioning
+
+**Post-launch queue:** ISR caching (2s TTFB → <200ms), CSP header, 13 EN/RU DB title cleanups, BrandShowcase scroll fixes, homepage revisions, contact form Resend integration.
+
+**Full report:** `docs/specs/DNS_SWITCH_PREFLIGHT_AUDIT/PREFLIGHT_REPORT.md`
 
 ---
 
@@ -305,75 +441,4 @@ After viewing the deployed luxury redesign, Daniel re-sequenced the pre-DNS queu
 - **NEW page** `אופטומטריה` — absorbs multifocal content; old slug 301-redirects
 - **NEW Events block** — YouTube Shorts `40f1I0eOR7s` (tadmit) + `-hJjVIK3BZM` (testimonials)
 - **All 3 locales (he/en/ru) ship in parity** — no placeholder copy allowed
-- Hero copy: Elison-inspired structure, NOT a copy; executor drafts using Prizma's own vocabulary ("40 שנה", Paris/Milan sourcing hint); Daniel reviews post-commit
-
-**Author's anchor decisions (for continuity):**
-- Q1 exhibition videos: SILMO Paris `XvfUYI87jso`, MIDO Milan `E8xt6Oj-QQw`, Israel `hOCxDNFEjWA`
-- Q2 hero copy: Elison-inspired, not copied; candidate draft in SPEC §10
-- Q3 i18n: all 3 locales in THIS SPEC, not a follow-up
-- Q4 story narrative: executor drafts → commits → Daniel reviews after
-- Q5 contact form: separate SPEC `CONTACT_FORM_FIX` immediately after this closes (both land before DNS switch)
-- Q6 events block: added as 6th Homepage section per Daniel's addendum mid-authoring
-
-**Follow-up SPECs queued:**
-- `CONTACT_FORM_FIX` — launch blocker; "בואו נדבר" form shows success but data silently lost (likely missing Edge Function + SMTP integration). Author immediately after this SPEC closes.
-- `MODULE_3_SEO_LEGACY_URL_REMAPS` — FINDING-seo-fixes-01 deferred (from PRE_MERGE_SEO_FIXES).
-- `M3_SEO_SAFETY_NET` — FINDING-seo-fixes-06 deferred (Rule 30).
-
-**Dispatch gate:** None remaining — all 6 Q&A resolved. Executor may start as soon as Daniel runs the SPEC commit from Windows CMD.
-
----
-
-## Pre-Merge SEO Fixes SPEC ✅ (2026-04-16)
-
-All HIGH/MEDIUM SEO findings from the parent audit resolved. Storefront is
-SEO-clean for DNS switch.
-
-- **Scope:** 9 fix tasks (14 success criteria — 9 pass-threshold, 5 best-effort); all 9 tasks executed end-to-end under Bounded Autonomy
-- **Sitemap:** 58 broken `<loc>` entries → **0** (root cause: sitemap emitted `/בלוג/{slug}/` while routing resolves at root `/{slug}/`; fix: sitemap generator emits the right path + `[...slug].astro` 301-guards legacy URLs)
-- **og:image coverage:** 27% → **100%** on sampled top-20 pages (fallback to tenant logo in `BaseLayout.astro` when no explicit `ogImage` prop)
-- **Locale 404:** `/en/*` and `/ru/*` now `Astro.rewrite('/404')` — real HTTP 404 instead of soft-404 302
-- **Redirect chains:** all 46 previously-multi-hop chains flattened to ≤1 hop via handler-level 404 for unknown brand/product slugs
-- **robots.txt:** single `sitemap-dynamic.xml` directive (stale `sitemap-index.xml` directive removed)
-- **Title / alt improvements:** template-level dedupe of tenant-name suffix (title ≤60 chars on 17/20 sampled pages, was 23%); `ensureImgAlt` regex pass on blog content
-- **Commits:** storefront `1739f49`, `0047e1f`, `f3a855f`, `c8789e9`, `fe756a7` + ERP retrospective `462bd51` + FOREMAN_REVIEW `8d306c3`
-- **Retrospective:** `docs/specs/PRE_MERGE_SEO_FIXES/{EXECUTION_REPORT,FINDINGS,FOREMAN_REVIEW}.md`
-- **Foreman verdict:** 🟡 closed with follow-ups (documentation drift — fixed in this commit). 6 findings logged: 1 closed in-SPEC; 5 deferred (non-blocking)
-- **Follow-up SPEC stubs flagged:** `MODULE_3_SEO_LEGACY_URL_REMAPS` (LOW — per-URL vercel.json rules for legacy WP URLs with ≥5 GSC clicks), `M3_SEO_SAFETY_NET` (MEDIUM, future — port SEO check subset to storefront scripts/ per Rule 30)
-
----
-
-## Pre-Merge SEO Overnight QA SPEC ✅ (2026-04-15)
-
-Read-only SEO audit against GSC ground truth (1000 Pages + 1000 Queries CSV exports). 10 Node scripts, 1 atomic commit, 14 findings (0 CRITICAL / 3 HIGH / 6 MEDIUM / 3 LOW / 2 INFO) → all actionable items fed into the PRE_MERGE_SEO_FIXES SPEC above.
-
-- **DNS verdict:** 🟢 **GREEN** — 41 MISSING URLs total, **0** carry ≥10 clicks (combined traffic of MISSING: 4 clicks)
-- **Coverage:** OK_200=96, OK_301_REDIRECT=863, MISSING=41 (of 1000 GSC URLs)
-- **HIGH findings resolved by PRE_MERGE_SEO_FIXES:** `og:image` 73/100 missing → now 100% coverage on sample; 58/245 sitemap `<loc>`s 404 → now 0 broken; `/en/*` and `/ru/*` 302 → now real 404
-- **Report:** `docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/SEO_QA_REPORT.md` (38.5 KB, 11 sections)
-- **Retrospective:** `docs/specs/PRE_MERGE_SEO_OVERNIGHT_QA/{EXECUTION_REPORT,FINDINGS,FOREMAN_REVIEW}.md`
-
----
-
-## Blog Pre-Merge Fixes SPEC ✅ (2026-04-15)
-
-All CRITICAL/HIGH blog findings resolved. Multilingual blog (he/en/ru, 174 posts) is production-safe for DNS switch.
-
-- **19 WP images migrated** to `media-library/blog` bucket + `media_library` rows inserted; 4 confirmed 404 stripped (commits `678a82e`, `4738191`)
-- **132 posts rewritten** — WP image URLs replaced with `/api/image/media/` proxy paths; 4 broken img tags stripped; WP `<a href>` links stripped (commit `dd0fe6f`)
-- **Grammar article** — en + ru soft-deleted; he variant preserved (commit `dd0fe6f`)
-- **58 Hebrew slugs transliterated** — 19 en → English ASCII, 39 ru → Russian Cyrillic (commit `dd0fe6f`)
-- **Retrospective:** `modules/Module 3 - Storefront/docs/specs/BLOG_PRE_MERGE_FIXES/`
-- **Remaining (UNVERIFIED, localhost):** build passes, browser spot-check, 200 responses — per existing `docs/QA_HANDOFF_2026-04-14.md`
-- **Follow-up SPEC flagged:** `BLOG_INSTAGRAM_TEMPLATIZE` — 82 posts contain hardcoded `optic_prizma` Instagram href (LOW, not a blocker)
-
----
-
-## Tenant Feature Gating & Cleanup SPEC ✅ (2026-04-15)
-
-4 new CMS feature keys added to plans table; 8 storefront HTML pages gated via `isFeatureEnabled()` + `renderFeatureLockedState()`:
-
-- **migration 067** — `cms_studio`, `cms_custom_blocks`, `cms_landing_pages`, `cms_ai_tools` keys added to basic/premium/enterprise plans (commit `ea08602`)
-- **renderFeatureLockedState** — new helper in `shared/js/plan-helpers.js`; GLOBAL_MAP.md updated (commit `44a7625`)
-- **8 pages gated** — storefront-settings, storefront-products (→ `storefront`); storefront-brands, storefront-studio, storefront-blog (→ `cms_studio`); storefront-content, storefront-glossary (→ `cms_ai_tools`); storefront-landing-content (→ `cms_landing_pages`) (commit `f28db3c`)
-- **Dead code cleaned** — `old prompts/` + `mar30-phase-specs/` archived + r
+- Hero copy: Elison-inspired structure, NOT a copy; executor drafts using Prizma's own vocabulary ("40 שנה

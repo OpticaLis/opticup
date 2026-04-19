@@ -180,6 +180,7 @@ function renderInventoryRows(recs) {
       <td${isAdm?' class="editable" onclick="invEditProductType(this)"':''}>${enToHe('product_type', r.product_type)||''}</td>
       <td${isAdm?' class="editable" onclick="invEdit(this,\'sell_price\',\'number\')"':''}>${sp}</td>
       <td${isAdm?' class="editable" onclick="invEdit(this,\'sell_discount\',\'pct\')"':''}>${sd}%</td>
+      <td style="font-weight:600;color:var(--primary)">${sd > 0 ? Math.round(sp * (1 - sd / 100)) : sp}</td>
       <td class="cost-col">${cp}</td>
       <td class="cost-col">${cd}%</td>
       <td style="font-weight:700;color:${qC}" data-qty-id="${r.id}">${qty}${isAdm?` <span class="qty-btns"><button class="qty-btn qty-plus" data-id="${escapeHtml(r.id)}" data-dir="add" title="הוסף כמות">➕</button><button class="qty-btn qty-minus" data-id="${escapeHtml(r.id)}" data-dir="remove" title="הוצא כמות">➖</button></span>`:''}</td>
@@ -237,6 +238,38 @@ function toggleNoImagesFilter() {
   }
   invPage = 0;
   loadInventoryPage();
+}
+
+// --- Selected-only filter ---
+var _selectedOnlyFilter = false;
+
+function toggleSelectedFilter() {
+  _selectedOnlyFilter = !_selectedOnlyFilter;
+  var btn = $('inv-filter-selected');
+  if (btn) {
+    btn.style.background = _selectedOnlyFilter ? '#2196F3' : '#e5e7eb';
+    btn.style.color = _selectedOnlyFilter ? '#fff' : '#1e293b';
+  }
+  if (_selectedOnlyFilter) {
+    // Show only selected items from current invData
+    var filtered = invData.filter(function(r) { return invSelected.has(r.id); });
+    renderInventoryRows(filtered);
+  } else {
+    renderInventoryRows(invData);
+  }
+}
+
+function _updateSelectedFilterBtn() {
+  var btn = $('inv-filter-selected');
+  if (!btn) return;
+  btn.style.display = invSelected.size > 0 ? 'inline-block' : 'none';
+  // If filter is active but no more selections, deactivate it
+  if (_selectedOnlyFilter && invSelected.size === 0) {
+    _selectedOnlyFilter = false;
+    btn.style.background = '#e5e7eb';
+    btn.style.color = '#1e293b';
+    renderInventoryRows(invData);
+  }
 }
 
 function _renderReceiptBanner() {

@@ -29,3 +29,6 @@ opticup-skills.plugin
 **/old prompts/
 **/current prompt/
 **/archive/
+
+# Claude local settings
+.claude/

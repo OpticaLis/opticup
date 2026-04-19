@@ -4,6 +4,11 @@ function toggleRowSelect(id, checked) {
   const tr = $('inv-body').querySelector(`tr[data-id="${id}"]`);
   if (tr) tr.classList.toggle('selected-row', checked);
   updateSelectionUI();
+  if (typeof _updateSelectedFilterBtn === 'function') _updateSelectedFilterBtn();
+  // In selected-only mode, unchecking removes the row immediately
+  if (!checked && typeof _selectedOnlyFilter !== 'undefined' && _selectedOnlyFilter) {
+    if (tr) tr.remove();
+  }
 }
 
 function toggleSelectAll(checked) {
@@ -35,6 +40,7 @@ function updateSelectionUI() {
   var showBulk = n > 0 && isAdm;
   $('inv-bulk-bar').style.display = showBulk ? 'flex' : 'none';
   if (showBulk) _populateBulkDropdowns();
+  if (typeof _updateSelectedFilterBtn === 'function') _updateSelectedFilterBtn();
 }
 function _populateBulkDropdowns() {
   _fillBulkSelect('bulk-brand', brandCache);

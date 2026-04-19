@@ -2,7 +2,7 @@
 
 > **Authority:** Phase status only. For rules → CLAUDE.md. For code → MODULE_MAP.md. For current status → SESSION_CONTEXT.md.
 > **מיקום:** `modules/Module 3 - Storefront/ROADMAP.md`
-> **עודכן לאחרונה:** מרץ 2026
+> **עודכן לאחרונה:** אפריל 2026 (DNS Switch GO verdict)
 > **Execution mode:** AUTONOMOUS — Claude Code executes PHASE_SPECs independently
 
 ---
@@ -140,14 +140,15 @@
 | Pre-Launch | ✅ | Pre-Launch Hardening | storefront RLS (components/pages/reviews), SAAS-01/04/05, R09-01 (commits `66acfc7`–`d2fe4d3`, 2026-04-14) |
 | Close-Out | ✅ | Module 3 Close-Out | 5 hardcoding fixes, translate-content wrapper fix, WP parity pages, Guardian alerts (commits `a115b5a`–`ba81a3b`, 2026-04-15) |
 | C | ✅ | WordPress Content Migration | Integrated into Close-Out via Supabase MCP DB inserts (migrations 065, 066) |
-| D | ⬜ | Dead Code Cleanup | Addressed in SPEC 2 (TENANT_FEATURE_GATING_AND_CLEANUP) |
-| QA | ⬜ | Full Module QA — **GATE FOR DNS SWITCH** | Daniel-run localhost QA per `docs/QA_HANDOFF_2026-04-14.md` |
+| D | ✅ | Dead Code Cleanup | Addressed in SPEC 2 (TENANT_FEATURE_GATING_AND_CLEANUP) |
+| QA | ✅ | Full Module QA + Preflight Audit | DNS_SWITCH_PREFLIGHT_AUDIT (2026-04-18): 15-mission read-only audit, 0 blockers, GO verdict |
+| DNS Switch | ✅ EXECUTED | DNS records updated 2026-04-18 | A record + CNAME updated at DreamVPS → Vercel. Propagation pending. Vercel auto-SSL in progress. |
 
-**Module 3 code-complete as of 2026-04-15.** Phase B + Pre-Launch + Close-Out all committed to develop. Sole remaining gate = Daniel QA on localhost → merge develop → main → DNS switch.
+**Module 3 DNS-switch ready as of 2026-04-18.** Full preflight audit: 0 blockers. develop→main merged (0 commits divergent). All phases complete.
 
 ---
 
-**סה"כ CMS + Storefront phases = COMPLETE. SaaS hardening chain = COMPLETE.**
+**סה"כ CMS + Storefront + SaaS Hardening + SEO + QA = COMPLETE. DNS SWITCH = GO.**
 
 ---
 

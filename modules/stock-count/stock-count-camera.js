@@ -322,23 +322,41 @@ async function _scSaveUnknownItem() {
 }
 
 // ── Zoom control ──────────────────────────────────────────────
+var _scZoomSteps = [1, 2, 3];
+var _scZoomIndex = 0;
 function _scInitZoom(stream) {
-  try { var caps = stream.getVideoTracks()[0].getCapabilities ? stream.getVideoTracks()[0].getCapabilities() : {};
+  try {
+    var track = stream.getVideoTracks()[0];
+    var caps = track.getCapabilities ? track.getCapabilities() : {};
+    // Show zoom button if supported
     if (caps.zoom) { var zb = document.getElementById('sc-cam-zoom'); if (zb) zb.style.display = ''; }
-  } catch (e) { /* zoom not supported */ }
+    // Lock focus to continuous if available — prevents focus hunting on close barcodes
+    if (caps.focusMode && caps.focusMode.includes('continuous')) {
+      track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+    }
+  } catch (e) { /* zoom/focus not supported */ }
 }
 function _scToggleZoom() {
   if (!_scCamStream) return;
-  try { var track = _scCamStream.getVideoTracks()[0], caps = track.getCapabilities ? track.getCapabilities() : {};
+  try {
+    var track = _scCamStream.getVideoTracks()[0];
+    var caps = track.getCapabilities ? track.getCapabilities() : {};
     if (!caps.zoom) return;
-    _scZoomLevel = (_scZoomLevel === 1) ? Math.min(2 * (caps.zoom.min || 1), caps.zoom.max || 1) : 1;
+    var maxZoom = caps.zoom.max || 1;
+    // Cycle to next zoom step
+    _scZoomIndex = (_scZoomIndex + 1) % _scZoomSteps.length;
+    var target = _scZoomSteps[_scZoomIndex];
+    // Clamp to device max — if exceeds, wrap back to 1x
+    if (target > maxZoom) { _scZoomIndex = 0; target = 1; }
+    _scZoomLevel = target;
     track.applyConstraints({ advanced: [{ zoom: _scZoomLevel }] });
-    var btn = document.getElementById('sc-cam-zoom'); if (btn) btn.textContent = (_scZoomLevel > 1) ? '2x' : '1x';
+    var btn = document.getElementById('sc-cam-zoom');
+    if (btn) btn.textContent = _scZoomLevel + 'x';
   } catch (e) { console.warn('Zoom error:', e); }
 }
 
 function stopCamera() {
-  _scanPaused = false; _scClearPauseTimer(); _scCamStream = null; _scZoomLevel = 1;
+  _scanPaused = false; _scClearPauseTimer(); _scCamStream = null; _scZoomLevel = 1; _scZoomIndex = 0;
   if (scCodeReader) { scCodeReader.reset(); scCodeReader = null; }
   var overlay = document.getElementById('sc-cam-overlay');
   if (overlay) {
