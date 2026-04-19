@@ -37,6 +37,7 @@ function addEntryRow(copyFrom) {
       <div class="card-field" style="min-width:100px"><label>מחיר סופי</label><input type="number" class="col-fprice" readonly placeholder="—" tabindex="-1" style="background:#f5f7fa;font-weight:600"></div>
       <div class="card-field cost-field" style="min-width:100px"><label>מחיר עלות</label><input type="number" class="col-cprice" placeholder="₪" step="0.01" min="0"></div>
       <div class="card-field cost-field" style="min-width:80px"><label>הנחה % עלות</label><input type="number" class="col-cdisc" placeholder="%" min="0" max="100"></div>
+      <div class="card-field" style="min-width:70px"><label>כמות <span class="req">*</span></label><input type="number" class="col-qty" value="1" min="0" step="1"></div>
       <div class="card-field" style="min-width:90px"><label>סנכרון <span class="req">*</span></label><select class="col-sync">${syncOpts()}</select></div>
       <div class="card-field" style="min-width:150px"><label>תמונות</label><input type="file" class="col-images" multiple accept="image/*"><div class="img-preview"></div></div>
       <div class="card-field" style="min-width:90px"><label>ברקוד</label><div class="barcode-cell barcode-val"></div></div>
@@ -45,7 +46,7 @@ function addEntryRow(copyFrom) {
   tb.appendChild(tr);
 
   // Get previous values for auto-fill
-  let pSup = '', pBrand = '', pPtype = '', pSprice = '', pSdisc = '0', pCprice = '', pCdisc = '', pSync = '';
+  let pSup = '', pBrand = '', pPtype = '', pSprice = '', pSdisc = '0', pCprice = '', pCdisc = '', pSync = '', pQty = '1';
   let pModel = '', pColor = '', pTemple = '';
   if (prev && prev.classList?.contains('item-card')) {
     pSup = prev.querySelector('.col-supplier')?.value || '';
@@ -56,6 +57,7 @@ function addEntryRow(copyFrom) {
     pCprice = prev.querySelector('.col-cprice')?.value || '';
     pCdisc = prev.querySelector('.col-cdisc')?.value || '';
     pSync = prev.querySelector('.col-sync')?.value || '';
+    pQty = prev.querySelector('.col-qty')?.value || '1';
     // If copyFrom is provided, also copy model, color, temple
     if (copyFrom) {
       pModel = prev.querySelector('.col-model')?.value || '';
@@ -82,6 +84,7 @@ function addEntryRow(copyFrom) {
   if (pCprice) tr.querySelector('.col-cprice').value = pCprice;
   if (pCdisc) tr.querySelector('.col-cdisc').value = pCdisc;
   if (pSync) tr.querySelector('.col-sync').value = pSync;
+  if (pQty) tr.querySelector('.col-qty').value = pQty;
   if (pModel) tr.querySelector('.col-model').value = pModel;
   if (pColor) tr.querySelector('.col-color').value = pColor;
   if (pTemple) tr.querySelector('.col-temple').value = pTemple;
@@ -168,6 +171,7 @@ function getEntryRows() {
     sdisc: tr.querySelector('.col-sdisc')?.value || '0',
     cprice: tr.querySelector('.col-cprice')?.value || '',
     cdisc: tr.querySelector('.col-cdisc')?.value || '',
+    qty: tr.querySelector('.col-qty')?.value ?? '1',
     sync: tr.querySelector('.col-sync')?.value || '',
     images: tr.querySelector('.col-images')?.files || [],
     barcode: tr.querySelector('.barcode-cell')?.textContent?.trim() || ''
@@ -208,6 +212,10 @@ function validateEntryRows() {
     if (r.cprice && parseFloat(r.cprice) < 0) {
       hasErr = true;
       errs.push(`שורה ${i+1}: מחיר עלות לא יכול להיות שלילי`);
+    }
+    if (r.qty === '' || isNaN(parseInt(r.qty)) || parseInt(r.qty) < 0) {
+      hasErr = true;
+      errs.push(`שורה ${i+1}: כמות לא תקינה`);
     }
     // Image requirement removed — may be restored in future
     if (hasErr) r.tr.classList.add('row-err');
@@ -262,7 +270,7 @@ async function submitEntry() {
           sell_discount: (parseFloat(r.sdisc) || 0) / 100,
           status: heToEn('status', 'במלאי'),
           origin: 'כניסת מלאי',
-          quantity: 1,
+          quantity: parseInt(r.qty) || 0,
           website_sync: heToEn('website_sync', r.sync || getBrandSync(r.brand) || 'לא'),
         };
         if (r.bridge) rec.bridge = r.bridge;
@@ -297,7 +305,7 @@ async function submitEntry() {
         brand:      item.brand_name,
         model:      item.model,
         qty_before: 0,
-        qty_after:  item.quantity || 1,
+        qty_after:  item.quantity ?? 1,
         source_ref: 'הכנסה ידנית'
       });
     }
@@ -316,4 +324,4 @@ async function submitEntry() {
     setAlert('entry-alerts', 'שגיאה: ' + msg, 'e');
   }
   hideLoading();
-}
+}                                                                                                                                                    
