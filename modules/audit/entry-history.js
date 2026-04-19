@@ -51,7 +51,7 @@ async function loadEntryHistory() {
     const PG = 1000;
     while (true) {
       const { data: batch, error: bErr } = await sb.from('inventory_logs')
-        .select('*, inventory:inventory_id(id, barcode, model, color, size, brand_id, quantity, status)')
+        .select('*, inventory:inventory_id(id, barcode, model, color, size, brand_id, quantity, status, sell_price, sell_discount)')
         .eq('tenant_id', getTenantId())
         .in('action', ENTRY_ACTIONS)
         .gte('created_at', from + 'T00:00:00')
@@ -105,13 +105,17 @@ function renderEntryHistory(logs) {
     const exportItems = items.map(log => {
       const inv = log.inventory;
       const brandName = inv?.brand_id ? (brandRevMap[inv.brand_id] || log.brand || '') : (log.brand || '');
+      const price = inv?.sell_price || 0;
+      const discount = inv?.sell_discount || 0;
       return {
         barcode: inv?.barcode || log.barcode || '',
         brand: brandName,
         model: inv?.model || log.model || '',
         size: inv?.size || '',
         color: inv?.color || '',
-        qty: log.qty_after || 1
+        qty: log.qty_after || 1,
+        sell_price: price,
+        sell_discount: discount
       };
     });
     const exportDataAttr = escapeHtml(JSON.stringify(exportItems));
@@ -206,7 +210,10 @@ function exportDateGroupBarcodes(items) {
   items.filter(i => i.barcode).forEach(i => {
     var qty = i.qty || 1;
     for (var q = 0; q < qty; q++) {
-      rows.push({ 'ברקוד': i.barcode, 'מותג': i.brand, 'דגם': i.model, 'גודל': i.size, 'צבע': i.color });
+      const price = i.sell_price || 0;
+      const discount = i.sell_discount || 0;
+      const finalPrice = discount > 0 ? Math.round(price * (1 - discount)) : price;
+      rows.push({ 'ברקוד': i.barcode, 'מותג': i.brand, 'דגם': i.model, 'גודל': i.size, 'צבע': i.color, 'מחיר מכירה': finalPrice || '' });
     }
   });
   if (!rows.length) { toast('אין פריטים עם ברקוד לייצוא', 'e'); return; }

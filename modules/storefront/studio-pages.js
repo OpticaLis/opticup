@@ -124,16 +124,22 @@ function renderPageList(pages) {
   const container = document.getElementById('studio-page-list');
   if (!container) return;
 
-  let html = renderPageSearchBar();
+  // Ensure search bar exists; only replace the items area to preserve input focus
+  let itemsEl = container.querySelector('.page-list-items');
+  if (!itemsEl) {
+    container.innerHTML = renderPageSearchBar() + '<div class="page-list-items"></div>';
+    itemsEl = container.querySelector('.page-list-items');
+  }
 
   if (!pages.length) {
-    container.innerHTML = html + '<div class="studio-empty">\u05D0\u05D9\u05DF \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD</div>';
+    itemsEl.innerHTML = '<div class="studio-empty">\u05D0\u05D9\u05DF \u05E2\u05DE\u05D5\u05D3\u05D9\u05DD</div>';
     return;
   }
 
   const showSettings = canSee('page_settings_button');
   const showToggle = canSee('status_toggle');
 
+  let html = '';
   html += pages.map(p => {
     const icon = PAGE_TYPE_ICONS[p.page_type] || '\u{1F4C4}';
     const statusClass = p.status === 'published' ? 'badge-published' : p.status === 'archived' ? 'badge-archived' : 'badge-draft';
@@ -203,7 +209,7 @@ function renderPageList(pages) {
     </div>`;
   }
 
-  container.innerHTML = html;
+  itemsEl.innerHTML = html;
 }
 
 function toggleBulkSelect(id, checked) { checked ? bulkSelectedIds.add(id) : bulkSelectedIds.delete(id); renderFilteredPageList(); }
