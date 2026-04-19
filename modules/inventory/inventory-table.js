@@ -166,7 +166,6 @@ function renderInventoryRows(recs) {
     const syncVal = enToHe('website_sync', r.website_sync) || '';
     return `<tr data-id="${r.id}" class="${sel}">
       <td style="position:relative"><button class="btn-inv-menu" data-id="${escapeHtml(r.id)}" style="background:none;border:none;cursor:pointer;font-size:1.1rem;padding:4px 8px" title="פעולות">⋯</button></td>
-      <td><button class="btn-item-history" style="background:none;border:none;cursor:pointer;font-size:1rem" data-id="${escapeHtml(r.id)}" data-barcode="${escapeHtml(bc)}" data-brand="${escapeHtml(r.brand_name||'')}" data-model="${escapeHtml(r.model||'')}" title="היסטוריה">📋</button></td>
       <td><input type="checkbox"${chk} class="inv-row-check" data-id="${escapeHtml(r.id)}"></td>
       <td>${pageOffset+i+1}</td>
       <td class="barcode-cell">${escapeHtml(bc)}</td>
@@ -340,12 +339,6 @@ document.addEventListener('click', function(e) {
   if (menuBtn) { _openInvMenu(menuBtn); return; }
   // Close menu on any outside click
   if (_invMenuOpen && !e.target.closest('.inv-action-menu')) _closeInvMenu();
-  // #3 openItemHistory
-  const histBtn = e.target.closest('.btn-item-history');
-  if (histBtn) {
-    openItemHistory(histBtn.dataset.id, histBtn.dataset.barcode, histBtn.dataset.brand, histBtn.dataset.model);
-    return;
-  }
   // #1 openReductionModal
   const reduceBtn = e.target.closest('.btn-reduce');
   if (reduceBtn) { openReductionModal(reduceBtn.dataset.id); return; }
