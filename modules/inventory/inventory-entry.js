@@ -228,11 +228,8 @@ async function submitEntry() {
     toast('יש ליצור ברקודים לפני שליחה', 'w');
     return;
   }
-  const physicalRows = rows.filter(r => r.sync !== 'תדמית');
-  if (physicalRows.length > 0) {
-    const ok = await confirmDialog('אישור שליחה', `האם הדבקת ברקודים על ${physicalRows.length} המסגרות?`);
-    if (!ok) return;
-  }
+  const ok = await confirmDialog('אישור שליחה', `האם הדבקת ברקודים על ${rows.length} המסגרות?`);
+  if (!ok) return;
 
   const limit = await checkPlanLimit('inventory');
   if (!limit.allowed) { Toast.warning(limit.message || 'הגעת למגבלה'); return; }
@@ -265,7 +262,7 @@ async function submitEntry() {
           sell_discount: (parseFloat(r.sdisc) || 0) / 100,
           status: heToEn('status', 'במלאי'),
           origin: 'כניסת מלאי',
-          quantity: r.sync === 'תדמית' ? 0 : 1,
+          quantity: 1,
           website_sync: heToEn('website_sync', r.sync || getBrandSync(r.brand) || 'לא'),
         };
         if (r.bridge) rec.bridge = r.bridge;
@@ -300,7 +297,7 @@ async function submitEntry() {
         brand:      item.brand_name,
         model:      item.model,
         qty_before: 0,
-        qty_after:  item.quantity ?? 1,
+        qty_after:  item.quantity || 1,
         source_ref: 'הכנסה ידנית'
       });
     }
