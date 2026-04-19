@@ -39,6 +39,9 @@ var TableResize = (function() {
   function _initTable(table, tableId) {
     if (table.dataset.resizeInit) return;
     table.style.tableLayout = 'fixed';
+    // Allow table to grow beyond container when columns are resized
+    table.style.width = '';
+    table.style.minWidth = '100%';
 
     // Make each th resizable via CSS resize
     table.querySelectorAll('thead th').forEach(function(th) {
@@ -47,18 +50,32 @@ var TableResize = (function() {
       if (!th.style.minWidth) th.style.minWidth = '40px';
     });
 
-    // Restore saved widths
+    // Restore saved widths and recalc table width
     _restoreWidths(table, tableId);
+    _recalcTableWidth(table);
 
-    // Save on mouseup (after resize drag ends)
+    // Save on mouseup (after resize drag ends) + recalc table width
     table.addEventListener('mouseup', function() {
-      setTimeout(function() { _saveWidths(table, tableId); }, 100);
+      setTimeout(function() {
+        _recalcTableWidth(table);
+        _saveWidths(table, tableId);
+      }, 100);
     });
 
     // Sticky scrollbar
     _ensureStickyBar(table);
 
     table.dataset.resizeInit = 'true';
+  }
+
+  // --- Recalculate table width from column widths ---
+  function _recalcTableWidth(table) {
+    var total = 0;
+    table.querySelectorAll('thead th').forEach(function(th) { total += th.offsetWidth; });
+    var wrap = table.parentElement;
+    var wrapWidth = wrap ? wrap.clientWidth : 0;
+    // If columns exceed container, set explicit width so overflow-x kicks in
+    table.style.width = total > wrapWidth ? total + 'px' : '';
   }
 
   // --- Save column widths to localStorage ---
