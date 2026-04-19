@@ -37,47 +37,47 @@ async function startCamera() {
     <div id="sc-cam-status" style="position:absolute;bottom:60px;left:10px;right:10px;background:rgba(0,0,0,0.6);color:#fff;font-size:14px;padding:8px 12px;border-radius:8px;text-align:center;z-index:10004">סורק...</div>
     ${SC_DEBUG ? '<div id="sc-scan-debug" style="position:absolute;bottom:100px;left:10px;right:10px;background:rgba(0,0,0,0.8);color:#0f0;font-family:monospace;font-size:13px;padding:10px;border-radius:8px;max-height:150px;overflow-y:auto;z-index:10004;direction:ltr;text-align:left">DEBUG</div>' : ''}
     <div id="sc-cam-success" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10003;
-      flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)">
-      <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+      flex-direction:column;align-items:center;justify-content:flex-end;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)">
+      <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 20px 36px;max-width:440px;width:100%;text-align:center;box-shadow:0 -4px 32px rgba(0,0,0,.3)">
         <div style="font-size:2.5rem;margin-bottom:8px">✅</div>
-        <div id="sc-cam-success-text" style="font-size:1rem;font-weight:600;color:var(--primary);margin-bottom:16px"></div>
-        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <button id="sc-cam-resume" style="min-height:48px;padding:10px 24px;font-size:1rem;font-weight:600;border:none;border-radius:10px;background:var(--primary);color:#fff;cursor:pointer;flex:1;min-width:120px">המשך סריקה</button>
-          <button id="sc-cam-done" style="min-height:48px;padding:10px 24px;font-size:1rem;font-weight:600;border:2px solid var(--g300);border-radius:10px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:100px">✕ סגור</button>
+        <div id="sc-cam-success-text" style="font-size:1.05rem;font-weight:600;color:var(--primary);margin-bottom:20px"></div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button id="sc-cam-resume" style="min-height:56px;padding:12px 28px;font-size:1.1rem;font-weight:600;border:none;border-radius:12px;background:var(--primary);color:#fff;cursor:pointer;flex:1;min-width:130px">המשך סריקה</button>
+          <button id="sc-cam-done" style="min-height:56px;padding:12px 28px;font-size:1.1rem;font-weight:600;border:2px solid var(--g300);border-radius:12px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:110px">✕ סגור</button>
         </div>
       </div>
     </div>
     <div id="sc-cam-qty" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10003;
-      flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)">
-      <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+      flex-direction:column;align-items:center;justify-content:flex-end;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)">
+      <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 20px 36px;max-width:440px;width:100%;text-align:center;box-shadow:0 -4px 32px rgba(0,0,0,.3)">
         <div style="font-size:1.8rem;margin-bottom:8px">🔄</div>
-        <div id="sc-cam-qty-info" style="font-size:.9rem;font-weight:600;color:var(--primary);margin-bottom:4px"></div>
-        <div id="sc-cam-qty-cur" style="font-size:.82rem;color:var(--g500);margin-bottom:12px"></div>
-        <label style="display:block;font-weight:600;margin-bottom:6px;font-size:.9rem">כמה יחידות יש מפריט זה?</label>
+        <div id="sc-cam-qty-info" style="font-size:.95rem;font-weight:600;color:var(--primary);margin-bottom:4px"></div>
+        <div id="sc-cam-qty-cur" style="font-size:.85rem;color:var(--g500);margin-bottom:12px"></div>
+        <label style="display:block;font-weight:600;margin-bottom:6px;font-size:.95rem">כמה יחידות יש מפריט זה?</label>
         <input id="sc-cam-qty-input" type="number" min="0" inputmode="numeric"
-          style="width:100%;min-height:52px;font-size:22px;text-align:center;border:2px solid var(--g300);border-radius:8px;padding:10px;margin-bottom:14px">
-        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <button id="sc-cam-qty-save" style="min-height:48px;padding:10px 24px;font-size:1rem;font-weight:600;border:none;border-radius:10px;background:var(--primary);color:#fff;cursor:pointer;flex:1;min-width:100px">עדכן</button>
-          <button id="sc-cam-qty-skip" style="min-height:48px;padding:10px 16px;font-size:.9rem;font-weight:600;border:2px solid var(--g300);border-radius:10px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:100px">המשך בלי שינוי</button>
-          <button id="sc-cam-qty-close" style="min-height:48px;padding:10px 16px;font-size:.9rem;font-weight:600;border:2px solid var(--g300);border-radius:10px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:80px">✕ סגור</button>
+          style="width:100%;min-height:56px;font-size:24px;text-align:center;border:2px solid var(--g300);border-radius:10px;padding:10px;margin-bottom:16px">
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button id="sc-cam-qty-save" style="min-height:56px;padding:12px 28px;font-size:1.1rem;font-weight:600;border:none;border-radius:12px;background:var(--primary);color:#fff;cursor:pointer;flex:1;min-width:110px">עדכן</button>
+          <button id="sc-cam-qty-skip" style="min-height:56px;padding:12px 20px;font-size:1rem;font-weight:600;border:2px solid var(--g300);border-radius:12px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:110px">המשך בלי שינוי</button>
+          <button id="sc-cam-qty-close" style="min-height:56px;padding:12px 20px;font-size:1rem;font-weight:600;border:2px solid var(--g300);border-radius:12px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:90px">✕ סגור</button>
         </div>
       </div>
     </div>
     <div id="sc-cam-notfound" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10003;
-      flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)">
-      <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+      flex-direction:column;align-items:center;justify-content:flex-end;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)">
+      <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 20px 36px;max-width:440px;width:100%;text-align:center;box-shadow:0 -4px 32px rgba(0,0,0,.3)">
         <div style="font-size:2rem;margin-bottom:8px">⚠️</div>
-        <div style="font-size:1rem;font-weight:600;color:#d97706;margin-bottom:4px">ברקוד לא נמצא ברשימה</div>
-        <div id="sc-cam-nf-barcode" style="font-size:.9rem;color:var(--g500);margin-bottom:16px;direction:ltr"></div>
-        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <button id="sc-cam-nf-add" style="min-height:48px;padding:10px 18px;font-size:.95rem;font-weight:600;border:none;border-radius:10px;background:#d97706;color:#fff;cursor:pointer;flex:1;min-width:140px">+ הוסף פריט לא ידוע</button>
-          <button id="sc-cam-nf-skip" style="min-height:48px;padding:10px 18px;font-size:.9rem;font-weight:600;border:2px solid var(--g300);border-radius:10px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:100px">המשך סריקה</button>
+        <div style="font-size:1.05rem;font-weight:600;color:#d97706;margin-bottom:4px">ברקוד לא נמצא ברשימה</div>
+        <div id="sc-cam-nf-barcode" style="font-size:.95rem;color:var(--g500);margin-bottom:18px;direction:ltr"></div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button id="sc-cam-nf-add" style="min-height:56px;padding:12px 22px;font-size:1.05rem;font-weight:600;border:none;border-radius:12px;background:#d97706;color:#fff;cursor:pointer;flex:1;min-width:150px">+ הוסף פריט לא ידוע</button>
+          <button id="sc-cam-nf-skip" style="min-height:56px;padding:12px 22px;font-size:1rem;font-weight:600;border:2px solid var(--g300);border-radius:12px;background:#fff;color:var(--g700);cursor:pointer;flex:1;min-width:110px">המשך סריקה</button>
         </div>
       </div>
     </div>
     <div id="sc-cam-unknown" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10003;
-      flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);overflow-y:auto">
-      <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:380px;width:92%;text-align:right;box-shadow:0 8px 32px rgba(0,0,0,.3);margin:20px 0">
+      flex-direction:column;align-items:center;justify-content:flex-end;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);overflow-y:auto">
+      <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 20px 36px;max-width:440px;width:100%;text-align:right;box-shadow:0 -4px 32px rgba(0,0,0,.3)">
         <div style="text-align:center;font-size:1rem;font-weight:700;color:var(--primary);margin-bottom:12px">הוספת פריט לא ידוע</div>
         <div style="font-size:.82rem;color:var(--g500);margin-bottom:10px;text-align:center" id="sc-unk-barcode-label"></div>
         <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:4px">מותג</label>
