@@ -173,9 +173,7 @@ function renderInventoryRows(recs) {
       <td>${escapeHtml(r.brand_name)||''}</td>
       <td${isAdm?' class="editable" onclick="invEdit(this,\'model\')"':''}>${escapeHtml(r.model)||''}</td>
       <td${isAdm?' class="editable" onclick="invEdit(this,\'size\')"':''}>${escapeHtml(r.size)||''}</td>
-      <td${isAdm?' class="editable" onclick="invEdit(this,\'bridge\')"':''}>${escapeHtml(r.bridge)||''}</td>
       <td${isAdm?' class="editable" onclick="invEdit(this,\'color\')"':''}>${escapeHtml(r.color)||''}</td>
-      <td${isAdm?' class="editable" onclick="invEdit(this,\'temple_length\')"':''}>${escapeHtml(r.temple_length)||''}</td>
       <td${isAdm?' class="editable" onclick="invEditProductType(this)"':''}>${enToHe('product_type', r.product_type)||''}</td>
       <td${isAdm?' class="editable" onclick="invEdit(this,\'sell_price\',\'number\')"':''}>${sp}</td>
       <td${isAdm?' class="editable" onclick="invEdit(this,\'sell_discount\',\'pct\')"':''}>${sd}%</td>
@@ -185,6 +183,11 @@ function renderInventoryRows(recs) {
       <td style="font-weight:700;color:${qC}" data-qty-id="${r.id}">${qty}${isAdm?` <span class="qty-btns"><button class="qty-btn qty-plus" data-id="${escapeHtml(r.id)}" data-dir="add" title="הוסף כמות">➕</button><button class="qty-btn qty-minus" data-id="${escapeHtml(r.id)}" data-dir="remove" title="הוצא כמות">➖</button></span>`:''}</td>
       <td class="img-cell">${imgCell}</td>
       <td${isAdm?' class="editable" onclick="invEditSync(this)"':''}>${syncVal}</td>
+    </tr>
+    <tr class="inv-subrow" data-parent="${escapeHtml(r.id)}" style="display:none">
+      <td colspan="18" style="background:#f8fafc;padding:6px 16px 6px 40px;border-bottom:1px solid var(--g200)">
+        <span style="font-size:.82rem;color:var(--g600)"><strong>גשר:</strong> ${isAdm?'<span class="editable" onclick="invEditSub(this,\''+escapeHtml(r.id)+'\',\'bridge\')">'+(escapeHtml(r.bridge)||'—')+'</span>':(escapeHtml(r.bridge)||'—')} &nbsp;&nbsp; <strong>אורך מוט:</strong> ${isAdm?'<span class="editable" onclick="invEditSub(this,\''+escapeHtml(r.id)+'\',\'temple_length\')">'+(escapeHtml(r.temple_length)||'—')+'</span>':(escapeHtml(r.temple_length)||'—')}</span>
+      </td>
     </tr>`;
   }).join('');
 }
