@@ -60,18 +60,22 @@ run both systems in parallel → switch when proven stable.
 - [x] Seed data: statuses (31), campaigns (2), tags (2), field visibility (8), unit economics (1)
 - [x] Run migration on Supabase — all 15 success criteria passed ✅
 
-### Step 2 — Data Collection (parallel with Step 1)
+### Step 2 — Data Collection
 - [ ] Extract actual message templates from Make scenarios → seed for `crm_message_templates`
 - [ ] Extract Monday column IDs → seed for `crm_monday_column_map`
-- [ ] Import ad spend data from Excel → seed for `crm_ad_spend`
+- [x] Import ad spend data from Excel → `crm_ad_spend` (88 rows, 12 with UTM match from Affiliates cross-ref) ✅ 2026-04-20
 
-### Step 3 — Import Leads
-- [ ] Daniel: move all Tier 1 leads into Tier 2 in Monday (manual, before import)
-- [ ] Build import script: Monday Tier 2 → `crm_leads` (UPSERT by phone)
-- [ ] Import Notes as single "History from Monday" note per lead
-- [ ] Import Events Record (212 records) → `crm_event_attendees`
-- [ ] Import Events Management → `crm_events`
-- [ ] Verify import counts match Monday
+### Step 3 — Import Leads ✅ COMPLETE (2026-04-20, Phase B2)
+- [x] Build import script: `campaigns/supersale/scripts/import-monday-data.mjs` (xlsx parser) + `rest-import.mjs` (DB runner)
+- [x] Monday Tier 2 → `crm_leads` (893 rows imported, 0 duplicate phones, UPSERT on `tenant_id,phone`)
+- [x] Import Notes as "History from Monday" prefix per lead → `crm_lead_notes` (695 rows)
+- [x] Import Events Record → `crm_event_attendees` (149 of 191 candidates; 42 phone-orphans skipped — see Phase B2 FINDINGS)
+- [x] Import Events Management → `crm_events` (11 rows, event_numbers 13–23)
+- [x] Import CX Ambassadors → `crm_cx_surveys` (8 of 11; 3 reference skipped attendees)
+- [x] Seed MultiSale unit_economics (margin=0.50, kill=5, scale=7)
+- [x] Affiliates UTM enrichment (PATCH null utm_* columns on 893 leads)
+- [x] All 5 Views return data; Event #22 revenue = ₪39,460 (exact match vs Monday)
+- SPEC: `modules/Module 4 - CRM/docs/specs/CRM_PHASE_B2_DATA_IMPORT/`
 
 ### Step 4 — UI Build (after schema + data)
 - [ ] Design Messaging Hub UI and logic

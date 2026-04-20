@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-04-20T15:53:57.539Z",
+  "counts": {
+    "events": 11,
+    "leads": 893,
+    "affiliates_enrich": 833,
+    "lead_notes": 695,
+    "attendees": 191,
+    "ad_spend": 88,
+    "ad_spend_utm_matches": 12,
+    "cx_surveys": 11,
+    "skipped": 38
+  }
+}

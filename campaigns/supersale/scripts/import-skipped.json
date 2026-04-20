@@ -1,0 +1,572 @@
+[
+  {
+    "file": "Events_Management",
+    "row_index": 14,
+    "reason": "no event_number or name (totals row)",
+    "row": [
+      "",
+      "",
+      "2026-01-21 to 2026-04-17",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Tier_2",
+    "row_index": 222,
+    "reason": "invalid phone",
+    "row": [
+      "אריאל",
+      "2026-03-05T06:10:20.000Z",
+      "ממתין לאירוע",
+      "",
+      9720528088322,
+      "arielmori21@gmail.com",
+      "",
+      "הודעת ״הרשמה נפתחה״ נשלחה | 2026-03-19T15:22:12.350Z\n\nסטטוס: הודעת ״אירוע נפתח מחר״ נשלחה | זמן עדכון: 18/03/2026 16:12"
+    ]
+  },
+  {
+    "file": "Tier_2",
+    "row_index": 710,
+    "reason": "invalid phone",
+    "row": [
+      "מעיין",
+      "2026-04-20T14:48:20.000Z",
+      "ממתין לאירוע",
+      "",
+      526411712972,
+      "maayanelm89@gmail.com",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Tier_2",
+    "row_index": 845,
+    "reason": "no full_name",
+    "row": [
+      "",
+      "2025-12-19 to 2026-04-20",
+      "",
+      "2026-01-25 to 2026-02-19",
+      "",
+      "",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Tier_2",
+    "row_index": 848,
+    "reason": "header re-emission",
+    "row": [
+      "שם מלא",
+      "Creation date",
+      "Status",
+      "Last Comment",
+      "Phone Number",
+      "Email",
+      "Call Back",
+      "Notes"
+    ]
+  },
+  {
+    "file": "Tier_2",
+    "row_index": 850,
+    "reason": "no full_name",
+    "row": [
+      "",
+      "2026-01-05",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Tier_2",
+    "row_index": 853,
+    "reason": "header re-emission",
+    "row": [
+      "שם מלא",
+      "Creation date",
+      "Status",
+      "Last Comment",
+      "Phone Number",
+      "Email",
+      "Call Back",
+      "Notes"
+    ]
+  },
+  {
+    "file": "Tier_2",
+    "row_index": 906,
+    "reason": "no full_name",
+    "row": [
+      "",
+      "2025-12-21 to 2026-03-18",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 11,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "אולג קולוטושקין",
+      "2026-01-12T17:29:20.000Z",
+      972546877831,
+      "zeleny70.ok@gmail.com",
+      "",
+      "כבר נרשם",
+      "Мультифокальные линзы, хамелеоны серые. Оправа прочная для повседневного использования. Чтобы не сломалась во время работы. Я .сантехник ",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 12,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "ארי סיבוני",
+      "2026-01-15T05:52:20.000Z",
+      972542982380,
+      "arisiboni74@gmail.com",
+      "",
+      "כבר נרשם",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 15,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "ארי סיבוני",
+      "2026-01-14T19:56:20.000Z",
+      972542982380,
+      "arisiboni74@gmail.com",
+      "",
+      "אירוע נסגר",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 16,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "ארי סיבוני",
+      "2026-01-15T05:52:20.000Z",
+      972542982380,
+      "arisiboni74@gmail.com",
+      "",
+      "אירוע נסגר",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 18,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "יוני אגאגני",
+      "2026-01-08T12:59:20.000Z",
+      972544637657,
+      "yoni.aga@gmail.com",
+      "",
+      "לא הגיע",
+      "",
+      "2026-01-21T08:59:20.000Z"
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 19,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "שמעון ססי",
+      "2026-01-08T18:58:20.000Z",
+      972537347285,
+      "sasimo1010@gmail.com",
+      "",
+      "לא הגיע",
+      "",
+      "2026-01-21T07:59:20.000Z"
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 22,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "דניאל טסט 6",
+      "2026-01-19T16:27:20.000Z",
+      972537889878,
+      "danylis92@gmail.com",
+      "",
+      "הגיע",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 23,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "דניאל טסט 6",
+      "2026-01-19T16:30:20.000Z",
+      972537889878,
+      "danylis92@gmail.com",
+      "",
+      "הגיע",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 30,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "ליאת",
+      "2026-01-20T08:02:19.999Z",
+      972522780783,
+      "ronenliat@gmail.com",
+      "",
+      "ביטל",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 48,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "לאון דניאל",
+      "2026-02-01T16:29:20.000Z",
+      972535668398,
+      "leonsfood@gmail.com",
+      "",
+      "כבר נרשם",
+      "בארב",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 52,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "ליאת",
+      "2026-02-01T17:47:19.999Z",
+      972522780783,
+      "ronenliat@gmail.com",
+      "",
+      "ביטל",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 112,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "ענבל הקניין",
+      "2026-01-29T13:53:19.999Z",
+      972546647276,
+      "inbalhaka@gmail.com",
+      "",
+      "כבר נרשם",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 113,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "רומן לכטמן",
+      "2026-01-29T14:08:19.999Z",
+      972523950713,
+      "roman.lechtman@gmail.com",
+      "",
+      "כבר נרשם",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 114,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "כריסטי",
+      "2026-02-20T06:02:20.000Z",
+      972546446454,
+      "cristhyluna@gmail.com",
+      "",
+      "כבר נרשם",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 115,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "מתנאל  אלפסי",
+      "2026-02-20T11:21:20.000Z",
+      972528058510,
+      "matan.alfasi@walla.co.il",
+      "",
+      "כבר נרשם",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 118,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "נועם",
+      "2026-02-17T13:27:20.000Z",
+      972528778799,
+      "noam123001@gmail.com",
+      "",
+      "כבר נרשם",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 131,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "אתי סיילב",
+      "2026-03-20T05:40:19.999Z",
+      972525994447,
+      "etyelet@walla.com",
+      "",
+      "רשימת המתנה",
+      "סטטוס: נשלחה הודעת ווידוא הגעה לממתינים | זמן עדכון: 25/03/2026 15:56\n\nסטטוס: נרשם לרשימת המתנה | זמן עדכון: 20/03/2026 07:41",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 202,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "נטלי",
+      "2026-03-19T18:54:20.000Z",
+      972549765885,
+      "Natalie198301@walla.com",
+      "",
+      "כבר נרשם",
+      "סטטוס: נרשם לרשימת המתנה | זמן עדכון: 19/03/2026 20:56",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 203,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "Revital",
+      "2026-03-19T17:15:20.000Z",
+      972545598859,
+      "revitalelkayam@yahoo.com",
+      "",
+      "כבר נרשם",
+      "",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 204,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "ליבי",
+      "2026-03-19T15:52:20.000Z",
+      972546474558,
+      "libiperman@gmail.com",
+      "",
+      "כבר נרשם",
+      "רושמת את בעלי ודים פרמן תחתי",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 214,
+    "reason": "duplicate (phone, event_number)",
+    "row": [
+      "הודיה",
+      "2026-04-08T13:12:20.000Z",
+      972547580176,
+      "azzaya8000@gmail.com",
+      "",
+      "חדש",
+      "נרשם אחרי סגגירת האירוע. צריך לבדוק איך",
+      ""
+    ]
+  },
+  {
+    "file": "Events_Record",
+    "row_index": 215,
+    "reason": "invalid phone",
+    "row": [
+      "",
+      "2026-01-08 to 2026-04-08",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "2026-01-21 to 2026-02-19"
+    ]
+  },
+  {
+    "file": "Facebook_ADS",
+    "row_index": 8,
+    "reason": "no name",
+    "row": [
+      "",
+      "2026-03-04 to 2026-04-19",
+      "",
+      "",
+      "",
+      9519.15,
+      294,
+      "null"
+    ]
+  },
+  {
+    "file": "Facebook_ADS",
+    "row_index": 11,
+    "reason": "header re-emission",
+    "row": [
+      "שם מלא",
+      "Creation Date",
+      "Status",
+      "Event Type",
+      "Campaign ID",
+      "Total Spend",
+      "Daily Budget",
+      "Decision Text"
+    ]
+  },
+  {
+    "file": "Facebook_ADS",
+    "row_index": 19,
+    "reason": "no name",
+    "row": [
+      "",
+      "2026-01-14 to 2026-03-19",
+      "",
+      "",
+      "",
+      2110.12,
+      0,
+      "null"
+    ]
+  },
+  {
+    "file": "Facebook_ADS",
+    "row_index": 22,
+    "reason": "header re-emission",
+    "row": [
+      "שם מלא",
+      "Creation Date",
+      "Status",
+      "Event Type",
+      "Campaign ID",
+      "Total Spend",
+      "Daily Budget",
+      "Decision Text"
+    ]
+  },
+  {
+    "file": "Facebook_ADS",
+    "row_index": 99,
+    "reason": "no name",
+    "row": [
+      "",
+      "2021-11-26 to 2026-02-26",
+      "",
+      "",
+      "",
+      22640.79,
+      0,
+      "null"
+    ]
+  },
+  {
+    "file": "CX_Ambassadors",
+    "row_index": 5,
+    "reason": "header re-emission",
+    "row": [
+      "שמך המלא",
+      "Created",
+      "Phone Number",
+      "Email",
+      "Status",
+      "Interest",
+      "ציון כללי",
+      "ציון משני"
+    ]
+  },
+  {
+    "file": "CX_Ambassadors",
+    "row_index": 20,
+    "reason": "header re-emission",
+    "row": [
+      "שמך המלא",
+      "Created",
+      "Phone Number",
+      "Email",
+      "Status",
+      "Interest",
+      "ציון כללי",
+      "ציון משני"
+    ]
+  },
+  {
+    "file": "CX_Ambassadors",
+    "row_index": 23,
+    "reason": "header re-emission",
+    "row": [
+      "שמך המלא",
+      "Created",
+      "Phone Number",
+      "Email",
+      "Status",
+      "Interest",
+      "ציון כללי",
+      "ציון משני"
+    ]
+  }
+]
