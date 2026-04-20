@@ -24,6 +24,7 @@
       var body = modal.el.querySelector('.modal-body');
       if (body) body.innerHTML = renderDetail(data.event, stats, data.attendees);
       wireAttendeeFilter(modal.el, data.attendees);
+      wireEventDayEntry(modal);
     } catch (e) {
       console.error('event detail failed:', e);
       var body = modal.el.querySelector('.modal-body');
@@ -78,6 +79,13 @@
         escapeHtml(event.notes) + '</div></div>';
     }
 
+    // Event Day entry button — only when event is operational
+    if (event.status === 'registration_open' || event.status === 'completed') {
+      h += '<button type="button" class="crm-eventday-entry-btn" data-event-day-id="' + escapeHtml(event.id) + '">' +
+        '🎯 מצב יום אירוע — כניסה למסך ניהול יום' +
+      '</button>';
+    }
+
     // Stats (from v_crm_event_stats cache)
     if (stats) {
       h += '<div class="crm-detail-section"><h4>📊 סיכום</h4><div class="crm-detail-grid">' +
@@ -127,6 +135,19 @@
     });
     h += '</tbody></table>';
     return h;
+  }
+
+  function wireEventDayEntry(modal) {
+    var btn = modal.el.querySelector('button[data-event-day-id]');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-event-day-id');
+      if (!id) return;
+      window._currentEventDayId = id;
+      if (typeof modal.close === 'function') modal.close();
+      else if (typeof Modal.close === 'function') Modal.close();
+      if (typeof showCrmTab === 'function') showCrmTab('event-day');
+    });
   }
 
   function wireAttendeeFilter(modalEl, allAttendees) {
