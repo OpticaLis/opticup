@@ -91,12 +91,61 @@ main{padding:20px;max-width:1400px;margin:0 auto}
 .crm-detail-note-meta{color:var(--g500);font-size:.78rem;margin-top:4px}
 .crm-detail-empty{color:var(--g400);font-style:italic;font-size:.9rem;padding:8px 0}
 
+/* ==================== Event Day ==================== */
+.crm-eventday-header{display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.crm-eventday-back{padding:8px 14px;border:1px solid var(--g300);background:var(--white);border-radius:8px;cursor:pointer;font-family:inherit;font-size:.9rem;color:var(--g700);font-weight:500;transition:all .15s}
+.crm-eventday-back:hover{background:var(--primary);color:var(--white);border-color:var(--primary)}
+.crm-eventday-title{font-size:1.15rem;font-weight:700;color:var(--primary);flex:1}
+.crm-eventday-date{color:var(--g500);font-weight:500;font-size:.92rem;margin-inline-start:8px}
+
+.crm-eventday-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;padding:14px}
+.crm-eventday-stats .crm-stat-card{margin:0;box-shadow:none;padding:14px 10px}
+
+.crm-eventday-subtabs{display:flex;gap:0;background:var(--white);border-radius:var(--radius) var(--radius) 0 0;border:1px solid var(--g200);border-bottom:none;overflow:hidden;margin-bottom:0}
+.crm-eventday-subtab{flex:1;padding:12px 16px;border:none;background:none;cursor:pointer;font-family:inherit;font-size:.92rem;color:var(--g500);font-weight:500;transition:all .15s;border-bottom:3px solid transparent}
+.crm-eventday-subtab:hover{background:var(--g100);color:var(--primary)}
+.crm-eventday-subtab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:700;background:var(--g100)}
+
+.crm-eventday-body{border-radius:0 0 var(--radius) var(--radius);margin-top:0}
+
+/* Check-in table action button */
+.crm-eventday-checkin-btn{padding:6px 14px;border:none;border-radius:6px;background:var(--primary);color:var(--white);cursor:pointer;font-family:inherit;font-size:.88rem;font-weight:600;transition:all .15s}
+.crm-eventday-checkin-btn:hover:not(:disabled){background:var(--primary-light)}
+.crm-eventday-checkin-btn:disabled{background:var(--g300);cursor:not-allowed;opacity:.7}
+.crm-eventday-checkin-done{color:var(--success);font-weight:600;font-size:.9rem}
+
+/* Scheduled times board */
+.crm-eventday-schedule-group{margin-bottom:18px}
+.crm-eventday-schedule-header{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--g100);border-radius:8px;font-weight:600;color:var(--g700);margin-bottom:8px}
+.crm-eventday-schedule-chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 4px}
+.crm-eventday-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:18px;border:1px solid var(--g300);background:var(--white);cursor:pointer;font-size:.88rem;color:var(--g700);transition:all .15s;font-family:inherit}
+.crm-eventday-chip:hover{border-color:var(--primary);color:var(--primary)}
+.crm-eventday-chip.checked-in{background:var(--success);color:var(--white);border-color:var(--success);cursor:default}
+.crm-eventday-chip.checked-in:hover{background:var(--success);color:var(--white)}
+
+/* Manage panel inline controls */
+.crm-eventday-manage-input{width:90px;padding:4px 6px;border:1px solid var(--g300);border-radius:4px;font-family:inherit;font-size:.88rem;text-align:end}
+.crm-eventday-manage-toggle{padding:4px 10px;border:1px solid var(--g300);background:var(--white);border-radius:14px;cursor:pointer;font-family:inherit;font-size:.82rem;color:var(--g500);transition:all .15s}
+.crm-eventday-manage-toggle:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
+.crm-eventday-manage-toggle.on{background:var(--success);color:var(--white);border-color:var(--success);cursor:default}
+.crm-eventday-manage-toggle.on:hover{background:var(--success);color:var(--white)}
+.crm-eventday-manage-toggle:disabled{opacity:.7}
+.crm-eventday-manage-link{color:var(--primary);font-size:.82rem;cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;font-family:inherit}
+.crm-eventday-manage-link:hover{color:var(--primary-light)}
+
+/* Modal entry button */
+.crm-eventday-entry-btn{display:block;width:100%;padding:14px 20px;margin-top:12px;border:none;border-radius:var(--radius);background:linear-gradient(135deg,var(--primary),var(--primary-light));color:var(--white);font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:var(--shadow)}
+.crm-eventday-entry-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,39,68,.25)}
+
 /* ==================== Responsive ==================== */
 @media (max-width:768px){
   main{padding:10px}
   .crm-filter-bar .crm-search{min-width:100%}
   .crm-stats-grid{grid-template-columns:repeat(2,1fr)}
+  .crm-eventday-stats{grid-template-columns:repeat(2,1fr)}
   .crm-bar-row{grid-template-columns:110px 1fr 50px;font-size:.82rem}
   .crm-table{font-size:.82rem}
   .crm-table th,.crm-table td{padding:7px 8px}
+  .crm-eventday-subtab{padding:10px 8px;font-size:.85rem}
+  .crm-eventday-title{font-size:1rem;width:100%;order:3}
 }
