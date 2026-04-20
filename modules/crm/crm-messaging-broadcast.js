@@ -162,14 +162,14 @@
     try {
       var ins = await sb.from('crm_broadcasts').insert({
         tenant_id: tid, employee_id: employeeId, name: name, channel: channel, template_id: templateId,
-        filter_criteria: filters, total_recipients: leadIds.length, total_sent: leadIds.length, total_failed: 0, status: 'sent'
+        filter_criteria: filters, total_recipients: leadIds.length, total_sent: leadIds.length, total_failed: 0, status: 'queued'
       }).select('id').single();
       if (ins.error) throw new Error(ins.error.message);
       var broadcastId = ins.data.id;
       logWrite('crm.broadcast.send', 'crm_broadcast', broadcastId, { name: name, channel: channel, recipients: leadIds.length });
 
       var logRows = leadIds.map(function (id) {
-        return { tenant_id: tid, lead_id: id, template_id: templateId, broadcast_id: broadcastId, channel: channel, content: body, status: 'sent' };
+        return { tenant_id: tid, lead_id: id, template_id: templateId, broadcast_id: broadcastId, channel: channel, content: body, status: 'queued' };
       });
       var logRes = await sb.from('crm_message_log').insert(logRows);
       if (logRes.error) throw new Error(logRes.error.message);

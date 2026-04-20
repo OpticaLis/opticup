@@ -48,6 +48,9 @@
   function renderMessagingRules(host) {
     if (!host) return;
     host.innerHTML =
+      '<div style="padding:10px 14px;margin-bottom:12px;background:#fef3c7;border-inline-start:4px solid var(--warn);border-radius:6px;color:var(--g700);font-size:.9rem">' +
+        '\u26A0\uFE0F \u05DB\u05DC\u05DC\u05D9 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05D4 \u05E0\u05E9\u05DE\u05E8\u05D9\u05DD \u05D0\u05DA \u05E2\u05D3\u05D9\u05D9\u05DF \u05DC\u05D0 \u05E4\u05D5\u05E2\u05DC\u05D9\u05DD \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA. \u05D4\u05E4\u05E2\u05DC\u05D4 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA \u05EA\u05EA\u05D5\u05D5\u05E1\u05E3 \u05D1\u05E9\u05DC\u05D1 \u05D4\u05D1\u05D0.' +
+      '</div>' +
       '<div class="crm-filter-bar">' +
         '<h3 style="flex:1;color:var(--primary);margin:0">\u05DB\u05DC\u05DC\u05D9 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05D4</h3>' +
         '<button type="button" class="btn btn-primary" id="btn-new-rule">+ \u05DB\u05DC\u05DC \u05D7\u05D3\u05E9</button>' +
