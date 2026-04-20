@@ -30,6 +30,7 @@
   <button data-tab="dashboard" class="active" onclick="showCrmTab('dashboard')">&#128202; &#1491;&#1513;&#1489;&#1493;&#1512;&#1491;</button>
   <button data-tab="leads" onclick="showCrmTab('leads')">&#128101; &#1500;&#1497;&#1491;&#1497;&#1501;</button>
   <button data-tab="events" onclick="showCrmTab('events')">&#128197; &#1488;&#1497;&#1512;&#1493;&#1506;&#1497;&#1501;</button>
+  <button data-tab="messaging" onclick="showCrmTab('messaging')">&#9993; &#1492;&#1493;&#1491;&#1506;&#1493;&#1514;</button>
 </nav>
 
 <main id="crm-main">
@@ -78,6 +79,9 @@
     </div>
   </section>
 
+  <!-- ========== TAB 4: MESSAGING HUB ========== -->
+  <section id="tab-messaging" class="tab"></section>
+
   <!-- ========== HIDDEN TAB: EVENT DAY (no nav button; entered via event modal) ========== -->
   <section id="tab-event-day" class="tab"></section>
 
@@ -108,6 +112,9 @@
 <script src="modules/crm/crm-event-day-checkin.js"></script>
 <script src="modules/crm/crm-event-day-schedule.js"></script>
 <script src="modules/crm/crm-event-day-manage.js"></script>
+<script src="modules/crm/crm-messaging-tab.js"></script>
+<script src="modules/crm/crm-messaging-templates.js"></script>
+<script src="modules/crm/crm-messaging-rules.js"></script>
 
 </body>
 </html>

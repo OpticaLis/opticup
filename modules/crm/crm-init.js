@@ -19,6 +19,7 @@
     if (name === 'leads' && typeof loadCrmLeadsTab === 'function') loadCrmLeadsTab();
     if (name === 'events' && typeof loadCrmEventsTab === 'function') loadCrmEventsTab();
     if (name === 'event-day' && typeof loadCrmEventDay === 'function') loadCrmEventDay();
+    if (name === 'messaging' && typeof loadCrmMessagingTab === 'function') loadCrmMessagingTab();
   }
   window.showCrmTab = showCrmTab;
 
