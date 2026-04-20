@@ -41,5 +41,36 @@
 | `21918a6` | `feat(crm): add dashboard tab with stats and event performance` |
 | `1bb0df6` | `chore(spec): close CRM_PHASE_B3_UI_CORE with retrospective` |
 
-**Post-B3 fixes (pending commit):**
+**Post-B3 fixes (landed in 2512f59):**
 - `fix(crm): correct nav CSS selector — nav#mainNav → nav#crmNav`
+
+---
+
+## Phase B4 — Event Day Module (2026-04-20)
+
+| Hash | Message |
+|------|---------|
+| `3d4e89f` | `docs(crm): archive SPECs and FOREMAN_REVIEWs for phases A, B1, B2, B3` |
+| `4b36310` | `docs(crm): add CRM_PHASE_B4_EVENT_DAY SPEC` |
+| `ddcddfd` | `feat(crm): add Event Day view layout and stats bar` |
+| `3e1f22e` | `feat(crm): add Event Day check-in panel with RPC` |
+| `c09fb40` | `feat(crm): add scheduled times board` |
+| `1078c40` | `feat(crm): add attendee management (purchase, coupon, fee) and entry button` |
+| `5709799` | `chore(spec): close CRM_PHASE_B4_EVENT_DAY with retrospective` |
+
+New files: `crm-event-day.js`, `crm-event-day-checkin.js`, `crm-event-day-schedule.js`, `crm-event-day-manage.js`. Entry button + `wireEventDayEntry()` wiring in `crm-events-detail.js`. Hidden `#tab-event-day` section in `crm.html`. RPC used: `check_in_attendee`. All writes include `tenant_id` + `ActivityLog.write`.
+
+---
+
+## Phase B5 — Messaging Hub (2026-04-20)
+
+| Hash | Message |
+|------|---------|
+| `684d3be` | `feat(crm): add messaging hub tab with templates and automation rules` |
+| `b97f1c4` | `feat(crm): add broadcast send and message log UI` |
+| _(pending)_ | `docs(crm): update Module 4 docs for B5 Messaging Hub` |
+| _(pending)_ | `chore(spec): close CRM_PHASE_B5_MESSAGING_HUB with retrospective` |
+
+New files: `crm-messaging-tab.js`, `crm-messaging-templates.js`, `crm-messaging-rules.js`, `crm-messaging-broadcast.js`. Modified: `crm.html` (nav button, tab section, 4 script tags), `modules/crm/crm-init.js` (routing), `css/crm.css` (sub-nav, toggle, chips, form rows). Writes to `crm_message_templates`, `crm_automation_rules`, `crm_broadcasts`, `crm_message_log` — all with `tenant_id` and `ActivityLog.write`. No DDL (tables existed from Phase A).
+
+**B5 deviations:** SPEC planned 3 new JS files; split into 4 (templates + rules) so every file stayed under Iron Rule 12 line limit. See `CRM_PHASE_B5_MESSAGING_HUB/EXECUTION_REPORT.md` Decision #1 for rationale.
