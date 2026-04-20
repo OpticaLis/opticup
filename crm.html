@@ -1,0 +1,106 @@
+<!--
+  Optic Up — CRM Module (Phase B3: Core UI)
+  Version: 1.0 — Leads, Events, Dashboard
+  Stack: Vanilla JS + Supabase (no build step, no external libs)
+-->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optic Up — CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Shared CSS -->
+<link rel="stylesheet" href="shared/css/variables.css">
+<link rel="stylesheet" href="shared/css/components.css">
+<link rel="stylesheet" href="shared/css/components-extra.css">
+<link rel="stylesheet" href="shared/css/layout.css">
+<link rel="stylesheet" href="shared/css/forms.css">
+<link rel="stylesheet" href="shared/css/modal.css">
+<link rel="stylesheet" href="shared/css/toast.css">
+<link rel="stylesheet" href="shared/css/table.css">
+<!-- Module CSS -->
+<link rel="stylesheet" href="css/header.css">
+<link rel="stylesheet" href="css/crm.css">
+</head>
+<body>
+
+<nav id="crmNav">
+  <button data-tab="dashboard" class="active" onclick="showCrmTab('dashboard')">&#128202; &#1491;&#1513;&#1489;&#1493;&#1512;&#1491;</button>
+  <button data-tab="leads" onclick="showCrmTab('leads')">&#128101; &#1500;&#1497;&#1491;&#1497;&#1501;</button>
+  <button data-tab="events" onclick="showCrmTab('events')">&#128197; &#1488;&#1497;&#1512;&#1493;&#1506;&#1497;&#1501;</button>
+</nav>
+
+<main id="crm-main">
+
+  <!-- ========== TAB 1: DASHBOARD ========== -->
+  <section id="tab-dashboard" class="tab active">
+    <div id="crm-dashboard-stats" class="crm-stats-grid"></div>
+
+    <div class="card">
+      <h3>&#128202; &#1489;&#1497;&#1510;&#1493;&#1506;&#1497; &#1488;&#1497;&#1512;&#1493;&#1506;&#1497;&#1501;</h3>
+      <div id="crm-dashboard-events" class="crm-table-wrap"></div>
+    </div>
+
+    <div class="card">
+      <h3>&#128100; &#1492;&#1514;&#1508;&#1500;&#1490;&#1493;&#1514; &#1505;&#1496;&#1496;&#1493;&#1505; &#1500;&#1497;&#1491;&#1497;&#1501;</h3>
+      <div id="crm-dashboard-status"></div>
+    </div>
+  </section>
+
+  <!-- ========== TAB 2: LEADS ========== -->
+  <section id="tab-leads" class="tab">
+    <div class="card">
+      <div class="crm-filter-bar">
+        <input type="search" id="crm-leads-search" class="crm-search" placeholder="&#1495;&#1497;&#1508;&#1493;&#1513; &#1500;&#1508;&#1497; &#1513;&#1501; &#1488;&#1493; &#1496;&#1500;&#1508;&#1493;&#1503;...">
+        <select id="crm-leads-filter-status"><option value="">&#1499;&#1500; &#1492;&#1505;&#1496;&#1496;&#1493;&#1505;&#1497;&#1501;</option></select>
+        <select id="crm-leads-filter-lang"><option value="">&#1499;&#1500; &#1492;&#1513;&#1508;&#1493;&#1514;</option></select>
+        <select id="crm-leads-sort">
+          <option value="full_name">&#1502;&#1497;&#1493;&#1503;: &#1513;&#1501;</option>
+          <option value="phone">&#1502;&#1497;&#1493;&#1503;: &#1496;&#1500;&#1508;&#1493;&#1503;</option>
+          <option value="created_at">&#1502;&#1497;&#1493;&#1503;: &#1514;&#1488;&#1512;&#1497;&#1498; &#1497;&#1510;&#1497;&#1512;&#1492; (&#1495;&#1491;&#1513;)</option>
+          <option value="status">&#1502;&#1497;&#1493;&#1503;: &#1505;&#1496;&#1496;&#1493;&#1505;</option>
+        </select>
+      </div>
+      <div id="crm-leads-table-wrap" class="crm-table-wrap"></div>
+      <div id="crm-leads-pagination" class="crm-pagination"></div>
+    </div>
+  </section>
+
+  <!-- ========== TAB 3: EVENTS ========== -->
+  <section id="tab-events" class="tab">
+    <div class="card">
+      <div class="crm-filter-bar">
+        <select id="crm-events-filter-status"><option value="">&#1499;&#1500; &#1492;&#1505;&#1496;&#1496;&#1493;&#1505;&#1497;&#1501;</option></select>
+      </div>
+      <div id="crm-events-table-wrap" class="crm-table-wrap"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Shared JS -->
+<script src="shared/js/theme-loader.js"></script>
+<script src="shared/js/modal-builder.js"></script>
+<script src="shared/js/toast.js"></script>
+<script src="shared/js/permission-ui.js"></script>
+<script src="shared/js/supabase-client.js"></script>
+<script src="shared/js/activity-logger.js"></script>
+<!-- Core JS -->
+<script src="js/shared.js"></script>
+<script src="js/shared-ui.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/supabase-ops.js"></script>
+<script src="js/header.js"></script>
+<!-- CRM JS -->
+<script src="modules/crm/crm-helpers.js"></script>
+<script src="modules/crm/crm-init.js"></script>
+<script src="modules/crm/crm-dashboard.js"></script>
+<script src="modules/crm/crm-leads-tab.js"></script>
+<script src="modules/crm/crm-leads-detail.js"></script>
+<script src="modules/crm/crm-events-tab.js"></script>
+<script src="modules/crm/crm-events-detail.js"></script>
+
+</body>
+</html>
