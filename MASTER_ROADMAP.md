@@ -38,7 +38,7 @@ backend with RLS-based tenant isolation.
 | 2 | Platform Admin | ✅ Complete (v2.0) | opticup | Super-admin control plane: tenant provisioning, plans/limits/features, audit log, PIN reset, suspend/activate/delete. 4 phases. 5 tables + tenants extension. |
 | 3 | Storefront | 🟢 DNS SWITCH EXECUTED (2026-04-18) — propagation pending | opticup-storefront | Public storefront: CMS pages, campaigns, blog, AI content, translations (he/en/ru), media library, lead forms, brand pages, SEO. All phases complete. develop→main merged. DNS switched from DreamVPS to Vercel. 25 tables. |
 | 3.1 | Project Reconstruction | ✅ Complete | opticup | Meta-module: foundation doc rewrites, DB audit baseline, roadmap reconciliation. Does not own code — owns documentation accuracy. 3A/3B/3C/3D all complete. |
-| 4 | CRM | ⬜ Not started | opticup (planned) | Customer management — replaces Monday.com for leads. Prerequisite for orders + prescriptions. |
+| 4 | CRM | 🟡 In Progress (B9 CLOSED — Visual QA pass) | opticup | Customer management — replaces Monday.com for leads. 23 tables, 7 views, 8 RPCs, 46 RLS policies. Phases A–B9 complete (schema, data import, core UI, event day, messaging hub, visual polish, Tailwind rewrite, visual QA). Not yet merged to main. |
 | 5–22 | Future modules | ⬜ Not started | — | Orders, prescriptions, payments, lab/KDS, lenses, branches, WhatsApp, reports, supplier portal, content hub, B2B network, AI support, WooCommerce sync, POS. |
 
 **Detailed per-module scope** lives in each module's `README.md` and `MODULE_SPEC.md`
@@ -105,8 +105,12 @@ fix, 2 tech-debt items (missing `storefront_pages_backups` table, oversized
 Module 3.1 (Project Reconstruction) is **complete** — all phases 3A/3B/3C/3D
 done. Foundation docs are accurate and current.
 
-**On deck:** Module 4 (CRM) — customer management to replace Monday.com for
-leads. Prerequisite for orders + prescriptions modules.
+**Module 4 (CRM) is in progress** — phases A through B9 complete on `develop`.
+Schema migration (23 tables), Monday.com data import (893 leads, 11 events,
+149 attendees), core UI (5 tabs: dashboard, leads, events, messaging hub,
+event day), Tailwind visual rewrite (B8), and visual QA + functional
+verification (B9, 28/28 criteria, 27 screenshots). Not yet merged to `main`.
+Next: Daniel's final review, then merge-to-main candidate.
 
 The dual-repo split is stable. Both repos use `develop` for active work.
 Merges to `main` happen only after Daniel's manual QA on the demo tenant.
@@ -280,7 +284,7 @@ is real and must be fixed before either module starts writing.
 - Homepage revisions queue (Daniel's remaining feedback)
 - Contact form lead-capture (Resend integration — deferred by Daniel)
 
-**On deck:** Module 4 (CRM) — customer management to replace Monday.com for leads.
+**Module 4 (CRM):** In progress — B9 Visual QA closed. Awaiting Daniel's final review + merge to main.
 
 ---
 

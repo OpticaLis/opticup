@@ -28,6 +28,9 @@ async function loadStorefrontSettings() {
       document.getElementById('sf-fb-capi').value = a.fb_capi_token || '';
       document.getElementById('sf-google-mp').value = a.google_mp_secret || '';
 
+      // Pixel events
+      renderPixelEvents(a.pixel_events || []);
+
       // Branding & Domain
       document.getElementById('sf-custom-domain').value = data.custom_domain || '';
       document.getElementById('sf-hero-title').value = data.hero_title || '';
@@ -87,6 +90,10 @@ async function saveStorefrontSettings() {
   if (hotjarId) analytics.hotjar_id = hotjarId;
   if (fbCapi) analytics.fb_capi_token = fbCapi;
   if (googleMp) analytics.google_mp_secret = googleMp;
+
+  // Pixel events
+  const pixelEvents = collectPixelEvents();
+  if (pixelEvents.length > 0) analytics.pixel_events = pixelEvents;
 
   // Branding fields
   const customDomain = document.getElementById('sf-custom-domain').value.trim();
@@ -189,3 +196,89 @@ function clearSiteLogo() {
 
 window.handleSiteLogoUpload = handleSiteLogoUpload;
 window.clearSiteLogo = clearSiteLogo;
+
+// ═══════════════════════════════════════════════════
+// PIXEL EVENTS — manage URL-based conversion events
+// ═══════════════════════════════════════════════════
+
+const PIXEL_EVENT_OPTIONS = [
+  { value: 'Lead', label: 'Lead — ליד / טופס נשלח' },
+  { value: 'CompleteRegistration', label: 'CompleteRegistration — סיום הרשמה' },
+  { value: 'Contact', label: 'Contact — יצירת קשר' },
+  { value: 'Schedule', label: 'Schedule — קביעת תור' },
+  { value: 'ViewContent', label: 'ViewContent — צפייה בתוכן' },
+  { value: 'Purchase', label: 'Purchase — רכישה' },
+  { value: 'Subscribe', label: 'Subscribe — הרשמה לניוזלטר' },
+];
+
+function renderPixelEvents(events) {
+  const container = document.getElementById('sf-pixel-events-list');
+  if (!container) return;
+  container.innerHTML = '';
+  if (!events || events.length === 0) return;
+  events.forEach((ev, i) => addPixelEventRow(ev.url_pattern, ev.event, ev.label));
+}
+
+function addPixelEventRow(url, event, label) {
+  const container = document.getElementById('sf-pixel-events-list');
+  if (!container) return;
+  const row = document.createElement('div');
+  row.className = 'pixel-event-row';
+  row.style.cssText = 'display:flex; gap:8px; align-items:center; margin-bottom:6px; flex-wrap:wrap;';
+
+  const urlInput = document.createElement('input');
+  urlInput.type = 'text';
+  urlInput.placeholder = '/successfulsupersale/';
+  urlInput.value = url || '';
+  urlInput.dir = 'ltr';
+  urlInput.style.cssText = 'flex:1; min-width:180px; padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:.85rem;';
+  urlInput.dataset.field = 'url';
+
+  const select = document.createElement('select');
+  select.style.cssText = 'min-width:180px; padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:.85rem;';
+  select.dataset.field = 'event';
+  PIXEL_EVENT_OPTIONS.forEach(opt => {
+    const o = document.createElement('option');
+    o.value = opt.value;
+    o.textContent = opt.label;
+    if (opt.value === event) o.selected = true;
+    select.appendChild(o);
+  });
+
+  const labelInput = document.createElement('input');
+  labelInput.type = 'text';
+  labelInput.placeholder = 'תיאור (אופציונלי)';
+  labelInput.value = label || '';
+  labelInput.style.cssText = 'width:140px; padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:.85rem;';
+  labelInput.dataset.field = 'label';
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.textContent = '✕';
+  removeBtn.style.cssText = 'padding:4px 8px; background:#fee2e2; border:1px solid #fca5a5; border-radius:4px; cursor:pointer; font-size:.85rem;';
+  removeBtn.onclick = () => row.remove();
+
+  row.appendChild(urlInput);
+  row.appendChild(select);
+  row.appendChild(labelInput);
+  row.appendChild(removeBtn);
+  container.appendChild(row);
+}
+
+function collectPixelEvents() {
+  const rows = document.querySelectorAll('#sf-pixel-events-list .pixel-event-row');
+  const events = [];
+  rows.forEach(row => {
+    const url = row.querySelector('[data-field="url"]').value.trim();
+    const event = row.querySelector('[data-field="event"]').value;
+    const label = row.querySelector('[data-field="label"]').value.trim();
+    if (url && event) {
+      const entry = { url_pattern: url, event };
+      if (label) entry.label = label;
+      events.push(entry);
+    }
+  });
+  return events;
+}
+
+window.addPixelEventRow = addPixelEventRow;

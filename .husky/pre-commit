@@ -1,5 +1,20 @@
-if ! node scripts/verify.mjs --staged; then
-  status=$?
-  if [ $status -ne 2 ]; then exit $status; fi
+#!/usr/bin/env bash
+# Run the verifier and capture its exit code.
+# Exit code contract (scripts/verify.mjs):
+#   0 = clean — allow commit
+#   1 = violations — BLOCK commit
+#   2 = warnings only — allow commit (informational)
+#   * = any other error (e.g. missing node, broken check) — BLOCK commit
+# Note: do NOT wrap the verifier in `if ! cmd`. Bash's `!` inverts the exit
+# code seen by `$?` inside the branch, which caused a real corruption
+# (286 NUL bytes in crm.html) to slip past this hook on 2026-04-21.
+node scripts/verify.mjs --staged
+status=$?
+
+if [ "$status" -eq 0 ] || [ "$status" -eq 2 ]; then
+  exit 0
 fi
-exit 0
+
+echo ""
+echo "pre-commit: verify.mjs exited $status — commit blocked." >&2
+exit "$status"

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Event Day — Variation C (Split Dashboard)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+    <style>
+        * {
+            font-family: 'Heebo', sans-serif;
+        }
+
+        .counter-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .counter-blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .counter-violet { background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); }
+        .counter-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .counter-gold { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .counter-emerald { background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); }
+
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .attendee-card {
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid transparent;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .attendee-card:hover {
+            background: #f3f4f6;
+            transform: translateX(-4px);
+        }
+
+        .attendee-card.overdue {
+            border-left-color: #f97316;
+            background: #fef3c7;
+        }
+
+        .attendee-card.selected {
+            border-left-color: #3b82f6;
+            background: #dbeafe;
+        }
+
+        .arrived-card {
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 14px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .arrived-card.waiting {
+            background: #f0fdf4;
+            border-left-color: #10b981;
+        }
+
+        .arrived-card.purchased {
+            background: #fffbeb;
+            border-left-color: #f59e0b;
+        }
+
+        .flash-notification {
+            animation: slideIn 3s ease-out;
+        }
+
+        @keyframes slideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            10% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            90% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+
+        .column-header {
+            font-size: 16px;
+            font-weight: 700;
+            padding: 12px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .action-button {
+            height: 56px;
+            font-weight: 600;
+            font-size: 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .action-button:hover {
+            transform: scale(1.02);
+        }
+
+        .action-button:active {
+            transform: scale(0.98);
+        }
+
+        .counter-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .counter-number {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 m-0 p-0">
+    <div class="h-screen flex flex-col">
+        <!-- TOP COUNTER BAR -->
+        <div class="bg-slate-800 text-white px-6 py-4 flex items-center justify-between gap-8 h-20">
+            <div class="flex items-center gap-6 flex-1">
+                <div>
+                    <h1 class="text-xl font-800">SUPER SALE 2026</h1>
+                    <p class="text-sm opacity-80">אירוע בזמן אמת</p>
+                </div>
+            </div>
+
+            <div class="flex gap-4 flex-1 justify-center">
+                <div class="counter-card counter-blue text-center">
+                    <div class="counter-number">87</div>
+                    <div class="counter-label">נרשמו</div>
+                </div>
+                <div class="counter-card counter-violet text-center">
+                    <div class="counter-number">69</div>
+                    <div class="counter-label">אישרו</div>
+                </div>
+                <div class="counter-card counter-green text-center pulse-animation">
+                    <div class="counter-number">22</div>
+                    <div class="counter-label">הגיעו</div>
+                </div>
+                <div class="counter-card counter-gold text-center">
+                    <div class="counter-number">21</div>
+                    <div class="counter-label">קנו</div>
+                </div>
+                <div class="counter-card counter-emerald text-center">
+                    <div class="counter-number">₪35,125</div>
+                    <div class="counter-label">הכנסות</div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 flex-1 justify-end">
+                <div id="live-clock" class="text-lg font-600">09:45</div>
+                <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+            </div>
+        </div>
+
+        <!-- MAIN THREE-COLUMN LAYOUT -->
+        <div class="flex flex-1 gap-0 overflow-hidden">
+            <!-- LEFT COLUMN: ממתינים -->
+            <div class="w-3/10 bg-amber-50 flex flex-col border-r border-gray-200">
+                <div class="column-header flex items-center gap-2 text-amber-700">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    ממתינים להגעה (47)
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-3 py-2">
+                    <!-- Overdue -->
+                    <div class="attendee-card overdue" onclick="selectAttendee(this, 'דניאל כהן')">
+                        <div class="font-600 text-sm">דניאל כהן</div>
+                        <div class="text-xs text-gray-600 mt-1">050-1234567</div>
+                        <div class="text-xs text-gray-600">📅 08:45 (בעיכוב 17 דקות)</div>
+                        <div class="flex gap-1 mt-1">
+                            <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded">בדיקה</span>
+                        </div>
+                    </div>
+
+                    <div class="attendee-card" onclick="selectAttendee(this, 'רחל דביר')">
+                        <div class="font-600 text-sm">רחל דביר</div>
+                        <div class="text-xs text-gray-600 mt-1">054-9876543</div>
+                        <div class="text-xs text-gray-600">📅 09:00 (בעוד 2 דקות)</div>
+                    </div>
+
+                    <div class="attendee-card" onclick="selectAttendee(this, 'מיכאל לוי')">
+                        <div class="font-600 text-sm">מיכאל לוי</div>
+                        <div class="text-xs text-gray-600 mt-1">052-5555555</div>
+                        <div class="text-xs text-gray-600">📅 09:15</div>
+                        <div class="flex gap-1 mt-1">
+                            <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded">בדיקה</span>
+                        </div>
+                    </div>
+
+                    <div class="attendee-card" onclick="selectAttendee(this, 'אביבה סלע')">
+                        <div class="font-600 text-sm">אביבה סלע</div>
+                        <div class="text-xs text-gray-600 mt-1">050-3333333</div>
+                        <div class="text-xs text-gray-600">📅 09:30</div>
+                    </div>
+
+                    <div class="attendee-card" onclick="selectAttendee(this, 'שלום קורן')">
+                        <div class="font-600 text-sm">שלום קורן</div>
+                        <div class="text-xs text-gray-600 mt-1">054-7777777</div>
+                        <div class="text-xs text-gray-600">📅 09:45</div>
+                        <div class="flex gap-1 mt-1">
+                            <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded">בדיקה</span>
+                        </div>
+                    </div>
+
+                    <div class="attendee-card" onclick="selectAttendee(this, 'עדי רובינstein')">
+                        <div class="font-600 text-sm">עדי רובינstein</div>
+                        <div class="text-xs text-gray-600 mt-1">052-8888888</div>
+                        <div class="text-xs text-gray-600">📅 10:00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CENTER COLUMN: צ'ק-אין -->
+            <div class="w-2/5 bg-white flex flex-col border-r border-gray-200">
+                <!-- Search Bar -->
+                <div class="p-4 bg-white border-b border-gray-200">
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="search-input" placeholder="חפש שם או טלפון..." class="flex-1 px-4 py-3 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                        <button class="bg-blue-600 text-white px-4 py-3 rounded-lg font-600 flex items-center gap-2 hover:bg-blue-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            QR
+                        </button>
+                    </div>
+                    <button class="w-full text-sm text-blue-600 font-600 py-2 hover:bg-blue-50 rounded">+ רישום מהיר</button>
+                </div>
+
+                <!-- Notifications Area -->
+                <div class="h-10 px-4 py-1 bg-green-100 border-b border-green-300" id="notifications">
+                </div>
+
+                <!-- Selected Attendee Card -->
+                <div class="flex-1 p-6 flex flex-col justify-between">
+                    <div id="selected-card" class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-200">
+                        <div class="text-center mb-6">
+                            <div class="text-2xl font-800 text-blue-900">דניאל כהן</div>
+                            <div class="text-sm text-gray-600 mt-1">050-1234567</div>
+                        </div>
+
+                        <div class="space-y-3 mb-6">
+                            <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                                <span class="text-sm font-600">סטטוס:</span>
+                                <span class="text-sm font-600 text-amber-700 bg-amber-100 px-3 py-1 rounded">בעיכוב</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                                <span class="text-sm font-600">זמן מתוכנן:</span>
+                                <span class="text-sm font-600">08:45</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                                <span class="text-sm font-600">בדיקה עיניים:</span>
+                                <span class="text-sm font-600 bg-purple-200 text-purple-800 px-3 py-1 rounded">כן</span>
+                            </div>
+                            <div class="p-3 bg-white rounded-lg">
+                                <span class="text-sm font-600 block mb-1">הערות:</span>
+                                <span class="text-sm text-gray-600">מעוניין בעדשות קשות + מסגרות</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="grid grid-cols-2 gap-3 mt-6">
+                        <button class="action-button bg-green-600 text-white hover:bg-green-700">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            צ'ק-אין
+                        </button>
+                        <button class="action-button bg-amber-500 text-white hover:bg-amber-600">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"></path>
+                            </svg>
+                            רשום רכישה
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: הגיעו -->
+            <div class="w-3/10 bg-green-50 flex flex-col border-r border-gray-200">
+                <div class="column-header flex items-center gap-2 text-green-700">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    הגיעו (22)
+                </div>
+
+                <div class="flex-1 overflow-y-auto">
+                    <!-- Section 1: Waiting to purchase -->
+                    <div class="px-3 pt-3">
+                        <div class="text-xs font-700 text-green-700 mb-2">הגיעו — ממתינים לקנייה</div>
+
+                        <div class="arrived-card waiting">
+                            <div class="font-600">אביבה קוניץ</div>
+                            <div class="text-xs text-gray-600 mt-1">✓ נכנסה • 09:02</div>
+                        </div>
+
+                        <div class="arrived-card waiting">
+                            <div class="font-600">יוסי דולב</div>
+                            <div class="text-xs text-gray-600 mt-1">✓ נכנס • 09:18</div>
+                        </div>
+
+                        <div class="arrived-card waiting">
+                            <div class="font-600">מיכל סטרוס</div>
+                            <div class="text-xs text-gray-600 mt-1">✓ נכנסה • 09:25</div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Purchased -->
+                    <div class="px-3 pt-4 border-t border-green-200 mt-3">
+                        <div class="text-xs font-700 text-amber-700 mb-2">קנו</div>
+
+                        <div class="arrived-card purchased">
+                            <div class="flex justify-between items-center">
+                                <div class="font-600">לימור גינזבורג</div>
+                                <div class="font-700 text-amber-700">₪890</div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">09:12</div>
+                        </div>
+
+                        <div class="arrived-card purchased">
+                            <div class="flex justify-between items-center">
+                                <div class="font-600">ד״ר משה פלד</div>
+                                <div class="font-700 text-amber-700">₪1,250</div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">09:20</div>
+                        </div>
+
+                        <div class="arrived-card purchased">
+                            <div class="flex justify-between items-center">
+                                <div class="font-600">רונית רבינוביץ</div>
+                                <div class="font-700 text-amber-700">₪2,100</div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">09:35</div>
+                        </div>
+
+                        <div class="arrived-card purchased">
+                            <div class="flex justify-between items-center">
+                                <div class="font-600">אביהו כרמי</div>
+                                <div class="font-700 text-amber-700">₪1,450</div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">09:38</div>
+                        </div>
+
+                        <div class="arrived-card purchased">
+                            <div class="flex justify-between items-center">
+                                <div class="font-600">שנית מנור</div>
+                                <div class="font-700 text-amber-700">₪785</div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">09:42</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Running Total -->
+                <div class="bg-green-100 border-t-2 border-green-300 p-4 font-700 text-lg text-green-900 text-center">
+                    סה״כ: <span class="text-amber-700">₪35,125</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Live clock
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('live-clock').textContent = `${hours}:${minutes}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Select attendee from left column
+        function selectAttendee(element, name) {
+            document.querySelectorAll('.attendee-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            element.classList.add('selected');
+
+            // Update center card
+            const card = document.getElementById('selected-card');
+            card.innerHTML = `
+                <div class="text-center mb-6">
+                    <div class="text-2xl font-800 text-blue-900">${name}</div>
+                    <div class="text-sm text-gray-600 mt-1">050-1234567</div>
+                </div>
+
+                <div class="space-y-3 mb-6">
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span class="text-sm font-600">סטטוס:</span>
+                        <span class="text-sm font-600 text-amber-700 bg-amber-100 px-3 py-1 rounded">ממתין</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span class="text-sm font-600">זמן מתוכנן:</span>
+                        <span class="text-sm font-600">09:15</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span class="text-sm font-600">בדיקה עיניים:</span>
+                        <span class="text-sm font-600 bg-purple-200 text-purple-800 px-3 py-1 rounded">כן</span>
+                    </div>
+                    <div class="p-3 bg-white rounded-lg">
+                        <span class="text-sm font-600 block mb-1">הערות:</span>
+                        <span class="text-sm text-gray-600">משקפיים חדשים, עדשות</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Check-in button flash notification
+        document.querySelectorAll('.action-button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (this.textContent.includes('צ\'ק-אין')) {
+                    const notif = document.getElementById('notifications');
+                    const msg = document.createElement('div');
+                    msg.className = 'flash-notification text-sm font-600 text-green-800';
+                    msg.textContent = 'דניאל כהן נכנס — 09:45';
+                    notif.innerHTML = '';
+                    notif.appendChild(msg);
+                    setTimeout(() => notif.innerHTML = '', 3000);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

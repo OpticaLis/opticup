@@ -235,6 +235,34 @@ const FIELD_MAP = {
     'סוג פריט':'item_type','פריט מלאי':'inventory_id','החזרה':'return_id',
     'מספר הזמנה':'order_number','מספר לקוח':'customer_number',
     'קטגוריה':'category','עלות יחידה':'unit_cost'
+  },
+  crm_leads: {
+    'שם מלא':'full_name','טלפון':'phone','אימייל':'email','עיר':'city',
+    'שפה':'language','סטטוס':'status','מקור':'source',
+    'מקור UTM':'utm_source','אמצעי UTM':'utm_medium','קמפיין UTM':'utm_campaign',
+    'תוכן UTM':'utm_content','מונח UTM':'utm_term',
+    'הערות לקוח':'client_notes','תנאים מאושרים':'terms_approved',
+    'תאריך אישור תנאים':'terms_approved_at','הסכמה שיווקית':'marketing_consent',
+    'תאריך הסרה':'unsubscribed_at','טלפון מאומת':'verified_phone'
+  },
+  crm_events: {
+    'מספר אירוע':'event_number','שם אירוע':'name','תאריך אירוע':'event_date',
+    'שעת התחלה':'start_time','שעת סיום':'end_time','כתובת':'location_address',
+    'קישור Waze':'location_waze_url','סטטוס':'status','תפוסה מקסימלית':'max_capacity',
+    'דמי הזמנה':'booking_fee','קופון':'coupon_code',
+    'קישור טופס הרשמה':'registration_form_url','הערות':'notes'
+  },
+  crm_lead_notes: {
+    'תוכן':'content','אירוע':'event_id','עובד':'employee_id'
+  },
+  crm_event_attendees: {
+    'סטטוס':'status','אופן רישום':'registration_method',
+    'תאריך רישום':'registered_at','תאריך אישור':'confirmed_at',
+    'שעת כניסה':'checked_in_at','תאריך רכישה':'purchased_at',
+    'תאריך ביטול':'cancelled_at','סכום רכישה':'purchase_amount',
+    'שולם דמי הזמנה':'booking_fee_paid','הוחזר דמי הזמנה':'booking_fee_refunded',
+    'נשלח קופון':'coupon_sent','שעה מתוזמנת':'scheduled_time',
+    'דרושה בדיקת ראייה':'eye_exam_needed','הערות לקוח':'client_notes'
   }
 };
 

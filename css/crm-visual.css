@@ -1,0 +1,20 @@
+/* crm-visual.css — Minimal residual styles after B8 Tailwind rewrite.
+   The B7 visual components (sparklines, gauges, funnels, kanban cards,
+   gradient headers, counter cards, code editor, preview panels, etc.)
+   were re-implemented in JS using Tailwind utility classes in B8.
+   This file now only keeps a small pulse keyframe in case any legacy
+   selector still references it, plus a safety .crm-pagination baseline
+   for the shell (a .crm-pagination <div> exists in crm.html leads tab). */
+
+/* ---- Pagination shell (crm.html #crm-leads-pagination) ---- */
+.crm-pagination {
+  display: flex; gap: 6px;
+  justify-content: center; align-items: center;
+  margin-top: 16px; flex-wrap: wrap;
+}
+
+/* ---- Keep legacy pulse keyframe for any residual consumer ---- */
+@keyframes crm-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+}

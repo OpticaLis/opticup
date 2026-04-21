@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול לידים | CRM אופטיקה פריזמה</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts: Heebo -->
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            font-family: 'Heebo', sans-serif;
+        }
+
+        html {
+            font-family: 'Heebo', sans-serif;
+        }
+
+        body {
+            font-family: 'Heebo', sans-serif;
+            background-color: #f9fafb;
+        }
+
+        /* SIDEBAR STYLES */
+        .sidebar {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            color: white;
+            width: 220px;
+            flex-shrink: 0;
+        }
+
+        .segment-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            margin: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            border-left: 3px solid transparent;
+        }
+
+        .segment-item:hover {
+            background-color: rgba(139, 92, 246, 0.15);
+        }
+
+        .segment-item.active {
+            background-color: rgba(139, 92, 246, 0.2);
+            border-left-color: #8b5cf6;
+            font-weight: 600;
+        }
+
+        .segment-icon {
+            width: 18px;
+            height: 18px;
+            margin-left: 12px;
+            flex-shrink: 0;
+        }
+
+        .segment-label {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .segment-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            height: 24px;
+            padding: 0 6px;
+            background-color: rgba(139, 92, 246, 0.3);
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #c4b5fd;
+            flex-shrink: 0;
+        }
+
+        /* TABLE STYLES */
+        .table-header {
+            background-color: #f9fafb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .table-row {
+            border-bottom: 1px solid #f3f4f6;
+            transition: background-color 0.15s ease;
+        }
+
+        .table-row:nth-child(odd) {
+            background-color: #ffffff;
+        }
+
+        .table-row:nth-child(even) {
+            background-color: #fafbfc;
+        }
+
+        .table-row:hover {
+            background-color: #f0f4ff;
+        }
+
+        .table-row.selected {
+            background-color: #f3e8ff;
+        }
+
+        .table-cell {
+            padding: 12px 14px;
+            font-size: 13px;
+        }
+
+        /* STATUS & TAG STYLES */
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            height: 24px;
+            padding: 0 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-new {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .status-waiting {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-invited {
+            background-color: #ede9fe;
+            color: #6d28d9;
+        }
+
+        .status-confirmed {
+            background-color: #dcfce7;
+            color: #15803d;
+        }
+
+        .status-not-interested {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-unsubscribed {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            height: 20px;
+            padding: 0 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            background-color: #f3f4f6;
+            color: #374151;
+            margin: 0 2px;
+        }
+
+        .tag-pill.supersale {
+            background-color: #fed7aa;
+            color: #92400e;
+        }
+
+        .tag-pill.vip {
+            background-color: #fce7f3;
+            color: #831843;
+        }
+
+        .tag-pill.returning {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        /* AVATAR STYLES */
+        .avatar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        /* SEARCH & FILTERS */
+        .search-container {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 12px 8px 32px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: #9ca3af;
+            pointer-events: none;
+        }
+
+        .result-count {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 6px;
+        }
+
+        /* FILTER CHIPS */
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background-color: white;
+            border: 1px solid #d1d5db;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .filter-chip:hover {
+            border-color: #8b5cf6;
+            background-color: #f9f5ff;
+        }
+
+        .filter-chip.active {
+            background-color: #8b5cf6;
+            color: white;
+            border-color: #8b5cf6;
+        }
+
+        .filter-chip-close {
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .clear-all-link {
+            font-size: 12px;
+            color: #8b5cf6;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .clear-all-link:hover {
+            text-decoration: underline;
+        }
+
+        /* VIEW TOGGLE */
+        .view-toggle {
+            display: flex;
+            gap: 6px;
+        }
+
+        .view-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            background-color: white;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .view-btn:hover {
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+        }
+
+        .view-btn.active {
+            background-color: #8b5cf6;
+            color: white;
+            border-color: #8b5cf6;
+        }
+
+        /* QUICK ACTIONS */
+        .quick-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background-color: #f3f4f6;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .quick-action-btn:hover {
+            background-color: #8b5cf6;
+            color: white;
+        }
+
+        .tooltip {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background-color: #1f2937;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            margin-bottom: 8px;
+            z-index: 100;
+        }
+
+        .quick-action-btn:hover .tooltip {
+            opacity: 1;
+        }
+
+        /* TREND ARROW */
+        .trend-up {
+            color: #16a34a;
+            font-weight: bold;
+        }
+
+        .trend-down {
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        /* DETAIL PANEL */
+        .detail-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 420px;
+            height: 100vh;
+            background: white;
+            box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .detail-panel.hidden {
+            display: none;
+        }
+
+        .detail-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .detail-header-content h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .detail-header-close {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .detail-header-close:hover {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .detail-quick-info {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .detail-info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-info-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 4px;
+        }
+
+        .detail-info-value {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1f2937;
+            word-break: break-all;
+        }
+
+        .detail-info-value.link {
+            color: #8b5cf6;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .detail-info-value.link:hover {
+            text-decoration: underline;
+        }
+
+        .detail-action-buttons {
+            padding: 12px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            gap: 10px;
+        }
+
+        .detail-action-btn {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .detail-action-primary {
+            background-color: #8b5cf6;
+            color: white;
+        }
+
+        .detail-action-primary:hover {
+            background-color: #7c3aed;
+        }
+
+        .detail-action-secondary {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .detail-action-secondary:hover {
+            background-color: #e5e7eb;
+        }
+
+        .detail-tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .detail-tab {
+            flex: 1;
+            padding: 12px 16px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .detail-tab.active {
+            color: #8b5cf6;
+            border-bottom-color: #8b5cf6;
+        }
+
+        .detail-tab:hover:not(.active) {
+            color: #4f46e5;
+        }
+
+        .detail-tab-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: #8b5cf6;
+            color: white;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .detail-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+        }
+
+        .detail-tab-pane {
+            display: none;
+        }
+
+        .detail-tab-pane.active {
+            display: block;
+        }
+
+        /* DETAIL SECTION */
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .detail-field {
+            margin-bottom: 16px;
+        }
+
+        .detail-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-field-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .detail-field-value {
+            font-size: 13px;
+            color: #1f2937;
+            line-height: 1.5;
+        }
+
+        /* EVENT TABLE IN DETAIL */
+        .event-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .event-table th {
+            background-color: #f9fafb;
+            padding: 10px 8px;
+            text-align: right;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 11px;
+        }
+
+        .event-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #f3f4f6;
+            color: #374151;
+        }
+
+        .event-table tr:hover {
+            background-color: #f9fafb;
+        }
+
+        /* TIMELINE */
+        .timeline-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+
+        .timeline-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #8b5cf6;
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-time {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-bottom: 3px;
+            font-weight: 500;
+        }
+
+        .timeline-message {
+            font-size: 12px;
+            color: #1f2937;
+            line-height: 1.5;
+        }
+
+        /* BULK ACTION BAR */
+        .bulk-action-bar {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            left: 220px;
+            height: auto;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+            animation: slideUp 0.2s ease-out;
+            z-index: 40;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .bulk-action-bar.hidden {
+            display: none;
+        }
+
+        .bulk-action-bar-text {
+            font-size: 12px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .bulk-action-btn {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            background-color: white;
+            font-size: 12px;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .bulk-action-btn:hover {
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+            background-color: #f9f5ff;
+        }
+
+        .bulk-action-close {
+            margin-left: auto;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 300;
+        }
+
+        .bulk-action-close:hover {
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="flex h-screen bg-gray-50">
+        <!-- SEGMENT SIDEBAR -->
+        <div class="sidebar overflow-y-auto">
+            <div class="p-6 border-b border-white border-opacity-20 sticky top-0 bg-gradient-to-b from-indigo-900 to-transparent">
+                <h1 class="text-lg font-bold">אופטיקה פריזמה</h1>
+                <p class="text-xs text-indigo-200 mt-1">ניהול לידים וקמפיינים</p>
+            </div>
+
+            <div class="px-3 py-4">
+                <p class="text-xs font-semibold text-indigo-200 mb-3 px-3">תאים חכמים</p>
+
+                <div class="segment-item active" data-segment="all">
+                    <svg class="segment-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 1 1 0 000-2H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V9a1 1 0 10-2 0v4H4V5z" clip-rule="evenodd"/></svg>
+                    <span class="segment-label">כל הלידים</span>
+                    <span class="segment-badge">850</span>
+                </div>
+
+                <div class="segment-item" data-segment="waiting">
+                    <svg class="segment-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span class="segment-label">ממתינים לאירוע</span>
+                    <span class="segment-badge">580</span>
+                </div>
+
+                <div class="segment-item" data-segment="invited">
+                    <svg class="segment-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    <span class="segment-label">הוזמנו לאירוע</span>
+                    <span class="segment-badge">120</span>
+                </div>
+
+                <div class="segment-item" data-segment="confirmed">
+                    <svg class="segment-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    <span class="segment-label">אישרו הגעה</span>
+                    <span class="segment-badge">45</span>
+                </div>
+
+                <div class="segment-item" data-segment="not-interested">
+                    <svg class="segment-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                    <span class="segment-label">לא מעוניינים</span>
+                    <span class="segment-badge">52</span>
+                </div>
+
+                <div class="segment-item" data-segment="unsubscribed">
+                    <svg class="segment-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                    <span class="segment-label">ביטלו דיוור</span>
+                    <span class="segment-badge">18</span>
+                </div>
+
+                <div class="segment-item" data-segment="returning">
+                    <svg class="segment-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/></svg>
+                    <span class="segment-label">לקוחות חוזרים</span>
+                    <span class="segment-badge">31</span>
+                </div>
+
+                <div class="segment-item" data-segment="vip">
+                    <svg class="segment-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    <span class="segment-label">VIP</span>
+                    <span class="segment-badge">8</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- HEADER -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">ניהול לידים</h2>
+                    <p class="text-sm text-gray-500 mt-1">850 לידים כוללים</p>
+                </div>
+                <button class="px-4 py-2 rounded-lg bg-violet-600 text-white font-medium text-sm hover:bg-violet-700 transition">
+                    + לید חדש
+                </button>
+            </div>
+
+            <!-- SEARCH & FILTERS -->
+            <div class="bg-white px-6 py-4 border-b border-gray-200 flex-shrink-0">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="flex-1 search-container">
+                        <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" placeholder="חיפוש לפי שם, טלפון או אימייל..." class="search-input">
+                        <div class="result-count">נמצאו 850 מתוך 850 לידים</div>
+                    </div>
+                    <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+                        ⚙️ מסננים
+                    </button>
+                    <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+                        📥 ייצוא
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    <span class="filter-chip">
+                        סטטוס: חדש
+                        <span class="filter-chip-close">×</span>
+                    </span>
+                    <span class="filter-chip">
+                        תגיות: SuperSale
+                        <span class="filter-chip-close">×</span>
+                    </span>
+                    <span class="filter-chip">
+                        עיר: תל אביב
+                        <span class="filter-chip-close">×</span>
+                    </span>
+                    <a class="clear-all-link">נקה הכל</a>
+                </div>
+            </div>
+
+            <!-- VIEW CONTROLS -->
+            <div class="bg-white px-6 py-3 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+                <div class="view-toggle">
+                    <button class="view-btn active" title="טבלה">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z" clip-rule="evenodd"/></svg>
+                    </button>
+                    <button class="view-btn" title="לוח">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    </button>
+                    <button class="view-btn" title="כרטיסים">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 4a1 1 0 011-1h6a1 1 0 011 1v12a1 1 0 01-1 1H3a1 1 0 01-1-1V4z"/><path d="M13 4a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1h-4a1 1 0 01-1-1V4z"/></svg>
+                    </button>
+                </div>
+                <select class="px-3 py-1 border border-gray-300 rounded-lg text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500">
+                    <option>סדר: שם (א-י)</option>
+                    <option>סדר: תאריך הוספה (חדש ראשון)</option>
+                    <option>סדר: פעילות אחרונה</option>
+                    <option>סדר: הכנסות (גבוה לנמוך)</option>
+                </select>
+            </div>
+
+            <!-- LEADS TABLE -->
+            <div class="flex-1 overflow-auto">
+                <table class="w-full">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="table-cell text-right"><input type="checkbox" class="w-4 h-4"></th>
+                            <th class="table-cell text-right font-semibold text-gray-700">שם ופרטים</th>
+                            <th class="table-cell text-right font-semibold text-gray-700">סטטוס</th>
+                            <th class="table-cell text-right font-semibold text-gray-700">תגיות</th>
+                            <th class="table-cell text-right font-semibold text-gray-700">עיר</th>
+                            <th class="table-cell text-right font-semibold text-gray-700">פעילות אחרונה</th>
+                            <th class="table-cell text-right font-semibold text-gray-700">הכנסות</th>
+                            <th class="table-cell text-right font-semibold text-gray-700">פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Row 1 -->
+                        <tr class="table-row">
+                            <td class="table-cell"><input type="checkbox" class="w-4 h-4"></td>
+                            <td class="table-cell">
+                                <div class="flex items-center gap-3">
+                                    <div class="avatar">שע</div>
+                                    <div>
+                                        <div class="font-medium text-gray-900 cursor-pointer hover:text-violet-600 text-sm" onclick="openDetailPanel()">שרה עזר</div>
+                                        <div class="text-xs text-gray-500">052-123-4567</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="table-cell"><span class="status-chip status-new">חדש</span></td>
+                            <td class="table-cell">
+                                <span class="tag-pill supersale">SuperSale</span>
+                                <span class="tag-pill vip">VIP</span>
+                            </td>
+                            <td class="table-cell"><span class="text-sm text-gray-700">תל אביב</span></td>
+                            <td class="table-cell"><span class="text-sm text-gray-500">נרשמה לאירוע #22 — לפני 3 שעות</span></td>
+                            <td class="table-cell"><span class="font-medium text-gray-900">₪ 2,450 <span class="trend-up">↑</span></span></td>
+                            <td class="table-cell">
+                                <div class="flex gap-1">
+                                    <button class="quick-action-btn" title="WhatsApp"><div class="tooltip">WhatsApp</div><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.075-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.998c0 2.707.732 5.338 2.122 7.606L2.1 23.93l8.087-2.122c2.268 1.389 4.898 2.122 7.606 2.122 5.47 0 9.998-4.528 9.998-9.998s-4.528-9.997-9.997-9.997"/></svg></button>
+                                    <button class="quick-action-btn" title="Email"><div class="tooltip">שלח אימייל</div><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></button>
+                                    <button class="quick-action-btn" title="Edit" onclick="openDetailPanel()"><div class="tooltip">עדכן פרטים</div><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 2 -->
+                        <tr class="table-row">
+                            <td class="table-cell"><input type="checkbox" class="w-4 h-4"></td>
+                            <td class="table-cell">
+                                <div class="flex items-center gap-3">
+                                    <div class="avatar" style="background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);">דנ</div>
+                                    <div>
+                                        <div class="font-medium text-gray-900 cursor-pointer hover:text-violet-600 text-sm">דני נוביק</div>
+                                        <div class="text-xs text-gray-500">053-987-6543</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="table-cell"><span class="status-chip status-waiting">ממתין</span></td>
+                            <td class="table-cell"><span class="tag-pill supersale">SuperSale</span></td>
+                            <td class="table-cell"><span class="text-sm text-gray-700">ירושלים</span></td>
+                            <td class="table-cell"><span class="text-sm text-gray-500">קיבל הזמנה — לפני 3 שעות</span></td>
+                            <td class="table-cell"><span class="font-medium text-gray-900">₪ 890 <span class="trend-down">↓</span></span></td>
+                            <td class="table-cell">
+                                <div class="flex gap-1">
+                                    <button class="quick-action-btn"><div class="tooltip">WhatsApp</div><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.075-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.998c0 2.707.732 5.338 2.122 7.606L2.1 23.93l8.087-2.122c2.268 1.389 4.898 2.122 7.606 2.122 5.47 0 9.998-4.528 9.998-9.998s-4.528-9.997-9.997-9.997"/></svg></button>
+                                    <button class="quick-action-btn"><div class="tooltip">שלח אימייל</div><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></button>
+                                    <button class="quick-action-btn"><div class="tooltip">עדכן פרטים</div><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 3 - Selected -->
+                        <tr class="table-row selected">
+                            <td class="table-cell"><input type="checkbox" class="w-4 h-4" checked></td>
+                            <td class="table-cell">
+                                <div class="flex items-center gap-3">
+                                    <div class="avatar" style="background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);">נמ</div>
+                                    <div>
+                                        <div class="font-medium text-gray-900 cursor-pointer hover:text-violet-600 text-sm" onclick="openDetailPanel()">נעמה מילר</div>
+                                        <div class="text-xs text-gray-500">054-555-8888</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="table-cell"><span class="status-chip status-invited">הוזמנה</span></td>
+                            <td class="table-cell"><span class="tag-pill returning">לקוח חוזר</span></td>
+                            <td class="table-cell"><span class="text-sm text-gray-700">ראש לציון</span></td>
+                            <td class="table-cell"><span class="text-sm text-gray-500">אישרה הגעה — לפני 2 שעות</span></td>
+                            <td class="table-cell"><span class="font-medium text-gray-900">₪ 5,200 <span class="trend-up">↑</span></span></td>
+                            <td class="table-cell">
+                                <div class="flex gap-1">
+                                    <button class="quick-action-btn"><div class="tooltip">WhatsApp</div><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.075-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.998c0 2.707.732 5.338 2.122 7.606L2.1 23.93l8.087-2.122c2.268 1.389 4.898 2.122 7.606 2.122 5.47 0 9.998-4.528 9.998-9.998s-4.528-9.997-9.997-9.997"/></svg></button>
+                                    <button class="quick-action-btn"><div class="tooltip">שלח אימייל</div><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></button>
+                                    <button class="quick-action-btn"><div class="tooltip">עדכן פרטים</div><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 4 - Selected -->
+                        <tr class="table-row selected">
+                            <td class="table-cell"><input type="checkbox" class="w-4 h-4" checked></td>
+                            <td class="table-cell">
+                                <div class="flex items-center gap-3">
+                                    <div class="avatar" style="background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);">אנ</div>
+                                    <div>
+                                        <div class="font-medium text-gray-900 cursor-pointer hover:text-violet-600 text-sm">אנה כהן</div>
+                                        <div class="text-xs text-gray-500">058-123-4321</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="table-cell"><span class="status-chip status-confirmed">אישרה</span></td>
+                            <td class="table-cell"><span class="tag-pill">מהופך</span></td>
+                            <td class="table-cell"><span class="text-sm text-gray-700">בתי ברק</span></td>
+                            <td class="table-cell"><span class="text-sm text-gray-500">הגיעה לאירוע #23 — אתמול ב-14:30</span></td>
+                            <td class="table-cell"><span class="font-medium text-gray-900">₪ 1,650</span></td>
+                            <td class="table-cell">
+                                <div class="flex gap-1">
+                                    <button class="quick-action-btn"><div class="tooltip">WhatsApp</div><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.075-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.998c0 2.707.732 5.338 2.122 7.606L2.1 23.93l8.087-2.122c2.268 1.389 4.898 2.122 7.606 2.122 5.47 0 9.998-4.528 9.998-9.998s-4.528-9.997-9.997-9.997"/></svg></button>
+                                    <button class="quick-action-btn"><div class="tooltip">שלח אימייל</div><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></button>
+                                    <button class="quick-action-btn"><div class="tooltip">עדכן פרטים</div><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 5 - Selected -->
+                        <tr class="table-row selected">
+                            <td class="table-cell"><input type="checkbox" class="w-4 h-4" checked></td>
+                            <td class="table-cell">
+                                <div class="flex items-center gap-3">
+                                    <div class="avatar" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">מא</div>
+                                    <div>
+                                        <div class="font-medium text-gray-900 cursor-pointer hover:text-violet-600 text-sm">מאיה אברהם</div>
+                                        <div class="text-xs text-gray-500">050-999-7777</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="table-cell"><span class="status-chip status-not-interested">לא מעוניינת</span></td>
+                            <td class="table-cell"></td>
+                            <td class="table-cell"><span class="text-sm text-gray-700">חולון</span></td>
+                            <td class="table-cell"><span class="text-sm text-gray-500">הסירה מהדיוור — לפני שבוע</span></td>
+                            <td class="table-cell"><span class="font-medium text-gray-900">₪ 0</span></td>
+                            <td class="table-cell">
+                                <div class="flex gap-1">
+                                    <button class="quick-action-btn"><div class="tooltip">WhatsApp</div><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.075-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.998c0 2.707.732 5.338 2.122 7.606L2.1 23.93l8.087-2.122c2.268 1.389 4.898 2.122 7.606 2.122 5.47 0 9.998-4.528 9.998-9.998s-4.528-9.997-9.997-9.997"/></svg></button>
+                                    <button class="quick-action-btn"><div class="tooltip">שלח אימייל</div><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></button>
+                                    <button class="quick-action-btn"><div class="tooltip">עדכן פרטים</div><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 6 -->
+                        <tr class="table-row">
+                            <td class="table-cell"><input type="checkbox" class="w-4 h-4"></td>
+                            <td class="table-cell">
+                                <div class="flex items-center gap-3">
+                                    <div class="avatar" style="background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);">יע</div>
+                                    <div>
+                                        <div class="font-medium text-gray-900 cursor-pointer hover:text-violet-600 text-sm">יעל עשמן</div>
+                                        <div class="text-xs text-gray-500">051-222-3333</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="table-cell"><span class="status-chip status-unsubscribed">הסר</span></td>
+                            <td class="table-cell"></td>
+                            <td class="table-cell"><span class="text-sm text-gray-700">גבעתיים</span></td>
+                            <td class="table-cell"><span class="text-sm text-gray-500">הסירה מהדיוור — לפני חודש</span></td>
+                            <td class="table-cell"><span class="font-medium text-gray-900">₪ 0</span></td>
+                            <td class="table-cell">
+                                <div class="flex gap-1">
+                                    <button class="quick-action-btn"><div class="tooltip">WhatsApp</div><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.075-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.998c0 2.707.732 5.338 2.122 7.606L2.1 23.93l8.087-2.122c2.268 1.389 4.898 2.122 7.606 2.122 5.47 0 9.998-4.528 9.998-9.998s-4.528-9.997-9.997-9.997"/></svg></button>
+                                    <button class="quick-action-btn"><div class="tooltip">שלח אימייל</div><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></button>
+                                    <button class="quick-action-btn"><div class="tooltip">עדכן פרטים</div><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- BULK ACTION BAR -->
+        <div class="bulk-action-bar">
+            <span class="bulk-action-bar-text">בחרת <strong>3</strong> לידים</span>
+            <button class="bulk-action-btn">שנה סטטוס</button>
+            <button class="bulk-action-btn">הוסף תגית</button>
+            <button class="bulk-action-btn">שלח הודעה</button>
+            <button class="bulk-action-btn">ייצוא</button>
+            <span class="bulk-action-close" onclick="hideBulkBar()">✕</span>
+        </div>
+
+        <!-- DETAIL PANEL -->
+        <div class="detail-panel" id="detailPanel">
+            <!-- Header -->
+            <div class="detail-header">
+                <div class="detail-header-content">
+                    <h3>נעמה מילר</h3>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="status-chip status-invited">ממתינה לאירוע</span>
+                        <span class="tag-pill returning">לקוח חוזר</span>
+                    </div>
+                </div>
+                <div class="detail-header-close" onclick="closeDetailPanel()">✕</div>
+            </div>
+
+            <!-- Quick Info Grid -->
+            <div class="detail-quick-info">
+                <div class="detail-info-item">
+                    <div class="detail-info-label">טלפון</div>
+                    <div class="detail-info-value link">052-3456789</div>
+                </div>
+                <div class="detail-info-item">
+                    <div class="detail-info-label">אימייל</div>
+                    <div class="detail-info-value link">naama@gmail.com</div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="detail-action-buttons">
+                <button class="detail-action-btn detail-action-primary">💬 שלח הודעה</button>
+                <button class="detail-action-btn detail-action-secondary">+ הוסף הערה</button>
+            </div>
+
+            <!-- Tab Bar -->
+            <div class="detail-tabs">
+                <div class="detail-tab active" onclick="switchDetailTab(event, 'details')">
+                    פרטים
+                </div>
+                <div class="detail-tab" onclick="switchDetailTab(event, 'events')">
+                    אירועים <span class="detail-tab-badge">3</span>
+                </div>
+                <div class="detail-tab" onclick="switchDetailTab(event, 'messages')">
+                    הודעות <span class="detail-tab-badge">12</span>
+                </div>
+                <div class="detail-tab" onclick="switchDetailTab(event, 'timeline')">
+                    ציר זמן <span class="detail-tab-badge">5</span>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="detail-content">
+                <!-- DETAILS TAB -->
+                <div id="details" class="detail-tab-pane active">
+                    <div class="detail-section">
+                        <div class="detail-section-title">מידע אישי</div>
+                        <div class="detail-field">
+                            <div class="detail-field-label">שם מלא</div>
+                            <div class="detail-field-value">נעמה מילר</div>
+                        </div>
+                        <div class="detail-field">
+                            <div class="detail-field-label">טלפון</div>
+                            <div class="detail-field-value">052-3456789</div>
+                        </div>
+                        <div class="detail-field">
+                            <div class="detail-field-label">אימייל</div>
+                            <div class="detail-field-value">naama@gmail.com</div>
+                        </div>
+                        <div class="detail-field">
+                            <div class="detail-field-label">עיר</div>
+                            <div class="detail-field-value">ראש לציון</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-title">מידע קמפיין</div>
+                        <div class="detail-field">
+                            <div class="detail-field-label">סטטוס</div>
+                            <div class="detail-field-value"><span class="status-chip status-invited">ממתינה לאירוע</span></div>
+                        </div>
+                        <div class="detail-field">
+                            <div class="detail-field-label">מקור</div>
+                            <div class="detail-field-value">ישיר / קמפיין</div>
+                        </div>
+                        <div class="detail-field">
+                            <div class="detail-field-label">תגיות</div>
+                            <div class="detail-field-value"><span class="tag-pill returning">לקוח חוזר</span></div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-title">סיכום</div>
+                        <div class="detail-field">
+                            <div class="detail-field-label">הערות</div>
+                            <div class="detail-field-value">אחת מהלקוחות הנאמנות ביותר שלנו. תמיד קונה משקפיים חדשים כל שנה בכ-2 זוגות. אהבה משפחתית לתכנית SuperSale.</div>
+                        </div>
+                        <div class="detail-field">
+                            <div class="detail-field-label">סך הכנסות</div>
+                            <div class="detail-field-value" style="font-weight: 700; color: #8b5cf6;">₪ 5,200</div>
+                        </div>
+                        <div class="detail-field">
+                            <div class="detail-field-label">הצטרפה</div>
+                            <div class="detail-field-value">2 בדצמבר 2023</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EVENTS TAB -->
+                <div id="events" class="detail-tab-pane">
+                    <table class="event-table">
+                        <thead>
+                            <tr>
+                                <th>אירוע</th>
+                                <th>תאריך</th>
+                                <th>סטטוס</th>
+                                <th>קנייה</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>SuperSale 2026</td>
+                                <td>15 יוני 2026</td>
+                                <td><span class="status-chip status-confirmed">אישרה</span></td>
+                                <td>₪ 2,500</td>
+                            </tr>
+                            <tr>
+                                <td>יום שמש - אפריל 2026</td>
+                                <td>20 אפריל 2026</td>
+                                <td><span class="status-chip status-confirmed">הגיעה</span></td>
+                                <td>₪ 1,800</td>
+                            </tr>
+                            <tr>
+                                <td>מבחר חורף 2025</td>
+                                <td>15 ינואר 2026</td>
+                                <td><span class="status-chip status-confirmed">הגיעה</span></td>
+                                <td>₪ 900</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- MESSAGES TAB -->
+                <div id="messages" class="detail-tab-pane">
+                    <div class="text-center py-12 text-gray-400">
+                        <p style="font-size: 13px;">עדיין אין הודעות מרוחקות</p>
+                        <button class="mt-4 px-4 py-2 bg-violet-50 text-violet-600 rounded-lg text-sm font-medium hover:bg-violet-100">+ שלח הודעה ראשונה</button>
+                    </div>
+                </div>
+
+                <!-- TIMELINE TAB -->
+                <div id="timeline" class="detail-tab-pane">
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">לפני 2 שעות</div>
+                            <div class="timeline-message">אישרה הגעה לאירוע SuperSale 2026</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">לפני 3 שעות</div>
+                            <div class="timeline-message">נרשמה לאירוע #22</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">לפני יומיים</div>
+                            <div class="timeline-message">סטטוס השתנה מ"ממתינה" ל"הוזמנה"</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">לפני שבוע</div>
+                            <div class="timeline-message">הצטרפה ל-SuperSale מיילינג</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">2 בדצמבר 2023</div>
+                            <div class="timeline-message">יצור תיעוד בעקבות רכישה בחנות</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching in detail panel
+        function switchDetailTab(event, tabName) {
+            const panes = document.querySelectorAll('.detail-tab-pane');
+            panes.forEach(pane => pane.classList.remove('active'));
+
+            const tabs = document.querySelectorAll('.detail-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.closest('.detail-tab').classList.add('active');
+        }
+
+        // Detail panel functions
+        function openDetailPanel() {
+            document.getElementById('detailPanel').classList.remove('hidden');
+        }
+
+        function closeDetailPanel() {
+            document.getElementById('detailPanel').classList.add('hidden');
+        }
+
+        // Bulk action bar
+        function hideBulkBar() {
+            document.querySelector('.bulk-action-bar').classList.add('hidden');
+        }
+
+        // Segment sidebar click
+        document.querySelectorAll('.segment-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.segment-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Initialize icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>

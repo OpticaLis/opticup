@@ -1,0 +1,164 @@
+<!--
+  SuperSale "Already Registered" Email — שלב 1: ליד שכבר רשום
+  Scenario: 1A-S
+  Trigger: ליד שכבר קיים במערכת (ממתין / מסופח לאירוע) מנסה להירשם שוב
+  From: events@prizma-optic.co.il
+  Subject: היי {{name}}, נרשמת למערכת האירועים בעבר!
+
+  Variables:
+    {{1.fields.name.raw_value}} = שם מלא מהטופס (ההרשמה הנוכחית)
+    {{replace(6.mappable_column_values.phone_mky4a5fq.text; 972; 0)}} = טלפון מה-Master Board
+    {{6.mappable_column_values.email_mky18cr2.text}} = אימייל מה-Master Board
+
+  NOTE: המייל מזכיר "אירוע מולטיפוקל" — ייתכן שצריך לעדכן ל"אירוע מכירות" עבור SuperSale
+-->
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>עדכון סטטוס הרשמה - אופטיקה פריזמה</title>
+<style>
+    /* Reset Styles */
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    table { border-collapse: collapse !important; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color:#000000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    /* Mobile Styles */
+    @media screen and (max-width: 600px) {
+        .container { width: 100% !important; }
+        .mobile-padding { padding-left: 20px !important; padding-right: 20px !important; }
+        .event-box { padding: 20px !important; }
+        .brand-col { width: 48% !important; display: inline-block !important; margin-bottom: 10px !important; box-sizing: border-box; }
+        .btn { width: 100% !important; display: block !important; box-sizing: border-box; }
+    }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#000000; direction:rtl;">
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#000000; background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000000 70%);">
+    <tr>
+        <td align="center" style="padding: 20px 0 40px 0;">
+            <table border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="max-width:600px; background-color:#0a0a0a; border-radius:12px; overflow:hidden; border: 1px solid #222222; box-shadow: 0 10px 40px rgba(212, 175, 55, 0.15);">
+
+                <tr>
+                    <td height="4" style="background: linear-gradient(90deg, #000000 0%, #d4af37 50%, #000000 100%);"></td>
+                </tr>
+                <tr>
+                    <td align="center" style="padding: 35px 0 15px 0;">
+                        <p style="margin:0; color:#d4af37; font-size:24px; font-weight:bold; letter-spacing:4px; text-transform:uppercase; font-family: sans-serif;">PRIZMA OPTIC</p>
+                        <p style="margin:5px 0 0 0; color:#666666; font-size:12px; letter-spacing:2px; text-transform:uppercase;">Luxury Eyewear Events</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="mobile-padding" style="padding: 20px 50px 40px 50px; text-align:right;">
+                        <h1 style="margin:0 0 20px 0; font-size:28px; font-weight:300; color:#ffffff;">
+                            היי {{1.fields.name.raw_value}},
+                        </h1>
+                        <p style="margin:0 0 25px 0; font-size:16px; line-height:1.7; color:#cccccc;">
+                              אנו מודים על ההתעניינות המתמשכת באירועי המכירות שלנו! 👓
+                            <br>
+                            אנחנו שמחים לעדכן שהפרטים שלך <strong>כבר מעודכנים במערכת</strong>.
+                        </p>
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a1a10; border: 1px solid #1e5d35; border-radius: 4px; margin-bottom: 30px;">
+                            <tr>
+                                <td style="padding: 20px; text-align:center;">
+                                    <p style="margin:0; font-size:18px; color:#4ade80; font-weight:bold; letter-spacing: 0.5px;">
+                                        ✅ הכל תקין!
+                                    </p>
+                                    <p style="margin:5px 0 0 0; font-size:14px; color:#cccccc;">
+                                        האישור המקורי שלך כבר בתוקף, הרישום תקין לחלוטין ואין צורך בפעולה נוספת.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#161616; border-right:4px solid #d4af37; border-radius:4px; margin-bottom:30px;">
+                            <tr>
+                                <td class="data-box" style="padding: 20px;">
+                                    <p style="margin:0 0 15px 0; font-size:12px; text-transform:uppercase; letter-spacing:2px; color:#888888; border-bottom:1px solid #333333; padding-bottom:10px;">
+                                        פרטי המנוי במערכת
+                                    </p>
+
+                                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                        <tr>
+                                            <td width="30" valign="middle" style="padding-bottom:10px; font-size:16px;">📞</td>
+                                            <td valign="middle" style="padding-bottom:10px; font-size:15px; color:#dddddd;">
+                                                 {{replace(6.mappable_column_values.phone_mky4a5fq.text; 972; 0)}}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td width="30" valign="middle" style="font-size:16px;">📧</td>
+                                            <td valign="middle" style="font-size:15px; color:#dddddd;">
+                                                 {{6.mappable_column_values.email_mky18cr2.text}}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                        <p style="margin:0 0 15px 0; font-size:16px; font-weight:bold; color:#ffffff;">
+                            מה קורה ברגע שייפתח אירוע מולטיפוקל חדש?
+                        </p>
+                        <p style="margin:0 0 20px 0; font-size:15px; color:#bbbbbb;">
+                            תקבל\י הודעה ראשונה (במייל וב-SMS) הכוללת:
+                        </p>
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 30px;">
+                            <tr>
+                                <td width="40" style="padding:12px 0; font-size:20px; border-bottom:1px solid #222222;">📅</td>
+                                <td style="padding:12px 0; font-size:15px; color:#cccccc; border-bottom:1px solid #222222;">תאריך ושעת האירוע</td>
+                            </tr>
+                            <tr>
+                                <td width="40" style="padding:12px 0; font-size:20px; border-bottom:1px solid #222222;">🔗</td>
+                                <td style="padding:12px 0; font-size:15px; color:#cccccc; border-bottom:1px solid #222222;">קישור להרשמה אישית</td>
+                            </tr>
+                            <tr>
+                                <td width="40" style="padding:12px 0; font-size:20px;">🎫</td>
+                                <td style="padding:12px 0; font-size:15px; color:#cccccc;">קוד קופון מיוחד (לאחר אישור הגעה)</td>
+                            </tr>
+                        </table>
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 30px 0;">
+                            <tr>
+                                <td style="border-top: 1px solid #222222;"></td>
+                            </tr>
+                        </table>
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                            <tr>
+                                <td align="center">
+                                    <p style="margin:0 0 15px 0; font-size:14px; color:#bbbbbb;">
+                                        בינתיים, להצצה בקולקציות שלנו:
+                                    </p>
+                                    <a href="https://prizma-optic.co.il/" class="btn" style="display:inline-block; padding:12px 30px; background-color:transparent; color:#d4af37; border: 1px solid #d4af37; font-size:14px; font-weight:bold; text-decoration:none; border-radius:4px; letter-spacing:0.5px;">
+                                        לאתר הבית והמותגים >
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 40px; border-top: 1px solid #222222;">
+                            <tr>
+                                <td style="padding-top: 20px;">
+                                    <p style="margin:0; font-size:15px; color:#ffffff;">
+                                        אנחנו כאן לכל שאלה,
+                                    </p>
+                                    <p style="margin:5px 0 0 0; font-size:15px; color:#d4af37; font-weight:bold;">
+                                        צוות אופטיקה פריזמה
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+            <table border="0" cellpadding="0" cellspacing="0" width="600" class="container">
+                <tr>
+                    <td align="center" style="padding: 20px 0; color:#555555; font-size:12px;">
+                        © כל הזכויות שמורות לאופטיקה פריזמה
+                        <br>
+                        הודעה זו נשלחה אוטומטית ממערכת הניהול
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול אירועים - טבעת הזמן | Optic Up CRM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            font-family: 'Heebo', sans-serif;
+        }
+
+        @keyframes pulse-soft {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(168, 85, 247, 0);
+            }
+        }
+
+        .step-circle-active {
+            animation: pulse-soft 2s infinite;
+        }
+
+        .stepper-container {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            padding: 0 24px;
+            overflow-x: auto;
+        }
+
+        .stepper-item {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .stepper-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 12px;
+            border: 2px solid;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .stepper-circle.completed {
+            background: #a855f7;
+            border-color: #a855f7;
+            color: white;
+        }
+
+        .stepper-circle.active {
+            background: #a855f7;
+            border-color: #a855f7;
+            color: white;
+            width: 56px;
+            height: 56px;
+            font-size: 13px;
+        }
+
+        .stepper-circle.future {
+            background: transparent;
+            border-color: #d1d5db;
+            color: #6b7280;
+        }
+
+        .stepper-line {
+            width: 32px;
+            height: 2px;
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
+
+        .stepper-line.completed {
+            background: #a855f7;
+        }
+
+        .stepper-line.future {
+            border-top: 2px dashed #d1d5db;
+            background: transparent;
+        }
+
+        .stepper-label {
+            position: absolute;
+            top: 56px;
+            font-size: 11px;
+            white-space: nowrap;
+            font-weight: 500;
+            color: #374151;
+            margin-top: 4px;
+        }
+
+        .sidebar-nav {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 64px;
+            height: 100vh;
+            background: #1f2937;
+            border-right: 1px solid #374151;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 0;
+            gap: 16px;
+        }
+
+        .nav-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            color: #9ca3af;
+        }
+
+        .nav-icon:hover {
+            background: #374151;
+            color: #f3f4f6;
+        }
+
+        .nav-icon.active {
+            background: #a855f7;
+            color: white;
+        }
+
+        .main-wrapper {
+            margin-right: 64px;
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+
+        .stepper-bar {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex: 1;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 24px;
+            background: #f9fafb;
+            overflow-y: auto;
+        }
+
+        .kpi-sidebar {
+            width: 280px;
+            background: #f3f4f6;
+            border-left: 1px solid #e5e7eb;
+            padding: 24px 16px;
+            overflow-y: auto;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .kpi-subtext {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+
+        .funnel-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .funnel-item:last-child {
+            border-bottom: none;
+        }
+
+        .funnel-bar {
+            flex: 1;
+            height: 32px;
+            background: linear-gradient(90deg, #a855f7 0%, #d8b4fe 100%);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .funnel-label {
+            min-width: 80px;
+            text-align: left;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .funnel-count {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .revenue-card .kpi-value {
+            color: #059669;
+            font-size: 28px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .table th {
+            background: #f3f4f6;
+            padding: 12px 8px;
+            text-align: right;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #1f2937;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .status-attended {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-absent {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .feedback-item {
+            padding: 12px;
+            background: #f9fafb;
+            border-right: 3px solid #a855f7;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: #374151;
+        }
+
+        .rating-stars {
+            color: #fbbf24;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .action-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+            width: 100%;
+            justify-content: center;
+            font-weight: 500;
+        }
+
+        .action-button:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .action-button.primary {
+            background: #a855f7;
+            color: white;
+            border-color: #a855f7;
+        }
+
+        .action-button.primary:hover {
+            background: #9333ea;
+            border-color: #9333ea;
+        }
+
+        .registration-progress {
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a855f7 0%, #d8b4fe 100%);
+            width: 90%;
+        }
+
+        .activity-feed {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 12px;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a855f7 0%, #d8b4fe 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .activity-time {
+            color: #9ca3af;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 m-0 p-0">
+    <!-- Sidebar Navigation -->
+    <div class="sidebar-nav">
+        <div class="nav-icon active" title="אירועים">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+            </svg>
+        </div>
+        <div class="nav-icon" title="דוחות">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="2" x2="12" y2="22"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+        </div>
+        <div class="nav-icon" title="הגדרות">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6m-16.78 7.78l4.24-4.24m5.08-5.08l4.24-4.24"></path>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+        <!-- Stepper Bar -->
+        <div class="stepper-bar">
+            <div class="stepper-container">
+                <!-- Step 1: תכנון -->
+                <div class="stepper-item" style="position: relative;">
+                    <div class="stepper-circle completed">✓</div>
+                    <div class="stepper-label">תכנון</div>
+                </div>
+                <div class="stepper-line completed"></div>
+
+                <!-- Step 2: נפתח מחר -->
+                <div class="stepper-item" style="position: relative;">
+                    <div class="stepper-circle completed">✓</div>
+                    <div class="stepper-label">נפתח מחר</div>
+                </div>
+                <div class="stepper-line completed"></div>
+
+                <!-- Step 3: הרשמה פתוחה -->
+                <div class="stepper-item" style="position: relative;">
+                    <div class="stepper-circle completed">✓</div>
+                    <div class="stepper-label">הרשמה פתוחה</div>
+                </div>
+                <div class="stepper-line completed"></div>
+
+                <!-- Step 4: הזמנת חדשים -->
+                <div class="stepper-item" style="position: relative;">
+                    <div class="stepper-circle completed">✓</div>
+                    <div class="stepper-label">הזמנת חדשים</div>
+                </div>
+                <div class="stepper-line completed"></div>
+
+                <!-- Step 5: נסגר -->
+                <div class="stepper-item" style="position: relative;">
+                    <div class="stepper-circle completed">✓</div>
+                    <div class="stepper-label">נסגר</div>
+                </div>
+                <div class="stepper-line completed"></div>
+
+                <!-- Step 6: רשימת המתנה -->
+                <div class="stepper-item" style="position: relative;">
+                    <div class="stepper-circle completed">✓</div>
+                    <div class="stepper-label">רשימת המתנה</div>
+                </div>
+                <div class="stepper-line completed"></div>
+
+                <!-- Step 7: 2-3 ימים -->
+                <div class="stepper-item" style="position: relative;">
+                    <div class="stepper-circle completed">✓</div>
+                    <div class="stepper-label">2-3 ימים</div>
+                </div>
+                <div class="stepper-line completed"></div>
+
+                <!-- Step 8: יום האירוע -->
+                <div class="stepper-item" style="position: relative;">
+                    <div class="stepper-circle completed">✓</div>
+                    <div class="stepper-label">יום האירוע</div>
+                </div>
+                <div class="stepper-line completed"></div>
+
+                <!-- Step 9: הושלם (Active) -->
+                <div class="stepper-item" style="position: relative;">
+                    <div class="stepper-circle active step-circle-active">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="stepper-label">הושלם</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-wrapper">
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Header -->
+                <div class="mb-24">
+                    <h1 style="font-size: 28px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">אירוע #22 הסתיים בהצלחה</h1>
+                    <p style="color: #6b7280; font-size: 14px;">סטטוס: הושלם • 20 באפריל 2026</p>
+                </div>
+
+                <!-- Summary Card -->
+                <div class="card">
+                    <h2 class="section-title">סיכום הפקת האירוע</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div>
+                            <p style="color: #6b7280; font-size: 12px; margin-bottom: 4px;">תאריך</p>
+                            <p style="font-size: 16px; font-weight: 600; color: #1f2937;">12 באפריל 2026</p>
+                        </div>
+                        <div>
+                            <p style="color: #6b7280; font-size: 12px; margin-bottom: 4px;">מקום</p>
+                            <p style="font-size: 16px; font-weight: 600; color: #1f2937;">סניף פרימה - חיפה</p>
+                        </div>
+                        <div>
+                            <p style="color: #6b7280; font-size: 12px; margin-bottom: 4px;">קיבולת</p>
+                            <p style="font-size: 16px; font-weight: 600; color: #1f2937;">50 משתתפים</p>
+                        </div>
+                        <div>
+                            <p style="color: #6b7280; font-size: 12px; margin-bottom: 4px;">משך</p>
+                            <p style="font-size: 16px; font-weight: 600; color: #1f2937;">3 שעות</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Funnel Card -->
+                <div class="card">
+                    <h2 class="section-title">漏斗המרות</h2>
+                    <div class="funnel-item">
+                        <div class="funnel-label">הприглушеني</div>
+                        <div class="funnel-bar" style="width: 100%;">87</div>
+                        <div class="funnel-count">87</div>
+                    </div>
+                    <div class="funnel-item">
+                        <div class="funnel-label">אישור הגעה</div>
+                        <div class="funnel-bar" style="width: 79%;">69</div>
+                        <div class="funnel-count">79%</div>
+                    </div>
+                    <div class="funnel-item">
+                        <div class="funnel-label">הגעה בפועל</div>
+                        <div class="funnel-bar" style="width: 46%;">32</div>
+                        <div class="funnel-count">46%</div>
+                    </div>
+                    <div class="funnel-item">
+                        <div class="funnel-label">קנייה</div>
+                        <div class="funnel-bar" style="width: 97%;">31</div>
+                        <div class="funnel-count">97%</div>
+                    </div>
+                </div>
+
+                <!-- Revenue Card -->
+                <div class="card revenue-card">
+                    <h2 class="section-title">הכנסות</h2>
+                    <div style="text-align: center; padding: 24px;">
+                        <div class="kpi-label">סך הכנסות מהאירוע</div>
+                        <div class="kpi-value">₪39,460</div>
+                        <p style="color: #6b7280; font-size: 12px; margin-top: 12px;">קנייות מ-31 משתתפים</p>
+                    </div>
+                </div>
+
+                <!-- Attendees Table -->
+                <div class="card">
+                    <h2 class="section-title">רשימת משתתפים</h2>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>שם</th>
+                                    <th>טלפון</th>
+                                    <th>סטטוס</th>
+                                    <th>קנייה</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>רחל שלום</td>
+                                    <td>054-123-4567</td>
+                                    <td><span class="status-badge status-attended">הגיע</span></td>
+                                    <td>₪2,450</td>
+                                </tr>
+                                <tr>
+                                    <td>דוד כהן</td>
+                                    <td>050-987-6543</td>
+                                    <td><span class="status-badge status-attended">הגיע</span></td>
+                                    <td>₪1,890</td>
+                                </tr>
+                                <tr>
+                                    <td>סוזנה לוי</td>
+                                    <td>053-234-5678</td>
+                                    <td><span class="status-badge status-absent">לא הגיע</span></td>
+                                    <td>₪0</td>
+                                </tr>
+                                <tr>
+                                    <td>אלי מימון</td>
+                                    <td>052-876-5432</td>
+                                    <td><span class="status-badge status-attended">הגיע</span></td>
+                                    <td>₪3,200</td>
+                                </tr>
+                                <tr>
+                                    <td>מיכאל ברק</td>
+                                    <td>054-567-8901</td>
+                                    <td><span class="status-badge status-attended">הגיע</span></td>
+                                    <td>₪2,120</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 16px;">+ 26 משתתפים נוספים</p>
+                </div>
+
+                <!-- CX Survey -->
+                <div class="card">
+                    <h2 class="section-title">משוב חוויית משתמש</h2>
+                    <div style="margin-bottom: 16px;">
+                        <p style="color: #6b7280; font-size: 12px; margin-bottom: 4px;">דירוג ממוצע</p>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="rating-stars">★★★★★</div>
+                            <span style="font-size: 18px; font-weight: 700; color: #1f2937;">4.7</span>
+                            <span style="font-size: 12px; color: #9ca3af;">מתוך 31 משוב</span>
+                        </div>
+                    </div>
+                    <p style="font-size: 12px; font-weight: 600; color: #1f2937; margin-bottom: 12px;">הערות בולטות:</p>
+                    <div class="feedback-item">
+                        <div class="rating-stars">★★★★★</div>
+                        <p>"אירוע מנוסה מאוד, הצוות היה מקצועי ועזור"</p>
+                        <p style="color: #9ca3af; margin-top: 4px;">— רחל שלום</p>
+                    </div>
+                    <div class="feedback-item">
+                        <div class="rating-stars">★★★★☆</div>
+                        <p>"נהדר, אבל זמן ההמתנה בדלפקים היה קצת ארוך"</p>
+                        <p style="color: #9ca3af; margin-top: 4px;">— אלי מימון</p>
+                    </div>
+                    <div class="feedback-item">
+                        <div class="rating-stars">★★★★★</div>
+                        <p>"האוסף החדש נראה מדהים, בהחלט אחזור"</p>
+                        <p style="color: #9ca3af; margin-top: 4px;">— מיכאל ברק</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Sidebar -->
+            <div class="kpi-sidebar">
+                <!-- Event Info -->
+                <div class="kpi-card" style="margin-bottom: 20px;">
+                    <h3 style="font-size: 12px; font-weight: 700; color: #1f2937; margin-bottom: 12px;">פרטי האירוע</h3>
+                    <p style="font-size: 11px; color: #6b7280; margin-bottom: 2px;">אירוע #22</p>
+                    <p style="font-size: 13px; font-weight: 600; color: #1f2937; margin-bottom: 8px;">הצגת האוסף החדש</p>
+                    <div style="font-size: 11px; color: #6b7280; line-height: 1.6;">
+                        <p>12 באפריל 2026</p>
+                        <p>18:00 - 21:00</p>
+                        <p>סניף פרימה - חיפה</p>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="kpi-card">
+                    <div class="kpi-label">נרשמו</div>
+                    <div class="kpi-value">87</div>
+                    <div class="kpi-subtext">תו יוצא דופן</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-label">אישרו הגעה</div>
+                    <div class="kpi-value">69</div>
+                    <div class="kpi-subtext">79% מנרשמים</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-label">הגיעו בפועל</div>
+                    <div class="kpi-value">32</div>
+                    <div class="kpi-subtext">46% מאישרים</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-label">קנו במחנה</div>
+                    <div class="kpi-value">31</div>
+                    <div class="kpi-subtext">97% מהגיעו</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-label">הכנסות</div>
+                    <div class="kpi-value" style="color: #059669;">₪39.5K</div>
+                    <div class="kpi-subtext">₪1,273 לקנוי</div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div style="margin-top: 24px;">
+                    <p style="font-size: 12px; font-weight: 700; color: #1f2937; margin-bottom: 12px;">פעולות</p>
+                    <button class="action-button">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="12 3 20 7.5 20 16.5 12 21 4 16.5 4 7.5 12 3"></polyline>
+                            <line x1="12" y1="12" x2="20" y2="7.5"></line>
+                            <line x1="12" y1="12" x2="12" y2="21"></line>
+                            <line x1="12" y1="12" x2="4" y2="7.5"></line>
+                        </svg>
+                        עדכן סטטוס
+                    </button>
+                    <button class="action-button">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        שלח הודעה
+                    </button>
+                    <button class="action-button">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        ייצוא דוח
+                    </button>
+                    <button class="action-button primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        טופל
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Simulate step navigation
+        const stepperItems = document.querySelectorAll('.stepper-item');
+        stepperItems.forEach((item, index) => {
+            const circle = item.querySelector('.stepper-circle');
+            circle.style.cursor = 'pointer';
+            circle.addEventListener('click', () => {
+                // Toggle between "הושלם" (completed) and "הרשמה פתוחה" (registration open) view
+                alert(`לחצת על שלב: ${index + 1}`);
+            });
+        });
+    </script>
+</body>
+</html>

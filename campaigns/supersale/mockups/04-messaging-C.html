@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Messaging Hub - Campaign Calendar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            font-family: 'Heebo', sans-serif;
+        }
+        body {
+            direction: rtl;
+            text-align: right;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px;
+            background: white;
+            min-height: 120px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .calendar-day:hover {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.1);
+        }
+        .calendar-day.today {
+            border: 2px solid #7c3aed;
+            background: rgba(124, 58, 237, 0.05);
+        }
+        .calendar-day.future-scheduled {
+            border: 2px dashed #7c3aed;
+            background: rgba(124, 58, 237, 0.02);
+        }
+        .calendar-day-number {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1f2937;
+            margin-bottom: 6px;
+        }
+        .calendar-day-empty .calendar-day-number {
+            color: #9ca3af;
+        }
+        .message-dots {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+        .message-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .dot-whatsapp {
+            background: #10b981;
+        }
+        .dot-sms {
+            background: #3b82f6;
+        }
+        .dot-email {
+            background: #f59e0b;
+        }
+        .message-count-badge {
+            display: inline-block;
+            font-size: 11px;
+            padding: 2px 6px;
+            background: #f3f4f6;
+            border-radius: 4px;
+            color: #4b5563;
+            font-weight: 500;
+        }
+        .delivery-mini-bar {
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .delivery-mini-bar-fill {
+            height: 100%;
+            background: #10b981;
+            border-radius: 2px;
+        }
+        .delivery-mini-bar-failed {
+            background: #ef4444;
+        }
+        .weekday-header {
+            text-align: center;
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 13px;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 650px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .template-list-item {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .template-list-item:hover {
+            background: #f9fafb;
+        }
+        .template-list-item.active {
+            background: #f0f4ff;
+            border-right: 3px solid #7c3aed;
+        }
+        .broadcast-item {
+            padding: 12px;
+            border-left: 3px solid #7c3aed;
+            background: #f9fafb;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .broadcast-item:hover {
+            background: #f0f4ff;
+            border-left-color: #5b21b6;
+        }
+        .stat-card {
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            color: white;
+            font-weight: 500;
+        }
+        .stat-card.sent {
+            background: #7c3aed;
+        }
+        .stat-card.delivered {
+            background: #10b981;
+        }
+        .stat-card.read {
+            background: #3b82f6;
+        }
+        .stat-card.failed {
+            background: #ef4444;
+        }
+        .stat-card-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .stat-card-label {
+            font-size: 12px;
+            margin-top: 4px;
+            opacity: 0.9;
+        }
+        .detail-panel {
+            display: none;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            padding: 20px;
+            margin-top: 16px;
+            border-radius: 8px;
+        }
+        .detail-panel.active {
+            display: block;
+        }
+        .detail-message-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-right: 3px solid #7c3aed;
+        }
+        .btn-primary {
+            background: #7c3aed;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover {
+            background: #6d28d9;
+        }
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #1f2937;
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        .channel-tab {
+            padding: 8px 16px;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-weight: 500;
+            color: #6b7280;
+            transition: all 0.2s;
+        }
+        .channel-tab.active {
+            border-bottom-color: #7c3aed;
+            color: #7c3aed;
+        }
+        .editor-preview {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Dark Sidebar Nav -->
+        <div class="w-64 bg-gray-900 text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-xl font-bold">Prizma CRM</h1>
+                <p class="text-sm text-gray-400 mt-2">מרכז הודעות</p>
+            </div>
+            <nav class="flex-1 p-4 space-y-2">
+                <div class="px-4 py-2 rounded-lg bg-purple-600 text-white font-500">
+                    <svg class="w-4 h-4 inline-block ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    <span>קומץ הודעות</span>
+                </div>
+                <div class="px-4 py-2 rounded-lg hover:bg-gray-800 cursor-pointer font-400 text-gray-300">
+                    <svg class="w-4 h-4 inline-block ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span>דוחות</span>
+                </div>
+                <div class="px-4 py-2 rounded-lg hover:bg-gray-800 cursor-pointer font-400 text-gray-300">
+                    <svg class="w-4 h-4 inline-block ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                    </svg>
+                    <span>הגדרות</span>
+                </div>
+            </nav>
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center space-x-3 rtl:space-x-reverse">
+                    <div class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center">
+                        <span class="text-white font-bold">מ</span>
+                    </div>
+                    <div>
+                        <p class="text-sm font-500">מנהל סניף</p>
+                        <p class="text-xs text-gray-400">manager@prizma.co.il</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <div class="bg-white border-b border-gray-200 px-8 py-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">לוח זמנים ליחסי קשר</h2>
+                        <p class="text-sm text-gray-500 mt-1">צפו בהודעות המתוזמנות ושלחו שידורים חדשים</p>
+                    </div>
+                    <button class="btn-primary flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>שידור חדש</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Delivery Stats Bar (60px) -->
+            <div class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="stat-card sent">
+                        <div class="stat-card-value">145</div>
+                        <div class="stat-card-label">נשלחו היום</div>
+                    </div>
+                    <div class="stat-card delivered">
+                        <div class="stat-card-value">138</div>
+                        <div class="stat-card-label">(95%) נמסרו</div>
+                    </div>
+                    <div class="stat-card read">
+                        <div class="stat-card-value">89</div>
+                        <div class="stat-card-label">(64%) נקראו</div>
+                    </div>
+                    <div class="stat-card failed">
+                        <div class="stat-card-value">3</div>
+                        <div class="stat-card-label">(2%) נכשלו</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Calendar Section (70%) -->
+                <div class="flex-1 overflow-auto px-8 py-6">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <!-- Month/Year Header -->
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-bold text-gray-900">אפריל 2026</h3>
+                            <div class="flex gap-2">
+                                <button class="btn-secondary">←</button>
+                                <button class="btn-secondary">→</button>
+                            </div>
+                        </div>
+
+                        <!-- Weekday Headers -->
+                        <div class="calendar-grid mb-4">
+                            <div class="weekday-header">ראשון</div>
+                            <div class="weekday-header">שני</div>
+                            <div class="weekday-header">שלישי</div>
+                            <div class="weekday-header">רביעי</div>
+                            <div class="weekday-header">חמישי</div>
+                            <div class="weekday-header">שישי</div>
+                            <div class="weekday-header">שבת</div>
+                        </div>
+
+                        <!-- Calendar Grid -->
+                        <div class="calendar-grid">
+                            <!-- Empty cells for days before month starts (Wed Apr 1) -->
+                            <div class="calendar-day calendar-day-empty"></div>
+                            <div class="calendar-day calendar-day-empty"></div>
+
+                            <!-- Apr 1-11 (light) -->
+                            <div class="calendar-day" onclick="selectDay(1)">
+                                <div class="calendar-day-number">1</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(2)">
+                                <div class="calendar-day-number">2</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(3)">
+                                <div class="calendar-day-number">3</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(4)">
+                                <div class="calendar-day-number">4</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(5)">
+                                <div class="calendar-day-number">5</div>
+                            </div>
+
+                            <!-- Week 2 -->
+                            <div class="calendar-day" onclick="selectDay(6)">
+                                <div class="calendar-day-number">6</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(7)">
+                                <div class="calendar-day-number">7</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(8)">
+                                <div class="calendar-day-number">8</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(9)">
+                                <div class="calendar-day-number">9</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(10)">
+                                <div class="calendar-day-number">10</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(11)">
+                                <div class="calendar-day-number">11</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(12)">
+                                <div class="calendar-day-number">12</div>
+                                <div class="message-dots">
+                                    <div class="message-dot dot-sms"></div>
+                                    <div class="message-dot dot-email"></div>
+                                </div>
+                                <div class="message-count-badge">198 הודעות</div>
+                                <div class="delivery-mini-bar">
+                                    <div class="delivery-mini-bar-fill" style="width: 92%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Week 3 -->
+                            <div class="calendar-day" onclick="selectDay(13)">
+                                <div class="calendar-day-number">13</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(14)">
+                                <div class="calendar-day-number">14</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(15)">
+                                <div class="calendar-day-number">15</div>
+                                <div class="message-dots">
+                                    <div class="message-dot dot-sms"></div>
+                                    <div class="message-dot dot-email"></div>
+                                    <div class="message-dot dot-whatsapp"></div>
+                                </div>
+                                <div class="message-count-badge">132 הודעות</div>
+                                <div class="delivery-mini-bar">
+                                    <div class="delivery-mini-bar-fill" style="width: 96%;"></div>
+                                </div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(16)">
+                                <div class="calendar-day-number">16</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(17)">
+                                <div class="calendar-day-number">17</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(18)">
+                                <div class="calendar-day-number">18</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(19)">
+                                <div class="calendar-day-number">19</div>
+                            </div>
+
+                            <!-- Week 4 - Today (Apr 20) -->
+                            <div class="calendar-day today" onclick="selectDay(20)">
+                                <div class="calendar-day-number">20</div>
+                                <div class="message-dots">
+                                    <div class="message-dot dot-sms"></div>
+                                </div>
+                                <div class="message-count-badge">היום</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(21)">
+                                <div class="calendar-day-number">21</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(22)">
+                                <div class="calendar-day-number">22</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(23)">
+                                <div class="calendar-day-number">23</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(24)">
+                                <div class="calendar-day-number">24</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(25)">
+                                <div class="calendar-day-number">25</div>
+                                <div class="message-dots">
+                                    <div class="message-dot dot-whatsapp"></div>
+                                </div>
+                                <div class="message-count-badge">שידור חדש</div>
+                            </div>
+                            <div class="calendar-day future-scheduled" onclick="selectDay(26)">
+                                <div class="calendar-day-number">26</div>
+                            </div>
+
+                            <!-- Week 5 -->
+                            <div class="calendar-day" onclick="selectDay(27)">
+                                <div class="calendar-day-number">27</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(28)">
+                                <div class="calendar-day-number">28</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(29)">
+                                <div class="calendar-day-number">29</div>
+                            </div>
+                            <div class="calendar-day" onclick="selectDay(30)">
+                                <div class="calendar-day-number">30</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detail Panel (Hidden by default) -->
+                    <div class="detail-panel" id="detailPanel">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-lg font-bold text-gray-900" id="detailDate">בחרו יום לצפייה בפרטים</h4>
+                            <button onclick="closeDetail()" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="detailMessages" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar (30%) -->
+                <div class="w-96 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
+                    <!-- Templates Section -->
+                    <div class="border-b border-gray-200 p-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-bold text-gray-900">תבניות</h4>
+                            <button class="btn-primary text-sm py-1 px-3 flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                <span>הוסף</span>
+                            </button>
+                        </div>
+                        <div class="space-y-1 max-h-48 overflow-y-auto">
+                            <div class="template-list-item active">
+                                <div class="font-500 text-gray-900">ברכה יום הולדת</div>
+                                <div class="flex gap-1 mt-2">
+                                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M17.472 14.382c-.297-.149-1.739-.867-2.009-.967-.27-.099-.645-.073-.909.196-.164.164-.674.786-.826.947-.153.161-.307.164-.604.054-.297-.11-1.252-.463-2.386-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-5.031 1.378l-.361.214-3.741-.982.998 3.645-.235.364a9.864 9.864 0 001.516 5.394c1.487 2.386 3.83 4.064 6.529 4.753.504.122 1.015.172 1.518.172 1.946 0 3.817-.563 5.487-1.632l.364-.214 3.75.981-.998-3.648.235-.363a9.876 9.876 0 00-1.516-5.396c-1.487-2.386-3.83-4.064-6.529-4.753a9.072 9.072 0 00-1.518-.172h-.013z"></path>
+                                    </svg>
+                                    <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M2.5 2h19A1.5 1.5 0 0123 3.5v17A1.5 1.5 0 0121.5 22h-19A1.5 1.5 0 012 20.5v-17A1.5 1.5 0 013.5 2m19 2h-19v17h19V4z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex items-center mt-2 text-xs text-gray-500">
+                                    <input type="checkbox" checked class="w-3 h-3 rounded">
+                                    <span class="mr-2">פעיל</span>
+                                </div>
+                            </div>
+
+                            <div class="template-list-item">
+                                <div class="font-500 text-gray-900">התזכורת קנייה</div>
+                                <div class="flex gap-1 mt-2">
+                                    <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex items-center mt-2 text-xs text-gray-500">
+                                    <input type="checkbox" class="w-3 h-3 rounded">
+                                    <span class="mr-2">פעיל</span>
+                                </div>
+                            </div>
+
+                            <div class="template-list-item">
+                                <div class="font-500 text-gray-900">סקר שביעות רצון</div>
+                                <div class="flex gap-1 mt-2">
+                                    <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M2.5 2h19A1.5 1.5 0 0123 3.5v17A1.5 1.5 0 0121.5 22h-19A1.5 1.5 0 012 20.5v-17A1.5 1.5 0 013.5 2m19 2h-19v17h19V4z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex items-center mt-2 text-xs text-gray-500">
+                                    <input type="checkbox" class="w-3 h-3 rounded">
+                                    <span class="mr-2">פעיל</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scheduled Broadcasts Section -->
+                    <div class="flex-1 flex flex-col p-4 overflow-hidden">
+                        <h4 class="font-bold text-gray-900 mb-4">שידורים מתוזמנים</h4>
+                        <div class="flex-1 overflow-y-auto space-y-3">
+                            <div class="broadcast-item" onclick="editBroadcast(1)">
+                                <div class="font-500 text-gray-900">מכירת החרוז</div>
+                                <div class="text-xs text-gray-600 mt-1">22 באפריל, 14:00</div>
+                                <div class="text-xs text-gray-500 mt-1">📊 1,245 לידים</div>
+                            </div>
+
+                            <div class="broadcast-item" onclick="editBroadcast(2)">
+                                <div class="font-500 text-gray-900">לידים חדשים</div>
+                                <div class="text-xs text-gray-600 mt-1">25 באפריל, 10:00</div>
+                                <div class="text-xs text-gray-500 mt-1">📊 892 לידים</div>
+                            </div>
+
+                            <div class="broadcast-item" onclick="editBroadcast(3)">
+                                <div class="font-500 text-gray-900">מבחן משקפיים חדשים</div>
+                                <div class="text-xs text-gray-600 mt-1">28 באפריל, 16:30</div>
+                                <div class="text-xs text-gray-500 mt-1">📊 567 לידים</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor Modal -->
+    <div class="modal" id="editorModal">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-900" id="modalTitle">עריכת תבנית</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+                <!-- Template Name -->
+                <div>
+                    <label class="block text-sm font-500 text-gray-700 mb-2">שם התבנית</label>
+                    <input type="text" value="ברכה יום הולדת" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+
+                <!-- Trigger Config -->
+                <div>
+                    <label class="block text-sm font-500 text-gray-700 mb-2">הגדר הדלקה</label>
+                    <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option>בחרו טריגר</option>
+                        <option selected>יום הולדת</option>
+                        <option>יום שנה לרכישה</option>
+                        <option>שידור ידני</option>
+                        <option>תוך 7 ימים לפג תוקף משקפיים</option>
+                    </select>
+                </div>
+
+                <!-- Channel Tabs -->
+                <div>
+                    <label class="block text-sm font-500 text-gray-700 mb-3">בחרו ערוץ</label>
+                    <div class="flex border-b border-gray-200 gap-0">
+                        <div class="channel-tab active" onclick="switchTab(this, 'whatsapp')">
+                            <svg class="w-4 h-4 inline-block ml-2" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M17.472 14.382c-.297-.149-1.739-.867-2.009-.967-.27-.099-.645-.073-.909.196-.164.164-.674.786-.826.947-.153.161-.307.164-.604.054-.297-.11-1.252-.463-2.386-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-5.031 1.378l-.361.214-3.741-.982.998 3.645-.235.364a9.864 9.864 0 001.516 5.394c1.487 2.386 3.83 4.064 6.529 4.753.504.122 1.015.172 1.518.172 1.946 0 3.817-.563 5.487-1.632l.364-.214 3.75.981-.998-3.648.235-.363a9.876 9.876 0 00-1.516-5.396c-1.487-2.386-3.83-4.064-6.529-4.753a9.072 9.072 0 00-1.518-.172h-.013z"></path>
+                            </svg>
+                            <span>WhatsApp</span>
+                        </div>
+                        <div class="channel-tab" onclick="switchTab(this, 'sms')">
+                            <svg class="w-4 h-4 inline-block ml-2" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M2.5 2h19A1.5 1.5 0 0123 3.5v17A1.5 1.5 0 0121.5 22h-19A1.5 1.5 0 012 20.5v-17A1.5 1.5 0 013.5 2m19 2h-19v17h19V4z"></path>
+                            </svg>
+                            <span>SMS</span>
+                        </div>
+                        <div class="channel-tab" onclick="switchTab(this, 'email')">
+                            <svg class="w-4 h-4 inline-block ml-2" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"></path>
+                            </svg>
+                            <span>Email</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message Body Editor -->
+                <div id="whatsapp-tab" class="channel-content">
+                    <label class="block text-sm font-500 text-gray-700 mb-2">הודעה ל-WhatsApp</label>
+                    <textarea rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-400" placeholder="כתבו את הודעתכם...">שלום {{first_name}}!
+
+🎂 יום הולדת שמח!
+
+אנו מציעים לך הנחה של 15% על משקפיים חדשים.
+
+👉 ביקרו בחנות היום!</textarea>
+                </div>
+                <div id="sms-tab" class="channel-content hidden">
+                    <label class="block text-sm font-500 text-gray-700 mb-2">הודעה ל-SMS</label>
+                    <textarea rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-400" placeholder="כתבו את הודעתכם...">שלום {{first_name}}, יום הולדת שמח! הנחה של 15% מחכה לך. Prizma Optics</textarea>
+                </div>
+                <div id="email-tab" class="channel-content hidden">
+                    <label class="block text-sm font-500 text-gray-700 mb-2">הודעה ל-Email</label>
+                    <textarea rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-400" placeholder="כתבו את הודעתכם...">שלום {{first_name}},
+
+רוצים משקפיים חדשים?
+
+ביום ההולדת שלך קיבלת הנחה של 15%.
+
+Prizma Optics</textarea>
+                </div>
+
+                <!-- Preview -->
+                <div>
+                    <label class="block text-sm font-500 text-gray-700 mb-2">תצוגה מקדימה</label>
+                    <div class="editor-preview">
+                        <p>שלום דוד!</p>
+                        <p class="mt-2">🎂 יום הולדת שמח!</p>
+                        <p class="mt-2">אנו מציעים לך הנחה של 15% על משקפיים חדשים.</p>
+                        <p class="mt-2">👉 ביקרו בחנות היום!</p>
+                    </div>
+                </div>
+
+                <!-- Schedule Picker -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-500 text-gray-700 mb-2">זמן שליחה</label>
+                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option selected>מיידי</option>
+                            <option>לוח זמנים</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-500 text-gray-700 mb-2">טוקו קהל</label>
+                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option>כל לקוחות</option>
+                            <option>לקוחות עם יום הולדת</option>
+                            <option>לקוחות חדשים</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+                <button onclick="closeModal()" class="btn-secondary">ביטול</button>
+                <button class="btn-primary">שמור ושלח</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function selectDay(day) {
+            const panel = document.getElementById('detailPanel');
+            const dateEl = document.getElementById('detailDate');
+            const messagesEl = document.getElementById('detailMessages');
+
+            dateEl.textContent = day + ' באפריל, 2026';
+
+            const messages = {
+                12: [
+                    { channel: 'SMS', template: 'התזכורת קנייה', count: 98, status: '92% נמסר' },
+                    { channel: 'Email', template: 'סקר שביעות רצון', count: 100, status: '92% נמסר' }
+                ],
+                15: [
+                    { channel: 'SMS', template: 'ברכה יום הולדת', count: 65, status: '95% נמסר' },
+                    { channel: 'Email', template: 'התזכורת קנייה', count: 45, status: '97% נמסר' },
+                    { channel: 'WhatsApp', template: 'סקר שביעות רצון', count: 22, status: '98% נמסר' }
+                ],
+                20: [
+                    { channel: 'SMS', template: 'שידור היום', count: 145, status: 'נשלח' }
+                ],
+                25: [
+                    { channel: 'WhatsApp', template: 'לידים חדשים', count: 892, status: 'בתור' }
+                ]
+            };
+
+            messagesEl.innerHTML = '';
+            if (messages[day]) {
+                messages[day].forEach(msg => {
+                    const msgEl = document.createElement('div');
+                    msgEl.className = 'detail-message-item';
+                    msgEl.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="font-500 text-gray-900">${msg.template}</div>
+                                <div class="text-xs text-gray-600 mt-1">${msg.channel}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-600 text-gray-900">${msg.count}</div>
+                                <div class="text-xs text-gray-500">${msg.status}</div>
+                            </div>
+                        </div>
+                    `;
+                    messagesEl.appendChild(msgEl);
+                });
+            } else {
+                messagesEl.innerHTML = '<p class="text-gray-500 text-sm">אין הודעות ביום זה</p>';
+            }
+
+            panel.classList.add('active');
+        }
+
+        function closeDetail() {
+            document.getElementById('detailPanel').classList.remove('active');
+        }
+
+        function editBroadcast(id) {
+            const titles = ['מכירת החרוז', 'לידים חדשים', 'מבחן משקפיים חדשים'];
+            document.getElementById('modalTitle').textContent = 'עריכת: ' + titles[id - 1];
+            document.getElementById('editorModal').classList.add('active');
+        }
+
+        function switchTab(el, tab) {
+            document.querySelectorAll('.channel-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.channel-content').forEach(c => c.classList.add('hidden'));
+            el.classList.add('active');
+            document.getElementById(tab + '-tab').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('editorModal').classList.remove('active');
+        }
+
+        // Close modals when clicking outside
+        document.getElementById('editorModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>

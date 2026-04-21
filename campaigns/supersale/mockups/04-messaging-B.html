@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מרכז ההודעות - זרימה חזותית</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Heebo', sans-serif; }
+    html, body { overflow: hidden; height: 100vh; }
+
+    /* Canvas Grid */
+    .canvas-grid {
+      background-image:
+        linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, .1) 25%, rgba(200, 200, 200, .1) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, .1) 75%, rgba(200, 200, 200, .1) 76%, transparent 77%, transparent),
+        linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, .1) 25%, rgba(200, 200, 200, .1) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, .1) 75%, rgba(200, 200, 200, .1) 76%, transparent 77%, transparent);
+      background-size: 40px 40px;
+    }
+
+    /* SVG Canvas */
+    #flowCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 10;
+    }
+
+    /* Nodes */
+    .flow-node {
+      position: absolute;
+      cursor: pointer;
+      transition: all 200ms ease;
+      z-index: 20;
+    }
+
+    .flow-node:hover {
+      transform: scale(1.02);
+      filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15));
+    }
+
+    .flow-node.selected {
+      z-index: 30;
+      filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.6));
+    }
+
+    /* Trigger Node */
+    .trigger-node {
+      width: 200px;
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border-right: 4px solid;
+    }
+
+    .trigger-node.blue { border-right-color: #3b82f6; }
+    .trigger-node.purple { border-right-color: #a855f7; }
+    .trigger-node.orange { border-right-color: #f97316; }
+    .trigger-node.pink { border-right-color: #ec4899; }
+
+    .trigger-node-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .trigger-node-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .trigger-node.blue .trigger-node-icon { background-color: #dbeafe; }
+    .trigger-node.purple .trigger-node-icon { background-color: #f3e8ff; }
+    .trigger-node.orange .trigger-node-icon { background-color: #fed7aa; }
+    .trigger-node.pink .trigger-node-icon { background-color: #fce7f3; }
+
+    .trigger-node-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1f2937;
+      line-height: 1.3;
+    }
+
+    .trigger-node-subtitle {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    /* Action Node */
+    .action-node {
+      width: 140px;
+      background: white;
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      border-top: 3px solid;
+      font-size: 12px;
+    }
+
+    .action-node.sms { border-top-color: #10b981; }
+    .action-node.email { border-top-color: #0ea5e9; }
+    .action-node.whatsapp { border-top-color: #059669; }
+
+    .action-node-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .action-node-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+      color: white;
+    }
+
+    .action-node.sms .action-node-icon { background-color: #10b981; }
+    .action-node.email .action-node-icon { background-color: #0ea5e9; }
+    .action-node.whatsapp .action-node-icon { background-color: #059669; }
+
+    .action-node-title {
+      font-weight: 500;
+      color: #1f2937;
+      line-height: 1.2;
+    }
+
+    .action-node-count {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    /* Right Panel */
+    .editor-panel {
+      position: fixed;
+      right: 0;
+      top: 56px;
+      width: 320px;
+      height: calc(100vh - 56px);
+      background: white;
+      border-right: 1px solid #e5e7eb;
+      overflow-y: auto;
+      z-index: 40;
+      transform: translateX(0);
+      transition: transform 300ms ease;
+    }
+
+    .editor-panel.hidden {
+      transform: translateX(100%);
+    }
+
+    .editor-content {
+      padding: 20px;
+    }
+
+    .editor-section {
+      margin-bottom: 20px;
+    }
+
+    .editor-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .editor-value {
+      font-size: 14px;
+      color: #1f2937;
+      background-color: #f9fafb;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 8px;
+    }
+
+    .editor-button {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 13px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      background-color: #f9fafb;
+      color: #1f2937;
+      cursor: pointer;
+      transition: all 150ms ease;
+      font-weight: 500;
+    }
+
+    .editor-button:hover {
+      background-color: #f3f4f6;
+      border-color: #d1d5db;
+    }
+
+    .editor-button.primary {
+      background-color: #a855f7;
+      color: white;
+      border-color: #a855f7;
+    }
+
+    .editor-button.primary:hover {
+      background-color: #9333ea;
+      border-color: #9333ea;
+    }
+
+    .toggle-switch {
+      display: inline-block;
+      position: relative;
+      width: 48px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-switch .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 24px;
+    }
+
+    .toggle-switch .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      right: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+
+    .toggle-switch input:checked + .slider {
+      background-color: #a855f7;
+    }
+
+    .toggle-switch input:checked + .slider:before {
+      left: 3px;
+    }
+
+    /* Message Templates */
+    .template-preview {
+      background-color: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #374151;
+      max-height: 150px;
+      overflow-y: auto;
+      margin-top: 8px;
+    }
+
+    /* Floating Action Button */
+    .fab {
+      position: fixed;
+      bottom: 32px;
+      left: 32px;
+      width: 56px;
+      height: 56px;
+      background-color: #a855f7;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+      transition: all 200ms ease;
+      z-index: 50;
+    }
+
+    .fab:hover {
+      background-color: #9333ea;
+      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
+      transform: scale(1.1);
+    }
+
+    /* Top Bar */
+    .top-bar {
+      height: 56px;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 35;
+      position: relative;
+    }
+
+    .top-bar-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .top-bar-controls {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .view-toggle {
+      display: flex;
+      background-color: #f3f4f6;
+      border-radius: 6px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .view-toggle-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 150ms ease;
+      color: #6b7280;
+    }
+
+    .view-toggle-btn.active {
+      background-color: white;
+      color: #1f2937;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .btn-new {
+      padding: 8px 16px;
+      background-color: #a855f7;
+      color: white;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 150ms ease;
+    }
+
+    .btn-new:hover {
+      background-color: #9333ea;
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 300ms ease;
+    }
+
+    .modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: #1f2937;
+    }
+
+    .modal-field {
+      margin-bottom: 16px;
+    }
+
+    .modal-field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4b5563;
+      margin-bottom: 6px;
+    }
+
+    .modal-field input,
+    .modal-field textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 13px;
+      color: #1f2937;
+    }
+
+    .modal-field textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      background-color: white;
+      color: #1f2937;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 150ms ease;
+    }
+
+    .modal-actions button:hover {
+      background-color: #f9fafb;
+    }
+
+    .modal-actions button.primary {
+      background-color: #a855f7;
+      color: white;
+      border-color: #a855f7;
+    }
+
+    .modal-actions button.primary:hover {
+      background-color: #9333ea;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="top-bar-title">מרכז ההודעות</div>
+    <div class="top-bar-controls">
+      <div class="view-toggle">
+        <button class="view-toggle-btn active">תצוגת זרימה</button>
+        <button class="view-toggle-btn">תצוגת רשימה</button>
+      </div>
+      <button class="btn-new">+ זרימה חדשה</button>
+    </div>
+  </div>
+
+  <!-- Canvas Container -->
+  <div class="flex" style="height: calc(100vh - 56px);">
+    <!-- Flow Canvas -->
+    <div class="canvas-grid flex-1 relative overflow-auto" id="canvasContainer">
+      <svg id="flowCanvas" width="2000" height="1600"></svg>
+
+      <!-- Nodes Container -->
+      <div id="nodesContainer" style="position: relative; width: 2000px; height: 1600px;">
+        <!-- Trigger Node 1: ליד חדש נוצר -->
+        <div class="flow-node trigger-node blue selected" style="top: 80px; right: 60px;" data-node-id="trigger-1">
+          <div class="trigger-node-header">
+            <div class="trigger-node-icon">👤</div>
+            <div>
+              <div class="trigger-node-title">ליד חדש נוצר</div>
+              <div class="trigger-node-subtitle">2 הודעות</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Node 1.1: SMS -->
+        <div class="flow-node action-node sms" style="top: 60px; right: 320px;" data-node-id="action-1.1">
+          <div class="action-node-header">
+            <div class="action-node-icon">💬</div>
+          </div>
+          <div class="action-node-title">שלח SMS אישור</div>
+          <div class="action-node-count">2,340 הודעות</div>
+        </div>
+
+        <!-- Action Node 1.2: Email -->
+        <div class="flow-node action-node email" style="top: 140px; right: 320px;" data-node-id="action-1.2">
+          <div class="action-node-header">
+            <div class="action-node-icon">✉️</div>
+          </div>
+          <div class="action-node-title">שלח Email ברוכים הבאים</div>
+          <div class="action-node-count">2,134 הודעות</div>
+        </div>
+
+        <!-- Trigger Node 2: סטטוס אירוע → הרשמה פתוחה -->
+        <div class="flow-node trigger-node purple" style="top: 320px; right: 60px;" data-node-id="trigger-2">
+          <div class="trigger-node-header">
+            <div class="trigger-node-icon">📅</div>
+            <div>
+              <div class="trigger-node-title">סטטוס אירוע</div>
+              <div class="trigger-node-subtitle">2 הודעות</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Node 2.1: SMS -->
+        <div class="flow-node action-node sms" style="top: 300px; right: 320px;" data-node-id="action-2.1">
+          <div class="action-node-header">
+            <div class="action-node-icon">💬</div>
+          </div>
+          <div class="action-node-title">שלח SMS הזמנה</div>
+          <div class="action-node-count">1,856 הודעות</div>
+        </div>
+
+        <!-- Action Node 2.2: Email -->
+        <div class="flow-node action-node email" style="top: 380px; right: 320px;" data-node-id="action-2.2">
+          <div class="action-node-header">
+            <div class="action-node-icon">✉️</div>
+          </div>
+          <div class="action-node-title">שלח Email הזמנה</div>
+          <div class="action-node-count">1,734 הודעות</div>
+        </div>
+
+        <!-- Trigger Node 3: סטטוס אירוע → 2-3 ימים -->
+        <div class="flow-node trigger-node orange" style="top: 560px; right: 60px;" data-node-id="trigger-3">
+          <div class="trigger-node-header">
+            <div class="trigger-node-icon">⏰</div>
+            <div>
+              <div class="trigger-node-title">סטטוס אירוע</div>
+              <div class="trigger-node-subtitle">1 הודעה</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Node 3.1: SMS -->
+        <div class="flow-node action-node sms" style="top: 560px; right: 320px;" data-node-id="action-3.1">
+          <div class="action-node-header">
+            <div class="action-node-icon">💬</div>
+          </div>
+          <div class="action-node-title">שלח SMS תזכורת</div>
+          <div class="action-node-count">945 הודעות</div>
+        </div>
+
+        <!-- Trigger Node 4: משתתף → הגיע -->
+        <div class="flow-node trigger-node pink" style="top: 800px; right: 60px;" data-node-id="trigger-4">
+          <div class="trigger-node-header">
+            <div class="trigger-node-icon">✅</div>
+            <div>
+              <div class="trigger-node-title">משתתף הגיע</div>
+              <div class="trigger-node-subtitle">1 הודעה</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Node 4.1: WhatsApp -->
+        <div class="flow-node action-node whatsapp" style="top: 800px; right: 320px;" data-node-id="action-4.1">
+          <div class="action-node-header">
+            <div class="action-node-icon">💭</div>
+          </div>
+          <div class="action-node-title">שלח WhatsApp סקר</div>
+          <div class="action-node-count">523 הודעות</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Editor Panel -->
+    <div class="editor-panel" id="editorPanel">
+      <div class="editor-content">
+        <!-- Selected Node: trigger-2 (סטטוס אירוע → הרשמה פתוחה) -->
+        <div class="editor-section">
+          <label class="editor-label">סוג הטריגר</label>
+          <div class="editor-value">סטטוס אירוע</div>
+        </div>
+
+        <div class="editor-section">
+          <label class="editor-label">ישות</label>
+          <div class="editor-value">אירוע</div>
+        </div>
+
+        <div class="editor-section">
+          <label class="editor-label">תנאי</label>
+          <div class="editor-value">סטטוס משתנה ל: "הרשמה פתוחה"</div>
+        </div>
+
+        <div class="editor-section">
+          <label class="editor-label">פעולות מחוברות</label>
+          <div style="background-color: #f9fafb; border-radius: 6px; overflow: hidden;">
+            <div style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; color: #374151;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px;">💬</span>
+                <span>שלח SMS הזמנה</span>
+              </div>
+              <div style="font-size: 11px; color: #9ca3af; margin-top: 4px;">1,856 הודעות</div>
+            </div>
+            <div style="padding: 12px; font-size: 13px; color: #374151;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px;">✉️</span>
+                <span>שלח Email הזמנה</span>
+              </div>
+              <div style="font-size: 11px; color: #9ca3af; margin-top: 4px;">1,734 הודעות</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="editor-section">
+          <button class="editor-button primary" onclick="openActionModal()">+ הוסף פעולה</button>
+        </div>
+
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+
+        <div class="editor-section">
+          <label class="editor-label">סטטוס</label>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 13px; color: #374151;">פעיל</span>
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="editor-section">
+          <button class="editor-button">👁️ תצוגה מקדימה</button>
+        </div>
+
+        <div class="editor-section">
+          <button class="editor-button">🔧 עריכה</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Action Button -->
+  <div class="fab" onclick="openBroadcastModal()">📢</div>
+
+  <!-- Broadcast Modal -->
+  <div class="modal" id="broadcastModal">
+    <div class="modal-content">
+      <div class="modal-title">שלח שידור חדש</div>
+
+      <div class="modal-field">
+        <label>שם הקמפיין</label>
+        <input type="text" placeholder="למשל: SuperSale Final Days">
+      </div>
+
+      <div class="modal-field">
+        <label>תיאור</label>
+        <textarea placeholder="מה הקמפיין הזה?"></textarea>
+      </div>
+
+      <div class="modal-field">
+        <label>קבוצת יעד</label>
+        <input type="text" placeholder="בחר קבוצה">
+      </div>
+
+      <div class="modal-field">
+        <label>תבנית</label>
+        <input type="text" placeholder="בחר תבנית הודעה">
+      </div>
+
+      <div class="modal-actions">
+        <button onclick="closeBroadcastModal()">ביטול</button>
+        <button class="primary" onclick="closeBroadcastModal()">צור קמפיין</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Modal -->
+  <div class="modal" id="actionModal">
+    <div class="modal-content">
+      <div class="modal-title">הוסף פעולה</div>
+
+      <div class="modal-field">
+        <label>ערוץ</label>
+        <input type="text" placeholder="בחר: SMS / Email / WhatsApp">
+      </div>
+
+      <div class="modal-field">
+        <label>תבנית</label>
+        <input type="text" placeholder="בחר תבנית הודעה">
+      </div>
+
+      <div class="modal-field">
+        <label>השהיה (בשניות)</label>
+        <input type="number" value="0" placeholder="0">
+      </div>
+
+      <div class="modal-field">
+        <label>סטטוס</label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label class="toggle-switch">
+            <input type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+          <span style="font-size: 13px; color: #374151;">פעיל</span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button onclick="closeActionModal()">ביטול</button>
+        <button class="primary" onclick="closeActionModal()">הוסף</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // SVG Arrow Marker
+    const svg = document.getElementById('flowCanvas');
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    marker.setAttribute('id', 'arrowhead');
+    marker.setAttribute('markerWidth', '10');
+    marker.setAttribute('markerHeight', '10');
+    marker.setAttribute('refX', '9');
+    marker.setAttribute('refY', '3');
+    marker.setAttribute('orient', 'auto');
+    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    polygon.setAttribute('points', '0 0, 10 3, 0 6');
+    polygon.setAttribute('fill', '#d1d5db');
+    marker.appendChild(polygon);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+
+    // Draw connecting lines
+    const connections = [
+      { from: 'trigger-1', to: ['action-1.1', 'action-1.2'] },
+      { from: 'trigger-2', to: ['action-2.1', 'action-2.2'] },
+      { from: 'trigger-3', to: ['action-3.1'] },
+      { from: 'trigger-4', to: ['action-4.1'] }
+    ];
+
+    function getNodePosition(nodeId) {
+      const el = document.querySelector(`[data-node-id="${nodeId}"]`);
+      if (!el) return null;
+      return {
+        x: el.offsetLeft + el.offsetWidth / 2,
+        y: el.offsetTop + el.offsetHeight / 2
+      };
+    }
+
+    function drawLines() {
+      connections.forEach(conn => {
+        const fromPos = getNodePosition(conn.from);
+        if (!fromPos) return;
+
+        conn.to.forEach(toId => {
+          const toPos = getNodePosition(toId);
+          if (!toPos) return;
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', fromPos.x);
+          line.setAttribute('y1', fromPos.y);
+          line.setAttribute('x2', toPos.x);
+          line.setAttribute('y2', toPos.y);
+          line.setAttribute('stroke', '#d1d5db');
+          line.setAttribute('stroke-width', '2');
+          line.setAttribute('marker-end', 'url(#arrowhead)');
+          svg.appendChild(line);
+        });
+      });
+    }
+
+    // Node click handlers
+    document.querySelectorAll('.flow-node').forEach(node => {
+      node.addEventListener('click', function(e) {
+        e.stopPropagation();
+
+        document.querySelectorAll('.flow-node').forEach(n => {
+          n.classList.remove('selected');
+        });
+        this.classList.add('selected');
+
+        // Show editor panel
+        document.getElementById('editorPanel').classList.remove('hidden');
+      });
+    });
+
+    document.getElementById('canvasContainer').addEventListener('click', function() {
+      document.querySelectorAll('.flow-node').forEach(n => {
+        n.classList.remove('selected');
+      });
+      document.getElementById('editorPanel').classList.add('hidden');
+    });
+
+    // Modal handlers
+    function openBroadcastModal() {
+      document.getElementById('broadcastModal').classList.add('active');
+    }
+
+    function closeBroadcastModal() {
+      document.getElementById('broadcastModal').classList.remove('active');
+    }
+
+    function openActionModal() {
+      document.getElementById('actionModal').classList.add('active');
+    }
+
+    function closeActionModal() {
+      document.getElementById('actionModal').classList.remove('active');
+    }
+
+    // Close modals when clicking outside
+    document.getElementById('broadcastModal').addEventListener('click', function(e) {
+      if (e.target === this) closeBroadcastModal();
+    });
+
+    document.getElementById('actionModal').addEventListener('click', function(e) {
+      if (e.target === this) closeActionModal();
+    });
+
+    // Draw lines on load
+    window.addEventListener('load', drawLines);
+  </script>
+
+</body>
+</html>

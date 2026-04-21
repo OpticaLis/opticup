@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messaging Hub — CRM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+    <style>
+        * {
+            font-family: 'Heebo', sans-serif;
+        }
+        [dir="rtl"] {
+            direction: rtl;
+            text-align: right;
+        }
+        .sidebar-nav { background: #1e1b4b; }
+        .accent { color: #8b5cf6; }
+        .accent-bg { background: #8b5cf6; }
+        .whatsapp-color { color: #25D366; }
+        .sms-color { color: #3b82f6; }
+        .email-color { color: #f59e0b; }
+        .card-shadow { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+        .template-item-active { background: #f3f4f6; border-right: 4px solid #8b5cf6; }
+        .rich-toolbar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 12px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            border-radius: 6px 6px 0 0;
+        }
+        .toolbar-btn {
+            padding: 6px 10px;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .toolbar-btn:hover { background: #f3f4f6; }
+        .toolbar-btn.active { background: #8b5cf6; color: white; border-color: #8b5cf6; }
+        .message-editor {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .message-input {
+            padding: 12px;
+            min-height: 120px;
+            font-family: 'Heebo', sans-serif;
+            border: none;
+            resize: vertical;
+        }
+        .preview-panel {
+            background: #f9fafb;
+            padding: 16px;
+            border-top: 1px solid #e5e7eb;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .preview-message {
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            margin: 8px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .whatsapp-preview { background: #e7f5fe; border-left: 3px solid #25D366; }
+        .sms-preview { background: #eff6ff; border-left: 3px solid #3b82f6; }
+        .email-preview { background: #fffbeb; border-left: 3px solid #f59e0b; }
+        .variable-tag {
+            display: inline-block;
+            background: #dbeafe;
+            color: #0369a1;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .message-log-entry {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 13px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-sent { background: #dbeafe; color: #0369a1; }
+        .status-delivered { background: #dcfce7; color: #166534; }
+        .status-read { background: #d1d5db; color: #374151; }
+        .status-failed { background: #fee2e2; color: #991b1b; }
+        .tab-active {
+            border-bottom: 2px solid #8b5cf6;
+            color: #8b5cf6;
+        }
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .icon-btn:hover { background: #f3f4f6; }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            right: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: #8b5cf6;
+        }
+        input:checked + .toggle-slider:before {
+            right: 21px;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 40;
+        }
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900">
+    <div class="flex h-screen bg-gray-50">
+        <!-- Sidebar Navigation -->
+        <div class="w-64 sidebar-nav text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-xl font-bold">Optic Up</h1>
+                <p class="text-gray-400 text-sm">ניהול CRM</p>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-2">
+                <div class="px-4 py-2 rounded-lg hover:bg-gray-700 cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <span>דוח מכירות</span>
+                    </div>
+                </div>
+
+                <div class="px-4 py-2 rounded-lg bg-gray-700 cursor-pointer accent">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Messaging Hub</span>
+                    </div>
+                </div>
+
+                <div class="px-4 py-2 rounded-lg hover:bg-gray-700 cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM16 20a3 3 0 100-6 3 3 0 000 6z"/>
+                        </svg>
+                        <span>ניהול אנשי קשר</span>
+                    </div>
+                </div>
+
+                <div class="px-4 py-2 rounded-lg hover:bg-gray-700 cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span>דוחות</span>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-700 cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span>הגדרות</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <div class="bg-white border-b border-gray-200 px-8 py-6 flex justify-between items-center card-shadow">
+                <h2 class="text-2xl font-bold">Messaging Hub</h2>
+                <button onclick="openBroadcastModal()" class="accent-bg text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    שליחת הודעה חדשה
+                </button>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Left: Template List -->
+                <div class="w-2/5 border-l border-gray-200 flex flex-col bg-white">
+                    <!-- Category Tabs -->
+                    <div class="flex border-b border-gray-200 overflow-x-auto">
+                        <button onclick="filterTemplates('all')" class="tab-active flex-1 px-4 py-3 text-sm font-semibold border-b-2 border-purple-500 text-purple-600">הכל</button>
+                        <button onclick="filterTemplates('auto')" class="flex-1 px-4 py-3 text-sm font-semibold text-gray-600 hover:text-gray-900">אוטומטי</button>
+                        <button onclick="filterTemplates('manual')" class="flex-1 px-4 py-3 text-sm font-semibold text-gray-600 hover:text-gray-900">ידני</button>
+                        <button onclick="filterTemplates('drafts')" class="flex-1 px-4 py-3 text-sm font-semibold text-gray-600 hover:text-gray-900">טיוטות</button>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="p-4 border-b border-gray-200">
+                        <input type="text" placeholder="חיפוש תבניות..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" onkeyup="searchTemplates(this.value)">
+                    </div>
+
+                    <!-- Templates List -->
+                    <div class="flex-1 overflow-y-auto">
+                        <div id="templateList" class="space-y-0">
+                            <!-- Template items will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Template Editor -->
+                <div class="w-3/5 flex flex-col bg-gray-50 overflow-hidden">
+                    <div id="editorPanel" class="flex-1 overflow-y-auto p-6 space-y-6">
+                        <!-- Template Name -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">שם התבנית</label>
+                            <input id="templateName" type="text" value="אירוע נפתח — הזמנה" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+
+                        <!-- Trigger Configuration -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">הגדרת הפעלה</label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option>בחר ישות...</option>
+                                    <option selected>אירוע</option>
+                                    <option>לקוח</option>
+                                    <option>טיקט תמיכה</option>
+                                </select>
+                                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option selected>סטטוס → פתוח להרשמה</option>
+                                    <option>סטטוס → ביטול</option>
+                                    <option>סטטוס → הסתיים</option>
+                                </select>
+                                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option selected>ללא תנאי</option>
+                                    <option>בעל כרטיס חסם</option>
+                                    <option>הודעה שנשלחה לאחרונה</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Channel Selection -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-3">ערוצים</label>
+                            <div class="flex gap-3 mb-4">
+                                <button onclick="selectChannel('whatsapp')" id="channelWhatsapp" class="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-gray-300 hover:border-gray-400">
+                                    <svg class="w-5 h-5 whatsapp-color" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.694.735 5.326 2.124 7.619L2.883 22l8.115-2.133c2.223 1.213 4.735 1.854 7.302 1.854h.006c5.396 0 9.747-4.363 9.747-9.798 0-2.619-.675-5.081-1.96-7.228-1.282-2.151-3.093-4.061-5.335-5.343-2.242-1.282-4.748-1.97-7.302-1.97"/>
+                                    </svg>
+                                    <span>WhatsApp</span>
+                                </button>
+                                <button onclick="selectChannel('sms')" id="channelSms" class="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-gray-300 hover:border-gray-400">
+                                    <svg class="w-5 h-5 sms-color" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                                    </svg>
+                                    <span>SMS</span>
+                                </button>
+                                <button onclick="selectChannel('email')" id="channelEmail" class="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-gray-300 hover:border-gray-400">
+                                    <svg class="w-5 h-5 email-color" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                    </svg>
+                                    <span>Email</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Language Tabs -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-3">שפה</label>
+                            <div class="flex gap-2 mb-4">
+                                <button onclick="selectLanguage('he')" id="langHe" class="px-4 py-2 rounded-lg bg-purple-500 text-white font-semibold">עברית</button>
+                                <button onclick="selectLanguage('ru')" id="langRu" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-semibold hover:bg-gray-300">רוסית</button>
+                            </div>
+                        </div>
+
+                        <!-- Email Subject (if email channel selected) -->
+                        <div id="emailSubjectContainer" class="hidden">
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">שורת הנושא</label>
+                            <input type="text" placeholder="הנושא של ההודעה..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" value="הזמנה לאירוע חדש — אופטיקה פריזמה">
+                        </div>
+
+                        <!-- Message Editor -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">תוכן ההודעה</label>
+                            <div class="message-editor">
+                                <div class="rich-toolbar">
+                                    <button class="toolbar-btn" onclick="this.classList.toggle('active')"><strong>B</strong></button>
+                                    <button class="toolbar-btn" onclick="this.classList.toggle('active')"><em>I</em></button>
+                                    <button class="toolbar-btn" onclick="this.classList.toggle('active')" style="text-decoration: underline;">U</button>
+                                    <div style="width: 1px; background: #d1d5db; margin: 0 4px;"></div>
+                                    <button class="toolbar-btn" onclick="insertEmoji()">😊 Emoji</button>
+                                    <button class="toolbar-btn" onclick="openVariableMenu()">{{ }} משתנים</button>
+                                </div>
+                                <textarea id="messageContent" class="message-input" placeholder="כתוב את תוכן ההודעה כאן...
+
+{{name}} שלום,
+
+אנו שמחים להודיע כי האירוע {{event_name}} נפתח להרשמה!
+
+תאריך: {{event_date}}
+שעות: {{event_hours}}
+
+הרשם עכשיו דרך הקישור הבא:
+{{registration_link}}
+
+בברכה,
+צוות אופטיקה פריזמה
+
+{{unsubscribe_link}}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Preview -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">תצוגה מקדימה</label>
+                            <div class="preview-panel whatsapp-preview rounded-lg">
+                                <p class="text-sm text-gray-500 mb-2">דוגמה עם נתונים לדוגמה:</p>
+                                <div class="preview-message whatsapp-preview">
+                                    דוד שלום,<br><br>
+                                    אנו שמחים להודיע כי האירוע בדיקת ראייה מקצועית נפתח להרשמה!<br><br>
+                                    תאריך: 2026-05-15<br>
+                                    שעות: 14:00 - 18:00<br><br>
+                                    הרשם עכשיו דרך הקישור הבא:<br>
+                                    <span class="variable-tag">prizma.opticup.co.il/register/evt-001</span><br><br>
+                                    בברכה,<br>
+                                    צוות אופטיקה פריזמה<br><br>
+                                    <a href="#" class="text-blue-500 text-sm">בטל הרשמה</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex gap-3 pt-4">
+                            <button class="flex-1 accent-bg text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition">שמור ופעיל</button>
+                            <button class="flex-1 px-6 py-3 bg-gray-200 text-gray-900 rounded-lg font-semibold hover:bg-gray-300 transition">שמור כטיוטה</button>
+                            <button class="px-6 py-3 bg-red-100 text-red-600 rounded-lg font-semibold hover:bg-red-200 transition">מחק</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Log Sidebar -->
+        <div id="logSidebar" class="w-72 border-l border-gray-200 bg-white flex flex-col hidden">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-semibold text-gray-900">היסטוריית שליחה</h3>
+                <button onclick="toggleLogSidebar()" class="text-gray-500 hover:text-gray-900">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-3 border-b border-gray-200 space-y-2">
+                <select class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option>כל הערוצים</option>
+                    <option>WhatsApp</option>
+                    <option>SMS</option>
+                    <option>Email</option>
+                </select>
+                <select class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option>כל הסטטוסים</option>
+                    <option>נשלח</option>
+                    <option>הועבר</option>
+                    <option>נקרא</option>
+                    <option>כשל</option>
+                </select>
+            </div>
+
+            <div class="flex-1 overflow-y-auto">
+                <div class="message-log-entry">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg class="w-4 h-4 whatsapp-color" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.694.735 5.326 2.124 7.619L2.883 22l8.115-2.133c2.223 1.213 4.735 1.854 7.302 1.854h.006c5.396 0 9.747-4.363 9.747-9.798 0-2.619-.675-5.081-1.96-7.228-1.282-2.151-3.093-4.061-5.335-5.343-2.242-1.282-4.748-1.97-7.302-1.97"/>
+                        </svg>
+                        <span class="font-semibold text-sm">דוד כהן</span>
+                        <span class="status-badge status-delivered">הועבר</span>
+                    </div>
+                    <p class="text-xs text-gray-600 mb-1">אירוע נפתח — הזמנה</p>
+                    <p class="text-xs text-gray-500">לפני 12 דקות</p>
+                </div>
+
+                <div class="message-log-entry">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg class="w-4 h-4 sms-color" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                        </svg>
+                        <span class="font-semibold text-sm">שרה לוי</span>
+                        <span class="status-badge status-read">נקרא</span>
+                    </div>
+                    <p class="text-xs text-gray-600 mb-1">אירוע נפתח — הזמנה</p>
+                    <p class="text-xs text-gray-500">לפני 1 שעה</p>
+                </div>
+
+                <div class="message-log-entry">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg class="w-4 h-4 email-color" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="font-semibold text-sm">יוסי מורן</span>
+                        <span class="status-badge status-failed">כשל</span>
+                    </div>
+                    <p class="text-xs text-gray-600 mb-1">אירוע נפתח — הזמנה</p>
+                    <p class="text-xs text-gray-500">לפני 3 שעות</p>
+                </div>
+
+                <div class="message-log-entry">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg class="w-4 h-4 whatsapp-color" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.694.735 5.326 2.124 7.619L2.883 22l8.115-2.133c2.223 1.213 4.735 1.854 7.302 1.854h.006c5.396 0 9.747-4.363 9.747-9.798 0-2.619-.675-5.081-1.96-7.228-1.282-2.151-3.093-4.061-5.335-5.343-2.242-1.282-4.748-1.97-7.302-1.97"/>
+                        </svg>
+                        <span class="font-semibold text-sm">מיכל ברקוביץ</span>
+                        <span class="status-badge status-sent">נשלח</span>
+                    </div>
+                    <p class="text-xs text-gray-600 mb-1">תזכורת 2-3 ימים</p>
+                    <p class="text-xs text-gray-500">אתמול</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Broadcast Modal -->
+    <div id="broadcastModal" class="modal-overlay">
+        <div class="modal-content slide-in">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-xl font-bold">שליחת הודעה חדשה</h3>
+                <button onclick="closeBroadcastModal()" class="text-gray-500 hover:text-gray-900">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-6">
+                <!-- Recipient Filters -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 mb-3">בחר נמענים</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-sm text-gray-700 block mb-1">סטטוס</label>
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option>בחר סטטוס</option>
+                                <option>לקוח פעיל</option>
+                                <option>צופה</option>
+                                <option>ממתין</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-700 block mb-1">תגיות</label>
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option>בחר תגית</option>
+                                <option>VIP</option>
+                                <option>סטודנט</option>
+                                <option>ביטוח</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-700 block mb-1">אירוע</label>
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option>בחר אירוע</option>
+                                <option>בדיקת ראייה</option>
+                                <option>הנחה מיוחדת</option>
+                                <option>השקה חדשה</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-700 block mb-1">עיר</label>
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option>בחר עיר</option>
+                                <option>תל אביב</option>
+                                <option>ירושלים</option>
+                                <option>חיפה</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <p class="text-sm text-blue-900"><strong>168 נמענים</strong> תואמים את הקריטריונים</p>
+                    </div>
+                </div>
+
+                <!-- Message Selection -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 mb-3">בחר הודעה</h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="msgType" value="template" checked class="mr-3">
+                            <div>
+                                <p class="font-semibold text-sm">בחר מתבנית קיימת</p>
+                                <p class="text-xs text-gray-600">אירוע נפתח — הזמנה</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="msgType" value="custom" class="mr-3">
+                            <div>
+                                <p class="font-semibold text-sm">כתוב הודעה חדשה</p>
+                                <p class="text-xs text-gray-600">הודעה חד-פעמית</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Channel Selection -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 mb-3">בחר ערוץ</h4>
+                    <div class="flex gap-3">
+                        <button class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-purple-500 rounded-lg bg-purple-50">
+                            <svg class="w-5 h-5 whatsapp-color" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.694.735 5.326 2.124 7.619L2.883 22l8.115-2.133c2.223 1.213 4.735 1.854 7.302 1.854h.006c5.396 0 9.747-4.363 9.747-9.798 0-2.619-.675-5.081-1.96-7.228-1.282-2.151-3.093-4.061-5.335-5.343-2.242-1.282-4.748-1.97-7.302-1.97"/>
+                            </svg>
+                            <span>WhatsApp</span>
+                        </button>
+                        <button class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-gray-300 rounded-lg hover:border-gray-400">
+                            <svg class="w-5 h-5 sms-color" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                            </svg>
+                            <span>SMS</span>
+                        </button>
+                        <button class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-gray-300 rounded-lg hover:border-gray-400">
+                            <svg class="w-5 h-5 email-color" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                            <span>Email</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Scheduling -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 mb-3">תזמון</h4>
+                    <div class="flex gap-3">
+                        <label class="flex-1 flex items-center p-3 border-2 border-purple-500 rounded-lg bg-purple-50 cursor-pointer">
+                            <input type="radio" name="timing" value="now" checked class="mr-3">
+                            <span class="font-semibold text-sm">שלח עכשיו</span>
+                        </label>
+                        <label class="flex-1 flex items-center p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-gray-400">
+                            <input type="radio" name="timing" value="schedule" class="mr-3">
+                            <span class="font-semibold text-sm">בחר זמן</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Summary -->
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h4 class="font-semibold text-gray-900 mb-2">סיכום שליחה</h4>
+                    <div class="space-y-1 text-sm text-gray-700">
+                        <p><strong>נמענים:</strong> 168</p>
+                        <p><strong>ערוץ:</strong> WhatsApp</p>
+                        <p><strong>תבנית:</strong> אירוע נפתח — הזמנה</p>
+                        <p><strong>תזמון:</strong> עכשיו</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-200 flex gap-3 justify-end">
+                <button onclick="closeBroadcastModal()" class="px-6 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50">ביטול</button>
+                <button class="accent-bg text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90">שלח ל-168 נמענים</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Variable Menu -->
+    <div id="variableMenu" class="hidden absolute bg-white border border-gray-300 rounded-lg shadow-lg p-2 z-50">
+        <button onclick="insertVariable('{{name}}')" class="block w-full text-right px-3 py-2 hover:bg-gray-100 rounded text-sm">{{name}} — שם הלקוח</button>
+        <button onclick="insertVariable('{{event_name}}')" class="block w-full text-right px-3 py-2 hover:bg-gray-100 rounded text-sm">{{event_name}} — שם האירוע</button>
+        <button onclick="insertVariable('{{event_date}}')" class="block w-full text-right px-3 py-2 hover:bg-gray-100 rounded text-sm">{{event_date}} — תאריך</button>
+        <button onclick="insertVariable('{{event_hours}}')" class="block w-full text-right px-3 py-2 hover:bg-gray-100 rounded text-sm">{{event_hours}} — שעות</button>
+        <button onclick="insertVariable('{{coupon_code}}')" class="block w-full text-right px-3 py-2 hover:bg-gray-100 rounded text-sm">{{coupon_code}} — קוד קופון</button>
+        <button onclick="insertVariable('{{registration_link}}')" class="block w-full text-right px-3 py-2 hover:bg-gray-100 rounded text-sm">{{registration_link}} — קישור הרשמה</button>
+        <button onclick="insertVariable('{{unsubscribe_link}}')" class="block w-full text-right px-3 py-2 hover:bg-gray-100 rounded text-sm">{{unsubscribe_link}} — ביטול הרשמה</button>
+    </div>
+
+    <script>
+        // Sample template data
+        const templates = [
+            {
+                id: 1,
+                name: 'אישור הרשמה ראשונית',
+                type: 'auto',
+                trigger: 'כשלקוח חדש נוצר',
+                channels: ['sms', 'email'],
+                languages: ['he', 'ru'],
+                active: true,
+                sent: 342
+            },
+            {
+                id: 2,
+                name: 'אירוע נפתח — הזמנה',
+                type: 'auto',
+                trigger: 'כשסטטוס אירוע → פתוח להרשמה',
+                channels: ['sms', 'email', 'whatsapp'],
+                languages: ['he'],
+                active: true,
+                sent: 156
+            },
+            {
+                id: 3,
+                name: 'תזכורת 2-3 ימים',
+                type: 'auto',
+                trigger: 'כשסטטוס אירוע → 2-3 ימים לפני',
+                channels: ['sms', 'email'],
+                languages: ['he'],
+                active: true,
+                sent: 89
+            },
+            {
+                id: 4,
+                name: 'הודעת יום האירוע',
+                type: 'auto',
+                trigger: 'כשסטטוס אירוע → יום האירוע',
+                channels: ['sms', 'email'],
+                languages: ['he'],
+                active: true,
+                sent: 45
+            },
+            {
+                id: 5,
+                name: 'סקר שביעות רצון',
+                type: 'auto',
+                trigger: 'כשמשתתף → נוכח',
+                channels: ['whatsapp'],
+                languages: ['he'],
+                active: false,
+                sent: 12
+            }
+        ];
+
+        let currentTemplate = 2; // Start with template 2 selected
+
+        function renderTemplates() {
+            const list = document.getElementById('templateList');
+            list.innerHTML = templates.map(t => `
+                <div onclick="selectTemplate(${t.id})" class="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition ${currentTemplate === t.id ? 'template-item-active' : ''}">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-semibold text-gray-900">${t.name}</h4>
+                        <label class="toggle-switch">
+                            <input type="checkbox" ${t.active ? 'checked' : ''}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">${t.trigger}</p>
+                    <div class="flex items-center gap-2 mb-2">
+                        ${t.channels.includes('whatsapp') ? '<svg class="w-4 h-4 whatsapp-color" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.694.735 5.326 2.124 7.619L2.883 22l8.115-2.133c2.223 1.213 4.735 1.854 7.302 1.854h.006c5.396 0 9.747-4.363 9.747-9.798 0-2.619-.675-5.081-1.96-7.228-1.282-2.151-3.093-4.061-5.335-5.343-2.242-1.282-4.748-1.97-7.302-1.97"/></svg>' : ''}
+                        ${t.channels.includes('sms') ? '<svg class="w-4 h-4 sms-color" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>' : ''}
+                        ${t.channels.includes('email') ? '<svg class="w-4 h-4 email-color" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>' : ''}
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">${t.languages.join('/')}</span>
+                        <span class="text-xs text-gray-600">נשלח ${t.sent} פעמים</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectTemplate(id) {
+            currentTemplate = id;
+            const template = templates.find(t => t.id === id);
+            document.getElementById('templateName').value = template.name;
+            renderTemplates();
+        }
+
+        function filterTemplates(type) {
+            // Update tab styling
+            const buttons = document.querySelectorAll('.flex.border-b.border-gray-200 button');
+            buttons.forEach((btn, idx) => {
+                if ((type === 'all' && idx === 0) ||
+                    (type === 'auto' && idx === 1) ||
+                    (type === 'manual' && idx === 2) ||
+                    (type === 'drafts' && idx === 3)) {
+                    btn.classList.add('tab-active', 'accent');
+                    btn.classList.remove('text-gray-600');
+                } else {
+                    btn.classList.remove('tab-active', 'accent');
+                    btn.classList.add('text-gray-600');
+                }
+            });
+        }
+
+        function searchTemplates(query) {
+            // Filter logic would go here
+        }
+
+        function selectChannel(channel) {
+            const channels = ['whatsapp', 'sms', 'email'];
+            channels.forEach(c => {
+                const btn = document.getElementById(`channel${c.charAt(0).toUpperCase() + c.slice(1)}`);
+                if (c === channel) {
+                    btn.classList.add('border-purple-500', 'bg-purple-50');
+                    btn.classList.remove('border-gray-300', 'hover:border-gray-400');
+                } else {
+                    btn.classList.remove('border-purple-500', 'bg-purple-50');
+                    btn.classList.add('border-gray-300', 'hover:border-gray-400');
+                }
+            });
+
+            if (channel === 'email') {
+                document.getElementById('emailSubjectContainer').classList.remove('hidden');
+            } else {
+                document.getElementById('emailSubjectContainer').classList.add('hidden');
+            }
+        }
+
+        function selectLanguage(lang) {
+            const langs = ['he', 'ru'];
+            langs.forEach(l => {
+                const btn = document.getElementById(`lang${l === 'he' ? 'He' : 'Ru'}`);
+                if (l === lang) {
+                    btn.classList.add('bg-purple-500', 'text-white');
+                    btn.classList.remove('bg-gray-200', 'text-gray-900');
+                } else {
+                    btn.classList.remove('bg-purple-500', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-900');
+                }
+            });
+        }
+
+        function openVariableMenu() {
+            const menu = document.getElementById('variableMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        function insertVariable(variable) {
+            const textarea = document.getElementById('messageContent');
+            textarea.value += '\n' + variable;
+            document.getElementById('variableMenu').classList.add('hidden');
+        }
+
+        function insertEmoji() {
+            // Emoji picker could be implemented here
+            alert('Emoji picker would open');
+        }
+
+        function openBroadcastModal() {
+            document.getElementById('broadcastModal').classList.add('active');
+        }
+
+        function closeBroadcastModal() {
+            document.getElementById('broadcastModal').classList.remove('active');
+        }
+
+        function toggleLogSidebar() {
+            document.getElementById('logSidebar').classList.toggle('hidden');
+        }
+
+        // Initialize
+        renderTemplates();
+        selectChannel('sms');
+        selectLanguage('he');
+    </script>
+</body>
+</html>

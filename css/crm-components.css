@@ -1,0 +1,8 @@
+/* crm-components.css — Minimal residual after B8 Tailwind migration. */
+.crm-badge {
+  display: inline-block; padding: 3px 10px;
+  border-radius: 999px; font-size: 0.78rem; font-weight: 600;
+  color: #ffffff; white-space: nowrap;
+}
+.crm-leads-view { display: none; }
+.crm-leads-view.active { display: block; }

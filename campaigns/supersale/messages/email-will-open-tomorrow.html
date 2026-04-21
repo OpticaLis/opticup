@@ -1,0 +1,192 @@
+<!--
+  SuperSale "Will Open Tomorrow" Email — שלב 2: טיזר יום לפני פתיחת הרשמה
+  Scenario: 5A — פתיחת אירוע ושליחת הודעות
+  Trigger: Event Status → "Will open tomorrow" (+ Interest = SuperSale)
+  Recipients: כל לידי Tier 2 בסטטוס "ממתין לאירוע" (עד 500)
+  From: events@prizma-optic.co.il
+  Subject: פתיחת הרשמה לאירוע המכירות - עדכון
+
+  Variables:
+    {{23.name}} = שם הליד מ-Tier 2
+    {{2.name}} = שם האירוע מ-Events Management
+    {{23.id}} = item_id של הליד ב-Monday (ל-unsubscribe URL)
+    {{23.mappable_column_values.email_mky18cr2.text}} = אימייל הליד
+-->
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>עדכון לקראת פתיחת הרשמה - אירוע המכירות</title>
+    <style>
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            background-color:#000000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        @media screen and (max-width: 600px) {
+            .container { width: 100% !important; }
+            .mobile-padding { padding-left: 20px !important; padding-right: 20px !important; }
+        }
+    </style>
+</head>
+<body style="margin:0; padding:0; background-color:#000000; direction:rtl;">
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#000000; background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000000 70%);">
+    <tr>
+        <td align="center" style="padding: 40px 0;">
+
+            <table border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="max-width:600px; background-color:#0a0a0a; border-radius:12px; overflow:hidden; border: 1px solid #222222; box-shadow: 0 10px 40px rgba(212, 175, 55, 0.1);">
+
+                <!-- Gold Top Line -->
+                <tr>
+                    <td height="4" style="background: linear-gradient(90deg, #000000 0%, #d4af37 50%, #000000 100%);"></td>
+                </tr>
+
+                <!-- Header -->
+                <tr>
+                    <td align="center" style="padding: 40px 0 20px 0;">
+                        <p style="margin:0; color:#d4af37; font-size:24px; font-weight:bold; letter-spacing:4px; text-transform:uppercase;">
+                            PRIZMA OPTIC
+                        </p>
+                        <p style="margin:5px 0 0 0; color:#666666; font-size:12px; letter-spacing:2px; text-transform:uppercase;">
+                            Luxury Eyewear Events
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Content -->
+                <tr>
+                    <td class="mobile-padding" style="padding: 20px 50px 40px 50px; text-align:right;">
+
+                        <h1 style="margin:0 0 20px 0; font-size:26px; font-weight:300; color:#ffffff;">
+                            שלום {{23.name}},
+                        </h1>
+
+                        <p style="margin:0 0 22px 0; font-size:16px; line-height:1.7; color:#cccccc;">
+                            מחר תיפתח ההרשמה ל- {{2.name}}.
+                        </p>
+
+                        <p style="margin:0 0 22px 0; font-size:15px; line-height:1.7; color:#bbbbbb;">
+                            אירוע מכירה ייעודי, הנערך בזמנים מוגדרים בלבד,
+                            עם תנאים שנקבעים במיוחד במימוש קוד הקופון שנשלח לנרשמים מראש.
+                        </p>
+
+                        <!-- Info Box -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#111111; border: 1px solid #333333; border-radius: 8px; margin-bottom: 28px;">
+                            <tr>
+                                <td style="padding: 22px; border-right: 4px solid #d4af37;">
+                                    <p style="margin:0; font-size:15px; line-height:1.6; color:#dddddd;">
+                                        על מנת לשמור על רמת שירות וחוויית קנייה גבוהה,
+                                        מספר המשתתפים באירוע הקרוב מוגבל ל־
+                                        <strong style="color:#d4af37;">50 משתתפים</strong>.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="margin:0 0 28px 0; font-size:14px; line-height:1.6; color:#999999;">
+                            עם פתיחת ההרשמה תישלח הודעה נוספת עם קישור ייעודי לרישום.
+                            אין צורך לבצע שום פעולה בשלב זה.
+                        </p>
+
+                        <!-- Links -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 6px;">
+                            <tr>
+                                <td align="center" style="padding: 6px 0 0 0;">
+                                    <p style="margin:0 0 14px 0; font-size:14px; color:#bbbbbb; letter-spacing:0.2px;">
+                                        למידע נוסף:
+                                    </p>
+
+                                    <!-- Buttons Row -->
+                                    <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin: 0 auto;">
+                                        <tr>
+                                            <!-- Event Page -->
+                                            <td align="center" style="padding: 0 6px 10px 6px;">
+                                                <a href="https://prizma-optic.co.il/supersale/" class="btn" style="display:inline-block; padding:12px 16px; background:#0f0f0f; color:#d4af37; border: 1px solid rgba(212,175,55,0.55); font-size:13px; font-weight:700; text-decoration:none; border-radius:999px; letter-spacing:0.3px; box-shadow: 0 6px 18px rgba(0,0,0,0.35);">
+                                                    <span style="font-size:14px; line-height:1;">✨</span>&nbsp;עמוד האירוע
+                                                </a>
+                                            </td>
+
+                                            <!-- Website -->
+                                            <td align="center" style="padding: 0 6px 10px 6px;">
+                                                <a href="https://prizma-optic.co.il/" class="btn" style="display:inline-block; padding:12px 16px; background:#0f0f0f; color:#d4af37; border: 1px solid rgba(212,175,55,0.55); font-size:13px; font-weight:700; text-decoration:none; border-radius:999px; letter-spacing:0.3px; box-shadow: 0 6px 18px rgba(0,0,0,0.35);">
+                                                    <span style="font-size:14px; line-height:1;">🌐</span>&nbsp;אתר
+                                                </a>
+                                            </td>
+
+                                            <!-- Instagram -->
+                                            <td align="center" style="padding: 0 6px 10px 6px;">
+                                                <a href="https://www.instagram.com/optic_prizma" class="btn" style="display:inline-block; padding:12px 16px; background:#0f0f0f; color:#d4af37; border: 1px solid rgba(212,175,55,0.55); font-size:13px; font-weight:700; text-decoration:none; border-radius:999px; letter-spacing:0.3px; box-shadow: 0 6px 18px rgba(0,0,0,0.35);">
+                                                    <span style="font-size:14px; line-height:1;">📸</span>&nbsp;אינסטגרם
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                        <!-- Sign Off -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 40px; border-top: 1px solid #222222;">
+                            <tr>
+                                <td style="padding-top: 20px;">
+                                    <p style="margin:0; font-size:15px; color:#ffffff;">
+                                        בברכה,
+                                    </p>
+                                    <p style="margin:5px 0 0 0; font-size:15px; color:#d4af37; font-weight:bold;">
+                                        צוות אופטיקה פריזמה
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </td>
+                </tr>
+
+                <!-- Unsubscribe Block -->
+                <tr>
+                    <td>
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 22px;">
+                            <tr>
+                                <td align="center" style="padding: 18px 20px; color:#777777; font-size:12px; line-height:1.6;">
+                                    <p style="margin:0 0 6px 0;">
+                                        קיבלת את המייל הזה כחלק מרשימת עדכוני אירועי המכירות של אופטיקה פריזמה.
+                                    </p>
+                                    <p style="margin:0 0 10px 0;">
+                                        אם אינך מעוניין לקבל מאיתנו עדכונים שוטפים והזמנות לאירועים עתידיים, ניתן להסיר את עצמך בלחיצה:
+                                    </p>
+
+                                    <a href="https://prizma-optic.co.il/eventsunsubscribe/?item_id={{23.id}}"
+                                       style="color:#d4af37; text-decoration:underline; font-weight:600;">
+                                        להסרה מרשימת התפוצה
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <!-- END Unsubscribe Block -->
+
+            </table>
+
+            <!-- Footer -->
+            <table border="0" cellpadding="0" cellspacing="0" width="600" class="container">
+                <tr>
+                    <td align="center" style="padding: 20px 0; color:#555555; font-size:12px;">
+                        © כל הזכויות שמורות לאופטיקה פריזמה<br>
+                        הודעה זו נשלחה אוטומטית ממערכת ניהול האירועים
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

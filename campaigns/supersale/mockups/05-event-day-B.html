@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Event Day — Variation B "Kiosk Mode"</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://lucide.dev/lucide.svg">
+    <style>
+        * {
+            font-family: 'Heebo', sans-serif;
+        }
+        html, body {
+            background: white;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+        .kiosk-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            height: 60px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .top-bar-left {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .event-title {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .live-counters {
+            display: flex;
+            gap: 24px;
+            font-size: 16px;
+        }
+
+        .live-clock {
+            font-size: 16px;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+            hover: opacity 0.8;
+            transition: opacity 0.2s;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 48px 24px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Search State */
+        .search-section {
+            width: 100%;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+            width: 100%;
+        }
+
+        .search-input {
+            flex: 1;
+            height: 100px;
+            font-size: 48px;
+            padding: 16px 24px;
+            border: 3px solid #e2e8f0;
+            border-radius: 16px;
+            background: white;
+            transition: border-color 0.2s;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+        }
+
+        .qr-scan-button {
+            width: 100px;
+            height: 100px;
+            border-radius: 16px;
+            background: #7c3aed;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            transition: background 0.2s;
+        }
+
+        .qr-scan-button:hover {
+            background: #6d28d9;
+        }
+
+        .search-helper-link {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 18px;
+            color: #7c3aed;
+            cursor: pointer;
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+
+        .search-helper-link:hover {
+            color: #6d28d9;
+        }
+
+        /* Result Card */
+        .result-card {
+            width: 100%;
+            background: white;
+            border: 3px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 32px;
+            min-height: 250px;
+            justify-content: center;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .result-name {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1e293b;
+        }
+
+        .result-phone {
+            font-size: 24px;
+            color: #64748b;
+            margin-bottom: 20px;
+            direction: ltr;
+            font-family: 'Courier New', monospace;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #374151;
+        }
+
+        .status-badge.confirmed {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .eye-exam-banner {
+            width: 100%;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 16px 0;
+            text-align: center;
+        }
+
+        .tags {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 6px 12px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        /* Check-in Button */
+        .checkin-button {
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 32px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .checkin-button:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        .checkin-button:active {
+            transform: translateY(0);
+        }
+
+        .wrong-person-link {
+            text-align: center;
+            font-size: 16px;
+            color: #64748b;
+            cursor: pointer;
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+
+        .wrong-person-link:hover {
+            color: #475569;
+        }
+
+        /* Success State */
+        .success-state {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            animation: successPulse 0.6s ease-out;
+        }
+
+        @keyframes successPulse {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .checkmark-icon {
+            font-size: 200px;
+            color: #10b981;
+            margin-bottom: 24px;
+            animation: checkmarkBounce 0.6s ease-out;
+        }
+
+        @keyframes checkmarkBounce {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .success-message {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 16px;
+        }
+
+        .success-time {
+            font-size: 28px;
+            color: #64748b;
+            margin-bottom: 32px;
+        }
+
+        .purchase-button {
+            height: 60px;
+            padding: 0 32px;
+            background: #7c3aed;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .purchase-button:hover {
+            background: #6d28d9;
+        }
+
+        /* Bottom Bar */
+        .bottom-bar {
+            background: #f8fafc;
+            padding: 24px;
+            border-top: 2px solid #e2e8f0;
+            display: flex;
+            gap: 16px;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .quick-registration-btn {
+            height: 60px;
+            padding: 0 24px;
+            background: #7c3aed;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .quick-registration-btn:hover {
+            background: #6d28d9;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #7c3aed;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        /* Hidden States */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .top-bar {
+                flex-direction: column;
+                height: auto;
+                gap: 12px;
+                padding: 12px;
+            }
+
+            .top-bar-left {
+                flex-direction: column;
+                gap: 12px;
+                width: 100%;
+            }
+
+            .live-counters {
+                flex-direction: column;
+                gap: 8px;
+                width: 100%;
+                font-size: 14px;
+            }
+
+            .search-input {
+                font-size: 36px;
+                height: 80px;
+            }
+
+            .qr-scan-button {
+                width: 80px;
+                height: 80px;
+                font-size: 36px;
+            }
+
+            .result-name {
+                font-size: 28px;
+            }
+
+            .result-phone {
+                font-size: 18px;
+            }
+
+            .checkin-button {
+                font-size: 24px;
+                height: 60px;
+            }
+
+            .stats-row {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .bottom-bar {
+                flex-direction: column;
+            }
+
+            .quick-registration-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="kiosk-container">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <div class="event-title">אירוע #22</div>
+                <div class="live-counters">
+                    <span>הגיעו 22/50</span>
+                    <span>₪35,125</span>
+                </div>
+                <div class="live-clock" id="liveClock">09:15</div>
+            </div>
+            <a class="back-link" href="#" onclick="window.history.back(); return false;">חזרה</a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- State 1: Search (default) -->
+            <div id="searchState" class="search-section">
+                <div class="search-input-wrapper">
+                    <input
+                        type="text"
+                        class="search-input"
+                        id="searchInput"
+                        placeholder="הקלד שם או טלפון..."
+                        autofocus
+                    >
+                    <button class="qr-scan-button" title="סרוק QR">
+                        📱
+                    </button>
+                </div>
+                <div class="search-helper-link" onclick="toggleAttendeeList()">או בחר מהרשימה</div>
+            </div>
+
+            <!-- State 2: Result Card (showing on input) -->
+            <div id="resultState" class="hidden">
+                <div class="result-card">
+                    <div class="avatar">רל</div>
+                    <div class="result-name">רותי לוי</div>
+                    <div class="result-phone">050-1234567</div>
+                    <div class="status-badge confirmed">✓ אושר</div>
+                    <div class="eye-exam-banner">⚕️ נזקק/ה לבדיקת ראייה</div>
+                    <div class="tags">
+                        <span class="tag">VIP</span>
+                        <span class="tag">משקפיים</span>
+                        <span class="tag">עדשות</span>
+                    </div>
+                </div>
+
+                <button class="checkin-button" onclick="handleCheckIn()">
+                    ✓ צ'ק-אין
+                </button>
+                <div class="wrong-person-link" onclick="backToSearch()">זה לא האדם הנכון</div>
+            </div>
+
+            <!-- State 3: Success State (temporary) -->
+            <div id="successState" class="hidden success-state">
+                <div class="checkmark-icon">✓</div>
+                <div class="success-message">רותי לוי נכנס/ה בהצלחה!</div>
+                <div class="success-time">09:15</div>
+                <button class="purchase-button" onclick="showPurchaseForm()">רשום רכישה</button>
+            </div>
+        </div>
+
+        <!-- Bottom Bar -->
+        <div class="bottom-bar">
+            <button class="quick-registration-btn" onclick="quickRegistration()">+ רישום מהיר</button>
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="stat-number">50</div>
+                    <div class="stat-label">רשומים</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">45</div>
+                    <div class="stat-label">אושרו</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">22</div>
+                    <div class="stat-label">הגיעו</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">18</div>
+                    <div class="stat-label">קנו</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Live clock
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('liveClock').textContent = `${hours}:${minutes}`;
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Search input handler
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const value = e.target.value.trim();
+
+            if (value.length >= 3) {
+                // Simulate finding a match
+                showResult();
+            } else {
+                hideResult();
+            }
+        });
+
+        function showResult() {
+            document.getElementById('searchState').classList.add('hidden');
+            document.getElementById('resultState').classList.remove('hidden');
+        }
+
+        function hideResult() {
+            document.getElementById('resultState').classList.add('hidden');
+            document.getElementById('searchState').classList.remove('hidden');
+        }
+
+        function backToSearch() {
+            document.getElementById('searchInput').value = '';
+            hideResult();
+            document.getElementById('searchInput').focus();
+        }
+
+        function handleCheckIn() {
+            document.getElementById('resultState').classList.add('hidden');
+            document.getElementById('searchState').classList.add('hidden');
+            document.getElementById('successState').classList.remove('hidden');
+
+            // Auto-return to search after 3 seconds
+            setTimeout(() => {
+                document.getElementById('successState').classList.add('hidden');
+                document.getElementById('searchState').classList.remove('hidden');
+                document.getElementById('searchInput').value = '';
+                document.getElementById('searchInput').focus();
+            }, 3000);
+        }
+
+        function toggleAttendeeList() {
+            alert('הצג רשימת משתתפים (תכונה עתידית)');
+        }
+
+        function showPurchaseForm() {
+            alert('טופס רכישה (תכונה עתידית)');
+        }
+
+        function quickRegistration() {
+            alert('הוסף משתתף חדש (תכונה עתידית)');
+        }
+    </script>
+</body>
+</html>

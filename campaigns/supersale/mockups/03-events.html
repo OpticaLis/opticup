@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ניהול אירועים CRM | אופטיקה פריזמה</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100..900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    * {
+      font-family: 'Heebo', system-ui, sans-serif;
+    }
+
+    body {
+      background-color: #f8f6ff;
+    }
+
+    .sidebar {
+      background-color: #1e1b4b;
+    }
+
+    .accent-violet {
+      color: #8b5cf6;
+    }
+
+    .accent-bg-violet {
+      background-color: #8b5cf6;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+
+    .status-planning {
+      background-color: #d1d5db;
+      color: #1f2937;
+    }
+
+    .status-open {
+      background-color: #dcfce7;
+      color: #15803d;
+    }
+
+    .status-closed {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .status-before {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-event {
+      background-color: #e9d5ff;
+      color: #6b21a8;
+    }
+
+    .status-completed {
+      background-color: #f3f4f6;
+      color: #4b5563;
+    }
+
+    .attendee-status-new {
+      background-color: #dcfce7;
+      color: #15803d;
+    }
+
+    .attendee-status-wait {
+      background-color: #fed7aa;
+      color: #92400e;
+    }
+
+    .attendee-status-confirmed {
+      background-color: #dcfce7;
+      color: #15803d;
+    }
+
+    .attendee-status-attended {
+      background-color: #fbcfe8;
+      color: #831843;
+    }
+
+    .attendee-status-cancelled {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .funnel-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .funnel-arrow {
+      color: #d1d5db;
+      font-size: 2rem;
+      margin: 0 0.5rem;
+    }
+
+    .kpi-card {
+      background: white;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1e1b4b;
+      margin: 0.5rem 0;
+    }
+
+    .kpi-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+
+    .tab-button {
+      padding: 0.75rem 1.5rem;
+      border-bottom: 3px solid transparent;
+      color: #6b7280;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-button.active {
+      color: #8b5cf6;
+      border-bottom-color: #8b5cf6;
+    }
+
+    .tab-button:hover {
+      color: #7c3aed;
+    }
+
+    .attendee-row {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .attendee-row:hover {
+      background-color: #f9f7ff;
+    }
+
+    .attendee-name {
+      font-weight: 600;
+      color: #1f2937;
+      flex: 0 0 150px;
+    }
+
+    .attendee-phone {
+      color: #6b7280;
+      font-size: 0.875rem;
+      flex: 0 0 120px;
+    }
+
+    .attendee-status-chip {
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      flex: 0 0 auto;
+    }
+
+    .attendee-method {
+      color: #6b7280;
+      font-size: 0.875rem;
+      flex: 0 0 120px;
+    }
+
+    .attendee-time {
+      color: #6b7280;
+      font-size: 0.875rem;
+      flex: 0 0 100px;
+    }
+
+    .attendee-purchase {
+      font-weight: 600;
+      color: #059669;
+      flex: 0 0 80px;
+    }
+
+    .attendee-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex: 0 0 auto;
+    }
+
+    .action-button {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 0.375rem;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .action-button:hover {
+      background: #8b5cf6;
+      border-color: #8b5cf6;
+      color: white;
+    }
+
+    .group-header {
+      background-color: #f3f4f6;
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      color: #374151;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .group-header:hover {
+      background-color: #e5e7eb;
+    }
+
+    .group-count {
+      background-color: #8b5cf6;
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      margin-right: 0.5rem;
+    }
+
+    .capacity-bar {
+      height: 0.5rem;
+      background-color: #e5e7eb;
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+
+    .capacity-fill {
+      height: 100%;
+      background-color: #8b5cf6;
+    }
+
+    .header-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .info-label {
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+
+    .info-value {
+      color: #1f2937;
+      font-weight: 500;
+    }
+
+    .waze-link {
+      color: #8b5cf6;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .waze-link:hover {
+      color: #7c3aed;
+    }
+  </style>
+</head>
+<body>
+  <div class="flex h-screen bg-gray-100">
+    <!-- SIDEBAR -->
+    <div class="sidebar w-64 text-white flex flex-col">
+      <!-- Header -->
+      <div class="p-4 border-b border-indigo-700">
+        <h1 class="text-xl font-bold">אופטיקה פריזמה</h1>
+        <p class="text-sm text-indigo-300">מערכת CRM</p>
+      </div>
+
+      <!-- Nav Items -->
+      <nav class="flex-1 overflow-y-auto p-4 space-y-2">
+        <div class="px-3 py-2 rounded-lg text-indigo-300 text-sm font-semibold">ניהול מקרים</div>
+
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">קונים פוטנציאליים</a>
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">מאוחדים</a>
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">הזמנות</a>
+
+        <div class="px-3 py-2 rounded-lg text-indigo-300 text-sm font-semibold mt-6">קמפיינים ואירועים</div>
+
+        <a href="#" class="px-3 py-2 rounded-lg bg-indigo-700 text-sm text-white font-semibold">🎉 אירועים</a>
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">קמפיינים</a>
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">ניוזלטר</a>
+
+        <div class="px-3 py-2 rounded-lg text-indigo-300 text-sm font-semibold mt-6">דוחות</div>
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">ביצועים</a>
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">ROI</a>
+      </nav>
+
+      <!-- User Footer -->
+      <div class="p-4 border-t border-indigo-700 text-sm">
+        <div class="text-indigo-300">יוסי כהן</div>
+        <div class="text-indigo-400 text-xs">מנהל מבצעות</div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 overflow-auto">
+      <div class="p-8">
+
+        <!-- HEADER SECTION -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h2 class="text-3xl font-bold text-gray-900 mb-1">אירוע המותגים #24 — מאי 2026</h2>
+              <p class="text-gray-500 text-sm">SuperSale — ירידה עונתית גדולה</p>
+            </div>
+
+            <div class="flex gap-2">
+              <!-- Status Dropdown -->
+              <select class="status-badge status-event px-4 py-2 rounded-lg cursor-pointer border border-gray-300 hover:border-indigo-500" style="background-color: #e9d5ff; color: #6b21a8; font-weight: 500;">
+                <option>יום האירוע</option>
+                <option>תכנון</option>
+                <option>הרשמה פתוחה</option>
+                <option>נסגר</option>
+                <option>2-3 ימים</option>
+                <option>הושלם</option>
+              </select>
+
+              <!-- Action Buttons -->
+              <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">
+                ✉️ שלח הודעה
+              </button>
+              <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+                ⚙️ עריכה
+              </button>
+            </div>
+          </div>
+
+          <!-- Event Info Grid -->
+          <div class="header-info">
+            <div class="info-item">
+              <svg class="w-5 h-5 text-indigo-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.3A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13H5.5z"></path>
+              </svg>
+              <div>
+                <div class="info-label">תאריך ושעה</div>
+                <div class="info-value">יום שישי, 2 במאי 2026 | 09:00–14:00</div>
+              </div>
+            </div>
+
+            <div class="info-item">
+              <svg class="w-5 h-5 text-indigo-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+              </svg>
+              <div>
+                <div class="info-label">מיקום</div>
+                <div class="info-value">רחוב הרצל 42, תל אביב | <span class="waze-link">🗺️ נווט ל-Waze</span></div>
+              </div>
+            </div>
+
+            <div class="info-item">
+              <svg class="w-5 h-5 text-indigo-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path>
+              </svg>
+              <div>
+                <div class="info-label">תיאור</div>
+                <div class="info-value">אירוע משפחתי עם ניסיון משקפיים וקבלת חלקות</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Capacity Bar -->
+          <div class="mt-4">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-sm font-semibold text-gray-700">קיבולת: 32/50 נרשמו</span>
+              <span class="text-sm text-gray-500">18 מקומות פנויים</span>
+            </div>
+            <div class="capacity-bar">
+              <div class="capacity-fill" style="width: 64%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI CARDS -->
+        <div class="grid grid-cols-6 gap-3 mb-6">
+          <div class="kpi-card">
+            <div class="kpi-label">נרשמו</div>
+            <div class="kpi-value">87</div>
+            <div class="text-xs text-gray-500">בקשות</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-label">אישרו</div>
+            <div class="kpi-value">69</div>
+            <div class="text-xs text-gray-500">79% מנרשמים</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-label">הגיעו</div>
+            <div class="kpi-value">32</div>
+            <div class="text-xs text-gray-500">46% מאישרים</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-label">קנו</div>
+            <div class="kpi-value">31</div>
+            <div class="text-xs text-gray-500">97% מנוכחים</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-label">הכנסות</div>
+            <div class="kpi-value text-xl" style="color: #059669;">₪39,460</div>
+            <div class="text-xs text-gray-500">מכירות + דמי</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-label">דמי הרשמה</div>
+            <div class="kpi-value">₪3,450</div>
+            <div class="text-xs text-gray-500">₪50 × 69</div>
+          </div>
+        </div>
+
+        <!-- FUNNEL VISUALIZATION -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-6">עלי בקבוק המרות</h3>
+
+          <div class="flex items-center justify-between">
+            <!-- Stage 1: Registered -->
+            <div class="funnel-stage">
+              <div style="background: linear-gradient(to right, #f3f4f6, #e5e7eb); width: 100%; height: 3.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;">
+                <div class="text-center">
+                  <div class="text-lg font-bold text-gray-900">87</div>
+                  <div class="text-xs text-gray-600">נרשמו</div>
+                </div>
+              </div>
+              <div class="text-center text-xs text-gray-500">100%</div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="funnel-arrow" style="color: #d1d5db; font-size: 1.5rem;">→</div>
+
+            <!-- Stage 2: Confirmed -->
+            <div class="funnel-stage">
+              <div style="background: linear-gradient(to right, #dcfce7, #b7e4c7); width: 85%; height: 3rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;">
+                <div class="text-center">
+                  <div class="text-lg font-bold text-gray-900">69</div>
+                  <div class="text-xs text-gray-600">אישרו</div>
+                </div>
+              </div>
+              <div class="text-center text-xs text-gray-500">79%</div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="funnel-arrow" style="color: #d1d5db; font-size: 1.5rem;">→</div>
+
+            <!-- Stage 3: Attended -->
+            <div class="funnel-stage">
+              <div style="background: linear-gradient(to right, #fbcfe8, #f472b6); width: 48%; height: 2.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;">
+                <div class="text-center">
+                  <div class="text-lg font-bold text-gray-900">32</div>
+                  <div class="text-xs text-gray-600">הגיעו</div>
+                </div>
+              </div>
+              <div class="text-center text-xs text-gray-500">46%</div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="funnel-arrow" style="color: #d1d5db; font-size: 1.5rem;">→</div>
+
+            <!-- Stage 4: Purchased -->
+            <div class="funnel-stage">
+              <div style="background: linear-gradient(to right, #d1fae5, #6ee7b7); width: 45%; height: 2rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;">
+                <div class="text-center">
+                  <div class="text-lg font-bold text-gray-900">31</div>
+                  <div class="text-xs text-gray-600">קנו</div>
+                </div>
+              </div>
+              <div class="text-center text-xs text-gray-500">97%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div class="border-b border-gray-200 flex">
+            <button class="tab-button active" onclick="switchTab('attendees')">👥 משתתפים</button>
+            <button class="tab-button" onclick="switchTab('messages')">💬 הודעות</button>
+            <button class="tab-button" onclick="switchTab('analytics')">📊 סטטיסטיקות</button>
+          </div>
+
+          <!-- TAB: ATTENDEES -->
+          <div id="tab-attendees" class="tab-content">
+            <!-- Attendee Groups -->
+
+            <!-- Group: Confirmed -->
+            <div class="border-b border-gray-100">
+              <div class="group-header" onclick="toggleGroup(this)">
+                <span>✓</span>
+                <span>אישרו</span>
+                <span class="group-count">32</span>
+                <span style="margin-right: auto; color: #9ca3af; font-size: 0.75rem;">לחץ להצגה/הסתרה</span>
+              </div>
+
+              <div class="group-content">
+                <!-- Attendee Row 1 -->
+                <div class="attendee-row">
+                  <div class="attendee-name">דוד לוי</div>
+                  <div class="attendee-phone">050-123-4567</div>
+                  <div class="attendee-status-chip attendee-status-attended">הגיע ✓</div>
+                  <div class="attendee-method">טופס אתר</div>
+                  <div class="attendee-time">09:15</div>
+                  <div class="attendee-purchase">₪780</div>
+                  <div class="attendee-actions">
+                    <button class="action-button" title="WhatsApp">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371 0-.57 0-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.708.738 5.348 2.135 7.656l-2.275 6.613 6.768-2.234a9.865 9.865 0 004.718 1.204h.005c5.443 0 9.886-4.453 9.886-9.974 0-2.662-.738-5.167-2.135-7.322a9.844 9.844 0 00-7.551-3.911zm0-1.98c2.992 0 5.822 1.165 7.938 3.277a9.864 9.864 0 012.923 7.346c0 6.052-4.927 10.974-10.974 10.974-1.798 0-3.537-.438-5.08-1.272l-.364-.214-3.776 1.248 1.27-3.687-.235-.374a9.86 9.86 0 01-1.512-5.301c0-6.052 4.927-10.974 10.974-10.974z"/>
+                      </svg>
+                    </button>
+                    <button class="action-button" title="שלח קופון">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h3.29l2.75-3.54z"/>
+                      </svg>
+                    </button>
+                    <button class="action-button" title="שנה סטטוס">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                      </svg>
+                    </button>
+                    <button class="action-button" title="הוסף הערה">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Attendee Row 2 -->
+                <div class="attendee-row">
+                  <div class="attendee-name">שרה כהן</div>
+                  <div class="attendee-phone">052-987-6543</div>
+                  <div class="attendee-status-chip attendee-status-attended">הגיע ✓</div>
+                  <div class="attendee-method">WhatsApp</div>
+                  <div class="attendee-time">10:42</div>
+                  <div class="attendee-purchase">₪1,230</div>
+                  <div class="attendee-actions">
+                    <button class="action-button" title="WhatsApp">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371 0-.57 0-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.708.738 5.348 2.135 7.656l-2.275 6.613 6.768-2.234a9.865 9.865 0 004.718 1.204h.005c5.443 0 9.886-4.453 9.886-9.974 0-2.662-.738-5.167-2.135-7.322a9.844 9.844 0 00-7.551-3.911zm0-1.98c2.992 0 5.822 1.165 7.938 3.277a9.864 9.864 0 012.923 7.346c0 6.052-4.927 10.974-10.974 10.974-1.798 0-3.537-.438-5.08-1.272l-.364-.214-3.776 1.248 1.27-3.687-.235-.374a9.86 9.86 0 01-1.512-5.301c0-6.052 4.927-10.974 10.974-10.974z"/>
+                      </svg>
+                    </button>
+                    <button class="action-button" title="שלח קופון">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h3.29l2.75-3.54z"/>
+                      </svg>
+                    </button>
+                    <button class="action-button" title="שנה סטטוס">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                      </svg>
+                    </button>
+                    <button class="action-button" title="הוסף הערה">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Group: Wait List -->
+            <div class="border-b border-gray-100">
+              <div class="group-header" onclick="toggleGroup(this)">
+                <span>⏳</span>
+                <span>רשימת המתנה</span>
+                <span class="group-count">18</span>
+                <span style="margin-right: auto; color: #9ca3af; font-size: 0.75rem;">לחץ להצגה/הסתרה</span>
+              </div>
+
+              <div class="group-content" style="display: none;">
+                <!-- Attendee Row 3 -->
+                <div class="attendee-row">
+                  <div class="attendee-name">נתן דרור</div>
+                  <div class="attendee-phone">054-555-6789</div>
+                  <div class="attendee-status-chip attendee-status-wait">המתנה</div>
+                  <div class="attendee-method">טופס אתר</div>
+                  <div class="attendee-time">—</div>
+                  <div class="attendee-purchase">₪0</div>
+                  <div class="attendee-actions">
+                    <button class="action-button" title="WhatsApp">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371 0-.57 0-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.708.738 5.348 2.135 7.656l-2.275 6.613 6.768-2.234a9.865 9.865 0 004.718 1.204h.005c5.443 0 9.886-4.453 9.886-9.974 0-2.662-.738-5.167-2.135-7.322a9.844 9.844 0 00-7.551-3.911zm0-1.98c2.992 0 5.822 1.165 7.938 3.277a9.864 9.864 0 012.923 7.346c0 6.052-4.927 10.974-10.974 10.974-1.798 0-3.537-.438-5.08-1.272l-.364-.214-3.776 1.248 1.27-3.687-.235-.374a9.86 9.86 0 01-1.512-5.301c0-6.052 4.927-10.974 10.974-10.974z"/>
+                      </svg>
+                    </button>
+                    <button class="action-button" title="שלח קופון">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54h3.29l2.75-3.54z"/>
+                      </svg>
+                    </button>
+                    <button class="action-button" title="שנה סטטוס">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                      </svg>
+                    </button>
+                    <button class="action-button" title="הוסף הערה">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Group: Cancelled -->
+            <div class="border-b border-gray-100">
+              <div class="group-header" onclick="toggleGroup(this)">
+                <span>✕</span>
+                <span>ביטל</span>
+                <span class="group-count">37</span>
+                <span style="margin-right: auto; color: #9ca3af; font-size: 0.75rem;">לחץ להצגה/הסתרה</span>
+              </div>
+
+              <div class="group-content" style="display: none;">
+                <!-- Collapsed by default -->
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: MESSAGES -->
+          <div id="tab-messages" class="tab-content" style="display: none;">
+            <div class="p-6">
+              <div class="space-y-4">
+                <div style="background: #f3f4f6; border-radius: 0.75rem; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <h4 class="font-semibold text-gray-900">הודעת פתיחת הרשמה</h4>
+                    <p class="text-sm text-gray-500 mt-1">נשלחה: 15 באפריל 2026 בשעה 15:00</p>
+                  </div>
+                  <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: 700; color: #059669;">87</div>
+                    <div class="text-xs text-gray-500">נשלחו בהצלחה</div>
+                  </div>
+                </div>
+
+                <div style="background: #f3f4f6; border-radius: 0.75rem; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <h4 class="font-semibold text-gray-900">תזכורת אישור הרשמה</h4>
+                    <p class="text-sm text-gray-500 mt-1">נשלחה: 25 באפריל 2026 בשעה 10:00</p>
+                  </div>
+                  <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: 700; color: #059669;">69</div>
+                    <div class="text-xs text-gray-500">אישרו הגעה</div>
+                  </div>
+                </div>
+
+                <div style="background: #f3f4f6; border-radius: 0.75rem; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <h4 class="font-semibold text-gray-900">תזכורת יום הלפני</h4>
+                    <p class="text-sm text-gray-500 mt-1">נשלחה: 1 במאי 2026 בשעה 18:00</p>
+                  </div>
+                  <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: 700; color: #059669;">63</div>
+                    <div class="text-xs text-gray-500">הוקרא הודעה</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: ANALYTICS -->
+          <div id="tab-analytics" class="tab-content" style="display: none;">
+            <div class="p-6">
+              <div class="grid grid-cols-2 gap-6">
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-4">סטטוס הנוכחות לפי שעה</h4>
+                  <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                      <span>09:00–10:00</span>
+                      <span class="font-semibold">8 → 7%</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                      <span>10:00–11:00</span>
+                      <span class="font-semibold">12 → 35%</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                      <span>11:00–12:00</span>
+                      <span class="font-semibold">7 → 57%</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                      <span>12:00–13:00</span>
+                      <span class="font-semibold">3 → 67%</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                      <span>13:00–14:00</span>
+                      <span class="font-semibold">2 → 71%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 class="font-semibold text-gray-900 mb-4">התפלגות מכירות לפי קטגוריה</h4>
+                  <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                      <span>משקפיים עיניים</span>
+                      <span class="font-semibold" style="color: #059669;">₪21,500</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                      <span>עדשות מגע</span>
+                      <span class="font-semibold" style="color: #059669;">₪9,200</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                      <span>אביזרים</span>
+                      <span class="font-semibold" style="color: #059669;">₪4,760</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                      <span>בחינה אופטומטרית</span>
+                      <span class="font-semibold" style="color: #059669;">₪4,000</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    function switchTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+
+      // Deactivate all buttons
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+
+      // Show selected tab
+      document.getElementById('tab-' + tabName).style.display = 'block';
+
+      // Activate selected button
+      event.target.classList.add('active');
+    }
+
+    function toggleGroup(header) {
+      const content = header.nextElementSibling;
+      if (content && content.classList.contains('group-content')) {
+        content.style.display = content.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+  </script>
+</body>
+</html>

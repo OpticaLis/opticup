@@ -131,6 +131,17 @@
           <input type="password" id="sf-google-mp" dir="ltr" placeholder="xxxxxxxx">
         </div>
       </div>
+
+      <!-- Pixel Events — fire on specific URLs -->
+      <div style="margin-top:18px; border-top:1px solid #eee; padding-top:14px;">
+        <h3 style="font-size:1rem; font-weight:600; margin-bottom:8px;">🎯 אירועי Pixel לפי עמוד</h3>
+        <small style="display:block; margin-bottom:10px; color:#666;">הגדר אירועים שיישלחו כשמשתמש מגיע לעמוד מסוים (למשל עמוד "תודה שנרשמת")</small>
+        <div id="sf-pixel-events-list"></div>
+        <button type="button" onclick="addPixelEventRow()" class="btn-sm" style="margin-top:8px; padding:6px 14px; font-size:.85rem; background:#f3f4f6; border:1px solid #d1d5db; border-radius:6px; cursor:pointer;">
+          ➕ הוסף אירוע
+        </button>
+      </div>
+      </div>
     </div>
 
     <!-- Section: Branding & Domain -->
@@ -226,10 +237,4 @@
 window.addEventListener('DOMContentLoaded', async () => {
   const session = await loadSession();
   if (!session) { window.location.href = '/'; return; }
-  if (!hasPermission('settings.view')) { window.location.href = '/'; return; }
-  if (!await isFeatureEnabled('storefront')) { renderFeatureLockedState('storefront'); return; }
-  await loadStorefrontSettings();
-});
-</script>
-</body>
-</html>
+  if (!hasPe
