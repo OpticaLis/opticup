@@ -1,15 +1,13 @@
 /* =============================================================================
-   crm-messaging-templates.js — Messaging templates (B7: FINAL-04 rewrite)
-   Split layout: sidebar (category-tabs + search + filterTemplates + template cards)
-                 + main (toolbar + code-editor with line-numbers + variable-menu +
-                         3-panel preview: whatsapp-frame / sms-frame / email-frame)
-   Table: crm_message_templates. Depends on: shared.js, CrmHelpers, Modal.
+   crm-messaging-templates.js — Templates (B8 Tailwind rewrite — FINAL-04)
+   Split layout: sidebar (category tabs + search + cards) + editor (toolbar +
+   code editor + variable menu + 3-panel preview). Table: crm_message_templates.
    ============================================================================= */
 (function () {
   'use strict';
 
   var CHANNEL_LABELS = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'אימייל' };
-  var CHANNEL_COLORS = { sms: '#3b82f6', whatsapp: '#10b981', email: '#f59e0b' };
+  var CHANNEL_COLORS = { sms: 'bg-sky-500', whatsapp: 'bg-emerald-500', email: 'bg-amber-500' };
   var VARIABLES = [
     { key: '{{name}}',              desc: 'שם הליד' },
     { key: '{{phone}}',             desc: 'טלפון' },
@@ -22,11 +20,28 @@
     { key: '{{unsubscribe_link}}',  desc: 'קישור הסרה' }
   ];
   var CATEGORIES = [
-    { key: 'all',     label: 'הכל' },
-    { key: 'auto',    label: 'אוטומטי' },
-    { key: 'manual',  label: 'ידני' },
-    { key: 'drafts',  label: 'טיוטות' }
+    { key: 'all',    label: 'הכל' },
+    { key: 'auto',   label: 'אוטומטי' },
+    { key: 'manual', label: 'ידני' },
+    { key: 'drafts', label: 'טיוטות' }
   ];
+
+  // Tailwind class constants
+  var CLS_SPLIT      = 'grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4 min-h-[500px]';
+  var CLS_SIDEBAR    = 'bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col gap-2';
+  var CLS_EDITOR     = 'bg-white border border-slate-200 rounded-xl p-4';
+  var CLS_CAT_TABS   = 'flex gap-1 bg-white rounded-lg p-1 border border-slate-200';
+  var CLS_CAT_BTN    = 'flex-1 px-2 py-1.5 text-xs font-medium text-slate-600 rounded-md hover:bg-slate-100 transition';
+  var CLS_CAT_ACTIVE = 'flex-1 px-2 py-1.5 text-xs font-bold text-white bg-indigo-600 rounded-md transition';
+  var CLS_INPUT      = 'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500';
+  var CLS_BTN_PRIMARY= 'px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm';
+  var CLS_BTN_SECOND = 'px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold rounded-lg text-sm transition';
+  var CLS_BTN_DANGER = 'px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-lg text-sm transition disabled:opacity-40 disabled:cursor-not-allowed';
+  var CLS_TPL_CARD   = 'bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-indigo-300 hover:shadow-sm transition';
+  var CLS_TPL_ACTIVE = 'bg-indigo-50 border-2 border-indigo-500 rounded-lg p-3 cursor-pointer shadow-sm transition';
+  var CLS_TB_BTN     = 'px-2.5 py-1.5 text-sm bg-white hover:bg-slate-100 border border-slate-200 rounded-md transition';
+  var CLS_CH_BADGE   = 'inline-block text-xs text-white px-2 py-0.5 rounded-full font-semibold';
+  var CLS_PREVIEW    = 'grid grid-cols-1 md:grid-cols-3 gap-3 mt-4';
 
   var _templates = [];
   var _loadPromise = null;
@@ -44,7 +59,7 @@
     if (_loadPromise) return _loadPromise;
     var tid = getTenantId();
     _loadPromise = (async function () {
-      var q = sb.from('crm_message_templates').select('id, slug, name, channel, language, subject, body, is_active, created_at, send_count, last_sent_at, is_auto');
+      var q = sb.from('crm_message_templates').select('id, slug, name, channel, language, subject, body, is_active, created_at');
       if (tid) q = q.eq('tenant_id', tid);
       q = q.order('name');
       var res = await q;
@@ -57,14 +72,13 @@
   window.loadMessagingTemplates = function () { return loadTemplates(true); };
   window._crmMessagingTemplates = function () { return _templates.slice(); };
 
-  // ---- Entry: split layout inside host ----
   function renderMessagingTemplates(host) {
     if (!host) return;
     host.innerHTML =
-      '<div class="crm-messaging-split">' +
-        '<aside class="crm-messaging-sidebar" id="tpl-sidebar"></aside>' +
-        '<main class="crm-messaging-main" id="tpl-editor">' +
-          '<div class="crm-detail-empty" style="padding:20px">בחר תבנית מהרשימה או לחץ "+ תבנית חדשה"</div>' +
+      '<div class="' + CLS_SPLIT + '">' +
+        '<aside class="' + CLS_SIDEBAR + '" id="tpl-sidebar"></aside>' +
+        '<main class="' + CLS_EDITOR + '" id="tpl-editor">' +
+          '<div class="text-center text-slate-400 py-10">בחר תבנית מהרשימה או לחץ "+ תבנית חדשה"</div>' +
         '</main>' +
       '</div>';
     loadTemplates().then(function () {
@@ -72,23 +86,22 @@
       if (_activeId) openEditor(_activeId);
     }).catch(function (e) {
       var sb2 = host.querySelector('#tpl-sidebar');
-      if (sb2) sb2.innerHTML = '<div class="crm-detail-empty" style="color:#ef4444">' + escapeHtml(e.message || String(e)) + '</div>';
+      if (sb2) sb2.innerHTML = '<div class="text-rose-500 py-4 text-sm font-semibold">' + escapeHtml(e.message || String(e)) + '</div>';
     });
   }
   window.renderMessagingTemplates = renderMessagingTemplates;
 
-  // ---- Sidebar: category-tabs + search + template cards ----
   function renderSidebar() {
     var sb2 = document.getElementById('tpl-sidebar');
     if (!sb2) return;
-    var tabsHtml = '<div class="crm-category-tabs">' +
+    var tabsHtml = '<div class="' + CLS_CAT_TABS + '">' +
       CATEGORIES.map(function (c) {
-        return '<button type="button" class="crm-category-tab ' + c.key + (c.key === _category ? ' active' : '') + '" data-cat="' + c.key + '">' + escapeHtml(c.label) + '</button>';
+        return '<button type="button" class="' + (c.key === _category ? CLS_CAT_ACTIVE : CLS_CAT_BTN) + '" data-cat="' + c.key + '">' + escapeHtml(c.label) + '</button>';
       }).join('') +
     '</div>';
-    var searchHtml = '<input type="search" class="crm-search" id="tpl-search" placeholder="חיפוש תבנית..." value="' + escapeHtml(_search) + '" style="width:100%;margin-bottom:8px;padding:8px 10px;border:1px solid var(--crm-border-strong);border-radius:var(--crm-radius-sm)">';
-    var newBtn = '<button type="button" class="crm-btn crm-btn-primary" id="tpl-new" style="width:100%;margin-bottom:10px">+ תבנית חדשה</button>';
-    sb2.innerHTML = tabsHtml + searchHtml + newBtn + '<div id="tpl-list"></div>';
+    var searchHtml = '<input type="search" class="' + CLS_INPUT + '" id="tpl-search" placeholder="חיפוש תבנית..." value="' + escapeHtml(_search) + '">';
+    var newBtn = '<button type="button" class="' + CLS_BTN_PRIMARY + ' w-full" id="tpl-new">+ תבנית חדשה</button>';
+    sb2.innerHTML = tabsHtml + searchHtml + newBtn + '<div class="flex flex-col gap-2 overflow-y-auto max-h-[500px]" id="tpl-list"></div>';
     sb2.querySelectorAll('[data-cat]').forEach(function (b) {
       b.addEventListener('click', function () { _category = b.getAttribute('data-cat'); renderSidebar(); });
     });
@@ -99,12 +112,11 @@
     renderList();
   }
 
-  // ---- filterTemplates + template card list ----
   function filterTemplates() {
     var s = _search.trim().toLowerCase();
     return _templates.filter(function (t) {
-      if (_category === 'auto'   && !t.is_auto) return false;
-      if (_category === 'manual' && t.is_auto)  return false;
+      if (_category === 'auto')   return false;
+      if (_category === 'manual' && !t.is_active) return false;
       if (_category === 'drafts' && t.is_active) return false;
       if (s && (t.name || '').toLowerCase().indexOf(s) === -1 && (t.slug || '').toLowerCase().indexOf(s) === -1) return false;
       return true;
@@ -115,16 +127,19 @@
     var list = document.getElementById('tpl-list');
     if (!list) return;
     var rows = filterTemplates();
-    if (!rows.length) { list.innerHTML = '<div class="crm-detail-empty">אין תבניות</div>'; return; }
+    if (!rows.length) { list.innerHTML = '<div class="text-center text-slate-400 py-4 text-sm">אין תבניות</div>'; return; }
     list.innerHTML = rows.map(function (t) {
       var ch = CHANNEL_LABELS[t.channel] || t.channel;
-      var dot = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + (t.is_active ? 'var(--crm-success)' : 'var(--crm-text-muted)') + ';margin-inline-end:6px"></span>';
-      var cls = 'crm-template-card' + (_activeId === t.id ? ' active' : '');
+      var dotCls = t.is_active ? 'bg-emerald-500' : 'bg-slate-400';
+      var cls = _activeId === t.id ? CLS_TPL_ACTIVE : CLS_TPL_CARD;
       return '<div class="' + cls + '" data-open-tpl="' + escapeHtml(t.id) + '">' +
-        '<div style="font-weight:700">' + dot + escapeHtml(t.name || '') + '</div>' +
-        '<div style="font-size:0.78rem;color:var(--crm-text-muted)">' +
-          '<span class="crm-badge" style="background:' + escapeHtml(CHANNEL_COLORS[t.channel] || '#6b7280') + '">' + escapeHtml(ch) + '</span> ' +
-          (t.send_count ? t.send_count + ' נשלחו' : 'לא נשלח') + ' · ' + escapeHtml(CrmHelpers.formatDate(t.last_sent_at) || '—') +
+        '<div class="flex items-center gap-2 font-bold text-sm text-slate-900">' +
+          '<span class="w-2 h-2 rounded-full ' + dotCls + ' shrink-0"></span>' +
+          '<span class="truncate">' + escapeHtml(t.name || '') + '</span>' +
+        '</div>' +
+        '<div class="flex items-center gap-2 text-xs text-slate-500 mt-1">' +
+          '<span class="' + CLS_CH_BADGE + ' ' + (CHANNEL_COLORS[t.channel] || 'bg-slate-500') + '">' + escapeHtml(ch) + '</span>' +
+          escapeHtml(CrmHelpers.formatDate(t.created_at) || '—') +
         '</div>' +
       '</div>';
     }).join('');
@@ -133,7 +148,6 @@
     });
   }
 
-  // ---- Editor: toolbar + code-editor (line-numbers) + variable-menu + 3-panel preview ----
   function openEditor(id) {
     var main = document.getElementById('tpl-editor');
     if (!main) return;
@@ -142,41 +156,37 @@
     _activeId = id;
 
     main.innerHTML =
-      '<div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap">' +
-        '<input type="text" id="tpl-name" value="' + escapeHtml(tpl.name) + '" placeholder="שם תבנית" style="flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--crm-border-strong);border-radius:var(--crm-radius-sm)">' +
-        '<select id="tpl-channel" style="padding:8px;border:1px solid var(--crm-border-strong);border-radius:var(--crm-radius-sm)">' +
+      '<div class="flex flex-wrap gap-2 mb-3">' +
+        '<input type="text" id="tpl-name" value="' + escapeHtml(tpl.name) + '" placeholder="שם תבנית" class="' + CLS_INPUT + ' flex-1 min-w-[180px]">' +
+        '<select id="tpl-channel" class="' + CLS_INPUT + ' w-32">' +
           ['whatsapp','sms','email'].map(function (c) { return '<option value="' + c + '"' + (c === tpl.channel ? ' selected' : '') + '>' + CHANNEL_LABELS[c] + '</option>'; }).join('') +
         '</select>' +
-        '<select id="tpl-lang" style="padding:8px;border:1px solid var(--crm-border-strong);border-radius:var(--crm-radius-sm)">' +
+        '<select id="tpl-lang" class="' + CLS_INPUT + ' w-28">' +
           [['he','עברית'],['ru','רוסית'],['en','אנגלית']].map(function (l) { return '<option value="' + l[0] + '"' + (l[0] === tpl.language ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') +
         '</select>' +
       '</div>' +
-      '<input type="text" id="tpl-subject" value="' + escapeHtml(tpl.subject || '') + '" placeholder="נושא (רק לאימייל)" style="width:100%;padding:8px 10px;border:1px solid var(--crm-border-strong);border-radius:var(--crm-radius-sm);margin-bottom:8px">' +
-      // ---- toolbar ----
-      '<div class="crm-editor-toolbar">' +
-        '<button type="button" class="crm-toolbar-btn" data-fmt="bold"><strong>B</strong></button>' +
-        '<button type="button" class="crm-toolbar-btn" data-fmt="italic"><em>I</em></button>' +
-        '<button type="button" class="crm-toolbar-btn" data-fmt="underline"><u>U</u></button>' +
-        '<button type="button" class="crm-toolbar-btn" data-fmt="emoji">😀</button>' +
-        '<span class="crm-variable-menu">' +
-          '<button type="button" class="crm-toolbar-btn" id="tpl-var-btn">משתנים ▾</button>' +
-          '<div class="crm-variable-menu-list" id="tpl-var-list" style="display:none">' +
-            VARIABLES.map(function (v) { return '<div class="crm-variable-item" data-insert-var="' + escapeHtml(v.key) + '"><code>' + escapeHtml(v.key) + '</code><span>' + escapeHtml(v.desc) + '</span></div>'; }).join('') +
+      '<input type="text" id="tpl-subject" value="' + escapeHtml(tpl.subject || '') + '" placeholder="נושא (רק לאימייל)" class="' + CLS_INPUT + ' mb-3">' +
+      '<div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-2 mb-0">' +
+        '<button type="button" class="' + CLS_TB_BTN + '" data-fmt="bold"><strong>B</strong></button>' +
+        '<button type="button" class="' + CLS_TB_BTN + '" data-fmt="italic"><em>I</em></button>' +
+        '<button type="button" class="' + CLS_TB_BTN + '" data-fmt="underline"><u>U</u></button>' +
+        '<button type="button" class="' + CLS_TB_BTN + '" data-fmt="emoji">😀</button>' +
+        '<span class="relative ms-2">' +
+          '<button type="button" class="' + CLS_TB_BTN + '" id="tpl-var-btn">משתנים ▾</button>' +
+          '<div class="absolute z-10 end-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg p-1 min-w-[220px] hidden" id="tpl-var-list">' +
+            VARIABLES.map(function (v) { return '<div class="flex items-center justify-between px-2 py-1.5 hover:bg-indigo-50 rounded cursor-pointer gap-3" data-insert-var="' + escapeHtml(v.key) + '"><code class="text-xs text-indigo-600">' + escapeHtml(v.key) + '</code><span class="text-xs text-slate-500">' + escapeHtml(v.desc) + '</span></div>'; }).join('') +
           '</div>' +
         '</span>' +
       '</div>' +
-      // ---- code editor with line-numbers ----
-      '<div class="crm-code-editor">' +
-        '<div class="crm-line-numbers" id="tpl-linenums"></div>' +
-        '<textarea class="crm-editor-input" id="tpl-body" rows="8">' + escapeHtml(tpl.body || '') + '</textarea>' +
+      '<div class="flex bg-slate-900 border border-slate-900 rounded-b-lg overflow-hidden">' +
+        '<div class="bg-slate-800 text-slate-500 text-xs text-end p-2 select-none font-mono whitespace-pre" id="tpl-linenums"></div>' +
+        '<textarea class="flex-1 bg-slate-900 text-slate-100 p-2 border-0 focus:ring-0 resize-y font-mono text-sm" id="tpl-body" rows="8" style="direction:ltr;text-align:start">' + escapeHtml(tpl.body || '') + '</textarea>' +
       '</div>' +
-      // ---- 3-panel preview ----
-      '<div class="crm-preview-container" id="tpl-preview"></div>' +
-      // ---- action buttons ----
-      '<div class="crm-modal-footer">' +
-        '<button type="button" class="crm-btn crm-btn-primary" id="tpl-save">שמור והפעל</button>' +
-        '<button type="button" class="crm-btn crm-btn-secondary" id="tpl-draft">שמור טיוטה</button>' +
-        '<button type="button" class="crm-btn crm-btn-danger" id="tpl-delete"' + (id ? '' : ' disabled') + '>מחק</button>' +
+      '<div class="' + CLS_PREVIEW + '" id="tpl-preview"></div>' +
+      '<div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 justify-end">' +
+        '<button type="button" class="' + CLS_BTN_PRIMARY + '" id="tpl-save">שמור והפעל</button>' +
+        '<button type="button" class="' + CLS_BTN_SECOND + '" id="tpl-draft">שמור טיוטה</button>' +
+        '<button type="button" class="' + CLS_BTN_DANGER + '" id="tpl-delete"' + (id ? '' : ' disabled') + '>מחק</button>' +
       '</div>';
 
     wireEditor(tpl);
@@ -188,16 +198,12 @@
     var body = document.getElementById('tpl-body');
     var varBtn = document.getElementById('tpl-var-btn');
     var varList = document.getElementById('tpl-var-list');
-    if (varBtn && varList) varBtn.addEventListener('click', function () { varList.style.display = varList.style.display === 'none' ? 'block' : 'none'; });
+    if (varBtn && varList) varBtn.addEventListener('click', function () { varList.classList.toggle('hidden'); });
     document.querySelectorAll('[data-insert-var]').forEach(function (it) {
-      it.addEventListener('click', function () { insertVariable(it.getAttribute('data-insert-var')); if (varList) varList.style.display = 'none'; });
+      it.addEventListener('click', function () { insertVariable(it.getAttribute('data-insert-var')); if (varList) varList.classList.add('hidden'); });
     });
-    if (body) {
-      body.addEventListener('input', function () { updatePreview(); updateLineNumbers(); });
-    }
-    var save = document.getElementById('tpl-save');
-    var draft = document.getElementById('tpl-draft');
-    var del = document.getElementById('tpl-delete');
+    if (body) body.addEventListener('input', function () { updatePreview(); updateLineNumbers(); });
+    var save = document.getElementById('tpl-save'), draft = document.getElementById('tpl-draft'), del = document.getElementById('tpl-delete');
     if (save)  save.addEventListener('click', function () { saveTemplate(tpl, true); });
     if (draft) draft.addEventListener('click', function () { saveTemplate(tpl, false); });
     if (del && tpl.id) del.addEventListener('click', function () { deleteTemplate(tpl); });
@@ -222,26 +228,26 @@
     ln.textContent = out;
   }
 
-  // ---- 3-panel preview: whatsapp-frame / sms-frame / email-frame ----
   function updatePreview() {
     var host = document.getElementById('tpl-preview');
     if (!host) return;
     var body = (document.getElementById('tpl-body') || {}).value || '';
     var subj = (document.getElementById('tpl-subject') || {}).value || '';
     var rendered = substitute(body);
-    host.innerHTML =
-      '<div class="crm-preview-panel whatsapp-frame crm-whatsapp-frame">' +
-        '<div class="crm-preview-header">WhatsApp</div>' +
-        '<div class="crm-preview-body"><div class="crm-preview-bubble">' + escapeHtml(rendered) + '</div></div>' +
+    host.innerHTML = previewPanel('WhatsApp', 'emerald', rendered, '') +
+                     previewPanel('SMS',      'sky',     rendered, '') +
+                     previewPanel('אימייל',   'amber',   rendered, substitute(subj));
+  }
+
+  function previewPanel(title, color, body, subject) {
+    var headerBg = { emerald: 'bg-emerald-500', sky: 'bg-sky-500', amber: 'bg-amber-500' }[color] || 'bg-slate-500';
+    return '<div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">' +
+      '<div class="' + headerBg + ' text-white text-xs font-bold px-3 py-2">' + escapeHtml(title) + '</div>' +
+      '<div class="p-3 bg-slate-50 min-h-[120px]">' +
+        (subject ? '<div class="font-bold text-sm text-slate-800 mb-2">' + escapeHtml(subject) + '</div>' : '') +
+        '<div class="bg-white rounded-lg p-2.5 text-sm text-slate-700 border border-slate-100 whitespace-pre-wrap">' + escapeHtml(body) + '</div>' +
       '</div>' +
-      '<div class="crm-preview-panel sms-frame crm-sms-frame">' +
-        '<div class="crm-preview-header">SMS</div>' +
-        '<div class="crm-preview-body"><div class="crm-preview-bubble">' + escapeHtml(rendered) + '</div></div>' +
-      '</div>' +
-      '<div class="crm-preview-panel email-frame crm-email-frame">' +
-        '<div class="crm-preview-header">אימייל</div>' +
-        '<div class="crm-preview-body"><strong>' + escapeHtml(substitute(subj)) + '</strong><br>' + escapeHtml(rendered) + '</div>' +
-      '</div>';
+    '</div>';
   }
 
   function substitute(text) {
@@ -293,6 +299,6 @@
     await loadTemplates(true);
     renderSidebar();
     var main = document.getElementById('tpl-editor');
-    if (main) main.innerHTML = '<div class="crm-detail-empty" style="padding:20px">התבנית בוטלה</div>';
+    if (main) main.innerHTML = '<div class="text-center text-slate-400 py-10">התבנית בוטלה</div>';
   }
 })();

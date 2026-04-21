@@ -1,25 +1,21 @@
 /* =============================================================================
-   crm-messaging-tab.js — Messaging Hub tab (orchestrator + sub-tab nav)
-   Depends on: shared.js, CrmHelpers, crm-init.js
-   Sub-tab renderers (registered by sibling files):
-     window.renderMessagingTemplates(host)
-     window.renderMessagingRules(host)
-     window.renderMessagingBroadcast(host)
-     window.renderMessagingLog(host)
-   Exports:
-     window.loadCrmMessagingTab() — entry point called by showCrmTab('messaging')
-     window.showMessagingSub(key) — switch active sub-tab
-     window.getMessagingSubTab() — current sub-tab key
+   crm-messaging-tab.js — Messaging Hub orchestrator (B8 Tailwind — FINAL-04)
+   Sub-tab nav: templates / rules / broadcast / log
    ============================================================================= */
 (function () {
   'use strict';
 
   var SUB_TABS = [
-    { key: 'templates',  label: '\uD83D\uDCDD \u05EA\u05D1\u05E0\u05D9\u05D5\u05EA' },          // תבניות
-    { key: 'rules',      label: '\u26A1 \u05DB\u05DC\u05DC\u05D9 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05D4' }, // כללי אוטומטיה
-    { key: 'broadcast',  label: '\uD83D\uDCE2 \u05E9\u05DC\u05D9\u05D7\u05D4 \u05D9\u05D3\u05E0\u05D9\u05EA' }, // שליחה ידנית
-    { key: 'log',        label: '\uD83D\uDCDC \u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D4' }  // היסטוריה
+    { key: 'templates', label: '📝 תבניות' },
+    { key: 'rules',     label: '⚡ כללי אוטומטיה' },
+    { key: 'broadcast', label: '📢 שליחה ידנית' },
+    { key: 'log',       label: '📜 היסטוריה' }
   ];
+
+  var CLS_SUBTAB_BAR = 'flex gap-1 border-b border-slate-200 bg-white rounded-t-xl px-3 pt-3 overflow-x-auto';
+  var CLS_SUBTAB     = 'px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-indigo-600 border-b-2 border-transparent transition whitespace-nowrap';
+  var CLS_SUBTAB_ACT = 'px-4 py-2.5 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition whitespace-nowrap';
+  var CLS_BODY       = 'bg-white rounded-b-xl shadow-sm border border-t-0 border-slate-200 p-5';
 
   var _state = { subTab: 'templates', layoutReady: false };
   window.getMessagingSubTab = function () { return _state.subTab; };
@@ -33,7 +29,7 @@
       return;
     }
 
-    panel.innerHTML = '<div class="crm-card"><div class="crm-detail-empty" style="padding:20px">\u05D8\u05D5\u05E2\u05DF \u05DE\u05E8\u05DB\u05D6 \u05D4\u05D5\u05D3\u05E2\u05D5\u05EA...</div></div>';
+    panel.innerHTML = '<div class="' + CLS_BODY + '"><div class="text-center text-slate-400 py-8">טוען מרכז הודעות...</div></div>';
 
     try {
       await ensureCrmStatusCache();
@@ -42,7 +38,7 @@
       renderActiveSubTab();
     } catch (e) {
       console.error('messaging hub load failed:', e);
-      panel.innerHTML = '<div class="crm-card"><div class="crm-detail-empty" style="padding:20px;color:#ef4444">\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05D4: ' +
+      panel.innerHTML = '<div class="' + CLS_BODY + '"><div class="text-center text-rose-500 py-6 font-semibold">שגיאה בטעינה: ' +
         escapeHtml(e.message || String(e)) + '</div></div>';
     }
   }
@@ -50,15 +46,15 @@
 
   function renderLayout(panel) {
     var subTabHtml = SUB_TABS.map(function (t) {
-      var cls = 'crm-messaging-subtab' + (_state.subTab === t.key ? ' active' : '');
+      var cls = (_state.subTab === t.key) ? CLS_SUBTAB_ACT : CLS_SUBTAB;
       return '<button type="button" class="' + cls + '" data-subtab="' + t.key + '">' + t.label + '</button>';
     }).join('');
 
     panel.innerHTML =
-      '<div class="crm-messaging-subtabs">' + subTabHtml + '</div>' +
-      '<div class="card crm-messaging-body" id="crm-messaging-body"></div>';
+      '<div class="' + CLS_SUBTAB_BAR + '">' + subTabHtml + '</div>' +
+      '<div class="' + CLS_BODY + '" id="crm-messaging-body"></div>';
 
-    panel.querySelectorAll('.crm-messaging-subtab').forEach(function (btn) {
+    panel.querySelectorAll('[data-subtab]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var key = btn.getAttribute('data-subtab');
         if (!key || key === _state.subTab) return;
@@ -72,9 +68,9 @@
     _state.subTab = key;
     var panel = document.getElementById('tab-messaging');
     if (!panel) return;
-    panel.querySelectorAll('.crm-messaging-subtab').forEach(function (b) {
-      var k = b.getAttribute('data-subtab');
-      b.classList.toggle('active', k === key);
+    panel.querySelectorAll('[data-subtab]').forEach(function (b) {
+      var isActive = b.getAttribute('data-subtab') === key;
+      b.className = isActive ? CLS_SUBTAB_ACT : CLS_SUBTAB;
     });
     renderActiveSubTab();
   }
@@ -94,13 +90,11 @@
         renderer(host);
       } catch (e) {
         console.error('sub-tab render failed:', e);
-        host.innerHTML = '<div class="crm-detail-empty" style="padding:20px;color:#ef4444">' +
-          '\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05EA \u05D4\u05EA\u05EA-\u05DC\u05E9\u05D5\u05E0\u05D9\u05EA: ' +
+        host.innerHTML = '<div class="text-center text-rose-500 py-6 font-semibold">שגיאה בטעינת התת-לשונית: ' +
           escapeHtml(e.message || String(e)) + '</div>';
       }
     } else {
-      host.innerHTML = '<div class="crm-detail-empty" style="padding:20px">' +
-        '\u05E8\u05DB\u05D9\u05D1 \u05D4\u05EA\u05EA-\u05DC\u05E9\u05D5\u05E0\u05D9\u05EA \u05DC\u05D0 \u05E0\u05D8\u05E2\u05DF.</div>';
+      host.innerHTML = '<div class="text-center text-slate-400 py-6">רכיב התת-לשונית לא נטען.</div>';
     }
   }
   window.renderMessagingActiveSub = renderActiveSubTab;

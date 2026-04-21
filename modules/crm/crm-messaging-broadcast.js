@@ -1,14 +1,20 @@
 /* =============================================================================
-   crm-messaging-broadcast.js — Manual Broadcast (5-step wizard) + Message Log
-   Tables: crm_broadcasts, crm_message_log, crm_leads (read), crm_events (read)
-   B7: wizard modal with wizard-progress + wizard-dot + wizard-step,
-       message-log table with status-chip pills (sent/delivered/read/failed).
+   crm-messaging-broadcast.js — Broadcast wizard + Log (B8 Tailwind — FINAL-04)
+   Tables: crm_broadcasts, crm_message_log, crm_leads, crm_events
    ============================================================================= */
 (function () {
   'use strict';
 
   var CHANNEL_LABELS = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'אימייל' };
-  var STATUS_LABELS  = { sent: 'נשלח', pending: 'בתור', failed: 'נכשל', delivered: 'הגיע', read: 'נקרא' };
+  var STATUS_LABELS  = { sent: 'נשלח', pending: 'בתור', failed: 'נכשל', delivered: 'הגיע', read: 'נקרא', queued: 'בתור' };
+  var STATUS_CLASSES = {
+    sent:      'bg-sky-100 text-sky-800',
+    delivered: 'bg-emerald-100 text-emerald-800',
+    read:      'bg-indigo-100 text-indigo-800',
+    failed:    'bg-rose-100 text-rose-800',
+    queued:    'bg-slate-100 text-slate-700',
+    pending:   'bg-slate-100 text-slate-700'
+  };
   var PAGE_SIZE = 50;
   var WIZARD_STEPS = [
     { key: 'recipients', label: 'נמענים' },
@@ -17,6 +23,15 @@
     { key: 'timing',     label: 'תזמון' },
     { key: 'confirm',    label: 'אישור' }
   ];
+
+  var CLS_INPUT  = 'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500';
+  var CLS_LABEL  = 'block text-sm font-medium text-slate-700 mb-1';
+  var CLS_ROW    = 'mb-3';
+  var CLS_BTN_P  = 'px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed';
+  var CLS_BTN_S  = 'px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold rounded-lg text-sm transition disabled:opacity-40 disabled:cursor-not-allowed';
+  var CLS_TABLE  = 'w-full text-sm bg-white';
+  var CLS_TH     = 'px-4 py-2.5 text-start font-semibold text-slate-700 bg-slate-50';
+  var CLS_TD     = 'px-4 py-2.5 text-slate-800 border-b border-slate-100';
 
   var _events = [];
   var _logRows = [];
@@ -28,13 +43,11 @@
     if (window.ActivityLog && ActivityLog.write) { try { ActivityLog.write({ action: a, entity_type: et, entity_id: eid, severity: 'info', metadata: meta || {} }); } catch (_) {} }
   }
 
-  /* ----------------------------------- BROADCAST (wizard) ----------------------------------- */
-
   async function renderMessagingBroadcast(host) {
     if (!host) return;
-    host.innerHTML = '<div class="crm-detail-empty" style="padding:20px">טוען...</div>';
+    host.innerHTML = '<div class="text-center text-slate-400 py-8">טוען...</div>';
     try { await ensureCrmStatusCache(); await loadEventsOnce(); renderBroadcastIntro(host); }
-    catch (e) { host.innerHTML = '<div class="crm-detail-empty" style="color:#ef4444">' + escapeHtml(e.message || String(e)) + '</div>'; }
+    catch (e) { host.innerHTML = '<div class="text-center text-rose-500 py-6 font-semibold">' + escapeHtml(e.message || String(e)) + '</div>'; }
   }
   window.renderMessagingBroadcast = renderMessagingBroadcast;
 
@@ -51,13 +64,16 @@
 
   function renderBroadcastIntro(host) {
     host.innerHTML =
-      '<h3 style="color:var(--crm-text-primary);margin:0 0 10px">שליחה ידנית</h3>' +
-      '<p style="color:var(--crm-text-muted)">אשף שליחה בן 5 שלבים: בחירת נמענים, ערוץ, תבנית, תזמון, אישור.</p>' +
-      '<button type="button" class="crm-btn crm-btn-primary" id="open-wizard">+ שליחה חדשה</button>' +
-      '<div id="bc-history" style="margin-top:20px"></div>';
+      '<div class="flex items-center justify-between mb-4">' +
+        '<div>' +
+          '<h3 class="text-lg font-bold text-slate-800 m-0">שליחה ידנית</h3>' +
+          '<p class="text-sm text-slate-500 mt-1">אשף שליחה בן 5 שלבים: נמענים, ערוץ, תבנית, תזמון, אישור.</p>' +
+        '</div>' +
+        '<button type="button" class="' + CLS_BTN_P + '" id="open-wizard">+ שליחה חדשה</button>' +
+      '</div>' +
+      '<div id="bc-history" class="mt-4"></div>';
     var btn = host.querySelector('#open-wizard');
     if (btn) btn.addEventListener('click', openWizard);
-    // Also render log underneath as a preview (B7 §2.25)
     renderMessagingLog(host.querySelector('#bc-history'));
   }
 
@@ -65,26 +81,30 @@
     _wizard = { step: 0, status: '', event: '', language: '', channel: 'whatsapp', templateId: '', body: '', name: '', schedule: 'now', recipients: 0 };
     var modal = Modal.show({ title: 'אשף שליחה', size: 'lg', content: wizardHtml() });
     var root = modal.el.querySelector('.modal-body');
-    if (root) { wireWizard(root); }
+    if (root) wireWizard(root);
   }
 
-  // ---- wizard-progress + 5 wizard-step panels ----
   function wizardHtml() {
-    var dots = '<div class="crm-wizard-progress">' +
+    var dots = '<div class="flex items-center justify-between mb-6 px-2">' +
       WIZARD_STEPS.map(function (s, i) {
-        var cls = 'crm-wizard-dot' + (i === _wizard.step ? ' active' : (i < _wizard.step ? ' done' : ''));
-        return '<div class="' + cls + '" data-wiz-dot="' + i + '">' + (i + 1) + '</div>';
+        var isActive = i === _wizard.step, isDone = i < _wizard.step;
+        var dotCls = isActive ? 'bg-indigo-600 text-white ring-4 ring-indigo-100'
+                   : isDone ? 'bg-emerald-500 text-white'
+                   : 'bg-slate-200 text-slate-500';
+        var labelCls = isActive ? 'text-indigo-700 font-bold' : 'text-slate-500';
+        return '<div class="flex flex-col items-center gap-1.5 flex-1">' +
+          '<div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition ' + dotCls + '" data-wiz-dot="' + i + '">' + (isDone ? '✓' : (i + 1)) + '</div>' +
+          '<span class="text-xs ' + labelCls + '">' + escapeHtml(s.label) + '</span>' +
+        '</div>' +
+        (i < WIZARD_STEPS.length - 1 ? '<div class="flex-1 h-0.5 ' + (isDone ? 'bg-emerald-500' : 'bg-slate-200') + ' mt-[-20px]"></div>' : '');
       }).join('') +
     '</div>';
-    var steps = WIZARD_STEPS.map(function (s, i) {
-      var cls = 'crm-wizard-step' + (i === _wizard.step ? ' active' : '');
-      return '<div class="' + cls + '" data-wiz-step="' + s.key + '">' + wizardStepBody(s.key) + '</div>';
-    }).join('');
-    var nav = '<div class="crm-modal-footer">' +
-      '<button type="button" class="crm-btn crm-btn-secondary" id="wiz-back"' + (_wizard.step === 0 ? ' disabled' : '') + '>‹ חזור</button>' +
-      '<button type="button" class="crm-btn crm-btn-primary" id="wiz-next">' + (_wizard.step === WIZARD_STEPS.length - 1 ? 'שלח' : 'הבא ›') + '</button>' +
+    var body = '<div class="py-2 min-h-[200px]" data-wiz-step="' + WIZARD_STEPS[_wizard.step].key + '">' + wizardStepBody(WIZARD_STEPS[_wizard.step].key) + '</div>';
+    var nav = '<div class="flex gap-2 justify-end pt-4 border-t border-slate-200 mt-4">' +
+      '<button type="button" class="' + CLS_BTN_S + '" id="wiz-back"' + (_wizard.step === 0 ? ' disabled' : '') + '>‹ חזור</button>' +
+      '<button type="button" class="' + CLS_BTN_P + '" id="wiz-next">' + (_wizard.step === WIZARD_STEPS.length - 1 ? 'שלח ✓' : 'הבא ›') + '</button>' +
     '</div>';
-    return dots + steps + nav;
+    return dots + body + nav;
   }
 
   function wizardStepBody(key) {
@@ -92,36 +112,52 @@
       var statuses = (window.CRM_STATUSES && window.CRM_STATUSES.lead) || {};
       var stOpts = '<option value="">(כל הסטטוסים)</option>' + Object.keys(statuses).map(function (slug) { return '<option value="' + escapeHtml(slug) + '"' + (slug === _wizard.status ? ' selected' : '') + '>' + escapeHtml(statuses[slug].name_he || slug) + '</option>'; }).join('');
       var evOpts = '<option value="">(כל האירועים)</option>' + _events.map(function (e) { return '<option value="' + escapeHtml(e.id) + '"' + (e.id === _wizard.event ? ' selected' : '') + '>#' + e.event_number + ' ' + escapeHtml(e.name || '') + '</option>'; }).join('');
-      return '<h4>שלב 1 — נמענים</h4>' +
-        '<div class="crm-form-row"><label>סטטוס</label><select id="wiz-status">' + stOpts + '</select></div>' +
-        '<div class="crm-form-row"><label>אירוע</label><select id="wiz-event">' + evOpts + '</select></div>' +
-        '<div class="crm-form-row"><label>שפה</label><select id="wiz-lang"><option value="">הכל</option><option value="he">עברית</option><option value="ru">רוסית</option><option value="en">אנגלית</option></select></div>' +
-        '<div id="wiz-count" style="padding:10px;background:var(--crm-accent-light);color:var(--crm-accent);border-radius:6px;font-weight:700">מחשב...</div>';
+      return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 1 — נמענים</h4>' +
+        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">סטטוס</label><select id="wiz-status" class="' + CLS_INPUT + '">' + stOpts + '</select></div>' +
+        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">אירוע</label><select id="wiz-event" class="' + CLS_INPUT + '">' + evOpts + '</select></div>' +
+        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">שפה</label><select id="wiz-lang" class="' + CLS_INPUT + '"><option value="">הכל</option><option value="he">עברית</option><option value="ru">רוסית</option><option value="en">אנגלית</option></select></div>' +
+        '<div id="wiz-count" class="px-4 py-3 bg-indigo-50 text-indigo-800 rounded-lg font-bold text-sm">מחשב...</div>';
     }
     if (key === 'channel') {
-      return '<h4>שלב 2 — ערוץ</h4>' +
-        ['whatsapp','sms','email'].map(function (c) { return '<label style="display:inline-flex;align-items:center;gap:6px;margin:8px 14px 8px 0"><input type="radio" name="wiz-channel" value="' + c + '"' + (c === _wizard.channel ? ' checked' : '') + '> ' + CHANNEL_LABELS[c] + '</label>'; }).join('');
+      return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 2 — ערוץ</h4>' +
+        '<div class="grid grid-cols-3 gap-3">' +
+        ['whatsapp','sms','email'].map(function (c) {
+          var chk = c === _wizard.channel;
+          var box = chk ? 'bg-indigo-50 border-indigo-500 text-indigo-900' : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300';
+          return '<label class="flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg cursor-pointer font-semibold transition ' + box + '"><input type="radio" name="wiz-channel" value="' + c + '"' + (chk ? ' checked' : '') + ' class="text-indigo-600 focus:ring-indigo-500"> ' + CHANNEL_LABELS[c] + '</label>';
+        }).join('') + '</div>';
     }
     if (key === 'template') {
       var tpls = (typeof window._crmMessagingTemplates === 'function') ? window._crmMessagingTemplates() : [];
-      var opts = tpls.filter(function (t) { return t.is_active; }).map(function (t) { return '<label style="display:block;padding:6px"><input type="radio" name="wiz-tpl" value="' + escapeHtml(t.id) + '"' + (t.id === _wizard.templateId ? ' checked' : '') + '> ' + escapeHtml(t.name) + ' (' + escapeHtml(CHANNEL_LABELS[t.channel] || t.channel) + ')</label>'; }).join('');
-      return '<h4>שלב 3 — תבנית</h4>' + (opts || '<div class="crm-detail-empty">אין תבניות פעילות</div>') +
-        '<div class="crm-form-row"><label>תוכן</label><textarea id="wiz-body" rows="4" placeholder="תוכן הודעה ידני (או בחר תבנית)">' + escapeHtml(_wizard.body) + '</textarea></div>';
+      var opts = tpls.filter(function (t) { return t.is_active; }).map(function (t) {
+        return '<label class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg hover:bg-indigo-50 cursor-pointer">' +
+          '<input type="radio" name="wiz-tpl" value="' + escapeHtml(t.id) + '"' + (t.id === _wizard.templateId ? ' checked' : '') + ' class="text-indigo-600">' +
+          '<span class="font-medium text-sm text-slate-800">' + escapeHtml(t.name) + '</span>' +
+          '<span class="text-xs text-slate-500 ms-auto">' + escapeHtml(CHANNEL_LABELS[t.channel] || t.channel) + '</span>' +
+        '</label>';
+      }).join('');
+      return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 3 — תבנית</h4>' +
+        '<div class="space-y-2 mb-3 max-h-48 overflow-y-auto">' + (opts || '<div class="text-center text-slate-400 py-4">אין תבניות פעילות</div>') + '</div>' +
+        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">תוכן</label><textarea id="wiz-body" rows="4" placeholder="תוכן הודעה ידני (או בחר תבנית)" class="' + CLS_INPUT + '">' + escapeHtml(_wizard.body) + '</textarea></div>';
     }
     if (key === 'timing') {
-      return '<h4>שלב 4 — תזמון</h4>' +
-        '<label style="display:block;margin:8px 0"><input type="radio" name="wiz-sched" value="now"' + (_wizard.schedule === 'now' ? ' checked' : '') + '> שלח עכשיו</label>' +
-        '<label style="display:block;margin:8px 0"><input type="radio" name="wiz-sched" value="later"' + (_wizard.schedule === 'later' ? ' checked' : '') + '> מתוזמן (לא נשמר ב-B7)</label>' +
-        '<div class="crm-form-row"><label>שם שליחה</label><input type="text" id="wiz-name" value="' + escapeHtml(_wizard.name) + '" placeholder="לדוגמה: תזכורת לאירוע 25"></div>';
+      return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 4 — תזמון</h4>' +
+        '<div class="space-y-2 mb-3">' +
+          '<label class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg hover:bg-indigo-50 cursor-pointer"><input type="radio" name="wiz-sched" value="now"' + (_wizard.schedule === 'now' ? ' checked' : '') + ' class="text-indigo-600"><span class="text-sm">שלח עכשיו</span></label>' +
+          '<label class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg hover:bg-indigo-50 cursor-pointer"><input type="radio" name="wiz-sched" value="later"' + (_wizard.schedule === 'later' ? ' checked' : '') + ' class="text-indigo-600"><span class="text-sm">מתוזמן (לא נשמר ב-B7)</span></label>' +
+        '</div>' +
+        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">שם שליחה</label><input type="text" id="wiz-name" value="' + escapeHtml(_wizard.name) + '" placeholder="לדוגמה: תזכורת לאירוע 25" class="' + CLS_INPUT + '"></div>';
     }
     if (key === 'confirm') {
-      return '<h4>שלב 5 — אישור</h4>' +
-        '<div class="crm-form-row"><strong>נמענים:</strong> ' + _wizard.recipients + '</div>' +
-        '<div class="crm-form-row"><strong>ערוץ:</strong> ' + (CHANNEL_LABELS[_wizard.channel] || _wizard.channel) + '</div>' +
-        '<div class="crm-form-row"><strong>תבנית:</strong> ' + (_wizard.templateId ? 'נבחרה' : 'חופשי') + '</div>' +
-        '<div class="crm-form-row"><strong>תזמון:</strong> ' + (_wizard.schedule === 'now' ? 'מיידי' : 'מתוזמן') + '</div>' +
-        '<div class="crm-form-row"><strong>שם:</strong> ' + escapeHtml(_wizard.name || '—') + '</div>' +
-        '<div class="crm-detail-note">לחץ "שלח" כדי ליצור broadcast ו־log rows.</div>';
+      return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 5 — אישור</h4>' +
+        '<div class="bg-slate-50 rounded-lg p-4 space-y-2 text-sm">' +
+          '<div class="flex justify-between"><span class="font-semibold text-slate-600">נמענים:</span><span class="text-indigo-700 font-bold">' + _wizard.recipients + '</span></div>' +
+          '<div class="flex justify-between"><span class="font-semibold text-slate-600">ערוץ:</span><span>' + (CHANNEL_LABELS[_wizard.channel] || _wizard.channel) + '</span></div>' +
+          '<div class="flex justify-between"><span class="font-semibold text-slate-600">תבנית:</span><span>' + (_wizard.templateId ? 'נבחרה' : 'חופשי') + '</span></div>' +
+          '<div class="flex justify-between"><span class="font-semibold text-slate-600">תזמון:</span><span>' + (_wizard.schedule === 'now' ? 'מיידי' : 'מתוזמן') + '</span></div>' +
+          '<div class="flex justify-between"><span class="font-semibold text-slate-600">שם:</span><span>' + escapeHtml(_wizard.name || '—') + '</span></div>' +
+        '</div>' +
+        '<div class="mt-3 text-xs text-slate-500 bg-amber-50 border border-amber-200 rounded-lg p-3">לחץ "שלח" כדי ליצור broadcast ו-log rows.</div>';
     }
     return '';
   }
@@ -138,8 +174,7 @@
       else { doWizardSend(); }
     });
     if (_wizard.step === 0) refreshRecipientCount(root);
-    var tplInputs = root.querySelectorAll('input[name="wiz-tpl"]');
-    tplInputs.forEach(function (i) {
+    root.querySelectorAll('input[name="wiz-tpl"]').forEach(function (i) {
       i.addEventListener('change', function () {
         var tpls = window._crmMessagingTemplates ? window._crmMessagingTemplates() : [];
         var t = tpls.find(function (x) { return x.id === i.value; });
@@ -220,19 +255,19 @@
     } catch (e) { toast('error', 'שגיאה: ' + (e.message || e)); }
   }
 
-  /* ----------------------------------- LOG (status-chip + message-log) ----------------------------------- */
+  /* ----------------------------------- LOG ----------------------------------- */
 
   async function renderMessagingLog(host) {
     if (!host) return;
     host.innerHTML =
-      '<div class="crm-message-log-wrap">' +
-        '<h4 style="margin:0 0 10px">היסטוריה</h4>' +
-        '<div class="crm-filter-bar">' +
-          '<select id="log-channel"><option value="">כל הערוצים</option><option value="sms">SMS</option><option value="whatsapp">WhatsApp</option><option value="email">אימייל</option></select>' +
-          '<select id="log-status"><option value="">כל הסטטוסים</option><option value="sent">נשלח</option><option value="delivered">הגיע</option><option value="read">נקרא</option><option value="failed">נכשל</option></select>' +
+      '<div>' +
+        '<h4 class="text-base font-bold text-slate-800 mb-3">היסטוריה</h4>' +
+        '<div class="flex flex-wrap gap-2 mb-3">' +
+          '<select id="log-channel" class="' + CLS_INPUT + ' max-w-[180px]"><option value="">כל הערוצים</option><option value="sms">SMS</option><option value="whatsapp">WhatsApp</option><option value="email">אימייל</option></select>' +
+          '<select id="log-status" class="' + CLS_INPUT + ' max-w-[180px]"><option value="">כל הסטטוסים</option><option value="sent">נשלח</option><option value="delivered">הגיע</option><option value="read">נקרא</option><option value="failed">נכשל</option></select>' +
         '</div>' +
-        '<div id="log-table" class="crm-table-wrap"></div>' +
-        '<div id="log-pagination" class="crm-pagination"></div>' +
+        '<div id="log-table" class="bg-white rounded-lg border border-slate-200 overflow-hidden"></div>' +
+        '<div id="log-pagination" class="flex items-center gap-2 mt-3"></div>' +
       '</div>';
     ['log-channel','log-status'].forEach(function (id) {
       var el = host.querySelector('#' + id);
@@ -260,16 +295,22 @@
   function renderLogTable() {
     var wrap = document.getElementById('log-table');
     if (!wrap) return;
-    if (!_logRows.length) { wrap.innerHTML = '<div class="crm-detail-empty" style="padding:16px">אין הודעות</div>'; return; }
+    if (!_logRows.length) { wrap.innerHTML = '<div class="text-center text-slate-400 py-8">אין הודעות</div>'; return; }
     var start = (_logPage - 1) * PAGE_SIZE;
     var rows = _logRows.slice(start, start + PAGE_SIZE);
-    var html = '<table class="crm-table"><thead><tr><th>תאריך</th><th>ערוץ</th><th>סטטוס</th><th>תוכן</th></tr></thead><tbody>';
+    var html = '<table class="' + CLS_TABLE + '"><thead><tr>' +
+      '<th class="' + CLS_TH + '">תאריך</th>' +
+      '<th class="' + CLS_TH + '">ערוץ</th>' +
+      '<th class="' + CLS_TH + '">סטטוס</th>' +
+      '<th class="' + CLS_TH + '">תוכן</th>' +
+      '</tr></thead><tbody>';
     rows.forEach(function (r) {
-      html += '<tr class="readonly">' +
-        '<td>' + escapeHtml(CrmHelpers.formatDateTime(r.created_at)) + '</td>' +
-        '<td>' + escapeHtml(CHANNEL_LABELS[r.channel] || r.channel) + '</td>' +
-        '<td><span class="crm-status-chip ' + escapeHtml(r.status) + '">' + escapeHtml(STATUS_LABELS[r.status] || r.status) + '</span></td>' +
-        '<td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml((r.content || '').slice(0, 80)) + '</td>' +
+      var chipCls = STATUS_CLASSES[r.status] || 'bg-slate-100 text-slate-700';
+      html += '<tr>' +
+        '<td class="' + CLS_TD + ' text-xs text-slate-600">' + escapeHtml(CrmHelpers.formatDateTime(r.created_at)) + '</td>' +
+        '<td class="' + CLS_TD + '">' + escapeHtml(CHANNEL_LABELS[r.channel] || r.channel) + '</td>' +
+        '<td class="' + CLS_TD + '"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + chipCls + '">' + escapeHtml(STATUS_LABELS[r.status] || r.status) + '</span></td>' +
+        '<td class="' + CLS_TD + ' text-slate-700 truncate max-w-xs">' + escapeHtml((r.content || '').slice(0, 80)) + '</td>' +
       '</tr>';
     });
     wrap.innerHTML = html + '</tbody></table>';
@@ -280,10 +321,12 @@
     var box = document.getElementById('log-pagination');
     if (!box) return;
     var pages = Math.max(1, Math.ceil(_logRows.length / PAGE_SIZE));
-    if (pages <= 1) { box.innerHTML = '<span class="crm-page-info">סה"כ ' + _logRows.length + '</span>'; return; }
-    var html = '<button ' + (_logPage === 1 ? 'disabled' : '') + ' data-lp="prev">›</button>';
-    for (var i = 1; i <= pages; i++) html += '<button data-lp="' + i + '"' + (i === _logPage ? ' class="active"' : '') + '>' + i + '</button>';
-    html += '<button ' + (_logPage === pages ? 'disabled' : '') + ' data-lp="next">‹</button>';
+    if (pages <= 1) { box.innerHTML = '<span class="text-sm text-slate-500">סה״כ ' + _logRows.length + '</span>'; return; }
+    var btn = 'px-3 py-1.5 rounded-md border border-slate-200 text-sm font-medium hover:bg-slate-50 disabled:opacity-40';
+    var act = 'px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-semibold';
+    var html = '<button class="' + btn + '" ' + (_logPage === 1 ? 'disabled' : '') + ' data-lp="prev">›</button>';
+    for (var i = 1; i <= pages; i++) html += '<button class="' + (i === _logPage ? act : btn) + '" data-lp="' + i + '">' + i + '</button>';
+    html += '<button class="' + btn + '" ' + (_logPage === pages ? 'disabled' : '') + ' data-lp="next">‹</button>';
     box.innerHTML = html;
     box.querySelectorAll('[data-lp]').forEach(function (b) {
       b.addEventListener('click', function () {
