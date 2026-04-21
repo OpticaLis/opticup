@@ -32,7 +32,8 @@
 
   async function openCrmLeadDetail(leadId) {
     if (!leadId || typeof Modal === 'undefined') return;
-    var lead = typeof getCrmLeadById === 'function' ? getCrmLeadById(leadId) : null;
+    var lead = (typeof getCrmLeadById === 'function') ? getCrmLeadById(leadId) : null;
+    if (!lead && typeof getCrmIncomingLeadById === 'function') lead = getCrmIncomingLeadById(leadId);
     if (!lead) return;
 
     var modal = Modal.show({

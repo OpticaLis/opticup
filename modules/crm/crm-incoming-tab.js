@@ -23,7 +23,7 @@
   async function loadIncomingLeads() {
     var tid = getTenantId();
     var q = sb.from('v_crm_leads_with_tags')
-      .select('id, full_name, phone, email, status, created_at, source, utm_source, utm_medium, utm_campaign, utm_content, utm_term')
+      .select('id, full_name, phone, email, city, language, status, source, client_notes, terms_approved, marketing_consent, unsubscribed_at, created_at, updated_at, tag_names, tag_colors, utm_source, utm_medium, utm_campaign, utm_content, utm_term, monday_item_id')
       .eq('is_deleted', false);
     if (tid) q = q.eq('tenant_id', tid);
     q = q.order('created_at', { ascending: false });
@@ -134,12 +134,13 @@
       '<th class="' + CLS_TH + '">תאריך</th>' +
       '<th class="' + CLS_TH + '">מקור</th>' +
       '<th class="' + CLS_TH + '">UTM Campaign</th>' +
+      '<th class="' + CLS_TH + ' w-28">פעולה</th>' +
       '</tr></thead><tbody>';
 
     _filtered.forEach(function (r, idx) {
       var rowClass = idx % 2 === 0 ? CLS_ROW_ODD : CLS_ROW_EVEN;
       var statusInfo = CrmHelpers.getStatusInfo('lead', r.status);
-      html += '<tr class="' + rowClass + '">' +
+      html += '<tr class="' + rowClass + '" data-lead-id="' + escapeHtml(r.id) + '">' +
         '<td class="' + CLS_TD + '">' + escapeHtml(r.full_name || '') + '</td>' +
         '<td class="' + CLS_TD + '">' + escapeHtml(CrmHelpers.formatPhone(r.phone) || '') + '</td>' +
         '<td class="' + CLS_TD + '">' + escapeHtml(r.email || '') + '</td>' +
@@ -148,10 +149,54 @@
         '<td class="' + CLS_TD + '">' + escapeHtml(CrmHelpers.formatDate(r.created_at) || '') + '</td>' +
         '<td class="' + CLS_TD + '">' + escapeHtml(r.source || '—') + '</td>' +
         '<td class="' + CLS_TD + '">' + escapeHtml(r.utm_campaign || '—') + '</td>' +
+        '<td class="' + CLS_TD + '">' +
+          '<button type="button" data-approve-lead="' + escapeHtml(r.id) + '" class="px-3 py-1.5 bg-emerald-500 text-white rounded-md text-xs font-semibold hover:bg-emerald-600 transition">אשר ✓</button>' +
+        '</td>' +
         '</tr>';
     });
 
     html += '</tbody></table>';
     wrap.innerHTML = html;
+    wireIncomingRowActions(wrap);
   }
+
+  function wireIncomingRowActions(wrap) {
+    wrap.querySelectorAll('button[data-approve-lead]').forEach(function (btn) {
+      btn.addEventListener('click', async function (e) {
+        e.stopPropagation();
+        if (!window.CrmLeadActions) return;
+        var id = btn.getAttribute('data-approve-lead');
+        btn.disabled = true;
+        var oldText = btn.textContent;
+        btn.textContent = 'מעביר...';
+        try {
+          await CrmLeadActions.transferLeadToTier2(id);
+          if (window.Toast) Toast.show('הליד אושר והועבר ל-Tier 2');
+          await reloadCrmIncomingTab();
+          if (typeof window.reloadCrmLeadsTab === 'function') window.reloadCrmLeadsTab();
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = oldText;
+          if (window.Toast) Toast.show('שגיאה: ' + (err.message || String(err)));
+        }
+      });
+    });
+    wrap.querySelectorAll('tr[data-lead-id]').forEach(function (tr) {
+      tr.addEventListener('click', function (e) {
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        var id = tr.getAttribute('data-lead-id');
+        if (typeof openCrmLeadDetail === 'function') openCrmLeadDetail(id);
+      });
+    });
+  }
+
+  async function reloadCrmIncomingTab() {
+    _allLeads = await loadIncomingLeads();
+    applyIncomingFilters();
+  }
+  window.reloadCrmIncomingTab = reloadCrmIncomingTab;
+
+  window.getCrmIncomingLeadById = function (id) {
+    return _allLeads.find(function (r) { return r.id === id; }) || null;
+  };
 })();
