@@ -184,19 +184,19 @@
               <option value="status">מיון: סטטוס</option>
             </select>
           </div>
+          <!-- Filter chips (B7: removable active-filter chips) -->
+          <div id="crm-leads-filter-chips" style="margin-bottom:8px"></div>
+          <!-- Bulk selection bar (B7: shows when any lead row is checked) -->
+          <div id="crm-leads-bulk-bar"></div>
           <!-- View 1: Table (default visible) -->
           <div id="leads-view-table" class="crm-leads-view active">
             <div id="crm-leads-table-wrap" class="crm-table-wrap"></div>
             <div id="crm-leads-pagination" class="crm-pagination"></div>
           </div>
-          <!-- View 2: Kanban (placeholder — populated by future SPEC) -->
-          <div id="leads-view-kanban" class="crm-leads-view">
-            <div class="crm-coming-soon">תצוגת קנבן — בקרוב</div>
-          </div>
-          <!-- View 3: Cards (placeholder — populated by future SPEC) -->
-          <div id="leads-view-cards" class="crm-leads-view">
-            <div class="crm-coming-soon">תצוגת כרטיסים — בקרוב</div>
-          </div>
+          <!-- View 2: Kanban (B7: rendered by crm-leads-views.js) -->
+          <div id="leads-view-kanban" class="crm-leads-view"></div>
+          <!-- View 3: Cards (B7: rendered by crm-leads-views.js) -->
+          <div id="leads-view-cards" class="crm-leads-view"></div>
         </div>
       </section>
 
@@ -262,6 +262,7 @@
 <script src="modules/crm/crm-helpers.js"></script>
 <script src="modules/crm/crm-init.js"></script>
 <script src="modules/crm/crm-dashboard.js"></script>
+<script src="modules/crm/crm-leads-views.js"></script>
 <script src="modules/crm/crm-leads-tab.js"></script>
 <script src="modules/crm/crm-leads-detail.js"></script>
 <script src="modules/crm/crm-events-tab.js"></script>
