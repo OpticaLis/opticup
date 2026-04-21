@@ -89,7 +89,10 @@
           '<div class="text-sm text-slate-600 mt-1" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(lead.phone)) + '</div>' +
           '<div class="text-sm text-slate-500">' + escapeHtml(lead.city || '') + ' · ' + escapeHtml(lead.source || '') + '</div>' +
           '<div class="mt-2">' +
-            '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white" style="background:' + escapeHtml(statusInfo.color) + '">' + escapeHtml(statusInfo.label) + '</span>' +
+            '<button type="button" data-action="status" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium text-white hover:opacity-90 transition cursor-pointer" style="background:' + escapeHtml(statusInfo.color) + '">' +
+              '<span data-status-label>' + escapeHtml(statusInfo.label) + '</span>' +
+              '<span aria-hidden="true">▾</span>' +
+            '</button>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -210,7 +213,7 @@
 
   function wireFooter(body, lead) {
     body.querySelectorAll('[data-action]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
+      btn.addEventListener('click', function (e) {
         var act = btn.getAttribute('data-action');
         if (act === 'whatsapp' && lead.phone) {
           var wa = String(lead.phone).replace(/^\+/, '');
@@ -221,6 +224,23 @@
           if (window.Toast) Toast.show('עריכה — בקרוב');
         } else if (act === 'eventday') {
           if (window.Toast) Toast.show('מעבר למצב יום אירוע — בקרוב');
+        } else if (act === 'status' && window.CrmLeadActions) {
+          e.stopPropagation();
+          var tier = CrmLeadActions.leadTier(lead.status);
+          CrmLeadActions.openStatusDropdown(btn, tier, lead.status, async function (newStatus) {
+            try {
+              await CrmLeadActions.changeLeadStatus(lead.id, newStatus, lead.status);
+              lead.status = newStatus;
+              var info = CrmHelpers.getStatusInfo('lead', newStatus);
+              var labelEl = btn.querySelector('[data-status-label]');
+              if (labelEl) labelEl.textContent = info.label;
+              btn.style.background = info.color;
+              if (typeof window.reloadCrmLeadsTab === 'function') window.reloadCrmLeadsTab();
+              if (typeof window.reloadCrmIncomingTab === 'function') window.reloadCrmIncomingTab();
+            } catch (err) {
+              if (window.Toast) Toast.show('שגיאה: ' + (err.message || String(err)));
+            }
+          });
         }
       });
     });

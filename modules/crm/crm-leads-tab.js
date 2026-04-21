@@ -179,10 +179,24 @@
       b.addEventListener('click', function () {
         var act = b.getAttribute('data-bulk');
         if (act === 'clear') { _selectedIds.clear(); renderBulkBar(); renderLeadsTable(); return; }
+        if (act === 'status' && window.CrmLeadActions) {
+          var ids = Array.from(_selectedIds);
+          CrmLeadActions.openBulkStatusPicker(ids, 2, function () {
+            _selectedIds.clear();
+            reloadCrmLeadsTab();
+          });
+          return;
+        }
         if (window.Toast) Toast.show('פעולה לאצווה: ' + act + ' (' + _selectedIds.size + ' לידים) — בקרוב');
       });
     });
   }
+
+  async function reloadCrmLeadsTab() {
+    _allLeads = await loadLeads();
+    applyFiltersAndRender();
+  }
+  window.reloadCrmLeadsTab = reloadCrmLeadsTab;
 
   // ---- Table ----
   function renderLeadsTable() {
