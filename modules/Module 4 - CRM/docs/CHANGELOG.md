@@ -2,6 +2,67 @@
 
 ---
 
+## Go-Live P2a — Lead Management (2026-04-21)
+
+| Hash | Message |
+|------|---------|
+| `0dc3dc4` | `fix(crm): seed crm_statuses for demo tenant (unblocks P2a testing)` |
+| `23bc333` | `fix(hooks): disable errexit so warnings (exit 2) don't block commit` |
+| `4da9cf3` | `feat(crm): wire lead status change — individual and bulk` |
+| `9f4fad2` | `feat(crm): add lead notes from detail modal` |
+| `c8d5096` | `feat(crm): add Tier 1→2 transfer button in incoming tab` |
+
+**New file:** `modules/crm/crm-lead-actions.js` (230 lines) — exports
+`CrmLeadActions.{changeLeadStatus, bulkChangeStatus, addLeadNote,
+transferLeadToTier2, openStatusDropdown, openBulkStatusPicker,
+leadTier}`. All writes go through direct Supabase client calls (not
+RPCs — status change is a simple field update; a dedicated RPC would
+add complexity without benefit, per SPEC §14). Every `.update()` /
+`.insert()` / `.select()` carries `tenant_id: getTenantId()` (Rule 22
+defense-in-depth).
+
+**UI wiring:**
+- Status badge in lead-detail header is now a clickable button that
+  opens an anchored status dropdown, filtered to the lead's tier (T1 or
+  T2). Selection updates `crm_leads.status` and inserts a note
+  "סטטוס שונה מ-X ל-Y".
+- Bulk bar "שנה סטטוס" on the registered leads tab opens a modal
+  picker. Applies status to all selected leads; shows success/fail
+  toast.
+- Notes tab in the detail modal has a textarea + "הוסף" button at the
+  top. Submit prepends to the in-memory list and DOM — no full reload.
+  Ctrl+Enter submits.
+- Incoming leads table has a new "פעולה" column with a green "אשר ✓"
+  button per row. Clicking transfers the lead to Tier 2 (status=
+  'waiting') and refreshes both the incoming and registered tabs.
+- Rows on the incoming tab are now clickable → open the lead-detail
+  modal (registered tab already had this wiring). Click on the approve
+  button is ignored so it doesn't also open the modal.
+- `openCrmLeadDetail` falls back to `getCrmIncomingLeadById` when the
+  lead isn't in the registered-tab store. No naming collision — two
+  distinct global getters.
+
+**Bug fixes rolled in:**
+- `demo.crm_statuses` was empty (SESSION_CONTEXT M4-DATA-03 known gap)
+  — cloned all 31 rows from Prizma so dropdowns have data on the test
+  tenant. Seed SQL is idempotent via the existing
+  `(tenant_id, entity_type, slug)` UNIQUE constraint.
+- `.husky/pre-commit` was killed by its wrapper's `sh -e` before the
+  "exit 2 = warnings, allow commit" branch could run. `set +e` now
+  preserves the documented exit-code contract.
+
+**Out of scope (per SPEC §7), deferred:**
+- Auto-approval logic on intake — still requires a separate mini-SPEC
+  (DB trigger vs Edge Function enhancement).
+- Lead edit form — "ערוך" still shows "בקרוב" toast.
+- Event management + Make scenarios + message dispatch — P2b, P3, P4.
+
+**File sizes after P2a:** crm-lead-actions 230, crm-leads-tab 313,
+crm-leads-detail 295, crm-incoming-tab 202, crm-helpers 140 — all
+within the 350-line hard limit.
+
+---
+
 ## Go-Live P1 — Internal Lead Intake Pipeline (2026-04-21)
 
 | Hash | Message |

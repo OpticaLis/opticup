@@ -21,11 +21,12 @@
 | `crm-init.js` | 75 | Page bootstrap, tab orchestration stub, status cache gate, error banner |
 | `crm-bootstrap.js` | 105 | **[B6]** Extracted from crm.html inline JS: page header updater, theme switcher, `toggleCrmRole()`, `switchCrmLeadsView()`, Lucide init, barcode auto-focus on event-day entry |
 | `crm-helpers.js` | 140 | **[C1]** Shared utilities: phone format, currency, date, language, status cache/badges. Added `TIER1_STATUSES` + `TIER2_STATUSES` constants (exported on window) |
-| `crm-incoming-tab.js` | 157 | **[C1]** Tier 1 "לידים נכנסים" tab: fetch leads with Tier 1 statuses from `v_crm_leads_with_tags`, status filter dropdown, search, paginated table (name, phone, email, status, date, source, UTM campaign) |
+| `crm-lead-actions.js` | 230 | **[P2a]** Lead mutation helpers + UI flows. Exports `CrmLeadActions.{changeLeadStatus, bulkChangeStatus, addLeadNote, transferLeadToTier2, openStatusDropdown, openBulkStatusPicker, leadTier}`. Direct Supabase writes with `tenant_id: getTenantId()` on every `.update()/.insert()/.eq()` (Rule 22). Status change inserts audit note "סטטוס שונה מ-X ל-Y". |
+| `crm-incoming-tab.js` | 202 | **[C1 + P2a]** Tier 1 "לידים נכנסים" tab: fetch leads from `v_crm_leads_with_tags` (full field set as of P2a), status filter dropdown, search, paginated table with new "פעולה" column (green "אשר ✓" button → `transferLeadToTier2`). Rows clickable → `openCrmLeadDetail`. Exports `reloadCrmIncomingTab` + `getCrmIncomingLeadById`. |
 | `crm-dashboard.js` | 295 | **[B8]** Dashboard via Tailwind: 4 gradient KPI cards (indigo/cyan/emerald/amber) with per-variant sparkline bars, 3-column alert strip, gradient stacked bar chart, 3 conic-gradient gauges (inline style), animate-pulse activity feed, horizontal timeline cards with progress bars |
-| `crm-leads-tab.js` | 290 | **[B8]** Leads via Tailwind: white-card table with hover:bg-indigo-50/40, indigo filter chips, indigo bulk bar, pagination with rounded-md buttons, delegates kanban + cards to `crm-leads-views.js` |
+| `crm-leads-tab.js` | 313 | **[B8 + P2a]** Leads via Tailwind: white-card table, indigo filter chips, indigo bulk bar (now with working "שנה סטטוס" → `CrmLeadActions.openBulkStatusPicker`), pagination, delegates kanban + cards to `crm-leads-views.js`. Exports `reloadCrmLeadsTab`. |
 | `crm-leads-views.js` | 112 | **[B8]** Kanban (4 status columns with colored headers — emerald/amber/violet/indigo) + Cards (3-col grid with gradient avatars + tag pills) |
-| `crm-leads-detail.js` | 228 | **[B8]** Lead detail modal via Tailwind: gradient-avatar header + 5 underline tabs (events/messages/notes/timeline/details) + 4 gradient action buttons (WhatsApp emerald / SMS sky / edit indigo / event-day amber) |
+| `crm-leads-detail.js` | 295 | **[B8 + P2a]** Lead detail modal via Tailwind: gradient-avatar header + clickable status badge → tier-filtered dropdown (P2a) + 5 underline tabs (events/messages/notes/timeline/details) — notes tab has textarea + "הוסף" button at top (P2a) + 4 gradient action buttons. Falls back to `getCrmIncomingLeadById` when `getCrmLeadById` misses. |
 | `crm-events-tab.js` | 125 | **[B8]** Events list via Tailwind: white-card table, indigo event number, emerald revenue column (admin-only) |
 | `crm-events-detail.js` | 206 | **[B8]** Event detail modal: gradient header (indigo→violet) with glass-morphism controls, segmented capacity bar, 3 sub-tabs, grouped attendee list with gradient avatars, delegates KPI+funnel+analytics to `crm-events-detail-charts.js` |
 | `crm-events-detail-charts.js` | 201 | **[B8]** 6 gradient KPI cards with trend arrows (sky/emerald/amber/violet), SVG funnel wrapped in white chart card, gradient analytics bars |
@@ -68,9 +69,19 @@
 | `showCrmError(panelId, msg)` | crm-init.js | Display error banner in a tab panel |
 | `loadCrmDashboard()` | crm-dashboard.js | Fetch + render dashboard (stat cards, event table, status bars) |
 | `loadCrmIncomingTab()` | crm-incoming-tab.js | **[C1]** Fetch Tier 1 leads, populate status filter, render table with search |
+| `reloadCrmIncomingTab()` | crm-incoming-tab.js | **[P2a]** Force re-fetch of Tier 1 leads and re-render (bypasses load-once cache; used after status change / transfer) |
+| `getCrmIncomingLeadById(id)` | crm-incoming-tab.js | **[P2a]** Return cached incoming (Tier 1) lead row by ID — used as fallback by `openCrmLeadDetail` |
 | `loadCrmLeadsTab()` | crm-leads-tab.js | Fetch Tier 2 leads (was: all leads), populate filters, render paginated table |
+| `reloadCrmLeadsTab()` | crm-leads-tab.js | **[P2a]** Force re-fetch of Tier 2 leads and re-render; called by bulk status change, transfer, and individual status change |
 | `getCrmLeadById(id)` | crm-leads-tab.js | Return cached lead row by ID (for detail modal) |
-| `openCrmLeadDetail(leadId)` | crm-leads-detail.js | Open lead detail modal (info + notes + events) |
+| `openCrmLeadDetail(leadId)` | crm-leads-detail.js | Open lead detail modal (info + notes + events). **[P2a]** Now falls back to `getCrmIncomingLeadById` when primary getter misses, so rows on both incoming and registered tabs open the same modal |
+| `CrmLeadActions.changeLeadStatus(id, newStatus, oldStatus, opts?)` | crm-lead-actions.js | **[P2a]** Atomic status update + audit note (Hebrew "סטטוס שונה מ-X ל-Y"). `opts.silent` skips toast (used by bulk) |
+| `CrmLeadActions.bulkChangeStatus(ids, newStatus)` | crm-lead-actions.js | **[P2a]** Per-lead loop; pre-fetches current statuses in one query for accurate audit notes; returns `{ok, fail[]}` |
+| `CrmLeadActions.addLeadNote(leadId, content)` | crm-lead-actions.js | **[P2a]** Insert a free-text note into `crm_lead_notes`. Returns the new row |
+| `CrmLeadActions.transferLeadToTier2(leadId)` | crm-lead-actions.js | **[P2a]** Set status='waiting' + insert note "הועבר ל-Tier 2 (אושר)" |
+| `CrmLeadActions.openStatusDropdown(anchor, tier, currentStatus, onPick)` | crm-lead-actions.js | **[P2a]** Tier-filtered anchored dropdown; fixed-positioned, closes on outside click |
+| `CrmLeadActions.openBulkStatusPicker(ids, tier, onDone)` | crm-lead-actions.js | **[P2a]** Modal grid of statuses for bulk change |
+| `CrmLeadActions.leadTier(status)` | crm-lead-actions.js | **[P2a]** Returns 1 or 2 based on TIER1_STATUSES / TIER2_STATUSES membership |
 | `loadCrmEventsTab()` | crm-events-tab.js | Fetch events from `v_crm_event_stats`, render table |
 | `getCrmEventStatsById(id)` | crm-events-tab.js | Return cached event stats row by ID |
 | `openCrmEventDetail(eventId)` | crm-events-detail.js | Open event detail modal (info + stats + attendees + event-day entry) |
