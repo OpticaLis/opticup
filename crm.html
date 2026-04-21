@@ -13,6 +13,29 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
+<!-- Tailwind CSS (CDN — CRM only, not loaded on other ERP pages) -->
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      fontFamily: { heebo: ['Heebo', 'sans-serif'] },
+      colors: {
+        crm: {
+          sidebar: '#1e1b4b',
+          accent:  '#6366f1',
+          surface: '#f8fafc',
+          card:    '#ffffff',
+          text:    '#1e293b',
+          muted:   '#64748b'
+        }
+      }
+    }
+  }
+};
+</script>
+
 <!-- Shared CSS (ERP design system) -->
 <link rel="stylesheet" href="shared/css/variables.css">
 <link rel="stylesheet" href="shared/css/components.css">
