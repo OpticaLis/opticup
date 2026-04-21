@@ -1,38 +1,40 @@
 /* =============================================================================
-   crm-messaging-broadcast.js — Manual Broadcast + Message Log
+   crm-messaging-broadcast.js — Manual Broadcast (5-step wizard) + Message Log
    Tables: crm_broadcasts, crm_message_log, crm_leads (read), crm_events (read)
-   Depends on: shared.js (sb, getTenantId, escapeHtml), CrmHelpers, Modal
-   Exports:
-     window.renderMessagingBroadcast(host) — sub-tab: שליחה ידנית
-     window.renderMessagingLog(host)       — sub-tab: היסטוריה
-     window.loadMessagingLog()             — public refresher
+   B7: wizard modal with wizard-progress + wizard-dot + wizard-step,
+       message-log table with status-chip pills (sent/delivered/read/failed).
    ============================================================================= */
 (function () {
   'use strict';
 
-  var CHANNEL_LABELS = { sms: 'SMS', whatsapp: 'WhatsApp', email: '\u05D0\u05D9\u05DE\u05D9\u05D9\u05DC' };
-  var CHANNEL_COLORS = { sms: '#3b82f6', whatsapp: '#10b981', email: '#f59e0b' };
-  var STATUS_LABELS = { sent: '\u05E0\u05E9\u05DC\u05D7', pending: '\u05D1\u05EA\u05D5\u05E8', failed: '\u05E0\u05DB\u05E9\u05DC', delivered: '\u05D4\u05D2\u05D9\u05E2' };
+  var CHANNEL_LABELS = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'אימייל' };
+  var STATUS_LABELS  = { sent: 'נשלח', pending: 'בתור', failed: 'נכשל', delivered: 'הגיע', read: 'נקרא' };
   var PAGE_SIZE = 50;
+  var WIZARD_STEPS = [
+    { key: 'recipients', label: 'נמענים' },
+    { key: 'channel',    label: 'ערוץ' },
+    { key: 'template',   label: 'תבנית' },
+    { key: 'timing',     label: 'תזמון' },
+    { key: 'confirm',    label: 'אישור' }
+  ];
 
   var _events = [];
   var _logRows = [];
   var _logPage = 1;
+  var _wizard = null;
 
-  function logWrite(action, et, eid, meta) {
-    if (window.ActivityLog && typeof ActivityLog.write === 'function') {
-      try { ActivityLog.write({ action: action, entity_type: et, entity_id: eid, severity: 'info', metadata: meta || {} }); } catch (_) {}
-    }
+  function toast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
+  function logWrite(a, et, eid, meta) {
+    if (window.ActivityLog && ActivityLog.write) { try { ActivityLog.write({ action: a, entity_type: et, entity_id: eid, severity: 'info', metadata: meta || {} }); } catch (_) {} }
   }
-  function toast(t, m) { if (window.Toast && typeof Toast[t] === 'function') Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
 
-  /* ----------------------------------- BROADCAST ----------------------------------- */
+  /* ----------------------------------- BROADCAST (wizard) ----------------------------------- */
 
   async function renderMessagingBroadcast(host) {
     if (!host) return;
-    host.innerHTML = '<div class="crm-detail-empty" style="padding:20px">\u05D8\u05D5\u05E2\u05DF...</div>';
-    try { await ensureCrmStatusCache(); await loadEventsOnce(); renderBroadcastUI(host); }
-    catch (e) { host.innerHTML = '<div class="crm-detail-empty" style="padding:20px;color:#ef4444">' + escapeHtml(e.message || String(e)) + '</div>'; }
+    host.innerHTML = '<div class="crm-detail-empty" style="padding:20px">טוען...</div>';
+    try { await ensureCrmStatusCache(); await loadEventsOnce(); renderBroadcastIntro(host); }
+    catch (e) { host.innerHTML = '<div class="crm-detail-empty" style="color:#ef4444">' + escapeHtml(e.message || String(e)) + '</div>'; }
   }
   window.renderMessagingBroadcast = renderMessagingBroadcast;
 
@@ -43,66 +45,146 @@
     if (tid) q = q.eq('tenant_id', tid);
     q = q.order('event_date', { ascending: false });
     var res = await q;
-    if (res.error) throw new Error('events load failed: ' + res.error.message);
+    if (res.error) throw new Error(res.error.message);
     _events = res.data || [];
   }
 
-  function renderBroadcastUI(host) {
-    var statuses = (window.CRM_STATUSES && window.CRM_STATUSES.lead) || {};
-    var stOpts = '<option value="">(\u05DB\u05DC \u05D4\u05E1\u05D8\u05D8\u05D5\u05E1\u05D9\u05DD)</option>' + Object.keys(statuses).map(function (slug) { return '<option value="' + escapeHtml(slug) + '">' + escapeHtml(statuses[slug].name_he || slug) + '</option>'; }).join('');
-    var evOpts = '<option value="">(\u05DB\u05DC \u05D4\u05D0\u05D9\u05E8\u05D5\u05E2\u05D9\u05DD)</option>' + _events.map(function (e) { return '<option value="' + escapeHtml(e.id) + '">#' + escapeHtml(String(e.event_number || '?')) + ' \u2014 ' + escapeHtml(e.name || '') + '</option>'; }).join('');
-    var templates = (typeof window._crmMessagingTemplates === 'function') ? window._crmMessagingTemplates() : [];
-    var tplOpts = '<option value="">(\u05DC\u05DC\u05D0 \u05EA\u05D1\u05E0\u05D9\u05EA \u2014 \u05DB\u05EA\u05D5\u05D1 \u05D7\u05D5\u05E4\u05E9\u05D9)</option>' + templates.filter(function (t) { return t.is_active; }).map(function (t) { return '<option value="' + escapeHtml(t.id) + '">' + escapeHtml(t.name) + ' (' + escapeHtml(CHANNEL_LABELS[t.channel] || t.channel) + ')</option>'; }).join('');
-    var chRadios = ['sms','whatsapp','email'].map(function (c) { return '<label style="margin-inline-end:14px;font-weight:400"><input type="radio" name="bc-channel" value="' + c + '"' + (c === 'whatsapp' ? ' checked' : '') + '> ' + CHANNEL_LABELS[c] + '</label>'; }).join('');
+  function renderBroadcastIntro(host) {
     host.innerHTML =
-      '<h3 style="color:var(--primary);margin:0 0 12px">\u05E9\u05DC\u05D9\u05D7\u05D4 \u05D9\u05D3\u05E0\u05D9\u05EA</h3>' +
-      '<div class="crm-form-row"><label>\u05E9\u05DD \u05E9\u05DC\u05D9\u05D7\u05D4 *</label><input type="text" id="bc-name" placeholder="\u05DC\u05D3\u05D5\u05D2\u05DE\u05D4: \u05EA\u05D6\u05DB\u05D5\u05E8\u05EA \u05DC\u05D0\u05D9\u05E8\u05D5\u05E2 25"></div>' +
-      '<div class="crm-form-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">' +
-        '<div><label>\u05E1\u05D8\u05D8\u05D5\u05E1 \u05DC\u05D9\u05D3</label><select id="bc-status">' + stOpts + '</select></div>' +
-        '<div><label>\u05D0\u05D9\u05E8\u05D5\u05E2 (\u05DE\u05E9\u05EA\u05EA\u05E4\u05D9\u05DD)</label><select id="bc-event">' + evOpts + '</select></div>' +
-        '<div><label>\u05E9\u05E4\u05D4</label><select id="bc-lang"><option value="">\u05D4\u05DB\u05DC</option><option value="he">\u05E2\u05D1\u05E8\u05D9\u05EA</option><option value="ru">\u05E8\u05D5\u05E1\u05D9\u05EA</option><option value="en">\u05D0\u05E0\u05D2\u05DC\u05D9\u05EA</option></select></div>' +
-      '</div>' +
-      '<div class="crm-form-row"><div id="bc-recipient-count" style="padding:10px;background:var(--g100);border-radius:8px;font-weight:600;color:var(--primary)">\u05D4\u05D2\u05D3\u05E8 \u05E1\u05D9\u05E0\u05D5\u05DF \u05DC\u05D7\u05D9\u05E9\u05D5\u05D1 \u05E0\u05DE\u05E2\u05E0\u05D9\u05DD</div></div>' +
-      '<div class="crm-form-row"><label>\u05E2\u05E8\u05D5\u05E5 *</label><div>' + chRadios + '</div></div>' +
-      '<div class="crm-form-row"><label>\u05EA\u05D1\u05E0\u05D9\u05EA (\u05D0\u05D5\u05E4\u05E6\u05D9\u05D5\u05E0\u05DC\u05D9)</label><select id="bc-template">' + tplOpts + '</select></div>' +
-      '<div class="crm-form-row"><label>\u05EA\u05D5\u05DB\u05DF \u05D4\u05D5\u05D3\u05E2\u05D4 *</label><textarea id="bc-body" rows="5" placeholder="\u05D4\u05E7\u05DC\u05D3 \u05D4\u05D5\u05D3\u05E2\u05D4 \u05D0\u05D5 \u05D1\u05D7\u05E8 \u05EA\u05D1\u05E0\u05D9\u05EA \u05DC\u05DE\u05E2\u05DC\u05D4"></textarea></div>' +
-      '<div class="crm-form-row" style="text-align:end"><button type="button" class="btn btn-primary" id="bc-send-btn">\u05E9\u05DC\u05D7</button></div>';
-
-    wireBroadcastEvents(host);
-    updateRecipientCount();
+      '<h3 style="color:var(--crm-text-primary);margin:0 0 10px">שליחה ידנית</h3>' +
+      '<p style="color:var(--crm-text-muted)">אשף שליחה בן 5 שלבים: בחירת נמענים, ערוץ, תבנית, תזמון, אישור.</p>' +
+      '<button type="button" class="crm-btn crm-btn-primary" id="open-wizard">+ שליחה חדשה</button>' +
+      '<div id="bc-history" style="margin-top:20px"></div>';
+    var btn = host.querySelector('#open-wizard');
+    if (btn) btn.addEventListener('click', openWizard);
+    // Also render log underneath as a preview (B7 §2.25)
+    renderMessagingLog(host.querySelector('#bc-history'));
   }
 
-  function wireBroadcastEvents(host) {
-    ['bc-status', 'bc-event', 'bc-lang'].forEach(function (id) {
-      var el = host.querySelector('#' + id);
-      if (el) el.addEventListener('change', updateRecipientCount);
+  function openWizard() {
+    _wizard = { step: 0, status: '', event: '', language: '', channel: 'whatsapp', templateId: '', body: '', name: '', schedule: 'now', recipients: 0 };
+    var modal = Modal.show({ title: 'אשף שליחה', size: 'lg', content: wizardHtml() });
+    var root = modal.el.querySelector('.modal-body');
+    if (root) { wireWizard(root); }
+  }
+
+  // ---- wizard-progress + 5 wizard-step panels ----
+  function wizardHtml() {
+    var dots = '<div class="crm-wizard-progress">' +
+      WIZARD_STEPS.map(function (s, i) {
+        var cls = 'crm-wizard-dot' + (i === _wizard.step ? ' active' : (i < _wizard.step ? ' done' : ''));
+        return '<div class="' + cls + '" data-wiz-dot="' + i + '">' + (i + 1) + '</div>';
+      }).join('') +
+    '</div>';
+    var steps = WIZARD_STEPS.map(function (s, i) {
+      var cls = 'crm-wizard-step' + (i === _wizard.step ? ' active' : '');
+      return '<div class="' + cls + '" data-wiz-step="' + s.key + '">' + wizardStepBody(s.key) + '</div>';
+    }).join('');
+    var nav = '<div class="crm-modal-footer">' +
+      '<button type="button" class="crm-btn crm-btn-secondary" id="wiz-back"' + (_wizard.step === 0 ? ' disabled' : '') + '>‹ חזור</button>' +
+      '<button type="button" class="crm-btn crm-btn-primary" id="wiz-next">' + (_wizard.step === WIZARD_STEPS.length - 1 ? 'שלח' : 'הבא ›') + '</button>' +
+    '</div>';
+    return dots + steps + nav;
+  }
+
+  function wizardStepBody(key) {
+    if (key === 'recipients') {
+      var statuses = (window.CRM_STATUSES && window.CRM_STATUSES.lead) || {};
+      var stOpts = '<option value="">(כל הסטטוסים)</option>' + Object.keys(statuses).map(function (slug) { return '<option value="' + escapeHtml(slug) + '"' + (slug === _wizard.status ? ' selected' : '') + '>' + escapeHtml(statuses[slug].name_he || slug) + '</option>'; }).join('');
+      var evOpts = '<option value="">(כל האירועים)</option>' + _events.map(function (e) { return '<option value="' + escapeHtml(e.id) + '"' + (e.id === _wizard.event ? ' selected' : '') + '>#' + e.event_number + ' ' + escapeHtml(e.name || '') + '</option>'; }).join('');
+      return '<h4>שלב 1 — נמענים</h4>' +
+        '<div class="crm-form-row"><label>סטטוס</label><select id="wiz-status">' + stOpts + '</select></div>' +
+        '<div class="crm-form-row"><label>אירוע</label><select id="wiz-event">' + evOpts + '</select></div>' +
+        '<div class="crm-form-row"><label>שפה</label><select id="wiz-lang"><option value="">הכל</option><option value="he">עברית</option><option value="ru">רוסית</option><option value="en">אנגלית</option></select></div>' +
+        '<div id="wiz-count" style="padding:10px;background:var(--crm-accent-light);color:var(--crm-accent);border-radius:6px;font-weight:700">מחשב...</div>';
+    }
+    if (key === 'channel') {
+      return '<h4>שלב 2 — ערוץ</h4>' +
+        ['whatsapp','sms','email'].map(function (c) { return '<label style="display:inline-flex;align-items:center;gap:6px;margin:8px 14px 8px 0"><input type="radio" name="wiz-channel" value="' + c + '"' + (c === _wizard.channel ? ' checked' : '') + '> ' + CHANNEL_LABELS[c] + '</label>'; }).join('');
+    }
+    if (key === 'template') {
+      var tpls = (typeof window._crmMessagingTemplates === 'function') ? window._crmMessagingTemplates() : [];
+      var opts = tpls.filter(function (t) { return t.is_active; }).map(function (t) { return '<label style="display:block;padding:6px"><input type="radio" name="wiz-tpl" value="' + escapeHtml(t.id) + '"' + (t.id === _wizard.templateId ? ' checked' : '') + '> ' + escapeHtml(t.name) + ' (' + escapeHtml(CHANNEL_LABELS[t.channel] || t.channel) + ')</label>'; }).join('');
+      return '<h4>שלב 3 — תבנית</h4>' + (opts || '<div class="crm-detail-empty">אין תבניות פעילות</div>') +
+        '<div class="crm-form-row"><label>תוכן</label><textarea id="wiz-body" rows="4" placeholder="תוכן הודעה ידני (או בחר תבנית)">' + escapeHtml(_wizard.body) + '</textarea></div>';
+    }
+    if (key === 'timing') {
+      return '<h4>שלב 4 — תזמון</h4>' +
+        '<label style="display:block;margin:8px 0"><input type="radio" name="wiz-sched" value="now"' + (_wizard.schedule === 'now' ? ' checked' : '') + '> שלח עכשיו</label>' +
+        '<label style="display:block;margin:8px 0"><input type="radio" name="wiz-sched" value="later"' + (_wizard.schedule === 'later' ? ' checked' : '') + '> מתוזמן (לא נשמר ב-B7)</label>' +
+        '<div class="crm-form-row"><label>שם שליחה</label><input type="text" id="wiz-name" value="' + escapeHtml(_wizard.name) + '" placeholder="לדוגמה: תזכורת לאירוע 25"></div>';
+    }
+    if (key === 'confirm') {
+      return '<h4>שלב 5 — אישור</h4>' +
+        '<div class="crm-form-row"><strong>נמענים:</strong> ' + _wizard.recipients + '</div>' +
+        '<div class="crm-form-row"><strong>ערוץ:</strong> ' + (CHANNEL_LABELS[_wizard.channel] || _wizard.channel) + '</div>' +
+        '<div class="crm-form-row"><strong>תבנית:</strong> ' + (_wizard.templateId ? 'נבחרה' : 'חופשי') + '</div>' +
+        '<div class="crm-form-row"><strong>תזמון:</strong> ' + (_wizard.schedule === 'now' ? 'מיידי' : 'מתוזמן') + '</div>' +
+        '<div class="crm-form-row"><strong>שם:</strong> ' + escapeHtml(_wizard.name || '—') + '</div>' +
+        '<div class="crm-detail-note">לחץ "שלח" כדי ליצור broadcast ו־log rows.</div>';
+    }
+    return '';
+  }
+
+  function wireWizard(root) {
+    root.querySelectorAll('[data-wiz-dot]').forEach(function (d) {
+      d.addEventListener('click', function () { captureStep(root); _wizard.step = Number(d.getAttribute('data-wiz-dot')); rerenderWizard(root); });
     });
-    var tplSel = host.querySelector('#bc-template');
-    var bodyEl = host.querySelector('#bc-body');
-    if (tplSel && bodyEl) {
-      tplSel.addEventListener('change', function () {
-        if (!tplSel.value) return;
-        var templates = (typeof window._crmMessagingTemplates === 'function') ? window._crmMessagingTemplates() : [];
-        var t = templates.find(function (x) { return x.id === tplSel.value; });
+    var back = root.querySelector('#wiz-back'), next = root.querySelector('#wiz-next');
+    if (back) back.addEventListener('click', function () { captureStep(root); if (_wizard.step > 0) _wizard.step--; rerenderWizard(root); });
+    if (next) next.addEventListener('click', function () {
+      captureStep(root);
+      if (_wizard.step < WIZARD_STEPS.length - 1) { _wizard.step++; rerenderWizard(root); }
+      else { doWizardSend(); }
+    });
+    if (_wizard.step === 0) refreshRecipientCount(root);
+    var tplInputs = root.querySelectorAll('input[name="wiz-tpl"]');
+    tplInputs.forEach(function (i) {
+      i.addEventListener('change', function () {
+        var tpls = window._crmMessagingTemplates ? window._crmMessagingTemplates() : [];
+        var t = tpls.find(function (x) { return x.id === i.value; });
         if (t) {
-          bodyEl.value = t.body || '';
-          var chRadio = host.querySelector('input[name="bc-channel"][value="' + t.channel + '"]');
-          if (chRadio) chRadio.checked = true;
+          var bodyEl = root.querySelector('#wiz-body');
+          if (bodyEl && !bodyEl.value) bodyEl.value = t.body || '';
+          _wizard.channel = t.channel;
         }
       });
-    }
-    var sendBtn = host.querySelector('#bc-send-btn');
-    if (sendBtn) sendBtn.addEventListener('click', function () { submitBroadcast(host); });
+    });
   }
 
-  async function buildLeadIdsQuery(filters) {
+  function captureStep(root) {
+    var statusSel = root.querySelector('#wiz-status'); if (statusSel) _wizard.status = statusSel.value || '';
+    var evSel = root.querySelector('#wiz-event');     if (evSel)     _wizard.event    = evSel.value || '';
+    var langSel = root.querySelector('#wiz-lang');    if (langSel)   _wizard.language = langSel.value || '';
+    var chRadio = root.querySelector('input[name="wiz-channel"]:checked'); if (chRadio) _wizard.channel = chRadio.value;
+    var tplRadio = root.querySelector('input[name="wiz-tpl"]:checked');   if (tplRadio) _wizard.templateId = tplRadio.value;
+    var bodyEl = root.querySelector('#wiz-body'); if (bodyEl) _wizard.body = bodyEl.value || '';
+    var schRadio = root.querySelector('input[name="wiz-sched"]:checked'); if (schRadio) _wizard.schedule = schRadio.value;
+    var nameEl = root.querySelector('#wiz-name'); if (nameEl) _wizard.name = nameEl.value || '';
+  }
+
+  function rerenderWizard(root) { root.innerHTML = wizardHtml(); wireWizard(root); }
+
+  async function refreshRecipientCount(root) {
+    try {
+      var ids = await buildLeadIds();
+      _wizard.recipients = ids.length;
+      var el = root.querySelector('#wiz-count');
+      if (el) el.textContent = 'נמצאו ' + ids.length + ' נמענים';
+    } catch (e) {
+      var el2 = root.querySelector('#wiz-count');
+      if (el2) el2.textContent = 'שגיאה: ' + (e.message || e);
+    }
+  }
+
+  async function buildLeadIds() {
     var tid = getTenantId();
     var q = sb.from('crm_leads').select('id').eq('is_deleted', false).is('unsubscribed_at', null);
     if (tid) q = q.eq('tenant_id', tid);
-    if (filters.status) q = q.eq('status', filters.status);
-    if (filters.language) q = q.eq('language', filters.language);
-    if (filters.event) {
-      var att = sb.from('crm_event_attendees').select('lead_id').eq('event_id', filters.event).eq('is_deleted', false);
+    if (_wizard.status) q = q.eq('status', _wizard.status);
+    if (_wizard.language) q = q.eq('language', _wizard.language);
+    if (_wizard.event) {
+      var att = sb.from('crm_event_attendees').select('lead_id').eq('event_id', _wizard.event).eq('is_deleted', false);
       if (tid) att = att.eq('tenant_id', tid);
       var r = await att;
       if (r.error) throw new Error(r.error.message);
@@ -115,93 +197,47 @@
     return (res.data || []).map(function (r) { return r.id; });
   }
 
-  function readBroadcastFilters(host) {
-    return { status: host.querySelector('#bc-status').value || null, event: host.querySelector('#bc-event').value || null, language: host.querySelector('#bc-lang').value || null };
-  }
-
-  async function updateRecipientCount() {
-    var host = document.getElementById('crm-messaging-body');
-    if (!host) return;
-    var el = host.querySelector('#bc-recipient-count');
-    if (!el) return;
-    el.textContent = '\u05DE\u05D7\u05E9\u05D1...';
-    try {
-      var ids = await buildLeadIdsQuery(readBroadcastFilters(host));
-      el.textContent = '\u05D4\u05D4\u05D5\u05D3\u05E2\u05D4 \u05EA\u05D9\u05E9\u05DC\u05D7 \u05DC-' + ids.length + ' \u05E0\u05DE\u05E2\u05E0\u05D9\u05DD';
-      el.dataset.count = String(ids.length);
-    } catch (e) { el.textContent = '\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || String(e)); }
-  }
-
-  function submitBroadcast(host) {
-    var name = (host.querySelector('#bc-name').value || '').trim();
-    var body = (host.querySelector('#bc-body').value || '').trim();
-    var channel = (host.querySelector('input[name="bc-channel"]:checked') || {}).value;
-    var templateId = host.querySelector('#bc-template').value || null;
-    if (!name) { toast('error', '\u05E9\u05DD \u05E9\u05DC\u05D9\u05D7\u05D4 \u05D7\u05D5\u05D1\u05D4'); return; }
-    if (!body) { toast('error', '\u05EA\u05D5\u05DB\u05DF \u05D4\u05D5\u05D3\u05E2\u05D4 \u05D7\u05D5\u05D1'); return; }
-    if (!channel) { toast('error', '\u05D1\u05D7\u05E8 \u05E2\u05E8\u05D5\u05E5'); return; }
-    var filters = readBroadcastFilters(host);
-
-    buildLeadIdsQuery(filters).then(function (ids) {
-      if (!ids.length) { toast('warning', '\u05D0\u05D9\u05DF \u05E0\u05DE\u05E2\u05E0\u05D9\u05DD \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD \u05DC\u05E1\u05D9\u05E0\u05D5\u05DF'); return; }
-      Modal.confirm({
-        title: '\u05D0\u05D9\u05E9\u05D5\u05E8 \u05E9\u05DC\u05D9\u05D7\u05D4',
-        message: '\u05DC\u05E9\u05DC\u05D5\u05D7 ' + ids.length + ' \u05D4\u05D5\u05D3\u05E2\u05D5\u05EA \u05D1-' + (CHANNEL_LABELS[channel] || channel) + '?',
-        confirmText: '\u05E9\u05DC\u05D7', cancelText: '\u05D1\u05D9\u05D8\u05D5\u05DC',
-        onConfirm: function () { doSend(name, channel, templateId, body, filters, ids); }
-      });
-    }).catch(function (e) { toast('error', '\u05E9\u05D2\u05D9\u05D0\u05D4: ' + (e.message || e)); });
-  }
-
-  async function doSend(name, channel, templateId, body, filters, leadIds) {
+  async function doWizardSend() {
+    if (!_wizard.name) { toast('error', 'שם שליחה חובה'); _wizard.step = 3; return; }
+    if (!_wizard.body) { toast('error', 'תוכן הודעה חובה'); _wizard.step = 2; return; }
+    var leadIds = await buildLeadIds();
+    if (!leadIds.length) { toast('warning', 'אין נמענים'); return; }
     var tid = getTenantId();
-    var session = (typeof loadSession === 'function') ? await loadSession() : null;
-    var employeeId = session && session.employee && session.employee.id;
-    if (!employeeId) { toast('error', '\u05D4\u05E0\u05E9\u05DE\u05EA \u05E2\u05D5\u05D1\u05D3 \u05D7\u05E1\u05E8\u05D4'); return; }
-
     try {
       var ins = await sb.from('crm_broadcasts').insert({
-        tenant_id: tid, employee_id: employeeId, name: name, channel: channel, template_id: templateId,
-        filter_criteria: filters, total_recipients: leadIds.length, total_sent: leadIds.length, total_failed: 0, status: 'queued'
+        tenant_id: tid, name: _wizard.name, channel: _wizard.channel, template_id: _wizard.templateId || null,
+        filter_criteria: { status: _wizard.status || null, event: _wizard.event || null, language: _wizard.language || null },
+        total_recipients: leadIds.length, total_sent: leadIds.length, total_failed: 0, status: 'queued'
       }).select('id').single();
       if (ins.error) throw new Error(ins.error.message);
-      var broadcastId = ins.data.id;
-      logWrite('crm.broadcast.send', 'crm_broadcast', broadcastId, { name: name, channel: channel, recipients: leadIds.length });
-
-      var logRows = leadIds.map(function (id) {
-        return { tenant_id: tid, lead_id: id, template_id: templateId, broadcast_id: broadcastId, channel: channel, content: body, status: 'queued' };
-      });
+      logWrite('crm.broadcast.send', 'crm_broadcast', ins.data.id, { name: _wizard.name, recipients: leadIds.length });
+      var logRows = leadIds.map(function (id) { return { tenant_id: tid, lead_id: id, template_id: _wizard.templateId || null, broadcast_id: ins.data.id, channel: _wizard.channel, content: _wizard.body, status: 'queued' }; });
       var logRes = await sb.from('crm_message_log').insert(logRows);
       if (logRes.error) throw new Error(logRes.error.message);
-
-      toast('success', '\u05E0\u05E9\u05DC\u05D7\u05D5 ' + leadIds.length + ' \u05D4\u05D5\u05D3\u05E2\u05D5\u05EA');
-      document.getElementById('bc-name').value = '';
-      document.getElementById('bc-body').value = '';
-    } catch (e) {
-      toast('error', '\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05E9\u05DC\u05D9\u05D7\u05D4: ' + (e.message || String(e)));
-    }
+      toast('success', 'נשלחו ' + leadIds.length + ' הודעות');
+      if (typeof Modal.close === 'function') Modal.close();
+      loadLog().then(renderLogTable);
+    } catch (e) { toast('error', 'שגיאה: ' + (e.message || e)); }
   }
 
-  /* ----------------------------------- LOG ----------------------------------- */
+  /* ----------------------------------- LOG (status-chip + message-log) ----------------------------------- */
 
   async function renderMessagingLog(host) {
     if (!host) return;
     host.innerHTML =
-      '<h3 style="color:var(--primary);margin:0 0 12px">\u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D4</h3>' +
-      '<div class="crm-filter-bar">' +
-        '<select id="log-channel"><option value="">\u05DB\u05DC \u05D4\u05E2\u05E8\u05D5\u05E6\u05D9\u05DD</option><option value="sms">SMS</option><option value="whatsapp">WhatsApp</option><option value="email">\u05D0\u05D9\u05DE\u05D9\u05D9\u05DC</option></select>' +
-        '<select id="log-status"><option value="">\u05DB\u05DC \u05D4\u05E1\u05D8\u05D8\u05D5\u05E1\u05D9\u05DD</option><option value="sent">\u05E0\u05E9\u05DC\u05D7</option><option value="pending">\u05D1\u05EA\u05D5\u05E8</option><option value="failed">\u05E0\u05DB\u05E9\u05DC</option><option value="delivered">\u05D4\u05D2\u05D9\u05E2</option></select>' +
-        '<input type="date" id="log-from" title="\u05DE\u05EA\u05D0\u05E8\u05D9\u05DA">' +
-        '<input type="date" id="log-to" title="\u05E2\u05D3 \u05EA\u05D0\u05E8\u05D9\u05DA">' +
-      '</div>' +
-      '<div id="log-table" class="crm-table-wrap"><div class="crm-detail-empty" style="padding:20px">\u05D8\u05D5\u05E2\u05DF...</div></div>' +
-      '<div id="log-pagination" class="crm-pagination"></div>';
-
-    ['log-channel', 'log-status', 'log-from', 'log-to'].forEach(function (id) {
+      '<div class="crm-message-log-wrap">' +
+        '<h4 style="margin:0 0 10px">היסטוריה</h4>' +
+        '<div class="crm-filter-bar">' +
+          '<select id="log-channel"><option value="">כל הערוצים</option><option value="sms">SMS</option><option value="whatsapp">WhatsApp</option><option value="email">אימייל</option></select>' +
+          '<select id="log-status"><option value="">כל הסטטוסים</option><option value="sent">נשלח</option><option value="delivered">הגיע</option><option value="read">נקרא</option><option value="failed">נכשל</option></select>' +
+        '</div>' +
+        '<div id="log-table" class="crm-table-wrap"></div>' +
+        '<div id="log-pagination" class="crm-pagination"></div>' +
+      '</div>';
+    ['log-channel','log-status'].forEach(function (id) {
       var el = host.querySelector('#' + id);
       if (el) el.addEventListener('change', function () { _logPage = 1; loadLog().then(renderLogTable); });
     });
-
     await loadLog();
     renderLogTable();
   }
@@ -210,65 +246,31 @@
 
   async function loadLog() {
     var tid = getTenantId();
-    var host = document.getElementById('crm-messaging-body');
-    var ch = host ? (host.querySelector('#log-channel') || {}).value : '';
-    var st = host ? (host.querySelector('#log-status') || {}).value : '';
-    var df = host ? (host.querySelector('#log-from') || {}).value : '';
-    var dt = host ? (host.querySelector('#log-to') || {}).value : '';
-
-    var q = sb.from('crm_message_log').select('id, lead_id, event_id, template_id, broadcast_id, channel, content, status, created_at');
+    var ch = (document.getElementById('log-channel') || {}).value || '';
+    var st = (document.getElementById('log-status')  || {}).value || '';
+    var q = sb.from('crm_message_log').select('id, lead_id, channel, content, status, created_at');
     if (tid) q = q.eq('tenant_id', tid);
     if (ch) q = q.eq('channel', ch);
     if (st) q = q.eq('status', st);
-    if (df) q = q.gte('created_at', df);
-    if (dt) q = q.lte('created_at', dt + 'T23:59:59');
-    q = q.order('created_at', { ascending: false }).limit(500);
+    q = q.order('created_at', { ascending: false }).limit(300);
     var res = await q;
-    if (res.error) { toast('error', '\u05DB\u05E9\u05DC \u05D1\u05D8\u05E2\u05D9\u05E0\u05D4: ' + res.error.message); _logRows = []; return; }
-    _logRows = res.data || [];
-
-    var leadIds = Array.from(new Set(_logRows.map(function (r) { return r.lead_id; }).filter(Boolean)));
-    var tplIds = Array.from(new Set(_logRows.map(function (r) { return r.template_id; }).filter(Boolean)));
-    var leadMap = {}, tplMap = {};
-    var jobs = [];
-    if (leadIds.length) {
-      var lq = sb.from('crm_leads').select('id, full_name').in('id', leadIds);
-      if (tid) lq = lq.eq('tenant_id', tid);
-      jobs.push(lq.then(function (lr) { (lr.data || []).forEach(function (l) { leadMap[l.id] = l.full_name; }); }));
-    }
-    if (tplIds.length) {
-      var tq = sb.from('crm_message_templates').select('id, name').in('id', tplIds);
-      if (tid) tq = tq.eq('tenant_id', tid);
-      jobs.push(tq.then(function (tr) { (tr.data || []).forEach(function (t) { tplMap[t.id] = t.name; }); }));
-    }
-    await Promise.all(jobs);
-    _logRows.forEach(function (r) { r._lead_name = leadMap[r.lead_id] || '\u2014'; r._template_name = tplMap[r.template_id] || ''; });
+    _logRows = res.error ? [] : (res.data || []);
   }
 
   function renderLogTable() {
     var wrap = document.getElementById('log-table');
     if (!wrap) return;
-    if (!_logRows.length) {
-      wrap.innerHTML = '<div class="crm-detail-empty" style="padding:20px">\u05D0\u05D9\u05DF \u05D4\u05D5\u05D3\u05E2\u05D5\u05EA \u05DC\u05D4\u05E6\u05D2\u05D4.</div>';
-      document.getElementById('log-pagination').innerHTML = '';
-      return;
-    }
+    if (!_logRows.length) { wrap.innerHTML = '<div class="crm-detail-empty" style="padding:16px">אין הודעות</div>'; return; }
     var start = (_logPage - 1) * PAGE_SIZE;
     var rows = _logRows.slice(start, start + PAGE_SIZE);
-    var html = '<table class="crm-table"><thead><tr>' +
-      '<th>\u05EA\u05D0\u05E8\u05D9\u05DA</th><th>\u05DC\u05D9\u05D3</th><th>\u05E2\u05E8\u05D5\u05E5</th><th>\u05EA\u05D1\u05E0\u05D9\u05EA</th><th>\u05E1\u05D8\u05D8\u05D5\u05E1</th><th>\u05EA\u05D5\u05DB\u05DF</th>' +
-      '</tr></thead><tbody>';
+    var html = '<table class="crm-table"><thead><tr><th>תאריך</th><th>ערוץ</th><th>סטטוס</th><th>תוכן</th></tr></thead><tbody>';
     rows.forEach(function (r) {
-      var chColor = CHANNEL_COLORS[r.channel] || '#6b7280';
-      var preview = (r.content || '').slice(0, 60) + ((r.content || '').length > 60 ? '\u2026' : '');
       html += '<tr class="readonly">' +
         '<td>' + escapeHtml(CrmHelpers.formatDateTime(r.created_at)) + '</td>' +
-        '<td>' + escapeHtml(r._lead_name) + '</td>' +
-        '<td><span class="crm-badge" style="background:' + escapeHtml(chColor) + '">' + escapeHtml(CHANNEL_LABELS[r.channel] || r.channel) + '</span></td>' +
-        '<td>' + escapeHtml(r._template_name) + '</td>' +
-        '<td>' + escapeHtml(STATUS_LABELS[r.status] || r.status) + '</td>' +
-        '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escapeHtml(r.content || '') + '">' + escapeHtml(preview) + '</td>' +
-        '</tr>';
+        '<td>' + escapeHtml(CHANNEL_LABELS[r.channel] || r.channel) + '</td>' +
+        '<td><span class="crm-status-chip ' + escapeHtml(r.status) + '">' + escapeHtml(STATUS_LABELS[r.status] || r.status) + '</span></td>' +
+        '<td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml((r.content || '').slice(0, 80)) + '</td>' +
+      '</tr>';
     });
     wrap.innerHTML = html + '</tbody></table>';
     renderLogPagination();
@@ -277,14 +279,13 @@
   function renderLogPagination() {
     var box = document.getElementById('log-pagination');
     if (!box) return;
-    var total = _logRows.length;
-    var pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-    if (pages <= 1) { box.innerHTML = '<span class="crm-page-info">\u05E1\u05D4"\u05DB ' + total + ' \u05D4\u05D5\u05D3\u05E2\u05D5\u05EA</span>'; return; }
-    var html = '<button ' + (_logPage === 1 ? 'disabled' : '') + ' data-lp="prev">\u203A</button>';
+    var pages = Math.max(1, Math.ceil(_logRows.length / PAGE_SIZE));
+    if (pages <= 1) { box.innerHTML = '<span class="crm-page-info">סה"כ ' + _logRows.length + '</span>'; return; }
+    var html = '<button ' + (_logPage === 1 ? 'disabled' : '') + ' data-lp="prev">›</button>';
     for (var i = 1; i <= pages; i++) html += '<button data-lp="' + i + '"' + (i === _logPage ? ' class="active"' : '') + '>' + i + '</button>';
-    html += '<button ' + (_logPage === pages ? 'disabled' : '') + ' data-lp="next">\u2039</button>';
-    box.innerHTML = html + '<span class="crm-page-info">\u05E2\u05DE\u05D5\u05D3 ' + _logPage + ' \u05DE\u05EA\u05D5\u05DA ' + pages + '</span>';
-    box.querySelectorAll('button[data-lp]').forEach(function (b) {
+    html += '<button ' + (_logPage === pages ? 'disabled' : '') + ' data-lp="next">‹</button>';
+    box.innerHTML = html;
+    box.querySelectorAll('[data-lp]').forEach(function (b) {
       b.addEventListener('click', function () {
         var v = b.getAttribute('data-lp');
         if (v === 'prev') _logPage = Math.max(1, _logPage - 1);
