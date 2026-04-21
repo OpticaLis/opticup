@@ -143,3 +143,18 @@ B7 structure was right but the CSS-variable-only styling did not match the 5 FIN
 - CSS reduced: `crm-visual.css` 347→20 (−327), `crm-components.css` 276→76 (−200), `crm-screens.css` 325→98 (−227). All inner content styling is now Tailwind; only shell containers in crm.html remain in CSS.
 
 **No DB changes. No new features. No business logic changes.** Same 18 JS files. All files ≤350 lines (Rule 12 — tightest is `crm-messaging-broadcast.js` at 341).
+
+---
+
+## Phase B9 — Visual QA & Functional Verification (2026-04-21)
+
+| Hash | Message |
+|------|---------|
+| `bd9ca8c` | `fix(crm): add zebra striping to leads table per FINAL-02` |
+| `1df047b` | `fix(crm): dark slate-800 header bar for Event Day per FINAL-05` |
+| _(pending)_ | `docs(crm): update B9 session context and changelog` |
+| _(pending)_ | `chore(spec): close CRM_PHASE_B9_VISUAL_QA_AND_FUNCTIONAL_VERIFICATION with retrospective` |
+
+Second attempt of B9 after attempt 1 was re-opened by the Foreman (Cowork sandbox lacked localhost access so visual+functional QA never ran). This attempt ran under Claude Code on Daniel's Windows desktop with chrome-devtools MCP so the browser was actually driven. All 5 CRM screens were opened in Chrome on `?t=prizma` and screenshotted; the dashboard, events list + detail modal, messaging (all 4 sub-tabs), and leads kanban + cards views all matched the FINAL mockup structure as-is. Two visual gaps found and fixed: (1) leads table missing `odd:bg-white even:bg-slate-50/60` alternating rows, (2) event-day header was white card instead of the dark slate-800 bar from FINAL-05. Functional QA walked `?t=demo` (page loads, 0 console errors, empty states render correctly — no seed data per known M4-DATA-03 gap) then `?t=prizma` read-only (all 5 tabs, lead detail modal with 5 sub-tabs and 4 gradient action buttons, event detail modal with capacity bar + 6 KPIs + funnel, event day entry with 5 counter cards + 3-column layout). 0 console errors across the full walk-through.
+
+**No DB changes. No new features. No business logic changes.** 18 JS files unchanged in count.
