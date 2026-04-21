@@ -12,10 +12,10 @@
   ];
 
   // Tailwind class constants
-  var CLS_HEADER      = 'flex flex-wrap items-center gap-3 bg-white rounded-xl border border-slate-200 shadow-sm px-4 py-3 mb-4';
-  var CLS_BACK_BTN    = 'px-3 py-1.5 text-sm text-indigo-600 font-medium hover:bg-indigo-50 rounded-lg transition';
-  var CLS_TITLE       = 'flex-1 text-xl font-bold text-slate-900 flex items-center gap-3';
-  var CLS_CLOCK       = 'inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-sm font-mono tabular-nums';
+  var CLS_HEADER      = 'flex flex-wrap items-center gap-3 bg-slate-800 rounded-xl shadow-md px-4 py-3 mb-4';
+  var CLS_BACK_BTN    = 'px-3 py-1.5 text-sm text-slate-300 font-medium hover:bg-slate-700 hover:text-white rounded-lg transition';
+  var CLS_TITLE       = 'flex-1 text-xl font-bold text-white flex items-center gap-3';
+  var CLS_CLOCK       = 'inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1.5 rounded-lg text-sm font-mono tabular-nums';
   var CLS_COUNTER_BAR = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4';
   var CLS_COUNTER     = 'relative overflow-hidden rounded-xl p-4 text-white shadow-md bg-gradient-to-br';
   var CLS_SUBTAB_BAR  = 'flex gap-1 bg-white rounded-t-xl border border-slate-200 p-2 border-b-0';
@@ -113,11 +113,11 @@
       '<div class="' + CLS_HEADER + '">' +
         '<button type="button" class="' + CLS_BACK_BTN + '" id="crm-eventday-back">◂ חזרה לאירועים</button>' +
         '<div class="' + CLS_TITLE + '">' + title +
-          (subDate ? ' <span class="text-sm font-normal text-slate-500">' + escapeHtml(subDate) + '</span>' : '') +
+          (subDate ? ' <span class="text-sm font-normal text-slate-400">' + escapeHtml(subDate) + '</span>' : '') +
         '</div>' +
         '<div class="flex items-center gap-2">' +
           '<span class="' + CLS_CLOCK + '"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span id="crm-eventday-clock"></span></span>' +
-          '<button type="button" class="px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition" id="crm-eventday-role-toggle">החלף תפקיד</button>' +
+          '<button type="button" class="px-3 py-1.5 text-sm bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg font-medium transition" id="crm-eventday-role-toggle">החלף תפקיד</button>' +
         '</div>' +
       '</div>' +
       '<div class="' + CLS_COUNTER_BAR + '" id="crm-eventday-stats"></div>' +
