@@ -17,7 +17,8 @@
   var CLS_TABLE       = 'w-full text-sm bg-white';
   var CLS_TH          = 'px-4 py-3 text-start font-semibold text-slate-700 bg-slate-50';
   var CLS_TD          = 'px-4 py-3 text-slate-800';
-  var CLS_ROW         = 'hover:bg-indigo-50/40 cursor-pointer border-b border-slate-100 transition-colors';
+  var CLS_ROW_ODD     = 'hover:bg-indigo-50/40 cursor-pointer border-b border-slate-100 transition-colors bg-white';
+  var CLS_ROW_EVEN    = 'hover:bg-indigo-50/40 cursor-pointer border-b border-slate-100 transition-colors bg-slate-50/60';
   var CLS_CHIP        = 'inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-3 py-1.5 rounded-full text-sm font-medium';
   var CLS_CHIP_CLOSE  = 'cursor-pointer font-bold opacity-70 hover:opacity-100 text-base leading-none';
   var CLS_TAG_PILL    = 'inline-block text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded mr-1';
@@ -199,9 +200,10 @@
       '<th class="' + CLS_TH + '">תגיות</th>' +
       '<th class="' + CLS_TH + '">נוצר</th>' +
       '</tr></thead><tbody>';
-    rows.forEach(function (r) {
+    rows.forEach(function (r, idx) {
       var checked = _selectedIds.has(r.id);
-      html += '<tr class="' + CLS_ROW + '" data-lead-id="' + escapeHtml(r.id) + '">' +
+      var rowCls = idx % 2 === 0 ? CLS_ROW_ODD : CLS_ROW_EVEN;
+      html += '<tr class="' + rowCls + '" data-lead-id="' + escapeHtml(r.id) + '">' +
         '<td class="' + CLS_TD + '"><input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" data-check-lead="' + escapeHtml(r.id) + '"' + (checked ? ' checked' : '') + '></td>' +
         '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
