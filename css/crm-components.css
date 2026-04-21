@@ -229,3 +229,48 @@
   display: flex; align-items: center; gap: 16px;
   margin-bottom: 16px; flex-wrap: wrap;
 }
+
+/* ---- B7: shared avatar + tag pill + summary row + status chip + bulk bar ---- */
+.crm-avatar-gradient {
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; color: #fff; font-weight: 700;
+  background: linear-gradient(135deg, var(--crm-accent), #7e22ce);
+  flex-shrink: 0; box-shadow: var(--crm-shadow-sm);
+}
+.crm-avatar-gradient.sm { width: 32px; height: 32px; font-size: 0.85rem; }
+.crm-avatar-gradient.md { width: 48px; height: 48px; font-size: 1.05rem; }
+.crm-avatar-gradient.lg { width: 80px; height: 80px; font-size: 1.8rem; }
+.crm-tag-pill {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 999px; font-size: 0.72rem; font-weight: 600;
+  background: var(--crm-accent-light); color: var(--crm-accent);
+  margin-inline-end: 4px;
+}
+.crm-summary-row {
+  background: var(--crm-accent-light); color: var(--crm-accent);
+  font-weight: 700;
+}
+.crm-summary-row td { border-top: 2px solid var(--crm-accent); }
+.crm-status-chip {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 999px; font-size: 0.72rem; font-weight: 600;
+}
+.crm-status-chip.sent       { background: var(--crm-info-light); color: var(--crm-info-dark); }
+.crm-status-chip.delivered  { background: var(--crm-success-light); color: var(--crm-success-dark); }
+.crm-status-chip.read       { background: #e9d5ff; color: #6b21a8; }
+.crm-status-chip.failed     { background: var(--crm-error-light); color: var(--crm-error-dark); }
+.crm-status-chip.pending    { background: var(--crm-warning-light); color: var(--crm-warning-dark); }
+.crm-bulk-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; margin-bottom: 10px;
+  background: var(--crm-accent); color: #fff;
+  border-radius: var(--crm-radius-md);
+}
+.crm-bulk-bar-count { font-weight: 700; }
+.crm-bulk-bar button {
+  padding: 6px 12px; border: 1px solid rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.12); color: #fff;
+  border-radius: var(--crm-radius-sm); cursor: pointer;
+  font-family: inherit; font-size: 0.85rem; font-weight: 500;
+}
+.crm-bulk-bar button:hover { background: rgba(255,255,255,0.24); }
