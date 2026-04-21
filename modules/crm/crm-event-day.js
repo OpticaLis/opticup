@@ -121,9 +121,9 @@
         '<button type="button" class="crm-eventday-back" id="crm-eventday-back">\u25B6 \u05D7\u05D6\u05E8\u05D4 \u05DC\u05D0\u05D9\u05E8\u05D5\u05E2\u05D9\u05DD</button>' +
         '<div class="crm-eventday-title">' + title + (subDate ? ' <span class="crm-eventday-date">' + escapeHtml(subDate) + '</span>' : '') + '</div>' +
       '</div>' +
-      '<div class="card crm-eventday-stats" id="crm-eventday-stats"></div>' +
+      '<div class="crm-eventday-counter-bar" id="crm-eventday-stats"></div>' +
       '<div class="crm-eventday-subtabs">' + subTabHtml + '</div>' +
-      '<div class="card crm-eventday-body" id="crm-eventday-body"></div>';
+      '<div id="crm-eventday-body"></div>';
 
     renderStatsBar();
 
@@ -162,10 +162,15 @@
       card(String(waiting), '\u05DE\u05DE\u05EA\u05D9\u05E0\u05D9\u05DD', 'accent-warn');
   }
 
+  // Counter-card styling per SPEC §8 (FINAL-05 mockup counter-bar). Variants: green/gold/violet/(default=blue).
   function card(value, label, accent) {
-    return '<div class="crm-stat-card ' + accent + '">' +
-      '<div class="crm-stat-value">' + escapeHtml(value) + '</div>' +
-      '<div class="crm-stat-label">' + escapeHtml(label) + '</div>' +
+    var variant = accent === 'accent-success' ? 'green'
+                : accent === 'accent-info'    ? 'gold'
+                : accent === 'accent-warn'    ? 'violet'
+                : '';
+    return '<div class="crm-counter-card ' + variant + '">' +
+      '<div class="crm-counter-number">' + escapeHtml(value) + '</div>' +
+      '<div class="crm-counter-label">' + escapeHtml(label) + '</div>' +
     '</div>';
   }
 

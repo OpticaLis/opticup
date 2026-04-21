@@ -95,7 +95,7 @@
         detailRow('הכנסות', CrmHelpers.formatCurrency(stats.total_revenue || 0)) +
         detailRow('% רכישה', stats.purchase_rate_pct != null ? stats.purchase_rate_pct + '%' : '—') +
         detailRow('מקומות פנויים', stats.spots_remaining != null ? String(stats.spots_remaining) : '—') +
-        '</div></div>';
+        '</div>' + renderCapacityBar(stats, event.max_capacity) + '</div>';
     }
 
     // Attendees
@@ -173,6 +173,32 @@
 
     search.addEventListener('input', apply);
     statusSel.addEventListener('change', apply);
+  }
+
+  // Capacity-bar: segmented progress (registered / confirmed / attended) over max_capacity.
+  // Falls back gracefully when capacity is unset — segments scale to total registered instead.
+  function renderCapacityBar(stats, maxCapacity) {
+    var reg = Number(stats.total_registered || 0);
+    var conf = Number(stats.total_confirmed || 0);
+    var att = Number(stats.total_attended || 0);
+    var cap = Number(maxCapacity || 0) || Math.max(reg, 1);
+    var regPct = Math.min(100, Math.round((reg / cap) * 100));
+    var confPct = Math.min(100, Math.round((conf / cap) * 100));
+    var attPct = Math.min(100, Math.round((att / cap) * 100));
+    var spotsLeft = Math.max(0, cap - reg);
+    return '<div class="crm-capacity-container">' +
+      '<div class="crm-capacity-label"><span>תפוסה: ' + reg + ' → ' + conf + ' → ' + att + '</span>' +
+      '<span>' + spotsLeft + ' מקומות פנויים</span></div>' +
+      '<div class="crm-capacity-bar">' +
+      '<div class="crm-capacity-segment registered" style="width:' + regPct + '%">' + (regPct > 8 ? reg : '') + '</div>' +
+      '<div class="crm-capacity-segment confirmed" style="width:' + Math.max(0, confPct - regPct) + '%">' + (confPct - regPct > 8 ? conf : '') + '</div>' +
+      '<div class="crm-capacity-segment attended" style="width:' + Math.max(0, attPct - confPct) + '%">' + (attPct - confPct > 8 ? att : '') + '</div>' +
+      '</div>' +
+      '<div class="crm-capacity-legend">' +
+      '<span class="crm-legend-item"><span class="crm-legend-dot" style="background:var(--crm-info)"></span>נרשמו (' + reg + ')</span>' +
+      '<span class="crm-legend-item"><span class="crm-legend-dot" style="background:var(--crm-success)"></span>אישרו (' + conf + ')</span>' +
+      '<span class="crm-legend-item"><span class="crm-legend-dot" style="background:var(--crm-warning)"></span>הגיעו (' + att + ')</span>' +
+      '</div></div>';
   }
 
   function detailRow(label, value) {
