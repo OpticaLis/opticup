@@ -1,13 +1,6 @@
 /* =============================================================================
-   crm-event-day.js — Event Day main view (B7: FINAL-05)
-   Header bar (title + breadcrumb + live clock + role toggle + back) +
-   counter-bar (5 gradient counter-card variants) + sub-tab nav + body.
-   Depends on: shared.js, CrmHelpers.
-   Exports:
-     window.loadCrmEventDay()
-     window.refreshEventDayStats()
-     window.getEventDayState()
-     window.renderEventDaySubTab()
+   crm-event-day.js — Event Day main (B8 Tailwind rewrite — FINAL-05)
+   Header bar + 5 gradient counter cards + sub-tab nav + body shell.
    ============================================================================= */
 (function () {
   'use strict';
@@ -18,6 +11,26 @@
     { key: 'manage',   label: '📋 ניהול' }
   ];
 
+  // Tailwind class constants
+  var CLS_HEADER      = 'flex flex-wrap items-center gap-3 bg-white rounded-xl border border-slate-200 shadow-sm px-4 py-3 mb-4';
+  var CLS_BACK_BTN    = 'px-3 py-1.5 text-sm text-indigo-600 font-medium hover:bg-indigo-50 rounded-lg transition';
+  var CLS_TITLE       = 'flex-1 text-xl font-bold text-slate-900 flex items-center gap-3';
+  var CLS_CLOCK       = 'inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-sm font-mono tabular-nums';
+  var CLS_COUNTER_BAR = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4';
+  var CLS_COUNTER     = 'relative overflow-hidden rounded-xl p-4 text-white shadow-md bg-gradient-to-br';
+  var CLS_SUBTAB_BAR  = 'flex gap-1 bg-white rounded-t-xl border border-slate-200 p-2 border-b-0';
+  var CLS_SUBTAB      = 'px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition';
+  var CLS_SUBTAB_ACT  = 'px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg transition';
+  var CLS_BODY        = 'bg-white rounded-b-xl border border-slate-200 p-4';
+
+  var COUNTER_VARIANTS = {
+    blue:    'from-sky-500 to-sky-600',
+    violet:  'from-violet-500 to-violet-600',
+    green:   'from-emerald-500 to-emerald-600',
+    gold:    'from-amber-500 to-amber-600',
+    emerald: 'from-teal-500 to-teal-600'
+  };
+
   var _state = { eventId: null, event: null, attendees: [], stats: null, subTab: 'checkin' };
   var _clockInterval = null;
   window.getEventDayState = function () { return _state; };
@@ -27,13 +40,13 @@
     if (!panel) return;
     var eventId = window._currentEventDayId;
     if (!eventId) {
-      panel.innerHTML = '<div class="crm-card"><div class="crm-detail-empty" style="padding:20px">לא נבחר אירוע. חזור ללשונית האירועים ובחר אירוע.</div></div>';
+      panel.innerHTML = '<div class="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-400">לא נבחר אירוע. חזור ללשונית האירועים ובחר אירוע.</div>';
       return;
     }
     if (_state.eventId !== eventId) {
       _state = { eventId: eventId, event: null, attendees: [], stats: null, subTab: 'checkin' };
     }
-    panel.innerHTML = '<div class="crm-card"><div class="crm-detail-empty" style="padding:20px">טוען מצב יום אירוע...</div></div>';
+    panel.innerHTML = '<div class="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-400">טוען מצב יום אירוע...</div>';
 
     try {
       await ensureCrmStatusCache();
@@ -42,7 +55,7 @@
       renderActiveSubTab();
     } catch (e) {
       console.error('event day load failed:', e);
-      panel.innerHTML = '<div class="crm-card"><div class="crm-detail-empty" style="padding:20px;color:#ef4444">שגיאה: ' + escapeHtml(e.message || String(e)) + '</div></div>';
+      panel.innerHTML = '<div class="bg-white rounded-xl border border-slate-200 p-6 text-center text-rose-500 font-semibold">שגיאה: ' + escapeHtml(e.message || String(e)) + '</div>';
     }
   }
   window.loadCrmEventDay = loadCrmEventDay;
@@ -93,21 +106,23 @@
     var subDate = ev && ev.event_date ? CrmHelpers.formatDate(ev.event_date) : '';
 
     var subTabHtml = SUB_TABS.map(function (t) {
-      return '<button type="button" class="crm-eventday-subtab' + (_state.subTab === t.key ? ' active' : '') + '" data-subtab="' + t.key + '">' + t.label + '</button>';
+      return '<button type="button" class="' + (_state.subTab === t.key ? CLS_SUBTAB_ACT : CLS_SUBTAB) + '" data-subtab="' + t.key + '">' + t.label + '</button>';
     }).join('');
 
     panel.innerHTML =
-      '<div class="crm-eventday-header">' +
-        '<button type="button" class="crm-eventday-back" id="crm-eventday-back">▶ חזרה לאירועים</button>' +
-        '<div class="crm-eventday-title">' + title + (subDate ? ' <span class="crm-eventday-date">' + escapeHtml(subDate) + '</span>' : '') + '</div>' +
-        '<div style="display:inline-flex;align-items:center;gap:10px;margin-inline-start:auto">' +
-          '<span class="crm-scanning-indicator"><span class="crm-scanning-dot"></span><span id="crm-eventday-clock"></span></span>' +
-          '<button type="button" class="crm-btn crm-btn-secondary" id="crm-eventday-role-toggle">החלף תפקיד</button>' +
+      '<div class="' + CLS_HEADER + '">' +
+        '<button type="button" class="' + CLS_BACK_BTN + '" id="crm-eventday-back">◂ חזרה לאירועים</button>' +
+        '<div class="' + CLS_TITLE + '">' + title +
+          (subDate ? ' <span class="text-sm font-normal text-slate-500">' + escapeHtml(subDate) + '</span>' : '') +
+        '</div>' +
+        '<div class="flex items-center gap-2">' +
+          '<span class="' + CLS_CLOCK + '"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span id="crm-eventday-clock"></span></span>' +
+          '<button type="button" class="px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition" id="crm-eventday-role-toggle">החלף תפקיד</button>' +
         '</div>' +
       '</div>' +
-      '<div class="crm-eventday-counter-bar" id="crm-eventday-stats"></div>' +
-      '<div class="crm-eventday-subtabs">' + subTabHtml + '</div>' +
-      '<div id="crm-eventday-body"></div>';
+      '<div class="' + CLS_COUNTER_BAR + '" id="crm-eventday-stats"></div>' +
+      '<div class="' + CLS_SUBTAB_BAR + '">' + subTabHtml + '</div>' +
+      '<div class="' + CLS_BODY + '" id="crm-eventday-body"></div>';
 
     renderStatsBar();
     startClock();
@@ -118,41 +133,41 @@
     var roleBtn = document.getElementById('crm-eventday-role-toggle');
     if (roleBtn) roleBtn.addEventListener('click', function () { if (typeof window.toggleCrmRole === 'function') window.toggleCrmRole(); });
 
-    panel.querySelectorAll('.crm-eventday-subtab').forEach(function (btn) {
+    panel.querySelectorAll('[data-subtab]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var key = btn.getAttribute('data-subtab');
         if (!key || key === _state.subTab) return;
         _state.subTab = key;
-        panel.querySelectorAll('.crm-eventday-subtab').forEach(function (b) { b.classList.remove('active'); });
-        btn.classList.add('active');
+        panel.querySelectorAll('[data-subtab]').forEach(function (b) {
+          var isActive = b.getAttribute('data-subtab') === key;
+          b.className = isActive ? CLS_SUBTAB_ACT : CLS_SUBTAB;
+        });
         renderActiveSubTab();
       });
     });
   }
 
-  // ---- 5 gradient counter-card variants (criterion §2.26 counter-card/counter-bar) ----
   function renderStatsBar() {
     var el = document.getElementById('crm-eventday-stats');
     if (!el) return;
     var s = _state.stats || {};
-    var reg  = Number(s.total_registered || 0);
-    var conf = Number(s.total_confirmed  || 0);
-    var att  = Number(s.total_attended   || 0);
-    var prc  = Number(s.total_purchased  || 0);
-    var rev  = Number(s.total_revenue    || 0);
+    var reg  = +s.total_registered || 0, conf = +s.total_confirmed || 0;
+    var att  = +s.total_attended   || 0, prc  = +s.total_purchased  || 0;
+    var rev  = +s.total_revenue    || 0;
 
     el.innerHTML =
-      counterCard(reg,  'נרשמו',   'blue') +
-      counterCard(conf, 'אישרו',   'violet') +
-      counterCard(att,  'הגיעו',   'green') +
-      counterCard(prc,  'רכשו',    'gold') +
-      '<div data-admin-only style="flex:1;min-width:120px">' + counterCard(CrmHelpers.formatCurrency(rev), 'הכנסות', 'emerald') + '</div>';
+      counterCard(reg,  'נרשמו', 'blue') +
+      counterCard(conf, 'אישרו', 'violet') +
+      counterCard(att,  'הגיעו', 'green') +
+      counterCard(prc,  'רכשו',  'gold') +
+      '<div data-admin-only>' + counterCard(CrmHelpers.formatCurrency(rev), 'הכנסות', 'emerald') + '</div>';
   }
 
   function counterCard(value, label, variant) {
-    return '<div class="crm-counter-card ' + variant + '">' +
-      '<div class="crm-counter-number">' + escapeHtml(String(value)) + '</div>' +
-      '<div class="crm-counter-label">' + escapeHtml(label) + '</div>' +
+    var grad = COUNTER_VARIANTS[variant] || COUNTER_VARIANTS.blue;
+    return '<div class="' + CLS_COUNTER + ' ' + grad + '">' +
+      '<div class="text-3xl font-black tracking-tight tabular-nums">' + escapeHtml(String(value)) + '</div>' +
+      '<div class="text-xs font-semibold uppercase tracking-wider opacity-90 mt-1">' + escapeHtml(label) + '</div>' +
     '</div>';
   }
 
@@ -175,7 +190,7 @@
     if (_state.subTab === 'checkin' && typeof window.renderEventDayCheckin === 'function') window.renderEventDayCheckin(host);
     else if (_state.subTab === 'schedule' && typeof window.renderEventDaySchedule === 'function') window.renderEventDaySchedule(host);
     else if (_state.subTab === 'manage' && typeof window.renderEventDayManage === 'function') window.renderEventDayManage(host);
-    else host.innerHTML = '<div class="crm-detail-empty" style="padding:20px">רכיב התת-לשונית לא נטען.</div>';
+    else host.innerHTML = '<div class="text-center text-slate-400 py-8">רכיב התת-לשונית לא נטען.</div>';
   }
   window.renderEventDaySubTab = renderActiveSubTab;
 })();

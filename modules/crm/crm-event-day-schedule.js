@@ -1,11 +1,15 @@
 /* =============================================================================
-   crm-event-day-schedule.js — Scheduled times sub-tab
-   Groups attendees by scheduled_time; chips are clickable to check-in.
-   Depends on: shared.js, CrmHelpers, crm-event-day.js (state + refresh)
-   Exports: window.renderEventDaySchedule(hostEl)
+   crm-event-day-schedule.js — Scheduled times board (B8 Tailwind — FINAL-05)
+   Groups attendees by scheduled_time; clickable chips trigger check-in.
    ============================================================================= */
 (function () {
   'use strict';
+
+  var CLS_GROUP     = 'bg-slate-50 border border-slate-200 rounded-xl p-3 mb-3';
+  var CLS_GRP_HEAD  = 'font-bold text-slate-800 text-sm mb-3 pb-2 border-b border-slate-200 flex items-center gap-2';
+  var CLS_CHIPS     = 'flex flex-wrap gap-2';
+  var CLS_CHIP      = 'inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 rounded-full text-sm font-medium text-slate-800 hover:bg-indigo-50 hover:border-indigo-400 cursor-pointer transition';
+  var CLS_CHIP_DONE = 'inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-100 border border-emerald-300 rounded-full text-sm font-semibold text-emerald-800';
 
   function renderEventDaySchedule(host) {
     if (!host) return;
@@ -21,17 +25,15 @@
     var grouped = groupByScheduledTime(state.attendees);
 
     if (!grouped.length) {
-      body.innerHTML = '<div class="crm-detail-empty" style="padding:20px">אין משתתפים להצגה</div>';
+      body.innerHTML = '<div class="text-center text-slate-400 py-8">אין משתתפים להצגה</div>';
       return;
     }
 
     var html = '';
-    grouped.forEach(function (g) {
-      html += renderGroup(g);
-    });
+    grouped.forEach(function (g) { html += renderGroup(g); });
     body.innerHTML = html;
 
-    body.querySelectorAll('.crm-eventday-chip[data-attendee-id]').forEach(function (chip) {
+    body.querySelectorAll('[data-attendee-id]').forEach(function (chip) {
       if (chip.classList.contains('checked-in')) return;
       chip.addEventListener('click', function () {
         var id = chip.getAttribute('data-attendee-id');
@@ -41,27 +43,27 @@
   }
 
   function renderGroup(g) {
-    var label = g.time
-      ? '🕐 ' + escapeHtml(g.time)
-      : '⚠️ ללא זמן מתוזמן';
+    var label = g.time ? '🕐 ' + escapeHtml(g.time) : '⚠️ ללא זמן מתוזמן';
     var attendedCount = g.rows.filter(function (r) { return !!r.checked_in_at; }).length;
 
     var chipsHtml = g.rows.map(function (r) {
-      var cls = 'crm-eventday-chip' + (r.checked_in_at ? ' checked-in' : '');
-      var icon = r.checked_in_at ? '✅' : '🔵';
-      var timeTxt = r.checked_in_at ? ' (' + formatTime(r.checked_in_at) + ')' : '';
-      var attr = r.checked_in_at ? '' : ' data-attendee-id="' + escapeHtml(r.id) + '"';
+      var done = !!r.checked_in_at;
+      var cls = (done ? CLS_CHIP_DONE : CLS_CHIP) + (done ? ' checked-in' : '');
+      var icon = done ? '✅' : '🔵';
+      var timeTxt = done ? ' (' + formatTime(r.checked_in_at) + ')' : '';
+      var attr = done ? '' : ' data-attendee-id="' + escapeHtml(r.id) + '"';
       var titleAttr = r.phone ? ' title="' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '"' : '';
       return '<button type="button" class="' + cls + '"' + attr + titleAttr + '>' +
-        icon + ' ' + escapeHtml(r.full_name || '') + escapeHtml(timeTxt) +
+        '<span>' + icon + '</span><span>' + escapeHtml(r.full_name || '') + escapeHtml(timeTxt) + '</span>' +
       '</button>';
     }).join('');
 
-    return '<div class="crm-eventday-schedule-group">' +
-      '<div class="crm-eventday-schedule-header">' +
-        label + ' (' + g.rows.length + ' משתתפים — ' + attendedCount + ' נכנסו)' +
+    return '<div class="' + CLS_GROUP + '">' +
+      '<div class="' + CLS_GRP_HEAD + '">' +
+        '<span class="text-indigo-700">' + label + '</span>' +
+        '<span class="text-xs font-normal text-slate-500">(' + g.rows.length + ' משתתפים — ' + attendedCount + ' נכנסו)</span>' +
       '</div>' +
-      '<div class="crm-eventday-schedule-chips">' + chipsHtml + '</div>' +
+      '<div class="' + CLS_CHIPS + '">' + chipsHtml + '</div>' +
     '</div>';
   }
 
@@ -98,7 +100,7 @@
     if (!attendeeId) return;
     var originalHtml = chip.innerHTML;
     chip.disabled = true;
-    chip.innerHTML = '⏳ מכניס...';
+    chip.innerHTML = '<span>⏳</span><span>מכניס...</span>';
 
     try {
       var res = await sb.rpc('check_in_attendee', {
@@ -133,9 +135,7 @@
 
   function updateLocalAttendee(id, patch) {
     var state = window.getEventDayState();
-    (state.attendees || []).forEach(function (a) {
-      if (a.id === id) Object.assign(a, patch);
-    });
+    (state.attendees || []).forEach(function (a) { if (a.id === id) Object.assign(a, patch); });
   }
 
   function logActivity(action, entityId, metadata) {

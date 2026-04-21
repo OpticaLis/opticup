@@ -1,14 +1,27 @@
 /* =============================================================================
-   crm-event-day-checkin.js — Check-in sub-tab (B7: FINAL-05)
-   3-column layout: LEFT = waiting list (amber / overdue / selected cards)
-                    CENTER = barcode scanner with scanning-indicator + selected
-                             attendee detail (gradient) + check-in/purchase buttons
-                    RIGHT = arrived column (delegated to renderEventDayArrived)
-   Flash notifications on successful check-in / failure.
-   Depends on: shared.js, CrmHelpers, crm-event-day.js state.
+   crm-event-day-checkin.js — Check-in sub-tab (B8 Tailwind — FINAL-05)
+   3-column layout: waiting / scanner+selected / arrived. Flash notifications.
    ============================================================================= */
 (function () {
   'use strict';
+
+  // Class constants
+  var CLS_GRID       = 'grid grid-cols-1 lg:grid-cols-3 gap-3 min-h-[500px]';
+  var CLS_COL        = 'rounded-xl border p-3 flex flex-col gap-2 min-h-[500px]';
+  var CLS_COL_AMBER  = CLS_COL + ' bg-amber-50/60 border-amber-200';
+  var CLS_COL_CENTER = CLS_COL + ' bg-indigo-50/60 border-indigo-200';
+  var CLS_COL_GREEN  = CLS_COL + ' bg-emerald-50/60 border-emerald-200';
+  var CLS_COL_HEAD   = 'flex items-center justify-between mb-1 font-bold text-slate-800';
+  var CLS_SEARCH     = 'w-full px-3 py-1.5 text-sm bg-white border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500';
+  var CLS_ATT_CARD   = 'bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-indigo-300 hover:shadow-sm transition';
+  var CLS_ATT_SEL    = 'bg-indigo-100 border-2 border-indigo-500 rounded-lg p-3 shadow-md cursor-pointer transition';
+  var CLS_ATT_OVER   = 'bg-amber-100 border-2 border-amber-500 rounded-lg p-3 cursor-pointer hover:shadow-sm transition';
+  var CLS_SCAN_IND   = 'inline-flex items-center gap-2 bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm w-max mx-auto mb-3';
+  var CLS_BARCODE    = 'w-full bg-slate-900 text-emerald-400 border-2 border-emerald-500 rounded-lg p-4 text-center text-xl font-mono shadow-inner mb-2 focus:ring-2 focus:ring-emerald-500';
+  var CLS_BTN_SECOND = 'w-full px-3 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-lg text-sm transition mb-3';
+  var CLS_SEL_CARD   = 'bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-xl p-4 shadow-lg';
+  var CLS_BTN_CHECK  = 'flex-1 h-14 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base shadow-md transition disabled:opacity-50';
+  var CLS_BTN_PURCH  = 'flex-1 h-14 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-base shadow-md transition disabled:opacity-50';
 
   var _filter = '';
   var _selectedId = null;
@@ -16,10 +29,10 @@
   function renderEventDayCheckin(host) {
     if (!host) return;
     host.innerHTML =
-      '<div class="crm-eventday-grid">' +
-        '<div class="crm-eventday-col crm-eventday-col-amber" id="eventday-col-waiting"></div>' +
-        '<div class="crm-eventday-col crm-eventday-col-center" id="eventday-col-checkin"></div>' +
-        '<div class="crm-eventday-col crm-eventday-col-green" id="eventday-col-arrived"></div>' +
+      '<div class="' + CLS_GRID + '">' +
+        '<div class="' + CLS_COL_AMBER + '" id="eventday-col-waiting"></div>' +
+        '<div class="' + CLS_COL_CENTER + '" id="eventday-col-checkin"></div>' +
+        '<div class="' + CLS_COL_GREEN + '" id="eventday-col-arrived"></div>' +
       '</div>';
     renderWaitingColumn();
     renderCenterColumn();
@@ -27,27 +40,26 @@
   }
   window.renderEventDayCheckin = renderEventDayCheckin;
 
-  // ---- Left: waiting cards ----
   function renderWaitingColumn() {
     var col = document.getElementById('eventday-col-waiting');
     if (!col) return;
     var state = window.getEventDayState();
     var now = new Date();
     var waiting = (state.attendees || []).filter(function (a) { return !a.checked_in_at && a.status !== 'cancelled'; });
-    var header = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
-      '<strong>⏳ ממתינים (' + waiting.length + ')</strong>' +
-      '<input type="search" id="crm-eventday-waiting-search" class="crm-search" placeholder="חיפוש..." value="' + escapeHtml(_filter) + '" style="width:130px;padding:4px 8px;border:1px solid var(--crm-border-strong);border-radius:4px">' +
+    var header = '<div class="' + CLS_COL_HEAD + '">' +
+      '<span>⏳ ממתינים (' + waiting.length + ')</span>' +
+      '<input type="search" id="crm-eventday-waiting-search" class="' + CLS_SEARCH + ' max-w-[130px]" placeholder="חיפוש..." value="' + escapeHtml(_filter) + '">' +
     '</div>';
     var filtered = filterList(waiting, _filter);
     var cards = filtered.length ? filtered.map(function (a) {
       var overdue = isOverdue(a.scheduled_time, now);
-      var cls = 'crm-attendee-card' + (overdue ? ' overdue' : '') + (a.id === _selectedId ? ' selected' : '');
+      var cls = a.id === _selectedId ? CLS_ATT_SEL : (overdue ? CLS_ATT_OVER : CLS_ATT_CARD);
       return '<div class="' + cls + '" data-select-id="' + escapeHtml(a.id) + '">' +
-        '<div style="font-weight:700">' + escapeHtml(a.full_name || '') + '</div>' +
-        '<div style="font-size:0.78rem;color:var(--crm-text-muted);direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div>' +
-        (a.scheduled_time ? '<div style="font-size:0.78rem;color:' + (overdue ? 'var(--crm-warning-dark)' : 'var(--crm-text-muted)') + '">🕐 ' + escapeHtml(a.scheduled_time) + '</div>' : '') +
+        '<div class="font-bold text-slate-900 text-sm truncate">' + escapeHtml(a.full_name || '') + '</div>' +
+        '<div class="text-xs text-slate-500 mt-0.5" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div>' +
+        (a.scheduled_time ? '<div class="text-xs mt-1 ' + (overdue ? 'text-amber-700 font-semibold' : 'text-slate-500') + '">🕐 ' + escapeHtml(a.scheduled_time) + '</div>' : '') +
       '</div>';
-    }).join('') : '<div class="crm-detail-empty">—</div>';
+    }).join('') : '<div class="text-center text-slate-400 py-6 text-sm">—</div>';
 
     col.innerHTML = header + cards;
     var srch = col.querySelector('#crm-eventday-waiting-search');
@@ -57,7 +69,6 @@
     });
   }
 
-  // ---- Center: barcode scanner with scanning-indicator + selected attendee detail ----
   function renderCenterColumn() {
     var col = document.getElementById('eventday-col-checkin');
     if (!col) return;
@@ -65,18 +76,18 @@
     var selected = _selectedId ? (state.attendees || []).find(function (a) { return a.id === _selectedId; }) : null;
 
     col.innerHTML =
-      '<div class="crm-scanning-indicator"><span class="crm-scanning-dot"></span><span>מוכן לסריקה</span></div>' +
-      '<input type="text" id="crm-eventday-barcode" class="crm-barcode-input" placeholder="העבר ברקוד..." autocomplete="off">' +
-      '<input type="search" id="crm-eventday-search" class="crm-search" placeholder="🔍 חיפוש משני..." style="width:100%;padding:8px 10px;border:1px solid var(--crm-border-strong);border-radius:6px;margin-bottom:10px">' +
-      '<button type="button" class="crm-btn crm-btn-secondary" id="crm-eventday-quick-register" style="width:100%;margin-bottom:10px">+ רישום מהיר</button>' +
+      '<div class="' + CLS_SCAN_IND + '"><span class="w-2 h-2 rounded-full bg-white animate-pulse"></span><span>מוכן לסריקה</span></div>' +
+      '<input type="text" id="crm-eventday-barcode" class="' + CLS_BARCODE + '" placeholder="העבר ברקוד..." autocomplete="off" style="direction:ltr">' +
+      '<input type="search" id="crm-eventday-search" class="' + CLS_SEARCH + ' mb-2" placeholder="🔍 חיפוש משני...">' +
+      '<button type="button" class="' + CLS_BTN_SECOND + '" id="crm-eventday-quick-register">+ רישום מהיר</button>' +
       '<div id="crm-eventday-notif-area"></div>' +
       (selected
         ? renderSelectedDetail(selected) +
-          '<div style="display:flex;gap:10px;margin-top:10px">' +
-            '<button type="button" class="crm-action-btn whatsapp" style="flex:1;height:56px;font-size:1rem" data-checkin-id="' + escapeHtml(selected.id) + '">✅ צ׳ק-אין</button>' +
-            '<button type="button" class="crm-action-btn eventday" style="flex:1;height:56px;font-size:1rem" data-purchase-id="' + escapeHtml(selected.id) + '">💰 רכישה</button>' +
+          '<div class="flex gap-2 mt-3">' +
+            '<button type="button" class="' + CLS_BTN_CHECK + '" data-checkin-id="' + escapeHtml(selected.id) + '">✅ צ׳ק-אין</button>' +
+            '<button type="button" class="' + CLS_BTN_PURCH + '" data-purchase-id="' + escapeHtml(selected.id) + '">💰 רכישה</button>' +
           '</div>'
-        : '<div class="crm-detail-empty" style="padding:20px">בחר משתתף מהעמודה השמאלית או סרוק ברקוד</div>'
+        : '<div class="bg-white rounded-xl border border-dashed border-slate-300 p-6 text-center text-slate-400 text-sm">בחר משתתף מהעמודה השמאלית או סרוק ברקוד</div>'
       );
 
     var barcode = col.querySelector('#crm-eventday-barcode');
@@ -98,34 +109,31 @@
     });
   }
 
-  // ---- Selected attendee detail card (gradient + status/time/notes rows) ----
   function renderSelectedDetail(a) {
     var status = CrmHelpers.getStatusInfo('attendee', a.status);
-    return '<div class="crm-selected-detail selected-card">' +
-      '<div style="font-size:1.2rem;font-weight:800">' + escapeHtml(a.full_name || '') + '</div>' +
-      '<div style="font-size:0.88rem;direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div>' +
-      '<div class="crm-attendee-detail">' +
-        '<div><strong>סטטוס:</strong> <span class="crm-badge" style="background:' + escapeHtml(status.color) + '">' + escapeHtml(status.label) + '</span></div>' +
-        '<div><strong>שעה:</strong> ' + escapeHtml(a.scheduled_time || '—') + '</div>' +
-        '<div><strong>צ׳ק-אין:</strong> ' + escapeHtml(formatTime(a.checked_in_at) || '—') + '</div>' +
-        '<div><strong>קופון:</strong> ' + (a.coupon_sent ? '✅' : '—') + '</div>' +
+    return '<div class="' + CLS_SEL_CARD + '">' +
+      '<div class="text-xl font-black">' + escapeHtml(a.full_name || '') + '</div>' +
+      '<div class="text-sm opacity-90 mt-1" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div>' +
+      '<div class="grid grid-cols-2 gap-2 mt-3 text-xs">' +
+        '<div class="bg-white/15 rounded-lg px-2 py-1.5"><div class="opacity-80">סטטוס</div><div class="font-semibold mt-0.5">' + escapeHtml(status.label) + '</div></div>' +
+        '<div class="bg-white/15 rounded-lg px-2 py-1.5"><div class="opacity-80">שעה</div><div class="font-semibold mt-0.5">' + escapeHtml(a.scheduled_time || '—') + '</div></div>' +
+        '<div class="bg-white/15 rounded-lg px-2 py-1.5"><div class="opacity-80">צ׳ק-אין</div><div class="font-semibold mt-0.5">' + escapeHtml(formatTime(a.checked_in_at) || '—') + '</div></div>' +
+        '<div class="bg-white/15 rounded-lg px-2 py-1.5"><div class="opacity-80">קופון</div><div class="font-semibold mt-0.5">' + (a.coupon_sent ? '✅' : '—') + '</div></div>' +
       '</div>' +
     '</div>';
   }
 
-  // ---- Right column — delegates to manage.js (criterion §2.29 lives there) ----
   function renderArrivedColumn() {
     var col = document.getElementById('eventday-col-arrived');
     if (!col) return;
     if (typeof window.renderEventDayArrivedColumn === 'function') {
       window.renderEventDayArrivedColumn(col);
     } else {
-      col.innerHTML = '<div class="crm-detail-empty">—</div>';
+      col.innerHTML = '<div class="text-center text-slate-400 py-6 text-sm">—</div>';
     }
   }
   window.renderEventDayArrivedRefresh = renderArrivedColumn;
 
-  // ---- Barcode scan (matches by phone tail or id) ----
   function onBarcodeScan(code) {
     code = String(code || '').trim();
     if (!code) return;
@@ -151,7 +159,7 @@
     if (!t) return false;
     var parts = String(t).split(':');
     if (parts.length < 2) return false;
-    var d = new Date(now); d.setHours(Number(parts[0]) || 0, Number(parts[1]) || 0, 0, 0);
+    var d = new Date(now); d.setHours(+parts[0] || 0, +parts[1] || 0, 0, 0);
     return d.getTime() < now.getTime() - 5 * 60 * 1000;
   }
 
@@ -162,10 +170,10 @@
     return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
   }
 
-  // ---- Flash notification (criterion §2.31) ----
   function showNotification(text, type) {
     var el = document.createElement('div');
-    el.className = 'crm-flash-notification' + (type === 'error' ? ' error' : '');
+    var base = 'fixed top-6 end-6 z-[9999] px-5 py-3 rounded-xl font-bold text-white shadow-lg transition';
+    el.className = base + ' ' + (type === 'error' ? 'bg-rose-500' : 'bg-emerald-500');
     el.textContent = text;
     document.body.appendChild(el);
     setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 2400);

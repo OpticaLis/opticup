@@ -1,15 +1,22 @@
 /* =============================================================================
-   crm-event-day-manage.js — Manage sub-tab + B7 arrived-column widget
-   Exports:
-     window.renderEventDayManage(host)         — full table view (sub-tab)
-     window.renderEventDayArrivedColumn(host)  — right column for checkin layout
-     window.openPurchaseAmountModal(id)        — ₪ amount modal (save/cancel)
-   The arrived column shows two sections (ממתינים לקנייה + קנו) with
-   arrived-card / purchase-badge / amount-display styling, plus an
-   admin-only running-total bar at the bottom.
+   crm-event-day-manage.js — Manage sub-tab + Arrived column widget + Purchase modal
+   (B8 Tailwind rewrite — FINAL-05)
    ============================================================================= */
 (function () {
   'use strict';
+
+  var CLS_TABLE        = 'w-full text-sm bg-white';
+  var CLS_TH           = 'px-4 py-2.5 text-start font-semibold text-slate-700 bg-slate-50';
+  var CLS_TD           = 'px-4 py-2.5 text-slate-800 border-b border-slate-100';
+  var CLS_INPUT        = 'px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500';
+  var CLS_LINK_BTN     = 'text-xs text-indigo-600 font-medium hover:text-indigo-800 hover:underline';
+  var CLS_TOGGLE_ON    = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700';
+  var CLS_TOGGLE_OFF   = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+  var CLS_ARR_CARD     = 'bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-amber-400 hover:shadow-sm transition';
+  var CLS_ARR_PURCH    = 'bg-emerald-50 border border-emerald-300 rounded-lg p-3';
+  var CLS_PURCH_BADGE  = 'inline-block mt-2 text-xs bg-amber-500 text-white font-semibold px-2 py-1 rounded-full';
+  var CLS_AMOUNT_DISP  = 'inline-block mt-2 text-sm bg-emerald-600 text-white font-bold px-2 py-1 rounded-md';
+  var CLS_RUNNING_TOT  = 'mt-4 pt-3 border-t-2 border-emerald-300 flex justify-between items-center bg-emerald-100 rounded-lg px-3 py-2';
 
   var _filter = '';
   var _statusFilter = '';
@@ -17,16 +24,16 @@
 
   function toast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
 
-  /* ----------------------------------- MANAGE SUB-TAB (table) ----------------------------------- */
+  /* ----------------------------------- MANAGE SUB-TAB ----------------------------------- */
 
   function renderEventDayManage(host) {
     if (!host) return;
     host.innerHTML =
-      '<div class="crm-filter-bar">' +
-        '<input type="search" id="crm-eventday-manage-search" class="crm-search" placeholder="חיפוש שם או טלפון..." value="' + escapeHtml(_filter) + '">' +
-        '<select id="crm-eventday-manage-status"><option value="">כל הסטטוסים</option></select>' +
+      '<div class="flex flex-wrap gap-2 mb-3">' +
+        '<input type="search" id="crm-eventday-manage-search" class="' + CLS_INPUT + ' flex-1 min-w-[200px]" placeholder="חיפוש שם או טלפון..." value="' + escapeHtml(_filter) + '">' +
+        '<select id="crm-eventday-manage-status" class="' + CLS_INPUT + '"><option value="">כל הסטטוסים</option></select>' +
       '</div>' +
-      '<div id="crm-eventday-manage-table" class="crm-table-wrap"></div>';
+      '<div id="crm-eventday-manage-table" class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden"></div>';
     populateStatusFilter();
     wireFilters();
     renderTable();
@@ -58,19 +65,24 @@
     if (!wrap) return;
     var state = window.getEventDayState();
     var rows = filterRows(state.attendees);
-    if (!rows.length) { wrap.innerHTML = '<div class="crm-detail-empty" style="padding:20px">אין משתתפים להצגה</div>'; return; }
+    if (!rows.length) { wrap.innerHTML = '<div class="text-center text-slate-400 py-8">אין משתתפים להצגה</div>'; return; }
 
-    var html = '<table class="crm-table"><thead><tr>' +
-      '<th>שם</th><th>טלפון</th><th>סטטוס</th><th>רכישה</th><th>קופון</th><th>דמי הזמנה</th>' +
+    var html = '<table class="' + CLS_TABLE + '"><thead><tr>' +
+      '<th class="' + CLS_TH + '">שם</th>' +
+      '<th class="' + CLS_TH + '">טלפון</th>' +
+      '<th class="' + CLS_TH + '">סטטוס</th>' +
+      '<th class="' + CLS_TH + '" data-admin-only>רכישה</th>' +
+      '<th class="' + CLS_TH + '">קופון</th>' +
+      '<th class="' + CLS_TH + '">דמי הזמנה</th>' +
       '</tr></thead><tbody>';
     rows.forEach(function (r) {
-      html += '<tr class="readonly">' +
-        '<td>' + escapeHtml(r.full_name || '') + '</td>' +
-        '<td style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
-        '<td>' + CrmHelpers.statusBadgeHtml('attendee', r.status) + '</td>' +
-        '<td>' + purchaseCell(r) + '</td>' +
-        '<td>' + couponCell(r) + '</td>' +
-        '<td>' + feeCell(r) + '</td>' +
+      html += '<tr>' +
+        '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + '</td>' +
+        '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
+        '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('attendee', r.status) + '</td>' +
+        '<td class="' + CLS_TD + '" data-admin-only>' + purchaseCell(r) + '</td>' +
+        '<td class="' + CLS_TD + '">' + couponCell(r) + '</td>' +
+        '<td class="' + CLS_TD + '">' + feeCell(r) + '</td>' +
       '</tr>';
     });
     wrap.innerHTML = html + '</tbody></table>';
@@ -88,22 +100,22 @@
 
   function purchaseCell(r) {
     if (_editingId === r.id) {
-      return '<input type="number" min="0" step="1" class="crm-eventday-manage-input" data-save-purchase="' + escapeHtml(r.id) + '" value="' + escapeHtml(String(r.purchase_amount == null ? '' : r.purchase_amount)) + '" autofocus>' +
-        ' <button type="button" class="crm-eventday-manage-link" data-cancel-edit="' + escapeHtml(r.id) + '">ביטול</button>';
+      return '<input type="number" min="0" step="1" class="' + CLS_INPUT + ' w-24" data-save-purchase="' + escapeHtml(r.id) + '" value="' + escapeHtml(String(r.purchase_amount == null ? '' : r.purchase_amount)) + '" autofocus>' +
+        ' <button type="button" class="' + CLS_LINK_BTN + ' ms-1" data-cancel-edit="' + escapeHtml(r.id) + '">ביטול</button>';
     }
-    var valTxt = r.purchase_amount != null && Number(r.purchase_amount) > 0 ? CrmHelpers.formatCurrency(r.purchase_amount) : '—';
-    return '<span data-admin-only>' + escapeHtml(valTxt) + '</span>' +
-      ' <button type="button" class="crm-eventday-manage-link" data-edit-purchase="' + escapeHtml(r.id) + '">ערוך</button>';
+    var valTxt = r.purchase_amount != null && +r.purchase_amount > 0 ? CrmHelpers.formatCurrency(r.purchase_amount) : '—';
+    return '<span class="font-semibold text-emerald-700">' + escapeHtml(valTxt) + '</span>' +
+      ' <button type="button" class="' + CLS_LINK_BTN + ' ms-1" data-edit-purchase="' + escapeHtml(r.id) + '">ערוך</button>';
   }
   function couponCell(r) {
     return r.coupon_sent
-      ? '<button type="button" class="crm-eventday-manage-toggle on" disabled>✅ נשלח</button>'
-      : '<button type="button" class="crm-eventday-manage-toggle" data-toggle-coupon="' + escapeHtml(r.id) + '">שלח</button>';
+      ? '<button type="button" class="' + CLS_TOGGLE_ON + '" disabled>✅ נשלח</button>'
+      : '<button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-coupon="' + escapeHtml(r.id) + '">שלח</button>';
   }
   function feeCell(r) {
     return r.booking_fee_paid
-      ? '<button type="button" class="crm-eventday-manage-toggle on" disabled>✅ שולם</button>'
-      : '<button type="button" class="crm-eventday-manage-toggle" data-toggle-fee="' + escapeHtml(r.id) + '">שולם</button>';
+      ? '<button type="button" class="' + CLS_TOGGLE_ON + '" disabled>✅ שולם</button>'
+      : '<button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-fee="' + escapeHtml(r.id) + '">שולם</button>';
   }
 
   function wireRowActions(wrap) {
@@ -117,39 +129,44 @@
     wrap.querySelectorAll('[data-toggle-fee]').forEach(function (b) { b.addEventListener('click', function () { toggleFee(b.getAttribute('data-toggle-fee'), b); }); });
   }
 
-  /* ----------------------------------- ARRIVED COLUMN (B7 right col) ----------------------------------- */
+  /* ----------------------------------- ARRIVED COLUMN ----------------------------------- */
 
-  // criterion §2.29: arrived-card + purchase-badge + amount-display
-  // criterion §2.32: running-total + data-admin-only
   function renderEventDayArrivedColumn(host) {
     if (!host) return;
     var state = window.getEventDayState();
     var arrived = (state.attendees || []).filter(function (a) { return a.checked_in_at && a.status !== 'cancelled'; });
-    var waitingPurchase = arrived.filter(function (a) { return !(Number(a.purchase_amount) > 0); });
-    var purchased = arrived.filter(function (a) { return Number(a.purchase_amount) > 0; });
+    var waitingPurchase = arrived.filter(function (a) { return !(+a.purchase_amount > 0); });
+    var purchased = arrived.filter(function (a) { return +a.purchase_amount > 0; });
 
-    var totalRevenue = purchased.reduce(function (sum, a) { return sum + Number(a.purchase_amount || 0); }, 0);
-    var headerTxt = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong>✅ הגיעו (' + arrived.length + ')</strong></div>';
+    var totalRevenue = purchased.reduce(function (sum, a) { return sum + (+a.purchase_amount || 0); }, 0);
+    var headerTxt = '<div class="flex items-center justify-between mb-2 font-bold text-slate-800"><span>✅ הגיעו (' + arrived.length + ')</span></div>';
 
-    var pendHtml = '<div style="font-weight:700;margin:8px 0 4px">ממתינים לקנייה (' + waitingPurchase.length + ')</div>' +
+    var pendHtml = '<div class="font-semibold text-amber-700 text-sm mt-2 mb-2">ממתינים לקנייה (' + waitingPurchase.length + ')</div>' +
+      '<div class="space-y-2">' +
       (waitingPurchase.length ? waitingPurchase.map(function (a) {
-        return '<div class="crm-arrived-card" data-open-purchase="' + escapeHtml(a.id) + '">' +
-          '<div style="font-weight:600">' + escapeHtml(a.full_name || '') + '</div>' +
-          '<div style="font-size:0.78rem;color:var(--crm-text-muted);direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div>' +
-          '<span class="crm-purchase-badge">💰 הזן סכום</span>' +
+        return '<div class="' + CLS_ARR_CARD + '" data-open-purchase="' + escapeHtml(a.id) + '">' +
+          '<div class="font-semibold text-slate-900 text-sm truncate">' + escapeHtml(a.full_name || '') + '</div>' +
+          '<div class="text-xs text-slate-500 mt-0.5" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div>' +
+          '<span class="' + CLS_PURCH_BADGE + '">💰 הזן סכום</span>' +
         '</div>';
-      }).join('') : '<div class="crm-detail-empty">—</div>');
+      }).join('') : '<div class="text-center text-slate-400 py-2 text-sm">—</div>') +
+      '</div>';
 
-    var purchHtml = '<div style="font-weight:700;margin:12px 0 4px">רכישות (' + purchased.length + ')</div>' +
+    var purchHtml = '<div class="font-semibold text-emerald-700 text-sm mt-4 mb-2">רכישות (' + purchased.length + ')</div>' +
+      '<div class="space-y-2">' +
       (purchased.length ? purchased.map(function (a) {
-        return '<div class="crm-arrived-card purchased">' +
-          '<div style="font-weight:600">' + escapeHtml(a.full_name || '') + '</div>' +
-          '<div style="font-size:0.78rem;color:var(--crm-text-muted);direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div>' +
-          '<span class="crm-amount-display" data-admin-only>' + escapeHtml(CrmHelpers.formatCurrency(a.purchase_amount)) + '</span>' +
+        return '<div class="' + CLS_ARR_PURCH + '">' +
+          '<div class="font-semibold text-slate-900 text-sm truncate">' + escapeHtml(a.full_name || '') + '</div>' +
+          '<div class="text-xs text-slate-500 mt-0.5" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div>' +
+          '<span class="' + CLS_AMOUNT_DISP + '" data-admin-only>' + escapeHtml(CrmHelpers.formatCurrency(a.purchase_amount)) + '</span>' +
         '</div>';
-      }).join('') : '<div class="crm-detail-empty">—</div>');
+      }).join('') : '<div class="text-center text-slate-400 py-2 text-sm">—</div>') +
+      '</div>';
 
-    var running = '<div class="crm-running-total" data-admin-only><span>הכנסות היום</span><span class="amount">' + escapeHtml(CrmHelpers.formatCurrency(totalRevenue)) + '</span></div>';
+    var running = '<div class="' + CLS_RUNNING_TOT + '" data-admin-only>' +
+      '<span class="font-semibold text-emerald-900 text-sm">הכנסות היום</span>' +
+      '<span class="text-xl font-black text-emerald-900 tabular-nums">' + escapeHtml(CrmHelpers.formatCurrency(totalRevenue)) + '</span>' +
+    '</div>';
 
     host.innerHTML = headerTxt + pendHtml + purchHtml + running;
     host.querySelectorAll('[data-open-purchase]').forEach(function (el) {
@@ -158,35 +175,32 @@
   }
   window.renderEventDayArrivedColumn = renderEventDayArrivedColumn;
 
-  /* ----------------------------------- PURCHASE AMOUNT MODAL (§2.30) ----------------------------------- */
+  /* ----------------------------------- PURCHASE AMOUNT MODAL ----------------------------------- */
 
   function openPurchaseAmountModal(id) {
     if (!id || typeof Modal === 'undefined') return;
     var state = window.getEventDayState();
     var a = (state.attendees || []).find(function (x) { return x.id === id; });
     if (!a) return;
-    var content = '<div class="purchase-modal">' +
-      '<div style="text-align:center;font-size:1.1rem;font-weight:700;margin-bottom:10px">' + escapeHtml(a.full_name || '') + '</div>' +
-      '<div class="crm-form-row">' +
-        '<label style="display:block;text-align:center">סכום רכישה (₪)</label>' +
-        '<input type="number" id="purchase-amount" class="crm-barcode-input" min="0" step="1" value="' + escapeHtml(String(a.purchase_amount || '')) + '" placeholder="0" style="font-size:1.6rem;text-align:center">' +
-      '</div>' +
+    var content = '<div class="text-center py-2">' +
+      '<div class="text-lg font-bold text-slate-800 mb-3">' + escapeHtml(a.full_name || '') + '</div>' +
+      '<label class="block text-sm font-medium text-slate-700 mb-2">סכום רכישה (₪)</label>' +
+      '<input type="number" id="purchase-amount" class="w-full px-4 py-3 text-3xl text-center border-2 border-emerald-400 rounded-xl focus:ring-4 focus:ring-emerald-200 bg-white font-black tabular-nums" min="0" step="1" value="' + escapeHtml(String(a.purchase_amount || '')) + '" placeholder="0" style="direction:ltr">' +
     '</div>';
-    var modal = Modal.show({ title: 'רכישה — ' + (a.full_name || ''), size: 'sm', content: content,
-      onClose: function () {} });
+    var modal = Modal.show({ title: 'רכישה — ' + (a.full_name || ''), size: 'sm', content: content });
     var input = modal.el.querySelector('#purchase-amount');
     if (input) { setTimeout(function () { input.focus(); input.select(); }, 50); }
     var footer = modal.el.querySelector('.modal-footer');
     if (footer) {
-      footer.innerHTML = '<button type="button" class="crm-btn crm-btn-primary" id="purchase-save">שמור</button>' +
-        '<button type="button" class="crm-btn crm-btn-secondary" id="purchase-cancel">ביטול</button>';
+      footer.innerHTML =
+        '<button type="button" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg transition shadow-sm" id="purchase-save">שמור</button>' +
+        '<button type="button" class="px-5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-lg transition" id="purchase-cancel">ביטול</button>';
       footer.querySelector('#purchase-save').addEventListener('click', function () {
-        var v = Number(input.value);
-        savePurchaseAmount(id, v, modal);
+        savePurchaseAmount(id, +input.value, modal);
       });
       footer.querySelector('#purchase-cancel').addEventListener('click', function () { if (modal.close) modal.close(); });
     }
-    if (input) input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); var v = Number(input.value); savePurchaseAmount(id, v, modal); } });
+    if (input) input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); savePurchaseAmount(id, +input.value, modal); } });
   }
   window.openPurchaseAmountModal = openPurchaseAmountModal;
 
@@ -213,12 +227,12 @@
     if (!id || _editingId !== id) return;
     var raw = inp.value;
     if (raw === '' || raw == null) { _editingId = null; renderTable(); return; }
-    var amount = Number(raw);
+    var amount = +raw;
     if (!isFinite(amount) || amount < 0) { toast('error', 'סכום לא תקין'); return; }
     var state = window.getEventDayState();
     var a = (state.attendees || []).find(function (x) { return x.id === id; });
     if (!a) { _editingId = null; renderTable(); return; }
-    if (Number(a.purchase_amount || 0) === amount) { _editingId = null; renderTable(); return; }
+    if ((+a.purchase_amount || 0) === amount) { _editingId = null; renderTable(); return; }
     var patch = { purchase_amount: amount };
     if (amount > 0 && a.status !== 'purchased') patch.status = 'purchased';
     if (amount > 0 && !a.purchased_at) patch.purchased_at = new Date().toISOString();
