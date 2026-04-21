@@ -1,6 +1,6 @@
 # Module 4 — CRM: Module Map
 
-> **Last updated:** 2026-04-21 (Phase B6 close — UI Redesign)
+> **Last updated:** 2026-04-21 (Phase B7 close — Visual Components)
 
 ---
 
@@ -9,30 +9,33 @@
 ### HTML & CSS
 | File | Lines | Purpose |
 |------|-------|---------|
-| `crm.html` | 271 | Main CRM page — sidebar nav (5 tabs), role toggle, page header, 5 tab panels with skeleton containers, 16 CRM script tags |
+| `crm.html` | 278 | Main CRM page — sidebar nav (5 tabs), role toggle, page header, 5 tab panels with skeleton containers, 18 CRM script tags |
 | `css/crm.css` | 215 | Foundation: palette tokens, base, sidebar, page header, tab panels, role visibility, responsive, utilities |
-| `css/crm-components.css` | 231 | Reusable components: cards, tables, filter bar, badges/chips, detail modal sections, buttons, pagination, sub-tabs |
-| `css/crm-screens.css` | 300 | Screen-specific: KPI grid + alert strip, legacy stat cards, status bars, leads view-toggle, capacity-bar, messaging split layout, event-day counter-bar + 3-column grid + barcode input + attendee/arrived cards, schedule chips |
+| `css/crm-components.css` | 276 | Reusable components: cards, tables, filter bar, badges/chips, detail modal sections, buttons, pagination, sub-tabs, **[B7]** avatar-gradient, tag-pill, summary-row, status-chip, bulk-bar |
+| `css/crm-screens.css` | 325 | Screen-specific: KPI grid + alert strip, legacy stat cards, status bars, leads view-toggle, capacity-bar, messaging split layout, event-day counter-bar + 3-column grid + barcode input + attendee/arrived cards, schedule chips, **[B7]** conversion gauges (conic-gradient) |
+| `css/crm-visual.css` | 347 | **[B7]** NEW visual component layer: sparklines, stacked-bar, activity-feed + pulse-dot, timeline-scroll, kanban grid/col/card, card-grid + lead-card, gradient event-header, funnel-svg, group-header, attendee-row, chart-card, detail-tabs, modal-footer, action-btn, category-tabs, code-editor + line-numbers + variable-menu, preview-container (whatsapp/sms/email frames), wizard (progress/dot/step), scanning-indicator, selected-detail, flash-notification, counter emerald/blue, amount-display, purchase-badge, running-total, template-card |
 
-### JavaScript — `modules/crm/` (16 files, all ≤300 lines)
+### JavaScript — `modules/crm/` (18 files, all ≤350 lines)
 | File | Lines | Purpose |
 |------|-------|---------|
 | `crm-init.js` | 75 | Page bootstrap, tab orchestration stub, status cache gate, error banner |
 | `crm-bootstrap.js` | 105 | **[B6]** Extracted from crm.html inline JS: page header updater, theme switcher, `toggleCrmRole()`, `switchCrmLeadsView()`, Lucide init, barcode auto-focus on event-day entry |
 | `crm-helpers.js` | 118 | Shared utilities: phone format, currency, date, language, status cache/badges |
-| `crm-dashboard.js` | 163 | Dashboard tab: KPI cards (renamed from stat cards in B6), event performance table, lead status distribution bars |
-| `crm-leads-tab.js` | 222 | Leads tab: load all leads, filter/sort/search, client-side pagination (50/page) |
-| `crm-leads-detail.js` | 163 | Lead detail modal: info grid, notes list, event history table, tags |
+| `crm-dashboard.js` | 253 | **[B7]** Dashboard: KPI cards with sparklines, alert strip, stacked bar chart events (replaces table), conversion gauges (conic-gradient), activity feed (pulse-dot), events timeline (horizontal scroll with progress bars) |
+| `crm-leads-tab.js` | 270 | **[B7]** Leads tab: table with checkboxes + summary row, bulk selection bar, filter chips (removable), delegates kanban + cards rendering to crm-leads-views.js |
+| `crm-leads-views.js` | 106 | **[B7]** NEW — Kanban (4 status columns with colored headers) + Cards (3-col grid with gradient avatar circles + tag pills) renderers |
+| `crm-leads-detail.js` | 209 | **[B7]** Lead detail modal: gradient avatar + 5 sub-tabs (events/messages/notes/timeline/details) + modal footer with 4 action buttons (WhatsApp/SMS/edit/event-day) |
 | `crm-events-tab.js` | 115 | Events tab: load events from `v_crm_event_stats`, filter by status |
-| `crm-events-detail.js` | 217 | Event detail modal: event info, stats summary, **[B6]** segmented capacity-bar, attendees table, Event Day entry button |
-| `crm-event-day.js` | 191 | Event Day main view — layout, **[B6]** counter-bar styling, sub-tab routing, state management |
-| `crm-event-day-checkin.js` | 152 | Event Day check-in sub-tab: search, כניסה button → `check_in_attendee` RPC |
+| `crm-events-detail.js` | 210 | **[B7]** Event detail modal: gradient event-header with breadcrumb/controls/info grid, segmented capacity-bar, 3 sub-tabs (attendees grouped with group-header, messages, analytics), delegates KPI+funnel+analytics charts to crm-events-detail-charts.js |
+| `crm-events-detail-charts.js` | 210 | **[B7]** NEW — 6 KPI cards with sparklines + trend indicators, SVG funnel visualization (4 trapezoid stages with arrows), Analytics chart cards (conversion rates, hourly attendance, revenue breakdown admin-only, coupon source) |
+| `crm-event-day.js` | 181 | **[B7]** Event Day main view — 5 gradient counter cards (blue/violet/green/gold/emerald), live clock in header, role-toggle button, sub-tab routing |
+| `crm-event-day-checkin.js` | 209 | **[B7]** Check-in sub-tab with 3-column layout: LEFT waiting (amber/overdue/selected cards) + CENTER barcode scanner (scanning-indicator pulse + selected-detail gradient card + check-in/purchase action buttons) + RIGHT delegates to arrived column. Flash notifications on every outcome. |
 | `crm-event-day-schedule.js` | 160 | Event Day scheduled-times board: grouped chips per time slot, click-to-check-in |
-| `crm-event-day-manage.js` | 232 | Event Day attendee management: purchase amount input, coupon toggle, booking fee toggle |
+| `crm-event-day-manage.js` | 264 | **[B7]** Manage sub-tab (table) + `renderEventDayArrivedColumn(host)` (arrived-card split: ממתינים לקנייה + רכישות with amount-display, running-total admin-only) + `openPurchaseAmountModal(id)` with ₪ input + save/cancel |
 | `crm-messaging-tab.js` | 107 | Messaging Hub orchestrator — 4 sub-tabs (templates / rules / broadcast / log) |
-| `crm-messaging-templates.js` | 238 | Templates CRUD (`crm_message_templates`): list, create/edit modal with variable chips, active toggle |
+| `crm-messaging-templates.js` | 298 | **[B7]** Split layout: sidebar (category-tabs all/auto/manual/drafts + search + filterTemplates + template-cards) + main (toolbar Bold/Italic/Underline/Emoji/Variables, code-editor with line-numbers, variable-menu with insertVariable, 3-panel preview whatsapp/sms/email frames with live substitute) |
 | `crm-messaging-rules.js` | 221 | Automation Rules CRUD (`crm_automation_rules`): list, trigger-based modal with JSON condition, channel checkboxes, template picker |
-| `crm-messaging-broadcast.js` | 297 | Manual broadcast + message log: filter bar, live recipient count, send with confirmation, log table with filters + 50/page pagination |
+| `crm-messaging-broadcast.js` | 298 | **[B7]** 5-step wizard modal (recipients/channel/template/timing/confirm) with wizard-progress dots + wizard-step panels, message-log sidebar with status-chip pills (sent/delivered/read/failed/pending), channel + status filters, pagination |
 
 ### Modified shared files
 | File | Change | Phase |

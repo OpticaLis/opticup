@@ -92,3 +92,24 @@ New files: `crm-messaging-tab.js`, `crm-messaging-templates.js`, `crm-messaging-
 Visual rewrite — no new features, no DB changes. `crm.html` dropped from 377→271 lines by extracting inline JS to new `modules/crm/crm-bootstrap.js` (Iron Rule 12). `css/crm.css` split from 983 lines into 3 files (crm.css 215 + crm-components.css 231 + crm-screens.css 300), all ≤350. Added new design tokens and component classes for KPI grid, capacity-bar, view-toggle, messaging split, event-day 3-column counter-bar, barcode input. Dashboard stat cards renamed to KPI cards; event-day stats bar switched to counter-card styling; event modal now renders segmented capacity-bar.
 
 **B6 deviations:** (1) SPEC targeted 15 JS files; added 1 (`crm-bootstrap.js`) to comply with Rule 12 after HTML grew during container additions — within SPEC §5 ≤18 ceiling. (2) Full 3-column runtime UX for Event Day checkin sub-tab not implemented in JS (HTML shells satisfy C13 grep; UX restructure is follow-up scope per FINDINGS.md). (3) Messaging split runtime wiring similarly deferred. See `CRM_PHASE_B6_UI_REDESIGN/EXECUTION_REPORT.md`.
+
+---
+
+## Phase B7 — Visual Components (2026-04-21)
+
+| Hash | Message |
+|------|---------|
+| `07bfa1c` | `feat(crm): add visual component CSS classes for B7 mockup alignment` |
+| `aa7905f` | `feat(crm): rewrite dashboard with sparklines, bar chart, gauges, activity feed, timeline` |
+| `38bf6b5` | `feat(crm): add kanban view, cards view, filter chips, bulk selection to leads tab` |
+| `115301c` | `feat(crm): rewrite lead detail modal (5 tabs) and event detail (header, capacity, funnel, analytics)` |
+| `dfea397` | `feat(crm): add code editor, 3-panel preview, category tabs, broadcast wizard` |
+| `2aa64f1` | `feat(crm): enhance event day with gradient counters, scanner indicator, purchase flow, flash notifications` |
+| _(pending)_ | `chore(crm): close B7 — module docs refresh + criteria verification` |
+| _(pending)_ | `chore(spec): close CRM_PHASE_B7_VISUAL_COMPONENTS with retrospective` |
+
+Visual-only rewrite that brings each CRM screen in line with the 5 FINAL mockups Daniel approved 2026-04-21 (B6 built the HTML skeleton + CSS design system; B7 makes the JS render functions produce the rich visual components). 2 new JS files (`crm-leads-views.js`, `crm-events-detail-charts.js`) and 1 new CSS file (`css/crm-visual.css`). 8 JS files rewritten. crm.html gained 4 containers (dashboard activity+timeline, leads filter-chips + bulk-bar), 2 new `<script>` tags, 1 new `<link>` tag. Event Day checkin sub-tab now renders as a live 3-column layout (waiting / scanner+selected-detail / arrived) — closes one of the B6 follow-ups. All 35 §2 structural criteria pass; 5 behavioral criteria deferred to Daniel QA. No DB schema changes, no new queries.
+
+**B7 key additions:** gradient avatar circles, sparkline mini-charts, conversion gauges (conic-gradient), SVG funnel visualization (polygon stages + arrow markers), 5-step broadcast wizard with progress dots, WhatsApp/SMS/Email preview frames with live variable substitution, barcode-scanner scanning-indicator, selected-attendee gradient detail card, flash-notification toasts on check-in outcomes, purchase-amount modal with ₪ input, admin-only running-total of the day's revenue.
+
+**File count:** 16 → 18 JS files, 3 → 4 CSS files. All files ≤350 lines (Rule 12).

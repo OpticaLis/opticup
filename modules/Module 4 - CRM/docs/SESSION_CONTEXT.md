@@ -1,8 +1,8 @@
 # Module 4 — CRM: Session Context
 
 > **Last updated:** 2026-04-21
-> **Current phase:** B6 (UI Redesign) — CLOSED WITH FOLLOW-UPS
-> **Next phase:** B7 candidate (Make cutover / Monday retirement) — formerly planned as B6, renumbered after Daniel approved 2026-04-21 visual rewrite SPEC
+> **Current phase:** B7 (Visual Components) — CLOSED WITH FOLLOW-UPS
+> **Next phase:** B8 candidate (Make cutover / Monday retirement) — was planned as B7 before the 2026-04-21 visual rewrite SPEC slotted ahead
 > **Branch:** develop
 
 ---
@@ -42,20 +42,26 @@ All code is on `develop` — NOT yet merged to `main`. Daniel cannot access the 
 | B4 — Event Day Module | 🟡 CLOSED w/ FOLLOW-UPS | 4 new files: event-day main + check-in + schedule + manage. Entry button in event modal. Stats bar + 3 sub-tabs. Writes via `check_in_attendee` RPC and direct `crm_event_attendees` updates. |
 | B5 — Messaging Hub | 🟡 CLOSED w/ FOLLOW-UPS | 4 new files: messaging-tab orchestrator + templates CRUD + automation-rules CRUD + broadcast/log. Tab #4 "הודעות". 4 sub-tabs (תבניות / כללי אוטומציה / שליחה ידנית / היסטוריה). No DDL. Send is UI-only; external dispatch deferred. |
 | B6 — UI Redesign | 🟡 CLOSED w/ FOLLOW-UPS | Visual rewrite to match 5 FINAL mockups Daniel approved 2026-04-21 (dashboard B / leads C / events A / messaging A / event-day C). `crm.html` 377→271 lines (extracted inline JS to new `crm-bootstrap.js`); `css/crm.css` 983→215 lines, split into 3 files (crm.css + crm-components.css + crm-screens.css), each ≤350. Added KPI grid + alert strip + view-toggle + capacity-bar + counter-bar + 3-column event-day shells + barcode input. No DB changes, no new features. 16 JS files (was 15). |
+| B7 — Visual Components | 🟡 CLOSED w/ FOLLOW-UPS | JS rewrite that populates the B6 shells with the rich visual components from the 5 FINAL mockups. 8 JS files rewritten + 2 new (`crm-leads-views.js`, `crm-events-detail-charts.js`). 1 new CSS file (`css/crm-visual.css`, 347 lines). All 35 §2 structural criteria pass; 5 behavioral criteria deferred to Daniel QA. Adds: KPI sparklines, stacked bar chart, conversion gauges (conic-gradient), activity feed with pulse-dot, horizontal events timeline, kanban+cards views for leads, filter chips, bulk selection bar, summary row, lead detail 5-sub-tab modal with footer actions, gradient event-header, SVG funnel, analytics chart cards, category-tabbed template sidebar, dark code editor with line-numbers + variable menu, 3-panel WhatsApp/SMS/Email preview, 5-step broadcast wizard, status-chip message log, 5 gradient event-day counter cards, live clock, 3-column checkin layout with barcode scanner and selected-detail, arrived-column with waiting-to-purchase + purchased sections, purchase-amount modal, admin-only running-total, flash notifications. No DB changes, no new queries. 18 JS files. |
 
 ## What's Next
 
-**Phase B7 (candidate, was B6 pre-2026-04-21)** — Make cutover / Monday retirement:
+**Phase B8 (candidate, was B7 pre-2026-04-21)** — Make cutover / Monday retirement:
 - Rewire campaign ingest away from Monday+Make to direct DB writes
 - Retire the 15+ Make scenarios behind the CRM
 - Migrate the automation rules from B5 into a background scheduler (Edge Function or Supabase cron)
 - Wire external dispatch for templates + broadcasts (SMS provider, WhatsApp Business, email)
 - The `DB.*` wrapper refactor for CRM code (M4-DEBT-02) is a good companion SPEC.
 
-**Open from B6:**
-- 3-column runtime UX for Event Day checkin not yet wired in JS (HTML shells exist in crm.html for SPEC C13 grep). Needs a follow-up SPEC to restructure `renderEventDayCheckin()` to render into 3 columns with waiting/center/arrived split.
-- Messaging Hub split layout (template-list sidebar + messaging-editor main pane) similarly: HTML shells satisfy SPEC C12 grep but `crm-messaging-tab.js` still overwrites `#tab-messaging` with single-body layout. Follow-up to wire JS into the split.
-- Dark-theme palette per FINAL-01 mockup not adopted; SPEC §10 explicit instruction was "preserve indigo palette" so light-content + dark-sidebar retained.
+**Open from B7:**
+- Messaging Hub split-layout runtime wiring: B7 delivers the sidebar+editor split inside `renderMessagingTemplates` but the orchestrator `crm-messaging-tab.js` still overwrites `#tab-messaging` with a single body before delegating. Visually works because templates render the split internally — but a follow-up should lift the split into the orchestrator so Rules + Broadcast + Log sub-tabs can also use it.
+- Wizard "later" scheduling is UI-only (no backing storage); live schedule will land with B8's scheduler.
+- Activity feed items on the dashboard are derived from `eventStats` rather than a real activity log — follow-up is to read from `activity_log` when that pipeline exists.
+- Sparkline trailing values in the KPI cards are synthesized from current counts (0.6 → 0.75 → 0.85 → 0.95 → 1.0 of total). Real time-series will require historical snapshots.
+- Dark-theme palette per FINAL-01 mockup still not adopted — preserved per original B6 SPEC §10 instruction.
+
+**Open from B6 (still valid):**
+- Full 3-column event-day layout is now wired in JS (B7 closed this follow-up). ✅
 
 **Before merge to main:**
 - Daniel QA pass on crm.html (manual) — covers B6 behavioral criteria 18-20 (page loads zero errors, tab switching, role toggle hides revenue), deferred per SPEC §3.
