@@ -113,3 +113,33 @@ Visual-only rewrite that brings each CRM screen in line with the 5 FINAL mockups
 **B7 key additions:** gradient avatar circles, sparkline mini-charts, conversion gauges (conic-gradient), SVG funnel visualization (polygon stages + arrow markers), 5-step broadcast wizard with progress dots, WhatsApp/SMS/Email preview frames with live variable substitution, barcode-scanner scanning-indicator, selected-attendee gradient detail card, flash-notification toasts on check-in outcomes, purchase-amount modal with ₪ input, admin-only running-total of the day's revenue.
 
 **File count:** 16 → 18 JS files, 3 → 4 CSS files. All files ≤350 lines (Rule 12).
+
+---
+
+## Phase B8 — Tailwind Visual Fidelity (2026-04-21)
+
+| Hash | Message |
+|------|---------|
+| `bc04b1b` | `docs(crm): add B8 Tailwind Visual Fidelity SPEC` |
+| `4d023e2` | `feat(crm): add Tailwind CDN to crm.html with config` |
+| `fc36051` | `feat(crm): rewrite dashboard renders with Tailwind classes` |
+| `c3e006a` | `feat(crm): rewrite leads renders with Tailwind classes` |
+| `6d4a94b` | `feat(crm): rewrite events renders with Tailwind classes` |
+| `4f1ba8b` | `feat(crm): rewrite messaging renders with Tailwind classes` |
+| `b2dccf0` | `feat(crm): rewrite event-day renders with Tailwind classes` |
+| `f9be29d` | `chore(crm): final CSS cleanup and consolidation` |
+| _(pending)_ | `docs(crm): update B8 session context, changelog, module map` |
+| _(pending)_ | `chore(spec): close CRM_PHASE_B8_TAILWIND_VISUAL_FIDELITY with retrospective` |
+
+B7 structure was right but the CSS-variable-only styling did not match the 5 FINAL mockups Daniel approved on 2026-04-21 (the mockups are built with Tailwind CDN — gradients, shadows, rounded corners, typography, spacing). B8 loads Tailwind CDN on `crm.html` only (with a `tailwind.config` block for RTL, Heebo font, and `crm.*` custom colors matching the CSS variable palette) and rewrites every CRM render function to produce HTML with Tailwind utility classes that match the mockups.
+
+**B8 key changes:**
+- `crm.html` + Tailwind CDN + `tailwind.config` (305 lines total, +23)
+- `crm-dashboard.js` 253→295: 4 gradient KPI cards with per-variant sparklines (indigo/cyan/emerald/amber), 3-column alert strip, stacked gradient bar chart, 3 conic-gradient gauges, animate-pulse activity feed, horizontal timeline cards
+- `crm-leads-tab.js` 270→290 + `crm-leads-views.js` 106→112 + `crm-leads-detail.js` 209→228: white-card table with hover:bg-indigo-50/40, indigo filter chips, indigo bulk bar, pagination with `rounded-md` buttons, 4-column kanban with colored headers (emerald/amber/violet/indigo), 3-column card grid with gradient avatars, lead-detail modal with gradient-avatar header + 5 underline tabs + 4 gradient action buttons
+- `crm-events-tab.js` 115→125 + `crm-events-detail.js` 210→206 + `crm-events-detail-charts.js` 210→201: events list with emerald revenue column, gradient event header (indigo→violet) with glass-morphism controls, segmented capacity bar, 6 gradient KPI cards with trend arrows (sky/emerald/amber/violet), SVG funnel unchanged (wrapped in white chart card), gradient bar analytics
+- `crm-messaging-tab.js` 107→101 + `crm-messaging-templates.js` 299→304 + `crm-messaging-broadcast.js` 298→341 + `crm-messaging-rules.js` 221→234: rounded tab bar, template split-layout (category tabs + search + template cards + dark slate-900 code editor with line numbers + 3-panel preview in WhatsApp emerald / SMS sky / Email amber headers), 5-step wizard with progress connectors and green✓ completed state, rules with colored channel badges and pill toggles
+- `crm-event-day.js` 181→196 + `crm-event-day-checkin.js` 209→217 + `crm-event-day-manage.js` 264→278 + `crm-event-day-schedule.js` 160: 5 gradient counter cards (sky/violet/emerald/amber/teal), live clock with animate-pulse dot, 3-column check-in grid (amber/indigo/emerald columns), dark slate-900 barcode input with emerald accent, gradient selected-attendee card (indigo→violet) with info grid, arrived column with purchase badges and running-total, purchase modal with 3xl amount input
+- CSS reduced: `crm-visual.css` 347→20 (−327), `crm-components.css` 276→76 (−200), `crm-screens.css` 325→98 (−227). All inner content styling is now Tailwind; only shell containers in crm.html remain in CSS.
+
+**No DB changes. No new features. No business logic changes.** Same 18 JS files. All files ≤350 lines (Rule 12 — tightest is `crm-messaging-broadcast.js` at 341).
