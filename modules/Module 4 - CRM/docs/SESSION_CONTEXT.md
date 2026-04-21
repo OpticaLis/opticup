@@ -1,23 +1,26 @@
 # Module 4 — CRM: Session Context
 
 > **Last updated:** 2026-04-21
-> **Current phase:** B9 (Visual QA & Functional Verification) — CLOSED (attempt 2)
-> **Next phase:** B10 candidate (Make cutover / Monday retirement)
+> **Current phase:** Go-Live C1 (Lead Intake Pipeline) — IN PROGRESS
+> **Next phase:** C2 (Lead Management — status, notes, Tier 1→2 transfer)
 > **Branch:** develop
 
 ---
 
 ## Current State
 
-Phase A through B5 complete. The CRM module has:
-- **Schema:** 23 tables (incl. 4 messaging tables from Phase A), 7 Views, 8 RPCs, 46 RLS policies
-- **Data:** 893 leads, 11 events, 149 attendees, 695 notes, 88 ad spend rows imported from Monday.com (Phase B2)
-- **UI:** `crm.html` with 4 visible tabs (Dashboard, Leads, Events, Messaging Hub) + 1 hidden tab (Event Day) entered via event modal
-- **Event Day (B4):** live check-in panel (RPC: `check_in_attendee`), scheduled times board, attendee management (purchase amount, coupon toggle, booking fee), stats bar with registered/attended/purchased/revenue
-- **Messaging Hub (B5):** 4 sub-tabs — templates CRUD, automation rules CRUD, manual broadcast send (recipient count preview + confirmation), message log with filters and pagination
-- **Home screen:** CRM card added to `index.html` via MODULES config
+**Build phases (A–B9) complete.** CRM merged to `main`. Go-Live initiative started.
 
-All code is on `develop` — NOT yet merged to `main`. Daniel cannot access the CRM on the production site until merge.
+- **Schema:** 23 tables, 7 Views, 8 RPCs, 46 RLS policies
+- **Data:** 893 leads, 11 events, 149 attendees, 695 notes, 88 ad spend rows (Monday import)
+- **UI:** `crm.html` with **6 visible tabs** (Dashboard, לידים נכנסים, רשומים, Events, Messaging Hub) + 1 hidden (Event Day)
+- **Go-Live C1 (in progress):**
+  - Tier 1 "לידים נכנסים" tab added (`crm-incoming-tab.js`, 157 lines)
+  - Existing "לידים" tab renamed to "רשומים" (Tier 2 only)
+  - `TIER1_STATUSES` / `TIER2_STATUSES` constants in `crm-helpers.js`
+  - 4 message templates seeded in `crm_message_templates` (demo tenant)
+  - Make scenario created in Demo folder (ID 9101245, 11 modules)
+  - **Pending:** Daniel must add Supabase service_role key to Make HTTP modules, then activate scenario and run end-to-end test
 
 ## Known Gaps
 
@@ -48,12 +51,9 @@ All code is on `develop` — NOT yet merged to `main`. Daniel cannot access the 
 
 ## What's Next
 
-**Phase B10 (candidate, was B9 candidate pre-2026-04-21)** — Make cutover / Monday retirement:
-- Rewire campaign ingest away from Monday+Make to direct DB writes
-- Retire the 15+ Make scenarios behind the CRM
-- Migrate the automation rules from B5 into a background scheduler (Edge Function or Supabase cron)
-- Wire external dispatch for templates + broadcasts (SMS provider, WhatsApp Business, email)
-- The `DB.*` wrapper refactor for CRM code (M4-DEBT-02) is a good companion SPEC.
+**Go-Live C1 completion:** Daniel adds service_role key → activate Make scenario → test with phone 0537889878 → verify CRM reflects new lead → close C1.
+
+**Go-Live C2:** Lead management — status change UI, notes, Tier 1→Tier 2 transfer button, auto-approval logic for clean leads. See `modules/Module 4 - CRM/go-live/ROADMAP.md` for full C1–C9 roadmap.
 
 **Open from B8:**
 - Tailwind CDN runs a JIT compiler in-browser (~15KB gzipped). Fine for an internal tool but could be switched to a static extracted CSS file in a future SPEC if startup latency ever matters.
