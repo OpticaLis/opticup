@@ -1,7 +1,7 @@
 /* =============================================================================
-   crm-leads-detail.js — Lead detail modal (B7: gradient avatar + 5 tabs + footer)
-   Data: in-memory row from crm-leads-tab.js + crm_lead_notes + v_crm_lead_event_history.
-   READ-ONLY — edit + event-day entry are placeholders until a follow-up SPEC.
+   crm-leads-detail.js — Lead detail modal (B8 Tailwind rewrite — FINAL-02)
+   Gradient header avatar + 5 tabs + 4 action buttons footer. READ-ONLY.
+   Data: in-memory row + crm_lead_notes + v_crm_lead_event_history.
    ============================================================================= */
 (function () {
   'use strict';
@@ -13,6 +13,14 @@
     { key: 'timeline', label: 'ציר זמן' },
     { key: 'details',  label: 'פרטים' }
   ];
+
+  // Reusable classes
+  var CLS_TAB_BTN        = 'px-4 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 border-b-2 border-transparent transition';
+  var CLS_TAB_BTN_ACTIVE = 'px-4 py-2 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition';
+  var CLS_TAB_BAR        = 'flex gap-2 border-b border-slate-200 mt-4 mb-4 overflow-x-auto';
+  var CLS_ACTION_BTN     = 'flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold text-white shadow-sm transition hover:shadow-md';
+  var CLS_DETAIL_ROW     = 'flex items-center justify-between py-2 border-b border-slate-100';
+  var CLS_NOTE           = 'bg-slate-50 border border-slate-200 rounded-lg p-3 mb-2 text-sm text-slate-700';
 
   function initials(name) {
     var s = String(name || '').trim();
@@ -30,7 +38,7 @@
     var modal = Modal.show({
       title: lead.full_name || 'ליד',
       size: 'lg',
-      content: '<div class="crm-detail-empty" style="padding:20px">טוען פרטי ליד...</div>'
+      content: '<div class="text-center text-slate-400 py-10">טוען פרטי ליד...</div>'
     });
 
     try {
@@ -44,7 +52,7 @@
     } catch (e) {
       console.error('lead detail load failed:', e);
       var body2 = modal.el.querySelector('.modal-body');
-      if (body2) body2.innerHTML = '<div class="crm-detail-empty" style="color:#ef4444">שגיאה בטעינה: ' + escapeHtml(e.message || String(e)) + '</div>';
+      if (body2) body2.innerHTML = '<div class="text-center text-rose-500 py-6 font-semibold">שגיאה בטעינה: ' + escapeHtml(e.message || String(e)) + '</div>';
     }
   }
   window.openCrmLeadDetail = openCrmLeadDetail;
@@ -67,37 +75,37 @@
     return { notes: r[0].data || [], history: (r[1].data && r[1].data[0]) || null };
   }
 
-  // ---- Render: header (gradient avatar) + tab bar + tab panels + footer ----
+  // ---- Render ----
   function renderDetail(lead, notes, hist) {
     var statusInfo = CrmHelpers.getStatusInfo('lead', lead.status);
     var tabBtns = TABS.map(function (t, i) {
-      return '<button type="button" class="crm-detail-tab' + (i === 0 ? ' active' : '') + '" data-detail-tab="' + t.key + '">' + escapeHtml(t.label) + '</button>';
+      return '<button type="button" class="' + (i === 0 ? CLS_TAB_BTN_ACTIVE : CLS_TAB_BTN) + '" data-detail-tab="' + t.key + '">' + escapeHtml(t.label) + '</button>';
     }).join('');
 
-    return '<div style="display:flex;gap:14px;align-items:center">' +
-        '<div class="crm-avatar-gradient lg">' + escapeHtml(initials(lead.full_name)) + '</div>' +
-        '<div>' +
-          '<h2 style="margin:0;color:var(--crm-text-primary)">' + escapeHtml(lead.full_name || '') + '</h2>' +
-          '<div style="font-size:0.88rem;color:var(--crm-text-muted);direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(lead.phone)) + '</div>' +
-          '<div style="font-size:0.88rem;color:var(--crm-text-muted)">' + escapeHtml(lead.city || '') + ' · ' + escapeHtml(lead.source || '') + '</div>' +
-          '<div style="margin-top:6px">' +
-            '<span class="crm-badge" style="background:' + escapeHtml(statusInfo.color) + '">' + escapeHtml(statusInfo.label) + '</span>' +
+    return '<div class="flex gap-4 items-center bg-gradient-to-br from-indigo-50 to-violet-50 rounded-xl p-4 mb-2">' +
+        '<div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-black text-xl flex items-center justify-center shrink-0 shadow-md">' + escapeHtml(initials(lead.full_name)) + '</div>' +
+        '<div class="flex-1 min-w-0">' +
+          '<h2 class="text-xl font-bold text-slate-900 m-0 truncate">' + escapeHtml(lead.full_name || '') + '</h2>' +
+          '<div class="text-sm text-slate-600 mt-1" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(lead.phone)) + '</div>' +
+          '<div class="text-sm text-slate-500">' + escapeHtml(lead.city || '') + ' · ' + escapeHtml(lead.source || '') + '</div>' +
+          '<div class="mt-2">' +
+            '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white" style="background:' + escapeHtml(statusInfo.color) + '">' + escapeHtml(statusInfo.label) + '</span>' +
           '</div>' +
         '</div>' +
       '</div>' +
-      '<div class="crm-detail-tabs">' + tabBtns + '</div>' +
-      '<div id="crm-lead-tab-body">' + renderTabContent('events', lead, notes, hist) + '</div>' +
-      '<div class="crm-modal-footer">' +
-        '<button type="button" class="crm-action-btn whatsapp" data-action="whatsapp">WhatsApp</button>' +
-        '<button type="button" class="crm-action-btn sms" data-action="sms">SMS</button>' +
-        '<button type="button" class="crm-action-btn edit" data-action="edit">ערוך</button>' +
-        '<button type="button" class="crm-action-btn eventday" data-action="eventday">מצב יום אירוע</button>' +
+      '<div class="' + CLS_TAB_BAR + '">' + tabBtns + '</div>' +
+      '<div id="crm-lead-tab-body" class="min-h-[120px]">' + renderTabContent('events', lead, notes, hist) + '</div>' +
+      '<div class="flex gap-2 mt-4 pt-4 border-t border-slate-200">' +
+        '<button type="button" class="' + CLS_ACTION_BTN + ' bg-emerald-500 hover:bg-emerald-600" data-action="whatsapp">WhatsApp</button>' +
+        '<button type="button" class="' + CLS_ACTION_BTN + ' bg-sky-500 hover:bg-sky-600" data-action="sms">SMS</button>' +
+        '<button type="button" class="' + CLS_ACTION_BTN + ' bg-indigo-500 hover:bg-indigo-600" data-action="edit">ערוך</button>' +
+        '<button type="button" class="' + CLS_ACTION_BTN + ' bg-amber-500 hover:bg-amber-600" data-action="eventday">מצב יום אירוע</button>' +
       '</div>';
   }
 
   function renderTabContent(key, lead, notes, hist) {
     if (key === 'events')   return renderEvents(hist);
-    if (key === 'messages') return '<div class="crm-detail-empty">היסטוריית הודעות — בקרוב</div>';
+    if (key === 'messages') return '<div class="text-center text-slate-400 py-8">היסטוריית הודעות — בקרוב</div>';
     if (key === 'notes')    return renderNotes(notes);
     if (key === 'timeline') return renderTimeline(notes, hist);
     if (key === 'details')  return renderFullDetails(lead);
@@ -105,36 +113,38 @@
   }
 
   function renderEvents(hist) {
-    if (!hist) return '<div class="crm-detail-empty">לא השתתף באירועים</div>';
+    if (!hist) return '<div class="text-center text-slate-400 py-6">לא השתתף באירועים</div>';
     var events = Array.isArray(hist.event_history) ? hist.event_history.slice() : [];
     if (!events.length) {
       var s = 'השתתף ב-' + (hist.total_events_attended || 0) + ' אירועים';
       if (hist.total_purchases) s += ' · רכישות: ' + CrmHelpers.formatCurrency(hist.total_purchases);
-      return '<div class="crm-detail-empty">' + escapeHtml(s) + '</div>';
+      return '<div class="text-center text-slate-500 py-6 text-sm">' + escapeHtml(s) + '</div>';
     }
     events.sort(function (a, b) { return String(b.event_date || '').localeCompare(String(a.event_date || '')); });
-    var html = '';
+    var html = '<div class="space-y-2">';
     events.forEach(function (e) {
       var label = '#' + (e.event_number || '?') + ' ' + (e.event_name || '');
-      var amount = e.purchase_amount ? '<span data-admin-only> · ' + escapeHtml(CrmHelpers.formatCurrency(e.purchase_amount)) + '</span>' : '';
-      html += '<div class="crm-attendee-row">' +
-        '<div></div>' +
-        '<div><strong>' + escapeHtml(label) + '</strong><div style="font-size:0.78rem;color:var(--crm-text-muted)">' + escapeHtml(CrmHelpers.formatDate(e.event_date)) + amount + '</div></div>' +
+      var amount = e.purchase_amount ? '<span data-admin-only class="text-emerald-600 font-semibold"> · ' + escapeHtml(CrmHelpers.formatCurrency(e.purchase_amount)) + '</span>' : '';
+      html += '<div class="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg p-3">' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="font-semibold text-slate-800 text-sm truncate">' + escapeHtml(label) + '</div>' +
+          '<div class="text-xs text-slate-500 mt-0.5">' + escapeHtml(CrmHelpers.formatDate(e.event_date)) + amount + '</div>' +
+        '</div>' +
         '<div>' + CrmHelpers.statusBadgeHtml('attendee', e.attendee_status || e.status) + '</div>' +
-        '<div></div>' +
       '</div>';
     });
+    html += '</div>';
     if (hist.total_purchases) {
-      html += '<div data-admin-only style="margin-top:8px;text-align:end;font-weight:700">סה"כ: ' + escapeHtml(CrmHelpers.formatCurrency(hist.total_purchases)) + '</div>';
+      html += '<div data-admin-only class="mt-3 text-end font-bold text-emerald-700">סה״כ: ' + escapeHtml(CrmHelpers.formatCurrency(hist.total_purchases)) + '</div>';
     }
     return html;
   }
 
   function renderNotes(notes) {
-    if (!notes.length) return '<div class="crm-detail-empty">אין הערות</div>';
+    if (!notes.length) return '<div class="text-center text-slate-400 py-6">אין הערות</div>';
     return notes.map(function (n) {
-      return '<div class="crm-detail-note">' + escapeHtml(n.content || '') +
-        '<div class="crm-detail-note-meta">' + escapeHtml(CrmHelpers.formatDateTime(n.created_at)) + '</div></div>';
+      return '<div class="' + CLS_NOTE + '">' + escapeHtml(n.content || '') +
+        '<div class="text-xs text-slate-500 mt-1">' + escapeHtml(CrmHelpers.formatDateTime(n.created_at)) + '</div></div>';
     }).join('');
   }
 
@@ -144,19 +154,19 @@
     if (hist && Array.isArray(hist.event_history)) {
       hist.event_history.forEach(function (e) { items.push({ date: e.event_date, text: '📅 אירוע #' + (e.event_number || '?') + ' — ' + (e.event_name || '') }); });
     }
-    if (!items.length) return '<div class="crm-detail-empty">אין אירועים בציר הזמן</div>';
+    if (!items.length) return '<div class="text-center text-slate-400 py-6">אין אירועים בציר הזמן</div>';
     items.sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
-    return items.map(function (it) {
-      return '<div class="crm-activity-item">' +
-        '<span class="crm-pulse-dot"></span>' +
-        '<span>' + escapeHtml(it.text) + '</span>' +
-        '<span class="crm-activity-time">' + escapeHtml(CrmHelpers.formatDate(it.date)) + '</span>' +
-        '</div>';
-    }).join('');
+    return '<div class="space-y-2">' + items.map(function (it) {
+      return '<div class="flex items-start gap-3 py-2 border-b border-slate-100">' +
+        '<div class="w-2 h-2 mt-2 rounded-full bg-indigo-500 shrink-0"></div>' +
+        '<div class="flex-1 min-w-0"><p class="text-sm text-slate-800 truncate">' + escapeHtml(it.text) + '</p></div>' +
+        '<div class="text-xs text-slate-500 shrink-0">' + escapeHtml(CrmHelpers.formatDate(it.date)) + '</div>' +
+      '</div>';
+    }).join('') + '</div>';
   }
 
   function renderFullDetails(lead) {
-    return '<div class="crm-detail-grid">' +
+    var html = '<div class="space-y-1">' +
       row('אימייל', lead.email || '—') +
       row('עיר', lead.city || '—') +
       row('שפה', CrmHelpers.formatLanguage(lead.language)) +
@@ -167,22 +177,31 @@
       row('שיווק', lead.marketing_consent ? '✅ מאושר' : (lead.unsubscribed_at ? '❌ הוסר' : '—')) +
       row('נוצר', CrmHelpers.formatDate(lead.created_at)) +
       row('עודכן', CrmHelpers.formatDate(lead.updated_at)) +
-      '</div>' +
-      (Array.isArray(lead.tag_names) && lead.tag_names.length
-        ? '<div style="margin-top:10px">' + lead.tag_names.map(function (n) { return '<span class="crm-tag-pill">' + escapeHtml(n) + '</span>'; }).join('') + '</div>'
-        : '') +
-      (lead.client_notes ? '<div class="crm-detail-note" style="margin-top:10px">' + escapeHtml(lead.client_notes) + '</div>' : '');
+      '</div>';
+    if (Array.isArray(lead.tag_names) && lead.tag_names.length) {
+      html += '<div class="mt-3 flex flex-wrap gap-1">' + lead.tag_names.map(function (n) {
+        return '<span class="inline-block text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">' + escapeHtml(n) + '</span>';
+      }).join('') + '</div>';
+    }
+    if (lead.client_notes) {
+      html += '<div class="' + CLS_NOTE + ' mt-3">' + escapeHtml(lead.client_notes) + '</div>';
+    }
+    return html;
   }
 
   function row(label, value) {
-    return '<div class="crm-detail-row"><span class="crm-detail-label">' + escapeHtml(label) + ':</span>' +
-      '<span class="crm-detail-value">' + escapeHtml(value == null ? '' : value) + '</span></div>';
+    return '<div class="' + CLS_DETAIL_ROW + '">' +
+      '<span class="text-sm font-medium text-slate-600">' + escapeHtml(label) + ':</span>' +
+      '<span class="text-sm text-slate-900">' + escapeHtml(value == null ? '' : value) + '</span>' +
+    '</div>';
   }
 
   function wireTabs(body, lead, data) {
     body.querySelectorAll('[data-detail-tab]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        body.querySelectorAll('[data-detail-tab]').forEach(function (b) { b.classList.toggle('active', b === btn); });
+        body.querySelectorAll('[data-detail-tab]').forEach(function (b) {
+          b.className = (b === btn) ? CLS_TAB_BTN_ACTIVE : CLS_TAB_BTN;
+        });
         var host = body.querySelector('#crm-lead-tab-body');
         if (host) host.innerHTML = renderTabContent(btn.getAttribute('data-detail-tab'), lead, data.notes, data.history);
       });

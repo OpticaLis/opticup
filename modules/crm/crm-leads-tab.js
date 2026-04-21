@@ -1,8 +1,7 @@
 /* =============================================================================
-   crm-leads-tab.js — Leads tab: table + filters + bulk selection + filter chips
-   View: v_crm_leads_with_tags. Kanban + cards are rendered by crm-leads-views.js.
-   Depends on: shared.js (sb, getTenantId), CrmHelpers, crm-leads-detail.js,
-               crm-leads-views.js (window.renderCrmLeadsKanban/Cards).
+   crm-leads-tab.js — Leads tab (B8 Tailwind rewrite — FINAL-02)
+   Table + filter chips + bulk bar + pagination. View: v_crm_leads_with_tags.
+   Kanban + cards rendered by crm-leads-views.js.
    ============================================================================= */
 (function () {
   'use strict';
@@ -13,6 +12,19 @@
   var _filtered = [];
   var _currentPage = 1;
   var _selectedIds = new Set();
+
+  // Tailwind class constants (§10.6)
+  var CLS_TABLE       = 'w-full text-sm bg-white';
+  var CLS_TH          = 'px-4 py-3 text-start font-semibold text-slate-700 bg-slate-50';
+  var CLS_TD          = 'px-4 py-3 text-slate-800';
+  var CLS_ROW         = 'hover:bg-indigo-50/40 cursor-pointer border-b border-slate-100 transition-colors';
+  var CLS_CHIP        = 'inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-3 py-1.5 rounded-full text-sm font-medium';
+  var CLS_CHIP_CLOSE  = 'cursor-pointer font-bold opacity-70 hover:opacity-100 text-base leading-none';
+  var CLS_TAG_PILL    = 'inline-block text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded mr-1';
+  var CLS_BULK_BAR    = 'bg-indigo-100 text-indigo-800 px-4 py-3 rounded-lg flex items-center gap-3 mb-3 text-sm font-medium';
+  var CLS_BULK_BTN    = 'px-3 py-1.5 bg-white text-indigo-700 rounded-md hover:bg-indigo-50 font-medium text-sm transition';
+  var CLS_PAGE_BTN    = 'px-3 py-1.5 rounded-md border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed';
+  var CLS_PAGE_ACTIVE = 'px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-semibold';
 
   async function loadLeads() {
     var tid = getTenantId();
@@ -30,7 +42,7 @@
     var wrap = document.getElementById('crm-leads-table-wrap');
     if (!wrap) return;
     if (!_loadPromise) {
-      wrap.innerHTML = '<div class="crm-detail-empty" style="padding:20px">טוען לידים...</div>';
+      wrap.innerHTML = '<div class="text-center text-slate-400 py-8">טוען לידים...</div>';
       _loadPromise = (async function () {
         await ensureCrmStatusCache();
         _allLeads = await loadLeads();
@@ -38,7 +50,7 @@
         wireEvents();
       })().catch(function (e) {
         _loadPromise = null;
-        wrap.innerHTML = '<div class="crm-detail-empty" style="padding:20px;color:#ef4444">שגיאה בטעינה: ' + escapeHtml(e.message || String(e)) + '</div>';
+        wrap.innerHTML = '<div class="text-center text-rose-500 py-6 font-semibold">שגיאה בטעינה: ' + escapeHtml(e.message || String(e)) + '</div>';
         throw e;
       });
     }
@@ -109,12 +121,11 @@
     renderLeadsTable();
     renderBulkBar();
     renderPagination();
-    // Delegate to kanban + card-grid (lead-card) renderers in crm-leads-views.js
     if (typeof window.renderCrmLeadsKanban === 'function') window.renderCrmLeadsKanban(_filtered);
     if (typeof window.renderCrmLeadsCards  === 'function') window.renderCrmLeadsCards(_filtered);
   }
 
-  // ---- Filter chips (§2.9) ----
+  // ---- Filter chips ----
   function renderFilterChips(filters) {
     var host = document.getElementById('crm-leads-filter-chips');
     if (!host) return;
@@ -126,11 +137,12 @@
     }
     if (filters.lang) chips.push({ key: 'lang', label: 'שפה: ' + CrmHelpers.formatLanguage(filters.lang) });
     if (!chips.length) { host.innerHTML = ''; return; }
-    host.innerHTML = chips.map(function (c) {
-      return '<span class="crm-filter-chip" data-chip="' + c.key + '">' +
+    host.className = 'flex items-center gap-2 flex-wrap mb-3';
+    host.innerHTML = '<span class="text-xs font-semibold text-slate-600">פילטרים פעילים:</span>' + chips.map(function (c) {
+      return '<span class="' + CLS_CHIP + '" data-chip="' + c.key + '">' +
         escapeHtml(c.label) +
-        '<span class="crm-chip-close" data-clear-chip="' + c.key + '">&times;</span>' +
-      '</span> ';
+        '<span class="' + CLS_CHIP_CLOSE + '" data-clear-chip="' + c.key + '">×</span>' +
+      '</span>';
     }).join('');
     host.querySelectorAll('[data-clear-chip]').forEach(function (el) {
       el.addEventListener('click', function () {
@@ -143,17 +155,18 @@
     });
   }
 
-  // ---- Bulk selection bar (§2.10) ----
+  // ---- Bulk selection bar ----
   function renderBulkBar() {
     var host = document.getElementById('crm-leads-bulk-bar');
     if (!host) return;
     if (!_selectedIds.size) { host.innerHTML = ''; return; }
-    host.innerHTML = '<div class="crm-bulk-bar">' +
-      '<span class="crm-bulk-bar-count">' + _selectedIds.size + ' נבחרו</span>' +
-      '<button type="button" data-bulk="whatsapp">WhatsApp</button>' +
-      '<button type="button" data-bulk="sms">SMS</button>' +
-      '<button type="button" data-bulk="status">שנה סטטוס</button>' +
-      '<button type="button" data-bulk="clear">נקה בחירה</button>' +
+    host.innerHTML = '<div class="' + CLS_BULK_BAR + '">' +
+      '<span class="font-bold">' + _selectedIds.size + ' נבחרו</span>' +
+      '<div class="flex-1"></div>' +
+      '<button type="button" class="' + CLS_BULK_BTN + '" data-bulk="whatsapp">WhatsApp</button>' +
+      '<button type="button" class="' + CLS_BULK_BTN + '" data-bulk="sms">SMS</button>' +
+      '<button type="button" class="' + CLS_BULK_BTN + '" data-bulk="status">שנה סטטוס</button>' +
+      '<button type="button" class="' + CLS_BULK_BTN + '" data-bulk="clear">נקה בחירה</button>' +
     '</div>';
     host.querySelectorAll('button[data-bulk]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -164,38 +177,44 @@
     });
   }
 
-  // ---- Table with checkboxes + summary row (§2.10, §2.11) ----
+  // ---- Table ----
   function renderLeadsTable() {
     var wrap = document.getElementById('crm-leads-table-wrap');
     if (!wrap) return;
     if (!_filtered.length) {
-      wrap.innerHTML = '<div class="crm-detail-empty" style="padding:20px">לא נמצאו לידים תואמים</div>';
+      wrap.innerHTML = '<div class="text-center text-slate-400 py-10 bg-white rounded-lg border border-slate-200">לא נמצאו לידים תואמים</div>';
       return;
     }
     var start = (_currentPage - 1) * PAGE_SIZE;
     var rows = _filtered.slice(start, start + PAGE_SIZE);
     var allChecked = rows.length && rows.every(function (r) { return _selectedIds.has(r.id); });
 
-    var html = '<table class="crm-table"><thead><tr>' +
-      '<th style="width:36px"><input type="checkbox" id="crm-leads-check-all"' + (allChecked ? ' checked' : '') + '></th>' +
-      '<th>שם מלא</th><th>טלפון</th><th>סטטוס</th><th>שפה</th><th>תגים</th><th>נוצר</th>' +
+    var html = '<div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">' +
+      '<table class="' + CLS_TABLE + '"><thead><tr>' +
+      '<th class="' + CLS_TH + ' w-10"><input type="checkbox" id="crm-leads-check-all" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"' + (allChecked ? ' checked' : '') + '></th>' +
+      '<th class="' + CLS_TH + '">שם מלא</th>' +
+      '<th class="' + CLS_TH + '">טלפון</th>' +
+      '<th class="' + CLS_TH + '">סטטוס</th>' +
+      '<th class="' + CLS_TH + '">שפה</th>' +
+      '<th class="' + CLS_TH + '">תגיות</th>' +
+      '<th class="' + CLS_TH + '">נוצר</th>' +
       '</tr></thead><tbody>';
     rows.forEach(function (r) {
       var checked = _selectedIds.has(r.id);
-      html += '<tr data-lead-id="' + escapeHtml(r.id) + '">' +
-        '<td><input type="checkbox" data-check-lead="' + escapeHtml(r.id) + '"' + (checked ? ' checked' : '') + '></td>' +
-        '<td>' + escapeHtml(r.full_name || '') + '</td>' +
-        '<td style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
-        '<td>' + CrmHelpers.statusBadgeHtml('lead', r.status) + '</td>' +
-        '<td>' + escapeHtml(CrmHelpers.formatLanguage(r.language)) + '</td>' +
-        '<td>' + renderTagPillsHtml(r.tag_names) + '</td>' +
-        '<td>' + escapeHtml(CrmHelpers.formatDate(r.created_at)) + '</td>' +
+      html += '<tr class="' + CLS_ROW + '" data-lead-id="' + escapeHtml(r.id) + '">' +
+        '<td class="' + CLS_TD + '"><input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" data-check-lead="' + escapeHtml(r.id) + '"' + (checked ? ' checked' : '') + '></td>' +
+        '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + '</td>' +
+        '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
+        '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('lead', r.status) + '</td>' +
+        '<td class="' + CLS_TD + ' text-slate-600">' + escapeHtml(CrmHelpers.formatLanguage(r.language)) + '</td>' +
+        '<td class="' + CLS_TD + '">' + renderTagPillsHtml(r.tag_names) + '</td>' +
+        '<td class="' + CLS_TD + ' text-slate-500 text-xs">' + escapeHtml(CrmHelpers.formatDate(r.created_at)) + '</td>' +
       '</tr>';
     });
-    html += '</tbody><tfoot><tr class="crm-summary-row">' +
-      '<td colspan="6">סה"כ</td>' +
-      '<td style="text-align:end">' + _filtered.length + ' לידים</td>' +
-    '</tr></tfoot></table>';
+    html += '</tbody><tfoot><tr class="bg-slate-50 font-semibold">' +
+      '<td class="' + CLS_TD + '" colspan="6">סה״כ</td>' +
+      '<td class="' + CLS_TD + ' text-end text-indigo-700">' + _filtered.length + ' לידים</td>' +
+    '</tr></tfoot></table></div>';
     wrap.innerHTML = html;
 
     var checkAll = document.getElementById('crm-leads-check-all');
@@ -225,7 +244,7 @@
   function renderTagPillsHtml(names) {
     if (!Array.isArray(names) || !names.length) return '';
     return names.slice(0, 3).map(function (n) {
-      return '<span class="crm-tag-pill">' + escapeHtml(n) + '</span>';
+      return '<span class="' + CLS_TAG_PILL + '">' + escapeHtml(n) + '</span>';
     }).join('');
   }
 
@@ -235,21 +254,22 @@
     var total = _filtered.length;
     var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
     if (_currentPage > totalPages) _currentPage = totalPages;
-    if (totalPages <= 1) { box.innerHTML = '<span class="crm-page-info">סה"כ ' + total + ' לידים</span>'; return; }
+    box.className = 'flex items-center gap-2 flex-wrap mt-4';
+    if (totalPages <= 1) { box.innerHTML = '<span class="text-sm text-slate-500">סה״כ ' + total + ' לידים</span>'; return; }
 
-    var html = '<button ' + (_currentPage === 1 ? 'disabled' : '') + ' data-page="prev">&rsaquo;</button>';
+    var html = '<button class="' + CLS_PAGE_BTN + '" ' + (_currentPage === 1 ? 'disabled' : '') + ' data-page="prev">›</button>';
     var pages = [1];
     for (var i = Math.max(2, _currentPage - 1); i <= Math.min(totalPages - 1, _currentPage + 1); i++) pages.push(i);
     if (totalPages > 1) pages.push(totalPages);
     pages = Array.from(new Set(pages)).sort(function (a, b) { return a - b; });
     var prev = 0;
     pages.forEach(function (p) {
-      if (p - prev > 1) html += '<span class="crm-page-info">…</span>';
-      html += '<button data-page="' + p + '"' + (p === _currentPage ? ' class="active"' : '') + '>' + p + '</button>';
+      if (p - prev > 1) html += '<span class="text-slate-400 px-1">…</span>';
+      html += '<button class="' + (p === _currentPage ? CLS_PAGE_ACTIVE : CLS_PAGE_BTN) + '" data-page="' + p + '">' + p + '</button>';
       prev = p;
     });
-    html += '<button ' + (_currentPage === totalPages ? 'disabled' : '') + ' data-page="next">&lsaquo;</button>';
-    html += '<span class="crm-page-info">עמוד ' + _currentPage + ' מתוך ' + totalPages + ' · סה"כ ' + total + '</span>';
+    html += '<button class="' + CLS_PAGE_BTN + '" ' + (_currentPage === totalPages ? 'disabled' : '') + ' data-page="next">‹</button>';
+    html += '<span class="text-sm text-slate-500 ms-2">עמוד ' + _currentPage + ' מתוך ' + totalPages + ' · סה״כ ' + total + '</span>';
     box.innerHTML = html;
     box.querySelectorAll('button[data-page]').forEach(function (btn) {
       btn.addEventListener('click', function () {
