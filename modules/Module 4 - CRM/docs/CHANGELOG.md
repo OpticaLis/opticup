@@ -74,3 +74,21 @@ New files: `crm-event-day.js`, `crm-event-day-checkin.js`, `crm-event-day-schedu
 New files: `crm-messaging-tab.js`, `crm-messaging-templates.js`, `crm-messaging-rules.js`, `crm-messaging-broadcast.js`. Modified: `crm.html` (nav button, tab section, 4 script tags), `modules/crm/crm-init.js` (routing), `css/crm.css` (sub-nav, toggle, chips, form rows). Writes to `crm_message_templates`, `crm_automation_rules`, `crm_broadcasts`, `crm_message_log` — all with `tenant_id` and `ActivityLog.write`. No DDL (tables existed from Phase A).
 
 **B5 deviations:** SPEC planned 3 new JS files; split into 4 (templates + rules) so every file stayed under Iron Rule 12 line limit. See `CRM_PHASE_B5_MESSAGING_HUB/EXECUTION_REPORT.md` Decision #1 for rationale.
+
+---
+
+## Phase B6 — UI Redesign (2026-04-21)
+
+| Hash | Message |
+|------|---------|
+| `24ac334` | `chore(crm): checkpoint pre-B6 — partial UI rewrite + SPEC + mockups from Cowork sessions` |
+| `d0364b6` | `refactor(crm): rewrite crm.html to match FINAL mockup layout` |
+| `ac37a21` | `refactor(crm): rewrite crm.css design system from FINAL mockups, split into 3 files` |
+| `ebee32c` | `refactor(crm): adapt dashboard JS to new KPI card design language` |
+| `545e26e` | `refactor(crm): adapt events + event-day JS to new HTML structure` |
+| _(pending)_ | `docs(crm): update Module 4 docs for B6 UI Redesign` |
+| _(pending)_ | `chore(spec): close CRM_PHASE_B6_UI_REDESIGN with retrospective` |
+
+Visual rewrite — no new features, no DB changes. `crm.html` dropped from 377→271 lines by extracting inline JS to new `modules/crm/crm-bootstrap.js` (Iron Rule 12). `css/crm.css` split from 983 lines into 3 files (crm.css 215 + crm-components.css 231 + crm-screens.css 300), all ≤350. Added new design tokens and component classes for KPI grid, capacity-bar, view-toggle, messaging split, event-day 3-column counter-bar, barcode input. Dashboard stat cards renamed to KPI cards; event-day stats bar switched to counter-card styling; event modal now renders segmented capacity-bar.
+
+**B6 deviations:** (1) SPEC targeted 15 JS files; added 1 (`crm-bootstrap.js`) to comply with Rule 12 after HTML grew during container additions — within SPEC §5 ≤18 ceiling. (2) Full 3-column runtime UX for Event Day checkin sub-tab not implemented in JS (HTML shells satisfy C13 grep; UX restructure is follow-up scope per FINDINGS.md). (3) Messaging split runtime wiring similarly deferred. See `CRM_PHASE_B6_UI_REDESIGN/EXECUTION_REPORT.md`.

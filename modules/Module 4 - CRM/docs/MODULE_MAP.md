@@ -1,6 +1,6 @@
 # Module 4 — CRM: Module Map
 
-> **Last updated:** 2026-04-20 (Phase B5 close)
+> **Last updated:** 2026-04-21 (Phase B6 close — UI Redesign)
 
 ---
 
@@ -9,26 +9,29 @@
 ### HTML & CSS
 | File | Lines | Purpose |
 |------|-------|---------|
-| `crm.html` | 121 | Main CRM page — 4 visible tabs (Dashboard, Leads, Events, Messaging) + 1 hidden tab (Event Day), nav, filter bars, 13 CRM script tags |
-| `css/crm.css` | 173 | CRM-specific styles: stat cards, tables, badges, bars, pagination, detail modal, Event Day sub-nav/chips/manage controls, Messaging sub-nav/toggle/chips/form rows |
+| `crm.html` | 271 | Main CRM page — sidebar nav (5 tabs), role toggle, page header, 5 tab panels with skeleton containers, 16 CRM script tags |
+| `css/crm.css` | 215 | Foundation: palette tokens, base, sidebar, page header, tab panels, role visibility, responsive, utilities |
+| `css/crm-components.css` | 231 | Reusable components: cards, tables, filter bar, badges/chips, detail modal sections, buttons, pagination, sub-tabs |
+| `css/crm-screens.css` | 300 | Screen-specific: KPI grid + alert strip, legacy stat cards, status bars, leads view-toggle, capacity-bar, messaging split layout, event-day counter-bar + 3-column grid + barcode input + attendee/arrived cards, schedule chips |
 
-### JavaScript — `modules/crm/`
+### JavaScript — `modules/crm/` (16 files, all ≤300 lines)
 | File | Lines | Purpose |
 |------|-------|---------|
-| `crm-init.js` | 75 | Page bootstrap, tab orchestration (`showCrmTab`), status cache gate, error banner |
+| `crm-init.js` | 75 | Page bootstrap, tab orchestration stub, status cache gate, error banner |
+| `crm-bootstrap.js` | 105 | **[B6]** Extracted from crm.html inline JS: page header updater, theme switcher, `toggleCrmRole()`, `switchCrmLeadsView()`, Lucide init, barcode auto-focus on event-day entry |
 | `crm-helpers.js` | 118 | Shared utilities: phone format, currency, date, language, status cache/badges |
-| `crm-dashboard.js` | 163 | Dashboard tab: stat cards, event performance table, lead status distribution bars |
+| `crm-dashboard.js` | 163 | Dashboard tab: KPI cards (renamed from stat cards in B6), event performance table, lead status distribution bars |
 | `crm-leads-tab.js` | 222 | Leads tab: load all leads, filter/sort/search, client-side pagination (50/page) |
 | `crm-leads-detail.js` | 163 | Lead detail modal: info grid, notes list, event history table, tags |
 | `crm-events-tab.js` | 115 | Events tab: load events from `v_crm_event_stats`, filter by status |
-| `crm-events-detail.js` | 191 | Event detail modal: event info, stats summary, attendees table, "מצב יום אירוע" entry button |
-| `crm-event-day.js` | 186 | Event Day main view — layout, stats bar, sub-tab routing, state management |
+| `crm-events-detail.js` | 217 | Event detail modal: event info, stats summary, **[B6]** segmented capacity-bar, attendees table, Event Day entry button |
+| `crm-event-day.js` | 191 | Event Day main view — layout, **[B6]** counter-bar styling, sub-tab routing, state management |
 | `crm-event-day-checkin.js` | 152 | Event Day check-in sub-tab: search, כניסה button → `check_in_attendee` RPC |
 | `crm-event-day-schedule.js` | 160 | Event Day scheduled-times board: grouped chips per time slot, click-to-check-in |
 | `crm-event-day-manage.js` | 232 | Event Day attendee management: purchase amount input, coupon toggle, booking fee toggle |
 | `crm-messaging-tab.js` | 107 | Messaging Hub orchestrator — 4 sub-tabs (templates / rules / broadcast / log) |
 | `crm-messaging-templates.js` | 238 | Templates CRUD (`crm_message_templates`): list, create/edit modal with variable chips, active toggle |
-| `crm-messaging-rules.js` | 218 | Automation Rules CRUD (`crm_automation_rules`): list, trigger-based modal with JSON condition, channel checkboxes, template picker |
+| `crm-messaging-rules.js` | 221 | Automation Rules CRUD (`crm_automation_rules`): list, trigger-based modal with JSON condition, channel checkboxes, template picker |
 | `crm-messaging-broadcast.js` | 297 | Manual broadcast + message log: filter bar, live recipient count, send with confirmation, log table with filters + 50/page pagination |
 
 ### Modified shared files
