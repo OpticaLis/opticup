@@ -144,11 +144,18 @@
   }
 
   function renderNotes(notes) {
-    if (!notes.length) return '<div class="text-center text-slate-400 py-6">אין הערות</div>';
-    return notes.map(function (n) {
-      return '<div class="' + CLS_NOTE + '">' + escapeHtml(n.content || '') +
-        '<div class="text-xs text-slate-500 mt-1">' + escapeHtml(CrmHelpers.formatDateTime(n.created_at)) + '</div></div>';
-    }).join('');
+    var form =
+      '<div class="flex gap-2 mb-3" data-note-form>' +
+        '<textarea data-note-input class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 resize-y min-h-[44px]" rows="1" placeholder="הוסף הערה..." maxlength="2000"></textarea>' +
+        '<button type="button" data-note-submit class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50">הוסף</button>' +
+      '</div>';
+    var list = notes.length
+      ? '<div data-notes-list>' + notes.map(function (n) {
+          return '<div class="' + CLS_NOTE + '">' + escapeHtml(n.content || '') +
+            '<div class="text-xs text-slate-500 mt-1">' + escapeHtml(CrmHelpers.formatDateTime(n.created_at)) + '</div></div>';
+        }).join('') + '</div>'
+      : '<div data-notes-list class="text-center text-slate-400 py-6">אין הערות</div>';
+    return form + list;
   }
 
   function renderTimeline(notes, hist) {
@@ -206,8 +213,47 @@
           b.className = (b === btn) ? CLS_TAB_BTN_ACTIVE : CLS_TAB_BTN;
         });
         var host = body.querySelector('#crm-lead-tab-body');
-        if (host) host.innerHTML = renderTabContent(btn.getAttribute('data-detail-tab'), lead, data.notes, data.history);
+        var key = btn.getAttribute('data-detail-tab');
+        if (host) host.innerHTML = renderTabContent(key, lead, data.notes, data.history);
+        if (key === 'notes') wireNoteForm(host, lead, data);
       });
+    });
+  }
+
+  function wireNoteForm(host, lead, data) {
+    if (!host || !window.CrmLeadActions) return;
+    var input = host.querySelector('[data-note-input]');
+    var btn = host.querySelector('[data-note-submit]');
+    if (!input || !btn) return;
+
+    async function submit() {
+      var text = (input.value || '').trim();
+      if (!text) return;
+      btn.disabled = true;
+      var oldText = btn.textContent;
+      btn.textContent = 'שומר...';
+      try {
+        var newNote = await CrmLeadActions.addLeadNote(lead.id, text);
+        data.notes.unshift(newNote);
+        var list = host.querySelector('[data-notes-list]');
+        var itemHtml = '<div class="' + CLS_NOTE + '">' + escapeHtml(newNote.content || '') +
+          '<div class="text-xs text-slate-500 mt-1">' + escapeHtml(CrmHelpers.formatDateTime(newNote.created_at)) + '</div></div>';
+        if (list && list.classList.contains('text-center')) {
+          list.outerHTML = '<div data-notes-list>' + itemHtml + '</div>';
+        } else if (list) {
+          list.insertAdjacentHTML('afterbegin', itemHtml);
+        }
+        input.value = '';
+      } catch (err) {
+        if (window.Toast) Toast.show('שגיאה: ' + (err.message || String(err)));
+      } finally {
+        btn.disabled = false;
+        btn.textContent = oldText;
+      }
+    }
+    btn.addEventListener('click', submit);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submit();
     });
   }
 
