@@ -98,9 +98,9 @@
   }
 
   function statCard(value, label, accentClass) {
-    return '<div class="crm-stat-card ' + (accentClass || '') + '">' +
-      '<div class="crm-stat-value">' + escapeHtml(String(value == null ? 0 : value)) + '</div>' +
-      '<div class="crm-stat-label">' + escapeHtml(label) + '</div>' +
+    return '<div class="crm-kpi-card ' + (accentClass || '') + '">' +
+      '<div class="crm-kpi-value">' + escapeHtml(String(value == null ? 0 : value)) + '</div>' +
+      '<div class="crm-kpi-label">' + escapeHtml(label) + '</div>' +
       '</div>';
   }
 
