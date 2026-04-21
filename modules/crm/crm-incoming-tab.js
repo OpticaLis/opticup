@@ -171,13 +171,13 @@
         btn.textContent = 'מעביר...';
         try {
           await CrmLeadActions.transferLeadToTier2(id);
-          if (window.Toast) Toast.show('הליד אושר והועבר ל-Tier 2');
+          if (window.Toast) Toast.success('הליד אושר והועבר ל-Tier 2');
           await reloadCrmIncomingTab();
           if (typeof window.reloadCrmLeadsTab === 'function') window.reloadCrmLeadsTab();
         } catch (err) {
           btn.disabled = false;
           btn.textContent = oldText;
-          if (window.Toast) Toast.show('שגיאה: ' + (err.message || String(err)));
+          if (window.Toast) Toast.error('שגיאה: ' + (err.message || String(err)));
         }
       });
     });

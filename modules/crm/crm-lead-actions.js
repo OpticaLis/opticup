@@ -47,7 +47,7 @@
     });
     if (noteIns.error) throw new Error('status note insert failed: ' + noteIns.error.message);
 
-    if (!opts.silent && window.Toast) Toast.show('סטטוס עודכן: ' + statusLabel(newStatus));
+    if (!opts.silent && window.Toast) Toast.success('סטטוס עודכן: ' + statusLabel(newStatus));
     return { id: leadId, status: newStatus, noteContent: content };
   }
 
@@ -205,11 +205,11 @@
           if (window.Toast) {
             var msg = 'עודכנו ' + res.ok + ' מתוך ' + leadIds.length + ' לידים';
             if (res.fail.length) msg += ' · ' + res.fail.length + ' נכשלו';
-            Toast.show(msg);
+            (res.fail.length ? Toast.warning : Toast.success)(msg);
           }
           if (typeof onDone === 'function') onDone(res);
         } catch (e) {
-          if (window.Toast) Toast.show('שגיאה: ' + (e.message || String(e)));
+          if (window.Toast) Toast.error('שגיאה: ' + (e.message || String(e)));
           modal.el.querySelectorAll('[data-pick-status]').forEach(function (b) { b.disabled = false; });
           btn.textContent = labels[slug] && labels[slug].name_he || slug;
         }

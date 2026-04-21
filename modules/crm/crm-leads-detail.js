@@ -246,7 +246,7 @@
         }
         input.value = '';
       } catch (err) {
-        if (window.Toast) Toast.show('שגיאה: ' + (err.message || String(err)));
+        if (window.Toast) Toast.error('שגיאה: ' + (err.message || String(err)));
       } finally {
         btn.disabled = false;
         btn.textContent = oldText;
@@ -285,7 +285,7 @@
               if (typeof window.reloadCrmLeadsTab === 'function') window.reloadCrmLeadsTab();
               if (typeof window.reloadCrmIncomingTab === 'function') window.reloadCrmIncomingTab();
             } catch (err) {
-              if (window.Toast) Toast.show('שגיאה: ' + (err.message || String(err)));
+              if (window.Toast) Toast.error('שגיאה: ' + (err.message || String(err)));
             }
           });
         }
