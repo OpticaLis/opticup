@@ -1,7 +1,8 @@
-/* crm-components.css — Optic Up CRM reusable components (cards/tables/buttons/badges/sub-tabs) */
-/* Loaded after crm.css. Building blocks shared across all 5 screens. */
+/* crm-components.css — Shell components still referenced by crm.html.
+   After B8, most inner content is rendered with Tailwind utility classes.
+   Only the shell/container classes that live in crm.html remain here. */
 
-/* ---- Cards ---- */
+/* ---- Cards (shell containers in crm.html) ---- */
 .crm-card {
   background: var(--crm-card);
   border: 1px solid var(--crm-card-border);
@@ -17,35 +18,13 @@
   border-bottom: 2px solid var(--crm-bg);
 }
 
-/* ---- Tables ---- */
+/* ---- Table wrap (scroll container in crm.html) ---- */
 .crm-table-wrap {
   overflow-x: auto;
   border-radius: var(--crm-radius-md);
-  border: 1px solid var(--crm-border);
 }
-.crm-table {
-  width: 100%; border-collapse: collapse;
-  font-size: 0.88rem; background: var(--crm-card);
-}
-.crm-table thead {
-  background: var(--crm-accent); color: var(--crm-accent-text);
-}
-.crm-table th {
-  padding: 10px 14px; text-align: start;
-  font-weight: 600; font-size: 0.85rem; white-space: nowrap;
-}
-.crm-table td {
-  padding: 10px 14px; border-top: 1px solid var(--crm-border);
-}
-.crm-table tbody tr {
-  cursor: pointer; transition: background var(--crm-transition);
-}
-.crm-table tbody tr:nth-child(even) { background: rgba(248, 250, 252, 0.5); }
-.crm-table tbody tr:hover { background: var(--crm-accent-light); }
-.crm-table tbody tr.readonly { cursor: default; }
-.crm-table tbody tr.readonly:hover { background: transparent; }
 
-/* ---- Filter bar ---- */
+/* ---- Filter bar (shell in crm.html) ---- */
 .crm-filter-bar {
   display: flex; flex-wrap: wrap; gap: 10px;
   margin-bottom: 16px; align-items: center;
@@ -68,209 +47,30 @@
 }
 .crm-filter-bar .crm-search { flex: 1; min-width: 220px; }
 
-/* ---- Badges + chips ---- */
+/* ---- Badge (used by CrmHelpers.statusBadgeHtml — legacy, out of B8 scope) ---- */
 .crm-badge {
   display: inline-block; padding: 3px 10px;
   border-radius: 999px; font-size: 0.78rem; font-weight: 600;
   color: #ffffff; white-space: nowrap;
 }
-.crm-tag-chip {
-  display: inline-block; padding: 2px 8px;
-  border-radius: 999px; font-size: 0.75rem; font-weight: 500;
-  background: var(--crm-bg); color: var(--crm-text-secondary);
-  margin-inline-end: 4px;
-}
-.crm-filter-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: var(--crm-info-light); color: var(--crm-info-dark);
-  padding: 4px 10px; border-radius: 999px;
-  font-size: 0.82rem; font-weight: 500;
-}
-.crm-filter-chip .crm-chip-close {
-  cursor: pointer; font-weight: 700; opacity: 0.6;
-  transition: opacity var(--crm-transition);
-}
-.crm-filter-chip .crm-chip-close:hover { opacity: 1; }
 
-/* ---- Detail modal sections (lead/event detail) ---- */
-.crm-detail-section { margin-bottom: 16px; }
-.crm-detail-section h4 {
-  color: var(--crm-accent); font-size: 1rem;
-  margin-bottom: 8px; padding-bottom: 6px;
-  border-bottom: 1px solid var(--crm-border);
+/* ---- View toggle (shell — in crm.html leads tab) ---- */
+.crm-view-toggle {
+  display: inline-flex; gap: 4px;
+  background: var(--crm-bg); padding: 4px;
+  border-radius: var(--crm-radius-md); margin-bottom: 14px;
 }
-.crm-detail-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 8px 20px; font-size: 0.88rem;
-}
-.crm-detail-grid .crm-detail-row {
-  display: flex; gap: 6px; align-items: baseline;
-}
-.crm-detail-grid .crm-detail-label {
-  color: var(--crm-text-muted); font-weight: 500; min-width: 85px;
-}
-.crm-detail-grid .crm-detail-value {
-  color: var(--crm-text-secondary); font-weight: 600;
-}
-.crm-detail-note {
-  background: var(--crm-accent-light);
-  border-inline-start: 3px solid var(--crm-info);
-  padding: 10px 12px; border-radius: var(--crm-radius-sm);
-  margin-bottom: 8px; font-size: 0.85rem;
-  white-space: pre-wrap; line-height: 1.5;
-}
-.crm-detail-note-meta {
-  color: var(--crm-text-muted); font-size: 0.78rem; margin-top: 4px;
-}
-.crm-detail-empty {
-  color: var(--crm-text-muted); font-style: italic;
-  font-size: 0.88rem; padding: 8px 0;
-}
-
-/* ---- Buttons ---- */
-.crm-btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 8px 18px; border: none;
-  border-radius: var(--crm-radius-md); cursor: pointer;
-  font-family: inherit; font-size: 0.88rem; font-weight: 600;
-  transition: all var(--crm-transition); white-space: nowrap;
-}
-.crm-btn-primary {
-  background: var(--crm-accent); color: var(--crm-accent-text);
-}
-.crm-btn-primary:hover { background: var(--crm-accent-hover); }
-.crm-btn-secondary {
-  background: var(--crm-bg); color: var(--crm-text-secondary);
-  border: 1px solid var(--crm-border-strong);
-}
-.crm-btn-secondary:hover {
-  background: var(--crm-accent-light);
-  color: var(--crm-accent); border-color: var(--crm-accent);
-}
-.crm-btn-success { background: var(--crm-success); color: #ffffff; }
-.crm-btn-success:hover { filter: brightness(0.9); }
-.crm-btn-danger {
-  background: var(--crm-error-light); color: var(--crm-error-dark);
-}
-.crm-btn-danger:hover { background: var(--crm-error); color: #ffffff; }
-.crm-btn-icon { width: 18px; height: 18px; }
-
-/* ---- Pagination ---- */
-.crm-pagination {
-  display: flex; gap: 6px;
-  justify-content: center; align-items: center;
-  margin-top: 16px; flex-wrap: wrap;
-}
-.crm-pagination button {
-  padding: 6px 12px;
-  border: 1px solid var(--crm-border-strong);
-  background: var(--crm-card);
-  border-radius: var(--crm-radius-sm);
-  cursor: pointer; font-family: inherit;
-  font-size: 0.85rem; min-width: 36px;
-  color: var(--crm-text-secondary);
-  transition: all var(--crm-transition);
-}
-.crm-pagination button:hover:not(:disabled) {
-  background: var(--crm-accent-light);
-  border-color: var(--crm-accent); color: var(--crm-accent);
-}
-.crm-pagination button.active {
-  background: var(--crm-accent); color: var(--crm-accent-text);
-  border-color: var(--crm-accent); font-weight: 600;
-}
-.crm-pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
-.crm-pagination .crm-page-info {
-  color: var(--crm-text-muted); font-size: 0.82rem; padding: 0 8px;
-}
-
-/* ---- Sub-tabs (event-day + messaging) ---- */
-.crm-eventday-subtabs,
-.crm-messaging-subtabs {
-  display: flex; gap: 0;
-  border-bottom: 2px solid var(--crm-border);
-  margin-bottom: 16px;
-}
-.crm-eventday-subtab,
-.crm-messaging-subtab {
-  padding: 10px 20px;
-  border: none; background: none;
-  cursor: pointer; font-family: inherit;
-  font-size: 0.9rem; color: var(--crm-text-muted);
-  white-space: nowrap;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-  transition: all var(--crm-transition);
-  font-weight: 500;
-}
-.crm-eventday-subtab:hover,
-.crm-messaging-subtab:hover { color: var(--crm-accent); }
-.crm-eventday-subtab.active,
-.crm-messaging-subtab.active {
-  color: var(--crm-accent);
-  border-bottom-color: var(--crm-accent);
-  font-weight: 700;
-}
-.crm-eventday-back {
-  padding: 8px 14px;
-  border: 1px solid var(--crm-border-strong);
-  background: var(--crm-card);
-  border-radius: var(--crm-radius-md);
-  cursor: pointer; font-family: inherit;
-  font-size: 0.88rem; color: var(--crm-text-secondary);
-  font-weight: 500; transition: all var(--crm-transition);
-}
-.crm-eventday-back:hover {
-  background: var(--crm-accent-light);
-  border-color: var(--crm-accent); color: var(--crm-accent);
-}
-.crm-eventday-header {
-  display: flex; align-items: center; gap: 16px;
-  margin-bottom: 16px; flex-wrap: wrap;
-}
-
-/* ---- B7: shared avatar + tag pill + summary row + status chip + bulk bar ---- */
-.crm-avatar-gradient {
-  display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 50%; color: #fff; font-weight: 700;
-  background: linear-gradient(135deg, var(--crm-accent), #7e22ce);
-  flex-shrink: 0; box-shadow: var(--crm-shadow-sm);
-}
-.crm-avatar-gradient.sm { width: 32px; height: 32px; font-size: 0.85rem; }
-.crm-avatar-gradient.md { width: 48px; height: 48px; font-size: 1.05rem; }
-.crm-avatar-gradient.lg { width: 80px; height: 80px; font-size: 1.8rem; }
-.crm-tag-pill {
-  display: inline-block; padding: 2px 8px;
-  border-radius: 999px; font-size: 0.72rem; font-weight: 600;
-  background: var(--crm-accent-light); color: var(--crm-accent);
-  margin-inline-end: 4px;
-}
-.crm-summary-row {
-  background: var(--crm-accent-light); color: var(--crm-accent);
-  font-weight: 700;
-}
-.crm-summary-row td { border-top: 2px solid var(--crm-accent); }
-.crm-status-chip {
-  display: inline-block; padding: 2px 8px;
-  border-radius: 999px; font-size: 0.72rem; font-weight: 600;
-}
-.crm-status-chip.sent       { background: var(--crm-info-light); color: var(--crm-info-dark); }
-.crm-status-chip.delivered  { background: var(--crm-success-light); color: var(--crm-success-dark); }
-.crm-status-chip.read       { background: #e9d5ff; color: #6b21a8; }
-.crm-status-chip.failed     { background: var(--crm-error-light); color: var(--crm-error-dark); }
-.crm-status-chip.pending    { background: var(--crm-warning-light); color: var(--crm-warning-dark); }
-.crm-bulk-bar {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; margin-bottom: 10px;
-  background: var(--crm-accent); color: #fff;
-  border-radius: var(--crm-radius-md);
-}
-.crm-bulk-bar-count { font-weight: 700; }
-.crm-bulk-bar button {
-  padding: 6px 12px; border: 1px solid rgba(255,255,255,0.4);
-  background: rgba(255,255,255,0.12); color: #fff;
-  border-radius: var(--crm-radius-sm); cursor: pointer;
+.crm-view-btn {
+  padding: 6px 14px; border: none; background: transparent;
+  cursor: pointer; border-radius: var(--crm-radius-sm);
   font-family: inherit; font-size: 0.85rem; font-weight: 500;
+  color: var(--crm-text-muted); transition: all var(--crm-transition);
 }
-.crm-bulk-bar button:hover { background: rgba(255,255,255,0.24); }
+.crm-view-btn:hover { color: var(--crm-accent); }
+.crm-view-btn.active {
+  background: var(--crm-accent); color: var(--crm-accent-text); font-weight: 600;
+}
+
+/* ---- Leads views: show/hide active view (shell) ---- */
+.crm-leads-view { display: none; }
+.crm-leads-view.active { display: block; }
