@@ -54,6 +54,24 @@
     return LANG_HE[String(code).toLowerCase()] || code;
   }
 
+  // --- Tier 1 & Tier 2 status constants ---
+  var TIER1_STATUSES = [
+    'new',              // ליד חדש שנרשם
+    'invalid_phone',    // מספר טלפון שגוי
+    'too_far',          // גר רחוק מאשקלון
+    'no_answer',        // ניסו ליצור קשר, לא ענה
+    'callback'          // צריך להתקשר אליו בחזרה
+  ];
+
+  var TIER2_STATUSES = [
+    'waiting',                // ממתין לאירוע
+    'invited',                // הוזמן לאירוע
+    'confirmed',              // אישר הגעה
+    'confirmed_verified',     // אישר ווידוא הגעה
+    'not_interested',         // לא מעוניין
+    'unsubscribed'            // ביטל UNSUBSCRIBE
+  ];
+
   // --- Status cache loader ---
   // Fills window.CRM_STATUSES = { lead: { slug: {name_he, color, ...} }, event: {...}, attendee: {...} }
   async function loadStatusCache() {
@@ -115,4 +133,8 @@
     distinctValues: distinctValues,
     heCompare: heCompare
   };
+
+  // Export tier constants
+  window.TIER1_STATUSES = TIER1_STATUSES;
+  window.TIER2_STATUSES = TIER2_STATUSES;
 })();

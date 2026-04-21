@@ -65,7 +65,10 @@
     var langSel = document.getElementById('crm-leads-filter-lang');
     if (statusSel && statusSel.options.length <= 1) {
       var statuses = (window.CRM_STATUSES && window.CRM_STATUSES.lead) || {};
+      var tier2Statuses = (typeof TIER2_STATUSES !== 'undefined') ? TIER2_STATUSES : [];
       Object.keys(statuses).forEach(function (slug) {
+        // Only show Tier 2 statuses in filter dropdown for registered leads tab
+        if (tier2Statuses.indexOf(slug) === -1) return;
         var opt = document.createElement('option');
         opt.value = slug; opt.textContent = statuses[slug].name_he || slug;
         statusSel.appendChild(opt);
@@ -101,7 +104,10 @@
     var sortKey      = (document.getElementById('crm-leads-sort')         || {}).value || 'full_name';
 
     var s = search.trim().toLowerCase();
+    var tier2Statuses = (typeof TIER2_STATUSES !== 'undefined') ? TIER2_STATUSES : [];
     _filtered = _allLeads.filter(function (r) {
+      // Filter to Tier 2 statuses only (registered leads)
+      if (tier2Statuses.length > 0 && tier2Statuses.indexOf(r.status) === -1) return false;
       if (statusFilter && r.status !== statusFilter) return false;
       if (langFilter && r.language !== langFilter) return false;
       if (s) {

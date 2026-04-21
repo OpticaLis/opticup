@@ -80,12 +80,20 @@ tailwind.config = {
         <span>דשבורד</span>
       </button>
 
+      <button class="crm-nav-item" data-tab="incoming" onclick="showCrmTab('incoming')">
+        <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+        </svg>
+        <span>לידים נכנסים</span>
+      </button>
+
       <button class="crm-nav-item" data-tab="leads" onclick="showCrmTab('leads')">
         <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round"
             d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
         </svg>
-        <span>לידים</span>
+        <span>רשומים</span>
       </button>
 
       <button class="crm-nav-item" data-tab="events" onclick="showCrmTab('events')">
@@ -186,7 +194,22 @@ tailwind.config = {
         </div>
       </section>
 
-      <!-- ========== TAB 2: LEADS ========== -->
+      <!-- ========== TAB 2: INCOMING LEADS ========== -->
+      <section id="tab-incoming" class="crm-tab">
+        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">לידים נכנסים</h3>
+            <span class="text-sm text-gray-500" id="crm-incoming-count"></span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 mb-4">
+            <input type="search" id="crm-incoming-search" class="flex-1 min-w-[220px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="חיפוש לפי שם או טלפון...">
+            <select id="crm-incoming-filter-status" class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"><option value="">כל הסטטוסים</option></select>
+          </div>
+          <div id="crm-incoming-table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ========== TAB 3: REGISTERED LEADS ========== -->
       <section id="tab-leads" class="crm-tab">
         <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <div class="flex items-center justify-between mb-4">
@@ -219,7 +242,7 @@ tailwind.config = {
         </div>
       </section>
 
-      <!-- ========== TAB 3: EVENTS ========== -->
+      <!-- ========== TAB 4: EVENTS ========== -->
       <section id="tab-events" class="crm-tab">
         <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <div class="flex flex-wrap items-center gap-2 mb-4">
@@ -229,7 +252,7 @@ tailwind.config = {
         </div>
       </section>
 
-      <!-- ========== TAB 4: MESSAGING HUB ========== -->
+      <!-- ========== TAB 5: MESSAGING HUB ========== -->
       <section id="tab-messaging" class="crm-tab">
         <div id="crm-messaging-body" class="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4 items-start">
           <aside id="template-list" class="bg-white border border-gray-200 rounded-xl p-3 shadow-sm max-h-[calc(100vh-200px)] overflow-y-auto"></aside>
@@ -237,7 +260,7 @@ tailwind.config = {
         </div>
       </section>
 
-      <!-- ========== TAB 5: EVENT DAY ========== -->
+      <!-- ========== TAB 6: EVENT DAY ========== -->
       <section id="tab-event-day" class="crm-tab">
         <div id="crm-eventday-stats" class="flex gap-3 mb-4 flex-wrap"></div>
         <div id="crm-eventday-body">
@@ -278,6 +301,7 @@ tailwind.config = {
 <script src="modules/crm/crm-helpers.js"></script>
 <script src="modules/crm/crm-init.js"></script>
 <script src="modules/crm/crm-dashboard.js"></script>
+<script src="modules/crm/crm-incoming-tab.js"></script>
 <script src="modules/crm/crm-leads-views.js"></script>
 <script src="modules/crm/crm-leads-tab.js"></script>
 <script src="modules/crm/crm-leads-detail.js"></script>

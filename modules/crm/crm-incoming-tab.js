@@ -1,0 +1,157 @@
+/* =============================================================================
+   crm-incoming-tab.js — Incoming Leads (Tier 1) tab
+   Fetches leads with Tier 1 statuses (new, invalid_phone, too_far, no_answer, callback)
+   Renders table with name, phone, email, status, date, source, UTMs.
+   Status filter + search functionality.
+   ============================================================================= */
+(function () {
+  'use strict';
+
+  var PAGE_SIZE = 50;
+  var _loadPromise = null;
+  var _allLeads = [];
+  var _filtered = [];
+  var _currentPage = 1;
+
+  // Tailwind class constants
+  var CLS_TABLE       = 'w-full text-sm bg-white';
+  var CLS_TH          = 'px-4 py-3 text-start font-semibold text-slate-700 bg-slate-50';
+  var CLS_TD          = 'px-4 py-3 text-slate-800';
+  var CLS_ROW_ODD     = 'hover:bg-indigo-50/40 cursor-pointer border-b border-slate-100 transition-colors bg-white';
+  var CLS_ROW_EVEN    = 'hover:bg-indigo-50/40 cursor-pointer border-b border-slate-100 transition-colors bg-slate-50/60';
+
+  async function loadIncomingLeads() {
+    var tid = getTenantId();
+    var q = sb.from('v_crm_leads_with_tags')
+      .select('id, full_name, phone, email, status, created_at, source, utm_source, utm_medium, utm_campaign, utm_content, utm_term')
+      .eq('is_deleted', false);
+    if (tid) q = q.eq('tenant_id', tid);
+    q = q.order('created_at', { ascending: false });
+    var res = await q;
+    if (res.error) throw new Error('Incoming leads load failed: ' + res.error.message);
+    var tier1Statuses = (typeof TIER1_STATUSES !== 'undefined') ? TIER1_STATUSES : [];
+    return (res.data || []).filter(function (r) {
+      return tier1Statuses.indexOf(r.status) !== -1;
+    });
+  }
+
+  async function loadCrmIncomingTab() {
+    var wrap = document.getElementById('crm-incoming-table-wrap');
+    if (!wrap) return;
+    if (!_loadPromise) {
+      wrap.innerHTML = '<div class="text-center text-slate-400 py-8">טוען לידים נכנסים...</div>';
+      _loadPromise = (async function () {
+        await ensureCrmStatusCache();
+        _allLeads = await loadIncomingLeads();
+        populateIncomingFilters();
+        wireIncomingEvents();
+      })().catch(function (e) {
+        _loadPromise = null;
+        wrap.innerHTML = '<div class="text-center text-rose-500 py-6 font-semibold">שגיאה בטעינה: ' + escapeHtml(e.message || String(e)) + '</div>';
+        throw e;
+      });
+    }
+    await _loadPromise;
+    applyIncomingFilters();
+  }
+  window.loadCrmIncomingTab = loadCrmIncomingTab;
+
+  function populateIncomingFilters() {
+    var statusSel = document.getElementById('crm-incoming-filter-status');
+    if (statusSel && statusSel.options.length <= 1) {
+      var incomingStatusMap = (window.CRM_STATUSES && window.CRM_STATUSES.lead) || {};
+      var tier1Statuses = (typeof TIER1_STATUSES !== 'undefined') ? TIER1_STATUSES : [];
+      tier1Statuses.forEach(function (slug) {
+        var statusInfo = incomingStatusMap[slug];
+        if (!statusInfo) return;
+        var opt = document.createElement('option');
+        opt.value = slug;
+        opt.textContent = statusInfo.name_he || slug;
+        statusSel.appendChild(opt);
+      });
+    }
+  }
+
+  var _eventsWired = false;
+  function wireIncomingEvents() {
+    if (_eventsWired) return;
+    _eventsWired = true;
+    var searchEl = document.getElementById('crm-incoming-search');
+    var statusEl = document.getElementById('crm-incoming-filter-status');
+    if (searchEl) {
+      searchEl.addEventListener('input', function () {
+        _currentPage = 1;
+        applyIncomingFilters();
+      });
+    }
+    if (statusEl) {
+      statusEl.addEventListener('change', function () {
+        _currentPage = 1;
+        applyIncomingFilters();
+      });
+    }
+  }
+
+  function applyIncomingFilters() {
+    var incomingSearch = (document.getElementById('crm-incoming-search') || {}).value || '';
+    var incomingStatusFilter = (document.getElementById('crm-incoming-filter-status') || {}).value || '';
+    var q = incomingSearch.trim().toLowerCase();
+
+    _filtered = _allLeads.filter(function (r) {
+      if (incomingStatusFilter && r.status !== incomingStatusFilter) return false;
+      if (q) {
+        var leadName = (r.full_name || '').toLowerCase();
+        var leadPhone = (r.phone || '').toLowerCase();
+        var leadEmail = (r.email || '').toLowerCase();
+        if (leadName.indexOf(q) === -1 && leadPhone.indexOf(q) === -1 && leadEmail.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+
+    renderIncomingTable();
+    updateCount();
+  }
+
+  function updateCount() {
+    var countEl = document.getElementById('crm-incoming-count');
+    if (countEl) {
+      countEl.textContent = _filtered.length + ' לידים';
+    }
+  }
+
+  function renderIncomingTable() {
+    var wrap = document.getElementById('crm-incoming-table-wrap');
+    if (!wrap) return;
+    if (_filtered.length === 0) {
+      wrap.innerHTML = '<div class="text-center text-slate-400 py-8">אין לידים נכנסים</div>';
+      return;
+    }
+    var html = '<table class="' + CLS_TABLE + '"><thead><tr>' +
+      '<th class="' + CLS_TH + '">שם</th>' +
+      '<th class="' + CLS_TH + '">טלפון</th>' +
+      '<th class="' + CLS_TH + '">אימייל</th>' +
+      '<th class="' + CLS_TH + '">סטטוס</th>' +
+      '<th class="' + CLS_TH + '">תאריך</th>' +
+      '<th class="' + CLS_TH + '">מקור</th>' +
+      '<th class="' + CLS_TH + '">UTM Campaign</th>' +
+      '</tr></thead><tbody>';
+
+    _filtered.forEach(function (r, idx) {
+      var rowClass = idx % 2 === 0 ? CLS_ROW_ODD : CLS_ROW_EVEN;
+      var statusInfo = CrmHelpers.getStatusInfo('lead', r.status);
+      html += '<tr class="' + rowClass + '">' +
+        '<td class="' + CLS_TD + '">' + escapeHtml(r.full_name || '') + '</td>' +
+        '<td class="' + CLS_TD + '">' + escapeHtml(CrmHelpers.formatPhone(r.phone) || '') + '</td>' +
+        '<td class="' + CLS_TD + '">' + escapeHtml(r.email || '') + '</td>' +
+        '<td class="' + CLS_TD + '"><span class="crm-badge" style="background:' + escapeHtml(statusInfo.color) + '">' +
+          escapeHtml(statusInfo.label) + '</span></td>' +
+        '<td class="' + CLS_TD + '">' + escapeHtml(CrmHelpers.formatDate(r.created_at) || '') + '</td>' +
+        '<td class="' + CLS_TD + '">' + escapeHtml(r.source || '—') + '</td>' +
+        '<td class="' + CLS_TD + '">' + escapeHtml(r.utm_campaign || '—') + '</td>' +
+        '</tr>';
+    });
+
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+})();
