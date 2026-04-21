@@ -2,6 +2,19 @@
 
 ---
 
+## Go-Live P1 — Internal Lead Intake Pipeline (2026-04-21)
+
+| Hash | Message |
+|------|---------|
+| `f8783dd` | `feat(crm): add lead-intake Edge Function for direct form submission` |
+
+**Edge Function deployed:** `lead-intake` (ACTIVE, `verify_jwt: false`, 241 lines).
+Public form POSTs → validate → resolve tenant by slug → normalize phone to E.164 → duplicate check (tenant_id, phone) → INSERT `crm_leads` with `status='new'`. Returns `201 { id, is_new: true }` on new, `409 { duplicate, existing_name }` on dup. No Make involvement; message dispatch deferred to P3+P4.
+
+All 17 §3 success criteria passed on demo tenant (UUID `8d8cfa7e-ef58-49af-9702-a862d459cccb`) via curl test protocol (Tests 1–7 + DB verify + cleanup).
+
+---
+
 ## Phase A — Schema Migration (2026-04-20)
 
 | Hash | Message |
@@ -158,3 +171,19 @@ B7 structure was right but the CSS-variable-only styling did not match the 5 FIN
 Second attempt of B9 after attempt 1 was re-opened by the Foreman (Cowork sandbox lacked localhost access so visual+functional QA never ran). This attempt ran under Claude Code on Daniel's Windows desktop with chrome-devtools MCP so the browser was actually driven. All 5 CRM screens were opened in Chrome on `?t=prizma` and screenshotted; the dashboard, events list + detail modal, messaging (all 4 sub-tabs), and leads kanban + cards views all matched the FINAL mockup structure as-is. Two visual gaps found and fixed: (1) leads table missing `odd:bg-white even:bg-slate-50/60` alternating rows, (2) event-day header was white card instead of the dark slate-800 bar from FINAL-05. Functional QA walked `?t=demo` (page loads, 0 console errors, empty states render correctly — no seed data per known M4-DATA-03 gap) then `?t=prizma` read-only (all 5 tabs, lead detail modal with 5 sub-tabs and 4 gradient action buttons, event detail modal with capacity bar + 6 KPIs + funnel, event day entry with 5 counter cards + 3-column layout). 0 console errors across the full walk-through.
 
 **No DB changes. No new features. No business logic changes.** 18 JS files unchanged in count.
+
+---
+
+## Go-Live C1 — Lead Intake Pipeline (2026-04-21)
+
+| Hash | Message |
+|------|---------|
+| `4375dfc` | `feat(crm): add Tier 1 incoming leads tab and rename Leads to Registered` |
+| `bd9ec9f` | `docs(crm): update C1 session context, changelog, module map` |
+| _(pending)_ | `docs(crm): close C1 SPEC with execution report and findings` |
+
+**New file:** `modules/crm/crm-incoming-tab.js` (157 lines) — Tier 1 "לידים נכנסים" tab.
+**Modified:** `crm.html` (6th sidebar tab, renamed "לידים" → "רשומים"), `crm-helpers.js` (+`TIER1_STATUSES` / `TIER2_STATUSES` constants), `crm-init.js` (routing for `incoming` tab), `crm-leads-tab.js` (filter to Tier 2 only).
+**DB:** 4 message templates seeded in `crm_message_templates` (demo tenant). See `go-live/seed-message-templates.sql`.
+**Make:** Demo folder created (ID 499779). Scenario "Demo 1A-S — Lead Intake (Supabase)" created (ID 9101245, 11 modules). Webhook URL: `https://hook.eu2.make.com/y1p5x1zlqrwygdg4hi6klkgchci4o462`. Pending: service_role key configuration + activation.
+**19 JS files** (was 18). All ≤350 lines.

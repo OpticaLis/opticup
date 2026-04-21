@@ -1,6 +1,6 @@
 # Module 4 — CRM: Module Map
 
-> **Last updated:** 2026-04-21 (Phase B8 close — Tailwind Visual Fidelity)
+> **Last updated:** 2026-04-21 (Go-Live P1 — Internal Lead Intake Edge Function)
 
 ---
 
@@ -15,12 +15,13 @@
 | `css/crm-screens.css` | 98 | **[B8]** Reduced from 325 → shell only: KPI grid + loading shimmer, alert strip, activity feed, timeline scroll, messaging split, event-day counter-bar + 3-col grid + barcode input |
 | `css/crm-visual.css` | 20 | **[B8]** Reduced from 347 → near-empty placeholder (pagination baseline + legacy pulse keyframe). All B7 visual components moved into JS as Tailwind classes |
 
-### JavaScript — `modules/crm/` (18 files, all ≤350 lines)
+### JavaScript — `modules/crm/` (19 files, all ≤350 lines)
 | File | Lines | Purpose |
 |------|-------|---------|
 | `crm-init.js` | 75 | Page bootstrap, tab orchestration stub, status cache gate, error banner |
 | `crm-bootstrap.js` | 105 | **[B6]** Extracted from crm.html inline JS: page header updater, theme switcher, `toggleCrmRole()`, `switchCrmLeadsView()`, Lucide init, barcode auto-focus on event-day entry |
-| `crm-helpers.js` | 118 | Shared utilities: phone format, currency, date, language, status cache/badges |
+| `crm-helpers.js` | 140 | **[C1]** Shared utilities: phone format, currency, date, language, status cache/badges. Added `TIER1_STATUSES` + `TIER2_STATUSES` constants (exported on window) |
+| `crm-incoming-tab.js` | 157 | **[C1]** Tier 1 "לידים נכנסים" tab: fetch leads with Tier 1 statuses from `v_crm_leads_with_tags`, status filter dropdown, search, paginated table (name, phone, email, status, date, source, UTM campaign) |
 | `crm-dashboard.js` | 295 | **[B8]** Dashboard via Tailwind: 4 gradient KPI cards (indigo/cyan/emerald/amber) with per-variant sparkline bars, 3-column alert strip, gradient stacked bar chart, 3 conic-gradient gauges (inline style), animate-pulse activity feed, horizontal timeline cards with progress bars |
 | `crm-leads-tab.js` | 290 | **[B8]** Leads via Tailwind: white-card table with hover:bg-indigo-50/40, indigo filter chips, indigo bulk bar, pagination with rounded-md buttons, delegates kanban + cards to `crm-leads-views.js` |
 | `crm-leads-views.js` | 112 | **[B8]** Kanban (4 status columns with colored headers — emerald/amber/violet/indigo) + Cards (3-col grid with gradient avatars + tag pills) |
@@ -43,6 +44,11 @@
 | `index.html` | Added CRM card to MODULES config array (line 152) | B3 |
 | `js/shared.js` | Added FIELD_MAP entries for `crm_leads`, `crm_events`, `crm_lead_notes`, `crm_event_attendees` (+29 lines) | B3 |
 
+### Edge Functions — `supabase/functions/` (owned by Module 4)
+| Slug | Files | Lines | Phase | Purpose |
+|------|-------|-------|-------|---------|
+| `lead-intake` | `index.ts` + `deno.json` | 241 | P1 | Public form intake: validate payload, resolve tenant by slug, normalize Israeli phones to E.164, duplicate-check (tenant_id, phone), INSERT `crm_leads` with `status='new'`. Returns 201 `{id, is_new: true}` on new, 409 `{duplicate, existing_name}` on dup, 400 on validation fail, 401 on unknown tenant. `verify_jwt: false` (public endpoint). Uses `SUPABASE_SERVICE_ROLE_KEY` server-side to bypass RLS. |
+
 ### Migration & import scripts (campaign-scoped)
 | File | Purpose | Phase |
 |------|---------|-------|
@@ -57,11 +63,12 @@
 
 | Function | File | Purpose |
 |----------|------|---------|
-| `showCrmTab(name)` | crm-init.js | Switch between dashboard/leads/events/messaging/event-day tabs |
+| `showCrmTab(name)` | crm-init.js | Switch between dashboard/incoming/leads/events/messaging/event-day tabs |
 | `ensureCrmStatusCache()` | crm-init.js | Load `crm_statuses` table once, cache in `CRM_STATUSES` |
 | `showCrmError(panelId, msg)` | crm-init.js | Display error banner in a tab panel |
 | `loadCrmDashboard()` | crm-dashboard.js | Fetch + render dashboard (stat cards, event table, status bars) |
-| `loadCrmLeadsTab()` | crm-leads-tab.js | Fetch all leads, populate filters, render paginated table |
+| `loadCrmIncomingTab()` | crm-incoming-tab.js | **[C1]** Fetch Tier 1 leads, populate status filter, render table with search |
+| `loadCrmLeadsTab()` | crm-leads-tab.js | Fetch Tier 2 leads (was: all leads), populate filters, render paginated table |
 | `getCrmLeadById(id)` | crm-leads-tab.js | Return cached lead row by ID (for detail modal) |
 | `openCrmLeadDetail(leadId)` | crm-leads-detail.js | Open lead detail modal (info + notes + events) |
 | `loadCrmEventsTab()` | crm-events-tab.js | Fetch events from `v_crm_event_stats`, render table |
@@ -111,7 +118,7 @@
 | `v_crm_event_stats` | crm-events-tab.js, crm-dashboard.js, crm-event-day.js | Event-level aggregates (11 rows) |
 | `v_crm_lead_event_history` | crm-leads-detail.js, crm-dashboard.js | Lead-level event history + returning flag |
 | `v_crm_event_attendees_full` | crm-events-detail.js, crm-event-day.js | Event attendees with lead info |
-| `crm_leads` | crm-dashboard.js, crm-messaging-broadcast.js | Direct count queries for dashboard, lead-id filter for broadcast recipients, name lookup for log display |
+| `crm_leads` | crm-dashboard.js, crm-messaging-broadcast.js | Direct count queries for dashboard, lead-id filter for broadcast recipients, name lookup for log display. **[C1]** Also used by Make scenario for duplicate check (HTTP GET) and insert (HTTP POST) |
 | `crm_lead_notes` | crm-leads-detail.js | Notes for lead detail modal |
 | `crm_events` | crm-events-detail.js, crm-event-day.js, crm-messaging-broadcast.js | Single event row for detail modal, event list for broadcast filter dropdown |
 | `crm_event_attendees` | crm-event-day-manage.js, crm-messaging-broadcast.js | Direct updates (purchase/coupon/fee) and lead_id lookup for event filter |

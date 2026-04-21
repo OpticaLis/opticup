@@ -1,23 +1,40 @@
 # Module 4 — CRM: Session Context
 
 > **Last updated:** 2026-04-21
-> **Current phase:** B9 (Visual QA & Functional Verification) — CLOSED (attempt 2)
-> **Next phase:** B10 candidate (Make cutover / Monday retirement)
+> **Current phase:** Go-Live P1 (Internal Lead Intake Pipeline) — ✅ CLOSED
+> **Next phase:** P2 (CRM Lead & Event Management)
 > **Branch:** develop
 
 ---
 
 ## Current State
 
-Phase A through B5 complete. The CRM module has:
-- **Schema:** 23 tables (incl. 4 messaging tables from Phase A), 7 Views, 8 RPCs, 46 RLS policies
-- **Data:** 893 leads, 11 events, 149 attendees, 695 notes, 88 ad spend rows imported from Monday.com (Phase B2)
-- **UI:** `crm.html` with 4 visible tabs (Dashboard, Leads, Events, Messaging Hub) + 1 hidden tab (Event Day) entered via event modal
-- **Event Day (B4):** live check-in panel (RPC: `check_in_attendee`), scheduled times board, attendee management (purchase amount, coupon toggle, booking fee), stats bar with registered/attended/purchased/revenue
-- **Messaging Hub (B5):** 4 sub-tabs — templates CRUD, automation rules CRUD, manual broadcast send (recipient count preview + confirmation), message log with filters and pagination
-- **Home screen:** CRM card added to `index.html` via MODULES config
+**Build phases (A–B9) complete.** CRM merged to `main`.
 
-All code is on `develop` — NOT yet merged to `main`. Daniel cannot access the CRM on the production site until merge.
+- **Schema:** 23 tables, 7 Views, 8 RPCs, 46 RLS policies
+- **Data:** 893 leads, 11 events, 149 attendees, 695 notes, 88 ad spend rows (Monday import)
+- **UI:** `crm.html` with **6 visible tabs** (Dashboard, לידים נכנסים, רשומים, Events, Messaging Hub) + 1 hidden (Event Day)
+
+### Architecture Decision (2026-04-21): Internal-First
+
+Go-Live roadmap rewritten from C1–C9 (Make-centric) to P1–P7 (internal-first).
+
+**Old approach (abandoned):** clone every Make scenario, replace Monday modules with HTTP calls to Supabase. Resulted in brittle Make scenarios (broken routers, `{{}}` conflicts, no error handling, missing business logic).
+
+**New approach:**
+- **All business logic is internal** — Edge Functions, RPCs, CRM UI → Supabase directly. No Make involved in decisions.
+- **Make is a message dispatcher only** — receives webhook with template_slug + recipient + variables, sends SMS/Email/WhatsApp, logs result. Generic scenarios, not per-flow.
+- **Native Supabase modules in Make** — not generic HTTP. One connection, proper modules (Search Rows, Create a Row, etc.)
+- **Message content last** — templates written and seeded in P5, not during pipeline build.
+
+See `modules/Module 4 - CRM/go-live/ROADMAP.md` for full P1–P7 plan.
+
+### What survived from old C1
+- Tier 1 "לידים נכנסים" tab (`crm-incoming-tab.js`, 157 lines) — **keep, code is good**
+- "לידים" renamed to "רשומים" (Tier 2 filter) — **keep**
+- `TIER1_STATUSES` / `TIER2_STATUSES` in `crm-helpers.js` — **keep**
+- 4 message templates in `crm_message_templates` (demo tenant) — **keep, will update format in P5**
+- Make scenario ID 9101245 (Demo folder) — **abandon, will rebuild with native Supabase modules in P3**
 
 ## Known Gaps
 
@@ -44,16 +61,19 @@ All code is on `develop` — NOT yet merged to `main`. Daniel cannot access the 
 | B6 — UI Redesign | 🟡 CLOSED w/ FOLLOW-UPS | Visual rewrite to match 5 FINAL mockups Daniel approved 2026-04-21 (dashboard B / leads C / events A / messaging A / event-day C). `crm.html` 377→271 lines (extracted inline JS to new `crm-bootstrap.js`); `css/crm.css` 983→215 lines, split into 3 files (crm.css + crm-components.css + crm-screens.css), each ≤350. Added KPI grid + alert strip + view-toggle + capacity-bar + counter-bar + 3-column event-day shells + barcode input. No DB changes, no new features. 16 JS files (was 15). |
 | B7 — Visual Components | 🟡 CLOSED w/ FOLLOW-UPS | JS rewrite that populates the B6 shells with the rich visual components from the 5 FINAL mockups. 8 JS files rewritten + 2 new (`crm-leads-views.js`, `crm-events-detail-charts.js`). 1 new CSS file (`css/crm-visual.css`, 347 lines). All 35 §2 structural criteria pass; 5 behavioral criteria deferred to Daniel QA. Adds: KPI sparklines, stacked bar chart, conversion gauges (conic-gradient), activity feed with pulse-dot, horizontal events timeline, kanban+cards views for leads, filter chips, bulk selection bar, summary row, lead detail 5-sub-tab modal with footer actions, gradient event-header, SVG funnel, analytics chart cards, category-tabbed template sidebar, dark code editor with line-numbers + variable menu, 3-panel WhatsApp/SMS/Email preview, 5-step broadcast wizard, status-chip message log, 5 gradient event-day counter cards, live clock, 3-column checkin layout with barcode scanner and selected-detail, arrived-column with waiting-to-purchase + purchased sections, purchase-amount modal, admin-only running-total, flash notifications. No DB changes, no new queries. 18 JS files. |
 | B8 — Tailwind Visual Fidelity | ✅ CLOSED | Daniel rejected B7 visual output ("לא נראה כמו המוקאפים"). Root cause: the 5 FINAL mockups use Tailwind CDN (gradients, shadows, rounded corners, spacing) while B6+B7 used only CSS custom properties. Fix: Tailwind CDN loaded on `crm.html` only (with RTL + Heebo + custom `crm.*` colors in `tailwind.config`). All 16 CRM render functions across the 5 screens rewritten to emit Tailwind utility classes matching the mockup patterns — KPI gradient cards + sparklines, colored alert strip, gradient stacked bar chart, conic-gradient gauges, animate-pulse activity feed, horizontal timeline cards, table/kanban/cards leads views, filter chips, indigo bulk bar, pagination, lead-detail with gradient-avatar header and 5 tabs + 4 gradient action buttons, events list with emerald revenue column, gradient event header (indigo→violet) with glass-morphism controls and capacity bar, 6 gradient KPI cards with trend arrows, SVG funnel, gradient bar analytics, sub-tab bar, messaging orchestrator with rounded tab bar, templates split-layout with category tabs + dark code editor + 3-panel preview (WhatsApp emerald / SMS sky / Email amber), broadcast wizard with 5-step progress + green✓ completed dots, rules table with colored channel badges + pill toggles, event-day 5 gradient counter cards with clock, 3-column check-in grid (amber/indigo/emerald cols) with barcode scanner and gradient selected-attendee detail, arrived column with running-total badge, purchase modal. CSS massively reduced: `crm-visual.css` 347→20, `crm-components.css` 276→76, `crm-screens.css` 325→98. No DB changes, no new features, no business logic changes. 18 JS files unchanged (no splits needed). |
+| Go-Live P1 — Internal Lead Intake Pipeline | ✅ CLOSED | `lead-intake` Edge Function (241 lines, `verify_jwt: false`) deployed to Supabase. Accepts public form POSTs, validates payload (tenant_slug + name + phone required), resolves tenant by slug, normalizes Israeli phones to E.164 (`0XXXXXXXXX → +972XXXXXXXXX`), duplicate-checks by (tenant_id, phone), inserts `crm_leads` with `status='new'` and `source='supersale_form'`. Stores `eye_exam` inside `client_notes` (no schema change). 17/17 §3 criteria passed via curl test protocol on demo tenant. No messages sent here — dispatch deferred to P3+P4. |
 | B9 — Visual QA & Functional Verification | ✅ CLOSED (attempt 2) | Attempt 1 re-opened by Foreman: Cowork sandbox lacked localhost access so the core visual+functional QA was never executed; only 4 peripheral commits were made. Attempt 2 ran under Claude Code on Daniel's Windows desktop via chrome-devtools MCP so the browser was actually driven. All 5 CRM screens opened on `?t=prizma` (893 leads, 11 events), screenshotted, and structurally matched against FINAL-01..FINAL-05 mockups (dark theme out of scope per B6). Two visual gaps fixed: (1) `crm-leads-tab.js` — added `odd:bg-white even:bg-slate-50/60` zebra striping to CLS_ROW per FINAL-02; (2) `crm-event-day.js` — swapped CLS_HEADER from white card to dark `bg-slate-800` top bar with sky-300 back link + white title + emerald-500/20 clock + slate-700 role toggle per FINAL-05. Functional QA on `?t=demo` (page loads, 0 console errors, empty state renders correctly — no seed data per M4-DATA-03) + `?t=prizma` read-only (all 5 tabs navigable, lead detail modal with 5 sub-tabs and 4 gradient action buttons, event detail modal with gradient header + capacity bar + 6 KPI cards + SVG funnel, event day entry with 5 counter cards and 3-column check-in layout, messaging hub with all 4 sub-tabs). 0 console errors throughout. No DB changes. |
 
 ## What's Next
 
-**Phase B10 (candidate, was B9 candidate pre-2026-04-21)** — Make cutover / Monday retirement:
-- Rewire campaign ingest away from Monday+Make to direct DB writes
-- Retire the 15+ Make scenarios behind the CRM
-- Migrate the automation rules from B5 into a background scheduler (Edge Function or Supabase cron)
-- Wire external dispatch for templates + broadcasts (SMS provider, WhatsApp Business, email)
-- The `DB.*` wrapper refactor for CRM code (M4-DEBT-02) is a good companion SPEC.
+**Go-Live P2:** CRM Lead & Event Management — build auto-approval rules, Tier 1→Tier 2 transfer flow, manual lead actions. This unlocks events/attendees management via the CRM UI before messages start flowing in P3.
+
+**Full roadmap:** ~~P1~~ ✅ → P2 (CRM management features) → P3 (Make message dispatcher) → P4 (connect CRM→Make triggers) → P5 (message content) → P6 (full demo test) → P7 (Prizma cutover). See `modules/Module 4 - CRM/go-live/ROADMAP.md`.
+
+**P1 follow-ups (not blockers):**
+- Storefront form still POSTs to Make webhook; repointing to `/functions/v1/lead-intake` will land as a separate storefront-repo SPEC (or as part of P4 cutover).
+- `verify_jwt: false` + `Access-Control-Allow-Origin: *` are permissive on purpose (public form). Tighten origin + add rate limiting in P7 when production domain set is known.
+- Race-condition safety implemented (23505 unique_violation caught + converted to 409), but not exercised under load — stress test in P6.
 
 **Open from B8:**
 - Tailwind CDN runs a JIT compiler in-browser (~15KB gzipped). Fine for an internal tool but could be switched to a static extracted CSS file in a future SPEC if startup latency ever matters.
