@@ -8,7 +8,7 @@
   // --- Local tab switcher (mirrors showTab() behavior from js/shared-ui.js
   // but routes to CRM-specific loaders instead of modifying shared-ui.js). ---
   function showCrmTab(name) {
-    document.querySelectorAll('#crm-main .tab').forEach(function (t) { t.classList.remove('active'); });
+    document.querySelectorAll('#crm-main .crm-tab').forEach(function (t) { t.classList.remove('active'); });
     document.querySelectorAll('#crmNav button[data-tab]').forEach(function (b) { b.classList.remove('active'); });
     var panel = document.getElementById('tab-' + name);
     if (panel) panel.classList.add('active');
@@ -40,7 +40,7 @@
     var panel = document.getElementById(panelId);
     if (!panel) return;
     var box = document.createElement('div');
-    box.className = 'card';
+    box.className = 'crm-card';
     box.style.borderInlineStart = '4px solid #ef4444';
     box.textContent = msg;
     panel.prepend(box);

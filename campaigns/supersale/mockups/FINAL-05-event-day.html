@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Event Day — FINAL (Role-Based + Barcode Scanner + Purchase Flow)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+    <style>
+        * {
+            font-family: 'Heebo', sans-serif;
+        }
+
+        .counter-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .counter-blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .counter-violet { background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); }
+        .counter-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .counter-gold { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .counter-emerald { background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); }
+
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .scanning-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            background: #f0fdf4;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #059669;
+        }
+
+        .scanning-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        .attendee-card {
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid transparent;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .attendee-card:hover {
+            background: #f3f4f6;
+            transform: translateX(-4px);
+        }
+
+        .attendee-card.overdue {
+            border-left-color: #f97316;
+            background: #fef3c7;
+        }
+
+        .attendee-card.selected {
+            border-left-color: #3b82f6;
+            background: #dbeafe;
+        }
+
+        .arrived-card {
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 14px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .arrived-card:hover {
+            transform: translateX(-2px);
+        }
+
+        .arrived-card.waiting {
+            background: #f0fdf4;
+            border-left-color: #10b981;
+        }
+
+        .arrived-card.purchased {
+            background: #fffbeb;
+            border-left-color: #f59e0b;
+        }
+
+        .purchase-badge {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #fed7aa;
+            color: #92400e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .amount-display {
+            font-weight: 700;
+            color: #b45309;
+        }
+
+        .flash-notification {
+            animation: slideIn 3s ease-out;
+        }
+
+        @keyframes slideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            10% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            90% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+
+        .column-header {
+            font-size: 16px;
+            font-weight: 700;
+            padding: 12px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .action-button {
+            height: 56px;
+            font-weight: 600;
+            font-size: 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .action-button:hover {
+            transform: scale(1.02);
+        }
+
+        .action-button:active {
+            transform: scale(0.98);
+        }
+
+        .counter-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .counter-number {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 2px;
+        }
+
+        .admin-only {
+            display: block;
+        }
+
+        .admin-only.hidden {
+            display: none;
+        }
+
+        .role-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .role-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: #3b82f6;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .role-badge.team {
+            background: #6366f1;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #1f2937;
+        }
+
+        .purchase-input-group {
+            margin-bottom: 12px;
+        }
+
+        .purchase-input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #374151;
+        }
+
+        .purchase-input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .purchase-input-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .modal-buttons .save-btn {
+            background: #10b981;
+            color: white;
+        }
+
+        .modal-buttons .save-btn:hover {
+            background: #059669;
+        }
+
+        .modal-buttons .cancel-btn {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .modal-buttons .cancel-btn:hover {
+            background: #d1d5db;
+        }
+
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-item-name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .history-item-action {
+            padding: 4px 8px;
+            background: #fef3c7;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #92400e;
+            cursor: pointer;
+        }
+
+        .history-item-action:hover {
+            background: #fde68a;
+        }
+
+        .barcode-input-group {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .barcode-input {
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .barcode-input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .barcode-input.scanning-active {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 m-0 p-0">
+    <div class="h-screen flex flex-col">
+        <!-- TOP COUNTER BAR -->
+        <div class="bg-slate-800 text-white px-6 py-4 flex items-center justify-between gap-8 h-20">
+            <div class="flex items-center gap-6 flex-1">
+                <div>
+                    <h1 class="text-xl font-800">SUPER SALE 2026</h1>
+                    <p class="text-sm opacity-80">אירוע בזמן אמת</p>
+                </div>
+            </div>
+
+            <div class="flex gap-4 flex-1 justify-center">
+                <div class="counter-card counter-blue text-center">
+                    <div class="counter-number">87</div>
+                    <div class="counter-label">נרשמו</div>
+                </div>
+                <div class="counter-card counter-violet text-center">
+                    <div class="counter-number">69</div>
+                    <div class="counter-label">אישרו</div>
+                </div>
+                <div class="counter-card counter-green text-center pulse-animation">
+                    <div class="counter-number">22</div>
+                    <div class="counter-label">הגיעו</div>
+                </div>
+                <div class="counter-card counter-gold text-center">
+                    <div class="counter-number">21</div>
+                    <div class="counter-label">קנו</div>
+                </div>
+                <div class="counter-card counter-emerald text-center admin-only" data-admin-only="revenue">
+                    <div class="counter-number">₪35,125</div>
+                    <div class="counter-label">הכנסות</div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4 flex-1 justify-end">
+                <div class="role-toggle" onclick="toggleRole()">
+                    <span class="role-badge" id="role-display">מנהל ראשי</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                </div>
+                <div id="live-clock" class="text-lg font-600">09:45</div>
+                <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+            </div>
+        </div>
+
+        <!-- MAIN THREE-COLUMN LAYOUT -->
+        <div class="flex flex-1 gap-0 overflow-hidden">
+            <!-- LEFT COLUMN: ממתינים -->
+            <div class="w-3/10 bg-amber-50 flex flex-col border-r border-gray-200">
+                <div class="column-header flex items-center gap-2 text-amber-700">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    ממתינים להגעה (47)
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-3 py-2">
+                    <!-- Overdue -->
+                    <div class="attendee-card overdue" onclick="selectAttendee(this, 'דניאל כהן')">
+                        <div class="font-600 text-sm">דניאל כהן</div>
+                        <div class="text-xs text-gray-600 mt-1">050-1234567</div>
+                        <div class="text-xs text-gray-600">📅 08:45 (בעיכוב 17 דקות)</div>
+                        <div class="flex gap-1 mt-1">
+                            <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded">בדיקה</span>
+                        </div>
+                    </div>
+
+                    <div class="attendee-card" onclick="selectAttendee(this, 'רחל דביר')">
+                        <div class="font-600 text-sm">רחל דביר</div>
+                        <div class="text-xs text-gray-600 mt-1">054-9876543</div>
+                        <div class="text-xs text-gray-600">📅 09:00 (בעוד 2 דקות)</div>
+                    </div>
+
+                    <div class="attendee-card" onclick="selectAttendee(this, 'מיכאל לוי')">
+                        <div class="font-600 text-sm">מיכאל לוי</div>
+                        <div class="text-xs text-gray-600 mt-1">052-5555555</div>
+                        <div class="text-xs text-gray-600">📅 09:15</div>
+                        <div class="flex gap-1 mt-1">
+                            <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded">בדיקה</span>
+                        </div>
+                    </div>
+
+                    <div class="attendee-card" onclick="selectAttendee(this, 'אביבה סלע')">
+                        <div class="font-600 text-sm">אביבה סלע</div>
+                        <div class="text-xs text-gray-600 mt-1">050-3333333</div>
+                        <div class="text-xs text-gray-600">📅 09:30</div>
+                    </div>
+
+                    <div class="attendee-card" onclick="selectAttendee(this, 'שלום קורן')">
+                        <div class="font-600 text-sm">שלום קורן</div>
+                        <div class="text-xs text-gray-600 mt-1">054-7777777</div>
+                        <div class="text-xs text-gray-600">📅 09:45</div>
+                        <div class="flex gap-1 mt-1">
+                            <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded">בדיקה</span>
+                        </div>
+                    </div>
+
+                    <div class="attendee-card" onclick="selectAttendee(this, 'עדי רובינstein')">
+                        <div class="font-600 text-sm">עדי רובינstein</div>
+                        <div class="text-xs text-gray-600 mt-1">052-8888888</div>
+                        <div class="text-xs text-gray-600">📅 10:00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CENTER COLUMN: צ'ק-אין עם סורק ברקוד -->
+            <div class="w-2/5 bg-white flex flex-col border-r border-gray-200">
+                <!-- Barcode Scanner Section -->
+                <div class="p-4 bg-white border-b border-gray-200">
+                    <div class="barcode-input-group">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-sm font-600 text-gray-700">סורק ברקוד</label>
+                            <div class="scanning-indicator">
+                                <div class="scanning-dot"></div>
+                                <span>מוכן לסריקה</span>
+                            </div>
+                        </div>
+                        <input type="text" id="barcode-input" class="barcode-input scanning-active" placeholder="העבר ברקוד..." autocomplete="off" />
+                    </div>
+
+                    <!-- Search Bar (Secondary) -->
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="search-input" placeholder="חפש שם או טלפון..." class="flex-1 px-4 py-3 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                    </div>
+
+                    <button class="w-full text-sm text-blue-600 font-600 py-2 hover:bg-blue-50 rounded">+ רישום מהיר</button>
+                </div>
+
+                <!-- Notifications Area -->
+                <div class="h-10 px-4 py-1 bg-green-100 border-b border-green-300" id="notifications">
+                </div>
+
+                <!-- Selected Attendee Card -->
+                <div class="flex-1 p-6 flex flex-col justify-between">
+                    <div id="selected-card" class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-200">
+                        <div class="text-center mb-6">
+                            <div class="text-2xl font-800 text-blue-900">דניאל כהן</div>
+                            <div class="text-sm text-gray-600 mt-1">050-1234567</div>
+                        </div>
+
+                        <div class="space-y-3 mb-6">
+                            <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                                <span class="text-sm font-600">סטטוס:</span>
+                                <span class="text-sm font-600 text-amber-700 bg-amber-100 px-3 py-1 rounded">בעיכוב</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                                <span class="text-sm font-600">זמן מתוכנן:</span>
+                                <span class="text-sm font-600">08:45</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                                <span class="text-sm font-600">בדיקה עיניים:</span>
+                                <span class="text-sm font-600 bg-purple-200 text-purple-800 px-3 py-1 rounded">כן</span>
+                            </div>
+                            <div class="p-3 bg-white rounded-lg">
+                                <span class="text-sm font-600 block mb-1">הערות:</span>
+                                <span class="text-sm text-gray-600">מעוניין בעדשות קשות + מסגרות</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="grid grid-cols-2 gap-3 mt-6">
+                        <button class="action-button bg-green-600 text-white hover:bg-green-700" onclick="checkInAttendee()">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            צ'ק-אין
+                        </button>
+                        <button class="action-button bg-amber-500 text-white hover:bg-amber-600">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"></path>
+                            </svg>
+                            רשום רכישה
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: הגיעו -->
+            <div class="w-3/10 bg-green-50 flex flex-col border-r border-gray-200">
+                <div class="column-header flex items-center justify-between text-green-700">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        הגיעו (22)
+                    </div>
+                    <button class="text-xs font-600 bg-green-200 text-green-800 px-2 py-1 rounded hover:bg-green-300" onclick="showPurchaseHistory()">היסטוריה</button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto">
+                    <!-- Section 1: Waiting to purchase -->
+                    <div class="px-3 pt-3">
+                        <div class="text-xs font-700 text-green-700 mb-2">הגיעו — ממתינים לקנייה</div>
+
+                        <div class="arrived-card waiting" onclick="openPurchaseForm('אביבה קוניץ')">
+                            <div class="font-600">אביבה קוניץ</div>
+                            <div class="text-xs text-gray-600 mt-1">✓ נכנסה • 09:02</div>
+                        </div>
+
+                        <div class="arrived-card waiting" onclick="openPurchaseForm('יוסי דולב')">
+                            <div class="font-600">יוסי דולב</div>
+                            <div class="text-xs text-gray-600 mt-1">✓ נכנס • 09:18</div>
+                            <div class="purchase-badge">💰 הזן סכום</div>
+                        </div>
+
+                        <div class="arrived-card waiting" onclick="openPurchaseForm('מיכל סטרוס')">
+                            <div class="font-600">מיכל סטרוס</div>
+                            <div class="text-xs text-gray-600 mt-1">✓ נכנסה • 09:25</div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Purchased -->
+                    <div class="px-3 pt-4 border-t border-green-200 mt-3">
+                        <div class="text-xs font-700 text-amber-700 mb-2">קנו</div>
+
+                        <div class="arrived-card purchased">
+                            <div class="flex justify-between items-center">
+                                <div class="font-600">לימור גינזבורג</div>
+                                <div class="amount-display admin-only" data-admin-only="amount">₪890</div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">09:12</div>
+                        </div>
+
+                        <div class="arrived-card purchased">
+                            <div class="flex justify-between items-center">
+                                <div class="font-600">ד״ר משה פלד</div>
+                                <div class="amount-display admin-only" data-admin-only="amount">₪1,250</div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">09:20</div>
+                        </div>
+
+                        <div class="arrived-card purchased">
+                            <div class="flex justify-between items-center">
+                                <div class="font-600">רונית רבינוביץ</div>
+                                <div class="amount-display admin-only" data-admin-only="amount">₪2,100</div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">09:35</div>
+                        </div>
+
+                        <div class="arrived-card purchased">
+                            <div class="flex justify-between items-center">
+                                <div class="font-600">אביהו כרמי</div>
+                                <div class="amount-display admin-only" data-admin-only="amount">₪1,450</div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">09:38</div>
+                        </div>
+
+                        <div class="arrived-card purchased">
+                            <div class="flex justify-between items-center">
+                                <div class="font-600">שנית מנור</div>
+                                <div class="amount-display admin-only" data-admin-only="amount">₪785</div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">09:42</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Running Total -->
+                <div class="bg-green-100 border-t-2 border-green-300 p-4 font-700 text-lg text-green-900 text-center admin-only" data-admin-only="total">
+                    סה״כ: <span class="text-amber-700">₪35,125</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PURCHASE AMOUNT MODAL -->
+    <div class="modal-overlay" id="purchase-modal">
+        <div class="modal-content">
+            <div class="modal-title">הזן סכום קנייה</div>
+            <div class="purchase-input-group">
+                <label>שם: <span id="modal-name">—</span></label>
+            </div>
+            <div class="purchase-input-group">
+                <label>סכום (₪):</label>
+                <input type="number" id="purchase-amount" placeholder="0.00" min="0" step="0.01" />
+            </div>
+            <div class="modal-buttons">
+                <button class="save-btn" onclick="savePurchase()">שמור</button>
+                <button class="cancel-btn" onclick="closePurchaseForm()">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PURCHASE HISTORY MODAL -->
+    <div class="modal-overlay" id="history-modal">
+        <div class="modal-content">
+            <div class="modal-title">ממתינים להזנת סכום</div>
+            <div class="history-list" id="history-list">
+                <!-- Populated dynamically -->
+            </div>
+            <div class="modal-buttons" style="margin-top: 12px;">
+                <button class="cancel-btn" onclick="closePurchaseHistory()" style="flex: 1;">סגור</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentRole = 'admin'; // 'admin' or 'team'
+        let pendingPurchases = {
+            'אביבה קוניץ': null,
+            'יוסי דולב': null,
+            'מיכל סטרוס': null
+        };
+        let completedPurchases = {
+            'לימור גינזבורג': '890',
+            'ד״ר משה פלד': '1250',
+            'רונית רבינוביץ': '2100',
+            'אביהו כרמי': '1450',
+            'שנית מנור': '785'
+        };
+
+        // Live clock
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('live-clock').textContent = `${hours}:${minutes}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Role toggle
+        function toggleRole() {
+            currentRole = currentRole === 'admin' ? 'team' : 'admin';
+            updateRoleVisibility();
+        }
+
+        function updateRoleVisibility() {
+            const roleDisplay = document.getElementById('role-display');
+            roleDisplay.textContent = currentRole === 'admin' ? 'מנהל ראשי' : 'צוות';
+            roleDisplay.classList.toggle('team', currentRole === 'team');
+
+            // Show/hide admin-only elements
+            const adminElements = document.querySelectorAll('[data-admin-only]');
+            adminElements.forEach(el => {
+                if (currentRole === 'admin') {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+        }
+
+        // Barcode scanner
+        document.getElementById('barcode-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const barcode = this.value.trim();
+                if (barcode) {
+                    performBarcodeCheckIn(barcode);
+                    this.value = '';
+                }
+            }
+        });
+
+        function performBarcodeCheckIn(barcode) {
+            // Simulate barcode matching
+            const attendees = {
+                '123456': 'דניאל כהן',
+                '789012': 'רחל דביר',
+                '345678': 'מיכאל לוי'
+            };
+
+            const name = attendees[barcode] || 'ממתינים - לא נמצא';
+            if (name !== 'ממתינים - לא נמצא') {
+                selectAttendeeByName(name);
+                checkInAttendee();
+            } else {
+                showNotification('⚠️ ברקוד לא מוכר');
+            }
+        }
+
+        function selectAttendeeByName(name) {
+            const cards = document.querySelectorAll('.attendee-card');
+            cards.forEach(card => {
+                if (card.textContent.includes(name)) {
+                    selectAttendee(card, name);
+                }
+            });
+        }
+
+        // Select attendee
+        function selectAttendee(element, name) {
+            document.querySelectorAll('.attendee-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            element.classList.add('selected');
+
+            const card = document.getElementById('selected-card');
+            card.innerHTML = `
+                <div class="text-center mb-6">
+                    <div class="text-2xl font-800 text-blue-900">${name}</div>
+                    <div class="text-sm text-gray-600 mt-1">050-1234567</div>
+                </div>
+
+                <div class="space-y-3 mb-6">
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span class="text-sm font-600">סטטוס:</span>
+                        <span class="text-sm font-600 text-amber-700 bg-amber-100 px-3 py-1 rounded">ממתין</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span class="text-sm font-600">זמן מתוכנן:</span>
+                        <span class="text-sm font-600">09:15</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span class="text-sm font-600">בדיקה עיניים:</span>
+                        <span class="text-sm font-600 bg-purple-200 text-purple-800 px-3 py-1 rounded">כן</span>
+                    </div>
+                    <div class="p-3 bg-white rounded-lg">
+                        <span class="text-sm font-600 block mb-1">הערות:</span>
+                        <span class="text-sm text-gray-600">משקפיים חדשים, עדשות</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Check-in
+        function checkInAttendee() {
+            const name = document.querySelector('.selected-card .text-2xl');
+            const selectedName = name ? name.textContent : 'דניאל כהן';
+
+            showNotification(`${selectedName} נכנס — הממתין לקנייה`);
+            pendingPurchases[selectedName] = null;
+
+            // Re-focus barcode input
+            setTimeout(() => {
+                document.getElementById('barcode-input').focus();
+            }, 500);
+        }
+
+        // Purchase form
+        function openPurchaseForm(name) {
+            document.getElementById('modal-name').textContent = name;
+            document.getElementById('purchase-amount').value = '';
+            document.getElementById('purchase-amount').focus();
+            document.getElementById('purchase-modal').classList.add('show');
+        }
+
+        function closePurchaseForm() {
+            document.getElementById('purchase-modal').classList.remove('show');
+        }
+
+        function savePurchase() {
+            const name = document.getElementById('modal-name').textContent;
+            const amount = document.getElementById('purchase-amount').value;
+
+            if (amount && parseFloat(amount) > 0) {
+                completedPurchases[name] = amount;
+                delete pendingPurchases[name];
+                showNotification(`✓ ${name} - ₪${amount}`);
+                closePurchaseForm();
+            } else {
+                alert('אנא הזן סכום חוקי');
+            }
+        }
+
+        // Purchase history
+        function showPurchaseHistory() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+
+            for (const [name, amount] of Object.entries(pendingPurchases)) {
+                if (amount === null) {
+                    const item = document.createElement('div');
+                    item.className = 'history-item';
+                    item.innerHTML = `
+                        <div class="history-item-name">${name}</div>
+                        <div class="history-item-action" onclick="openPurchaseForm('${name}')">הזן סכום</div>
+                    `;
+                    historyList.appendChild(item);
+                }
+            }
+
+            if (historyList.innerHTML === '') {
+                historyList.innerHTML = '<div class="p-4 text-center text-gray-500">אין ממתינים להזנה</div>';
+            }
+
+            document.getElementById('history-modal').classList.add('show');
+        }
+
+        function closePurchaseHistory() {
+            document.getElementById('history-modal').classList.remove('show');
+        }
+
+        // Notifications
+        function showNotification(msg) {
+            const notif = document.getElementById('notifications');
+            const div = document.createElement('div');
+            div.className = 'flash-notification text-sm font-600 text-green-800';
+            div.textContent = msg;
+            notif.innerHTML = '';
+            notif.appendChild(div);
+            setTimeout(() => notif.innerHTML = '', 3000);
+        }
+
+        // Init
+        updateRoleVisibility();
+        document.getElementById('barcode-input').focus();
+    </script>
+</body>
+</html>

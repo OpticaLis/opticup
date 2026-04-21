@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messaging Hub — CRM (Editor Pro)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+    <style>
+        * {
+            font-family: 'Heebo', sans-serif;
+        }
+        [dir="rtl"] {
+            direction: rtl;
+            text-align: right;
+        }
+        .sidebar-nav { background: #1e1b4b; }
+        .accent { color: #8b5cf6; }
+        .accent-bg { background: #8b5cf6; }
+        .whatsapp-color { color: #25D366; }
+        .whatsapp-bg { background: #25D366; }
+        .sms-color { color: #3b82f6; }
+        .sms-bg { background: #3b82f6; }
+        .email-color { color: #f59e0b; }
+        .email-bg { background: #f59e0b; }
+
+        /* Template List Styles */
+        .template-list-container {
+            width: 350px;
+            background: white;
+            overflow-y: auto;
+        }
+        .template-card {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-right: 4px solid transparent;
+        }
+        .template-card:hover {
+            background: #f9fafb;
+        }
+        .template-card.active {
+            background: #f3f4f6;
+            border-right-color: #8b5cf6;
+        }
+        .template-status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .template-status-active { background: #10b981; }
+        .template-status-inactive { background: #9ca3af; }
+
+        /* Category Tabs */
+        .category-tab {
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            color: #6b7280;
+        }
+        .category-tab.active {
+            color: white;
+            border-bottom-color: white;
+        }
+        .tab-all.active { background: #8b5cf6; }
+        .tab-auto.active { background: #10b981; }
+        .tab-manual.active { background: #3b82f6; }
+        .tab-drafts.active { background: #9ca3af; }
+
+        /* Code Editor Styles */
+        .code-editor {
+            font-family: 'JetBrains Mono', monospace;
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            border: 1px solid #374151;
+        }
+        .line-numbers {
+            background: #111827;
+            color: #6b7280;
+            padding: 12px 12px;
+            text-align: center;
+            user-select: none;
+            border-right: 1px solid #374151;
+            font-size: 13px;
+            line-height: 1.6;
+            min-width: 40px;
+        }
+        .editor-input {
+            flex: 1;
+            background: #1f2937;
+            color: #f3f4f6;
+            border: none;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: none;
+        }
+        .editor-input:focus {
+            outline: none;
+        }
+        .variable-syntax {
+            color: #fbbf24;
+            font-weight: 600;
+        }
+
+        /* Variable Dropdown */
+        .variable-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .variable-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            max-height: 300px;
+            overflow-y: auto;
+            width: 280px;
+        }
+        .variable-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 13px;
+        }
+        .variable-item:hover {
+            background: #f9fafb;
+        }
+        .variable-name {
+            color: #8b5cf6;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+        .variable-desc {
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+        .variable-sample {
+            color: #d1d5db;
+            font-size: 11px;
+            margin-top: 2px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Preview Panels */
+        .preview-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            height: 400px;
+        }
+        .preview-panel {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            overflow: hidden;
+        }
+        .preview-header {
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        /* WhatsApp Preview */
+        .whatsapp-frame {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #ece5dd;
+            padding: 12px;
+            overflow-y: auto;
+        }
+        .whatsapp-header {
+            background: #25D366;
+            color: white;
+            padding: 12px;
+            border-radius: 12px 12px 0 0;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .whatsapp-msg {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            max-width: 70%;
+            word-break: break-word;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* SMS Preview */
+        .sms-frame {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f3f4f6;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        .sms-bubble {
+            background: #3b82f6;
+            color: white;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            align-self: flex-end;
+            max-width: 75%;
+            word-break: break-word;
+        }
+
+        /* Email Preview */
+        .email-frame {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            overflow-y: auto;
+        }
+        .email-header {
+            background: #f59e0b;
+            color: white;
+            padding: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .email-content {
+            padding: 16px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #374151;
+        }
+
+        /* Channel Stats */
+        .channel-stat {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            background: #f3f4f6;
+            border-radius: 4px;
+        }
+
+        /* Message Log Table */
+        .message-log-table {
+            width: 100%;
+            font-size: 13px;
+            border-collapse: collapse;
+        }
+        .message-log-table thead {
+            background: #f9fafb;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .message-log-table th {
+            padding: 10px 12px;
+            text-align: right;
+            font-weight: 600;
+            color: #374151;
+        }
+        .message-log-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #6b7280;
+        }
+        .message-log-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        /* Status Chips */
+        .status-chip {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .status-sent { background: #dbeafe; color: #0369a1; }
+        .status-delivered { background: #dcfce7; color: #166534; }
+        .status-read { background: #fef08a; color: #854d0e; }
+        .status-failed { background: #fee2e2; color: #991b1b; }
+
+        /* Broadcast Wizard */
+        .wizard-step {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .wizard-step.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .wizard-progress {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        .wizard-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e5e7eb;
+            color: #6b7280;
+            transition: all 0.2s;
+        }
+        .wizard-dot.active {
+            background: #8b5cf6;
+            color: white;
+        }
+        .wizard-dot.completed {
+            background: #10b981;
+            color: white;
+        }
+
+        /* Toolbar */
+        .editor-toolbar {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            border-radius: 6px 6px 0 0;
+            flex-wrap: wrap;
+        }
+        .toolbar-btn {
+            padding: 6px 10px;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .toolbar-btn:hover {
+            background: #f3f4f6;
+        }
+        .toolbar-btn.active {
+            background: #8b5cf6;
+            color: white;
+            border-color: #8b5cf6;
+        }
+        .toolbar-separator {
+            width: 1px;
+            background: #d1d5db;
+            margin: 0 4px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 40;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <div class="flex h-screen bg-gray-50">
+        <!-- Unified Sidebar Navigation -->
+        <div class="w-64 sidebar-nav text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-xl font-bold">Optic Up</h1>
+                <p class="text-gray-400 text-sm">ניהול CRM</p>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-2">
+                <div class="px-4 py-2 rounded-lg hover:bg-gray-700 cursor-pointer text-gray-400 hover:text-white transition">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span>דשבורד</span>
+                    </div>
+                </div>
+
+                <div class="px-4 py-2 rounded-lg hover:bg-gray-700 cursor-pointer text-gray-400 hover:text-white transition">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        <span>לידים</span>
+                    </div>
+                </div>
+
+                <div class="px-4 py-2 rounded-lg hover:bg-gray-700 cursor-pointer text-gray-400 hover:text-white transition">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span>אירועים</span>
+                    </div>
+                </div>
+
+                <div class="px-4 py-2 rounded-lg bg-gray-700 cursor-pointer accent text-white">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                        </svg>
+                        <span>מרכז הודעות</span>
+                    </div>
+                </div>
+
+                <div class="px-4 py-2 rounded-lg hover:bg-gray-700 cursor-pointer text-gray-400 hover:text-white transition">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>יום אירוע</span>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700 space-y-3">
+                <div class="px-3 py-2 rounded-lg bg-gray-700 bg-opacity-50">
+                    <p class="text-xs text-gray-400">תפקיד</p>
+                    <p class="text-sm font-semibold text-white">מנהל ראשי</p>
+                </div>
+                <div class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-700 cursor-pointer text-gray-400 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span>הגדרות</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <div class="bg-white border-b border-gray-200 px-8 py-5 flex justify-between items-center shadow-sm">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Messaging Hub</h2>
+                    <p class="text-sm text-gray-600 mt-1">Editor Pro — עריכה מתקדמת של תבניות הודעות</p>
+                </div>
+                <button onclick="openBroadcastModal()" class="accent-bg text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    שיגור הודעה חדשה
+                </button>
+            </div>
+
+            <!-- Main Split Layout -->
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Left: Template List (350px) -->
+                <div class="template-list-container border-l border-gray-200">
+                    <!-- Category Tabs with Colors -->
+                    <div class="flex border-b border-gray-200 bg-white">
+                        <button onclick="filterTemplates('all')" class="category-tab tab-all active flex-1" style="background: #8b5cf6; color: white; border-bottom: none;">הכל</button>
+                        <button onclick="filterTemplates('auto')" class="category-tab tab-auto flex-1">אוטומטי</button>
+                        <button onclick="filterTemplates('manual')" class="category-tab tab-manual flex-1">ידני</button>
+                        <button onclick="filterTemplates('drafts')" class="category-tab tab-drafts flex-1">טיוטות</button>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="p-3 border-b border-gray-200 bg-white">
+                        <input type="text" placeholder="חיפוש תבניות..."
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                               onkeyup="searchTemplates(this.value)">
+                    </div>
+
+                    <!-- Templates List -->
+                    <div id="templateList" class="space-y-0">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Right: Editor + Preview (remaining width) -->
+                <div class="flex-1 flex flex-col bg-white overflow-hidden">
+                    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                        <!-- Template Name & Type -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">שם התבנית</label>
+                                <input id="templateName" type="text" value="אירוע נפתח — הזמנה"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">סוג</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option selected>אוטומטי</option>
+                                    <option>ידני</option>
+                                    <option>טיוטה</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Channel Selection with Stats -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-3">ערוצים</label>
+                            <div class="flex gap-3">
+                                <button onclick="selectChannel('whatsapp')" id="channelWhatsapp"
+                                        class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-green-500 bg-green-50 font-semibold text-green-700 transition">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.694.735 5.326 2.124 7.619L2.883 22l8.115-2.133c2.223 1.213 4.735 1.854 7.302 1.854h.006c5.396 0 9.747-4.363 9.747-9.798 0-2.619-.675-5.081-1.96-7.228-1.282-2.151-3.093-4.061-5.335-5.343-2.242-1.282-4.748-1.97-7.302-1.97"/>
+                                    </svg>
+                                    <div class="flex flex-col items-start">
+                                        <span>WhatsApp</span>
+                                        <span class="channel-stat" style="margin-top: 2px; background: transparent; font-size: 11px; color: #059669;">3,280 operations</span>
+                                    </div>
+                                </button>
+                                <button onclick="selectChannel('sms')" id="channelSms"
+                                        class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition">
+                                    <svg class="w-5 h-5 sms-color" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                                    </svg>
+                                    <div class="flex flex-col items-start">
+                                        <span>SMS</span>
+                                        <span class="channel-stat" style="margin-top: 2px;">1,200 ops</span>
+                                    </div>
+                                </button>
+                                <button onclick="selectChannel('email')" id="channelEmail"
+                                        class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition">
+                                    <svg class="w-5 h-5 email-color" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                    </svg>
+                                    <div class="flex flex-col items-start">
+                                        <span>Email</span>
+                                        <span class="channel-stat" style="margin-top: 2px;">800 ops</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Language & Email Subject -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">שפה</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option selected>עברית</option>
+                                    <option>רוסית</option>
+                                    <option>אנגלית</option>
+                                </select>
+                            </div>
+                            <div id="emailSubjectContainer" class="hidden">
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">שורת נושא</label>
+                                <input type="text" placeholder="הנושא..."
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                       value="הזמנה לאירוע חדש — אופטיקה פריזמה">
+                            </div>
+                        </div>
+
+                        <!-- Code Editor with Line Numbers -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">תוכן ההודעה (עריכה HTML)</label>
+                            <div class="message-editor border border-gray-300 rounded-lg overflow-hidden">
+                                <div class="editor-toolbar">
+                                    <button class="toolbar-btn" title="Bold"><strong>B</strong></button>
+                                    <button class="toolbar-btn" title="Italic"><em>I</em></button>
+                                    <button class="toolbar-btn" title="Underline" style="text-decoration: underline;">U</button>
+                                    <div class="toolbar-separator"></div>
+                                    <button class="toolbar-btn" onclick="insertEmoji()" title="Emoji">😊</button>
+                                    <div class="toolbar-separator"></div>
+                                    <div class="variable-dropdown">
+                                        <button class="toolbar-btn" onclick="toggleVariableMenu()" title="Insert Variable">
+                                            {{ }} משתנים
+                                        </button>
+                                        <div id="variableMenu" class="variable-menu hidden">
+                                            <div class="variable-item" onclick="insertVariable('{{name}}')">
+                                                <div class="variable-name">{{name}}</div>
+                                                <div class="variable-desc">שם הלקוח</div>
+                                                <div class="variable-sample">דוגמה: דוד כהן</div>
+                                            </div>
+                                            <div class="variable-item" onclick="insertVariable('{{event_name}}')">
+                                                <div class="variable-name">{{event_name}}</div>
+                                                <div class="variable-desc">שם האירוע</div>
+                                                <div class="variable-sample">דוגמה: בדיקת ראייה מקצועית</div>
+                                            </div>
+                                            <div class="variable-item" onclick="insertVariable('{{event_date}}')">
+                                                <div class="variable-name">{{event_date}}</div>
+                                                <div class="variable-desc">תאריך האירוע</div>
+                                                <div class="variable-sample">דוגמה: 2026-05-15</div>
+                                            </div>
+                                            <div class="variable-item" onclick="insertVariable('{{event_hours}}')">
+                                                <div class="variable-name">{{event_hours}}</div>
+                                                <div class="variable-desc">שעות האירוע</div>
+                                                <div class="variable-sample">דוגמה: 14:00 - 18:00</div>
+                                            </div>
+                                            <div class="variable-item" onclick="insertVariable('{{coupon_code}}')">
+                                                <div class="variable-name">{{coupon_code}}</div>
+                                                <div class="variable-desc">קוד קופון הנחה</div>
+                                                <div class="variable-sample">דוגמה: SUMMER20</div>
+                                            </div>
+                                            <div class="variable-item" onclick="insertVariable('{{registration_link}}')">
+                                                <div class="variable-name">{{registration_link}}</div>
+                                                <div class="variable-desc">קישור הרשמה</div>
+                                                <div class="variable-sample">דוגמה: prizma.opticup.co.il/register/evt-001</div>
+                                            </div>
+                                            <div class="variable-item" onclick="insertVariable('{{unsubscribe_link}}')">
+                                                <div class="variable-name">{{unsubscribe_link}}</div>
+                                                <div class="variable-desc">קישור ביטול הרשמה</div>
+                                                <div class="variable-sample">דוגמה: prizma.opticup.co.il/unsubscribe</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="code-editor">
+                                    <div class="line-numbers" id="lineNumbers">1</div>
+                                    <textarea id="messageContent" class="editor-input"
+                                              placeholder="כתוב את תוכן ההודעה כאן..."
+                                              oninput="updateLineNumbers()">{{name}} שלום,
+
+אנו שמחים להודיע כי האירוע {{event_name}} נפתח להרשמה!
+
+תאריך: {{event_date}}
+שעות: {{event_hours}}
+
+הרשם עכשיו דרך הקישור הבא:
+{{registration_link}}
+
+בברכה,
+צוות אופטיקה פריזמה
+
+{{unsubscribe_link}}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Split Preview: WhatsApp + SMS + Email -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-3">תצוגה מקדימה (3 ערוצים)</label>
+                            <div class="preview-container">
+                                <!-- WhatsApp Preview -->
+                                <div class="preview-panel">
+                                    <div class="preview-header whatsapp-bg text-white">📱 WhatsApp</div>
+                                    <div class="whatsapp-frame">
+                                        <div class="whatsapp-header">אופטיקה פריזמה</div>
+                                        <div class="whatsapp-msg">
+                                            דוד שלום,<br><br>
+                                            אנו שמחים להודיע כי האירוע בדיקת ראייה מקצועית נפתח להרשמה!<br><br>
+                                            תאריך: 2026-05-15<br>
+                                            שעות: 14:00 - 18:00
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- SMS Preview -->
+                                <div class="preview-panel">
+                                    <div class="preview-header sms-bg text-white">💬 SMS</div>
+                                    <div class="sms-frame">
+                                        <div class="sms-bubble">
+                                            דוד שלום, אנו שמחים להודיע כי האירוע בדיקת ראייה מקצועית נפתח להרשמה! תאריך: 2026-05-15 שעות: 14:00-18:00 הרשם עכשיו!
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Email Preview -->
+                                <div class="preview-panel">
+                                    <div class="preview-header email-bg text-white">📧 Email</div>
+                                    <div class="email-frame">
+                                        <div class="email-header">
+                                            הנושא: הזמנה לאירוע חדש — אופטיקה פריזמה
+                                        </div>
+                                        <div class="email-content">
+                                            דוד שלום,<br><br>
+                                            אנו שמחים להודיע כי האירוע בדיקת ראייה מקצועית נפתח להרשמה!<br><br>
+                                            <strong>תאריך:</strong> 2026-05-15<br>
+                                            <strong>שעות:</strong> 14:00 - 18:00<br><br>
+                                            <a href="#" style="color: #8b5cf6; text-decoration: none;"><strong>הרשם עכשיו</strong></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3 pt-4 border-t border-gray-200">
+                            <button class="flex-1 accent-bg text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition">שמור ופעיל</button>
+                            <button class="flex-1 px-6 py-3 bg-gray-200 text-gray-900 rounded-lg font-semibold hover:bg-gray-300 transition">שמור כטיוטה</button>
+                            <button class="px-6 py-3 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition">שכפל</button>
+                            <button class="px-6 py-3 bg-red-100 text-red-600 rounded-lg font-semibold hover:bg-red-200 transition">מחק</button>
+                            <button class="px-6 py-3 bg-green-100 text-green-600 rounded-lg font-semibold hover:bg-green-200 transition">שלח לעצמי</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Log Sidebar (bottom right overlay toggle) -->
+        <div id="logSidebar" class="w-96 border-l border-gray-200 bg-white flex flex-col hidden overflow-hidden">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-semibold text-gray-900">היסטוריית שליחה</h3>
+                <button onclick="toggleLogSidebar()" class="text-gray-500 hover:text-gray-900">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-3 border-b border-gray-200 flex gap-2">
+                <select class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option>כל הערוצים</option>
+                    <option>WhatsApp</option>
+                    <option>SMS</option>
+                    <option>Email</option>
+                </select>
+                <select class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option>כל הסטטוסים</option>
+                    <option>נשלח</option>
+                    <option>הועבר</option>
+                    <option>נקרא</option>
+                    <option>כשל</option>
+                </select>
+            </div>
+
+            <div class="flex-1 overflow-x-auto">
+                <table class="message-log-table">
+                    <thead>
+                        <tr>
+                            <th>זמן</th>
+                            <th>נמען</th>
+                            <th>ערוץ</th>
+                            <th>סטטוס</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>לפני 12 דקות</td>
+                            <td>דוד כהן</td>
+                            <td><svg class="w-4 h-4 whatsapp-color inline" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.694.735 5.326 2.124 7.619L2.883 22l8.115-2.133c2.223 1.213 4.735 1.854 7.302 1.854h.006c5.396 0 9.747-4.363 9.747-9.798 0-2.619-.675-5.081-1.96-7.228-1.282-2.151-3.093-4.061-5.335-5.343-2.242-1.282-4.748-1.97-7.302-1.97"/></svg></td>
+                            <td><span class="status-chip status-delivered">הועבר</span></td>
+                        </tr>
+                        <tr>
+                            <td>לפני 1 שעה</td>
+                            <td>שרה לוי</td>
+                            <td><svg class="w-4 h-4 sms-color inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg></td>
+                            <td><span class="status-chip status-read">נקרא</span></td>
+                        </tr>
+                        <tr>
+                            <td>לפני 3 שעות</td>
+                            <td>יוסי מורן</td>
+                            <td><svg class="w-4 h-4 email-color inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></td>
+                            <td><span class="status-chip status-failed">כשל</span></td>
+                        </tr>
+                        <tr>
+                            <td>אתמול</td>
+                            <td>מיכל ברקוביץ</td>
+                            <td><svg class="w-4 h-4 whatsapp-color inline" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.694.735 5.326 2.124 7.619L2.883 22l8.115-2.133c2.223 1.213 4.735 1.854 7.302 1.854h.006c5.396 0 9.747-4.363 9.747-9.798 0-2.619-.675-5.081-1.96-7.228-1.282-2.151-3.093-4.061-5.335-5.343-2.242-1.282-4.748-1.97-7.302-1.97"/></svg></td>
+                            <td><span class="status-chip status-sent">נשלח</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Broadcast Wizard Modal -->
+    <div id="broadcastModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-xl font-bold">שיגור הודעה חדשה — 5 שלבים</h3>
+                <button onclick="closeBroadcastModal()" class="text-gray-500 hover:text-gray-900">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <!-- Wizard Progress -->
+                <div class="wizard-progress mb-8">
+                    <div class="wizard-dot active">1</div>
+                    <div class="wizard-dot">2</div>
+                    <div class="wizard-dot">3</div>
+                    <div class="wizard-dot">4</div>
+                    <div class="wizard-dot">5</div>
+                </div>
+
+                <!-- Step 1: Recipients -->
+                <div class="wizard-step active">
+                    <h4 class="font-semibold text-gray-900 mb-4">1. בחר נמענים</h4>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                            <label class="text-sm font-semibold text-gray-700 block mb-1">סטטוס</label>
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option>בחר סטטוס</option>
+                                <option>לקוח פעיל</option>
+                                <option>צופה</option>
+                                <option>ממתין</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-sm font-semibold text-gray-700 block mb-1">תגיות</label>
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option>בחר תגית</option>
+                                <option>VIP</option>
+                                <option>סטודנט</option>
+                                <option>ביטוח</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-blue-50 rounded-lg mb-4">
+                        <p class="text-sm text-blue-900"><strong>168 נמענים</strong> תואמים את הקריטריונים</p>
+                    </div>
+                </div>
+
+                <!-- Step 2: Channel -->
+                <div class="wizard-step">
+                    <h4 class="font-semibold text-gray-900 mb-4">2. בחר ערוץ</h4>
+                    <div class="flex gap-3">
+                        <button class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-purple-500 rounded-lg bg-purple-50">
+                            <svg class="w-5 h-5 whatsapp-color" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.694.735 5.326 2.124 7.619L2.883 22l8.115-2.133c2.223 1.213 4.735 1.854 7.302 1.854h.006c5.396 0 9.747-4.363 9.747-9.798 0-2.619-.675-5.081-1.96-7.228-1.282-2.151-3.093-4.061-5.335-5.343-2.242-1.282-4.748-1.97-7.302-1.97"/>
+                            </svg>
+                            <span>WhatsApp</span>
+                        </button>
+                        <button class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-gray-300 rounded-lg hover:border-gray-400">
+                            <svg class="w-5 h-5 sms-color" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                            </svg>
+                            <span>SMS</span>
+                        </button>
+                        <button class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 border-gray-300 rounded-lg hover:border-gray-400">
+                            <svg class="w-5 h-5 email-color" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                            <span>Email</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Template -->
+                <div class="wizard-step">
+                    <h4 class="font-semibold text-gray-900 mb-4">3. בחר תבנית</h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="msgTemplate" value="existing" checked class="mr-3">
+                            <div>
+                                <p class="font-semibold text-sm">אירוע נפתח — הזמנה</p>
+                                <p class="text-xs text-gray-600">תבנית קיימת, שונה פעמים רבות</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="msgTemplate" value="custom" class="mr-3">
+                            <div>
+                                <p class="font-semibold text-sm">כתוב הודעה חדשה</p>
+                                <p class="text-xs text-gray-600">הודעה חד-פעמית</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Step 4: Timing -->
+                <div class="wizard-step">
+                    <h4 class="font-semibold text-gray-900 mb-4">4. תזמון</h4>
+                    <div class="flex gap-3">
+                        <label class="flex-1 flex items-center p-3 border-2 border-purple-500 rounded-lg bg-purple-50 cursor-pointer">
+                            <input type="radio" name="timing" value="now" checked class="mr-3">
+                            <span class="font-semibold text-sm">שלח עכשיו</span>
+                        </label>
+                        <label class="flex-1 flex items-center p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-gray-400">
+                            <input type="radio" name="timing" value="schedule" class="mr-3">
+                            <span class="font-semibold text-sm">בחר זמן</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Step 5: Confirmation -->
+                <div class="wizard-step">
+                    <h4 class="font-semibold text-gray-900 mb-4">5. אישור סיכום</h4>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="space-y-2 text-sm text-gray-700">
+                            <p><strong>נמענים:</strong> 168</p>
+                            <p><strong>ערוץ:</strong> WhatsApp</p>
+                            <p><strong>תבנית:</strong> אירוע נפתח — הזמנה</p>
+                            <p><strong>תזמון:</strong> עכשיו</p>
+                            <p><strong>מוערך:</strong> 3–5 דקות</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-200 flex gap-3 justify-end">
+                <button onclick="closeBroadcastModal()" class="px-6 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50">ביטול</button>
+                <button class="accent-bg text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90">שלח ל-168 נמענים</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const templates = [
+            {
+                id: 1,
+                name: 'אישור הרשמה ראשונית',
+                type: 'auto',
+                category: 'auto',
+                active: true,
+                lastSent: '2026-04-18',
+                sent: 892,
+                channels: ['sms', 'email'],
+                languages: 'HE/RU'
+            },
+            {
+                id: 2,
+                name: 'אירוע נפתח — הזמנה',
+                type: 'auto',
+                category: 'auto',
+                active: true,
+                lastSent: '2026-04-19',
+                sent: 1240,
+                channels: ['sms', 'email', 'whatsapp'],
+                languages: 'HE'
+            },
+            {
+                id: 3,
+                name: 'תזכורת 2-3 ימים',
+                type: 'auto',
+                category: 'auto',
+                active: true,
+                lastSent: '2026-04-17',
+                sent: 198,
+                channels: ['sms', 'email'],
+                languages: 'HE'
+            },
+            {
+                id: 4,
+                name: 'הודעת יום האירוע',
+                type: 'auto',
+                category: 'auto',
+                active: true,
+                lastSent: '2026-04-16',
+                sent: 132,
+                channels: ['sms', 'email'],
+                languages: 'HE'
+            },
+            {
+                id: 5,
+                name: 'סקר שביעות רצון',
+                type: 'auto',
+                category: 'auto',
+                active: false,
+                lastSent: '2026-04-10',
+                sent: 64,
+                channels: ['whatsapp'],
+                languages: 'HE'
+            }
+        ];
+
+        let currentTemplate = 2;
+
+        function renderTemplates() {
+            const list = document.getElementById('templateList');
+            list.innerHTML = templates.map(t => `
+                <div onclick="selectTemplate(${t.id})" class="template-card ${currentTemplate === t.id ? 'active' : ''}">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-semibold text-gray-900 text-sm">${t.name}</h4>
+                        <span class="template-status-dot ${t.active ? 'template-status-active' : 'template-status-inactive'}"></span>
+                    </div>
+                    <div class="flex items-center gap-2 mb-2">
+                        ${t.channels.includes('whatsapp') ? '<svg class="w-3 h-3 whatsapp-color" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.694.735 5.326 2.124 7.619L2.883 22l8.115-2.133c2.223 1.213 4.735 1.854 7.302 1.854h.006c5.396 0 9.747-4.363 9.747-9.798 0-2.619-.675-5.081-1.96-7.228-1.282-2.151-3.093-4.061-5.335-5.343-2.242-1.282-4.748-1.97-7.302-1.97"/></svg>' : ''}
+                        ${t.channels.includes('sms') ? '<svg class="w-3 h-3 sms-color" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>' : ''}
+                        ${t.channels.includes('email') ? '<svg class="w-3 h-3 email-color" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>' : ''}
+                    </div>
+                    <p class="text-xs text-gray-600 mb-1">שנשלחה: ${t.lastSent}</p>
+                    <p class="text-xs text-gray-500">נשלח ${t.sent} פעמים</p>
+                </div>
+            `).join('');
+        }
+
+        function selectTemplate(id) {
+            currentTemplate = id;
+            const template = templates.find(t => t.id === id);
+            document.getElementById('templateName').value = template.name;
+            renderTemplates();
+        }
+
+        function filterTemplates(type) {
+            const tabs = document.querySelectorAll('.category-tab');
+            tabs.forEach((tab, idx) => tab.classList.remove('active'));
+
+            if (type === 'all') tabs[0].classList.add('active');
+            else if (type === 'auto') tabs[1].classList.add('active');
+            else if (type === 'manual') tabs[2].classList.add('active');
+            else if (type === 'drafts') tabs[3].classList.add('active');
+
+            tabs.forEach(tab => tab.style.background = '');
+            const activeTab = event.target;
+            if (type === 'all') activeTab.style.background = '#8b5cf6';
+            else if (type === 'auto') activeTab.style.background = '#10b981';
+            else if (type === 'manual') activeTab.style.background = '#3b82f6';
+            else if (type === 'drafts') activeTab.style.background = '#9ca3af';
+        }
+
+        function searchTemplates(query) {
+            // Placeholder
+        }
+
+        function selectChannel(channel) {
+            const btns = {
+                whatsapp: document.getElementById('channelWhatsapp'),
+                sms: document.getElementById('channelSms'),
+                email: document.getElementById('channelEmail')
+            };
+
+            Object.values(btns).forEach(btn => {
+                btn.classList.remove('border-green-500', 'bg-green-50', 'text-green-700', 'border-blue-500', 'bg-blue-50', 'text-blue-700', 'border-amber-500', 'bg-amber-50', 'text-amber-700');
+                btn.classList.add('border-gray-300');
+            });
+
+            if (channel === 'whatsapp') {
+                btns.whatsapp.classList.add('border-green-500', 'bg-green-50', 'text-green-700');
+                btns.whatsapp.classList.remove('border-gray-300');
+            } else if (channel === 'sms') {
+                btns.sms.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-700');
+                btns.sms.classList.remove('border-gray-300');
+            } else if (channel === 'email') {
+                btns.email.classList.add('border-amber-500', 'bg-amber-50', 'text-amber-700');
+                btns.email.classList.remove('border-gray-300');
+                document.getElementById('emailSubjectContainer').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('emailSubjectContainer').classList.add('hidden');
+        }
+
+        function updateLineNumbers() {
+            const textarea = document.getElementById('messageContent');
+            const lines = textarea.value.split('\n').length;
+            const lineNumbers = document.getElementById('lineNumbers');
+            lineNumbers.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('\n');
+        }
+
+        function toggleVariableMenu() {
+            document.getElementById('variableMenu').classList.toggle('hidden');
+        }
+
+        function insertVariable(variable) {
+            const textarea = document.getElementById('messageContent');
+            textarea.value += variable;
+            document.getElementById('variableMenu').classList.add('hidden');
+        }
+
+        function insertEmoji() {
+            alert('Emoji picker would open');
+        }
+
+        function openBroadcastModal() {
+            document.getElementById('broadcastModal').classList.add('active');
+        }
+
+        function closeBroadcastModal() {
+            document.getElementById('broadcastModal').classList.remove('active');
+        }
+
+        function toggleLogSidebar() {
+            document.getElementById('logSidebar').classList.toggle('hidden');
+        }
+
+        // Initialize
+        renderTemplates();
+        selectChannel('whatsapp');
+        updateLineNumbers();
+    </script>
+</body>
+</html>

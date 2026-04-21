@@ -33,7 +33,7 @@
       return;
     }
 
-    panel.innerHTML = '<div class="card"><div class="crm-detail-empty" style="padding:20px">\u05D8\u05D5\u05E2\u05DF \u05DE\u05E8\u05DB\u05D6 \u05D4\u05D5\u05D3\u05E2\u05D5\u05EA...</div></div>';
+    panel.innerHTML = '<div class="crm-card"><div class="crm-detail-empty" style="padding:20px">\u05D8\u05D5\u05E2\u05DF \u05DE\u05E8\u05DB\u05D6 \u05D4\u05D5\u05D3\u05E2\u05D5\u05EA...</div></div>';
 
     try {
       await ensureCrmStatusCache();
@@ -42,7 +42,7 @@
       renderActiveSubTab();
     } catch (e) {
       console.error('messaging hub load failed:', e);
-      panel.innerHTML = '<div class="card"><div class="crm-detail-empty" style="padding:20px;color:#ef4444">\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05D4: ' +
+      panel.innerHTML = '<div class="crm-card"><div class="crm-detail-empty" style="padding:20px;color:#ef4444">\u05E9\u05D2\u05D9\u05D0\u05D4 \u05D1\u05D8\u05E2\u05D9\u05E0\u05D4: ' +
         escapeHtml(e.message || String(e)) + '</div></div>';
     }
   }

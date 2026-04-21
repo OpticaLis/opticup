@@ -1,0 +1,229 @@
+<!--
+  SuperSale Welcome Email — שלב 1: הרשמה ראשונית
+  Scenario: 1A-S (via 1B)
+  Trigger: ליד חדש שלא היה במערכת
+  From: events@prizma-optic.co.il
+  Subject: {{name}}, ההרשמה למערכת אירועי המכירות נקלטה בהצלחה,הנה מה שקורה הלאה ✔️
+
+  Variables:
+    {{1.fields.name.raw_value}} = שם מלא
+    {{1.fields.phone.raw_value}} = טלפון
+    {{1.fields.email.raw_value}} = אימייל
+-->
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>נרשמת בהצלחה למערכת האירועים - אופטיקה פריזמה</title>
+    <style>
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color:#000000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        @media screen and (max-width: 600px) {
+            .container { width: 100% !important; }
+            .mobile-padding { padding-left: 20px !important; padding-right: 20px !important; }
+            .mobile-btn { width: 100% !important; display: block !important; margin-bottom: 10px !important; }
+            .step-table { width: 100% !important; }
+        }
+    </style>
+</head>
+<body style="margin:0; padding:0; background-color:#000000; direction:rtl;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#000000; background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000000 70%);">
+        <tr>
+            <td align="center" style="padding: 20px 0 40px 0;">
+                <!-- Main Container -->
+                <table border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="max-width:600px; background-color:#0a0a0a; border-radius:12px; overflow:hidden; border: 1px solid #222222; box-shadow: 0 10px 40px rgba(212, 175, 55, 0.15);">
+
+                    <!-- Gold Top Bar -->
+                    <tr>
+                        <td height="4" style="background: linear-gradient(90deg, #000000 0%, #d4af37 50%, #000000 100%);"></td>
+                    </tr>
+                    <!-- Logo -->
+                    <tr>
+                        <td align="center" style="padding: 35px 0 15px 0;">
+                            <p style="margin:0; color:#d4af37; font-size:24px; font-weight:bold; letter-spacing:4px; text-transform:uppercase; font-family: sans-serif;">PRIZMA OPTIC</p>
+                            <p style="margin:5px 0 0 0; color:#666666; font-size:12px; letter-spacing:2px; text-transform:uppercase;">Luxury Eyewear Events</p>
+                        </td>
+                    </tr>
+                    <!-- Main Content -->
+                    <tr>
+                        <td class="mobile-padding" style="padding: 20px 50px 40px 50px; text-align:right;">
+                            <!-- Greeting -->
+                            <h1 style="margin:0 0 20px 0; font-size:28px; font-weight:300; color:#ffffff;">
+                                היי {{1.fields.name.raw_value}} 👋
+                            </h1>
+
+                            <p style="margin:0 0 25px 0; font-size:16px; line-height:1.7; color:#cccccc;">
+                                נרשמת בהצלחה ל<strong style="color:#ffffff;">מערכת האירועים</strong> של אופטיקה פריזמה.
+                                <br>
+                                ברגע שייפתח אירוע מכירות חדש – תקבל/י הודעה עם קישור הרשמה ישירות לנייד.
+                            </p>
+                            <!-- ═══ PROCESS STEPS ═══ -->
+                            <h3 style="margin:0 0 18px 0; font-size:18px; color:#d4af37; border-bottom: 1px solid #333333; display:inline-block; padding-bottom:5px;">
+                                איך זה עובד?
+                            </h3>
+                            <!-- Step 1 - DONE -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:14px;">
+                                <tr>
+                                    <td width="36" valign="top" style="padding-top:2px;">
+                                        <table border="0" cellpadding="0" cellspacing="0"><tr><td style="width:28px; height:28px; border-radius:50%; background-color:#1a3d1a; border:2px solid #25D366; text-align:center; line-height:28px; font-size:14px; color:#7CFC9A;">✓</td></tr></table>
+                                    </td>
+                                    <td style="padding-right:10px;">
+                                        <p style="margin:0 0 3px 0; font-size:15px; font-weight:bold; color:#7CFC9A;">הרשמה למערכת ✓</p>
+                                        <p style="margin:0; font-size:14px; line-height:1.6; color:#999999;">הפרטים שלך נקלטו. תקבל/י עדכונים על כל אירוע שנפתח.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- Step 2 -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:14px;">
+                                <tr>
+                                    <td width="36" valign="top" style="padding-top:2px;">
+                                        <table border="0" cellpadding="0" cellspacing="0"><tr><td style="width:28px; height:28px; border-radius:50%; background-color:#0a0a0a; border:2px solid #d4af37; text-align:center; line-height:28px; font-size:13px; font-weight:bold; color:#d4af37;">2</td></tr></table>
+                                    </td>
+                                    <td style="padding-right:10px;">
+                                        <p style="margin:0 0 3px 0; font-size:15px; font-weight:bold; color:#E8D48B;">הזמנה + קישור הרשמה לאירוע</p>
+                                        <p style="margin:0; font-size:14px; line-height:1.6; color:#999999;">כשנפתח אירוע – תקבל/י SMS ומייל עם קישור הרשמה. כל אירוע מוגבל ל-50 משתתפים.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- Step 3 -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:14px;">
+                                <tr>
+                                    <td width="36" valign="top" style="padding-top:2px;">
+                                        <table border="0" cellpadding="0" cellspacing="0"><tr><td style="width:28px; height:28px; border-radius:50%; background-color:#0a0a0a; border:2px solid #d4af37; text-align:center; line-height:28px; font-size:13px; font-weight:bold; color:#d4af37;">3</td></tr></table>
+                                    </td>
+                                    <td style="padding-right:10px;">
+                                        <p style="margin:0 0 3px 0; font-size:15px; font-weight:bold; color:#E8D48B;">שריון מקום + קופון אישי</p>
+                                        <p style="margin:0; font-size:14px; line-height:1.6; color:#999999;">לאחר ההרשמה לאירוע - בחלק מהאירועים נדרש שריון מקום באמצעות דמי שריון (המקוזזים במלואם מהקנייה). הקופון האישי יישלח אלייך לאחר השלמת השריון. <a href="https://prizma-optic.co.il/supersale-takanon/" style="color:#d4af37; text-decoration:underline;">פרטים בתקנון ›</a></p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- Step 4 -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:25px;">
+                                <tr>
+                                    <td width="36" valign="top" style="padding-top:2px;">
+                                        <table border="0" cellpadding="0" cellspacing="0"><tr><td style="width:28px; height:28px; border-radius:50%; background-color:#0a0a0a; border:2px solid #d4af37; text-align:center; line-height:28px; font-size:13px; font-weight:bold; color:#d4af37;">4</td></tr></table>
+                                    </td>
+                                    <td style="padding-right:10px;">
+                                        <p style="margin:0 0 3px 0; font-size:15px; font-weight:bold; color:#E8D48B;">מגיעים ונהנים</p>
+                                        <p style="margin:0; font-size:14px; line-height:1.6; color:#999999;">מציגים את הקופון בסניף ונהנים מהמחירים המיוחדים של האירוע.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- ═══ YOUR DETAILS ═══ -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#161616; border-radius:8px; border:1px solid #333333; margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin:0 0 10px 0; font-size:15px; font-weight:bold; color:#d4af37; border-bottom:1px solid #333333; padding-bottom:8px;">
+                                            הפרטים שנקלטו במערכת:
+                                        </p>
+                                        <p style="margin:8px 0 4px 0; font-size:14px; color:#cccccc;">
+                                            👤 <strong>שם:</strong> {{1.fields.name.raw_value}}
+                                        </p>
+                                        <p style="margin:4px 0 4px 0; font-size:14px; color:#cccccc; white-space: nowrap;">
+                                            📱 <strong>טלפון:</strong> {{1.fields.phone.raw_value}}
+                                        </p>
+                                        <p style="margin:4px 0 0 0; font-size:14px; color:#cccccc; white-space: nowrap;">
+                                            ✉️ <strong>אימייל:</strong> {{1.fields.email.raw_value}}
+                                        </p>
+                                        <p style="margin:14px 0 0 0; font-size:12px; color:#777777;">
+                                            הקופון האישי יהיה צמוד לפרטים אלו בלבד. משהו לא מדויק?
+                                            <a href="https://wa.me/972533645404?text=%D7%94%D7%99%D7%99%2C%20%D7%A0%D7%A8%D7%A9%D7%9E%D7%AA%D7%99%20%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%20%D7%94%D7%9E%D7%9B%D7%99%D7%A8%D7%95%D7%AA%20%D7%A9%D7%9C%D7%9B%D7%9D.%20%D7%A8%D7%90%D7%99%D7%AA%D7%99%20%D7%A9%D7%94%D7%9E%D7%99%D7%93%D7%A2%20%D7%A9%D7%A0%D7%A7%D7%9C%D7%98%20%D7%9C%D7%90%20%D7%A0%D7%9B%D7%95%D7%9F." style="color:#d4af37; text-decoration:underline;">עדכנו אותנו בוואטסאפ</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- ═══ IMPORTANT NOTICE ═══ -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#1a1200; border:1px solid #d4af37; border-radius:6px; margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding: 15px;">
+                                        <p style="margin:0 0 5px 0; font-size:15px; font-weight:bold; color:#E8D48B;">
+                                            ⚡ חשוב לדעת
+                                        </p>
+                                        <p style="margin:0; font-size:14px; line-height:1.6; color:#cccccc;">
+                                            קישור ההרשמה לאירוע עצמו יישלח <strong style="color:#ffffff;">במייל ובהודעת SMS</strong> בלבד.
+                                            כדי לא לפספס – ודאו שמייל זה הגיע מ:
+                                            <br>
+                                            <strong style="color:#d4af37;">events@prizma-optic.co.il</strong>
+                                        </p>
+                                        <p style="margin:8px 0 0 0; font-size:13px; color:#999999;">
+                                            לא מצאתם? בדקו בתיקיית "ספאם" או "קידומי מכירות".
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- ═══ LOCATION ═══ -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#161616; border: 1px solid #333333; border-radius: 6px; margin-bottom: 20px;">
+                                <tr>
+                                    <td style="padding: 18px; text-align:center;">
+                                        <p style="margin:0 0 10px 0; font-size:15px; font-weight:bold; color:#ffffff;">
+                                            📍 האירועים מתקיימים בסניף באשקלון
+                                        </p>
+                                        <p style="margin:0 0 12px 0; font-size:13px; color:#999999;">
+                                            הרצל 32, אשקלון &nbsp;•&nbsp; יש חניה
+                                        </p>
+                                        <a href="https://waze.com/ul/hsv8s5h2c3" style="display:inline-block; padding:10px 25px; background-color:#1e1e1e; color:#d4af37; border: 1px solid #d4af37; text-decoration:none; border-radius:50px; font-weight:bold; font-size:14px;">
+                                            🚗 נווט עם Waze
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin:0; font-size:13px; color:#777777;">
+                                זמינים גם בטלפון: <a href="tel:086751313" style="color:#d4af37; text-decoration:none;">08-6751313</a>
+                            </p>
+                        </td>
+                    </tr>
+                    <!-- ═══ FOOTER CTA ═══ -->
+                    <tr>
+                        <td align="center" style="background-color:#111111; padding: 30px 40px; border-top: 1px solid #222222;">
+                            <p style="margin:0 0 18px 0; font-size:15px; color:#ffffff;">
+                                רוצים להציץ בינתיים במותגים ובמחירים?
+                            </p>
+
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <a href="https://wa.me/972533645404?text=%D7%94%D7%99%D7%99%2C%20%D7%A0%D7%A8%D7%A9%D7%9E%D7%AA%D7%99%20%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2%20%D7%94%D7%9E%D7%95%D7%AA%D7%92%D7%99%D7%9D%21%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%A7%D7%91%D7%9C%20%D7%90%D7%AA%20%D7%A7%D7%98%D7%9C%D7%95%D7%92%20%D7%94%D7%9E%D7%97%D7%99%D7%A8%D7%99%D7%9D%20%D7%95%D7%94%D7%9E%D7%95%D7%AA%D7%92%D7%99%D7%9D." class="mobile-btn"
+                                           style="background-color:#25D366; color:#ffffff; display:inline-block; font-family:sans-serif; font-size:15px; font-weight:bold; line-height:45px; text-align:center; text-decoration:none; width:220px; -webkit-text-size-adjust:none; border-radius:50px; margin: 5px;">
+                                                💬 קטלוג מחירים בוואטסאפ
+                                        </a>
+                                        <a href="https://prizma-optic.co.il/brands/" class="mobile-btn"
+                                           style="background-color:#1e1e1e; color:#d4af37; display:inline-block; font-family:sans-serif; font-size:14px; font-weight:bold; line-height:45px; text-align:center; text-decoration:none; width:160px; -webkit-text-size-adjust:none; border-radius:50px; margin: 5px; border: 1px solid #333333;">
+                                                ✨ עמוד המותגים
+                                        </a>
+                                        <a href="https://www.instagram.com/optic_prizma" class="mobile-btn"
+                                           style="background-color:#1e1e1e; color:#ffffff; display:inline-block; font-family:sans-serif; font-size:14px; font-weight:bold; line-height:45px; text-align:center; text-decoration:none; width:160px; -webkit-text-size-adjust:none; border-radius:50px; margin: 5px; border: 1px solid #333333;">
+                                                📷 אינסטגרם
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin:25px 0 0 0; font-size:14px; color:#777777;">
+                                נתראה באירוע 💛
+                                <br>
+                                <strong style="color:#d4af37;">צוות אופטיקה פריזמה</strong>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- ═══ COPYRIGHT ═══ -->
+                <table border="0" cellpadding="0" cellspacing="0" width="600" class="container">
+                    <tr>
+                        <td align="center" style="padding: 20px 0; color:#555555; font-size:11px; line-height:1.6;">
+                            © כל הזכויות שמורות לאופטיקה פריזמה | הרצל 32, אשקלון
+                            <br>
+                            הודעה זו נשלחה בעקבות הרשמה למערכת האירועים.
+                            <br>
+                            המחירים, המותגים וההטבות בכפוף לתנאי האירוע ולזמינות המלאי.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

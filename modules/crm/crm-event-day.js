@@ -34,7 +34,7 @@
     if (!panel) return;
     var eventId = window._currentEventDayId;
     if (!eventId) {
-      panel.innerHTML = '<div class="card"><div class="crm-detail-empty" style="padding:20px">לא נבחר אירוע. חזור ללשונית האירועים ובחר אירוע.</div></div>';
+      panel.innerHTML = '<div class="crm-card"><div class="crm-detail-empty" style="padding:20px">לא נבחר אירוע. חזור ללשונית האירועים ובחר אירוע.</div></div>';
       return;
     }
 
@@ -42,7 +42,7 @@
       _state = { eventId: eventId, event: null, attendees: [], stats: null, subTab: 'checkin' };
     }
 
-    panel.innerHTML = '<div class="card"><div class="crm-detail-empty" style="padding:20px">טוען מצב יום אירוע...</div></div>';
+    panel.innerHTML = '<div class="crm-card"><div class="crm-detail-empty" style="padding:20px">טוען מצב יום אירוע...</div></div>';
 
     try {
       await ensureCrmStatusCache();
@@ -51,7 +51,7 @@
       renderActiveSubTab();
     } catch (e) {
       console.error('event day load failed:', e);
-      panel.innerHTML = '<div class="card"><div class="crm-detail-empty" style="padding:20px;color:#ef4444">שגיאה בטעינה: ' +
+      panel.innerHTML = '<div class="crm-card"><div class="crm-detail-empty" style="padding:20px;color:#ef4444">שגיאה בטעינה: ' +
         escapeHtml(e.message || String(e)) + '</div></div>';
     }
   }

@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM Leads Management — Final Version</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Heebo', sans-serif;
+    }
+    /* RTL Adjustments */
+    [dir="rtl"] {
+      direction: rtl;
+      text-align: right;
+    }
+    /* Sticky Table Header */
+    .table-container {
+      max-height: calc(100vh - 380px);
+      overflow-y: auto;
+    }
+    .table-header {
+      position: sticky;
+      top: 0;
+      background-color: #f3f4f6;
+      z-index: 10;
+    }
+    /* Modal Overlay */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(3px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    .modal-backdrop.hidden {
+      display: none;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 1rem;
+      width: 90%;
+      max-width: 700px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+    .modal-footer {
+      padding: 1.5rem;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    /* Tab Navigation */
+    .tab-bar {
+      display: flex;
+      gap: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 0 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .tab-item {
+      padding: 0.75rem 0;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      color: #6b7280;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .tab-item.active {
+      color: #7c3aed;
+      border-bottom-color: #7c3aed;
+    }
+    .tab-item:hover {
+      color: #7c3aed;
+    }
+    /* View Toggle */
+    .view-toggle {
+      display: flex;
+      gap: 0.5rem;
+      background-color: #f3f4f6;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      width: fit-content;
+    }
+    .view-btn {
+      padding: 0.5rem 0.75rem;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 0.375rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #6b7280;
+    }
+    .view-btn.active {
+      background-color: #7c3aed;
+      color: white;
+    }
+    .view-btn:hover:not(.active) {
+      background-color: #e5e7eb;
+    }
+    /* Filter Chips */
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: #dbeafe;
+      color: #1e40af;
+      padding: 0.375rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .filter-chip .close-btn {
+      cursor: pointer;
+      font-weight: 700;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .filter-chip .close-btn:hover {
+      opacity: 1;
+    }
+    /* Status Styles */
+    .status-new {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+    .status-waiting {
+      background-color: #dbeafe;
+      color: #1e40af;
+    }
+    .status-ordered {
+      background-color: #ede9fe;
+      color: #6d28d9;
+    }
+    .status-confirmed {
+      background-color: #dcfce7;
+      color: #15803d;
+    }
+    .status-not-interested {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+    /* Alternating Table Rows */
+    tbody tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+    tbody tr:hover {
+      background-color: #f0f0f0;
+      cursor: pointer;
+    }
+    /* Admin-only visibility */
+    [data-admin-only] {
+      display: table-cell;
+    }
+    .role-staff [data-admin-only] {
+      display: none;
+    }
+    /* Cards View Preview */
+    .cards-preview {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .lead-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      height: 200px;
+      display: flex;
+      flex-direction: column;
+    }
+    .lead-card-header {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .lead-card-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .lead-card-info {
+      flex: 1;
+    }
+    .lead-card-name {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #111827;
+    }
+    .lead-card-status {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-top: 0.25rem;
+    }
+    .lead-card-body {
+      font-size: 0.875rem;
+      color: #6b7280;
+      flex: 1;
+    }
+    .lead-card-footer {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: auto;
+    }
+    .lead-card-tag {
+      font-size: 0.75rem;
+      background-color: #f3f4f6;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      color: #6b7280;
+    }
+    .lead-card-amount {
+      display: block;
+    }
+    .role-staff .lead-card-amount {
+      display: none;
+    }
+    /* Bulk Selection Bar */
+    .bulk-bar {
+      background-color: #ede9fe;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #6d28d9;
+    }
+    .bulk-bar-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .bulk-bar-action-btn {
+      padding: 0.375rem 0.75rem;
+      background-color: white;
+      border: 1px solid #d8b4fe;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #6d28d9;
+      transition: all 0.2s;
+    }
+    .bulk-bar-action-btn:hover {
+      background-color: #f9f5ff;
+    }
+    /* Event List in Modal */
+    .event-item {
+      padding: 1rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .event-item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    .event-item-title {
+      font-weight: 600;
+      color: #111827;
+    }
+    .event-item-date {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+    .event-item-body {
+      font-size: 0.875rem;
+      color: #4b5563;
+    }
+    /* Role Toggle Dropdown */
+    .role-toggle-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    .role-dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      min-width: 150px;
+      z-index: 40;
+      display: none;
+    }
+    .role-dropdown-menu.show {
+      display: block;
+    }
+    .role-dropdown-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      font-size: 0.875rem;
+    }
+    .role-dropdown-item:hover {
+      background-color: #f3f4f6;
+    }
+    .role-dropdown-item.active {
+      background-color: #ede9fe;
+      color: #7c3aed;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
+  <div class="flex h-screen">
+    <!-- Dark Sidebar Navigation (Unified 5-screen module) -->
+    <aside class="w-64 bg-gray-900 text-white flex flex-col">
+      <div class="p-6 border-b border-gray-800">
+        <h1 class="text-xl font-bold">אופטיקה פריזמה</h1>
+        <p class="text-xs text-gray-400 mt-1">CRM ניהול לידים</p>
+      </div>
+      <nav class="flex-1 p-6 space-y-2">
+        <div class="px-4 py-2 text-gray-400 hover:text-white cursor-pointer text-sm">דשבורד</div>
+        <div class="px-4 py-2 rounded bg-purple-600 font-medium text-sm">לידים</div>
+        <div class="px-4 py-2 text-gray-400 hover:text-white cursor-pointer text-sm">אירועים</div>
+        <div class="px-4 py-2 text-gray-400 hover:text-white cursor-pointer text-sm">מרכז הודעות</div>
+        <div class="px-4 py-2 text-gray-400 hover:text-white cursor-pointer text-sm">יום אירוע</div>
+      </nav>
+      <div class="p-6 border-t border-gray-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-sm font-bold">דנ</div>
+          <div class="text-sm">
+            <p class="font-medium">דניאל</p>
+            <p class="text-xs text-gray-400">מנהל</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-auto role-admin" id="mainContent">
+      <!-- Header -->
+      <div class="bg-white border-b border-gray-200 sticky top-0 z-20">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold text-gray-900">ניהול לידים</h2>
+            <div class="flex items-center gap-4">
+              <!-- Role Toggle -->
+              <div class="role-toggle-wrapper">
+                <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-200 transition flex items-center gap-2" onclick="toggleRoleDropdown()">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z"/>
+                  </svg>
+                  <span id="currentRoleLabel">מנהל ראשי</span>
+                </button>
+                <div id="roleDropdown" class="role-dropdown-menu">
+                  <div class="role-dropdown-item active" onclick="setRole('admin')">מנהל ראשי</div>
+                  <div class="role-dropdown-item" onclick="setRole('staff')">צוות</div>
+                </div>
+              </div>
+              <button class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium text-sm hover:bg-purple-700 transition">
+                + לید חדש
+              </button>
+            </div>
+          </div>
+
+          <!-- View Toggle Bar -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="view-toggle">
+              <button class="view-btn active" onclick="switchView('table')">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z"/>
+                </svg>
+                טבלה
+              </button>
+              <button class="view-btn" onclick="switchView('kanban')">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM13 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2h-2zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM13 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z"/>
+                </svg>
+                קנבן
+              </button>
+              <button class="view-btn" onclick="switchView('cards')">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z"/>
+                </svg>
+                כרטיסים
+              </button>
+            </div>
+            <span class="text-sm text-gray-500">850 לידים</span>
+          </div>
+
+          <!-- Smart Filters Bar -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <option>שמור פילטר</option>
+              <option>VIP שלא נרשמו</option>
+              <option>לידים מאשקלון — ממתינים</option>
+              <option>לקוחות חוזרים</option>
+              <option>שמור פילטר חדש...</option>
+            </select>
+            <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <option>סטטוס: הכל</option>
+              <option>חדש</option>
+              <option>ממתין</option>
+              <option>הוזמן</option>
+              <option>אישר</option>
+              <option>לא מעוניין</option>
+            </select>
+            <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <option>תגיות: הכל</option>
+              <option>VIP</option>
+              <option>חזור</option>
+              <option>הנחה</option>
+            </select>
+            <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <option>עיר: הכל</option>
+              <option>אשקלון</option>
+              <option>בשבע</option>
+              <option>אשדוד</option>
+            </select>
+            <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <option>מקור: הכל</option>
+              <option>פייסבוק</option>
+              <option>גוגל</option>
+              <option>הפניה</option>
+            </select>
+          </div>
+
+          <!-- Active Filters -->
+          <div class="flex items-center gap-2 flex-wrap mt-3">
+            <span class="text-xs font-medium text-gray-600">פילטרים פעילים:</span>
+            <span class="filter-chip">
+              סטטוס: ממתין
+              <span class="close-btn" onclick="this.parentElement.remove()">×</span>
+            </span>
+            <span class="filter-chip">
+              עיר: אשקלון
+              <span class="close-btn" onclick="this.parentElement.remove()">×</span>
+            </span>
+            <span class="filter-chip">
+              תגיה: VIP
+              <span class="close-btn" onclick="this.parentElement.remove()">×</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Area -->
+      <div class="p-6">
+        <!-- Bulk Selection Bar (when active) -->
+        <div class="bulk-bar">
+          <input type="checkbox" class="w-5 h-5" id="selectAll" onchange="toggleAllRows()">
+          <span>נבחרו 3 לידים</span>
+          <div class="flex-1"></div>
+          <div class="bulk-bar-actions">
+            <button class="bulk-bar-action-btn">שנה סטטוס</button>
+            <button class="bulk-bar-action-btn">הוסף תגיה</button>
+            <button class="bulk-bar-action-btn">ייצוא</button>
+          </div>
+        </div>
+
+        <!-- Table View -->
+        <div id="tableView" class="bg-white rounded-lg shadow">
+          <div class="table-container">
+            <table class="w-full text-sm">
+              <thead class="table-header">
+                <tr>
+                  <th class="px-4 py-3 text-right font-semibold text-gray-700 w-8">
+                    <input type="checkbox" class="w-4 h-4">
+                  </th>
+                  <th class="px-4 py-3 text-right font-semibold text-gray-700">שם</th>
+                  <th class="px-4 py-3 text-right font-semibold text-gray-700">טלפון</th>
+                  <th class="px-4 py-3 text-right font-semibold text-gray-700">סטטוס</th>
+                  <th class="px-4 py-3 text-right font-semibold text-gray-700">תגיות</th>
+                  <th class="px-4 py-3 text-right font-semibold text-gray-700">עיר</th>
+                  <th class="px-4 py-3 text-right font-semibold text-gray-700" data-admin-only>הכנסה</th>
+                  <th class="px-4 py-3 text-right font-semibold text-gray-700">תאריך</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Row 1: Nae'ma Miller (Modal Lead) -->
+                <tr onclick="openModal('naema')">
+                  <td class="px-4 py-3"><input type="checkbox" class="w-4 h-4" onchange="event.stopPropagation()"></td>
+                  <td class="px-4 py-3 font-medium">נעמה מילר</td>
+                  <td class="px-4 py-3">050-543-2210</td>
+                  <td class="px-4 py-3">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium status-waiting">ממתין</span>
+                  </td>
+                  <td class="px-4 py-3"><span class="text-gray-500">VIP, חזור</span></td>
+                  <td class="px-4 py-3">אשקלון</td>
+                  <td class="px-4 py-3" data-admin-only>₪450</td>
+                  <td class="px-4 py-3">18/4/2026</td>
+                </tr>
+                <!-- Row 2 -->
+                <tr onclick="openModal('lead2')">
+                  <td class="px-4 py-3"><input type="checkbox" class="w-4 h-4" onchange="event.stopPropagation()"></td>
+                  <td class="px-4 py-3 font-medium">יוסי כהן</td>
+                  <td class="px-4 py-3">052-812-3445</td>
+                  <td class="px-4 py-3">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium status-new">חדש</span>
+                  </td>
+                  <td class="px-4 py-3"><span class="text-gray-500">הנחה</span></td>
+                  <td class="px-4 py-3">בשבע</td>
+                  <td class="px-4 py-3" data-admin-only>₪380</td>
+                  <td class="px-4 py-3">17/4/2026</td>
+                </tr>
+                <!-- Row 3 -->
+                <tr onclick="openModal('lead3')">
+                  <td class="px-4 py-3"><input type="checkbox" class="w-4 h-4" onchange="event.stopPropagation()"></td>
+                  <td class="px-4 py-3 font-medium">מרים אברהמוב</td>
+                  <td class="px-4 py-3">053-441-5678</td>
+                  <td class="px-4 py-3">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium status-confirmed">אישר</span>
+                  </td>
+                  <td class="px-4 py-3"><span class="text-gray-500">VIP</span></td>
+                  <td class="px-4 py-3">אשדוד</td>
+                  <td class="px-4 py-3" data-admin-only>₪890</td>
+                  <td class="px-4 py-3">16/4/2026</td>
+                </tr>
+                <!-- Row 4 -->
+                <tr onclick="openModal('lead4')">
+                  <td class="px-4 py-3"><input type="checkbox" class="w-4 h-4" onchange="event.stopPropagation()"></td>
+                  <td class="px-4 py-3 font-medium">דוד רוזנברג</td>
+                  <td class="px-4 py-3">054-987-6543</td>
+                  <td class="px-4 py-3">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium status-ordered">הוזמן</span>
+                  </td>
+                  <td class="px-4 py-3"><span class="text-gray-500">-</span></td>
+                  <td class="px-4 py-3">אשקלון</td>
+                  <td class="px-4 py-3" data-admin-only>₪210</td>
+                  <td class="px-4 py-3">15/4/2026</td>
+                </tr>
+                <!-- Row 5 -->
+                <tr onclick="openModal('lead5')">
+                  <td class="px-4 py-3"><input type="checkbox" class="w-4 h-4" onchange="event.stopPropagation()"></td>
+                  <td class="px-4 py-3 font-medium">שרה שריד</td>
+                  <td class="px-4 py-3">051-234-5678</td>
+                  <td class="px-4 py-3">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium status-not-interested">לא מעוניין</span>
+                  </td>
+                  <td class="px-4 py-3"><span class="text-gray-500">-</span></td>
+                  <td class="px-4 py-3">בשבע</td>
+                  <td class="px-4 py-3" data-admin-only>₪0</td>
+                  <td class="px-4 py-3">14/4/2026</td>
+                </tr>
+                <!-- Row 6 -->
+                <tr onclick="openModal('lead6')">
+                  <td class="px-4 py-3"><input type="checkbox" class="w-4 h-4" onchange="event.stopPropagation()"></td>
+                  <td class="px-4 py-3 font-medium">אלכס פולניצקי</td>
+                  <td class="px-4 py-3">052-555-1234</td>
+                  <td class="px-4 py-3">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium status-waiting">ממתין</span>
+                  </td>
+                  <td class="px-4 py-3"><span class="text-gray-500">חזור</span></td>
+                  <td class="px-4 py-3">אשקלון</td>
+                  <td class="px-4 py-3" data-admin-only>₪520</td>
+                  <td class="px-4 py-3">13/4/2026</td>
+                </tr>
+                <!-- Row 7 -->
+                <tr onclick="openModal('lead7')">
+                  <td class="px-4 py-3"><input type="checkbox" class="w-4 h-4" onchange="event.stopPropagation()"></td>
+                  <td class="px-4 py-3 font-medium">עינת ברקוביץ</td>
+                  <td class="px-4 py-3">053-789-2341</td>
+                  <td class="px-4 py-3">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium status-new">חדש</span>
+                  </td>
+                  <td class="px-4 py-3"><span class="text-gray-500">VIP</span></td>
+                  <td class="px-4 py-3">אשדוד</td>
+                  <td class="px-4 py-3" data-admin-only>₪675</td>
+                  <td class="px-4 py-3">12/4/2026</td>
+                </tr>
+                <!-- Row 8 -->
+                <tr onclick="openModal('lead8')">
+                  <td class="px-4 py-3"><input type="checkbox" class="w-4 h-4" onchange="event.stopPropagation()"></td>
+                  <td class="px-4 py-3 font-medium">מוטי הדר</td>
+                  <td class="px-4 py-3">054-432-1098</td>
+                  <td class="px-4 py-3">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium status-confirmed">אישר</span>
+                  </td>
+                  <td class="px-4 py-3"><span class="text-gray-500">-</span></td>
+                  <td class="px-4 py-3">בשבע</td>
+                  <td class="px-4 py-3" data-admin-only>₪360</td>
+                  <td class="px-4 py-3">11/4/2026</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Summary Row -->
+          <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center text-sm font-medium text-gray-700" id="summaryRow">
+            <div>סה״כ: 850 לידים</div>
+            <div data-admin-only>סה״כ הכנסות: <span class="text-green-600 font-bold">₪74,585</span></div>
+            <div data-admin-only>ממוצע הכנסה: <span class="text-blue-600 font-bold">₪87.7</span></div>
+          </div>
+        </div>
+
+        <!-- Kanban View (Hidden) -->
+        <div id="kanbanView" class="hidden">
+          <div class="grid grid-cols-4 gap-4">
+            <div class="bg-white rounded-lg p-4">
+              <h3 class="font-bold text-gray-900 mb-4">חדש (125)</h3>
+              <div class="space-y-3">
+                <div class="bg-blue-50 p-3 rounded border-r-4 border-blue-400 cursor-pointer hover:shadow-md">
+                  <p class="font-medium text-sm">יוסי כהן</p>
+                  <p class="text-xs text-gray-600">050-812-3445</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-lg p-4">
+              <h3 class="font-bold text-gray-900 mb-4">ממתין (234)</h3>
+              <div class="space-y-3">
+                <div class="bg-yellow-50 p-3 rounded border-r-4 border-yellow-400 cursor-pointer hover:shadow-md">
+                  <p class="font-medium text-sm">נעמה מילר</p>
+                  <p class="text-xs text-gray-600">050-543-2210</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-lg p-4">
+              <h3 class="font-bold text-gray-900 mb-4">הוזמן (156)</h3>
+              <div class="space-y-3">
+                <div class="bg-purple-50 p-3 rounded border-r-4 border-purple-400 cursor-pointer hover:shadow-md">
+                  <p class="font-medium text-sm">דוד רוזנברג</p>
+                  <p class="text-xs text-gray-600">054-987-6543</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-lg p-4">
+              <h3 class="font-bold text-gray-900 mb-4">אישר (335)</h3>
+              <div class="space-y-3">
+                <div class="bg-green-50 p-3 rounded border-r-4 border-green-400 cursor-pointer hover:shadow-md">
+                  <p class="font-medium text-sm">מרים אברהמוב</p>
+                  <p class="text-xs text-gray-600">053-441-5678</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cards View (Hidden) -->
+        <div id="cardsView" class="hidden">
+          <div class="cards-preview">
+            <div class="lead-card">
+              <div class="lead-card-header">
+                <div class="lead-card-avatar">נע</div>
+                <div class="lead-card-info">
+                  <div class="lead-card-name">נעמה מילר</div>
+                  <div class="lead-card-status">ממתין</div>
+                </div>
+              </div>
+              <div class="lead-card-body">
+                <p>050-543-2210</p>
+                <p>אשקלון</p>
+                <p class="mt-2 font-medium lead-card-amount" data-admin-only>₪450</p>
+              </div>
+              <div class="lead-card-footer">
+                <span class="lead-card-tag">VIP</span>
+                <span class="lead-card-tag">חזור</span>
+              </div>
+            </div>
+
+            <div class="lead-card">
+              <div class="lead-card-header">
+                <div class="lead-card-avatar" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">יוס</div>
+                <div class="lead-card-info">
+                  <div class="lead-card-name">יוסי כהן</div>
+                  <div class="lead-card-status">חדש</div>
+                </div>
+              </div>
+              <div class="lead-card-body">
+                <p>052-812-3445</p>
+                <p>בשבע</p>
+                <p class="mt-2 font-medium lead-card-amount" data-admin-only>₪380</p>
+              </div>
+              <div class="lead-card-footer">
+                <span class="lead-card-tag">הנחה</span>
+              </div>
+            </div>
+
+            <div class="lead-card">
+              <div class="lead-card-header">
+                <div class="lead-card-avatar" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">מרים</div>
+                <div class="lead-card-info">
+                  <div class="lead-card-name">מרים אברהמוב</div>
+                  <div class="lead-card-status">אישר</div>
+                </div>
+              </div>
+              <div class="lead-card-body">
+                <p>053-441-5678</p>
+                <p>אשדוד</p>
+                <p class="mt-2 font-medium lead-card-amount" data-admin-only>₪890</p>
+              </div>
+              <div class="lead-card-footer">
+                <span class="lead-card-tag">VIP</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Lead Detail Modal -->
+  <div id="modalBackdrop" class="modal-backdrop hidden" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div>
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-600 flex items-center justify-center text-white font-bold text-lg">נע</div>
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">נעמה מילר</h3>
+              <p class="text-sm text-gray-600">050-543-2210 | naema@email.com</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mt-3 flex-wrap">
+            <span class="px-3 py-1 rounded-full text-xs font-medium status-waiting">ממתין</span>
+            <span class="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">VIP</span>
+            <span class="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">חזור</span>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-light">×</button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="tab-bar">
+        <div class="tab-item active" onclick="switchTab('events')">אירועים (3)</div>
+        <div class="tab-item" onclick="switchTab('messages')">הודעות (12)</div>
+        <div class="tab-item" onclick="switchTab('notes')">הערות (5)</div>
+        <div class="tab-item" onclick="switchTab('timeline')">ציר זמן</div>
+        <div class="tab-item" onclick="switchTab('details')">פרטים</div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <!-- Events Tab (Active) -->
+        <div id="eventsTab">
+          <div class="space-y-3">
+            <div class="event-item">
+              <div class="event-item-header">
+                <span class="event-item-title">פגישה קבוצתית</span>
+                <span class="event-item-date">20/4/2026 14:00</span>
+              </div>
+              <div class="event-item-body">דיון בצרכי משקפיים וציפיות מחיר</div>
+            </div>
+            <div class="event-item">
+              <div class="event-item-header">
+                <span class="event-item-title">הזמנה שנשלחה</span>
+                <span class="event-item-date">19/4/2026 10:30</span>
+              </div>
+              <div class="event-item-body">הזמנה מס׳ #PZ-2024-1847 שנשלחה בדואר אלקטרוני</div>
+            </div>
+            <div class="event-item">
+              <div class="event-item-header">
+                <span class="event-item-title">טלפון קר אינבאונד</span>
+                <span class="event-item-date">18/4/2026 09:15</span>
+              </div>
+              <div class="event-item-body">שיחה ראשונה, ביטחון גבוה בהמרה, פוטנציאל VIP</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages Tab (Hidden) -->
+        <div id="messagesTab" class="hidden">
+          <p class="text-gray-500">12 הודעות שנשלחו. בחר הודעה לצפייה בפרטים.</p>
+        </div>
+
+        <!-- Notes Tab (Hidden) -->
+        <div id="notesTab" class="hidden">
+          <p class="text-gray-500">5 הערות שמורות.</p>
+        </div>
+
+        <!-- Timeline Tab (Hidden) -->
+        <div id="timelineTab" class="hidden">
+          <p class="text-gray-500">ציר זמן מלא של כל פעילויות הלידה.</p>
+        </div>
+
+        <!-- Details Tab (Hidden) -->
+        <div id="detailsTab" class="hidden">
+          <p class="text-gray-500">פרטים נוספים על הלידה.</p>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium text-sm hover:bg-purple-700 transition">
+          שלח הודעה
+        </button>
+        <button class="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg font-medium text-sm hover:bg-gray-300 transition">
+          הוסף הערה
+        </button>
+        <button class="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg font-medium text-sm hover:bg-gray-300 transition">
+          שנה סטטוס
+        </button>
+        <button class="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg font-medium text-sm hover:bg-gray-300 transition">
+          ייצוא
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Role toggle functionality
+    function toggleRoleDropdown() {
+      const dropdown = document.getElementById('roleDropdown');
+      dropdown.classList.toggle('show');
+    }
+
+    function setRole(role) {
+      const mainContent = document.getElementById('mainContent');
+      const label = document.getElementById('currentRoleLabel');
+      const dropdown = document.getElementById('roleDropdown');
+      const items = document.querySelectorAll('.role-dropdown-item');
+
+      // Remove all role classes
+      mainContent.classList.remove('role-admin', 'role-staff');
+
+      // Add the selected role
+      mainContent.classList.add('role-' + role);
+
+      // Update label
+      if (role === 'admin') {
+        label.textContent = 'מנהל ראשי';
+      } else {
+        label.textContent = 'צוות';
+      }
+
+      // Update dropdown active state
+      items.forEach((item, index) => {
+        item.classList.remove('active');
+        if ((role === 'admin' && index === 0) || (role === 'staff' && index === 1)) {
+          item.classList.add('active');
+        }
+      });
+
+      dropdown.classList.remove('show');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      const wrapper = document.querySelector('.role-toggle-wrapper');
+      const dropdown = document.getElementById('roleDropdown');
+      if (!wrapper.contains(e.target)) {
+        dropdown.classList.remove('show');
+      }
+    });
+
+    function openModal(leadId) {
+      document.getElementById('modalBackdrop').classList.remove('hidden');
+      switchTab('events');
+    }
+
+    function closeModal() {
+      document.getElementById('modalBackdrop').classList.add('hidden');
+    }
+
+    function switchView(view) {
+      document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.closest('.view-btn').classList.add('active');
+
+      document.getElementById('tableView').classList.add('hidden');
+      document.getElementById('kanbanView').classList.add('hidden');
+      document.getElementById('cardsView').classList.add('hidden');
+
+      if (view === 'table') {
+        document.getElementById('tableView').classList.remove('hidden');
+      } else if (view === 'kanban') {
+        document.getElementById('kanbanView').classList.remove('hidden');
+      } else if (view === 'cards') {
+        document.getElementById('cardsView').classList.remove('hidden');
+      }
+    }
+
+    function switchTab(tab) {
+      document.getElementById('eventsTab').classList.add('hidden');
+      document.getElementById('messagesTab').classList.add('hidden');
+      document.getElementById('notesTab').classList.add('hidden');
+      document.getElementById('timelineTab').classList.add('hidden');
+      document.getElementById('detailsTab').classList.add('hidden');
+
+      document.querySelectorAll('.tab-item').forEach(item => {
+        item.classList.remove('active');
+      });
+
+      if (tab === 'events') {
+        document.getElementById('eventsTab').classList.remove('hidden');
+        document.querySelectorAll('.tab-item')[0].classList.add('active');
+      } else if (tab === 'messages') {
+        document.getElementById('messagesTab').classList.remove('hidden');
+        document.querySelectorAll('.tab-item')[1].classList.add('active');
+      } else if (tab === 'notes') {
+        document.getElementById('notesTab').classList.remove('hidden');
+        document.querySelectorAll('.tab-item')[2].classList.add('active');
+      } else if (tab === 'timeline') {
+        document.getElementById('timelineTab').classList.remove('hidden');
+        document.querySelectorAll('.tab-item')[3].classList.add('active');
+      } else if (tab === 'details') {
+        document.getElementById('detailsTab').classList.remove('hidden');
+        document.querySelectorAll('.tab-item')[4].classList.add('active');
+      }
+    }
+
+    function toggleAllRows() {
+      const checked = document.getElementById('selectAll').checked;
+      document.querySelectorAll('tbody input[type="checkbox"]').forEach(cb => {
+        cb.checked = checked;
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+  </script>
+</body>
+</html>

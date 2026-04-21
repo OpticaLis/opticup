@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Event Management — Variation B "Split View"</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap">
+    <style>
+        * {
+            font-family: 'Heebo', sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+        }
+
+        .sidebar {
+            background-color: #1a1a2e;
+        }
+
+        .status-kanban-column {
+            flex-shrink: 0;
+            width: 200px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+        }
+
+        .attendee-mini-card {
+            background: white;
+            border-right: 4px solid;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .attendee-mini-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .attendee-mini-card.selected {
+            background-color: #e8f5e9;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .status-new { border-right-color: #2196F3; }
+        .status-waitlist { border-right-color: #FF9800; }
+        .status-confirmed { border-right-color: #4CAF50; }
+        .status-checkedin { border-right-color: #9C27B0; }
+        .status-cancelled { border-right-color: #f44336; }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .dot-new { background-color: #2196F3; }
+        .dot-waitlist { background-color: #FF9800; }
+        .dot-confirmed { background-color: #4CAF50; }
+        .dot-checkedin { background-color: #9C27B0; }
+        .dot-cancelled { background-color: #f44336; }
+
+        .status-chip {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .chip-new {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .chip-confirmed {
+            background-color: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .chip-checkedin {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .detail-section {
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+        }
+
+        .detail-section:last-child {
+            border-bottom: none;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+
+        .timeline-dot.upcoming {
+            background-color: #ccc;
+        }
+
+        .inline-kpi {
+            display: inline-block;
+            margin-right: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .inline-kpi-label {
+            color: #666;
+            font-size: 11px;
+            display: block;
+        }
+
+        .inline-kpi-value {
+            color: #1a1a2e;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .action-button {
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-button.primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .action-button.primary:hover {
+            background-color: #45a049;
+        }
+
+        .action-button.secondary {
+            background-color: #e0e0e0;
+            color: #1a1a2e;
+        }
+
+        .action-button.secondary:hover {
+            background-color: #d0d0d0;
+        }
+
+        .tab-button {
+            padding: 8px 16px;
+            border: none;
+            background: none;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-button.active {
+            color: #1a1a2e;
+            border-bottom-color: #4CAF50;
+        }
+
+        .tab-button:hover {
+            color: #1a1a2e;
+        }
+
+        .icon-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            padding: 4px 8px;
+            transition: color 0.2s ease;
+        }
+
+        .icon-button:hover {
+            color: #1a1a2e;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-xl font-bold">אופטיקה פריזמה</h1>
+                <p class="text-xs text-gray-400 mt-2">ניהול אירועים</p>
+            </div>
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="#" class="block px-4 py-3 rounded bg-gray-700 text-sm font-600">אירועים</a>
+                <a href="#" class="block px-4 py-3 rounded text-gray-300 text-sm font-500 hover:bg-gray-700">משתתפים</a>
+                <a href="#" class="block px-4 py-3 rounded text-gray-300 text-sm font-500 hover:bg-gray-700">דוחות</a>
+                <a href="#" class="block px-4 py-3 rounded text-gray-300 text-sm font-500 hover:bg-gray-700">הגדרות</a>
+            </nav>
+            <div class="p-4 border-t border-gray-700">
+                <p class="text-xs text-gray-400">משתמש: דניאל כהן</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col bg-white">
+            <!-- Compact Header (80px) -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between" style="height: 80px;">
+                <div class="flex items-center gap-4">
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <h2 class="text-lg font-700">SuperSale 2026</h2>
+                            <span class="text-xs font-600 bg-blue-100 text-blue-700 px-2 py-1 rounded">#22</span>
+                            <select class="status-chip chip-confirmed text-xs py-1 px-2 border border-gray-300 rounded cursor-pointer">
+                                <option>אישור מלא</option>
+                                <option>בתכנון</option>
+                                <option>סגור</option>
+                            </select>
+                        </div>
+                        <div class="text-xs text-gray-600">
+                            20 באפריל 2026 | 18:00–22:00 | אולם הדגמות, רחוב הרצל 45
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <div class="inline-kpi">
+                        <div class="inline-kpi-label">נרשמו</div>
+                        <div class="inline-kpi-value">87</div>
+                    </div>
+                    <div class="inline-kpi">
+                        <div class="inline-kpi-label">אישרו</div>
+                        <div class="inline-kpi-value">69</div>
+                    </div>
+                    <div class="inline-kpi">
+                        <div class="inline-kpi-label">הגיעו</div>
+                        <div class="inline-kpi-value">32</div>
+                    </div>
+                    <div class="inline-kpi">
+                        <div class="inline-kpi-label">קנו</div>
+                        <div class="inline-kpi-value">31</div>
+                    </div>
+                    <div class="inline-kpi">
+                        <div class="inline-kpi-label">הכנסה</div>
+                        <div class="inline-kpi-value">₪39,460</div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button class="icon-button" title="שלח הודעה">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </button>
+                        <button class="icon-button" title="ייצוא">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                        </button>
+                        <button class="icon-button" title="הגדרות">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area (Two Panels) -->
+            <div class="flex flex-1 overflow-hidden">
+                <!-- Left Panel: Attendee Kanban (55%) -->
+                <div class="w-1/2 border-r border-gray-200 bg-gray-50 p-4 overflow-x-auto">
+                    <div class="flex gap-4" style="height: 100%;">
+                        <!-- Column: חדש -->
+                        <div class="status-kanban-column">
+                            <div class="sticky top-0 bg-gray-50 pb-2 mb-3 border-b border-gray-300">
+                                <div class="flex items-center gap-2 px-2 py-1">
+                                    <span class="status-dot dot-new"></span>
+                                    <span class="font-600 text-sm">חדש</span>
+                                    <span class="text-xs text-gray-500 font-500">(35)</span>
+                                </div>
+                            </div>
+                            <div class="overflow-y-auto" style="height: calc(100% - 40px);">
+                                <div class="attendee-mini-card status-new">
+                                    <div class="font-600 text-sm">יוסף אברהמוב</div>
+                                    <div class="text-xs text-gray-600 mt-1">050-1234567</div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm4 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h12v14z"/></svg>
+                                        <span class="text-xs text-gray-600">טופס אינטרנט</span>
+                                    </div>
+                                </div>
+                                <div class="attendee-mini-card status-new">
+                                    <div class="font-600 text-sm">אלה גינדס</div>
+                                    <div class="text-xs text-gray-600 mt-1">052-9876543</div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                                        <span class="text-xs text-gray-600">קריאה טלפונית</span>
+                                    </div>
+                                </div>
+                                <div class="attendee-mini-card status-new">
+                                    <div class="font-600 text-sm">מרים לוי</div>
+                                    <div class="text-xs text-gray-600 mt-1">054-5555555</div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54 3.63 3.63c1.3-1.31 2.16-3.12 2.16-5.12 0-.68-.13-1.33-.36-1.93l-2.68 2.88zM7.04 6.71l2.75-3.54-3.63-3.63C5.86 4.79 5 6.6 5 8.6c0 .68.13 1.33.36 1.93l2.68-2.82z"/></svg>
+                                        <span class="text-xs text-gray-600">דוא"ל</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Column: רשימת המתנה -->
+                        <div class="status-kanban-column">
+                            <div class="sticky top-0 bg-gray-50 pb-2 mb-3 border-b border-gray-300">
+                                <div class="flex items-center gap-2 px-2 py-1">
+                                    <span class="status-dot dot-waitlist"></span>
+                                    <span class="font-600 text-sm">רשימת המתנה</span>
+                                    <span class="text-xs text-gray-500 font-500">(8)</span>
+                                </div>
+                            </div>
+                            <div class="overflow-y-auto" style="height: calc(100% - 40px);">
+                                <div class="attendee-mini-card status-waitlist">
+                                    <div class="font-600 text-sm">בנימין שרמן</div>
+                                    <div class="text-xs text-gray-600 mt-1">053-2222222</div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm4 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h12v14z"/></svg>
+                                        <span class="text-xs text-gray-600">טופס אינטרנט</span>
+                                    </div>
+                                </div>
+                                <div class="attendee-mini-card status-waitlist">
+                                    <div class="font-600 text-sm">רחל נחום</div>
+                                    <div class="text-xs text-gray-600 mt-1">050-3333333</div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                                        <span class="text-xs text-gray-600">קריאה טלפונית</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Column: אישר -->
+                        <div class="status-kanban-column">
+                            <div class="sticky top-0 bg-gray-50 pb-2 mb-3 border-b border-gray-300">
+                                <div class="flex items-center gap-2 px-2 py-1">
+                                    <span class="status-dot dot-confirmed"></span>
+                                    <span class="font-600 text-sm">אישר</span>
+                                    <span class="text-xs text-gray-500 font-500">(22)</span>
+                                </div>
+                            </div>
+                            <div class="overflow-y-auto" style="height: calc(100% - 40px);">
+                                <div class="attendee-mini-card status-confirmed">
+                                    <div class="font-600 text-sm">שרה כהנמן</div>
+                                    <div class="text-xs text-gray-600 mt-1">052-1111111</div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm4 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h12v14z"/></svg>
+                                        <span class="text-xs text-gray-600">טופס אינטרנט</span>
+                                    </div>
+                                </div>
+                                <div class="attendee-mini-card status-confirmed">
+                                    <div class="font-600 text-sm">מיכאל רוזן</div>
+                                    <div class="text-xs text-gray-600 mt-1">053-4444444</div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                                        <span class="text-xs text-gray-600">קריאה טלפונית</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Column: הגיע -->
+                        <div class="status-kanban-column">
+                            <div class="sticky top-0 bg-gray-50 pb-2 mb-3 border-b border-gray-300">
+                                <div class="flex items-center gap-2 px-2 py-1">
+                                    <span class="status-dot dot-checkedin"></span>
+                                    <span class="font-600 text-sm">הגיע</span>
+                                    <span class="text-xs text-gray-500 font-500">(20)</span>
+                                </div>
+                            </div>
+                            <div class="overflow-y-auto" style="height: calc(100% - 40px);">
+                                <div class="attendee-mini-card status-checkedin selected">
+                                    <div class="font-600 text-sm">דניאל כהן</div>
+                                    <div class="text-xs text-gray-600 mt-1">052-7777777</div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm4 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h12v14z"/></svg>
+                                        <span class="text-xs text-gray-600">טופס אינטרנט</span>
+                                    </div>
+                                </div>
+                                <div class="attendee-mini-card status-checkedin">
+                                    <div class="font-600 text-sm">אילנה גולדברג</div>
+                                    <div class="text-xs text-gray-600 mt-1">050-6666666</div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                                        <span class="text-xs text-gray-600">קריאה טלפונית</span>
+                                    </div>
+                                </div>
+                                <div class="attendee-mini-card status-checkedin">
+                                    <div class="font-600 text-sm">יעל סומך</div>
+                                    <div class="text-xs text-gray-600 mt-1">054-8888888</div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm4 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h12v14z"/></svg>
+                                        <span class="text-xs text-gray-600">טופס אינטרנט</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Column: ביטל -->
+                        <div class="status-kanban-column">
+                            <div class="sticky top-0 bg-gray-50 pb-2 mb-3 border-b border-gray-300">
+                                <div class="flex items-center gap-2 px-2 py-1">
+                                    <span class="status-dot dot-cancelled"></span>
+                                    <span class="font-600 text-sm">ביטל</span>
+                                    <span class="text-xs text-gray-500 font-500">(2)</span>
+                                </div>
+                            </div>
+                            <div class="overflow-y-auto" style="height: calc(100% - 40px);">
+                                <div class="attendee-mini-card status-cancelled">
+                                    <div class="font-600 text-sm">דוד בן-משה</div>
+                                    <div class="text-xs text-gray-600 mt-1">050-9999999</div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm4 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h12v14z"/></svg>
+                                        <span class="text-xs text-gray-600">טופס אינטרנט</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Selected Attendee Detail (45%) -->
+                <div class="w-1/2 bg-white p-6 overflow-y-auto">
+                    <!-- Header -->
+                    <div class="mb-6 pb-4 border-b border-gray-200">
+                        <div class="flex items-start justify-between mb-3">
+                            <div>
+                                <h3 class="text-2xl font-700">דניאל כהן</h3>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    <a href="tel:+972527777777" class="text-blue-600 hover:underline">052-7777777</a>
+                                    <span class="text-gray-400 mx-2">|</span>
+                                    <a href="mailto:daniel@example.com" class="text-blue-600 hover:underline">daniel@example.com</a>
+                                </p>
+                            </div>
+                            <span class="status-chip chip-checkedin">הגיע</span>
+                        </div>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="flex gap-6 mb-6 border-b border-gray-200">
+                        <button class="tab-button active" onclick="switchTab('details')">פרטים</button>
+                        <button class="tab-button" onclick="switchTab('timeline')">ציר זמן</button>
+                        <button class="tab-button" onclick="switchTab('notes')">הערות</button>
+                    </div>
+
+                    <!-- Tab: פרטים -->
+                    <div id="tab-details" class="tab-content">
+                        <div class="detail-section">
+                            <div class="text-xs font-600 text-gray-600 mb-2">שיטת רישום</div>
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm4 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h12v14z"/></svg>
+                                <span class="text-sm">טופס אינטרנט</span>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <div class="text-xs font-600 text-gray-600 mb-2">שעת ההצהרה המתוזמנת</div>
+                            <div class="text-sm">18:30 – בדיקת עיניים</div>
+                        </div>
+
+                        <div class="detail-section">
+                            <div class="text-xs font-600 text-gray-600 mb-2">בדיקת עיניים</div>
+                            <div class="text-sm">✓ נדרשת (אישרה בטופס)</div>
+                        </div>
+
+                        <div class="detail-section">
+                            <div class="text-xs font-600 text-gray-600 mb-2">סטטוס שכ"ז הרישום</div>
+                            <div class="text-sm">✓ שולם (50₪ בתאריך 10 באפריל)</div>
+                        </div>
+
+                        <div class="detail-section">
+                            <div class="text-xs font-600 text-gray-600 mb-2">סכום הרכישה</div>
+                            <div class="text-xl font-700 text-green-600">₪1,850</div>
+                            <div class="text-xs text-gray-600 mt-1">2 זוגות משקפיים + מסגרת שמש</div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: ציר זמן (Hidden by default) -->
+                    <div id="tab-timeline" class="tab-content hidden">
+                        <div class="space-y-3">
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div>
+                                    <div class="font-600 text-sm">נרשם לאירוע</div>
+                                    <div class="text-xs text-gray-600">8 באפריל 2026, 14:23</div>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div>
+                                    <div class="font-600 text-sm">שלם שכ"ז הרישום</div>
+                                    <div class="text-xs text-gray-600">10 באפריל 2026, 09:15</div>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div>
+                                    <div class="font-600 text-sm">אישור הגעה</div>
+                                    <div class="text-xs text-gray-600">18 באפריל 2026, 16:45</div>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div>
+                                    <div class="font-600 text-sm">צ'ק-אין בלובי</div>
+                                    <div class="text-xs text-gray-600">20 באפריל 2026, 18:08</div>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div>
+                                    <div class="font-600 text-sm">בדיקת עיניים שלמה</div>
+                                    <div class="text-xs text-gray-600">20 באפריל 2026, 19:20</div>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div>
+                                    <div class="font-600 text-sm">רכישה שלמה</div>
+                                    <div class="text-xs text-gray-600">20 באפריל 2026, 20:45</div>
+                                    <div class="text-xs text-green-600 font-600 mt-1">₪1,850</div>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot upcoming"></div>
+                                <div>
+                                    <div class="font-600 text-sm">ביקור עוקב (מתוזמן)</div>
+                                    <div class="text-xs text-gray-600">27 באפריל 2026, 18:00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: הערות (Hidden by default) -->
+                    <div id="tab-notes" class="tab-content hidden">
+                        <div class="space-y-4 mb-4">
+                            <div class="bg-blue-50 border border-blue-200 p-3 rounded">
+                                <div class="text-xs font-600 text-blue-900 mb-1">הערת מערכת</div>
+                                <div class="text-sm text-blue-900">נבחרה משקפיים בעלות עדשות ארוגות (Ergonomic Blue Light)</div>
+                                <div class="text-xs text-gray-500 mt-1">דניאל כהן — 20 באפריל 20:45</div>
+                            </div>
+                            <div class="bg-amber-50 border border-amber-200 p-3 rounded">
+                                <div class="text-xs font-600 text-amber-900 mb-1">הערה אישית</div>
+                                <div class="text-sm text-amber-900">פרט מקדים: רוצה עדשות פוקוסיות חדשות. הצע מבחן 7 ימים.</div>
+                                <div class="text-xs text-gray-500 mt-1">אתה — 19 באפריל 15:30</div>
+                            </div>
+                        </div>
+                        <textarea placeholder="הוסף הערה..." class="w-full h-20 px-3 py-2 border border-gray-300 rounded text-sm resize-none"></textarea>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-8 pt-6 border-t border-gray-200 flex gap-3 flex-wrap">
+                        <button class="action-button primary">צ'ק-אין</button>
+                        <button class="action-button primary">רשום רכישה</button>
+                        <button class="action-button secondary">שנה סטטוס</button>
+                        <button class="action-button secondary">הוסף הערה</button>
+                        <button class="action-button secondary">שלח הודעה</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+            event.target.classList.add('active');
+        }
+
+        // Select attendee on click
+        document.querySelectorAll('.attendee-mini-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.attendee-mini-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+    </script>
+</body>
+</html>

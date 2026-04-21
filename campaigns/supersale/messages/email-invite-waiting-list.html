@@ -1,0 +1,138 @@
+<!--
+  SuperSale "Invite Waiting List" Email — נפתח מועד נוסף
+  Scenario: 5A — פתיחת אירוע ושליחת הודעות
+  Trigger: Event Status → "Invite Waiting list" + Interest = SuperSale
+  Recipients: Tier 3 leads in status "רשימת המתנה" (up to 200)
+  From: events@prizma-optic.co.il
+  Subject: עדכון חשוב: נפתח מועד נוסף לאירוע המותגים של אופטיקה פריזמה
+
+  Variables:
+    {{131.name}} = שם הליד מ-Tier 3
+    {{2.mappable_column_values.date_mky5xx32.text}} = תאריך האירוע
+    {{2.mappable_column_values.text_mky9k86w}} = שעות פעילות האירוע
+    {{132.shortURL}} = registration link (Short.io)
+    {{133.shortURL}} = unsubscribe short URL (Short.io)
+    {{131.mappable_column_values.email_mky6an8w.text}} = אימייל הליד
+-->
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>תאריך נוסף לאירוע - אופטיקה פריזמה</title>
+    <style>
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color:#000000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        @media screen and (max-width: 600px) {
+            .container { width: 100% !important; }
+            .mobile-padding { padding-left: 20px !important; padding-right: 20px !important; }
+            .btn { width: 100% !important; display: block !important; box-sizing: border-box; }
+        }
+    </style>
+</head>
+<body style="margin:0; padding:0; background-color:#000000; direction:rtl;">
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#000000; background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000000 70%);">
+    <tr>
+        <td align="center" style="padding: 40px 0;">
+
+            <table border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="max-width:600px; background-color:#0a0a0a; border-radius:12px; overflow:hidden; border: 1px solid #222222;">
+
+                <tr>
+                    <td height="4" style="background: linear-gradient(90deg, #000000 0%, #d4af37 50%, #000000 100%);"></td>
+                </tr>
+
+                <tr>
+                    <td align="center" style="padding: 40px 0 25px 0;">
+                        <p style="margin:0; color:#d4af37; font-size:24px; font-weight:bold; letter-spacing:4px;">PRIZMA OPTIC</p>
+                        <p style="margin:5px 0 0 0; color:#666666; font-size:12px; letter-spacing:2px; text-transform:uppercase;">Luxury Eyewear Events</p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="mobile-padding" style="padding: 0 50px 40px 50px; text-align:right;">
+
+                        <h1 style="margin:0 0 15px 0; font-size:26px; font-weight:300; color:#ffffff; text-align:center;">
+                            היי {{131.name}},
+                        </h1>
+                        <p style="margin:0 0 30px 0; font-size:16px; line-height:1.6; color:#cccccc; text-align:center;">
+                            ראינו שיש עדיין רשימת המתנה ארוכה לאירוע המותגים הקרוב, אז החלטנו לפתוח תאריך נוסף כדי שתוכלו להגיע וליהנות מהמחירים המיוחדים שלנו.
+                        </p>
+
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#111111; border: 1px solid #333333; border-radius: 8px; margin-bottom: 30px;">
+                            <tr>
+                                <td style="padding: 25px; text-align:center;">
+                                    <p style="margin:0 0 10px 0; font-size:14px; color:#d4af37; font-weight:bold;">שימו לב, זהו מועד חדש:</p>
+                                    <p style="margin:0; font-size:20px; color:#ffffff; font-weight:bold;">
+                                        יום שישי, ה-{{2.mappable_column_values.date_mky5xx32.text}}
+                                    </p>
+                                    <p style="margin:5px 0 0 0; font-size:16px; color:#cccccc;">
+                                        שעות הפעילות: {{2.mappable_column_values.text_mky9k86w}}
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 30px;">
+                            <tr>
+                                <td style="padding: 0; text-align:right;">
+                                    <p style="margin:0 0 15px 0; font-size:15px; color:#bbbbbb; line-height:1.6;">
+                                        גם לתאריך הזה הקצינו <strong>50 קופונים בלבד</strong>, והם יחולקו לראשונים שיאשרו הגעה בקישור כאן למטה.
+                                    </p>
+                                    <p style="margin:0; font-size:15px; color:#bbbbbb; line-height:1.6;">
+                                        <strong>מה קורה אם התאריך החדש לא מתאים לכם?</strong> <br>
+                                        הכל טוב. אין צורך לעשות כלום – המקום שלכם ברשימת ההמתנה המקורית נשמר בדיוק כמו שהוא, למקרה שיתפנה מקום בתאריך אליו נרשמתם בהתחלה.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 40px;">
+                            <tr>
+                                <td align="center">
+                                    <a href="{{132.shortURL}}" class="btn" style="display:inline-block; padding:18px 50px; background-color:#d4af37; color:#000000; font-size:16px; font-weight:bold; text-decoration:none; border-radius:4px;">
+                                        לאישור הגעה במועד החדש
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-top: 1px solid #222222;">
+                            <tr>
+                                <td style="padding-top: 25px; text-align:right;">
+                                    <p style="margin:0; font-size:15px; color:#ffffff;">נתראה,</p>
+                                    <p style="margin:5px 0 0 0; font-size:15px; color:#d4af37; font-weight:bold;">צוות אופטיקה פריזמה</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </td>
+                </tr>
+
+                <tr>
+                    <td align="center" style="padding: 20px; color:#555555; font-size:11px; border-top: 1px solid #1a1a1a;">
+                        <a href="{{133.shortURL}}" style="color:#666666; text-decoration:underline;">להסרה מרשימת התפוצה</a>
+                    </td>
+                </tr>
+
+            </table>
+
+            <table border="0" cellpadding="0" cellspacing="0" width="600" class="container">
+                <tr>
+                    <td align="center" style="padding: 20px 0; color:#444444; font-size:11px; line-height:1.6;">
+                        © כל הזכויות שמורות לאופטיקה פריזמה | הרצל 32, אשקלון <br>
+                        ההטבות והמחירים בכפוף לתנאי התקנון וזמינות המלאי.
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

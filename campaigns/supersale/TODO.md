@@ -75,20 +75,34 @@ run both systems in parallel → switch when proven stable.
 - [x] Seed MultiSale unit_economics (margin=0.50, kill=5, scale=7)
 - [x] Affiliates UTM enrichment (PATCH null utm_* columns on 893 leads)
 - [x] All 5 Views return data; Event #22 revenue = ₪39,460 (exact match vs Monday)
-- SPEC: `modules/Module 4 - CRM/docs/specs/CRM_PHASE_B2_DATA_IMPORT/`
+- SPEC: `modules/Module 4 - CRM/docs/specs/CRM_PHASE_B_DATA_IMPORT/`
 
-### Step 4 — UI Build (after schema + data)
-- [ ] Design Messaging Hub UI and logic
-- [ ] Design Event Day Module (entrance scan screen)
-- [ ] Design CX Flow (satisfaction → Google review / agent callback)
-- [ ] Design campaigner public performance page
+### Step 4 — UX/UI Design ✅ COMPLETE (2026-04-20 → 2026-04-21)
+- [x] Research UX: Monday.com analysis + modern CRM patterns (HubSpot, Attio, Close, Folk)
+- [x] Define design system: dark sidebar (#1e1b4b), violet accent (#8b5cf6), Heebo RTL, Tailwind CDN
+- [x] Build V0 mockups (5 screens) — approved by Daniel
+- [x] Build V1 variations: 15 HTML files (5 screens × 3 variations A/B/C)
+- [x] Daniel selected: Dashboard=B, Leads=C, Events=A, Messaging=A, EventDay=C
+- [x] Build 5 FINAL mockups with 3 new requirements:
+  - Role-based visibility (מנהל ראשי vs צוות — hide revenue from non-admins)
+  - Barcode scanner on Event Day main screen (auto-focus, no button needed)
+  - Purchase amount entry after check-in (non-blocking reminder + history for batch update)
+- [x] Documentation updated: `campaigns/supersale/mockups/CRM_UX_MOCKUPS.md`
+- Files: `campaigns/supersale/mockups/FINAL-01-dashboard.html` through `FINAL-05-event-day.html`
 
-### Step 5 — Make Integration
-- [ ] Design Make scenarios from scratch (clean, no duplication)
-- [ ] Wire Make webhooks to CRM (instead of Monday)
-- [ ] Plan parallel run strategy (Monday + Optic Up side by side)
+### Step 5 — Build CRM Module (NEXT)
+- [ ] Daniel reviews & approves FINAL mockups
+- [ ] Create Module 4 folder structure in `modules/Module 4 - CRM/`
+- [ ] Build Dashboard screen (real Supabase data)
+- [ ] Build Leads screen (893 leads from DB)
+- [ ] Build Events screen (11 events from DB)
+- [ ] Build Messaging Hub (connect to Make.com templates)
+- [ ] Build Event Day tablet screen (barcode scanner + live check-in)
+- [ ] Role-based access control (RLS + client-side)
 
-### Step 6 — Switch
-- [ ] QA on demo tenant
-- [ ] Plan migration / switchover
-- [ ] Go live
+### Step 6 — Automation Migration
+- [ ] Extract message templates from Make → seed `crm_message_templates`
+- [ ] Extract Monday column IDs → seed `crm_monday_column_map`
+- [ ] Build Make.com scenarios to point at Supabase instead of Monday
+- [ ] Parallel run: Monday + CRM side by side
+- [ ] Switch when stable

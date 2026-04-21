@@ -1,7 +1,8 @@
 <!--
-  Optic Up — CRM Module (Phase B3: Core UI)
-  Version: 1.0 — Leads, Events, Dashboard
-  Stack: Vanilla JS + Supabase (no build step, no external libs)
+  Optic Up — CRM Module
+  Design: Premium sidebar layout with theme switching
+  Stack: Vanilla JS + Supabase (no build step)
+  Layout: Sidebar nav + content area with 5 tab panels
 -->
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
@@ -9,9 +10,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Optic Up — CRM</title>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<!-- Shared CSS -->
+
+<!-- Shared CSS (ERP design system) -->
 <link rel="stylesheet" href="shared/css/variables.css">
 <link rel="stylesheet" href="shared/css/components.css">
 <link rel="stylesheet" href="shared/css/components-extra.css">
@@ -20,87 +22,188 @@
 <link rel="stylesheet" href="shared/css/modal.css">
 <link rel="stylesheet" href="shared/css/toast.css">
 <link rel="stylesheet" href="shared/css/table.css">
-<!-- Module CSS -->
-<link rel="stylesheet" href="css/header.css">
+
+<!-- CRM CSS (theme system) -->
 <link rel="stylesheet" href="css/crm.css">
+
 </head>
-<body>
+<body class="crm-page">
 
-<nav id="crmNav">
-  <button data-tab="dashboard" class="active" onclick="showCrmTab('dashboard')">&#128202; &#1491;&#1513;&#1489;&#1493;&#1512;&#1491;</button>
-  <button data-tab="leads" onclick="showCrmTab('leads')">&#128101; &#1500;&#1497;&#1491;&#1497;&#1501;</button>
-  <button data-tab="events" onclick="showCrmTab('events')">&#128197; &#1488;&#1497;&#1512;&#1493;&#1506;&#1497;&#1501;</button>
-  <button data-tab="messaging" onclick="showCrmTab('messaging')">&#9993; &#1492;&#1493;&#1491;&#1506;&#1493;&#1514;</button>
-</nav>
+<!-- ============================================================
+     CRM APP SHELL — sidebar + main content
+     ============================================================ -->
+<div class="crm-app" id="crm-app">
 
-<main id="crm-main">
+  <!-- ======================== SIDEBAR ======================== -->
+  <aside class="crm-sidebar">
 
-  <!-- ========== TAB 1: DASHBOARD ========== -->
-  <section id="tab-dashboard" class="tab active">
-    <div id="crm-dashboard-stats" class="crm-stats-grid"></div>
-
-    <div class="card">
-      <h3>&#128202; &#1489;&#1497;&#1510;&#1493;&#1506;&#1497; &#1488;&#1497;&#1512;&#1493;&#1506;&#1497;&#1501;</h3>
-      <div id="crm-dashboard-events" class="crm-table-wrap"></div>
+    <!-- Sidebar Header -->
+    <div class="crm-sidebar-header">
+      <h1 class="crm-sidebar-logo">Optic Up</h1>
+      <p class="crm-sidebar-subtitle">ניהול CRM</p>
     </div>
 
-    <div class="card">
-      <h3>&#128100; &#1492;&#1514;&#1508;&#1500;&#1490;&#1493;&#1514; &#1505;&#1496;&#1496;&#1493;&#1505; &#1500;&#1497;&#1491;&#1497;&#1501;</h3>
-      <div id="crm-dashboard-status"></div>
-    </div>
-  </section>
+    <!-- Navigation -->
+    <nav class="crm-sidebar-nav" id="crmNav">
+      <button class="crm-nav-item active" data-tab="dashboard" onclick="showCrmTab('dashboard')">
+        <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        <span>דשבורד</span>
+      </button>
 
-  <!-- ========== TAB 2: LEADS ========== -->
-  <section id="tab-leads" class="tab">
-    <div class="card">
-      <div class="crm-filter-bar">
-        <input type="search" id="crm-leads-search" class="crm-search" placeholder="&#1495;&#1497;&#1508;&#1493;&#1513; &#1500;&#1508;&#1497; &#1513;&#1501; &#1488;&#1493; &#1496;&#1500;&#1508;&#1493;&#1503;...">
-        <select id="crm-leads-filter-status"><option value="">&#1499;&#1500; &#1492;&#1505;&#1496;&#1496;&#1493;&#1505;&#1497;&#1501;</option></select>
-        <select id="crm-leads-filter-lang"><option value="">&#1499;&#1500; &#1492;&#1513;&#1508;&#1493;&#1514;</option></select>
-        <select id="crm-leads-sort">
-          <option value="full_name">&#1502;&#1497;&#1493;&#1503;: &#1513;&#1501;</option>
-          <option value="phone">&#1502;&#1497;&#1493;&#1503;: &#1496;&#1500;&#1508;&#1493;&#1503;</option>
-          <option value="created_at">&#1502;&#1497;&#1493;&#1503;: &#1514;&#1488;&#1512;&#1497;&#1498; &#1497;&#1510;&#1497;&#1512;&#1492; (&#1495;&#1491;&#1513;)</option>
-          <option value="status">&#1502;&#1497;&#1493;&#1503;: &#1505;&#1496;&#1496;&#1493;&#1505;</option>
-        </select>
+      <button class="crm-nav-item" data-tab="leads" onclick="showCrmTab('leads')">
+        <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <span>לידים</span>
+      </button>
+
+      <button class="crm-nav-item" data-tab="events" onclick="showCrmTab('events')">
+        <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        <span>אירועים</span>
+      </button>
+
+      <button class="crm-nav-item" data-tab="messaging" onclick="showCrmTab('messaging')">
+        <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+        </svg>
+        <span>מרכז הודעות</span>
+      </button>
+
+      <button class="crm-nav-item" data-tab="event-day" onclick="showCrmTab('event-day')">
+        <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>יום אירוע</span>
+      </button>
+    </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="crm-sidebar-footer">
+      <!-- Role indicator -->
+      <div class="crm-sidebar-role" id="crm-role-display">
+        <span class="crm-sidebar-role-label">תפקיד</span>
+        <span class="crm-sidebar-role-value" id="crm-role-text">מנהל ראשי</span>
       </div>
-      <div id="crm-leads-table-wrap" class="crm-table-wrap"></div>
-      <div id="crm-leads-pagination" class="crm-pagination"></div>
-    </div>
-  </section>
 
-  <!-- ========== TAB 3: EVENTS ========== -->
-  <section id="tab-events" class="tab">
-    <div class="card">
-      <div class="crm-filter-bar">
-        <select id="crm-events-filter-status"><option value="">&#1499;&#1500; &#1492;&#1505;&#1496;&#1496;&#1493;&#1505;&#1497;&#1501;</option></select>
+      <!-- Theme switcher (ready for future palettes) -->
+      <div class="crm-theme-switcher" id="crm-theme-switcher">
+        <div class="crm-theme-dot active" data-theme="indigo" style="background:#4f46e5" title="Indigo"></div>
+        <!-- Future: uncomment when palettes are defined
+        <div class="crm-theme-dot" data-theme="teal" style="background:#0d9488" title="Teal"></div>
+        <div class="crm-theme-dot" data-theme="ocean" style="background:#2563eb" title="Ocean"></div>
+        -->
       </div>
-      <div id="crm-events-table-wrap" class="crm-table-wrap"></div>
+
+      <!-- Settings -->
+      <button class="crm-settings-link">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <span>הגדרות</span>
+      </button>
     </div>
-  </section>
+  </aside>
 
-  <!-- ========== TAB 4: MESSAGING HUB ========== -->
-  <section id="tab-messaging" class="tab"></section>
+  <!-- ======================== MAIN AREA ======================== -->
+  <div class="crm-main">
 
-  <!-- ========== HIDDEN TAB: EVENT DAY (no nav button; entered via event modal) ========== -->
-  <section id="tab-event-day" class="tab"></section>
+    <!-- Page Header (dynamic — updated by each tab) -->
+    <header class="crm-page-header" id="crm-page-header">
+      <div>
+        <h2 class="crm-page-title" id="crm-page-title">דשבורד</h2>
+        <p class="crm-page-subtitle" id="crm-page-subtitle">סקירה כללית של ביצועי הקמפיינים</p>
+      </div>
+      <div id="crm-header-actions">
+        <!-- Tab-specific action buttons injected here by JS -->
+      </div>
+    </header>
 
-</main>
+    <!-- Scrollable Content -->
+    <div class="crm-content" id="crm-main">
 
-<!-- Shared JS -->
+      <!-- ========== TAB 1: DASHBOARD ========== -->
+      <section id="tab-dashboard" class="crm-tab active">
+        <div id="crm-dashboard-stats" class="crm-stats-grid"></div>
+        <div class="crm-card">
+          <h3 class="crm-card-title">ביצועי אירועים</h3>
+          <div id="crm-dashboard-events" class="crm-table-wrap"></div>
+        </div>
+        <div class="crm-card">
+          <h3 class="crm-card-title">התפלגות סטטוס לידים</h3>
+          <div id="crm-dashboard-status"></div>
+        </div>
+      </section>
+
+      <!-- ========== TAB 2: LEADS ========== -->
+      <section id="tab-leads" class="crm-tab">
+        <div class="crm-card">
+          <div class="crm-filter-bar">
+            <input type="search" id="crm-leads-search" class="crm-search" placeholder="חיפוש לפי שם או טלפון...">
+            <select id="crm-leads-filter-status"><option value="">כל הסטטוסים</option></select>
+            <select id="crm-leads-filter-lang"><option value="">כל השפות</option></select>
+            <select id="crm-leads-sort">
+              <option value="full_name">מיון: שם</option>
+              <option value="phone">מיון: טלפון</option>
+              <option value="created_at">מיון: תאריך יצירה (חדש)</option>
+              <option value="status">מיון: סטטוס</option>
+            </select>
+          </div>
+          <div id="crm-leads-table-wrap" class="crm-table-wrap"></div>
+          <div id="crm-leads-pagination" class="crm-pagination"></div>
+        </div>
+      </section>
+
+      <!-- ========== TAB 3: EVENTS ========== -->
+      <section id="tab-events" class="crm-tab">
+        <div class="crm-card">
+          <div class="crm-filter-bar">
+            <select id="crm-events-filter-status"><option value="">כל הסטטוסים</option></select>
+          </div>
+          <div id="crm-events-table-wrap" class="crm-table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ========== TAB 4: MESSAGING HUB ========== -->
+      <section id="tab-messaging" class="crm-tab"></section>
+
+      <!-- ========== TAB 5: EVENT DAY ========== -->
+      <section id="tab-event-day" class="crm-tab"></section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCRIPTS — load order matters
+     ============================================================ -->
+
+<!-- Shared JS (ERP infrastructure) -->
 <script src="shared/js/theme-loader.js"></script>
 <script src="shared/js/modal-builder.js"></script>
+<script src="shared/js/modal-wizard.js"></script>
 <script src="shared/js/toast.js"></script>
 <script src="shared/js/permission-ui.js"></script>
 <script src="shared/js/supabase-client.js"></script>
 <script src="shared/js/activity-logger.js"></script>
+
 <!-- Core JS -->
 <script src="js/shared.js"></script>
 <script src="js/shared-ui.js"></script>
 <script src="js/auth-service.js"></script>
 <script src="js/supabase-ops.js"></script>
-<script src="js/header.js"></script>
-<!-- CRM JS -->
+
+<!-- CRM JS — helpers first, then init, then tab modules -->
 <script src="modules/crm/crm-helpers.js"></script>
 <script src="modules/crm/crm-init.js"></script>
 <script src="modules/crm/crm-dashboard.js"></script>
@@ -110,12 +213,109 @@
 <script src="modules/crm/crm-events-detail.js"></script>
 <script src="modules/crm/crm-event-day.js"></script>
 <script src="modules/crm/crm-event-day-checkin.js"></script>
-<script src="modules/crm/crm-event-day-schedule.js"></script>
 <script src="modules/crm/crm-event-day-manage.js"></script>
+<script src="modules/crm/crm-event-day-schedule.js"></script>
 <script src="modules/crm/crm-messaging-tab.js"></script>
 <script src="modules/crm/crm-messaging-templates.js"></script>
-<script src="modules/crm/crm-messaging-rules.js"></script>
 <script src="modules/crm/crm-messaging-broadcast.js"></script>
+<script src="modules/crm/crm-messaging-rules.js"></script>
 
+<!-- CRM bootstrap: theme switcher + header updater + page init -->
+<script>
+(function() {
+  'use strict';
+
+  // --- Header titles per tab ---
+  var TAB_META = {
+    'dashboard': { title: '\u05D3\u05E9\u05D1\u05D5\u05E8\u05D3', subtitle: '\u05E1\u05E7\u05D9\u05E8\u05D4 \u05DB\u05DC\u05DC\u05D9\u05EA \u05E9\u05DC \u05D1\u05D9\u05E6\u05D5\u05E2\u05D9 \u05D4\u05E7\u05DE\u05E4\u05D9\u05D9\u05E0\u05D9\u05DD' },
+    'leads':     { title: '\u05DC\u05D9\u05D3\u05D9\u05DD', subtitle: '\u05E0\u05D9\u05D4\u05D5\u05DC \u05DC\u05D9\u05D3\u05D9\u05DD \u05D5\u05E1\u05D2\u05DE\u05E0\u05D8\u05D9\u05DD' },
+    'events':    { title: '\u05D0\u05D9\u05E8\u05D5\u05E2\u05D9\u05DD', subtitle: '\u05E0\u05D9\u05D4\u05D5\u05DC \u05D0\u05D9\u05E8\u05D5\u05E2\u05D9\u05DD \u05D5\u05DE\u05E9\u05EA\u05EA\u05E4\u05D9\u05DD' },
+    'messaging': { title: '\u05DE\u05E8\u05DB\u05D6 \u05D4\u05D5\u05D3\u05E2\u05D5\u05EA', subtitle: '\u05EA\u05D1\u05E0\u05D9\u05D5\u05EA, \u05D0\u05D5\u05D8\u05D5\u05DE\u05E6\u05D9\u05D4 \u05D5\u05E9\u05DC\u05D9\u05D7\u05D4 \u05D9\u05D3\u05E0\u05D9\u05EA' },
+    'event-day': { title: '\u05D9\u05D5\u05DD \u05D0\u05D9\u05E8\u05D5\u05E2', subtitle: '\u05E6\u05F3\u05E7-\u05D0\u05D9\u05DF, \u05E0\u05D5\u05DB\u05D7\u05D5\u05EA \u05D5\u05E0\u05D9\u05D4\u05D5\u05DC' }
+  };
+
+  // --- Wrap original showCrmTab to also update header + sidebar ---
+  var _origShowCrmTab = window.showCrmTab;
+  window.showCrmTab = function(name) {
+    // Update sidebar active state
+    document.querySelectorAll('#crmNav .crm-nav-item').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-tab') === name);
+    });
+
+    // Update tab panels — use crm-tab class
+    document.querySelectorAll('#crm-main .crm-tab').forEach(function(t) {
+      t.classList.toggle('active', t.id === 'tab-' + name);
+    });
+
+    // Update page header
+    var meta = TAB_META[name] || {};
+    var titleEl = document.getElementById('crm-page-title');
+    var subEl = document.getElementById('crm-page-subtitle');
+    if (titleEl) titleEl.textContent = meta.title || name;
+    if (subEl) subEl.textContent = meta.subtitle || '';
+
+    // Clear header actions (each tab can inject its own)
+    var actionsEl = document.getElementById('crm-header-actions');
+    if (actionsEl) actionsEl.innerHTML = '';
+
+    // Call tab loader
+    if (name === 'dashboard' && typeof loadCrmDashboard === 'function') loadCrmDashboard();
+    if (name === 'leads' && typeof loadCrmLeadsTab === 'function') loadCrmLeadsTab();
+    if (name === 'events' && typeof loadCrmEventsTab === 'function') loadCrmEventsTab();
+    if (name === 'event-day' && typeof loadCrmEventDay === 'function') loadCrmEventDay();
+    if (name === 'messaging' && typeof loadCrmMessagingTab === 'function') loadCrmMessagingTab();
+  };
+
+  // --- Theme switcher ---
+  document.querySelectorAll('.crm-theme-dot').forEach(function(dot) {
+    dot.addEventListener('click', function() {
+      var theme = this.getAttribute('data-theme');
+      document.documentElement.setAttribute('data-crm-theme', theme);
+      document.querySelectorAll('.crm-theme-dot').forEach(function(d) {
+        d.classList.toggle('active', d.getAttribute('data-theme') === theme);
+      });
+      try { sessionStorage.setItem('crm-theme', theme); } catch(_) {}
+    });
+  });
+
+  // Restore saved theme
+  try {
+    var saved = sessionStorage.getItem('crm-theme');
+    if (saved) {
+      document.documentElement.setAttribute('data-crm-theme', saved);
+      document.querySelectorAll('.crm-theme-dot').forEach(function(d) {
+        d.classList.toggle('active', d.getAttribute('data-theme') === saved);
+      });
+    }
+  } catch(_) {}
+
+  // --- Role toggle (admin vs team) ---
+  var _isAdmin = true;
+  window.toggleCrmRole = function() {
+    _isAdmin = !_isAdmin;
+    var app = document.getElementById('crm-app');
+    var roleText = document.getElementById('crm-role-text');
+    if (_isAdmin) {
+      app.classList.remove('crm-role-team');
+      if (roleText) roleText.textContent = '\u05DE\u05E0\u05D4\u05DC \u05E8\u05D0\u05E9\u05D9';
+    } else {
+      app.classList.add('crm-role-team');
+      if (roleText) roleText.textContent = '\u05E6\u05D5\u05D5\u05EA';
+    }
+  };
+
+  // Make role display clickable for demo toggling
+  var roleDisplay = document.getElementById('crm-role-display');
+  if (roleDisplay) {
+    roleDisplay.style.cursor = 'pointer';
+    roleDisplay.addEventListener('click', function() { window.toggleCrmRole(); });
+  }
+
+  // --- Initialize Lucide icons ---
+  if (typeof lucide !== 'undefined' && lucide.createIcons) {
+    lucide.createIcons();
+  }
+})();
+</script>
 </body>
 </html>

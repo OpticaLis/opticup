@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>יום אירוע - POS Style</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        * {
+            font-family: 'Heebo', sans-serif;
+        }
+
+        html, body {
+            direction: rtl;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* Animations */
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            }
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                opacity: 1;
+                transform: translateY(0) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(20px) rotate(360deg);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes ticker {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .pulse-dot {
+            animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .pulse-ring {
+            animation: pulse-ring 2s infinite;
+        }
+
+        .confetti {
+            animation: confetti-fall 1s ease-out forwards;
+        }
+
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .ticker {
+            animation: ticker 0.4s ease-in-out;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Large touch targets */
+        button {
+            min-height: 48px;
+            min-width: 48px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        input {
+            min-height: 48px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Attendee cards */
+        .attendee-card {
+            transition: all 0.3s ease;
+            border-right: 4px solid #e2e8f0;
+        }
+
+        .attendee-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-right-color: #8b5cf6;
+        }
+
+        .attendee-card.checked-in {
+            background-color: #f0fdf4;
+            border-right-color: #22c55e;
+            opacity: 0.7;
+        }
+
+        .attendee-card.checked-in .check-in-overlay {
+            display: flex !important;
+        }
+
+        .check-in-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(34, 197, 94, 0.1);
+            border-radius: 12px;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+        }
+
+        .check-in-overlay .checkmark {
+            font-size: 64px;
+            animation: pulse-ring 1s ease-out;
+        }
+
+        /* Live feed */
+        .feed-item {
+            transition: all 0.2s ease;
+            border-right: 4px solid transparent;
+        }
+
+        .feed-item.check-in {
+            border-right-color: #22c55e;
+            background: rgba(34, 197, 94, 0.05);
+        }
+
+        .feed-item.purchase {
+            border-right-color: #eab308;
+            background: rgba(234, 179, 8, 0.05);
+        }
+
+        .feed-item.note {
+            border-right-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        .feed-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 24px;
+        }
+
+        .feed-item.check-in .feed-icon {
+            background: rgba(34, 197, 94, 0.2);
+            color: #16a34a;
+        }
+
+        .feed-item.purchase .feed-icon {
+            background: rgba(234, 179, 8, 0.2);
+            color: #ca8a04;
+        }
+
+        .feed-item.note .feed-icon {
+            background: rgba(139, 92, 246, 0.2);
+            color: #7c3aed;
+        }
+
+        /* Stats */
+        .stat-box {
+            transition: all 0.3s ease;
+        }
+
+        .stat-box.active {
+            transform: scale(1.02);
+        }
+
+        .stat-number {
+            font-size: 2.25rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        /* Slide-up panel */
+        .panel-overlay {
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+        }
+
+        .panel-content {
+            animation: slideUp 0.3s ease-out;
+            border-radius: 24px 24px 0 0;
+        }
+
+        /* Number pad */
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .numpad-btn {
+            aspect-ratio: 1;
+            font-size: 1.5rem;
+            font-weight: 700;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .numpad-btn:active {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: scale(0.95);
+        }
+
+        /* Connection status */
+        .connection-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .connection-dot.online {
+            background: #22c55e;
+            animation: pulse-dot 2s infinite;
+        }
+
+        .connection-dot.offline {
+            background: #ef4444;
+        }
+
+        /* Photo placeholder */
+        .photo-placeholder {
+            width: 100%;
+            height: 140px;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #8b5cf6;
+        }
+
+        /* Search highlight */
+        .search-highlight {
+            background-color: #fef08a;
+            font-weight: 700;
+            padding: 0 4px;
+            border-radius: 2px;
+        }
+
+        /* Eye exam badge */
+        .exam-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #eab308;
+            color: #78350f;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Waiting list indicator */
+        .waiting-badge {
+            background: #f3e8ff;
+            color: #6d28d9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Tab styling */
+        .tab-btn {
+            padding: 12px 24px;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+            color: #64748b;
+        }
+
+        .tab-btn.active {
+            color: #1e293b;
+            border-bottom-color: #8b5cf6;
+        }
+    </style>
+</head>
+<body class="bg-white">
+    <div class="h-screen flex flex-col">
+        <!-- Top Bar -->
+        <div class="bg-white border-b-2 border-slate-200 px-8 py-6 flex-shrink-0">
+            <div class="flex items-center justify-between">
+                <!-- Left: Event Info -->
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900">אירוע #22 - סופר סייל ראשוני</h1>
+                    <p class="text-sm text-slate-600 mt-2">20 באפריל 2026 • 09:30 - 17:00</p>
+                </div>
+
+                <!-- Center: Live Stats (Animated) -->
+                <div class="flex gap-8">
+                    <div class="text-center stat-box">
+                        <p class="text-xs font-semibold text-slate-600 uppercase tracking-wide">הגיעו</p>
+                        <p class="stat-number text-emerald-700" id="checkin-count">22</p>
+                        <p class="text-sm text-slate-500 mt-1">/32 צפויים</p>
+                    </div>
+                    <div class="w-px bg-slate-200"></div>
+                    <div class="text-center stat-box">
+                        <p class="text-xs font-semibold text-slate-600 uppercase tracking-wide">קנו</p>
+                        <p class="stat-number text-yellow-600" id="purchase-count">21</p>
+                        <p class="text-sm text-slate-500 mt-1">עסקאות</p>
+                    </div>
+                    <div class="w-px bg-slate-200"></div>
+                    <div class="text-center stat-box">
+                        <p class="text-xs font-semibold text-slate-600 uppercase tracking-wide">הכנסות</p>
+                        <p class="stat-number text-emerald-600" id="revenue-count">₪35,125</p>
+                        <p class="text-sm text-slate-500 mt-1">סה"כ</p>
+                    </div>
+                </div>
+
+                <!-- Right: Status & Time -->
+                <div class="flex flex-col items-end gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="connection-dot online"></span>
+                        <span class="text-sm font-medium text-emerald-700">מחובר</span>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-500">שעה</p>
+                        <p class="text-2xl font-bold text-slate-900" id="live-clock">09:47</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-hidden flex gap-0">
+            <!-- Left Column: Check-in Search & Attendee Cards -->
+            <div class="w-2/5 border-r-2 border-slate-200 flex flex-col bg-white">
+                <!-- Search Bar (80px height) -->
+                <div class="p-6 border-b-2 border-slate-200 flex-shrink-0">
+                    <div class="flex gap-3">
+                        <div class="flex-1 relative">
+                            <input
+                                type="text"
+                                id="search-input"
+                                placeholder="חפש לפי שם או טלפון..."
+                                class="w-full h-20 px-6 text-lg border-2 border-slate-300 rounded-16 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all"
+                            >
+                            <svg class="absolute top-6 right-6 w-8 h-8 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <!-- Microphone Button -->
+                        <button class="h-20 w-20 bg-slate-100 hover:bg-slate-200 rounded-16 flex items-center justify-center transition-colors" title="חפש בקול">
+                            <svg class="w-8 h-8 text-slate-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"></path>
+                                <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12s4.477 10 10 10 10-4.484 10-10S17.523 2 12 2zm0 2a8 8 0 100 16 8 8 0 000-16z"></path>
+                            </svg>
+                        </button>
+                        <!-- QR Scan Button -->
+                        <button class="h-20 w-20 bg-slate-100 hover:bg-slate-200 rounded-16 flex items-center justify-center transition-colors" title="סרוק QR">
+                            <svg class="w-8 h-8 text-slate-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h3v2h-3zm-3 0h2v3h-2zm4-4h-2V9h3v2h-1z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabs: Waiting vs Arrived -->
+                <div class="px-6 pt-4 flex gap-6 border-b border-slate-200 flex-shrink-0">
+                    <button class="tab-btn active" onclick="switchTab('arrived')">
+                        ✓ הגיעו (22)
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('waiting')">
+                        📍 מחכים (10)
+                    </button>
+                </div>
+
+                <!-- Attendee Cards (scrollable) -->
+                <div class="flex-1 overflow-y-auto px-6 py-4 space-y-4" id="attendee-list">
+                    <!-- Card 1: Checked In -->
+                    <div class="attendee-card relative bg-white border-2 border-slate-200 rounded-16 overflow-hidden">
+                        <div class="photo-placeholder">👤</div>
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <h3 class="font-bold text-lg text-slate-900">דניאל כהן</h3>
+                                    <p class="text-sm text-slate-600">050-1234567</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2 mb-4">
+                                <span class="text-xs font-semibold bg-emerald-100 text-emerald-700 px-3 py-2 rounded-md w-fit">✓ נכנס ב-09:15</span>
+                                <span class="exam-badge">בדיקה עדכנית</span>
+                            </div>
+                            <button class="w-full h-14 bg-slate-200 text-slate-700 font-bold rounded-12 cursor-not-allowed opacity-60" disabled>
+                                ✓ צ'ק-אין בוצע
+                            </button>
+                        </div>
+                        <div class="check-in-overlay rounded-12">
+                            <div class="checkmark">✓</div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Not yet arrived -->
+                    <div class="attendee-card relative bg-white border-2 border-slate-200 rounded-16 overflow-hidden">
+                        <div class="photo-placeholder">👤</div>
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <h3 class="font-bold text-lg text-slate-900">רותי לוי</h3>
+                                    <p class="text-sm text-slate-600">052-9876543</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2 mb-4">
+                                <span class="waiting-badge">📍 מחכה הגעה</span>
+                            </div>
+                            <button class="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg rounded-12 transition-colors" onclick="checkInAttendee(this, 'רותי לוי')">
+                                ✓ צ'ק-אין
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Checked In -->
+                    <div class="attendee-card relative bg-white border-2 border-slate-200 rounded-16 overflow-hidden">
+                        <div class="photo-placeholder">👤</div>
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <h3 class="font-bold text-lg text-slate-900">משה אברהם</h3>
+                                    <p class="text-sm text-slate-600">053-5555555</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2 mb-4">
+                                <span class="text-xs font-semibold bg-emerald-100 text-emerald-700 px-3 py-2 rounded-md w-fit">✓ נכנס ב-09:22</span>
+                            </div>
+                            <button class="w-full h-14 bg-slate-200 text-slate-700 font-bold rounded-12 cursor-not-allowed opacity-60" disabled>
+                                ✓ צ'ק-אין בוצע
+                            </button>
+                        </div>
+                        <div class="check-in-overlay rounded-12">
+                            <div class="checkmark">✓</div>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Needs Exam -->
+                    <div class="attendee-card relative bg-white border-2 border-slate-200 rounded-16 overflow-hidden">
+                        <div class="photo-placeholder">👤</div>
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <h3 class="font-bold text-lg text-slate-900">יעל מנדלבאום</h3>
+                                    <p class="text-sm text-slate-600">051-7777777</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2 mb-4">
+                                <span class="waiting-badge">📍 מחכה הגעה</span>
+                                <span class="exam-badge">בדיקה עדכנית</span>
+                            </div>
+                            <button class="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg rounded-12 transition-colors" onclick="checkInAttendee(this, 'יעל מנדלבאום')">
+                                ✓ צ'ק-אין
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Live Feed -->
+            <div class="w-3/5 flex flex-col bg-slate-50">
+                <!-- Feed Header -->
+                <div class="p-8 border-b-2 border-slate-200 bg-white flex-shrink-0">
+                    <h2 class="text-2xl font-bold text-slate-900">📊 פעילות בזמן אמת</h2>
+                    <p class="text-sm text-slate-600 mt-2">עדכונים חיים מהאירוע</p>
+                </div>
+
+                <!-- Feed Items (scrollable) -->
+                <div class="flex-1 overflow-y-auto px-8 py-6 space-y-4">
+                    <!-- Check-in Entry -->
+                    <div class="feed-item check-in bg-white p-6 rounded-16 border-r-4 border-emerald-500">
+                        <div class="flex items-start gap-4">
+                            <div class="feed-icon">✓</div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-lg text-slate-900">דניאל כהן נכנס</p>
+                                <p class="text-sm text-slate-600 mt-1">בדיקה עדכנית נדרשת</p>
+                                <p class="text-xs text-slate-500 mt-2">09:15 🔔</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Purchase Entry -->
+                    <div class="feed-item purchase bg-white p-6 rounded-16 border-r-4 border-yellow-500">
+                        <div class="flex items-start gap-4">
+                            <div class="feed-icon">💰</div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-lg text-slate-900">רותי לוי — רכישה</p>
+                                <p class="text-sm font-bold text-yellow-700 mt-1">₪1,850</p>
+                                <p class="text-xs text-slate-500 mt-2">09:18 🔔</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Check-in Entry -->
+                    <div class="feed-item check-in bg-white p-6 rounded-16 border-r-4 border-emerald-500">
+                        <div class="flex items-start gap-4">
+                            <div class="feed-icon">✓</div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-lg text-slate-900">משה אברהם נכנס</p>
+                                <p class="text-sm text-slate-600 mt-1">ללא הערות</p>
+                                <p class="text-xs text-slate-500 mt-2">09:22 🔔</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Purchase Entry -->
+                    <div class="feed-item purchase bg-white p-6 rounded-16 border-r-4 border-yellow-500">
+                        <div class="flex items-start gap-4">
+                            <div class="feed-icon">💰</div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-lg text-slate-900">דניאל כהן — רכישה</p>
+                                <p class="text-sm font-bold text-yellow-700 mt-1">₪2,120</p>
+                                <p class="text-xs text-slate-500 mt-2">09:28 🔔</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Check-in Entry -->
+                    <div class="feed-item check-in bg-white p-6 rounded-16 border-r-4 border-emerald-500">
+                        <div class="flex items-start gap-4">
+                            <div class="feed-icon">✓</div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-lg text-slate-900">שרה כהנמן נכנסה</p>
+                                <p class="text-sm text-slate-600 mt-1">ללא הערות</p>
+                                <p class="text-xs text-slate-500 mt-2">09:31 🔔</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Note Entry -->
+                    <div class="feed-item note bg-white p-6 rounded-16 border-r-4 border-violet-500">
+                        <div class="flex items-start gap-4">
+                            <div class="feed-icon">📝</div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-lg text-slate-900">הערה: משה רוצה שקע</p>
+                                <p class="text-sm text-slate-600 mt-1">הוסיף על ידי אורלי</p>
+                                <p class="text-xs text-slate-500 mt-2">09:35</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Purchase Entry -->
+                    <div class="feed-item purchase bg-white p-6 rounded-16 border-r-4 border-yellow-500">
+                        <div class="flex items-start gap-4">
+                            <div class="feed-icon">💰</div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-lg text-slate-900">משה אברהם — רכישה</p>
+                                <p class="text-sm font-bold text-yellow-700 mt-1">₪1,155</p>
+                                <p class="text-xs text-slate-500 mt-2">09:42 🔔</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Slide-Up Panel -->
+    <div id="purchase-panel" class="hidden fixed inset-0 panel-overlay flex items-end z-50" onclick="if(event.target === this) closePurchasePanel()">
+        <div class="panel-content bg-white w-full max-w-2xl mx-auto">
+            <div class="px-8 py-6 border-b-2 border-slate-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-bold text-slate-900">רישום רכישה</h2>
+                    <button onclick="closePurchasePanel()" class="text-slate-400 hover:text-slate-600 text-2xl">✕</button>
+                </div>
+                <div class="bg-slate-50 p-6 rounded-12">
+                    <p class="text-sm text-slate-600 mb-1">לקוח</p>
+                    <p class="text-2xl font-bold text-slate-900" id="purchase-customer">דניאל כהן</p>
+                    <p class="text-sm text-slate-600">050-1234567</p>
+                </div>
+            </div>
+
+            <div class="px-8 py-8">
+                <label class="block text-sm font-semibold text-slate-700 mb-4">סכום רכישה</label>
+                <div class="flex items-center gap-6 mb-8">
+                    <span class="text-4xl font-bold text-slate-900">₪</span>
+                    <input
+                        type="number"
+                        id="purchase-amount"
+                        placeholder="0"
+                        class="flex-1 text-5xl font-bold border-b-2 border-slate-300 focus:border-yellow-500 pb-2 focus:outline-none transition-colors"
+                        autofocus
+                    >
+                </div>
+
+                <!-- Number Pad -->
+                <div class="numpad mb-8">
+                    <button class="numpad-btn" onclick="addNumber('1')">1</button>
+                    <button class="numpad-btn" onclick="addNumber('2')">2</button>
+                    <button class="numpad-btn" onclick="addNumber('3')">3</button>
+                    <button class="numpad-btn" onclick="addNumber('4')">4</button>
+                    <button class="numpad-btn" onclick="addNumber('5')">5</button>
+                    <button class="numpad-btn" onclick="addNumber('6')">6</button>
+                    <button class="numpad-btn" onclick="addNumber('7')">7</button>
+                    <button class="numpad-btn" onclick="addNumber('8')">8</button>
+                    <button class="numpad-btn" onclick="addNumber('9')">9</button>
+                    <button class="numpad-btn col-span-2" onclick="addNumber('0')">0</button>
+                    <button class="numpad-btn" onclick="deleteLast()">⌫</button>
+                </div>
+
+                <div class="flex gap-4">
+                    <button onclick="closePurchasePanel()" class="flex-1 h-14 border-2 border-slate-200 rounded-12 font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+                        ביטול
+                    </button>
+                    <button class="flex-1 h-14 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-12 transition-colors text-lg" onclick="recordPurchase()">
+                        💰 אישור קנייה
+                    </button>
+                </div>
+
+                <button class="w-full mt-4 py-3 text-slate-600 hover:text-slate-900 font-medium transition-colors">
+                    לא קנה / ביטול
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Registration Slide-Up Panel -->
+    <div id="registration-panel" class="hidden fixed inset-0 panel-overlay flex items-end z-50" onclick="if(event.target === this) closeRegistrationPanel()">
+        <div class="panel-content bg-white w-full max-w-2xl mx-auto">
+            <div class="px-8 py-6 border-b-2 border-slate-200">
+                <h2 class="text-2xl font-bold text-slate-900">רישום מהיר</h2>
+            </div>
+
+            <div class="px-8 py-8 space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-3">שם מלא</label>
+                    <input
+                        type="text"
+                        id="reg-name"
+                        placeholder="הזן שם"
+                        class="w-full px-4 py-4 text-lg border-2 border-slate-200 rounded-12 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all"
+                        autofocus
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-3">טלפון</label>
+                    <input
+                        type="tel"
+                        id="reg-phone"
+                        placeholder="050-1234567"
+                        class="w-full px-4 py-4 text-lg border-2 border-slate-200 rounded-12 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all"
+                    >
+                </div>
+
+                <label class="flex items-center gap-3 cursor-pointer p-4 bg-slate-50 rounded-12 hover:bg-slate-100 transition-colors">
+                    <input type="checkbox" id="reg-exam" class="w-6 h-6 rounded border-2 border-slate-300 accent-violet-600">
+                    <span class="text-base font-medium text-slate-700">נדרשת בדיקה עדכנית</span>
+                </label>
+            </div>
+
+            <div class="px-8 py-6 border-t-2 border-slate-200 flex gap-4">
+                <button onclick="closeRegistrationPanel()" class="flex-1 h-14 border-2 border-slate-200 rounded-12 font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+                    ביטול
+                </button>
+                <button class="flex-1 h-14 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-12 transition-colors text-lg" onclick="submitRegistration()">
+                    ✓ רישום וצ'ק-אין
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div class="fixed bottom-8 right-8 flex flex-col gap-4 z-40">
+        <!-- Record Purchase -->
+        <button onclick="openPurchasePanel()" class="h-16 px-6 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-full shadow-lg flex items-center gap-2 transition-all hover:shadow-xl">
+            <span class="text-2xl">💰</span>
+            <span class="text-base">רכישה</span>
+        </button>
+
+        <!-- Quick Register -->
+        <button onclick="openRegistrationPanel()" class="h-16 px-6 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-full shadow-lg flex items-center gap-2 transition-all hover:shadow-xl">
+            <span class="text-2xl">+</span>
+            <span class="text-base">רישום</span>
+        </button>
+    </div>
+
+    <script>
+        // Update live clock
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('live-clock').textContent = `${hours}:${minutes}`;
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Purchase Panel
+        function openPurchasePanel() {
+            document.getElementById('purchase-panel').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('purchase-amount').focus();
+            }, 100);
+        }
+
+        function closePurchasePanel() {
+            document.getElementById('purchase-panel').classList.add('hidden');
+            document.getElementById('purchase-amount').value = '';
+        }
+
+        // Registration Panel
+        function openRegistrationPanel() {
+            document.getElementById('registration-panel').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('reg-name').focus();
+            }, 100);
+        }
+
+        function closeRegistrationPanel() {
+            document.getElementById('registration-panel').classList.add('hidden');
+            document.getElementById('reg-name').value = '';
+            document.getElementById('reg-phone').value = '';
+            document.getElementById('reg-exam').checked = false;
+        }
+
+        // Number Pad
+        function addNumber(num) {
+            const input = document.getElementById('purchase-amount');
+            input.value += num;
+        }
+
+        function deleteLast() {
+            const input = document.getElementById('purchase-amount');
+            input.value = input.value.slice(0, -1);
+        }
+
+        function recordPurchase() {
+            const amount = document.getElementById('purchase-amount').value;
+            if (!amount) return;
+            alert(`רכישה של ₪${amount} נרשמה בהצלחה!`);
+            closePurchasePanel();
+        }
+
+        function submitRegistration() {
+            const name = document.getElementById('reg-name').value;
+            const phone = document.getElementById('reg-phone').value;
+            if (!name || !phone) {
+                alert('אנא מלא את כל הפרטים');
+                return;
+            }
+            alert(`${name} נרשם וצ'ק-אין בוצע בהצלחה!`);
+            closeRegistrationPanel();
+        }
+
+        // Check-in function with animation
+        function checkInAttendee(btn, name) {
+            const card = btn.closest('.attendee-card');
+
+            // Play sound indicator
+            console.log('Sound: check-in beep 🔔');
+
+            // Add checked-in class for overlay
+            card.classList.add('checked-in');
+
+            // Animate stats
+            animateStatIncrease('checkin-count');
+
+            // Update button
+            btn.disabled = true;
+            btn.textContent = '✓ צ\'ק-אין בוצע';
+            btn.className = 'w-full h-14 bg-slate-200 text-slate-700 font-bold rounded-12 cursor-not-allowed opacity-60';
+
+            // Add to feed
+            addFeedEntry('check-in', `${name} נכנס`, '');
+
+            // Confetti
+            createConfetti();
+        }
+
+        function animateStatIncrease(elementId) {
+            const elem = document.getElementById(elementId);
+            elem.classList.add('ticker');
+            setTimeout(() => elem.classList.remove('ticker'), 400);
+        }
+
+        function addFeedEntry(type, title, detail) {
+            const feed = document.querySelector('.flex-1.overflow-y-auto:last-of-type');
+            const time = new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+
+            let icon = '';
+            let bgClass = 'check-in';
+            if (type === 'purchase') {
+                icon = '💰';
+                bgClass = 'purchase';
+            } else if (type === 'note') {
+                icon = '📝';
+                bgClass = 'note';
+            } else {
+                icon = '✓';
+            }
+
+            const entry = document.createElement('div');
+            entry.className = `feed-item ${bgClass} bg-white p-6 rounded-16 border-r-4 slide-in`;
+            entry.innerHTML = `
+                <div class="flex items-start gap-4">
+                    <div class="feed-icon">${icon}</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-lg text-slate-900">${title}</p>
+                        <p class="text-sm text-slate-600 mt-1">${detail}</p>
+                        <p class="text-xs text-slate-500 mt-2">${time} 🔔</p>
+                    </div>
+                </div>
+            `;
+
+            if (feed) {
+                feed.insertBefore(entry, feed.firstChild);
+            }
+        }
+
+        function createConfetti() {
+            for (let i = 0; i < 8; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'fixed';
+                confetti.style.left = Math.random() * window.innerWidth + 'px';
+                confetti.style.top = '50%';
+                confetti.style.width = '12px';
+                confetti.style.height = '12px';
+                confetti.style.backgroundColor = ['#22c55e', '#eab308', '#8b5cf6'][Math.floor(Math.random() * 3)];
+                confetti.style.borderRadius = '50%';
+                confetti.style.zIndex = '100';
+                confetti.className = 'confetti';
+                document.body.appendChild(confetti);
+
+                setTimeout(() => confetti.remove(), 1000);
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            // In a real app, filter the attendee list
+        }
+
+        // Search functionality
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.attendee-card');
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(query) ? '' : 'none';
+            });
+        });
+
+        // Close panels on background click
+        document.getElementById('purchase-panel').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('purchase-panel')) {
+                closePurchasePanel();
+            }
+        });
+
+        document.getElementById('registration-panel').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('registration-panel')) {
+                closeRegistrationPanel();
+            }
+        });
+
+        // Escape key to close panels
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePurchasePanel();
+                closeRegistrationPanel();
+            }
+        });
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>

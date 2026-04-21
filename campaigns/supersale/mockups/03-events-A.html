@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אירוע המותגים #22 | CRM אופטיקה פריזמה</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100..900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    * {
+      font-family: 'Heebo', system-ui, sans-serif;
+    }
+
+    body {
+      background-color: #f8f6ff;
+    }
+
+    .sidebar {
+      background-color: #1e1b4b;
+    }
+
+    .accent-violet {
+      color: #8b5cf6;
+    }
+
+    .accent-bg-violet {
+      background-color: #8b5cf6;
+    }
+
+    /* Event Header Gradient */
+    .event-header {
+      background: linear-gradient(135deg, #312e81 0%, #4c1d95 100%);
+      color: white;
+      border-radius: 0 0 1.5rem 1.5rem;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .event-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 300px;
+      height: 300px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 50%;
+      transform: translate(50%, -50%);
+      pointer-events: none;
+    }
+
+    .event-header-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .event-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .event-subtitle {
+      font-size: 1.125rem;
+      opacity: 0.9;
+      margin-bottom: 1.5rem;
+    }
+
+    .breadcrumb {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      margin-bottom: 1.5rem;
+    }
+
+    .breadcrumb a {
+      color: white;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .breadcrumb a:hover {
+      opacity: 0.7;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      background-color: white;
+      color: #312e81;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary:hover {
+      background-color: #f0f0f0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-secondary {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .status-dropdown {
+      background-color: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .status-dropdown:hover {
+      background-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .status-dropdown option {
+      background-color: #1e1b4b;
+      color: white;
+    }
+
+    /* Capacity Bar with Segments */
+    .capacity-container {
+      margin-top: 1.5rem;
+    }
+
+    .capacity-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .capacity-bar {
+      height: 1.25rem;
+      background-color: #e5e7eb;
+      border-radius: 9999px;
+      overflow: hidden;
+      display: flex;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .capacity-segment {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .segment-registered {
+      background-color: #3b82f6;
+    }
+
+    .segment-confirmed {
+      background-color: #10b981;
+    }
+
+    .segment-waited {
+      background-color: #f59e0b;
+    }
+
+    .capacity-legend {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1rem;
+      font-size: 0.875rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .legend-dot {
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 50%;
+    }
+
+    /* KPI Cards with Trends */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .kpi-card {
+      background: white;
+      border-radius: 1rem;
+      padding: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border-top: 4px solid #8b5cf6;
+      transition: all 0.2s;
+    }
+
+    .kpi-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .kpi-card.blue {
+      border-top-color: #3b82f6;
+    }
+
+    .kpi-card.green {
+      border-top-color: #10b981;
+    }
+
+    .kpi-card.orange {
+      border-top-color: #f59e0b;
+    }
+
+    .kpi-card.rose {
+      border-top-color: #ec4899;
+    }
+
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+
+    .kpi-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .kpi-trend {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .trend-up {
+      color: #10b981;
+    }
+
+    .trend-down {
+      color: #ef4444;
+    }
+
+    .trend-neutral {
+      color: #9ca3af;
+    }
+
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #1e1b4b;
+      margin: 0.5rem 0;
+    }
+
+    .kpi-value.currency {
+      color: #059669;
+    }
+
+    .kpi-sublabel {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      line-height: 1.4;
+    }
+
+    .kpi-sparkline {
+      height: 2rem;
+      background: linear-gradient(90deg, #f3f4f6 0%, #e5e7eb 100%);
+      border-radius: 0.25rem;
+      margin-top: 0.75rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sparkline-bar {
+      position: absolute;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, #8b5cf6, #7c3aed);
+      border-radius: 1px;
+    }
+
+    /* Funnel SVG */
+    .funnel-container {
+      background: white;
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .funnel-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #1e1b4b;
+      margin-bottom: 1.5rem;
+    }
+
+    .funnel-svg {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Tabs */
+    .tabs-container {
+      background: white;
+      border-radius: 1rem;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .tab-bar {
+      display: flex;
+      border-bottom: 2px solid #e5e7eb;
+      padding: 0 2rem;
+      overflow-x: auto;
+    }
+
+    .tab-button {
+      padding: 1rem 1.5rem;
+      border: none;
+      background: none;
+      color: #6b7280;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+      position: relative;
+      bottom: -2px;
+    }
+
+    .tab-button:hover {
+      color: #8b5cf6;
+    }
+
+    .tab-button.active {
+      color: #8b5cf6;
+      border-bottom-color: #8b5cf6;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 2rem;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Search and Filter */
+    .search-bar {
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.75rem 1rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+
+    .filter-toggle {
+      padding: 0.75rem 1rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      background: white;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .filter-toggle:hover {
+      background: #f3f4f6;
+    }
+
+    /* Attendee Groups */
+    .group-header {
+      background-color: #f9fafb;
+      padding: 1rem 1.5rem;
+      font-weight: 600;
+      color: #374151;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid #e5e7eb;
+      transition: all 0.2s;
+    }
+
+    .group-header:hover {
+      background-color: #f3f4f6;
+    }
+
+    .group-status-dot {
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-confirmed {
+      background-color: #10b981;
+    }
+
+    .dot-wait {
+      background-color: #f59e0b;
+    }
+
+    .dot-cancelled {
+      background-color: #ef4444;
+    }
+
+    .group-name {
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .group-count {
+      background-color: #8b5cf6;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-left: 0.5rem;
+    }
+
+    .group-toggle {
+      margin-right: auto;
+      color: #9ca3af;
+      font-size: 0.875rem;
+      transition: transform 0.2s;
+    }
+
+    .group-toggle.collapsed {
+      transform: rotate(180deg);
+    }
+
+    .group-content {
+      display: block;
+    }
+
+    .group-content.hidden {
+      display: none;
+    }
+
+    /* Attendee Row */
+    .attendee-row {
+      background: white;
+      border-bottom: 1px solid #f3f4f6;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      transition: all 0.2s;
+    }
+
+    .attendee-row:hover {
+      background-color: #fafbff;
+    }
+
+    .attendee-avatar {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .attendee-info {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .attendee-name {
+      font-weight: 600;
+      color: #1f2937;
+      font-size: 0.95rem;
+    }
+
+    .attendee-detail {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-top: 0.25rem;
+    }
+
+    .attendee-status-chip {
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.375rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .status-confirmed {
+      background-color: #dcfce7;
+      color: #15803d;
+    }
+
+    .status-wait {
+      background-color: #fed7aa;
+      color: #92400e;
+    }
+
+    .status-attended {
+      background-color: #fbcfe8;
+      color: #831843;
+    }
+
+    .status-cancelled {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .attendee-purchase {
+      font-weight: 700;
+      color: #059669;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    .attendee-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .action-button {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.375rem;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      color: #6b7280;
+    }
+
+    .action-button:hover {
+      background: #8b5cf6;
+      border-color: #8b5cf6;
+      color: white;
+    }
+
+    /* Messages Timeline */
+    .message-item {
+      background: #f9fafb;
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      border-right: 4px solid #8b5cf6;
+    }
+
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+
+    .message-title {
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .message-time {
+      font-size: 0.875rem;
+      color: #9ca3af;
+    }
+
+    .message-stats {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stat-count {
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+
+    /* Analytics Charts */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+    }
+
+    .chart-card {
+      background: white;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      border: 1px solid #e5e7eb;
+    }
+
+    .chart-title {
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 1rem;
+    }
+
+    .chart-bar {
+      background: #f3f4f6;
+      border-radius: 0.375rem;
+      height: 2rem;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+    }
+
+    .chart-bar-fill {
+      background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding-right: 0.75rem;
+      justify-content: flex-end;
+      color: white;
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+
+    .chart-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .chart-row:last-child {
+      border-bottom: none;
+    }
+
+    .chart-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+
+    .chart-value {
+      font-weight: 700;
+      color: #059669;
+    }
+
+    /* Status Dropdown Inline */
+    .status-select {
+      padding: 0.375rem 0.75rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.375rem;
+      background: white;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .status-select:hover {
+      border-color: #8b5cf6;
+      background: #f9f7ff;
+    }
+
+    .status-select:focus {
+      outline: none;
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="flex h-screen bg-gray-100">
+    <!-- SIDEBAR -->
+    <div class="sidebar w-64 text-white flex flex-col">
+      <!-- Header -->
+      <div class="p-4 border-b border-indigo-700">
+        <h1 class="text-xl font-bold">אופטיקה פריזמה</h1>
+        <p class="text-sm text-indigo-300">מערכת CRM</p>
+      </div>
+
+      <!-- Nav Items -->
+      <nav class="flex-1 overflow-y-auto p-4 space-y-2">
+        <div class="px-3 py-2 rounded-lg text-indigo-300 text-sm font-semibold">ניהול מקרים</div>
+
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">קונים פוטנציאליים</a>
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">מאוחדים</a>
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">הזמנות</a>
+
+        <div class="px-3 py-2 rounded-lg text-indigo-300 text-sm font-semibold mt-6">קמפיינים ואירועים</div>
+
+        <a href="#" class="px-3 py-2 rounded-lg bg-indigo-700 text-sm text-white font-semibold">🎉 אירועים</a>
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">קמפיינים</a>
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">ניוזלטר</a>
+
+        <div class="px-3 py-2 rounded-lg text-indigo-300 text-sm font-semibold mt-6">דוחות</div>
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">ביצועים</a>
+        <a href="#" class="px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-100">ROI</a>
+      </nav>
+
+      <!-- User Footer -->
+      <div class="p-4 border-t border-indigo-700 text-sm">
+        <div class="text-indigo-300">יוסי כהן</div>
+        <div class="text-indigo-400 text-xs">מנהל מבצעות</div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 overflow-auto">
+      <div class="p-8">
+
+        <!-- EVENT HEADER -->
+        <div class="event-header">
+          <div class="event-header-content">
+            <div class="breadcrumb">
+              <a href="#">אירועים</a> › <span>אירוע המותגים #22</span>
+            </div>
+
+            <div class="event-title">אירוע המותגים #22</div>
+            <div class="event-subtitle">SuperSale — ירידה עונתית גדולה</div>
+
+            <div class="header-controls">
+              <button class="btn-primary">
+                <span>✉️</span>
+                <span>שלח הודעה למשתתפים</span>
+              </button>
+              <button class="btn-secondary">
+                <span>⚙️</span>
+                <span>שנה סטטוס אירוע</span>
+              </button>
+              <button class="btn-secondary">
+                <span>📊</span>
+                <span>ייצוא Excel</span>
+              </button>
+
+              <select class="status-dropdown" style="margin-start: auto;">
+                <option>יום האירוע</option>
+                <option selected>תכנון</option>
+                <option>הרשמה פתוחה</option>
+                <option>נסגר</option>
+                <option>2-3 ימים</option>
+                <option>הושלם</option>
+              </select>
+            </div>
+
+            <!-- Event Info Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 text-sm">
+              <div>
+                <div class="opacity-75 text-xs">תאריך ושעה</div>
+                <div class="font-semibold">יום שישי, 2 במאי 2026 | 09:00–14:00</div>
+              </div>
+              <div>
+                <div class="opacity-75 text-xs">מיקום</div>
+                <div class="font-semibold">רחוב הרצל 42, תל אביב <a href="#" style="color: #cffafe; text-decoration: underline;">🗺️ Waze</a></div>
+              </div>
+              <div>
+                <div class="opacity-75 text-xs">תיאור</div>
+                <div class="font-semibold">אירוע משפחתי עם ניסיון משקפיים</div>
+              </div>
+            </div>
+
+            <!-- Capacity Bar with Segments -->
+            <div class="capacity-container">
+              <div class="capacity-label">
+                <span>קיבולת אירוע: 87 → 69 → 32 → 31 משתתפים</span>
+                <span>18 מקומות פנויים</span>
+              </div>
+              <div class="capacity-bar">
+                <div class="capacity-segment segment-registered" style="width: 60%;">87</div>
+                <div class="capacity-segment segment-confirmed" style="width: 23%;">69</div>
+                <div class="capacity-segment segment-waited" style="width: 12%;">32</div>
+              </div>
+              <div class="capacity-legend">
+                <div class="legend-item">
+                  <div class="legend-dot segment-registered"></div>
+                  <span>נרשמו (87)</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot segment-confirmed"></div>
+                  <span>אישרו (69)</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot segment-waited"></div>
+                  <span>הגיעו (32)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI CARDS -->
+        <div class="kpi-grid">
+          <div class="kpi-card blue">
+            <div class="kpi-header">
+              <div class="kpi-label">נרשמו</div>
+              <div class="kpi-trend trend-up">↑</div>
+            </div>
+            <div class="kpi-value">87</div>
+            <div class="kpi-sublabel">בקשות הרשמה<br/>+12% מהאירוע הקודם</div>
+            <div class="kpi-sparkline">
+              <div class="sparkline-bar" style="left: 10%; height: 40%;"></div>
+              <div class="sparkline-bar" style="left: 20%; height: 60%;"></div>
+              <div class="sparkline-bar" style="left: 30%; height: 55%;"></div>
+              <div class="sparkline-bar" style="left: 40%; height: 75%;"></div>
+              <div class="sparkline-bar" style="left: 50%; height: 85%;"></div>
+              <div class="sparkline-bar" style="left: 60%; height: 90%;"></div>
+              <div class="sparkline-bar" style="left: 70%; height: 100%;"></div>
+              <div class="sparkline-bar" style="left: 80%; height: 95%;"></div>
+            </div>
+          </div>
+
+          <div class="kpi-card green">
+            <div class="kpi-header">
+              <div class="kpi-label">אישרו</div>
+              <div class="kpi-trend trend-neutral">→</div>
+            </div>
+            <div class="kpi-value">69</div>
+            <div class="kpi-sublabel">79% מנרשמים<br/>שיעור אישור זהה</div>
+            <div class="kpi-sparkline">
+              <div class="sparkline-bar" style="left: 10%; height: 70%;"></div>
+              <div class="sparkline-bar" style="left: 20%; height: 72%;"></div>
+              <div class="sparkline-bar" style="left: 30%; height: 75%;"></div>
+              <div class="sparkline-bar" style="left: 40%; height: 78%;"></div>
+              <div class="sparkline-bar" style="left: 50%; height: 79%;"></div>
+              <div class="sparkline-bar" style="left: 60%; height: 79%;"></div>
+              <div class="sparkline-bar" style="left: 70%; height: 79%;"></div>
+              <div class="sparkline-bar" style="left: 80%; height: 79%;"></div>
+            </div>
+          </div>
+
+          <div class="kpi-card orange">
+            <div class="kpi-header">
+              <div class="kpi-label">הגיעו</div>
+              <div class="kpi-trend trend-down">↓</div>
+            </div>
+            <div class="kpi-value">32</div>
+            <div class="kpi-sublabel">46% מאישרים<br/>-8% מהאירוע הקודם</div>
+            <div class="kpi-sparkline">
+              <div class="sparkline-bar" style="left: 10%; height: 65%;"></div>
+              <div class="sparkline-bar" style="left: 20%; height: 60%;"></div>
+              <div class="sparkline-bar" style="left: 30%; height: 55%;"></div>
+              <div class="sparkline-bar" style="left: 40%; height: 50%;"></div>
+              <div class="sparkline-bar" style="left: 50%; height: 48%;"></div>
+              <div class="sparkline-bar" style="left: 60%; height: 47%;"></div>
+              <div class="sparkline-bar" style="left: 70%; height: 46%;"></div>
+              <div class="sparkline-bar" style="left: 80%; height: 46%;"></div>
+            </div>
+          </div>
+
+          <div class="kpi-card rose">
+            <div class="kpi-header">
+              <div class="kpi-label">קנו</div>
+              <div class="kpi-trend trend-up">↑</div>
+            </div>
+            <div class="kpi-value">31</div>
+            <div class="kpi-sublabel">97% מנוכחים<br/>+5% שיעור המרה</div>
+            <div class="kpi-sparkline">
+              <div class="sparkline-bar" style="left: 10%; height: 85%;"></div>
+              <div class="sparkline-bar" style="left: 20%; height: 87%;"></div>
+              <div class="sparkline-bar" style="left: 30%; height: 90%;"></div>
+              <div class="sparkline-bar" style="left: 40%; height: 93%;"></div>
+              <div class="sparkline-bar" style="left: 50%; height: 95%;"></div>
+              <div class="sparkline-bar" style="left: 60%; height: 97%;"></div>
+              <div class="sparkline-bar" style="left: 70%; height: 97%;"></div>
+              <div class="sparkline-bar" style="left: 80%; height: 97%;"></div>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="border-top-color: #059669;">
+            <div class="kpi-header">
+              <div class="kpi-label">הכנסות</div>
+              <div class="kpi-trend trend-up">↑</div>
+            </div>
+            <div class="kpi-value currency">₪39,460</div>
+            <div class="kpi-sublabel">מכירות + דמי<br/>+₪3,250 מהאירוע הקודם</div>
+            <div class="kpi-sparkline">
+              <div class="sparkline-bar" style="left: 10%; height: 50%; background: #059669;"></div>
+              <div class="sparkline-bar" style="left: 20%; height: 60%; background: #059669;"></div>
+              <div class="sparkline-bar" style="left: 30%; height: 70%; background: #059669;"></div>
+              <div class="sparkline-bar" style="left: 40%; height: 80%; background: #059669;"></div>
+              <div class="sparkline-bar" style="left: 50%; height: 85%; background: #059669;"></div>
+              <div class="sparkline-bar" style="left: 60%; height: 90%; background: #059669;"></div>
+              <div class="sparkline-bar" style="left: 70%; height: 95%; background: #059669;"></div>
+              <div class="sparkline-bar" style="left: 80%; height: 100%; background: #059669;"></div>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="border-top-color: #7c3aed;">
+            <div class="kpi-header">
+              <div class="kpi-label">דמי הרשמה</div>
+              <div class="kpi-trend trend-up">↑</div>
+            </div>
+            <div class="kpi-value currency">₪3,450</div>
+            <div class="kpi-sublabel">₪50 × 69 משתתפים<br/>סה"כ מדמים</div>
+            <div class="kpi-sparkline">
+              <div class="sparkline-bar" style="left: 10%; height: 30%; background: #7c3aed;"></div>
+              <div class="sparkline-bar" style="left: 20%; height: 45%; background: #7c3aed;"></div>
+              <div class="sparkline-bar" style="left: 30%; height: 55%; background: #7c3aed;"></div>
+              <div class="sparkline-bar" style="left: 40%; height: 65%; background: #7c3aed;"></div>
+              <div class="sparkline-bar" style="left: 50%; height: 75%; background: #7c3aed;"></div>
+              <div class="sparkline-bar" style="left: 60%; height: 85%; background: #7c3aed;"></div>
+              <div class="sparkline-bar" style="left: 70%; height: 95%; background: #7c3aed;"></div>
+              <div class="sparkline-bar" style="left: 80%; height: 100%; background: #7c3aed;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FUNNEL VISUALIZATION -->
+        <div class="funnel-container">
+          <h3 class="funnel-title">עלי בקבוק המרות — תזרים משתתפים</h3>
+
+          <svg class="funnel-svg" viewBox="0 0 1000 300" preserveAspectRatio="xMidYMid meet">
+            <!-- Stage 1: Registered -->
+            <g>
+              <polygon points="50,50 250,50 250,120 50,120" fill="#3b82f6" opacity="0.9"/>
+              <text x="150" y="95" text-anchor="middle" font-size="18" font-weight="bold" fill="white">87</text>
+              <text x="150" y="140" text-anchor="middle" font-size="14" fill="#6b7280">נרשמו</text>
+              <text x="150" y="160" text-anchor="middle" font-size="12" fill="#9ca3af">100%</text>
+            </g>
+
+            <!-- Arrow 1 -->
+            <path d="M 250,85 L 300,85" stroke="#d1d5db" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+
+            <!-- Stage 2: Confirmed -->
+            <g>
+              <polygon points="300,60 480,60 480,110 300,110" fill="#10b981" opacity="0.9"/>
+              <text x="390" y="90" text-anchor="middle" font-size="18" font-weight="bold" fill="white">69</text>
+              <text x="390" y="135" text-anchor="middle" font-size="14" fill="#6b7280">אישרו</text>
+              <text x="390" y="155" text-anchor="middle" font-size="12" fill="#9ca3af">79%</text>
+            </g>
+
+            <!-- Arrow 2 -->
+            <path d="M 480,85 L 530,85" stroke="#d1d5db" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+
+            <!-- Stage 3: Attended -->
+            <g>
+              <polygon points="530,70 680,70 680,100 530,100" fill="#f59e0b" opacity="0.9"/>
+              <text x="605" y="88" text-anchor="middle" font-size="18" font-weight="bold" fill="white">32</text>
+              <text x="605" y="130" text-anchor="middle" font-size="14" fill="#6b7280">הגיעו</text>
+              <text x="605" y="150" text-anchor="middle" font-size="12" fill="#9ca3af">46%</text>
+            </g>
+
+            <!-- Arrow 3 -->
+            <path d="M 680,85 L 730,85" stroke="#d1d5db" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+
+            <!-- Stage 4: Purchased -->
+            <g>
+              <polygon points="730,75 880,75 880,95 730,95" fill="#ec4899" opacity="0.9"/>
+              <text x="805" y="87" text-anchor="middle" font-size="18" font-weight="bold" fill="white">31</text>
+              <text x="805" y="125" text-anchor="middle" font-size="14" fill="#6b7280">קנו</text>
+              <text x="805" y="145" text-anchor="middle" font-size="12" fill="#9ca3af">97%</text>
+            </g>
+
+            <!-- Arrow marker definition -->
+            <defs>
+              <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#d1d5db" />
+              </marker>
+            </defs>
+          </svg>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs-container">
+          <div class="tab-bar">
+            <button class="tab-button active" onclick="switchTab(event, 'attendees')">👥 משתתפים</button>
+            <button class="tab-button" onclick="switchTab(event, 'messages')">💬 הודעות</button>
+            <button class="tab-button" onclick="switchTab(event, 'analytics')">📊 סטטיסטיקות</button>
+          </div>
+
+          <!-- TAB: ATTENDEES -->
+          <div id="attendees" class="tab-content active">
+            <!-- Search & Filter -->
+            <div class="search-bar">
+              <input type="text" class="search-input" placeholder="חפש לפי שם או טלפון...">
+              <button class="filter-toggle" onclick="toggleGroupBy(this)">📊 קבץ לפי סטטוס</button>
+            </div>
+
+            <!-- Group: Confirmed -->
+            <div>
+              <div class="group-header" onclick="toggleGroup(this)">
+                <div class="group-status-dot dot-confirmed"></div>
+                <span class="group-name">אישרו הגעה</span>
+                <span class="group-count">32</span>
+                <span class="group-toggle">▼</span>
+              </div>
+
+              <div class="group-content">
+                <!-- Attendee Row 1 -->
+                <div class="attendee-row">
+                  <div class="attendee-avatar">דל</div>
+                  <div class="attendee-info">
+                    <div class="attendee-name">דוד לוי</div>
+                    <div class="attendee-detail">050-123-4567 • טופס אתר</div>
+                  </div>
+                  <div class="attendee-status-chip status-attended">הגיע ✓</div>
+                  <div class="attendee-purchase">₪780</div>
+                  <div class="attendee-actions">
+                    <button class="action-button" title="WhatsApp">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371 0-.57 0-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.708.738 5.348 2.135 7.656l-2.275 6.613 6.768-2.234a9.865 9.865 0 004.718 1.204h.005c5.443 0 9.886-4.453 9.886-9.974 0-2.662-.738-5.167-2.135-7.322a9.844 9.844 0 00-7.551-3.911zm0-1.98c2.992 0 5.822 1.165 7.938 3.277a9.864 9.864 0 012.923 7.346c0 6.052-4.927 10.974-10.974 10.974-1.798 0-3.537-.438-5.08-1.272l-.364-.214-3.776 1.248 1.27-3.687-.235-.374a9.86 9.86 0 01-1.512-5.301c0-6.052 4.927-10.974 10.974-10.974z"/></svg>
+                    </button>
+                    <button class="action-button" title="שנה סטטוס">
+                      <select class="status-select" style="width: 60px;">
+                        <option selected>אישור</option>
+                        <option>המתנה</option>
+                        <option>ביטול</option>
+                      </select>
+                    </button>
+                    <button class="action-button" title="עוד">⋯</button>
+                  </div>
+                </div>
+
+                <!-- Attendee Row 2 -->
+                <div class="attendee-row">
+                  <div class="attendee-avatar" style="background: linear-gradient(135deg, #10b981, #059669);">שכ</div>
+                  <div class="attendee-info">
+                    <div class="attendee-name">שרה כהן</div>
+                    <div class="attendee-detail">052-987-6543 • WhatsApp</div>
+                  </div>
+                  <div class="attendee-status-chip status-attended">הגיע ✓</div>
+                  <div class="attendee-purchase">₪1,230</div>
+                  <div class="attendee-actions">
+                    <button class="action-button" title="WhatsApp">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371 0-.57 0-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.708.738 5.348 2.135 7.656l-2.275 6.613 6.768-2.234a9.865 9.865 0 004.718 1.204h.005c5.443 0 9.886-4.453 9.886-9.974 0-2.662-.738-5.167-2.135-7.322a9.844 9.844 0 00-7.551-3.911zm0-1.98c2.992 0 5.822 1.165 7.938 3.277a9.864 9.864 0 012.923 7.346c0 6.052-4.927 10.974-10.974 10.974-1.798 0-3.537-.438-5.08-1.272l-.364-.214-3.776 1.248 1.27-3.687-.235-.374a9.86 9.86 0 01-1.512-5.301c0-6.052 4.927-10.974 10.974-10.974z"/></svg>
+                    </button>
+                    <button class="action-button" title="שנה סטטוס">
+                      <select class="status-select" style="width: 60px;">
+                        <option selected>אישור</option>
+                        <option>המתנה</option>
+                        <option>ביטול</option>
+                      </select>
+                    </button>
+                    <button class="action-button" title="עוד">⋯</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Group: Wait List -->
+            <div>
+              <div class="group-header" onclick="toggleGroup(this)">
+                <div class="group-status-dot dot-wait"></div>
+                <span class="group-name">רשימת המתנה</span>
+                <span class="group-count">18</span>
+                <span class="group-toggle">▼</span>
+              </div>
+
+              <div class="group-content hidden">
+                <!-- Attendee Row 3 -->
+                <div class="attendee-row">
+                  <div class="attendee-avatar" style="background: linear-gradient(135deg, #f59e0b, #d97706);">נד</div>
+                  <div class="attendee-info">
+                    <div class="attendee-name">נתן דרור</div>
+                    <div class="attendee-detail">054-555-6789 • טופס אתר</div>
+                  </div>
+                  <div class="attendee-status-chip status-wait">המתנה</div>
+                  <div class="attendee-purchase">₪0</div>
+                  <div class="attendee-actions">
+                    <button class="action-button" title="WhatsApp">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371 0-.57 0-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.708.738 5.348 2.135 7.656l-2.275 6.613 6.768-2.234a9.865 9.865 0 004.718 1.204h.005c5.443 0 9.886-4.453 9.886-9.974 0-2.662-.738-5.167-2.135-7.322a9.844 9.844 0 00-7.551-3.911zm0-1.98c2.992 0 5.822 1.165 7.938 3.277a9.864 9.864 0 012.923 7.346c0 6.052-4.927 10.974-10.974 10.974-1.798 0-3.537-.438-5.08-1.272l-.364-.214-3.776 1.248 1.27-3.687-.235-.374a9.86 9.86 0 01-1.512-5.301c0-6.052 4.927-10.974 10.974-10.974z"/></svg>
+                    </button>
+                    <button class="action-button" title="שנה סטטוס">
+                      <select class="status-select" style="width: 60px;">
+                        <option>אישור</option>
+                        <option selected>המתנה</option>
+                        <option>ביטול</option>
+                      </select>
+                    </button>
+                    <button class="action-button" title="עוד">⋯</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Group: Cancelled -->
+            <div>
+              <div class="group-header" onclick="toggleGroup(this)">
+                <div class="group-status-dot dot-cancelled"></div>
+                <span class="group-name">ביטלו הגעה</span>
+                <span class="group-count">7</span>
+                <span class="group-toggle">▼</span>
+              </div>
+
+              <div class="group-content hidden">
+                <!-- Collapsed by default -->
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: MESSAGES -->
+          <div id="messages" class="tab-content">
+            <div class="space-y-4">
+              <div class="message-item">
+                <div class="message-header">
+                  <div class="message-title">הודעת פתיחת הרשמה</div>
+                  <div class="message-time">15 באפריל 2026 בשעה 15:00</div>
+                </div>
+                <div class="message-stats">
+                  <div class="stat-item">
+                    <div class="stat-count">87</div>
+                    <div class="stat-label">נשלחו בהצלחה</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-count">79</div>
+                    <div class="stat-label">הוקרא</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-count">2</div>
+                    <div class="stat-label">נכשל</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message-item">
+                <div class="message-header">
+                  <div class="message-title">תזכורת אישור הרשמה</div>
+                  <div class="message-time">25 באפריל 2026 בשעה 10:00</div>
+                </div>
+                <div class="message-stats">
+                  <div class="stat-item">
+                    <div class="stat-count">69</div>
+                    <div class="stat-label">אישרו הגעה</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-count">65</div>
+                    <div class="stat-label">הוקרא</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-count">0</div>
+                    <div class="stat-label">נכשל</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message-item">
+                <div class="message-header">
+                  <div class="message-title">תזכורת יום לפני האירוע</div>
+                  <div class="message-time">1 במאי 2026 בשעה 18:00</div>
+                </div>
+                <div class="message-stats">
+                  <div class="stat-item">
+                    <div class="stat-count">63</div>
+                    <div class="stat-label">הוקרא</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-count">2</div>
+                    <div class="stat-label">הוצאה מהרשימה</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-count">4</div>
+                    <div class="stat-label">נכשל</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB: ANALYTICS -->
+          <div id="analytics" class="tab-content">
+            <div class="chart-grid">
+              <!-- Funnel Conversion -->
+              <div class="chart-card">
+                <div class="chart-title">שיעורי המרה בעלי בקבוק</div>
+                <div class="chart-row">
+                  <div class="chart-label">נרשמו → אישרו</div>
+                  <div class="chart-value">79%</div>
+                </div>
+                <div class="chart-row">
+                  <div class="chart-label">אישרו → הגיעו</div>
+                  <div class="chart-value">46%</div>
+                </div>
+                <div class="chart-row">
+                  <div class="chart-label">הגיעו → קנו</div>
+                  <div class="chart-value">97%</div>
+                </div>
+                <div class="chart-row">
+                  <div class="chart-label">סה"כ: נרשמו → קנו</div>
+                  <div class="chart-value" style="color: #059669; font-weight: 800;">36%</div>
+                </div>
+              </div>
+
+              <!-- Hourly Attendance -->
+              <div class="chart-card">
+                <div class="chart-title">נוכחות לפי שעה</div>
+                <div class="chart-row">
+                  <div class="chart-label">09:00–10:00</div>
+                  <div style="flex: 1;">
+                    <div class="chart-bar">
+                      <div class="chart-bar-fill" style="width: 22%;">7%</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-row">
+                  <div class="chart-label">10:00–11:00</div>
+                  <div style="flex: 1;">
+                    <div class="chart-bar">
+                      <div class="chart-bar-fill" style="width: 38%;">38%</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-row">
+                  <div class="chart-label">11:00–12:00</div>
+                  <div style="flex: 1;">
+                    <div class="chart-bar">
+                      <div class="chart-bar-fill" style="width: 32%;">32%</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-row">
+                  <div class="chart-label">12:00–13:00</div>
+                  <div style="flex: 1;">
+                    <div class="chart-bar">
+                      <div class="chart-bar-fill" style="width: 16%;">16%</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-row">
+                  <div class="chart-label">13:00–14:00</div>
+                  <div style="flex: 1;">
+                    <div class="chart-bar">
+                      <div class="chart-bar-fill" style="width: 8%;">7%</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Revenue by Category -->
+              <div class="chart-card">
+                <div class="chart-title">התפלגות הכנסות</div>
+                <div class="chart-row">
+                  <div class="chart-label">משקפיים עיניים</div>
+                  <div class="chart-value">₪21,500</div>
+                </div>
+                <div class="chart-row">
+                  <div class="chart-label">עדשות מגע</div>
+                  <div class="chart-value">₪9,200</div>
+                </div>
+                <div class="chart-row">
+                  <div class="chart-label">אביזרים</div>
+                  <div class="chart-value">₪4,760</div>
+                </div>
+                <div class="chart-row">
+                  <div class="chart-label">בחינה אופטומטרית</div>
+                  <div class="chart-value">₪4,000</div>
+                </div>
+              </div>
+
+              <!-- Attendee Source -->
+              <div class="chart-card">
+                <div class="chart-title">מקור הרשמה</div>
+                <div class="chart-row">
+                  <div class="chart-label">טופס אתר</div>
+                  <div style="flex: 1;">
+                    <div class="chart-bar">
+                      <div class="chart-bar-fill" style="width: 60%;">43</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-row">
+                  <div class="chart-label">WhatsApp</div>
+                  <div style="flex: 1;">
+                    <div class="chart-bar">
+                      <div class="chart-bar-fill" style="width: 27%;">19</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-row">
+                  <div class="chart-label">טלפון ישיר</div>
+                  <div style="flex: 1;">
+                    <div class="chart-bar">
+                      <div class="chart-bar-fill" style="width: 10%;">7</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-row">
+                  <div class="chart-label">דוא"ל</div>
+                  <div style="flex: 1;">
+                    <div class="chart-bar">
+                      <div class="chart-bar-fill" style="width: 3%;">2</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function switchTab(event, tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+        tab.style.display = 'none';
+      });
+
+      // Deactivate all buttons
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+
+      // Show selected tab
+      const tab = document.getElementById(tabName);
+      if (tab) {
+        tab.classList.add('active');
+        tab.style.display = 'block';
+      }
+
+      // Activate selected button
+      event.target.classList.add('active');
+    }
+
+    function toggleGroup(header) {
+      const content = header.nextElementSibling;
+      if (content) {
+        content.classList.toggle('hidden');
+        const toggle = header.querySelector('.group-toggle');
+        if (toggle) {
+          toggle.classList.toggle('collapsed');
+        }
+      }
+    }
+
+    function toggleGroupBy(button) {
+      button.style.backgroundColor = button.style.backgroundColor === 'rgb(139, 92, 246)' ? '' : '#8b5cf6';
+      button.style.color = button.style.color === 'white' ? '' : 'white';
+    }
+  </script>
+</body>
+</html>

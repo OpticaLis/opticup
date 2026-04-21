@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>יום אירוע - מערכת CRM</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        * {
+            font-family: 'Heebo', sans-serif;
+        }
+
+        html, body {
+            direction: rtl;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        /* Pulsing animation for live status */
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulse-dot {
+            animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Smooth transitions */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Large touch targets */
+        button {
+            min-height: 48px;
+            min-width: 48px;
+        }
+
+        input {
+            min-height: 48px;
+        }
+
+        .event-card {
+            transition: all 0.3s ease;
+        }
+
+        .event-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-card.checked-in {
+            background-color: #f0fdf4;
+            border-color: #22c55e;
+        }
+
+        .search-result {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .search-result:hover {
+            background-color: #f8fafc;
+        }
+
+        .search-result.checked-in {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .feed-item {
+            border-right: 4px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .feed-item.check-in {
+            border-right-color: #22c55e;
+        }
+
+        .feed-item.purchase {
+            border-right-color: #eab308;
+        }
+
+        .feed-item.note {
+            border-right-color: #8b5cf6;
+        }
+
+        /* Modal overlay */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* Status badge */
+        .badge-checked-in {
+            background-color: #dbeafe;
+            color: #0369a1;
+        }
+
+        .badge-needs-exam {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Live counter pulsing */
+        .live-pulse {
+            position: relative;
+        }
+
+        .live-pulse::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            background: rgba(34, 197, 94, 0.1);
+            border-radius: 8px;
+            animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat-card-large {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        /* Floating action button */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
+            z-index: 40;
+            transition: all 0.3s ease;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 24px rgba(139, 92, 246, 0.4);
+        }
+
+        /* Input focus states */
+        input:focus {
+            outline: none;
+            ring: 2px;
+            ring-color: #8b5cf6;
+        }
+
+        /* Time badge */
+        .time-badge {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #64748b;
+            min-width: 60px;
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-indicator.active {
+            background-color: #22c55e;
+        }
+    </style>
+</head>
+<body class="bg-white">
+    <div class="h-screen flex flex-col">
+        <!-- Top Bar -->
+        <div class="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">אירוע #22 - סופר סייל ראשוני</h1>
+                    <p class="text-sm text-slate-600 mt-1">20 באפריל 2026 • 09:30 - 17:00</p>
+                </div>
+
+                <div class="flex items-center gap-8">
+                    <!-- Status -->
+                    <div class="flex items-center gap-2">
+                        <div class="status-indicator active pulse-dot"></div>
+                        <span class="text-sm font-medium text-emerald-700">האירוע פעיל</span>
+                    </div>
+
+                    <!-- Live Clock -->
+                    <div class="text-right">
+                        <p class="text-xs text-slate-500 mb-1">שעה מעודכנת</p>
+                        <p class="text-lg font-bold text-slate-900" id="live-clock">09:47</p>
+                    </div>
+
+                    <!-- Live Counters -->
+                    <div class="flex gap-6 px-6 py-3 bg-white rounded-lg border border-slate-200">
+                        <div class="text-center live-pulse">
+                            <p class="text-xs text-slate-600 font-medium">הגיעו</p>
+                            <p class="text-xl font-bold text-slate-900">22<span class="text-sm text-slate-500">/50</span></p>
+                        </div>
+                        <div class="border-r border-slate-200"></div>
+                        <div class="text-center">
+                            <p class="text-xs text-slate-600 font-medium">קנו</p>
+                            <p class="text-xl font-bold text-slate-900">21</p>
+                        </div>
+                        <div class="border-r border-slate-200"></div>
+                        <div class="text-center">
+                            <p class="text-xs text-slate-600 font-medium">הכנסות</p>
+                            <p class="text-xl font-bold text-emerald-700">₪35,125</p>
+                        </div>
+                    </div>
+
+                    <!-- Back Link -->
+                    <a href="#" class="text-sm font-medium text-violet-600 hover:text-violet-700">חזרה ל-CRM</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-hidden flex">
+            <!-- Left Column - Check-in (60%) -->
+            <div class="w-3/5 border-r border-slate-200 flex flex-col">
+                <!-- Search Bar -->
+                <div class="p-6 border-b border-slate-200 bg-white">
+                    <div class="relative">
+                        <input
+                            type="text"
+                            id="search-input"
+                            placeholder="חפש לפי שם, טלפון או סרוק QR"
+                            class="w-full px-5 py-4 text-lg border-2 border-slate-200 rounded-lg focus:border-violet-500 transition-colors"
+                        >
+                        <svg class="absolute top-4 right-4 w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Search Results -->
+                <div class="flex-1 overflow-y-auto px-6 py-6">
+                    <div id="search-results" class="space-y-3">
+                        <!-- Sample Results -->
+                        <div class="event-card p-4 border-2 border-slate-200 rounded-lg bg-white">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-lg text-slate-900">דניאל כהן</h3>
+                                    <p class="text-sm text-slate-600 mt-1">050-1234567</p>
+                                    <div class="flex gap-2 mt-2">
+                                        <span class="badge-checked-in px-3 py-1 rounded-full text-xs font-medium">✓ נכנס</span>
+                                        <span class="badge-needs-exam px-3 py-1 rounded-full text-xs font-medium">בדיקה עדכנית</span>
+                                    </div>
+                                </div>
+                                <button class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-lg transition-colors">
+                                    צ'ק-אין ✓
+                                </button>
+                            </div>
+                            <div class="mt-3 text-xs text-emerald-700 font-medium">✓ נכנס ב-09:15</div>
+                        </div>
+
+                        <div class="event-card p-4 border-2 border-slate-200 rounded-lg bg-white">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-lg text-slate-900">רותי לוי</h3>
+                                    <p class="text-sm text-slate-600 mt-1">052-9876543</p>
+                                    <div class="flex gap-2 mt-2">
+                                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">עדיין לא הגיע</span>
+                                    </div>
+                                </div>
+                                <button class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-lg transition-colors">
+                                    צ'ק-אין ✓
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="event-card p-4 border-2 border-slate-200 rounded-lg bg-white">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-lg text-slate-900">משה אברהם</h3>
+                                    <p class="text-sm text-slate-600 mt-1">053-5555555</p>
+                                    <div class="flex gap-2 mt-2">
+                                        <span class="badge-checked-in px-3 py-1 rounded-full text-xs font-medium">✓ נכנס</span>
+                                    </div>
+                                </div>
+                                <button class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-lg transition-colors">
+                                    צ'ק-אין ✓
+                                </button>
+                            </div>
+                            <div class="mt-3 text-xs text-emerald-700 font-medium">✓ נכנס ב-09:22</div>
+                        </div>
+
+                        <div class="event-card p-4 border-2 border-slate-200 rounded-lg bg-white">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-lg text-slate-900">יעל מנדלבאום</h3>
+                                    <p class="text-sm text-slate-600 mt-1">051-7777777</p>
+                                    <div class="flex gap-2 mt-2">
+                                        <span class="badge-needs-exam px-3 py-1 rounded-full text-xs font-medium">בדיקה עדכנית</span>
+                                    </div>
+                                </div>
+                                <button class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-lg transition-colors">
+                                    צ'ק-אין ✓
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Live Feed (40%) -->
+            <div class="w-2/5 flex flex-col bg-slate-50">
+                <!-- Feed Header -->
+                <div class="p-6 border-b border-slate-200 bg-white">
+                    <h2 class="text-lg font-bold text-slate-900">פעילות בזמן אמת</h2>
+                    <p class="text-xs text-slate-600 mt-1">עדכונים מהאירוע</p>
+                </div>
+
+                <!-- Feed Items -->
+                <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                    <!-- Check-in entries -->
+                    <div class="feed-item check-in bg-white p-4 rounded-lg border border-slate-200">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                                <span class="text-emerald-600 font-bold">✓</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-slate-900 truncate">דניאל כהן נכנס</p>
+                                <p class="text-sm text-slate-600">בדיקה עדכנית נדרשת</p>
+                            </div>
+                            <div class="time-badge">09:15</div>
+                        </div>
+                    </div>
+
+                    <!-- Purchase entry -->
+                    <div class="feed-item purchase bg-white p-4 rounded-lg border border-slate-200">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                                <span class="text-yellow-700 font-bold">💰</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-slate-900 truncate">רותי לוי — רכישה</p>
+                                <p class="text-sm text-yellow-700 font-bold">₪1,850</p>
+                            </div>
+                            <div class="time-badge">09:18</div>
+                        </div>
+                    </div>
+
+                    <!-- Check-in entry -->
+                    <div class="feed-item check-in bg-white p-4 rounded-lg border border-slate-200">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                                <span class="text-emerald-600 font-bold">✓</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-slate-900 truncate">משה אברהם נכנס</p>
+                                <p class="text-sm text-slate-600">ללא הערות</p>
+                            </div>
+                            <div class="time-badge">09:22</div>
+                        </div>
+                    </div>
+
+                    <!-- Purchase entry -->
+                    <div class="feed-item purchase bg-white p-4 rounded-lg border border-slate-200">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                                <span class="text-yellow-700 font-bold">💰</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-slate-900 truncate">דניאל כהן — רכישה</p>
+                                <p class="text-sm text-yellow-700 font-bold">₪2,120</p>
+                            </div>
+                            <div class="time-badge">09:28</div>
+                        </div>
+                    </div>
+
+                    <!-- Check-in entry -->
+                    <div class="feed-item check-in bg-white p-4 rounded-lg border border-slate-200">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                                <span class="text-emerald-600 font-bold">✓</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-slate-900 truncate">שרה כהנמן נכנסה</p>
+                                <p class="text-sm text-slate-600">ללא הערות</p>
+                            </div>
+                            <div class="time-badge">09:31</div>
+                        </div>
+                    </div>
+
+                    <!-- Note entry -->
+                    <div class="feed-item note bg-white p-4 rounded-lg border border-slate-200">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+                                <span class="text-violet-600 font-bold">📝</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-slate-900 truncate">הערה: משה רוצה שקע</p>
+                                <p class="text-sm text-slate-600">הוסיף על ידי אורלי</p>
+                            </div>
+                            <div class="time-badge">09:35</div>
+                        </div>
+                    </div>
+
+                    <!-- Purchase entry -->
+                    <div class="feed-item purchase bg-white p-4 rounded-lg border border-slate-200">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                                <span class="text-yellow-700 font-bold">💰</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-slate-900 truncate">משה אברהם — רכישה</p>
+                                <p class="text-sm text-yellow-700 font-bold">₪1,155</p>
+                            </div>
+                            <div class="time-badge">09:42</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Stats -->
+        <div class="bg-white border-t border-slate-200 px-6 py-6 grid grid-cols-4 gap-4">
+            <div class="stat-card p-6 rounded-lg">
+                <p class="text-sm text-slate-600 font-medium mb-2">נרשמו</p>
+                <p class="stat-card-large">87</p>
+                <p class="text-xs text-slate-500 mt-2">נרשמים לאירוע</p>
+            </div>
+
+            <div class="stat-card p-6 rounded-lg">
+                <p class="text-sm text-slate-600 font-medium mb-2">אישרו</p>
+                <p class="stat-card-large">69</p>
+                <p class="text-xs text-slate-500 mt-2">אישרו הגעה</p>
+            </div>
+
+            <div class="stat-card p-6 rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-300">
+                <p class="text-sm text-emerald-700 font-medium mb-2">הגיעו</p>
+                <p class="stat-card-large text-emerald-700">22</p>
+                <p class="text-xs text-emerald-600 mt-2">עד כה הגיעו</p>
+            </div>
+
+            <div class="stat-card p-6 rounded-lg">
+                <p class="text-sm text-slate-600 font-medium mb-2">קנו</p>
+                <p class="stat-card-large">21</p>
+                <p class="text-sm text-emerald-700 font-bold mt-2">₪35,125</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button onclick="openQuickRegistration()" class="fab bg-violet-600 hover:bg-violet-700 text-white rounded-full p-4 flex items-center justify-center gap-2 shadow-lg">
+        <span class="text-2xl font-bold">+</span>
+        <span class="text-sm font-bold">רישום מהיר</span>
+    </button>
+
+    <!-- Quick Registration Modal -->
+    <div id="registration-modal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-50">
+        <div class="modal-content bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-8">
+            <h2 class="text-2xl font-bold text-slate-900 mb-6">רישום מהיר לאירוע</h2>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">שם מלא</label>
+                    <input type="text" placeholder="שם מלא" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-violet-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">טלפון</label>
+                    <input type="tel" placeholder="050-1234567" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-violet-500 transition-colors">
+                </div>
+
+                <div>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" class="w-5 h-5 rounded border-slate-300">
+                        <span class="text-sm font-medium text-slate-700">נדרשת בדיקת עדכנית</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-8">
+                <button onclick="closeQuickRegistration()" class="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+                    ביטול
+                </button>
+                <button onclick="submitQuickRegistration()" class="flex-1 px-4 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-bold transition-colors">
+                    רישום וצ'ק-אין
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Modal -->
+    <div id="purchase-modal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-50">
+        <div class="modal-content bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">רישום רכישה</h2>
+                <button onclick="closePurchaseModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-lg mb-6">
+                <p class="text-xs text-slate-600 mb-1">לקוח</p>
+                <p class="text-lg font-bold text-slate-900" id="purchase-customer">דניאל כהן</p>
+                <p class="text-sm text-slate-600">050-1234567</p>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-slate-700 mb-2">סכום רכישה</label>
+                <div class="relative">
+                    <span class="absolute right-4 top-3 text-2xl font-bold text-slate-900">₪</span>
+                    <input type="number" placeholder="0" class="w-full pl-4 pr-12 py-4 text-3xl font-bold border-2 border-slate-200 rounded-lg focus:border-violet-500 transition-colors">
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closePurchaseModal()" class="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+                    ביטול
+                </button>
+                <button class="flex-1 px-4 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-bold transition-colors">
+                    רשום רכישה
+                </button>
+            </div>
+
+            <button class="w-full mt-4 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+                לא קנה / ביטול
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Update live clock
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('live-clock').textContent = `${hours}:${minutes}`;
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Modal functions
+        function openQuickRegistration() {
+            document.getElementById('registration-modal').classList.remove('hidden');
+        }
+
+        function closeQuickRegistration() {
+            document.getElementById('registration-modal').classList.add('hidden');
+        }
+
+        function submitQuickRegistration() {
+            // Simulate registration
+            alert('נרשם וצ\'ק-אין בוצע בהצלחה!');
+            closeQuickRegistration();
+        }
+
+        function openPurchaseModal(customerName, phone) {
+            document.getElementById('purchase-customer').textContent = customerName;
+            document.getElementById('purchase-modal').classList.remove('hidden');
+        }
+
+        function closePurchaseModal() {
+            document.getElementById('purchase-modal').classList.add('hidden');
+        }
+
+        // Search functionality
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            // In a real app, this would filter results
+            console.log('Search:', query);
+        });
+
+        // Close modals on background click
+        document.getElementById('registration-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('registration-modal')) {
+                closeQuickRegistration();
+            }
+        });
+
+        document.getElementById('purchase-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('purchase-modal')) {
+                closePurchaseModal();
+            }
+        });
+
+        // Lucide icons init (if needed)
+        lucide.createIcons();
+    </script>
+</body>
+</html>

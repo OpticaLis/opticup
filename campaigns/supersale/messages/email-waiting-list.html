@@ -1,0 +1,133 @@
+<!--
+  SuperSale "Waiting List" Email — מכסה ראשונית הושלמה
+  Scenario: 5A — פתיחת אירוע ושליחת הודעות
+  Trigger: Event Status → "Waiting list"
+  Recipients: Tier 2 leads in status "הוזמן לאירוע" matching Interest (up to 500)
+  From: events@prizma-optic.co.il
+  Subject: עדכון סטטוס רישום: אירוע המותגים {{2.name}} הגיע למכסה הראשונית
+
+  Variables:
+    {{124.name}} = שם הליד מ-Tier 2
+    {{2.name}} = שם האירוע מ-Events Management
+    {{2.mappable_column_values.date_mky5xx32.text}} = תאריך האירוע
+    {{126.shortURL}} = registration link (Short.io)
+    {{127.shortURL}} = unsubscribe short URL (Short.io)
+    {{124.mappable_column_values.email_mky18cr2.text}} = אימייל הליד
+-->
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>עדכון רישום - אופטיקה פריזמה</title>
+    <style>
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color:#000000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        @media screen and (max-width: 600px) {
+            .container { width: 100% !important; }
+            .mobile-padding { padding-left: 20px !important; padding-right: 20px !important; }
+            .event-box { padding: 25px 20px !important; }
+            .btn { width: 100% !important; display: block !important; box-sizing: border-box; }
+        }
+    </style>
+</head>
+<body style="margin:0; padding:0; background-color:#000000; direction:rtl;">
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#000000; background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000000 70%);">
+    <tr>
+        <td align="center" style="padding: 40px 0;">
+
+            <table border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="max-width:600px; background-color:#0a0a0a; border-radius:12px; overflow:hidden; border: 1px solid #222222; box-shadow: 0 10px 40px rgba(212, 175, 55, 0.1);">
+
+                <tr>
+                    <td height="4" style="background: linear-gradient(90deg, #000000 0%, #d4af37 50%, #000000 100%);"></td>
+                </tr>
+
+                <tr>
+                    <td align="center" style="padding: 40px 0 25px 0;">
+                        <p style="margin:0; color:#d4af37; font-size:24px; font-weight:bold; letter-spacing:4px; text-transform:uppercase;">PRIZMA OPTIC</p>
+                        <p style="margin:5px 0 0 0; color:#666666; font-size:12px; letter-spacing:2px; text-transform:uppercase;">Luxury Eyewear Events</p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="mobile-padding" style="padding: 20px 50px 40px 50px; text-align:right;">
+
+                        <h1 style="margin:0 0 25px 0; font-size:28px; font-weight:300; color:#ffffff; text-align:center;">
+                            שלום {{124.name}},
+                        </h1>
+
+                        <p style="margin:0 0 35px 0; font-size:16px; line-height:1.7; color:#cccccc; text-align:center;">
+                            אנו מעדכנים כי מכסת הרישום הראשונית עבור האירוע <strong>{{2.name}}</strong> בתאריך {{2.mappable_column_values.date_mky5xx32.text}} הושלמה במלואה.
+                        </p>
+
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#111111; border: 1px solid #333333; border-radius: 8px; margin-bottom: 35px;">
+                            <tr>
+                                <td style="padding: 25px; border-right: 4px solid #d4af37;">
+                                    <h3 style="margin:0 0 12px 0; font-size:17px; color:#d4af37;">שריון מקום על בסיס מקום פנוי</h3>
+                                    <p style="margin:0 0 15px 0; color:#dddddd; font-size:14px; line-height:1.6;">
+                                        על מנת לשמור על רמת שירות VIP, אנו מגבילים את מספר המשתתפים ל-50 בכל אירוע. יחד עם זאת, ניתן עדיין להצטרף לרשימת ההמתנה המנוהלת שלנו.
+                                    </p>
+                                    <p style="margin:0 0 15px 0; color:#dddddd; font-size:14px; line-height:1.6;">
+                                        <strong>שלב התיאום הסופי:</strong> כ-3 ימים לפני האירוע, נבצע אימות הגעה מול הנרשמים.
+                                    </p>
+                                    <p style="margin:0; color:#dddddd; font-size:14px; line-height:1.6;">
+                                        במידה ויתפנו מקומות לאור ביטולים או עדכונים ברשימה, נפתח את הזכאות להטבות עבור הממתינים לפי סדר הרישום.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                            <tr>
+                                <td align="center">
+                                    <a href="{{126.shortURL}}" class="btn" style="display:inline-block; padding:18px 45px; background-color:#d4af37; color:#000000; font-size:16px; font-weight:bold; text-decoration:none; border-radius:4px; text-transform:uppercase; letter-spacing:0.5px; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);">
+                                        להרשמה ובדיקת זכאות
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="margin:20px 0 0 0; text-align:center; font-size:13px; color:#777777;">
+                            *מימוש הטבות האירוע (מחירי אירוע והתחייבות למחיר) מותנה באישור הגעה סופי וקבלת קופון אישי.
+                        </p>
+
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 40px; border-top: 1px solid #222222;">
+                            <tr>
+                                <td style="padding-top: 25px; text-align:right;">
+                                    <p style="margin:0; font-size:15px; color:#ffffff;">בברכה,</p>
+                                    <p style="margin:5px 0 0 0; font-size:15px; color:#d4af37; font-weight:bold;">צוות אופטיקה פריזמה</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </td>
+                </tr>
+
+                <tr>
+                    <td align="center" style="padding: 20px; color:#555555; font-size:12px; border-top: 1px solid #1a1a1a;">
+                        <a href="{{127.shortURL}}" style="color:#666666; text-decoration:underline;">להסרה מרשימת התפוצה</a>
+                    </td>
+                </tr>
+
+            </table>
+
+            <table border="0" cellpadding="0" cellspacing="0" width="600" class="container">
+                <tr>
+                    <td align="center" style="padding: 20px 0; color:#444444; font-size:11px; line-height:1.6;">
+                        © כל הזכויות שמורות לאופטיקה פריזמה | הרצל 32, אשקלון <br>
+                        ההשתתפות בכפוף לאישור סופי וזמינות המלאי ביום האירוע.
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

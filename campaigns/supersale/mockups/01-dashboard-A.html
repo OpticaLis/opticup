@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>דשבורד CRM - אירוע המותגים</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts - Heebo for Hebrew -->
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            font-family: 'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #f8f7ff;
+        }
+
+        /* Sidebar styling */
+        .sidebar {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .nav-item {
+            @apply px-6 py-3 flex items-center gap-3 text-slate-300 hover:text-white hover:bg-white/10 transition-all duration-200 cursor-pointer rounded-lg mx-3 my-1;
+        }
+
+        .nav-item.active {
+            @apply bg-violet-500/20 text-violet-300 font-medium;
+            border-right: 3px solid #8b5cf6;
+        }
+
+        /* Hero KPI Card */
+        .hero-kpi {
+            @apply bg-gradient-to-br from-violet-500 to-violet-600 rounded-2xl p-8 shadow-lg text-white;
+        }
+
+        .hero-value {
+            @apply text-5xl font-900 mt-3 tracking-tight;
+        }
+
+        .hero-label {
+            @apply text-violet-100 text-sm font-medium opacity-90;
+        }
+
+        /* KPI Cards */
+        .kpi-card {
+            @apply bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 border border-slate-200;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: #8b5cf6;
+        }
+
+        .kpi-value {
+            @apply text-3xl font-bold text-slate-900 mt-2;
+        }
+
+        .kpi-label {
+            @apply text-sm text-slate-600 font-medium;
+        }
+
+        .kpi-change {
+            @apply text-xs font-semibold mt-2 px-2 py-1 rounded-full inline-block;
+        }
+
+        .kpi-change.positive {
+            @apply bg-green-100 text-green-700;
+        }
+
+        .kpi-change.neutral {
+            @apply bg-slate-100 text-slate-700;
+        }
+
+        /* Gradient Funnel Bar */
+        .funnel-gradient-container {
+            @apply space-y-2;
+        }
+
+        .funnel-gradient-bar {
+            @apply flex items-center rounded-lg p-4 text-white font-semibold text-sm transition-all duration-300;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .funnel-gradient-bar:hover {
+            transform: translateX(-4px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .funnel-bar-label {
+            @apply flex-1;
+        }
+
+        .funnel-bar-value {
+            @apply font-bold text-base;
+        }
+
+        .funnel-bar-percent {
+            @apply text-xs opacity-90 mr-3;
+        }
+
+        /* Status Chips */
+        .status-chip {
+            @apply inline-block px-3 py-1 rounded-full text-xs font-semibold;
+        }
+
+        .status-chip.new {
+            @apply bg-green-100 text-green-700;
+        }
+
+        .status-chip.pending {
+            @apply bg-blue-100 text-blue-700;
+        }
+
+        .status-chip.confirmed {
+            @apply bg-violet-100 text-violet-700;
+        }
+
+        .status-chip.purchased {
+            @apply bg-green-100 text-green-700;
+        }
+
+        .status-chip.interested {
+            @apply bg-amber-100 text-amber-700;
+        }
+
+        .status-chip.not-interested {
+            @apply bg-red-100 text-red-700;
+        }
+
+        /* Activity feed */
+        .activity-section-header {
+            @apply text-xs font-bold text-slate-500 uppercase tracking-wider py-2 px-4 bg-slate-50 rounded-lg mb-3;
+        }
+
+        .activity-item {
+            @apply flex gap-4 pb-4 border-b border-slate-100 last:border-0 last:pb-0 animate-fadeIn;
+        }
+
+        .activity-icon {
+            @apply w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-semibold;
+        }
+
+        .activity-icon.registration {
+            @apply bg-blue-100 text-blue-600;
+        }
+
+        .activity-icon.message {
+            @apply bg-purple-100 text-purple-600;
+        }
+
+        .activity-icon.status {
+            @apply bg-green-100 text-green-600;
+        }
+
+        .activity-icon.purchase {
+            @apply bg-amber-100 text-amber-600;
+        }
+
+        .activity-time {
+            @apply text-xs text-slate-500 font-medium;
+        }
+
+        .activity-title {
+            @apply text-sm font-semibold text-slate-900;
+        }
+
+        .activity-description {
+            @apply text-sm text-slate-600 mt-1;
+        }
+
+        /* Button styles */
+        .btn-primary {
+            @apply px-4 py-2.5 bg-violet-500 text-white rounded-lg font-medium hover:bg-violet-600 transition-colors duration-200 shadow-md hover:shadow-lg flex items-center gap-2;
+        }
+
+        .btn-secondary {
+            @apply px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors duration-200 flex items-center gap-2;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-slideInDown {
+            animation: slideInDown 0.4s ease-out;
+        }
+
+        @keyframes pulse-soft {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .animate-pulse-soft {
+            animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Header */
+        .header {
+            @apply bg-white border-b border-slate-200 shadow-sm;
+        }
+
+        /* Quick action cards */
+        .action-card {
+            @apply bg-white border border-slate-200 rounded-xl p-5 hover:border-violet-300 hover:shadow-md transition-all duration-200 cursor-pointer;
+        }
+
+        .action-card:hover {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(139, 92, 246, 0.02) 100%);
+            transform: translateY(-1px);
+        }
+
+        .action-icon {
+            @apply w-12 h-12 rounded-lg bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center mx-auto mb-3;
+        }
+
+        .action-title {
+            @apply text-sm font-semibold text-slate-900 text-center;
+        }
+
+        .action-description {
+            @apply text-xs text-slate-500 text-center mt-1;
+        }
+
+        /* Event card */
+        .event-card {
+            @apply bg-white rounded-xl p-6 shadow-md border border-slate-200;
+        }
+
+        .event-badge {
+            @apply inline-block px-3 py-1 bg-violet-100 text-violet-700 text-xs font-bold rounded-full;
+        }
+
+        /* Donut chart styles */
+        .donut-container {
+            @apply flex flex-col items-center justify-center;
+        }
+
+        .donut-chart {
+            @apply relative w-32 h-32;
+        }
+
+        .donut-label {
+            @apply text-center mt-4 text-sm font-semibold text-slate-900;
+        }
+
+        .donut-sublabel {
+            @apply text-center text-xs text-slate-600 mt-1;
+        }
+
+        /* Sparkline simulation */
+        .sparkline {
+            @apply flex items-end justify-around h-12 gap-0.5 px-2;
+        }
+
+        .sparkline-bar {
+            @apply flex-1 bg-gradient-to-t from-violet-400 to-violet-300 rounded-t opacity-70 transition-all duration-300;
+        }
+
+        .sparkline-bar:hover {
+            @apply opacity-100;
+        }
+
+        /* Metric row */
+        .metric-row {
+            @apply flex items-center justify-between py-3 px-4 border-b border-slate-100 last:border-0;
+        }
+
+        .metric-label {
+            @apply text-sm text-slate-600 font-medium;
+        }
+
+        .metric-value {
+            @apply text-sm font-bold text-slate-900;
+        }
+
+        /* Footer */
+        .dashboard-footer {
+            @apply bg-white border-t border-slate-200 px-8 py-4 text-xs text-slate-500 flex items-center justify-between;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Greeting section */
+        .greeting-section {
+            @apply text-slate-900 mb-8;
+        }
+
+        .greeting-main {
+            @apply text-3xl font-bold;
+        }
+
+        .greeting-date {
+            @apply text-sm text-slate-600 mt-1;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div class="flex h-screen bg-slate-50">
+
+        <!-- Sidebar Navigation -->
+        <div class="sidebar w-64 flex flex-col overflow-hidden">
+            <!-- Logo -->
+            <div class="px-6 py-8 border-b border-white/10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-violet-400 to-purple-500 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-white font-bold text-lg">Optic CRM</div>
+                        <div class="text-violet-300 text-xs">אירוע המותגים</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="flex-1 overflow-y-auto py-6 px-2">
+                <div class="nav-item active">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 11l4-4m0 0l4-4m-4 4l-4-4m4 4l4 4"/>
+                    </svg>
+                    <span>דשבורד</span>
+                </div>
+
+                <div class="nav-item">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM6 20a9 9 0 0118 0v2H6v-2z"/>
+                    </svg>
+                    <span>לידים</span>
+                </div>
+
+                <div class="nav-item">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <span>אירועים</span>
+                </div>
+
+                <div class="nav-item">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3.914a.5.5 0 01-.5-.5V5.5a.5.5 0 01.5-.5h10.172a2 2 0 012 2v13.414a.5.5 0 01-.5.5z"/>
+                    </svg>
+                    <span>משתתפים</span>
+                </div>
+
+                <div class="nav-item">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    <span>הודעות</span>
+                </div>
+
+                <div class="nav-item">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    <span>סטטיסטיקות</span>
+                </div>
+
+                <div class="nav-item">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span>הגדרות</span>
+                </div>
+            </nav>
+
+            <!-- User Footer -->
+            <div class="border-t border-white/10 px-4 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-violet-400 rounded-full flex items-center justify-center text-white font-bold">ד</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-white text-sm font-semibold truncate">דניאל</div>
+                        <div class="text-violet-300 text-xs truncate">מנהל ראשי</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+
+            <!-- Header -->
+            <div class="header h-16 px-8 flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">דשבורד CRM</h1>
+                    <p class="text-sm text-slate-600">ניהול אירועים והעלאת הכנסות</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                        <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 1115 15.571V15a4 4 0 00-8 0v.571a2.032 2.032 0 101.405 1.405L9 17h5m0 0v4m0-11v.571"/>
+                        </svg>
+                    </button>
+                    <div class="w-px h-6 bg-slate-200"></div>
+                    <button class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                        <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scrollable Content Area -->
+            <div class="flex-1 overflow-y-auto flex flex-col">
+                <div class="p-8 flex-1">
+
+                    <!-- Greeting Section -->
+                    <div class="greeting-section animate-slideInDown mb-8">
+                        <div class="greeting-main">בוקר טוב, דניאל 👋</div>
+                        <div class="greeting-date" id="currentDate">20 באפריל, 2026</div>
+                    </div>
+
+                    <!-- Hero KPI: Active Event Revenue -->
+                    <div class="hero-kpi animate-slideInDown mb-8">
+                        <div class="hero-label">הכנסה אירוע פעיל - אירוע #22</div>
+                        <div class="hero-value">₪39,460</div>
+                        <div class="text-violet-100 text-sm mt-2">32 משתתפים • 97% שיעור המרה</div>
+                    </div>
+
+                    <!-- KPI Cards Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-slideInDown">
+
+                        <div class="kpi-card">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <div class="kpi-label">סה"כ לידים</div>
+                                    <div class="kpi-value">850</div>
+                                    <div class="kpi-change positive">↑ 12% החודש</div>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM6 20a9 9 0 0118 0v2H6v-2z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <div class="kpi-label">אירוע #24 רשומים</div>
+                                    <div class="kpi-value">87</div>
+                                    <div class="kpi-change neutral">מאי 2026</div>
+                                </div>
+                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <div class="kpi-label">משתתפים שהגיעו</div>
+                                    <div class="kpi-value">32</div>
+                                    <div class="kpi-change positive">97% קנו</div>
+                                </div>
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m7 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <div class="kpi-label">שיעור המרה</div>
+                                    <div class="kpi-value">97%</div>
+                                    <div class="kpi-change positive">רוכשים ממשיכים</div>
+                                </div>
+                                <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Main Grid: Funnel + Quick Status + Quick Actions -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+
+                        <!-- Event Funnel with Real Gradient -->
+                        <div class="lg:col-span-2">
+                            <div class="bg-white rounded-xl p-8 shadow-md border border-slate-200">
+                                <h2 class="text-lg font-bold text-slate-900 mb-2">ממשק ההמרה - אירוע #22</h2>
+                                <p class="text-sm text-slate-600 mb-8">מעקב אחרי המסע של לידים להמרה</p>
+
+                                <div class="funnel-gradient-container">
+                                    <!-- Registered -->
+                                    <div class="funnel-gradient-bar bg-gradient-to-r from-blue-500 to-blue-400" style="width: 100%;">
+                                        <div class="funnel-bar-label">רשומים</div>
+                                        <div class="flex items-center">
+                                            <span class="funnel-bar-percent">87</span>
+                                            <span class="funnel-bar-value">100%</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Confirmed -->
+                                    <div class="funnel-gradient-bar bg-gradient-to-r from-violet-500 to-violet-400" style="width: 79.3%;">
+                                        <div class="funnel-bar-label">אושרו</div>
+                                        <div class="flex items-center">
+                                            <span class="funnel-bar-percent">69</span>
+                                            <span class="funnel-bar-value">79%</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Attended -->
+                                    <div class="funnel-gradient-bar bg-gradient-to-r from-emerald-500 to-emerald-400" style="width: 36.8%;">
+                                        <div class="funnel-bar-label">הגיעו</div>
+                                        <div class="flex items-center">
+                                            <span class="funnel-bar-percent">32</span>
+                                            <span class="funnel-bar-value">37%</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Purchased -->
+                                    <div class="funnel-gradient-bar bg-gradient-to-r from-amber-500 to-amber-400" style="width: 35.6%;">
+                                        <div class="funnel-bar-label">קנו</div>
+                                        <div class="flex items-center">
+                                            <span class="funnel-bar-percent">31</span>
+                                            <span class="funnel-bar-value">36%</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Conversion Insights -->
+                                <div class="mt-6 pt-6 border-t border-slate-200">
+                                    <div class="grid grid-cols-3 gap-4 text-center">
+                                        <div>
+                                            <div class="text-xs text-slate-600">ירידה רשום→אושר</div>
+                                            <div class="text-lg font-bold text-slate-900">20.7%</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-slate-600">ירידה אושר→הגיע</div>
+                                            <div class="text-lg font-bold text-slate-900">53.6%</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-slate-600">שיעור קנייה</div>
+                                            <div class="text-lg font-bold text-green-600">97%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Status: Leads Breakdown Donut -->
+                        <div>
+                            <div class="bg-white rounded-xl p-6 shadow-md border border-slate-200 h-full">
+                                <h3 class="text-lg font-bold text-slate-900 mb-6">הסטטוס של לידים</h3>
+
+                                <div class="donut-container">
+                                    <svg class="donut-chart" viewBox="0 0 140 140">
+                                        <!-- Background circle -->
+                                        <circle cx="70" cy="70" r="60" fill="none" stroke="#e2e8f0" stroke-width="20"/>
+
+                                        <!-- Green (חדש) - 35% -->
+                                        <circle cx="70" cy="70" r="60" fill="none" stroke="#22c55e" stroke-width="20"
+                                                stroke-dasharray="131.95 377.0" stroke-dashoffset="0"
+                                                stroke-linecap="round" transform="rotate(-90 70 70)"/>
+
+                                        <!-- Blue (ממתין) - 25% -->
+                                        <circle cx="70" cy="70" r="60" fill="none" stroke="#3b82f6" stroke-width="20"
+                                                stroke-dasharray="94.25 377.0" stroke-dashoffset="-131.95"
+                                                stroke-linecap="round" transform="rotate(-90 70 70)"/>
+
+                                        <!-- Purple (הוזמן) - 20% -->
+                                        <circle cx="70" cy="70" r="60" fill="none" stroke="#8b5cf6" stroke-width="20"
+                                                stroke-dasharray="75.4 377.0" stroke-dashoffset="-226.2"
+                                                stroke-linecap="round" transform="rotate(-90 70 70)"/>
+
+                                        <!-- Amber (מעוניין) - 15% -->
+                                        <circle cx="70" cy="70" r="60" fill="none" stroke="#f59e0b" stroke-width="20"
+                                                stroke-dasharray="56.55 377.0" stroke-dashoffset="-301.6"
+                                                stroke-linecap="round" transform="rotate(-90 70 70)"/>
+
+                                        <!-- Red (לא מעוניין) - 5% -->
+                                        <circle cx="70" cy="70" r="60" fill="none" stroke="#ef4444" stroke-width="20"
+                                                stroke-dasharray="18.85 377.0" stroke-dashoffset="-358.15"
+                                                stroke-linecap="round" transform="rotate(-90 70 70)"/>
+
+                                        <!-- Center text -->
+                                        <text x="70" y="75" text-anchor="middle" font-size="24" font-weight="bold" fill="#1e293b">850</text>
+                                    </svg>
+                                    <div class="donut-sublabel">סה"כ לידים</div>
+                                </div>
+
+                                <div class="mt-6 space-y-2 text-sm">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                            <span class="text-slate-700">חדש</span>
+                                        </div>
+                                        <span class="font-semibold text-slate-900">298</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                                            <span class="text-slate-700">ממתין</span>
+                                        </div>
+                                        <span class="font-semibold text-slate-900">212</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-3 h-3 rounded-full bg-violet-500"></div>
+                                            <span class="text-slate-700">הוזמן</span>
+                                        </div>
+                                        <span class="font-semibold text-slate-900">170</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                                            <span class="text-slate-700">מעוניין</span>
+                                        </div>
+                                        <span class="font-semibold text-slate-900">128</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                            <span class="text-slate-700">לא מעוניין</span>
+                                        </div>
+                                        <span class="font-semibold text-slate-900">42</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Quick Actions Row -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4">פעולות מהירות</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="action-card">
+                                <div class="action-icon">
+                                    <svg class="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </div>
+                                <div class="action-title">אירוע חדש</div>
+                                <div class="action-description">פתח אירוע וחתום בשנייה</div>
+                            </div>
+                            <div class="action-card">
+                                <div class="action-icon">
+                                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                                <div class="action-title">שלח הודעה</div>
+                                <div class="action-description">דברו ישירות עם לידים</div>
+                            </div>
+                            <div class="action-card">
+                                <div class="action-icon">
+                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </div>
+                                <div class="action-title">ייבוא לידים</div>
+                                <div class="action-description">הוסיפו מקורות חדשים</div>
+                            </div>
+                            <div class="action-card">
+                                <div class="action-icon">
+                                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                    </svg>
+                                </div>
+                                <div class="action-title">צפה בדוחות</div>
+                                <div class="action-description">התחקו אחרי הביצועים</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Grid: Activity Feed + Upcoming Events -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                        <!-- Activity Feed with Grouping -->
+                        <div class="lg:col-span-2">
+                            <div class="bg-white rounded-xl p-6 shadow-md border border-slate-200">
+                                <h3 class="text-lg font-bold text-slate-900 mb-6">פעילות אחרונה</h3>
+
+                                <div class="space-y-4">
+                                    <!-- Today Section -->
+                                    <div>
+                                        <div class="activity-section-header">היום</div>
+                                        <div class="space-y-4">
+                                            <!-- Activity 1 -->
+                                            <div class="activity-item">
+                                                <div class="activity-icon registration">
+                                                    <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
+                                                        <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0015.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/>
+                                                    </svg>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="activity-time">לפני 2 דקות</div>
+                                                    <div class="activity-title">דנה כהן נרשמה לאירוע</div>
+                                                    <div class="activity-description">אירוע #24 - אירוע המותגים, מאי 2026</div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Activity 2 -->
+                                            <div class="activity-item">
+                                                <div class="activity-icon message">
+                                                    <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                                                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+                                                    </svg>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="activity-time">לפני 15 דקות</div>
+                                                    <div class="activity-title">הודעה נשלחה ל-43 משתתפים</div>
+                                                    <div class="activity-description">תזכורת על אירוע #24 - קבלו 31 אישורים</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- This Week Section -->
+                                    <div>
+                                        <div class="activity-section-header">השבוע</div>
+                                        <div class="space-y-4">
+                                            <!-- Activity 3 -->
+                                            <div class="activity-item">
+                                                <div class="activity-icon status">
+                                                    <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="activity-time">לפני שעה</div>
+                                                    <div class="activity-title">סטטוס עודכן - מוקד זיהוי</div>
+                                                    <div class="activity-description">לידים בעלי עניין גבוה אותרו וסומנו למעקב</div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Activity 4 -->
+                                            <div class="activity-item">
+                                                <div class="activity-icon purchase">
+                                                    <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 6H6.28l-.31-1.243A1 1 0 005 4H3z"/>
+                                                        <path d="M16 16a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                                        <path d="M6 16a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                                    </svg>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="activity-time">לפני 2 שעות</div>
+                                                    <div class="activity-title">רכישה נרשמה - שירה לוי</div>
+                                                    <div class="activity-description">מסגרות - DIOR תוכנית עתידית, ₪2,850</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upcoming Events & Event Details -->
+                        <div class="space-y-6">
+                            <!-- Next Event Card with Sparkline -->
+                            <div class="event-card">
+                                <div class="event-badge">אירוע #24 קרוב</div>
+                                <h4 class="text-lg font-bold text-slate-900 mt-4">אירוע המותגים</h4>
+                                <p class="text-sm text-slate-600 mt-2">מאי 2026</p>
+
+                                <!-- Mini Sparkline -->
+                                <div class="mt-4">
+                                    <p class="text-xs text-slate-600 font-medium mb-2">מגמת הרשמה (7 ימים)</p>
+                                    <div class="sparkline">
+                                        <div class="sparkline-bar" style="height: 40%;"></div>
+                                        <div class="sparkline-bar" style="height: 55%;"></div>
+                                        <div class="sparkline-bar" style="height: 65%;"></div>
+                                        <div class="sparkline-bar" style="height: 75%;"></div>
+                                        <div class="sparkline-bar" style="height: 82%;"></div>
+                                        <div class="sparkline-bar" style="height: 88%;"></div>
+                                        <div class="sparkline-bar" style="height: 100%;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 space-y-3">
+                                    <div class="metric-row">
+                                        <div class="metric-label">רשומים:</div>
+                                        <div class="metric-value"><span class="status-chip confirmed">87</span></div>
+                                    </div>
+                                    <div class="metric-row">
+                                        <div class="metric-label">אושרו:</div>
+                                        <div class="metric-value"><span class="status-chip pending">62</span></div>
+                                    </div>
+                                    <div class="metric-row">
+                                        <div class="metric-label">בהמתנה:</div>
+                                        <div class="metric-value"><span class="status-chip interested">25</span></div>
+                                    </div>
+                                </div>
+
+                                <button class="btn-primary w-full mt-5">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                    </svg>
+                                    פתח אירוע
+                                </button>
+                            </div>
+
+                            <!-- Last Event Summary -->
+                            <div class="event-card bg-gradient-to-br from-slate-50 to-slate-100">
+                                <div class="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded">סיכום</div>
+                                <h4 class="text-lg font-bold text-slate-900 mt-3">אירוע #22 - השבוע שעבר</h4>
+
+                                <div class="mt-5 space-y-3">
+                                    <div class="metric-row bg-white rounded-lg">
+                                        <div class="metric-label">סה"כ משתתפים:</div>
+                                        <div class="metric-value">32</div>
+                                    </div>
+                                    <div class="metric-row bg-white rounded-lg">
+                                        <div class="metric-label">הכנסה:</div>
+                                        <div class="metric-value text-green-600 font-bold">₪39,460</div>
+                                    </div>
+                                    <div class="metric-row bg-white rounded-lg">
+                                        <div class="metric-label">ROI:</div>
+                                        <div class="metric-value text-green-600 font-bold">325%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- Footer -->
+                <div class="dashboard-footer">
+                    <div>
+                        <span class="font-medium">Optic CRM</span> v2.1.4
+                    </div>
+                    <div id="lastSync">
+                        סנכרון אחרון: עכשיו
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Update date
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        const today = new Date();
+        document.getElementById('currentDate').textContent = today.toLocaleDateString('he-IL', options);
+
+        // Simulate last sync time
+        function updateLastSync() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('lastSync').textContent = `סנכרון אחרון: ${hours}:${minutes}`;
+        }
+        updateLastSync();
+        setInterval(updateLastSync, 60000);
+
+        // Add simple animation on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const kpiCards = document.querySelectorAll('.kpi-card');
+            kpiCards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 50);
+            });
+
+            // Animate hero KPI
+            const heroKpi = document.querySelector('.hero-kpi');
+            if (heroKpi) {
+                heroKpi.style.opacity = '0';
+                heroKpi.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    heroKpi.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+                    heroKpi.style.opacity = '1';
+                    heroKpi.style.transform = 'translateY(0)';
+                }, 0);
+            }
+        });
+
+        // Hover effects on funnel bars
+        const funnelBars = document.querySelectorAll('.funnel-gradient-bar');
+        funnelBars.forEach(bar => {
+            bar.addEventListener('mouseenter', function() {
+                this.style.filter = 'brightness(1.1)';
+            });
+            bar.addEventListener('mouseleave', function() {
+                this.style.filter = 'brightness(1)';
+            });
+        });
+
+        // Interactive action cards
+        const actionCards = document.querySelectorAll('.action-card');
+        actionCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const title = this.querySelector('.action-title').textContent;
+                console.log(`Clicked: ${title}`);
+            });
+        });
+    </script>
+</body>
+</html>
