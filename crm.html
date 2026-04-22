@@ -201,11 +201,12 @@ tailwind.config = {
             <h3 class="text-lg font-semibold text-gray-900">לידים נכנסים</h3>
             <span class="text-sm text-gray-500" id="crm-incoming-count"></span>
           </div>
-          <div class="flex flex-wrap items-center gap-2 mb-4">
-            <input type="search" id="crm-incoming-search" class="flex-1 min-w-[220px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="חיפוש לפי שם או טלפון...">
-            <select id="crm-incoming-filter-status" class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"><option value="">כל הסטטוסים</option></select>
+          <div class="flex flex-wrap items-center gap-2 mb-2">
+            <input type="search" id="crm-incoming-search" class="flex-1 min-w-[220px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="חיפוש לפי שם / טלפון / אימייל...">
             <button type="button" id="crm-add-lead-btn" class="ms-auto px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">+ הוסף ליד</button>
           </div>
+          <div id="crm-incoming-advanced-filters"></div>
+          <div id="crm-incoming-filter-chips" class="mb-2"></div>
           <div id="crm-incoming-table-wrap"></div>
         </div>
       </section>

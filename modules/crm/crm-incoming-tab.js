@@ -12,6 +12,7 @@
   var _allLeads = [];
   var _filtered = [];
   var _currentPage = 1;
+  var _lastNotesMap = {};
 
   // Tailwind class constants
   var CLS_TABLE       = 'w-full text-sm bg-white';
@@ -43,7 +44,8 @@
       _loadPromise = (async function () {
         await ensureCrmStatusCache();
         _allLeads = await loadIncomingLeads();
-        populateIncomingFilters();
+        if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
+        renderIncomingAdvancedBar();
         wireIncomingEvents();
       })().catch(function (e) {
         _loadPromise = null;
@@ -56,20 +58,19 @@
   }
   window.loadCrmIncomingTab = loadCrmIncomingTab;
 
-  function populateIncomingFilters() {
-    var statusSel = document.getElementById('crm-incoming-filter-status');
-    if (statusSel && statusSel.options.length <= 1) {
-      var incomingStatusMap = (window.CRM_STATUSES && window.CRM_STATUSES.lead) || {};
-      var tier1Statuses = (typeof TIER1_STATUSES !== 'undefined') ? TIER1_STATUSES : [];
-      tier1Statuses.forEach(function (slug) {
-        var statusInfo = incomingStatusMap[slug];
-        if (!statusInfo) return;
-        var opt = document.createElement('option');
-        opt.value = slug;
-        opt.textContent = statusInfo.name_he || slug;
-        statusSel.appendChild(opt);
-      });
-    }
+  function renderIncomingAdvancedBar() {
+    var host = document.getElementById('crm-incoming-advanced-filters');
+    if (!host || !window.CrmLeadFilters) return;
+    CrmLeadFilters.renderAdvancedBar(host, {
+      key: 'incoming',
+      statuses: (typeof TIER1_STATUSES !== 'undefined') ? TIER1_STATUSES : [],
+      leads: _allLeads,
+      showLanguage: false,
+      onChange: function () {
+        _currentPage = 1;
+        applyIncomingFilters();
+      }
+    });
   }
 
   var _eventsWired = false;
@@ -77,16 +78,9 @@
     if (_eventsWired) return;
     _eventsWired = true;
     var searchEl = document.getElementById('crm-incoming-search');
-    var statusEl = document.getElementById('crm-incoming-filter-status');
     var addBtn = document.getElementById('crm-add-lead-btn');
     if (searchEl) {
       searchEl.addEventListener('input', function () {
-        _currentPage = 1;
-        applyIncomingFilters();
-      });
-    }
-    if (statusEl) {
-      statusEl.addEventListener('change', function () {
         _currentPage = 1;
         applyIncomingFilters();
       });
@@ -102,22 +96,58 @@
 
   function applyIncomingFilters() {
     var incomingSearch = (document.getElementById('crm-incoming-search') || {}).value || '';
-    var incomingStatusFilter = (document.getElementById('crm-incoming-filter-status') || {}).value || '';
     var q = incomingSearch.trim().toLowerCase();
 
-    _filtered = _allLeads.filter(function (r) {
-      if (incomingStatusFilter && r.status !== incomingStatusFilter) return false;
-      if (q) {
-        var leadName = (r.full_name || '').toLowerCase();
-        var leadPhone = (r.phone || '').toLowerCase();
-        var leadEmail = (r.email || '').toLowerCase();
-        if (leadName.indexOf(q) === -1 && leadPhone.indexOf(q) === -1 && leadEmail.indexOf(q) === -1) return false;
-      }
-      return true;
+    var tier1Statuses = (typeof TIER1_STATUSES !== 'undefined') ? TIER1_STATUSES : [];
+    var state = window.CrmLeadFilters ? CrmLeadFilters.getState('incoming') : { statuses: [], fromDate: '', toDate: '', noResp48: false, source: '', language: '' };
+    var afterAdv = window.CrmLeadFilters
+      ? CrmLeadFilters.applyFilters(_allLeads, tier1Statuses, _lastNotesMap, state)
+      : _allLeads;
+
+    _filtered = afterAdv.filter(function (r) {
+      if (!q) return true;
+      var leadName = (r.full_name || '').toLowerCase();
+      var leadPhone = (r.phone || '').toLowerCase();
+      var leadEmail = (r.email || '').toLowerCase();
+      return leadName.indexOf(q) !== -1 || leadPhone.indexOf(q) !== -1 || leadEmail.indexOf(q) !== -1;
     });
 
+    renderIncomingChips(incomingSearch, state);
     renderIncomingTable();
     updateCount();
+  }
+
+  function renderIncomingChips(search, state) {
+    var host = document.getElementById('crm-incoming-filter-chips');
+    if (!host) return;
+    var chips = [];
+    if (search) chips.push({ k: 'search', label: 'חיפוש: ' + search });
+    if (window.CrmLeadFilters) chips = chips.concat(CrmLeadFilters.renderChips(state));
+    if (!chips.length) { host.innerHTML = ''; return; }
+    host.className = 'flex items-center gap-2 flex-wrap mb-3';
+    host.innerHTML = '<span class="text-xs font-semibold text-slate-600">פילטרים פעילים:</span>' + chips.map(function (c) {
+      return '<span class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-3 py-1.5 rounded-full text-sm font-medium" data-chip="' + c.k + '">' +
+        escapeHtml(c.label) +
+        '<span class="cursor-pointer font-bold opacity-70 hover:opacity-100 text-base leading-none" data-clear-chip="' + c.k + '">×</span>' +
+      '</span>';
+    }).join('');
+    host.querySelectorAll('[data-clear-chip]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var k = el.getAttribute('data-clear-chip');
+        if (k === 'search') {
+          var sEl = document.getElementById('crm-incoming-search');
+          if (sEl) sEl.value = '';
+        } else if (window.CrmLeadFilters) {
+          var s = CrmLeadFilters.getState('incoming');
+          if (k === 'statuses') s.statuses = [];
+          else if (k === 'dates') { s.fromDate = ''; s.toDate = ''; }
+          else if (k === '48h') s.noResp48 = false;
+          else if (k === 'source') s.source = '';
+          renderIncomingAdvancedBar();
+        }
+        _currentPage = 1; applyIncomingFilters();
+      });
+    });
   }
 
   function updateCount() {
@@ -205,6 +235,8 @@
 
   async function reloadCrmIncomingTab() {
     _allLeads = await loadIncomingLeads();
+    if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
+    renderIncomingAdvancedBar();
     applyIncomingFilters();
   }
   window.reloadCrmIncomingTab = reloadCrmIncomingTab;
