@@ -143,15 +143,22 @@ P1 → P2 → P3 → P4 → P5 → P6 → P7
 
 ---
 
-## P5 — תוכן הודעות  ⬜
+## P5 — תוכן הודעות  ✅
 
-**מה נבנה:** כתיבת כל הטמפלטים ושמירה ב-`crm_message_templates`.
+**סגור 2026-04-22.** 20 טמפלטים פעילים בטננט דמו (10 SMS + 10 Email, 10 טריגרים).
 
-**רכיבים:**
-- העתקת כל הודעות ה-SMS מ-FLOW.md לטבלה (כבר חלקית מ-C1)
-- העתקת כל Email templates כ-HTML (מתיקיית `messages/`)
-- הגדרת placeholders אחידים (לא `{{}}` — פורמט שלא מתנגש עם Make)
-- הוספת טמפלטים לכל trigger: lead_new, lead_duplicate, event_open, event_reminder, registration_confirm, checkin, cx_survey, unsubscribe
+**רכיבים שבוצעו:**
+- UI: `modules/crm/crm-messaging-templates.js` — פורמט משתנים הועבר מ-`{{var}}` ל-`%var%`, נוסף `%email%`, preview values עודכנו ל-Prizma SuperSale defaults.
+- Seed: `modules/Module 4 - CRM/go-live/seed-templates-demo.sql` (artifact לשחזור) מזין 20 טמפלטים: `lead_intake_new`, `lead_intake_duplicate`, `event_will_open_tomorrow`, `event_registration_open`, `event_invite_new`, `event_closed`, `event_waiting_list`, `event_2_3d_before`, `event_day`, `event_invite_waiting_list` — כל אחד ב-SMS + Email.
+- תוכן: SMS מ-`campaigns/supersale/FLOW.md`, Email מ-`campaigns/supersale/messages/*.html` (10 HTML עשירים עם inline CSS).
+- המרת משתנים: Make `{{X.field}}` → Optic Up `%var%` (name/phone/email/event_name/event_date/event_time/registration_url/unsubscribe_url).
+- Rule 21: `seed-message-templates.sql` (C1 seed ישן עם 4 טמפלטים ב-`{{var}}`) נמחק ב-commit זהה.
+
+**לא כלול (ידחה ל-SPEC נפרד):**
+- חיבור טריגרים ל-`send-message` (event status → bulk send; scheduler לתזכורות; broadcast wizard send button).
+- WhatsApp variants — ממתינים ל-Meta API.
+- Russian / English variants — כשיצטרך ערוץ שני.
+- Unsubscribe Edge Function — `%unsubscribe_url%` קיים בטמפלטים אך האנדפוינט עצמו עדיין לא נבנה.
 
 ---
 
