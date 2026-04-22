@@ -12,6 +12,30 @@
   //   (b) Raw mode: pass body (+ optional subject for email) for ad-hoc
   //       broadcasts. No template lookup.
 
+  // ─── CALLER CONTRACT ─────────────────────────────────────────────
+  // The `send-message` Edge Function (supabase/functions/send-message/index.ts)
+  // requires `variables.phone` for SMS and `variables.email` for Email channel,
+  // in BOTH template and raw-body modes. The EF extracts the recipient address
+  // from `variables`, not from a separate field.
+  //
+  // Callers MUST populate:
+  //   opts.variables.phone  — REQUIRED when channel = 'sms'  (E.164 format)
+  //   opts.variables.email  — REQUIRED when channel = 'email'
+  //   opts.variables.name   — recommended (used in template substitution)
+  //
+  // If these are missing, the EF returns 400:
+  //   "Missing variables.phone for SMS channel"
+  //   "Missing variables.email for email channel"
+  //
+  // Fetch the full lead row before calling sendMessage to populate variables:
+  //   const { data: lead } = await sb.from('crm_leads').select('full_name, phone, email')
+  //     .eq('id', leadId).eq('tenant_id', getTenantId()).single();
+  //   const variables = { name: lead.full_name, phone: lead.phone, email: lead.email };
+  //
+  // See: supabase/functions/send-message/index.ts lines 170-177
+  // See: M4-BUG-P55-03 (P5.5 Finding #3)
+  // ─────────────────────────────────────────────────────────────────
+
   async function sendMessage(opts) {
     opts = opts || {};
 
