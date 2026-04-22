@@ -127,10 +127,10 @@ P1 → P2 → P3 → P4 → P5 → P6 → P7
 ### חלק 3: חיבור טריגרים (Claude בונה)
 - ✅ ליד חדש (P1 Edge Function) → send-message → SMS+Email (template `lead_intake_new`)
 - ✅ ליד כפול (P1 Edge Function) → send-message → SMS+Email (template `lead_intake_duplicate`)
-- ⬜ פתיחת אירוע (CRM, שינוי event status) → send-message → SMS+Email (bulk) — P5+ scope
-- ⬜ הרשמה לאירוע (CRM) → send-message → SMS+Email — P5+ scope
+- ✅ פתיחת אירוע (CRM, שינוי event status) → send-message → SMS+Email (bulk) — P5.5 (dispatchEventStatusMessages)
+- ✅ הרשמה לאירוע (CRM) → send-message → SMS+Email — P5.5 (dispatchRegistrationConfirmation)
 - ⬜ תזכורות לפני אירוע → scheduled Edge Function → send-message — ידרוש scheduler, SPEC נפרד
-- ⬜ Broadcast ידני (Messaging Hub) → send-message → SMS/Email לרשימה מסוננת — הצינור מוכן ב-`crm-messaging-send.js`, UI wiring של B5 עדיין צריך להתחבר
+- ✅ Broadcast ידני (Messaging Hub) → send-message → SMS/Email לרשימה מסוננת — P5.5 (doWizardSend → CrmMessaging.sendMessage)
 - ⬜ Unsubscribe (Edge Function) → עדכון DB ישירות, ללא Make — P5+ scope
 
 **הערה:** P3c+P4 סגר את שני הטריגרים הראשונים (lead-intake). שאר הטריגרים יטופלו כשתוכן ההודעות ייכתב ב-P5 ואחרי שה-scheduler ייבנה.
@@ -159,6 +159,31 @@ P1 → P2 → P3 → P4 → P5 → P6 → P7
 - WhatsApp variants — ממתינים ל-Meta API.
 - Russian / English variants — כשיצטרך ערוץ שני.
 - Unsubscribe Edge Function — `%unsubscribe_url%` קיים בטמפלטים אך האנדפוינט עצמו עדיין לא נבנה.
+
+---
+
+---
+
+## P5.5 — חיבור טריגרים (CRM → send-message)  ✅
+
+**סגור 2026-04-22.** 3 זרימות CRM חוברו ל-`send-message` Edge Function. כל הודעה שחשבון ממשק משנה סטטוס, רושם משתתף או מפעיל Broadcast — נשלחת בפועל.
+
+**רכיבים שבוצעו:**
+- `modules/crm/crm-event-actions.js` (+75 שורות) — `dispatchEventStatusMessages(eventId, newStatus, event)` ממפה 8 סטטוסי אירוע ל-template base slugs (event_will_open_tomorrow, event_registration_open, event_invite_new, event_closed, event_waiting_list, event_2_3d_before, event_day, event_invite_waiting_list) + 4 סוגי נמענים (tier2 / tier2_excl_registered / attendees / attendees_waiting). כפול-ערוץ: SMS תמיד + Email אם יש אימייל, באמצעות `Promise.allSettled`. `changeEventStatus()` מבצע fire-and-forget dispatch אחרי ה-UPDATE.
+- `modules/crm/crm-event-register.js` (+23 שורות) — `dispatchRegistrationConfirmation()` נקרא אחרי `register_lead_to_event` מוצלח. מיפוי סטטוס → טמפלט: `registered` → `event_registration_confirmation`, `waiting_list` → `event_waiting_list_confirmation`. SMS + Email.
+- `modules/crm/crm-messaging-broadcast.js` (`doWizardSend` נכתב מחדש) — שלב 5 של אשף השליחה כעת מושך את כל שורות הלידים הנבחרים, קורא `CrmMessaging.sendMessage()` לכל ליד (מצב טמפלט אם נבחר, מצב body-גולמי אם לא), עוקב אחר הצלחות/כשלים, ומעדכן את `crm_broadcasts` עם counts אמיתיים + status (`completed` או `partial`).
+- 4 טמפלטי אישור חדשים על טננט דמו: `event_registration_confirmation_{sms,email}_he` + `event_waiting_list_confirmation_{sms,email}_he` (סה"כ 24 טמפלטים על דמו).
+
+**תיקוני קצה שנחשפו בזמן QA:**
+- `TIER2_STATUSES` fallback ב-`crm-event-actions.js` יושר מול הקוד החי (`crm-helpers.js` — 6 slugs אמיתיים).
+- `crm_broadcasts.employee_id` NOT NULL הוזנח מאז B5 — INSERT בברודקאסט נכשל עד עכשיו; הטופס סיפק `getCurrentEmployee().id` ושחרר את הכפתור.
+- `send-message` Edge Function דורש `variables.phone` / `variables.email` גם במצב body-גולמי — ברודקאסט לא העביר אותם; תוקן עם fetch שורות מלאות בתוך `doWizardSend`.
+
+**לא כלול (ידחה ל-SPEC נפרד):**
+- תזכורות מתוזמנות (2-3 ימים לפני אירוע, בוקר האירוע) — דורש Edge Function עם scheduler.
+- WhatsApp channel — ממתין ל-Meta API.
+- Unsubscribe endpoint — `%unsubscribe_url%` קיים בטמפלטים אך האנדפוינט עצמו לא נבנה.
+- Automation rules execution engine — `crm-messaging-rules.js` נשאר CRUD-UI בלבד; מיפוי ה-trigger→template של P5.5 הוא hardcoded לפי תכנון המוצר לגו-לייב.
 
 ---
 
