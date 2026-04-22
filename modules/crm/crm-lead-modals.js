@@ -137,8 +137,8 @@
           '<input type="tel" id="crm-new-lead-phone" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>' +
         '</div>' +
         '<div>' +
-          '<label class="block text-sm font-medium text-slate-700 mb-1">אימייל</label>' +
-          '<input type="email" id="crm-new-lead-email" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">' +
+          '<label class="block text-sm font-medium text-slate-700 mb-1">אימייל <span class="text-rose-500">*</span></label>' +
+          '<input type="email" id="crm-new-lead-email" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>' +
         '</div>' +
         '<div>' +
           '<label class="block text-sm font-medium text-slate-700 mb-1">עיר</label>' +
@@ -185,8 +185,9 @@
     submitBtn.addEventListener('click', async function () {
       var nameVal = (modal.el.querySelector('#crm-new-lead-name').value || '').trim();
       var phoneVal = (modal.el.querySelector('#crm-new-lead-phone').value || '').trim();
-      if (!nameVal || !phoneVal) {
-        if (window.Toast) Toast.warning('שם וטלפון חובה');
+      var emailVal = (modal.el.querySelector('#crm-new-lead-email').value || '').trim();
+      if (!nameVal || !phoneVal || !emailVal) {
+        if (window.Toast) Toast.warning('שם, טלפון ואימייל חובה');
         return;
       }
       submitBtn.disabled = true;
@@ -195,7 +196,7 @@
         var res = await window.CrmLeadActions.createManualLead({
           full_name: nameVal,
           phone: phoneVal,
-          email: modal.el.querySelector('#crm-new-lead-email').value,
+          email: emailVal,
           city: modal.el.querySelector('#crm-new-lead-city').value,
           language: modal.el.querySelector('#crm-new-lead-language').value,
           notes: modal.el.querySelector('#crm-new-lead-notes').value

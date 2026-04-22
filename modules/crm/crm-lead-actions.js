@@ -94,14 +94,16 @@
     var tenantId = getTid();
     var fullName = (data.full_name || '').trim();
     var phone = (data.phone || '').trim();
+    var email = (data.email || '').trim();
     if (!fullName) throw new Error('missing full_name');
     if (!phone) throw new Error('missing phone');
+    if (!email) throw new Error('missing email');
 
     var payload = {
       tenant_id: tenantId,
       full_name: fullName,
       phone: phone,
-      email: (data.email || '').trim() || null,
+      email: email,
       city: (data.city || '').trim() || null,
       language: data.language || 'he',
       status: 'pending_terms',
