@@ -1,7 +1,8 @@
 # Make Scenario — "Optic Up — Send Message"
 
-> **Built by:** P3B_MAKE_MESSAGE_DISPATCHER SPEC (2026-04-22)
-> **Purpose:** Generic message dispatcher — receives webhook, fetches template from Supabase, sends SMS/Email, logs result.
+> **Built by:** Daniel (manual) + Claude (guidance), 2026-04-22
+> **Rebuilt from:** P3B_MAKE_MESSAGE_DISPATCHER SPEC — original API-built scenario replaced with manual build using native Supabase modules
+> **Purpose:** Generic message dispatcher — receives webhook, fetches template from Supabase (native module), sends SMS/Email, logs result (native module).
 
 ---
 
@@ -9,13 +10,14 @@
 
 | Field | Value |
 |---|---|
-| Scenario ID | `9103817` |
+| Scenario ID | `9104395` |
 | Scenario name | `Optic Up — Send Message` |
 | Team ID | `402680` (Prizma Optics Make team) |
 | Folder | Demo (id `499779`) |
-| Webhook (hook) ID | `4068400` |
-| Webhook URL | `https://hook.eu2.make.com/b56ocktlm8rcpj52pu12qkthpke71c77` |
+| Webhook (hook) ID | `4068609` |
+| Webhook URL | `https://hook.eu2.make.com/n7y5m7x9m9yn4uqo3ielqsobdn8s5nui` |
 | Activated | Yes (2026-04-22) |
+| Supabase connection | `14098961` — OpticUp Connection (native Supabase modules) |
 | SMS connection | `13198122` — My Global SMS connection |
 | Email connection | `13196610` — My Gmail connection (events@prizma-optic.co.il) |
 
@@ -46,44 +48,45 @@
 - `channel` is one of `"sms"` / `"email"` (WhatsApp planned for a future SPEC).
 - `language` defaults to `"he"` if missing.
 - `event_id` may be `null`.
-- `variables` keys map to template placeholders `{{name}}`, `{{phone}}`, `{{email}}`, `{{event_name}}`, `{{event_date}}`, `{{event_location}}`.
+- `variables` keys map to template placeholders `%name%`, `%phone%`, `%email%`, `%event_name%`, `%event_date%`, `%event_location%`.
+
+### Template placeholder format
+
+Templates in `crm_message_templates` use `%name%` style placeholders (NOT `{{name}}`).
+Reason: Make interprets `{{...}}` as its own variable references, which breaks substitution.
+The `%...%` format avoids this conflict entirely.
 
 ---
 
-## Flow (13 modules)
+## Flow (8 modules)
 
 ```
 [1] Webhook (gateway:CustomWebHook)
   ↓
-[2] SetVariable "FullSlug" = template_slug + "_" + channel + "_" + (language|he)
+[2] Supabase Search Rows — crm_message_templates
+      filter: slug = {template_slug}_{channel}_{language}, tenant_id = {tenant_id}
   ↓
-[3] SetVariable "NormalizedPhone" = strip non-digits, replace leading 0 with 972
-  ↓
-[4] HTTP GET crm_message_templates?slug=eq.{FullSlug}&tenant_id=eq.{tenant_id}&is_active=eq.true
-  ↓
-[5] Router ──┬── Route 1 (channel=sms AND length(template)>0):
-             │     [6] SetVariable "SmsBody" (substituted body)
-             │     [7] global-sms:sendSmsToRecipients → +{NormalizedPhone}
-             │     [8] HTTP POST crm_message_log (status=sent)
+[3] Router ──┬── Route 1 (channel = sms):
+             │     [4] Global SMS → sendSmsToRecipients → {variables.phone}
+             │         body = template body with %name%→name, %phone%→phone, %email%→email substituted
+             │     [5] Supabase Create Row → crm_message_log (status=sent)
              │
-             ├── Route 2 (channel=email AND length(template)>0):
-             │     [9]  SetVariable "EmailBody" (substituted body)
-             │     [10] SetVariable "EmailSubject" (substituted subject)
-             │     [11] google-email:sendAnEmail → {variables.email}
-             │     [12] HTTP POST crm_message_log (status=sent)
+             ├── Route 2 (channel = email):
+             │     [6] Gmail → sendAnEmail → {variables.email}
+             │         subject = template subject with substitutions
+             │         body = template body with substitutions
+             │     [7] Supabase Create Row → crm_message_log (status=sent)
              │
-             └── Route 3 (length(template)=0 — template not found):
-                   [13] HTTP POST crm_message_log (status=failed, error_message=...)
+             └── Route 3 (fallback — template not found / no bundles from Search):
+                   [8] Supabase Create Row → crm_message_log (status=failed, error_message=...)
 ```
 
----
+### Key design decisions
 
-## Auth in HTTP modules
-
-- `apikey` header: Supabase anon key (public, shipped in client — retrieve from `js/shared.js` or Supabase Dashboard → Settings → API).
-- `Authorization: Bearer REPLACE_WITH_SERVICE_ROLE_KEY` — **placeholder** until Daniel replaces it manually in Make's UI. Required to bypass RLS when inserting into `crm_message_log` and reading templates.
-
-Do NOT inline the real service_role key in this repo or in any git history. Rule 23.
+1. **Native Supabase modules** — Search Rows and Create Row use the "OpticUp Connection" (connection ID 14098961). No HTTP modules, no manual service_role key in headers. Auth is handled by the connection.
+2. **Search Rows with 0 results** — When the template slug is not found, Search Rows emits 0 bundles. The Router's fallback route (Route 3) fires automatically — no need for explicit `__IMTLENGTH__` checks.
+3. **Variable substitution** — Each route uses Make's `replace()` function to swap `%name%`, `%phone%`, `%email%` in the template body/subject with actual values from `{{1.variables.name}}` etc.
+4. **Fallback route** — Route 3 has "fallback" enabled (runs when no other route matches). This catches both "template not found" and any unexpected channel values.
 
 ---
 
@@ -107,5 +110,17 @@ P3b does not wire any triggers. P4 will call `CrmMessaging.sendMessage(...)` fro
 ## Operational notes
 
 - Demo 1A-S (scenario `9101245`) is left untouched as a reference. It remains inactive. Do not modify or delete.
-- To rebuild: delete scenario `9103817` + hook `4068400`, then re-run the P3B SPEC.
-- To tweak the blueprint: edit via Make UI, OR update the `scenarios_update` call in a follow-up SPEC.
+- Old API-built scenario `9103817` was deleted on 2026-04-22 (BundleValidationError — webhook UDT not registered via API).
+- To rebuild: delete scenario `9104395` + hook `4068609`, then rebuild manually following the same 8-module pattern.
+
+---
+
+## Test results (2026-04-22)
+
+All 3 paths verified on demo tenant:
+
+| Path | Result | Details |
+|---|---|---|
+| Error (template not found) | ✅ PASS | `crm_message_log` row written with `status=failed`, error message includes slug |
+| SMS | ✅ PASS | Global SMS sent to +972537889878, Hebrew content with variable substitution, log written `status=sent` |
+| Email | ✅ PASS | Gmail sent from events@prizma-optic.co.il, Hebrew content with variable substitution, log written `status=sent` |

@@ -1,6 +1,6 @@
 (function () {
   'use strict';
   window.CrmMessagingConfig = {
-    MAKE_SEND_WEBHOOK: 'https://hook.eu2.make.com/b56ocktlm8rcpj52pu12qkthpke71c77'
+    MAKE_SEND_WEBHOOK: 'https://hook.eu2.make.com/n7y5m7x9m9yn4uqo3ielqsobdn8s5nui'
   };
 })();
