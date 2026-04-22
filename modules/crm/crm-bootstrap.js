@@ -34,6 +34,7 @@
     if (actionsEl) actionsEl.innerHTML = '';
 
     if (name === 'dashboard' && typeof loadCrmDashboard === 'function') loadCrmDashboard();
+    if (name === 'incoming' && typeof loadCrmIncomingTab === 'function') loadCrmIncomingTab();
     if (name === 'leads' && typeof loadCrmLeadsTab === 'function') loadCrmLeadsTab();
     if (name === 'events' && typeof loadCrmEventsTab === 'function') loadCrmEventsTab();
     if (name === 'event-day' && typeof loadCrmEventDay === 'function') loadCrmEventDay();
