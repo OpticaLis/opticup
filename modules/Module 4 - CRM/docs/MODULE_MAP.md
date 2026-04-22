@@ -9,7 +9,7 @@
 ### HTML & CSS
 | File | Lines | Purpose |
 |------|-------|---------|
-| `crm.html` | 328 | Main CRM page — sidebar nav (5 tabs), role toggle, page header, 5 tab panels with skeleton containers, 21 CRM script tags. **[B8]** Loads Tailwind CDN + `tailwind.config` (RTL, Heebo, custom `crm.*` palette). **[P2b]** Events tab filter bar gained "יצירת אירוע +" button. **[P3a]** Incoming tab filter bar gained "+ הוסף ליד" button; added `<script src="modules/crm/crm-lead-modals.js">` after crm-lead-actions.js. |
+| `crm.html` | 330 | Main CRM page — sidebar nav (5 tabs), role toggle, page header, 5 tab panels with skeleton containers, 23 CRM script tags. **[B8]** Loads Tailwind CDN + `tailwind.config` (RTL, Heebo, custom `crm.*` palette). **[P2b]** Events tab filter bar gained "יצירת אירוע +" button. **[P3a]** Incoming tab filter bar gained "+ הוסף ליד" button; added `<script src="modules/crm/crm-lead-modals.js">` after crm-lead-actions.js. **[P3b]** Added 2 `<script>` tags for `crm-messaging-config.js` + `crm-messaging-send.js` (Make dispatcher helper). |
 | `css/crm.css` | 215 | Foundation: palette tokens, base, sidebar, page header, tab panels, role visibility, responsive, utilities |
 | `css/crm-components.css` | 76 | **[B8]** Reduced from 276 → shell only: cards, filter bar, table-wrap, view toggle, badge (legacy helper), leads-view show/hide |
 | `css/crm-screens.css` | 98 | **[B8]** Reduced from 325 → shell only: KPI grid + loading shimmer, alert strip, activity feed, timeline scroll, messaging split, event-day counter-bar + 3-col grid + barcode input |
@@ -41,6 +41,8 @@
 | `crm-messaging-templates.js` | 304 | **[B8]** Templates split layout: sidebar (category tabs, search, template cards) + editor (toolbar, dark slate-900 code editor with line numbers, variable dropdown, 3-panel preview WhatsApp emerald / SMS sky / Email amber) |
 | `crm-messaging-rules.js` | 234 | **[B8]** Rules table via Tailwind: colored channel badges (sky/emerald/amber), pill toggle for active state, warning callout (amber border-s), modal with JSON textarea |
 | `crm-messaging-broadcast.js` | 341 | **[B8]** 5-step wizard with progress connectors (green ✓ on completed, indigo ring on active), step body Tailwind forms, message log with status chip pills (sky sent / emerald delivered / indigo read / rose failed), channel + status filters, pagination |
+| `crm-messaging-config.js` | 6 | **[P3b]** `window.CrmMessagingConfig.MAKE_SEND_WEBHOOK` — Make dispatcher webhook URL. Separate file keeps it trivial to locate/update when the webhook rotates. |
+| `crm-messaging-send.js` | 52 | **[P3b]** `window.CrmMessaging.sendMessage({leadId, templateSlug, channel, variables, eventId?, language?})` — POSTs JSON payload to Make dispatcher scenario 9103817; returns `{ok, error?}`. Make appends `_{channel}_{language}` to the slug, fetches template, sends via Global SMS or Gmail, logs to `crm_message_log`. |
 
 ### Modified shared files
 | File | Change | Phase |
@@ -115,6 +117,8 @@
 | `renderMessagingBroadcast(host)` | crm-messaging-broadcast.js | Broadcast sub-tab: filter + recipient preview + send |
 | `renderMessagingLog(host)` | crm-messaging-broadcast.js | Log sub-tab: history table + filters + pagination |
 | `loadMessagingLog()` | crm-messaging-broadcast.js | Force refresh of log rows |
+| `CrmMessagingConfig.MAKE_SEND_WEBHOOK` | crm-messaging-config.js | **[P3b]** Webhook URL for "Optic Up — Send Message" Make scenario |
+| `CrmMessaging.sendMessage({leadId, templateSlug, channel, variables, eventId?, language?})` | crm-messaging-send.js | **[P3b]** POST to Make webhook dispatcher; returns `{ok, error?}`. Make resolves full slug as `{templateSlug}_{channel}_{language}` and logs to `crm_message_log`. |
 
 ### Shared namespace: `window.CrmHelpers`
 | Method | Purpose |

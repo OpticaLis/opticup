@@ -2,6 +2,59 @@
 
 ---
 
+## Go-Live P3b — Make Message Dispatcher (2026-04-22, PARTIAL)
+
+| Hash | Message |
+|------|---------|
+| `b9b1199` | `feat(crm): add Make message dispatcher scenario and webhook` |
+| `0fce761` | `feat(crm): add CRM messaging helper for webhook dispatch` |
+
+**New files:**
+- `modules/Module 4 - CRM/go-live/make-send-message.md` (111 lines) — reference doc for the Make scenario: scenario ID `9103817`, webhook `4068400` (URL `https://hook.eu2.make.com/b56ocktlm8rcpj52pu12qkthpke71c77`), 13-module flow diagram, webhook payload schema, auth notes, P4 wiring plan, operational notes. Demo 1A-S (`9101245`) left untouched as reference.
+- `modules/crm/crm-messaging-config.js` (6 lines) — `window.CrmMessagingConfig.MAKE_SEND_WEBHOOK` — single webhook URL constant, separate file for easy discovery.
+- `modules/crm/crm-messaging-send.js` (52 lines) — `window.CrmMessaging.sendMessage({leadId, templateSlug, channel, variables, eventId?, language?})` — POSTs to Make webhook, returns `{ok, error?}`. Validates `tenant_id`/`leadId`/`templateSlug`/channel before firing.
+
+**Modified files:**
+- `crm.html` — added 2 `<script>` tags (`crm-messaging-config.js` + `crm-messaging-send.js`) after the existing messaging JS block, before `crm-bootstrap.js`.
+
+**Make state after P3b execution:**
+- Team 402680 → Demo folder (499779) → scenario `9103817` "Optic Up — Send Message" created via API, blueprint accepted (`isinvalid: false` at creation), 13 modules: webhook → SetVariable × 2 → HTTP GET template → Router (SMS / Email / template-not-found routes, each with their log write).
+- `scheduling.type: immediately` (instant webhook mode).
+- Auth placeholder `REPLACE_WITH_SERVICE_ROLE_KEY` in all 4 HTTP modules per SPEC §4 autonomy rule — real key never leaves Daniel's Make UI.
+- Scenario **DEACTIVATED** after execution errors to leave a clean state. Daniel reactivates after completing the UI steps described in SESSION_CONTEXT §What's Next.
+
+**Tests run:**
+- Test 1 ✅ webhook reachability: `curl POST` → HTTP 200 "Accepted".
+- Test 2 ✅ browser console: `typeof CrmMessaging.sendMessage === 'function'`, config URL populated.
+- Test 3 ✅ dry-run from browser console returned `{ok:true}`.
+- Test 4, 5, 6, 7 ⬜ BLOCKED — scenario runtime fails every execution with `BundleValidationError: Validation failed for 4 parameter(s)`. Root cause in FINDINGS.md → `M4-MAKE-01`. Resolution requires (a) hook data-structure registration via Make UI, and (b) Daniel replacing `REPLACE_WITH_SERVICE_ROLE_KEY` with the real key.
+
+**DB state after P3b:**
+- No DDL, no RLS changes, no RPC changes. No rows inserted into `crm_message_log` (tests 4-6 blocked before any insert could run).
+
+**Rule 23 note (process):**
+- Pre-commit hook blocked `SPEC.md` + `ACTIVATION_PROMPT.md` on the first commit attempt because both inlined the Supabase anon key (JWT format). Fixed by replacing inline anon keys with placeholders pointing to `shared.js`/`index.html`. Committed clean in `2a81f0e`.
+
+**Success-criteria scorecard (SPEC §3):**
+
+| # | Criterion | Status |
+|---|-----------|--------|
+| 1 | Branch state clean w.r.t. P3b files | ✅ |
+| 2 | Make scenario exists in Demo folder | ✅ (`9103817`) |
+| 3 | Scenario has a working webhook | ✅ (POST returns 200) |
+| 4 | SMS send works on demo | ⬜ BLOCKED on M4-MAKE-01 + service_role key |
+| 5 | Email send works on demo | ⬜ BLOCKED |
+| 6 | Template fetched from DB | ⬜ BLOCKED |
+| 7 | Message logged to `crm_message_log` | ⬜ BLOCKED |
+| 8 | CRM helper exists | ✅ |
+| 9 | Webhook URL NOT hardcoded in helper | ✅ (in `crm-messaging-config.js`) |
+| 10 | Error path works | ⬜ BLOCKED |
+| 11 | File sizes ≤ 350 lines | ✅ (6 + 52 + 111) |
+| 12 | Docs updated | 🟡 PARTIAL (this CHANGELOG + SESSION_CONTEXT + MODULE_MAP updated; MASTER_ROADMAP kept at "P3b in progress") |
+| 13 | Test data cleaned | N/A (no test rows were inserted) |
+
+---
+
 ## Go-Live P3a — Manual Lead Entry (2026-04-22)
 
 | Hash | Message |
