@@ -129,6 +129,53 @@ sessionStorage doesn't exist in the tenants table, force logout.
 
 ---
 
+## Edge Functions
+
+### Edge Function cross-function calls return 401
+
+**Symptom:** One Edge Function calls another via `fetch()` with
+`Authorization: Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}` and gets HTTP 401.
+The call never reaches the target function's handler — the Supabase gateway
+rejects it.
+
+**Root cause:** Inside Edge Functions, `Deno.env.get("SUPABASE_ANON_KEY")`
+returns the newer `sb_publishable_*` key format. The Edge Function gateway's
+`verify_jwt` only accepts JWT-format tokens, so it rejects the publishable key.
+`supabase-js` `functions.invoke()` hits the same wall because its default
+auth path uses the same anon key.
+
+**Fix:** Use the legacy JWT anon key (same value as in `js/shared.js` line 3)
+for cross-EF calls. Either read from a dedicated Supabase secret
+(`LEGACY_ANON_KEY`) or hardcode as a constant — acceptable since the value
+is already git-tracked.
+
+**Pattern:**
+```typescript
+// Legacy JWT anon key — copy verbatim from js/shared.js line 3
+const ANON_KEY = "<LEGACY_JWT_ANON_KEY_FROM_SHARED_JS>";
+
+const res = await fetch(`${SUPABASE_URL}/functions/v1/target-function`, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${ANON_KEY}`,
+    apikey: ANON_KEY,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify(payload),
+});
+```
+
+**Prevention:** For new cross-EF wiring, prefer the dedicated secret pattern
+over hardcoding. Include the legacy-JWT-only disclaimer in any new
+`send-message`-style shared dispatch helper.
+
+**Discovered:** P3c+P4 (2026-04-22), Finding M4-INFRA-01.
+**Affected:** `supabase/functions/lead-intake/index.ts` → `send-message` call.
+
+**Commits:** 37e8cc4 (2026-04-22)
+
+---
+
 ## Template for new entries
 
 ### [Title]

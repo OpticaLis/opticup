@@ -38,7 +38,7 @@ backend with RLS-based tenant isolation.
 | 2 | Platform Admin | ✅ Complete (v2.0) | opticup | Super-admin control plane: tenant provisioning, plans/limits/features, audit log, PIN reset, suspend/activate/delete. 4 phases. 5 tables + tenants extension. |
 | 3 | Storefront | 🟢 DNS SWITCH EXECUTED (2026-04-18) — propagation pending | opticup-storefront | Public storefront: CMS pages, campaigns, blog, AI content, translations (he/en/ru), media library, lead forms, brand pages, SEO. All phases complete. develop→main merged. DNS switched from DreamVPS to Vercel. 25 tables. |
 | 3.1 | Project Reconstruction | ✅ Complete | opticup | Meta-module: foundation doc rewrites, DB audit baseline, roadmap reconciliation. Does not own code — owns documentation accuracy. 3A/3B/3C/3D all complete. |
-| 4 | CRM | 🟡 Go-Live (P3a CLOSED — 2026-04-22) | opticup | Customer management — replaces Monday.com for leads. 23 tables, 7 views, 8 RPCs, 46 RLS policies. Phases A–B9 complete + merged to main. Go-Live P1–P3a closed (lead intake, lead management, event management, manual lead entry with pending_terms gate). P3b–P7 remaining. |
+| 4 | CRM | 🟡 Go-Live (P3c+P4 CLOSED — 2026-04-22) | opticup | Customer management — replaces Monday.com for leads. 23 tables, 7 views, 8 RPCs, 46 RLS policies. Phases A–B9 complete + merged to main. Go-Live P1–P3c+P4 closed: lead intake, lead management, event management, manual lead entry with pending_terms gate, Make message dispatcher (P3b superseded by P3c+P4), and the full messaging pipeline rebuild — `send-message` Edge Function + Make reduced to send-only pipe + lead-intake trigger wiring. P5–P7 remaining. |
 | 5–22 | Future modules | ⬜ Not started | — | Orders, prescriptions, payments, lab/KDS, lenses, branches, WhatsApp, reports, supplier portal, content hub, B2B network, AI support, WooCommerce sync, POS. |
 
 **Detailed per-module scope** lives in each module's `README.md` and `MODULE_SPEC.md`
@@ -108,13 +108,18 @@ done. Foundation docs are accurate and current.
 **Module 4 (CRM) is in Go-Live phase** — phases A through B9 complete on `develop`,
 now merged to `main`. Go-Live replaces the Monday.com→Make→Supabase pipeline with
 internal-first Supabase flows. Architecture pivot from C1–C9 (Make-centric) to
-P1–P7 (internal-first) decided 2026-04-21. Status as of 2026-04-22:
+P1–P7 (internal-first) decided 2026-04-21, then refined on 2026-04-22 with
+Architecture v3: **Make is a send-only pipe, all messaging logic lives in the
+`send-message` Edge Function.** Status as of 2026-04-22:
 - **P1 (Internal Lead Intake):** ✅ CLOSED — `lead-intake` Edge Function deployed
 - **P2a (Lead Management):** ✅ CLOSED — status change, notes, tier transfer wired
 - **P2b (Event Management):** ✅ CLOSED — event creation (auto-numbered), status change (10-state), lead registration (via RPC)
 - **P3a (Manual Lead Entry):** ✅ CLOSED — `crm-lead-modals.js` (219 lines), `pending_terms` gate blocks Tier 2 transfer until terms approved
-- **P3b (Make Message Dispatcher):** 🟡 In progress — generic Make scenario receives webhook with `template_slug + recipient + variables`, dispatches SMS/Email/WhatsApp, logs result. First SPEC built via Make MCP API.
-- **P4–P7:** ⬜ Planned (CRM→Make triggers, form replacement, UTM tracking, switchover)
+- **P3b (Make Message Dispatcher):** ✅ CLOSED, then **superseded** — 8-module Make scenario with native Supabase access; replaced under Architecture v3.
+- **P3c+P4 (Messaging Pipeline + Trigger Wiring):** ✅ CLOSED — `send-message` Edge Function (277 lines) owns template fetch, variable substitution, log write, Make webhook call. Make scenario `9104395` rebuilt to 4 modules (Webhook → Router → Global SMS \| Gmail), zero DB access. `lead-intake` now dispatches SMS+Email on new lead (`lead_intake_new`) and on duplicate (`lead_intake_duplicate`). 14/14 success criteria passed on demo. 3 findings logged (M4-INFRA-01 `SUPABASE_ANON_KEY` now returns publishable-key format; M4-R23-01 hardcoded legacy JWT anon key in lead-intake; M4-DEBT-04 lead-intake at 342 lines).
+- **P5 (Message Content):** ⬜ Next — author full SMS/Email/HTML templates for all triggers (event open, attendee confirmation, reminders, CX survey, unsubscribe) in `crm_message_templates`.
+- **P6 (Full Demo Test):** ⬜ Planned — end-to-end cycle verification on demo tenant.
+- **P7 (Prizma Cutover):** ⬜ Planned — form repoint, Monday decommission, production switchover.
 
 The dual-repo split is stable. Both repos use `develop` for active work.
 Merges to `main` happen only after Daniel's manual QA on the demo tenant.
@@ -290,7 +295,7 @@ is real and must be fixed before either module starts writing.
 - Homepage revisions queue (Daniel's remaining feedback)
 - Contact form lead-capture (Resend integration — deferred by Daniel)
 
-**Module 4 (CRM) Go-Live:** P1/P2a/P2b/P3a closed. In progress: P3b (Make message dispatcher — generic webhook-driven scenario for SMS/Email/WhatsApp). Then P4 (CRM→Make trigger hookup), P5 (form replacement), P6 (UTM tracking), P7 (switchover + Monday decommission).
+**Module 4 (CRM) Go-Live:** P1/P2a/P2b/P3a/P3b/P3c+P4 closed (messaging pipeline operational under Architecture v3 — Make is a send-only pipe, all logic in `send-message` Edge Function). Next: P5 (message content — author SMS/HTML Email templates), then P6 (full demo test), then P7 (Prizma cutover + Monday decommission).
 
 **Post-P7 planned:** Module repo split — each module gets its own repo for parallel Claude Code sessions (see §4 Decisions Log, Apr 2026).
 

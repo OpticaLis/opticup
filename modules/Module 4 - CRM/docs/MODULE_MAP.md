@@ -1,6 +1,6 @@
 # Module 4 — CRM: Module Map
 
-> **Last updated:** 2026-04-22 (Go-Live P3a — Manual Lead Entry)
+> **Last updated:** 2026-04-22 (Go-Live P3c+P4 — Messaging Pipeline)
 
 ---
 
@@ -41,8 +41,8 @@
 | `crm-messaging-templates.js` | 304 | **[B8]** Templates split layout: sidebar (category tabs, search, template cards) + editor (toolbar, dark slate-900 code editor with line numbers, variable dropdown, 3-panel preview WhatsApp emerald / SMS sky / Email amber) |
 | `crm-messaging-rules.js` | 234 | **[B8]** Rules table via Tailwind: colored channel badges (sky/emerald/amber), pill toggle for active state, warning callout (amber border-s), modal with JSON textarea |
 | `crm-messaging-broadcast.js` | 341 | **[B8]** 5-step wizard with progress connectors (green ✓ on completed, indigo ring on active), step body Tailwind forms, message log with status chip pills (sky sent / emerald delivered / indigo read / rose failed), channel + status filters, pagination |
-| `crm-messaging-config.js` | 6 | **[P3b]** `window.CrmMessagingConfig.MAKE_SEND_WEBHOOK` — Make dispatcher webhook URL. Separate file keeps it trivial to locate/update when the webhook rotates. |
-| `crm-messaging-send.js` | 52 | **[P3b]** `window.CrmMessaging.sendMessage({leadId, templateSlug, channel, variables, eventId?, language?})` — POSTs JSON payload to Make dispatcher scenario 9103817; returns `{ok, error?}`. Make appends `_{channel}_{language}` to the slug, fetches template, sends via Global SMS or Gmail, logs to `crm_message_log`. |
+| `crm-messaging-config.js` | 17 | **[P3b→P3c+P4]** Documentation-only pointer. Since Architecture v3, the Make webhook URL lives in the `send-message` Edge Function as `MAKE_WEBHOOK_URL_DEFAULT` (env-overridable via the `MAKE_SEND_MESSAGE_WEBHOOK_URL` Supabase secret); `window.CrmMessagingConfig.MAKE_SEND_WEBHOOK` here mirrors that URL for humans reading the client-side code. |
+| `crm-messaging-send.js` | 69 | **[P3b→P3c+P4]** `window.CrmMessaging.sendMessage({leadId, channel, templateSlug?, body?, subject?, variables?, eventId?, language?})` — calls the `send-message` Edge Function via `sb.functions.invoke()`. Supports template mode (`templateSlug`) and raw-body mode (`body` XOR `templateSlug`) for ad-hoc broadcasts. The Edge Function handles template fetch, `%name%`/`%phone%`/... substitution, `crm_message_log` write, and Make webhook dispatch. Returns `{ok, logId?, channel?, error?}`. |
 
 ### Modified shared files
 | File | Change | Phase |
@@ -53,7 +53,8 @@
 ### Edge Functions — `supabase/functions/` (owned by Module 4)
 | Slug | Files | Lines | Phase | Purpose |
 |------|-------|-------|-------|---------|
-| `lead-intake` | `index.ts` + `deno.json` | 241 | P1 | Public form intake: validate payload, resolve tenant by slug, normalize Israeli phones to E.164, duplicate-check (tenant_id, phone), INSERT `crm_leads` with `status='new'`. Returns 201 `{id, is_new: true}` on new, 409 `{duplicate, existing_name}` on dup, 400 on validation fail, 401 on unknown tenant. `verify_jwt: false` (public endpoint). Uses `SUPABASE_SERVICE_ROLE_KEY` server-side to bypass RLS. |
+| `lead-intake` | `index.ts` + `deno.json` | 342 | P1, P3c+P4 | Public form intake: validate payload, resolve tenant by slug, normalize Israeli phones to E.164, duplicate-check (tenant_id, phone), INSERT `crm_leads` with `status='new'`. Returns 201 `{id, is_new: true}` on new, 409 `{duplicate, existing_name}` on dup, 400 on validation fail, 401 on unknown tenant. `verify_jwt: false` (public endpoint). Uses `SUPABASE_SERVICE_ROLE_KEY` server-side to bypass RLS. **[P3c+P4]** After new-lead INSERT or duplicate detection (both initial check and 23505 race branch), dispatches SMS + Email via the `send-message` Edge Function using `lead_intake_new` or `lead_intake_duplicate` templates. Uses a hardcoded legacy JWT anon key for the cross-function fetch (Finding M4-INFRA-01). |
+| `send-message` | `index.ts` + `deno.json` | 277 | P3c+P4 | Messaging pipeline core. Receives `{tenant_id, lead_id, event_id?, channel, template_slug?, body?, subject?, variables?, language?}`, looks up template in `crm_message_templates` (composing full slug = `{base_slug}_{channel}_{language}`), substitutes `%name%`/`%phone%`/`%email%`/`%event_*%` placeholders, writes `crm_message_log` with `status='pending'`, calls Make webhook with ready-to-send payload `{channel, recipient_phone, recipient_email, subject, body}`, updates log to `sent` or `failed` based on Make response. Supports raw broadcast (body without template — `templateSlug` XOR `body`). `verify_jwt: true`. Make URL read from `MAKE_SEND_MESSAGE_WEBHOOK_URL` env with a hardcoded fallback matching `crm-messaging-config.js`. |
 
 ### Migration & import scripts (campaign-scoped)
 | File | Purpose | Phase |

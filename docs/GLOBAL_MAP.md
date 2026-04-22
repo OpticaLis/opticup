@@ -154,11 +154,13 @@ Full parameter/return detail: `modules/Module 3.1 - Project Reconstruction/db-au
 
 ### 5.2 Edge Functions (Supabase)
 
-| Function | Purpose |
-|----------|---------|
-| `pin-auth` | PIN authentication — returns JWT + employee |
-| `ocr-extract` | Claude Vision OCR for supplier documents |
-| `remove-background` | Server-side background removal for product images |
+| Function | Module | Phase | Purpose |
+|----------|--------|-------|---------|
+| `pin-auth` | Core | — | PIN authentication — returns JWT + employee |
+| `ocr-extract` | Module 1 (Inventory) | — | Claude Vision OCR for supplier documents |
+| `remove-background` | Module 1 (Inventory) | — | Server-side background removal for product images |
+| `lead-intake` | Module 4 (CRM) | P1, P3c+P4 | Public lead form intake — validate, normalize phone, dedupe by tenant+phone, INSERT `crm_leads`. **[P3c+P4]** Also dispatches SMS+Email via `send-message` on new lead (`lead_intake_new`) and on duplicate (`lead_intake_duplicate`). `verify_jwt: false`. |
+| `send-message` | Module 4 (CRM) | P3c+P4 | Messaging pipeline — template fetch from `crm_message_templates`, `%var%` substitution, `crm_message_log` write, Make webhook dispatch. Supports template mode and raw-body broadcast mode. `verify_jwt: true`. |
 
 ### 5.3 ERP HTML Pages
 
