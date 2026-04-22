@@ -104,88 +104,83 @@
 
   async function openCreateEventModal(onCreated) {
     if (typeof Modal === 'undefined') { if (window.Toast) Toast.error('Modal לא זמין'); return; }
+    var footerHtml =
+      '<button type="button" id="crm-create-event-submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition shadow-sm" disabled>צור אירוע</button>' +
+      '<button type="button" id="crm-create-event-cancel" class="px-5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-lg transition">ביטול</button>';
     var modal = Modal.show({
       title: 'יצירת אירוע חדש',
       size: 'md',
-      content: '<div class="text-center text-slate-400 py-8">טוען קמפיינים...</div>'
+      content: '<div class="text-center text-slate-400 py-8">טוען קמפיינים...</div>',
+      footer: footerHtml
+    });
+
+    var footer = modal.el.querySelector('.modal-footer');
+    var body = modal.el.querySelector('.modal-body');
+    footer.querySelector('#crm-create-event-cancel').addEventListener('click', function () {
+      if (typeof modal.close === 'function') modal.close();
     });
 
     var campaigns;
     try {
       campaigns = await loadCampaigns();
     } catch (e) {
-      var body0 = modal.el.querySelector('.modal-body');
-      if (body0) body0.innerHTML = '<div class="text-rose-600 py-4">שגיאה בטעינה: ' + escapeHtml(e.message) + '</div>';
+      body.innerHTML = '<div class="text-rose-600 py-4">שגיאה בטעינה: ' + escapeHtml(e.message) + '</div>';
       return;
     }
     if (!campaigns.length) {
-      var body1 = modal.el.querySelector('.modal-body');
-      if (body1) body1.innerHTML = '<div class="text-amber-700 py-4">אין קמפיינים פעילים. יש ליצור קמפיין לפני יצירת אירוע.</div>';
+      body.innerHTML = '<div class="text-amber-700 py-4">אין קמפיינים פעילים. יש ליצור קמפיין לפני יצירת אירוע.</div>';
       return;
     }
 
-    var body = modal.el.querySelector('.modal-body');
-    if (!body) return;
     body.innerHTML = renderCreateForm(campaigns);
 
-    var footer = modal.el.querySelector('.modal-footer');
-    if (footer) {
-      footer.innerHTML =
-        '<button type="button" id="crm-create-event-submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition shadow-sm">צור אירוע</button>' +
-        '<button type="button" id="crm-create-event-cancel" class="px-5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-lg transition">ביטול</button>';
+    var form = body.querySelector('#crm-create-event-form');
+    var campSel = form.querySelector('[name="campaign_id"]');
+    campSel.addEventListener('change', function () {
+      var picked = campaigns.find(function (c) { return c.id === campSel.value; }) || {};
+      var locInput = form.querySelector('[name="location_address"]');
+      var capInput = form.querySelector('[name="max_capacity"]');
+      var feeInput = form.querySelector('[name="booking_fee"]');
+      if (locInput && !locInput.value) locInput.value = picked.default_location || '';
+      if (capInput) capInput.value = picked.default_max_capacity || 50;
+      if (feeInput) feeInput.value = picked.default_booking_fee || 50;
+    });
 
-      footer.querySelector('#crm-create-event-cancel').addEventListener('click', function () {
+    var submit = footer.querySelector('#crm-create-event-submit');
+    submit.disabled = false;
+    submit.addEventListener('click', async function () {
+      var errBox = body.querySelector('#crm-create-event-error');
+      errBox.classList.add('hidden');
+      var fd = new FormData(form);
+      var data = {
+        campaign_id: fd.get('campaign_id'),
+        name: (fd.get('name') || '').trim(),
+        event_date: fd.get('event_date'),
+        start_time: fd.get('start_time'),
+        end_time: fd.get('end_time'),
+        location_address: (fd.get('location_address') || '').trim(),
+        location_waze_url: (fd.get('location_waze_url') || '').trim(),
+        max_capacity: parseInt(fd.get('max_capacity'), 10),
+        booking_fee: parseFloat(fd.get('booking_fee')),
+        coupon_code: (fd.get('coupon_code') || '').trim()
+      };
+      if (!data.name || !data.event_date || !data.location_address || !data.coupon_code) {
+        errBox.textContent = 'שדות חובה חסרים';
+        errBox.classList.remove('hidden');
+        return;
+      }
+      submit.disabled = true; submit.textContent = 'יוצר...';
+      try {
+        var created = await createEvent(data);
+        if (window.Toast) Toast.success('אירוע #' + created.event_number + ' נוצר');
         if (typeof modal.close === 'function') modal.close();
-      });
-
-      // Re-seed location default when campaign changes
-      var form = body.querySelector('#crm-create-event-form');
-      var campSel = form.querySelector('[name="campaign_id"]');
-      campSel.addEventListener('change', function () {
-        var picked = campaigns.find(function (c) { return c.id === campSel.value; }) || {};
-        var locInput = form.querySelector('[name="location_address"]');
-        var capInput = form.querySelector('[name="max_capacity"]');
-        var feeInput = form.querySelector('[name="booking_fee"]');
-        if (locInput && !locInput.value) locInput.value = picked.default_location || '';
-        if (capInput) capInput.value = picked.default_max_capacity || 50;
-        if (feeInput) feeInput.value = picked.default_booking_fee || 50;
-      });
-
-      footer.querySelector('#crm-create-event-submit').addEventListener('click', async function () {
-        var errBox = body.querySelector('#crm-create-event-error');
-        errBox.classList.add('hidden');
-        var fd = new FormData(form);
-        var data = {
-          campaign_id: fd.get('campaign_id'),
-          name: (fd.get('name') || '').trim(),
-          event_date: fd.get('event_date'),
-          start_time: fd.get('start_time'),
-          end_time: fd.get('end_time'),
-          location_address: (fd.get('location_address') || '').trim(),
-          location_waze_url: (fd.get('location_waze_url') || '').trim(),
-          max_capacity: parseInt(fd.get('max_capacity'), 10),
-          booking_fee: parseFloat(fd.get('booking_fee')),
-          coupon_code: (fd.get('coupon_code') || '').trim()
-        };
-        if (!data.name || !data.event_date || !data.location_address || !data.coupon_code) {
-          errBox.textContent = 'שדות חובה חסרים';
-          errBox.classList.remove('hidden');
-          return;
-        }
-        var submit = footer.querySelector('#crm-create-event-submit');
-        submit.disabled = true; submit.textContent = 'יוצר...';
-        try {
-          var created = await createEvent(data);
-          if (window.Toast) Toast.success('אירוע #' + created.event_number + ' נוצר');
-          if (typeof modal.close === 'function') modal.close();
-          if (typeof onCreated === 'function') onCreated(created);
-        } catch (e) {
-          errBox.textContent = 'שגיאה: ' + (e.message || String(e));
-          errBox.classList.remove('hidden');
-          submit.disabled = false; submit.textContent = 'צור אירוע';
-        }
-      });
-    }
+        if (typeof onCreated === 'function') onCreated(created);
+      } catch (e) {
+        errBox.textContent = 'שגיאה: ' + (e.message || String(e));
+        errBox.classList.remove('hidden');
+        submit.disabled = false; submit.textContent = 'צור אירוע';
+      }
+    });
   }
 
   // ---- Status change ----
