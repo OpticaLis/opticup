@@ -129,6 +129,40 @@
     return ins.data;
   }
 
+  async function updateLead(leadId, patch) {
+    if (!leadId) throw new Error('missing lead id');
+    var tenantId = getTid();
+    var clean = {};
+    if (patch.full_name != null) {
+      var n = String(patch.full_name).trim();
+      if (!n) throw new Error('missing full_name');
+      clean.full_name = n;
+    }
+    if (patch.phone != null) {
+      var p = String(patch.phone).trim();
+      if (!p) throw new Error('missing phone');
+      clean.phone = p;
+    }
+    if (patch.email != null) {
+      var e = String(patch.email).trim();
+      if (!e) throw new Error('missing email');
+      clean.email = e;
+    }
+    if (patch.city != null) clean.city = String(patch.city).trim() || null;
+    if (patch.language != null) clean.language = patch.language || 'he';
+    if (patch.client_notes != null) clean.client_notes = String(patch.client_notes).trim() || null;
+    clean.updated_at = new Date().toISOString();
+
+    var res = await sb.from('crm_leads')
+      .update(clean)
+      .eq('id', leadId)
+      .eq('tenant_id', tenantId)
+      .select('id, full_name, phone, email, city, language, client_notes, updated_at')
+      .single();
+    if (res.error) throw new Error('lead update failed: ' + res.error.message);
+    return res.data;
+  }
+
   async function transferLeadToTier2(leadId) {
     var tenantId = getTid();
     var check = await sb.from('crm_leads')
@@ -162,6 +196,7 @@
   window.CrmLeadActions.bulkChangeStatus = bulkChangeStatus;
   window.CrmLeadActions.addLeadNote = addLeadNote;
   window.CrmLeadActions.createManualLead = createManualLead;
+  window.CrmLeadActions.updateLead = updateLead;
   window.CrmLeadActions.transferLeadToTier2 = transferLeadToTier2;
   window.CrmLeadActions.leadTier = leadTier;
 })();

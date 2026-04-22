@@ -212,9 +212,97 @@
     });
   }
 
+  // ---- Edit-lead modal ----
+
+  function openEditLeadModal(lead, onSaved) {
+    if (!lead || typeof Modal === 'undefined') return;
+
+    function langOpt(code, labelHe) {
+      var sel = (lead.language || 'he') === code ? ' selected' : '';
+      return '<option value="' + code + '"' + sel + '>' + labelHe + '</option>';
+    }
+
+    var body =
+      '<div class="space-y-3">' +
+        '<div>' +
+          '<label class="block text-sm font-medium text-slate-700 mb-1">שם מלא <span class="text-rose-500">*</span></label>' +
+          '<input type="text" id="crm-edit-lead-name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required value="' + escapeHtml(lead.full_name || '') + '">' +
+        '</div>' +
+        '<div>' +
+          '<label class="block text-sm font-medium text-slate-700 mb-1">טלפון <span class="text-rose-500">*</span></label>' +
+          '<input type="tel" id="crm-edit-lead-phone" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required value="' + escapeHtml(lead.phone || '') + '">' +
+        '</div>' +
+        '<div>' +
+          '<label class="block text-sm font-medium text-slate-700 mb-1">אימייל <span class="text-rose-500">*</span></label>' +
+          '<input type="email" id="crm-edit-lead-email" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required value="' + escapeHtml(lead.email || '') + '">' +
+        '</div>' +
+        '<div>' +
+          '<label class="block text-sm font-medium text-slate-700 mb-1">עיר</label>' +
+          '<input type="text" id="crm-edit-lead-city" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" value="' + escapeHtml(lead.city || '') + '">' +
+        '</div>' +
+        '<div>' +
+          '<label class="block text-sm font-medium text-slate-700 mb-1">שפה</label>' +
+          '<select id="crm-edit-lead-language" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">' +
+            langOpt('he', 'עברית') + langOpt('en', 'English') + langOpt('ru', 'Русский') +
+          '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label class="block text-sm font-medium text-slate-700 mb-1">הערות</label>' +
+          '<textarea id="crm-edit-lead-notes" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="2">' + escapeHtml(lead.client_notes || '') + '</textarea>' +
+        '</div>' +
+      '</div>';
+
+    var footerHtml =
+      '<button type="button" id="crm-edit-lead-cancel" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm hover:bg-slate-50 transition">ביטול</button>' +
+      '<button type="button" id="crm-edit-lead-submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">שמור</button>';
+
+    var modal = Modal.show({
+      title: 'עריכת ליד',
+      size: 'sm',
+      content: body,
+      footer: footerHtml
+    });
+
+    var cancelBtn = modal.el.querySelector('#crm-edit-lead-cancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', function () {
+      if (typeof modal.close === 'function') modal.close();
+    });
+
+    var submitBtn = modal.el.querySelector('#crm-edit-lead-submit');
+    submitBtn.addEventListener('click', async function () {
+      var nameVal = (modal.el.querySelector('#crm-edit-lead-name').value || '').trim();
+      var phoneVal = (modal.el.querySelector('#crm-edit-lead-phone').value || '').trim();
+      var emailVal = (modal.el.querySelector('#crm-edit-lead-email').value || '').trim();
+      if (!nameVal || !phoneVal || !emailVal) {
+        if (window.Toast) Toast.warning('שם, טלפון ואימייל חובה');
+        return;
+      }
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'שומר...';
+      try {
+        var updated = await window.CrmLeadActions.updateLead(lead.id, {
+          full_name: nameVal,
+          phone: phoneVal,
+          email: emailVal,
+          city: modal.el.querySelector('#crm-edit-lead-city').value,
+          language: modal.el.querySelector('#crm-edit-lead-language').value,
+          client_notes: modal.el.querySelector('#crm-edit-lead-notes').value
+        });
+        if (typeof modal.close === 'function') modal.close();
+        if (window.Toast) Toast.success('הליד עודכן');
+        if (typeof onSaved === 'function') onSaved(updated);
+      } catch (e) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'שמור';
+        if (window.Toast) Toast.error('שגיאה: ' + (e.message || String(e)));
+      }
+    });
+  }
+
   window.CrmLeadActions = window.CrmLeadActions || {};
   window.CrmLeadActions.openStatusDropdown = openStatusDropdown;
   window.CrmLeadActions.closeStatusDropdown = closeStatusDropdown;
   window.CrmLeadActions.openBulkStatusPicker = openBulkStatusPicker;
   window.CrmLeadActions.openCreateLeadModal = openCreateLeadModal;
+  window.CrmLeadActions.openEditLeadModal = openEditLeadModal;
 })();

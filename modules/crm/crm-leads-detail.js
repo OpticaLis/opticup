@@ -310,8 +310,12 @@
           window.open('https://wa.me/' + wa, '_blank');
         } else if (act === 'sms' && lead.phone) {
           window.location.href = 'sms:' + lead.phone;
-        } else if (act === 'edit') {
-          if (window.Toast) Toast.show('עריכה — בקרוב');
+        } else if (act === 'edit' && window.CrmLeadActions && CrmLeadActions.openEditLeadModal) {
+          CrmLeadActions.openEditLeadModal(lead, function (updated) {
+            if (updated) Object.keys(updated).forEach(function (k) { lead[k] = updated[k]; });
+            if (typeof window.reloadCrmLeadsTab === 'function') window.reloadCrmLeadsTab();
+            if (typeof window.reloadCrmIncomingTab === 'function') window.reloadCrmIncomingTab();
+          });
         } else if (act === 'eventday') {
           if (window.Toast) Toast.show('מעבר למצב יום אירוע — בקרוב');
         } else if (act === 'status' && window.CrmLeadActions) {
