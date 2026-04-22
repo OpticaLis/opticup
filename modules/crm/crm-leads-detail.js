@@ -22,6 +22,17 @@
   var CLS_DETAIL_ROW     = 'flex items-center justify-between py-2 border-b border-slate-100';
   var CLS_NOTE           = 'bg-slate-50 border border-slate-200 rounded-lg p-3 mb-2 text-sm text-slate-700';
 
+  var CHANNEL_LABELS = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'אימייל' };
+  var STATUS_LABELS  = { sent: 'נשלח', pending: 'בתור', failed: 'נכשל', delivered: 'הגיע', read: 'נקרא', queued: 'בתור' };
+  var STATUS_CLASSES = {
+    sent:      'bg-sky-100 text-sky-800',
+    delivered: 'bg-emerald-100 text-emerald-800',
+    read:      'bg-indigo-100 text-indigo-800',
+    failed:    'bg-rose-100 text-rose-800',
+    queued:    'bg-slate-100 text-slate-700',
+    pending:   'bg-slate-100 text-slate-700'
+  };
+
   function initials(name) {
     var s = String(name || '').trim();
     if (!s) return '?';
@@ -46,7 +57,7 @@
       var data = await fetchDetailData(leadId);
       var body = modal.el.querySelector('.modal-body');
       if (body) {
-        body.innerHTML = renderDetail(lead, data.notes, data.history);
+        body.innerHTML = renderDetail(lead, data.notes, data.history, data.messages);
         wireTabs(body, lead, data);
         wireFooter(body, lead);
       }
@@ -70,14 +81,21 @@
       .eq('lead_id', leadId);
     if (tid) histQ = histQ.eq('tenant_id', tid);
 
-    var r = await Promise.all([notesQ, histQ]);
+    // P8: per-lead message history from crm_message_log filtered by lead_id.
+    var msgQ = sb.from('crm_message_log')
+      .select('id, channel, content, status, error_message, created_at, crm_message_templates(name, slug)')
+      .eq('lead_id', leadId).order('created_at', { ascending: false }).limit(50);
+    if (tid) msgQ = msgQ.eq('tenant_id', tid);
+
+    var r = await Promise.all([notesQ, histQ, msgQ]);
     if (r[0].error) throw new Error('notes: ' + r[0].error.message);
     if (r[1].error) throw new Error('history: ' + r[1].error.message);
-    return { notes: r[0].data || [], history: (r[1].data && r[1].data[0]) || null };
+    if (r[2].error) throw new Error('messages: ' + r[2].error.message);
+    return { notes: r[0].data || [], history: (r[1].data && r[1].data[0]) || null, messages: r[2].data || [] };
   }
 
   // ---- Render ----
-  function renderDetail(lead, notes, hist) {
+  function renderDetail(lead, notes, hist, messages) {
     var statusInfo = CrmHelpers.getStatusInfo('lead', lead.status);
     var tabBtns = TABS.map(function (t, i) {
       return '<button type="button" class="' + (i === 0 ? CLS_TAB_BTN_ACTIVE : CLS_TAB_BTN) + '" data-detail-tab="' + t.key + '">' + escapeHtml(t.label) + '</button>';
@@ -98,7 +116,7 @@
         '</div>' +
       '</div>' +
       '<div class="' + CLS_TAB_BAR + '">' + tabBtns + '</div>' +
-      '<div id="crm-lead-tab-body" class="min-h-[120px]">' + renderTabContent('events', lead, notes, hist) + '</div>' +
+      '<div id="crm-lead-tab-body" class="min-h-[120px]">' + renderTabContent('events', lead, notes, hist, []) + '</div>' +
       '<div class="flex gap-2 mt-4 pt-4 border-t border-slate-200">' +
         '<button type="button" class="' + CLS_ACTION_BTN + ' bg-emerald-500 hover:bg-emerald-600" data-action="whatsapp">WhatsApp</button>' +
         '<button type="button" class="' + CLS_ACTION_BTN + ' bg-sky-500 hover:bg-sky-600" data-action="sms">SMS</button>' +
@@ -107,13 +125,38 @@
       '</div>';
   }
 
-  function renderTabContent(key, lead, notes, hist) {
+  function renderTabContent(key, lead, notes, hist, messages) {
     if (key === 'events')   return renderEvents(hist);
-    if (key === 'messages') return '<div class="text-center text-slate-400 py-8">היסטוריית הודעות — בקרוב</div>';
+    if (key === 'messages') return renderMessages(messages || []);
     if (key === 'notes')    return renderNotes(notes);
     if (key === 'timeline') return renderTimeline(notes, hist);
     if (key === 'details')  return renderFullDetails(lead);
     return '';
+  }
+
+  // P8: per-lead message history. Reuses the styling conventions from
+  // crm-messaging-log.js (chip colours, channel labels) for visual consistency.
+  function renderMessages(messages) {
+    if (!messages.length) return '<div class="text-center text-slate-400 py-8">אין היסטוריית הודעות לליד זה</div>';
+    var html = '<div class="space-y-2">';
+    messages.forEach(function (m) {
+      var chipCls = STATUS_CLASSES[m.status] || 'bg-slate-100 text-slate-700';
+      var tpl = m.crm_message_templates || {};
+      var preview = (m.content || '').replace(/\s+/g, ' ').slice(0, 80);
+      var err = m.error_message ? '<div class="text-xs text-rose-600 mt-1">' + escapeHtml(m.error_message) + '</div>' : '';
+      html += '<div class="bg-white border border-slate-200 rounded-lg p-3 hover:bg-slate-50 transition" data-msg-row="' + escapeHtml(m.id) + '">' +
+        '<div class="flex items-center gap-2 flex-wrap mb-1">' +
+          '<span class="text-xs font-semibold text-slate-500">' + escapeHtml(CrmHelpers.formatDateTime(m.created_at)) + '</span>' +
+          '<span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium">' + escapeHtml(CHANNEL_LABELS[m.channel] || m.channel) + '</span>' +
+          '<span class="text-xs px-2 py-0.5 rounded-full font-medium ' + chipCls + '">' + escapeHtml(STATUS_LABELS[m.status] || m.status) + '</span>' +
+          (tpl.name ? '<span class="text-xs text-slate-500">· ' + escapeHtml(tpl.name) + '</span>' : '') +
+        '</div>' +
+        '<div class="text-sm text-slate-800 truncate">' + escapeHtml(preview) + '</div>' +
+        err +
+      '</div>';
+    });
+    html += '</div>';
+    return html;
   }
 
   function renderEvents(hist) {
@@ -215,7 +258,7 @@
         });
         var host = body.querySelector('#crm-lead-tab-body');
         var key = btn.getAttribute('data-detail-tab');
-        if (host) host.innerHTML = renderTabContent(key, lead, data.notes, data.history);
+        if (host) host.innerHTML = renderTabContent(key, lead, data.notes, data.history, data.messages);
         if (key === 'notes') wireNoteForm(host, lead, data);
       });
     });
