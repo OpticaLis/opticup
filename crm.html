@@ -221,10 +221,8 @@ tailwind.config = {
             </div>
             <span class="text-sm text-gray-500" id="crm-leads-count"></span>
           </div>
-          <div class="flex flex-wrap items-center gap-2 mb-4">
-            <input type="search" id="crm-leads-search" class="flex-1 min-w-[220px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="חיפוש לפי שם או טלפון...">
-            <select id="crm-leads-filter-status" class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"><option value="">כל הסטטוסים</option></select>
-            <select id="crm-leads-filter-lang" class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"><option value="">כל השפות</option></select>
+          <div class="flex flex-wrap items-center gap-2 mb-2">
+            <input type="search" id="crm-leads-search" class="flex-1 min-w-[220px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="חיפוש לפי שם / טלפון / אימייל...">
             <select id="crm-leads-sort" class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
               <option value="full_name">מיון: שם</option>
               <option value="phone">מיון: טלפון</option>
@@ -232,6 +230,7 @@ tailwind.config = {
               <option value="status">מיון: סטטוס</option>
             </select>
           </div>
+          <div id="crm-leads-advanced-filters"></div>
           <div id="crm-leads-filter-chips" class="mb-2"></div>
           <div id="crm-leads-bulk-bar"></div>
           <div id="leads-view-table" class="crm-leads-view active">
@@ -301,6 +300,7 @@ tailwind.config = {
 
 <!-- CRM JS — helpers first, then init, then tab modules -->
 <script src="modules/crm/crm-helpers.js"></script>
+<script src="modules/crm/crm-lead-filters.js"></script>
 <script src="modules/crm/crm-lead-actions.js"></script>
 <script src="modules/crm/crm-lead-modals.js"></script>
 <script src="modules/crm/crm-init.js"></script>

@@ -12,6 +12,7 @@
   var _filtered = [];
   var _currentPage = 1;
   var _selectedIds = new Set();
+  var _lastNotesMap = {};
 
   // Tailwind class constants (§10.6)
   var CLS_TABLE       = 'w-full text-sm bg-white';
@@ -47,7 +48,8 @@
       _loadPromise = (async function () {
         await ensureCrmStatusCache();
         _allLeads = await loadLeads();
-        populateFilters();
+        if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
+        renderAdvancedFilterBar();
         wireEvents();
       })().catch(function (e) {
         _loadPromise = null;
@@ -60,62 +62,48 @@
   }
   window.loadCrmLeadsTab = loadCrmLeadsTab;
 
-  function populateFilters() {
-    var statusSel = document.getElementById('crm-leads-filter-status');
-    var langSel = document.getElementById('crm-leads-filter-lang');
-    if (statusSel && statusSel.options.length <= 1) {
-      var statuses = (window.CRM_STATUSES && window.CRM_STATUSES.lead) || {};
-      var tier2Statuses = (typeof TIER2_STATUSES !== 'undefined') ? TIER2_STATUSES : [];
-      Object.keys(statuses).forEach(function (slug) {
-        // Only show Tier 2 statuses in filter dropdown for registered leads tab
-        if (tier2Statuses.indexOf(slug) === -1) return;
-        var opt = document.createElement('option');
-        opt.value = slug; opt.textContent = statuses[slug].name_he || slug;
-        statusSel.appendChild(opt);
-      });
-    }
-    if (langSel && langSel.options.length <= 1) {
-      CrmHelpers.distinctValues(_allLeads, 'language').sort().forEach(function (code) {
-        var opt = document.createElement('option');
-        opt.value = code; opt.textContent = CrmHelpers.formatLanguage(code);
-        langSel.appendChild(opt);
-      });
-    }
+  function renderAdvancedFilterBar() {
+    var host = document.getElementById('crm-leads-advanced-filters');
+    if (!host || !window.CrmLeadFilters) return;
+    CrmLeadFilters.renderAdvancedBar(host, {
+      key: 'registered',
+      statuses: (typeof TIER2_STATUSES !== 'undefined') ? TIER2_STATUSES : [],
+      leads: _allLeads,
+      showLanguage: true,
+      onChange: function () {
+        _currentPage = 1;
+        applyFiltersAndRender();
+      }
+    });
   }
 
   var _eventsWired = false;
   function wireEvents() {
     if (_eventsWired) return;
     _eventsWired = true;
-    ['crm-leads-search', 'crm-leads-filter-status', 'crm-leads-filter-lang', 'crm-leads-sort'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener(id === 'crm-leads-search' ? 'input' : 'change', function () {
-        _currentPage = 1;
-        applyFiltersAndRender();
-      });
-    });
+    var searchEl = document.getElementById('crm-leads-search');
+    if (searchEl) searchEl.addEventListener('input', function () { _currentPage = 1; applyFiltersAndRender(); });
+    var sortEl = document.getElementById('crm-leads-sort');
+    if (sortEl) sortEl.addEventListener('change', function () { _currentPage = 1; applyFiltersAndRender(); });
   }
 
   function applyFiltersAndRender() {
-    var search       = (document.getElementById('crm-leads-search')       || {}).value || '';
-    var statusFilter = (document.getElementById('crm-leads-filter-status')|| {}).value || '';
-    var langFilter   = (document.getElementById('crm-leads-filter-lang')  || {}).value || '';
-    var sortKey      = (document.getElementById('crm-leads-sort')         || {}).value || 'full_name';
+    var search  = (document.getElementById('crm-leads-search') || {}).value || '';
+    var sortKey = (document.getElementById('crm-leads-sort')   || {}).value || 'full_name';
+
+    var tier2Statuses = (typeof TIER2_STATUSES !== 'undefined') ? TIER2_STATUSES : [];
+    var state = window.CrmLeadFilters ? CrmLeadFilters.getState('registered') : { statuses: [], fromDate: '', toDate: '', noResp48: false, source: '', language: '' };
+    var afterAdv = window.CrmLeadFilters
+      ? CrmLeadFilters.applyFilters(_allLeads, tier2Statuses, _lastNotesMap, state)
+      : _allLeads.filter(function (r) { return tier2Statuses.indexOf(r.status) !== -1; });
 
     var s = search.trim().toLowerCase();
-    var tier2Statuses = (typeof TIER2_STATUSES !== 'undefined') ? TIER2_STATUSES : [];
-    _filtered = _allLeads.filter(function (r) {
-      // Filter to Tier 2 statuses only (registered leads)
-      if (tier2Statuses.length > 0 && tier2Statuses.indexOf(r.status) === -1) return false;
-      if (statusFilter && r.status !== statusFilter) return false;
-      if (langFilter && r.language !== langFilter) return false;
-      if (s) {
-        var name = (r.full_name || '').toLowerCase();
-        var phone = (r.phone || '').toLowerCase();
-        if (name.indexOf(s) === -1 && phone.indexOf(s) === -1) return false;
-      }
-      return true;
+    _filtered = afterAdv.filter(function (r) {
+      if (!s) return true;
+      var name = (r.full_name || '').toLowerCase();
+      var phone = (r.phone || '').toLowerCase();
+      var email = (r.email || '').toLowerCase();
+      return name.indexOf(s) !== -1 || phone.indexOf(s) !== -1 || email.indexOf(s) !== -1;
     });
 
     _filtered.sort(function (a, b) {
@@ -124,7 +112,7 @@
       return CrmHelpers.heCompare(a.full_name, b.full_name);
     });
 
-    renderFilterChips({ search: search, status: statusFilter, lang: langFilter });
+    renderFilterChips(search, state);
     renderLeadsTable();
     renderBulkBar();
     renderPagination();
@@ -132,31 +120,35 @@
     if (typeof window.renderCrmLeadsCards  === 'function') window.renderCrmLeadsCards(_filtered);
   }
 
-  // ---- Filter chips ----
-  function renderFilterChips(filters) {
+  function renderFilterChips(search, state) {
     var host = document.getElementById('crm-leads-filter-chips');
     if (!host) return;
     var chips = [];
-    if (filters.search) chips.push({ key: 'search', label: 'חיפוש: ' + filters.search });
-    if (filters.status) {
-      var si = CrmHelpers.getStatusInfo('lead', filters.status);
-      chips.push({ key: 'status', label: 'סטטוס: ' + si.label });
-    }
-    if (filters.lang) chips.push({ key: 'lang', label: 'שפה: ' + CrmHelpers.formatLanguage(filters.lang) });
+    if (search) chips.push({ k: 'search', label: 'חיפוש: ' + search });
+    if (window.CrmLeadFilters) chips = chips.concat(CrmLeadFilters.renderChips(state));
     if (!chips.length) { host.innerHTML = ''; return; }
     host.className = 'flex items-center gap-2 flex-wrap mb-3';
     host.innerHTML = '<span class="text-xs font-semibold text-slate-600">פילטרים פעילים:</span>' + chips.map(function (c) {
-      return '<span class="' + CLS_CHIP + '" data-chip="' + c.key + '">' +
+      return '<span class="' + CLS_CHIP + '" data-chip="' + c.k + '">' +
         escapeHtml(c.label) +
-        '<span class="' + CLS_CHIP_CLOSE + '" data-clear-chip="' + c.key + '">×</span>' +
+        '<span class="' + CLS_CHIP_CLOSE + '" data-clear-chip="' + c.k + '">×</span>' +
       '</span>';
     }).join('');
     host.querySelectorAll('[data-clear-chip]').forEach(function (el) {
       el.addEventListener('click', function () {
         var k = el.getAttribute('data-clear-chip');
-        if (k === 'search') { var s = document.getElementById('crm-leads-search'); if (s) s.value = ''; }
-        if (k === 'status') { var st = document.getElementById('crm-leads-filter-status'); if (st) st.value = ''; }
-        if (k === 'lang')   { var l  = document.getElementById('crm-leads-filter-lang');   if (l)  l.value = ''; }
+        if (k === 'search') {
+          var sEl = document.getElementById('crm-leads-search');
+          if (sEl) sEl.value = '';
+        } else if (window.CrmLeadFilters) {
+          var s = CrmLeadFilters.getState('registered');
+          if (k === 'statuses') s.statuses = [];
+          else if (k === 'dates') { s.fromDate = ''; s.toDate = ''; }
+          else if (k === '48h') s.noResp48 = false;
+          else if (k === 'source') s.source = '';
+          else if (k === 'lang') s.language = '';
+          renderAdvancedFilterBar();
+        }
         _currentPage = 1; applyFiltersAndRender();
       });
     });
@@ -194,6 +186,8 @@
 
   async function reloadCrmLeadsTab() {
     _allLeads = await loadLeads();
+    if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
+    renderAdvancedFilterBar();
     applyFiltersAndRender();
   }
   window.reloadCrmLeadsTab = reloadCrmLeadsTab;
