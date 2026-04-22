@@ -194,6 +194,88 @@ When a task requires review:
 
 ---
 
+## Cowork-to-Claude-Code Handoff (Proven Pattern)
+
+When this skill runs inside **Cowork** (not Claude Code), use this workflow.
+Proven in P1, P2a, P2b, P3a — all closed successfully.
+
+### Why This Split Exists
+
+Cowork has: full conversation context with Daniel, strategic thinking, DB
+queries via Supabase MCP, memory system, skill loading.
+
+Claude Code has: local file system access, `git` operations, browser testing
+via chrome-devtools MCP, pre-commit hooks, `npm run` scripts.
+
+Splitting roles by strength produces better SPECs (Cowork gathers evidence
+before writing) and cleaner execution (Claude Code runs end-to-end without
+strategic context-switching).
+
+### The Workflow
+
+```
+Cowork (Strategic)                    Claude Code (Executor)
+─────────────────                     ──────────────────────
+1. Gather evidence                    
+   - DB queries (Supabase MCP)        
+   - File reads (repo access)         
+   - Prior FOREMAN_REVIEWs            
+                                      
+2. Write SPEC.md                      
+   - Full folder-per-SPEC protocol    
+   - Verified preconditions           
+   - All lessons incorporated         
+                                      
+3. Write ACTIVATION_PROMPT.md         
+   - Pending commits (backlog)        
+   - SPEC path                        
+   - Key notes & lessons              
+                                      
+4. Daniel copies prompt to ──────────►5. Commit backlog (selective add)
+   Claude Code                         6. Load opticup-executor skill
+                                       7. Execute SPEC end-to-end
+                                       8. Write EXECUTION_REPORT.md
+                                       9. Write FINDINGS.md
+                                      
+10. Daniel pastes result back ◄──────  
+                                      
+11. Read EXECUTION_REPORT +           
+    FINDINGS from repo                
+12. Spot-check 3+ claims              
+13. Write FOREMAN_REVIEW.md           
+14. Include in next activation        
+    prompt as backlog commit          
+```
+
+### What Goes in the Activation Prompt
+
+The activation prompt (`ACTIVATION_PROMPT.md`) is a short document that
+Daniel copies to Claude Code. It must contain:
+
+1. **Machine identifier** — which of the 3 machines (Windows desktop/laptop/Mac)
+2. **Pending commits table** — files from previous Cowork sessions that need
+   committing. Each row: files + commit message. Selective `git add` only.
+3. **SPEC path** — the full path to execute:
+   `modules/Module X/docs/specs/{SLUG}/SPEC.md`
+4. **Key notes** — 3–5 bullet points of lessons from prior SPECs that the
+   executor should know (Toast API, Modal footer pattern, pre-commit hook
+   state, etc.)
+5. **Expected end state** — "Repo clean, all N criteria pass,
+   EXECUTION_REPORT.md + FINDINGS.md written."
+
+### Rules
+
+- **Cowork writes the SPEC, not Claude Code.** Cowork has the conversation
+  context and strategic judgment. Claude Code executes, not plans.
+- **One SPEC per activation.** Don't batch multiple SPECs in one prompt.
+- **Backlog commits first, then execution.** The activation prompt always
+  starts with pending commits from the previous session.
+- **Foreman Review flows back through Cowork.** Daniel pastes the executor's
+  final report, Cowork writes FOREMAN_REVIEW, includes it as backlog in the
+  next activation prompt. The cycle repeats.
+
+---
+
 ## SPEC Authoring Protocol (Foreman Hat)
 
 **This is how SPECs are created going forward.** The old pattern of dropping a
