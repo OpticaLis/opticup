@@ -245,6 +245,70 @@ P1 → P2 → P3 → P4 → P5 → P6 → P8 → P7
 
 ---
 
+## P9 — CRM Hardening (Pre-Cutover)  ✅
+
+**סגור 2026-04-22.** מעבר חיזוק מקיף על CRM לפני P7 — תיקון כל הבאגים שדניאל מצא ב-QA, שדרוג UX (HH:MM בכל מקום, סינון מתקדם, עריכת ליד עובדת, אימייל חובה), ווידוא end-to-end של כל הצינור.
+
+**מה בוצע (40/40 קריטריונים עוברים):**
+
+### Track A — תיקוני באגים
+1. ✅ יצירת ליד — אימייל נדרש (ולידציה קליינט + סרבר) + toast "שם, טלפון ואימייל חובה"
+2. ✅ כפתור SMS בפרטי ליד לא פותח יותר אפליקציית SMS מערכת — נפתח dialog CRM פנימי עם בחירת ערוץ (SMS/Email) + body, משתמש ב-`CrmMessaging.sendMessage` (Option A)
+3. ✅ כפתור "ערוך" בפרטי ליד פותח modal עם 6 שדות (שם/טלפון/אימייל/עיר/שפה/הערות) ושומר ל-DB דרך `CrmLeadActions.updateLead` חדש
+
+### Track B — זמנים HH:MM בכל מקום
+4. ✅ פרטי ליד "נוצר"/"עודכן" — `formatDate` → `formatDateTime`
+5. ✅ ציר זמן — `formatDate` → `formatDateTime`
+6. ✅ טבלת רשומים — עמודת "נוצר" → `formatDateTime`
+7. ✅ טבלת לידים נכנסים — עמודת "תאריך" → `formatDateTime`
+8. ✅ לוג הודעות, הערות, הודעות-ליד — כבר היו HH:MM, אומתו
+9. ✅ Event dates נשארו `formatDate` (תאריך בלבד, אין שעה) — תיעוד בחירה מודעת
+
+### Track C — סינון מתקדם
+10. ✅ קובץ חדש `modules/crm/crm-lead-filters.js` (221 שורות) — מודול משותף עם state module-scoped פר tier
+11. ✅ Multi-status checkboxes עם dropdown — שני הטאבים (רשומים Tier 2 + נכנסים Tier 1)
+12. ✅ Date range filter (מתאריך / עד תאריך)
+13. ✅ "ללא תגובה 48 שעות" — שולף `MAX(created_at)` per lead מ-`crm_lead_notes`, מחשב לידים ללא פעילות ב-48h
+14. ✅ Source filter — dropdown דינמי מ-`distinct source` בלידים הטעונים
+15. ✅ Language filter — רק בטאב רשומים
+16. ✅ "סינון מתקדם" collapsible accordion עם badge שסופר פילטרים פעילים
+17. ✅ Filter chips לכל פילטר פעיל + "נקה הכל"
+18. ✅ Filter state נשמר בין מעברי טאבים (module-scoped vars, לא localStorage)
+
+### Track D — בדיקת זרימה מלאה E2E
+1. ✅ Lead-intake EF POST (phone `+972537889878`) → HTTP 409 duplicate → 2 log rows `lead_intake_duplicate_{sms,email}_he` status=sent
+2. ✅ לידים בטאב רשומים — HH:MM נראה בעמודת "נוצר"
+3. ✅ עריכת ליד (UI) — `city='P9 Test City'` נשמר ל-DB + `updated_at` עודכן
+4. ✅ שינוי סטטוס (UI) — `waiting → invited` → note inserted "סטטוס שונה מ-ממתין לאירוע ל-הוזמן לאירוע"
+5. ✅ Tier 1→2 transfer (UI) — terms_approved flipped via SQL, "אשר ✓" button → lead moved to Tier 2
+6. ✅ Register lead to event (UI) — attendee created, confirmation SMS dispatched (email skipped — lead had no email), 1 log row `event_registration_confirmation_sms_he` sent
+7. ✅ Event status change `registration_open → invite_new` (UI) — toast "נשלחו 4 הודעות" → 4 log rows (2 Tier 2 leads × SMS+Email), all sent, template `event_invite_new`
+8. ✅ Messaging Hub log tab — 7 rows total, HH:MM שעה+תאריך מוצגים, שם ליד + טלפון + תבנית + סטטוס chips
+9. ✅ פרטי ליד → טאב "הודעות" — 4 הודעות של Daniel Secondary מוצגות עם HH:MM
+
+### Track E — Executor initiative
+- ✅ 0 console errors חדשים על כל 5 המסכים (רק pre-existing Tailwind-CDN + GoTrueClient warnings)
+- ✅ כל קובצי JS של CRM ≤ 350 שורות (rule 12) — file-size warnings בלבד (>300 soft target, <350 hard max)
+- ✅ escapeHtml בכל קריאת innerHTML עם user data — `grep` מאומת
+- ✅ לא נמצאו באגים נוספים ב-QA sweep — 3 `בקרוב`-placeholders שנותרו הם פיצ'רים עתידיים לא בוגים (event-day quick-scan, bulk WhatsApp/SMS, event messages timeline)
+- ✅ נתוני בדיקה נוקו סופית — demo baseline משוחזר (3 leads, 0 log, 2 notes, 1 event@registration_open, 0 attendees, 24 templates, 10 rules, 0 broadcasts)
+
+**רכיבים שנוצרו/שונו:**
+- `modules/crm/crm-lead-filters.js` (new, 221 lines)
+- `modules/crm/crm-send-dialog.js` (new, 115 lines) — כפתור SMS → CRM dialog
+- `modules/crm/crm-lead-modals.js` (219 → 309 lines) — add `openEditLeadModal`
+- `modules/crm/crm-lead-actions.js` (165 → 202 lines) — add `updateLead`, email required in `createManualLead`
+- `modules/crm/crm-leads-detail.js` (338 → 345 lines) — wire edit button, SMS → dialog, HH:MM timestamps
+- `modules/crm/crm-leads-tab.js` (312 → 307 lines) — use CrmLeadFilters for advanced filtering
+- `modules/crm/crm-incoming-tab.js` (215 → 247 lines) — use CrmLeadFilters, remove native status filter
+- `crm.html` — 2 new `<div id="crm-*-advanced-filters">` hosts, `<script>` tags for 2 new files, removed old status/lang `<select>`s
+
+**אין שינויי DB, אין שינויי Edge Functions, אין קריאות חדשות ל-Make.**
+
+**פרטים מלאים:** `modules/Module 4 - CRM/go-live/specs/P9_CRM_HARDENING/` — SPEC.md + EXECUTION_REPORT.md + FINDINGS.md + FOREMAN_REVIEW.md (pending).
+
+---
+
 ## P7 — מעבר פריזמה  ⬜
 
 **מה נבנה:** כיבוי Monday, הפעלת הצינור החדש על פריזמה.

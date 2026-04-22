@@ -1,8 +1,8 @@
 # Module 4 — CRM: Session Context
 
 > **Last updated:** 2026-04-22
-> **Current phase:** Go-Live P8 (Automation Engine — Level 1) — ✅ CLOSED
-> **Next phase:** P7 (Prizma cutover) — pending Daniel QA sign-off on P8 + P6. Reminders scheduler + unsubscribe endpoint + lead-intake EF refactor remain separate SPECs that can land after P7.
+> **Current phase:** Go-Live P9 (CRM Hardening) — ✅ CLOSED
+> **Next phase:** P7 (Prizma cutover) — pending Daniel QA sign-off on P9 + P8 + P6. Reminders scheduler + unsubscribe endpoint + lead-intake EF refactor remain separate SPECs that can land after P7.
 > **Branch:** develop
 
 ---
@@ -60,6 +60,7 @@ See `modules/Module 4 - CRM/go-live/ROADMAP.md` for full P1–P7 plan.
 
 | Phase | Status | What it did |
 |-------|--------|-------------|
+| Go-Live P9 — CRM Hardening | ✅ CLOSED | Pre-cutover hardening pass. 40/40 criteria. (A) Bug fixes: email required on lead create (client + server), SMS button replaced with CRM send dialog (`modules/crm/crm-send-dialog.js` new 115 lines, Option A — keeps all dispatch inside the CRM messaging pipeline), lead edit modal wired (6-field form: name/phone/email/city/language/notes → new `CrmLeadActions.updateLead`). (B) Timestamps: 5 `formatDate` call sites upgraded to `formatDateTime` — lead detail "נוצר"/"עודכן", timeline, registered table "נוצר" col, incoming table "תאריך" col; event_date columns deliberately kept as date-only. (C) Advanced filtering: new `modules/crm/crm-lead-filters.js` (221 lines, module-scoped state per tier) with multi-status checkboxes dropdown, date range, 48h no-response toggle (queries `MAX(crm_lead_notes.created_at)` per lead), source filter (dynamic from data), language filter (registered only). Collapsible "סינון מתקדם" accordion with active-count badge + filter chips + clear-all. State persists across tab switches. Wired to both incoming (Tier 1) and registered (Tier 2) tabs, replacing the basic status/lang dropdowns. (D) Full E2E flow test on demo: lead-intake EF 409 duplicate path (+972537889878) → 2 log rows sent; UI lead edit → DB updated; UI status change → note inserted; UI Tier 1→2 transfer via אשר ✓; UI event registration → confirmation SMS dispatched via rule engine; UI event status `registration_open → invite_new` → rule #3 fired 4 messages (2 leads × SMS+Email); per-lead messages tab shows 4 rows with HH:MM. All 7 messaging log rows had correct lead joins + HH:MM formatting. (E) Executor QA sweep: 0 new console errors across all 5 main tabs, 0 orphans/duplicates, all CRM files ≤350 (Rule 12), 3 remaining `בקרוב` placeholders are future features not bugs (event-day quick-scan, bulk WhatsApp/SMS, event messages timeline). Test data cleaned — demo restored to exact baseline (3 leads, 0 log, 2 notes, 1 event@registration_open, 0 attendees, 24 templates, 10 active rules, 0 broadcasts). No schema changes, no Edge Function changes, no Make changes. See `modules/Module 4 - CRM/go-live/specs/P9_CRM_HARDENING/` for SPEC + EXECUTION_REPORT + FINDINGS. |
 | A — Schema Migration | ✅ CLOSED | 23 tables, 7 Views, 8 RPCs, seed data |
 | B1 — Data Discovery | ✅ CLOSED | Analyzed 9 Monday exports, produced mapping report |
 | B2 — Data Import | 🟡 CLOSED w/ FOLLOW-UPS | Imported all Monday data into CRM tables |
@@ -83,7 +84,16 @@ See `modules/Module 4 - CRM/go-live/ROADMAP.md` for full P1–P7 plan.
 
 ## What's Next
 
-**Full roadmap:** ~~P1~~ ✅ → ~~P2a~~ ✅ → ~~P2b~~ ✅ → ~~P3a~~ ✅ → ~~P3b~~ ✅ → ~~P3c+P4~~ ✅ → ~~P5~~ ✅ → ~~P5.5~~ ✅ → ~~P6~~ ✅ → ~~P8~~ ✅ → P7 (Prizma cutover — awaiting Daniel QA sign-off). See `modules/Module 4 - CRM/go-live/ROADMAP.md`.
+**Full roadmap:** ~~P1~~ ✅ → ~~P2a~~ ✅ → ~~P2b~~ ✅ → ~~P3a~~ ✅ → ~~P3b~~ ✅ → ~~P3c+P4~~ ✅ → ~~P5~~ ✅ → ~~P5.5~~ ✅ → ~~P6~~ ✅ → ~~P8~~ ✅ → ~~P9~~ ✅ → P7 (Prizma cutover — awaiting Daniel QA sign-off). See `modules/Module 4 - CRM/go-live/ROADMAP.md`.
+
+**P9 follow-ups (not blockers):**
+- SMS button UX: the "SMS" button label now opens a channel picker (SMS default, Email option). Some users may expect "SMS" to mean SMS-only. Consider renaming to "שלח" with a small channel-icon indicator in a future polish SPEC.
+- Edit modal does not offer "phone normalization" (`05X → +972...`) — same gap as manual lead entry. Fine for now; a future SPEC could normalize on both create + edit.
+- 48h filter loads ALL `crm_lead_notes` for the tenant (one query). On Prizma's ~700+ notes this remains fast (<200ms), but at 10k+ rows a subquery `LEFT JOIN latest_note_per_lead` or a DB view would be cleaner. Low priority.
+- Multi-status filter UI is a custom checkbox dropdown (no native `<select multiple>`) — works but has no keyboard nav (Space to toggle). Consider a keyboard-accessible combobox pattern if/when an accessibility SPEC is authored.
+- `crm-leads-detail.js` is at 345 lines (soft target 300). Next touch should consider extracting render helpers to a sibling file.
+- 3 "בקרוב" placeholders remain (event-day quick-scan, bulk WhatsApp/SMS action in bulk bar, event messages timeline). Not regressions — original feature gaps, logged for future polish SPECs.
+- Foreman review due — SPEC folder `modules/Module 4 - CRM/go-live/specs/P9_CRM_HARDENING/` will receive `FOREMAN_REVIEW.md` from opticup-strategic after executor retrospective.
 
 **P8 follow-ups (not blockers):**
 - `lead-intake` Edge Function still dispatches server-side with hardcoded template slugs. The client-side rule engine cannot intercept this. A future SPEC should refactor the EF to call a server-side rule evaluator (or port the engine to Deno/TS and share with the client).
