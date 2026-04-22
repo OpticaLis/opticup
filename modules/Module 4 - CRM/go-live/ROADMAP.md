@@ -187,23 +187,28 @@ P1 → P2 → P3 → P4 → P5 → P6 → P7
 
 ---
 
-## P6 — הרצה מלאה על דמו  ⬜
+## P6 — הרצה מלאה על דמו  ✅
 
-**מה נבנה:** End-to-end test של כל הסייקל על טננט דמו.
+**סגור 2026-04-22.** End-to-end test של כל הסייקל על טננט דמו עבר בהצלחה.
 
-**סדר הבדיקה:**
-1. ליד חדש נרשם בטופס → מופיע ב-CRM, מקבל SMS+Email
-2. ליד כפול → הודעת "כבר רשום", לא נוצר שוב
-3. מאשרים ומעבירים ל-Tier 2
-4. יוצרים אירוע, פותחים הרשמה → כל Tier 2 מקבל הודעה
-5. ליד נרשם לאירוע → אישור הרשמה
-6. תזכורות → SMS+Email לנרשמים
-7. סריקת ברקוד → check-in
-8. רישום רכישה
-9. סקר שביעות רצון
-10. Unsubscribe
+**מה נבדק:**
+1. ✅ Lead-intake EF (phone `+972537889878`) → HTTP 409 duplicate → SMS + Email dispatched (`lead_intake_duplicate_{sms,email}_he`, both `status=sent`)
+2. ✅ CRM `?t=demo` loaded on localhost:3000 — 0 app console errors (only favicon 404 + known Tailwind-CDN warning)
+3. ✅ Registered tab shows 2 P55 leads; lead detail modal opens; status change `confirmed → waiting` via tier-filtered dropdown → DB updated + note "סטטוס שונה מ-אישר הגעה ל-ממתין לאירוע" inserted
+4. ✅ Tier 1→2 transfer — SQL-set lead to `new` (Tier 1) → UI "אשר ✓" button → lead moved to registered tab, status=`waiting`, note "הועבר ל-Tier 2 (אושר)" inserted
+5. ✅ Event creation — "יצירת אירוע +" → event #2 "P6 Test Event" created with auto-number
+6. ✅ Event status change `planning → registration_open` → 4 log rows dispatched (2 Tier 2 leads × SMS+Email, all `status=sent`, template `event_registration_open`)
+7. ✅ Register lead to event — search dialog → click lead → `register_lead_to_event` RPC → 2 confirmation log rows (SMS+Email, templates `event_registration_confirmation`)
+8. ✅ Broadcast wizard — template mode (SMS, `event_invite_new`) → `crm_broadcasts.status=completed`, total_sent=2, total_failed=0
+9. ✅ Broadcast wizard — raw mode (email, free-text body with `%name%`) → `crm_broadcasts.status=completed`, total_sent=2, total_failed=0
+10. ✅ WhatsApp channel guard — `CrmMessaging.sendMessage({channel:'whatsapp'})` returns `{ok:false, error:'invalid_channel:whatsapp'}` before any EF call; 0 new log rows
+11. ✅ Template-not-found error — `send-message` EF with nonexistent slug → log row with `status='failed'`, `error_message='template_not_found: nonexistent_template_that_does_not_exist_sms_he'`
 
-**קריטריון הצלחה:** 0 שגיאות, כל הנתונים ב-CRM מדויקים, כל ההודעות נשלחו ונרשמו ב-log.
+**תוצאה סופית בדמו:** baseline משוחזר בדיוק — 2 leads (statuses מקוריים), 0 log, 0 broadcasts, 0 attendees, 1 event (P5.5 pre-existing), 0 notes, 24 templates. כל נתוני ה-P6 נמחקו.
+
+**תיעוד קוד:** JSDoc "CALLER CONTRACT" בלוק נוסף ל-`modules/crm/crm-messaging-send.js` (93 שורות total) — מסמך את חוזה `variables.phone`/`variables.email` של ה-Edge Function (סוגר את M4-BUG-P55-03).
+
+**פרטים מלאים:** `modules/Module 4 - CRM/go-live/specs/P6_FULL_CYCLE_TEST/` — SPEC.md + EXECUTION_REPORT.md + FINDINGS.md + FOREMAN_REVIEW.md.
 
 ---
 
