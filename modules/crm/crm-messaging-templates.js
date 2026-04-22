@@ -9,15 +9,16 @@
   var CHANNEL_LABELS = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'אימייל' };
   var CHANNEL_COLORS = { sms: 'bg-sky-500', whatsapp: 'bg-emerald-500', email: 'bg-amber-500' };
   var VARIABLES = [
-    { key: '{{name}}',              desc: 'שם הליד' },
-    { key: '{{phone}}',             desc: 'טלפון' },
-    { key: '{{event_name}}',        desc: 'שם האירוע' },
-    { key: '{{event_date}}',        desc: 'תאריך האירוע' },
-    { key: '{{event_time}}',        desc: 'שעת האירוע' },
-    { key: '{{event_address}}',     desc: 'כתובת' },
-    { key: '{{coupon}}',            desc: 'קוד קופון' },
-    { key: '{{registration_link}}', desc: 'קישור רישום' },
-    { key: '{{unsubscribe_link}}',  desc: 'קישור הסרה' }
+    { key: '%name%',             desc: 'שם הלקוח' },
+    { key: '%phone%',            desc: 'טלפון' },
+    { key: '%email%',            desc: 'אימייל' },
+    { key: '%event_name%',       desc: 'שם האירוע' },
+    { key: '%event_date%',       desc: 'תאריך האירוע' },
+    { key: '%event_time%',       desc: 'שעות האירוע' },
+    { key: '%event_location%',   desc: 'מיקום האירוע' },
+    { key: '%coupon_code%',      desc: 'קוד קופון' },
+    { key: '%registration_url%', desc: 'קישור הרשמה' },
+    { key: '%unsubscribe_url%',  desc: 'קישור הסרה' }
   ];
   var CATEGORIES = [
     { key: 'all',    label: 'הכל' },
@@ -252,15 +253,16 @@
 
   function substitute(text) {
     return String(text || '')
-      .replace(/\{\{name\}\}/g, 'דנה כהן')
-      .replace(/\{\{event_name\}\}/g, 'סופר-סייל אוקטובר')
-      .replace(/\{\{event_date\}\}/g, '01.11.2026')
-      .replace(/\{\{event_time\}\}/g, '19:00')
-      .replace(/\{\{event_address\}\}/g, 'ויצמן 10, כפר סבא')
-      .replace(/\{\{coupon\}\}/g, 'SAVE20')
-      .replace(/\{\{phone\}\}/g, '050-717-5675')
-      .replace(/\{\{registration_link\}\}/g, 'opticalis.co.il/r/...')
-      .replace(/\{\{unsubscribe_link\}\}/g, 'opticalis.co.il/u/...');
+      .replace(/%name%/g, 'דנה כהן')
+      .replace(/%event_name%/g, 'סופר-סייל אוקטובר')
+      .replace(/%event_date%/g, '01.11.2026')
+      .replace(/%event_time%/g, '09:00 - 14:00')
+      .replace(/%event_location%/g, 'הרצל 32, אשקלון')
+      .replace(/%coupon_code%/g, 'SuperSale24')
+      .replace(/%phone%/g, '050-717-5675')
+      .replace(/%email%/g, 'dana@example.com')
+      .replace(/%registration_url%/g, 'prizma-optic.co.il/r/...')
+      .replace(/%unsubscribe_url%/g, 'prizma-optic.co.il/u/...');
   }
 
   async function saveTemplate(existing, activate) {
