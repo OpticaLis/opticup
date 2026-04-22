@@ -143,5 +143,7 @@
     }
   };
 
+  Toast.show = Toast.info;
+
   window.Toast = Toast;
 })();
