@@ -154,7 +154,7 @@
         '<td class="' + CLS_TD + '">' + escapeHtml(r.email || '') + '</td>' +
         '<td class="' + CLS_TD + '"><span class="crm-badge" style="background:' + escapeHtml(statusInfo.color) + '">' +
           escapeHtml(statusInfo.label) + '</span></td>' +
-        '<td class="' + CLS_TD + '">' + escapeHtml(CrmHelpers.formatDate(r.created_at) || '') + '</td>' +
+        '<td class="' + CLS_TD + '">' + escapeHtml(CrmHelpers.formatDateTime(r.created_at) || '') + '</td>' +
         '<td class="' + CLS_TD + '">' + escapeHtml(r.source || '—') + '</td>' +
         '<td class="' + CLS_TD + '">' + escapeHtml(r.utm_campaign || '—') + '</td>' +
         '<td class="' + CLS_TD + '">' +

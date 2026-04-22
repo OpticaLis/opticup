@@ -230,7 +230,7 @@
         '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('lead', r.status) + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600">' + escapeHtml(CrmHelpers.formatLanguage(r.language)) + '</td>' +
         '<td class="' + CLS_TD + '">' + renderTagPillsHtml(r.tag_names) + '</td>' +
-        '<td class="' + CLS_TD + ' text-slate-500 text-xs">' + escapeHtml(CrmHelpers.formatDate(r.created_at)) + '</td>' +
+        '<td class="' + CLS_TD + ' text-slate-500 text-xs">' + escapeHtml(CrmHelpers.formatDateTime(r.created_at)) + '</td>' +
       '</tr>';
     });
     html += '</tbody><tfoot><tr class="bg-slate-50 font-semibold">' +

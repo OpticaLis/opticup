@@ -214,7 +214,7 @@
       return '<div class="flex items-start gap-3 py-2 border-b border-slate-100">' +
         '<div class="w-2 h-2 mt-2 rounded-full bg-indigo-500 shrink-0"></div>' +
         '<div class="flex-1 min-w-0"><p class="text-sm text-slate-800 truncate">' + escapeHtml(it.text) + '</p></div>' +
-        '<div class="text-xs text-slate-500 shrink-0">' + escapeHtml(CrmHelpers.formatDate(it.date)) + '</div>' +
+        '<div class="text-xs text-slate-500 shrink-0">' + escapeHtml(CrmHelpers.formatDateTime(it.date)) + '</div>' +
       '</div>';
     }).join('') + '</div>';
   }
@@ -229,8 +229,8 @@
       row('מקור UTM', lead.utm_source || '—') +
       row('תנאים', lead.terms_approved ? '✅ אושרו' : '—') +
       row('שיווק', lead.marketing_consent ? '✅ מאושר' : (lead.unsubscribed_at ? '❌ הוסר' : '—')) +
-      row('נוצר', CrmHelpers.formatDate(lead.created_at)) +
-      row('עודכן', CrmHelpers.formatDate(lead.updated_at)) +
+      row('נוצר', CrmHelpers.formatDateTime(lead.created_at)) +
+      row('עודכן', CrmHelpers.formatDateTime(lead.updated_at)) +
       '</div>';
     if (Array.isArray(lead.tag_names) && lead.tag_names.length) {
       html += '<div class="mt-3 flex flex-wrap gap-1">' + lead.tag_names.map(function (n) {
@@ -308,8 +308,10 @@
         if (act === 'whatsapp' && lead.phone) {
           var wa = String(lead.phone).replace(/^\+/, '');
           window.open('https://wa.me/' + wa, '_blank');
-        } else if (act === 'sms' && lead.phone) {
-          window.location.href = 'sms:' + lead.phone;
+        } else if (act === 'sms') {
+          if (window.CrmSendDialog && CrmSendDialog.openQuickSend) {
+            CrmSendDialog.openQuickSend({ lead: lead });
+          }
         } else if (act === 'edit' && window.CrmLeadActions && CrmLeadActions.openEditLeadModal) {
           CrmLeadActions.openEditLeadModal(lead, function (updated) {
             if (updated) Object.keys(updated).forEach(function (k) { lead[k] = updated[k]; });
