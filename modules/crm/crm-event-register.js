@@ -42,6 +42,23 @@
     return res.data;
   }
 
+  async function dispatchRegistrationConfirmation(leadId, lead, eventId, regStatus) {
+    if (!window.CrmMessaging || !CrmMessaging.sendMessage || !lead) return;
+    var tplBase = regStatus === 'waiting_list' ? 'event_waiting_list_confirmation' : 'event_registration_confirmation';
+    var tenantId = tid();
+    var evRes = await sb.from('crm_events').select('name, event_date, start_time, location_address')
+      .eq('id', eventId).eq('tenant_id', tenantId).single();
+    if (evRes.error || !evRes.data) return;
+    var e = evRes.data;
+    var date = (CrmHelpers && CrmHelpers.formatDate) ? CrmHelpers.formatDate(e.event_date) : (e.event_date || '');
+    var vars = {
+      event_name: e.name || '', event_date: date, event_time: e.start_time || '', event_location: e.location_address || '',
+      name: lead.full_name || '', phone: lead.phone || '', email: lead.email || ''
+    };
+    CrmMessaging.sendMessage({ leadId: leadId, channel: 'sms', templateSlug: tplBase, variables: vars, eventId: eventId, language: 'he' });
+    if (lead.email) CrmMessaging.sendMessage({ leadId: leadId, channel: 'email', templateSlug: tplBase, variables: vars, eventId: eventId, language: 'he' });
+  }
+
   function renderLeadRow(lead) {
     var phone = (CrmHelpers && CrmHelpers.formatPhone) ? CrmHelpers.formatPhone(lead.phone) : (lead.phone || '');
     return '<button type="button" class="w-full text-start bg-white border border-slate-200 rounded-lg p-3 hover:bg-indigo-50 hover:border-indigo-300 transition flex items-center gap-3" data-lead-id="' + escapeHtml(lead.id) + '">' +
@@ -91,8 +108,13 @@
           btn.addEventListener('click', async function () {
             btn.disabled = true; btn.classList.add('opacity-60');
             try {
-              var resp = await registerLeadToEvent(btn.getAttribute('data-lead-id'), eventId, 'manual');
+              var leadId = btn.getAttribute('data-lead-id');
+              var lead = leads.find(function (l) { return l.id === leadId; });
+              var resp = await registerLeadToEvent(leadId, eventId, 'manual');
               toastResponse(resp);
+              if (resp && resp.success && (resp.status === 'registered' || resp.status === 'waiting_list')) {
+                dispatchRegistrationConfirmation(leadId, lead, eventId, resp.status);
+              }
               if (typeof modal.close === 'function') modal.close();
               if (typeof onRegistered === 'function') onRegistered(resp);
             } catch (err) {
