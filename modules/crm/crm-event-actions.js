@@ -188,8 +188,84 @@
     }
   }
 
+  // ---- Status change ----
+
+  function eventStatusLabel(slug) {
+    var info = (CrmHelpers && CrmHelpers.getStatusInfo) ? CrmHelpers.getStatusInfo('event', slug) : null;
+    return (info && info.label) || slug || '';
+  }
+
+  async function changeEventStatus(eventId, newStatus) {
+    var tenantId = tid();
+    var upd = await sb.from('crm_events')
+      .update({ status: newStatus })
+      .eq('id', eventId)
+      .eq('tenant_id', tenantId)
+      .select('id, status')
+      .single();
+    if (upd.error) throw new Error('event status update failed: ' + upd.error.message);
+    return upd.data;
+  }
+
+  function closeEventStatusDropdown() {
+    var existing = document.getElementById('crm-event-status-dropdown');
+    if (existing) existing.remove();
+  }
+
+  function openEventStatusDropdown(anchorEl, currentStatus, onPick) {
+    closeEventStatusDropdown();
+    var all = (window.CRM_STATUSES && window.CRM_STATUSES._all) || [];
+    var eventRows = all.filter(function (r) { return r.entity_type === 'event'; });
+    var menu = document.createElement('div');
+    menu.id = 'crm-event-status-dropdown';
+    menu.className = 'bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[220px] max-h-[60vh] overflow-y-auto';
+    menu.style.position = 'fixed';
+    menu.style.zIndex = '9999';
+
+    var rows = 0;
+    eventRows.forEach(function (r) {
+      if (r.slug === currentStatus) return;
+      rows++;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'w-full text-start px-3 py-2 text-sm hover:bg-indigo-50 flex items-center gap-2 text-slate-700';
+      btn.innerHTML =
+        '<span class="w-2 h-2 rounded-full shrink-0" style="background:' +
+          escapeHtml(r.color || '#9ca3af') + '"></span>' +
+        '<span>' + escapeHtml(r.name_he || r.slug) + '</span>';
+      btn.addEventListener('click', function () {
+        closeEventStatusDropdown();
+        if (typeof onPick === 'function') onPick(r.slug);
+      });
+      menu.appendChild(btn);
+    });
+    if (!rows) {
+      var empty = document.createElement('div');
+      empty.className = 'px-3 py-2 text-sm text-slate-500';
+      empty.textContent = 'אין סטטוסים זמינים';
+      menu.appendChild(empty);
+    }
+
+    var rect = anchorEl.getBoundingClientRect();
+    menu.style.top = (rect.bottom + 4) + 'px';
+    menu.style.insetInlineStart = rect.left + 'px';
+    document.body.appendChild(menu);
+
+    setTimeout(function () {
+      document.addEventListener('click', function onDoc(e) {
+        if (!menu.contains(e.target)) {
+          closeEventStatusDropdown();
+          document.removeEventListener('click', onDoc);
+        }
+      });
+    }, 50);
+  }
+
   window.CrmEventActions = {
     openCreateEventModal: openCreateEventModal,
-    createEvent: createEvent
+    createEvent: createEvent,
+    changeEventStatus: changeEventStatus,
+    openEventStatusDropdown: openEventStatusDropdown,
+    closeEventStatusDropdown: closeEventStatusDropdown
   };
 })();

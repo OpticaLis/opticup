@@ -38,6 +38,7 @@
         body.innerHTML = renderDetail(data.event, stats, data.attendees);
         wireSubTabs(body, data.event, stats, data.attendees);
         wireEventDayEntry(modal, body);
+        wireStatusChange(modal, body, data.event, stats);
       }
     } catch (e) {
       console.error('event detail failed:', e);
@@ -74,10 +75,10 @@
     h += '<div class="' + CLS_HEADER + '">' +
       '<div class="text-xs uppercase tracking-wider opacity-80">אירועים › #' + escapeHtml(String(event.event_number || '?')) + '</div>' +
       '<h2 class="text-2xl font-black mt-1 mb-2">' + escapeHtml(event.name || '') + '</h2>' +
-      '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur">' + escapeHtml(statusInfo.label) + '</span>' +
+      '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur" data-role="event-status-badge">' + escapeHtml(statusInfo.label) + '</span>' +
       '<div class="flex flex-wrap gap-2 mt-4">' +
         '<button type="button" class="' + CLS_HEAD_BTN + '">שלח הודעה</button>' +
-        '<button type="button" class="' + CLS_HEAD_BTN + '">שנה סטטוס</button>' +
+        '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="change-status">שנה סטטוס</button>' +
         '<button type="button" class="' + CLS_HEAD_BTN + '">ייצוא Excel</button>' +
         (event.status === 'registration_open' || event.status === 'completed'
           ? '<button type="button" class="' + CLS_HEAD_BTN + ' bg-amber-500/90 hover:bg-amber-500" data-event-day-id="' + escapeHtml(event.id) + '">מצב יום אירוע</button>'
@@ -186,6 +187,31 @@
         host.innerHTML = renderSubTab(key, attendees, stats);
         if (key === 'analytics' && typeof window.renderEventDetailAnalytics === 'function') {
           window.renderEventDetailAnalytics(body.querySelector('#crm-event-detail-analytics'), stats, attendees);
+        }
+      });
+    });
+  }
+
+  function wireStatusChange(modal, body, event, stats) {
+    var btn = body.querySelector('button[data-action="change-status"]');
+    if (!btn || !window.CrmEventActions) return;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      CrmEventActions.openEventStatusDropdown(btn, event.status, async function (newStatus) {
+        try {
+          await CrmEventActions.changeEventStatus(event.id, newStatus);
+          event.status = newStatus;
+          var info = CrmHelpers.getStatusInfo('event', newStatus);
+          var badge = body.querySelector('[data-role="event-status-badge"]');
+          if (badge) badge.textContent = info.label;
+          if (window.Toast) Toast.success('סטטוס עודכן: ' + info.label);
+          if (typeof window.loadCrmEventsTab === 'function') {
+            // Invalidate list cache so next open reloads
+            var wrap = document.getElementById('crm-events-table-wrap');
+            if (wrap) wrap.innerHTML = '';
+          }
+        } catch (err) {
+          if (window.Toast) Toast.error('שגיאה: ' + (err.message || String(err)));
         }
       });
     });
