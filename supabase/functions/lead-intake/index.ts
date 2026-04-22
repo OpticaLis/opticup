@@ -3,19 +3,20 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ============================================================
 // lead-intake — Edge Function for public lead form submission
-// Module 4 CRM — Go-Live Phase P1
+// Module 4 CRM — Go-Live Phase P1 (+ P4 dispatch wiring, 2026-04-22)
 // ============================================================
 // Flow: POST { tenant_slug, name, phone, ... } → validate →
 //       resolve tenant → normalize phone → duplicate check →
-//       INSERT crm_leads or return existing.
+//       INSERT crm_leads (or return existing) → dispatch
+//       SMS + email via `send-message` Edge Function.
 // Replaces the old Monday.com + Make lead-creation pipeline.
-// Messages (SMS/Email/WhatsApp) are NOT sent here — that's P3+P4.
 // ============================================================
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const DEFAULT_SOURCE = "supersale_form";
+const SEND_MESSAGE_URL = `${SUPABASE_URL}/functions/v1/send-message`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -80,6 +81,73 @@ function normalizePhone(raw: string): string | null {
   if (!/^\d{10,15}$/.test(withoutPlus)) return null;
 
   return e164;
+}
+
+/**
+ * Dispatch SMS + email messages for a lead-intake event.
+ *
+ * Fire-and-forget wrapper around the `send-message` Edge Function. Failures
+ * are logged but never propagate to the caller — a message-dispatch failure
+ * must not cause the lead-intake request to fail (the lead is already
+ * persisted at this point, and crm_message_log captures the failure).
+ *
+ * @param templateBaseSlug either "lead_intake_new" or "lead_intake_duplicate"
+ */
+async function dispatchIntakeMessages(
+  tenantId: string,
+  leadId: string,
+  templateBaseSlug: string,
+  name: string,
+  phone: string,
+  email: string | null,
+): Promise<void> {
+  const variables: Record<string, string> = { name, phone };
+  if (email) variables.email = email;
+
+  const calls: Promise<unknown>[] = [];
+
+  calls.push(callSendMessage(tenantId, leadId, "sms", templateBaseSlug, variables));
+  if (email) {
+    calls.push(callSendMessage(tenantId, leadId, "email", templateBaseSlug, variables));
+  }
+
+  await Promise.allSettled(calls);
+}
+
+async function callSendMessage(
+  tenantId: string,
+  leadId: string,
+  channel: "sms" | "email",
+  templateSlug: string,
+  variables: Record<string, string>,
+): Promise<void> {
+  try {
+    const res = await fetch(SEND_MESSAGE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({
+        tenant_id: tenantId,
+        lead_id: leadId,
+        channel,
+        template_slug: templateSlug,
+        variables,
+      }),
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      console.error(
+        `send-message ${channel}/${templateSlug} HTTP ${res.status}: ${txt.slice(0, 200)}`,
+      );
+    }
+  } catch (e) {
+    console.error(
+      `send-message ${channel}/${templateSlug} exception:`,
+      (e as Error).message || e,
+    );
+  }
 }
 
 // --- Main handler ---
@@ -173,6 +241,14 @@ Deno.serve(async (req: Request) => {
   }
 
   if (existing) {
+    await dispatchIntakeMessages(
+      tenantId,
+      existing.id,
+      "lead_intake_duplicate",
+      existing.full_name || name,
+      phone,
+      email,
+    );
     return jsonResponse({
       duplicate: true,
       is_new: false,
@@ -223,6 +299,16 @@ Deno.serve(async (req: Request) => {
         .eq("phone", phone)
         .limit(1)
         .maybeSingle();
+      if (racedRow?.id) {
+        await dispatchIntakeMessages(
+          tenantId,
+          racedRow.id,
+          "lead_intake_duplicate",
+          racedRow.full_name || name,
+          phone,
+          email,
+        );
+      }
       return jsonResponse({
         duplicate: true,
         is_new: false,
@@ -233,6 +319,15 @@ Deno.serve(async (req: Request) => {
     console.error("Insert error:", insErr);
     return errorResponse("Could not create lead", 500);
   }
+
+  await dispatchIntakeMessages(
+    tenantId,
+    inserted.id,
+    "lead_intake_new",
+    name,
+    phone,
+    email,
+  );
 
   return jsonResponse({
     id: inserted.id,
