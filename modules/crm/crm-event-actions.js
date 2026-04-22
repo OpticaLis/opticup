@@ -1,20 +1,19 @@
 /* =============================================================================
-   crm-event-actions.js — CRM event mutation helpers + UI flows (P2b)
-   Load order: after shared.js, crm-helpers.js. Uses Modal, Toast, CrmHelpers.
+   crm-event-actions.js — CRM event mutation helpers + UI flows (P2b, P5.5, P8)
+   Load order: after shared.js, crm-helpers.js, crm-automation-engine.js.
+   Uses Modal, Toast, CrmHelpers, CrmAutomation.
    Exports window.CrmEventActions:
-     openCreateEventModal, createEvent.
-   Writes: crm_events (INSERT). Every write carries tenant_id: getTenantId()
+     openCreateEventModal, createEvent, changeEventStatus,
+     openEventStatusDropdown, closeEventStatusDropdown.
+   Writes: crm_events (INSERT/UPDATE). Every write carries tenant_id
    (Rule 22). Auto-numbering via next_crm_event_number RPC (Rule 11).
+   Event-status dispatch: delegated to CrmAutomation.evaluate (P8) —
+   rules live in crm_automation_rules, not hardcoded here.
    ============================================================================= */
 (function () {
   'use strict';
 
   function tid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
-
-  function buildEventVariables(e) {
-    var d = (CrmHelpers && CrmHelpers.formatDate) ? CrmHelpers.formatDate(e && e.event_date) : ((e && e.event_date) || '');
-    return { event_name: (e && e.name) || '', event_date: d || '', event_time: (e && e.start_time) || '', event_location: (e && e.location_address) || '' };
-  }
 
   // ---- Create ----
 
@@ -195,69 +194,16 @@
     return (info && info.label) || slug || '';
   }
 
-  var EVENT_STATUS_DISPATCH = {
-    will_open_tomorrow:  { t: 'event_will_open_tomorrow',  r: 'tier2_excl_registered' },
-    registration_open:   { t: 'event_registration_open',   r: 'tier2' },
-    invite_new:          { t: 'event_invite_new',          r: 'tier2_excl_registered' },
-    closed:              { t: 'event_closed',              r: 'attendees' },
-    waiting_list:        { t: 'event_waiting_list',        r: 'attendees_waiting' },
-    '2_3d_before':       { t: 'event_2_3d_before',         r: 'attendees' },
-    event_day:           { t: 'event_day',                 r: 'attendees' },
-    invite_waiting_list: { t: 'event_invite_waiting_list', r: 'attendees_waiting' }
-  };
-
+  // P8: hardcoded dispatch replaced by rule evaluation. Rules live in
+  // crm_automation_rules (trigger_entity='event', trigger_event='status_change').
+  // Seed demo defaults at go-live/seed-automation-rules-demo.sql.
   async function dispatchEventStatusMessages(eventId, newStatus, event) {
-    if (!window.CrmMessaging || !CrmMessaging.sendMessage) return;
-    var dispatchCfg = EVENT_STATUS_DISPATCH[newStatus];
-    if (!dispatchCfg) return;
-    var templateBase = dispatchCfg.t, recipientType = dispatchCfg.r;
-
-    var tenantId = tid();
-    if (!tenantId) return;
-    var tier2 = window.TIER2_STATUSES || ['waiting','invited','confirmed','confirmed_verified'];
-    var leads = [];
-    try {
-      if (recipientType === 'tier2' || recipientType === 'tier2_excl_registered') {
-        var lRes = await sb.from('crm_leads').select('id, full_name, phone, email')
-          .eq('tenant_id', tenantId).eq('is_deleted', false).is('unsubscribed_at', null).in('status', tier2);
-        if (lRes.error) throw new Error(lRes.error.message);
-        leads = lRes.data || [];
-        if (recipientType === 'tier2_excl_registered') {
-          var xRes = await sb.from('crm_event_attendees').select('lead_id')
-            .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false);
-          if (xRes.error) throw new Error(xRes.error.message);
-          var excluded = {};
-          (xRes.data || []).forEach(function (r) { if (r.lead_id) excluded[r.lead_id] = true; });
-          leads = leads.filter(function (l) { return !excluded[l.id]; });
-        }
-      } else {
-        var attStatus = (recipientType === 'attendees_waiting') ? ['waiting_list'] : ['registered','confirmed'];
-        var aRes = await sb.from('crm_event_attendees').select('crm_leads(id, full_name, phone, email)')
-          .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false).in('status', attStatus);
-        if (aRes.error) throw new Error(aRes.error.message);
-        leads = (aRes.data || []).map(function (r) { return r.crm_leads; }).filter(Boolean);
-      }
-    } catch (e) {
-      console.error('dispatchEventStatusMessages recipients:', e);
-      if (window.Toast) Toast.error('שגיאה באיתור נמענים');
-      return;
-    }
-    if (!leads.length) { if (window.Toast) Toast.info('אין נמענים לשליחה'); return; }
-
-    var baseVars = buildEventVariables(event);
-    var calls = [];
-    leads.forEach(function (lead) {
-      var vars = Object.assign({}, baseVars, { name: lead.full_name || '', phone: lead.phone || '', email: lead.email || '' });
-      calls.push(CrmMessaging.sendMessage({ leadId: lead.id, channel: 'sms', templateSlug: templateBase, variables: vars, eventId: eventId, language: 'he' }));
-      if (lead.email) calls.push(CrmMessaging.sendMessage({ leadId: lead.id, channel: 'email', templateSlug: templateBase, variables: vars, eventId: eventId, language: 'he' }));
+    if (!window.CrmAutomation || typeof CrmAutomation.evaluate !== 'function') return;
+    return CrmAutomation.evaluate('event_status_change', {
+      eventId: eventId,
+      newStatus: newStatus,
+      event: event
     });
-    var results = await Promise.allSettled(calls);
-    var ok = 0, fail = 0;
-    results.forEach(function (r) { if (r.status === 'fulfilled' && r.value && r.value.ok) ok++; else fail++; });
-    if (window.Toast) {
-      if (fail === 0) Toast.success('נשלחו ' + ok + ' הודעות ל-' + leads.length + ' נמענים');
-      else Toast.warning('נשלחו ' + ok + ' הודעות, ' + fail + ' נכשלו');
-    }
   }
 
   async function changeEventStatus(eventId, newStatus) {
