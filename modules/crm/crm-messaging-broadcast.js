@@ -1,21 +1,12 @@
 /* =============================================================================
-   crm-messaging-broadcast.js — Broadcast wizard + Log (B8 Tailwind — FINAL-04)
+   crm-messaging-broadcast.js — Broadcast wizard (B8 Tailwind — FINAL-04, P8 split)
    Tables: crm_broadcasts, crm_message_log, crm_leads, crm_events
+   Log rendering extracted to crm-messaging-log.js (P8, Rule 12 split, 2026-04-22).
    ============================================================================= */
 (function () {
   'use strict';
 
   var CHANNEL_LABELS = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'אימייל' };
-  var STATUS_LABELS  = { sent: 'נשלח', pending: 'בתור', failed: 'נכשל', delivered: 'הגיע', read: 'נקרא', queued: 'בתור' };
-  var STATUS_CLASSES = {
-    sent:      'bg-sky-100 text-sky-800',
-    delivered: 'bg-emerald-100 text-emerald-800',
-    read:      'bg-indigo-100 text-indigo-800',
-    failed:    'bg-rose-100 text-rose-800',
-    queued:    'bg-slate-100 text-slate-700',
-    pending:   'bg-slate-100 text-slate-700'
-  };
-  var PAGE_SIZE = 50;
   var WIZARD_STEPS = [
     { key: 'recipients', label: 'נמענים' },
     { key: 'channel',    label: 'ערוץ' },
@@ -29,13 +20,8 @@
   var CLS_ROW    = 'mb-3';
   var CLS_BTN_P  = 'px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed';
   var CLS_BTN_S  = 'px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold rounded-lg text-sm transition disabled:opacity-40 disabled:cursor-not-allowed';
-  var CLS_TABLE  = 'w-full text-sm bg-white';
-  var CLS_TH     = 'px-4 py-2.5 text-start font-semibold text-slate-700 bg-slate-50';
-  var CLS_TD     = 'px-4 py-2.5 text-slate-800 border-b border-slate-100';
 
   var _events = [];
-  var _logRows = [];
-  var _logPage = 1;
   var _wizard = null;
 
   function toast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
@@ -74,7 +60,7 @@
       '<div id="bc-history" class="mt-4"></div>';
     var btn = host.querySelector('#open-wizard');
     if (btn) btn.addEventListener('click', openWizard);
-    renderMessagingLog(host.querySelector('#bc-history'));
+    if (typeof window.renderMessagingLog === 'function') window.renderMessagingLog(host.querySelector('#bc-history'));
   }
 
   function openWizard() {
@@ -258,91 +244,8 @@
       (await Promise.allSettled(calls)).forEach(function (r) { if (r.status === 'fulfilled' && r.value && r.value.ok) ok++; else fail++; });
       await sb.from('crm_broadcasts').update({ total_sent: ok, total_failed: fail, status: fail === 0 ? 'completed' : 'partial' }).eq('id', ins.data.id).eq('tenant_id', tid);
       toast(fail === 0 ? 'success' : 'warning', 'נשלחו ' + ok + ' הודעות' + (fail ? ', ' + fail + ' נכשלו' : ''));
-      if (typeof Modal.close === 'function') Modal.close(); loadLog().then(renderLogTable);
+      if (typeof Modal.close === 'function') Modal.close();
+      if (typeof window.loadMessagingLog === 'function') window.loadMessagingLog();
     } catch (e) { toast('error', 'שגיאה: ' + (e.message || e)); }
-  }
-
-  /* ----------------------------------- LOG ----------------------------------- */
-
-  async function renderMessagingLog(host) {
-    if (!host) return;
-    host.innerHTML =
-      '<div>' +
-        '<h4 class="text-base font-bold text-slate-800 mb-3">היסטוריה</h4>' +
-        '<div class="flex flex-wrap gap-2 mb-3">' +
-          '<select id="log-channel" class="' + CLS_INPUT + ' max-w-[180px]"><option value="">כל הערוצים</option><option value="sms">SMS</option><option value="whatsapp">WhatsApp</option><option value="email">אימייל</option></select>' +
-          '<select id="log-status" class="' + CLS_INPUT + ' max-w-[180px]"><option value="">כל הסטטוסים</option><option value="sent">נשלח</option><option value="delivered">הגיע</option><option value="read">נקרא</option><option value="failed">נכשל</option></select>' +
-        '</div>' +
-        '<div id="log-table" class="bg-white rounded-lg border border-slate-200 overflow-hidden"></div>' +
-        '<div id="log-pagination" class="flex items-center gap-2 mt-3"></div>' +
-      '</div>';
-    ['log-channel','log-status'].forEach(function (id) {
-      var el = host.querySelector('#' + id);
-      if (el) el.addEventListener('change', function () { _logPage = 1; loadLog().then(renderLogTable); });
-    });
-    await loadLog();
-    renderLogTable();
-  }
-  window.renderMessagingLog = renderMessagingLog;
-  window.loadMessagingLog = function () { return loadLog().then(renderLogTable); };
-
-  async function loadLog() {
-    var tid = getTenantId();
-    var ch = (document.getElementById('log-channel') || {}).value || '';
-    var st = (document.getElementById('log-status')  || {}).value || '';
-    var q = sb.from('crm_message_log').select('id, lead_id, channel, content, status, created_at');
-    if (tid) q = q.eq('tenant_id', tid);
-    if (ch) q = q.eq('channel', ch);
-    if (st) q = q.eq('status', st);
-    q = q.order('created_at', { ascending: false }).limit(300);
-    var res = await q;
-    _logRows = res.error ? [] : (res.data || []);
-  }
-
-  function renderLogTable() {
-    var wrap = document.getElementById('log-table');
-    if (!wrap) return;
-    if (!_logRows.length) { wrap.innerHTML = '<div class="text-center text-slate-400 py-8">אין הודעות</div>'; return; }
-    var start = (_logPage - 1) * PAGE_SIZE;
-    var rows = _logRows.slice(start, start + PAGE_SIZE);
-    var html = '<table class="' + CLS_TABLE + '"><thead><tr>' +
-      '<th class="' + CLS_TH + '">תאריך</th>' +
-      '<th class="' + CLS_TH + '">ערוץ</th>' +
-      '<th class="' + CLS_TH + '">סטטוס</th>' +
-      '<th class="' + CLS_TH + '">תוכן</th>' +
-      '</tr></thead><tbody>';
-    rows.forEach(function (r) {
-      var chipCls = STATUS_CLASSES[r.status] || 'bg-slate-100 text-slate-700';
-      html += '<tr>' +
-        '<td class="' + CLS_TD + ' text-xs text-slate-600">' + escapeHtml(CrmHelpers.formatDateTime(r.created_at)) + '</td>' +
-        '<td class="' + CLS_TD + '">' + escapeHtml(CHANNEL_LABELS[r.channel] || r.channel) + '</td>' +
-        '<td class="' + CLS_TD + '"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + chipCls + '">' + escapeHtml(STATUS_LABELS[r.status] || r.status) + '</span></td>' +
-        '<td class="' + CLS_TD + ' text-slate-700 truncate max-w-xs">' + escapeHtml((r.content || '').slice(0, 80)) + '</td>' +
-      '</tr>';
-    });
-    wrap.innerHTML = html + '</tbody></table>';
-    renderLogPagination();
-  }
-
-  function renderLogPagination() {
-    var box = document.getElementById('log-pagination');
-    if (!box) return;
-    var pages = Math.max(1, Math.ceil(_logRows.length / PAGE_SIZE));
-    if (pages <= 1) { box.innerHTML = '<span class="text-sm text-slate-500">סה״כ ' + _logRows.length + '</span>'; return; }
-    var btn = 'px-3 py-1.5 rounded-md border border-slate-200 text-sm font-medium hover:bg-slate-50 disabled:opacity-40';
-    var act = 'px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-semibold';
-    var html = '<button class="' + btn + '" ' + (_logPage === 1 ? 'disabled' : '') + ' data-lp="prev">›</button>';
-    for (var i = 1; i <= pages; i++) html += '<button class="' + (i === _logPage ? act : btn) + '" data-lp="' + i + '">' + i + '</button>';
-    html += '<button class="' + btn + '" ' + (_logPage === pages ? 'disabled' : '') + ' data-lp="next">‹</button>';
-    box.innerHTML = html;
-    box.querySelectorAll('[data-lp]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var v = b.getAttribute('data-lp');
-        if (v === 'prev') _logPage = Math.max(1, _logPage - 1);
-        else if (v === 'next') _logPage = Math.min(pages, _logPage + 1);
-        else _logPage = parseInt(v, 10) || 1;
-        renderLogTable();
-      });
-    });
   }
 })();
