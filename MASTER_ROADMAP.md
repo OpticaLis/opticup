@@ -38,7 +38,7 @@ backend with RLS-based tenant isolation.
 | 2 | Platform Admin | ✅ Complete (v2.0) | opticup | Super-admin control plane: tenant provisioning, plans/limits/features, audit log, PIN reset, suspend/activate/delete. 4 phases. 5 tables + tenants extension. |
 | 3 | Storefront | 🟢 DNS SWITCH EXECUTED (2026-04-18) — propagation pending | opticup-storefront | Public storefront: CMS pages, campaigns, blog, AI content, translations (he/en/ru), media library, lead forms, brand pages, SEO. All phases complete. develop→main merged. DNS switched from DreamVPS to Vercel. 25 tables. |
 | 3.1 | Project Reconstruction | ✅ Complete | opticup | Meta-module: foundation doc rewrites, DB audit baseline, roadmap reconciliation. Does not own code — owns documentation accuracy. 3A/3B/3C/3D all complete. |
-| 4 | CRM | 🟡 Go-Live (P2b CLOSED — 2026-04-22) | opticup | Customer management — replaces Monday.com for leads. 23 tables, 7 views, 8 RPCs, 46 RLS policies. Phases A–B9 complete + merged to main. Go-Live P1–P2b closed (lead intake, lead management, event management). P3–P7 remaining. |
+| 4 | CRM | 🟡 Go-Live (P3a CLOSED — 2026-04-22) | opticup | Customer management — replaces Monday.com for leads. 23 tables, 7 views, 8 RPCs, 46 RLS policies. Phases A–B9 complete + merged to main. Go-Live P1–P3a closed (lead intake, lead management, event management, manual lead entry with pending_terms gate). P3b–P7 remaining. |
 | 5–22 | Future modules | ⬜ Not started | — | Orders, prescriptions, payments, lab/KDS, lenses, branches, WhatsApp, reports, supplier portal, content hub, B2B network, AI support, WooCommerce sync, POS. |
 
 **Detailed per-module scope** lives in each module's `README.md` and `MODULE_SPEC.md`
@@ -112,7 +112,8 @@ P1–P7 (internal-first) decided 2026-04-21. Status as of 2026-04-22:
 - **P1 (Internal Lead Intake):** ✅ CLOSED — `lead-intake` Edge Function deployed
 - **P2a (Lead Management):** ✅ CLOSED — status change, notes, tier transfer wired
 - **P2b (Event Management):** ✅ CLOSED — event creation (auto-numbered), status change (10-state), lead registration (via RPC)
-- **P3 (Make Message Dispatcher):** ⬜ Next — event status changes trigger WhatsApp/SMS via Make
+- **P3a (Manual Lead Entry):** ✅ CLOSED — `crm-lead-modals.js` (219 lines), `pending_terms` gate blocks Tier 2 transfer until terms approved
+- **P3b (Make Message Dispatcher):** 🟡 In progress — generic Make scenario receives webhook with `template_slug + recipient + variables`, dispatches SMS/Email/WhatsApp, logs result. First SPEC built via Make MCP API.
 - **P4–P7:** ⬜ Planned (CRM→Make triggers, form replacement, UTM tracking, switchover)
 
 The dual-repo split is stable. Both repos use `develop` for active work.
@@ -289,7 +290,7 @@ is real and must be fixed before either module starts writing.
 - Homepage revisions queue (Daniel's remaining feedback)
 - Contact form lead-capture (Resend integration — deferred by Daniel)
 
-**Module 4 (CRM) Go-Live:** P1/P2a/P2b closed. Next: P3 (Make message dispatcher — event status changes trigger WhatsApp/SMS). Then P4 (CRM→Make trigger hookup), P5 (form replacement), P6 (UTM tracking), P7 (switchover + Monday decommission).
+**Module 4 (CRM) Go-Live:** P1/P2a/P2b/P3a closed. In progress: P3b (Make message dispatcher — generic webhook-driven scenario for SMS/Email/WhatsApp). Then P4 (CRM→Make trigger hookup), P5 (form replacement), P6 (UTM tracking), P7 (switchover + Monday decommission).
 
 **Post-P7 planned:** Module repo split — each module gets its own repo for parallel Claude Code sessions (see §4 Decisions Log, Apr 2026).
 
