@@ -214,7 +214,7 @@
 
     var tenantId = tid();
     if (!tenantId) return;
-    var tier2 = window.TIER2_STATUSES || ['waiting_for_event','invited','confirmed_attendance'];
+    var tier2 = window.TIER2_STATUSES || ['waiting','invited','confirmed','confirmed_verified'];
     var leads = [];
     try {
       if (recipientType === 'tier2' || recipientType === 'tier2_excl_registered') {

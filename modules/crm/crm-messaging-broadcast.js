@@ -239,13 +239,13 @@
     var leadIds = await buildLeadIds();
     if (!leadIds.length) { toast('warning', 'אין נמענים'); return; }
     if (!window.CrmMessaging || !CrmMessaging.sendMessage) { toast('error', 'CrmMessaging לא זמין'); return; }
-    var tid = getTenantId();
+    var tid = getTenantId(), emp = (typeof getCurrentEmployee === 'function') ? getCurrentEmployee() : null;
+    if (!emp || !emp.id) { toast('error', 'משתמש לא מזוהה'); return; }
     try {
       var ins = await sb.from('crm_broadcasts').insert({
-        tenant_id: tid, name: _wizard.name, channel: _wizard.channel, template_id: _wizard.templateId || null,
+        tenant_id: tid, employee_id: emp.id, name: _wizard.name, channel: _wizard.channel, template_id: _wizard.templateId || null,
         filter_criteria: { status: _wizard.status || null, event: _wizard.event || null, language: _wizard.language || null },
-        total_recipients: leadIds.length, total_sent: 0, total_failed: 0, status: 'queued'
-      }).select('id').single();
+        total_recipients: leadIds.length, total_sent: 0, total_failed: 0, status: 'queued' }).select('id').single();
       if (ins.error) throw new Error(ins.error.message);
       logWrite('crm.broadcast.send', 'crm_broadcast', ins.data.id, { name: _wizard.name, recipients: leadIds.length });
       var baseSlug = null, lang = _wizard.language || 'he', tpls = window._crmMessagingTemplates ? window._crmMessagingTemplates() : [];
