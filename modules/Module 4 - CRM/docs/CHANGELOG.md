@@ -2,6 +2,72 @@
 
 ---
 
+## Go-Live P3a — Manual Lead Entry (2026-04-22)
+
+| Hash | Message |
+|------|---------|
+| `7651c86` | `fix(shared): add Toast.show compat shim mapping to Toast.info` |
+| `83c9a32` | `feat(crm): seed pending_terms status for manual lead entry` |
+| `8b29b26` | `feat(crm): add manual lead entry form and pending_terms gate` |
+| `e3c5329` | `fix(crm): wire loadCrmIncomingTab on incoming tab switch (M4-BUG-04)` |
+
+**New files:**
+- `modules/crm/crm-lead-modals.js` (219 lines) — UI flows split out of
+  `crm-lead-actions.js` during execution (Rule 12 ceiling). Extends
+  `window.CrmLeadActions` with `openStatusDropdown`, `closeStatusDropdown`,
+  `openBulkStatusPicker`, `openCreateLeadModal`. Calls core writes via
+  `window.CrmLeadActions.*` so call sites didn't need to migrate.
+- `modules/Module 4 - CRM/go-live/seed-pending-terms-status.sql` — seeds the
+  new `pending_terms` lead status for BOTH demo and Prizma tenants
+  (`sort_order=6`, amber `#f59e0b`, `name_he='לא אישר תקנון'`,
+  `is_default=false`, `is_terminal=false`, `triggers_messages=false`).
+  Idempotent `ON CONFLICT (tenant_id, entity_type, slug) DO NOTHING`.
+
+**Modified files:**
+- `shared/js/toast.js` — one-line compat shim `Toast.show = Toast.info`
+  after the public API block. Resolves 7 pre-existing `Toast.show(...)`
+  call sites (from P2a FINDINGS #2) without touching any CRM file.
+- `modules/crm/crm-lead-actions.js` (230 → 165 lines after split) —
+  added `createManualLead(data)` which inserts a new lead with
+  `status='pending_terms'`, `source='manual'`, `terms_approved=false`,
+  plus optional note. Added `terms_approved` guard to `transferLeadToTier2`
+  — returns `{blocked:true, reason:'terms_not_approved'}` and shows a
+  Toast.error when the check fails; otherwise proceeds with the original
+  Tier 2 move. Renamed local `tid()` → `getTid()` so the pre-commit
+  rule-21-orphans detector doesn't flag it against `var tid =` in
+  `crm-helpers.js` (false-positive M4-TOOL-01).
+- `modules/crm/crm-helpers.js` — added `pending_terms` to `TIER1_STATUSES`
+  between `new` and `invalid_phone`.
+- `modules/crm/crm-incoming-tab.js` — wires the new "+ הוסף ליד" button
+  to `CrmLeadActions.openCreateLeadModal` with a `reloadCrmIncomingTab`
+  callback. Handles the new `{blocked:true}` return from
+  `transferLeadToTier2` by re-enabling the approve button without a
+  success toast.
+- `modules/crm/crm-bootstrap.js` — added the missing `incoming` case to
+  `showCrmTab` so the tab's loader actually runs (M4-BUG-04). The
+  bootstrap version of `window.showCrmTab` had been overriding
+  `crm-init.js`'s version since B6 and was missing this one line.
+  This broke event-listener wiring for the P3a button — once the button
+  existed and `wireIncomingEvents` never ran, the click was silent.
+  Hotfix authorized by Daniel inline in this SPEC (same pattern as the
+  P2b `register_lead_to_event` RPC hotfix).
+- `crm.html` — added "+ הוסף ליד" button in incoming tab filter bar
+  (matches the P2b "יצירת אירוע +" pattern — `ms-auto` pushes to the
+  row end). Added `<script src="modules/crm/crm-lead-modals.js">` after
+  `crm-lead-actions.js`.
+
+**DB state after P3a:**
+- `crm_statuses`: +1 `pending_terms` row per tenant (demo + Prizma).
+  Demo and Prizma now each have 12 lead statuses + 10 event + 10 attendee = 32 rows.
+- No DDL. No RLS changes. No RPC changes.
+
+**Test summary (demo tenant):**
+All 6 SPEC §13 tests passed with DB verification.
+15/15 SPEC §3 success criteria passed.
+Test data cleaned: 0 `P3a Test*` leads remain on demo.
+
+---
+
 ## Go-Live P2b — Event Management (2026-04-22)
 
 | Hash | Message |

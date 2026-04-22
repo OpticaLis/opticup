@@ -1,6 +1,6 @@
 # Module 4 — CRM: Module Map
 
-> **Last updated:** 2026-04-22 (Go-Live P2b — CRM Event Management)
+> **Last updated:** 2026-04-22 (Go-Live P3a — Manual Lead Entry)
 
 ---
 
@@ -9,20 +9,21 @@
 ### HTML & CSS
 | File | Lines | Purpose |
 |------|-------|---------|
-| `crm.html` | 307 | Main CRM page — sidebar nav (5 tabs), role toggle, page header, 5 tab panels with skeleton containers, 20 CRM script tags. **[B8]** Loads Tailwind CDN + `tailwind.config` (RTL, Heebo, custom `crm.*` palette). **[P2b]** Events tab filter bar gained "יצירת אירוע +" button. |
+| `crm.html` | 328 | Main CRM page — sidebar nav (5 tabs), role toggle, page header, 5 tab panels with skeleton containers, 21 CRM script tags. **[B8]** Loads Tailwind CDN + `tailwind.config` (RTL, Heebo, custom `crm.*` palette). **[P2b]** Events tab filter bar gained "יצירת אירוע +" button. **[P3a]** Incoming tab filter bar gained "+ הוסף ליד" button; added `<script src="modules/crm/crm-lead-modals.js">` after crm-lead-actions.js. |
 | `css/crm.css` | 215 | Foundation: palette tokens, base, sidebar, page header, tab panels, role visibility, responsive, utilities |
 | `css/crm-components.css` | 76 | **[B8]** Reduced from 276 → shell only: cards, filter bar, table-wrap, view toggle, badge (legacy helper), leads-view show/hide |
 | `css/crm-screens.css` | 98 | **[B8]** Reduced from 325 → shell only: KPI grid + loading shimmer, alert strip, activity feed, timeline scroll, messaging split, event-day counter-bar + 3-col grid + barcode input |
 | `css/crm-visual.css` | 20 | **[B8]** Reduced from 347 → near-empty placeholder (pagination baseline + legacy pulse keyframe). All B7 visual components moved into JS as Tailwind classes |
 
-### JavaScript — `modules/crm/` (21 files, all ≤350 lines)
+### JavaScript — `modules/crm/` (22 files, all ≤350 lines)
 | File | Lines | Purpose |
 |------|-------|---------|
 | `crm-init.js` | 75 | Page bootstrap, tab orchestration stub, status cache gate, error banner |
-| `crm-bootstrap.js` | 105 | **[B6]** Extracted from crm.html inline JS: page header updater, theme switcher, `toggleCrmRole()`, `switchCrmLeadsView()`, Lucide init, barcode auto-focus on event-day entry |
-| `crm-helpers.js` | 140 | **[C1]** Shared utilities: phone format, currency, date, language, status cache/badges. Added `TIER1_STATUSES` + `TIER2_STATUSES` constants (exported on window) |
-| `crm-lead-actions.js` | 230 | **[P2a]** Lead mutation helpers + UI flows. Exports `CrmLeadActions.{changeLeadStatus, bulkChangeStatus, addLeadNote, transferLeadToTier2, openStatusDropdown, openBulkStatusPicker, leadTier}`. Direct Supabase writes with `tenant_id: getTenantId()` on every `.update()/.insert()/.eq()` (Rule 22). Status change inserts audit note "סטטוס שונה מ-X ל-Y". |
-| `crm-incoming-tab.js` | 202 | **[C1 + P2a]** Tier 1 "לידים נכנסים" tab: fetch leads from `v_crm_leads_with_tags` (full field set as of P2a), status filter dropdown, search, paginated table with new "פעולה" column (green "אשר ✓" button → `transferLeadToTier2`). Rows clickable → `openCrmLeadDetail`. Exports `reloadCrmIncomingTab` + `getCrmIncomingLeadById`. |
+| `crm-bootstrap.js` | 106 | **[B6]** Extracted from crm.html inline JS: page header updater, theme switcher, `toggleCrmRole()`, `switchCrmLeadsView()`, Lucide init, barcode auto-focus on event-day entry. **[P3a]** Added missing `incoming` case to `showCrmTab` that wires `loadCrmIncomingTab()` — M4-BUG-04 pre-existing hotfix. |
+| `crm-helpers.js` | 141 | **[C1]** Shared utilities: phone format, currency, date, language, status cache/badges. Added `TIER1_STATUSES` + `TIER2_STATUSES` constants (exported on window). **[P3a]** Added `pending_terms` to `TIER1_STATUSES`. |
+| `crm-lead-actions.js` | 165 | **[P2a + P3a]** Lead mutation helpers (core writes only — UI modals live in crm-lead-modals.js after the P3a split). Exports `CrmLeadActions.{changeLeadStatus, bulkChangeStatus, addLeadNote, createManualLead, transferLeadToTier2, leadTier}`. Direct Supabase writes with `tenant_id: getTenantId()` on every `.update()/.insert()/.eq()` (Rule 22). Status change inserts audit note "סטטוס שונה מ-X ל-Y". **[P3a]** `createManualLead` inserts lead with `status='pending_terms'`, `source='manual'`, `terms_approved=false`. `transferLeadToTier2` now pre-checks `terms_approved` and returns `{blocked:true, reason:'terms_not_approved'}` when false. |
+| `crm-lead-modals.js` | 219 | **[P3a]** UI flows extracted from crm-lead-actions.js during the P3a split (Rule 12). Extends `window.CrmLeadActions` with `{openStatusDropdown, closeStatusDropdown, openBulkStatusPicker, openCreateLeadModal}`. Calls core writes via `window.CrmLeadActions.*`. `openCreateLeadModal` renders 6-field form (name/phone required, email/city/language/notes optional) with Modal footer submit+cancel buttons; uses the Modal.show `footer` config pattern discovered in P2b. |
+| `crm-incoming-tab.js` | 215 | **[C1 + P2a + P3a]** Tier 1 "לידים נכנסים" tab: fetch leads from `v_crm_leads_with_tags` (full field set as of P2a), status filter dropdown, search, paginated table with new "פעולה" column (green "אשר ✓" button → `transferLeadToTier2`). Rows clickable → `openCrmLeadDetail`. Exports `reloadCrmIncomingTab` + `getCrmIncomingLeadById`. **[P3a]** Wires "+ הוסף ליד" button to `CrmLeadActions.openCreateLeadModal` with `reloadCrmIncomingTab` callback. Handles new `{blocked:true}` return from `transferLeadToTier2` by re-enabling the approve button without a success toast. |
 | `crm-dashboard.js` | 295 | **[B8]** Dashboard via Tailwind: 4 gradient KPI cards (indigo/cyan/emerald/amber) with per-variant sparkline bars, 3-column alert strip, gradient stacked bar chart, 3 conic-gradient gauges (inline style), animate-pulse activity feed, horizontal timeline cards with progress bars |
 | `crm-leads-tab.js` | 313 | **[B8 + P2a]** Leads via Tailwind: white-card table, indigo filter chips, indigo bulk bar (now with working "שנה סטטוס" → `CrmLeadActions.openBulkStatusPicker`), pagination, delegates kanban + cards to `crm-leads-views.js`. Exports `reloadCrmLeadsTab`. |
 | `crm-leads-views.js` | 112 | **[B8]** Kanban (4 status columns with colored headers — emerald/amber/violet/indigo) + Cards (3-col grid with gradient avatars + tag pills) |
@@ -80,9 +81,11 @@
 | `CrmLeadActions.changeLeadStatus(id, newStatus, oldStatus, opts?)` | crm-lead-actions.js | **[P2a]** Atomic status update + audit note (Hebrew "סטטוס שונה מ-X ל-Y"). `opts.silent` skips toast (used by bulk) |
 | `CrmLeadActions.bulkChangeStatus(ids, newStatus)` | crm-lead-actions.js | **[P2a]** Per-lead loop; pre-fetches current statuses in one query for accurate audit notes; returns `{ok, fail[]}` |
 | `CrmLeadActions.addLeadNote(leadId, content)` | crm-lead-actions.js | **[P2a]** Insert a free-text note into `crm_lead_notes`. Returns the new row |
-| `CrmLeadActions.transferLeadToTier2(leadId)` | crm-lead-actions.js | **[P2a]** Set status='waiting' + insert note "הועבר ל-Tier 2 (אושר)" |
-| `CrmLeadActions.openStatusDropdown(anchor, tier, currentStatus, onPick)` | crm-lead-actions.js | **[P2a]** Tier-filtered anchored dropdown; fixed-positioned, closes on outside click |
-| `CrmLeadActions.openBulkStatusPicker(ids, tier, onDone)` | crm-lead-actions.js | **[P2a]** Modal grid of statuses for bulk change |
+| `CrmLeadActions.createManualLead(data)` | crm-lead-actions.js | **[P3a]** Insert a manually-entered lead with `status='pending_terms'`, `source='manual'`, `terms_approved=false`, `marketing_consent=false`. Validates name + phone required. Writes optional note to `crm_lead_notes`. Returns `{id, full_name, status}` |
+| `CrmLeadActions.transferLeadToTier2(leadId)` | crm-lead-actions.js | **[P2a + P3a]** Pre-checks `terms_approved`; if false returns `{blocked:true, reason:'terms_not_approved'}` and shows error toast. Otherwise sets status='waiting' + inserts note "הועבר ל-Tier 2 (אושר)" |
+| `CrmLeadActions.openStatusDropdown(anchor, tier, currentStatus, onPick)` | crm-lead-modals.js | **[P2a + P3a split]** Tier-filtered anchored dropdown; fixed-positioned, closes on outside click |
+| `CrmLeadActions.openBulkStatusPicker(ids, tier, onDone)` | crm-lead-modals.js | **[P2a + P3a split]** Modal grid of statuses for bulk change |
+| `CrmLeadActions.openCreateLeadModal(onCreated)` | crm-lead-modals.js | **[P3a]** Open a 6-field form modal (name/phone required + email/city/language/notes optional) that calls `createManualLead` on submit |
 | `CrmLeadActions.leadTier(status)` | crm-lead-actions.js | **[P2a]** Returns 1 or 2 based on TIER1_STATUSES / TIER2_STATUSES membership |
 | `CrmEventActions.openCreateEventModal(onCreated)` | crm-event-actions.js | **[P2b]** Open modal form to create a new event; on submit calls `next_crm_event_number` RPC + inserts `crm_events` row |
 | `CrmEventActions.createEvent(data)` | crm-event-actions.js | **[P2b]** Insert event row with atomic auto-numbered event_number (Rule 11) |
