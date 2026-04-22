@@ -242,6 +242,8 @@
     var tid = getTenantId(), emp = (typeof getCurrentEmployee === 'function') ? getCurrentEmployee() : null;
     if (!emp || !emp.id) { toast('error', 'משתמש לא מזוהה'); return; }
     try {
+      var leadsRes = await sb.from('crm_leads').select('id, full_name, phone, email').eq('tenant_id', tid).in('id', leadIds);
+      if (leadsRes.error) throw new Error(leadsRes.error.message); var leadRows = leadsRes.data || [];
       var ins = await sb.from('crm_broadcasts').insert({
         tenant_id: tid, employee_id: emp.id, name: _wizard.name, channel: _wizard.channel, template_id: _wizard.templateId || null,
         filter_criteria: { status: _wizard.status || null, event: _wizard.event || null, language: _wizard.language || null },
@@ -251,10 +253,7 @@
       var baseSlug = null, lang = _wizard.language || 'he', tpls = window._crmMessagingTemplates ? window._crmMessagingTemplates() : [];
       var tpl = _wizard.templateId ? tpls.find(function (t) { return t.id === _wizard.templateId; }) : null;
       if (tpl) { lang = tpl.language || lang; var sfx = '_' + tpl.channel + '_' + lang; baseSlug = (tpl.slug && tpl.slug.slice(-sfx.length) === sfx) ? tpl.slug.slice(0, -sfx.length) : (tpl.slug || null); }
-      var calls = leadIds.map(function (lid) {
-        return baseSlug ? CrmMessaging.sendMessage({ leadId: lid, channel: _wizard.channel, templateSlug: baseSlug, language: lang })
-          : CrmMessaging.sendMessage({ leadId: lid, channel: _wizard.channel, body: _wizard.body, subject: _wizard.name || '', language: lang });
-      });
+      var calls = leadRows.map(function (l) { var v = { name: l.full_name || '', phone: l.phone || '', email: l.email || '' }; return baseSlug ? CrmMessaging.sendMessage({ leadId: l.id, channel: _wizard.channel, templateSlug: baseSlug, variables: v, language: lang }) : CrmMessaging.sendMessage({ leadId: l.id, channel: _wizard.channel, body: _wizard.body, subject: _wizard.name || '', variables: v, language: lang }); });
       var ok = 0, fail = 0;
       (await Promise.allSettled(calls)).forEach(function (r) { if (r.status === 'fulfilled' && r.value && r.value.ok) ok++; else fail++; });
       await sb.from('crm_broadcasts').update({ total_sent: ok, total_failed: fail, status: fail === 0 ? 'completed' : 'partial' }).eq('id', ins.data.id).eq('tenant_id', tid);
