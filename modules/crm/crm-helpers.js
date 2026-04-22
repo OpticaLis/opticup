@@ -57,6 +57,7 @@
   // --- Tier 1 & Tier 2 status constants ---
   var TIER1_STATUSES = [
     'new',              // ליד חדש שנרשם
+    'pending_terms',    // ליד ידני שלא אישר תקנון
     'invalid_phone',    // מספר טלפון שגוי
     'too_far',          // גר רחוק מאשקלון
     'no_answer',        // ניסו ליצור קשר, לא ענה

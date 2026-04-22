@@ -78,6 +78,7 @@
     _eventsWired = true;
     var searchEl = document.getElementById('crm-incoming-search');
     var statusEl = document.getElementById('crm-incoming-filter-status');
+    var addBtn = document.getElementById('crm-add-lead-btn');
     if (searchEl) {
       searchEl.addEventListener('input', function () {
         _currentPage = 1;
@@ -88,6 +89,13 @@
       statusEl.addEventListener('change', function () {
         _currentPage = 1;
         applyIncomingFilters();
+      });
+    }
+    if (addBtn) {
+      addBtn.addEventListener('click', function () {
+        if (window.CrmLeadActions && typeof CrmLeadActions.openCreateLeadModal === 'function') {
+          CrmLeadActions.openCreateLeadModal(function () { reloadCrmIncomingTab(); });
+        }
       });
     }
   }
@@ -170,7 +178,12 @@
         var oldText = btn.textContent;
         btn.textContent = 'מעביר...';
         try {
-          await CrmLeadActions.transferLeadToTier2(id);
+          var res = await CrmLeadActions.transferLeadToTier2(id);
+          if (res && res.blocked) {
+            btn.disabled = false;
+            btn.textContent = oldText;
+            return;
+          }
           if (window.Toast) Toast.success('הליד אושר והועבר ל-Tier 2');
           await reloadCrmIncomingTab();
           if (typeof window.reloadCrmLeadsTab === 'function') window.reloadCrmLeadsTab();
