@@ -49,7 +49,7 @@
 ## סדר ביצוע
 
 ```
-P1 → P2 → P3 → P4 → P5 → P6 → P7
+P1 → P2 → P3 → P4 → P5 → P6 → P8 → P7
 │         │         │         │
 │  צינור  │  שליח   │  מחזור  │
 │  פנימי  │  הודעות │  מלא    │
@@ -209,6 +209,39 @@ P1 → P2 → P3 → P4 → P5 → P6 → P7
 **תיעוד קוד:** JSDoc "CALLER CONTRACT" בלוק נוסף ל-`modules/crm/crm-messaging-send.js` (93 שורות total) — מסמך את חוזה `variables.phone`/`variables.email` של ה-Edge Function (סוגר את M4-BUG-P55-03).
 
 **פרטים מלאים:** `modules/Module 4 - CRM/go-live/specs/P6_FULL_CYCLE_TEST/` — SPEC.md + EXECUTION_REPORT.md + FINDINGS.md + FOREMAN_REVIEW.md.
+
+---
+
+## P8 — מנוע אוטומציות (Level 1)  ✅
+
+**סגור 2026-04-22.** מנוע חוקים (rule engine) ל-CRM מוטמע. Dispatch של P5.5 שהיה hardcoded הופך ל-rule-driven. Daniel יכול ליצור/לערוך/לכבות חוקים מהממשק בלי פיתוח.
+
+**מה נבנה:**
+1. ✅ `modules/crm/crm-automation-engine.js` (225 lines) — `CrmAutomation.evaluate(triggerType, triggerData)` טוען חוקים פעילים, מעריך תנאים (`always` / `status_equals` / `count_threshold` / `source_equals`), פותר נמענים (`trigger_lead` / `tier2` / `tier2_excl_registered` / `attendees` / `attendees_waiting`) ושולח דרך `CrmMessaging.sendMessage`. `Promise.allSettled` לבידוד שגיאות ברמת החוק.
+2. ✅ `crm-event-actions.js` — `dispatchEventStatusMessages` מחליף את `EVENT_STATUS_DISPATCH` ב-`CrmAutomation.evaluate('event_status_change', ...)`. `buildEventVariables` הוסר (Rule 21 — orphan). 341 → 287 שורות.
+3. ✅ `crm-event-register.js` — `dispatchRegistrationConfirmation` מחליף את ה-template mapping הפנימי ב-`CrmAutomation.evaluate('event_registration', ...)`. 144 → 139 שורות.
+4. ✅ `crm-messaging-rules.js` (UI) — הוסר banner "עדיין לא פועלים", נוסף dropdown טריגר (4 types), dropdown תנאי (4 types), dropdown נמענים (5 types). ה-`action_config` עבר מ-`template_id` UUID ל-`template_slug` בסיסי. 234 → 311 שורות.
+5. ✅ `crm-messaging-broadcast.js` + `crm-messaging-log.js` (new) — Log הופרד לקובץ נפרד בשל Rule 12 (broadcast היה 348). Log מציג עכשיו: תאריך, שם ליד, טלפון, ערוץ, תבנית, סטטוס, תוכן-preview + click-to-expand עם תוכן מלא + error_message. broadcast: 348 → 251. log: 151 חדש.
+6. ✅ `crm-leads-detail.js` — טאב "הודעות" מציג היסטוריית `crm_message_log` מסוננת ב-`lead_id` (JOIN templates). 295 → 338 שורות.
+7. ✅ `go-live/seed-automation-rules-demo.sql` — 10 חוקים seeded על דמו (8 event status + 2 registration outcomes) שמשחזרים את ה-P5.5 hardcoded behaviour.
+
+**QA על דמו:**
+- ✅ `CrmAutomation.evaluate('event_status_change', {newStatus:'invite_new'})` → 1 rule fired, 4 messages sent (2 tier2 leads × SMS+Email, templates `event_invite_new_{sms,email}_he`, all status=sent, phones +972537889878/+972503348349)
+- ✅ `CrmAutomation.evaluate('event_registration', {outcome:'registered'})` → 1 rule fired, 2 messages sent (trigger_lead × SMS+Email, templates `event_registration_confirmation_{sms,email}_he`)
+- ✅ Disabled rule (`is_active=false`) → 0 fires (engine respects filter)
+- ✅ Unknown trigger type → clean return `{fired:0}`
+- ✅ Condition evaluators: `always` true, `count_threshold 60>50` true, `count_threshold 30>50` false
+- ✅ Log table shows לֵיד name, phone, template name; row-click expands to full content + error + metadata
+- ✅ Lead detail "הודעות" tab shows per-lead history (date/channel/status/template/preview)
+
+**תוצאה סופית בדמו:** 10 active rules, 0 log rows. כל נתוני הבדיקה נוקו. Phones המשותפים — רק `+972537889878` ו-`+972503348349`.
+
+**מה לא נכנס (Out of scope):**
+- `lead-intake` Edge Function refactor — ה-EF עדיין שולח hardcoded. ה-client-side engine לא יכול ליירט dispatch שקורה server-side. SPEC עתידי יעביר גם את זה ל-rule-based.
+- Scheduled/timed rules (wait X days) — Level 2, צריך scheduler.
+- Action chains + AND/OR מורכב + visual builder — Level 2/3.
+
+**פרטים מלאים:** `modules/Module 4 - CRM/go-live/specs/P8_AUTOMATION_ENGINE/` — SPEC.md + EXECUTION_REPORT.md + FINDINGS.md + FOREMAN_REVIEW.md.
 
 ---
 
