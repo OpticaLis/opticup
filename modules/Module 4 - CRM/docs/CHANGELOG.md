@@ -2,6 +2,63 @@
 
 ---
 
+## Go-Live P2b — Event Management (2026-04-22)
+
+| Hash | Message |
+|------|---------|
+| `0780309` | `fix(crm): seed demo campaign for P2b event testing` |
+| `a78cf61` | `feat(crm): add event creation form with auto-numbering` |
+| `3ed59de` | `feat(crm): wire event status change in detail modal` |
+| `30bd9cf` | `feat(crm): add register-lead-to-event from event detail` |
+| `8e317d4` | `fix(crm): pass footer in Modal.show config for event creation` |
+| `925fe4c` | `fix(crm): remove invalid FOR UPDATE from register_lead_to_event COUNT` |
+
+**New files:**
+- `modules/crm/crm-event-actions.js` (266 lines) — exports
+  `CrmEventActions.{openCreateEventModal, createEvent, changeEventStatus,
+  openEventStatusDropdown, closeEventStatusDropdown}`. Event creation modal
+  with campaign dropdown, auto-numbering via `next_crm_event_number` RPC,
+  campaign-seeded defaults for location/capacity/fee. Anchored status-change
+  dropdown showing all 10 event statuses from `CRM_STATUSES._all`.
+- `modules/crm/crm-event-register.js` (122 lines) — exports
+  `CrmEventRegister.{openRegisterLeadModal, registerLeadToEvent}`. Search-
+  and-pick modal filtered to Tier 2 leads only. Debounced (200ms) search by
+  name/phone/email. Handles all 4 RPC responses (registered / waiting_list /
+  already_registered / event_not_found) with matching Toast types.
+- `modules/Module 4 - CRM/go-live/seed-crm-campaign-demo.sql` — seeds
+  1 campaign on demo tenant (clones Prizma's `supersale`) so the creation
+  form has a campaign to pick.
+- `modules/Module 4 - CRM/go-live/hotfix-register-lead-to-event.sql` —
+  Postgres fix applied mid-execution: removed invalid `FOR UPDATE` clause
+  from the COUNT aggregate inside `register_lead_to_event`. The event row
+  is already locked via the first `SELECT * INTO v_event ... FOR UPDATE`
+  at the top of the function, which serializes concurrent registrations
+  per-event, so the attendee-count query doesn't need its own row lock.
+
+**Modified files:**
+- `crm.html` — added "יצירת אירוע +" button in events tab filter bar,
+  plus 2 new `<script>` tags.
+- `modules/crm/crm-events-tab.js` — wired the new create button to
+  `CrmEventActions.openCreateEventModal`, reloads the list on success.
+- `modules/crm/crm-events-detail.js` — wired "שנה סטטוס" button in
+  gradient header (added `data-action="change-status"`) and a new
+  "רשום משתתף +" button in the attendees sub-tab. Status badge got
+  `data-role="event-status-badge"` for in-place updates. Registration
+  flow reopens the detail modal so the attendee list refreshes.
+
+**DB state:**
+- 1 new seed campaign on demo tenant (persistent).
+- Test events/attendees/leads all cleaned up per SPEC §13 Test 6.
+- `register_lead_to_event` RPC patched via Supabase migration
+  `fix_register_lead_to_event_remove_for_update_on_count`.
+
+**Findings:** 1 HIGH (M4-BUG-03) — `register_lead_to_event` RPC had an
+invalid `FOR UPDATE` clause on a COUNT aggregate that would have
+blocked every registration attempt. Fixed in-SPEC per Daniel
+authorization; canonical SQL committed to `go-live/hotfix-*.sql`.
+
+---
+
 ## Go-Live P2a — Lead Management (2026-04-21)
 
 | Hash | Message |

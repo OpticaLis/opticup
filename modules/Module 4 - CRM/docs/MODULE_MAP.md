@@ -1,6 +1,6 @@
 # Module 4 — CRM: Module Map
 
-> **Last updated:** 2026-04-21 (Go-Live P1 — Internal Lead Intake Edge Function)
+> **Last updated:** 2026-04-22 (Go-Live P2b — CRM Event Management)
 
 ---
 
@@ -9,13 +9,13 @@
 ### HTML & CSS
 | File | Lines | Purpose |
 |------|-------|---------|
-| `crm.html` | 305 | Main CRM page — sidebar nav (5 tabs), role toggle, page header, 5 tab panels with skeleton containers, 18 CRM script tags. **[B8]** Loads Tailwind CDN + `tailwind.config` (RTL, Heebo, custom `crm.*` palette) |
+| `crm.html` | 307 | Main CRM page — sidebar nav (5 tabs), role toggle, page header, 5 tab panels with skeleton containers, 20 CRM script tags. **[B8]** Loads Tailwind CDN + `tailwind.config` (RTL, Heebo, custom `crm.*` palette). **[P2b]** Events tab filter bar gained "יצירת אירוע +" button. |
 | `css/crm.css` | 215 | Foundation: palette tokens, base, sidebar, page header, tab panels, role visibility, responsive, utilities |
 | `css/crm-components.css` | 76 | **[B8]** Reduced from 276 → shell only: cards, filter bar, table-wrap, view toggle, badge (legacy helper), leads-view show/hide |
 | `css/crm-screens.css` | 98 | **[B8]** Reduced from 325 → shell only: KPI grid + loading shimmer, alert strip, activity feed, timeline scroll, messaging split, event-day counter-bar + 3-col grid + barcode input |
 | `css/crm-visual.css` | 20 | **[B8]** Reduced from 347 → near-empty placeholder (pagination baseline + legacy pulse keyframe). All B7 visual components moved into JS as Tailwind classes |
 
-### JavaScript — `modules/crm/` (19 files, all ≤350 lines)
+### JavaScript — `modules/crm/` (21 files, all ≤350 lines)
 | File | Lines | Purpose |
 |------|-------|---------|
 | `crm-init.js` | 75 | Page bootstrap, tab orchestration stub, status cache gate, error banner |
@@ -27,8 +27,10 @@
 | `crm-leads-tab.js` | 313 | **[B8 + P2a]** Leads via Tailwind: white-card table, indigo filter chips, indigo bulk bar (now with working "שנה סטטוס" → `CrmLeadActions.openBulkStatusPicker`), pagination, delegates kanban + cards to `crm-leads-views.js`. Exports `reloadCrmLeadsTab`. |
 | `crm-leads-views.js` | 112 | **[B8]** Kanban (4 status columns with colored headers — emerald/amber/violet/indigo) + Cards (3-col grid with gradient avatars + tag pills) |
 | `crm-leads-detail.js` | 295 | **[B8 + P2a]** Lead detail modal via Tailwind: gradient-avatar header + clickable status badge → tier-filtered dropdown (P2a) + 5 underline tabs (events/messages/notes/timeline/details) — notes tab has textarea + "הוסף" button at top (P2a) + 4 gradient action buttons. Falls back to `getCrmIncomingLeadById` when `getCrmLeadById` misses. |
-| `crm-events-tab.js` | 125 | **[B8]** Events list via Tailwind: white-card table, indigo event number, emerald revenue column (admin-only) |
-| `crm-events-detail.js` | 206 | **[B8]** Event detail modal: gradient header (indigo→violet) with glass-morphism controls, segmented capacity bar, 3 sub-tabs, grouped attendee list with gradient avatars, delegates KPI+funnel+analytics to `crm-events-detail-charts.js` |
+| `crm-event-actions.js` | 266 | **[P2b]** Event mutation helpers + UI flows. Exports `CrmEventActions.{openCreateEventModal, createEvent, changeEventStatus, openEventStatusDropdown, closeEventStatusDropdown}`. Event creation modal uses `next_crm_event_number` RPC for atomic auto-numbering (Rule 11) and `crm_events.insert()` with `tenant_id: getTenantId()` (Rule 22). Campaign dropdown + campaign-based defaults that re-seed when campaign changes. Status dropdown anchored to any DOM element, iterates `CRM_STATUSES._all` to show all 10 event statuses in sort order. |
+| `crm-event-register.js` | 122 | **[P2b]** Tier 2 lead → event registration flow. Exports `CrmEventRegister.{openRegisterLeadModal, registerLeadToEvent}`. Search modal filters `crm_leads` to `TIER2_STATUSES` only, debounced (200ms) name/phone/email ilike search, limit 20. Click-to-register calls `register_lead_to_event` RPC; 4 response branches: `registered` → Toast.success, `waiting_list` → Toast.warning, `already_registered` → Toast.info, `event_not_found` → Toast.error. |
+| `crm-events-tab.js` | 135 | **[B8 + P2b]** Events list via Tailwind: white-card table, indigo event number, emerald revenue column (admin-only). **[P2b]** Added "יצירת אירוע +" button wired to `CrmEventActions.openCreateEventModal` with reload callback. |
+| `crm-events-detail.js` | 255 | **[B8 + P2b]** Event detail modal: gradient header (indigo→violet) with glass-morphism controls, segmented capacity bar, 3 sub-tabs, grouped attendee list with gradient avatars, delegates KPI+funnel+analytics to `crm-events-detail-charts.js`. **[P2b]** Wired "שנה סטטוס" button (`data-action="change-status"`) to `CrmEventActions.openEventStatusDropdown`, updates status badge in-place via `data-role="event-status-badge"`. Added "רשום משתתף +" button at top of attendees sub-tab wired to `CrmEventRegister.openRegisterLeadModal`; on registration, detail modal is closed and reopened to refresh attendees. |
 | `crm-events-detail-charts.js` | 201 | **[B8]** 6 gradient KPI cards with trend arrows (sky/emerald/amber/violet), SVG funnel wrapped in white chart card, gradient analytics bars |
 | `crm-event-day.js` | 196 | **[B8]** Event Day main: 5 gradient counter cards (sky/violet/emerald/amber/teal) with tabular-nums, live clock with animate-pulse dot, role toggle, sub-tab routing |
 | `crm-event-day-checkin.js` | 217 | **[B8]** Check-in 3-column grid: LEFT waiting (amber) with overdue/selected states + CENTER dark barcode scanner (slate-900 + emerald) with gradient selected-attendee detail card (indigo→violet) + RIGHT delegates to arrived column |
@@ -82,6 +84,12 @@
 | `CrmLeadActions.openStatusDropdown(anchor, tier, currentStatus, onPick)` | crm-lead-actions.js | **[P2a]** Tier-filtered anchored dropdown; fixed-positioned, closes on outside click |
 | `CrmLeadActions.openBulkStatusPicker(ids, tier, onDone)` | crm-lead-actions.js | **[P2a]** Modal grid of statuses for bulk change |
 | `CrmLeadActions.leadTier(status)` | crm-lead-actions.js | **[P2a]** Returns 1 or 2 based on TIER1_STATUSES / TIER2_STATUSES membership |
+| `CrmEventActions.openCreateEventModal(onCreated)` | crm-event-actions.js | **[P2b]** Open modal form to create a new event; on submit calls `next_crm_event_number` RPC + inserts `crm_events` row |
+| `CrmEventActions.createEvent(data)` | crm-event-actions.js | **[P2b]** Insert event row with atomic auto-numbered event_number (Rule 11) |
+| `CrmEventActions.changeEventStatus(eventId, newStatus)` | crm-event-actions.js | **[P2b]** Update `crm_events.status` (tenant-scoped write, Rule 22) |
+| `CrmEventActions.openEventStatusDropdown(anchor, currentStatus, onPick)` | crm-event-actions.js | **[P2b]** Anchored dropdown of all 10 event statuses (excludes current), closes on outside click |
+| `CrmEventRegister.openRegisterLeadModal(eventId, onRegistered)` | crm-event-register.js | **[P2b]** Search-and-pick modal for Tier 2 leads; on pick calls `register_lead_to_event` RPC with Toast branching |
+| `CrmEventRegister.registerLeadToEvent(leadId, eventId, method)` | crm-event-register.js | **[P2b]** Invoke `register_lead_to_event` RPC; returns `{success, status|error, attendee_id}` |
 | `loadCrmEventsTab()` | crm-events-tab.js | Fetch events from `v_crm_event_stats`, render table |
 | `getCrmEventStatsById(id)` | crm-events-tab.js | Return cached event stats row by ID |
 | `openCrmEventDetail(eventId)` | crm-events-detail.js | Open event detail modal (info + stats + attendees + event-day entry) |
@@ -131,7 +139,10 @@
 | `v_crm_event_attendees_full` | crm-events-detail.js, crm-event-day.js | Event attendees with lead info |
 | `crm_leads` | crm-dashboard.js, crm-messaging-broadcast.js | Direct count queries for dashboard, lead-id filter for broadcast recipients, name lookup for log display. **[C1]** Also used by Make scenario for duplicate check (HTTP GET) and insert (HTTP POST) |
 | `crm_lead_notes` | crm-leads-detail.js | Notes for lead detail modal |
-| `crm_events` | crm-events-detail.js, crm-event-day.js, crm-messaging-broadcast.js | Single event row for detail modal, event list for broadcast filter dropdown |
+| `crm_events` | crm-events-detail.js, crm-event-day.js, crm-messaging-broadcast.js, crm-event-actions.js | Single event row for detail modal, event list for broadcast filter dropdown. **[P2b]** INSERT (create event with auto-numbered event_number) + UPDATE status via `CrmEventActions` |
+| `crm_campaigns` | crm-event-actions.js | **[P2b]** SELECT active campaigns for the event creation form dropdown |
+| `crm_event_attendees` | crm-event-day.js, crm-event-register.js | **[P2b]** INSERT via `register_lead_to_event` RPC only (Rule 11 — atomic capacity check + insert) |
+| `crm_leads` (Tier 2 filter) | crm-event-register.js | **[P2b]** SELECT for Tier 2 lead search in the register-to-event modal |
 | `crm_event_attendees` | crm-event-day-manage.js, crm-messaging-broadcast.js | Direct updates (purchase/coupon/fee) and lead_id lookup for event filter |
 | `crm_statuses` | crm-helpers.js, crm-messaging-broadcast.js | Status labels + colors (31 seed rows), filter dropdown source |
 | `crm_message_templates` | crm-messaging-templates.js, crm-messaging-rules.js, crm-messaging-broadcast.js | Templates CRUD, template picker in rules + broadcasts, name lookup for log display |
