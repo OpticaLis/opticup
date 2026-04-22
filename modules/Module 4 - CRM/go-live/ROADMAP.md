@@ -102,7 +102,7 @@ P1 → P2 → P3 → P4 → P5 → P6 → P7
 
 ---
 
-## P3c+P4 — ארכיטקטורה v3: Edge Function + Make Send-Only + חיבור טריגרים  ⬜
+## P3c+P4 — ארכיטקטורה v3: Edge Function + Make Send-Only + חיבור טריגרים  ✅
 
 **מה נבנה:** תשתית שליחת הודעות מלאה בגישה חדשה.
 
@@ -125,13 +125,15 @@ P1 → P2 → P3 → P4 → P5 → P6 → P7
 - מעדכן status ל-'sent' או 'failed'
 
 ### חלק 3: חיבור טריגרים (Claude בונה)
-- ליד חדש (P1 Edge Function) → send-message → SMS+Email
-- ליד כפול (P1 Edge Function) → send-message → SMS
-- פתיחת אירוע (CRM, שינוי event status) → send-message → SMS+Email (bulk)
-- הרשמה לאירוע (CRM) → send-message → SMS+Email
-- תזכורות לפני אירוע → scheduled Edge Function → send-message
-- Broadcast ידני (Messaging Hub) → send-message → SMS/Email לרשימה מסוננת
-- Unsubscribe (Edge Function) → עדכון DB ישירות, ללא Make
+- ✅ ליד חדש (P1 Edge Function) → send-message → SMS+Email (template `lead_intake_new`)
+- ✅ ליד כפול (P1 Edge Function) → send-message → SMS+Email (template `lead_intake_duplicate`)
+- ⬜ פתיחת אירוע (CRM, שינוי event status) → send-message → SMS+Email (bulk) — P5+ scope
+- ⬜ הרשמה לאירוע (CRM) → send-message → SMS+Email — P5+ scope
+- ⬜ תזכורות לפני אירוע → scheduled Edge Function → send-message — ידרוש scheduler, SPEC נפרד
+- ⬜ Broadcast ידני (Messaging Hub) → send-message → SMS/Email לרשימה מסוננת — הצינור מוכן ב-`crm-messaging-send.js`, UI wiring של B5 עדיין צריך להתחבר
+- ⬜ Unsubscribe (Edge Function) → עדכון DB ישירות, ללא Make — P5+ scope
+
+**הערה:** P3c+P4 סגר את שני הטריגרים הראשונים (lead-intake). שאר הטריגרים יטופלו כשתוכן ההודעות ייכתב ב-P5 ואחרי שה-scheduler ייבנה.
 
 ### עיצוב טמפלטים
 - כל טמפלט: עד 3 ערוצים (SMS/Email/WhatsApp) — לא חובה למלא הכל

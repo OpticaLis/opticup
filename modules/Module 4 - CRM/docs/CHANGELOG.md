@@ -2,6 +2,109 @@
 
 ---
 
+## Go-Live P3c+P4 — Messaging Pipeline (Edge Function + Trigger Wiring, 2026-04-22) ✅
+
+| Hash | Message |
+|------|---------|
+| `64a8f80` | `feat(crm): add send-message Edge Function (P3c+P4)` |
+| `e644dd0` | `refactor(crm): rewire CRM messaging through send-message Edge Function` |
+| `2830874` | `feat(crm): wire lead-intake to send-message on new/duplicate lead` |
+| `37e8cc4` | `fix(crm): use legacy JWT anon key for cross-EF send-message call` |
+
+**Architecture v3 — Make is now a send-only pipe.** All business logic
+(template fetch, variable substitution, log writes) lives in the
+`send-message` Edge Function. Make receives a ready-to-send payload
+`{ channel, recipient_phone, recipient_email, subject, body }` and forwards
+through a Router to Global SMS or Gmail. No Supabase modules in Make.
+
+**New files:**
+- `supabase/functions/send-message/index.ts` (277 lines) +
+  `supabase/functions/send-message/deno.json` — Edge Function, `verify_jwt: true`.
+  Validates `tenant_id` + `lead_id` + `channel` + (`template_slug` XOR `body`),
+  composes full slug `{base}_{channel}_{lang}`, substitutes `%name%`, `%phone%`,
+  `%email%`, `%event_*%` placeholders, writes `crm_message_log` row with
+  `status='pending'`, calls Make webhook, updates log to `sent` / `failed`
+  based on Make response. Returns `{ok, log_id, channel, template_id}` on
+  success. Make webhook URL read from `MAKE_SEND_MESSAGE_WEBHOOK_URL` env
+  with a hardcoded fallback (same URL as `crm-messaging-config.js`).
+
+**Modified files:**
+- `modules/crm/crm-messaging-send.js` (52 → 69 lines) — replace direct Make
+  `fetch` with `sb.functions.invoke('send-message', ...)`. Adds raw-body
+  mode (`body` XOR `templateSlug`) for ad-hoc broadcasts and surfaces
+  `log_id` to callers.
+- `modules/crm/crm-messaging-config.js` — documentation-only comment
+  refresh; `MAKE_SEND_WEBHOOK` kept as human-readable pointer to the Make
+  scenario the Edge Function targets.
+- `supabase/functions/lead-intake/index.ts` (241 → 342 lines) — dispatches
+  SMS + email via `send-message` after new-lead INSERT (template
+  `lead_intake_new`) and on duplicate detection (`lead_intake_duplicate`,
+  both the initial check and the 23505 race branch). Failures wrapped in
+  `Promise.allSettled` + `try/catch`; the lead is already persisted and
+  `crm_message_log` records the error, so dispatch failures never fail
+  the request.
+
+**Make state after P3c+P4 execution:**
+- Scenario `9104395` rebuilt from 8 modules → 4 modules (Webhook → Router →
+  Global SMS | Gmail). Same scenario ID and webhook URL retained. Data
+  structure registered for the new send-ready payload shape. Scenario is
+  active.
+
+**Tests run (all on demo tenant, phone `+972537889878`, email `danylis92@gmail.com`):**
+- ✅ Test 1 unauth probe: `curl POST /send-message` → `401` (verify_jwt enforced)
+- ✅ Test 2 template-not-found: `template_slug=does_not_exist` → `404`, log
+  row `35f62ab1…` with `status=failed`, `error_message=template_not_found:
+  does_not_exist_sms_he`
+- ✅ Test 3 template SMS: `template_slug=lead_intake_new`, `channel=sms` →
+  `200`, log row with Hebrew body (P3c SMS Test substituted for `%name%`),
+  `status=sent`
+- ✅ Test 4 template Email: same + `channel=email` → `200`, log row with
+  Hebrew HTML body, `status=sent`
+- ✅ Test 5 raw broadcast: no template, `body="Optic Up broadcast test to
+  %name% - no template, raw body"` → `200`, log row `template_id=null`,
+  `status=sent`
+- ✅ Test 6 lead-intake NEW lead: `POST /lead-intake` with fresh phone →
+  `201` + 2 log rows (sms + email) with `lead_intake_new` template,
+  status=sent
+- ✅ Test 7 lead-intake DUPLICATE: same phone → `409` + 2 log rows with
+  `lead_intake_duplicate` template, status=sent
+
+**DB state after P3c+P4:**
+- No schema changes.
+- `crm_message_log` on demo: all 10 test rows cleaned (DELETE after test
+  verification); count back to 0.
+- `crm_leads` on demo: test lead `f32cbd6a…` and the pre-existing P3b Test
+  Lead `e98e36cb…` deleted to free the phone for the new-lead test path.
+
+**Mid-execution debugging (logged to FINDINGS):**
+- `SERVICE_ROLE_KEY` rejected by the Edge Function gateway with 401 on
+  cross-EF calls from inside `lead-intake`. Switched to raw JWT anon key.
+  Root cause: `SUPABASE_ANON_KEY` env var inside Edge Functions now returns
+  the newer `sb_publishable_*` key format which the gateway's verify_jwt
+  does not accept. Fix: hardcode the legacy JWT anon key in lead-intake
+  (same value already in `js/shared.js`, so not a new exposure).
+
+**Success-criteria scorecard (SPEC §3):**
+
+| # | Criterion | Status |
+|---|-----------|--------|
+| 1 | Branch state clean | ✅ |
+| 2 | Edge Function deployed, 401 unauth | ✅ |
+| 3 | Make scenario rebuilt (Webhook → Router → SMS \| Email) | ✅ (Daniel) |
+| 4 | Webhook URL in `crm-messaging-config.js` | ✅ |
+| 5 | Template SMS send verified | ✅ |
+| 6 | Template Email send verified | ✅ |
+| 7 | Error path verified | ✅ |
+| 8 | Raw broadcast verified | ✅ |
+| 9 | Log rows written for every send attempt | ✅ |
+| 10 | Old scenario 9104395 handled | ✅ (same ID reused by Daniel, re-architected) |
+| 11 | CRM trigger end-to-end | ✅ (both new-lead and duplicate paths) |
+| 12 | Variable list documented | ✅ (SPEC §12 + make-send-message.md) |
+| 13 | Test data cleaned | ✅ (0 crm_message_log rows on demo) |
+| 14 | Docs updated | ✅ (this CHANGELOG + SESSION_CONTEXT + ROADMAP + make-send-message.md) |
+
+---
+
 ## Go-Live P3b — Make Message Dispatcher (2026-04-22, PARTIAL)
 
 | Hash | Message |
