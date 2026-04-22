@@ -16,17 +16,24 @@
 - **UI:** `crm.html` with **6 visible tabs** (Dashboard, לידים נכנסים, רשומים, Events, Messaging Hub) + 1 hidden (Event Day)
 - **Lead management (P2a):** working end-to-end — individual + bulk status change, add note from detail modal, Tier 1→2 transfer button, row click → detail modal (both tabs). See Phase History row below for details.
 
-### Architecture Decision (2026-04-21): Internal-First
+### Architecture Decision v1 (2026-04-21): Internal-First
 
 Go-Live roadmap rewritten from C1–C9 (Make-centric) to P1–P7 (internal-first).
 
 **Old approach (abandoned):** clone every Make scenario, replace Monday modules with HTTP calls to Supabase. Resulted in brittle Make scenarios (broken routers, `{{}}` conflicts, no error handling, missing business logic).
 
-**New approach:**
-- **All business logic is internal** — Edge Functions, RPCs, CRM UI → Supabase directly. No Make involved in decisions.
-- **Make is a message dispatcher only** — receives webhook with template_slug + recipient + variables, sends SMS/Email/WhatsApp, logs result. Generic scenarios, not per-flow.
-- **Native Supabase modules in Make** — not generic HTTP. One connection, proper modules (Search Rows, Create a Row, etc.)
-- **Message content last** — templates written and seeded in P5, not during pipeline build.
+### Architecture Decision v2 (2026-04-22): Make = Send-Only Pipe
+
+**Supersedes v1.** After P3b was built with native Supabase modules in Make (8 modules), Daniel decided Make should have **zero access to Supabase**. All DB operations move to a Supabase Edge Function.
+
+**New architecture (final):**
+- **Supabase Edge Function `send-message`** — fetches template, substitutes variables, writes log, then calls Make with a **ready-to-send message** (channel + recipient + subject + body). All logic is here.
+- **Make = send-only pipe** — 3 modules only: Webhook → Router → SMS | Email. No Supabase modules, no DB connection, no variable substitution. Receives a fully prepared message and forwards it.
+- **WhatsApp deferred** — Daniel plans to switch from Green API to Meta's official WhatsApp API. Third route added to Make when ready.
+- **Template design** — each template has up to 3 channel variants (SMS/Email/WhatsApp), not all required. Email body is full HTML stored in DB. Variable format: `%name%` (not `{{}}`).
+- **Ad-hoc broadcast** — Broadcast Wizard (B5) wired to send via same Edge Function in raw-content mode (no template needed).
+
+**Old P3b scenario (9104395, 8 modules with Supabase)** → replaced by P3c+P4 (3-module scenario + Edge Function + trigger wiring).
 
 See `modules/Module 4 - CRM/go-live/ROADMAP.md` for full P1–P7 plan.
 

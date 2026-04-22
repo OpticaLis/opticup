@@ -2,11 +2,12 @@
 
 > **מטרה:** להעביר את כל תהליך הקמפיין מ-Monday.com + Make ל-CRM פנימי + Make כשליח הודעות בלבד.
 >
-> **עיקרון מנחה v2 (עדכון 2026-04-21):**
+> **עיקרון מנחה v3 (עדכון 2026-04-22):**
 > כל הלוגיקה העסקית — פנימית (Edge Functions, RPCs, CRM UI).
-> Make לא מקבל החלטות. Make רק שולח הודעות.
-> הטפסים שלנו. ה-CRM שלנו. הנתונים ישירות לסופאבייס.
-> Monday.com לא נגעים בו — הוא נשאר כגיבוי read-only.
+> Make לא מקבל החלטות. Make לא ניגש ל-DB. Make רק מעביר הודעה מוכנה לערוץ השליחה.
+> Edge Function `send-message` עושה הכל: שליפת טמפלט, הצבת משתנים, כתיבת לוג.
+> Make מקבל הודעה מוכנה (channel + recipient + body) ושולח. נקודה.
+> Monday.com לא נוגעים בו — הוא נשאר כגיבוי read-only.
 >
 > **למה שינינו גישה:** הגישה הקודמת (C1–C9 ישן) ניסתה לשכפל כל סנריו מ-Make
 > ולהחליף Monday ב-HTTP calls לסופאבייס. זה יצר סנריואים שבירים (ראוטרים שבורים,
@@ -29,11 +30,11 @@
 │  CRM UI → Supabase RPCs                             │
 │  אין Make. אין Monday. ישירות ל-DB.                │
 ├─────────────────────────────────────────────────────┤
-│  שכבה 2: שליחת הודעות (Make בלבד)                  │
+│  שכבה 2: שליחת הודעות (Make = צינור שליחה בלבד)     │
 │                                                     │
-│  CRM/Edge Function → Make webhook → SMS/Email/WA    │
-│  Make קורא טמפלט מ-DB, מציב משתנים, שולח, כותב לוג │
-│  סנריואים גנריים — לא per-flow                      │
+│  Edge Function → Make webhook → SMS/Email            │
+│  Make מקבל הודעה מוכנה ושולח. אפס גישה ל-DB.       │
+│  3 מודולים: Webhook → Router → SMS | Email           │
 ├─────────────────────────────────────────────────────┤
 │  שכבה 3: תוכן (בסוף)                               │
 │                                                     │
@@ -94,33 +95,49 @@ P1 → P2 → P3 → P4 → P5 → P6 → P7
 
 ## P3 — שליח הודעות גנרי ב-Make  ✅
 
-**מה נבנה:** סנריואים גנריים ב-Make שמקבלים webhook ושולחים הודעה. לא מכילים לוגיקה עסקית.
+**P3a+P3b הושלמו.** סנריו 9104395 נבנה עם 8 מודולים (כולל Supabase native).
 
-**רכיבים:**
-- Supabase connection ב-Make (חד-פעמי — URL + service_role key)
-- סנריו "Send SMS" — webhook → קריאת טמפלט (Supabase module) → הצבת משתנים → Global SMS → POST log ל-`crm_message_log`
-- סנריו "Send Email" — webhook → קריאת טמפלט → הצבת משתנים → Gmail → POST log
-- סנריו "Bulk Notify" — scheduled/webhook → שליפת נמענים מסופאבייס → לולאה → SMS+Email → log
-- סנריו "WhatsApp Incoming" — webhook מ-Green API → ניתוב לפי תוכן → תשובה אוטומטית
-- Error handler על כל סנריו — הודעה ל-events@ + log ב-DB
-
-**עיקרון:** ה-webhook payload פשוט: `{ recipient_phone, recipient_email, template_slug, variables: { name, event_name, ... } }`. Make לא מחליט מה לשלוח — הוא רק שולח מה שנאמר לו.
+**⚠️ P3b הוחלף ב-P3c (ארכיטקטורה v3, 2026-04-22):**
+דניאל החליט ש-Make לא צריך גישה ל-DB בכלל. הסנריו הנוכחי (8 מודולים עם Supabase Search Rows + Create Row) יוחלף בסנריו של 3 מודולים בלבד: Webhook → Router → SMS | Email. כל הלוגיקה (שליפת טמפלט, הצבת משתנים, כתיבת לוג) עוברת ל-Edge Function `send-message` בסופאבייס. ראה P3c+P4 למטה.
 
 ---
 
-## P4 — חיבור CRM ← → Make  ⬜
+## P3c+P4 — ארכיטקטורה v3: Edge Function + Make Send-Only + חיבור טריגרים  ⬜
 
-**מה נבנה:** הנקודות שבהן ה-CRM או Edge Functions קוראים ל-Make webhook כדי לשלוח הודעות.
+**מה נבנה:** תשתית שליחת הודעות מלאה בגישה חדשה.
 
-**trigger points:**
-- ליד חדש (P1 Edge Function) → Make webhook → SMS+Email "נרשמת בהצלחה"
-- ליד כפול (P1 Edge Function) → Make webhook → SMS "כבר רשום"
-- פתיחת אירוע (P2 CRM, שינוי event status) → Make bulk webhook → SMS+Email לכל ה-Tier 2
-- הרשמה לאירוע (P2 CRM) → Make webhook → SMS+Email "אישור הרשמה"
-- תזכורות לפני אירוע → Make scheduled → SMS+Email
-- Check-in (P2 CRM) → Make webhook → post-scan actions
-- אחרי אירוע → Make webhook → סקר שביעות רצון
+**עיקרון:** Make = צינור שליחה בלבד. מקבל הודעה מוכנה, שולח. אפס גישה ל-DB.
+
+**רכיבים:**
+
+### חלק 1: Make (דניאל בונה ידנית)
+- סנריו חדש: 3 מודולים — Webhook → Router → SMS (Global SMS) | Email (Gmail)
+- Webhook מקבל: `{ channel, recipient_phone, recipient_email, subject, body }`
+- Body מגיע מוכן — Make לא עושה שום עיבוד
+- WhatsApp — לא עכשיו. מחכים ל-API הרשמי של Meta
+
+### חלק 2: Edge Function `send-message` (Claude בונה)
+- מקבל: `{ template_slug OR body, channel, recipient, variables, tenant_id, lead_id, event_id }`
+- אם template_slug: שולף מ-crm_message_templates, מציב משתנים
+- אם body ישיר: משתמש כמות שהוא (broadcast חופשי)
+- כותב crm_message_log עם status='pending'
+- קורא ל-Make webhook עם הודעה מוכנה
+- מעדכן status ל-'sent' או 'failed'
+
+### חלק 3: חיבור טריגרים (Claude בונה)
+- ליד חדש (P1 Edge Function) → send-message → SMS+Email
+- ליד כפול (P1 Edge Function) → send-message → SMS
+- פתיחת אירוע (CRM, שינוי event status) → send-message → SMS+Email (bulk)
+- הרשמה לאירוע (CRM) → send-message → SMS+Email
+- תזכורות לפני אירוע → scheduled Edge Function → send-message
+- Broadcast ידני (Messaging Hub) → send-message → SMS/Email לרשימה מסוננת
 - Unsubscribe (Edge Function) → עדכון DB ישירות, ללא Make
+
+### עיצוב טמפלטים
+- כל טמפלט: עד 3 ערוצים (SMS/Email/WhatsApp) — לא חובה למלא הכל
+- Email = HTML מלא ב-body, SMS = טקסט רגיל, WA = טקסט
+- משתנים: `%name%`, `%phone%`, `%email%`, `%event_name%`, `%event_date%`, `%event_location%`
+- רשימת משתנים זמינים ליד עורך הטמפלטים (copy-paste, בעתיד: חיפים לחיצים)
 
 ---
 
