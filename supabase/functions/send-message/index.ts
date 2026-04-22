@@ -17,7 +17,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const MAKE_WEBHOOK_URL = Deno.env.get("MAKE_SEND_MESSAGE_WEBHOOK_URL") || "";
+
+// Make "Optic Up — Send Message" scenario 9104395, webhook 4068609.
+// Mirrors MAKE_SEND_WEBHOOK in modules/crm/crm-messaging-config.js (which is
+// already in git, so this is duplicated human-readable documentation, not a
+// new exposure). Override via the Supabase secret to point at a different
+// scenario (e.g., staging) without a redeploy.
+const MAKE_WEBHOOK_URL_DEFAULT =
+  "https://hook.eu2.make.com/n7y5m7x9m9yn4uqo3ielqsobdn8s5nui";
+const MAKE_WEBHOOK_URL =
+  Deno.env.get("MAKE_SEND_MESSAGE_WEBHOOK_URL") || MAKE_WEBHOOK_URL_DEFAULT;
 
 const DEFAULT_LANGUAGE = "he";
 

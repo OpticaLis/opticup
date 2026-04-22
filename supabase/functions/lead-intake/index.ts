@@ -15,8 +15,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// Legacy JWT-format anon key — the gateway's verify_jwt rejects the newer
+// `sb_publishable_*` key format that `SUPABASE_ANON_KEY` env var returns.
+// This is the same key already present in js/shared.js (git-tracked), so
+// hardcoding here is not a new exposure. Supabase issue:
+// https://github.com/supabase/supabase/issues/ — see project publishable keys.
+const ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU";
+
 const DEFAULT_SOURCE = "supersale_form";
-const SEND_MESSAGE_URL = `${SUPABASE_URL}/functions/v1/send-message`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -84,15 +91,14 @@ function normalizePhone(raw: string): string | null {
 }
 
 /**
- * Dispatch SMS + email messages for a lead-intake event.
- *
- * Fire-and-forget wrapper around the `send-message` Edge Function. Failures
- * are logged but never propagate to the caller — a message-dispatch failure
- * must not cause the lead-intake request to fail (the lead is already
- * persisted at this point, and crm_message_log captures the failure).
- *
- * @param templateBaseSlug either "lead_intake_new" or "lead_intake_duplicate"
+ * Dispatch SMS + email messages via the send-message Edge Function.
+ * Failures are logged but never bubble up — the lead is already persisted,
+ * and crm_message_log captures the failure for operator follow-up.
+ * Uses raw fetch with the anon key (same pattern as direct curl tests);
+ * SERVICE_ROLE_KEY is rejected by the Edge Function gateway with 401.
  */
+const SEND_MESSAGE_URL = `${SUPABASE_URL}/functions/v1/send-message`;
+
 async function dispatchIntakeMessages(
   tenantId: string,
   leadId: string,
@@ -105,12 +111,10 @@ async function dispatchIntakeMessages(
   if (email) variables.email = email;
 
   const calls: Promise<unknown>[] = [];
-
   calls.push(callSendMessage(tenantId, leadId, "sms", templateBaseSlug, variables));
   if (email) {
     calls.push(callSendMessage(tenantId, leadId, "email", templateBaseSlug, variables));
   }
-
   await Promise.allSettled(calls);
 }
 
@@ -126,7 +130,8 @@ async function callSendMessage(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+        "Authorization": `Bearer ${ANON_KEY}`,
+        "apikey": ANON_KEY,
       },
       body: JSON.stringify({
         tenant_id: tenantId,
