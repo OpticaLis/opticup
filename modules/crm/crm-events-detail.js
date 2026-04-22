@@ -130,7 +130,11 @@
   }
 
   function renderSubTab(key, attendees, stats) {
-    if (key === 'attendees') return renderAttendeesGrouped(attendees);
+    if (key === 'attendees') {
+      return '<div class="flex justify-end mb-3">' +
+          '<button type="button" id="crm-register-lead-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition shadow-sm">רשום משתתף +</button>' +
+        '</div>' + renderAttendeesGrouped(attendees);
+    }
     if (key === 'messages')  return '<div class="text-center text-slate-400 py-8">ציר הודעות לאירוע — בקרוב</div>';
     if (key === 'analytics') return '<div id="crm-event-detail-analytics"></div>';
     return '';
@@ -169,6 +173,16 @@
     return html;
   }
 
+  function wireRegisterButton(body, event, reloadDetail) {
+    var btn = body.querySelector('#crm-register-lead-btn');
+    if (!btn || !window.CrmEventRegister) return;
+    btn.addEventListener('click', function () {
+      CrmEventRegister.openRegisterLeadModal(event.id, function () {
+        if (typeof reloadDetail === 'function') reloadDetail();
+      });
+    });
+  }
+
   function wireSubTabs(body, event, stats, attendees) {
     if (stats && typeof window.renderEventDetailKpiSparklines === 'function') {
       window.renderEventDetailKpiSparklines(body.querySelector('#crm-event-detail-kpis'), stats);
@@ -176,6 +190,14 @@
     if (stats && typeof window.renderEventDetailFunnelSvg === 'function') {
       window.renderEventDetailFunnelSvg(body.querySelector('#crm-event-detail-funnel'), stats);
     }
+    var reloadDetail = function () {
+      if (typeof openCrmEventDetail === 'function') {
+        // close then reopen to refresh attendees
+        if (typeof Modal !== 'undefined' && Modal.close) Modal.close();
+        setTimeout(function () { openCrmEventDetail(event.id); }, 50);
+      }
+    };
+    wireRegisterButton(body, event, reloadDetail);
     body.querySelectorAll('[data-event-subtab]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         body.querySelectorAll('[data-event-subtab]').forEach(function (b) {
@@ -185,6 +207,7 @@
         var host = body.querySelector('#crm-event-detail-subbody');
         if (!host) return;
         host.innerHTML = renderSubTab(key, attendees, stats);
+        if (key === 'attendees') wireRegisterButton(body, event, reloadDetail);
         if (key === 'analytics' && typeof window.renderEventDetailAnalytics === 'function') {
           window.renderEventDetailAnalytics(body.querySelector('#crm-event-detail-analytics'), stats, attendees);
         }
