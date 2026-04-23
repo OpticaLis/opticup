@@ -95,6 +95,11 @@
     var afterAdv = window.CrmLeadFilters
       ? CrmLeadFilters.applyFilters(_allLeads, tier2Statuses, _lastNotesMap, state)
       : _allLeads.filter(function (r) { return tier2Statuses.indexOf(r.status) !== -1; });
+    // P16: default-exclude 'unsubscribed' when no explicit status filter is selected.
+    // Selecting 'unsubscribed' in the status checkbox filter reveals them again.
+    if (!state.statuses || !state.statuses.length) {
+      afterAdv = afterAdv.filter(function (r) { return r.status !== 'unsubscribed'; });
+    }
 
     var s = search.trim().toLowerCase();
     _filtered = afterAdv.filter(function (r) {
