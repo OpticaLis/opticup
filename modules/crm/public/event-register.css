@@ -1,0 +1,117 @@
+:root {
+  --primary: #4f46e5;
+  --primary-dark: #4338ca;
+  --surface: #ffffff;
+  --bg-start: #eef2ff;
+  --bg-end: #f8fafc;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --accent: #10b981;
+  --error: #e11d48;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Heebo', 'Arial', sans-serif;
+  background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 60%);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 24px 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.wrap { width: 100%; max-width: 560px; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px 28px;
+  box-shadow: 0 10px 40px rgba(79, 70, 229, .08);
+  border-top: 4px solid var(--primary);
+}
+.brand { text-align: center; margin-bottom: 20px; }
+.brand img { max-height: 56px; max-width: 180px; object-fit: contain; }
+.hero h1 { font-size: 22px; font-weight: 700; margin: 0 0 8px; color: var(--text); text-align: center; }
+.hero .sub { font-size: 14px; color: var(--muted); margin: 0 0 20px; text-align: center; line-height: 1.6; }
+.event-card {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: white;
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 24px;
+}
+.event-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: .85; margin-bottom: 4px; }
+.event-card .name { font-size: 17px; font-weight: 700; margin-bottom: 8px; line-height: 1.4; }
+.event-card .meta { font-size: 13px; line-height: 1.8; opacity: .95; }
+.event-card .meta-row { display: flex; gap: 8px; align-items: center; }
+.field { margin-bottom: 18px; }
+.field label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+.field .hint { font-size: 12px; color: var(--muted); margin: 0 0 6px; line-height: 1.5; }
+.field select, .field textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 15px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: white;
+  color: var(--text);
+  transition: border-color .15s, box-shadow .15s;
+}
+.field select:focus, .field textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
+}
+.field textarea { resize: vertical; min-height: 90px; }
+.counter { font-size: 11px; color: var(--muted); text-align: start; margin-top: 4px; }
+button.submit {
+  width: 100%;
+  background: var(--primary);
+  color: white;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+  margin-top: 8px;
+}
+button.submit:hover:not(:disabled) { background: var(--primary-dark); }
+button.submit:active:not(:disabled) { transform: scale(.98); }
+button.submit:disabled { background: #c7d2fe; cursor: not-allowed; }
+.msg { font-size: 14px; text-align: center; padding: 12px; border-radius: 10px; margin-bottom: 14px; }
+.msg.error { background: #fef2f2; color: var(--error); border: 1px solid #fecaca; }
+.msg.info { background: #eef2ff; color: var(--primary-dark); border: 1px solid #c7d2fe; }
+.loading { text-align: center; color: var(--muted); padding: 40px 0; font-size: 14px; }
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(15, 23, 42, .55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; z-index: 50;
+}
+.popup {
+  background: white;
+  border-radius: 20px;
+  padding: 40px 28px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, .25);
+}
+.popup .icon-wrap {
+  width: 72px; height: 72px; margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+}
+.popup.success .icon-wrap { background: #d1fae5; }
+.popup.warn .icon-wrap { background: #fef3c7; }
+.popup.info .icon-wrap { background: #dbeafe; }
+.popup.error .icon-wrap { background: #fee2e2; }
+.popup h2 { font-size: 20px; font-weight: 700; margin: 0 0 8px; color: var(--text); }
+.popup p { font-size: 14px; color: var(--muted); margin: 0; line-height: 1.7; }
+.foot { text-align: center; font-size: 12px; color: var(--muted); margin-top: 20px; }

@@ -123,7 +123,7 @@
     // If the trigger carries an event, merge event variables.
     if (!evt && triggerData && triggerData.eventId) {
       var tenantId = tid();
-      var evRes = await sb.from('crm_events').select('name, event_date, start_time, location_address')
+      var evRes = await sb.from('crm_events').select('name, event_date, start_time, location_address, registration_form_url')
         .eq('id', triggerData.eventId).eq('tenant_id', tenantId).single();
       if (!evRes.error) evt = evRes.data;
     }
@@ -133,6 +133,15 @@
       vars.event_date     = date || '';
       vars.event_time     = evt.start_time || '';
       vars.event_location = evt.location_address || '';
+      // P16: %registration_url% — use the event's override if set, otherwise
+      // auto-build the public form URL on GitHub Pages.
+      if (evt.registration_form_url) {
+        vars.registration_url = evt.registration_form_url;
+      } else if (triggerData && triggerData.eventId) {
+        vars.registration_url = 'https://app.opticalis.co.il/modules/crm/public/event-register.html'
+          + '?event_id=' + encodeURIComponent(triggerData.eventId)
+          + '&lead_id=' + encodeURIComponent(lead.id || '');
+      }
     }
     return vars;
   }
