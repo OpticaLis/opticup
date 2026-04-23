@@ -28,6 +28,15 @@
     attendees:               'נרשמים לאירוע',
     attendees_waiting:       'רשימת המתנה'
   };
+  // P21: recipient_status_filter — only offered when recipient_type is tier2*.
+  // Empty filter = send to ALL tier2 statuses (backwards-compatible default).
+  var TIER2_FILTER_STATUSES = [
+    { slug: 'waiting',            label: 'ממתין לאירוע (waiting)' },
+    { slug: 'invited',             label: 'הוזמן (invited)' },
+    { slug: 'confirmed',           label: 'אישר הגעה (confirmed)' },
+    { slug: 'confirmed_verified', label: 'אומת (confirmed_verified)' }
+  ];
+  function recipientTypeUsesStatusFilter(t) { return t === 'tier2' || t === 'tier2_excl_registered'; }
   function lookupTriggerTypeKey(entity, event) {
     for (var k in TRIGGER_TYPES) {
       if (TRIGGER_TYPES[k].entity === entity && TRIGGER_TYPES[k].event === event) return k;
@@ -194,6 +203,12 @@
       var chk = chs.indexOf(c) !== -1 ? ' checked' : '';
       return '<label class="inline-flex items-center gap-1.5 me-4 cursor-pointer"><input type="checkbox" name="rule-channel" value="' + c + '"' + chk + ' class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"> <span class="text-sm">' + CHANNEL_LABELS[c] + '</span></label>';
     }).join('');
+    var savedFilter = Array.isArray(cfg.recipient_status_filter) ? cfg.recipient_status_filter : [];
+    var filterBoxes = TIER2_FILTER_STATUSES.map(function (s) {
+      var chk = savedFilter.indexOf(s.slug) !== -1 ? ' checked' : '';
+      return '<label class="flex items-center gap-1.5 py-0.5 cursor-pointer"><input type="checkbox" name="rule-status-filter" value="' + s.slug + '"' + chk + ' class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"> <span class="text-sm">' + escapeHtml(s.label) + '</span></label>';
+    }).join('');
+    var filterHidden = recipientTypeUsesStatusFilter(cfg.recipient_type) ? '' : ' hidden';
     var condValue = cond.status || cond.source || '';
     var condNum = (cond.value != null) ? cond.value : '';
     var condOp = cond.operator || '>';
@@ -216,7 +231,12 @@
       '</div>' +
       '<div class="mb-3"><label class="' + CLS_LABEL + '">תבנית הודעה (slug בסיסי) *</label><select id="rule-tpl" class="' + CLS_INPUT + '">' + tplOpts + '</select></div>' +
       '<div class="mb-3"><label class="' + CLS_LABEL + '">ערוצים *</label><div>' + chBoxes + '</div></div>' +
-      '<div class="mb-3"><label class="' + CLS_LABEL + '">נמענים *</label><select id="rule-recipient" class="' + CLS_INPUT + '">' + recipOpts + '</select></div>';
+      '<div class="mb-3"><label class="' + CLS_LABEL + '">נמענים *</label><select id="rule-recipient" class="' + CLS_INPUT + '">' + recipOpts + '</select></div>' +
+      '<div id="rule-status-filter-block" class="mb-3' + filterHidden + '">' +
+        '<label class="' + CLS_LABEL + '">סינון לפי סטטוס (אופציונלי)</label>' +
+        '<div class="border border-slate-200 rounded-lg p-2 bg-slate-50">' + filterBoxes + '</div>' +
+        '<div class="text-xs text-slate-500 mt-1">אם לא מסומן דבר — יישלח לכל הסטטוסים בקבוצה.</div>' +
+      '</div>';
 
     Modal.form({
       title: title, size: 'md', content: content,
@@ -231,14 +251,23 @@
     // Reveal/hide conditional field blocks based on the condition-type select.
     setTimeout(function () {
       var sel = document.querySelector('#rule-cond-type');
-      if (!sel) return;
-      sel.addEventListener('change', function () {
-        var type = sel.value;
-        var vEl = document.querySelector('#rule-cond-value');
-        var cEl = document.querySelector('#rule-cond-count');
-        if (vEl) vEl.classList.toggle('hidden', type !== 'status_equals' && type !== 'source_equals');
-        if (cEl) cEl.classList.toggle('hidden', type !== 'count_threshold');
-      });
+      if (sel) {
+        sel.addEventListener('change', function () {
+          var type = sel.value;
+          var vEl = document.querySelector('#rule-cond-value');
+          var cEl = document.querySelector('#rule-cond-count');
+          if (vEl) vEl.classList.toggle('hidden', type !== 'status_equals' && type !== 'source_equals');
+          if (cEl) cEl.classList.toggle('hidden', type !== 'count_threshold');
+        });
+      }
+      // P21: show/hide status-filter block when recipient_type changes.
+      var recSel = document.querySelector('#rule-recipient');
+      var fBlk = document.querySelector('#rule-status-filter-block');
+      if (recSel && fBlk) {
+        recSel.addEventListener('change', function () {
+          fBlk.classList.toggle('hidden', !recipientTypeUsesStatusFilter(recSel.value));
+        });
+      }
     }, 50);
   }
 
@@ -256,17 +285,24 @@
       cond.operator = el.querySelector('#rule-cond-op').value;
       cond.value = Number(el.querySelector('#rule-cond-num').value) || 0;
     }
+    var recipientType = el.querySelector('#rule-recipient').value;
+    var actionConfig = {
+      template_slug: (el.querySelector('#rule-tpl').value || '').trim(),
+      channels: chs,
+      recipient_type: recipientType
+    };
+    if (recipientTypeUsesStatusFilter(recipientType)) {
+      var picked = [];
+      el.querySelectorAll('input[name="rule-status-filter"]:checked').forEach(function (cb) { picked.push(cb.value); });
+      if (picked.length) actionConfig.recipient_status_filter = picked;
+    }
     return {
       name: (el.querySelector('#rule-name').value || '').trim(),
       trigger_entity: trig.entity,
       trigger_event: trig.event,
       trigger_condition: cond,
       action_type: 'send_message',
-      action_config: {
-        template_slug: (el.querySelector('#rule-tpl').value || '').trim(),
-        channels: chs,
-        recipient_type: el.querySelector('#rule-recipient').value
-      }
+      action_config: actionConfig
     };
   }
 

@@ -1,6 +1,6 @@
 # Module 4 — CRM: Module Map
 
-> **Last updated:** 2026-04-22 (Go-Live P3c+P4 — Messaging Pipeline)
+> **Last updated:** 2026-04-23 (Go-Live P21 — Automation Overhaul)
 
 ---
 
@@ -15,7 +15,7 @@
 | `css/crm-screens.css` | 98 | **[B8]** Reduced from 325 → shell only: KPI grid + loading shimmer, alert strip, activity feed, timeline scroll, messaging split, event-day counter-bar + 3-col grid + barcode input |
 | `css/crm-visual.css` | 20 | **[B8]** Reduced from 347 → near-empty placeholder (pagination baseline + legacy pulse keyframe). All B7 visual components moved into JS as Tailwind classes |
 
-### JavaScript — `modules/crm/` (22 files, all ≤350 lines)
+### JavaScript — `modules/crm/` (32 files, all ≤350 lines)
 | File | Lines | Purpose |
 |------|-------|---------|
 | `crm-init.js` | 75 | Page bootstrap, tab orchestration stub, status cache gate, error banner |
@@ -39,7 +39,14 @@
 | `crm-event-day-manage.js` | 278 | **[B8]** Manage table (Tailwind) + arrived column widget (waiting-to-purchase + purchased sections with amount badges) + running-total bar + purchase amount modal with 3xl tabular-nums input |
 | `crm-messaging-tab.js` | 101 | **[B8]** Messaging Hub orchestrator — rounded tab bar with indigo underline active state, 4 sub-tabs |
 | `crm-messaging-templates.js` | 304 | **[B8]** Templates split layout: sidebar (category tabs, search, template cards) + editor (toolbar, dark slate-900 code editor with line numbers, variable dropdown, 3-panel preview WhatsApp emerald / SMS sky / Email amber) |
-| `crm-messaging-rules.js` | 234 | **[B8]** Rules table via Tailwind: colored channel badges (sky/emerald/amber), pill toggle for active state, warning callout (amber border-s), modal with JSON textarea |
+| `crm-messaging-rules.js` | 347 | **[B8 + P8 + P21]** Rules table via Tailwind: colored channel badges, pill toggle for active state, rule editor modal with trigger/condition/template/channels/recipient fields. **[P21]** Added optional "סינון לפי סטטוס" checkbox group (waiting/invited/confirmed/confirmed_verified); stored in `action_config.recipient_status_filter`, visible only when recipient_type ∈ {tier2, tier2_excl_registered}. Empty filter = all tier2 statuses (backwards compatible). |
+| `crm-automation-engine.js` | 303 | **[P8 + P20 + P21]** Rule evaluation engine. `CrmAutomation.evaluate(triggerType, data)` loads matching `crm_automation_rules`, evaluates conditions (always/status_equals/count_threshold/source_equals), resolves recipients, builds `sendPlan`. **[P20]** Shows `CrmConfirmSend` modal if loaded; falls back to immediate `CrmMessaging.sendMessage` dispatch. **[P21]** `resolveRecipients` accepts optional 4th param `actionConfig`; when `action_config.recipient_status_filter` is set and recipient_type is tier2*, filters the `crm_leads.status IN (...)` list to the chosen statuses. |
+| `crm-confirm-send.js` | 255 | **[P20 + P21]** Confirmation Gate shown before any automated send. **[P21]** Redesigned to 2-tab layout: Messages tab (1 card per channel per rule with representative body preview) + Recipients tab (sortable paginated table, 50/page, dedup by lead_id with ×N badge when same lead is targeted by multiple rules). Approve → `CrmMessaging.sendMessage` per plan item; Cancel → inserts `pending_review` rows into `crm_message_log`. Exports `window.CrmConfirmSend.show(sendPlan)`. |
+| `crm-messaging-log.js` | 201 | **[P8 + P20]** Message log table (split from broadcast file 2026-04-22, Rule 12). JOINs `crm_leads` (full_name, phone) + `crm_message_templates` (name, slug). Channel/status filters, pagination (50/page), click-to-expand row showing full body + metadata + error. **[P20]** `pending_review` (amber) + `superseded` (slate strikethrough) badges; resend button on pending_review opens `CrmSendDialog.openQuickSend` pre-filled with preserved body, marks original row superseded on successful send. |
+| `crm-send-dialog.js` | 131 | **[P20]** Quick-send dialog for ad-hoc messages. `CrmSendDialog.openQuickSend({lead, prefill, onSent})` shows a modal with channel picker + editable body, calls `CrmMessaging.sendMessage`, then invokes `onSent` callback. Used by the pending_review resend flow. |
+| `crm-activity-log.js` | 262 | **[P12]** CRM activity timeline sub-view. Renders paginated list of rows from `activity_log` scoped to CRM entity types (leads, events, attendees, messages) with colored severity badges and action-specific icons. |
+| `crm-broadcast-filters.js` | 286 | **[B8]** Recipient filter chip bar shared by broadcast wizard and log. Renders tier/status/tag/source/event filters with AND/OR semantics; previews live recipient count. |
+| `crm-lead-filters.js` | 221 | **[P2a]** Advanced filter panel for the leads table — multi-select by status/source/tag/city + date range. Emits filter objects consumed by `crm-leads-tab.js`. |
 | `crm-messaging-broadcast.js` | 341 | **[B8]** 5-step wizard with progress connectors (green ✓ on completed, indigo ring on active), step body Tailwind forms, message log with status chip pills (sky sent / emerald delivered / indigo read / rose failed), channel + status filters, pagination |
 | `crm-messaging-config.js` | 17 | **[P3b→P3c+P4]** Documentation-only pointer. Since Architecture v3, the Make webhook URL lives in the `send-message` Edge Function as `MAKE_WEBHOOK_URL_DEFAULT` (env-overridable via the `MAKE_SEND_MESSAGE_WEBHOOK_URL` Supabase secret); `window.CrmMessagingConfig.MAKE_SEND_WEBHOOK` here mirrors that URL for humans reading the client-side code. |
 | `crm-messaging-send.js` | 69 | **[P3b→P3c+P4]** `window.CrmMessaging.sendMessage({leadId, channel, templateSlug?, body?, subject?, variables?, eventId?, language?})` — calls the `send-message` Edge Function via `sb.functions.invoke()`. Supports template mode (`templateSlug`) and raw-body mode (`body` XOR `templateSlug`) for ad-hoc broadcasts. The Edge Function handles template fetch, `%name%`/`%phone%`/... substitution, `crm_message_log` write, and Make webhook dispatch. Returns `{ok, logId?, channel?, error?}`. |

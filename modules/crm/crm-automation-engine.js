@@ -72,8 +72,12 @@
 
   // Resolve recipients for a rule. Returns an array of lead rows
   // { id, full_name, phone, email } filtered per the recipient_type.
-  async function resolveRecipients(recipientType, tenantId, triggerData) {
+  // P21: optional `actionConfig.recipient_status_filter` narrows the tier2
+  // status list to specific statuses (e.g. ["waiting"]). Empty/missing →
+  // fall back to the full tier2 list (backwards-compatible).
+  async function resolveRecipients(recipientType, tenantId, triggerData, actionConfig) {
     var tier2 = window.TIER2_STATUSES || ['waiting','invited','confirmed','confirmed_verified'];
+    var cfg = actionConfig || {};
     var eventId = triggerData && triggerData.eventId;
     var leadId  = triggerData && triggerData.leadId;
 
@@ -87,8 +91,11 @@
     }
 
     if (recipientType === 'tier2' || recipientType === 'tier2_excl_registered') {
+      var statusList = (Array.isArray(cfg.recipient_status_filter) && cfg.recipient_status_filter.length)
+        ? cfg.recipient_status_filter
+        : tier2;
       var lRes = await sb.from('crm_leads').select('id, full_name, phone, email')
-        .eq('tenant_id', tenantId).eq('is_deleted', false).is('unsubscribed_at', null).in('status', tier2);
+        .eq('tenant_id', tenantId).eq('is_deleted', false).is('unsubscribed_at', null).in('status', statusList);
       if (lRes.error) throw new Error('recipients tier2: ' + lRes.error.message);
       var leads = lRes.data || [];
       if (recipientType === 'tier2_excl_registered' && eventId) {
@@ -189,7 +196,7 @@
     if (!tplBase) { console.warn('CrmAutomation: rule missing template_slug', rule.id); return { items: [], skipped: 1 }; }
 
     var leads;
-    try { leads = await resolveRecipients(recipientType, tenantId, triggerData); }
+    try { leads = await resolveRecipients(recipientType, tenantId, triggerData, cfg); }
     catch (e) { console.error('CrmAutomation.prepareRulePlan recipients:', e); return { items: [], skipped: 0 }; }
     if (!leads.length) return { items: [], skipped: 0 };
 
