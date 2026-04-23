@@ -21,6 +21,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// P-FINAL Track B: hardcoded legacy JWT anon for the cross-EF call to
+// send-message. Same key already present in js/shared.js and lead-intake
+// EF (see lead-intake/index.ts comment for rationale); not a new exposure.
+const ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU";
+
+const SEND_MESSAGE_URL = `${SUPABASE_URL}/functions/v1/send-message`;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -54,6 +62,63 @@ type FormBody = {
   eye_exam?: string;
   notes?: string;
 };
+
+// P-FINAL Track B: fire-and-forget confirmation dispatch (SMS + email)
+// after a successful public-form registration. Mirrors the lead-intake
+// EF dispatch pattern. Failures are logged but never bubble up — the
+// attendee row is already persisted, and crm_message_log captures the
+// failure for operator follow-up.
+async function dispatchRegistrationMessages(
+  tenantId: string,
+  leadId: string,
+  templateBaseSlug: string,
+  variables: Record<string, string>,
+  hasEmail: boolean,
+): Promise<void> {
+  const calls: Promise<unknown>[] = [];
+  calls.push(callSendMessage(tenantId, leadId, "sms", templateBaseSlug, variables));
+  if (hasEmail) {
+    calls.push(callSendMessage(tenantId, leadId, "email", templateBaseSlug, variables));
+  }
+  await Promise.allSettled(calls);
+}
+
+async function callSendMessage(
+  tenantId: string,
+  leadId: string,
+  channel: "sms" | "email",
+  templateSlug: string,
+  variables: Record<string, string>,
+): Promise<void> {
+  try {
+    const res = await fetch(SEND_MESSAGE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${ANON_KEY}`,
+        "apikey": ANON_KEY,
+      },
+      body: JSON.stringify({
+        tenant_id: tenantId,
+        lead_id: leadId,
+        channel,
+        template_slug: templateSlug,
+        variables,
+      }),
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      console.error(
+        `send-message ${channel}/${templateSlug} HTTP ${res.status}: ${txt.slice(0, 200)}`,
+      );
+    }
+  } catch (e) {
+    console.error(
+      `send-message ${channel}/${templateSlug} exception:`,
+      (e as Error).message || e,
+    );
+  }
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -123,16 +188,18 @@ Deno.serve(async (req: Request) => {
     return jsonResp({ success: false, error: "invalid_ids" }, 400);
   }
 
-  // Verify lead and event both exist in the same tenant.
+  // Verify lead and event both exist in the same tenant. P-FINAL Track B:
+  // widened SELECTs to also fetch the fields we need for the confirmation
+  // dispatch variables — avoids a second round trip after the RPC.
   const [leadRes, eventRes] = await Promise.all([
     db.from("crm_leads")
-      .select("id")
+      .select("id, full_name, phone, email")
       .eq("id", body.lead_id!)
       .eq("tenant_id", body.tenant_id!)
       .eq("is_deleted", false)
       .maybeSingle(),
     db.from("crm_events")
-      .select("id, status")
+      .select("id, status, name, event_date, start_time, location_address")
       .eq("id", body.event_id!)
       .eq("tenant_id", body.tenant_id!)
       .eq("is_deleted", false)
@@ -193,6 +260,34 @@ Deno.serve(async (req: Request) => {
         console.warn("attendee details update failed:", upd.error);
       }
     }
+
+    // P-FINAL Track B (M4-QA-03): dispatch confirmation SMS + email.
+    // UI-side registration goes through CrmAutomation.evaluate which loads
+    // rules from crm_automation_rules. The public form bypasses the client,
+    // so the template-slug mapping is hardcoded here — matches rules #9/#10
+    // seeded on demo. Fire-and-forget: dispatch failure never fails the
+    // form response (the attendee row is already persisted).
+    const templateBase = result.status === "waiting_list"
+      ? "event_waiting_list_confirmation"
+      : "event_registration_confirmation";
+    const lead = leadRes.data!;
+    const event = eventRes.data!;
+    const variables: Record<string, string> = {
+      name: lead.full_name || "",
+      phone: lead.phone || "",
+      email: lead.email || "",
+      event_name: event.name || "",
+      event_date: event.event_date || "",
+      event_time: event.start_time || "",
+      event_location: event.location_address || "",
+    };
+    await dispatchRegistrationMessages(
+      body.tenant_id!,
+      body.lead_id!,
+      templateBase,
+      variables,
+      Boolean(lead.email),
+    );
   }
 
   return jsonResp(result, 200);
