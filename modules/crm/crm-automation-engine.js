@@ -146,14 +146,15 @@
       vars.event_date     = date || '';
       vars.event_time     = evt.start_time || '';
       vars.event_location = evt.location_address || '';
-      // P16: %registration_url% — use the event's override if set, otherwise
-      // auto-build the public form URL on GitHub Pages.
+      // STOREFRONT_FORMS P-A: preview placeholder only — real HMAC-signed
+      // storefront URL (prizma-optic.co.il/event-register?token=…) is
+      // generated server-side by send-message EF when event_id is passed.
+      // Per-event override (crm_events.registration_form_url) still wins
+      // and is passed through to the message as-is.
       if (evt.registration_form_url) {
         vars.registration_url = evt.registration_form_url;
       } else if (triggerData && triggerData.eventId) {
-        vars.registration_url = 'https://app.opticalis.co.il/r.html'
-          + '?event_id=' + encodeURIComponent(triggerData.eventId)
-          + '&lead_id=' + encodeURIComponent(lead.id || '');
+        vars.registration_url = '[קישור הרשמה — יצורף אוטומטית]';
       }
     }
     return vars;
