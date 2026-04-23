@@ -227,12 +227,53 @@
     return rows.map(function (r) { return r.id; });
   }
 
+  function showRecipientsPreview(leads) {
+    if (typeof Modal === 'undefined' || typeof Modal.show !== 'function') return;
+    var statusesCache = (window.CRM_STATUSES && window.CRM_STATUSES.lead) || {};
+    var rows = (leads || []).map(function (l) {
+      var st = statusesCache[l.status];
+      var stLabel = (st && st.name_he) || l.status || '—';
+      var stColor = (st && st.color) || '#9ca3af';
+      var phoneFmt = (window.CrmHelpers && typeof CrmHelpers.formatPhone === 'function') ? CrmHelpers.formatPhone(l.phone) : (l.phone || '');
+      return '<tr class="border-b border-slate-100 last:border-0">' +
+        '<td class="px-3 py-2 text-sm">' + escape(l.full_name || '—') + '</td>' +
+        '<td class="px-3 py-2 text-sm text-slate-600" style="direction:ltr;text-align:end">' + escape(phoneFmt || '—') + '</td>' +
+        '<td class="px-3 py-2 text-sm"><span class="inline-flex items-center gap-1.5">' +
+          '<span class="w-2 h-2 rounded-full" style="background:' + escape(stColor) + '"></span>' +
+          '<span>' + escape(stLabel) + '</span>' +
+        '</span></td>' +
+        '<td class="px-3 py-2 text-sm text-slate-500">' + escape(l.source || '—') + '</td>' +
+      '</tr>';
+    }).join('');
+
+    var content = (leads && leads.length)
+      ? '<div class="max-h-[400px] overflow-y-auto border border-slate-200 rounded-lg">' +
+          '<table class="w-full text-sm">' +
+            '<thead class="sticky top-0 bg-slate-50 border-b border-slate-200"><tr>' +
+              '<th class="px-3 py-2 text-start font-semibold text-slate-700">שם</th>' +
+              '<th class="px-3 py-2 text-start font-semibold text-slate-700">טלפון</th>' +
+              '<th class="px-3 py-2 text-start font-semibold text-slate-700">סטטוס</th>' +
+              '<th class="px-3 py-2 text-start font-semibold text-slate-700">מקור</th>' +
+            '</tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+          '</table>' +
+        '</div>'
+      : '<div class="text-center text-slate-400 py-8 text-sm">אין נמענים תואמים</div>';
+
+    Modal.show({
+      title: 'נמענים — ' + (leads ? leads.length : 0) + ' לידים',
+      size: 'lg',
+      content: content
+    });
+  }
+
   window.CrmBroadcastFilters = {
     BOARD_DEFS: BOARD_DEFS,
     renderRecipientsStep: renderRecipientsStep,
     wireRecipientsStep: wireRecipientsStep,
     buildLeadIds: buildLeadIds,
     buildLeadRows: buildLeadRows,
-    allBoardStatuses: allBoardStatuses
+    allBoardStatuses: allBoardStatuses,
+    showRecipientsPreview: showRecipientsPreview
   };
 })();

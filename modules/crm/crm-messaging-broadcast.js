@@ -239,6 +239,14 @@
           rerenderWizard(root);
         });
       }
+      var countEl = root.querySelector('#wiz-count');
+      if (countEl) {
+        countEl.addEventListener('click', function () {
+          if (window.CrmBroadcastFilters && typeof CrmBroadcastFilters.showRecipientsPreview === 'function') {
+            CrmBroadcastFilters.showRecipientsPreview(_wizard._matchedLeads || []);
+          }
+        });
+      }
       refreshRecipientCount(root);
     }
     root.querySelectorAll('input[name="wiz-tpl"]').forEach(function (i) {
@@ -278,6 +286,7 @@
       if (el2) el2.textContent = 'שגיאה: ' + (e.message || e);
     }
   }
+
 
   async function doWizardSend() {
     if (!_wizard.name) { toast('error', 'שם שליחה חובה'); _wizard.step = 3; return; }
