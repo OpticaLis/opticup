@@ -29,6 +29,68 @@
     if (window.ActivityLog && ActivityLog.write) { try { ActivityLog.write({ action: a, entity_type: et, entity_id: eid, severity: 'info', metadata: meta || {} }); } catch (_) {} }
   }
 
+  function variablePanelHtml(idPrefix) {
+    var vars = window.CRM_TEMPLATE_VARIABLES || [];
+    if (!vars.length) return '';
+    var items = vars.map(function (v) {
+      return '<div class="flex items-center justify-between px-2 py-1.5 hover:bg-indigo-50 rounded cursor-pointer gap-3" data-copy-var="' + escapeHtml(v.key) + '">' +
+        '<code class="text-xs text-indigo-600">' + escapeHtml(v.key) + '</code>' +
+        '<span class="text-xs text-slate-500">' + escapeHtml(v.desc) + '</span>' +
+      '</div>';
+    }).join('');
+    return '<div class="mt-2 border border-slate-200 rounded-lg bg-white">' +
+      '<button type="button" class="w-full text-start px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-t-lg" id="' + idPrefix + '-toggle">משתנים זמינים (לחץ להעתקה) ▾</button>' +
+      '<div class="hidden p-2 grid grid-cols-1 sm:grid-cols-2 gap-1 border-t border-slate-200" id="' + idPrefix + '-list">' + items + '</div>' +
+    '</div>';
+  }
+
+  function wireVariablePanel(root, idPrefix) {
+    if (!root) return;
+    var toggle = root.querySelector('#' + idPrefix + '-toggle');
+    var list = root.querySelector('#' + idPrefix + '-list');
+    if (toggle && list) {
+      toggle.addEventListener('click', function () {
+        list.classList.toggle('hidden');
+      });
+    }
+    if (list) {
+      list.querySelectorAll('[data-copy-var]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var v = el.getAttribute('data-copy-var');
+          copyVarToClipboard(v);
+        });
+      });
+    }
+  }
+
+  function copyVarToClipboard(v) {
+    if (!v) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(v).then(function () {
+        toast('success', 'הועתק: ' + v);
+      }).catch(function () {
+        _fallbackCopy(v);
+      });
+    } else {
+      _fallbackCopy(v);
+    }
+  }
+
+  function _fallbackCopy(v) {
+    try {
+      var tmp = document.createElement('input');
+      tmp.value = v; tmp.style.position = 'fixed'; tmp.style.top = '-1000px';
+      document.body.appendChild(tmp);
+      tmp.select(); document.execCommand('copy');
+      document.body.removeChild(tmp);
+      toast('success', 'הועתק: ' + v);
+    } catch (_) {
+      toast('error', 'העתקה נכשלה');
+    }
+  }
+
+  window.CrmBroadcastClipboard = { copy: copyVarToClipboard, panelHtml: variablePanelHtml, wire: wireVariablePanel };
+
   async function renderMessagingBroadcast(host) {
     if (!host) return;
     host.innerHTML = '<div class="text-center text-slate-400 py-8">טוען...</div>';
@@ -124,7 +186,8 @@
       }).join('');
       return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 3 — תבנית</h4>' +
         '<div class="space-y-2 mb-3 max-h-48 overflow-y-auto">' + (opts || '<div class="text-center text-slate-400 py-4">אין תבניות פעילות</div>') + '</div>' +
-        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">תוכן</label><textarea id="wiz-body" rows="4" placeholder="תוכן הודעה ידני (או בחר תבנית)" class="' + CLS_INPUT + '">' + escapeHtml(_wizard.body) + '</textarea></div>';
+        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">תוכן</label><textarea id="wiz-body" rows="4" placeholder="תוכן הודעה ידני (או בחר תבנית)" class="' + CLS_INPUT + '">' + escapeHtml(_wizard.body) + '</textarea></div>' +
+        variablePanelHtml('wiz-var');
     }
     if (key === 'timing') {
       return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 4 — תזמון</h4>' +
@@ -171,6 +234,7 @@
         }
       });
     });
+    if (WIZARD_STEPS[_wizard.step].key === 'template') wireVariablePanel(root, 'wiz-var');
   }
 
   function captureStep(root) {

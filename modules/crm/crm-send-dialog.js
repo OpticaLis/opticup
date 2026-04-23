@@ -31,6 +31,9 @@
       (hasEmail ? 'Email: ' + escapeHtml(lead.email) : '') +
     '</div>';
 
+    var varPanel = (window.CrmBroadcastClipboard && typeof CrmBroadcastClipboard.panelHtml === 'function')
+      ? CrmBroadcastClipboard.panelHtml('quick-send-var') : '';
+
     var body =
       '<div class="space-y-3">' +
         recipientLine +
@@ -45,6 +48,7 @@
         '<div>' +
           '<label class="block text-sm font-medium text-slate-700 mb-1">הודעה <span class="text-rose-500">*</span></label>' +
           '<textarea id="quick-send-body" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" rows="4" placeholder="תוכן ההודעה..."></textarea>' +
+          varPanel +
         '</div>' +
       '</div>';
 
@@ -68,6 +72,10 @@
       r.addEventListener('change', syncSubjectVisibility);
     });
     syncSubjectVisibility();
+
+    if (window.CrmBroadcastClipboard && typeof CrmBroadcastClipboard.wire === 'function') {
+      CrmBroadcastClipboard.wire(modal.el, 'quick-send-var');
+    }
 
     modal.el.querySelector('#quick-send-cancel').addEventListener('click', function () {
       if (typeof modal.close === 'function') modal.close();
