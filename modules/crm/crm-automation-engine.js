@@ -101,7 +101,7 @@
 
     if (recipientType === 'attendees' || recipientType === 'attendees_waiting') {
       if (!eventId) return [];
-      var attStatus = (recipientType === 'attendees_waiting') ? ['waiting_list'] : ['registered','confirmed'];
+      var attStatus = (recipientType === 'attendees_waiting') ? ['waiting_list'] : ['registered','confirmed','attended','purchased','no_show'];
       var aRes = await sb.from('crm_event_attendees').select('crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
         .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false).in('status', attStatus);
       if (aRes.error) throw new Error('recipients attendees: ' + aRes.error.message);
