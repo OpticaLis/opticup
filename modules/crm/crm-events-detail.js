@@ -14,7 +14,7 @@
 
   var CLS_HEADER       = 'bg-gradient-to-br from-indigo-700 to-violet-900 text-white rounded-xl p-6 mb-4 shadow-lg relative overflow-hidden';
   var CLS_HEAD_BTN     = 'bg-white/15 hover:bg-white/25 text-white text-sm font-semibold px-3 py-1.5 rounded-lg backdrop-blur transition';
-  var CLS_INFO_GRID    = 'grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 text-sm';
+  var CLS_INFO_GRID    = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 text-sm';
   var CLS_CAP_BOX      = 'bg-white border border-slate-200 rounded-xl p-4 mb-4';
   var CLS_SUBTAB_BAR   = 'flex gap-2 border-b border-slate-200 mb-4 mt-4 overflow-x-auto';
   var CLS_SUBTAB       = 'px-4 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 border-b-2 border-transparent transition';
@@ -39,6 +39,8 @@
         wireSubTabs(body, data.event, stats, data.attendees);
         wireEventDayEntry(modal, body);
         wireStatusChange(modal, body, data.event, stats);
+        wireExtraCouponsEdit(modal, body, data.event, data.attendees);
+        wireInviteWaitingList(modal, body, data.event);
       }
     } catch (e) {
       console.error('event detail failed:', e);
@@ -51,7 +53,7 @@
   async function fetchDetail(eventId) {
     var tid = getTenantId();
     var evQ = sb.from('crm_events')
-      .select('id, event_number, name, event_date, start_time, end_time, location_address, location_waze_url, status, max_capacity, booking_fee, coupon_code, registration_form_url, notes')
+      .select('id, event_number, name, event_date, start_time, end_time, location_address, location_waze_url, status, max_capacity, booking_fee, coupon_code, max_coupons, extra_coupons, registration_form_url, notes')
       .eq('id', eventId).eq('is_deleted', false);
     if (tid) evQ = evQ.eq('tenant_id', tid);
     var attQ = sb.from('v_crm_event_attendees_full')
@@ -69,6 +71,11 @@
     var statusInfo = CrmHelpers.getStatusInfo('event', event.status);
     var timeRange = [event.start_time, event.end_time].filter(Boolean).map(function (t) { return String(t).slice(0, 5); }).join('–');
     var wazeHtml = event.location_waze_url ? ' · <a href="' + escapeHtml(event.location_waze_url) + '" target="_blank" class="underline text-white/90 hover:text-white">Waze</a>' : '';
+    var maxCoupons = +event.max_coupons || 0;
+    var extraCoupons = +event.extra_coupons || 0;
+    var couponCeiling = maxCoupons + extraCoupons;
+    var couponsSent = (attendees || []).filter(function (a) { return a.coupon_sent && a.status !== 'cancelled'; }).length;
+    var hasWaitingList = (attendees || []).some(function (a) { return a.status === 'waiting_list'; });
 
     var h = '';
     // Gradient header
@@ -80,6 +87,10 @@
         '<button type="button" class="' + CLS_HEAD_BTN + '">שלח הודעה</button>' +
         '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="change-status">שנה סטטוס</button>' +
         '<button type="button" class="' + CLS_HEAD_BTN + '">ייצוא Excel</button>' +
+        '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="edit-extra-coupons">➕ הגדר קופונים נוספים</button>' +
+        (hasWaitingList
+          ? '<button type="button" class="' + CLS_HEAD_BTN + ' bg-sky-500/90 hover:bg-sky-500" data-action="invite-waiting-list">📩 שלח הזמנה לרשימת המתנה</button>'
+          : '') +
         (event.status === 'registration_open' || event.status === 'completed'
           ? '<button type="button" class="' + CLS_HEAD_BTN + ' bg-amber-500/90 hover:bg-amber-500" data-event-day-id="' + escapeHtml(event.id) + '">מצב יום אירוע</button>'
           : '') +
@@ -88,6 +99,7 @@
         '<div class="bg-white/10 rounded-lg px-3 py-2"><span class="opacity-80">📅 תאריך:</span> ' + escapeHtml(CrmHelpers.formatDate(event.event_date)) + ' ' + escapeHtml(timeRange) + '</div>' +
         '<div class="bg-white/10 rounded-lg px-3 py-2"><span class="opacity-80">📍 מיקום:</span> ' + escapeHtml(event.location_address || '—') + wazeHtml + '</div>' +
         '<div class="bg-white/10 rounded-lg px-3 py-2"><span class="opacity-80">🎟️ קופון:</span> ' + escapeHtml(event.coupon_code || '—') + '</div>' +
+        '<div class="bg-white/10 rounded-lg px-3 py-2" data-role="coupon-info"><span class="opacity-80">🎫 קופונים:</span> ' + couponsSent + ' / ' + couponCeiling + (extraCoupons > 0 ? ' <span class="opacity-80">(+' + extraCoupons + ' נוספים)</span>' : '') + '</div>' +
       '</div>' +
     '</div>';
 
@@ -250,6 +262,56 @@
       if (typeof modal.close === 'function') modal.close();
       else if (typeof Modal.close === 'function') Modal.close();
       if (typeof showCrmTab === 'function') showCrmTab('event-day');
+    });
+  }
+
+  function wireExtraCouponsEdit(modal, body, event, attendees) {
+    var btn = body.querySelector('button[data-action="edit-extra-coupons"]');
+    if (!btn) return;
+    btn.addEventListener('click', async function () {
+      var current = +event.extra_coupons || 0;
+      var raw = window.prompt('כמות קופונים נוספת (מעבר ל-' + (+event.max_coupons || 0) + '):', String(current));
+      if (raw == null) return;
+      var next = parseInt(String(raw).trim(), 10);
+      if (!isFinite(next) || next < 0) { if (window.Toast) Toast.error('ערך לא תקין'); return; }
+      if (next === current) return;
+      var { error } = await sb.from('crm_events')
+        .update({ extra_coupons: next })
+        .eq('id', event.id).eq('tenant_id', getTenantId());
+      if (error) { if (window.Toast) Toast.error('עדכון נכשל: ' + error.message); return; }
+      try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.event.extra_coupons_update', entity_type: 'crm_events', entity_id: event.id, details: { from: current, to: next } }); } catch (_) {}
+      event.extra_coupons = next;
+      var maxC = +event.max_coupons || 0;
+      var sent = (attendees || []).filter(function (a) { return a.coupon_sent && a.status !== 'cancelled'; }).length;
+      var cell = body.querySelector('[data-role="coupon-info"]');
+      if (cell) {
+        cell.innerHTML = '<span class="opacity-80">🎫 קופונים:</span> ' + sent + ' / ' + (maxC + next) +
+          (next > 0 ? ' <span class="opacity-80">(+' + next + ' נוספים)</span>' : '');
+      }
+      if (window.Toast) Toast.success('קופונים נוספים: ' + next);
+    });
+  }
+
+  function wireInviteWaitingList(modal, body, event) {
+    var btn = body.querySelector('button[data-action="invite-waiting-list"]');
+    if (!btn || !window.CrmEventActions) return;
+    btn.addEventListener('click', async function () {
+      if (!window.confirm('לשלוח הזמנה לכל הרשומים ברשימת ההמתנה?')) return;
+      btn.disabled = true;
+      var original = btn.textContent;
+      btn.textContent = 'שולח...';
+      try {
+        await CrmEventActions.changeEventStatus(event.id, 'invite_waiting_list');
+        event.status = 'invite_waiting_list';
+        var info = CrmHelpers.getStatusInfo('event', 'invite_waiting_list');
+        var badge = body.querySelector('[data-role="event-status-badge"]');
+        if (badge && info) badge.textContent = info.label;
+        if (window.Toast) Toast.success('הזמנות נשלחו לרשימת ההמתנה');
+      } catch (e) {
+        if (window.Toast) Toast.error('שגיאה: ' + (e.message || String(e)));
+        btn.disabled = false;
+        btn.textContent = original;
+      }
     });
   }
 })();
