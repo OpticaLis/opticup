@@ -19,6 +19,23 @@
     return raw;
   }
 
+  // --- Phone normalize to E.164 ---
+  // Mirrors supabase/functions/lead-intake/index.ts normalizePhone so manual
+  // creation, edit, and public intake all write phones in one canonical format.
+  // Returns +CC... or null if the input cannot be interpreted.
+  function normalizePhone(raw) {
+    if (raw == null) return null;
+    var s = String(raw).trim();
+    if (!s) return null;
+    var hasPlus = s.charAt(0) === '+';
+    var digits = s.replace(/\D/g, '');
+    if (!digits) return null;
+    if (hasPlus) return '+' + digits;
+    if (digits.indexOf('972') === 0) return '+' + digits;
+    if (digits.charAt(0) === '0' && digits.length === 10) return '+972' + digits.slice(1);
+    return null;
+  }
+
   // --- Currency: number -> ₪39,460 ---
   function formatCurrency(n) {
     if (n == null || n === '') return '';
@@ -124,6 +141,7 @@
 
   window.CrmHelpers = {
     formatPhone: formatPhone,
+    normalizePhone: normalizePhone,
     formatCurrency: formatCurrency,
     formatDate: formatDate,
     formatDateTime: formatDateTime,

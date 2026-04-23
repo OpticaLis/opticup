@@ -93,11 +93,24 @@
   async function createManualLead(data) {
     var tenantId = getTid();
     var fullName = (data.full_name || '').trim();
-    var phone = (data.phone || '').trim();
+    var phoneRaw = (data.phone || '').trim();
     var email = (data.email || '').trim();
     if (!fullName) throw new Error('missing full_name');
-    if (!phone) throw new Error('missing phone');
+    if (!phoneRaw) throw new Error('missing phone');
     if (!email) throw new Error('missing email');
+
+    var phone = (CrmHelpers && CrmHelpers.normalizePhone) ? CrmHelpers.normalizePhone(phoneRaw) : null;
+    if (!phone) return { invalidPhone: true, raw: phoneRaw };
+
+    var existing = await sb.from('crm_leads')
+      .select('id, full_name, status')
+      .eq('tenant_id', tenantId)
+      .eq('phone', phone)
+      .eq('is_deleted', false)
+      .limit(1)
+      .maybeSingle();
+    if (existing.error) throw new Error('duplicate check failed: ' + existing.error.message);
+    if (existing.data) return { duplicate: true, existingLead: existing.data };
 
     var payload = {
       tenant_id: tenantId,
@@ -115,7 +128,19 @@
       .insert(payload)
       .select('id, full_name, status')
       .single();
-    if (ins.error) throw new Error('lead create failed: ' + ins.error.message);
+    if (ins.error) {
+      // Race-safety: 23505 unique_violation → report as duplicate.
+      if (ins.error.code === '23505') {
+        var raced = await sb.from('crm_leads')
+          .select('id, full_name, status')
+          .eq('tenant_id', tenantId)
+          .eq('phone', phone)
+          .limit(1)
+          .maybeSingle();
+        if (raced.data) return { duplicate: true, existingLead: raced.data };
+      }
+      throw new Error('lead create failed: ' + ins.error.message);
+    }
 
     var notes = (data.notes || '').trim();
     if (notes) {
@@ -139,9 +164,21 @@
       clean.full_name = n;
     }
     if (patch.phone != null) {
-      var p = String(patch.phone).trim();
-      if (!p) throw new Error('missing phone');
-      clean.phone = p;
+      var pRaw = String(patch.phone).trim();
+      if (!pRaw) throw new Error('missing phone');
+      var pNorm = (CrmHelpers && CrmHelpers.normalizePhone) ? CrmHelpers.normalizePhone(pRaw) : null;
+      if (!pNorm) return { invalidPhone: true, raw: pRaw };
+      var dup = await sb.from('crm_leads')
+        .select('id, full_name, status')
+        .eq('tenant_id', tenantId)
+        .eq('phone', pNorm)
+        .eq('is_deleted', false)
+        .neq('id', leadId)
+        .limit(1)
+        .maybeSingle();
+      if (dup.error) throw new Error('duplicate check failed: ' + dup.error.message);
+      if (dup.data) return { duplicate: true, existingLead: dup.data };
+      clean.phone = pNorm;
     }
     if (patch.email != null) {
       var e = String(patch.email).trim();
@@ -159,7 +196,19 @@
       .eq('tenant_id', tenantId)
       .select('id, full_name, phone, email, city, language, client_notes, updated_at')
       .single();
-    if (res.error) throw new Error('lead update failed: ' + res.error.message);
+    if (res.error) {
+      if (res.error.code === '23505' && clean.phone) {
+        var raced = await sb.from('crm_leads')
+          .select('id, full_name, status')
+          .eq('tenant_id', tenantId)
+          .eq('phone', clean.phone)
+          .neq('id', leadId)
+          .limit(1)
+          .maybeSingle();
+        if (raced.data) return { duplicate: true, existingLead: raced.data };
+      }
+      throw new Error('lead update failed: ' + res.error.message);
+    }
     return res.data;
   }
 

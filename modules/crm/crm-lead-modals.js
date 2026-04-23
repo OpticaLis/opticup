@@ -201,6 +201,20 @@
           language: modal.el.querySelector('#crm-new-lead-language').value,
           notes: modal.el.querySelector('#crm-new-lead-notes').value
         });
+        if (res && res.invalidPhone) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'הוסף ליד';
+          if (window.Toast) Toast.warning('מספר טלפון לא תקין — נא להזין בפורמט 05X-XXXXXXX או +972...');
+          return;
+        }
+        if (res && res.duplicate) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'הוסף ליד';
+          if (window.Toast) {
+            Toast.warning('ליד עם מספר טלפון זה כבר קיים: ' + (res.existingLead.full_name || ''));
+          }
+          return;
+        }
         if (typeof modal.close === 'function') modal.close();
         if (window.Toast) Toast.success('ליד נוסף — ממתין לאישור תקנון');
         if (typeof onCreated === 'function') onCreated(res);
@@ -288,6 +302,20 @@
           language: modal.el.querySelector('#crm-edit-lead-language').value,
           client_notes: modal.el.querySelector('#crm-edit-lead-notes').value
         });
+        if (updated && updated.invalidPhone) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'שמור';
+          if (window.Toast) Toast.warning('מספר טלפון לא תקין — נא להזין בפורמט 05X-XXXXXXX או +972...');
+          return;
+        }
+        if (updated && updated.duplicate) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'שמור';
+          if (window.Toast) {
+            Toast.warning('ליד אחר כבר רשום עם מספר טלפון זה: ' + (updated.existingLead.full_name || ''));
+          }
+          return;
+        }
         if (typeof modal.close === 'function') modal.close();
         if (window.Toast) Toast.success('הליד עודכן');
         if (typeof onSaved === 'function') onSaved(updated);
