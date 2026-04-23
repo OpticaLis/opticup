@@ -20,6 +20,7 @@
     { key: '%registration_url%', desc: 'קישור הרשמה' },
     { key: '%unsubscribe_url%',  desc: 'קישור הסרה' }
   ];
+  window.CRM_TEMPLATE_VARIABLES = VARIABLES;
   var CATEGORIES = [
     { key: 'all',    label: 'הכל' },
     { key: 'auto',   label: 'אוטומטי' },
@@ -213,9 +214,12 @@
   function insertVariable(v) {
     var body = document.getElementById('tpl-body');
     if (!body) return;
+    var savedScroll = window.scrollY;
     var s = body.selectionStart || 0, e = body.selectionEnd || 0;
     body.value = body.value.slice(0, s) + v + body.value.slice(e);
-    body.focus(); body.setSelectionRange(s + v.length, s + v.length);
+    body.focus({ preventScroll: true });
+    body.setSelectionRange(s + v.length, s + v.length);
+    window.scrollTo(0, savedScroll);
     updatePreview(); updateLineNumbers();
   }
 
