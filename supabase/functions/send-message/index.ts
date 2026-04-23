@@ -1,28 +1,18 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// ============================================================
-// send-message — Edge Function for CRM message dispatch
-// Module 4 CRM — Go-Live Phase P3c+P4 (Architecture v3)
-// ============================================================
-// Flow: POST { tenant_id, lead_id, channel, template_slug | body,
-//              variables } → validate → fetch template (or use
-//              raw body) → substitute variables → INSERT
-//              crm_message_log(pending) → call Make webhook →
-//              UPDATE log to sent/failed → return result.
-//
-// Make's role is a send-only pipe (3 modules: Webhook → Router
-// → SMS | Email). All business logic lives here.
-// ============================================================
+// send-message — CRM message dispatch (P3c+P4 Architecture v3).
+// Flow: POST {tenant_id, lead_id, channel, template_slug|body, variables} →
+// validate → fetch template → substitute vars → log(pending) → Make webhook
+// → log(sent|failed) → return. Make is a 3-module send-only pipe (Webhook →
+// Router → SMS|Email); all business logic lives here.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Make "Optic Up — Send Message" scenario 9104395, webhook 4068609.
-// Mirrors MAKE_SEND_WEBHOOK in modules/crm/crm-messaging-config.js (which is
-// already in git, so this is duplicated human-readable documentation, not a
-// new exposure). Override via the Supabase secret to point at a different
-// scenario (e.g., staging) without a redeploy.
+// Make "Optic Up — Send Message" (scenario 9104395, webhook 4068609). Same
+// URL as MAKE_SEND_WEBHOOK in crm-messaging-config.js. Override via secret
+// MAKE_SEND_MESSAGE_WEBHOOK_URL to point at staging without a redeploy.
 const MAKE_WEBHOOK_URL_DEFAULT =
   "https://hook.eu2.make.com/n7y5m7x9m9yn4uqo3ielqsobdn8s5nui";
 const MAKE_WEBHOOK_URL =
@@ -72,14 +62,17 @@ function substituteVariables(
   });
 }
 
-// --- Unsubscribe token (HMAC-SHA256 signed) ---
-// Mirror of verifyToken in supabase/functions/unsubscribe/index.ts.
-// Payload:  `${lead_id}:${tenant_id}:${expiry_epoch}`
-// Token:    b64url(payload) + "." + b64url(hmac(payload))
-// TTL default 90 days — long enough for users to unsubscribe from an old
-// email without making stale links permanent.
+// --- HMAC-signed tokens (shared for unsubscribe + registration) ---
+// Token format: b64url(payload) + "." + b64url(HMAC-SHA256(SERVICE_ROLE_KEY, payload)).
+// Payloads:
+//   unsubscribe  = `${lead_id}:${tenant_id}:${exp}`              (verified by unsubscribe EF)
+//   registration = `${lead_id}:${tenant_id}:${event_id}:${exp}`  (verified by event-register EF)
+// TTL: 90 days — long enough that an old email link still works.
+// STOREFRONT_FORMS P-A: both URLs hardcoded to prizma-optic.co.il; SaaS-ification
+// via tenants.storefront_domain is out of scope per the SPEC.
 
-const UNSUBSCRIBE_TTL_SECONDS = 90 * 24 * 3600;
+const TOKEN_TTL_SECONDS = 90 * 24 * 3600;
+const STOREFRONT_ORIGIN = "https://prizma-optic.co.il";
 
 function b64urlEncode(bytes: Uint8Array): string {
   let binary = "";
@@ -87,19 +80,11 @@ function b64urlEncode(bytes: Uint8Array): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-async function generateUnsubscribeToken(
-  leadId: string,
-  tenantId: string,
-): Promise<string> {
-  const exp = Math.floor(Date.now() / 1000) + UNSUBSCRIBE_TTL_SECONDS;
-  const payload = `${leadId}:${tenantId}:${exp}`;
+async function signToken(payload: string): Promise<string> {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(SERVICE_ROLE_KEY),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
+    "raw", enc.encode(SERVICE_ROLE_KEY),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
   );
   const sig = new Uint8Array(
     await crypto.subtle.sign("HMAC", key, enc.encode(payload)),
@@ -107,12 +92,18 @@ async function generateUnsubscribeToken(
   return `${b64urlEncode(enc.encode(payload))}.${b64urlEncode(sig)}`;
 }
 
-async function buildUnsubscribeUrl(
-  leadId: string,
-  tenantId: string,
+async function buildUnsubscribeUrl(leadId: string, tenantId: string): Promise<string> {
+  const exp = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;
+  const token = await signToken(`${leadId}:${tenantId}:${exp}`);
+  return `${STOREFRONT_ORIGIN}/unsubscribe?token=${token}`;
+}
+
+async function buildRegistrationUrl(
+  leadId: string, tenantId: string, eventId: string,
 ): Promise<string> {
-  const token = await generateUnsubscribeToken(leadId, tenantId);
-  return `${SUPABASE_URL}/functions/v1/unsubscribe?token=${token}`;
+  const exp = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;
+  const token = await signToken(`${leadId}:${tenantId}:${eventId}:${exp}`);
+  return `${STOREFRONT_ORIGIN}/event-register?token=${token}`;
 }
 
 // --- Main handler ---
@@ -164,15 +155,36 @@ Deno.serve(async (req: Request) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // --- Inject unsubscribe URL ---
-  // Every outbound message gets a signed %unsubscribe_url% even if the
-  // caller didn't provide one, so email templates with that placeholder
-  // always resolve to a working link. SMS templates typically omit it.
-  if (typeof variables.unsubscribe_url !== "string") {
+  // --- Inject unsubscribe + registration URLs ---
+  // unsubscribe_url: injected when caller didn't pass a string value, OR when
+  // the caller passed a placeholder (preview text starting with "["). The
+  // placeholder convention is used by crm-automation-engine.js buildVariables
+  // so the confirm-send modal can show something readable before the EF
+  // generates the real signed link.
+  const isPlaceholder = (v: unknown) =>
+    typeof v === "string" && v.startsWith("[");
+  if (typeof variables.unsubscribe_url !== "string" || isPlaceholder(variables.unsubscribe_url)) {
     try {
       variables.unsubscribe_url = await buildUnsubscribeUrl(leadId, tenantId);
     } catch (e) {
       console.warn("unsubscribe_url generation failed:", (e as Error).message);
+    }
+  }
+  // registration_url: canonical server-side injection when event_id is known.
+  // The URL depends on lead+tenant+event which only the server can sign, so
+  // any client-supplied value is ignored unless the caller already provided a
+  // real URL (http/https) — that branch is for the per-event override stored
+  // in crm_events.registration_form_url (passed through by buildVariables).
+  if (eventId) {
+    const hasOverride =
+      typeof variables.registration_url === "string" &&
+      /^https?:\/\//i.test(variables.registration_url);
+    if (!hasOverride) {
+      try {
+        variables.registration_url = await buildRegistrationUrl(leadId, tenantId, eventId);
+      } catch (e) {
+        console.warn("registration_url generation failed:", (e as Error).message);
+      }
     }
   }
 
