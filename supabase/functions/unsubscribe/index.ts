@@ -88,9 +88,28 @@ async function verifyToken(token: string): Promise<TokenPayload | null> {
 
 // --- HTML page helper ---
 
-function htmlPage(titleHe: string, bodyHe: string, status: number): Response {
+type HtmlOpts = {
+  kind?: "success" | "error";
+  logoUrl?: string | null;
+  tenantName?: string | null;
+};
+
+function htmlPage(
+  titleHe: string,
+  bodyHe: string,
+  status: number,
+  opts: HtmlOpts = {},
+): Response {
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const isSuccess = opts.kind === "success";
+  const iconSvg = isSuccess
+    ? '<svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="#eef2ff" stroke="#4f46e5"/><path d="M8 12.5l3 3 5-6"/></svg>'
+    : '<svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="#fff1f2" stroke="#e11d48"/><path d="M12 8v4"/><circle cx="12" cy="16" r="0.5" fill="#e11d48"/></svg>';
+  const logoBlock = opts.logoUrl
+    ? `<img src="${esc(opts.logoUrl)}" alt="${esc(opts.tenantName || "logo")}" style="max-height:64px;max-width:200px;margin:0 auto 24px;display:block;object-fit:contain">`
+    : "";
+  const accent = isSuccess ? "#4f46e5" : "#e11d48";
   const html = `<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -98,18 +117,23 @@ function htmlPage(titleHe: string, bodyHe: string, status: number): Response {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(titleHe)}</title>
 <style>
-body { font-family: 'Heebo', 'Arial', sans-serif; background:#f8fafc; color:#1e293b;
-  display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; }
-.card { background:white; border:1px solid #e2e8f0; border-radius:16px; padding:48px 32px;
-  max-width:480px; text-align:center; box-shadow:0 4px 24px rgba(15,23,42,.06); }
-h1 { font-size:22px; margin:0 0 12px; color:#0f172a; }
-p { font-size:15px; line-height:1.6; color:#475569; margin:0; }
+body { font-family: 'Heebo', 'Arial', sans-serif; background:linear-gradient(135deg,#eef2ff 0%,#f8fafc 60%); color:#1e293b;
+  display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:16px; box-sizing:border-box; }
+.card { background:white; border:1px solid #e2e8f0; border-radius:20px; padding:48px 32px;
+  max-width:480px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(79,70,229,.08); border-top:4px solid ${accent}; box-sizing:border-box; }
+.icon { margin:0 auto 20px; display:block; }
+h1 { font-size:22px; margin:0 0 12px; color:#0f172a; font-weight:700; }
+p { font-size:15px; line-height:1.7; color:#475569; margin:0 0 8px; }
+.foot { margin-top:24px; padding-top:20px; border-top:1px solid #f1f5f9; font-size:13px; color:#94a3b8; }
 </style>
 </head>
 <body>
 <div class="card">
+${logoBlock}
+<div class="icon">${iconSvg}</div>
 <h1>${esc(titleHe)}</h1>
 <p>${esc(bodyHe)}</p>
+<div class="foot">ניתן לסגור חלון זה</div>
 </div>
 </body>
 </html>`;
@@ -133,6 +157,7 @@ Deno.serve(async (req: Request) => {
       "קישור לא תקין",
       "הקישור להסרה חסר — לא ניתן לעבד את הבקשה.",
       400,
+      { kind: "error" },
     );
   }
 
@@ -142,6 +167,7 @@ Deno.serve(async (req: Request) => {
       "קישור לא תקין או שפג תוקפו",
       "לא ניתן לאמת את הקישור. ייתכן שהקישור שונה, פג תוקפו, או נוצר במערכת אחרת.",
       400,
+      { kind: "error" },
     );
   }
 
@@ -149,11 +175,29 @@ Deno.serve(async (req: Request) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
+  // Fetch tenant branding (best-effort — fall back to un-branded page on error)
+  let logoUrl: string | null = null;
+  let tenantName: string | null = null;
+  try {
+    const tRes = await db
+      .from("tenants")
+      .select("name, logo_url")
+      .eq("id", parsed.tenantId)
+      .maybeSingle();
+    if (tRes.data) {
+      logoUrl = tRes.data.logo_url || null;
+      tenantName = tRes.data.name || null;
+    }
+  } catch (_) {
+    // branding is optional — ignore failures
+  }
+
   const { data, error } = await db
     .from("crm_leads")
     .update({
       unsubscribed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      status: "unsubscribed",
     })
     .eq("id", parsed.leadId)
     .eq("tenant_id", parsed.tenantId)
@@ -166,6 +210,7 @@ Deno.serve(async (req: Request) => {
       "שגיאה זמנית",
       "לא הצלחנו לעבד את הבקשה כעת. אנא נסה שוב מאוחר יותר.",
       500,
+      { kind: "error", logoUrl, tenantName },
     );
   }
   if (!data) {
@@ -173,12 +218,14 @@ Deno.serve(async (req: Request) => {
       "קישור לא תקין",
       "לא נמצא מנוי מתאים. ייתכן שכבר הוסר בעבר.",
       404,
+      { kind: "error", logoUrl, tenantName },
     );
   }
 
   return htmlPage(
     "הוסרת מרשימת התפוצה בהצלחה",
-    "הסרנו אותך מרשימת ההתראות. ניתן לסגור חלון זה.",
+    "הסרנו אותך מרשימת ההתראות שלנו. לא תקבל עוד הודעות בנושא.",
     200,
+    { kind: "success", logoUrl, tenantName },
   );
 });
