@@ -108,9 +108,10 @@
       ' <button type="button" class="' + CLS_LINK_BTN + ' ms-1" data-edit-purchase="' + escapeHtml(r.id) + '">ערוך</button>';
   }
   function couponCell(r) {
-    return r.coupon_sent
-      ? '<button type="button" class="' + CLS_TOGGLE_ON + '" disabled>✅ נשלח</button>'
-      : '<button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-coupon="' + escapeHtml(r.id) + '">שלח</button>';
+    if (!r.coupon_sent) return '<button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-coupon="' + escapeHtml(r.id) + '">שלח</button>';
+    return r.checked_in_at
+      ? '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">✓ הגיע</span>'
+      : '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">⚠️ לא הגיע</span>';
   }
   function feeCell(r) {
     return r.booking_fee_paid

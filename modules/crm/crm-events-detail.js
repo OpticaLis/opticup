@@ -57,7 +57,7 @@
       .eq('id', eventId).eq('is_deleted', false);
     if (tid) evQ = evQ.eq('tenant_id', tid);
     var attQ = sb.from('v_crm_event_attendees_full')
-      .select('id, lead_id, event_id, full_name, phone, email, status, status_name, status_color, purchase_amount, checked_in_at, registered_at, cancelled_at, coupon_sent, scheduled_time')
+      .select('id, lead_id, event_id, full_name, phone, email, status, status_name, status_color, purchase_amount, checked_in_at, registered_at, cancelled_at, coupon_sent, booking_fee_paid, scheduled_time')
       .eq('event_id', eventId).eq('is_deleted', false).order('full_name');
     if (tid) attQ = attQ.eq('tenant_id', tid);
     var r = await Promise.all([evQ, attQ]);
@@ -104,6 +104,7 @@
     '</div>';
 
     if (stats) h += renderCapacityBar(stats, event.max_capacity);
+    h += renderCouponFunnel(attendees);
     h += '<div id="crm-event-detail-kpis"></div>';
     h += '<div id="crm-event-detail-funnel" data-admin-only></div>';
 
@@ -141,6 +142,36 @@
     '</div>';
   }
 
+  function renderCouponFunnel(attendees) {
+    var wc = (attendees || []).filter(function (a) { return a.coupon_sent && a.status !== 'cancelled'; });
+    if (!wc.length) return '';
+    var arr = 0, pur = 0, noShow = [];
+    wc.forEach(function (a) { if (a.checked_in_at) arr++; else noShow.push(a); if (+a.purchase_amount > 0) pur++; });
+    var cb = 'flex-1 min-w-[110px] rounded-lg p-4 text-center text-white shadow-sm bg-gradient-to-br';
+    var arrow = '<div class="text-2xl text-slate-400 shrink-0">→</div>';
+    function card(grad, n, lbl) { return '<div class="' + cb + ' ' + grad + '"><div class="text-3xl font-black tabular-nums">' + n + '</div><div class="text-xs mt-1 opacity-90">' + lbl + '</div></div>'; }
+    var cards = '<div class="flex items-center gap-2 sm:gap-3 mb-4 overflow-x-auto">' +
+      card('from-indigo-500 to-indigo-600', wc.length, 'קיבלו קופון') + arrow +
+      card('from-emerald-500 to-emerald-600', arr, 'הגיעו') + arrow +
+      card('from-amber-500 to-amber-600', pur, 'רכשו') + '</div>';
+    var nsBlock = '';
+    if (noShow.length) {
+      var yes = '<span class="text-emerald-600 font-bold">✓</span>', th = 'px-3 py-2 font-semibold text-slate-700';
+      var rows = noShow.map(function (a) {
+        return '<tr><td class="px-3 py-2 text-slate-800">' + escapeHtml(a.full_name || '') + '</td>' +
+          '<td class="px-3 py-2 text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</td>' +
+          '<td class="px-3 py-2 text-center">' + (a.booking_fee_paid ? yes : '<span class="text-slate-400">✗</span>') + '</td><td class="px-3 py-2 text-center">' + yes + '</td></tr>';
+      }).join('');
+      nsBlock = '<div class="bg-amber-50 border border-amber-300 rounded-lg p-3 mb-3 text-sm font-semibold text-amber-800">⚠️ ' + noShow.length + ' קיבלו קופון ולא הגיעו</div>' +
+        '<div class="overflow-x-auto border border-slate-200 rounded-lg"><table class="w-full text-sm"><thead><tr class="bg-slate-50">' +
+        '<th class="' + th + ' text-start">שם</th><th class="' + th + ' text-start">טלפון</th><th class="' + th + ' text-center">פיקדון</th><th class="' + th + ' text-center">קופון</th>' +
+        '</tr></thead><tbody class="divide-y divide-slate-100">' + rows + '</tbody></table></div>';
+    }
+    return '<details class="bg-white border border-slate-200 rounded-xl mb-4 overflow-hidden"><summary class="flex items-center justify-between px-4 py-3 cursor-pointer font-semibold text-slate-800 hover:bg-slate-50 select-none" style="list-style:none">' +
+      '<span>🎫 מעקב קופונים</span><span class="text-slate-400 text-sm">▾</span></summary>' +
+      '<div class="border-t border-slate-200 p-4">' + cards + nsBlock + '</div></details>';
+  }
+
   function renderSubTab(key, attendees, stats) {
     if (key === 'attendees') {
       return '<div class="flex justify-end mb-3">' +
@@ -172,9 +203,10 @@
       groups[slug].slice(0, 40).forEach(function (a) {
         var ini = (a.full_name || '?').trim().charAt(0);
         var amount = a.purchase_amount ? ' <span class="text-emerald-600 font-semibold" data-admin-only>' + escapeHtml(CrmHelpers.formatCurrency(a.purchase_amount)) + '</span>' : '';
+        var fee = a.booking_fee_paid ? ' <span class="inline-block text-xs bg-emerald-100 text-emerald-700 font-semibold px-1.5 py-0.5 rounded" title="פיקדון שולם">💰</span>' : '';
         html += '<div class="' + CLS_ATT_ROW + '">' +
           '<div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold flex items-center justify-center shrink-0">' + escapeHtml(ini) + '</div>' +
-          '<div class="flex-1 min-w-0"><div class="font-semibold text-slate-800 text-sm truncate">' + escapeHtml(a.full_name || '') + amount + '</div>' +
+          '<div class="flex-1 min-w-0"><div class="font-semibold text-slate-800 text-sm truncate">' + escapeHtml(a.full_name || '') + amount + fee + '</div>' +
             '<div class="text-xs text-slate-500 mt-0.5" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div></div>' +
           '<div>' + CrmHelpers.statusBadgeHtml('attendee', a.status) + '</div>' +
         '</div>';
