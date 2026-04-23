@@ -73,7 +73,7 @@ Deno.serve(async (req: Request) => {
       return jsonResp({ success: false, error: "invalid_ids" }, 400);
     }
     const evRes = await db.from("crm_events")
-      .select("id, tenant_id, name, event_date, start_time, location_address, status, max_capacity")
+      .select("id, tenant_id, name, event_date, start_time, location_address, status, max_capacity, booking_fee")
       .eq("id", eventId!)
       .eq("is_deleted", false)
       .maybeSingle();
@@ -104,6 +104,7 @@ Deno.serve(async (req: Request) => {
       event_time: evRes.data.start_time || "",
       event_location: evRes.data.location_address || "",
       event_status: evRes.data.status || "",
+      booking_fee: evRes.data.booking_fee ?? 50,
     }, 200);
   }
 

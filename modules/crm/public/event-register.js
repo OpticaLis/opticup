@@ -47,15 +47,21 @@
     var dateStr = formatDate(data.event_date);
     var timeStr = formatTime(data.event_time);
     var greeting = data.lead_name ? ('היי ' + data.lead_name + ',') : 'היי,';
+    var fee = (data.booking_fee != null) ? Number(data.booking_fee) : 50;
     var logoHtml = data.tenant_logo_url
       ? '<div class="brand"><img src="' + esc(data.tenant_logo_url) + '" alt="' + esc(data.tenant_name || '') + '"></div>'
       : '';
 
     el('root').innerHTML = logoHtml +
       '<div class="hero">' +
-        '<h1>' + esc(greeting) + '</h1>' +
-        '<p class="sub">נשמח שתשלים/י כמה פרטים קצרים כדי שנוכל להכין את הביקור שלך באירוע.</p>' +
+        '<h1>אישור הגעה לאירוע</h1>' +
       '</div>' +
+      '<div class="info-notice">' +
+        '<p>שימו לב: כדי להבטיח לכם שירות אישי ללא המתנה, אישור ההגעה הסופי וקבלת הברקוד כרוכים בפיקדון סמלי (<strong>' + esc(String(fee)) + ' ש"ח</strong>) המתקזז במלואו מהרכישה (או מוחזר בביטול עד 48 שעות מראש).</p>' +
+        '<p>איך זה עובד? לאחר שליחת הטופס, תישלח אליכם הודעה אוטומטית להשלמת השריון וקבלת הברקוד האישי באופן עצמאי.</p>' +
+        '<p>לשאלות ועזרה ניתן לפנות אלינו בוואטסאפ: <a href="https://wa.me/972533645404" target="_blank" rel="noopener">053-3645404</a></p>' +
+      '</div>' +
+      '<p class="greeting">' + esc(greeting) + '</p>' +
       '<div class="event-card">' +
         '<div class="label">פרטי האירוע</div>' +
         '<div class="name">' + esc(data.event_name || '') + '</div>' +
@@ -68,7 +74,7 @@
       '<form id="reg-form" novalidate>' +
         '<div class="field">' +
           '<label for="arrival_time">שעת הגעה מועדפת</label>' +
-          '<p class="hint">הגעה גמישה - בחירת השעה עוזרת לנו לנהל את זרימת המבקרים.</p>' +
+          '<p class="hint">ההגעה גמישה - בחירת השעה עוזרת לנו לנהל את האירוע בצורה נוחה עבורך.</p>' +
           '<select id="arrival_time" name="arrival_time">' +
             '<option value="">-- בחר/י --</option>' +
             '<option value="09:00 - 12:00">09:00 - 12:00 (בוקר)</option>' +
@@ -77,8 +83,8 @@
           '</select>' +
         '</div>' +
         '<div class="field">' +
-          '<label for="eye_exam">בדיקת ראייה</label>' +
-          '<p class="hint">האם יש צורך בבדיקת ראייה במהלך הביקור?</p>' +
+          '<label for="eye_exam">בדיקת ראייה*</label>' +
+          '<p class="hint">האם יש צורך בבדיקת ראייה?</p>' +
           '<select id="eye_exam" name="eye_exam">' +
             '<option value="">-- בחר/י --</option>' +
             '<option value="כן">כן, אשמח לבדיקה</option>' +
@@ -87,12 +93,15 @@
         '</div>' +
         '<div class="field">' +
           '<label for="notes">הערות</label>' +
-          '<p class="hint">יש משהו שחשוב שנדע? (אופציונלי)</p>' +
+          '<p class="hint">אם יש משהו שאנחנו צריכים לדעת לפני ההגעה (נגישות, העדפות וכו\') - אפשר לכתוב כאן.</p>' +
           '<textarea id="notes" name="notes" maxlength="' + MAX_NOTES + '" placeholder="לדוגמה: מעדיף מסגרות קלאסיות, מגיעה עם בן הזוג..."></textarea>' +
           '<div class="counter"><span id="notes-count">0</span> / ' + MAX_NOTES + '</div>' +
         '</div>' +
-        '<button type="submit" class="submit" id="submit-btn">אישור ההרשמה</button>' +
+        '<button type="submit" class="submit" id="submit-btn">אישור</button>' +
       '</form>';
+
+    var footEl = document.querySelector('.foot');
+    if (footEl && data.tenant_name) footEl.textContent = '© ' + data.tenant_name;
 
     var notes = el('notes');
     var cnt = el('notes-count');
@@ -155,7 +164,7 @@
       })
       .finally(function () {
         btn.disabled = false;
-        btn.textContent = 'אישור ההרשמה';
+        btn.textContent = 'אישור';
       });
   }
 
