@@ -12,10 +12,13 @@
    of scope per P8 SPEC §7).
    Exports window.CrmAutomation:
      evaluate(triggerType, triggerData) — loads matching rules, evaluates conditions,
-       resolves recipients, dispatches via CrmMessaging.sendMessage. Returns
-       { fired, sent, failed, skipped } summary. Error-isolated per rule
-       (Promise.allSettled).
-   Load order: after crm-helpers.js, crm-messaging-send.js.
+       resolves recipients, builds a sendPlan. P20: when CrmConfirmSend is loaded
+       (default for CRM UI), shows the confirmation modal and returns
+       { fired, pending_confirm: true, planned } without dispatching. Fallback
+       (no modal available): dispatches via CrmMessaging.sendMessage and returns
+       { fired, sent, failed, skipped }.
+   Load order: after crm-helpers.js, crm-messaging-send.js, and — for the
+   confirmation gate — crm-confirm-send.js (optional).
    ============================================================================= */
 (function () {
   'use strict';
@@ -146,47 +149,90 @@
     return vars;
   }
 
-  // Fire a single rule: resolve recipients, compose calls, Promise.allSettled.
-  async function fireRule(rule, triggerData) {
+  // P20: Template cache + variable substitution for client-side preview.
+  // Same %var% pattern the send-message EF uses server-side; preview is
+  // informational (EF re-substitutes on actual send).
+  async function fetchTemplate(cache, tenantId, base, channel, language) {
+    var key = base + '|' + channel + '|' + (language || 'he');
+    if (cache.has(key)) return cache.get(key);
+    var fullSlug = base + '_' + channel + '_' + (language || 'he');
+    var r = await sb.from('crm_message_templates').select('id, slug, body, subject')
+      .eq('tenant_id', tenantId).eq('slug', fullSlug).eq('is_active', true).maybeSingle();
+    var tpl = (!r.error && r.data) ? r.data : null;
+    cache.set(key, tpl);
+    return tpl;
+  }
+
+  function substituteVars(text, vars) {
+    var out = String(text || '');
+    Object.keys(vars || {}).forEach(function (k) {
+      out = out.replace(new RegExp('%' + k + '%', 'g'), String(vars[k] == null ? '' : vars[k]));
+    });
+    return out;
+  }
+
+  // P20: prepare plan items for a rule (replaces fireRule's direct dispatch).
+  // Returns { items, skipped } — items carry everything the confirmation modal
+  // and the direct-dispatch fallback need.
+  async function prepareRulePlan(rule, triggerData, tplCache) {
     var cfg = rule.action_config || {};
     var tenantId = tid();
-    if (!tenantId) return { sent: 0, failed: 0, skipped: 1 };
+    if (!tenantId) return { items: [], skipped: 1 };
     if (rule.action_type !== 'send_message') {
       console.warn('CrmAutomation: unsupported action_type', rule.action_type);
-      return { sent: 0, failed: 0, skipped: 1 };
+      return { items: [], skipped: 1 };
     }
     var tplBase = cfg.template_slug;
     var channels = Array.isArray(cfg.channels) ? cfg.channels : (cfg.channel ? [cfg.channel] : ['sms']);
     var recipientType = cfg.recipient_type || 'trigger_lead';
-    if (!tplBase) { console.warn('CrmAutomation: rule missing template_slug', rule.id); return { sent: 0, failed: 0, skipped: 1 }; }
+    var language = cfg.language || 'he';
+    if (!tplBase) { console.warn('CrmAutomation: rule missing template_slug', rule.id); return { items: [], skipped: 1 }; }
 
     var leads;
     try { leads = await resolveRecipients(recipientType, tenantId, triggerData); }
-    catch (e) { console.error('CrmAutomation.fireRule recipients:', e); return { sent: 0, failed: 1, skipped: 0 }; }
-    if (!leads.length) return { sent: 0, failed: 0, skipped: 0 };
+    catch (e) { console.error('CrmAutomation.prepareRulePlan recipients:', e); return { items: [], skipped: 0 }; }
+    if (!leads.length) return { items: [], skipped: 0 };
 
-    if (!window.CrmMessaging || !CrmMessaging.sendMessage) {
-      console.error('CrmAutomation: CrmMessaging.sendMessage not available');
-      return { sent: 0, failed: leads.length * channels.length, skipped: 0 };
-    }
-
-    var calls = [];
+    var items = [];
     for (var i = 0; i < leads.length; i++) {
       var lead = leads[i];
       var vars = await buildVariables(triggerData, lead);
-      channels.forEach(function (ch) {
-        if (ch === 'email' && !lead.email) return; // skip email-less leads for email channel
-        calls.push(CrmMessaging.sendMessage({
-          leadId: lead.id,
+      for (var j = 0; j < channels.length; j++) {
+        var ch = channels[j];
+        if (ch === 'email' && !lead.email) continue;
+        if (ch === 'sms'   && !lead.phone) continue;
+        var tpl = await fetchTemplate(tplCache, tenantId, tplBase, ch, language);
+        var composedBody = tpl ? substituteVars(tpl.body, vars) : '[תבנית לא נמצאה: ' + tplBase + '_' + ch + '_' + language + ']';
+        items.push({
+          rule_name: rule.name || '',
+          template_slug: tplBase,
+          template_id: tpl ? tpl.id : null,
           channel: ch,
-          templateSlug: tplBase,
+          recipient: { name: lead.full_name || '', phone: lead.phone || '', email: lead.email || '' },
           variables: vars,
-          eventId: triggerData && triggerData.eventId ? triggerData.eventId : undefined,
-          language: cfg.language || 'he'
-        }));
-      });
+          composedBody: composedBody,
+          lead_id: lead.id,
+          event_id: (triggerData && triggerData.eventId) || null,
+          language: language
+        });
+      }
     }
+    return { items: items, skipped: 0 };
+  }
 
+  // P20 fallback: direct dispatch when CrmConfirmSend isn't loaded (never
+  // expected in normal operation — every CRM page loads crm-confirm-send.js).
+  async function dispatchPlanDirect(items) {
+    if (!window.CrmMessaging || !CrmMessaging.sendMessage) {
+      console.error('CrmAutomation: CrmMessaging.sendMessage not available');
+      return { sent: 0, failed: items.length, skipped: 0 };
+    }
+    var calls = items.map(function (it) {
+      return CrmMessaging.sendMessage({
+        leadId: it.lead_id, channel: it.channel, templateSlug: it.template_slug,
+        variables: it.variables, eventId: it.event_id || undefined, language: it.language
+      });
+    });
     var results = await Promise.allSettled(calls);
     var sent = 0, failed = 0;
     results.forEach(function (r) { if (r.status === 'fulfilled' && r.value && r.value.ok) sent++; else failed++; });
@@ -213,24 +259,37 @@
     var rules = (res.data || []).filter(function (r) { return evaluateCondition(r.trigger_condition, triggerData || {}); });
     if (!rules.length) return { fired: 0, sent: 0, failed: 0, skipped: 0 };
 
-    var perRule = await Promise.allSettled(rules.map(function (r) { return fireRule(r, triggerData || {}); }));
-    var sent = 0, failed = 0, skipped = 0;
+    // P20: build a combined plan across all matching rules; show confirmation
+    // modal if available (default), else dispatch immediately (fallback).
+    var tplCache = new Map();
+    var perRule = await Promise.allSettled(rules.map(function (r) { return prepareRulePlan(r, triggerData || {}, tplCache); }));
+    var planItems = [], skipped = 0;
     perRule.forEach(function (pr) {
-      if (pr.status === 'fulfilled' && pr.value) { sent += pr.value.sent || 0; failed += pr.value.failed || 0; skipped += pr.value.skipped || 0; }
-      else failed++;
+      if (pr.status === 'fulfilled' && pr.value) { planItems = planItems.concat(pr.value.items || []); skipped += pr.value.skipped || 0; }
+      else skipped++;
     });
-    var summary = { fired: rules.length, sent: sent, failed: failed, skipped: skipped };
-    if (window.Toast && (sent + failed) > 0) {
-      if (failed === 0) Toast.success('נשלחו ' + sent + ' הודעות');
-      else Toast.warning('נשלחו ' + sent + ', ' + failed + ' נכשלו');
+
+    if (!planItems.length) return { fired: rules.length, sent: 0, failed: 0, skipped: skipped };
+
+    if (window.CrmConfirmSend && typeof CrmConfirmSend.show === 'function') {
+      CrmConfirmSend.show(planItems); // fire-and-forget — caller doesn't await
+      return { fired: rules.length, pending_confirm: true, skipped: skipped, planned: planItems.length };
     }
-    return summary;
+
+    // Fallback: legacy immediate dispatch (no modal loaded).
+    var r = await dispatchPlanDirect(planItems);
+    if (window.Toast && (r.sent + r.failed) > 0) {
+      if (r.failed === 0) Toast.success('נשלחו ' + r.sent + ' הודעות');
+      else Toast.warning('נשלחו ' + r.sent + ', ' + r.failed + ' נכשלו');
+    }
+    return { fired: rules.length, sent: r.sent, failed: r.failed, skipped: skipped };
   }
 
   window.CrmAutomation = {
     evaluate: evaluate,
     evaluateCondition: evaluateCondition,
     resolveRecipients: resolveRecipients,
+    prepareRulePlan: prepareRulePlan,
     TRIGGER_TYPES: TRIGGER_TYPES,
     CONDITIONS: CONDITIONS
   };
