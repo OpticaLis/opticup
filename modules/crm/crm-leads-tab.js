@@ -22,7 +22,6 @@
   var CLS_ROW_EVEN    = 'hover:bg-indigo-50/40 cursor-pointer border-b border-slate-100 transition-colors bg-slate-50/60';
   var CLS_CHIP        = 'inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-3 py-1.5 rounded-full text-sm font-medium';
   var CLS_CHIP_CLOSE  = 'cursor-pointer font-bold opacity-70 hover:opacity-100 text-base leading-none';
-  var CLS_TAG_PILL    = 'inline-block text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded mr-1';
   var CLS_BULK_BAR    = 'bg-indigo-100 text-indigo-800 px-4 py-3 rounded-lg flex items-center gap-3 mb-3 text-sm font-medium';
   var CLS_BULK_BTN    = 'px-3 py-1.5 bg-white text-indigo-700 rounded-md hover:bg-indigo-50 font-medium text-sm transition';
   var CLS_PAGE_BTN    = 'px-3 py-1.5 rounded-md border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed';
@@ -31,7 +30,7 @@
   async function loadLeads() {
     var tid = getTenantId();
     var q = sb.from('v_crm_leads_with_tags')
-      .select('id, full_name, phone, email, city, language, status, source, client_notes, terms_approved, marketing_consent, unsubscribed_at, created_at, updated_at, tag_names, tag_colors, utm_source, utm_campaign, monday_item_id')
+      .select('id, full_name, phone, email, city, language, status, source, client_notes, terms_approved, marketing_consent, unsubscribed_at, created_at, updated_at, tag_names, tag_colors, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_campaign_id, monday_item_id')
       .eq('is_deleted', false);
     if (tid) q = q.eq('tenant_id', tid);
     q = q.order('full_name');
@@ -211,8 +210,7 @@
       '<th class="' + CLS_TH + '">שם מלא</th>' +
       '<th class="' + CLS_TH + '">טלפון</th>' +
       '<th class="' + CLS_TH + '">סטטוס</th>' +
-      '<th class="' + CLS_TH + '">שפה</th>' +
-      '<th class="' + CLS_TH + '">תגיות</th>' +
+      '<th class="' + CLS_TH + '">אימייל</th>' +
       '<th class="' + CLS_TH + '">נוצר</th>' +
       '</tr></thead><tbody>';
     rows.forEach(function (r, idx) {
@@ -223,13 +221,12 @@
         '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
         '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('lead', r.status) + '</td>' +
-        '<td class="' + CLS_TD + ' text-slate-600">' + escapeHtml(CrmHelpers.formatLanguage(r.language)) + '</td>' +
-        '<td class="' + CLS_TD + '">' + renderTagPillsHtml(r.tag_names) + '</td>' +
+        '<td class="' + CLS_TD + ' text-slate-600">' + escapeHtml(r.email || '—') + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-500 text-xs">' + escapeHtml(CrmHelpers.formatDateTime(r.created_at)) + '</td>' +
       '</tr>';
     });
     html += '</tbody><tfoot><tr class="bg-slate-50 font-semibold">' +
-      '<td class="' + CLS_TD + '" colspan="6">סה״כ</td>' +
+      '<td class="' + CLS_TD + '" colspan="5">סה״כ</td>' +
       '<td class="' + CLS_TD + ' text-end text-indigo-700">' + _filtered.length + ' לידים</td>' +
     '</tr></tfoot></table></div>';
     wrap.innerHTML = html;
@@ -256,13 +253,6 @@
         if (typeof openCrmLeadDetail === 'function') openCrmLeadDetail(id);
       });
     });
-  }
-
-  function renderTagPillsHtml(names) {
-    if (!Array.isArray(names) || !names.length) return '';
-    return names.slice(0, 3).map(function (n) {
-      return '<span class="' + CLS_TAG_PILL + '">' + escapeHtml(n) + '</span>';
-    }).join('');
   }
 
   function renderPagination() {

@@ -220,24 +220,28 @@
   }
 
   function renderFullDetails(lead) {
+    var eyeExam = null;
+    try { var p = lead.client_notes ? JSON.parse(lead.client_notes) : null; if (p && p.eye_exam) eyeExam = String(p.eye_exam); } catch (_) {}
     var html = '<div class="space-y-1">' +
       row('אימייל', lead.email || '—') +
       row('עיר', lead.city || '—') +
-      row('שפה', CrmHelpers.formatLanguage(lead.language)) +
       row('מקור', lead.source || '—') +
-      row('קמפיין UTM', lead.utm_campaign || '—') +
-      row('מקור UTM', lead.utm_source || '—') +
       row('תנאים', lead.terms_approved ? '✅ אושרו' : '—') +
       row('שיווק', lead.marketing_consent ? '✅ מאושר' : (lead.unsubscribed_at ? '❌ הוסר' : '—')) +
       row('נוצר', CrmHelpers.formatDateTime(lead.created_at)) +
       row('עודכן', CrmHelpers.formatDateTime(lead.updated_at)) +
       '</div>';
+    if (eyeExam) html += '<div class="mt-3">' + row('בדיקת עיניים', eyeExam) + '</div>';
+    var utm = [['מקור (source)', lead.utm_source], ['מדיום (medium)', lead.utm_medium], ['קמפיין (campaign)', lead.utm_campaign], ['תוכן (content)', lead.utm_content], ['מונח (term)', lead.utm_term], ['מזהה קמפיין (campaign_id)', lead.utm_campaign_id]];
+    if (utm.some(function (f) { return f[1]; })) {
+      html += '<details class="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-3"><summary class="cursor-pointer text-sm font-semibold text-slate-700">מידע UTM</summary><div class="mt-2 space-y-1">' + utm.map(function (f) { return row(f[0], f[1] || '—'); }).join('') + '</div></details>';
+    }
     if (Array.isArray(lead.tag_names) && lead.tag_names.length) {
       html += '<div class="mt-3 flex flex-wrap gap-1">' + lead.tag_names.map(function (n) {
         return '<span class="inline-block text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">' + escapeHtml(n) + '</span>';
       }).join('') + '</div>';
     }
-    if (lead.client_notes) {
+    if (lead.client_notes && !eyeExam) {
       html += '<div class="' + CLS_NOTE + ' mt-3">' + escapeHtml(lead.client_notes) + '</div>';
     }
     return html;
