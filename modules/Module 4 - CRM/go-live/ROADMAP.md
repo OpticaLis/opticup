@@ -309,6 +309,57 @@ P1 → P2 → P3 → P4 → P5 → P6 → P8 → P7
 
 ---
 
+## P10 — Pre-Sale Hardening  ✅
+
+**סגור 2026-04-23.** שלושה חוסמי-ייצור אחרונים לפני P7 נסגרו בריצה אוטונומית: מניעת כפילויות לידים, אכיפת unsubscribe חוקית מלאה, ונראות היסטוריית הודעות.
+
+**מה בוצע (30/30 קריטריונים עוברים):**
+
+### Track A — Phone Normalization + Duplicate Prevention
+1. ✅ `CrmHelpers.normalizePhone(raw)` הוסף ל-`crm-helpers.js` (mirror של ה-EF) — מטפל ב-`0537889878` / `+972537889878` / `972537889878` / `053-788-9878` / `  050 3348 349 ` → `+972XXXXXXXXX`.
+2. ✅ `createManualLead` מנרמל לפני INSERT + pre-check של `crm_leads WHERE phone = E.164 AND is_deleted=false` — מחזיר `{duplicate, existingLead}` עם toast "ליד עם מספר טלפון זה כבר קיים".
+3. ✅ `updateLead` מנרמל + duplicate-check עם `.neq('id', leadId)` (לא מתנגש עם עצמו).
+4. ✅ שני הנתיבים מטפלים ב-Postgres `23505 unique_violation` כ-race-safety נוסף.
+5. ✅ Demo נתוני קיימים: ליד כפול `a16f6ba5 (דניאל טסט, 0537889878)` ושרד `f49d4d8e (P55 דנה כהן, +972537889878)` היו אותו מספר פיזי בשני פורמטים — ה-LOSER נסגר ב-soft-delete (0 notes, 0 messages, pending_terms) וה-SURVIVOR קיבל audit note. SQL שמור ב-`go-live/p10-data-merge-demo.sql`.
+
+### Track B — Unsubscribe
+6. ✅ Automation engine (`crm-automation-engine.js`) מסנן `unsubscribed_at IS NOT NULL` בכל 5 סוגי הנמענים: `trigger_lead` (post-fetch check), `tier2` (+ `.is('unsubscribed_at', null)` כבר היה מ-P8), `tier2_excl_registered`, `attendees`, `attendees_waiting` (nested select + filter).
+7. ✅ חדש: `supabase/functions/unsubscribe/index.ts` (184 lines, `verify_jwt: false`) מקבל GET `?token=<b64url(payload).b64url(sig)>`, מאמת HMAC-SHA256 עם `SUPABASE_SERVICE_ROLE_KEY`, בודק תוקף (90 ימים), מעדכן `crm_leads.unsubscribed_at = now()`, מחזיר Hebrew RTL HTML confirmation; tokens לא תקפים/פגי תוקף → 400 עם Hebrew HTML error page.
+8. ✅ `send-message/index.ts` (277→332 lines) מזריק `variables.unsubscribe_url` אוטומטית לכל הודעה (אם המזמין לא סיפק אחר), token חתום עם אותו SERVICE_ROLE_KEY. פריסה v3.
+9. ✅ Deployed to Supabase (unsubscribe v1 ACTIVE, send-message v3 ACTIVE), נבדק עם 4 curls: token ריק/לא תקין → 400 Hebrew; token אמיתי → 200 Hebrew success + `unsubscribed_at` נקבע ב-DB.
+
+### Track C — Message Log Visibility
+10. ✅ Root cause זוהה: כפילות לידים (טופל ב-Track A). אין באג בשאילתות `crm-messaging-log.js` ו-`crm-leads-detail.js`. לאחר נרמול + merge, כל ההודעות הולכות ל-canonical lead, וה-per-lead tab משתמש בליד אחד לשאילתה. 0 שינויי קוד נדרשים כאן.
+
+### Track D — Full Flow Test
+11. ✅ Lead-intake EF (phone `0537889878`) → HTTP 409 duplicate → 2 log rows `lead_intake_duplicate_{sms,email}_he` status=sent.
+12. ✅ Manual create דרך `CrmLeadActions.createManualLead({phone:'+972503348349'})` → `{duplicate:true, existingLead: efc0bd54...}` — לא נוצר ליד חדש.
+13. ✅ Direct dispatch לשני לידים → 4 log rows (2 direct + 2 intake_duplicate async), JOIN של `crm_leads(full_name, phone)` נפתר נכון לכל השורות.
+14. ✅ Unsubscribe: `UPDATE crm_leads SET unsubscribed_at=now()` ב-`f49d4d8e` → `resolveRecipients('tier2')` מחזיר רק את `efc0bd54`, `resolveRecipients('trigger_lead',{leadId:f49d4d8e})` מחזיר `[]`.
+15. ✅ קלינאפ: `unsubscribed_at` חזר ל-NULL, 4 log rows נמחקו. Baseline דמו סופי: 2 leads_active (both E.164), 3 leads_all (1 soft-deleted), 0 log, 0 unsubscribed, 0 raw 05X phones.
+
+### Track E — Documentation & Quality
+16. ✅ כל קובצי CRM ≤ 350 שורות. Edge Functions: unsubscribe 184, send-message 332 (עדיין מתחת ל-hard max).
+17. ✅ 0 console errors חדשים (רק pre-existing Tailwind-CDN + GoTrueClient warnings).
+18. ✅ רק טלפונים מאושרים בשימוש לאורך כל הריצה (`+972537889878`, `+972503348349`).
+19. ✅ אין שינויי DDL. אין שינויים ב-`lead-intake` EF (הנרמול הקיים שלו תקין).
+20. ✅ מיזוג נתונים תועד ב-SQL artifact (`go-live/p10-data-merge-demo.sql`) לצרכי rollback.
+
+**רכיבים שנוצרו/שונו:**
+- `modules/crm/crm-helpers.js` (+15 שורות) — `normalizePhone` export
+- `modules/crm/crm-lead-actions.js` (+47 שורות) — duplicate check בשני המסלולים
+- `modules/crm/crm-lead-modals.js` (+28 שורות) — toast branches ב-create + edit
+- `modules/crm/crm-automation-engine.js` (+5 שורות) — unsub filter ל-3 נתיבים שלא היו מכוסים
+- `supabase/functions/unsubscribe/index.ts` — new 184 lines + deno.json
+- `supabase/functions/send-message/index.ts` (+55 שורות) — token generator + injection
+- `modules/Module 4 - CRM/go-live/p10-data-merge-demo.sql` — new artifact (merge SQL)
+
+**אין שינויי schema. אין שינויים ב-Make scenario.**
+
+**פרטים מלאים:** `modules/Module 4 - CRM/go-live/specs/P10_PRESALE_HARDENING/` — SPEC.md + EXECUTION_REPORT.md + FINDINGS.md.
+
+---
+
 ## P7 — מעבר פריזמה  ⬜
 
 **מה נבנה:** כיבוי Monday, הפעלת הצינור החדש על פריזמה.
