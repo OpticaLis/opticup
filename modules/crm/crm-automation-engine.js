@@ -76,9 +76,10 @@
 
     if (recipientType === 'trigger_lead') {
       if (!leadId) return [];
-      var leadRes = await sb.from('crm_leads').select('id, full_name, phone, email')
+      var leadRes = await sb.from('crm_leads').select('id, full_name, phone, email, unsubscribed_at, is_deleted')
         .eq('tenant_id', tenantId).eq('id', leadId).single();
       if (leadRes.error || !leadRes.data) return [];
+      if (leadRes.data.unsubscribed_at || leadRes.data.is_deleted) return [];
       return [leadRes.data];
     }
 
@@ -101,10 +102,12 @@
     if (recipientType === 'attendees' || recipientType === 'attendees_waiting') {
       if (!eventId) return [];
       var attStatus = (recipientType === 'attendees_waiting') ? ['waiting_list'] : ['registered','confirmed'];
-      var aRes = await sb.from('crm_event_attendees').select('crm_leads(id, full_name, phone, email)')
+      var aRes = await sb.from('crm_event_attendees').select('crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
         .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false).in('status', attStatus);
       if (aRes.error) throw new Error('recipients attendees: ' + aRes.error.message);
-      return (aRes.data || []).map(function (r) { return r.crm_leads; }).filter(Boolean);
+      return (aRes.data || [])
+        .map(function (r) { return r.crm_leads; })
+        .filter(function (l) { return l && !l.unsubscribed_at && !l.is_deleted; });
     }
 
     console.warn('CrmAutomation: unknown recipient_type', recipientType);
