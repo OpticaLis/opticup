@@ -8,11 +8,13 @@
 
   // --- Header titles per tab ---
   var TAB_META = {
-    'dashboard': { title: 'דשבורד', subtitle: 'סקירה כללית של ביצועי הקמפיינים' },
-    'leads':     { title: 'לידים', subtitle: 'ניהול לידים וסגמנטים' },
-    'events':    { title: 'אירועים', subtitle: 'ניהול אירועים ומשתתפים' },
-    'messaging': { title: 'מרכז הודעות', subtitle: 'תבניות, אוטומציה ושליחה ידנית' },
-    'event-day': { title: 'יום אירוע', subtitle: 'צ׳ק-אין, נוכחות וניהול' }
+    'dashboard':    { title: 'דשבורד', subtitle: 'סקירה כללית של ביצועי הקמפיינים' },
+    'incoming':     { title: 'לידים נכנסים', subtitle: 'לידים חדשים שטרם אושרו' },
+    'leads':        { title: 'רשומים', subtitle: 'ניהול לידים וסגמנטים' },
+    'events':       { title: 'אירועים', subtitle: 'ניהול אירועים ומשתתפים' },
+    'messaging':    { title: 'מרכז הודעות', subtitle: 'תבניות, אוטומציה ושליחה ידנית' },
+    'event-day':    { title: 'יום אירוע', subtitle: 'צ׳ק-אין, נוכחות וניהול' },
+    'activity-log': { title: 'לוג פעילות', subtitle: 'היסטוריית פעולות במערכת' }
   };
 
   // --- Wrap original showCrmTab to also update header + sidebar ---
