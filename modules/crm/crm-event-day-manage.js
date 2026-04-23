@@ -247,6 +247,17 @@
   }
 
   async function toggleCoupon(id, btn) {
+    var state = window.getEventDayState();
+    var ev = state.event || {};
+    var attendees = state.attendees || [];
+    var target = attendees.find(function (a) { return a.id === id; });
+    if (target && target.coupon_sent) return;
+    var totalSent = attendees.filter(function (a) { return a.coupon_sent && a.status !== 'cancelled'; }).length;
+    var ceiling = (ev.max_coupons != null ? +ev.max_coupons : 50) + (+ev.extra_coupons || 0);
+    if (totalSent >= ceiling) {
+      toast('error', 'הגעת למכסת הקופונים (' + ceiling + '). הגדל כמות קופונים נוספת אם יש צורך.');
+      return;
+    }
     if (btn) { btn.disabled = true; btn.textContent = '...'; }
     var nowIso = new Date().toISOString();
     var { error } = await sb.from('crm_event_attendees').update({ coupon_sent: true, coupon_sent_at: nowIso }).eq('id', id).eq('tenant_id', getTenantId());

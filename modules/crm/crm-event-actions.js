@@ -20,7 +20,7 @@
   async function loadCampaigns() {
     var tenantId = tid();
     var q = sb.from('crm_campaigns')
-      .select('id, slug, name, default_location, default_hours, default_max_capacity, default_booking_fee')
+      .select('id, slug, name, default_location, default_hours, default_max_capacity, default_booking_fee, default_max_coupons')
       .eq('is_active', true);
     if (tenantId) q = q.eq('tenant_id', tenantId);
     q = q.order('name');
@@ -52,6 +52,7 @@
       location_address: data.location_address,
       location_waze_url: data.location_waze_url || null,
       max_capacity: data.max_capacity != null ? data.max_capacity : 50,
+      max_coupons: data.max_coupons != null ? data.max_coupons : 50,
       booking_fee: data.booking_fee != null ? data.booking_fee : 50,
       coupon_code: data.coupon_code
     };
@@ -95,9 +96,11 @@
       '<input type="text" name="location_address" class="' + inputCls + '" required value="' + escapeHtml(camp0.default_location || '') + '" placeholder="כתובת מלאה"></div>' +
       '<div><label class="' + labelCls + '">קישור Waze (אופציונלי)</label>' +
       '<input type="url" name="location_waze_url" class="' + inputCls + '" placeholder="https://waze.com/..."></div>' +
-      '<div class="grid grid-cols-2 gap-2">' +
+      '<div class="grid grid-cols-3 gap-2">' +
       '<div><label class="' + labelCls + '">קיבולת מקסימלית</label>' +
       '<input type="number" name="max_capacity" class="' + inputCls + '" value="' + (camp0.default_max_capacity || 50) + '" min="1" required></div>' +
+      '<div><label class="' + labelCls + '">כמות קופונים</label>' +
+      '<input type="number" name="max_coupons" class="' + inputCls + '" value="' + (camp0.default_max_coupons || 50) + '" min="0" required></div>' +
       '<div><label class="' + labelCls + '">דמי רישום (₪)</label>' +
       '<input type="number" name="booking_fee" class="' + inputCls + '" value="' + (camp0.default_booking_fee || 50) + '" min="0" step="0.01" required></div>' +
       '</div>' +
@@ -145,9 +148,11 @@
       var picked = campaigns.find(function (c) { return c.id === campSel.value; }) || {};
       var locInput = form.querySelector('[name="location_address"]');
       var capInput = form.querySelector('[name="max_capacity"]');
+      var couponsInput = form.querySelector('[name="max_coupons"]');
       var feeInput = form.querySelector('[name="booking_fee"]');
       if (locInput && !locInput.value) locInput.value = picked.default_location || '';
       if (capInput) capInput.value = picked.default_max_capacity || 50;
+      if (couponsInput) couponsInput.value = picked.default_max_coupons || 50;
       if (feeInput) feeInput.value = picked.default_booking_fee || 50;
     });
 
@@ -166,6 +171,7 @@
         location_address: (fd.get('location_address') || '').trim(),
         location_waze_url: (fd.get('location_waze_url') || '').trim(),
         max_capacity: parseInt(fd.get('max_capacity'), 10),
+        max_coupons: parseInt(fd.get('max_coupons'), 10),
         booking_fee: parseFloat(fd.get('booking_fee')),
         coupon_code: (fd.get('coupon_code') || '').trim()
       };

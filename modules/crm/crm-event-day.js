@@ -63,7 +63,7 @@
   async function fetchAllEventDayData() {
     var tid = getTenantId();
     var evQ = sb.from('crm_events')
-      .select('id, event_number, name, event_date, start_time, end_time, status, max_capacity, booking_fee, coupon_code')
+      .select('id, event_number, name, event_date, start_time, end_time, status, max_capacity, booking_fee, coupon_code, max_coupons, extra_coupons')
       .eq('id', _state.eventId).eq('is_deleted', false);
     if (tid) evQ = evQ.eq('tenant_id', tid);
 
