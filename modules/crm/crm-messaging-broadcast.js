@@ -128,7 +128,7 @@
   function openWizard() {
     _wizard = {
       step: 0,
-      boards: ['incoming', 'registered'],
+      board: 'incoming',
       statuses: [],
       events: [],
       openEventsOnly: false,
@@ -303,7 +303,7 @@
       var ins = await sb.from('crm_broadcasts').insert({
         tenant_id: tid, employee_id: emp.id, name: _wizard.name, channel: _wizard.channel, template_id: _wizard.templateId || null,
         filter_criteria: {
-          boards: _wizard.boards.slice(),
+          board: _wizard.board,
           statuses: _wizard.statuses.slice(),
           events: _wizard.events.slice(),
           openEventsOnly: !!_wizard.openEventsOnly,

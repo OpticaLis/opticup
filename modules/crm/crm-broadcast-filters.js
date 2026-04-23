@@ -1,5 +1,5 @@
 /* =============================================================================
-   crm-broadcast-filters.js — Advanced recipient filtering for broadcast wizard (P11)
+   crm-broadcast-filters.js — Advanced recipient filtering for broadcast wizard (P11+P12)
    Tables: crm_leads, crm_events, crm_event_attendees.
    Load order: AFTER crm-helpers.js (for TIER1/TIER2_STATUSES + CRM_STATUSES),
    BEFORE crm-messaging-broadcast.js (broadcast consumes window.CrmBroadcastFilters).
@@ -20,21 +20,20 @@
 
   var BOARD_DEFS = [
     { key: 'incoming',   label: 'לידים נכנסים', globalVar: 'TIER1_STATUSES' },
-    { key: 'registered', label: 'רשומים',        globalVar: 'TIER2_STATUSES' }
+    { key: 'registered', label: 'רשומים',        globalVar: 'TIER2_STATUSES' },
+    { key: 'by_event',   label: 'לפי אירוע',     globalVar: null }
+  ];
+
+  var SOURCE_OPTIONS = [
+    { value: 'supersale_form', label: 'טופס אתר' },
+    { value: 'manual',         label: 'ידני' },
+    { value: 'import',         label: 'ייבוא' }
   ];
 
   function boardStatuses(boardKey) {
     var def = BOARD_DEFS.find(function (b) { return b.key === boardKey; });
-    if (!def) return [];
+    if (!def || !def.globalVar) return [];
     return window[def.globalVar] || [];
-  }
-
-  function allBoardStatuses(selectedBoards) {
-    var out = [];
-    (selectedBoards || []).forEach(function (b) {
-      boardStatuses(b).forEach(function (s) { if (out.indexOf(s) === -1) out.push(s); });
-    });
-    return out;
   }
 
   function isEventOpen(ev) {
@@ -45,17 +44,8 @@
 
   function escape(s) { return (typeof escapeHtml === 'function') ? escapeHtml(s) : String(s || ''); }
 
-  function renderRecipientsStep(state, events) {
-    var statusesCache = (window.CRM_STATUSES && window.CRM_STATUSES.lead) || {};
-    var boardChecks = BOARD_DEFS.map(function (b) {
-      var on = state.boards.indexOf(b.key) !== -1;
-      return '<label class="inline-flex items-center gap-1.5 text-sm text-slate-700 cursor-pointer px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-slate-50' + (on ? ' bg-indigo-50 border-indigo-400' : '') + '">' +
-        '<input type="checkbox" data-bc-board="' + escape(b.key) + '"' + (on ? ' checked' : '') + ' class="rounded border-slate-300">' +
-        '<span>' + escape(b.label) + '</span>' +
-      '</label>';
-    }).join('');
-
-    var visibleStatuses = allBoardStatuses(state.boards);
+  function renderStatusBlock(state, statusesCache) {
+    var visibleStatuses = boardStatuses(state.board);
     if (!visibleStatuses.length) visibleStatuses = Object.keys(statusesCache);
     var statusChecks = visibleStatuses.map(function (slug) {
       var info = statusesCache[slug];
@@ -67,7 +57,16 @@
         '<span class="text-slate-700">' + escape(info.name_he || slug) + '</span>' +
       '</label>';
     }).filter(Boolean).join('');
+    var statusLabel = state.statuses.length ? 'סטטוס (' + state.statuses.length + ')' : 'סטטוס (כולם)';
+    return '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">' + escape(statusLabel) + '</label>' +
+      '<div class="bg-slate-50 border border-slate-200 rounded-lg p-2 max-h-36 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-1">' +
+        (statusChecks || '<div class="text-slate-400 text-sm py-1">אין סטטוסים זמינים</div>') +
+      '</div>' +
+      '<div class="text-xs text-slate-500 mt-1">ריק = כל הסטטוסים שבלוח שנבחר</div>' +
+    '</div>';
+  }
 
+  function renderEventBlock(state, events) {
     var filteredEvents = state.openEventsOnly ? (events || []).filter(isEventOpen) : (events || []);
     var eventChecks = filteredEvents.map(function (ev) {
       var on = state.events.indexOf(ev.id) !== -1;
@@ -79,30 +78,41 @@
         '<span class="text-xs text-slate-500">' + escape(dateLabel) + '</span>' +
       '</label>';
     }).join('');
+    var eventLabel = state.events.length ? 'אירוע (' + state.events.length + ')' : 'אירוע (הכל)';
+    return '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">' + escape(eventLabel) + '</label>' +
+      '<label class="inline-flex items-center gap-1.5 text-sm text-slate-700 cursor-pointer mb-2">' +
+        '<input type="checkbox" data-bc-open-events' + (state.openEventsOnly ? ' checked' : '') + ' class="rounded border-slate-300">' +
+        '<span>אירועים פתוחים בלבד</span>' +
+      '</label>' +
+      '<div class="bg-slate-50 border border-slate-200 rounded-lg p-2 max-h-40 overflow-y-auto">' +
+        (eventChecks || '<div class="text-slate-400 text-sm py-1">אין אירועים</div>') +
+      '</div>' +
+      '<div class="text-xs text-slate-500 mt-1">בחר אירוע אחד או יותר. ריק = אין נמענים</div>' +
+    '</div>';
+  }
 
-    var statusLabel = state.statuses.length ? 'סטטוס (' + state.statuses.length + ')' : 'סטטוס (כולם)';
-    var eventLabel  = state.events.length   ? 'אירוע (' + state.events.length + ')'   : 'אירוע (הכל)';
+  function renderRecipientsStep(state, events) {
+    var statusesCache = (window.CRM_STATUSES && window.CRM_STATUSES.lead) || {};
+    if (!state.board) state.board = 'incoming';
+    var byEvent = state.board === 'by_event';
+
+    var boardRadios = BOARD_DEFS.map(function (b) {
+      var on = b.key === state.board;
+      return '<label class="inline-flex items-center gap-1.5 text-sm text-slate-700 cursor-pointer px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-slate-50' + (on ? ' bg-indigo-50 border-indigo-400' : '') + '">' +
+        '<input type="radio" name="wiz-board" data-bc-board="' + escape(b.key) + '"' + (on ? ' checked' : '') + ' class="border-slate-300">' +
+        '<span>' + escape(b.label) + '</span>' +
+      '</label>';
+    }).join('');
+
+    var sourceOpts = SOURCE_OPTIONS.map(function (s) {
+      return '<option value="' + escape(s.value) + '"' + (s.value === state.source ? ' selected' : '') + '>' + escape(s.label) + '</option>';
+    }).join('');
 
     return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 1 — נמענים</h4>' +
       '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">לוח</label>' +
-        '<div class="flex gap-2 flex-wrap">' + boardChecks + '</div>' +
+        '<div class="flex gap-2 flex-wrap">' + boardRadios + '</div>' +
       '</div>' +
-      '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">' + escape(statusLabel) + '</label>' +
-        '<div class="bg-slate-50 border border-slate-200 rounded-lg p-2 max-h-36 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-1">' +
-          (statusChecks || '<div class="text-slate-400 text-sm py-1">אין סטטוסים זמינים</div>') +
-        '</div>' +
-        '<div class="text-xs text-slate-500 mt-1">ריק = כל הסטטוסים שבלוח שנבחר</div>' +
-      '</div>' +
-      '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">' + escape(eventLabel) + '</label>' +
-        '<label class="inline-flex items-center gap-1.5 text-sm text-slate-700 cursor-pointer mb-2">' +
-          '<input type="checkbox" data-bc-open-events' + (state.openEventsOnly ? ' checked' : '') + ' class="rounded border-slate-300">' +
-          '<span>אירועים פתוחים בלבד</span>' +
-        '</label>' +
-        '<div class="bg-slate-50 border border-slate-200 rounded-lg p-2 max-h-40 overflow-y-auto">' +
-          (eventChecks || '<div class="text-slate-400 text-sm py-1">אין אירועים</div>') +
-        '</div>' +
-        '<div class="text-xs text-slate-500 mt-1">ריק = ללא סינון אירוע</div>' +
-      '</div>' +
+      (byEvent ? renderEventBlock(state, events) : renderStatusBlock(state, statusesCache)) +
       '<div class="grid grid-cols-2 gap-3 mb-3">' +
         '<div><label class="' + CLS_LABEL + '">שפה</label>' +
           '<select data-bc-lang class="' + CLS_INPUT + '">' +
@@ -115,11 +125,7 @@
         '</div>' +
         '<div><label class="' + CLS_LABEL + '">מקור</label>' +
           '<select data-bc-source class="' + CLS_INPUT + '">' +
-            '<option value="">הכל</option>' +
-            ['site','manual','import','other'].map(function (s) {
-              var label = s === 'site' ? 'אתר' : s === 'manual' ? 'ידני' : s === 'import' ? 'ייבוא' : 'אחר';
-              return '<option value="' + s + '"' + (s === state.source ? ' selected' : '') + '>' + label + '</option>';
-            }).join('') +
+            '<option value="">הכל</option>' + sourceOpts +
           '</select>' +
         '</div>' +
       '</div>' +
@@ -130,15 +136,17 @@
     if (!root) return;
     var fire = function () { if (typeof onChange === 'function') onChange(); };
 
-    root.querySelectorAll('[data-bc-board]').forEach(function (cb) {
-      cb.addEventListener('change', function () {
-        var key = cb.getAttribute('data-bc-board');
-        var i = state.boards.indexOf(key);
-        if (cb.checked && i === -1) state.boards.push(key);
-        if (!cb.checked && i !== -1) state.boards.splice(i, 1);
-        var allowed = allBoardStatuses(state.boards);
-        if (allowed.length) {
+    root.querySelectorAll('[data-bc-board]').forEach(function (rb) {
+      rb.addEventListener('change', function () {
+        if (!rb.checked) return;
+        state.board = rb.getAttribute('data-bc-board');
+        if (state.board === 'by_event') {
+          state.statuses = [];
+        } else {
+          var allowed = boardStatuses(state.board);
           state.statuses = state.statuses.filter(function (s) { return allowed.indexOf(s) !== -1; });
+          state.events = [];
+          state.openEventsOnly = false;
         }
         fire();
       });
@@ -183,24 +191,16 @@
 
   async function buildLeadRows(state) {
     var tid = getTenantId();
+    var board = state.board || 'incoming';
+
     var q = sb.from('crm_leads')
       .select('id, full_name, phone, status, source, language')
       .eq('is_deleted', false)
       .is('unsubscribed_at', null);
     if (tid) q = q.eq('tenant_id', tid);
 
-    var effectiveStatuses = [];
-    if (state.statuses && state.statuses.length) {
-      effectiveStatuses = state.statuses.slice();
-    } else {
-      effectiveStatuses = allBoardStatuses(state.boards);
-    }
-    if (effectiveStatuses.length) q = q.in('status', effectiveStatuses);
-
-    if (state.language) q = q.eq('language', state.language);
-    if (state.source)   q = q.eq('source', state.source);
-
-    if (state.events && state.events.length) {
+    if (board === 'by_event') {
+      if (!state.events || !state.events.length) return [];
       var att = sb.from('crm_event_attendees')
         .select('lead_id')
         .in('event_id', state.events)
@@ -215,7 +215,15 @@
       });
       if (!ids.length) return [];
       q = q.in('id', ids);
+    } else {
+      var effectiveStatuses = (state.statuses && state.statuses.length)
+        ? state.statuses.slice()
+        : boardStatuses(board);
+      if (effectiveStatuses.length) q = q.in('status', effectiveStatuses);
     }
+
+    if (state.language) q = q.eq('language', state.language);
+    if (state.source)   q = q.eq('source', state.source);
 
     var res = await q;
     if (res.error) throw new Error(res.error.message);
@@ -273,7 +281,6 @@
     wireRecipientsStep: wireRecipientsStep,
     buildLeadIds: buildLeadIds,
     buildLeadRows: buildLeadRows,
-    allBoardStatuses: allBoardStatuses,
     showRecipientsPreview: showRecipientsPreview
   };
 })();
