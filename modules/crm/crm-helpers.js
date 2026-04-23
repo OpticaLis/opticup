@@ -3,6 +3,11 @@
    Load order: after shared.js (needs sb, T, getTenantId, escapeHtml).
    Globals exported on window.CrmHelpers + window.CRM_STATUSES.
    ============================================================================= */
+// Promote ActivityLog (declared as script-scope const in shared/js/activity-logger.js)
+// onto window so `if (window.ActivityLog) ...` guards across CRM files resolve truthy.
+// Without this, every ActivityLog.write call in CRM is silently skipped.
+if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLog = ActivityLog;
+
 (function () {
   'use strict';
 
@@ -17,6 +22,23 @@
       return local.slice(0, 3) + '-' + local.slice(3, 6) + '-' + local.slice(6);
     }
     return raw;
+  }
+
+  // --- Phone normalize to E.164 ---
+  // Mirrors supabase/functions/lead-intake/index.ts normalizePhone so manual
+  // creation, edit, and public intake all write phones in one canonical format.
+  // Returns +CC... or null if the input cannot be interpreted.
+  function normalizePhone(raw) {
+    if (raw == null) return null;
+    var s = String(raw).trim();
+    if (!s) return null;
+    var hasPlus = s.charAt(0) === '+';
+    var digits = s.replace(/\D/g, '');
+    if (!digits) return null;
+    if (hasPlus) return '+' + digits;
+    if (digits.indexOf('972') === 0) return '+' + digits;
+    if (digits.charAt(0) === '0' && digits.length === 10) return '+972' + digits.slice(1);
+    return null;
   }
 
   // --- Currency: number -> ₪39,460 ---
@@ -53,6 +75,25 @@
     if (!code) return '';
     return LANG_HE[String(code).toLowerCase()] || code;
   }
+
+  // --- Tier 1 & Tier 2 status constants ---
+  var TIER1_STATUSES = [
+    'new',              // ליד חדש שנרשם
+    'pending_terms',    // ליד ידני שלא אישר תקנון
+    'invalid_phone',    // מספר טלפון שגוי
+    'too_far',          // גר רחוק מאשקלון
+    'no_answer',        // ניסו ליצור קשר, לא ענה
+    'callback'          // צריך להתקשר אליו בחזרה
+  ];
+
+  var TIER2_STATUSES = [
+    'waiting',                // ממתין לאירוע
+    'invited',                // הוזמן לאירוע
+    'confirmed',              // אישר הגעה
+    'confirmed_verified',     // אישר ווידוא הגעה
+    'not_interested',         // לא מעוניין
+    'unsubscribed'            // ביטל UNSUBSCRIBE
+  ];
 
   // --- Status cache loader ---
   // Fills window.CRM_STATUSES = { lead: { slug: {name_he, color, ...} }, event: {...}, attendee: {...} }
@@ -105,6 +146,7 @@
 
   window.CrmHelpers = {
     formatPhone: formatPhone,
+    normalizePhone: normalizePhone,
     formatCurrency: formatCurrency,
     formatDate: formatDate,
     formatDateTime: formatDateTime,
@@ -115,4 +157,8 @@
     distinctValues: distinctValues,
     heCompare: heCompare
   };
+
+  // Export tier constants
+  window.TIER1_STATUSES = TIER1_STATUSES;
+  window.TIER2_STATUSES = TIER2_STATUSES;
 })();

@@ -7,8 +7,42 @@
 
   var CHANNEL_LABELS = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'אימייל' };
   var CHANNEL_CLASSES = { sms: 'bg-sky-500', whatsapp: 'bg-emerald-500', email: 'bg-amber-500' };
-  var ENTITY_LABELS = { lead: 'ליד', event: 'אירוע', attendee: 'משתתף' };
-  var EVENT_LABELS = { created: 'נוצר', updated: 'עודכן', status_change: 'שינוי סטטוס' };
+
+  // P8 — trigger/condition/recipient taxonomies mirror the engine (crm-automation-engine.js).
+  var TRIGGER_TYPES = {
+    event_status_change: { label: 'שינוי סטטוס אירוע', entity: 'event',    event: 'status_change' },
+    event_registration:  { label: 'הרשמה לאירוע',       entity: 'attendee', event: 'created'       },
+    lead_status_change:  { label: 'שינוי סטטוס ליד',    entity: 'lead',     event: 'status_change' },
+    lead_intake:         { label: 'ליד חדש (ידני)',     entity: 'lead',     event: 'created'       }
+  };
+  var CONDITION_TYPES = {
+    always:          'תמיד (ללא תנאי)',
+    status_equals:   'סטטוס שווה ל-',
+    count_threshold: 'ספירה עוברת סף',
+    source_equals:   'מקור שווה ל-'
+  };
+  var RECIPIENT_TYPES = {
+    trigger_lead:            'הליד שהפעיל את החוק',
+    tier2:                   'כל Tier 2',
+    tier2_excl_registered:   'Tier 2 חוץ מרשומים',
+    attendees:               'נרשמים לאירוע',
+    attendees_waiting:       'רשימת המתנה'
+  };
+  // P21: recipient_status_filter — only offered when recipient_type is tier2*.
+  // Empty filter = send to ALL tier2 statuses (backwards-compatible default).
+  var TIER2_FILTER_STATUSES = [
+    { slug: 'waiting',            label: 'ממתין לאירוע (waiting)' },
+    { slug: 'invited',             label: 'הוזמן (invited)' },
+    { slug: 'confirmed',           label: 'אישר הגעה (confirmed)' },
+    { slug: 'confirmed_verified', label: 'אומת (confirmed_verified)' }
+  ];
+  function recipientTypeUsesStatusFilter(t) { return t === 'tier2' || t === 'tier2_excl_registered'; }
+  function lookupTriggerTypeKey(entity, event) {
+    for (var k in TRIGGER_TYPES) {
+      if (TRIGGER_TYPES[k].entity === entity && TRIGGER_TYPES[k].event === event) return k;
+    }
+    return null;
+  }
 
   var CLS_TABLE      = 'w-full text-sm bg-white';
   var CLS_TH         = 'px-4 py-3 text-start font-semibold text-slate-700 bg-slate-50';
@@ -54,11 +88,8 @@
   function renderMessagingRules(host) {
     if (!host) return;
     host.innerHTML =
-      '<div class="bg-amber-50 border-s-4 border-amber-500 text-amber-900 rounded-lg p-3 mb-4 text-sm">' +
-        '⚠️ כללי אוטומטיה נשמרים אך עדיין לא פועלים אוטומטית. הפעלה אוטומטית תתווסף בשלב הבא.' +
-      '</div>' +
       '<div class="flex items-center justify-between mb-4">' +
-        '<h3 class="text-lg font-bold text-slate-800 m-0">כללי אוטומטיה</h3>' +
+        '<h3 class="text-lg font-bold text-slate-800 m-0">כללי אוטומציה</h3>' +
         '<button type="button" class="' + CLS_BTN_P + '" id="btn-new-rule">+ כלל חדש</button>' +
       '</div>' +
       '<div id="crm-rules-table" class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">' +
@@ -79,7 +110,7 @@
     var wrap = document.getElementById('crm-rules-table');
     if (!wrap) return;
     if (!_rules.length) {
-      wrap.innerHTML = '<div class="text-center text-slate-400 py-8">אין כללי אוטומטיה עדיין.</div>';
+      wrap.innerHTML = '<div class="text-center text-slate-400 py-8">אין כללי אוטומציה עדיין.</div>';
       return;
     }
     var html = '<table class="' + CLS_TABLE + '"><thead><tr>' +
@@ -91,7 +122,8 @@
       '<th class="' + CLS_TH + ' text-end">פעולה</th>' +
       '</tr></thead><tbody>';
     _rules.forEach(function (r) {
-      var trig = (ENTITY_LABELS[r.trigger_entity] || r.trigger_entity) + ' · ' + (EVENT_LABELS[r.trigger_event] || r.trigger_event);
+      var tKey = lookupTriggerTypeKey(r.trigger_entity, r.trigger_event);
+      var trig = tKey ? TRIGGER_TYPES[tKey].label : (r.trigger_entity + ' · ' + r.trigger_event);
       var cfg = r.action_config || {};
       var chs = Array.isArray(cfg.channels) ? cfg.channels : (cfg.channel ? [cfg.channel] : []);
       var chHtml = chs.map(function (c) {
@@ -129,39 +161,82 @@
     });
   }
 
+  // Extract unique base-slug + name pairs from the loaded templates cache.
+  // crm_message_templates.slug is fully composed (e.g. event_registration_open_sms_he);
+  // the engine dispatches via base slug. We derive base = slug minus `_{channel}_{lang}`.
+  function baseSlugsFromTemplates() {
+    var tpls = (typeof window._crmMessagingTemplates === 'function') ? window._crmMessagingTemplates() : [];
+    var seen = {};
+    tpls.forEach(function (t) {
+      if (!t || !t.slug) return;
+      var sfx = '_' + (t.channel || '') + '_' + (t.language || 'he');
+      var base = (t.slug.slice(-sfx.length) === sfx) ? t.slug.slice(0, -sfx.length) : t.slug;
+      if (!seen[base]) seen[base] = { base: base, name: t.name || base };
+    });
+    return Object.keys(seen).sort().map(function (k) { return seen[k]; });
+  }
+
   function openRuleModal(existing) {
     var isNew = !existing;
-    var row = existing || { name: '', trigger_entity: 'lead', trigger_event: 'status_change', trigger_condition: {}, action_type: 'send_message', action_config: { template_id: null, channels: [], delay_minutes: 0 }, sort_order: 0, is_active: true };
+    var row = existing || { name: '', trigger_entity: 'event', trigger_event: 'status_change', trigger_condition: { type: 'always' }, action_type: 'send_message', action_config: { template_slug: '', channels: [], recipient_type: 'trigger_lead' }, sort_order: 0, is_active: true };
     var cfg = row.action_config || {};
     var chs = Array.isArray(cfg.channels) ? cfg.channels : [];
-    var title = isNew ? 'כלל אוטומטיה חדש' : 'עריכת כלל';
+    var title = isNew ? 'כלל אוטומציה חדש' : 'עריכת כלל';
+    var currentTrigger = lookupTriggerTypeKey(row.trigger_entity, row.trigger_event) || 'event_status_change';
+    var cond = row.trigger_condition || {};
+    var condType = cond.type || 'always';
 
-    var templates = (typeof window._crmMessagingTemplates === 'function') ? window._crmMessagingTemplates() : [];
-    var tplOptions = '<option value="">(ללא תבנית)</option>' + templates.map(function (t) {
-      return '<option value="' + escapeHtml(t.id) + '"' + (cfg.template_id === t.id ? ' selected' : '') + '>' + escapeHtml(t.name) + '</option>';
+    var triggerOpts = Object.keys(TRIGGER_TYPES).map(function (k) {
+      return '<option value="' + k + '"' + (k === currentTrigger ? ' selected' : '') + '>' + escapeHtml(TRIGGER_TYPES[k].label) + '</option>';
     }).join('');
-
-    var entOpts = Object.keys(ENTITY_LABELS).map(function (k) {
-      return '<option value="' + k + '"' + (k === row.trigger_entity ? ' selected' : '') + '>' + ENTITY_LABELS[k] + '</option>';
+    var condOpts = Object.keys(CONDITION_TYPES).map(function (k) {
+      return '<option value="' + k + '"' + (k === condType ? ' selected' : '') + '>' + escapeHtml(CONDITION_TYPES[k]) + '</option>';
     }).join('');
-    var evOpts = Object.keys(EVENT_LABELS).map(function (k) {
-      return '<option value="' + k + '"' + (k === row.trigger_event ? ' selected' : '') + '>' + EVENT_LABELS[k] + '</option>';
+    var recipOpts = Object.keys(RECIPIENT_TYPES).map(function (k) {
+      return '<option value="' + k + '"' + (k === cfg.recipient_type ? ' selected' : '') + '>' + escapeHtml(RECIPIENT_TYPES[k]) + '</option>';
+    }).join('');
+    var bases = baseSlugsFromTemplates();
+    var tplOpts = '<option value="">(בחר תבנית)</option>' + bases.map(function (b) {
+      return '<option value="' + escapeHtml(b.base) + '"' + (cfg.template_slug === b.base ? ' selected' : '') + '>' + escapeHtml(b.name) + ' — ' + escapeHtml(b.base) + '</option>';
     }).join('');
     var chBoxes = ['sms', 'whatsapp', 'email'].map(function (c) {
       var chk = chs.indexOf(c) !== -1 ? ' checked' : '';
       return '<label class="inline-flex items-center gap-1.5 me-4 cursor-pointer"><input type="checkbox" name="rule-channel" value="' + c + '"' + chk + ' class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"> <span class="text-sm">' + CHANNEL_LABELS[c] + '</span></label>';
     }).join('');
+    var savedFilter = Array.isArray(cfg.recipient_status_filter) ? cfg.recipient_status_filter : [];
+    var filterBoxes = TIER2_FILTER_STATUSES.map(function (s) {
+      var chk = savedFilter.indexOf(s.slug) !== -1 ? ' checked' : '';
+      return '<label class="flex items-center gap-1.5 py-0.5 cursor-pointer"><input type="checkbox" name="rule-status-filter" value="' + s.slug + '"' + chk + ' class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"> <span class="text-sm">' + escapeHtml(s.label) + '</span></label>';
+    }).join('');
+    var filterHidden = recipientTypeUsesStatusFilter(cfg.recipient_type) ? '' : ' hidden';
+    var condValue = cond.status || cond.source || '';
+    var condNum = (cond.value != null) ? cond.value : '';
+    var condOp = cond.operator || '>';
+    var condField = cond.field || 'attendee_count';
 
     var content =
       '<div class="mb-3"><label class="' + CLS_LABEL + '">שם כלל *</label><input type="text" id="rule-name" value="' + escapeHtml(row.name) + '" required class="' + CLS_INPUT + '"></div>' +
-      '<div class="grid grid-cols-2 gap-3 mb-3">' +
-        '<div><label class="' + CLS_LABEL + '">ישות *</label><select id="rule-entity" class="' + CLS_INPUT + '">' + entOpts + '</select></div>' +
-        '<div><label class="' + CLS_LABEL + '">אירוע *</label><select id="rule-event" class="' + CLS_INPUT + '">' + evOpts + '</select></div>' +
+      '<div class="mb-3"><label class="' + CLS_LABEL + '">טריגר *</label><select id="rule-trigger" class="' + CLS_INPUT + '">' + triggerOpts + '</select></div>' +
+      '<div class="mb-3"><label class="' + CLS_LABEL + '">תנאי *</label><select id="rule-cond-type" class="' + CLS_INPUT + '">' + condOpts + '</select>' +
+        '<div id="rule-cond-fields" class="mt-2">' +
+          '<input type="text" id="rule-cond-value" placeholder="ערך (למשל: registered, waiting_list, supersale_form)" value="' + escapeHtml(condValue) + '" class="' + CLS_INPUT + '' + (condType !== 'status_equals' && condType !== 'source_equals' ? ' hidden' : '') + '">' +
+          '<div id="rule-cond-count" class="grid grid-cols-3 gap-2' + (condType !== 'count_threshold' ? ' hidden' : '') + '">' +
+            '<input type="text" id="rule-cond-field" placeholder="שדה" value="' + escapeHtml(condField) + '" class="' + CLS_INPUT + '">' +
+            '<select id="rule-cond-op" class="' + CLS_INPUT + '">' +
+              ['>','>=','=','<','<='].map(function (o) { return '<option' + (o === condOp ? ' selected' : '') + '>' + o + '</option>'; }).join('') +
+            '</select>' +
+            '<input type="number" id="rule-cond-num" placeholder="ערך" value="' + escapeHtml(String(condNum)) + '" class="' + CLS_INPUT + '">' +
+          '</div>' +
+        '</div>' +
       '</div>' +
-      '<div class="mb-3"><label class="' + CLS_LABEL + '">תנאים נוספים (JSON)</label><textarea id="rule-cond" rows="3" placeholder="{}" class="' + CLS_INPUT + ' font-mono text-xs" style="direction:ltr">' + escapeHtml(JSON.stringify(row.trigger_condition || {}, null, 2)) + '</textarea></div>' +
-      '<div class="mb-3"><label class="' + CLS_LABEL + '">תבנית</label><select id="rule-tpl" class="' + CLS_INPUT + '">' + tplOptions + '</select></div>' +
-      '<div class="mb-3"><label class="' + CLS_LABEL + '">ערוצים</label><div>' + chBoxes + '</div></div>' +
-      '<div class="mb-3"><label class="' + CLS_LABEL + '">השהיה (דקות אחרי הטריגר)</label><input type="number" id="rule-delay" min="0" value="' + Number(cfg.delay_minutes || 0) + '" class="' + CLS_INPUT + '"></div>';
+      '<div class="mb-3"><label class="' + CLS_LABEL + '">תבנית הודעה (slug בסיסי) *</label><select id="rule-tpl" class="' + CLS_INPUT + '">' + tplOpts + '</select></div>' +
+      '<div class="mb-3"><label class="' + CLS_LABEL + '">ערוצים *</label><div>' + chBoxes + '</div></div>' +
+      '<div class="mb-3"><label class="' + CLS_LABEL + '">נמענים *</label><select id="rule-recipient" class="' + CLS_INPUT + '">' + recipOpts + '</select></div>' +
+      '<div id="rule-status-filter-block" class="mb-3' + filterHidden + '">' +
+        '<label class="' + CLS_LABEL + '">סינון לפי סטטוס (אופציונלי)</label>' +
+        '<div class="border border-slate-200 rounded-lg p-2 bg-slate-50">' + filterBoxes + '</div>' +
+        '<div class="text-xs text-slate-500 mt-1">אם לא מסומן דבר — יישלח לכל הסטטוסים בקבוצה.</div>' +
+      '</div>';
 
     Modal.form({
       title: title, size: 'md', content: content,
@@ -172,32 +247,70 @@
         save(row.id, data, isNew);
       }
     });
+
+    // Reveal/hide conditional field blocks based on the condition-type select.
+    setTimeout(function () {
+      var sel = document.querySelector('#rule-cond-type');
+      if (sel) {
+        sel.addEventListener('change', function () {
+          var type = sel.value;
+          var vEl = document.querySelector('#rule-cond-value');
+          var cEl = document.querySelector('#rule-cond-count');
+          if (vEl) vEl.classList.toggle('hidden', type !== 'status_equals' && type !== 'source_equals');
+          if (cEl) cEl.classList.toggle('hidden', type !== 'count_threshold');
+        });
+      }
+      // P21: show/hide status-filter block when recipient_type changes.
+      var recSel = document.querySelector('#rule-recipient');
+      var fBlk = document.querySelector('#rule-status-filter-block');
+      if (recSel && fBlk) {
+        recSel.addEventListener('change', function () {
+          fBlk.classList.toggle('hidden', !recipientTypeUsesStatusFilter(recSel.value));
+        });
+      }
+    }, 50);
   }
 
   function readForm(el) {
     var chs = [];
     el.querySelectorAll('input[name="rule-channel"]:checked').forEach(function (cb) { chs.push(cb.value); });
-    var condRaw = (el.querySelector('#rule-cond').value || '').trim();
-    var cond = {};
-    if (condRaw) { try { cond = JSON.parse(condRaw); } catch (_) { cond = null; } }
+    var triggerKey = el.querySelector('#rule-trigger').value;
+    var trig = TRIGGER_TYPES[triggerKey] || TRIGGER_TYPES.event_status_change;
+    var condType = el.querySelector('#rule-cond-type').value || 'always';
+    var cond = { type: condType };
+    if (condType === 'status_equals') cond.status = (el.querySelector('#rule-cond-value').value || '').trim();
+    else if (condType === 'source_equals') cond.source = (el.querySelector('#rule-cond-value').value || '').trim();
+    else if (condType === 'count_threshold') {
+      cond.field = (el.querySelector('#rule-cond-field').value || '').trim();
+      cond.operator = el.querySelector('#rule-cond-op').value;
+      cond.value = Number(el.querySelector('#rule-cond-num').value) || 0;
+    }
+    var recipientType = el.querySelector('#rule-recipient').value;
+    var actionConfig = {
+      template_slug: (el.querySelector('#rule-tpl').value || '').trim(),
+      channels: chs,
+      recipient_type: recipientType
+    };
+    if (recipientTypeUsesStatusFilter(recipientType)) {
+      var picked = [];
+      el.querySelectorAll('input[name="rule-status-filter"]:checked').forEach(function (cb) { picked.push(cb.value); });
+      if (picked.length) actionConfig.recipient_status_filter = picked;
+    }
     return {
       name: (el.querySelector('#rule-name').value || '').trim(),
-      trigger_entity: el.querySelector('#rule-entity').value,
-      trigger_event: el.querySelector('#rule-event').value,
+      trigger_entity: trig.entity,
+      trigger_event: trig.event,
       trigger_condition: cond,
       action_type: 'send_message',
-      action_config: {
-        template_id: el.querySelector('#rule-tpl').value || null,
-        channels: chs,
-        delay_minutes: parseInt(el.querySelector('#rule-delay').value, 10) || 0
-      }
+      action_config: actionConfig
     };
   }
 
   function validate(d) {
     if (!d.name) return 'שם כלל חובה';
-    if (!d.trigger_condition) return 'JSON תנאים לא תקין';
+    if (!d.action_config.template_slug) return 'בחר תבנית';
     if (!d.action_config.channels.length) return 'בחר לפחות ערוץ אחד';
+    if (!d.action_config.recipient_type) return 'בחר סוג נמענים';
     return null;
   }
 

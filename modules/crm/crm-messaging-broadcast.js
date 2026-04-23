@@ -1,21 +1,12 @@
 /* =============================================================================
-   crm-messaging-broadcast.js — Broadcast wizard + Log (B8 Tailwind — FINAL-04)
+   crm-messaging-broadcast.js — Broadcast wizard (B8 Tailwind — FINAL-04, P8 split)
    Tables: crm_broadcasts, crm_message_log, crm_leads, crm_events
+   Log rendering extracted to crm-messaging-log.js (P8, Rule 12 split, 2026-04-22).
    ============================================================================= */
 (function () {
   'use strict';
 
   var CHANNEL_LABELS = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'אימייל' };
-  var STATUS_LABELS  = { sent: 'נשלח', pending: 'בתור', failed: 'נכשל', delivered: 'הגיע', read: 'נקרא', queued: 'בתור' };
-  var STATUS_CLASSES = {
-    sent:      'bg-sky-100 text-sky-800',
-    delivered: 'bg-emerald-100 text-emerald-800',
-    read:      'bg-indigo-100 text-indigo-800',
-    failed:    'bg-rose-100 text-rose-800',
-    queued:    'bg-slate-100 text-slate-700',
-    pending:   'bg-slate-100 text-slate-700'
-  };
-  var PAGE_SIZE = 50;
   var WIZARD_STEPS = [
     { key: 'recipients', label: 'נמענים' },
     { key: 'channel',    label: 'ערוץ' },
@@ -29,19 +20,76 @@
   var CLS_ROW    = 'mb-3';
   var CLS_BTN_P  = 'px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed';
   var CLS_BTN_S  = 'px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold rounded-lg text-sm transition disabled:opacity-40 disabled:cursor-not-allowed';
-  var CLS_TABLE  = 'w-full text-sm bg-white';
-  var CLS_TH     = 'px-4 py-2.5 text-start font-semibold text-slate-700 bg-slate-50';
-  var CLS_TD     = 'px-4 py-2.5 text-slate-800 border-b border-slate-100';
 
   var _events = [];
-  var _logRows = [];
-  var _logPage = 1;
   var _wizard = null;
 
   function toast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
   function logWrite(a, et, eid, meta) {
     if (window.ActivityLog && ActivityLog.write) { try { ActivityLog.write({ action: a, entity_type: et, entity_id: eid, severity: 'info', metadata: meta || {} }); } catch (_) {} }
   }
+
+  function variablePanelHtml(idPrefix) {
+    var vars = window.CRM_TEMPLATE_VARIABLES || [];
+    if (!vars.length) return '';
+    var items = vars.map(function (v) {
+      return '<div class="flex items-center justify-between px-2 py-1.5 hover:bg-indigo-50 rounded cursor-pointer gap-3" data-copy-var="' + escapeHtml(v.key) + '">' +
+        '<code class="text-xs text-indigo-600">' + escapeHtml(v.key) + '</code>' +
+        '<span class="text-xs text-slate-500">' + escapeHtml(v.desc) + '</span>' +
+      '</div>';
+    }).join('');
+    return '<div class="mt-2 border border-slate-200 rounded-lg bg-white">' +
+      '<button type="button" class="w-full text-start px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-t-lg" id="' + idPrefix + '-toggle">משתנים זמינים (לחץ להעתקה) ▾</button>' +
+      '<div class="hidden p-2 grid grid-cols-1 sm:grid-cols-2 gap-1 border-t border-slate-200" id="' + idPrefix + '-list">' + items + '</div>' +
+    '</div>';
+  }
+
+  function wireVariablePanel(root, idPrefix) {
+    if (!root) return;
+    var toggle = root.querySelector('#' + idPrefix + '-toggle');
+    var list = root.querySelector('#' + idPrefix + '-list');
+    if (toggle && list) {
+      toggle.addEventListener('click', function () {
+        list.classList.toggle('hidden');
+      });
+    }
+    if (list) {
+      list.querySelectorAll('[data-copy-var]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var v = el.getAttribute('data-copy-var');
+          copyVarToClipboard(v);
+        });
+      });
+    }
+  }
+
+  function copyVarToClipboard(v) {
+    if (!v) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(v).then(function () {
+        toast('success', 'הועתק: ' + v);
+      }).catch(function () {
+        _fallbackCopy(v);
+      });
+    } else {
+      _fallbackCopy(v);
+    }
+  }
+
+  function _fallbackCopy(v) {
+    try {
+      var tmp = document.createElement('input');
+      tmp.value = v; tmp.style.position = 'fixed'; tmp.style.top = '-1000px';
+      document.body.appendChild(tmp);
+      tmp.select(); document.execCommand('copy');
+      document.body.removeChild(tmp);
+      toast('success', 'הועתק: ' + v);
+    } catch (_) {
+      toast('error', 'העתקה נכשלה');
+    }
+  }
+
+  window.CrmBroadcastClipboard = { copy: copyVarToClipboard, panelHtml: variablePanelHtml, wire: wireVariablePanel };
 
   async function renderMessagingBroadcast(host) {
     if (!host) return;
@@ -74,11 +122,26 @@
       '<div id="bc-history" class="mt-4"></div>';
     var btn = host.querySelector('#open-wizard');
     if (btn) btn.addEventListener('click', openWizard);
-    renderMessagingLog(host.querySelector('#bc-history'));
+    if (typeof window.renderMessagingLog === 'function') window.renderMessagingLog(host.querySelector('#bc-history'));
   }
 
   function openWizard() {
-    _wizard = { step: 0, status: '', event: '', language: '', channel: 'whatsapp', templateId: '', body: '', name: '', schedule: 'now', recipients: 0 };
+    _wizard = {
+      step: 0,
+      board: 'incoming',
+      statuses: [],
+      events: [],
+      openEventsOnly: false,
+      language: '',
+      source: '',
+      channel: 'whatsapp',
+      templateId: '',
+      body: '',
+      name: '',
+      schedule: 'now',
+      recipients: 0,
+      _matchedLeads: []
+    };
     var modal = Modal.show({ title: 'אשף שליחה', size: 'lg', content: wizardHtml() });
     var root = modal.el.querySelector('.modal-body');
     if (root) wireWizard(root);
@@ -109,14 +172,10 @@
 
   function wizardStepBody(key) {
     if (key === 'recipients') {
-      var statuses = (window.CRM_STATUSES && window.CRM_STATUSES.lead) || {};
-      var stOpts = '<option value="">(כל הסטטוסים)</option>' + Object.keys(statuses).map(function (slug) { return '<option value="' + escapeHtml(slug) + '"' + (slug === _wizard.status ? ' selected' : '') + '>' + escapeHtml(statuses[slug].name_he || slug) + '</option>'; }).join('');
-      var evOpts = '<option value="">(כל האירועים)</option>' + _events.map(function (e) { return '<option value="' + escapeHtml(e.id) + '"' + (e.id === _wizard.event ? ' selected' : '') + '>#' + e.event_number + ' ' + escapeHtml(e.name || '') + '</option>'; }).join('');
-      return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 1 — נמענים</h4>' +
-        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">סטטוס</label><select id="wiz-status" class="' + CLS_INPUT + '">' + stOpts + '</select></div>' +
-        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">אירוע</label><select id="wiz-event" class="' + CLS_INPUT + '">' + evOpts + '</select></div>' +
-        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">שפה</label><select id="wiz-lang" class="' + CLS_INPUT + '"><option value="">הכל</option><option value="he">עברית</option><option value="ru">רוסית</option><option value="en">אנגלית</option></select></div>' +
-        '<div id="wiz-count" class="px-4 py-3 bg-indigo-50 text-indigo-800 rounded-lg font-bold text-sm">מחשב...</div>';
+      if (window.CrmBroadcastFilters && typeof CrmBroadcastFilters.renderRecipientsStep === 'function') {
+        return CrmBroadcastFilters.renderRecipientsStep(_wizard, _events);
+      }
+      return '<div class="text-rose-500">שגיאה: מודול סינון לא נטען</div>';
     }
     if (key === 'channel') {
       return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 2 — ערוץ</h4>' +
@@ -138,7 +197,8 @@
       }).join('');
       return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 3 — תבנית</h4>' +
         '<div class="space-y-2 mb-3 max-h-48 overflow-y-auto">' + (opts || '<div class="text-center text-slate-400 py-4">אין תבניות פעילות</div>') + '</div>' +
-        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">תוכן</label><textarea id="wiz-body" rows="4" placeholder="תוכן הודעה ידני (או בחר תבנית)" class="' + CLS_INPUT + '">' + escapeHtml(_wizard.body) + '</textarea></div>';
+        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">תוכן</label><textarea id="wiz-body" rows="4" placeholder="תוכן הודעה ידני (או בחר תבנית)" class="' + CLS_INPUT + '">' + escapeHtml(_wizard.body) + '</textarea></div>' +
+        variablePanelHtml('wiz-var');
     }
     if (key === 'timing') {
       return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 4 — תזמון</h4>' +
@@ -173,7 +233,22 @@
       if (_wizard.step < WIZARD_STEPS.length - 1) { _wizard.step++; rerenderWizard(root); }
       else { doWizardSend(); }
     });
-    if (_wizard.step === 0) refreshRecipientCount(root);
+    if (_wizard.step === 0) {
+      if (window.CrmBroadcastFilters && typeof CrmBroadcastFilters.wireRecipientsStep === 'function') {
+        CrmBroadcastFilters.wireRecipientsStep(root, _wizard, _events, function () {
+          rerenderWizard(root);
+        });
+      }
+      var countEl = root.querySelector('#wiz-count');
+      if (countEl) {
+        countEl.addEventListener('click', function () {
+          if (window.CrmBroadcastFilters && typeof CrmBroadcastFilters.showRecipientsPreview === 'function') {
+            CrmBroadcastFilters.showRecipientsPreview(_wizard._matchedLeads || []);
+          }
+        });
+      }
+      refreshRecipientCount(root);
+    }
     root.querySelectorAll('input[name="wiz-tpl"]').forEach(function (i) {
       i.addEventListener('change', function () {
         var tpls = window._crmMessagingTemplates ? window._crmMessagingTemplates() : [];
@@ -185,12 +260,11 @@
         }
       });
     });
+    if (WIZARD_STEPS[_wizard.step].key === 'template') wireVariablePanel(root, 'wiz-var');
   }
 
   function captureStep(root) {
-    var statusSel = root.querySelector('#wiz-status'); if (statusSel) _wizard.status = statusSel.value || '';
-    var evSel = root.querySelector('#wiz-event');     if (evSel)     _wizard.event    = evSel.value || '';
-    var langSel = root.querySelector('#wiz-lang');    if (langSel)   _wizard.language = langSel.value || '';
+    // Step 1 (recipients) — state is maintained live by CrmBroadcastFilters.wireRecipientsStep.
     var chRadio = root.querySelector('input[name="wiz-channel"]:checked'); if (chRadio) _wizard.channel = chRadio.value;
     var tplRadio = root.querySelector('input[name="wiz-tpl"]:checked');   if (tplRadio) _wizard.templateId = tplRadio.value;
     var bodyEl = root.querySelector('#wiz-body'); if (bodyEl) _wizard.body = bodyEl.value || '';
@@ -202,140 +276,53 @@
 
   async function refreshRecipientCount(root) {
     try {
-      var ids = await buildLeadIds();
-      _wizard.recipients = ids.length;
+      var rows = await CrmBroadcastFilters.buildLeadRows(_wizard);
+      _wizard._matchedLeads = rows;
+      _wizard.recipients = rows.length;
       var el = root.querySelector('#wiz-count');
-      if (el) el.textContent = 'נמצאו ' + ids.length + ' נמענים';
+      if (el) el.textContent = 'נמצאו ' + rows.length + ' נמענים';
     } catch (e) {
       var el2 = root.querySelector('#wiz-count');
       if (el2) el2.textContent = 'שגיאה: ' + (e.message || e);
     }
   }
 
-  async function buildLeadIds() {
-    var tid = getTenantId();
-    var q = sb.from('crm_leads').select('id').eq('is_deleted', false).is('unsubscribed_at', null);
-    if (tid) q = q.eq('tenant_id', tid);
-    if (_wizard.status) q = q.eq('status', _wizard.status);
-    if (_wizard.language) q = q.eq('language', _wizard.language);
-    if (_wizard.event) {
-      var att = sb.from('crm_event_attendees').select('lead_id').eq('event_id', _wizard.event).eq('is_deleted', false);
-      if (tid) att = att.eq('tenant_id', tid);
-      var r = await att;
-      if (r.error) throw new Error(r.error.message);
-      var ids = (r.data || []).map(function (x) { return x.lead_id; }).filter(Boolean);
-      if (!ids.length) return [];
-      q = q.in('id', ids);
-    }
-    var res = await q;
-    if (res.error) throw new Error(res.error.message);
-    return (res.data || []).map(function (r) { return r.id; });
-  }
 
   async function doWizardSend() {
     if (!_wizard.name) { toast('error', 'שם שליחה חובה'); _wizard.step = 3; return; }
-    if (!_wizard.body) { toast('error', 'תוכן הודעה חובה'); _wizard.step = 2; return; }
-    var leadIds = await buildLeadIds();
+    if (!_wizard.body && !_wizard.templateId) { toast('error', 'תוכן הודעה חובה'); _wizard.step = 2; return; }
+    if (_wizard.channel !== 'sms' && _wizard.channel !== 'email') { toast('error', 'ערוץ ' + (CHANNEL_LABELS[_wizard.channel] || _wizard.channel) + ' אינו פעיל'); _wizard.step = 1; return; }
+    var leadIds = await CrmBroadcastFilters.buildLeadIds(_wizard);
     if (!leadIds.length) { toast('warning', 'אין נמענים'); return; }
-    var tid = getTenantId();
+    if (!window.CrmMessaging || !CrmMessaging.sendMessage) { toast('error', 'CrmMessaging לא זמין'); return; }
+    var tid = getTenantId(), emp = (typeof getCurrentEmployee === 'function') ? getCurrentEmployee() : null;
+    if (!emp || !emp.id) { toast('error', 'משתמש לא מזוהה'); return; }
     try {
+      var leadsRes = await sb.from('crm_leads').select('id, full_name, phone, email').eq('tenant_id', tid).in('id', leadIds);
+      if (leadsRes.error) throw new Error(leadsRes.error.message); var leadRows = leadsRes.data || [];
       var ins = await sb.from('crm_broadcasts').insert({
-        tenant_id: tid, name: _wizard.name, channel: _wizard.channel, template_id: _wizard.templateId || null,
-        filter_criteria: { status: _wizard.status || null, event: _wizard.event || null, language: _wizard.language || null },
-        total_recipients: leadIds.length, total_sent: leadIds.length, total_failed: 0, status: 'queued'
-      }).select('id').single();
+        tenant_id: tid, employee_id: emp.id, name: _wizard.name, channel: _wizard.channel, template_id: _wizard.templateId || null,
+        filter_criteria: {
+          board: _wizard.board,
+          statuses: _wizard.statuses.slice(),
+          events: _wizard.events.slice(),
+          openEventsOnly: !!_wizard.openEventsOnly,
+          language: _wizard.language || null,
+          source: _wizard.source || null
+        },
+        total_recipients: leadIds.length, total_sent: 0, total_failed: 0, status: 'queued' }).select('id').single();
       if (ins.error) throw new Error(ins.error.message);
       logWrite('crm.broadcast.send', 'crm_broadcast', ins.data.id, { name: _wizard.name, recipients: leadIds.length });
-      var logRows = leadIds.map(function (id) { return { tenant_id: tid, lead_id: id, template_id: _wizard.templateId || null, broadcast_id: ins.data.id, channel: _wizard.channel, content: _wizard.body, status: 'queued' }; });
-      var logRes = await sb.from('crm_message_log').insert(logRows);
-      if (logRes.error) throw new Error(logRes.error.message);
-      toast('success', 'נשלחו ' + leadIds.length + ' הודעות');
+      var baseSlug = null, lang = _wizard.language || 'he', tpls = window._crmMessagingTemplates ? window._crmMessagingTemplates() : [];
+      var tpl = _wizard.templateId ? tpls.find(function (t) { return t.id === _wizard.templateId; }) : null;
+      if (tpl) { lang = tpl.language || lang; var sfx = '_' + tpl.channel + '_' + lang; baseSlug = (tpl.slug && tpl.slug.slice(-sfx.length) === sfx) ? tpl.slug.slice(0, -sfx.length) : (tpl.slug || null); }
+      var calls = leadRows.map(function (l) { var v = { name: l.full_name || '', phone: l.phone || '', email: l.email || '' }; return baseSlug ? CrmMessaging.sendMessage({ leadId: l.id, channel: _wizard.channel, templateSlug: baseSlug, variables: v, language: lang }) : CrmMessaging.sendMessage({ leadId: l.id, channel: _wizard.channel, body: _wizard.body, subject: _wizard.name || '', variables: v, language: lang }); });
+      var ok = 0, fail = 0;
+      (await Promise.allSettled(calls)).forEach(function (r) { if (r.status === 'fulfilled' && r.value && r.value.ok) ok++; else fail++; });
+      await sb.from('crm_broadcasts').update({ total_sent: ok, total_failed: fail, status: fail === 0 ? 'completed' : 'partial' }).eq('id', ins.data.id).eq('tenant_id', tid);
+      toast(fail === 0 ? 'success' : 'warning', 'נשלחו ' + ok + ' הודעות' + (fail ? ', ' + fail + ' נכשלו' : ''));
       if (typeof Modal.close === 'function') Modal.close();
-      loadLog().then(renderLogTable);
+      if (typeof window.loadMessagingLog === 'function') window.loadMessagingLog();
     } catch (e) { toast('error', 'שגיאה: ' + (e.message || e)); }
-  }
-
-  /* ----------------------------------- LOG ----------------------------------- */
-
-  async function renderMessagingLog(host) {
-    if (!host) return;
-    host.innerHTML =
-      '<div>' +
-        '<h4 class="text-base font-bold text-slate-800 mb-3">היסטוריה</h4>' +
-        '<div class="flex flex-wrap gap-2 mb-3">' +
-          '<select id="log-channel" class="' + CLS_INPUT + ' max-w-[180px]"><option value="">כל הערוצים</option><option value="sms">SMS</option><option value="whatsapp">WhatsApp</option><option value="email">אימייל</option></select>' +
-          '<select id="log-status" class="' + CLS_INPUT + ' max-w-[180px]"><option value="">כל הסטטוסים</option><option value="sent">נשלח</option><option value="delivered">הגיע</option><option value="read">נקרא</option><option value="failed">נכשל</option></select>' +
-        '</div>' +
-        '<div id="log-table" class="bg-white rounded-lg border border-slate-200 overflow-hidden"></div>' +
-        '<div id="log-pagination" class="flex items-center gap-2 mt-3"></div>' +
-      '</div>';
-    ['log-channel','log-status'].forEach(function (id) {
-      var el = host.querySelector('#' + id);
-      if (el) el.addEventListener('change', function () { _logPage = 1; loadLog().then(renderLogTable); });
-    });
-    await loadLog();
-    renderLogTable();
-  }
-  window.renderMessagingLog = renderMessagingLog;
-  window.loadMessagingLog = function () { return loadLog().then(renderLogTable); };
-
-  async function loadLog() {
-    var tid = getTenantId();
-    var ch = (document.getElementById('log-channel') || {}).value || '';
-    var st = (document.getElementById('log-status')  || {}).value || '';
-    var q = sb.from('crm_message_log').select('id, lead_id, channel, content, status, created_at');
-    if (tid) q = q.eq('tenant_id', tid);
-    if (ch) q = q.eq('channel', ch);
-    if (st) q = q.eq('status', st);
-    q = q.order('created_at', { ascending: false }).limit(300);
-    var res = await q;
-    _logRows = res.error ? [] : (res.data || []);
-  }
-
-  function renderLogTable() {
-    var wrap = document.getElementById('log-table');
-    if (!wrap) return;
-    if (!_logRows.length) { wrap.innerHTML = '<div class="text-center text-slate-400 py-8">אין הודעות</div>'; return; }
-    var start = (_logPage - 1) * PAGE_SIZE;
-    var rows = _logRows.slice(start, start + PAGE_SIZE);
-    var html = '<table class="' + CLS_TABLE + '"><thead><tr>' +
-      '<th class="' + CLS_TH + '">תאריך</th>' +
-      '<th class="' + CLS_TH + '">ערוץ</th>' +
-      '<th class="' + CLS_TH + '">סטטוס</th>' +
-      '<th class="' + CLS_TH + '">תוכן</th>' +
-      '</tr></thead><tbody>';
-    rows.forEach(function (r) {
-      var chipCls = STATUS_CLASSES[r.status] || 'bg-slate-100 text-slate-700';
-      html += '<tr>' +
-        '<td class="' + CLS_TD + ' text-xs text-slate-600">' + escapeHtml(CrmHelpers.formatDateTime(r.created_at)) + '</td>' +
-        '<td class="' + CLS_TD + '">' + escapeHtml(CHANNEL_LABELS[r.channel] || r.channel) + '</td>' +
-        '<td class="' + CLS_TD + '"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + chipCls + '">' + escapeHtml(STATUS_LABELS[r.status] || r.status) + '</span></td>' +
-        '<td class="' + CLS_TD + ' text-slate-700 truncate max-w-xs">' + escapeHtml((r.content || '').slice(0, 80)) + '</td>' +
-      '</tr>';
-    });
-    wrap.innerHTML = html + '</tbody></table>';
-    renderLogPagination();
-  }
-
-  function renderLogPagination() {
-    var box = document.getElementById('log-pagination');
-    if (!box) return;
-    var pages = Math.max(1, Math.ceil(_logRows.length / PAGE_SIZE));
-    if (pages <= 1) { box.innerHTML = '<span class="text-sm text-slate-500">סה״כ ' + _logRows.length + '</span>'; return; }
-    var btn = 'px-3 py-1.5 rounded-md border border-slate-200 text-sm font-medium hover:bg-slate-50 disabled:opacity-40';
-    var act = 'px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-semibold';
-    var html = '<button class="' + btn + '" ' + (_logPage === 1 ? 'disabled' : '') + ' data-lp="prev">›</button>';
-    for (var i = 1; i <= pages; i++) html += '<button class="' + (i === _logPage ? act : btn) + '" data-lp="' + i + '">' + i + '</button>';
-    html += '<button class="' + btn + '" ' + (_logPage === pages ? 'disabled' : '') + ' data-lp="next">‹</button>';
-    box.innerHTML = html;
-    box.querySelectorAll('[data-lp]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var v = b.getAttribute('data-lp');
-        if (v === 'prev') _logPage = Math.max(1, _logPage - 1);
-        else if (v === 'next') _logPage = Math.min(pages, _logPage + 1);
-        else _logPage = parseInt(v, 10) || 1;
-        renderLogTable();
-      });
-    });
   }
 })();

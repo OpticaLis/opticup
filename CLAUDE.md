@@ -281,6 +281,17 @@ Commit messages are in English, present-tense verb, scoped: `type(scope): descri
 - `refactor(docs): restructure CLAUDE.md as navigation hub`
 - `chore(deps): update Supabase JS to v2.44`
 
+### Clean Repo at Session End (mandatory)
+
+Every session that touches files MUST end with a clean working tree. No exceptions.
+
+- **If work is complete:** `git add` the specific files + `git commit` + `git push origin develop`.
+- **If work is not ready to commit:** `git stash push -m "session-name WIP"` before ending.
+- **If files were changed by mistake:** `git checkout -- <file>` to restore.
+- **Never leave uncommitted changes for "the next session."** The next session should open to `git status` → "nothing to commit, working tree clean."
+
+Rationale: multiple sessions (Cowork, Claude Code, Sentinel) share the same repo. Uncommitted leftovers from one session cause merge conflicts, dirty-repo discussions, and wasted time in the next session. A clean close is part of the job, not optional cleanup.
+
 ### Branching & Environments
 
 - **`main`** = Production (GitHub Pages). Do NOT push directly — merge only.

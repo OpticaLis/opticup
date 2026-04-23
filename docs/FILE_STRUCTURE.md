@@ -41,7 +41,8 @@ css/
 
 ```
 js/
-├── shared.js                   — Supabase init, constants, caches, utilities (LOAD FIRST)
+├── shared-field-map.js         — Hebrew↔English FIELD_MAP / ENUM_MAP + heToEn/enToHe + supplier/brand caches (LOAD BEFORE shared.js)
+├── shared.js                   — Supabase init, T constants, tenant resolution, UI helpers (LOAD FIRST after field-map)
 ├── shared-ui.js                — navigation (showTab), info modal, help banner
 ├── supabase-ops.js             — core DB operations: writeLog, fetchAll, batch ops, softDelete
 ├── supabase-alerts-ocr.js      — alert creation + OCR template learning (split from supabase-ops.js)
@@ -54,7 +55,7 @@ js/
 └── pin-modal.js                — reusable PIN prompt modal (shared promptPin())
 ```
 
-**Load order:** `shared.js` → `shared-ui.js` → `supabase-ops.js` → `data-loading.js` → `auth-service.js`
+**Load order:** `shared-field-map.js` → `shared.js` → `shared-ui.js` → `supabase-ops.js` → `data-loading.js` → `auth-service.js`
 
 ## shared/ (Module 1.5 — Shared Components)
 

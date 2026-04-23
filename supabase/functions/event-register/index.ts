@@ -1,0 +1,294 @@
+import "@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ============================================================
+// event-register — Edge Function for public event registration form
+// Module 4 CRM — Go-Live P16 (2026-04-23)
+// ============================================================
+// POST body JSON:
+//   { tenant_id, lead_id, event_id, arrival_time, eye_exam, notes }
+//
+// Flow: validate UUIDs → verify lead+event exist in same tenant →
+//       call register_lead_to_event RPC → on success, UPDATE the
+//       attendee row with form-specific fields (scheduled_time,
+//       eye_exam_needed, client_notes) → return RPC result.
+//
+// verify_jwt is false because the caller is a public HTML form
+// following an emailed link; the tenant+lead+event UUID triplet
+// is the auth (same security model as the unsubscribe EF).
+// ============================================================
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// P-FINAL Track B: hardcoded legacy JWT anon for the cross-EF call to
+// send-message. Same key already present in js/shared.js and lead-intake
+// EF (see lead-intake/index.ts comment for rationale); not a new exposure.
+const ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU";
+
+const SEND_MESSAGE_URL = `${SUPABASE_URL}/functions/v1/send-message`;
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Content-Type": "application/json; charset=utf-8",
+};
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(s: unknown): s is string {
+  return typeof s === "string" && UUID_RE.test(s);
+}
+
+function jsonResp(
+  body: Record<string, unknown>,
+  status: number,
+): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: corsHeaders,
+  });
+}
+
+type FormBody = {
+  tenant_id?: string;
+  lead_id?: string;
+  event_id?: string;
+  arrival_time?: string;
+  eye_exam?: string;
+  notes?: string;
+};
+
+// P-FINAL Track B: fire-and-forget confirmation dispatch (SMS + email)
+// after a successful public-form registration. Mirrors the lead-intake
+// EF dispatch pattern. Failures are logged but never bubble up — the
+// attendee row is already persisted, and crm_message_log captures the
+// failure for operator follow-up.
+async function dispatchRegistrationMessages(
+  tenantId: string,
+  leadId: string,
+  templateBaseSlug: string,
+  variables: Record<string, string>,
+  hasEmail: boolean,
+): Promise<void> {
+  const calls: Promise<unknown>[] = [];
+  calls.push(callSendMessage(tenantId, leadId, "sms", templateBaseSlug, variables));
+  if (hasEmail) {
+    calls.push(callSendMessage(tenantId, leadId, "email", templateBaseSlug, variables));
+  }
+  await Promise.allSettled(calls);
+}
+
+async function callSendMessage(
+  tenantId: string,
+  leadId: string,
+  channel: "sms" | "email",
+  templateSlug: string,
+  variables: Record<string, string>,
+): Promise<void> {
+  try {
+    const res = await fetch(SEND_MESSAGE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${ANON_KEY}`,
+        "apikey": ANON_KEY,
+      },
+      body: JSON.stringify({
+        tenant_id: tenantId,
+        lead_id: leadId,
+        channel,
+        template_slug: templateSlug,
+        variables,
+      }),
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      console.error(
+        `send-message ${channel}/${templateSlug} HTTP ${res.status}: ${txt.slice(0, 200)}`,
+      );
+    }
+  } catch (e) {
+    console.error(
+      `send-message ${channel}/${templateSlug} exception:`,
+      (e as Error).message || e,
+    );
+  }
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  // GET = bootstrap payload for the form (event details + lead name).
+  if (req.method === "GET") {
+    const url = new URL(req.url);
+    const eventId = url.searchParams.get("event_id");
+    const leadId = url.searchParams.get("lead_id");
+    if (!isUuid(eventId) || !isUuid(leadId)) {
+      return jsonResp({ success: false, error: "invalid_ids" }, 400);
+    }
+    const evRes = await db.from("crm_events")
+      .select("id, tenant_id, name, event_date, start_time, location_address, status, max_capacity, booking_fee")
+      .eq("id", eventId!)
+      .eq("is_deleted", false)
+      .maybeSingle();
+    if (evRes.error || !evRes.data) {
+      return jsonResp({ success: false, error: "event_not_found" }, 404);
+    }
+    const leadRes = await db.from("crm_leads")
+      .select("id, full_name, tenant_id")
+      .eq("id", leadId!)
+      .eq("tenant_id", evRes.data.tenant_id)
+      .eq("is_deleted", false)
+      .maybeSingle();
+    if (leadRes.error || !leadRes.data) {
+      return jsonResp({ success: false, error: "lead_not_found" }, 404);
+    }
+    const tRes = await db.from("tenants")
+      .select("name, logo_url")
+      .eq("id", evRes.data.tenant_id)
+      .maybeSingle();
+    return jsonResp({
+      success: true,
+      tenant_id: evRes.data.tenant_id,
+      tenant_name: tRes.data?.name || null,
+      tenant_logo_url: tRes.data?.logo_url || null,
+      lead_name: leadRes.data.full_name || "",
+      event_name: evRes.data.name || "",
+      event_date: evRes.data.event_date || "",
+      event_time: evRes.data.start_time || "",
+      event_location: evRes.data.location_address || "",
+      event_status: evRes.data.status || "",
+      booking_fee: evRes.data.booking_fee ?? 50,
+    }, 200);
+  }
+
+  if (req.method !== "POST") {
+    return jsonResp({ success: false, error: "method_not_allowed" }, 405);
+  }
+
+  let body: FormBody;
+  try {
+    body = await req.json();
+  } catch {
+    return jsonResp({ success: false, error: "invalid_json" }, 400);
+  }
+
+  if (!isUuid(body.tenant_id) || !isUuid(body.lead_id) || !isUuid(body.event_id)) {
+    return jsonResp({ success: false, error: "invalid_ids" }, 400);
+  }
+
+  // Verify lead and event both exist in the same tenant. P-FINAL Track B:
+  // widened SELECTs to also fetch the fields we need for the confirmation
+  // dispatch variables — avoids a second round trip after the RPC.
+  const [leadRes, eventRes] = await Promise.all([
+    db.from("crm_leads")
+      .select("id, full_name, phone, email")
+      .eq("id", body.lead_id!)
+      .eq("tenant_id", body.tenant_id!)
+      .eq("is_deleted", false)
+      .maybeSingle(),
+    db.from("crm_events")
+      .select("id, status, name, event_date, start_time, location_address")
+      .eq("id", body.event_id!)
+      .eq("tenant_id", body.tenant_id!)
+      .eq("is_deleted", false)
+      .maybeSingle(),
+  ]);
+
+  if (leadRes.error || !leadRes.data) {
+    return jsonResp({ success: false, error: "lead_not_found" }, 404);
+  }
+  if (eventRes.error || !eventRes.data) {
+    return jsonResp({ success: false, error: "event_not_found" }, 404);
+  }
+
+  // Call the canonical registration RPC (handles capacity, duplicate,
+  // waiting-list, event_closed — single source of truth).
+  const rpcRes = await db.rpc("register_lead_to_event", {
+    p_tenant_id: body.tenant_id!,
+    p_lead_id: body.lead_id!,
+    p_event_id: body.event_id!,
+    p_method: "form",
+  });
+
+  if (rpcRes.error) {
+    console.error("register_lead_to_event failed:", rpcRes.error);
+    return jsonResp(
+      { success: false, error: "rpc_failed", detail: rpcRes.error.message },
+      500,
+    );
+  }
+
+  const result = (rpcRes.data ?? {}) as {
+    success?: boolean;
+    error?: string;
+    status?: string;
+    attendee_id?: string;
+  };
+
+  // Persist form-specific fields on success (best-effort — registration
+  // itself is authoritative; failure here shouldn't fail the request).
+  if (result.success && result.attendee_id) {
+    const patch: Record<string, unknown> = {};
+    if (typeof body.arrival_time === "string" && body.arrival_time.trim()) {
+      patch.scheduled_time = body.arrival_time.trim();
+    }
+    if (typeof body.eye_exam === "string" && body.eye_exam.trim()) {
+      patch.eye_exam_needed = body.eye_exam.trim();
+    }
+    if (typeof body.notes === "string" && body.notes.trim()) {
+      patch.client_notes = body.notes.trim().slice(0, 2000);
+    }
+    if (Object.keys(patch).length) {
+      const upd = await db
+        .from("crm_event_attendees")
+        .update(patch)
+        .eq("id", result.attendee_id)
+        .eq("tenant_id", body.tenant_id!);
+      if (upd.error) {
+        console.warn("attendee details update failed:", upd.error);
+      }
+    }
+
+    // P-FINAL Track B (M4-QA-03): dispatch confirmation SMS + email.
+    // UI-side registration goes through CrmAutomation.evaluate which loads
+    // rules from crm_automation_rules. The public form bypasses the client,
+    // so the template-slug mapping is hardcoded here — matches rules #9/#10
+    // seeded on demo. Fire-and-forget: dispatch failure never fails the
+    // form response (the attendee row is already persisted).
+    const templateBase = result.status === "waiting_list"
+      ? "event_waiting_list_confirmation"
+      : "event_registration_confirmation";
+    const lead = leadRes.data!;
+    const event = eventRes.data!;
+    const variables: Record<string, string> = {
+      name: lead.full_name || "",
+      phone: lead.phone || "",
+      email: lead.email || "",
+      event_name: event.name || "",
+      event_date: event.event_date || "",
+      event_time: event.start_time || "",
+      event_location: event.location_address || "",
+    };
+    await dispatchRegistrationMessages(
+      body.tenant_id!,
+      body.lead_id!,
+      templateBase,
+      variables,
+      Boolean(lead.email),
+    );
+  }
+
+  return jsonResp(result, 200);
+});

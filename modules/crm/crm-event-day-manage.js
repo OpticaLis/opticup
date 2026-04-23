@@ -108,9 +108,10 @@
       ' <button type="button" class="' + CLS_LINK_BTN + ' ms-1" data-edit-purchase="' + escapeHtml(r.id) + '">ערוך</button>';
   }
   function couponCell(r) {
-    return r.coupon_sent
-      ? '<button type="button" class="' + CLS_TOGGLE_ON + '" disabled>✅ נשלח</button>'
-      : '<button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-coupon="' + escapeHtml(r.id) + '">שלח</button>';
+    if (!r.coupon_sent) return '<button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-coupon="' + escapeHtml(r.id) + '">שלח</button>';
+    return r.checked_in_at
+      ? '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">✓ הגיע</span>'
+      : '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">⚠️ לא הגיע</span>';
   }
   function feeCell(r) {
     return r.booking_fee_paid
@@ -247,6 +248,17 @@
   }
 
   async function toggleCoupon(id, btn) {
+    var state = window.getEventDayState();
+    var ev = state.event || {};
+    var attendees = state.attendees || [];
+    var target = attendees.find(function (a) { return a.id === id; });
+    if (target && target.coupon_sent) return;
+    var totalSent = attendees.filter(function (a) { return a.coupon_sent && a.status !== 'cancelled'; }).length;
+    var ceiling = (ev.max_coupons != null ? +ev.max_coupons : 50) + (+ev.extra_coupons || 0);
+    if (totalSent >= ceiling) {
+      toast('error', 'הגעת למכסת הקופונים (' + ceiling + '). הגדל כמות קופונים נוספת אם יש צורך.');
+      return;
+    }
     if (btn) { btn.disabled = true; btn.textContent = '...'; }
     var nowIso = new Date().toISOString();
     var { error } = await sb.from('crm_event_attendees').update({ coupon_sent: true, coupon_sent_at: nowIso }).eq('id', id).eq('tenant_id', getTenantId());

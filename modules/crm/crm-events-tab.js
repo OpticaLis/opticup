@@ -64,6 +64,16 @@
     _wired = true;
     var sel = document.getElementById('crm-events-filter-status');
     if (sel) sel.addEventListener('change', renderFilteredEvents);
+    var createBtn = document.getElementById('crm-events-create-btn');
+    if (createBtn && window.CrmEventActions) {
+      createBtn.addEventListener('click', function () {
+        CrmEventActions.openCreateEventModal(async function () {
+          _loadPromise = null;
+          _allEvents = await loadEvents();
+          renderFilteredEvents();
+        });
+      });
+    }
   }
 
   function renderFilteredEvents() {

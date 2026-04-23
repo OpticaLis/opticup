@@ -8,11 +8,13 @@
 
   // --- Header titles per tab ---
   var TAB_META = {
-    'dashboard': { title: 'דשבורד', subtitle: 'סקירה כללית של ביצועי הקמפיינים' },
-    'leads':     { title: 'לידים', subtitle: 'ניהול לידים וסגמנטים' },
-    'events':    { title: 'אירועים', subtitle: 'ניהול אירועים ומשתתפים' },
-    'messaging': { title: 'מרכז הודעות', subtitle: 'תבניות, אוטומציה ושליחה ידנית' },
-    'event-day': { title: 'יום אירוע', subtitle: 'צ׳ק-אין, נוכחות וניהול' }
+    'dashboard':    { title: 'דשבורד', subtitle: 'סקירה כללית של ביצועי הקמפיינים' },
+    'incoming':     { title: 'לידים נכנסים', subtitle: 'לידים חדשים שטרם אושרו' },
+    'leads':        { title: 'רשומים', subtitle: 'ניהול לידים וסגמנטים' },
+    'events':       { title: 'אירועים', subtitle: 'ניהול אירועים ומשתתפים' },
+    'messaging':    { title: 'מרכז הודעות', subtitle: 'תבניות, אוטומציה ושליחה ידנית' },
+    'event-day':    { title: 'יום אירוע', subtitle: 'צ׳ק-אין, נוכחות וניהול' },
+    'activity-log': { title: 'לוג פעילות', subtitle: 'היסטוריית פעולות במערכת' }
   };
 
   // --- Wrap original showCrmTab to also update header + sidebar ---
@@ -34,10 +36,15 @@
     if (actionsEl) actionsEl.innerHTML = '';
 
     if (name === 'dashboard' && typeof loadCrmDashboard === 'function') loadCrmDashboard();
+    if (name === 'incoming' && typeof loadCrmIncomingTab === 'function') loadCrmIncomingTab();
     if (name === 'leads' && typeof loadCrmLeadsTab === 'function') loadCrmLeadsTab();
     if (name === 'events' && typeof loadCrmEventsTab === 'function') loadCrmEventsTab();
     if (name === 'event-day' && typeof loadCrmEventDay === 'function') loadCrmEventDay();
     if (name === 'messaging' && typeof loadCrmMessagingTab === 'function') loadCrmMessagingTab();
+    if (name === 'activity-log' && typeof renderActivityLog === 'function') {
+      var host = document.getElementById('activity-log-host');
+      if (host) renderActivityLog(host);
+    }
   };
 
   // --- Theme switcher ---

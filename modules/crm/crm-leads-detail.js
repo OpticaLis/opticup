@@ -22,6 +22,17 @@
   var CLS_DETAIL_ROW     = 'flex items-center justify-between py-2 border-b border-slate-100';
   var CLS_NOTE           = 'bg-slate-50 border border-slate-200 rounded-lg p-3 mb-2 text-sm text-slate-700';
 
+  var CHANNEL_LABELS = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'אימייל' };
+  var STATUS_LABELS  = { sent: 'נשלח', pending: 'בתור', failed: 'נכשל', delivered: 'הגיע', read: 'נקרא', queued: 'בתור' };
+  var STATUS_CLASSES = {
+    sent:      'bg-sky-100 text-sky-800',
+    delivered: 'bg-emerald-100 text-emerald-800',
+    read:      'bg-indigo-100 text-indigo-800',
+    failed:    'bg-rose-100 text-rose-800',
+    queued:    'bg-slate-100 text-slate-700',
+    pending:   'bg-slate-100 text-slate-700'
+  };
+
   function initials(name) {
     var s = String(name || '').trim();
     if (!s) return '?';
@@ -32,7 +43,8 @@
 
   async function openCrmLeadDetail(leadId) {
     if (!leadId || typeof Modal === 'undefined') return;
-    var lead = typeof getCrmLeadById === 'function' ? getCrmLeadById(leadId) : null;
+    var lead = (typeof getCrmLeadById === 'function') ? getCrmLeadById(leadId) : null;
+    if (!lead && typeof getCrmIncomingLeadById === 'function') lead = getCrmIncomingLeadById(leadId);
     if (!lead) return;
 
     var modal = Modal.show({
@@ -45,7 +57,7 @@
       var data = await fetchDetailData(leadId);
       var body = modal.el.querySelector('.modal-body');
       if (body) {
-        body.innerHTML = renderDetail(lead, data.notes, data.history);
+        body.innerHTML = renderDetail(lead, data.notes, data.history, data.messages);
         wireTabs(body, lead, data);
         wireFooter(body, lead);
       }
@@ -69,14 +81,21 @@
       .eq('lead_id', leadId);
     if (tid) histQ = histQ.eq('tenant_id', tid);
 
-    var r = await Promise.all([notesQ, histQ]);
+    // P8: per-lead message history from crm_message_log filtered by lead_id.
+    var msgQ = sb.from('crm_message_log')
+      .select('id, channel, content, status, error_message, created_at, crm_message_templates(name, slug)')
+      .eq('lead_id', leadId).order('created_at', { ascending: false }).limit(50);
+    if (tid) msgQ = msgQ.eq('tenant_id', tid);
+
+    var r = await Promise.all([notesQ, histQ, msgQ]);
     if (r[0].error) throw new Error('notes: ' + r[0].error.message);
     if (r[1].error) throw new Error('history: ' + r[1].error.message);
-    return { notes: r[0].data || [], history: (r[1].data && r[1].data[0]) || null };
+    if (r[2].error) throw new Error('messages: ' + r[2].error.message);
+    return { notes: r[0].data || [], history: (r[1].data && r[1].data[0]) || null, messages: r[2].data || [] };
   }
 
   // ---- Render ----
-  function renderDetail(lead, notes, hist) {
+  function renderDetail(lead, notes, hist, messages) {
     var statusInfo = CrmHelpers.getStatusInfo('lead', lead.status);
     var tabBtns = TABS.map(function (t, i) {
       return '<button type="button" class="' + (i === 0 ? CLS_TAB_BTN_ACTIVE : CLS_TAB_BTN) + '" data-detail-tab="' + t.key + '">' + escapeHtml(t.label) + '</button>';
@@ -89,12 +108,15 @@
           '<div class="text-sm text-slate-600 mt-1" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(lead.phone)) + '</div>' +
           '<div class="text-sm text-slate-500">' + escapeHtml(lead.city || '') + ' · ' + escapeHtml(lead.source || '') + '</div>' +
           '<div class="mt-2">' +
-            '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white" style="background:' + escapeHtml(statusInfo.color) + '">' + escapeHtml(statusInfo.label) + '</span>' +
+            '<button type="button" data-action="status" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium text-white hover:opacity-90 transition cursor-pointer" style="background:' + escapeHtml(statusInfo.color) + '">' +
+              '<span data-status-label>' + escapeHtml(statusInfo.label) + '</span>' +
+              '<span aria-hidden="true">▾</span>' +
+            '</button>' +
           '</div>' +
         '</div>' +
       '</div>' +
       '<div class="' + CLS_TAB_BAR + '">' + tabBtns + '</div>' +
-      '<div id="crm-lead-tab-body" class="min-h-[120px]">' + renderTabContent('events', lead, notes, hist) + '</div>' +
+      '<div id="crm-lead-tab-body" class="min-h-[120px]">' + renderTabContent('events', lead, notes, hist, []) + '</div>' +
       '<div class="flex gap-2 mt-4 pt-4 border-t border-slate-200">' +
         '<button type="button" class="' + CLS_ACTION_BTN + ' bg-emerald-500 hover:bg-emerald-600" data-action="whatsapp">WhatsApp</button>' +
         '<button type="button" class="' + CLS_ACTION_BTN + ' bg-sky-500 hover:bg-sky-600" data-action="sms">SMS</button>' +
@@ -103,13 +125,38 @@
       '</div>';
   }
 
-  function renderTabContent(key, lead, notes, hist) {
+  function renderTabContent(key, lead, notes, hist, messages) {
     if (key === 'events')   return renderEvents(hist);
-    if (key === 'messages') return '<div class="text-center text-slate-400 py-8">היסטוריית הודעות — בקרוב</div>';
+    if (key === 'messages') return renderMessages(messages || []);
     if (key === 'notes')    return renderNotes(notes);
     if (key === 'timeline') return renderTimeline(notes, hist);
     if (key === 'details')  return renderFullDetails(lead);
     return '';
+  }
+
+  // P8: per-lead message history. Reuses the styling conventions from
+  // crm-messaging-log.js (chip colours, channel labels) for visual consistency.
+  function renderMessages(messages) {
+    if (!messages.length) return '<div class="text-center text-slate-400 py-8">אין היסטוריית הודעות לליד זה</div>';
+    var html = '<div class="space-y-2">';
+    messages.forEach(function (m) {
+      var chipCls = STATUS_CLASSES[m.status] || 'bg-slate-100 text-slate-700';
+      var tpl = m.crm_message_templates || {};
+      var preview = (m.content || '').replace(/\s+/g, ' ').slice(0, 80);
+      var err = m.error_message ? '<div class="text-xs text-rose-600 mt-1">' + escapeHtml(m.error_message) + '</div>' : '';
+      html += '<div class="bg-white border border-slate-200 rounded-lg p-3 hover:bg-slate-50 transition" data-msg-row="' + escapeHtml(m.id) + '">' +
+        '<div class="flex items-center gap-2 flex-wrap mb-1">' +
+          '<span class="text-xs font-semibold text-slate-500">' + escapeHtml(CrmHelpers.formatDateTime(m.created_at)) + '</span>' +
+          '<span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium">' + escapeHtml(CHANNEL_LABELS[m.channel] || m.channel) + '</span>' +
+          '<span class="text-xs px-2 py-0.5 rounded-full font-medium ' + chipCls + '">' + escapeHtml(STATUS_LABELS[m.status] || m.status) + '</span>' +
+          (tpl.name ? '<span class="text-xs text-slate-500">· ' + escapeHtml(tpl.name) + '</span>' : '') +
+        '</div>' +
+        '<div class="text-sm text-slate-800 truncate">' + escapeHtml(preview) + '</div>' +
+        err +
+      '</div>';
+    });
+    html += '</div>';
+    return html;
   }
 
   function renderEvents(hist) {
@@ -141,11 +188,18 @@
   }
 
   function renderNotes(notes) {
-    if (!notes.length) return '<div class="text-center text-slate-400 py-6">אין הערות</div>';
-    return notes.map(function (n) {
-      return '<div class="' + CLS_NOTE + '">' + escapeHtml(n.content || '') +
-        '<div class="text-xs text-slate-500 mt-1">' + escapeHtml(CrmHelpers.formatDateTime(n.created_at)) + '</div></div>';
-    }).join('');
+    var form =
+      '<div class="flex gap-2 mb-3" data-note-form>' +
+        '<textarea data-note-input class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 resize-y min-h-[44px]" rows="1" placeholder="הוסף הערה..." maxlength="2000"></textarea>' +
+        '<button type="button" data-note-submit class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50">הוסף</button>' +
+      '</div>';
+    var list = notes.length
+      ? '<div data-notes-list>' + notes.map(function (n) {
+          return '<div class="' + CLS_NOTE + '">' + escapeHtml(n.content || '') +
+            '<div class="text-xs text-slate-500 mt-1">' + escapeHtml(CrmHelpers.formatDateTime(n.created_at)) + '</div></div>';
+        }).join('') + '</div>'
+      : '<div data-notes-list class="text-center text-slate-400 py-6">אין הערות</div>';
+    return form + list;
   }
 
   function renderTimeline(notes, hist) {
@@ -160,30 +214,34 @@
       return '<div class="flex items-start gap-3 py-2 border-b border-slate-100">' +
         '<div class="w-2 h-2 mt-2 rounded-full bg-indigo-500 shrink-0"></div>' +
         '<div class="flex-1 min-w-0"><p class="text-sm text-slate-800 truncate">' + escapeHtml(it.text) + '</p></div>' +
-        '<div class="text-xs text-slate-500 shrink-0">' + escapeHtml(CrmHelpers.formatDate(it.date)) + '</div>' +
+        '<div class="text-xs text-slate-500 shrink-0">' + escapeHtml(CrmHelpers.formatDateTime(it.date)) + '</div>' +
       '</div>';
     }).join('') + '</div>';
   }
 
   function renderFullDetails(lead) {
+    var eyeExam = null;
+    try { var p = lead.client_notes ? JSON.parse(lead.client_notes) : null; if (p && p.eye_exam) eyeExam = String(p.eye_exam); } catch (_) {}
     var html = '<div class="space-y-1">' +
       row('אימייל', lead.email || '—') +
       row('עיר', lead.city || '—') +
-      row('שפה', CrmHelpers.formatLanguage(lead.language)) +
       row('מקור', lead.source || '—') +
-      row('קמפיין UTM', lead.utm_campaign || '—') +
-      row('מקור UTM', lead.utm_source || '—') +
       row('תנאים', lead.terms_approved ? '✅ אושרו' : '—') +
       row('שיווק', lead.marketing_consent ? '✅ מאושר' : (lead.unsubscribed_at ? '❌ הוסר' : '—')) +
-      row('נוצר', CrmHelpers.formatDate(lead.created_at)) +
-      row('עודכן', CrmHelpers.formatDate(lead.updated_at)) +
+      row('נוצר', CrmHelpers.formatDateTime(lead.created_at)) +
+      row('עודכן', CrmHelpers.formatDateTime(lead.updated_at)) +
       '</div>';
+    if (eyeExam) html += '<div class="mt-3">' + row('בדיקת עיניים', eyeExam) + '</div>';
+    var utm = [['מקור (source)', lead.utm_source], ['מדיום (medium)', lead.utm_medium], ['קמפיין (campaign)', lead.utm_campaign], ['תוכן (content)', lead.utm_content], ['מונח (term)', lead.utm_term], ['מזהה קמפיין (campaign_id)', lead.utm_campaign_id]];
+    if (utm.some(function (f) { return f[1]; })) {
+      html += '<details class="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-3"><summary class="cursor-pointer text-sm font-semibold text-slate-700">מידע UTM</summary><div class="mt-2 space-y-1">' + utm.map(function (f) { return row(f[0], f[1] || '—'); }).join('') + '</div></details>';
+    }
     if (Array.isArray(lead.tag_names) && lead.tag_names.length) {
       html += '<div class="mt-3 flex flex-wrap gap-1">' + lead.tag_names.map(function (n) {
         return '<span class="inline-block text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">' + escapeHtml(n) + '</span>';
       }).join('') + '</div>';
     }
-    if (lead.client_notes) {
+    if (lead.client_notes && !eyeExam) {
       html += '<div class="' + CLS_NOTE + ' mt-3">' + escapeHtml(lead.client_notes) + '</div>';
     }
     return html;
@@ -203,24 +261,87 @@
           b.className = (b === btn) ? CLS_TAB_BTN_ACTIVE : CLS_TAB_BTN;
         });
         var host = body.querySelector('#crm-lead-tab-body');
-        if (host) host.innerHTML = renderTabContent(btn.getAttribute('data-detail-tab'), lead, data.notes, data.history);
+        var key = btn.getAttribute('data-detail-tab');
+        if (host) host.innerHTML = renderTabContent(key, lead, data.notes, data.history, data.messages);
+        if (key === 'notes') wireNoteForm(host, lead, data);
       });
+    });
+  }
+
+  function wireNoteForm(host, lead, data) {
+    if (!host || !window.CrmLeadActions) return;
+    var input = host.querySelector('[data-note-input]');
+    var btn = host.querySelector('[data-note-submit]');
+    if (!input || !btn) return;
+
+    async function submit() {
+      var text = (input.value || '').trim();
+      if (!text) return;
+      btn.disabled = true;
+      var oldText = btn.textContent;
+      btn.textContent = 'שומר...';
+      try {
+        var newNote = await CrmLeadActions.addLeadNote(lead.id, text);
+        data.notes.unshift(newNote);
+        try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.note_add', entity_type: 'crm_leads', entity_id: lead.id, details: { lead_name: lead.full_name, note_preview: text.slice(0, 80) } }); } catch (_) {}
+        var list = host.querySelector('[data-notes-list]');
+        var itemHtml = '<div class="' + CLS_NOTE + '">' + escapeHtml(newNote.content || '') +
+          '<div class="text-xs text-slate-500 mt-1">' + escapeHtml(CrmHelpers.formatDateTime(newNote.created_at)) + '</div></div>';
+        if (list && list.classList.contains('text-center')) {
+          list.outerHTML = '<div data-notes-list>' + itemHtml + '</div>';
+        } else if (list) {
+          list.insertAdjacentHTML('afterbegin', itemHtml);
+        }
+        input.value = '';
+      } catch (err) {
+        if (window.Toast) Toast.error('שגיאה: ' + (err.message || String(err)));
+      } finally {
+        btn.disabled = false;
+        btn.textContent = oldText;
+      }
+    }
+    btn.addEventListener('click', submit);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submit();
     });
   }
 
   function wireFooter(body, lead) {
     body.querySelectorAll('[data-action]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
+      btn.addEventListener('click', function (e) {
         var act = btn.getAttribute('data-action');
         if (act === 'whatsapp' && lead.phone) {
           var wa = String(lead.phone).replace(/^\+/, '');
           window.open('https://wa.me/' + wa, '_blank');
-        } else if (act === 'sms' && lead.phone) {
-          window.location.href = 'sms:' + lead.phone;
-        } else if (act === 'edit') {
-          if (window.Toast) Toast.show('עריכה — בקרוב');
+        } else if (act === 'sms') {
+          if (window.CrmSendDialog && CrmSendDialog.openQuickSend) {
+            CrmSendDialog.openQuickSend({ lead: lead });
+          }
+        } else if (act === 'edit' && window.CrmLeadActions && CrmLeadActions.openEditLeadModal) {
+          CrmLeadActions.openEditLeadModal(lead, function (updated) {
+            if (updated) Object.keys(updated).forEach(function (k) { lead[k] = updated[k]; });
+            if (typeof window.reloadCrmLeadsTab === 'function') window.reloadCrmLeadsTab();
+            if (typeof window.reloadCrmIncomingTab === 'function') window.reloadCrmIncomingTab();
+          });
         } else if (act === 'eventday') {
           if (window.Toast) Toast.show('מעבר למצב יום אירוע — בקרוב');
+        } else if (act === 'status' && window.CrmLeadActions) {
+          e.stopPropagation();
+          var tier = CrmLeadActions.leadTier(lead.status);
+          CrmLeadActions.openStatusDropdown(btn, tier, lead.status, async function (newStatus) {
+            try {
+              await CrmLeadActions.changeLeadStatus(lead.id, newStatus, lead.status);
+              lead.status = newStatus;
+              var info = CrmHelpers.getStatusInfo('lead', newStatus);
+              var labelEl = btn.querySelector('[data-status-label]');
+              if (labelEl) labelEl.textContent = info.label;
+              btn.style.background = info.color;
+              if (typeof window.reloadCrmLeadsTab === 'function') window.reloadCrmLeadsTab();
+              if (typeof window.reloadCrmIncomingTab === 'function') window.reloadCrmIncomingTab();
+            } catch (err) {
+              if (window.Toast) Toast.error('שגיאה: ' + (err.message || String(err)));
+            }
+          });
         }
       });
     });

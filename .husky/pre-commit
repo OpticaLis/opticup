@@ -8,6 +8,11 @@
 # Note: do NOT wrap the verifier in `if ! cmd`. Bash's `!` inverts the exit
 # code seen by `$?` inside the branch, which caused a real corruption
 # (286 NUL bytes in crm.html) to slip past this hook on 2026-04-21.
+# Husky's wrapper (.husky/_/h) invokes this via `sh -e`, which propagates
+# errexit into this script. Disable it so `status=$?` can run after a
+# non-zero verifier exit — otherwise exit 2 (warnings) kills the hook
+# before the allow-on-2 branch below is reached.
+set +e
 node scripts/verify.mjs --staged
 status=$?
 
