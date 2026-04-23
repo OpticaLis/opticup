@@ -3,6 +3,11 @@
    Load order: after shared.js (needs sb, T, getTenantId, escapeHtml).
    Globals exported on window.CrmHelpers + window.CRM_STATUSES.
    ============================================================================= */
+// Promote ActivityLog (declared as script-scope const in shared/js/activity-logger.js)
+// onto window so `if (window.ActivityLog) ...` guards across CRM files resolve truthy.
+// Without this, every ActivityLog.write call in CRM is silently skipped.
+if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLog = ActivityLog;
+
 (function () {
   'use strict';
 
