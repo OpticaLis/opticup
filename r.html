@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>מעבר לאישור הגעה…</title>
+  <meta name="robots" content="noindex">
+</head>
+<body>
+  <p style="font-family: Heebo, Arial, sans-serif; padding: 2rem; text-align: center;">
+    מעביר אותך לטופס ההרשמה…
+  </p>
+  <script>
+    (function () {
+      var q = window.location.search || '';
+      var target = 'modules/crm/public/event-register.html' + q;
+      window.location.replace(target);
+    })();
+  </script>
+  <noscript>
+    <p style="font-family: Heebo, Arial, sans-serif; padding: 2rem; text-align: center;">
+      <a id="fallback" href="modules/crm/public/event-register.html">לחץ כאן להמשך</a>
+    </p>
+    <script>
+      document.getElementById('fallback').href =
+        'modules/crm/public/event-register.html' + (window.location.search || '');
+    </script>
+  </noscript>
+</body>
+</html>

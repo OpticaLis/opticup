@@ -89,7 +89,7 @@
     if (!host) return;
     host.innerHTML =
       '<div class="flex items-center justify-between mb-4">' +
-        '<h3 class="text-lg font-bold text-slate-800 m-0">כללי אוטומטיה</h3>' +
+        '<h3 class="text-lg font-bold text-slate-800 m-0">כללי אוטומציה</h3>' +
         '<button type="button" class="' + CLS_BTN_P + '" id="btn-new-rule">+ כלל חדש</button>' +
       '</div>' +
       '<div id="crm-rules-table" class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">' +
@@ -110,7 +110,7 @@
     var wrap = document.getElementById('crm-rules-table');
     if (!wrap) return;
     if (!_rules.length) {
-      wrap.innerHTML = '<div class="text-center text-slate-400 py-8">אין כללי אוטומטיה עדיין.</div>';
+      wrap.innerHTML = '<div class="text-center text-slate-400 py-8">אין כללי אוטומציה עדיין.</div>';
       return;
     }
     var html = '<table class="' + CLS_TABLE + '"><thead><tr>' +
@@ -181,7 +181,7 @@
     var row = existing || { name: '', trigger_entity: 'event', trigger_event: 'status_change', trigger_condition: { type: 'always' }, action_type: 'send_message', action_config: { template_slug: '', channels: [], recipient_type: 'trigger_lead' }, sort_order: 0, is_active: true };
     var cfg = row.action_config || {};
     var chs = Array.isArray(cfg.channels) ? cfg.channels : [];
-    var title = isNew ? 'כלל אוטומטיה חדש' : 'עריכת כלל';
+    var title = isNew ? 'כלל אוטומציה חדש' : 'עריכת כלל';
     var currentTrigger = lookupTriggerTypeKey(row.trigger_entity, row.trigger_event) || 'event_status_change';
     var cond = row.trigger_condition || {};
     var condType = cond.type || 'always';

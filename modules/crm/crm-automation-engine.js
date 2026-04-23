@@ -129,6 +129,9 @@
   // from crm-event-actions.js when available (for event-scoped triggers).
   async function buildVariables(triggerData, lead) {
     var vars = { name: lead.full_name || '', phone: lead.phone || '', email: lead.email || '' };
+    // P-FINAL: preview placeholder only — real HMAC unsubscribe token is
+    // generated server-side in send-message EF at actual send time (90-day TTL).
+    vars.unsubscribe_url = '[קישור הסרה — יצורף אוטומטית]';
     var evt = triggerData && triggerData.event;
     // If the trigger carries an event, merge event variables.
     if (!evt && triggerData && triggerData.eventId) {
@@ -148,7 +151,7 @@
       if (evt.registration_form_url) {
         vars.registration_url = evt.registration_form_url;
       } else if (triggerData && triggerData.eventId) {
-        vars.registration_url = 'https://app.opticalis.co.il/modules/crm/public/event-register.html'
+        vars.registration_url = 'https://app.opticalis.co.il/r.html'
           + '?event_id=' + encodeURIComponent(triggerData.eventId)
           + '&lead_id=' + encodeURIComponent(lead.id || '');
       }

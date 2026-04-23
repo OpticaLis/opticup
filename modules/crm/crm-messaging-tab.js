@@ -7,7 +7,7 @@
 
   var SUB_TABS = [
     { key: 'templates', label: '📝 תבניות' },
-    { key: 'rules',     label: '⚡ כללי אוטומטיה' },
+    { key: 'rules',     label: '⚡ כללי אוטומציה' },
     { key: 'broadcast', label: '📢 שליחה ידנית' },
     { key: 'log',       label: '📜 היסטוריה' }
   ];
