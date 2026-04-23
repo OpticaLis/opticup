@@ -49,19 +49,19 @@
 ## סדר ביצוע
 
 ```
-P1 → P2 → P3 → P4 → P5 → P6 → P8 → P7
-│         │         │         │
-│  צינור  │  שליח   │  מחזור  │
-│  פנימי  │  הודעות │  מלא    │
-│  מלא    │  ב-Make │  על דמו │
-└─────────┘         │         │
-                    │    P7 = מעבר פריזמה
-                    └─────────┘
+P1 → P2 → P3 → P4 → P5 → P6 → P8 → P9 → P10 → P11 → P12 → P14–P18 → P19–P22 → QA → FIXES → MERGE → P7
+│         │         │         │              │                │            │       │                 │
+│  צינור  │  שליח   │  מחזור  │   hardening   │   UI + capacity │ gate+split │ final │    P7 = מעבר   │
+│  פנימי  │  הודעות │  מלא    │   + QA        │   + coupons     │ + overhaul │ audit │      פריזמה    │
+│  מלא    │  ב-Make │  על דמו │              │                │            │       │                │
+└─────────┘         │         └──────────────┘                └────────────┘       │                │
+                    └──────────────────────────────────────────────────────────────┘                │
+                                                                              ✅ הכל סגור, ממתין למיזוג
 ```
 
 ---
 
-## P1 — צינור כניסת ליד (פנימי)  ⬜
+## P1 — צינור כניסת ליד (פנימי)  ✅
 
 **מה נבנה:** Edge Function שמקבל submit מטופס הסטורפרונט ומכניס ליד ישירות לסופאבייס.
 
@@ -74,7 +74,7 @@ P1 → P2 → P3 → P4 → P5 → P6 → P8 → P7
 
 ---
 
-## P2 — ניהול לידים ואירועים (CRM פנימי)  ⬜
+## P2 — ניהול לידים ואירועים (CRM פנימי)  ✅
 
 **מה נבנה:** הפיצ'רים ב-CRM שמאפשרים לנהל לידים, לשנות סטטוסים, להעביר tier, ליצור ולנהל אירועים, ולרשום לידים לאירוע.
 
@@ -460,6 +460,94 @@ P1 → P2 → P3 → P4 → P5 → P6 → P8 → P7
 **אין שינויי schema. אין שינויי Edge Functions. אין שינויים ב-Make scenario. אין שינויים ב-`shared.js` או ב-MODULE_MAP (Integration Ceremony).**
 
 **פרטים מלאים:** `modules/Module 4 - CRM/go-live/specs/P12_ACTIVITY_LOG/` — SPEC.md + EXECUTION_REPORT.md + FINDINGS.md.
+
+---
+
+## P14 — event_closed Audience Hotfix  ✅
+
+**סגור 2026-04-23.** תיקון שורה אחת: הקהל של הודעת `event_closed` הורחב מ-`['registered','confirmed']` ל-`['registered','confirmed','attended','purchased','no_show']`. כשאירוע נסגר, כל המשתתפים שהשתתפו בפועל מקבלים הודעה — לא רק אלה בסטטוסי הרשמה מוקדמים.
+
+**קומיט:** `1d970df`. קובץ: `crm-automation-engine.js` (שורה 104). ראה `go-live/specs/P14_EVENT_CLOSED_AUDIENCE/`.
+
+---
+
+## P15 — UI Polish  ✅
+
+**סגור 2026-04-23.** חמישה שינויי UI בטבלת רשומים + מודל פרטי ליד. הסרת עמודת שפה ותגיות, הוספת עמודת אימייל, UTM collapsible panel, חילוץ `eye_exam` מ-`client_notes`.
+
+**קומיט:** `6466901`. קבצים: `crm-leads-tab.js` 307→297, `crm-leads-detail.js` 345→349. ראה `go-live/specs/P15_UI_POLISH/`.
+
+---
+
+## P16 — Forms & Unsubscribe  ✅
+
+**סגור 2026-04-23.** שלושה tracks: (A) Unsubscribe EF — `status='unsubscribed'` + דף HTML ממותג עם לוגו מ-`tenants.logo_url`. (B) הסתרת לידים unsubscribed כברירת מחדל. (C) טופס הרשמה לאירוע ציבורי (`event-register` html/css/js + Edge Function) — GET bootstrap, POST calls RPC + UPDATE 3 שדות.
+
+**קומיטים:** 82444d7, 7258122, 5caa7d9. 5 קבצים חדשים + 2 שינויים. ראה `go-live/specs/P16_FORMS_AND_UNSUBSCRIBE/`.
+
+---
+
+## P17 — Registration Form Redesign  ✅
+
+**סגור 2026-04-23.** עיצוב מחדש של טופס ההרשמה לפי הסקרין שדניאל שלח. החלפת פלטה סגולה לכחולים (`#3b82f6` + `#1a237e`), הוספת טקסט הסבר על פיקדון עם `booking_fee` דינמי, קישור וואטסאפ, footer ממותג.
+
+**קומיט:** c0f3c94. 4 קבצים. ראה `go-live/specs/P17_REGISTRATION_FORM_REDESIGN/`.
+
+---
+
+## P18 — Event Capacity & Coupons  ✅
+
+**סגור 2026-04-23.** מודל קיבולת 3 שכבות מלא: `max_coupons` (תקרת קופונים), `extra_coupons` (הוספה באמצע אירוע), `default_max_coupons` (ברירת מחדל מקמפיין). אכיפת תקרה בכפתור שליחת קופון (event-day). שדה "כמות קופונים" בטופס יצירת אירוע. בעמוד פרטי אירוע: תצוגת קופונים, עריכת קופונים נוספים, כפתור "שלח הזמנה לרשימת המתנה".
+
+**קומיטים:** c05f7c6, b5eda4e, 8369e40. 5 קבצים. Rule 5 FIELD_MAP deferred (shared.js 408L). ראה `go-live/specs/P18_EVENT_CAPACITY_AND_COUPONS/`.
+
+---
+
+## P19 — shared.js Split  ✅
+
+**סגור 2026-04-23.** `js/shared.js` 407→231 שורות; חדש `js/shared-field-map.js` 178 שורות. FIELD_MAP entries שנדחו מ-P18 (`max_coupons`, `extra_coupons`) נכנסו. 17 קבצי HTML קיבלו `<script>` חדש. Pre-commit hook: `rule-23-secrets` allow-listed Supabase anon key (commit 250a721). סוגר M4-DEBT-P18-01.
+
+**ראה:** `go-live/specs/P19_SHARED_JS_SPLIT/`.
+
+---
+
+## P20 — Confirmation Gate  ✅
+
+**סגור 2026-04-23.** כל dispatch אוטומטי ב-CRM עובר דרך מודאל preview (`CrmConfirmSend.show`) — כרטיסי חוקים עם נמענים ותוכן מלא. Approve שולח, Cancel שומר ל-`crm_message_log` עם `status='pending_review'` + badge כתום + כפתור "שלח מחדש" בלוג. קובץ חדש `crm-confirm-send.js`. ללא שינויי DB/EF. 2 commits.
+
+**ראה:** `go-live/specs/P20_CONFIRMATION_GATE/`.
+
+---
+
+## P21 — Automation Overhaul  ✅
+
+**סגור 2026-04-23.** שדרוג UX של Confirmation Gate: מודאל דו-טאבי (Messages — כרטיס לכל ערוץ לכל חוק; Recipients — טבלה ממוינת עם pagination 50/דף ודה-דופליקציה). פיצ'ר `recipient_status_filter` חדש — קבוצת checkboxes בעורך חוקים לסוגי נמענים tier2/tier2_excl_registered. MODULE_MAP.md רוענן. 2 commits.
+
+**ראה:** `go-live/specs/P21_AUTOMATION_OVERHAUL/`.
+
+---
+
+## P22 — Coupon Tracking  ✅
+
+**סגור 2026-04-23.** פאנל funnel קופונים בפרטי אירוע (3 כרטיסי gradient + התראת no-show + טבלת משתתפים). Badge של booking-fee בשורות משתתפים. Event-day manage tab: badges מודעי-הגעה (✓ הגיע / ⚠️ לא הגיע). 1 commit. `crm-events-detail.js` ב-350 שורות (hard cap).
+
+**ראה:** `go-live/specs/P22_COUPON_TRACKING/`.
+
+---
+
+## FINAL_QA_AUDIT  ✅
+
+**סגור 2026-04-23.** ביקורת QA מקיפה על כל ה-CRM על דמו. 54 בדיקות: 46 PASS, 1 FAIL, 1 ADAPTED, 6 SKIPPED. 3 CRITICAL (URL הרשמה, activity log, אישורי הרשמה ציבורית), 1 MEDIUM, 4 LOW. Read-only — ללא שינויי קוד.
+
+**ראה:** `modules/Module 4 - CRM/final/FINAL_QA_AUDIT/`.
+
+---
+
+## FINAL_FIXES  ✅
+
+**סגור 2026-04-23.** 6/7 tracks בוצעו. Track D הוסר (utm_campaign_id = Facebook Ads enrichment, לא form field). Track G הוסר (pending_review = פיצ'ר P20/P21, לא באג). תיקונים: activity log dispatch, event-register EF confirmation dispatch (deployed), r.html redirect, typo fix, unsubscribe preview placeholder, demo cleanup. **זה ה-SPEC האחרון לפני merge.**
+
+**ראה:** `modules/Module 4 - CRM/final/FINAL_FIXES/`.
 
 ---
 
