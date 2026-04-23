@@ -45,12 +45,21 @@ const anonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 ---
 ```
 
+### IMPORTANT — Design Reference
+
+**Before writing ANY code, open the existing unsubscribe page in a browser:**
+`https://www.prizma-optic.co.il/eventsunsubscribe/`
+
+This is the design you must replicate. Both `/event-register/` and
+`/unsubscribe/` must use the same design language (card style, colors,
+fonts, spacing, icons). Copy the CSS patterns from the live page.
+
 ### HTML Structure
 
 Use `BaseLayout` with `noindex={true}`. Inside:
 
 1. A centered wrapper div (max-width 560px, margin auto)
-2. A card container (white bg, rounded-[20px], shadow, `border-top: 4px solid #1a237e`)
+2. A card matching the style from `/eventsunsubscribe/`
 3. Inside the card, a `<div id="root">` with a loading indicator ("טוען…")
 4. The card gets populated by client-side JS after EF fetch
 
@@ -127,14 +136,11 @@ a `<script>` block with the form logic:
 
 ### Styling
 
-Use a `<style>` block with the design from SPEC §5:
-- Card: white, rounded-[20px], shadow, navy top border
-- Event card: linear-gradient(135deg, #1a237e, #283593)
-- Form inputs: rounded-[10px], border focus ring
-- Submit button: #3b82f6, rounded-[12px], full-width
-- Popup overlay: fixed inset, dark backdrop
-- All text: Heebo font, RTL direction
-- Mobile: padding adjustments at small viewports
+**Replicate the design from the live page `https://www.prizma-optic.co.il/eventsunsubscribe/`.**
+Open it in a browser, inspect the CSS, and use the same card style, colors,
+fonts, spacing, and visual language. Adapt for the form layout (event card,
+form fields, submit button, popups). Both pages must feel like they belong
+to the same design family as the existing unsubscribe page.
 
 **Target: ≤ 320 lines.** If the file approaches 330, extract the `<script>`
 into `src/scripts/event-register.ts` and import it.
@@ -149,9 +155,18 @@ Create `src/pages/unsubscribe/index.astro`:
 
 Same pattern as registration page — resolve tenant, get theme CSS.
 
+### IMPORTANT — Design Reference
+
+**This page must look identical to the existing page at:**
+`https://www.prizma-optic.co.il/eventsunsubscribe/`
+
+Open it in a browser, copy its exact design (card, colors, fonts, icons,
+spacing, WhatsApp button), and use the EF JSON response for the dynamic values
+instead of static text.
+
 ### HTML Structure
 
-1. Centered wrapper (max-width 480px)
+1. Centered wrapper matching `/eventsunsubscribe/` layout
 2. Card with `<div id="root">` — loading state initially
 3. Client JS fetches unsubscribe EF, renders result
 
@@ -186,10 +201,8 @@ Same pattern as registration page — resolve tenant, get theme CSS.
 
 ### Styling
 
-- Card: white, rounded-[20px], shadow, dynamic top border (indigo or rose)
-- Background: subtle gradient matching storefront
-- Text centered, Heebo font, RTL
-- Icons: inline SVG, 56px
+**Copy the exact CSS from `https://www.prizma-optic.co.il/eventsunsubscribe/`.**
+This page already has the design we want — replicate it.
 
 **Target: ≤ 220 lines.**
 

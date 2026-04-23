@@ -117,63 +117,58 @@ The EF base URL is `PUBLIC_SUPABASE_URL + '/functions/v1/'`.
 
 ## 5. Design Specification
 
+### Design Reference — LIVE PAGE
+
+**CRITICAL:** An existing unsubscribe page is already live on the storefront at:
+`https://www.prizma-optic.co.il/eventsunsubscribe/`
+
+**The executor MUST open this page first** (via browser or curl) and replicate
+its exact design language: layout, colors, fonts, spacing, card style, icons,
+and overall feel. The new `/unsubscribe/` page should look identical to the
+existing `/eventsunsubscribe/` page — just fed with dynamic values from the EF
+JSON response instead of static content.
+
+The same design language (card style, colors, typography) should carry over to
+the `/event-register/` page as well, adapted for the form layout.
+
 ### Registration Page (`/event-register/`)
 
-**Layout:** Single centered card, max-width 560px, matching the ERP design.
+**Layout:** Match the card style from `/eventsunsubscribe/`. Max-width 560px.
 
 **Visual hierarchy (top to bottom):**
-1. **Tenant logo** — centered, max-height 56px, from EF response `tenant_logo_url`
-2. **Page title** — "אישור הגעה לאירוע" (h1, centered, 22px, bold)
-3. **Info notice** — blue-tinted box explaining the booking fee and process.
+1. **Tenant logo** — centered, from EF response `tenant_logo_url`
+2. **Page title** — "אישור הגעה לאירוע" (h1)
+3. **Info notice** — explaining the booking fee and process.
    Uses `booking_fee` from EF response. Contains WhatsApp link to store.
-4. **Greeting** — "היי {lead_name}," (centered, muted)
-5. **Event card** — navy gradient (`#1a237e → #283593`), rounded, containing:
-   - Label: "פרטי האירוע"
-   - Event name (bold, 17px)
-   - Date (📅), Time (⏰), Location (📍) — each on its own row
+4. **Greeting** — "היי {lead_name},"
+5. **Event card** — containing event details:
+   - Event name
+   - 📅 Date, ⏰ Time, 📍 Location
 6. **Form fields:**
    - Arrival time (select): options "09:00 - 12:00 (בוקר)", "12:00 - 14:00 (צהריים)", "גמיש - כל השעות"
    - Eye exam (select): "כן, אשמח לבדיקה", "לא, יש לי מרשם עדכני"
    - Notes (textarea, maxlength 2000, with live counter)
-7. **Submit button** — "אישור", full-width, blue, rounded
+7. **Submit button** — "אישור", full-width
 
 **States:**
-- Loading: centered spinner text "טוען…"
+- Loading: centered spinner/text "טוען…"
 - Error (invalid/expired token): error message + help text
 - Form loaded: full form as described
 - Submitting: button disabled + "שולח…"
 - Result popups: overlay with icon, title, message (4 variants: success, waitlist, info, error)
 
-**Color system (CSS variables, matching ERP form):**
-- `--primary: #3b82f6` (blue)
-- `--primary-dark: #2563eb`
-- `--accent: #10b981` (green, for success)
-- `--error: #e11d48` (rose)
-- `--text: #0f172a`, `--muted: #64748b`
-- `--border: #e2e8f0`, `--surface: #ffffff`
-- Event card gradient: `#1a237e → #283593`
-- Card: white, `border-radius: 20px`, `border-top: 4px solid #1a237e`
-
-**Typography:** Heebo font (already loaded by storefront's BaseLayout via
-the tenant theme CSS or global.css `--font-family-he`).
-
 ### Unsubscribe Page (`/unsubscribe/`)
 
-**Layout:** Single centered card, max-width 480px.
+**Replicate the existing `/eventsunsubscribe/` page design exactly.**
 
-**Visual hierarchy:**
-1. **Tenant logo** — from `resolveTenant()` (server-side, available before
-   client JS runs since the tenant is resolved by slug)
-2. **Loading state** → client JS calls unsubscribe EF with token
-3. **Result state:**
-   - Success: green check icon, "הוסרת בהצלחה מרשימת התפוצה", reassurance text
-   - Error: red warning icon, "קישור לא תקין או שפג תוקפו", help text
+The only difference: instead of static text, the page calls the `unsubscribe`
+EF with `Accept: application/json` and renders the response dynamically.
 
-**Color accents:**
-- Success: indigo top border (`#4f46e5`), green check icon
-- Error: rose top border (`#e11d48`), red warning icon
-
-**Footer:** "ניתן לסגור חלון זה" (muted, centered)
+**Content from EF response:**
+- Success: title + message from `data.title` / `data.message`
+- Error: title + message from `data.title` / `data.message`
+- WhatsApp recovery link: `https://wa.me/972533645404`
+- Footer: "ניתן לסגור חלון זה"
 
 ---
 
