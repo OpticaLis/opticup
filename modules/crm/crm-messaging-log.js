@@ -10,14 +10,20 @@
   'use strict';
 
   var CHANNEL_LABELS = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'אימייל' };
-  var STATUS_LABELS  = { sent: 'נשלח', pending: 'בתור', failed: 'נכשל', delivered: 'הגיע', read: 'נקרא', queued: 'בתור' };
+  // P20: added pending_review (amber) + superseded (slate) for the confirmation gate.
+  var STATUS_LABELS  = {
+    sent: 'נשלח', pending: 'בתור', failed: 'נכשל', delivered: 'הגיע', read: 'נקרא', queued: 'בתור',
+    pending_review: 'ממתין לאישור', superseded: 'הוחלף'
+  };
   var STATUS_CLASSES = {
-    sent:      'bg-sky-100 text-sky-800',
-    delivered: 'bg-emerald-100 text-emerald-800',
-    read:      'bg-indigo-100 text-indigo-800',
-    failed:    'bg-rose-100 text-rose-800',
-    queued:    'bg-slate-100 text-slate-700',
-    pending:   'bg-slate-100 text-slate-700'
+    sent:           'bg-sky-100 text-sky-800',
+    delivered:      'bg-emerald-100 text-emerald-800',
+    read:           'bg-indigo-100 text-indigo-800',
+    failed:         'bg-rose-100 text-rose-800',
+    queued:         'bg-slate-100 text-slate-700',
+    pending:        'bg-slate-100 text-slate-700',
+    pending_review: 'bg-amber-100 text-amber-800',
+    superseded:     'bg-slate-100 text-slate-500 line-through'
   };
   var PAGE_SIZE = 50;
 
@@ -37,7 +43,7 @@
         '<h4 class="text-base font-bold text-slate-800 mb-3">היסטוריה</h4>' +
         '<div class="flex flex-wrap gap-2 mb-3">' +
           '<select id="log-channel" class="' + CLS_INPUT + ' max-w-[180px]"><option value="">כל הערוצים</option><option value="sms">SMS</option><option value="whatsapp">WhatsApp</option><option value="email">אימייל</option></select>' +
-          '<select id="log-status" class="' + CLS_INPUT + ' max-w-[180px]"><option value="">כל הסטטוסים</option><option value="sent">נשלח</option><option value="delivered">הגיע</option><option value="read">נקרא</option><option value="failed">נכשל</option></select>' +
+          '<select id="log-status" class="' + CLS_INPUT + ' max-w-[180px]"><option value="">כל הסטטוסים</option><option value="sent">נשלח</option><option value="delivered">הגיע</option><option value="read">נקרא</option><option value="failed">נכשל</option><option value="pending_review">ממתין לאישור</option></select>' +
         '</div>' +
         '<div id="log-table" class="bg-white rounded-lg border border-slate-200 overflow-hidden"></div>' +
         '<div id="log-pagination" class="flex items-center gap-2 mt-3"></div>' +
@@ -108,6 +114,13 @@
         renderLogTable();
       });
     });
+    // P20: resend button click — stop propagation so the row doesn't collapse.
+    wrap.querySelectorAll('[data-log-resend]').forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        resendPendingReview(b.getAttribute('data-log-resend'));
+      });
+    });
     renderLogPagination();
   }
 
@@ -120,11 +133,48 @@
       (tpl.slug ? '<div>slug: <code class="text-slate-700">' + escapeHtml(tpl.slug) + '</code></div>' : '') +
       (lead.phone ? '<div>טלפון: <span style="direction:ltr">' + escapeHtml(lead.phone) + '</span></div>' : '') +
     '</div>';
+    // P20: pending_review rows expose a "שלח מחדש" button that opens the send dialog
+    // pre-filled with the preserved body; on successful send, the original row is
+    // marked 'superseded' so the log preserves the audit trail.
+    var resendBtn = (r.status === 'pending_review')
+      ? '<div class="mt-3"><button type="button" data-log-resend="' + escapeHtml(r.id) + '" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition">שלח מחדש</button></div>'
+      : '';
     return '<tr><td colspan="7" class="bg-slate-50 px-6 py-4 border-b border-slate-200">' +
       '<div class="text-sm font-semibold text-slate-700 mb-1">תוכן מלא:</div>' +
       '<pre class="whitespace-pre-wrap text-sm text-slate-800 bg-white border border-slate-200 rounded p-3 max-h-64 overflow-auto">' + escapeHtml(r.content || '') + '</pre>' +
-      err + meta +
+      err + meta + resendBtn +
     '</td></tr>';
+  }
+
+  // P20: resend flow — opens a pre-filled quick-send dialog, then marks the old
+  // pending_review row as 'superseded' when the user confirms the send.
+  async function resendPendingReview(logId) {
+    var row = null;
+    for (var i = 0; i < _logRows.length; i++) { if (_logRows[i].id === logId) { row = _logRows[i]; break; } }
+    if (!row) return;
+    if (!row.lead_id) { if (window.Toast) Toast.error('ליד חסר ברשומה'); return; }
+    var tenantId = (typeof getTenantId === 'function') ? getTenantId() : null;
+    if (!tenantId) return;
+
+    var leadRes = await sb.from('crm_leads').select('id, full_name, phone, email, language')
+      .eq('tenant_id', tenantId).eq('id', row.lead_id).maybeSingle();
+    if (leadRes.error || !leadRes.data) { if (window.Toast) Toast.error('לא ניתן לטעון את הליד'); return; }
+
+    if (!window.CrmSendDialog || typeof CrmSendDialog.openQuickSend !== 'function') {
+      if (window.Toast) Toast.error('חלון שליחה לא זמין');
+      return;
+    }
+    CrmSendDialog.openQuickSend({
+      lead: leadRes.data,
+      prefill: { channel: row.channel, body: row.content || '' },
+      onSent: async function () {
+        await sb.from('crm_message_log').update({ status: 'superseded' })
+          .eq('tenant_id', tenantId).eq('id', logId);
+        _expandedId = null;
+        await loadLog();
+        renderLogTable();
+      }
+    });
   }
 
   function renderLogPagination() {

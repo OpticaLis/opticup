@@ -11,10 +11,13 @@
     opts = opts || {};
     var lead = opts.lead;
     if (!lead || typeof Modal === 'undefined') return;
+    // P20: optional prefill for "resend from log" flow (pending_review rows).
+    var prefill = opts.prefill || null;
+    var onSent = typeof opts.onSent === 'function' ? opts.onSent : null;
 
     var hasEmail = !!(lead.email && String(lead.email).trim());
     var hasPhone = !!(lead.phone && String(lead.phone).trim());
-    var defaultChannel = hasPhone ? 'sms' : (hasEmail ? 'email' : 'sms');
+    var defaultChannel = prefill && prefill.channel ? prefill.channel : (hasPhone ? 'sms' : (hasEmail ? 'email' : 'sms'));
 
     function channelRow(val, label, disabled) {
       var checked = val === defaultChannel ? ' checked' : '';
@@ -47,7 +50,7 @@
         '</div>' +
         '<div>' +
           '<label class="block text-sm font-medium text-slate-700 mb-1">הודעה <span class="text-rose-500">*</span></label>' +
-          '<textarea id="quick-send-body" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" rows="4" placeholder="תוכן ההודעה..."></textarea>' +
+          '<textarea id="quick-send-body" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" rows="4" placeholder="תוכן ההודעה...">' + (prefill && prefill.body ? escapeHtml(prefill.body) : '') + '</textarea>' +
           varPanel +
         '</div>' +
       '</div>';
@@ -110,6 +113,7 @@
         if (res && res.ok) {
           if (typeof modal.close === 'function') modal.close();
           if (window.Toast) Toast.success('ההודעה נשלחה');
+          if (onSent) { try { await onSent(res); } catch (cbErr) { console.error('openQuickSend onSent:', cbErr); } }
         } else {
           submit.disabled = false;
           submit.textContent = 'שלח';
