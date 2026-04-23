@@ -119,6 +119,14 @@ tailwind.config = {
         </svg>
         <span>יום אירוע</span>
       </button>
+
+      <button class="crm-nav-item" data-tab="activity-log" onclick="showCrmTab('activity-log')">
+        <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+        <span>לוג פעילות</span>
+      </button>
     </nav>
 
     <!-- Sidebar Footer -->
@@ -276,6 +284,11 @@ tailwind.config = {
         </div>
       </section>
 
+      <!-- ========== TAB 7: ACTIVITY LOG ========== -->
+      <section id="tab-activity-log" class="crm-tab">
+        <div id="activity-log-host"></div>
+      </section>
+
     </div>
   </div>
 </div>
@@ -324,6 +337,7 @@ tailwind.config = {
 <script src="modules/crm/crm-broadcast-filters.js"></script>
 <script src="modules/crm/crm-messaging-broadcast.js"></script>
 <script src="modules/crm/crm-messaging-log.js"></script>
+<script src="modules/crm/crm-activity-log.js"></script>
 <script src="modules/crm/crm-messaging-rules.js"></script>
 <script src="modules/crm/crm-messaging-config.js"></script>
 <script src="modules/crm/crm-messaging-send.js"></script>
