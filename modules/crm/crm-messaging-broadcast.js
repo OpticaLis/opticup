@@ -126,7 +126,22 @@
   }
 
   function openWizard() {
-    _wizard = { step: 0, status: '', event: '', language: '', channel: 'whatsapp', templateId: '', body: '', name: '', schedule: 'now', recipients: 0 };
+    _wizard = {
+      step: 0,
+      boards: ['incoming', 'registered'],
+      statuses: [],
+      events: [],
+      openEventsOnly: false,
+      language: '',
+      source: '',
+      channel: 'whatsapp',
+      templateId: '',
+      body: '',
+      name: '',
+      schedule: 'now',
+      recipients: 0,
+      _matchedLeads: []
+    };
     var modal = Modal.show({ title: 'אשף שליחה', size: 'lg', content: wizardHtml() });
     var root = modal.el.querySelector('.modal-body');
     if (root) wireWizard(root);
@@ -157,14 +172,10 @@
 
   function wizardStepBody(key) {
     if (key === 'recipients') {
-      var statuses = (window.CRM_STATUSES && window.CRM_STATUSES.lead) || {};
-      var stOpts = '<option value="">(כל הסטטוסים)</option>' + Object.keys(statuses).map(function (slug) { return '<option value="' + escapeHtml(slug) + '"' + (slug === _wizard.status ? ' selected' : '') + '>' + escapeHtml(statuses[slug].name_he || slug) + '</option>'; }).join('');
-      var evOpts = '<option value="">(כל האירועים)</option>' + _events.map(function (e) { return '<option value="' + escapeHtml(e.id) + '"' + (e.id === _wizard.event ? ' selected' : '') + '>#' + e.event_number + ' ' + escapeHtml(e.name || '') + '</option>'; }).join('');
-      return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 1 — נמענים</h4>' +
-        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">סטטוס</label><select id="wiz-status" class="' + CLS_INPUT + '">' + stOpts + '</select></div>' +
-        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">אירוע</label><select id="wiz-event" class="' + CLS_INPUT + '">' + evOpts + '</select></div>' +
-        '<div class="' + CLS_ROW + '"><label class="' + CLS_LABEL + '">שפה</label><select id="wiz-lang" class="' + CLS_INPUT + '"><option value="">הכל</option><option value="he">עברית</option><option value="ru">רוסית</option><option value="en">אנגלית</option></select></div>' +
-        '<div id="wiz-count" class="px-4 py-3 bg-indigo-50 text-indigo-800 rounded-lg font-bold text-sm">מחשב...</div>';
+      if (window.CrmBroadcastFilters && typeof CrmBroadcastFilters.renderRecipientsStep === 'function') {
+        return CrmBroadcastFilters.renderRecipientsStep(_wizard, _events);
+      }
+      return '<div class="text-rose-500">שגיאה: מודול סינון לא נטען</div>';
     }
     if (key === 'channel') {
       return '<h4 class="text-base font-bold text-slate-800 mb-3">שלב 2 — ערוץ</h4>' +
@@ -222,7 +233,14 @@
       if (_wizard.step < WIZARD_STEPS.length - 1) { _wizard.step++; rerenderWizard(root); }
       else { doWizardSend(); }
     });
-    if (_wizard.step === 0) refreshRecipientCount(root);
+    if (_wizard.step === 0) {
+      if (window.CrmBroadcastFilters && typeof CrmBroadcastFilters.wireRecipientsStep === 'function') {
+        CrmBroadcastFilters.wireRecipientsStep(root, _wizard, _events, function () {
+          rerenderWizard(root);
+        });
+      }
+      refreshRecipientCount(root);
+    }
     root.querySelectorAll('input[name="wiz-tpl"]').forEach(function (i) {
       i.addEventListener('change', function () {
         var tpls = window._crmMessagingTemplates ? window._crmMessagingTemplates() : [];
@@ -238,9 +256,7 @@
   }
 
   function captureStep(root) {
-    var statusSel = root.querySelector('#wiz-status'); if (statusSel) _wizard.status = statusSel.value || '';
-    var evSel = root.querySelector('#wiz-event');     if (evSel)     _wizard.event    = evSel.value || '';
-    var langSel = root.querySelector('#wiz-lang');    if (langSel)   _wizard.language = langSel.value || '';
+    // Step 1 (recipients) — state is maintained live by CrmBroadcastFilters.wireRecipientsStep.
     var chRadio = root.querySelector('input[name="wiz-channel"]:checked'); if (chRadio) _wizard.channel = chRadio.value;
     var tplRadio = root.querySelector('input[name="wiz-tpl"]:checked');   if (tplRadio) _wizard.templateId = tplRadio.value;
     var bodyEl = root.querySelector('#wiz-body'); if (bodyEl) _wizard.body = bodyEl.value || '';
@@ -252,41 +268,22 @@
 
   async function refreshRecipientCount(root) {
     try {
-      var ids = await buildLeadIds();
-      _wizard.recipients = ids.length;
+      var rows = await CrmBroadcastFilters.buildLeadRows(_wizard);
+      _wizard._matchedLeads = rows;
+      _wizard.recipients = rows.length;
       var el = root.querySelector('#wiz-count');
-      if (el) el.textContent = 'נמצאו ' + ids.length + ' נמענים';
+      if (el) el.textContent = 'נמצאו ' + rows.length + ' נמענים';
     } catch (e) {
       var el2 = root.querySelector('#wiz-count');
       if (el2) el2.textContent = 'שגיאה: ' + (e.message || e);
     }
   }
 
-  async function buildLeadIds() {
-    var tid = getTenantId();
-    var q = sb.from('crm_leads').select('id').eq('is_deleted', false).is('unsubscribed_at', null);
-    if (tid) q = q.eq('tenant_id', tid);
-    if (_wizard.status) q = q.eq('status', _wizard.status);
-    if (_wizard.language) q = q.eq('language', _wizard.language);
-    if (_wizard.event) {
-      var att = sb.from('crm_event_attendees').select('lead_id').eq('event_id', _wizard.event).eq('is_deleted', false);
-      if (tid) att = att.eq('tenant_id', tid);
-      var r = await att;
-      if (r.error) throw new Error(r.error.message);
-      var ids = (r.data || []).map(function (x) { return x.lead_id; }).filter(Boolean);
-      if (!ids.length) return [];
-      q = q.in('id', ids);
-    }
-    var res = await q;
-    if (res.error) throw new Error(res.error.message);
-    return (res.data || []).map(function (r) { return r.id; });
-  }
-
   async function doWizardSend() {
     if (!_wizard.name) { toast('error', 'שם שליחה חובה'); _wizard.step = 3; return; }
     if (!_wizard.body && !_wizard.templateId) { toast('error', 'תוכן הודעה חובה'); _wizard.step = 2; return; }
     if (_wizard.channel !== 'sms' && _wizard.channel !== 'email') { toast('error', 'ערוץ ' + (CHANNEL_LABELS[_wizard.channel] || _wizard.channel) + ' אינו פעיל'); _wizard.step = 1; return; }
-    var leadIds = await buildLeadIds();
+    var leadIds = await CrmBroadcastFilters.buildLeadIds(_wizard);
     if (!leadIds.length) { toast('warning', 'אין נמענים'); return; }
     if (!window.CrmMessaging || !CrmMessaging.sendMessage) { toast('error', 'CrmMessaging לא זמין'); return; }
     var tid = getTenantId(), emp = (typeof getCurrentEmployee === 'function') ? getCurrentEmployee() : null;
@@ -296,7 +293,14 @@
       if (leadsRes.error) throw new Error(leadsRes.error.message); var leadRows = leadsRes.data || [];
       var ins = await sb.from('crm_broadcasts').insert({
         tenant_id: tid, employee_id: emp.id, name: _wizard.name, channel: _wizard.channel, template_id: _wizard.templateId || null,
-        filter_criteria: { status: _wizard.status || null, event: _wizard.event || null, language: _wizard.language || null },
+        filter_criteria: {
+          boards: _wizard.boards.slice(),
+          statuses: _wizard.statuses.slice(),
+          events: _wizard.events.slice(),
+          openEventsOnly: !!_wizard.openEventsOnly,
+          language: _wizard.language || null,
+          source: _wizard.source || null
+        },
         total_recipients: leadIds.length, total_sent: 0, total_failed: 0, status: 'queued' }).select('id').single();
       if (ins.error) throw new Error(ins.error.message);
       logWrite('crm.broadcast.send', 'crm_broadcast', ins.data.id, { name: _wizard.name, recipients: leadIds.length });
