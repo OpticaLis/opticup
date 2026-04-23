@@ -72,6 +72,49 @@ function substituteVariables(
   });
 }
 
+// --- Unsubscribe token (HMAC-SHA256 signed) ---
+// Mirror of verifyToken in supabase/functions/unsubscribe/index.ts.
+// Payload:  `${lead_id}:${tenant_id}:${expiry_epoch}`
+// Token:    b64url(payload) + "." + b64url(hmac(payload))
+// TTL default 90 days — long enough for users to unsubscribe from an old
+// email without making stale links permanent.
+
+const UNSUBSCRIBE_TTL_SECONDS = 90 * 24 * 3600;
+
+function b64urlEncode(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function generateUnsubscribeToken(
+  leadId: string,
+  tenantId: string,
+): Promise<string> {
+  const exp = Math.floor(Date.now() / 1000) + UNSUBSCRIBE_TTL_SECONDS;
+  const payload = `${leadId}:${tenantId}:${exp}`;
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(SERVICE_ROLE_KEY),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = new Uint8Array(
+    await crypto.subtle.sign("HMAC", key, enc.encode(payload)),
+  );
+  return `${b64urlEncode(enc.encode(payload))}.${b64urlEncode(sig)}`;
+}
+
+async function buildUnsubscribeUrl(
+  leadId: string,
+  tenantId: string,
+): Promise<string> {
+  const token = await generateUnsubscribeToken(leadId, tenantId);
+  return `${SUPABASE_URL}/functions/v1/unsubscribe?token=${token}`;
+}
+
 // --- Main handler ---
 
 Deno.serve(async (req: Request) => {
@@ -120,6 +163,18 @@ Deno.serve(async (req: Request) => {
   const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+
+  // --- Inject unsubscribe URL ---
+  // Every outbound message gets a signed %unsubscribe_url% even if the
+  // caller didn't provide one, so email templates with that placeholder
+  // always resolve to a working link. SMS templates typically omit it.
+  if (typeof variables.unsubscribe_url !== "string") {
+    try {
+      variables.unsubscribe_url = await buildUnsubscribeUrl(leadId, tenantId);
+    } catch (e) {
+      console.warn("unsubscribe_url generation failed:", (e as Error).message);
+    }
+  }
 
   // --- Resolve template or use raw body ---
   let finalBody: string;
