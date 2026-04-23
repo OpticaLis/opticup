@@ -57,6 +57,7 @@
     };
     var ins = await sb.from('crm_events').insert(row).select('id, event_number').single();
     if (ins.error) throw new Error('event insert failed: ' + ins.error.message);
+    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.event.create', entity_type: 'crm_events', entity_id: ins.data.id, details: { name: row.name, event_date: row.event_date, event_number: ins.data.event_number } }); } catch (_) {}
     return ins.data;
   }
 
@@ -218,6 +219,7 @@
       .select('id, status')
       .single();
     if (upd.error) throw new Error('event status update failed: ' + upd.error.message);
+    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.event.status_change', entity_type: 'crm_events', entity_id: eventId, details: { to: newStatus, name: evRes.data && evRes.data.name } }); } catch (_) {}
     // Fire-and-forget — upd.data returned, dispatch in background (P5.5)
     if (!evRes.error && evRes.data) dispatchEventStatusMessages(eventId, newStatus, evRes.data);
     return upd.data;

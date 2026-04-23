@@ -174,6 +174,7 @@
         if (act === 'status' && window.CrmLeadActions) {
           var ids = Array.from(_selectedIds);
           CrmLeadActions.openBulkStatusPicker(ids, 2, function () {
+            try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.bulk_status_change', entity_type: 'crm_leads', entity_id: null, details: { count: ids.length, ids: ids.slice(0, 20) } }); } catch (_) {}
             _selectedIds.clear();
             reloadCrmLeadsTab();
           });

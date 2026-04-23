@@ -214,6 +214,8 @@
             btn.textContent = oldText;
             return;
           }
+          var leadRow = _allLeads.find(function (x) { return x.id === id; }) || {};
+          try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.move_to_registered', entity_type: 'crm_leads', entity_id: id, details: { full_name: leadRow.full_name, phone: leadRow.phone } }); } catch (_) {}
           if (window.Toast) Toast.success('הליד אושר והועבר ל-Tier 2');
           await reloadCrmIncomingTab();
           if (typeof window.reloadCrmLeadsTab === 'function') window.reloadCrmLeadsTab();

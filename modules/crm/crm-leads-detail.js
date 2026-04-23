@@ -279,6 +279,7 @@
       try {
         var newNote = await CrmLeadActions.addLeadNote(lead.id, text);
         data.notes.unshift(newNote);
+        try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.note_add', entity_type: 'crm_leads', entity_id: lead.id, details: { lead_name: lead.full_name, note_preview: text.slice(0, 80) } }); } catch (_) {}
         var list = host.querySelector('[data-notes-list]');
         var itemHtml = '<div class="' + CLS_NOTE + '">' + escapeHtml(newNote.content || '') +
           '<div class="text-xs text-slate-500 mt-1">' + escapeHtml(CrmHelpers.formatDateTime(newNote.created_at)) + '</div></div>';
