@@ -49,6 +49,8 @@
     });
     if (noteIns.error) throw new Error('status note insert failed: ' + noteIns.error.message);
 
+    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.status_change', entity_type: 'crm_leads', entity_id: leadId, details: { from: oldStatus, to: newStatus, from_label: statusLabel(oldStatus), to_label: statusLabel(newStatus) } }); } catch (_) {}
+
     if (!opts.silent && window.Toast) Toast.success('סטטוס עודכן: ' + statusLabel(newStatus));
     return { id: leadId, status: newStatus, noteContent: content };
   }
@@ -151,6 +153,7 @@
       });
       if (noteRes.error) throw new Error('lead note insert failed: ' + noteRes.error.message);
     }
+    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.create', entity_type: 'crm_leads', entity_id: ins.data.id, details: { full_name: payload.full_name, phone: payload.phone, source: 'manual' } }); } catch (_) {}
     return ins.data;
   }
 
@@ -209,6 +212,7 @@
       }
       throw new Error('lead update failed: ' + res.error.message);
     }
+    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.update', entity_type: 'crm_leads', entity_id: leadId, details: { full_name: res.data && res.data.full_name, fields_changed: Object.keys(clean).filter(function (k) { return k !== 'updated_at'; }) } }); } catch (_) {}
     return res.data;
   }
 
