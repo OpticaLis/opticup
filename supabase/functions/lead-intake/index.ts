@@ -246,6 +246,13 @@ Deno.serve(async (req: Request) => {
   }
 
   if (existing) {
+    // If the returning lead was unsubscribed, clear it — re-registration = implicit resubscribe
+    await db.from("crm_leads")
+      .update({ unsubscribed_at: null, updated_at: new Date().toISOString() })
+      .eq("id", existing.id)
+      .eq("tenant_id", tenantId)
+      .not("unsubscribed_at", "is", null);
+
     await dispatchIntakeMessages(
       tenantId,
       existing.id,

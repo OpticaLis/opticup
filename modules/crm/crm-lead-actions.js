@@ -244,6 +244,33 @@
     return { id: leadId, status: 'waiting' };
   }
 
+  async function resubscribeLead(lead) {
+    var tid = (typeof getTenantId === 'function') ? getTenantId() : null;
+    if (!tid || !lead || !lead.id) throw new Error('missing context');
+    var res = await sb.from('crm_leads')
+      .update({ unsubscribed_at: null, updated_at: new Date().toISOString() })
+      .eq('id', lead.id).eq('tenant_id', tid);
+    if (res.error) throw new Error(res.error.message);
+    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.resubscribed', entity_type: 'crm_leads', entity_id: lead.id, details: { lead_name: lead.full_name } }); } catch (_) {}
+    if (window.Toast) Toast.success('הליד הוחזר לדיוור');
+    return true;
+  }
+
+  function wireResubscribeButton(host, lead, onDone) {
+    var btn = host && host.querySelector('[data-action="resubscribe"]');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+      resubscribeLead(lead).then(function () {
+        lead.unsubscribed_at = null;
+        if (typeof onDone === 'function') onDone();
+      }, function (err) {
+        btn.disabled = false;
+        if (window.Toast) Toast.error('שגיאה: ' + (err.message || String(err)));
+      });
+    });
+  }
+
   window.CrmLeadActions = window.CrmLeadActions || {};
   window.CrmLeadActions.changeLeadStatus = changeLeadStatus;
   window.CrmLeadActions.bulkChangeStatus = bulkChangeStatus;
@@ -252,4 +279,6 @@
   window.CrmLeadActions.updateLead = updateLead;
   window.CrmLeadActions.transferLeadToTier2 = transferLeadToTier2;
   window.CrmLeadActions.leadTier = leadTier;
+  window.CrmLeadActions.resubscribeLead = resubscribeLead;
+  window.CrmLeadActions.wireResubscribeButton = wireResubscribeButton;
 })();
