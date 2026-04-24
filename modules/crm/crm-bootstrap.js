@@ -49,6 +49,10 @@
       var ahHost = document.getElementById('automation-history-host');
       if (ahHost) renderAutomationHistory(ahHost);
     }
+    if (name === 'queue-live' && typeof renderQueueLive === 'function') {
+      var qHost = document.getElementById('queue-live-host');
+      if (qHost) renderQueueLive(qHost);
+    }
   };
 
   // --- Theme switcher ---

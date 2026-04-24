@@ -127,6 +127,13 @@ tailwind.config = {
         <span>היסטוריית אוטומציה</span>
       </button>
 
+      <button class="crm-nav-item" data-tab="queue-live" onclick="showCrmTab('queue-live')">
+        <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4m0 0l6-6m-6 6l6 6"/>
+        </svg>
+        <span>תור הודעות</span>
+      </button>
+
       <button class="crm-nav-item" data-tab="activity-log" onclick="showCrmTab('activity-log')">
         <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round"
@@ -296,6 +303,11 @@ tailwind.config = {
         <div id="automation-history-host"></div>
       </section>
 
+      <!-- ========== TAB: QUEUE LIVE ========== -->
+      <section id="tab-queue-live" class="crm-tab">
+        <div id="queue-live-host"></div>
+      </section>
+
       <!-- ========== TAB 8: ACTIVITY LOG ========== -->
       <section id="tab-activity-log" class="crm-tab">
         <div id="activity-log-host"></div>
@@ -361,6 +373,8 @@ tailwind.config = {
 <script src="modules/crm/crm-automation-post-actions.js"></script>
 <script src="modules/crm/crm-automation-runs.js"></script>
 <script src="modules/crm/crm-automation-history.js"></script>
+<script src="modules/crm/crm-queue-live.js"></script>
+<script src="modules/crm/crm-event-edit.js"></script>
 <script src="modules/crm/crm-confirm-send.js"></script>
 
 <script src="modules/crm/crm-bootstrap.js"></script>

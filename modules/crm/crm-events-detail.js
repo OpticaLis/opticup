@@ -41,6 +41,7 @@
         wireStatusChange(modal, body, data.event, stats);
         wireExtraCouponsEdit(modal, body, data.event, data.attendees);
         wireInviteWaitingList(modal, body, data.event);
+        (function(b){ if(b && window.CrmEventEdit) b.addEventListener('click',function(){ CrmEventEdit.open(data.event,function(u){ Object.assign(data.event,u); if(modal.close) modal.close(); }); }); })(body.querySelector('button[data-action="edit-event"]'));
         if (window.CrmEventSendMessage && CrmEventSendMessage.wire) CrmEventSendMessage.wire(body, data.event, data.attendees);
       }
     } catch (e) {
@@ -87,6 +88,7 @@
       '<div class="flex flex-wrap gap-2 mt-4">' +
         '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="send-message">שלח הודעה</button>' +
         '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="change-status">שנה סטטוס</button>' +
+        '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="edit-event">✏️ ערוך פרטים</button>' +
         '<button type="button" class="' + CLS_HEAD_BTN + '">ייצוא Excel</button>' +
         '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="edit-extra-coupons">➕ הגדר קופונים נוספים</button>' +
         (hasWaitingList
@@ -103,17 +105,9 @@
     '</div>';
 
     if (stats) h += renderCapacityBar(stats, event.max_capacity);
-    h += renderCouponFunnel(attendees);
-    h += '<div id="crm-event-detail-kpis"></div>';
-    h += '<div id="crm-event-detail-funnel" data-admin-only></div>';
-
-    var subTabBtns = SUB_TABS.map(function (t, i) {
-      return '<button type="button" class="' + (i === 0 ? CLS_SUBTAB_ACT : CLS_SUBTAB) + '" data-event-subtab="' + t.key + '">' + escapeHtml(t.label) + '</button>';
-    }).join('');
-    h += '<div class="' + CLS_SUBTAB_BAR + '">' + subTabBtns + '</div>' +
-      '<div id="crm-event-detail-subbody">' + renderSubTab('attendees', attendees, stats) + '</div>';
-
-    return h;
+    h += renderCouponFunnel(attendees) + '<div id="crm-event-detail-kpis"></div><div id="crm-event-detail-funnel" data-admin-only></div>';
+    var subTabBtns = SUB_TABS.map(function (t, i) { return '<button type="button" class="' + (i === 0 ? CLS_SUBTAB_ACT : CLS_SUBTAB) + '" data-event-subtab="' + t.key + '">' + escapeHtml(t.label) + '</button>'; }).join('');
+    return h + '<div class="' + CLS_SUBTAB_BAR + '">' + subTabBtns + '</div><div id="crm-event-detail-subbody">' + renderSubTab('attendees', attendees, stats) + '</div>';
   }
 
   function renderCapacityBar(stats, maxCapacity) {
@@ -345,4 +339,5 @@
       });
     });
   }
+
 })();
