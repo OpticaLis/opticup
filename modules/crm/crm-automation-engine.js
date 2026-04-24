@@ -146,14 +146,21 @@
       vars.event_date     = date || '';
       vars.event_time     = evt.start_time || '';
       vars.event_location = evt.location_address || '';
-      // P16: %registration_url% — use the event's override if set, otherwise
-      // auto-build the public form URL on GitHub Pages.
-      if (evt.registration_form_url) {
-        vars.registration_url = evt.registration_form_url;
+      // STOREFRONT_FORMS P-A: preview placeholder only — real HMAC-signed
+      // storefront URL (prizma-optic.co.il/event-register?token=…) is
+      // generated server-side by send-message EF when event_id is passed.
+      // Per-event override (crm_events.registration_form_url) still wins
+      // and is passed through to the message as-is.
+      // P-BUGFIX: ignore legacy registration_form_url values that point to the
+      // old ERP domain (app.opticalis.co.il/r.html). These must fall through
+      // to the placeholder so the send-message EF generates a new HMAC-signed
+      // storefront URL (prizma-optic.co.il/event-register?token=...).
+      var regUrl = evt.registration_form_url || '';
+      var isLegacyUrl = regUrl.indexOf('r.html') !== -1 || regUrl.indexOf('app.opticalis') !== -1;
+      if (regUrl && !isLegacyUrl) {
+        vars.registration_url = regUrl;
       } else if (triggerData && triggerData.eventId) {
-        vars.registration_url = 'https://app.opticalis.co.il/r.html'
-          + '?event_id=' + encodeURIComponent(triggerData.eventId)
-          + '&lead_id=' + encodeURIComponent(lead.id || '');
+        vars.registration_url = '[קישור הרשמה — יצורף אוטומטית]';
       }
     }
     return vars;

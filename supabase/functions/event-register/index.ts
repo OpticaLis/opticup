@@ -1,29 +1,17 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// ============================================================
-// event-register — Edge Function for public event registration form
-// Module 4 CRM — Go-Live P16 (2026-04-23)
-// ============================================================
-// POST body JSON:
-//   { tenant_id, lead_id, event_id, arrival_time, eye_exam, notes }
-//
-// Flow: validate UUIDs → verify lead+event exist in same tenant →
-//       call register_lead_to_event RPC → on success, UPDATE the
-//       attendee row with form-specific fields (scheduled_time,
-//       eye_exam_needed, client_notes) → return RPC result.
-//
-// verify_jwt is false because the caller is a public HTML form
-// following an emailed link; the tenant+lead+event UUID triplet
-// is the auth (same security model as the unsubscribe EF).
-// ============================================================
+// event-register — public event registration (P16 + STOREFRONT_FORMS P-A).
+// Auth modes: (a) ?token=<b64url(lead:tenant:event:exp)>.<b64url(hmac)> or
+// (b) legacy ?event_id&lead_id (GET) / body UUIDs (POST). HMAC signature
+// with SERVICE_ROLE_KEY is the auth (same model as unsubscribe EF).
+// verify_jwt=false (public form). Duplicated HMAC helpers per M4-DEBT-FINAL-01.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// P-FINAL Track B: hardcoded legacy JWT anon for the cross-EF call to
-// send-message. Same key already present in js/shared.js and lead-intake
-// EF (see lead-intake/index.ts comment for rationale); not a new exposure.
+// Legacy JWT anon for the cross-EF call to send-message (mirrors the key in
+// js/shared.js + lead-intake EF — not a new exposure).
 const ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU";
 
@@ -54,6 +42,43 @@ function jsonResp(
   });
 }
 
+type RegTokenPayload = { leadId: string; tenantId: string; eventId: string; exp: number };
+async function verifyRegistrationToken(token: string): Promise<RegTokenPayload | null> {
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  try {
+    const decode = (s: string) => {
+      const pad = (4 - (s.length % 4)) % 4;
+      const bin = atob((s + "=".repeat(pad)).replace(/-/g, "+").replace(/_/g, "/"));
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    };
+    const payloadBytes = decode(parts[0]);
+    const providedSig = decode(parts[1]);
+    const payload = new TextDecoder().decode(payloadBytes);
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw", enc.encode(SERVICE_ROLE_KEY),
+      { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+    );
+    const expected = new Uint8Array(
+      await crypto.subtle.sign("HMAC", key, enc.encode(payload)),
+    );
+    if (providedSig.length !== expected.length) return null;
+    let diff = 0;
+    for (let i = 0; i < expected.length; i++) diff |= providedSig[i] ^ expected[i];
+    if (diff !== 0) return null;
+    const [leadId, tenantId, eventId, expStr] = payload.split(":");
+    if (!isUuid(leadId) || !isUuid(tenantId) || !isUuid(eventId) || !expStr) return null;
+    const exp = Number.parseInt(expStr, 10);
+    if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) return null;
+    return { leadId, tenantId, eventId, exp };
+  } catch {
+    return null;
+  }
+}
+
 type FormBody = {
   tenant_id?: string;
   lead_id?: string;
@@ -63,11 +88,10 @@ type FormBody = {
   notes?: string;
 };
 
-// P-FINAL Track B: fire-and-forget confirmation dispatch (SMS + email)
-// after a successful public-form registration. Mirrors the lead-intake
-// EF dispatch pattern. Failures are logged but never bubble up — the
-// attendee row is already persisted, and crm_message_log captures the
-// failure for operator follow-up.
+// Fire-and-forget SMS+email confirmation after a successful public-form
+// registration (mirrors the lead-intake EF dispatch pattern). Failures are
+// logged to crm_message_log but never bubble up — the attendee row is
+// already persisted by the time we dispatch.
 async function dispatchRegistrationMessages(
   tenantId: string,
   leadId: string,
@@ -129,11 +153,23 @@ Deno.serve(async (req: Request) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // GET = bootstrap payload for the form (event details + lead name).
+  // GET = bootstrap payload for the form (event details + lead pre-fill).
   if (req.method === "GET") {
     const url = new URL(req.url);
-    const eventId = url.searchParams.get("event_id");
-    const leadId = url.searchParams.get("lead_id");
+    let eventId: string | null = null;
+    let leadId: string | null = null;
+    const tokenParam = url.searchParams.get("token");
+    if (tokenParam) {
+      const parsed = await verifyRegistrationToken(tokenParam);
+      if (!parsed) {
+        return jsonResp({ success: false, error: "invalid_token" }, 400);
+      }
+      eventId = parsed.eventId;
+      leadId = parsed.leadId;
+    } else {
+      eventId = url.searchParams.get("event_id");
+      leadId = url.searchParams.get("lead_id");
+    }
     if (!isUuid(eventId) || !isUuid(leadId)) {
       return jsonResp({ success: false, error: "invalid_ids" }, 400);
     }
@@ -146,7 +182,7 @@ Deno.serve(async (req: Request) => {
       return jsonResp({ success: false, error: "event_not_found" }, 404);
     }
     const leadRes = await db.from("crm_leads")
-      .select("id, full_name, tenant_id")
+      .select("id, full_name, phone, email, tenant_id")
       .eq("id", leadId!)
       .eq("tenant_id", evRes.data.tenant_id)
       .eq("is_deleted", false)
@@ -163,7 +199,11 @@ Deno.serve(async (req: Request) => {
       tenant_id: evRes.data.tenant_id,
       tenant_name: tRes.data?.name || null,
       tenant_logo_url: tRes.data?.logo_url || null,
+      lead_id: leadRes.data.id,
+      event_id: evRes.data.id,
       lead_name: leadRes.data.full_name || "",
+      lead_phone: leadRes.data.phone || "",
+      lead_email: leadRes.data.email || "",
       event_name: evRes.data.name || "",
       event_date: evRes.data.event_date || "",
       event_time: evRes.data.start_time || "",
@@ -182,6 +222,21 @@ Deno.serve(async (req: Request) => {
     body = await req.json();
   } catch {
     return jsonResp({ success: false, error: "invalid_json" }, 400);
+  }
+
+  // STOREFRONT_FORMS P-A: when ?token=... is present, extract the ID triplet
+  // from the signed payload; body values are ignored. Without token, fall back
+  // to the legacy body-UUID contract (unchanged behavior for old callers).
+  const postUrl = new URL(req.url);
+  const postToken = postUrl.searchParams.get("token");
+  if (postToken) {
+    const parsed = await verifyRegistrationToken(postToken);
+    if (!parsed) {
+      return jsonResp({ success: false, error: "invalid_token" }, 400);
+    }
+    body.tenant_id = parsed.tenantId;
+    body.lead_id = parsed.leadId;
+    body.event_id = parsed.eventId;
   }
 
   if (!isUuid(body.tenant_id) || !isUuid(body.lead_id) || !isUuid(body.event_id)) {
