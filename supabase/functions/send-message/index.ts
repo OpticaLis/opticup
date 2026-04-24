@@ -24,6 +24,22 @@ const MAKE_WEBHOOK_URL =
 
 const DEFAULT_LANGUAGE = "he";
 
+// OVERNIGHT_M4_SCALE_AND_UI Phase 1 — 3-layer phone allowlist (layer 1 of 3).
+// Hardcoded for the overnight scale-test window so runaway blasts during
+// queue/retry tests cannot send real SMS to strangers. Layer 2 is the queue
+// gate in dispatch-queue EF; layer 3 is the CRM UI guard. Remove after P7
+// cutover and replace with a tenant-level test_mode flag.
+const ALLOWED_PHONES = ["0537889878", "0503348349"];
+function normalizePhone(p: string): string {
+  const d = p.replace(/[\s+\-]/g, "");
+  return d.startsWith("972") ? "0" + d.slice(3) : d;
+}
+function phoneAllowed(phone: string | null): boolean {
+  if (!phone) return true;
+  const n = normalizePhone(phone);
+  return ALLOWED_PHONES.some(a => normalizePhone(a) === n);
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -201,6 +217,16 @@ Deno.serve(async (req: Request) => {
   }
   if (channel === "email" && !recipientEmail) {
     return errorResponse("Missing variables.email for email channel", 400);
+  }
+
+  // --- Allowlist gate (layer 1) ---
+  if (channel === "sms" && !phoneAllowed(recipientPhone)) {
+    await db.from("crm_message_log").insert({
+      tenant_id: tenantId, lead_id: leadId, event_id: eventId,
+      template_id: templateId, channel, content: finalBody,
+      status: "rejected", error_message: "phone_not_allowed: " + recipientPhone,
+    });
+    return jsonResponse({ ok: false, error: "phone_not_allowed" }, 200);
   }
 
   // --- Write log (pending) ---
