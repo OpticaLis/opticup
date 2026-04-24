@@ -90,7 +90,7 @@
         '<button type="button" class="' + CLS_HEAD_BTN + '">ייצוא Excel</button>' +
         '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="edit-extra-coupons">➕ הגדר קופונים נוספים</button>' +
         (hasWaitingList
-          ? '<button type="button" class="' + CLS_HEAD_BTN + ' bg-sky-500/90 hover:bg-sky-500" data-action="invite-waiting-list">📩 שלח הזמנה לרשימת המתנה</button>'
+          ? '<button type="button" class="' + CLS_HEAD_BTN + ' bg-sky-500/90 hover:bg-sky-500" data-action="invite-waiting-list">📩 הזמן סופית את רשימת הממתינים</button>'
           : '') +
         '<button type="button" class="' + CLS_HEAD_BTN + ' bg-amber-500/90 hover:bg-amber-500" data-event-day-id="' + escapeHtml(event.id) + '">מצב יום אירוע</button>' +
       '</div>' +
@@ -321,23 +321,28 @@
   function wireInviteWaitingList(modal, body, event) {
     var btn = body.querySelector('button[data-action="invite-waiting-list"]');
     if (!btn || !window.CrmEventActions) return;
-    btn.addEventListener('click', async function () {
-      if (!window.confirm('לשלוח הזמנה לכל הרשומים ברשימת ההמתנה?')) return;
-      btn.disabled = true;
-      var original = btn.textContent;
-      btn.textContent = 'שולח...';
-      try {
-        await CrmEventActions.changeEventStatus(event.id, 'invite_waiting_list');
-        event.status = 'invite_waiting_list';
-        var info = CrmHelpers.getStatusInfo('event', 'invite_waiting_list');
-        var badge = body.querySelector('[data-role="event-status-badge"]');
-        if (badge && info) badge.textContent = info.label;
-        if (window.Toast) Toast.success('הזמנות נשלחו לרשימת ההמתנה');
-      } catch (e) {
-        if (window.Toast) Toast.error('שגיאה: ' + (e.message || String(e)));
-        btn.disabled = false;
-        btn.textContent = original;
-      }
+    btn.addEventListener('click', function () {
+      if (typeof Modal === 'undefined' || typeof Modal.confirm !== 'function') return;
+      Modal.confirm({
+        title: 'הזמן סופית את רשימת הממתינים',
+        message: 'תישלח הזמנת הצטרפות לכל מי שכרגע ברשימת ההמתנה של האירוע. להמשיך?',
+        confirmText: 'שלח הזמנה',
+        onConfirm: async function () {
+          var original = btn.textContent;
+          btn.disabled = true; btn.textContent = 'שולח...';
+          try {
+            await CrmEventActions.changeEventStatus(event.id, 'invite_waiting_list');
+            event.status = 'invite_waiting_list';
+            var info = CrmHelpers.getStatusInfo('event', 'invite_waiting_list');
+            var badge = body.querySelector('[data-role="event-status-badge"]');
+            if (badge && info) badge.textContent = info.label;
+            if (window.Toast) Toast.success('הזמנות נשלחו לרשימת ההמתנה');
+          } catch (e) {
+            if (window.Toast) Toast.error('שגיאה: ' + (e.message || String(e)));
+            btn.disabled = false; btn.textContent = original;
+          }
+        }
+      });
     });
   }
 })();
