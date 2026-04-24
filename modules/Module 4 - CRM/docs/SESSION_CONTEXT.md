@@ -1,15 +1,20 @@
 # Module 4 — CRM: Session Context
 
 > **Last updated:** 2026-04-24
-> **Current phase:** CRM_PRE_MERGE — ✅ CLOSED (final micro-task + Integration Ceremony before merge)
-> **Next:** Merge develop → main (Daniel authorization). Post-merge: verify registration form on production, then Token-based URL SPEC + Affiliates board SPEC.
+> **Current phase:** POST-MERGE — CRM is on `main` and live in production
+> **Next:** Post-merge fixes deployed (event status board refresh, resubscribe flow, short links). Next: P7 (Prizma cutover) + planned SPECs.
 > **Branch:** develop
 
 ---
 
 ## Current State
 
-**Build phases (A–B9) complete.** CRM merged to `main`.
+**Build phases (A–B9) complete.** CRM merged to `main` (2026-04-24 via PR).
+**Post-merge fixes deployed (2026-04-24):**
+- CRM_EVENT_STATUS_FIX: event status board refresh + automation Toast for 0 recipients (commit c238374)
+- CRM_RESUBSCRIBE_FIX: auto-clear `unsubscribed_at` on re-registration (RPC + lead-intake EF) + manual "החזר לדיוור" button (commit 6cd332f)
+- Short links `/r/[code]` route deployed to storefront production (storefront merge c9cf77f)
+- EF deploys: lead-intake (manual by Daniel), event-register (manual by Daniel)
 
 - **Schema:** 23 tables, 7 Views, 8 RPCs, 46 RLS policies
 - **Data:** 893 leads, 11 events, 149 attendees, 695 notes, 88 ad spend rows (Monday import) on Prizma. 31 crm_statuses now also seeded on demo (11 lead + 10 event + 10 attendee — cloned from Prizma on 2026-04-21 as P2a Commit 0).
@@ -60,6 +65,8 @@ See `modules/Module 4 - CRM/go-live/ROADMAP.md` for full P1–P7 plan.
 
 | Phase | Status | What it did |
 |-------|--------|-------------|
+| **CRM_RESUBSCRIBE_FIX** | ✅ CLOSED | Post-merge fix. Three tracks: (A) `register_lead_to_event` RPC updated to clear `unsubscribed_at = NULL` on all registration paths (new reg, soft-delete reactivation, waiting list). (B) `lead-intake` EF updated to clear `unsubscribed_at` in duplicate-found block (re-registration = implicit resubscribe). (C) Manual "החזר לדיוור" button in lead detail card via new `CrmLeadActions.resubscribeLead` + `wireResubscribeButton` in `crm-lead-actions.js` (255→284 lines). ActivityLog integration. lead-intake EF deployed manually by Daniel. **Commit:** 6cd332f. See `modules/Module 4 - CRM/final/CRM_RESUBSCRIBE_FIX/ACTIVATION_PROMPT.md`. |
+| **CRM_EVENT_STATUS_FIX** | ✅ CLOSED | Post-merge regression fix. 3 bugs: (1) event card disappears from board after status change, (2) confirmation gate not opening for "הרשמה פתוחה", (3) stale status on event card. Root cause 1+3: `wireStatusChange` cleared DOM without resetting `_loadPromise` cache. Fix: new `window.reloadCrmEventsTab()` function in `crm-events-tab.js` that resets cache + re-renders. Root cause 2: NOT a regression — the only waiting lead was unsubscribed, so 0 eligible recipients. Fix: Toast.info message for 0 plan items. **Commit:** c238374. See `modules/Module 4 - CRM/final/CRM_EVENT_STATUS_FIX/ACTIVATION_PROMPT.md`. |
 | **CRM_PRE_MERGE** | ✅ CLOSED | Final micro-task before merge. (1) One-line bugfix (M4-BUG-EVCONF-01): `buildVariables` in `crm-automation-engine.js` now injects `vars.lead_id = lead.id`, so `%lead_id%` in the confirmation email QR URL resolves on the UI-register path (staff-registers-lead flow) — previously the QR encoded the literal string `%lead_id%`. (2) Integration Ceremony: `MODULE_MAP.md` + `SESSION_CONTEXT.md` + `CHANGELOG.md` + `docs/GLOBAL_MAP.md` refreshed to list CRM work since last Ceremony (SHORT_LINKS, CRM_HOTFIXES, EVENT_CONFIRMATION_EMAIL). 2 commits (40b9da9 + docs). See `modules/Module 4 - CRM/final/CRM_PRE_MERGE/ACTIVATION_PROMPT.md`. |
 | **EVENT_CONFIRMATION_EMAIL** | ✅ CLOSED | Branded HTML confirmation email with QR code on event registration. Template `event_registration_confirmation_email_he` populated with inline-CSS HTML body embedding a QR code that encodes `%lead_id%` (resolves via short-links EF to the attendee-scanner URL). `buildVariables` in `crm-automation-engine.js` extended to compose `%event_id%`. **Commits:** fcd7994, 979574c, c51d7b1 (FOREMAN_REVIEW). Known gap at close — QR URL for UI-register path still broken (closed by CRM_PRE_MERGE one-liner above). See `modules/Module 4 - CRM/final/EVENT_CONFIRMATION_EMAIL/`. |
 | **CRM_HOTFIXES** | ✅ CLOSED | Three fixes rolled up pre-merge: (1) `crm-automation-engine.js` new `promoteWaitingLeadsToInvited(planItems, results)` — atomic UPDATE of `crm_leads.status` waiting→invited after an invitation rule fires; (2) new file `modules/crm/crm-event-send-message.js` (186 lines) — raw-body compose modal opened from the "שלח הודעה" button in the event detail modal, filters recipients by status + channel, per-lead dispatch via `CrmMessaging.sendMessage`; (3) "send-message" button in event detail wired to open the new modal. **Commits:** 9fe1e36, 99ca541, 531e4c4, 324fe86 (FOREMAN_REVIEW). See `modules/Module 4 - CRM/final/CRM_HOTFIXES/`. |
@@ -101,9 +108,9 @@ See `modules/Module 4 - CRM/go-live/ROADMAP.md` for full P1–P7 plan.
 
 ## What's Next
 
-**Full roadmap:** ~~P1~~ ✅ → ~~P2a~~ ✅ → ~~P2b~~ ✅ → ~~P3a~~ ✅ → ~~P3b~~ ✅ → ~~P3c+P4~~ ✅ → ~~P5~~ ✅ → ~~P5.5~~ ✅ → ~~P6~~ ✅ → ~~P8~~ ✅ → ~~P9~~ ✅ → ~~P10~~ ✅ → ~~P11~~ ✅ → ~~P12~~ ✅ → ~~P14~~ ✅ → ~~P15~~ ✅ → ~~P16~~ ✅ → ~~P17~~ ✅ → ~~P18~~ ✅ → ~~P19~~ ✅ → ~~P20~~ ✅ → ~~P21~~ ✅ → ~~P22~~ ✅ → ~~FINAL_QA_AUDIT~~ ✅ → ~~FINAL_FIXES~~ ✅ → ~~STOREFRONT_FORMS~~ ✅ → ~~SHORT_LINKS~~ ✅ → ~~CRM_HOTFIXES~~ ✅ → ~~EVENT_CONFIRMATION_EMAIL~~ ✅ → ~~CRM_PRE_MERGE~~ ✅ → **MERGE TO MAIN** (awaiting Daniel authorization) → P7 (Prizma cutover).
+**Full roadmap:** ~~P1~~ ✅ → ~~P2a~~ ✅ → ~~P2b~~ ✅ → ~~P3a~~ ✅ → ~~P3b~~ ✅ → ~~P3c+P4~~ ✅ → ~~P5~~ ✅ → ~~P5.5~~ ✅ → ~~P6~~ ✅ → ~~P8~~ ✅ → ~~P9~~ ✅ → ~~P10~~ ✅ → ~~P11~~ ✅ → ~~P12~~ ✅ → ~~P14~~ ✅ → ~~P15~~ ✅ → ~~P16~~ ✅ → ~~P17~~ ✅ → ~~P18~~ ✅ → ~~P19~~ ✅ → ~~P20~~ ✅ → ~~P21~~ ✅ → ~~P22~~ ✅ → ~~FINAL_QA_AUDIT~~ ✅ → ~~FINAL_FIXES~~ ✅ → ~~STOREFRONT_FORMS~~ ✅ → ~~SHORT_LINKS~~ ✅ → ~~CRM_HOTFIXES~~ ✅ → ~~EVENT_CONFIRMATION_EMAIL~~ ✅ → ~~CRM_PRE_MERGE~~ ✅ → ~~MERGE TO MAIN~~ ✅ → ~~CRM_EVENT_STATUS_FIX~~ ✅ → ~~CRM_RESUBSCRIBE_FIX~~ ✅ → **P7 (Prizma cutover)**.
 
-**All 7 OPEN_ISSUES resolved. All code SPECs complete.** Ready for merge develop → main pending Daniel's QA.
+**All 7 OPEN_ISSUES resolved. All code SPECs complete. CRM merged to main. Post-merge regressions fixed. Short links live.** Next: P7 Prizma cutover + planned improvement SPECs.
 
 **Post-merge SPECs planned:**
 - Token-based registration URL (HMAC) — security improvement, replaces raw UUIDs in registration links
@@ -175,25 +182,4 @@ See `modules/Module 4 - CRM/go-live/ROADMAP.md` for full P1–P7 plan.
 - Race-condition safety implemented (23505 unique_violation caught + converted to 409), but not exercised under load — stress test in P6.
 
 **Open from B8:**
-- Tailwind CDN runs a JIT compiler in-browser (~15KB gzipped). Fine for an internal tool but could be switched to a static extracted CSS file in a future SPEC if startup latency ever matters.
-- Some `rule-21-orphans` false positives were flagged during B8 (IIFE-local helpers with shared names: `toast`, `logWrite`, `formatTime`, `initials`, `doCheckIn`, `updateLocal`, `logActivity`). Pre-existing; the hook is informational, not blocking (same M4-TOOL-01 / B3 TOOL-DEBT-01 detector issue).
-- CRM-wide font switched from the ERP default to Heebo via Tailwind `fontFamily.heebo`; the shell still pulls Heebo from Google Fonts.
-
-**Open from B7:**
-- Messaging Hub split-layout runtime wiring: B7 delivers the sidebar+editor split inside `renderMessagingTemplates` but the orchestrator `crm-messaging-tab.js` still overwrites `#tab-messaging` with a single body before delegating. Visually works because templates render the split internally — but a follow-up should lift the split into the orchestrator so Rules + Broadcast + Log sub-tabs can also use it.
-- Wizard "later" scheduling is UI-only (no backing storage); live schedule will land with B8's scheduler.
-- Activity feed items on the dashboard are derived from `eventStats` rather than a real activity log — follow-up is to read from `activity_log` when that pipeline exists.
-- Sparkline trailing values in the KPI cards are synthesized from current counts (0.6 → 0.75 → 0.85 → 0.95 → 1.0 of total). Real time-series will require historical snapshots.
-- Dark-theme palette per FINAL-01 mockup still not adopted — preserved per original B6 SPEC §10 instruction.
-
-**Open from B6 (still valid):**
-- Full 3-column event-day layout is now wired in JS (B7 closed this follow-up). ✅
-
-**Before merge to main:**
-- ✅ FINAL_QA_AUDIT complete (54 tests, 3 critical findings)
-- ✅ FINAL_FIXES complete (all 3 critical findings resolved)
-- ⬜ Daniel authorizes merge develop → main
-- Post-merge: verify registration form works on production (GitHub Pages serves `r.html` + `modules/crm/public/event-register.html`)
-- Post-merge: Token-based registration URL SPEC (HMAC, replaces raw UUIDs)
-- Post-merge: Affiliates board UI SPEC (Facebook Ads campaign tracking)
-- Optional: `CRM_DEMO_SEED` SPEC to unblock automated browser testing.
+- Tailwind CDN runs a JIT compiler in-browser (~15KB gzipped). Fine for an internal tool but could be switched to a static extrac
