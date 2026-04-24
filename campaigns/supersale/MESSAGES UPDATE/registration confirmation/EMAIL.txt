@@ -1,0 +1,307 @@
+SUBJECT:
+🔒 נשאר שלב אחד להשלמת שריון המקום | %event_name%
+
+CONTENT:
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>השלמת שריון מקום - אופטיקה פריזמה</title>
+    <style>
+        /* Reset Styles */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color:#000000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        /* Mobile Styles */
+        @media screen and (max-width: 600px) {
+            .container { width: 100% !important; }
+            .mobile-padding { padding-left: 20px !important; padding-right: 20px !important; }
+            .btn { width: 100% !important; display: block !important; box-sizing: border-box; }
+        }
+    </style>
+</head>
+<body style="margin:0; padding:0; background-color:#000000; direction:rtl;">
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#000000; background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000000 70%);">
+    <tr>
+        <td align="center" style="padding: 20px 0 40px 0;">
+
+            <table border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="max-width:600px; background-color:#0a0a0a; border-radius:12px; overflow:hidden; border: 1px solid #222222; box-shadow: 0 10px 40px rgba(212, 175, 55, 0.15);">
+
+                <!-- Gold Top Bar -->
+                <tr>
+                    <td height="4" style="background: linear-gradient(90deg, #000000 0%, #d4af37 50%, #000000 100%);"></td>
+                </tr>
+
+                <!-- Logo -->
+                <tr>
+                    <td align="center" style="padding: 35px 0 15px 0;">
+                        <p style="margin:0; color:#d4af37; font-size:24px; font-weight:bold; letter-spacing:4px; text-transform:uppercase; font-family: sans-serif;">PRIZMA OPTIC</p>
+                        <p style="margin:5px 0 0 0; color:#666666; font-size:12px; letter-spacing:2px; text-transform:uppercase;">Luxury Eyewear Events</p>
+                    </td>
+                </tr>
+
+                <!-- Main Content -->
+                <tr>
+                    <td class="mobile-padding" style="padding: 20px 50px 40px 50px; text-align:right;">
+
+                        <h1 style="margin:0 0 15px 0; font-size:28px; font-weight:300; color:#ffffff;">
+                            היי %name% 👋
+                        </h1>
+
+                        <p style="margin:0 0 25px 0; font-size:16px; line-height:1.7; color:#cccccc;">
+                            הרשמתך לאירוע נקלטה בהצלחה ✔️<br>
+                            <strong style="color:#E8D48B;">נשאר שלב אחד אחרון</strong> כדי להבטיח את מקומך ולקבל את הקופון האישי.
+                        </p>
+
+                        <!-- ═══ EVENT DETAILS ═══ -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#111111; border: 1px solid #333333; border-radius: 8px; margin-bottom: 25px;">
+                            <tr>
+                                <td style="padding: 25px; border-right: 4px solid #d4af37;">
+                                    <p style="margin:0 0 5px 0; font-size:12px; color:#d4af37; text-transform:uppercase; letter-spacing:1px;">
+                                        פרטי האירוע
+                                    </p>
+                                    <p style="margin:0 0 10px 0; font-size:18px; font-weight:bold; color:#ffffff;">
+                                        %event_name%
+                                    </p>
+                                    <table border="0" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td width="25" style="font-size:16px; padding-bottom:8px;">📅</td>
+                                            <td style="font-size:16px; color:#cccccc; padding-bottom:8px;">%event_date%</td>
+                                        </tr>
+                                        <tr>
+                                            <td width="25" style="font-size:16px; padding-bottom:8px;">⏰</td>
+                                            <td style="font-size:16px; color:#cccccc; padding-bottom:8px;">שעות האירוע: %event_time%</td>
+                                        </tr>
+                                        <tr>
+                                            <td width="25" style="font-size:16px;">📍</td>
+                                            <td style="font-size:16px; color:#cccccc;">הרצל 32, אשקלון</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- ═══ PAYMENT CTA - שריון מקום ═══ -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background: linear-gradient(135deg, #1a1200 0%, #2a1f00 100%); border:2px solid #d4af37; border-radius: 10px; margin-bottom: 25px;">
+                            <tr>
+                                <td style="padding: 28px 25px;">
+                                    <p style="margin:0 0 8px 0; font-size:12px; color:#d4af37; text-transform:uppercase; letter-spacing:2px; text-align:center; font-weight:bold;">
+                                        ⚡ שלב אחרון להשלמת השריון
+                                    </p>
+                                    <h2 style="margin:0 0 16px 0; font-size:22px; font-weight:bold; color:#ffffff; text-align:center;">
+                                        השלמת שריון המקום
+                                    </h2>
+
+                                    <p style="margin:0 0 18px 0; font-size:15px; line-height:1.7; color:#dddddd; text-align:center;">
+                                        כדי להבטיח את מקומך באירוע ולקבל את הקופון האישי,<br>
+                                        יש להשלים תשלום דמי שריון מקום בסך <strong style="color:#E8D48B; font-size:18px;">50 ₪</strong>.
+                                    </p>
+
+                                    <!-- Refund info box -->
+                                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: rgba(0,0,0,0.35); border-radius:6px; margin-bottom: 22px;">
+                                        <tr>
+                                            <td style="padding: 16px 18px;">
+                                                <p style="margin:0 0 10px 0; font-size:13px; font-weight:bold; color:#7CFC9A; text-align:center;">
+                                                    💛 הסכום המלא חוזר אליך בכל אחד מהמקרים הבאים:
+                                                </p>
+                                                <p style="margin:0; font-size:13px; color:#cccccc; line-height:2;">
+                                                    ✓ <strong style="color:#ffffff;">מקוזז מהקנייה</strong> ביום האירוע<br>
+                                                    ✓ <strong style="color:#ffffff;">מוחזר במלואו</strong> בביטול עד 48 שעות לפני האירוע<br>
+                                                    ✓ <strong style="color:#ffffff;">מוחזר במלואו</strong> אם הגעת ולא מצאת מוצר מתאים
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <!-- CTA Button -->
+                                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                        <tr>
+                                            <td align="center">
+                                                <a href="https://prizmaoptic.short.gy/gmapy"
+                                                   style="display:inline-block; padding:18px 45px; background: linear-gradient(135deg, #d4af37 0%, #f4cf57 100%); color:#000000; text-decoration:none; border-radius:50px; font-weight:bold; font-size:17px; letter-spacing:0.5px;">
+                                                    🔒 השלמת שריון מקום ←
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <p style="margin:20px 0 0 0; font-size:13px; color:#E8D48B; text-align:center; font-weight:bold;">
+                                        ⏱️ המקום שלך שמור ל-24 שעות
+                                    </p>
+                                    <p style="margin:6px 0 0 0; font-size:12px; color:#999999; text-align:center; line-height:1.6;">
+                                        לאחר מכן, אם השריון לא הושלם, המקום עובר אוטומטית למשתתפים מרשימת ההמתנה.
+                                    </p>
+
+                                    <!-- Important note -->
+                                    <p style="margin:18px 0 0 0; font-size:12px; color:#aaaaaa; text-align:center; line-height:1.7; border-top:1px solid #2a2a2a; padding-top:16px;">
+                                        💡 <strong style="color:#E8D48B;">חשוב:</strong> בעמוד התשלום יש להזין את אותו מספר טלפון איתו נרשמת (%phone%),<br>
+                                        או לשלוח אסמכתת תשלום בוואטסאפ ל-<a href="https://wa.me/972533645404" style="color:#d4af37; text-decoration:underline;">053-364-5404</a>
+                                    </p>
+
+                                    <p style="margin:14px 0 0 0; font-size:11px; color:#666666; text-align:center;">
+                                        <a href="https://prizma-optic.co.il/supersale-takanon/" style="color:#888888; text-decoration:underline;">לתקנון המלא ולמדיניות שריון מקום ›</a>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- ═══ WHAT HAPPENS NEXT ═══ -->
+                        <p style="margin:0 0 15px 0; font-size:16px; font-weight:bold; color:#d4af37;">
+                            מה קורה עכשיו?
+                        </p>
+
+                        <!-- Step 1 - Done -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:12px;">
+                            <tr>
+                                <td width="36" valign="top" style="padding-top:2px;">
+                                    <table border="0" cellpadding="0" cellspacing="0"><tr><td style="width:28px; height:28px; border-radius:50%; background-color:#1a3d1a; border:2px solid #25D366; text-align:center; line-height:28px; font-size:14px; color:#7CFC9A;">✓</td></tr></table>
+                                </td>
+                                <td style="padding-right:10px;">
+                                    <p style="margin:0 0 2px 0; font-size:15px; font-weight:bold; color:#7CFC9A;">הרשמה לאירוע ✓</p>
+                                    <p style="margin:0; font-size:13px; color:#999999;">הרשמתך נקלטה במערכת.</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Step 2 - Current/Active -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:12px;">
+                            <tr>
+                                <td width="36" valign="top" style="padding-top:2px;">
+                                    <table border="0" cellpadding="0" cellspacing="0"><tr><td style="width:28px; height:28px; border-radius:50%; background-color:#2a1f00; border:2px solid #d4af37; text-align:center; line-height:28px; font-size:14px; color:#d4af37;">💳</td></tr></table>
+                                </td>
+                                <td style="padding-right:10px;">
+                                    <p style="margin:0 0 2px 0; font-size:15px; font-weight:bold; color:#E8D48B;">השלמת שריון מקום (השלב שלך עכשיו)</p>
+                                    <p style="margin:0; font-size:13px; color:#999999;">תשלום דמי שריון של 50 ₪ באבטחה מלאה דרך חברת סליקה. הסכום מקוזז מהקנייה.</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Step 3 - Coupon -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:12px;">
+                            <tr>
+                                <td width="36" valign="top" style="padding-top:2px;">
+                                    <table border="0" cellpadding="0" cellspacing="0"><tr><td style="width:28px; height:28px; border-radius:50%; background-color:#0a0a0a; border:2px solid #d4af37; text-align:center; line-height:28px; font-size:14px; color:#d4af37;">🎟️</td></tr></table>
+                                </td>
+                                <td style="padding-right:10px;">
+                                    <p style="margin:0 0 2px 0; font-size:15px; font-weight:bold; color:#E8D48B;">קבלת קופון אישי</p>
+                                    <p style="margin:0; font-size:13px; color:#999999;">תוך 48 שעות מרגע אישור התשלום, הקופון האישי יישלח אלייך למייל ולנייד.</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Step 4 - Event -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:25px;">
+                            <tr>
+                                <td width="36" valign="top" style="padding-top:2px;">
+                                    <table border="0" cellpadding="0" cellspacing="0"><tr><td style="width:28px; height:28px; border-radius:50%; background-color:#0a0a0a; border:2px solid #d4af37; text-align:center; line-height:28px; font-size:14px; color:#d4af37;">🎉</td></tr></table>
+                                </td>
+                                <td style="padding-right:10px;">
+                                    <p style="margin:0 0 2px 0; font-size:15px; font-weight:bold; color:#E8D48B;">מגיעים עם הקופון</p>
+                                    <p style="margin:0; font-size:13px; color:#999999;">מציגים את הקופון בסניף ביום האירוע ונהנים ממחירי האירוע המיוחדים.</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- ═══ COUPON NOTICE ═══ -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#1a1200; border:1px solid #d4af37; border-radius:6px; margin-bottom:25px;">
+                            <tr>
+                                <td style="padding: 15px;">
+                                    <p style="margin:0; font-size:14px; line-height:1.6; color:#cccccc;">
+                                        <strong style="color:#E8D48B;">⚡ חשוב:</strong> בלי קופון אישי לא ניתן לממש את מחירי האירוע. הקופון יישלח רק לאחר השלמת שריון המקום.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- ═══ YOUR DETAILS ═══ -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#111216; border-radius:8px; border:1px solid #333333; margin-bottom:25px;">
+                            <tr>
+                                <td style="padding: 20px;">
+                                    <p style="margin:0 0 12px 0; font-size:12px; color:#666666; text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid #2a2a2a; padding-bottom:10px;">
+                                        הפרטים שנקלטו במערכת
+                                    </p>
+                                    <p style="margin:0 0 8px 0; font-size:15px; color:#eeeeee;">
+                                        <span style="color:#d4af37;">👤</span> &nbsp; <strong>שם:</strong> %name%
+                                    </p>
+                                    <p style="margin:0 0 8px 0; font-size:15px; color:#eeeeee;">
+                                        <span style="color:#d4af37;">📱</span> &nbsp; <strong>טלפון:</strong> %phone%
+                                    </p>
+                                    <p style="margin:0; font-size:15px; color:#eeeeee;">
+                                        <span style="color:#d4af37;">✉️</span> &nbsp; <strong>אימייל:</strong> %email%
+                                    </p>
+                                    <p style="margin:14px 0 0 0; font-size:12px; color:#777777;">
+                                        חשוב שהפרטים יהיו מדויקים — הקופון יוצמד אליהם בלבד. משהו לא נכון?
+                                        <a href="https://wa.me/972533645404?text=%D7%94%D7%99%D7%99%2C%20%D7%A0%D7%A8%D7%A9%D7%9E%D7%AA%D7%99%20%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%20%D7%94%D7%9E%D7%9B%D7%99%D7%A8%D7%95%D7%AA%20%D7%A9%D7%9C%D7%9B%D7%9D.%20%D7%A8%D7%90%D7%99%D7%AA%D7%99%20%D7%A9%D7%94%D7%9E%D7%99%D7%93%D7%A2%20%D7%A9%D7%A0%D7%A7%D7%9C%D7%98%20%D7%9C%D7%90%20%D7%A0%D7%9B%D7%95%D7%9F." style="color:#d4af37; text-decoration:underline;">עדכנו אותנו בוואטסאפ</a>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- ═══ LOCATION ═══ -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#161616; border: 1px solid #333333; border-radius: 6px; margin-bottom: 25px;">
+                            <tr>
+                                <td style="padding: 18px; text-align:center;">
+                                    <p style="margin:0 0 12px 0; font-size:15px; font-weight:bold; color:#ffffff;">
+                                        📍 הרצל 32, אשקלון &nbsp;•&nbsp; יש חניה
+                                    </p>
+                                    <a href="https://waze.com/ul/hsv8s5h2c3" style="display:inline-block; padding:10px 25px; background-color:#1e1e1e; color:#d4af37; border: 1px solid #d4af37; text-decoration:none; border-radius:50px; font-weight:bold; font-size:14px;">
+                                        🚗 נווט עם Waze
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Sign Off -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-top: 1px solid #222222;">
+                            <tr>
+                                <td style="padding-top: 20px;">
+                                    <p style="margin:0; font-size:15px; color:#ffffff;">
+                                        נתראה באירוע 💛
+                                    </p>
+                                    <p style="margin:5px 0 0 0; font-size:15px; color:#d4af37; font-weight:bold;">
+                                        צוות אופטיקה פריזמה
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </td>
+                </tr>
+
+                <!-- Unsubscribe Block -->
+                <tr>
+                    <td align="center" style="padding: 18px 20px; color:#777777; font-size:12px; line-height:1.6;">
+                        <p style="margin:0 0 10px 0;">
+                            קיבלת את המייל הזה בעקבות הרשמה לאירוע מכירות של אופטיקה פריזמה.
+                        </p>
+                        <a href="%unsubscribe_url%"
+                           style="color:#d4af37; text-decoration:underline; font-weight:600;">
+                            להסרה מרשימת התפוצה
+                        </a>
+                    </td>
+                </tr>
+
+            </table>
+
+            <!-- Footer -->
+            <table border="0" cellpadding="0" cellspacing="0" width="600" class="container">
+                <tr>
+                    <td align="center" style="padding: 20px 0; color:#555555; font-size:11px; line-height:1.6;">
+                        © כל הזכויות שמורות לאופטיקה פריזמה | הרצל 32, אשקלון
+                        <br>
+                        המחירים, המותגים וההטבות בכפוף לתנאי האירוע ולזמינות המלאי.
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 > **Created:** 2026-04-24
 > **Source:** End-to-end testing of STOREFRONT_FORMS feature
-> **Status:** 8/8 resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL. #8 → WORKING_TREE_RECOVERY + INTEGRITY_GATE_SETUP.
+> **Status:** 8/8 original issues resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL. #8 → WORKING_TREE_RECOVERY + INTEGRITY_GATE_SETUP. #9 open — template propagation to Prizma (deferred to P7 cutover).
 
 ---
 
@@ -165,3 +165,35 @@ null-byte corruption שכן היה. Spot-checking של קבצים בודדים �
 whole-tree automated gate נחוץ.
 **Followup:** `final/INTEGRITY_GATE_SETUP/FINDINGS.md` כולל 6 findings
 נוספים (Sentinel gap, style inconsistency, husky comment).
+
+---
+
+## 9. Propagate all message templates demo → prizma (P7 cutover) — 🟡 OPEN
+
+**Priority:** HIGH (blocking Prizma production cutover)
+**Created:** 2026-04-24
+**Description:** The demo tenant (`8d8cfa7e-ef58-49af-9702-a862d459cccb`) holds
+all 24 CRM message templates (email + SMS for every slug). The prizma tenant
+(`6ad0781b-37f0-47a9-92e3-be9ed1477e1c`) has **0 rows** in
+`crm_message_templates`. Every template edit today (e.g., today's update to
+`event_registration_confirmation_email_he` + `_sms_he`) lands on demo only —
+once prizma is cut over to the Optic Up CRM pipeline, leads on prizma will
+hit missing-template errors.
+**Where:** `crm_message_templates` table. Needs a one-shot INSERT SELECT
+that copies every row from demo, rewriting `tenant_id` to prizma's UUID and
+minting new `id` values.
+**Plan (for P7 SPEC, not now):**
+1. Snapshot demo templates at cutover time:
+   `INSERT INTO crm_message_templates (tenant_id, slug, name, channel, language, subject, body, is_active)
+    SELECT '6ad0781b-37f0-47a9-92e3-be9ed1477e1c', slug, name, channel, language, subject, body, is_active
+      FROM crm_message_templates WHERE tenant_id = '8d8cfa7e-ef58-49af-9702-a862d459cccb';`
+2. Daniel reviews the prizma-branded subject lines (some may need tweaking
+   from "demo" wording).
+3. E2E send one message per channel on a prizma staff test lead.
+**Why not now:** Prizma cutover is gated on Module 4 P7 (Production Cutover
+SPEC). Propagating templates before other P7 prerequisites creates a half-
+ready tenant where messages exist but other pipeline pieces (Monday bridge,
+event scheduling, staff PIN accounts) are not yet in place.
+**Source:** Today's SuperSale message-update task (event_registration_confirmation)
+surfaced the gap — UPDATE affected only demo (1 row per slug), not the
+"UPDATE affects both tenants" assumption in the original prompt.
