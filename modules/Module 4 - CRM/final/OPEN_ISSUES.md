@@ -2,7 +2,7 @@
 
 > **Created:** 2026-04-24
 > **Source:** End-to-end testing of STOREFRONT_FORMS feature
-> **Status:** 8/8 original issues resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL. #8 → WORKING_TREE_RECOVERY + INTEGRITY_GATE_SETUP. #9 open — template propagation to Prizma (deferred to P7 cutover).
+> **Status:** 8/8 original issues resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL. #8 → WORKING_TREE_RECOVERY + INTEGRITY_GATE_SETUP. #9 open — template propagation to Prizma (deferred to P7 cutover). #10 open — coupon-send button is flag-only, no dispatch (COUPON_SEND_WIRING SPEC). #11 deferred — "Add to calendar" in messages (needs ICS endpoint + %event_date_iso% variable).
 
 ---
 
@@ -197,3 +197,59 @@ event scheduling, staff PIN accounts) are not yet in place.
 **Source:** Today's SuperSale message-update task (event_registration_confirmation)
 surfaced the gap — UPDATE affected only demo (1 row per slug), not the
 "UPDATE affects both tenants" assumption in the original prompt.
+
+---
+
+## 10. כפתור "שלח" בקופון ב-Event Day לא שולח הודעה — ⚠️ OPEN
+
+**Priority:** HIGH
+**Created:** 2026-04-24
+**Description:** `toggleCoupon()` in `modules/crm/crm-event-day-manage.js:250-269`
+only updates `crm_event_attendees.coupon_sent=true` + `coupon_sent_at=now()`
+and calls `logActivity('crm.attendee.coupon_sent', id)`. It does NOT call
+`CrmMessaging.sendMessage` or hit the `send-message` Edge Function. Therefore
+clicking "שלח" next to an attendee's coupon (in Event Day Mode → Manage
+sub-tab) silently flips a boolean; no SMS or email is dispatched to the
+attendee's phone/email.
+**Where:** `modules/crm/crm-event-day-manage.js` lines 250–269 (and by
+extension `couponCell` at line 110–115 which renders the button).
+**Next step:** SPEC `modules/Module 4 - CRM/final/COUPON_SEND_WIRING/SPEC.md`
+will wire the button to `CrmMessaging.sendMessage({ template_slug:
+'event_coupon_delivery', variables: { coupon_code, lead_id, name,
+event_name, event_date, event_time, phone, email } })`. Templates
+`event_coupon_delivery_{email,sms}_he` already exist on demo (inserted in
+commit `f621b49`, 2026-04-24) — the dispatch wiring is the remaining gap.
+**Blockers for fix:**
+(a) `crm_event_attendees` needs each attendee's resolved `coupon_code` accessible.
+Today `crm_events.coupon_code` is a single event-wide code (e.g. "Supersale0526").
+If the product intent is truly per-attendee codes (unique per recipient) a
+column `crm_event_attendees.coupon_code` + minting logic is required;
+otherwise the SPEC can just pass `event.coupon_code` as the variable.
+(b) The button uses `coupon_sent`/`coupon_sent_at` only — it should set
+those AFTER a successful dispatch, not before. Today's ordering would mark
+"sent" even when Make returns an error.
+(c) The `send-message` EF variable substitution engine already supports
+caller-passed `%coupon_code%` and `%lead_id%` — no EF change needed for (a)
+if per-attendee codes stay out of scope.
+
+---
+
+## 11. "הוספה ליומן" בהודעות — ⚠️ DEFERRED
+
+**Priority:** LOW
+**Created:** 2026-04-24
+**Description:** ההודעות המקוריות ב-Make כללו כפתור/לינק "הוספה ליומן"
+דרך `{{89.shortURL}}`. בעת ההמרה ל-Supabase (COUPON commit `f621b49`,
+2026-04-24) הוסרו כי אין במערכת: (א) ICS generator, (ב) ISO date variable
+(`%event_date%` הוא טקסט עברי לתצוגה בלבד, לא RFC3339).
+**Where:** `event_coupon_delivery_email_he` (calendar button removed),
+`event_coupon_delivery_sms_he` ("הוספה ליומן:" line removed). Registration
+confirmation email did not have this feature originally — only coupon.
+**Next step:** Future SPEC to build `calendar.ics` endpoint + add
+`%event_date_iso%` variable (RFC 3339) to `send-message` EF. After that,
+restore the calendar button:
+```html
+<a href="%calendar_url%" style="...">📅 הוספה ליומן</a>
+```
+where `%calendar_url%` is either a storefront `/event/:id/ics` short URL or
+a pre-built Google Calendar template URL injected server-side.
