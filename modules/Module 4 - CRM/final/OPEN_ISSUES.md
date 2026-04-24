@@ -2,7 +2,7 @@
 
 > **Created:** 2026-04-24
 > **Source:** End-to-end testing of STOREFRONT_FORMS feature
-> **Status:** 4/7 resolved by CRM_HOTFIXES SPEC (2026-04-24). Remaining: #3, #6, #7 → EVENT_CONFIRMATION_EMAIL SPEC.
+> **Status:** 7/7 resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL.
 
 ---
 
@@ -35,12 +35,22 @@ transition via ActivityLog.
 
 ---
 
-## 3. שינוי סטטוס מרובה (Bulk Status Change)
+## 3. שינוי סטטוס מרובה (Bulk Status Change) — ✅ RESOLVED 2026-04-24 (already shipped in P2a)
 
 **Priority:** MEDIUM
 **Description:** צריך אפשרות לסמן מספר לידים בבורד (צ'קבוקסים או דרך סינון)
 ולשנות לכולם את הסטטוס בפעם אחת.
 **Where:** UI חדש ב-crm.html — כפתור "שנה סטטוס" שמופיע כשיש סימון מרובה.
+**Resolution:** EVENT_CONFIRMATION_EMAIL SPEC pre-flight discovered the
+feature was already fully implemented in P2a (2026-04-21) and instrumented
+with ActivityLog in P12 (2026-04-22). Registered leads tab renders row
+checkboxes (`crm-leads-tab.js:169-183` via `_selectedIds` Set); bulk bar
+exposes "שנה סטטוס" which calls `CrmLeadActions.openBulkStatusPicker`
+(`crm-lead-modals.js:73-333`); batch writes emit
+`crm.lead.bulk_status_change` audit entries. Issue marker was stale —
+OPEN_ISSUES.md was authored after E2E testing that focused on event
+flows, not the leads board. Closed without code changes. Duplicate new
+implementation was avoided per Rule 21.
 
 ---
 
@@ -81,7 +91,7 @@ ceiling=60).
 
 ---
 
-## 6. QR Code חסר באישור הרשמה
+## 6. QR Code חסר באישור הרשמה — ✅ RESOLVED 2026-04-24
 
 **Priority:** CRITICAL
 **Description:** בעבר ליד שנרשם לאירוע קיבל מייל עם QR Code שנסרק
@@ -91,10 +101,21 @@ ceiling=60).
 - קישור לתשלום 50 ש"ח דמי שריון
 **Where:** תבנית `event_registration_confirmation_email_he` + לוגיקת יצירת
 QR ב-send-message EF או בתבנית HTML.
+**Resolution:** EVENT_CONFIRMATION_EMAIL SPEC. QR embedded as
+`<img src="https://api.qrserver.com/v1/create-qr-code/?data=%lead_id%...">`
+directly in the email template body — substituted by send-message EF's
+variable engine at send time. New `%lead_id%` variable injected by
+`event-register/index.ts` (one-line §4 exception) so the public-form
+registration path resolves it correctly. QR encodes lead_id UUID
+(same semantics as the old Monday system's attendee_id). Payment
+placeholder link `prizma-optic.co.il/payment?attendee_id=%lead_id%`
+included per SPEC (actual Bit integration out of scope).
+**Pending:** Manual redeploy of `event-register` EF from Daniel's
+Supabase CLI — MCP deploy path failed (see FINDINGS).
 
 ---
 
-## 7. עיצוב מייל אישור הרשמה
+## 7. עיצוב מייל אישור הרשמה — ✅ RESOLVED 2026-04-24
 
 **Priority:** HIGH
 **Description:** המייל שמגיע אחרי הרשמה לאירוע לא מעוצב — טקסט פשוט.
@@ -105,3 +126,12 @@ QR ב-send-message EF או בתבנית HTML.
 - קישור תשלום דמי שריון
 - כפתור WhatsApp ליצירת קשר
 **Where:** תבנית email ב-`crm_message_templates` — צריך תבנית HTML חדשה.
+**Resolution:** EVENT_CONFIRMATION_EMAIL SPEC — UPDATE (not INSERT, to
+respect Rule 21) of existing `event_registration_confirmation_email_he`
+row on demo tenant. New body 3039 chars, table-based layout, inline
+styles, RTL, max-width 600px. Prizma gold-on-black header with
+"PRIZMA OPTIC" wordmark, event details box (gold-tinted background),
+QR code section, payment CTA button, dark footer with unsubscribe link.
+Subject updated to `אישור הרשמה: %event_name% — אופטיקה פריזמה`. SMS
+variant also refreshed to mention that QR + payment details were sent
+to email (124 chars, 2 UCS-2 segments).
