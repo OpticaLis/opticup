@@ -19,8 +19,7 @@ const SEND_MESSAGE_URL = `${SUPABASE_URL}/functions/v1/send-message`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Content-Type": "application/json; charset=utf-8",
 };
@@ -331,6 +330,7 @@ Deno.serve(async (req: Request) => {
       name: lead.full_name || "",
       phone: lead.phone || "",
       email: lead.email || "",
+      lead_id: body.lead_id!,
       event_name: event.name || "",
       event_date: event.event_date || "",
       event_time: event.start_time || "",

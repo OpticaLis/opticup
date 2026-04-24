@@ -1,7 +1,7 @@
 # Module 4 — CRM: Session Context
 
-> **Last updated:** 2026-04-23
-> **Current phase:** FINAL_FIXES — ✅ CLOSED (last code SPEC before merge)
+> **Last updated:** 2026-04-24
+> **Current phase:** CRM_PRE_MERGE — ✅ CLOSED (final micro-task + Integration Ceremony before merge)
 > **Next:** Merge develop → main (Daniel authorization). Post-merge: verify registration form on production, then Token-based URL SPEC + Affiliates board SPEC.
 > **Branch:** develop
 
@@ -60,6 +60,9 @@ See `modules/Module 4 - CRM/go-live/ROADMAP.md` for full P1–P7 plan.
 
 | Phase | Status | What it did |
 |-------|--------|-------------|
+| **CRM_PRE_MERGE** | ✅ CLOSED | Final micro-task before merge. (1) One-line bugfix (M4-BUG-EVCONF-01): `buildVariables` in `crm-automation-engine.js` now injects `vars.lead_id = lead.id`, so `%lead_id%` in the confirmation email QR URL resolves on the UI-register path (staff-registers-lead flow) — previously the QR encoded the literal string `%lead_id%`. (2) Integration Ceremony: `MODULE_MAP.md` + `SESSION_CONTEXT.md` + `CHANGELOG.md` + `docs/GLOBAL_MAP.md` refreshed to list CRM work since last Ceremony (SHORT_LINKS, CRM_HOTFIXES, EVENT_CONFIRMATION_EMAIL). 2 commits (40b9da9 + docs). See `modules/Module 4 - CRM/final/CRM_PRE_MERGE/ACTIVATION_PROMPT.md`. |
+| **EVENT_CONFIRMATION_EMAIL** | ✅ CLOSED | Branded HTML confirmation email with QR code on event registration. Template `event_registration_confirmation_email_he` populated with inline-CSS HTML body embedding a QR code that encodes `%lead_id%` (resolves via short-links EF to the attendee-scanner URL). `buildVariables` in `crm-automation-engine.js` extended to compose `%event_id%`. **Commits:** fcd7994, 979574c, c51d7b1 (FOREMAN_REVIEW). Known gap at close — QR URL for UI-register path still broken (closed by CRM_PRE_MERGE one-liner above). See `modules/Module 4 - CRM/final/EVENT_CONFIRMATION_EMAIL/`. |
+| **CRM_HOTFIXES** | ✅ CLOSED | Three fixes rolled up pre-merge: (1) `crm-automation-engine.js` new `promoteWaitingLeadsToInvited(planItems, results)` — atomic UPDATE of `crm_leads.status` waiting→invited after an invitation rule fires; (2) new file `modules/crm/crm-event-send-message.js` (186 lines) — raw-body compose modal opened from the "שלח הודעה" button in the event detail modal, filters recipients by status + channel, per-lead dispatch via `CrmMessaging.sendMessage`; (3) "send-message" button in event detail wired to open the new modal. **Commits:** 9fe1e36, 99ca541, 531e4c4, 324fe86 (FOREMAN_REVIEW). See `modules/Module 4 - CRM/final/CRM_HOTFIXES/`. |
 | **FINAL_FIXES** | ✅ CLOSED | Last code SPEC before merge. 6/7 tracks shipped (Track D removed pre-execution — utm_campaign_id is Facebook Ads enrichment, not a form field; Track G removed mid-execution — pending_review rows are P20/P21 resend feature, not orphans). Fixes: (A) activity-log tab dispatch in bootstrap, (B) event-register EF now dispatches confirmation SMS+email after RPC success (deployed), (C1) `r.html` redirect at repo root + shortened registration URL in automation engine, (E) typo אוטומטיה→אוטומציה ×4, (F) unsubscribe_url preview placeholder in Confirmation Gate, (H) demo stray lead soft-deleted + P55 unsubscribed_at cleared. **Commits:** 5fd2d5c, 33dd823, 2110788. **Deployed:** event-register EF. See `modules/Module 4 - CRM/final/FINAL_FIXES/`. |
 | **FINAL_QA_AUDIT** | ✅ CLOSED | Comprehensive read-only QA audit of entire CRM flow on demo. 54 tests: 46 PASS, 1 FAIL (activity log tab), 1 ADAPTED, 6 SKIPPED. Found 3 CRITICAL (registration URL 404, activity log empty, public form no confirmations), 1 MEDIUM (pending_review — later confirmed as feature), 4 LOW. Registration URL investigation: r.html redirect as immediate fix, HMAC token deferred. Self-service gap analysis for event manager. See `modules/Module 4 - CRM/final/FINAL_QA_AUDIT/`. |
 | Go-Live P22 — Coupon Tracking | ✅ CLOSED | Coupon funnel panel in event detail modal (3 gradient cards + no-show alert + attendee table). Booking-fee badge on attendee rows. Event-day manage tab: arrival-aware coupon badges (✓ הגיע / ⚠️ לא הגיע). 1 commit. `crm-events-detail.js` at 350-line hard cap. See `go-live/specs/P22_COUPON_TRACKING/`. |
@@ -98,9 +101,9 @@ See `modules/Module 4 - CRM/go-live/ROADMAP.md` for full P1–P7 plan.
 
 ## What's Next
 
-**Full roadmap:** ~~P1~~ ✅ → ~~P2a~~ ✅ → ~~P2b~~ ✅ → ~~P3a~~ ✅ → ~~P3b~~ ✅ → ~~P3c+P4~~ ✅ → ~~P5~~ ✅ → ~~P5.5~~ ✅ → ~~P6~~ ✅ → ~~P8~~ ✅ → ~~P9~~ ✅ → ~~P10~~ ✅ → ~~P11~~ ✅ → ~~P12~~ ✅ → ~~P14~~ ✅ → ~~P15~~ ✅ → ~~P16~~ ✅ → ~~P17~~ ✅ → ~~P18~~ ✅ → ~~P19~~ ✅ → ~~P20~~ ✅ → ~~P21~~ ✅ → ~~P22~~ ✅ → ~~FINAL_QA_AUDIT~~ ✅ → ~~FINAL_FIXES~~ ✅ → **MERGE TO MAIN** (awaiting Daniel authorization) → P7 (Prizma cutover).
+**Full roadmap:** ~~P1~~ ✅ → ~~P2a~~ ✅ → ~~P2b~~ ✅ → ~~P3a~~ ✅ → ~~P3b~~ ✅ → ~~P3c+P4~~ ✅ → ~~P5~~ ✅ → ~~P5.5~~ ✅ → ~~P6~~ ✅ → ~~P8~~ ✅ → ~~P9~~ ✅ → ~~P10~~ ✅ → ~~P11~~ ✅ → ~~P12~~ ✅ → ~~P14~~ ✅ → ~~P15~~ ✅ → ~~P16~~ ✅ → ~~P17~~ ✅ → ~~P18~~ ✅ → ~~P19~~ ✅ → ~~P20~~ ✅ → ~~P21~~ ✅ → ~~P22~~ ✅ → ~~FINAL_QA_AUDIT~~ ✅ → ~~FINAL_FIXES~~ ✅ → ~~STOREFRONT_FORMS~~ ✅ → ~~SHORT_LINKS~~ ✅ → ~~CRM_HOTFIXES~~ ✅ → ~~EVENT_CONFIRMATION_EMAIL~~ ✅ → ~~CRM_PRE_MERGE~~ ✅ → **MERGE TO MAIN** (awaiting Daniel authorization) → P7 (Prizma cutover).
 
-**All code SPECs complete.** Ready for merge develop → main.
+**All 7 OPEN_ISSUES resolved. All code SPECs complete.** Ready for merge develop → main pending Daniel's QA.
 
 **Post-merge SPECs planned:**
 - Token-based registration URL (HMAC) — security improvement, replaces raw UUIDs in registration links
