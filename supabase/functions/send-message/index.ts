@@ -1,5 +1,9 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  buildRegistrationUrl,
+  buildUnsubscribeUrl,
+} from "./url-builders.ts";
 
 // send-message — CRM message dispatch (P3c+P4 Architecture v3).
 // Flow: POST {tenant_id, lead_id, channel, template_slug|body, variables} →
@@ -62,50 +66,6 @@ function substituteVariables(
   });
 }
 
-// --- HMAC-signed tokens (shared for unsubscribe + registration) ---
-// Token format: b64url(payload) + "." + b64url(HMAC-SHA256(SERVICE_ROLE_KEY, payload)).
-// Payloads:
-//   unsubscribe  = `${lead_id}:${tenant_id}:${exp}`              (verified by unsubscribe EF)
-//   registration = `${lead_id}:${tenant_id}:${event_id}:${exp}`  (verified by event-register EF)
-// TTL: 90 days — long enough that an old email link still works.
-// STOREFRONT_FORMS P-A: both URLs hardcoded to prizma-optic.co.il; SaaS-ification
-// via tenants.storefront_domain is out of scope per the SPEC.
-
-const TOKEN_TTL_SECONDS = 90 * 24 * 3600;
-const STOREFRONT_ORIGIN = "https://prizma-optic.co.il";
-
-function b64urlEncode(bytes: Uint8Array): string {
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-async function signToken(payload: string): Promise<string> {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw", enc.encode(SERVICE_ROLE_KEY),
-    { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
-  );
-  const sig = new Uint8Array(
-    await crypto.subtle.sign("HMAC", key, enc.encode(payload)),
-  );
-  return `${b64urlEncode(enc.encode(payload))}.${b64urlEncode(sig)}`;
-}
-
-async function buildUnsubscribeUrl(leadId: string, tenantId: string): Promise<string> {
-  const exp = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;
-  const token = await signToken(`${leadId}:${tenantId}:${exp}`);
-  return `${STOREFRONT_ORIGIN}/unsubscribe?token=${token}`;
-}
-
-async function buildRegistrationUrl(
-  leadId: string, tenantId: string, eventId: string,
-): Promise<string> {
-  const exp = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;
-  const token = await signToken(`${leadId}:${tenantId}:${eventId}:${exp}`);
-  return `${STOREFRONT_ORIGIN}/event-register?token=${token}`;
-}
-
 // --- Main handler ---
 
 Deno.serve(async (req: Request) => {
@@ -165,7 +125,7 @@ Deno.serve(async (req: Request) => {
     typeof v === "string" && v.startsWith("[");
   if (typeof variables.unsubscribe_url !== "string" || isPlaceholder(variables.unsubscribe_url)) {
     try {
-      variables.unsubscribe_url = await buildUnsubscribeUrl(leadId, tenantId);
+      variables.unsubscribe_url = await buildUnsubscribeUrl(db, leadId, tenantId);
     } catch (e) {
       console.warn("unsubscribe_url generation failed:", (e as Error).message);
     }
@@ -181,7 +141,7 @@ Deno.serve(async (req: Request) => {
       /^https?:\/\//i.test(variables.registration_url);
     if (!hasOverride) {
       try {
-        variables.registration_url = await buildRegistrationUrl(leadId, tenantId, eventId);
+        variables.registration_url = await buildRegistrationUrl(db, leadId, tenantId, eventId);
       } catch (e) {
         console.warn("registration_url generation failed:", (e as Error).message);
       }
