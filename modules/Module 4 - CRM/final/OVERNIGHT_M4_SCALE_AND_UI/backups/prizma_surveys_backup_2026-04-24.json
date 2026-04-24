@@ -1,0 +1,90 @@
+[
+  {
+    "id": "b3b0d8e2-6011-4736-b8ed-29e50a748efb",
+    "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+    "attendee_id": "72df1f62-bea2-483d-a756-0429b00c6392",
+    "rating": 5,
+    "comment": "טסט",
+    "google_review_sent": false,
+    "callback_requested": false,
+    "callback_done": false,
+    "created_at": "2026-02-19T16:03:20+00:00"
+  },
+  {
+    "id": "65235b7a-ba4b-4474-b99e-abf9c0438a72",
+    "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+    "attendee_id": "fa242c67-ca79-4e81-899f-ace574f56183",
+    "rating": 5,
+    "comment": "מוצרים עדכניים, חנות מלאה סטייל, פינה למשקפי שמש ופינה מפרדת לראייה,מסגרות של חברות ברמה ,שירות יוצא דופן שלא ניתקלתי בו בחיי, בנוסף בדיקה ומשקפי ראייה קיבלתי במקום!!!אין מילים, ממליצה בחום\nכמובן זאת החנות שלי מעכשיו",
+    "google_review_sent": false,
+    "callback_requested": false,
+    "callback_done": false,
+    "created_at": "2026-02-21T19:32:20+00:00"
+  },
+  {
+    "id": "3d875ea5-94b1-4f54-9e0e-62a32887eb55",
+    "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+    "attendee_id": "bc145e49-ec01-4306-b4f4-cff4fa2ffade",
+    "rating": 5,
+    "comment": "מוכרים מקסימים וכיף שהארוע מוגבל ואין מלא אנשים",
+    "google_review_sent": false,
+    "callback_requested": false,
+    "callback_done": false,
+    "created_at": "2026-03-27T11:51:20+00:00"
+  },
+  {
+    "id": "0cd1cc3c-fadf-49ce-a6d7-fbcbb78f7213",
+    "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+    "attendee_id": "b7b58300-7cc5-45b9-a981-56060ea6db10",
+    "rating": 5,
+    "comment": "קנייה שעלתה מעל כל הציפיות!",
+    "google_review_sent": false,
+    "callback_requested": false,
+    "callback_done": false,
+    "created_at": "2026-03-27T11:55:20+00:00"
+  },
+  {
+    "id": "de6ca531-20c7-4745-bb66-75b75f5006c1",
+    "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+    "attendee_id": "9b2fdda8-c88d-4dd3-bb27-87dd58a15eb8",
+    "rating": 5,
+    "comment": "צוות אדיב מקצועי יחס חם ומותגים מעולים",
+    "google_review_sent": false,
+    "callback_requested": false,
+    "callback_done": false,
+    "created_at": "2026-03-27T12:23:19.999+00:00"
+  },
+  {
+    "id": "1a51c67a-bb32-43f3-a402-2052871bbb3b",
+    "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+    "attendee_id": "95e3426e-38df-4d9e-a94f-c2d2a7473f89",
+    "rating": 5,
+    "comment": "תודה רבה, יש לכם אחלה שירות.",
+    "google_review_sent": false,
+    "callback_requested": false,
+    "callback_done": false,
+    "created_at": "2026-03-27T12:35:20+00:00"
+  },
+  {
+    "id": "8e55ac1d-7bb9-45c5-a542-627b56604b53",
+    "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+    "attendee_id": "84ab6c12-0574-46fb-8bed-c9948dbac2fb",
+    "rating": 5,
+    "comment": "קניתי שתי זוגות יצאתי סופר מרוצה \nנשמח להגיע שוב",
+    "google_review_sent": false,
+    "callback_requested": false,
+    "callback_done": false,
+    "created_at": "2026-03-27T12:54:20+00:00"
+  },
+  {
+    "id": "a9faf2dc-ff7e-465a-b58f-083aeb8f2743",
+    "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+    "attendee_id": "a94df47f-7a4b-4799-a95e-87aa3cef7311",
+    "rating": 5,
+    "comment": null,
+    "google_review_sent": false,
+    "callback_requested": false,
+    "callback_done": false,
+    "created_at": "2026-03-27T16:18:20+00:00"
+  }
+]
