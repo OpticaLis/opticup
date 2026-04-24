@@ -151,8 +151,14 @@
       // generated server-side by send-message EF when event_id is passed.
       // Per-event override (crm_events.registration_form_url) still wins
       // and is passed through to the message as-is.
-      if (evt.registration_form_url) {
-        vars.registration_url = evt.registration_form_url;
+      // P-BUGFIX: ignore legacy registration_form_url values that point to the
+      // old ERP domain (app.opticalis.co.il/r.html). These must fall through
+      // to the placeholder so the send-message EF generates a new HMAC-signed
+      // storefront URL (prizma-optic.co.il/event-register?token=...).
+      var regUrl = evt.registration_form_url || '';
+      var isLegacyUrl = regUrl.indexOf('r.html') !== -1 || regUrl.indexOf('app.opticalis') !== -1;
+      if (regUrl && !isLegacyUrl) {
+        vars.registration_url = regUrl;
       } else if (triggerData && triggerData.eventId) {
         vars.registration_url = '[קישור הרשמה — יצורף אוטומטית]';
       }
