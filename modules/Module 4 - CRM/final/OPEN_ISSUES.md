@@ -2,7 +2,7 @@
 
 > **Created:** 2026-04-24
 > **Source:** End-to-end testing of STOREFRONT_FORMS feature
-> **Status:** 7/7 resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL.
+> **Status:** 8/8 resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL. #8 → WORKING_TREE_RECOVERY + INTEGRITY_GATE_SETUP.
 
 ---
 
@@ -135,3 +135,33 @@ QR code section, payment CTA button, dark footer with unsubscribe link.
 Subject updated to `אישור הרשמה: %event_name% — אופטיקה פריזמה`. SMS
 variant also refreshed to mention that QR + payment details were sent
 to email (124 chars, 2 UCS-2 segments).
+
+---
+
+## 8. קבצים מושחתים ב-working tree (Cowork VM null-byte padding) — ✅ RESOLVED 2026-04-24
+
+**Priority:** HIGH
+**Description:** סביבת ה-Cowork VM דיווחה על 1,083 רשומות ב-`git status`
+(821 CRLF + 40+ truncated) ב-2026-04-24. SPEC ראשון (WORKING_TREE_RECOVERY)
+נכתב לשחזור, אך כשה-Executor רץ על מחשב דניאל ראה רק 5 רשומות — המצב
+הנקי הצפוי. עצר ב-step 0 ואימת שאין השחתה בקבצים שנבדקו. השאלה: האם
+באמת היו קבצים מושחתים?
+**Resolution:** מכוסה בשני SPECs:
+- **WORKING_TREE_RECOVERY** (closed 🟡 as no-op) — CRLF-alarm היה false
+  signal של סביבת ה-Cowork (אין לה autocrlf). autocrlf על מחשב דניאל
+  מתמודד עם CRLF נכון. spot check של 5 קבצים ב-EXECUTION_REPORT אישר אין
+  null-byte corruption בהם.
+- **INTEGRITY_GATE_SETUP** (closed ✅) — התקנת Iron Rule 31 +
+  `scripts/verify-tree-integrity.mjs`. ברגע שהשער רץ על כל העץ לראשונה,
+  הוא מצא **2 מקרי null-byte corruption אמיתיים** שה-spot check של SPEC 1
+  פספס: `CLAUDE.md` (49 NULs baked in HEAD) ו-
+  `modules/Module 3 - Storefront/docs/SESSION_CONTEXT.md` (913 NULs).
+  git ראה את שניהם כ-binary (NULs = binary classification) ולכן `git diff`
+  היה ריק. זה בדיוק סוג ההשחתה ש-Rule 31 נועד למנוע — ועכשיו הוא מותקן.
+  שני הקבצים תוקנו (תוכן נשמר, padding הוסר, LF נוסף) ב-commit `bf36f48`.
+**Lesson:** authoring-env vs execution-env עלול להבדיל סנסורית — ה-Cowork
+VM ראה CRLF שלא היה קיים מבחינת git (reporting artifact), אבל פספס
+null-byte corruption שכן היה. Spot-checking של קבצים בודדים לא מספיק;
+whole-tree automated gate נחוץ.
+**Followup:** `final/INTEGRITY_GATE_SETUP/FINDINGS.md` כולל 6 findings
+נוספים (Sentinel gap, style inconsistency, husky comment).

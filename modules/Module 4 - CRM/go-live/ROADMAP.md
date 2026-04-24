@@ -551,6 +551,27 @@ P1 → P2 → P3 → P4 → P5 → P6 → P8 → P9 → P10 → P11 → P12 → 
 
 ---
 
+## CRM_PRE_MERGE_INTEGRITY  ✅
+
+**סגור 2026-04-24.** שני SPECs מלפני merge לטיפול בחשד להשחתת working-tree + התקנת שער הגנה קבוע.
+
+**WORKING_TREE_RECOVERY** — SPEC ראשון, בוצע כ-no-op 🟡. סביבת ה-Cowork ראתה 1,083 שינויים ב-`git status`, אך על מחשב דניאל רק 5 (4 SPEC-related + 1 SESSION_CONTEXT). ההנחות של ה-SPEC (821 CRLF + 40+ truncations) היו false alarm של סביבת ה-Cowork (אין לה autocrlf). Executor עצר ב-step 0 לפי Stop-on-Deviation, אימת 16 קריטריונים מול המצב בחי (כולם עוברים), לא ביצע שום פעולה הרסנית. ראה `final/WORKING_TREE_RECOVERY/` + `FOREMAN_REVIEW.md` 🟡.
+
+**INTEGRITY_GATE_SETUP** — SPEC שני, Iron Rule 31 מותקן לצמיתות. הוסיף:
+- `scripts/verify-tree-integrity.mjs` (191 שורות) — שער בדיקה לכל העץ, null-byte (ERROR) + trailing-newline (WARNING). משתמש ב-`git status --porcelain` + `git ls-files` (לא filesystem walk — מתחמק מ-false positives של autocrlf).
+- `npm run verify:integrity` — npm script.
+- Iron Rule 31 ב-CLAUDE.md §6.
+- First Action step 4a ב-CLAUDE.md + opticup-executor + opticup-strategic.
+- SPEC_TEMPLATE §3 + §12 Pre-Merge Checklist.
+- `.husky/pre-commit` — השער רץ לפני `verify.mjs --staged`.
+- מבחן corruption מבוקר (§13) עבר: זריקת null bytes → exit 1; git checkout → exit 0.
+
+**Iron Rule 31 first catch:** בסריקה הראשונה של השער התגלו 2 מקרי null-byte padding אמיתיים ב-HEAD — `CLAUDE.md` (49 NULs) ו-`modules/Module 3 - Storefront/docs/SESSION_CONTEXT.md` (913 NULs). git ראה אותם כ-binary (בגלל ה-NULs), `git diff` היה ריק, אף אחד לא שם לב. שני הקבצים תוקנו ב-commit `bf36f48` (תוכן נשמר, padding הוסר, LF נוסף). זה בדיוק סוג ההשחתה שלמענה Rule 31 קיים.
+
+**ראה:** `final/WORKING_TREE_RECOVERY/`, `final/INTEGRITY_GATE_SETUP/`.
+
+---
+
 ## P7 — מעבר פריזמה  ⬜
 
 **מה נבנה:** כיבוי Monday, הפעלת הצינור החדש על פריזמה.
