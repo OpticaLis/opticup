@@ -73,7 +73,14 @@
       p_method: method || 'manual'
     });
     if (res.error) throw new Error('register_lead_to_event: ' + res.error.message);
-    return res.data;
+    // WAITING_LIST_PUBLIC_REGISTRATION_FIX: any caller that registers a lead
+    // gets the capacity-hit transition automatically. Gated on status='registered'
+    // — a 'waiting_list' RPC outcome means the cap was already hit before.
+    var data = res.data;
+    if (data && data.success && data.status === 'registered') {
+      try { await checkAndAutoWaitingList(eventId); } catch (e) { console.error('autoWaitingList:', e); }
+    }
+    return data;
   }
 
   // P8: hardcoded dispatch replaced by rule evaluation. Rules live in
@@ -142,9 +149,6 @@
               toastResponse(resp);
               if (resp && resp.success && (resp.status === 'registered' || resp.status === 'waiting_list')) {
                 dispatchRegistrationConfirmation(leadId, lead, eventId, resp.status);
-              }
-              if (resp && resp.success && resp.status === 'registered') {
-                try { await checkAndAutoWaitingList(eventId); } catch (e) { console.error('autoWaitingList:', e); }
               }
               if (typeof modal.close === 'function') modal.close();
               if (typeof onRegistered === 'function') onRegistered(resp);

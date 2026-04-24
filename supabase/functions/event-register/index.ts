@@ -1,5 +1,6 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkAndDispatchWaitingList } from "./capacity.ts";
 
 // event-register — public event registration (P16 + STOREFRONT_FORMS P-A).
 // Auth modes: (a) ?token=<b64url(lead:tenant:event:exp)>.<b64url(hmac)> or
@@ -87,10 +88,7 @@ type FormBody = {
   notes?: string;
 };
 
-// Fire-and-forget SMS+email confirmation after a successful public-form
-// registration (mirrors the lead-intake EF dispatch pattern). Failures are
-// logged to crm_message_log but never bubble up — the attendee row is
-// already persisted by the time we dispatch.
+// Fire-and-forget SMS+email dispatch. Failures log but never bubble up.
 async function dispatchRegistrationMessages(
   tenantId: string,
   leadId: string,
@@ -223,9 +221,7 @@ Deno.serve(async (req: Request) => {
     return jsonResp({ success: false, error: "invalid_json" }, 400);
   }
 
-  // STOREFRONT_FORMS P-A: when ?token=... is present, extract the ID triplet
-  // from the signed payload; body values are ignored. Without token, fall back
-  // to the legacy body-UUID contract (unchanged behavior for old callers).
+  // STOREFRONT_FORMS P-A: ?token=... overrides body UUIDs; legacy body-UUID path still works.
   const postUrl = new URL(req.url);
   const postToken = postUrl.searchParams.get("token");
   if (postToken) {
@@ -315,12 +311,8 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // P-FINAL Track B (M4-QA-03): dispatch confirmation SMS + email.
-    // UI-side registration goes through CrmAutomation.evaluate which loads
-    // rules from crm_automation_rules. The public form bypasses the client,
-    // so the template-slug mapping is hardcoded here — matches rules #9/#10
-    // seeded on demo. Fire-and-forget: dispatch failure never fails the
-    // form response (the attendee row is already persisted).
+    // Public form bypasses CrmAutomation.evaluate — hardcode the template
+    // mapping here (matches rules #9/#10 on demo). Fire-and-forget.
     const templateBase = result.status === "waiting_list"
       ? "event_waiting_list_confirmation"
       : "event_registration_confirmation";
@@ -343,6 +335,14 @@ Deno.serve(async (req: Request) => {
       variables,
       Boolean(lead.email),
     );
+
+    // WAITING_LIST_PUBLIC_REGISTRATION_FIX: after the per-lead confirmation,
+    // check if this registration just hit capacity. If so, transition the
+    // event to waiting_list and blast event_waiting_list to every attendee.
+    // Only runs when the RPC actually placed the lead in a spot.
+    if (result.status === "registered") {
+      await checkAndDispatchWaitingList(db, body.tenant_id!, body.event_id!, callSendMessage);
+    }
   }
 
   return jsonResp(result, 200);

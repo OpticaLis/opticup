@@ -2,7 +2,7 @@
 
 > **Created:** 2026-04-24
 > **Source:** End-to-end testing of STOREFRONT_FORMS feature
-> **Status:** 11/13 issues resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL. #8 → WORKING_TREE_RECOVERY + INTEGRITY_GATE_SETUP. #10 → COUPON_SEND_WIRING. #12 → EVENT_CLOSE_COMPLETE_STATUS_FLOW + regression fix in commit 5e93fb3 (UI QA confirmed). #9 open — template propagation to Prizma (deferred to P7 cutover). #11 deferred — "Add to calendar" in messages. #13 deferred — quick-register terms-approval flow.
+> **Status:** 11/14 issues resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL. #8 → WORKING_TREE_RECOVERY + INTEGRITY_GATE_SETUP. #10 → COUPON_SEND_WIRING. #12 → EVENT_CLOSE_COMPLETE_STATUS_FLOW + regression fix in commit 5e93fb3 (UI QA confirmed). #9 open — template propagation to Prizma (deferred to P7 cutover). #11 deferred — "Add to calendar" in messages. #13 deferred — quick-register terms-approval flow. #19 deferred — server-side rule evaluator EF (post-P7).
 
 ---
 
@@ -326,3 +326,43 @@ POST to `terms-approve` Edge Function.
 terms approval; prompt staff to send the approval link.
 Out of scope for EVENT_CLOSE_COMPLETE_STATUS_FLOW; included there only
 because the data discovery surfaced the systemic gap.
+
+---
+
+## 19. Build server-side rule evaluator EF to replace hardcoded dispatches — ⚠️ DEFERRED (post-P7)
+
+**Priority:** HIGH (architectural) — but deferred.
+**Created:** 2026-04-24
+**Description:** `CrmAutomation.evaluate` is **client-side JavaScript only**.
+Every non-UI entry point (public form via `event-register` EF, `lead-intake`
+EF) reimplements rule-like dispatch with hardcoded template mappings. This
+means:
+(a) Rule edits on `crm_automation_rules` do not reach server-side dispatch
+    paths — only the client UI follows them.
+(b) New server-side triggers (e.g., capacity-hit → waiting_list transition
+    via `event-register` EF, shipped today in WAITING_LIST_PUBLIC_REGISTRATION_FIX)
+    must replicate the capacity-check + dispatch logic that exists
+    client-side.
+(c) Any new automation rule added on demo for a server-triggered event
+    MUST be coordinated with a server-side code change, or it silently
+    does nothing on server paths.
+**Where:**
+- Client: `modules/crm/crm-automation-engine.js`,
+  `crm-coupon-dispatch.js`, `crm-event-register.js`.
+- Server (hardcoded): `supabase/functions/event-register/index.ts`,
+  `supabase/functions/event-register/capacity.ts` (new),
+  `supabase/functions/lead-intake/index.ts`.
+**Next step:** SPEC to build a `rule-evaluate` Edge Function that:
+(1) Accepts `(triggerType, triggerData)` like `CrmAutomation.evaluate`.
+(2) Reads `crm_automation_rules` filtered by trigger_entity/trigger_event.
+(3) Resolves recipients server-side (same recipient_type switch as
+    `crm-automation-engine.js:resolveRecipients`).
+(4) Invokes `send-message` EF per resolved recipient + channel.
+(5) Runs post-actions — mirrors
+    `crm-automation-post-actions.js:executePostActions`.
+Then update `event-register`, `lead-intake`, and other server paths to
+call `rule-evaluate` instead of their hardcoded dispatch helpers.
+**Scheduling:** Not a feature blocker; current hardcode works. Defer
+to after P7 Prizma cutover to reduce churn. Until then, every new
+automation rule on demo needs coordinated EF code if a non-UI entry
+point can trigger it.
