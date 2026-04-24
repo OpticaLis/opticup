@@ -15,6 +15,7 @@
 - CRM_RESUBSCRIBE_FIX: auto-clear `unsubscribed_at` on re-registration (RPC + lead-intake EF) + manual "החזר לדיוור" button (commit 6cd332f)
 - Short links `/r/[code]` route deployed to storefront production (storefront merge c9cf77f)
 - EF deploys: lead-intake (manual by Daniel), event-register (manual by Daniel)
+- EVENT_CLOSE_COMPLETE_STATUS_FLOW: event_closed rule now targets `invited` leads + post-action reverts them to `waiting`; NEW event_completed rule reverts all attendees' leads to `waiting` (no dispatch). Post-actions promoted to first-class engine concept — extracted to `modules/crm/crm-automation-post-actions.js`. `terms_approved_at` backfilled for 2 historical rows. Browser-UI QA pending.
 
 - **Schema:** 23 tables, 7 Views, 8 RPCs, 46 RLS policies
 - **Data:** 893 leads, 11 events, 149 attendees, 695 notes, 88 ad spend rows (Monday import) on Prizma. 31 crm_statuses now also seeded on demo (11 lead + 10 event + 10 attendee — cloned from Prizma on 2026-04-21 as P2a Commit 0).

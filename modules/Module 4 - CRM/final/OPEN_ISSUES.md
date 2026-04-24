@@ -2,7 +2,7 @@
 
 > **Created:** 2026-04-24
 > **Source:** End-to-end testing of STOREFRONT_FORMS feature
-> **Status:** 9/11 issues resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL. #8 → WORKING_TREE_RECOVERY + INTEGRITY_GATE_SETUP. #10 → COUPON_SEND_WIRING. #9 open — template propagation to Prizma (deferred to P7 cutover). #11 deferred — "Add to calendar" in messages (needs ICS endpoint + %event_date_iso% variable).
+> **Status:** 10/13 issues resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL. #8 → WORKING_TREE_RECOVERY + INTEGRITY_GATE_SETUP. #10 → COUPON_SEND_WIRING. #12 (event lifecycle) → EVENT_CLOSE_COMPLETE_STATUS_FLOW 🟡 pending UI QA. #9 open — template propagation to Prizma (deferred to P7 cutover). #11 deferred — "Add to calendar" in messages. #13 deferred — quick-register terms-approval flow.
 
 ---
 
@@ -264,3 +264,59 @@ restore the calendar button:
 ```
 where `%calendar_url%` is either a storefront `/event/:id/ics` short URL or
 a pre-built Google Calendar template URL injected server-side.
+
+---
+
+## 12. Event lifecycle: leads stuck in confirmed after event ends — 🟡 PENDING UI QA (2026-04-24)
+
+**Priority:** HIGH
+**Created:** 2026-04-24
+**Description:** The `event_closed` automation rule targeted
+`recipient_type='attendees'` (all attendees regardless of lead status) and
+did not revert lead status after send. No `event_completed` rule existed
+at all. Net effect: once a lead became `confirmed` (or `attended` /
+`purchased`) for event N, they never returned to `waiting`, so the
+`event_registration_open` rule (which filters `status=['waiting']`) skipped
+them for event N+1. Dana was the visible case.
+**Resolution:** EVENT_CLOSE_COMPLETE_STATUS_FLOW SPEC (2026-04-24).
+(1) `event_closed` rule updated: `recipient_type=leads_by_status` with
+filter=['invited'] + new `post_action_status_update='waiting'`. (2) NEW
+`event_completed` rule with empty channels, `recipient_type=
+attendees_all_statuses`, post_action=waiting. (3) Engine refactored:
+post-actions extracted to `modules/crm/crm-automation-post-actions.js`
+(`executePostActions` new, `promoteWaitingLeadsToInvited` moved).
+(4) Backfill of `terms_approved_at` for 2 demo leads (data drift from
+historical Monday import; live code paths already sync both fields —
+audited 5 sites).
+**Pending:** Browser-UI QA steps — Daniel to click through SPEC §12
+(set Dana→invited, close test event, verify Dana→waiting + messages
+sent; complete event, verify all attendees→waiting). DB-level simulation
+already passed. Flip this marker to ✅ after UI QA succeeds.
+
+---
+
+## 13. Quick-register terms-approval flow — ⚠️ DEFERRED
+
+**Priority:** MEDIUM
+**Created:** 2026-04-24
+**Description:** When a walk-in customer is registered to an event via
+quick-register (barcode scan or staff-created entry with no form data),
+there is no consent capture for terms. The lead lands in the system with
+`terms_approved=false` and stays there, but nothing blocks them from being
+promoted to `confirmed` / receiving messages. Daniel's directive from
+2026-04-24: such customers must be prompted to approve terms via a rapid
+flow (e.g., a WhatsApp link with one-click approve, or an in-person
+kiosk step) before they can reach `confirmed`.
+**Where:** `modules/crm/crm-lead-actions.js` (quick-register flow) +
+possibly `modules/crm/crm-event-day-checkin.js` (in-person scan).
+**Next step:** Dedicated SPEC that defines:
+(1) UX: WhatsApp bot link with HMAC token → one-click approve page →
+POST to `terms-approve` Edge Function.
+(2) Server: `terms-approve` EF validates token, sets
+`crm_leads.{terms_approved:true, terms_approved_at:now}`.
+(3) Guard: UI prevents promotion to `confirmed` if `terms_approved=false`
+(or flags the lead in the Confirmed board with a red badge).
+(4) Pre-event reconciliation: block event check-in for leads without
+terms approval; prompt staff to send the approval link.
+Out of scope for EVENT_CLOSE_COMPLETE_STATUS_FLOW; included there only
+because the data discovery surfaced the systemic gap.

@@ -90,10 +90,14 @@
       return [leadRes.data];
     }
 
-    if (recipientType === 'tier2' || recipientType === 'tier2_excl_registered') {
-      var statusList = (Array.isArray(cfg.recipient_status_filter) && cfg.recipient_status_filter.length)
-        ? cfg.recipient_status_filter
-        : tier2;
+    // tier2 / tier2_excl_registered / leads_by_status all select from crm_leads
+    // by status. Difference: tier2* defaults to the full tier2 list when no
+    // filter is provided; leads_by_status (EVENT_CLOSE_COMPLETE_STATUS_FLOW)
+    // REQUIRES an explicit filter and returns empty otherwise.
+    if (recipientType === 'tier2' || recipientType === 'tier2_excl_registered' || recipientType === 'leads_by_status') {
+      var hasFilter = Array.isArray(cfg.recipient_status_filter) && cfg.recipient_status_filter.length;
+      if (recipientType === 'leads_by_status' && !hasFilter) { console.warn('CrmAutomation: leads_by_status requires recipient_status_filter'); return []; }
+      var statusList = hasFilter ? cfg.recipient_status_filter : tier2;
       var lRes = await sb.from('crm_leads').select('id, full_name, phone, email')
         .eq('tenant_id', tenantId).eq('is_deleted', false).is('unsubscribed_at', null).in('status', statusList);
       if (lRes.error) throw new Error('recipients tier2: ' + lRes.error.message);
@@ -109,11 +113,16 @@
       return leads;
     }
 
-    if (recipientType === 'attendees' || recipientType === 'attendees_waiting') {
+    if (recipientType === 'attendees' || recipientType === 'attendees_waiting' || recipientType === 'attendees_all_statuses') {
       if (!eventId) return [];
-      var attStatus = (recipientType === 'attendees_waiting') ? ['waiting_list'] : ['registered','confirmed','attended','purchased','no_show'];
-      var aRes = await sb.from('crm_event_attendees').select('crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
-        .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false).in('status', attStatus);
+      var attStatus;
+      if (recipientType === 'attendees_waiting') attStatus = ['waiting_list'];
+      else if (recipientType === 'attendees_all_statuses') attStatus = null; // no filter
+      else attStatus = ['registered','confirmed','attended','purchased','no_show'];
+      var q = sb.from('crm_event_attendees').select('crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
+        .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false);
+      if (attStatus) q = q.in('status', attStatus);
+      var aRes = await q;
       if (aRes.error) throw new Error('recipients attendees: ' + aRes.error.message);
       return (aRes.data || [])
         .map(function (r) { return r.crm_leads; })
@@ -195,21 +204,30 @@
   async function prepareRulePlan(rule, triggerData, tplCache) {
     var cfg = rule.action_config || {};
     var tenantId = tid();
-    if (!tenantId) return { items: [], skipped: 1 };
+    if (!tenantId) return { items: [], skipped: 1, resolvedLeadIds: [] };
     if (rule.action_type !== 'send_message') {
       console.warn('CrmAutomation: unsupported action_type', rule.action_type);
-      return { items: [], skipped: 1 };
+      return { items: [], skipped: 1, resolvedLeadIds: [] };
     }
     var tplBase = cfg.template_slug;
     var channels = Array.isArray(cfg.channels) ? cfg.channels : (cfg.channel ? [cfg.channel] : ['sms']);
     var recipientType = cfg.recipient_type || 'trigger_lead';
     var language = cfg.language || 'he';
-    if (!tplBase) { console.warn('CrmAutomation: rule missing template_slug', rule.id); return { items: [], skipped: 1 }; }
+    var hasPostAction = !!cfg.post_action_status_update;
+
+    // Rule must either dispatch (tplBase) or run a post-action. Both absent = no-op.
+    if (!tplBase && !hasPostAction) {
+      console.warn('CrmAutomation: rule has no template_slug and no post_action_status_update', rule.id);
+      return { items: [], skipped: 1, resolvedLeadIds: [] };
+    }
 
     var leads;
     try { leads = await resolveRecipients(recipientType, tenantId, triggerData, cfg); }
-    catch (e) { console.error('CrmAutomation.prepareRulePlan recipients:', e); return { items: [], skipped: 0 }; }
-    if (!leads.length) return { items: [], skipped: 0 };
+    catch (e) { console.error('CrmAutomation.prepareRulePlan recipients:', e); return { items: [], skipped: 0, resolvedLeadIds: [] }; }
+    var resolvedLeadIds = leads.map(function (l) { return l.id; });
+    if (!leads.length) return { items: [], skipped: 0, resolvedLeadIds: resolvedLeadIds };
+    // No dispatch — rule is post-action-only. Recipients resolved for the hook.
+    if (!tplBase) return { items: [], skipped: 0, resolvedLeadIds: resolvedLeadIds };
 
     var items = [];
     for (var i = 0; i < leads.length; i++) {
@@ -235,7 +253,7 @@
         });
       }
     }
-    return { items: items, skipped: 0 };
+    return { items: items, skipped: 0, resolvedLeadIds: resolvedLeadIds };
   }
 
   // P20 fallback: direct dispatch when CrmConfirmSend isn't loaded (never
@@ -254,40 +272,11 @@
     var results = await Promise.allSettled(calls);
     var sent = 0, failed = 0;
     results.forEach(function (r) { if (r.status === 'fulfilled' && r.value && r.value.ok) sent++; else failed++; });
-    try { await promoteWaitingLeadsToInvited(items, results); } catch (e) { console.error('promoteWaitingLeadsToInvited:', e); }
+    if (window.CrmAutomationPostActions) {
+      try { await CrmAutomationPostActions.promoteWaitingLeadsToInvited(items, results); }
+      catch (e) { console.error('promoteWaitingLeadsToInvited:', e); }
+    }
     return { sent: sent, failed: failed, skipped: 0 };
-  }
-
-  // CRM_HOTFIXES Fix 2: after a successful event-scoped dispatch, promote
-  // any tier-2 lead currently in status='waiting' to 'invited'. Scoped by
-  // tenant_id + explicit `.eq('status','waiting')` so confirmed / attended /
-  // unsubscribed leads are never demoted. Called from both dispatch paths
-  // (confirmation-gate approveAndSend and dispatchPlanDirect fallback).
-  async function promoteWaitingLeadsToInvited(planItems, results) {
-    if (!Array.isArray(planItems) || !planItems.length) return { promoted: 0 };
-    var tenantId = tid();
-    if (!tenantId) return { promoted: 0 };
-    var leadIds = {};
-    planItems.forEach(function (it, i) {
-      if (!it.event_id || !it.lead_id) return;
-      var r = results && results[i];
-      var ok = r && r.status === 'fulfilled' && r.value && r.value.ok;
-      if (ok) leadIds[it.lead_id] = true;
-    });
-    var ids = Object.keys(leadIds);
-    if (!ids.length) return { promoted: 0 };
-    var res = await sb.from('crm_leads')
-      .update({ status: 'invited', updated_at: new Date().toISOString() })
-      .eq('tenant_id', tenantId)
-      .in('id', ids)
-      .eq('status', 'waiting')
-      .select('id');
-    if (res.error) { console.error('CrmAutomation.promoteWaitingLeadsToInvited:', res.error); return { promoted: 0 }; }
-    var promotedIds = (res.data || []).map(function (r) { return r.id; });
-    promotedIds.forEach(function (id) {
-      try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.status_change', entity_type: 'crm_leads', entity_id: id, details: { from: 'waiting', to: 'invited', source: 'automation_invite' } }); } catch (_) {}
-    });
-    return { promoted: promotedIds.length };
   }
 
   // Public entry point.
@@ -314,11 +303,21 @@
     // modal if available (default), else dispatch immediately (fallback).
     var tplCache = new Map();
     var perRule = await Promise.allSettled(rules.map(function (r) { return prepareRulePlan(r, triggerData || {}, tplCache); }));
-    var planItems = [], skipped = 0;
-    perRule.forEach(function (pr) {
-      if (pr.status === 'fulfilled' && pr.value) { planItems = planItems.concat(pr.value.items || []); skipped += pr.value.skipped || 0; }
-      else skipped++;
+    var planItems = [], skipped = 0, ruleResolvedIds = [];
+    perRule.forEach(function (pr, i) {
+      var v = pr.status === 'fulfilled' ? pr.value : null;
+      if (v) { planItems = planItems.concat(v.items || []); skipped += v.skipped || 0; ruleResolvedIds[i] = v.resolvedLeadIds || []; }
+      else { skipped++; ruleResolvedIds[i] = []; }
     });
+
+    // Per-rule bulk post-actions run AFTER resolve, BEFORE dispatch — lifecycle
+    // transitions are independent of the user-gated notification modal.
+    if (window.CrmAutomationPostActions && CrmAutomationPostActions.executePostActions) {
+      for (var ri = 0; ri < rules.length; ri++) {
+        try { await CrmAutomationPostActions.executePostActions(rules[ri], ruleResolvedIds[ri] || []); }
+        catch (e) { console.error('CrmAutomation post-action:', e); }
+      }
+    }
 
     if (!planItems.length) { if (window.Toast) Toast.info('כלל אוטומציה הופעל, אך אין נמענים מתאימים'); return { fired: rules.length, sent: 0, failed: 0, skipped: skipped }; }
 
@@ -341,7 +340,6 @@
     evaluateCondition: evaluateCondition,
     resolveRecipients: resolveRecipients,
     prepareRulePlan: prepareRulePlan,
-    promoteWaitingLeadsToInvited: promoteWaitingLeadsToInvited,
     TRIGGER_TYPES: TRIGGER_TYPES,
     CONDITIONS: CONDITIONS
   };
