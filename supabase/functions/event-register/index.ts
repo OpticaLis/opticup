@@ -1,6 +1,6 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { checkAndDispatchWaitingList } from "./capacity.ts";
+import { checkAndTransitionToWaitingList } from "./capacity.ts";
 
 // event-register — public event registration (P16 + STOREFRONT_FORMS P-A).
 // Auth modes: (a) ?token=<b64url(lead:tenant:event:exp)>.<b64url(hmac)> or
@@ -336,12 +336,10 @@ Deno.serve(async (req: Request) => {
       Boolean(lead.email),
     );
 
-    // WAITING_LIST_PUBLIC_REGISTRATION_FIX: after the per-lead confirmation,
-    // check if this registration just hit capacity. If so, transition the
-    // event to waiting_list and blast event_waiting_list to every attendee.
-    // Only runs when the RPC actually placed the lead in a spot.
+    // Cap-hit → flip to waiting_list only. No blast to existing attendees
+    // (per-attendee waiting_list_confirmation above covers new arrivals).
     if (result.status === "registered") {
-      await checkAndDispatchWaitingList(db, body.tenant_id!, body.event_id!, callSendMessage);
+      await checkAndTransitionToWaitingList(db, body.tenant_id!, body.event_id!);
     }
   }
 
