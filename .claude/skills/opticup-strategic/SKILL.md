@@ -77,6 +77,14 @@ When this skill loads, do these steps:
 4. **Read `state/current-focus.md`** in the active module's docs — if it exists,
    it has the live execution state.
 
+4a. **Integrity Gate check (Iron Rule 31):** if running on a machine with
+   repo access (not a read-only review session), run
+   `npm run verify:integrity` or inspect the most recent executor run's
+   gate result. A null-byte ERROR (exit 1) in HEAD is a STOP-and-escalate
+   event — do not author new SPECs on top of a corrupted tree; open a
+   repair SPEC first. Warnings (exit 2) are informational. Reference:
+   `scripts/verify-tree-integrity.mjs`.
+
 5. **Confirm readiness** to Daniel in Hebrew, briefly:
    > "קראתי את המצב. אנחנו ב-[module] [phase]. [one line status]. מה הכיוון?"
 

@@ -41,6 +41,19 @@ Before touching any file, do these steps. No exceptions.
    - Ask once: stash / leave alone / intentional WIP?
    - Wait for answer, then proceed. Don't ask again.
 
+4a. **Integrity Gate (Iron Rule 31):** run `npm run verify:integrity`. This is a
+   whole-tree scan for null-byte padding (Cowork-VM-style corruption) and
+   trailing-newline truncation. Interpret the exit code:
+   - `0` = clean, continue.
+   - `2` = warnings only (trailing-newline on some source files) — continue,
+     note in session log if surprising.
+   - `1` = null-byte ERROR detected — **STOP immediately**. Do NOT read, write,
+     or commit anything until the corruption is understood and repaired.
+     Never bypass with `--no-verify`.
+   The gate uses `git status --porcelain` + `git ls-files` for file discovery
+   (never a raw filesystem walk), so autocrlf does not produce false positives.
+   Reference: `scripts/verify-tree-integrity.mjs`.
+
 5. **Read CLAUDE.md** — the constitution for this repo. Contains the Iron Rules.
 
 5.5. **Skill-reference file lookup rule (E1 — added 2026-04-16):** When a SPEC
@@ -219,6 +232,13 @@ Next: [what's next per the plan, or "Awaiting Foreman review"]
 
 When dispatched with a SPEC folder path (e.g.
 `modules/Module 3 - Storefront/docs/specs/PHASE_B6_DNS_SWITCH/`):
+
+### Step 0 — Integrity Gate (Iron Rule 31)
+
+Before reading the SPEC, run `npm run verify:integrity`. If it exits with
+code 1 (null-byte ERROR), STOP and escalate — the working tree is
+corrupted and no SPEC should be executed on top of it. Exit 0 or 2 is
+green-light to proceed. See First Action step 4a for interpretation.
 
 ### Step 1 — Load and validate the SPEC
 1. Read `SPEC.md` in full.

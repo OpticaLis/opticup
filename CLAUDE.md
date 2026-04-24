@@ -18,6 +18,7 @@ When starting a new Claude Code session, do these steps in order. No exceptions.
    - Ask once: "I see pre-existing uncommitted changes in these files. Options: (a) stash them with `git stash` and restore after the task, (b) leave them alone and use selective `git add` by filename for this task, (c) they are intentional work-in-progress — just note them and continue with selective add. Which?"
    - Wait for the user's choice, then proceed. Do NOT ask about them again later in the session.
    - If the repo is clean — continue without saying anything.
+4a. **Integrity gate (Rule 31):** run `npm run verify:integrity`. Exit 0 = clean; exit 2 = warnings only (continue, log to session notes if surprising); exit 1 = null-byte corruption detected — STOP and investigate before touching any file. Never bypass.
 5. **Read this file** (CLAUDE.md) — rules, navigation, conventions.
 6. **Read the target module's SESSION_CONTEXT.md** — path pattern:
    `modules/Module X - [Name]/docs/SESSION_CONTEXT.md`
@@ -134,6 +135,8 @@ These are hard rules. Breaking one is a bug, regardless of whether it "works."
     Never leave two things that do the same job. Orphaned code becomes the source of future bugs.
 22. **Defense-in-depth on writes** — every `.insert()` / `.upsert()` must include `tenant_id: getTenantId()`. Every `.select()` should also filter `.eq('tenant_id', getTenantId())` even though RLS enforces it. Belt AND suspenders.
 23. **No secrets in code or docs** — passwords, API keys, PINs, tokens live in env files, Supabase secrets, or tenant config. Never in `.js`, `.md`, or git history. If you find one while editing — flag it, do not "just leave it there."
+
+31. **Integrity gate before every stage.** Before any `git add`, `git commit`, or session end, run `npm run verify:integrity`. The gate scans git-tracked + git-modified files (sourced from `git status --porcelain` + `git ls-files`, never a raw filesystem walk — this avoids autocrlf false positives) for two corruption classes: (a) null bytes embedded in source files (Cowork-VM-style padding); (b) mid-statement truncation (file ends with incomplete token, no trailing newline, unbalanced braces at EOF). A failed gate BLOCKS the stage; never bypass with `--no-verify`. If the gate fails at session start, STOP and investigate before touching anything. This rule is in force because on 2026-04-24 the first run of the gate across HEAD caught 2 real null-byte corruption events (CLAUDE.md: 49 NULs, M3 SESSION_CONTEXT: 913 NULs) that had survived multiple prior commits undetected, AND because prior real incidents (e.g. 286 null bytes in crm.html on 2026-04-21, documented in auto-memory `feedback_cowork_truncation.md`) did reach staged commits before being caught manually. CRLF is NOT checked — `core.autocrlf` on each developer machine handles line endings; adding a CRLF check would produce false positives on Windows without .gitattributes, and .gitattributes is deferred to a post-merge SPEC. (Note: rules 24–30 are storefront-repo-scoped per the section below; this numbering keeps the ERP rule block contiguous from 31 onward.)
 
 ### Cross-repo: Iron Rules 24–30 (Storefront-Scoped)
 
