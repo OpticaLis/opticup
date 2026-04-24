@@ -2,6 +2,47 @@
 
 ---
 
+## CRM_PRE_MERGE — Final Micro-task + Integration Ceremony (2026-04-24) ✅
+
+| Hash | Message |
+|------|---------|
+| `40b9da9` | `fix(crm): inject lead_id into buildVariables for QR code on UI-register path` |
+| _(pending)_ | `docs(crm): Integration Ceremony — update MODULE_MAP, SESSION_CONTEXT, CHANGELOG, GLOBAL_MAP` |
+
+One-line bugfix: `modules/crm/crm-automation-engine.js` `buildVariables` now injects `vars.lead_id = lead.id`, so `%lead_id%` in the confirmation email QR URL resolves on the UI-register path (staff-registers-lead flow) — previously the QR encoded the literal string `%lead_id%`. File 347→348 lines. Integration Ceremony docs: MODULE_MAP adds the new `crm-event-send-message.js` file + 3 new global function entries (`CrmEventSendMessage.open/wire`, `CrmAutomation.promoteWaitingLeadsToInvited`); SESSION_CONTEXT adds CRM_HOTFIXES, EVENT_CONFIRMATION_EMAIL, and CRM_PRE_MERGE to Phase History; CHANGELOG adds this + the two prior SPECs; GLOBAL_MAP §5.4 adds the 2 new CRM globals.
+
+---
+
+## EVENT_CONFIRMATION_EMAIL — Branded HTML Confirmation with QR (2026-04-24) ✅
+
+| Hash | Message |
+|------|---------|
+| `fcd7994` | `feat(crm): branded HTML confirmation email with QR code + lead_id injection` |
+| `979574c` | `chore(spec): close EVENT_CONFIRMATION_EMAIL with retrospective` |
+| `c51d7b1` | `chore(spec): add FOREMAN_REVIEW for EVENT_CONFIRMATION_EMAIL` |
+
+Template `event_registration_confirmation_email_he` populated with inline-CSS HTML body embedding a QR code. The QR encodes a short-link URL that resolves (via the `resolve-link` Edge Function from SHORT_LINKS) to an attendee-scanner URL keyed on `%lead_id%`. `crm-automation-engine.js` `buildVariables` extended to compose `%event_id%`. Known gap at close — the UI-register path (staff registering a lead via CRM) did not pass through `buildVariables`'s lead-id seed, so the QR rendered the literal `%lead_id%`; closed by CRM_PRE_MERGE one-liner. See `modules/Module 4 - CRM/final/EVENT_CONFIRMATION_EMAIL/`.
+
+---
+
+## CRM_HOTFIXES — Event Messaging + Status Promotion (2026-04-24) ✅
+
+| Hash | Message |
+|------|---------|
+| `9fe1e36` | `fix(crm): update lead status to invited after event invitation send` |
+| `99ca541` | `fix(crm): wire send-message button in event detail` |
+| `531e4c4` | `chore(spec): close CRM_HOTFIXES with retrospective` |
+| `324fe86` | `chore(spec): add FOREMAN_REVIEW for CRM_HOTFIXES` |
+
+Three rolled-up fixes:
+- **Fix 1 — Status promotion:** `crm-automation-engine.js` gains `promoteWaitingLeadsToInvited(planItems, results)` — after an event-invitation rule dispatches messages, atomic UPDATE of `crm_leads.status` from `waiting`→`invited` for the targeted leads (tenant-scoped write, Rule 22).
+- **Fix 2 — Send-message button:** "שלח הודעה" button in the event detail modal header wired to open a new compose modal (previously rendered but inert).
+- **Fix 3 — Compose modal:** new file `modules/crm/crm-event-send-message.js` (186 lines) — raw-body compose-and-send modal (no template). Status-filter chips + channel picker (SMS / Email), filters attendees by channel-availability (phone for SMS, email for Email), per-lead dispatch via `CrmMessaging.sendMessage`, per-lead result summary. Exports `window.CrmEventSendMessage.{open, wire}`. Load order: after `crm-messaging-send.js`.
+
+See `modules/Module 4 - CRM/final/CRM_HOTFIXES/`.
+
+---
+
 ## Go-Live P3c+P4 — Messaging Pipeline (Edge Function + Trigger Wiring, 2026-04-22) ✅
 
 | Hash | Message |

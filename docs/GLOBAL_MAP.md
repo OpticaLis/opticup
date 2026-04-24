@@ -194,6 +194,8 @@ Full parameter/return detail: `modules/Module 3.1 - Project Reconstruction/db-au
 | `ActivityLog.*` | shared/js/activity-logger.js | Module 1.5 activity logging |
 | `checkPlanLimit()` / `isFeatureEnabled()` | shared/js/plan-helpers.js | Module 2 plan gates |
 | `renderFeatureLockedState(featureName)` | shared/js/plan-helpers.js | Show lock UI when isFeatureEnabled() returns false; used by 8 storefront-*.html gates (added 2026-04-15) |
+| `CrmEventSendMessage.{open, wire}` | modules/crm/crm-event-send-message.js | Module 4 — compose-and-send modal for event-wide raw-body broadcasts (status-filter chips + channel picker + per-lead dispatch). Added 2026-04-24 (CRM_HOTFIXES). |
+| `CrmAutomation.promoteWaitingLeadsToInvited(planItems, results)` | modules/crm/crm-automation-engine.js | Module 4 — atomic UPDATE of `crm_leads.status` waiting→invited after an event-invitation rule dispatches. Added 2026-04-24 (CRM_HOTFIXES). |
 
 ---
 
