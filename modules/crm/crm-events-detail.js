@@ -92,9 +92,7 @@
         (hasWaitingList
           ? '<button type="button" class="' + CLS_HEAD_BTN + ' bg-sky-500/90 hover:bg-sky-500" data-action="invite-waiting-list">📩 שלח הזמנה לרשימת המתנה</button>'
           : '') +
-        (event.status === 'registration_open' || event.status === 'completed'
-          ? '<button type="button" class="' + CLS_HEAD_BTN + ' bg-amber-500/90 hover:bg-amber-500" data-event-day-id="' + escapeHtml(event.id) + '">מצב יום אירוע</button>'
-          : '') +
+        '<button type="button" class="' + CLS_HEAD_BTN + ' bg-amber-500/90 hover:bg-amber-500" data-event-day-id="' + escapeHtml(event.id) + '">מצב יום אירוע</button>' +
       '</div>' +
       '<div class="' + CLS_INFO_GRID + '">' +
         '<div class="bg-white/10 rounded-lg px-3 py-2"><span class="opacity-80">📅 תאריך:</span> ' + escapeHtml(CrmHelpers.formatDate(event.event_date)) + ' ' + escapeHtml(timeRange) + '</div>' +

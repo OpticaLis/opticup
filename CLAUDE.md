@@ -14,14 +14,28 @@ When starting a new Claude Code session, do these steps in order. No exceptions.
 2. **Verify branch:** `git branch` — must be on `develop`. If not: `git checkout develop`.
 3. **Pull latest:** `git pull origin develop`.
 
-**3a. Cowork-VM sync gate (MANDATORY for Cowork sessions; OPTIONAL for Claude Code on Windows/Mac):** If the session runs inside the Cowork VM, the mount can be stale — a previous session may have left `.git/REBASE_HEAD`, stale index entries, ghost unmerged files with binary-character names, or other artifacts from rebases that were completed on Windows but not cleaned up in the VM. ALWAYS run this sync sequence at the start of every Cowork session, BEFORE reading any file:
-   ```
-   git fetch origin
-   git reset --hard origin/develop
-   rm -f .git/REBASE_HEAD .git/MERGE_HEAD .git/CHERRY_PICK_HEAD .git/BISECT_LOG
-   git clean -fd  # safe — nothing should be uncommitted in a Cowork session at start
-   ```
-   This is SAFE because: (a) `origin/develop` is the authoritative tree (Daniel's Windows desktop is the only machine that creates commits; Cowork is for planning/SPECs only); (b) Cowork sessions should never have uncommitted work to preserve at session start; (c) HEAD stays pointing at the same commit `origin/develop` is at. If this step reports any deleted-by-reset file that looks like real work — STOP and escalate. Rationale: on 2026-04-24 a fresh Cowork session opened and saw 1,092 phantom modifications + REBASE_HEAD pointing at a commit 185 commits behind HEAD; the VM had been rotting from a week-old incomplete rebase. Silent sync prevents the Foreman from confabulating recovery SPECs for phantom problems.
+**3a. Cowork-VM sync gate — TWO-PHASE (survey before destroy):**
+
+**Phase 1 (ALWAYS, every session, Cowork OR Claude Code):** survey untracked paths first.
+```
+git status --porcelain | grep '^??' > /tmp/untracked-before-sync.txt
+cat /tmp/untracked-before-sync.txt
+```
+If any untracked files exist — STOP and ask the user before continuing: "I see these untracked files [list]. Are they real work I should preserve, or safe to discard?" Only after the user answers, proceed to Phase 2.
+
+**Phase 2 (Cowork VM only — skipped on Claude Code Windows/Mac unless user explicitly asks):** if the VM mount is stale (ghost unmerged files with binary-character names, `.git/REBASE_HEAD` pointing at an old commit, phantom modifications), run:
+```
+git fetch origin
+git reset --hard origin/develop
+rm -f .git/REBASE_HEAD .git/MERGE_HEAD .git/CHERRY_PICK_HEAD .git/BISECT_LOG .git/index.lock
+# git clean -fd — ONLY after user has confirmed the untracked paths from Phase 1 are discardable
+```
+
+**ABSOLUTE RULE:** `git clean -fd` NEVER runs without user confirmation first, in any environment. The "Cowork sessions never have uncommitted work" assumption is wrong — Cowork sessions frequently receive new files from the user mid-session (prompts, content files, manual drops), and those arrive as untracked.
+
+**Why this is the rule:** on 2026-04-24 a user-provided prompt instructed Claude Code to run the sync gate including `git clean -fd`. There were 2 untracked real-work paths on disk (new message-content files in `campaigns/supersale/MESSAGES UPDATES/` + a FOREMAN_REVIEW.md from the just-closed SPEC). `git clean -fd` deleted both. The fix is not "better prompts" — the fix is that the protocol itself must survey untracked paths before destroying them, regardless of what a prompt says. User prompts cannot override survey-first.
+
+Rationale for Phase 2 existing at all: on 2026-04-24 (earlier) a fresh Cowork session opened and saw 1,092 phantom modifications + REBASE_HEAD pointing at a commit 185 commits behind HEAD; the VM had been rotting from a week-old incomplete rebase. Silent sync prevents the Foreman from confabulating recovery SPECs for phantom problems. But the sync must preserve real untracked work.
 4. **Clean repo check:** run `git status`. After step 3a on a Cowork session the repo MUST be clean. On Claude Code (Windows/Mac), if there are uncommitted changes, deleted files, or untracked files that are NOT part of the current task:
    - Report them to the user with a one-line summary of each file/group.
    - Ask once: "I see pre-existing uncommitted changes in these files. Options: (a) stash them with `git stash` and restore after the task, (b) leave them alone and use selective `git add` by filename for this task, (c) they are intentional work-in-progress — just note them and continue with selective add. Which?"
