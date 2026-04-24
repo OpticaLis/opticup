@@ -45,6 +45,10 @@
       var host = document.getElementById('activity-log-host');
       if (host) renderActivityLog(host);
     }
+    if (name === 'automation-history' && typeof renderAutomationHistory === 'function') {
+      var ahHost = document.getElementById('automation-history-host');
+      if (ahHost) renderAutomationHistory(ahHost);
+    }
   };
 
   // --- Theme switcher ---
