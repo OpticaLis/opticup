@@ -312,6 +312,12 @@
     });
     updateLocal(id, { coupon_sent: true, coupon_sent_at: nowIso });
     toast(dispatch.allOk ? 'success' : 'warning', 'הקופון נשלח: ' + dispatch.summary);
+    if (window.CrmCouponDispatch && typeof CrmCouponDispatch.checkAndAutoClose === 'function') {
+      try {
+        var ac = await CrmCouponDispatch.checkAndAutoClose(ev);
+        if (ac && ac.closed) { ev.status = 'closed'; toast('success', 'האירוע עבר ל"נסגר" — כל הקופונים הונפקו'); }
+      } catch (e) { console.error('autoClose:', e); }
+    }
     renderTable();
   }
 

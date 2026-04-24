@@ -56,6 +56,44 @@
     };
   }
 
+  // COUPON_CAP_AUTO_CLOSE (2026-04-24): after a coupon is successfully sent,
+  // the caller invokes this to check whether the event has hit its coupon
+  // ceiling. If yes, delegates to CrmEventActions.changeEventStatus — which
+  // both UPDATEs crm_events.status='closed' AND fires the event_closed
+  // automation rule via CrmAutomation.evaluate. SPEC requirement: NULL
+  // max_coupons OR extra_coupons means "no cap" and returns { closed:false }.
+  async function checkAndAutoClose(event) {
+    if (!event || !event.id) return { closed: false };
+    if (event.max_coupons == null || event.extra_coupons == null) return { closed: false, reason: 'no_cap' };
+    if (event.status === 'closed' || event.status === 'completed') return { closed: false, reason: 'already_terminal' };
+    var tenantId = typeof getTenantId === 'function' ? getTenantId() : null;
+    if (!tenantId) return { closed: false, reason: 'no_tenant' };
+    var cap = (+event.max_coupons || 0) + (+event.extra_coupons || 0);
+    if (cap <= 0) return { closed: false, reason: 'ceiling_zero' };
+    var cRes = await sb.from('crm_event_attendees')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('event_id', event.id)
+      .eq('coupon_sent', true)
+      .eq('is_deleted', false)
+      .neq('status', 'cancelled');
+    if (cRes.error) { console.error('checkAndAutoClose count:', cRes.error); return { closed: false, error: cRes.error.message }; }
+    var sent = cRes.count || 0;
+    if (sent < cap) return { closed: false, sent: sent, ceiling: cap };
+    if (!window.CrmEventActions || typeof CrmEventActions.changeEventStatus !== 'function') {
+      console.error('checkAndAutoClose: CrmEventActions.changeEventStatus unavailable');
+      return { closed: false, sent: sent, ceiling: cap, error: 'CrmEventActions_unavailable' };
+    }
+    try {
+      await CrmEventActions.changeEventStatus(event.id, 'closed');
+      return { closed: true, sent: sent, ceiling: cap };
+    } catch (e) {
+      console.error('checkAndAutoClose changeEventStatus:', e);
+      return { closed: false, sent: sent, ceiling: cap, error: e.message || String(e) };
+    }
+  }
+
   window.CrmCouponDispatch = window.CrmCouponDispatch || {};
   window.CrmCouponDispatch.dispatch = dispatch;
+  window.CrmCouponDispatch.checkAndAutoClose = checkAndAutoClose;
 })();
