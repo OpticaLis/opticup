@@ -273,11 +273,7 @@
           var badge = body.querySelector('[data-role="event-status-badge"]');
           if (badge) badge.textContent = info.label;
           if (window.Toast) Toast.success('סטטוס עודכן: ' + info.label);
-          if (typeof window.loadCrmEventsTab === 'function') {
-            // Invalidate list cache so next open reloads
-            var wrap = document.getElementById('crm-events-table-wrap');
-            if (wrap) wrap.innerHTML = '';
-          }
+          if (typeof window.reloadCrmEventsTab === 'function') reloadCrmEventsTab();
         } catch (err) {
           if (window.Toast) Toast.error('שגיאה: ' + (err.message || String(err)));
         }

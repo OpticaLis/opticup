@@ -45,6 +45,15 @@
   }
   window.loadCrmEventsTab = loadCrmEventsTab;
 
+  // Invalidate cache and re-render. Called after a mutation that changes the
+  // board's source-of-truth (status change, create, etc.) so the user sees
+  // the updated row without needing a page refresh.
+  window.reloadCrmEventsTab = async function () {
+    _loadPromise = null;
+    _allEvents = await loadEvents();
+    renderFilteredEvents();
+  };
+
   function populateFilter() {
     var sel = document.getElementById('crm-events-filter-status');
     if (!sel || sel.options.length > 1) return;

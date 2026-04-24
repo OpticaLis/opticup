@@ -320,7 +320,7 @@
       else skipped++;
     });
 
-    if (!planItems.length) return { fired: rules.length, sent: 0, failed: 0, skipped: skipped };
+    if (!planItems.length) { if (window.Toast) Toast.info('כלל אוטומציה הופעל, אך אין נמענים מתאימים'); return { fired: rules.length, sent: 0, failed: 0, skipped: skipped }; }
 
     if (window.CrmConfirmSend && typeof CrmConfirmSend.show === 'function') {
       CrmConfirmSend.show(planItems); // fire-and-forget — caller doesn't await
