@@ -13,7 +13,16 @@ When starting a new Claude Code session, do these steps in order. No exceptions.
 1. **Identify machine & repo:** Ask "Which of the three machines? 🖥️ Windows desktop, 🖥️ Windows laptop, or 🍎 Mac?" (see §9 Multi-Machine for paths) and confirm the working directory matches the task. Run `git remote -v` to verify you are in `opticalis/opticup` (ERP) vs `opticalis/opticup-storefront`. If the remote does not match the task — STOP and tell the user.
 2. **Verify branch:** `git branch` — must be on `develop`. If not: `git checkout develop`.
 3. **Pull latest:** `git pull origin develop`.
-4. **Clean repo check:** run `git status`. If there are uncommitted changes, deleted files, or untracked files that are NOT part of the current task:
+
+**3a. Cowork-VM sync gate (MANDATORY for Cowork sessions; OPTIONAL for Claude Code on Windows/Mac):** If the session runs inside the Cowork VM, the mount can be stale — a previous session may have left `.git/REBASE_HEAD`, stale index entries, ghost unmerged files with binary-character names, or other artifacts from rebases that were completed on Windows but not cleaned up in the VM. ALWAYS run this sync sequence at the start of every Cowork session, BEFORE reading any file:
+   ```
+   git fetch origin
+   git reset --hard origin/develop
+   rm -f .git/REBASE_HEAD .git/MERGE_HEAD .git/CHERRY_PICK_HEAD .git/BISECT_LOG
+   git clean -fd  # safe — nothing should be uncommitted in a Cowork session at start
+   ```
+   This is SAFE because: (a) `origin/develop` is the authoritative tree (Daniel's Windows desktop is the only machine that creates commits; Cowork is for planning/SPECs only); (b) Cowork sessions should never have uncommitted work to preserve at session start; (c) HEAD stays pointing at the same commit `origin/develop` is at. If this step reports any deleted-by-reset file that looks like real work — STOP and escalate. Rationale: on 2026-04-24 a fresh Cowork session opened and saw 1,092 phantom modifications + REBASE_HEAD pointing at a commit 185 commits behind HEAD; the VM had been rotting from a week-old incomplete rebase. Silent sync prevents the Foreman from confabulating recovery SPECs for phantom problems.
+4. **Clean repo check:** run `git status`. After step 3a on a Cowork session the repo MUST be clean. On Claude Code (Windows/Mac), if there are uncommitted changes, deleted files, or untracked files that are NOT part of the current task:
    - Report them to the user with a one-line summary of each file/group.
    - Ask once: "I see pre-existing uncommitted changes in these files. Options: (a) stash them with `git stash` and restore after the task, (b) leave them alone and use selective `git add` by filename for this task, (c) they are intentional work-in-progress — just note them and continue with selective add. Which?"
    - Wait for the user's choice, then proceed. Do NOT ask about them again later in the session.
