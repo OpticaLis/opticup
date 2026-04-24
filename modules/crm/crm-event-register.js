@@ -13,6 +13,39 @@
 
   function tid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
 
+  // EVENT_WAITING_LIST_AUTO_TRANSITION (2026-04-24): after a successful
+  // register, count attendees that actually occupy a spot (exclude
+  // waiting_list / cancelled / duplicate) and compare to max_capacity. If
+  // the event just hit the cap, flip status to 'waiting_list' via
+  // CrmEventActions.changeEventStatus — which fires the waiting_list
+  // automation rule through the canonical path. NULL max_capacity → skip.
+  async function checkAndAutoWaitingList(eventId) {
+    if (!eventId) return { transitioned: false };
+    var tenantId = tid();
+    if (!tenantId) return { transitioned: false, reason: 'no_tenant' };
+    var eRes = await sb.from('crm_events').select('id, status, max_capacity')
+      .eq('id', eventId).eq('tenant_id', tenantId).single();
+    if (eRes.error || !eRes.data) return { transitioned: false, error: eRes.error && eRes.error.message };
+    var ev = eRes.data;
+    if (ev.max_capacity == null) return { transitioned: false, reason: 'no_max_capacity' };
+    if (ev.status !== 'registration_open') return { transitioned: false, reason: 'not_open' };
+    var cRes = await sb.from('crm_event_attendees').select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false)
+      .neq('status', 'waiting_list').neq('status', 'cancelled').neq('status', 'duplicate');
+    if (cRes.error) return { transitioned: false, error: cRes.error.message };
+    var count = cRes.count || 0;
+    if (count < ev.max_capacity) return { transitioned: false, count: count, max: ev.max_capacity };
+    if (!window.CrmEventActions || typeof CrmEventActions.changeEventStatus !== 'function') {
+      return { transitioned: false, count: count, max: ev.max_capacity, error: 'CrmEventActions_unavailable' };
+    }
+    try {
+      await CrmEventActions.changeEventStatus(eventId, 'waiting_list');
+      return { transitioned: true, count: count, max: ev.max_capacity };
+    } catch (e) {
+      return { transitioned: false, count: count, max: ev.max_capacity, error: e.message || String(e) };
+    }
+  }
+
   async function searchTier2Leads(term) {
     var tenantId = tid();
     var tier2 = window.TIER2_STATUSES || [];
@@ -109,6 +142,9 @@
               toastResponse(resp);
               if (resp && resp.success && (resp.status === 'registered' || resp.status === 'waiting_list')) {
                 dispatchRegistrationConfirmation(leadId, lead, eventId, resp.status);
+              }
+              if (resp && resp.success && resp.status === 'registered') {
+                try { await checkAndAutoWaitingList(eventId); } catch (e) { console.error('autoWaitingList:', e); }
               }
               if (typeof modal.close === 'function') modal.close();
               if (typeof onRegistered === 'function') onRegistered(resp);
