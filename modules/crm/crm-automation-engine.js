@@ -129,6 +129,7 @@
   // from crm-event-actions.js when available (for event-scoped triggers).
   async function buildVariables(triggerData, lead) {
     var vars = { name: lead.full_name || '', phone: lead.phone || '', email: lead.email || '' };
+    vars.lead_id = lead.id || '';
     // P-FINAL: preview placeholder only — real HMAC unsubscribe token is
     // generated server-side in send-message EF at actual send time (90-day TTL).
     vars.unsubscribe_url = '[קישור הסרה — יצורף אוטומטית]';
