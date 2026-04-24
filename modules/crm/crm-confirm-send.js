@@ -188,14 +188,17 @@
     });
     var results = await Promise.allSettled(calls);
     var sent = 0, failed = 0;
-    results.forEach(function (r) { if (r.status === 'fulfilled' && r.value && r.value.ok) sent++; else failed++; });
-    // CRM_HOTFIXES Fix 2: promote tier-2 leads 'waiting' → 'invited' after
-    // successful event-scoped sends. Helper moved to CrmAutomationPostActions
-    // in EVENT_CLOSE_COMPLETE_STATUS_FLOW (2026-04-24).
+    var runId = (plan[0] && plan[0].run_id) || null;
+    results.forEach(function (r, i) {
+      var ok = r.status === 'fulfilled' && r.value && r.value.ok;
+      if (ok) sent++; else failed++;
+      if (ok && runId && r.value.logId && window.CrmAutomationRuns) CrmAutomationRuns.stampLog(r.value.logId, runId);
+    });
     if (window.CrmAutomationPostActions && typeof CrmAutomationPostActions.promoteWaitingLeadsToInvited === 'function') {
       try { await CrmAutomationPostActions.promoteWaitingLeadsToInvited(plan, results); }
       catch (e) { console.error('promoteWaitingLeadsToInvited:', e); }
     }
+    if (runId && window.CrmAutomationRuns) await CrmAutomationRuns.finishRun(runId, 'completed');
     return { sent: sent, failed: failed };
   }
 

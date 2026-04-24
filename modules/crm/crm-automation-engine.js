@@ -156,15 +156,8 @@
       vars.event_date     = date || '';
       vars.event_time     = evt.start_time || '';
       vars.event_location = evt.location_address || '';
-      // STOREFRONT_FORMS P-A: preview placeholder only — real HMAC-signed
-      // storefront URL (prizma-optic.co.il/event-register?token=…) is
-      // generated server-side by send-message EF when event_id is passed.
-      // Per-event override (crm_events.registration_form_url) still wins
-      // and is passed through to the message as-is.
-      // P-BUGFIX: ignore legacy registration_form_url values that point to the
-      // old ERP domain (app.opticalis.co.il/r.html). These must fall through
-      // to the placeholder so the send-message EF generates a new HMAC-signed
-      // storefront URL (prizma-optic.co.il/event-register?token=...).
+      // Preview placeholder — real URL generated server-side by send-message EF.
+      // Per-event registration_form_url overrides UNLESS it's a legacy r.html/app.opticalis URL.
       var regUrl = evt.registration_form_url || '';
       var isLegacyUrl = regUrl.indexOf('r.html') !== -1 || regUrl.indexOf('app.opticalis') !== -1;
       if (regUrl && !isLegacyUrl) {
@@ -260,8 +253,7 @@
     return { items: items, skipped: 0, resolvedLeadIds: resolvedLeadIds };
   }
 
-  // P20 fallback: direct dispatch when CrmConfirmSend isn't loaded (never
-  // expected in normal operation — every CRM page loads crm-confirm-send.js).
+  // P20 fallback: direct dispatch when CrmConfirmSend isn't loaded.
   async function dispatchPlanDirect(items) {
     if (!window.CrmMessaging || !CrmMessaging.sendMessage) {
       console.error('CrmAutomation: CrmMessaging.sendMessage not available');
@@ -275,7 +267,11 @@
     });
     var results = await Promise.allSettled(calls);
     var sent = 0, failed = 0;
-    results.forEach(function (r) { if (r.status === 'fulfilled' && r.value && r.value.ok) sent++; else failed++; });
+    results.forEach(function (r, i) {
+      var ok = r.status === 'fulfilled' && r.value && r.value.ok;
+      if (ok) sent++; else failed++;
+      if (ok && items[i].run_id && r.value.logId && window.CrmAutomationRuns) CrmAutomationRuns.stampLog(r.value.logId, items[i].run_id);
+    });
     if (window.CrmAutomationPostActions) {
       try { await CrmAutomationPostActions.promoteWaitingLeadsToInvited(items, results); }
       catch (e) { console.error('promoteWaitingLeadsToInvited:', e); }
@@ -303,8 +299,6 @@
     var rules = (res.data || []).filter(function (r) { return evaluateCondition(r.trigger_condition, triggerData || {}); });
     if (!rules.length) return { fired: 0, sent: 0, failed: 0, skipped: 0 };
 
-    // P20: build a combined plan across all matching rules; show confirmation
-    // modal if available (default), else dispatch immediately (fallback).
     var tplCache = new Map();
     var perRule = await Promise.allSettled(rules.map(function (r) { return prepareRulePlan(r, triggerData || {}, tplCache); }));
     var planItems = [], skipped = 0, ruleResolvedIds = [];
@@ -314,8 +308,7 @@
       else { skipped++; ruleResolvedIds[i] = []; }
     });
 
-    // Per-rule bulk post-actions run AFTER resolve, BEFORE dispatch — lifecycle
-    // transitions are independent of the user-gated notification modal.
+    // Bulk post-actions run after resolve, before dispatch — lifecycle transitions are user-gate-independent.
     if (window.CrmAutomationPostActions && CrmAutomationPostActions.executePostActions) {
       for (var ri = 0; ri < rules.length; ri++) {
         try { await CrmAutomationPostActions.executePostActions(rules[ri], ruleResolvedIds[ri] || []); }
@@ -325,18 +318,24 @@
 
     if (!planItems.length) { if (window.Toast) Toast.info('כלל אוטומציה הופעל, אך אין נמענים מתאימים'); return { fired: rules.length, sent: 0, failed: 0, skipped: skipped }; }
 
-    if (window.CrmConfirmSend && typeof CrmConfirmSend.show === 'function') {
-      CrmConfirmSend.show(planItems); // fire-and-forget — caller doesn't await
-      return { fired: rules.length, pending_confirm: true, skipped: skipped, planned: planItems.length };
+    // OVERNIGHT_M4_SCALE_AND_UI Phase 4: observability run row.
+    var runId = null;
+    if (window.CrmAutomationRuns) {
+      runId = await CrmAutomationRuns.createRun(tenantId, rules, triggerType, triggerData, triggerData && triggerData.eventId, planItems.length);
+      if (runId) planItems.forEach(function (it) { it.run_id = runId; });
     }
 
-    // Fallback: legacy immediate dispatch (no modal loaded).
+    if (window.CrmConfirmSend && typeof CrmConfirmSend.show === 'function') {
+      CrmConfirmSend.show(planItems); // fire-and-forget; finish-run happens in approveAndSend
+      return { fired: rules.length, pending_confirm: true, skipped: skipped, planned: planItems.length, run_id: runId };
+    }
     var r = await dispatchPlanDirect(planItems);
+    if (runId && window.CrmAutomationRuns) await CrmAutomationRuns.finishRun(runId, 'completed');
     if (window.Toast && (r.sent + r.failed) > 0) {
       if (r.failed === 0) Toast.success('נשלחו ' + r.sent + ' הודעות');
       else Toast.warning('נשלחו ' + r.sent + ', ' + r.failed + ' נכשלו');
     }
-    return { fired: rules.length, sent: r.sent, failed: r.failed, skipped: skipped };
+    return { fired: rules.length, sent: r.sent, failed: r.failed, skipped: skipped, run_id: runId };
   }
 
   window.CrmAutomation = {
