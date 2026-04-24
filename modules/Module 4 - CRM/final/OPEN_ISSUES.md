@@ -2,7 +2,7 @@
 
 > **Created:** 2026-04-24
 > **Source:** End-to-end testing of STOREFRONT_FORMS feature
-> **Status:** 8/8 original issues resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL. #8 → WORKING_TREE_RECOVERY + INTEGRITY_GATE_SETUP. #9 open — template propagation to Prizma (deferred to P7 cutover). #10 open — coupon-send button is flag-only, no dispatch (COUPON_SEND_WIRING SPEC). #11 deferred — "Add to calendar" in messages (needs ICS endpoint + %event_date_iso% variable).
+> **Status:** 9/11 issues resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL. #8 → WORKING_TREE_RECOVERY + INTEGRITY_GATE_SETUP. #10 → COUPON_SEND_WIRING. #9 open — template propagation to Prizma (deferred to P7 cutover). #11 deferred — "Add to calendar" in messages (needs ICS endpoint + %event_date_iso% variable).
 
 ---
 
@@ -200,10 +200,21 @@ surfaced the gap — UPDATE affected only demo (1 row per slug), not the
 
 ---
 
-## 10. כפתור "שלח" בקופון ב-Event Day לא שולח הודעה — ⚠️ OPEN
+## 10. כפתור "שלח" בקופון ב-Event Day לא שולח הודעה — ✅ RESOLVED 2026-04-24
 
 **Priority:** HIGH
 **Created:** 2026-04-24
+**Resolved:** 2026-04-24 by COUPON_SEND_WIRING SPEC. `toggleCoupon` in
+`modules/crm/crm-event-day-manage.js` now calls `CrmCouponDispatch.dispatch`
+(new file `modules/crm/crm-coupon-dispatch.js`) which invokes
+`CrmMessaging.sendMessage` twice (SMS + Email) with the `event_coupon_delivery`
+templates from `f621b49`. DB flag `coupon_sent=true` is set ONLY after
+`dispatch.anyOk`, never before. E2E QA passed on demo for attendee דנה כהן
+(event SuperSale טסט #3, coupon_code=SUPERSALE3): both log rows status=sent,
+all 7 vars substituted, QR image URL encodes the correct lead_id UUID.
+Findings logged in `final/COUPON_SEND_WIRING/FINDINGS.md` (F1 SMS is fully
+static + missing unsubscribe_url; F2 coupon_code is per-event not
+per-attendee despite email copy saying "אישי וחד-פעמי").
 **Description:** `toggleCoupon()` in `modules/crm/crm-event-day-manage.js:250-269`
 only updates `crm_event_attendees.coupon_sent=true` + `coupon_sent_at=now()`
 and calls `logActivity('crm.attendee.coupon_sent', id)`. It does NOT call

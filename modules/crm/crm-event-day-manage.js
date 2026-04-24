@@ -252,19 +252,66 @@
     var ev = state.event || {};
     var attendees = state.attendees || [];
     var target = attendees.find(function (a) { return a.id === id; });
-    if (target && target.coupon_sent) return;
-    var totalSent = attendees.filter(function (a) { return a.coupon_sent && a.status !== 'cancelled'; }).length;
-    var ceiling = (ev.max_coupons != null ? +ev.max_coupons : 50) + (+ev.extra_coupons || 0);
-    if (totalSent >= ceiling) {
-      toast('error', 'הגעת למכסת הקופונים (' + ceiling + '). הגדל כמות קופונים נוספת אם יש צורך.');
+    if (!target) return;
+
+    // Defensive re-send guard. UI hides the "שלח" button once coupon_sent=true
+    // (see couponCell), so this path is not reachable from the rendered table
+    // today; it protects programmatic callers and any future re-send button.
+    if (target.coupon_sent) {
+      var when = target.coupon_sent_at ? new Date(target.coupon_sent_at).toLocaleString('he-IL') : '—';
+      if (!confirm('הקופון כבר נשלח ב-' + when + '. לשלוח שוב?')) return;
+    } else {
+      var totalSent = attendees.filter(function (a) { return a.coupon_sent && a.status !== 'cancelled'; }).length;
+      var ceiling = (ev.max_coupons != null ? +ev.max_coupons : 50) + (+ev.extra_coupons || 0);
+      if (totalSent >= ceiling) {
+        toast('error', 'הגעת למכסת הקופונים (' + ceiling + '). הגדל כמות קופונים נוספת אם יש צורך.');
+        return;
+      }
+    }
+
+    if (!ev.coupon_code) {
+      toast('error', 'לאירוע לא הוגדר קוד קופון. הגדר קוד קופון לאירוע לפני השליחה.');
       return;
     }
+    if (!window.CrmMessaging || typeof CrmMessaging.sendMessage !== 'function') {
+      toast('error', 'CrmMessaging אינו זמין');
+      return;
+    }
+    if (!target.phone && !target.email) {
+      toast('error', 'למשתתף חסרים טלפון ואימייל — לא ניתן לשלוח קופון.');
+      return;
+    }
+
+    if (!window.CrmCouponDispatch || typeof CrmCouponDispatch.dispatch !== 'function') {
+      toast('error', 'CrmCouponDispatch אינו זמין');
+      return;
+    }
+
     if (btn) { btn.disabled = true; btn.textContent = '...'; }
+
+    var dispatch = await CrmCouponDispatch.dispatch(target, ev);
+    if (!dispatch.anyOk) {
+      if (btn) { btn.disabled = false; btn.textContent = 'שלח'; }
+      toast('error', 'שליחה נכשלה: SMS ' + (dispatch.smsError || '—') + ' | Email ' + (dispatch.emailError || '—'));
+      return;
+    }
+
+    // Flag update happens AFTER at least one channel succeeds — never before.
     var nowIso = new Date().toISOString();
-    var { error } = await sb.from('crm_event_attendees').update({ coupon_sent: true, coupon_sent_at: nowIso }).eq('id', id).eq('tenant_id', getTenantId());
-    if (error) { toast('error', error.message); if (btn) { btn.disabled = false; btn.textContent = 'שלח'; } return; }
-    logActivity('crm.attendee.coupon_sent', id);
+    var { error } = await sb.from('crm_event_attendees')
+      .update({ coupon_sent: true, coupon_sent_at: nowIso })
+      .eq('id', id).eq('tenant_id', getTenantId());
+    if (error) {
+      toast('warning', 'נשלח, אך שמירת דגל נכשלה: ' + error.message);
+      if (btn) { btn.disabled = false; }
+      return;
+    }
+    logActivity('crm.attendee.coupon_sent', id, {
+      sms_ok: dispatch.smsOk, email_ok: dispatch.emailOk,
+      sms_log_id: dispatch.smsLogId, email_log_id: dispatch.emailLogId
+    });
     updateLocal(id, { coupon_sent: true, coupon_sent_at: nowIso });
+    toast(dispatch.allOk ? 'success' : 'warning', 'הקופון נשלח: ' + dispatch.summary);
     renderTable();
   }
 
