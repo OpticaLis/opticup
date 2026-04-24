@@ -249,7 +249,11 @@
           composedBody: composedBody,
           lead_id: lead.id,
           event_id: (triggerData && triggerData.eventId) || null,
-          language: language
+          language: language,
+          // EVENT_CLOSE_COMPLETE_STATUS_FIX: rules with an explicit status
+          // transition own their lifecycle; don't let promoteWaitingLeadsToInvited
+          // override it post-dispatch (it was overwriting Dana invited→waiting→invited).
+          skip_auto_promote: hasPostAction
         });
       }
     }

@@ -31,6 +31,9 @@
     if (!tenantId) return { promoted: 0 };
     var leadIds = {};
     planItems.forEach(function (it, i) {
+      // Rules that manage their own lifecycle (post_action_status_update)
+      // flag their items so this generic promote does not override them.
+      if (it.skip_auto_promote) return;
       if (!it.event_id || !it.lead_id) return;
       var r = results && results[i];
       var ok = r && r.status === 'fulfilled' && r.value && r.value.ok;
