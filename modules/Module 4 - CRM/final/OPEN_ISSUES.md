@@ -2,7 +2,7 @@
 
 > **Created:** 2026-04-24
 > **Source:** End-to-end testing of STOREFRONT_FORMS feature
-> **Status:** 10/13 issues resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL. #8 → WORKING_TREE_RECOVERY + INTEGRITY_GATE_SETUP. #10 → COUPON_SEND_WIRING. #12 (event lifecycle) → EVENT_CLOSE_COMPLETE_STATUS_FLOW 🟡 pending UI QA. #9 open — template propagation to Prizma (deferred to P7 cutover). #11 deferred — "Add to calendar" in messages. #13 deferred — quick-register terms-approval flow.
+> **Status:** 11/13 issues resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL. #8 → WORKING_TREE_RECOVERY + INTEGRITY_GATE_SETUP. #10 → COUPON_SEND_WIRING. #12 → EVENT_CLOSE_COMPLETE_STATUS_FLOW + regression fix in commit 5e93fb3 (UI QA confirmed). #9 open — template propagation to Prizma (deferred to P7 cutover). #11 deferred — "Add to calendar" in messages. #13 deferred — quick-register terms-approval flow.
 
 ---
 
@@ -267,7 +267,7 @@ a pre-built Google Calendar template URL injected server-side.
 
 ---
 
-## 12. Event lifecycle: leads stuck in confirmed after event ends — 🟡 PENDING UI QA (2026-04-24)
+## 12. Event lifecycle: leads stuck in confirmed after event ends — ✅ RESOLVED 2026-04-24
 
 **Priority:** HIGH
 **Created:** 2026-04-24
@@ -288,10 +288,16 @@ post-actions extracted to `modules/crm/crm-automation-post-actions.js`
 (4) Backfill of `terms_approved_at` for 2 demo leads (data drift from
 historical Monday import; live code paths already sync both fields —
 audited 5 sites).
-**Pending:** Browser-UI QA steps — Daniel to click through SPEC §12
-(set Dana→invited, close test event, verify Dana→waiting + messages
-sent; complete event, verify all attendees→waiting). DB-level simulation
-already passed. Flip this marker to ✅ after UI QA succeeds.
+**UI QA result:** Daniel's first run on 2026-04-24 exposed a regression —
+Dana's status ended up `invited` again because `promoteWaitingLeadsToInvited`
+(dispatch-path hook) was undoing `executePostActions` (rule-level hook) 20
+seconds later. ActivityLog evidence captured in
+`final/COUPON_CAP_AUTO_CLOSE/EXECUTION_REPORT.md` §1. Regression fix landed
+in commit `5e93fb3`: plan items from rules with `post_action_status_update`
+carry a `skip_auto_promote` flag; `promoteWaitingLeadsToInvited` honours it.
+Re-run UI QA by Daniel confirmed Dana ends up in `waiting` as expected.
+Companion feature COUPON_CAP_AUTO_CLOSE shipped in the same batch
+(auto-trigger event_closed when coupon cap is reached).
 
 ---
 
