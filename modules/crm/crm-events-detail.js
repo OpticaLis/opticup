@@ -41,6 +41,7 @@
         wireStatusChange(modal, body, data.event, stats);
         wireExtraCouponsEdit(modal, body, data.event, data.attendees);
         wireInviteWaitingList(modal, body, data.event);
+        if (window.CrmEventSendMessage && CrmEventSendMessage.wire) CrmEventSendMessage.wire(body, data.event, data.attendees);
       }
     } catch (e) {
       console.error('event detail failed:', e);
@@ -84,7 +85,7 @@
       '<h2 class="text-2xl font-black mt-1 mb-2">' + escapeHtml(event.name || '') + '</h2>' +
       '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur" data-role="event-status-badge">' + escapeHtml(statusInfo.label) + '</span>' +
       '<div class="flex flex-wrap gap-2 mt-4">' +
-        '<button type="button" class="' + CLS_HEAD_BTN + '">שלח הודעה</button>' +
+        '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="send-message">שלח הודעה</button>' +
         '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="change-status">שנה סטטוס</button>' +
         '<button type="button" class="' + CLS_HEAD_BTN + '">ייצוא Excel</button>' +
         '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="edit-extra-coupons">➕ הגדר קופונים נוספים</button>' +
@@ -291,8 +292,7 @@
       var id = btn.getAttribute('data-event-day-id');
       if (!id) return;
       window._currentEventDayId = id;
-      if (typeof modal.close === 'function') modal.close();
-      else if (typeof Modal.close === 'function') Modal.close();
+      if (typeof modal.close === 'function') modal.close(); else if (typeof Modal.close === 'function') Modal.close();
       if (typeof showCrmTab === 'function') showCrmTab('event-day');
     });
   }
