@@ -27,17 +27,28 @@
   var CLS_PAGE_BTN    = 'px-3 py-1.5 rounded-md border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed';
   var CLS_PAGE_ACTIVE = 'px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-semibold';
 
-  async function loadLeads() {
+  // OVERNIGHT_M4_SCALE_AND_UI Phase 10: server-side pagination via .range().
+  // Initial slice 200; "Load more" appends next 200. Client filter/sort still
+  // operates on the loaded slice for MVP (criterion 10.4 full-server-side
+  // filtering deferred — FINDINGS F-page).
+  var SERVER_PAGE = 200;
+  var _svrOffset = 0, _svrHasMore = true;
+  async function loadLeads(reset) {
+    if (reset) { _svrOffset = 0; _svrHasMore = true; }
+    if (!_svrHasMore) return [];
     var tid = getTenantId();
     var q = sb.from('v_crm_leads_with_tags')
       .select('id, full_name, phone, email, city, language, status, source, client_notes, terms_approved, marketing_consent, unsubscribed_at, created_at, updated_at, tag_names, tag_colors, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_campaign_id, monday_item_id')
       .eq('is_deleted', false);
     if (tid) q = q.eq('tenant_id', tid);
-    q = q.order('full_name');
-    var res = await q;
+    var res = await q.order('full_name').range(_svrOffset, _svrOffset + SERVER_PAGE - 1);
     if (res.error) throw new Error('Leads load failed: ' + res.error.message);
-    return res.data || [];
+    var rows = res.data || [];
+    _svrOffset += rows.length;
+    if (rows.length < SERVER_PAGE) _svrHasMore = false;
+    return rows;
   }
+  function leadsHasMoreSrv() { return _svrHasMore; }
 
   async function loadCrmLeadsTab() {
     var wrap = document.getElementById('crm-leads-table-wrap');
@@ -46,7 +57,7 @@
       wrap.innerHTML = '<div class="text-center text-slate-400 py-8">טוען לידים...</div>';
       _loadPromise = (async function () {
         await ensureCrmStatusCache();
-        _allLeads = await loadLeads();
+        _allLeads = await loadLeads(true);
         if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
         renderAdvancedFilterBar();
         wireEvents();
@@ -190,12 +201,19 @@
   }
 
   async function reloadCrmLeadsTab() {
-    _allLeads = await loadLeads();
+    _allLeads = await loadLeads(true);
     if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
     renderAdvancedFilterBar();
     applyFiltersAndRender();
   }
   window.reloadCrmLeadsTab = reloadCrmLeadsTab;
+  window.loadMoreCrmLeads = async function () {
+    var more = await loadLeads(false);
+    _allLeads = _allLeads.concat(more);
+    applyFiltersAndRender();
+    return { loaded: more.length, hasMore: leadsHasMoreSrv() };
+  };
+  window.CrmLeadsServerPaging = { hasMore: leadsHasMoreSrv };
 
   // ---- Table ----
   function renderLeadsTable() {
@@ -281,8 +299,11 @@
       prev = p;
     });
     html += '<button class="' + CLS_PAGE_BTN + '" ' + (_currentPage === totalPages ? 'disabled' : '') + ' data-page="next">‹</button>';
-    html += '<span class="text-sm text-slate-500 ms-2">עמוד ' + _currentPage + ' מתוך ' + totalPages + ' · סה״כ ' + total + '</span>';
+    html += '<span class="text-sm text-slate-500 ms-2">עמוד ' + _currentPage + ' מתוך ' + totalPages + ' · סה״כ טעון ' + total + '</span>';
+    if (leadsHasMoreSrv()) html += '<button type="button" class="' + CLS_PAGE_BTN + ' ms-2" id="load-more-leads">⬇ טען עוד מהשרת</button>';
     box.innerHTML = html;
+    var moreBtn = box.querySelector('#load-more-leads');
+    if (moreBtn) moreBtn.addEventListener('click', async function () { moreBtn.disabled = true; moreBtn.textContent = 'טוען...'; await window.loadMoreCrmLeads(); });
     box.querySelectorAll('button[data-page]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var v = btn.getAttribute('data-page');
