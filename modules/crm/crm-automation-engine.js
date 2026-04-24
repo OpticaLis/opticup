@@ -253,7 +253,40 @@
     var results = await Promise.allSettled(calls);
     var sent = 0, failed = 0;
     results.forEach(function (r) { if (r.status === 'fulfilled' && r.value && r.value.ok) sent++; else failed++; });
+    try { await promoteWaitingLeadsToInvited(items, results); } catch (e) { console.error('promoteWaitingLeadsToInvited:', e); }
     return { sent: sent, failed: failed, skipped: 0 };
+  }
+
+  // CRM_HOTFIXES Fix 2: after a successful event-scoped dispatch, promote
+  // any tier-2 lead currently in status='waiting' to 'invited'. Scoped by
+  // tenant_id + explicit `.eq('status','waiting')` so confirmed / attended /
+  // unsubscribed leads are never demoted. Called from both dispatch paths
+  // (confirmation-gate approveAndSend and dispatchPlanDirect fallback).
+  async function promoteWaitingLeadsToInvited(planItems, results) {
+    if (!Array.isArray(planItems) || !planItems.length) return { promoted: 0 };
+    var tenantId = tid();
+    if (!tenantId) return { promoted: 0 };
+    var leadIds = {};
+    planItems.forEach(function (it, i) {
+      if (!it.event_id || !it.lead_id) return;
+      var r = results && results[i];
+      var ok = r && r.status === 'fulfilled' && r.value && r.value.ok;
+      if (ok) leadIds[it.lead_id] = true;
+    });
+    var ids = Object.keys(leadIds);
+    if (!ids.length) return { promoted: 0 };
+    var res = await sb.from('crm_leads')
+      .update({ status: 'invited', updated_at: new Date().toISOString() })
+      .eq('tenant_id', tenantId)
+      .in('id', ids)
+      .eq('status', 'waiting')
+      .select('id');
+    if (res.error) { console.error('CrmAutomation.promoteWaitingLeadsToInvited:', res.error); return { promoted: 0 }; }
+    var promotedIds = (res.data || []).map(function (r) { return r.id; });
+    promotedIds.forEach(function (id) {
+      try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.status_change', entity_type: 'crm_leads', entity_id: id, details: { from: 'waiting', to: 'invited', source: 'automation_invite' } }); } catch (_) {}
+    });
+    return { promoted: promotedIds.length };
   }
 
   // Public entry point.
@@ -307,6 +340,7 @@
     evaluateCondition: evaluateCondition,
     resolveRecipients: resolveRecipients,
     prepareRulePlan: prepareRulePlan,
+    promoteWaitingLeadsToInvited: promoteWaitingLeadsToInvited,
     TRIGGER_TYPES: TRIGGER_TYPES,
     CONDITIONS: CONDITIONS
   };

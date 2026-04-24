@@ -189,6 +189,12 @@
     var results = await Promise.allSettled(calls);
     var sent = 0, failed = 0;
     results.forEach(function (r) { if (r.status === 'fulfilled' && r.value && r.value.ok) sent++; else failed++; });
+    // CRM_HOTFIXES Fix 2: promote tier-2 leads 'waiting' → 'invited' after
+    // successful event-scoped sends via the automation-engine helper.
+    if (window.CrmAutomation && typeof CrmAutomation.promoteWaitingLeadsToInvited === 'function') {
+      try { await CrmAutomation.promoteWaitingLeadsToInvited(plan, results); }
+      catch (e) { console.error('promoteWaitingLeadsToInvited:', e); }
+    }
     return { sent: sent, failed: failed };
   }
 
