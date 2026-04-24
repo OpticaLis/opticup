@@ -44,5 +44,28 @@
     } catch (e) { console.error('CrmAutomationRuns.stampLog:', e); }
   }
 
-  window.CrmAutomationRuns = { createRun: createRun, finishRun: finishRun, stampLog: stampLog };
+  // OVERNIGHT_M4_SCALE_AND_UI Phase 6: bulk-insert plan items into the message
+  // queue instead of dispatching directly. Returns { queued, errored }.
+  // Callers: engine fallback dispatch (when no modal) + explicit "schedule for
+  // later" callers. The modal's approveAndSend stays direct-dispatch for UX.
+  async function enqueuePlan(items, runId) {
+    if (!Array.isArray(items) || !items.length) return { queued: 0, errored: 0 };
+    var tenantId = typeof getTenantId === 'function' ? getTenantId() : null;
+    if (!tenantId) return { queued: 0, errored: items.length };
+    var rows = items.map(function (it) {
+      return {
+        tenant_id: tenantId, run_id: runId || it.run_id || null,
+        lead_id: it.lead_id, event_id: it.event_id || null,
+        channel: it.channel, template_slug: it.template_slug || null,
+        body: it.body || null, subject: it.subject || null,
+        variables: it.variables || {}, language: it.language || 'he',
+        status: 'queued'
+      };
+    });
+    var res = await sb.from('crm_message_queue').insert(rows).select('id');
+    if (res.error) { console.error('CrmAutomationRuns.enqueuePlan:', res.error); return { queued: 0, errored: items.length }; }
+    return { queued: (res.data || []).length, errored: 0 };
+  }
+
+  window.CrmAutomationRuns = { createRun: createRun, finishRun: finishRun, stampLog: stampLog, enqueuePlan: enqueuePlan };
 })();
