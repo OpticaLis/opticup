@@ -397,4 +397,4 @@ All detailed content lives here. Keep this file (CLAUDE.md) free of detail — a
 
 *End of CLAUDE.md. This file is a map. Detailed content lives in the reference files above.*
 *Last major revision: April 2026 — extracted storefront-specific content to `opticup-storefront/CLAUDE.md`, extracted file structure / DB tables / conventions to dedicated reference files, added Hygiene Rules (21–23), added Navigation Table, switched Working Rules to Bounded Autonomy model (stop on deviation, not on success), added clean-repo check to First Action.*
-                                                 
+
