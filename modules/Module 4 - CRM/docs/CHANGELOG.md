@@ -2,6 +2,31 @@
 
 ---
 
+## M4_ATTENDEE_PAYMENT_AUTOMATION — Payment lifecycle automations (2026-04-25) ✅
+
+| Hash | Message |
+|------|---------|
+| `c2dd8eb` | `feat(crm): add CrmPaymentAutomation helper for auto-status transitions` |
+| `328df0d` | `feat(crm): wire auto-unpaid + auto-credit-transfer into existing flows` |
+| `ffebabe` | `chore(db): backfill payment_status for closed events on demo` |
+| _(this commit)_ | `chore(spec): close M4_ATTENDEE_PAYMENT_AUTOMATION with retrospective` |
+
+**SPEC #3 of 3 in the payment-lifecycle series. Closes the trio.**
+
+Two automations wired into the existing engine, with a one-shot backfill for historical events:
+
+- **Auto-mark `unpaid` on event completion.** When an event flips to `'completed'`, `markUnpaidForCompletedEvent(eventId, oldStatus, newStatus)` runs after the existing `dispatchEventStatusMessages`: 1 UPDATE flips all attendees with `payment_status='pending_payment'` AND `checked_in_at IS NULL` to `'unpaid'`. **Strict scope: ONLY `'completed'` (event ran). NOT `'closed'` (registration closed but event still upcoming — attendees may still pay).** Trigger fires only on transition INTO completed (`oldStatus !== 'completed' && newStatus === 'completed'`); re-saving an already-completed event is a no-op.
+- **Auto-transfer credit on new registration.** When a lead registers for a new event AND has an open `credit_pending` row whose `credit_expires_at > now()`, `transferOpenCreditOnRegistration(leadId, newAttendeeId)` calls the existing `transfer_credit_to_new_attendee(p_old_attendee_id, p_new_attendee_id)` RPC (FIFO — oldest credit first). The RPC atomically flips the new row to `paid` and the old row to `credit_used`. Fires from inside `dispatchRegistrationConfirmation` BEFORE the `CrmAutomation.evaluate('event_registration', ...)` call so the confirmation message reflects updated payment state.
+- **Backfill migration** (`2026_04_25_payment_backfill_closed_events.sql`): for any attendee on a `'completed'` event with `pending_payment` + no checkin, flip to `'unpaid'`. **Idempotent** (re-running affects 0 rows). Affected 0 rows on demo (only completed event's pending attendee was already checked-in). Cross-tenant by code; 0 rows on Prizma + test-stores per pre-flight.
+
+**No DB schema changes. Engine + RPC untouched.** Helper module sits AROUND `CrmAutomation.evaluate` (engine remains the contract surface for `lead-intake` EF + `event-register` EF). New `crm-payment-automation.js` (100 lines) exposes 2 methods on `window.CrmPaymentAutomation`. Pre-emptive `tid → _regTid` rename in `crm-event-register.js` to avoid Rule-21-orphans hook collision when co-staging with `crm-event-actions.js` (lesson from `M4_ATTENDEE_PAYMENT_UI` review).
+
+**Final file sizes:** crm-payment-automation.js: 100, crm-event-actions.js: 295→297 (+2), crm-event-register.js: 179→192 (+13). All ≤350.
+
+**The payment trio is now complete:** SPEC #1 (schema) → SPEC #2 (UI) → SPEC #3 (this — automations). Daniel can now drop the manual "remember to mark unpaid after each event" + "remember to credit-transfer when a lead with credit registers for a new event" overhead.
+
+---
+
 ## M4_EVENT_DAY_PARITY_FIX — Event-day-manage parity + coupon status fix (2026-04-25) ✅
 
 | Hash | Message |
