@@ -244,7 +244,7 @@ function updatePOTotals() {
   var amtEl = document.getElementById('po-total-amount');
   if (qtyEl) qtyEl.textContent = totalQty;
   if (amtEl) amtEl.textContent = fmt(totalAmount);
-  var vatRate = Number(typeof getTenantConfig === 'function' ? getTenantConfig('vat_rate') : 0) || 17;
+  var vatRate = typeof getVatRate === 'function' ? getVatRate() : 0;
   var vatAmount = totalAmount * vatRate / 100, totalWithVat = totalAmount + vatAmount;
   var vatRateEl = document.getElementById('po-vat-rate');
   var vatAmtEl = document.getElementById('po-vat-amount');

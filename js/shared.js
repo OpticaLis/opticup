@@ -160,6 +160,23 @@ function getCustomDomain() {
 }
 
 /**
+ * Resolve the tenant's VAT rate (percentage form, e.g. 18 for 18%).
+ * Reads from tenant_config.vat_rate. Returns 0 + warns if missing/invalid —
+ * explicit zero is safer than silent fallback to wrong country's rate
+ * (M3-SAAS-21).
+ * @returns {number}
+ */
+function getVatRate() {
+  var raw = getTenantConfig('vat_rate');
+  var num = Number(raw);
+  if (isFinite(num) && num > 0) return num;
+  if (window.console && console.warn) {
+    console.warn('[shared] vat_rate missing or invalid in tenant_config; returning 0. Configure vat_rate on the tenant.');
+  }
+  return 0;
+}
+
+/**
  * Format a number as a currency string per tenant_config (default ILS/he-IL).
  * Reads default_currency + locale from getTenantConfig() with safe fallbacks
  * so a second-tenant onboarding (different country) just works without code changes.
