@@ -187,19 +187,22 @@
       });
     });
     var results = await Promise.allSettled(calls);
-    var sent = 0, failed = 0;
+    var sent = 0, failed = 0, rejected = 0;
     var runId = (plan[0] && plan[0].run_id) || null;
     results.forEach(function (r, i) {
-      var ok = r.status === 'fulfilled' && r.value && r.value.ok;
-      if (ok) sent++; else failed++;
-      if (ok && runId && r.value.logId && window.CrmAutomationRuns) CrmAutomationRuns.stampLog(r.value.logId, runId);
+      var v = r.status === 'fulfilled' ? r.value : null;
+      var ok = v && v.ok;
+      if (ok) sent++;
+      else if (v && v.error === 'phone_not_allowed') rejected++;
+      else failed++;
+      if (ok && runId && v.logId && window.CrmAutomationRuns) CrmAutomationRuns.stampLog(v.logId, runId);
     });
     if (window.CrmAutomationPostActions && typeof CrmAutomationPostActions.promoteWaitingLeadsToInvited === 'function') {
       try { await CrmAutomationPostActions.promoteWaitingLeadsToInvited(plan, results); }
       catch (e) { console.error('promoteWaitingLeadsToInvited:', e); }
     }
     if (runId && window.CrmAutomationRuns) await CrmAutomationRuns.finishRun(runId, 'completed');
-    return { sent: sent, failed: failed };
+    return { sent: sent, failed: failed, rejected: rejected };
   }
 
   async function show(sendPlan) {
@@ -245,8 +248,9 @@
       var r = await approveAndSend(sendPlan);
       if (typeof modal.close === 'function') modal.close();
       if (window.Toast) {
-        if (r.failed === 0) Toast.success('נשלחו ' + r.sent + ' הודעות');
-        else Toast.warning('נשלחו ' + r.sent + ', ' + r.failed + ' נכשלו');
+        var msg = 'נשלחו ' + r.sent + ', נכשלו ' + r.failed + ', נדחו ' + (r.rejected || 0);
+        if (r.failed === 0 && (r.rejected || 0) === 0) Toast.success(msg);
+        else Toast.warning(msg);
       }
     });
 

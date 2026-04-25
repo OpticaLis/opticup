@@ -266,17 +266,17 @@
       });
     });
     var results = await Promise.allSettled(calls);
-    var sent = 0, failed = 0;
+    var sent = 0, failed = 0, rejected = 0;
     results.forEach(function (r, i) {
-      var ok = r.status === 'fulfilled' && r.value && r.value.ok;
-      if (ok) sent++; else failed++;
-      if (ok && items[i].run_id && r.value.logId && window.CrmAutomationRuns) CrmAutomationRuns.stampLog(r.value.logId, items[i].run_id);
+      var v = r.status === 'fulfilled' ? r.value : null;
+      if (v && v.ok) { sent++; if (items[i].run_id && v.logId && window.CrmAutomationRuns) CrmAutomationRuns.stampLog(v.logId, items[i].run_id); }
+      else if (v && v.error === 'phone_not_allowed') rejected++; else failed++;
     });
     if (window.CrmAutomationPostActions) {
       try { await CrmAutomationPostActions.promoteWaitingLeadsToInvited(items, results); }
       catch (e) { console.error('promoteWaitingLeadsToInvited:', e); }
     }
-    return { sent: sent, failed: failed, skipped: 0 };
+    return { sent: sent, failed: failed, rejected: rejected, skipped: 0 };
   }
 
   // Public entry point.
@@ -331,11 +331,11 @@
     }
     var r = await dispatchPlanDirect(planItems);
     if (runId && window.CrmAutomationRuns) await CrmAutomationRuns.finishRun(runId, 'completed');
-    if (window.Toast && (r.sent + r.failed) > 0) {
-      if (r.failed === 0) Toast.success('נשלחו ' + r.sent + ' הודעות');
-      else Toast.warning('נשלחו ' + r.sent + ', ' + r.failed + ' נכשלו');
+    if (window.Toast && (r.sent + r.failed + (r.rejected || 0)) > 0) {
+      var m = 'נשלחו ' + r.sent + ', נכשלו ' + r.failed + ', נדחו ' + (r.rejected || 0);
+      Toast[(r.failed === 0 && (r.rejected || 0) === 0) ? 'success' : 'warning'](m);
     }
-    return { fired: rules.length, sent: r.sent, failed: r.failed, skipped: skipped, run_id: runId };
+    return { fired: rules.length, sent: r.sent, failed: r.failed, rejected: r.rejected || 0, skipped: skipped, run_id: runId };
   }
 
   window.CrmAutomation = {

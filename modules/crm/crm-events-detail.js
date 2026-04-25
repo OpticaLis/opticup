@@ -36,18 +36,18 @@
       var body = modal.el.querySelector('.modal-body');
       function renderAndWire() {
         if (!body) return;
+        var pst = body.querySelector('button[data-event-subtab].text-indigo-600'); var prevSubTab = pst ? pst.getAttribute('data-event-subtab') : null;
         body.innerHTML = renderDetail(data.event, stats, data.attendees); wireSubTabs(body, data.event, stats, data.attendees);
-        wireEventDayEntry(modal, body);
-        wireStatusChange(modal, body, data.event, stats);
-        wireExtraCouponsEdit(modal, body, data.event, data.attendees);
-        wireInviteWaitingList(modal, body, data.event);
+        wireEventDayEntry(modal, body); wireStatusChange(modal, body, data.event, stats);
+        wireExtraCouponsEdit(modal, body, data.event, data.attendees); wireInviteWaitingList(modal, body, data.event);
         var editBtn = body.querySelector('button[data-action="edit-event"]');
         if (editBtn && window.CrmEventEdit) editBtn.addEventListener('click', function () { CrmEventEdit.open(data.event, function (u) {
             Object.assign(data.event, u);
-            var ttl = modal.el.querySelector('.modal-title');
-            if (ttl) ttl.textContent = 'אירוע #' + (data.event.event_number || '?') + ' — ' + (data.event.name || '');
-            renderAndWire(); }); });
+            var ttl = modal.el.querySelector('.modal-title'); if (ttl) ttl.textContent = 'אירוע #' + (data.event.event_number || '?') + ' — ' + (data.event.name || '');
+            renderAndWire();
+            if (typeof window.reloadCrmEventsTab === 'function') reloadCrmEventsTab(); }); });
         if (window.CrmEventSendMessage && CrmEventSendMessage.wire) CrmEventSendMessage.wire(body, data.event, data.attendees);
+        if (prevSubTab && prevSubTab !== 'attendees') { var rb = body.querySelector('button[data-event-subtab="' + prevSubTab + '"]'); if (rb) rb.click(); }
       }
       renderAndWire();
     } catch (e) {
