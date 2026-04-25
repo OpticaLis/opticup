@@ -20,7 +20,7 @@ async function showOCRReview(result, fileUrl, existingDocId) {
 
   var docType = fv('document_type') || '';
   var subtotal = fv('subtotal'), vatRate = fv('vat_rate'), vatAmt = fv('vat_amount'), total = fv('total_amount');
-  if (vatRate == null) vatRate = Number(getTenantConfig('vat_rate')) || 17;
+  if (vatRate == null) vatRate = getVatRate();
   if (subtotal != null && vatAmt == null) vatAmt = Math.round(subtotal * vatRate) / 100;
   if (subtotal != null && total == null) total = subtotal + (vatAmt || 0);
   var currency = fv('currency') || 'ILS';
