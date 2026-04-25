@@ -145,6 +145,37 @@ function getTenantConfig(key) {
   const config = JSON.parse(sessionStorage.getItem('tenant_config') || '{}');
   return key ? config[key] : config;
 }
+/**
+ * Format a number as a currency string per tenant_config (default ILS/he-IL).
+ * Reads default_currency + locale from getTenantConfig() with safe fallbacks
+ * so a second-tenant onboarding (different country) just works without code changes.
+ *
+ * Default behavior preserves the legacy formatILS() output exactly: SYMBOL+number,
+ * no fractional digits, locale-formatted thousands separator. The currency symbol
+ * is resolved via Intl.NumberFormat parts API for cross-currency support
+ * (₪ for ILS, $ for USD, € for EUR, etc.) but assembled in the legacy prefix style.
+ *
+ * @param {number|string} amount
+ * @param {object} [opts] - { currency, locale, minimumFractionDigits, maximumFractionDigits }
+ * @returns {string}
+ */
+function formatMoney(amount, opts) {
+  opts = opts || {};
+  var num = Number(amount);
+  if (!isFinite(num)) num = 0;
+  var currency = opts.currency || getTenantConfig('default_currency') || 'ILS';
+  var locale = opts.locale || getTenantConfig('locale') || 'he-IL';
+  var minFrac = (opts.minimumFractionDigits != null) ? opts.minimumFractionDigits : 0;
+  var maxFrac = (opts.maximumFractionDigits != null) ? opts.maximumFractionDigits : 0;
+  var symbol;
+  try {
+    var parts = new Intl.NumberFormat(locale, { style: 'currency', currency: currency }).formatToParts(0);
+    var sym = parts.find(function (p) { return p.type === 'currency'; });
+    symbol = sym ? sym.value : currency;
+  } catch (e) { symbol = (currency === 'ILS' ? '₪' : currency); }
+  return symbol + num.toLocaleString(locale, { minimumFractionDigits: minFrac, maximumFractionDigits: maxFrac });
+}
+
 
 /**
  * Resolve a media-library storage path to a full URL.
@@ -177,8 +208,9 @@ function escapeHtml(str) {
  * Format a number as ILS currency string: ₪1,234
  */
 function formatILS(amount) {
-  const num = Number(amount) || 0;
-  return '\u20AA' + num.toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  // Backward-compat wrapper - delegates to formatMoney() which reads
+  // default_currency + locale from tenant_config (M1_5_SAAS_FORMAT_MONEY).
+  return formatMoney(amount);
 }
 
 function showLoading(t) { $('loading-text').textContent=t||'טוען...'; $('loading').style.display='flex'; }
