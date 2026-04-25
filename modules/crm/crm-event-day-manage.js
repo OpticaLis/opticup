@@ -73,7 +73,7 @@
       '<th class="' + CLS_TH + '">סטטוס</th>' +
       '<th class="' + CLS_TH + '" data-admin-only>רכישה</th>' +
       '<th class="' + CLS_TH + '">קופון</th>' +
-      '<th class="' + CLS_TH + '">דמי הזמנה</th>' +
+      '<th class="' + CLS_TH + '">תשלום</th>' +
       '</tr></thead><tbody>';
     rows.forEach(function (r) {
       html += '<tr>' +
@@ -114,9 +114,9 @@
       : '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">⚠️ לא הגיע</span>';
   }
   function feeCell(r) {
-    return (r.payment_status === 'paid')
-      ? '<button type="button" class="' + CLS_TOGGLE_ON + '" disabled>✅ שולם</button>'
-      : '<button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-fee="' + escapeHtml(r.id) + '">שולם</button>';
+    var pill = window.CrmPayment ? CrmPayment.renderStatusPill(r.payment_status) : '';
+    var btn = (r.payment_status === 'paid') ? '' : ' <button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-fee="' + escapeHtml(r.id) + '">סמן שולם</button>';
+    return pill + btn;
   }
 
   function wireRowActions(wrap) {

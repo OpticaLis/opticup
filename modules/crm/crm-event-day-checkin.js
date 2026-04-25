@@ -55,7 +55,7 @@
       var overdue = isOverdue(a.scheduled_time, now);
       var cls = a.id === _selectedId ? CLS_ATT_SEL : (overdue ? CLS_ATT_OVER : CLS_ATT_CARD);
       return '<div class="' + cls + '" data-select-id="' + escapeHtml(a.id) + '">' +
-        '<div class="font-bold text-slate-900 text-sm truncate">' + escapeHtml(a.full_name || '') + '</div>' +
+        '<div class="font-bold text-slate-900 text-sm truncate">' + escapeHtml(a.full_name || '') + (window.CrmPayment ? ' ' + CrmPayment.renderStatusPill(a.payment_status) : '') + '</div>' +
         '<div class="text-xs text-slate-500 mt-0.5" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div>' +
         (a.scheduled_time ? '<div class="text-xs mt-1 ' + (overdue ? 'text-amber-700 font-semibold' : 'text-slate-500') + '">🕐 ' + escapeHtml(a.scheduled_time) + '</div>' : '') +
       '</div>';
@@ -188,8 +188,8 @@
       if (res.error) throw new Error(res.error.message);
       var payload = res.data || {};
       if (payload.success) {
-        logActivity('crm.attendee.checked_in', attendeeId);
-        updateLocal(attendeeId, { checked_in_at: payload.checked_in_at, status: 'attended' });
+        _chkLog('crm.attendee.checked_in', attendeeId);
+        _chkUpd(attendeeId, { checked_in_at: payload.checked_in_at, status: 'attended' });
         if (window.refreshEventDayStats) await window.refreshEventDayStats();
         showNotification('✅ הכניסה נרשמה', 'success');
         renderWaitingColumn(); renderCenterColumn(); renderArrivedColumn();
@@ -204,12 +204,11 @@
     }
   }
 
-  function updateLocal(id, patch) {
+  function _chkUpd(id, patch) {
     var state = window.getEventDayState();
     (state.attendees || []).forEach(function (a) { if (a.id === id) Object.assign(a, patch); });
   }
-
-  function logActivity(action, entityId) {
+  function _chkLog(action, entityId) {
     if (window.ActivityLog && ActivityLog.write) {
       try { ActivityLog.write({ action: action, entity_type: 'crm_event_attendees', entity_id: entityId, severity: 'info', metadata: { event_id: window.getEventDayState().eventId } }); } catch (_) {}
     }
