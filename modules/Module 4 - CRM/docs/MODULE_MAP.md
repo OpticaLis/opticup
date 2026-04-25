@@ -169,8 +169,22 @@
 | `crm_campaigns` | crm-event-actions.js | **[P2b]** SELECT active campaigns for the event creation form dropdown |
 | `crm_event_attendees` | crm-event-day.js, crm-event-register.js | **[P2b]** INSERT via `register_lead_to_event` RPC only (Rule 11 — atomic capacity check + insert) |
 | `crm_leads` (Tier 2 filter) | crm-event-register.js | **[P2b]** SELECT for Tier 2 lead search in the register-to-event modal |
-| `crm_event_attendees` | crm-event-day-manage.js, crm-messaging-broadcast.js | Direct updates (purchase/coupon/fee) and lead_id lookup for event filter |
+| `crm_event_attendees` | crm-event-day-manage.js, crm-messaging-broadcast.js | Direct updates (purchase/coupon/payment_status) and lead_id lookup for event filter. **[M4_ATTENDEE_PAYMENT_SCHEMA]** Replaced legacy booking_fee_paid/refunded booleans with payment_status (7-value enum) + 4 timestamps + credit_used_for_attendee_id self-FK. |
 | `crm_statuses` | crm-helpers.js, crm-messaging-broadcast.js | Status labels + colors (31 seed rows), filter dropdown source |
+
+### Payment lifecycle (DB) — added 2026-04-25 by `M4_ATTENDEE_PAYMENT_SCHEMA`
+
+The `crm_event_attendees` table now carries a payment-lifecycle model:
+
+- **`payment_status`** (text NOT NULL, default `'pending_payment'`, CHECK) — one of 7 values: `pending_payment`, `paid`, `unpaid`, `refund_requested`, `refunded`, `credit_pending`, `credit_used`.
+- **`paid_at`** / **`refund_requested_at`** / **`refunded_at`** / **`credit_expires_at`** — supporting timestamptz columns (nullable).
+- **`credit_used_for_attendee_id`** — uuid FK to `crm_event_attendees(id)` self-reference. When a credit moves from an old attendee to a new one, the old row points to the new.
+- **2 partial indexes**: `(tenant_id, payment_status) WHERE NOT is_deleted` and `(tenant_id, credit_expires_at) WHERE payment_status='credit_pending' AND NOT is_deleted`.
+- **RPC `transfer_credit_to_new_attendee(uuid, uuid)`** — atomic credit transfer: validates old=`credit_pending`+new=`pending_payment`+same tenant, flips old→`credit_used` (with FK back-pointer), new→`paid` + `paid_at=now()`. SECURITY DEFINER. GRANT EXECUTE TO authenticated + service_role.
+- **Templates `payment_received_sms_he` + `payment_received_email_he`** — seeded on demo + prizma (4 rows total). Tenant-neutral content; uses `%name%`, `%event_name%`, `%event_date%`, `%unsubscribe_url%`.
+- **Migration files** in `modules/Module 4 - CRM/migrations/2026_04_25_payment_*.sql` (6 files: `_01_add_columns`, `_02_sync_trigger`, `_03_backfill_demo`, `_04_credit_transfer_rpc`, `_05_recreate_view`, `_99_drop_legacy`).
+- **Removed at SPEC close:** legacy `booking_fee_paid` + `booking_fee_refunded` columns, plus the temporary `sync_booking_fee_paid_from_status` trigger that bridged the old and new fields during the carve-out.
+- **UI + automation work** depending on this schema lives in sibling SPECs `M4_ATTENDEE_PAYMENT_UI` (#2) and `M4_ATTENDEE_PAYMENT_AUTOMATION` (#3).
 | `crm_message_templates` | crm-messaging-templates.js, crm-messaging-rules.js, crm-messaging-broadcast.js | Templates CRUD, template picker in rules + broadcasts, name lookup for log display |
 | `crm_automation_rules` | crm-messaging-rules.js | Rules CRUD |
 | `crm_broadcasts` | crm-messaging-broadcast.js | Broadcast records (insert on send) |

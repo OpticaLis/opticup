@@ -2,6 +2,44 @@
 
 ---
 
+## M4_ATTENDEE_PAYMENT_SCHEMA — Payment lifecycle DB foundation (2026-04-25) ✅
+
+| Hash | Message |
+|------|---------|
+| `f16a1f4` | `docs(spec): approve M4_ATTENDEE_PAYMENT_SCHEMA SPEC for execution` |
+| `6e33858` | `feat(crm): add payment lifecycle columns to event attendees` |
+| `abe7264` | `feat(crm): install booking_fee_paid sync trigger` |
+| `0ce3c1a` | `feat(crm): backfill demo attendees with payment_status` |
+| `09eac51` | `feat(crm): add credit transfer RPC + payment_received template` |
+| `a356270` | `refactor(crm): carve out booking_fee_paid/refunded from JS + EFs + views` |
+| _(this commit)_ | `chore(crm): drop legacy booking_fee_paid/refunded + close SPEC` |
+
+**SPEC #1 of 3 in the payment-lifecycle series.** Builds the DB foundation for the payment-lifecycle model Daniel approved:
+
+- 7 statuses (`pending_payment` / `paid` / `unpaid` / `refund_requested` / `refunded` / `credit_pending` / `credit_used`) on each `crm_event_attendees` row, enforced via CHECK constraint.
+- 4 supporting timestamps: `paid_at`, `refund_requested_at`, `refunded_at`, `credit_expires_at`.
+- 1 self-FK: `credit_used_for_attendee_id` — when credit transfers from an old attendee to a new one, the old row points to the new.
+- RPC `transfer_credit_to_new_attendee(uuid, uuid)` — atomic credit transfer, SECURITY DEFINER, validates same-tenant + correct source/target statuses before the flip.
+- Templates `payment_received_sms_he` + `payment_received_email_he` — seeded on BOTH demo + prizma (4 rows total). Tenant-neutral content per Iron Rule 9.
+- 2 partial indexes for query performance: `(tenant_id, payment_status) WHERE NOT is_deleted` + `(tenant_id, credit_expires_at) WHERE payment_status='credit_pending' AND NOT is_deleted`.
+
+**Hybrid migration:** during the SPEC, a one-way sync trigger kept the legacy `booking_fee_paid` field updated as a shadow of `payment_status='paid'` so existing code didn't break mid-flight. After the JS carve-out finished (commit 5), the legacy columns + sync trigger were both DROPPED in commit 6 — leaving zero shadow technical debt.
+
+**Cross-tenant scope:** schema DDL applies to all tenants (single shared schema). Backfill is demo-only because Prizma had 0 attendees at SPEC time. Test-store tenants get the schema for free.
+
+**Code carve-out** (commit 5):
+- `modules/crm/crm-event-day.js` — SELECT clause column rename
+- `modules/crm/crm-event-day-manage.js` — `feeCell` reads `payment_status === 'paid'`; `toggleFee` writes `{payment_status:'paid', paid_at: now()}`
+- `modules/crm/crm-events-detail.js` — SELECT + 2 read sites
+- `js/shared-field-map.js` — Hebrew↔English mapping switched to enum + timestamp semantics
+- `v_crm_event_attendees_full` view — DROP+CREATE to expose new columns
+
+**Verified** post-DROP: `grep -rn "booking_fee_paid\|booking_fee_refunded" modules/ js/ supabase/` returns 0 hits in active code. `payment_status` references count: 30. All CRM JS files ≤350. Engine `crm-automation-engine.js` byte-identical to pre-SPEC. No automation rules added/modified. No DB migrations affected `purchase_amount` / `cancelled_at` (orthogonal).
+
+**SPEC #2 + #3 unblocked:** UI work (`M4_ATTENDEE_PAYMENT_UI`) and automations (`M4_ATTENDEE_PAYMENT_AUTOMATION`) depend on this schema; both can proceed in subsequent SPECs.
+
+---
+
 ## CRM_UX_REDESIGN_AUTOMATION — Rules editor board-led rewrite (2026-04-25) ✅
 
 | Hash | Message |
