@@ -194,20 +194,26 @@
     function rerenderBoards() { var host = document.querySelector('#rule-board-picker'); if (host) { host.innerHTML = _renderBoardPicker(s.boardKey); wireBoardListeners(); } }
     function refreshSummary() { var box = document.querySelector('#rule-summary'), txt = document.querySelector('#rule-summary-text'); if (!box || !txt) return; if (!s.boardKey) { box.classList.add('hidden'); return; } box.classList.remove('hidden'); txt.innerHTML = _summaryFor(s); }
 
+    function applyBoardSwitch(nextKey) {
+      if (s.boardKey && s.boardKey !== nextKey) {
+        s.conditionType = (COND_BY_BOARD[nextKey] || [['always']])[0][0];
+        s.conditionValue = ''; s.templateSlug = ''; s.channels = []; s.recipientType = (RECIP_BY_BOARD[nextKey] || [['']])[0][0]; s.recipientStatusFilter = [];
+      } else if (!s.boardKey) {
+        s.conditionType = (COND_BY_BOARD[nextKey] || [['always']])[0][0];
+        s.recipientType = (RECIP_BY_BOARD[nextKey] || [['']])[0][0];
+      }
+      s.boardKey = nextKey;
+      rerenderBoards(); rerenderCond(); rerenderTpl(); rerenderChannels(); refreshSummary();
+    }
     function wireBoardListeners() {
       document.querySelectorAll('[data-board-pick]').forEach(function (b) {
         b.addEventListener('click', function () {
           var nextKey = b.getAttribute('data-board-pick');
           if (s.boardKey && s.boardKey !== nextKey) {
-            if (!confirm('שינוי בורד יאפס את התנאים, להמשיך?')) return;
-            s.conditionType = (COND_BY_BOARD[nextKey] || [['always']])[0][0];
-            s.conditionValue = ''; s.templateSlug = ''; s.channels = []; s.recipientType = (RECIP_BY_BOARD[nextKey] || [['']])[0][0]; s.recipientStatusFilter = [];
-          } else if (!s.boardKey) {
-            s.conditionType = (COND_BY_BOARD[nextKey] || [['always']])[0][0];
-            s.recipientType = (RECIP_BY_BOARD[nextKey] || [['']])[0][0];
+            if (window.Modal && Modal.confirm) { Modal.confirm({ title: 'שינוי בורד', message: 'שינוי בורד יאפס את התנאים, להמשיך?', confirmText: 'אישור', cancelText: 'ביטול', onConfirm: function () { applyBoardSwitch(nextKey); } }); return; }
+            if (!window.confirm('שינוי בורד יאפס את התנאים, להמשיך?')) return;
           }
-          s.boardKey = nextKey;
-          rerenderBoards(); rerenderCond(); rerenderTpl(); rerenderChannels(); refreshSummary();
+          applyBoardSwitch(nextKey);
         });
       });
     }
