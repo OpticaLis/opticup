@@ -40,10 +40,8 @@
   var _templates = [], _logical = [], _loadPromise = null;
   var _category = 'all', _search = '', _activeBase = null, _editorState = null;
 
-  function toast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
-  function logWrite(a, id, m) {
-    if (window.ActivityLog && ActivityLog.write) { try { ActivityLog.write({ action: a, entity_type: 'crm_message_template', entity_id: id, severity: 'info', metadata: m || {} }); } catch (_) {} }
-  }
+  function _tplToast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
+  function _tplLog(a, id, m) { if (window.ActivityLog && ActivityLog.write) { try { ActivityLog.write({ action: a, entity_type: 'crm_message_template', entity_id: id, severity: 'info', metadata: m || {} }); } catch (_) {} } }
   function stripChannelSuffix(name) { return String(name || '').replace(/\s*[—-]\s*(SMS|Email|אימייל|WhatsApp)\s*$/i, '').trim(); }
   function deriveBaseSlug(row) {
     if (!row || !row.slug) return null;
@@ -120,7 +118,7 @@
       '<button type="button" class="' + CLS_BTN_PRIMARY + ' w-full" id="tpl-new">+ תבנית חדשה</button>' +
       '<div class="flex flex-col gap-2 overflow-y-auto max-h-[500px]" id="tpl-list"></div>';
     sb2.querySelectorAll('[data-cat]').forEach(function (b) {
-      b.addEventListener('click', function () { _category = b.getAttribute('data-cat'); renderSidebar(); });
+      b.addEventListener('click', async function () { _category = b.getAttribute('data-cat'); if (_category === 'auto') await _loadAutoRulesIfNeeded(); renderSidebar(); });
     });
     var srch = sb2.querySelector('#tpl-search');
     if (srch) srch.addEventListener('input', function () { _search = srch.value || ''; renderList(); });
@@ -129,11 +127,31 @@
     renderList();
   }
 
+  // Lazy cache of active automation rules — populated on first 'auto' filter click.
+  // Resolves M4-DEBT-CRMUX-02 from CRM_UX_REDESIGN_TEMPLATES/FINDINGS.md (Finding 2).
+  var _autoRulesCache = null;
+  async function _loadAutoRulesIfNeeded() {
+    if (_autoRulesCache) return _autoRulesCache;
+    if (typeof window.loadMessagingRules === 'function') {
+      try { await window.loadMessagingRules(); } catch (_) {}
+    }
+    var slugs = {};
+    var tid = getTenantId();
+    var q = sb.from('crm_automation_rules').select('action_config,is_active');
+    if (tid) q = q.eq('tenant_id', tid);
+    q = q.eq('is_active', true);
+    var res = await q;
+    (res.data || []).forEach(function (r) { var s = r.action_config && r.action_config.template_slug; if (s) slugs[s] = true; });
+    _autoRulesCache = slugs;
+    return slugs;
+  }
+  function _filterCategoryAuto(g) { return !!(_autoRulesCache && _autoRulesCache[g.baseSlug]); }
+
   function filterLogical() {
     var s = _search.trim().toLowerCase();
     return _logical.filter(function (g) {
       var active = logicalIsActive(g);
-      if (_category === 'auto') return false;
+      if (_category === 'auto')   return _filterCategoryAuto(g);
       if (_category === 'manual' && !active) return false;
       if (_category === 'drafts' && active) return false;
       if (s && (g.name || '').toLowerCase().indexOf(s) === -1 && (g.baseSlug || '').toLowerCase().indexOf(s) === -1) return false;
@@ -249,13 +267,13 @@
   async function saveLogicalTemplate() {
     if (!_editorState) return;
     var name = (_editorState.name || '').trim();
-    if (!name) { toast('error', 'שם תבנית חובה'); return; }
-    if (!CHANNELS.some(function (c) { return _editorState.channels[c].exists; })) { toast('error', 'יש לסמן לפחות ערוץ אחד פעיל'); return; }
+    if (!name) { _tplToast('error', 'שם תבנית חובה'); return; }
+    if (!CHANNELS.some(function (c) { return _editorState.channels[c].exists; })) { _tplToast('error', 'יש לסמן לפחות ערוץ אחד פעיל'); return; }
     var tid = getTenantId();
     var baseSlug = _editorState.isNew ? deriveSlugFromName(name) : _editorState.baseSlug;
-    if (!baseSlug) { toast('error', 'לא ניתן לגזור slug משם זה'); return; }
+    if (!baseSlug) { _tplToast('error', 'לא ניתן לגזור slug משם זה'); return; }
     var emptyCh2 = CHANNELS.filter(function (c) { return _editorState.channels[c].exists && !((_editorState.channels[c].body || '').trim()); })[0];
-    if (emptyCh2) { toast('error', 'תוכן חסר בערוץ ' + CHANNEL_LABELS[emptyCh2]); return; }
+    if (emptyCh2) { _tplToast('error', 'תוכן חסר בערוץ ' + CHANNEL_LABELS[emptyCh2]); return; }
 
     var ops = [], saved = 0, deactivated = 0, created = 0;
     CHANNELS.forEach(function (ch) {
@@ -279,14 +297,14 @@
     try {
       var results = await Promise.allSettled(ops);
       var failures = results.filter(function (r) { return r.status === 'rejected'; });
-      if (failures.length) { toast('error', 'שמירה חלקית: ' + failures.length + ' כשלים'); console.warn('crm-templates save failures:', failures); }
-      else { toast('success', 'נשמר (' + (saved + created) + ' נשמרו, ' + deactivated + ' בוטלו)'); }
-      logWrite('crm.template.save', baseSlug, { name: name, saved: saved, created: created, deactivated: deactivated });
+      if (failures.length) { _tplToast('error', 'שמירה חלקית: ' + failures.length + ' כשלים'); console.warn('crm-templates save failures:', failures); }
+      else { _tplToast('success', 'נשמר (' + (saved + created) + ' נשמרו, ' + deactivated + ' בוטלו)'); }
+      _tplLog('crm.template.save', baseSlug, { name: name, saved: saved, created: created, deactivated: deactivated });
       _activeBase = baseSlug;
       await loadTemplates(true);
       renderSidebar();
       openEditor(baseSlug);
-    } catch (e) { toast('error', 'שמירה נכשלה: ' + (e.message || String(e))); }
+    } catch (e) { _tplToast('error', 'שמירה נכשלה: ' + (e.message || String(e))); }
   }
 
   async function deleteLogicalTemplate() {
@@ -300,15 +318,15 @@
     });
     try {
       var results = await Promise.allSettled(ops);
-      if (results.some(function (r) { return r.status === 'rejected'; })) { toast('error', 'מחיקה חלקית נכשלה'); return; }
-      logWrite('crm.template.deactivate', _editorState.baseSlug, { name: _editorState.name });
-      toast('success', 'התבנית בוטלה');
+      if (results.some(function (r) { return r.status === 'rejected'; })) { _tplToast('error', 'מחיקה חלקית נכשלה'); return; }
+      _tplLog('crm.template.deactivate', _editorState.baseSlug, { name: _editorState.name });
+      _tplToast('success', 'התבנית בוטלה');
       _activeBase = null;
       await loadTemplates(true);
       renderSidebar();
       var main = document.getElementById('tpl-editor');
       if (main) main.innerHTML = '<div class="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-400">התבנית בוטלה</div>';
-    } catch (e) { toast('error', 'מחיקה נכשלה: ' + (e.message || String(e))); }
+    } catch (e) { _tplToast('error', 'מחיקה נכשלה: ' + (e.message || String(e))); }
   }
 
   // Variable substitution for previews — exposed for CrmTemplateSection.

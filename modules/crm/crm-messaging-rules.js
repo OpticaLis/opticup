@@ -1,55 +1,27 @@
-/* =============================================================================
-   crm-messaging-rules.js — Automation Rules (B8 Tailwind — FINAL-04)
-   Table: crm_automation_rules
-   ============================================================================= */
+/* crm-messaging-rules.js — Automation Rules orchestrator
+   (CRM_UX_REDESIGN_AUTOMATION). Owns rules-list + table + pill bar; the
+   editor is delegated to window.CrmRuleEditor (crm-rule-editor.js).
+   Backward-compat: window.{renderMessagingRules, loadMessagingRules}
+   preserve unchanged signatures. */
 (function () {
   'use strict';
 
   var CHANNEL_LABELS = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'אימייל' };
   var CHANNEL_CLASSES = { sms: 'bg-sky-500', whatsapp: 'bg-emerald-500', email: 'bg-amber-500' };
 
-  // P8 — trigger/condition/recipient taxonomies mirror the engine (crm-automation-engine.js).
-  var TRIGGER_TYPES = {
-    event_status_change: { label: 'שינוי סטטוס אירוע', entity: 'event',    event: 'status_change' },
-    event_registration:  { label: 'הרשמה לאירוע',       entity: 'attendee', event: 'created'       },
-    lead_status_change:  { label: 'שינוי סטטוס ליד',    entity: 'lead',     event: 'status_change' },
-    lead_intake:         { label: 'ליד חדש (ידני)',     entity: 'lead',     event: 'created'       }
+  var BOARD_META = {
+    incoming:  { icon: '📥', label: 'לידים נכנסים',     color: 'orange',  entity: 'lead',     event: 'created'       },
+    tier2:     { icon: '👥', label: 'רשומים',           color: 'blue',    entity: 'lead',     event: 'status_change' },
+    events:    { icon: '📅', label: 'אירועים',          color: 'violet',  entity: 'event',    event: 'status_change' },
+    attendees: { icon: '✅', label: 'נרשמים לאירוע',    color: 'emerald', entity: 'attendee', event: 'created'       }
   };
-  var CONDITION_TYPES = {
-    always:          'תמיד (ללא תנאי)',
-    status_equals:   'סטטוס שווה ל-',
-    count_threshold: 'ספירה עוברת סף',
-    source_equals:   'מקור שווה ל-'
-  };
-  var RECIPIENT_TYPES = {
-    trigger_lead:            'הליד שהפעיל את החוק',
-    tier2:                   'כל Tier 2',
-    tier2_excl_registered:   'Tier 2 חוץ מרשומים',
-    attendees:               'נרשמים לאירוע',
-    attendees_waiting:       'רשימת המתנה'
-  };
-  // P21: recipient_status_filter — only offered when recipient_type is tier2*.
-  // Empty filter = send to ALL tier2 statuses (backwards-compatible default).
-  var TIER2_FILTER_STATUSES = [
-    { slug: 'waiting',            label: 'ממתין לאירוע (waiting)' },
-    { slug: 'invited',             label: 'הוזמן (invited)' },
-    { slug: 'confirmed',           label: 'אישר הגעה (confirmed)' },
-    { slug: 'confirmed_verified', label: 'אומת (confirmed_verified)' }
-  ];
-  function recipientTypeUsesStatusFilter(t) { return t === 'tier2' || t === 'tier2_excl_registered'; }
-  function lookupTriggerTypeKey(entity, event) {
-    for (var k in TRIGGER_TYPES) {
-      if (TRIGGER_TYPES[k].entity === entity && TRIGGER_TYPES[k].event === event) return k;
-    }
-    return null;
-  }
+  var BOARD_KEYS = ['incoming','tier2','events','attendees'];
+  function boardOf(entity, ev) { for (var k in BOARD_META) { if (BOARD_META[k].entity === entity && BOARD_META[k].event === ev) return k; } return null; }
 
   var CLS_TABLE      = 'w-full text-sm bg-white';
   var CLS_TH         = 'px-4 py-3 text-start font-semibold text-slate-700 bg-slate-50';
   var CLS_TD         = 'px-4 py-3 text-slate-800';
-  var CLS_ROW        = 'border-b border-slate-100';
-  var CLS_INPUT      = 'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500';
-  var CLS_LABEL      = 'block text-sm font-medium text-slate-700 mb-1';
+  var CLS_ROW        = 'border-b border-slate-100 cursor-pointer hover:bg-slate-50';
   var CLS_BTN_P      = 'px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm';
   var CLS_LINK_BTN   = 'text-sm text-indigo-600 font-medium hover:text-indigo-800 hover:underline';
   var CLS_TOGGLE_OFF = 'px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition';
@@ -57,6 +29,7 @@
 
   var _rules = [];
   var _loadPromise = null;
+  var _pillFilter = 'all';
 
   function logWrite(action, entityId, meta) {
     if (window.ActivityLog && typeof ActivityLog.write === 'function') {
@@ -85,45 +58,89 @@
   }
   window.loadMessagingRules = function () { return loadRules(true); };
 
+  function rulesForPill(pill) {
+    if (pill === 'all') return _rules.filter(function (r) { return r.is_active; });
+    var meta = BOARD_META[pill]; if (!meta) return [];
+    return _rules.filter(function (r) { return r.is_active && r.trigger_entity === meta.entity && r.trigger_event === meta.event; });
+  }
+
+  function renderPillBar(host) {
+    var counts = { all: _rules.filter(function (r) { return r.is_active; }).length };
+    BOARD_KEYS.forEach(function (k) { counts[k] = rulesForPill(k).length; });
+    var allActive = _pillFilter === 'all';
+    var html = '<div class="flex items-center gap-2 flex-wrap mb-3">' +
+      '<button type="button" data-pill="all" class="px-3 py-1.5 rounded-full text-xs font-semibold transition ' +
+        (allActive ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-700 hover:border-indigo-300') + '">הכל (' + counts.all + ')</button>';
+    BOARD_KEYS.forEach(function (k) {
+      var b = BOARD_META[k]; var on = _pillFilter === k;
+      var bg = on ? ('bg-' + b.color + '-100 border-2 border-' + b.color + '-500 text-' + b.color + '-800 shadow-sm') : ('bg-' + b.color + '-50 border border-' + b.color + '-200 text-' + b.color + '-700 hover:border-' + b.color + '-400');
+      html += '<button type="button" data-pill="' + k + '" class="' + bg + ' px-3 py-1.5 rounded-full text-xs font-semibold transition">' + b.icon + ' ' + escapeHtml(b.label) + ' (' + counts[k] + ')</button>';
+    });
+    html += '</div>';
+    host.innerHTML = html;
+    host.querySelectorAll('[data-pill]').forEach(function (b) {
+      b.addEventListener('click', function () { _pillFilter = b.getAttribute('data-pill'); renderPillBar(host); renderTable(); });
+    });
+  }
+
   function renderMessagingRules(host) {
     if (!host) return;
     host.innerHTML =
-      '<div class="flex items-center justify-between mb-4">' +
+      '<div class="flex items-center justify-between mb-3">' +
         '<h3 class="text-lg font-bold text-slate-800 m-0">כללי אוטומציה</h3>' +
-        '<button type="button" class="' + CLS_BTN_P + '" id="btn-new-rule">+ כלל חדש</button>' +
+        '<button type="button" class="' + CLS_BTN_P + '" id="btn-new-rule">+ חוק חדש</button>' +
       '</div>' +
+      '<div id="crm-rules-pillbar"></div>' +
       '<div id="crm-rules-table" class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">' +
         '<div class="text-center text-slate-400 py-8">טוען...</div>' +
       '</div>';
-
     var btn = host.querySelector('#btn-new-rule');
     if (btn) btn.addEventListener('click', function () { openRuleModal(null); });
-
-    loadRules().then(renderTable).catch(function (e) {
+    loadRules().then(function () {
+      renderPillBar(host.querySelector('#crm-rules-pillbar'));
+      renderTable();
+    }).catch(function (e) {
       var wrap = host.querySelector('#crm-rules-table');
       if (wrap) wrap.innerHTML = '<div class="text-center text-rose-500 py-6 font-semibold">' + escapeHtml(e.message || String(e)) + '</div>';
     });
   }
   window.renderMessagingRules = renderMessagingRules;
 
+  function boardChip(entity, ev) {
+    var k = boardOf(entity, ev); if (!k) return '<span class="text-slate-400 text-xs">—</span>';
+    var b = BOARD_META[k];
+    return '<span class="bg-' + b.color + '-100 text-' + b.color + '-700 px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap">' + b.icon + ' ' + escapeHtml(b.label) + '</span>';
+  }
+
+  function triggerLabel(r) {
+    var k = boardOf(r.trigger_entity, r.trigger_event);
+    if (!k) return r.trigger_entity + ' · ' + r.trigger_event;
+    var cond = r.trigger_condition || {};
+    if (cond.type === 'always') return 'תמיד';
+    if (cond.type === 'status_equals') return 'סטטוס = ' + (cond.status || '?');
+    if (cond.type === 'source_equals') return 'מקור = ' + (cond.source || '?');
+    if (cond.type === 'count_threshold') return (cond.field || '?') + ' ' + (cond.operator || '?') + ' ' + (cond.value || 0);
+    return '—';
+  }
+
   function renderTable() {
     var wrap = document.getElementById('crm-rules-table');
     if (!wrap) return;
-    if (!_rules.length) {
-      wrap.innerHTML = '<div class="text-center text-slate-400 py-8">אין כללי אוטומציה עדיין.</div>';
+    var rows = rulesForPill(_pillFilter);
+    if (!rows.length) {
+      wrap.innerHTML = '<div class="text-center text-slate-400 py-8">אין חוקים בבורד הזה.</div>';
       return;
     }
     var html = '<table class="' + CLS_TABLE + '"><thead><tr>' +
       '<th class="' + CLS_TH + '">שם</th>' +
+      '<th class="' + CLS_TH + '">בורד</th>' +
       '<th class="' + CLS_TH + '">טריגר</th>' +
-      '<th class="' + CLS_TH + '">פעולה</th>' +
+      '<th class="' + CLS_TH + '">תבנית</th>' +
       '<th class="' + CLS_TH + '">ערוצים</th>' +
       '<th class="' + CLS_TH + '">פעיל</th>' +
       '<th class="' + CLS_TH + ' text-end">פעולה</th>' +
       '</tr></thead><tbody>';
-    _rules.forEach(function (r) {
-      var tKey = lookupTriggerTypeKey(r.trigger_entity, r.trigger_event);
-      var trig = tKey ? TRIGGER_TYPES[tKey].label : (r.trigger_entity + ' · ' + r.trigger_event);
+    rows.forEach(function (r) {
       var cfg = r.action_config || {};
       var chs = Array.isArray(cfg.channels) ? cfg.channels : (cfg.channel ? [cfg.channel] : []);
       var chHtml = chs.map(function (c) {
@@ -132,15 +149,15 @@
       var toggleCls = r.is_active ? CLS_TOGGLE_ON : CLS_TOGGLE_OFF;
       html += '<tr class="' + CLS_ROW + '" data-rule-id="' + escapeHtml(r.id) + '">' +
         '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.name || '') + '</td>' +
-        '<td class="' + CLS_TD + ' text-slate-600">' + escapeHtml(trig) + '</td>' +
-        '<td class="' + CLS_TD + ' text-slate-600">' + escapeHtml(r.action_type || '') + '</td>' +
+        '<td class="' + CLS_TD + '">' + boardChip(r.trigger_entity, r.trigger_event) + '</td>' +
+        '<td class="' + CLS_TD + ' text-slate-600 text-xs">' + escapeHtml(triggerLabel(r)) + '</td>' +
+        '<td class="' + CLS_TD + ' text-slate-600 text-xs">' + escapeHtml((cfg.template_slug || '—')) + '</td>' +
         '<td class="' + CLS_TD + '">' + chHtml + '</td>' +
         '<td class="' + CLS_TD + '"><button type="button" class="' + toggleCls + '" data-toggle-id="' + escapeHtml(r.id) + '" data-next="' + (r.is_active ? '0' : '1') + '">' + (r.is_active ? 'פעיל' : 'כבוי') + '</button></td>' +
         '<td class="' + CLS_TD + ' text-end"><button type="button" class="' + CLS_LINK_BTN + '" data-edit-id="' + escapeHtml(r.id) + '">עריכה</button></td>' +
         '</tr>';
     });
     wrap.innerHTML = html + '</tbody></table>';
-
     wrap.querySelectorAll('button[data-edit-id]').forEach(function (b) {
       b.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -156,179 +173,44 @@
         b.disabled = true;
         var ok = await toggleActive(id, next);
         b.disabled = false;
-        if (ok) renderTable();
+        if (ok) { var r = _rules.find(function (rr) { return rr.id === id; }); if (r) r.is_active = !!next; renderPillBar(document.getElementById('crm-rules-pillbar')); renderTable(); }
       });
     });
   }
 
-  // Extract unique base-slug + name pairs from the loaded templates cache.
-  // crm_message_templates.slug is fully composed (e.g. event_registration_open_sms_he);
-  // the engine dispatches via base slug. We derive base = slug minus `_{channel}_{lang}`.
-  function baseSlugsFromTemplates() {
-    var tpls = (typeof window._crmMessagingTemplates === 'function') ? window._crmMessagingTemplates() : [];
-    var seen = {};
-    tpls.forEach(function (t) {
-      if (!t || !t.slug) return;
-      var sfx = '_' + (t.channel || '') + '_' + (t.language || 'he');
-      var base = (t.slug.slice(-sfx.length) === sfx) ? t.slug.slice(0, -sfx.length) : t.slug;
-      if (!seen[base]) seen[base] = { base: base, name: t.name || base };
-    });
-    return Object.keys(seen).sort().map(function (k) { return seen[k]; });
-  }
-
   function openRuleModal(existing) {
-    var isNew = !existing;
-    var row = existing || { name: '', trigger_entity: 'event', trigger_event: 'status_change', trigger_condition: { type: 'always' }, action_type: 'send_message', action_config: { template_slug: '', channels: [], recipient_type: 'trigger_lead' }, sort_order: 0, is_active: true };
-    var cfg = row.action_config || {};
-    var chs = Array.isArray(cfg.channels) ? cfg.channels : [];
-    var title = isNew ? 'כלל אוטומציה חדש' : 'עריכת כלל';
-    var currentTrigger = lookupTriggerTypeKey(row.trigger_entity, row.trigger_event) || 'event_status_change';
-    var cond = row.trigger_condition || {};
-    var condType = cond.type || 'always';
-
-    var triggerOpts = Object.keys(TRIGGER_TYPES).map(function (k) {
-      return '<option value="' + k + '"' + (k === currentTrigger ? ' selected' : '') + '>' + escapeHtml(TRIGGER_TYPES[k].label) + '</option>';
-    }).join('');
-    var condOpts = Object.keys(CONDITION_TYPES).map(function (k) {
-      return '<option value="' + k + '"' + (k === condType ? ' selected' : '') + '>' + escapeHtml(CONDITION_TYPES[k]) + '</option>';
-    }).join('');
-    var recipOpts = Object.keys(RECIPIENT_TYPES).map(function (k) {
-      return '<option value="' + k + '"' + (k === cfg.recipient_type ? ' selected' : '') + '>' + escapeHtml(RECIPIENT_TYPES[k]) + '</option>';
-    }).join('');
-    var bases = baseSlugsFromTemplates();
-    var tplOpts = '<option value="">(בחר תבנית)</option>' + bases.map(function (b) {
-      return '<option value="' + escapeHtml(b.base) + '"' + (cfg.template_slug === b.base ? ' selected' : '') + '>' + escapeHtml(b.name) + ' — ' + escapeHtml(b.base) + '</option>';
-    }).join('');
-    var chBoxes = ['sms', 'whatsapp', 'email'].map(function (c) {
-      var chk = chs.indexOf(c) !== -1 ? ' checked' : '';
-      return '<label class="inline-flex items-center gap-1.5 me-4 cursor-pointer"><input type="checkbox" name="rule-channel" value="' + c + '"' + chk + ' class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"> <span class="text-sm">' + CHANNEL_LABELS[c] + '</span></label>';
-    }).join('');
-    var savedFilter = Array.isArray(cfg.recipient_status_filter) ? cfg.recipient_status_filter : [];
-    var filterBoxes = TIER2_FILTER_STATUSES.map(function (s) {
-      var chk = savedFilter.indexOf(s.slug) !== -1 ? ' checked' : '';
-      return '<label class="flex items-center gap-1.5 py-0.5 cursor-pointer"><input type="checkbox" name="rule-status-filter" value="' + s.slug + '"' + chk + ' class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"> <span class="text-sm">' + escapeHtml(s.label) + '</span></label>';
-    }).join('');
-    var filterHidden = recipientTypeUsesStatusFilter(cfg.recipient_type) ? '' : ' hidden';
-    var condValue = cond.status || cond.source || '';
-    var condNum = (cond.value != null) ? cond.value : '';
-    var condOp = cond.operator || '>';
-    var condField = cond.field || 'attendee_count';
-
-    var content =
-      '<div class="mb-3"><label class="' + CLS_LABEL + '">שם כלל *</label><input type="text" id="rule-name" value="' + escapeHtml(row.name) + '" required class="' + CLS_INPUT + '"></div>' +
-      '<div class="mb-3"><label class="' + CLS_LABEL + '">טריגר *</label><select id="rule-trigger" class="' + CLS_INPUT + '">' + triggerOpts + '</select></div>' +
-      '<div class="mb-3"><label class="' + CLS_LABEL + '">תנאי *</label><select id="rule-cond-type" class="' + CLS_INPUT + '">' + condOpts + '</select>' +
-        '<div id="rule-cond-fields" class="mt-2">' +
-          '<input type="text" id="rule-cond-value" placeholder="ערך (למשל: registered, waiting_list, supersale_form)" value="' + escapeHtml(condValue) + '" class="' + CLS_INPUT + '' + (condType !== 'status_equals' && condType !== 'source_equals' ? ' hidden' : '') + '">' +
-          '<div id="rule-cond-count" class="grid grid-cols-3 gap-2' + (condType !== 'count_threshold' ? ' hidden' : '') + '">' +
-            '<input type="text" id="rule-cond-field" placeholder="שדה" value="' + escapeHtml(condField) + '" class="' + CLS_INPUT + '">' +
-            '<select id="rule-cond-op" class="' + CLS_INPUT + '">' +
-              ['>','>=','=','<','<='].map(function (o) { return '<option' + (o === condOp ? ' selected' : '') + '>' + o + '</option>'; }).join('') +
-            '</select>' +
-            '<input type="number" id="rule-cond-num" placeholder="ערך" value="' + escapeHtml(String(condNum)) + '" class="' + CLS_INPUT + '">' +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="mb-3"><label class="' + CLS_LABEL + '">תבנית הודעה (slug בסיסי) *</label><select id="rule-tpl" class="' + CLS_INPUT + '">' + tplOpts + '</select></div>' +
-      '<div class="mb-3"><label class="' + CLS_LABEL + '">ערוצים *</label><div>' + chBoxes + '</div></div>' +
-      '<div class="mb-3"><label class="' + CLS_LABEL + '">נמענים *</label><select id="rule-recipient" class="' + CLS_INPUT + '">' + recipOpts + '</select></div>' +
-      '<div id="rule-status-filter-block" class="mb-3' + filterHidden + '">' +
-        '<label class="' + CLS_LABEL + '">סינון לפי סטטוס (אופציונלי)</label>' +
-        '<div class="border border-slate-200 rounded-lg p-2 bg-slate-50">' + filterBoxes + '</div>' +
-        '<div class="text-xs text-slate-500 mt-1">אם לא מסומן דבר — יישלח לכל הסטטוסים בקבוצה.</div>' +
-      '</div>';
-
-    Modal.form({
-      title: title, size: 'md', content: content,
-      onSubmit: function (formEl) {
-        var data = readForm(formEl);
-        var err = validate(data);
-        if (err) { toast('error', err); return; }
-        save(row.id, data, isNew);
-      }
+    if (!window.CrmRuleEditor || typeof CrmRuleEditor.open !== 'function') {
+      toast('error', 'עורך חוקים לא נטען');
+      return;
+    }
+    CrmRuleEditor.open(existing, {
+      onSave: function (data, isNew) { save(existing ? existing.id : null, data, isNew); },
+      onCancel: function () {}
     });
-
-    // Reveal/hide conditional field blocks based on the condition-type select.
-    setTimeout(function () {
-      var sel = document.querySelector('#rule-cond-type');
-      if (sel) {
-        sel.addEventListener('change', function () {
-          var type = sel.value;
-          var vEl = document.querySelector('#rule-cond-value');
-          var cEl = document.querySelector('#rule-cond-count');
-          if (vEl) vEl.classList.toggle('hidden', type !== 'status_equals' && type !== 'source_equals');
-          if (cEl) cEl.classList.toggle('hidden', type !== 'count_threshold');
-        });
-      }
-      // P21: show/hide status-filter block when recipient_type changes.
-      var recSel = document.querySelector('#rule-recipient');
-      var fBlk = document.querySelector('#rule-status-filter-block');
-      if (recSel && fBlk) {
-        recSel.addEventListener('change', function () {
-          fBlk.classList.toggle('hidden', !recipientTypeUsesStatusFilter(recSel.value));
-        });
-      }
-    }, 50);
-  }
-
-  function readForm(el) {
-    var chs = [];
-    el.querySelectorAll('input[name="rule-channel"]:checked').forEach(function (cb) { chs.push(cb.value); });
-    var triggerKey = el.querySelector('#rule-trigger').value;
-    var trig = TRIGGER_TYPES[triggerKey] || TRIGGER_TYPES.event_status_change;
-    var condType = el.querySelector('#rule-cond-type').value || 'always';
-    var cond = { type: condType };
-    if (condType === 'status_equals') cond.status = (el.querySelector('#rule-cond-value').value || '').trim();
-    else if (condType === 'source_equals') cond.source = (el.querySelector('#rule-cond-value').value || '').trim();
-    else if (condType === 'count_threshold') {
-      cond.field = (el.querySelector('#rule-cond-field').value || '').trim();
-      cond.operator = el.querySelector('#rule-cond-op').value;
-      cond.value = Number(el.querySelector('#rule-cond-num').value) || 0;
-    }
-    var recipientType = el.querySelector('#rule-recipient').value;
-    var actionConfig = {
-      template_slug: (el.querySelector('#rule-tpl').value || '').trim(),
-      channels: chs,
-      recipient_type: recipientType
-    };
-    if (recipientTypeUsesStatusFilter(recipientType)) {
-      var picked = [];
-      el.querySelectorAll('input[name="rule-status-filter"]:checked').forEach(function (cb) { picked.push(cb.value); });
-      if (picked.length) actionConfig.recipient_status_filter = picked;
-    }
-    return {
-      name: (el.querySelector('#rule-name').value || '').trim(),
-      trigger_entity: trig.entity,
-      trigger_event: trig.event,
-      trigger_condition: cond,
-      action_type: 'send_message',
-      action_config: actionConfig
-    };
-  }
-
-  function validate(d) {
-    if (!d.name) return 'שם כלל חובה';
-    if (!d.action_config.template_slug) return 'בחר תבנית';
-    if (!d.action_config.channels.length) return 'בחר לפחות ערוץ אחד';
-    if (!d.action_config.recipient_type) return 'בחר סוג נמענים';
-    return null;
   }
 
   async function save(id, data, isNew) {
     var tid = getTenantId();
     try {
       if (isNew) {
-        var ins = await sb.from('crm_automation_rules').insert({ tenant_id: tid, name: data.name, trigger_entity: data.trigger_entity, trigger_event: data.trigger_event, trigger_condition: data.trigger_condition, action_type: data.action_type, action_config: data.action_config, is_active: true }).select('id').single();
+        var ins = await sb.from('crm_automation_rules').insert({
+          tenant_id: tid, name: data.name, trigger_entity: data.trigger_entity, trigger_event: data.trigger_event,
+          trigger_condition: data.trigger_condition, action_type: data.action_type, action_config: data.action_config, is_active: true
+        }).select('id').single();
         if (ins.error) throw new Error(ins.error.message);
         logWrite('crm.rule.create', ins.data.id, { name: data.name, trigger_entity: data.trigger_entity, trigger_event: data.trigger_event });
         toast('success', 'הכלל נוצר');
       } else {
-        var upd = await sb.from('crm_automation_rules').update({ name: data.name, trigger_entity: data.trigger_entity, trigger_event: data.trigger_event, trigger_condition: data.trigger_condition, action_type: data.action_type, action_config: data.action_config }).eq('id', id).eq('tenant_id', tid);
+        var upd = await sb.from('crm_automation_rules').update({
+          name: data.name, trigger_entity: data.trigger_entity, trigger_event: data.trigger_event,
+          trigger_condition: data.trigger_condition, action_type: data.action_type, action_config: data.action_config
+        }).eq('id', id).eq('tenant_id', tid);
         if (upd.error) throw new Error(upd.error.message);
         logWrite('crm.rule.update', id, { name: data.name });
         toast('success', 'הכלל עודכן');
       }
       await loadRules(true);
+      renderPillBar(document.getElementById('crm-rules-pillbar'));
       renderTable();
     } catch (e) {
       toast('error', 'שמירה נכשלה: ' + (e.message || String(e)));
@@ -340,8 +222,6 @@
     var upd = await sb.from('crm_automation_rules').update({ is_active: !!nextActive }).eq('id', id).eq('tenant_id', tid);
     if (upd.error) { toast('error', 'כשל'); return false; }
     logWrite('crm.rule.toggle', id, { is_active: !!nextActive });
-    var row = _rules.find(function (r) { return r.id === id; });
-    if (row) row.is_active = !!nextActive;
     return true;
   }
 })();
