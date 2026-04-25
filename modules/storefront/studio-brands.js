@@ -309,8 +309,7 @@ function openStudioBrandEditor(brandId) {
 
   const googleTitle = escapeHtml(brand.seo_title || 'כותרת SEO');
   const googleDesc = escapeHtml(brand.seo_description || 'תיאור SEO');
-  // TODO(B4): replace hardcoded domain with getTenantConfig('custom_domain') when added to schema
-  const googleUrl = `prizma-optic.co.il › brands › ${brand.slug || ''}`;
+  const googleUrl = `${getCustomDomain()} › brands › ${brand.slug || ''}`;
 
   const content = `
     <div class="brand-editor-section" style="display:flex; align-items:center; gap:12px;">

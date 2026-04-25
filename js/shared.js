@@ -145,6 +145,20 @@ function getTenantConfig(key) {
   const config = JSON.parse(sessionStorage.getItem('tenant_config') || '{}');
   return key ? config[key] : config;
 }
+
+/**
+ * Resolve the tenant's custom storefront domain, used in SEO-preview UI text.
+ * Priority: tenant_config.custom_domain → tenant_config.ui_config.seo_domain → 'domain.co.il'.
+ * @returns {string}
+ */
+function getCustomDomain() {
+  var direct = getTenantConfig('custom_domain');
+  if (direct) return direct;
+  var uiConfig = getTenantConfig('ui_config');
+  if (uiConfig && uiConfig.seo_domain) return uiConfig.seo_domain;
+  return 'domain.co.il';
+}
+
 /**
  * Format a number as a currency string per tenant_config (default ILS/he-IL).
  * Reads default_currency + locale from getTenantConfig() with safe fallbacks
