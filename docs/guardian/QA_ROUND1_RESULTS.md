@@ -184,4 +184,61 @@ Two test paths could not be completed under the phone-budget constraint (lead-in
 
 ---
 
+## Fix F1 Applied 2026-04-25
+
+**Scope:** demo tenant only (`8d8cfa7e-ef58-49af-9702-a862d459cccb`). Prizma deliberately not touched per Daniel directive (same gap exists there — `pos_event_name=0, pos_event_location=0` on both Prizma rows; reported here for awareness, not fixed).
+
+**Edits applied via the new templates editor (UI flow, not direct SQL):**
+
+| Row | Variable changes | Length before → after |
+|---|---|---|
+| `event_2_3d_before_sms_he` | Added `%event_name%` in opening line ("האירוע %event_name% ב-%event_date% מתקרב..."); replaced hardcoded "בהרצל 32, אשקלון" with `ב-%event_location%` | 390 → 400 chars (PG); within ≤480 cap |
+| `event_2_3d_before_email_he` | Added `<strong>%event_name%</strong>` in the lead paragraph ("האירוע %event_name% בתאריך %event_date% מתקרב"); replaced hardcoded "הרצל 32, אשקלון (יש חניה במקום)" with `%event_location%` in the location row | 9,742 → 9,622 chars (PG; reduction is partly CRLF→LF normalization + shorter location string) |
+
+**Verification (post-save SQL):**
+
+| Slug | Channel | `pos_event_name` | `pos_event_location` | `pos_name` | `pos_event_date` | `pos_unsubscribe_url` |
+|---|---|---|---|---|---|---|
+| event_2_3d_before_sms_he | sms | **22** ✓ | **161** ✓ | 5 | 37 | 384 |
+| event_2_3d_before_email_he | email | **2841** ✓ | **5737** ✓ | 2613 | 2901 | 8939 |
+
+All 5 expected variables now present in both rows. HTML structure of the email preserved (no broken tags — the Waze link, footer, copyright, and unsubscribe block all intact). Note: the email's static copyright footer at the bottom still reads "© כל הזכויות שמורות לאופטיקה פריזמה | הרצל 32, אשקלון" — that's the company HQ address (legal/branding), distinct from the event-specific `%event_location%` variable that now resolves dynamically per event.
+
+**Final SMS body (400 chars):**
+```
+היי %name% 👋
+
+האירוע %event_name% ב-%event_date% מתקרב - מחכים לראות אותך!
+
+המקום שלך שמור והקופון האישי כבר אצלך במייל. כל מה שצריך זה להגיע עם הקופון לסניף ב-%event_location%.
+
+חלו שינויים בתכניות? אין בעיה - אפשר לבטל עד 48 שעות לפני האירוע (טלפון או וואטסאפ) ולקבל החזר מלא של דמי השריון. ככה נוכל להעניק את המקום למישהו מרשימת ההמתנה.
+
+נתראה בקרוב 💛
+צוות אופטיקה פריזמה
+
+להסרה: %unsubscribe_url%
+```
+
+**Final Email body — key snippets (full HTML 9,622 chars; structural preview):**
+- Subject line (unchanged): `%name%, האירוע מתקרב - הכל מוכן 💛`
+- Lead paragraph: `האירוע <strong style="color:#E8D48B;">%event_name%</strong> בתאריך <strong style="color:#E8D48B;">%event_date%</strong> מתקרב — מחכים לראות אותך! 💛`
+- Event-details location row: `<td>%event_location%</td>` (replacing the previously-hardcoded "הרצל 32, אשקלון (יש חניה במקום)")
+- All other content (cancellation policy, contacts, Waze button, signature, copyright footer, unsubscribe link) unchanged.
+
+**No code changes. No EFs touched. No new dispatches. Engine + DB schema unchanged.**
+
+---
+
+## Prizma status (REPORT ONLY — not fixed per directive)
+
+| Tenant | Slug | `pos_event_name` | `pos_event_location` |
+|---|---|---|---|
+| אופטיקה פריזמה | event_2_3d_before_email_he | **0** (missing) | **0** (missing) |
+| אופטיקה פריזמה | event_2_3d_before_sms_he | **0** (missing) | **0** (missing) |
+
+Same gap exists on Prizma. Daniel decides how the demo→prizma content sync happens (separate process, not this fix's responsibility).
+
+---
+
 *End of QA Round 1 Results.*
