@@ -11,7 +11,7 @@
 (function () {
   'use strict';
 
-  function tid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
+  function _regTid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
 
   // EVENT_WAITING_LIST_AUTO_TRANSITION (2026-04-24): after a successful
   // register, count attendees that actually occupy a spot (exclude
@@ -21,7 +21,7 @@
   // automation rule through the canonical path. NULL max_capacity → skip.
   async function checkAndAutoWaitingList(eventId) {
     if (!eventId) return { transitioned: false };
-    var tenantId = tid();
+    var tenantId = _regTid();
     if (!tenantId) return { transitioned: false, reason: 'no_tenant' };
     var eRes = await sb.from('crm_events').select('id, status, max_capacity')
       .eq('id', eventId).eq('tenant_id', tenantId).single();
@@ -47,7 +47,7 @@
   }
 
   async function searchTier2Leads(term) {
-    var tenantId = tid();
+    var tenantId = _regTid();
     var tier2 = window.TIER2_STATUSES || [];
     var q = sb.from('crm_leads')
       .select('id, full_name, phone, email, status')
@@ -65,7 +65,7 @@
   }
 
   async function registerLeadToEvent(leadId, eventId, method) {
-    var tenantId = tid();
+    var tenantId = _regTid();
     var res = await sb.rpc('register_lead_to_event', {
       p_tenant_id: tenantId,
       p_lead_id: leadId,
@@ -85,7 +85,20 @@
 
   // P8: hardcoded dispatch replaced by rule evaluation. Rules live in
   // crm_automation_rules (trigger_entity='attendee', trigger_event='created').
+  // M4_ATTENDEE_PAYMENT_AUTOMATION: BEFORE the evaluate call, attempt FIFO credit transfer
+  // so the confirmation message sees the updated payment_status (paid vs pending_payment).
   async function dispatchRegistrationConfirmation(leadId, lead, eventId, regStatus) {
+    if (regStatus === 'registered' && window.CrmPaymentAutomation) {
+      try {
+        var attRes = await sb.from('crm_event_attendees')
+          .select('id').eq('lead_id', leadId).eq('event_id', eventId)
+          .eq('tenant_id', _regTid()).eq('is_deleted', false)
+          .order('registered_at', { ascending: false }).limit(1).single();
+        if (attRes.data && attRes.data.id) {
+          await CrmPaymentAutomation.transferOpenCreditOnRegistration(leadId, attRes.data.id);
+        }
+      } catch (e) { console.error('CrmPaymentAutomation.transferCredit:', e); }
+    }
     if (!window.CrmAutomation || typeof CrmAutomation.evaluate !== 'function') return;
     return CrmAutomation.evaluate('event_registration', {
       leadId: leadId,
