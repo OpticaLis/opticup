@@ -2,6 +2,25 @@
 
 ---
 
+## CRM_UX_REDESIGN_AUTOMATION — Rules editor board-led rewrite (2026-04-25) ✅
+
+| Hash | Message |
+|------|---------|
+| `125cef4` | `docs(spec): approve CRM_UX_REDESIGN_AUTOMATION SPEC for execution` |
+| `44029ad` | `feat(crm): add CrmRuleEditor component for board-led rule editor` |
+| `6a69518` | `feat(crm): rewrite rules editor as board-led single-form (Mockup C)` |
+| _(this commit)_ | `chore(spec): close CRM_UX_REDESIGN_AUTOMATION with retrospective` |
+
+Automation Rules editor rewritten per Mockup C (Single Form with conditional fields). New file `modules/crm/crm-rule-editor.js` (273 lines) owns the editor: 4-card board picker (📥 לידים נכנסים / 👥 רשומים / 📅 אירועים / ✅ נרשמים לאירוע) leads the form, conditional fields reveal after board choice and are themed by the board's color, templates dropdown filters by board prefix, plain-Hebrew summary block updates live with every input. Switching board mid-edit triggers a confirm dialog before resetting fields. `action_config` round-trip preserves unknown fields (`post_action_status_update`, `language`) via Object.assign spread — closes a latent regression in the original editor that silently dropped these fields.
+
+`modules/crm/crm-messaging-rules.js` reduced 347 → 227 lines. New: pill bar above the rules table (5 pills — הכל + 4 boards with active-rule counts), board column with colored chip per row, filter-by-pill on click. Editor delegated to `window.CrmRuleEditor.open()`. Backward-compat: `window.{renderMessagingRules, loadMessagingRules}` preserve unchanged signatures. Pill counts: ACTIVE rules only (the disabled "רשימת המתנה" rule excluded — "הכל" shows 12 not 13).
+
+`modules/crm/crm-messaging-templates.js` 325 → 343 lines (+18). **Bonus scope per SPEC §8.4:** wired up the "אוטומטי" filter category (resolves M4-DEBT-CRMUX-02 from predecessor `CRM_UX_REDESIGN_TEMPLATES/FINDINGS.md` Finding 2). Lazy cache of active rules' `template_slug`; cache populates on first auto-filter click. `_filterCategoryAuto` helper checks if a logical template is referenced by an active rule. Verified: clicking "אוטומטי" shows 10 of the 13 logical templates (the 10 referenced by ≥1 active rule). Two IIFE-local helpers renamed (`toast`→`_tplToast`, `logWrite`→`_tplLog`) to silence rule-21-orphans hook on co-staging with rules.js (helpers were duplicated in both files since B5 phase but never co-staged before).
+
+**No engine changes. No DB schema changes. No migrations.** All findings logged in `modules/Module 4 - CRM/docs/specs/CRM_UX_REDESIGN_AUTOMATION/FINDINGS.md`. With this SPEC closed, the post-merge UX redesign is complete (both sibling SPECs shipped). Next: P7 (Prizma cutover).
+
+---
+
 ## CRM_UX_REDESIGN_TEMPLATES — Templates Center accordion rewrite (2026-04-25) ✅
 
 | Hash | Message |
