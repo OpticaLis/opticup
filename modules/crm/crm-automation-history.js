@@ -47,12 +47,16 @@
     return out;
   }
 
+  var STATUS_LABEL = { completed: 'הושלם', running: 'רץ', failed: 'נכשל', sent: 'נשלח',
+    rejected: 'נדחה', pending: 'בתור', queued: 'בתור', delivered: 'הגיע', read: 'נקרא' };
   function statusBadge(status) {
     var cls = 'bg-slate-100 text-slate-700';
-    if (status === 'completed') cls = 'bg-emerald-100 text-emerald-700';
+    if (status === 'completed' || status === 'sent') cls = 'bg-emerald-100 text-emerald-700';
     else if (status === 'running') cls = 'bg-amber-100 text-amber-700';
     else if (status === 'failed') cls = 'bg-rose-100 text-rose-700';
-    return '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold ' + cls + '">' + escapeHtml(status) + '</span>';
+    else if (status === 'rejected') cls = 'bg-orange-100 text-orange-700';
+    var label = STATUS_LABEL[status] || status;
+    return '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold ' + cls + '">' + escapeHtml(label) + '</span>';
   }
 
   async function render(host) {

@@ -103,6 +103,7 @@ Deno.serve(async (req: Request) => {
   const tenantId = trimOrNull(payload.tenant_id);
   const leadId = trimOrNull(payload.lead_id);
   const eventId = trimOrNull(payload.event_id);
+  const runId = trimOrNull(payload.run_id);
   const channel = trimOrNull(payload.channel);
   const templateSlug = trimOrNull(payload.template_slug);
   const rawBody = trimOrNull(payload.body);
@@ -190,6 +191,7 @@ Deno.serve(async (req: Request) => {
         tenant_id: tenantId,
         lead_id: leadId,
         event_id: eventId,
+        run_id: runId,
         channel,
         content: "",
         status: "failed",
@@ -222,7 +224,7 @@ Deno.serve(async (req: Request) => {
   // --- Allowlist gate (layer 1) ---
   if (channel === "sms" && !phoneAllowed(recipientPhone)) {
     await db.from("crm_message_log").insert({
-      tenant_id: tenantId, lead_id: leadId, event_id: eventId,
+      tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
       template_id: templateId, channel, content: finalBody,
       status: "rejected", error_message: "phone_not_allowed: " + recipientPhone,
     });
@@ -236,6 +238,7 @@ Deno.serve(async (req: Request) => {
       tenant_id: tenantId,
       lead_id: leadId,
       event_id: eventId,
+      run_id: runId,
       template_id: templateId,
       channel,
       content: finalBody,

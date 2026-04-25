@@ -262,7 +262,7 @@
     var calls = items.map(function (it) {
       return CrmMessaging.sendMessage({
         leadId: it.lead_id, channel: it.channel, templateSlug: it.template_slug,
-        variables: it.variables, eventId: it.event_id || undefined, language: it.language
+        variables: it.variables, eventId: it.event_id || undefined, language: it.language, runId: it.run_id || undefined
       });
     });
     var results = await Promise.allSettled(calls);

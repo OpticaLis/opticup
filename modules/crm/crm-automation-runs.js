@@ -30,9 +30,25 @@
 
   async function finishRun(runId, status) {
     if (!runId) return;
+    // Counts are derived from message_log (authoritative). After OVERNIGHT
+    // FIX (AUTOMATION_HISTORY_FIXES) the send-message EF stamps run_id on
+    // every log row including rejected, so this query returns the full set.
+    var counts = { sent: 0, failed: 0, rejected: 0 };
+    try {
+      var tnt = typeof getTenantId === 'function' ? getTenantId() : null;
+      var q = sb.from('crm_message_log').select('status').eq('run_id', runId);
+      if (tnt) q = q.eq('tenant_id', tnt);
+      var r = await q;
+      if (!r.error) (r.data || []).forEach(function (row) {
+        if (row.status === 'sent') counts.sent++;
+        else if (row.status === 'failed') counts.failed++;
+        else if (row.status === 'rejected') counts.rejected++;
+      });
+    } catch (e) { console.error('CrmAutomationRuns.finishRun counts:', e); }
     try {
       await sb.from('crm_automation_runs')
-        .update({ status: status || 'completed', finished_at: new Date().toISOString() })
+        .update({ status: status || 'completed', finished_at: new Date().toISOString(),
+          sent_count: counts.sent, failed_count: counts.failed, rejected_count: counts.rejected })
         .eq('id', runId);
     } catch (e) { console.error('CrmAutomationRuns.finishRun:', e); }
   }

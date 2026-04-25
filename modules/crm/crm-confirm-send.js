@@ -161,7 +161,7 @@
   }
 
   async function writePendingReviewRows(plan) {
-    var tenantId = (typeof getTenantId === 'function') ? getTenantId() : null;
+    var tenantId = typeof getTenantId === 'function' ? getTenantId() : null;
     if (!tenantId) return { ok: false, error: 'no_tenant' };
     var rows = plan.map(function (it) {
       return {
@@ -183,7 +183,7 @@
     var calls = plan.map(function (it) {
       return CrmMessaging.sendMessage({
         leadId: it.lead_id, channel: it.channel, templateSlug: it.template_slug,
-        variables: it.variables || {}, eventId: it.event_id || undefined, language: it.language || 'he'
+        variables: it.variables || {}, eventId: it.event_id || undefined, language: it.language || 'he', runId: it.run_id || undefined
       });
     });
     var results = await Promise.allSettled(calls);
