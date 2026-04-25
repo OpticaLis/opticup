@@ -271,6 +271,60 @@
     });
   }
 
+  async function approveTermsManually(lead) {
+    var tid = getTid();
+    if (!tid || !lead || !lead.id) throw new Error('missing context');
+    var nowIso = new Date().toISOString();
+    var res = await sb.from('crm_leads')
+      .update({ terms_approved: true, terms_approved_at: nowIso, updated_at: nowIso })
+      .eq('id', lead.id).eq('tenant_id', tid);
+    if (res.error) throw new Error(res.error.message);
+    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.terms_approved_manual', entity_type: 'crm_leads', entity_id: lead.id, details: { lead_name: lead.full_name } }); } catch (_) {}
+    if (window.Toast) Toast.success('תקנון אושר ידנית');
+    return true;
+  }
+
+  function wireApproveTermsButton(host, lead, onDone) {
+    var btn = host && host.querySelector('[data-action="approve-terms"]');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      if (typeof Modal === 'undefined' || !Modal.confirm) return;
+      Modal.confirm({
+        title: 'אישור תקנון ידני',
+        message: 'לסמן שהליד אישר תקנון? לאחר האישור ניתן יהיה להעביר אותו ל-Tier 2.',
+        confirmText: 'אישר תקנון',
+        confirmClass: 'bg-emerald-600 hover:bg-emerald-700',
+        onConfirm: function () {
+          btn.disabled = true;
+          approveTermsManually(lead).then(function () {
+            lead.terms_approved = true;
+            lead.terms_approved_at = new Date().toISOString();
+            if (typeof onDone === 'function') onDone();
+          }, function (err) {
+            btn.disabled = false;
+            if (window.Toast) Toast.error('שגיאה: ' + (err.message || String(err)));
+          });
+        }
+      });
+    });
+  }
+
+  function termsApproveButtonHtml(lead) {
+    if (!lead || lead.terms_approved) return '';
+    if (leadTier(lead.status) !== 1) return '';
+    return ' <button type="button" data-action="approve-terms" class="ms-2 px-2 py-0.5 rounded bg-emerald-500 text-white text-xs font-semibold hover:bg-emerald-600">סמן כאישר תקנון</button>';
+  }
+
+  function wireDetailsButtons(host, lead, refresh) {
+    if (!host || !lead) return;
+    if (lead.unsubscribed_at) wireResubscribeButton(host, lead, refresh);
+    if (!lead.terms_approved) wireApproveTermsButton(host, lead, function () {
+      refresh && refresh();
+      if (typeof window.reloadCrmIncomingTab === 'function') window.reloadCrmIncomingTab();
+      if (typeof window.reloadCrmLeadsTab === 'function') window.reloadCrmLeadsTab();
+    });
+  }
+
   window.CrmLeadActions = window.CrmLeadActions || {};
   window.CrmLeadActions.changeLeadStatus = changeLeadStatus;
   window.CrmLeadActions.bulkChangeStatus = bulkChangeStatus;
@@ -281,4 +335,8 @@
   window.CrmLeadActions.leadTier = leadTier;
   window.CrmLeadActions.resubscribeLead = resubscribeLead;
   window.CrmLeadActions.wireResubscribeButton = wireResubscribeButton;
+  window.CrmLeadActions.approveTermsManually = approveTermsManually;
+  window.CrmLeadActions.wireApproveTermsButton = wireApproveTermsButton;
+  window.CrmLeadActions.termsApproveButtonHtml = termsApproveButtonHtml;
+  window.CrmLeadActions.wireDetailsButtons = wireDetailsButtons;
 })();
