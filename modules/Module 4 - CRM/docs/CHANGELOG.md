@@ -2,6 +2,23 @@
 
 ---
 
+## CRM_UX_REDESIGN_TEMPLATES — Templates Center accordion rewrite (2026-04-25) ✅
+
+| Hash | Message |
+|------|---------|
+| `d1b1c7c` | `docs(spec): approve CRM_UX_REDESIGN_TEMPLATES SPEC for execution` |
+| `704f7f4` | `feat(crm): add CrmTemplateSection component for channel-accordion editor` |
+| `4e118b9` | `feat(crm): rewrite templates editor as channel-accordion (Mockup B)` |
+| _(this commit)_ | `chore(spec): close CRM_UX_REDESIGN_TEMPLATES with retrospective` |
+
+Templates Center editor rewritten per Mockup B (Stacked Accordion). One sidebar card per logical template (grouped by base slug), with active-channel badges (SMS/EMAIL/WA). Editor renders three accordion sections via the new `window.CrmTemplateSection` component — each section has a per-channel "ערוץ פעיל" checkbox controlling whether a row exists in `crm_message_templates` for that channel. Save logic diffs each channel → INSERT new / UPDATE existing / SOFT-DELETE removed (is_active=false; never hard-delete). WhatsApp interactions on a disabled section fire `Toast.info "WhatsApp עדיין לא פעיל — מתוכנן לרבעון הקרוב"` (Meta WhatsApp Cloud API integration is ~3 months out per Daniel). Closes the UI bug where SMS rows displayed channel selector + 3-panel preview + email subject field, making single-channel rows look multi-channel.
+
+**Files:** new `modules/crm/crm-template-section.js` (141 lines), modified `modules/crm/crm-messaging-templates.js` (310 → 325 lines), modified `crm.html` (+1 script tag at line 361). All CRM JS files ≤350 (Rule 12). Backward-compat: 4 public globals preserved with unchanged signatures (`renderMessagingTemplates`, `loadMessagingTemplates`, `_crmMessagingTemplates`, `CRM_TEMPLATE_VARIABLES`); new global `CrmTemplateSubstitute` exposed for section module's preview rendering. The Automation rules editor's `baseSlugsFromTemplates()` helper continues to work unchanged (verified — 13 base slugs available in dropdown).
+
+**Out of scope (deferred):** template-channel migration to single-row JSON model (Daniel approved keeping current schema); `auto` filter category in sidebar (requires JOIN to `crm_automation_rules`, deferred to next CRM_UX_REDESIGN_AUTOMATION SPEC); WhatsApp dispatch wiring (post-Meta-API SPEC). All findings logged in `modules/Module 4 - CRM/docs/specs/CRM_UX_REDESIGN_TEMPLATES/FINDINGS.md`.
+
+---
+
 ## CRM_PRE_MERGE — Final Micro-task + Integration Ceremony (2026-04-24) ✅
 
 | Hash | Message |
