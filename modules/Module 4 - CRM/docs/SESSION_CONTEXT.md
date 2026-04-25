@@ -1,6 +1,7 @@
 # Module 4 — CRM: Session Context
 
-> **Last updated:** 2026-04-25
+> **Last updated:** 2026-04-25 (end of strategic-chat session — 7 SPECs + 3 inline F1 fixes closed)
+> **Status:** Payment lifecycle trio CLOSED (schema + UI + automation). Module 4 ready for P7 Prizma cutover.
 > **Current phase:** POST-MERGE — CRM is on `main` and live in production
 > **Next:** **Payment-lifecycle trio CLOSED** — SPECs #1 (schema), #2 (UI + parity fix + F1 column fix), #3 (automations) all shipped. Module 4 ready for P7 (Prizma cutover) when Daniel is.
 > **Branch:** develop

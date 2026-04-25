@@ -371,6 +371,66 @@ Step 1.5 DB Pre-Flight — intentionally. Defense in depth.
    "Cross-Reference Check completed 2026-04-14 against GLOBAL_SCHEMA rev X:
    0 collisions / N hits resolved." An empty or missing line = incomplete SPEC.
 
+#### Step 1.5e — File-size pre-flight refresh (MANDATORY, NOT conditional)
+
+For EVERY file mentioned in §3 (Success Criteria) and §8 (Expected Final State),
+the SPEC author MUST run `wc -l` against the live current file at SPEC authoring
+time. Do NOT carry forward line counts from predecessor SPECs even if the file
+"wasn't supposed to change". Other SPECs may have shipped intermediate carve-outs.
+Update §3 criteria + §8 projection table with live counts before dispatching to
+executor.
+
+This is mandatory regardless of whether the file is "tight" (within 30 lines of
+the 350 cap). A file at 295 misreported as 349 is just as confusing to the
+executor as a file at 348 misreported as 344 — in both cases the SPEC's stop
+trigger thresholds become wrong.
+
+**Anti-pattern to avoid:** `'within 5 lines of pre-SPEC (~349)'` style language
+with stale numbers. Replace with: `'currently 295 lines (verified at SPEC author
+time YYYY-MM-DD); within 5 lines after edit'`.
+
+Rationale: this lesson was flagged in 3 consecutive FOREMAN_REVIEWs
+(M4_ATTENDEE_PAYMENT_UI, M4_EVENT_DAY_PARITY_FIX, M4_ATTENDEE_PAYMENT_AUTOMATION
+on 2026-04-25) before being codified here. Per §"Self-Improvement Mandate",
+3 consecutive same-finding triggers a mandatory skill update.
+
+#### Step 1.5f — Criteria-to-§8 sync check (from M4_ATTENDEE_PAYMENT_SCHEMA review)
+
+After §3 (Success Criteria) and §8 (Expected Final State) are both drafted,
+walk each numeric criterion in §3 (e.g., "X new files", "Y commits", "Z lines")
+and verify it matches the corresponding count in §8. If §8 was expanded after
+§3 was drafted (e.g., a new migration file was added), re-sync the criterion.
+A criterion that contradicts §8 is a SPEC bug — the executor will produce the
+§8 thing and report a "failed" criterion that is actually correct work.
+
+#### Step 1.5g — Co-staged file pre-flight (from CRM_UX_REDESIGN_AUTOMATION review)
+
+When the SPEC modifies 2+ existing files in the same commit (per §9), the SPEC
+author MUST inspect the file headers for shared IIFE-local helper names
+(`toast`, `logWrite`, `escapeHtml`, `escape`, `_esc`, `tid`, etc.). If
+duplicates exist, the SPEC must EITHER:
+- (a) authorize a file-prefix rename in the modified file (e.g. `_tplToast`)
+  and document the rename in §8, OR
+- (b) split the work into separate commits in §9.
+
+The `rule-21-orphans` pre-commit hook is IIFE-blind and will block co-staged
+commits with shared helper names regardless of scoping. Catching this at
+SPEC-author time saves the executor a mid-execution debug round-trip.
+
+#### Step 1.5h — Behavioral preservation defaults (from CRM_UX_REDESIGN_AUTOMATION review)
+
+When the SPEC rewrites a save handler, query, or any code that operates on
+existing rows, the rewrite MUST preserve unknown fields in the row's JSON
+columns (`action_config`, `metadata`, `payload`, etc.). Use
+`Object.assign({}, originalConfig, { ...newFields })` over `{ ...newFields }`
+even when you don't know what's in the original. List the JSON columns the
+SPEC touches and which keys the SPEC explicitly knows about — anything outside
+the known set must round-trip unchanged.
+
+In §3 Success Criteria, add a backward-compat check: a baseline row's full JSON
+column hash (md5 or equivalent) must be preserved through open + save without
+changes.
+
 This is the layer that prevents "we got to Module 20 and didn't know which
 fields we'd already used." Skipping it at author time puts the burden on the
 executor's Step 1.5 which may catch it later, but by then the SPEC is already
@@ -492,6 +552,47 @@ If the SPEC closed a module phase, update `MASTER_ROADMAP.md` §3 (Current State
 with a one-line change reflecting the new phase status. If the SPEC added new
 functions/tables/views, merge into `docs/GLOBAL_MAP.md` and
 `docs/GLOBAL_SCHEMA.sql` per the Integration Ceremony checklist.
+
+### Mechanism-level QA verification (from M4_EVENT_DAY_PARITY_FIX review)
+
+Every SPEC §12 QA path that asserts a UI behavior (e.g., "button is disabled
+when X") must also assert that the UNDERLYING mechanism actually executed
+correctly — not just that the surface state happens to match. Specifically:
+
+- If a path asserts "button disabled" or "button enabled", also instruct the
+  QA-runner to inspect the browser console for HTTP errors (4xx/5xx) during
+  the action. A surface success that hides a console 400 is a latent failure.
+- If a path asserts a computed state (e.g., "48h rule fires correctly"), also
+  instruct verification of the input data (DB state, query response) reaching
+  the computation. Permissive-default fallbacks are particularly dangerous
+  because they mask broken upstream queries.
+- If a path uses a backend SELECT, instruct the QA-runner to capture the
+  actual SELECT in the Network tab and verify the response shape matches the
+  code's expectations.
+
+Why this matters: `M4_ATTENDEE_PAYMENT_UI` Path 6 PASSED for the 48h rule
+(button showed correct enable/disable in surface tests), but the underlying
+`event_time` column reference was returning HTTP 400 for 5 commits before
+being caught. The permissive-default fallback hid the failure.
+
+### Path 0 — Baseline reset (mandatory before Path 1)
+
+Every §12 QA Protocol must start with a Path 0 — a one-shot SQL reset to the
+documented pre-SPEC baseline state. This absorbs any verification-side drift
+(e.g., attendees marked paid during a smoke-check that wasn't reset) so
+Path 1's pre-flight assertions reliably hold.
+
+Template:
+```sql
+-- Reset all attendees to documented baseline payment_status distribution.
+-- Edit per-SPEC to match the actual baseline.
+UPDATE crm_event_attendees
+   SET payment_status='pending_payment', paid_at=NULL, ...
+ WHERE tenant_id='<demo>' AND id NOT IN (SELECT id FROM crm_event_attendees WHERE booking_fee_paid=true);
+```
+
+Document the actual reset SQL in the SPEC; the QA-runner runs it then
+proceeds to Path 1.
 
 ---
 
