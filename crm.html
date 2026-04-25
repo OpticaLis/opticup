@@ -181,7 +181,8 @@ tailwind.config = {
         <h2 class="crm-page-title" id="crm-page-title">דשבורד</h2>
         <p class="crm-page-subtitle" id="crm-page-subtitle">סקירה כללית של ביצועי הקמפיינים</p>
       </div>
-      <div id="crm-header-actions">
+      <div id="crm-header-actions" style="display:flex;align-items:center;gap:8px;">
+        <div id="crm-notifications-bell"></div>
         <!-- Tab-specific action buttons injected here by JS -->
       </div>
     </header>
@@ -352,6 +353,7 @@ tailwind.config = {
 <script src="modules/crm/crm-event-register.js"></script>
 <script src="modules/crm/crm-events-tab.js"></script>
 <script src="modules/crm/crm-payment-helpers.js"></script>
+<script src="modules/crm/crm-notifications-bell.js"></script>
 <script src="modules/crm/crm-events-detail.js"></script>
 <script src="modules/crm/crm-events-detail-charts.js"></script>
 <script src="modules/crm/crm-event-day.js"></script>
