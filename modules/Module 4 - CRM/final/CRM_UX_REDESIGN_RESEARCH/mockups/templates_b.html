@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<title>Templates Mockup B — Stacked Accordion</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>body { font-family: 'Heebo', sans-serif; }</style>
+</head>
+<body class="bg-slate-100 p-6">
+
+<div class="max-w-7xl mx-auto">
+  <h1 class="text-2xl font-bold text-slate-800 mb-1">Templates — Mockup B: Stacked Accordion</h1>
+  <p class="text-slate-600 text-sm mb-6">3 סקציות ערוצים אחת מעל השנייה (SMS / WhatsApp / אימייל). פתיחה/סגירה בלחיצה. אפשר לפתוח כמה במקביל. כל סקציה כוללת toggle "ערוץ פעיל" + body + preview משלה.</p>
+
+  <div class="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4">
+
+    <!-- Sidebar (same as mockup A) -->
+    <aside class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col gap-2">
+      <div class="flex gap-1 bg-white rounded-lg p-1 border border-slate-200">
+        <button class="flex-1 px-2 py-1.5 text-xs font-bold text-white bg-indigo-600 rounded-md">הכל</button>
+        <button class="flex-1 px-2 py-1.5 text-xs font-medium text-slate-600 rounded-md">אוטומטי</button>
+        <button class="flex-1 px-2 py-1.5 text-xs font-medium text-slate-600 rounded-md">ידני</button>
+      </div>
+      <input type="search" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="חיפוש...">
+      <button class="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg text-sm">+ תבנית חדשה</button>
+      <div class="flex flex-col gap-2 overflow-y-auto max-h-[480px]">
+        <div class="bg-indigo-50 border-2 border-indigo-500 rounded-lg p-3 cursor-pointer">
+          <div class="flex items-center gap-2 font-bold text-sm text-slate-900">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <span class="truncate">הזמנה לחדשים</span>
+          </div>
+          <div class="flex items-center gap-1.5 text-xs mt-1.5">
+            <span class="bg-sky-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">SMS</span>
+            <span class="bg-amber-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">EMAIL</span>
+          </div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-indigo-300">
+          <div class="font-bold text-sm text-slate-900 truncate">אישור הרשמה לאירוע</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-indigo-300">
+          <div class="font-bold text-sm text-slate-900 truncate">ליד חדש — ברוך הבא</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Editor: stacked accordion of 3 channels -->
+    <main class="space-y-3">
+      <!-- Header bar (template-level meta) -->
+      <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <div class="flex flex-wrap gap-2">
+          <input type="text" value="הזמנה לחדשים" class="flex-1 min-w-[200px] px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold">
+          <select class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-28">
+            <option>עברית</option>
+          </select>
+          <span class="px-3 py-2 text-xs text-slate-500 self-center">slug: event_invite_new</span>
+        </div>
+      </div>
+
+      <!-- SMS section — OPEN -->
+      <div class="bg-white border-2 border-sky-200 rounded-xl overflow-hidden">
+        <div class="bg-sky-50 px-4 py-3 flex items-center justify-between cursor-pointer">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">📱</span>
+            <span class="font-bold text-sky-900">SMS — עברית</span>
+            <label class="inline-flex items-center gap-2 cursor-pointer mr-3">
+              <input type="checkbox" checked class="rounded border-slate-300 text-sky-600">
+              <span class="text-xs text-sky-700 font-semibold">ערוץ פעיל</span>
+            </label>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-500">163 / 480 תווים</span>
+            <span class="text-slate-400">▼</span>
+          </div>
+        </div>
+        <div class="p-4 border-t border-sky-100">
+          <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-t-lg p-1.5 mb-0">
+            <button class="px-2 py-1 text-xs bg-white hover:bg-slate-100 border border-slate-200 rounded">😀</button>
+            <button class="px-2 py-1 text-xs bg-white hover:bg-slate-100 border border-slate-200 rounded">משתנים ▾</button>
+          </div>
+          <textarea rows="4" class="w-full bg-slate-900 text-slate-100 p-3 border-0 font-mono text-sm rounded-b-lg" style="direction:ltr;text-align:start">אופטיקה פריזמה: ברוכים הבאים!
+%name%, בדיוק הצטרפת ויש אירוע פתוח: %event_name%.
+לפרטים: %registration_url%</textarea>
+          <div class="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-3 max-w-md">
+            <div class="text-[10px] text-slate-500 font-semibold mb-1">תצוגה מקדימה</div>
+            <div class="bg-white rounded p-2 text-sm whitespace-pre-wrap">אופטיקה פריזמה: ברוכים הבאים!
+דנה כהן, בדיוק הצטרפת ויש אירוע פתוח: סופר-סייל אוקטובר.
+לפרטים: prizma-optic.co.il/r/...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WhatsApp section — CLOSED + INACTIVE -->
+      <div class="bg-white border border-slate-200 rounded-xl overflow-hidden opacity-60">
+        <div class="px-4 py-3 flex items-center justify-between cursor-pointer">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">💬</span>
+            <span class="font-bold text-slate-700">WhatsApp — עברית</span>
+            <label class="inline-flex items-center gap-2 cursor-pointer mr-3">
+              <input type="checkbox" class="rounded border-slate-300 text-emerald-600">
+              <span class="text-xs text-slate-500 font-semibold">ערוץ לא פעיל — סמן להפעלה</span>
+            </label>
+          </div>
+          <span class="text-slate-400">◀</span>
+        </div>
+      </div>
+
+      <!-- Email section — CLOSED + ACTIVE -->
+      <div class="bg-white border-2 border-amber-200 rounded-xl overflow-hidden">
+        <div class="bg-amber-50 px-4 py-3 flex items-center justify-between cursor-pointer">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">✉️</span>
+            <span class="font-bold text-amber-900">אימייל — עברית</span>
+            <label class="inline-flex items-center gap-2 cursor-pointer mr-3">
+              <input type="checkbox" checked class="rounded border-slate-300 text-amber-600">
+              <span class="text-xs text-amber-700 font-semibold">ערוץ פעיל</span>
+            </label>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-500">12,957 תווים HTML</span>
+            <span class="text-slate-400">◀</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action bar -->
+      <div class="bg-white border border-slate-200 rounded-xl p-4 flex gap-2 justify-end">
+        <button class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-lg text-sm">מחק תבנית</button>
+        <button class="px-4 py-2 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg text-sm">שמור טיוטה</button>
+        <button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm">שמור הכל</button>
+      </div>
+    </main>
+  </div>
+
+  <div class="mt-8 bg-white border border-slate-200 rounded-xl p-4 text-sm text-slate-700">
+    <div class="font-bold text-slate-800 mb-2">איך זה עובד</div>
+    <ul class="list-disc pr-5 space-y-1">
+      <li>3 סקציות ערוץ אחת מעל השנייה. סקציה פעילה (checkbox מסומן) קיבלה צבע ושוליים — לא פעילה אפורה.</li>
+      <li>פתיחת/סגירת סקציה בלחיצה. אפשר לפתוח את כולן יחד אם רוצים.</li>
+      <li>checkbox "ערוץ פעיל" שולט אם השורה תיווצר ב-DB.</li>
+      <li>"שמור הכל" שומר את כל הסקציות הפעילות בבת אחת — שורה אחת ב-<code>crm_message_templates</code> לכל ערוץ פעיל.</li>
+      <li>אם רוצים להוסיף שפה (אנגלית/רוסית) — מוסיפים מעל סקציות נוספות (SMS-en, SMS-ru) באותה שיטה. נדחה לעתיד.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<title>Automation Mockup A — Wizard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>body { font-family: 'Heebo', sans-serif; }</style>
+</head>
+<body class="bg-slate-100 p-6">
+
+<div class="max-w-5xl mx-auto">
+  <h1 class="text-2xl font-bold text-slate-800 mb-1">Automation Rules — Mockup A: Wizard Step-by-Step</h1>
+  <p class="text-slate-600 text-sm mb-6">יצירת/עריכת חוק = wizard 4 שלבים. שלב 1: בחר בורד. שלב 2: תנאי טריגר. שלב 3: למי שולחים. שלב 4: תבנית + ערוצים + סיכום.</p>
+
+  <!-- Rules table (compact summary) -->
+  <div class="bg-white border border-slate-200 rounded-xl mb-4 overflow-hidden">
+    <div class="px-4 py-3 flex items-center justify-between border-b border-slate-200">
+      <h2 class="font-bold text-slate-800">חוקי אוטומציה (13)</h2>
+      <button class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg text-sm">+ חוק חדש</button>
+    </div>
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="px-4 py-2 text-start font-semibold text-slate-700">שם</th>
+          <th class="px-4 py-2 text-start font-semibold text-slate-700">בורד</th>
+          <th class="px-4 py-2 text-start font-semibold text-slate-700">טריגר</th>
+          <th class="px-4 py-2 text-start font-semibold text-slate-700">תבנית</th>
+          <th class="px-4 py-2 text-start font-semibold text-slate-700">ערוצים</th>
+          <th class="px-4 py-2 text-start font-semibold text-slate-700">פעיל</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="border-t border-slate-100">
+          <td class="px-4 py-2.5 font-medium">שינוי סטטוס: נפתחה הרשמה</td>
+          <td class="px-4 py-2.5"><span class="bg-violet-100 text-violet-700 px-2 py-0.5 rounded text-xs font-semibold">📅 אירועים</span></td>
+          <td class="px-4 py-2.5 text-slate-600 text-xs">סטטוס = registration_open</td>
+          <td class="px-4 py-2.5 text-slate-600 text-xs">event_registration_open</td>
+          <td class="px-4 py-2.5"><span class="bg-sky-500 text-white text-[10px] px-1.5 py-0.5 rounded">SMS</span> <span class="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded">EMAIL</span></td>
+          <td class="px-4 py-2.5"><span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-semibold">פעיל</span></td>
+        </tr>
+        <tr class="border-t border-slate-100 bg-slate-50">
+          <td class="px-4 py-2.5 font-medium">ליד חדש: ברוך הבא</td>
+          <td class="px-4 py-2.5"><span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-xs font-semibold">📥 לידים נכנסים</span></td>
+          <td class="px-4 py-2.5 text-slate-600 text-xs">תמיד</td>
+          <td class="px-4 py-2.5 text-slate-600 text-xs">lead_intake_new</td>
+          <td class="px-4 py-2.5"><span class="bg-sky-500 text-white text-[10px] px-1.5 py-0.5 rounded">SMS</span> <span class="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded">EMAIL</span></td>
+          <td class="px-4 py-2.5"><span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-semibold">פעיל</span></td>
+        </tr>
+        <tr class="border-t border-slate-100">
+          <td class="px-4 py-2.5 font-medium">הרשמה: אישור הרשמה</td>
+          <td class="px-4 py-2.5"><span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs font-semibold">✅ נרשמים לאירוע</span></td>
+          <td class="px-4 py-2.5 text-slate-600 text-xs">סטטוס הרשמה = registered</td>
+          <td class="px-4 py-2.5 text-slate-600 text-xs">event_registration_confirmation</td>
+          <td class="px-4 py-2.5"><span class="bg-sky-500 text-white text-[10px] px-1.5 py-0.5 rounded">SMS</span> <span class="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded">EMAIL</span></td>
+          <td class="px-4 py-2.5"><span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-semibold">פעיל</span></td>
+        </tr>
+        <tr class="border-t border-slate-100 bg-slate-50">
+          <td class="px-4 py-2.5 font-medium">שינוי סטטוס ליד: ברוך הבא לרשומים</td>
+          <td class="px-4 py-2.5"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">👥 רשומים</span></td>
+          <td class="px-4 py-2.5 text-slate-600 text-xs">סטטוס = waiting</td>
+          <td class="px-4 py-2.5 text-slate-600 text-xs">lead_intake_new</td>
+          <td class="px-4 py-2.5"><span class="bg-sky-500 text-white text-[10px] px-1.5 py-0.5 rounded">SMS</span> <span class="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded">EMAIL</span></td>
+          <td class="px-4 py-2.5"><span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-semibold">פעיל</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Wizard modal (rendered "open" for the mockup) -->
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden">
+
+    <!-- Header with step progress -->
+    <div class="bg-gradient-to-l from-indigo-600 to-violet-700 text-white px-6 py-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-bold">חוק אוטומציה חדש</h3>
+        <button class="text-white/70 hover:text-white text-xl">×</button>
+      </div>
+      <!-- Step indicator -->
+      <div class="flex items-center gap-2 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-emerald-400 text-white flex items-center justify-center font-bold">✓</span>
+          <span class="font-semibold">בורד</span>
+        </div>
+        <div class="flex-1 h-0.5 bg-emerald-400"></div>
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-white text-indigo-700 flex items-center justify-center font-bold">2</span>
+          <span class="font-semibold">תנאי</span>
+        </div>
+        <div class="flex-1 h-0.5 bg-white/30"></div>
+        <div class="flex items-center gap-2 opacity-60">
+          <span class="w-7 h-7 rounded-full bg-white/30 text-white flex items-center justify-center font-bold">3</span>
+          <span>נמענים</span>
+        </div>
+        <div class="flex-1 h-0.5 bg-white/30"></div>
+        <div class="flex items-center gap-2 opacity-60">
+          <span class="w-7 h-7 rounded-full bg-white/30 text-white flex items-center justify-center font-bold">4</span>
+          <span>תבנית + סיכום</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 content (shown after step 1 chose "אירועים") -->
+    <div class="p-6">
+      <div class="mb-1 text-xs text-slate-500">בורד שנבחר:</div>
+      <div class="mb-4 inline-flex items-center gap-2 bg-violet-100 text-violet-700 px-3 py-1.5 rounded-lg font-semibold text-sm">
+        <span>📅</span><span>אירועים</span>
+        <button class="text-violet-500 hover:text-violet-900 text-xs underline mr-2">שנה</button>
+      </div>
+
+      <h4 class="font-bold text-slate-800 mb-3">מתי החוק יופעל?</h4>
+
+      <div class="space-y-2 mb-4">
+        <label class="flex items-start gap-3 p-3 bg-white border-2 border-indigo-500 bg-indigo-50 rounded-lg cursor-pointer">
+          <input type="radio" name="trigger" checked class="mt-0.5">
+          <div>
+            <div class="font-semibold text-slate-900">סטטוס אירוע משתנה ל-...</div>
+            <div class="text-xs text-slate-600 mt-0.5">החוק יופעל ברגע שמישהו משנה את סטטוס האירוע לערך מסוים (למשל "נפתחה הרשמה").</div>
+          </div>
+        </label>
+        <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-indigo-300">
+          <input type="radio" name="trigger" class="mt-0.5">
+          <div>
+            <div class="font-semibold text-slate-900">ספירת נמענים עוברת סף</div>
+            <div class="text-xs text-slate-600 mt-0.5">למשל: כשמספר הנרשמים לאירוע עובר 100. שימושי להתראות לצוות.</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Conditional fields (shown after radio choice) -->
+      <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+        <label class="block text-sm font-semibold text-slate-700 mb-2">לאיזה סטטוס?</label>
+        <select class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+          <option>נפתחה הרשמה (registration_open)</option>
+          <option>הזמנה לחדשים (invite_new)</option>
+          <option>הזמנה ממתינים (invite_waiting_list)</option>
+          <option>2-3 ימים לפני (2_3d_before)</option>
+          <option>יום האירוע (event_day)</option>
+          <option>אירוע נסגר (closed)</option>
+          <option>אירוע הושלם (completed)</option>
+          <option>נפתח מחר (will_open_tomorrow)</option>
+          <option>רשימת המתנה (waiting_list)</option>
+        </select>
+      </div>
+
+    </div>
+
+    <!-- Footer with navigation -->
+    <div class="bg-slate-50 border-t border-slate-200 px-6 py-3 flex items-center justify-between">
+      <button class="px-4 py-2 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg text-sm">▶ חזרה</button>
+      <span class="text-xs text-slate-500">שלב 2 / 4</span>
+      <button class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm">המשך ◀</button>
+    </div>
+
+  </div>
+
+  <!-- Step 1 reference (shown below for context) -->
+  <div class="mt-8 bg-white border border-slate-200 rounded-xl p-6">
+    <div class="text-xs text-slate-500 font-semibold mb-3">לתזכורת — שלב 1 (בחירת בורד):</div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <button class="bg-orange-50 border-2 border-orange-200 hover:border-orange-400 rounded-xl p-4 text-center transition">
+        <div class="text-3xl mb-2">📥</div>
+        <div class="font-bold text-orange-900">לידים נכנסים</div>
+        <div class="text-xs text-orange-700 mt-1">Tier 1 — לידים חדשים שעוד לא אישרו תקנון</div>
+      </button>
+      <button class="bg-blue-50 border-2 border-blue-200 hover:border-blue-400 rounded-xl p-4 text-center transition">
+        <div class="text-3xl mb-2">👥</div>
+        <div class="font-bold text-blue-900">רשומים</div>
+        <div class="text-xs text-blue-700 mt-1">Tier 2 — לידים פעילים שאישרו תקנון</div>
+      </button>
+      <button class="bg-violet-100 border-2 border-violet-500 rounded-xl p-4 text-center transition shadow-md">
+        <div class="text-3xl mb-2">📅</div>
+        <div class="font-bold text-violet-900">אירועים</div>
+        <div class="text-xs text-violet-700 mt-1">סטטוס אירוע משתנה — שולח לקבוצה רחבה</div>
+      </button>
+      <button class="bg-emerald-50 border-2 border-emerald-200 hover:border-emerald-400 rounded-xl p-4 text-center transition">
+        <div class="text-3xl mb-2">✅</div>
+        <div class="font-bold text-emerald-900">נרשמים לאירוע</div>
+        <div class="text-xs text-emerald-700 mt-1">לקוח רגע נרשם / יצא לרשימת המתנה</div>
+      </button>
+    </div>
+  </div>
+
+  <div class="mt-8 bg-white border border-slate-200 rounded-xl p-4 text-sm text-slate-700">
+    <div class="font-bold text-slate-800 mb-2">איך זה עובד</div>
+    <ul class="list-disc pr-5 space-y-1">
+      <li>שלב 1: בחירת בורד — 4 כרטיסים גדולים, כל אחד צבע משלו וטקסט הסבר.</li>
+      <li>שלב 2: תנאי הטריגר — הרשימה משתנה לפי הבורד שנבחר.</li>
+      <li>שלב 3: נמענים — באירועים זה "כל Tier 2 / חוץ מהנרשמים / רשימת המתנה". בלידים זה "הליד עצמו". וכן הלאה.</li>
+      <li>שלב 4: בחירת תבנית מהרשימה (סינון לפי בורד), בחירת ערוצים, ומסך סיכום: "החוק יישלח SMS+אימייל ל-X לידים בכל פעם ש-Y".</li>
+      <li>אי-אפשר להמשיך לשלב הבא בלי למלא את הקודם — חוסם טעויות.</li>
+      <li>עריכת חוק קיים: אותו wizard, אבל ניתן לקפוץ ישר לשלב כלשהו דרך step indicator (חזרה לאחור).</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
