@@ -59,6 +59,15 @@
     return hoursUntil > 48;
   }
 
+  // Event-end check: true if status closed/completed OR end_time has passed (Israel TZ).
+  function eventEnded(ev) {
+    if (!ev) return false;
+    if (ev.status === 'completed' || ev.status === 'closed') return true;
+    if (!ev.event_date) return false;
+    var endTime = ev.end_time || '23:59:59';
+    return new Date(ev.event_date + 'T' + endTime + '+03:00').getTime() < Date.now();
+  }
+
   function allowedActions(status, eventRow) {
     var refundable = isRefundEligibleByTime(eventRow);
     if (status === 'pending_payment') return refundable ? ['mark_paid', 'mark_refund_requested'] : ['mark_paid'];
@@ -213,7 +222,8 @@
 
   // Open a Modal with the action panel for a single attendee.
   // Fetches attendee + event from DB so callers only need attendee_id.
-  async function openActionModal(attendeeId) {
+  // opts.onAfterAction (optional): fires after every successful action (mark paid/refund/etc.).
+  async function openActionModal(attendeeId, opts) {
     var tid = getTenantId();
     var attRes = await sb.from('crm_event_attendees').select('id, lead_id, event_id, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id').eq('id', attendeeId).eq('tenant_id', tid).single();
     if (attRes.error || !attRes.data) { _toast('error', 'משתתף לא נמצא'); return; }
@@ -225,7 +235,10 @@
     setTimeout(function () {
       var host = document.querySelector('#crm-payment-modal-host');
       if (!host) return;
-      renderActionPanel(host, att, ev, { onUpdate: function () { openActionModal(attendeeId); } });
+      renderActionPanel(host, att, ev, { onUpdate: function () {
+        openActionModal(attendeeId, opts);
+        if (opts && typeof opts.onAfterAction === 'function') opts.onAfterAction();
+      }});
     }, 50);
   }
 
@@ -251,6 +264,7 @@
     markRefunded: markRefunded,
     openCredit: openCredit,
     isRefundEligibleByTime: isRefundEligibleByTime,
+    eventEnded: eventEnded,
     allowedActions: allowedActions,
     STATUS_COLORS: STATUS_COLORS,
     STATUS_LABELS: STATUS_LABELS

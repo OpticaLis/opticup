@@ -109,14 +109,14 @@
   }
   function couponCell(r) {
     if (!r.coupon_sent) return '<button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-coupon="' + escapeHtml(r.id) + '">שלח</button>';
-    return r.checked_in_at
-      ? '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">✓ הגיע</span>'
-      : '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">⚠️ לא הגיע</span>';
+    if (r.checked_in_at) return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">✓ הגיע</span>';
+    var ev = window.getEventDayState().event;
+    if (window.CrmPayment && CrmPayment.eventEnded(ev)) return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">⚠️ לא הגיע</span>';
+    return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">📨 נשלח</span>';
   }
   function feeCell(r) {
     var pill = window.CrmPayment ? CrmPayment.renderStatusPill(r.payment_status) : '';
-    var btn = (r.payment_status === 'paid') ? '' : ' <button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-fee="' + escapeHtml(r.id) + '">סמן שולם</button>';
-    return pill + btn;
+    return '<button type="button" class="text-start hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded" data-pay-attendee-id="' + escapeHtml(r.id) + '">' + pill + '</button>';
   }
 
   function wireRowActions(wrap) {
@@ -127,7 +127,10 @@
       inp.addEventListener('blur', function () { setTimeout(function () { savePurchase(inp); }, 150); });
     });
     wrap.querySelectorAll('[data-toggle-coupon]').forEach(function (b) { b.addEventListener('click', function () { toggleCoupon(b.getAttribute('data-toggle-coupon'), b); }); });
-    wrap.querySelectorAll('[data-toggle-fee]').forEach(function (b) { b.addEventListener('click', function () { toggleFee(b.getAttribute('data-toggle-fee'), b); }); });
+    wrap.querySelectorAll('[data-pay-attendee-id]').forEach(function (b) {
+      var aid = b.getAttribute('data-pay-attendee-id');
+      b.addEventListener('click', function (e) { e.stopPropagation(); if (window.CrmPayment) CrmPayment.openActionModal(aid, { onAfterAction: function () { refreshAttendeeRow(aid); } }); });
+    });
   }
 
   /* ----------------------------------- ARRIVED COLUMN ----------------------------------- */
@@ -321,14 +324,13 @@
     renderTable();
   }
 
-  async function toggleFee(id, btn) {
-    if (btn) { btn.disabled = true; btn.textContent = '...'; }
-    var nowIso = new Date().toISOString();
-    var { error } = await sb.from('crm_event_attendees').update({ payment_status: 'paid', paid_at: nowIso }).eq('id', id).eq('tenant_id', getTenantId());
-    if (error) { toast('error', error.message); if (btn) { btn.disabled = false; btn.textContent = 'שולם'; } return; }
-    logActivity('crm.attendee.fee_paid', id);
-    updateLocal(id, { payment_status: 'paid', paid_at: nowIso });
+  async function refreshAttendeeRow(id) {
+    var state = window.getEventDayState();
+    var res = await sb.from('crm_event_attendees').select('id, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id').eq('id', id).eq('tenant_id', getTenantId()).single();
+    if (res.error || !res.data) return;
+    (state.attendees || []).forEach(function (a) { if (a.id === id) Object.assign(a, res.data); });
     renderTable();
+    if (window.CrmNotificationsBell && CrmNotificationsBell.refresh) CrmNotificationsBell.refresh();
   }
 
   function updateLocal(id, patch) {
