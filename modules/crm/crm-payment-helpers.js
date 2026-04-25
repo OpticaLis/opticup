@@ -45,8 +45,8 @@
     var month = parseInt(String(eventRow.event_date).slice(5, 7), 10);
     var offset = (month >= 3 && month <= 10) ? '+03:00' : '+02:00';
     var startTime = '09:00';
-    if (eventRow.event_time) {
-      var m = String(eventRow.event_time).match(/(\d{1,2}):(\d{2})/);
+    if (eventRow.start_time) {
+      var m = String(eventRow.start_time).match(/(\d{1,2}):(\d{2})/);
       if (m) startTime = m[1].padStart(2, '0') + ':' + m[2];
     }
     return new Date(String(eventRow.event_date).slice(0, 10) + 'T' + startTime + ':00' + offset);
@@ -228,7 +228,7 @@
     var attRes = await sb.from('crm_event_attendees').select('id, lead_id, event_id, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id').eq('id', attendeeId).eq('tenant_id', tid).single();
     if (attRes.error || !attRes.data) { _toast('error', 'משתתף לא נמצא'); return; }
     var att = attRes.data;
-    var evRes = await sb.from('crm_events').select('id, name, event_date, event_time, location_address').eq('id', att.event_id).single();
+    var evRes = await sb.from('crm_events').select('id, name, event_date, start_time, end_time, status, location_address').eq('id', att.event_id).single();
     var ev = evRes.data || {};
     if (!window.Modal || !Modal.show) return;
     var modal = Modal.show({ title: 'ניהול תשלום — משתתף', size: 'md', content: '<div id="crm-payment-modal-host"></div>' });
