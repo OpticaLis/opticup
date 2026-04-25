@@ -34,16 +34,22 @@
     try {
       var data = await fetchDetail(eventId);
       var body = modal.el.querySelector('.modal-body');
-      if (body) {
-        body.innerHTML = renderDetail(data.event, stats, data.attendees);
-        wireSubTabs(body, data.event, stats, data.attendees);
+      function renderAndWire() {
+        if (!body) return;
+        body.innerHTML = renderDetail(data.event, stats, data.attendees); wireSubTabs(body, data.event, stats, data.attendees);
         wireEventDayEntry(modal, body);
         wireStatusChange(modal, body, data.event, stats);
         wireExtraCouponsEdit(modal, body, data.event, data.attendees);
         wireInviteWaitingList(modal, body, data.event);
-        (function(b){ if(b && window.CrmEventEdit) b.addEventListener('click',function(){ CrmEventEdit.open(data.event,function(u){ Object.assign(data.event,u); if(modal.close) modal.close(); }); }); })(body.querySelector('button[data-action="edit-event"]'));
+        var editBtn = body.querySelector('button[data-action="edit-event"]');
+        if (editBtn && window.CrmEventEdit) editBtn.addEventListener('click', function () { CrmEventEdit.open(data.event, function (u) {
+            Object.assign(data.event, u);
+            var ttl = modal.el.querySelector('.modal-title');
+            if (ttl) ttl.textContent = 'אירוע #' + (data.event.event_number || '?') + ' — ' + (data.event.name || '');
+            renderAndWire(); }); });
         if (window.CrmEventSendMessage && CrmEventSendMessage.wire) CrmEventSendMessage.wire(body, data.event, data.attendees);
       }
+      renderAndWire();
     } catch (e) {
       console.error('event detail failed:', e);
       var body2 = modal.el.querySelector('.modal-body');
