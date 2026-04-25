@@ -2,6 +2,27 @@
 
 ---
 
+## M4_EVENT_DAY_PARITY_FIX — Event-day-manage parity + coupon status fix (2026-04-25) ✅
+
+| Hash | Message |
+|------|---------|
+| `65c0a26` | `fix(crm): parity + coupon-status fix on event-day-manage` |
+| _(this commit)_ | `chore(spec): close M4_EVENT_DAY_PARITY_FIX with retrospective` |
+
+Two surgical fixes between SPEC #2 and SPEC #3 of the payment-lifecycle series:
+
+- **Fix A — payment-management parity in event-day-manage.** `feeCell` rewritten: instead of a one-shot "סמן שולם" button it now renders a clickable wrapper around the status pill carrying `data-pay-attendee-id`. Click opens `CrmPayment.openActionModal` (same modal as event-detail), giving full access to the 4-button transition matrix (mark paid / mark refund_requested / mark refunded / open credit). After any action, only the changed attendee row is re-fetched + patched into local state and the table re-renders — no full reload, no jarring jump. Old `toggleFee` function + `[data-toggle-fee]` wireRowActions block removed entirely (Rule 21 cleanup).
+- **Fix B — coupon column 3-state.** `couponCell` was 2-state ("✓ הגיע" if checked-in, "⚠️ לא הגיע" otherwise). Now 4-state: button "שלח" (no coupon yet) → "📨 נשלח" sky pill (coupon sent, event still active) → "✓ הגיע" emerald (checked-in) → "⚠️ לא הגיע" amber (event ended without check-in). "Event ended" via new `CrmPayment.eventEnded(ev)` helper: status='completed'/'closed' OR event_date + end_time past Israel time. Resolves Daniel's friction "שלחתי קופון לדנה כהן ב-16:59:40 והממשק מיד הפך ל-לא הגיע".
+- **Helpers.js extended additively:** `eventEnded()` added (new export); `openActionModal(attendeeId, opts)` extended with optional `opts.onAfterAction` callback to satisfy criterion 11 "table re-renders after action". Backward-compatible — existing single-arg callers unaffected.
+
+**Rule 12:** `crm-event-day-manage.js` 344→346 (within projected 343–349 from §3.1.3); `crm-payment-helpers.js` 258→272 (well under cap).
+
+**No DB schema changes. No automation engine changes. No `crm-events-detail.js` touch.** QA verified all 6 paths on demo (paid + refund_requested + refunded + open_credit chain executed via the new modal; 3-state coupon cell tested on a future event AND a past event with status='registration_open' but past end_time — TEST333). Zero SMS sent during QA — every "ושלח אישור ללקוח" checkbox manually unchecked.
+
+**1 HIGH-severity finding logged (NOT introduced by this SPEC):** `crm-payment-helpers.js` lines 48 + 221 reference non-existent column `event_time` (schema has `start_time`/`end_time`). Causes 10 console 400s per QA pass + silently disables the 48h refund rule. Pre-existing from `M4_ATTENDEE_PAYMENT_UI` commit `f22bc20`. Suggested follow-up SPEC `M4_PAYMENT_HELPERS_COLUMN_FIX`. See `FINDINGS.md` F1.
+
+---
+
 ## M4_ATTENDEE_PAYMENT_UI — Payment lifecycle UI rollout (2026-04-25) ✅
 
 | Hash | Message |
