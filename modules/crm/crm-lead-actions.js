@@ -158,6 +158,7 @@
       if (noteRes.error) throw new Error('lead note insert failed: ' + noteRes.error.message);
     }
     try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.create', entity_type: 'crm_leads', entity_id: ins.data.id, details: { full_name: payload.full_name, phone: payload.phone, source: 'manual' } }); } catch (_) {}
+    if (window.CrmAutomation && CrmAutomation.evaluate) CrmAutomation.evaluate('lead_intake', { leadId: ins.data.id });
     return ins.data;
   }
 
