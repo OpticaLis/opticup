@@ -14,6 +14,8 @@
 
   function getTid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
 
+  function fireLeadStatusAutomation(leadId, newStatus, oldStatus) { if (window.CrmAutomation && CrmAutomation.evaluate) CrmAutomation.evaluate('lead_status_change', { leadId: leadId, newStatus: newStatus, oldStatus: oldStatus }); }
+
   function statusLabel(slug) {
     var info = (CrmHelpers && CrmHelpers.getStatusInfo) ? CrmHelpers.getStatusInfo('lead', slug) : null;
     return (info && info.label) || slug || '';
@@ -50,6 +52,8 @@
     if (noteIns.error) throw new Error('status note insert failed: ' + noteIns.error.message);
 
     try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.status_change', entity_type: 'crm_leads', entity_id: leadId, details: { from: oldStatus, to: newStatus, from_label: statusLabel(oldStatus), to_label: statusLabel(newStatus) } }); } catch (_) {}
+
+    fireLeadStatusAutomation(leadId, newStatus, oldStatus);
 
     if (!opts.silent && window.Toast) Toast.success('סטטוס עודכן: ' + statusLabel(newStatus));
     return { id: leadId, status: newStatus, noteContent: content };
@@ -219,7 +223,7 @@
   async function transferLeadToTier2(leadId) {
     var tenantId = getTid();
     var check = await sb.from('crm_leads')
-      .select('terms_approved')
+      .select('terms_approved, status')
       .eq('id', leadId)
       .eq('tenant_id', tenantId)
       .single();
@@ -228,6 +232,7 @@
       if (window.Toast) Toast.error('לא ניתן להעביר — הליד לא אישר תקנון');
       return { blocked: true, reason: 'terms_not_approved' };
     }
+    var oldStatus = check.data.status;
     var upd = await sb.from('crm_leads')
       .update({ status: 'waiting', updated_at: new Date().toISOString() })
       .eq('id', leadId)
@@ -241,6 +246,7 @@
       content: 'הועבר ל-Tier 2 (אושר)'
     });
     if (noteIns.error) throw new Error('transfer note failed: ' + noteIns.error.message);
+    fireLeadStatusAutomation(leadId, 'waiting', oldStatus);
     return { id: leadId, status: 'waiting' };
   }
 
