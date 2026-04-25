@@ -114,7 +114,7 @@
       : '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">⚠️ לא הגיע</span>';
   }
   function feeCell(r) {
-    return r.booking_fee_paid
+    return (r.payment_status === 'paid')
       ? '<button type="button" class="' + CLS_TOGGLE_ON + '" disabled>✅ שולם</button>'
       : '<button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-fee="' + escapeHtml(r.id) + '">שולם</button>';
   }
@@ -323,10 +323,11 @@
 
   async function toggleFee(id, btn) {
     if (btn) { btn.disabled = true; btn.textContent = '...'; }
-    var { error } = await sb.from('crm_event_attendees').update({ booking_fee_paid: true }).eq('id', id).eq('tenant_id', getTenantId());
+    var nowIso = new Date().toISOString();
+    var { error } = await sb.from('crm_event_attendees').update({ payment_status: 'paid', paid_at: nowIso }).eq('id', id).eq('tenant_id', getTenantId());
     if (error) { toast('error', error.message); if (btn) { btn.disabled = false; btn.textContent = 'שולם'; } return; }
     logActivity('crm.attendee.fee_paid', id);
-    updateLocal(id, { booking_fee_paid: true });
+    updateLocal(id, { payment_status: 'paid', paid_at: nowIso });
     renderTable();
   }
 

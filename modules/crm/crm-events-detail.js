@@ -65,7 +65,7 @@
       .eq('id', eventId).eq('is_deleted', false);
     if (tid) evQ = evQ.eq('tenant_id', tid);
     var attQ = sb.from('v_crm_event_attendees_full')
-      .select('id, lead_id, event_id, full_name, phone, email, status, status_name, status_color, purchase_amount, checked_in_at, registered_at, cancelled_at, coupon_sent, booking_fee_paid, scheduled_time')
+      .select('id, lead_id, event_id, full_name, phone, email, status, status_name, status_color, purchase_amount, checked_in_at, registered_at, cancelled_at, coupon_sent, payment_status, paid_at, scheduled_time')
       .eq('event_id', eventId).eq('is_deleted', false).order('full_name');
     if (tid) attQ = attQ.eq('tenant_id', tid);
     var r = await Promise.all([evQ, attQ]);
@@ -159,7 +159,7 @@
       var rows = noShow.map(function (a) {
         return '<tr><td class="px-3 py-2 text-slate-800">' + escapeHtml(a.full_name || '') + '</td>' +
           '<td class="px-3 py-2 text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</td>' +
-          '<td class="px-3 py-2 text-center">' + (a.booking_fee_paid ? yes : '<span class="text-slate-400">✗</span>') + '</td><td class="px-3 py-2 text-center">' + yes + '</td></tr>';
+          '<td class="px-3 py-2 text-center">' + ((a.payment_status === 'paid') ? yes : '<span class="text-slate-400">✗</span>') + '</td><td class="px-3 py-2 text-center">' + yes + '</td></tr>';
       }).join('');
       nsBlock = '<div class="bg-amber-50 border border-amber-300 rounded-lg p-3 mb-3 text-sm font-semibold text-amber-800">⚠️ ' + noShow.length + ' קיבלו קופון ולא הגיעו</div>' +
         '<div class="overflow-x-auto border border-slate-200 rounded-lg"><table class="w-full text-sm"><thead><tr class="bg-slate-50">' +
@@ -202,7 +202,7 @@
       groups[slug].slice(0, 40).forEach(function (a) {
         var ini = (a.full_name || '?').trim().charAt(0);
         var amount = a.purchase_amount ? ' <span class="text-emerald-600 font-semibold" data-admin-only>' + escapeHtml(CrmHelpers.formatCurrency(a.purchase_amount)) + '</span>' : '';
-        var fee = a.booking_fee_paid ? ' <span class="inline-block text-xs bg-emerald-100 text-emerald-700 font-semibold px-1.5 py-0.5 rounded" title="פיקדון שולם">💰</span>' : '';
+        var fee = (a.payment_status === 'paid') ? ' <span class="inline-block text-xs bg-emerald-100 text-emerald-700 font-semibold px-1.5 py-0.5 rounded" title="פיקדון שולם">💰</span>' : '';
         html += '<div class="' + CLS_ATT_ROW + '">' +
           '<div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold flex items-center justify-center shrink-0">' + escapeHtml(ini) + '</div>' +
           '<div class="flex-1 min-w-0"><div class="font-semibold text-slate-800 text-sm truncate">' + escapeHtml(a.full_name || '') + amount + fee + '</div>' +
