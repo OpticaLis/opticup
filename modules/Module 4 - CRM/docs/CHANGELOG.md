@@ -2,6 +2,34 @@
 
 ---
 
+## M4_ATTENDEE_PAYMENT_UI — Payment lifecycle UI rollout (2026-04-25) ✅
+
+| Hash | Message |
+|------|---------|
+| `aa2c2d2` | `docs(spec): approve M4_ATTENDEE_PAYMENT_UI SPEC for execution` |
+| `f22bc20` | `feat(crm): add CrmPayment helper module (status pills + action panel + transitions)` |
+| `83aafe2` | `feat(crm): add CrmNotificationsBell module + topbar anchor` |
+| `ac2137a` | `feat(crm): add payment status pill column to attendee tables` |
+| `be0d1ed` | `feat(crm): add payment action panel + tier2 credit warning + bell wiring` |
+| _(this commit)_ | `chore(spec): close M4_ATTENDEE_PAYMENT_UI with retrospective` |
+
+**SPEC #2 of 3 in the payment-lifecycle series.** Turns the schema from SPEC #1 into a usable UI:
+
+- **Status pill column** in 3 attendee tables (event detail, event-day-manage, event-day-checkin) showing the 7-status taxonomy as colored pills (sky=pending, emerald=paid, slate=unpaid, amber=refund_requested, gray=refunded, violet=credit_pending, slate-light=credit_used).
+- **Action panel on attendee card** ("ניהול תשלום") with 4 conditional buttons gated by transition matrix + 48h hard rule. The "סמן שולם" button has a paired checkbox "ושלח אישור ללקוח" (default ON) — when checked, marking paid also fires SMS+Email from the `payment_received` template via `CrmMessaging.sendMessage`. **Order is strict:** DB UPDATE first (`payment_status='paid'` + `paid_at=now()`), THEN dispatch — if UPDATE fails, no message goes out.
+- **48h hard rule** — "מגיע החזר" button is disabled when `event_date + event_time` is within 48 hours of now or already passed. Tooltip: "עברו 48 שעות — לא ניתן לבטל ללא אישור מיוחד". No manager-PIN override yet (deferred per Daniel's Q2 simplification). Israel timezone via month-based DST heuristic (Mar-Oct → +03:00, else +02:00).
+- **Notification bell** in `crm.html` topbar showing count of leads with credit_pending attendees expiring in ≤30 days. Click → modal listing leads (color-coded urgency: ≤7d rose, ≤14d amber). Each row clicks through to lead card.
+- **Tier 2 board amber-row highlight** — leads with at-risk credit_pending attendees get `bg-amber-50` row + "💳 קרדיט פג בעוד X ימים" subtitle under their name.
+- **Refund flow** — "מגיע החזר" → status=`refund_requested`. Then 2 sub-buttons: "סמן הוחזר" (→ `refunded`) or "פתח קרדיט עד..." (date picker default = today + 6 months → `credit_pending` + `credit_expires_at`).
+
+**Rule 12 budget management** — all 3 modified existing JS files stayed within Rule 12 hard cap. The tightest file (`crm-events-detail.js`, 349/350) had ZERO net-line growth thanks to the `[data-pay-attendee-id]` delegate pattern absorbed in `CrmPayment._installCardDelegate`. The `crm-event-day-checkin.js` got a pre-emptive helper rename (`logActivity`→`_chkLog`, `updateLocal`→`_chkUpd`) before being co-staged with `crm-event-day-manage.js` — avoiding the rule-21-orphans hook trap documented in the predecessor SPEC's FOREMAN_REVIEW.
+
+**No code changes** to the engine, automation rules, or `transfer_credit_to_new_attendee` RPC. **No DB schema changes.** Legacy 💰 paid-icon retained alongside the new pill in the event-detail attendee cards (per Foreman context note 7 — discretion to keep both).
+
+**SPEC #3 (`M4_ATTENDEE_PAYMENT_AUTOMATION`) unblocked** — UI is in place; automations can now reference the UI's action endpoints. The 2 approved triggers (event_completed → unpaid auto-flip; lead-registers-with-credit → auto-paid via `transfer_credit_to_new_attendee`) are SPEC #3's territory.
+
+---
+
 ## M4_ATTENDEE_PAYMENT_SCHEMA — Payment lifecycle DB foundation (2026-04-25) ✅
 
 | Hash | Message |

@@ -172,6 +172,16 @@
 | `crm_event_attendees` | crm-event-day-manage.js, crm-messaging-broadcast.js | Direct updates (purchase/coupon/payment_status) and lead_id lookup for event filter. **[M4_ATTENDEE_PAYMENT_SCHEMA]** Replaced legacy booking_fee_paid/refunded booleans with payment_status (7-value enum) + 4 timestamps + credit_used_for_attendee_id self-FK. |
 | `crm_statuses` | crm-helpers.js, crm-messaging-broadcast.js | Status labels + colors (31 seed rows), filter dropdown source |
 
+### Payment lifecycle (UI) — added 2026-04-25 by `M4_ATTENDEE_PAYMENT_UI`
+
+Two new modules + edits to 4 existing files turn the schema from SPEC #1 into a usable UI:
+
+- **`modules/crm/crm-payment-helpers.js`** (258 lines) — `window.CrmPayment.{renderStatusPill, renderActionPanel, openActionModal, markPaid, markRefundRequested, markRefunded, openCredit, isRefundEligibleByTime, allowedActions, STATUS_COLORS, STATUS_LABELS}`. Owns: per-status pill rendering (sky/emerald/slate/amber/gray/violet), 7-status transition matrix, Israel-timezone-aware 48h hard rule (DST month-based heuristic), action-panel HTML + wiring with paired "ושלח אישור ללקוח" checkbox, mark_paid flow with strict UPDATE-first-then-dispatch ordering. Auto-installs a document-level click delegate on `[data-pay-attendee-id]` cards that opens an action modal.
+- **`modules/crm/crm-notifications-bell.js`** (130 lines) — `window.CrmNotificationsBell.{render, countExpiring, refresh}`. Bell icon (🔔) in topbar with rounded badge counter. Shows count of unique leads with credit_pending attendees expiring in ≤30 days. Click → modal listing leads (color-coded urgency: ≤7d rose, ≤14d amber, else slate). Click on row → opens lead card via `openCrmLeadDetail`. Auto-renders on DOMContentLoaded into `#crm-notifications-bell` anchor in the page header.
+- **Modified:** `crm-events-detail.js` (no-show table column rename + pill, attendee cards get `data-pay-attendee-id` + cursor-pointer for action-modal trigger), `crm-event-day-manage.js` (column rename + feeCell renders pill + button), `crm-event-day-checkin.js` (pill next to attendee name; helper rename `logActivity`→`_chkLog`, `updateLocal`→`_chkUpd` to avoid co-staging hook collision), `crm-leads-tab.js` (tier 2 rows with at-risk credit get `bg-amber-50` + "💳 קרדיט פג בעוד X ימים" subtitle).
+- **`crm.html`:** 2 script tags added (helper + bell, both above `crm-events-detail.js`); `<div id="crm-notifications-bell">` anchor added inside `#crm-header-actions` topbar.
+- **Engine + automation rules + DB schema untouched.** SPEC #3 (`M4_ATTENDEE_PAYMENT_AUTOMATION`) builds on this UI to add the 2 trigger automations.
+
 ### Payment lifecycle (DB) — added 2026-04-25 by `M4_ATTENDEE_PAYMENT_SCHEMA`
 
 The `crm_event_attendees` table now carries a payment-lifecycle model:
