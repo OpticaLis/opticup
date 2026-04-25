@@ -33,6 +33,21 @@
   // filtering deferred — FINDINGS F-page).
   var SERVER_PAGE = 200;
   var _svrOffset = 0, _svrHasMore = true;
+  // M4_ATTENDEE_PAYMENT_UI: map of lead_id → days_left for tier2 amber row + subtitle.
+  var _atRisk = {};
+  async function loadAtRisk() {
+    var tid = getTenantId();
+    if (!tid) { _atRisk = {}; return; }
+    var horizon = new Date(Date.now() + 30 * 86400000);
+    var res = await sb.from('crm_event_attendees').select('lead_id, credit_expires_at')
+      .eq('tenant_id', tid).eq('payment_status', 'credit_pending').eq('is_deleted', false)
+      .lte('credit_expires_at', horizon.toISOString());
+    var m = {}; (res.data || []).forEach(function (r) {
+      var d = Math.max(0, Math.ceil((new Date(r.credit_expires_at).getTime() - Date.now()) / 86400000));
+      if (m[r.lead_id] === undefined || d < m[r.lead_id]) m[r.lead_id] = d;
+    });
+    _atRisk = m;
+  }
   async function loadLeads(reset) {
     if (reset) { _svrOffset = 0; _svrHasMore = true; }
     if (!_svrHasMore) return [];
@@ -58,6 +73,7 @@
       _loadPromise = (async function () {
         await ensureCrmStatusCache();
         _allLeads = await loadLeads(true);
+        await loadAtRisk();
         if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
         renderAdvancedFilterBar();
         wireEvents();
@@ -238,10 +254,12 @@
       '</tr></thead><tbody>';
     rows.forEach(function (r, idx) {
       var checked = _selectedIds.has(r.id);
-      var rowCls = idx % 2 === 0 ? CLS_ROW_ODD : CLS_ROW_EVEN;
+      var atRiskDays = _atRisk[r.id];
+      var rowCls = (atRiskDays !== undefined) ? 'hover:bg-amber-100 cursor-pointer border-b border-slate-100 transition-colors bg-amber-50' : (idx % 2 === 0 ? CLS_ROW_ODD : CLS_ROW_EVEN);
+      var nameSubtitle = (atRiskDays !== undefined) ? '<div class="text-xs text-amber-700 font-semibold mt-0.5">💳 קרדיט פג בעוד ' + atRiskDays + ' ימים</div>' : '';
       html += '<tr class="' + rowCls + '" data-lead-id="' + escapeHtml(r.id) + '">' +
         '<td class="' + CLS_TD + '"><input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" data-check-lead="' + escapeHtml(r.id) + '"' + (checked ? ' checked' : '') + '></td>' +
-        '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + '</td>' +
+        '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + nameSubtitle + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
         '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('lead', r.status) + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600">' + escapeHtml(r.email || '—') + '</td>' +

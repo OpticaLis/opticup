@@ -203,7 +203,7 @@
         var ini = (a.full_name || '?').trim().charAt(0);
         var amount = a.purchase_amount ? ' <span class="text-emerald-600 font-semibold" data-admin-only>' + escapeHtml(CrmHelpers.formatCurrency(a.purchase_amount)) + '</span>' : '';
         var fee = (window.CrmPayment ? ' ' + CrmPayment.renderStatusPill(a.payment_status) : '') + ((a.payment_status === 'paid') ? ' <span class="inline-block text-xs bg-emerald-100 text-emerald-700 font-semibold px-1.5 py-0.5 rounded" title="פיקדון שולם">💰</span>' : '');
-        html += '<div class="' + CLS_ATT_ROW + '">' +
+        html += '<div class="' + CLS_ATT_ROW + ' cursor-pointer hover:border-indigo-300" data-pay-attendee-id="' + escapeHtml(a.id) + '">' +
           '<div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold flex items-center justify-center shrink-0">' + escapeHtml(ini) + '</div>' +
           '<div class="flex-1 min-w-0"><div class="font-semibold text-slate-800 text-sm truncate">' + escapeHtml(a.full_name || '') + amount + fee + '</div>' +
             '<div class="text-xs text-slate-500 mt-0.5" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div></div>' +

@@ -211,9 +211,41 @@
     return { ok: true };
   }
 
+  // Open a Modal with the action panel for a single attendee.
+  // Fetches attendee + event from DB so callers only need attendee_id.
+  async function openActionModal(attendeeId) {
+    var tid = getTenantId();
+    var attRes = await sb.from('crm_event_attendees').select('id, lead_id, event_id, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id').eq('id', attendeeId).eq('tenant_id', tid).single();
+    if (attRes.error || !attRes.data) { _toast('error', 'משתתף לא נמצא'); return; }
+    var att = attRes.data;
+    var evRes = await sb.from('crm_events').select('id, name, event_date, event_time, location_address').eq('id', att.event_id).single();
+    var ev = evRes.data || {};
+    if (!window.Modal || !Modal.show) return;
+    var modal = Modal.show({ title: 'ניהול תשלום — משתתף', size: 'md', content: '<div id="crm-payment-modal-host"></div>' });
+    setTimeout(function () {
+      var host = document.querySelector('#crm-payment-modal-host');
+      if (!host) return;
+      renderActionPanel(host, att, ev, { onUpdate: function () { openActionModal(attendeeId); } });
+    }, 50);
+  }
+
+  // Install a single document-level click delegate for cards with data-pay-attendee-id.
+  function _installCardDelegate() {
+    if (window.__crmPayCardDelegateInstalled) return;
+    window.__crmPayCardDelegateInstalled = true;
+    document.body.addEventListener('click', function (e) {
+      var card = e.target && e.target.closest && e.target.closest('[data-pay-attendee-id]');
+      if (!card) return;
+      var aid = card.getAttribute('data-pay-attendee-id');
+      if (aid) openActionModal(aid);
+    });
+  }
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _installCardDelegate); } else { _installCardDelegate(); }
+
   window.CrmPayment = {
     renderStatusPill: renderStatusPill,
     renderActionPanel: renderActionPanel,
+    openActionModal: openActionModal,
     markPaid: markPaid,
     markRefundRequested: markRefundRequested,
     markRefunded: markRefunded,
