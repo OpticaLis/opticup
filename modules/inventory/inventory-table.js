@@ -24,9 +24,12 @@ async function loadInventoryPage() {
   // Read filters from DOM
   const search = ($('inv-search')?.value || '').trim().toLowerCase();
   const supplier = $('inv-filter-supplier')?.value || '';
+  const brandId = $('inv-filter-brand')?.value || '';
   const ptype = $('inv-filter-ptype')?.value || '';
+  const btype = $('inv-filter-btype')?.value || '';
   const qtyFilter = $('inv-filter-qty')?.value || '';
-  invCurrentFilters = { search, supplier, ptype, qtyFilter };
+  const wsync = $('inv-filter-sync')?.value || '';
+  invCurrentFilters = { search, supplier, brandId, ptype, btype, qtyFilter, wsync };
 
   try {
     let query = sb.from('inventory')
@@ -38,9 +41,12 @@ async function loadInventoryPage() {
       query = query.in('id', _receiptFilterIds);
     }
     if (supplier) { const suppId = supplierCache[supplier]; if (suppId) query = query.eq('supplier_id', suppId); }
+    if (brandId) query = query.eq('brand_id', brandId);
     if (ptype) query = query.eq('product_type', heToEn('product_type', ptype));
+    if (btype) query = query.eq('brand_type', btype);
     if (qtyFilter === '1') query = query.gt('quantity', 0);
     else if (qtyFilter === '0') query = query.lte('quantity', 0);
+    if (wsync) query = query.eq('website_sync', wsync);
     // No-images filter — parent-level NOT EXISTS via PostgREST empty-embed syntax.
     // Must use the embed name without a column suffix: "inventory_images.id=is.null"
     // would scope to the embed array (returns ALL parents with empty arrays); the
@@ -100,6 +106,13 @@ async function loadInventoryPage() {
     var supplierSel = $('inv-filter-supplier'); var curVal = supplierSel.value;
     supplierSel.innerHTML = '<option value="">הכל</option>' + suppliers.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
     supplierSel.value = curVal;
+    var brandSel = $('inv-filter-brand');
+    if (brandSel) {
+      var brandCurVal = brandSel.value;
+      var brandPairs = Object.entries(brandCacheRev).sort((a, b) => (a[1] || '').localeCompare(b[1] || '', 'he'));
+      brandSel.innerHTML = '<option value="">הכל</option>' + brandPairs.map(([id, name]) => `<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`).join('');
+      brandSel.value = brandCurVal;
+    }
     $('inv-count').textContent = invTotalCount;
     renderInventoryRows(invData);
     updatePaginationUI();

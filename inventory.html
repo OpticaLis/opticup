@@ -190,8 +190,11 @@
     <div class="form-row" style="align-items:flex-end;margin-bottom:12px;gap:8px">
       <div class="form-group" style="max-width:220px"><label>חיפוש חופשי</label><input type="text" id="inv-search" placeholder="ברקוד / מותג / דגם..." oninput="filterInventoryTable()"></div>
       <div class="form-group" style="max-width:160px"><label>ספק</label><select id="inv-filter-supplier" onchange="filterInventoryTable()"><option value="">הכל</option></select></div>
+      <div class="form-group" style="max-width:160px"><label>חברה</label><select id="inv-filter-brand" onchange="filterInventoryTable()"><option value="">הכל</option></select></div>
       <div class="form-group" style="max-width:160px"><label>סוג מוצר</label><select id="inv-filter-ptype" onchange="filterInventoryTable()"><option value="">הכל</option><option value="משקפי ראייה">ראייה</option><option value="משקפי שמש">שמש</option></select></div>
+      <div class="form-group" style="max-width:140px"><label>סוג מותג</label><select id="inv-filter-btype" onchange="filterInventoryTable()"><option value="">הכל</option><option value="luxury">יוקרה</option><option value="brand">מותג</option><option value="regular">רגיל</option></select></div>
       <div class="form-group" style="max-width:100px"><label>כמות</label><select id="inv-filter-qty" onchange="filterInventoryTable()"><option value="">הכל</option><option value="1" selected>במלאי</option><option value="0">אזל</option></select></div>
+      <div class="form-group" style="max-width:140px"><label>סוג סנכרון</label><select id="inv-filter-sync" onchange="filterInventoryTable()"><option value="">הכל</option><option value="full">מלא</option><option value="display">תדמית</option><option value="none">לא</option></select></div>
       <button class="btn btn-sm" id="inv-filter-no-images" onclick="toggleNoImagesFilter()" style="background:#e5e7eb;color:#1e293b;margin-right:4px" title="הצג רק פריטים ללא תמונות">&#128247; ללא תמונות</button>
       <button class="btn btn-sm" id="inv-filter-selected" onclick="toggleSelectedFilter()" style="background:#e5e7eb;color:#1e293b;margin-right:4px;display:none" title="הצג רק פריטים מסומנים">&#9745; רק מסומנים</button>
       <button class="btn btn-p" onclick="loadInventoryTab()">&#128260; רענן</button>
