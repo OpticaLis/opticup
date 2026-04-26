@@ -95,8 +95,8 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 |---|-------|----------|--------|
 | D1 | Brands tab: "סנכרון" column is redundant — simplify to show/hide | MEDIUM | ⬜ |
 | D2 | Brands tab: confusing overlap between "מצב תצוגה" and "תצוגה באתר" — simplify | MEDIUM | ⬜ |
-| D3 | Products tab: "מצב תצוגה" shows wrong value (reads wrong field) | HIGH | ⬜ |
-| D4 | Products tab: display override ("דריסה") changes don't take effect on storefront | HIGH | ⬜ |
+| D3 | Products tab: "מצב תצוגה" shows wrong value (reads wrong field) | HIGH | 🔍 Investigating (Phase A complete, awaiting Foreman decision) |
+| D4 | Products tab: display override ("דריסה") changes don't take effect on storefront | HIGH | 🔍 Investigating (Phase A complete, awaiting Foreman decision) |
 | D5 | Products tab: setting product to "מוסתר" makes it disappear from Studio UI — can't undo | CRITICAL | ✅ Fixed (`D5_HIDDEN_PRODUCT_RECOVERY/`) |
 | D6 | AI Content tab: generation fails with error (missing auth header / no user feedback) | MEDIUM | ⬜ |
 | D7 | Media library: loads very slowly (expensive count queries, ilike on 4 columns, unbatched URLs) | HIGH | ⬜ |
@@ -141,7 +141,7 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 |------|--------|--------|-----------|
 | C1_PERMISSIONS_UPSERT | C1 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(C1)\"` | (in fix commit) |
 | D5_HIDDEN_PRODUCT_RECOVERY | D5 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(D5)\"` | (in fix commit) |
-| TBD | D3, D4 | ⬜ Pending | — |
+| D3_D4_DISPLAY_MODE_RECONCILIATION | D3 + D4 | 🔍 Phase A complete by Claude Code (2026-04-26) — INVESTIGATION_REPORT.md written; awaiting Foreman RECONCILIATION_DECISION.md before Phase B | (Phase A is no-source-change chore commit) |
 | B1_NO_IMAGES_FILTER_SERVER_SIDE | B1 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(B1)\"` | (two-commit pattern: fix + chore-spec) |
 | TBD | B2-B4 | ⬜ Pending | — |
 | TBD | A1-A4 | ⬜ Pending | — |
