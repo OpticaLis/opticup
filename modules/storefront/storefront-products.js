@@ -1,6 +1,6 @@
 // Storefront Product Manager — filter, override modes, bulk select
 // Shows ONLY products sent to website (website_sync = full/display, has images)
-// Updates go to inventory table (storefront_mode_override)
+// Updates go to inventory table (display_mode_override) — canonical pair per RECONCILIATION_DECISION 2026-04-26
 
 let allProducts = [];
 let allBrands = [];
@@ -13,7 +13,7 @@ async function loadStorefrontProducts() {
 
     // Load brands (include exclude_website for filtering)
     const { data: brands, error: brandErr } = await sb.from(T.BRANDS)
-      .select('id, name, storefront_mode, exclude_website')
+      .select('id, name, display_mode, exclude_website')
       .eq('tenant_id', tid)
       .eq('active', true)
       .order('name');
@@ -26,7 +26,7 @@ async function loadStorefrontProducts() {
 
     // Load only products sent to the website (website_sync set + has images)
     const { data: products, error: prodErr } = await sb.from(T.INV)
-      .select('id, barcode, model, color, brand_id, storefront_mode_override, quantity, website_sync, inventory_images!inner(id)')
+      .select('id, barcode, model, color, brand_id, display_mode_override, quantity, website_sync, inventory_images!inner(id)')
       .eq('tenant_id', tid)
       .eq('is_deleted', false)
       .in('website_sync', ['full', 'display'])
@@ -63,8 +63,8 @@ async function loadStorefrontProducts() {
       return {
         ...p,
         brand_name: brand?.name || '—',
-        brand_mode: brand?.storefront_mode || null,
-        resolved_mode: p.storefront_mode_override || brand?.storefront_mode || 'catalog'
+        brand_mode: brand?.display_mode || null,
+        resolved_mode: p.display_mode_override || brand?.display_mode || 'store_all'
       };
     });
 
@@ -126,7 +126,7 @@ function renderProductsTable(products) {
 
   for (const p of products) {
     const brandModeLabel = p.brand_mode ? modeLabels[p.brand_mode] : 'קטלוג (ברירת מחדל)';
-    const overrideVal = p.storefront_mode_override || '';
+    const overrideVal = p.display_mode_override || '';
     const resolvedLabel = modeLabels[p.resolved_mode] || 'קטלוג';
     const resolvedClass = modeTags[p.resolved_mode] || 'resolved-catalog';
     const checked = selectedIds.has(p.id) ? 'checked' : '';
@@ -194,7 +194,7 @@ async function changeProductMode(selectEl) {
 
   try {
     const { error } = await sb.from(T.INV)
-      .update({ storefront_mode_override: newMode })
+      .update({ display_mode_override: newMode })
       .eq('id', productId)
       .eq('tenant_id', getTenantId());
 
@@ -203,8 +203,8 @@ async function changeProductMode(selectEl) {
     // Update local data
     const prod = allProducts.find(p => p.id === productId);
     if (prod) {
-      prod.storefront_mode_override = newMode;
-      prod.resolved_mode = newMode || prod.brand_mode || 'catalog';
+      prod.display_mode_override = newMode;
+      prod.resolved_mode = newMode || prod.brand_mode || 'store_all';
     }
 
     toast('מצב תצוגה עודכן', 's');
@@ -229,7 +229,7 @@ async function applyBulkMode() {
     for (let i = 0; i < ids.length; i += chunkSize) {
       const chunk = ids.slice(i, i + chunkSize);
       const { error } = await sb.from(T.INV)
-        .update({ storefront_mode_override: newMode })
+        .update({ display_mode_override: newMode })
         .in('id', chunk)
         .eq('tenant_id', getTenantId());
 
@@ -240,8 +240,8 @@ async function applyBulkMode() {
     for (const id of ids) {
       const prod = allProducts.find(p => p.id === id);
       if (prod) {
-        prod.storefront_mode_override = newMode;
-        prod.resolved_mode = newMode || prod.brand_mode || 'catalog';
+        prod.display_mode_override = newMode;
+        prod.resolved_mode = newMode || prod.brand_mode || 'store_all';
       }
     }
 
