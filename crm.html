@@ -104,6 +104,13 @@ tailwind.config = {
         <span>אירועים</span>
       </button>
 
+      <button class="crm-nav-item" data-tab="campaigns" onclick="showCrmTab('campaigns')">
+        <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 14l4-4 4 4 5-7"/>
+        </svg>
+        <span>קמפיינים</span>
+      </button>
+
       <button class="crm-nav-item" data-tab="messaging" onclick="showCrmTab('messaging')">
         <svg class="crm-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round"
@@ -279,6 +286,9 @@ tailwind.config = {
         </div>
       </section>
 
+      <!-- ========== TAB: CAMPAIGNS (M4_CAMPAIGNS_SCREEN) ========== -->
+      <section id="tab-campaigns" class="crm-tab"></section>
+
       <!-- ========== TAB 5: MESSAGING HUB ========== -->
       <section id="tab-messaging" class="crm-tab">
         <div id="crm-messaging-body" class="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4 items-start">
@@ -359,6 +369,9 @@ tailwind.config = {
 <script src="modules/crm/crm-notifications-bell.js"></script>
 <script src="modules/crm/crm-events-detail.js"></script>
 <script src="modules/crm/crm-events-detail-charts.js"></script>
+<script src="modules/crm/crm-campaigns.js"></script>
+<script src="modules/crm/crm-campaigns-detail.js"></script>
+<script src="modules/crm/crm-unit-economics-modal.js"></script>
 <script src="modules/crm/crm-event-day.js"></script>
 <script src="modules/crm/crm-event-day-checkin.js"></script>
 <script src="modules/crm/crm-event-day-manage.js"></script>
