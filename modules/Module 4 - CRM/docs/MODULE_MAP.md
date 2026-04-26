@@ -1,6 +1,6 @@
 # Module 4 — CRM: Module Map
 
-> **Last updated:** 2026-04-24 (CRM_PRE_MERGE — Integration Ceremony)
+> **Last updated:** 2026-04-26 (M4_CAMPAIGNS_CLEANUP — campaigns sequence closed; make-patterns/ doc directory added)
 
 ---
 
@@ -73,6 +73,11 @@
 | `campaigns/supersale/scripts/import-monday-data.mjs` | Monday xlsx parser | B2 |
 | `campaigns/supersale/scripts/rest-import.mjs` | PostgREST bulk import runner | B2 |
 | `campaigns/supersale/DATA_DISCOVERY_REPORT.md` | Analysis of 9 Monday export boards | B1 |
+
+### Make integration patterns
+| File | Purpose | Phase |
+|------|---------|-------|
+| `docs/make-patterns/README.md` | Make → Optic Up Edge Function integration pattern. Documents the V1/V2/V3 trap journey and the iteration pattern that landed (1 HTTP POST per item, `mapper.data` not `mapper.body`, no array references). Reference for future Make → EF SPECs. | M4_CAMPAIGNS_MAKE_BODY_FIX_V3 |
 
 ---
 
