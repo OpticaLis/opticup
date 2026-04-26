@@ -29,7 +29,7 @@ const DEFAULT_LANGUAGE = "he";
 // queue/retry tests cannot send real SMS to strangers. Layer 2 is the queue
 // gate in dispatch-queue EF; layer 3 is the CRM UI guard. Remove after P7
 // cutover and replace with a tenant-level test_mode flag.
-const ALLOWED_PHONES = ["0537889878", "0503348349"];
+const ALLOWED_PHONES = ["0537889878", "0503348349", "0507168471"];
 function normalizePhone(p: string): string {
   const d = p.replace(/[\s+\-]/g, "");
   return d.startsWith("972") ? "0" + d.slice(3) : d;

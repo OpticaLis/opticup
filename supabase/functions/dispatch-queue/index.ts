@@ -16,7 +16,7 @@ const SEND_MESSAGE_URL = `${SUPABASE_URL}/functions/v1/send-message`;
 
 // Allowlist layer 2 — same list as send-message. Any queue row for a phone
 // not in this list is marked rejected without a send-message call.
-const ALLOWED_PHONES = ["0537889878", "0503348349"];
+const ALLOWED_PHONES = ["0537889878", "0503348349", "0507168471"];
 function normalizePhone(p: string): string {
   const d = p.replace(/[\s+\-]/g, "");
   return d.startsWith("972") ? "0" + d.slice(3) : d;
