@@ -168,7 +168,7 @@ function validateOCRData(data) {
     results.push({ field: 'total_amount', level: 'error', msg: 'סכום שלילי' });
   }
   // Unusual VAT
-  if (vatRate != null && Number(vatRate) !== 17 && Number(vatRate) !== 0) {
+  if (vatRate != null && Number(vatRate) !== 18 && Number(vatRate) !== 0) {
     results.push({ field: 'vat_rate', level: 'warning', msg: 'שיעור מע"מ חריג' });
   }
   // Missing supplier
