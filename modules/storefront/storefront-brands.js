@@ -62,17 +62,17 @@ function renderBrandsTable(brands, countMap) {
     return;
   }
 
-  const modeLabel = { catalog: 'קטלוג', shop: 'חנות', hidden: 'מוסתר' };
-  const modeClass = { catalog: 'mode-catalog', shop: 'mode-shop', hidden: 'mode-hidden' };
-
+  // D1+D2 simplification: 5 columns (was 6). Removed redundant סנכרון column.
+  // Old "מצב תצוגה" (NEW pair / changeBrandMode) and "תצוגה באתר" (LEGACY pair /
+  // changeBrandDisplayMode) collapsed into: a show/hide toggle (exclude_website)
+  // + a single display_mode dropdown (LEGACY pair, post-D3+D4 canonical).
   let html = `<table class="brands-table">
     <thead>
       <tr>
         <th>מותג</th>
         <th>מוצרים</th>
-        <th>סנכרון</th>
-        <th>מצב תצוגה</th>
         <th>תצוגה באתר</th>
+        <th>מצב תצוגה</th>
         <th>עמוד מותג</th>
       </tr>
     </thead>
@@ -80,34 +80,29 @@ function renderBrandsTable(brands, countMap) {
 
   for (const b of brands) {
     const count = countMap[b.id] || 0;
-    const currentMode = b.storefront_mode || '';
-    const currentDisplay = b.display_mode || 'store_all';
-    const syncLabel = b.exclude_website ? '🚫 מוסתר' :
-      b.default_sync === 'full' ? '✅ מלא' :
-      b.default_sync === 'display' ? '🖼️ תצוגה' : '—';
+    const isVisible = !b.exclude_website;
+    const currentDisplay = b.display_mode || '';
     const pageActive = b.brand_page_enabled === true;
 
     html += `<tr>
       <td style="font-weight:600">${escapeHtml(b.name)}</td>
       <td><span class="badge-count">${count}</span></td>
-      <td style="font-size:.85rem">${syncLabel}</td>
       <td>
-        <select class="mode-select" data-brand-id="${b.id}" onchange="changeBrandMode(this)">
-          <option value="" ${!currentMode ? 'selected' : ''}>— ברירת מחדל (קטלוג)</option>
-          <option value="catalog" ${currentMode === 'catalog' ? 'selected' : ''}>📋 קטלוג</option>
-          <option value="shop" ${currentMode === 'shop' ? 'selected' : ''}>🛒 חנות</option>
-          <option value="hidden" ${currentMode === 'hidden' ? 'selected' : ''}>🚫 מוסתר</option>
+        <button class="btn-toggle ${isVisible ? 'on' : 'off'}" data-brand-id="${escapeHtml(b.id)}" onclick="changeBrandVisibility(this)" title="${isVisible ? 'מותג גלוי באתר — לחץ להסתרה' : 'מותג מוסתר — לחץ להצגה'}" style="padding:4px 10px;border:1px solid ${isVisible ? '#10b981' : '#dc2626'};background:${isVisible ? '#d1fae5' : '#fee2e2'};color:${isVisible ? '#059669' : '#dc2626'};border-radius:6px;cursor:pointer;font-weight:600">
+          ${isVisible ? '✅ גלוי' : '🚫 מוסתר'}
+        </button>
+      </td>
+      <td>
+        <select class="mode-select" data-brand-id="${escapeHtml(b.id)}" onchange="changeBrandDisplayMode(this)">
+          <option value="" ${!currentDisplay ? 'selected' : ''}>— ברירת מחדל</option>
+          <option value="catalog" ${currentDisplay === 'catalog' ? 'selected' : ''}>📋 קטלוג</option>
+          <option value="store_all" ${currentDisplay === 'store_all' ? 'selected' : ''}>🛒 חנות (הכל כולל אזל)</option>
+          <option value="store" ${currentDisplay === 'store' ? 'selected' : ''}>🏪 חנות (במלאי בלבד)</option>
+          <option value="hidden" ${currentDisplay === 'hidden' ? 'selected' : ''}>🚫 מוסתר</option>
         </select>
       </td>
       <td>
-        <select class="mode-select" data-brand-id="${b.id}" onchange="changeBrandDisplayMode(this)">
-          <option value="catalog" ${currentDisplay === 'catalog' ? 'selected' : ''}>קטלוג - כל הדגמים (להזמנה)</option>
-          <option value="store_all" ${currentDisplay === 'store_all' ? 'selected' : ''}>חנות - הכל כולל אזל</option>
-          <option value="store" ${currentDisplay === 'store' ? 'selected' : ''}>חנות - במלאי בלבד</option>
-        </select>
-      </td>
-      <td>
-        <button class="btn-page ${pageActive ? 'active' : ''}" onclick="openBrandPageModal('${b.id}')">
+        <button class="btn-page ${pageActive ? 'active' : ''}" onclick="openBrandPageModal('${escapeHtml(b.id)}')">
           ${pageActive ? '✅ פעיל' : '📄 ערוך'}
         </button>
       </td>
@@ -124,21 +119,50 @@ function renderBrandsTable(brands, countMap) {
 
 async function changeBrandDisplayMode(selectEl) {
   const brandId = selectEl.dataset.brandId;
-  const newMode = selectEl.value;
+  const newMode = selectEl.value || null;  // empty option → null (clear brand-level default)
   try {
     const { error } = await sb.from(T.BRANDS)
       .update({ display_mode: newMode })
       .eq('id', brandId)
       .eq('tenant_id', getTenantId());
     if (error) throw error;
-    const label = { catalog: 'קטלוג', store_all: 'חנות (כולל אזל)', store: 'חנות (במלאי בלבד)' }[newMode];
-    toast(`תצוגה באתר עודכנה ל: ${label}`, 's');
+    const label = newMode
+      ? { catalog: 'קטלוג', store_all: 'חנות (כולל אזל)', store: 'חנות (במלאי בלבד)', hidden: 'מוסתר' }[newMode] || newMode
+      : 'ברירת מחדל';
+    toast(`מצב תצוגה עודכן ל: ${label}`, 's');
   } catch (e) {
     console.error('changeBrandDisplayMode error:', e);
-    toast('שגיאה בעדכון תצוגה', 'e');
+    toast('שגיאה בעדכון מצב תצוגה', 'e');
   }
 }
 
+// D1+D2 — show/hide toggle for brand visibility on storefront.
+// Writes brands.exclude_website (true = hidden from public view, false = visible).
+async function changeBrandVisibility(btn) {
+  const brandId = btn.dataset.brandId;
+  const currentlyVisible = btn.classList.contains('on');
+  const newExclude = currentlyVisible;  // toggling: visible → excluded
+  try {
+    const { error } = await sb.from(T.BRANDS)
+      .update({ exclude_website: newExclude })
+      .eq('id', brandId)
+      .eq('tenant_id', getTenantId());
+    if (error) throw error;
+    toast(newExclude ? 'מותג הוסתר מהאתר' : 'מותג הוצג באתר', 's');
+    // Reload — toggling exclude_website affects which brands appear in this filtered list.
+    loadStorefrontBrands();
+  } catch (e) {
+    console.error('changeBrandVisibility error:', e);
+    toast('שגיאה בשינוי תצוגה', 'e');
+  }
+}
+
+// DEAD-CODE CANDIDATE — no UI binds to this after D1+D2 (T4) collapsed the
+// Brands tab columns. Writes the deprecated NEW pair (storefront_mode) which
+// will be dropped in D3+D4 Phase B-3/B-4 follow-up SPEC. Kept here per the
+// activation prompt's "keep the existing change-handlers" guidance; the
+// queued housekeeping SPEC (B1_DEAD_CODE_MAPPING.md "Out-of-scope housekeeping")
+// will remove this function and the storefront_mode column together.
 async function changeBrandMode(selectEl) {
   const brandId = selectEl.dataset.brandId;
   const newMode = selectEl.value || null;

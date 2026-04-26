@@ -93,8 +93,8 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| D1 | Brands tab: "סנכרון" column is redundant — simplify to show/hide | MEDIUM | ⬜ |
-| D2 | Brands tab: confusing overlap between "מצב תצוגה" and "תצוגה באתר" — simplify | MEDIUM | ⬜ |
+| D1 | Brands tab: "סנכרון" column is redundant — simplify to show/hide | MEDIUM | ✅ Fixed (`D1_D2_BRANDS_TAB_UX/`) |
+| D2 | Brands tab: confusing overlap between "מצב תצוגה" and "תצוגה באתר" — simplify | MEDIUM | ✅ Fixed (`D1_D2_BRANDS_TAB_UX/`) |
 | D3 | Products tab: "מצב תצוגה" shows wrong value (reads wrong field) | HIGH | ✅ Fixed by B-2 (`D3_D4_DISPLAY_MODE_RECONCILIATION/`); B-3 view + B-4 DDL deferred to follow-up SPEC |
 | D4 | Products tab: display override ("דריסה") changes don't take effect on storefront | HIGH | ✅ Fixed by B-2 + dropdown values normalized in `D4_FOLLOWUP_VALUE_NORMALIZATION/`; B-3 view + B-4 DDL deferred to follow-up SPEC |
 | D5 | Products tab: setting product to "מוסתר" makes it disappear from Studio UI — can't undo | CRITICAL | ✅ Fixed (`D5_HIDDEN_PRODUCT_RECOVERY/`) |
