@@ -19,6 +19,7 @@
     if (name === 'incoming' && typeof loadCrmIncomingTab === 'function') loadCrmIncomingTab();
     if (name === 'leads' && typeof loadCrmLeadsTab === 'function') loadCrmLeadsTab();
     if (name === 'events' && typeof loadCrmEventsTab === 'function') loadCrmEventsTab();
+    if (name === 'campaigns' && typeof loadCrmCampaignsTab === 'function') loadCrmCampaignsTab();
     if (name === 'event-day' && typeof loadCrmEventDay === 'function') loadCrmEventDay();
     if (name === 'messaging' && typeof loadCrmMessagingTab === 'function') loadCrmMessagingTab();
     if (name === 'activity-log' && typeof renderActivityLog === 'function') {

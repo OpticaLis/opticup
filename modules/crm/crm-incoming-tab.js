@@ -21,20 +21,28 @@
   var CLS_ROW_ODD     = 'hover:bg-indigo-50/40 cursor-pointer border-b border-slate-100 transition-colors bg-white';
   var CLS_ROW_EVEN    = 'hover:bg-indigo-50/40 cursor-pointer border-b border-slate-100 transition-colors bg-slate-50/60';
 
-  async function loadIncomingLeads() {
+  // OVERNIGHT_M4_SCALE_AND_UI Phase 10: server-side pagination + server-side
+  // tier1 status filter via .in(). 200 rows per page; "Load more" appends.
+  var SERVER_PAGE = 200;
+  var _svrOffset = 0, _svrHasMore = true;
+  async function loadIncomingLeads(reset) {
+    if (reset) { _svrOffset = 0; _svrHasMore = true; }
+    if (!_svrHasMore) return [];
     var tid = getTenantId();
+    var tier1Statuses = (typeof TIER1_STATUSES !== 'undefined') ? TIER1_STATUSES : [];
     var q = sb.from('v_crm_leads_with_tags')
       .select('id, full_name, phone, email, city, language, status, source, client_notes, terms_approved, marketing_consent, unsubscribed_at, created_at, updated_at, tag_names, tag_colors, utm_source, utm_medium, utm_campaign, utm_content, utm_term, monday_item_id')
       .eq('is_deleted', false);
     if (tid) q = q.eq('tenant_id', tid);
-    q = q.order('created_at', { ascending: false });
-    var res = await q;
+    if (tier1Statuses.length) q = q.in('status', tier1Statuses);
+    var res = await q.order('created_at', { ascending: false }).range(_svrOffset, _svrOffset + SERVER_PAGE - 1);
     if (res.error) throw new Error('Incoming leads load failed: ' + res.error.message);
-    var tier1Statuses = (typeof TIER1_STATUSES !== 'undefined') ? TIER1_STATUSES : [];
-    return (res.data || []).filter(function (r) {
-      return tier1Statuses.indexOf(r.status) !== -1;
-    });
+    var rows = res.data || [];
+    _svrOffset += rows.length;
+    if (rows.length < SERVER_PAGE) _svrHasMore = false;
+    return rows;
   }
+  function hasMoreServer() { return _svrHasMore; }
 
   async function loadCrmIncomingTab() {
     var wrap = document.getElementById('crm-incoming-table-wrap');
@@ -43,7 +51,7 @@
       wrap.innerHTML = '<div class="text-center text-slate-400 py-8">טוען לידים נכנסים...</div>';
       _loadPromise = (async function () {
         await ensureCrmStatusCache();
-        _allLeads = await loadIncomingLeads();
+        _allLeads = await loadIncomingLeads(true);
         if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
         renderIncomingAdvancedBar();
         wireIncomingEvents();
@@ -236,12 +244,19 @@
   }
 
   async function reloadCrmIncomingTab() {
-    _allLeads = await loadIncomingLeads();
+    _allLeads = await loadIncomingLeads(true);
     if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
     renderIncomingAdvancedBar();
     applyIncomingFilters();
   }
   window.reloadCrmIncomingTab = reloadCrmIncomingTab;
+  window.loadMoreCrmIncoming = async function () {
+    var more = await loadIncomingLeads(false);
+    _allLeads = _allLeads.concat(more);
+    applyIncomingFilters();
+    return { loaded: more.length, hasMore: hasMoreServer() };
+  };
+  window.CrmIncomingServerPaging = { hasMore: hasMoreServer };
 
   window.getCrmIncomingLeadById = function (id) {
     return _allLeads.find(function (r) { return r.id === id; }) || null;

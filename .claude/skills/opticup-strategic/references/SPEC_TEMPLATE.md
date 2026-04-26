@@ -38,6 +38,11 @@ possible. If a criterion is not measurable, the SPEC is not ready.
 | 3 | New files | X new files at paths [...] | `ls {paths}` → exit 0 |
 | 4 | DB row count for Prizma brands | 232 | Supabase MCP execute_sql |
 | 5 | Storefront build | passes, 0 errors | `npm run build` → exit 0 |
+| 6 | Integrity Gate (Iron Rule 31) | exit 0 or 2 (no null-byte ERROR) | `npm run verify:integrity; echo $?` → `0` or `2` |
+
+**Every SPEC must include an Integrity Gate criterion** (Iron Rule 31). A SPEC
+whose execution ends with a null-byte ERROR in HEAD is not closed — it is open
+until the corruption is cleared. Reference: `scripts/verify-tree-integrity.mjs`.
 
 ---
 
@@ -137,3 +142,17 @@ closing, not just accumulating.
 
 - FROM `PHASE_B/FOREMAN_REVIEW.md` → "always pin package versions" → APPLIED in §8.
 - FROM `PRE_LAUNCH_HARDENING/FOREMAN_REVIEW.md` → "run image regression check before view changes" → NOT APPLICABLE (no view changes here).
+
+---
+
+## 12. Pre-Merge Checklist
+
+Every SPEC must pass these items before the executor closes it. Any item
+failing → SPEC is REOPEN, not CLOSED.
+
+- [ ] All §3 success criteria pass with actual values captured in EXECUTION_REPORT.md §2.
+- [ ] **Integrity Gate (Iron Rule 31):** `npm run verify:integrity` returns exit 0 or 2. A null-byte ERROR (exit 1) anywhere in HEAD blocks closure.
+- [ ] `git status --short` returns empty (clean tree).
+- [ ] HEAD pushed to `origin/develop`.
+- [ ] EXECUTION_REPORT.md + FINDINGS.md written in the SPEC folder.
+- [ ] Module ROADMAP / SESSION_CONTEXT / CHANGELOG updated if applicable.

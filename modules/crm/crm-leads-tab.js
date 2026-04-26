@@ -27,17 +27,43 @@
   var CLS_PAGE_BTN    = 'px-3 py-1.5 rounded-md border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed';
   var CLS_PAGE_ACTIVE = 'px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-semibold';
 
-  async function loadLeads() {
+  // OVERNIGHT_M4_SCALE_AND_UI Phase 10: server-side pagination via .range().
+  // Initial slice 200; "Load more" appends next 200. Client filter/sort still
+  // operates on the loaded slice for MVP (criterion 10.4 full-server-side
+  // filtering deferred — FINDINGS F-page).
+  var SERVER_PAGE = 200;
+  var _svrOffset = 0, _svrHasMore = true;
+  // M4_ATTENDEE_PAYMENT_UI: map of lead_id → days_left for tier2 amber row + subtitle.
+  var _atRisk = {};
+  async function loadAtRisk() {
+    var tid = getTenantId();
+    if (!tid) { _atRisk = {}; return; }
+    var horizon = new Date(Date.now() + 30 * 86400000);
+    var res = await sb.from('crm_event_attendees').select('lead_id, credit_expires_at')
+      .eq('tenant_id', tid).eq('payment_status', 'credit_pending').eq('is_deleted', false)
+      .lte('credit_expires_at', horizon.toISOString());
+    var m = {}; (res.data || []).forEach(function (r) {
+      var d = Math.max(0, Math.ceil((new Date(r.credit_expires_at).getTime() - Date.now()) / 86400000));
+      if (m[r.lead_id] === undefined || d < m[r.lead_id]) m[r.lead_id] = d;
+    });
+    _atRisk = m;
+  }
+  async function loadLeads(reset) {
+    if (reset) { _svrOffset = 0; _svrHasMore = true; }
+    if (!_svrHasMore) return [];
     var tid = getTenantId();
     var q = sb.from('v_crm_leads_with_tags')
       .select('id, full_name, phone, email, city, language, status, source, client_notes, terms_approved, marketing_consent, unsubscribed_at, created_at, updated_at, tag_names, tag_colors, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_campaign_id, monday_item_id')
       .eq('is_deleted', false);
     if (tid) q = q.eq('tenant_id', tid);
-    q = q.order('full_name');
-    var res = await q;
+    var res = await q.order('full_name').range(_svrOffset, _svrOffset + SERVER_PAGE - 1);
     if (res.error) throw new Error('Leads load failed: ' + res.error.message);
-    return res.data || [];
+    var rows = res.data || [];
+    _svrOffset += rows.length;
+    if (rows.length < SERVER_PAGE) _svrHasMore = false;
+    return rows;
   }
+  function leadsHasMoreSrv() { return _svrHasMore; }
 
   async function loadCrmLeadsTab() {
     var wrap = document.getElementById('crm-leads-table-wrap');
@@ -46,7 +72,8 @@
       wrap.innerHTML = '<div class="text-center text-slate-400 py-8">טוען לידים...</div>';
       _loadPromise = (async function () {
         await ensureCrmStatusCache();
-        _allLeads = await loadLeads();
+        _allLeads = await loadLeads(true);
+        await loadAtRisk();
         if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
         renderAdvancedFilterBar();
         wireEvents();
@@ -190,12 +217,19 @@
   }
 
   async function reloadCrmLeadsTab() {
-    _allLeads = await loadLeads();
+    _allLeads = await loadLeads(true);
     if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
     renderAdvancedFilterBar();
     applyFiltersAndRender();
   }
   window.reloadCrmLeadsTab = reloadCrmLeadsTab;
+  window.loadMoreCrmLeads = async function () {
+    var more = await loadLeads(false);
+    _allLeads = _allLeads.concat(more);
+    applyFiltersAndRender();
+    return { loaded: more.length, hasMore: leadsHasMoreSrv() };
+  };
+  window.CrmLeadsServerPaging = { hasMore: leadsHasMoreSrv };
 
   // ---- Table ----
   function renderLeadsTable() {
@@ -220,10 +254,12 @@
       '</tr></thead><tbody>';
     rows.forEach(function (r, idx) {
       var checked = _selectedIds.has(r.id);
-      var rowCls = idx % 2 === 0 ? CLS_ROW_ODD : CLS_ROW_EVEN;
+      var atRiskDays = _atRisk[r.id];
+      var rowCls = (atRiskDays !== undefined) ? 'hover:bg-amber-100 cursor-pointer border-b border-slate-100 transition-colors bg-amber-50' : (idx % 2 === 0 ? CLS_ROW_ODD : CLS_ROW_EVEN);
+      var nameSubtitle = (atRiskDays !== undefined) ? '<div class="text-xs text-amber-700 font-semibold mt-0.5">💳 קרדיט פג בעוד ' + atRiskDays + ' ימים</div>' : '';
       html += '<tr class="' + rowCls + '" data-lead-id="' + escapeHtml(r.id) + '">' +
         '<td class="' + CLS_TD + '"><input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" data-check-lead="' + escapeHtml(r.id) + '"' + (checked ? ' checked' : '') + '></td>' +
-        '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + '</td>' +
+        '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + nameSubtitle + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
         '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('lead', r.status) + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600">' + escapeHtml(r.email || '—') + '</td>' +
@@ -281,8 +317,11 @@
       prev = p;
     });
     html += '<button class="' + CLS_PAGE_BTN + '" ' + (_currentPage === totalPages ? 'disabled' : '') + ' data-page="next">‹</button>';
-    html += '<span class="text-sm text-slate-500 ms-2">עמוד ' + _currentPage + ' מתוך ' + totalPages + ' · סה״כ ' + total + '</span>';
+    html += '<span class="text-sm text-slate-500 ms-2">עמוד ' + _currentPage + ' מתוך ' + totalPages + ' · סה״כ טעון ' + total + '</span>';
+    if (leadsHasMoreSrv()) html += '<button type="button" class="' + CLS_PAGE_BTN + ' ms-2" id="load-more-leads">⬇ טען עוד מהשרת</button>';
     box.innerHTML = html;
+    var moreBtn = box.querySelector('#load-more-leads');
+    if (moreBtn) moreBtn.addEventListener('click', async function () { moreBtn.disabled = true; moreBtn.textContent = 'טוען...'; await window.loadMoreCrmLeads(); });
     box.querySelectorAll('button[data-page]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var v = btn.getAttribute('data-page');

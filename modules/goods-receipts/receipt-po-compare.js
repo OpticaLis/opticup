@@ -1,5 +1,4 @@
 // receipt-po-compare.js — PO comparison report (Phase 8 Step 4b)
-// --- 1. Build comparison report ---
 async function _poCompBuildReport(receiptItems, poId) {
   var poItems = await fetchAll('purchase_order_items', [['po_id', 'eq', poId]]);
   var _poSupplierId = null;
@@ -340,7 +339,7 @@ async function _poCompLearnPricePattern(decisions, receiptItems, supplierId) {
   if (invoiceCount < priceItems.length * 0.7) return;
   try {
     var { data: tenant } = await sb.from(T.TENANTS).select('vat_rate').eq('id', getTenantId()).single();
-    var vatRate = (tenant && tenant.vat_rate) ? Number(tenant.vat_rate) / 100 : 0.17;
+    var vatRate = (tenant && tenant.vat_rate) ? Number(tenant.vat_rate) / 100 : getVatRate() / 100;
     var templates = await fetchAll(T.OCR_TEMPLATES, [['supplier_id', 'eq', supplierId]]);
     if (!templates.length) return;
     var hints = templates[0].extraction_hints || {};

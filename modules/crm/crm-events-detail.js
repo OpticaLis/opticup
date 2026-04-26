@@ -34,15 +34,22 @@
     try {
       var data = await fetchDetail(eventId);
       var body = modal.el.querySelector('.modal-body');
-      if (body) {
-        body.innerHTML = renderDetail(data.event, stats, data.attendees);
-        wireSubTabs(body, data.event, stats, data.attendees);
-        wireEventDayEntry(modal, body);
-        wireStatusChange(modal, body, data.event, stats);
-        wireExtraCouponsEdit(modal, body, data.event, data.attendees);
-        wireInviteWaitingList(modal, body, data.event);
+      function renderAndWire() {
+        if (!body) return;
+        var pst = body.querySelector('button[data-event-subtab].text-indigo-600'); var prevSubTab = pst ? pst.getAttribute('data-event-subtab') : null;
+        body.innerHTML = renderDetail(data.event, stats, data.attendees); wireSubTabs(body, data.event, stats, data.attendees);
+        wireEventDayEntry(modal, body); wireStatusChange(modal, body, data.event, stats);
+        wireExtraCouponsEdit(modal, body, data.event, data.attendees); wireInviteWaitingList(modal, body, data.event);
+        var editBtn = body.querySelector('button[data-action="edit-event"]');
+        if (editBtn && window.CrmEventEdit) editBtn.addEventListener('click', function () { CrmEventEdit.open(data.event, function (u) {
+            Object.assign(data.event, u);
+            var ttl = modal.el.querySelector('.modal-title'); if (ttl) ttl.textContent = 'אירוע #' + (data.event.event_number || '?') + ' — ' + (data.event.name || '');
+            renderAndWire();
+            if (typeof window.reloadCrmEventsTab === 'function') reloadCrmEventsTab(); }); });
         if (window.CrmEventSendMessage && CrmEventSendMessage.wire) CrmEventSendMessage.wire(body, data.event, data.attendees);
+        if (prevSubTab && prevSubTab !== 'attendees') { var rb = body.querySelector('button[data-event-subtab="' + prevSubTab + '"]'); if (rb) rb.click(); }
       }
+      renderAndWire();
     } catch (e) {
       console.error('event detail failed:', e);
       var body2 = modal.el.querySelector('.modal-body');
@@ -58,7 +65,7 @@
       .eq('id', eventId).eq('is_deleted', false);
     if (tid) evQ = evQ.eq('tenant_id', tid);
     var attQ = sb.from('v_crm_event_attendees_full')
-      .select('id, lead_id, event_id, full_name, phone, email, status, status_name, status_color, purchase_amount, checked_in_at, registered_at, cancelled_at, coupon_sent, booking_fee_paid, scheduled_time')
+      .select('id, lead_id, event_id, full_name, phone, email, status, status_name, status_color, purchase_amount, checked_in_at, registered_at, cancelled_at, coupon_sent, payment_status, paid_at, scheduled_time')
       .eq('event_id', eventId).eq('is_deleted', false).order('full_name');
     if (tid) attQ = attQ.eq('tenant_id', tid);
     var r = await Promise.all([evQ, attQ]);
@@ -87,14 +94,13 @@
       '<div class="flex flex-wrap gap-2 mt-4">' +
         '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="send-message">שלח הודעה</button>' +
         '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="change-status">שנה סטטוס</button>' +
+        '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="edit-event">✏️ ערוך פרטים</button>' +
         '<button type="button" class="' + CLS_HEAD_BTN + '">ייצוא Excel</button>' +
         '<button type="button" class="' + CLS_HEAD_BTN + '" data-action="edit-extra-coupons">➕ הגדר קופונים נוספים</button>' +
         (hasWaitingList
-          ? '<button type="button" class="' + CLS_HEAD_BTN + ' bg-sky-500/90 hover:bg-sky-500" data-action="invite-waiting-list">📩 שלח הזמנה לרשימת המתנה</button>'
+          ? '<button type="button" class="' + CLS_HEAD_BTN + ' bg-sky-500/90 hover:bg-sky-500" data-action="invite-waiting-list">📩 הזמן סופית את רשימת הממתינים</button>'
           : '') +
-        (event.status === 'registration_open' || event.status === 'completed'
-          ? '<button type="button" class="' + CLS_HEAD_BTN + ' bg-amber-500/90 hover:bg-amber-500" data-event-day-id="' + escapeHtml(event.id) + '">מצב יום אירוע</button>'
-          : '') +
+        '<button type="button" class="' + CLS_HEAD_BTN + ' bg-amber-500/90 hover:bg-amber-500" data-event-day-id="' + escapeHtml(event.id) + '">מצב יום אירוע</button>' +
       '</div>' +
       '<div class="' + CLS_INFO_GRID + '">' +
         '<div class="bg-white/10 rounded-lg px-3 py-2"><span class="opacity-80">📅 תאריך:</span> ' + escapeHtml(CrmHelpers.formatDate(event.event_date)) + ' ' + escapeHtml(timeRange) + '</div>' +
@@ -105,17 +111,9 @@
     '</div>';
 
     if (stats) h += renderCapacityBar(stats, event.max_capacity);
-    h += renderCouponFunnel(attendees);
-    h += '<div id="crm-event-detail-kpis"></div>';
-    h += '<div id="crm-event-detail-funnel" data-admin-only></div>';
-
-    var subTabBtns = SUB_TABS.map(function (t, i) {
-      return '<button type="button" class="' + (i === 0 ? CLS_SUBTAB_ACT : CLS_SUBTAB) + '" data-event-subtab="' + t.key + '">' + escapeHtml(t.label) + '</button>';
-    }).join('');
-    h += '<div class="' + CLS_SUBTAB_BAR + '">' + subTabBtns + '</div>' +
-      '<div id="crm-event-detail-subbody">' + renderSubTab('attendees', attendees, stats) + '</div>';
-
-    return h;
+    h += renderCouponFunnel(attendees) + '<div id="crm-event-detail-kpis"></div><div id="crm-event-detail-funnel" data-admin-only></div>';
+    var subTabBtns = SUB_TABS.map(function (t, i) { return '<button type="button" class="' + (i === 0 ? CLS_SUBTAB_ACT : CLS_SUBTAB) + '" data-event-subtab="' + t.key + '">' + escapeHtml(t.label) + '</button>'; }).join('');
+    return h + '<div class="' + CLS_SUBTAB_BAR + '">' + subTabBtns + '</div><div id="crm-event-detail-subbody">' + renderSubTab('attendees', attendees, stats) + '</div>';
   }
 
   function renderCapacityBar(stats, maxCapacity) {
@@ -161,11 +159,11 @@
       var rows = noShow.map(function (a) {
         return '<tr><td class="px-3 py-2 text-slate-800">' + escapeHtml(a.full_name || '') + '</td>' +
           '<td class="px-3 py-2 text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</td>' +
-          '<td class="px-3 py-2 text-center">' + (a.booking_fee_paid ? yes : '<span class="text-slate-400">✗</span>') + '</td><td class="px-3 py-2 text-center">' + yes + '</td></tr>';
+          '<td class="px-3 py-2 text-center">' + (window.CrmPayment ? CrmPayment.renderStatusPill(a.payment_status) : '—') + '</td><td class="px-3 py-2 text-center">' + yes + '</td></tr>';
       }).join('');
       nsBlock = '<div class="bg-amber-50 border border-amber-300 rounded-lg p-3 mb-3 text-sm font-semibold text-amber-800">⚠️ ' + noShow.length + ' קיבלו קופון ולא הגיעו</div>' +
         '<div class="overflow-x-auto border border-slate-200 rounded-lg"><table class="w-full text-sm"><thead><tr class="bg-slate-50">' +
-        '<th class="' + th + ' text-start">שם</th><th class="' + th + ' text-start">טלפון</th><th class="' + th + ' text-center">פיקדון</th><th class="' + th + ' text-center">קופון</th>' +
+        '<th class="' + th + ' text-start">שם</th><th class="' + th + ' text-start">טלפון</th><th class="' + th + ' text-center">תשלום</th><th class="' + th + ' text-center">קופון</th>' +
         '</tr></thead><tbody class="divide-y divide-slate-100">' + rows + '</tbody></table></div>';
     }
     return '<details class="bg-white border border-slate-200 rounded-xl mb-4 overflow-hidden"><summary class="flex items-center justify-between px-4 py-3 cursor-pointer font-semibold text-slate-800 hover:bg-slate-50 select-none" style="list-style:none">' +
@@ -204,8 +202,8 @@
       groups[slug].slice(0, 40).forEach(function (a) {
         var ini = (a.full_name || '?').trim().charAt(0);
         var amount = a.purchase_amount ? ' <span class="text-emerald-600 font-semibold" data-admin-only>' + escapeHtml(CrmHelpers.formatCurrency(a.purchase_amount)) + '</span>' : '';
-        var fee = a.booking_fee_paid ? ' <span class="inline-block text-xs bg-emerald-100 text-emerald-700 font-semibold px-1.5 py-0.5 rounded" title="פיקדון שולם">💰</span>' : '';
-        html += '<div class="' + CLS_ATT_ROW + '">' +
+        var fee = (window.CrmPayment ? ' ' + CrmPayment.renderStatusPill(a.payment_status) : '') + ((a.payment_status === 'paid') ? ' <span class="inline-block text-xs bg-emerald-100 text-emerald-700 font-semibold px-1.5 py-0.5 rounded" title="פיקדון שולם">💰</span>' : '');
+        html += '<div class="' + CLS_ATT_ROW + ' cursor-pointer hover:border-indigo-300" data-pay-attendee-id="' + escapeHtml(a.id) + '">' +
           '<div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold flex items-center justify-center shrink-0">' + escapeHtml(ini) + '</div>' +
           '<div class="flex-1 min-w-0"><div class="font-semibold text-slate-800 text-sm truncate">' + escapeHtml(a.full_name || '') + amount + fee + '</div>' +
             '<div class="text-xs text-slate-500 mt-0.5" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div></div>' +
@@ -323,23 +321,29 @@
   function wireInviteWaitingList(modal, body, event) {
     var btn = body.querySelector('button[data-action="invite-waiting-list"]');
     if (!btn || !window.CrmEventActions) return;
-    btn.addEventListener('click', async function () {
-      if (!window.confirm('לשלוח הזמנה לכל הרשומים ברשימת ההמתנה?')) return;
-      btn.disabled = true;
-      var original = btn.textContent;
-      btn.textContent = 'שולח...';
-      try {
-        await CrmEventActions.changeEventStatus(event.id, 'invite_waiting_list');
-        event.status = 'invite_waiting_list';
-        var info = CrmHelpers.getStatusInfo('event', 'invite_waiting_list');
-        var badge = body.querySelector('[data-role="event-status-badge"]');
-        if (badge && info) badge.textContent = info.label;
-        if (window.Toast) Toast.success('הזמנות נשלחו לרשימת ההמתנה');
-      } catch (e) {
-        if (window.Toast) Toast.error('שגיאה: ' + (e.message || String(e)));
-        btn.disabled = false;
-        btn.textContent = original;
-      }
+    btn.addEventListener('click', function () {
+      if (typeof Modal === 'undefined' || typeof Modal.confirm !== 'function') return;
+      Modal.confirm({
+        title: 'הזמן סופית את רשימת הממתינים',
+        message: 'תישלח הזמנת הצטרפות לכל מי שכרגע ברשימת ההמתנה של האירוע. להמשיך?',
+        confirmText: 'שלח הזמנה',
+        onConfirm: async function () {
+          var original = btn.textContent;
+          btn.disabled = true; btn.textContent = 'שולח...';
+          try {
+            await CrmEventActions.changeEventStatus(event.id, 'invite_waiting_list');
+            event.status = 'invite_waiting_list';
+            var info = CrmHelpers.getStatusInfo('event', 'invite_waiting_list');
+            var badge = body.querySelector('[data-role="event-status-badge"]');
+            if (badge && info) badge.textContent = info.label;
+            if (window.Toast) Toast.success('הזמנות נשלחו לרשימת ההמתנה');
+          } catch (e) {
+            if (window.Toast) Toast.error('שגיאה: ' + (e.message || String(e)));
+            btn.disabled = false; btn.textContent = original;
+          }
+        }
+      });
     });
   }
+
 })();

@@ -44,7 +44,7 @@
       return { ok: false, error: 'sb_not_ready' };
     }
 
-    var tenantId = (typeof getTenantId === 'function') ? getTenantId() : null;
+    var tenantId = typeof getTenantId === 'function' ? getTenantId() : null;
     if (!tenantId) return { ok: false, error: 'no_tenant' };
 
     if (!opts.leadId) return { ok: false, error: 'lead_id_required' };
@@ -63,6 +63,7 @@
       tenant_id: tenantId,
       lead_id: opts.leadId,
       event_id: opts.eventId || null,
+      run_id: opts.runId || null,
       channel: channel,
       variables: opts.variables || {},
       language: opts.language || 'he'

@@ -142,7 +142,7 @@ async function _createCreditNoteForReturn(ret, returnId, empId, uploadedFile) {
     }, 0);
     if (subtotal <= 0) subtotal = 0.01; // avoid zero
 
-    var vatRate = getTenantConfig('vat_rate') || 17;
+    var vatRate = getVatRate();
     var vatAmount = Math.round(subtotal * vatRate) / 100;
     var totalAmount = subtotal + vatAmount;
 

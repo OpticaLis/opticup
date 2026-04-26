@@ -83,7 +83,7 @@ async function editDocument(docId) {
         '<label>\u05EA\u05D0\u05E8\u05D9\u05DA \u05DE\u05E1\u05DE\u05DA<input type="date" id="ed-date" class="nd-field" value="' + (doc.document_date || '') + '"></label>' +
         '<label>\u05EA\u05D0\u05E8\u05D9\u05DA \u05EA\u05E9\u05DC\u05D5\u05DD<input type="date" id="ed-due" class="nd-field" value="' + (doc.due_date || '') + '"></label>' +
         '<label>\u05E1\u05DB\u05D5\u05DD \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DE<input type="number" id="ed-subtotal" step="0.01" class="nd-field" value="' + (Number(doc.subtotal) || 0) + '" oninput="_editDocCalc()"></label>' +
-        '<label>% \u05DE\u05E2"\u05DE<input type="number" id="ed-vat-rate" step="0.01" class="nd-field" value="' + (Number(doc.vat_rate) || 17) + '" oninput="_editDocCalc()"></label>' +
+        '<label>% \u05DE\u05E2"\u05DE<input type="number" id="ed-vat-rate" step="0.01" class="nd-field" value="' + (Number(doc.vat_rate) || getVatRate()) + '" oninput="_editDocCalc()"></label>' +
         '<label>\u05DE\u05E2"\u05DE<input type="number" id="ed-vat" class="nd-field" value="' + (Number(doc.vat_amount) || 0).toFixed(2) + '" readonly style="background:var(--g100)"></label>' +
         '<label>\u05E1\u05D4"\u05DB<input type="number" id="ed-total" class="nd-field" value="' + (Number(doc.total_amount) || 0).toFixed(2) + '" readonly style="background:var(--g100)"></label>' +
         (doc.goods_receipt_id ? '<div style="font-size:.78rem;color:#92400e;grid-column:1/-1">\u26A0\uFE0F \u05E9\u05D9\u05E0\u05D5\u05D9 \u05E1\u05DB\u05D5\u05DD \u05E2\u05DC \u05DE\u05E1\u05DE\u05DA \u05DE\u05E7\u05D1\u05DC\u05EA \u05E1\u05D7\u05D5\u05E8\u05D4</div>' : '') +

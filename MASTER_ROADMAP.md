@@ -1,6 +1,6 @@
 # Optic Up — Master Roadmap
 
-> **Last reconciled:** 2026-04-18 (DNS Switch Preflight Audit — GO verdict)
+> **Last reconciled:** 2026-04-26 (Module 4 campaigns measurement pipeline operational on demo)
 >
 > This document is the canonical **build sequence**, **decision log**, and
 > **known-debt register** for the Optic Up platform.
@@ -38,7 +38,7 @@ backend with RLS-based tenant isolation.
 | 2 | Platform Admin | ✅ Complete (v2.0) | opticup | Super-admin control plane: tenant provisioning, plans/limits/features, audit log, PIN reset, suspend/activate/delete. 4 phases. 5 tables + tenants extension. |
 | 3 | Storefront | 🟢 DNS SWITCH EXECUTED (2026-04-18) — propagation pending | opticup-storefront | Public storefront: CMS pages, campaigns, blog, AI content, translations (he/en/ru), media library, lead forms, brand pages, SEO. All phases complete. develop→main merged. DNS switched from DreamVPS to Vercel. 25 tables. |
 | 3.1 | Project Reconstruction | ✅ Complete | opticup | Meta-module: foundation doc rewrites, DB audit baseline, roadmap reconciliation. Does not own code — owns documentation accuracy. 3A/3B/3C/3D all complete. |
-| 4 | CRM | 🟡 Go-Live (P3c+P4 CLOSED — 2026-04-22) | opticup | Customer management — replaces Monday.com for leads. 23 tables, 7 views, 8 RPCs, 46 RLS policies. Phases A–B9 complete + merged to main. Go-Live P1–P3c+P4 closed: lead intake, lead management, event management, manual lead entry with pending_terms gate, Make message dispatcher (P3b superseded by P3c+P4), and the full messaging pipeline rebuild — `send-message` Edge Function + Make reduced to send-only pipe + lead-intake trigger wiring. P5–P7 remaining. |
+| 4 | CRM | 🟡 Go-Live (Campaigns Measurement OPERATIONAL on demo — 2026-04-26) | opticup | Customer management — replaces Monday.com for leads. 23 tables, 7 views, 8 RPCs, 46 RLS policies. Phases A–B9 complete + merged to main. Go-Live P1–P3c+P4 closed (lead intake, lead management, event management, messaging pipeline). Campaigns Measurement screen + Make → Supabase Facebook sync pipeline OPERATIONAL on demo (`M4_CAMPAIGNS_*` 5-SPEC sequence closed 2026-04-26 — see `modules/Module 4 - CRM/docs/make-patterns/README.md` for the iteration pattern). Payment-lifecycle trio CLOSED. P5–P7 remaining + P7 historical import for prizma. |
 | 5–22 | Future modules | ⬜ Not started | — | Orders, prescriptions, payments, lab/KDS, lenses, branches, WhatsApp, reports, supplier portal, content hub, B2B network, AI support, WooCommerce sync, POS. |
 
 **Detailed per-module scope** lives in each module's `README.md` and `MODULE_SPEC.md`
@@ -154,6 +154,7 @@ without explicit strategic-chat approval.
 | Apr 2026 | Bounded Autonomy execution model | Claude Code executes approved plans end-to-end, stopping only on deviation from stated success criteria (CLAUDE.md §9) |
 | Apr 2026 | Cowork→Claude Code handoff pattern | Cowork (strategic role) gathers evidence + writes SPEC + activation prompt; Claude Code (executor role) commits backlog + executes SPEC end-to-end; Cowork writes Foreman Review after. Proven in P1/P2a/P2b — to be documented in opticup-strategic SKILL.md. |
 | Apr 2026 | Module repo split after P7 Go-Live | Monorepo blocks parallel work (only one Claude Code session at a time on `develop`). After P7, split each module into its own repo. `shared.js` → shared package (git submodule or npm). Supabase stays as one project (tables already module-scoped). Enables 3-4 parallel Claude Code sessions + SaaS product packaging per module. |
+| 2026-04-26 | Make → Optic Up EF integration pattern: iteration over batched-array | After 3 architectural attempts (V1 CreateJSON, V2 mapper.data + array, V3 iteration pivot), confirmed that Make's array-to-JSON serialization is unreliable in raw HTTP bodies. Canonical pattern: 1 HTTP POST per item, flat-object body in `mapper.data` (never `mapper.body`), simple `{{N.field}}` substitutions only. Documented at `modules/Module 4 - CRM/docs/make-patterns/README.md`. Trade ~10× HTTP ops for predictable behavior + partial-failure isolation. Reference scenario: Make `9126542` (Facebook Campaigns → Optic Up CRM). |
 | Apr 2026 | DB audit: hybrid approach (option ג) | optic_readonly Postgres role created for future automation; Phase 3A baseline collected manually via Supabase SQL Editor. Automated run-audit.mjs deferred to Module 3 Phase B preamble. |
 | Apr 2026 | Parallel execution of 3A / 3B / 3C | Pre-approved by Daniel. All three sub-phases have disjoint file scopes. Commits interleave on develop — cosmetically ugly, functionally correct. |
 | Apr 2026 | Cancelled Claude API for translations | Translation now manual: Studio export → external chat → import. Claude API remains active only for content generation, logo normalization, Module 1 scan tracking. |

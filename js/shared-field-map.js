@@ -125,7 +125,7 @@ const FIELD_MAP = {
     'תאריך רישום':'registered_at','תאריך אישור':'confirmed_at',
     'שעת כניסה':'checked_in_at','תאריך רכישה':'purchased_at',
     'תאריך ביטול':'cancelled_at','סכום רכישה':'purchase_amount',
-    'שולם דמי הזמנה':'booking_fee_paid','הוחזר דמי הזמנה':'booking_fee_refunded',
+    'סטטוס תשלום':'payment_status','תאריך תשלום':'paid_at',
     'נשלח קופון':'coupon_sent','שעה מתוזמנת':'scheduled_time',
     'דרושה בדיקת ראייה':'eye_exam_needed','הערות לקוח':'client_notes'
   }

@@ -161,7 +161,7 @@
   }
 
   async function writePendingReviewRows(plan) {
-    var tenantId = (typeof getTenantId === 'function') ? getTenantId() : null;
+    var tenantId = typeof getTenantId === 'function' ? getTenantId() : null;
     if (!tenantId) return { ok: false, error: 'no_tenant' };
     var rows = plan.map(function (it) {
       return {
@@ -183,19 +183,26 @@
     var calls = plan.map(function (it) {
       return CrmMessaging.sendMessage({
         leadId: it.lead_id, channel: it.channel, templateSlug: it.template_slug,
-        variables: it.variables || {}, eventId: it.event_id || undefined, language: it.language || 'he'
+        variables: it.variables || {}, eventId: it.event_id || undefined, language: it.language || 'he', runId: it.run_id || undefined
       });
     });
     var results = await Promise.allSettled(calls);
-    var sent = 0, failed = 0;
-    results.forEach(function (r) { if (r.status === 'fulfilled' && r.value && r.value.ok) sent++; else failed++; });
-    // CRM_HOTFIXES Fix 2: promote tier-2 leads 'waiting' → 'invited' after
-    // successful event-scoped sends via the automation-engine helper.
-    if (window.CrmAutomation && typeof CrmAutomation.promoteWaitingLeadsToInvited === 'function') {
-      try { await CrmAutomation.promoteWaitingLeadsToInvited(plan, results); }
+    var sent = 0, failed = 0, rejected = 0;
+    var runId = (plan[0] && plan[0].run_id) || null;
+    results.forEach(function (r, i) {
+      var v = r.status === 'fulfilled' ? r.value : null;
+      var ok = v && v.ok;
+      if (ok) sent++;
+      else if (v && v.error === 'phone_not_allowed') rejected++;
+      else failed++;
+      if (ok && runId && v.logId && window.CrmAutomationRuns) CrmAutomationRuns.stampLog(v.logId, runId);
+    });
+    if (window.CrmAutomationPostActions && typeof CrmAutomationPostActions.promoteWaitingLeadsToInvited === 'function') {
+      try { await CrmAutomationPostActions.promoteWaitingLeadsToInvited(plan, results); }
       catch (e) { console.error('promoteWaitingLeadsToInvited:', e); }
     }
-    return { sent: sent, failed: failed };
+    if (runId && window.CrmAutomationRuns) await CrmAutomationRuns.finishRun(runId, 'completed');
+    return { sent: sent, failed: failed, rejected: rejected };
   }
 
   async function show(sendPlan) {
@@ -241,8 +248,9 @@
       var r = await approveAndSend(sendPlan);
       if (typeof modal.close === 'function') modal.close();
       if (window.Toast) {
-        if (r.failed === 0) Toast.success('נשלחו ' + r.sent + ' הודעות');
-        else Toast.warning('נשלחו ' + r.sent + ', ' + r.failed + ' נכשלו');
+        var msg = 'נשלחו ' + r.sent + ', נכשלו ' + r.failed + ', נדחו ' + (r.rejected || 0);
+        if (r.failed === 0 && (r.rejected || 0) === 0) Toast.success(msg);
+        else Toast.warning(msg);
       }
     });
 

@@ -14,6 +14,8 @@
 
   function getTid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
 
+  function fireLeadStatusAutomation(leadId, newStatus, oldStatus) { if (window.CrmAutomation && CrmAutomation.evaluate) CrmAutomation.evaluate('lead_status_change', { leadId: leadId, newStatus: newStatus, oldStatus: oldStatus }); }
+
   function statusLabel(slug) {
     var info = (CrmHelpers && CrmHelpers.getStatusInfo) ? CrmHelpers.getStatusInfo('lead', slug) : null;
     return (info && info.label) || slug || '';
@@ -50,6 +52,8 @@
     if (noteIns.error) throw new Error('status note insert failed: ' + noteIns.error.message);
 
     try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.status_change', entity_type: 'crm_leads', entity_id: leadId, details: { from: oldStatus, to: newStatus, from_label: statusLabel(oldStatus), to_label: statusLabel(newStatus) } }); } catch (_) {}
+
+    fireLeadStatusAutomation(leadId, newStatus, oldStatus);
 
     if (!opts.silent && window.Toast) Toast.success('סטטוס עודכן: ' + statusLabel(newStatus));
     return { id: leadId, status: newStatus, noteContent: content };
@@ -154,6 +158,7 @@
       if (noteRes.error) throw new Error('lead note insert failed: ' + noteRes.error.message);
     }
     try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.create', entity_type: 'crm_leads', entity_id: ins.data.id, details: { full_name: payload.full_name, phone: payload.phone, source: 'manual' } }); } catch (_) {}
+    if (window.CrmAutomation && CrmAutomation.evaluate) CrmAutomation.evaluate('lead_intake', { leadId: ins.data.id });
     return ins.data;
   }
 
@@ -219,7 +224,7 @@
   async function transferLeadToTier2(leadId) {
     var tenantId = getTid();
     var check = await sb.from('crm_leads')
-      .select('terms_approved')
+      .select('terms_approved, status')
       .eq('id', leadId)
       .eq('tenant_id', tenantId)
       .single();
@@ -228,6 +233,7 @@
       if (window.Toast) Toast.error('לא ניתן להעביר — הליד לא אישר תקנון');
       return { blocked: true, reason: 'terms_not_approved' };
     }
+    var oldStatus = check.data.status;
     var upd = await sb.from('crm_leads')
       .update({ status: 'waiting', updated_at: new Date().toISOString() })
       .eq('id', leadId)
@@ -241,6 +247,7 @@
       content: 'הועבר ל-Tier 2 (אושר)'
     });
     if (noteIns.error) throw new Error('transfer note failed: ' + noteIns.error.message);
+    fireLeadStatusAutomation(leadId, 'waiting', oldStatus);
     return { id: leadId, status: 'waiting' };
   }
 
@@ -271,6 +278,60 @@
     });
   }
 
+  async function approveTermsManually(lead) {
+    var tid = getTid();
+    if (!tid || !lead || !lead.id) throw new Error('missing context');
+    var nowIso = new Date().toISOString();
+    var res = await sb.from('crm_leads')
+      .update({ terms_approved: true, terms_approved_at: nowIso, updated_at: nowIso })
+      .eq('id', lead.id).eq('tenant_id', tid);
+    if (res.error) throw new Error(res.error.message);
+    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.terms_approved_manual', entity_type: 'crm_leads', entity_id: lead.id, details: { lead_name: lead.full_name } }); } catch (_) {}
+    if (window.Toast) Toast.success('תקנון אושר ידנית');
+    return true;
+  }
+
+  function wireApproveTermsButton(host, lead, onDone) {
+    var btn = host && host.querySelector('[data-action="approve-terms"]');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      if (typeof Modal === 'undefined' || !Modal.confirm) return;
+      Modal.confirm({
+        title: 'אישור תקנון ידני',
+        message: 'לסמן שהליד אישר תקנון? לאחר האישור ניתן יהיה להעביר אותו ל-Tier 2.',
+        confirmText: 'אישר תקנון',
+        confirmClass: 'bg-emerald-600 hover:bg-emerald-700',
+        onConfirm: function () {
+          btn.disabled = true;
+          approveTermsManually(lead).then(function () {
+            lead.terms_approved = true;
+            lead.terms_approved_at = new Date().toISOString();
+            if (typeof onDone === 'function') onDone();
+          }, function (err) {
+            btn.disabled = false;
+            if (window.Toast) Toast.error('שגיאה: ' + (err.message || String(err)));
+          });
+        }
+      });
+    });
+  }
+
+  function termsApproveButtonHtml(lead) {
+    if (!lead || lead.terms_approved) return '';
+    if (leadTier(lead.status) !== 1) return '';
+    return ' <button type="button" data-action="approve-terms" class="ms-2 px-2 py-0.5 rounded bg-emerald-500 text-white text-xs font-semibold hover:bg-emerald-600">סמן כאישר תקנון</button>';
+  }
+
+  function wireDetailsButtons(host, lead, refresh) {
+    if (!host || !lead) return;
+    if (lead.unsubscribed_at) wireResubscribeButton(host, lead, refresh);
+    if (!lead.terms_approved) wireApproveTermsButton(host, lead, function () {
+      refresh && refresh();
+      if (typeof window.reloadCrmIncomingTab === 'function') window.reloadCrmIncomingTab();
+      if (typeof window.reloadCrmLeadsTab === 'function') window.reloadCrmLeadsTab();
+    });
+  }
+
   window.CrmLeadActions = window.CrmLeadActions || {};
   window.CrmLeadActions.changeLeadStatus = changeLeadStatus;
   window.CrmLeadActions.bulkChangeStatus = bulkChangeStatus;
@@ -281,4 +342,8 @@
   window.CrmLeadActions.leadTier = leadTier;
   window.CrmLeadActions.resubscribeLead = resubscribeLead;
   window.CrmLeadActions.wireResubscribeButton = wireResubscribeButton;
+  window.CrmLeadActions.approveTermsManually = approveTermsManually;
+  window.CrmLeadActions.wireApproveTermsButton = wireApproveTermsButton;
+  window.CrmLeadActions.termsApproveButtonHtml = termsApproveButtonHtml;
+  window.CrmLeadActions.wireDetailsButtons = wireDetailsButtons;
 })();

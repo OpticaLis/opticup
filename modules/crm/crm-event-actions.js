@@ -216,8 +216,9 @@
   async function changeEventStatus(eventId, newStatus) {
     var tenantId = tid();
     var evRes = await sb.from('crm_events')
-      .select('name, event_date, start_time, location_address')
+      .select('name, event_date, start_time, location_address, status')
       .eq('id', eventId).eq('tenant_id', tenantId).single();
+    var oldStatus = evRes.data && evRes.data.status;
     var upd = await sb.from('crm_events')
       .update({ status: newStatus })
       .eq('id', eventId)
@@ -225,9 +226,10 @@
       .select('id, status')
       .single();
     if (upd.error) throw new Error('event status update failed: ' + upd.error.message);
-    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.event.status_change', entity_type: 'crm_events', entity_id: eventId, details: { to: newStatus, name: evRes.data && evRes.data.name } }); } catch (_) {}
+    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.event.status_change', entity_type: 'crm_events', entity_id: eventId, details: { from: oldStatus, to: newStatus, name: evRes.data && evRes.data.name } }); } catch (_) {}
     // Fire-and-forget — upd.data returned, dispatch in background (P5.5)
     if (!evRes.error && evRes.data) dispatchEventStatusMessages(eventId, newStatus, evRes.data);
+    if (window.CrmPaymentAutomation) CrmPaymentAutomation.markUnpaidForCompletedEvent(eventId, oldStatus, newStatus).catch(function (e) { console.error('CrmPaymentAutomation.markUnpaid:', e); });
     return upd.data;
   }
 

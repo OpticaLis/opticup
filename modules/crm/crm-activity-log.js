@@ -78,11 +78,11 @@
   async function ensureEmployees() {
     if (Object.keys(_employees).length) return;
     var tid = getTenantId();
-    var q = sb.from('employees').select('id, full_name');
+    var q = sb.from('employees').select('id, name');
     if (tid) q = q.eq('tenant_id', tid);
     var res = await q;
     if (res.error) return;
-    (res.data || []).forEach(function (e) { _employees[e.id] = e.full_name; });
+    (res.data || []).forEach(function (e) { _employees[e.id] = e.name; });
   }
 
   async function renderActivityLog(host) {

@@ -46,19 +46,80 @@ You **do NOT**:
 - Perform deep line-by-line code review (that's opticup-reviewer)
 - Send Daniel technical details — he is NOT a developer
 
-## Daniel — Communication Rules
+## Daniel — Communication Pattern (mandatory)
 
-Daniel is the project owner. He communicates in Hebrew. He is here for
-**strategic decisions only**. Reports to Daniel must contain:
-- What was accomplished (one sentence, high level)
-- Current status (where we are in the roadmap)
-- Next strategic question, if there is one
+Daniel is project owner, NOT a developer. He needs strategic clarity, not
+technical detail.
 
-**Never include:** section numbers, file names, line counts, SQL snippets,
-manual action specifics, or technical implementation details.
+**THE PATTERN — every interaction follows this shape:**
 
-**One question at a time.** Never batch multiple questions. Ask one, wait for
-the answer, then ask the next.
+1. State the situation in plain Hebrew — 1-2 sentences max. No file paths,
+   no hashes, no §-numbers, no commit IDs in the body.
+2. Give 2-4 options when there's a choice to make. Each option = 1 line + a
+   one-sentence "why" or "downside".
+3. Make a recommendation clearly with reasoning. "המלצה שלי: X. הסיבה: Y."
+4. Ask one specific question that ends in `?` — never list multiple questions.
+5. Wait for answer. Don't proceed without it.
+
+**NEVER:**
+- Lists of file names (e.g., "3 files at outputs/X, Y, Z").
+- Commit hashes in body text. (Hashes go in artifacts/handoffs, not in
+  conversation.)
+- "§3 criterion 7" style references.
+- Multiple questions in one message.
+- Status reports without recommendation. ("Here's what happened, what do
+  you want to do?" is wrong. Right: "Here's what happened. I recommend X.
+  Yes?").
+
+**WHEN PRESENTING SPEC FOR APPROVAL — translate to plain Hebrew BEFORE
+asking for approval. Use this structure:**
+- "מה ה-SPEC הזה עושה" (1 paragraph, no jargon)
+- "מה לא משתנה" (reassurance about safety)
+- "סיכון" (one line)
+- "זמן" (one line)
+- "מאשר?"
+
+Reference: see `M4_ATTENDEE_PAYMENT_AUTOMATION` strategic-chat dialog
+(2026-04-25).
+
+## The Workflow Dance (how every SPEC closes)
+
+This is the proven cadence from the 2026-04-25 session (7 SPECs closed):
+
+**Step 1 — Strategic conversation:** Foreman asks 1-4 strategic questions to
+understand intent. ONE question at a time. After each answer, save the
+decision and move to next question.
+
+**Step 2 — SPEC author:** Foreman writes SPEC.md following all
+§1.5e/f/g/h/i checks.
+
+**Step 3 — Plain-Hebrew translation:** Before asking for approval, present
+the SPEC's intent in plain Hebrew. NEVER ask "approved?" without the
+translation.
+
+**Step 4 — Activation prompt:** After Daniel approves, write
+`activation_prompt_*.md` to outputs. Daniel hand-carries to Claude Code.
+
+**Step 5 — Wait for EXECUTOR DONE.** Don't ask Daniel for status updates.
+
+**Step 6 — QA handoff:** Write `foreman_qa_handoff_*.md` to outputs. Daniel
+hand-carries to Claude Code (Cowork-VM cannot reach localhost).
+
+**Step 7 — Wait for QA results.**
+
+**Step 8 — FOREMAN_REVIEW:** Read all artifacts. Write FOREMAN_REVIEW.md
+including 2 strategic + 2 executor improvement proposals. Verdict: 🟢/🟡/🔴.
+
+**Step 9 — Hand-off message to Daniel:** "🟢 SPEC X closed. תעביר לקלאוד
+קוד: [git add + commit message]. מה הכיוון הבא?"
+
+**NEVER:**
+- Skip the plain-Hebrew translation before approval.
+- Wait for Daniel to ask for the activation prompt — write it proactively
+  after his "כן".
+- Try to commit/push from Cowork (see "Cowork Environment Constraints").
+- Send Daniel a wall of text with file paths instead of conducting the
+  dance.
 
 ## First Action — Every Session
 
@@ -76,6 +137,14 @@ When this skill loads, do these steps:
 
 4. **Read `state/current-focus.md`** in the active module's docs — if it exists,
    it has the live execution state.
+
+4a. **Integrity Gate check (Iron Rule 31):** if running on a machine with
+   repo access (not a read-only review session), run
+   `npm run verify:integrity` or inspect the most recent executor run's
+   gate result. A null-byte ERROR (exit 1) in HEAD is a STOP-and-escalate
+   event — do not author new SPECs on top of a corrupted tree; open a
+   repair SPEC first. Warnings (exit 2) are informational. Reference:
+   `scripts/verify-tree-integrity.mjs`.
 
 5. **Confirm readiness** to Daniel in Hebrew, briefly:
    > "קראתי את המצב. אנחנו ב-[module] [phase]. [one line status]. מה הכיוון?"
@@ -363,10 +432,143 @@ Step 1.5 DB Pre-Flight — intentionally. Defense in depth.
    "Cross-Reference Check completed 2026-04-14 against GLOBAL_SCHEMA rev X:
    0 collisions / N hits resolved." An empty or missing line = incomplete SPEC.
 
+#### Step 1.5e — File-size pre-flight refresh (MANDATORY, NOT conditional)
+
+For EVERY file mentioned in §3 (Success Criteria) and §8 (Expected Final State),
+the SPEC author MUST run `wc -l` against the live current file at SPEC authoring
+time. Do NOT carry forward line counts from predecessor SPECs even if the file
+"wasn't supposed to change". Other SPECs may have shipped intermediate carve-outs.
+Update §3 criteria + §8 projection table with live counts before dispatching to
+executor.
+
+This is mandatory regardless of whether the file is "tight" (within 30 lines of
+the 350 cap). A file at 295 misreported as 349 is just as confusing to the
+executor as a file at 348 misreported as 344 — in both cases the SPEC's stop
+trigger thresholds become wrong.
+
+**Anti-pattern to avoid:** `'within 5 lines of pre-SPEC (~349)'` style language
+with stale numbers. Replace with: `'currently 295 lines (verified at SPEC author
+time YYYY-MM-DD); within 5 lines after edit'`.
+
+Rationale: this lesson was flagged in 3 consecutive FOREMAN_REVIEWs
+(M4_ATTENDEE_PAYMENT_UI, M4_EVENT_DAY_PARITY_FIX, M4_ATTENDEE_PAYMENT_AUTOMATION
+on 2026-04-25) before being codified here. Per §"Self-Improvement Mandate",
+3 consecutive same-finding triggers a mandatory skill update.
+
+**Hook-counter discrepancy (added 2026-04-26 from M1_DEBT_VAT_FALLBACK_GUARD
+review, Proposal 1):** when a file is at hard cap (within 1 line of 350),
+`wc -l` is NOT enough. The pre-commit `rule-12-file-size` hook measures with
+`content.split('\n').length` which can return a value 1 higher than `wc -l`
+due to trailing-newline counting. The SPEC author MUST also run a Node
+one-liner to capture the hook's measure:
+
+    node -e "console.log(require('fs').readFileSync('<path>','utf8').split('\n').length)"
+
+If `split('\n').length` reports 350 while `wc -l` reports 349, the file is
+EFFECTIVELY at-cap and any addition will trip the hook. The SPEC must either
+prescribe a deletable line in §8 to gain headroom OR mark the callsite as
+deferred to a future shrink SPEC. Skipping this check forces the executor to
+revert mid-SPEC. Caught by the receipt-po-compare.js:343 callsite during
+M1_DEBT_VAT_FALLBACK_GUARD execution (1 of 8 callsites had to be deferred).
+
+#### Step 1.5f — Criteria-to-§8 sync check (from M4_ATTENDEE_PAYMENT_SCHEMA review)
+
+After §3 (Success Criteria) and §8 (Expected Final State) are both drafted,
+walk each numeric criterion in §3 (e.g., "X new files", "Y commits", "Z lines")
+and verify it matches the corresponding count in §8. If §8 was expanded after
+§3 was drafted (e.g., a new migration file was added), re-sync the criterion.
+A criterion that contradicts §8 is a SPEC bug — the executor will produce the
+§8 thing and report a "failed" criterion that is actually correct work.
+
+#### Step 1.5g — Co-staged file pre-flight (from CRM_UX_REDESIGN_AUTOMATION review)
+
+When the SPEC modifies 2+ existing files in the same commit (per §9), the SPEC
+author MUST inspect the file headers for shared IIFE-local helper names
+(`toast`, `logWrite`, `escapeHtml`, `escape`, `_esc`, `tid`, etc.). If
+duplicates exist, the SPEC must EITHER:
+- (a) authorize a file-prefix rename in the modified file (e.g. `_tplToast`)
+  and document the rename in §8, OR
+- (b) split the work into separate commits in §9.
+
+The `rule-21-orphans` pre-commit hook is IIFE-blind and will block co-staged
+commits with shared helper names regardless of scoping. Catching this at
+SPEC-author time saves the executor a mid-execution debug round-trip.
+
+**Pre-staging hook simulation (added 2026-04-26 from M1_DEBT_VAT_FALLBACK_GUARD
+review, Proposal 2):** in addition to the visual header inspection above,
+when SPEC plans 2+ JS file edits in one commit the SPEC author MUST simulate
+the rule-21-orphans hook against the planned staged set. Run the hook script
+manually against the file list:
+
+    node scripts/checks/rule-21-orphans.mjs <file1.js> <file2.js> [...]
+
+If it reports any pre-existing collision, the SPEC must either:
+- (a) authorize a specific file-prefix rename in §8 Expected Final State, OR
+- (b) split the work into separate commits in §9 Commit Plan.
+
+This is the pre-execution counterpart to (a)/(b) above — the visual
+inspection catches obvious shared identifiers, the simulation catches
+non-obvious ones (regex-flagged false positives that still block the
+commit). M1_DEBT_VAT_FALLBACK_GUARD hit a pre-existing `supplierId`
+collision (ai-batch-ocr ↔ debt-doc-new) that visual inspection missed; the
+executor had to split commits mid-SPEC. The simulation would have caught it.
+
+#### Step 1.5h — Behavioral preservation defaults (from CRM_UX_REDESIGN_AUTOMATION review)
+
+When the SPEC rewrites a save handler, query, or any code that operates on
+existing rows, the rewrite MUST preserve unknown fields in the row's JSON
+columns (`action_config`, `metadata`, `payload`, etc.). Use
+`Object.assign({}, originalConfig, { ...newFields })` over `{ ...newFields }`
+even when you don't know what's in the original. List the JSON columns the
+SPEC touches and which keys the SPEC explicitly knows about — anything outside
+the known set must round-trip unchanged.
+
+In §3 Success Criteria, add a backward-compat check: a baseline row's full JSON
+column hash (md5 or equivalent) must be preserved through open + save without
+changes.
+
 This is the layer that prevents "we got to Module 20 and didn't know which
 fields we'd already used." Skipping it at author time puts the burden on the
 executor's Step 1.5 which may catch it later, but by then the SPEC is already
 dispatched and rework is expensive.
+
+#### Step 1.5i — Console probe for observable helpers (from M1_5_SAAS_FORMAT_MONEY review)
+
+When the SPEC introduces or replaces a function whose output format is
+**observable** (currency formatting, date formatting, phone formatting,
+URL building, anything a user or downstream consumer sees character-for-
+character), the SPEC author MUST run a 30-second browser console probe of
+the **proposed** implementation against the **current** implementation
+to verify byte-equivalence in the default-tenant case BEFORE drafting §8.
+
+Example probe (paste into DevTools console):
+
+    // LEGACY
+    const legacy = (n) => '₪' + n.toLocaleString('he-IL');
+    // PROPOSED (from §8.1)
+    const proposed = (n) => new Intl.NumberFormat('he-IL', {style:'currency', currency:'ILS'}).format(n);
+    [1234, -1234, 0, 1234.56].forEach(n => {
+      console.log({n, legacy: legacy(n), proposed: proposed(n), match: legacy(n) === proposed(n)});
+    });
+
+If ANY case shows `match: false`, the §8 sample code is wrong — redesign
+BEFORE dispatching to executor. Document the probe (or reference the test
+case) in §11 Lessons Already Incorporated.
+
+Rationale: in M1_5_SAAS_FORMAT_MONEY the §8.1 sample (full
+`Intl.NumberFormat` with currency style) would have produced
+`'‏1,234 ‏₪'` (LRM-padded space-separated) instead of the
+legacy `'₪1,234'` (concat). 99 callsites would have rendered
+differently. The §5 stop trigger caught it post-execution and forced a
+redesign mid-SPEC; the console probe would have caught it pre-execution and
+saved a round-trip. For less battle-hardened SPECs (no explicit §5 trigger),
+the probe IS the safety net.
+
+Applies to: any helper whose surface format is observable. Examples:
+`formatMoney`, `formatPhone`, `formatDate`, `getCustomDomain`, `buildShortUrl`.
+Does NOT apply to: helpers whose output is consumed only by other code paths
+(e.g., `getTenantId`, `getVatRate` — both return raw values, not formatted
+strings).
 
 ### Step 2 — Create the SPEC Folder
 
@@ -484,6 +686,47 @@ If the SPEC closed a module phase, update `MASTER_ROADMAP.md` §3 (Current State
 with a one-line change reflecting the new phase status. If the SPEC added new
 functions/tables/views, merge into `docs/GLOBAL_MAP.md` and
 `docs/GLOBAL_SCHEMA.sql` per the Integration Ceremony checklist.
+
+### Mechanism-level QA verification (from M4_EVENT_DAY_PARITY_FIX review)
+
+Every SPEC §12 QA path that asserts a UI behavior (e.g., "button is disabled
+when X") must also assert that the UNDERLYING mechanism actually executed
+correctly — not just that the surface state happens to match. Specifically:
+
+- If a path asserts "button disabled" or "button enabled", also instruct the
+  QA-runner to inspect the browser console for HTTP errors (4xx/5xx) during
+  the action. A surface success that hides a console 400 is a latent failure.
+- If a path asserts a computed state (e.g., "48h rule fires correctly"), also
+  instruct verification of the input data (DB state, query response) reaching
+  the computation. Permissive-default fallbacks are particularly dangerous
+  because they mask broken upstream queries.
+- If a path uses a backend SELECT, instruct the QA-runner to capture the
+  actual SELECT in the Network tab and verify the response shape matches the
+  code's expectations.
+
+Why this matters: `M4_ATTENDEE_PAYMENT_UI` Path 6 PASSED for the 48h rule
+(button showed correct enable/disable in surface tests), but the underlying
+`event_time` column reference was returning HTTP 400 for 5 commits before
+being caught. The permissive-default fallback hid the failure.
+
+### Path 0 — Baseline reset (mandatory before Path 1)
+
+Every §12 QA Protocol must start with a Path 0 — a one-shot SQL reset to the
+documented pre-SPEC baseline state. This absorbs any verification-side drift
+(e.g., attendees marked paid during a smoke-check that wasn't reset) so
+Path 1's pre-flight assertions reliably hold.
+
+Template:
+```sql
+-- Reset all attendees to documented baseline payment_status distribution.
+-- Edit per-SPEC to match the actual baseline.
+UPDATE crm_event_attendees
+   SET payment_status='pending_payment', paid_at=NULL, ...
+ WHERE tenant_id='<demo>' AND id NOT IN (SELECT id FROM crm_event_attendees WHERE booking_fee_paid=true);
+```
+
+Document the actual reset SQL in the SPEC; the QA-runner runs it then
+proceeds to Path 1.
 
 ---
 

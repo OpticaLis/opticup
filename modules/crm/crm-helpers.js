@@ -44,9 +44,10 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
   // --- Currency: number -> ₪39,460 ---
   function formatCurrency(n) {
     if (n == null || n === '') return '';
+    if (typeof formatMoney === 'function') return formatMoney(n);
     var num = Number(n);
     if (!isFinite(num)) return '';
-    return '\u20AA' + num.toLocaleString('he-IL', { maximumFractionDigits: 0 });
+    return '₪' + num.toLocaleString('he-IL', { maximumFractionDigits: 0 });
   }
 
   // --- Date: '2026-03-27' -> 27.03.2026 ---

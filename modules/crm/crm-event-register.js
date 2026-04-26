@@ -11,10 +11,43 @@
 (function () {
   'use strict';
 
-  function tid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
+  function _regTid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
+
+  // EVENT_WAITING_LIST_AUTO_TRANSITION (2026-04-24): after a successful
+  // register, count attendees that actually occupy a spot (exclude
+  // waiting_list / cancelled / duplicate) and compare to max_capacity. If
+  // the event just hit the cap, flip status to 'waiting_list' via
+  // CrmEventActions.changeEventStatus — which fires the waiting_list
+  // automation rule through the canonical path. NULL max_capacity → skip.
+  async function checkAndAutoWaitingList(eventId) {
+    if (!eventId) return { transitioned: false };
+    var tenantId = _regTid();
+    if (!tenantId) return { transitioned: false, reason: 'no_tenant' };
+    var eRes = await sb.from('crm_events').select('id, status, max_capacity')
+      .eq('id', eventId).eq('tenant_id', tenantId).single();
+    if (eRes.error || !eRes.data) return { transitioned: false, error: eRes.error && eRes.error.message };
+    var ev = eRes.data;
+    if (ev.max_capacity == null) return { transitioned: false, reason: 'no_max_capacity' };
+    if (ev.status !== 'registration_open') return { transitioned: false, reason: 'not_open' };
+    var cRes = await sb.from('crm_event_attendees').select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false)
+      .neq('status', 'waiting_list').neq('status', 'cancelled').neq('status', 'duplicate');
+    if (cRes.error) return { transitioned: false, error: cRes.error.message };
+    var count = cRes.count || 0;
+    if (count < ev.max_capacity) return { transitioned: false, count: count, max: ev.max_capacity };
+    if (!window.CrmEventActions || typeof CrmEventActions.changeEventStatus !== 'function') {
+      return { transitioned: false, count: count, max: ev.max_capacity, error: 'CrmEventActions_unavailable' };
+    }
+    try {
+      await CrmEventActions.changeEventStatus(eventId, 'waiting_list');
+      return { transitioned: true, count: count, max: ev.max_capacity };
+    } catch (e) {
+      return { transitioned: false, count: count, max: ev.max_capacity, error: e.message || String(e) };
+    }
+  }
 
   async function searchTier2Leads(term) {
-    var tenantId = tid();
+    var tenantId = _regTid();
     var tier2 = window.TIER2_STATUSES || [];
     var q = sb.from('crm_leads')
       .select('id, full_name, phone, email, status')
@@ -32,7 +65,7 @@
   }
 
   async function registerLeadToEvent(leadId, eventId, method) {
-    var tenantId = tid();
+    var tenantId = _regTid();
     var res = await sb.rpc('register_lead_to_event', {
       p_tenant_id: tenantId,
       p_lead_id: leadId,
@@ -40,12 +73,32 @@
       p_method: method || 'manual'
     });
     if (res.error) throw new Error('register_lead_to_event: ' + res.error.message);
-    return res.data;
+    // WAITING_LIST_PUBLIC_REGISTRATION_FIX: any caller that registers a lead
+    // gets the capacity-hit transition automatically. Gated on status='registered'
+    // — a 'waiting_list' RPC outcome means the cap was already hit before.
+    var data = res.data;
+    if (data && data.success && data.status === 'registered') {
+      try { await checkAndAutoWaitingList(eventId); } catch (e) { console.error('autoWaitingList:', e); }
+    }
+    return data;
   }
 
   // P8: hardcoded dispatch replaced by rule evaluation. Rules live in
   // crm_automation_rules (trigger_entity='attendee', trigger_event='created').
+  // M4_ATTENDEE_PAYMENT_AUTOMATION: BEFORE the evaluate call, attempt FIFO credit transfer
+  // so the confirmation message sees the updated payment_status (paid vs pending_payment).
   async function dispatchRegistrationConfirmation(leadId, lead, eventId, regStatus) {
+    if (regStatus === 'registered' && window.CrmPaymentAutomation) {
+      try {
+        var attRes = await sb.from('crm_event_attendees')
+          .select('id').eq('lead_id', leadId).eq('event_id', eventId)
+          .eq('tenant_id', _regTid()).eq('is_deleted', false)
+          .order('registered_at', { ascending: false }).limit(1).single();
+        if (attRes.data && attRes.data.id) {
+          await CrmPaymentAutomation.transferOpenCreditOnRegistration(leadId, attRes.data.id);
+        }
+      } catch (e) { console.error('CrmPaymentAutomation.transferCredit:', e); }
+    }
     if (!window.CrmAutomation || typeof CrmAutomation.evaluate !== 'function') return;
     return CrmAutomation.evaluate('event_registration', {
       leadId: leadId,

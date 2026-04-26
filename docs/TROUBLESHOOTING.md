@@ -208,6 +208,30 @@ over hardcoding. Include the legacy-JWT-only disclaimer in any new
 
 ---
 
+### Cowork-VM reports mass CRLF/truncation corruption — DO NOT trust the raw report
+
+**Symptom:** A Cowork VM strategic session opens the repo and sees `git status --short | wc -l` return a very large number (e.g., 1,083). A forensic sweep reports "800+ files with CRLF changes" and "40+ truncated/null-padded files." A recovery SPEC is authored to clean everything up. When the executor (Claude Code on Daniel's Windows desktop) actually runs, the working tree shows only 4–5 entries — the clean, expected state. Running the SPEC's destructive recovery steps against a healthy tree is wasted work at best, destructive at worst (stash-and-restore can lose real uncommitted edits if the restore step has a bug).
+
+**Root cause:** Two separate things are being conflated:
+1. **Line-ending display drift.** Daniel's Windows desktop has `core.autocrlf=true`. Files check out to disk with CRLF and are normalized back to LF when git reads them. `git diff` sees zero change; a raw filesystem reader (`file -i`, `od`, `xxd`, `tail -c`) sees `\r\n`. The Cowork VM does not have autocrlf, so when its subagent reads files via raw-bytes inspection, it reports "CRLF everywhere" — but on Daniel's git, those are NOT staged/unstaged changes. This is a **reporting artifact**, not corruption.
+2. **The real null-byte corruption pattern** (documented in auto-memory as the "Cowork truncation" issue) is a separate, rarer event that DID happen historically (286 null bytes in `crm.html` on 2026-04-21). It's real, it's dangerous, and it's the reason Iron Rule 31 exists. But it is NOT what triggers the "1,083 files changed" report.
+
+**Fix:** Before writing any recovery SPEC based on a forensic report from a different environment, the SPEC author MUST:
+1. Re-verify every state claim using `git status --porcelain`, `git diff`, `git ls-files` on the **target execution environment**, not the authoring environment.
+2. Explicitly record known-config baselines in the SPEC: `core.autocrlf`, `core.eol`, git version, OS.
+3. Distinguish reporting artifacts (filesystem-level view through the Cowork VM lens) from real corruption (null bytes in git-tracked content, mid-word truncation).
+
+**Prevention — process-level guard:** 
+- `opticup-strategic` SKILL §"SPEC Authoring Protocol" Step 1.5 requires an environment-parity check when authoring SPECs that will execute on a different machine (per FOREMAN_REVIEW of WORKING_TREE_RECOVERY, 2026-04-24).
+- `opticup-executor` SKILL Step 1.4 requires a precondition-drift check at execution time — any mismatch between SPEC-stated starting state and live starting state triggers a STOP.
+- Iron Rule 31 + `scripts/verify-tree-integrity.mjs` (once shipped) uses `git status --porcelain` / `git ls-files`, NOT raw filesystem scans, for file discovery — avoiding the autocrlf false-positive mode entirely.
+
+**Validated incident:** 2026-04-24 — WORKING_TREE_RECOVERY SPEC was authored on Cowork VM assuming 1,083 corrupted files; executor halted at step 0 on Windows desktop after seeing only 5 entries. Zero destructive action, correct outcome. See `modules/Module 4 - CRM/final/WORKING_TREE_RECOVERY/` (SPEC + EXECUTION_REPORT + FINDINGS + FOREMAN_REVIEW) for full record. INTEGRITY_GATE_SETUP SPEC inherited the corrected design.
+
+**Commits:** `666f20f` (Commit 1 of INTEGRITY_GATE_SETUP — bundles the WORKING_TREE_RECOVERY retrospective + holdover files).
+
+---
+
 ### Secondary Chat activation antipattern ("what role am I playing?")
 
 **Symptom:** A new Secondary Chat is opened with its assigned template and SPEC, but instead of immediately executing the SPEC it asks the user meta-questions ("Am I a Secondary Chat? Should I be running the SPEC or reviewing it? What is my scope here?"). The chat stalls in role-clarification instead of producing its first Claude Code prompt. In severe cases the chat refuses to proceed entirely.

@@ -2,6 +2,154 @@
 
 ---
 
+## M4_ATTENDEE_PAYMENT_AUTOMATION — Payment lifecycle automations (2026-04-25) ✅
+
+| Hash | Message |
+|------|---------|
+| `c2dd8eb` | `feat(crm): add CrmPaymentAutomation helper for auto-status transitions` |
+| `328df0d` | `feat(crm): wire auto-unpaid + auto-credit-transfer into existing flows` |
+| `ffebabe` | `chore(db): backfill payment_status for closed events on demo` |
+| _(this commit)_ | `chore(spec): close M4_ATTENDEE_PAYMENT_AUTOMATION with retrospective` |
+
+**SPEC #3 of 3 in the payment-lifecycle series. Closes the trio.**
+
+Two automations wired into the existing engine, with a one-shot backfill for historical events:
+
+- **Auto-mark `unpaid` on event completion.** When an event flips to `'completed'`, `markUnpaidForCompletedEvent(eventId, oldStatus, newStatus)` runs after the existing `dispatchEventStatusMessages`: 1 UPDATE flips all attendees with `payment_status='pending_payment'` AND `checked_in_at IS NULL` to `'unpaid'`. **Strict scope: ONLY `'completed'` (event ran). NOT `'closed'` (registration closed but event still upcoming — attendees may still pay).** Trigger fires only on transition INTO completed (`oldStatus !== 'completed' && newStatus === 'completed'`); re-saving an already-completed event is a no-op.
+- **Auto-transfer credit on new registration.** When a lead registers for a new event AND has an open `credit_pending` row whose `credit_expires_at > now()`, `transferOpenCreditOnRegistration(leadId, newAttendeeId)` calls the existing `transfer_credit_to_new_attendee(p_old_attendee_id, p_new_attendee_id)` RPC (FIFO — oldest credit first). The RPC atomically flips the new row to `paid` and the old row to `credit_used`. Fires from inside `dispatchRegistrationConfirmation` BEFORE the `CrmAutomation.evaluate('event_registration', ...)` call so the confirmation message reflects updated payment state.
+- **Backfill migration** (`2026_04_25_payment_backfill_closed_events.sql`): for any attendee on a `'completed'` event with `pending_payment` + no checkin, flip to `'unpaid'`. **Idempotent** (re-running affects 0 rows). Affected 0 rows on demo (only completed event's pending attendee was already checked-in). Cross-tenant by code; 0 rows on Prizma + test-stores per pre-flight.
+
+**No DB schema changes. Engine + RPC untouched.** Helper module sits AROUND `CrmAutomation.evaluate` (engine remains the contract surface for `lead-intake` EF + `event-register` EF). New `crm-payment-automation.js` (100 lines) exposes 2 methods on `window.CrmPaymentAutomation`. Pre-emptive `tid → _regTid` rename in `crm-event-register.js` to avoid Rule-21-orphans hook collision when co-staging with `crm-event-actions.js` (lesson from `M4_ATTENDEE_PAYMENT_UI` review).
+
+**Final file sizes:** crm-payment-automation.js: 100, crm-event-actions.js: 295→297 (+2), crm-event-register.js: 179→192 (+13). All ≤350.
+
+**The payment trio is now complete:** SPEC #1 (schema) → SPEC #2 (UI) → SPEC #3 (this — automations). Daniel can now drop the manual "remember to mark unpaid after each event" + "remember to credit-transfer when a lead with credit registers for a new event" overhead.
+
+---
+
+## M4_EVENT_DAY_PARITY_FIX — Event-day-manage parity + coupon status fix (2026-04-25) ✅
+
+| Hash | Message |
+|------|---------|
+| `65c0a26` | `fix(crm): parity + coupon-status fix on event-day-manage` |
+| _(this commit)_ | `chore(spec): close M4_EVENT_DAY_PARITY_FIX with retrospective` |
+
+Two surgical fixes between SPEC #2 and SPEC #3 of the payment-lifecycle series:
+
+- **Fix A — payment-management parity in event-day-manage.** `feeCell` rewritten: instead of a one-shot "סמן שולם" button it now renders a clickable wrapper around the status pill carrying `data-pay-attendee-id`. Click opens `CrmPayment.openActionModal` (same modal as event-detail), giving full access to the 4-button transition matrix (mark paid / mark refund_requested / mark refunded / open credit). After any action, only the changed attendee row is re-fetched + patched into local state and the table re-renders — no full reload, no jarring jump. Old `toggleFee` function + `[data-toggle-fee]` wireRowActions block removed entirely (Rule 21 cleanup).
+- **Fix B — coupon column 3-state.** `couponCell` was 2-state ("✓ הגיע" if checked-in, "⚠️ לא הגיע" otherwise). Now 4-state: button "שלח" (no coupon yet) → "📨 נשלח" sky pill (coupon sent, event still active) → "✓ הגיע" emerald (checked-in) → "⚠️ לא הגיע" amber (event ended without check-in). "Event ended" via new `CrmPayment.eventEnded(ev)` helper: status='completed'/'closed' OR event_date + end_time past Israel time. Resolves Daniel's friction "שלחתי קופון לדנה כהן ב-16:59:40 והממשק מיד הפך ל-לא הגיע".
+- **Helpers.js extended additively:** `eventEnded()` added (new export); `openActionModal(attendeeId, opts)` extended with optional `opts.onAfterAction` callback to satisfy criterion 11 "table re-renders after action". Backward-compatible — existing single-arg callers unaffected.
+
+**Rule 12:** `crm-event-day-manage.js` 344→346 (within projected 343–349 from §3.1.3); `crm-payment-helpers.js` 258→272 (well under cap).
+
+**No DB schema changes. No automation engine changes. No `crm-events-detail.js` touch.** QA verified all 6 paths on demo (paid + refund_requested + refunded + open_credit chain executed via the new modal; 3-state coupon cell tested on a future event AND a past event with status='registration_open' but past end_time — TEST333). Zero SMS sent during QA — every "ושלח אישור ללקוח" checkbox manually unchecked.
+
+**1 HIGH-severity finding logged (NOT introduced by this SPEC):** `crm-payment-helpers.js` lines 48 + 221 reference non-existent column `event_time` (schema has `start_time`/`end_time`). Causes 10 console 400s per QA pass + silently disables the 48h refund rule. Pre-existing from `M4_ATTENDEE_PAYMENT_UI` commit `f22bc20`. Suggested follow-up SPEC `M4_PAYMENT_HELPERS_COLUMN_FIX`. See `FINDINGS.md` F1.
+
+---
+
+## M4_ATTENDEE_PAYMENT_UI — Payment lifecycle UI rollout (2026-04-25) ✅
+
+| Hash | Message |
+|------|---------|
+| `aa2c2d2` | `docs(spec): approve M4_ATTENDEE_PAYMENT_UI SPEC for execution` |
+| `f22bc20` | `feat(crm): add CrmPayment helper module (status pills + action panel + transitions)` |
+| `83aafe2` | `feat(crm): add CrmNotificationsBell module + topbar anchor` |
+| `ac2137a` | `feat(crm): add payment status pill column to attendee tables` |
+| `be0d1ed` | `feat(crm): add payment action panel + tier2 credit warning + bell wiring` |
+| _(this commit)_ | `chore(spec): close M4_ATTENDEE_PAYMENT_UI with retrospective` |
+
+**SPEC #2 of 3 in the payment-lifecycle series.** Turns the schema from SPEC #1 into a usable UI:
+
+- **Status pill column** in 3 attendee tables (event detail, event-day-manage, event-day-checkin) showing the 7-status taxonomy as colored pills (sky=pending, emerald=paid, slate=unpaid, amber=refund_requested, gray=refunded, violet=credit_pending, slate-light=credit_used).
+- **Action panel on attendee card** ("ניהול תשלום") with 4 conditional buttons gated by transition matrix + 48h hard rule. The "סמן שולם" button has a paired checkbox "ושלח אישור ללקוח" (default ON) — when checked, marking paid also fires SMS+Email from the `payment_received` template via `CrmMessaging.sendMessage`. **Order is strict:** DB UPDATE first (`payment_status='paid'` + `paid_at=now()`), THEN dispatch — if UPDATE fails, no message goes out.
+- **48h hard rule** — "מגיע החזר" button is disabled when `event_date + event_time` is within 48 hours of now or already passed. Tooltip: "עברו 48 שעות — לא ניתן לבטל ללא אישור מיוחד". No manager-PIN override yet (deferred per Daniel's Q2 simplification). Israel timezone via month-based DST heuristic (Mar-Oct → +03:00, else +02:00).
+- **Notification bell** in `crm.html` topbar showing count of leads with credit_pending attendees expiring in ≤30 days. Click → modal listing leads (color-coded urgency: ≤7d rose, ≤14d amber). Each row clicks through to lead card.
+- **Tier 2 board amber-row highlight** — leads with at-risk credit_pending attendees get `bg-amber-50` row + "💳 קרדיט פג בעוד X ימים" subtitle under their name.
+- **Refund flow** — "מגיע החזר" → status=`refund_requested`. Then 2 sub-buttons: "סמן הוחזר" (→ `refunded`) or "פתח קרדיט עד..." (date picker default = today + 6 months → `credit_pending` + `credit_expires_at`).
+
+**Rule 12 budget management** — all 3 modified existing JS files stayed within Rule 12 hard cap. The tightest file (`crm-events-detail.js`, 349/350) had ZERO net-line growth thanks to the `[data-pay-attendee-id]` delegate pattern absorbed in `CrmPayment._installCardDelegate`. The `crm-event-day-checkin.js` got a pre-emptive helper rename (`logActivity`→`_chkLog`, `updateLocal`→`_chkUpd`) before being co-staged with `crm-event-day-manage.js` — avoiding the rule-21-orphans hook trap documented in the predecessor SPEC's FOREMAN_REVIEW.
+
+**No code changes** to the engine, automation rules, or `transfer_credit_to_new_attendee` RPC. **No DB schema changes.** Legacy 💰 paid-icon retained alongside the new pill in the event-detail attendee cards (per Foreman context note 7 — discretion to keep both).
+
+**SPEC #3 (`M4_ATTENDEE_PAYMENT_AUTOMATION`) unblocked** — UI is in place; automations can now reference the UI's action endpoints. The 2 approved triggers (event_completed → unpaid auto-flip; lead-registers-with-credit → auto-paid via `transfer_credit_to_new_attendee`) are SPEC #3's territory.
+
+---
+
+## M4_ATTENDEE_PAYMENT_SCHEMA — Payment lifecycle DB foundation (2026-04-25) ✅
+
+| Hash | Message |
+|------|---------|
+| `f16a1f4` | `docs(spec): approve M4_ATTENDEE_PAYMENT_SCHEMA SPEC for execution` |
+| `6e33858` | `feat(crm): add payment lifecycle columns to event attendees` |
+| `abe7264` | `feat(crm): install booking_fee_paid sync trigger` |
+| `0ce3c1a` | `feat(crm): backfill demo attendees with payment_status` |
+| `09eac51` | `feat(crm): add credit transfer RPC + payment_received template` |
+| `a356270` | `refactor(crm): carve out booking_fee_paid/refunded from JS + EFs + views` |
+| _(this commit)_ | `chore(crm): drop legacy booking_fee_paid/refunded + close SPEC` |
+
+**SPEC #1 of 3 in the payment-lifecycle series.** Builds the DB foundation for the payment-lifecycle model Daniel approved:
+
+- 7 statuses (`pending_payment` / `paid` / `unpaid` / `refund_requested` / `refunded` / `credit_pending` / `credit_used`) on each `crm_event_attendees` row, enforced via CHECK constraint.
+- 4 supporting timestamps: `paid_at`, `refund_requested_at`, `refunded_at`, `credit_expires_at`.
+- 1 self-FK: `credit_used_for_attendee_id` — when credit transfers from an old attendee to a new one, the old row points to the new.
+- RPC `transfer_credit_to_new_attendee(uuid, uuid)` — atomic credit transfer, SECURITY DEFINER, validates same-tenant + correct source/target statuses before the flip.
+- Templates `payment_received_sms_he` + `payment_received_email_he` — seeded on BOTH demo + prizma (4 rows total). Tenant-neutral content per Iron Rule 9.
+- 2 partial indexes for query performance: `(tenant_id, payment_status) WHERE NOT is_deleted` + `(tenant_id, credit_expires_at) WHERE payment_status='credit_pending' AND NOT is_deleted`.
+
+**Hybrid migration:** during the SPEC, a one-way sync trigger kept the legacy `booking_fee_paid` field updated as a shadow of `payment_status='paid'` so existing code didn't break mid-flight. After the JS carve-out finished (commit 5), the legacy columns + sync trigger were both DROPPED in commit 6 — leaving zero shadow technical debt.
+
+**Cross-tenant scope:** schema DDL applies to all tenants (single shared schema). Backfill is demo-only because Prizma had 0 attendees at SPEC time. Test-store tenants get the schema for free.
+
+**Code carve-out** (commit 5):
+- `modules/crm/crm-event-day.js` — SELECT clause column rename
+- `modules/crm/crm-event-day-manage.js` — `feeCell` reads `payment_status === 'paid'`; `toggleFee` writes `{payment_status:'paid', paid_at: now()}`
+- `modules/crm/crm-events-detail.js` — SELECT + 2 read sites
+- `js/shared-field-map.js` — Hebrew↔English mapping switched to enum + timestamp semantics
+- `v_crm_event_attendees_full` view — DROP+CREATE to expose new columns
+
+**Verified** post-DROP: `grep -rn "booking_fee_paid\|booking_fee_refunded" modules/ js/ supabase/` returns 0 hits in active code. `payment_status` references count: 30. All CRM JS files ≤350. Engine `crm-automation-engine.js` byte-identical to pre-SPEC. No automation rules added/modified. No DB migrations affected `purchase_amount` / `cancelled_at` (orthogonal).
+
+**SPEC #2 + #3 unblocked:** UI work (`M4_ATTENDEE_PAYMENT_UI`) and automations (`M4_ATTENDEE_PAYMENT_AUTOMATION`) depend on this schema; both can proceed in subsequent SPECs.
+
+---
+
+## CRM_UX_REDESIGN_AUTOMATION — Rules editor board-led rewrite (2026-04-25) ✅
+
+| Hash | Message |
+|------|---------|
+| `125cef4` | `docs(spec): approve CRM_UX_REDESIGN_AUTOMATION SPEC for execution` |
+| `44029ad` | `feat(crm): add CrmRuleEditor component for board-led rule editor` |
+| `6a69518` | `feat(crm): rewrite rules editor as board-led single-form (Mockup C)` |
+| _(this commit)_ | `chore(spec): close CRM_UX_REDESIGN_AUTOMATION with retrospective` |
+
+Automation Rules editor rewritten per Mockup C (Single Form with conditional fields). New file `modules/crm/crm-rule-editor.js` (273 lines) owns the editor: 4-card board picker (📥 לידים נכנסים / 👥 רשומים / 📅 אירועים / ✅ נרשמים לאירוע) leads the form, conditional fields reveal after board choice and are themed by the board's color, templates dropdown filters by board prefix, plain-Hebrew summary block updates live with every input. Switching board mid-edit triggers a confirm dialog before resetting fields. `action_config` round-trip preserves unknown fields (`post_action_status_update`, `language`) via Object.assign spread — closes a latent regression in the original editor that silently dropped these fields.
+
+`modules/crm/crm-messaging-rules.js` reduced 347 → 227 lines. New: pill bar above the rules table (5 pills — הכל + 4 boards with active-rule counts), board column with colored chip per row, filter-by-pill on click. Editor delegated to `window.CrmRuleEditor.open()`. Backward-compat: `window.{renderMessagingRules, loadMessagingRules}` preserve unchanged signatures. Pill counts: ACTIVE rules only (the disabled "רשימת המתנה" rule excluded — "הכל" shows 12 not 13).
+
+`modules/crm/crm-messaging-templates.js` 325 → 343 lines (+18). **Bonus scope per SPEC §8.4:** wired up the "אוטומטי" filter category (resolves M4-DEBT-CRMUX-02 from predecessor `CRM_UX_REDESIGN_TEMPLATES/FINDINGS.md` Finding 2). Lazy cache of active rules' `template_slug`; cache populates on first auto-filter click. `_filterCategoryAuto` helper checks if a logical template is referenced by an active rule. Verified: clicking "אוטומטי" shows 10 of the 13 logical templates (the 10 referenced by ≥1 active rule). Two IIFE-local helpers renamed (`toast`→`_tplToast`, `logWrite`→`_tplLog`) to silence rule-21-orphans hook on co-staging with rules.js (helpers were duplicated in both files since B5 phase but never co-staged before).
+
+**No engine changes. No DB schema changes. No migrations.** All findings logged in `modules/Module 4 - CRM/docs/specs/CRM_UX_REDESIGN_AUTOMATION/FINDINGS.md`. With this SPEC closed, the post-merge UX redesign is complete (both sibling SPECs shipped). Next: P7 (Prizma cutover).
+
+---
+
+## CRM_UX_REDESIGN_TEMPLATES — Templates Center accordion rewrite (2026-04-25) ✅
+
+| Hash | Message |
+|------|---------|
+| `d1b1c7c` | `docs(spec): approve CRM_UX_REDESIGN_TEMPLATES SPEC for execution` |
+| `704f7f4` | `feat(crm): add CrmTemplateSection component for channel-accordion editor` |
+| `4e118b9` | `feat(crm): rewrite templates editor as channel-accordion (Mockup B)` |
+| _(this commit)_ | `chore(spec): close CRM_UX_REDESIGN_TEMPLATES with retrospective` |
+
+Templates Center editor rewritten per Mockup B (Stacked Accordion). One sidebar card per logical template (grouped by base slug), with active-channel badges (SMS/EMAIL/WA). Editor renders three accordion sections via the new `window.CrmTemplateSection` component — each section has a per-channel "ערוץ פעיל" checkbox controlling whether a row exists in `crm_message_templates` for that channel. Save logic diffs each channel → INSERT new / UPDATE existing / SOFT-DELETE removed (is_active=false; never hard-delete). WhatsApp interactions on a disabled section fire `Toast.info "WhatsApp עדיין לא פעיל — מתוכנן לרבעון הקרוב"` (Meta WhatsApp Cloud API integration is ~3 months out per Daniel). Closes the UI bug where SMS rows displayed channel selector + 3-panel preview + email subject field, making single-channel rows look multi-channel.
+
+**Files:** new `modules/crm/crm-template-section.js` (141 lines), modified `modules/crm/crm-messaging-templates.js` (310 → 325 lines), modified `crm.html` (+1 script tag at line 361). All CRM JS files ≤350 (Rule 12). Backward-compat: 4 public globals preserved with unchanged signatures (`renderMessagingTemplates`, `loadMessagingTemplates`, `_crmMessagingTemplates`, `CRM_TEMPLATE_VARIABLES`); new global `CrmTemplateSubstitute` exposed for section module's preview rendering. The Automation rules editor's `baseSlugsFromTemplates()` helper continues to work unchanged (verified — 13 base slugs available in dropdown).
+
+**Out of scope (deferred):** template-channel migration to single-row JSON model (Daniel approved keeping current schema); `auto` filter category in sidebar (requires JOIN to `crm_automation_rules`, deferred to next CRM_UX_REDESIGN_AUTOMATION SPEC); WhatsApp dispatch wiring (post-Meta-API SPEC). All findings logged in `modules/Module 4 - CRM/docs/specs/CRM_UX_REDESIGN_TEMPLATES/FINDINGS.md`.
+
+---
+
 ## CRM_PRE_MERGE — Final Micro-task + Integration Ceremony (2026-04-24) ✅
 
 | Hash | Message |

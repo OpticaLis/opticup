@@ -1,6 +1,6 @@
 # Module 4 — CRM: Module Map
 
-> **Last updated:** 2026-04-24 (CRM_PRE_MERGE — Integration Ceremony)
+> **Last updated:** 2026-04-26 (M4_CAMPAIGNS_CLEANUP — campaigns sequence closed; make-patterns/ doc directory added)
 
 ---
 
@@ -38,8 +38,10 @@
 | `crm-event-day-schedule.js` | 160 | **[B8]** Scheduled times: grouped chip board (white chips + emerald checked-in) |
 | `crm-event-day-manage.js` | 278 | **[B8]** Manage table (Tailwind) + arrived column widget (waiting-to-purchase + purchased sections with amount badges) + running-total bar + purchase amount modal with 3xl tabular-nums input |
 | `crm-messaging-tab.js` | 101 | **[B8]** Messaging Hub orchestrator — rounded tab bar with indigo underline active state, 4 sub-tabs |
-| `crm-messaging-templates.js` | 304 | **[B8]** Templates split layout: sidebar (category tabs, search, template cards) + editor (toolbar, dark slate-900 code editor with line numbers, variable dropdown, 3-panel preview WhatsApp emerald / SMS sky / Email amber) |
-| `crm-messaging-rules.js` | 347 | **[B8 + P8 + P21]** Rules table via Tailwind: colored channel badges, pill toggle for active state, rule editor modal with trigger/condition/template/channels/recipient fields. **[P21]** Added optional "סינון לפי סטטוס" checkbox group (waiting/invited/confirmed/confirmed_verified); stored in `action_config.recipient_status_filter`, visible only when recipient_type ∈ {tier2, tier2_excl_registered}. Empty filter = all tier2 statuses (backwards compatible). |
+| `crm-messaging-templates.js` | 325 | **[CRM_UX_REDESIGN_TEMPLATES]** Logical-template grouping: sidebar shows one card per base slug (with active-channel badges) + editor renders 3 channel accordion sections via `window.CrmTemplateSection`. Save logic diffs channels → INSERT / UPDATE / SOFT-DELETE (is_active=false). Backward-compat: 4 public globals preserved (`renderMessagingTemplates`, `loadMessagingTemplates`, `_crmMessagingTemplates`, `CRM_TEMPLATE_VARIABLES`); new global `CrmTemplateSubstitute` for the section module's preview. |
+| `crm-template-section.js` | 141 | **[CRM_UX_REDESIGN_TEMPLATES]** Channel-section component for the templates accordion editor. Public API: `window.CrmTemplateSection.{render, wire, updatePreview, isInactive}`. Renders one accordion section per channel (SMS/WhatsApp/Email) with active/inactive states, per-channel preview, char counter. WhatsApp interactions on a disabled section fire `Toast.info` informing the user the channel is not yet active. Consumed only by `crm-messaging-templates.js`. |
+| `crm-messaging-rules.js` | 227 | **[CRM_UX_REDESIGN_AUTOMATION]** Rules orchestrator. Pill bar above the table (5 pills — הכל + 4 boards with active-rule counts), board column with colored chip per row, filter-by-pill on click. Editor delegated to `window.CrmRuleEditor.open()`. Backward-compat: `renderMessagingRules`, `loadMessagingRules` preserve unchanged signatures. |
+| `crm-rule-editor.js` | 273 | **[CRM_UX_REDESIGN_AUTOMATION]** Board-led rule editor (Mockup C). Public API: `window.CrmRuleEditor.{open, _boardOf, _summaryFor, BOARDS}`. Editor leads with 4-card board picker (📥 לידים נכנסים / 👥 רשומים / 📅 אירועים / ✅ נרשמים לאירוע); conditional fields reveal after board choice and are themed by the board's color. Templates dropdown filters by board prefix. Plain-Hebrew summary block updates live. action_config preserves unknown fields (post_action_status_update, language) on round-trip via Object.assign spread. |
 | `crm-automation-engine.js` | 348 | **[P8 + P20 + P21 + EVENT_CONFIRMATION_EMAIL + CRM_HOTFIXES + CRM_PRE_MERGE]** Rule evaluation engine. `CrmAutomation.evaluate(triggerType, data)` loads matching `crm_automation_rules`, evaluates conditions (always/status_equals/count_threshold/source_equals), resolves recipients, builds `sendPlan`. **[P20]** Shows `CrmConfirmSend` modal if loaded; falls back to immediate `CrmMessaging.sendMessage` dispatch. **[P21]** `resolveRecipients` accepts optional 4th param `actionConfig`; when `action_config.recipient_status_filter` is set and recipient_type is tier2*, filters the `crm_leads.status IN (...)` list to the chosen statuses. **[EVENT_CONFIRMATION_EMAIL]** `buildVariables` composes `%lead_id%` / `%event_id%` for the confirmation email QR code. **[CRM_HOTFIXES]** New `promoteWaitingLeadsToInvited(planItems, results)` runs after an event-invitation rule dispatches — atomic UPDATE of `crm_leads.status` from `waiting`→`invited` for the targeted leads. Exposed on `window.CrmAutomation`. **[CRM_PRE_MERGE]** `buildVariables` now injects `vars.lead_id = lead.id` so `%lead_id%` resolves on the UI-register path (fixes the broken QR where the literal `%lead_id%` was encoded). |
 | `crm-confirm-send.js` | 255 | **[P20 + P21]** Confirmation Gate shown before any automated send. **[P21]** Redesigned to 2-tab layout: Messages tab (1 card per channel per rule with representative body preview) + Recipients tab (sortable paginated table, 50/page, dedup by lead_id with ×N badge when same lead is targeted by multiple rules). Approve → `CrmMessaging.sendMessage` per plan item; Cancel → inserts `pending_review` rows into `crm_message_log`. Exports `window.CrmConfirmSend.show(sendPlan)`. |
 | `crm-messaging-log.js` | 201 | **[P8 + P20]** Message log table (split from broadcast file 2026-04-22, Rule 12). JOINs `crm_leads` (full_name, phone) + `crm_message_templates` (name, slug). Channel/status filters, pagination (50/page), click-to-expand row showing full body + metadata + error. **[P20]** `pending_review` (amber) + `superseded` (slate strikethrough) badges; resend button on pending_review opens `CrmSendDialog.openQuickSend` pre-filled with preserved body, marks original row superseded on successful send. |
@@ -71,6 +73,11 @@
 | `campaigns/supersale/scripts/import-monday-data.mjs` | Monday xlsx parser | B2 |
 | `campaigns/supersale/scripts/rest-import.mjs` | PostgREST bulk import runner | B2 |
 | `campaigns/supersale/DATA_DISCOVERY_REPORT.md` | Analysis of 9 Monday export boards | B1 |
+
+### Make integration patterns
+| File | Purpose | Phase |
+|------|---------|-------|
+| `docs/make-patterns/README.md` | Make → Optic Up Edge Function integration pattern. Documents the V1/V2/V3 trap journey and the iteration pattern that landed (1 HTTP POST per item, `mapper.data` not `mapper.body`, no array references). Reference for future Make → EF SPECs. | M4_CAMPAIGNS_MAKE_BODY_FIX_V3 |
 
 ---
 
@@ -118,9 +125,14 @@
 | `showMessagingSub(key)` | crm-messaging-tab.js | Switch active messaging sub-tab (templates/rules/broadcast/log) |
 | `getMessagingSubTab()` | crm-messaging-tab.js | Current sub-tab key |
 | `renderMessagingActiveSub()` | crm-messaging-tab.js | Re-render the currently active messaging sub-tab |
-| `renderMessagingTemplates(host)` | crm-messaging-templates.js | Templates sub-tab: list + toolbar |
+| `renderMessagingTemplates(host)` | crm-messaging-templates.js | Templates sub-tab entry: sidebar (1 card per logical template, base slug) + editor (3 channel accordion sections) |
 | `loadMessagingTemplates()` | crm-messaging-templates.js | Force refresh of template cache |
-| `_crmMessagingTemplates()` | crm-messaging-templates.js | Internal: expose cached templates list to sibling files |
+| `_crmMessagingTemplates()` | crm-messaging-templates.js | Internal: expose cached templates list to sibling files (raw rows, not grouped) |
+| `CrmTemplateSubstitute(text)` | crm-messaging-templates.js | Variable substitution (`%name%`, `%event_*%`, …) for previews — exposed for the section module |
+| `CrmTemplateSection.render(channel, channelState, opts)` | crm-template-section.js | Render markup for one channel accordion section |
+| `CrmTemplateSection.wire(rootEl, channel, channelState, callbacks)` | crm-template-section.js | Attach DOM events to a rendered section (toggle, body input, subject input, head click) |
+| `CrmTemplateSection.updatePreview(rootEl, channel, body, subject)` | crm-template-section.js | Re-render preview content for one section |
+| `CrmTemplateSection.isInactive(channel, channelState)` | crm-template-section.js | True if the section's checkbox is unchecked |
 | `renderMessagingRules(host)` | crm-messaging-rules.js | Automation rules sub-tab: list + toolbar |
 | `loadMessagingRules()` | crm-messaging-rules.js | Force refresh of rules cache |
 | `renderMessagingBroadcast(host)` | crm-messaging-broadcast.js | Broadcast sub-tab: filter + recipient preview + send |
@@ -162,8 +174,33 @@
 | `crm_campaigns` | crm-event-actions.js | **[P2b]** SELECT active campaigns for the event creation form dropdown |
 | `crm_event_attendees` | crm-event-day.js, crm-event-register.js | **[P2b]** INSERT via `register_lead_to_event` RPC only (Rule 11 — atomic capacity check + insert) |
 | `crm_leads` (Tier 2 filter) | crm-event-register.js | **[P2b]** SELECT for Tier 2 lead search in the register-to-event modal |
-| `crm_event_attendees` | crm-event-day-manage.js, crm-messaging-broadcast.js | Direct updates (purchase/coupon/fee) and lead_id lookup for event filter |
+| `crm_event_attendees` | crm-event-day-manage.js, crm-messaging-broadcast.js | Direct updates (purchase/coupon/payment_status) and lead_id lookup for event filter. **[M4_ATTENDEE_PAYMENT_SCHEMA]** Replaced legacy booking_fee_paid/refunded booleans with payment_status (7-value enum) + 4 timestamps + credit_used_for_attendee_id self-FK. |
 | `crm_statuses` | crm-helpers.js, crm-messaging-broadcast.js | Status labels + colors (31 seed rows), filter dropdown source |
+
+### Payment lifecycle (UI) — added 2026-04-25 by `M4_ATTENDEE_PAYMENT_UI`
+
+Two new modules + edits to 4 existing files turn the schema from SPEC #1 into a usable UI:
+
+- **`modules/crm/crm-payment-helpers.js`** (272 lines) — `window.CrmPayment.{renderStatusPill, renderActionPanel, openActionModal, markPaid, markRefundRequested, markRefunded, openCredit, isRefundEligibleByTime, eventEnded, allowedActions, STATUS_COLORS, STATUS_LABELS}`. Owns: per-status pill rendering (sky/emerald/slate/amber/gray/violet), 7-status transition matrix, Israel-timezone-aware 48h hard rule (DST month-based heuristic), action-panel HTML + wiring with paired "ושלח אישור ללקוח" checkbox, mark_paid flow with strict UPDATE-first-then-dispatch ordering, event-ended detection (`eventEnded` — status-first then end_time + '+03:00'). Auto-installs a document-level click delegate on `[data-pay-attendee-id]` cards. `openActionModal(attendeeId, opts)` accepts optional `opts.onAfterAction` callback for callers that need to refresh their own UI after a transition (used by event-day-manage's `refreshAttendeeRow`).
+- **`modules/crm/crm-payment-automation.js`** (100 lines, M4_ATTENDEE_PAYMENT_AUTOMATION) — `window.CrmPaymentAutomation.{markUnpaidForCompletedEvent, transferOpenCreditOnRegistration}`. Sits AROUND the existing `CrmAutomation.evaluate` engine — adds payment-status side-effects without modifying the engine contract. (1) `markUnpaidForCompletedEvent(eventId, oldStatus, newStatus)`: invoked by `crm-event-actions.js` after `dispatchEventStatusMessages`; ONLY fires on transition INTO `'completed'` (NOT `'closed'`). 1 UPDATE flips all `pending_payment` + no-checkin attendees to `'unpaid'`. Returns `{flipped, eventId, skipped?}`. (2) `transferOpenCreditOnRegistration(leadId, newAttendeeId)`: invoked by `crm-event-register.js` BEFORE `CrmAutomation.evaluate('event_registration', ...)`; SELECTs oldest unexpired `credit_pending` row (FIFO, `ORDER BY credit_expires_at ASC LIMIT 1`), calls `transfer_credit_to_new_attendee` RPC if found. Returns `{transferred, oldAttendeeId, newAttendeeId}`. Both methods log to console with `[CrmPaymentAutomation]` prefix and refresh `CrmNotificationsBell` on success. Engine + RPC untouched.
+- **`modules/crm/crm-notifications-bell.js`** (130 lines) — `window.CrmNotificationsBell.{render, countExpiring, refresh}`. Bell icon (🔔) in topbar with rounded badge counter. Shows count of unique leads with credit_pending attendees expiring in ≤30 days. Click → modal listing leads (color-coded urgency: ≤7d rose, ≤14d amber, else slate). Click on row → opens lead card via `openCrmLeadDetail`. Auto-renders on DOMContentLoaded into `#crm-notifications-bell` anchor in the page header.
+- **Modified:** `crm-events-detail.js` (no-show table column rename + pill, attendee cards get `data-pay-attendee-id` + cursor-pointer for action-modal trigger), `crm-event-day-manage.js` (column rename + feeCell now wraps pill in `data-pay-attendee-id` button → opens action modal; couponCell 3-state via `CrmPayment.eventEnded`; new `refreshAttendeeRow` helper — see M4_EVENT_DAY_PARITY_FIX), `crm-event-day-checkin.js` (pill next to attendee name; helper rename `logActivity`→`_chkLog`, `updateLocal`→`_chkUpd` to avoid co-staging hook collision), `crm-leads-tab.js` (tier 2 rows with at-risk credit get `bg-amber-50` + "💳 קרדיט פג בעוד X ימים" subtitle).
+- **`crm.html`:** 2 script tags added (helper + bell, both above `crm-events-detail.js`); `<div id="crm-notifications-bell">` anchor added inside `#crm-header-actions` topbar.
+- **Engine + automation rules + DB schema untouched.** SPEC #3 (`M4_ATTENDEE_PAYMENT_AUTOMATION`) builds on this UI to add the 2 trigger automations.
+
+### Payment lifecycle (DB) — added 2026-04-25 by `M4_ATTENDEE_PAYMENT_SCHEMA`
+
+The `crm_event_attendees` table now carries a payment-lifecycle model:
+
+- **`payment_status`** (text NOT NULL, default `'pending_payment'`, CHECK) — one of 7 values: `pending_payment`, `paid`, `unpaid`, `refund_requested`, `refunded`, `credit_pending`, `credit_used`.
+- **`paid_at`** / **`refund_requested_at`** / **`refunded_at`** / **`credit_expires_at`** — supporting timestamptz columns (nullable).
+- **`credit_used_for_attendee_id`** — uuid FK to `crm_event_attendees(id)` self-reference. When a credit moves from an old attendee to a new one, the old row points to the new.
+- **2 partial indexes**: `(tenant_id, payment_status) WHERE NOT is_deleted` and `(tenant_id, credit_expires_at) WHERE payment_status='credit_pending' AND NOT is_deleted`.
+- **RPC `transfer_credit_to_new_attendee(uuid, uuid)`** — atomic credit transfer: validates old=`credit_pending`+new=`pending_payment`+same tenant, flips old→`credit_used` (with FK back-pointer), new→`paid` + `paid_at=now()`. SECURITY DEFINER. GRANT EXECUTE TO authenticated + service_role.
+- **Templates `payment_received_sms_he` + `payment_received_email_he`** — seeded on demo + prizma (4 rows total). Tenant-neutral content; uses `%name%`, `%event_name%`, `%event_date%`, `%unsubscribe_url%`.
+- **Migration files** in `modules/Module 4 - CRM/migrations/2026_04_25_payment_*.sql` (6 files: `_01_add_columns`, `_02_sync_trigger`, `_03_backfill_demo`, `_04_credit_transfer_rpc`, `_05_recreate_view`, `_99_drop_legacy`).
+- **Removed at SPEC close:** legacy `booking_fee_paid` + `booking_fee_refunded` columns, plus the temporary `sync_booking_fee_paid_from_status` trigger that bridged the old and new fields during the carve-out.
+- **UI + automation work** depending on this schema lives in sibling SPECs `M4_ATTENDEE_PAYMENT_UI` (#2) and `M4_ATTENDEE_PAYMENT_AUTOMATION` (#3).
 | `crm_message_templates` | crm-messaging-templates.js, crm-messaging-rules.js, crm-messaging-broadcast.js | Templates CRUD, template picker in rules + broadcasts, name lookup for log display |
 | `crm_automation_rules` | crm-messaging-rules.js | Rules CRUD |
 | `crm_broadcasts` | crm-messaging-broadcast.js | Broadcast records (insert on send) |

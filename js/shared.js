@@ -147,6 +147,68 @@ function getTenantConfig(key) {
 }
 
 /**
+ * Resolve the tenant's custom storefront domain, used in SEO-preview UI text.
+ * Priority: tenant_config.custom_domain → tenant_config.ui_config.seo_domain → 'domain.co.il'.
+ * @returns {string}
+ */
+function getCustomDomain() {
+  var direct = getTenantConfig('custom_domain');
+  if (direct) return direct;
+  var uiConfig = getTenantConfig('ui_config');
+  if (uiConfig && uiConfig.seo_domain) return uiConfig.seo_domain;
+  return 'domain.co.il';
+}
+
+/**
+ * Resolve the tenant's VAT rate (percentage form, e.g. 18 for 18%).
+ * Reads from tenant_config.vat_rate. Returns 0 + warns if missing/invalid —
+ * explicit zero is safer than silent fallback to wrong country's rate
+ * (M3-SAAS-21).
+ * @returns {number}
+ */
+function getVatRate() {
+  var raw = getTenantConfig('vat_rate');
+  var num = Number(raw);
+  if (isFinite(num) && num > 0) return num;
+  if (window.console && console.warn) {
+    console.warn('[shared] vat_rate missing or invalid in tenant_config; returning 0. Configure vat_rate on the tenant.');
+  }
+  return 0;
+}
+
+/**
+ * Format a number as a currency string per tenant_config (default ILS/he-IL).
+ * Reads default_currency + locale from getTenantConfig() with safe fallbacks
+ * so a second-tenant onboarding (different country) just works without code changes.
+ *
+ * Default behavior preserves the legacy formatILS() output exactly: SYMBOL+number,
+ * no fractional digits, locale-formatted thousands separator. The currency symbol
+ * is resolved via Intl.NumberFormat parts API for cross-currency support
+ * (₪ for ILS, $ for USD, € for EUR, etc.) but assembled in the legacy prefix style.
+ *
+ * @param {number|string} amount
+ * @param {object} [opts] - { currency, locale, minimumFractionDigits, maximumFractionDigits }
+ * @returns {string}
+ */
+function formatMoney(amount, opts) {
+  opts = opts || {};
+  var num = Number(amount);
+  if (!isFinite(num)) num = 0;
+  var currency = opts.currency || getTenantConfig('default_currency') || 'ILS';
+  var locale = opts.locale || getTenantConfig('locale') || 'he-IL';
+  var minFrac = (opts.minimumFractionDigits != null) ? opts.minimumFractionDigits : 0;
+  var maxFrac = (opts.maximumFractionDigits != null) ? opts.maximumFractionDigits : 0;
+  var symbol;
+  try {
+    var parts = new Intl.NumberFormat(locale, { style: 'currency', currency: currency }).formatToParts(0);
+    var sym = parts.find(function (p) { return p.type === 'currency'; });
+    symbol = sym ? sym.value : currency;
+  } catch (e) { symbol = (currency === 'ILS' ? '₪' : currency); }
+  return symbol + num.toLocaleString(locale, { minimumFractionDigits: minFrac, maximumFractionDigits: maxFrac });
+}
+
+
+/**
  * Resolve a media-library storage path to a full URL.
  * Storage paths look like: "media-library/media/{tid}/{folder}/{filename}"
  * In storefront context (same domain) → "/api/image/{path}"
@@ -177,8 +239,9 @@ function escapeHtml(str) {
  * Format a number as ILS currency string: ₪1,234
  */
 function formatILS(amount) {
-  const num = Number(amount) || 0;
-  return '\u20AA' + num.toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  // Backward-compat wrapper - delegates to formatMoney() which reads
+  // default_currency + locale from tenant_config (M1_5_SAAS_FORMAT_MONEY).
+  return formatMoney(amount);
 }
 
 function showLoading(t) { $('loading-text').textContent=t||'טוען...'; $('loading').style.display='flex'; }

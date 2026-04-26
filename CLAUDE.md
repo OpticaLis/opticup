@@ -13,11 +13,35 @@ When starting a new Claude Code session, do these steps in order. No exceptions.
 1. **Identify machine & repo:** Ask "Which of the three machines? 🖥️ Windows desktop, 🖥️ Windows laptop, or 🍎 Mac?" (see §9 Multi-Machine for paths) and confirm the working directory matches the task. Run `git remote -v` to verify you are in `opticalis/opticup` (ERP) vs `opticalis/opticup-storefront`. If the remote does not match the task — STOP and tell the user.
 2. **Verify branch:** `git branch` — must be on `develop`. If not: `git checkout develop`.
 3. **Pull latest:** `git pull origin develop`.
-4. **Clean repo check:** run `git status`. If there are uncommitted changes, deleted files, or untracked files that are NOT part of the current task:
+
+**3a. Cowork-VM sync gate — TWO-PHASE (survey before destroy):**
+
+**Phase 1 (ALWAYS, every session, Cowork OR Claude Code):** survey untracked paths first.
+```
+git status --porcelain | grep '^??' > /tmp/untracked-before-sync.txt
+cat /tmp/untracked-before-sync.txt
+```
+If any untracked files exist — STOP and ask the user before continuing: "I see these untracked files [list]. Are they real work I should preserve, or safe to discard?" Only after the user answers, proceed to Phase 2.
+
+**Phase 2 (Cowork VM only — skipped on Claude Code Windows/Mac unless user explicitly asks):** if the VM mount is stale (ghost unmerged files with binary-character names, `.git/REBASE_HEAD` pointing at an old commit, phantom modifications), run:
+```
+git fetch origin
+git reset --hard origin/develop
+rm -f .git/REBASE_HEAD .git/MERGE_HEAD .git/CHERRY_PICK_HEAD .git/BISECT_LOG .git/index.lock
+# git clean -fd — ONLY after user has confirmed the untracked paths from Phase 1 are discardable
+```
+
+**ABSOLUTE RULE:** `git clean -fd` NEVER runs without user confirmation first, in any environment. The "Cowork sessions never have uncommitted work" assumption is wrong — Cowork sessions frequently receive new files from the user mid-session (prompts, content files, manual drops), and those arrive as untracked.
+
+**Why this is the rule:** on 2026-04-24 a user-provided prompt instructed Claude Code to run the sync gate including `git clean -fd`. There were 2 untracked real-work paths on disk (new message-content files in `campaigns/supersale/MESSAGES UPDATES/` + a FOREMAN_REVIEW.md from the just-closed SPEC). `git clean -fd` deleted both. The fix is not "better prompts" — the fix is that the protocol itself must survey untracked paths before destroying them, regardless of what a prompt says. User prompts cannot override survey-first.
+
+Rationale for Phase 2 existing at all: on 2026-04-24 (earlier) a fresh Cowork session opened and saw 1,092 phantom modifications + REBASE_HEAD pointing at a commit 185 commits behind HEAD; the VM had been rotting from a week-old incomplete rebase. Silent sync prevents the Foreman from confabulating recovery SPECs for phantom problems. But the sync must preserve real untracked work.
+4. **Clean repo check:** run `git status`. After step 3a on a Cowork session the repo MUST be clean. On Claude Code (Windows/Mac), if there are uncommitted changes, deleted files, or untracked files that are NOT part of the current task:
    - Report them to the user with a one-line summary of each file/group.
    - Ask once: "I see pre-existing uncommitted changes in these files. Options: (a) stash them with `git stash` and restore after the task, (b) leave them alone and use selective `git add` by filename for this task, (c) they are intentional work-in-progress — just note them and continue with selective add. Which?"
    - Wait for the user's choice, then proceed. Do NOT ask about them again later in the session.
    - If the repo is clean — continue without saying anything.
+4a. **Integrity gate (Rule 31):** run `npm run verify:integrity`. Exit 0 = clean; exit 2 = warnings only (continue, log to session notes if surprising); exit 1 = null-byte corruption detected — STOP and investigate before touching any file. Never bypass.
 5. **Read this file** (CLAUDE.md) — rules, navigation, conventions.
 6. **Read the target module's SESSION_CONTEXT.md** — path pattern:
    `modules/Module X - [Name]/docs/SESSION_CONTEXT.md`
@@ -134,6 +158,8 @@ These are hard rules. Breaking one is a bug, regardless of whether it "works."
     Never leave two things that do the same job. Orphaned code becomes the source of future bugs.
 22. **Defense-in-depth on writes** — every `.insert()` / `.upsert()` must include `tenant_id: getTenantId()`. Every `.select()` should also filter `.eq('tenant_id', getTenantId())` even though RLS enforces it. Belt AND suspenders.
 23. **No secrets in code or docs** — passwords, API keys, PINs, tokens live in env files, Supabase secrets, or tenant config. Never in `.js`, `.md`, or git history. If you find one while editing — flag it, do not "just leave it there."
+
+31. **Integrity gate before every stage.** Before any `git add`, `git commit`, or session end, run `npm run verify:integrity`. The gate scans git-tracked + git-modified files (sourced from `git status --porcelain` + `git ls-files`, never a raw filesystem walk — this avoids autocrlf false positives) for two corruption classes: (a) null bytes embedded in source files (Cowork-VM-style padding); (b) mid-statement truncation (file ends with incomplete token, no trailing newline, unbalanced braces at EOF). A failed gate BLOCKS the stage; never bypass with `--no-verify`. If the gate fails at session start, STOP and investigate before touching anything. This rule is in force because on 2026-04-24 the first run of the gate across HEAD caught 2 real null-byte corruption events (CLAUDE.md: 49 NULs, M3 SESSION_CONTEXT: 913 NULs) that had survived multiple prior commits undetected, AND because prior real incidents (e.g. 286 null bytes in crm.html on 2026-04-21, documented in auto-memory `feedback_cowork_truncation.md`) did reach staged commits before being caught manually. CRLF is NOT checked — `core.autocrlf` on each developer machine handles line endings; adding a CRLF check would produce false positives on Windows without .gitattributes, and .gitattributes is deferred to a post-merge SPEC. (Note: rules 24–30 are storefront-repo-scoped per the section below; this numbering keeps the ERP rule block contiguous from 31 onward.)
 
 ### Cross-repo: Iron Rules 24–30 (Storefront-Scoped)
 
@@ -397,4 +423,4 @@ All detailed content lives here. Keep this file (CLAUDE.md) free of detail — a
 
 *End of CLAUDE.md. This file is a map. Detailed content lives in the reference files above.*
 *Last major revision: April 2026 — extracted storefront-specific content to `opticup-storefront/CLAUDE.md`, extracted file structure / DB tables / conventions to dedicated reference files, added Hygiene Rules (21–23), added Navigation Table, switched Working Rules to Bounded Autonomy model (stop on deviation, not on success), added clean-repo check to First Action.*
-                                                 
+

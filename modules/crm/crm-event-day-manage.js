@@ -73,7 +73,7 @@
       '<th class="' + CLS_TH + '">סטטוס</th>' +
       '<th class="' + CLS_TH + '" data-admin-only>רכישה</th>' +
       '<th class="' + CLS_TH + '">קופון</th>' +
-      '<th class="' + CLS_TH + '">דמי הזמנה</th>' +
+      '<th class="' + CLS_TH + '">תשלום</th>' +
       '</tr></thead><tbody>';
     rows.forEach(function (r) {
       html += '<tr>' +
@@ -109,14 +109,14 @@
   }
   function couponCell(r) {
     if (!r.coupon_sent) return '<button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-coupon="' + escapeHtml(r.id) + '">שלח</button>';
-    return r.checked_in_at
-      ? '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">✓ הגיע</span>'
-      : '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">⚠️ לא הגיע</span>';
+    if (r.checked_in_at) return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">✓ הגיע</span>';
+    var ev = window.getEventDayState().event;
+    if (window.CrmPayment && CrmPayment.eventEnded(ev)) return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">⚠️ לא הגיע</span>';
+    return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">📨 נשלח</span>';
   }
   function feeCell(r) {
-    return r.booking_fee_paid
-      ? '<button type="button" class="' + CLS_TOGGLE_ON + '" disabled>✅ שולם</button>'
-      : '<button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-fee="' + escapeHtml(r.id) + '">שולם</button>';
+    var pill = window.CrmPayment ? CrmPayment.renderStatusPill(r.payment_status) : '';
+    return '<button type="button" class="text-start hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded" data-pay-attendee-id="' + escapeHtml(r.id) + '">' + pill + '</button>';
   }
 
   function wireRowActions(wrap) {
@@ -127,7 +127,10 @@
       inp.addEventListener('blur', function () { setTimeout(function () { savePurchase(inp); }, 150); });
     });
     wrap.querySelectorAll('[data-toggle-coupon]').forEach(function (b) { b.addEventListener('click', function () { toggleCoupon(b.getAttribute('data-toggle-coupon'), b); }); });
-    wrap.querySelectorAll('[data-toggle-fee]').forEach(function (b) { b.addEventListener('click', function () { toggleFee(b.getAttribute('data-toggle-fee'), b); }); });
+    wrap.querySelectorAll('[data-pay-attendee-id]').forEach(function (b) {
+      var aid = b.getAttribute('data-pay-attendee-id');
+      b.addEventListener('click', function (e) { e.stopPropagation(); if (window.CrmPayment) CrmPayment.openActionModal(aid, { onAfterAction: function () { refreshAttendeeRow(aid); } }); });
+    });
   }
 
   /* ----------------------------------- ARRIVED COLUMN ----------------------------------- */
@@ -252,29 +255,82 @@
     var ev = state.event || {};
     var attendees = state.attendees || [];
     var target = attendees.find(function (a) { return a.id === id; });
-    if (target && target.coupon_sent) return;
-    var totalSent = attendees.filter(function (a) { return a.coupon_sent && a.status !== 'cancelled'; }).length;
-    var ceiling = (ev.max_coupons != null ? +ev.max_coupons : 50) + (+ev.extra_coupons || 0);
-    if (totalSent >= ceiling) {
-      toast('error', 'הגעת למכסת הקופונים (' + ceiling + '). הגדל כמות קופונים נוספת אם יש צורך.');
+    if (!target) return;
+
+    // Defensive re-send guard. UI hides the "שלח" button once coupon_sent=true
+    // (see couponCell), so this path is not reachable from the rendered table
+    // today; it protects programmatic callers and any future re-send button.
+    if (target.coupon_sent) {
+      var when = target.coupon_sent_at ? new Date(target.coupon_sent_at).toLocaleString('he-IL') : '—';
+      if (!confirm('הקופון כבר נשלח ב-' + when + '. לשלוח שוב?')) return;
+    } else {
+      var totalSent = attendees.filter(function (a) { return a.coupon_sent && a.status !== 'cancelled'; }).length;
+      var ceiling = (ev.max_coupons != null ? +ev.max_coupons : 50) + (+ev.extra_coupons || 0);
+      if (totalSent >= ceiling) {
+        toast('error', 'הגעת למכסת הקופונים (' + ceiling + '). הגדל כמות קופונים נוספת אם יש צורך.');
+        return;
+      }
+    }
+
+    if (!ev.coupon_code) {
+      toast('error', 'לאירוע לא הוגדר קוד קופון. הגדר קוד קופון לאירוע לפני השליחה.');
       return;
     }
+    if (!window.CrmMessaging || typeof CrmMessaging.sendMessage !== 'function') {
+      toast('error', 'CrmMessaging אינו זמין');
+      return;
+    }
+    if (!target.phone && !target.email) {
+      toast('error', 'למשתתף חסרים טלפון ואימייל — לא ניתן לשלוח קופון.');
+      return;
+    }
+
+    if (!window.CrmCouponDispatch || typeof CrmCouponDispatch.dispatch !== 'function') {
+      toast('error', 'CrmCouponDispatch אינו זמין');
+      return;
+    }
+
     if (btn) { btn.disabled = true; btn.textContent = '...'; }
+
+    var dispatch = await CrmCouponDispatch.dispatch(target, ev);
+    if (!dispatch.anyOk) {
+      if (btn) { btn.disabled = false; btn.textContent = 'שלח'; }
+      toast('error', 'שליחה נכשלה: SMS ' + (dispatch.smsError || '—') + ' | Email ' + (dispatch.emailError || '—'));
+      return;
+    }
+
+    // Flag update happens AFTER at least one channel succeeds — never before.
     var nowIso = new Date().toISOString();
-    var { error } = await sb.from('crm_event_attendees').update({ coupon_sent: true, coupon_sent_at: nowIso }).eq('id', id).eq('tenant_id', getTenantId());
-    if (error) { toast('error', error.message); if (btn) { btn.disabled = false; btn.textContent = 'שלח'; } return; }
-    logActivity('crm.attendee.coupon_sent', id);
+    var { error } = await sb.from('crm_event_attendees')
+      .update({ coupon_sent: true, coupon_sent_at: nowIso })
+      .eq('id', id).eq('tenant_id', getTenantId());
+    if (error) {
+      toast('warning', 'נשלח, אך שמירת דגל נכשלה: ' + error.message);
+      if (btn) { btn.disabled = false; }
+      return;
+    }
+    logActivity('crm.attendee.coupon_sent', id, {
+      sms_ok: dispatch.smsOk, email_ok: dispatch.emailOk,
+      sms_log_id: dispatch.smsLogId, email_log_id: dispatch.emailLogId
+    });
     updateLocal(id, { coupon_sent: true, coupon_sent_at: nowIso });
+    toast(dispatch.allOk ? 'success' : 'warning', 'הקופון נשלח: ' + dispatch.summary);
+    if (window.CrmCouponDispatch && typeof CrmCouponDispatch.checkAndAutoClose === 'function') {
+      try {
+        var ac = await CrmCouponDispatch.checkAndAutoClose(ev);
+        if (ac && ac.closed) { ev.status = 'closed'; toast('success', 'האירוע עבר ל"נסגר" — כל הקופונים הונפקו'); }
+      } catch (e) { console.error('autoClose:', e); }
+    }
     renderTable();
   }
 
-  async function toggleFee(id, btn) {
-    if (btn) { btn.disabled = true; btn.textContent = '...'; }
-    var { error } = await sb.from('crm_event_attendees').update({ booking_fee_paid: true }).eq('id', id).eq('tenant_id', getTenantId());
-    if (error) { toast('error', error.message); if (btn) { btn.disabled = false; btn.textContent = 'שולם'; } return; }
-    logActivity('crm.attendee.fee_paid', id);
-    updateLocal(id, { booking_fee_paid: true });
+  async function refreshAttendeeRow(id) {
+    var state = window.getEventDayState();
+    var res = await sb.from('crm_event_attendees').select('id, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id').eq('id', id).eq('tenant_id', getTenantId()).single();
+    if (res.error || !res.data) return;
+    (state.attendees || []).forEach(function (a) { if (a.id === id) Object.assign(a, res.data); });
     renderTable();
+    if (window.CrmNotificationsBell && CrmNotificationsBell.refresh) CrmNotificationsBell.refresh();
   }
 
   function updateLocal(id, patch) {

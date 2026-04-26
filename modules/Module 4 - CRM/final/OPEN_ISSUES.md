@@ -2,7 +2,8 @@
 
 > **Created:** 2026-04-24
 > **Source:** End-to-end testing of STOREFRONT_FORMS feature
-> **Status:** 7/7 resolved as of 2026-04-24. #1, #2, #4, #5 → CRM_HOTFIXES. #3, #6, #7 → EVENT_CONFIRMATION_EMAIL.
+> **Last sync:** 2026-04-25 (CRM_OPEN_ISSUES_CLEANUP_2026-04-25 SPEC)
+> **Status:** 19/25 resolved. Open: #11, #13, #18, #19, #20, #21 (4 deferred, 2 actively tracked).
 
 ---
 
@@ -24,114 +25,283 @@ wraps HMAC URLs in `/r/XXXXXXXX` short codes via `short_links` table.
 **Priority:** HIGH
 **Description:** כשליד מקבל הודעת הזמנה לאירוע, הסטטוס שלו בבורד "רשומים"
 צריך להשתנות ל-"הוזמן לאירוע" (invited). כרגע הסטטוס לא משתנה.
-**Where:** לוגיקה ב-automation engine או ב-send-message EF — אחרי שליחה
-מוצלחת, לעדכן `crm_leads.status = 'invited'` (רק אם הסטטוס הנוכחי נמוך יותר).
 **Resolution:** CRM_HOTFIXES Fix 2 — commit 9fe1e36. Added
-`promoteWaitingLeadsToInvited` helper in `crm-automation-engine.js`, wired
-into both dispatch paths (confirmation-gate approveAndSend and
-dispatchPlanDirect fallback). Atomic UPDATE scoped to `.eq('status','waiting')`
-so confirmed/attended/unsubscribed leads are never demoted. Logs each
-transition via ActivityLog.
+`promoteWaitingLeadsToInvited` helper in `crm-automation-engine.js`.
 
 ---
 
 ## 3. שינוי סטטוס מרובה (Bulk Status Change) — ✅ RESOLVED 2026-04-24 (already shipped in P2a)
 
 **Priority:** MEDIUM
-**Description:** צריך אפשרות לסמן מספר לידים בבורד (צ'קבוקסים או דרך סינון)
-ולשנות לכולם את הסטטוס בפעם אחת.
-**Where:** UI חדש ב-crm.html — כפתור "שנה סטטוס" שמופיע כשיש סימון מרובה.
 **Resolution:** EVENT_CONFIRMATION_EMAIL SPEC pre-flight discovered the
-feature was already fully implemented in P2a (2026-04-21) and instrumented
-with ActivityLog in P12 (2026-04-22). Registered leads tab renders row
-checkboxes (`crm-leads-tab.js:169-183` via `_selectedIds` Set); bulk bar
-exposes "שנה סטטוס" which calls `CrmLeadActions.openBulkStatusPicker`
-(`crm-lead-modals.js:73-333`); batch writes emit
-`crm.lead.bulk_status_change` audit entries. Issue marker was stale —
-OPEN_ISSUES.md was authored after E2E testing that focused on event
-flows, not the leads board. Closed without code changes. Duplicate new
-implementation was avoided per Rule 21.
+feature was already fully implemented in P2a (2026-04-21).
 
 ---
 
 ## 4. כפתור "שלח הודעה" באירוע — לא עובד — ✅ RESOLVED 2026-04-24
 
 **Priority:** HIGH
-**Description:** הכפתור לא מגיב. הציפייה: פותח חלון כתיבת הודעה חופשית
-(raw body, לא תבנית) עם אפשרות לבחור למי לשלוח — כל הרשומים לאירוע
-או סינון לפי סטטוס ספציפי של attendee.
-**Where:** `modules/crm/crm-events-detail.js` — כנראה הכפתור קיים אבל
-ה-handler חסר או שבור.
 **Resolution:** CRM_HOTFIXES Fix 3 — commit 99ca541. Added
-`data-action="send-message"` attribute + new file `crm-event-send-message.js`
-(180 lines). Modal supports channel picker (SMS/Email), attendee-status
-filter checkboxes with live recipient count, raw body + email subject,
-per-recipient dispatch via CrmMessaging.sendMessage with progress indicator.
-Extracted to a new file per SPEC §5 — crm-events-detail.js holds at 350 lines.
+`crm-event-send-message.js` (180 lines) with channel picker and
+attendee-status filter.
 
 ---
 
 ## 5. קיבולת אירוע vs קופונים — בדיקת תקינות — ✅ RESOLVED 2026-04-24 (no code change)
 
 **Priority:** MEDIUM
-**Description:** אירוע עם 50 מקומות + 10 קופונים נוספים מראה 60 קופונים
-אבל רק 50 מקומות פנויים. צריך לבדוק:
-- מה קורה כש-50 נרשמים ומנסים רישום מהיר של מישהו נוסף?
-- האם הקופונים הנוספים מנוצלים נכון?
-**Where:** RPC `register_lead_to_event` (capacity check) + UI display logic.
 **Resolution:** Verified both are correct — no code change needed.
-`register_lead_to_event` RPC gates purely on `v_current_count >= v_event.max_capacity`
-(not max_coupons). `extra_coupons` does not appear in the RPC at all.
-UI `renderCapacityBar` in crm-events-detail.js uses `event.max_capacity`
-only, while the coupon cell shows `max_coupons + extra_coupons` as an
-independent ceiling. So 50 registration cap + 60 coupon ceiling coexist
-correctly: 51st registrant → waiting_list; extras are walk-in overflow.
-Verified on demo event "P5.5 Demo Event #1" (max_capacity=50, extras=10,
-ceiling=60).
 
 ---
 
 ## 6. QR Code חסר באישור הרשמה — ✅ RESOLVED 2026-04-24
 
 **Priority:** CRITICAL
-**Description:** בעבר ליד שנרשם לאירוע קיבל מייל עם QR Code שנסרק
-בכניסה לאירוע. עכשיו המייל מגיע בלי QR Code. צריך:
-- לייצר QR Code עבור כל attendee (מקודד את ה-attendee_id או barcode)
-- לכלול אותו במייל אישור ההרשמה
-- קישור לתשלום 50 ש"ח דמי שריון
-**Where:** תבנית `event_registration_confirmation_email_he` + לוגיקת יצירת
-QR ב-send-message EF או בתבנית HTML.
 **Resolution:** EVENT_CONFIRMATION_EMAIL SPEC. QR embedded as
 `<img src="https://api.qrserver.com/v1/create-qr-code/?data=%lead_id%...">`
-directly in the email template body — substituted by send-message EF's
-variable engine at send time. New `%lead_id%` variable injected by
-`event-register/index.ts` (one-line §4 exception) so the public-form
-registration path resolves it correctly. QR encodes lead_id UUID
-(same semantics as the old Monday system's attendee_id). Payment
-placeholder link `prizma-optic.co.il/payment?attendee_id=%lead_id%`
-included per SPEC (actual Bit integration out of scope).
-**Pending:** Manual redeploy of `event-register` EF from Daniel's
-Supabase CLI — MCP deploy path failed (see FINDINGS).
+in the email template body.
 
 ---
 
 ## 7. עיצוב מייל אישור הרשמה — ✅ RESOLVED 2026-04-24
 
 **Priority:** HIGH
-**Description:** המייל שמגיע אחרי הרשמה לאירוע לא מעוצב — טקסט פשוט.
-צריך מייל HTML מעוצב ובראנד של פריזמה, עם:
-- לוגו פריזמה
-- פרטי האירוע (שם, תאריך, שעה, מיקום)
-- QR Code (ראה #6)
-- קישור תשלום דמי שריון
-- כפתור WhatsApp ליצירת קשר
-**Where:** תבנית email ב-`crm_message_templates` — צריך תבנית HTML חדשה.
-**Resolution:** EVENT_CONFIRMATION_EMAIL SPEC — UPDATE (not INSERT, to
-respect Rule 21) of existing `event_registration_confirmation_email_he`
-row on demo tenant. New body 3039 chars, table-based layout, inline
-styles, RTL, max-width 600px. Prizma gold-on-black header with
-"PRIZMA OPTIC" wordmark, event details box (gold-tinted background),
-QR code section, payment CTA button, dark footer with unsubscribe link.
-Subject updated to `אישור הרשמה: %event_name% — אופטיקה פריזמה`. SMS
-variant also refreshed to mention that QR + payment details were sent
-to email (124 chars, 2 UCS-2 segments).
+**Resolution:** EVENT_CONFIRMATION_EMAIL SPEC. New body 3039 chars,
+table-based layout, RTL, Prizma branding.
+
+---
+
+## 8. קבצים מושחתים ב-working tree — ✅ RESOLVED 2026-04-24
+
+**Priority:** HIGH
+**Resolution:** Iron Rule 31 + `scripts/verify-tree-integrity.mjs`
+installed by INTEGRITY_GATE_SETUP SPEC. Two real null-byte
+corruption events fixed (CLAUDE.md, Module 3 SESSION_CONTEXT).
+
+---
+
+## 9. Propagate all message templates demo → prizma (P7 cutover) — ✅ RESOLVED 2026-04-25
+
+**Priority:** HIGH (was blocking Prizma production cutover)
+**Resolution:** OVERNIGHT_M4_SCALE_AND_UI Phase 3 (commit landed
+2026-04-25). Prizma tenant now has all 24 templates synchronized
+from demo. The original blocker — empty `crm_message_templates`
+on prizma — is gone.
+
+---
+
+## 10. כפתור "שלח" בקופון ב-Event Day לא שולח הודעה — ✅ RESOLVED 2026-04-24
+
+**Priority:** HIGH
+**Resolution:** COUPON_SEND_WIRING SPEC. `toggleCoupon` now calls
+`CrmCouponDispatch.dispatch` → SMS+Email via `CrmMessaging.sendMessage`
+with `event_coupon_delivery` templates.
+
+---
+
+## 11. "הוספה ליומן" בהודעות — ⚠️ DEFERRED
+
+**Priority:** LOW
+**Description:** Calendar button removed during Make→Supabase migration.
+**Status:** Awaiting `calendar.ics` endpoint + `%event_date_iso%` variable.
+
+---
+
+## 12. Event lifecycle: leads stuck in confirmed after event ends — ✅ RESOLVED 2026-04-24
+
+**Priority:** HIGH
+**Resolution:** EVENT_CLOSE_COMPLETE_STATUS_FLOW SPEC + regression fix
+in commit `5e93fb3` (skip_auto_promote flag).
+
+---
+
+## 13. Quick-register terms-approval flow — ⚠️ DEFERRED
+
+**Priority:** MEDIUM
+**Description:** Walk-in customers from quick-register lack consent capture.
+**Status:** Awaits dedicated SPEC for WhatsApp-link approve flow + EF.
+
+---
+
+## 14. Message queue infrastructure (rate-limit, retry, dispatch backoff) — ✅ RESOLVED 2026-04-25
+
+**Priority:** HIGH
+**Created:** 2026-04-25 (retroactively logged)
+**Resolution:** OVERNIGHT_M4_SCALE_AND_UI Phase 5 (`crm_message_queue` +
+`dispatch-queue` EF + pg_cron 1-min tick + 1-second throttle + 3-layer
+phone allowlist gate). Closed in same SPEC: queue draining works
+end-to-end, retry-failed EF for run-level retries.
+
+---
+
+## 15. Server-side pagination for leads + incoming tabs — ✅ RESOLVED 2026-04-25
+
+**Priority:** HIGH
+**Created:** 2026-04-25 (retroactively logged)
+**Resolution:** OVERNIGHT_M4_SCALE_AND_UI Phase 10. Added .range()-based
+SERVER_PAGE=200 server-side fetch with "Load more" pagination across
+crm-leads-tab.js + crm-incoming-tab.js. Initial-load cost <500ms even
+at 20K-row tenants. (Caveat: search/filter still client-side over
+loaded slice — see #21 for full server-side filter migration.)
+
+---
+
+## 16. Per-rule-firing observability (automation history view) — ✅ RESOLVED 2026-04-25
+
+**Priority:** HIGH
+**Created:** 2026-04-25 (retroactively logged)
+**Resolution:** OVERNIGHT_M4_SCALE_AND_UI Phases 4 + 7. New table
+`crm_automation_runs` (run-level metadata + counts) + automation history
+UI tab with drill-down to per-message log rows. Counter-correctness fixes
+landed in AUTOMATION_HISTORY_FIXES SPEC (run_id stamping in rejected
+inserts; finishRun derives counts via GROUP BY).
+
+---
+
+## 17. Event edit modal — ✅ RESOLVED 2026-04-25
+
+**Priority:** MEDIUM
+**Created:** 2026-04-25 (retroactively logged)
+**Resolution:** OVERNIGHT_M4_SCALE_AND_UI Phase 9. New
+`modules/crm/crm-event-edit.js` (91 lines). Edit modal-stack closure
+bug (closing both modals on save) fixed in EVENT_EDIT_MODAL_STACK_FIX
+SPEC; events-list staleness (#23) and sub-tab reset (#24) fixed in
+CRM_OPEN_ISSUES_CLEANUP_2026-04-25 SPEC.
+
+---
+
+## 18. Dev-server caching makes hot-reload unreliable — 🟡 OPEN (deferred)
+
+**Priority:** MEDIUM
+**Created:** 2026-04-25 (retroactively logged from
+WAITING_LIST_PUBLIC_REGISTRATION_FIX)
+**Description:** During QA, ad-hoc fixes to `modules/crm/*.js` files
+sometimes don't hot-reload — the in-memory module on the local server
+stays stale until a hard refresh with `ignoreCache=true`. Manifested in
+WAITING_LIST_PUBLIC_REGISTRATION_FIX where a coupon-dispatch helper
+appeared undefined despite the source file having the fix.
+**Where:** Local dev server config + browser cache headers.
+**Next step:** Either (a) add Cache-Control: no-store to the dev server's
+JS responses, or (b) mint a per-request build hash query param so each
+load forces a re-fetch.
+**Status:** Workaround documented (chrome-devtools navigate_page
+ignoreCache=true). Not blocking shipping.
+
+---
+
+## 19. Build server-side rule evaluator EF — ⚠️ DEFERRED (post-P7)
+
+**Priority:** HIGH (architectural)
+**Created:** 2026-04-24
+**Description:** `CrmAutomation.evaluate` is client-side only. Public
+form via `event-register` EF and `lead-intake` EF reimplement rule-like
+dispatch with hardcoded template mappings. Server-side triggers cannot
+read demo's `crm_automation_rules` table at all.
+**Status:** Defer until after P7 Prizma cutover to reduce churn. Until
+then, every new automation rule on demo needs coordinated EF code if
+a non-UI entry point can trigger it.
+
+---
+
+## 20. send-message EF MCP deploy returns InternalServerError persistently — 🟡 OPEN (escalated)
+
+**Priority:** HIGH (infra)
+**Created:** 2026-04-25 (retroactively logged from OVERNIGHT F2 +
+AUTOMATION_HISTORY_FIXES F1)
+**Description:** Five+ consecutive SPECs report
+`mcp__claude_ai_Supabase__deploy_edge_function` returning
+`InternalServerErrorException: Function deploy failed due to an
+internal error` for the `send-message` slug only. Other EFs
+(retry-failed, dispatch-queue, lead-intake) deploy cleanly via
+MCP on first try. Workaround applied every time: write source to
+disk + Daniel runs manual CLI deploy.
+**Where:** Supabase MCP server, project_ref `tsxrrxzmdxaenlvocyit`,
+function slug `send-message`.
+**Next step:** Open a Supabase support ticket with the project_ref
++ slug + timestamps of the 5+ failures + recent deploy logs from
+the platform side. Ticket payload draft is in
+final/OVERNIGHT_M4_SCALE_AND_UI/EXECUTION_REPORT.md §10.
+**Status:** Escalated to product. Not blocking — manual CLI works.
+
+---
+
+## 21. Server-side filter/sort for leads-tab — 🟡 OPEN
+
+**Priority:** MEDIUM
+**Created:** 2026-04-25 (retroactively logged from OVERNIGHT F4)
+**Description:** Phase 10 (#15) introduced server-side .range() pagination
+with a 200-row initial fetch. But search/filter/sort still operate on
+the loaded slice only. At 20K+ leads, scrolling filter results may miss
+rows not yet loaded.
+**Where:** `modules/crm/crm-leads-tab.js` + `crm-lead-filters.js` + sort
+dropdown.
+**Next step:** Migrate search/filter to the server query:
+`q.or('full_name.ilike.%X%,phone.ilike.%X%,email.ilike.%X%')`,
+`q.in('status', [...])`, `q.order(column, { ascending: dir })`.
+Scope ~40 lines. Follow-up SPEC.
+**Status:** Open — not yet scheduled. Acceptable for current demo
+volumes; visible at production scale only.
+
+---
+
+## 22. lead_intake trigger unwired — ✅ RESOLVED 2026-04-25
+
+**Priority:** MEDIUM
+**Created:** 2026-04-25 (logged from AUTOMATION_HISTORY_NOT_TRIGGERED F1)
+**Description:** `CrmAutomation.evaluate('lead_intake', …)` was declared
+in the engine's TRIGGER_TYPES map but never invoked. Same pattern as
+`lead_status_change` gap (resolved in AUTOMATION_HISTORY_NOT_TRIGGERED).
+**Resolution:** CRM_OPEN_ISSUES_CLEANUP_2026-04-25 SPEC. Wired
+`CrmAutomation.evaluate('lead_intake', { leadId })` into
+`createManualLead` after the INSERT + ActivityLog write. Demo rule
+"ליד חדש: ברוך הבא" inserted (id `e878749b-…`) with always-condition
++ `lead_intake_new` template. Verified end-to-end via chrome-devtools:
+manual lead "QA Test 0004" → CrmConfirmSend → toast "נשלחו 1, נכשלו 0,
+נדחו 1" → run row in `crm_automation_runs` (`8691592c-…`).
+Public-form lead-intake EF still uses its hardcoded dispatch (see #19).
+
+---
+
+## 23. Events-list cell stale after edit save — ✅ RESOLVED 2026-04-25
+
+**Priority:** LOW
+**Created:** 2026-04-25 (logged from EVENT_EDIT_MODAL_STACK_FIX F1)
+**Description:** After an event edit save, the parent events-list table
+behind the modal still showed the old name until the user navigated
+away and back. The fix was to call `window.reloadCrmEventsTab()` after
+the in-place detail-modal re-render.
+**Resolution:** CRM_OPEN_ISSUES_CLEANUP_2026-04-25 SPEC (commit c6e2d80).
+1-line addition in `renderAndWire`'s edit-success closure.
+
+---
+
+## 24. Sub-tab reset to "משתתפים" after re-render — ✅ RESOLVED 2026-04-25
+
+**Priority:** LOW
+**Created:** 2026-04-25 (logged from EVENT_EDIT_MODAL_STACK_FIX F2)
+**Description:** When event-detail re-rendered after an edit save (or
+any other in-place refresh), the active sub-tab was reset to the
+default "משתתפים" — losing context if the user was on סטטיסטיקות.
+**Resolution:** CRM_OPEN_ISSUES_CLEANUP_2026-04-25 SPEC (commit c6e2d80).
+`renderAndWire` now captures the active sub-tab key (via the unique
+`text-indigo-600` class on the active button) before innerHTML wipe
+and programmatically clicks the matching button after re-render.
+
+---
+
+## 25. Toast labels rejected as "נכשלו" instead of "נדחו" — ✅ RESOLVED 2026-04-25
+
+**Priority:** LOW (UX)
+**Created:** 2026-04-25 (logged from AUTOMATION_HISTORY_NOT_TRIGGERED F4)
+**Description:** Both `approveAndSend` (CrmConfirmSend modal) and
+`dispatchPlanDirect` (engine fallback) collapsed `failed` + `rejected`
+into a single counter, so the success toast read "נכשלו 1" for an
+allowlist-rejected SMS. The history view showed the right category;
+the toast did not.
+**Resolution:** CRM_OPEN_ISSUES_CLEANUP_2026-04-25 SPEC (commit c6e2d80).
+Both call sites now count rejected separately
+(`r.value.error === 'phone_not_allowed'` is the EF's marker). Toast
+emits 3 numbers always: "נשלחו X, נכשלו Y, נדחו Z" — verified via
+chrome-devtools on the QA Test 0004 flow ("נשלחו 1, נכשלו 0, נדחו 1").
+
+---

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<title>Templates Mockup A — Lateral Tabs</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>body { font-family: 'Heebo', sans-serif; } .legend { font-family: 'Heebo'; }</style>
+</head>
+<body class="bg-slate-100 p-6">
+
+<div class="max-w-7xl mx-auto">
+  <h1 class="text-2xl font-bold text-slate-800 mb-1">Templates — Mockup A: Lateral Tabs</h1>
+  <p class="text-slate-600 text-sm mb-6">תבנית = שורה אחת ברשימה. בעורך, לשוניות ערוץ בראש (SMS / WhatsApp / אימייל). לחיצה על לשונית מחליפה body + preview. בכל לשונית checkbox "קיים" — אם לא מסומן, השורה לא תיווצר ב-DB.</p>
+
+  <div class="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4 min-h-[600px]">
+
+    <!-- Sidebar: list by BASE slug, not by channel -->
+    <aside class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col gap-2">
+      <div class="flex gap-1 bg-white rounded-lg p-1 border border-slate-200">
+        <button class="flex-1 px-2 py-1.5 text-xs font-bold text-white bg-indigo-600 rounded-md">הכל</button>
+        <button class="flex-1 px-2 py-1.5 text-xs font-medium text-slate-600 rounded-md">אוטומטי</button>
+        <button class="flex-1 px-2 py-1.5 text-xs font-medium text-slate-600 rounded-md">ידני</button>
+      </div>
+      <input type="search" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="חיפוש תבנית...">
+      <button class="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg text-sm">+ תבנית חדשה</button>
+      <div class="flex flex-col gap-2 overflow-y-auto max-h-[480px]">
+
+        <!-- Active card -->
+        <div class="bg-indigo-50 border-2 border-indigo-500 rounded-lg p-3 cursor-pointer">
+          <div class="flex items-center gap-2 font-bold text-sm text-slate-900">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <span class="truncate">הזמנה לחדשים</span>
+          </div>
+          <div class="flex items-center gap-1.5 text-xs mt-1.5">
+            <span class="bg-sky-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">SMS</span>
+            <span class="bg-amber-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">EMAIL</span>
+            <span class="bg-slate-300 text-slate-500 px-1.5 py-0.5 rounded text-[10px]">WA</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">event_invite_new</div>
+        </div>
+
+        <!-- Other cards -->
+        <div class="bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-indigo-300">
+          <div class="flex items-center gap-2 font-bold text-sm text-slate-900">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <span class="truncate">אישור הרשמה לאירוע</span>
+          </div>
+          <div class="flex items-center gap-1.5 text-xs mt-1.5">
+            <span class="bg-sky-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">SMS</span>
+            <span class="bg-amber-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">EMAIL</span>
+            <span class="bg-slate-300 text-slate-500 px-1.5 py-0.5 rounded text-[10px]">WA</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">event_registration_confirmation</div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-indigo-300">
+          <div class="flex items-center gap-2 font-bold text-sm text-slate-900">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <span class="truncate">ליד חדש — ברוך הבא</span>
+          </div>
+          <div class="flex items-center gap-1.5 text-xs mt-1.5">
+            <span class="bg-sky-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">SMS</span>
+            <span class="bg-amber-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">EMAIL</span>
+            <span class="bg-slate-300 text-slate-500 px-1.5 py-0.5 rounded text-[10px]">WA</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">lead_intake_new</div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- Editor with lateral channel tabs -->
+    <main class="bg-white border border-slate-200 rounded-xl p-4">
+      <div class="flex flex-wrap gap-2 mb-3">
+        <input type="text" value="הזמנה לחדשים" class="flex-1 min-w-[200px] px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold">
+        <select class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-28">
+          <option>עברית</option><option>אנגלית</option><option>רוסית</option>
+        </select>
+        <span class="px-3 py-2 text-xs text-slate-500 self-center">slug: event_invite_new</span>
+      </div>
+
+      <!-- Channel tabs row -->
+      <div class="flex gap-1 border-b-2 border-slate-200 mb-4">
+        <button class="px-4 py-2.5 text-sm font-bold text-sky-700 bg-sky-50 border-b-2 border-sky-500 -mb-0.5 rounded-t flex items-center gap-2">
+          <span>📱 SMS</span>
+          <span class="text-[10px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full">קיים</span>
+        </button>
+        <button class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-t flex items-center gap-2">
+          <span>💬 WhatsApp</span>
+          <span class="text-[10px] bg-slate-300 text-slate-600 px-1.5 py-0.5 rounded-full">לא קיים</span>
+        </button>
+        <button class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-t flex items-center gap-2">
+          <span>✉️ אימייל</span>
+          <span class="text-[10px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full">קיים</span>
+        </button>
+      </div>
+
+      <!-- "Active" channel = SMS — SMS-specific editor -->
+      <div class="mb-3 flex items-center gap-3">
+        <label class="inline-flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked class="rounded border-slate-300 text-indigo-600">
+          <span class="text-sm font-medium">ערוץ זה פעיל (SMS תישלח)</span>
+        </label>
+        <span class="text-xs text-slate-500">163 / 480 תווים</span>
+      </div>
+
+      <!-- Toolbar (no subject for SMS) -->
+      <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-t-lg p-2">
+        <button class="px-2.5 py-1 text-sm bg-white hover:bg-slate-100 border border-slate-200 rounded">😀</button>
+        <button class="px-2.5 py-1 text-sm bg-white hover:bg-slate-100 border border-slate-200 rounded">משתנים ▾</button>
+      </div>
+
+      <!-- Body editor (SMS, no HTML) -->
+      <textarea rows="6" class="w-full bg-slate-900 text-slate-100 p-3 border-0 font-mono text-sm rounded-b-lg" style="direction:ltr;text-align:start">אופטיקה פריזמה: ברוכים הבאים!
+%name%, בדיוק הצטרפת ויש אירוע פתוח לרישום: %event_name%.
+לפרטים והרשמה: %registration_url%</textarea>
+
+      <!-- ONE preview, matching active channel -->
+      <div class="mt-4">
+        <div class="text-xs text-slate-500 font-semibold mb-2">תצוגה מקדימה — SMS:</div>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden max-w-md">
+          <div class="bg-sky-500 text-white text-xs font-bold px-3 py-2">📱 SMS</div>
+          <div class="p-4 bg-white text-sm text-slate-800 whitespace-pre-wrap leading-6">אופטיקה פריזמה: ברוכים הבאים!
+דנה כהן, בדיוק הצטרפת ויש אירוע פתוח לרישום: סופר-סייל אוקטובר.
+לפרטים והרשמה: prizma-optic.co.il/r/...</div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 mt-6 pt-4 border-t border-slate-200 justify-end">
+        <button class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-lg text-sm">מחק תבנית</button>
+        <button class="px-4 py-2 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg text-sm">שמור טיוטה</button>
+        <button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm">שמור והפעל</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend mt-8 bg-white border border-slate-200 rounded-xl p-4 text-sm text-slate-700">
+    <div class="font-bold text-slate-800 mb-2">איך זה עובד</div>
+    <ul class="list-disc pr-5 space-y-1">
+      <li>תבנית = base slug אחד (למשל <code>event_invite_new</code>). ברשימה רואים אותה פעם אחת, עם תגי SMS/EMAIL/WA שמראים אילו ערוצים קיימים.</li>
+      <li>בעורך: 3 לשוניות ערוץ בראש. לחיצה על לשונית מחליפה את ה-body + ה-preview.</li>
+      <li>Checkbox "ערוץ זה פעיל" בכל לשונית — אם מסומן, יש שורה ב-DB; אם מבוטל, השורה תימחק (או לא תיווצר).</li>
+      <li>שמירה אחת = שורה אחת או יותר ב-<code>crm_message_templates</code>, לפי הערוצים הפעילים.</li>
+      <li>אין יותר preview של ערוצים שלא מתאימים. אין יותר dropdown ערוץ בעורך SMS.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
