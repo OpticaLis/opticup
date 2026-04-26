@@ -97,7 +97,7 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 | D2 | Brands tab: confusing overlap between "מצב תצוגה" and "תצוגה באתר" — simplify | MEDIUM | ⬜ |
 | D3 | Products tab: "מצב תצוגה" shows wrong value (reads wrong field) | HIGH | ⬜ |
 | D4 | Products tab: display override ("דריסה") changes don't take effect on storefront | HIGH | ⬜ |
-| D5 | Products tab: setting product to "מוסתר" makes it disappear from Studio UI — can't undo | CRITICAL | 📝 SPEC ready (`D5_HIDDEN_PRODUCT_RECOVERY/`) — awaiting Claude Code execution |
+| D5 | Products tab: setting product to "מוסתר" makes it disappear from Studio UI — can't undo | CRITICAL | ✅ Fixed (`D5_HIDDEN_PRODUCT_RECOVERY/`) |
 | D6 | AI Content tab: generation fails with error (missing auth header / no user feedback) | MEDIUM | ⬜ |
 | D7 | Media library: loads very slowly (expensive count queries, ilike on 4 columns, unbatched URLs) | HIGH | ⬜ |
 
@@ -140,7 +140,7 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 | SPEC | Issues | Status | Commit(s) |
 |------|--------|--------|-----------|
 | C1_PERMISSIONS_UPSERT | C1 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(C1)\"` | (in fix commit) |
-| D5_HIDDEN_PRODUCT_RECOVERY | D5 | 📝 SPEC authored (Cowork, 2026-04-26) — ready for Claude Code | — |
+| D5_HIDDEN_PRODUCT_RECOVERY | D5 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(D5)\"` | (in fix commit) |
 | TBD | D3, D4 | ⬜ Pending | — |
 | TBD | B1, B2-B4 | ⬜ Pending | — |
 | TBD | A1-A4 | ⬜ Pending | — |

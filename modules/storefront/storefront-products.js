@@ -34,16 +34,12 @@ async function loadStorefrontProducts() {
 
     if (prodErr) throw prodErr;
 
-    // Apply same filters as v_storefront_products view:
-    // - exclude brands with exclude_website
-    // - full sync: only if quantity > 0
-    // - exclude resolved_mode = 'hidden'
+    // Studio UI filters mirror v_storefront_products EXCEPT for resolved_mode='hidden':
+    // hidden products intentionally stay visible here so admins can edit them back.
+    // The public view hides them on the customer-facing side; this is the management UI.
     const visible = (products || []).filter(p => {
       if (excludedBrandIds.has(p.brand_id)) return false;
       if (p.website_sync === 'full' && p.quantity <= 0) return false;
-      const brand = allBrands.find(b => b.id === p.brand_id);
-      const resolved = p.storefront_mode_override || brand?.storefront_mode || 'catalog';
-      if (resolved === 'hidden') return false;
       return true;
     });
 
