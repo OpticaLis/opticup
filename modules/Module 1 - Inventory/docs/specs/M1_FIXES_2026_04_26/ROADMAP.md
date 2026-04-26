@@ -96,7 +96,7 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 | D1 | Brands tab: "סנכרון" column is redundant — simplify to show/hide | MEDIUM | ⬜ |
 | D2 | Brands tab: confusing overlap between "מצב תצוגה" and "תצוגה באתר" — simplify | MEDIUM | ⬜ |
 | D3 | Products tab: "מצב תצוגה" shows wrong value (reads wrong field) | HIGH | ✅ Fixed by B-2 (`D3_D4_DISPLAY_MODE_RECONCILIATION/`); B-3 view + B-4 DDL deferred to follow-up SPEC |
-| D4 | Products tab: display override ("דריסה") changes don't take effect on storefront | HIGH | ✅ Fixed by B-2 (`D3_D4_DISPLAY_MODE_RECONCILIATION/`); B-3 view + B-4 DDL deferred to follow-up SPEC |
+| D4 | Products tab: display override ("דריסה") changes don't take effect on storefront | HIGH | ✅ Fixed by B-2 + dropdown values normalized in `D4_FOLLOWUP_VALUE_NORMALIZATION/`; B-3 view + B-4 DDL deferred to follow-up SPEC |
 | D5 | Products tab: setting product to "מוסתר" makes it disappear from Studio UI — can't undo | CRITICAL | ✅ Fixed (`D5_HIDDEN_PRODUCT_RECOVERY/`) |
 | D6 | AI Content tab: generation fails with error (missing auth header / no user feedback) | MEDIUM | ⬜ |
 | D7 | Media library: loads very slowly (expensive count queries, ilike on 4 columns, unbatched URLs) | HIGH | ⬜ |
@@ -144,8 +144,9 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 | D3_D4_DISPLAY_MODE_RECONCILIATION | D3 + D4 | ✅ Phase A + B-1 + B-2 closed by Claude Code (2026-04-26) — D3+D4 user-visible bugs fixed via JS rename to LEGACY pair. B-3 (view rewrite) + B-4 (DDL drop columns) deferred to separate SPEC pending Daniel sign-off. | (B-2 fix + 3 chore commits — see `git log --grep=\"D3+D4\"`) |
 | B1_NO_IMAGES_FILTER_SERVER_SIDE | B1 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(B1)\"` | (two-commit pattern: fix + chore-spec) |
 | TBD | B2-B4 | ⬜ Pending | — |
-| TBD | A1-A4 | ⬜ Pending | — |
-| TBD | D1, D2, D6, D7, B5 | ⬜ Pending | — |
+| OVERNIGHT_M1_M3_BURNDOWN | A1, A3, A4, B2-B5, D1, D2, D4-followup, D6 (invest), D7 (invest), T12, T13 audit | 📝 SPEC + activation prompt authored 2026-04-26 evening — 12+ hr unattended run queued | — |
+| (deferred) | A2 auto-compression on upload | ⬜ Pending (in burndown queue, may finish overnight) | — |
+| (Daniel-gated) | D3+D4 Phase B-3 (view rewrite) + B-4 (DDL drop) | 🔒 awaiting Daniel sign-off (Iron Rule 29 + Level 3 SQL) | — |
 
 ---
 

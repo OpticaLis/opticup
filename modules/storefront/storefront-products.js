@@ -109,8 +109,8 @@ function renderProductsTable(products) {
     return;
   }
 
-  const modeLabels = { catalog: 'קטלוג', shop: 'חנות', hidden: 'מוסתר' };
-  const modeTags = { catalog: 'resolved-catalog', shop: 'resolved-shop', hidden: 'resolved-hidden' };
+  const modeLabels = { catalog: 'קטלוג', store_all: 'חנות', hidden: 'מוסתר' };
+  const modeTags = { catalog: 'resolved-catalog', store_all: 'resolved-store_all', hidden: 'resolved-hidden' };
 
   let html = `<table class="products-table">
     <thead><tr>
@@ -141,7 +141,7 @@ function renderProductsTable(products) {
         <select class="mode-select" data-product-id="${p.id}" onchange="changeProductMode(this)">
           <option value="" ${!overrideVal ? 'selected' : ''}>— עקוב אחרי מותג</option>
           <option value="catalog" ${overrideVal === 'catalog' ? 'selected' : ''}>📋 קטלוג</option>
-          <option value="shop" ${overrideVal === 'shop' ? 'selected' : ''}>🛒 חנות</option>
+          <option value="store_all" ${overrideVal === 'store_all' ? 'selected' : ''}>🛒 חנות</option>
           <option value="hidden" ${overrideVal === 'hidden' ? 'selected' : ''}>🚫 מוסתר</option>
         </select>
       </td>
@@ -220,7 +220,7 @@ async function applyBulkMode() {
   if (!ids.length) return;
 
   const newMode = document.getElementById('bulk-mode').value || null;
-  const label = newMode ? { catalog: 'קטלוג', shop: 'חנות', hidden: 'מוסתר' }[newMode] : 'עקוב אחרי מותג';
+  const label = newMode ? { catalog: 'קטלוג', store_all: 'חנות', hidden: 'מוסתר' }[newMode] : 'עקוב אחרי מותג';
 
   showLoading(`מעדכן ${ids.length} מוצרים...`);
   try {
