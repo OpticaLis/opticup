@@ -41,6 +41,11 @@ async function loadInventoryPage() {
     if (ptype) query = query.eq('product_type', heToEn('product_type', ptype));
     if (qtyFilter === '1') query = query.gt('quantity', 0);
     else if (qtyFilter === '0') query = query.lte('quantity', 0);
+    // No-images filter — parent-level NOT EXISTS via PostgREST empty-embed syntax.
+    // Must use the embed name without a column suffix: "inventory_images.id=is.null"
+    // would scope to the embed array (returns ALL parents with empty arrays); the
+    // bare embed name elevates the filter to the parent row.
+    if (_noImagesFilter) query = query.is('inventory_images', null);
     if (search && search.length >= 2) {
       const safe = search.replace(/[,().\\]/g, '');
       if (safe) {
@@ -84,12 +89,6 @@ async function loadInventoryPage() {
         }
       }))
     }));
-    // No-images client-side filter
-    if (_noImagesFilter) {
-      invData = invData.filter(function(r) { return !r._images || r._images.length === 0; });
-      invTotalCount = invData.length;
-      invTotalPages = Math.max(1, Math.ceil(invTotalCount / INV_PAGE_SIZE));
-    }
     invFiltered = invData;
     var supplierSel = $('inv-filter-supplier'); var curVal = supplierSel.value;
     supplierSel.innerHTML = '<option value="">הכל</option>' + suppliers.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');

@@ -48,7 +48,7 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| B1 | "ללא תמונות" filter is client-side only — filters current page (50 items), not all inventory | CRITICAL | ⬜ |
+| B1 | "ללא תמונות" filter is client-side only — filters current page (50 items), not all inventory | CRITICAL | ✅ Fixed (`B1_NO_IMAGES_FILTER_SERVER_SIDE/`) |
 | B2 | Add filter: חברה (brand name dropdown) — below ספק | MEDIUM | ⬜ |
 | B3 | Add filter: סוג מותג (brand_type: luxury/brand/regular) — below סוג מוצר | MEDIUM | ⬜ |
 | B4 | Add filter: סוג סינכרון (website_sync: full/display/none) — below כמות | MEDIUM | ⬜ |
@@ -142,7 +142,8 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 | C1_PERMISSIONS_UPSERT | C1 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(C1)\"` | (in fix commit) |
 | D5_HIDDEN_PRODUCT_RECOVERY | D5 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(D5)\"` | (in fix commit) |
 | TBD | D3, D4 | ⬜ Pending | — |
-| TBD | B1, B2-B4 | ⬜ Pending | — |
+| B1_NO_IMAGES_FILTER_SERVER_SIDE | B1 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(B1)\"` | (two-commit pattern: fix + chore-spec) |
+| TBD | B2-B4 | ⬜ Pending | — |
 | TBD | A1-A4 | ⬜ Pending | — |
 | TBD | D1, D2, D6, D7, B5 | ⬜ Pending | — |
 
