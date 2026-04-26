@@ -52,7 +52,7 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 | B2 | Add filter: חברה (brand name dropdown) — below ספק | MEDIUM | ⬜ |
 | B3 | Add filter: סוג מותג (brand_type: luxury/brand/regular) — below סוג מוצר | MEDIUM | ⬜ |
 | B4 | Add filter: סוג סינכרון (website_sync: full/display/none) — below כמות | MEDIUM | ⬜ |
-| B5 | "רק מסומנים" view shows only current-page selections — should fetch all selected from server | HIGH | ⬜ |
+| B5 | "רק מסומנים" view shows only current-page selections — should fetch all selected from server | HIGH | ✅ Fixed (`B5_SELECTED_ONLY_SERVER_SIDE/`) |
 
 **Evidence:**
 - B1: `inventory-table.js:87-92` — `_noImagesFilter` runs `invData.filter()` AFTER pagination, not in Supabase query

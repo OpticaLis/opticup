@@ -46,6 +46,13 @@ async function loadInventoryPage() {
     // would scope to the embed array (returns ALL parents with empty arrays); the
     // bare embed name elevates the filter to the parent row.
     if (_noImagesFilter) query = query.is('inventory_images', null);
+    // Selected-only filter (B5) — fetch ALL selected items from server, not the local 50-row page.
+    // supabase-js switches to POST when the URL would be too long, so .in() handles 1000+ UUIDs
+    // transparently. The activation prompt's chunked-batching path is deferred until a real
+    // 10k+ selection workflow proves it necessary.
+    if (_selectedOnlyFilter && invSelected.size > 0) {
+      query = query.in('id', Array.from(invSelected));
+    }
     if (search && search.length >= 2) {
       const safe = search.replace(/[,().\\]/g, '');
       if (safe) {
@@ -251,25 +258,21 @@ function toggleSelectedFilter() {
     btn.style.background = _selectedOnlyFilter ? '#2196F3' : '#e5e7eb';
     btn.style.color = _selectedOnlyFilter ? '#fff' : '#1e293b';
   }
-  if (_selectedOnlyFilter) {
-    // Show only selected items from current invData
-    var filtered = invData.filter(function(r) { return invSelected.has(r.id); });
-    renderInventoryRows(filtered);
-  } else {
-    renderInventoryRows(invData);
-  }
+  invPage = 0;
+  loadInventoryPage();
 }
 
 function _updateSelectedFilterBtn() {
   var btn = $('inv-filter-selected');
   if (!btn) return;
   btn.style.display = invSelected.size > 0 ? 'inline-block' : 'none';
-  // If filter is active but no more selections, deactivate it
+  // If filter is active but no more selections, deactivate it and reload unfiltered
   if (_selectedOnlyFilter && invSelected.size === 0) {
     _selectedOnlyFilter = false;
     btn.style.background = '#e5e7eb';
     btn.style.color = '#1e293b';
-    renderInventoryRows(invData);
+    invPage = 0;
+    loadInventoryPage();
   }
 }
 
