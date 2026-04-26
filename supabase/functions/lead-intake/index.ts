@@ -31,8 +31,6 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// --- Helpers ---
-
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -199,6 +197,7 @@ Deno.serve(async (req: Request) => {
   const utm_campaign = trimOrNull(body.utm_campaign);
   const utm_content = trimOrNull(body.utm_content);
   const utm_term = trimOrNull(body.utm_term);
+  const utm_campaign_id = trimOrNull(body.utm_campaign_id);
   const termsApproved = boolOrFalse(body.terms_approved);
   const marketingConsent = boolOrFalse(body.marketing_consent);
 
@@ -284,6 +283,7 @@ Deno.serve(async (req: Request) => {
     utm_campaign,
     utm_content,
     utm_term,
+    utm_campaign_id,
     client_notes: clientNotes,
     terms_approved: termsApproved,
     terms_approved_at: termsApproved ? nowIso : null,
