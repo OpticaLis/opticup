@@ -14,6 +14,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// Shared secret for Make-side authentication (since Make's HTTP module strips
+// the Authorization header). EF is deployed with verify_jwt: false; auth is
+// enforced here via body.shared_secret. Rotate by updating MAKE_SECRET in
+// Supabase Edge Function secrets and the Make scenario's body template.
+const SHARED_SECRET = Deno.env.get("MAKE_SECRET");
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -67,6 +73,15 @@ Deno.serve(async (req: Request) => {
     body = await req.json();
   } catch {
     return errorResponse("Invalid JSON body", 400);
+  }
+
+  if (!SHARED_SECRET) {
+    return errorResponse("Server configuration error: MAKE_SECRET not set", 500);
+  }
+
+  // Shared-secret auth (Make-friendly — body field, not header)
+  if (trimOrNull(body.shared_secret) !== SHARED_SECRET) {
+    return errorResponse("Invalid or missing shared_secret", 401);
   }
 
   const tenantSlug = trimOrNull(body.tenant_slug);
