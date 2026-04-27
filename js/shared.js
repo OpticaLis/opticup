@@ -121,7 +121,6 @@ async function resolveTenant() {
 // — STATE —
 let suppliers = [];
 let brands = [];
-let isAdmin = false;
 let maxBarcode = 0;
 let branchCode = sessionStorage.getItem('tenant_branch') || '00';
 

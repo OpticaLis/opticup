@@ -133,7 +133,7 @@ async function loadInventoryPage() {
     updatePaginationUI();
     updateSelectionUI();
 
-    var isAdm = document.body.classList.contains('admin-mode');
+    var isAdm = hasPermission('inventory.edit');
     $('inv-admin-bar').style.display = isAdm ? 'flex' : 'none'; _renderReceiptBanner();
   } catch (e) {
     setAlert('inv-alerts', 'שגיאה בטעינת מלאי: ' + (e.message || ''), 'e');
@@ -180,7 +180,7 @@ function filterInventoryTable() {
 }
 
 function renderInventoryRows(recs) {
-  const isAdm = document.body.classList.contains('admin-mode');
+  const isAdm = hasPermission('inventory.edit');
   const tb = $('inv-body');
   const pageOffset = invPage * INV_PAGE_SIZE;
   tb.innerHTML = recs.map((r, i) => {

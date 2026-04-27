@@ -2,9 +2,7 @@
 // ADMIN MODE (permission-based — replaces legacy password flow)
 // =========================================================
 function activateAdmin() {
-  isAdmin = hasPermission('settings.edit');
-  if (!isAdmin) return;
-  document.body.classList.add('admin-mode');
+  if (!hasPermission('settings.edit')) return;
   toast('מצב מנהל הופעל — שדות עלות גלויים', 's');
 }
 
