@@ -477,10 +477,11 @@ async function generateContentForProduct(product) {
 
   let data;
   try {
-    const res = await fetch(EDGE_FN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    // D6 fix: sb.functions.invoke() auto-attaches the JWT/anon-key Authorization
+    // header. Bare fetch() returned HTTP 401 from the gateway (root cause per
+    // T11 investigation; verified with curl probe 2026-04-26).
+    const { data: invokeData, error: invokeErr } = await sb.functions.invoke('generate-ai-content', {
+      body: {
         tenant_id: tid,
         product_id: product.id,
         content_types: ['description', 'seo_title', 'seo_description', 'alt_text'],
@@ -493,9 +494,10 @@ async function generateContentForProduct(product) {
         },
         image_storage_path: product.image_path || null,
         brand_corrections: brandCorrections
-      })
+      }
     });
-    data = await res.json();
+    if (invokeErr) throw invokeErr;
+    data = invokeData;
   } catch (e) {
     console.error('AI generate fetch failed:', e);
     throw new Error('AI_UNAVAILABLE');

@@ -183,10 +183,9 @@ async function requestAutoSeo() {
 
   try {
     const learning = buildSeoPromptWithLearning(currentPage);
-    const response = await fetch(AI_EDIT_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    // D6 fix: invoke() attaches auth header that bare fetch() omitted (HTTP 401 root cause).
+    const { data: result, error: invokeErr } = await sb.functions.invoke('cms-ai-edit', {
+      body: {
         mode: 'seo',
         page_title: currentPage.title || '',
         page_type: currentPage.page_type || 'custom',
@@ -196,13 +195,9 @@ async function requestAutoSeo() {
         current_slug: currentPage.slug || '',
         lang: currentPage.lang || 'he',
         learning_context: learning
-      })
+      }
     });
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || `HTTP ${response.status}`);
-    }
-    const result = await response.json();
+    if (invokeErr) throw new Error(invokeErr.message || invokeErr.toString());
     showAutoSeoLoading(false);
     showAutoSeoResults(result);
   } catch (err) {
