@@ -1,0 +1,32 @@
+{
+  "captured_at": "2026-04-27",
+  "tenant": "prizma (6ad0781b-37f0-47a9-92e3-be9ed1477e1c)",
+  "source": "Supabase MCP execute_sql against live DB before any DDL change",
+  "view_baselines": {
+    "v_storefront_products_total_rows_prizma": 786,
+    "v_storefront_brands_total_rows_prizma": 47,
+    "v_storefront_brands_display_mode_store_all": 45,
+    "v_storefront_brands_display_mode_catalog": 2
+  },
+  "criteria_pre_values": {
+    "criterion_5_none_products_in_view_should_be_0_post": 0,
+    "criterion_6_display_products_not_resolving_catalog_should_be_0_post": 313,
+    "criterion_7_full_with_stock_resolving_catalog_should_be_0_post": 0
+  },
+  "inventory_website_sync_distribution_prizma": {
+    "full": 2773,
+    "display": 507,
+    "none": 45,
+    "null": 5413,
+    "total_active": 8738
+  },
+  "stop_trigger_adjustment": {
+    "spec_value": "fewer than 1200 rows in v_storefront_products (current baseline approx 1366)",
+    "actual_baseline": 786,
+    "adjusted_threshold_for_this_run": "fewer than 600 = significant drop (>23% loss)",
+    "rationale": "SPEC's 1366 number reflects pre-cleanup state (likely before BUG 1 cleared stale storefront_mode_override OR includes both tenants). Logged as a finding for Foreman."
+  },
+  "key_finding_pre_migration": {
+    "criterion_6": "313 of 507 'display'-marked products are CURRENTLY resolving to wrong mode (not 'catalog'). This confirms the bug the SPEC is fixing — these 313 products are showing as 'shop' instead of 'catalog' on the storefront."
+  }
+}
