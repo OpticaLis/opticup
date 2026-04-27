@@ -393,14 +393,10 @@ async function generateBlogAI() {
       payload.current_content = getQuillHtml();
     }
 
-    const res = await fetch(BLOG_EDGE_FN, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'AI generation failed');
+    // D6 fix: invoke() attaches auth header that bare fetch() omitted (HTTP 401 root cause).
+    const { data, error } = await sb.functions.invoke('generate-blog-post', { body: payload });
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error || 'AI generation failed');
 
     // If the edge function returns content directly, put it in the editor
     if (data.content && _blogQuill) {
@@ -466,19 +462,12 @@ async function generateAIBlogPost() {
   showLoading('מייצר פוסט AI...');
 
   try {
-    const res = await fetch(BLOG_EDGE_FN, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tenant_id: getTenantId(),
-        topic,
-        keywords,
-        target_length: targetLength
-      })
+    // D6 fix: invoke() attaches auth header that bare fetch() omitted.
+    const { data, error } = await sb.functions.invoke('generate-blog-post', {
+      body: { tenant_id: getTenantId(), topic, keywords, target_length: targetLength }
     });
-
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'AI generation failed');
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error || 'AI generation failed');
 
     toast('פוסט AI נוצר כטיוטה', 's');
     await loadBlogPosts();
@@ -566,11 +555,9 @@ async function translateBlogPost() {
     for (const lang of langs) {
       showLoading(`מתרגם ל-${lang.toUpperCase()}...`);
 
-      // Call edge function for translation
-      const res = await fetch(BLOG_EDGE_FN, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      // Call edge function for translation. D6 fix: invoke() attaches auth header.
+      const { data, error: invokeErr } = await sb.functions.invoke('generate-blog-post', {
+        body: {
           tenant_id: getTenantId(),
           mode: 'translate',
           source_lang: 'he',
@@ -580,10 +567,9 @@ async function translateBlogPost() {
           seo_title: source.seo_title,
           seo_description: source.seo_description,
           excerpt: source.excerpt
-        })
+        }
       });
-
-      const data = await res.json();
+      if (invokeErr) { console.error('translate invoke error:', invokeErr); continue; }
 
       if (data.success) {
         // Insert translated post

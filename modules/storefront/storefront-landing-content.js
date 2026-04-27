@@ -98,19 +98,12 @@ async function createNewLanding() {
 
   showLoading('מייצר תוכן AI...');
   try {
-    const res = await fetch(LANDING_EDGE_FN, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tenant_id: getTenantId(),
-        topic,
-        page_type: 'campaign',
-        tone: 'promotional'
-      })
+    // D6 fix: invoke() attaches auth header that bare fetch() omitted (HTTP 401 root cause).
+    const { data, error } = await sb.functions.invoke('generate-landing-content', {
+      body: { tenant_id: getTenantId(), topic, page_type: 'campaign', tone: 'promotional' }
     });
-
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'AI generation failed');
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error || 'AI generation failed');
 
     toast('תוכן דף נחיתה נוצר', 's');
     await loadLandingPages();
@@ -210,20 +203,18 @@ async function regenerateLandingContent() {
 
   showLoading('מייצר תוכן AI מחדש...');
   try {
-    const res = await fetch(LANDING_EDGE_FN, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    // D6 fix: invoke() attaches auth header.
+    const { data, error } = await sb.functions.invoke('generate-landing-content', {
+      body: {
         tenant_id: getTenantId(),
         topic: editingPage.title,
         landing_page_id: editingPage.id,
         page_type: 'campaign',
         tone: 'promotional'
-      })
+      }
     });
-
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'AI generation failed');
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error || 'AI generation failed');
 
     await loadLandingPages();
     openLandingEdit(editingPage.id, editingPage.title);

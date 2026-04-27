@@ -6,11 +6,19 @@ async function loadLookupCaches() {
   supplierCache = {}; supplierCacheRev = {}; supplierNumCache = {};
   (sups || []).forEach(s => { supplierCache[s.name] = s.id; supplierCacheRev[s.id] = s.name; supplierNumCache[s.id] = s.supplier_number; });
 
-  let brQ = sb.from('brands').select('id,name');
+  let brQ = sb.from('brands').select('id,name,brand_type');
   if (tid) brQ = brQ.eq('tenant_id', tid);
   const { data: brs } = await brQ;
-  brandCache = {}; brandCacheRev = {};
-  (brs || []).forEach(b => { brandCache[b.name] = b.id; brandCacheRev[b.id] = b.name; });
+  brandCache = {}; brandCacheRev = {}; brandTypeCache = {};
+  // brandTypeCache: brand_id → brand_type. Powers the B3 filter
+  // (inventory-table.js) which must resolve user's brand_type selection
+  // into a set of brand_ids (since inventory.brand_type column is 99% NULL
+  // and the real data lives on brands.brand_type).
+  (brs || []).forEach(b => {
+    brandCache[b.name] = b.id;
+    brandCacheRev[b.id] = b.name;
+    brandTypeCache[b.id] = b.brand_type || null;
+  });
 }
 
 // --- Enrich Supabase row with resolved brand/supplier names ---

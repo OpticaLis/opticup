@@ -269,18 +269,13 @@ async function cbGenerate() {
       payload.slug_override = state.variables._slug;
     }
 
-    const res = await fetch(CAMPAIGN_EDGE_FN, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + SUPABASE_ANON,
-      },
-      body: JSON.stringify(payload),
-    });
+    // D6 consistency: use sb.functions.invoke() like the other Studio AI callers.
+    // This file already had a manual Authorization header so wasn't broken — but the
+    // codebase is now uniform on the invoke pattern.
+    const { data, error: invokeErr } = await sb.functions.invoke('generate-campaign-page', { body: payload });
+    if (invokeErr) throw invokeErr;
 
-    const data = await res.json();
-
-    if (data.success && data.page_id) {
+    if (data?.success && data.page_id) {
       state.generatedPageId = data.page_id;
       state.generatedSlug = data.slug;
 

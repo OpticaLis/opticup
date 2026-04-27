@@ -318,7 +318,7 @@ function togglePermModule(headerRow) {
 async function updateRolePermission(roleId, permissionId, granted) {
   requirePermission('settings.edit');
   const { error } = await sb.from(AT.ROLE_PERMS)
-    .upsert({ role_id: roleId, permission_id: permissionId, granted, tenant_id: getTenantId() }, { onConflict: 'role_id,permission_id' });
+    .upsert({ role_id: roleId, permission_id: permissionId, granted, tenant_id: getTenantId() }, { onConflict: 'role_id,permission_id,tenant_id' });
   if (error) { toast('שגיאה בעדכון הרשאה', 'e'); return; }
   toast('הרשאות עודכנו', 's');
 }

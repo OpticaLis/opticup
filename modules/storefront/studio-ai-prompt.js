@@ -12,16 +12,13 @@ const promptHistory = {};
  */
 async function aiEditPage(currentBlocks, prompt) {
   try {
-    const response = await fetch(AI_EDIT_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ blocks: currentBlocks, prompt, mode: 'page' })
+    // D6 fix: sb.functions.invoke() auto-attaches the JWT/anon-key Authorization header
+    // that bare fetch() omits — bare fetch returned HTTP 401 from the gateway.
+    const { data, error } = await sb.functions.invoke('cms-ai-edit', {
+      body: { blocks: currentBlocks, prompt, mode: 'page' }
     });
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || `HTTP ${response.status}`);
-    }
-    return await response.json();
+    if (error) throw new Error(error.message || error.toString());
+    return data;
   } catch (err) {
     console.error('AI edit error:', err);
     return { error: err.message };
@@ -33,16 +30,12 @@ async function aiEditPage(currentBlocks, prompt) {
  */
 async function aiEditComponent(currentConfig, prompt) {
   try {
-    const response = await fetch(AI_EDIT_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ config: currentConfig, prompt, mode: 'component' })
+    // D6 fix: see aiEditPage above.
+    const { data, error } = await sb.functions.invoke('cms-ai-edit', {
+      body: { config: currentConfig, prompt, mode: 'component' }
     });
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || `HTTP ${response.status}`);
-    }
-    return await response.json();
+    if (error) throw new Error(error.message || error.toString());
+    return data;
   } catch (err) {
     console.error('AI component edit error:', err);
     return { error: err.message };
@@ -233,23 +226,15 @@ async function studioAiWriteCustom(fieldKey) {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ AI כותב...'; }
 
   try {
-    const response = await fetch(AI_EDIT_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        mode: 'custom',
-        mode_data: { prompt, current_html: currentHtml }
-      })
+    // D6 fix: see aiEditPage at top of file.
+    const { data: result, error } = await sb.functions.invoke('cms-ai-edit', {
+      body: { mode: 'custom', mode_data: { prompt, current_html: currentHtml } }
     });
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || `HTTP ${response.status}`);
-    }
-    const result = await response.json();
-    if (result.html) {
+    if (error) throw new Error(error.message || error.toString());
+    if (result?.html) {
       textarea.value = result.html;
       Toast.success('AI סיים לכתוב');
-    } else if (result.error) {
+    } else if (result?.error) {
       throw new Error(result.error);
     }
   } catch (err) {

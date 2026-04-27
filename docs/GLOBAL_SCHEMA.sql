@@ -272,7 +272,7 @@ CREATE OR REPLACE VIEW v_storefront_products AS
            FROM inventory_images img
           WHERE (img.inventory_id = i.id)), '[]'::json) AS images,
     lower(((((((COALESCE(b.name, ''::text) || ' '::text) || COALESCE(i.model, ''::text)) || ' '::text) || COALESCE(i.color, ''::text)) || ' '::text) || COALESCE(i.barcode, ''::text))) AS search_text,
-    COALESCE(i.storefront_mode_override, b.storefront_mode, 'catalog'::text) AS resolved_mode,
+    COALESCE(i.display_mode_override, b.display_mode, 'catalog'::text) AS resolved_mode,
     ( SELECT ai_content.content
            FROM ai_content
           WHERE ((ai_content.entity_type = 'product'::text) AND (ai_content.entity_id = i.id) AND (ai_content.content_type = 'description'::text) AND (ai_content.language = 'he'::text) AND (ai_content.is_deleted = false))
@@ -290,9 +290,9 @@ CREATE OR REPLACE VIEW v_storefront_products AS
          LIMIT 1) AS ai_seo_description
    FROM (inventory i
      JOIN brands b ON ((i.brand_id = b.id)))
-  WHERE ((i.is_deleted = false) AND (b.active = true) AND (b.exclude_website IS NOT TRUE) AND (COALESCE(i.storefront_mode_override, b.storefront_mode, 'catalog'::text) <> 'hidden'::text) AND (i.website_sync = ANY (ARRAY['full'::text, 'display'::text])) AND ((i.website_sync = 'display'::text) OR ((i.website_sync = 'full'::text) AND (i.quantity > 0))) AND (EXISTS ( SELECT 1
+  WHERE ((i.is_deleted = false) AND (b.active = true) AND (b.exclude_website IS NOT TRUE) AND (COALESCE(i.display_mode_override, b.display_mode, 'catalog'::text) <> 'hidden'::text) AND (i.website_sync = ANY (ARRAY['full'::text, 'display'::text])) AND ((i.website_sync = 'display'::text) OR ((i.website_sync = 'full'::text) AND (i.quantity > 0))) AND (EXISTS ( SELECT 1
            FROM inventory_images img
-          WHERE (img.inventory_id = i.id))));
+          WHERE (img.inventory_id = i.id))) AND (i.barcode IS NOT NULL));
 
 
 -- ============================================================

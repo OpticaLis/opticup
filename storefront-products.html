@@ -49,7 +49,7 @@
 .bulk-bar button:hover { background: var(--g100); }
 .resolved-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: .8rem; font-weight: 600; }
 .resolved-catalog { background: #fef3c7; color: #b45309; }
-.resolved-shop { background: #d1fae5; color: #059669; }
+.resolved-store_all { background: #d1fae5; color: #059669; }
 .resolved-hidden { background: #fee2e2; color: #dc2626; }
 .count-label { font-size: .85rem; color: var(--g400); margin-bottom: 12px; }
 </style>
@@ -63,7 +63,7 @@
 
     <nav class="sf-nav">
       <a href="storefront-settings.html">⚙️ הגדרות</a>
-      <a href="storefront-brands.html">🏷️ מותגים</a>
+      <a href="storefront-studio.html">🏷️ מותגים</a>
       <a href="storefront-products.html" class="active">📦 מוצרים</a>
       <a href="storefront-content.html">🤖 תוכן AI</a>
       <a href="storefront-blog.html">📝 בלוג</a>
@@ -81,7 +81,7 @@
         <select id="filter-mode" onchange="filterProducts()">
           <option value="">כל המצבים</option>
           <option value="catalog">קטלוג</option>
-          <option value="shop">חנות</option>
+          <option value="store_all">חנות</option>
           <option value="hidden">מוסתר</option>
         </select>
         <input type="text" id="filter-search" placeholder="חפש דגם / ברקוד..." oninput="filterProducts()" style="min-width:200px">
@@ -92,7 +92,7 @@
         <span id="bulk-count">0 מוצרים נבחרו</span>
         <select id="bulk-mode">
           <option value="catalog">📋 קטלוג</option>
-          <option value="shop">🛒 חנות</option>
+          <option value="store_all">🛒 חנות</option>
           <option value="hidden">🚫 מוסתר</option>
           <option value="">🔄 נקה דריסה (עקוב אחרי מותג)</option>
         </select>

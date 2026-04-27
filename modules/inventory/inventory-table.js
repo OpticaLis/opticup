@@ -24,9 +24,12 @@ async function loadInventoryPage() {
   // Read filters from DOM
   const search = ($('inv-search')?.value || '').trim().toLowerCase();
   const supplier = $('inv-filter-supplier')?.value || '';
+  const brandId = $('inv-filter-brand')?.value || '';
   const ptype = $('inv-filter-ptype')?.value || '';
+  const btype = $('inv-filter-btype')?.value || '';
   const qtyFilter = $('inv-filter-qty')?.value || '';
-  invCurrentFilters = { search, supplier, ptype, qtyFilter };
+  const wsync = $('inv-filter-sync')?.value || '';
+  invCurrentFilters = { search, supplier, brandId, ptype, btype, qtyFilter, wsync };
 
   try {
     let query = sb.from('inventory')
@@ -38,9 +41,39 @@ async function loadInventoryPage() {
       query = query.in('id', _receiptFilterIds);
     }
     if (supplier) { const suppId = supplierCache[supplier]; if (suppId) query = query.eq('supplier_id', suppId); }
+    if (brandId) query = query.eq('brand_id', brandId);
     if (ptype) query = query.eq('product_type', heToEn('product_type', ptype));
+    // B3 brand_type filter: inventory.brand_type is 99% NULL on Prizma — the real
+    // data lives on brands.brand_type (verified 2026-04-27: 32 vs 430 luxury,
+    // 43 vs 4173 brand). Resolve user's btype selection to brand_ids via
+    // brandTypeCache (populated by loadLookupCaches in supabase-ops.js), then
+    // filter via inventory.brand_id which IS reliable. Same pattern as B2 חברה.
+    if (btype) {
+      const matchIds = Object.entries(brandTypeCache)
+        .filter(function(pair) { return pair[1] === btype; })
+        .map(function(pair) { return pair[0]; });
+      if (matchIds.length === 0) {
+        // No brands of this type for this tenant — force empty result via impossible UUID
+        query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+      } else {
+        query = query.in('brand_id', matchIds);
+      }
+    }
     if (qtyFilter === '1') query = query.gt('quantity', 0);
     else if (qtyFilter === '0') query = query.lte('quantity', 0);
+    if (wsync) query = query.eq('website_sync', wsync);
+    // No-images filter — parent-level NOT EXISTS via PostgREST empty-embed syntax.
+    // Must use the embed name without a column suffix: "inventory_images.id=is.null"
+    // would scope to the embed array (returns ALL parents with empty arrays); the
+    // bare embed name elevates the filter to the parent row.
+    if (_noImagesFilter) query = query.is('inventory_images', null);
+    // Selected-only filter (B5) — fetch ALL selected items from server, not the local 50-row page.
+    // supabase-js switches to POST when the URL would be too long, so .in() handles 1000+ UUIDs
+    // transparently. The activation prompt's chunked-batching path is deferred until a real
+    // 10k+ selection workflow proves it necessary.
+    if (_selectedOnlyFilter && invSelected.size > 0) {
+      query = query.in('id', Array.from(invSelected));
+    }
     if (search && search.length >= 2) {
       const safe = search.replace(/[,().\\]/g, '');
       if (safe) {
@@ -84,16 +117,17 @@ async function loadInventoryPage() {
         }
       }))
     }));
-    // No-images client-side filter
-    if (_noImagesFilter) {
-      invData = invData.filter(function(r) { return !r._images || r._images.length === 0; });
-      invTotalCount = invData.length;
-      invTotalPages = Math.max(1, Math.ceil(invTotalCount / INV_PAGE_SIZE));
-    }
     invFiltered = invData;
     var supplierSel = $('inv-filter-supplier'); var curVal = supplierSel.value;
     supplierSel.innerHTML = '<option value="">הכל</option>' + suppliers.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
     supplierSel.value = curVal;
+    var brandSel = $('inv-filter-brand');
+    if (brandSel) {
+      var brandCurVal = brandSel.value;
+      var brandPairs = Object.entries(brandCacheRev).sort((a, b) => (a[1] || '').localeCompare(b[1] || '', 'he'));
+      brandSel.innerHTML = '<option value="">הכל</option>' + brandPairs.map(([id, name]) => `<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`).join('');
+      brandSel.value = brandCurVal;
+    }
     $('inv-count').textContent = invTotalCount;
     renderInventoryRows(invData);
     updatePaginationUI();
@@ -252,25 +286,21 @@ function toggleSelectedFilter() {
     btn.style.background = _selectedOnlyFilter ? '#2196F3' : '#e5e7eb';
     btn.style.color = _selectedOnlyFilter ? '#fff' : '#1e293b';
   }
-  if (_selectedOnlyFilter) {
-    // Show only selected items from current invData
-    var filtered = invData.filter(function(r) { return invSelected.has(r.id); });
-    renderInventoryRows(filtered);
-  } else {
-    renderInventoryRows(invData);
-  }
+  invPage = 0;
+  loadInventoryPage();
 }
 
 function _updateSelectedFilterBtn() {
   var btn = $('inv-filter-selected');
   if (!btn) return;
   btn.style.display = invSelected.size > 0 ? 'inline-block' : 'none';
-  // If filter is active but no more selections, deactivate it
+  // If filter is active but no more selections, deactivate it and reload unfiltered
   if (_selectedOnlyFilter && invSelected.size === 0) {
     _selectedOnlyFilter = false;
     btn.style.background = '#e5e7eb';
     btn.style.color = '#1e293b';
-    renderInventoryRows(invData);
+    invPage = 0;
+    loadInventoryPage();
   }
 }
 
