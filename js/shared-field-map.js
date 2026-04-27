@@ -176,3 +176,4 @@ let supplierCacheRev = {}; // uuid → name
 let supplierNumCache = {}; // uuid → supplier_number
 let brandCache = {};       // name → uuid
 let brandCacheRev = {};    // uuid → name
+let brandTypeCache = {};   // uuid → brand_type (populated by loadLookupCaches; powers Inventory B3 filter via brand_id JOIN)

@@ -50,7 +50,7 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 |---|-------|----------|--------|
 | B1 | "ללא תמונות" filter is client-side only — filters current page (50 items), not all inventory | CRITICAL | ✅ Fixed (`B1_NO_IMAGES_FILTER_SERVER_SIDE/`) |
 | B2 | Add filter: חברה (brand name dropdown) — below ספק | MEDIUM | ✅ Added (`B2_B3_B4_INVENTORY_FILTERS/`) |
-| B3 | Add filter: סוג מותג (brand_type: luxury/brand/regular) — below סוג מוצר | MEDIUM | ✅ Added (`B2_B3_B4_INVENTORY_FILTERS/`) |
+| B3 | Add filter: סוג מותג (brand_type: luxury/brand/regular) — below סוג מוצר | MEDIUM | ✅ Added (`B2_B3_B4_INVENTORY_FILTERS/`) + ✅ FIXED 2026-04-27 (`B3_BRAND_TYPE_FILTER_VIA_JOIN/`) — was operating on dead `inventory.brand_type` column (32 luxury, 99% NULL); now resolves via brandTypeCache + filters by `brand_id IN (...)`. Live verified: luxury 32→430, brand+no-images 0→3390. |
 | B4 | Add filter: סוג סינכרון (website_sync: full/display/none) — below כמות | MEDIUM | ✅ Added (`B2_B3_B4_INVENTORY_FILTERS/`) |
 | B5 | "רק מסומנים" view shows only current-page selections — should fetch all selected from server | HIGH | ✅ Fixed (`B5_SELECTED_ONLY_SERVER_SIDE/`) |
 

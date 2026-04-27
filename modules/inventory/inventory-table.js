@@ -43,7 +43,22 @@ async function loadInventoryPage() {
     if (supplier) { const suppId = supplierCache[supplier]; if (suppId) query = query.eq('supplier_id', suppId); }
     if (brandId) query = query.eq('brand_id', brandId);
     if (ptype) query = query.eq('product_type', heToEn('product_type', ptype));
-    if (btype) query = query.eq('brand_type', btype);
+    // B3 brand_type filter: inventory.brand_type is 99% NULL on Prizma — the real
+    // data lives on brands.brand_type (verified 2026-04-27: 32 vs 430 luxury,
+    // 43 vs 4173 brand). Resolve user's btype selection to brand_ids via
+    // brandTypeCache (populated by loadLookupCaches in supabase-ops.js), then
+    // filter via inventory.brand_id which IS reliable. Same pattern as B2 חברה.
+    if (btype) {
+      const matchIds = Object.entries(brandTypeCache)
+        .filter(function(pair) { return pair[1] === btype; })
+        .map(function(pair) { return pair[0]; });
+      if (matchIds.length === 0) {
+        // No brands of this type for this tenant — force empty result via impossible UUID
+        query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+      } else {
+        query = query.in('brand_id', matchIds);
+      }
+    }
     if (qtyFilter === '1') query = query.gt('quantity', 0);
     else if (qtyFilter === '0') query = query.lte('quantity', 0);
     if (wsync) query = query.eq('website_sync', wsync);
