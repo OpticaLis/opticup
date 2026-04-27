@@ -1,0 +1,36 @@
+{
+  "captured_at": "2026-04-27T20:30:00Z",
+  "captured_by": "opticup-executor (Windows desktop)",
+  "git_start_commit": "d21ce2d1030823a19c7103fdefa4ae4a5634eea6",
+  "permissions_table_row_count": 281,
+  "permissions_distinct_id_count": 89,
+  "permissions_distinct_module_count": 17,
+  "data_permission_attribute_count_active_source": 49,
+  "data_permission_distinct_values": 23,
+  "code_referenced_keys_distinct_total": 31,
+  "tenants_count": 5,
+  "tenants": [
+    {"id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c", "slug": "prizma", "name": "אופטיקה פריזמה"},
+    {"id": "8d8cfa7e-ef58-49af-9702-a862d459cccb", "slug": "demo", "name": "אופטיקה דמו (בדיקה)"},
+    {"id": "9d6c19e0-f1d7-47be-ba2f-8c4e1638e894", "slug": "test-store-v2", "name": "אופטיקה בדיקה 2"},
+    {"id": "f185ed73-8337-454f-be21-12dde73aaf21", "slug": "test-store-verify", "name": "אופטיקה טסט"},
+    {"id": "db710f25-fa10-4321-b280-4808679c727a", "slug": "test-store-qa", "name": "חנות בדיקה QA"}
+  ],
+  "active_employees_with_admin_role": 3,
+  "roles_count": 25,
+  "role_permissions_count": 833,
+  "role_permissions_granted_true": 829,
+  "role_permissions_granted_false": 4,
+  "employee_roles_count": 14,
+  "localhost_3000_reachable": true,
+  "logged_in_session_during_audit": {
+    "tenant_slug": "prizma",
+    "role": "ceo",
+    "perm_count_in_session": 55
+  },
+  "spec_baseline_match": {
+    "permissions_281": "exact match",
+    "5_tenants": "exact match",
+    "stop_trigger": "OK — 281 within ±20 tolerance"
+  }
+}

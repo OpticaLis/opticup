@@ -1,7 +1,21 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-Studio Brands Visibility Rework — 2026-04-27 (evening)
+Permissions Audit Phase 1 — 2026-04-27 (late evening)
+
+## 2026-04-27 (late evening) — Permissions Audit Phase 1 (READ-ONLY DIAGNOSTIC)
+
+Read-only diagnostic of the permissions system. Zero DB writes, zero code
+changes. Deliverable: 611-line DIAGNOSIS_REPORT.md (10 sections §A–§J)
+identifying that the "281 permissions" figure is misleading (89 distinct
+ids ✕ ~5 tenants), and that Daniel's user-visible bug ("manager doesn't
+see what admin sees") is caused by a stateful `isAdmin` global in
+`js/shared.js:124` that gates ~10 inventory bulk-edit functions on
+`settings.edit` instead of `inventory.edit`. Manager has all 54 inventory
+keys but lacks `settings.edit` → `isAdmin=false` → bulk ops denied.
+13 numbered consolidation proposals + Phase 2 SPEC outline (recommended
+minimum: decouple `isAdmin` from `settings.edit`, ~10 lines / 60 min).
+SPEC folder: `specs/PERMISSIONS_AUDIT_PHASE1_2026_04_27/`.
 
 ## 2026-04-27 (evening) — Studio Brands Visibility Rework (HOTFIX)
 
