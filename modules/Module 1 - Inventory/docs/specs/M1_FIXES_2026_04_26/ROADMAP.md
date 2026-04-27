@@ -24,7 +24,7 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| A1 | Compress media-library product images (27 files, avg 2.5 MB → target 200-300 KB) | HIGH | ⬜ |
+| A1 | Compress media-library product images (27 files, avg 2.5 MB → target 200-300 KB) | HIGH | ✅ Compressed 27/27 (`A1_PRODUCT_IMAGE_COMPRESSION/`) — 65MB → 0.8MB. Originals still in place pending Daniel's "go delete originals". Backups at `products-backup-2026-04-26/`. |
 | A2 | Add auto-compression on upload (max 1200px width, quality 80 WebP) | HIGH | ⬜ |
 | A3 | Delete demo tenant supplier-docs (119 PDFs, 64 MB test data) | LOW | ⬜ |
 | A4 | Delete failed-sync-files bucket contents (151 files, 47 KB junk) | LOW | ⬜ |
