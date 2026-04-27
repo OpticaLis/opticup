@@ -61,13 +61,13 @@ async function renderPermissionMatrix(targetDivId) {
     t += ml.icon + ' ' + escapeHtml(ml.he) + ' <span style="font-weight:400;font-size:.75rem;opacity:.7">(' + modPerms.length + ')</span>';
     t += '</td></tr>';
     modPerms.forEach(p => {
-      t += '<tr class="perm-row perm-mod-' + mod + '" data-perm-id="' + escapeAttr(p.id) + '" style="border-bottom:1px solid #f0f0f0">';
+      t += '<tr class="perm-row perm-mod-' + mod + '" data-perm-id="' + escapeHtml(p.id) + '" style="border-bottom:1px solid #f0f0f0">';
       t += '<td style="padding:6px 10px;padding-right:24px">' + escapeHtml(p.name_he) + '</td>';
       roles.forEach(r => {
         const key = r.id + '|' + p.id;
         const checked = rpMap[key] ? ' checked' : '';
         const disabled = canEdit ? '' : ' disabled';
-        t += '<td style="text-align:center"><input type="checkbox"' + checked + disabled + ' data-role-id="' + escapeAttr(r.id) + '" onchange="updateRolePermission(\'' + escapeAttr(r.id) + '\',\'' + escapeAttr(p.id) + '\',this.checked)" style="accent-color:var(--success);width:18px;height:18px"></td>';
+        t += '<td style="text-align:center"><input type="checkbox"' + checked + disabled + ' data-role-id="' + escapeHtml(r.id) + '" onchange="updateRolePermission(\'' + escapeHtml(r.id) + '\',\'' + escapeHtml(p.id) + '\',this.checked)" style="accent-color:var(--success);width:18px;height:18px"></td>';
       });
       if (canEdit) {
         t += '<td style="text-align:center;padding:4px;white-space:nowrap">';
