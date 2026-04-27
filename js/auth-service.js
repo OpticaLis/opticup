@@ -316,6 +316,10 @@ function applyUIPermissions() {
   // Body-class toggle for CSS rules gated on settings.edit (cost columns,
   // admin-only fields). Replaces the previous admin.js side-effect.
   document.body.classList.toggle('admin-mode', hasPermission('settings.edit'));
+  // Granular permission classes for CSS gating (PERMISSIONS_PHASE3_CSS_GATING_2026_04_27).
+  // .has-inventory-edit gates .qty-btns +/- buttons so manager (inventory.edit
+  // without settings.edit) sees them. Add more here as new granular CSS gates appear.
+  document.body.classList.toggle('has-inventory-edit', hasPermission('inventory.edit'));
 }
 
 // --- 10. getCurrentEmployee ---
