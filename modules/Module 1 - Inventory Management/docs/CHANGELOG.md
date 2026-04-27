@@ -4,6 +4,30 @@
 
 ---
 
+## Permissions Phase 2 Fix (HOTFIX bundle) — 2026-04-27 (night)
+
+8-commit bundle: tenant cleanup + key consolidation + isAdmin decoupling
++ AI bypass fix + DB-driven role badges + matrix all/none buttons.
+
+### Commits
+- `003eb9e` chore(perms): pre-flight snapshot
+- `ce89ff4` fix(perms): delete 3 unused test-store tenants and cascade (728 rows / 13 tables)
+- `439ae5f` refactor(perms): rename long-form keys to canonical short form (28 perm + 80 role_perm rows + 6 inventory.html attrs)
+- `f9c277d` fix(inventory): decouple isAdmin global from settings.edit — use granular hasPermission
+- `3ebd7dc` fix(debt): replace direct role check in ai-config with hasPermission('ai.config')
+- `7d37e62` feat(perms-ui): load ROLE_BADGES from DB + add row select-all/deny-all buttons
+- `d8ec90e` chore(cleanup): delete shared/tests/permission-test.html (stale)
+- (this commit) docs(m1): close PERMISSIONS_PHASE2_FIX with retrospective
+
+### Outcome
+Manager on Demo + Prizma can now use bulk inventory ops as designed.
+DB has 2 surviving tenants, 55 distinct canonical perm keys, 10 roles
+(ceo/manager/team_lead/worker/viewer × 2 tenants), 0 long-form keys, 0
+orphan role_permissions. CSS UX preserved via auth-service.js body-class
+toggle. Storefront repo: zero commits.
+
+---
+
 ## Studio Brands Visibility Rework (HOTFIX) — 2026-04-27 (evening)
 
 ### Files modified

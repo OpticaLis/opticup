@@ -1,7 +1,54 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-Permissions Audit Phase 1 — 2026-04-27 (late evening)
+Permissions Phase 2 Fix — 2026-04-27 (night)
+
+## 2026-04-27 (night) — Permissions Phase 2 Fix (HOTFIX bundle, 8 commits)
+
+Bundled fix for the user-visible "manager doesn't get bulk inventory ops"
+bug + 6 related permissions cleanups identified by PERMISSIONS_AUDIT_PHASE1.
+
+**Primary fix:** decoupled the stateful `isAdmin` global from `settings.edit`.
+~10 inventory bulk-edit guards now use `hasPermission('inventory.edit')` (or
+`.delete`) directly. Manager role on Demo + Prizma can now bulk-edit
+inventory despite not having `settings.edit`. CSS coupling on `.admin-mode`
+body class preserved by moving the toggle to `applyUIPermissions` in
+`js/auth-service.js`.
+
+**Cleanups:**
+- 3 unused test-store tenants deleted (test-store-qa/v2/verify) +
+  cascade — 728 rows across 13 tables. Surviving tenants: prizma + demo.
+- 14 long-form permission keys renamed to canonical short form on Prizma+Demo
+  (`purchase_order.* → purchasing.*`, `goods_receipt.* → receipts.*`,
+   `debt.documents.{create,edit,cancel} → debt.{create,edit,cancel}`,
+   `debt.payments.{create,cancel} → debt.payment_{create,cancel}`,
+   `debt.prepaid.manage → debt.prepaid`).
+  28 perms rows + 80 role_permissions rows renamed atomically via CTE.
+- HARMFUL bypass in `modules/debt/ai/ai-config.js` replaced with
+  `hasPermission('ai.config')` (was: direct `role === 'ceo' || 'manager'`).
+- `ROLE_BADGES` + `ROLE_HIERARCHY` now loaded from DB per tenant at
+  `loadEmployeesTab()` time. New `loadRolesFromDB()` function.
+- "הכל" / "כלום" buttons added to every permission row in matrix —
+  single batch UPSERT per click. Extracted matrix UI to
+  `modules/permissions/permission-matrix.js` (file-size compliance).
+- Stale `shared/tests/permission-test.html` deleted (referenced 3 dead keys).
+
+**DB delta:** 281 → 110 perms rows; 833 → 371 role_permissions rows;
+89 → 55 distinct perm ids; 5 → 2 tenants; 25 → 10 roles.
+
+**Tech-debt logged for future SPECs:**
+- Super-admin sub-role employees model — defer to dedicated SPEC.
+  Daniel wants `is_super_admin` to remain separate from per-tenant roles
+  but eventually wants employees with cross-tenant access at lower
+  privilege than full super-admin.
+- `LEGACY_ROLE_MAP` admin→ceo bridge in `js/auth-service.js:21` — kept;
+  remove when all employees are migrated to `employee_roles` rows.
+- Refactor `.admin-mode` CSS rules to use `[data-perm-settings-edit]`
+  attribute selector (Proposal 11 from PERMISSIONS_AUDIT_PHASE1).
+
+SPEC folder: `specs/PERMISSIONS_PHASE2_FIX_2026_04_27/`.
+
+## 2026-04-27 (late evening) — Permissions Audit Phase 1 (READ-ONLY DIAGNOSTIC)
 
 ## 2026-04-27 (late evening) — Permissions Audit Phase 1 (READ-ONLY DIAGNOSTIC)
 
