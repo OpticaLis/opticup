@@ -405,19 +405,31 @@ async function handleMediaUpload(files) {
 
 // ========== WEBP CONVERSION ==========
 
-function convertMediaToWebP(file, quality = 0.85) {
+// A2/T9 — auto-compression on upload. Mirrors the proven pattern in
+// modules/inventory/inventory-images.js:188-203 (1200px max + WebP q~0.8).
+// Without the dimension clamp, source-sized canvas + high quality produced
+// the 65MB media-library leak that T7 had to clean up after the fact.
+const MEDIA_MAX_DIMENSION = 1200;
+
+function convertMediaToWebP(file, quality = 0.8) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
+      let w = img.naturalWidth;
+      let h = img.naturalHeight;
+      if (w > MEDIA_MAX_DIMENSION || h > MEDIA_MAX_DIMENSION) {
+        if (w >= h) { h = Math.round(h * MEDIA_MAX_DIMENSION / w); w = MEDIA_MAX_DIMENSION; }
+        else        { w = Math.round(w * MEDIA_MAX_DIMENSION / h); h = MEDIA_MAX_DIMENSION; }
+      }
       const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
+      canvas.width = w;
+      canvas.height = h;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
+      ctx.drawImage(img, 0, 0, w, h);
       canvas.toBlob(
         (blob) => {
           if (blob) {
-            resolve({ blob, width: img.naturalWidth, height: img.naturalHeight, size: blob.size });
+            resolve({ blob, width: w, height: h, size: blob.size });
           } else {
             reject(new Error('WebP conversion failed'));
           }
