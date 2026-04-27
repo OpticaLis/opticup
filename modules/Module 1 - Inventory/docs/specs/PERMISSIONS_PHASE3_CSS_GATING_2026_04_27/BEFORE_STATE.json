@@ -1,0 +1,51 @@
+{
+  "captured_at": "2026-04-27T23:30:00Z",
+  "captured_by": "opticup-executor (Windows desktop)",
+  "git_start_commit": "1a8a591e4603767cf4b8283133e193b1a6fe6708",
+  "css_files_with_admin_mode": [
+    "css/employees.css",
+    "css/inventory.css",
+    "css/settings.css",
+    "css/shipments.css",
+    "css/styles.css"
+  ],
+  "admin_mode_rules_per_file": [
+    ".admin-col{display:none}.admin-mode .admin-col{display:table-cell}",
+    ".admin-mode .cost-field{display:flex}",
+    ".admin-tab{display:none!important}.admin-mode .admin-tab{display:inline-block!important}",
+    ".cost-col{display:none}.admin-mode .cost-col{display:table-cell}",
+    ".qty-btns{display:none}.admin-mode .qty-btns{display:inline}"
+  ],
+  "applyUIPermissions_current_body_class_toggles": [
+    "document.body.classList.toggle('admin-mode', hasPermission('settings.edit'))"
+  ],
+  "live_evidence_pre_fix": {
+    "manager_demo_pin_090004_inventory_html": {
+      "role": "manager",
+      "body_admin_mode": false,
+      "has_inventory_edit": true,
+      "has_settings_edit": false,
+      "qty_btns_in_dom": 50,
+      "qty_btns_visible": 0,
+      "cost_col_in_dom": 102,
+      "cost_col_visible": 0,
+      "screenshot": "manager-inventory-before.png"
+    },
+    "admin_prizma_pin_12345_inventory_html": {
+      "role": "ceo",
+      "body_admin_mode": true,
+      "has_inventory_edit": true,
+      "has_settings_edit": true,
+      "qty_btns_in_dom": 50,
+      "qty_btns_visible": 50,
+      "cost_col_in_dom": 102,
+      "cost_col_visible": 102,
+      "screenshot": "admin-inventory-before.png"
+    }
+  },
+  "audit_decision_summary": {
+    "remap": [".qty-btns → has-inventory-edit"],
+    "keep": [".admin-col (dead)", ".admin-tab (double-gated)", ".cost-col (settings.edit correct)", ".cost-field (settings.edit correct)"]
+  },
+  "rollback_command": "git -C C:/Users/User/opticup reset --hard 1a8a591e4603767cf4b8283133e193b1a6fe6708"
+}

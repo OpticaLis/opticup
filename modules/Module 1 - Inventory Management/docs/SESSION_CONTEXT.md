@@ -1,7 +1,35 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-Permissions Hotfix Null Bytes — 2026-04-27 (late night)
+Permissions Phase 3 CSS Gating — 2026-04-27 (very late night)
+
+## 2026-04-27 (very late night) — Permissions Phase 3: CSS Gating Fix
+
+User-visible bug: manager (with inventory.edit) could not see +/− qty buttons
+in inventory.html — JS guards (PHASE2 fix) were correct, but a legacy
+`.admin-mode` body-class CSS rule still hid `.qty-btns`. Body class only
+toggles when `settings.edit` is granted, which manager doesn't have.
+
+Audit found 5 `.admin-mode`-gated CSS classes across 5 duplicate stylesheets
+(employees/inventory/settings/shipments/styles.css). Mapping:
+- `.qty-btns` → REMAPPED to new `.has-inventory-edit` body class.
+- `.admin-col` → KEPT (dead class, no HTML uses it).
+- `.admin-tab` → KEPT (settings.edit correct; double-gated via data-tab-permission).
+- `.cost-col` + `.cost-field` → KEPT (cost data, settings.edit is correct).
+
+`applyUIPermissions` in `js/auth-service.js` now toggles BOTH `admin-mode`
+(settings.edit) AND `has-inventory-edit` (inventory.edit) on the body.
+Admin gets both classes (no regression); manager gets only the inventory
+class (qty-btns visible, cost-col still hidden).
+
+Verified live with side-by-side screenshots:
+- manager-inventory-before.png: 50 qty-btns in DOM, 0 visible (the bug)
+- manager-inventory-after.png: 50 qty-btns visible (the fix)
+- admin-inventory-before/after.png: 50 visible both before and after (no regression)
+
+SPEC folder: `specs/PERMISSIONS_PHASE3_CSS_GATING_2026_04_27/`.
+
+## 2026-04-27 (late night) — Permissions Hotfix Null Bytes
 
 ## 2026-04-27 (late night) — Permissions Hotfix (matrix render bug)
 
