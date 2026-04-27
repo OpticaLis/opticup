@@ -20,7 +20,6 @@ opticup/
 ├── shipments.html              — shipments & box management module
 ├── settings.html               — tenant settings (business info, financial config, display prefs)
 ├── storefront-settings.html    — storefront config: WhatsApp, booking, notifications (Phase 4B)
-├── storefront-brands.html      — storefront brand mode manager (Phase 4B)
 ├── storefront-products.html    — storefront product overrides + bulk select (Phase 4B)
 ├── storefront-glossary.html    — translation glossary management (Phase 6)
 ├── storefront-studio.html      — CMS block editor for storefront pages (CMS-2)

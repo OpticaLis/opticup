@@ -280,9 +280,20 @@ function showNewBrandPagePicker() {
 // EDITOR MODAL
 // ═══════════════════════════════════════════════════
 
-function openStudioBrandEditor(brandId) {
+async function openStudioBrandEditor(brandId) {
   const brand = studioBrands.find(b => b.brand_id === brandId);
   if (!brand) return;
+
+  // T2 (T12 consolidation lightweight Phase A): fetch exclude_website from the
+  // brands table since v_storefront_brands doesn't expose it. Modifying the
+  // view would require Iron Rule 29 sign-off; side-fetch is the smaller-blast-
+  // radius option. One extra query per modal open — negligible.
+  const { data: brandExtra } = await sb.from(T.BRANDS)
+    .select('exclude_website')
+    .eq('id', brandId)
+    .eq('tenant_id', getTenantId())
+    .single();
+  const isExcluded = brandExtra?.exclude_website === true;
 
   const storeName = getTenantConfig('name') || '';
   _quillDesc1 = null;
@@ -333,6 +344,12 @@ function openStudioBrandEditor(brandId) {
         <option value="store"     ${(brand.display_mode || 'store_all') === 'store'     ? 'selected' : ''}>חנות - במלאי בלבד</option>
         <option value="hidden"    ${(brand.display_mode || 'store_all') === 'hidden'    ? 'selected' : ''}>הסתר - לא מוצג באתר</option>
       </select>
+
+      <label class="brand-toggle" style="margin-top:12px; display:flex; align-items:center; gap:10px;">
+        <input type="checkbox" id="sbe-exclude-website" ${isExcluded ? 'checked' : ''} />
+        <span style="font-weight:600;">🚫 הסתר את המותג מהאתר לחלוטין</span>
+        <span style="font-size:.78rem; color:var(--g500);">(פעיל = המותג ומוצריו לא יופיעו באתר הפומבי)</span>
+      </label>
 
       <label class="brand-editor-label" style="margin-top:12px;">נראות עמוד מותג</label>
       <select id="sbe-page-visibility" class="brand-editor-input">
@@ -743,6 +760,10 @@ async function saveStudioBrandPage(brandId) {
     seo_description: document.getElementById('sbe-seo-desc')?.value.trim() || null,
     tags: typeof getCheckedTags === 'function' ? getCheckedTags() : [],
     display_mode: document.getElementById('sbe-display-mode')?.value || 'store_all',
+    // T2 (T12 lightweight Phase A): visibility toggle migrated from the
+    // now-deleted Brand Mode Manager (storefront-brands.js). exclude_website
+    // is the canonical hide-the-brand mechanism (post-D3+D4 + BUG 1 Part B).
+    exclude_website: document.getElementById('sbe-exclude-website')?.checked === true,
     brand_page_visibility: document.getElementById('sbe-page-visibility')?.value || 'listed',
     show_brand_products: document.getElementById('sbe-show-products')?.checked !== false,
   };

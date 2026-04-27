@@ -142,6 +142,7 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 | C1_PERMISSIONS_UPSERT | C1 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(C1)\"` | (in fix commit) |
 | D5_HIDDEN_PRODUCT_RECOVERY | D5 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(D5)\"` | (in fix commit) |
 | D3_D4_DISPLAY_MODE_RECONCILIATION | D3 + D4 | ✅ Phase A + B-1 + B-2 closed by Claude Code (2026-04-26) — D3+D4 user-visible bugs fixed via JS rename to LEGACY pair. B-3 (view rewrite) + B-4 (DDL drop columns) deferred to separate SPEC pending Daniel sign-off. | (B-2 fix + 3 chore commits — see `git log --grep=\"D3+D4\"`) |
+| T12_BRAND_UI_CONSOLIDATION (Option 2 lightweight) | T12 | ✅ Closed by Claude Code (2026-04-27) — visibility toggle ported to studio-brands.js Brand Editor; storefront-brands.html + storefront-brands.js deleted; 7 sibling pages' nav links rewritten to storefront-studio.html | (refactor + chore-spec) |
 | B1_NO_IMAGES_FILTER_SERVER_SIDE | B1 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(B1)\"` | (two-commit pattern: fix + chore-spec) |
 | TBD | B2-B4 | ⬜ Pending | — |
 | OVERNIGHT_M1_M3_BURNDOWN | A1, A3, A4, B2-B5, D1, D2, D4-followup, D6 (invest), D7 (invest), T12, T13 audit | 📝 SPEC + activation prompt authored 2026-04-26 evening — 12+ hr unattended run queued | — |
