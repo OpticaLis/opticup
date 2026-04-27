@@ -132,7 +132,7 @@ Overall: ~9.5/10.
 
 ## 8. Next steps
 
-- **Daniel's call:** authorize "go delete originals" to free 66.8 MB of leftover oversize files. Until then they remain at the original paths (no consumer references them now since `media_library.storage_path` was updated, but they're still costing storage).
+- ~~**Daniel's call:** authorize "go delete originals" to free 66.8 MB of leftover oversize files.~~ ✅ **DONE 2026-04-27** — Daniel authorized after POST_QA verified the compressed files serve correctly via the storefront image proxy. Self-deleting one-off script removed exactly 27 originals (verified count match before delete). Final state: 27 backups (65.22 MB) + 27 compressed (0.82 MB) + 0 originals. Commit: `chore(storage): delete T7 original media-library files post-verification`.
 - **A2 (T9 in burndown):** auto-compress on upload — the next task in the queue. Will halt if upload flow is in an Edge Function (per loop dispatch constraint).
 - **Long-term:** revisit egress consumption after a few days of compressed-only serving.
 
