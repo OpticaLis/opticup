@@ -27,7 +27,7 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 | A1 | Compress media-library product images (27 files, avg 2.5 MB → target 200-300 KB) | HIGH | ✅ Compressed 27/27 (`A1_PRODUCT_IMAGE_COMPRESSION/`) — 65MB → 0.8MB. Originals still in place pending Daniel's "go delete originals". Backups at `products-backup-2026-04-26/`. |
 | A2 | Add auto-compression on upload (max 1200px width, quality 80 WebP) | HIGH | ✅ Fixed (`A2_AUTO_COMPRESSION_ON_UPLOAD/`) — single-function patch in studio-media.js convertMediaToWebP, ports proven pattern from inventory-images.js |
 | A3 | Delete demo tenant supplier-docs (119 PDFs, 64 MB test data) | LOW | ⬜ |
-| A4 | Delete failed-sync-files bucket contents (151 files, 47 KB junk) | LOW | ⬜ |
+| A4 | Delete failed-sync-files bucket contents (151 files, 47 KB junk) | LOW | ✅ Cleaned (`A4_FAILED_SYNC_CLEANUP/`) — actual count 189 files / 54 KB; bucket now 0/0. Underlying leak not fixed (follow-up). |
 
 **Evidence:**
 - Supabase egress limit: 5 GB/month (Free tier)
