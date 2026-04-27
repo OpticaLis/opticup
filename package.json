@@ -7,6 +7,7 @@
     "verify:staged": "node scripts/verify.mjs --staged",
     "verify:full": "node scripts/verify.mjs --full",
     "verify:integrity": "node scripts/verify-tree-integrity.mjs",
+    "test:integrity-gate": "node scripts/test-integrity-gate.mjs",
     "prepare": "husky"
   },
   "dependencies": {
