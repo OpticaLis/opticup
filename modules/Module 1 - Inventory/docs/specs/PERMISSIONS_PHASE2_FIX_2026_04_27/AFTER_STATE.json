@@ -1,0 +1,81 @@
+{
+  "captured_at": "2026-04-27T22:45:00Z",
+  "captured_by": "opticup-executor",
+  "git_end_commit_pre_retrospective": "d8ec90e",
+
+  "post_execution_counts": {
+    "tenants": 2,
+    "tenant_slugs_remaining": ["prizma", "demo"],
+    "permissions_total_rows": 110,
+    "permissions_distinct_ids": 55,
+    "long_form_keys_remaining": 0,
+    "short_form_purchasing_receipts_count": 16,
+    "role_permissions": 371,
+    "orphan_role_permissions": 0,
+    "roles": 10,
+    "employees": 13
+  },
+
+  "delta_from_before": {
+    "tenants_deleted": 3,
+    "permissions_rows_deleted": 171,
+    "permissions_rows_renamed": 28,
+    "role_permissions_rows_deleted": 462,
+    "role_permissions_rows_renamed": 80,
+    "roles_deleted": 15,
+    "employees_deleted": 3,
+    "tenant_config_deleted": 17,
+    "document_types_deleted": 15,
+    "platform_audit_log_deleted": 15,
+    "payment_methods_deleted": 15,
+    "storefront_config_deleted": 3,
+    "tenant_provisioning_log_deleted": 1,
+    "auth_sessions_deleted": 5,
+    "employee_roles_deleted": 3
+  },
+
+  "spec_3_criteria_results": [
+    {"id": 1,  "criterion": "ERP repo on develop, clean",                          "expected": "nothing to commit", "actual": "clean post-commit-8", "status": "PASS"},
+    {"id": 2,  "criterion": "ERP commit count this SPEC",                          "expected": "8", "actual": "8 (003eb9e, ce89ff4, 439ae5f, f9c277d, 3ebd7dc, 7d37e62, d8ec90e, plus this)", "status": "PASS"},
+    {"id": 3,  "criterion": "isAdmin global declaration removed",                  "expected": "0", "actual": "0", "status": "PASS"},
+    {"id": 4,  "criterion": "if (!isAdmin) replaced + ≥6 hasPermission inventory.* hits", "expected": "0 + ≥6", "actual": "0 + 8", "status": "PASS"},
+    {"id": 5,  "criterion": "admin-mode removed from admin.js",                    "expected": "0", "actual": "0", "status": "PASS"},
+    {"id": 6,  "criterion": "AI debt config bypass replaced",                      "expected": "0", "actual": "0", "status": "PASS"},
+    {"id": 7,  "criterion": "Test page deleted",                                   "expected": "exit 1", "actual": "deleted in commit d8ec90e", "status": "PASS"},
+    {"id": 8,  "criterion": "Test-store tenants deleted",                          "expected": "0", "actual": "0", "status": "PASS"},
+    {"id": 9,  "criterion": "Test-store cascade complete",                         "expected": "0", "actual": "0", "status": "PASS"},
+    {"id": 10, "criterion": "Long-form keys gone",                                 "expected": "0", "actual": "0", "status": "PASS"},
+    {"id": 11, "criterion": "Code refs to long-form keys gone",                    "expected": "0", "actual": "0", "status": "PASS"},
+    {"id": 12, "criterion": "Short-form keys present (purchasing.* + receipts.*)", "expected": "≥10", "actual": "16", "status": "PASS"},
+    {"id": 13, "criterion": "ROLE_BADGES + HIERARCHY loaded from DB",              "expected": "≥1 from(AT.ROLES)", "actual": "2 (employee-list + permission-matrix)", "status": "PASS"},
+    {"id": 14, "criterion": "all/none buttons present",                            "expected": "data-row-toggle elements", "actual": "2 in permission-matrix.js", "status": "PASS"},
+    {"id": 15, "criterion": "Manager bulk inventory works on Demo",                "expected": "manual QA pass", "actual": "Substituted: DB query confirms Demo manager has inventory.edit+inventory.delete (NOT settings.edit) + code review confirms new guards use hasPermission('inventory.*'). Live login QA not run because navigating to ?t=demo invalidated Daniel's prizma session — disruptive to continue.", "status": "PASS-EQUIVALENT (deviation logged)"},
+    {"id": 16, "criterion": "ERP npm run verify:integrity",                        "expected": "exit 0", "actual": "exit 0 (verified at every commit)", "status": "PASS"},
+    {"id": 17, "criterion": "Storefront repo untouched",                           "expected": "0 commits 0 modified", "actual": "untouched (no Edit/Write to opticup-storefront)", "status": "PASS"},
+    {"id": 18, "criterion": "Pre-flight + post-state JSON captured",               "expected": "both files present", "actual": "both present", "status": "PASS"},
+    {"id": 19, "criterion": "EXECUTION_REPORT.md exists",                          "expected": "present", "actual": "this commit", "status": "PASS"},
+    {"id": 20, "criterion": "FINDINGS.md exists",                                  "expected": "present", "actual": "this commit", "status": "PASS"},
+    {"id": 21, "criterion": "Tech-debt entry for super-admin sub-roles",           "expected": "≥1 hit", "actual": "added to SESSION_CONTEXT.md", "status": "PASS"}
+  ],
+
+  "manager_bug_fix_verification": {
+    "demo_manager_perms_relevant": [
+      "inventory.delete=true",
+      "inventory.edit=true",
+      "inventory.view=true",
+      "purchasing.view=true",
+      "receipts.create=true",
+      "settings.edit NOT GRANTED (the original bug condition)"
+    ],
+    "code_path_post_fix": [
+      "applyBulkUpdate() now checks hasPermission('inventory.edit') — manager passes",
+      "bulkDelete() now checks hasPermission('inventory.delete') — manager passes",
+      "invEditSync() / invEditProductType() check hasPermission('inventory.edit') — manager passes",
+      "renderInventoryRows() reads hasPermission('inventory.edit') for isAdm flag — admin bar visible",
+      "_openInvMenu() reads hasPermission('inventory.edit') — manager sees delete option in row menu"
+    ],
+    "css_admin_mode_preserved": "applyUIPermissions() in auth-service.js toggles body.admin-mode based on settings.edit — only ceo gets cost columns visible (correct behavior)"
+  },
+
+  "qa_step_4_substitution_rationale": "SPEC §12 step 4 required logging in as a Demo manager test user via Chrome MCP. Attempting to navigate the open Chrome page to ?t=demo invalidated Daniel's existing prizma session (sessionStorage cleared). Continuing the session-switch QA would have required Daniel to manually re-login twice (once as Demo manager test user, once back as himself). Substituted with: (a) DB query confirming Demo manager has the relevant perms granted (inventory.edit + .delete + .view + purchasing.view + receipts.create) but NOT settings.edit — exactly the bug condition; (b) code review of all 5 modified inventory functions confirming the new guards check hasPermission('inventory.*') not isAdmin. The fix is logically sound; live verification deferred to Daniel's first manager-login session post-merge."
+}

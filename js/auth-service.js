@@ -313,6 +313,9 @@ function applyUIPermissions() {
   document.querySelectorAll('[data-tab-permission]').forEach(el => {
     el.style.display = hasPermission(el.getAttribute('data-tab-permission')) ? '' : 'none';
   });
+  // Body-class toggle for CSS rules gated on settings.edit (cost columns,
+  // admin-only fields). Replaces the previous admin.js side-effect.
+  document.body.classList.toggle('admin-mode', hasPermission('settings.edit'));
 }
 
 // --- 10. getCurrentEmployee ---

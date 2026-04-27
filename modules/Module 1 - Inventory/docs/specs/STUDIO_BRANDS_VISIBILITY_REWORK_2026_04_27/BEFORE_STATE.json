@@ -1,0 +1,32 @@
+{
+  "captured_at": "2026-04-27T20:00:00Z",
+  "captured_by": "opticup-executor (Windows desktop)",
+  "source": "Supabase MCP execute_sql against live DB before any change",
+  "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+  "tenant_slug": "prizma",
+  "erp_start_commit": "b8ab61f620a745e62a2a621a591b185c075683c9",
+  "mcqueen_pre": {
+    "id": "06b269ce-1224-4df6-bdb9-9cc4d4693ff6",
+    "name": "Alexander McQueen",
+    "exclude_website": true,
+    "brand_page_enabled": false,
+    "brand_page_visibility": "listed",
+    "display_mode": "store_all",
+    "default_sync": "full",
+    "is_deleted": false,
+    "products_count": 9,
+    "products_in_stock": 7,
+    "products_sync_values_distinct": ["full"],
+    "products_soft_deleted": 0
+  },
+  "totals": {
+    "brands_total": 232,
+    "brands_exclude_website_true": 3,
+    "brands_with_exclude_website_true_names": ["Alexander McQueen", "LOOL", "Tom Ford"]
+  },
+  "spec_baseline_match": {
+    "all_match": true,
+    "notes": "Every value in §3 baseline matched the live probe exactly. Safe to proceed."
+  },
+  "rollback_sql": "UPDATE brands SET exclude_website = true, brand_page_enabled = false WHERE id = '06b269ce-1224-4df6-bdb9-9cc4d4693ff6' AND tenant_id = '6ad0781b-37f0-47a9-92e3-be9ed1477e1c';"
+}

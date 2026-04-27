@@ -1,6 +1,120 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
+Permissions Hotfix Null Bytes — 2026-04-27 (late night)
+
+## 2026-04-27 (late night) — Permissions Hotfix (matrix render bug)
+
+User reported the perm matrix hung on "טוען..." after PHASE2 deployment.
+Investigation: SPEC blamed null-byte file truncation in `employee-list.js`,
+but the file was healthy on disk + in git (0 null bytes anywhere). Real
+root cause: `escapeAttr()` ReferenceError in `permission-matrix.js` —
+function only defined in storefront repo, not loaded on employees.html.
+Introduced by PHASE2 commit `7d37e62` when the matrix UI was extracted.
+
+Fixed by replacing 5 `escapeAttr()` calls with `escapeHtml()` (already
+global, semantically equivalent for HTML attribute escaping).
+
+Verified live via Chrome MCP: matrix renders 55 perm rows × 5 roles =
+275 checkboxes + 110 bulk buttons. Manager bulk-bug also re-verified
+end-to-end (Demo manager PIN 090004 → inv-admin-bar visible →
+bulk-bar visible after row select). Phase 2 fix is solid.
+
+Iron Rule 31 strengthened by adding `npm run test:integrity-gate` —
+4-case regression test for null-byte detection at EOF/mid/start/clean.
+The gate already caught nulls anywhere via `buf.indexOf(0x00)` — the
+test codifies that guarantee.
+
+SPEC folder: `specs/PERMISSIONS_HOTFIX_NULL_BYTES_2026_04_27/`.
+
+## 2026-04-27 (night) — Permissions Phase 2 Fix (HOTFIX bundle, 8 commits)
+
+## 2026-04-27 (night) — Permissions Phase 2 Fix (HOTFIX bundle, 8 commits)
+
+Bundled fix for the user-visible "manager doesn't get bulk inventory ops"
+bug + 6 related permissions cleanups identified by PERMISSIONS_AUDIT_PHASE1.
+
+**Primary fix:** decoupled the stateful `isAdmin` global from `settings.edit`.
+~10 inventory bulk-edit guards now use `hasPermission('inventory.edit')` (or
+`.delete`) directly. Manager role on Demo + Prizma can now bulk-edit
+inventory despite not having `settings.edit`. CSS coupling on `.admin-mode`
+body class preserved by moving the toggle to `applyUIPermissions` in
+`js/auth-service.js`.
+
+**Cleanups:**
+- 3 unused test-store tenants deleted (test-store-qa/v2/verify) +
+  cascade — 728 rows across 13 tables. Surviving tenants: prizma + demo.
+- 14 long-form permission keys renamed to canonical short form on Prizma+Demo
+  (`purchase_order.* → purchasing.*`, `goods_receipt.* → receipts.*`,
+   `debt.documents.{create,edit,cancel} → debt.{create,edit,cancel}`,
+   `debt.payments.{create,cancel} → debt.payment_{create,cancel}`,
+   `debt.prepaid.manage → debt.prepaid`).
+  28 perms rows + 80 role_permissions rows renamed atomically via CTE.
+- HARMFUL bypass in `modules/debt/ai/ai-config.js` replaced with
+  `hasPermission('ai.config')` (was: direct `role === 'ceo' || 'manager'`).
+- `ROLE_BADGES` + `ROLE_HIERARCHY` now loaded from DB per tenant at
+  `loadEmployeesTab()` time. New `loadRolesFromDB()` function.
+- "הכל" / "כלום" buttons added to every permission row in matrix —
+  single batch UPSERT per click. Extracted matrix UI to
+  `modules/permissions/permission-matrix.js` (file-size compliance).
+- Stale `shared/tests/permission-test.html` deleted (referenced 3 dead keys).
+
+**DB delta:** 281 → 110 perms rows; 833 → 371 role_permissions rows;
+89 → 55 distinct perm ids; 5 → 2 tenants; 25 → 10 roles.
+
+**Tech-debt logged for future SPECs:**
+- Super-admin sub-role employees model — defer to dedicated SPEC.
+  Daniel wants `is_super_admin` to remain separate from per-tenant roles
+  but eventually wants employees with cross-tenant access at lower
+  privilege than full super-admin.
+- `LEGACY_ROLE_MAP` admin→ceo bridge in `js/auth-service.js:21` — kept;
+  remove when all employees are migrated to `employee_roles` rows.
+- Refactor `.admin-mode` CSS rules to use `[data-perm-settings-edit]`
+  attribute selector (Proposal 11 from PERMISSIONS_AUDIT_PHASE1).
+
+SPEC folder: `specs/PERMISSIONS_PHASE2_FIX_2026_04_27/`.
+
+## 2026-04-27 (late evening) — Permissions Audit Phase 1 (READ-ONLY DIAGNOSTIC)
+
+## 2026-04-27 (late evening) — Permissions Audit Phase 1 (READ-ONLY DIAGNOSTIC)
+
+Read-only diagnostic of the permissions system. Zero DB writes, zero code
+changes. Deliverable: 611-line DIAGNOSIS_REPORT.md (10 sections §A–§J)
+identifying that the "281 permissions" figure is misleading (89 distinct
+ids ✕ ~5 tenants), and that Daniel's user-visible bug ("manager doesn't
+see what admin sees") is caused by a stateful `isAdmin` global in
+`js/shared.js:124` that gates ~10 inventory bulk-edit functions on
+`settings.edit` instead of `inventory.edit`. Manager has all 54 inventory
+keys but lacks `settings.edit` → `isAdmin=false` → bulk ops denied.
+13 numbered consolidation proposals + Phase 2 SPEC outline (recommended
+minimum: decouple `isAdmin` from `settings.edit`, ~10 lines / 60 min).
+SPEC folder: `specs/PERMISSIONS_AUDIT_PHASE1_2026_04_27/`.
+
+## 2026-04-27 (evening) — Studio Brands Visibility Rework (HOTFIX)
+
+Brand editor in Studio reworked: 3 overlapping controls (`display_mode`,
+`exclude_website`, `brand_page_visibility`) replaced by ONE radio-group with
+4 explicit modes (full / hide-card / hide-customer-keep-seo / hide-all).
+Added bulk-mode action (`bulkApplyBrandModeToProducts`) — confirmation-gated
+update of `inventory.website_sync` for every product of a brand. Added
+visible CSS spinner during AI content generation. Removed dead "🏷️ מותגים"
+nav link from Studio top-nav. Restored Alexander McQueen visibility
+(`exclude_website=true → false`, `brand_page_enabled=false → true`) — 9
+inventory rows untouched. SPEC folder:
+`specs/STUDIO_BRANDS_VISIBILITY_REWORK_2026_04_27/`.
+
+## 2026-04-27 — Storefront Sync Hierarchy Fix (HOTFIX)
+
+`v_storefront_products` and `v_storefront_brands` rewritten to drive storefront
+visibility from `inventory.website_sync` (per-product) instead of
+`brands.display_mode` (brand-level seed). Implements Daniel's 4-level hierarchy:
+display_mode_override > brand_page_visibility > website_sync > [no fallback].
+Fixed 313 mis-classified `display` products (now correctly 'catalog') and
+restored supersale-stock section 2 (was 0 brands, now 11). Storefront repo
+untouched; price-guard d1f67c4 intact. SPEC folder:
+`specs/STOREFRONT_SYNC_HIERARCHY_FIX_2026_04_27/`.
+
+## Last Updated (previous)
 Inventory Fixes + Subrow Feature — 2026-04-19
 
 ## What Was Done This Session

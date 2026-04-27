@@ -4,6 +4,86 @@
 
 ---
 
+## Permissions Phase 2 Fix (HOTFIX bundle) — 2026-04-27 (night)
+
+8-commit bundle: tenant cleanup + key consolidation + isAdmin decoupling
++ AI bypass fix + DB-driven role badges + matrix all/none buttons.
+
+### Commits
+- `003eb9e` chore(perms): pre-flight snapshot
+- `ce89ff4` fix(perms): delete 3 unused test-store tenants and cascade (728 rows / 13 tables)
+- `439ae5f` refactor(perms): rename long-form keys to canonical short form (28 perm + 80 role_perm rows + 6 inventory.html attrs)
+- `f9c277d` fix(inventory): decouple isAdmin global from settings.edit — use granular hasPermission
+- `3ebd7dc` fix(debt): replace direct role check in ai-config with hasPermission('ai.config')
+- `7d37e62` feat(perms-ui): load ROLE_BADGES from DB + add row select-all/deny-all buttons
+- `d8ec90e` chore(cleanup): delete shared/tests/permission-test.html (stale)
+- (this commit) docs(m1): close PERMISSIONS_PHASE2_FIX with retrospective
+
+### Outcome
+Manager on Demo + Prizma can now use bulk inventory ops as designed.
+DB has 2 surviving tenants, 55 distinct canonical perm keys, 10 roles
+(ceo/manager/team_lead/worker/viewer × 2 tenants), 0 long-form keys, 0
+orphan role_permissions. CSS UX preserved via auth-service.js body-class
+toggle. Storefront repo: zero commits.
+
+---
+
+## Studio Brands Visibility Rework (HOTFIX) — 2026-04-27 (evening)
+
+### Files modified
+- `storefront-studio.html` — removed dead "🏷️ מותגים" nav link.
+- `modules/storefront/studio-brands.js` — replaced 3-control visibility block
+  (`sbe-display-mode`, `sbe-exclude-website`, `sbe-page-visibility`) with a
+  single 4-mode radio-group (`brand-visibility-mode` = full | hide-card |
+  hide-customer-keep-seo | hide-all). Added helpers
+  `deriveBrandVisibilityMode`, `applyBrandVisibilityMode`,
+  `bulkApplyBrandModeToProducts` (confirmation-gated bulk update of
+  `inventory.website_sync` per brand — Iron Rules 7+22). Added CSS-only
+  AI-thinking spinner.
+
+### DB UPDATE (audit-trail commit, no repo file change)
+- `brands` row McQueen `06b269ce-...`: `exclude_website true→false`,
+  `brand_page_enabled false→true`. `display_mode` unchanged. 9 inventory
+  rows untouched. LOOL + Tom Ford untouched.
+
+### Commits
+- `e31daa4` fix(studio): remove dead Brands link from Studio top-nav
+- `ffef713` feat(studio-brands): replace 3-control visibility UI with single 4-mode radio + bulk-mode action + AI spinner
+- `52ca2b7` fix(brands): restore Alexander McQueen visibility (exclude_website=false, page_enabled=true)
+- (this commit) docs(m1): record studio brands visibility rework
+
+### Outcome
+McQueen back on storefront (visible in supersale-stock store_all). New brand
+editor UI presents one decision instead of three overlapping ones. No customer
+data lost or migrated incorrectly. Storefront repo: zero commits.
+
+---
+
+## Storefront Sync Hierarchy Fix (HOTFIX) — 2026-04-27
+
+### View rewrites (apply_migration via Supabase MCP)
+- `v_storefront_products` — visibility now driven by `inventory.website_sync`
+  per Daniel's 4-level hierarchy. Previous brand-level fallback removed.
+- `v_storefront_brands` — `display_mode` column derived from per-product mix
+  (powers supersale-stock API section split).
+
+### Commits
+- `26c047f` — `feat(views): drive storefront visibility from inventory.website_sync, not brands.display_mode`
+- (this commit) — `docs(m1): record storefront sync hierarchy fix in SESSION_CONTEXT + CHANGELOG`
+- (next) — `chore(spec): close STOREFRONT_SYNC_HIERARCHY_FIX with retrospective`
+
+### SPEC folder
+`modules/Module 1 - Inventory/docs/specs/STOREFRONT_SYNC_HIERARCHY_FIX_2026_04_27/`
+
+### Outcome
+- 313 'display' products now correctly resolve to 'catalog' on storefront (was wrong).
+- Supersale section 2 (catalog) restored: 0 brands → 11 brands, 147 products.
+- Supersale section 1 (store_all): 42 brands, 487 in-stock products.
+- HARD RULE 2026-04-27 (no storefront prices) verified intact via Chrome MCP rendered-DOM check.
+- Storefront repo untouched (price-guard `d1f67c4` sacred).
+
+---
+
 ## Inventory Fixes + Subrow Feature — 2026-04-19
 
 ### Stock Count Fixes (9b44831, 7781de7)

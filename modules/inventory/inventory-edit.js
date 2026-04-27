@@ -34,7 +34,7 @@ function clearSelection() {
 
 function updateSelectionUI() {
   const n = invSelected.size;
-  const isAdm = document.body.classList.contains('admin-mode');
+  const isAdm = hasPermission('inventory.edit');
   $('inv-sel-count').style.display = n > 0 ? 'inline' : 'none';
   $('inv-sel-num').textContent = n;
   var showBulk = n > 0 && isAdm;
@@ -54,7 +54,7 @@ function _fillBulkSelect(id, cache) {
 }
 
 async function applyBulkUpdate() {
-  if (!isAdmin) { toast('נדרשת הרשאת מנהל', 'e'); return; }
+  if (!hasPermission('inventory.edit')) { toast('נדרשת הרשאה לעריכת מלאי', 'e'); return; }
   const ids = Array.from(invSelected);
   if (!ids.length) { toast('לא נבחרו פריטים', 'w'); return; }
 
@@ -99,7 +99,7 @@ async function applyBulkUpdate() {
 }
 
 async function bulkDelete() {
-  if (!isAdmin) { toast('נדרשת הרשאת מנהל', 'e'); return; }
+  if (!hasPermission('inventory.delete')) { toast('נדרשת הרשאה למחיקת מלאי', 'e'); return; }
   const ids = Array.from(invSelected);
   if (!ids.length) { toast('לא נבחרו פריטים', 'w'); return; }
   const ok = await confirmDialog('מחיקה גורפת', `להעביר ${ids.length} פריטים לסל המחזור?`);
@@ -160,7 +160,7 @@ function invEdit(td, field, type) {
   input.focus();
   input.select();
 
-  const save = () => {
+  const _saveCell = () => {
     td.classList.remove('editing');
     let newVal = input.value.trim();
     if (type === 'number') newVal = parseFloat(newVal) || 0;
@@ -186,7 +186,7 @@ function invEdit(td, field, type) {
     else td.textContent = rec[field] || '';
   };
 
-  input.addEventListener('blur', save);
+  input.addEventListener('blur', _saveCell);
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') { input.blur(); }
     if (e.key === 'Escape') { td.classList.remove('editing'); td.textContent = type==='pct' ? Math.round((rec[field]||0)*100)+'%' : (rec[field]||''); }
@@ -195,7 +195,7 @@ function invEdit(td, field, type) {
 
 // ---- Sync cell edit (select dropdown with validation) ----
 function invEditSync(td) {
-  if (!isAdmin) return;
+  if (!hasPermission('inventory.edit')) return;
   if (td.classList.contains('editing')) return;
   const tr = td.closest('tr');
   const recId = tr.dataset.id;
@@ -215,7 +215,7 @@ function invEditSync(td) {
   td.appendChild(sel);
   sel.focus();
 
-  const save = () => {
+  const _saveSync = () => {
     td.classList.remove('editing');
     const newVal = sel.value;
     // Bridge/temple/image requirement for sync removed — may be restored in future
@@ -229,7 +229,7 @@ function invEditSync(td) {
     td.textContent = enToHe('website_sync', rec.website_sync) || '';
   };
 
-  sel.addEventListener('blur', save);
+  sel.addEventListener('blur', _saveSync);
   sel.addEventListener('change', () => sel.blur());
   sel.addEventListener('keydown', e => {
     if (e.key === 'Escape') { td.classList.remove('editing'); td.textContent = curVal; }
@@ -238,7 +238,7 @@ function invEditSync(td) {
 
 // ---- Product type cell edit (select dropdown) ----
 function invEditProductType(td) {
-  if (!isAdmin || td.classList.contains('editing')) return;
+  if (!hasPermission('inventory.edit') || td.classList.contains('editing')) return;
   var tr = td.closest('tr'), recId = tr.dataset.id;
   var rec = invData.find(r => r.id === recId);
   if (!rec) return;
@@ -250,7 +250,7 @@ function invEditProductType(td) {
     if (v === curHe) o.selected = true; sel.appendChild(o);
   });
   td.textContent = ''; td.appendChild(sel); sel.focus();
-  var save = function() {
+  var _saveType = function() {
     td.classList.remove('editing');
     var newEn = heToEn('product_type', sel.value) || 'eyeglasses';
     if (newEn !== (rec.product_type || 'eyeglasses')) {
@@ -260,7 +260,7 @@ function invEditProductType(td) {
     }
     td.textContent = enToHe('product_type', rec.product_type) || '';
   };
-  sel.addEventListener('blur', save);
+  sel.addEventListener('blur', _saveType);
   sel.addEventListener('change', function() { sel.blur(); });
   sel.addEventListener('keydown', function(e) { if (e.key === 'Escape') { td.classList.remove('editing'); td.textContent = curHe; } });
 }

@@ -284,16 +284,25 @@ async function openStudioBrandEditor(brandId) {
   const brand = studioBrands.find(b => b.brand_id === brandId);
   if (!brand) return;
 
-  // T2 (T12 consolidation lightweight Phase A): fetch exclude_website from the
-  // brands table since v_storefront_brands doesn't expose it. Modifying the
-  // view would require Iron Rule 29 sign-off; side-fetch is the smaller-blast-
-  // radius option. One extra query per modal open — negligible.
+  // Side-fetch the 3 visibility fields (exclude_website, brand_page_visibility,
+  // brand_page_enabled) + product count — v_storefront_brands doesn't expose
+  // them. One extra query per modal open — negligible.
   const { data: brandExtra } = await sb.from(T.BRANDS)
-    .select('exclude_website')
+    .select('exclude_website, brand_page_visibility, brand_page_enabled')
     .eq('id', brandId)
     .eq('tenant_id', getTenantId())
     .single();
   const isExcluded = brandExtra?.exclude_website === true;
+  const brandPageVisibility = brandExtra?.brand_page_visibility || 'listed';
+  const brandPageEnabled = brandExtra?.brand_page_enabled !== false;
+  const visibilityMode = deriveBrandVisibilityMode(isExcluded, brandPageVisibility, brandPageEnabled);
+
+  // Product count for bulk-mode confirmation copy
+  const { count: brandProductCount } = await sb.from(T.INV)
+    .select('id', { count: 'exact', head: true })
+    .eq('brand_id', brandId)
+    .eq('tenant_id', getTenantId())
+    .eq('is_deleted', false);
 
   const storeName = getTenantConfig('name') || '';
   _quillDesc1 = null;
@@ -335,33 +344,74 @@ async function openStudioBrandEditor(brandId) {
     </div>
 
     <div class="brand-editor-section">
-      <h4 style="font-weight:700; margin-bottom:8px;">הגדרות תצוגה</h4>
+      <h4 style="font-weight:700; margin-bottom:8px;">נראות באתר</h4>
+      <p style="color:var(--g500); font-size:.78rem; margin-bottom:8px;">
+        בחר איך המותג יוצג באתר הציבורי. ההגדרה כאן לא משפיעה על הסנכרון של הדגמים הבודדים.
+      </p>
 
-      <label class="brand-editor-label">תצוגת מוצרים</label>
-      <select id="sbe-display-mode" class="brand-editor-input">
-        <option value="catalog"   ${(brand.display_mode || 'store_all') === 'catalog'   ? 'selected' : ''}>קטלוג - כל הדגמים (להזמנה)</option>
-        <option value="store_all" ${(brand.display_mode || 'store_all') === 'store_all' ? 'selected' : ''}>חנות - הכל כולל אזל</option>
-        <option value="store"     ${(brand.display_mode || 'store_all') === 'store'     ? 'selected' : ''}>חנות - במלאי בלבד</option>
-        <option value="hidden"    ${(brand.display_mode || 'store_all') === 'hidden'    ? 'selected' : ''}>הסתר - לא מוצג באתר</option>
-      </select>
-
-      <label class="brand-toggle" style="margin-top:12px; display:flex; align-items:center; gap:10px;">
-        <input type="checkbox" id="sbe-exclude-website" ${isExcluded ? 'checked' : ''} />
-        <span style="font-weight:600;">🚫 הסתר את המותג מהאתר לחלוטין</span>
-        <span style="font-size:.78rem; color:var(--g500);">(פעיל = המותג ומוצריו לא יופיעו באתר הפומבי)</span>
+      <label class="brand-visibility-radio" style="display:flex; align-items:flex-start; gap:8px; padding:8px; border:1px solid #e5e5e5; border-radius:6px; margin-bottom:6px; cursor:pointer;">
+        <input type="radio" name="brand-visibility-mode" value="full" id="sbe-vis-full" ${visibilityMode === 'full' ? 'checked' : ''} style="margin-top:3px;" />
+        <div>
+          <strong>מוצג רגיל</strong>
+          <span style="font-size:.78rem; color:var(--g500); display:block;">
+            עמוד מותג פעיל, כרטיס מופיע בעמוד "מותגים", המוצרים נראים בכל המקומות באתר
+          </span>
+        </div>
       </label>
 
-      <label class="brand-editor-label" style="margin-top:12px;">נראות עמוד מותג</label>
-      <select id="sbe-page-visibility" class="brand-editor-input">
-        <option value="listed"   ${(brand.brand_page_visibility || 'listed') === 'listed'   ? 'selected' : ''}>פעיל - מופיע ברשימה</option>
-        <option value="unlisted" ${(brand.brand_page_visibility || 'listed') === 'unlisted' ? 'selected' : ''}>פעיל ומוסתר - לא ברשימה אבל URL עובד</option>
-        <option value="hidden"   ${(brand.brand_page_visibility || 'listed') === 'hidden'   ? 'selected' : ''}>מוסתר לגמרי - אין עמוד</option>
-      </select>
+      <label class="brand-visibility-radio" style="display:flex; align-items:flex-start; gap:8px; padding:8px; border:1px solid #e5e5e5; border-radius:6px; margin-bottom:6px; cursor:pointer;">
+        <input type="radio" name="brand-visibility-mode" value="hide-card" id="sbe-vis-hide-card" ${visibilityMode === 'hide-card' ? 'checked' : ''} style="margin-top:3px;" />
+        <div>
+          <strong>הסתר רק את הכרטיס בעמוד "מותגים"</strong>
+          <span style="font-size:.78rem; color:var(--g500); display:block;">
+            עמוד המותג נשאר זמין (URL פעיל, גוגל מוצא, תורם ל-SEO). כרטיס המותג לא מופיע בלוח המותגים. המוצרים ממשיכים להופיע בכל הלוחות (משקפי שמש, ראייה, חיפוש).
+          </span>
+        </div>
+      </label>
+
+      <label class="brand-visibility-radio" style="display:flex; align-items:flex-start; gap:8px; padding:8px; border:1px solid #e5e5e5; border-radius:6px; margin-bottom:6px; cursor:pointer;">
+        <input type="radio" name="brand-visibility-mode" value="hide-customer-keep-seo" id="sbe-vis-hide-customer" ${visibilityMode === 'hide-customer-keep-seo' ? 'checked' : ''} style="margin-top:3px;" />
+        <div>
+          <strong>הסתר מהאתר אבל השאר ל-SEO</strong>
+          <span style="font-size:.78rem; color:var(--g500); display:block;">
+            המוצרים והכרטיס לא מופיעים בשום מקום ציבורי. עמוד המותג עדיין מוגש (גוגל מוצא, מקדם דומיין). מתאים למותגים שאתה רוצה את ה-SEO שלהם בלי שלקוחות יראו שהם זמינים.
+          </span>
+        </div>
+      </label>
+
+      <label class="brand-visibility-radio" style="display:flex; align-items:flex-start; gap:8px; padding:8px; border:1px solid #e5e5e5; border-radius:6px; margin-bottom:6px; cursor:pointer;">
+        <input type="radio" name="brand-visibility-mode" value="hide-all" id="sbe-vis-hide-all" ${visibilityMode === 'hide-all' ? 'checked' : ''} style="margin-top:3px;" />
+        <div>
+          <strong>הסתר לחלוטין</strong>
+          <span style="font-size:.78rem; color:var(--g500); display:block;">
+            המותג לא יופיע בשום מקום באתר. עמוד המותג עצמו לא יוגש (404). הכרטיס נשאר כאן בסטודיו כדי שתוכל להחזיר.
+          </span>
+        </div>
+      </label>
 
       <label class="brand-toggle" style="display:flex; align-items:center; gap:8px; margin-top:12px;">
         <input type="checkbox" id="sbe-show-products" ${brand.show_brand_products !== false ? 'checked' : ''} />
         <span>הצג מוצרים בעמוד מותג</span>
       </label>
+    </div>
+
+    <div class="brand-editor-section">
+      <h4 style="font-weight:700; margin-bottom:8px;">שינוי מסיבי של דגמי המותג</h4>
+      <p style="color:var(--g500); font-size:.78rem; margin-bottom:8px;">
+        מאלץ את הסנכרון של <strong>כל הדגמים</strong> תחת המותג הזה לערך הנבחר.
+        הגדרות ידניות שעשית ברמת הדגם יידרסו. המותג כולל ${brandProductCount || 0} דגמים פעילים.
+      </p>
+
+      <label class="brand-editor-label">החל על כל הדגמים:</label>
+      <select id="sbe-bulk-target" class="brand-editor-input">
+        <option value="">— בחר מצב —</option>
+        <option value="display">קטלוג (תדמית) - בלי מחיר, בלי "אזל"</option>
+        <option value="full-all">חנות - כולל אזל מלאי</option>
+        <option value="full-in-stock">חנות - רק מה שבמלאי</option>
+      </select>
+      <button type="button" id="sbe-bulk-apply-btn" class="btn-ai-generate" style="margin-top:8px;" onclick="bulkApplyBrandModeToProducts('${brandId}', '${escapeAttr(brand.brand_name)}', ${brandProductCount || 0})">
+        🔄 החל על כל הדגמים
+      </button>
     </div>
 
     <div class="brand-editor-section">
@@ -741,6 +791,103 @@ async function handleStudioLogoUpload(input, brandId) {
 }
 
 // ═══════════════════════════════════════════════════
+// VISIBILITY MODE — radio ↔ DB columns mapping
+// ═══════════════════════════════════════════════════
+
+// Derive radio value from current DB state.
+// `hide-all`  ← exclude_website=true AND brand_page_visibility='hidden'
+// `hide-customer-keep-seo` ← exclude_website=true (and not hide-all)
+// `hide-card` ← brand_page_visibility='unlisted'
+// `full`      ← everything else (default)
+function deriveBrandVisibilityMode(isExcluded, brandPageVisibility, brandPageEnabled) {
+  if (isExcluded && brandPageVisibility === 'hidden') return 'hide-all';
+  if (isExcluded) return 'hide-customer-keep-seo';
+  if (brandPageVisibility === 'unlisted') return 'hide-card';
+  return 'full';
+}
+
+// Map radio value → the 3 brands columns that gate visibility.
+// `display_mode` is preserved (legacy seed field; not driven by this radio).
+// `brand_page_enabled` handled at SAVE time (depends on radio + legacy toggle).
+function applyBrandVisibilityMode(mode) {
+  switch (mode) {
+    case 'hide-card':
+      return { exclude_website: false, brand_page_visibility: 'unlisted' };
+    case 'hide-customer-keep-seo':
+      return { exclude_website: true, brand_page_visibility: 'listed' };
+    case 'hide-all':
+      return { exclude_website: true, brand_page_visibility: 'hidden' };
+    case 'full':
+    default:
+      return { exclude_website: false, brand_page_visibility: 'listed' };
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// BULK MODE — overwrite inventory.website_sync for every product of a brand
+// ═══════════════════════════════════════════════════
+
+async function bulkApplyBrandModeToProducts(brandId, brandName, productCount) {
+  const select = document.getElementById('sbe-bulk-target');
+  const target = select?.value;
+  if (!target) {
+    Toast.warning('יש לבחור מצב לפני החלת השינוי');
+    return;
+  }
+
+  const labels = {
+    'display':       'קטלוג (תדמית)',
+    'full-all':      'חנות - כולל אזל מלאי',
+    'full-in-stock': 'חנות - רק מה שבמלאי',
+  };
+  const label = labels[target] || target;
+  const confirmed = await confirmDialog(
+    `החלה על כל ${productCount} הדגמים של ${brandName}`,
+    `האם להחיל '${label}' על כל ${productCount} הדגמים תחת ${brandName}? הגדרות ידניות שעשית ברמת הדגם יידרסו.`
+  );
+  if (!confirmed) return;
+
+  const tid = getTenantId();
+
+  // Map target → website_sync value (the only inventory column we modify)
+  const syncValue = target === 'display' ? 'display' : 'full';
+
+  // Map target → brands.display_mode (legacy seed — set as a hint for future
+  // brand-level falls back; the storefront filter no longer reads it post-fix).
+  const brandDisplayMode = target === 'display' ? 'catalog'
+                          : target === 'full-in-stock' ? 'store'
+                          : 'store_all';
+
+  try {
+    // Iron Rule 7: helper-style wrapper. Iron Rule 22: tenant_id on writes.
+    // Brand-scoped + tenant-scoped + active-only — never touches is_deleted,
+    // quantity, images, or any column other than website_sync.
+    const { data: invRows, error: invErr } = await sb.from(T.INV)
+      .update({ website_sync: syncValue })
+      .eq('brand_id', brandId)
+      .eq('tenant_id', tid)
+      .eq('is_deleted', false)
+      .select('id');
+
+    if (invErr) throw invErr;
+
+    const { error: brandErr } = await sb.from(T.BRANDS)
+      .update({ display_mode: brandDisplayMode })
+      .eq('id', brandId)
+      .eq('tenant_id', tid);
+
+    if (brandErr) throw brandErr;
+
+    const updatedCount = Array.isArray(invRows) ? invRows.length : 0;
+    Toast.success(`עודכנו ${updatedCount} דגמים תחת ${brandName} ל-'${label}'`);
+    select.value = '';
+  } catch (err) {
+    console.error('bulkApplyBrandModeToProducts error:', err);
+    Toast.error('שגיאה בהחלה: ' + (err.message || ''));
+  }
+}
+
+// ═══════════════════════════════════════════════════
 // SAVE
 // ═══════════════════════════════════════════════════
 
@@ -759,14 +906,22 @@ async function saveStudioBrandPage(brandId) {
     seo_title: document.getElementById('sbe-seo-title')?.value.trim() || null,
     seo_description: document.getElementById('sbe-seo-desc')?.value.trim() || null,
     tags: typeof getCheckedTags === 'function' ? getCheckedTags() : [],
-    display_mode: document.getElementById('sbe-display-mode')?.value || 'store_all',
-    // T2 (T12 lightweight Phase A): visibility toggle migrated from the
-    // now-deleted Brand Mode Manager (storefront-brands.js). exclude_website
-    // is the canonical hide-the-brand mechanism (post-D3+D4 + BUG 1 Part B).
-    exclude_website: document.getElementById('sbe-exclude-website')?.checked === true,
-    brand_page_visibility: document.getElementById('sbe-page-visibility')?.value || 'listed',
     show_brand_products: document.getElementById('sbe-show-products')?.checked !== false,
   };
+
+  // Single 4-mode radio drives the 3 visibility fields (display_mode is a
+  // legacy seed field per STOREFRONT_SYNC_HIERARCHY_FIX — not driven here).
+  const visibilityRadio = document.querySelector('input[name="brand-visibility-mode"]:checked');
+  const visibilityMode = visibilityRadio?.value || 'full';
+  Object.assign(updates, applyBrandVisibilityMode(visibilityMode));
+  // brand_page_enabled is also driven by the radio + by the top "עמוד פעיל"
+  // toggle (legacy). The radio wins for hide-all (forces false), full/hide-card/
+  // hide-customer-keep-seo allow the top toggle to keep its current value.
+  if (visibilityMode === 'hide-all') {
+    updates.brand_page_enabled = false;
+  } else {
+    updates.brand_page_enabled = document.getElementById('sbe-enabled')?.checked || false;
+  }
 
   try {
     const { error } = await sb.from(T.BRANDS)
@@ -796,6 +951,17 @@ async function generateStudioBrandContent(brandName, brandId) {
   if (!btn) return;
   btn.disabled = true;
   btn.textContent = '🤖 מייצר תוכן...';
+  // Visible spinner next to the button — CSS animation, no library
+  injectAiSpinnerStylesOnce();
+  let spinnerEl = document.getElementById('sbe-ai-spinner');
+  if (!spinnerEl) {
+    spinnerEl = document.createElement('span');
+    spinnerEl.id = 'sbe-ai-spinner';
+    spinnerEl.className = 'ai-thinking-spinner';
+    spinnerEl.setAttribute('aria-label', 'AI חושב');
+    btn.parentNode?.insertBefore(spinnerEl, btn.nextSibling);
+  }
+  spinnerEl.style.display = 'inline-block';
 
   try {
     const payload = {
@@ -857,7 +1023,31 @@ async function generateStudioBrandContent(brandName, brandId) {
       btn.disabled = false;
       btn.textContent = _aiMode === 'edit' ? '🤖 שלח הנחיה' : '🤖 יצירת תוכן AI';
     }
+    const spinnerEl = document.getElementById('sbe-ai-spinner');
+    if (spinnerEl) spinnerEl.style.display = 'none';
   }
+}
+
+// CSS-only spinner styles, injected once per page load
+function injectAiSpinnerStylesOnce() {
+  if (document.getElementById('sbe-ai-spinner-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'sbe-ai-spinner-styles';
+  style.textContent = `
+    .ai-thinking-spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      margin-inline-start: 8px;
+      vertical-align: middle;
+      border: 2px solid var(--g300, #e5e5e5);
+      border-top-color: var(--accent, #c9a555);
+      border-radius: 50%;
+      animation: ai-spin 0.8s linear infinite;
+    }
+    @keyframes ai-spin { to { transform: rotate(360deg); } }
+  `;
+  document.head.appendChild(style);
 }
 
 // HF1 (2026-04-10): translateStudioBrandContent removed as part of the
@@ -912,3 +1102,4 @@ async function saveBrandTranslationEdits(brandId, targetLang, oldFields, newFiel
 }
 
 window.saveBrandTranslationEdits = saveBrandTranslationEdits;
+window.bulkApplyBrandModeToProducts = bulkApplyBrandModeToProducts;

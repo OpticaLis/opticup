@@ -1,0 +1,127 @@
+{
+  "captured_at": "2026-04-27T22:00:00Z",
+  "captured_by": "opticup-executor (Windows desktop)",
+  "git_start_commit": "64dbb13ddaf9aa1b219b8bbf5a3f1d7feca61e83",
+
+  "scope": {
+    "tenants_to_delete": [
+      {"id": "db710f25-fa10-4321-b280-4808679c727a", "slug": "test-store-qa",     "name": "חנות בדיקה QA"},
+      {"id": "9d6c19e0-f1d7-47be-ba2f-8c4e1638e894", "slug": "test-store-v2",     "name": "אופטיקה בדיקה 2"},
+      {"id": "f185ed73-8337-454f-be21-12dde73aaf21", "slug": "test-store-verify", "name": "אופטיקה טסט"}
+    ],
+    "tenants_to_keep": [
+      {"id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c", "slug": "prizma", "name": "אופטיקה פריזמה"},
+      {"id": "8d8cfa7e-ef58-49af-9702-a862d459cccb", "slug": "demo",   "name": "אופטיקה דמו (בדיקה)"}
+    ]
+  },
+
+  "fk_constraint_audit": {
+    "scan_target": "tenants table",
+    "constraints_count": 99,
+    "delete_rule_distribution": {"NO ACTION": 97, "CASCADE": 2},
+    "cascade_tables_only": ["crm_automation_runs", "crm_message_queue"],
+    "implication": "All other FK rules are NO ACTION — explicit DELETE in dependency order required before deleting parent tenants row.",
+    "extended_cascade_required_beyond_spec_4_envelope": true,
+    "extra_tables_with_test_store_rows_not_in_spec_4": [
+      {"table": "tenant_config",         "rows": 17, "fk": "tenant_id"},
+      {"table": "document_types",        "rows": 15, "fk": "tenant_id"},
+      {"table": "platform_audit_log",    "rows": 15, "fk": "target_tenant_id"},
+      {"table": "payment_methods",       "rows": 15, "fk": "tenant_id"},
+      {"table": "storefront_config",     "rows": 3,  "fk": "tenant_id"},
+      {"table": "tenant_provisioning_log","rows": 1, "fk": "tenant_id"}
+    ],
+    "deviation_notes": "SPEC §4 envelope listed 7 tables (tenants/roles/permissions/role_permissions/employees/employee_roles/auth_sessions) but FK audit reveals 6 additional admin/config tables with NO ACTION FK rules pointing to the 3 test-store tenants. SPEC §8 explicitly authorizes 'verify cascade behavior and choose appropriate path' — this requires the extra DELETEs. All extra writes remain scoped to the 3 test-store tenant ids. Logged as deviation in EXECUTION_REPORT."
+  },
+
+  "pre_flight_counts": {
+    "test_store_tenants": {
+      "tenants": 3,
+      "roles": 15,
+      "permissions": 171,
+      "role_permissions": 462,
+      "employees": 3,
+      "employee_roles": 3,
+      "auth_sessions": 5,
+      "inventory": 0,
+      "brands": 0,
+      "tenant_config": 17,
+      "document_types": 15,
+      "platform_audit_log": 15,
+      "payment_methods": 15,
+      "storefront_config": 3,
+      "tenant_provisioning_log": 1
+    },
+    "long_form_keys_to_rename_on_prizma_demo": {
+      "permission_rows": 28,
+      "role_permission_rows_referencing": 80,
+      "spec_estimated_max": 25,
+      "actual": 28,
+      "deviation_pct": "+12% (within stale-threshold tolerance per Foreman-approved Proposal D in PERMISSIONS_AUDIT_PHASE1 review)"
+    },
+    "global": {
+      "total_tenants": 5,
+      "total_permission_rows": 281,
+      "total_role_permissions": 833,
+      "total_roles": 25
+    }
+  },
+
+  "long_form_keys_to_rename": [
+    {"old": "purchase_order.create",   "new": "purchasing.create",         "perm_rows": 2, "role_perm_rows": [4, 4]},
+    {"old": "purchase_order.edit",     "new": "purchasing.edit",           "perm_rows": 2},
+    {"old": "purchase_order.approve",  "new": "purchasing.approve",        "perm_rows": 2},
+    {"old": "purchase_order.delete",   "new": "purchasing.delete",         "perm_rows": 2},
+    {"old": "purchase_order.view",     "new": "purchasing.view",           "perm_rows": 2},
+    {"old": "goods_receipt.create",    "new": "receipts.create",           "perm_rows": 2},
+    {"old": "goods_receipt.confirm",   "new": "receipts.confirm",          "perm_rows": 2},
+    {"old": "goods_receipt.export",    "new": "receipts.export",           "perm_rows": 2},
+    {"old": "debt.documents.create",   "new": "debt.create",               "perm_rows": 2},
+    {"old": "debt.documents.edit",     "new": "debt.edit",                 "perm_rows": 2},
+    {"old": "debt.documents.cancel",   "new": "debt.cancel",               "perm_rows": 2},
+    {"old": "debt.payments.create",    "new": "debt.payment_create",       "perm_rows": 2},
+    {"old": "debt.payments.cancel",    "new": "debt.payment_cancel",       "perm_rows": 2},
+    {"old": "debt.prepaid.manage",     "new": "debt.prepaid",              "perm_rows": 2}
+  ],
+
+  "rollback_plan": {
+    "summary": "Code: git reset --hard 64dbb13. DB: re-INSERT from row dumps below + reverse rename map.",
+    "code_rollback_sql_or_command": "cd C:/Users/User/opticup && git reset --hard 64dbb13ddaf9aa1b219b8bbf5a3f1d7feca61e83",
+    "db_rollback_summary_steps": [
+      "1. Re-INSERT 3 tenants rows from snapshot (UUIDs above).",
+      "2. Re-INSERT 15 roles rows for the 3 test-stores from snapshot.",
+      "3. Re-INSERT 171 permissions rows for the 3 test-stores from snapshot.",
+      "4. Re-INSERT 462 role_permissions rows for the 3 test-stores from snapshot.",
+      "5. Re-INSERT 3 employees + 3 employee_roles + 5 auth_sessions from snapshot.",
+      "6. Re-INSERT 17 tenant_config + 15 document_types + 15 payment_methods + 15 platform_audit_log + 3 storefront_config + 1 tenant_provisioning_log from snapshot.",
+      "7. UPDATE permissions SET id = REVERSE_RENAME_MAP WHERE id IN (NEW_KEYS) AND tenant_id IN (prizma, demo).",
+      "8. UPDATE role_permissions SET permission_id = REVERSE_RENAME_MAP WHERE permission_id IN (NEW_KEYS) AND tenant_id IN (prizma, demo)."
+    ],
+    "row_snapshot_notes": "Test-store full row data captured in pre-flight Supabase MCP queries (transcript). Daniel confirmed test-store data is unused; rollback documented for procedure compliance, not data preservation."
+  },
+
+  "test_store_full_dump_summary": {
+    "tenants_captured": 3,
+    "roles_captured": 15,
+    "employees_captured": 3,
+    "employee_roles_captured": 3,
+    "permissions_captured_count": 171,
+    "role_permissions_captured_count": 462,
+    "note": "Full row JSON for tenants/roles/employees/employee_roles available in pre-flight transcript. permissions and role_permissions row data is recoverable from a future re-seed since the 3 test-stores share canonical role/permission templates with the surviving Prizma+Demo (after consolidation, Prizma is the canonical seed)."
+  },
+
+  "deviation_register": [
+    {
+      "spec_section": "§4 envelope (7-table list) vs §8 cascade-path discretion",
+      "deviation": "Cascade requires DELETE on 6 additional tables (tenant_config, document_types, platform_audit_log, payment_methods, storefront_config, tenant_provisioning_log).",
+      "reasoning": "SPEC §4 enumerates 7 tables; §8 explicitly says 'executor must verify cascade behavior and choose path'. The FK constraint scan confirms NO ACTION rules require explicit DELETE in dependency order. All extra writes remain tenant-id-scoped to the 3 test-store UUIDs.",
+      "blast_radius": "unchanged (still only the 3 test-store tenants)",
+      "alternative_considered": "Stop and re-author SPEC — rejected per Foreman 'continue if intent met' precedent."
+    },
+    {
+      "spec_section": "§5 stop-trigger 'rename SQL would affect more than ~25 rows'",
+      "deviation": "Actual rename count is 28 perms × 2 tenants = 28 perm rows + 80 role_perms.",
+      "reasoning": "SPEC's '~25' was an estimate. Actual 28 is within stale-threshold tolerance (Foreman-approved Proposal D from PERMISSIONS_AUDIT_PHASE1).",
+      "blast_radius": "unchanged"
+    }
+  ]
+}

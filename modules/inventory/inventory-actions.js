@@ -10,7 +10,7 @@ function _openInvMenu(btn) {
   var id = btn.dataset.id;
   var rec = invData.find(function(r) { return r.id === id; });
   if (!rec) return;
-  var isAdm = document.body.classList.contains('admin-mode');
+  var isAdm = hasPermission('inventory.edit');
   var items = [
     { icon: '\uD83D\uDD0D', label: '\u05E2\u05D5\u05D3', fn: '_toggleSubrow', id: id },
     { icon: '\uD83D\uDCF7', label: '\u05EA\u05DE\u05D5\u05E0\u05D5\u05EA', fn: '_openImageWithNav', id: id },

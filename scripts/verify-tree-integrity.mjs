@@ -4,7 +4,10 @@
 // filesystem walk — avoids autocrlf false positives).
 //
 // Checks:
-//   - null-bytes (ERROR): any 0x00 in a text file is Cowork-VM-style corruption.
+//   - null-bytes (ERROR): any 0x00 ANYWHERE in a text file (offset 0,
+//     middle, or EOF) is Cowork-VM-style corruption. Detection uses
+//     buf.indexOf(0x00) — single-pass; covers all positions, not just
+//     end-of-file. Regression-tested by `npm run test:integrity-gate`.
 //   - trailing-newline (WARNING): source files that don't end with \n.
 //     Warning-only because this repo has a number of legitimate files ending
 //     without a trailing newline; tune up to ERROR after a repo-wide sweep.

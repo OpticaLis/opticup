@@ -37,7 +37,7 @@
 <nav id="mainNav">
   <button data-tab="entry" data-tab-permission="inventory.edit" class="active" onclick="showTab('entry')">&#128230; הכנסת מלאי</button>
   <button data-tab="reduction" data-tab-permission="inventory.reduce" onclick="showTab('reduction')">&#128179; הורדת מלאי</button>
-  <button data-tab="purchase-orders" data-tab-permission="purchase_order.view" onclick="showTab('purchase-orders')">&#128203; הזמנות רכש</button>
+  <button data-tab="purchase-orders" data-tab-permission="purchasing.view" onclick="showTab('purchase-orders')">&#128203; הזמנות רכש</button>
   <button data-tab="inventory" data-tab-permission="inventory.view" onclick="showTab('inventory')">&#128451; מלאי ראשי</button>
   <button data-tab="brands" data-tab-permission="brands.view" onclick="showTab('brands')">&#127991; ניהול מותגים</button>
   <button data-tab="suppliers" data-tab-permission="suppliers.view" onclick="showTab('suppliers')">&#128101; ניהול ספקים</button>
@@ -56,7 +56,7 @@
   <div id="entry-choice" class="sub-choice">
     <button onclick="showEntryMode('manual')" id="btn-entry-manual"><span class="icon">&#9997;</span>הכנסה ידנית</button>
     <button onclick="showEntryMode('excel')" id="btn-entry-excel"><span class="icon">&#128194;</span>הכנסה מאקסל</button>
-    <button onclick="showEntryMode('receipt')" id="btn-entry-receipt" data-tab-permission="goods_receipt.create"><span class="icon">&#128230;</span>קבלת סחורה</button>
+    <button onclick="showEntryMode('receipt')" id="btn-entry-receipt" data-tab-permission="receipts.create"><span class="icon">&#128230;</span>קבלת סחורה</button>
     <button onclick="openEntryHistory()" id="btn-entry-history"><span class="icon">&#128197;</span>היסטוריית הכנסות</button>
   </div>
 
@@ -401,7 +401,7 @@
   <div id="rcpt-step1">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <h3 style="margin:0">&#128230; קבלות סחורה</h3>
-      <button class="btn btn-p" onclick="openNewReceipt()" data-permission="goods_receipt.create">&#10010; קבלה חדשה</button>
+      <button class="btn btn-p" onclick="openNewReceipt()" data-permission="receipts.create">&#10010; קבלה חדשה</button>
     </div>
     <div class="rcpt-summary">
       <div class="slog-card"><div id="rcpt-drafts" style="font-size:1.6rem;font-weight:700;color:#92400e">0</div><div>טיוטות פתוחות</div></div>
@@ -503,9 +503,9 @@
     <div class="btn-bar" style="display:flex;gap:8px;flex-wrap:wrap" id="rcpt-action-bar">
       <button class="btn btn-g" onclick="saveReceiptDraft()">&#128190; שמור טיוטה</button>
       <button class="btn" id="rcpt-gen-barcodes-btn" onclick="generateReceiptBarcodes()" style="background:#7c3aed;color:#fff">&#127991; יצירת ברקודים</button>
-      <button class="btn btn-s" onclick="confirmReceipt()" data-permission="goods_receipt.confirm">&#10004; אשר קבלה ועדכן מלאי</button>
-      <button class="btn" id="rcpt-confirm-learn-btn" onclick="_rcptOcrConfirmAndLearn()" data-permission="goods_receipt.confirm" style="background:#7c3aed;color:#fff;display:none">&#129302; אשר ולמד את ה-AI</button>
-      <button class="btn btn-g btn-sm" onclick="exportReceiptExcel()" data-permission="goods_receipt.export" style="margin-right:auto">&#128194; ייצוא Excel</button>
+      <button class="btn btn-s" onclick="confirmReceipt()" data-permission="receipts.confirm">&#10004; אשר קבלה ועדכן מלאי</button>
+      <button class="btn" id="rcpt-confirm-learn-btn" onclick="_rcptOcrConfirmAndLearn()" data-permission="receipts.confirm" style="background:#7c3aed;color:#fff;display:none">&#129302; אשר ולמד את ה-AI</button>
+      <button class="btn btn-g btn-sm" onclick="exportReceiptExcel()" data-permission="receipts.export" style="margin-right:auto">&#128194; ייצוא Excel</button>
     </div>
   </div>
 </section>
