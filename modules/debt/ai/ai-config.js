@@ -9,8 +9,11 @@
 // 1. PERMISSION CHECK + GEAR BUTTON INJECTION
 // =========================================================
 function _aiCfgHasAccess() {
-  var role = sessionStorage.getItem('tenant_role');
-  return role === 'ceo' || role === 'manager';
+  // Was: return role === 'ceo' || role === 'manager' (HARMFUL bypass per
+  // PERMISSIONS_AUDIT_PHASE1). debt.ai_config (Group B-only) was deleted
+  // with the 3 test-store tenants in PHASE2 commit 2; ai.config is the
+  // surviving Group A AI-configuration key on Prizma+Demo.
+  return hasPermission('ai.config');
 }
 
 function _injectConfigGear() {
