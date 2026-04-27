@@ -1,7 +1,33 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-Permissions Phase 2 Fix — 2026-04-27 (night)
+Permissions Hotfix Null Bytes — 2026-04-27 (late night)
+
+## 2026-04-27 (late night) — Permissions Hotfix (matrix render bug)
+
+User reported the perm matrix hung on "טוען..." after PHASE2 deployment.
+Investigation: SPEC blamed null-byte file truncation in `employee-list.js`,
+but the file was healthy on disk + in git (0 null bytes anywhere). Real
+root cause: `escapeAttr()` ReferenceError in `permission-matrix.js` —
+function only defined in storefront repo, not loaded on employees.html.
+Introduced by PHASE2 commit `7d37e62` when the matrix UI was extracted.
+
+Fixed by replacing 5 `escapeAttr()` calls with `escapeHtml()` (already
+global, semantically equivalent for HTML attribute escaping).
+
+Verified live via Chrome MCP: matrix renders 55 perm rows × 5 roles =
+275 checkboxes + 110 bulk buttons. Manager bulk-bug also re-verified
+end-to-end (Demo manager PIN 090004 → inv-admin-bar visible →
+bulk-bar visible after row select). Phase 2 fix is solid.
+
+Iron Rule 31 strengthened by adding `npm run test:integrity-gate` —
+4-case regression test for null-byte detection at EOF/mid/start/clean.
+The gate already caught nulls anywhere via `buf.indexOf(0x00)` — the
+test codifies that guarantee.
+
+SPEC folder: `specs/PERMISSIONS_HOTFIX_NULL_BYTES_2026_04_27/`.
+
+## 2026-04-27 (night) — Permissions Phase 2 Fix (HOTFIX bundle, 8 commits)
 
 ## 2026-04-27 (night) — Permissions Phase 2 Fix (HOTFIX bundle, 8 commits)
 
