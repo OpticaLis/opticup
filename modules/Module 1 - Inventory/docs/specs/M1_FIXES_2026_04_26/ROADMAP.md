@@ -99,7 +99,7 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 | D4 | Products tab: display override ("דריסה") changes don't take effect on storefront | HIGH | ✅ Fixed by B-2 + dropdown values normalized in `D4_FOLLOWUP_VALUE_NORMALIZATION/`; B-3 view + B-4 DDL deferred to follow-up SPEC |
 | D5 | Products tab: setting product to "מוסתר" makes it disappear from Studio UI — can't undo | CRITICAL | ✅ Fixed (`D5_HIDDEN_PRODUCT_RECOVERY/`) |
 | D6 | AI Content tab: generation fails with error (missing auth header / no user feedback) | MEDIUM | ✅ Fixed (`D6_AI_CONTENT_AUTH_FIX/`) — 11 fetch sites across 6 files migrated to sb.functions.invoke() (root cause was missing Authorization header on bare fetch). |
-| D7 | Media library: loads very slowly (expensive count queries, ilike on 4 columns, unbatched URLs) | HIGH | ⬜ |
+| D7 | Media library: loads very slowly (expensive count queries, ilike on 4 columns, unbatched URLs) | HIGH | ✅ Fixed (`D7_MEDIA_LIBRARY_PERF_INVESTIGATION/` + parallelize patch in studio-media.js) — count + data fetch now parallel, ~600ms cold-load reduction. ilike→GIN/textSearch deferred (needs DDL); signed-URL batching rejected (T10 measured regression). |
 
 **Evidence:**
 - D1-D2: `storefront-brands.js:57-123` — three columns (`סנכרון`, `מצב תצוגה`, `תצוגה באתר`) where two would suffice

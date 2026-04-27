@@ -87,14 +87,11 @@ async function loadMediaLibrary(reset) {
       return q;
     }
 
-    // On reset: fetch exact total count (single lightweight query)
-    if (reset !== false) {
-      const countQ = applyMediaFilters(sb.from(MEDIA_TABLE).select('id', { count: 'exact', head: true }));
-      const { count: totalCount } = await countQ;
-      _mediaTotalCount = totalCount || 0;
-    }
-
-    // Data query with pagination + sort
+    // D7 fix: parallelize count + data fetch on reset.
+    // Pre-fix did them sequentially (~600ms RTT each = ~1200ms cold load).
+    // Post-fix: Promise.all kicks both off simultaneously (~600ms cold load,
+    // 30-40% perceived latency reduction). T10 investigation refs:
+    // D7_MEDIA_LIBRARY_PERF_INVESTIGATION/T10_MEDIA_LIBRARY_PERF_REPORT.md §3.
     let query = applyMediaFilters(sb.from(MEDIA_TABLE).select('*'));
 
     if (mediaFilter.sort === 'newest') query = query.order('created_at', { ascending: false });
@@ -104,7 +101,20 @@ async function loadMediaLibrary(reset) {
 
     query = query.range(from, to);
 
-    const { data, error } = await query;
+    let data, error;
+    if (reset !== false) {
+      // Reset path: count + data in parallel
+      const countQ = applyMediaFilters(sb.from(MEDIA_TABLE).select('id', { count: 'exact', head: true }));
+      const [countRes, dataRes] = await Promise.all([countQ, query]);
+      _mediaTotalCount = countRes.count || 0;
+      data = dataRes.data;
+      error = dataRes.error;
+    } else {
+      // Append path (load-more): no count needed
+      const dataRes = await query;
+      data = dataRes.data;
+      error = dataRes.error;
+    }
     if (error) throw error;
 
     const newItems = data || [];
