@@ -4,6 +4,37 @@
 
 ---
 
+## Studio Brands Visibility Rework (HOTFIX) — 2026-04-27 (evening)
+
+### Files modified
+- `storefront-studio.html` — removed dead "🏷️ מותגים" nav link.
+- `modules/storefront/studio-brands.js` — replaced 3-control visibility block
+  (`sbe-display-mode`, `sbe-exclude-website`, `sbe-page-visibility`) with a
+  single 4-mode radio-group (`brand-visibility-mode` = full | hide-card |
+  hide-customer-keep-seo | hide-all). Added helpers
+  `deriveBrandVisibilityMode`, `applyBrandVisibilityMode`,
+  `bulkApplyBrandModeToProducts` (confirmation-gated bulk update of
+  `inventory.website_sync` per brand — Iron Rules 7+22). Added CSS-only
+  AI-thinking spinner.
+
+### DB UPDATE (audit-trail commit, no repo file change)
+- `brands` row McQueen `06b269ce-...`: `exclude_website true→false`,
+  `brand_page_enabled false→true`. `display_mode` unchanged. 9 inventory
+  rows untouched. LOOL + Tom Ford untouched.
+
+### Commits
+- `e31daa4` fix(studio): remove dead Brands link from Studio top-nav
+- `ffef713` feat(studio-brands): replace 3-control visibility UI with single 4-mode radio + bulk-mode action + AI spinner
+- `52ca2b7` fix(brands): restore Alexander McQueen visibility (exclude_website=false, page_enabled=true)
+- (this commit) docs(m1): record studio brands visibility rework
+
+### Outcome
+McQueen back on storefront (visible in supersale-stock store_all). New brand
+editor UI presents one decision instead of three overlapping ones. No customer
+data lost or migrated incorrectly. Storefront repo: zero commits.
+
+---
+
 ## Storefront Sync Hierarchy Fix (HOTFIX) — 2026-04-27
 
 ### View rewrites (apply_migration via Supabase MCP)

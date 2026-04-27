@@ -1,7 +1,20 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-Storefront Sync Hierarchy Fix — 2026-04-27
+Studio Brands Visibility Rework — 2026-04-27 (evening)
+
+## 2026-04-27 (evening) — Studio Brands Visibility Rework (HOTFIX)
+
+Brand editor in Studio reworked: 3 overlapping controls (`display_mode`,
+`exclude_website`, `brand_page_visibility`) replaced by ONE radio-group with
+4 explicit modes (full / hide-card / hide-customer-keep-seo / hide-all).
+Added bulk-mode action (`bulkApplyBrandModeToProducts`) — confirmation-gated
+update of `inventory.website_sync` for every product of a brand. Added
+visible CSS spinner during AI content generation. Removed dead "🏷️ מותגים"
+nav link from Studio top-nav. Restored Alexander McQueen visibility
+(`exclude_website=true → false`, `brand_page_enabled=false → true`) — 9
+inventory rows untouched. SPEC folder:
+`specs/STUDIO_BRANDS_VISIBILITY_REWORK_2026_04_27/`.
 
 ## 2026-04-27 — Storefront Sync Hierarchy Fix (HOTFIX)
 
