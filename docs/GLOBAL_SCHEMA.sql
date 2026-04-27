@@ -251,6 +251,12 @@
 -- and per opticup-storefront/CLAUDE.md §5 View Modification Protocol.
 -- Verbatim from db-audit/03-views.md row `v_storefront_products`.
 -- ------------------------------------------------------------
+-- Rewritten 2026-04-27 by STOREFRONT_SYNC_HIERARCHY_FIX_2026_04_27
+-- Hierarchy (highest priority first):
+--   1. inventory.display_mode_override (Studio Products override) — wins
+--   2. brands.brand_page_visibility (Studio Brands page-show toggle) — gates inclusion
+--   3. inventory.website_sync (per-product) — primary visibility driver
+--   (no fallback to brands.display_mode — now a seed field only)
 CREATE OR REPLACE VIEW v_storefront_products AS
  SELECT i.id,
     i.tenant_id,
@@ -266,13 +272,21 @@ CREATE OR REPLACE VIEW v_storefront_products AS
     i.sell_price,
     i.sell_discount,
     i.website_sync,
-    b.display_mode,
+    CASE
+      WHEN i.display_mode_override IS NOT NULL THEN i.display_mode_override
+      WHEN COALESCE(i.website_sync, 'full'::text) = 'display' THEN 'catalog'::text
+      ELSE 'store_all'::text
+    END AS display_mode,
     i.display_mode_override,
     COALESCE(( SELECT json_agg(('/api/image/'::text || img.storage_path) ORDER BY img.sort_order, img.created_at) AS json_agg
            FROM inventory_images img
           WHERE (img.inventory_id = i.id)), '[]'::json) AS images,
     lower(((((((COALESCE(b.name, ''::text) || ' '::text) || COALESCE(i.model, ''::text)) || ' '::text) || COALESCE(i.color, ''::text)) || ' '::text) || COALESCE(i.barcode, ''::text))) AS search_text,
-    COALESCE(i.display_mode_override, b.display_mode, 'catalog'::text) AS resolved_mode,
+    CASE
+      WHEN i.display_mode_override = 'catalog' THEN 'catalog'::text
+      WHEN COALESCE(i.website_sync, 'full'::text) = 'display' THEN 'catalog'::text
+      ELSE 'shop'::text
+    END AS resolved_mode,
     ( SELECT ai_content.content
            FROM ai_content
           WHERE ((ai_content.entity_type = 'product'::text) AND (ai_content.entity_id = i.id) AND (ai_content.content_type = 'description'::text) AND (ai_content.language = 'he'::text) AND (ai_content.is_deleted = false))
@@ -290,9 +304,55 @@ CREATE OR REPLACE VIEW v_storefront_products AS
          LIMIT 1) AS ai_seo_description
    FROM (inventory i
      JOIN brands b ON ((i.brand_id = b.id)))
-  WHERE ((i.is_deleted = false) AND (b.active = true) AND (b.exclude_website IS NOT TRUE) AND (COALESCE(i.display_mode_override, b.display_mode, 'catalog'::text) <> 'hidden'::text) AND (i.website_sync = ANY (ARRAY['full'::text, 'display'::text])) AND ((i.website_sync = 'display'::text) OR ((i.website_sync = 'full'::text) AND (i.quantity > 0))) AND (EXISTS ( SELECT 1
+  WHERE ((i.is_deleted = false) AND (b.active = true) AND (b.exclude_website IS NOT TRUE) AND (COALESCE(i.website_sync, 'full'::text) <> 'none'::text) AND ((b.brand_page_visibility IS NULL) OR (b.brand_page_visibility <> 'hidden'::text)) AND ((i.display_mode_override IS NULL) OR (i.display_mode_override <> 'hidden'::text)) AND (EXISTS ( SELECT 1
            FROM inventory_images img
           WHERE (img.inventory_id = i.id))) AND (i.barcode IS NOT NULL));
+
+-- v_storefront_brands also rewritten 2026-04-27 — display_mode now derived from per-product mix
+CREATE OR REPLACE VIEW v_storefront_brands AS
+ SELECT b.id AS brand_id,
+    b.tenant_id,
+    b.name AS brand_name,
+    b.slug,
+    b.hero_image,
+    b.video_url,
+    b.logo_url,
+    b.brand_description,
+    b.brand_description_short,
+    ( SELECT jsonb_agg(ml.storage_path ORDER BY arr.idx) AS jsonb_agg
+           FROM jsonb_array_elements_text(b.brand_gallery) WITH ORDINALITY arr(val, idx)
+             LEFT JOIN media_library ml ON (((ml.id = (arr.val)::uuid) AND (ml.is_deleted = false)))
+          WHERE (ml.storage_path IS NOT NULL)) AS brand_gallery,
+    b.seo_title,
+    b.seo_description,
+    b.brand_page_enabled,
+    CASE
+      WHEN EXISTS (SELECT 1 FROM inventory i
+                    WHERE (i.brand_id = b.id) AND (i.tenant_id = b.tenant_id)
+                      AND (i.is_deleted = false) AND (i.website_sync = 'full'::text))
+        THEN 'store_all'::text
+      WHEN EXISTS (SELECT 1 FROM inventory i
+                    WHERE (i.brand_id = b.id) AND (i.tenant_id = b.tenant_id)
+                      AND (i.is_deleted = false) AND (i.website_sync = 'display'::text))
+        THEN 'catalog'::text
+      ELSE 'store_all'::text
+    END AS display_mode,
+    b.brand_page_visibility,
+    b.show_brand_products,
+    ( SELECT count(DISTINCT i.id) AS count
+        FROM inventory i
+       WHERE (i.brand_id = b.id) AND (i.tenant_id = b.tenant_id)
+         AND (i.is_deleted = false)
+         AND (COALESCE(i.website_sync, 'full'::text) <> 'none'::text)
+         AND ((i.display_mode_override IS NULL) OR (i.display_mode_override <> 'hidden'::text))
+         AND (EXISTS (SELECT 1 FROM inventory_images img WHERE (img.inventory_id = i.id)))) AS product_count
+   FROM brands b
+  WHERE ((b.is_deleted = false) AND (b.active = true) AND (b.exclude_website IS NOT TRUE)
+         AND ((b.brand_page_visibility IS NULL) OR (b.brand_page_visibility <> 'hidden'::text))
+         AND EXISTS (SELECT 1 FROM inventory i
+                      WHERE (i.brand_id = b.id) AND (i.tenant_id = b.tenant_id)
+                        AND (i.is_deleted = false)
+                        AND (COALESCE(i.website_sync, 'full'::text) <> 'none'::text)));
 
 
 -- ============================================================
