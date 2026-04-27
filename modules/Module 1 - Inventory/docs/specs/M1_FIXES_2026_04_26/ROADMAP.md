@@ -141,7 +141,7 @@ Each issue has been investigated and root-caused. Fixes are grouped into logical
 |------|--------|--------|-----------|
 | C1_PERMISSIONS_UPSERT | C1 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(C1)\"` | (in fix commit) |
 | D5_HIDDEN_PRODUCT_RECOVERY | D5 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(D5)\"` | (in fix commit) |
-| D3_D4_DISPLAY_MODE_RECONCILIATION | D3 + D4 | ✅ FULLY CLOSED — Phase A + B-1 + B-2 (2026-04-26) + B-3 view rewrite (2026-04-27) + B-4 DDL drop pending. Schema reconciliation complete: view's resolved_mode + WHERE filter both use LEGACY pair; storefront verified 0004223 + 5 random products render correctly post-rewrite. | (see `git log --grep=\"D3+D4\\\|B-3\\\|B-4\"`) |
+| D3_D4_DISPLAY_MODE_RECONCILIATION | D3 + D4 | ✅ FULLY CLOSED — Phase A + B-1 + B-2 (2026-04-26) + B-3 view rewrite (2026-04-27) + B-4 DDL drop columns (2026-04-27). Both views (v_storefront_products + v_storefront_brands) migrated to LEGACY pair; storefront_mode columns dropped from brands + inventory; 7-point doc-update checklist confirmed clean. | (see `git log --grep=\"D3+D4\\\|B-3\\\|B-4\"`) |
 | T12_BRAND_UI_CONSOLIDATION (Option 2 lightweight) | T12 | ✅ Closed by Claude Code (2026-04-27) — visibility toggle ported to studio-brands.js Brand Editor; storefront-brands.html + storefront-brands.js deleted; 7 sibling pages' nav links rewritten to storefront-studio.html | (refactor + chore-spec) |
 | B1_NO_IMAGES_FILTER_SERVER_SIDE | B1 | ✅ Closed by Claude Code (2026-04-26) — see `git log --grep=\"(B1)\"` | (two-commit pattern: fix + chore-spec) |
 | TBD | B2-B4 | ⬜ Pending | — |
