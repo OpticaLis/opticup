@@ -4,6 +4,31 @@
 
 ---
 
+## Storefront Sync Hierarchy Fix (HOTFIX) — 2026-04-27
+
+### View rewrites (apply_migration via Supabase MCP)
+- `v_storefront_products` — visibility now driven by `inventory.website_sync`
+  per Daniel's 4-level hierarchy. Previous brand-level fallback removed.
+- `v_storefront_brands` — `display_mode` column derived from per-product mix
+  (powers supersale-stock API section split).
+
+### Commits
+- `26c047f` — `feat(views): drive storefront visibility from inventory.website_sync, not brands.display_mode`
+- (this commit) — `docs(m1): record storefront sync hierarchy fix in SESSION_CONTEXT + CHANGELOG`
+- (next) — `chore(spec): close STOREFRONT_SYNC_HIERARCHY_FIX with retrospective`
+
+### SPEC folder
+`modules/Module 1 - Inventory/docs/specs/STOREFRONT_SYNC_HIERARCHY_FIX_2026_04_27/`
+
+### Outcome
+- 313 'display' products now correctly resolve to 'catalog' on storefront (was wrong).
+- Supersale section 2 (catalog) restored: 0 brands → 11 brands, 147 products.
+- Supersale section 1 (store_all): 42 brands, 487 in-stock products.
+- HARD RULE 2026-04-27 (no storefront prices) verified intact via Chrome MCP rendered-DOM check.
+- Storefront repo untouched (price-guard `d1f67c4` sacred).
+
+---
+
 ## Inventory Fixes + Subrow Feature — 2026-04-19
 
 ### Stock Count Fixes (9b44831, 7781de7)

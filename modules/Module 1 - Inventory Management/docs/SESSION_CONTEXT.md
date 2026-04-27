@@ -1,6 +1,20 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
+Storefront Sync Hierarchy Fix — 2026-04-27
+
+## 2026-04-27 — Storefront Sync Hierarchy Fix (HOTFIX)
+
+`v_storefront_products` and `v_storefront_brands` rewritten to drive storefront
+visibility from `inventory.website_sync` (per-product) instead of
+`brands.display_mode` (brand-level seed). Implements Daniel's 4-level hierarchy:
+display_mode_override > brand_page_visibility > website_sync > [no fallback].
+Fixed 313 mis-classified `display` products (now correctly 'catalog') and
+restored supersale-stock section 2 (was 0 brands, now 11). Storefront repo
+untouched; price-guard d1f67c4 intact. SPEC folder:
+`specs/STOREFRONT_SYNC_HIERARCHY_FIX_2026_04_27/`.
+
+## Last Updated (previous)
 Inventory Fixes + Subrow Feature — 2026-04-19
 
 ## What Was Done This Session
