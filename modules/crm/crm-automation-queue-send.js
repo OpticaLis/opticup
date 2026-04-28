@@ -77,7 +77,11 @@
           event_id: eventId,
           lead_id: lead.id,
           channel: ch,
-          template_slug: tplBase + '_' + ch + '_' + language,
+          // BASE slug only — send-message EF appends `_${channel}_${language}`
+          // when looking up the template. Storing the full slug here would
+          // cause double-suffix at dispatch time (event_day → event_day_sms_he,
+          // not event_day_sms_he_sms_he).
+          template_slug: tplBase,
           variables: {
             name: lead.full_name || '',
             phone: lead.phone || '',
