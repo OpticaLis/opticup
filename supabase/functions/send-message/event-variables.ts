@@ -58,7 +58,7 @@ export async function injectEventVariables(
 ): Promise<{ feeKey: string | null }> {
   const { data: ev, error: evErr } = await db
     .from("crm_events")
-    .select("event_date, max_capacity, booking_fee")
+    .select("name, event_date, start_time, location_address, max_capacity, booking_fee")
     .eq("id", eventId)
     .eq("tenant_id", tenantId)
     .maybeSingle();
@@ -67,6 +67,18 @@ export async function injectEventVariables(
     if (evErr) console.warn("injectEventVariables: event lookup failed", evErr);
     return { feeKey: null };
   }
+
+  // Basic event variables — caller (CRM UI engine) usually provides these via
+  // buildVariables, but server-side callers (lead-intake EF, dispatch-queue,
+  // ad-hoc test harnesses) don't. Inject only when caller didn't already set.
+  if (vars.event_name == null) vars.event_name = ev.name || "";
+  if (vars.event_date == null && ev.event_date) {
+    // DD/MM/YYYY (CrmHelpers.formatDate convention) — server-side formatter:
+    const [y, m, d] = String(ev.event_date).split("-");
+    vars.event_date = `${d}/${m}/${y}`;
+  }
+  if (vars.event_time == null) vars.event_time = ev.start_time || "";
+  if (vars.event_location == null) vars.event_location = ev.location_address || "";
 
   if (vars.event_max_attendees == null) {
     vars.event_max_attendees = ev.max_capacity;
