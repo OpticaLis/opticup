@@ -261,7 +261,7 @@
         '<td class="' + CLS_TD + '"><input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" data-check-lead="' + escapeHtml(r.id) + '"' + (checked ? ' checked' : '') + '></td>' +
         '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + nameSubtitle + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
-        '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('lead', r.status) + '</td>' +
+        '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('lead', r.status) + ((r.status === 'waitlist' || r.status === 'invited') ? ' <button type="button" data-move-lead="' + escapeHtml(r.id) + '" title="העבר לאירוע אחר" class="text-slate-400 hover:text-indigo-600 text-sm">↔</button>' : '') + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600">' + escapeHtml(r.email || '—') + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-500 text-xs">' + escapeHtml(CrmHelpers.formatDateTime(r.created_at)) + '</td>' +
       '</tr>';
@@ -290,9 +290,17 @@
     wrap.querySelectorAll('tr[data-lead-id]').forEach(function (tr) {
       tr.addEventListener('click', function (e) {
         if (e.target.tagName === 'INPUT') return;
+        // Rung 3: move-attendee button stops here (handled by delegation below)
+        if (e.target.closest('[data-move-lead]')) return;
         var id = tr.getAttribute('data-lead-id');
         if (typeof openCrmLeadDetail === 'function') openCrmLeadDetail(id);
       });
+    });
+    wrap.addEventListener('click', async function (e) {
+      var b = e.target.closest('[data-move-lead]'); if (!b || !window.CrmAttendeeMove) return; e.stopPropagation();
+      var r = await sb.from('crm_event_attendees').select('id').eq('tenant_id', getTenantId()).eq('lead_id', b.getAttribute('data-move-lead')).in('status', ['waiting_list','invited','registered']).eq('is_deleted', false).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (r.error || !r.data) { if (window.Toast) Toast.warning('אין רישום פעיל ללקוח זה'); return; }
+      CrmAttendeeMove.open(r.data.id, { onAfter: function () { renderLeadsTable(); } });
     });
   }
 
