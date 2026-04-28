@@ -94,8 +94,41 @@
     return { updated: updated };
   }
 
+  // Rung 2 (P5_V2_REBUILD_RUNG2_RULES_REWIRE): per-rule bulk post-action that
+  // UPSERTs crm_event_attendees rows for the resolved recipients of a rule.
+  // Used by Rule 2.2 (T5 sent → set attendee status to 'הוזמן') and Rule 2.4
+  // (parallel event T7 invitations → mark recipients as invited on the NEW
+  // event). Idempotent on (event_id, lead_id).
+  // action_config shape:
+  //   { post_action_attendee_upsert: { status: 'הוזמן' } }
+  // Reads triggerData.eventId via the closure captured at call time —
+  // the engine passes it via the third arg.
+  async function attendeeUpsert(rule, resolvedLeadIds, triggerData) {
+    var cfg = rule && rule.action_config && rule.action_config.post_action_attendee_upsert;
+    if (!cfg || !cfg.status) return { upserted: 0 };
+    if (!Array.isArray(resolvedLeadIds) || !resolvedLeadIds.length) return { upserted: 0 };
+    var eventId = triggerData && triggerData.eventId;
+    if (!eventId) { console.warn('CrmAutomationPostActions.attendeeUpsert: no eventId'); return { upserted: 0 }; }
+    var tenantId = typeof getTenantId === 'function' ? getTenantId() : null;
+    if (!tenantId) return { upserted: 0 };
+
+    var rows = resolvedLeadIds.map(function (lid) {
+      return { tenant_id: tenantId, event_id: eventId, lead_id: lid, status: cfg.status, updated_at: new Date().toISOString() };
+    });
+    var res = await sb.from('crm_event_attendees').upsert(rows, {
+      onConflict: 'event_id,lead_id',
+      ignoreDuplicates: false
+    }).select('id');
+    if (res.error) {
+      console.error('CrmAutomationPostActions.attendeeUpsert:', res.error);
+      return { upserted: 0, error: res.error.message };
+    }
+    return { upserted: (res.data || []).length };
+  }
+
   window.CrmAutomationPostActions = {
     executePostActions: executePostActions,
-    promoteWaitingLeadsToInvited: promoteWaitingLeadsToInvited
+    promoteWaitingLeadsToInvited: promoteWaitingLeadsToInvited,
+    attendeeUpsert: attendeeUpsert
   };
 })();
