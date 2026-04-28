@@ -117,7 +117,7 @@
       return { tenant_id: tenantId, event_id: eventId, lead_id: lid, status: cfg.status };
     });
     var res = await sb.from('crm_event_attendees').upsert(rows, {
-      onConflict: 'event_id,lead_id',
+      onConflict: 'tenant_id,lead_id,event_id',
       ignoreDuplicates: false
     }).select('lead_id');
     if (res.error) {

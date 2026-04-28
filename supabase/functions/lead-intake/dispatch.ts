@@ -90,7 +90,7 @@ export async function dispatchFreshLead(
         tenant_id: tenantId, event_id: ev.id, lead_id: leadId,
         status: "invited",
       },
-      { onConflict: "event_id,lead_id", ignoreDuplicates: false },
+      { onConflict: "tenant_id,lead_id,event_id", ignoreDuplicates: false },
     );
   } else {
     await dispatchIntakeMessages(tenantId, leadId, "lead_intake_new", name, phone, email);
