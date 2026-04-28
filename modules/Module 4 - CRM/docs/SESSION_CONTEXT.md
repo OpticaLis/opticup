@@ -1,9 +1,9 @@
 # Module 4 — CRM: Session Context
 
-> **Last updated:** 2026-04-28 (P5_V2 sub-SPECs authored; Rung 1 partial-close — DB landed, EF awaiting manual deploy)
-> **Status:** P5_V2_TEMPLATE_REBUILD in flight. Rung 1 (plumbing) DB work complete: tenants.payment_links column added cross-tenant, 22 V2 templates loaded on demo (18 UPDATE byte-equal + 4 INSERT). EF refactor committed locally (event-variables.ts, post-substitution loud failure for %payment_url_<fee>%). Smoke tests + payment_links seed deferred pending: (a) manual EF deploy by Daniel (MCP deploy_edge_function returned 500 twice), (b) Daniel-provided demo payment URL.
-> **Current phase:** PRE-CUTOVER — Rungs 2/3 + waitlist sync micro-SPEC queued; cutover target 2026-05-03.
-> **Next:** Daniel deploys send-message EF + provides payment_links["50"] URL → executor finishes Rung 1 smoke → Rung 2 (engine extensions + rule rewires + lead-intake EF refactor) → M4_LEAD_STATUS_WAITLIST_SYNC micro-SPEC → Rung 3 (manual-move feature).
+> **Last updated:** 2026-04-28 (Rungs 1+2 partial-close — DB + local code complete; both EFs awaiting manual deploy)
+> **Status:** P5_V2_TEMPLATE_REBUILD Rungs 1+2 partial-closed. **DB state on demo:** tenants.payment_links jsonb column added cross-tenant, 22 V2 templates loaded byte-equal, idempotency UNIQUE INDEX on crm_message_queue applied, 14 active automation rules (T6 slug fix, Rule 2.4 cross-event-waitlist, T8/T9 queue_send, T10 retired, Rule 2.7 manual-move 2-row inert). Engine extended: cross_event_active_waitlist recipient + queue_send action + attendee_moved trigger + attendee_upsert post-action. Lead-intake EF refactored locally for Rule 2.1 (T5 if active event, else T1). **Pending manual deploy by Daniel:** send-message EF (Rung 1 helpers) + lead-intake EF (Rung 2 fresh-lead path) — MCP deploy_edge_function returned 500 in 4 attempts; local code is correct, deploy via `supabase functions deploy <name>` from CLI/dashboard. Daniel's payment_links["50"] URL also pending.
+> **Current phase:** PRE-CUTOVER — M4_LEAD_STATUS_WAITLIST_SYNC + Rung 3 (manual-move) queued; cutover target 2026-05-03.
+> **Next:** Daniel manually deploys 2 EFs + seeds payment URL → executor closes Rung 1+2 smoke tests → executor runs M4_LEAD_STATUS_WAITLIST_SYNC (waitlist lead status + sync RPC) → Rung 3 (manual-move RPC + admin dialog).
 > **Branch:** develop
 
 ---
