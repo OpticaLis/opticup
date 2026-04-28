@@ -7,7 +7,11 @@
 // crm_message_log captures any send failure for operator follow-up.
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+// Legacy JWT-format anon key — same constant inlined in index.ts.
+// The `SUPABASE_ANON_KEY` env var on Supabase Edge returns the newer
+// sb_publishable_* format which the gateway's verify_jwt rejects.
+const ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU";
 const SEND_MESSAGE_URL = `${SUPABASE_URL}/functions/v1/send-message`;
 
 export async function dispatchIntakeMessages(
@@ -75,7 +79,7 @@ export async function dispatchFreshLead(
 ): Promise<void> {
   const { data: ev } = await db.from("crm_events")
     .select("id").eq("tenant_id", tenantId)
-    .in("status", ["open_for_registration", "waitlist_full"])
+    .in("status", ["registration_open", "waiting_list"])
     .eq("is_deleted", false)
     .order("event_date", { ascending: true })
     .limit(1).maybeSingle();

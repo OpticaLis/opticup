@@ -80,7 +80,7 @@
       // Rule 2.4 (P5_V2): invite the active waitlist of OTHER open events to a
       // newly-opened parallel event. Filters: attendee status 'waiting_list' or
       // 'invited' on a different event whose own status is
-      // open_for_registration / waitlist_full.
+      // registration_open / waiting_list (canonical crm_statuses.event slugs).
       var attRes = await sb.from('crm_event_attendees')
         .select('event_id, lead_id, status, crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
         .eq('tenant_id', tenantId)
@@ -95,7 +95,7 @@
       if (evRes.error) throw new Error('recipients cross_event events: ' + evRes.error.message);
       var activeEvents = {};
       (evRes.data || []).forEach(function (e) {
-        if (!e.is_deleted && (e.status === 'open_for_registration' || e.status === 'waitlist_full')) {
+        if (!e.is_deleted && (e.status === 'registration_open' || e.status === 'waiting_list')) {
           activeEvents[e.id] = true;
         }
       });
