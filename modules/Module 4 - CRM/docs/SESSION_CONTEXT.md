@@ -1,9 +1,9 @@
 # Module 4 — CRM: Session Context
 
-> **Last updated:** 2026-04-26 (merge-ready — develop fully wrapped, awaiting Daniel's manual merge)
-> **Status:** Develop merge-ready. Module 4 fully closed on demo: campaigns pipeline operational, payment lifecycle trio shipped, all pre-merge QA HIGH findings either fixed or explicitly deferred.
-> **Current phase:** POST-MERGE — CRM is on `main` and live in production
-> **Next:** Daniel runs `git checkout main && git merge develop && git push && git checkout develop`. Then event manager testing on Prizma. Then post-merge SPECs for HIGH-3, HIGH-4, MEDIUM, LOW findings + historical import + P7 cutover.
+> **Last updated:** 2026-04-28 (P5_V2 sub-SPECs authored; Rung 1 partial-close — DB landed, EF awaiting manual deploy)
+> **Status:** P5_V2_TEMPLATE_REBUILD in flight. Rung 1 (plumbing) DB work complete: tenants.payment_links column added cross-tenant, 22 V2 templates loaded on demo (18 UPDATE byte-equal + 4 INSERT). EF refactor committed locally (event-variables.ts, post-substitution loud failure for %payment_url_<fee>%). Smoke tests + payment_links seed deferred pending: (a) manual EF deploy by Daniel (MCP deploy_edge_function returned 500 twice), (b) Daniel-provided demo payment URL.
+> **Current phase:** PRE-CUTOVER — Rungs 2/3 + waitlist sync micro-SPEC queued; cutover target 2026-05-03.
+> **Next:** Daniel deploys send-message EF + provides payment_links["50"] URL → executor finishes Rung 1 smoke → Rung 2 (engine extensions + rule rewires + lead-intake EF refactor) → M4_LEAD_STATUS_WAITLIST_SYNC micro-SPEC → Rung 3 (manual-move feature).
 > **Branch:** develop
 
 ---
