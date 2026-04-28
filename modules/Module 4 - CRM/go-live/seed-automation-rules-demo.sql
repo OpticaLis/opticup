@@ -69,14 +69,14 @@ VALUES
   ('8d8cfa7e-ef58-49af-9702-a862d459cccb', 'אירוע פתח להרשמה - הזמנת רשימת המתנה',
    'event', 'status_change', '{"type":"status_equals","status":"registration_open"}',
    'send_message',
-   '{"channels":["sms","email"],"language":"he","template_slug":"event_invite_waiting_list","recipient_type":"cross_event_active_waitlist","post_action_attendee_upsert":{"status":"הוזמן"}}',
+   '{"channels":["sms","email"],"language":"he","template_slug":"event_invite_waiting_list","recipient_type":"cross_event_active_waitlist","post_action_attendee_upsert":{"status":"invited"}}',
    25, true),
 
   -- T5 — invite_new + Rule 2.2 attendee_upsert post-action
   ('8d8cfa7e-ef58-49af-9702-a862d459cccb', 'שינוי סטטוס: הזמנה חדשה',
    'event', 'status_change', '{"type":"status_equals","status":"invite_new"}',
    'send_message',
-   '{"channels":["sms","email"],"template_slug":"event_invite_new","recipient_type":"tier2_excl_registered","post_action_attendee_upsert":{"status":"הוזמן"}}',
+   '{"channels":["sms","email"],"template_slug":"event_invite_new","recipient_type":"tier2_excl_registered","post_action_attendee_upsert":{"status":"invited"}}',
    30, true),
 
   -- T10 retired (Rung 2 / 2026-04-28). Row kept for audit; is_active=false.
@@ -109,7 +109,7 @@ VALUES
   ('8d8cfa7e-ef58-49af-9702-a862d459cccb', 'שינוי סטטוס: הזמנה ממתינים',
    'event', 'status_change', '{"type":"status_equals","status":"invite_waiting_list"}',
    'send_message',
-   '{"channels":["sms","email"],"template_slug":"event_invite_waiting_list","recipient_type":"cross_event_active_waitlist","post_action_attendee_upsert":{"status":"הוזמן"}}',
+   '{"channels":["sms","email"],"template_slug":"event_invite_waiting_list","recipient_type":"cross_event_active_waitlist","post_action_attendee_upsert":{"status":"invited"}}',
    80, true),
 
   -- Confirmation messages on registration

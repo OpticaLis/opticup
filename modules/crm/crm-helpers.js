@@ -90,6 +90,7 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
   var TIER2_STATUSES = [
     'waiting',                // ממתין לאירוע
     'invited',                // הוזמן לאירוע
+    'waitlist',               // רשימת המתנה לאירוע ספציפי (M4_LEAD_STATUS_WAITLIST_SYNC, 2026-04-28)
     'confirmed',              // אישר הגעה
     'confirmed_verified',     // אישר ווידוא הגעה
     'not_interested',         // לא מעוניין

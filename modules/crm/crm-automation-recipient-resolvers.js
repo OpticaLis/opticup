@@ -9,8 +9,9 @@
      - tier2 / tier2_excl_registered  — leads filtered by status (P21 status filter)
      - leads_by_status                — explicit-filter-only variant
      - attendees / attendees_waiting / attendees_all_statuses — per-event attendees
-     - cross_event_active_waitlist    — NEW (Rung 2): leads with status המתנה / הוזמן
-       on OTHER currently-active events (open_for_registration / waitlist_full).
+     - cross_event_active_waitlist    — NEW (Rung 2): leads with attendee status
+       'waiting_list' or 'invited' on OTHER currently-active events
+       (open_for_registration / waitlist_full).
        Used by Rule 2.4: when a parallel event opens, invite the active waitlist.
 
    All resolvers filter out unsubscribed_at IS NOT NULL and is_deleted=true.
@@ -77,12 +78,13 @@
 
     if (recipientType === 'cross_event_active_waitlist') {
       // Rule 2.4 (P5_V2): invite the active waitlist of OTHER open events to a
-      // newly-opened parallel event. Filters: status המתנה or הוזמן on a
-      // different event whose own status is open_for_registration / waitlist_full.
+      // newly-opened parallel event. Filters: attendee status 'waiting_list' or
+      // 'invited' on a different event whose own status is
+      // open_for_registration / waitlist_full.
       var attRes = await sb.from('crm_event_attendees')
         .select('event_id, lead_id, status, crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
         .eq('tenant_id', tenantId)
-        .in('status', ['המתנה', 'הוזמן'])
+        .in('status', ['waiting_list', 'invited'])
         .eq('is_deleted', false);
       if (attRes.error) throw new Error('recipients cross_event: ' + attRes.error.message);
       var rows = (attRes.data || []).filter(function (r) { return r.event_id !== eventId; });

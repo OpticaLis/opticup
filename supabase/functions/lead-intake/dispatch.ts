@@ -84,7 +84,7 @@ export async function dispatchFreshLead(
     await db.from("crm_event_attendees").upsert(
       {
         tenant_id: tenantId, event_id: ev.id, lead_id: leadId,
-        status: "הוזמן", updated_at: new Date().toISOString(),
+        status: "invited",
       },
       { onConflict: "event_id,lead_id", ignoreDuplicates: false },
     );
