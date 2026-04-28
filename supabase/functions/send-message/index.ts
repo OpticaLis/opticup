@@ -1,9 +1,10 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  buildRegistrationUrl,
-  buildUnsubscribeUrl,
-} from "./url-builders.ts";
+  injectAutoUrls,
+  injectEventVariables,
+  scanForPaymentUrlMismatch,
+} from "./event-variables.ts";
 
 // send-message — CRM message dispatch (P3c+P4 Architecture v3).
 // Flow: POST {tenant_id, lead_id, channel, template_slug|body, variables} →
@@ -132,36 +133,15 @@ Deno.serve(async (req: Request) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // --- Inject unsubscribe + registration URLs ---
-  // unsubscribe_url: injected when caller didn't pass a string value, OR when
-  // the caller passed a placeholder (preview text starting with "["). The
-  // placeholder convention is used by crm-automation-engine.js buildVariables
-  // so the confirm-send modal can show something readable before the EF
-  // generates the real signed link.
-  const isPlaceholder = (v: unknown) =>
-    typeof v === "string" && v.startsWith("[");
-  if (typeof variables.unsubscribe_url !== "string" || isPlaceholder(variables.unsubscribe_url)) {
-    try {
-      variables.unsubscribe_url = await buildUnsubscribeUrl(db, leadId, tenantId);
-    } catch (e) {
-      console.warn("unsubscribe_url generation failed:", (e as Error).message);
-    }
-  }
-  // registration_url: canonical server-side injection when event_id is known.
-  // The URL depends on lead+tenant+event which only the server can sign, so
-  // any client-supplied value is ignored unless the caller already provided a
-  // real URL (http/https) — that branch is for the per-event override stored
-  // in crm_events.registration_form_url (passed through by buildVariables).
+  // --- Inject auto URLs (unsubscribe + registration) and event-derived vars ---
+  // Rung 1 (P5_V2_REBUILD_RUNG1_PLUMBING): URL injectors moved to event-variables.ts
+  // alongside event-bound substitutions to keep index.ts under Rule 12 cap.
+  await injectAutoUrls(db, leadId, tenantId, eventId, variables);
   if (eventId) {
-    const hasOverride =
-      typeof variables.registration_url === "string" &&
-      /^https?:\/\//i.test(variables.registration_url);
-    if (!hasOverride) {
-      try {
-        variables.registration_url = await buildRegistrationUrl(db, leadId, tenantId, eventId);
-      } catch (e) {
-        console.warn("registration_url generation failed:", (e as Error).message);
-      }
+    try {
+      await injectEventVariables(db, eventId, tenantId, variables);
+    } catch (e) {
+      console.warn("injectEventVariables failed:", (e as Error).message);
     }
   }
 
@@ -209,6 +189,19 @@ Deno.serve(async (req: Request) => {
   } else {
     finalBody = substituteVariables(rawBody!, variables);
     finalSubject = rawSubject ? substituteVariables(rawSubject, variables) : null;
+  }
+
+  // --- Rung 1 Pattern P12 loud failure: any %payment_url_<digits>% remaining
+  // after substitution = missing or mismatched tenants.payment_links entry.
+  // Send must fail; log row records the failure for operator visibility.
+  const paymentUrlError = scanForPaymentUrlMismatch(finalBody);
+  if (paymentUrlError) {
+    await db.from("crm_message_log").insert({
+      tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
+      template_id: templateId, channel, content: finalBody,
+      status: "failed", error_message: paymentUrlError,
+    });
+    return jsonResponse({ ok: false, error: paymentUrlError }, 422);
   }
 
   // --- Determine recipient ---
