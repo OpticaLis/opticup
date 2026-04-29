@@ -48,6 +48,7 @@
 
     try {
       await ensureCrmStatusCache();
+      loadRefundsBanner();
       var data = await fetchDashboardData();
       renderStatCards(statsEl, data);
       renderAlertStrip(alertsEl, data);
@@ -291,5 +292,44 @@
         '<div class="text-xs text-slate-600 font-medium">' + att + '/' + reg + ' <span class="text-indigo-600">(' + pct + '%)</span></div>' +
         '</div>';
     }).join('');
+  }
+
+  // ---- Refunds-pending banner (P23) ----
+  async function loadRefundsBanner() {
+    var el = document.getElementById('crm-dashboard-refunds-banner');
+    if (!el) return;
+    var tid = getTenantId();
+    var q = sb.from('crm_event_attendees')
+      .select('id, lead_id, event_id, full_name, phone, refund_requested_at')
+      .eq('payment_status', 'refund_requested').eq('is_deleted', false)
+      .order('refund_requested_at', { ascending: false });
+    if (tid) q = q.eq('tenant_id', tid);
+    var res = await q;
+    if (res.error) { el.innerHTML = ''; return; }
+    var rows = res.data || [];
+    if (!rows.length) { el.innerHTML = ''; return; }
+    el.innerHTML = '<div data-banner="refunds-pending" class="mb-5 p-4 rounded-xl border-2 border-amber-300 bg-amber-50 cursor-pointer hover:bg-amber-100 transition flex items-center gap-3">' +
+      '<span class="text-2xl">💸</span>' +
+      '<div class="flex-1"><p class="font-bold text-amber-900">' + rows.length + ' בקשות החזר ממתינות</p>' +
+      '<p class="text-sm text-amber-700">לחץ לצפייה ברשימה</p></div><span class="text-amber-600">›</span></div>';
+    el.querySelector('[data-banner="refunds-pending"]').addEventListener('click', function () { openRefundsModal(rows); });
+  }
+
+  function openRefundsModal(rows) {
+    if (typeof Modal === 'undefined') return;
+    var content = '<div class="space-y-2">' + rows.map(function (r) {
+      var when = r.refund_requested_at ? CrmHelpers.formatDate(r.refund_requested_at) : '—';
+      return '<div class="flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-amber-400" data-refund-lead-id="' + escapeHtml(r.lead_id || '') + '">' +
+        '<div class="flex-1 min-w-0"><div class="font-semibold text-slate-800">' + escapeHtml(r.full_name || '—') + '</div>' +
+        '<div class="text-xs text-slate-500" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</div></div>' +
+        '<div class="text-xs text-amber-700 shrink-0">בוקש ' + escapeHtml(when) + '</div></div>';
+    }).join('') + '</div>';
+    var modal = Modal.show({ title: 'בקשות החזר ממתינות (' + rows.length + ')', size: 'md', content: content });
+    modal.el.querySelectorAll('[data-refund-lead-id]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var leadId = el.getAttribute('data-refund-lead-id');
+        if (leadId && window.openCrmLeadDetail) { if (modal.close) modal.close(); openCrmLeadDetail(leadId); }
+      });
+    });
   }
 })();
