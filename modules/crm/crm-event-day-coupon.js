@@ -12,6 +12,19 @@
 
   var CLS_TOGGLE_OFF = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
 
+  // Statuses where manual coupon dispatch is allowed (event + attendee).
+  // Coupons are physically valid for the event, so we only allow
+  // dispatch while the event is in a "live" lifecycle and the attendee
+  // is in a state that earned a coupon (not cancelled / waitlist / etc.).
+  var COUPON_ALLOWED_EVENT_STATUSES = [
+    'registration_open', 'invite_new', 'waiting_list',
+    '2_3d_before', 'event_day', 'invite_waiting_list'
+  ];
+  var COUPON_ALLOWED_ATTENDEE_STATUSES = [
+    'registered', 'quick_registration', 'manual_registration',
+    'confirmed', 'attended', 'invited'
+  ];
+
   function couponToast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
 
   function couponLog(action, entityId, metadata) {
@@ -35,6 +48,23 @@
     var attendees = state.attendees || [];
     var target = attendees.find(function (a) { return a.id === id; });
     if (!target) return;
+
+    // Lifecycle guards — block dispatch when event or attendee is in a
+    // status where sending a coupon doesn't make business sense.
+    if (COUPON_ALLOWED_EVENT_STATUSES.indexOf(ev.status) === -1) {
+      var evLabel = (window.CrmHelpers && CrmHelpers.getStatusInfo)
+        ? (CrmHelpers.getStatusInfo('event', ev.status).label || ev.status)
+        : ev.status;
+      couponToast('error', 'לא ניתן לשלוח קופון בסטטוס אירוע "' + evLabel + '".');
+      return;
+    }
+    if (COUPON_ALLOWED_ATTENDEE_STATUSES.indexOf(target.status) === -1) {
+      var atLabel = (window.CrmHelpers && CrmHelpers.getStatusInfo)
+        ? (CrmHelpers.getStatusInfo('attendee', target.status).label || target.status)
+        : target.status;
+      couponToast('error', 'לא ניתן לשלוח קופון למשתתף בסטטוס "' + atLabel + '".');
+      return;
+    }
 
     // Defensive re-send guard. UI hides the "שלח" button once coupon_sent=true
     // (see couponCell), so this path is not reachable from the rendered table
