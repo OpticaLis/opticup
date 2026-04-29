@@ -716,3 +716,32 @@ Second attempt of B9 after attempt 1 was re-opened by the Foreman (Cowork sandbo
 **DB:** 4 message templates seeded in `crm_message_templates` (demo tenant). See `go-live/seed-message-templates.sql`.
 **Make:** Demo folder created (ID 499779). Scenario "Demo 1A-S — Lead Intake (Supabase)" created (ID 9101245, 11 modules). Webhook URL: `https://hook.eu2.make.com/y1p5x1zlqrwygdg4hi6klkgchci4o462`. Pending: service_role key configuration + activation.
 **19 JS files** (was 18). All ≤350 lines.
+
+---
+
+## P23 — Attendee Cancellation Flow (2026-04-29)
+
+| Hash | Message |
+|------|---------|
+| `f970748` | `refactor(crm): extract couponCell+toggleCoupon to crm-event-day-coupon.js` |
+| `5157070` | `feat(crm): coupon dispatch lifecycle guards` |
+| `1c969a8` | `feat(crm): add no_refund_due payment status` |
+| `dd2d2bd` | `feat(crm): cancel attendee dialog module` |
+| `b8bf4a4` | `feat(crm): cancel button on event day manage` |
+| `58bdcd9` | `feat(crm): dashboard refund-pending banner` |
+| _(pending)_ | `chore(crm): MODULE_MAP + CHANGELOG for P23` |
+| _(pending)_ | `chore(spec): close P23_ATTENDEE_CANCELLATION_FLOW with retrospective` |
+
+Added explicit "בטל" cancel button on Event Day "ניהול" attendee rows that walks the admin through the correct cancellation path based on `payment_status` (unpaid → simple confirm; paid → refund-due / no-refund-due choice). Cancelled attendees correctly free coupon slots. The new `payment_status='no_refund_due'` marks "ביטול ללא זיכוי" cases without freeing the coupon. Dashboard now surfaces a banner counting attendees with `payment_status='refund_requested'` so refunds awaiting action are not lost; click opens a list with row→lead-detail navigation.
+
+**Step 0 refactor (architectural):** `couponCell` + `toggleCoupon` extracted from `crm-event-day-manage.js` (346 → 278 lines) into a new `crm-event-day-coupon.js` (140 lines) — needed both to make headroom for the cancel button AND to give the deferred lifecycle-guard work (recovered from `stash@{0}`) a focused home.
+
+**Lifecycle guards (recovered from stash):** Coupon dispatch now blocks attempts on event statuses outside the live lifecycle ({registration_open, invite_new, waiting_list, 2_3d_before, event_day, invite_waiting_list}) and attendee statuses outside the coupon-earning set ({registered, quick_registration, manual_registration, confirmed, attended, invited}). Toasts a clear Hebrew error naming the offending status.
+
+**Pre-flight bug fixes (separate commits before the SPEC v2 baseline):** `035d2a4 refactor(crm): consolidate tid() helper into CrmHelpers`, `73a12a4 feat(crm): auto-default coupon_code to SuperSale{event_number}`, `e4a3b3d fix(crm): eventEnded treats only 'completed' as event-finished`. These were uncommitted dirty work that needed to land before P23 could measure clean baselines.
+
+**Deferred (out of P23 v2 scope):** Cancel button on `crm-events-detail.js` attendee grid was planned in v2 §7 but skipped — the file at 349 lines (verifier counts as 350) leaves no headroom under the 350 hard cap; needs an extraction SPEC. Logged in `FINDINGS.md`. Admins can still cancel from Event Day "ניהול" which is the primary surface.
+
+**New files:** `modules/crm/crm-event-day-coupon.js` (140 lines), `modules/crm/crm-attendee-cancel.js` (141 lines).
+**Modified:** `crm.html` (2 script tags + 1 banner anchor), `crm-event-day-manage.js` (extraction + cancel button wiring + cancelled-row hide filter + refreshAttendeeRow SELECT extension), `crm-payment-helpers.js` (no_refund_due in STATUS_LABELS / STATUS_COLORS / _renderInfoLine), `crm-dashboard.js` (loadRefundsBanner + openRefundsModal).
+**DB:** Zero schema changes. Zero seed data changes. New `payment_status` value `no_refund_due` written by the new flow only — existing rows unaffected.
