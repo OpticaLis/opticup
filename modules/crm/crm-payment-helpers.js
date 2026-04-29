@@ -59,10 +59,14 @@
     return hoursUntil > 48;
   }
 
-  // Event-end check: true if status closed/completed OR end_time has passed (Israel TZ).
+  // Event-end check: true if status='completed' OR end_time has passed (Israel TZ).
+  // NOTE: 'closed' is NOT treated as "event ended" — it means "registration closed"
+  // (e.g. coupon ceiling reached); the event itself can still be in the future.
+  // Conflating the two caused the "⚠️ לא הגיע" pill to fire on closed-but-future
+  // events. Use 'completed' for "event finished" semantics.
   function eventEnded(ev) {
     if (!ev) return false;
-    if (ev.status === 'completed' || ev.status === 'closed') return true;
+    if (ev.status === 'completed') return true;
     if (!ev.event_date) return false;
     var endTime = ev.end_time || '23:59:59';
     return new Date(ev.event_date + 'T' + endTime + '+03:00').getTime() < Date.now();
