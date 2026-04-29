@@ -14,7 +14,7 @@
 
   function _logCancel(action, attendeeId, metadata) {
     if (window.ActivityLog && ActivityLog.write) {
-      try { ActivityLog.write({ action: action, entity_type: 'crm_event_attendees', entity_id: attendeeId, severity: 'info', metadata: metadata || {} }); } catch (_) {}
+      try { ActivityLog.write({ action: action, entity_type: 'crm_event_attendees', entity_id: attendeeId, details: metadata || {} }); } catch (_) {}
     }
   }
 

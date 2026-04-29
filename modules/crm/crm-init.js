@@ -69,7 +69,7 @@
 
       // Audit trail — page open (fire-and-forget; schema expects action+entity_type)
       if (window.ActivityLog && typeof ActivityLog.write === 'function') {
-        try { ActivityLog.write({ action: 'crm.page.open', entity_type: 'crm', severity: 'info' }); } catch (_) {}
+        try { ActivityLog.write({ action: 'crm.page.open', entity_type: 'crm' }); } catch (_) {}
       }
     } catch (e) {
       console.error('CRM init failed:', e);

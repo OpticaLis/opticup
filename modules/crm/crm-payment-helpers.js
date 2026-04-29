@@ -39,7 +39,7 @@
 
   function _esc(s) { return window.escapeHtml ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); }
   function _toast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
-  function _logActivity(a, id, meta) { if (window.ActivityLog && ActivityLog.write) { try { ActivityLog.write({ action: a, entity_type: 'crm_event_attendee', entity_id: id, severity: 'info', metadata: meta || {} }); } catch (_) {} } }
+  function _logActivity(a, id, meta) { if (window.ActivityLog && ActivityLog.write) { try { ActivityLog.write({ action: a, entity_type: 'crm_event_attendees', entity_id: id, details: meta || {} }); } catch (_) {} } }
 
   function renderStatusPill(status, opts) {
     var color = STATUS_COLORS[status] || 'slate';
