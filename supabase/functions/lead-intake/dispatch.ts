@@ -157,6 +157,19 @@ export async function dispatchFreshLead(
       },
       { onConflict: "tenant_id,lead_id,event_id", ignoreDuplicates: false },
     );
+    // P5_8 Fix C: T5 recipient has an active relationship — promote lead to
+    // Tier 2 status='invited' so future T4 broadcasts include them and so the
+    // lead-side status matches the attendee row created above. Best-effort:
+    // a failure here does not bubble up — the lead is already persisted and
+    // the attendee row is the authoritative invitation marker.
+    try {
+      await db.from("crm_leads")
+        .update({ status: "invited", updated_at: new Date().toISOString() })
+        .eq("id", leadId)
+        .eq("tenant_id", tenantId);
+    } catch (e) {
+      console.error("dispatchFreshLead status='invited' update failed:", (e as Error).message || e);
+    }
   } else {
     await dispatchIntakeMessages(db, tenantId, leadId, "lead_intake_new", name, phone, email);
   }
