@@ -207,7 +207,7 @@
           '<div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold flex items-center justify-center shrink-0">' + escapeHtml(ini) + '</div>' +
           '<div class="flex-1 min-w-0"><div class="font-semibold text-slate-800 text-sm truncate">' + escapeHtml(a.full_name || '') + amount + fee + '</div>' +
             '<div class="text-xs text-slate-500 mt-0.5" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div></div>' +
-          '<div>' + CrmHelpers.statusBadgeHtml('attendee', a.status) + '</div>' +
+          '<div class="flex items-center gap-1">' + CrmHelpers.statusBadgeHtml('attendee', a.status) + '<button type="button" data-move-attendee-id="' + escapeHtml(a.id) + '" title="העבר לאירוע אחר" class="p-1 text-slate-400 hover:text-indigo-600">↔</button></div>' +
         '</div>';
       });
       html += '</div></div>';
@@ -241,6 +241,7 @@
       }
     };
     wireRegisterButton(body, event, reloadDetail);
+    body.addEventListener('click', function (e) { var b = e.target.closest('[data-move-attendee-id]'); if (b && window.CrmAttendeeMove) { e.stopPropagation(); CrmAttendeeMove.open(b.getAttribute('data-move-attendee-id'), { onAfter: reloadDetail }); } });
     body.querySelectorAll('[data-event-subtab]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         body.querySelectorAll('[data-event-subtab]').forEach(function (b) {
@@ -345,5 +346,4 @@
       });
     });
   }
-
 })();

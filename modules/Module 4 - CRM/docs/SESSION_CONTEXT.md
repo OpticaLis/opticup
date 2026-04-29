@@ -1,9 +1,9 @@
 # Module 4 — CRM: Session Context
 
-> **Last updated:** 2026-04-26 (merge-ready — develop fully wrapped, awaiting Daniel's manual merge)
-> **Status:** Develop merge-ready. Module 4 fully closed on demo: campaigns pipeline operational, payment lifecycle trio shipped, all pre-merge QA HIGH findings either fixed or explicitly deferred.
-> **Current phase:** POST-MERGE — CRM is on `main` and live in production
-> **Next:** Daniel runs `git checkout main && git merge develop && git push && git checkout develop`. Then event manager testing on Prizma. Then post-merge SPECs for HIGH-3, HIGH-4, MEDIUM, LOW findings + historical import + P7 cutover.
+> **Last updated:** 2026-04-28 (P5_V2 sequence: Rungs 1+2+micro-SPEC+Rung 3 all DB+code complete; 2 EF deploys pending Daniel)
+> **Status:** P5_V2_TEMPLATE_REBUILD pre-cutover work LANDED on demo. **22 V2 templates** loaded byte-equal; **14 active automation rules** rewired (T6, Rule 2.4 cross-event-waitlist, T8/T9 queue_send, T10 retired, Rule 2.7 manual-move 2-row); **engine extended** (cross_event_active_waitlist + queue_send + attendee_moved + attendee_upsert post-action); **idempotency UNIQUE INDEX** on crm_message_queue; **waitlist lead status** + sync RPC live + wired into register_lead_to_event + attendeeUpsert post-action; **manual-move feature** complete — new RPC `move_attendee_between_events` + cross-event auto-move in `register_lead_to_event` + `crm-attendee-move.js` dialog + ↔ buttons on events-detail attendees table + leads-tab waitlist/invited rows + Rule 2.7 wiring through `CrmAutomation.evaluate('attendee_moved')`. **Pending manual deploy by Daniel:** send-message EF (Rung 1) + lead-intake EF (Rung 2) — MCP deploy_edge_function returned 500; local code is correct, deploy via `supabase functions deploy <name>`. Daniel's `tenants.payment_links["50"]` URL also pending.
+> **Current phase:** PRE-CUTOVER smoke pending; cutover target 2026-05-03.
+> **Next:** Daniel deploys 2 EFs + seeds payment URL → executor smokes Rungs 1/2/3 end-to-end → cutover.
 > **Branch:** develop
 
 ---

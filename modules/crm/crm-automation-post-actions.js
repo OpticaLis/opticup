@@ -94,8 +94,51 @@
     return { updated: updated };
   }
 
+  // Rung 2 (P5_V2_REBUILD_RUNG2_RULES_REWIRE): per-rule bulk post-action that
+  // UPSERTs crm_event_attendees rows for the resolved recipients of a rule.
+  // Used by Rule 2.2 (T5 sent → set attendee status to 'invited') and Rule 2.4
+  // (parallel event T7 invitations → mark recipients as invited on the NEW
+  // event). Idempotent on (event_id, lead_id).
+  // action_config shape:
+  //   { post_action_attendee_upsert: { status: 'invited' } }
+  // Hebrew display name resolved by crm_statuses.name_he ('הוזמן').
+  // Reads triggerData.eventId via the closure captured at call time —
+  // the engine passes it via the third arg.
+  async function attendeeUpsert(rule, resolvedLeadIds, triggerData) {
+    var cfg = rule && rule.action_config && rule.action_config.post_action_attendee_upsert;
+    if (!cfg || !cfg.status) return { upserted: 0 };
+    if (!Array.isArray(resolvedLeadIds) || !resolvedLeadIds.length) return { upserted: 0 };
+    var eventId = triggerData && triggerData.eventId;
+    if (!eventId) { console.warn('CrmAutomationPostActions.attendeeUpsert: no eventId'); return { upserted: 0 }; }
+    var tenantId = typeof getTenantId === 'function' ? getTenantId() : null;
+    if (!tenantId) return { upserted: 0 };
+
+    var rows = resolvedLeadIds.map(function (lid) {
+      return { tenant_id: tenantId, event_id: eventId, lead_id: lid, status: cfg.status };
+    });
+    var res = await sb.from('crm_event_attendees').upsert(rows, {
+      onConflict: 'tenant_id,lead_id,event_id',
+      ignoreDuplicates: false
+    }).select('lead_id');
+    if (res.error) {
+      console.error('CrmAutomationPostActions.attendeeUpsert:', res.error);
+      return { upserted: 0, error: res.error.message };
+    }
+    // M4_LEAD_STATUS_WAITLIST_SYNC: re-derive lead.status from attendee state
+    // for every lead we just upserted. Best-effort — sync errors don't fail
+    // the dispatch path.
+    var upsertedIds = (res.data || []).map(function (r) { return r.lead_id; });
+    for (var i = 0; i < upsertedIds.length; i++) {
+      try {
+        await sb.rpc('sync_lead_status_from_attendee', { p_lead_id: upsertedIds[i], p_tenant_id: tenantId });
+      } catch (e) { console.warn('attendeeUpsert sync skipped:', e); }
+    }
+    return { upserted: upsertedIds.length };
+  }
+
   window.CrmAutomationPostActions = {
     executePostActions: executePostActions,
-    promoteWaitingLeadsToInvited: promoteWaitingLeadsToInvited
+    promoteWaitingLeadsToInvited: promoteWaitingLeadsToInvited,
+    attendeeUpsert: attendeeUpsert
   };
 })();

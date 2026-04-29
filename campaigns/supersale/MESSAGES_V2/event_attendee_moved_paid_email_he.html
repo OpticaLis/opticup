@@ -1,0 +1,202 @@
+<!--
+  ═══════════════════════════════════════════════════════════════════
+  Event-Attendee-Moved-Paid Email — v2 (canon-compliant)
+  ═══════════════════════════════════════════════════════════════════
+  CRM slug: event_attendee_moved_paid_email_he
+  Template position: Manual move action (PAID branch)
+  Trigger: CRM admin manually moves an attendee from event A to event B,
+           ticks the "Send customer notification" toggle, AND the attendee
+           HAS already paid the booking fee for event A. Fee is transferred
+           to event B (no re-payment).
+  From: events@prizma-optic.co.il
+  Subject: %name%, מקומכם הועבר לאירוע %event_name%
+
+  Variables in use (CRM substitution syntax):
+    %name%                   = lead's full name
+    %event_name%             = the NEW event's name
+    %event_date%             = the NEW event's date
+    %event_day_of_week%      = day-of-week derived from event_date
+    %event_time%             = the NEW event's hours
+    %unsubscribe_url%        = per-recipient unsubscribe URL
+
+  All tenant values (Prizma) hardcoded inline per Daniel's directive 2026-04-28.
+
+  Canon: PRIZMA_DESIGN_SYSTEM_CANONICAL.md v1.1 (2026-04-28)
+  Copy decisions: COPY_DECISIONS_LOG.md → "Template — event_attendee_moved (UNPAID + PAID)"
+  Tone: System/info notification (option B per Daniel) — confirms move + payment carry-over.
+  ═══════════════════════════════════════════════════════════════════
+-->
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מקומכם הועבר - אופטיקה פריזמה</title>
+
+  <!-- Rubik web font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    table { border-collapse: collapse !important; }
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      background-color: #000000;
+      font-family: 'Rubik', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    @media screen and (max-width: 600px) {
+      .container { width: 100% !important; }
+      .mobile-padding { padding-left: 20px !important; padding-right: 20px !important; }
+      .event-box { padding: 20px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#000000; direction:rtl; font-family:'Rubik','Segoe UI',Tahoma,sans-serif;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#000000; background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000000 70%);">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+
+        <!-- Main Container -->
+        <table border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="max-width:600px; background-color:#1a1a1a; border-radius:12px; overflow:hidden; border: 1px solid #2d2d2d; box-shadow: 0 10px 40px rgba(201, 165, 85, 0.15);">
+
+          <!-- Gold Bar Top -->
+          <tr>
+            <td height="4" style="background: linear-gradient(135deg, #c9a555 0%, #c9a555 50%, #e8da94 100%); line-height:4px; font-size:0;">&nbsp;</td>
+          </tr>
+
+          <!-- Wordmark -->
+          <tr>
+            <td align="center" style="padding: 40px 0 20px 0;">
+              <p style="margin:0; color:#c9a555; font-size:24px; font-weight:700; letter-spacing:4px; text-transform:uppercase; font-family:'Rubik','Segoe UI',sans-serif;">
+                PRIZMA OPTIC
+              </p>
+              <p style="margin:5px 0 0 0; color:#999999; font-size:12px; letter-spacing:2px; text-transform:uppercase; font-family:'Rubik','Segoe UI',sans-serif;">
+                Luxury Eyewear Events
+              </p>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td class="mobile-padding" style="padding: 20px 50px 40px 50px; text-align:right;">
+
+              <h1 style="margin:0 0 20px 0; font-size:26px; font-weight:700; color:#ffffff; text-align:right; line-height:1.3;">
+                %name%,
+              </h1>
+
+              <p style="margin:0 0 30px 0; font-size:16px; line-height:1.7; color:#cccccc; text-align:right;">
+                <strong style="color:#ffffff;">מקומכם הועבר לאירוע המותגים %event_name%</strong>.
+                <br>
+                להלן פרטי האירוע החדש:
+              </p>
+
+              <!-- ═══ EVENT DETAILS CARD (B variant: date + time + name only, no Waze) ═══ -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#1a1a1a; border:1px solid #2d2d2d; border-right:4px solid #c9a555; border-radius:12px; margin-bottom:25px;">
+                <tr>
+                  <td class="event-box" style="padding: 25px;">
+                    <p style="margin:0 0 5px 0; font-size:12px; font-weight:700; color:#c9a555; text-transform:uppercase; letter-spacing:0.15em;">
+                      פרטי האירוע החדש
+                    </p>
+                    <p style="margin:0 0 18px 0; font-size:22px; font-weight:700; color:#ffffff;">
+                      %event_name%
+                    </p>
+                    <table border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td width="32" valign="middle" style="padding-bottom:12px;">
+                          <!-- Heroicons outline: calendar -->
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a555" stroke-width="1.5" style="vertical-align:middle;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
+                          </svg>
+                        </td>
+                        <td valign="middle" style="font-size:16px; color:#ffffff; padding-bottom:12px;">
+                          <strong>%event_day_of_week%, %event_date%</strong>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td width="32" valign="middle">
+                          <!-- Heroicons outline: clock -->
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a555" stroke-width="1.5" style="vertical-align:middle;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </td>
+                        <td valign="middle" style="font-size:16px; color:#cccccc;">
+                          שעות הפעילות: %event_time%
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- ═══ PAYMENT CARRY-OVER NOTICE (success-tinted) ═══ -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: rgba(124,252,154,0.05); border:1px solid rgba(124,252,154,0.30); border-radius:12px; margin-bottom:25px;">
+                <tr>
+                  <td style="padding: 18px 22px;">
+                    <table border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td valign="middle" style="padding-bottom:8px;">
+                          <!-- Heroicons solid: check-circle -->
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#7CFC9A" style="vertical-align:middle; margin-left:6px;">
+                            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>
+                          </svg>
+                          <span style="font-size:12px; font-weight:700; color:#7CFC9A; text-transform:uppercase; letter-spacing:0.15em;">דמי השריון עוברים יחד</span>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="margin:0; font-size:15px; line-height:1.7; color:#cccccc;">
+                      דמי שריון המקום ששילמתם עבור האירוע הקודם <strong style="color:#ffffff;">עוברים אוטומטית למקום החדש</strong> - אין צורך לשלם שוב.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- ═══ INFO PARAGRAPH ═══ -->
+              <p style="margin:0 0 25px 0; font-size:15px; line-height:1.7; color:#cccccc; text-align:right;">
+                הקופון האישי שלכם תקף לאירוע החדש. כל מה שנשאר זה להגיע איתו ביום האירוע.
+              </p>
+
+              <!-- Sign Off -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 15px; border-top: 1px solid #2d2d2d;">
+                <tr>
+                  <td style="padding-top: 20px;">
+                    <p style="margin:0; font-size:15px; color:#ffffff;">נתראה,</p>
+                    <p style="margin:5px 0 0 0; font-size:15px; color:#c9a555; font-weight:700;">צוות אופטיקה פריזמה</p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Unsubscribe Block -->
+          <tr>
+            <td align="center" style="padding: 18px 20px; border-top: 1px solid #2d2d2d; color:#999999; font-size:12px; line-height:1.6;">
+              <p style="margin:0 0 10px 0;">המייל נשלח אליכם בעקבות העברת מקומכם בין אירועי המותגים של אופטיקה פריזמה.</p>
+              <a href="%unsubscribe_url%" style="color:#c9a555; text-decoration:underline;">הסרה מרשימת התפוצה</a>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- ═══ COPYRIGHT ═══ -->
+        <table border="0" cellpadding="0" cellspacing="0" width="600" class="container">
+          <tr>
+            <td align="center" style="padding: 20px 0; color:#666666; font-size:11px; line-height:1.6;">
+              © כל הזכויות שמורות לאופטיקה פריזמה | הרצל 32, אשקלון
+              <br>
+              ההטבות והמחירים בכפוף לתנאי התקנון וזמינות המלאי.
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

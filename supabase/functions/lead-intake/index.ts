@@ -88,70 +88,10 @@ function normalizePhone(raw: string): string | null {
   return e164;
 }
 
-/**
- * Dispatch SMS + email messages via the send-message Edge Function.
- * Failures are logged but never bubble up — the lead is already persisted,
- * and crm_message_log captures the failure for operator follow-up.
- * Uses raw fetch with the anon key (same pattern as direct curl tests);
- * SERVICE_ROLE_KEY is rejected by the Edge Function gateway with 401.
- */
-const SEND_MESSAGE_URL = `${SUPABASE_URL}/functions/v1/send-message`;
-
-async function dispatchIntakeMessages(
-  tenantId: string,
-  leadId: string,
-  templateBaseSlug: string,
-  name: string,
-  phone: string,
-  email: string | null,
-): Promise<void> {
-  const variables: Record<string, string> = { name, phone };
-  if (email) variables.email = email;
-
-  const calls: Promise<unknown>[] = [];
-  calls.push(callSendMessage(tenantId, leadId, "sms", templateBaseSlug, variables));
-  if (email) {
-    calls.push(callSendMessage(tenantId, leadId, "email", templateBaseSlug, variables));
-  }
-  await Promise.allSettled(calls);
-}
-
-async function callSendMessage(
-  tenantId: string,
-  leadId: string,
-  channel: "sms" | "email",
-  templateSlug: string,
-  variables: Record<string, string>,
-): Promise<void> {
-  try {
-    const res = await fetch(SEND_MESSAGE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${ANON_KEY}`,
-        "apikey": ANON_KEY,
-      },
-      body: JSON.stringify({
-        tenant_id: tenantId,
-        lead_id: leadId,
-        channel,
-        template_slug: templateSlug,
-        variables,
-      }),
-    });
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      console.error(
-        `send-message ${channel}/${templateSlug} HTTP ${res.status}: ${txt.slice(0, 200)}`,
-      );
-    }
-  } catch (e) {
-    console.error(
-      `send-message ${channel}/${templateSlug} exception:`,
-      (e as Error).message || e,
-    );
-  }
-}
+// Rung 2 (P5_V2_REBUILD_RUNG2_RULES_REWIRE): dispatch helpers extracted to
+// dispatch.ts to keep this file under Rule 12 cap and to add the Rule 2.1
+// fresh-lead path (active-event lookup + T5/T1 branch + attendee upsert).
+import { dispatchFreshLead, dispatchIntakeMessages } from "./dispatch.ts";
 
 // --- Main handler ---
 
@@ -253,6 +193,7 @@ Deno.serve(async (req: Request) => {
       .not("unsubscribed_at", "is", null);
 
     await dispatchIntakeMessages(
+      db,
       tenantId,
       existing.id,
       "lead_intake_duplicate",
@@ -313,6 +254,7 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
       if (racedRow?.id) {
         await dispatchIntakeMessages(
+          db,
           tenantId,
           racedRow.id,
           "lead_intake_duplicate",
@@ -332,14 +274,7 @@ Deno.serve(async (req: Request) => {
     return errorResponse("Could not create lead", 500);
   }
 
-  await dispatchIntakeMessages(
-    tenantId,
-    inserted.id,
-    "lead_intake_new",
-    name,
-    phone,
-    email,
-  );
+  await dispatchFreshLead(db, tenantId, inserted.id, name, phone, email);
 
   return jsonResponse({
     id: inserted.id,

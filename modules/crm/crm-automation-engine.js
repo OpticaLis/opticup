@@ -26,11 +26,15 @@
   function tid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
 
   // Map of client-side trigger types → {entity, event} columns in crm_automation_rules.
+  // attendee_moved (Rung 2 / 2026-04-28): fired by Rung 3's manual-move RPC.
+  // Inert pre-Rung-3 — rule rows for "manual move notification" sit in DB but
+  // never fire until the move dialog wires up.
   var TRIGGER_TYPES = {
     event_status_change: { entity: 'event',    event: 'status_change' },
     event_registration:  { entity: 'attendee', event: 'created'       },
     lead_status_change:  { entity: 'lead',     event: 'status_change' },
-    lead_intake:         { entity: 'lead',     event: 'created'       }
+    lead_intake:         { entity: 'lead',     event: 'created'       },
+    attendee_moved:      { entity: 'attendee', event: 'moved'         }
   };
   window.CRM_AUTOMATION_TRIGGER_TYPES = TRIGGER_TYPES;
 
@@ -73,74 +77,23 @@
   // Resolve recipients for a rule. Returns an array of lead rows
   // { id, full_name, phone, email } filtered per the recipient_type.
   // P21: optional `actionConfig.recipient_status_filter` narrows the tier2
-  // status list to specific statuses (e.g. ["waiting"]). Empty/missing →
-  // fall back to the full tier2 list (backwards-compatible).
-  async function resolveRecipients(recipientType, tenantId, triggerData, actionConfig) {
-    var tier2 = window.TIER2_STATUSES || ['waiting','invited','confirmed','confirmed_verified'];
-    var cfg = actionConfig || {};
-    var eventId = triggerData && triggerData.eventId;
-    var leadId  = triggerData && triggerData.leadId;
-
-    if (recipientType === 'trigger_lead') {
-      if (!leadId) return [];
-      var leadRes = await sb.from('crm_leads').select('id, full_name, phone, email, unsubscribed_at, is_deleted')
-        .eq('tenant_id', tenantId).eq('id', leadId).single();
-      if (leadRes.error || !leadRes.data) return [];
-      if (leadRes.data.unsubscribed_at || leadRes.data.is_deleted) return [];
-      return [leadRes.data];
+  // status list to specific statuses. Rung 2: implementation extracted to
+  // crm-automation-recipient-resolvers.js (Rule 12 cap + Rule 21 — engine
+  // delegates instead of redefining the same function name).
+  function _engineResolveRecipients(recipientType, tenantId, triggerData, actionConfig) {
+    if (window.CrmAutomationRecipients && CrmAutomationRecipients.resolve) {
+      return CrmAutomationRecipients.resolve(recipientType, tenantId, triggerData, actionConfig);
     }
-
-    // tier2 / tier2_excl_registered / leads_by_status all select from crm_leads
-    // by status. Difference: tier2* defaults to the full tier2 list when no
-    // filter is provided; leads_by_status (EVENT_CLOSE_COMPLETE_STATUS_FLOW)
-    // REQUIRES an explicit filter and returns empty otherwise.
-    if (recipientType === 'tier2' || recipientType === 'tier2_excl_registered' || recipientType === 'leads_by_status') {
-      var hasFilter = Array.isArray(cfg.recipient_status_filter) && cfg.recipient_status_filter.length;
-      if (recipientType === 'leads_by_status' && !hasFilter) { console.warn('CrmAutomation: leads_by_status requires recipient_status_filter'); return []; }
-      var statusList = hasFilter ? cfg.recipient_status_filter : tier2;
-      var lRes = await sb.from('crm_leads').select('id, full_name, phone, email')
-        .eq('tenant_id', tenantId).eq('is_deleted', false).is('unsubscribed_at', null).in('status', statusList);
-      if (lRes.error) throw new Error('recipients tier2: ' + lRes.error.message);
-      var leads = lRes.data || [];
-      if (recipientType === 'tier2_excl_registered' && eventId) {
-        var xRes = await sb.from('crm_event_attendees').select('lead_id')
-          .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false);
-        if (xRes.error) throw new Error('recipients exclude: ' + xRes.error.message);
-        var excluded = {};
-        (xRes.data || []).forEach(function (r) { if (r.lead_id) excluded[r.lead_id] = true; });
-        leads = leads.filter(function (l) { return !excluded[l.id]; });
-      }
-      return leads;
-    }
-
-    if (recipientType === 'attendees' || recipientType === 'attendees_waiting' || recipientType === 'attendees_all_statuses') {
-      if (!eventId) return [];
-      var attStatus;
-      if (recipientType === 'attendees_waiting') attStatus = ['waiting_list'];
-      else if (recipientType === 'attendees_all_statuses') attStatus = null; // no filter
-      else attStatus = ['registered','confirmed','attended','purchased','no_show'];
-      var q = sb.from('crm_event_attendees').select('crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
-        .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false);
-      if (attStatus) q = q.in('status', attStatus);
-      var aRes = await q;
-      if (aRes.error) throw new Error('recipients attendees: ' + aRes.error.message);
-      return (aRes.data || [])
-        .map(function (r) { return r.crm_leads; })
-        .filter(function (l) { return l && !l.unsubscribed_at && !l.is_deleted; });
-    }
-
-    console.warn('CrmAutomation: unknown recipient_type', recipientType);
-    return [];
+    console.error('CrmAutomation: CrmAutomationRecipients not loaded');
+    return Promise.resolve([]);
   }
-  window.CRM_AUTOMATION_RESOLVE_RECIPIENTS = resolveRecipients;
+  window.CRM_AUTOMATION_RESOLVE_RECIPIENTS = _engineResolveRecipients;
 
-  // Build the variables object the send-message EF needs. Reuses buildEventVariables
-  // from crm-event-actions.js when available (for event-scoped triggers).
+  // Build %var% substitution map for plan-item preview. Real URLs/HMACs are
+  // injected server-side by send-message EF at dispatch time.
   async function buildVariables(triggerData, lead) {
     var vars = { name: lead.full_name || '', phone: lead.phone || '', email: lead.email || '' };
     vars.lead_id = lead.id || '';
-    // P-FINAL: preview placeholder only — real HMAC unsubscribe token is
-    // generated server-side in send-message EF at actual send time (90-day TTL).
     vars.unsubscribe_url = '[קישור הסרה — יצורף אוטומטית]';
     var evt = triggerData && triggerData.event;
     // If the trigger carries an event, merge event variables.
@@ -169,9 +122,6 @@
     return vars;
   }
 
-  // P20: Template cache + variable substitution for client-side preview.
-  // Same %var% pattern the send-message EF uses server-side; preview is
-  // informational (EF re-substitutes on actual send).
   async function fetchTemplate(cache, tenantId, base, channel, language) {
     var key = base + '|' + channel + '|' + (language || 'he');
     if (cache.has(key)) return cache.get(key);
@@ -191,13 +141,30 @@
     return out;
   }
 
-  // P20: prepare plan items for a rule (replaces fireRule's direct dispatch).
-  // Returns { items, skipped } — items carry everything the confirmation modal
-  // and the direct-dispatch fallback need.
-  async function prepareRulePlan(rule, triggerData, tplCache) {
+  // P20: prepare plan items for a rule. runId stamps queue_send rows so
+  // dispatch-queue → send-message → log rows all carry the run id.
+  async function prepareRulePlan(rule, triggerData, tplCache, runId) {
     var cfg = rule.action_config || {};
     var tenantId = tid();
     if (!tenantId) return { items: [], skipped: 1, resolvedLeadIds: [] };
+    // Rung 2 (P5_V2_REBUILD_RUNG2_RULES_REWIRE): queue_send writes future rows
+    // into crm_message_queue (drained by dispatch-queue EF + pg_cron). No
+    // immediate dispatch — items array stays empty; engine loop is a no-op
+    // for this rule. Idempotency: ON CONFLICT (tenant_id,event_id,lead_id,
+    // template_slug,channel) DO NOTHING via uq_crm_message_queue_idem.
+    if (rule.action_type === 'queue_send') {
+      if (!window.CrmAutomationQueueSend || !CrmAutomationQueueSend.prepare) {
+        console.error('CrmAutomation: CrmAutomationQueueSend not loaded');
+        return { items: [], skipped: 1, resolvedLeadIds: [] };
+      }
+      try {
+        var qsRes = await CrmAutomationQueueSend.prepare(rule, triggerData, tenantId, _engineResolveRecipients, runId);
+        return { items: [], skipped: 0, resolvedLeadIds: qsRes.leadIds || [], queued: qsRes.queued || 0 };
+      } catch (e) {
+        console.error('CrmAutomation queue_send:', e);
+        return { items: [], skipped: 1, resolvedLeadIds: [] };
+      }
+    }
     if (rule.action_type !== 'send_message') {
       console.warn('CrmAutomation: unsupported action_type', rule.action_type);
       return { items: [], skipped: 1, resolvedLeadIds: [] };
@@ -215,7 +182,7 @@
     }
 
     var leads;
-    try { leads = await resolveRecipients(recipientType, tenantId, triggerData, cfg); }
+    try { leads = await _engineResolveRecipients(recipientType, tenantId, triggerData, cfg); }
     catch (e) { console.error('CrmAutomation.prepareRulePlan recipients:', e); return { items: [], skipped: 0, resolvedLeadIds: [] }; }
     var resolvedLeadIds = leads.map(function (l) { return l.id; });
     if (!leads.length) return { items: [], skipped: 0, resolvedLeadIds: resolvedLeadIds };
@@ -299,13 +266,25 @@
     var rules = (res.data || []).filter(function (r) { return evaluateCondition(r.trigger_condition, triggerData || {}); });
     if (!rules.length) return { fired: 0, sent: 0, failed: 0, skipped: 0 };
 
+    // Run row written upfront (2026-04-29) so queue_send/post-action-only
+    // firings (T8/T9 etc.) appear in automation-history. total_recipients
+    // is patched after planItems + queued are known.
+    var runId = null;
+    if (window.CrmAutomationRuns) {
+      runId = await CrmAutomationRuns.createRun(tenantId, rules, triggerType, triggerData, triggerData && triggerData.eventId, 0);
+    }
+
     var tplCache = new Map();
-    var perRule = await Promise.allSettled(rules.map(function (r) { return prepareRulePlan(r, triggerData || {}, tplCache); }));
-    var planItems = [], skipped = 0, ruleResolvedIds = [];
+    var perRule = await Promise.allSettled(rules.map(function (r) { return prepareRulePlan(r, triggerData || {}, tplCache, runId); }));
+    var planItems = [], skipped = 0, ruleResolvedIds = [], totalQueued = 0;
     perRule.forEach(function (pr, i) {
       var v = pr.status === 'fulfilled' ? pr.value : null;
-      if (v) { planItems = planItems.concat(v.items || []); skipped += v.skipped || 0; ruleResolvedIds[i] = v.resolvedLeadIds || []; }
-      else { skipped++; ruleResolvedIds[i] = []; }
+      if (v) {
+        planItems = planItems.concat(v.items || []);
+        skipped += v.skipped || 0;
+        ruleResolvedIds[i] = v.resolvedLeadIds || [];
+        totalQueued += v.queued || 0;
+      } else { skipped++; ruleResolvedIds[i] = []; }
     });
 
     // Bulk post-actions run after resolve, before dispatch — lifecycle transitions are user-gate-independent.
@@ -315,15 +294,34 @@
         catch (e) { console.error('CrmAutomation post-action:', e); }
       }
     }
-
-    if (!planItems.length) { if (window.Toast) Toast.info('כלל אוטומציה הופעל, אך אין נמענים מתאימים'); return { fired: rules.length, sent: 0, failed: 0, skipped: skipped }; }
-
-    // OVERNIGHT_M4_SCALE_AND_UI Phase 4: observability run row.
-    var runId = null;
-    if (window.CrmAutomationRuns) {
-      runId = await CrmAutomationRuns.createRun(tenantId, rules, triggerType, triggerData, triggerData && triggerData.eventId, planItems.length);
-      if (runId) planItems.forEach(function (it) { it.run_id = runId; });
+    // Rung 2: attendee_upsert post-action (Rules 2.2 / 2.4). Same loop, separate hook.
+    if (window.CrmAutomationPostActions && CrmAutomationPostActions.attendeeUpsert) {
+      for (var ai = 0; ai < rules.length; ai++) {
+        try { await CrmAutomationPostActions.attendeeUpsert(rules[ai], ruleResolvedIds[ai] || [], triggerData || {}); }
+        catch (e) { console.error('CrmAutomation attendee_upsert:', e); }
+      }
     }
+
+    // Update total_recipients now that planItems + queued count are known.
+    var totalRecipients = planItems.length + totalQueued;
+    if (runId && totalRecipients > 0) {
+      try { await sb.from('crm_automation_runs').update({ total_recipients: totalRecipients }).eq('id', runId); }
+      catch (e) { console.error('CrmAutomation total_recipients update:', e); }
+    }
+
+    if (!planItems.length) {
+      // queue_send-only or post-action-only fire: still close the run row so
+      // automation-history shows it (status='completed', sent_count derived
+      // from log later when dispatch-queue drains).
+      if (runId && window.CrmAutomationRuns) await CrmAutomationRuns.finishRun(runId, 'completed');
+      if (window.Toast) {
+        if (totalQueued > 0) Toast.info('הוצבו ' + totalQueued + ' הודעות בתור');
+        else Toast.info('כלל אוטומציה הופעל, אך אין נמענים מתאימים');
+      }
+      return { fired: rules.length, sent: 0, failed: 0, skipped: skipped, queued: totalQueued, run_id: runId };
+    }
+
+    if (runId) planItems.forEach(function (it) { it.run_id = runId; });
 
     if (window.CrmConfirmSend && typeof CrmConfirmSend.show === 'function') {
       CrmConfirmSend.show(planItems); // fire-and-forget; finish-run happens in approveAndSend
@@ -335,13 +333,13 @@
       var m = 'נשלחו ' + r.sent + ', נכשלו ' + r.failed + ', נדחו ' + (r.rejected || 0);
       Toast[(r.failed === 0 && (r.rejected || 0) === 0) ? 'success' : 'warning'](m);
     }
-    return { fired: rules.length, sent: r.sent, failed: r.failed, rejected: r.rejected || 0, skipped: skipped, run_id: runId };
+    return { fired: rules.length, sent: r.sent, failed: r.failed, rejected: r.rejected || 0, skipped: skipped, queued: totalQueued, run_id: runId };
   }
 
   window.CrmAutomation = {
     evaluate: evaluate,
     evaluateCondition: evaluateCondition,
-    resolveRecipients: resolveRecipients,
+    resolveRecipients: _engineResolveRecipients,
     prepareRulePlan: prepareRulePlan,
     TRIGGER_TYPES: TRIGGER_TYPES,
     CONDITIONS: CONDITIONS
