@@ -17,9 +17,13 @@
   var CLS_RUNNING_TOT  = 'mt-4 pt-3 border-t-2 border-emerald-300 flex justify-between items-center bg-emerald-100 rounded-lg px-3 py-2';
 
   var _filter = '';
-  // P24: multi-select status filter. null = "no filter set yet, default to all active".
-  // Set of slugs after first user interaction. Empty array = "no chips active" (= empty state).
-  var _statusFilters = null;
+  // P24 (commit 7): negative-set status filter. Holds slugs the admin has
+  // explicitly deactivated. Active set is derived as
+  // (slugs present in current data) MINUS _statusOff. Default state has _statusOff=[]
+  // so ALL chips render active — including chips that appear mid-session (e.g.,
+  // a 'cancelled' chip that surfaces after an in-session cancellation).
+  // Empty-state ("no chips active") means every present slug is in _statusOff.
+  var _statusOff = [];
   var _editingId = null;
 
   function toast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
@@ -59,10 +63,9 @@
       var ob = sb ? sb.sort_order : 9999;
       return oa - ob;
     });
-    if (_statusFilters === null) _statusFilters = ordered.slice();
     var html = ordered.map(function (slug) {
       var info = CrmHelpers.getStatusInfo('attendee', slug);
-      var active = _statusFilters.indexOf(slug) !== -1;
+      var active = _statusOff.indexOf(slug) === -1;
       var cls = active
         ? 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-600 text-white shadow-sm cursor-pointer'
         : 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 cursor-pointer';
@@ -73,8 +76,8 @@
     host.querySelectorAll('[data-status-chip]').forEach(function (b) {
       b.addEventListener('click', function () {
         var slug = b.getAttribute('data-status-chip');
-        var idx = _statusFilters.indexOf(slug);
-        if (idx === -1) _statusFilters.push(slug); else _statusFilters.splice(idx, 1);
+        var idx = _statusOff.indexOf(slug);
+        if (idx === -1) _statusOff.push(slug); else _statusOff.splice(idx, 1);
         renderStatusChips();
         renderTable();
       });
@@ -120,9 +123,11 @@
   function filterRows(all) {
     var s = _filter.trim().toLowerCase();
     return (all || []).filter(function (r) {
-      // P24: chip-based multi-select. _statusFilters===null means "first render,
-      // all active". Empty array means "user deactivated all chips → empty state".
-      if (_statusFilters !== null && _statusFilters.indexOf(r.status) === -1) return false;
+      // P24 (commit 7): negative-set filter — exclude rows whose status was
+      // explicitly deactivated by the admin. Default = nothing in _statusOff,
+      // so all rows pass; new statuses appearing mid-session are not in
+      // _statusOff and therefore visible by default.
+      if (_statusOff.indexOf(r.status) !== -1) return false;
       if (s && (r.full_name || '').toLowerCase().indexOf(s) === -1 && (r.phone || '').toLowerCase().indexOf(s) === -1) return false;
       return true;
     });
