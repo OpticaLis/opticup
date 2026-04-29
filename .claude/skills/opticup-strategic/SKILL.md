@@ -570,6 +570,142 @@ Does NOT apply to: helpers whose output is consumed only by other code paths
 (e.g., `getTenantId`, `getVatRate` — both return raw values, not formatted
 strings).
 
+
+#### Step 1.5j — CHECK-constraint scan for new column values (from P23 + P23.1 reviews)
+
+When the SPEC will write a NEW value to an existing column (any `payment_status`,
+`status`, slug, enum-shaped text column), run BEFORE drafting §2 baseline:
+
+    SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint
+     WHERE conrelid='public.<table>'::regclass AND contype='c';
+
+If any CHECK constraint enumerates allowed values
+(e.g., `payment_status = ANY (ARRAY[...])`), the SPEC's "value addition" framing
+is **wrong** — this is a Level-3 schema change (Daniel-only). Rewrite §2 to say
+"schema change required" and include the migration plan in §8 commit plan,
+gated on Daniel approval.
+
+**Rationale:** P23 SPEC declared "`payment_status` is text, not enum — adding a
+new value is a value addition" based on `SELECT DISTINCT payment_status` alone.
+The CHECK constraint underneath was invisible to that query. The miss cost a
+broken UX path silently 400ing in production until P23.1 shipped a corrective
+migration. A 5-second `pg_constraint` query at SPEC authoring time prevents
+the entire chain.
+
+**Applies to:** any column receiving a new written value where the value isn't
+already known to be present. **Does NOT apply to:** numeric counters,
+free-text fields, JSON columns.
+
+#### Step 1.5k — Business-semantics mapping for status-bearing columns (from P24 review)
+
+When the SPEC reads, writes, or filters a status/state column
+(`payment_status`, `status`, `lifecycle_state`, etc.), enumerate every WRITE site
+in code AND every RPC body that touches the column. For each write site, answer:
+**"What business event triggers this write?"** Document in §2 Background.
+
+Use:
+
+    grep -rn "<column>:" --include='*.js' modules/
+    SELECT routine_name FROM information_schema.routines WHERE
+       routine_schema='public' AND routine_definition ILIKE '%<column>%';
+
+If two write sites describe the same business event with different field
+combinations (e.g., `markPaid` writes `paid_at` only, `transfer_credit` writes
+`paid_at + paid_via_credit`), the SPEC must answer: which is the canonical
+write, and is the second one's divergence intentional?
+
+If the SPEC's planned write would overwrite an existing semantic state
+(e.g., the new "send coupon = paid" path could clobber `credit_used`), the
+new UPDATE MUST be gated on the current state via a `WHERE current_value=...`
+filter. Document the gate in §3 Success Criteria.
+
+**Rationale:** P24 surfaced that `payment_status='paid'` was assumed to mean
+"money confirmed received", but the actual write paths (admin button,
+credit-transfer RPC) only covered 2 of 4 business events. The natural admin
+flow ("send coupon") bypassed both. The SPEC's understanding of when each
+value is set must be derived from code+DB, not assumed.
+
+**Applies to:** any column where the SPEC introduces a new write path.
+
+#### Step 1.5l — Stale-baseline freshness gate (from P23.1 + P24 reviews)
+
+If more than 24 hours pass between SPEC authoring and dispatch to executor,
+the SPEC's §2 line counts (and any other live measurements) MUST be
+re-verified before the executor begins commits. Either:
+
+- (a) re-run the `node -e "console.log(require('fs').readFileSync('<path>','utf8').split('\n').length)"` queries and update the §2 table, OR
+- (b) explicitly log "stale at dispatch — executor will re-verify" in §11
+  Lessons-Already-Incorporated, AND require the executor to re-baseline in
+  pre-flight.
+
+**Rationale:** P23.1 and P24 both shipped with §2 line counts that drifted
+between authoring and dispatch (other commits landing in between). The drift
+was caught by executor pre-flight thanks to Step 1.5e — but at the cost of one
+extra "STOP — pre-flight finds drift" cycle per SPEC. Building the freshness
+gate into the SPEC's own protocol pre-empts the cycle.
+
+#### Step 1.5m — Stop-trigger enumeration must distinguish data sites from semantic references (from P23.1 review)
+
+When §5 Stop-Triggers enumerates "matches outside the N expected sites for
+`<symbol>` — STOP", the listed sites are **data write/read sites only** —
+NOT every grep hit. Log strings, comment references, action-name vocabulary,
+and other semantic-only references are NOT in the count.
+
+The SPEC author MUST explicitly state in §5:
+
+> "Expected sites" means write/read sites for the value/symbol — NOT every
+> grep hit. Log strings, comments, and action-name vocabulary do NOT count.
+> If the executor finds a hit outside the N enumerated sites that is purely
+> semantic (log labels, comments), they may resolve it inline (rename or
+> keep) without escalating, recording the choice in EXECUTION_REPORT §4.
+
+**Rationale:** P23.1 §5 said "matches outside 4 expected sites — STOP". A
+5th hit at `cancel.js:130` was a log-action-name string. The executor
+correctly stopped per strict reading, escalated, Daniel chose K2. The
+escalation cost ~2 minutes that was avoidable. Future SPECs distinguish
+data sites (require escalation) from semantic references (do not).
+
+#### Step 1.5n — DDL + tenant-override clarifier (from P23.1 review)
+
+When the SPEC's commit plan includes DDL or DB-level migrations AND §10 QA
+specifies a tenant override (e.g., "QA on Prizma per Daniel directive"),
+the SPEC author MUST add a clarifying paragraph to §10:
+
+> **Tenant scope of DDL:** schema migrations are NOT tenant-scoped. Adding
+> a column / view / RPC change to a shared object affects every tenant in
+> the database. The QA-tenant directive applies to the *behavior
+> verification* scenarios, not to the *schema state* scenarios. The
+> executor should split scenarios into "DB state — affects all tenants"
+> and "UI behavior — bound to the named tenant" and note this split in
+> the QA matrix.
+
+**Rationale:** P23.1 executor had to escalate this exact question
+mid-flight before Daniel approved migration run. Pre-empting in the SPEC
+saves the round trip. P24 already ran into the same need.
+
+**Applies to:** any SPEC with DDL + a tenant override directive.
+
+#### Step 1.5o — State-machine three-transition test (from P24 review)
+
+When the SPEC introduces a module-level state variable controlling rendering
+(filter set, sort order, active tab, status chip group, multi-select
+selection set), the SPEC's QA matrix MUST include three explicit transitions:
+
+- (a) initial render with empty/default state
+- (b) state after one mutation triggered by user action
+- (c) state after a second mutation that introduces a NEW dimension —
+  a new status appearing, a new filter category becoming visible, etc.
+
+**Rationale:** P24 commit 5 used a positive-set initialization
+(`_statusFilters` populated once at first render) which silently broke
+when new statuses appeared mid-session. The bug only surfaced in
+scenario 8's "cancel mid-sweep" subcase — a SPEC-mandated 3-transition
+test would have caught it pre-commit. Generic SPECs touching
+filter/sort/tab state are required to test the dynamic-introduction case.
+
+**Applies to:** any SPEC introducing a state variable that filters or
+groups a list whose contents can grow at runtime.
+
 ### Step 2 — Create the SPEC Folder
 
 Location pattern (folder, NOT file):
