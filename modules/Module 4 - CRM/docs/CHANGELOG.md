@@ -745,3 +745,27 @@ Added explicit "בטל" cancel button on Event Day "ניהול" attendee rows th
 **New files:** `modules/crm/crm-event-day-coupon.js` (140 lines), `modules/crm/crm-attendee-cancel.js` (141 lines).
 **Modified:** `crm.html` (2 script tags + 1 banner anchor), `crm-event-day-manage.js` (extraction + cancel button wiring + cancelled-row hide filter + refreshAttendeeRow SELECT extension), `crm-payment-helpers.js` (no_refund_due in STATUS_LABELS / STATUS_COLORS / _renderInfoLine), `crm-dashboard.js` (loadRefundsBanner + openRefundsModal).
 **DB:** Zero schema changes. Zero seed data changes. New `payment_status` value `no_refund_due` written by the new flow only — existing rows unaffected.
+
+---
+
+## P23.1 — no_refund_due Boolean Column (2026-04-29)
+
+| Hash | Message |
+|------|---------|
+| `aaafd29` | `migrations(crm): add no_refund_due_marked boolean column` |
+| `0f12745` | `refactor(crm): swap no_refund_due payment_status to boolean column` |
+| `82c0e02` | `feat(crm): show chip alongside payment pill when no_refund_due_marked` |
+| _(pending)_ | `chore(crm): MODULE_MAP + CHANGELOG for P23.1` |
+| _(pending)_ | `chore(spec): close P23_1_NO_REFUND_DUE_BOOLEAN_COLUMN with retrospective` |
+
+Fast-follow to P23 — fixes Finding 1 (CRITICAL): `payment_status='no_refund_due'` was rejected by the CHECK constraint, so the "לא מגיע החזר" button on the cancel dialog silently returned 400. Daniel chose Route B (boolean column) over Route A (extend the enum) because "no refund due" is a managerial decision flag, not a money state.
+
+**DB:** `crm_event_attendees` gains 2 new columns — `no_refund_due_marked BOOLEAN NOT NULL DEFAULT false` and `no_refund_due_marked_at TIMESTAMPTZ NULL`. View `v_crm_event_attendees_full` recreated to expose both. `payment_status` CHECK constraint INTENTIONALLY UNCHANGED. Migration applied via Supabase MCP under name `p23_1_no_refund_due_boolean`. Down migration provided.
+
+**Code swap:** `crm-attendee-cancel.js:123` UPDATE writes `{no_refund_due_marked: true, no_refund_due_marked_at: now()}` instead of the broken enum write. Log action renamed to `crm.attendee.mark_no_refund_due_flag` (K2 per Daniel). `STATUS_COLORS`/`STATUS_LABELS` no_refund_due entries removed from `crm-payment-helpers.js`. `_renderInfoLine` reads the boolean.
+
+**Visual stacking:** `CrmPayment.renderNoRefundDueChip(attendee)` renders a gray "🚫 לא מגיע החזר" chip; returns '' when boolean false. Wired at all 5 `renderStatusPill` call sites — chip stacks beside the existing pill, primary money-state stays visible.
+
+**SELECT projections:** 4 attendee fetches now include `no_refund_due_marked` + `no_refund_due_marked_at` (event-day main load, events-detail main load, refreshAttendeeRow single-row, openCancelDialog pre-flight).
+
+**Migrations:** `modules/Module 4 - CRM/migrations/2026_04_29_no_refund_due_boolean_up.sql` + `..._down.sql`.
