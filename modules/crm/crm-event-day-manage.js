@@ -26,7 +26,6 @@
   var _statusOff = [];
   var _editingId = null;
 
-  function toast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
 
   /* ----------------------------------- MANAGE SUB-TAB ----------------------------------- */
 
@@ -40,7 +39,7 @@
       '<div id="crm-eventday-manage-table" class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden"></div>';
     renderStatusChips();
     wireSearchInput();
-    renderTable();
+    renderManageTable();
   }
   window.renderEventDayManage = renderEventDayManage;
 
@@ -79,17 +78,18 @@
         var idx = _statusOff.indexOf(slug);
         if (idx === -1) _statusOff.push(slug); else _statusOff.splice(idx, 1);
         renderStatusChips();
-        renderTable();
+        renderManageTable();
       });
     });
   }
 
   function wireSearchInput() {
     var s = document.getElementById('crm-eventday-manage-search');
-    if (s) s.addEventListener('input', function () { _filter = s.value || ''; renderTable(); });
+    if (s) s.addEventListener('input', function () { _filter = s.value || ''; renderManageTable(); });
   }
 
-  function renderTable() {
+  function renderManageTable() {  // P26 commit 0a: renamed from renderTable to free Rule 21 collision with crm-messaging-rules.js
+
     var wrap = document.getElementById('crm-eventday-manage-table');
     if (!wrap) return;
     var state = window.getEventDayState();
@@ -148,16 +148,16 @@
   }
 
   function wireRowActions(wrap) {
-    wrap.querySelectorAll('[data-edit-purchase]').forEach(function (b) { b.addEventListener('click', function () { _editingId = b.getAttribute('data-edit-purchase'); renderTable(); }); });
-    wrap.querySelectorAll('[data-cancel-edit]').forEach(function (b) { b.addEventListener('click', function () { _editingId = null; renderTable(); }); });
+    wrap.querySelectorAll('[data-edit-purchase]').forEach(function (b) { b.addEventListener('click', function () { _editingId = b.getAttribute('data-edit-purchase'); renderManageTable(); }); });
+    wrap.querySelectorAll('[data-cancel-edit]').forEach(function (b) { b.addEventListener('click', function () { _editingId = null; renderManageTable(); }); });
     wrap.querySelectorAll('input[data-save-purchase]').forEach(function (inp) {
-      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); savePurchase(inp); } else if (e.key === 'Escape') { _editingId = null; renderTable(); } });
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); savePurchase(inp); } else if (e.key === 'Escape') { _editingId = null; renderManageTable(); } });
       inp.addEventListener('blur', function () { setTimeout(function () { savePurchase(inp); }, 150); });
     });
     wrap.querySelectorAll('[data-toggle-coupon]').forEach(function (b) {
       b.addEventListener('click', function () {
         CrmEventDayCoupon.toggleCoupon(b.getAttribute('data-toggle-coupon'), b, {
-          renderTable: renderTable,
+          renderTable: renderManageTable,
           updateLocal: updateLocal
         });
       });
@@ -250,7 +250,7 @@
   window.openPurchaseAmountModal = openPurchaseAmountModal;
 
   async function savePurchaseAmount(id, amount, modal) {
-    if (!isFinite(amount) || amount < 0) { toast('error', 'סכום לא תקין'); return; }
+    if (!isFinite(amount) || amount < 0) { CrmHelpers.toast('error', 'סכום לא תקין'); return; }
     var state = window.getEventDayState();
     var a = (state.attendees || []).find(function (x) { return x.id === id; });
     if (!a) return;
@@ -258,8 +258,8 @@
     if (amount > 0 && a.status !== 'purchased') patch.status = 'purchased';
     if (amount > 0 && !a.purchased_at) patch.purchased_at = new Date().toISOString();
     var { error } = await sb.from('crm_event_attendees').update(patch).eq('id', id).eq('tenant_id', getTenantId());
-    if (error) { toast('error', 'שמירה נכשלה: ' + error.message); return; }
-    logActivity('crm.attendee.purchase_update', id, { amount: amount });
+    if (error) { CrmHelpers.toast('error', 'שמירה נכשלה: ' + error.message); return; }
+    CrmHelpers.logActivity('crm.attendee.purchase_update', 'crm_event_attendees', id, { event_id: window.getEventDayState().eventId, amount: amount });
     Object.assign(a, patch);
     if (window.refreshEventDayStats) await window.refreshEventDayStats();
     if (window.renderEventDayArrivedRefresh) window.renderEventDayArrivedRefresh();
@@ -271,24 +271,24 @@
     var id = inp.getAttribute('data-save-purchase');
     if (!id || _editingId !== id) return;
     var raw = inp.value;
-    if (raw === '' || raw == null) { _editingId = null; renderTable(); return; }
+    if (raw === '' || raw == null) { _editingId = null; renderManageTable(); return; }
     var amount = +raw;
-    if (!isFinite(amount) || amount < 0) { toast('error', 'סכום לא תקין'); return; }
+    if (!isFinite(amount) || amount < 0) { CrmHelpers.toast('error', 'סכום לא תקין'); return; }
     var state = window.getEventDayState();
     var a = (state.attendees || []).find(function (x) { return x.id === id; });
-    if (!a) { _editingId = null; renderTable(); return; }
-    if ((+a.purchase_amount || 0) === amount) { _editingId = null; renderTable(); return; }
+    if (!a) { _editingId = null; renderManageTable(); return; }
+    if ((+a.purchase_amount || 0) === amount) { _editingId = null; renderManageTable(); return; }
     var patch = { purchase_amount: amount };
     if (amount > 0 && a.status !== 'purchased') patch.status = 'purchased';
     if (amount > 0 && !a.purchased_at) patch.purchased_at = new Date().toISOString();
     var { error } = await sb.from('crm_event_attendees').update(patch).eq('id', id).eq('tenant_id', getTenantId());
-    if (error) { toast('error', 'שמירה נכשלה: ' + error.message); return; }
-    logActivity('crm.attendee.purchase_update', id, { amount: amount });
+    if (error) { CrmHelpers.toast('error', 'שמירה נכשלה: ' + error.message); return; }
+    CrmHelpers.logActivity('crm.attendee.purchase_update', 'crm_event_attendees', id, { event_id: window.getEventDayState().eventId, amount: amount });
     Object.assign(a, patch);
     _editingId = null;
     if (window.refreshEventDayStats) await window.refreshEventDayStats();
-    renderTable();
-    toast('success', '✅ נשמר');
+    renderManageTable();
+    CrmHelpers.toast('success', '✅ נשמר');
   }
 
   async function refreshAttendeeRow(id) {
@@ -296,7 +296,7 @@
     var res = await sb.from('crm_event_attendees').select('id, status, cancelled_at, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id, no_refund_due_marked, no_refund_due_marked_at, paid_via_credit').eq('id', id).eq('tenant_id', getTenantId()).single();
     if (res.error || !res.data) return;
     (state.attendees || []).forEach(function (a) { if (a.id === id) Object.assign(a, res.data); });
-    renderTable();
+    renderManageTable();
     if (window.CrmNotificationsBell && CrmNotificationsBell.refresh) CrmNotificationsBell.refresh();
   }
 
@@ -305,9 +305,4 @@
     (state.attendees || []).forEach(function (a) { if (a.id === id) Object.assign(a, patch); });
   }
 
-  function logActivity(action, entityId, metadata) {
-    if (window.ActivityLog && ActivityLog.write) {
-      try { ActivityLog.write({ action: action, entity_type: 'crm_event_attendees', entity_id: entityId, severity: 'info', metadata: Object.assign({ event_id: window.getEventDayState().eventId }, metadata || {}) }); } catch (_) {}
-    }
-  }
 })();

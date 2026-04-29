@@ -151,6 +151,32 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
     return (typeof getTenantId === 'function') ? getTenantId() : null;
   }
 
+  // --- Toast wrapper (P26 commit 0a — consolidates 4 duplicate file-local
+  //     helpers in manage / schedule / broadcast / rules). Falls back to
+  //     window.Toast.show if the requested type is not a Toast method.
+  function toast(type, msg) {
+    if (window.Toast && Toast[type]) Toast[type](msg);
+    else if (window.Toast && Toast.show) Toast.show(msg);
+  }
+
+  // --- Activity log wrapper (P26 commit 0a — consolidates the
+  //     logActivity / logWrite duplicates across 4 CRM files). entity_type
+  //     is now an explicit caller argument so each caller maps the action
+  //     to the right entity. Field names already correct (details, level)
+  //     per the P26 commit-1 fix on the underlying ActivityLog.write API.
+  function logActivity(action, entity_type, entity_id, details) {
+    if (window.ActivityLog && ActivityLog.write) {
+      try {
+        ActivityLog.write({
+          action: action,
+          entity_type: entity_type,
+          entity_id: entity_id,
+          details: details || {}
+        });
+      } catch (_) {}
+    }
+  }
+
   window.CrmHelpers = {
     formatPhone: formatPhone,
     normalizePhone: normalizePhone,
@@ -163,7 +189,9 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
     statusBadgeHtml: statusBadgeHtml,
     distinctValues: distinctValues,
     heCompare: heCompare,
-    tid: tid
+    tid: tid,
+    toast: toast,
+    logActivity: logActivity
   };
 
   // Export tier constants

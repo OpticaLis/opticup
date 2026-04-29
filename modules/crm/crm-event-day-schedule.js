@@ -111,25 +111,25 @@
       var payload = res.data || {};
 
       if (payload.success) {
-        logActivity('crm.attendee.checked_in', attendeeId, { event_id: window.getEventDayState().eventId, source: 'schedule_board' });
+        CrmHelpers.logActivity('crm.attendee.checked_in', 'crm_event_attendees', attendeeId, { event_id: window.getEventDayState().eventId, source: 'schedule_board' });
         updateLocalAttendee(attendeeId, { checked_in_at: payload.checked_in_at, status: 'attended' });
         if (typeof window.refreshEventDayStats === 'function') await window.refreshEventDayStats();
         renderBoard();
-        toast('success', '✅ הכניסה נרשמה');
+        CrmHelpers.toast('success', '✅ הכניסה נרשמה');
       } else if (payload.error === 'already_checked_in') {
         updateLocalAttendee(attendeeId, { checked_in_at: payload.checked_in_at });
         renderBoard();
-        toast('warning', 'המשתתף כבר נכנס ב-' + formatTime(payload.checked_in_at));
+        CrmHelpers.toast('warning', 'המשתתף כבר נכנס ב-' + formatTime(payload.checked_in_at));
       } else {
         chip.innerHTML = originalHtml;
         chip.disabled = false;
-        toast('error', 'שגיאה: ' + (payload.error || 'unknown'));
+        CrmHelpers.toast('error', 'שגיאה: ' + (payload.error || 'unknown'));
       }
     } catch (e) {
       console.error('check-in failed:', e);
       chip.innerHTML = originalHtml;
       chip.disabled = false;
-      toast('error', 'כשל בכניסה: ' + (e.message || String(e)));
+      CrmHelpers.toast('error', 'כשל בכניסה: ' + (e.message || String(e)));
     }
   }
 
@@ -138,23 +138,4 @@
     (state.attendees || []).forEach(function (a) { if (a.id === id) Object.assign(a, patch); });
   }
 
-  function logActivity(action, entityId, metadata) {
-    if (window.ActivityLog && typeof ActivityLog.write === 'function') {
-      try {
-        ActivityLog.write({
-          action: action,
-          entity_type: 'crm_event_attendees',
-          entity_id: entityId,
-          severity: 'info',
-          metadata: metadata || {}
-        });
-      } catch (_) { /* non-blocking */ }
-    }
-  }
-
-  function toast(type, msg) {
-    if (window.Toast && typeof Toast[type] === 'function') Toast[type](msg);
-    else if (window.Toast && typeof Toast.show === 'function') Toast.show(msg);
-    else console.log('[' + type + ']', msg);
-  }
 })();
