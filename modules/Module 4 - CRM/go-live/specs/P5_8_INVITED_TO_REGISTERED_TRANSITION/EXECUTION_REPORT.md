@@ -197,3 +197,92 @@ None for this SPEC.
 ## 10. Awaiting Foreman review
 
 Awaiting Foreman review and Daniel UAT for Flow 4 retest.
+
+---
+
+## 11. Appendix — Fix D (post-Flow-4-attempt amendment, 2026-04-29 12:55Z)
+
+### Trigger
+
+Daniel completed Flow 4 form submission successfully (no "כבר נרשמת" rejection — Fix A working) but **the confirmation SMS did not arrive** while the email did.
+
+### Diagnosis
+
+`crm_message_log` for lead `a262bc0e-...` post-form-submit (12:39:52Z):
+- email row: `status='sent'` ✓
+- SMS row: **`status='failed'`, `error_message='payment_link_missing_or_mismatch:50'`**
+
+The SMS body (preview from log) contained literal `%event_deposit_amount%` and `%payment_url_50%` post-substitution. `scanForPaymentUrlMismatch` in `send-message/event-variables.ts` (Pattern P12) blocked the send before Make was called — so no exec, no DLQ change.
+
+### Root cause
+
+`event-register/index.ts` `callSendMessage` did NOT pass `event_id` in the send-message payload. `send-message/index.ts` only invokes `injectEventVariables` (which resolves `%event_deposit_amount%` from `crm_events.booking_fee` and `%payment_url_<fee>%` from `tenants.payment_links`) when the payload contains `event_id`. Lead-intake's `dispatch.ts:112` already does this; event-register was missed.
+
+This bug **pre-existed P5_8** but only surfaced today because today's Cowork edit (per `SHORTENING_PROPOSALS.md` Finding C resolution) replaced the previously-hardcoded `50 ₪` and `https://prizmaoptic.short.gy/gmapy` in `event_registration_confirmation_sms_he` with `%event_deposit_amount%` + `%payment_url_50%` (Rule 9 fix). With the prior hardcoded body, no event-derived substitution was needed; with the new body, it is required.
+
+### Blast-radius audit (templates fired by event-register)
+
+Queried `crm_message_templates` for variable usage:
+
+| Template | uses `%payment_url%` | uses `%event_deposit_amount%` | Other event-derived vars |
+|---|---|---|---|
+| `event_registration_confirmation_sms_he` | **YES** | **YES** | `%event_date%` |
+| `event_registration_confirmation_email_he` | no | no | `event_name`, `event_date`, `event_time` |
+| `event_waiting_list_confirmation_sms_he` | no | no | `event_name` |
+| `event_waiting_list_confirmation_email_he` | no | no | `event_name`, `event_date`, `event_time`, `event_location` |
+
+**Only `event_registration_confirmation_sms_he` was silently failing.** All other templates use vars that event-register already pre-supplies in its variables map (lines 326-330 of index.ts). So blast-radius = 1 template.
+
+Pre-existing inconsistency surfaced (NOT fixed in Fix D, flagged for follow-up): event-register pre-sets `event_date` as raw `YYYY-MM-DD` from `crm_events.event_date`, while `injectEventVariables` formats to `DD/MM/YYYY`. With Fix D, event-register's pre-set wins (because `injectEventVariables` only fills when `vars.X == null`). Result: form-path SMS shows `📅 2026-05-27`; T5/lead-intake-path SMS shows `📅 27/05/2026`. Format inconsistency, not a delivery blocker.
+
+### Fix D — `event-register/index.ts` plumbs `event_id`
+
+3 locations:
+- `dispatchRegistrationMessages` signature: added `eventId: string` param.
+- `callSendMessage` signature + JSON body: added `eventId` param + `event_id: eventId,` field.
+- Call site (line 331): passes `body.event_id!` through.
+
+Comment block compressed to 4 lines + signatures collapsed to 2 lines each to keep file ≤350 (Rule 12). Final `event-register/index.ts`: 346 lines.
+
+### Test state reset
+
+Soft-deleted canary attendee `ce1e02a9-...` (UPDATE returned `status='registered', is_deleted=true`). When Daniel re-clicks the registration link, `register_lead_to_event` will hit its soft-delete-revival branch (UPDATE back to `status='registered'`, capacity-bypass) and fire the confirmation dispatch through the now-fixed event-register EF. Lead row untouched (still `status='confirmed'`).
+
+This reset path validates Fix D end-to-end through the same form click but does NOT re-validate Fix A's `invited→registered` promote (the canary attendee is no longer `invited`). Fix A was already verified in Daniel's first Flow 4 attempt (the form succeeded — that branch ran cleanly).
+
+### Required CLI redeploy
+
+```bash
+supabase functions deploy event-register --project-ref tsxrrxzmdxaenlvocyit
+```
+
+Same bash session can also redeploy `lead-intake` for Fix C if not yet done:
+```bash
+supabase functions deploy lead-intake --project-ref tsxrrxzmdxaenlvocyit
+```
+
+### Daniel's Flow 4 RETEST steps (post-CLI-deploy)
+
+1. Open the SAME T5 SMS or email from earlier today (link is valid for 90 days).
+2. Tap the registration link.
+3. Form should open WITHOUT "כבר נרשמת" — RPC's soft-delete-revival path runs.
+4. Submit.
+5. Confirmation page appears.
+6. **`event_registration_confirmation_sms_he` SMS should arrive this time** (Fix D wired the substitution).
+7. Confirmation email arrives (was working before, still works).
+
+### Expected post-RETEST DB state
+
+- `attendee.ce1e02a9.status = registered`, `is_deleted = false` (revival)
+- `lead.a262bc0e.status = confirmed` (already was; sync no-op)
+- 2 new `crm_message_log` rows: SMS `status='sent'` (was failed before), email `status='sent'`. SMS body now has resolved `%event_deposit_amount% → 50` and `%payment_url_50% → https://prizmaoptic.short.gy/gmapy`.
+- Make scenario 9104395: 2 new exec status=1 (or just 1 for the SMS — the email path may bypass Make depending on send-message routing)
+- DLQ unchanged
+
+### Findings carried over to follow-up
+
+- **Date format inconsistency** in event-register vs injectEventVariables (`YYYY-MM-DD` vs `DD/MM/YYYY`). Form-path SMS shows the raw date format. Cleanup: either remove event-register's pre-set of `event_date/time/name/location` and let injectEventVariables own them, OR inline the same formatting in event-register. Defer to post-cutover.
+
+### Commit
+
+`{HASH-PENDING}` — feat(event-register): Fix D - forward event_id so substitution layer can resolve %event_deposit_amount% + %payment_url_50%

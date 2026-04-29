@@ -88,28 +88,25 @@ type FormBody = {
   notes?: string;
 };
 
-// Fire-and-forget SMS+email dispatch. Failures log but never bubble up.
+// Fire-and-forget SMS+email dispatch. P5_8 Fix D: event_id forwarded to
+// send-message so injectEventVariables resolves %payment_url_<fee>% +
+// %event_deposit_amount%; without it, scanForPaymentUrlMismatch (Pattern P12)
+// loud-fails templates referencing them. Mirrors lead-intake/dispatch.ts.
 async function dispatchRegistrationMessages(
-  tenantId: string,
-  leadId: string,
-  templateBaseSlug: string,
-  variables: Record<string, string>,
-  hasEmail: boolean,
+  tenantId: string, leadId: string, eventId: string,
+  templateBaseSlug: string, variables: Record<string, string>, hasEmail: boolean,
 ): Promise<void> {
   const calls: Promise<unknown>[] = [];
-  calls.push(callSendMessage(tenantId, leadId, "sms", templateBaseSlug, variables));
+  calls.push(callSendMessage(tenantId, leadId, eventId, "sms", templateBaseSlug, variables));
   if (hasEmail) {
-    calls.push(callSendMessage(tenantId, leadId, "email", templateBaseSlug, variables));
+    calls.push(callSendMessage(tenantId, leadId, eventId, "email", templateBaseSlug, variables));
   }
   await Promise.allSettled(calls);
 }
 
 async function callSendMessage(
-  tenantId: string,
-  leadId: string,
-  channel: "sms" | "email",
-  templateSlug: string,
-  variables: Record<string, string>,
+  tenantId: string, leadId: string, eventId: string,
+  channel: "sms" | "email", templateSlug: string, variables: Record<string, string>,
 ): Promise<void> {
   try {
     const res = await fetch(SEND_MESSAGE_URL, {
@@ -122,6 +119,7 @@ async function callSendMessage(
       body: JSON.stringify({
         tenant_id: tenantId,
         lead_id: leadId,
+        event_id: eventId,
         channel,
         template_slug: templateSlug,
         variables,
@@ -331,6 +329,7 @@ Deno.serve(async (req: Request) => {
     await dispatchRegistrationMessages(
       body.tenant_id!,
       body.lead_id!,
+      body.event_id!,
       templateBase,
       variables,
       Boolean(lead.email),
