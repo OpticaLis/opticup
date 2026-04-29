@@ -108,7 +108,7 @@
       ' <button type="button" class="' + CLS_LINK_BTN + ' ms-1" data-edit-purchase="' + escapeHtml(r.id) + '">ערוך</button>';
   }
   function feeCell(r) {
-    var pill = window.CrmPayment ? CrmPayment.renderStatusPill(r.payment_status) + CrmPayment.renderNoRefundDueChip(r) : '';
+    var pill = window.CrmPayment ? CrmPayment.renderStatusPill(r.payment_status) + CrmPayment.renderNoRefundDueChip(r) + CrmPayment.renderCreditIndicator(r) : '';
     return '<button type="button" class="text-start hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded" data-pay-attendee-id="' + escapeHtml(r.id) + '">' + pill + '</button>';
   }
 
@@ -258,7 +258,7 @@
 
   async function refreshAttendeeRow(id) {
     var state = window.getEventDayState();
-    var res = await sb.from('crm_event_attendees').select('id, status, cancelled_at, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id, no_refund_due_marked, no_refund_due_marked_at').eq('id', id).eq('tenant_id', getTenantId()).single();
+    var res = await sb.from('crm_event_attendees').select('id, status, cancelled_at, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id, no_refund_due_marked, no_refund_due_marked_at, paid_via_credit').eq('id', id).eq('tenant_id', getTenantId()).single();
     if (res.error || !res.data) return;
     (state.attendees || []).forEach(function (a) { if (a.id === id) Object.assign(a, res.data); });
     renderTable();
