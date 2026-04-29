@@ -10,8 +10,6 @@
 (function () {
   'use strict';
 
-  function tid() { return typeof getTenantId === 'function' ? getTenantId() : null; }
-
   function renderForm(ev) {
     var inp = 'flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm';
     var lbl = 'block text-sm font-medium text-slate-700 mb-1';
@@ -30,7 +28,7 @@
         '<div class="flex-1"><label class="' + lbl + '">קופונים נוספים</label><input type="number" name="extra_coupons" class="' + inp + ' w-full" value="' + (ev.extra_coupons || 0) + '" min="0"></div>' +
         '<div class="flex-1"><label class="' + lbl + '">דמי הזמנה</label><input type="number" step="0.01" name="booking_fee" class="' + inp + ' w-full" value="' + (ev.booking_fee || 50) + '"></div>' +
       '</div>' +
-      '<div><label class="' + lbl + '">קוד קופון</label><input name="coupon_code" class="' + inp + ' w-full" value="' + escapeHtml(ev.coupon_code || '') + '" required></div>' +
+      '<div><label class="' + lbl + '">קוד קופון</label><input name="coupon_code" class="' + inp + ' w-full" value="' + escapeHtml(ev.coupon_code || '') + '" placeholder="ריק = SuperSale' + (ev.event_number || '{מספר}') + '"></div>' +
       '<div><label class="' + lbl + '">קישור טופס הרשמה (אופציונלי)</label><input name="registration_form_url" class="' + inp + ' w-full" value="' + escapeHtml(ev.registration_form_url || '') + '"></div>' +
       '<div><label class="' + lbl + '">הערות</label><textarea name="notes" class="' + inp + ' w-full" rows="2">' + escapeHtml(ev.notes || '') + '</textarea></div>' +
       '<div id="crm-edit-event-error" class="hidden text-rose-600 text-sm"></div>' +
@@ -54,6 +52,9 @@
       var errBox = body.querySelector('#crm-edit-event-error');
       errBox.classList.add('hidden');
       var fd = new FormData(form);
+      // Auto-default coupon_code to SuperSale{event_number} when admin clears it.
+      var couponCodeIn = (fd.get('coupon_code') || '').trim();
+      if (!couponCodeIn) couponCodeIn = 'SuperSale' + (event.event_number || '');
       var patch = {
         name: (fd.get('name') || '').trim(),
         event_date: fd.get('event_date') || null,
@@ -65,14 +66,14 @@
         max_coupons: parseInt(fd.get('max_coupons'), 10) || null,
         extra_coupons: parseInt(fd.get('extra_coupons'), 10) || 0,
         booking_fee: parseFloat(fd.get('booking_fee')) || 0,
-        coupon_code: (fd.get('coupon_code') || '').trim(),
+        coupon_code: couponCodeIn,
         registration_form_url: (fd.get('registration_form_url') || '').trim() || null,
         notes: (fd.get('notes') || '').trim() || null
       };
-      if (!patch.name || !patch.event_date || !patch.location_address || !patch.coupon_code) {
+      if (!patch.name || !patch.event_date || !patch.location_address) {
         errBox.textContent = 'שדות חובה חסרים'; errBox.classList.remove('hidden'); return;
       }
-      var tenantId = tid();
+      var tenantId = CrmHelpers.tid();
       if (!tenantId) { errBox.textContent = 'לא זוהה tenant'; errBox.classList.remove('hidden'); return; }
       footer.querySelector('#crm-edit-event-submit').disabled = true;
       var res = await sb.from('crm_events').update(patch).eq('id', event.id).eq('tenant_id', tenantId).select('*').single();

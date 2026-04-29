@@ -68,7 +68,7 @@
     if (tid) evQ = evQ.eq('tenant_id', tid);
 
     var attQ = sb.from('v_crm_event_attendees_full')
-      .select('id, lead_id, event_id, full_name, phone, email, status, status_name, status_color, purchase_amount, checked_in_at, registered_at, coupon_sent, coupon_sent_at, payment_status, paid_at, scheduled_time')
+      .select('id, lead_id, event_id, full_name, phone, email, status, status_name, status_color, purchase_amount, checked_in_at, registered_at, coupon_sent, coupon_sent_at, payment_status, paid_at, scheduled_time, no_refund_due_marked, no_refund_due_marked_at, paid_via_credit')
       .eq('event_id', _state.eventId).eq('is_deleted', false)
       .order('scheduled_time', { nullsFirst: false }).order('full_name');
     if (tid) attQ = attQ.eq('tenant_id', tid);

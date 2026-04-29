@@ -10,8 +10,6 @@
   var CLS_TD           = 'px-4 py-2.5 text-slate-800 border-b border-slate-100';
   var CLS_INPUT        = 'px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500';
   var CLS_LINK_BTN     = 'text-xs text-indigo-600 font-medium hover:text-indigo-800 hover:underline';
-  var CLS_TOGGLE_ON    = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700';
-  var CLS_TOGGLE_OFF   = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
   var CLS_ARR_CARD     = 'bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-amber-400 hover:shadow-sm transition';
   var CLS_ARR_PURCH    = 'bg-emerald-50 border border-emerald-300 rounded-lg p-3';
   var CLS_PURCH_BADGE  = 'inline-block mt-2 text-xs bg-amber-500 text-white font-semibold px-2 py-1 rounded-full';
@@ -19,7 +17,13 @@
   var CLS_RUNNING_TOT  = 'mt-4 pt-3 border-t-2 border-emerald-300 flex justify-between items-center bg-emerald-100 rounded-lg px-3 py-2';
 
   var _filter = '';
-  var _statusFilter = '';
+  // P24 (commit 7): negative-set status filter. Holds slugs the admin has
+  // explicitly deactivated. Active set is derived as
+  // (slugs present in current data) MINUS _statusOff. Default state has _statusOff=[]
+  // so ALL chips render active — including chips that appear mid-session (e.g.,
+  // a 'cancelled' chip that surfaces after an in-session cancellation).
+  // Empty-state ("no chips active") means every present slug is in _statusOff.
+  var _statusOff = [];
   var _editingId = null;
 
   function toast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
@@ -31,33 +35,58 @@
     host.innerHTML =
       '<div class="flex flex-wrap gap-2 mb-3">' +
         '<input type="search" id="crm-eventday-manage-search" class="' + CLS_INPUT + ' flex-1 min-w-[200px]" placeholder="חיפוש שם או טלפון..." value="' + escapeHtml(_filter) + '">' +
-        '<select id="crm-eventday-manage-status" class="' + CLS_INPUT + '"><option value="">כל הסטטוסים</option></select>' +
       '</div>' +
+      '<div id="crm-eventday-manage-status-chips" class="flex flex-wrap gap-2 mb-3"></div>' +
       '<div id="crm-eventday-manage-table" class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden"></div>';
-    populateStatusFilter();
-    wireFilters();
+    renderStatusChips();
+    wireSearchInput();
     renderTable();
   }
   window.renderEventDayManage = renderEventDayManage;
 
-  function populateStatusFilter() {
-    var sel = document.getElementById('crm-eventday-manage-status');
-    if (!sel) return;
+  // P24: multi-select chip filter. Default = all chips active (cancelled visible).
+  function renderStatusChips() {
+    var host = document.getElementById('crm-eventday-manage-status-chips');
+    if (!host) return;
     var state = window.getEventDayState();
-    CrmHelpers.distinctValues(state.attendees, 'status').forEach(function (slug) {
+    var attendees = state.attendees || [];
+    // Group attendees by status; respect crm_statuses.sort_order via _all (loaded in CrmHelpers.loadStatusCache).
+    var counts = {};
+    attendees.forEach(function (a) { counts[a.status] = (counts[a.status] || 0) + 1; });
+    var allMeta = (window.CRM_STATUSES && window.CRM_STATUSES._all) || [];
+    var presentSlugs = Object.keys(counts);
+    // Sort: by sort_order if known, else lexical at end.
+    var ordered = presentSlugs.slice().sort(function (a, b) {
+      var sa = allMeta.find(function (m) { return m.entity_type === 'attendee' && m.slug === a; });
+      var sb = allMeta.find(function (m) { return m.entity_type === 'attendee' && m.slug === b; });
+      var oa = sa ? sa.sort_order : 9999;
+      var ob = sb ? sb.sort_order : 9999;
+      return oa - ob;
+    });
+    var html = ordered.map(function (slug) {
       var info = CrmHelpers.getStatusInfo('attendee', slug);
-      var opt = document.createElement('option');
-      opt.value = slug; opt.textContent = info.label;
-      if (_statusFilter === slug) opt.selected = true;
-      sel.appendChild(opt);
+      var active = _statusOff.indexOf(slug) === -1;
+      var cls = active
+        ? 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-600 text-white shadow-sm cursor-pointer'
+        : 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 cursor-pointer';
+      var check = active ? '✓ ' : '';
+      return '<button type="button" class="' + cls + '" data-status-chip="' + escapeHtml(slug) + '">' + check + escapeHtml(info.label) + ' (' + counts[slug] + ')</button>';
+    }).join('');
+    host.innerHTML = html || '<span class="text-xs text-slate-400">אין סטטוסים להציג</span>';
+    host.querySelectorAll('[data-status-chip]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var slug = b.getAttribute('data-status-chip');
+        var idx = _statusOff.indexOf(slug);
+        if (idx === -1) _statusOff.push(slug); else _statusOff.splice(idx, 1);
+        renderStatusChips();
+        renderTable();
+      });
     });
   }
 
-  function wireFilters() {
+  function wireSearchInput() {
     var s = document.getElementById('crm-eventday-manage-search');
-    var t = document.getElementById('crm-eventday-manage-status');
     if (s) s.addEventListener('input', function () { _filter = s.value || ''; renderTable(); });
-    if (t) t.addEventListener('change', function () { _statusFilter = t.value || ''; renderTable(); });
   }
 
   function renderTable() {
@@ -81,18 +110,24 @@
         '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
         '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('attendee', r.status) + '</td>' +
         '<td class="' + CLS_TD + '" data-admin-only>' + purchaseCell(r) + '</td>' +
-        '<td class="' + CLS_TD + '">' + couponCell(r) + '</td>' +
+        '<td class="' + CLS_TD + '">' + CrmEventDayCoupon.couponCell(r) + CrmAttendeeCancel.cancelButtonHtml(r) + '</td>' +
         '<td class="' + CLS_TD + '">' + feeCell(r) + '</td>' +
       '</tr>';
     });
     wrap.innerHTML = html + '</tbody></table>';
     wireRowActions(wrap);
+    // P24: keep chip counts in sync after any status-changing action (cancel, etc.)
+    renderStatusChips();
   }
 
   function filterRows(all) {
     var s = _filter.trim().toLowerCase();
     return (all || []).filter(function (r) {
-      if (_statusFilter && r.status !== _statusFilter) return false;
+      // P24 (commit 7): negative-set filter — exclude rows whose status was
+      // explicitly deactivated by the admin. Default = nothing in _statusOff,
+      // so all rows pass; new statuses appearing mid-session are not in
+      // _statusOff and therefore visible by default.
+      if (_statusOff.indexOf(r.status) !== -1) return false;
       if (s && (r.full_name || '').toLowerCase().indexOf(s) === -1 && (r.phone || '').toLowerCase().indexOf(s) === -1) return false;
       return true;
     });
@@ -107,15 +142,8 @@
     return '<span class="font-semibold text-emerald-700">' + escapeHtml(valTxt) + '</span>' +
       ' <button type="button" class="' + CLS_LINK_BTN + ' ms-1" data-edit-purchase="' + escapeHtml(r.id) + '">ערוך</button>';
   }
-  function couponCell(r) {
-    if (!r.coupon_sent) return '<button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-coupon="' + escapeHtml(r.id) + '">שלח</button>';
-    if (r.checked_in_at) return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">✓ הגיע</span>';
-    var ev = window.getEventDayState().event;
-    if (window.CrmPayment && CrmPayment.eventEnded(ev)) return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">⚠️ לא הגיע</span>';
-    return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">📨 נשלח</span>';
-  }
   function feeCell(r) {
-    var pill = window.CrmPayment ? CrmPayment.renderStatusPill(r.payment_status) : '';
+    var pill = window.CrmPayment ? CrmPayment.renderStatusPill(r.payment_status) + CrmPayment.renderNoRefundDueChip(r) + CrmPayment.renderCreditIndicator(r) : '';
     return '<button type="button" class="text-start hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded" data-pay-attendee-id="' + escapeHtml(r.id) + '">' + pill + '</button>';
   }
 
@@ -126,10 +154,23 @@
       inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); savePurchase(inp); } else if (e.key === 'Escape') { _editingId = null; renderTable(); } });
       inp.addEventListener('blur', function () { setTimeout(function () { savePurchase(inp); }, 150); });
     });
-    wrap.querySelectorAll('[data-toggle-coupon]').forEach(function (b) { b.addEventListener('click', function () { toggleCoupon(b.getAttribute('data-toggle-coupon'), b); }); });
+    wrap.querySelectorAll('[data-toggle-coupon]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        CrmEventDayCoupon.toggleCoupon(b.getAttribute('data-toggle-coupon'), b, {
+          renderTable: renderTable,
+          updateLocal: updateLocal
+        });
+      });
+    });
     wrap.querySelectorAll('[data-pay-attendee-id]').forEach(function (b) {
       var aid = b.getAttribute('data-pay-attendee-id');
       b.addEventListener('click', function (e) { e.stopPropagation(); if (window.CrmPayment) CrmPayment.openActionModal(aid, { onAfterAction: function () { refreshAttendeeRow(aid); } }); });
+    });
+    wrap.querySelectorAll('[data-cancel-attendee]').forEach(function (b) {
+      var aid = b.getAttribute('data-cancel-attendee');
+      b.addEventListener('click', function () {
+        CrmAttendeeCancel.openCancelDialog(aid, { onAfterCancel: function (id) { refreshAttendeeRow(id); } });
+      });
     });
   }
 
@@ -250,83 +291,9 @@
     toast('success', '✅ נשמר');
   }
 
-  async function toggleCoupon(id, btn) {
-    var state = window.getEventDayState();
-    var ev = state.event || {};
-    var attendees = state.attendees || [];
-    var target = attendees.find(function (a) { return a.id === id; });
-    if (!target) return;
-
-    // Defensive re-send guard. UI hides the "שלח" button once coupon_sent=true
-    // (see couponCell), so this path is not reachable from the rendered table
-    // today; it protects programmatic callers and any future re-send button.
-    if (target.coupon_sent) {
-      var when = target.coupon_sent_at ? new Date(target.coupon_sent_at).toLocaleString('he-IL') : '—';
-      if (!confirm('הקופון כבר נשלח ב-' + when + '. לשלוח שוב?')) return;
-    } else {
-      var totalSent = attendees.filter(function (a) { return a.coupon_sent && a.status !== 'cancelled'; }).length;
-      var ceiling = (ev.max_coupons != null ? +ev.max_coupons : 50) + (+ev.extra_coupons || 0);
-      if (totalSent >= ceiling) {
-        toast('error', 'הגעת למכסת הקופונים (' + ceiling + '). הגדל כמות קופונים נוספת אם יש צורך.');
-        return;
-      }
-    }
-
-    if (!ev.coupon_code) {
-      toast('error', 'לאירוע לא הוגדר קוד קופון. הגדר קוד קופון לאירוע לפני השליחה.');
-      return;
-    }
-    if (!window.CrmMessaging || typeof CrmMessaging.sendMessage !== 'function') {
-      toast('error', 'CrmMessaging אינו זמין');
-      return;
-    }
-    if (!target.phone && !target.email) {
-      toast('error', 'למשתתף חסרים טלפון ואימייל — לא ניתן לשלוח קופון.');
-      return;
-    }
-
-    if (!window.CrmCouponDispatch || typeof CrmCouponDispatch.dispatch !== 'function') {
-      toast('error', 'CrmCouponDispatch אינו זמין');
-      return;
-    }
-
-    if (btn) { btn.disabled = true; btn.textContent = '...'; }
-
-    var dispatch = await CrmCouponDispatch.dispatch(target, ev);
-    if (!dispatch.anyOk) {
-      if (btn) { btn.disabled = false; btn.textContent = 'שלח'; }
-      toast('error', 'שליחה נכשלה: SMS ' + (dispatch.smsError || '—') + ' | Email ' + (dispatch.emailError || '—'));
-      return;
-    }
-
-    // Flag update happens AFTER at least one channel succeeds — never before.
-    var nowIso = new Date().toISOString();
-    var { error } = await sb.from('crm_event_attendees')
-      .update({ coupon_sent: true, coupon_sent_at: nowIso })
-      .eq('id', id).eq('tenant_id', getTenantId());
-    if (error) {
-      toast('warning', 'נשלח, אך שמירת דגל נכשלה: ' + error.message);
-      if (btn) { btn.disabled = false; }
-      return;
-    }
-    logActivity('crm.attendee.coupon_sent', id, {
-      sms_ok: dispatch.smsOk, email_ok: dispatch.emailOk,
-      sms_log_id: dispatch.smsLogId, email_log_id: dispatch.emailLogId
-    });
-    updateLocal(id, { coupon_sent: true, coupon_sent_at: nowIso });
-    toast(dispatch.allOk ? 'success' : 'warning', 'הקופון נשלח: ' + dispatch.summary);
-    if (window.CrmCouponDispatch && typeof CrmCouponDispatch.checkAndAutoClose === 'function') {
-      try {
-        var ac = await CrmCouponDispatch.checkAndAutoClose(ev);
-        if (ac && ac.closed) { ev.status = 'closed'; toast('success', 'האירוע עבר ל"נסגר" — כל הקופונים הונפקו'); }
-      } catch (e) { console.error('autoClose:', e); }
-    }
-    renderTable();
-  }
-
   async function refreshAttendeeRow(id) {
     var state = window.getEventDayState();
-    var res = await sb.from('crm_event_attendees').select('id, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id').eq('id', id).eq('tenant_id', getTenantId()).single();
+    var res = await sb.from('crm_event_attendees').select('id, status, cancelled_at, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id, no_refund_due_marked, no_refund_due_marked_at, paid_via_credit').eq('id', id).eq('tenant_id', getTenantId()).single();
     if (res.error || !res.data) return;
     (state.attendees || []).forEach(function (a) { if (a.id === id) Object.assign(a, res.data); });
     renderTable();

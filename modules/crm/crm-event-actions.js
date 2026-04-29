@@ -13,12 +13,10 @@
 (function () {
   'use strict';
 
-  function tid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
-
   // ---- Create ----
 
   async function loadCampaigns() {
-    var tenantId = tid();
+    var tenantId = CrmHelpers.tid();
     var q = sb.from('crm_campaigns')
       .select('id, slug, name, default_location, default_hours, default_max_capacity, default_booking_fee, default_max_coupons')
       .eq('is_active', true);
@@ -30,7 +28,7 @@
   }
 
   async function createEvent(data) {
-    var tenantId = tid();
+    var tenantId = CrmHelpers.tid();
     if (!tenantId) throw new Error('tenant not resolved');
     if (!data.campaign_id) throw new Error('campaign required');
 
@@ -40,6 +38,10 @@
     });
     if (rpc.error) throw new Error('next_crm_event_number: ' + rpc.error.message);
     var eventNumber = rpc.data;
+
+    // Auto-default coupon_code to SuperSale{event_number} when admin leaves it blank.
+    var couponCode = (data.coupon_code || '').trim();
+    if (!couponCode) couponCode = 'SuperSale' + eventNumber;
 
     var row = {
       tenant_id: tenantId,
@@ -54,7 +56,7 @@
       max_capacity: data.max_capacity != null ? data.max_capacity : 50,
       max_coupons: data.max_coupons != null ? data.max_coupons : 50,
       booking_fee: data.booking_fee != null ? data.booking_fee : 50,
-      coupon_code: data.coupon_code
+      coupon_code: couponCode
     };
     var ins = await sb.from('crm_events').insert(row).select('id, event_number').single();
     if (ins.error) throw new Error('event insert failed: ' + ins.error.message);
@@ -105,7 +107,7 @@
       '<input type="number" name="booking_fee" class="' + inputCls + '" value="' + (camp0.default_booking_fee || 50) + '" min="0" step="0.01" required></div>' +
       '</div>' +
       '<div><label class="' + labelCls + '">קוד קופון</label>' +
-      '<input type="text" name="coupon_code" class="' + inputCls + '" required placeholder="SUPERSALE5"></div>' +
+      '<input type="text" name="coupon_code" class="' + inputCls + '" placeholder="ריק = SuperSale{מספר אירוע}"></div>' +
       '<div id="crm-create-event-error" class="text-sm text-rose-600 font-semibold hidden"></div>' +
       '</form>';
   }
@@ -175,7 +177,7 @@
         booking_fee: parseFloat(fd.get('booking_fee')),
         coupon_code: (fd.get('coupon_code') || '').trim()
       };
-      if (!data.name || !data.event_date || !data.location_address || !data.coupon_code) {
+      if (!data.name || !data.event_date || !data.location_address) {
         errBox.textContent = 'שדות חובה חסרים';
         errBox.classList.remove('hidden');
         return;
@@ -214,7 +216,7 @@
   }
 
   async function changeEventStatus(eventId, newStatus) {
-    var tenantId = tid();
+    var tenantId = CrmHelpers.tid();
     var evRes = await sb.from('crm_events')
       .select('name, event_date, start_time, location_address, status')
       .eq('id', eventId).eq('tenant_id', tenantId).single();

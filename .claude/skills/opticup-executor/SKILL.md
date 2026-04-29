@@ -308,6 +308,107 @@ view, new RPC, new migration, or even new field in an existing table), you MUST:
    storefront repo uses `sql/`. Auto-detect eliminates this class of deviation
    entirely. Observed in `HOMEPAGE_LUXURY_REVISIONS` (2026-04-16).
 
+
+10. **CHECK-constraint pre-flight (P23 review, 2026-04-29):** for every column
+    the SPEC will write a NEW value to (any `payment_status`, `status`, slug,
+    enum-shaped text), run BEFORE writing code:
+    ```sql
+    SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint
+     WHERE conrelid='public.<table>'::regclass AND contype='c';
+    ```
+    If any CHECK constraint enumerates allowed values, the SPEC's "value
+    addition" framing may be wrong. STOP, escalate to Foreman. This is a
+    Level-3 schema change (Daniel-only). Defense-in-depth — the Foreman should
+    have caught this at SPEC-author time (Step 1.5j), but if they didn't, you
+    catch it here before any commit.
+
+    Rationale: P23 shipped a SPEC that wrote `payment_status='no_refund_due'`
+    without inspecting the CHECK constraint. The UPDATE returned 400 in QA;
+    P23.1 had to ship a corrective migration. A 5-second `pg_constraint`
+    query in pre-flight prevents the entire chain.
+
+11. **Verifier-method line counts (P23 + P24 reviews, 2026-04-29):** when the
+    SPEC's §3 success criteria reference line counts, the executor MUST count
+    via the verifier's method, NOT `wc -l`:
+    ```bash
+    node -e "console.log(require('fs').readFileSync('<path>','utf8').split('\n').length)"
+    ```
+    This returns `wc -l + 1` for files ending with a trailing newline. SPEC
+    pre-flight tables typically use `wc -l`. To match the pre-commit hook's
+    count, use the Node form. When evaluating "lines available before hard
+    cap (350)", subtract 1 from any SPEC `wc -l` baseline.
+
+    If the SPEC was authored more than 24 hours ago, RE-BASELINE every file
+    in §2 / §3 line counts before commits begin. Drift between authoring and
+    dispatch is the #1 cause of mid-execution stop triggers in P23.1 and P24.
+
+    Log any baseline drift you find in `EXECUTION_REPORT.md §3 Deviations`
+    with the SPEC's stated number vs the actual measured number.
+
+12. **Function-name collision sweep before file creation (P23 review):** when
+    the SPEC creates a new JS file with helper functions, BEFORE writing the
+    file, grep the project for every function name you plan to define:
+    ```
+    grep -rn "function <name>(" --include='*.js' modules/ js/ shared/
+    ```
+    If ANY hit exists, STOP and escalate. The pre-commit `rule-21-orphans`
+    hook will block co-staged commits with shared helper names. Catching at
+    file-creation time prevents the late-cycle "fix or rename" round-trip.
+
+    Rationale: P23 had to extract `tid()` from 2 files into `crm-helpers.js`
+    mid-SPEC because the executor created a new file (`crm-attendee-cancel.js`)
+    with a `tid()` definition that collided with the existing one. Sweeping
+    BEFORE file creation would have caught it.
+
+13. **Commit-budget honesty (P24 process learning):** before commit 1, state
+    out loud: "I expect N commits per SPEC §8 commit plan, plus optionally
+    K hotfix commits if QA finds bugs. I will stop and report if commits
+    exceed N+K+1." If the actual count drifts beyond the budget, that is a
+    SPEC quality issue, NOT executor freedom — escalate.
+
+    Rationale: P23 shipped 8 commits (5 planned + 1 mid-flight regression
+    fix + 1 hotfix + 1 retro close). P24 shipped 8 (6 planned + 1 regression
+    fix + 1 retro close). Both were correctly scoped — but in both cases the
+    executor committed without explicitly logging the budget vs actual at the
+    start. Future SPECs benefit from explicit budget tracking.
+
+14. **PIN / production-credential boundary (P23.1 + P24 reviews):** when QA
+    requires UI authentication on a tenant whose PIN you don't know,
+    you MAY NOT guess production PINs OR wait for the user to paste one in
+    chat (chat-leakage risk). Default behavior: split the QA into:
+    - DB-level scenarios (verifiable via direct SELECT/UPDATE) → run them on
+      the requested tenant via Supabase MCP
+    - UI-rendering scenarios (require browser auth) → run them on demo tenant
+      using PIN 12345
+
+    Document the split in `EXECUTION_REPORT.md` and explicitly note that the
+    UI-rendering verification was done on demo, with code-review confirmation
+    that production tenant behavior is identical (since the code paths don't
+    branch on tenant).
+
+    Rationale: P23.1 + P24 both ran into this boundary. Splitting like this
+    gave full code coverage without exposing production credentials.
+
+15. **State-machine 3-transition runtime test (P24 review):** when the SPEC
+    introduces a module-level state variable controlling rendering (filter
+    set, sort order, active tab, multi-select selection), the executor's QA
+    MUST include three runtime transitions:
+    - (a) initial render with empty/default state
+    - (b) state after one mutation (e.g., user clicks an item)
+    - (c) state after a second mutation that introduces a NEW dimension
+      (e.g., a new status appears mid-session, a new chip becomes visible,
+      a new tab is created)
+
+    Static code review is NOT enough — these regressions only surface at
+    runtime. If the SPEC's QA doesn't already require this, ADD it before
+    starting commits and note the addition in EXECUTION_REPORT §3.
+
+    Rationale: P24 commit 5 used positive-set initialization
+    (`_statusFilters` populated once at first render) which silently broke
+    when new statuses appeared mid-session. The bug only surfaced in a
+    runtime "cancel mid-sweep" subcase. A SPEC-mandated 3-transition test
+    catches this class of regression pre-commit.
+
 Log the result of the Pre-Flight Check in `EXECUTION_REPORT.md` §6 Iron-Rule
 Self-Audit (Rule 21 row) with evidence of the greps you ran. An empty Rule 21
 row with "N/A" when the SPEC added DB objects is itself a finding against
