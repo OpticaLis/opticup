@@ -37,7 +37,7 @@
       if (chip.classList.contains('checked-in')) return;
       chip.addEventListener('click', function () {
         var id = chip.getAttribute('data-attendee-id');
-        if (id) doCheckIn(id, chip);
+        if (id) scheduleDoCheckIn(id, chip);
       });
     });
   }
@@ -50,7 +50,7 @@
       var done = !!r.checked_in_at;
       var cls = (done ? CLS_CHIP_DONE : CLS_CHIP) + (done ? ' checked-in' : '');
       var icon = done ? '✅' : '🔵';
-      var timeTxt = done ? ' (' + formatTime(r.checked_in_at) + ')' : '';
+      var timeTxt = done ? ' (' + CrmEventDayCheckIn.formatTime(r.checked_in_at) + ')' : '';
       var attr = done ? '' : ' data-attendee-id="' + escapeHtml(r.id) + '"';
       var titleAttr = r.phone ? ' title="' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '"' : '';
       return '<button type="button" class="' + cls + '"' + attr + titleAttr + '>' +
@@ -89,14 +89,12 @@
     return checkedIn.concat(pending);
   }
 
-  function formatTime(iso) {
-    if (!iso) return '';
-    var d = new Date(iso);
-    if (isNaN(d.getTime())) return '';
-    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-  }
+  // P26 commit 0b — formatTime moved to CrmEventDayCheckIn.formatTime (canonical).
+  // doCheckIn renamed to scheduleDoCheckIn (file-unique) — schedule's body has
+  // different UI side effects than checkin's (renders board, uses CrmHelpers.toast)
+  // so unifying would break behavior; rename-only resolves the Rule 21 collision.
 
-  async function doCheckIn(attendeeId, chip) {
+  async function scheduleDoCheckIn(attendeeId, chip) {
     if (!attendeeId) return;
     var originalHtml = chip.innerHTML;
     chip.disabled = true;
@@ -119,7 +117,7 @@
       } else if (payload.error === 'already_checked_in') {
         updateLocalAttendee(attendeeId, { checked_in_at: payload.checked_in_at });
         renderBoard();
-        CrmHelpers.toast('warning', 'המשתתף כבר נכנס ב-' + formatTime(payload.checked_in_at));
+        CrmHelpers.toast('warning', 'המשתתף כבר נכנס ב-' + CrmEventDayCheckIn.formatTime(payload.checked_in_at));
       } else {
         chip.innerHTML = originalHtml;
         chip.disabled = false;
