@@ -39,6 +39,10 @@
     renderArrivedColumn();
   }
   window.renderEventDayCheckin = renderEventDayCheckin;
+  // P26 commit 0b — formatTime is a pure date utility ("HH:MM" from ISO). Expose
+  // it so crm-event-day-schedule.js can consume the canonical implementation
+  // (was duplicated locally there pre-P26).
+  window.CrmEventDayCheckIn = { formatTime: function (iso) { return formatTime(iso); } };
 
   function renderWaitingColumn() {
     var col = document.getElementById('eventday-col-waiting');
@@ -210,7 +214,7 @@
   }
   function _chkLog(action, entityId) {
     if (window.ActivityLog && ActivityLog.write) {
-      try { ActivityLog.write({ action: action, entity_type: 'crm_event_attendees', entity_id: entityId, severity: 'info', metadata: { event_id: window.getEventDayState().eventId } }); } catch (_) {}
+      try { ActivityLog.write({ action: action, entity_type: 'crm_event_attendees', entity_id: entityId, details: { event_id: window.getEventDayState().eventId } }); } catch (_) {}
     }
   }
 })();

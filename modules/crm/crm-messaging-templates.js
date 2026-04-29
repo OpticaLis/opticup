@@ -41,7 +41,7 @@
   var _category = 'all', _search = '', _activeBase = null, _editorState = null;
 
   function _tplToast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
-  function _tplLog(a, id, m) { if (window.ActivityLog && ActivityLog.write) { try { ActivityLog.write({ action: a, entity_type: 'crm_message_template', entity_id: id, severity: 'info', metadata: m || {} }); } catch (_) {} } }
+  function _tplLog(a, id, m) { if (window.ActivityLog && ActivityLog.write) { try { ActivityLog.write({ action: a, entity_type: 'crm_message_template', entity_id: id, details: m || {} }); } catch (_) {} } }
   function stripChannelSuffix(name) { return String(name || '').replace(/\s*[—-]\s*(SMS|Email|אימייל|WhatsApp)\s*$/i, '').trim(); }
   function deriveBaseSlug(row) {
     if (!row || !row.slug) return null;

@@ -24,11 +24,6 @@
   var _events = [];
   var _wizard = null;
 
-  function toast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
-  function logWrite(a, et, eid, meta) {
-    if (window.ActivityLog && ActivityLog.write) { try { ActivityLog.write({ action: a, entity_type: et, entity_id: eid, severity: 'info', metadata: meta || {} }); } catch (_) {} }
-  }
-
   function variablePanelHtml(idPrefix) {
     var vars = window.CRM_TEMPLATE_VARIABLES || [];
     if (!vars.length) return '';
@@ -67,7 +62,7 @@
     if (!v) return;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(v).then(function () {
-        toast('success', 'הועתק: ' + v);
+        CrmHelpers.toast('success', 'הועתק: ' + v);
       }).catch(function () {
         _fallbackCopy(v);
       });
@@ -83,9 +78,9 @@
       document.body.appendChild(tmp);
       tmp.select(); document.execCommand('copy');
       document.body.removeChild(tmp);
-      toast('success', 'הועתק: ' + v);
+      CrmHelpers.toast('success', 'הועתק: ' + v);
     } catch (_) {
-      toast('error', 'העתקה נכשלה');
+      CrmHelpers.toast('error', 'העתקה נכשלה');
     }
   }
 
@@ -289,14 +284,14 @@
 
 
   async function doWizardSend() {
-    if (!_wizard.name) { toast('error', 'שם שליחה חובה'); _wizard.step = 3; return; }
-    if (!_wizard.body && !_wizard.templateId) { toast('error', 'תוכן הודעה חובה'); _wizard.step = 2; return; }
-    if (_wizard.channel !== 'sms' && _wizard.channel !== 'email') { toast('error', 'ערוץ ' + (CHANNEL_LABELS[_wizard.channel] || _wizard.channel) + ' אינו פעיל'); _wizard.step = 1; return; }
+    if (!_wizard.name) { CrmHelpers.toast('error', 'שם שליחה חובה'); _wizard.step = 3; return; }
+    if (!_wizard.body && !_wizard.templateId) { CrmHelpers.toast('error', 'תוכן הודעה חובה'); _wizard.step = 2; return; }
+    if (_wizard.channel !== 'sms' && _wizard.channel !== 'email') { CrmHelpers.toast('error', 'ערוץ ' + (CHANNEL_LABELS[_wizard.channel] || _wizard.channel) + ' אינו פעיל'); _wizard.step = 1; return; }
     var leadIds = await CrmBroadcastFilters.buildLeadIds(_wizard);
-    if (!leadIds.length) { toast('warning', 'אין נמענים'); return; }
-    if (!window.CrmMessaging || !CrmMessaging.sendMessage) { toast('error', 'CrmMessaging לא זמין'); return; }
+    if (!leadIds.length) { CrmHelpers.toast('warning', 'אין נמענים'); return; }
+    if (!window.CrmMessaging || !CrmMessaging.sendMessage) { CrmHelpers.toast('error', 'CrmMessaging לא זמין'); return; }
     var tid = getTenantId(), emp = (typeof getCurrentEmployee === 'function') ? getCurrentEmployee() : null;
-    if (!emp || !emp.id) { toast('error', 'משתמש לא מזוהה'); return; }
+    if (!emp || !emp.id) { CrmHelpers.toast('error', 'משתמש לא מזוהה'); return; }
     try {
       var leadsRes = await sb.from('crm_leads').select('id, full_name, phone, email').eq('tenant_id', tid).in('id', leadIds);
       if (leadsRes.error) throw new Error(leadsRes.error.message); var leadRows = leadsRes.data || [];
@@ -312,7 +307,7 @@
         },
         total_recipients: leadIds.length, total_sent: 0, total_failed: 0, status: 'queued' }).select('id').single();
       if (ins.error) throw new Error(ins.error.message);
-      logWrite('crm.broadcast.send', 'crm_broadcast', ins.data.id, { name: _wizard.name, recipients: leadIds.length });
+      CrmHelpers.logActivity('crm.broadcast.send', 'crm_broadcast', ins.data.id, { name: _wizard.name, recipients: leadIds.length });
       var baseSlug = null, lang = _wizard.language || 'he', tpls = window._crmMessagingTemplates ? window._crmMessagingTemplates() : [];
       var tpl = _wizard.templateId ? tpls.find(function (t) { return t.id === _wizard.templateId; }) : null;
       if (tpl) { lang = tpl.language || lang; var sfx = '_' + tpl.channel + '_' + lang; baseSlug = (tpl.slug && tpl.slug.slice(-sfx.length) === sfx) ? tpl.slug.slice(0, -sfx.length) : (tpl.slug || null); }
@@ -320,9 +315,9 @@
       var ok = 0, fail = 0;
       (await Promise.allSettled(calls)).forEach(function (r) { if (r.status === 'fulfilled' && r.value && r.value.ok) ok++; else fail++; });
       await sb.from('crm_broadcasts').update({ total_sent: ok, total_failed: fail, status: fail === 0 ? 'completed' : 'partial' }).eq('id', ins.data.id).eq('tenant_id', tid);
-      toast(fail === 0 ? 'success' : 'warning', 'נשלחו ' + ok + ' הודעות' + (fail ? ', ' + fail + ' נכשלו' : ''));
+      CrmHelpers.toast(fail === 0 ? 'success' : 'warning', 'נשלחו ' + ok + ' הודעות' + (fail ? ', ' + fail + ' נכשלו' : ''));
       if (typeof Modal.close === 'function') Modal.close();
       if (typeof window.loadMessagingLog === 'function') window.loadMessagingLog();
-    } catch (e) { toast('error', 'שגיאה: ' + (e.message || e)); }
+    } catch (e) { CrmHelpers.toast('error', 'שגיאה: ' + (e.message || e)); }
   }
 })();

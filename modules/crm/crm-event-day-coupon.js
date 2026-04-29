@@ -29,7 +29,7 @@
 
   function couponLog(action, entityId, metadata) {
     if (window.ActivityLog && ActivityLog.write) {
-      try { ActivityLog.write({ action: action, entity_type: 'crm_event_attendees', entity_id: entityId, severity: 'info', metadata: Object.assign({ event_id: window.getEventDayState().eventId }, metadata || {}) }); } catch (_) {}
+      try { ActivityLog.write({ action: action, entity_type: 'crm_event_attendees', entity_id: entityId, details: Object.assign({ event_id: window.getEventDayState().eventId }, metadata || {}) }); } catch (_) {}
     }
   }
 

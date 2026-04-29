@@ -31,15 +31,6 @@
   var _loadPromise = null;
   var _pillFilter = 'all';
 
-  function logWrite(action, entityId, meta) {
-    if (window.ActivityLog && typeof ActivityLog.write === 'function') {
-      try { ActivityLog.write({ action: action, entity_type: 'crm_automation_rule', entity_id: entityId, severity: 'info', metadata: meta || {} }); } catch (_) {}
-    }
-  }
-  function toast(type, msg) {
-    if (window.Toast && typeof Toast[type] === 'function') Toast[type](msg);
-    else if (window.Toast && typeof Toast.show === 'function') Toast.show(msg);
-  }
 
   async function loadRules(force) {
     if (force) { _loadPromise = null; _rules = []; }
@@ -79,7 +70,7 @@
     html += '</div>';
     host.innerHTML = html;
     host.querySelectorAll('[data-pill]').forEach(function (b) {
-      b.addEventListener('click', function () { _pillFilter = b.getAttribute('data-pill'); renderPillBar(host); renderTable(); });
+      b.addEventListener('click', function () { _pillFilter = b.getAttribute('data-pill'); renderPillBar(host); renderRulesTable(); });
     });
   }
 
@@ -98,7 +89,7 @@
     if (btn) btn.addEventListener('click', function () { openRuleModal(null); });
     loadRules().then(function () {
       renderPillBar(host.querySelector('#crm-rules-pillbar'));
-      renderTable();
+      renderRulesTable();
     }).catch(function (e) {
       var wrap = host.querySelector('#crm-rules-table');
       if (wrap) wrap.innerHTML = '<div class="text-center text-rose-500 py-6 font-semibold">' + escapeHtml(e.message || String(e)) + '</div>';
@@ -123,7 +114,8 @@
     return '—';
   }
 
-  function renderTable() {
+  function renderRulesTable() {  // P26 commit 0a: renamed from renderTable to free Rule 21 collision with crm-event-day-manage.js
+
     var wrap = document.getElementById('crm-rules-table');
     if (!wrap) return;
     var rows = rulesForPill(_pillFilter);
@@ -173,14 +165,14 @@
         b.disabled = true;
         var ok = await toggleActive(id, next);
         b.disabled = false;
-        if (ok) { var r = _rules.find(function (rr) { return rr.id === id; }); if (r) r.is_active = !!next; renderPillBar(document.getElementById('crm-rules-pillbar')); renderTable(); }
+        if (ok) { var r = _rules.find(function (rr) { return rr.id === id; }); if (r) r.is_active = !!next; renderPillBar(document.getElementById('crm-rules-pillbar')); renderRulesTable(); }
       });
     });
   }
 
   function openRuleModal(existing) {
     if (!window.CrmRuleEditor || typeof CrmRuleEditor.open !== 'function') {
-      toast('error', 'עורך חוקים לא נטען');
+      CrmHelpers.toast('error', 'עורך חוקים לא נטען');
       return;
     }
     CrmRuleEditor.open(existing, {
@@ -198,30 +190,30 @@
           trigger_condition: data.trigger_condition, action_type: data.action_type, action_config: data.action_config, is_active: true
         }).select('id').single();
         if (ins.error) throw new Error(ins.error.message);
-        logWrite('crm.rule.create', ins.data.id, { name: data.name, trigger_entity: data.trigger_entity, trigger_event: data.trigger_event });
-        toast('success', 'הכלל נוצר');
+        CrmHelpers.logActivity('crm.rule.create', 'crm_automation_rule', ins.data.id, { name: data.name, trigger_entity: data.trigger_entity, trigger_event: data.trigger_event });
+        CrmHelpers.toast('success', 'הכלל נוצר');
       } else {
         var upd = await sb.from('crm_automation_rules').update({
           name: data.name, trigger_entity: data.trigger_entity, trigger_event: data.trigger_event,
           trigger_condition: data.trigger_condition, action_type: data.action_type, action_config: data.action_config
         }).eq('id', id).eq('tenant_id', tid);
         if (upd.error) throw new Error(upd.error.message);
-        logWrite('crm.rule.update', id, { name: data.name });
-        toast('success', 'הכלל עודכן');
+        CrmHelpers.logActivity('crm.rule.update', 'crm_automation_rule', id, { name: data.name });
+        CrmHelpers.toast('success', 'הכלל עודכן');
       }
       await loadRules(true);
       renderPillBar(document.getElementById('crm-rules-pillbar'));
-      renderTable();
+      renderRulesTable();
     } catch (e) {
-      toast('error', 'שמירה נכשלה: ' + (e.message || String(e)));
+      CrmHelpers.toast('error', 'שמירה נכשלה: ' + (e.message || String(e)));
     }
   }
 
   async function toggleActive(id, nextActive) {
     var tid = getTenantId();
     var upd = await sb.from('crm_automation_rules').update({ is_active: !!nextActive }).eq('id', id).eq('tenant_id', tid);
-    if (upd.error) { toast('error', 'כשל'); return false; }
-    logWrite('crm.rule.toggle', id, { is_active: !!nextActive });
+    if (upd.error) { CrmHelpers.toast('error', 'כשל'); return false; }
+    CrmHelpers.logActivity('crm.rule.toggle', 'crm_automation_rule', id, { is_active: !!nextActive });
     return true;
   }
 })();
