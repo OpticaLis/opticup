@@ -120,14 +120,14 @@
       var btn = footer.querySelector('#crm-cancel-noref');
       btn.disabled = true;
       var upd = await sb.from('crm_event_attendees')
-        .update({ payment_status: 'no_refund_due' })
+        .update({ no_refund_due_marked: true, no_refund_due_marked_at: new Date().toISOString() })
         .eq('id', attendee.id).eq('tenant_id', tenantId);
       if (upd.error) {
         btn.disabled = false;
         _cancelToast('error', 'העדכון נכשל: ' + upd.error.message);
         return;
       }
-      _logCancel('crm.attendee.mark_no_refund_due', attendee.id, { from_status: attendee.status, payment_status: attendee.payment_status, path: 'paid_no_refund_due' });
+      _logCancel('crm.attendee.mark_no_refund_due_flag', attendee.id, { from_status: attendee.status, payment_status: attendee.payment_status, path: 'paid_no_refund_due' });
       _cancelToast('success', 'סומן: לא מגיע החזר');
       if (modal.close) modal.close();
       if (typeof opts.onAfterCancel === 'function') opts.onAfterCancel(attendee.id);
