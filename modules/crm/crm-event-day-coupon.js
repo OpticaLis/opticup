@@ -43,11 +43,22 @@
 
   async function toggleCoupon(id, btn, ctx) {
     ctx = ctx || {};
-    var state = window.getEventDayState();
-    var ev = state.event || {};
-    var attendees = state.attendees || [];
-    var target = attendees.find(function (a) { return a.id === id; });
-    if (!target) return;
+    // P24: callers outside Event Day "ניהול" (e.g., the events-detail coupon-only
+    // panel) provide ctx.target + ctx.event explicitly so the function does not
+    // depend on window.getEventDayState. The full attendees list is also optional
+    // — without it, the ceiling-check branch counts only the single passed row.
+    var ev, attendees, target;
+    if (ctx.target && ctx.event) {
+      ev = ctx.event;
+      target = ctx.target;
+      attendees = ctx.attendees || [target];
+    } else {
+      var state = window.getEventDayState();
+      ev = state.event || {};
+      attendees = state.attendees || [];
+      target = attendees.find(function (a) { return a.id === id; });
+      if (!target) return;
+    }
 
     // Lifecycle guards — block dispatch when event or attendee is in a
     // status where sending a coupon doesn't make business sense.

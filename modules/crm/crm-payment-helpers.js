@@ -7,6 +7,16 @@
 (function () {
   'use strict';
 
+  // P24: feature-flag bag. legacyPaymentPanel=false hides the
+  // mark_paid/refund/credit buttons in the events-detail attendees panel and
+  // shows only the coupon-send flow (matches Event Day "ניהול" UX). The legacy
+  // panel is preserved verbatim under the flag for the future
+  // automatic-payment-link → paid integration; flip the flag to opt back in.
+  if (!window.CrmFeatureFlags) window.CrmFeatureFlags = {};
+  if (window.CrmFeatureFlags.legacyPaymentPanel == null) {
+    window.CrmFeatureFlags.legacyPaymentPanel = false;
+  }
+
   var STATUS_COLORS = {
     pending_payment: 'sky',
     paid: 'emerald',
@@ -112,9 +122,41 @@
     return '';
   }
 
-  function renderActionPanel(hostEl, attendeeRow, eventRow, callbacks) {
+  // P24: coupon-only panel — surfaces the same UX as Event Day "ניהול"'s coupon
+  // column. Reuses CrmEventDayCoupon.couponCell for visual state and
+  // CrmEventDayCoupon.toggleCoupon for dispatch (no logic duplication, per §3 #16).
+  function _renderCouponOnlyPanel(hostEl, attendeeRow, eventRow, callbacks) {
+    var status = attendeeRow.payment_status || 'pending_payment';
+    var couponCellHtml = (window.CrmEventDayCoupon && CrmEventDayCoupon.couponCell)
+      ? CrmEventDayCoupon.couponCell(attendeeRow)
+      : '<span class="text-sm text-slate-500">CrmEventDayCoupon לא זמין</span>';
+    hostEl.innerHTML = '<div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-3">' +
+      '<div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold text-slate-800 m-0">קופון</h4><div>' +
+        renderStatusPill(status, { size: 'lg' }) +
+        renderNoRefundDueChip(attendeeRow) +
+        renderCreditIndicator(attendeeRow) +
+      '</div></div>' +
+      '<div class="flex items-center gap-2">' + couponCellHtml + '</div>' +
+      _renderInfoLine(attendeeRow) +
+    '</div>';
+    hostEl.querySelectorAll('[data-toggle-coupon]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (!window.CrmEventDayCoupon || typeof CrmEventDayCoupon.toggleCoupon !== 'function') return;
+        CrmEventDayCoupon.toggleCoupon(attendeeRow.id, b, {
+          target: attendeeRow,
+          event: eventRow,
+          renderTable: function () { if (callbacks.onUpdate) callbacks.onUpdate(); },
+          updateLocal: function (id, patch) { Object.assign(attendeeRow, patch); }
+        });
+      });
+    });
+  }
+
+  function renderActionPanel(hostEl, attendeeRow, eventRow, callbacks, mode) {
     if (!hostEl) return;
     callbacks = callbacks || {};
+    mode = mode || (window.CrmFeatureFlags && window.CrmFeatureFlags.legacyPaymentPanel ? 'legacy' : 'coupon_only');
+    if (mode === 'coupon_only') return _renderCouponOnlyPanel(hostEl, attendeeRow, eventRow, callbacks);
     var status = attendeeRow.payment_status || 'pending_payment';
     var actions = allowedActions(status, eventRow);
     var refundable = isRefundEligibleByTime(eventRow);
@@ -248,10 +290,10 @@
   // opts.onAfterAction (optional): fires after every successful action (mark paid/refund/etc.).
   async function openActionModal(attendeeId, opts) {
     var tid = getTenantId();
-    var attRes = await sb.from('crm_event_attendees').select('id, lead_id, event_id, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id').eq('id', attendeeId).eq('tenant_id', tid).single();
+    var attRes = await sb.from('v_crm_event_attendees_full').select('id, lead_id, event_id, status, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id, coupon_sent, coupon_sent_at, checked_in_at, no_refund_due_marked, no_refund_due_marked_at, paid_via_credit, phone, email, full_name').eq('id', attendeeId).eq('tenant_id', tid).single();
     if (attRes.error || !attRes.data) { _toast('error', 'משתתף לא נמצא'); return; }
     var att = attRes.data;
-    var evRes = await sb.from('crm_events').select('id, name, event_date, start_time, end_time, status, location_address').eq('id', att.event_id).single();
+    var evRes = await sb.from('crm_events').select('id, name, event_date, start_time, end_time, status, location_address, coupon_code, max_coupons, extra_coupons').eq('id', att.event_id).single();
     var ev = evRes.data || {};
     if (!window.Modal || !Modal.show) return;
     var modal = Modal.show({ title: 'ניהול תשלום — משתתף', size: 'md', content: '<div id="crm-payment-modal-host"></div>' });
