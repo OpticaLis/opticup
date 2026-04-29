@@ -79,7 +79,7 @@
         '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
         '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('attendee', r.status) + '</td>' +
         '<td class="' + CLS_TD + '" data-admin-only>' + purchaseCell(r) + '</td>' +
-        '<td class="' + CLS_TD + '">' + CrmEventDayCoupon.couponCell(r) + '</td>' +
+        '<td class="' + CLS_TD + '">' + CrmEventDayCoupon.couponCell(r) + CrmAttendeeCancel.cancelButtonHtml(r) + '</td>' +
         '<td class="' + CLS_TD + '">' + feeCell(r) + '</td>' +
       '</tr>';
     });
@@ -90,6 +90,8 @@
   function filterRows(all) {
     var s = _filter.trim().toLowerCase();
     return (all || []).filter(function (r) {
+      // Hide cancelled by default; show only when admin explicitly selects "ביטל" in the status filter.
+      if (!_statusFilter && r.status === 'cancelled') return false;
       if (_statusFilter && r.status !== _statusFilter) return false;
       if (s && (r.full_name || '').toLowerCase().indexOf(s) === -1 && (r.phone || '').toLowerCase().indexOf(s) === -1) return false;
       return true;
@@ -128,6 +130,12 @@
     wrap.querySelectorAll('[data-pay-attendee-id]').forEach(function (b) {
       var aid = b.getAttribute('data-pay-attendee-id');
       b.addEventListener('click', function (e) { e.stopPropagation(); if (window.CrmPayment) CrmPayment.openActionModal(aid, { onAfterAction: function () { refreshAttendeeRow(aid); } }); });
+    });
+    wrap.querySelectorAll('[data-cancel-attendee]').forEach(function (b) {
+      var aid = b.getAttribute('data-cancel-attendee');
+      b.addEventListener('click', function () {
+        CrmAttendeeCancel.openCancelDialog(aid, { onAfterCancel: function (id) { refreshAttendeeRow(id); } });
+      });
     });
   }
 
@@ -250,7 +258,7 @@
 
   async function refreshAttendeeRow(id) {
     var state = window.getEventDayState();
-    var res = await sb.from('crm_event_attendees').select('id, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id').eq('id', id).eq('tenant_id', getTenantId()).single();
+    var res = await sb.from('crm_event_attendees').select('id, status, cancelled_at, payment_status, paid_at, refund_requested_at, refunded_at, credit_expires_at, credit_used_for_attendee_id').eq('id', id).eq('tenant_id', getTenantId()).single();
     if (res.error || !res.data) return;
     (state.attendees || []).forEach(function (a) { if (a.id === id) Object.assign(a, res.data); });
     renderTable();
