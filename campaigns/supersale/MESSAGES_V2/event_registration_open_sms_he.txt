@@ -1,4 +1,4 @@
-%name%, נפתחה ההרשמה לאירוע המותגים %event_name% ב-%event_date% 📅
+%name%, נפתחה ההרשמה ל%event_name% ב-%event_date% 📅
 
 המכסה מוגבלת ל-%event_max_attendees% נרשמים - מומלץ לשריין מקום לפני המעבר לרשימת המתנה.
 
