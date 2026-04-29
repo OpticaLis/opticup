@@ -114,20 +114,27 @@ Deno.serve(async (req: Request) => {
   }
 
   // --- Validate required fields ---
+  // Email made REQUIRED 2026-04-29 (post-cutover-prep): every CRM lead must
+  // carry both phone AND email so T1/T2/T5 templates can dispatch on both
+  // channels. Defense-in-depth: storefront form is also expected to enforce
+  // email-required client-side (P5_7_STOREFRONT_FORM_REWIRE).
   const tenantSlug = trimOrNull(body.tenant_slug);
   const name = trimOrNull(body.name);
   const phoneRaw = trimOrNull(body.phone);
+  const emailRaw = trimOrNull(body.email);
 
   if (!tenantSlug) return errorResponse("Missing tenant_slug", 400);
   if (!name) return errorResponse("Missing name", 400);
   if (!phoneRaw) return errorResponse("Missing phone", 400);
+  if (!emailRaw) return errorResponse("Missing email", 400);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) return errorResponse("Invalid email format", 400);
 
   // --- Normalize phone ---
   const phone = normalizePhone(phoneRaw);
   if (!phone) return errorResponse("Invalid phone number", 400);
 
   // --- Optional fields ---
-  const email = trimOrNull(body.email);
+  const email = emailRaw;
   const eyeExam = trimOrNull(body.eye_exam);
   const notes = trimOrNull(body.notes);
   const language = trimOrNull(body.language) || "he";
