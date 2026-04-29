@@ -10,8 +10,6 @@
   var CLS_TD           = 'px-4 py-2.5 text-slate-800 border-b border-slate-100';
   var CLS_INPUT        = 'px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500';
   var CLS_LINK_BTN     = 'text-xs text-indigo-600 font-medium hover:text-indigo-800 hover:underline';
-  var CLS_TOGGLE_ON    = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700';
-  var CLS_TOGGLE_OFF   = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
   var CLS_ARR_CARD     = 'bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-amber-400 hover:shadow-sm transition';
   var CLS_ARR_PURCH    = 'bg-emerald-50 border border-emerald-300 rounded-lg p-3';
   var CLS_PURCH_BADGE  = 'inline-block mt-2 text-xs bg-amber-500 text-white font-semibold px-2 py-1 rounded-full';
@@ -81,7 +79,7 @@
         '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
         '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('attendee', r.status) + '</td>' +
         '<td class="' + CLS_TD + '" data-admin-only>' + purchaseCell(r) + '</td>' +
-        '<td class="' + CLS_TD + '">' + couponCell(r) + '</td>' +
+        '<td class="' + CLS_TD + '">' + CrmEventDayCoupon.couponCell(r) + '</td>' +
         '<td class="' + CLS_TD + '">' + feeCell(r) + '</td>' +
       '</tr>';
     });
@@ -107,13 +105,6 @@
     return '<span class="font-semibold text-emerald-700">' + escapeHtml(valTxt) + '</span>' +
       ' <button type="button" class="' + CLS_LINK_BTN + ' ms-1" data-edit-purchase="' + escapeHtml(r.id) + '">ערוך</button>';
   }
-  function couponCell(r) {
-    if (!r.coupon_sent) return '<button type="button" class="' + CLS_TOGGLE_OFF + '" data-toggle-coupon="' + escapeHtml(r.id) + '">שלח</button>';
-    if (r.checked_in_at) return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">✓ הגיע</span>';
-    var ev = window.getEventDayState().event;
-    if (window.CrmPayment && CrmPayment.eventEnded(ev)) return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">⚠️ לא הגיע</span>';
-    return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">📨 נשלח</span>';
-  }
   function feeCell(r) {
     var pill = window.CrmPayment ? CrmPayment.renderStatusPill(r.payment_status) : '';
     return '<button type="button" class="text-start hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded" data-pay-attendee-id="' + escapeHtml(r.id) + '">' + pill + '</button>';
@@ -126,7 +117,14 @@
       inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); savePurchase(inp); } else if (e.key === 'Escape') { _editingId = null; renderTable(); } });
       inp.addEventListener('blur', function () { setTimeout(function () { savePurchase(inp); }, 150); });
     });
-    wrap.querySelectorAll('[data-toggle-coupon]').forEach(function (b) { b.addEventListener('click', function () { toggleCoupon(b.getAttribute('data-toggle-coupon'), b); }); });
+    wrap.querySelectorAll('[data-toggle-coupon]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        CrmEventDayCoupon.toggleCoupon(b.getAttribute('data-toggle-coupon'), b, {
+          renderTable: renderTable,
+          updateLocal: updateLocal
+        });
+      });
+    });
     wrap.querySelectorAll('[data-pay-attendee-id]').forEach(function (b) {
       var aid = b.getAttribute('data-pay-attendee-id');
       b.addEventListener('click', function (e) { e.stopPropagation(); if (window.CrmPayment) CrmPayment.openActionModal(aid, { onAfterAction: function () { refreshAttendeeRow(aid); } }); });
@@ -248,80 +246,6 @@
     if (window.refreshEventDayStats) await window.refreshEventDayStats();
     renderTable();
     toast('success', '✅ נשמר');
-  }
-
-  async function toggleCoupon(id, btn) {
-    var state = window.getEventDayState();
-    var ev = state.event || {};
-    var attendees = state.attendees || [];
-    var target = attendees.find(function (a) { return a.id === id; });
-    if (!target) return;
-
-    // Defensive re-send guard. UI hides the "שלח" button once coupon_sent=true
-    // (see couponCell), so this path is not reachable from the rendered table
-    // today; it protects programmatic callers and any future re-send button.
-    if (target.coupon_sent) {
-      var when = target.coupon_sent_at ? new Date(target.coupon_sent_at).toLocaleString('he-IL') : '—';
-      if (!confirm('הקופון כבר נשלח ב-' + when + '. לשלוח שוב?')) return;
-    } else {
-      var totalSent = attendees.filter(function (a) { return a.coupon_sent && a.status !== 'cancelled'; }).length;
-      var ceiling = (ev.max_coupons != null ? +ev.max_coupons : 50) + (+ev.extra_coupons || 0);
-      if (totalSent >= ceiling) {
-        toast('error', 'הגעת למכסת הקופונים (' + ceiling + '). הגדל כמות קופונים נוספת אם יש צורך.');
-        return;
-      }
-    }
-
-    if (!ev.coupon_code) {
-      toast('error', 'לאירוע לא הוגדר קוד קופון. הגדר קוד קופון לאירוע לפני השליחה.');
-      return;
-    }
-    if (!window.CrmMessaging || typeof CrmMessaging.sendMessage !== 'function') {
-      toast('error', 'CrmMessaging אינו זמין');
-      return;
-    }
-    if (!target.phone && !target.email) {
-      toast('error', 'למשתתף חסרים טלפון ואימייל — לא ניתן לשלוח קופון.');
-      return;
-    }
-
-    if (!window.CrmCouponDispatch || typeof CrmCouponDispatch.dispatch !== 'function') {
-      toast('error', 'CrmCouponDispatch אינו זמין');
-      return;
-    }
-
-    if (btn) { btn.disabled = true; btn.textContent = '...'; }
-
-    var dispatch = await CrmCouponDispatch.dispatch(target, ev);
-    if (!dispatch.anyOk) {
-      if (btn) { btn.disabled = false; btn.textContent = 'שלח'; }
-      toast('error', 'שליחה נכשלה: SMS ' + (dispatch.smsError || '—') + ' | Email ' + (dispatch.emailError || '—'));
-      return;
-    }
-
-    // Flag update happens AFTER at least one channel succeeds — never before.
-    var nowIso = new Date().toISOString();
-    var { error } = await sb.from('crm_event_attendees')
-      .update({ coupon_sent: true, coupon_sent_at: nowIso })
-      .eq('id', id).eq('tenant_id', getTenantId());
-    if (error) {
-      toast('warning', 'נשלח, אך שמירת דגל נכשלה: ' + error.message);
-      if (btn) { btn.disabled = false; }
-      return;
-    }
-    logActivity('crm.attendee.coupon_sent', id, {
-      sms_ok: dispatch.smsOk, email_ok: dispatch.emailOk,
-      sms_log_id: dispatch.smsLogId, email_log_id: dispatch.emailLogId
-    });
-    updateLocal(id, { coupon_sent: true, coupon_sent_at: nowIso });
-    toast(dispatch.allOk ? 'success' : 'warning', 'הקופון נשלח: ' + dispatch.summary);
-    if (window.CrmCouponDispatch && typeof CrmCouponDispatch.checkAndAutoClose === 'function') {
-      try {
-        var ac = await CrmCouponDispatch.checkAndAutoClose(ev);
-        if (ac && ac.closed) { ev.status = 'closed'; toast('success', 'האירוע עבר ל"נסגר" — כל הקופונים הונפקו'); }
-      } catch (e) { console.error('autoClose:', e); }
-    }
-    renderTable();
   }
 
   async function refreshAttendeeRow(id) {
