@@ -4,6 +4,7 @@ import {
   injectAutoUrls,
   injectEventVariables,
   scanForPaymentUrlMismatch,
+  withDisplayPhone,
 } from "./event-variables.ts";
 
 // send-message — CRM message dispatch (P3c+P4 Architecture v3).
@@ -144,6 +145,11 @@ Deno.serve(async (req: Request) => {
       console.warn("injectEventVariables failed:", (e as Error).message);
     }
   }
+  // displayVars: same as variables, but %phone% reformatted E.164 → Israeli
+  // local (0XXXXXXXXX) for customer-facing body/subject. ORIGINAL `variables`
+  // stays untouched so the recipientPhone passed to Make/global-sms below
+  // remains E.164 (the wire format the SMS vendor expects).
+  const displayVars = withDisplayPhone(variables);
 
   // --- Resolve template or use raw body ---
   let finalBody: string;
@@ -183,12 +189,12 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    finalBody = substituteVariables(tpl.body, variables);
-    finalSubject = tpl.subject ? substituteVariables(tpl.subject, variables) : null;
+    finalBody = substituteVariables(tpl.body, displayVars);
+    finalSubject = tpl.subject ? substituteVariables(tpl.subject, displayVars) : null;
     templateId = tpl.id;
   } else {
-    finalBody = substituteVariables(rawBody!, variables);
-    finalSubject = rawSubject ? substituteVariables(rawSubject, variables) : null;
+    finalBody = substituteVariables(rawBody!, displayVars);
+    finalSubject = rawSubject ? substituteVariables(rawSubject, displayVars) : null;
   }
 
   // --- Rung 1 Pattern P12 loud failure: any %payment_url_<digits>% remaining

@@ -117,6 +117,27 @@ export async function injectEventVariables(
 }
 
 /**
+ * Build a new variables object with `phone` reformatted from canonical E.164
+ * (+972...) to Israeli local (0XXXXXXXXX, no dashes) for customer-facing
+ * template substitution. DB storage stays in E.164. The ORIGINAL `vars`
+ * object is left untouched so the caller can still use `vars.phone` as the
+ * Make/global-sms routing value (which requires E.164).
+ *
+ * Non-Israeli E.164 numbers stay as-is so future SaaS tenants in other
+ * countries are not silently mangled. Idempotent.
+ *
+ * Called from send-message index.ts to produce a `displayVars` for body +
+ * subject substitution only.
+ */
+export function withDisplayPhone(vars: Record<string, unknown>): Record<string, unknown> {
+  const p = vars.phone;
+  if (typeof p !== "string") return vars;
+  const m = p.match(/^\+972(\d{9})$/);
+  if (!m) return vars;
+  return { ...vars, phone: "0" + m[1] };
+}
+
+/**
  * Post-substitution scan for un-resolved payment_url placeholders.
  * Runs on the FINAL body after substituteVariables. If any %payment_url_\d+%
  * remains, the send must fail loudly per Pattern P12.
