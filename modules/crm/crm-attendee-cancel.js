@@ -35,7 +35,7 @@
     if (!tenantId) { _cancelToast('error', 'לא זוהה tenant'); return; }
 
     var fetchRes = await sb.from('v_crm_event_attendees_full')
-      .select('id, full_name, status, payment_status')
+      .select('id, full_name, status, payment_status, no_refund_due_marked')
       .eq('id', attendeeId).eq('tenant_id', tenantId).single();
     if (fetchRes.error || !fetchRes.data) {
       _cancelToast('error', 'לא נמצא רישום: ' + (fetchRes.error ? fetchRes.error.message : 'unknown'));

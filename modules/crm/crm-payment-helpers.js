@@ -38,6 +38,14 @@
     return '<span class="inline-block rounded-full ' + size + ' font-semibold bg-' + color + '-100 text-' + color + '-700">' + _esc(label) + '</span>';
   }
 
+  // Secondary chip — stacks beside the payment_status pill when admin has marked
+  // this attendee as cancellation-without-refund (P23.1). Returns '' when the
+  // boolean is false/missing so callers can blindly concatenate.
+  function renderNoRefundDueChip(attendeeRow) {
+    if (!attendeeRow || !attendeeRow.no_refund_due_marked) return '';
+    return '<span class="inline-block rounded-full text-xs px-2 py-0.5 font-semibold bg-slate-100 text-slate-700 ms-1" title="לא מגיע החזר">🚫 לא מגיע החזר</span>';
+  }
+
   // Returns Date for event start, accounting for Israel timezone.
   // Heuristic: months 3-10 (Mar-Oct) → DST +03:00; else +02:00. Adequate for demo dates.
   function _eventStartDate(eventRow) {
@@ -127,7 +135,7 @@
     }
     var btnsHtml = btns.length ? btns.join(' ') : '<span class="text-sm text-slate-500">אין פעולות זמינות</span>';
     hostEl.innerHTML = '<div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-3">' +
-      '<div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold text-slate-800 m-0">ניהול תשלום</h4>' + renderStatusPill(status, { size: 'lg' }) + '</div>' +
+      '<div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold text-slate-800 m-0">ניהול תשלום</h4><div>' + renderStatusPill(status, { size: 'lg' }) + renderNoRefundDueChip(attendeeRow) + '</div></div>' +
       '<div class="flex flex-wrap items-center gap-2">' + btnsHtml + '</div>' +
       _renderInfoLine(attendeeRow) +
     '</div>';
@@ -264,6 +272,7 @@
 
   window.CrmPayment = {
     renderStatusPill: renderStatusPill,
+    renderNoRefundDueChip: renderNoRefundDueChip,
     renderActionPanel: renderActionPanel,
     openActionModal: openActionModal,
     markPaid: markPaid,
