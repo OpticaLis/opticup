@@ -14,7 +14,8 @@
     refund_requested: 'amber',
     refunded: 'gray',
     credit_pending: 'violet',
-    credit_used: 'slate'
+    credit_used: 'slate',
+    no_refund_due: 'slate'
   };
   var STATUS_LABELS = {
     pending_payment: 'ממתין לתשלום',
@@ -23,7 +24,8 @@
     refund_requested: 'מבוקש החזר',
     refunded: 'הוחזר',
     credit_pending: 'קרדיט פתוח',
-    credit_used: 'קרדיט מומש'
+    credit_used: 'קרדיט מומש',
+    no_refund_due: 'לא מגיע החזר'
   };
   var REFUND_TOOLTIP = 'עברו 48 שעות — לא ניתן לבטל ללא אישור מיוחד';
 
@@ -89,6 +91,9 @@
     }
     if (attendeeRow.payment_status === 'credit_used' && attendeeRow.credit_used_for_attendee_id) {
       return '<div class="text-xs text-slate-500 mt-2">💳 קרדיט מומש לאירוע אחר</div>';
+    }
+    if (attendeeRow.payment_status === 'no_refund_due') {
+      return '<div class="text-xs text-slate-500 mt-2">לא מגיע החזר — ביטול ללא זיכוי</div>';
     }
     return '';
   }
