@@ -89,13 +89,11 @@
   }
   window.CRM_AUTOMATION_RESOLVE_RECIPIENTS = _engineResolveRecipients;
 
-  // Build the variables object the send-message EF needs. Reuses buildEventVariables
-  // from crm-event-actions.js when available (for event-scoped triggers).
+  // Build %var% substitution map for plan-item preview. Real URLs/HMACs are
+  // injected server-side by send-message EF at dispatch time.
   async function buildVariables(triggerData, lead) {
     var vars = { name: lead.full_name || '', phone: lead.phone || '', email: lead.email || '' };
     vars.lead_id = lead.id || '';
-    // P-FINAL: preview placeholder only — real HMAC unsubscribe token is
-    // generated server-side in send-message EF at actual send time (90-day TTL).
     vars.unsubscribe_url = '[קישור הסרה — יצורף אוטומטית]';
     var evt = triggerData && triggerData.event;
     // If the trigger carries an event, merge event variables.
@@ -124,9 +122,6 @@
     return vars;
   }
 
-  // P20: Template cache + variable substitution for client-side preview.
-  // Same %var% pattern the send-message EF uses server-side; preview is
-  // informational (EF re-substitutes on actual send).
   async function fetchTemplate(cache, tenantId, base, channel, language) {
     var key = base + '|' + channel + '|' + (language || 'he');
     if (cache.has(key)) return cache.get(key);
@@ -146,10 +141,9 @@
     return out;
   }
 
-  // P20: prepare plan items for a rule (replaces fireRule's direct dispatch).
-  // Returns { items, skipped } — items carry everything the confirmation modal
-  // and the direct-dispatch fallback need.
-  async function prepareRulePlan(rule, triggerData, tplCache) {
+  // P20: prepare plan items for a rule. runId stamps queue_send rows so
+  // dispatch-queue → send-message → log rows all carry the run id.
+  async function prepareRulePlan(rule, triggerData, tplCache, runId) {
     var cfg = rule.action_config || {};
     var tenantId = tid();
     if (!tenantId) return { items: [], skipped: 1, resolvedLeadIds: [] };
@@ -164,7 +158,7 @@
         return { items: [], skipped: 1, resolvedLeadIds: [] };
       }
       try {
-        var qsRes = await CrmAutomationQueueSend.prepare(rule, triggerData, tenantId, _engineResolveRecipients);
+        var qsRes = await CrmAutomationQueueSend.prepare(rule, triggerData, tenantId, _engineResolveRecipients, runId);
         return { items: [], skipped: 0, resolvedLeadIds: qsRes.leadIds || [], queued: qsRes.queued || 0 };
       } catch (e) {
         console.error('CrmAutomation queue_send:', e);
@@ -272,13 +266,25 @@
     var rules = (res.data || []).filter(function (r) { return evaluateCondition(r.trigger_condition, triggerData || {}); });
     if (!rules.length) return { fired: 0, sent: 0, failed: 0, skipped: 0 };
 
+    // Run row written upfront (2026-04-29) so queue_send/post-action-only
+    // firings (T8/T9 etc.) appear in automation-history. total_recipients
+    // is patched after planItems + queued are known.
+    var runId = null;
+    if (window.CrmAutomationRuns) {
+      runId = await CrmAutomationRuns.createRun(tenantId, rules, triggerType, triggerData, triggerData && triggerData.eventId, 0);
+    }
+
     var tplCache = new Map();
-    var perRule = await Promise.allSettled(rules.map(function (r) { return prepareRulePlan(r, triggerData || {}, tplCache); }));
-    var planItems = [], skipped = 0, ruleResolvedIds = [];
+    var perRule = await Promise.allSettled(rules.map(function (r) { return prepareRulePlan(r, triggerData || {}, tplCache, runId); }));
+    var planItems = [], skipped = 0, ruleResolvedIds = [], totalQueued = 0;
     perRule.forEach(function (pr, i) {
       var v = pr.status === 'fulfilled' ? pr.value : null;
-      if (v) { planItems = planItems.concat(v.items || []); skipped += v.skipped || 0; ruleResolvedIds[i] = v.resolvedLeadIds || []; }
-      else { skipped++; ruleResolvedIds[i] = []; }
+      if (v) {
+        planItems = planItems.concat(v.items || []);
+        skipped += v.skipped || 0;
+        ruleResolvedIds[i] = v.resolvedLeadIds || [];
+        totalQueued += v.queued || 0;
+      } else { skipped++; ruleResolvedIds[i] = []; }
     });
 
     // Bulk post-actions run after resolve, before dispatch — lifecycle transitions are user-gate-independent.
@@ -296,14 +302,26 @@
       }
     }
 
-    if (!planItems.length) { if (window.Toast) Toast.info('כלל אוטומציה הופעל, אך אין נמענים מתאימים'); return { fired: rules.length, sent: 0, failed: 0, skipped: skipped }; }
-
-    // OVERNIGHT_M4_SCALE_AND_UI Phase 4: observability run row.
-    var runId = null;
-    if (window.CrmAutomationRuns) {
-      runId = await CrmAutomationRuns.createRun(tenantId, rules, triggerType, triggerData, triggerData && triggerData.eventId, planItems.length);
-      if (runId) planItems.forEach(function (it) { it.run_id = runId; });
+    // Update total_recipients now that planItems + queued count are known.
+    var totalRecipients = planItems.length + totalQueued;
+    if (runId && totalRecipients > 0) {
+      try { await sb.from('crm_automation_runs').update({ total_recipients: totalRecipients }).eq('id', runId); }
+      catch (e) { console.error('CrmAutomation total_recipients update:', e); }
     }
+
+    if (!planItems.length) {
+      // queue_send-only or post-action-only fire: still close the run row so
+      // automation-history shows it (status='completed', sent_count derived
+      // from log later when dispatch-queue drains).
+      if (runId && window.CrmAutomationRuns) await CrmAutomationRuns.finishRun(runId, 'completed');
+      if (window.Toast) {
+        if (totalQueued > 0) Toast.info('הוצבו ' + totalQueued + ' הודעות בתור');
+        else Toast.info('כלל אוטומציה הופעל, אך אין נמענים מתאימים');
+      }
+      return { fired: rules.length, sent: 0, failed: 0, skipped: skipped, queued: totalQueued, run_id: runId };
+    }
+
+    if (runId) planItems.forEach(function (it) { it.run_id = runId; });
 
     if (window.CrmConfirmSend && typeof CrmConfirmSend.show === 'function') {
       CrmConfirmSend.show(planItems); // fire-and-forget; finish-run happens in approveAndSend
@@ -315,7 +333,7 @@
       var m = 'נשלחו ' + r.sent + ', נכשלו ' + r.failed + ', נדחו ' + (r.rejected || 0);
       Toast[(r.failed === 0 && (r.rejected || 0) === 0) ? 'success' : 'warning'](m);
     }
-    return { fired: rules.length, sent: r.sent, failed: r.failed, rejected: r.rejected || 0, skipped: skipped, run_id: runId };
+    return { fired: rules.length, sent: r.sent, failed: r.failed, rejected: r.rejected || 0, skipped: skipped, queued: totalQueued, run_id: runId };
   }
 
   window.CrmAutomation = {

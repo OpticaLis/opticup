@@ -193,6 +193,7 @@ Deno.serve(async (req: Request) => {
       .not("unsubscribed_at", "is", null);
 
     await dispatchIntakeMessages(
+      db,
       tenantId,
       existing.id,
       "lead_intake_duplicate",
@@ -253,6 +254,7 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
       if (racedRow?.id) {
         await dispatchIntakeMessages(
+          db,
           tenantId,
           racedRow.id,
           "lead_intake_duplicate",

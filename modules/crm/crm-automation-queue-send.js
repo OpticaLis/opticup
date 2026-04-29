@@ -33,7 +33,7 @@
 
   function _qsTid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
 
-  async function prepare(rule, triggerData, tenantIdArg, resolveRecipientsFn) {
+  async function prepare(rule, triggerData, tenantIdArg, resolveRecipientsFn, runId) {
     var cfg = rule.action_config || {};
     var tenantId = tenantIdArg || _qsTid();
     var eventId = triggerData && triggerData.eventId;
@@ -76,6 +76,7 @@
           tenant_id: tenantId,
           event_id: eventId,
           lead_id: lead.id,
+          run_id: runId || null,
           channel: ch,
           // BASE slug only — send-message EF appends `_${channel}_${language}`
           // when looking up the template. Storing the full slug here would

@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
 
   let sent = 0, failed = 0, rejected = 0;
   for (const row of rows) {
-    const r = row as { id: string; tenant_id: string; lead_id: string; event_id: string | null; channel: "sms"|"email"; template_slug?: string; body?: string; subject?: string; variables?: Record<string, unknown>; language: string };
+    const r = row as { id: string; tenant_id: string; run_id: string | null; lead_id: string; event_id: string | null; channel: "sms"|"email"; template_slug?: string; body?: string; subject?: string; variables?: Record<string, unknown>; language: string };
     if (!claimedIds.has(r.id)) continue; // another tick won the race
 
     // Allowlist layer 2 — fail fast without hitting send-message.
@@ -94,6 +94,10 @@ Deno.serve(async (req: Request) => {
         tenant_id: r.tenant_id, lead_id: r.lead_id, event_id: r.event_id,
         channel: r.channel, variables, language: r.language,
       };
+      // 2026-04-29 cutover-blocker fix: forward run_id end-to-end so the
+      // queue → send-message → crm_message_log row carries the originating
+      // automation run, making queue_send rules visible in automation-history.
+      if (r.run_id) payload.run_id = r.run_id;
       if (r.template_slug) payload.template_slug = r.template_slug;
       if (r.body) payload.body = r.body;
       if (r.subject) payload.subject = r.subject;
