@@ -34,7 +34,7 @@
     var tenantId = _resolveTenantId();
     if (!tenantId) { _cancelToast('error', 'לא זוהה tenant'); return; }
 
-    var fetchRes = await sb.from('crm_event_attendees')
+    var fetchRes = await sb.from('v_crm_event_attendees_full')
       .select('id, full_name, status, payment_status')
       .eq('id', attendeeId).eq('tenant_id', tenantId).single();
     if (fetchRes.error || !fetchRes.data) {

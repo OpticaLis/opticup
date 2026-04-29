@@ -299,7 +299,7 @@
     var el = document.getElementById('crm-dashboard-refunds-banner');
     if (!el) return;
     var tid = getTenantId();
-    var q = sb.from('crm_event_attendees')
+    var q = sb.from('v_crm_event_attendees_full')
       .select('id, lead_id, event_id, full_name, phone, refund_requested_at')
       .eq('payment_status', 'refund_requested').eq('is_deleted', false)
       .order('refund_requested_at', { ascending: false });
