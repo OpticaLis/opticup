@@ -1,12 +1,5 @@
-/* =============================================================================
-   crm-lead-modals.js — CRM lead UI flows (modals + dropdowns) (P3a split)
-   Load order: AFTER crm-lead-actions.js (relies on window.CrmLeadActions writes).
-   Uses Modal, Toast, CrmHelpers, TIER1_STATUSES/TIER2_STATUSES, CRM_STATUSES.
-   Extends window.CrmLeadActions with:
-     openStatusDropdown, closeStatusDropdown, openBulkStatusPicker,
-     openCreateLeadModal.
-   No DB writes live here — they all call through window.CrmLeadActions.*.
-   ============================================================================= */
+/* crm-lead-modals.js — CRM lead UI flows (modals + dropdowns). Load AFTER
+   crm-lead-actions.js. No DB writes — all writes go through CrmLeadActions. */
 (function () {
   'use strict';
 
@@ -267,6 +260,7 @@
       '</div>';
 
     var footerHtml =
+      '<button type="button" id="crm-edit-lead-delete" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg text-sm transition shadow-sm me-auto">מחק ליד</button>' +
       '<button type="button" id="crm-edit-lead-cancel" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm hover:bg-slate-50 transition">ביטול</button>' +
       '<button type="button" id="crm-edit-lead-submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">שמור</button>';
 
@@ -280,6 +274,25 @@
     var cancelBtn = modal.el.querySelector('#crm-edit-lead-cancel');
     if (cancelBtn) cancelBtn.addEventListener('click', function () {
       if (typeof modal.close === 'function') modal.close();
+    });
+
+    var deleteBtn = modal.el.querySelector('#crm-edit-lead-delete');
+    if (deleteBtn) deleteBtn.addEventListener('click', function () {
+      if (!Modal || !Modal.confirm) return;
+      Modal.confirm({
+        title: 'מחיקת ליד', confirmText: 'מחק', confirmClass: 'bg-rose-600 hover:bg-rose-700',
+        message: 'האם למחוק את הליד? פעולה זו ניתנת לשחזור על-ידי מנהל המערכת.',
+        onConfirm: function () {
+          deleteBtn.disabled = true;
+          window.CrmLeadActions.softDeleteLead(lead.id, lead.full_name).then(function () {
+            if (typeof modal.close === 'function') modal.close();
+            if (window.Toast) Toast.success('הליד נמחק');
+            if (typeof onSaved === 'function') onSaved({ deleted: true, id: lead.id });
+            if (typeof window.reloadCrmLeadsTab === 'function') window.reloadCrmLeadsTab();
+            if (typeof window.reloadCrmIncomingTab === 'function') window.reloadCrmIncomingTab();
+          }, function (e) { deleteBtn.disabled = false; if (window.Toast) Toast.error('שגיאה: ' + (e.message || String(e))); });
+        }
+      });
     });
 
     var submitBtn = modal.el.querySelector('#crm-edit-lead-submit');

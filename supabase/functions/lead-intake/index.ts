@@ -252,11 +252,16 @@ Deno.serve(async (req: Request) => {
     // deno-lint-ignore no-explicit-any
     const code = (insErr as any)?.code;
     if (code === "23505") {
+      // 23505: race-safety — return existing ACTIVE lead (is_deleted=false).
+      // The partial unique index `WHERE is_deleted=false` enforces that a
+      // soft-deleted row never blocks a new active row at the DB level; this
+      // mirrors that filter at the application level.
       const { data: racedRow } = await db
         .from("crm_leads")
         .select("id, full_name")
         .eq("tenant_id", tenantId)
         .eq("phone", phone)
+        .eq("is_deleted", false)
         .limit(1)
         .maybeSingle();
       if (racedRow?.id) {

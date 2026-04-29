@@ -1,14 +1,6 @@
-/* =============================================================================
-   crm-lead-actions.js — CRM lead mutation helpers (P2a + P3a)
-   Load order: after shared.js, crm-helpers.js. Uses Toast, CrmHelpers.
-   UI modal flows live in crm-lead-modals.js and extend the same
-   window.CrmLeadActions namespace.
-   Exports (writes + leadTier):
-     changeLeadStatus, bulkChangeStatus, addLeadNote, createManualLead,
-     transferLeadToTier2, leadTier.
-   Writes: crm_leads (UPDATE/INSERT) + crm_lead_notes (INSERT), both on
-   current tenant. Every write carries tenant_id: getTenantId() (Rule 22).
-   ============================================================================= */
+/* crm-lead-actions.js — CRM lead mutation helpers (P2a + P3a). Load after
+   shared.js, crm-helpers.js. UI modal flows in crm-lead-modals.js extend the
+   same window.CrmLeadActions namespace. Every write carries tenant_id (Rule 22). */
 (function () {
   'use strict';
 
@@ -60,27 +52,16 @@
   }
 
   async function bulkChangeStatus(leadIds, newStatus) {
-    var tenantId = getTid();
     var results = { ok: 0, fail: [] };
     // Fetch current statuses in one query to write accurate notes
-    var fetch = await sb.from('crm_leads')
-      .select('id, status')
-      .in('id', leadIds)
-      .eq('tenant_id', tenantId);
-    if (fetch.error) {
-      return { ok: 0, fail: leadIds.map(function (id) { return { id: id, err: fetch.error.message }; }) };
-    }
+    var fetch = await sb.from('crm_leads').select('id, status').in('id', leadIds).eq('tenant_id', getTid());
+    if (fetch.error) return { ok: 0, fail: leadIds.map(function (id) { return { id: id, err: fetch.error.message }; }) };
     var byId = {};
     (fetch.data || []).forEach(function (r) { byId[r.id] = r.status; });
-
     for (var i = 0; i < leadIds.length; i++) {
       var id = leadIds[i];
-      try {
-        await changeLeadStatus(id, newStatus, byId[id] || '', { silent: true });
-        results.ok++;
-      } catch (e) {
-        results.fail.push({ id: id, err: e.message || String(e) });
-      }
+      try { await changeLeadStatus(id, newStatus, byId[id] || '', { silent: true }); results.ok++; }
+      catch (e) { results.fail.push({ id: id, err: e.message || String(e) }); }
     }
     return results;
   }
@@ -135,12 +116,13 @@
       .select('id, full_name, status')
       .single();
     if (ins.error) {
-      // Race-safety: 23505 unique_violation → report as duplicate.
+      // 23505: race-safety — return existing ACTIVE lead, ignore soft-deleted.
       if (ins.error.code === '23505') {
         var raced = await sb.from('crm_leads')
           .select('id, full_name, status')
           .eq('tenant_id', tenantId)
           .eq('phone', phone)
+          .eq('is_deleted', false)
           .limit(1)
           .maybeSingle();
         if (raced.data) return { duplicate: true, existingLead: raced.data };
@@ -210,6 +192,7 @@
           .select('id, full_name, status')
           .eq('tenant_id', tenantId)
           .eq('phone', clean.phone)
+          .eq('is_deleted', false)
           .neq('id', leadId)
           .limit(1)
           .maybeSingle();
@@ -218,6 +201,17 @@
       throw new Error('lead update failed: ' + res.error.message);
     }
     try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.update', entity_type: 'crm_leads', entity_id: leadId, details: { full_name: res.data && res.data.full_name, fields_changed: Object.keys(clean).filter(function (k) { return k !== 'updated_at'; }) } }); } catch (_) {}
+    return res.data;
+  }
+
+  // Soft-delete (Iron Rule 3). Partial unique index frees the phone slot.
+  async function softDeleteLead(leadId, leadName) {
+    if (!leadId) throw new Error('missing lead id');
+    var res = await sb.from('crm_leads')
+      .update({ is_deleted: true, updated_at: new Date().toISOString() })
+      .eq('id', leadId).eq('tenant_id', getTid()).select('id').single();
+    if (res.error) throw new Error('soft-delete failed: ' + res.error.message);
+    try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.soft_delete', entity_type: 'crm_leads', entity_id: leadId, details: { lead_name: leadName || null } }); } catch (_) {}
     return res.data;
   }
 
@@ -338,6 +332,7 @@
   window.CrmLeadActions.addLeadNote = addLeadNote;
   window.CrmLeadActions.createManualLead = createManualLead;
   window.CrmLeadActions.updateLead = updateLead;
+  window.CrmLeadActions.softDeleteLead = softDeleteLead;
   window.CrmLeadActions.transferLeadToTier2 = transferLeadToTier2;
   window.CrmLeadActions.leadTier = leadTier;
   window.CrmLeadActions.resubscribeLead = resubscribeLead;
