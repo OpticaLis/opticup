@@ -769,3 +769,37 @@ Fast-follow to P23 — fixes Finding 1 (CRITICAL): `payment_status='no_refund_du
 **SELECT projections:** 4 attendee fetches now include `no_refund_due_marked` + `no_refund_due_marked_at` (event-day main load, events-detail main load, refreshAttendeeRow single-row, openCancelDialog pre-flight).
 
 **Migrations:** `modules/Module 4 - CRM/migrations/2026_04_29_no_refund_due_boolean_up.sql` + `..._down.sql`.
+
+---
+
+## P24 — Payment Lifecycle Cleanup (2026-04-29)
+
+| Hash | Message |
+|------|---------|
+| `e0bd584` | `migrations(crm): add paid_via_credit boolean + update transfer_credit_to_new_attendee RPC` |
+| `2ae8122` | `feat(crm): coupon send flips pending_payment → paid atomically` |
+| `bbd2132` | `feat(crm): show credit indicator next to paid pill` |
+| `74fdbc7` | `feat(crm): events-detail panel coupon-only mode + legacy feature flag` |
+| `8dd4550` | `feat(crm): multi-status chip filter on event day manage` |
+| _(pending)_ | `chore(crm): MODULE_MAP + CHANGELOG for P24` |
+| _(pending)_ | `chore(spec): close P24_PAYMENT_LIFECYCLE_CLEANUP with retrospective` |
+
+Bundles 5 coordinated changes to align CRM with the actual business flow ("send coupon = customer paid the deposit"; cancellation is a separate decision):
+
+**1. Atomic pending_payment → paid on coupon send.** When admin clicks "שלח" in Event Day "ניהול" coupon column, the same UPDATE that sets `coupon_sent=true` + `coupon_sent_at=now()` ALSO sets `payment_status='paid'` + `paid_at=now()` — but ONLY when current `payment_status='pending_payment'`. For any other status (paid, credit_used, refund_requested, etc.) the payment fields are NOT overwritten. ActivityLog gains `payment_status_after` + `paid_at_changed` metadata.
+
+**2. Events-detail panel coupon-only mode.** The events-detail attendees pill click now opens a modal showing ONLY the coupon-send flow (matches Event Day "ניהול" UX). Reuses `CrmEventDayCoupon.couponCell` for visual state and `CrmEventDayCoupon.toggleCoupon` for dispatch — no logic duplication. The legacy 4-button panel (`mark_paid`, refund, credit, etc.) is preserved verbatim under `window.CrmFeatureFlags.legacyPaymentPanel` (default `false`); flip to `true` to opt back in for the future automatic-payment-link integration.
+
+**3. New `paid_via_credit` boolean column + 💳 chip indicator.** `crm_event_attendees.paid_via_credit BOOLEAN NOT NULL DEFAULT false`. RPC `transfer_credit_to_new_attendee` updated to set the boolean to `true` on the new-attendee UPDATE (atomic with `payment_status='paid'`). New `CrmPayment.renderCreditIndicator(attendee)` helper renders a violet "💳 קרדיט מאירוע" chip beside the existing pill when `paid_via_credit=true`. Wired at all 5 pill render sites (in-place inline append, net 0 line delta — same P23.1 pattern). Hand-flagged the historical row `3d031fe7-...` (T5 Canary on event #68376) which was paid-via-credit but lost its `credit_used_for_attendee_id` pointer (likely cleared by `move_attendee_between_events`); finding logged for future investigation.
+
+**4. Multi-status chip filter on Event Day "ניהול".** Replaces the single-select status dropdown with a chip-based multi-select. Each chip shows: status label (Hebrew), live count, ✓ when active. Default = all chips active so cancelled rows are visible by default. P23's "hide cancelled by default" rule is REMOVED in favor of explicit chip control. Chips render in `crm_statuses.sort_order`. Counts refresh live as attendee statuses change.
+
+**5. Legacy panel preserved as feature flag.** See item 2 — `legacyPaymentPanel` default false; legacy code path verbatim.
+
+**Pre-flight (P23 + P23.1 + P24 §13 skill improvements applied):** `pg_constraint` scan confirmed only the existing payment_status CHECK; new BOOLEAN column has no CHECK. `pg_proc` scan enumerated payment_status write sites (3 in-scope + 1 added). `node -e split('\n').length` line counts. SPEC §2.2 baselines drifted up by 4-18 lines since SPEC was authored — flagged in EXECUTION_REPORT.
+
+**New files:** `modules/Module 4 - CRM/migrations/2026_04_29_paid_via_credit_up.sql` + `..._down.sql`.
+
+**Modified:** `crm-event-day-coupon.js` (atomic UPDATE + ctx.target/event override for panel-driven dispatch), `crm-payment-helpers.js` (renderCreditIndicator helper, mode param on renderActionPanel, _renderCouponOnlyPanel, CrmFeatureFlags global, expanded openActionModal SELECT), `crm-event-day-manage.js` (chip multi-select replacing dropdown, filterRows simplified), `crm-events-detail.js` (credit chip wiring × 2 + SELECT projection), `crm-event-day.js` (credit chip wiring + SELECT projection), `crm-event-day-checkin.js` (credit chip wiring).
+
+**DB:** new column `paid_via_credit`. RPC `transfer_credit_to_new_attendee` body updated. View `v_crm_event_attendees_full` recreated. Backfill UPDATE affected 1 row (the hand-flagged 3d031fe7). `payment_status` CHECK constraint UNCHANGED.

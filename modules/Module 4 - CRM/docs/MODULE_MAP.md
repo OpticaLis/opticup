@@ -1,6 +1,6 @@
 # Module 4 — CRM: Module Map
 
-> **Last updated:** 2026-04-29 (P23.1 — no_refund_due moved from broken payment_status enum value to boolean column `no_refund_due_marked`; chip stacks beside payment pill at 5 sites; migration applied)
+> **Last updated:** 2026-04-29 (P24 — payment lifecycle cleanup: send-coupon = atomic pending_payment→paid; events-detail panel coupon-only mode + legacyPaymentPanel feature flag; new `paid_via_credit` boolean + 💳 chip; multi-status chip filter on Event Day "ניהול"; migration + RPC update applied)
 
 ---
 
