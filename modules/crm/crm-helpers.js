@@ -146,6 +146,11 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
     return String(a || '').localeCompare(String(b || ''), 'he');
   }
 
+  // --- Tenant id getter (safe pre-bootstrap) ---
+  function tid() {
+    return (typeof getTenantId === 'function') ? getTenantId() : null;
+  }
+
   window.CrmHelpers = {
     formatPhone: formatPhone,
     normalizePhone: normalizePhone,
@@ -157,7 +162,8 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
     getStatusInfo: getStatusInfo,
     statusBadgeHtml: statusBadgeHtml,
     distinctValues: distinctValues,
-    heCompare: heCompare
+    heCompare: heCompare,
+    tid: tid
   };
 
   // Export tier constants

@@ -10,8 +10,6 @@
 (function () {
   'use strict';
 
-  function tid() { return typeof getTenantId === 'function' ? getTenantId() : null; }
-
   function renderForm(ev) {
     var inp = 'flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm';
     var lbl = 'block text-sm font-medium text-slate-700 mb-1';
@@ -72,7 +70,7 @@
       if (!patch.name || !patch.event_date || !patch.location_address || !patch.coupon_code) {
         errBox.textContent = 'שדות חובה חסרים'; errBox.classList.remove('hidden'); return;
       }
-      var tenantId = tid();
+      var tenantId = CrmHelpers.tid();
       if (!tenantId) { errBox.textContent = 'לא זוהה tenant'; errBox.classList.remove('hidden'); return; }
       footer.querySelector('#crm-edit-event-submit').disabled = true;
       var res = await sb.from('crm_events').update(patch).eq('id', event.id).eq('tenant_id', tenantId).select('*').single();

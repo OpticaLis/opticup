@@ -13,12 +13,10 @@
 (function () {
   'use strict';
 
-  function tid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
-
   // ---- Create ----
 
   async function loadCampaigns() {
-    var tenantId = tid();
+    var tenantId = CrmHelpers.tid();
     var q = sb.from('crm_campaigns')
       .select('id, slug, name, default_location, default_hours, default_max_capacity, default_booking_fee, default_max_coupons')
       .eq('is_active', true);
@@ -30,7 +28,7 @@
   }
 
   async function createEvent(data) {
-    var tenantId = tid();
+    var tenantId = CrmHelpers.tid();
     if (!tenantId) throw new Error('tenant not resolved');
     if (!data.campaign_id) throw new Error('campaign required');
 
@@ -214,7 +212,7 @@
   }
 
   async function changeEventStatus(eventId, newStatus) {
-    var tenantId = tid();
+    var tenantId = CrmHelpers.tid();
     var evRes = await sb.from('crm_events')
       .select('name, event_date, start_time, location_address, status')
       .eq('id', eventId).eq('tenant_id', tenantId).single();
