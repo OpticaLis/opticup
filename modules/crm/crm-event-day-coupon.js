@@ -109,9 +109,18 @@
     }
 
     // Flag update happens AFTER at least one channel succeeds — never before.
+    // P24: when current payment_status is 'pending_payment', the same UPDATE also
+    // sets payment_status='paid' + paid_at=nowIso atomically (send-coupon = paid
+    // confirmed, business-flow alignment). For any other status (paid, credit_used,
+    // refund_requested, etc.) the payment fields are NOT overwritten — the patch
+    // object only carries coupon_sent/coupon_sent_at.
     var nowIso = new Date().toISOString();
+    var paidFlipped = (target.payment_status === 'pending_payment');
+    var patch = paidFlipped
+      ? { coupon_sent: true, coupon_sent_at: nowIso, payment_status: 'paid', paid_at: nowIso }
+      : { coupon_sent: true, coupon_sent_at: nowIso };
     var { error } = await sb.from('crm_event_attendees')
-      .update({ coupon_sent: true, coupon_sent_at: nowIso })
+      .update(patch)
       .eq('id', id).eq('tenant_id', getTenantId());
     if (error) {
       couponToast('warning', 'נשלח, אך שמירת דגל נכשלה: ' + error.message);
@@ -120,9 +129,11 @@
     }
     couponLog('crm.attendee.coupon_sent', id, {
       sms_ok: dispatch.smsOk, email_ok: dispatch.emailOk,
-      sms_log_id: dispatch.smsLogId, email_log_id: dispatch.emailLogId
+      sms_log_id: dispatch.smsLogId, email_log_id: dispatch.emailLogId,
+      payment_status_after: paidFlipped ? 'paid' : target.payment_status,
+      paid_at_changed: paidFlipped
     });
-    if (typeof ctx.updateLocal === 'function') ctx.updateLocal(id, { coupon_sent: true, coupon_sent_at: nowIso });
+    if (typeof ctx.updateLocal === 'function') ctx.updateLocal(id, patch);
     couponToast(dispatch.allOk ? 'success' : 'warning', 'הקופון נשלח: ' + dispatch.summary);
     if (window.CrmCouponDispatch && typeof CrmCouponDispatch.checkAndAutoClose === 'function') {
       try {
