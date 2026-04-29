@@ -17,7 +17,9 @@
   var CLS_RUNNING_TOT  = 'mt-4 pt-3 border-t-2 border-emerald-300 flex justify-between items-center bg-emerald-100 rounded-lg px-3 py-2';
 
   var _filter = '';
-  var _statusFilter = '';
+  // P24: multi-select status filter. null = "no filter set yet, default to all active".
+  // Set of slugs after first user interaction. Empty array = "no chips active" (= empty state).
+  var _statusFilters = null;
   var _editingId = null;
 
   function toast(t, m) { if (window.Toast && Toast[t]) Toast[t](m); else if (window.Toast && Toast.show) Toast.show(m); }
@@ -29,33 +31,59 @@
     host.innerHTML =
       '<div class="flex flex-wrap gap-2 mb-3">' +
         '<input type="search" id="crm-eventday-manage-search" class="' + CLS_INPUT + ' flex-1 min-w-[200px]" placeholder="חיפוש שם או טלפון..." value="' + escapeHtml(_filter) + '">' +
-        '<select id="crm-eventday-manage-status" class="' + CLS_INPUT + '"><option value="">כל הסטטוסים</option></select>' +
       '</div>' +
+      '<div id="crm-eventday-manage-status-chips" class="flex flex-wrap gap-2 mb-3"></div>' +
       '<div id="crm-eventday-manage-table" class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden"></div>';
-    populateStatusFilter();
-    wireFilters();
+    renderStatusChips();
+    wireSearchInput();
     renderTable();
   }
   window.renderEventDayManage = renderEventDayManage;
 
-  function populateStatusFilter() {
-    var sel = document.getElementById('crm-eventday-manage-status');
-    if (!sel) return;
+  // P24: multi-select chip filter. Default = all chips active (cancelled visible).
+  function renderStatusChips() {
+    var host = document.getElementById('crm-eventday-manage-status-chips');
+    if (!host) return;
     var state = window.getEventDayState();
-    CrmHelpers.distinctValues(state.attendees, 'status').forEach(function (slug) {
+    var attendees = state.attendees || [];
+    // Group attendees by status; respect crm_statuses.sort_order via _all (loaded in CrmHelpers.loadStatusCache).
+    var counts = {};
+    attendees.forEach(function (a) { counts[a.status] = (counts[a.status] || 0) + 1; });
+    var allMeta = (window.CRM_STATUSES && window.CRM_STATUSES._all) || [];
+    var presentSlugs = Object.keys(counts);
+    // Sort: by sort_order if known, else lexical at end.
+    var ordered = presentSlugs.slice().sort(function (a, b) {
+      var sa = allMeta.find(function (m) { return m.entity_type === 'attendee' && m.slug === a; });
+      var sb = allMeta.find(function (m) { return m.entity_type === 'attendee' && m.slug === b; });
+      var oa = sa ? sa.sort_order : 9999;
+      var ob = sb ? sb.sort_order : 9999;
+      return oa - ob;
+    });
+    if (_statusFilters === null) _statusFilters = ordered.slice();
+    var html = ordered.map(function (slug) {
       var info = CrmHelpers.getStatusInfo('attendee', slug);
-      var opt = document.createElement('option');
-      opt.value = slug; opt.textContent = info.label;
-      if (_statusFilter === slug) opt.selected = true;
-      sel.appendChild(opt);
+      var active = _statusFilters.indexOf(slug) !== -1;
+      var cls = active
+        ? 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-600 text-white shadow-sm cursor-pointer'
+        : 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 cursor-pointer';
+      var check = active ? '✓ ' : '';
+      return '<button type="button" class="' + cls + '" data-status-chip="' + escapeHtml(slug) + '">' + check + escapeHtml(info.label) + ' (' + counts[slug] + ')</button>';
+    }).join('');
+    host.innerHTML = html || '<span class="text-xs text-slate-400">אין סטטוסים להציג</span>';
+    host.querySelectorAll('[data-status-chip]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var slug = b.getAttribute('data-status-chip');
+        var idx = _statusFilters.indexOf(slug);
+        if (idx === -1) _statusFilters.push(slug); else _statusFilters.splice(idx, 1);
+        renderStatusChips();
+        renderTable();
+      });
     });
   }
 
-  function wireFilters() {
+  function wireSearchInput() {
     var s = document.getElementById('crm-eventday-manage-search');
-    var t = document.getElementById('crm-eventday-manage-status');
     if (s) s.addEventListener('input', function () { _filter = s.value || ''; renderTable(); });
-    if (t) t.addEventListener('change', function () { _statusFilter = t.value || ''; renderTable(); });
   }
 
   function renderTable() {
@@ -85,14 +113,16 @@
     });
     wrap.innerHTML = html + '</tbody></table>';
     wireRowActions(wrap);
+    // P24: keep chip counts in sync after any status-changing action (cancel, etc.)
+    renderStatusChips();
   }
 
   function filterRows(all) {
     var s = _filter.trim().toLowerCase();
     return (all || []).filter(function (r) {
-      // Hide cancelled by default; show only when admin explicitly selects "ביטל" in the status filter.
-      if (!_statusFilter && r.status === 'cancelled') return false;
-      if (_statusFilter && r.status !== _statusFilter) return false;
+      // P24: chip-based multi-select. _statusFilters===null means "first render,
+      // all active". Empty array means "user deactivated all chips → empty state".
+      if (_statusFilters !== null && _statusFilters.indexOf(r.status) === -1) return false;
       if (s && (r.full_name || '').toLowerCase().indexOf(s) === -1 && (r.phone || '').toLowerCase().indexOf(s) === -1) return false;
       return true;
     });
