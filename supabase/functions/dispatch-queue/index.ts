@@ -48,6 +48,34 @@ Deno.serve(async (req: Request) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
+  // Reaper (P29): mark crm_automation_runs.status='running' rows older than
+  // 1h as 'aborted'. The CrmConfirmSend modal has no abandonment recovery —
+  // if the admin closes the window without approving, the run sits forever.
+  // Idempotent: predicate re-checked on UPDATE; finished_at IS NULL guard
+  // means we never touch rows that already transitioned terminally.
+  // tenant_id captured per-row in the RETURNING for audit (service role
+  // bypasses RLS, so a tenant_id WHERE filter would be a no-op).
+  try {
+    const reapBefore = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const reapRes = await db.from("crm_automation_runs")
+      .update({
+        status: "aborted",
+        error_message: "Approval window expired (no admin action within 1 hour)",
+        finished_at: new Date().toISOString(),
+      })
+      .eq("status", "running")
+      .is("finished_at", null)
+      .lte("updated_at", reapBefore)
+      .select("id, tenant_id");
+    if (reapRes.error) {
+      console.error("reaper update failed:", reapRes.error.message);
+    } else if (reapRes.data && reapRes.data.length) {
+      console.log(`reaper: aborted ${reapRes.data.length} stuck runs`);
+    }
+  } catch (e) {
+    console.error("reaper exception:", (e as Error).message || e);
+  }
+
   // Claim batch: UPDATE queued → processing, up to batchSize rows, return them.
   // Uses a WITH ... UPDATE ... RETURNING pattern through PostgREST — PostgREST
   // doesn't support CTE so we do SELECT-then-UPDATE-by-id in 2 round trips.
