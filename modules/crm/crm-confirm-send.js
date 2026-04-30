@@ -167,7 +167,8 @@
       return {
         tenant_id: tenantId, lead_id: it.lead_id, event_id: it.event_id || null,
         template_id: it.template_id || null, channel: it.channel,
-        content: it.composedBody || '', status: 'pending_review'
+        content: it.composedBody || '', status: 'pending_review',
+        run_id: it.run_id || null
       };
     });
     var res = await sb.from('crm_message_log').insert(rows);
