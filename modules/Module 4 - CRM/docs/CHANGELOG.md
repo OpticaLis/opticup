@@ -2,6 +2,33 @@
 
 ---
 
+## P29_AUTOMATION_RUNS_OBSERVABILITY — Stuck-run cluster fix (2026-04-30) ✅
+
+| Hash | Message |
+|------|---------|
+| `af13939` | `migrations(crm): add updated_at + trigger to crm_automation_runs (P29 commits 1+2)` |
+| `3382e2e` | `feat(crm): include run_id when inserting pending_review message_log rows (P29 commit 3)` |
+| `6f30285` | `feat(crm): drill-down modal shows run-status header + state-specific empty-states (P29 commit 4)` |
+| `392a19f` | `feat(crm): dispatch-queue EF reaps stuck running runs >1h old (P29 commit 5)` |
+| _(this commit)_ | `chore(crm): MODULE_MAP + CHANGELOG for P29 (P29 commit 6)` |
+
+**Closes 5 P28 findings as one cohesive cluster.** The CrmConfirmSend modal had no abandonment recovery — admins closing the window without approving left runs in `crm_automation_runs.status='running'` forever, with their `pending_review` dispatches sitting in `crm_message_log` orphaned (`run_id=null`). The drill-down modal queried by `run_id` and rendered a blank table for these stuck runs, giving operators no diagnostic surface.
+
+P29 fixes all five gaps with one migration + 3 code changes + 1 EF deploy:
+
+- **Migration** (idempotent — every step rerun-safe): `crm_automation_runs.updated_at TIMESTAMPTZ NOT NULL DEFAULT now()` column + `crm_automation_runs_updated_at` BEFORE-UPDATE trigger that stamps `updated_at = now()` on every state change. Backfilled all existing rows with `COALESCE(finished_at, started_at)`. Backfilled the 2 known-stuck Prizma rows (`a21e4d46`, `1195766b`) to `status='aborted'`, `error_message='Approval window expired (P29 backfill)'`, `finished_at = COALESCE(finished_at, now())`. Selector pinned by exact ids + tenant_id + `status='running'` (≤2 rows guaranteed). Pre-flight verified 0 CHECK constraints on `status` (so adding `aborted` value is safe — Rule 19 — and 0 existing triggers on the table).
+- **Engine fix** (1 line in `crm-confirm-send.js:170` — SPEC §7 misnamed `crm-automation-engine.js`; the actual `pending_review` INSERT site is in confirm-send): `writePendingReviewRows` now includes `run_id: it.run_id || null` on the inserted row. Old pending_review rows stay `run_id=null` (out of scope per SPEC §6).
+- **Drill-down modal** (`crm-automation-history.js:111-209` rewritten): `openDrillDown` fetches the run row in parallel with message_log rows. Renders `renderRunHeader(run)` (rule_name + status badge + started_at + finished_at + planned-recipients + red error banner if present) above the body. State-aware empty-states via `renderEmptyState(run)`: aborted → "ריצה הופסקה אוטומטית - חלון האישור פג", running → "ריצה ממתינה לאישור ידני... בעוד {N} דקות" (computed client-side from `updated_at`), other → "אין הודעות לריצה זו". Existing table + retry-failed button preserved when log rows exist.
+- **Reaper block** (`supabase/functions/dispatch-queue/index.ts:51-77`): runs at the top of every dispatch-queue tick (existing `* * * * *` pg_cron). Predicate: `status='running' AND finished_at IS NULL AND updated_at <= now() - 1h`. UPDATE sets `status='aborted'`, `error_message='Approval window expired (no admin action within 1 hour)'`, `finished_at=now()`. `.select('id, tenant_id')` returns aborted-row ids per-tenant for log audit. Idempotent — second pass produces no extra writes. **Deploy note:** the MCP `deploy_edge_function` returned `InternalServerErrorException` twice during P29; Daniel deployed manually via Supabase CLI. The 5-line reaper block is the only EF change.
+
+**Final file sizes:** crm-confirm-send.js 270→271, crm-automation-history.js 171→213, dispatch-queue/index.ts 144→172, crm-automation-engine.js 348 (unchanged — SPEC misnamed). All ≤350.
+
+**Post-deploy state on Prizma (verified 2026-04-30 03:30 IL):** column present + NOT NULL, trigger fires on UPDATE (verified by no-op self-update — `updated_at` jumped 7+ hours), 0 NULL `updated_at` rows, 0 still-stuck runs (both backfilled to aborted with the explanatory `error_message`).
+
+**Demo state (informational):** 4 pre-existing stuck runs from 2026-04-25 (4+ days old) remain `status='running'`. They were intentionally NOT touched by the migration backfill (which only targeted the 2 named Prizma rows per SPEC §3.1 #5). Once the EF is deployed, the reaper will catch them on its first tick — confirming the reaper has real work to do.
+
+---
+
 ## M4_ATTENDEE_PAYMENT_AUTOMATION — Payment lifecycle automations (2026-04-25) ✅
 
 | Hash | Message |
