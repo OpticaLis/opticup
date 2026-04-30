@@ -108,6 +108,35 @@
     });
   }
 
+  function renderRunHeader(run) {
+    var bits = '<div class="font-semibold text-slate-800 mb-1">' + escapeHtml(run.rule_name || '—') + '</div>' +
+      '<div class="flex flex-wrap gap-3 text-xs text-slate-600 mb-2">' +
+      '<span>סטטוס: ' + statusBadge(run.status) + '</span>' +
+      '<span>התחיל: ' + escapeHtml(fmt(run.started_at)) + '</span>' +
+      (run.finished_at ? '<span>הסתיים: ' + escapeHtml(fmt(run.finished_at)) + '</span>' : '') +
+      '<span>נמענים מתוכננים: ' + (run.total_recipients || 0) + '</span>' +
+      '</div>';
+    if (run.error_message) {
+      bits += '<div class="bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-md px-3 py-2 mb-2">' + escapeHtml(run.error_message) + '</div>';
+    }
+    return '<div class="border-b border-slate-200 pb-3 mb-3">' + bits + '</div>';
+  }
+
+  function renderEmptyState(run) {
+    if (run.status === 'aborted') {
+      return '<div class="text-center text-slate-500 py-6">ריצה הופסקה אוטומטית - חלון האישור פג. אין הודעות שנשלחו.</div>';
+    }
+    if (run.status === 'running') {
+      var rem = '';
+      if (run.updated_at) {
+        var ageMin = (Date.now() - new Date(run.updated_at).getTime()) / 60000;
+        rem = ' בעוד ' + Math.max(0, Math.round(60 - ageMin)) + ' דקות';
+      }
+      return '<div class="text-center text-amber-700 py-6">ריצה ממתינה לאישור ידני. לחץ על "אישור שליחה" או חכה לפג תוקף' + rem + '.</div>';
+    }
+    return '<div class="text-center text-slate-500 py-6">אין הודעות לריצה זו.</div>';
+  }
+
   async function openDrillDown(runId, tenantId) {
     if (typeof Modal === 'undefined') return;
     var modal = Modal.show({
@@ -115,37 +144,50 @@
       size: 'lg',
       content: '<div class="text-center text-slate-400 py-6">טוען...</div>'
     });
-    var logRes = await sb.from('crm_message_log')
-      .select('id, lead_id, channel, status, error_message, created_at')
-      .eq('run_id', runId).eq('tenant_id', tenantId)
-      .order('created_at', { ascending: true });
+    var pair = await Promise.all([
+      sb.from('crm_automation_runs')
+        .select('id, rule_name, status, started_at, finished_at, updated_at, error_message, total_recipients')
+        .eq('id', runId).eq('tenant_id', tenantId).maybeSingle(),
+      sb.from('crm_message_log')
+        .select('id, lead_id, channel, status, error_message, created_at')
+        .eq('run_id', runId).eq('tenant_id', tenantId)
+        .order('created_at', { ascending: true })
+    ]);
+    var runRes = pair[0], logRes = pair[1];
+    if (runRes.error || !runRes.data) { modal.el.querySelector('.modal-body').innerHTML = '<div class="text-rose-600">שגיאה: ' + escapeHtml((runRes.error && runRes.error.message) || 'הריצה לא נמצאה') + '</div>'; return; }
     if (logRes.error) { modal.el.querySelector('.modal-body').innerHTML = '<div class="text-rose-600">שגיאה: ' + escapeHtml(logRes.error.message) + '</div>'; return; }
+    var run = runRes.data;
     var rows = logRes.data || [];
     var failedCount = rows.filter(function (r) { return r.status === 'failed'; }).length;
 
-    var html = '<div class="max-h-[60vh] overflow-y-auto">' +
-      '<table class="' + CLS_TABLE + '"><thead><tr>' +
-      '<th class="' + CLS_TH + '">זמן</th>' +
-      '<th class="' + CLS_TH + '">ערוץ</th>' +
-      '<th class="' + CLS_TH + '">סטטוס</th>' +
-      '<th class="' + CLS_TH + '">שגיאה</th>' +
-      '</tr></thead><tbody>';
-    rows.forEach(function (r) {
-      html += '<tr>' +
-        '<td class="' + CLS_TD + ' text-xs whitespace-nowrap">' + escapeHtml(fmt(r.created_at)) + '</td>' +
-        '<td class="' + CLS_TD + '">' + escapeHtml(r.channel) + '</td>' +
-        '<td class="' + CLS_TD + '">' + statusBadge(r.status) + '</td>' +
-        '<td class="' + CLS_TD + ' text-xs text-rose-600">' + escapeHtml(r.error_message || '') + '</td>' +
-      '</tr>';
-    });
-    html += '</tbody></table></div>';
-    if (failedCount > 0) {
-      html += '<div class="mt-4 flex gap-2">' +
-        '<button type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm" id="retry-failed-btn">נסה שוב את הכושלים (' + failedCount + ')</button>' +
-        '<span class="text-xs text-slate-500 self-center">לידים שנדחו לא יישלחו שוב (לא מורשים).</span>' +
-      '</div>';
+    var body;
+    if (rows.length === 0) {
+      body = renderEmptyState(run);
+    } else {
+      body = '<div class="max-h-[60vh] overflow-y-auto">' +
+        '<table class="' + CLS_TABLE + '"><thead><tr>' +
+        '<th class="' + CLS_TH + '">זמן</th>' +
+        '<th class="' + CLS_TH + '">ערוץ</th>' +
+        '<th class="' + CLS_TH + '">סטטוס</th>' +
+        '<th class="' + CLS_TH + '">שגיאה</th>' +
+        '</tr></thead><tbody>';
+      rows.forEach(function (r) {
+        body += '<tr>' +
+          '<td class="' + CLS_TD + ' text-xs whitespace-nowrap">' + escapeHtml(fmt(r.created_at)) + '</td>' +
+          '<td class="' + CLS_TD + '">' + escapeHtml(r.channel) + '</td>' +
+          '<td class="' + CLS_TD + '">' + statusBadge(r.status) + '</td>' +
+          '<td class="' + CLS_TD + ' text-xs text-rose-600">' + escapeHtml(r.error_message || '') + '</td>' +
+        '</tr>';
+      });
+      body += '</tbody></table></div>';
+      if (failedCount > 0) {
+        body += '<div class="mt-4 flex gap-2">' +
+          '<button type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm" id="retry-failed-btn">נסה שוב את הכושלים (' + failedCount + ')</button>' +
+          '<span class="text-xs text-slate-500 self-center">לידים שנדחו לא יישלחו שוב (לא מורשים).</span>' +
+        '</div>';
+      }
     }
-    modal.el.querySelector('.modal-body').innerHTML = html;
+    modal.el.querySelector('.modal-body').innerHTML = renderRunHeader(run) + body;
 
     var retryBtn = modal.el.querySelector('#retry-failed-btn');
     if (retryBtn) {
