@@ -52,10 +52,13 @@ VALUES
    0, false),
 
   -- T3 — pre-open warning (24h before)
+  -- PRE_CUTOVER_QA_A B4: skip_auto_promote keeps lead.status='waiting' so the
+  -- "ייפתח מחר" notification does not flip waiting→invited; only the open
+  -- registration rule (T4 / Rule 2.4) is allowed to invite.
   ('8d8cfa7e-ef58-49af-9702-a862d459cccb', 'שינוי סטטוס: ייפתח מחר',
    'event', 'status_change', '{"type":"status_equals","status":"will_open_tomorrow"}',
    'send_message',
-   '{"channels":["sms","email"],"template_slug":"event_will_open_tomorrow","recipient_type":"tier2_excl_registered"}',
+   '{"channels":["sms","email"],"template_slug":"event_will_open_tomorrow","recipient_type":"tier2_excl_registered","skip_auto_promote":true}',
    10, true),
 
   -- T4 — registration open

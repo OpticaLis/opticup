@@ -213,7 +213,9 @@
           // EVENT_CLOSE_COMPLETE_STATUS_FIX: rules with an explicit status
           // transition own their lifecycle; don't let promoteWaitingLeadsToInvited
           // override it post-dispatch (it was overwriting Dana invited→waiting→invited).
-          skip_auto_promote: hasPostAction
+          // PRE_CUTOVER_QA_A B4: rules can also explicitly opt out via
+          // action_config.skip_auto_promote (e.g. will_open_tomorrow — leads stay 'waiting').
+          skip_auto_promote: hasPostAction || cfg.skip_auto_promote === true
         });
       }
     }
