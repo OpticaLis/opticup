@@ -58,7 +58,7 @@ export async function injectEventVariables(
 ): Promise<{ feeKey: string | null }> {
   const { data: ev, error: evErr } = await db
     .from("crm_events")
-    .select("name, event_date, start_time, location_address, max_capacity, booking_fee")
+    .select("name, event_date, start_time, location_address, max_capacity, booking_fee, coupon_code")
     .eq("id", eventId)
     .eq("tenant_id", tenantId)
     .maybeSingle();
@@ -88,6 +88,13 @@ export async function injectEventVariables(
   }
   if (vars.event_day_of_week == null && ev.event_date) {
     vars.event_day_of_week = hebrewDayOfWeek(ev.event_date);
+  }
+  // P33 Fix A — closes P32-001 (%coupon_code% literal reached customer in
+  // event_coupon_delivery_email_he). P31 declared coupon_code was auto-filled
+  // but this injection was never written. Caller-wins: if the caller already
+  // set vars.coupon_code, do not overwrite.
+  if (vars.coupon_code == null) {
+    vars.coupon_code = ev.coupon_code || "";
   }
 
   // payment_url_<fee> resolution
@@ -148,6 +155,28 @@ export function scanForPaymentUrlMismatch(body: string): string | null {
   const m = body.match(/%payment_url_(\d+)%/);
   if (!m) return null;
   return `payment_link_missing_or_mismatch:${m[1]}`;
+}
+
+/**
+ * Universal post-substitution placeholder scan (P33 Fix B). After
+ * substituteVariables runs, ANY remaining %lowercase_var% literal means a
+ * placeholder failed to substitute. The dispatch MUST be rejected so the
+ * literal never reaches the customer.
+ *
+ * Returns array of distinct placeholder names found (empty array if clean).
+ * Caller is responsible for writing the failed crm_message_log row + the
+ * HTTP 400 response.
+ *
+ * Regex matches the same lowercase-first-char pattern as P31's template body
+ * parser. URL-encoded hex sequences like %D7% (Hebrew in wa.me click-to-chat
+ * URLs) are excluded by the lowercase-first-char rule.
+ */
+export function scanForUnsubstitutedPlaceholders(text: string): string[] {
+  const seen = new Set<string>();
+  const re = /%([a-z][a-z0-9_]*)%/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) seen.add(m[1]);
+  return Array.from(seen).sort();
 }
 
 /**
