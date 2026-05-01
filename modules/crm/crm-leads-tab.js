@@ -20,12 +20,9 @@
   var CLS_TD          = 'px-4 py-3 text-slate-800';
   var CLS_ROW_ODD     = 'hover:bg-indigo-50/40 cursor-pointer border-b border-slate-100 transition-colors bg-white';
   var CLS_ROW_EVEN    = 'hover:bg-indigo-50/40 cursor-pointer border-b border-slate-100 transition-colors bg-slate-50/60';
-  var CLS_CHIP        = 'inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-3 py-1.5 rounded-full text-sm font-medium';
-  var CLS_CHIP_CLOSE  = 'cursor-pointer font-bold opacity-70 hover:opacity-100 text-base leading-none';
+  // Chip + pagination CLS constants live in crm-leads-tab-filters.js (P31 commit 0a extraction).
   var CLS_BULK_BAR    = 'bg-indigo-100 text-indigo-800 px-4 py-3 rounded-lg flex items-center gap-3 mb-3 text-sm font-medium';
   var CLS_BULK_BTN    = 'px-3 py-1.5 bg-white text-indigo-700 rounded-md hover:bg-indigo-50 font-medium text-sm transition';
-  var CLS_PAGE_BTN    = 'px-3 py-1.5 rounded-md border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed';
-  var CLS_PAGE_ACTIVE = 'px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-semibold';
 
   // OVERNIGHT_M4_SCALE_AND_UI Phase 10: server-side pagination via .range().
   // Initial slice 200; "Load more" appends next 200. Client filter/sort still
@@ -153,21 +150,10 @@
 
   function renderFilterChips(search, state) {
     var host = document.getElementById('crm-leads-filter-chips');
-    if (!host) return;
-    var chips = [];
-    if (search) chips.push({ k: 'search', label: 'חיפוש: ' + search });
-    if (window.CrmLeadFilters) chips = chips.concat(CrmLeadFilters.renderChips(state));
-    if (!chips.length) { host.innerHTML = ''; return; }
-    host.className = 'flex items-center gap-2 flex-wrap mb-3';
-    host.innerHTML = '<span class="text-xs font-semibold text-slate-600">פילטרים פעילים:</span>' + chips.map(function (c) {
-      return '<span class="' + CLS_CHIP + '" data-chip="' + c.k + '">' +
-        escapeHtml(c.label) +
-        '<span class="' + CLS_CHIP_CLOSE + '" data-clear-chip="' + c.k + '">×</span>' +
-      '</span>';
-    }).join('');
-    host.querySelectorAll('[data-clear-chip]').forEach(function (el) {
-      el.addEventListener('click', function () {
-        var k = el.getAttribute('data-clear-chip');
+    if (!host || !window.CrmLeadsTabFilters) return;
+    CrmLeadsTabFilters.renderChipsBar(host, {
+      search: search, state: state,
+      onClearChip: function (k) {
         if (k === 'search') {
           var sEl = document.getElementById('crm-leads-search');
           if (sEl) sEl.value = '';
@@ -181,7 +167,7 @@
           renderAdvancedFilterBar();
         }
         _currentPage = 1; applyFiltersAndRender();
-      });
+      }
     });
   }
 
@@ -306,40 +292,19 @@
 
   function renderPagination() {
     var box = document.getElementById('crm-leads-pagination');
-    if (!box) return;
-    var total = _filtered.length;
-    var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-    if (_currentPage > totalPages) _currentPage = totalPages;
-    box.className = 'flex items-center gap-2 flex-wrap mt-4';
-    if (totalPages <= 1) { box.innerHTML = '<span class="text-sm text-slate-500">סה״כ ' + total + ' לידים</span>'; return; }
-
-    var html = '<button class="' + CLS_PAGE_BTN + '" ' + (_currentPage === 1 ? 'disabled' : '') + ' data-page="prev">›</button>';
-    var pages = [1];
-    for (var i = Math.max(2, _currentPage - 1); i <= Math.min(totalPages - 1, _currentPage + 1); i++) pages.push(i);
-    if (totalPages > 1) pages.push(totalPages);
-    pages = Array.from(new Set(pages)).sort(function (a, b) { return a - b; });
-    var prev = 0;
-    pages.forEach(function (p) {
-      if (p - prev > 1) html += '<span class="text-slate-400 px-1">…</span>';
-      html += '<button class="' + (p === _currentPage ? CLS_PAGE_ACTIVE : CLS_PAGE_BTN) + '" data-page="' + p + '">' + p + '</button>';
-      prev = p;
-    });
-    html += '<button class="' + CLS_PAGE_BTN + '" ' + (_currentPage === totalPages ? 'disabled' : '') + ' data-page="next">‹</button>';
-    html += '<span class="text-sm text-slate-500 ms-2">עמוד ' + _currentPage + ' מתוך ' + totalPages + ' · סה״כ טעון ' + total + '</span>';
-    if (leadsHasMoreSrv()) html += '<button type="button" class="' + CLS_PAGE_BTN + ' ms-2" id="load-more-leads">⬇ טען עוד מהשרת</button>';
-    box.innerHTML = html;
-    var moreBtn = box.querySelector('#load-more-leads');
-    if (moreBtn) moreBtn.addEventListener('click', async function () { moreBtn.disabled = true; moreBtn.textContent = 'טוען...'; await window.loadMoreCrmLeads(); });
-    box.querySelectorAll('button[data-page]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var v = btn.getAttribute('data-page');
-        if (v === 'prev') _currentPage = Math.max(1, _currentPage - 1);
-        else if (v === 'next') _currentPage = Math.min(totalPages, _currentPage + 1);
-        else _currentPage = parseInt(v, 10) || 1;
+    if (!box || !window.CrmLeadsTabFilters) return;
+    CrmLeadsTabFilters.renderPaginationBar(box, {
+      total: _filtered.length,
+      currentPage: _currentPage,
+      pageSize: PAGE_SIZE,
+      hasMoreSrv: leadsHasMoreSrv(),
+      onPageChange: function (next) {
+        _currentPage = next;
         renderLeadsTable(); renderPagination();
         var main = document.getElementById('crm-main');
         if (main) main.scrollTop = 0;
-      });
+      },
+      onLoadMore: function () { return window.loadMoreCrmLeads(); }
     });
   }
 
