@@ -2,6 +2,60 @@
 
 ---
 
+## P31_VARIABLE_CONTRACT_AND_FAILURE_UI — Explicit variable contract + failed-message UI (2026-05-01) ✅
+
+| Hash | Message |
+|------|---------|
+| `8ab376c` | `refactor(crm): extract chip-bar + pagination from crm-leads-tab.js (P31 commit 0a)` |
+| `4f41e59` | `refactor(crm): extract messages tab from crm-leads-detail.js (P31 commit 0b)` |
+| `afbe6be` | `refactor(send-message): extract pending-log + Make-webhook block (P31 commit 0c)` |
+| `ffe5789` | `migrations(crm): add required_variables to message templates (P31 commit 1)` |
+| `c00cd93` | `feat(send-message): auto-fill core lead variables from crm_leads (P31 commit 2)` |
+| `06c16a1` | `feat(send-message): validate required variables; reject 400 on missing (P31 commit 3)` |
+| `a19dce4` | `feat(crm): hebrew error labels for message_log error_message values (P31 commit 4)` |
+| `bb60cb6` | `feat(crm): registered tab shows failed-messages badge + filter chip (P31 commit 5)` |
+| `cbac62d` | `feat(crm): lead detail card shows failed messages + per-row retry (P31 commit 6)` |
+| _(this commit)_ | `chore(crm): MODULE_MAP + CHANGELOG for P31 (P31 commit 7)` |
+
+**Two coordinated deliverables in one SPEC.**
+
+**Deliverable A — Explicit variable contract (prevent the bug class).** A customer can never receive a message containing literal `%X%` for a required variable. Either the message is fully substituted OR the dispatch fails loudly with a clear reason.
+
+- `crm_message_templates.required_variables JSONB NOT NULL DEFAULT '[]'` column with parser-driven backfill via tightened regex `%([a-z][a-z0-9_]*)%` that excludes `payment_url_*` (handled by existing `scanForPaymentUrlMismatch`) and the auto-fill+auto-inject set. All 30 active Prizma templates resolve to `[]` post-migration — every real placeholder is now machine-checkable against the contract.
+- `injectLeadVariables(db, leadId, tenantId, vars)` in send-message EF auto-fills `name`, `phone`, `email`, `lead_id` from `crm_leads` on every dispatch. Caller-wins merge — existing 7 callers continue to work unchanged. `lead_id` added to the auto-fill set per Daniel ack to fix the broken QR-code path in `event_coupon_delivery_email_he` when called via direct send-message without `lead_id` explicitly.
+- `validateRequiredVariables` runs AFTER all auto-injects + caller merge, BEFORE `substituteVariables`. If any required key is missing/empty, returns HTTP 400 + writes a `failed` row to `crm_message_log` with `error_message='missing_required_variable: <names>'`. This row is what the operator UI surfaces.
+
+**Deliverable B — Failed-message visibility for operators.** Closes the loop on dispatch failures.
+
+- `CrmMessageErrorLabels.errorLabel(raw)` Hebrew translation map for known error codes (8 exact + 6 prefix). Unknown codes fall through with raw text (no swallow).
+- Registered tab: `⚠️N` badge in red beside lead name when the lead has any `crm_message_log.status='failed'` rows in last 90 days. New `📩 הודעות כושלות (M)` toggle pill in chip bar; clicking restricts table to leads with failures.
+- Lead detail modal: collapsible `הודעות כושלות (N)` section above the avatar header (only when N>0). Each row shows channel icon + Hebrew label, template name, translated error reason, timestamp, `🔄 נסה שוב` retry button. Retry calls `CrmMessaging.sendMessage` with stripped base slug + original `event_id` + original `run_id` (preserves activity-log/automation-history coherence per SPEC §3.4 #23). On success: drop the failed row from the in-memory list, decrement registered-tab badge counts, toast success. DB audit row stays as historical record.
+
+**Structural pre-flight (Daniel-approved 2026-04-30 — same playbook as P23 commit 0):**
+
+3 files were at-or-beyond the 350-line cap before P31 additions. Verbatim extractions performed first to bring all parents below 320:
+
+- `crm-leads-tab.js` 350 → 315 (extracted: `crm-leads-tab-filters.js` 104 lines — chip-bar + pagination)
+- `crm-leads-detail.js` 350 → 319 (extracted: `crm-leads-detail-messages.js` 67 lines — messages-tab fetch + render)
+- `send-message/index.ts` 333 → 246 (extracted: `dispatch.ts` 129 lines — pending-log + Make-webhook block)
+
+Final file sizes after all P31 commits: `crm-leads-tab.js` 348, `crm-leads-detail.js` 332, `send-message/index.ts` 282, `crm-leads-detail-messages.js` 150, `crm-leads-tab-filters.js` 104, `dispatch.ts` 129, `lead-variables.ts` 43, `crm-message-error-labels.js` 56. All ≤350.
+
+**Pre-flight wins:**
+- Tightened regex eliminated 3 D7 false-positives (URL-encoded Hebrew in WhatsApp wa.me click-to-chat URLs)
+- 30/30 active templates resolve to `required_variables=[]` after exclusions — contract is comprehensive without per-template manual labor
+- 0 caller code changes needed — backward compat preserved
+- All commits passed pre-commit gate cleanly (Iron Rule 31 + 21 + file-size). 0 violations across all 10 P31 commits.
+
+**Deploy state at close:** migration applied to Prizma DB; `send-message` EF deploy via MCP returned `InternalServerErrorException` (P29-style — second occurrence). Daniel will deploy via Supabase CLI: `supabase functions deploy send-message --project-ref tsxrrxzmdxaenlvocyit`. Until then, the server-side validation in commits 2+3 is committed but not live; UI commits 4-6 are JS-only (live as soon as develop→main merges + Pages rebuilds).
+
+**Out of scope (per SPEC §6):**
+- Vendor delivery callback (P28-003 / `external_id IS NULL`) — separate SPEC, post-cutover
+- Refactoring caller-side variable building — backward compat is the rule
+- Bulk retry UI — single-row retry only in P31
+
+---
+
 ## P29_AUTOMATION_RUNS_OBSERVABILITY — Stuck-run cluster fix (2026-04-30) ✅
 
 | Hash | Message |

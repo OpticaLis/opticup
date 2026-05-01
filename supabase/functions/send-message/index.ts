@@ -6,6 +6,8 @@ import {
   scanForPaymentUrlMismatch,
   withDisplayPhone,
 } from "./event-variables.ts";
+import { injectLeadVariables } from "./lead-variables.ts";
+import { writeDispatchAndSend } from "./dispatch.ts";
 
 // send-message — CRM message dispatch (P3c+P4 Architecture v3).
 // Flow: POST {tenant_id, lead_id, channel, template_slug|body, variables} →
@@ -134,6 +136,12 @@ Deno.serve(async (req: Request) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
+  // --- Inject lead vars (P31 commit 2): name, phone, email, lead_id from
+  // crm_leads. Caller-wins — only fills gaps. Unconditional on every dispatch
+  // (not gated on event_id) so direct-send paths can never produce a message
+  // with literal %name%.
+  await injectLeadVariables(db, leadId, tenantId, variables);
+
   // --- Inject auto URLs (unsubscribe + registration) and event-derived vars ---
   // Rung 1 (P5_V2_REBUILD_RUNG1_PLUMBING): URL injectors moved to event-variables.ts
   // alongside event-bound substitutions to keep index.ts under Rule 12 cap.
@@ -160,7 +168,7 @@ Deno.serve(async (req: Request) => {
     const fullSlug = `${templateSlug}_${channel}_${language}`;
     const { data: tpl, error: tplErr } = await db
       .from("crm_message_templates")
-      .select("id, body, subject")
+      .select("id, body, subject, required_variables")
       .eq("tenant_id", tenantId)
       .eq("slug", fullSlug)
       .eq("is_active", true)
@@ -186,6 +194,35 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(
         { ok: false, error: "template_not_found", slug: fullSlug },
         404,
+      );
+    }
+
+    // P31 commit 3: validate required_variables AFTER all auto-injects + caller
+    // merge, BEFORE substituteVariables. Missing/empty values that the template
+    // declares as required = HTTP 400 + failed row in crm_message_log.
+    const required = Array.isArray(tpl.required_variables) ? tpl.required_variables : [];
+    const missing: string[] = [];
+    for (const k of required) {
+      if (typeof k !== "string") continue;
+      const v = (displayVars as Record<string, unknown>)[k];
+      if (v == null || v === "") missing.push(k);
+    }
+    if (missing.length > 0) {
+      const errMsg = "missing_required_variable: " + missing.join(",");
+      await db.from("crm_message_log").insert({
+        tenant_id: tenantId,
+        lead_id: leadId,
+        event_id: eventId,
+        run_id: runId,
+        template_id: tpl.id,
+        channel,
+        content: "",
+        status: "failed",
+        error_message: errMsg,
+      });
+      return jsonResponse(
+        { ok: false, error: "missing_required_variable", missing, template: fullSlug },
+        400,
       );
     }
 
@@ -230,103 +267,15 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ ok: false, error: "phone_not_allowed" }, 200);
   }
 
-  // --- Write log (pending) ---
-  const { data: logRow, error: logErr } = await db
-    .from("crm_message_log")
-    .insert({
-      tenant_id: tenantId,
-      lead_id: leadId,
-      event_id: eventId,
-      run_id: runId,
-      template_id: templateId,
-      channel,
-      content: finalBody,
-      status: "pending",
-    })
-    .select("id")
-    .single();
-
-  if (logErr || !logRow) {
-    console.error("Log insert failed:", logErr);
-    return errorResponse("Could not create log entry", 500);
-  }
-
-  // --- Call Make webhook ---
-  if (!MAKE_WEBHOOK_URL) {
-    await db
-      .from("crm_message_log")
-      .update({
-        status: "failed",
-        error_message: "make_webhook_url_not_configured",
-      })
-      .eq("id", logRow.id);
-    return jsonResponse(
-      { ok: false, error: "make_webhook_url_not_configured", log_id: logRow.id },
-      500,
-    );
-  }
-
-  const makePayload = {
-    channel,
-    recipient_phone: recipientPhone,
-    recipient_email: recipientEmail,
-    subject: finalSubject,
-    body: finalBody,
-  };
-
-  try {
-    const makeRes = await fetch(MAKE_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(makePayload),
-    });
-
-    if (!makeRes.ok) {
-      const errText = await makeRes.text().catch(() => "");
-      await db
-        .from("crm_message_log")
-        .update({
-          status: "failed",
-          error_message: `make_webhook_${makeRes.status}: ${errText.slice(0, 200)}`,
-        })
-        .eq("id", logRow.id);
-      return jsonResponse(
-        {
-          ok: false,
-          error: "make_webhook_error",
-          status: makeRes.status,
-          log_id: logRow.id,
-        },
-        502,
-      );
-    }
-
-    await db
-      .from("crm_message_log")
-      .update({ status: "sent" })
-      .eq("id", logRow.id);
-
-    return jsonResponse(
-      { ok: true, log_id: logRow.id, channel, template_id: templateId },
-      200,
-    );
-  } catch (e) {
-    const msg = (e as Error).message || String(e);
-    await db
-      .from("crm_message_log")
-      .update({
-        status: "failed",
-        error_message: `make_call_exception: ${msg.slice(0, 200)}`,
-      })
-      .eq("id", logRow.id);
-    return jsonResponse(
-      {
-        ok: false,
-        error: "make_call_exception",
-        message: msg,
-        log_id: logRow.id,
-      },
-      500,
-    );
-  }
+  // --- Final-stage dispatch (write pending log → Make → mark sent/failed) ---
+  return await writeDispatchAndSend(
+    db,
+    {
+      tenantId, leadId, eventId, runId, templateId,
+      channel: channel as "sms" | "email",
+      finalBody, finalSubject, recipientPhone, recipientEmail,
+    },
+    MAKE_WEBHOOK_URL,
+    jsonResponse,
+  );
 });
