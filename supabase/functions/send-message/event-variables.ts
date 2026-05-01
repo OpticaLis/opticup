@@ -58,7 +58,7 @@ export async function injectEventVariables(
 ): Promise<{ feeKey: string | null }> {
   const { data: ev, error: evErr } = await db
     .from("crm_events")
-    .select("name, event_date, start_time, location_address, max_capacity, booking_fee")
+    .select("name, event_date, start_time, location_address, max_capacity, booking_fee, coupon_code")
     .eq("id", eventId)
     .eq("tenant_id", tenantId)
     .maybeSingle();
@@ -88,6 +88,13 @@ export async function injectEventVariables(
   }
   if (vars.event_day_of_week == null && ev.event_date) {
     vars.event_day_of_week = hebrewDayOfWeek(ev.event_date);
+  }
+  // P33 Fix A — closes P32-001 (%coupon_code% literal reached customer in
+  // event_coupon_delivery_email_he). P31 declared coupon_code was auto-filled
+  // but this injection was never written. Caller-wins: if the caller already
+  // set vars.coupon_code, do not overwrite.
+  if (vars.coupon_code == null) {
+    vars.coupon_code = ev.coupon_code || "";
   }
 
   // payment_url_<fee> resolution
