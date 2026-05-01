@@ -222,31 +222,8 @@
     return { items: items, skipped: 0, resolvedLeadIds: resolvedLeadIds };
   }
 
-  // P20 fallback: direct dispatch when CrmConfirmSend isn't loaded.
-  async function dispatchPlanDirect(items) {
-    if (!window.CrmMessaging || !CrmMessaging.sendMessage) {
-      console.error('CrmAutomation: CrmMessaging.sendMessage not available');
-      return { sent: 0, failed: items.length, skipped: 0 };
-    }
-    var calls = items.map(function (it) {
-      return CrmMessaging.sendMessage({
-        leadId: it.lead_id, channel: it.channel, templateSlug: it.template_slug,
-        variables: it.variables, eventId: it.event_id || undefined, language: it.language, runId: it.run_id || undefined
-      });
-    });
-    var results = await Promise.allSettled(calls);
-    var sent = 0, failed = 0, rejected = 0;
-    results.forEach(function (r, i) {
-      var v = r.status === 'fulfilled' ? r.value : null;
-      if (v && v.ok) { sent++; if (items[i].run_id && v.logId && window.CrmAutomationRuns) CrmAutomationRuns.stampLog(v.logId, items[i].run_id); }
-      else if (v && v.error === 'phone_not_allowed') rejected++; else failed++;
-    });
-    if (window.CrmAutomationPostActions) {
-      try { await CrmAutomationPostActions.promoteWaitingLeadsToInvited(items, results); }
-      catch (e) { console.error('promoteWaitingLeadsToInvited:', e); }
-    }
-    return { sent: sent, failed: failed, rejected: rejected, skipped: 0 };
-  }
+  // P20 fallback dispatch path extracted to crm-automation-dispatch.js for
+  // Iron Rule 12 headroom (AUTOMATION_ENGINE_SPLIT, 2026-05-01). No logic change.
 
   // Public entry point.
   async function evaluate(triggerType, triggerData) {
@@ -329,7 +306,7 @@
       CrmConfirmSend.show(planItems); // fire-and-forget; finish-run happens in approveAndSend
       return { fired: rules.length, pending_confirm: true, skipped: skipped, planned: planItems.length, run_id: runId };
     }
-    var r = await dispatchPlanDirect(planItems);
+    var r = await CrmAutomationDispatch.dispatchPlanDirect(planItems);
     if (runId && window.CrmAutomationRuns) await CrmAutomationRuns.finishRun(runId, 'completed');
     if (window.Toast && (r.sent + r.failed + (r.rejected || 0)) > 0) {
       var m = 'נשלחו ' + r.sent + ', נכשלו ' + r.failed + ', נדחו ' + (r.rejected || 0);
