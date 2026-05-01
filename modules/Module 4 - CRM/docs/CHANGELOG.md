@@ -2,6 +2,27 @@
 
 ---
 
+## PRE_CUTOVER_QA_B_FORM_AND_TEMPLATE — Pre-cutover hardening: B1 + B2 (2026-05-01) ✅
+
+| Hash | Message |
+|------|---------|
+| `7d3bd0e` | `chore(crm): B1+B2 — investigation report identifying form location + read-side consumers + old eye-exam string occurrences` |
+| `edc98f1` | `feat(crm): B1 — replace eye-exam options on auto-event-registration form with new 4-option list + propagate value to lead card + attendee row + logs` |
+| `b0f5108` | `feat(crm): B2 — restyle auto-event-registration form per Prizma design canon (light bg, Rubik, gold gradient CTA, RTL, mobile-first)` |
+| _(this commit)_ | `chore(spec): close PRE_CUTOVER_QA_B_FORM_AND_TEMPLATE with retrospective` |
+
+**Pre-cutover hardening of the auto-sent event-registration form** (the one customers reach via `%registration_url%` in T5/T7 lifecycle messages). Closes B1 + B2 from HANDOFF §15.
+
+**B1 — eye-exam taxonomy.** Replaced 2 short options (`"כן"` / `"לא"`) with 4 full Hebrew strings: `"לא, אין צורך בבדיקה"` / `"כן, בדיקה רגילה"` / `"כן, בדיקת מולטיפוקל"` / `"יש לי כבר מרשם עדכני"`. EF unchanged (writes verbatim). DB pre-state: 8 rows carry the old `"כן"` value; per SPEC §7 those stay as-is (forward-flow only). Read-side propagation: investigation found no JS surface in `modules/crm/` currently renders `eye_exam_needed` — F1 in FINDINGS documents the rendering gap as a future-SPEC candidate.
+
+**B2 — visual restyle.** Full canon migration: Heebo → Rubik (4 weights), cool blue palette → cream bg `#fef9f0` + gold tokens (`#c9a555` / `#e8da94` / `#b8943f`), navy event-card gradient → white card with 4px gold `border-inline-start`, blue CTA → gold gradient with **black text** (canon §6.1 v1.1 WCAG fix), gold-tinted focus rings, `@media (max-width: 400px)` mobile-first. Customer-facing emoji 📅 ⏰ 📍 removed (replaced with plain `תאריך:` / `שעה:` / `מיקום:` text labels per Daniel's directive). One customer-facing em-dash swapped for short hyphen. Form logic, payload shape, and submit flow are UNCHANGED.
+
+Live browser smoke (SPEC §12 #7-9) deferred to Daniel's post-EF-deploy QA pass — same pattern as B11 + AUTOMATION_ENGINE_SPLIT. Component-level evidence (CSS palette + emoji removal + Rubik link tag) is conclusive in static review.
+
+3 findings logged for follow-up. Investigation commit landed first as a checkpoint per SPEC §9.
+
+---
+
 ## AUTOMATION_ENGINE_SPLIT — Tech-debt cleanup: extract dispatchPlanDirect (2026-05-01) ✅
 
 | Hash | Message |

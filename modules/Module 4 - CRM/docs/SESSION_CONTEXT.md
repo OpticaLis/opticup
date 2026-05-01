@@ -1,6 +1,6 @@
 # Module 4 — CRM: Session Context
 
-> **Last updated:** 2026-05-01 (AUTOMATION_ENGINE_SPLIT shipped — engine 350 → 326 lines via `dispatchPlanDirect` extraction to `crm-automation-dispatch.js`; closes F6 from PRE_CUTOVER_QA_A FINDINGS.md)
+> **Last updated:** 2026-05-01 (PRE_CUTOVER_QA_B_FORM_AND_TEMPLATE shipped — B1 + B2 closed; auto-event-registration form now uses 4-option eye-exam taxonomy + Prizma canon visual treatment with Rubik / cream bg / gold gradient CTA; remaining: SPEC-C with B3/B9/B10 → P5_7 → cutover)
 > **Status:** PRE_CUTOVER_QA_A_DATA_AND_LOGIC closed (8 commits on develop). All 7 fixes verified live on demo + prizma via DB component check (see B11 commit `f6a1293`). Live browser+SMS E2E still gated on Daniel's two pending EF deploys (send-message Rung 1 + lead-intake Rung 2) and `tenants.payment_links["50"]` URL seed. Prizma now has 0 active events (cascade hard-delete of 6 QA events + 7 attendees + 242 child rows in B6); `next_crm_event_number(prizma, supersale)` returns 1. Cutover-day go/no-go gate is Daniel sign-off on `MONDAY_TO_OPTIC_UP_PARITY.md` §13.
 > **Current phase:** PRE-CUTOVER. Next two SPECs (B + C) are author-only — opticup-strategic to author + Daniel triggers Claude Code sessions per ACTIVATION_PROMPT.md.
 > **Next:** Run SPEC-B (B1, B2 — eye-exam options + form redesign) → SPEC-C (B3, B9, B10 — date format + multisale removal + status colors) → P5_7_STOREFRONT_FORM_REWIRE → cutover Sat/Sun 2026-05-02 or 03.

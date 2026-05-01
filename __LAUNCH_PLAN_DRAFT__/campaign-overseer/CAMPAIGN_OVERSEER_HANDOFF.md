@@ -383,7 +383,7 @@ When Daniel returns:
 
 ## 15. Daniel's Manual QA Backlog — 2026-05-01 (NEW — addressed before P5_7 cutover prep)
 
-> **Status update 2026-05-01:** All B4/B5/B6/B7/B8/B11/B12 ✅ shipped via PRE_CUTOVER_QA_A_DATA_AND_LOGIC (8 commits on develop). B1/B2/B3/B9/B10 still pending in SPEC-B + SPEC-C.
+> **Status update 2026-05-01 (evening):** All B4/B5/B6/B7/B8/B11/B12 ✅ shipped via PRE_CUTOVER_QA_A_DATA_AND_LOGIC; B1/B2 ✅ shipped via PRE_CUTOVER_QA_B_FORM_AND_TEMPLATE (4 commits on develop). **B3/B9/B10 still pending in SPEC-C.**
 
 Surfaced by Daniel during a manual QA pass on the live CRM after the P23–P35 cycle landed. **All 12 items must be triaged and fixed before P5_7 cutover work resumes.** Order below is Daniel's listing order, not priority.
 
