@@ -83,6 +83,11 @@
         });
       });
     }
+    // PRE_CUTOVER_QA_C B10 — gear icon opens the status-color settings modal
+    var colorsBtn = document.getElementById('crm-events-status-colors-btn');
+    if (colorsBtn && window.CrmStatusColorSettings) {
+      colorsBtn.addEventListener('click', function () { CrmStatusColorSettings.open(); });
+    }
   }
 
   function renderFilteredEvents() {
