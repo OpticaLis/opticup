@@ -177,6 +177,17 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
     }
   }
 
+  // PRE_CUTOVER_QA_A B8 — Hebrew day-of-week derived client-side from a YYYY-MM-DD
+  // event_date. Mirrors the EF helper at supabase/functions/send-message/event-
+  // variables.ts (anchors at +03:00 Israel-local midnight). Used by event create
+  // + edit forms to surface "יום בשבוע" next to the date picker.
+  var _HE_DOW = ['יום ראשון','יום שני','יום שלישי','יום רביעי','יום חמישי','יום שישי','שבת'];
+  function hebrewDayOfWeek(ymd) {
+    if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return '';
+    var d = new Date(ymd + 'T00:00:00+03:00');
+    return _HE_DOW[d.getUTCDay()] || '';
+  }
+
   window.CrmHelpers = {
     formatPhone: formatPhone,
     normalizePhone: normalizePhone,
@@ -191,7 +202,8 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
     heCompare: heCompare,
     tid: tid,
     toast: toast,
-    logActivity: logActivity
+    logActivity: logActivity,
+    hebrewDayOfWeek: hebrewDayOfWeek
   };
 
   // Export tier constants

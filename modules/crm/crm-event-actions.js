@@ -88,7 +88,8 @@
       '<input type="text" name="name" class="' + inputCls + '" required placeholder="אירוע #X"></div>' +
       '<div class="grid grid-cols-3 gap-2">' +
       '<div class="col-span-1"><label class="' + labelCls + '">תאריך</label>' +
-      '<input type="date" name="event_date" class="' + inputCls + '" value="' + defaultDate + '" required></div>' +
+      '<input type="date" name="event_date" class="' + inputCls + '" value="' + defaultDate + '" required>' +
+      '<div class="text-xs text-slate-500 mt-1" data-event-dow></div></div>' +
       '<div><label class="' + labelCls + '">התחלה</label>' +
       '<input type="time" name="start_time" class="' + inputCls + '" value="09:00"></div>' +
       '<div><label class="' + labelCls + '">סיום</label>' +
@@ -145,6 +146,11 @@
     body.innerHTML = renderCreateForm(campaigns);
 
     var form = body.querySelector('#crm-create-event-form');
+    // B8: live Hebrew day-of-week beside event_date
+    var dateInput = form.querySelector('[name="event_date"]');
+    var dowEl = form.querySelector('[data-event-dow]');
+    function _updateDow() { if (dowEl && dateInput) dowEl.textContent = CrmHelpers.hebrewDayOfWeek(dateInput.value); }
+    if (dateInput) { dateInput.addEventListener('input', _updateDow); dateInput.addEventListener('change', _updateDow); _updateDow(); }
     var campSel = form.querySelector('[name="campaign_id"]');
     campSel.addEventListener('change', function () {
       var picked = campaigns.find(function (c) { return c.id === campSel.value; }) || {};
