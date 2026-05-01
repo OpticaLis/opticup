@@ -47,9 +47,7 @@
       var data = await fetchDetailData(leadId);
       var body = modal.el.querySelector('.modal-body');
       if (body) {
-        body.innerHTML = renderDetail(lead, data.notes, data.history, data.messages);
-        wireTabs(body, lead, data);
-        wireFooter(body, lead);
+        renderAndWire(body, lead, data);
       }
     } catch (e) {
       console.error('lead detail load failed:', e);
@@ -58,6 +56,17 @@
     }
   }
   window.openCrmLeadDetail = openCrmLeadDetail;
+
+  function renderAndWire(body, lead, data) {
+    body.innerHTML = renderDetail(lead, data.notes, data.history, data.messages);
+    wireTabs(body, lead, data);
+    wireFooter(body, lead);
+    if (window.CrmLeadsDetailMessages && CrmLeadsDetailMessages.wireFailedRetryHandlers) {
+      CrmLeadsDetailMessages.wireFailedRetryHandlers(body, lead, data, function () {
+        renderAndWire(body, lead, data);
+      });
+    }
+  }
 
   async function fetchDetailData(leadId) {
     var tid = getTenantId();
@@ -89,7 +98,11 @@
       return '<button type="button" class="' + (i === 0 ? CLS_TAB_BTN_ACTIVE : CLS_TAB_BTN) + '" data-detail-tab="' + t.key + '">' + escapeHtml(t.label) + '</button>';
     }).join('');
 
-    return '<div class="flex gap-4 items-center bg-gradient-to-br from-indigo-50 to-violet-50 rounded-xl p-4 mb-2">' +
+    var failedSection = (window.CrmLeadsDetailMessages && CrmLeadsDetailMessages.getFailedMessages)
+      ? CrmLeadsDetailMessages.renderFailedSection(CrmLeadsDetailMessages.getFailedMessages(messages))
+      : '';
+    return failedSection +
+      '<div class="flex gap-4 items-center bg-gradient-to-br from-indigo-50 to-violet-50 rounded-xl p-4 mb-2">' +
         '<div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-black text-xl flex items-center justify-center shrink-0 shadow-md">' + escapeHtml(initials(lead.full_name)) + '</div>' +
         '<div class="flex-1 min-w-0">' +
           '<h2 class="text-xl font-bold text-slate-900 m-0 truncate">' + escapeHtml(lead.full_name || '') + '</h2>' +

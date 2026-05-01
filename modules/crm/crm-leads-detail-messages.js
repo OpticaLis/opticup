@@ -59,8 +59,91 @@
     return html;
   }
 
+  // P31 commit 6: Failed-messages section above the tabs in lead detail modal.
+  // Each row: channel icon + Hebrew label, template name, Hebrew error reason
+  // (via CrmMessageErrorLabels), timestamp, and a "🔄 נסה שוב" retry button.
+  // Retry calls CrmMessaging.sendMessage with the original template_slug (base,
+  // stripped of _<channel>_<lang>) + run_id + event_id. On success, the failed
+  // row is removed from the in-memory list (DB row stays as audit) and the
+  // section + badge counts refresh.
+
+  function _baseSlug(fullSlug) {
+    return String(fullSlug || '').replace(/_(sms|email|whatsapp)_(he|en|ar)$/, '');
+  }
+
+  function getFailedMessages(messages) {
+    return (messages || []).filter(function (m) { return m.status === 'failed'; });
+  }
+
+  function renderFailedSection(failed) {
+    if (!failed || !failed.length) return '';
+    var rows = failed.map(function (m) {
+      var tpl = m.crm_message_templates || {};
+      var chanIcon = m.channel === 'email' ? '✉️' : '📱';
+      var chanLabel = CHANNEL_LABELS[m.channel] || m.channel;
+      var reason = (window.CrmMessageErrorLabels && CrmMessageErrorLabels.errorLabel)
+        ? CrmMessageErrorLabels.errorLabel(m.error_message)
+        : (m.error_message || '');
+      return '<div class="flex items-start gap-3 bg-white border border-rose-200 rounded-lg p-3" data-failed-row="' + escapeHtml(m.id) + '">' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="flex items-center gap-2 flex-wrap text-xs text-slate-600 mb-1">' +
+            '<span>' + chanIcon + ' ' + escapeHtml(chanLabel) + '</span>' +
+            (tpl.name ? '<span class="text-slate-500">· ' + escapeHtml(tpl.name) + '</span>' : '') +
+            '<span class="text-slate-400">· ' + escapeHtml(CrmHelpers.formatDateTime(m.created_at)) + '</span>' +
+          '</div>' +
+          '<div class="text-sm text-rose-700 font-semibold">' + escapeHtml(reason) + '</div>' +
+        '</div>' +
+        '<button type="button" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-semibold transition shrink-0" data-failed-retry="' + escapeHtml(m.id) + '">🔄 נסה שוב</button>' +
+      '</div>';
+    }).join('');
+    return '<details class="mb-3 bg-rose-50 border border-rose-200 rounded-lg" open>' +
+      '<summary class="cursor-pointer px-3 py-2 text-sm font-bold text-rose-800">⚠️ הודעות כושלות (' + failed.length + ')</summary>' +
+      '<div class="space-y-2 p-3 pt-1">' + rows + '</div>' +
+    '</details>';
+  }
+
+  function wireFailedRetryHandlers(rootEl, lead, data, onAfterRetry) {
+    if (!rootEl) return;
+    rootEl.querySelectorAll('[data-failed-retry]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        var msgId = btn.getAttribute('data-failed-retry');
+        var msg = (data.messages || []).find(function (m) { return m.id === msgId; });
+        if (!msg || !window.CrmMessaging || typeof CrmMessaging.sendMessage !== 'function') return;
+        btn.disabled = true; var oldText = btn.textContent; btn.textContent = '🔄 שולח...';
+        try {
+          var fullSlug = (msg.crm_message_templates && msg.crm_message_templates.slug) || '';
+          var res = await CrmMessaging.sendMessage({
+            leadId: lead.id, channel: msg.channel,
+            templateSlug: _baseSlug(fullSlug),
+            eventId: msg.event_id || undefined,
+            runId: msg.run_id || undefined,
+            language: 'he', variables: {}
+          });
+          if (res && res.ok) {
+            // Drop the failed row from the in-memory list (audit row stays in DB).
+            data.messages = (data.messages || []).filter(function (m) { return m.id !== msgId; });
+            if (window.Toast) Toast.success('ההודעה נשלחה בהצלחה');
+            if (typeof onAfterRetry === 'function') onAfterRetry();
+            if (typeof window.reloadCrmLeadsFailedCounts === 'function') window.reloadCrmLeadsFailedCounts();
+          } else {
+            var label = (window.CrmMessageErrorLabels && res && res.error)
+              ? CrmMessageErrorLabels.errorLabel(res.error) : 'שליחה נכשלה';
+            if (window.Toast) Toast.error(label);
+            btn.disabled = false; btn.textContent = oldText;
+          }
+        } catch (e) {
+          if (window.Toast) Toast.error('שגיאה: ' + (e.message || String(e)));
+          btn.disabled = false; btn.textContent = oldText;
+        }
+      });
+    });
+  }
+
   window.CrmLeadsDetailMessages = {
     fetchMessages: fetchMessages,
-    renderMessagesList: renderMessagesList
+    renderMessagesList: renderMessagesList,
+    getFailedMessages: getFailedMessages,
+    renderFailedSection: renderFailedSection,
+    wireFailedRetryHandlers: wireFailedRetryHandlers
   };
 })();
