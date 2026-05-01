@@ -32,6 +32,10 @@
   var _svrOffset = 0, _svrHasMore = true;
   // M4_ATTENDEE_PAYMENT_UI: map of lead_id → days_left for tier2 amber row + subtitle.
   var _atRisk = {};
+  // P31: map of lead_id → count of crm_message_log.status='failed' (last 90 days).
+  var _failedCounts = {};
+  // P31: when true, restrict the rendered table to leads with failures only.
+  var _failuresOnly = false;
   async function loadAtRisk() {
     var tid = getTenantId();
     if (!tid) { _atRisk = {}; return; }
@@ -45,6 +49,17 @@
     });
     _atRisk = m;
   }
+  async function loadFailedCounts() {
+    var tid = getTenantId();
+    if (!tid) { _failedCounts = {}; return; }
+    var since = new Date(Date.now() - 90 * 86400000).toISOString();
+    var res = await sb.from('crm_message_log').select('lead_id')
+      .eq('tenant_id', tid).eq('status', 'failed').not('lead_id', 'is', null)
+      .gte('created_at', since);
+    var m = {}; (res.data || []).forEach(function (r) { if (r.lead_id) m[r.lead_id] = (m[r.lead_id] || 0) + 1; });
+    _failedCounts = m;
+  }
+  window.reloadCrmLeadsFailedCounts = loadFailedCounts;
   async function loadLeads(reset) {
     if (reset) { _svrOffset = 0; _svrHasMore = true; }
     if (!_svrHasMore) return [];
@@ -71,6 +86,7 @@
         await ensureCrmStatusCache();
         _allLeads = await loadLeads(true);
         await loadAtRisk();
+        await loadFailedCounts();
         if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
         renderAdvancedFilterBar();
         wireEvents();
@@ -127,6 +143,7 @@
 
     var s = search.trim().toLowerCase();
     _filtered = afterAdv.filter(function (r) {
+      if (_failuresOnly && !(_failedCounts[r.id] > 0)) return false;
       if (!s) return true;
       var name = (r.full_name || '').toLowerCase();
       var phone = (r.phone || '').toLowerCase();
@@ -169,6 +186,20 @@
         _currentPage = 1; applyFiltersAndRender();
       }
     });
+    // P31: append failures-only toggle pill (always shown when M > 0).
+    var leadsWithFailures = Object.keys(_failedCounts).length;
+    if (leadsWithFailures > 0) {
+      if (host.classList.length === 0) host.className = 'flex items-center gap-2 flex-wrap mb-3';
+      var pill = document.createElement('button');
+      pill.type = 'button';
+      pill.className = 'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium ' +
+        (_failuresOnly ? 'bg-rose-600 text-white shadow-sm' : 'bg-rose-100 text-rose-800 hover:bg-rose-200');
+      pill.textContent = '📩 הודעות כושלות (' + leadsWithFailures + ')';
+      pill.addEventListener('click', function () {
+        _failuresOnly = !_failuresOnly; _currentPage = 1; applyFiltersAndRender();
+      });
+      host.appendChild(pill);
+    }
   }
 
   // ---- Bulk selection bar ----
@@ -243,9 +274,11 @@
       var atRiskDays = _atRisk[r.id];
       var rowCls = (atRiskDays !== undefined) ? 'hover:bg-amber-100 cursor-pointer border-b border-slate-100 transition-colors bg-amber-50' : (idx % 2 === 0 ? CLS_ROW_ODD : CLS_ROW_EVEN);
       var nameSubtitle = (atRiskDays !== undefined) ? '<div class="text-xs text-amber-700 font-semibold mt-0.5">💳 קרדיט פג בעוד ' + atRiskDays + ' ימים</div>' : '';
+      var failedN = _failedCounts[r.id] || 0;
+      var failedBadge = failedN > 0 ? ' <span class="inline-flex items-center gap-0.5 ms-1 px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700" title="הודעות כושלות">⚠️ ' + failedN + '</span>' : '';
       html += '<tr class="' + rowCls + '" data-lead-id="' + escapeHtml(r.id) + '">' +
         '<td class="' + CLS_TD + '"><input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" data-check-lead="' + escapeHtml(r.id) + '"' + (checked ? ' checked' : '') + '></td>' +
-        '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + nameSubtitle + '</td>' +
+        '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + failedBadge + nameSubtitle + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
         '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('lead', r.status) + ((r.status === 'waitlist' || r.status === 'invited') ? ' <button type="button" data-move-lead="' + escapeHtml(r.id) + '" title="העבר לאירוע אחר" class="text-slate-400 hover:text-indigo-600 text-sm">↔</button>' : '') + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600">' + escapeHtml(r.email || '—') + '</td>' +
