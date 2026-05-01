@@ -28,12 +28,14 @@ const HEBREW_DOW = [
 ];
 
 /**
- * Compute Hebrew weekday for an Israel-local event_date.
- * The date is stored as PostgreSQL `date` (no time component); we anchor at
- * Israel-local midnight (`+03:00` in May 2026 — outside DST shifts).
+ * Compute Hebrew weekday for an event_date stored as PostgreSQL `date`
+ * (no time component). Parses the YMD parts manually and builds a UTC
+ * midnight Date so getUTCDay() returns the calendar weekday regardless
+ * of the runtime's local timezone.
  */
 export function hebrewDayOfWeek(eventDateIsoYmd: string): string {
-  const d = new Date(eventDateIsoYmd + "T00:00:00+03:00");
+  const [yearStr, monthStr, dayStr] = eventDateIsoYmd.split("-");
+  const d = new Date(Date.UTC(parseInt(yearStr, 10), parseInt(monthStr, 10) - 1, parseInt(dayStr, 10)));
   return HEBREW_DOW[d.getUTCDay()];
 }
 
