@@ -1125,19 +1125,16 @@ $$;
 -- tenant_id: 6ad0781b-37f0-47a9-92e3-be9ed1477e1c
 -- =============================================================================
 
--- Seed: crm_campaigns (2 rows)
+-- Seed: crm_campaigns (1 row — multisale removed 2026-05-01 per PRE_CUTOVER_QA_C B9)
 INSERT INTO crm_campaigns (tenant_id, slug, name, description, default_max_capacity, default_booking_fee, cancellation_hours)
 VALUES
   ('6ad0781b-37f0-47a9-92e3-be9ed1477e1c', 'supersale', 'אירוע המותגים (SuperSale)',
-   'אירוע מכירות מותגים מוזל לקהל מוזמן', 50, 50.00, 48),
-  ('6ad0781b-37f0-47a9-92e3-be9ed1477e1c', 'multisale', 'MultiSale',
-   'אירוע מכירות משקפיים מרובי מותגים', 30, 0.00, 24);
+   'אירוע מכירות מותגים מוזל לקהל מוזמן', 50, 50.00, 48);
 
--- Seed: crm_tags (2 rows)
+-- Seed: crm_tags (1 row — MultiSale tag removed 2026-05-01 per PRE_CUTOVER_QA_C B9)
 INSERT INTO crm_tags (tenant_id, name, color, category, sort_order)
 VALUES
-  ('6ad0781b-37f0-47a9-92e3-be9ed1477e1c', 'SuperSale', '#8b5cf6', 'campaign', 1),
-  ('6ad0781b-37f0-47a9-92e3-be9ed1477e1c', 'MultiSale', '#3b82f6', 'campaign', 2);
+  ('6ad0781b-37f0-47a9-92e3-be9ed1477e1c', 'SuperSale', '#8b5cf6', 'campaign', 1);
 
 -- Seed: crm_statuses — Lead statuses (11 rows)
 INSERT INTO crm_statuses (tenant_id, entity_type, slug, name_he, name_en, color, sort_order, is_default, triggers_messages)

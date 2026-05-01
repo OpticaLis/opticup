@@ -58,7 +58,7 @@ export async function injectEventVariables(
 ): Promise<{ feeKey: string | null }> {
   const { data: ev, error: evErr } = await db
     .from("crm_events")
-    .select("name, event_date, start_time, location_address, max_capacity, booking_fee, coupon_code")
+    .select("name, event_date, start_time, location_address, location_waze_url, max_capacity, booking_fee, coupon_code")
     .eq("id", eventId)
     .eq("tenant_id", tenantId)
     .maybeSingle();
@@ -97,21 +97,32 @@ export async function injectEventVariables(
     vars.coupon_code = ev.coupon_code || "";
   }
 
-  // payment_url_<fee> resolution
+  // Tenant lookup — pulled earlier so ui_config is available for the waze_url
+  // cascade even when the event has no booking_fee (which short-circuits the
+  // payment_url branch below). PRE_CUTOVER_QA_A B7 — also fetches ui_config.
+  const { data: tenant, error: tErr } = await db
+    .from("tenants")
+    .select("payment_links, ui_config")
+    .eq("id", tenantId)
+    .maybeSingle();
+  if (tErr) console.warn("injectEventVariables: tenant lookup failed", tErr);
+
+  // PRE_CUTOVER_QA_A B7 — %waze_url% cascade: event row → tenant.ui_config
+  // → unset (universal P33 scanner will loud-fail if a template references
+  // %waze_url% with no resolution). No hardcoded fallback in code (Pattern P12).
+  if (vars.waze_url == null) {
+    const evWaze = typeof ev.location_waze_url === "string" ? ev.location_waze_url : "";
+    const tenantDefault = tenant?.ui_config?.default_waze_url;
+    if (evWaze) vars.waze_url = evWaze;
+    else if (typeof tenantDefault === "string" && tenantDefault.length > 0) vars.waze_url = tenantDefault;
+    else console.warn(`injectEventVariables: waze_url unresolved for event ${eventId} — set crm_events.location_waze_url or tenants.ui_config.default_waze_url`);
+  }
+
+  // payment_url_<fee> resolution (uses the tenant row already loaded above).
   const fee = Math.round(Number(ev.booking_fee));
   if (!Number.isFinite(fee) || fee <= 0) return { feeKey: null };
   const feeKey = String(fee);
-
-  const { data: tenant, error: tErr } = await db
-    .from("tenants")
-    .select("payment_links")
-    .eq("id", tenantId)
-    .maybeSingle();
-
-  if (tErr) {
-    console.warn("injectEventVariables: tenant lookup failed", tErr);
-    return { feeKey };
-  }
+  if (tErr) return { feeKey };
 
   const links: Record<string, string> = (tenant?.payment_links ?? {}) as Record<string, string>;
   const url = links[feeKey];

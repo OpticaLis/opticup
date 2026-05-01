@@ -66,9 +66,9 @@
         '<div class="label">פרטי האירוע</div>' +
         '<div class="name">' + esc(data.event_name || '') + '</div>' +
         '<div class="meta">' +
-          (dateStr ? '<div class="meta-row">📅 ' + esc(dateStr) + '</div>' : '') +
-          (timeStr ? '<div class="meta-row">⏰ ' + esc(timeStr) + '</div>' : '') +
-          (data.event_location ? '<div class="meta-row">📍 ' + esc(data.event_location) + '</div>' : '') +
+          (dateStr ? '<div class="meta-row"><span class="meta-key">תאריך:</span>' + esc(dateStr) + '</div>' : '') +
+          (timeStr ? '<div class="meta-row"><span class="meta-key">שעה:</span>' + esc(timeStr) + '</div>' : '') +
+          (data.event_location ? '<div class="meta-row"><span class="meta-key">מיקום:</span>' + esc(data.event_location) + '</div>' : '') +
         '</div>' +
       '</div>' +
       '<form id="reg-form" novalidate>' +
@@ -87,8 +87,10 @@
           '<p class="hint">האם יש צורך בבדיקת ראייה?</p>' +
           '<select id="eye_exam" name="eye_exam">' +
             '<option value="">-- בחר/י --</option>' +
-            '<option value="כן">כן, אשמח לבדיקה</option>' +
-            '<option value="לא">לא, יש לי מרשם עדכני</option>' +
+            '<option value="לא, אין צורך בבדיקה">לא, אין צורך בבדיקה</option>' +
+            '<option value="כן, בדיקה רגילה">כן, בדיקה רגילה</option>' +
+            '<option value="כן, בדיקת מולטיפוקל">כן, בדיקת מולטיפוקל</option>' +
+            '<option value="יש לי כבר מרשם עדכני">יש לי כבר מרשם עדכני</option>' +
           '</select>' +
         '</div>' +
         '<div class="field">' +
@@ -119,7 +121,7 @@
       return;
     }
     if (resp.success === true && resp.status === 'registered') {
-      showPopup('success', 'ההרשמה בוצעה בהצלחה!', 'נתראה באירוע — ניתן לסגור חלון זה.');
+      showPopup('success', 'ההרשמה בוצעה בהצלחה!', 'נתראה באירוע - ניתן לסגור חלון זה.');
       return;
     }
     if (resp.success === true && resp.status === 'waiting_list') {
@@ -181,7 +183,7 @@
         if (!resp) { renderError('לא התקבלה תגובה מהשרת.'); return; }
         if (resp.success !== true) {
           var errMap = {
-            invalid_ids: 'הקישור שגוי — פרטי הזיהוי אינם חוקיים.',
+            invalid_ids: 'הקישור שגוי - פרטי הזיהוי אינם חוקיים.',
             event_not_found: 'האירוע לא נמצא. ייתכן שהאירוע בוטל.',
             lead_not_found: 'פרטי הליד לא נמצאו. ייתכן שהקישור ישן מדי.'
           };

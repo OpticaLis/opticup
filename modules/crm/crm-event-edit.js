@@ -16,7 +16,8 @@
     return '<form id="crm-edit-event-form" class="space-y-3">' +
       '<div><label class="' + lbl + '">שם</label><input name="name" class="' + inp + ' w-full" value="' + escapeHtml(ev.name || '') + '" required></div>' +
       '<div class="flex gap-3">' +
-        '<div class="flex-1"><label class="' + lbl + '">תאריך</label><input type="date" name="event_date" class="' + inp + ' w-full" value="' + escapeHtml(ev.event_date || '') + '" required></div>' +
+        '<div class="flex-1"><label class="' + lbl + '">תאריך</label><input type="date" name="event_date" class="' + inp + ' w-full" value="' + escapeHtml(ev.event_date || '') + '" required>' +
+        '<div class="text-xs text-slate-500 mt-1" data-event-dow></div></div>' +
         '<div class="flex-1"><label class="' + lbl + '">שעת התחלה</label><input type="time" name="start_time" class="' + inp + ' w-full" value="' + escapeHtml((ev.start_time || '').slice(0, 5)) + '"></div>' +
         '<div class="flex-1"><label class="' + lbl + '">שעת סיום</label><input type="time" name="end_time" class="' + inp + ' w-full" value="' + escapeHtml((ev.end_time || '').slice(0, 5)) + '"></div>' +
       '</div>' +
@@ -47,6 +48,11 @@
     var body = modal.el.querySelector('.modal-body');
     var footer = modal.el.querySelector('.modal-footer');
     footer.querySelector('#crm-edit-event-cancel').addEventListener('click', function () { if (modal.close) modal.close(); });
+    // B8: live Hebrew day-of-week beside event_date
+    var _editDateInput = body.querySelector('[name="event_date"]');
+    var _editDowEl = body.querySelector('[data-event-dow]');
+    function _editUpdateDow() { if (_editDowEl && _editDateInput) _editDowEl.textContent = CrmHelpers.hebrewDayOfWeek(_editDateInput.value); }
+    if (_editDateInput) { _editDateInput.addEventListener('input', _editUpdateDow); _editDateInput.addEventListener('change', _editUpdateDow); _editUpdateDow(); }
     footer.querySelector('#crm-edit-event-submit').addEventListener('click', async function () {
       var form = body.querySelector('#crm-edit-event-form');
       var errBox = body.querySelector('#crm-edit-event-error');

@@ -315,20 +315,27 @@
     el.querySelector('[data-banner="refunds-pending"]').addEventListener('click', function () { openRefundsModal(rows); });
   }
 
+  // PRE_CUTOVER_QA_A B5: row click opens the per-attendee payment action modal
+  // (CrmPayment.openActionModal) which already surfaces the "סמן הוחזר" button
+  // for refund_requested attendees. After any action the banner reloads so the
+  // counter decrements / banner clears once no requests remain.
   function openRefundsModal(rows) {
     if (typeof Modal === 'undefined') return;
     var content = '<div class="space-y-2">' + rows.map(function (r) {
       var when = r.refund_requested_at ? CrmHelpers.formatDate(r.refund_requested_at) : '—';
-      return '<div class="flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-amber-400" data-refund-lead-id="' + escapeHtml(r.lead_id || '') + '">' +
+      return '<div class="flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-amber-400" data-refund-attendee-id="' + escapeHtml(r.id || '') + '">' +
         '<div class="flex-1 min-w-0"><div class="font-semibold text-slate-800">' + escapeHtml(r.full_name || '—') + '</div>' +
         '<div class="text-xs text-slate-500" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</div></div>' +
         '<div class="text-xs text-amber-700 shrink-0">בוקש ' + escapeHtml(when) + '</div></div>';
     }).join('') + '</div>';
     var modal = Modal.show({ title: 'בקשות החזר ממתינות (' + rows.length + ')', size: 'md', content: content });
-    modal.el.querySelectorAll('[data-refund-lead-id]').forEach(function (el) {
+    modal.el.querySelectorAll('[data-refund-attendee-id]').forEach(function (el) {
       el.addEventListener('click', function () {
-        var leadId = el.getAttribute('data-refund-lead-id');
-        if (leadId && window.openCrmLeadDetail) { if (modal.close) modal.close(); openCrmLeadDetail(leadId); }
+        var aid = el.getAttribute('data-refund-attendee-id');
+        if (aid && window.CrmPayment && CrmPayment.openActionModal) {
+          if (modal.close) modal.close();
+          CrmPayment.openActionModal(aid, { onAfterAction: function () { loadRefundsBanner(); } });
+        }
       });
     });
   }

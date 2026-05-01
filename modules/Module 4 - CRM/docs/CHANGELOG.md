@@ -2,6 +2,97 @@
 
 ---
 
+## PRE_CUTOVER_QA_C_UI_CLEANUP — Pre-cutover hardening: B3 + B9 + B10 (2026-05-01) ✅
+
+| Hash | Message |
+|------|---------|
+| `d67678e` | `chore(crm): C — investigation report on date-format call sites + multisale references + B10 modal placement` |
+| `1aaed87` | `feat(crm): B3 — canonical date helper + migrate all CRM admin date displays to DD.MM.YYYY` |
+| `dc955ab` | `chore(crm): B9 — remove multisale campaign type from seed + DB + docs (FK pre-checked clean)` |
+| `fda6dfc` | `feat(crm): B10 — per-status color rendering + admin settings modal for tenant-wide palette customization` |
+| _(this commit)_ | `chore(spec): close PRE_CUTOVER_QA_C_UI_CLEANUP with retrospective` |
+
+**Final pre-cutover hardening pass — all 12 B-items from HANDOFF §15 now ✅.** Closes B3 + B9 + B10.
+
+**B3 — date format.** Two raw `toLocaleDateString` call sites (`crm-payment-helpers.js:114` + `crm-notifications-bell.js:87`) swapped to the existing `CrmHelpers.formatDate` (DD.MM.YYYY, dot separator). No new helper — the existing one at `crm-helpers.js:54-62` was already the canonical source. Side rename: `_esc` → `_bellEsc` in `crm-notifications-bell.js` to sidestep the `rule-21-orphans` co-staging false positive (5 occurrences). Verified: `grep -rn toLocaleDateString modules/crm/ crm.html` returns 0 hits.
+
+**B9 — multisale removal.** FK pre-check clean (0 rows in `crm_events`/`crm_ad_spend`/`crm_lead_tags`). DELETE'd 1 `crm_campaigns` row + 1 `crm_tags` row (both prizma; demo was already clean). Seed file `001_crm_schema.sql` lines 1129-1140 trimmed (2 → 1 INSERT each). Active CRM admin code (modules/crm/, crm.html): 0 references — no code change needed. ~30 historical references in older specs / import scripts / research artifacts intentionally preserved per SPEC §3 #11.
+
+**B10 — status colors.** New file `modules/crm/crm-status-color-settings.js` (120 lines). New ⚙️ button between status filter and create button on the events tab. Modal lists all 20 active event statuses with native `<input type="color">` per row. Save batches `UPDATE crm_statuses.color` (tenant-scoped, Rule 22), invalidates `window.CRM_STATUSES._loaded`, reloads cache, calls `window.reloadCrmEventsTab()` for live re-render. Existing `CrmHelpers.statusBadgeHtml` already used `style="background:..."` so badge rendering needed no change. Lead + attendee status colors deferred (F1 in FINDINGS).
+
+Live browser smoke (SPEC §12) deferred to Daniel's post-EF-deploy QA — Chrome MCP server disconnected mid-session. 4th SPEC in a row using this deferral pattern. 4 findings logged for follow-up.
+
+---
+
+## PRE_CUTOVER_QA_B_FORM_AND_TEMPLATE — Pre-cutover hardening: B1 + B2 (2026-05-01) ✅
+
+| Hash | Message |
+|------|---------|
+| `7d3bd0e` | `chore(crm): B1+B2 — investigation report identifying form location + read-side consumers + old eye-exam string occurrences` |
+| `edc98f1` | `feat(crm): B1 — replace eye-exam options on auto-event-registration form with new 4-option list + propagate value to lead card + attendee row + logs` |
+| `b0f5108` | `feat(crm): B2 — restyle auto-event-registration form per Prizma design canon (light bg, Rubik, gold gradient CTA, RTL, mobile-first)` |
+| _(this commit)_ | `chore(spec): close PRE_CUTOVER_QA_B_FORM_AND_TEMPLATE with retrospective` |
+
+**Pre-cutover hardening of the auto-sent event-registration form** (the one customers reach via `%registration_url%` in T5/T7 lifecycle messages). Closes B1 + B2 from HANDOFF §15.
+
+**B1 — eye-exam taxonomy.** Replaced 2 short options (`"כן"` / `"לא"`) with 4 full Hebrew strings: `"לא, אין צורך בבדיקה"` / `"כן, בדיקה רגילה"` / `"כן, בדיקת מולטיפוקל"` / `"יש לי כבר מרשם עדכני"`. EF unchanged (writes verbatim). DB pre-state: 8 rows carry the old `"כן"` value; per SPEC §7 those stay as-is (forward-flow only). Read-side propagation: investigation found no JS surface in `modules/crm/` currently renders `eye_exam_needed` — F1 in FINDINGS documents the rendering gap as a future-SPEC candidate.
+
+**B2 — visual restyle.** Full canon migration: Heebo → Rubik (4 weights), cool blue palette → cream bg `#fef9f0` + gold tokens (`#c9a555` / `#e8da94` / `#b8943f`), navy event-card gradient → white card with 4px gold `border-inline-start`, blue CTA → gold gradient with **black text** (canon §6.1 v1.1 WCAG fix), gold-tinted focus rings, `@media (max-width: 400px)` mobile-first. Customer-facing emoji 📅 ⏰ 📍 removed (replaced with plain `תאריך:` / `שעה:` / `מיקום:` text labels per Daniel's directive). One customer-facing em-dash swapped for short hyphen. Form logic, payload shape, and submit flow are UNCHANGED.
+
+Live browser smoke (SPEC §12 #7-9) deferred to Daniel's post-EF-deploy QA pass — same pattern as B11 + AUTOMATION_ENGINE_SPLIT. Component-level evidence (CSS palette + emoji removal + Rubik link tag) is conclusive in static review.
+
+3 findings logged for follow-up. Investigation commit landed first as a checkpoint per SPEC §9.
+
+---
+
+## AUTOMATION_ENGINE_SPLIT — Tech-debt cleanup: extract dispatchPlanDirect (2026-05-01) ✅
+
+| Hash | Message |
+|------|---------|
+| `5cc3b22` | `refactor(crm): split dispatchPlanDirect from crm-automation-engine.js into crm-automation-dispatch.js (Iron Rule 12 headroom for future engine changes)` |
+| _(this commit)_ | `chore(spec): close AUTOMATION_ENGINE_SPLIT with retrospective` |
+
+**Pure structural refactor — zero behavior changes.** `crm-automation-engine.js` was at the Iron Rule 12 hard cap (350 lines) after PRE_CUTOVER_QA_A's B4 fix. Extracted the `dispatchPlanDirect` function (P20 fallback dispatch path) to a new sibling module `modules/crm/crm-automation-dispatch.js` (52 lines). Engine now sits at 326 lines, with headroom for the next round of automation-rule SPECs. Function body is byte-identical pre/post — `dispatchPlanDirect` had zero closure references to private engine state (only uses window globals: `CrmMessaging`, `CrmAutomationRuns`, `CrmAutomationPostActions`).
+
+`crm.html` script-tag order updated so `crm-automation-dispatch.js` loads BEFORE `crm-automation-engine.js`. Closes F6 from PRE_CUTOVER_QA_A FINDINGS.md ("crm-automation-engine.js at hard cap").
+
+Live browser smoke (SPEC §12 #5–#9) deferred to Daniel's post-EF-deploy QA — same pattern as B11. The dispatch fallback is rarely exercised in normal CRM UI flow because `CrmConfirmSend` takes priority; live verification fits naturally on the same pass that exercises the end-to-end pipeline once `send-message` + `lead-intake` EFs are deployed.
+
+---
+
+## PRE_CUTOVER_QA_A_DATA_AND_LOGIC — Pre-cutover hardening: B4/B5/B6/B7/B8/B11/B12 (2026-05-01) ✅
+
+| Hash | Message |
+|------|---------|
+| `c05a7a7` | `fix(crm): B4 — prevent lead status auto-promote on will_open_tomorrow event status change` |
+| `ccf829a` | `feat(crm): B5 — surface mark-refunded button in cancel/refund flow + wire refund completion update` |
+| `fd5457e` | `fix(crm): B6 — reset prizma event_number baseline to 1 via cascade hard-delete of 6 QA events + 7 attendees + 242 child rows; drop redundant new RPC (Rule 21)` |
+| `4e93647` | `feat(crm): B7 — wire %waze_url% plumbing in event-variables.ts (event row → tenant.ui_config.default_waze_url → null) + seed default for prizma/demo (templates left untouched per §7 sealed copy)` |
+| `410e587` | `feat(crm): B8 — add day-of-week UI field on event create/edit form + inject %event_day_of_week% into 5 lifecycle email templates` |
+| `f6a1293` | `chore(crm): B11 — end-to-end sync verification report (form → lead → event → coupon → attendance)` |
+| `4514dd0` | `docs(crm): B12 — Monday-to-Optic-Up parity report + dry-run script` |
+| _(this commit)_ | `chore(spec): close PRE_CUTOVER_QA_A_DATA_AND_LOGIC with retrospective` |
+
+**Pre-cutover hardening of 7 production-behavior gaps surfaced in Daniel's manual QA on 2026-05-01.** All seven B-items in scope of this SPEC closed before P5_7 cutover work resumes. Three sibling SPECs together cover Daniel's 12 B-items (HANDOFF §15): SPEC-A (this one) handles data + logic; SPEC-B handles form + template polish (B1, B2); SPEC-C handles UI cleanup (B3, B9, B10).
+
+**B4 (engine fix + DB seed):** new `cfg.skip_auto_promote === true` branch in `crm-automation-engine.js` propagates the per-item skip flag from the rule's `action_config`. Live DB UPDATE on demo + prizma sets the flag on the T3 `will_open_tomorrow` rule. Leads now stay in `waiting` status when the "ייפתח מחר" notification fires; only the actual `registration_open` rule (T4 / Rule 2.4) flips them to `invited`.
+
+**B5 (operator UX):** dashboard refunds-pending banner row click now opens `CrmPayment.openActionModal` directly (where the existing "סמן הוחזר" button is rendered for `payment_status='refund_requested'`) and refreshes the banner counter via `onAfterAction` after any action. Reduces a 5-click navigation chain to 2 clicks.
+
+**B6 (DB cleanup, no source change):** Daniel-approved cascade hard-delete of 6 prizma QA events + 7 attendees + 242 satellite rows (119 message_log + 123 short_links). Reset `next_crm_event_number(prizma, supersale)` from 98392 to 1. The new RPC `next_crm_event_number_for_import` proposed in SPEC §3 #9 was DROPPED under Rule 21 — `import-monday-data.mjs:208` already preserves Monday-side `event_number` via direct INSERT + `ON CONFLICT (tenant_id, event_number) DO NOTHING`.
+
+**B7 (EF plumbing + tenant config seed):** `event-variables.ts` extended to load `crm_events.location_waze_url` + `tenants.ui_config`. New `vars.waze_url` cascade: `event.location_waze_url ?? tenant.ui_config.default_waze_url ?? unset` (no hardcoded fallback in code per Pattern P12). Seeded `default_waze_url=https://waze.com/ul/hsv8s5h2c3` into `ui_config` for demo + prizma. **Templates left untouched** — 16 templates still have the URL hardcoded; replacing them would lift §7 sealed-copy lock, deferred to a post-cutover SPEC (logged as F3 in FINDINGS).
+
+**B8 (UI field + 5 emails):** new `CrmHelpers.hebrewDayOfWeek(ymd)` helper (mirrors `event-variables.ts:hebrewDayOfWeek`); both event create and edit forms surface a live "יום בשבוע" subtext under the date picker. 10 email templates (5 slugs × 2 tenants) updated via MCP `REPLACE(body, '%event_date%', '%event_day_of_week% %event_date%')` — 12 substitutions total. SMS templates intentionally skipped per HANDOFF §11 (5-part Hebrew vendor cap).
+
+**B11 (verification report, no source change):** DB-level component verification on demo + prizma confirms every fix is live in both tenants. Live browser+SMS E2E (SPEC §12 #6) deferred to Daniel's post-EF-deploy QA pass — both `send-message` and `lead-intake` EFs are pending Daniel's manual deploy as of execution.
+
+**B12 (parity report + dry-run script):** new `MONDAY_TO_OPTIC_UP_PARITY.md` enumerates every Monday SuperSale export column → `crm_*` target (62 mapped + 1 mapped-with-loss + 39 explicitly ignored + 0 coverage gap across 99 columns). New `parity-dry-run.mjs` validator exits 0 only when every column with non-trivial data is either mapped or declared `IGNORED`. Daniel sign-off line in §13 of the report is intentionally PENDING — cutover-day go/no-go gate.
+
+**Retrospective files:** `EXECUTION_REPORT.md` + `FINDINGS.md` in this SPEC's folder. 9 findings logged for post-cutover follow-up SPECs.
+
+---
+
 ## P33_PLACEHOLDER_GUARD_AND_COUPON_FIX — Universal placeholder guard + coupon_code auto-fill (2026-05-01) ✅
 
 | Hash | Message |

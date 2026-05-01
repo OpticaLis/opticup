@@ -281,7 +281,8 @@ tailwind.config = {
         <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <div class="flex flex-wrap items-center gap-2 mb-4">
             <select id="crm-events-filter-status" class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"><option value="">כל הסטטוסים</option></select>
-            <button type="button" id="crm-events-create-btn" class="ms-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition shadow-sm">יצירת אירוע +</button>
+            <button type="button" id="crm-events-status-colors-btn" title="ניהול צבעי סטטוס" aria-label="ניהול צבעי סטטוס" class="ms-auto w-9 h-9 flex items-center justify-center border border-gray-300 hover:bg-gray-50 text-gray-600 rounded-lg text-sm transition">⚙️</button>
+            <button type="button" id="crm-events-create-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition shadow-sm">יצירת אירוע +</button>
           </div>
           <div id="crm-events-table-wrap"></div>
         </div>
@@ -367,6 +368,7 @@ tailwind.config = {
 <script src="modules/crm/crm-leads-detail.js"></script>
 <script src="modules/crm/crm-event-actions.js"></script>
 <script src="modules/crm/crm-event-register.js"></script>
+<script src="modules/crm/crm-status-color-settings.js"></script>
 <script src="modules/crm/crm-events-tab.js"></script>
 <script src="modules/crm/crm-payment-helpers.js"></script>
 <script src="modules/crm/crm-attendee-cancel.js"></script>
@@ -397,6 +399,7 @@ tailwind.config = {
 <script src="modules/crm/crm-event-send-message.js"></script>
 <script src="modules/crm/crm-coupon-dispatch.js"></script>
 <script src="modules/crm/crm-automation-recipient-resolvers.js"></script>
+<script src="modules/crm/crm-automation-dispatch.js"></script>
 <script src="modules/crm/crm-automation-engine.js"></script>
 <script src="modules/crm/crm-automation-queue-send.js"></script>
 <script src="modules/crm/crm-automation-post-actions.js"></script>
