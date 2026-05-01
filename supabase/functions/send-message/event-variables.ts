@@ -158,6 +158,28 @@ export function scanForPaymentUrlMismatch(body: string): string | null {
 }
 
 /**
+ * Universal post-substitution placeholder scan (P33 Fix B). After
+ * substituteVariables runs, ANY remaining %lowercase_var% literal means a
+ * placeholder failed to substitute. The dispatch MUST be rejected so the
+ * literal never reaches the customer.
+ *
+ * Returns array of distinct placeholder names found (empty array if clean).
+ * Caller is responsible for writing the failed crm_message_log row + the
+ * HTTP 400 response.
+ *
+ * Regex matches the same lowercase-first-char pattern as P31's template body
+ * parser. URL-encoded hex sequences like %D7% (Hebrew in wa.me click-to-chat
+ * URLs) are excluded by the lowercase-first-char rule.
+ */
+export function scanForUnsubstitutedPlaceholders(text: string): string[] {
+  const seen = new Set<string>();
+  const re = /%([a-z][a-z0-9_]*)%/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) seen.add(m[1]);
+  return Array.from(seen).sort();
+}
+
+/**
  * Inject unsubscribe_url + registration_url (when event_id present).
  * Caller-provided values are preserved unless they are placeholders ("[...").
  * Best-effort: errors are logged but never throw.

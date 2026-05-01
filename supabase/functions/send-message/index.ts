@@ -4,6 +4,7 @@ import {
   injectAutoUrls,
   injectEventVariables,
   scanForPaymentUrlMismatch,
+  scanForUnsubstitutedPlaceholders,
   withDisplayPhone,
 } from "./event-variables.ts";
 import { injectLeadVariables } from "./lead-variables.ts";
@@ -245,6 +246,27 @@ Deno.serve(async (req: Request) => {
       status: "failed", error_message: paymentUrlError,
     });
     return jsonResponse({ ok: false, error: paymentUrlError }, 422);
+  }
+
+  // --- P33 Fix B universal placeholder guard: scan body+subject for ANY
+  // remaining %X% literal. If found, reject so the customer never sees a
+  // half-rendered template. This is the safety net that closes the bug
+  // class P32-001 surfaced (%coupon_code% literal reached customer).
+  const unsubstituted = scanForUnsubstitutedPlaceholders(
+    finalBody + (finalSubject ? " " + finalSubject : "")
+  );
+  if (unsubstituted.length > 0) {
+    const errMsg = "unsubstituted_placeholder: " + unsubstituted.join(",");
+    await db.from("crm_message_log").insert({
+      tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
+      template_id: templateId, channel, content: finalBody,
+      status: "failed", error_message: errMsg,
+    });
+    return jsonResponse(
+      { ok: false, error: "unsubstituted_placeholder", missing: unsubstituted,
+        template: templateSlug ? `${templateSlug}_${channel}_${language}` : null },
+      400,
+    );
   }
 
   // --- Determine recipient ---
