@@ -1,6 +1,6 @@
 # Module 4 — CRM: Module Map
 
-> **Last updated:** 2026-05-01 (P31 — explicit variable contract + failed-message UI: `crm_message_templates.required_variables JSONB` column with parser-driven backfill; `injectLeadVariables` auto-fills `name/phone/email/lead_id` on every dispatch; `validateRequiredVariables` rejects 400 when contract missing; CrmMessageErrorLabels Hebrew error map; ⚠️N badge + 📩 הודעות כושלות filter pill on registered tab; collapsible failed-messages section + per-row retry in lead detail; 3 structural extractions: crm-leads-tab-filters.js, crm-leads-detail-messages.js, send-message/dispatch.ts)
+> **Last updated:** 2026-05-01 (P33 — universal placeholder guard + coupon_code auto-fill fix: closes P32-001 customer-facing bug class. `injectEventVariables` now selects + sets `vars.coupon_code` from `crm_events.coupon_code` (caller-wins); new `scanForUnsubstitutedPlaceholders(text)` helper in event-variables.ts; index.ts invokes the scan on body+subject after substitution; if any `%[a-z][a-z0-9_]*%` literal remains, dispatch rejected with HTTP 400 + `error_message='unsubstituted_placeholder: <names>'` written to crm_message_log before any Make webhook call. Make webhook never receives broken templates.)
 
 ---
 

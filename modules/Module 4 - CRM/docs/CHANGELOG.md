@@ -2,6 +2,42 @@
 
 ---
 
+## P33_PLACEHOLDER_GUARD_AND_COUPON_FIX — Universal placeholder guard + coupon_code auto-fill (2026-05-01) ✅
+
+| Hash | Message |
+|------|---------|
+| `d96655f` | `fix(send-message): inject coupon_code from crm_events in injectEventVariables (P33 commit 1)` |
+| `e7f8a29` | `feat(send-message): universal post-substitution placeholder guard rejects unsubstituted %X% (P33 commit 2)` |
+| _(this commit)_ | `chore(crm): MODULE_MAP + CHANGELOG for P33 (P33 commit 3)` |
+
+**URGENT pre-cutover.** Closes P32-001: `%coupon_code%` literal reached a customer in `event_coupon_delivery_email_he` on 2026-05-01 because P31's contract layer trusted a SPEC declaration that the EF never actually fulfilled. P33 ships two fixes together — the direct cause and the safety net.
+
+**Fix A — coupon_code auto-fill (commit 1).** `event-variables.ts:injectEventVariables` now SELECTs `coupon_code` from `crm_events` and sets `vars.coupon_code = ev.coupon_code || ""` when not already provided by caller. Caller-wins semantics preserved (existing `crm-coupon-dispatch.js` and other paths that pass `coupon_code` explicitly continue to work unchanged). Two-line change. Pre-flight verified all 5 active Prizma events have `coupon_code` populated (V4-13860, V4-32619, V4-40268, V4-68376, V4-98390).
+
+**Fix B — universal post-substitution placeholder guard (commit 2).** New helper `scanForUnsubstitutedPlaceholders(text): string[]` exported from `event-variables.ts`. Returns sorted distinct array of `%lowercase_var%` names found in the input string after substitution; empty array means clean. `index.ts` invokes the scan on `finalBody + finalSubject` AFTER substitution, AFTER `scanForPaymentUrlMismatch`. If any placeholder remains:
+1. Inserts `crm_message_log` row with `status='failed'`, `error_message='unsubstituted_placeholder: <comma-separated names>'`, full content captured for operator inspection
+2. Returns HTTP 400 `{ ok: false, error: 'unsubstituted_placeholder', missing: [...names], template: <slug or null> }`
+3. Make webhook NOT called — customer never sees the broken template
+
+The scan uses the same regex as P31's template-body parser: `/%([a-z][a-z0-9_]*)%/g` — lowercase first-char excludes URL-encoded sequences like `%D7%` from WhatsApp wa.me click-to-chat URLs.
+
+**Why both fixes together:** Fix A removes the immediate cause. Fix B closes the entire bug class — independent of whether `required_variables` is correctly populated, whether the auto-fill paths actually fill what their SPEC claims they fill (the P32-001 root cause), whether a future template author adds a new placeholder, or whether a future schema change drops a field. The existing P12-pattern `scanForPaymentUrlMismatch` was a near-miss that solved the problem for one variable family — generalizing was the obvious next step.
+
+The new `unsubstituted_placeholder` error code surfaces in the P31 failed-msg UI (registered tab badge, filter pill, lead-detail section, retry button). Hebrew label can be added to `crm-message-error-labels.js` in a follow-up; current behavior falls through to raw English text per P31's unknown-code fallback.
+
+**File sizes (verifier method, all under 350 cap):**
+- `event-variables.ts` 189 → 218 (+29 across both commits — coupon_code injection + new scan helper + JSDoc)
+- `index.ts` 282 → 304 (+22 — import + scan invocation block)
+
+**Deploy state at close:** code committed + pushed; `send-message` EF deploy via MCP returned `InternalServerErrorException` (third consecutive SPEC hitting this — P29 + P31 + P33). Per SPEC §4, deploy step deferred to Daniel CLI: `supabase functions deploy send-message --project-ref tsxrrxzmdxaenlvocyit`.
+
+**Out of scope (per SPEC §6):**
+- All other P32 history-documentation gaps (10 items) — separate SPECs post-cutover
+- Vendor delivery callback (P28-003) — post-cutover
+- Hebrew label for the new `unsubstituted_placeholder` code — follow-up micro-fix
+
+---
+
 ## P31_VARIABLE_CONTRACT_AND_FAILURE_UI — Explicit variable contract + failed-message UI (2026-05-01) ✅
 
 | Hash | Message |
