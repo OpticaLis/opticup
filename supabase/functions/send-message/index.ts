@@ -168,7 +168,7 @@ Deno.serve(async (req: Request) => {
     const fullSlug = `${templateSlug}_${channel}_${language}`;
     const { data: tpl, error: tplErr } = await db
       .from("crm_message_templates")
-      .select("id, body, subject")
+      .select("id, body, subject, required_variables")
       .eq("tenant_id", tenantId)
       .eq("slug", fullSlug)
       .eq("is_active", true)
@@ -194,6 +194,35 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(
         { ok: false, error: "template_not_found", slug: fullSlug },
         404,
+      );
+    }
+
+    // P31 commit 3: validate required_variables AFTER all auto-injects + caller
+    // merge, BEFORE substituteVariables. Missing/empty values that the template
+    // declares as required = HTTP 400 + failed row in crm_message_log.
+    const required = Array.isArray(tpl.required_variables) ? tpl.required_variables : [];
+    const missing: string[] = [];
+    for (const k of required) {
+      if (typeof k !== "string") continue;
+      const v = (displayVars as Record<string, unknown>)[k];
+      if (v == null || v === "") missing.push(k);
+    }
+    if (missing.length > 0) {
+      const errMsg = "missing_required_variable: " + missing.join(",");
+      await db.from("crm_message_log").insert({
+        tenant_id: tenantId,
+        lead_id: leadId,
+        event_id: eventId,
+        run_id: runId,
+        template_id: tpl.id,
+        channel,
+        content: "",
+        status: "failed",
+        error_message: errMsg,
+      });
+      return jsonResponse(
+        { ok: false, error: "missing_required_variable", missing, template: fullSlug },
+        400,
       );
     }
 
