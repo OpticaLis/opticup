@@ -2,6 +2,17 @@
 
 ---
 
+## B8_DAY_OF_WEEK_TIMEZONE_FIX — Hot-fix: off-by-one in hebrewDayOfWeek (2026-05-01) ✅
+
+| Hash | Message |
+|------|---------|
+| `468b090` | `fix(crm): B8 hot-fix — correct off-by-one in hebrewDayOfWeek helper (UTC parsing bug)` |
+| _(this commit)_ | `chore(spec): close B8_DAY_OF_WEEK_TIMEZONE_FIX with retrospective` |
+
+**Customer-string-corruption hot-fix.** Browser QA on 2026-05-01 (TEST 2 PROD) caught that every Hebrew weekday computed from `event_date` rendered as the day BEFORE the actual day. Root cause: `new Date(ymd + 'T00:00:00+03:00')` constructs an instant equal to `21:00 UTC the previous day`; `.getUTCDay()` then returns the previous day's UTC weekday. Fix parses YMD parts manually and builds the Date with `Date.UTC(y,m-1,d)`. Affected `modules/crm/crm-helpers.js` (CRM admin event-form subtext) + `supabase/functions/send-message/event-variables.ts` (`%event_day_of_week%` substitution in customer SMS+email). EF redeployed to Supabase production v15 → v16. No customer messages were corrupted in production (cutover hadn't fired yet).
+
+---
+
 ## PRE_CUTOVER_QA_C_UI_CLEANUP — Pre-cutover hardening: B3 + B9 + B10 (2026-05-01) ✅
 
 | Hash | Message |
