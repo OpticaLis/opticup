@@ -1,9 +1,9 @@
 # Module 4 — CRM: Session Context
 
-> **Last updated:** 2026-04-28 (P5_V2 sequence: Rungs 1+2+micro-SPEC+Rung 3 all DB+code complete; 2 EF deploys pending Daniel)
-> **Status:** P5_V2_TEMPLATE_REBUILD pre-cutover work LANDED on demo. **22 V2 templates** loaded byte-equal; **14 active automation rules** rewired (T6, Rule 2.4 cross-event-waitlist, T8/T9 queue_send, T10 retired, Rule 2.7 manual-move 2-row); **engine extended** (cross_event_active_waitlist + queue_send + attendee_moved + attendee_upsert post-action); **idempotency UNIQUE INDEX** on crm_message_queue; **waitlist lead status** + sync RPC live + wired into register_lead_to_event + attendeeUpsert post-action; **manual-move feature** complete — new RPC `move_attendee_between_events` + cross-event auto-move in `register_lead_to_event` + `crm-attendee-move.js` dialog + ↔ buttons on events-detail attendees table + leads-tab waitlist/invited rows + Rule 2.7 wiring through `CrmAutomation.evaluate('attendee_moved')`. **Pending manual deploy by Daniel:** send-message EF (Rung 1) + lead-intake EF (Rung 2) — MCP deploy_edge_function returned 500; local code is correct, deploy via `supabase functions deploy <name>`. Daniel's `tenants.payment_links["50"]` URL also pending.
-> **Current phase:** PRE-CUTOVER smoke pending; cutover target 2026-05-03.
-> **Next:** Daniel deploys 2 EFs + seeds payment URL → executor smokes Rungs 1/2/3 end-to-end → cutover.
+> **Last updated:** 2026-05-01 (PRE_CUTOVER_QA_A shipped — B4/B5/B6/B7/B8/B11/B12 ✅; sibling SPEC-B + SPEC-C + P5_7 cutover SPEC remain)
+> **Status:** PRE_CUTOVER_QA_A_DATA_AND_LOGIC closed (8 commits on develop). All 7 fixes verified live on demo + prizma via DB component check (see B11 commit `f6a1293`). Live browser+SMS E2E still gated on Daniel's two pending EF deploys (send-message Rung 1 + lead-intake Rung 2) and `tenants.payment_links["50"]` URL seed. Prizma now has 0 active events (cascade hard-delete of 6 QA events + 7 attendees + 242 child rows in B6); `next_crm_event_number(prizma, supersale)` returns 1. Cutover-day go/no-go gate is Daniel sign-off on `MONDAY_TO_OPTIC_UP_PARITY.md` §13.
+> **Current phase:** PRE-CUTOVER. Next two SPECs (B + C) are author-only — opticup-strategic to author + Daniel triggers Claude Code sessions per ACTIVATION_PROMPT.md.
+> **Next:** Run SPEC-B (B1, B2 — eye-exam options + form redesign) → SPEC-C (B3, B9, B10 — date format + multisale removal + status colors) → P5_7_STOREFRONT_FORM_REWIRE → cutover Sat/Sun 2026-05-02 or 03.
 > **Branch:** develop
 
 ---
