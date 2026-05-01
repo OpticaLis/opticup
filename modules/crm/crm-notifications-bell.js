@@ -10,7 +10,7 @@
   var _hostEl = null;
   var _cachedCount = null;
 
-  function _esc(s) { return window.escapeHtml ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); }
+  function _bellEsc(s) { return window.escapeHtml ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); }
 
   // Returns an array of expiring rows: [{ attendee_id, lead_id, full_name, days_left, expires_at }, ...]
   // Sorted by days_left ascending (most urgent first). Limited to 50 rows.
@@ -58,7 +58,7 @@
 
   function _renderBellHTML(count) {
     var badgeHtml = (count > 0)
-      ? '<span class="absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">' + _esc(String(count)) + '</span>'
+      ? '<span class="absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">' + _bellEsc(String(count)) + '</span>'
       : '';
     return '<button type="button" id="crm-bell-btn" class="relative inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-slate-100 transition" title="התראות תוקף קרדיטים">' +
       '<span class="text-xl">🔔</span>' + badgeHtml + '</button>';
@@ -82,9 +82,9 @@
     var rowsHtml = rows.length
       ? rows.map(function (r) {
           var dayClass = r.days_left <= 7 ? 'text-rose-600 font-bold' : (r.days_left <= 14 ? 'text-amber-600 font-semibold' : 'text-slate-600');
-          return '<div class="flex items-center justify-between py-2 px-3 hover:bg-slate-50 border-b border-slate-100 cursor-pointer" data-bell-lead-id="' + _esc(r.lead_id) + '">' +
-            '<div class="flex-1"><div class="font-semibold text-slate-800">' + _esc(r.full_name) + '</div>' +
-            '<div class="text-xs text-slate-500">פג ב-' + _esc(new Date(r.expires_at).toLocaleDateString('he-IL')) + '</div></div>' +
+          return '<div class="flex items-center justify-between py-2 px-3 hover:bg-slate-50 border-b border-slate-100 cursor-pointer" data-bell-lead-id="' + _bellEsc(r.lead_id) + '">' +
+            '<div class="flex-1"><div class="font-semibold text-slate-800">' + _bellEsc(r.full_name) + '</div>' +
+            '<div class="text-xs text-slate-500">פג ב-' + _bellEsc(CrmHelpers.formatDate(r.expires_at)) + '</div></div>' +
             '<div class="' + dayClass + ' text-sm">' + r.days_left + ' ימים</div>' +
           '</div>';
         }).join('')

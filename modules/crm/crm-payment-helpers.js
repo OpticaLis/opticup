@@ -111,7 +111,8 @@
     if (attendeeRow.payment_status === 'credit_pending' && attendeeRow.credit_expires_at) {
       var exp = new Date(attendeeRow.credit_expires_at);
       var daysLeft = Math.max(0, Math.ceil((exp.getTime() - Date.now()) / 86400000));
-      return '<div class="text-xs text-violet-700 mt-2">💳 קרדיט פתוח עד ' + _esc(exp.toLocaleDateString('he-IL')) + ' (' + daysLeft + ' ימים שנותרו)</div>';
+      // PRE_CUTOVER_QA_C B3 — DD.MM.YYYY via canonical CrmHelpers.formatDate
+      return '<div class="text-xs text-violet-700 mt-2">💳 קרדיט פתוח עד ' + _esc(CrmHelpers.formatDate(attendeeRow.credit_expires_at)) + ' (' + daysLeft + ' ימים שנותרו)</div>';
     }
     if (attendeeRow.payment_status === 'credit_used' && attendeeRow.credit_used_for_attendee_id) {
       return '<div class="text-xs text-slate-500 mt-2">💳 קרדיט מומש לאירוע אחר</div>';
