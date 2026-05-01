@@ -2,6 +2,21 @@
 
 ---
 
+## AUTOMATION_ENGINE_SPLIT — Tech-debt cleanup: extract dispatchPlanDirect (2026-05-01) ✅
+
+| Hash | Message |
+|------|---------|
+| `5cc3b22` | `refactor(crm): split dispatchPlanDirect from crm-automation-engine.js into crm-automation-dispatch.js (Iron Rule 12 headroom for future engine changes)` |
+| _(this commit)_ | `chore(spec): close AUTOMATION_ENGINE_SPLIT with retrospective` |
+
+**Pure structural refactor — zero behavior changes.** `crm-automation-engine.js` was at the Iron Rule 12 hard cap (350 lines) after PRE_CUTOVER_QA_A's B4 fix. Extracted the `dispatchPlanDirect` function (P20 fallback dispatch path) to a new sibling module `modules/crm/crm-automation-dispatch.js` (52 lines). Engine now sits at 326 lines, with headroom for the next round of automation-rule SPECs. Function body is byte-identical pre/post — `dispatchPlanDirect` had zero closure references to private engine state (only uses window globals: `CrmMessaging`, `CrmAutomationRuns`, `CrmAutomationPostActions`).
+
+`crm.html` script-tag order updated so `crm-automation-dispatch.js` loads BEFORE `crm-automation-engine.js`. Closes F6 from PRE_CUTOVER_QA_A FINDINGS.md ("crm-automation-engine.js at hard cap").
+
+Live browser smoke (SPEC §12 #5–#9) deferred to Daniel's post-EF-deploy QA — same pattern as B11. The dispatch fallback is rarely exercised in normal CRM UI flow because `CrmConfirmSend` takes priority; live verification fits naturally on the same pass that exercises the end-to-end pipeline once `send-message` + `lead-intake` EFs are deployed.
+
+---
+
 ## PRE_CUTOVER_QA_A_DATA_AND_LOGIC — Pre-cutover hardening: B4/B5/B6/B7/B8/B11/B12 (2026-05-01) ✅
 
 | Hash | Message |
