@@ -87,8 +87,10 @@
           '<p class="hint">האם יש צורך בבדיקת ראייה?</p>' +
           '<select id="eye_exam" name="eye_exam">' +
             '<option value="">-- בחר/י --</option>' +
-            '<option value="כן">כן, אשמח לבדיקה</option>' +
-            '<option value="לא">לא, יש לי מרשם עדכני</option>' +
+            '<option value="לא, אין צורך בבדיקה">לא, אין צורך בבדיקה</option>' +
+            '<option value="כן, בדיקה רגילה">כן, בדיקה רגילה</option>' +
+            '<option value="כן, בדיקת מולטיפוקל">כן, בדיקת מולטיפוקל</option>' +
+            '<option value="יש לי כבר מרשם עדכני">יש לי כבר מרשם עדכני</option>' +
           '</select>' +
         '</div>' +
         '<div class="field">' +
