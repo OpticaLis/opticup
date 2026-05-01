@@ -6,6 +6,7 @@ import {
   scanForPaymentUrlMismatch,
   withDisplayPhone,
 } from "./event-variables.ts";
+import { injectLeadVariables } from "./lead-variables.ts";
 import { writeDispatchAndSend } from "./dispatch.ts";
 
 // send-message — CRM message dispatch (P3c+P4 Architecture v3).
@@ -134,6 +135,12 @@ Deno.serve(async (req: Request) => {
   const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+
+  // --- Inject lead vars (P31 commit 2): name, phone, email, lead_id from
+  // crm_leads. Caller-wins — only fills gaps. Unconditional on every dispatch
+  // (not gated on event_id) so direct-send paths can never produce a message
+  // with literal %name%.
+  await injectLeadVariables(db, leadId, tenantId, variables);
 
   // --- Inject auto URLs (unsubscribe + registration) and event-derived vars ---
   // Rung 1 (P5_V2_REBUILD_RUNG1_PLUMBING): URL injectors moved to event-variables.ts
