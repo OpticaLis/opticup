@@ -2,6 +2,28 @@
 
 ---
 
+## PRE_CUTOVER_QA_C_UI_CLEANUP — Pre-cutover hardening: B3 + B9 + B10 (2026-05-01) ✅
+
+| Hash | Message |
+|------|---------|
+| `d67678e` | `chore(crm): C — investigation report on date-format call sites + multisale references + B10 modal placement` |
+| `1aaed87` | `feat(crm): B3 — canonical date helper + migrate all CRM admin date displays to DD.MM.YYYY` |
+| `dc955ab` | `chore(crm): B9 — remove multisale campaign type from seed + DB + docs (FK pre-checked clean)` |
+| `fda6dfc` | `feat(crm): B10 — per-status color rendering + admin settings modal for tenant-wide palette customization` |
+| _(this commit)_ | `chore(spec): close PRE_CUTOVER_QA_C_UI_CLEANUP with retrospective` |
+
+**Final pre-cutover hardening pass — all 12 B-items from HANDOFF §15 now ✅.** Closes B3 + B9 + B10.
+
+**B3 — date format.** Two raw `toLocaleDateString` call sites (`crm-payment-helpers.js:114` + `crm-notifications-bell.js:87`) swapped to the existing `CrmHelpers.formatDate` (DD.MM.YYYY, dot separator). No new helper — the existing one at `crm-helpers.js:54-62` was already the canonical source. Side rename: `_esc` → `_bellEsc` in `crm-notifications-bell.js` to sidestep the `rule-21-orphans` co-staging false positive (5 occurrences). Verified: `grep -rn toLocaleDateString modules/crm/ crm.html` returns 0 hits.
+
+**B9 — multisale removal.** FK pre-check clean (0 rows in `crm_events`/`crm_ad_spend`/`crm_lead_tags`). DELETE'd 1 `crm_campaigns` row + 1 `crm_tags` row (both prizma; demo was already clean). Seed file `001_crm_schema.sql` lines 1129-1140 trimmed (2 → 1 INSERT each). Active CRM admin code (modules/crm/, crm.html): 0 references — no code change needed. ~30 historical references in older specs / import scripts / research artifacts intentionally preserved per SPEC §3 #11.
+
+**B10 — status colors.** New file `modules/crm/crm-status-color-settings.js` (120 lines). New ⚙️ button between status filter and create button on the events tab. Modal lists all 20 active event statuses with native `<input type="color">` per row. Save batches `UPDATE crm_statuses.color` (tenant-scoped, Rule 22), invalidates `window.CRM_STATUSES._loaded`, reloads cache, calls `window.reloadCrmEventsTab()` for live re-render. Existing `CrmHelpers.statusBadgeHtml` already used `style="background:..."` so badge rendering needed no change. Lead + attendee status colors deferred (F1 in FINDINGS).
+
+Live browser smoke (SPEC §12) deferred to Daniel's post-EF-deploy QA — Chrome MCP server disconnected mid-session. 4th SPEC in a row using this deferral pattern. 4 findings logged for follow-up.
+
+---
+
 ## PRE_CUTOVER_QA_B_FORM_AND_TEMPLATE — Pre-cutover hardening: B1 + B2 (2026-05-01) ✅
 
 | Hash | Message |

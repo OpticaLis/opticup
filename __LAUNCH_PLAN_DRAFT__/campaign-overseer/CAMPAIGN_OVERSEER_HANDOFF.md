@@ -383,7 +383,7 @@ When Daniel returns:
 
 ## 15. Daniel's Manual QA Backlog — 2026-05-01 (NEW — addressed before P5_7 cutover prep)
 
-> **Status update 2026-05-01 (evening):** All B4/B5/B6/B7/B8/B11/B12 ✅ shipped via PRE_CUTOVER_QA_A_DATA_AND_LOGIC; B1/B2 ✅ shipped via PRE_CUTOVER_QA_B_FORM_AND_TEMPLATE (4 commits on develop). **B3/B9/B10 still pending in SPEC-C.**
+> **Status update 2026-05-01 (late evening):** **ALL 12 B-items ✅ closed.** B4/B5/B6/B7/B8/B11/B12 via PRE_CUTOVER_QA_A_DATA_AND_LOGIC. B1/B2 via PRE_CUTOVER_QA_B_FORM_AND_TEMPLATE. B3/B9/B10 via PRE_CUTOVER_QA_C_UI_CLEANUP (5 commits on develop). Pre-cutover hardening backlog from §15 is fully drained. Remaining before cutover: P5_7_STOREFRONT_FORM_REWIRE → P5_6_BOT_PROTECTION → Daniel-driven QA pass once 2 EFs deploy → cutover Sat/Sun 2026-05-02 or 03.
 
 Surfaced by Daniel during a manual QA pass on the live CRM after the P23–P35 cycle landed. **All 12 items must be triaged and fixed before P5_7 cutover work resumes.** Order below is Daniel's listing order, not priority.
 
