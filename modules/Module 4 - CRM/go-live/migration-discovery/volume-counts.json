@@ -1,0 +1,75 @@
+{
+  "generated_at": "2026-05-02",
+  "source": "campaigns/supersale/exports/*.xlsx (last-modified 2026-04-21)",
+  "monday_xlsx_inventory": {
+    "Affiliates_1776697312.xlsx": { "size_bytes": 105913, "data_rows": 867, "cols": 17, "purpose": "UTM enrichment lookup by phone" },
+    "CX_Ambassadors_Events_Management_1776697276.xlsx": { "size_bytes": 9567, "data_rows": 14, "cols": 16, "purpose": "Customer-experience surveys", "real_surveys_after_dedup": 11 },
+    "Entrance_Scan_QR_1776697228.xlsx": { "size_bytes": 12376, "data_rows": 68, "cols": 9, "purpose": "Day-of QR scan log — NOT imported (deprecated)" },
+    "Events_Management_1776697208.xlsx": { "size_bytes": 8557, "data_rows": 12, "cols": 22, "purpose": "Master event list", "real_events_after_skip": 11 },
+    "Events_Record_Attendees_1776697299.xlsx": { "size_bytes": 44919, "data_rows": 213, "cols": 23, "purpose": "Permanent attendee archive", "real_attendees_after_skip": 212 },
+    "Facebook_ADS_1776697328.xlsx": { "size_bytes": 28512, "data_rows": 93, "cols": 29, "purpose": "FB ad campaigns", "imported_to_facebook_campaigns": 88 },
+    "Tier_2_Master_Board_1776697136.xlsx": { "size_bytes": 209933, "data_rows": 900, "cols": 32, "purpose": "Lead lifecycle (CRM core)", "valid_leads_after_skip": 893 },
+    "Tier_3_Event_Attendees_1776697179.xlsx": { "size_bytes": 7571, "data_rows": 5, "cols": 27, "purpose": "Per-event slice — NOT imported (derived from Tier_2 + Events_Record)" },
+    "Unit_Economics_1776697339.xlsx": { "size_bytes": 6544, "data_rows": 4, "cols": 5, "purpose": "MultiSale/SuperSale economic constants" }
+  },
+  "lead_status_distribution_in_monday": {
+    "ממתין לאירוע (waiting)": 841,
+    "ביטל Unsubscribe (unsubscribed)": 50,
+    "הוזמן לאירוע (invited)": 2,
+    "לא מעוניין (not_interested)": 2
+  },
+  "attendee_status_distribution_in_monday": {
+    "הגיע (attended)": 74,
+    "אישר (confirmed)": 62,
+    "ביטל (cancelled)": 23,
+    "כבר נרשם (duplicate)": 16,
+    "חדש (registered/new)": 15,
+    "רשימת המתנה (waiting_list)": 10,
+    "לא הגיע (no_show)": 9,
+    "אירוע נסגר (event_closed)": 2,
+    "הגיע ולא קנה (attended-no-purchase)": 1,
+    "(blank)": 1
+  },
+  "event_status_distribution_in_monday": {
+    "Completed": 9,
+    "Closed (event 19)": 1,
+    "Registration Open (event 23)": 1
+  },
+  "event_interests_distribution": {
+    "MultiSale": 8,
+    "SuperSale": 3
+  },
+  "edge_case_counts": {
+    "tier2_leads_with_invalid_phone": 7,
+    "tier2_duplicate_phones": 0,
+    "tier2_unsubscribed_leads_to_preserve": 50,
+    "tier2_total_revenue_column_sum_BROKEN": 148990,
+    "events_record_purchase_amount_sum_CANONICAL": 279640,
+    "events_record_paid_attendees": 65,
+    "orphan_attendees_phone_not_in_tier2": 51,
+    "orphan_attendees_by_event": {"13":18,"14":7,"15":5,"16":9,"17":4,"18":6,"21":2},
+    "events_with_zero_attendees_in_record": ["19","23"],
+    "multi_event_leads_in_attendees": 18,
+    "leads_attending_2_events": 17,
+    "leads_attending_3_events": 1,
+    "tier2_blank_or_banner_rows": 5
+  },
+  "supabase_target_state_2026_05_02": {
+    "tenant_prizma_uuid": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
+    "tenant_demo_uuid": "8d8cfa7e-ef58-49af-9702-a862d459cccb",
+    "row_counts_per_tenant_at_baseline": {
+      "crm_leads":         { "prizma": 11,  "demo": 8   },
+      "crm_events":        { "prizma": 2,   "demo": 10  },
+      "crm_event_attendees":{ "prizma": 2,   "demo": 12  },
+      "crm_lead_notes":    { "prizma": 19,  "demo": 30  },
+      "crm_message_log":   { "prizma": 57,  "demo": 121 },
+      "crm_message_templates":{ "prizma":32, "demo": 36  },
+      "crm_statuses":      { "prizma": 34,  "demo": 34  },
+      "crm_ad_spend":      { "prizma": 0,   "demo": 49  },
+      "crm_facebook_campaigns":{ "prizma":0,"demo": 7   },
+      "crm_unsubscribes":  { "prizma": 0,   "demo": 0   },
+      "crm_cx_surveys":    { "prizma": 0,   "demo": 0   }
+    },
+    "interpretation": "Prizma is essentially clean — Daniel's manual QA leads only. Demo holds the test data. The migration target is empty Prizma."
+  }
+}
