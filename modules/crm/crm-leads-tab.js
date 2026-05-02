@@ -66,7 +66,7 @@
     if (!_svrHasMore) return [];
     var tid = getTenantId();
     var q = sb.from('v_crm_leads_with_tags')
-      .select('id, full_name, phone, email, city, language, status, source, client_notes, terms_approved, marketing_consent, unsubscribed_at, created_at, updated_at, tag_names, tag_colors, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_campaign_id, monday_item_id')
+      .select('id, full_name, phone, email, city, language, status, source, client_notes, eye_exam_default, terms_approved, marketing_consent, unsubscribed_at, created_at, updated_at, tag_names, tag_colors, utm_source, utm_medium, utm_campaign, utm_content, utm_term, utm_campaign_id, monday_item_id')
       .eq('is_deleted', false);
     if (tid) q = q.eq('tenant_id', tid);
     var res = await q.order('full_name').range(_svrOffset, _svrOffset + SERVER_PAGE - 1);

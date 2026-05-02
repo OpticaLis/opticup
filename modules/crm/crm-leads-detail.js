@@ -201,8 +201,7 @@
   }
 
   function renderFullDetails(lead) {
-    var eyeExam = null;
-    try { var p = lead.client_notes ? JSON.parse(lead.client_notes) : null; if (p && p.eye_exam) eyeExam = String(p.eye_exam); } catch (_) {}
+    var eyeExam = lead.eye_exam_default ? String(lead.eye_exam_default) : null;
     var html = '<div class="space-y-1">' +
       row('אימייל', lead.email || '—') +
       row('עיר', lead.city || '—') +
