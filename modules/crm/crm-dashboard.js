@@ -334,7 +334,11 @@
         var aid = el.getAttribute('data-refund-attendee-id');
         if (aid && window.CrmPayment && CrmPayment.openActionModal) {
           if (modal.close) modal.close();
-          CrmPayment.openActionModal(aid, { onAfterAction: function () { loadRefundsBanner(); } });
+          // PRE_CUTOVER_FINAL_FIXES Q3 (Daniel directive 2026-05-01): force
+          // mode='legacy' so the action panel renders the "סמן הוחזר" button.
+          // Default mode='coupon_only' renders no action buttons, leaving the
+          // refunds banner counter stuck because users can't mark refund done.
+          CrmPayment.openActionModal(aid, { mode: 'legacy', onAfterAction: function () { loadRefundsBanner(); } });
         }
       });
     });

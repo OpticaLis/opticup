@@ -301,10 +301,15 @@
     setTimeout(function () {
       var host = document.querySelector('#crm-payment-modal-host');
       if (!host) return;
+      // PRE_CUTOVER_FINAL_FIXES Q3 (2026-05-01): forward opts.mode so callers
+      // such as the dashboard refunds banner can request mode='legacy' and
+      // surface the "סמן הוחזר" action button. Sites that don't pass mode
+      // continue to inherit renderActionPanel's coupon_only default (no
+      // regression for event-day-manage or the body-level card delegate).
       renderActionPanel(host, att, ev, { onUpdate: function () {
         openActionModal(attendeeId, opts);
         if (opts && typeof opts.onAfterAction === 'function') opts.onAfterAction();
-      }});
+      }}, opts && opts.mode);
     }, 50);
   }
 
