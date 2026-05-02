@@ -46,14 +46,20 @@
     }
   }
 
+  // PRE_CUTOVER_FINAL_FIXES Q2 (Daniel directive 2026-05-01): manual
+  // attendee-add must surface ONLY leads genuinely available for adding to a
+  // new event. TIER2_STATUSES (7 values) included confirmed / confirmed_verified
+  // / not_interested / unsubscribed — those are not valid candidates for new
+  // registration. Narrow to the 3 statuses that mean "available".
+  var ATTENDEE_ADD_STATUSES = ['waiting', 'waitlist', 'invited'];
+
   async function searchTier2Leads(term) {
     var tenantId = _regTid();
-    var tier2 = window.TIER2_STATUSES || [];
     var q = sb.from('crm_leads')
       .select('id, full_name, phone, email, status')
       .eq('tenant_id', tenantId)
       .eq('is_deleted', false)
-      .in('status', tier2);
+      .in('status', ATTENDEE_ADD_STATUSES);
     if (term) {
       var t = term.trim();
       if (t) q = q.or('full_name.ilike.%' + t + '%,phone.ilike.%' + t + '%,email.ilike.%' + t + '%');
