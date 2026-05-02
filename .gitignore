@@ -37,3 +37,29 @@ opticup-skills.plugin
 campaigns/supersale/scripts/_sql/
 _rung1-chunks/
 modules/Module 4 - CRM/go-live/_rung1-*/
+
+# === SESSION HYGIENE — added 2026-05-02 per Supervisor Pattern 20 ===
+
+# Sentinel auto-writes — regenerated every scan, no archival value
+docs/guardian/*.md
+docs/guardian/
+
+# Cowork session prompt artifacts — per-session, transient
+outputs/
+
+# Test scratch files at repo root — should never be created here
+/.git-test-write
+/.test-write-from-bash
+/test-*.txt
+/test-*.json
+
+# Editor / OS scratch files
+*.tmp
+*.bak
+~$*
+.DS_Store
+Thumbs.db
+
+# Per-session QA artifacts at module root level (NOT inside SPEC folders — those are intentional)
+modules/*/go-live/_qa_*.json
+modules/*/go-live/qa-*.mjs
