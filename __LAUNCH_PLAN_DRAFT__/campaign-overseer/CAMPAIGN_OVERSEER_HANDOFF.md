@@ -3,7 +3,34 @@
 > **Purpose:** the live state file the Campaign Overseer reads at session start and updates after every meaningful action.
 > **Update discipline:** state-as-you-go. Replace, don't append. Cleanup when ≥150 lines.
 > **Authority:** lower than `CAMPAIGN_OVERSEER_SKILL.md` (the constitution). If they conflict, skill wins.
-> **Last meaningful update:** 2026-05-01 (authored 3 pre-cutover SPECs covering all 12 B-items from §15)
+> **Last meaningful update:** 2026-05-02 (Cutover Roadmap from Supervisor — 4 phases locked; folder structure created; awaiting Daniel "start Phase 1" trigger)
+
+---
+
+## 🚦 ACTIVE WORK — Cutover & Migration Roadmap (READ FIRST)
+
+**Source of truth:** `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CUTOVER_ROADMAP.md` (issued by Supervisor 2026-05-01).
+**Working folder:** `__LAUNCH_PLAN_DRAFT__/campaign-overseer/cutover-roadmap/`
+
+| Phase | Goal | Status | Folder |
+|---|---|---|---|
+| 1 — Verify | Full E2E pipeline + campaigns integration fix | ⬜ NOT STARTED | `cutover-roadmap/PHASE_1_VERIFY/` |
+| 2 — 7 Decisions | D-1 to D-7 from MAP §5 locked | ⬜ NOT STARTED | `cutover-roadmap/PHASE_2_DECISIONS/` |
+| 3 — Wipe + Migrate | Migrate full Monday history; 17 verification queries pass | ⬜ NOT STARTED | `cutover-roadmap/PHASE_3_MIGRATION/` |
+| 4 — Cutover + Soak | P5_7 deploy + 48h watch + 7d verification + kill Monday | ⬜ NOT STARTED | `cutover-roadmap/PHASE_4_CUTOVER/` |
+
+**Operating rules:**
+- One question at a time to Daniel (Pattern 19), plain Hebrew.
+- No phase parallelism, no skipping.
+- Daniel verbal "advance" required at every gate.
+- Supervisor on call for escalations only.
+
+**Next action when activated:** read `cutover-roadmap/ROADMAP.md` (working copy), then start Phase 1 by authoring `cutover-roadmap/PHASE_1_VERIFY/VERIFY_CHECKLIST.md` with 12-15 chain items + presenting the first item to Daniel for execution.
+
+**Key references:**
+- Migration MAP (the source for Phase 2 decisions): `modules/Module 4 - CRM/go-live/MONDAY_MIGRATION_MAP.md`
+- P5_7 SPEC (used in Phase 4): `modules/Module 4 - CRM/go-live/specs/P5_7_STOREFRONT_FORM_REWIRE/`
+- Original Roadmap (do NOT modify): `CUTOVER_ROADMAP.md`
 
 ---
 

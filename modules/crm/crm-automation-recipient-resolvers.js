@@ -4,15 +4,22 @@
    (2026-04-28) to keep the engine under Rule 12 cap and add the
    cross_event_active_waitlist resolver for Rule 2.4 (parallel-event opens).
 
-   Recipient types (6):
+   Recipient types (7):
      - trigger_lead                   — single lead from triggerData.leadId
      - tier2 / tier2_excl_registered  — leads filtered by status (P21 status filter)
      - leads_by_status                — explicit-filter-only variant
      - attendees / attendees_waiting / attendees_all_statuses — per-event attendees
-     - cross_event_active_waitlist    — NEW (Rung 2): leads with attendee status
+     - cross_event_active_waitlist    — leads with attendee status
        'waiting_list' or 'invited' on OTHER currently-active events
        (open_for_registration / waitlist_full).
        Used by Rule 2.4: when a parallel event opens, invite the active waitlist.
+     - attendees_with_active_coupon   — NEW (2026-05-02, Daniel directive):
+       per-event attendees who currently hold a valid coupon. Definition:
+       coupon_sent=true AND status != 'cancelled' (matches existing UI counters
+       in crm-events-detail.js / crm-event-day-coupon.js / crm-event-day-manage.js).
+       Used by the event-day reminder rule so only attendees with a coupon in
+       hand get the morning-of message — not attendees who registered but
+       never paid/got their coupon, and not those who cancelled.
 
    All resolvers filter out unsubscribed_at IS NOT NULL and is_deleted=true.
    Load order: AFTER crm-helpers.js, BEFORE crm-automation-engine.js.
@@ -72,6 +79,24 @@
       var aRes = await q;
       if (aRes.error) throw new Error('recipients attendees: ' + aRes.error.message);
       return (aRes.data || [])
+        .map(function (r) { return r.crm_leads; })
+        .filter(function (l) { return l && !l.unsubscribed_at && !l.is_deleted; });
+    }
+
+    if (recipientType === 'attendees_with_active_coupon') {
+      // 2026-05-02 — Daniel directive for the event-day reminder rule:
+      // recipients are attendees who currently hold a valid coupon, defined as
+      // coupon_sent=true AND status != 'cancelled' (mirrors UI counter logic in
+      // crm-events-detail.js + crm-event-day-coupon.js). When an attendee
+      // cancels, the existing cancel flow flips coupon_sent back to false +
+      // returns the coupon to the pool, so this filter is robust on its own.
+      if (!eventId) return [];
+      var cRes = await sb.from('crm_event_attendees')
+        .select('status, coupon_sent, crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
+        .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false)
+        .eq('coupon_sent', true).neq('status', 'cancelled');
+      if (cRes.error) throw new Error('recipients attendees_with_active_coupon: ' + cRes.error.message);
+      return (cRes.data || [])
         .map(function (r) { return r.crm_leads; })
         .filter(function (l) { return l && !l.unsubscribed_at && !l.is_deleted; });
     }

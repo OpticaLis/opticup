@@ -60,7 +60,7 @@ export async function injectEventVariables(
 ): Promise<{ feeKey: string | null }> {
   const { data: ev, error: evErr } = await db
     .from("crm_events")
-    .select("name, event_date, start_time, location_address, location_waze_url, max_capacity, booking_fee, coupon_code")
+    .select("name, event_date, start_time, end_time, location_address, location_waze_url, max_capacity, booking_fee, coupon_code")
     .eq("id", eventId)
     .eq("tenant_id", tenantId)
     .maybeSingle();
@@ -79,7 +79,17 @@ export async function injectEventVariables(
     const [y, m, d] = String(ev.event_date).split("-");
     vars.event_date = `${d}/${m}/${y}`;
   }
-  if (vars.event_time == null) vars.event_time = ev.start_time || "";
+  if (vars.event_time == null) {
+    // Format as "HH:MM - HH:MM" (start - end). Strip seconds from "HH:MM:SS".
+    const trim = (t: string | null | undefined) => (t ? String(t).slice(0, 5) : "");
+    const startStr = trim(ev.start_time);
+    const endStr = trim(ev.end_time);
+    if (startStr && endStr) {
+      vars.event_time = `${startStr} - ${endStr}`;
+    } else {
+      vars.event_time = startStr || endStr || "";
+    }
+  }
   if (vars.event_location == null) vars.event_location = ev.location_address || "";
 
   if (vars.event_max_attendees == null) {
