@@ -164,7 +164,8 @@
     });
     wrap.querySelectorAll('[data-pay-attendee-id]').forEach(function (b) {
       var aid = b.getAttribute('data-pay-attendee-id');
-      b.addEventListener('click', function (e) { e.stopPropagation(); if (window.CrmPayment) CrmPayment.openActionModal(aid, { onAfterAction: function () { refreshAttendeeRow(aid); } }); });
+      // mode='legacy' surfaces refund + credit buttons (Daniel directive 2026-05-02 — same fix as dashboard refunds banner, commit fd305b3)
+      b.addEventListener('click', function (e) { e.stopPropagation(); if (window.CrmPayment) CrmPayment.openActionModal(aid, { mode: 'legacy', onAfterAction: function () { refreshAttendeeRow(aid); } }); });
     });
     wrap.querySelectorAll('[data-cancel-attendee]').forEach(function (b) {
       var aid = b.getAttribute('data-cancel-attendee');
