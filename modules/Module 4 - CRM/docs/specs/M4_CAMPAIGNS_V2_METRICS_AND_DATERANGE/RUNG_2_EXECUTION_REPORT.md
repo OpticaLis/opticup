@@ -5,7 +5,7 @@
 > **Written on:** 2026-05-02
 > **SPEC reviewed:** `RUNG_2_ACTIVATION_PROMPT.md` (authored by Foreman, 2026-05-02), grounded in `SPEC.md` + `FOREMAN_REVIEW.md` + the dispatcher's mid-session recovery instruction.
 > **Start commit:** `588b9e2` (HEAD of `develop` at session start, immediately after Rung 1's `chore(crm): record actual Commit 2 hash …`).
-> **End commit:** `c60a12c` (Commit 1 — EF source + config.toml). Commit 2 (this retrospective + blueprint snapshot) hash recorded post-commit.
+> **End commit:** `c028d85` (Commit 2 — retrospective + blueprint snapshot + findings). Commit 1 (EF source + config.toml): `c60a12c`.
 > **Duration:** ~30 minutes including a ~3.5-minute production regression window caused by a deploy side effect (recovered in <2 minutes once diagnosed).
 
 ---
@@ -21,7 +21,7 @@ Rung 2 shipped both halves of the activation prompt: PART A modified the `facebo
 | # | Hash | Message | Files touched |
 |---|------|---------|---------------|
 | 1 | `c60a12c` | `feat(crm): campaigns v2 Rung 2 — EF accepts start_time + impressions + clicks (additive, backward compatible)` | `supabase/functions/facebook-campaigns-sync/index.ts` (+11 lines, 219 → 230 lines), `supabase/config.toml` (+13 lines: new `[functions.facebook-campaigns-sync]` block with `verify_jwt=false`) |
-| 2 | (recorded post-commit) | `docs(crm): campaigns v2 Rung 2 retrospective + Make blueprint pre-change snapshot` | SPEC folder: `RUNG_2_blueprint_pre_change.json` (new), `RUNG_2_EXECUTION_REPORT.md` (new), `RUNG_2_FINDINGS.md` (new) |
+| 2 | `c028d85` | `docs(crm): campaigns v2 Rung 2 retrospective + Make blueprint pre-change snapshot` | SPEC folder: `RUNG_2_blueprint_pre_change.json` (new), `RUNG_2_EXECUTION_REPORT.md` (new), `RUNG_2_FINDINGS.md` (new) |
 
 **Edge Function changes (additive, backward compatible):**
 - `InboundCampaign` interface gained 3 optional fields: `start_time?: string|null`, `impressions?: number|string|null`, `clicks?: number|string|null`.
