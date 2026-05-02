@@ -19,6 +19,8 @@
 | 3 — Wipe + Migrate | Migrate full Monday history; 17 verification queries pass | ⬜ NOT STARTED | `cutover-roadmap/PHASE_3_MIGRATION/` |
 | 4 — Cutover + Soak | P5_7 deploy + 48h watch + 7d verification + kill Monday | ⬜ NOT STARTED | `cutover-roadmap/PHASE_4_CUTOVER/` |
 
+**2026-05-02 (post-merge):** PR #41 merged to `origin/main` (commit `456bfea`) — `cd2b2f7` recipient-resolver fix is live in production CRM; V10 (Phase 1 Verify blocker) **UNBLOCKED**. See `modules/Module 4 - CRM/docs/specs/V10_MAIN_BRANCH_RECONCILIATION/`.
+
 **Operating rules:**
 - One question at a time to Daniel (Pattern 19), plain Hebrew.
 - No phase parallelism, no skipping.
