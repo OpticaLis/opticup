@@ -141,7 +141,7 @@
       content:
         '<div class="space-y-3">' +
           '<input type="text" id="crm-register-lead-search" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="חיפוש לפי שם / טלפון / אימייל...">' +
-          '<p class="text-xs text-slate-500">רק לידים ב-Tier 2 (ממתינים לאירוע, הוזמנו, אישרו) מוצגים.</p>' +
+          '<p class="text-xs text-slate-500">מוצגים רק לידים זמינים להוספה (ממתינים לאירוע, הוזמנו, ברשימת המתנה).</p>' +
           '<div id="crm-register-lead-results" class="space-y-2 max-h-[50vh] overflow-y-auto"><div class="text-center text-slate-400 py-6">טוען...</div></div>' +
         '</div>'
     });
