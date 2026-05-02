@@ -30,24 +30,25 @@
   // filtering deferred — FINDINGS F-page).
   var SERVER_PAGE = 200;
   var _svrOffset = 0, _svrHasMore = true;
-  // M4_ATTENDEE_PAYMENT_UI: map of lead_id → days_left for tier2 amber row + subtitle.
-  var _atRisk = {};
+  // _atRisk = days_left for tier2 amber row (M4_ATTENDEE_PAYMENT_UI). _openCredits = no-horizon companion for violet badge (Q4 2026-05-02).
+  var _atRisk = {}, _openCredits = {};
   // P31: map of lead_id → count of crm_message_log.status='failed' (last 90 days).
   var _failedCounts = {};
   // P31: when true, restrict the rendered table to leads with failures only.
   var _failuresOnly = false;
-  async function loadAtRisk() {
-    var tid = getTenantId();
-    if (!tid) { _atRisk = {}; return; }
-    var horizon = new Date(Date.now() + 30 * 86400000);
+  async function loadCreditMaps() {
+    var tid = getTenantId(); _atRisk = {}; _openCredits = {};
+    if (!tid) return;
+    var horizonMs = Date.now() + 30 * 86400000;
     var res = await sb.from('crm_event_attendees').select('lead_id, credit_expires_at')
-      .eq('tenant_id', tid).eq('payment_status', 'credit_pending').eq('is_deleted', false)
-      .lte('credit_expires_at', horizon.toISOString());
-    var m = {}; (res.data || []).forEach(function (r) {
-      var d = Math.max(0, Math.ceil((new Date(r.credit_expires_at).getTime() - Date.now()) / 86400000));
-      if (m[r.lead_id] === undefined || d < m[r.lead_id]) m[r.lead_id] = d;
+      .eq('tenant_id', tid).eq('payment_status', 'credit_pending').eq('is_deleted', false);
+    (res.data || []).forEach(function (r) {
+      var t = new Date(r.credit_expires_at).getTime();
+      if (_openCredits[r.lead_id] === undefined) _openCredits[r.lead_id] = r.credit_expires_at;
+      if (t > horizonMs) return;
+      var d = Math.max(0, Math.ceil((t - Date.now()) / 86400000));
+      if (_atRisk[r.lead_id] === undefined || d < _atRisk[r.lead_id]) _atRisk[r.lead_id] = d;
     });
-    _atRisk = m;
   }
   async function loadFailedCounts() {
     var tid = getTenantId();
@@ -85,7 +86,7 @@
       _loadPromise = (async function () {
         await ensureCrmStatusCache();
         _allLeads = await loadLeads(true);
-        await loadAtRisk();
+        await loadCreditMaps();
         await loadFailedCounts();
         if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
         renderAdvancedFilterBar();
@@ -276,9 +277,10 @@
       var nameSubtitle = (atRiskDays !== undefined) ? '<div class="text-xs text-amber-700 font-semibold mt-0.5">💳 קרדיט פג בעוד ' + atRiskDays + ' ימים</div>' : '';
       var failedN = _failedCounts[r.id] || 0;
       var failedBadge = failedN > 0 ? ' <span class="inline-flex items-center gap-0.5 ms-1 px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700" title="הודעות כושלות">⚠️ ' + failedN + '</span>' : '';
+      var creditBadge = (_openCredits[r.id] !== undefined && atRiskDays === undefined) ? ' <span class="inline-flex items-center gap-1 ms-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-100 text-violet-700" title="קרדיט פתוח לאירוע הבא">💳 קרדיט פתוח</span>' : '';
       html += '<tr class="' + rowCls + '" data-lead-id="' + escapeHtml(r.id) + '">' +
         '<td class="' + CLS_TD + '"><input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" data-check-lead="' + escapeHtml(r.id) + '"' + (checked ? ' checked' : '') + '></td>' +
-        '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + failedBadge + nameSubtitle + '</td>' +
+        '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + failedBadge + creditBadge + nameSubtitle + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
         '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('lead', r.status) + ((r.status === 'waitlist' || r.status === 'invited') ? ' <button type="button" data-move-lead="' + escapeHtml(r.id) + '" title="העבר לאירוע אחר" class="text-slate-400 hover:text-indigo-600 text-sm">↔</button>' : '') + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600">' + escapeHtml(r.email || '—') + '</td>' +
