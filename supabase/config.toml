@@ -397,3 +397,15 @@ entrypoint = "./functions/pin-auth/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/pin-auth/*.html" ]
+
+# verify_jwt is false because Make's HTTP module cannot send the
+# Authorization header reliably. Auth is enforced inside the EF via
+# body.shared_secret matched against the MAKE_SECRET env var. Do NOT
+# remove this block — its absence causes the CLI to default to
+# verify_jwt = true on the next redeploy, which breaks the Make
+# pipeline at the platform gateway before requests reach the EF.
+[functions.facebook-campaigns-sync]
+enabled = true
+verify_jwt = false
+import_map = "./functions/facebook-campaigns-sync/deno.json"
+entrypoint = "./functions/facebook-campaigns-sync/index.ts"
