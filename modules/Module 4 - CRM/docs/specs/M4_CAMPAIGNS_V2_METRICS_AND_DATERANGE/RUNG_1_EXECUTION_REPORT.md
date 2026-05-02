@@ -21,7 +21,7 @@ Rung 1 shipped exactly the migration described in `RUNG_1_ACTIVATION_PROMPT.md` 
 | # | Hash | Message | Files touched |
 |---|------|---------|---------------|
 | 1 | `c6eda2c` | `feat(crm): campaigns v2 Rung 1 — schema additions + range-aware function` | `modules/Module 4 - CRM/migrations/2026_05_02_campaigns_v2_01_schema_and_function.sql` (new, 168 lines) |
-| 2 | `{COMMIT_2_HASH}` | `docs(crm): campaigns v2 SPEC folder + Rung 1 retrospective` | SPEC folder (6 pre-existing untracked SPEC docs + 2 new retrospective files) |
+| 2 | `9e08dae` | `docs(crm): campaigns v2 SPEC folder + Rung 1 retrospective` | SPEC folder (6 pre-existing untracked SPEC docs + 2 new retrospective files) |
 
 **Database changes applied via Supabase MCP `apply_migration`:**
 - ALTER TABLE `crm_facebook_campaigns` ADD COLUMN start_time, city, audience_label (all NULL-safe)
