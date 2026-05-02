@@ -2,6 +2,24 @@
 
 ---
 
+## PRE_CUTOVER_FINAL_FIXES — Q2 (attendee-add filter) + Q3 (refunds-banner mode) (2026-05-02) ✅
+
+| Hash | Message |
+|------|---------|
+| `ee23ba3` | `fix(crm): manual attendee-add search filter — only show leads in waiting/waitlist/invited statuses (excludes confirmed/not_interested/unsubscribed/etc.) per Daniel directive 2026-05-01` |
+| `fd305b3` | `fix(crm): refunds banner — surface 'סמן הוחזר' button when opening Manage Payment modal from dashboard refunds-banner (mode='legacy' override)` |
+| _(this commit)_ | `chore(spec): close PRE_CUTOVER_FINAL_FIXES with retrospective` |
+
+**Final two pre-cutover bug fixes from Daniel's 2026-05-01 hands-on UI session.**
+
+**Q2 — manual attendee-add filter.** `searchTier2Leads()` in `modules/crm/crm-event-register.js:49-65` was filtering against `window.TIER2_STATUSES` (7 values) which surfaced already-`confirmed`/`confirmed_verified`/`not_interested`/`unsubscribed` leads in the manual-add modal — not valid candidates for new-event registration. New module-local constant `ATTENDEE_ADD_STATUSES = ['waiting', 'waitlist', 'invited']` narrows the search to only leads genuinely available. No DB writes; `TIER2_STATUSES` itself unchanged (other call sites preserved).
+
+**Q3 — refunds-banner mode override.** `modules/crm/crm-dashboard.js:337` (refunds-banner row click) called `CrmPayment.openActionModal(aid, { onAfterAction: ... })` without a `mode` override, so `renderActionPanel` defaulted to `coupon_only` — which renders zero action buttons (only the coupon panel + status pill). Users could click into a refund_requested attendee and have no way to mark the refund as completed, leaving the banner counter stuck. Fix passes `mode: 'legacy'` from the dashboard call site so the action panel renders the full button set, including "סמן הוחזר" when `payment_status='refund_requested'`. Required complementary fix in `modules/crm/crm-payment-helpers.js:292-309`: `openActionModal` now forwards `opts && opts.mode` as the 5th arg to `renderActionPanel` — without that, the dashboard's `mode` option was silently swallowed (latent bug, see FINDINGS Finding 2). Other callers (`crm-event-day-manage.js:167`, body-level card delegate) don't pass `mode` and continue to inherit the existing `coupon_only` default — no regression. Bug premise verified live on prod prior to commit (clicked refunds banner → T5 Canary Post-Shorten row → `#crm-payment-modal-host` showed 0 action buttons, only coupon panel — exactly the failure mode the SPEC predicted).
+
+**No DB writes, no EF changes, no schema changes.** Pure client JS.
+
+---
+
 ## B8_DAY_OF_WEEK_TIMEZONE_FIX — Hot-fix: off-by-one in hebrewDayOfWeek (2026-05-01) ✅
 
 | Hash | Message |
