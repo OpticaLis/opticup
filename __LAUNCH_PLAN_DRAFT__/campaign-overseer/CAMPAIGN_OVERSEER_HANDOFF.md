@@ -12,22 +12,36 @@
 **Source of truth:** `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CUTOVER_ROADMAP.md` (issued by Supervisor 2026-05-01).
 **Working folder:** `__LAUNCH_PLAN_DRAFT__/campaign-overseer/cutover-roadmap/`
 
+**Last update:** 2026-05-02 evening (Israel)
+**Status:** 🟡 IN PROGRESS — V10 unblocked, mid-test
+**Last action by Overseer:** Resolved stash pop conflict in HANDOFF.md after Supervisor's `develop → main` reconciliation (PR #41 → main @ 456bfea, develop @ 8b6f529). Recipient-resolver fix is live in production CRM.
+**Next action when resumed:** Trigger event-day rule on QA event `e05ad4ba-d2c3-4150-b75f-0bcb23ca485f` and verify only 1 attendee (QA-A 0537889878) is dispatched. Document evidence at `__LAUNCH_PLAN_DRAFT__/campaign-overseer/cutover-roadmap/PHASE_1_VERIFY/evidence/V10_attendee_dispatch.txt`.
+
 | Phase | Goal | Status | Folder |
 |---|---|---|---|
-| 1 — Verify | Full E2E pipeline + campaigns integration fix | ⬜ NOT STARTED | `cutover-roadmap/PHASE_1_VERIFY/` |
+| 1 — Verify | Full E2E pipeline + campaigns integration fix | 🟡 IN PROGRESS — V10 unblocked, mid-test | `cutover-roadmap/PHASE_1_VERIFY/` |
 | 2 — 7 Decisions | D-1 to D-7 from MAP §5 locked | ⬜ NOT STARTED | `cutover-roadmap/PHASE_2_DECISIONS/` |
 | 3 — Wipe + Migrate | Migrate full Monday history; 17 verification queries pass | ⬜ NOT STARTED | `cutover-roadmap/PHASE_3_MIGRATION/` |
 | 4 — Cutover + Soak | P5_7 deploy + 48h watch + 7d verification + kill Monday | ⬜ NOT STARTED | `cutover-roadmap/PHASE_4_CUTOVER/` |
 
 **2026-05-02 (post-merge):** PR #41 merged to `origin/main` (commit `456bfea`) — `cd2b2f7` recipient-resolver fix is live in production CRM; V10 (Phase 1 Verify blocker) **UNBLOCKED**. See `modules/Module 4 - CRM/docs/specs/V10_MAIN_BRANCH_RECONCILIATION/`.
 
+### V10 pre-requisites — verified ready before merge
+
+- QA event #7 exists on Prizma — id `e05ad4ba-d2c3-4150-b75f-0bcb23ca485f`, `event_date=2026-05-02`, `status=registration_open`, ready to flip.
+- 3 QA attendees seeded correctly:
+  - QA-A (0537889878): registered + `coupon_sent=true` → **expected to receive**
+  - QA-B (0503348349): cancelled + `coupon_sent=true` → expected NOT to receive (cancelled filter)
+  - QA-C (0500000003): registered + `coupon_sent=false` → expected NOT to receive (no-coupon filter)
+- Automation rule wired: `recipient_type='attendees_with_active_coupon'`, `template_slug='event_day'`, channels=sms+email, `is_active=true`.
+- send-message EF deployed v17 (event-variables.ts `%event_time%` fix live).
+- pg_cron job `event_day_status_flip` active (08:30 Israel daily).
+
 **Operating rules:**
 - One question at a time to Daniel (Pattern 19), plain Hebrew.
 - No phase parallelism, no skipping.
 - Daniel verbal "advance" required at every gate.
 - Supervisor on call for escalations only.
-
-**Next action when activated:** read `cutover-roadmap/ROADMAP.md` (working copy), then start Phase 1 by authoring `cutover-roadmap/PHASE_1_VERIFY/VERIFY_CHECKLIST.md` with 12-15 chain items + presenting the first item to Daniel for execution.
 
 **Key references:**
 - Migration MAP (the source for Phase 2 decisions): `modules/Module 4 - CRM/go-live/MONDAY_MIGRATION_MAP.md`
