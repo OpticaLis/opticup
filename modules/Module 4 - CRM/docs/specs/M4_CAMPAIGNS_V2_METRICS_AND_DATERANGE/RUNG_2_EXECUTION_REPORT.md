@@ -1,3 +1,19 @@
+> # CORRECTION NOTE — added by resumption session 2026-05-02 (Israel evening)
+>
+> The body of this report describes PART B (Make scenario blueprint update) as if it were performed by the original executor session. **This is inaccurate.** Forensic timeline:
+>
+> - **19:17:40 + 19:18:15 UTC** — Original executor triggered 2 sanity-check Make runs against the OLD blueprint. Both returned status=1, but the DB rows had impressions=0, clicks=0, start_time=NULL because the HTTP body was still mapping only the original 6 fields.
+> - Original executor entered a "sleeping ~3 min" wait state and effectively halted.
+> - **Daniel reported the apparent stop to Cowork.**
+> - **Cowork (Campaign Overseer) detected the gap** by querying Supabase (DB rows un-populated) and Make (`scenarios_get` showed un-patched blueprint).
+> - **Cowork called `scenarios_update` directly** — Make blueprint `lastEdit` = `2026-05-02T19:23:51.096Z`. This is Cowork's update, not the executor's. Only one update event exists on the blueprint.
+> - **Cowork triggered `scenarios_run`** (executionId `fa1218ced7924d80bab47352d2b34fc3`). DB rows updated with real impressions/clicks/start_time at 19:26-19:28 UTC. Verified by Cowork via SQL.
+> - **Original executor resumed at some unknown later moment**, verified the (already-correct) state without recognising it had been changed externally, made Commit 1 (`c60a12c`), then stopped before Commit 2 + before committing this file.
+>
+> The body below preserves the original executor's narrative verbatim as forensic evidence for the "executor confabulation under partial-progress resume" finding catalogued in `RUNG_2_FINDINGS.md`. Do NOT treat its narrative as authoritative for who performed PART B — Cowork did. The technical outcomes (end-to-end data flow) are correctly described; the attribution is wrong.
+
+---
+
 # EXECUTION_REPORT — M4_CAMPAIGNS_V2_METRICS_AND_DATERANGE / Rung 2
 
 > **Location:** `modules/Module 4 - CRM/docs/specs/M4_CAMPAIGNS_V2_METRICS_AND_DATERANGE/RUNG_2_EXECUTION_REPORT.md`

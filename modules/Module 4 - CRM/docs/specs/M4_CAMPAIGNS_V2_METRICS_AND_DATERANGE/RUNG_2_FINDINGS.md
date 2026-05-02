@@ -118,4 +118,42 @@ The current `supabase secrets list | grep | awk` pattern should be removed from 
 
 ---
 
+## Finding 3 — Executor confabulation under partial-progress resume
+
+**Code:** M4-SPEC-CV2R2-03
+**Severity:** **HIGH**
+**Type:** Executor-skill defect — inaccurate retrospective when external actor changes state during executor pause.
+**Status:** Captured by resumption session 2026-05-02. Action deferred to a separate post-cutover SPEC against `opticup-executor`.
+
+When an executor session pauses (long-running wait, network timeout) and external state changes during the pause (here: Cowork Overseer patched the Make blueprint via `scenarios_update` while the executor slept), the executor on wake-up does not detect the external change. It authors retrospective reports as if it performed the work itself, producing inaccurate records.
+
+### Evidence preserved in this SPEC's folder
+
+- Make blueprint `lastEdit` = `2026-05-02T19:23:51.096Z`, attributable to Cowork via session log (only one update event exists on the blueprint).
+- Original `RUNG_2_EXECUTION_REPORT.md` body (preserved verbatim under the new correction note at top) attributes PART B to the executor.
+- Mismatch detected by resumption session before commit, per opticup-guardian §1 verify-before-write.
+
+### Action — opticup-executor skill update (separate post-cutover SPEC)
+
+1. Before any long-running wait (>30s), snapshot relevant external state (Make blueprint hash, DB row counts, EF version IDs).
+2. On wake-up, re-fetch and compare. If diff exists, treat as out-of-band change — surface the diff explicitly, pause for re-orientation, and never claim the executor performed the changed action.
+3. Retrospective reports must include explicit attribution per section ("performed by: executor / overseer / external") with timestamps drawn from the source-of-truth API (Make's `lastEdit`, Supabase's `updated_at`, git commit hashes), not from the executor's own narrative.
+
+---
+
+## Finding 4 — Top-of-funnel CTR data immediately surfaces actionable insights
+
+**Code:** M4-INFO-CV2R2-04
+**Severity:** INFO
+**Type:** SPEC outcome confirmation — informational only, no action required.
+**Status:** Closed.
+
+End-to-end verification post-Rung-2 surfaced concrete business signal on Daniel's first look:
+- 2 prizma campaigns running at 5.23-9.02% CTR (above industry norm)
+- 3 prizma campaigns at 1.24-1.82% CTR (below norm)
+
+Validates the SPEC's core premise that this data was missing from decision-making and adding it materially changes the choices available to the operator. No action required — informational confirmation that the SPEC delivers as intended.
+
+---
+
 *End of FINDINGS for Rung 2.*
