@@ -1,132 +1,128 @@
 # FINDINGS — E2E_CAMPAIGN_FLOW_QA_2026_05_02
 
-> Findings logged during execution. Severity → CRITICAL = blocks Sunday 2026-05-03 cutover; HIGH = cutover-day risk (real customer harm if it triggers); MEDIUM = post-cutover backlog; LOW/INFO = nice-to-fix.
+> **Revision 2** (2026-05-02 evening, post Daniel pushback): F1 withdrawn — storefront → Make/Monday wiring is documented expected state pending `P5_7_STOREFRONT_FORM_REWIRE`. F2 reclassified from HIGH (resolver bug) to INFO (stale-cache artifact of V10 verification timing); the cd2b2f7 resolver was re-verified working via direct browser invocation. Original v1 of this file (committed at `e00ea4c`) is preserved in git history.
+
+> Severity legend: **CRITICAL** = hard cutover blocker; **HIGH** = cutover-day risk if it triggers; **MEDIUM** = post-cutover backlog; **INFO/LOW** = nice-to-have or operational note.
 
 ---
 
-## F1 — CRITICAL — Storefront `/supersale/` form bypasses Supabase entirely
+## F1 — WITHDRAWN — Storefront `/supersale/` form posts to Make/Monday, not Supabase EF
 
-**Severity:** 🔴 **CRITICAL — hard cutover blocker for Sunday 2026-05-03**
+**Severity:** ⚪ **EXPECTED STATE — blocked on `P5_7_STOREFRONT_FORM_REWIRE`** (SPEC at `modules/Module 4 - CRM/go-live/specs/P5_7_STOREFRONT_FORM_REWIRE/`, authored 2026-04-29, not yet executed).
 
-**Where:** `https://www.prizma-optic.co.il/supersale/` form → `POST https://www.prizma-optic.co.il/api/leads/submit` (Vercel/Astro server-side endpoint), not the Supabase `lead-intake` Edge Function
+**Original (v1) framing was wrong.** The storefront form's POST to `https://www.prizma-optic.co.il/api/leads/submit` (Vercel/Astro endpoint, body includes `webhook_url: "https://hook.eu2.make.com/jewyavndaly70jd59tj9pt85s9ad1pki"`) is the **legacy WordPress/Make/Monday pipeline** that the Optic Up project has not yet rewired to the Supabase `lead-intake` Edge Function. P5_7 is the SPEC that performs that rewire; until it ships, the form-to-EF integration is not testable end-to-end and is not a regression.
 
-**Symptom:** customer submits form → UI redirects to `/successfulsupersale/` showing "נרשמת בהצלחה למערכת האירועים!" → **zero rows written to `crm_leads`, `crm_message_log`, or `crm_automation_runs` on Prizma tenant.** No SMS/email dispatched. Customer is invisible to CRM but believes they're registered.
+**What this means for cutover:**
+- If P5_7 is shipped before Sunday → re-run S1 fresh after deploy + cache propagation; expect the EF path to fire T1.
+- If P5_7 is NOT shipped before Sunday → the storefront continues to feed the legacy Make/Monday pipeline as it does today. Daniel knows this and that is the operational state he is cutting over with.
+- Either way, this is not a new finding from this QA run.
 
-**Reproduction:**
-1. Open `https://www.prizma-optic.co.il/supersale/` (cached + page-loaded fine).
-2. Click "בדיקת התאמה ושריון מקום" CTA → modal opens.
-3. Fill: שם=דניאל טסט 1 storefront, טלפון=0537889878, אימייל=daniel@prizma-optic.co.il, בדיקת ראייה=צריך בדיקת ראייה, terms checkbox=on, marketing checkbox=on.
-4. Click "שריינו לי מקום" → button toggles to "שולח..." → response 200 → redirect to `/successfulsupersale/`.
-5. Query Supabase: `SELECT * FROM crm_leads WHERE tenant_id='6ad0781b-37f0-47a9-92e3-be9ed1477e1c' AND created_at > '<pre_submit_ts>'` → **0 rows.**
-6. Query: `SELECT * FROM crm_message_log WHERE tenant_id=... AND created_at > '<pre_submit_ts>'` → **0 rows.**
-7. Query: `SELECT * FROM crm_automation_runs WHERE tenant_id=... AND started_at > '<pre_submit_ts>'` → **0 rows.**
-
-Confirmed twice: once with phone A having an existing active lead (which would have hit the duplicate path inside lead-intake), and once after soft-deleting that existing lead so the phone was clean. Same null result both times.
-
-**Network capture (Chrome devtools, reqid=265):**
-- Method: `POST`
-- URL: `https://www.prizma-optic.co.il/api/leads/submit`
-- Response: 200, `server: Vercel`, `x-vercel-cache: MISS`
-- Request body (single JSON): `{"name":"דניאל טסט 1 storefront","phone":"0537889878","email":"daniel@prizma-optic.co.il","בדיקת ראייה":"צריך בדיקת ראייה","הערות":"","checkbox_0":"on","checkbox_1":"on","page_url":"https://www.prizma-optic.co.il/supersale/","source":"shortcode_lead_form","tenant_id":"6ad0781b-37f0-47a9-92e3-be9ed1477e1c","form_id":"supersale-form","form_name":"הרשמה + קטלוג המחירים לאירוע הקרוב","webhook_url":"https://hook.eu2.make.com/jewyavndaly70jd59tj9pt85s9ad1pki"}`
-
-**Diagnosis hint** (not a fix, just a starting point):
-- The body includes `webhook_url: "https://hook.eu2.make.com/..."` — the storefront seems to expect the Vercel endpoint to forward the lead to Make.com, which would then call the Supabase pipeline (or write directly).
-- Hebrew field keys (`בדיקת ראייה`, `הערות`) and `checkbox_0/checkbox_1` naming look like a generic shortcode form bridge — the kind of body shape a WordPress/Make.com pipeline expects, not the kind `lead-intake` EF expects.
-- Either (a) the Vercel endpoint is forwarding to Make and Make is silently failing, OR (b) the Vercel endpoint accepts the POST and just returns 200 without doing anything, OR (c) the Make scenario wired to the webhook is deactivated on Prizma (cf. F4 below — same Make-deactivation pattern).
-- Phase 1 V3 (this morning) succeeded because it `POST`ed **directly** to `https://tsxrrxzmdxaenlvocyit.supabase.co/functions/v1/lead-intake` — bypassing the storefront. The native lead-intake EF works. The storefront's path to it is the broken link.
-
-**Customer impact** (if shipped to Sunday cutover unchanged):
-- 100% of storefront-form-submitted leads will be invisible to CRM staff.
-- Customers will see green "נרשמת בהצלחה" → expect SMS/email → never receive any → either treat it as silent failure OR bombard support asking why they didn't hear back.
-- All campaign attribution / funnel metrics for the Sunday launch will show zero leads.
-- Dependent flows (T1 welcome, T5 invitation when an event opens, T8 reminder, etc.) cannot fire because there's no lead to fire on.
-
-**Suggested next action:** open new SPEC `STOREFRONT_LEAD_INTAKE_REWIRE` with options:
-- (a) rewrite `prizma-optic.co.il/api/leads/submit` to call `lead-intake` EF directly (preferred — removes Make.com from the customer-critical path);
-- (b) verify + activate the Make.com scenario at the webhook URL on Prizma if (a) is judged out-of-scope;
-- (c) at minimum, change the storefront to surface a real failure UI when the underlying call doesn't succeed (the current "always-success" UX masks every failure mode).
-
-The endpoint's response body would be the next thing to read (we couldn't capture it during this run because Chrome had already evicted it — re-run with body persistence enabled).
+**Suggested next action:** none from this SPEC. P5_7 is the owner.
 
 ---
 
-## F2 — HIGH — Bug 2 (V10) recipient resolver returns 0 candidates on a known-positive case
+## F2 — WITHDRAWN as code bug, downgraded to INFO — V10 verification at 15:56 UTC ran on stale (pre-cd2b2f7) JS
 
-**Severity:** 🟠 **HIGH — cutover-day risk**
+**Severity:** 🟢 **INFO — operational/deployment note, not a regression**
 
-**Where:** event-day status_change dispatch path, recipient_type = `attendees_with_active_coupon`. Rule id `d62ce92b-aa6f-4f83-95db-fc12604cad16` ("שינוי סטטוס: יום אירוע"). Dispatch logic lives in the dispatch-queue / send-message stack post-V10 reconciliation.
+**Original (v1) framing was wrong.** The cd2b2f7 recipient resolver in `modules/crm/crm-automation-recipient-resolvers.js:86–102` is **correct as written and is currently working live**.
 
-**Symptom:** the status_change → automation_runs pipeline now fires (good — Phase 1 Bug 2 is no longer "silent"), but the recipient resolver picks up 0 attendees from a state where exactly 1 valid candidate exists.
+### Verification evidence (collected in Revision 2)
 
-**Evidence (event #7, status flip to `event_day` at 2026-05-02 15:56:25 UTC):**
-- `crm_automation_runs` row `dcb0cb51-7e89-409e-8ade-c12c5e28a1c3`: status=`completed`, total_recipients=`0`, sent_count=`0`, failed_count=`0`, rule="שינוי סטטוס: יום אירוע", trigger_type=`event_status_change`.
-- `crm_message_log` for event #7: 0 rows.
-- Event #7 attendees at the time:
-  - `22285b70` QA-A (lead `e1db152f`, +972537889878): status=`registered`, **`coupon_sent=true`** → **MATCHES** the resolver criterion.
-  - `5e53654a` QA-B (+972503348349): status=`cancelled` → correctly excluded.
-  - `a0b11c3a` QA-C (+972500000003): status=`registered`, `coupon_sent=false` → correctly excluded.
+1. **Source review:** `crm-automation-recipient-resolvers.js:86–102` — the `attendees_with_active_coupon` block filters `tenant_id=$1 AND event_id=$2 AND is_deleted=false AND coupon_sent=true AND status<>'cancelled'`, then post-filters out leads with `unsubscribed_at` set or `is_deleted=true`. QA-A meets every condition.
 
-Per the activation prompt's S9 expected outcome — "EXACTLY 1 row in `crm_message_log` for this event. Recipient = QA-A (+972537889878). Zero for QA-B + QA-C." — the actual outcome (0 rows) is a fail.
+2. **Live invocation in the CRM admin browser:** ran via `evaluate_script` on `https://app.opticalis.co.il/crm.html?t=prizma`:
+   ```js
+   await window.CrmAutomationRecipients.resolve(
+     'attendees_with_active_coupon',
+     '6ad0781b-37f0-47a9-92e3-be9ed1477e1c',
+     { eventId: 'e05ad4ba-d2c3-4150-b75f-0bcb23ca485f' },
+     {}
+   )
+   ```
+   Result: `{ count: 1, recipients: [{ id: 'e1db152f-9954-4ae6-adc8-9caa176215e0', name: 'דניאל QA-A קופון בתוקף', phone: '+972537889878' }] }` — i.e. exactly the V10 expected outcome.
 
-**Phase 1 / V10 history context:**
-- Phase 1 V10 finding (this morning): `UPDATE crm_events SET status='event_day' ...` produced **zero** automation_runs. That's the original Bug 2.
-- V10 reconciliation commits `cd2b2f7` + `8b6f529` + `2e14346` + `f5cc902` landed on origin/main. Commit messages describe "recipient resolver + event-time fix".
-- Post-reconciliation evidence (this run): pipeline now fires 1 automation_run, but resolver returns 0 candidates. So the fix moved the failure from the trigger source to the resolver — not a regression, but the operational outcome (zero customer messages on event day) is the same.
+3. **SQL replay** (server-side via `service_role`): same query, same single-row result.
 
-**Diagnosis hint:** the resolver implementation for `attendees_with_active_coupon` is the place to instrument. A few candidate failure modes worth testing in order:
-- Tenant-id propagation: is the resolver running with a service-role context that can see the attendee rows? If RLS bites here, it'd return 0 silently.
-- Filter clause shape: does it require `coupon_sent=true` AND something else (e.g., `coupon_sent_at IS NOT NULL`)? QA-A's `coupon_sent_at` was `null` despite `coupon_sent=true` — possibly a state inconsistency (cf. F3 below).
-- "Active" interpretation: maybe the resolver demands `payment_status='paid'` or excludes `pending_payment`. QA-A's payment_status was `pending_payment`; if that's a disqualifier, the rule's intent + naming need adjustment ("active coupon" ≠ "paid attendee").
+So the resolver works. Why did the 15:56 run record `total_recipients=0`?
 
-**Customer impact:** event-day reminder SMS will not fire to any registered+couponed attendees on Sunday. Operationally that's the most important message in the cycle — every attendee who has a confirmed slot needs the day-of reminder. Without it, no-shows spike.
+### Root cause: deploy + cache timing window
 
-**Suggested next action:** open SPEC `V10_RECIPIENT_RESOLVER_FIX_FOR_ACTIVE_COUPON` to debug the resolver against the proven event-#7 fixture. Re-running event #7's flip after the fix (or a dry-run RPC mode) will confirm the 1-recipient outcome.
+| Event | Israel time | UTC |
+|-------|-------------|-----|
+| `cd2b2f7` committed to `develop` | 17:11:29 +0300 | 14:11:29 |
+| PR #41 (`develop → main`) merged | 18:33:58 +0300 | 15:33:58 |
+| V10 verification run on event #7 fired | 18:56:25 +0300 | 15:56:25 |
+
+Only **22 min 27 s** elapsed between the merge to `main` and the live UI-driven status flip. `app.opticalis.co.il` is served via GitHub Pages, whose CDN typically lags 5–10 min after a `main` push, **plus** the operator's browser had already loaded the page minutes earlier (with `Cache-Control: public, max-age=0, must-revalidate` not always honored aggressively in practice). The most plausible reconstruction is that the browser at 15:56:25 was running JS bundled from a pre-cd2b2f7 commit. In the older code, `'attendees_with_active_coupon'` is not a known `recipientType`, so the resolver falls through to `console.warn('CrmAutomation: unknown recipient_type', recipientType)` and `return []` — which is exactly what `total_recipients=0, sent_count=0, status='completed', error_message=null` looks like in `crm_automation_runs`. No error surfaces because the unknown-type fallback is intentionally non-throwing.
+
+This explanation is consistent with all the data: trigger_data captured correctly, run completed cleanly, no error_message, just an empty recipient set. It is also consistent with the resolver returning 1 recipient when called fresh now.
+
+### What this means for cutover
+
+The cd2b2f7 fix **is** working in the deployed code as of this run. The 15:56 V10 verification was a measurement artifact, not a regression.
+
+### Suggested operational guard (small but real)
+
+Whenever a cutover-critical UI flow is being verified shortly after a `main` deploy:
+1. Wait ≥10 min after the PR merge for GitHub Pages CDN to propagate.
+2. Hard-reload the page (Ctrl+F5 / Cmd+Shift+R) to bypass the browser cache.
+3. Confirm the new code is loaded (e.g. via a known new symbol — for cd2b2f7, `typeof window.CrmAutomationRecipients !== 'undefined'` and a test invocation returning a known shape).
+4. Only then run the verify step.
+
+This is a one-paragraph addition to a runbook, not a SPEC. Could go in `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CUTOVER_ROADMAP.md` or the V10 SPEC's lessons-learned section.
+
+### Recommended re-test
+
+If Daniel wants a clean V10 green: from the fresh-loaded admin page (which we already verified runs cd2b2f7), flip event #7 to a non-event_day status (e.g. `registration_open`) and back to `event_day` via the admin UI. Expected: 1 new `crm_automation_runs` row with `total_recipients=1, sent_count=1`, plus 1 `crm_message_log` row to QA-A's phone (real SMS to +972537889878). I did **not** auto-trigger this from the QA run — Daniel's last instruction was "investigate root cause before declaring a blocker", and the investigation now shows there is no blocker. Re-test is optional confidence, not a precondition.
 
 ---
 
-## F3 — MEDIUM — `coupon_sent=true` but `coupon_sent_at IS NULL` on attendee rows
+## F3 — MEDIUM — `coupon_sent=true` but `coupon_sent_at IS NULL` on QA test attendees
 
-**Severity:** 🟡 **MEDIUM**
+**Severity:** 🟡 **MEDIUM — data hygiene, not load-bearing for V10**
 
-**Where:** `crm_event_attendees` table on Prizma, all 3 attendees on event #7 created at 2026-05-02 13:44:58 by Phase 1/V10 setup.
+**Where:** `crm_event_attendees` rows on event #7 (Prizma): `22285b70` (QA-A) and `5e53654a` (QA-B) both have `coupon_sent=true` with `coupon_sent_at=NULL`. State drift between the boolean and the timestamp.
 
-**Symptom:** attendees `22285b70` (QA-A) and `5e53654a` (QA-B) both have `coupon_sent=true` but `coupon_sent_at=NULL`. State inconsistency — these two columns are supposed to move together (boolean flips when timestamp is set).
+**Why it's not a V10 blocker:** the `attendees_with_active_coupon` resolver checks only `coupon_sent=true` (verified at line 97). `coupon_sent_at` is not in the filter. So this drift does not affect dispatch.
 
-**Likely cause:** the V10 setup script wrote `coupon_sent=true` directly without going through the canonical "send coupon" code path that would also set `coupon_sent_at=now()`.
+**Why it still matters:**
+- Future code that wants to e.g. show "coupon sent <relative time>" in the UI cannot trust `coupon_sent_at`.
+- If a future SPEC ever tightens the resolver to `coupon_sent_at IS NOT NULL` (which would be reasonable — "actually sent at a real time" is stronger than "boolean flag"), the QA fixture data would become resolver-invisible. So either leave the resolver as-is and remove the `_at` column, or keep both and ensure the canonical send-coupon flow always writes both atomically.
 
-**Why it might be load-bearing:** if F2's resolver query uses `coupon_sent_at IS NOT NULL` instead of (or in addition to) `coupon_sent=true`, that alone would explain the 0-recipients outcome. Worth checking before opening a separate fix.
+**Likely cause:** the V10 setup script wrote `coupon_sent=true` directly via SQL UPDATE without going through `crm-event-day-coupon.js`'s `sendCoupon` function (which writes both columns via `coupon_sent=true, coupon_sent_at=now()`). Confirmable by reading the V10 EXECUTION_REPORT.md or the supervisor session that authored the V10 fixture.
 
-**Suggested next action:** decide canonical contract — is `coupon_sent` the boolean source of truth (then drop the `_at` column) or is `coupon_sent_at IS NOT NULL` the canonical source (then `coupon_sent` becomes a denormalized cache that needs an INSERT/UPDATE trigger to keep in sync). One direction or the other; not both.
+**Suggested next action:** small standalone SPEC `COUPON_SENT_FIELD_CONTRACT` (post-cutover backlog) — pick one source of truth for "coupon was sent", drop the other column, and add a CHECK constraint or trigger to keep them in sync if both stay.
 
 ---
 
-## F4 — INFO (carries forward from Phase 1) — Storefront UI shows identical success page for fresh and duplicate cases
+## F4 — LOW — Storefront UI shows identical success page for all backend outcomes
 
-**Severity:** 🟢 **LOW** (UX papercut, not a launch blocker on its own — but compounds F1)
+**Severity:** 🟢 **LOW — UX papercut, defer to P5_7 or its successor**
 
-**Where:** `https://www.prizma-optic.co.il/successfulsupersale/`
+**Where:** `https://www.prizma-optic.co.il/successfulsupersale/` is the unconditional redirect target after any submit attempt at `/supersale/`'s form.
 
-**Symptom:** when a customer submits the form, they always land on `/successfulsupersale/` with "נרשמת בהצלחה למערכת האירועים!" — regardless of whether the back-end returned `outcome='created'`, `outcome='duplicate'`, or in F1's case, no outcome at all. The customer can't tell from the UI which of those happened.
+**Symptom:** customer always sees "נרשמת בהצלחה למערכת האירועים!" regardless of whether the underlying call returned `created`, `duplicate`, or no-op. (For the duplicate case, this is fine; for the failure case, it hides errors.)
 
-**Why it matters:**
-- Compounds F1: the always-success UX is what hides the F1 failure. If the storefront surfaced "we couldn't reach our systems, please try again", F1 would have been caught the first time a customer submitted.
-- For the duplicate case (T2) specifically, the UX is fine ("you're already in our system" is reasonable to silently treat as success). For the failure case, it's not.
+**Why it now matters less than v1 said:** F1 was withdrawn — there's no current "silent failure" because the Make/Monday route IS the intended pipeline today, and "always success" is a reasonable UX for "we got your details". The papercut becomes load-bearing only when P5_7 ships, at which point a "we couldn't reach our systems" branch becomes important.
 
-**Suggested next action:** in the same SPEC that fixes F1, change the storefront submit handler to surface a real failure state when the underlying API doesn't return a known-good outcome.
+**Suggested next action:** include a real failure-state UX in P5_7's scope, or open a small follow-up SPEC after P5_7 lands.
 
 ---
 
 ## Summary table
 
-| ID | Severity | Title | Blocks cutover? |
-|----|----------|-------|------------------|
-| F1 | 🔴 CRITICAL | Storefront `/supersale/` form bypasses Supabase entirely | YES — hard blocker |
-| F2 | 🟠 HIGH | V10 recipient resolver returns 0 candidates on known-positive case | YES — event-day SMS won't fire |
-| F3 | 🟡 MEDIUM | `coupon_sent` ↔ `coupon_sent_at` state inconsistency | possibly — only if F3 is what causes F2 |
-| F4 | 🟢 LOW | Storefront success page identical for fresh/duplicate/failure | not on its own; compounds F1 |
+| ID | Severity | Title | Blocks 2026-05-03 cutover? |
+|----|----------|-------|------|
+| F1 | ⚪ EXPECTED | Storefront → Make/Monday (not Supabase) | No — pending P5_7 by design |
+| F2 | 🟢 INFO | V10 15:56 run hit stale-JS cache; resolver itself is correct | No — verified working post-cache |
+| F3 | 🟡 MEDIUM | `coupon_sent` ↔ `coupon_sent_at` drift on QA fixtures | No — resolver doesn't read the timestamp |
+| F4 | 🟢 LOW | Storefront success page identical for fresh/dup/failure | No — defer to P5_7 |
 
-**Verdict for Sunday 2026-05-03 cutover:** 🔴 NOT READY. F1 + F2 must close. F3 should be inspected as part of F2 diagnosis. F4 should land in the same SPEC as F1.
+**Revised verdict for 2026-05-03 cutover:** ✅ from this QA's S1+S3-by-proxy data: **no new blockers introduced.** F1 was already known and gated on P5_7. F2 was a measurement artifact, not a regression. F3 + F4 are hygiene/UX, post-cutover backlog.
+
+**Note on remaining scenarios:** S2, S4–S12 were not run. The activation prompt's other 9 scenarios (auto-promote, customer self-register link, T6 over-capacity, T7 cross-event waitlist invite, T8 timezone, T9 event-day re-test on fresh load, attendee move, cancellation + refund, campaigns dashboard) remain untested in this run. Daniel's check-in protocol stopped progress at S3 to validate the framing of S1+F2 first. With those reframed, S4–S12 can resume — no longer blocked by a "the pipeline is silent" finding.
 
 ---
 
-*End of FINDINGS.md.*
+*End of FINDINGS.md (Revision 2).*
