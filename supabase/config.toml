@@ -409,3 +409,14 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/facebook-campaigns-sync/deno.json"
 entrypoint = "./functions/facebook-campaigns-sync/index.ts"
+
+# verify_jwt = true accepts both authenticated user JWTs and the anon JWT.
+# The storefront sends the anon publishable key as Authorization, which the
+# gateway accepts. This block is required to prevent CLI redeploy from
+# defaulting verify_jwt incorrectly (mirrors the lesson from
+# M4_CAMPAIGNS_V2_METRICS_AND_DATERANGE Rung 2 facebook-campaigns-sync incident).
+[functions.lead-intake]
+enabled = true
+verify_jwt = true
+import_map = "./functions/lead-intake/deno.json"
+entrypoint = "./functions/lead-intake/index.ts"

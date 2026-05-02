@@ -25,6 +25,13 @@ const ANON_KEY =
 
 const DEFAULT_SOURCE = "supersale_form";
 
+const EYE_EXAM_OPTIONS: readonly string[] = [
+  "לא, אין צורך בבדיקה",
+  "כן, בדיקה רגילה",
+  "כן, בדיקת מולטיפוקל",
+  "יש לי כבר מרשם עדכני",
+] as const;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -136,6 +143,9 @@ Deno.serve(async (req: Request) => {
   // --- Optional fields ---
   const email = emailRaw;
   const eyeExam = trimOrNull(body.eye_exam);
+  if (eyeExam !== null && !EYE_EXAM_OPTIONS.includes(eyeExam)) {
+    return errorResponse("INVALID_EYE_EXAM_DEFAULT", 400);
+  }
   const notes = trimOrNull(body.notes);
   const language = trimOrNull(body.language) || "he";
   const source = trimOrNull(body.source) || DEFAULT_SOURCE;
@@ -148,12 +158,9 @@ Deno.serve(async (req: Request) => {
   const termsApproved = boolOrFalse(body.terms_approved);
   const marketingConsent = boolOrFalse(body.marketing_consent);
 
-  // Build client_notes: combine eye_exam + notes when present.
-  let clientNotes: string | null = null;
-  const noteParts: string[] = [];
-  if (eyeExam) noteParts.push(`בדיקת עיניים: ${eyeExam}`);
-  if (notes) noteParts.push(notes);
-  if (noteParts.length > 0) clientNotes = noteParts.join("\n");
+  // eye_exam now writes to crm_leads.eye_exam_default directly (Rung 1, 2026-05-03).
+  // client_notes carries only the free-text notes field, if any.
+  const clientNotes: string | null = notes ? notes : null;
 
   // --- Service-role DB client (bypasses RLS, server-side only) ---
   const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -233,6 +240,7 @@ Deno.serve(async (req: Request) => {
     utm_term,
     utm_campaign_id,
     client_notes: clientNotes,
+    eye_exam_default: eyeExam,
     terms_approved: termsApproved,
     terms_approved_at: termsApproved ? nowIso : null,
     marketing_consent: marketingConsent,
