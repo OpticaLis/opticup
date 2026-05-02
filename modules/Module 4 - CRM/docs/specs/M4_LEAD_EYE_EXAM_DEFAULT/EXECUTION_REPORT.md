@@ -142,3 +142,171 @@ And document the failure mode: `curl -d '{multi-line JSON with Hebrew}'` mangles
 ---
 
 *EXECUTION_REPORT complete. FINDINGS.md follows in same SPEC folder. Awaiting Foreman review.*
+
+---
+
+# EXECUTION_REPORT — M4_LEAD_EYE_EXAM_DEFAULT — Rung 2 (CRM display correction)
+
+**Executor:** opticup-executor (Claude Code, Windows desktop, `C:\Users\User\opticup`)
+**Date:** 2026-05-03
+**Rung:** Rung 2 — wire CRM lead detail UI to read `eye_exam_default` from the column instead of the (always-empty) JSON.parse path
+**Commits:**
+- `6cfa61b` — `fix(crm): M4 Rung 2 — expose eye_exam_default through v_crm_leads_with_tags + read from column in lead detail`
+- doc-updates commit — to be appended once written
+**Branch:** `develop` → pushed
+**Authorization path:** Option A1 (view modification + JS read), Daniel-authorized 2026-05-03 mid-session.
+
+---
+
+## 1. Summary (Rung 2)
+
+Rung 2 fixed the latent UI bug logged as FINDING #2 in Rung 1: the lead-detail card's "בדיקת עיניים" row never rendered, because the code parsed `lead.client_notes` as JSON to extract `eye_exam`, but the EF has always written `client_notes` as plain text. The original SPEC anticipated only a single-file edit (`crm-leads-detail.js`), but the lead-detail data path turned out to flow through the view `v_crm_leads_with_tags` (consumed by `loadLeads()` in `crm-leads-tab.js`), and the view did not expose `eye_exam_default`. Daniel authorized Option A — modify the view + the JS SELECT + the parse line — over Option B (per-modal-open fallback fetch) to avoid creating a tech-debt pattern that future lead-level columns would have to repeat. A second mid-execution adjustment was needed when Postgres rejected the SPEC-prescribed mid-list column placement (`42P16`) — Daniel authorized appending at the end of the view's SELECT list as A1 instead.
+
+---
+
+## 2. What was done (Rung 2 — single commit `6cfa61b`)
+
+- **DB Pre-Flight Check:** verified `crm_leads.eye_exam_default` exists post-Rung-1 (`information_schema.columns`: 1 row, `text`, nullable). Captured the pre-change view definition via `pg_get_viewdef('public.v_crm_leads_with_tags'::regclass, true)` for rollback (full text below in §6).
+- **Migration applied to prizma:** `modules/Module 4 - CRM/migrations/2026_05_03_lead_eye_exam_default_02_view.sql` — `CREATE OR REPLACE VIEW public.v_crm_leads_with_tags` adding `l.eye_exam_default` as the **last** column in the SELECT list (after `tag_colors`). Two earlier attempts at SPEC-prescribed mid-list placements failed with `42P16: cannot change name of view column …` — Postgres `CREATE OR REPLACE VIEW` forbids inserting columns mid-list. End-of-list placement is functionally identical because JS selects by name.
+- **JS edit 1** (`modules/crm/crm-leads-tab.js:69`): added `eye_exam_default` to the explicit column list in `loadLeads()`, placed adjacent to `client_notes` in the JS string (cosmetic — JS field order is irrelevant at runtime).
+- **JS edit 2** (`modules/crm/crm-leads-detail.js:204-205`): replaced
+  ```js
+  var eyeExam = null;
+  try { var p = lead.client_notes ? JSON.parse(lead.client_notes) : null; if (p && p.eye_exam) eyeExam = String(p.eye_exam); } catch (_) {}
+  ```
+  with
+  ```js
+  var eyeExam = lead.eye_exam_default ? String(lead.eye_exam_default) : null;
+  ```
+  The render at line ~215 (`if (eyeExam) html += '<div class="mt-3">' + row(...) + '</div>';`) was left unchanged per SPEC.
+- **Verified post-change:** smoke `SELECT id, full_name, eye_exam_default FROM v_crm_leads_with_tags WHERE tenant_id='6ad0781b-37f0-47a9-92e3-be9ed1477e1c' AND is_deleted=false LIMIT 3` returned 3 rows with `eye_exam_default = NULL` (no Rung-1-era leads on prizma have it set yet — expected, since the column was just deployed and no fresh lead has been created post-Rung-1 against this column).
+- **Browser smoke:** **deferred to manual.** No live browser session attached to this Claude Code instance. The SPEC marks browser smoke optional; Daniel will verify post-deploy.
+
+---
+
+## 3. Deviations from Rung 2 SPEC
+
+1. **Step 1.6 — fetch path runs through a view, not a direct table SELECT.** The SPEC's pre-flight assumed a direct `sb.from('crm_leads')…select(…)` path and prescribed "single edit" if the SELECT lacked the column. The actual path is `loadLeads()` → `v_crm_leads_with_tags` (a view), and the view itself did not expose `eye_exam_default`. **Resolution:** stopped, reported, Daniel authorized Option A1 (view + JS edits). +1 schema migration in scope.
+2. **Step 2 — first migration attempt failed with `42P16`.** The SPEC specified placement "after `l.client_notes`, before `l.terms_approved`", with the rationale "to mirror the column position in the underlying table". Both rationale and placement were inaccurate: (a) the underlying `crm_leads` table has `eye_exam_default` at ordinal_position 26 (last), not between `client_notes` (16) and `terms_approved` (17); (b) `CREATE OR REPLACE VIEW` cannot insert columns mid-list. **Resolution:** stopped, reported, Daniel authorized A1 (append-at-end). Functionally identical for JS callers.
+3. **A second `42P16` on the second attempt** — placing `eye_exam_default` between `is_deleted` and the aggregated `tag_names` was also rejected (same root cause). Successful placement was strictly after `tag_colors`. Logged here for completeness; resolved by appending at the very end.
+
+---
+
+## 4. Decisions made in real time (places the SPEC was silent or inaccurate)
+
+- **The `!eyeExam` guard at line ~225-227.** The original code had `if (lead.client_notes && !eyeExam) { html += …client_notes raw… }`, which historically existed to prevent the legacy JSON-blob `client_notes` from being shown raw when an `eye_exam` was successfully parsed out. The SPEC was silent on this conditional. With the parse path removed, this guard now hides plain-text `client_notes` for any lead that has `eye_exam_default` set — a behavior change. **Decision:** left untouched per "one concern per task" / Iron Rule scope discipline. Verified zero risk on prizma: 0 active leads have a non-NULL `client_notes` (let alone a JSON-shaped one) — see FINDING #8 below.
+- **Doc-update inline policy.** Per FINDING #5 from Rung 1 + Daniel's preference, this Rung WILL update `modules/Module 4 - CRM/docs/db-schema.sql` (column declaration + view definition) inline as a separate `docs(crm)` commit, following the SPEC's Step 8.
+
+---
+
+## 5. What would have helped me go faster (Rung 2)
+
+- **Pre-flight SPEC step: identify the data path — direct table SELECT vs view.** A 30-second `grep` for the SELECT that populates `lead` would have surfaced the view layer at SPEC-authoring time, and Option A would have been the original path instead of a mid-execution pivot.
+- **Postgres `CREATE OR REPLACE VIEW` rule reference.** A one-line note in the executor skill ("when adding a column to an existing view via `CREATE OR REPLACE`, the new column MUST go at the end of the SELECT list — Postgres rejects mid-list insertion with `42P16`") would have prevented two failed migration attempts.
+
+---
+
+## 6. Pre-change view definition (rollback target)
+
+Captured 2026-05-03 via `SELECT pg_get_viewdef('public.v_crm_leads_with_tags'::regclass, true)` BEFORE Rung 2 migration:
+
+```sql
+ SELECT l.id,
+    l.tenant_id,
+    l.full_name,
+    l.phone,
+    l.email,
+    l.city,
+    l.language,
+    l.status,
+    l.source,
+    l.utm_source,
+    l.utm_medium,
+    l.utm_campaign,
+    l.utm_content,
+    l.utm_term,
+    l.utm_campaign_id,
+    l.client_notes,
+    l.terms_approved,
+    l.terms_approved_at,
+    l.marketing_consent,
+    l.unsubscribed_at,
+    l.verified_phone,
+    l.monday_item_id,
+    l.created_at,
+    l.updated_at,
+    l.is_deleted,
+    COALESCE(array_agg(t.name ORDER BY t.sort_order) FILTER (WHERE t.id IS NOT NULL), '{}'::text[]) AS tag_names,
+    COALESCE(array_agg(t.color ORDER BY t.sort_order) FILTER (WHERE t.id IS NOT NULL), '{}'::text[]) AS tag_colors
+   FROM crm_leads l
+     LEFT JOIN crm_lead_tags lt ON l.id = lt.lead_id AND l.tenant_id = lt.tenant_id
+     LEFT JOIN crm_tags t ON lt.tag_id = t.id
+  WHERE l.is_deleted = false
+  GROUP BY l.id;
+```
+
+Post-change view definition (verified via the same query AFTER the migration) is identical to the above plus `, l.eye_exam_default` appended after `tag_colors`. The migration file at `modules/Module 4 - CRM/migrations/2026_05_03_lead_eye_exam_default_02_view.sql` is the authoritative source.
+
+---
+
+## 7. Iron-Rule self-audit (Rung 2)
+
+| Rule | Status | Evidence |
+|---|---|---|
+| 1, 2, 3, 4, 6, 11, 14, 15, 18 | N/A | No quantity changes, no soft-delete, no barcodes, no sequential numbers, no new tables, no RLS changes, no UNIQUE constraints. The view was modified, not the underlying table. |
+| 5 (FIELD_MAP) | **Open finding** | `eye_exam_default` is now read by ERP UI; per Rung 1's FINDING #3, FIELD_MAP entry in `js/shared.js` should be added. **Not done in this commit** — Rung 2 SPEC did not include it. Re-flagged as FINDING #9 below for Foreman to assign to a follow-up. |
+| 7 (API abstraction) | ⚠ acceptable | `loadLeads()` already uses `sb.from('v_crm_leads_with_tags')` directly, not via `DB.*`. This is unchanged by Rung 2; the lead-detail render path uses the in-memory cache only. Pre-existing pattern; not within Rung 2 scope to refactor. |
+| 8 (escape/sanitize) | ✓ | The render at line ~215 uses the existing `row()` helper, which produces text content via `escapeHtml()` (verified in earlier reads of the file). The new value `lead.eye_exam_default` is server-controlled (EF allow-list of 4 strings) and goes through the same render path. |
+| 9 (no hardcoded business values) | N/A | No new business values introduced in Rung 2. |
+| 12 (file size) | ⚠ | Pre-commit hook reported soft warnings: `crm-leads-detail.js` 331 lines, `crm-leads-tab.js` 350 lines. Both under the 350 absolute max. Net change in this Rung is `-1` line for the detail file (3 → 1) and `+0` net for the tab file (just added one column to an existing string). No additional file-size pressure created. |
+| 13 (Views-only for external reads) | ✓ | This view is **internal CRM**, not exposed to storefront/supplier portal. Iron Rule 13's elevated severity applies to external-facing views; this view's modification falls under standard CREATE OR REPLACE protocol. |
+| 21 (no orphans, no duplicates) | ✓ | `eye_exam_default` is consumed by the now-correct path; the previous JSON.parse path is fully removed (not left as dead code). |
+| 22 (defense-in-depth on writes) | N/A | Read-only path. |
+| 23 (no secrets) | ✓ | No secrets touched. |
+| 31 (integrity gate) | ✓ | Pre-execution: 71 files clean. Post-execution: 75 files clean. |
+
+---
+
+## 8. Self-assessment (Rung 2)
+
+| Dimension | Score (1-10) | Justification |
+|---|---|---|
+| Adherence to SPEC | 7 | Two stop-on-deviation events (view layer; mid-list placement). Both were genuine SPEC inaccuracies, not executor errors — but the executor must take the score hit because the result is "SPEC-as-written did not run end-to-end". The ultimate fix landed exactly where the SPEC's overall goal pointed. |
+| Adherence to Iron Rules | 8 | Rule 5 (FIELD_MAP) deferred again, now flagged as FINDING #9. Rule 12 soft warnings logged, no action required. No violations. |
+| Commit hygiene | 9 | Single scoped commit for the code change; explicit `git add` of exactly 3 files; no stray staging; pre-commit hook clean except known soft warnings. The doc-update commit follows separately per SPEC Step 8. |
+| Documentation currency | 8 | This Rung will update `modules/Module 4 - CRM/docs/db-schema.sql`, `CHANGELOG.md`, and `SESSION_CONTEXT.md` inline (per Step 8). FIELD_MAP entry remains deferred (FINDING #9). GLOBAL_SCHEMA + GLOBAL_MAP merges deferred to next Integration Ceremony per CLAUDE.md §10. |
+
+---
+
+## 9. Two proposals to improve `opticup-executor` skill (Rung 2)
+
+**Proposal 3 — Add a "data-path identification" sub-step to Step 1.5 DB Pre-Flight Check.**
+
+*Where:* `.claude/skills/opticup-executor/SKILL.md` § Step 1.5 — DB Pre-Flight Check.
+
+*Concrete change:* add bullet 8:
+> 8. **Data-path identification (required when the SPEC modifies how UI reads an existing field):** for every column the SPEC plans to read from in UI, grep the consuming module for the SELECT path. Distinguish: (a) direct `sb.from('<table>')` — single-edit; (b) view `sb.from('v_<view>')` — verify the view exposes the column via `pg_get_viewdef`, plan a view migration if not; (c) RPC — verify the RPC return shape includes the column. If the data path is (b) or (c) and the column is not exposed → STOP and escalate **before** starting code edits, do NOT assume the SPEC's "add to SELECT list" instruction will be sufficient.
+
+*Why this matters:* Rung 2 of M4_LEAD_EYE_EXAM_DEFAULT paused mid-execution because the SPEC author didn't trace the data path through the view layer. Catching this at pre-flight is a 30-second grep; catching it mid-execution costs an authorization round-trip.
+
+---
+
+**Proposal 4 — Add a "CREATE OR REPLACE VIEW column placement" reference snippet.**
+
+*Where:* `.claude/skills/opticup-executor/SKILL.md` — new subsection "Database patterns / Modifying existing views".
+
+*Concrete change:* document the rule and the trap:
+```
+Postgres CREATE OR REPLACE VIEW can ONLY append new columns at the end of the
+SELECT list. Inserting a column mid-list raises 42P16: "cannot change name of
+view column ...". If the SPEC prescribes a specific column position, treat
+that as cosmetic — JS callers SELECT by name, position is irrelevant. Always
+append at the end of the SELECT list (after any aggregated columns) and note
+the deviation in the migration file's header comment.
+```
+
+*Why this matters:* Rung 2 hit `42P16` twice in this session (once at the SPEC-prescribed mid-list position, once at a "near-end but before aggregates" position). A pre-execution reference would prevent both attempts and make the migration land first try.
+
+---
+
+*Rung 2 EXECUTION_REPORT complete. FINDINGS.md appended in same SPEC folder. Doc-updates commit follows. Awaiting Foreman review of full SPEC closure.*
