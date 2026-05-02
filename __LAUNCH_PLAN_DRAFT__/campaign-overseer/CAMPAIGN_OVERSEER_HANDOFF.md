@@ -12,17 +12,42 @@
 **Source of truth:** `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CUTOVER_ROADMAP.md` (issued by Supervisor 2026-05-01).
 **Working folder:** `__LAUNCH_PLAN_DRAFT__/campaign-overseer/cutover-roadmap/`
 
-**Last update:** 2026-05-02 evening (Israel)
-**Status:** 🟡 IN PROGRESS — V10 unblocked, mid-test
-**Last action by Overseer:** Resolved stash pop conflict in HANDOFF.md after Supervisor's `develop → main` reconciliation (PR #41 → main @ 456bfea, develop @ 8b6f529). Recipient-resolver fix is live in production CRM.
-**Next action when resumed:** Trigger event-day rule on QA event `e05ad4ba-d2c3-4150-b75f-0bcb23ca485f` and verify only 1 attendee (QA-A 0537889878) is dispatched. Document evidence at `__LAUNCH_PLAN_DRAFT__/campaign-overseer/cutover-roadmap/PHASE_1_VERIFY/evidence/V10_attendee_dispatch.txt`.
+**Last update:** 2026-05-02 night (Israel)
+**Status:** ✅ Phase 2 COMPLETE — all 7 D-decisions logged in DECISIONS_LOG (REC-001 to REC-007). 4 agree / 3 disagree. Awaiting Daniel "advance to Phase 3" verbal trigger AND completion of pre-Phase-3 gating items (see below).
+**Last action by Overseer:** Walked Daniel through D-1..D-7 one at a time, logged each as REC-NNN per SKILL §4. Pattern observed (recorded in DECISIONS_LOG stats note): the 3 disagrees concentrated on "drop historical data" recommendations where Daniel saw live operational/customer-facing value the Overseer underestimated.
+**Next action when resumed:** Wait for Daniel "advance to Phase 3" + confirm the pre-Phase-3 gating items are closed (fresh Monday re-export, demo-data wipe on prizma, migration script tested in scratch DB, P5_7 + P5_6 shipped, D-6 schema add + form rewire shipped, Daniel signs off on the MAP).
 
 | Phase | Goal | Status | Folder |
 |---|---|---|---|
-| 1 — Verify | Full E2E pipeline + campaigns integration fix | 🟡 IN PROGRESS — V10 unblocked, mid-test | `cutover-roadmap/PHASE_1_VERIFY/` |
-| 2 — 7 Decisions | D-1 to D-7 from MAP §5 locked | ⬜ NOT STARTED | `cutover-roadmap/PHASE_2_DECISIONS/` |
-| 3 — Wipe + Migrate | Migrate full Monday history; 17 verification queries pass | ⬜ NOT STARTED | `cutover-roadmap/PHASE_3_MIGRATION/` |
+| 1 — Verify | Full E2E pipeline + campaigns integration fix | ✅ COMPLETE — 13/14 PASS, V13 deferred | `cutover-roadmap/PHASE_1_VERIFY/` |
+| 2 — 7 Decisions | D-1 to D-7 from MAP §5 locked | ✅ COMPLETE — REC-001 to REC-007 logged | `cutover-roadmap/PHASE_2_DECISIONS/` |
+| 3 — Wipe + Migrate | Migrate full Monday history; 17 verification queries pass | ⬜ NOT STARTED — gating items pending | `cutover-roadmap/PHASE_3_MIGRATION/` |
 | 4 — Cutover + Soak | P5_7 deploy + 48h watch + 7d verification + kill Monday | ⬜ NOT STARTED | `cutover-roadmap/PHASE_4_CUTOVER/` |
+
+### Phase 2 outcomes (REC-001 to REC-007 — full detail in DECISIONS_LOG)
+
+| REC | Migration item | Recommended | Daniel | Notes |
+|---|---|---|---|---|
+| REC-001 | D-1: 51 orphan attendees | (b) stub-create | ✅ agree | 51 stub leads with `legacy_orphan` tag |
+| REC-002 | D-2: 8 vision questionnaires | (b) move to client_notes | ❌ disagree → (a) drop | "לא צריך שאלון התאמה" |
+| REC-003 | D-3: 179 message markers | (c) hybrid (152 coupon-sent only) | ✅ agree | 152 synthetic message_log rows |
+| REC-004 | D-4: 80 Monday Category tags | (a) drop | ✅ agree | UTM-based source identification supersedes |
+| REC-005 | D-5: 8 MultiSale events (BLOCKER) | (a) map to SuperSale + tag | ❌ disagree → (d) defer | Post-cutover SPEC: introduce `event_type`, then import |
+| REC-006 | D-6: 587 lead-level eye-exam answers | (a) drop | ❌ disagree → (b) keep | Storefront form actively uses this field |
+| REC-007 | D-7: 2 corrupted-phone rows | (b) fix-and-import | ✅ agree | Narrow fixup rule: strip leading `972` if 12-digit |
+
+### Pre-Phase-3 gating items (must close BEFORE migration script runs)
+
+1. **NEW (from D-6):** Schema add `crm_leads.eye_exam_default` + wire `lead-intake` EF to populate it on form submit. **Pre-cutover SPEC required.** Owner: Supervisor authors.
+2. **From MAP §1:** P5_7 (storefront form rewire) + P5_6 (bot protection) shipped to main.
+3. **From MAP §1:** Fresh Monday re-export (current data is 11 days old).
+4. **From MAP §1:** Demo data wipe on prizma (currently 11 leads + 2 events from QA — must zero before import).
+5. **From MAP §1:** Migration script tested end-to-end on Supabase scratch branch.
+6. **From MAP §1:** Daniel sign-off on the MAP.
+
+### Post-cutover backlog (NEW commitments captured this session)
+
+1. **From REC-005:** Post-cutover SPEC — introduce `event_type` field on `crm_events` (distinct from `campaign_id`), backfill defaults, import the 8 MultiSale archive events under a new `multisale_archive` event_type. Timing: 1-2 weeks post 2026-05-03.
 
 **2026-05-02 (post-merge):** PR #41 merged to `origin/main` (commit `456bfea`) — `cd2b2f7` recipient-resolver fix is live in production CRM; V10 (Phase 1 Verify blocker) **UNBLOCKED**. See `modules/Module 4 - CRM/docs/specs/V10_MAIN_BRANCH_RECONCILIATION/`.
 
