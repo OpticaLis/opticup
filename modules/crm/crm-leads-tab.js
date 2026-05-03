@@ -72,7 +72,7 @@
     var res = await q.order('full_name').range(_svrOffset, _svrOffset + SERVER_PAGE - 1);
     if (res.error) throw new Error('Leads load failed: ' + res.error.message);
     var rows = res.data || [];
-    _svrOffset += rows.length;
+    _svrOffset += rows.length; if (rows.length && tid) await CrmHelpers.mergeLeadHistory(rows, tid);
     if (rows.length < SERVER_PAGE) _svrHasMore = false;
     return rows;
   }
@@ -181,7 +181,7 @@
           else if (k === 'dates') { s.fromDate = ''; s.toDate = ''; }
           else if (k === '48h') s.noResp48 = false;
           else if (k === 'source') s.source = '';
-          else if (k === 'lang') s.language = '';
+          else if (k === 'lang') s.language = ''; else if (k === 'purchase') s.purchase_status = '';
           renderAdvancedFilterBar();
         }
         _currentPage = 1; applyFiltersAndRender();
@@ -266,7 +266,7 @@
       '<th class="' + CLS_TH + ' w-10"><input type="checkbox" id="crm-leads-check-all" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"' + (allChecked ? ' checked' : '') + '></th>' +
       '<th class="' + CLS_TH + '">שם מלא</th>' +
       '<th class="' + CLS_TH + '">טלפון</th>' +
-      '<th class="' + CLS_TH + '">סטטוס</th>' +
+      '<th class="' + CLS_TH + '">סטטוס</th><th class="' + CLS_TH + ' text-end">אירועים</th>' +
       '<th class="' + CLS_TH + '">אימייל</th>' +
       '<th class="' + CLS_TH + '">נוצר</th>' +
       '</tr></thead><tbody>';
@@ -282,13 +282,13 @@
         '<td class="' + CLS_TD + '"><input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" data-check-lead="' + escapeHtml(r.id) + '"' + (checked ? ' checked' : '') + '></td>' +
         '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + failedBadge + creditBadge + nameSubtitle + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
-        '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('lead', r.status) + ((r.status === 'waitlist' || r.status === 'invited') ? ' <button type="button" data-move-lead="' + escapeHtml(r.id) + '" title="העבר לאירוע אחר" class="text-slate-400 hover:text-indigo-600 text-sm">↔</button>' : '') + '</td>' +
+        '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('lead', r.status) + ((r.status === 'waitlist' || r.status === 'invited') ? ' <button type="button" data-move-lead="' + escapeHtml(r.id) + '" title="העבר לאירוע אחר" class="text-slate-400 hover:text-indigo-600 text-sm">↔</button>' : '') + '</td><td class="' + CLS_TD + ' text-end text-slate-600 tabular-nums">' + (r.total_events_attended || 0) + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600">' + escapeHtml(r.email || '—') + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-500 text-xs">' + escapeHtml(CrmHelpers.formatDateTime(r.created_at)) + '</td>' +
       '</tr>';
     });
     html += '</tbody><tfoot><tr class="bg-slate-50 font-semibold">' +
-      '<td class="' + CLS_TD + '" colspan="5">סה״כ</td>' +
+      '<td class="' + CLS_TD + '" colspan="6">סה״כ</td>' +
       '<td class="' + CLS_TD + ' text-end text-indigo-700">' + _filtered.length + ' לידים</td>' +
     '</tr></tfoot></table></div>';
     wrap.innerHTML = html;

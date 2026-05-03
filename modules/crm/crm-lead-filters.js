@@ -14,7 +14,7 @@
   var _state = {};
 
   function _empty() {
-    return { statuses: [], fromDate: '', toDate: '', noResp48: false, source: '', language: '' };
+    return { statuses: [], fromDate: '', toDate: '', noResp48: false, source: '', language: '', purchase_status: '' };
   }
   function getState(key) { if (!_state[key]) _state[key] = _empty(); return _state[key]; }
   function clearState(key) { _state[key] = _empty(); }
@@ -27,6 +27,7 @@
     if (st.noResp48) n++;
     if (st.source) n++;
     if (st.language) n++;
+    if (st.purchase_status) n++;
     return n;
   }
 
@@ -49,15 +50,16 @@
         var last = notesByLead && notesByLead[r.id];
         if (last && new Date(last).getTime() >= cutoff48) return false;
       }
+      if (state.purchase_status && (state.purchase_status === 'purchased') !== !!r.is_returning_customer) return false;
       return true;
     });
   }
 
   async function loadLastNotesMap() {
     if (!window.sb) return {};
-    var tid = (typeof getTenantId === 'function') ? getTenantId() : null;
+    var _tid = (typeof getTenantId === 'function') ? getTenantId() : null;
     var q = sb.from('crm_lead_notes').select('lead_id, created_at');
-    if (tid) q = q.eq('tenant_id', tid);
+    if (_tid) q = q.eq('tenant_id', _tid);
     q = q.order('created_at', { ascending: false });
     var res = await q;
     if (res.error) return {};
@@ -100,6 +102,8 @@
         }).join('') + '</select>';
     }
 
+    var purchOpts = '<option value=""' + (!st.purchase_status ? ' selected' : '') + '>סטטוס רכישה</option><option value="purchased"' + (st.purchase_status === 'purchased' ? ' selected' : '') + '>קנו לפחות פעם</option><option value="never_purchased"' + (st.purchase_status === 'never_purchased' ? ' selected' : '') + '>אף פעם לא קנו</option>';
+
     var count = activeCount(st);
     var collapsed = count === 0;
     var badge = count ? '<span class="text-xs bg-indigo-600 text-white rounded-full px-2 py-0.5 ms-1">' + count + '</span>' : '';
@@ -127,6 +131,7 @@
             '<span>ללא תגובה 48 שעות</span>' +
           '</label>' +
           '<select data-filter-source class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm">' + sourceOpts + '</select>' +
+          '<select data-filter-purchase class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm">' + purchOpts + '</select>' +
           langHtml +
           '<button type="button" data-filter-clear class="px-3 py-1.5 border border-rose-300 text-rose-700 rounded-lg text-sm hover:bg-rose-50 transition ms-auto">נקה הכל</button>' +
         '</div>' +
@@ -184,6 +189,8 @@
     if (src) src.addEventListener('change', function () { st.source = src.value || ''; fire(); });
     var lang = host.querySelector('[data-filter-lang]');
     if (lang) lang.addEventListener('change', function () { st.language = lang.value || ''; fire(); });
+    var purch = host.querySelector('[data-filter-purchase]');
+    if (purch) purch.addEventListener('change', function () { st.purchase_status = purch.value || ''; fire(); });
 
     var clear = host.querySelector('[data-filter-clear]');
     if (clear) clear.addEventListener('click', function () {
@@ -206,6 +213,7 @@
     if (state.noResp48) chips.push({ k: '48h', label: 'ללא תגובה 48 שעות' });
     if (state.source) chips.push({ k: 'source', label: 'מקור: ' + state.source });
     if (state.language) chips.push({ k: 'lang', label: 'שפה: ' + CrmHelpers.formatLanguage(state.language) });
+    if (state.purchase_status) chips.push({ k: 'purchase', label: 'רכישה: ' + (state.purchase_status === 'purchased' ? 'קנו' : 'לא קנו') });
     return chips;
   }
 
