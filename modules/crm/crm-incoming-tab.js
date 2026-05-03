@@ -278,12 +278,12 @@
     try {
       _rtChannel = sb.channel('crm_incoming_' + tid)
         .on('postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'crm_leads', filter: 'tenant_id=eq.' + tid },
+            { event: 'INSERT', schema: 'public', table: 'crm_leads' },
             function (payload) { handleIncomingInsert(payload.new, tier1); })
         .on('postgres_changes',
-            { event: 'UPDATE', schema: 'public', table: 'crm_leads', filter: 'tenant_id=eq.' + tid },
+            { event: 'UPDATE', schema: 'public', table: 'crm_leads' },
             function (payload) { handleIncomingUpdate(payload.new, payload.old, tier1); })
-        .subscribe(function (status, err) { console.log('[Realtime DEBUG] subscribe status:', status, 'err:', err); });
+        .subscribe();
     } catch (e) { console.warn('CrmIncomingRealtime subscribe failed:', e && e.message); _rtChannel = null; }
   }
   function stopRealtime() {
@@ -292,20 +292,16 @@
     _rtChannel = null;
   }
   function handleIncomingInsert(row, tier1) {
-    console.log('[Realtime DEBUG] INSERT received:', { id: row && row.id, status: row && row.status, tenant_id: row && row.tenant_id, full_name: row && row.full_name });
-    console.log('[Realtime DEBUG] tier1 list:', tier1, 'tier1 includes status?', tier1.indexOf(row && row.status));
-    console.log('[Realtime DEBUG] _allLeads.length BEFORE:', _allLeads.length);
-    console.log('[Realtime DEBUG] dedup check:', _allLeads.some(function (l) { return l.id === row.id; }));
-    if (!row || row.is_deleted) { console.log('[Realtime DEBUG] EARLY EXIT: !row or is_deleted'); return; }
-    if (tier1.length && tier1.indexOf(row.status) === -1) { console.log('[Realtime DEBUG] EARLY EXIT: status not in tier1'); return; }
-    if (_allLeads.some(function (l) { return l.id === row.id; })) { console.log('[Realtime DEBUG] EARLY EXIT: dedup hit'); return; }
+    if (row && row.tenant_id !== getTenantId()) return;
+    if (!row || row.is_deleted) return;
+    if (tier1.length && tier1.indexOf(row.status) === -1) return;
+    if (_allLeads.some(function (l) { return l.id === row.id; })) return;
     _allLeads.unshift(row);
-    console.log('[Realtime DEBUG] _allLeads.length AFTER unshift:', _allLeads.length);
     applyIncomingFilters();
-    console.log('[Realtime DEBUG] _filtered.length:', _filtered.length, '_currentPage:', _currentPage);
     flashIncomingRow(row.id, 'bg-indigo-100');
   }
   function handleIncomingUpdate(newRow, oldRow, tier1) {
+    if (newRow && newRow.tenant_id !== getTenantId()) return;
     if (!newRow) return;
     var idx = _allLeads.findIndex(function (l) { return l.id === newRow.id; });
     var inTier1 = !newRow.is_deleted && (!tier1.length || tier1.indexOf(newRow.status) >= 0);
