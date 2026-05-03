@@ -141,7 +141,10 @@ Deno.serve(async (req: Request) => {
   if (!phone) return errorResponse("Invalid phone number", 400);
 
   // --- Optional fields ---
-  const email = emailRaw;
+  // Email lowercased for canonical storage (P5_7_STOREFRONT_FORM_REWIRE Part D3,
+  // 2026-05-03). Phone is the duplicate-check key, not email, so casing changes
+  // don't affect duplicate detection. Existing mixed-case rows are not rewritten.
+  const email = emailRaw.toLowerCase();
   const eyeExam = trimOrNull(body.eye_exam);
   if (eyeExam !== null && !EYE_EXAM_OPTIONS.includes(eyeExam)) {
     return errorResponse("INVALID_EYE_EXAM_DEFAULT", 400);
