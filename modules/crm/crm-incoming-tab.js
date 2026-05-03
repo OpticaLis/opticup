@@ -55,6 +55,7 @@
         if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
         renderIncomingAdvancedBar();
         wireIncomingEvents();
+        startRealtime();
       })().catch(function (e) {
         _loadPromise = null;
         wrap.innerHTML = '<div class="text-center text-rose-500 py-6 font-semibold">שגיאה בטעינה: ' + escapeHtml(e.message || String(e)) + '</div>';
@@ -261,4 +262,61 @@
   window.getCrmIncomingLeadById = function (id) {
     return _allLeads.find(function (r) { return r.id === id; }) || null;
   };
+
+  // ===== Realtime (CRM_REALTIME_INCOMING_PILOT — pilot for crm_leads streaming) =====
+  // Supabase Realtime channel filtered to this tenant's crm_leads.
+  // INSERT events: prepend new Tier-1 lead (de-dup against initial fetch race).
+  // UPDATE events: add/remove/merge based on Tier-1 status + is_deleted transitions.
+  // Visual cue: 2s Tailwind background flash (indigo=new, amber=update). No CSS file.
+  // Failure mode (per brief): subscribe failure logs and falls through; tab keeps working.
+  var _rtChannel = null;
+  function startRealtime() {
+    if (_rtChannel) return;
+    var tid = getTenantId();
+    if (!tid || !window.sb || !sb.channel) return;
+    var tier1 = (typeof TIER1_STATUSES !== 'undefined') ? TIER1_STATUSES : [];
+    try {
+      _rtChannel = sb.channel('crm_incoming_' + tid)
+        .on('postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'crm_leads', filter: 'tenant_id=eq.' + tid },
+            function (payload) { handleIncomingInsert(payload.new, tier1); })
+        .on('postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'crm_leads', filter: 'tenant_id=eq.' + tid },
+            function (payload) { handleIncomingUpdate(payload.new, payload.old, tier1); })
+        .subscribe();
+    } catch (e) { console.warn('CrmIncomingRealtime subscribe failed:', e && e.message); _rtChannel = null; }
+  }
+  function stopRealtime() {
+    if (!_rtChannel) return;
+    try { sb.removeChannel(_rtChannel); } catch (_) {}
+    _rtChannel = null;
+  }
+  function handleIncomingInsert(row, tier1) {
+    if (!row || row.is_deleted) return;
+    if (tier1.length && tier1.indexOf(row.status) === -1) return;
+    if (_allLeads.some(function (l) { return l.id === row.id; })) return;
+    _allLeads.unshift(row);
+    applyIncomingFilters();
+    flashIncomingRow(row.id, 'bg-indigo-100');
+  }
+  function handleIncomingUpdate(newRow, oldRow, tier1) {
+    if (!newRow) return;
+    var idx = _allLeads.findIndex(function (l) { return l.id === newRow.id; });
+    var inTier1 = !newRow.is_deleted && (!tier1.length || tier1.indexOf(newRow.status) >= 0);
+    if (idx >= 0 && !inTier1) { _allLeads.splice(idx, 1); applyIncomingFilters(); return; }
+    if (idx >= 0) { _allLeads[idx] = Object.assign({}, _allLeads[idx], newRow); applyIncomingFilters(); flashIncomingRow(newRow.id, 'bg-amber-100'); return; }
+    if (idx < 0 && inTier1) { _allLeads.unshift(newRow); applyIncomingFilters(); flashIncomingRow(newRow.id, 'bg-indigo-100'); }
+  }
+  function flashIncomingRow(leadId, bgClass) {
+    setTimeout(function () {
+      var tr = document.querySelector('tr[data-lead-id="' + leadId + '"]');
+      if (!tr) return;
+      tr.classList.add(bgClass, 'transition-colors', 'duration-1000');
+      setTimeout(function () {
+        tr.classList.remove(bgClass);
+        setTimeout(function () { tr.classList.remove('transition-colors', 'duration-1000'); }, 1000);
+      }, 1000);
+    }, 0);
+  }
+  window.addEventListener('beforeunload', stopRealtime);
 })();
