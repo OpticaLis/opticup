@@ -1,0 +1,62 @@
+# Evidence: realtime.messages snapshot BEFORE Round 4 revert
+# Captured 2026-05-03 by opticup-executor
+# SPEC: REALTIME_INSERT_NOT_RENDERING_DEBUG / Round 4 (Option E)
+#
+# Purpose: confirm whether Round 3's broadcast trigger was actually firing
+# (writing to realtime.messages) before the revert. This is the F diagnostic
+# from ROUND_4_ACTIVATION_PROMPT §"Optional 10-minute diagnostics".
+
+# Query:
+SELECT topic, event, inserted_at
+FROM realtime.messages
+WHERE topic LIKE 'crm_leads_%'
+ORDER BY inserted_at DESC
+LIMIT 10;
+
+# Result (3 rows — all prizma tenant 6ad0781b-37f0-47a9-92e3-be9ed1477e1c):
+[
+  {"topic":"crm_leads_6ad0781b-37f0-47a9-92e3-be9ed1477e1c","event":"INSERT","inserted_at":"2026-05-03 19:18:23.29375"},
+  {"topic":"crm_leads_6ad0781b-37f0-47a9-92e3-be9ed1477e1c","event":"INSERT","inserted_at":"2026-05-03 19:17:28.459947"},
+  {"topic":"crm_leads_6ad0781b-37f0-47a9-92e3-be9ed1477e1c","event":"INSERT","inserted_at":"2026-05-03 19:16:05.878215"}
+]
+
+# Interpretation (KEY FINDING for the post-cutover SPEC):
+#
+# The trigger crm_leads_broadcast_insert_trigger DID FIRE correctly. Each form
+# submission (3 in the diagnostic window 19:16–19:18) wrote a row to
+# realtime.messages with the per-tenant topic 'crm_leads_<prizma-uuid>' and
+# event 'INSERT'. The Postgres-side of the broadcast pipeline worked.
+#
+# Yet the client console (Daniel's report) showed `[Realtime] subscribe status:
+# SUBSCRIBED` followed by NO `[Realtime DEBUG] INSERT received:` lines and no
+# row appearing in the UI. This means the gap is BETWEEN realtime.messages and
+# the client WebSocket:
+#
+#   trigger → realtime.messages   ← VERIFIED working (this evidence)
+#   realtime.messages → WS client ← BROKEN somewhere
+#
+# Likely causes (for post-cutover investigation):
+#
+# 1. Channel was subscribed as 'public' but realtime.broadcast_changes writes
+#    require the channel to be subscribed with `private: true` + RLS GRANT on
+#    realtime.messages (Supabase docs: "broadcast from database" requires
+#    private channels). The client subscribed without `{ config: { private: true } }`.
+#
+# 2. RLS policy on realtime.messages does not GRANT SELECT to the anon JWT
+#    role for these per-tenant topics. The broadcast lands in the table but
+#    the WebSocket forwarder filters it out before sending to the client.
+#
+# 3. Channel name in client subscription (sb.channel('crm_leads_<tid>')) vs
+#    topic written by trigger ('crm_leads_<tid>') match string-wise — but
+#    the underlying realtime.send mechanism may format topics differently.
+#
+# Next steps (post-cutover SPEC will start here):
+# - Verify Supabase realtime quickstart docs for "broadcast from database".
+# - Inspect realtime.messages RLS policies via pg_policies.
+# - Test with `private: true` on the client subscription.
+# - Test with explicit GRANT SELECT on realtime.messages to the anon role for
+#   the per-tenant topics.
+#
+# Evidence captured BEFORE the revert migration drops the trigger; once
+# Round 4 ships, no more rows will land in realtime.messages from this trigger
+# until the post-cutover restoration SPEC re-enables it.

@@ -56,6 +56,7 @@
         renderIncomingAdvancedBar();
         wireIncomingEvents();
         startRealtime();
+        startPolling();
       })().catch(function (e) {
         _loadPromise = null;
         wrap.innerHTML = '<div class="text-center text-rose-500 py-6 font-semibold">שגיאה בטעינה: ' + escapeHtml(e.message || String(e)) + '</div>';
@@ -263,24 +264,20 @@
     return _allLeads.find(function (r) { return r.id === id; }) || null;
   };
 
-  // HYBRID PATTERN (Round 3 / Option B) — DO NOT "CLEAN UP":
-  // INSERTs from service_role (lead-intake EF) bypass postgres_changes broadcast.
-  // The DB trigger crm_leads_broadcast_insert (migration 20260503180000_realtime_crm_leads_broadcast_insert)
-  // calls realtime.broadcast_changes onto a per-tenant channel 'crm_leads_<tid>'.
-  // UPDATEs continue on postgres_changes — they work (browser admin writes carry
-  // JWT tenant context, not service_role). Mixed transports by design.
+  // Round 4 (Option E — polling fallback). Round 3's broadcast trigger was reverted
+  // via migration 20260503190000_revert_crm_leads_broadcast_insert. The
+  // postgres_changes UPDATE channel stays — works for browser-initiated UPDATEs
+  // (admin writes carry JWT tenant context, no service_role bypass). New leads
+  // (INSERTs from service_role lead-intake EF) are picked up by polling at
+  // POLL_INTERVAL_MS — see startPolling() below. Realtime restoration deferred
+  // to post-cutover SPEC REALTIME_INSERT_INVESTIGATION_POST_CUTOVER.
   var _rtChannel = null;
   function startRealtime() {
     if (_rtChannel) return;
     var tid = getTenantId();
     if (!tid || !window.sb || !sb.channel) return;
     try {
-      _rtChannel = sb.channel('crm_leads_' + tid)
-        .on('broadcast', { event: 'INSERT' }, function (payload) {
-          var row = payload && payload.payload && payload.payload.record;
-          if (!row || row.tenant_id !== tid) return;
-          reloadIncomingFromRealtime(row.id, 'bg-indigo-100');
-        })
+      _rtChannel = sb.channel('crm_incoming_updates')
         .on('postgres_changes',
             { event: 'UPDATE', schema: 'public', table: 'crm_leads', filter: 'tenant_id=eq.' + tid },
             function (payload) {
@@ -318,5 +315,23 @@
       if (highlightLeadId && flashClass) flashIncomingRow(highlightLeadId, flashClass);
     } catch (e) { console.warn('[Realtime] reload failed, falling back to next manual refresh:', e && e.message); }
   }
-  window.addEventListener('beforeunload', stopRealtime);
+  // Polling fallback (Round 4 / Option E). 30-second interval refresh, paused when
+  // the incoming-tab wrap is hidden (user switched to another CRM tab) or the
+  // browser tab is hidden. Reuses reloadIncomingFromRealtime → loadIncomingLeads(true).
+  // Realtime restoration deferred to post-cutover SPEC.
+  var _pollIntervalId = null;
+  var POLL_INTERVAL_MS = 30000;
+  function startPolling() {
+    if (_pollIntervalId) return;
+    _pollIntervalId = setInterval(function () {
+      var wrap = document.getElementById('crm-incoming-table-wrap');
+      if (document.hidden || !wrap || wrap.offsetParent === null) return;
+      console.log('[Polling] refresh fired');
+      reloadIncomingFromRealtime(null, null);
+    }, POLL_INTERVAL_MS);
+  }
+  function stopPolling() {
+    if (_pollIntervalId) { clearInterval(_pollIntervalId); _pollIntervalId = null; }
+  }
+  window.addEventListener('beforeunload', function () { stopRealtime(); stopPolling(); });
 })();

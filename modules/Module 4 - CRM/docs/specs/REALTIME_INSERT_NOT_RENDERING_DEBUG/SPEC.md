@@ -522,3 +522,146 @@ Push to `origin/develop`. Pop the pre-session stash AFTER push. **Do NOT merge t
 - Any change required outside `supabase/migrations/`, `modules/crm/crm-incoming-tab.js`, and the SPEC folder → halt + escalate.
 
 This SPEC closes when Daniel verifies all 7 R3.5 acceptance cases pass.
+
+---
+
+# Round 4 — Option E (polling fallback + Round-3 revert) — authored 2026-05-03
+
+> **Round-3 outcome.** Round 3 deployed the broadcast trigger + per-tenant channel client subscription. Production result: regressed worse — even the `[Realtime] subscribe status: SUBSCRIBED` log disappeared from console after Daniel's deploy. Diagnostic capture from `realtime.messages` (saved as `evidence_realtime_messages_pre_revert.txt` in this folder) shows the trigger DID fire (3 broadcast events written to `realtime.messages` for prizma tenant at 19:16, 19:17, 19:18), but the WebSocket forwarder never propagated them to the subscribed client. The disconnect is between `realtime.messages` and the client subscription — likely missing `private: true` on the channel + RLS GRANT on `realtime.messages` (Supabase docs for "broadcast from database" require both).
+>
+> **Round-4 verdict (`SUPERVISOR_DECISION_ROUND_4.md`, binding).** Cut losses on Realtime. Ship polling (Option E). Revert Round 3 cleanly via NEW migration (original migration stays in git history per Rule 21). Defer Realtime restoration to post-cutover SPEC `REALTIME_INSERT_INVESTIGATION_POST_CUTOVER`.
+
+## R4.A — Sub-SPEC A — Revert Round 3
+
+### A.1 — Revert migration
+
+**File:** `supabase/migrations/20260503190000_revert_crm_leads_broadcast_insert.sql` (new, tracked from commit zero — Daniel directive).
+
+Idempotent (`DROP IF EXISTS`):
+```sql
+DROP TRIGGER IF EXISTS crm_leads_broadcast_insert_trigger ON public.crm_leads;
+DROP FUNCTION IF EXISTS public.crm_leads_broadcast_insert();
+```
+
+Original Round-3 migration (`20260503180000_realtime_crm_leads_broadcast_insert.sql`) stays in git history — never rewrite history (Iron Rule 21). The revert is a NEW migration that lands AFTER it in chronological order.
+
+### A.2 — Client-side: remove broadcast subscription
+
+In `modules/crm/crm-incoming-tab.js` `startRealtime()`:
+- Drop the `.on('broadcast', { event: 'INSERT' }, ...)` handler block.
+- Rename channel `crm_leads_<tid>` → `crm_incoming_updates` (generic, since it now only carries UPDATEs).
+- KEEP the existing `postgres_changes UPDATE` subscription as-is.
+- KEEP `reloadIncomingFromRealtime()` helper — Sub-SPEC B reuses it.
+- Comment block updated from "HYBRID PATTERN (Round 3 / Option B)" to "Round 4 (Option E — polling fallback)".
+
+## R4.B — Sub-SPEC B — Polling implementation (Option E)
+
+NEW polling block inserted after `reloadIncomingFromRealtime` and BEFORE the bundled `beforeunload` listener:
+
+```javascript
+  var _pollIntervalId = null;
+  var POLL_INTERVAL_MS = 30000;
+  function startPolling() {
+    if (_pollIntervalId) return;
+    _pollIntervalId = setInterval(function () {
+      var wrap = document.getElementById('crm-incoming-table-wrap');
+      if (document.hidden || !wrap || wrap.offsetParent === null) return;
+      console.log('[Polling] refresh fired');
+      reloadIncomingFromRealtime(null, null);
+    }, POLL_INTERVAL_MS);
+  }
+  function stopPolling() {
+    if (_pollIntervalId) { clearInterval(_pollIntervalId); _pollIntervalId = null; }
+  }
+```
+
+**Visibility-pause logic (Foreman addition beyond brief).** Brief criterion #4 ("Switch to רשומים tab → console-log lines stop") cannot be satisfied without parent-file changes (which the brief's stop-trigger forbids: "Any change required outside the migration .sql + crm-incoming-tab.js → halt + escalate"). Solution: inside the timer callback, check `document.hidden` (browser tab hidden) AND `wrap.offsetParent === null` (the incoming-tab DOM element hidden via CSS by the parent CRM tab router). If either is true, skip the refresh — polling effectively pauses when the user isn't looking. Cost: 1 extra DOM lookup per 30s tick.
+
+### Wiring
+
+- `startPolling()` called in `loadCrmIncomingTab()` immediately after `wireIncomingEvents()` and `startRealtime()`.
+- `beforeunload` listener bundled to call BOTH stops:
+  ```javascript
+  window.addEventListener('beforeunload', function () { stopRealtime(); stopPolling(); });
+  ```
+
+## R4.C — Round 4 success criteria
+
+| # | Criterion | Expected | Verify |
+|---|-----------|---------|--------|
+| R4-1 | Branch state at start | clean post-stash | `git status --porcelain` → empty |
+| R4-2 | Step Zero re-check | 7 .sql files tracked | `git ls-files supabase/migrations/ \| wc -l` → 7 |
+| R4-3 | Pre-revert evidence captured | non-empty file | `evidence_realtime_messages_pre_revert.txt` exists |
+| R4-4 | Revert migration applied | success | MCP `apply_migration` returns `{"success": true}` |
+| R4-5 | Trigger gone post-revert | 0 rows | `pg_trigger` query returns 0 |
+| R4-6 | Function gone post-revert | 0 rows | `pg_proc` query returns 0 |
+| R4-7 | Files modified | 1 source + 1 new migration | `git diff --name-only` |
+| R4-8 | `crm-incoming-tab.js` line count | 322 → ≤ 340 | `wc -l` ≤ 340 |
+| R4-9 | Broadcast `.on` removed | 0 hits | grep |
+| R4-10 | Per-tenant channel name removed | 0 hits | grep |
+| R4-11 | New generic channel name | 1 hit | grep |
+| R4-12 | UPDATE postgres_changes preserved | 1 hit | grep |
+| R4-13 | Polling functions added | 2 declarations | grep |
+| R4-14 | `POLL_INTERVAL_MS` constant defined | ≥ 1 | grep |
+| R4-15 | `startPolling()` call sites | declaration + ≥ 1 call | grep |
+| R4-16 | Visibility-pause check | 1 hit | grep `document.hidden` |
+| R4-17 | beforeunload bundles both stops | 1 hit | grep |
+| R4-18 | Iron Rule 12 (≤ 350) | ≤ 350 | covered by R4-8 |
+| R4-19 | Integrity gate | exit 0 or 2 | `npm run verify:integrity` |
+| R4-20 | Single commit | 1 ahead of origin | git rev-list |
+| R4-21 | Pushed | local == origin/develop | post-push verify |
+| R4-22 | In-scope clean tree | empty | `git status --short` |
+| R4-23 | Stash restored | pop succeeds | end of session |
+
+## R4.D — Manual QA — Daniel runs after deploy (7 acceptance cases per brief)
+
+GitHub Pages redeploys ~30s after push. Migration is already live on the DB (revert applied pre-push). On **prizma**:
+
+1. **PRIMARY:** Open `app.opticalis.co.il/crm/` → לידים נכנסים tab. From a separate browser/tab, submit a fresh lead via `prizma-optic.co.il/supersale/`. **Within 30 seconds the new lead appears, no F5.** Console shows `[Polling] refresh fired` lines firing every 30s. (First refresh is at +30s, NOT immediate — that's expected polling behavior. The realtime UPDATE channel still works for browser-initiated UPDATEs which fire <2s.)
+2. **No UI flicker:** During polling refresh, table doesn't visibly flash, scroll position is preserved, active filters preserved, search box value preserved.
+3. **UPDATE regression:** Status change on existing lead → list updates immediately via the still-working `postgres_changes UPDATE` channel. Amber pulse on the changed row.
+4. **Tab-leave hygiene:** Switch to "רשומים" tab. Console `[Polling] refresh fired` lines STOP within 30s. Switch back → resume.
+5. **Page-leave hygiene:** Close the browser tab → `beforeunload` fires both stops; no leaked intervals.
+6. **DB verification:** `pg_trigger` query returns NO `crm_leads_broadcast_insert_trigger` row. New revert migration tracked in git.
+7. **Cross-tenant safety:** RLS on `loadIncomingLeads` prevents cross-tenant leaks.
+
+If all 7 pass → trigger PR-merge to main yourself. **Executor does NOT merge.**
+
+## R4.E — Iron-Rule self-audit
+
+| Rule | Status | Evidence |
+|------|--------|----------|
+| Rule 7 | ✅ reuse | Polling uses existing `reloadIncomingFromRealtime` → `loadIncomingLeads(true)`. |
+| Rule 12 | ✅ ≤ 350 | crm-incoming-tab.js 337 lines (13-line headroom). |
+| Rule 14/15 | ✅ relied on | RLS on `crm_leads` unchanged. Same RLS evaluation as initial page load. |
+| Rule 21 | ✅ never rewrite history | Revert migration is a NEW file; Round-3 migration stays for audit. No parallel fetcher. |
+| Rule 22 | ✅ defense-in-depth preserved | `tenant_id` filter on `loadIncomingLeads`. UPDATE channel still has filter + handler guard. |
+| Rule 23 | ✅ | no secrets |
+| Rule 31 | ✅ | gate exit 0, 4 files scanned, 1ms |
+
+## R4.F — Round 4 commit plan
+
+Single commit (Sub-SPEC A + Sub-SPEC B in one commit per brief):
+```
+feat(crm): polling fallback for incoming-leads tab; revert Round-3 broadcast trigger
+```
+
+Files in commit:
+- `supabase/migrations/20260503190000_revert_crm_leads_broadcast_insert.sql`
+- `modules/crm/crm-incoming-tab.js`
+- `modules/Module 4 - CRM/docs/specs/REALTIME_INSERT_NOT_RENDERING_DEBUG/SPEC.md` (this file, §R4 appended)
+- `modules/Module 4 - CRM/docs/specs/REALTIME_INSERT_NOT_RENDERING_DEBUG/EXECUTION_REPORT.md` (Round 4 closure appended)
+- `modules/Module 4 - CRM/docs/specs/REALTIME_INSERT_NOT_RENDERING_DEBUG/ROUND_4_ACTIVATION_PROMPT.md` (newly tracked)
+- `modules/Module 4 - CRM/docs/specs/REALTIME_INSERT_NOT_RENDERING_DEBUG/SUPERVISOR_DECISION_ROUND_4.md` (newly tracked, binding)
+- `modules/Module 4 - CRM/docs/specs/REALTIME_INSERT_NOT_RENDERING_DEBUG/evidence_realtime_messages_pre_revert.txt` (diagnostic evidence captured pre-revert)
+
+Push to `origin/develop`. Pop the pre-session stash AFTER push. **Do NOT merge to main.**
+
+## R4.G — Round 4 stop triggers (in addition to brief globals)
+
+- Revert migration fails → halt + escalate.
+- Removing broadcast subscription breaks UPDATE subscription → halt.
+- Polling causes UI flicker / scroll loss / filter loss → halt; fix UX before close.
+- Executor "discovers" a new Realtime fix mid-execution → HALT. Ship E (per Supervisor Round 4).
+
+This SPEC closes when Daniel verifies all 7 R4.D acceptance cases pass. Post-cutover SPEC `REALTIME_INSERT_INVESTIGATION_POST_CUTOVER` opens for restoring real-time INSERT delivery — likely via `private: true` channel + `realtime.messages` RLS GRANT (see `evidence_realtime_messages_pre_revert.txt` for the starting-point hypothesis).
