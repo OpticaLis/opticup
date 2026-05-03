@@ -189,6 +189,27 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
     return _HE_DOW[d.getUTCDay()] || '';
   }
 
+  // --- Lead history merge (Rule 21: single helper, used by crm-leads-tab.js) ---
+  // Hydrates `total_events_attended` + `is_returning_customer` from
+  // v_crm_lead_event_history onto each row. Mutates rows in place. Per-page
+  // (caller passes a slice of up to SERVER_PAGE leads); .in('lead_id', ids)
+  // stays well under the PostgREST 1000-row cap.
+  async function mergeLeadHistory(rows, tenantId) {
+    if (!rows || !rows.length || !tenantId) return;
+    var ids = rows.map(function (r) { return r.id; });
+    var hRes = await sb.from('v_crm_lead_event_history')
+      .select('lead_id, total_events_attended, is_returning_customer')
+      .eq('tenant_id', tenantId).in('lead_id', ids);
+    if (hRes.error) return;
+    var byId = {};
+    (hRes.data || []).forEach(function (h) { byId[h.lead_id] = h; });
+    rows.forEach(function (r) {
+      var h = byId[r.id];
+      r.total_events_attended = (h && h.total_events_attended) || 0;
+      r.is_returning_customer = !!(h && h.is_returning_customer);
+    });
+  }
+
   window.CrmHelpers = {
     formatPhone: formatPhone,
     normalizePhone: normalizePhone,
@@ -204,7 +225,8 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
     tid: tid,
     toast: toast,
     logActivity: logActivity,
-    hebrewDayOfWeek: hebrewDayOfWeek
+    hebrewDayOfWeek: hebrewDayOfWeek,
+    mergeLeadHistory: mergeLeadHistory
   };
 
   // Export tier constants
