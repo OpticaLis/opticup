@@ -263,55 +263,38 @@
     return _allLeads.find(function (r) { return r.id === id; }) || null;
   };
 
-  // ===== Realtime (CRM_REALTIME_INCOMING_PILOT — pilot for crm_leads streaming) =====
-  // Supabase Realtime channel filtered to this tenant's crm_leads.
-  // INSERT events: prepend new Tier-1 lead (de-dup against initial fetch race).
-  // UPDATE events: add/remove/merge based on Tier-1 status + is_deleted transitions.
-  // Visual cue: 2s Tailwind background flash (indigo=new, amber=update). No CSS file.
-  // Failure mode (per brief): subscribe failure logs and falls through; tab keeps working.
+  // HYBRID PATTERN (Round 3 / Option B) — DO NOT "CLEAN UP":
+  // INSERTs from service_role (lead-intake EF) bypass postgres_changes broadcast.
+  // The DB trigger crm_leads_broadcast_insert (migration 20260503180000_realtime_crm_leads_broadcast_insert)
+  // calls realtime.broadcast_changes onto a per-tenant channel 'crm_leads_<tid>'.
+  // UPDATEs continue on postgres_changes — they work (browser admin writes carry
+  // JWT tenant context, not service_role). Mixed transports by design.
   var _rtChannel = null;
   function startRealtime() {
     if (_rtChannel) return;
     var tid = getTenantId();
     if (!tid || !window.sb || !sb.channel) return;
-    var tier1 = (typeof TIER1_STATUSES !== 'undefined') ? TIER1_STATUSES : [];
     try {
-      _rtChannel = sb.channel('crm_incoming_' + tid)
-        .on('postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'crm_leads', filter: 'tenant_id=eq.' + tid },
-            function (payload) { handleIncomingInsert(payload.new, tier1); })
+      _rtChannel = sb.channel('crm_leads_' + tid)
+        .on('broadcast', { event: 'INSERT' }, function (payload) {
+          var row = payload && payload.payload && payload.payload.record;
+          if (!row || row.tenant_id !== tid) return;
+          reloadIncomingFromRealtime(row.id, 'bg-indigo-100');
+        })
         .on('postgres_changes',
             { event: 'UPDATE', schema: 'public', table: 'crm_leads', filter: 'tenant_id=eq.' + tid },
-            function (payload) { handleIncomingUpdate(payload.new, payload.old, tier1); })
-        .subscribe(function (status, err) { console.log('[Realtime DEBUG] subscribe status:', status, 'err:', err); });
+            function (payload) {
+              var newRow = payload && payload.new;
+              if (!newRow || newRow.tenant_id !== tid) return;
+              reloadIncomingFromRealtime(newRow.id, 'bg-amber-100');
+            })
+        .subscribe(function (status, err) { console.log('[Realtime] subscribe status:', status, err); });
     } catch (e) { console.warn('CrmIncomingRealtime subscribe failed:', e && e.message); _rtChannel = null; }
   }
   function stopRealtime() {
     if (!_rtChannel) return;
     try { sb.removeChannel(_rtChannel); } catch (_) {}
     _rtChannel = null;
-  }
-  function handleIncomingInsert(row, tier1) {
-    console.log('[Realtime DEBUG] INSERT received:', { id: row && row.id, status: row && row.status, tenant_id: row && row.tenant_id, full_name: row && row.full_name });
-    console.log('[Realtime DEBUG] tier1 list:', tier1, 'tier1 includes status?', tier1.indexOf(row && row.status));
-    console.log('[Realtime DEBUG] _allLeads.length BEFORE:', _allLeads.length);
-    console.log('[Realtime DEBUG] dedup check:', _allLeads.some(function (l) { return l.id === row.id; }));
-    if (!row || row.is_deleted) { console.log('[Realtime DEBUG] EARLY EXIT: !row or is_deleted'); return; }
-    if (tier1.length && tier1.indexOf(row.status) === -1) { console.log('[Realtime DEBUG] EARLY EXIT: status not in tier1'); return; }
-    if (_allLeads.some(function (l) { return l.id === row.id; })) { console.log('[Realtime DEBUG] EARLY EXIT: dedup hit'); return; }
-    _allLeads.unshift(row);
-    console.log('[Realtime DEBUG] _allLeads.length AFTER unshift:', _allLeads.length);
-    applyIncomingFilters();
-    console.log('[Realtime DEBUG] _filtered.length:', _filtered.length, '_currentPage:', _currentPage);
-    flashIncomingRow(row.id, 'bg-indigo-100');
-  }
-  function handleIncomingUpdate(newRow, oldRow, tier1) {
-    if (!newRow) return;
-    var idx = _allLeads.findIndex(function (l) { return l.id === newRow.id; });
-    var inTier1 = !newRow.is_deleted && (!tier1.length || tier1.indexOf(newRow.status) >= 0);
-    if (idx >= 0 && !inTier1) { _allLeads.splice(idx, 1); applyIncomingFilters(); return; }
-    if (idx >= 0) { _allLeads[idx] = Object.assign({}, _allLeads[idx], newRow); applyIncomingFilters(); flashIncomingRow(newRow.id, 'bg-amber-100'); return; }
-    if (idx < 0 && inTier1) { _allLeads.unshift(newRow); applyIncomingFilters(); flashIncomingRow(newRow.id, 'bg-indigo-100'); }
   }
   function flashIncomingRow(leadId, bgClass) {
     setTimeout(function () {
@@ -323,6 +306,17 @@
         setTimeout(function () { tr.classList.remove('transition-colors', 'duration-1000'); }, 1000);
       }, 1000);
     }, 0);
+  }
+  // Realtime as trigger (Round 3 / Option B). Full reload via existing fetcher;
+  // re-applies filters via existing applyIncomingFilters; flashes the changed row.
+  // Tradeoff vs granular mutation: 1 round-trip per event. Acceptable at <200 events/day.
+  async function reloadIncomingFromRealtime(highlightLeadId, flashClass) {
+    try {
+      _allLeads = await loadIncomingLeads(true);
+      if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
+      applyIncomingFilters();
+      if (highlightLeadId && flashClass) flashIncomingRow(highlightLeadId, flashClass);
+    } catch (e) { console.warn('[Realtime] reload failed, falling back to next manual refresh:', e && e.message); }
   }
   window.addEventListener('beforeunload', stopRealtime);
 })();
