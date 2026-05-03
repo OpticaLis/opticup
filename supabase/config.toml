@@ -397,3 +397,49 @@ entrypoint = "./functions/pin-auth/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/pin-auth/*.html" ]
+
+# verify_jwt is false because Make's HTTP module cannot send the
+# Authorization header reliably. Auth is enforced inside the EF via
+# body.shared_secret matched against the MAKE_SECRET env var. Do NOT
+# remove this block — its absence causes the CLI to default to
+# verify_jwt = true on the next redeploy, which breaks the Make
+# pipeline at the platform gateway before requests reach the EF.
+[functions.facebook-campaigns-sync]
+enabled = true
+verify_jwt = false
+import_map = "./functions/facebook-campaigns-sync/deno.json"
+entrypoint = "./functions/facebook-campaigns-sync/index.ts"
+
+# verify_jwt = true accepts both authenticated user JWTs and the anon JWT.
+# The storefront sends the anon publishable key as Authorization, which the
+# gateway accepts. This block is required to prevent CLI redeploy from
+# defaulting verify_jwt incorrectly (mirrors the lesson from
+# M4_CAMPAIGNS_V2_METRICS_AND_DATERANGE Rung 2 facebook-campaigns-sync incident).
+[functions.lead-intake]
+enabled = true
+verify_jwt = true
+import_map = "./functions/lead-intake/deno.json"
+entrypoint = "./functions/lead-intake/index.ts"
+
+# C001 (2026-05-03) — send-message verify_jwt = true. Block was missing pre-C001;
+# the EF defaulted in via CLI. Adding the explicit block prevents CLI redeploy
+# from defaulting verify_jwt incorrectly (lesson from M4_CAMPAIGNS_V2_METRICS_AND_DATERANGE
+# Rung 2 facebook-campaigns-sync incident, also referenced in lead-intake block).
+[functions.send-message]
+enabled = true
+verify_jwt = true
+import_map = "./functions/send-message/deno.json"
+entrypoint = "./functions/send-message/index.ts"
+
+# M4_AUTOMATION_ENGINE_SERVER_SIDE Rung 1 (2026-05-03) — server-side port of
+# the browser CrmAutomation.evaluate engine. verify_jwt = true mirrors
+# lead-intake (gateway accepts both authenticated user JWTs and the anon JWT
+# that pg_cron sends via net.http_post). Required to prevent CLI redeploy
+# from defaulting verify_jwt incorrectly (lesson from
+# M4_CAMPAIGNS_V2_METRICS_AND_DATERANGE Rung 2 facebook-campaigns-sync
+# incident, also referenced in lead-intake + send-message blocks).
+[functions.automation-engine]
+enabled = true
+verify_jwt = true
+import_map = "./functions/automation-engine/deno.json"
+entrypoint = "./functions/automation-engine/index.ts"

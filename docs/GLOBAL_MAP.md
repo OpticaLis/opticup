@@ -126,6 +126,38 @@ Changing any Supabase View used by the storefront requires the protocol defined 
 3. Run the storefront safety-net scripts
 4. Verify no runtime regressions
 
+### 4.5 Lead intake — cross-repo POST contract
+
+The storefront's SuperSale form (`/supersale/` CMS page on prizma) POSTs lead
+submissions directly to the `lead-intake` Edge Function. Other shortcode-based
+forms (`/multisale-brands-cat/`, `/premiummultisale/`, `/מיופיה/`) and the
+`LeadFormBlock`/`ContactBlock`/`CtaBlock`/`ContactForm` components remain on
+the legacy `/api/leads/submit` Astro endpoint until their own follow-up SPECs.
+
+**Contract** (P5_7_STOREFRONT_FORM_REWIRE, 2026-05-03 — see SPEC):
+- Endpoint: `POST {SUPABASE_URL}/functions/v1/lead-intake`
+- Auth: legacy-format anon JWT in `Authorization: Bearer …` + `apikey` headers.
+  Same constant inlined in `js/shared.js`,
+  `supabase/functions/lead-intake/dispatch.ts`, and the storefront's
+  `src/lib/shortcodes/lead-form-validation.ts`.
+- Body: `{ tenant_slug, name, phone, email, language?, source?,
+  terms_approved, marketing_consent, eye_exam?, notes?, utm_*? }` — see
+  `supabase/functions/lead-intake/index.ts` for the full validator.
+- Required: `tenant_slug`, `name`, `phone`, `email` (post-v16; v21 adds
+  email-lowercase canonicalization). `eye_exam` must be one of 4 allow-list
+  values; the storefront maps Hebrew shortcode select_options into the
+  allow-list at submit time.
+- Returns: `201` for new lead, `409` for duplicate (T2 fires either way).
+  Both are success paths from the user's POV; the storefront treats both
+  as success.
+
+**Storefront → EF mode wiring:** the `[lead_form]` shortcode uses two
+optional attributes — `submit_url` (presence triggers EF mode) and
+`tenant_slug` — read in `lead-form.ts` and threaded into
+`lead-form-validation.ts:buildScript`. The body transform inside the
+generated script handles tenant_id→tenant_slug, Hebrew→English field
+renames, and checkbox→boolean coercion.
+
 ---
 
 ## 5. ERP Internal Contracts (summary)
@@ -159,7 +191,7 @@ Full parameter/return detail: `modules/Module 3.1 - Project Reconstruction/db-au
 | `pin-auth` | Core | — | PIN authentication — returns JWT + employee |
 | `ocr-extract` | Module 1 (Inventory) | — | Claude Vision OCR for supplier documents |
 | `remove-background` | Module 1 (Inventory) | — | Server-side background removal for product images |
-| `lead-intake` | Module 4 (CRM) | P1, P3c+P4 | Public lead form intake — validate, normalize phone, dedupe by tenant+phone, INSERT `crm_leads`. **[P3c+P4]** Also dispatches SMS+Email via `send-message` on new lead (`lead_intake_new`) and on duplicate (`lead_intake_duplicate`). `verify_jwt: false`. |
+| `lead-intake` | Module 4 (CRM) | P1, P3c+P4, P5_7 | Public lead form intake — validate, normalize phone, dedupe by tenant+phone, INSERT `crm_leads`. **[P3c+P4]** Also dispatches SMS+Email via `send-message` on new lead (`lead_intake_new`), duplicate (`lead_intake_duplicate`), and active-event branch (`event_invite_new` / T5). **[P5_7, v22]** Email is required + lowercased server-side. Storefront SuperSale form posts here directly via the shortcode's EF-mode (P5_7). `verify_jwt: true` (per config.toml; `Authorization: Bearer <legacy anon JWT>` accepted). |
 | `send-message` | Module 4 (CRM) | P3c+P4 | Messaging pipeline — template fetch from `crm_message_templates`, `%var%` substitution, `crm_message_log` write, Make webhook dispatch. Supports template mode and raw-body broadcast mode. `verify_jwt: true`. |
 
 ### 5.3 ERP HTML Pages

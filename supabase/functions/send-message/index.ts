@@ -29,20 +29,34 @@ const MAKE_WEBHOOK_URL =
 
 const DEFAULT_LANGUAGE = "he";
 
-// OVERNIGHT_M4_SCALE_AND_UI Phase 1 — 3-layer phone allowlist (layer 1 of 3).
-// Hardcoded for the overnight scale-test window so runaway blasts during
-// queue/retry tests cannot send real SMS to strangers. Layer 2 is the queue
-// gate in dispatch-queue EF; layer 3 is the CRM UI guard. Remove after P7
-// cutover and replace with a tenant-level test_mode flag.
-const ALLOWED_PHONES = ["0537889878", "0503348349", "0507168471"];
+// C001 (2026-05-03) — phone allowlist moved from hardcoded ALLOWED_PHONES to
+// tenants.test_mode_sms_allowlist (JSONB array of E.164 strings, NULL = production).
+// Fail-closed on lookup error or malformed JSON — never accidentally blast strangers.
 function normalizePhone(p: string): string {
   const d = p.replace(/[\s+\-]/g, "");
   return d.startsWith("972") ? "0" + d.slice(3) : d;
 }
-function phoneAllowed(phone: string | null): boolean {
+async function phoneAllowed(db: any, tenantId: string, phone: string | null): Promise<boolean> {
   if (!phone) return true;
+  const { data: tenant, error } = await db
+    .from("tenants")
+    .select("test_mode_sms_allowlist")
+    .eq("id", tenantId)
+    .maybeSingle();
+  if (error) {
+    console.warn("phoneAllowed: tenant lookup failed; failing CLOSED for safety", error);
+    return false;
+  }
+  const allowlist = tenant?.test_mode_sms_allowlist;
+  if (allowlist == null) return true;  // production mode
+  if (!Array.isArray(allowlist)) {
+    console.warn("phoneAllowed: malformed allowlist on tenant", tenantId);
+    return false;
+  }
   const n = normalizePhone(phone);
-  return ALLOWED_PHONES.some(a => normalizePhone(a) === n);
+  return allowlist.some((a: unknown) =>
+    typeof a === "string" && normalizePhone(a) === n
+  );
 }
 
 const corsHeaders = {
@@ -280,7 +294,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // --- Allowlist gate (layer 1) ---
-  if (channel === "sms" && !phoneAllowed(recipientPhone)) {
+  if (channel === "sms" && !(await phoneAllowed(db, tenantId, recipientPhone))) {
     await db.from("crm_message_log").insert({
       tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
       template_id: templateId, channel, content: finalBody,

@@ -1,0 +1,321 @@
+{
+  "_meta": {
+    "captured_at": "2026-05-02T19:14:00Z",
+    "captured_by": "opticup-executor (Rung 2 PART B §4.6)",
+    "scenario_id": 9126542,
+    "scenario_name": "Facebook Campaigns → Optic Up CRM (PRIZMA)",
+    "team_id": 402680,
+    "folder_id": 499779,
+    "purpose": "Rollback target if Rung 2 PART B blueprint update needs to revert. Restore via mcp__claude_ai_Make__scenarios_update with this exact 'blueprint' object.",
+    "source": "mcp__claude_ai_Make__scenarios_get response (the blueprint key)"
+  },
+  "blueprint": {
+    "flow": [
+      {
+        "id": 1,
+        "mapper": {
+          "limit": "100",
+          "businessId": "106457754847532",
+          "adAccountId": "act_270898661673629"
+        },
+        "module": "facebook-ads-cm:listCampaigns",
+        "version": 1,
+        "metadata": {
+          "expect": [
+            {
+              "name": "businessId",
+              "type": "select",
+              "label": "Business",
+              "required": true
+            },
+            {
+              "name": "adAccountId",
+              "type": "select",
+              "label": "Ad Account",
+              "required": true
+            },
+            {
+              "name": "limit",
+              "type": "uinteger",
+              "label": "Limit"
+            }
+          ],
+          "restore": {
+            "expect": {
+              "businessId": {
+                "label": "Optic By Liscker LTD"
+              },
+              "adAccountId": {
+                "label": "Prizma Optics"
+              }
+            },
+            "parameters": {
+              "__IMTCONN__": {
+                "label": "Facebook ADS (Daniel Lisker)"
+              }
+            }
+          },
+          "designer": {
+            "x": 0,
+            "y": 0
+          },
+          "parameters": [
+            {
+              "name": "__IMTCONN__",
+              "type": "account:facebook,facebook-restricted",
+              "label": "Connection",
+              "required": true
+            }
+          ]
+        },
+        "parameters": {
+          "__IMTCONN__": 13500740
+        }
+      },
+      {
+        "id": 2,
+        "filter": {
+          "name": "Active only",
+          "conditions": [
+            [
+              {
+                "a": "{{1.effective_status}}",
+                "b": "ACTIVE",
+                "o": "text:equal"
+              }
+            ]
+          ]
+        },
+        "mapper": {
+          "type": "campaign",
+          "limit": "500",
+          "fields": [
+            "campaign_id",
+            "spend"
+          ],
+          "business": "106457754847532",
+          "campaign": "{{1.id}}",
+          "adAccount": "act_270898661673629",
+          "date_preset": "lifetime",
+          "specify_date": "date_preset"
+        },
+        "module": "facebook-insights:GetAdAccountInsights",
+        "version": 1,
+        "metadata": {
+          "expect": [
+            {
+              "name": "type",
+              "type": "select",
+              "label": "Type",
+              "required": true
+            },
+            {
+              "name": "business",
+              "type": "select",
+              "label": "Business",
+              "required": true
+            },
+            {
+              "name": "adAccount",
+              "type": "select",
+              "label": "Ad Account",
+              "required": true
+            },
+            {
+              "name": "campaign",
+              "type": "select",
+              "label": "Campaign"
+            },
+            {
+              "name": "specify_date",
+              "type": "select",
+              "label": "Specify Date"
+            },
+            {
+              "name": "date_preset",
+              "type": "select",
+              "label": "Date Preset"
+            },
+            {
+              "name": "fields",
+              "type": "select",
+              "label": "Fields",
+              "multiple": true
+            },
+            {
+              "name": "limit",
+              "type": "uinteger",
+              "label": "Limit"
+            }
+          ],
+          "restore": {
+            "expect": {
+              "type": {
+                "label": "Campaign"
+              },
+              "business": {
+                "label": "Optic By Liscker LTD"
+              },
+              "adAccount": {
+                "label": "Prizma Optics"
+              },
+              "date_preset": {
+                "label": "Lifetime"
+              },
+              "specify_date": {
+                "label": "Date Preset"
+              }
+            },
+            "parameters": {
+              "__IMTCONN__": {
+                "label": "Facebook ADS (Daniel Lisker)"
+              }
+            }
+          },
+          "designer": {
+            "x": 300,
+            "y": 0
+          },
+          "parameters": [
+            {
+              "name": "__IMTCONN__",
+              "type": "account:facebook,facebook-restricted",
+              "label": "Connection",
+              "required": true
+            }
+          ]
+        },
+        "parameters": {
+          "__IMTCONN__": 13500740
+        }
+      },
+      {
+        "id": 3,
+        "mapper": {
+          "ca": null,
+          "qs": [],
+          "url": "https://tsxrrxzmdxaenlvocyit.supabase.co/functions/v1/facebook-campaigns-sync",
+          "body": "",
+          "data": "{\n  \"tenant_slug\": \"prizma\",\n  \"shared_secret\": \"fbsync_f7acdea0442d619eb700e3667c8fb72989d5085666ad6e77a249bedcf34133fc\",\n  \"campaigns\": [\n    {\n      \"campaign_id\": \"{{1.id}}\",\n      \"name\": \"{{1.name}}\",\n      \"status\": \"{{1.effective_status}}\",\n      \"event_type\": \"{{if(contains(1.name; \"SuperSale\"); \"SuperSale\"; if(contains(1.name; \"MultiSale\"); \"MultiSale\"; \"\"))}}\",\n      \"daily_budget\": {{ifempty(parseNumber(1.daily_budget; \".\"); 0) / 100}},\n      \"total_spend\": {{ifempty(parseNumber(2.spend; \".\"); 0)}}\n    }\n  ]\n}",
+          "gzip": false,
+          "method": "post",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "timeout": "",
+          "useMtls": false,
+          "bodyType": "raw",
+          "contentType": "application/json",
+          "shareCookies": false,
+          "parseResponse": true,
+          "followRedirect": true,
+          "useQuerystring": false,
+          "followAllRedirects": false,
+          "rejectUnauthorized": true
+        },
+        "module": "http:ActionSendData",
+        "version": 3,
+        "metadata": {
+          "expect": [
+            {
+              "name": "url",
+              "type": "url",
+              "label": "URL",
+              "required": true
+            },
+            {
+              "name": "method",
+              "type": "select",
+              "label": "Method",
+              "required": true
+            },
+            {
+              "name": "headers",
+              "type": "array",
+              "label": "Headers"
+            },
+            {
+              "name": "qs",
+              "type": "array",
+              "label": "Query String"
+            },
+            {
+              "name": "bodyType",
+              "type": "select",
+              "label": "Body type"
+            },
+            {
+              "name": "data",
+              "type": "buffer",
+              "label": "Request content"
+            },
+            {
+              "name": "parseResponse",
+              "type": "boolean",
+              "label": "Parse response"
+            }
+          ],
+          "restore": {
+            "expect": {
+              "method": {
+                "label": "POST"
+              },
+              "headers": {
+                "mode": "chose",
+                "items": [
+                  null
+                ]
+              },
+              "bodyType": {
+                "label": "Raw"
+              },
+              "contentType": {
+                "label": "JSON (application/json)"
+              }
+            }
+          },
+          "designer": {
+            "x": 600,
+            "y": 0
+          }
+        },
+        "parameters": {
+          "handleErrors": false,
+          "useNewZLibDeCompress": true
+        }
+      }
+    ],
+    "name": "Facebook Campaigns → Optic Up CRM (PRIZMA)",
+    "metadata": {
+      "zone": "eu2.make.com",
+      "notes": [],
+      "instant": false,
+      "version": 1,
+      "designer": {
+        "orphans": []
+      },
+      "scenario": {
+        "dlq": false,
+        "dataloss": false,
+        "maxErrors": 3,
+        "autoCommit": true,
+        "roundtrips": 1,
+        "sequential": false,
+        "confidential": false,
+        "freshVariables": false,
+        "autoCommitTriggerLast": true
+      }
+    },
+    "scheduling": {
+      "type": "indefinitely",
+      "interval": 14400
+    },
+    "interface": {
+      "input": [],
+      "output": []
+    }
+  }
+}
