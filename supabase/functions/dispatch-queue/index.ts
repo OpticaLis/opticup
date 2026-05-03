@@ -14,17 +14,34 @@ const ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeHJyeHptZHhhZW5sdm9jeWl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjIxNzIsImV4cCI6MjA4ODUzODE3Mn0.7Z_lrqHctUqm1offIvZxA17wCI4kRopFWgL1jCDJ9ZU";
 const SEND_MESSAGE_URL = `${SUPABASE_URL}/functions/v1/send-message`;
 
-// Allowlist layer 2 — same list as send-message. Any queue row for a phone
-// not in this list is marked rejected without a send-message call.
-const ALLOWED_PHONES = ["0537889878", "0503348349", "0507168471"];
+// C001 (2026-05-03) — allowlist layer 2 (defense in depth). Same lookup as
+// send-message; mirrors the layer-1 fail-closed semantics. tenants.test_mode_sms_allowlist
+// is the single source of truth for both layers.
 function normalizePhone(p: string): string {
   const d = p.replace(/[\s+\-]/g, "");
   return d.startsWith("972") ? "0" + d.slice(3) : d;
 }
-function phoneAllowed(phone: string | null): boolean {
+async function phoneAllowed(db: any, tenantId: string, phone: string | null): Promise<boolean> {
   if (!phone) return true;
+  const { data: tenant, error } = await db
+    .from("tenants")
+    .select("test_mode_sms_allowlist")
+    .eq("id", tenantId)
+    .maybeSingle();
+  if (error) {
+    console.warn("phoneAllowed: tenant lookup failed; failing CLOSED for safety", error);
+    return false;
+  }
+  const allowlist = tenant?.test_mode_sms_allowlist;
+  if (allowlist == null) return true;
+  if (!Array.isArray(allowlist)) {
+    console.warn("phoneAllowed: malformed allowlist on tenant", tenantId);
+    return false;
+  }
   const n = normalizePhone(phone);
-  return ALLOWED_PHONES.some(a => normalizePhone(a) === n);
+  return allowlist.some((a: unknown) =>
+    typeof a === "string" && normalizePhone(a) === n
+  );
 }
 
 const corsHeaders = {
@@ -108,7 +125,7 @@ Deno.serve(async (req: Request) => {
     // Allowlist layer 2 — fail fast without hitting send-message.
     const variables = (r.variables || {}) as Record<string, unknown>;
     const phone = typeof variables.phone === "string" ? variables.phone : null;
-    if (r.channel === "sms" && !phoneAllowed(phone)) {
+    if (r.channel === "sms" && !(await phoneAllowed(db, r.tenant_id, phone))) {
       await db.from("crm_message_queue")
         .update({ status: "rejected", processed_at: new Date().toISOString(), error_message: "phone_not_allowed: " + phone })
         .eq("id", r.id);

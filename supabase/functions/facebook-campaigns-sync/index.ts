@@ -58,6 +58,10 @@ interface InboundCampaign {
   interests?: string | null;
   total_spend?: number | string | null;
   raw_data?: Record<string, unknown> | null;
+  // v2 additions (M4_CAMPAIGNS_V2_METRICS_AND_DATERANGE Rung 2)
+  start_time?: string | null;            // ISO timestamptz from Facebook listCampaigns
+  impressions?: number | string | null;  // daily impressions from Insights API
+  clicks?: number | string | null;       // daily clicks from Insights API
 }
 
 Deno.serve(async (req: Request) => {
@@ -131,7 +135,7 @@ Deno.serve(async (req: Request) => {
       .eq("campaign_id", campaignId)
       .maybeSingle();
 
-    const metaRow = {
+    const metaRow: Record<string, unknown> = {
       tenant_id: tenantId,
       campaign_id: campaignId,
       name: trimOrNull(c.name) || campaignId,
@@ -144,6 +148,11 @@ Deno.serve(async (req: Request) => {
       last_synced_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
+    // v2: only set start_time when inbound provides it; absence preserves
+    // any previously-saved value on UPDATE and stays NULL on INSERT.
+    if (c.start_time) {
+      metaRow.start_time = new Date(c.start_time).toISOString();
+    }
 
     if (existingMeta) {
       const { error } = await db
@@ -181,6 +190,8 @@ Deno.serve(async (req: Request) => {
       campaign_id: campaignId,
       spend_date: today,
       total_spend: numOrZero(c.total_spend),
+      impressions: Math.round(numOrZero(c.impressions)),
+      clicks: Math.round(numOrZero(c.clicks)),
       updated_at: new Date().toISOString(),
     };
 

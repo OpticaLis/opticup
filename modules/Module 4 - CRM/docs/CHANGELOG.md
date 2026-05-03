@@ -2,6 +2,26 @@
 
 ---
 
+## M4_LEAD_EYE_EXAM_DEFAULT — Lead-level eye-exam column + UI wiring (2026-05-02 → 2026-05-03) ✅
+
+| Hash | Message |
+|------|---------|
+| `c438c75` | `feat(crm): M4 Rung 1 — add crm_leads.eye_exam_default + lead-intake EF structured write` |
+| `6cfa61b` | `fix(crm): M4 Rung 2 — expose eye_exam_default through v_crm_leads_with_tags + read from column in lead detail` |
+| _(this commit)_ | `docs(crm): M4_LEAD_EYE_EXAM_DEFAULT — close-out doc updates` |
+
+**Rung 1 (2026-05-02).** Added `crm_leads.eye_exam_default TEXT NULL` and rewired the `lead-intake` Edge Function to write the eye-exam preference as a structured field instead of concatenating it into `client_notes`. EF now validates against a 4-string canonical Hebrew allow-list (`לא, אין צורך בבדיקה` / `כן, בדיקה רגילה` / `כן, בדיקת מולטיפוקל` / `יש לי כבר מרשם עדכני`) and rejects unknown values with HTTP 400 `INVALID_EYE_EXAM_DEFAULT`. `[functions.lead-intake]` block added to `supabase/config.toml` to lock `verify_jwt = true` against accidental CLI redeploy drift. EF deployed to prizma as version 20.
+
+**Rung 2 (2026-05-03).** Closed the latent UI bug logged as Rung 1 FINDING #2: the lead-detail card never rendered the eye-exam value because the code parsed `client_notes` as JSON, which the EF never wrote. Two-layer fix authorized as Option A1: (1) `CREATE OR REPLACE VIEW v_crm_leads_with_tags` adding `l.eye_exam_default` at the end of the SELECT list (Postgres `42P16` blocks mid-list insertion); (2) added `eye_exam_default` to the explicit column list in `loadLeads()` (`crm-leads-tab.js:69`); (3) replaced the JSON.parse path in `crm-leads-detail.js:204-205` with a direct `lead.eye_exam_default` read.
+
+**Migrations applied to prizma:**
+- `2026_05_03_lead_eye_exam_default_01_schema.sql` — `ALTER TABLE crm_leads ADD COLUMN eye_exam_default TEXT NULL` + `COMMENT ON COLUMN`.
+- `2026_05_03_lead_eye_exam_default_02_view.sql` — `CREATE OR REPLACE VIEW v_crm_leads_with_tags` with `l.eye_exam_default` appended.
+
+**Open follow-up:** FIELD_MAP entry in `js/shared.js` for `eye_exam_default` (Rule 5) deferred — see SPEC FINDINGS #3 + #9. To be covered by a small CRM-hygiene SPEC.
+
+---
+
 ## PRE_CUTOVER_FINAL_FIXES — Q2 (attendee-add filter) + Q3 (refunds-banner mode) (2026-05-02) ✅
 
 | Hash | Message |

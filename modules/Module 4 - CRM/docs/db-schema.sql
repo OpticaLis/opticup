@@ -69,3 +69,29 @@ CREATE INDEX idx_crm_attendees_credit_pending
 
 -- End of payment-lifecycle additions. Full Module 4 schema reconstruction
 -- pending Integration Ceremony.
+
+-- =============================================================================
+-- crm_leads.eye_exam_default — lead-level eye-exam preference (added 2026-05-03)
+-- =============================================================================
+-- Stores the lead's preferred eye-exam option captured at intake. Distinct from
+-- crm_event_attendees.eye_exam_needed (per-event override). Body field name in
+-- the lead-intake EF is `eye_exam` (mapped here). 4 canonical Hebrew options:
+--   לא, אין צורך בבדיקה
+--   כן, בדיקה רגילה
+--   כן, בדיקת מולטיפוקל
+--   יש לי כבר מרשם עדכני
+-- NULL = lead created without specifying. EF rejects unknown values with HTTP
+-- 400 INVALID_EYE_EXAM_DEFAULT. SPEC: M4_LEAD_EYE_EXAM_DEFAULT (Rung 1).
+
+ALTER TABLE crm_leads
+  ADD COLUMN eye_exam_default TEXT NULL;
+
+-- =============================================================================
+-- v_crm_leads_with_tags — view recreated 2026-05-03 (Rung 2)
+-- =============================================================================
+-- Recreated to expose crm_leads.eye_exam_default so the CRM lead-detail card
+-- can read it from the in-memory cache populated by loadLeads(). Column
+-- appended at the end of the SELECT list (after tag_colors) — Postgres
+-- CREATE OR REPLACE VIEW cannot insert columns mid-list (42P16). Functionally
+-- equivalent for callers (JS selects by name).
+-- Full definition in migrations/2026_05_03_lead_eye_exam_default_02_view.sql.
