@@ -50,17 +50,24 @@
         return [];
       }
       var statusList = hasFilter ? cfg.recipient_status_filter : tier2;
-      var lRes = await sb.from('crm_leads').select('id, full_name, phone, email')
-        .eq('tenant_id', tenantId).eq('is_deleted', false).is('unsubscribed_at', null)
-        .in('status', statusList);
-      if (lRes.error) throw new Error('recipients tier2: ' + lRes.error.message);
-      var leads = lRes.data || [];
+      var leads;
+      try {
+        leads = await paginateQuery(
+          sb.from('crm_leads').select('id, full_name, phone, email')
+            .eq('tenant_id', tenantId).eq('is_deleted', false).is('unsubscribed_at', null)
+            .in('status', statusList)
+        );
+      } catch (e) { throw new Error('recipients tier2: ' + e.message); }
       if (recipientType === 'tier2_excl_registered' && eventId) {
-        var xRes = await sb.from('crm_event_attendees').select('lead_id')
-          .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false);
-        if (xRes.error) throw new Error('recipients exclude: ' + xRes.error.message);
+        var excludeRows;
+        try {
+          excludeRows = await paginateQuery(
+            sb.from('crm_event_attendees').select('lead_id')
+              .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false)
+          );
+        } catch (e) { throw new Error('recipients exclude: ' + e.message); }
         var excluded = {};
-        (xRes.data || []).forEach(function (r) { if (r.lead_id) excluded[r.lead_id] = true; });
+        excludeRows.forEach(function (r) { if (r.lead_id) excluded[r.lead_id] = true; });
         leads = leads.filter(function (l) { return !excluded[l.id]; });
       }
       return leads;
@@ -76,9 +83,10 @@
         .select('crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
         .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false);
       if (attStatus) q = q.in('status', attStatus);
-      var aRes = await q;
-      if (aRes.error) throw new Error('recipients attendees: ' + aRes.error.message);
-      return (aRes.data || [])
+      var aRows;
+      try { aRows = await paginateQuery(q); }
+      catch (e) { throw new Error('recipients attendees: ' + e.message); }
+      return aRows
         .map(function (r) { return r.crm_leads; })
         .filter(function (l) { return l && !l.unsubscribed_at && !l.is_deleted; });
     }
@@ -91,12 +99,16 @@
       // cancels, the existing cancel flow flips coupon_sent back to false +
       // returns the coupon to the pool, so this filter is robust on its own.
       if (!eventId) return [];
-      var cRes = await sb.from('crm_event_attendees')
-        .select('status, coupon_sent, crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
-        .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false)
-        .eq('coupon_sent', true).neq('status', 'cancelled');
-      if (cRes.error) throw new Error('recipients attendees_with_active_coupon: ' + cRes.error.message);
-      return (cRes.data || [])
+      var cRows;
+      try {
+        cRows = await paginateQuery(
+          sb.from('crm_event_attendees')
+            .select('status, coupon_sent, crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
+            .eq('tenant_id', tenantId).eq('event_id', eventId).eq('is_deleted', false)
+            .eq('coupon_sent', true).neq('status', 'cancelled')
+        );
+      } catch (e) { throw new Error('recipients attendees_with_active_coupon: ' + e.message); }
+      return cRows
         .map(function (r) { return r.crm_leads; })
         .filter(function (l) { return l && !l.unsubscribed_at && !l.is_deleted; });
     }
@@ -106,20 +118,28 @@
       // newly-opened parallel event. Filters: attendee status 'waiting_list' or
       // 'invited' on a different event whose own status is
       // registration_open / waiting_list (canonical crm_statuses.event slugs).
-      var attRes = await sb.from('crm_event_attendees')
-        .select('event_id, lead_id, status, crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
-        .eq('tenant_id', tenantId)
-        .in('status', ['waiting_list', 'invited'])
-        .eq('is_deleted', false);
-      if (attRes.error) throw new Error('recipients cross_event: ' + attRes.error.message);
-      var rows = (attRes.data || []).filter(function (r) { return r.event_id !== eventId; });
+      var attRows;
+      try {
+        attRows = await paginateQuery(
+          sb.from('crm_event_attendees')
+            .select('event_id, lead_id, status, crm_leads(id, full_name, phone, email, unsubscribed_at, is_deleted)')
+            .eq('tenant_id', tenantId)
+            .in('status', ['waiting_list', 'invited'])
+            .eq('is_deleted', false)
+        );
+      } catch (e) { throw new Error('recipients cross_event: ' + e.message); }
+      var rows = attRows.filter(function (r) { return r.event_id !== eventId; });
       if (!rows.length) return [];
       var otherEventIds = Array.from(new Set(rows.map(function (r) { return r.event_id; })));
-      var evRes = await sb.from('crm_events').select('id, status, is_deleted')
-        .eq('tenant_id', tenantId).in('id', otherEventIds);
-      if (evRes.error) throw new Error('recipients cross_event events: ' + evRes.error.message);
+      var evRows;
+      try {
+        evRows = await paginateQuery(
+          sb.from('crm_events').select('id, status, is_deleted')
+            .eq('tenant_id', tenantId).in('id', otherEventIds)
+        );
+      } catch (e) { throw new Error('recipients cross_event events: ' + e.message); }
       var activeEvents = {};
-      (evRes.data || []).forEach(function (e) {
+      evRows.forEach(function (e) {
         if (!e.is_deleted && (e.status === 'registration_open' || e.status === 'waiting_list')) {
           activeEvents[e.id] = true;
         }

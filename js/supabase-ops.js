@@ -30,34 +30,44 @@ function enrichRow(row) {
   };
 }
 
-// --- Supabase-backed fetchAll ---
-async function fetchAll(tableName, filters) {
-  const PAGE = 1000;
+// --- Pagination engine (Iron Rule 21: single source of pagination) ---
+// Wraps a Supabase PostgREST query builder with .range() pagination so any
+// "select all" query can transparently exceed the PostgREST 1000-row cap.
+// Caller passes a fully-configured builder (table + select + filters); we
+// only set .range() per page and accumulate. Errors throw with the original
+// PostgREST message. Stops when a page returns fewer than pageSize rows.
+async function paginateQuery(queryBuilder, pageSize) {
+  pageSize = pageSize || 1000;
   let all = [], from = 0;
   while (true) {
-    const tid = getTenantId();
-    let query = sb.from(tableName).select(tableName === 'inventory' ? '*, inventory_images(*)' : '*');
-    if (tid) query = query.eq('tenant_id', tid);
-    if (filters) {
-      for (const [col, op, val] of filters) {
-        if (op === 'eq') query = query.eq(col, val);
-        else if (op === 'in') query = query.in(col, val);
-        else if (op === 'ilike') query = query.ilike(col, val);
-        else if (op === 'neq') query = query.neq(col, val);
-        else if (op === 'gt') query = query.gt(col, val);
-        else if (op === 'gte') query = query.gte(col, val);
-        else if (op === 'lt') query = query.lt(col, val);
-        else if (op === 'lte') query = query.lte(col, val);
-      }
-    }
-    query = query.range(from, from + PAGE - 1);
-    const { data, error } = await query;
+    const { data, error } = await queryBuilder.range(from, from + pageSize - 1);
     if (error) throw new Error(error.message);
-    if (!data?.length) break;
+    if (!data || !data.length) break;
     all.push(...data);
-    if (data.length < PAGE) break;
-    from += PAGE;
+    if (data.length < pageSize) break;
+    from += pageSize;
   }
+  return all;
+}
+
+// --- Supabase-backed fetchAll ---
+async function fetchAll(tableName, filters) {
+  const tid = getTenantId();
+  let query = sb.from(tableName).select(tableName === 'inventory' ? '*, inventory_images(*)' : '*');
+  if (tid) query = query.eq('tenant_id', tid);
+  if (filters) {
+    for (const [col, op, val] of filters) {
+      if (op === 'eq') query = query.eq(col, val);
+      else if (op === 'in') query = query.in(col, val);
+      else if (op === 'ilike') query = query.ilike(col, val);
+      else if (op === 'neq') query = query.neq(col, val);
+      else if (op === 'gt') query = query.gt(col, val);
+      else if (op === 'gte') query = query.gte(col, val);
+      else if (op === 'lt') query = query.lt(col, val);
+      else if (op === 'lte') query = query.lte(col, val);
+    }
+  }
+  const all = await paginateQuery(query);
   return all.map(enrichRow);
 }
 
