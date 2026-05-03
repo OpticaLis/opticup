@@ -104,7 +104,7 @@
 
   function applyIncomingFilters() {
     var incomingSearch = (document.getElementById('crm-incoming-search') || {}).value || '';
-    var q = incomingSearch.trim().toLowerCase();
+    var q = incomingSearch.trim().toLowerCase(), sNorm = (window.CrmHelpers && CrmHelpers.normalizePhone) ? CrmHelpers.normalizePhone(q) : '';
 
     var tier1Statuses = (typeof TIER1_STATUSES !== 'undefined') ? TIER1_STATUSES : [];
     var state = window.CrmLeadFilters ? CrmLeadFilters.getState('incoming') : { statuses: [], fromDate: '', toDate: '', noResp48: false, source: '', language: '' };
@@ -117,7 +117,7 @@
       var leadName = (r.full_name || '').toLowerCase();
       var leadPhone = (r.phone || '').toLowerCase();
       var leadEmail = (r.email || '').toLowerCase();
-      return leadName.indexOf(q) !== -1 || leadPhone.indexOf(q) !== -1 || leadEmail.indexOf(q) !== -1;
+      return leadName.indexOf(q) !== -1 || leadPhone.indexOf(q) !== -1 || (sNorm && leadPhone.indexOf(sNorm) !== -1) || leadEmail.indexOf(q) !== -1;
     });
 
     renderIncomingChips(incomingSearch, state);
