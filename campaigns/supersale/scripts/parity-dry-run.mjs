@@ -24,16 +24,41 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..', '..', '..');
-const EXPORTS = path.join(ROOT, 'campaigns', 'supersale', 'exports');
+const DEFAULT_EXPORTS = path.join(ROOT, 'campaigns', 'supersale', 'exports');
 
 // ---- args ----
 const argv = process.argv.slice(2);
 let sampleSize = 5;
+let sourceDir = null;
+let tenantIdArg = null; // accepted for symmetry with importer; not used by parity
 for (let i = 0; i < argv.length; i++) {
   if (argv[i] === '--sample' && argv[i + 1]) {
     const n = parseInt(argv[i + 1], 10);
     if (Number.isFinite(n) && n > 0) sampleSize = n;
   }
+  if (argv[i] === '--source-dir' && argv[i + 1]) {
+    sourceDir = argv[i + 1];
+  }
+  if (argv[i] === '--tenant-id' && argv[i + 1]) {
+    tenantIdArg = argv[i + 1];
+  }
+}
+const EXPORTS = sourceDir ? path.resolve(sourceDir) : DEFAULT_EXPORTS;
+
+// When --source-dir is provided, the timestamp suffix in filenames may differ.
+// Resolve a SPEC entry's `file` to whatever export currently matches its prefix.
+function resolveFile(declaredFile) {
+  // declaredFile examples: "Tier_2_Master_Board_1776697136.xlsx"
+  // We strip the trailing _<digits>.xlsx and search the dir for any file whose
+  // base starts with the same prefix and ends with .xlsx.
+  const m = declaredFile.match(/^(.+?)_\d+\.xlsx$/);
+  const prefix = m ? m[1] + '_' : declaredFile.replace(/\.xlsx$/, '_');
+  if (!fs.existsSync(EXPORTS)) return null;
+  const all = fs.readdirSync(EXPORTS);
+  const exact = all.find((f) => f === declaredFile);
+  if (exact) return exact;
+  const match = all.find((f) => f.startsWith(prefix) && f.endsWith('.xlsx'));
+  return match || null;
 }
 
 // ---- mapping spec (mirror of MONDAY_TO_OPTIC_UP_PARITY.md tables) ----
@@ -147,12 +172,12 @@ const SPEC = {
   },
 };
 
-function readSheet(fileName) {
+function parityReadSheet(fileName) {
   const wb = XLSX.readFile(path.join(EXPORTS, fileName), { cellDates: true });
   return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: null, raw: true });
 }
 
-function nonNullCount(row) {
+function parityNonNullCount(row) {
   return row.filter((c) => c !== null && c !== '').length;
 }
 
@@ -165,17 +190,21 @@ function previewVal(v) {
 }
 
 function checkEntity(name, def) {
-  const filePath = path.join(EXPORTS, def.file);
-  if (!fs.existsSync(filePath)) {
-    return { name, status: 'SKIP', reason: 'Export file not found', mapped: 0, ignored: 0, gaps: [] };
+  const resolved = resolveFile(def.file);
+  if (!resolved) {
+    return { name, status: 'SKIP', reason: `Export file not found (looked for ${def.file} or matching prefix in ${EXPORTS})`, mapped: 0, ignored: 0, gaps: [] };
   }
-  const rows = readSheet(def.file);
+  const filePath = path.join(EXPORTS, resolved);
+  if (resolved !== def.file) {
+    console.log(`  (${name}: resolved ${def.file} → ${resolved})`);
+  }
+  const rows = parityReadSheet(resolved);
   const dataRows = [];
   // first non-header data row starts at headerRow + 1
   for (let i = def.headerRow + 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r) continue;
-    if (nonNullCount(r) <= 1) continue;
+    if (parityNonNullCount(r) <= 1) continue;
     if (r[0] === 'שם מלא' || r[0] === 'שמך המלא' || r[0] === 'טלפון') continue; // header re-emission
     dataRows.push({ i, r });
     if (dataRows.length >= sampleSize) break;
@@ -214,7 +243,7 @@ function checkEntity(name, def) {
   return { name, status: gaps.length === 0 ? 'PASS' : 'FAIL', mapped, fkOnly, ignored, gaps };
 }
 
-function main() {
+function parityMain() {
   console.log(`Monday → Optic Up parity dry-run (sample=${sampleSize}/entity)`);
   console.log(`Exports: ${EXPORTS}`);
   const results = [];
@@ -233,4 +262,4 @@ function main() {
   process.exit(totalGaps === 0 ? 0 : 1);
 }
 
-main();
+parityMain();

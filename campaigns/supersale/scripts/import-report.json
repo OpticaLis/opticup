@@ -1,14 +1,16 @@
 {
-  "generated_at": "2026-04-20T15:53:57.539Z",
+  "generated_at": "2026-05-03T11:04:40.450Z",
+  "source_dir": "C:\\Users\\User\\opticup\\modules\\Module 4 - CRM\\go-live\\monday-exports-2026-05-03",
+  "tenant_id": "6ad0781b-37f0-47a9-92e3-be9ed1477e1c",
   "counts": {
-    "events": 11,
-    "leads": 893,
-    "affiliates_enrich": 833,
-    "lead_notes": 695,
-    "attendees": 191,
+    "events": 3,
+    "events_multisale_dropped": 8,
+    "leads": 1121,
+    "stub_leads": 37,
+    "attendees": 221,
+    "attendees_multisale_dropped": 54,
+    "synth_message_log": 156,
     "ad_spend": 88,
-    "ad_spend_utm_matches": 12,
-    "cx_surveys": 11,
-    "skipped": 38
+    "skipped": 36
   }
 }
