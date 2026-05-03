@@ -443,3 +443,14 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/automation-engine/deno.json"
 entrypoint = "./functions/automation-engine/index.ts"
+
+# WHATSAPP_CATALOG_FLOW_EF (2026-05-03) — Make scenario 8464122 calls this EF
+# to look up a lead by phone (op=lookup) and to mark catalog as sent
+# (op=mark_sent). verify_jwt = true mirrors lead-intake (gateway accepts the
+# anon JWT that Make's HTTP module sends as Authorization). Required to
+# prevent CLI redeploy from defaulting verify_jwt incorrectly.
+[functions.whatsapp-catalog-flow]
+enabled = true
+verify_jwt = true
+import_map = "./functions/whatsapp-catalog-flow/deno.json"
+entrypoint = "./functions/whatsapp-catalog-flow/index.ts"
