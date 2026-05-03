@@ -206,11 +206,10 @@
         .in('event_id', state.events)
         .eq('is_deleted', false);
       if (tid) att = att.eq('tenant_id', tid);
-      var r = await att;
-      if (r.error) throw new Error(r.error.message);
+      var attRows = await paginateQuery(att);
       var ids = [];
       var seen = {};
-      (r.data || []).forEach(function (x) {
+      attRows.forEach(function (x) {
         if (x.lead_id && !seen[x.lead_id]) { seen[x.lead_id] = 1; ids.push(x.lead_id); }
       });
       if (!ids.length) return [];
@@ -225,9 +224,7 @@
     if (state.language) q = q.eq('language', state.language);
     if (state.source)   q = q.eq('source', state.source);
 
-    var res = await q;
-    if (res.error) throw new Error(res.error.message);
-    return res.data || [];
+    return await paginateQuery(q);
   }
 
   async function buildLeadIds(state) {

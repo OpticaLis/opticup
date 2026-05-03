@@ -293,8 +293,9 @@
     var tid = getTenantId(), emp = (typeof getCurrentEmployee === 'function') ? getCurrentEmployee() : null;
     if (!emp || !emp.id) { CrmHelpers.toast('error', 'משתמש לא מזוהה'); return; }
     try {
-      var leadsRes = await sb.from('crm_leads').select('id, full_name, phone, email').eq('tenant_id', tid).in('id', leadIds);
-      if (leadsRes.error) throw new Error(leadsRes.error.message); var leadRows = leadsRes.data || [];
+      var leadRows = await paginateQuery(
+        sb.from('crm_leads').select('id, full_name, phone, email').eq('tenant_id', tid).in('id', leadIds)
+      );
       var ins = await sb.from('crm_broadcasts').insert({
         tenant_id: tid, employee_id: emp.id, name: _wizard.name, channel: _wizard.channel, template_id: _wizard.templateId || null,
         filter_criteria: {
