@@ -430,3 +430,16 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/send-message/deno.json"
 entrypoint = "./functions/send-message/index.ts"
+
+# M4_AUTOMATION_ENGINE_SERVER_SIDE Rung 1 (2026-05-03) — server-side port of
+# the browser CrmAutomation.evaluate engine. verify_jwt = true mirrors
+# lead-intake (gateway accepts both authenticated user JWTs and the anon JWT
+# that pg_cron sends via net.http_post). Required to prevent CLI redeploy
+# from defaulting verify_jwt incorrectly (lesson from
+# M4_CAMPAIGNS_V2_METRICS_AND_DATERANGE Rung 2 facebook-campaigns-sync
+# incident, also referenced in lead-intake + send-message blocks).
+[functions.automation-engine]
+enabled = true
+verify_jwt = true
+import_map = "./functions/automation-engine/deno.json"
+entrypoint = "./functions/automation-engine/index.ts"
