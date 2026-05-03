@@ -420,3 +420,13 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/lead-intake/deno.json"
 entrypoint = "./functions/lead-intake/index.ts"
+
+# C001 (2026-05-03) — send-message verify_jwt = true. Block was missing pre-C001;
+# the EF defaulted in via CLI. Adding the explicit block prevents CLI redeploy
+# from defaulting verify_jwt incorrectly (lesson from M4_CAMPAIGNS_V2_METRICS_AND_DATERANGE
+# Rung 2 facebook-campaigns-sync incident, also referenced in lead-intake block).
+[functions.send-message]
+enabled = true
+verify_jwt = true
+import_map = "./functions/send-message/deno.json"
+entrypoint = "./functions/send-message/index.ts"
