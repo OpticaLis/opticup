@@ -3,19 +3,16 @@
 > **Purpose:** the live state file the Campaign Overseer reads at session start and updates after every meaningful action.
 > **Update discipline:** state-as-you-go. Replace, don't append. Cleanup when ≥150 lines.
 > **Authority:** lower than `CAMPAIGN_OVERSEER_SKILL.md` (the constitution). If they conflict, skill wins.
-> **Last meaningful update:** 2026-05-04 late night — QUICK_REGISTER_QR_FLOW Rung 1 + Hotfix #1 + #2 + #3 all CLOSED + verified on demo. Rung 2 (lookup_url op) verified live. Rung 3 (Make scenario branch update) PARTIALLY done — HTTP module replaced + Save works + headers correct + tenant_slug=demo, but the `event_number` regex extraction is still failing. Need a fresh session to nail the regex syntax + finish wiring the Green-API caption + URL.
+> **Last meaningful update:** 2026-05-04 late evening — **QUICK_REGISTER_QR_FLOW ✅ FULLY CLOSED.** All 3 Rungs + 3 Hotfixes shipped + smoke-test passed end-to-end on demo. EXECUTION_REPORT + FINDINGS written. New REC-009 (delete-empty-event button) opened, awaiting SPEC authoring next in this session per Daniel directive.
 
-**Pause point for Rung 3 — what's working and what's not (verified by Daniel via Run-once tests in Make):**
-- HTTP module created in scenario 8464122 quick-register branch ✅
-- URL: `https://tsxrrxzmdxaenlvocyit.supabase.co/functions/v1/quick-register` ✅
-- Method: POST ✅
-- Headers (Content-Type, apikey, Authorization Bearer) — all correct, Supabase responds 200 ✅
-- Body content type: JSON, input: JSON string ✅
-- With hardcoded `"event_number": "14"` → EF returns 200 + correct payload (url, event_name, event_date_he) ✅
-- With regex extraction → fails. Tried `/[^0-9]+/g` (unsupported in Make), tried `[^0-9]+` (also failed — Make injected the full Hebrew text). Need a different approach.
-- Green-API module (caption + URL) NOT YET updated — still references `36.mappable_column_values.*` (Monday columns).
+**Rung 3 closure note (Make scenario 8464122):** branch `"ברקוד רישום לאירוע - רישום מהיר"` updated successfully via **manual Make UI** (not Make MCP — see FINDINGS.md F3 for tooling constraint). 3 surgical edits applied:
+- Module 213 (HTTP) `event_number` body field → `{{trim(replace(replace(ifempty(1.messageData.textMessageData.textMessage; 1.messageData.extendedTextMessageData.text); "רישום מהיר אירוע"; ""); " "; ""))}}` (pattern-free nested replace; the `/g` flag approach failed in Make's regex parser)
+- Module 40 (Green-API SendFileByURL) caption → `ברקוד רישום לאירוע {{213.data.event_name}}`
+- Module 40 URL → `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{encodeURL(213.data.url)}}`
 
-**Resume path for next session:** new prompt below — fix the regex (use Make's `numbers()` filter, or hardcode-then-replace approach), then update Green-API.
+Module 36 (Monday legacy) intentionally left dangling for now — separate cleanup pass.
+
+**Smoke test result:** WhatsApp `רישום מהיר אירוע 14` → QR within 10s → scan → `/quick-register/?event=14&tenant=demo` → form submit → lead + attendee created on demo + coupon delivery dispatched. Single tenant-resolution caveat noted (F2): storefront defaults to `tenantSlug='prizma'`; for demo testing the URL needs `&tenant=demo` appended. By design until F1+F2 cleanup SPEC.
 
 ---
 
@@ -70,8 +67,11 @@
 **Open follow-ups (M4 closure path, after 2026-05-04 audit):**
 - Realtime post-cutover investigation (tech debt — REC-014/015 evidence preserved)
 - 8 MultiSale archive events import (REC-005 — needs `event_type` schema add first)
-- WhatsApp QR registration flow (note: `whatsapp-catalog-flow` EF exists at v1; QR-registration is a different concept — needs Daniel clarification)
+- ~~WhatsApp QR registration flow~~ ✅ CLOSED 2026-05-04 evening (`QUICK_REGISTER_QR_FLOW` SPEC + 3 hotfixes shipped, end-to-end smoke test passed on demo)
 - Campaign metrics UI (new feature, 0 references in CRM today)
+- **NEW: Multi-tenant URL strategy for quick-register EF** (FINDINGS F1+F2 — `STOREFRONT_URL` hardcoded + storefront `tenantSlug` defaults `prizma`. Single-tenant safe; promote to `tenants.config` when tenant 2 onboards.)
+- **NEW: Module 36 (Monday legacy) cleanup in scenario 8464122** (FINDINGS F4 — dangling, cosmetic, ~2 min UI work)
+- **NEW: Delete-empty-event button** (REC-009, agreed verbally 2026-05-04, SPEC being authored in same session)
 
 **By-design (NOT a follow-up, captured here so future Overseer sessions don't re-flag):**
 - Email duplication on `crm_leads` is allowed by Daniel directive 2026-05-04 (REC-008). Couples + parents-registering-children share emails; only phone is unique. Do not propose dedup SPECs targeting email field.
@@ -206,13 +206,9 @@ EN+RU versions of campaign pages are soft-deleted in `storefront_pages` — camp
 
 ## 3. Open Recommendations Queue
 
-(awaiting Daniel's verbal decision)
+(awaiting Daniel's verbal decision OR SPEC authoring)
 
-(none yet — first recommendations will land after first deep-read session)
-
-When entries arrive, format:
-- `REC-001 — {title} — submitted YYYY-MM-DD — awaiting decision`
-- `REC-002 — {title} — submitted YYYY-MM-DD — awaiting decision`
+- `REC-009 — Delete-empty-event button (purchase_amount=0 condition) — submitted 2026-05-04 — agreed verbally, SPEC authoring NEXT in this session per Daniel directive`
 
 The full recommendation lives in `DECISIONS_LOG.md`; this section is just a pointer.
 

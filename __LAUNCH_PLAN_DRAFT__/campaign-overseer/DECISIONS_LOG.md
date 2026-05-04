@@ -27,12 +27,12 @@
 
 ## Stats summary (auto-recalculate on every update)
 
-- **Total recommendations submitted:** 8
-- **Total decided:** 8 (agree: 4 / disagree: 4 / partial: 0)
+- **Total recommendations submitted:** 9
+- **Total decided:** 9 (agree: 5 / disagree: 4 / partial: 0)
 - **Total applied:** 0
-- **Rolling 30-rec acceptance rate:** N/A (need ≥10 decided to begin reporting; current = 4/8 = 50%)
+- **Rolling 30-rec acceptance rate:** N/A (need ≥10 decided to begin reporting; current = 5/9 = 56%)
 - **Mode:** RECOMMEND-ONLY (v1)
-- **Status toward graduation:** baseline collection — 8 of 30 decisions in. Pattern emerging across REC-002, REC-005, REC-006, REC-008: when the Overseer recommends action on apparent data anomalies, Daniel pushes back when the "anomaly" is actually legitimate real-world behavior the business depends on. The Overseer (me) over-indexes on schema-level signals (counts, uniqueness violations, "stale" labels) without first checking whether the customer-facing flow that produces the data is intentional.
+- **Status toward graduation:** baseline collection — 9 of 30 decisions in. Pattern emerging across REC-002, REC-005, REC-006, REC-008: when the Overseer recommends action on apparent data anomalies, Daniel pushes back when the "anomaly" is actually legitimate real-world behavior the business depends on. The Overseer (me) over-indexes on schema-level signals (counts, uniqueness violations, "stale" labels) without first checking whether the customer-facing flow that produces the data is intentional. **REC-009 is a counter-trend** — Daniel proactively requested the capability as a feature, no anomaly framing needed.
 
 ---
 
@@ -144,6 +144,22 @@
 - **Outcome (v2 gate input):** N/A — decision was "do nothing", no measurement needed.
 
 **Overseer self-note:** I had verified the data shape (8 emails / 16 leads / 4 patterns) before recommending, which was correct per L-001. But I framed all 16 rows as "candidates for cleanup" by default, instead of asking Daniel first whether multi-person email is even an anomaly to him. This is the same pattern as REC-002 ("drop questionnaire data"), REC-005 ("drop MultiSale events"), and REC-006 ("drop lead-level eye-exam answers") — over-indexing on data-shape anomalies without checking the live business context. Lesson: when a data shape looks like a violation, ask "does the business want this preserved?" BEFORE proposing a cleanup.
+
+## REC-009 — Add "delete event" UI when there are no purchases (`SUM(purchase_amount) = 0`)
+- **Date submitted:** 2026-05-04 (evening, post-QUICK_REGISTER_QR_FLOW closure)
+- **Source signal:** Daniel directive at the close of the quick-register flow smoke test: "תוסיף אפשרות למחוק אירוע במידה ולא היו בו רשומים שהגיעו וקנו (שהסכום קניה הוא 0)" — i.e., he wants to be able to clean up QA events + cancelled events without leaving them as `is_deleted=false` orphans cluttering the events list. Tied to B6 (event numbering reset to baseline 1) — without this UI, every QA cycle adds inflation to the next available event_number.
+- **Problem:** today there is no UI for soft-deleting an `crm_events` row. Operators (Daniel) edit `is_deleted=true` via SQL when they want to clean up. This is fragile (no atomicity check, no cascade to attendees + queued messages, no protection against accidentally deleting events that DID drive revenue).
+- **Proposal:** add a "Delete event" button to the event detail screen. Behavior:
+  - On click: query `SELECT SUM(COALESCE(purchase_amount, 0)) FROM crm_event_attendees WHERE event_id = $1 AND is_deleted = false` for the event.
+  - If sum > 0 → modal: "אי אפשר למחוק — האירוע כולל רכישות בסך X ₪. ניתן למחוק רק אירוע ריק."
+  - If sum = 0 → confirm modal: "המחיקה תמחק את האירוע ואת N הרשומים אליו (לא בוצעו רכישות). להמשיך?"
+  - On confirm → call new RPC `soft_delete_event_if_empty` that does atomically (within a single transaction with `SELECT FOR UPDATE` lock on the event row): re-check `SUM(purchase_amount) = 0`, soft-delete event, soft-delete attendees, cancel pending entries in `crm_message_queue` for the event.
+- **Predicted impact:** Daniel can clean up QA events + truly-empty events from the events list. Sets the foundation for B6 baseline-at-1 numbering reset. Minor risk if `purchase_amount` is updated between check and delete (mitigated by `FOR UPDATE` lock).
+- **How to measure:** post-deploy, count of `is_deleted=true` events on prizma rises as Daniel cleans up; no events with `SUM(purchase_amount) > 0` ever get deleted (RPC enforces).
+- **Daniel decision:** **agree** — verbal directive given 2026-05-04 evening; this is condition (a) only ("`purchase_amount=0` is the gate"; testing leads who registered but didn't buy are NOT a blocker, by design).
+- **Decided on:** 2026-05-04
+- **Applied:** PENDING — SPEC `DELETE_EMPTY_EVENT` to be authored next in the same Cowork session via in-loaded `opticup-strategic` skill (per L-002).
+- **Outcome (v2 gate input):** PENDING — verify SPEC ships + first event delete succeeds + no events with purchases get caught.
 
 ---
 
