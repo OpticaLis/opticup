@@ -48,9 +48,10 @@
     '</div>';
   }
 
-  function renderEventDetailKpiSparklines(host, stats) {
+  function renderEventDetailKpiSparklines(host, stats, attendees) {
     if (!host || !stats) return;
-    var reg  = +stats.total_registered || 0, conf = +stats.total_confirmed || 0;
+    var reg  = CrmHelpers.countRegistered(attendees || []);
+    var conf = +stats.total_confirmed || 0;
     var att  = +stats.total_attended   || 0, prc  = +stats.total_purchased  || 0;
     var rev  = +stats.total_revenue    || 0, bFee = +stats.booking_fees_collected || 0;
 
@@ -76,9 +77,10 @@
   }
   window.renderEventDetailKpiSparklines = renderEventDetailKpiSparklines;
 
-  function renderEventDetailFunnelSvg(host, stats) {
+  function renderEventDetailFunnelSvg(host, stats, attendees) {
     if (!host || !stats) return;
-    var reg = +stats.total_registered || 0, conf = +stats.total_confirmed || 0;
+    var reg = CrmHelpers.countRegistered(attendees || []);
+    var conf = +stats.total_confirmed || 0;
     var att = +stats.total_attended   || 0, prc  = +stats.total_purchased || 0;
     if (!reg) { host.innerHTML = ''; return; }
 

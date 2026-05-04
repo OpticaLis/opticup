@@ -151,9 +151,10 @@
     var el = document.getElementById('crm-eventday-stats');
     if (!el) return;
     var s = _state.stats || {};
-    var reg  = +s.total_registered || 0, conf = +s.total_confirmed || 0;
-    var att  = +s.total_attended   || 0, prc  = +s.total_purchased  || 0;
-    var rev  = +s.total_revenue    || 0;
+    var reg  = CrmHelpers.countRegistered(_state.attendees);
+    var conf = +s.total_confirmed || 0;
+    var att  = +s.total_attended  || 0, prc  = +s.total_purchased || 0;
+    var rev  = +s.total_revenue   || 0;
 
     el.innerHTML =
       counterCard(reg,  'נרשמו', 'blue') +

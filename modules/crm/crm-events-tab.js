@@ -15,13 +15,29 @@
 
   async function loadEvents() {
     var tid = getTenantId();
-    var q = sb.from('v_crm_event_stats')
+    var statsQ = sb.from('v_crm_event_stats')
       .select('event_id, event_number, name, event_date, status, max_capacity, total_registered, total_confirmed, total_attended, total_purchased, total_revenue, spots_remaining, purchase_rate_pct');
-    if (tid) q = q.eq('tenant_id', tid);
-    q = q.order('event_number', { ascending: false });
-    var res = await q;
-    if (res.error) throw new Error('Events load failed: ' + res.error.message);
-    return res.data || [];
+    if (tid) statsQ = statsQ.eq('tenant_id', tid);
+    statsQ = statsQ.order('event_number', { ascending: false });
+
+    // ATTENDEE_COUNTER_DISPLAY_FIX: bypass v_crm_event_stats.total_registered
+    // (which is broader than the נרשמו semantics) by counting attendees in
+    // REGISTERED_STATUSES per event_id client-side.
+    var regQ = sb.from('crm_event_attendees')
+      .select('event_id, status')
+      .eq('is_deleted', false)
+      .in('status', window.REGISTERED_STATUSES);
+    if (tid) regQ = regQ.eq('tenant_id', tid);
+
+    var r = await Promise.all([statsQ, regQ]);
+    if (r[0].error) throw new Error('Events load failed: ' + r[0].error.message);
+    if (r[1].error) throw new Error('Registered counts load failed: ' + r[1].error.message);
+
+    var rows = r[0].data || [];
+    var counts = {};
+    (r[1].data || []).forEach(function (a) { counts[a.event_id] = (counts[a.event_id] || 0) + 1; });
+    rows.forEach(function (row) { row._registeredComputed = counts[row.event_id] || 0; });
+    return rows;
   }
 
   async function loadCrmEventsTab() {
@@ -119,7 +135,7 @@
         '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.name || '') + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600">' + escapeHtml(CrmHelpers.formatDate(r.event_date)) + '</td>' +
         '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('event', r.status) + '</td>' +
-        '<td class="' + CLS_TD + ' text-slate-700 font-semibold">' + escapeHtml(formatCount(r.total_registered)) + '</td>' +
+        '<td class="' + CLS_TD + ' text-slate-700 font-semibold">' + escapeHtml(formatCount(r._registeredComputed)) + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-700 font-semibold">' + escapeHtml(formatCount(r.total_attended)) + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-700 font-semibold">' + escapeHtml(formatCount(r.total_purchased)) + '</td>' +
         '<td class="' + CLS_TD + ' text-emerald-700 font-bold" data-admin-only>' + escapeHtml(r.total_revenue ? CrmHelpers.formatCurrency(r.total_revenue) : '—') + '</td>' +
