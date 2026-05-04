@@ -142,14 +142,14 @@
       afterAdv = afterAdv.filter(function (r) { return r.status !== 'unsubscribed'; });
     }
 
-    var s = search.trim().toLowerCase(), sNorm = (window.CrmHelpers && CrmHelpers.normalizePhone) ? CrmHelpers.normalizePhone(s) : '';
+    var s = search.trim().toLowerCase(), sNorm = (window.CrmHelpers && CrmHelpers.normalizePhone) ? CrmHelpers.normalizePhone(s) : '', sPartial972 = (s && /^0\d+$/.test(s) && s.length >= 2 && s.length <= 10) ? ('+972' + s.slice(1)) : '';
     _filtered = afterAdv.filter(function (r) {
       if (_failuresOnly && !(_failedCounts[r.id] > 0)) return false;
       if (!s) return true;
       var name = (r.full_name || '').toLowerCase();
       var phone = (r.phone || '').toLowerCase();
       var email = (r.email || '').toLowerCase();
-      return name.indexOf(s) !== -1 || phone.indexOf(s) !== -1 || (sNorm && phone.indexOf(sNorm) !== -1) || email.indexOf(s) !== -1;
+      return name.indexOf(s) !== -1 || phone.indexOf(s) !== -1 || (sNorm && phone.indexOf(sNorm) !== -1) || (sPartial972 && phone.indexOf(sPartial972) !== -1) || email.indexOf(s) !== -1;
     });
 
     _filtered.sort(function (a, b) {
