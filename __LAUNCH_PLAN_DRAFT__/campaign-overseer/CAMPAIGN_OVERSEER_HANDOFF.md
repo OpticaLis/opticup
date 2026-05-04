@@ -3,7 +3,7 @@
 > **Purpose:** the live state file the Campaign Overseer reads at session start and updates after every meaningful action.
 > **Update discipline:** state-as-you-go. Replace, don't append. Cleanup when ≥150 lines.
 > **Authority:** lower than `CAMPAIGN_OVERSEER_SKILL.md` (the constitution). If they conflict, skill wins.
-> **Last meaningful update:** 2026-05-04 late evening — **QUICK_REGISTER_QR_FLOW ✅ FULLY CLOSED.** All 3 Rungs + 3 Hotfixes shipped + smoke-test passed end-to-end on demo. EXECUTION_REPORT + FINDINGS written. New REC-009 (delete-empty-event button) opened, awaiting SPEC authoring next in this session per Daniel directive.
+> **Last meaningful update:** 2026-05-04 late night — **TWO SPECs CLOSED + 4 commits on develop.** QUICK_REGISTER_QR_FLOW ✅ + DELETE_EMPTY_EVENT ✅ end-to-end verified on demo. Commit chain: `8ab8408` overseer-close, `3915721` RPC, `a949d1c` UI, `6f99adc` retro. EXECUTION_REPORT 19✅+1⚠️. 4 FINDINGS (F1 HIGH double activity-log write — needs follow-up SPEC). 10 RECs decided (60% rolling — first reportable). REC-010 (restore-deleted-event UI) opened verbally for future. Awaiting Foreman review of DELETE_EMPTY_EVENT.
 
 **Rung 3 closure note (Make scenario 8464122):** branch `"ברקוד רישום לאירוע - רישום מהיר"` updated successfully via **manual Make UI** (not Make MCP — see FINDINGS.md F3 for tooling constraint). 3 surgical edits applied:
 - Module 213 (HTTP) `event_number` body field → `{{trim(replace(replace(ifempty(1.messageData.textMessageData.textMessage; 1.messageData.extendedTextMessageData.text); "רישום מהיר אירוע"; ""); " "; ""))}}` (pattern-free nested replace; the `/g` flag approach failed in Make's regex parser)
@@ -71,7 +71,11 @@ Module 36 (Monday legacy) intentionally left dangling for now — separate clean
 - Campaign metrics UI (new feature, 0 references in CRM today)
 - **NEW: Multi-tenant URL strategy for quick-register EF** (FINDINGS F1+F2 — `STOREFRONT_URL` hardcoded + storefront `tenantSlug` defaults `prizma`. Single-tenant safe; promote to `tenants.config` when tenant 2 onboards.)
 - **NEW: Module 36 (Monday legacy) cleanup in scenario 8464122** (FINDINGS F4 — dangling, cosmetic, ~2 min UI work)
-- **NEW: Delete-empty-event button** (REC-009, agreed verbally 2026-05-04, SPEC being authored in same session)
+- ~~**NEW: Delete-empty-event button**~~ ✅ CLOSED 2026-05-04 evening (REC-009 → DELETE_EMPTY_EVENT SPEC shipped, demo smoke-test passed all 3 cases). UNBLOCKS B6 baseline-at-1 numbering reset whenever Daniel runs the operational cleanup.
+- **NEW: Restore-deleted-event UI via activity-logs screen** (REC-010, agreed verbally 2026-05-04 evening, future-SPEC. Inverse of DELETE_EMPTY_EVENT. Not blocking.)
+- **Activity-log table name discrepancy** (surfaced during REC-009 smoke test verification — `crm_activity_log` does not exist as a table; SPEC referenced wrong name. Resolved in DELETE_EMPTY_EVENT FINDINGS F3 as INFO. Need next FOREMAN_REVIEW to confirm actual table name + flag for cross-SPEC consistency.)
+- **DELETE_EMPTY_EVENT F1 — HIGH double activity-log write** (RPC inserts an activity-log row, but `ActivityLog.write` on the JS side ALSO fires on the soft-delete callback path. Result: 2 activity-log rows per delete instead of 1. Follow-up SPEC needed to dedupe — pick one side as authoritative. RPC is preferable per defense-in-depth.)
+- **Awaiting opticup-strategic FOREMAN_REVIEW for DELETE_EMPTY_EVENT** — Foreman should write `modules/Module 4 - CRM/docs/specs/DELETE_EMPTY_EVENT/FOREMAN_REVIEW.md` covering: (1) executor's 2 self-improvement proposals (P1 shared-table check in DB Pre-Flight, P2 double-audit lint at commit), (2) F1 dedup decision, (3) verdict. Defer until next opticup-strategic session.
 
 **By-design (NOT a follow-up, captured here so future Overseer sessions don't re-flag):**
 - Email duplication on `crm_leads` is allowed by Daniel directive 2026-05-04 (REC-008). Couples + parents-registering-children share emails; only phone is unique. Do not propose dedup SPECs targeting email field.
@@ -208,7 +212,8 @@ EN+RU versions of campaign pages are soft-deleted in `storefront_pages` — camp
 
 (awaiting Daniel's verbal decision OR SPEC authoring)
 
-- `REC-009 — Delete-empty-event button (purchase_amount=0 condition) — submitted 2026-05-04 — agreed verbally, SPEC authoring NEXT in this session per Daniel directive`
+- ✅ `REC-009 — Delete-empty-event button — APPLIED 2026-05-04 evening (DELETE_EMPTY_EVENT SPEC, 2 commits + retro on develop, demo smoke-test all 3 cases passed)`
+- `REC-010 — Restore-deleted-event UI via activity-logs screen — submitted 2026-05-04 evening — agreed verbally, SPEC authoring deferred to a future session (not blocking)`
 
 The full recommendation lives in `DECISIONS_LOG.md`; this section is just a pointer.
 
