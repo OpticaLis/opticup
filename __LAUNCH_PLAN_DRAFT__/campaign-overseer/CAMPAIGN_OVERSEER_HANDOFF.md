@@ -3,7 +3,19 @@
 > **Purpose:** the live state file the Campaign Overseer reads at session start and updates after every meaningful action.
 > **Update discipline:** state-as-you-go. Replace, don't append. Cleanup when ≥150 lines.
 > **Authority:** lower than `CAMPAIGN_OVERSEER_SKILL.md` (the constitution). If they conflict, skill wins.
-> **Last meaningful update:** 2026-05-04 evening — SPEC #1 ATOMIC_CONFIRMATION_FLOW CLOSED + verified end-to-end on demo. Both bugs fixed. M4 last bug-bundle SPEC closes. Daniel asked "to finish Module 4" — now reviewing the 5 open follow-ups for closure path.
+> **Last meaningful update:** 2026-05-04 late night — QUICK_REGISTER_QR_FLOW Rung 1 + Hotfix #1 + #2 + #3 all CLOSED + verified on demo. Rung 2 (lookup_url op) verified live. Rung 3 (Make scenario branch update) PARTIALLY done — HTTP module replaced + Save works + headers correct + tenant_slug=demo, but the `event_number` regex extraction is still failing. Need a fresh session to nail the regex syntax + finish wiring the Green-API caption + URL.
+
+**Pause point for Rung 3 — what's working and what's not (verified by Daniel via Run-once tests in Make):**
+- HTTP module created in scenario 8464122 quick-register branch ✅
+- URL: `https://tsxrrxzmdxaenlvocyit.supabase.co/functions/v1/quick-register` ✅
+- Method: POST ✅
+- Headers (Content-Type, apikey, Authorization Bearer) — all correct, Supabase responds 200 ✅
+- Body content type: JSON, input: JSON string ✅
+- With hardcoded `"event_number": "14"` → EF returns 200 + correct payload (url, event_name, event_date_he) ✅
+- With regex extraction → fails. Tried `/[^0-9]+/g` (unsupported in Make), tried `[^0-9]+` (also failed — Make injected the full Hebrew text). Need a different approach.
+- Green-API module (caption + URL) NOT YET updated — still references `36.mappable_column_values.*` (Monday columns).
+
+**Resume path for next session:** new prompt below — fix the regex (use Make's `numbers()` filter, or hardcode-then-replace approach), then update Green-API.
 
 ---
 
