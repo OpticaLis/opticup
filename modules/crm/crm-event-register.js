@@ -93,7 +93,7 @@
   // crm_automation_rules (trigger_entity='attendee', trigger_event='created').
   // M4_ATTENDEE_PAYMENT_AUTOMATION: BEFORE the evaluate call, attempt FIFO credit transfer
   // so the confirmation message sees the updated payment_status (paid vs pending_payment).
-  async function dispatchRegistrationConfirmation(leadId, lead, eventId, regStatus) {
+  async function dispatchRegistrationConfirmation(leadId, lead, eventId, regStatus, onAfterConfirm) {
     if (regStatus === 'registered' && window.CrmPaymentAutomation) {
       try {
         var attRes = await sb.from('crm_event_attendees')
@@ -110,7 +110,7 @@
       leadId: leadId,
       eventId: eventId,
       outcome: regStatus  // 'registered' or 'waiting_list'
-    });
+    }, onAfterConfirm);
   }
 
   function renderLeadRow(lead) {
@@ -166,11 +166,19 @@
               var lead = leads.find(function (l) { return l.id === leadId; });
               var resp = await registerLeadToEvent(leadId, eventId, 'manual');
               toastResponse(resp);
+              // ATOMIC_CONFIRMATION_FLOW B.3: defer modal-close + onRegistered
+              // (= reloadDetail) until AFTER the confirmation modal resolves.
+              // Otherwise reloadDetail's global Modal.close() races the
+              // confirmation modal off the stack mid-dispatch.
+              var doFinalCleanup = async function () {
+                if (typeof modal.close === 'function') modal.close();
+                if (typeof onRegistered === 'function') onRegistered(resp);
+              };
               if (resp && resp.success && (resp.status === 'registered' || resp.status === 'waiting_list')) {
-                dispatchRegistrationConfirmation(leadId, lead, eventId, resp.status);
+                var evalRes = await dispatchRegistrationConfirmation(leadId, lead, eventId, resp.status, doFinalCleanup);
+                if (evalRes && evalRes.pending_confirm) return; // cleanup deferred
               }
-              if (typeof modal.close === 'function') modal.close();
-              if (typeof onRegistered === 'function') onRegistered(resp);
+              await doFinalCleanup();
             } catch (err) {
               if (window.Toast) Toast.error('שגיאה: ' + (err.message || String(err)));
               btn.disabled = false; btn.classList.remove('opacity-60');
