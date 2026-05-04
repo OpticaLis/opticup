@@ -19,6 +19,7 @@
     'crm.event.create':           'יצירת אירוע',
     'crm.event.update':           'עדכון אירוע',
     'crm.event.delete':           'מחיקת אירוע',
+    'crm.event.restore':          'שחזור אירוע',
     'crm.event.status_change':    'שינוי סטטוס אירוע',
     'crm.event.attendee_checkin': 'צ׳ק-אין משתתף',
     'crm.event.attendee_status':  'שינוי סטטוס משתתף',
@@ -46,7 +47,7 @@
 
   var ACTION_GROUPS = {
     leads:     ['crm.lead.create','crm.lead.update','crm.lead.delete','crm.lead.status_change','crm.lead.bulk_status_change','crm.lead.move_to_registered','crm.lead.note_add'],
-    events:    ['crm.event.create','crm.event.update','crm.event.delete','crm.event.status_change','crm.event.attendee_checkin','crm.event.attendee_status','crm.event.schedule_publish'],
+    events:    ['crm.event.create','crm.event.update','crm.event.delete','crm.event.restore','crm.event.status_change','crm.event.attendee_checkin','crm.event.attendee_status','crm.event.schedule_publish'],
     messaging: ['crm.broadcast.send'],
     templates: ['crm.template.create','crm.template.update','crm.template.deactivate'],
     rules:     ['crm.rule.create','crm.rule.update','crm.rule.toggle'],
@@ -200,6 +201,9 @@
       var levelCls  = LEVEL_CLASSES[r.level] || LEVEL_CLASSES.info;
       var levelLbl  = LEVEL_LABELS[r.level] || r.level || '—';
       var when      = (window.CrmHelpers && CrmHelpers.formatDateTime) ? CrmHelpers.formatDateTime(r.created_at) : String(r.created_at || '');
+      var restoreBtn = (r.action === 'crm.event.delete')
+        ? ' <button type="button" class="ms-2 inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700" data-al-restore="' + esc(r.id) + '">שחזר</button>'
+        : '';
       html += '<tr class="hover:bg-indigo-50 cursor-pointer" data-al-row="' + esc(r.id) + '">' +
         '<td class="' + CLS_TD + ' text-xs text-slate-600 whitespace-nowrap">' + esc(when) + '</td>' +
         '<td class="' + CLS_TD + ' font-medium text-slate-800">' + esc(actionLbl) + '</td>' +
@@ -207,7 +211,7 @@
         '<td class="' + CLS_TD + ' text-xs text-slate-500" style="direction:ltr;text-align:end">' + esc(entityIdDisplay(r)) + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-700">' + esc(userLbl) + '</td>' +
         '<td class="' + CLS_TD + '"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + levelCls + '">' + esc(levelLbl) + '</span></td>' +
-        '<td class="' + CLS_TD + ' text-slate-600 text-xs truncate max-w-md">' + esc(detailPreview(r.details)) + '</td>' +
+        '<td class="' + CLS_TD + ' text-slate-600 text-xs max-w-md"><span class="truncate inline-block align-middle" style="max-width:18rem;">' + esc(detailPreview(r.details)) + '</span>' + restoreBtn + '</td>' +
       '</tr>';
       if (_expandedId === r.id) html += renderExpandedRow(r);
     });
@@ -219,7 +223,56 @@
         renderTable();
       });
     });
+    wrap.querySelectorAll('[data-al-restore]').forEach(function (btn) {
+      btn.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        handleRestoreClick(btn.getAttribute('data-al-restore'), btn);
+      });
+    });
     renderPagination();
+  }
+
+  function handleRestoreClick(logId, btn) {
+    if (!logId) return;
+    if (!window.Modal || !Modal.confirm) return;
+    Modal.confirm({
+      title: 'שחזור אירוע',
+      message: 'האם לשחזר את האירוע ואת המשתתפים שהיו רשומים אליו?',
+      confirmText: 'שחזר',
+      confirmClass: 'bg-indigo-600 hover:bg-indigo-700',
+      onConfirm: function () {
+        if (btn) btn.disabled = true;
+        var tid = getTenantId();
+        if (!window.CrmEventActions || typeof CrmEventActions.restoreEventFromLog !== 'function') {
+          if (btn) btn.disabled = false;
+          if (window.Toast) Toast.error('שגיאה: מודול שחזור לא נטען');
+          return;
+        }
+        CrmEventActions.restoreEventFromLog(logId, tid).then(function (result) {
+          if (result && result.success) {
+            if (window.Toast) Toast.success('האירוע שוחזר');
+            if (typeof window.loadActivityLog === 'function') window.loadActivityLog();
+            if (typeof window.reloadCrmEventsTab === 'function') window.reloadCrmEventsTab();
+          } else if (result && result.error === 'event_not_deleted') {
+            if (btn) btn.disabled = false;
+            if (window.Toast) Toast.error('האירוע כבר פעיל');
+          } else if (result && result.error === 'event_not_found') {
+            if (btn) btn.disabled = false;
+            if (window.Toast) Toast.error('האירוע נמחק לצמיתות ואינו ניתן לשחזור');
+          } else if (result && result.error === 'invalid_log_id') {
+            if (btn) btn.disabled = false;
+            if (window.Toast) Toast.error('שגיאה בשחזור');
+          } else {
+            if (btn) btn.disabled = false;
+            var msg = (result && result.error) ? result.error : 'unknown';
+            if (window.Toast) Toast.error('שגיאה: ' + msg);
+          }
+        }, function (err) {
+          if (btn) btn.disabled = false;
+          if (window.Toast) Toast.error('שגיאה: ' + (err && err.message ? err.message : String(err)));
+        });
+      }
+    });
   }
 
   function renderExpandedRow(r) {
