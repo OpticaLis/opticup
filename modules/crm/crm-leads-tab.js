@@ -28,7 +28,7 @@
   // Initial slice 200; "Load more" appends next 200. Client filter/sort still
   // operates on the loaded slice for MVP (criterion 10.4 full-server-side
   // filtering deferred — FINDINGS F-page).
-  var SERVER_PAGE = 200;
+  var SERVER_PAGE = 1000;
   var _svrOffset = 0, _svrHasMore = true;
   // _atRisk = days_left for tier2 amber row (M4_ATTENDEE_PAYMENT_UI). _openCredits = no-horizon companion for violet badge (Q4 2026-05-02).
   var _atRisk = {}, _openCredits = {};
