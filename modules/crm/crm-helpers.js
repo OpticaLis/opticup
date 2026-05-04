@@ -97,6 +97,21 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
     'unsubscribed'            // ביטל UNSUBSCRIBE
   ];
 
+  // Attendee statuses that count as "registered for the event" in UI counters.
+  // Excludes invited/new/waiting_list/cancelled/no_show. View-side
+  // v_crm_event_stats.total_registered is broader and is bypassed at the 4
+  // נרשמו callsites (ATTENDEE_COUNTER_DISPLAY_FIX).
+  var REGISTERED_STATUSES = ['registered', 'confirmed', 'attended'];
+
+  function countRegistered(attendees) {
+    if (!attendees || !attendees.length) return 0;
+    var n = 0;
+    for (var i = 0; i < attendees.length; i++) {
+      if (REGISTERED_STATUSES.indexOf(attendees[i].status) !== -1) n++;
+    }
+    return n;
+  }
+
   // --- Status cache loader ---
   // Fills window.CRM_STATUSES = { lead: { slug: {name_he, color, ...} }, event: {...}, attendee: {...} }
   async function loadStatusCache() {
@@ -226,10 +241,13 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
     toast: toast,
     logActivity: logActivity,
     hebrewDayOfWeek: hebrewDayOfWeek,
-    mergeLeadHistory: mergeLeadHistory
+    mergeLeadHistory: mergeLeadHistory,
+    countRegistered: countRegistered,
+    REGISTERED_STATUSES: REGISTERED_STATUSES
   };
 
   // Export tier constants
   window.TIER1_STATUSES = TIER1_STATUSES;
   window.TIER2_STATUSES = TIER2_STATUSES;
+  window.REGISTERED_STATUSES = REGISTERED_STATUSES;
 })();

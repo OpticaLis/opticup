@@ -165,6 +165,8 @@
 | `statusBadgeHtml(type, slug)` | Returns safe HTML badge string |
 | `distinctValues(rows, key)` | Unique values from array for filter dropdowns |
 | `heCompare(a, b)` | Hebrew-locale string comparison |
+| `countRegistered(attendees)` | **[ATTENDEE_COUNTER_DISPLAY_FIX, 2026-05-04]** Counts attendees whose `status` is in `REGISTERED_STATUSES` (`['registered','confirmed','attended']`). Bypasses `v_crm_event_stats.total_registered` which is broader. Used by all 4 נרשמו counter callsites. |
+| `REGISTERED_STATUSES` (constant) | **[ATTENDEE_COUNTER_DISPLAY_FIX, 2026-05-04]** Canonical list `['registered','confirmed','attended']` for "registered for the event" UI semantics. Also exported as `window.REGISTERED_STATUSES`. |
 
 ---
 

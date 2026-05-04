@@ -2,6 +2,22 @@
 
 ---
 
+## ATTENDEE_COUNTER_DISPLAY_FIX — נרשמו counter scoped to registered/confirmed/attended (2026-05-04) ✅
+
+| Hash | Message |
+|------|---------|
+| `01672d4` | `docs(spec-m4): author ATTENDEE_COUNTER_DISPLAY_FIX SPEC` |
+| `303426d` | `fix(crm): add REGISTERED_STATUSES constant + countRegistered helper` |
+| `25422a4` | `fix(crm): scope 'נרשמו' counter to registered/confirmed/attended (3 of 4 sites)` |
+| `4cd3bcc` | `fix(crm): scope 'נרשמו' counter to registered/confirmed/attended (4 of 4 — capacity bar)` |
+| _(this commit)_ | `chore(spec): close ATTENDEE_COUNTER_DISPLAY_FIX with retrospective` |
+
+Display-layer fix — no DB writes, no view changes, no Edge Function deploys. Introduces `CrmHelpers.REGISTERED_STATUSES = ['registered','confirmed','attended']` + `countRegistered(attendees)` helper in `crm-helpers.js`. Routes all 4 callsites that display the נרשמו counter through the helper instead of `v_crm_event_stats.total_registered` (which counts attendees beyond the three registered-semantics statuses, empirically confirmed on demo event #11: 1 invited + 1 new → view returned 2, expected 0). Sites: events tab list (added a parallel SELECT on `crm_event_attendees` filtered by status, aggregated client-side per `event_id`), event-detail capacity bar, KPI sparklines, funnel SVG, event-day counter card. `crm-events-detail.js` net-zero line delta (file at 349/350 cap). 5 findings logged: `renderConversionCard` ratio uses broad `total_registered` denominator (M4-CRM-COUNTER-01); `v_crm_event_stats.total_registered` view-side semantic bug (M4-CRM-VIEW-01) — future DB-write SPEC; `rule-21-orphans` hook false positive on co-staged `var sent` required commit-split per M4 P12 precedent (M4-TOOL-COUNTER-01); `wc -l` vs hook line-count off-by-one on CRLF (M4-TOOL-COUNTER-02); `MODULE_MAP.md` entry for `countRegistered` deferred (M4-DOC-COUNTER-01). **🟡 Code complete; manual demo browser QA on event #11 pending Daniel.**
+
+See `modules/Module 4 - CRM/docs/specs/ATTENDEE_COUNTER_DISPLAY_FIX/`.
+
+---
+
 ## M4_LEAD_EYE_EXAM_DEFAULT — Lead-level eye-exam column + UI wiring (2026-05-02 → 2026-05-03) ✅
 
 | Hash | Message |

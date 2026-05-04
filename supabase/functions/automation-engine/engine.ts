@@ -70,6 +70,11 @@ export interface EvaluateInput {
   triggerData: Record<string, unknown>;
   mode: "evaluate" | "dispatch";
   planItems: unknown[] | null;
+  // ATOMIC_CONFIRMATION_FLOW Part A: when mode='dispatch', this flag controls
+  // whether messages are dispatched. Post-actions + queue_send always run in
+  // dispatch mode regardless. Default true (cron path + confirm-and-notify).
+  // Set to false by client's "Confirm without notify" modal choice.
+  dispatchMessages: boolean;
   anonKey: string;
   sendMessageUrl: string;
 }
@@ -90,15 +95,15 @@ const ZERO: EvaluateResult = {
 };
 
 export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateResult> {
-  const { tenantId, triggerType, triggerData, mode, planItems, anonKey, sendMessageUrl } = input;
+  const { tenantId, triggerType, triggerData, mode, planItems, dispatchMessages, anonKey, sendMessageUrl } = input;
 
-  // Rung 2 approve-path short-circuit: caller has approved plan_items, skip
-  // rule re-evaluation and dispatch directly. Prevents preview/dispatch race
-  // per FOREMAN_REVIEW §2.3 clarification.
-  if (mode === "dispatch" && Array.isArray(planItems) && planItems.length > 0) {
-    const r = await dispatchPlanDirect(db, planItems, tenantId, anonKey, sendMessageUrl);
-    return { ...ZERO, sent: r.sent, failed: r.failed, rejected: r.rejected };
-  }
+  // ATOMIC_CONFIRMATION_FLOW Part A: Rung-2 short-circuit DROPPED.
+  // Dispatch mode now MUST run rule re-evaluation so post-actions + queue_send
+  // (which were skipped in evaluate mode) can fire here at the atomic-commit
+  // point. Client's planItems are still honored at the dispatch step (no
+  // preview/dispatch recipient race for messages); post-actions run on the
+  // re-resolved leads, which is acceptable — race window is bounded by modal
+  // open duration (seconds).
 
   const map = TRIGGER_TYPES[triggerType];
   if (!map) return ZERO;
@@ -129,7 +134,9 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
   const perRule: PreparedPlan[] = [];
   for (let i = 0; i < rules.length; i++) {
     try {
-      perRule.push(await prepareRulePlan(db, tenantId, rules[i], triggerData, tplCache, runId));
+      // ATOMIC_CONFIRMATION_FLOW Part A: pass `mode` so prepareRulePlan can
+      // skip queue_send writes when mode='evaluate' (preview only).
+      perRule.push(await prepareRulePlan(db, tenantId, rules[i], triggerData, tplCache, runId, mode));
     } catch (e) {
       console.error("automation-engine prepareRulePlan:", (e as Error).message);
       perRule.push({ items: [], skipped: 1, resolvedLeadIds: [], queued: 0 });
@@ -147,12 +154,18 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
     ruleResolvedIds[i] = v.resolvedLeadIds || [];
   });
 
-  // Bulk post-actions (parity with browser engine lines 270–282).
-  for (let i = 0; i < rules.length; i++) {
-    try { await executePostActions(db, tenantId, rules[i], ruleResolvedIds[i] || []); }
-    catch (e) { console.error("automation-engine post-action:", (e as Error).message); }
-    try { await attendeeUpsert(db, tenantId, rules[i], ruleResolvedIds[i] || [], triggerData); }
-    catch (e) { console.error("automation-engine attendee-upsert:", (e as Error).message); }
+  console.log(`[AE-DIAG runId=${runId}] post-prepare allItems=${allItems.length} totalQueued=${totalQueued} skipped=${skipped} mode=${mode} dispatchMessages=${dispatchMessages}`);
+
+  // ATOMIC_CONFIRMATION_FLOW Part A: post-actions + attendee-upsert ONLY in
+  // dispatch mode. evaluate mode is preview-only — no side effects.
+  if (mode === "dispatch") {
+    console.log(`[AE-DIAG runId=${runId}] post-actions loop entry rules=${rules.length}`);
+    for (let i = 0; i < rules.length; i++) {
+      try { await executePostActions(db, tenantId, rules[i], ruleResolvedIds[i] || []); }
+      catch (e) { console.error("automation-engine post-action:", (e as Error).message); }
+      try { await attendeeUpsert(db, tenantId, rules[i], ruleResolvedIds[i] || [], triggerData); }
+      catch (e) { console.error("automation-engine attendee-upsert:", (e as Error).message); }
+    }
   }
 
   // Update total_recipients (parity with browser line 285–289).
@@ -169,12 +182,11 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
     allItems.forEach((it) => { (it as Record<string, unknown>).run_id = runId; });
   }
 
-  // mode='evaluate' — return planItems for preview, do not dispatch.
-  // queue_send rules already wrote to crm_message_queue; post-actions
-  // already ran — those are deterministic state transitions independent of
-  // dispatch approval (parity with browser engine, where the modal also
-  // doesn't gate them).
+  // mode='evaluate' — return planItems for preview, NO side effects.
+  // ATOMIC_CONFIRMATION_FLOW Part A: post-actions and queue_send writes were
+  // skipped above in this mode — they fire only at dispatch (modal approve).
   if (mode === "evaluate") {
+    console.log(`[AE-DIAG runId=${runId}] EARLY RETURN evaluate-mode plan_items.length=${allItems.length}`);
     if (runId) await finishRun(db, tenantId, runId, "completed");
     return {
       run_id: runId,
@@ -186,11 +198,17 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
     };
   }
 
-  // mode='dispatch' (cron path or browser fallback). queue_send rules already
-  // wrote to crm_message_queue; for any send_message planItems, fall through
-  // to direct dispatch (parity with browser dispatchPlanDirect when
-  // CrmConfirmSend is not loaded).
-  if (!allItems.length) {
+  // mode='dispatch'. Decide which items to dispatch:
+  //   - if client provided plan_items (browser confirm path), use those
+  //     (honors the operator's approval — no preview/dispatch recipient race);
+  //   - else (cron path) use re-evaluated allItems.
+  // Then: dispatchMessages flag gates the actual message send. False =
+  // post-actions ran (committed) but no SMS/email dispatch ("confirm without
+  // notify"). True = full dispatch (cron default OR "confirm and notify").
+  const itemsToDispatch = (Array.isArray(planItems) && planItems.length > 0) ? planItems : allItems;
+  console.log(`[AE-DIAG runId=${runId}] dispatch decision itemsToDispatch=${itemsToDispatch.length} (planItems=${Array.isArray(planItems) ? planItems.length : "null"} allItems=${allItems.length}) dispatchMessages=${dispatchMessages}`);
+  if (!dispatchMessages || itemsToDispatch.length === 0) {
+    console.log(`[AE-DIAG runId=${runId}] EARLY RETURN no-dispatch reason=${!dispatchMessages ? "dispatchMessages=false" : "itemsToDispatch.length=0"}`);
     if (runId) await finishRun(db, tenantId, runId, "completed");
     return {
       run_id: runId, fired: rules.length, sent: 0, failed: 0, rejected: 0,
@@ -198,7 +216,9 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
     };
   }
 
-  const r = await dispatchPlanDirect(db, allItems, tenantId, anonKey, sendMessageUrl);
+  console.log(`[AE-DIAG runId=${runId}] dispatchPlanDirect ENTRY items=${itemsToDispatch.length}`);
+  const r = await dispatchPlanDirect(db, itemsToDispatch, tenantId, anonKey, sendMessageUrl);
+  console.log(`[AE-DIAG runId=${runId}] dispatchPlanDirect EXIT sent=${r.sent} failed=${r.failed} rejected=${r.rejected}`);
   if (runId) await finishRun(db, tenantId, runId, "completed");
   return {
     run_id: runId,

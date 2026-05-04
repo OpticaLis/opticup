@@ -105,8 +105,8 @@
         }
       } catch (e) { console.error('CrmPaymentAutomation.transferCredit:', e); }
     }
-    if (!window.CrmAutomation || typeof CrmAutomation.evaluate !== 'function') return;
-    return CrmAutomation.evaluate('event_registration', {
+    if (!window.CrmAutomationClient || typeof CrmAutomationClient.evaluate !== 'function') return;
+    return CrmAutomationClient.evaluate('event_registration', {
       leadId: leadId,
       eventId: eventId,
       outcome: regStatus  // 'registered' or 'waiting_list'

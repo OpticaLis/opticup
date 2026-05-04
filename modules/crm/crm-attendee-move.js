@@ -26,7 +26,7 @@
     var r = await sb.from('crm_events')
       .select('id, name, event_date, booking_fee, max_capacity')
       .eq('tenant_id', tenantId)
-      .in('status', ['open_for_registration','waitlist_full'])
+      .in('status', ['registration_open','waiting_list'])
       .neq('id', srcEventId)
       .eq('is_deleted', false)
       .order('event_date', { ascending: true })
@@ -93,10 +93,10 @@
         confirmBtn.disabled = false;
         return;
       }
-      if (sendNotif && window.CrmAutomation && CrmAutomation.evaluate) {
+      if (sendNotif && window.CrmAutomationClient && CrmAutomationClient.evaluate) {
         var paid = (r.data.payment_status === 'paid');
         try {
-          await CrmAutomation.evaluate('attendee_moved', {
+          await CrmAutomationClient.evaluate('attendee_moved', {
             attendeeId: r.data.new_attendee_id,
             leadId:     r.data.lead_id,
             eventId:    r.data.target_event_id,

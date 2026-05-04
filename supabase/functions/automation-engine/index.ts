@@ -69,6 +69,9 @@ Deno.serve(async (req: Request) => {
     : {};
   const mode = (body.mode === "evaluate" || body.mode === "dispatch") ? body.mode : "dispatch";
   const planItems = Array.isArray(body.plan_items) ? body.plan_items : null;
+  // ATOMIC_CONFIRMATION_FLOW Part A: dispatch_messages flag (default true).
+  // Set to false by client's "Confirm without notify" modal choice.
+  const dispatchMessages = body.dispatch_messages === false ? false : true;
 
   if (!tenantId) return errorResponse("Missing tenant_id", 400);
   if (!triggerType) return errorResponse("Missing trigger_type", 400);
@@ -89,6 +92,7 @@ Deno.serve(async (req: Request) => {
       triggerData,
       mode,
       planItems,
+      dispatchMessages,
       anonKey: ANON_KEY,
       sendMessageUrl: `${SUPABASE_URL}/functions/v1/send-message`,
     });
