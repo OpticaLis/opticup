@@ -6,6 +6,59 @@
 
 ---
 
+## L-004 — Probe schema BEFORE writing a SPEC that depends on a column existing
+
+**Date:** 2026-05-04 late night
+**Mode at the time:** Foreman Hat (opticup-strategic loaded in-session)
+
+**Trigger incident.** I authored RESTORE_DELETED_EVENT_UI SPEC §3.5 around the assumption that `crm_event_attendees.updated_at` exists and is touched at delete-time, enabling timestamp-based "restore only what was cascade-deleted at the same instant." Daniel asked me to "check yourself properly using the strategic skill" before he ran Claude Code. I queried `information_schema.columns` and discovered `crm_event_attendees` has only `created_at` and `is_deleted` boolean — no `updated_at`, no `deleted_at`. The original SPEC was infeasible as written.
+
+I had to rewrite the SPEC (Approach A=add column, B=capture IDs in audit details, C=event-only restore). Daniel chose B. The rewrite cost ~30 minutes of authoring time but no executor time was wasted (caught pre-dispatch).
+
+**Cost of the incident.** Zero — Daniel's gate prevented bad dispatch. But this was the second SPEC in 24 hours where a column-existence assumption proved wrong (DELETE_EMPTY_EVENT §3.13 referenced a `crm_activity_log` table that doesn't exist; actual is shared `activity_log`).
+
+---
+
+### Rule (binding on every Overseer/Foreman SPEC)
+
+When a SPEC's success criteria, RPC body, or commit plan depends on a column / table / RPC / function existing, the author MUST verify each dependency via `information_schema.columns` / `information_schema.routines` / `pg_get_functiondef` BEFORE writing §3 Success Criteria.
+
+**Concrete check before §3 is written:**
+
+1. **List every named DB object the SPEC will read or write:** tables, columns, RPCs, views, triggers, indexes.
+2. **For each item, run a probe:**
+   - Tables: `SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name='<name>';`
+   - Columns: `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name='<table>' AND column_name='<col>';`
+   - RPCs/functions: `SELECT routine_name FROM information_schema.routines WHERE routine_schema='public' AND routine_name='<name>';` + `SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname='<name>';` for body inspection.
+3. **If a probe returns no row** — the SPEC's plan must explicitly account for it: either add a migration to create the missing object, or pivot the design.
+4. **If a probe returns row(s) but with different shape than assumed** — quote the actual shape in §2 Verified Evidence and adjust §3 to match.
+
+A SPEC that fails any probe AT AUTHOR TIME but cites the assumed shape in §3 is not ready for dispatch. Mid-execution discoveries cost executor time and erode trust.
+
+---
+
+### Why this matters (the meta-pattern)
+
+This is **Pattern 14 (verify before acting) applied to Foreman authoring discipline.** The Overseer/Foreman normally treats Pattern 14 as a rule for write actions and dispatch decisions. SPEC authoring is also a write action — it spends executor cycles, makes promises about live system state, and creates expectations that the codebase will accept the SPEC's plan. A SPEC that lies about the schema is itself a broken artifact, regardless of how well-formatted the rest looks.
+
+**The compound risk:** once a SPEC ships and the executor starts work, mid-flight discovery of a shape mismatch forces a SPEC rewrite at the worst possible time (executor blocked, partial work done, decisions need rolling back). Catching at author time costs ~5 minutes of probing; catching at execution time costs an hour of recovery + rewrite.
+
+---
+
+### Combined with L-001, L-003
+
+- **L-001:** verify infrastructure + test-data preconditions BEFORE pushing a QA prompt.
+- **L-003:** verify ground-truth state BEFORE trusting HANDOFF claims about partial-SPEC progress.
+- **L-004 (this rule):** verify SCHEMA-level facts BEFORE writing §3 Success Criteria.
+
+All three are the same principle (Pattern 14 — verify before acting) applied to different write surfaces of the Overseer/Foreman job: QA dispatch, state tracking, and SPEC authoring.
+
+---
+
+*End of L-004.*
+
+---
+
 ## L-003 — Verify ground truth (git + Supabase + filesystem) before trusting any HANDOFF or SESSION_CONTEXT claim about partial-SPEC state
 
 **Date:** 2026-05-04 (resume session)

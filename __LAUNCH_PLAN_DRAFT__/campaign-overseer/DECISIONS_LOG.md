@@ -29,8 +29,8 @@
 
 - **Total recommendations submitted:** 10
 - **Total decided:** 10 (agree: 6 / disagree: 4 / partial: 0)
-- **Total applied:** 1 (REC-009 — DELETE_EMPTY_EVENT shipped + verified 2026-05-04 evening)
-- **Rolling 30-rec acceptance rate:** 60% (6/10 decided as agree). **First reportable rate** — crossed the ≥10 threshold this session.
+- **Total applied:** 2 (REC-009 + REC-010 — both shipped + verified 2026-05-04)
+- **Rolling 30-rec acceptance rate:** 60% (6/10 decided as agree).
 - **Mode:** RECOMMEND-ONLY (v1)
 - **Status toward graduation:** 10 of 30 decisions in (rolling rate 60%). Pattern across REC-002, REC-005, REC-006, REC-008: when the Overseer recommends action on apparent data anomalies, Daniel pushes back when the "anomaly" is actually legitimate real-world behavior the business depends on. **REC-009 + REC-010 are counter-trend** — both Daniel-proactive feature requests where the Overseer's role was to author the SPEC, not propose action on anomalies. Over the next 20 decisions, the rate will likely rise as the Overseer matures past the data-shape-anomaly trap.
 
@@ -170,14 +170,34 @@
 - **How to measure:** post-deploy, count of `crm.event.restore` activity-log entries grows as Daniel uses the feature; restored events re-appear in events list with their attendees intact.
 - **Daniel decision:** **agree** — verbal directive 2026-05-04 evening as a future-SPEC commitment. Not blocking anything operational today.
 - **Decided on:** 2026-05-04
-- **Applied:** PENDING — separate SPEC to be authored when M4 closure backlog reaches it. NOT this session.
-- **Outcome (v2 gate input):** PENDING — to be verified after that SPEC ships.
+- **Applied:** ✅ 2026-05-04 late night (RESTORE_DELETED_EVENT_UI SPEC, 3 commits: 7f8117a backend, 7df4586 frontend, dd5ff21 retro). Approach B (capture attendee_ids in audit-log details, replay on restore) shipped after Foreman scope-correction caught the original timestamp-based approach was infeasible — `crm_event_attendees` has no `updated_at` column. Demo end-to-end round-trip verified by Daniel: create event → 2 attendees → delete → click שחזר → event + attendees back.
+- **Outcome (v2 gate input):** ✅ verified live. Predicted impact (zero-click recovery from accidental deletes) achieved. Pre-v2 audit log rows restore event-only by design.
 
 ---
 
 ## Self-Reviews
 
 (written by the Overseer after every 10 decisions — see SKILL §8)
+
+### Self-Review #1 — after 10 decided recommendations (2026-05-04 late night)
+
+**Pattern in disagreements (4 of 4 had the same shape):**
+- REC-002 (drop 8 vision-questionnaires), REC-005 (drop 8 MultiSale events), REC-006 (drop 587 lead-level eye-exam answers), REC-008 (merge 16 duplicate-email leads) — every one was the Overseer recommending to "remove or clean up" data that looked anomalous on a schema-shape inspection. In each case, Daniel pushed back because the data carried legitimate business meaning the Overseer hadn't checked: questionnaires had no operational purpose in the new system (drop was right but for the wrong reason — the Overseer recommended "preserve via b"), MultiSale events were ~200K NIS of revenue history, lead-level eye-exam is actively written by the live storefront form, duplicate emails reflect couples/parents-with-kids registering together.
+- **Common root cause:** the Overseer over-indexes on schema-level signals (counts, uniqueness violations, "stale" labels) without first checking whether the customer-facing or operational flow that produces the data is intentional. The lookup pattern is "look at the table → see anomaly → propose remediation" instead of "look at the storefront form/operator workflow/customer journey first → understand what produces this data → only then evaluate whether it's anomalous."
+
+**Pattern in agreements (6 of 6):**
+- REC-001 (stub-create 51 orphan attendees), REC-003 (hybrid synthesize 152 coupon-log rows), REC-004 (drop Monday Category tag), REC-007 (fix-and-import 2 corrupted phones) — all were migration choices where the Overseer's recommendation matched Daniel's operational instincts: preserve customer-relationship data, prefer fidelity over cleanliness, use UTM-based segmentation over legacy tags. **Common shape:** when the Overseer had access to both the data shape AND the business context (via the MAP / live form schemas / cutover discussions), recommendations landed.
+- REC-009 (delete-empty-event button) + REC-010 (restore-deleted-event UI) — both were Daniel-proactive feature requests where the Overseer's role was SPEC authoring, not anomaly detection. 100% agree rate on this class.
+
+**Proposed skill adjustments (Self-Review #1 — require Daniel's approval before applying to SKILL):**
+
+1. **Add a "live-flow check" step before any cleanup/remediation REC.** Before recommending action on a data anomaly, the Overseer MUST: (a) identify the customer-facing or operator-facing surface that produces this data (storefront form, CRM admin button, automation rule, EF, Make scenario); (b) read or query that surface to understand what data it produces and why; (c) only then frame the anomaly as "intentional" vs "actually anomalous." This codifies the lesson from REC-002/005/006/008 directly: the problem wasn't the recommendations themselves — the problem was framing data anomalies as cleanup candidates without asking "does this come from a live flow that intentionally produces it?"
+
+2. **Distinguish "anomaly detection" recs from "feature request" recs in REC numbering or labeling.** Daniel-proactive feature requests (REC-009, REC-010) have a 100% agree rate; anomaly-detection recs have 50%. Future Overseer should clearly label which class each REC belongs to, so the rolling acceptance rate is interpretable instead of a noisy aggregate. Daniel can also see at a glance which class an Overseer recommendation falls into.
+
+**Status:** awaiting Daniel approval before editing SKILL file. If approved, apply at the next opticup-strategic / Campaign-Overseer session.
+
+---
 
 When entries arrive, format:
 
@@ -195,8 +215,6 @@ When entries arrive, format:
 1. {proposal}
 2. {proposal}
 ```
-
-(none yet)
 
 ---
 

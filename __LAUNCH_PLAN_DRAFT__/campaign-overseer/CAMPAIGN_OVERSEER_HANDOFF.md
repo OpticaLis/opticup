@@ -3,7 +3,7 @@
 > **Purpose:** the live state file the Campaign Overseer reads at session start and updates after every meaningful action.
 > **Update discipline:** state-as-you-go. Replace, don't append. Cleanup when ≥150 lines.
 > **Authority:** lower than `CAMPAIGN_OVERSEER_SKILL.md` (the constitution). If they conflict, skill wins.
-> **Last meaningful update:** 2026-05-04 late night — **TWO SPECs CLOSED + 4 commits on develop.** QUICK_REGISTER_QR_FLOW ✅ + DELETE_EMPTY_EVENT ✅ end-to-end verified on demo. Commit chain: `8ab8408` overseer-close, `3915721` RPC, `a949d1c` UI, `6f99adc` retro. EXECUTION_REPORT 19✅+1⚠️. 4 FINDINGS (F1 HIGH double activity-log write — needs follow-up SPEC). 10 RECs decided (60% rolling — first reportable). REC-010 (restore-deleted-event UI) opened verbally for future. Awaiting Foreman review of DELETE_EMPTY_EVENT.
+> **Last meaningful update:** 2026-05-04 late night — **FOUR SPECs CLOSED + 7+ commits on develop + 2 PRs already merged to main.** Marathon evening session: (1) QUICK_REGISTER_QR_FLOW ✅ Rungs 1-3 + 3 Hotfixes; (2) DELETE_EMPTY_EVENT ✅ REC-009; (3) ACTIVITY_LOG_DEDUPLICATION_DELETE_EVENT ✅ F1 fix; (4) RESTORE_DELETED_EVENT_UI ✅ REC-010 (Approach B after Foreman scope-correction); plus Module 36 cleanup in Make scenario 8464122 (already done by Daniel mid-session). 2 FOREMAN_REVIEWs written (QUICK_REGISTER + DELETE_EMPTY_EVENT). 10 RECs decided (60% rolling rate — first reportable). MASTER_ROADMAP + Module 4 SESSION_CONTEXT both refreshed. Two FOREMAN_REVIEWs still pending: ACTIVITY_LOG_DEDUP + RESTORE_DELETED_EVENT_UI.
 
 **Rung 3 closure note (Make scenario 8464122):** branch `"ברקוד רישום לאירוע - רישום מהיר"` updated successfully via **manual Make UI** (not Make MCP — see FINDINGS.md F3 for tooling constraint). 3 surgical edits applied:
 - Module 213 (HTTP) `event_number` body field → `{{trim(replace(replace(ifempty(1.messageData.textMessageData.textMessage; 1.messageData.extendedTextMessageData.text); "רישום מהיר אירוע"; ""); " "; ""))}}` (pattern-free nested replace; the `/g` flag approach failed in Make's regex parser)
@@ -72,6 +72,7 @@ Module 36 (Monday legacy) intentionally left dangling for now — separate clean
 - **NEW: Multi-tenant URL strategy for quick-register EF** (FINDINGS F1+F2 — `STOREFRONT_URL` hardcoded + storefront `tenantSlug` defaults `prizma`. Single-tenant safe; promote to `tenants.config` when tenant 2 onboards.)
 - **NEW: Module 36 (Monday legacy) cleanup in scenario 8464122** (FINDINGS F4 — dangling, cosmetic, ~2 min UI work)
 - ~~**NEW: Delete-empty-event button**~~ ✅ CLOSED 2026-05-04 evening (REC-009 → DELETE_EMPTY_EVENT SPEC shipped, demo smoke-test passed all 3 cases). UNBLOCKS B6 baseline-at-1 numbering reset whenever Daniel runs the operational cleanup.
+- ~~**Module 36 cleanup in scenario 8464122**~~ ✅ CLOSED 2026-05-04 by Daniel via Make UI (separate from this Cowork session — already done before SPEC was authored). The dangling Monday module was removed; flow now: filter → SetVar → HTTP module 213 → router → module 40. The MAKE_8464122_MODULE_36_CLEANUP SPEC document is retained for historical reference but execution is N/A.
 - **NEW: Restore-deleted-event UI via activity-logs screen** (REC-010, agreed verbally 2026-05-04 evening, future-SPEC. Inverse of DELETE_EMPTY_EVENT. Not blocking.)
 - **Activity-log table name discrepancy** (surfaced during REC-009 smoke test verification — `crm_activity_log` does not exist as a table; SPEC referenced wrong name. Resolved in DELETE_EMPTY_EVENT FINDINGS F3 as INFO. Need next FOREMAN_REVIEW to confirm actual table name + flag for cross-SPEC consistency.)
 - **DELETE_EMPTY_EVENT F1 — HIGH double activity-log write** (RPC inserts an activity-log row, but `ActivityLog.write` on the JS side ALSO fires on the soft-delete callback path. Result: 2 activity-log rows per delete instead of 1. Follow-up SPEC needed to dedupe — pick one side as authoritative. RPC is preferable per defense-in-depth.)
@@ -213,7 +214,7 @@ EN+RU versions of campaign pages are soft-deleted in `storefront_pages` — camp
 (awaiting Daniel's verbal decision OR SPEC authoring)
 
 - ✅ `REC-009 — Delete-empty-event button — APPLIED 2026-05-04 evening (DELETE_EMPTY_EVENT SPEC, 2 commits + retro on develop, demo smoke-test all 3 cases passed)`
-- `REC-010 — Restore-deleted-event UI via activity-logs screen — submitted 2026-05-04 evening — agreed verbally, SPEC authoring deferred to a future session (not blocking)`
+- ✅ `REC-010 — Restore-deleted-event UI — APPLIED 2026-05-04 late night (RESTORE_DELETED_EVENT_UI SPEC, 3 commits 7f8117a/7df4586/dd5ff21, demo round-trip verified). Approach B (attendee_ids in audit-log details) shipped over the originally-planned timestamp scoping, after Foreman scope-correction caught crm_event_attendees has no updated_at column.`
 
 The full recommendation lives in `DECISIONS_LOG.md`; this section is just a pointer.
 
@@ -222,20 +223,28 @@ The full recommendation lives in `DECISIONS_LOG.md`; this section is just a poin
 ## 4. 90% Gate Status
 
 **Mode:** RECOMMEND-ONLY (v1).
-**Total recommendations submitted:** 0.
-**Last 30 decisions:** N/A (need ≥10 to begin reporting).
-**Rolling 30-rec acceptance rate:** N/A.
-**Status toward graduation:** baseline collection phase.
-
-When ≥10 recommendations have been decided, populate this section with current rolling rate and trajectory.
+**Total recommendations submitted:** 10.
+**Total decided:** 10 (agree: 6, disagree: 4, partial: 0).
+**Total applied:** 2 (REC-009 DELETE_EMPTY_EVENT + REC-010 RESTORE_DELETED_EVENT_UI, both 2026-05-04).
+**Rolling 30-rec acceptance rate:** **60%** (6/10) — first reportable rate.
+**Status toward graduation:** 10/30 decisions in. **Pattern:** 4 of 4 disagreements were "drop X" anomaly proposals (REC-002 questionnaires, REC-005 MultiSale events, REC-006 lead-level eye-exam, REC-008 duplicate emails) where Daniel saw legitimate business value the Overseer underestimated. **REC-009 + REC-010 were Daniel-proactive feature requests** — counter-trend with 100% agree rate. Over the next 20 decisions, the rate is expected to improve as the Overseer matures past the data-shape-anomaly trap. **Self-Review #1 due** (per SKILL §8 — every 10 decisions).
 
 ---
 
 ## 5. Recent Decisions (last 7 days)
 
-(none yet)
+- 2026-05-04 — REC-010 — agree — restore-deleted-event UI; Approach B (capture attendee_ids in audit details) chosen over A (add deleted_at column) and C (event-only)
+- 2026-05-04 — REC-009 — agree — delete-event button gated on SUM(purchase_amount)=0 (condition "א" only — testing leads who didn't buy don't block)
+- 2026-05-04 — REC-008 — disagree — same-email-different-people is by design (couples / parents+kids); only phone is unique
+- 2026-05-02 — REC-007 — agree — fix-and-import 2 corrupted-phone leads
+- 2026-05-02 — REC-006 — disagree → option (b) — keep lead-level eye-exam answer (storefront form actively writes it)
+- 2026-05-02 — REC-005 — disagree → option (d) defer — 8 MultiSale archive events, post-cutover SPEC introduces event_type
+- 2026-05-02 — REC-004 — agree — drop Monday "Category" tag on ~80 leads
+- 2026-05-02 — REC-003 — agree — hybrid synthesize 152 coupon-sent message-log rows
+- 2026-05-02 — REC-002 — disagree → option (a) — drop 8 vision-questionnaires, "לא צריך שאלון התאמה"
+- 2026-05-02 — REC-001 — agree — stub-create 51 orphan attendees instead of dropping
 
-When entries arrive, format: `2026-MM-DD — REC-NNN — agree/disagree/partial — {brief Daniel reason if given}`. Keep last 10 inline; archive older to `DECISIONS_LOG.md` only.
+Format: `YYYY-MM-DD — REC-NNN — agree/disagree/partial — {brief Daniel reason}`. Keep last 10 inline; older archived in `DECISIONS_LOG.md`.
 
 ---
 
