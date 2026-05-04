@@ -26,9 +26,20 @@ type EventVars = {
 
 // Public quick-register form bypasses CrmAutomation.evaluate (same posture as
 // event-register). Hardcode the template-base mapping by post-RPC status.
+//
+// Hotfix #3 (2026-05-04): on the coupon-delivery branch, after at least one
+// channel succeeds, mirror crm-event-day-coupon.js:131-132 semantics and flip
+// crm_event_attendees.coupon_sent=true + coupon_sent_at=now(). Without this,
+// the event-day operator UI ("שלח" button gated on !coupon_sent) shows a
+// manual-send button for already-auto-dispatched walk-ins → duplicate-send
+// risk. Payment-status flip from the manual flow is intentionally NOT mirrored
+// — walk-ins haven't paid yet at registration.
 export async function dispatchQuickRegister(
+  // deno-lint-ignore no-explicit-any
+  db: any,
   tenantId: string,
   leadId: string,
+  attendeeId: string | null,
   event: EventVars,
   name: string,
   phone: string,
@@ -47,11 +58,30 @@ export async function dispatchQuickRegister(
     event_date: event.event_date || "",
     event_time: event.start_time || "",
   };
-  const calls: Promise<unknown>[] = [
+  const results = await Promise.allSettled([
     callSendMessage(tenantId, leadId, event.id, "sms", templateBaseSlug, variables),
     callSendMessage(tenantId, leadId, event.id, "email", templateBaseSlug, variables),
-  ];
-  await Promise.allSettled(calls);
+  ]);
+  const anySent = results.some((r) => r.status === "fulfilled" && r.value === true);
+
+  if (
+    templateBaseSlug === "event_coupon_delivery" &&
+    anySent &&
+    attendeeId
+  ) {
+    try {
+      const { error } = await db
+        .from("crm_event_attendees")
+        .update({ coupon_sent: true, coupon_sent_at: new Date().toISOString() })
+        .eq("id", attendeeId)
+        .eq("tenant_id", tenantId);
+      if (error) {
+        console.error("coupon_sent flag update failed:", error);
+      }
+    } catch (e) {
+      console.error("coupon_sent flag update exception:", (e as Error).message || e);
+    }
+  }
 }
 
 async function callSendMessage(
@@ -61,7 +91,7 @@ async function callSendMessage(
   channel: "sms" | "email",
   templateSlug: string,
   variables: Record<string, string>,
-): Promise<void> {
+): Promise<boolean> {
   try {
     const res = await fetch(SEND_MESSAGE_URL, {
       method: "POST",
@@ -84,11 +114,14 @@ async function callSendMessage(
       console.error(
         `send-message ${channel}/${templateSlug} HTTP ${res.status}: ${txt.slice(0, 200)}`,
       );
+      return false;
     }
+    return true;
   } catch (e) {
     console.error(
       `send-message ${channel}/${templateSlug} exception:`,
       (e as Error).message || e,
     );
+    return false;
   }
 }

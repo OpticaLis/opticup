@@ -332,8 +332,9 @@ Deno.serve(async (req: Request) => {
   const finalStatus = result.status || "registered";
 
   // Public form bypasses automation rules — dispatch coupon-delivery /
-  // waiting-list templates directly. Failures inside are logged + swallowed.
-  await dispatchQuickRegister(tenantId, leadId, event, fullName, phone, email, finalStatus);
+  // waiting-list templates directly. Hotfix #3: on coupon-delivery the helper
+  // also flips coupon_sent=true post-success to block duplicate manual sends.
+  await dispatchQuickRegister(db, tenantId, leadId, result.attendee_id ?? null, event, fullName, phone, email, finalStatus);
 
   return jsonResponse({
     ok: true,
