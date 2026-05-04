@@ -1,5 +1,6 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { dispatchQuickRegister } from "./dispatch.ts";
 
 // ============================================================
 // quick-register — Walk-in QR registration EF
@@ -97,6 +98,7 @@ type EventRow = {
   id: string;
   name: string | null;
   event_date: string | null;
+  start_time: string | null;
   status: string;
   event_number: number;
   max_capacity: number | null;
@@ -118,7 +120,7 @@ async function resolveTenantAndEvent(db: any, tenantSlug: string, eventNumber: n
 
   const { data: event, error: evErr } = await db
     .from("crm_events")
-    .select("id, name, event_date, status, event_number, max_capacity, max_coupons")
+    .select("id, name, event_date, start_time, status, event_number, max_capacity, max_coupons")
     .eq("tenant_id", tenant.id)
     .eq("event_number", eventNumber)
     .eq("is_deleted", false)
@@ -192,6 +194,7 @@ Deno.serve(async (req: Request) => {
   if (!fullName) return errorResponse("missing_full_name", 400);
   if (!phoneRaw) return errorResponse("missing_phone", 400);
   if (!termsAccepted) return errorResponse("terms_required", 400);
+  if (!eyeExamNeeded) return errorResponse("missing_eye_exam", 400);
 
   const phone = normalizePhone(phoneRaw);
   if (!phone) return errorResponse("invalid_phone", 400);
@@ -227,7 +230,7 @@ Deno.serve(async (req: Request) => {
     // re-engaging, not editing the master record.
     await db
       .from("crm_leads")
-      .update({ unsubscribed_at: null, updated_at: nowIso })
+      .update({ unsubscribed_at: null, updated_at: nowIso, acquired_via: SOURCE_TAG })
       .eq("id", leadId)
       .eq("tenant_id", tenantId);
   } else {
@@ -239,6 +242,7 @@ Deno.serve(async (req: Request) => {
       language: "he",
       status: "new",
       source: SOURCE_TAG,
+      acquired_via: SOURCE_TAG,
       eye_exam_default: eyeExamNeeded,
       terms_approved: true,
       terms_approved_at: nowIso,
@@ -326,6 +330,11 @@ Deno.serve(async (req: Request) => {
   }
 
   const finalStatus = result.status || "registered";
+
+  // Public form bypasses automation rules — dispatch coupon-delivery /
+  // waiting-list templates directly. Failures inside are logged + swallowed.
+  await dispatchQuickRegister(tenantId, leadId, event, fullName, phone, email, finalStatus);
+
   return jsonResponse({
     ok: true,
     status: finalStatus,
