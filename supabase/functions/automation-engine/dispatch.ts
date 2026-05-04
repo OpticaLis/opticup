@@ -23,10 +23,7 @@ export async function dispatchPlanDirect(
   anonKey: string,
   sendMessageUrl: string,
 ): Promise<DispatchResult> {
-  const runIdTag = (items[0] && items[0].run_id) || "unknown";
-  console.log(`[AE-DIAG runId=${runIdTag}] dispatchPlanDirect ENTRY items=${Array.isArray(items) ? items.length : 0}`);
   if (!Array.isArray(items) || !items.length) {
-    console.log(`[AE-DIAG runId=${runIdTag}] dispatchPlanDirect EARLY RETURN empty items`);
     return { sent: 0, failed: 0, rejected: 0 };
   }
 
@@ -34,16 +31,14 @@ export async function dispatchPlanDirect(
   const settled = await Promise.allSettled(calls);
   let sent = 0, failed = 0, rejected = 0;
   const results: { ok: boolean; error?: string }[] = [];
-  settled.forEach((r, i) => {
+  settled.forEach((r) => {
     const v = r.status === "fulfilled" ? r.value : null;
-    const it = items[i];
-    if (v && v.ok) { sent++; results.push({ ok: true }); console.log(`[AE-DIAG runId=${runIdTag}] dispatch item ${i} lead=${it?.lead_id} channel=${it?.channel} OK`); }
-    else if (v && v.error === "phone_not_allowed") { rejected++; results.push({ ok: false, error: "phone_not_allowed" }); console.log(`[AE-DIAG runId=${runIdTag}] dispatch item ${i} lead=${it?.lead_id} channel=${it?.channel} REJECTED phone_not_allowed`); }
-    else { failed++; results.push({ ok: false, error: v?.error }); console.log(`[AE-DIAG runId=${runIdTag}] dispatch item ${i} lead=${it?.lead_id} channel=${it?.channel} FAILED error=${v?.error || "unknown"}`); }
+    if (v && v.ok) { sent++; results.push({ ok: true }); }
+    else if (v && v.error === "phone_not_allowed") { rejected++; results.push({ ok: false, error: "phone_not_allowed" }); }
+    else { failed++; results.push({ ok: false, error: v?.error }); }
   });
   try { await promoteWaitingLeadsToInvited(db, tenantId, items, results); }
   catch (e) { console.error("automation-engine promoteWaitingLeadsToInvited:", (e as Error).message); }
-  console.log(`[AE-DIAG runId=${runIdTag}] dispatchPlanDirect EXIT sent=${sent} failed=${failed} rejected=${rejected}`);
   return { sent, failed, rejected };
 }
 
