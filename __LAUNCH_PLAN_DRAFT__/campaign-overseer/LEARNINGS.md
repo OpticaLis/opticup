@@ -6,6 +6,55 @@
 
 ---
 
+## L-005 — Two binding behavior rules from Self-Review #1 (Daniel-approved 2026-05-04 late night)
+
+**Date:** 2026-05-04 late night
+**Mode at the time:** RECOMMEND-ONLY (v1)
+**Trigger:** Self-Review #1 (`DECISIONS_LOG.md`) identified that 4 of 4 disagreements (REC-002/005/006/008) shared the same root: anomaly-detection RECs that didn't first verify the live flow producing the data. 2 skill adjustments were proposed; Daniel approved both.
+
+**Until the formal `CAMPAIGN_OVERSEER_SKILL.md` is recreated, these two rules are binding via this LEARNINGS entry. Future sessions MUST follow them.**
+
+---
+
+### Rule A — Live-Flow Check before any cleanup/remediation REC
+
+Before recommending action on a perceived data anomaly, the Overseer MUST first identify and inspect the customer-facing or operator-facing surface that produces the data:
+
+1. **Identify the producing surface:** which storefront form, CRM admin button, automation rule, EF, Make scenario, or operator workflow created the data shape under question?
+2. **Read or query that surface** (not just the resulting table). Examples: open the storefront form's HTML to confirm which fields it submits; read the EF source to see what it inserts; inspect the Make scenario branches to see what writes the row.
+3. **Only then frame the anomaly:** is this data the intentional output of a working flow (= leave it alone, possibly document as by-design), or is it an unintended artifact (= legitimate cleanup target).
+
+**Why this rule exists.** REC-002 proposed preserving 8 questionnaire summaries that turned out to have zero use in the new system. REC-005 proposed dropping 8 MultiSale events that were ~200K NIS revenue history. REC-006 proposed dropping 587 lead-level eye-exam answers that the live storefront form actively writes to. REC-008 proposed merging 16 duplicate-email leads that reflect couples + parents-with-kids by design. In every case the anomaly looked real on a schema-shape inspection but the live flow proved it was intentional.
+
+**How to apply.** When you spot a data shape that triggers a "should we clean this up?" thought, ASK Daniel about the producing flow before drafting the REC: "I see X rows with shape Y — is this from the [storefront form / operator action / automation rule / migration import]? Should it be there?" That single clarifying question prevents the anomaly-framing trap.
+
+---
+
+### Rule B — Tag every REC as `anomaly-detection` or `feature-request`
+
+Every REC entry in `DECISIONS_LOG.md` MUST carry an explicit class tag in its title or first line:
+
+- `[anomaly-detection]` — the REC is the Overseer surfacing a data shape, schema violation, or operational drift that may need cleanup. These RECs are gated by Rule A above.
+- `[feature-request]` — the REC is the Overseer authoring a SPEC for a Daniel-proactive ask (a new capability, a UI affordance, a missing operational tool). These RECs are NOT subject to Rule A — they originate from Daniel and don't need a live-flow defense.
+
+**Format example for future RECs:**
+
+```markdown
+## REC-011 — [feature-request] Auto-archive events older than 60 days
+- **Date submitted:** YYYY-MM-DD
+- **Source signal:** ...
+```
+
+**Why this matters.** The 90% rolling rate today (60% over 10 RECs) is a noisy aggregate. 6 of 6 agreements were either feature requests (REC-009 + REC-010) or migration choices grounded in clear business context (REC-001/003/004/007). 4 of 4 disagreements were anomaly-detection RECs that didn't apply Rule A. With class tagging, the rate split makes the Overseer's actual quality visible: feature-request track and anomaly-detection track will graduate to v2 (autonomous) at different rates because they require different discipline. Daniel can also see at a glance which class an Overseer recommendation falls into.
+
+**How to apply going forward.** All RECs from REC-011 onward carry one of the two tags. Historical RECs (001-010) keep their existing format; this rule is forward-only.
+
+---
+
+*End of L-005.*
+
+---
+
 ## L-004 — Probe schema BEFORE writing a SPEC that depends on a column existing
 
 **Date:** 2026-05-04 late night

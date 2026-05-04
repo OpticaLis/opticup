@@ -195,7 +195,7 @@
 
 2. **Distinguish "anomaly detection" recs from "feature request" recs in REC numbering or labeling.** Daniel-proactive feature requests (REC-009, REC-010) have a 100% agree rate; anomaly-detection recs have 50%. Future Overseer should clearly label which class each REC belongs to, so the rolling acceptance rate is interpretable instead of a noisy aggregate. Daniel can also see at a glance which class an Overseer recommendation falls into.
 
-**Status:** awaiting Daniel approval before editing SKILL file. If approved, apply at the next opticup-strategic / Campaign-Overseer session.
+**Status:** ✅ Daniel APPROVED both 2026-05-04 late night. Codified into `LEARNINGS.md` L-005 (Rule A — live-flow check; Rule B — REC class-tagging) as binding-via-LEARNINGS until formal SKILL.md is recreated.
 
 ---
 
