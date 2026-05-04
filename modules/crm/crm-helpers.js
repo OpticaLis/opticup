@@ -225,6 +225,17 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
     });
   }
 
+  // --- Registration-method badge (Hotfix #3 2026-05-04) ---
+  // QR walk-in flow needs an operator-visible marker so staff don't manually
+  // re-send the already-auto-dispatched coupon. Only quick_register_qr gets a
+  // badge today; future methods can extend the map without touching call sites.
+  var REG_BADGE_LABELS = { quick_register_qr: 'רישום מהיר' };
+  function renderRegBadge(method) {
+    var label = REG_BADGE_LABELS[method];
+    if (!label) return '';
+    return ' <span class="inline-block px-1.5 py-0.5 text-[0.65rem] font-bold rounded-full bg-amber-500 text-white align-middle" title="רישום מהיר דרך QR">' + label + '</span>';
+  }
+
   window.CrmHelpers = {
     formatPhone: formatPhone,
     normalizePhone: normalizePhone,
@@ -235,6 +246,7 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
     loadStatusCache: loadStatusCache,
     getStatusInfo: getStatusInfo,
     statusBadgeHtml: statusBadgeHtml,
+    renderRegBadge: renderRegBadge,
     distinctValues: distinctValues,
     heCompare: heCompare,
     tid: tid,

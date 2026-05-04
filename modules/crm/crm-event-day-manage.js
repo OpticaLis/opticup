@@ -106,7 +106,7 @@
       '</tr></thead><tbody>';
     rows.forEach(function (r) {
       html += '<tr>' +
-        '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + '</td>' +
+        '<td class="' + CLS_TD + ' font-medium text-slate-900">' + escapeHtml(r.full_name || '') + CrmHelpers.renderRegBadge(r.registration_method) + '</td>' +
         '<td class="' + CLS_TD + ' text-slate-600" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(r.phone)) + '</td>' +
         '<td class="' + CLS_TD + '">' + CrmHelpers.statusBadgeHtml('attendee', r.status) + '</td>' +
         '<td class="' + CLS_TD + '" data-admin-only>' + purchaseCell(r) + '</td>' +
@@ -191,7 +191,7 @@
       '<div class="space-y-2">' +
       (waitingPurchase.length ? waitingPurchase.map(function (a) {
         return '<div class="' + CLS_ARR_CARD + '" data-open-purchase="' + escapeHtml(a.id) + '">' +
-          '<div class="font-semibold text-slate-900 text-sm truncate">' + escapeHtml(a.full_name || '') + '</div>' +
+          '<div class="font-semibold text-slate-900 text-sm truncate">' + escapeHtml(a.full_name || '') + CrmHelpers.renderRegBadge(a.registration_method) + '</div>' +
           '<div class="text-xs text-slate-500 mt-0.5" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div>' +
           '<span class="' + CLS_PURCH_BADGE + '">💰 הזן סכום</span>' +
         '</div>';
@@ -202,7 +202,7 @@
       '<div class="space-y-2">' +
       (purchased.length ? purchased.map(function (a) {
         return '<div class="' + CLS_ARR_PURCH + '">' +
-          '<div class="font-semibold text-slate-900 text-sm truncate">' + escapeHtml(a.full_name || '') + '</div>' +
+          '<div class="font-semibold text-slate-900 text-sm truncate">' + escapeHtml(a.full_name || '') + CrmHelpers.renderRegBadge(a.registration_method) + '</div>' +
           '<div class="text-xs text-slate-500 mt-0.5" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div>' +
           '<span class="' + CLS_AMOUNT_DISP + '" data-admin-only>' + escapeHtml(CrmHelpers.formatCurrency(a.purchase_amount)) + '</span>' +
         '</div>';
