@@ -154,13 +154,12 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
     ruleResolvedIds[i] = v.resolvedLeadIds || [];
   });
 
+  console.log(`[AE-DIAG runId=${runId}] post-prepare allItems=${allItems.length} totalQueued=${totalQueued} skipped=${skipped} mode=${mode} dispatchMessages=${dispatchMessages}`);
+
   // ATOMIC_CONFIRMATION_FLOW Part A: post-actions + attendee-upsert ONLY in
   // dispatch mode. evaluate mode is preview-only — no side effects.
-  // This is the fix for Bug 1: operator clicking "Cancel" on the modal MUST
-  // leave attendees' status unchanged. Cancel = no second EF call, no side
-  // effects. Confirm-without-notify = mode='dispatch' + dispatchMessages=false
-  // → post-actions fire, no message dispatch. Confirm-and-notify = full path.
   if (mode === "dispatch") {
+    console.log(`[AE-DIAG runId=${runId}] post-actions loop entry rules=${rules.length}`);
     for (let i = 0; i < rules.length; i++) {
       try { await executePostActions(db, tenantId, rules[i], ruleResolvedIds[i] || []); }
       catch (e) { console.error("automation-engine post-action:", (e as Error).message); }
@@ -187,6 +186,7 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
   // ATOMIC_CONFIRMATION_FLOW Part A: post-actions and queue_send writes were
   // skipped above in this mode — they fire only at dispatch (modal approve).
   if (mode === "evaluate") {
+    console.log(`[AE-DIAG runId=${runId}] EARLY RETURN evaluate-mode plan_items.length=${allItems.length}`);
     if (runId) await finishRun(db, tenantId, runId, "completed");
     return {
       run_id: runId,
@@ -206,7 +206,9 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
   // post-actions ran (committed) but no SMS/email dispatch ("confirm without
   // notify"). True = full dispatch (cron default OR "confirm and notify").
   const itemsToDispatch = (Array.isArray(planItems) && planItems.length > 0) ? planItems : allItems;
+  console.log(`[AE-DIAG runId=${runId}] dispatch decision itemsToDispatch=${itemsToDispatch.length} (planItems=${Array.isArray(planItems) ? planItems.length : "null"} allItems=${allItems.length}) dispatchMessages=${dispatchMessages}`);
   if (!dispatchMessages || itemsToDispatch.length === 0) {
+    console.log(`[AE-DIAG runId=${runId}] EARLY RETURN no-dispatch reason=${!dispatchMessages ? "dispatchMessages=false" : "itemsToDispatch.length=0"}`);
     if (runId) await finishRun(db, tenantId, runId, "completed");
     return {
       run_id: runId, fired: rules.length, sent: 0, failed: 0, rejected: 0,
@@ -214,7 +216,9 @@ export async function evaluate(db: Db, input: EvaluateInput): Promise<EvaluateRe
     };
   }
 
+  console.log(`[AE-DIAG runId=${runId}] dispatchPlanDirect ENTRY items=${itemsToDispatch.length}`);
   const r = await dispatchPlanDirect(db, itemsToDispatch, tenantId, anonKey, sendMessageUrl);
+  console.log(`[AE-DIAG runId=${runId}] dispatchPlanDirect EXIT sent=${r.sent} failed=${r.failed} rejected=${r.rejected}`);
   if (runId) await finishRun(db, tenantId, runId, "completed");
   return {
     run_id: runId,
