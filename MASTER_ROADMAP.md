@@ -1,6 +1,6 @@
 # Optic Up — Master Roadmap
 
-> **Last reconciled:** 2026-04-26 (Module 4 campaigns measurement pipeline operational on demo)
+> **Last reconciled:** 2026-05-04 late night — Prizma cutover COMPLETE 2026-05-03 (production live). M4 post-cutover closure rolling: QUICK_REGISTER_QR_FLOW + DELETE_EMPTY_EVENT + ACTIVITY_LOG_DEDUP + RESTORE_DELETED_EVENT_UI all ✅ shipped. 60% Overseer rolling REC rate (10 decided). Open M4 tech-debt: TD-2 migrations git drift (SaaS-blocker), TD-3 multi-tenant URL strategy (deferred to tenant 2). Open M4 backlog: POST-1 ✅ closed, POST-7 ✅ closed, POST-4/5/6 + REC-005 (MultiSale archive needs event_type schema first).
 >
 > This document is the canonical **build sequence**, **decision log**, and
 > **known-debt register** for the Optic Up platform.
@@ -38,7 +38,7 @@ backend with RLS-based tenant isolation.
 | 2 | Platform Admin | ✅ Complete (v2.0) | opticup | Super-admin control plane: tenant provisioning, plans/limits/features, audit log, PIN reset, suspend/activate/delete. 4 phases. 5 tables + tenants extension. |
 | 3 | Storefront | 🟢 DNS SWITCH EXECUTED (2026-04-18) — propagation pending | opticup-storefront | Public storefront: CMS pages, campaigns, blog, AI content, translations (he/en/ru), media library, lead forms, brand pages, SEO. All phases complete. develop→main merged. DNS switched from DreamVPS to Vercel. 25 tables. |
 | 3.1 | Project Reconstruction | ✅ Complete | opticup | Meta-module: foundation doc rewrites, DB audit baseline, roadmap reconciliation. Does not own code — owns documentation accuracy. 3A/3B/3C/3D all complete. |
-| 4 | CRM | 🟡 Go-Live (Campaigns Measurement OPERATIONAL on demo — 2026-04-26) | opticup | Customer management — replaces Monday.com for leads. 23 tables, 7 views, 8 RPCs, 46 RLS policies. Phases A–B9 complete + merged to main. Go-Live P1–P3c+P4 closed (lead intake, lead management, event management, messaging pipeline). Campaigns Measurement screen + Make → Supabase Facebook sync pipeline OPERATIONAL on demo (`M4_CAMPAIGNS_*` 5-SPEC sequence closed 2026-04-26 — see `modules/Module 4 - CRM/docs/make-patterns/README.md` for the iteration pattern). Payment-lifecycle trio CLOSED. P5–P7 remaining + P7 historical import for prizma. |
+| 4 | CRM | 🟢 PRODUCTION (Prizma cutover COMPLETE 2026-05-03; post-cutover closure rolling) | opticup | Customer management — replaces Monday.com for leads. 23 tables, 7 views, 8+ RPCs, 46 RLS policies. Phases A–B9 + Go-Live P1–P3c+P4 + P5–P7 closed. Cutover 2026-05-03 successful — 1158 leads + 88 campaigns + 221 attendees migrated; legacy pipeline decommissioned. **Post-cutover features shipped:** QUICK_REGISTER_QR_FLOW (WhatsApp QR walk-in registration), DELETE_EMPTY_EVENT (soft-delete gated on purchase_amount=0), ACTIVITY_LOG_DEDUPLICATION_DELETE_EVENT (1-row audit), RESTORE_DELETED_EVENT_UI (Approach B: attendee_ids in audit details), payment-lifecycle trio. Open: 4 backlog items (POST-4/5/6 LOW, REC-005 MultiSale archive needs event_type schema), 2 tech-debts (TD-2 migrations git drift, TD-3 multi-tenant URL strategy). |
 | 5–22 | Future modules | ⬜ Not started | — | Orders, prescriptions, payments, lab/KDS, lenses, branches, WhatsApp, reports, supplier portal, content hub, B2B network, AI support, WooCommerce sync, POS. |
 
 **Detailed per-module scope** lives in each module's `README.md` and `MODULE_SPEC.md`
@@ -46,10 +46,32 @@ under `opticup/modules/Module N - .../`.
 
 ---
 
-## 3. Current State (April 2026)
+## 3. Current State (May 2026 — post-cutover)
 
-**Module 3 (Storefront) has received a GO verdict for DNS switch** as of
-2026-04-18. A comprehensive 15-mission preflight audit (`DNS_SWITCH_PREFLIGHT_AUDIT`)
+**Prizma is LIVE in production** (cutover executed 2026-05-03). Module 4 (CRM)
+operating full pipeline: storefront `/supersale/` form → `lead-intake` EF →
+`crm_leads` → automations → SMS/Email via Make-as-pipe. WhatsApp QR walk-in
+registration (`/quick-register/`) live. Soft-delete + restore for events
+shipped 2026-05-04. Legacy Monday/WordPress pipeline decommissioned.
+
+**M4 closure backlog (post-2026-05-04 marathon):**
+- 2 tech-debts: TD-2 migrations git drift (SaaS-blocker pre-tenant-2),
+  TD-3 multi-tenant URL strategy (deferred to tenant 2 onboarding).
+- 4 LOW/MEDIUM POST items: POST-4 (CRM leads pagination), POST-5
+  (storefront form Hebrew lock), POST-6 (campaign metrics UI), REC-005
+  (8 MultiSale archive events — needs `event_type` schema first).
+- 2 pending FOREMAN_REVIEWs: ACTIVITY_LOG_DEDUPLICATION_DELETE_EVENT,
+  RESTORE_DELETED_EVENT_UI.
+
+**Production discipline:** SPEC + Foreman + Executor flow on every change.
+PR-only merges to main. Read-only by default for Overseer. See
+`feedback_production_discipline_post_cutover.md`.
+
+---
+
+### Module 3 (Storefront) — historical DNS switch context (April 2026)
+
+**GO verdict for DNS switch** issued 2026-04-18. A comprehensive 15-mission preflight audit (`DNS_SWITCH_PREFLIGHT_AUDIT`)
 found **0 blockers**. All prior issues are resolved:
 
 - **develop→main merge: CLOSED** (0 commits divergent)

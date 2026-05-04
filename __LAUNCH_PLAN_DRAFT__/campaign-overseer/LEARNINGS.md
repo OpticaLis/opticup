@@ -6,6 +6,108 @@
 
 ---
 
+## L-005 — Two binding behavior rules from Self-Review #1 (Daniel-approved 2026-05-04 late night)
+
+**Date:** 2026-05-04 late night
+**Mode at the time:** RECOMMEND-ONLY (v1)
+**Trigger:** Self-Review #1 (`DECISIONS_LOG.md`) identified that 4 of 4 disagreements (REC-002/005/006/008) shared the same root: anomaly-detection RECs that didn't first verify the live flow producing the data. 2 skill adjustments were proposed; Daniel approved both.
+
+**Until the formal `CAMPAIGN_OVERSEER_SKILL.md` is recreated, these two rules are binding via this LEARNINGS entry. Future sessions MUST follow them.**
+
+---
+
+### Rule A — Live-Flow Check before any cleanup/remediation REC
+
+Before recommending action on a perceived data anomaly, the Overseer MUST first identify and inspect the customer-facing or operator-facing surface that produces the data:
+
+1. **Identify the producing surface:** which storefront form, CRM admin button, automation rule, EF, Make scenario, or operator workflow created the data shape under question?
+2. **Read or query that surface** (not just the resulting table). Examples: open the storefront form's HTML to confirm which fields it submits; read the EF source to see what it inserts; inspect the Make scenario branches to see what writes the row.
+3. **Only then frame the anomaly:** is this data the intentional output of a working flow (= leave it alone, possibly document as by-design), or is it an unintended artifact (= legitimate cleanup target).
+
+**Why this rule exists.** REC-002 proposed preserving 8 questionnaire summaries that turned out to have zero use in the new system. REC-005 proposed dropping 8 MultiSale events that were ~200K NIS revenue history. REC-006 proposed dropping 587 lead-level eye-exam answers that the live storefront form actively writes to. REC-008 proposed merging 16 duplicate-email leads that reflect couples + parents-with-kids by design. In every case the anomaly looked real on a schema-shape inspection but the live flow proved it was intentional.
+
+**How to apply.** When you spot a data shape that triggers a "should we clean this up?" thought, ASK Daniel about the producing flow before drafting the REC: "I see X rows with shape Y — is this from the [storefront form / operator action / automation rule / migration import]? Should it be there?" That single clarifying question prevents the anomaly-framing trap.
+
+---
+
+### Rule B — Tag every REC as `anomaly-detection` or `feature-request`
+
+Every REC entry in `DECISIONS_LOG.md` MUST carry an explicit class tag in its title or first line:
+
+- `[anomaly-detection]` — the REC is the Overseer surfacing a data shape, schema violation, or operational drift that may need cleanup. These RECs are gated by Rule A above.
+- `[feature-request]` — the REC is the Overseer authoring a SPEC for a Daniel-proactive ask (a new capability, a UI affordance, a missing operational tool). These RECs are NOT subject to Rule A — they originate from Daniel and don't need a live-flow defense.
+
+**Format example for future RECs:**
+
+```markdown
+## REC-011 — [feature-request] Auto-archive events older than 60 days
+- **Date submitted:** YYYY-MM-DD
+- **Source signal:** ...
+```
+
+**Why this matters.** The 90% rolling rate today (60% over 10 RECs) is a noisy aggregate. 6 of 6 agreements were either feature requests (REC-009 + REC-010) or migration choices grounded in clear business context (REC-001/003/004/007). 4 of 4 disagreements were anomaly-detection RECs that didn't apply Rule A. With class tagging, the rate split makes the Overseer's actual quality visible: feature-request track and anomaly-detection track will graduate to v2 (autonomous) at different rates because they require different discipline. Daniel can also see at a glance which class an Overseer recommendation falls into.
+
+**How to apply going forward.** All RECs from REC-011 onward carry one of the two tags. Historical RECs (001-010) keep their existing format; this rule is forward-only.
+
+---
+
+*End of L-005.*
+
+---
+
+## L-004 — Probe schema BEFORE writing a SPEC that depends on a column existing
+
+**Date:** 2026-05-04 late night
+**Mode at the time:** Foreman Hat (opticup-strategic loaded in-session)
+
+**Trigger incident.** I authored RESTORE_DELETED_EVENT_UI SPEC §3.5 around the assumption that `crm_event_attendees.updated_at` exists and is touched at delete-time, enabling timestamp-based "restore only what was cascade-deleted at the same instant." Daniel asked me to "check yourself properly using the strategic skill" before he ran Claude Code. I queried `information_schema.columns` and discovered `crm_event_attendees` has only `created_at` and `is_deleted` boolean — no `updated_at`, no `deleted_at`. The original SPEC was infeasible as written.
+
+I had to rewrite the SPEC (Approach A=add column, B=capture IDs in audit details, C=event-only restore). Daniel chose B. The rewrite cost ~30 minutes of authoring time but no executor time was wasted (caught pre-dispatch).
+
+**Cost of the incident.** Zero — Daniel's gate prevented bad dispatch. But this was the second SPEC in 24 hours where a column-existence assumption proved wrong (DELETE_EMPTY_EVENT §3.13 referenced a `crm_activity_log` table that doesn't exist; actual is shared `activity_log`).
+
+---
+
+### Rule (binding on every Overseer/Foreman SPEC)
+
+When a SPEC's success criteria, RPC body, or commit plan depends on a column / table / RPC / function existing, the author MUST verify each dependency via `information_schema.columns` / `information_schema.routines` / `pg_get_functiondef` BEFORE writing §3 Success Criteria.
+
+**Concrete check before §3 is written:**
+
+1. **List every named DB object the SPEC will read or write:** tables, columns, RPCs, views, triggers, indexes.
+2. **For each item, run a probe:**
+   - Tables: `SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name='<name>';`
+   - Columns: `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name='<table>' AND column_name='<col>';`
+   - RPCs/functions: `SELECT routine_name FROM information_schema.routines WHERE routine_schema='public' AND routine_name='<name>';` + `SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname='<name>';` for body inspection.
+3. **If a probe returns no row** — the SPEC's plan must explicitly account for it: either add a migration to create the missing object, or pivot the design.
+4. **If a probe returns row(s) but with different shape than assumed** — quote the actual shape in §2 Verified Evidence and adjust §3 to match.
+
+A SPEC that fails any probe AT AUTHOR TIME but cites the assumed shape in §3 is not ready for dispatch. Mid-execution discoveries cost executor time and erode trust.
+
+---
+
+### Why this matters (the meta-pattern)
+
+This is **Pattern 14 (verify before acting) applied to Foreman authoring discipline.** The Overseer/Foreman normally treats Pattern 14 as a rule for write actions and dispatch decisions. SPEC authoring is also a write action — it spends executor cycles, makes promises about live system state, and creates expectations that the codebase will accept the SPEC's plan. A SPEC that lies about the schema is itself a broken artifact, regardless of how well-formatted the rest looks.
+
+**The compound risk:** once a SPEC ships and the executor starts work, mid-flight discovery of a shape mismatch forces a SPEC rewrite at the worst possible time (executor blocked, partial work done, decisions need rolling back). Catching at author time costs ~5 minutes of probing; catching at execution time costs an hour of recovery + rewrite.
+
+---
+
+### Combined with L-001, L-003
+
+- **L-001:** verify infrastructure + test-data preconditions BEFORE pushing a QA prompt.
+- **L-003:** verify ground-truth state BEFORE trusting HANDOFF claims about partial-SPEC progress.
+- **L-004 (this rule):** verify SCHEMA-level facts BEFORE writing §3 Success Criteria.
+
+All three are the same principle (Pattern 14 — verify before acting) applied to different write surfaces of the Overseer/Foreman job: QA dispatch, state tracking, and SPEC authoring.
+
+---
+
+*End of L-004.*
+
+---
+
 ## L-003 — Verify ground truth (git + Supabase + filesystem) before trusting any HANDOFF or SESSION_CONTEXT claim about partial-SPEC state
 
 **Date:** 2026-05-04 (resume session)
