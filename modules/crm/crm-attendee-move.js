@@ -93,10 +93,10 @@
         confirmBtn.disabled = false;
         return;
       }
-      if (sendNotif && window.CrmAutomation && CrmAutomation.evaluate) {
+      if (sendNotif && window.CrmAutomationClient && CrmAutomationClient.evaluate) {
         var paid = (r.data.payment_status === 'paid');
         try {
-          await CrmAutomation.evaluate('attendee_moved', {
+          await CrmAutomationClient.evaluate('attendee_moved', {
             attendeeId: r.data.new_attendee_id,
             leadId:     r.data.lead_id,
             eventId:    r.data.target_event_id,

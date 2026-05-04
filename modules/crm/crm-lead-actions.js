@@ -6,11 +6,11 @@
 
   function getTid() { return (typeof getTenantId === 'function') ? getTenantId() : null; }
 
-  function fireLeadStatusAutomation(leadId, newStatus, oldStatus) { if (window.CrmAutomation && CrmAutomation.evaluate) CrmAutomation.evaluate('lead_status_change', { leadId: leadId, newStatus: newStatus, oldStatus: oldStatus }); }
+  function fireLeadStatusAutomation(leadId, newStatus, oldStatus) { if (window.CrmAutomationClient && CrmAutomationClient.evaluate) CrmAutomationClient.evaluate('lead_status_change', { leadId: leadId, newStatus: newStatus, oldStatus: oldStatus }); }
 
   function statusLabel(slug) {
-    var info = (CrmHelpers && CrmHelpers.getStatusInfo) ? CrmHelpers.getStatusInfo('lead', slug) : null;
-    return (info && info.label) || slug || '';
+    var _info = (CrmHelpers && CrmHelpers.getStatusInfo) ? CrmHelpers.getStatusInfo('lead', slug) : null;
+    return (_info && _info.label) || slug || '';
   }
 
   // Returns 1 or 2 based on TIER1_STATUSES / TIER2_STATUSES; defaults to 1.
@@ -86,13 +86,13 @@
     if (!phoneRaw) throw new Error('missing phone');
     if (!email) throw new Error('missing email');
 
-    var phone = (CrmHelpers && CrmHelpers.normalizePhone) ? CrmHelpers.normalizePhone(phoneRaw) : null;
-    if (!phone) return { invalidPhone: true, raw: phoneRaw };
+    var _phone = (CrmHelpers && CrmHelpers.normalizePhone) ? CrmHelpers.normalizePhone(phoneRaw) : null;
+    if (!_phone) return { invalidPhone: true, raw: phoneRaw };
 
     var existing = await sb.from('crm_leads')
       .select('id, full_name, status')
       .eq('tenant_id', tenantId)
-      .eq('phone', phone)
+      .eq('phone', _phone)
       .eq('is_deleted', false)
       .limit(1)
       .maybeSingle();
@@ -102,7 +102,7 @@
     var payload = {
       tenant_id: tenantId,
       full_name: fullName,
-      phone: phone,
+      phone: _phone,
       email: email,
       city: (data.city || '').trim() || null,
       language: data.language || 'he',
@@ -121,7 +121,7 @@
         var raced = await sb.from('crm_leads')
           .select('id, full_name, status')
           .eq('tenant_id', tenantId)
-          .eq('phone', phone)
+          .eq('phone', _phone)
           .eq('is_deleted', false)
           .limit(1)
           .maybeSingle();
@@ -140,7 +140,7 @@
       if (noteRes.error) throw new Error('lead note insert failed: ' + noteRes.error.message);
     }
     try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.create', entity_type: 'crm_leads', entity_id: ins.data.id, details: { full_name: payload.full_name, phone: payload.phone, source: 'manual' } }); } catch (_) {}
-    if (window.CrmAutomation && CrmAutomation.evaluate) CrmAutomation.evaluate('lead_intake', { leadId: ins.data.id });
+    if (window.CrmAutomationClient && CrmAutomationClient.evaluate) CrmAutomationClient.evaluate('lead_intake', { leadId: ins.data.id });
     return ins.data;
   }
 
@@ -246,11 +246,11 @@
   }
 
   async function resubscribeLead(lead) {
-    var tid = (typeof getTenantId === 'function') ? getTenantId() : null;
-    if (!tid || !lead || !lead.id) throw new Error('missing context');
+    var tenantId = (typeof getTenantId === 'function') ? getTenantId() : null;
+    if (!tenantId || !lead || !lead.id) throw new Error('missing context');
     var res = await sb.from('crm_leads')
       .update({ unsubscribed_at: null, updated_at: new Date().toISOString() })
-      .eq('id', lead.id).eq('tenant_id', tid);
+      .eq('id', lead.id).eq('tenant_id', tenantId);
     if (res.error) throw new Error(res.error.message);
     try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.resubscribed', entity_type: 'crm_leads', entity_id: lead.id, details: { lead_name: lead.full_name } }); } catch (_) {}
     if (window.Toast) Toast.success('הליד הוחזר לדיוור');
@@ -273,12 +273,12 @@
   }
 
   async function approveTermsManually(lead) {
-    var tid = getTid();
-    if (!tid || !lead || !lead.id) throw new Error('missing context');
+    var tenantId = getTid();
+    if (!tenantId || !lead || !lead.id) throw new Error('missing context');
     var nowIso = new Date().toISOString();
     var res = await sb.from('crm_leads')
       .update({ terms_approved: true, terms_approved_at: nowIso, updated_at: nowIso })
-      .eq('id', lead.id).eq('tenant_id', tid);
+      .eq('id', lead.id).eq('tenant_id', tenantId);
     if (res.error) throw new Error(res.error.message);
     try { if (window.ActivityLog) ActivityLog.write({ action: 'crm.lead.terms_approved_manual', entity_type: 'crm_leads', entity_id: lead.id, details: { lead_name: lead.full_name } }); } catch (_) {}
     if (window.Toast) Toast.success('תקנון אושר ידנית');

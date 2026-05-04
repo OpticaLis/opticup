@@ -206,7 +206,10 @@
     return { sent: sent, failed: failed, rejected: rejected };
   }
 
-  async function show(sendPlan) {
+  async function show(sendPlan, onApprove) {
+    // Rung 2 additive: optional `onApprove(sendPlan)` callback. If provided, the
+    // approve button calls it instead of the legacy browser-side approveAndSend.
+    // Backward compat: callers passing a single arg keep working unchanged.
     if (!Array.isArray(sendPlan) || !sendPlan.length) return;
     if (typeof Modal === 'undefined') { console.error('CrmConfirmSend: Modal not available'); return; }
     _state.activeTab = 'messages'; _state.page = 1; _state.sortCol = 'name'; _state.sortDir = 'asc';
@@ -246,7 +249,13 @@
 
     approveBtn.addEventListener('click', async function () {
       approveBtn.disabled = true; approveBtn.textContent = 'שולח...'; cancelBtn.disabled = true;
-      var r = await approveAndSend(sendPlan);
+      var r;
+      if (typeof onApprove === 'function') {
+        r = await onApprove(sendPlan);
+        if (!r) r = { sent: 0, failed: sendPlan.length, rejected: 0 };
+      } else {
+        r = await approveAndSend(sendPlan);
+      }
       if (typeof modal.close === 'function') modal.close();
       if (window.Toast) {
         var msg = 'נשלחו ' + r.sent + ', נכשלו ' + r.failed + ', נדחו ' + (r.rejected || 0);

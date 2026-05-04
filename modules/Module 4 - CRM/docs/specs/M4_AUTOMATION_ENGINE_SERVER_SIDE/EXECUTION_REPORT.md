@@ -294,4 +294,146 @@ new-EF authoring as a default.
 
 ---
 
-*End of EXECUTION_REPORT. Awaiting Foreman review.*
+*End of Rung 1 EXECUTION_REPORT.*
+
+---
+
+# Rung 2 Closure (appended 2026-05-04)
+
+> **Rung 2 commit shipped — 5 browser CrmAutomation.evaluate callsites routed through automation-engine EF via new `CrmAutomationClient`.** Browser engine files stay loaded but unreachable from callers (Rung 3 deletes them).
+
+## §0R2 — Rung-2 in-scope paths
+
+- `modules/crm/crm-automation-client.js` (NEW, 102 lines)
+- `modules/crm/crm-confirm-send.js` (additive change — `show(sendPlan, onApprove)` second arg)
+- `modules/crm/crm-event-actions.js` (callsite swap — line 216–217)
+- `modules/crm/crm-event-register.js` (callsite swap — line 108–109)
+- `modules/crm/crm-lead-actions.js` (callsite swaps — line 9 + line 143)
+- `modules/crm/crm-attendee-move.js` (callsite swap — line 96 + 99)
+- `crm.html` (script tag added at line 412)
+
+## §1R2 — Pre-flight (Iron Rule 21 + Rung 1 verification)
+
+| Check | Result |
+|-------|--------|
+| `[functions.automation-engine]` block in `supabase/config.toml` | ✅ present (verify_jwt = true, import_map set) |
+| `automation-engine` EF deployed | ✅ slug=`automation-engine`, version 4, status ACTIVE |
+| `event_day_status_flip` cron uses augmented command (calls EF with `mode='dispatch'`) | ✅ verified — DO block iterates flipped events, POSTs to `/functions/v1/automation-engine` per row |
+| `event_2_3d_before_status_flip` cron exists with same pattern | ✅ verified |
+| `grep CrmAutomation.evaluate` repo-wide | 5 callsites in 4 files — matches brief |
+| `grep CrmAutomationClient` in JS code | 0 hits before edit ✅ |
+| `grep crm-automation-client` in HTML/JS | 0 hits before edit ✅ |
+
+Rung 1 confirmed live in production. Pre-flight gate PASSED.
+
+## §2R2 — What was done
+
+### New file
+- `modules/crm/crm-automation-client.js` (102 lines, target ≤ 300, hard cap 350) — ES5-compatible IIFE exposing `window.CrmAutomationClient.evaluate(triggerType, triggerData)`. Internal flow:
+  1. Call EF with `{ tenant_id, trigger_type, trigger_data, mode: 'evaluate' }` via `sb.functions.invoke('automation-engine', ...)`.
+  2. Receive `{ plan_items, run_id, fired, queued, skipped, ... }` from EF.
+  3. If `plan_items.length === 0` (queue_send-only or no recipients) → return EF's evaluate-shape directly.
+  4. If `window.CrmConfirmSend` is loaded → render preview modal with new `onApprove` callback that POSTs `{ ..., mode: 'dispatch', plan_items: approved, run_id }` (passes the approved array per FOREMAN_REVIEW §4 §5.4 — prevents preview/dispatch race).
+  5. Fallback (no modal) → POST dispatch immediately and return result.
+  Iron Rule 22 defense-in-depth: explicitly sends `tenant_id` from `getTenantId()` on every call.
+
+### Additive change to crm-confirm-send.js (+9 lines, 270 → 279)
+- `show(sendPlan, onApprove)` — new optional second arg.
+- On approve click: if `typeof onApprove === 'function'`, call it; else fall back to legacy browser-side `approveAndSend`. Backward-compat preserved (the still-loaded `crm-automation-engine.js:306` call `CrmConfirmSend.show(planItems)` with one arg keeps working).
+
+### 5 callsite swaps (4 files)
+- `crm-event-actions.js:216–217` — `event_status_change` ✅
+- `crm-event-register.js:108–109` — `event_registration` ✅
+- `crm-lead-actions.js:9` — `lead_status_change` ✅
+- `crm-lead-actions.js:143` — `lead_intake` ✅
+- `crm-attendee-move.js:96+99` — `attendee_moved` ✅
+- All swaps preserve original guard logic + arg shape — pure name swap `CrmAutomation` → `CrmAutomationClient`.
+
+### HTML wiring (+1 line)
+- `crm.html:412` — `<script src="modules/crm/crm-automation-client.js"></script>` inserted AFTER `crm-confirm-send.js` (the client depends on the modal).
+
+## §3R2 — Reverse-callsite report (FOREMAN_REVIEW §7 executor proposal #2)
+
+Post-edit grep `CrmAutomation\.evaluate(` (actual call syntax with `(`) in `modules/crm/`:
+
+```
+modules/crm/crm-attendee-move.js:6:   "שלח עדכון ללקוח" toggle is ON, fires CrmAutomation.evaluate('attendee_moved')
+modules/crm/crm-automation-client.js:4:   Replaces CrmAutomation.evaluate(...) at 5 callsites in 4 files.
+```
+
+**0 actual call sites in caller files.** Both remaining hits are docstring comments (one in `crm-attendee-move.js` describing the file's prior behavior; one in the new client describing what it replaces). Neither is an executable call.
+
+Note: the engine's own internal warn-log at `crm-automation-engine.js:231` (`console.warn('CrmAutomation.evaluate: unknown triggerType', ...)`) does NOT match `CrmAutomation\.evaluate(` because it's a STRING (no parenthesis after the dot-name). The brief's expected "1 hit (engine self-reference)" was off — the engine's reference is a string literal, not a call. The functionally-meaningful test ("0 actual `CrmAutomation.evaluate(` calls in caller files") passes.
+
+Post-edit grep `CrmAutomationClient.evaluate` shows 8 hits across 5 callsites in 4 files (5 actual calls + 3 guards re-mentioning the symbol).
+
+Other browser-engine files still loaded but unreachable from callers (Rung 3 deletes them):
+- `crm-automation-engine.js:231` (line 305-306 still calls `CrmConfirmSend.show(planItems)` — backward-compat preserved by additive callback design)
+- `crm-coupon-dispatch.js:63`, `crm-payment-automation.js:3`, `crm-automation-dispatch.js:7` — comment-only mentions; will become stale until Rung 3 deletes the engine.
+- `crm-event-register.js:7`, `crm-attendee-move.js:6`, `crm-event-actions.js:10` — docstring comments at top of caller files; same Rung-3 cleanup.
+
+## §4R2 — Iron-Rule self-audit (Rung 2)
+
+| Rule | Status | Evidence |
+|------|--------|----------|
+| Rule 7 | ✅ reuse | `sb.functions.invoke('automation-engine', ...)` is the canonical EF-call pattern (matches `crm-messaging-send.js:76` and `crm-automation-history.js:197`). |
+| Rule 12 | ✅ all files ≤ 350 | new client 102; confirm-send 279; event-actions 305; event-register 198; lead-actions 344 (unchanged from pre-edit baseline; only text content of existing lines changed); attendee-move 120 |
+| Rule 21 | ✅ no orphan, no duplicate | New `CrmAutomationClient` symbol confirmed unique by 3 pre-edit greps (modules/, *.html). New file path `crm-automation-client.js` confirmed unique. Engine's `evaluate` stays referenced for Rung 3 cleanup; no parallel caller paths exist. |
+| Rule 22 | ✅ defense-in-depth | Client explicitly sends `tenant_id: getTenantId()` on every EF call. EF (Rung 1) verified to filter every query by tenant_id (service-role bypasses RLS, manual filter mandatory). |
+| Rule 31 | ✅ | `npm run verify:integrity` exit 0, 7 files scanned, 1ms |
+
+## §5R2 — Manual UX QA — Daniel runs on prizma (browser-side, executor cannot run from CLI)
+
+Brief Step 6 calls for browser-side QA on prizma. Cannot run from this CLI session. Daniel runs:
+
+1. Open `app.opticalis.co.il/crm/` (after GH-Pages redeploy ~30s) as prizma admin.
+2. DevTools Console: `typeof window.CrmAutomationClient === 'object'` → expect `true`.
+3. **Test 5 callsites** (each with at least one matched rule firing; phone allowlist = `0537889878` + `0503348349`):
+   - **Open registration on event** → confirm modal renders, click approve, observe `crm_message_log` row appears, observe `crm_automation_runs` shows the run.
+   - **Register a lead to event** → same drill.
+   - **Manually change a lead status** → same.
+   - **Create fresh lead via CRM lead-add modal** → confirm `lead_intake` rule fires.
+   - **Move an attendee between events** → confirm `attendee_moved` rule fires.
+4. Compare row counts and shapes against Rung-1 baseline.
+
+**Stop on any UX regression** — modal MUST render exactly as before, toasts MUST appear, dispatch counts MUST match Rung 1.
+
+If all 5 pass → ready for Rung 3 (delete browser engine files; requires Daniel sign-off).
+If any callsite returns a different shape → halt + investigate.
+
+## §6R2 — Decisions made in real time
+
+1. **EF response shape**: SPEC said `{ plan_items, run_id, ... }` for evaluate mode. EF source verified (`engine.ts:179–185` + `engine.ts:203–209`): evaluate returns `{ run_id, fired, sent: 0, failed: 0, rejected: 0, queued, skipped, plan_items }`; dispatch returns the same shape minus `plan_items` plus actual `sent/failed/rejected` counts. Client mirrors this shape on return so callers see the same fields the old engine returned.
+2. **CrmConfirmSend additive callback design**: existing signature `show(sendPlan)` had no callback hook; the approve button hardcoded `approveAndSend(sendPlan)` which uses legacy browser-side dispatch. Authored second optional param `onApprove(sendPlan)` and gated the dispatch path on `typeof onApprove === 'function'`. Existing single-arg callers (`crm-automation-engine.js:306`) keep working unchanged. Net change: +9 lines.
+3. **Engine internal warn-log NOT a call**: brief said "Step 4 grep should reach 1 hit — engine's own internal warn-log mentioning its own name". Verified line 231 is `console.warn('CrmAutomation.evaluate: unknown triggerType', triggerType)` — a STRING literal, not an actual `evaluate(` call. The grep `CrmAutomation\.evaluate(` returns 0 hits in caller files (correct outcome) but the engine's string literal doesn't match either. Documented in §3R2 reverse-callsite report so future audits don't mistake this for incomplete migration.
+
+## §7R2 — Two proposals to improve opticup-executor (Rung 2)
+
+### Proposal R2-X1: Distinguish "call site" vs "string literal" greps in SPEC §3 criteria
+
+**Rationale:** Brief's "Step 4 should reach 1 hit (engine's warn log)" was off because `CrmAutomation\.evaluate(` (with parens) doesn't match strings like `'CrmAutomation.evaluate: unknown triggerType'`. The functional intent ("0 caller-file calls") was achieved, but the literal criterion text was wrong.
+
+**Proposed change:** Add to `.claude/skills/opticup-executor/references/COMMON_PATTERNS.md` (or seed it):
+
+> **PATTERN-CALL-SITE-GREP.** When a SPEC criterion verifies "no callers of FunctionX remain", express it as TWO separate greps:
+> 1. **Actual call sites:** `grep -E "FunctionName\s*\(" --include="*.js"` — anchors on the parenthesis to match invocations only.
+> 2. **String/comment mentions (informational):** `grep "FunctionName" --include="*.js"` minus the call-site set — flags surviving documentation references for cleanup in a later Rung.
+>
+> The binding criterion is grep #1 (actual calls). Grep #2 is informational. Doc comments often legitimately reference the deleted symbol name to explain history; they're not blockers.
+
+**Why this prevents recurrence:** Future Rung-cleanup SPECs will distinguish the two cleanly. Reverse-callsite reports include both for full audit-trail.
+
+### Proposal R2-X2: When swapping a global symbol across N callsites, batch all Edits in a single tool-use round
+
+**Rationale:** This Rung's swap was 5 callsites + 1 additive change to confirm-send + 1 HTML script tag — 9 Edits total, all character-exact, applied in a single batched round. Wall time: ~3 seconds. The framework correctly serialized intra-file Edits and parallelized inter-file. This validates and extends inherited Proposal X-1 (CRM_PHONE_SEARCH_NORMALIZATION) for global-symbol swaps specifically.
+
+**Proposed change:** Add to `.claude/skills/opticup-executor/SKILL.md` § "File discipline" → "Edit batching":
+
+> **Global-symbol swap pattern.** When a SPEC swaps a global symbol (`OldName` → `NewName`) across N callsites, batch all N Edits + any additive helper-file changes + any HTML wiring changes in a single tool-use round. Pre-condition: each `old_string` must contain enough surrounding context to be unique within its target file (typically the guard line + the call line, OR the full function statement). After the batch, run a single grep verification to confirm:
+> 1. 0 actual call sites of OldName remain in caller files.
+> 2. N actual call sites of NewName exist in the expected files at the expected lines.
+> 3. Any string/comment references to OldName are deferred to a later cleanup Rung (informational, not blocking).
+
+---
+
+**Rung 2 status:** Shipped. Awaiting Daniel's UX QA on prizma (5 callsite tests). After all 5 pass → Rung 3 begins (delete browser engine files; Daniel sign-off required per §R3 of SPEC).

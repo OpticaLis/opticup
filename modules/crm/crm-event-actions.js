@@ -213,8 +213,8 @@
   // crm_automation_rules (trigger_entity='event', trigger_event='status_change').
   // Seed demo defaults at go-live/seed-automation-rules-demo.sql.
   async function dispatchEventStatusMessages(eventId, newStatus, event) {
-    if (!window.CrmAutomation || typeof CrmAutomation.evaluate !== 'function') return;
-    return CrmAutomation.evaluate('event_status_change', {
+    if (!window.CrmAutomationClient || typeof CrmAutomationClient.evaluate !== 'function') return;
+    return CrmAutomationClient.evaluate('event_status_change', {
       eventId: eventId,
       newStatus: newStatus,
       event: event
