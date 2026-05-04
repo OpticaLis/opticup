@@ -101,10 +101,17 @@ export async function prepareRulePlan(
   db: Db, tenantId: string,
   rule: Rule, triggerData: Record<string, unknown>,
   tplCache: Map<string, unknown>, runId: string | null,
+  mode: "evaluate" | "dispatch" = "dispatch",
 ): Promise<PreparedPlan> {
   const cfg = rule.action_config || {};
 
   if (rule.action_type === "queue_send") {
+    // ATOMIC_CONFIRMATION_FLOW Part A: queue_send writes to crm_message_queue.
+    // Skip in evaluate mode — those writes are side effects gated on operator
+    // confirmation. Modal preview doesn't show queue_send items anyway.
+    if (mode === "evaluate") {
+      return { items: [], skipped: 0, resolvedLeadIds: [], queued: 0 };
+    }
     try {
       const qs = await prepareQueueSend(db, tenantId, rule, triggerData, runId);
       return { items: [], skipped: 0, resolvedLeadIds: qs.leadIds, queued: qs.queued };

@@ -206,10 +206,16 @@
     return { sent: sent, failed: failed, rejected: rejected };
   }
 
-  async function show(sendPlan, onApprove) {
-    // Rung 2 additive: optional `onApprove(sendPlan)` callback. If provided, the
-    // approve button calls it instead of the legacy browser-side approveAndSend.
-    // Backward compat: callers passing a single arg keep working unchanged.
+  async function show(sendPlan, onChoice) {
+    // ATOMIC_CONFIRMATION_FLOW Part A: 3-button modal contract.
+    // onChoice signature: async function(choice, sendPlan) where
+    //   choice = { dispatch: true }  → "אישור ושלח הודעות" — status commits + dispatch
+    //   choice = { dispatch: false } → "אישור ללא הודעות" — status commits only
+    //   Cancel button does NOT call onChoice — modal closes, no commit.
+    // Backward compat: legacy 1-arg show(planItems) — both confirm buttons call
+    // approveAndSend(sendPlan) (legacy in-process dispatch). Cancel still closes
+    // without commit. Only crm-automation-engine.js:306 calls 1-arg legacy and
+    // it is unreachable post-Rung-2 (Rung 3 deletes it).
     if (!Array.isArray(sendPlan) || !sendPlan.length) return;
     if (typeof Modal === 'undefined') { console.error('CrmConfirmSend: Modal not available'); return; }
     _state.activeTab = 'messages'; _state.page = 1; _state.sortCol = 'name'; _state.sortDir = 'asc';
@@ -228,11 +234,15 @@
         '</div>' +
         '<div id="ccs-tab-body" class="pt-2"></div>' +
       '</div>';
+    // 3-button atomic modal: Cancel / Confirm-no-notify / Confirm-and-notify.
+    // Per Prizma Design System Canon: outline gray for Cancel, neutral gray for
+    // Confirm-no-notify, primary indigo for Confirm-and-notify.
     var footerHtml =
-      '<button type="button" id="ccs-cancel" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm hover:bg-slate-50 transition">בטל</button>' +
-      '<button type="button" id="ccs-approve" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">אשר ושלח (' + total + ')</button>';
+      '<button type="button" id="ccs-cancel" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm hover:bg-slate-50 transition">ביטול</button>' +
+      '<button type="button" id="ccs-confirm-no-notify" class="px-4 py-2 border border-slate-400 bg-white text-slate-700 hover:bg-slate-50 font-semibold rounded-lg text-sm transition">אישור ללא הודעות</button>' +
+      '<button type="button" id="ccs-confirm-notify" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">אישור ושלח הודעות (' + total + ')</button>';
 
-    var modal = Modal.show({ title: '📩 אישור שליחה (' + total + ' הודעות · ' + recipients + ' נמענים)', size: 'lg', content: content, footer: footerHtml });
+    var modal = Modal.show({ title: 'אישור פעולה', size: 'lg', content: content, footer: footerHtml });
 
     modal.el.querySelectorAll('[data-ccs-tab]').forEach(function (t) {
       t.addEventListener('click', function () {
@@ -244,34 +254,47 @@
     });
     renderTabContent(modal.el, sendPlan);
 
-    var approveBtn = modal.el.querySelector('#ccs-approve');
-    var cancelBtn  = modal.el.querySelector('#ccs-cancel');
+    var confirmNotifyBtn   = modal.el.querySelector('#ccs-confirm-notify');
+    var confirmNoNotifyBtn = modal.el.querySelector('#ccs-confirm-no-notify');
+    var cancelBtn          = modal.el.querySelector('#ccs-cancel');
 
-    approveBtn.addEventListener('click', async function () {
-      approveBtn.disabled = true; approveBtn.textContent = 'שולח...'; cancelBtn.disabled = true;
+    async function handleConfirm(choice, btnEl, busyText) {
+      confirmNotifyBtn.disabled = true; confirmNoNotifyBtn.disabled = true; cancelBtn.disabled = true;
+      btnEl.textContent = busyText;
       var r;
-      if (typeof onApprove === 'function') {
-        r = await onApprove(sendPlan);
-        if (!r) r = { sent: 0, failed: sendPlan.length, rejected: 0 };
+      if (typeof onChoice === 'function') {
+        r = await onChoice(choice, sendPlan);
+        if (!r) r = { sent: 0, failed: choice.dispatch ? sendPlan.length : 0, rejected: 0 };
       } else {
+        // Legacy 1-arg path (unreachable post-Rung-2). Both confirm buttons
+        // fall back to in-process approveAndSend so the path doesn't silently
+        // break if something resurfaces it.
         r = await approveAndSend(sendPlan);
       }
       if (typeof modal.close === 'function') modal.close();
       if (window.Toast) {
-        var msg = 'נשלחו ' + r.sent + ', נכשלו ' + r.failed + ', נדחו ' + (r.rejected || 0);
-        if (r.failed === 0 && (r.rejected || 0) === 0) Toast.success(msg);
-        else Toast.warning(msg);
+        var msg;
+        if (choice.dispatch) {
+          msg = 'נשלחו ' + r.sent + ', נכשלו ' + r.failed + ', נדחו ' + (r.rejected || 0);
+          if (r.failed === 0 && (r.rejected || 0) === 0) Toast.success(msg);
+          else Toast.warning(msg);
+        } else {
+          Toast.success('הסטטוסים עודכנו (ללא שליחת הודעות)');
+        }
       }
+    }
+
+    confirmNotifyBtn.addEventListener('click', function () {
+      handleConfirm({ dispatch: true }, confirmNotifyBtn, 'שולח...');
     });
 
-    cancelBtn.addEventListener('click', async function () {
-      cancelBtn.disabled = true; approveBtn.disabled = true; cancelBtn.textContent = 'מבטל...';
-      var r = await writePendingReviewRows(sendPlan);
+    confirmNoNotifyBtn.addEventListener('click', function () {
+      handleConfirm({ dispatch: false }, confirmNoNotifyBtn, 'מעדכן...');
+    });
+
+    cancelBtn.addEventListener('click', function () {
+      // Cancel = atomic abort. No EF call, no DB write, no callback. Modal closes.
       if (typeof modal.close === 'function') modal.close();
-      if (window.Toast) {
-        if (r.ok) Toast.info('ההודעות בוטלו ונשמרו בלוג — ניתן לערוך ולשלוח מחדש');
-        else Toast.error('שגיאה בשמירת ההודעות: ' + (r.error || 'unknown'));
-      }
     });
   }
 

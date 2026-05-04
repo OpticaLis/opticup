@@ -60,19 +60,27 @@
     // Step 2 — empty plan (queue_send-only or no recipients): return evaluate-shape.
     if (!planItems.length) return firedBase;
 
-    // Step 3 — modal loaded: render preview + delegate dispatch to onApprove callback.
+    // Step 3 — modal loaded: render 3-button preview + delegate to onChoice.
+    // ATOMIC_CONFIRMATION_FLOW Part A: callback receives `choice` with
+    // { dispatch: true|false } reflecting the operator's button click.
+    // - dispatch=true  → "אישור ושלח הודעות": EF runs post-actions + sends messages
+    // - dispatch=false → "אישור ללא הודעות":  EF runs post-actions, no messages
+    // Cancel: modal closes without calling onChoice — no EF call, no side effects.
     if (window.CrmConfirmSend && typeof CrmConfirmSend.show === 'function') {
-      CrmConfirmSend.show(planItems, async function (approved) {
-        // Pass approved plan_items array (not just dry_run flag) per FOREMAN_REVIEW §4 §5.4.
+      CrmConfirmSend.show(planItems, async function (choice, approved) {
         var dispatchRes = await callEf({
           tenant_id: _tid,
           trigger_type: triggerType,
           trigger_data: triggerData || {},
           mode: 'dispatch',
           plan_items: approved,
-          run_id: runId
+          run_id: runId,
+          dispatch_messages: choice && choice.dispatch === true
         });
-        return dispatchRes || { sent: 0, failed: approved.length, rejected: 0 };
+        if (!dispatchRes) {
+          return choice && choice.dispatch ? { sent: 0, failed: approved.length, rejected: 0 } : { sent: 0, failed: 0, rejected: 0 };
+        }
+        return dispatchRes;
       });
       // Caller doesn't await dispatch — modal handles it.
       firedBase.pending_confirm = true;
@@ -80,14 +88,16 @@
       return firedBase;
     }
 
-    // Step 4 — fallback (no modal — server-side flow / non-UI): dispatch immediately.
+    // Step 4 — fallback (no modal — server-side flow / non-UI): dispatch immediately
+    // with messages enabled (default behavior, equivalent to legacy auto-send).
     var dispatchRes = await callEf({
       tenant_id: _tid,
       trigger_type: triggerType,
       trigger_data: triggerData || {},
       mode: 'dispatch',
       plan_items: planItems,
-      run_id: runId
+      run_id: runId,
+      dispatch_messages: true
     });
     if (!dispatchRes) {
       var fb = ZERO();
