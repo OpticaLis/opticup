@@ -110,14 +110,14 @@
       '</div>' +
     '</div>';
 
-    if (stats) h += renderCapacityBar(stats, event.max_capacity);
+    if (stats) h += renderCapacityBar(stats, event.max_capacity, attendees);
     h += renderCouponFunnel(attendees) + '<div id="crm-event-detail-kpis"></div><div id="crm-event-detail-funnel" data-admin-only></div>';
     var subTabBtns = SUB_TABS.map(function (t, i) { return '<button type="button" class="' + (i === 0 ? CLS_SUBTAB_ACT : CLS_SUBTAB) + '" data-event-subtab="' + t.key + '">' + escapeHtml(t.label) + '</button>'; }).join('');
     return h + '<div class="' + CLS_SUBTAB_BAR + '">' + subTabBtns + '</div><div id="crm-event-detail-subbody">' + renderSubTab('attendees', attendees, stats) + '</div>';
   }
 
-  function renderCapacityBar(stats, maxCapacity) {
-    var reg = +stats.total_registered || 0, conf = +stats.total_confirmed || 0, att = +stats.total_attended || 0;
+  function renderCapacityBar(stats, maxCapacity, attendees) {
+    var reg = CrmHelpers.countRegistered(attendees || []), conf = +stats.total_confirmed || 0, att = +stats.total_attended || 0;
     var cap = +maxCapacity || 0 || Math.max(reg, 1);
     var regPct  = Math.min(100, Math.round(reg  / cap * 100));
     var confPct = Math.min(100, Math.round(conf / cap * 100));
@@ -228,10 +228,10 @@
 
   function wireSubTabs(body, event, stats, attendees) {
     if (stats && typeof window.renderEventDetailKpiSparklines === 'function') {
-      window.renderEventDetailKpiSparklines(body.querySelector('#crm-event-detail-kpis'), stats);
+      window.renderEventDetailKpiSparklines(body.querySelector('#crm-event-detail-kpis'), stats, attendees);
     }
     if (stats && typeof window.renderEventDetailFunnelSvg === 'function') {
-      window.renderEventDetailFunnelSvg(body.querySelector('#crm-event-detail-funnel'), stats);
+      window.renderEventDetailFunnelSvg(body.querySelector('#crm-event-detail-funnel'), stats, attendees);
     }
     var reloadDetail = function () {
       if (typeof openCrmEventDetail === 'function') {
