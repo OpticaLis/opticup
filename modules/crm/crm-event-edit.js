@@ -40,7 +40,8 @@
     if (typeof Modal === 'undefined' || !event || !event.id) return;
     var footerHtml =
       '<button id="crm-edit-event-submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition">שמור</button>' +
-      '<button id="crm-edit-event-cancel" class="px-5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-lg">ביטול</button>';
+      '<button id="crm-edit-event-cancel" class="px-5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-lg">ביטול</button>' +
+      '<button id="crm-edit-event-delete" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg text-sm transition shadow-sm me-auto">מחק אירוע</button>';
     var modal = Modal.show({
       title: 'עריכת אירוע' + (event.event_number ? ' #' + event.event_number : ''),
       size: 'md', content: renderForm(event), footer: footerHtml
@@ -48,6 +49,35 @@
     var body = modal.el.querySelector('.modal-body');
     var footer = modal.el.querySelector('.modal-footer');
     footer.querySelector('#crm-edit-event-cancel').addEventListener('click', function () { if (modal.close) modal.close(); });
+    var deleteBtn = footer.querySelector('#crm-edit-event-delete');
+    if (deleteBtn) deleteBtn.addEventListener('click', function () {
+      if (!Modal || !Modal.confirm) return;
+      Modal.confirm({
+        title: 'מחיקת אירוע', confirmText: 'מחק', confirmClass: 'bg-rose-600 hover:bg-rose-700',
+        message: 'האם למחוק את האירוע? פעולה זו ניתנת לשחזור על-ידי מנהל המערכת.',
+        onConfirm: function () {
+          deleteBtn.disabled = true;
+          var tid = CrmHelpers.tid();
+          window.CrmEventActions.softDeleteEventIfEmpty(event.id, event.name, tid).then(function (result) {
+            if (result && result.success) {
+              if (modal.close) modal.close();
+              if (window.Toast) Toast.success('האירוע נמחק');
+              if (typeof window.reloadCrmEventsTab === 'function') window.reloadCrmEventsTab();
+            } else if (result && result.error === 'has_purchases') {
+              deleteBtn.disabled = false;
+              if (window.Toast) Toast.error('לא ניתן למחוק — האירוע כולל רכישות בסך ' + (result.total_purchases || 0) + ' ₪');
+            } else {
+              deleteBtn.disabled = false;
+              var msg = (result && result.error) ? result.error : 'unknown';
+              if (window.Toast) Toast.error('שגיאה: ' + msg);
+            }
+          }, function (e) {
+            deleteBtn.disabled = false;
+            if (window.Toast) Toast.error('שגיאה: ' + (e.message || String(e)));
+          });
+        }
+      });
+    });
     // B8: live Hebrew day-of-week beside event_date
     var _editDateInput = body.querySelector('[name="event_date"]');
     var _editDowEl = body.querySelector('[data-event-dow]');
