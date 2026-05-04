@@ -196,9 +196,11 @@ Deno.serve(async (req: Request) => {
   const phone = normalizePhone(phoneRaw);
   if (!phone) return errorResponse("invalid_phone", 400);
 
-  const email = emailRaw && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)
-    ? emailRaw.toLowerCase()
-    : null;
+  if (!emailRaw) return errorResponse("missing_email", 400);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) {
+    return errorResponse("invalid_email", 400);
+  }
+  const email = emailRaw.toLowerCase();
 
   const nowIso = new Date().toISOString();
 
