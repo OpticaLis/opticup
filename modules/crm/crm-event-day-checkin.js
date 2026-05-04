@@ -59,7 +59,7 @@
       var overdue = isOverdue(a.scheduled_time, now);
       var cls = a.id === _selectedId ? CLS_ATT_SEL : (overdue ? CLS_ATT_OVER : CLS_ATT_CARD);
       return '<div class="' + cls + '" data-select-id="' + escapeHtml(a.id) + '">' +
-        '<div class="font-bold text-slate-900 text-sm truncate">' + escapeHtml(a.full_name || '') + (window.CrmPayment ? ' ' + CrmPayment.renderStatusPill(a.payment_status) + CrmPayment.renderNoRefundDueChip(a) + CrmPayment.renderCreditIndicator(a) : '') + '</div>' +
+        '<div class="font-bold text-slate-900 text-sm truncate">' + escapeHtml(a.full_name || '') + CrmHelpers.renderRegBadge(a.registration_method) + (window.CrmPayment ? ' ' + CrmPayment.renderStatusPill(a.payment_status) + CrmPayment.renderNoRefundDueChip(a) + CrmPayment.renderCreditIndicator(a) : '') + '</div>' +
         '<div class="text-xs text-slate-500 mt-0.5" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div>' +
         (a.scheduled_time ? '<div class="text-xs mt-1 ' + (overdue ? 'text-amber-700 font-semibold' : 'text-slate-500') + '">🕐 ' + escapeHtml(a.scheduled_time) + '</div>' : '') +
       '</div>';
@@ -116,7 +116,7 @@
   function renderSelectedDetail(a) {
     var status = CrmHelpers.getStatusInfo('attendee', a.status);
     return '<div class="' + CLS_SEL_CARD + '">' +
-      '<div class="text-xl font-black">' + escapeHtml(a.full_name || '') + '</div>' +
+      '<div class="text-xl font-black">' + escapeHtml(a.full_name || '') + CrmHelpers.renderRegBadge(a.registration_method) + '</div>' +
       '<div class="text-sm opacity-90 mt-1" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div>' +
       '<div class="grid grid-cols-2 gap-2 mt-3 text-xs">' +
         '<div class="bg-white/15 rounded-lg px-2 py-1.5"><div class="opacity-80">סטטוס</div><div class="font-semibold mt-0.5">' + escapeHtml(status.label) + '</div></div>' +

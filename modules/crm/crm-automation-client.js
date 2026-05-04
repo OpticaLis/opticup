@@ -33,7 +33,13 @@
     }
   }
 
-  async function evaluate(triggerType, triggerData) {
+  async function evaluate(triggerType, triggerData, onAfterConfirm) {
+    // ATOMIC_CONFIRMATION_FLOW B.3: optional `onAfterConfirm` lets callers
+    // defer their UI cleanup (modal.close, parent-view reload) until AFTER
+    // the operator's modal choice resolves. Without this, callers that run
+    // their own Modal.close() right after `await evaluate(...)` race the
+    // confirmation modal off the stack before the user can click anything,
+    // dropping the dispatch silently. See FINDINGS Finding 1 (M4-CRM-AUTOMATION-CLIENT-01).
     // Iron Rule 22 defense-in-depth: explicitly send tenant_id from getTenantId().
     var _tid = (typeof getTenantId === 'function') ? getTenantId() : null;
     if (!_tid || !triggerType) return ZERO();
@@ -77,6 +83,13 @@
           run_id: runId,
           dispatch_messages: choice && choice.dispatch === true
         });
+        // Run caller's deferred cleanup AFTER dispatch completes — protects
+        // the confirmation modal from being closed by an unrelated Modal.close()
+        // in the caller's success path (e.g. reloadDetail).
+        if (typeof onAfterConfirm === 'function') {
+          try { await onAfterConfirm(); }
+          catch (e) { console.warn('CrmAutomationClient onAfterConfirm threw:', e && e.message); }
+        }
         if (!dispatchRes) {
           return choice && choice.dispatch ? { sent: 0, failed: approved.length, rejected: 0 } : { sent: 0, failed: 0, rejected: 0 };
         }
@@ -99,6 +112,11 @@
       run_id: runId,
       dispatch_messages: true
     });
+    // No modal in this path, so dispatch IS the resolution — fire cleanup now.
+    if (typeof onAfterConfirm === 'function') {
+      try { await onAfterConfirm(); }
+      catch (e) { console.warn('CrmAutomationClient onAfterConfirm threw (fallback):', e && e.message); }
+    }
     if (!dispatchRes) {
       var fb = ZERO();
       fb.fired = firedBase.fired;

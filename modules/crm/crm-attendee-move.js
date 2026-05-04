@@ -93,10 +93,22 @@
         confirmBtn.disabled = false;
         return;
       }
+      var feeWarn = r.data.fee_mismatch ? ' (אזהרה: דמי רישום שונים — לטפל ידנית)' : '';
+      if (window.Toast) Toast.success('המשתתף הועבר בהצלחה' + feeWarn);
+      // ATOMIC_CONFIRMATION_FLOW B.3: defer modal-close + parent reload until
+      // AFTER the confirmation modal resolves. ctx.onAfter is reloadDetail
+      // (events-detail caller) which calls the global Modal.close() — without
+      // this defer it pops the confirmation modal off the stack mid-flight.
+      var doFinalCleanup = async function () {
+        if (typeof modal.close === 'function') modal.close();
+        if (ctx && typeof ctx.onAfter === 'function') {
+          try { await ctx.onAfter(); } catch (_) {}
+        }
+      };
       if (sendNotif && window.CrmAutomationClient && CrmAutomationClient.evaluate) {
         var paid = (r.data.payment_status === 'paid');
         try {
-          await CrmAutomationClient.evaluate('attendee_moved', {
+          var evalRes = await CrmAutomationClient.evaluate('attendee_moved', {
             attendeeId: r.data.new_attendee_id,
             leadId:     r.data.lead_id,
             eventId:    r.data.target_event_id,
@@ -104,15 +116,11 @@
             paymentStatus: r.data.payment_status,
             outcome: paid ? 'paid' : 'unpaid',
             newStatus: paid ? 'paid' : 'unpaid'
-          });
+          }, doFinalCleanup);
+          if (evalRes && evalRes.pending_confirm) return; // cleanup deferred
         } catch (e) { console.warn('attendee_moved rule eval skipped:', e); }
       }
-      var feeWarn = r.data.fee_mismatch ? ' (אזהרה: דמי רישום שונים — לטפל ידנית)' : '';
-      if (window.Toast) Toast.success('המשתתף הועבר בהצלחה' + feeWarn);
-      if (typeof modal.close === 'function') modal.close();
-      if (ctx && typeof ctx.onAfter === 'function') {
-        try { await ctx.onAfter(); } catch (_) {}
-      }
+      await doFinalCleanup();
     });
   }
 

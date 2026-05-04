@@ -65,7 +65,7 @@
       .eq('id', eventId).eq('is_deleted', false);
     if (tid) evQ = evQ.eq('tenant_id', tid);
     var attQ = sb.from('v_crm_event_attendees_full')
-      .select('id, lead_id, event_id, full_name, phone, email, status, status_name, status_color, purchase_amount, checked_in_at, registered_at, cancelled_at, coupon_sent, payment_status, paid_at, scheduled_time, no_refund_due_marked, no_refund_due_marked_at, paid_via_credit')
+      .select('id, lead_id, event_id, full_name, phone, email, status, status_name, status_color, purchase_amount, checked_in_at, registered_at, cancelled_at, coupon_sent, payment_status, paid_at, scheduled_time, no_refund_due_marked, no_refund_due_marked_at, paid_via_credit, registration_method')
       .eq('event_id', eventId).eq('is_deleted', false).order('full_name');
     if (tid) attQ = attQ.eq('tenant_id', tid);
     var r = await Promise.all([evQ, attQ]);
@@ -205,7 +205,7 @@
         var fee = (window.CrmPayment ? ' ' + CrmPayment.renderStatusPill(a.payment_status) + CrmPayment.renderNoRefundDueChip(a) + CrmPayment.renderCreditIndicator(a) : '') + ((a.payment_status === 'paid') ? ' <span class="inline-block text-xs bg-emerald-100 text-emerald-700 font-semibold px-1.5 py-0.5 rounded" title="פיקדון שולם">💰</span>' : '');
         html += '<div class="' + CLS_ATT_ROW + ' cursor-pointer hover:border-indigo-300" data-pay-attendee-id="' + escapeHtml(a.id) + '">' +
           '<div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold flex items-center justify-center shrink-0">' + escapeHtml(ini) + '</div>' +
-          '<div class="flex-1 min-w-0"><div class="font-semibold text-slate-800 text-sm truncate">' + escapeHtml(a.full_name || '') + amount + fee + '</div>' +
+          '<div class="flex-1 min-w-0"><div class="font-semibold text-slate-800 text-sm truncate">' + escapeHtml(a.full_name || '') + CrmHelpers.renderRegBadge(a.registration_method) + amount + fee + '</div>' +
             '<div class="text-xs text-slate-500 mt-0.5" style="direction:ltr;text-align:end">' + escapeHtml(CrmHelpers.formatPhone(a.phone)) + '</div></div>' +
           '<div class="flex items-center gap-1">' + CrmHelpers.statusBadgeHtml('attendee', a.status) + '<button type="button" data-move-attendee-id="' + escapeHtml(a.id) + '" title="העבר לאירוע אחר" class="p-1 text-slate-400 hover:text-indigo-600">↔</button></div>' +
         '</div>';

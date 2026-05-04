@@ -104,7 +104,6 @@ export async function prepareRulePlan(
   mode: "evaluate" | "dispatch" = "dispatch",
 ): Promise<PreparedPlan> {
   const cfg = rule.action_config || {};
-  console.log(`[AE-DIAG runId=${runId}] prepareRulePlan ENTRY rule="${rule.name || rule.id}" action_type=${rule.action_type} mode=${mode} triggerData=${JSON.stringify(triggerData).slice(0, 200)}`);
 
   if (rule.action_type === "queue_send") {
     // ATOMIC_CONFIRMATION_FLOW Part A: queue_send writes to crm_message_queue.
@@ -148,10 +147,8 @@ export async function prepareRulePlan(
     return { items: [], skipped: 0, resolvedLeadIds: [], queued: 0 };
   }
   const resolvedLeadIds = leads.map((l) => l.id);
-  console.log(`[AE-DIAG runId=${runId}] prepareRulePlan recipients rule="${rule.name || rule.id}" recipientType=${recipientType} resolved=${resolvedLeadIds.length}`);
   if (!leads.length) return { items: [], skipped: 0, resolvedLeadIds, queued: 0 };
   if (!tplBase) {
-    console.log(`[AE-DIAG runId=${runId}] prepareRulePlan EARLY RETURN no template_slug rule="${rule.name || rule.id}" (post-action only) resolved=${resolvedLeadIds.length}`);
     return { items: [], skipped: 0, resolvedLeadIds, queued: 0 };
   }
 
@@ -181,6 +178,5 @@ export async function prepareRulePlan(
       });
     }
   }
-  console.log(`[AE-DIAG runId=${runId}] prepareRulePlan EXIT rule="${rule.name || rule.id}" items=${items.length} skipped=0 queued=0`);
   return { items, skipped: 0, resolvedLeadIds, queued: 0 };
 }

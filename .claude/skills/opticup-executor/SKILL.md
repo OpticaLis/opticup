@@ -164,6 +164,20 @@ Load order: shared.js → shared-ui.js → supabase-ops.js → data-loading.js �
   - `docs(m3): update SESSION_CONTEXT after Phase B`
 - One logical change per commit. Multi-file is fine, multi-concern is not.
 
+#### CRM-module commit-split anticipation (rule-21-orphans hook false positives)
+
+Before staging 2+ files from `modules/crm/` together for the same commit, run:
+
+```
+grep -hE '^\s+var ([a-z_]+) =' <staged-files> | sort | uniq -d
+```
+
+If any name appears as a duplicate, the `rule-21-orphans` pre-commit hook will block the commit because it cannot distinguish IIFE-local var declarations from module-global ones. **Workaround:** split the staged files across 2 separate commits so each commit's staged set has only one declaration of any local var. Do NOT use `--no-verify` to bypass — that masks real Rule 21 violations.
+
+The mechanical workaround is well-established (precedents: M4 P12 `info`/`phone`/`email`, M4 ATTENDEE_COUNTER_DISPLAY_FIX `var sent`, M4 ATOMIC_CONFIRMATION_FLOW `var doFinalCleanup`). Pre-empting this saves ~3 minutes per affected commit and removes the recurring "is this a real bug?" cognitive load. Document the pre-emptive split in your EXECUTION_REPORT §2 (commit table) so the Foreman doesn't have to re-derive the reason.
+
+Applied to opticup-executor via FOREMAN_REVIEW for ATOMIC_CONFIRMATION_FLOW (3rd-cycle trigger from prior reviews).
+
 ### File discipline:
 - Target 300 lines per file, max 350
 - Split by logical separation, not arbitrary line count
