@@ -55,6 +55,8 @@
         if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
         renderIncomingAdvancedBar();
         wireIncomingEvents();
+        startRealtime();
+        startPolling();
       })().catch(function (e) {
         _loadPromise = null;
         wrap.innerHTML = '<div class="text-center text-rose-500 py-6 font-semibold">שגיאה בטעינה: ' + escapeHtml(e.message || String(e)) + '</div>';
@@ -261,4 +263,75 @@
   window.getCrmIncomingLeadById = function (id) {
     return _allLeads.find(function (r) { return r.id === id; }) || null;
   };
+
+  // Round 4 (Option E — polling fallback). Round 3's broadcast trigger was reverted
+  // via migration 20260503190000_revert_crm_leads_broadcast_insert. The
+  // postgres_changes UPDATE channel stays — works for browser-initiated UPDATEs
+  // (admin writes carry JWT tenant context, no service_role bypass). New leads
+  // (INSERTs from service_role lead-intake EF) are picked up by polling at
+  // POLL_INTERVAL_MS — see startPolling() below. Realtime restoration deferred
+  // to post-cutover SPEC REALTIME_INSERT_INVESTIGATION_POST_CUTOVER.
+  var _rtChannel = null;
+  function startRealtime() {
+    if (_rtChannel) return;
+    var tid = getTenantId();
+    if (!tid || !window.sb || !sb.channel) return;
+    try {
+      _rtChannel = sb.channel('crm_incoming_updates')
+        .on('postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'crm_leads', filter: 'tenant_id=eq.' + tid },
+            function (payload) {
+              var newRow = payload && payload.new;
+              if (!newRow || newRow.tenant_id !== tid) return;
+              reloadIncomingFromRealtime(newRow.id, 'bg-amber-100');
+            })
+        .subscribe(function (status, err) { console.log('[Realtime] subscribe status:', status, err); });
+    } catch (e) { console.warn('CrmIncomingRealtime subscribe failed:', e && e.message); _rtChannel = null; }
+  }
+  function stopRealtime() {
+    if (!_rtChannel) return;
+    try { sb.removeChannel(_rtChannel); } catch (_) {}
+    _rtChannel = null;
+  }
+  function flashIncomingRow(leadId, bgClass) {
+    setTimeout(function () {
+      var tr = document.querySelector('tr[data-lead-id="' + leadId + '"]');
+      if (!tr) return;
+      tr.classList.add(bgClass, 'transition-colors', 'duration-1000');
+      setTimeout(function () {
+        tr.classList.remove(bgClass);
+        setTimeout(function () { tr.classList.remove('transition-colors', 'duration-1000'); }, 1000);
+      }, 1000);
+    }, 0);
+  }
+  // Realtime as trigger (Round 3 / Option B). Full reload via existing fetcher;
+  // re-applies filters via existing applyIncomingFilters; flashes the changed row.
+  // Tradeoff vs granular mutation: 1 round-trip per event. Acceptable at <200 events/day.
+  async function reloadIncomingFromRealtime(highlightLeadId, flashClass) {
+    try {
+      _allLeads = await loadIncomingLeads(true);
+      if (window.CrmLeadFilters) _lastNotesMap = await CrmLeadFilters.loadLastNotesMap();
+      applyIncomingFilters();
+      if (highlightLeadId && flashClass) flashIncomingRow(highlightLeadId, flashClass);
+    } catch (e) { console.warn('[Realtime] reload failed, falling back to next manual refresh:', e && e.message); }
+  }
+  // Polling fallback (Round 4 / Option E). 30-second interval refresh, paused when
+  // the incoming-tab wrap is hidden (user switched to another CRM tab) or the
+  // browser tab is hidden. Reuses reloadIncomingFromRealtime → loadIncomingLeads(true).
+  // Realtime restoration deferred to post-cutover SPEC.
+  var _pollIntervalId = null;
+  var POLL_INTERVAL_MS = 30000;
+  function startPolling() {
+    if (_pollIntervalId) return;
+    _pollIntervalId = setInterval(function () {
+      var wrap = document.getElementById('crm-incoming-table-wrap');
+      if (document.hidden || !wrap || wrap.offsetParent === null) return;
+      console.log('[Polling] refresh fired');
+      reloadIncomingFromRealtime(null, null);
+    }, POLL_INTERVAL_MS);
+  }
+  function stopPolling() {
+    if (_pollIntervalId) { clearInterval(_pollIntervalId); _pollIntervalId = null; }
+  }
+  window.addEventListener('beforeunload', function () { stopRealtime(); stopPolling(); });
 })();
