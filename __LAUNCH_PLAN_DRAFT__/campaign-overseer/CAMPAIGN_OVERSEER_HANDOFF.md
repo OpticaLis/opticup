@@ -3,11 +3,70 @@
 > **Purpose:** the live state file the Campaign Overseer reads at session start and updates after every meaningful action.
 > **Update discipline:** state-as-you-go. Replace, don't append. Cleanup when ≥150 lines.
 > **Authority:** lower than `CAMPAIGN_OVERSEER_SKILL.md` (the constitution). If they conflict, skill wins.
-> **Last meaningful update:** 2026-05-02 (Cutover Roadmap from Supervisor — 4 phases locked; folder structure created; awaiting Daniel "start Phase 1" trigger)
+> **Last meaningful update:** 2026-05-04 evening — SPEC #1 ATOMIC_CONFIRMATION_FLOW CLOSED + verified end-to-end on demo. Both bugs fixed. M4 last bug-bundle SPEC closes. Daniel asked "to finish Module 4" — now reviewing the 5 open follow-ups for closure path.
 
 ---
 
-## 🚦 ACTIVE WORK — Cutover & Migration Roadmap (READ FIRST)
+## 🚦 ACTIVE WORK — SPEC #1 ATOMIC_CONFIRMATION_FLOW (✅ CLOSED 2026-05-04)
+
+**Status:** ✅ **CLOSED.** Both bugs fixed, demo-verified, retro committed, awaiting Foreman review.
+**Final state:** `automation-engine` v7 ACTIVE on Supabase (CLI deployed, ezbr_sha256 `80cd8605d74b3f37371a4a5d902155095d10f4d5b60c9354e3624be8949ded79`), zero `[AE-DIAG]` in source.
+
+**Final commit chain (this SPEC):**
+- `965c76d` — Part A: 3-button modal contract (server + client). EF v5.
+- `3e79db9` — Part B.1: diagnostic logging in source. (4× Management API deploy failures; bypassed via CLI to v6.)
+- `d8e8f4c` — partial EXECUTION_REPORT (mid-block escalation point).
+- `edbe142` — Part B.2: FINDINGS draft (modal-stack race root cause).
+- `c474756` + `201bcf6` — Part B.3: Option A `onAfterConfirm` fix (5 callsites). Client-only.
+- `fec8b81` — Part B.4: 17 AE-DIAG lines removed. EF v7 via CLI.
+- `02920d4` — retrospective close: final EXECUTION_REPORT replaces partial; FINDINGS cumulative.
+
+**4 findings logged in cumulative FINDINGS.md:**
+- F1 `M4-CRM-AUTOMATION-CLIENT-01` (CRITICAL → ✅ FIX LANDED) — modal-stack race; root of Bug 2.
+- F2 `M4-TOOL-DIAG-01` (MEDIUM) — Supabase MCP `get_logs(service='edge-function')` returns gateway-only logs, not function stdout. Workaround: Studio Logs UI / CLI.
+- F3 `M4-DOC-DIAG-01` (LOW) — schema column drift (`crm_automation_runs.created_at`, `crm_message_log.template_slug`).
+- F4 `M4-TOOL-DEPLOY-01` (INFO) — Supabase CLI deploys idempotent on byte-identical content. Explains v6 → v7 (not v8). Future SPECs should NOT pre-commit to specific version numbers.
+
+**Lessons captured (for Overseer + Executor + Foreman skills):**
+- **Overseer L-003** (already written) — verify ground truth (git + Supabase + filesystem) before trusting any HANDOFF claim about partial-SPEC state.
+- **Executor proposal #1** — standardize partial-EXECUTION_REPORT template for platform-deploy blocks (Supabase / Vercel / GitHub 5xx).
+- **Executor proposal #2** — pre-empt Rule-21 orphans co-staging false positives in commit-prep. **2nd consecutive review** surfacing this — per opticup-strategic SKILL's "3 reviews → must apply" rule, next strategic session should edit the SKILL file directly.
+
+**Pending (separate session):** Foreman review by `opticup-strategic` reads `SPEC.md` + `EXECUTION_REPORT.md` + `FINDINGS.md`, writes `FOREMAN_REVIEW.md`. Module-level docs (SESSION_CONTEXT, MODULE_MAP, CHANGELOG) refreshed as part of Integration Ceremony.
+
+---
+
+## 📋 SPEC #2 — ATTENDEE_COUNTER_DISPLAY_FIX (✅ CLOSED — already merged)
+
+**Status:** ✅ **CLOSED 2026-05-04.** All 6 commits on origin/develop. EXECUTION_REPORT + FINDINGS + FOREMAN_REVIEW all present. Counter logic fixed at 4/4 callsites.
+
+---
+
+## 📊 Session Summary 2026-05-04 (M4 cleanup marathon)
+
+**Closed today (8 SPECs merged to main):**
+- REC-009 phone search Israeli-format normalization
+- REC-010 broadcast 1000-cap fix (paginateQuery helper)
+- REC-011 purchase filter + events column + 6 Monday import status repairs
+- REC-012 Realtime pilot incoming tab (4-round saga, finally settled on polling — see Realtime tech-debt entry)
+- REC-016 Rung 2 (5 browser callsites → automation-engine EF) + attendee-move dropdown fix
+- 36 stub-orphan leads soft-deleted (kept גולה וורלמוב — paid 8430 ₪)
+- 13 legacy SuperSale Make scenarios disabled (Monday pipeline fully decommissioned)
+
+**In-flight:** _(none — SPEC #1 closed 2026-05-04 evening, foreman-reviewed)_
+
+**Open follow-ups (M4 closure path, after 2026-05-04 audit):**
+- Realtime post-cutover investigation (tech debt — REC-014/015 evidence preserved)
+- 8 MultiSale archive events import (REC-005 — needs `event_type` schema add first)
+- WhatsApp QR registration flow (note: `whatsapp-catalog-flow` EF exists at v1; QR-registration is a different concept — needs Daniel clarification)
+- Campaign metrics UI (new feature, 0 references in CRM today)
+
+**By-design (NOT a follow-up, captured here so future Overseer sessions don't re-flag):**
+- Email duplication on `crm_leads` is allowed by Daniel directive 2026-05-04 (REC-008). Couples + parents-registering-children share emails; only phone is unique. Do not propose dedup SPECs targeting email field.
+
+---
+
+## 🚦 ACTIVE WORK — Cutover & Migration Roadmap (HISTORICAL — Phases 1-4 ALL CLOSED 2026-05-03)
 
 **Source of truth:** `__LAUNCH_PLAN_DRAFT__/campaign-overseer/CUTOVER_ROADMAP.md` (issued by Supervisor 2026-05-01).
 **Working folder:** `__LAUNCH_PLAN_DRAFT__/campaign-overseer/cutover-roadmap/`

@@ -27,12 +27,12 @@
 
 ## Stats summary (auto-recalculate on every update)
 
-- **Total recommendations submitted:** 7
-- **Total decided:** 7 (agree: 4 / disagree: 3 / partial: 0)
+- **Total recommendations submitted:** 8
+- **Total decided:** 8 (agree: 4 / disagree: 4 / partial: 0)
 - **Total applied:** 0
-- **Rolling 30-rec acceptance rate:** N/A (need ≥10 decided to begin reporting; current = 4/7 = 57%)
+- **Rolling 30-rec acceptance rate:** N/A (need ≥10 decided to begin reporting; current = 4/8 = 50%)
 - **Mode:** RECOMMEND-ONLY (v1)
-- **Status toward graduation:** baseline collection — 7 of 30 decisions in. Pattern emerging across REC-002, REC-005, REC-006: when the Overseer recommends "drop historical data", Daniel pushes back if the data has live operational/customer-facing value. The Overseer (me) underweighted "what's still in active use today" relative to "what the executor's MAP labeled as historical/stale."
+- **Status toward graduation:** baseline collection — 8 of 30 decisions in. Pattern emerging across REC-002, REC-005, REC-006, REC-008: when the Overseer recommends action on apparent data anomalies, Daniel pushes back when the "anomaly" is actually legitimate real-world behavior the business depends on. The Overseer (me) over-indexes on schema-level signals (counts, uniqueness violations, "stale" labels) without first checking whether the customer-facing flow that produces the data is intentional.
 
 ---
 
@@ -130,6 +130,20 @@
 - **Decided on:** 2026-05-02
 - **Applied:** PENDING (Phase 3 migration script run)
 - **Outcome (v2 gate input):** PENDING — verify both leads imported with normalized phones.
+
+## REC-008 — Triage 16 Prizma leads (8 distinct emails) flagged as "duplicate emails"
+- **Date submitted:** 2026-05-04
+- **Source signal:** M4 closure follow-up audit — HANDOFF §"Open follow-ups" listed "8 duplicate-email leads" as an open item. Verified on Prizma: 8 distinct emails appearing across 16 active leads.
+- **Problem:** Same email present on 2+ active lead rows. Initial framing: data anomaly that should be cleaned (merge legitimate duplicates, dismiss false positives).
+- **Proposal:** Author a SPEC that triages the 16 rows by 4 patterns: (A) same person + phone typo → merge; (B) same person with attendee/message history → careful merge preserving history; (C) two different people sharing one email → leave alone or flag email field; (D) ambiguous → manual review. Auto-merge only pattern A; flag rest for manual review.
+- **Predicted impact:** ~3-4 legitimate duplicates merged; ~3-4 same-email-different-people pairs flagged but untouched. Reduces lead count by 3-4 rows.
+- **How to measure:** Post-merge query: distinct active emails with >1 active lead row drops from 8 to ~4 (the legitimate "two people share one email" cases).
+- **Daniel decision:** **disagree** — Daniel directive: "אין בעיה עם זה שנרשמים עם אותו המייל 2 אנשים שונים. המגבלה היא רק בטלפון. לפעמים זוג נרשם עם אותו המייל או אמא רושמת גם את הילדים שלה. נשאיר את זה בנתיים ככה." Same-email-different-people is **legitimate operational behavior** (couples, parents registering children). The only uniqueness constraint that matters is phone (already enforced by lead-intake EF). Email duplication is by design.
+- **Decided on:** 2026-05-04
+- **Applied:** N/A — no code or data changes. HANDOFF §"Open follow-ups" updated to remove this item (moved to "by-design" section).
+- **Outcome (v2 gate input):** N/A — decision was "do nothing", no measurement needed.
+
+**Overseer self-note:** I had verified the data shape (8 emails / 16 leads / 4 patterns) before recommending, which was correct per L-001. But I framed all 16 rows as "candidates for cleanup" by default, instead of asking Daniel first whether multi-person email is even an anomaly to him. This is the same pattern as REC-002 ("drop questionnaire data"), REC-005 ("drop MultiSale events"), and REC-006 ("drop lead-level eye-exam answers") — over-indexing on data-shape anomalies without checking the live business context. Lesson: when a data shape looks like a violation, ask "does the business want this preserved?" BEFORE proposing a cleanup.
 
 ---
 
