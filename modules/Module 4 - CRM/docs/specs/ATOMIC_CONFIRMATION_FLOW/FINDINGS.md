@@ -1,9 +1,10 @@
 # FINDINGS — ATOMIC_CONFIRMATION_FLOW
 
 > **Location:** `modules/Module 4 - CRM/docs/specs/ATOMIC_CONFIRMATION_FLOW/FINDINGS.md`
-> **Written by:** opticup-executor (Step B.2 diagnosis run, 2026-05-04)
-> **Cumulative across:** Part A QA notes + Part B silent-drop trace
+> **Written by:** opticup-executor (Step B.2 diagnosis run, 2026-05-04; cumulative update at SPEC close 2026-05-04)
+> **Cumulative across:** Part A QA notes + Part B silent-drop trace + B.4 CLI redeploy
 > **Review disposition:** decided by Foreman in `FOREMAN_REVIEW.md`
+> **Last updated:** 2026-05-04 (SPEC close — Finding 1 status "FIX LANDED" annotation added; Finding 4 added from B.4 CLI deploy observation).
 
 ---
 
@@ -19,6 +20,7 @@
 
 - **Code:** `M4-CRM-AUTOMATION-CLIENT-01`
 - **Severity:** **CRITICAL** (silent message drop on every attendee-move with notify=ON; reproduces deterministically)
+- **Status (2026-05-04 SPEC close):** ✅ **FIX LANDED** — Option A (`onAfterConfirm` callback in `CrmAutomationClient.evaluate`) shipped in commits `c474756` + `201bcf6`. Daniel verified GREEN on demo: confirmation modal stays visible until user clicks; dispatch fires; `crm_message_log` rows created on the new run_id. Live EF v7 (no source change in B.3, EF was unaffected — purely client-side fix). The 3 fire-and-forget callsites in `crm-event-actions.js` + `crm-lead-actions.js` (×2) were left untouched as documented in `c474756` commit message; they don't have the await-then-sync-cleanup pattern that triggers the race.
 - **Discovered during:** Step B.2 — analysis of run row state + client wiring
 - **Locations:**
   - Race trigger: `modules/crm/crm-events-detail.js:236-242` (`reloadDetail` closure — calls global `Modal.close()`)
@@ -187,4 +189,34 @@
 
 ---
 
-*End of FINDINGS. 3 findings logged. Awaiting Daniel decision on Finding 1 fix scope before B.3 commit.*
+### Finding 4 — Supabase CLI deploy short-circuits identical-content uploads (no new version)
+
+- **Code:** `M4-TOOL-DEPLOY-01`
+- **Severity:** INFO
+- **Discovered during:** Step B.4 CLI redeploy of `automation-engine` after the [AE-DIAG] cleanup
+- **Location:** `npx supabase functions deploy automation-engine --project-ref tsxrrxzmdxaenlvocyit` (Supabase CLI, version unknown — Daniel's local install)
+
+- **Description:** Daniel ran the CLI deploy command **twice** in his terminal during B.4. Supabase's deploy pipeline created **only ONE** new version (v7), short-circuiting the second invocation because the uploaded ezbr (the bundled JS payload) was byte-identical to the first deploy. This contradicts the SPEC §8 commit-plan's implicit assumption that v7 (B.3 fix) and v8 (B.4 cleanup) would be sequential numbers. The actual sequence was v5 (Part A) → v6 (B.1 diag, CLI bypass after 4 Management API failures) → v7 (B.4 cleanup, CLI). v8 was never reached.
+
+- **Reproduction:**
+  ```
+  $ npx supabase functions deploy automation-engine --project-ref tsxrrxzmdxaenlvocyit
+  # ✓ deploy succeeds, new version v7 active
+  $ npx supabase functions deploy automation-engine --project-ref tsxrrxzmdxaenlvocyit
+  # ✓ deploy returns success, but ezbr_sha256 unchanged → no new version row
+  $ # list_edge_functions still shows version=7
+  ```
+
+- **Expected vs Actual:**
+  - Expected (per SPEC's implicit assumption): every successful deploy CLI invocation produces a new version number.
+  - Actual: Supabase pipeline checks ezbr_sha256 against the current ACTIVE version; if identical, the deploy is a no-op (success response, no version increment).
+
+- **Impact:** Functionally **no impact** — the desired source IS live (v7 has the cleaned source per ezbr_sha256 `80cd8605d74b3f37371a4a5d902155095d10f4d5b60c9354e3624be8949ded79`). But version-numbering plans in future SPECs that assume sequential increments per deploy will drift if any deploy is a content-no-op.
+
+- **Suggested next action:** **DISMISS** (informational; no action required). Optionally, future SPECs can sidestep this by NOT pre-committing to specific version numbers in their commit plans (e.g. write "next version" instead of "v7"). Foreman may want to flag this in `docs/CONVENTIONS.md` or the executor SKILL: "Supabase Edge Function deploys are idempotent on byte-identical content — version numbers are NOT a 1:1 count of deploy invocations."
+
+- **Foreman override (filled by Foreman in review):** { }
+
+---
+
+*End of FINDINGS. 4 findings logged across the SPEC: Finding 1 (CRITICAL, FIX LANDED), Finding 2 (MEDIUM, workaround documented), Finding 3 (LOW, cosmetic), Finding 4 (INFO, deploy idempotency). All findings dispositioned. Awaiting Foreman review per protocol.*
