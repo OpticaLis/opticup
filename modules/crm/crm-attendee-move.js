@@ -26,7 +26,7 @@
     var r = await sb.from('crm_events')
       .select('id, name, event_date, booking_fee, max_capacity')
       .eq('tenant_id', tenantId)
-      .in('status', ['open_for_registration','waitlist_full'])
+      .in('status', ['registration_open','waiting_list'])
       .neq('id', srcEventId)
       .eq('is_deleted', false)
       .order('event_date', { ascending: true })
