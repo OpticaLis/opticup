@@ -2,6 +2,26 @@
 
 ---
 
+## ATOMIC_CONFIRMATION_FLOW — 3-button atomic modal commit + silent-drop race fix (2026-05-04) ✅
+
+| Hash | Message |
+|------|---------|
+| `965c76d` | `feat(crm): atomic modal commit — 3-button contract for status+dispatch` |
+| `3e79db9` | `chore(automation-engine): temporary diagnostic logging for dispatch silent-drop investigation` |
+| `d8e8f4c` | `chore(spec): record Part-B-Step-1 deploy block (4th failure) — partial EXECUTION_REPORT` (superseded) |
+| `edbe142` | `docs(spec-m4): Step B.2 diagnosis — silent-drop root cause is modal-stack race` |
+| `c474756` | `fix(crm): onAfterConfirm signature in CrmAutomationClient + attendee-move callsite` |
+| `201bcf6` | `fix(crm): onAfterConfirm cleanup in event-register lead-pick flow` |
+| `fec8b81` | `chore(automation-engine): remove temporary diagnostic logging` |
+| `02920d4` | `chore(spec): close ATOMIC_CONFIRMATION_FLOW with retrospective` |
+| _(this commit)_ | `chore(spec): foreman review for ATOMIC_CONFIRMATION_FLOW + Integration Ceremony` |
+
+Bug-bundle SPEC closing the two post-cutover defects from `AUTOMATION_FLOW_BUGS_TRIPLE/SUPERVISOR_DECISION.md`. **Bug 1 (state leak):** event-status-change post-action was committing attendees → `invited` even when the operator clicked Cancel on the message-confirmation modal. Part A introduced the 3-button atomic-modal contract (Cancel — no commit; Confirm without notify — status only; Confirm and notify — status + dispatch) and gated post-actions + queue_send on `mode === 'dispatch'` in `engine.ts:159`. New `dispatch_messages` flag on the EF input separates commit from notify; cron callers default to `true` (zero behavior change). EF deployed as v5. **Bug 2 (silent message drop):** `automation-engine` identified `total_recipients=2` but never dispatched (`sent=0, failed=0, rejected=0`, no `crm_message_log` rows). Root cause was a modal-stack race in the client: callsite-side cleanup chain (`modal.close + reloadDetail`) ran a global `Modal.close()` that popped the confirmation modal off the stack BEFORE the user could click. Fixed by adding optional `onAfterConfirm` callback to `CrmAutomationClient.evaluate` so caller cleanup defers until after dispatch resolves; wired in `crm-attendee-move.js` + `crm-event-register.js` (3 fire-and-forget callsites left untouched — no race shape). EF deployed as v7 after diagnostic-logging cleanup. **Live state at SPEC close:** `automation-engine` v7 ACTIVE, no [AE-DIAG] in source or deploy, ezbr_sha256 `80cd8605d74b3f37371a4a5d902155095d10f4d5b60c9354e3624be8949ded79`. **Notable execution detail:** Part B Step 1 hit a Supabase Management API platform block (4× consecutive `InternalServerErrorException` across 2 sessions); pivoted to Daniel's local CLI deploy via activation prompt V3. SPEC spans 3 executor sessions; partial-EXECUTION_REPORT preserved at `d8e8f4c` for archival. **4 findings dispositioned in Foreman review** (`FOREMAN_REVIEW.md`): F1 modal-stack race (CRITICAL — fixed), F2 MCP `get_logs` returns gateway-only logs (MEDIUM — tech-debt + executor SKILL update with CLI fallback note), F3 schema doc drift (LOW — dismiss), F4 CLI deploy idempotency (INFO — folded into author SKILL proposal). **Executor SKILL.md** updated with Rule-21 orphans co-staging guard (3rd-cycle apply trigger reached: M4 P12 + ATTENDEE_COUNTER_DISPLAY_FIX + this SPEC). Daniel signed off GREEN on demo for both bugs.
+
+See `modules/Module 4 - CRM/docs/specs/ATOMIC_CONFIRMATION_FLOW/`.
+
+---
+
 ## ATTENDEE_COUNTER_DISPLAY_FIX — נרשמו counter scoped to registered/confirmed/attended (2026-05-04) ✅
 
 | Hash | Message |
@@ -10,9 +30,10 @@
 | `303426d` | `fix(crm): add REGISTERED_STATUSES constant + countRegistered helper` |
 | `25422a4` | `fix(crm): scope 'נרשמו' counter to registered/confirmed/attended (3 of 4 sites)` |
 | `4cd3bcc` | `fix(crm): scope 'נרשמו' counter to registered/confirmed/attended (4 of 4 — capacity bar)` |
-| _(this commit)_ | `chore(spec): close ATTENDEE_COUNTER_DISPLAY_FIX with retrospective` |
+| `cfce0d3` | `chore(spec): close ATTENDEE_COUNTER_DISPLAY_FIX with retrospective` |
+| `0b82d29` | `chore(spec): foreman review for ATTENDEE_COUNTER_DISPLAY_FIX` |
 
-Display-layer fix — no DB writes, no view changes, no Edge Function deploys. Introduces `CrmHelpers.REGISTERED_STATUSES = ['registered','confirmed','attended']` + `countRegistered(attendees)` helper in `crm-helpers.js`. Routes all 4 callsites that display the נרשמו counter through the helper instead of `v_crm_event_stats.total_registered` (which counts attendees beyond the three registered-semantics statuses, empirically confirmed on demo event #11: 1 invited + 1 new → view returned 2, expected 0). Sites: events tab list (added a parallel SELECT on `crm_event_attendees` filtered by status, aggregated client-side per `event_id`), event-detail capacity bar, KPI sparklines, funnel SVG, event-day counter card. `crm-events-detail.js` net-zero line delta (file at 349/350 cap). 5 findings logged: `renderConversionCard` ratio uses broad `total_registered` denominator (M4-CRM-COUNTER-01); `v_crm_event_stats.total_registered` view-side semantic bug (M4-CRM-VIEW-01) — future DB-write SPEC; `rule-21-orphans` hook false positive on co-staged `var sent` required commit-split per M4 P12 precedent (M4-TOOL-COUNTER-01); `wc -l` vs hook line-count off-by-one on CRLF (M4-TOOL-COUNTER-02); `MODULE_MAP.md` entry for `countRegistered` deferred (M4-DOC-COUNTER-01). **🟡 Code complete; manual demo browser QA on event #11 pending Daniel.**
+Display-layer fix — no DB writes, no view changes, no Edge Function deploys. Introduces `CrmHelpers.REGISTERED_STATUSES = ['registered','confirmed','attended']` + `countRegistered(attendees)` helper in `crm-helpers.js`. Routes all 4 callsites that display the נרשמו counter through the helper instead of `v_crm_event_stats.total_registered` (which counts attendees beyond the three registered-semantics statuses, empirically confirmed on demo event #11: 1 invited + 1 new → view returned 2, expected 0). Sites: events tab list (added a parallel SELECT on `crm_event_attendees` filtered by status, aggregated client-side per `event_id`), event-detail capacity bar, KPI sparklines, funnel SVG, event-day counter card. `crm-events-detail.js` net-zero line delta (file at 349/350 cap). 5 findings dispositioned in Foreman review: F1 + F2 bundled into a future `M4_CRM_REGISTERED_SEMANTIC_ALIGNMENT/` NEW_SPEC stub (view-side root-cause fix + `renderConversionCard` ratio); F3 + F4 → `M4-TOOL-DEBT` bucket; F5 (`MODULE_MAP.md` entry for `countRegistered`) closed inline by Foreman. Daniel verified GREEN on demo event #11 — all 4 counter sites show 0 as expected. **🟢 Closed.**
 
 See `modules/Module 4 - CRM/docs/specs/ATTENDEE_COUNTER_DISPLAY_FIX/`.
 
