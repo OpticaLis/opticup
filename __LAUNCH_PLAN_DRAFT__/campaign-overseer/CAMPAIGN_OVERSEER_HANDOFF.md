@@ -3,7 +3,7 @@
 > **Purpose:** the live state file the Campaign Overseer reads at session start and updates after every meaningful action.
 > **Update discipline:** state-as-you-go. Replace, don't append. Cleanup when ≥150 lines.
 > **Authority:** lower than `CAMPAIGN_OVERSEER_SKILL.md` (the constitution). If they conflict, skill wins.
-> **Last meaningful update:** 2026-05-04 late night — **FOUR SPECs CLOSED + 7+ commits on develop + 2 PRs already merged to main.** Marathon evening session: (1) QUICK_REGISTER_QR_FLOW ✅ Rungs 1-3 + 3 Hotfixes; (2) DELETE_EMPTY_EVENT ✅ REC-009; (3) ACTIVITY_LOG_DEDUPLICATION_DELETE_EVENT ✅ F1 fix; (4) RESTORE_DELETED_EVENT_UI ✅ REC-010 (Approach B after Foreman scope-correction); plus Module 36 cleanup in Make scenario 8464122 (already done by Daniel mid-session). 2 FOREMAN_REVIEWs written (QUICK_REGISTER + DELETE_EMPTY_EVENT). 10 RECs decided (60% rolling rate — first reportable). MASTER_ROADMAP + Module 4 SESSION_CONTEXT both refreshed. Two FOREMAN_REVIEWs still pending: ACTIVITY_LOG_DEDUP + RESTORE_DELETED_EVENT_UI.
+> **Last meaningful update:** 2026-05-04 late night extended — **SIX SPECs CLOSED + 10+ commits + 4 PRs merged to main.** Marathon evening session: (1) QUICK_REGISTER_QR_FLOW ✅ Rungs 1-3 + 3 Hotfixes; (2) DELETE_EMPTY_EVENT ✅ REC-009; (3) ACTIVITY_LOG_DEDUPLICATION_DELETE_EVENT ✅ F1 fix; (4) RESTORE_DELETED_EVENT_UI ✅ REC-010 (Approach B after Foreman scope-correction); (5) POST_4_LEADS_PAGINATION_BUMP ✅ (200→1000); (6) PHONE_SEARCH_PARTIAL_FIX ✅ (Daniel-reported regression — 0-prefix partial-format phone search now works). Plus Module 36 cleanup in Make scenario 8464122. 2 FOREMAN_REVIEWs written (QUICK_REGISTER + DELETE_EMPTY_EVENT). Self-Review #1 written + Daniel-approved → L-005 binding rules added (Rule A live-flow check, Rule B REC class-tagging). MASTER_ROADMAP + Module 4 SESSION_CONTEXT both refreshed. Open follow-ups: 4 FOREMAN_REVIEWs still pending (ACTIVITY_LOG_DEDUP, RESTORE_DELETED_EVENT_UI, POST_4_LEADS_PAGINATION_BUMP, PHONE_SEARCH_PARTIAL_FIX); incoming-tab.js partial-phone-search bug (same pattern as PHONE_SEARCH_PARTIAL_FIX, logged as INFO).
 
 **Rung 3 closure note (Make scenario 8464122):** branch `"ברקוד רישום לאירוע - רישום מהיר"` updated successfully via **manual Make UI** (not Make MCP — see FINDINGS.md F3 for tooling constraint). 3 surgical edits applied:
 - Module 213 (HTTP) `event_number` body field → `{{trim(replace(replace(ifempty(1.messageData.textMessageData.textMessage; 1.messageData.extendedTextMessageData.text); "רישום מהיר אירוע"; ""); " "; ""))}}` (pattern-free nested replace; the `/g` flag approach failed in Make's regex parser)
@@ -213,8 +213,10 @@ EN+RU versions of campaign pages are soft-deleted in `storefront_pages` — camp
 
 (awaiting Daniel's verbal decision OR SPEC authoring)
 
-- ✅ `REC-009 — Delete-empty-event button — APPLIED 2026-05-04 evening (DELETE_EMPTY_EVENT SPEC, 2 commits + retro on develop, demo smoke-test all 3 cases passed)`
-- ✅ `REC-010 — Restore-deleted-event UI — APPLIED 2026-05-04 late night (RESTORE_DELETED_EVENT_UI SPEC, 3 commits 7f8117a/7df4586/dd5ff21, demo round-trip verified). Approach B (attendee_ids in audit-log details) shipped over the originally-planned timestamp scoping, after Foreman scope-correction caught crm_event_attendees has no updated_at column.`
+- ✅ `REC-009 — [feature-request] Delete-empty-event button — APPLIED 2026-05-04 evening (DELETE_EMPTY_EVENT SPEC, demo smoke-test all 3 cases passed, MERGED to main)`
+- ✅ `REC-010 — [feature-request] Restore-deleted-event UI — APPLIED 2026-05-04 late night (RESTORE_DELETED_EVENT_UI SPEC, Approach B, MERGED to main)`
+- ✅ `REC-011 — [feature-request] Leads tab pagination 200→1000 — APPLIED 2026-05-04 late night (POST_4_LEADS_PAGINATION_BUMP, MERGED to main, Daniel verified on prizma)`
+- ✅ `REC-012 — [feature-request] Partial-format phone search fix — APPLIED 2026-05-04 late night (PHONE_SEARCH_PARTIAL_FIX SPEC, MERGED to main, all 5 search variants verified by Daniel)`
 
 The full recommendation lives in `DECISIONS_LOG.md`; this section is just a pointer.
 
@@ -223,16 +225,18 @@ The full recommendation lives in `DECISIONS_LOG.md`; this section is just a poin
 ## 4. 90% Gate Status
 
 **Mode:** RECOMMEND-ONLY (v1).
-**Total recommendations submitted:** 10.
-**Total decided:** 10 (agree: 6, disagree: 4, partial: 0).
-**Total applied:** 2 (REC-009 DELETE_EMPTY_EVENT + REC-010 RESTORE_DELETED_EVENT_UI, both 2026-05-04).
-**Rolling 30-rec acceptance rate:** **60%** (6/10) — first reportable rate.
-**Status toward graduation:** 10/30 decisions in. **Pattern:** 4 of 4 disagreements were "drop X" anomaly proposals (REC-002 questionnaires, REC-005 MultiSale events, REC-006 lead-level eye-exam, REC-008 duplicate emails) where Daniel saw legitimate business value the Overseer underestimated. **REC-009 + REC-010 were Daniel-proactive feature requests** — counter-trend with 100% agree rate. Over the next 20 decisions, the rate is expected to improve as the Overseer matures past the data-shape-anomaly trap. **Self-Review #1 due** (per SKILL §8 — every 10 decisions).
+**Total recommendations submitted:** 12.
+**Total decided:** 12 (agree: 8, disagree: 4, partial: 0).
+**Total applied:** 4 (REC-009 DELETE_EMPTY_EVENT, REC-010 RESTORE_DELETED_EVENT_UI, REC-011 POST_4_LEADS_PAGINATION_BUMP, REC-012 PHONE_SEARCH_PARTIAL_FIX — all 2026-05-04).
+**Rolling 30-rec acceptance rate:** **67%** (8/12). Trending up from 60% as feature-request track adds.
+**Status toward graduation:** 12/30 decisions in. **Pattern:** 4 of 4 disagreements were anomaly-detection RECs (REC-002/005/006/008). **REC-009 through REC-012 were all [feature-request] class — 4/4 agree.** Self-Review #1 written + Daniel-approved 2026-05-04. Rules A + B codified in LEARNINGS.md L-005. Going forward, every REC must carry an explicit `[anomaly-detection]` or `[feature-request]` class tag.
 
 ---
 
 ## 5. Recent Decisions (last 7 days)
 
+- 2026-05-04 — REC-012 — [feature-request] agree — PHONE_SEARCH_PARTIAL_FIX shipped (5-line patch in crm-leads-tab.js — 0-prefix partial phone search)
+- 2026-05-04 — REC-011 — [feature-request] agree — POST_4_LEADS_PAGINATION_BUMP shipped (1-line: 200→1000)
 - 2026-05-04 — REC-010 — agree — restore-deleted-event UI; Approach B (capture attendee_ids in audit details) chosen over A (add deleted_at column) and C (event-only)
 - 2026-05-04 — REC-009 — agree — delete-event button gated on SUM(purchase_amount)=0 (condition "א" only — testing leads who didn't buy don't block)
 - 2026-05-04 — REC-008 — disagree — same-email-different-people is by design (couples / parents+kids); only phone is unique

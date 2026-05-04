@@ -6,6 +6,29 @@
 
 ---
 
+## TD-002 — [OPEN] Partial-phone search bug in `crm-incoming-tab.js:109` (same pattern as PHONE_SEARCH_PARTIAL_FIX)
+
+**Date observed:** 2026-05-04 late night
+**Status:** ⏳ OPEN — logged as INFO-severity finding by PHONE_SEARCH_PARTIAL_FIX EXECUTION_REPORT.
+
+### What
+
+`crm-incoming-tab.js:109` uses the same `normalizePhone(s)` + `phone.indexOf(sNorm)` pattern that PHONE_SEARCH_PARTIAL_FIX corrected in `crm-leads-tab.js:145-152`. Searching with a partial Israeli local-format string (e.g. `05056`) on the "לידים נכנסים" tab will return 0 results even when leads matching exist.
+
+### Recommended fix
+
+Apply the same 5-line patch from PHONE_SEARCH_PARTIAL_FIX to `crm-incoming-tab.js`. Out of scope for that SPEC by design (one-file-per-SPEC discipline). A future cleanup SPEC can either: (a) duplicate the search-prefix helper into the incoming-tab file, or (b) extract a shared helper into `crm-helpers.js` (e.g. `phoneSearchVariants(s)` returning the array of all forms to test).
+
+### Severity
+
+INFO — affects daily ops on the incoming tab (less heavily used than רשומים, but still a regression for any operator who searches by partial phone there).
+
+### Who logged
+
+Claude Code via the executor's PHONE_SEARCH_PARTIAL_FIX FINDINGS, surfaced during cross-reference grep at Step 1 of that SPEC.
+
+---
+
 ## TD-001 — [CLOSED — NOT A BUG] UI label "לא הגיע" investigation
 
 **Date observed:** 2026-05-02 evening (Israel)
