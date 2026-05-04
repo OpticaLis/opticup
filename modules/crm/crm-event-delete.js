@@ -27,22 +27,6 @@
     if (res.error) throw new Error('soft_delete_event_if_empty: ' + res.error.message);
 
     var payload = res.data || {};
-    if (payload && payload.success === true) {
-      try {
-        if (window.ActivityLog) {
-          ActivityLog.write({
-            action: 'crm.event.delete',
-            entity_type: 'crm_events',
-            entity_id: eventId,
-            details: {
-              event_name: eventName || null,
-              deleted_attendees: payload.deleted_attendees || 0,
-              cancelled_messages: payload.cancelled_messages || 0
-            }
-          });
-        }
-      } catch (_) { /* activity-log is best-effort */ }
-    }
     return payload;
   }
 
