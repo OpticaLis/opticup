@@ -1,7 +1,64 @@
 # Session Context — Module 1: Inventory Management
 
 ## Last Updated
-Permissions Phase 3 CSS Gating — 2026-04-27 (very late night)
+RECEIPT_FORM_FIXES_FROM_MANAGER — 2026-05-06
+
+## 2026-05-06 — Goods Receipt Form: 3-fix bundle from branch manager
+
+3-item hotfix bundle to the receipt form in `inventory.html`, addressing
+items 13/14/15 from the Prizma branch manager's written list. Together
+they ship the **prevention** for the 2026-05-05 receipt 8119464877
+mis-pricing (4 MiuMiu rows, +3,710.64 ₪ over invoice) by surfacing a
+real-time invoice-vs-system total comparison.
+
+**What shipped:**
+- **Item 13** — sort lock by default. New 🔒/🔓 toggle button next to
+  the search/import controls; clicking column headers no longer scrambles
+  the manager's tray order. Implementation in new file
+  `modules/goods-receipts/receipt-form-validate.js` (split out of
+  `receipt-form-items.js` per Amendment 1 — Iron Rule 12 file-size).
+- **Item 14** — line-total per row + invoice-total compare + confirm
+  gate. New `<th>סה"כ לשורה</th>` column shows `qty × cost` live; new
+  header input `סה"כ חשבונית` shows ✅/❌ status with delta; clicking
+  "אשר קבלה ועדכן מלאי" while invoice-total disagrees by >1 ₪ triggers
+  a confirmation dialog. Empty invoice-total = no gate (back-compat).
+- **Item 15** — `sort_order INT` column + idx_rcpt_items_sort on
+  `goods_receipt_items` (migration 068). Items written with
+  `sort_order = idx + 1` (1-based DOM order). 3 SELECT sites updated to
+  read in `sort_order ASC, id ASC` order: confirmReceiptCore,
+  openExistingReceipt, exportReceiptBarcodes. Legacy receipts
+  (sort_order=NULL) deterministically fall back to id ASC.
+
+**Bundle:** 3 feature commits (`c0391ef` → `02a5884` → `0d27c81`) + 1
+close commit. Migration 068 applied via Supabase MCP (idempotency
+verified). RLS unchanged (canonical 2-policy pair preserved).
+
+**Mid-execution Foreman escalations (2):**
+1. Iron Rule 12 contradiction caught at pre-flight: `receipt-form-items.js`
+   was already 357 lines (over the 350 hard max) BEFORE any edit. Foreman
+   issued Amendment 1 — split sort-lock + invoice-compare into new file
+   `receipt-form-validate.js` ("one responsibility per file"). Final state:
+   items=344, validate=120, all under 350.
+2. Pre-commit hook fired 50 false-positive violations on commit 3 (42
+   rule-15-rls on quoted policy names + 2 rule-21-orphans on local
+   `const X = (...)` + 5 rule-18 + 1 file-size warning). Foreman authorized
+   Option 1: rename one local const to dodge rule-21 collision + defer
+   db-schema.sql doc-sync to a follow-up SPEC after the hook regex is
+   fixed. 2 NEW_SPEC findings logged: HOOKS_FIX_RULE_15 (HIGH) +
+   HOOKS_FIX_RULE_21 (MEDIUM).
+
+**Out of scope (deliberate):** the 4 mis-priced rows on receipt
+8119464877 — Daniel corrects manually. The data correction is NOT in
+this SPEC.
+
+**Manual UI QA owed on Demo:** §12 has 11 walk-through steps that
+require browser interaction post-deployment (sort-lock click, line-total
+display, invoice-compare match/mismatch, confirm gate, save+reload+
+export order preservation, back-compat, console errors). Code-level
+verification done; live walk-through scheduled for Daniel/QA.
+
+SPEC folder:
+`modules/Module 1 - Inventory Management/docs/specs/RECEIPT_FORM_FIXES_FROM_MANAGER/`.
 
 ## 2026-04-27 (very late night) — Permissions Phase 3: CSS Gating Fix
 

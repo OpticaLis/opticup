@@ -108,10 +108,11 @@ modules/
 ├── purchasing/                 — 6 files
 │   (purchase-orders, po-form, po-items, po-actions, po-import, po-view)
 │
-├── goods-receipts/             — 12 files
-│   (goods-receipt, receipt-form, receipt-form-items, receipt-actions,
-│    receipt-confirm, receipt-confirm-items, receipt-debt, receipt-excel,
-│    receipt-ocr, receipt-ocr-review, receipt-po-compare, receipt-guide)
+├── goods-receipts/             — 13 files
+│   (goods-receipt, receipt-form, receipt-form-items, receipt-form-validate,
+│    receipt-actions, receipt-confirm, receipt-confirm-items, receipt-debt,
+│    receipt-excel, receipt-ocr, receipt-ocr-review, receipt-po-compare,
+│    receipt-guide)
 │
 ├── audit/                      — 4 files
 │   (audit-log, item-history, entry-history, qty-modal)

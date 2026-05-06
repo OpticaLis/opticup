@@ -131,7 +131,11 @@ async function openExistingReceipt(receiptId, viewOnly) {
     const { data: rcpt, error: rErr } = await sb.from(T.RECEIPTS).select('*').eq('tenant_id', getTenantId()).eq('id', receiptId).single();
     if (rErr) throw rErr;
 
-    const { data: items, error: iErr } = await sb.from(T.RCPT_ITEMS).select('*').eq('tenant_id', getTenantId()).eq('receipt_id', receiptId);
+    // Item 15: render items in manager-typed entry order (sort_order ASC, then id ASC for legacy rows)
+    const { data: items, error: iErr } = await sb.from(T.RCPT_ITEMS).select('*')
+      .eq('tenant_id', getTenantId()).eq('receipt_id', receiptId)
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('id', { ascending: true });
     if (iErr) throw iErr;
 
     currentReceiptId = receiptId;

@@ -44,6 +44,17 @@ async function confirmReceipt() {
     return;
   }
 
+  // Item 14 gate: if user typed an invoice total and it disagrees with the
+  // system-computed total cost (|delta| > 1 \u20AA), force explicit acknowledgement
+  // before proceeding. Empty invoice-total = no gate (back-compat).
+  if (typeof _rcptInvoiceTotalDelta === 'function') {
+    var d = _rcptInvoiceTotalDelta();
+    if (d.hasInvoiceTotal && Math.abs(d.delta) > 1.00) {
+      var msg = '\u26A0\uFE0F \u05E4\u05E2\u05E8 ' + d.delta.toFixed(2) + ' \u20AA \u05DE\u05D5\u05DC \u05D4\u05D7\u05E9\u05D1\u05D5\u05E0\u05D9\u05EA \u2014 \u05DC\u05D4\u05DE\u05E9\u05D9\u05DA \u05D1\u05DB\u05DC \u05D6\u05D0\u05EA?';
+      if (!confirm(msg)) return;
+    }
+  }
+
   // Confirmation step: employee must confirm items match the document
   var matchResult = await _showMatchConfirmDialog(rcptNumber);
   if (!matchResult) return; // user closed dialog without choosing

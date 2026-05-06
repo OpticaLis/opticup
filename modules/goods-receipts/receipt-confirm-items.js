@@ -1,5 +1,9 @@
 async function confirmReceiptCore(receiptId, rcptNumber, poId) {
-  const { data: savedItems, error: siErr } = await sb.from(T.RCPT_ITEMS).select('*').eq('receipt_id', receiptId).eq('tenant_id', getTenantId());
+  // Item 15: read items in manager-typed entry order (sort_order ASC, then id ASC for legacy rows)
+  const { data: savedItems, error: siErr } = await sb.from(T.RCPT_ITEMS).select('*')
+    .eq('receipt_id', receiptId).eq('tenant_id', getTenantId())
+    .order('sort_order', { ascending: true, nullsFirst: false })
+    .order('id', { ascending: true });
   if (siErr) throw siErr;
 
   // Phase 2c: Track successful inventory changes for rollback on failure

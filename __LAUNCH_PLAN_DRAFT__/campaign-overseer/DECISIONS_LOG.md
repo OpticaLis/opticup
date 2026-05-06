@@ -27,10 +27,10 @@
 
 ## Stats summary (auto-recalculate on every update)
 
-- **Total recommendations submitted:** 10
-- **Total decided:** 10 (agree: 6 / disagree: 4 / partial: 0)
-- **Total applied:** 2 (REC-009 + REC-010 — both shipped + verified 2026-05-04)
-- **Rolling 30-rec acceptance rate:** 60% (6/10 decided as agree).
+- **Total recommendations submitted:** 12
+- **Total decided:** 12 (agree: 8 / disagree: 4 / partial: 0)
+- **Total applied:** 4 (REC-009 + REC-010 + REC-011 + REC-012 — all shipped + verified + merged to main 2026-05-04)
+- **Rolling 30-rec acceptance rate:** 67% (8/12 decided as agree). Trending up — 4-of-4 latest are [feature-request] class.
 - **Mode:** RECOMMEND-ONLY (v1)
 - **Status toward graduation:** 10 of 30 decisions in (rolling rate 60%). Pattern across REC-002, REC-005, REC-006, REC-008: when the Overseer recommends action on apparent data anomalies, Daniel pushes back when the "anomaly" is actually legitimate real-world behavior the business depends on. **REC-009 + REC-010 are counter-trend** — both Daniel-proactive feature requests where the Overseer's role was to author the SPEC, not propose action on anomalies. Over the next 20 decisions, the rate will likely rise as the Overseer matures past the data-shape-anomaly trap.
 
@@ -172,6 +172,30 @@
 - **Decided on:** 2026-05-04
 - **Applied:** ✅ 2026-05-04 late night (RESTORE_DELETED_EVENT_UI SPEC, 3 commits: 7f8117a backend, 7df4586 frontend, dd5ff21 retro). Approach B (capture attendee_ids in audit-log details, replay on restore) shipped after Foreman scope-correction caught the original timestamp-based approach was infeasible — `crm_event_attendees` has no `updated_at` column. Demo end-to-end round-trip verified by Daniel: create event → 2 attendees → delete → click שחזר → event + attendees back.
 - **Outcome (v2 gate input):** ✅ verified live. Predicted impact (zero-click recovery from accidental deletes) achieved. Pre-v2 audit log rows restore event-only by design.
+
+## REC-011 — [feature-request] Bump CRM leads tab SERVER_PAGE 200 → 1000
+- **Date submitted:** 2026-05-04 late night
+- **Source signal:** POST-4 in `project_post_cutover_backlog.md` — Daniel observed only ~4 pages of leads visible at entry; needed ~6 "load more" clicks to see all 1,158 leads.
+- **Problem:** Server-page constant set to 200 when the dataset is ~1,158. Daily ops friction (6 clicks to see all leads).
+- **Proposal:** 1-line change in `modules/crm/crm-leads-tab.js:31` from 200 to 1000.
+- **Predicted impact:** ~1,158 leads in 2 batches instead of 6.
+- **How to measure:** open CRM → רשומים tab → 1 click of "load more" reveals all leads.
+- **Daniel decision:** **agree** — implicit (POST-4 was already on the backlog, this is the implementation).
+- **Decided on:** 2026-05-04
+- **Applied:** ✅ 2026-05-04 late night (POST_4_LEADS_PAGINATION_BUMP SPEC, commit `7f02463` + retro, MERGED to main).
+- **Outcome (v2 gate input):** ✅ verified by Daniel on prizma post-merge.
+
+## REC-012 — [feature-request] Fix partial-Israeli-format phone search regression
+- **Date submitted:** 2026-05-04 late night
+- **Source signal:** Daniel-reported regression after POST-4 merge: searching `05056` returns nothing; searching `5056` (no leading 0) finds the lead. Expected behavior: both should match a phone stored as `+972505636387`.
+- **Problem:** `CrmHelpers.normalizePhone` returns null on partial inputs (e.g. 5-digit `05056`) because it requires exactly 10 digits for Israeli local format. Then `sNorm` is empty, the search falls back to literal substring on the stored E.164 — which never contains `05...` (the 0 was replaced by `+972`).
+- **Proposal:** 5-line patch in `modules/crm/crm-leads-tab.js` to add a partial-format helper alongside `sNorm`. Synthesizes `+972 + s.slice(1)` when input is `^0\d+$` length ≥2. Does NOT modify `normalizePhone` itself (other write-path consumers depend on null-on-partial).
+- **Predicted impact:** all 4 search formats find the same lead (`0505636387` full local, `+972505...` international, `5056` partial-no-prefix, `05056` partial-with-prefix).
+- **How to measure:** 5 manual search variants on prizma after merge.
+- **Daniel decision:** **agree** — implicit (regression-fix triggered by Daniel report).
+- **Decided on:** 2026-05-04
+- **Applied:** ✅ 2026-05-04 late night (PHONE_SEARCH_PARTIAL_FIX SPEC, commit `f13888a` + retro, MERGED to main).
+- **Outcome (v2 gate input):** ✅ all 5 search variants verified by Daniel on prizma post-merge. Same partial-search bug exists in `crm-incoming-tab.js:109` — logged as INFO finding for future SPEC.
 
 ---
 
