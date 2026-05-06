@@ -1,6 +1,6 @@
 # Module 4 — CRM: Module Map
 
-> **Last updated:** 2026-05-01 (P33 — universal placeholder guard + coupon_code auto-fill fix: closes P32-001 customer-facing bug class. `injectEventVariables` now selects + sets `vars.coupon_code` from `crm_events.coupon_code` (caller-wins); new `scanForUnsubstitutedPlaceholders(text)` helper in event-variables.ts; index.ts invokes the scan on body+subject after substitution; if any `%[a-z][a-z0-9_]*%` literal remains, dispatch rejected with HTTP 400 + `error_message='unsubstituted_placeholder: <names>'` written to crm_message_log before any Make webhook call. Make webhook never receives broken templates.)
+> **Last updated:** 2026-05-06 (M4_CLOSURE_AND_INTEGRATION_CEREMONY — administrative closure of the audit cycle 2026-05-01 to 2026-05-06. All 4 audit CRITICALs CLOSED: G-CRIT-1 + G-CRIT-3 (PART1 — cms_leads canonical RLS + 7 v_crm_* views security_invoker), G-CRIT-4 (M4_HARDCODED_PRIZMA_REMOVAL — tenant-scoped business config), G-CRIT-2 (PART2 — anon EXECUTE revoked from 9 internal RPCs + 2 admin-only). New shared helper `_shared/tenant-config.ts`. New module file `modules/crm/crm-event-restore.js` + `restore_event_from_log` RPC. `crm-event-delete.js` reduced 50→34 lines after activity-log deduplication. Module enters MAINTENANCE phase. Tech-debt items remain logged in TECH_DEBT.md but don't block closure.)
 
 ---
 
@@ -62,6 +62,8 @@
 | `crm-messaging-broadcast.js` | 341 | **[B8]** 5-step wizard with progress connectors (green ✓ on completed, indigo ring on active), step body Tailwind forms, message log with status chip pills (sky sent / emerald delivered / indigo read / rose failed), channel + status filters, pagination |
 | `crm-messaging-config.js` | 17 | **[P3b→P3c+P4]** Documentation-only pointer. Since Architecture v3, the Make webhook URL lives in the `send-message` Edge Function as `MAKE_WEBHOOK_URL_DEFAULT` (env-overridable via the `MAKE_SEND_MESSAGE_WEBHOOK_URL` Supabase secret); `window.CrmMessagingConfig.MAKE_SEND_WEBHOOK` here mirrors that URL for humans reading the client-side code. |
 | `crm-messaging-send.js` | 69 | **[P3b→P3c+P4]** `window.CrmMessaging.sendMessage({leadId, channel, templateSlug?, body?, subject?, variables?, eventId?, language?})` — calls the `send-message` Edge Function via `sb.functions.invoke()`. Supports template mode (`templateSlug`) and raw-body mode (`body` XOR `templateSlug`) for ad-hoc broadcasts. The Edge Function handles template fetch, `%name%`/`%phone%`/... substitution, `crm_message_log` write, and Make webhook dispatch. Returns `{ok, logId?, channel?, error?}`. |
+| `crm-event-delete.js` | 34 | **[DELETE_EMPTY_EVENT + ACTIVITY_LOG_DEDUPLICATION_DELETE_EVENT, 2026-05-04]** `window.CrmEventActions.softDeleteEventIfEmpty(eventId)` — wraps the `soft_delete_event_if_empty` RPC (gated server-side on `SUM(purchase_amount)=0`). RPC writes the canonical activity_log audit row with `attendee_ids` array (v2). Originally 50 lines; reduced to 34 by removing the redundant client-side `ActivityLog.write` block (server-side write is canonical, Iron Rule 21). |
+| `crm-event-restore.js` | 38 | **[RESTORE_DELETED_EVENT_UI, 2026-05-04]** `window.CrmEventActions.restoreEventFromLog(logId, tenantId)` — wraps the `restore_event_from_log` RPC. Reads `attendee_ids` from the source delete-log row's details and replays them via tenant-scoped UPDATE (Approach B, no-DDL inverse of soft_delete). On pre-v2 logs (no attendee_ids), restores event-only with `note='pre_v2_log_event_only'`. Returns `{success, event_id, restored_attendees, source_log_id}`. |
 
 ### Modified shared files
 | File | Change | Phase |
@@ -224,9 +226,20 @@ The `crm_event_attendees` table now carries a payment-lifecycle model:
 | `crm_message_log` | crm-messaging-broadcast.js | Message history with channel/status/date filters, paginated |
 
 ### RPCs
-| RPC | Caller | Purpose |
-|-----|--------|---------|
-| `check_in_attendee(p_tenant_id, p_attendee_id)` | crm-event-day-checkin.js | Atomic check-in: sets `checked_in_at` + `status='attended'` |
+| RPC | Caller | Purpose | EXECUTE access (post-PART2) |
+|-----|--------|---------|------------------------------|
+| `check_in_attendee(p_tenant_id, p_attendee_id)` | crm-event-day-checkin.js + crm-event-day-schedule.js | Atomic check-in: sets `checked_in_at` + `status='attended'` | authenticated + service_role only |
+| `move_attendee_between_events(p_attendee_id, p_target_event_id)` | crm-attendee-move.js | Move attendee to a different event with paid-state inheritance | authenticated + service_role only |
+| `transfer_credit_to_new_attendee(p_old_attendee_id, p_new_attendee_id)` | crm-payment-automation.js | FIFO oldest-credit transfer on re-registration | authenticated + service_role only |
+| `next_crm_event_number(p_tenant_id, p_campaign_id)` | crm-event-actions.js | Atomic auto-numbered event_number (Rule 11; FOR UPDATE lock) | authenticated + service_role only |
+| `soft_delete_event_if_empty(p_tenant_id, p_event_id)` | crm-event-delete.js | Gated soft-delete (SUM(purchase_amount)=0). v2 captures `attendee_ids` in audit row for restore. | authenticated + service_role only |
+| `restore_event_from_log(p_tenant_id, p_log_id)` | crm-event-restore.js | Inverse of soft_delete_event_if_empty: replays `attendee_ids` from audit row | authenticated + service_role only |
+| `sync_lead_status_from_attendee(p_lead_id, p_tenant_id)` | crm-automation-post-actions.js + automation-engine EF | Re-derive lead.status from attendee state | authenticated + service_role only |
+| `register_lead_to_event(p_tenant_id, p_lead_id, p_event_id, p_method)` | crm-event-register.js + event-register EF + quick-register EF | Canonical registration (capacity check, dedup, waiting_list) | **anon + authenticated + service_role** — public form path |
+| `submit_storefront_lead(p_tenant_id, p_inventory_id, p_contact_type, p_contact_value)` | storefront repo | Public storefront lead ingress to `storefront_leads` | **anon + authenticated + service_role** — public ingress |
+| `verify_campaign_page_password(p_tenant_id, p_page_slug, p_password)` | storefront repo | Password gate for protected campaign pages | **anon + authenticated + service_role** — public ingress |
+| `cascade_attendee_soft_delete()` | DB trigger only | Trigger function — cascade attendee soft-delete on event soft-delete | service_role only |
+| `import_leads_from_monday(p_tenant_id, p_board_id, p_items)` | one-time admin script | Monday board lead import | service_role only |
 
 ---
 

@@ -2,6 +2,27 @@
 
 ---
 
+## M4_CLOSURE_AND_INTEGRATION_CEREMONY — administrative closure of the audit cycle (2026-05-06) ✅
+
+| Hash | Message |
+|------|---------|
+| `e811bd9` | `docs(spec): backfill ACTIVITY_LOG_DEDUPLICATION_DELETE_EVENT FOREMAN_REVIEW` |
+| `6e75307` | `docs(spec): backfill RESTORE_DELETED_EVENT_UI FOREMAN_REVIEW` |
+| `1e89832` | `docs(spec): backfill POST_4_LEADS_PAGINATION_BUMP FOREMAN_REVIEW` |
+| `d1090e5` | `docs(spec): backfill PHONE_SEARCH_PARTIAL_FIX FOREMAN_REVIEW` |
+| _(this commit)_ | `docs(m4): refresh MODULE_MAP + SESSION_CONTEXT + CHANGELOG for 2026-05-06 cycle` |
+| _(next)_ | `docs(global): merge M4 into GLOBAL_MAP — Integration Ceremony` |
+| _(next)_ | `docs(global): merge M4 schema into GLOBAL_SCHEMA — Integration Ceremony` |
+| _(next)_ | `chore(spec): close M4_CLOSURE_AND_INTEGRATION_CEREMONY with retrospective` |
+
+Documentation-only SPEC closing Module 4 administratively. Backfilled the 4 missing FOREMAN_REVIEW.md files for SPECs that closed 2026-05-04 (ACTIVITY_LOG_DEDUP, RESTORE_DELETED_EVENT_UI, POST_4, PHONE_SEARCH). Refreshed MODULE_MAP with `crm-event-delete.js` (50→34 lines), new `crm-event-restore.js`, `loadTenantConfig` helper, and the 12-RPC EXECUTE-access matrix post-PART2. SESSION_CONTEXT updated to "MAINTENANCE phase." MASTER_ROADMAP unchanged (no phase boundary). Subsequent commits 6+7 merge M4 into GLOBAL_MAP + GLOBAL_SCHEMA per CLAUDE.md §10 Integration Ceremony — first time M4 lands in those project-global files.
+
+**Audit cycle 2026-05-01 to 2026-05-06 summary:** 41 Phase-1 findings + 2 Phase-2 NEW findings → 5 production SPECs shipped (M4_PUBLIC_FORM_VARIABLES_HIGH, M4_UNSUB_SUPPRESSION_CRIT, M4_TENANT_ISOLATION_HARDENING_PART1, M4_HARDCODED_PRIZMA_REMOVAL, M4_TENANT_ISOLATION_HARDENING_PART2). All 4 audit CRITICALs CLOSED. SaaS-readiness threshold crossed (tenant 2 onboarding requires only DB rows). Tech-debt items logged in TECH_DEBT.md.
+
+See `modules/Module 4 - CRM/docs/specs/M4_CLOSURE_AND_INTEGRATION_CEREMONY/`.
+
+---
+
 ## M4_TENANT_ISOLATION_HARDENING_PART2 — revoke anon EXECUTE from 9 internal RPCs + 2 admin-only (2026-05-06) ✅
 
 | Hash | Message |
