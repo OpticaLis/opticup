@@ -316,6 +316,27 @@ view, new RPC, new migration, or even new field in an existing table), you MUST:
    M4_UNSUB_SUPPRESSION_CRIT/M4-DOC-04,
    M4_TENANT_ISOLATION_HARDENING_PART1/M4-DOC-05) → this rule is now
    binding, not aspirational.
+
+5c. **Filesystem path verification (MANDATORY — added 2026-05-06 after
+   4-occurrence rule).** For every file path cited in the SPEC's §2/§8/§12,
+   confirm by `ls` or `find` BEFORE editing. If the cited path doesn't
+   exist, locate the actual file via:
+   ```bash
+   find . -name '<basename>' -not -path '*/.git/*' 2>/dev/null
+   ```
+   Edit at the actual path; log the discrepancy as a finding so the SPEC
+   author can correct the reference. Common pattern: SPECs miss the
+   `/public/` subfolder qualifier (e.g., `modules/crm/event-register.js`
+   vs actual `modules/crm/public/event-register.js`).
+
+5d. **Cross-tenant preview QA (when client preview helpers touched).**
+   When SPEC modifies a client-side preview/template helper (e.g.,
+   `crm-messaging-templates.js` substitute()), the QA must include a
+   "preview as tenant 2" walkthrough: open the helper while logged in as
+   the OTHER tenant, confirm preview shows tenant-neutral placeholders OR
+   correctly-fetched current-tenant values, NEVER the prior tenant's
+   values. Source: M4_HARDCODED_PRIZMA_REMOVAL M4-DOC-09 — preview-only
+   impact path is structurally different from customer-facing path.
 6. **Field-reuse check:** if the SPEC adds a field that semantically overlaps
    an existing one (e.g. `phone`, `phone_number`, `mobile`, `contact_phone`),
    STOP and escalate. Foreman decides: reuse existing vs create new.

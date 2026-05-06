@@ -469,6 +469,38 @@ Step 1.5 DB Pre-Flight — intentionally. Defense in depth.
    Per Self-Improvement Mandate "3 reviews → must apply", this rule is now
    binding — not an aspiration.
 
+7. **Filesystem path verification (MANDATORY — applied 2026-05-06 after 4-occurrence rule).**
+   For every filesystem path cited in §2 (sites table), §8 (Expected Final
+   State), or §12 (QA Plan), confirm it exists BEFORE finalizing the SPEC:
+   ```bash
+   ls modules/<exact-path-cited>     # for code files
+   find . -name '<filename>' -not -path '*/.git/*' 2>/dev/null  # if location uncertain
+   ```
+   If the path doesn't exist, the SPEC has a wrong premise. Do NOT cite paths
+   from memory — repos are restructured frequently (e.g., `modules/crm/public/`
+   subfolder added during the storefront refactor; SPECs authored from older
+   mental models miss the qualifier).
+
+   **Why:** 4-occurrence pattern in the M4 cycle (M4-DOC-02 columns,
+   M4-DOC-04 template slug, M4-DOC-05 RPC role, M4-DOC-06 file paths). All
+   share the root-cause class "author cited a name from memory; live system
+   disagreed." This rule + bullet 6 above together cover the four families:
+   columns, catalog rows, RPC bodies, filesystem paths.
+
+8. **Preview-vs-customer-facing distinction in §2 threat model
+   (added 2026-05-06).** When the SPEC cites a hardcoded value, distinguish
+   whether it appears in:
+   - **`[customer-facing]`** — value reaches the customer's screen / SMS /
+     email body / public form
+   - **`[internal]`** — value appears in staff tooling, preview helpers,
+     debug pages, template editor previews, etc.
+   Iron Rule 9 violations in `[internal]` are real but lower-severity, and
+   the fix differs (tenant-neutral placeholder vs dynamic tenant lookup).
+   Mark each violation with `[customer-facing]` or `[internal]` in the §2
+   sites table. **Source:** M4_HARDCODED_PRIZMA_REMOVAL Finding M4-DOC-09 —
+   `crm-messaging-templates.js` preview defaults were initially framed as
+   customer-facing; they are not.
+
 #### Step 1.5e — File-size pre-flight refresh (MANDATORY, NOT conditional)
 
 For EVERY file mentioned in §3 (Success Criteria) and §8 (Expected Final State),

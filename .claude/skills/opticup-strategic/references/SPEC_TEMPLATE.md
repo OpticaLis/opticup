@@ -91,6 +91,15 @@ Things that look related but MUST NOT be touched in this SPEC:
 
 ---
 
+> **Authoring note for §2 (Background) sites tables:**
+> When citing a hardcoded value, mark each row with one of:
+> - **`[customer-facing]`** — value reaches customer screen / SMS / email body / public form
+> - **`[internal]`** — appears in staff tooling, preview helpers, debug pages, template editor previews
+>
+> Iron Rule 9 violations in `[internal]` are real but lower-severity, and the fix differs (tenant-neutral placeholder vs dynamic tenant lookup). The distinction informs both severity and architecture.
+
+---
+
 ## 8. Expected Final State
 
 After the executor finishes, the repo should contain:
