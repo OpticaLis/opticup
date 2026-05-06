@@ -330,14 +330,18 @@
   }
 
   // Variable substitution for previews — exposed for CrmTemplateSection.
+  // Tenant-neutral placeholders (M4_HARDCODED_PRIZMA_REMOVAL): customer-facing
+  // messages still substitute real values via send-message EF reading
+  // tenants.business_address / .business_phone / .ui_config.storefront_url;
+  // this preview just shows where each variable appears.
   function substitute(text) {
     return String(text || '')
       .replace(/%name%/g, 'דנה כהן').replace(/%event_name%/g, 'סופר-סייל אוקטובר')
       .replace(/%event_date%/g, '01.11.2026').replace(/%event_time%/g, '09:00 - 14:00')
-      .replace(/%event_location%/g, 'הרצל 32, אשקלון').replace(/%coupon_code%/g, 'SuperSale24')
-      .replace(/%phone%/g, '050-717-5675').replace(/%email%/g, 'dana@example.com')
-      .replace(/%registration_url%/g, 'prizma-optic.co.il/r/...')
-      .replace(/%unsubscribe_url%/g, 'prizma-optic.co.il/u/...');
+      .replace(/%event_location%/g, '[כתובת העסק]').replace(/%coupon_code%/g, 'SuperSale24')
+      .replace(/%phone%/g, '[טלפון העסק]').replace(/%email%/g, 'dana@example.com')
+      .replace(/%registration_url%/g, '[storefront]/r/...')
+      .replace(/%unsubscribe_url%/g, '[storefront]/u/...');
   }
   window.CrmTemplateSubstitute = substitute;
 })();

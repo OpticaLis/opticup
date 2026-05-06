@@ -43,6 +43,30 @@
     document.body.appendChild(div.firstChild);
   }
 
+  // Apply tenant brand colors via CSS variable overrides (Iron Rule 9).
+  // The CSS file has neutral grayscale defaults; this swaps them for the
+  // active tenant's gold-family. Caller-decides-fallback: if config is
+  // missing, defaults stay (degrades to grayscale, never to a wrong tenant).
+  function applyTenantBrand(brand) {
+    if (!brand || typeof brand !== 'object') return;
+    var root = document.documentElement.style;
+    if (typeof brand.gold === 'string')       root.setProperty('--gold',       brand.gold);
+    if (typeof brand.gold_light === 'string') root.setProperty('--gold-light', brand.gold_light);
+    if (typeof brand.gold_hover === 'string') root.setProperty('--gold-hover', brand.gold_hover);
+  }
+
+  // Build the WhatsApp contact line from tenant config. Returns '' if config
+  // is missing — the line is omitted from the form rather than rendering a
+  // wrong tenant's number.
+  function whatsappLineHtml(cfg) {
+    if (!cfg || typeof cfg !== 'object') return '';
+    var e164 = typeof cfg.whatsapp_phone_e164 === 'string' ? cfg.whatsapp_phone_e164 : '';
+    var disp = typeof cfg.support_phone_display === 'string' ? cfg.support_phone_display : '';
+    if (!e164 || !disp) return '';
+    return '<p>לשאלות ועזרה ניתן לפנות אלינו בוואטסאפ: <a href="https://wa.me/' +
+      esc(e164) + '" target="_blank" rel="noopener">' + esc(disp) + '</a></p>';
+  }
+
   function renderForm(data) {
     var dateStr = formatDate(data.event_date);
     var timeStr = formatTime(data.event_time);
@@ -52,6 +76,8 @@
       ? '<div class="brand"><img src="' + esc(data.tenant_logo_url) + '" alt="' + esc(data.tenant_name || '') + '"></div>'
       : '';
 
+    applyTenantBrand(data.tenant_ui_config && data.tenant_ui_config.brand);
+
     el('root').innerHTML = logoHtml +
       '<div class="hero">' +
         '<h1>אישור הגעה לאירוע</h1>' +
@@ -59,7 +85,7 @@
       '<div class="info-notice">' +
         '<p>שימו לב: כדי להבטיח לכם שירות אישי ללא המתנה, אישור ההגעה הסופי וקבלת הברקוד כרוכים בפיקדון סמלי (<strong>' + esc(String(fee)) + ' ש"ח</strong>) המתקזז במלואו מהרכישה (או מוחזר בביטול עד 48 שעות מראש).</p>' +
         '<p>איך זה עובד? לאחר שליחת הטופס, תישלח אליכם הודעה אוטומטית להשלמת השריון וקבלת הברקוד האישי באופן עצמאי.</p>' +
-        '<p>לשאלות ועזרה ניתן לפנות אלינו בוואטסאפ: <a href="https://wa.me/972533645404" target="_blank" rel="noopener">053-3645404</a></p>' +
+        whatsappLineHtml(data.tenant_ui_config) +
       '</div>' +
       '<p class="greeting">' + esc(greeting) + '</p>' +
       '<div class="event-card">' +
