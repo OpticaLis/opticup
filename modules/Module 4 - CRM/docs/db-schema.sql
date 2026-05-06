@@ -156,3 +156,39 @@ ALTER TABLE crm_leads
 --
 -- Full migration in migrations/2026_05_06_tenant_config_seed_up.sql.
 -- Companion rollback in migrations/2026_05_06_tenant_config_seed_down.sql.
+
+-- =============================================================================
+-- M4_TENANT_ISOLATION_HARDENING_PART2 (2026-05-06) — RPC EXECUTE hardening
+-- =============================================================================
+-- Closes Phase 1 audit G-CRIT-2 — last of the 4 audit CRITICALs. Reduces the
+-- attack surface of 11 SECURITY DEFINER RPCs by revoking anon (and where
+-- applicable authenticated) EXECUTE access AND the Postgres-default PUBLIC
+-- EXECUTE inheritance. The 3 public-ingress RPCs are intentionally unchanged.
+--
+-- Group 1 — REVOKE-ANON (9 RPCs): anon=false, authenticated=true, service=true
+--   move_attendee_between_events(uuid, uuid)
+--   check_in_attendee(uuid, uuid)
+--   transfer_credit_to_new_attendee(uuid, uuid)
+--   next_crm_event_number(uuid, uuid)
+--   restore_event_from_log(uuid, uuid)
+--   soft_delete_event_if_empty(uuid, uuid)
+--   sync_lead_status_from_attendee(uuid, uuid)
+--
+-- Group 2 — REVOKE-ANON-AND-AUTH (2 RPCs): anon=false, authenticated=false, service=true
+--   cascade_attendee_soft_delete()                — DB trigger only
+--   import_leads_from_monday(uuid, text, jsonb)   — admin migration tool only
+--
+-- Group 3 — KEEP-ANON (3 RPCs, unchanged): anon=true, authenticated=true, service=true
+--   register_lead_to_event(uuid, uuid, uuid, text)        — public form + WhatsApp QR
+--   submit_storefront_lead(uuid, uuid, text, text)        — storefront ingress
+--   verify_campaign_page_password(uuid, text, text)       — storefront password gate
+--   Tenant validation in body (WHERE tenant_id = p_tenant_id) is the second defense layer.
+--
+-- Important Postgres semantics: functions get `EXECUTE TO PUBLIC` at creation by
+-- default. `REVOKE EXECUTE FROM anon` strips anon's direct grant but anon still
+-- inherits via PUBLIC. The forward migration applies BOTH stages (FROM anon,
+-- then FROM PUBLIC) to actually deny anon access. See finding M4-DB-01 in this
+-- SPEC's FINDINGS.md.
+--
+-- Full migration in migrations/2026_05_06_revoke_anon_rpc_execute_up.sql.
+-- Companion rollback in migrations/2026_05_06_revoke_anon_rpc_execute_down.sql.

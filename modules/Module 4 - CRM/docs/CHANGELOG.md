@@ -2,6 +2,29 @@
 
 ---
 
+## M4_TENANT_ISOLATION_HARDENING_PART2 — revoke anon EXECUTE from 9 internal RPCs + 2 admin-only (2026-05-06) ✅
+
+| Hash | Message |
+|------|---------|
+| _(this commit)_ | `fix(crm): revoke anon EXECUTE from 9 internal RPCs + 2 admin-only (M4_TENANT_ISOLATION_HARDENING_PART2)` |
+
+CRITICAL hotfix closing the LAST of the 4 audit CRITICAL findings (G-CRIT-2). 12 SECURITY DEFINER RPCs were inadvertently EXECUTABLE by anon (Postgres' default `EXECUTE TO PUBLIC` plus explicit anon GRANTs at function-definition time). The audit flagged this as the largest tenant-isolation surface remaining after PART1.
+
+**Caller classification (verified live by grep against modules/ + supabase/functions/):**
+- **9 REVOKE-ANON** (CRM-staff-only): `move_attendee_between_events`, `check_in_attendee`, `transfer_credit_to_new_attendee`, `next_crm_event_number`, `restore_event_from_log`, `soft_delete_event_if_empty`, `sync_lead_status_from_attendee` — authenticated retains direct EXECUTE.
+- **2 REVOKE-ANON-AND-AUTH** (DB-internal-only): `cascade_attendee_soft_delete` (DB trigger), `import_leads_from_monday` (one-time admin tool) — only service_role retains EXECUTE.
+- **3 KEEP-ANON** (public ingress): `register_lead_to_event`, `submit_storefront_lead`, `verify_campaign_page_password` — unchanged. Tenant validation in their bodies (`WHERE tenant_id = p_tenant_id`) is the second defense layer per Iron Rule 22.
+
+**Two-stage migration applied:** Stage 1 (`m4_revoke_anon_rpc_execute`) stripped direct anon/authenticated grants. Stage 2 (`m4_revoke_anon_rpc_execute_v2_strip_public`) stripped the PUBLIC EXECUTE inheritance — needed because Postgres functions get `EXECUTE TO PUBLIC` at creation by default, and `REVOKE FROM anon` doesn't strip the PUBLIC parent. Both stages consolidated in the `_up.sql` source-of-truth file. The PUBLIC oversight is logged as a finding for future SPEC authoring.
+
+**E2E verification:** Test 4 GREEN — anon → `move_attendee_between_events` returns SQLSTATE `42501: permission denied for function`. Test 1 GREEN — public form path (event-register EF) successfully calls register_lead_to_event for a demo lead. Test 2 GREEN — quick-register EF lookup_url op returns 200 with demo's storefront URL. Test 3 (CRM staff Chrome walk) deferred to Daniel UAT; the §3 #4 EXECUTE matrix confirms `authenticated=true` on all 9 REVOKE-ANON RPCs which is the staff path.
+
+**Audit status post-SPEC:** ALL 4 audit CRITICALs closed (G-CRIT-1 + G-CRIT-3 in PART1; G-CRIT-4 in M4_HARDCODED_PRIZMA_REMOVAL; G-CRIT-2 in this SPEC).
+
+See `modules/Module 4 - CRM/docs/specs/M4_TENANT_ISOLATION_HARDENING_PART2/`.
+
+---
+
 ## M4_HARDCODED_PRIZMA_REMOVAL — tenant config + 4 EFs + client + preview defaults (2026-05-06) ✅
 
 | Hash | Message |
