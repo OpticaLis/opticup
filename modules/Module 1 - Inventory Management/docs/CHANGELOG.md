@@ -4,6 +4,60 @@
 
 ---
 
+## RECEIPT_FORM_FIXES_FROM_MANAGER (HOTFIX bundle) — 2026-05-06
+
+3-fix bundle to the goods-receipt form addressing items 13/14/15 from
+the Prizma branch manager. Ships the prevention for the 2026-05-05
+receipt 8119464877 mis-pricing (₪3,710.64 over invoice).
+
+### Commits
+- `c0391ef` feat(receipts): item 13 — lock receipt-items column sort by default
+- `02a5884` feat(receipts): item 14 — add line-total column + invoice-total compare
+- `0d27c81` feat(receipts): item 15 — preserve receipt items entry order via sort_order column
+- (this commit) chore(spec): close RECEIPT_FORM_FIXES_FROM_MANAGER with retrospective
+
+### Outcome
+- **DB schema:** new column `goods_receipt_items.sort_order INT` (nullable,
+  back-compat) + `idx_rcpt_items_sort` on `(receipt_id, sort_order)`.
+  Migration 068 applied via Supabase MCP. RLS canonical 2-policy pair
+  preserved.
+- **Front-end:** new file `modules/goods-receipts/receipt-form-validate.js`
+  (120 lines) — sort-lock state + toggle + UI init + invoice-compare pure
+  function + delta exporter + listener. New 🔒 toggle button, new
+  `<th>סה"כ לשורה</th>` column, new `<input id="rcpt-invoice-total">`
+  with ✅/❌ status, mismatch confirm-gate before file-attach hard-block.
+- **Order preservation:** `items.map((i, idx) => ({…, sort_order: idx+1}))`
+  on both INSERT sites; `.order('sort_order', ASC nullsFirst:false)
+  .order('id', ASC)` on confirmReceiptCore, openExistingReceipt,
+  exportReceiptBarcodes.
+
+### Mid-execution Foreman escalations
+1. **SPEC Amendment 1** — `receipt-form-items.js` was 357 lines pre-edit
+   (over Iron Rule 12 hard max 350). Foreman issued split: sort-lock +
+   invoice-compare into new `receipt-form-validate.js`. Final files all
+   under 350.
+2. **Hook false-positive blocker (Option 1)** — 50 pre-existing hook
+   violations blocked commit 3 (42 quoted-policy-name false positives
+   + 2 rule-21 over-match + others). Foreman authorized rename of
+   `const rcptNumber` in receipt-excel.js to `rcptNumForExcel` + deferral
+   of `db-schema.sql` doc-sync. 2 NEW_SPEC findings logged for hook
+   regex fixes (FINDING-A HIGH, FINDING-B MEDIUM).
+
+### Out of scope
+- Data correction for receipt 8119464877 (Daniel handles manually).
+- db-schema.sql / GLOBAL_SCHEMA.sql doc-sync (FINDING-C, auto-resolves
+  when FINDING-A's hook fix lands).
+
+### QA
+- 12 of 20 §3 success criteria verified automatically. 8 UI criteria
+  scheduled for live Demo walk-through post-deployment.
+
+SPEC folder:
+`modules/Module 1 - Inventory Management/docs/specs/RECEIPT_FORM_FIXES_FROM_MANAGER/`
+contains SPEC.md, ACTIVATION_PROMPT.md, EXECUTION_REPORT.md, FINDINGS.md.
+
+---
+
 ## Permissions Phase 2 Fix (HOTFIX bundle) — 2026-04-27 (night)
 
 8-commit bundle: tenant cleanup + key consolidation + isAdmin decoupling
