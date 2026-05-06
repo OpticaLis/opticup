@@ -1,0 +1,890 @@
+﻿Option Compare Database
+Option Explicit
+Global cansave%, done%, globali%, addw As Integer
+Global insw  As Integer
+Global qopt  As Integer
+Global globalt, repname As String
+Global delw, undow As Integer
+Global confirm As Boolean
+Global total_time, total_s_time As Double
+Global temptbl As String
+Global dbs As Database
+Global dbsOpen As DAO.Database
+Global rplabels As String
+Global rst As Recordset
+Global rst2 As Recordset
+Global prst As Recordset
+Global prst2 As Recordset
+Global dbs_msrd As Database
+Global qdf As DAO.QueryDef
+Global prm As DAO.Parameter
+Global qssopen As Boolean
+Global qssopenb As Boolean
+Global pdq As Boolean
+Global qopenlk As Boolean
+Global qtz As Boolean
+Global a As Variant
+Global qnewsw As Boolean
+Global dummy As Recordset
+Global qguser, qgpass, qport
+Global strbody As String
+Global me_ct, me_mwdate, me_yeda
+
+
+'Global appOutLook As Outlook.Application
+'Global MailOutLook As Outlook.MailItem
+
+Function ChangeProperty(strPropName As String, _
+    varPropType As Variant, _
+    varPropValue As Variant) As Integer
+
+    Dim dbs As Object, prp As Variant
+    Const conPropNotFoundError = 3270
+
+    Set dbs = CurrentDb
+    On Error GoTo Change_Err
+    dbs.Properties(strPropName) = varPropValue
+    ChangeProperty = True
+
+Change_Bye:
+    Exit Function
+
+Change_Err:
+    If err = conPropNotFoundError Then ' Property not found.
+        Set prp = dbs.CreateProperty(strPropName, _
+            varPropType, varPropValue)
+        dbs.Properties.Append prp
+        Resume Next
+    Else
+        ' Unknown error.
+        ChangeProperty = False
+        Resume Change_Bye
+    End If
+End Function
+Function wfind()
+On Error GoTo Err_findr_Click
+
+
+   ' Screen.PreviousControl.SetFocus
+    DoCmd.DoMenuItem acFormBar, acEditMenu, 10, , acMenuVer70
+
+Exit_findr_Click:
+    Exit Function
+
+Err_findr_Click:
+   ' MsgBox Err.Description
+    Resume Exit_findr_Click
+   
+End Function
+
+
+Function wsortname(sname As String, sw As Boolean) As String
+  Dim i, X  As Integer
+  
+  Dim letw, out As String
+     
+     i = Len(Trim$(sname))
+     
+
+     
+     out = ""
+     For X = 1 To i
+     
+      letw = Mid$(sname, X, 1)
+       
+     Select Case letw
+     Case "א": out = out + "1"
+     Case "ב": out = out + "2"
+     Case "ג": out = out + "3"
+     Case "ד": out = out + "4"
+     Case "ה": out = out + "5"
+     Case "ו": out = out + "6"
+     Case "ז": out = out + "7"
+     Case "ח": out = out + "8"
+     Case "ט": out = out + "9"
+     Case "י": out = out + "a"
+     Case "כ": out = out + "b"
+     Case "ך": out = out + "b"
+     Case "ל": out = out + "c"
+     Case "מ": out = out + "d"
+     Case "ם": out = out + "d"
+     Case "נ": out = out + "e"
+     Case "ן": out = out + "e"
+     Case "ס": out = out + "f"
+     Case "ע": out = out + "g"
+     Case "פ": out = out + "h"
+     Case "ף": out = out + "h"
+     Case "צ": out = out + "i"
+     Case "ץ": out = out + "i"
+     Case "ק": out = out + "j"
+     Case "ר": out = out + "k"
+     Case "ש": out = out + "l"
+     Case "ת": out = out + "m"
+     Case Else
+          If sw = True And Nz(letw) <> " " Then
+           out = out + letw
+          End If
+     End Select
+    
+    Next X
+    
+    wsortname = Trim$(out)
+End Function
+Function tranl(letw As String) As String
+Dim out As String
+ 
+Select Case letw
+     Case "א": out = "1"
+     Case "ב": out = "2"
+     Case "ג": out = "3"
+     Case "ד": out = "4"
+     Case "ה": out = "5"
+     Case "ו": out = "6"
+     Case "ז": out = "7"
+     Case "ח": out = "8"
+     Case "ט": out = "9"
+     Case "י": out = "a"
+     Case "כ": out = "b"
+     Case "ך": out = "b"
+     Case "ל": out = "c"
+     Case "מ": out = "d"
+     Case "ם": out = "d"
+     Case "נ": out = "e"
+     Case "ן": out = "e"
+     Case "ס": out = "f"
+     Case "ע": out = "g"
+     Case "פ": out = "h"
+     Case "ף": out = "h"
+     Case "צ": out = "i"
+     Case "ץ": out = "i"
+     Case "ק": out = "j"
+     Case "ר": out = "k"
+     Case "ש": out = "l"
+     Case "ת": out = "m"
+     Case Else
+          out = letw
+     End Select
+     tranl = out
+End Function
+
+Function close_report()
+On Error GoTo eprint
+
+If Nz(repname) <> "" Then
+DoCmd.Close acReport, repname
+repname = ""
+End If
+eprint:
+End Function
+Function prt_rep()
+On Error GoTo Err_Command
+   
+    If Application.CurrentObjectType <> acReport Then
+      Exit Function
+    End If
+
+ 
+    If Nz(repname) <> "" Then
+     DoCmd.PrintOut , , , , 1
+     DoCmd.Close acReport, repname
+     repname = ""
+    End If
+Exit_Command:
+    Exit Function
+
+Err_Command:
+   ' MsgBox err.Description
+    Resume Exit_Command
+    
+End Function
+Function aun(tblw As String, st As Long) As Long
+Dim i As Long
+ 
+Set dbs = CurrentDb()
+   
+' Set rst = dbs.OpenRecordset("SELECT last(" & fldw & ") as lastw FROM " & tblw & ";")
+ Set rst = dbs.OpenRecordset(tblw)
+ If rst.EOF = True Then
+  i = st
+ Else
+  If Val(Nz(rst![tl])) = 0 Then
+   i = st
+  Else
+   i = rst![tl] + 1
+  End If
+ End If
+ 
+ aun = i
+ rst.Close
+End Function
+
+Function add_fld1(pathw As String)
+
+
+    
+    Dim tbl As TableDef
+    Dim dbs As Database
+    Dim rst As Recordset
+    Dim fld As Field
+    Dim i As Long
+    Dim sw As Boolean
+  
+
+  Set dbs = DBEngine.Workspaces(0).OpenDatabase(pathw)
+  
+
+          
+ On Error Resume Next
+
+
+  Set tbl = dbs.TableDefs!orders
+          With tbl
+           .Fields.Append .CreateField("t1", dbBoolean)
+          End With
+ 
+ Set tbl = dbs.TableDefs!cust_list
+          With tbl
+           .Fields.Append .CreateField("msgdone", dbBoolean)
+          End With
+ 
+ 
+  Set tbl = dbs.TableDefs!add_order
+          With tbl
+           .Fields.Append .CreateField("wapmsg", dbMemo)
+          End With
+ 
+ Set tbl = dbs.TableDefs!add_order
+          With tbl
+           .Fields.Append .CreateField("waptparms", dbText)
+          End With
+ dbs.Execute "ALTER TABLE cust_list ALTER COLUMN colv Date"
+ 
+  Set tbl = dbs.TableDefs!companyn
+          With tbl
+          .Fields.Append .CreateField("qpd", dbBoolean)
+          End With
+ 
+  Set tbl = dbs.TableDefs!orders
+          With tbl
+          .Fields.Append .CreateField("aheight", dbText)
+          .Fields.Append .CreateField("aheight2", dbText)
+          End With
+ 
+ Set tbl = dbs.TableDefs!doc_title
+          With tbl
+          .Fields.Append .CreateField("לוגו", dbLongBinary)
+          End With
+ 
+   Set tbl = dbs.TableDefs!tb_upd_amount
+          With tbl
+           .Fields.Append .CreateField("hesh", dbText)
+          End With
+   
+   Set tbl = dbs.TableDefs!cust_list
+          With tbl
+           .Fields.Append .CreateField("kupon", dbText)
+          End With
+ 
+   Set tbl = dbs.TableDefs!BANK_LIST
+          With tbl
+           .Fields.Append .CreateField("reda", dbDouble)
+          End With
+ 
+  Set tbl = dbs.TableDefs!tb_gnrl_tests
+          With tbl
+          .Fields.Append .CreateField("qtyp", dbBoolean)
+          End With
+ 
+  Set tbl = dbs.TableDefs!tb_ad_catalog
+          With tbl
+          .Fields.Append .CreateField("ktr", dbText)
+          End With
+ 
+ Set tbl = dbs.TableDefs!doc_title
+          With tbl
+          .Fields.Append .CreateField("חתימה", dbLongBinary)
+          End With
+ 
+  Set tbl = dbs.TableDefs!tb_ad_catalog
+          With tbl
+           .Fields.Append .CreateField("reduce", dbDouble)
+          End With
+
+  dbs.Execute "ALTER TABLE adchecks ALTER COLUMN cnrktr TEXT(255)"
+  dbs.Execute "ALTER TABLE adchecks ALTER COLUMN cnlktr TEXT(255)"
+  
+  Set tbl = dbs.TableDefs!companyn
+          With tbl
+           .Fields.Append .CreateField("ax", dbBoolean)
+          End With
+          
+  
+  Set tbl = dbs.TableDefs!add_order
+          With tbl
+           .Fields.Append .CreateField("wap", dbMemo)
+          End With
+ 
+ Set tbl = dbs.TableDefs!cust_list
+          With tbl
+           .Fields.Append .CreateField("kupadate", dbDate)
+          End With
+ 
+ dbs.Execute "ALTER TABLE tb_hsapakim ALTER COLUMN tuyak TEXT(255)"
+ 
+ Set tbl = dbs.TableDefs!add_order
+          With tbl
+           .Fields.Append .CreateField("smsparms", dbText)
+          End With
+          
+ Set tbl = dbs.TableDefs!tb_upd_amount
+          With tbl
+           .Fields.Append .CreateField("qtyp", dbInteger)
+           .Fields.Append .CreateField("moadon", dbText)
+           .Fields.Append .CreateField("redc", dbInteger)
+          End With
+ 
+ Set tbl = dbs.TableDefs!BANK_LIST
+          With tbl
+           .Fields.Append .CreateField("redc", dbInteger)
+          End With
+ 
+  Set tbl = dbs.TableDefs!BANK_LIST
+          With tbl
+           .Fields.Append .CreateField("q_url", dbText)
+          End With
+ 
+  Set tbl = dbs.TableDefs!cust_list
+          With tbl
+           .Fields.Append .CreateField("cust_open", dbBoolean)
+          End With
+
+End Function
+
+Function qmonth(inmn As Integer) As String
+Dim codew
+codew = DLookup("[monthn]", "monthn", "[numw]=" & inmn)
+If Nz(codew) <> "" Then
+ qmonth = codew
+End If
+End Function
+Function xg_ReplaceAllWith(sMainString As Variant, _
+sSubString As String, sReplaceString As String) As Variant
+'* Recursive function to replace all occurences of sSubString
+'* with sReplaceString in sMainString
+Dim i As Integer
+Dim ipos As Integer
+Dim s As Variant
+Dim s1 As Variant, s2 As Variant
+On Error GoTo out
+If Nz(sMainString) = "" Then
+ Exit Function
+End If
+s = sMainString
+ipos = InStr(1, sMainString, sSubString)
+If ipos = 0 Then
+    GoTo Exit_xg_ReplaceAllWith
+End If
+s1 = Mid(sMainString, 1, ipos - 1)
+s2 = Mid(sMainString, ipos + Len(sSubString), Len(sMainString))
+s = s1 & sReplaceString & _
+    xg_ReplaceAllWith(s2, sSubString, sReplaceString)
+
+Exit_xg_ReplaceAllWith:
+    xg_ReplaceAllWith = s
+    Exit Function
+out:
+    xg_ReplaceAllWith = Nz(sMainString)
+End Function
+Function amla(kartis As String, tashlumim As Integer, total As Double) As Double
+On Error GoTo out
+Dim code
+
+code = DLookup("[" & "n" & Trim$(tashlumim) & "]", "tb_amlot", "[qcredit] =" & "'" & kartis & "'")
+
+
+If Val(Nz(code)) > 0 Then
+ amla = Val(Format((total * code) / 100, "fixed"))
+Else
+ amla = 0
+End If
+
+out:
+End Function
+Function fCursorToStartOnClick()
+'* Move cursor to start of text field when clicked
+On Error Resume Next
+If Len(Screen.ActiveControl.InputMask) > 0 Then
+    If IsNull(Screen.ActiveControl) Then
+        Screen.ActiveControl.SelStart = 0
+    End If
+End If
+On Error GoTo 0
+End Function
+Function ZoomCtl()
+On Error Resume Next
+DoCmd.RunCommand acCmdZoomBox
+On Error GoTo 0
+End Function
+Function qpass() As Boolean
+Set dbs = CurrentDb()
+Set rst = dbs.OpenRecordset("path")
+
+If rst![sw] = False Then
+ qpass = False
+Else
+ qpass = True
+End If
+rst.Close
+End Function
+Function IsLoaded(ByVal strFormName As String) As Boolean
+' Returns True if the specified form is loaded.
+
+    Const conDesignView = 0
+    Const conObjStateClosed = 0
+
+    IsLoaded = False
+    If SysCmd(acSysCmdGetObjectState, acForm, strFormName) <> conObjStateClosed Then
+        If Forms(strFormName).CurrentView <> conDesignView Then
+            IsLoaded = True
+        End If
+    End If
+
+End Function
+Function findstr(qstring As String) As String
+findstr = xg_ReplaceAllWith(qstring, "'", "''")
+End Function
+Function findstrb(qstring As String) As String
+findstrb = xg_ReplaceAllWith(qstring, """", "''")
+End Function
+Function xg_GetSubString(mainstr As String, n As Integer, delimiter As String) As String
+'* Get the "n"-th substring from "mainstr" where strings are delimited by "delimiter"
+    Dim i As Integer
+    Dim substringcount As Integer
+    Dim pos As Integer
+    Dim strx As String
+    Dim val1 As Integer
+    Dim w As String
+
+On Error GoTo Err_xg_GetSubString
+
+w = ""
+substringcount = 0
+i = 1
+pos = InStr(i, mainstr, delimiter)
+Do While pos <> 0
+    strx = Mid(mainstr, i, pos - i)
+    substringcount = substringcount + 1
+    If substringcount = n Then
+        Exit Do
+    End If
+    i = pos + 1
+    pos = InStr(i, mainstr, delimiter)
+Loop
+
+If substringcount = n Then
+    xg_GetSubString = strx
+Else
+    strx = Mid(mainstr, i, Len(mainstr) + 1 - i)
+    substringcount = substringcount + 1
+    If substringcount = n Then
+        xg_GetSubString = strx
+    Else
+        xg_GetSubString = ""
+    End If
+End If
+
+Exit Function
+
+Err_xg_GetSubString:
+    MsgBox "xg_GetSubString " & err & " " & err.Description
+    Resume Next
+
+End Function
+
+Function qlbl()
+Dim codew
+codew = DLookup("[lbl]", "companyn", "nz([lbl])= " & "'" & "33" & "'")
+If Nz(codew) <> "" Then
+ rplabels = "r_letter_labels33"
+Else
+ rplabels = "r_letter_labels"
+End If
+  
+End Function
+Function qax() As Boolean
+Dim codew
+codew = DLookup("[ax]", "companyn", "[ax] = true")
+If Nz(codew) <> "" Then
+ qax = True
+Else
+ qax = False
+End If
+  
+End Function
+Function qpr() As Boolean
+Dim codew
+codew = DLookup("[pr]", "companyn", "[pr] = true")
+If Nz(codew) <> "" Then
+ qpr = True
+Else
+ qpr = False
+End If
+  
+End Function
+Function last_GetSubString(mainstr As String, delimiter As String) As String
+'* Get the last substring from "mainstr" where strings are delimited by "delimiter"
+    Dim i As Integer
+    
+    Dim pos As Integer
+    Dim strx As String
+    
+    
+
+On Error GoTo Err_xg_GetSubString
+If Nz(mainstr) <> "" Then
+ mainstr = mainstr & delimiter
+End If
+strx = ""
+i = 1
+pos = InStr(i, mainstr, delimiter)
+Do While pos <> 0
+    strx = Mid(mainstr, i, pos - i)
+   
+    If Nz(strx) = "" Then
+        i = pos - 1
+        pos = InStr(i, mainstr, delimiter)
+        strx = Mid(mainstr, i, pos - i)
+        Exit Do
+    End If
+    i = pos + 1
+    pos = InStr(i, mainstr, delimiter)
+Loop
+
+ 
+    last_GetSubString = Nz(strx)
+
+
+Exit Function
+
+Err_xg_GetSubString:
+    MsgBox "last_GetSubString " & err & " " & err.Description
+    Resume Next
+
+End Function
+Function close_tables()
+On Error GoTo out
+Dim i As Integer
+Dim dbs As Database
+Dim tdfAccounts As TableDef
+
+
+Set dbs = CurrentDb
+i = dbs.TableDefs.Count
+    
+
+    For i = 0 To dbs.TableDefs.Count - 1
+        Set tdfAccounts = dbs.TableDefs(i)
+      '   If connect is blank, its not an attached table
+        If Len(tdfAccounts.Connect) > 0 Then
+           DoCmd.Close acTable, tdfAccounts.name, acSaveYes
+        End If
+                
+    Next i
+out:
+End Function
+Function backup_db()
+Dim path, myid, strDBDir, i, qname
+ 
+On Error GoTo out
+    close_tables
+   
+    Set dbs = CurrentDb
+    Set rst = dbs.OpenRecordset("parameters")
+    rst.MoveFirst
+    
+    If rst![sbck_done] = False Then
+     Exit Function
+    End If
+  
+    
+    Set rst = dbs.OpenRecordset("path")
+    rst.MoveFirst
+    rst.Edit
+    path = rst![full_path]
+    qname = rst![bck]
+    rst.Close
+    
+    If Nz(qname) = "" Then
+     Exit Function
+    End If
+   
+   myid = Dir(path & "optic_dt.laccdb")
+   If Nz(myid) <> "" Then
+    Exit Function
+   Else
+    ' ok
+     
+   End If
+    strDBDir = dbs.name
+    i = Len(strDBDir)
+    i = i - 11
+  '    i = i - 15
+    strDBDir = Mid$(strDBDir, 1, i)
+    
+
+On Error Resume Next
+
+
+   Close #1
+   Kill (path & "opticb.bat")
+On Error GoTo out
+
+   Open strDBDir & "opticb.bat" For Output As #1
+ 
+
+ Print #1, "@ECHO OFF"
+ Print #1, Chr(34) & strDBDir & "7z.exe" & Chr(34) & " a -tzip " & Chr(34) & qname & "optback.zip" & Chr(34) & " " & Chr(34) & path & "optic_dt.accdb" & Chr(34)
+ Close #1
+ 
+ 
+
+ strCmdLine = strDBDir & "opticb.bat"
+ ExecCmd strCmdLine
+ 
+  
+  
+   myid = Dir(Trim$(qname) & "optback.zip")
+   
+    If Nz(myid) <> "" Then
+     ' MsgBox "בוצע", 64
+    Else
+   '  MsgBox "הגיבוי נכשל", 64
+    End If
+    
+   
+
+out:
+End Function
+
+
+Function qwrn() As Boolean
+    Set dbs = CurrentDb
+    Set rst = dbs.OpenRecordset("parameters")
+    rst.MoveFirst
+    
+    If rst![wrn] = True Then
+     qwrn = True
+    Else
+     qwrn = False
+    End If
+    rst.Close
+     
+  
+End Function
+
+Function backup_dt()
+On Error GoTo out
+    Dim dbs As Database
+    Dim rst As Recordset
+    Dim path
+    
+
+    Set dbs = CurrentDb
+    Set rst = dbs.OpenRecordset("cust_list")
+    If rst.RecordCount > 0 Then
+     rst.MoveLast
+    End If
+    rst.Close
+    Set rst = dbs.OpenRecordset("checks")
+    If rst.RecordCount > 0 Then
+     rst.MoveLast
+    End If
+    rst.Close
+    Set rst = dbs.OpenRecordset("adchecks")
+    If rst.RecordCount > 0 Then
+     rst.MoveLast
+    End If
+    rst.Close
+    Set rst = dbs.OpenRecordset("orders")
+    If rst.RecordCount > 0 Then
+     rst.MoveLast
+    End If
+    rst.Close
+    
+    Set rst = dbs.OpenRecordset("path")
+    rst.MoveFirst
+    rst.Edit
+    path = rst![full_path]
+    rst.Close
+    FileCopy path & "optic_dt.accdb", path & "optic_dt_bak.accdb"
+    
+out:
+End Function
+Function q_open() As Boolean
+     If IsLoaded("customers") = False Then
+       q_open = False
+     Else
+      MsgBox "סגור לקוח פתוח תחילה", 64, "אופטיק פלוס"
+      q_open = True
+    End If
+End Function
+Function prp(p As String)
+''If pdq = False Then
+
+'' Exit Function
+''End If
+    'need report open in order to set .Printer property
+'  so open report in PREVIEW mode but HIDDEN
+''DoCmd.OpenReport p, acPreview, , , acHidden
+'Assign report's .Printer property to default printer
+''Reports(p).Printer = Application.Printers(Printer.DeviceName)
+'Print report
+End Function
+Function q_logo() As Boolean
+    Dim dbs As Database
+    Dim rst As Recordset
+    Dim tl As String
+    
+
+    Set dbs = CurrentDb
+    Set rst = dbs.OpenRecordset("doc_title")
+    If IsNull(rst![לוגו]) = False Then
+     q_logo = True
+    Else
+     q_logo = False
+    End If
+    rst.Close
+     
+End Function
+Function send_mail() As Boolean
+Dim rst As Recordset
+Set dbs = CurrentDb()
+Set rst = dbs.OpenRecordset("add_order")
+ rst.MoveFirst
+
+ If Nz(rst![pathw]) <> "" Then
+  qguser = xg_GetSubString(Nz(rst![pathw]), 1, ";")
+  qgpass = xg_GetSubString(Nz(rst![pathw]), 2, ";")
+  qport = xg_GetSubString(Nz(rst![pathw]), 3, ";")
+  rst.Close
+  send_mail = True
+ Else
+ '   MsgBox "יש למלא באפשרויות פרטי המייל תחילה", 64
+     rst.Close
+    send_mail = False
+ End If
+
+End Function
+Function CreateContextMenu()
+
+Const strMenuName As String = "myforms_CommandBar"
+
+Dim cbar As CommandBar
+Dim bt As CommandBarButton
+    
+    Set cbar = CommandBars.Add(strMenuName, msoBarPopup, , False)
+    Set bt = cbar.Controls.Add
+        bt.Caption = "Cut"
+        bt.OnAction = "=fCut()"
+        bt.FaceId = 21
+    Set bt = cbar.Controls.Add
+        bt.Caption = "Copy"
+        bt.OnAction = "=fCopy()"
+        bt.FaceId = 19
+    Set bt = cbar.Controls.Add
+        bt.Caption = "Paste"
+        bt.OnAction = "=fPaste()"
+        bt.FaceId = 22
+End Function
+
+Function fCut()
+On Error Resume Next
+    Application.CommandBars.ExecuteMso ("Cut")
+End Function
+
+Function fCopy()
+On Error Resume Next
+    Application.CommandBars.ExecuteMso ("Copy")
+End Function
+
+Function fPaste()
+On Error Resume Next
+    Application.CommandBars.ExecuteMso ("Paste")
+End Function
+Public Function OpenDb(sDb As String)
+    On Error GoTo Error_Handler
+ 
+    Application.FollowHyperlink sDb
+ 
+Error_Handler_Exit:
+    On Error Resume Next
+    Exit Function
+ 
+Error_Handler:
+    MsgBox "The following error has occurred" & vbCrLf & vbCrLf & _
+           "Error Number: " & err.number & vbCrLf & _
+           "Error Source: OpenDb3" & vbCrLf & _
+           "Error Description: " & err.Description & _
+           Switch(Erl = 0, "", Erl <> 0, vbCrLf & "Line No: " & Erl) _
+           , vbOKOnly + vbCritical, "An Error has Occurred!"
+    Resume Error_Handler_Exit
+End Function
+Function close_forms()
+On Error Resume Next
+DoCmd.Close acForm, "f_quest"
+DoCmd.Close acForm, "f_gnrl_tests"
+DoCmd.Close acForm, "f_gnrl_testsa"
+DoCmd.Close acForm, "person_remarks_list"
+DoCmd.Close acForm, "person_orders_list"
+DoCmd.Close acForm, "cust_checks_full"
+DoCmd.Close acForm, "cust_adchecks_full"
+DoCmd.Close acForm, "f_ad_tests"
+End Function
+Public Function getFileName() As String
+ On Error GoTo out
+
+  Dim f    As Object
+  Dim buff As Variant
+  Dim folder As Variant
+  Dim X%, Y As Integer
+ 
+      
+   buff = ""
+      
+   Set f = Application.FileDialog(3)
+   f.AllowMultiSelect = True
+   Set dbs = CurrentDb()
+   Set rst = dbs.OpenRecordset("tb_lastfolder")
+   rst.MoveFirst
+   
+    If Nz(rst![LastFolder]) <> "" Then
+      f.InitialFileName = Nz(rst![LastFolder])
+    End If
+   f.Show
+   On Error Resume Next
+   buff = Trim$(Nz(f.SelectedItems(1)))
+   On Error GoTo out
+
+
+  
+    If Nz(buff) <> "" Then
+      Y = 999
+      X = 1
+      Do Until Y = 0
+         Y = InStr(X, buff, "\")
+         If Y <> 0 Then
+          X = Y + 1
+         End If
+      Loop
+      folder = Mid(buff, 1, X - 1)
+      rst.Edit
+      rst![LastFolder] = folder
+      rst.Update
+      rst.Close
+    
+       getFileName = buff
+   
+  End If
+
+out:
+End Function

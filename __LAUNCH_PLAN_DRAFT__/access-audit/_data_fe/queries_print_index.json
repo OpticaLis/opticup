@@ -1,0 +1,237 @@
+﻿[
+    {
+        "Name":  "prt_ad_tests",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.*, tb_comp.*, companyn.*, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([adress_c]))+\" \"+Trim$(nz([city_c])) AS caddr, Trim$(nz([city])) AS mcity, DateDiff(\"yyyy\",[bdate],Date()) AS gil, \"טל: \" \u0026 nz([tel_c]) \u0026 \"  \" \u0026 \"פקס: \" \u0026 nz([fax__c]) AS tl, tb_comp.rnum AS p1\r\nFROM companyn, cust_list INNER JOIN tb_comp ON cust_list.numw=tb_comp.wnum\r\nWHERE (((tb_comp.rnum)=[Forms]![f_ad_tests]![rnum]));\r\n"
+    },
+    {
+        "Name":  "prt_blank",
+        "Type":  0,
+        "SQLPreview":  "SELECT companyn.*, Trim$(nz([adress_c]))+\" \"+Trim$(nz([city_c])) AS caddr\r\nFROM companyn;\r\n"
+    },
+    {
+        "Name":  "prt_gnrl_tests",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.tel, IIf(nz([sel])\u003c\u003e\"\",[sel],[tel]) AS qtel, nz([address]) \u0026 \" \" \u0026 nz([city]) \u0026 \" \" \u0026 nz([mikud]) AS qaddress, cust_list.sel, cust_list.zehut, cust_list.Min, cust_list.bdate, cust_list.kupa, cust_list.numw, cust_list.number, pr_tb_gnrl_tests.tb_gnrl_tests.rnum AS p1, pr_tb_gnrl_tests.tb_gnrl_tests.datew AS p2, pr_tb_gnrl_tests.*, companyn.*, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([adress_c]))+\" \"+Trim$(nz([city_c])) AS caddr, Trim$(nz([city])) AS mcity, DateDiff(\"y"
+    },
+    {
+        "Name":  "prt_gnrl_testsa",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.tel, IIf(nz([sel])\u003c\u003e\"\",[sel],[tel]) AS qtel, nz([address]) \u0026 \" \" \u0026 nz([city]) \u0026 \" \" \u0026 nz([mikud]) AS qaddress, cust_list.sel, cust_list.zehut, cust_list.Min, cust_list.bdate, cust_list.kupa, cust_list.numw, cust_list.number, pr_tb_gnrl_tests.tb_gnrl_tests.rnum AS p1, pr_tb_gnrl_tests.tb_gnrl_tests.datew AS p2, pr_tb_gnrl_tests.*, companyn.*, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([adress_c]))+\" \"+Trim$(nz([city_c])) AS caddr, Trim$(nz([city])) AS mcity, DateDiff(\"y"
+    },
+    {
+        "Name":  "prt_mirsham",
+        "Type":  0,
+        "SQLPreview":  "SELECT tb_cust_list.*, qprt_checks.*, tb_cust_list.numw AS p1, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([adress_c]))+\" \"+Trim$(nz([city_c])) AS caddr, Trim$(nz([city])) AS mcity, DateDiff(\"yyyy\",[bdate],Date()) AS gil, \"טל: \" \u0026 nz([tel_c]) \u0026 \"  \" \u0026 \"פקס: \" \u0026 nz([fax__c]) AS tl, IIf(nz([sel])\u003c\u003e\"\",[sel],[tel]) AS qtel, \"*\" \u0026 [number] \u0026 \"*\" AS bnumber\r\nFROM tb_cust_list INNER JOIN qprt_checks ON tb_cust_list.numw=qprt_checks.numw\r\nWHERE (((tb_cust_list.numw)=[Forms]![customers]![numw]))"
+    },
+    {
+        "Name":  "prt_mirsham_test",
+        "Type":  0,
+        "SQLPreview":  "SELECT tb_cust_list.*, qprt_achecks.*, tb_cust_list.numw AS p1, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([adress_c]))+\" \"+Trim$(nz([city_c])) AS caddr, Trim$(nz([city])) AS mcity, DateDiff(\"yyyy\",[bdate],Date()) AS gil, \"טל: \" \u0026 nz([tel_c]) \u0026 \"  \" \u0026 \"פקס: \" \u0026 nz([fax__c]) AS tl, IIf(nz([sel])\u003c\u003e\"\",[sel],[tel]) AS qtel\r\nFROM tb_cust_list INNER JOIN qprt_achecks ON tb_cust_list.numw=qprt_achecks.numw\r\nWHERE (((tb_cust_list.numw)=[Forms]![customers]![numw]));\r\n"
+    },
+    {
+        "Name":  "prt_mirshamp",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.*, checks.*, cust_list.numw AS p1, companyn.*, checks.bdka AS q, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([adress_c]))+\" \"+Trim$(nz([city_c])) AS caddr, Trim$(nz([city]))+\" \"+Trim$(nz([mikud])) AS mcity, DateDiff(\"yyyy\",[bdate],Date()) AS gil, \"טל: \" \u0026 nz([tel_c]) \u0026 \"  \" \u0026 \"פקס: \" \u0026 nz([fax__c]) AS tl\r\nFROM companyn, cust_list INNER JOIN checks ON cust_list.numw=checks.numw\r\nWHERE (((cust_list.numw)=Forms!customers!numw) And ((checks.bdka)=True));\r\n"
+    },
+    {
+        "Name":  "prt_quest",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.*, tb_quest.*, tb_quest.rnum AS p1, companyn.*, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([adress_c]))+\" \"+Trim$(nz([city_c])) AS caddr, Trim$(nz([city]))+\" \"+Trim$(nz([mikud])) AS mcity, DateDiff(\"yyyy\",[bdate],Date()) AS gil, \"טל: \" \u0026 nz([tel_c]) \u0026 \"  \" \u0026 \"פקס: \" \u0026 nz([fax__c]) AS tl\r\nFROM companyn, cust_list INNER JOIN tb_quest ON cust_list.numw=tb_quest.wnum\r\nWHERE (((tb_quest.rnum)=[Forms]![f_quest]![rnum]));\r\n"
+    },
+    {
+        "Name":  "qp_order",
+        "Type":  0,
+        "SQLPreview":  "SELECT orders.*, q_companyn.picw, nz([otht1]) AS qoth1, nz([otht2]) AS qoth2, nz([otht3]) AS qoth3, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, orders.rnum AS p1, orders.ordernum AS p2, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([address]))+\"  \"+Trim$(nz([city])) AS addr, IIf(nz([cust_list]![sel])\u003c\u003e\"\",Trim$(nz([cust_list]![sel])) \u0026 \"  \" \u0026 Trim$(nz([cust_list]![tel])),Trim$(nz([cust_li"
+    },
+    {
+        "Name":  "qp_order_all",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.*, orders.*, orders.ordernum, cust_list.numw AS qnumw, IIf(nz([cust_list]![sel])\u003c\u003e\"\",Trim$(nz([cust_list]![sel])) \u0026 \"  \" \u0026 Trim$(nz([cust_list]![tel])),Trim$(nz([cust_list]![tel]))) AS qtel, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([address]))+\"  \"+Trim$(nz([city])) AS addr, Trim$(nz([FirstName]))+\"  \"+Trim$(nz([LastName])) AS emp, q_companyn.pr, q_companyn.name_c, q_companyn.tel_c, q_companyn.fax__c, Trim$(nz([adress_c]))+\" \"+Trim$(nz([city_c])) AS caddr, Val(nz([pb"
+    },
+    {
+        "Name":  "qp_order_all_add",
+        "Type":  0,
+        "SQLPreview":  "SELECT orders.*, checks.*, checks.bdka AS q, orders.ordernum, cust_list.numw AS qnumw, IIf(nz([cust_list]![sel])\u003c\u003e\"\",Trim$(nz([cust_list]![sel])) \u0026 \"  \" \u0026 Trim$(nz([cust_list]![tel])),Trim$(nz([cust_list]![tel]))) AS qtel, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([address]))+\"  \"+Trim$(nz([city]))+\"  \"+Trim$(nz([cust_list]![mikud])) AS addr, Trim$(nz([FirstName]))+\"  \"+Trim$(nz([LastName])) AS emp, q_companyn.pr, q_companyn.name_c, q_companyn.tel_c, q_companyn.fax__c, Trim$(nz([adres"
+    },
+    {
+        "Name":  "qp_order_all_ext",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 [orders]![ordernum] \u0026 \"*\" AS bordernum, cust_list.ct AS cct, qprt_checks_pr.checkname AS qn, cust_list.kupa, cust_list.email, orders.gremk AS qnr, orders.*, nz([otht1]) AS qoth1, nz([otht2]) AS qoth2, nz([otht3]) AS qoth3, qprt_checks_pr.*, orders.ordernum, qlist_remarks.teur, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.zehut, cust_list.numw AS qnu"
+    },
+    {
+        "Name":  "qp_order_all_ext_ad",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, cust_list.ct AS cct, cust_list.checkname AS qn, cust_list.kupa, orders.gremk AS qnr, cust_list.rocv, orders.*, orders.ordernum, qlist_remarks.teur, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.zehut, cust_list.numw AS qnumw, cust_list.nrop, cust_list.nradd, cust_list.nlop, cust_list.nladd, cust_list.nvisus, cust_list.nrktr, cust_list.nlktr, IIf(nz([cust_l"
+    },
+    {
+        "Name":  "qp_order_all_ext_all",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 [orders]![ordernum] \u0026 \"*\" AS bordernum, cust_list.ct AS cct, cust_list.kupa, cust_list.email, orders.gremk AS qnr, orders.*, nz([oth1]) \u0026 \" \" \u0026 nz([otht1]) AS qoth1, nz([oth2]) \u0026 \" \" \u0026 nz([otht2]) AS qoth2, nz([oth3]) \u0026 \" \" \u0026 nz([otht3]) AS qoth3, qprt_checks_all.*, orders.ordernum, cust_list.checkname AS qn, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_"
+    },
+    {
+        "Name":  "qp_order_all_ext_all1",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 [orders]![ordernum] \u0026 \"*\" AS bordernum, cust_list.ct AS cct, cust_list.kupa, cust_list.email, orders.gremk AS qnr, orders.*, nz([oth1]) \u0026 \" \" \u0026 nz([otht1]) AS qoth1, nz([oth2]) \u0026 \" \" \u0026 nz([otht2]) AS qoth2, nz([oth3]) \u0026 \" \" \u0026 nz([otht3]) AS qoth3, qprt_checks_all.*, orders.ordernum, cust_list.checkname AS qn, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_"
+    },
+    {
+        "Name":  "qp_order_all_ext_env",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 [orders]![ordernum] \u0026 \"*\" AS bordernum, cust_list.ct AS cct, qprt_checks_pr.checkname AS qn, cust_list.kupa, cust_list.email, orders.gremk AS qnr, orders.*, nz([otht1]) AS qoth1, nz([otht2]) AS qoth2, nz([otht3]) AS qoth3, qprt_checks_pr.*, orders.ordernum, qlist_remarks.teur, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.zehut, cust_list.numw AS qnu"
+    },
+    {
+        "Name":  "qp_order_all_ext_g",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 [orders]![ordernum] \u0026 \"*\" AS bordernum, cust_list.ct AS cct, qprt_checks_pr_g.checkname AS qn, cust_list.kupa, cust_list.email, orders.gremk AS qnr, orders.*, nz([otht1]) AS qoth1, nz([otht2]) AS qoth2, nz([otht3]) AS qoth3, qprt_checks_pr_g.*, orders.ordernum, qlist_remarks.teur, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.zehut, cust_list.numw AS"
+    },
+    {
+        "Name":  "qp_order_all_ext_gnrl",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 [orders]![ordernum] \u0026 \"*\" AS bordernum, cust_list.ct AS cct, qprt_checks_pr.checkname AS qn, cust_list.kupa, cust_list.email, orders.gremk AS qnr, orders.*, nz([otht1]) AS qoth1, nz([otht2]) AS qoth2, nz([otht3]) AS qoth3, orders.ordernum, qlist_remarks.teur, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.zehut, cust_list.numw AS qnumw, IIf(nz([cust_l"
+    },
+    {
+        "Name":  "qp_order_all_ext_lab",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 [orders]![ordernum] \u0026 \"*\" AS bordernum, cust_list.ct AS cct, qprt_checks_pr_lab.checkname AS qn, cust_list.kupa, cust_list.email, orders.gremk AS qnr, orders.*, nz([otht1]) AS qoth1, nz([otht2]) AS qoth2, nz([otht3]) AS qoth3, qprt_checks_pr_lab.*, orders.ordernum, qlist_remarks.teur, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.zehut, cust_list.num"
+    },
+    {
+        "Name":  "qp_order_all_ext_msgra",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 nz([num_snif]) \u0026 \"-\" \u0026 nz([ordernum]) \u0026 \"-\" \u0026 \"A\" \u0026 \"*\" AS bordernum, nz([num_snif]) \u0026 \"-\" \u0026 nz([ordernum]) \u0026 \"-\" \u0026 \"A\" AS rdr, cust_list.ct AS cct, orders.*, qprt_checks_pr.*, orders.ordernum, qlist_remarks.teur, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.numw AS qnumw, \"משקפיים\" \u0026 \" \" \u0026 nz([qprt_checks_pr]![ct]) AS q1, nz([qprt_checks_pr]![ct]) "
+    },
+    {
+        "Name":  "qp_order_all_ext_msgrb",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 nz([num_snif]) \u0026 \"-\" \u0026 nz([ordernum]) \u0026 \"-\" \u0026 \"B\" \u0026 \"*\" AS bordernum, nz([num_snif]) \u0026 \"-\" \u0026 nz([ordernum]) \u0026 \"-\" \u0026 \"B\" AS rdr, cust_list.ct AS cct, orders.*, qprt_checks_pr.*, orders.ordernum, qlist_remarks.teur, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.numw AS qnumw, \"משקפיים\" \u0026 \" \" \u0026 nz([qprt_checks_pr]![ct]) AS q1, nz([qprt_checks_pr]![ct]) "
+    },
+    {
+        "Name":  "qp_order_all_ext_repair",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 nz([num_snif]) \u0026 \"-\" \u0026 nz([ordernum]) \u0026 \"-\" \u0026 \"A\" \u0026 \"*\" AS bordernum, nz([num_snif]) \u0026 \"-\" \u0026 nz([ordernum]) \u0026 \"-\" \u0026 \"A\" AS rdr, cust_list.ct AS cct, orders.*, orders.ordernum, qlist_remarks.teur, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.numw AS qnumw, tb_ad_catalog.wnum, tb_ad_catalog.catg AS catg1, tb_ad_catalog.hevra AS hevra1, tb_ad_catalog.t"
+    },
+    {
+        "Name":  "qp_order_all_ext_repair_old",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 nz([num_snif]) \u0026 \"-\" \u0026 nz([ordernum]) \u0026 \"*\" AS bordernum, nz([num_snif]) \u0026 \"-\" \u0026 nz([ordernum]) AS rdr, cust_list.ct AS cct, orders.*, qprt_checks_pr.*, orders.ordernum, qlist_remarks.teur, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.numw AS qnumw, \"משקפיים\" \u0026 \" \" \u0026 nz([qprt_checks_pr]![ct]) AS q1, nz([qprt_checks_pr]![ct]) AS q2, tb_ad_catalog.wnu"
+    },
+    {
+        "Name":  "qp_order_all_ext_repairb",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 nz([num_snif]) \u0026 \"-\" \u0026 nz([ordernum]) \u0026 \"-\" \u0026 \"B\" \u0026 \"*\" AS bordernum, nz([num_snif]) \u0026 \"-\" \u0026 nz([ordernum]) \u0026 \"-\" \u0026 \"B\" AS rdr, cust_list.ct AS cct, orders.*, orders.ordernum, qlist_remarks.teur, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.numw AS qnumw, tb_ad_catalog.wnum, tb_ad_catalog.catg AS catg1, tb_ad_catalog.hevra AS hevra1, tb_ad_catalog.t"
+    },
+    {
+        "Name":  "qp_order_all_ext_task",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 nz([num_snif]) \u0026 \"-\" \u0026 nz([ordernum]) \u0026 \"-\" \u0026 \"A\" \u0026 \"*\" AS bordernum, nz([num_snif]) \u0026 \"-\" \u0026 nz([ordernum]) \u0026 \"-\" \u0026 \"A\" AS rdr, cust_list.ct AS cct, orders.*, qprt_checks_pr.*, orders.ordernum, qlist_remarks.teur, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.numw AS qnumw, Trim$([fname])+\"  \"+Trim$([pname]) AS name, q_companyn.name_c, q_companyn.tel"
+    },
+    {
+        "Name":  "qp_order_all_extchk",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, q_companyn.singw, cust_list.ct AS cct, qprt_checks_pr_chk.checkname AS qn, cust_list.kupa, cust_list.email, nz([oth1]) \u0026 \" \" \u0026 nz([otht1]) AS qoth1, nz([oth2]) \u0026 \" \" \u0026 nz([otht2]) AS qoth2, nz([oth3]) \u0026 \" \" \u0026 nz([otht3]) AS qoth3, qprt_checks_pr_chk.*, q_orders_chk.*, q_orders_chk.gremk AS qnr, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.zehut, cust_list"
+    },
+    {
+        "Name":  "qp_order_all_rps",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.*, cust_list.numw AS qnumw, orders.*, orders.ordernum, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, IIf(nz([cust_list]![sel])\u003c\u003e\"\",Trim$(nz([cust_list]![sel])) \u0026 \"  \" \u0026 Trim$(nz([cust_list]![tel])),Trim$(nz([cust_list]![tel]))) AS qtel, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([address]))+\"  \"+Trim$(nz([city]))+\"  \"+Trim$(nz([cust_list]![mikud])) AS addr, Trim$(nz([Fi"
+    },
+    {
+        "Name":  "qp_order_all_rps_ext",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.numw AS qnumw, orders.*, checks.*, checks.bdka AS q, orders.ordernum, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, IIf(nz([cust_list]![sel])\u003c\u003e\"\",Trim$(nz([cust_list]![sel])) \u0026 \"  \" \u0026 Trim$(nz([cust_list]![tel])),Trim$(nz([cust_list]![tel]))) AS qtel, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([address]))+\"  \"+Trim$(nz([city]))+\"  \"+Trim$(nz([cust_list]![mikud])) AS add"
+    },
+    {
+        "Name":  "qp_order_all_rps_tst",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.numw AS qnumw, orders.*, adchecks.*, adchecks.bdka AS q, orders.ordernum, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, IIf(nz([cust_list]![sel])\u003c\u003e\"\",Trim$(nz([cust_list]![sel])) \u0026 \"  \" \u0026 Trim$(nz([cust_list]![tel])),Trim$(nz([cust_list]![tel]))) AS qtel, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([address]))+\"  \"+Trim$(nz([city]))+\"  \"+Trim$(nz([cust_list]![mikud])) AS"
+    },
+    {
+        "Name":  "qp_order_all_tst",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, \"*\" \u0026 [cust_list]![number] \u0026 \"*\" AS bnumber, qprt_achecks_pr.cadcheckname AS qn, cust_list.kupa, cust_list.email, orders.*, orders.gremk AS qnr, orders.ordernum, qlist_remarks.teur, qprt_achecks_pr.*, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.zehut, cust_list.numw AS qnumw, IIf(nz([cust_list]![sel])\u003c\u003e\"\",Trim$(nz([cust_list]![sel])) \u0026 \"  \" \u0026 Trim$(nz([c"
+    },
+    {
+        "Name":  "qp_order_all_tstchk",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, qprt_achecks_pr_chk.cadcheckname AS qn, cust_list.kupa, cust_list.email, q_orders_achk.gremk AS qnr, qprt_achecks_pr_chk.*, q_orders_achk.*, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.zehut, cust_list.numw AS qnumw, IIf(nz([cust_list]![sel])\u003c\u003e\"\",Trim$(nz([cust_list]![sel])) \u0026 \"  \" \u0026 Trim$(nz([cust_list]![tel])),Trim$(nz([cust_list]![tel]))) AS qtel, Tri"
+    },
+    {
+        "Name":  "qp_order_all_tstchk1",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.number AS qr, qprt_achecks_pr_chk.cadcheckname AS qn, cust_list.kupa, cust_list.email, orders.*, orders.gremk AS qnr, orders.ordernum, orders.mwdate, qlist_remarks.teur, qprt_achecks_pr_chk.*, IIf([sun]=True And nz([qpart])=\"מסגרת\",\"מסגרת שמש\",[qpart]) AS qpartw1, IIf([sun2]=True And nz([qpart2])=\"מסגרת\",\"מסגרת שמש\",[qpart2]) AS qpartw2, cust_list.zehut, cust_list.numw AS qnumw, IIf(nz([cust_list]![sel])\u003c\u003e\"\",Trim$(nz([cust_list]![sel])) \u0026 \"  \" \u0026 Trim$(nz([cust_list]![tel])),Trim"
+    },
+    {
+        "Name":  "qp_order_allp",
+        "Type":  0,
+        "SQLPreview":  "SELECT orders.*, SAPAKIM.[SHEM SAPAK] AS s1, SAPAKIM_1.[SHEM SAPAK] AS s2, SAPAKIM_2.[SHEM SAPAK] AS s3, SAPAKIM_3.[SHEM SAPAK] AS s4, orders.ordernum, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([address]))+\"  \"+Trim$(nz([city]))+\"  \"+Trim$(nz([cust_list]![mikud])) AS addr, IIf(nz([cust_list]![sel])\u003c\u003e\"\",Trim$(nz([cust_list]![sel])) \u0026 \"  \" \u0026 Trim$(nz([cust_list]![tel])),Trim$(nz([cust_list]![tel]))) AS qtel, cust_list.zehut, cust_list.numw AS qnumw, q_companyn.pr, q_companyn.tel_c, q_co"
+    },
+    {
+        "Name":  "qp_order_kupa",
+        "Type":  0,
+        "SQLPreview":  "SELECT qorder_kupa.cn, cust_list.email, cust_list.wsort, cust_list.zehut, qorder_kupa.odate, qorder_kupa.qpart, qorder_kupa.qpart2, qorder_kupa.ob_comp, qorder_kupa.ob_comp2, qorder_kupa.number, qorder_kupa.bprice, qorder_kupa.pbprice, qorder_kupa.pdisc, qorder_kupa.pdisct, qorder_kupa.pdisct2, qorder_kupa.pdisctb, qorder_kupa.pdisctb2, qorder_kupa.gpricet, qorder_kupa.pgpricet, qorder_kupa.pgpricetb, qorder_kupa.bprice2, qorder_kupa.pbprice2, qorder_kupa.pdisc2, qorder_kupa.gpricet2, qorder_kup"
+    },
+    {
+        "Name":  "qp_order_kupa_old",
+        "Type":  0,
+        "SQLPreview":  "SELECT qorder_kupa.cn, cust_list.email, cust_list.wsort, cust_list.zehut, qorder_kupa.odate, qorder_kupa.qpart, qorder_kupa.qpart2, qorder_kupa.ob_comp, qorder_kupa.ob_comp2, qorder_kupa.ocomp AS Expr1, qorder_kupa.ocomp2 AS Expr2, qorder_kupa.number, qorder_kupa.bprice, qorder_kupa.pbprice, qorder_kupa.pdisc, qorder_kupa.gpricet, qorder_kupa.pgpricet, qorder_kupa.pdisct, qorder_kupa.bprice2, qorder_kupa.pbprice2, qorder_kupa.pdisc2, qorder_kupa.gpricet2, qorder_kupa.pgpricet2, qorder_kupa.pdisc"
+    },
+    {
+        "Name":  "qp_pay_order_kupa",
+        "Type":  0,
+        "SQLPreview":  "SELECT orders.cn, orders.swkp, Sum(orders.gpay) AS qpay, orders.numw AS q\r\nFROM cust_list INNER JOIN orders ON cust_list.numw = orders.numw\r\nGROUP BY orders.cn, orders.swkp, orders.numw\r\nHAVING (((orders.cn)=False) AND ((orders.swkp)=True));\r\n"
+    },
+    {
+        "Name":  "qp_prop",
+        "Type":  0,
+        "SQLPreview":  "SELECT proposals.*, IIf(Val(nz([incode]))\u003e0,[incode],[ob_type]) AS qob_type, IIf(Val(nz([incode2]))\u003e0,[incode2],[ob_type2]) AS qob_type2, proposals.propnum, Trim$([fname])+\"  \"+Trim$([pname]) AS name, Trim$(nz([address]))+\"  \"+Trim$(nz([city]))+\"  \"+Trim$(nz([mikud])) AS addr, IIf(nz([sel])\u003c\u003e\"\",Trim$(nz([sel])) \u0026 \"  \" \u0026 Trim$(nz([tel])),Trim$(nz([tel]))) AS qtel, cust_list.zehut, companyn.*, Trim$(nz([adress_c]))+\" \"+Trim$(nz([city_c])) AS caddr\r\nFROM companyn, cust_list INNER JOIN proposals ON "
+    },
+    {
+        "Name":  "qprt_achecks",
+        "Type":  0,
+        "SQLPreview":  "SELECT adchecks.*, adchecks.bdikanum AS s, adchecks.numw AS q, adchecks.caddate AS dw\r\nFROM qlast_achecks INNER JOIN adchecks ON (qlast_achecks.qtyp=adchecks.qtyp) AND (qlast_achecks.dt=adchecks.caddate) AND (qlast_achecks.numw=adchecks.numw)\r\nORDER BY adchecks.bdikanum DESC;\r\n"
+    },
+    {
+        "Name":  "qprt_achecks_pr",
+        "Type":  0,
+        "SQLPreview":  "SELECT adchecks.*, adchecks.bdikanum AS s, adchecks.numw AS q, adchecks.qtyp AS qq, adchecks.caddate AS dw\r\nFROM qlast_achecks RIGHT JOIN adchecks ON (qlast_achecks.qtyp=adchecks.qtyp) AND (qlast_achecks.dt=adchecks.caddate) AND (qlast_achecks.numw=adchecks.numw)\r\nWHERE (((adchecks.qtyp)=\"מרשם סופי\" Or (adchecks.qtyp)=\"מרשם נסיוני\") And ((adchecks.caddate)=IIf(nz(Forms!person_orders_list!mwdate)\u003c\u003e\"\",Forms!person_orders_list!mwdate,[dt])))\r\nORDER BY adchecks.bdikanum DESC;\r\n"
+    },
+    {
+        "Name":  "qprt_achecks_pr_chk",
+        "Type":  0,
+        "SQLPreview":  "SELECT adchecks.*, adchecks.bdikanum AS s, adchecks.numw AS q, adchecks.qtyp AS qq, adchecks.caddate AS dw\r\nFROM adchecks\r\nWHERE (((adchecks.numw)=Forms!cust_adchecks_full!cust_adchecks_full_w!numw) And ((adchecks.qtyp)=\"מרשם סופי\" Or (adchecks.qtyp)=\"מרשם נסיוני\") And ((adchecks.caddate)=Forms!cust_adchecks_full!cust_adchecks_full_w!caddate))\r\nORDER BY adchecks.bdikanum DESC;\r\n"
+    },
+    {
+        "Name":  "qprt_checks",
+        "Type":  0,
+        "SQLPreview":  "SELECT checks.*, checks.bdikanum AS s, checks.numw AS q, checks.chdate AS dw\r\nFROM qlast_checks INNER JOIN checks ON (qlast_checks.numw=checks.numw) AND (qlast_checks.dt=checks.chdate) AND (qlast_checks.qtyp=checks.qtyp)\r\nORDER BY checks.bdikanum DESC;\r\n"
+    },
+    {
+        "Name":  "qprt_checks_all",
+        "Type":  0,
+        "SQLPreview":  "SELECT checks.*, checks.bdikanum AS s, checks.numw AS q, checks.qtyp AS qq, checks.chdate AS dw\r\nFROM checks\r\nWHERE (((checks.qtyp)=\"מרשם סופי\"))\r\nORDER BY checks.bdikanum DESC;\r\n"
+    },
+    {
+        "Name":  "qprt_checks_pr",
+        "Type":  0,
+        "SQLPreview":  "SELECT checks.*, checks.bdikanum AS s, checks.numw AS q, checks.qtyp AS qq, checks.chdate AS dw\r\nFROM qlast_checks RIGHT JOIN checks ON (qlast_checks.qtyp=checks.qtyp) AND (qlast_checks.dt=checks.chdate) AND (qlast_checks.numw=checks.numw)\r\nWHERE (((checks.qtyp)=\"מרשם סופי\") And ((checks.chdate)=IIf(nz(Forms!person_orders_list!mwdate)\u003c\u003e\"\",Forms!person_orders_list!mwdate,[dt])))\r\nORDER BY checks.bdikanum DESC;\r\n"
+    },
+    {
+        "Name":  "qprt_checks_pr_chk",
+        "Type":  0,
+        "SQLPreview":  "SELECT checks.*, checks.bdikanum AS s, checks.numw AS q, checks.qtyp AS qq, checks.chdate AS dw\r\nFROM checks\r\nWHERE (((checks.numw)=Forms!cust_checks_full!cust_checks_full_w!numw) And ((checks.qtyp)=\"מרשם סופי\") And ((checks.chdate)=Forms!cust_checks_full!cust_checks_full_w!chdate))\r\nORDER BY checks.bdikanum DESC;\r\n"
+    },
+    {
+        "Name":  "qprt_checks_pr_g",
+        "Type":  0,
+        "SQLPreview":  "SELECT checks.*, checks.bdikanum AS s, checks.numw AS q, checks.qtyp AS qq, checks.chdate AS dw\r\nFROM checks\r\nWHERE (((checks.qtyp)=\"מרשם סופי\"))\r\nORDER BY checks.bdikanum DESC;\r\n"
+    },
+    {
+        "Name":  "qprt_checks_pr_lab",
+        "Type":  0,
+        "SQLPreview":  "SELECT checks.*, checks.bdikanum AS s, checks.numw AS q, checks.qtyp AS qq, checks.chdate AS dw, checks.bdka\r\nFROM qlast_checks RIGHT JOIN checks ON (qlast_checks.qtyp=checks.qtyp) AND (qlast_checks.dt=checks.chdate) AND (qlast_checks.numw=checks.numw)\r\nWHERE (((checks.qtyp)=\"מרשם סופי\") And ((checks.chdate)=IIf(nz(Forms!person_orders_list!mwdate)\u003c\u003e\"\",Forms!person_orders_list!mwdate,[dt])) And ((checks.bdka)=True))\r\nORDER BY checks.bdikanum DESC;\r\n"
+    },
+    {
+        "Name":  "qprt_checks_pr_w",
+        "Type":  0,
+        "SQLPreview":  "SELECT checks.*, checks.bdikanum AS s, checks.numw AS q, checks.qtyp AS qq, checks.chdate AS dw\r\nFROM qlast_checks RIGHT JOIN checks ON (qlast_checks.qtyp=checks.qtyp) AND (qlast_checks.dt=checks.chdate) AND (qlast_checks.numw=checks.numw)\r\nWHERE (((checks.qtyp)=\"מרשם סופי\"))\r\nORDER BY checks.bdikanum DESC;\r\n"
+    }
+]

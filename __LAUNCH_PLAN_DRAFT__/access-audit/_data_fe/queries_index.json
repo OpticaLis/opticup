@@ -1,0 +1,5177 @@
+﻿[
+    {
+        "Name":  "~sq_cCalendar_of_Attendance~sq_cqsnif",
+        "Type":  0,
+        "SQLLen":  151
+    },
+    {
+        "Name":  "~sq_cCalendar_of_Attendance~sq_cscrMonth",
+        "Type":  0,
+        "SQLLen":  140
+    },
+    {
+        "Name":  "~sq_cCalendar_of_Attendance~sq_cscrYear",
+        "Type":  0,
+        "SQLLen":  57
+    },
+    {
+        "Name":  "~sq_cCARTIS SAPAK~sq_cgrp",
+        "Type":  0,
+        "SQLLen":  101
+    },
+    {
+        "Name":  "~sq_cCARTIS SAPAK~sq_cIR",
+        "Type":  0,
+        "SQLLen":  98
+    },
+    {
+        "Name":  "~sq_cCARTIS SAPAK~sq_cq_code",
+        "Type":  0,
+        "SQLLen":  86
+    },
+    {
+        "Name":  "~sq_cCARTIS SAPAK~sq_cq_sapak",
+        "Type":  0,
+        "SQLLen":  95
+    },
+    {
+        "Name":  "~sq_cCARTIS SAPAK~sq_cSUG",
+        "Type":  0,
+        "SQLLen":  101
+    },
+    {
+        "Name":  "~sq_cCARTIS SAPAK~sq_cTT TELEFONE SAPAK",
+        "Type":  0,
+        "SQLLen":  144
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_carea",
+        "Type":  0,
+        "SQLLen":  112
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_ccheckname",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_ccity",
+        "Type":  0,
+        "SQLLen":  112
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_ccust_file_list",
+        "Type":  0,
+        "SQLLen":  114
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_ccyeda",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_cdcheckname",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_ckamp",
+        "Type":  0,
+        "SQLLen":  152
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_ckupa",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_ckupon",
+        "Type":  0,
+        "SQLLen":  344
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_cltm",
+        "Type":  0,
+        "SQLLen":  71
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_cltm2",
+        "Type":  0,
+        "SQLLen":  71
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_clty",
+        "Type":  0,
+        "SQLLen":  57
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_clty2",
+        "Type":  0,
+        "SQLLen":  57
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_cmkor",
+        "Type":  0,
+        "SQLLen":  152
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_cqhaver",
+        "Type":  0,
+        "SQLLen":  193
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_cwbdate",
+        "Type":  0,
+        "SQLLen":  57
+    },
+    {
+        "Name":  "~sq_cCopy Of customers~sq_cyeda",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_cCopy Of person_orders_list~sq_cfkupa",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_cCopy Of person_orders_list~sq_cheshbonit",
+        "Type":  0,
+        "SQLLen":  121
+    },
+    {
+        "Name":  "~sq_cCopy Of person_orders_list~sq_coth1",
+        "Type":  0,
+        "SQLLen":  229
+    },
+    {
+        "Name":  "~sq_cCopy Of person_orders_list~sq_coth2",
+        "Type":  0,
+        "SQLLen":  229
+    },
+    {
+        "Name":  "~sq_ccust_adchecks_full_w~sq_ccadcheckname",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ccust_adchecks_full_w~sq_ccnlcomp",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_ccust_adchecks_full_w~sq_ccnltype",
+        "Type":  0,
+        "SQLLen":  69
+    },
+    {
+        "Name":  "~sq_ccust_adchecks_full_w~sq_ccnrcomp",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_ccust_adchecks_full_w~sq_ccnrtype",
+        "Type":  0,
+        "SQLLen":  67
+    },
+    {
+        "Name":  "~sq_ccust_adchecks_full_w~sq_ccyeda",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ccust_checks_full_w~sq_ccheckname",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ccust_checks_full_w~sq_cyeda",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ccust_listb~sq_cqkamp",
+        "Type":  0,
+        "SQLLen":  110
+    },
+    {
+        "Name":  "~sq_ccust_listb~sq_cqmkor",
+        "Type":  0,
+        "SQLLen":  110
+    },
+    {
+        "Name":  "~sq_ccust_listb~sq_cqsel",
+        "Type":  0,
+        "SQLLen":  238
+    },
+    {
+        "Name":  "~sq_ccust_listb~sq_cqtz",
+        "Type":  0,
+        "SQLLen":  113
+    },
+    {
+        "Name":  "~sq_ccust_listb~sq_cselect_emp",
+        "Type":  0,
+        "SQLLen":  83
+    },
+    {
+        "Name":  "~sq_ccustomers_lids~sq_ccity",
+        "Type":  0,
+        "SQLLen":  112
+    },
+    {
+        "Name":  "~sq_ccustomers_lids~sq_ckamp",
+        "Type":  0,
+        "SQLLen":  152
+    },
+    {
+        "Name":  "~sq_ccustomers_lids~sq_ckupa",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ccustomers_lids~sq_cmkor",
+        "Type":  0,
+        "SQLLen":  152
+    },
+    {
+        "Name":  "~sq_ccustomers_lids~sq_cselect_emp",
+        "Type":  0,
+        "SQLLen":  173
+    },
+    {
+        "Name":  "~sq_ccustomers_new~sq_ccity",
+        "Type":  0,
+        "SQLLen":  112
+    },
+    {
+        "Name":  "~sq_ccustomers_new~sq_ckamp",
+        "Type":  0,
+        "SQLLen":  152
+    },
+    {
+        "Name":  "~sq_ccustomers_new~sq_ckupa",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ccustomers_new~sq_ckupon",
+        "Type":  0,
+        "SQLLen":  344
+    },
+    {
+        "Name":  "~sq_ccustomers_new~sq_cmkor",
+        "Type":  0,
+        "SQLLen":  152
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_carea",
+        "Type":  0,
+        "SQLLen":  112
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_ccheckname",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_ccity",
+        "Type":  0,
+        "SQLLen":  112
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_ccust_file_list",
+        "Type":  0,
+        "SQLLen":  104
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_ccyeda",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_cdcheckname",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_ckamp",
+        "Type":  0,
+        "SQLLen":  152
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_ckupa",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_ckupon",
+        "Type":  0,
+        "SQLLen":  344
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_cltm",
+        "Type":  0,
+        "SQLLen":  71
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_cltm2",
+        "Type":  0,
+        "SQLLen":  71
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_clty",
+        "Type":  0,
+        "SQLLen":  57
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_clty2",
+        "Type":  0,
+        "SQLLen":  57
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_cmkor",
+        "Type":  0,
+        "SQLLen":  152
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_cqhaver",
+        "Type":  0,
+        "SQLLen":  193
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_cwbdate",
+        "Type":  0,
+        "SQLLen":  57
+    },
+    {
+        "Name":  "~sq_ccustomers~sq_cyeda",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_cdate_list~sq_ctype",
+        "Type":  0,
+        "SQLLen":  98
+    },
+    {
+        "Name":  "~sq_cdate_reminder~sq_ccodel",
+        "Type":  0,
+        "SQLLen":  91
+    },
+    {
+        "Name":  "~sq_cdate_reminder~sq_ctype",
+        "Type":  0,
+        "SQLLen":  98
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_cbarcodew",
+        "Type":  0,
+        "SQLLen":  131
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_ccylw",
+        "Type":  0,
+        "SQLLen":  423
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_ccylwb",
+        "Type":  0,
+        "SQLLen":  239
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_chevraw",
+        "Type":  0,
+        "SQLLen":  217
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_cktrw",
+        "Type":  0,
+        "SQLLen":  423
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_cmatw",
+        "Type":  0,
+        "SQLLen":  423
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_csapak",
+        "Type":  0,
+        "SQLLen":  73
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_csphw",
+        "Type":  0,
+        "SQLLen":  423
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_csphwb",
+        "Type":  0,
+        "SQLLen":  239
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_ctypw",
+        "Type":  0,
+        "SQLLen":  307
+    },
+    {
+        "Name":  "~sq_cf_adds_catalog_1~sq_cסוג",
+        "Type":  0,
+        "SQLLen":  151
+    },
+    {
+        "Name":  "~sq_cf_adds_catalog_1~sq_cתאור",
+        "Type":  0,
+        "SQLLen":  197
+    },
+    {
+        "Name":  "~sq_cf_adds_catalog~sq_cתאור",
+        "Type":  0,
+        "SQLLen":  197
+    },
+    {
+        "Name":  "~sq_cf_bdikat_maakav~sq_cfm",
+        "Type":  0,
+        "SQLLen":  71
+    },
+    {
+        "Name":  "~sq_cf_bdikat_maakav~sq_cfmw",
+        "Type":  0,
+        "SQLLen":  71
+    },
+    {
+        "Name":  "~sq_cf_cash~sq_cyy",
+        "Type":  0,
+        "SQLLen":  57
+    },
+    {
+        "Name":  "~sq_cf_kabala~sq_cwname",
+        "Type":  0,
+        "SQLLen":  52
+    },
+    {
+        "Name":  "~sq_cf_q_checks~sq_ccode",
+        "Type":  0,
+        "SQLLen":  54
+    },
+    {
+        "Name":  "~sq_cf_q_checks~sq_cdescw",
+        "Type":  0,
+        "SQLLen":  73
+    },
+    {
+        "Name":  "~sq_cf_q_checks~sq_csnif",
+        "Type":  0,
+        "SQLLen":  48
+    },
+    {
+        "Name":  "~sq_cf_sivug~sq_cstr",
+        "Type":  0,
+        "SQLLen":  152
+    },
+    {
+        "Name":  "~sq_cf_total_doc_hours~sq_cmw",
+        "Type":  0,
+        "SQLLen":  140
+    },
+    {
+        "Name":  "~sq_cf_total_doc_hours~sq_cyw",
+        "Type":  0,
+        "SQLLen":  57
+    },
+    {
+        "Name":  "~sq_cf_upd_presence~sq_ctyp",
+        "Type":  0,
+        "SQLLen":  94
+    },
+    {
+        "Name":  "~sq_cf_wats_msg~sq_cChild10",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msg~sq_cfrm_wats_1",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msg~sq_cfrm_wats_2",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msg~sq_cfrm_wats_3",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msg~sq_cfrm_wats_4",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msg~sq_cfrm_watsr_2",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msg~sq_cfrm_watsr_3",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msg~sq_cfrm_watsr_4",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgab~sq_cfrm_wats_ab",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgab~sq_cfrm_watsr_ab",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgb~sq_cfrm_watsk_1",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgb~sq_cfrm_watsma_1",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgb~sq_cfrm_watsmb_2",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgb~sq_cfrm_watsmb_3",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgb~sq_cfrm_watsmmf_1",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgb~sq_cfrm_watsmmfr_1",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgb~sq_cfrm_watsmms_1",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgb~sq_cfrm_watsmmsr_1",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgb~sq_cfrm_watsrk_1",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgb~sq_cfrm_watsrma_1",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgb~sq_cfrm_watsrmb_2",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgb~sq_cfrm_watsrmb_3",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgmy~sq_cfrm_wats_my",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cf_wats_msgmy~sq_cfrm_watsr_my",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_cfind_a_catg~sq_cocomp",
+        "Type":  0,
+        "SQLLen":  65
+    },
+    {
+        "Name":  "~sq_cfind_a_catg~sq_cogtype",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cfind_catg~sq_cob_comp",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cfind_catg~sq_cob_size",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cfind_catg~sq_cob_type",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cfind_catg~sq_cocolor",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cfind_catg~sq_cwincode",
+        "Type":  0,
+        "SQLLen":  54
+    },
+    {
+        "Name":  "~sq_cfind_che~sq_ccode",
+        "Type":  0,
+        "SQLLen":  54
+    },
+    {
+        "Name":  "~sq_cfind_che~sq_cdesc",
+        "Type":  0,
+        "SQLLen":  73
+    },
+    {
+        "Name":  "~sq_cfind_clndr~sq_cqcode",
+        "Type":  0,
+        "SQLLen":  91
+    },
+    {
+        "Name":  "~sq_cfind_clndr~sq_cqtyp",
+        "Type":  0,
+        "SQLLen":  98
+    },
+    {
+        "Name":  "~sq_cfind_hesh~sq_ccode",
+        "Type":  0,
+        "SQLLen":  54
+    },
+    {
+        "Name":  "~sq_cfind_hesh~sq_cdesc",
+        "Type":  0,
+        "SQLLen":  73
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cEmp",
+        "Type":  0,
+        "SQLLen":  97
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cob_comp",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cob_size",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cob_type",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cocolor",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cocomp",
+        "Type":  0,
+        "SQLLen":  55
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cog_type",
+        "Type":  0,
+        "SQLLen":  53
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cqadds",
+        "Type":  0,
+        "SQLLen":  48
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cqhsb",
+        "Type":  0,
+        "SQLLen":  121
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cqkupa",
+        "Type":  0,
+        "SQLLen":  112
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cqmoadon",
+        "Type":  0,
+        "SQLLen":  118
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cqyeda",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cwmsgr",
+        "Type":  0,
+        "SQLLen":  120
+    },
+    {
+        "Name":  "~sq_cfind_order~sq_cwpart",
+        "Type":  0,
+        "SQLLen":  60
+    },
+    {
+        "Name":  "~sq_cfrm_birth~sq_cselect_emp",
+        "Type":  0,
+        "SQLLen":  98
+    },
+    {
+        "Name":  "~sq_cfrm_birthh~sq_cselect_emp",
+        "Type":  0,
+        "SQLLen":  101
+    },
+    {
+        "Name":  "~sq_cfrm_maakav~sq_cltm",
+        "Type":  0,
+        "SQLLen":  71
+    },
+    {
+        "Name":  "~sq_cfrm_maakav~sq_cselect_emp",
+        "Type":  0,
+        "SQLLen":  104
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cEmployeeID",
+        "Type":  0,
+        "SQLLen":  97
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cfkupa",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cheshbonit",
+        "Type":  0,
+        "SQLLen":  121
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_clang",
+        "Type":  0,
+        "SQLLen":  94
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cob_comp",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cob_comp2",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cob_size",
+        "Type":  0,
+        "SQLLen":  57
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cob_size2",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cob_type",
+        "Type":  0,
+        "SQLLen":  57
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cob_type2",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cocolor",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cocolor2",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_coth1",
+        "Type":  0,
+        "SQLLen":  62
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_coth2",
+        "Type":  0,
+        "SQLLen":  62
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_coth3",
+        "Type":  0,
+        "SQLLen":  62
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cotht1",
+        "Type":  0,
+        "SQLLen":  67
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cotht2",
+        "Type":  0,
+        "SQLLen":  67
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cotht3",
+        "Type":  0,
+        "SQLLen":  67
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cqmail",
+        "Type":  0,
+        "SQLLen":  160
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cqmsgr",
+        "Type":  0,
+        "SQLLen":  344
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cqpart",
+        "Type":  0,
+        "SQLLen":  60
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cqpart2",
+        "Type":  0,
+        "SQLLen":  60
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_csapakm",
+        "Type":  0,
+        "SQLLen":  173
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_csapakm2",
+        "Type":  0,
+        "SQLLen":  176
+    },
+    {
+        "Name":  "~sq_cperson_orders_list_w1~sq_cyeda",
+        "Type":  0,
+        "SQLLen":  346
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cEmployeeID",
+        "Type":  0,
+        "SQLLen":  97
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_clang",
+        "Type":  0,
+        "SQLLen":  94
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cob_comp",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cob_comp2",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cob_size",
+        "Type":  0,
+        "SQLLen":  57
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cob_size2",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cob_type",
+        "Type":  0,
+        "SQLLen":  57
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cob_type2",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cocolor",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cocolor2",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_coth3",
+        "Type":  0,
+        "SQLLen":  229
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cotht1",
+        "Type":  0,
+        "SQLLen":  229
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cotht2",
+        "Type":  0,
+        "SQLLen":  229
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cotht3",
+        "Type":  0,
+        "SQLLen":  229
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cqmail",
+        "Type":  0,
+        "SQLLen":  160
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cqmsgr",
+        "Type":  0,
+        "SQLLen":  344
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cqpart",
+        "Type":  0,
+        "SQLLen":  60
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cqpart2",
+        "Type":  0,
+        "SQLLen":  60
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_csapakm",
+        "Type":  0,
+        "SQLLen":  173
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_csapakm2",
+        "Type":  0,
+        "SQLLen":  176
+    },
+    {
+        "Name":  "~sq_cperson_orders_list~sq_cyeda",
+        "Type":  0,
+        "SQLLen":  412
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_carea",
+        "Type":  0,
+        "SQLLen":  112
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cc_comp",
+        "Type":  0,
+        "SQLLen":  53
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cc_type",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_ccity",
+        "Type":  0,
+        "SQLLen":  112
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cob_comp",
+        "Type":  0,
+        "SQLLen":  63
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cob_type",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cocomp",
+        "Type":  0,
+        "SQLLen":  125
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cog_type",
+        "Type":  0,
+        "SQLLen":  224
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cqadds",
+        "Type":  0,
+        "SQLLen":  313
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cqkupa",
+        "Type":  0,
+        "SQLLen":  112
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cqmoadon",
+        "Type":  0,
+        "SQLLen":  118
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cqyeda",
+        "Type":  0,
+        "SQLLen":  221
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cwmsgr",
+        "Type":  0,
+        "SQLLen":  120
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cwyeda",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cyeda",
+        "Type":  0,
+        "SQLLen":  48
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_ccylw",
+        "Type":  0,
+        "SQLLen":  414
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_chevraw",
+        "Type":  0,
+        "SQLLen":  214
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cktrw",
+        "Type":  0,
+        "SQLLen":  414
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cmatw",
+        "Type":  0,
+        "SQLLen":  414
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cob_comp",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cob_size",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cob_type",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cocolor",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cqkupa",
+        "Type":  0,
+        "SQLLen":  112
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cqname",
+        "Type":  0,
+        "SQLLen":  79
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cqoth1",
+        "Type":  0,
+        "SQLLen":  62
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cqotht1",
+        "Type":  0,
+        "SQLLen":  67
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cqsapaka",
+        "Type":  0,
+        "SQLLen":  73
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cqsapakm",
+        "Type":  0,
+        "SQLLen":  73
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_csphw",
+        "Type":  0,
+        "SQLLen":  414
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_ctypw",
+        "Type":  0,
+        "SQLLen":  301
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cwarea",
+        "Type":  0,
+        "SQLLen":  112
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cwcity",
+        "Type":  0,
+        "SQLLen":  112
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cwemp",
+        "Type":  0,
+        "SQLLen":  97
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cwmsgr",
+        "Type":  0,
+        "SQLLen":  661
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cwyeda",
+        "Type":  0,
+        "SQLLen":  660
+    },
+    {
+        "Name":  "~sq_cs_melai~sq_cob_comp",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cs_melai~sq_cob_size",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cs_melai~sq_cob_type",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cs_melai~sq_cocolor",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_casapak",
+        "Type":  0,
+        "SQLLen":  73
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cmsapak",
+        "Type":  0,
+        "SQLLen":  73
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cob_comp",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cob_size",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cob_type",
+        "Type":  0,
+        "SQLLen":  59
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cocolor",
+        "Type":  0,
+        "SQLLen":  61
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cocomp",
+        "Type":  0,
+        "SQLLen":  137
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cog_type",
+        "Type":  0,
+        "SQLLen":  222
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cqkamp",
+        "Type":  0,
+        "SQLLen":  152
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cqkupa",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cqkupon",
+        "Type":  0,
+        "SQLLen":  116
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cqlang",
+        "Type":  0,
+        "SQLLen":  106
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cqmevazea",
+        "Type":  0,
+        "SQLLen":  136
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cqname",
+        "Type":  0,
+        "SQLLen":  79
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cqoth",
+        "Type":  0,
+        "SQLLen":  64
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cqqmsgr",
+        "Type":  0,
+        "SQLLen":  120
+    },
+    {
+        "Name":  "~sq_cs_sum_sapakim~sq_ccode",
+        "Type":  0,
+        "SQLLen":  54
+    },
+    {
+        "Name":  "~sq_cs_sum_sapakim~sq_cdesc",
+        "Type":  0,
+        "SQLLen":  73
+    },
+    {
+        "Name":  "~sq_cs_sum_sapakim~sq_cqsnif",
+        "Type":  0,
+        "SQLLen":  48
+    },
+    {
+        "Name":  "~sq_cs_takbul_daily~sq_cqcartis",
+        "Type":  0,
+        "SQLLen":  183
+    },
+    {
+        "Name":  "~sq_cs_takbul_daily~sq_cqkamp",
+        "Type":  0,
+        "SQLLen":  355
+    },
+    {
+        "Name":  "~sq_cs_takbul_daily~sq_cqkupa",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_cs_takbul_daily~sq_cqmoadon",
+        "Type":  0,
+        "SQLLen":  118
+    },
+    {
+        "Name":  "~sq_cs_takbul~sq_cqcartis",
+        "Type":  0,
+        "SQLLen":  183
+    },
+    {
+        "Name":  "~sq_cs_takbul~sq_cqkamp",
+        "Type":  0,
+        "SQLLen":  152
+    },
+    {
+        "Name":  "~sq_cs_takbul~sq_cqkupa",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_dkishrey_hutz~sq_ddoc_tel",
+        "Type":  0,
+        "SQLLen":  126
+    },
+    {
+        "Name":  "~sq_drp_order_m~sq_dChild439",
+        "Type":  0,
+        "SQLLen":  760
+    },
+    {
+        "Name":  "~sq_drp_order_m~sq_dמירשם משקפיים",
+        "Type":  0,
+        "SQLLen":  404
+    },
+    {
+        "Name":  "~sq_drp_order_spka~sq_dמירשם משקפיים",
+        "Type":  0,
+        "SQLLen":  404
+    },
+    {
+        "Name":  "~sq_fCalendar_of_Attendance",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_fCARTIS SAPAK",
+        "Type":  0,
+        "SQLLen":  37
+    },
+    {
+        "Name":  "~sq_fclock_form",
+        "Type":  0,
+        "SQLLen":  34
+    },
+    {
+        "Name":  "~sq_ff_adashot",
+        "Type":  0,
+        "SQLLen":  192
+    },
+    {
+        "Name":  "~sq_ff_adashotq",
+        "Type":  0,
+        "SQLLen":  40
+    },
+    {
+        "Name":  "~sq_ff_adds_desc",
+        "Type":  0,
+        "SQLLen":  197
+    },
+    {
+        "Name":  "~sq_ff_bank_list",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ff_bodek",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ff_company",
+        "Type":  0,
+        "SQLLen":  288
+    },
+    {
+        "Name":  "~sq_ff_credit_list",
+        "Type":  0,
+        "SQLLen":  41
+    },
+    {
+        "Name":  "~sq_ff_gen_parms",
+        "Type":  0,
+        "SQLLen":  51
+    },
+    {
+        "Name":  "~sq_ff_h_vs_h",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_ff_haver",
+        "Type":  0,
+        "SQLLen":  231
+    },
+    {
+        "Name":  "~sq_ff_kabala",
+        "Type":  0,
+        "SQLLen":  122
+    },
+    {
+        "Name":  "~sq_ff_kamp",
+        "Type":  0,
+        "SQLLen":  169
+    },
+    {
+        "Name":  "~sq_ff_kupa",
+        "Type":  0,
+        "SQLLen":  167
+    },
+    {
+        "Name":  "~sq_ff_meda",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ff_mirsham",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "~sq_ff_misgarotq",
+        "Type":  0,
+        "SQLLen":  41
+    },
+    {
+        "Name":  "~sq_ff_mkor",
+        "Type":  0,
+        "SQLLen":  169
+    },
+    {
+        "Name":  "~sq_ff_options",
+        "Type":  0,
+        "SQLLen":  291
+    },
+    {
+        "Name":  "~sq_ff_reduce",
+        "Type":  0,
+        "SQLLen":  230
+    },
+    {
+        "Name":  "~sq_ff_short_cust_list",
+        "Type":  0,
+        "SQLLen":  264
+    },
+    {
+        "Name":  "~sq_ff_sivug",
+        "Type":  0,
+        "SQLLen":  245
+    },
+    {
+        "Name":  "~sq_ff_yoman",
+        "Type":  0,
+        "SQLLen":  151
+    },
+    {
+        "Name":  "~sq_ffrm_teur",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_ffrm_wats_1",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_ffrm_wats_2",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_ffrm_wats_3",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_ffrm_wats_4",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_ffrm_wats_ab",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_ffrm_wats_my",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_ffrm_watsr_1",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_ffrm_watsr_2",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_ffrm_watsr_3",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_ffrm_watsr_4",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_ffrm_watsr_ab",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_ffrm_watsr_my",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_forder_frm_f",
+        "Type":  0,
+        "SQLLen":  404
+    },
+    {
+        "Name":  "~sq_forder_frm_s",
+        "Type":  0,
+        "SQLLen":  404
+    },
+    {
+        "Name":  "~sq_forders_remarks_list",
+        "Type":  0,
+        "SQLLen":  169
+    },
+    {
+        "Name":  "~sq_fsendmail",
+        "Type":  0,
+        "SQLLen":  43
+    },
+    {
+        "Name":  "~sq_ftitle_form",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "~sq_fTT TELEFONE SAPAK",
+        "Type":  0,
+        "SQLLen":  53
+    },
+    {
+        "Name":  "~sq_rr_letter_labels",
+        "Type":  0,
+        "SQLLen":  43
+    },
+    {
+        "Name":  "~sq_rr_letter_labels33",
+        "Type":  0,
+        "SQLLen":  43
+    },
+    {
+        "Name":  "~sq_rReportToPdf",
+        "Type":  0,
+        "SQLLen":  38
+    },
+    {
+        "Name":  "~sq_rrp_mehirot_adp_bar_over",
+        "Type":  0,
+        "SQLLen":  376
+    },
+    {
+        "Name":  "~sq_rrp_melai_not_active",
+        "Type":  0,
+        "SQLLen":  220
+    },
+    {
+        "Name":  "~sq_rrp_total_month_detail",
+        "Type":  0,
+        "SQLLen":  46
+    },
+    {
+        "Name":  "~sq_rrp_total_month_detail_p",
+        "Type":  0,
+        "SQLLen":  46
+    },
+    {
+        "Name":  "~sq_rrp_total_month_sum",
+        "Type":  0,
+        "SQLLen":  46
+    },
+    {
+        "Name":  "adapa",
+        "Type":  0,
+        "SQLLen":  297
+    },
+    {
+        "Name":  "adapb",
+        "Type":  0,
+        "SQLLen":  258
+    },
+    {
+        "Name":  "adapc",
+        "Type":  0,
+        "SQLLen":  224
+    },
+    {
+        "Name":  "adashot_list",
+        "Type":  128,
+        "SQLLen":  222
+    },
+    {
+        "Name":  "adashot_list_c",
+        "Type":  0,
+        "SQLLen":  283
+    },
+    {
+        "Name":  "adashot_list_c2",
+        "Type":  0,
+        "SQLLen":  283
+    },
+    {
+        "Name":  "add_fam",
+        "Type":  0,
+        "SQLLen":  37
+    },
+    {
+        "Name":  "add_lbincode",
+        "Type":  64,
+        "SQLLen":  301
+    },
+    {
+        "Name":  "add_sapakim",
+        "Type":  0,
+        "SQLLen":  142
+    },
+    {
+        "Name":  "adds",
+        "Type":  128,
+        "SQLLen":  392
+    },
+    {
+        "Name":  "addsg",
+        "Type":  128,
+        "SQLLen":  192
+    },
+    {
+        "Name":  "addsp",
+        "Type":  128,
+        "SQLLen":  408
+    },
+    {
+        "Name":  "addss",
+        "Type":  128,
+        "SQLLen":  408
+    },
+    {
+        "Name":  "app_tb_qnum",
+        "Type":  64,
+        "SQLLen":  72
+    },
+    {
+        "Name":  "b_company",
+        "Type":  128,
+        "SQLLen":  448
+    },
+    {
+        "Name":  "bl_company",
+        "Type":  128,
+        "SQLLen":  212
+    },
+    {
+        "Name":  "border_type",
+        "Type":  128,
+        "SQLLen":  450
+    },
+    {
+        "Name":  "checks_last",
+        "Type":  0,
+        "SQLLen":  970
+    },
+    {
+        "Name":  "checks_pre",
+        "Type":  0,
+        "SQLLen":  199
+    },
+    {
+        "Name":  "checks_pre_ad",
+        "Type":  0,
+        "SQLLen":  219
+    },
+    {
+        "Name":  "checks_prep",
+        "Type":  128,
+        "SQLLen":  1123
+    },
+    {
+        "Name":  "checks_prep_ad",
+        "Type":  128,
+        "SQLLen":  820
+    },
+    {
+        "Name":  "clga_adds",
+        "Type":  0,
+        "SQLLen":  552
+    },
+    {
+        "Name":  "cmb_ado1",
+        "Type":  128,
+        "SQLLen":  1020
+    },
+    {
+        "Name":  "cmb_ado11",
+        "Type":  128,
+        "SQLLen":  1020
+    },
+    {
+        "Name":  "cmb_ado2",
+        "Type":  128,
+        "SQLLen":  1028
+    },
+    {
+        "Name":  "cmb_ado22",
+        "Type":  128,
+        "SQLLen":  1028
+    },
+    {
+        "Name":  "cmb_adp1",
+        "Type":  128,
+        "SQLLen":  1004
+    },
+    {
+        "Name":  "cmb_adp11",
+        "Type":  128,
+        "SQLLen":  1004
+    },
+    {
+        "Name":  "cmb_adp2",
+        "Type":  128,
+        "SQLLen":  1012
+    },
+    {
+        "Name":  "cmb_adp22",
+        "Type":  128,
+        "SQLLen":  1012
+    },
+    {
+        "Name":  "cmb_pro1",
+        "Type":  128,
+        "SQLLen":  1052
+    },
+    {
+        "Name":  "cmb_pro2",
+        "Type":  128,
+        "SQLLen":  1063
+    },
+    {
+        "Name":  "cmb_prp1",
+        "Type":  128,
+        "SQLLen":  1038
+    },
+    {
+        "Name":  "cmb_prp2",
+        "Type":  128,
+        "SQLLen":  1048
+    },
+    {
+        "Name":  "cmb_typ",
+        "Type":  128,
+        "SQLLen":  195
+    },
+    {
+        "Name":  "cmb_typo1",
+        "Type":  128,
+        "SQLLen":  688
+    },
+    {
+        "Name":  "cmb_typo1m",
+        "Type":  128,
+        "SQLLen":  652
+    },
+    {
+        "Name":  "cmb_typo1s",
+        "Type":  128,
+        "SQLLen":  656
+    },
+    {
+        "Name":  "cmb_typo2",
+        "Type":  128,
+        "SQLLen":  692
+    },
+    {
+        "Name":  "cmb_typo2h",
+        "Type":  128,
+        "SQLLen":  648
+    },
+    {
+        "Name":  "cmb_typo2s",
+        "Type":  128,
+        "SQLLen":  660
+    },
+    {
+        "Name":  "cmb_typp1",
+        "Type":  128,
+        "SQLLen":  680
+    },
+    {
+        "Name":  "cmb_typp2",
+        "Type":  128,
+        "SQLLen":  684
+    },
+    {
+        "Name":  "color",
+        "Type":  128,
+        "SQLLen":  199
+    },
+    {
+        "Name":  "colors",
+        "Type":  128,
+        "SQLLen":  418
+    },
+    {
+        "Name":  "combo_bodek",
+        "Type":  128,
+        "SQLLen":  225
+    },
+    {
+        "Name":  "combo_fname",
+        "Type":  0,
+        "SQLLen":  320
+    },
+    {
+        "Name":  "combo_mahut",
+        "Type":  0,
+        "SQLLen":  229
+    },
+    {
+        "Name":  "combo_name",
+        "Type":  0,
+        "SQLLen":  449
+    },
+    {
+        "Name":  "combo_name_tel",
+        "Type":  0,
+        "SQLLen":  384
+    },
+    {
+        "Name":  "combo_pname",
+        "Type":  0,
+        "SQLLen":  257
+    },
+    {
+        "Name":  "combo_sapak",
+        "Type":  0,
+        "SQLLen":  260
+    },
+    {
+        "Name":  "combo_tel",
+        "Type":  0,
+        "SQLLen":  656
+    },
+    {
+        "Name":  "comp_list",
+        "Type":  128,
+        "SQLLen":  222
+    },
+    {
+        "Name":  "comp_list_c",
+        "Type":  0,
+        "SQLLen":  163
+    },
+    {
+        "Name":  "company",
+        "Type":  128,
+        "SQLLen":  425
+    },
+    {
+        "Name":  "companyg",
+        "Type":  128,
+        "SQLLen":  199
+    },
+    {
+        "Name":  "companyl",
+        "Type":  128,
+        "SQLLen":  201
+    },
+    {
+        "Name":  "companyp",
+        "Type":  128,
+        "SQLLen":  425
+    },
+    {
+        "Name":  "companys",
+        "Type":  128,
+        "SQLLen":  426
+    },
+    {
+        "Name":  "Copy Of qrefractr",
+        "Type":  0,
+        "SQLLen":  858
+    },
+    {
+        "Name":  "copy_adchecks",
+        "Type":  64,
+        "SQLLen":  1026
+    },
+    {
+        "Name":  "copy_adchecks_new",
+        "Type":  64,
+        "SQLLen":  102
+    },
+    {
+        "Name":  "copy_checks",
+        "Type":  64,
+        "SQLLen":  1333
+    },
+    {
+        "Name":  "copy_checks_del",
+        "Type":  32,
+        "SQLLen":  128
+    },
+    {
+        "Name":  "copy_checks_new",
+        "Type":  64,
+        "SQLLen":  120
+    },
+    {
+        "Name":  "cover",
+        "Type":  128,
+        "SQLLen":  405
+    },
+    {
+        "Name":  "ctlg_color",
+        "Type":  0,
+        "SQLLen":  502
+    },
+    {
+        "Name":  "ctlg_color2",
+        "Type":  0,
+        "SQLLen":  506
+    },
+    {
+        "Name":  "ctlg_hevra",
+        "Type":  0,
+        "SQLLen":  247
+    },
+    {
+        "Name":  "ctlg_hevra2",
+        "Type":  0,
+        "SQLLen":  248
+    },
+    {
+        "Name":  "ctlg_size",
+        "Type":  0,
+        "SQLLen":  408
+    },
+    {
+        "Name":  "ctlg_size2",
+        "Type":  0,
+        "SQLLen":  411
+    },
+    {
+        "Name":  "ctlg_type",
+        "Type":  0,
+        "SQLLen":  314
+    },
+    {
+        "Name":  "ctlg_type2",
+        "Type":  0,
+        "SQLLen":  316
+    },
+    {
+        "Name":  "ctlga_adds",
+        "Type":  0,
+        "SQLLen":  649
+    },
+    {
+        "Name":  "ctlga_adds2",
+        "Type":  0,
+        "SQLLen":  651
+    },
+    {
+        "Name":  "ctlga_cover",
+        "Type":  0,
+        "SQLLen":  749
+    },
+    {
+        "Name":  "ctlga_cover2",
+        "Type":  0,
+        "SQLLen":  752
+    },
+    {
+        "Name":  "ctlga_hevra",
+        "Type":  0,
+        "SQLLen":  487
+    },
+    {
+        "Name":  "ctlga_hevra_a",
+        "Type":  0,
+        "SQLLen":  224
+    },
+    {
+        "Name":  "ctlga_ktr",
+        "Type":  0,
+        "SQLLen":  844
+    },
+    {
+        "Name":  "ctlga_ktr2",
+        "Type":  0,
+        "SQLLen":  848
+    },
+    {
+        "Name":  "ctlga_type",
+        "Type":  0,
+        "SQLLen":  552
+    },
+    {
+        "Name":  "ctlga_type_a",
+        "Type":  0,
+        "SQLLen":  329
+    },
+    {
+        "Name":  "ctlga_type_a2",
+        "Type":  0,
+        "SQLLen":  329
+    },
+    {
+        "Name":  "ctlga_type_ah",
+        "Type":  0,
+        "SQLLen":  349
+    },
+    {
+        "Name":  "ctlga_type_ah2",
+        "Type":  0,
+        "SQLLen":  349
+    },
+    {
+        "Name":  "ctlga_type_at",
+        "Type":  0,
+        "SQLLen":  349
+    },
+    {
+        "Name":  "ctlga_type_at2",
+        "Type":  0,
+        "SQLLen":  349
+    },
+    {
+        "Name":  "ctlga_type2",
+        "Type":  0,
+        "SQLLen":  553
+    },
+    {
+        "Name":  "ctlgact_hevra",
+        "Type":  0,
+        "SQLLen":  155
+    },
+    {
+        "Name":  "ctlgact_type",
+        "Type":  0,
+        "SQLLen":  258
+    },
+    {
+        "Name":  "ctlgah_hevra",
+        "Type":  0,
+        "SQLLen":  467
+    },
+    {
+        "Name":  "ctlgah_type",
+        "Type":  0,
+        "SQLLen":  693
+    },
+    {
+        "Name":  "ctlgap_hevra",
+        "Type":  0,
+        "SQLLen":  479
+    },
+    {
+        "Name":  "ctlgap_type",
+        "Type":  0,
+        "SQLLen":  400
+    },
+    {
+        "Name":  "ctlgap_type2",
+        "Type":  0,
+        "SQLLen":  401
+    },
+    {
+        "Name":  "ctlgar_hevra",
+        "Type":  0,
+        "SQLLen":  439
+    },
+    {
+        "Name":  "ctlgar_type",
+        "Type":  0,
+        "SQLLen":  540
+    },
+    {
+        "Name":  "ctlgas_hevra",
+        "Type":  0,
+        "SQLLen":  633
+    },
+    {
+        "Name":  "ctlgas_type",
+        "Type":  0,
+        "SQLLen":  973
+    },
+    {
+        "Name":  "ctlgf_color",
+        "Type":  0,
+        "SQLLen":  466
+    },
+    {
+        "Name":  "ctlgf_hevra",
+        "Type":  0,
+        "SQLLen":  238
+    },
+    {
+        "Name":  "ctlgf_size",
+        "Type":  0,
+        "SQLLen":  381
+    },
+    {
+        "Name":  "ctlgf_type",
+        "Type":  0,
+        "SQLLen":  296
+    },
+    {
+        "Name":  "ctlgh_color",
+        "Type":  0,
+        "SQLLen":  463
+    },
+    {
+        "Name":  "ctlgh_hevra",
+        "Type":  0,
+        "SQLLen":  238
+    },
+    {
+        "Name":  "ctlgh_size",
+        "Type":  0,
+        "SQLLen":  379
+    },
+    {
+        "Name":  "ctlgh_type",
+        "Type":  0,
+        "SQLLen":  295
+    },
+    {
+        "Name":  "ctlgm_color",
+        "Type":  0,
+        "SQLLen":  682
+    },
+    {
+        "Name":  "ctlgm_hevra",
+        "Type":  0,
+        "SQLLen":  325
+    },
+    {
+        "Name":  "ctlgm_size",
+        "Type":  0,
+        "SQLLen":  556
+    },
+    {
+        "Name":  "ctlgm_type",
+        "Type":  0,
+        "SQLLen":  430
+    },
+    {
+        "Name":  "ctlgr_color",
+        "Type":  0,
+        "SQLLen":  511
+    },
+    {
+        "Name":  "ctlgr_hevra",
+        "Type":  0,
+        "SQLLen":  121
+    },
+    {
+        "Name":  "ctlgr_size",
+        "Type":  0,
+        "SQLLen":  381
+    },
+    {
+        "Name":  "ctlgr_type",
+        "Type":  0,
+        "SQLLen":  251
+    },
+    {
+        "Name":  "ctlgs_color",
+        "Type":  0,
+        "SQLLen":  466
+    },
+    {
+        "Name":  "ctlgs_hevra",
+        "Type":  0,
+        "SQLLen":  238
+    },
+    {
+        "Name":  "ctlgs_size",
+        "Type":  0,
+        "SQLLen":  381
+    },
+    {
+        "Name":  "ctlgs_type",
+        "Type":  0,
+        "SQLLen":  296
+    },
+    {
+        "Name":  "ctlgsr_hevra",
+        "Type":  0,
+        "SQLLen":  240
+    },
+    {
+        "Name":  "ctlgsr_type",
+        "Type":  0,
+        "SQLLen":  299
+    },
+    {
+        "Name":  "ctype",
+        "Type":  0,
+        "SQLLen":  102
+    },
+    {
+        "Name":  "cust_list_q",
+        "Type":  0,
+        "SQLLen":  89
+    },
+    {
+        "Name":  "cust_list_q_ordr",
+        "Type":  0,
+        "SQLLen":  258
+    },
+    {
+        "Name":  "cust_list_q_ordr_lids",
+        "Type":  0,
+        "SQLLen":  266
+    },
+    {
+        "Name":  "cust_list_q_ordr_lids_all",
+        "Type":  0,
+        "SQLLen":  266
+    },
+    {
+        "Name":  "cust_list_q_ordr_lids_slc",
+        "Type":  0,
+        "SQLLen":  344
+    },
+    {
+        "Name":  "del_add",
+        "Type":  32,
+        "SQLLen":  120
+    },
+    {
+        "Name":  "del_bill_order",
+        "Type":  32,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "del_bodeka",
+        "Type":  48,
+        "SQLLen":  114
+    },
+    {
+        "Name":  "del_bodekb",
+        "Type":  48,
+        "SQLLen":  116
+    },
+    {
+        "Name":  "del_csv_table",
+        "Type":  32,
+        "SQLLen":  37
+    },
+    {
+        "Name":  "del_frm",
+        "Type":  32,
+        "SQLLen":  125
+    },
+    {
+        "Name":  "del_item",
+        "Type":  32,
+        "SQLLen":  814
+    },
+    {
+        "Name":  "del_kupon",
+        "Type":  48,
+        "SQLLen":  104
+    },
+    {
+        "Name":  "del_letter_labels",
+        "Type":  32,
+        "SQLLen":  45
+    },
+    {
+        "Name":  "del_old_cust",
+        "Type":  32,
+        "SQLLen":  531
+    },
+    {
+        "Name":  "del_presence",
+        "Type":  32,
+        "SQLLen":  208
+    },
+    {
+        "Name":  "del_presence_wrk_tbl",
+        "Type":  32,
+        "SQLLen":  51
+    },
+    {
+        "Name":  "del_qnum",
+        "Type":  32,
+        "SQLLen":  33
+    },
+    {
+        "Name":  "del_qnum_un",
+        "Type":  32,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "del_sel_list",
+        "Type":  32,
+        "SQLLen":  35
+    },
+    {
+        "Name":  "del_tb_adashot",
+        "Type":  32,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "del_tb_checks",
+        "Type":  32,
+        "SQLLen":  217
+    },
+    {
+        "Name":  "del_tb_credits",
+        "Type":  32,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "del_tb_date_list",
+        "Type":  32,
+        "SQLLen":  276
+    },
+    {
+        "Name":  "del_tb_email",
+        "Type":  32,
+        "SQLLen":  35
+    },
+    {
+        "Name":  "del_tb_graph",
+        "Type":  48,
+        "SQLLen":  66
+    },
+    {
+        "Name":  "del_tb_hsapakim",
+        "Type":  32,
+        "SQLLen":  217
+    },
+    {
+        "Name":  "del_tb_in",
+        "Type":  32,
+        "SQLLen":  253
+    },
+    {
+        "Name":  "del_tb_labels",
+        "Type":  32,
+        "SQLLen":  37
+    },
+    {
+        "Name":  "del_tb_lekohot",
+        "Type":  48,
+        "SQLLen":  236
+    },
+    {
+        "Name":  "del_tb_ltv",
+        "Type":  48,
+        "SQLLen":  176
+    },
+    {
+        "Name":  "del_tb_ltv_return",
+        "Type":  48,
+        "SQLLen":  315
+    },
+    {
+        "Name":  "del_tb_misgarot",
+        "Type":  32,
+        "SQLLen":  41
+    },
+    {
+        "Name":  "del_tb_orders",
+        "Type":  32,
+        "SQLLen":  187
+    },
+    {
+        "Name":  "del_tb_q_credits",
+        "Type":  32,
+        "SQLLen":  43
+    },
+    {
+        "Name":  "del_tb_sumlekohot",
+        "Type":  48,
+        "SQLLen":  623
+    },
+    {
+        "Name":  "del_tb_xls_data",
+        "Type":  32,
+        "SQLLen":  41
+    },
+    {
+        "Name":  "del_tb_xls_data_lids",
+        "Type":  32,
+        "SQLLen":  51
+    },
+    {
+        "Name":  "del_tb_yoman",
+        "Type":  48,
+        "SQLLen":  426
+    },
+    {
+        "Name":  "dt_adchecks",
+        "Type":  0,
+        "SQLLen":  91
+    },
+    {
+        "Name":  "dt_checks",
+        "Type":  0,
+        "SQLLen":  82
+    },
+    {
+        "Name":  "dup_order",
+        "Type":  64,
+        "SQLLen":  3040
+    },
+    {
+        "Name":  "dup_order_msgr",
+        "Type":  64,
+        "SQLLen":  809
+    },
+    {
+        "Name":  "dyopter",
+        "Type":  128,
+        "SQLLen":  203
+    },
+    {
+        "Name":  "emp_combo_name",
+        "Type":  0,
+        "SQLLen":  373
+    },
+    {
+        "Name":  "gtype",
+        "Type":  128,
+        "SQLLen":  454
+    },
+    {
+        "Name":  "gtypeg",
+        "Type":  128,
+        "SQLLen":  213
+    },
+    {
+        "Name":  "gtypel",
+        "Type":  128,
+        "SQLLen":  214
+    },
+    {
+        "Name":  "gtypep",
+        "Type":  128,
+        "SQLLen":  454
+    },
+    {
+        "Name":  "gtypes",
+        "Type":  128,
+        "SQLLen":  454
+    },
+    {
+        "Name":  "ktr",
+        "Type":  128,
+        "SQLLen":  213
+    },
+    {
+        "Name":  "o_employees",
+        "Type":  0,
+        "SQLLen":  145
+    },
+    {
+        "Name":  "ordersq",
+        "Type":  0,
+        "SQLLen":  78
+    },
+    {
+        "Name":  "ordersq36",
+        "Type":  0,
+        "SQLLen":  205
+    },
+    {
+        "Name":  "ordersq36m",
+        "Type":  0,
+        "SQLLen":  205
+    },
+    {
+        "Name":  "ordersqm",
+        "Type":  0,
+        "SQLLen":  78
+    },
+    {
+        "Name":  "person_list_for_labels",
+        "Type":  0,
+        "SQLLen":  379
+    },
+    {
+        "Name":  "person_remarks_q",
+        "Type":  0,
+        "SQLLen":  294
+    },
+    {
+        "Name":  "pq_total_sales",
+        "Type":  128,
+        "SQLLen":  369
+    },
+    {
+        "Name":  "pr_tb_gnrl_tests",
+        "Type":  0,
+        "SQLLen":  179
+    },
+    {
+        "Name":  "pr_tels",
+        "Type":  0,
+        "SQLLen":  409
+    },
+    {
+        "Name":  "prt_ad_tests",
+        "Type":  0,
+        "SQLLen":  422
+    },
+    {
+        "Name":  "prt_blank",
+        "Type":  0,
+        "SQLLen":  91
+    },
+    {
+        "Name":  "prt_gnrl_tests",
+        "Type":  0,
+        "SQLLen":  814
+    },
+    {
+        "Name":  "prt_gnrl_testsa",
+        "Type":  0,
+        "SQLLen":  815
+    },
+    {
+        "Name":  "prt_mirsham",
+        "Type":  0,
+        "SQLLen":  503
+    },
+    {
+        "Name":  "prt_mirsham_test",
+        "Type":  0,
+        "SQLLen":  473
+    },
+    {
+        "Name":  "prt_mirshamp",
+        "Type":  0,
+        "SQLLen":  482
+    },
+    {
+        "Name":  "prt_quest",
+        "Type":  0,
+        "SQLLen":  447
+    },
+    {
+        "Name":  "ptb_hsapakim",
+        "Type":  128,
+        "SQLLen":  710
+    },
+    {
+        "Name":  "ptb_yoman",
+        "Type":  0,
+        "SQLLen":  60
+    },
+    {
+        "Name":  "q_adashot",
+        "Type":  0,
+        "SQLLen":  111
+    },
+    {
+        "Name":  "q_adchecks",
+        "Type":  0,
+        "SQLLen":  533
+    },
+    {
+        "Name":  "q_adchecks_full",
+        "Type":  0,
+        "SQLLen":  669
+    },
+    {
+        "Name":  "q_adchecks_test",
+        "Type":  0,
+        "SQLLen":  269
+    },
+    {
+        "Name":  "q_bank",
+        "Type":  0,
+        "SQLLen":  153
+    },
+    {
+        "Name":  "q_birthdate",
+        "Type":  0,
+        "SQLLen":  882
+    },
+    {
+        "Name":  "q_birthdate_frm",
+        "Type":  0,
+        "SQLLen":  892
+    },
+    {
+        "Name":  "q_birthdate_frms",
+        "Type":  0,
+        "SQLLen":  754
+    },
+    {
+        "Name":  "q_birthdate_L",
+        "Type":  64,
+        "SQLLen":  702
+    },
+    {
+        "Name":  "q_birthdate_mail",
+        "Type":  64,
+        "SQLLen":  549
+    },
+    {
+        "Name":  "q_birthdate_rv",
+        "Type":  48,
+        "SQLLen":  423
+    },
+    {
+        "Name":  "q_birthdate_u",
+        "Type":  48,
+        "SQLLen":  466
+    },
+    {
+        "Name":  "q_birthdate_xls",
+        "Type":  64,
+        "SQLLen":  714
+    },
+    {
+        "Name":  "q_birthdateh",
+        "Type":  0,
+        "SQLLen":  802
+    },
+    {
+        "Name":  "q_birthdateh_frm",
+        "Type":  0,
+        "SQLLen":  982
+    },
+    {
+        "Name":  "q_birthdateh_frms",
+        "Type":  0,
+        "SQLLen":  786
+    },
+    {
+        "Name":  "q_birthdateh_L",
+        "Type":  64,
+        "SQLLen":  734
+    },
+    {
+        "Name":  "q_birthdateh_mail",
+        "Type":  64,
+        "SQLLen":  581
+    },
+    {
+        "Name":  "q_birthdateh_rv",
+        "Type":  48,
+        "SQLLen":  455
+    },
+    {
+        "Name":  "q_birthdateh_u",
+        "Type":  48,
+        "SQLLen":  498
+    },
+    {
+        "Name":  "q_birthdateh_xls",
+        "Type":  64,
+        "SQLLen":  786
+    },
+    {
+        "Name":  "q_cartis",
+        "Type":  0,
+        "SQLLen":  794
+    },
+    {
+        "Name":  "q_cartis_atst",
+        "Type":  0,
+        "SQLLen":  483
+    },
+    {
+        "Name":  "q_check_again",
+        "Type":  0,
+        "SQLLen":  4168
+    },
+    {
+        "Name":  "q_check_again_frm",
+        "Type":  0,
+        "SQLLen":  4287
+    },
+    {
+        "Name":  "q_check_again_frms",
+        "Type":  0,
+        "SQLLen":  3757
+    },
+    {
+        "Name":  "q_check_again_frmsa",
+        "Type":  0,
+        "SQLLen":  3836
+    },
+    {
+        "Name":  "q_check_again_frmsm",
+        "Type":  0,
+        "SQLLen":  3835
+    },
+    {
+        "Name":  "q_check_again_L",
+        "Type":  64,
+        "SQLLen":  3451
+    },
+    {
+        "Name":  "q_check_again_old",
+        "Type":  0,
+        "SQLLen":  2574
+    },
+    {
+        "Name":  "q_check_again_rv",
+        "Type":  48,
+        "SQLLen":  457
+    },
+    {
+        "Name":  "q_check_again_rva",
+        "Type":  48,
+        "SQLLen":  494
+    },
+    {
+        "Name":  "q_check_again_rvm",
+        "Type":  48,
+        "SQLLen":  493
+    },
+    {
+        "Name":  "q_check_again_u",
+        "Type":  48,
+        "SQLLen":  3261
+    },
+    {
+        "Name":  "q_check_again_ua",
+        "Type":  48,
+        "SQLLen":  3298
+    },
+    {
+        "Name":  "q_check_again_um",
+        "Type":  48,
+        "SQLLen":  3297
+    },
+    {
+        "Name":  "q_check_xls",
+        "Type":  64,
+        "SQLLen":  3602
+    },
+    {
+        "Name":  "q_checks",
+        "Type":  0,
+        "SQLLen":  554
+    },
+    {
+        "Name":  "q_checks_a",
+        "Type":  0,
+        "SQLLen":  193
+    },
+    {
+        "Name":  "q_checks_a_old",
+        "Type":  0,
+        "SQLLen":  527
+    },
+    {
+        "Name":  "q_checks_a_old_plus",
+        "Type":  0,
+        "SQLLen":  276
+    },
+    {
+        "Name":  "q_checks_add",
+        "Type":  0,
+        "SQLLen":  195
+    },
+    {
+        "Name":  "q_checks_add_app",
+        "Type":  64,
+        "SQLLen":  1208
+    },
+    {
+        "Name":  "q_checks_add_appb",
+        "Type":  64,
+        "SQLLen":  1209
+    },
+    {
+        "Name":  "q_checks_full",
+        "Type":  0,
+        "SQLLen":  622
+    },
+    {
+        "Name":  "q_checks_m_add",
+        "Type":  0,
+        "SQLLen":  664
+    },
+    {
+        "Name":  "q_checks_m_old",
+        "Type":  0,
+        "SQLLen":  635
+    },
+    {
+        "Name":  "q_checks_m_old_b1",
+        "Type":  0,
+        "SQLLen":  141
+    },
+    {
+        "Name":  "q_checks_m_old_plus",
+        "Type":  0,
+        "SQLLen":  307
+    },
+    {
+        "Name":  "q_checks_myupye",
+        "Type":  0,
+        "SQLLen":  673
+    },
+    {
+        "Name":  "q_cheks",
+        "Type":  0,
+        "SQLLen":  486
+    },
+    {
+        "Name":  "q_clean",
+        "Type":  0,
+        "SQLLen":  721
+    },
+    {
+        "Name":  "q_clean_frm",
+        "Type":  0,
+        "SQLLen":  672
+    },
+    {
+        "Name":  "q_clean_frms",
+        "Type":  0,
+        "SQLLen":  684
+    },
+    {
+        "Name":  "q_companyn",
+        "Type":  0,
+        "SQLLen":  123
+    },
+    {
+        "Name":  "q_credit",
+        "Type":  0,
+        "SQLLen":  138
+    },
+    {
+        "Name":  "q_credit_receipt",
+        "Type":  128,
+        "SQLLen":  975
+    },
+    {
+        "Name":  "q_critic_remark",
+        "Type":  0,
+        "SQLLen":  165
+    },
+    {
+        "Name":  "q_cust_frm",
+        "Type":  0,
+        "SQLLen":  673
+    },
+    {
+        "Name":  "q_cust_frm_dt",
+        "Type":  0,
+        "SQLLen":  696
+    },
+    {
+        "Name":  "q_cust_frm_fm",
+        "Type":  0,
+        "SQLLen":  537
+    },
+    {
+        "Name":  "q_cust_frm_pn",
+        "Type":  0,
+        "SQLLen":  642
+    },
+    {
+        "Name":  "q_cust_frm_tl",
+        "Type":  0,
+        "SQLLen":  674
+    },
+    {
+        "Name":  "q_cust_frmb",
+        "Type":  0,
+        "SQLLen":  1794
+    },
+    {
+        "Name":  "q_cust_frms",
+        "Type":  0,
+        "SQLLen":  821
+    },
+    {
+        "Name":  "q_cust_frms_fm",
+        "Type":  0,
+        "SQLLen":  630
+    },
+    {
+        "Name":  "q_cust_frms_p",
+        "Type":  0,
+        "SQLLen":  757
+    },
+    {
+        "Name":  "q_cust_list",
+        "Type":  0,
+        "SQLLen":  2306
+    },
+    {
+        "Name":  "q_cust_remarks",
+        "Type":  0,
+        "SQLLen":  649
+    },
+    {
+        "Name":  "q_cust_wt",
+        "Type":  0,
+        "SQLLen":  333
+    },
+    {
+        "Name":  "q_email_list",
+        "Type":  0,
+        "SQLLen":  84
+    },
+    {
+        "Name":  "q_empty",
+        "Type":  0,
+        "SQLLen":  78
+    },
+    {
+        "Name":  "q_find_cust",
+        "Type":  0,
+        "SQLLen":  703
+    },
+    {
+        "Name":  "q_hesh",
+        "Type":  0,
+        "SQLLen":  686
+    },
+    {
+        "Name":  "q_insw",
+        "Type":  0,
+        "SQLLen":  565
+    },
+    {
+        "Name":  "q_insw_L",
+        "Type":  64,
+        "SQLLen":  436
+    },
+    {
+        "Name":  "q_insw_u",
+        "Type":  48,
+        "SQLLen":  241
+    },
+    {
+        "Name":  "q_insw_un",
+        "Type":  48,
+        "SQLLen":  241
+    },
+    {
+        "Name":  "q_insw_xls",
+        "Type":  64,
+        "SQLLen":  451
+    },
+    {
+        "Name":  "q_inv",
+        "Type":  0,
+        "SQLLen":  423
+    },
+    {
+        "Name":  "q_inv_L",
+        "Type":  64,
+        "SQLLen":  372
+    },
+    {
+        "Name":  "q_inv_sel",
+        "Type":  0,
+        "SQLLen":  440
+    },
+    {
+        "Name":  "q_inv_u",
+        "Type":  48,
+        "SQLLen":  153
+    },
+    {
+        "Name":  "q_inv_un",
+        "Type":  48,
+        "SQLLen":  153
+    },
+    {
+        "Name":  "q_inv_xls",
+        "Type":  64,
+        "SQLLen":  362
+    },
+    {
+        "Name":  "q_items",
+        "Type":  128,
+        "SQLLen":  598
+    },
+    {
+        "Name":  "q_kupa",
+        "Type":  0,
+        "SQLLen":  187
+    },
+    {
+        "Name":  "q_last_achecks",
+        "Type":  0,
+        "SQLLen":  609
+    },
+    {
+        "Name":  "q_last_checks",
+        "Type":  0,
+        "SQLLen":  498
+    },
+    {
+        "Name":  "q_maxdt",
+        "Type":  0,
+        "SQLLen":  156
+    },
+    {
+        "Name":  "q_maxdt_a",
+        "Type":  0,
+        "SQLLen":  171
+    },
+    {
+        "Name":  "q_mehirot",
+        "Type":  0,
+        "SQLLen":  558
+    },
+    {
+        "Name":  "q_mehirot_ad",
+        "Type":  0,
+        "SQLLen":  701
+    },
+    {
+        "Name":  "q_mehirot_adb",
+        "Type":  0,
+        "SQLLen":  785
+    },
+    {
+        "Name":  "q_mehirot_adb_x",
+        "Type":  0,
+        "SQLLen":  2039
+    },
+    {
+        "Name":  "q_mehirot_adp",
+        "Type":  0,
+        "SQLLen":  780
+    },
+    {
+        "Name":  "q_mehirot_adp_n",
+        "Type":  0,
+        "SQLLen":  284
+    },
+    {
+        "Name":  "q_mehirot_adp_np",
+        "Type":  0,
+        "SQLLen":  670
+    },
+    {
+        "Name":  "q_mehirot_adp_s",
+        "Type":  0,
+        "SQLLen":  1069
+    },
+    {
+        "Name":  "q_mehirot_all",
+        "Type":  128,
+        "SQLLen":  1399
+    },
+    {
+        "Name":  "q_mehirot_p",
+        "Type":  0,
+        "SQLLen":  566
+    },
+    {
+        "Name":  "q_mehirotb",
+        "Type":  0,
+        "SQLLen":  697
+    },
+    {
+        "Name":  "q_mehirotb_x",
+        "Type":  0,
+        "SQLLen":  1564
+    },
+    {
+        "Name":  "q_melai_date",
+        "Type":  0,
+        "SQLLen":  812
+    },
+    {
+        "Name":  "q_melai_p_date",
+        "Type":  128,
+        "SQLLen":  930
+    },
+    {
+        "Name":  "q_melai_p_date_sum",
+        "Type":  0,
+        "SQLLen":  345
+    },
+    {
+        "Name":  "q_melai_p_date_xls",
+        "Type":  0,
+        "SQLLen":  310
+    },
+    {
+        "Name":  "q_mirsham",
+        "Type":  0,
+        "SQLLen":  126
+    },
+    {
+        "Name":  "q_mirsham_a",
+        "Type":  128,
+        "SQLLen":  1110
+    },
+    {
+        "Name":  "q_num_orders",
+        "Type":  0,
+        "SQLLen":  146
+    },
+    {
+        "Name":  "q_num_orders_b",
+        "Type":  0,
+        "SQLLen":  142
+    },
+    {
+        "Name":  "q_order_mail",
+        "Type":  0,
+        "SQLLen":  220
+    },
+    {
+        "Name":  "q_order_sel",
+        "Type":  0,
+        "SQLLen":  1615
+    },
+    {
+        "Name":  "q_orders",
+        "Type":  0,
+        "SQLLen":  406
+    },
+    {
+        "Name":  "q_orders_achk",
+        "Type":  0,
+        "SQLLen":  273
+    },
+    {
+        "Name":  "q_orders_chk",
+        "Type":  0,
+        "SQLLen":  403
+    },
+    {
+        "Name":  "q_orders_fltr",
+        "Type":  0,
+        "SQLLen":  458
+    },
+    {
+        "Name":  "q_orders_rdr",
+        "Type":  0,
+        "SQLLen":  295
+    },
+    {
+        "Name":  "q_out_credit",
+        "Type":  0,
+        "SQLLen":  323
+    },
+    {
+        "Name":  "q_out_keva",
+        "Type":  0,
+        "SQLLen":  427
+    },
+    {
+        "Name":  "q_pay_presence",
+        "Type":  0,
+        "SQLLen":  123
+    },
+    {
+        "Name":  "q_presence",
+        "Type":  0,
+        "SQLLen":  208
+    },
+    {
+        "Name":  "q_presence_type",
+        "Type":  0,
+        "SQLLen":  188
+    },
+    {
+        "Name":  "q_prop",
+        "Type":  0,
+        "SQLLen":  277
+    },
+    {
+        "Name":  "q_sales",
+        "Type":  0,
+        "SQLLen":  155
+    },
+    {
+        "Name":  "q_sapakim",
+        "Type":  0,
+        "SQLLen":  198
+    },
+    {
+        "Name":  "q_sapakim_all",
+        "Type":  128,
+        "SQLLen":  1328
+    },
+    {
+        "Name":  "q_sapakim_all_total",
+        "Type":  0,
+        "SQLLen":  353
+    },
+    {
+        "Name":  "q_sapakim_all_total_s",
+        "Type":  0,
+        "SQLLen":  438
+    },
+    {
+        "Name":  "q_sapakim_all_totalp",
+        "Type":  0,
+        "SQLLen":  251
+    },
+    {
+        "Name":  "q_sapakim_all_totalp_s",
+        "Type":  0,
+        "SQLLen":  291
+    },
+    {
+        "Name":  "q_takbul",
+        "Type":  128,
+        "SQLLen":  804
+    },
+    {
+        "Name":  "q_takbul_h",
+        "Type":  128,
+        "SQLLen":  813
+    },
+    {
+        "Name":  "q_takbul_in",
+        "Type":  0,
+        "SQLLen":  412
+    },
+    {
+        "Name":  "q_takbul_k",
+        "Type":  0,
+        "SQLLen":  627
+    },
+    {
+        "Name":  "q_takbul_t",
+        "Type":  0,
+        "SQLLen":  580
+    },
+    {
+        "Name":  "q_tashlumim",
+        "Type":  128,
+        "SQLLen":  575
+    },
+    {
+        "Name":  "q_tashlumim_xls",
+        "Type":  128,
+        "SQLLen":  612
+    },
+    {
+        "Name":  "q_tb_ad_catalog",
+        "Type":  0,
+        "SQLLen":  1262
+    },
+    {
+        "Name":  "q_tb_ad_catalog_ba",
+        "Type":  0,
+        "SQLLen":  371
+    },
+    {
+        "Name":  "q_tb_ad_catalog_bm",
+        "Type":  0,
+        "SQLLen":  371
+    },
+    {
+        "Name":  "q_tb_ad_catalog_find",
+        "Type":  0,
+        "SQLLen":  625
+    },
+    {
+        "Name":  "q_tb_ad_catalog_g",
+        "Type":  0,
+        "SQLLen":  1403
+    },
+    {
+        "Name":  "q_tb_ad_catalog_sapak",
+        "Type":  0,
+        "SQLLen":  176
+    },
+    {
+        "Name":  "q_tb_ad_catalog_sapak2",
+        "Type":  0,
+        "SQLLen":  176
+    },
+    {
+        "Name":  "q_tb_catalog",
+        "Type":  0,
+        "SQLLen":  759
+    },
+    {
+        "Name":  "q_tb_catalog_a",
+        "Type":  0,
+        "SQLLen":  677
+    },
+    {
+        "Name":  "q_tb_catalog_b",
+        "Type":  0,
+        "SQLLen":  541
+    },
+    {
+        "Name":  "q_tb_catalog_c",
+        "Type":  0,
+        "SQLLen":  405
+    },
+    {
+        "Name":  "q_tb_catalog_find",
+        "Type":  0,
+        "SQLLen":  715
+    },
+    {
+        "Name":  "q_tb_catalog_sapak",
+        "Type":  0,
+        "SQLLen":  170
+    },
+    {
+        "Name":  "q_tb_catalog_sapak2",
+        "Type":  0,
+        "SQLLen":  170
+    },
+    {
+        "Name":  "q_tb_hsapakim_remark",
+        "Type":  0,
+        "SQLLen":  149
+    },
+    {
+        "Name":  "q_tb_kabala_count",
+        "Type":  0,
+        "SQLLen":  305
+    },
+    {
+        "Name":  "q_total_orders",
+        "Type":  0,
+        "SQLLen":  493
+    },
+    {
+        "Name":  "q_total_sales",
+        "Type":  0,
+        "SQLLen":  416
+    },
+    {
+        "Name":  "q_yitra",
+        "Type":  0,
+        "SQLLen":  607
+    },
+    {
+        "Name":  "q1",
+        "Type":  0,
+        "SQLLen":  83
+    },
+    {
+        "Name":  "qa_codes",
+        "Type":  0,
+        "SQLLen":  148
+    },
+    {
+        "Name":  "qa_descs",
+        "Type":  0,
+        "SQLLen":  225
+    },
+    {
+        "Name":  "qad_kupa",
+        "Type":  0,
+        "SQLLen":  212
+    },
+    {
+        "Name":  "qada_kupa",
+        "Type":  0,
+        "SQLLen":  196
+    },
+    {
+        "Name":  "qadchecks",
+        "Type":  0,
+        "SQLLen":  89
+    },
+    {
+        "Name":  "qbar",
+        "Type":  128,
+        "SQLLen":  414
+    },
+    {
+        "Name":  "qchecks",
+        "Type":  0,
+        "SQLLen":  124
+    },
+    {
+        "Name":  "qchecks_ob",
+        "Type":  0,
+        "SQLLen":  78
+    },
+    {
+        "Name":  "qchecksadd",
+        "Type":  0,
+        "SQLLen":  80
+    },
+    {
+        "Name":  "qcheckstest",
+        "Type":  0,
+        "SQLLen":  91
+    },
+    {
+        "Name":  "qcust",
+        "Type":  0,
+        "SQLLen":  184
+    },
+    {
+        "Name":  "qcust_list",
+        "Type":  0,
+        "SQLLen":  1368
+    },
+    {
+        "Name":  "qcust_list_L",
+        "Type":  0,
+        "SQLLen":  1256
+    },
+    {
+        "Name":  "qcust_list_rp",
+        "Type":  0,
+        "SQLLen":  1105
+    },
+    {
+        "Name":  "qcust_list_XLS",
+        "Type":  0,
+        "SQLLen":  1290
+    },
+    {
+        "Name":  "qcustfiles",
+        "Type":  0,
+        "SQLLen":  168
+    },
+    {
+        "Name":  "qdel_adchecks",
+        "Type":  0,
+        "SQLLen":  88
+    },
+    {
+        "Name":  "qdel_checks",
+        "Type":  0,
+        "SQLLen":  132
+    },
+    {
+        "Name":  "qdt_order",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "qfile_cust",
+        "Type":  0,
+        "SQLLen":  248
+    },
+    {
+        "Name":  "qfile_cust_mem",
+        "Type":  0,
+        "SQLLen":  251
+    },
+    {
+        "Name":  "qgil",
+        "Type":  32,
+        "SQLLen":  168
+    },
+    {
+        "Name":  "qhday",
+        "Type":  0,
+        "SQLLen":  114
+    },
+    {
+        "Name":  "qhmonth",
+        "Type":  0,
+        "SQLLen":  148
+    },
+    {
+        "Name":  "qincode",
+        "Type":  0,
+        "SQLLen":  144
+    },
+    {
+        "Name":  "qkabala_sum",
+        "Type":  0,
+        "SQLLen":  95
+    },
+    {
+        "Name":  "qkavgl",
+        "Type":  0,
+        "SQLLen":  273
+    },
+    {
+        "Name":  "qkavgr",
+        "Type":  0,
+        "SQLLen":  273
+    },
+    {
+        "Name":  "ql_dates_list",
+        "Type":  0,
+        "SQLLen":  356
+    },
+    {
+        "Name":  "qlast_achecks",
+        "Type":  0,
+        "SQLLen":  194
+    },
+    {
+        "Name":  "qlast_checks",
+        "Type":  0,
+        "SQLLen":  146
+    },
+    {
+        "Name":  "qlast_remark",
+        "Type":  0,
+        "SQLLen":  175
+    },
+    {
+        "Name":  "qlbincode",
+        "Type":  0,
+        "SQLLen":  121
+    },
+    {
+        "Name":  "qlist_ad_tests",
+        "Type":  0,
+        "SQLLen":  155
+    },
+    {
+        "Name":  "qlist_adaptation",
+        "Type":  0,
+        "SQLLen":  242
+    },
+    {
+        "Name":  "qlist_adaptationp",
+        "Type":  0,
+        "SQLLen":  1271
+    },
+    {
+        "Name":  "qlist_adchecks",
+        "Type":  0,
+        "SQLLen":  35
+    },
+    {
+        "Name":  "qlist_appoint",
+        "Type":  0,
+        "SQLLen":  646
+    },
+    {
+        "Name":  "qlist_appoint_clndr",
+        "Type":  0,
+        "SQLLen":  669
+    },
+    {
+        "Name":  "qlist_appoint_sel",
+        "Type":  0,
+        "SQLLen":  625
+    },
+    {
+        "Name":  "qlist_barcode",
+        "Type":  0,
+        "SQLLen":  256
+    },
+    {
+        "Name":  "qlist_check_remarks",
+        "Type":  0,
+        "SQLLen":  295
+    },
+    {
+        "Name":  "qlist_checks",
+        "Type":  128,
+        "SQLLen":  462
+    },
+    {
+        "Name":  "qlist_date",
+        "Type":  0,
+        "SQLLen":  164
+    },
+    {
+        "Name":  "qlist_datep",
+        "Type":  128,
+        "SQLLen":  699
+    },
+    {
+        "Name":  "qlist_dates",
+        "Type":  0,
+        "SQLLen":  765
+    },
+    {
+        "Name":  "qlist_dup_names",
+        "Type":  0,
+        "SQLLen":  115
+    },
+    {
+        "Name":  "qlist_frame",
+        "Type":  0,
+        "SQLLen":  101
+    },
+    {
+        "Name":  "qlist_haver",
+        "Type":  0,
+        "SQLLen":  145
+    },
+    {
+        "Name":  "qlist_heblet",
+        "Type":  0,
+        "SQLLen":  135
+    },
+    {
+        "Name":  "qlist_in",
+        "Type":  0,
+        "SQLLen":  191
+    },
+    {
+        "Name":  "qlist_items",
+        "Type":  0,
+        "SQLLen":  338
+    },
+    {
+        "Name":  "qlist_kod",
+        "Type":  0,
+        "SQLLen":  75
+    },
+    {
+        "Name":  "qlist_kupa",
+        "Type":  0,
+        "SQLLen":  159
+    },
+    {
+        "Name":  "qlist_kupon",
+        "Type":  0,
+        "SQLLen":  124
+    },
+    {
+        "Name":  "qlist_kuponh",
+        "Type":  0,
+        "SQLLen":  128
+    },
+    {
+        "Name":  "qlist_kuponp",
+        "Type":  128,
+        "SQLLen":  276
+    },
+    {
+        "Name":  "qlist_last_ordr",
+        "Type":  0,
+        "SQLLen":  139
+    },
+    {
+        "Name":  "qlist_lens",
+        "Type":  0,
+        "SQLLen":  234
+    },
+    {
+        "Name":  "qlist_lens_mh",
+        "Type":  0,
+        "SQLLen":  215
+    },
+    {
+        "Name":  "qlist_lens_p",
+        "Type":  0,
+        "SQLLen":  158
+    },
+    {
+        "Name":  "qlist_lids",
+        "Type":  0,
+        "SQLLen":  117
+    },
+    {
+        "Name":  "qlist_log",
+        "Type":  0,
+        "SQLLen":  469
+    },
+    {
+        "Name":  "qlist_log_names",
+        "Type":  128,
+        "SQLLen":  344
+    },
+    {
+        "Name":  "qlist_ltv_lekohot_g",
+        "Type":  0,
+        "SQLLen":  137
+    },
+    {
+        "Name":  "qlist_ltv_lekohot_m",
+        "Type":  0,
+        "SQLLen":  137
+    },
+    {
+        "Name":  "qlist_ltv_lekohot12_g",
+        "Type":  0,
+        "SQLLen":  626
+    },
+    {
+        "Name":  "qlist_ltv_lekohot12_m",
+        "Type":  0,
+        "SQLLen":  907
+    },
+    {
+        "Name":  "qlist_ltv_lekohot24_g",
+        "Type":  0,
+        "SQLLen":  626
+    },
+    {
+        "Name":  "qlist_ltv_lekohot24_m",
+        "Type":  0,
+        "SQLLen":  907
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36_g",
+        "Type":  0,
+        "SQLLen":  626
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36_m",
+        "Type":  0,
+        "SQLLen":  959
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36lkltv_g",
+        "Type":  0,
+        "SQLLen":  165
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36lkltv_m",
+        "Type":  0,
+        "SQLLen":  165
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36lkpltv_g",
+        "Type":  0,
+        "SQLLen":  460
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36lkpltv_m",
+        "Type":  0,
+        "SQLLen":  406
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36ltv_g",
+        "Type":  0,
+        "SQLLen":  634
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36ltv_m",
+        "Type":  0,
+        "SQLLen":  999
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36ltvc_g",
+        "Type":  0,
+        "SQLLen":  442
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36ltvc_m",
+        "Type":  0,
+        "SQLLen":  756
+    },
+    {
+        "Name":  "qlist_ltv_lekohotk_g",
+        "Type":  0,
+        "SQLLen":  474
+    },
+    {
+        "Name":  "qlist_ltv_lekohotk_m",
+        "Type":  0,
+        "SQLLen":  775
+    },
+    {
+        "Name":  "qlist_ltv_lekohotp_g",
+        "Type":  0,
+        "SQLLen":  316
+    },
+    {
+        "Name":  "qlist_ltv_lekohotp_m",
+        "Type":  0,
+        "SQLLen":  581
+    },
+    {
+        "Name":  "qlist_ltvret_lekohot_g",
+        "Type":  0,
+        "SQLLen":  137
+    },
+    {
+        "Name":  "qlist_ltvret_lekohot_m",
+        "Type":  0,
+        "SQLLen":  137
+    },
+    {
+        "Name":  "qlist_ltvret_n_g",
+        "Type":  0,
+        "SQLLen":  125
+    },
+    {
+        "Name":  "qlist_ltvret_n_m",
+        "Type":  0,
+        "SQLLen":  125
+    },
+    {
+        "Name":  "qlist_ltvret_n12_g",
+        "Type":  0,
+        "SQLLen":  133
+    },
+    {
+        "Name":  "qlist_ltvret_n12_m",
+        "Type":  0,
+        "SQLLen":  133
+    },
+    {
+        "Name":  "qlist_ltvret_n12p_g",
+        "Type":  0,
+        "SQLLen":  561
+    },
+    {
+        "Name":  "qlist_ltvret_n12p_m",
+        "Type":  0,
+        "SQLLen":  866
+    },
+    {
+        "Name":  "qlist_ltvret_n24_g",
+        "Type":  0,
+        "SQLLen":  133
+    },
+    {
+        "Name":  "qlist_ltvret_n24_m",
+        "Type":  0,
+        "SQLLen":  133
+    },
+    {
+        "Name":  "qlist_ltvret_n24p_g",
+        "Type":  0,
+        "SQLLen":  535
+    },
+    {
+        "Name":  "qlist_ltvret_n24p_m",
+        "Type":  0,
+        "SQLLen":  866
+    },
+    {
+        "Name":  "qlist_ltvret_n36_g",
+        "Type":  0,
+        "SQLLen":  133
+    },
+    {
+        "Name":  "qlist_ltvret_n36_m",
+        "Type":  0,
+        "SQLLen":  133
+    },
+    {
+        "Name":  "qlist_ltvret_n36p_g",
+        "Type":  0,
+        "SQLLen":  535
+    },
+    {
+        "Name":  "qlist_ltvret_n36p_m",
+        "Type":  0,
+        "SQLLen":  838
+    },
+    {
+        "Name":  "qlist_ltvret_np_g",
+        "Type":  0,
+        "SQLLen":  494
+    },
+    {
+        "Name":  "qlist_ltvret_np_m",
+        "Type":  0,
+        "SQLLen":  784
+    },
+    {
+        "Name":  "qlist_ltvret_nr_g",
+        "Type":  0,
+        "SQLLen":  263
+    },
+    {
+        "Name":  "qlist_ltvret_nr_m",
+        "Type":  0,
+        "SQLLen":  261
+    },
+    {
+        "Name":  "qlist_ltvret_total_g",
+        "Type":  0,
+        "SQLLen":  382
+    },
+    {
+        "Name":  "qlist_ltvret_total_m",
+        "Type":  0,
+        "SQLLen":  663
+    },
+    {
+        "Name":  "qlist_mail",
+        "Type":  0,
+        "SQLLen":  293
+    },
+    {
+        "Name":  "qlist_orders",
+        "Type":  0,
+        "SQLLen":  230
+    },
+    {
+        "Name":  "qlist_ordersgn_l",
+        "Type":  0,
+        "SQLLen":  1207
+    },
+    {
+        "Name":  "qlist_ordersgn_lg",
+        "Type":  0,
+        "SQLLen":  1202
+    },
+    {
+        "Name":  "qlist_ordersgnp_l",
+        "Type":  0,
+        "SQLLen":  580
+    },
+    {
+        "Name":  "qlist_ordersgnp_lg",
+        "Type":  0,
+        "SQLLen":  516
+    },
+    {
+        "Name":  "qlist_ordersgnpb_l",
+        "Type":  0,
+        "SQLLen":  709
+    },
+    {
+        "Name":  "qlist_ordersgnpb_lg",
+        "Type":  0,
+        "SQLLen":  645
+    },
+    {
+        "Name":  "qlist_orderslk_first_g",
+        "Type":  0,
+        "SQLLen":  643
+    },
+    {
+        "Name":  "qlist_orderslk_first_lg",
+        "Type":  0,
+        "SQLLen":  707
+    },
+    {
+        "Name":  "qlist_orderslk_first_new_g",
+        "Type":  0,
+        "SQLLen":  794
+    },
+    {
+        "Name":  "qlist_orderslk_first_new_lg",
+        "Type":  0,
+        "SQLLen":  858
+    },
+    {
+        "Name":  "qlist_orderslk_g",
+        "Type":  0,
+        "SQLLen":  145
+    },
+    {
+        "Name":  "qlist_orderslk_lg",
+        "Type":  0,
+        "SQLLen":  149
+    },
+    {
+        "Name":  "qlist_orderslk_return_g",
+        "Type":  0,
+        "SQLLen":  320
+    },
+    {
+        "Name":  "qlist_orderslk_return_lg",
+        "Type":  0,
+        "SQLLen":  329
+    },
+    {
+        "Name":  "qlist_orderslknew_g",
+        "Type":  0,
+        "SQLLen":  690
+    },
+    {
+        "Name":  "qlist_orderslknew_lg",
+        "Type":  0,
+        "SQLLen":  806
+    },
+    {
+        "Name":  "qlist_orderslkold_g",
+        "Type":  0,
+        "SQLLen":  735
+    },
+    {
+        "Name":  "qlist_orderslkold_lg",
+        "Type":  0,
+        "SQLLen":  801
+    },
+    {
+        "Name":  "qlist_orderslkp_g",
+        "Type":  0,
+        "SQLLen":  161
+    },
+    {
+        "Name":  "qlist_orderslkp_lg",
+        "Type":  0,
+        "SQLLen":  165
+    },
+    {
+        "Name":  "qlist_orderslkpb_g",
+        "Type":  0,
+        "SQLLen":  516
+    },
+    {
+        "Name":  "qlist_orderslkpb_lg",
+        "Type":  0,
+        "SQLLen":  580
+    },
+    {
+        "Name":  "qlist_orderslktot_g",
+        "Type":  0,
+        "SQLLen":  653
+    },
+    {
+        "Name":  "qlist_orderslktot_lg",
+        "Type":  0,
+        "SQLLen":  717
+    },
+    {
+        "Name":  "qlist_orderslsumk_first_g",
+        "Type":  0,
+        "SQLLen":  161
+    },
+    {
+        "Name":  "qlist_orderssumktv_n24_g",
+        "Type":  0,
+        "SQLLen":  153
+    },
+    {
+        "Name":  "qlist_orderssumlk_firstp_g",
+        "Type":  0,
+        "SQLLen":  868
+    },
+    {
+        "Name":  "qlist_orderssumlk_g",
+        "Type":  0,
+        "SQLLen":  137
+    },
+    {
+        "Name":  "qlist_orderssumlk_return_g",
+        "Type":  0,
+        "SQLLen":  308
+    },
+    {
+        "Name":  "qlist_orderssumlkold_g",
+        "Type":  0,
+        "SQLLen":  753
+    },
+    {
+        "Name":  "qlist_orderssumlkp_g",
+        "Type":  0,
+        "SQLLen":  705
+    },
+    {
+        "Name":  "qlist_orderssumlkpb_g",
+        "Type":  0,
+        "SQLLen":  660
+    },
+    {
+        "Name":  "qlist_orderssumlktot_a_g",
+        "Type":  0,
+        "SQLLen":  826
+    },
+    {
+        "Name":  "qlist_orderssumlktot_am_g",
+        "Type":  0,
+        "SQLLen":  776
+    },
+    {
+        "Name":  "qlist_orderssumlktot_g",
+        "Type":  0,
+        "SQLLen":  715
+    },
+    {
+        "Name":  "qlist_orderssumlktot_m_g",
+        "Type":  0,
+        "SQLLen":  736
+    },
+    {
+        "Name":  "qlist_orderssumltv_first_g",
+        "Type":  0,
+        "SQLLen":  753
+    },
+    {
+        "Name":  "qlist_orderssumltvn24p_g",
+        "Type":  0,
+        "SQLLen":  988
+    },
+    {
+        "Name":  "qlist_oth",
+        "Type":  128,
+        "SQLLen":  1854
+    },
+    {
+        "Name":  "qlist_othrp",
+        "Type":  0,
+        "SQLLen":  125
+    },
+    {
+        "Name":  "qlist_parts",
+        "Type":  0,
+        "SQLLen":  101
+    },
+    {
+        "Name":  "qlist_parts_ordr",
+        "Type":  0,
+        "SQLLen":  126
+    },
+    {
+        "Name":  "qlist_pay",
+        "Type":  0,
+        "SQLLen":  183
+    },
+    {
+        "Name":  "qlist_pay_tel",
+        "Type":  0,
+        "SQLLen":  294
+    },
+    {
+        "Name":  "qlist_poth",
+        "Type":  0,
+        "SQLLen":  179
+    },
+    {
+        "Name":  "qlist_pothp",
+        "Type":  128,
+        "SQLLen":  840
+    },
+    {
+        "Name":  "qlist_qmaga",
+        "Type":  0,
+        "SQLLen":  556
+    },
+    {
+        "Name":  "qlist_qmaga_upd",
+        "Type":  48,
+        "SQLLen":  159
+    },
+    {
+        "Name":  "qlist_qmaga_xls",
+        "Type":  64,
+        "SQLLen":  313
+    },
+    {
+        "Name":  "qlist_redc",
+        "Type":  0,
+        "SQLLen":  97
+    },
+    {
+        "Name":  "qlist_remarks",
+        "Type":  0,
+        "SQLLen":  204
+    },
+    {
+        "Name":  "qlist_sales",
+        "Type":  128,
+        "SQLLen":  7090
+    },
+    {
+        "Name":  "qlist_sales_old1",
+        "Type":  128,
+        "SQLLen":  6514
+    },
+    {
+        "Name":  "qlist_sapakim",
+        "Type":  128,
+        "SQLLen":  275
+    },
+    {
+        "Name":  "qlist_shonot",
+        "Type":  0,
+        "SQLLen":  216
+    },
+    {
+        "Name":  "qlist_snifim",
+        "Type":  128,
+        "SQLLen":  239
+    },
+    {
+        "Name":  "qlist_total_orders",
+        "Type":  0,
+        "SQLLen":  3079
+    },
+    {
+        "Name":  "qlist_total_orders_a",
+        "Type":  0,
+        "SQLLen":  1809
+    },
+    {
+        "Name":  "qlist_total_orders_frm",
+        "Type":  0,
+        "SQLLen":  1113
+    },
+    {
+        "Name":  "qlist_total_orders_frmֹ_first",
+        "Type":  0,
+        "SQLLen":  1160
+    },
+    {
+        "Name":  "qlist_total_orders_frmֹ_sg",
+        "Type":  0,
+        "SQLLen":  1135
+    },
+    {
+        "Name":  "qlist_total_orders_m",
+        "Type":  0,
+        "SQLLen":  2159
+    },
+    {
+        "Name":  "qlist_total_orders_multi",
+        "Type":  0,
+        "SQLLen":  3246
+    },
+    {
+        "Name":  "qlist_total_orders_multip",
+        "Type":  0,
+        "SQLLen":  573
+    },
+    {
+        "Name":  "qlist_total_ordersp",
+        "Type":  128,
+        "SQLLen":  2867
+    },
+    {
+        "Name":  "qlist_upd_amount",
+        "Type":  0,
+        "SQLLen":  181
+    },
+    {
+        "Name":  "qlist_upd_amount_sts",
+        "Type":  0,
+        "SQLLen":  211
+    },
+    {
+        "Name":  "qlist_upd_amount_stsp",
+        "Type":  0,
+        "SQLLen":  169
+    },
+    {
+        "Name":  "qlist_yitra",
+        "Type":  0,
+        "SQLLen":  194
+    },
+    {
+        "Name":  "qlist_yitra_fam",
+        "Type":  0,
+        "SQLLen":  400
+    },
+    {
+        "Name":  "qlist_yitra_tel",
+        "Type":  0,
+        "SQLLen":  296
+    },
+    {
+        "Name":  "qlist_yoman",
+        "Type":  0,
+        "SQLLen":  455
+    },
+    {
+        "Name":  "qlist_zvira",
+        "Type":  0,
+        "SQLLen":  301
+    },
+    {
+        "Name":  "qlorders",
+        "Type":  0,
+        "SQLLen":  136
+    },
+    {
+        "Name":  "qlprop",
+        "Type":  0,
+        "SQLLen":  147
+    },
+    {
+        "Name":  "qmaam",
+        "Type":  0,
+        "SQLLen":  126
+    },
+    {
+        "Name":  "qmail_list",
+        "Type":  0,
+        "SQLLen":  1485
+    },
+    {
+        "Name":  "qmail_list_bd",
+        "Type":  64,
+        "SQLLen":  3414
+    },
+    {
+        "Name":  "qmail_list_insw",
+        "Type":  64,
+        "SQLLen":  300
+    },
+    {
+        "Name":  "qmail_list_inv",
+        "Type":  64,
+        "SQLLen":  213
+    },
+    {
+        "Name":  "qmail_sapak",
+        "Type":  0,
+        "SQLLen":  170
+    },
+    {
+        "Name":  "qmail_sapak_old",
+        "Type":  128,
+        "SQLLen":  1250
+    },
+    {
+        "Name":  "qmail_sapak_old2",
+        "Type":  128,
+        "SQLLen":  974
+    },
+    {
+        "Name":  "qmelai",
+        "Type":  0,
+        "SQLLen":  104
+    },
+    {
+        "Name":  "qmirsham",
+        "Type":  128,
+        "SQLLen":  353
+    },
+    {
+        "Name":  "qmonthn",
+        "Type":  0,
+        "SQLLen":  108
+    },
+    {
+        "Name":  "qnmu_cust_list",
+        "Type":  0,
+        "SQLLen":  141
+    },
+    {
+        "Name":  "qnumber",
+        "Type":  0,
+        "SQLLen":  115
+    },
+    {
+        "Name":  "qodrd1",
+        "Type":  128,
+        "SQLLen":  3264
+    },
+    {
+        "Name":  "qodrd2",
+        "Type":  128,
+        "SQLLen":  3263
+    },
+    {
+        "Name":  "qorder",
+        "Type":  128,
+        "SQLLen":  72
+    },
+    {
+        "Name":  "qorder_kupa",
+        "Type":  0,
+        "SQLLen":  304
+    },
+    {
+        "Name":  "qorders",
+        "Type":  0,
+        "SQLLen":  118
+    },
+    {
+        "Name":  "qorders_all",
+        "Type":  0,
+        "SQLLen":  140
+    },
+    {
+        "Name":  "qorders_old1",
+        "Type":  128,
+        "SQLLen":  185
+    },
+    {
+        "Name":  "qorderst",
+        "Type":  0,
+        "SQLLen":  114
+    },
+    {
+        "Name":  "qoth",
+        "Type":  128,
+        "SQLLen":  334
+    },
+    {
+        "Name":  "qotht",
+        "Type":  128,
+        "SQLLen":  334
+    },
+    {
+        "Name":  "qp_order",
+        "Type":  0,
+        "SQLLen":  1285
+    },
+    {
+        "Name":  "qp_order_all",
+        "Type":  0,
+        "SQLLen":  1076
+    },
+    {
+        "Name":  "qp_order_all_add",
+        "Type":  0,
+        "SQLLen":  1150
+    },
+    {
+        "Name":  "qp_order_all_ext",
+        "Type":  0,
+        "SQLLen":  3968
+    },
+    {
+        "Name":  "qp_order_all_ext_ad",
+        "Type":  0,
+        "SQLLen":  1574
+    },
+    {
+        "Name":  "qp_order_all_ext_all",
+        "Type":  0,
+        "SQLLen":  1843
+    },
+    {
+        "Name":  "qp_order_all_ext_all1",
+        "Type":  0,
+        "SQLLen":  2267
+    },
+    {
+        "Name":  "qp_order_all_ext_env",
+        "Type":  0,
+        "SQLLen":  3797
+    },
+    {
+        "Name":  "qp_order_all_ext_g",
+        "Type":  0,
+        "SQLLen":  3636
+    },
+    {
+        "Name":  "qp_order_all_ext_gnrl",
+        "Type":  0,
+        "SQLLen":  2747
+    },
+    {
+        "Name":  "qp_order_all_ext_lab",
+        "Type":  0,
+        "SQLLen":  3845
+    },
+    {
+        "Name":  "qp_order_all_ext_msgra",
+        "Type":  0,
+        "SQLLen":  2207
+    },
+    {
+        "Name":  "qp_order_all_ext_msgrb",
+        "Type":  0,
+        "SQLLen":  2220
+    },
+    {
+        "Name":  "qp_order_all_ext_repair",
+        "Type":  0,
+        "SQLLen":  2127
+    },
+    {
+        "Name":  "qp_order_all_ext_repair_old",
+        "Type":  0,
+        "SQLLen":  2763
+    },
+    {
+        "Name":  "qp_order_all_ext_repairb",
+        "Type":  0,
+        "SQLLen":  2127
+    },
+    {
+        "Name":  "qp_order_all_ext_task",
+        "Type":  0,
+        "SQLLen":  1174
+    },
+    {
+        "Name":  "qp_order_all_extchk",
+        "Type":  0,
+        "SQLLen":  1811
+    },
+    {
+        "Name":  "qp_order_all_rps",
+        "Type":  0,
+        "SQLLen":  935
+    },
+    {
+        "Name":  "qp_order_all_rps_ext",
+        "Type":  0,
+        "SQLLen":  1013
+    },
+    {
+        "Name":  "qp_order_all_rps_tst",
+        "Type":  0,
+        "SQLLen":  1037
+    },
+    {
+        "Name":  "qp_order_all_tst",
+        "Type":  0,
+        "SQLLen":  3141
+    },
+    {
+        "Name":  "qp_order_all_tstchk",
+        "Type":  0,
+        "SQLLen":  1498
+    },
+    {
+        "Name":  "qp_order_all_tstchk1",
+        "Type":  0,
+        "SQLLen":  1679
+    },
+    {
+        "Name":  "qp_order_allp",
+        "Type":  0,
+        "SQLLen":  1297
+    },
+    {
+        "Name":  "qp_order_kupa",
+        "Type":  0,
+        "SQLLen":  5857
+    },
+    {
+        "Name":  "qp_order_kupa_old",
+        "Type":  0,
+        "SQLLen":  6919
+    },
+    {
+        "Name":  "qp_pay_order_kupa",
+        "Type":  0,
+        "SQLLen":  243
+    },
+    {
+        "Name":  "qp_prop",
+        "Type":  0,
+        "SQLLen":  600
+    },
+    {
+        "Name":  "qpl_order",
+        "Type":  0,
+        "SQLLen":  874
+    },
+    {
+        "Name":  "qprop",
+        "Type":  128,
+        "SQLLen":  184
+    },
+    {
+        "Name":  "qpropt",
+        "Type":  0,
+        "SQLLen":  117
+    },
+    {
+        "Name":  "qprt_achecks",
+        "Type":  0,
+        "SQLLen":  278
+    },
+    {
+        "Name":  "qprt_achecks_pr",
+        "Type":  0,
+        "SQLLen":  478
+    },
+    {
+        "Name":  "qprt_achecks_pr_chk",
+        "Type":  0,
+        "SQLLen":  381
+    },
+    {
+        "Name":  "qprt_checks",
+        "Type":  0,
+        "SQLLen":  254
+    },
+    {
+        "Name":  "qprt_checks_all",
+        "Type":  0,
+        "SQLLen":  179
+    },
+    {
+        "Name":  "qprt_checks_pr",
+        "Type":  0,
+        "SQLLen":  414
+    },
+    {
+        "Name":  "qprt_checks_pr_chk",
+        "Type":  0,
+        "SQLLen":  317
+    },
+    {
+        "Name":  "qprt_checks_pr_g",
+        "Type":  0,
+        "SQLLen":  179
+    },
+    {
+        "Name":  "qprt_checks_pr_lab",
+        "Type":  0,
+        "SQLLen":  452
+    },
+    {
+        "Name":  "qprt_checks_pr_w",
+        "Type":  0,
+        "SQLLen":  310
+    },
+    {
+        "Name":  "qra_employees",
+        "Type":  0,
+        "SQLLen":  145
+    },
+    {
+        "Name":  "qrefractl",
+        "Type":  0,
+        "SQLLen":  457
+    },
+    {
+        "Name":  "qrefractr",
+        "Type":  0,
+        "SQLLen":  457
+    },
+    {
+        "Name":  "qrp_heshboniyot",
+        "Type":  0,
+        "SQLLen":  304
+    },
+    {
+        "Name":  "qrp_title",
+        "Type":  0,
+        "SQLLen":  143
+    },
+    {
+        "Name":  "qrp_upd_amount",
+        "Type":  0,
+        "SQLLen":  2129
+    },
+    {
+        "Name":  "qrp_upd_amount_catg",
+        "Type":  0,
+        "SQLLen":  2368
+    },
+    {
+        "Name":  "qrp_upd_amount_n",
+        "Type":  64,
+        "SQLLen":  1151
+    },
+    {
+        "Name":  "qsclera_all",
+        "Type":  0,
+        "SQLLen":  296
+    },
+    {
+        "Name":  "qscleral",
+        "Type":  0,
+        "SQLLen":  363
+    },
+    {
+        "Name":  "qsclerar",
+        "Type":  0,
+        "SQLLen":  355
+    },
+    {
+        "Name":  "qsnif",
+        "Type":  0,
+        "SQLLen":  150
+    },
+    {
+        "Name":  "qsort_ad_catalog",
+        "Type":  0,
+        "SQLLen":  1785
+    },
+    {
+        "Name":  "qsort_catalog",
+        "Type":  0,
+        "SQLLen":  1431
+    },
+    {
+        "Name":  "qsort_catalog_rp",
+        "Type":  0,
+        "SQLLen":  995
+    },
+    {
+        "Name":  "qsug",
+        "Type":  128,
+        "SQLLen":  651
+    },
+    {
+        "Name":  "qsum_kabala",
+        "Type":  0,
+        "SQLLen":  236
+    },
+    {
+        "Name":  "qswkp",
+        "Type":  0,
+        "SQLLen":  142
+    },
+    {
+        "Name":  "qt_angle",
+        "Type":  0,
+        "SQLLen":  94
+    },
+    {
+        "Name":  "qtb_ad_catalog",
+        "Type":  0,
+        "SQLLen":  232
+    },
+    {
+        "Name":  "qtb_date_list",
+        "Type":  0,
+        "SQLLen":  268
+    },
+    {
+        "Name":  "qtb_date_list_r",
+        "Type":  0,
+        "SQLLen":  119
+    },
+    {
+        "Name":  "qtb_date_list_rem",
+        "Type":  0,
+        "SQLLen":  474
+    },
+    {
+        "Name":  "qtb_date_list_w",
+        "Type":  0,
+        "SQLLen":  119
+    },
+    {
+        "Name":  "qtb_graf",
+        "Type":  0,
+        "SQLLen":  118
+    },
+    {
+        "Name":  "qtb_hsapakim",
+        "Type":  0,
+        "SQLLen":  752
+    },
+    {
+        "Name":  "qtb_hsapakim_all",
+        "Type":  0,
+        "SQLLen":  378
+    },
+    {
+        "Name":  "qtb_lekohot",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "qtb_lens",
+        "Type":  128,
+        "SQLLen":  288
+    },
+    {
+        "Name":  "qtb_ltv",
+        "Type":  0,
+        "SQLLen":  31
+    },
+    {
+        "Name":  "qtb_ltvret",
+        "Type":  0,
+        "SQLLen":  45
+    },
+    {
+        "Name":  "qtb_moadon_amount",
+        "Type":  0,
+        "SQLLen":  215
+    },
+    {
+        "Name":  "qtb_orders",
+        "Type":  0,
+        "SQLLen":  31
+    },
+    {
+        "Name":  "qtb_q_checks",
+        "Type":  0,
+        "SQLLen":  782
+    },
+    {
+        "Name":  "qtb_q_checks_all",
+        "Type":  0,
+        "SQLLen":  413
+    },
+    {
+        "Name":  "qtb_q_checks_all_p",
+        "Type":  0,
+        "SQLLen":  413
+    },
+    {
+        "Name":  "qtb_q_checks_p",
+        "Type":  0,
+        "SQLLen":  782
+    },
+    {
+        "Name":  "qtb_sum_lekohot",
+        "Type":  0,
+        "SQLLen":  47
+    },
+    {
+        "Name":  "qtb_upd_amount",
+        "Type":  0,
+        "SQLLen":  369
+    },
+    {
+        "Name":  "qtb_upd_amount_ad",
+        "Type":  0,
+        "SQLLen":  274
+    },
+    {
+        "Name":  "qtb_xls_data_a",
+        "Type":  0,
+        "SQLLen":  281
+    },
+    {
+        "Name":  "qtb_xls_data_m",
+        "Type":  0,
+        "SQLLen":  409
+    },
+    {
+        "Name":  "qtb_yoman",
+        "Type":  0,
+        "SQLLen":  81
+    },
+    {
+        "Name":  "qtblast_upd_amount",
+        "Type":  0,
+        "SQLLen":  308
+    },
+    {
+        "Name":  "qtblast_upd_amountp",
+        "Type":  0,
+        "SQLLen":  111
+    },
+    {
+        "Name":  "qyeda",
+        "Type":  0,
+        "SQLLen":  106
+    },
+    {
+        "Name":  "refractp",
+        "Type":  0,
+        "SQLLen":  149
+    },
+    {
+        "Name":  "refractpw",
+        "Type":  0,
+        "SQLLen":  123
+    },
+    {
+        "Name":  "refractw",
+        "Type":  0,
+        "SQLLen":  760
+    },
+    {
+        "Name":  "rp_q_presence",
+        "Type":  0,
+        "SQLLen":  193
+    },
+    {
+        "Name":  "rp_sapakim",
+        "Type":  0,
+        "SQLLen":  474
+    },
+    {
+        "Name":  "rplist_checks",
+        "Type":  0,
+        "SQLLen":  131
+    },
+    {
+        "Name":  "rpt_date_list",
+        "Type":  0,
+        "SQLLen":  850
+    },
+    {
+        "Name":  "rpt_date_list_find",
+        "Type":  0,
+        "SQLLen":  709
+    },
+    {
+        "Name":  "sel_numbers",
+        "Type":  0,
+        "SQLLen":  336
+    },
+    {
+        "Name":  "sel_numbers_msg",
+        "Type":  0,
+        "SQLLen":  156
+    },
+    {
+        "Name":  "sizes",
+        "Type":  128,
+        "SQLLen":  432
+    },
+    {
+        "Name":  "sw_tb_labels",
+        "Type":  48,
+        "SQLLen":  43
+    },
+    {
+        "Name":  "tb_ad_catalog_sw",
+        "Type":  0,
+        "SQLLen":  60
+    },
+    {
+        "Name":  "tb_adchecks",
+        "Type":  0,
+        "SQLLen":  87
+    },
+    {
+        "Name":  "tb_cat_order",
+        "Type":  128,
+        "SQLLen":  250
+    },
+    {
+        "Name":  "tb_catalog_sw",
+        "Type":  0,
+        "SQLLen":  54
+    },
+    {
+        "Name":  "tb_checks",
+        "Type":  0,
+        "SQLLen":  79
+    },
+    {
+        "Name":  "tb_cust_list",
+        "Type":  0,
+        "SQLLen":  111
+    },
+    {
+        "Name":  "tb_cust_listb",
+        "Type":  0,
+        "SQLLen":  39
+    },
+    {
+        "Name":  "tb_q_catalog",
+        "Type":  0,
+        "SQLLen":  225
+    },
+    {
+        "Name":  "tb_q_catalog_ad",
+        "Type":  0,
+        "SQLLen":  246
+    },
+    {
+        "Name":  "tb_q_catalog_ad_2_old",
+        "Type":  0,
+        "SQLLen":  295
+    },
+    {
+        "Name":  "tb_q_catalog_adb",
+        "Type":  0,
+        "SQLLen":  288
+    },
+    {
+        "Name":  "tb_q_catalog_melai",
+        "Type":  0,
+        "SQLLen":  542
+    },
+    {
+        "Name":  "tb_q_catalog_melai_price",
+        "Type":  0,
+        "SQLLen":  733
+    },
+    {
+        "Name":  "tb_q_catalog_w",
+        "Type":  0,
+        "SQLLen":  189
+    },
+    {
+        "Name":  "tb_q_catalogb",
+        "Type":  0,
+        "SQLLen":  325
+    },
+    {
+        "Name":  "tb_q_orders",
+        "Type":  128,
+        "SQLLen":  2553
+    },
+    {
+        "Name":  "tb_q_orders_ad",
+        "Type":  128,
+        "SQLLen":  2585
+    },
+    {
+        "Name":  "tb_q_orders_adp",
+        "Type":  128,
+        "SQLLen":  2295
+    },
+    {
+        "Name":  "tb_q_ordersml",
+        "Type":  128,
+        "SQLLen":  2638
+    },
+    {
+        "Name":  "tb_q_ordersp",
+        "Type":  128,
+        "SQLLen":  2879
+    },
+    {
+        "Name":  "tbq_moadon_red",
+        "Type":  0,
+        "SQLLen":  102
+    },
+    {
+        "Name":  "tbq_upd_amount",
+        "Type":  0,
+        "SQLLen":  102
+    },
+    {
+        "Name":  "upd_add_graph",
+        "Type":  64,
+        "SQLLen":  210
+    },
+    {
+        "Name":  "upd_cust_close",
+        "Type":  48,
+        "SQLLen":  89
+    },
+    {
+        "Name":  "upd_details",
+        "Type":  48,
+        "SQLLen":  420
+    },
+    {
+        "Name":  "upd_dup_cust",
+        "Type":  0,
+        "SQLLen":  124
+    },
+    {
+        "Name":  "upd_hesh",
+        "Type":  0,
+        "SQLLen":  192
+    },
+    {
+        "Name":  "upd_orders_num",
+        "Type":  48,
+        "SQLLen":  122
+    },
+    {
+        "Name":  "upd_presence",
+        "Type":  0,
+        "SQLLen":  479
+    },
+    {
+        "Name":  "upd_presence_all",
+        "Type":  0,
+        "SQLLen":  253
+    },
+    {
+        "Name":  "upd_swkp",
+        "Type":  48,
+        "SQLLen":  101
+    },
+    {
+        "Name":  "upd_tb_graph",
+        "Type":  48,
+        "SQLLen":  126
+    },
+    {
+        "Name":  "upd_wt",
+        "Type":  0,
+        "SQLLen":  143
+    },
+    {
+        "Name":  "updsc",
+        "Type":  48,
+        "SQLLen":  89
+    },
+    {
+        "Name":  "updsd",
+        "Type":  48,
+        "SQLLen":  50
+    },
+    {
+        "Name":  "void_old_cust",
+        "Type":  48,
+        "SQLLen":  438
+    },
+    {
+        "Name":  "הזמנה_לבדיקה",
+        "Type":  0,
+        "SQLLen":  586
+    },
+    {
+        "Name":  "הזמנת_מסגרות",
+        "Type":  0,
+        "SQLLen":  673
+    },
+    {
+        "Name":  "מייל",
+        "Type":  0,
+        "SQLLen":  186
+    },
+    {
+        "Name":  "מלאי_old",
+        "Type":  0,
+        "SQLLen":  2052
+    },
+    {
+        "Name":  "מלאי-מסגרות",
+        "Type":  0,
+        "SQLLen":  2227
+    },
+    {
+        "Name":  "מלאי-מסגרותG",
+        "Type":  0,
+        "SQLLen":  1316
+    },
+    {
+        "Name":  "מלאי-מסגרות-חברה",
+        "Type":  0,
+        "SQLLen":  938
+    },
+    {
+        "Name":  "מלאי-מסגרות-חברהG",
+        "Type":  0,
+        "SQLLen":  513
+    },
+    {
+        "Name":  "מלאי-מסגרות-חברהR",
+        "Type":  0,
+        "SQLLen":  783
+    },
+    {
+        "Name":  "מסגרות",
+        "Type":  0,
+        "SQLLen":  799
+    },
+    {
+        "Name":  "נייד",
+        "Type":  0,
+        "SQLLen":  190
+    },
+    {
+        "Name":  "עדשות",
+        "Type":  0,
+        "SQLLen":  684
+    },
+    {
+        "Name":  "פרטי-לקוח",
+        "Type":  0,
+        "SQLLen":  470
+    },
+    {
+        "Name":  "קטלוג-מסגרות",
+        "Type":  0,
+        "SQLLen":  633
+    },
+    {
+        "Name":  "קטלוג-עדשות",
+        "Type":  0,
+        "SQLLen":  617
+    },
+    {
+        "Name":  "תקבול_הזמנה",
+        "Type":  0,
+        "SQLLen":  654
+    },
+    {
+        "Name":  "תקבול_פירעון",
+        "Type":  0,
+        "SQLLen":  664
+    },
+    {
+        "Name":  "תקבול_תשלום",
+        "Type":  0,
+        "SQLLen":  720
+    }
+]

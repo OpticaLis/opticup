@@ -1,0 +1,27 @@
+﻿[
+    {
+        "Name":  "~sq_ff_yoman",
+        "Type":  0,
+        "SQL":  "SELECT BANK_LIST.bank, BANK_LIST.tran, BANK_LIST.qtyp, Val(nz([qtyp])) AS q\r\nFROM BANK_LIST\r\nWHERE (((Val(nz([qtyp])))=12))\r\nORDER BY BANK_LIST.tran;\r\n"
+    },
+    {
+        "Name":  "del_tb_yoman",
+        "Type":  48,
+        "SQL":  "UPDATE tb_yoman SET tb_yoman.t1 = Null, tb_yoman.eh1 = Null, tb_yoman.l1 = Null, tb_yoman.m1 = Null, tb_yoman.t2 = Null, tb_yoman.eh2 = Null, tb_yoman.l2 = Null, tb_yoman.m2 = Null, tb_yoman.t3 = Null, tb_yoman.eh3 = Null, tb_yoman.l3 = Null, tb_yoman.m3 = Null, tb_yoman.t4 = Null, tb_yoman.eh4 = Null, tb_yoman.l4 = Null, tb_yoman.m4 = Null, tb_yoman.t5 = Null, tb_yoman.eh5 = Null, tb_yoman.l5 = Null, tb_yoman.m5 = Null;\r\n"
+    },
+    {
+        "Name":  "ptb_yoman",
+        "Type":  0,
+        "SQL":  "SELECT tb_yoman.sh, tb_yoman.p, tb_yoman.b\r\nFROM tb_yoman;\r\n"
+    },
+    {
+        "Name":  "qlist_yoman",
+        "Type":  0,
+        "SQL":  "SELECT tb_date_list.datew, tb_date_list.snif, tb_date_list.qhour, tb_date_list.qhoure, Trim$(nz([fname]))+\" \"+Trim$(nz([pname])) \u0026 \" טל: \" \u0026 IIf(nz([sel])\u003c\u003e\"\",nz([sel]),nz([tel])) AS name, tb_date_list.mem\r\nFROM ((tb_date_list LEFT JOIN cust_list ON tb_date_list.codel=cust_list.numw) INNER JOIN tmp_parameters ON tb_date_list.datew=tmp_parameters.wdate) INNER JOIN qsnif ON tb_date_list.snif=qsnif.qsnif\r\nORDER BY tb_date_list.snif, tb_date_list.qhour;\r\n"
+    },
+    {
+        "Name":  "qtb_yoman",
+        "Type":  0,
+        "SQL":  "SELECT tb_yoman.*, tb_yoman.p AS q\r\nFROM tb_yoman\r\nWHERE (((tb_yoman.p)=True));\r\n"
+    }
+]

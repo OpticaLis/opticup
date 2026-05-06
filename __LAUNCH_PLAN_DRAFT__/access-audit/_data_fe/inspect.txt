@@ -1,0 +1,48 @@
+﻿check_again: 13
+credits: 8
+yoman: 5
+update: 33
+print: 47
+sales: 11
+KW tb_credits      count=3
+KW tb_yoman        count=3
+KW tb_log          count=1
+KW tb_kabala       count=12
+KW SAPAKIM         count=66
+KW sapakm          count=26
+KW catalog         count=160
+KW presence        count=12
+KW attendance      count=12
+KW ahuz            count=3
+
+=== Forms most referenced in queries (top 30) ===
+  f_cash                         258
+  person_orders_list             109
+  s_mehirot                      94
+  birthdaysheb                   64
+  s_melai                        47
+  f_ad_catalog                   41
+  birthdays                      40
+  customers                      35
+  cust_listb                     24
+  f_catalog                      22
+  Calendar_of_Attendance         21
+  s_orders                       19
+  f_bdikat_maakav                19
+  print_cust                     12
+  find_order                     12
+  find_catg                      10
+  cust_adchecks_full             8
+  person_prop_list               6
+  s_takbul                       6
+  cust_checks_full               5
+  s_adap                         4
+  s_melai_prt                    4
+  cust_adchecks_test             4
+  f_tipul_adashot                3
+  cust_checks                    3
+  empty_tables                   2
+  cust_adchecks                  2
+  find_a_catg                    2
+  person_remarks_list            1
+  f_gnrl_tests                   1

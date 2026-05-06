@@ -1,0 +1,310 @@
+﻿[
+    {
+        "table":  "cust_list",
+        "count":  null,
+        "date_columns":  [
+                             "bdate",
+                             "cdate",
+                             "chdate",
+                             "insdate",
+                             "cleandate",
+                             "kupadate",
+                             "colv",
+                             "fwdateh",
+                             "twdateh",
+                             "hvshdate"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "cust_listb",
+        "count":  null,
+        "date_columns":  [
+                             "bdate",
+                             "colv"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "orders",
+        "count":  null,
+        "date_columns":  [
+                             "odate",
+                             "odatetime",
+                             "rdate",
+                             "cdate",
+                             "rtime",
+                             "gdate",
+                             "mwdate",
+                             "shoursa",
+                             "thoursa",
+                             "shoursb",
+                             "thoursb",
+                             "dworka",
+                             "ddonea",
+                             "ddelva",
+                             "dworkb",
+                             "ddoneb",
+                             "ddelvb",
+                             "dorda",
+                             "dordb",
+                             "nhoursa",
+                             "nhoursb"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "tb_kabala",
+        "count":  null,
+        "date_columns":  [
+                             "wdate",
+                             "tpiraon"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "checks",
+        "count":  null,
+        "date_columns":  [
+                             "chdate"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "adchecks",
+        "count":  null,
+        "date_columns":  [
+                             "caddate"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "items_sales",
+        "count":  null,
+        "date_columns":  [
+                             "wdate",
+                             "tpiraon"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "proposals",
+        "count":  null,
+        "date_columns":  [
+                             "odate"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "person_remarks",
+        "count":  null,
+        "date_columns":  [
+                             "datew"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "tb_log",
+        "count":  null,
+        "date_columns":  [
+                             "datew",
+                             "hh"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "tb_order_rem",
+        "count":  null,
+        "date_columns":  [
+                             "wdate"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "tb_quest",
+        "count":  null,
+        "date_columns":  [
+                             "datew"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "employees",
+        "count":  null,
+        "date_columns":  [
+                             "qhours"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "tb_q_checks",
+        "count":  null,
+        "date_columns":  [
+                             "tdate",
+                             "cdate"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "companyn",
+        "count":  null,
+        "date_columns":  [
+
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "doc_title",
+        "count":  null,
+        "date_columns":  [
+
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "add_order",
+        "count":  null,
+        "date_columns":  [
+                             "qhourw"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "add_num",
+        "count":  null,
+        "date_columns":  [
+
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "BANK_LIST",
+        "count":  null,
+        "date_columns":  [
+
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "CREDIT_LIST",
+        "count":  null,
+        "date_columns":  [
+
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    },
+    {
+        "table":  "presence_type",
+        "count":  null,
+        "date_columns":  [
+                             "hours",
+                             "shours"
+                         ],
+        "date_ranges":  [
+
+                        ],
+        "fill":  [
+
+                 ]
+    }
+]

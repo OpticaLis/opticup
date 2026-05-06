@@ -1,0 +1,785 @@
+﻿[
+    {
+        "bank":  "12novsale",
+        "tran":  "1",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "1TIME10",
+        "tran":  "1",
+        "qtyp":  3,
+        "redc":  10,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "ANETA10",
+        "tran":  "A",
+        "qtyp":  3,
+        "redc":  10,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "AnetaEvents5",
+        "tran":  "A",
+        "qtyp":  3,
+        "redc":  5,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "CX50REF",
+        "tran":  "C",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  50,
+        "tm":  null,
+        "str":  "MultiSale"
+    },
+    {
+        "bank":  "Gold",
+        "tran":  "G",
+        "qtyp":  23,
+        "redc":  5,
+        "reda":  10,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "INSIDER10",
+        "tran":  "I",
+        "qtyp":  3,
+        "redc":  10,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "JD15",
+        "tran":  "J",
+        "qtyp":  3,
+        "redc":  15,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "LENS-SUPERSALE-200",
+        "tran":  "L",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  200,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "LENS-SUPERSALE-400",
+        "tran":  "L",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  400,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "MultiSale",
+        "tran":  "M",
+        "qtyp":  100,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "MultiSale",
+        "tran":  "M",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "MultiSale",
+        "tran":  "M",
+        "qtyp":  200,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "Nov24Lenses",
+        "tran":  "N",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  300,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "Nov24Sale",
+        "tran":  "N",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  null,
+        "tm":  60,
+        "str":  null
+    },
+    {
+        "bank":  "RevFol10",
+        "tran":  "R",
+        "qtyp":  3,
+        "redc":  10,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "SUN-VIP-50P",
+        "tran":  "S",
+        "qtyp":  3,
+        "redc":  50,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "SuperSale",
+        "tran":  "S",
+        "qtyp":  100,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "SuperSale",
+        "tran":  "S",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "SuperSale",
+        "tran":  "S",
+        "qtyp":  200,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "VIP_Clients",
+        "tran":  "V",
+        "qtyp":  3,
+        "redc":  10,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "אגוד לישראל",
+        "tran":  "1",
+        "qtyp":  null,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "אוצר החייל",
+        "tran":  "1",
+        "qtyp":  null,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "אלמנט ימין - FRED FG50027U",
+        "tran":  "1",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  500,
+        "str":  null
+    },
+    {
+        "bank":  "אפונים",
+        "tran":  "1",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  20,
+        "str":  null
+    },
+    {
+        "bank":  "בדיקה בלבד",
+        "tran":  "2",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  200,
+        "str":  null
+    },
+    {
+        "bank":  "בדיקה לרישיון",
+        "tran":  "2",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  50,
+        "str":  null
+    },
+    {
+        "bank":  "בדיקת ראייה ביומטרית והתאמה אישית",
+        "tran":  "2",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  400,
+        "str":  null
+    },
+    {
+        "bank":  "בורג",
+        "tran":  "2",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  10,
+        "str":  null
+    },
+    {
+        "bank":  "דיסקונט לישראל",
+        "tran":  "4",
+        "qtyp":  null,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "דמי משלוח",
+        "tran":  "4",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  50,
+        "str":  null
+    },
+    {
+        "bank":  "דמי פיקדון - אירוע מותגים",
+        "tran":  "4",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  50,
+        "str":  null
+    },
+    {
+        "bank":  "הבינלאומי הראשון",
+        "tran":  "5",
+        "qtyp":  null,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "הישיר הראשון",
+        "tran":  "5",
+        "qtyp":  null,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "הלחמה",
+        "tran":  "5",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  60,
+        "str":  null
+    },
+    {
+        "bank":  "הנחת עובד",
+        "tran":  "5",
+        "qtyp":  3,
+        "redc":  20,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "הנחת פלטינום ילדים",
+        "tran":  "5",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  560,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "הנחת פלטינום מבוגרים",
+        "tran":  "5",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  480,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "הפועלים",
+        "tran":  "5",
+        "qtyp":  null,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "זוג עדשות 1.6",
+        "tran":  "7",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  300,
+        "str":  null
+    },
+    {
+        "bank":  "זיכוי חבילת Advanced Vision",
+        "tran":  "7",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  600,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "זיכוי חבילת Basic Vision",
+        "tran":  "7",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  400,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "זיכוי חבילת Individual Vision",
+        "tran":  "7",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  1200,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "זיכוי חבילת Premium Vision",
+        "tran":  "7",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  1000,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "חדש",
+        "tran":  "8",
+        "qtyp":  2,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "חדש",
+        "tran":  "8",
+        "qtyp":  9,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "חוט",
+        "tran":  "8",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  5,
+        "str":  null
+    },
+    {
+        "bank":  "חיילים קרבי במדים 2026",
+        "tran":  "8",
+        "qtyp":  3,
+        "redc":  15,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "ילדים  2 זוגות",
+        "tran":  "a",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  400,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "ילדים זוג אחד",
+        "tran":  "a",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  100,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "כללית",
+        "tran":  "b",
+        "qtyp":  1,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "כללית פלטינום",
+        "tran":  "b",
+        "qtyp":  1,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "לאומי לישראל",
+        "tran":  "c",
+        "qtyp":  null,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "לאומית",
+        "tran":  "c",
+        "qtyp":  1,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "לאומית",
+        "tran":  "c",
+        "qtyp":  2,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "לאומית - 46",
+        "tran":  "c",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  46,
+        "str":  null
+    },
+    {
+        "bank":  "מאוחדת",
+        "tran":  "d",
+        "qtyp":  1,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "מבוגרים 2 זוגות",
+        "tran":  "d",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  200,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "מבצע 1.56 מדף שקוף",
+        "tran":  "d",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  200,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "מבצע 1.6 מדף שקוף",
+        "tran":  "d",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  300,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "מבצע 1.67 מדף שקוף",
+        "tran":  "d",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  500,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "מבצע 1.74 מדף שקוף",
+        "tran":  "d",
+        "qtyp":  3,
+        "redc":  null,
+        "reda":  800,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "מבצע פסח 2022",
+        "tran":  "d",
+        "qtyp":  2,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "מוט FENDI",
+        "tran":  "d",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  280,
+        "str":  null
+    },
+    {
+        "bank":  "מזרחי המאוחד",
+        "tran":  "d",
+        "qtyp":  null,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "מכבי",
+        "tran":  "d",
+        "qtyp":  1,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "מסד",
+        "tran":  "d",
+        "qtyp":  null,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "מרכנתיל דיסקונט",
+        "tran":  "d",
+        "qtyp":  null,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "משקפיים חדש",
+        "tran":  "8",
+        "qtyp":  10,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "ניקוי במים",
+        "tran":  "e",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  30,
+        "str":  null
+    },
+    {
+        "bank":  "נעמה נחמני",
+        "tran":  "e",
+        "qtyp":  4,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "נרתיק",
+        "tran":  "e",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  20,
+        "str":  null
+    },
+    {
+        "bank":  "ספריי",
+        "tran":  "f",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  15,
+        "str":  null
+    },
+    {
+        "bank":  "פועלי אגודת ישראל",
+        "tran":  "h",
+        "qtyp":  null,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "קטי ישראל",
+        "tran":  "j",
+        "qtyp":  4,
+        "redc":  null,
+        "reda":  null,
+        "tm":  null,
+        "str":  null
+    },
+    {
+        "bank":  "קליפון",
+        "tran":  "j",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  70,
+        "str":  null
+    },
+    {
+        "bank":  "שירותי אופטיקה",
+        "tran":  "l",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  14084,
+        "str":  null
+    },
+    {
+        "bank":  "שרשרת",
+        "tran":  "l",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  20,
+        "str":  null
+    },
+    {
+        "bank":  "תוספת לאומית",
+        "tran":  "m",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  50,
+        "str":  null
+    },
+    {
+        "bank":  "תוספת תשלום",
+        "tran":  "m",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  400,
+        "str":  null
+    },
+    {
+        "bank":  "תיקון - מוט",
+        "tran":  "m",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  60,
+        "str":  null
+    },
+    {
+        "bank":  "תיקון - מוט",
+        "tran":  "m",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  50,
+        "str":  null
+    },
+    {
+        "bank":  "תיקון - עדשה",
+        "tran":  "m",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  150,
+        "str":  null
+    },
+    {
+        "bank":  "תיקון - עדשה",
+        "tran":  "m",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  100,
+        "str":  null
+    },
+    {
+        "bank":  "תיקון / יישור",
+        "tran":  "m",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  20,
+        "str":  null
+    },
+    {
+        "bank":  "תיקון חוט",
+        "tran":  "m",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  40,
+        "str":  null
+    },
+    {
+        "bank":  "תמיסה לעדשות",
+        "tran":  "m",
+        "qtyp":  31,
+        "redc":  null,
+        "reda":  null,
+        "tm":  40,
+        "str":  null
+    }
+]

@@ -1,0 +1,170 @@
+﻿[
+    {
+        "Name":  "{269FC0CB-E0CD-4356-A423-7F697AAC946E}",
+        "Table":  "employees",
+        "ForeignTable":  "presence_back",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "EmployeeID",
+                           "ForeignName":  "num"
+                       }
+                   ]
+    },
+    {
+        "Name":  "{A9D6CBC9-DF50-48B0-87CC-E69C13CCA669}",
+        "Table":  "employees",
+        "ForeignTable":  "presence",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "EmployeeID",
+                           "ForeignName":  "num"
+                       }
+                   ]
+    },
+    {
+        "Name":  "checkschecks_remarks",
+        "Table":  "checks",
+        "ForeignTable":  "checks_remarks",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "bdikanum",
+                           "ForeignName":  "bdikanumw"
+                       }
+                   ]
+    },
+    {
+        "Name":  "cust_listadchecks",
+        "Table":  "cust_list",
+        "ForeignTable":  "adchecks",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "numw",
+                           "ForeignName":  "numw"
+                       }
+                   ]
+    },
+    {
+        "Name":  "cust_listchecks",
+        "Table":  "cust_list",
+        "ForeignTable":  "checks",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "numw",
+                           "ForeignName":  "numw"
+                       }
+                   ]
+    },
+    {
+        "Name":  "cust_listorders",
+        "Table":  "cust_list",
+        "ForeignTable":  "orders",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "numw",
+                           "ForeignName":  "numw"
+                       }
+                   ]
+    },
+    {
+        "Name":  "cust_listperson_remarks",
+        "Table":  "cust_list",
+        "ForeignTable":  "person_remarks",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "numw",
+                           "ForeignName":  "numw"
+                       }
+                   ]
+    },
+    {
+        "Name":  "cust_listproposals",
+        "Table":  "cust_list",
+        "ForeignTable":  "proposals",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "numw",
+                           "ForeignName":  "numw"
+                       }
+                   ]
+    },
+    {
+        "Name":  "cust_listtb_comp",
+        "Table":  "cust_list",
+        "ForeignTable":  "tb_comp",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "numw",
+                           "ForeignName":  "wnum"
+                       }
+                   ]
+    },
+    {
+        "Name":  "cust_listtb_gnrl_tests",
+        "Table":  "cust_list",
+        "ForeignTable":  "tb_gnrl_tests",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "numw",
+                           "ForeignName":  "wnum"
+                       }
+                   ]
+    },
+    {
+        "Name":  "cust_listtb_quest",
+        "Table":  "cust_list",
+        "ForeignTable":  "tb_quest",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "numw",
+                           "ForeignName":  "wnum"
+                       }
+                   ]
+    },
+    {
+        "Name":  "ordersitems_sales",
+        "Table":  "orders",
+        "ForeignTable":  "items_sales",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "rnum",
+                           "ForeignName":  "numw"
+                       }
+                   ]
+    },
+    {
+        "Name":  "orderstb_kabala",
+        "Table":  "orders",
+        "ForeignTable":  "tb_kabala",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "rnum",
+                           "ForeignName":  "rnum"
+                       }
+                   ]
+    },
+    {
+        "Name":  "orderstb_order_rem",
+        "Table":  "orders",
+        "ForeignTable":  "tb_order_rem",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "rnum",
+                           "ForeignName":  "rnum"
+                       }
+                   ]
+    }
+]

@@ -1,0 +1,62 @@
+﻿[
+    {
+        "Name":  "{5E56D393-B62F-4EB1-90A4-D887D178692E}",
+        "Table":  "tb_zikuyim",
+        "ForeignTable":  "tb_zikuyim_detail",
+        "Attributes":  4096,
+        "Fields":  [
+                       {
+                           "Name":  "wnum",
+                           "ForeignName":  "wnum"
+                       }
+                   ]
+    },
+    {
+        "Name":  "{B5D6CDAE-4300-46A7-AA2D-8367F2A3582C}",
+        "Table":  "tb_catalog",
+        "ForeignTable":  "tb_upd_amount",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "wnum",
+                           "ForeignName":  "rnum"
+                       }
+                   ]
+    },
+    {
+        "Name":  "{B7F992E0-089E-4085-A5CB-3F6B05AD6DFE}",
+        "Table":  "tb_argaz",
+        "ForeignTable":  "tb_argaz_detail",
+        "Attributes":  4096,
+        "Fields":  [
+                       {
+                           "Name":  "wnum",
+                           "ForeignName":  "wnum"
+                       }
+                   ]
+    },
+    {
+        "Name":  "SAPAKIMTT  TELEFONE  SAPAKIM",
+        "Table":  "SAPAKIM",
+        "ForeignTable":  "TT  TELEFONE  SAPAKIM",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "CODE SAPAK",
+                           "ForeignName":  "CODE SAPAK"
+                       }
+                   ]
+    },
+    {
+        "Name":  "tb_ad_catalogtb_upd_amount",
+        "Table":  "tb_ad_catalog",
+        "ForeignTable":  "tb_upd_amount_ad",
+        "Attributes":  4352,
+        "Fields":  [
+                       {
+                           "Name":  "wnum",
+                           "ForeignName":  "rnum"
+                       }
+                   ]
+    }
+]

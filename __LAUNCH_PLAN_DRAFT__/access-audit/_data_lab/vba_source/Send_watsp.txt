@@ -1,0 +1,75 @@
+﻿Option Compare Database
+Global fsw As Boolean
+
+   
+Function SendWMessage(tel As String, strbody As String) As Boolean
+On Error GoTo out
+    Dim rst As Recordset
+    Dim url As String
+    Dim RequestBody As String
+    Dim http As Object
+    Dim token As String
+    Dim instance As String
+    
+    
+    Set dbs = CurrentDb()
+    Set rst = dbs.OpenRecordset("add_order")
+    rst.MoveFirst
+
+    If Nz(rst![waptparms]) <> "" Then
+      token = xg_GetSubString(Nz(rst![waptparms]), 1, ";")
+      instance = xg_GetSubString(Nz(rst![waptparms]), 2, ";")
+    Else
+      MsgBox "יש למלא פרטי ווצאפ תחילה", 64, "אופטיק פלוס"
+      rst.Close
+      SendWMessage = False
+      Exit Function
+    End If
+    rst.Close
+    
+     
+     tel = "972" & Mid(tel, 2)
+     tel = xg_ReplaceAllWith(tel, "-", "")
+     
+
+  '  url = "https://api.green-api.com/wAInstance7103847292/sendMessage/a9080a90e25a45d7985eaa7488babe76da5c9fd90156423bab"
+  
+  url = "https://api.green-api.com/wAInstance" & instance & "/sendMessage/" & token
+  
+  
+    RequestBody = "{""chatId"":" & """" & tel & "@c.us" & """" & ",""message"":" & """" & strbody & """" & "}"
+  
+'  Exit Function
+    Set http = CreateObject("MSXML2.ServerXMLHTTP")
+
+    With http
+        .Open "POST", url, False
+        .setRequestHeader "Content-Type", "application/json"
+        .send RequestBody
+    End With
+
+    ' Add error handling here if required
+
+    Set http = Nothing
+    SendWMessage = True
+    Exit Function
+out:
+    SendWMessage = False
+    Exit Function
+ 
+End Function
+Function q_msg(str As String) As String
+ q_msg = xg_ReplaceAllWith(str, "#", "\n")
+End Function
+Function q_wap() As Boolean
+Dim rst As Recordset
+ Set dbs = CurrentDb()
+    Set rst = dbs.OpenRecordset("add_order")
+    rst.MoveFirst
+    If Nz(rst![waptparms]) <> "" Then
+     q_wap = True
+    Else
+     q_wap = False
+    End If
+    
+End Function

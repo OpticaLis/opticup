@@ -1,0 +1,167 @@
+﻿[
+    {
+        "Name":  "del_bodeka",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.checkname = Null\r\nWHERE (((cust_list.checkname)=[Forms]![empty_tables]![bodek]));\r\n"
+    },
+    {
+        "Name":  "del_bodekb",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.dcheckname = Null\r\nWHERE (((cust_list.dcheckname)=[Forms]![empty_tables]![bodek]));\r\n"
+    },
+    {
+        "Name":  "del_kupon",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.kupon = Null\r\nWHERE (((cust_list.kupon)=nz([Forms]![f_sivug]![bank])));\r\n"
+    },
+    {
+        "Name":  "del_tb_graph",
+        "Type":  48,
+        "SQL":  "UPDATE tb_graf SET tb_graf.qnumpr = Null, tb_graf.qnumpl = Null;\r\n"
+    },
+    {
+        "Name":  "del_tb_lekohot",
+        "Type":  48,
+        "SQL":  "UPDATE tb_lekohot SET tb_lekohot.mm = Null, tb_lekohot.totl = Null, tb_lekohot.totnew = Null, tb_lekohot.perc_new = Null, tb_lekohot.multi_new = Null, tb_lekohot.flow_old = Null, tb_lekohot.flow_new = Null, tb_lekohot.flow_tot = Null;\r\n"
+    },
+    {
+        "Name":  "del_tb_ltv",
+        "Type":  48,
+        "SQL":  "UPDATE tb_ltv SET tb_ltv.mm = Null, tb_ltv.totl = Null, tb_ltv.n12 = Null, tb_ltv.n24 = Null, tb_ltv.n36 = Null, tb_ltv.totlk = Null, tb_ltv.avrgp = Null, tb_ltv.totp = Null;\r\n"
+    },
+    {
+        "Name":  "del_tb_ltv_return",
+        "Type":  48,
+        "SQL":  "UPDATE tb_ltv_return SET tb_ltv_return.mm = Null, tb_ltv_return.totl = Null, tb_ltv_return.totm = Null, tb_ltv_return.n12 = Null, tb_ltv_return.n12p = Null, tb_ltv_return.n24 = Null, tb_ltv_return.n24p = Null, tb_ltv_return.n36 = Null, tb_ltv_return.n36p = Null, tb_ltv_return.nr = Null, tb_ltv_return.nrp = Null;\r\n"
+    },
+    {
+        "Name":  "del_tb_sumlekohot",
+        "Type":  48,
+        "SQL":  "UPDATE tb_sum_lekohot SET tb_sum_lekohot.mm = Null, tb_sum_lekohot.totlk = Null, tb_sum_lekohot.totnew = Null, tb_sum_lekohot.perc_new = Null, tb_sum_lekohot.flow_tot = Null, tb_sum_lekohot.flow_old = Null, tb_sum_lekohot.perc_old = Null, tb_sum_lekohot.avg_tot = Null, tb_sum_lekohot.flow_new = Null, tb_sum_lekohot.perc_flow_new = Null, tb_sum_lekohot.ret24 = Null, tb_sum_lekohot.perc_24 = Null, tb_sum_lekohot.tot_maam = Null, tb_sum_lekohot.tot_m = Null, tb_sum_lekohot.tot_a = Null, tb_sum_lekohot.tot_am = Null, tb_sum_lekohot.perc_tot_m = Null, tb_sum_lekohot.perc_tot_a = Null, tb_sum_lekohot.perc_tot_am = Null;\r\n"
+    },
+    {
+        "Name":  "del_tb_yoman",
+        "Type":  48,
+        "SQL":  "UPDATE tb_yoman SET tb_yoman.t1 = Null, tb_yoman.eh1 = Null, tb_yoman.l1 = Null, tb_yoman.m1 = Null, tb_yoman.t2 = Null, tb_yoman.eh2 = Null, tb_yoman.l2 = Null, tb_yoman.m2 = Null, tb_yoman.t3 = Null, tb_yoman.eh3 = Null, tb_yoman.l3 = Null, tb_yoman.m3 = Null, tb_yoman.t4 = Null, tb_yoman.eh4 = Null, tb_yoman.l4 = Null, tb_yoman.m4 = Null, tb_yoman.t5 = Null, tb_yoman.eh5 = Null, tb_yoman.l5 = Null, tb_yoman.m5 = Null;\r\n"
+    },
+    {
+        "Name":  "q_birthdate_rv",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.wbdate = Null\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) And ((cust_list.bdate) Is Not Null) And ((Format(Month([bdate]),\"00\") \u0026 Format(Day([bdate]),\"00\"))\u003e=Format(Forms!birthdays!fm,\"00\") \u0026 Format(Forms!birthdays!fd,\"00\") And (Format(Month([bdate]),\"00\") \u0026 Format(Day([bdate]),\"00\"))\u003c=Format(Forms!birthdays!tm,\"00\") \u0026 Format(Forms!birthdays!td,\"00\")) And ((Year([bdate]))\u003e=Forms!birthdays!fy));\r\n"
+    },
+    {
+        "Name":  "q_birthdate_u",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.wbdate = Year(Date())\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) And ((cust_list.bdate) Is Not Null) And ((nz([wbdate]))\u003c\u003eYear(Date())) And ((Format(Month([bdate]),\"00\") \u0026 Format(Day([bdate]),\"00\"))\u003e=Format(Forms!birthdays!fm,\"00\") \u0026 Format(Forms!birthdays!fd,\"00\") And (Format(Month([bdate]),\"00\") \u0026 Format(Day([bdate]),\"00\"))\u003c=Format(Forms!birthdays!tm,\"00\") \u0026 Format(Forms!birthdays!td,\"00\")) And ((Year([bdate]))\u003e=Forms!birthdays!fy));\r\n"
+    },
+    {
+        "Name":  "q_birthdateh_rv",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.wbdate = Null\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) And ((cust_list.bdate) Is Not Null) And ((gethdatee(nz([bdate]),Forms!birthdaysheb!q))\u003e=Format(Forms!birthdaysheb!mm,\"000\") \u0026 Format(Forms!birthdaysheb!fm,\"00\") And (gethdatee(nz([bdate]),Forms!birthdaysheb!q))\u003c=Format(Forms!birthdaysheb!mm,\"000\") \u0026 Format(Forms!birthdaysheb!tm,\"00\")) And ((Year([bdate]))\u003e=IIf(nz(Forms!birthdaysheb!fy)=\"\",1900,Forms!birthdaysheb!fy)));\r\n"
+    },
+    {
+        "Name":  "q_birthdateh_u",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.wbdate = Year(Date())\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) And ((cust_list.bdate) Is Not Null) And ((nz([wbdate]))\u003c\u003eYear(Date())) And ((gethdatee(nz([bdate]),Forms!birthdaysheb!q))\u003e=Format(Forms!birthdaysheb!mm,\"000\") \u0026 Format(Forms!birthdaysheb!fm,\"00\") And (gethdatee(nz([bdate]),Forms!birthdaysheb!q))\u003c=Format(Forms!birthdaysheb!mm,\"000\") \u0026 Format(Forms!birthdaysheb!tm,\"00\")) And ((Year([bdate]))\u003e=IIf(nz(Forms!birthdaysheb!fy)=\"\",1900,Forms!birthdaysheb!fy)));\r\n"
+    },
+    {
+        "Name":  "q_check_again_rv",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.ltm = Null, cust_list.lty = Null\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) And ((Val(nz([sendb])))=-1) And ((IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))=IIf(nz(Forms!f_bdikat_maakav!chknw)\u003c\u003e\"\",Forms!f_bdikat_maakav!chknw,IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))) And ((Format((nz([lty])),\"0000\") \u0026 Format((nz([ltm])),\"00\"))=Format(Year(Date()),\"0000\") \u0026 Format(Format(Forms!f_bdikat_maakav!fm),\"00\")));\r\n"
+    },
+    {
+        "Name":  "q_check_again_rva",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.ltm = Null, cust_list.lty = Null\r\nWHERE (((cust_list.chdate) Is Not Null) And ((Val(nz([ocupation])))\u003c\u003e-1) And ((Val(nz([sendb])))=-1) And ((IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))=IIf(nz(Forms!f_bdikat_maakav!chknw)\u003c\u003e\"\",Forms!f_bdikat_maakav!chknw,IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))) And ((Format((nz([lty])),\"0000\") \u0026 Format((nz([ltm])),\"00\"))=Format(Year(Date()),\"0000\") \u0026 Format(Format(Forms!f_bdikat_maakav!fm),\"00\")));\r\n"
+    },
+    {
+        "Name":  "q_check_again_rvm",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.ltm = Null, cust_list.lty = Null\r\nWHERE (((cust_list.cdate) Is Not Null) And ((Val(nz([ocupation])))\u003c\u003e-1) And ((Val(nz([sendb])))=-1) And ((IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))=IIf(nz(Forms!f_bdikat_maakav!chknw)\u003c\u003e\"\",Forms!f_bdikat_maakav!chknw,IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))) And ((Format((nz([lty])),\"0000\") \u0026 Format((nz([ltm])),\"00\"))=Format(Year(Date()),\"0000\") \u0026 Format(Format(Forms!f_bdikat_maakav!fm),\"00\")));\r\n"
+    },
+    {
+        "Name":  "q_check_again_u",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.ltm = [Forms]![f_bdikat_maakav]![fm], cust_list.lty = Year(Date()), cust_list.swd = False\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) AND ((Val(nz([sendb])))=-1) AND ((IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))=IIf(nz([Forms]![f_bdikat_maakav]![chknw])\u003c\u003e\"\",[Forms]![f_bdikat_maakav]![chknw],IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))) AND ((Format((nz([lty])),\"0000\") \u0026 Format((nz([ltm])),\"00\"))=\"\" Or (Format((nz([lty])),\"0000\") \u0026 Format((nz([ltm])),\"00\"))\u003cFormat(Year(Date()),\"0000\") \u0026 Format([Forms]![f_bdikat_maakav]![fm],\"00\")) AND ((IIf(nz([Forms]![f_bdikat_maakav]![fmw])=\"\",(IIf([swb]=True,Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12))),(IIf([swb]=True,((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12)))))\u003e0 And (IIf(nz([Forms]![f_bdikat_maakav]![fmw])=\"\",(IIf([swb]=True,Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12))),(IIf([swb]=True,((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12)))))=IIf([swb]=True,Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12)) And (IIf(nz([Forms]![f_bdikat_maakav]![fmw])=\"\",(IIf([swb]=True,Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12))),(IIf([swb]=True,((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12)))))\u003c=Val(nz([Forms]![f_bdikat_maakav]![qfy]))));\r\n"
+    },
+    {
+        "Name":  "q_check_again_ua",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.ltm = [Forms]![f_bdikat_maakav]![fm], cust_list.lty = Year(Date()), cust_list.swd = False\r\nWHERE (((cust_list.chdate) Is Not Null) AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((Val(nz([sendb])))=-1) AND ((IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))=IIf(nz([Forms]![f_bdikat_maakav]![chknw])\u003c\u003e\"\",[Forms]![f_bdikat_maakav]![chknw],IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))) AND ((Format((nz([lty])),\"0000\") \u0026 Format((nz([ltm])),\"00\"))=\"\" Or (Format((nz([lty])),\"0000\") \u0026 Format((nz([ltm])),\"00\"))\u003cFormat(Year(Date()),\"0000\") \u0026 Format([Forms]![f_bdikat_maakav]![fm],\"00\")) AND ((IIf(nz([Forms]![f_bdikat_maakav]![fmw])=\"\",(IIf([swb]=True,Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12))),(IIf([swb]=True,((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12)))))\u003e0 And (IIf(nz([Forms]![f_bdikat_maakav]![fmw])=\"\",(IIf([swb]=True,Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12))),(IIf([swb]=True,((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12)))))=IIf([swb]=True,Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12)) And (IIf(nz([Forms]![f_bdikat_maakav]![fmw])=\"\",(IIf([swb]=True,Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12))),(IIf([swb]=True,((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12)))))\u003c=Val(nz([Forms]![f_bdikat_maakav]![qfy]))));\r\n"
+    },
+    {
+        "Name":  "q_check_again_um",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.ltm = [Forms]![f_bdikat_maakav]![fm], cust_list.lty = Year(Date()), cust_list.swd = False\r\nWHERE (((cust_list.cdate) Is Not Null) AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((Val(nz([sendb])))=-1) AND ((IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))=IIf(nz([Forms]![f_bdikat_maakav]![chknw])\u003c\u003e\"\",[Forms]![f_bdikat_maakav]![chknw],IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))) AND ((Format((nz([lty])),\"0000\") \u0026 Format((nz([ltm])),\"00\"))=\"\" Or (Format((nz([lty])),\"0000\") \u0026 Format((nz([ltm])),\"00\"))\u003cFormat(Year(Date()),\"0000\") \u0026 Format([Forms]![f_bdikat_maakav]![fm],\"00\")) AND ((IIf(nz([Forms]![f_bdikat_maakav]![fmw])=\"\",(IIf([swb]=True,Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12))),(IIf([swb]=True,((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12)))))\u003e0 And (IIf(nz([Forms]![f_bdikat_maakav]![fmw])=\"\",(IIf([swb]=True,Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12))),(IIf([swb]=True,((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12)))))=IIf([swb]=True,Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12)) And (IIf(nz([Forms]![f_bdikat_maakav]![fmw])=\"\",(IIf([swb]=True,Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),Int((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12))),(IIf([swb]=True,((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/6),((DateDiff(\"m\",IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]),DateValue(Format(([Forms]![f_bdikat_maakav]![fm] \u0026 \"/\" \u0026 \"01\" \u0026 \"/\" \u0026 Year(Date())),\"mm/dd/yyyy\"))))/12)))))\u003c=Val(nz([Forms]![f_bdikat_maakav]![qfy]))));\r\n"
+    },
+    {
+        "Name":  "q_insw_u",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.aswb = True\r\nWHERE (((cust_list.aswb)=False) AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((cust_list.cleandate) Is Not Null) AND ((DateAdd(\"m\",-1,[cleandate]))\u003c=Date()) AND ((DateAdd(\"d\",+14,[cleandate]))\u003e=Date()));\r\n"
+    },
+    {
+        "Name":  "q_insw_un",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.aswb = False\r\nWHERE (((cust_list.aswb)=True) AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((cust_list.cleandate) Is Not Null) AND ((DateAdd(\"m\",-1,[cleandate]))\u003c=Date()) AND ((DateAdd(\"d\",+14,[cleandate]))\u003e=Date()));\r\n"
+    },
+    {
+        "Name":  "q_inv_u",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.swd = True\r\nWHERE (((cust_list.swd)=False) AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((DateAdd(\"ww\",-1,[insdate]))\u003c=Date()));\r\n"
+    },
+    {
+        "Name":  "q_inv_un",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.swd = False\r\nWHERE (((cust_list.swd)=True) AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((DateAdd(\"ww\",-1,[insdate]))\u003c=Date()));\r\n"
+    },
+    {
+        "Name":  "qlist_qmaga_upd",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list INNER JOIN orders ON cust_list.numw=orders.numw SET orders.swo = False\r\nWHERE (((orders.swo)=True) AND ((DateDiff(\"d\",Date(),[gdate]))\u003c=7));\r\n"
+    },
+    {
+        "Name":  "sw_tb_labels",
+        "Type":  48,
+        "SQL":  "UPDATE tb_labels SET tb_labels.sw = True;\r\n"
+    },
+    {
+        "Name":  "upd_cust_close",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.cust_open = False\r\nWHERE (((cust_list.cust_open)=True));\r\n"
+    },
+    {
+        "Name":  "upd_details",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.address = [Forms]![customers]![address], cust_list.city = [Forms]![customers]![city], cust_list.area = [Forms]![customers]![area], cust_list.tel = [Forms]![customers]![tel], cust_list.sel = [Forms]![customers]![sel], cust_list.khist = [Forms]![customers]![khist]\r\nWHERE (((cust_list.number)=Forms!customers!number And (cust_list.number)\u003c\u003e0) And ((cust_list.numw)\u003c\u003eForms!customers!numw));\r\n"
+    },
+    {
+        "Name":  "upd_orders_num",
+        "Type":  48,
+        "SQL":  "UPDATE orders SET orders.[number] = [Forms]![customers]![number]\r\nWHERE (((orders.numw)=[Forms]![customers]![norders]));\r\n"
+    },
+    {
+        "Name":  "upd_swkp",
+        "Type":  48,
+        "SQL":  "UPDATE orders SET orders.swkp = False\r\nWHERE (((orders.numw)=[Forms]![person_orders_list]![numw]));\r\n"
+    },
+    {
+        "Name":  "upd_tb_graph",
+        "Type":  48,
+        "SQL":  "UPDATE tb_graf INNER JOIN qsclera_all ON tb_graf.gil=qsclera_all.gil SET tb_graf.qnumpr = [qnumr], tb_graf.qnumpl = [qnuml];\r\n"
+    },
+    {
+        "Name":  "updsc",
+        "Type":  48,
+        "SQL":  "UPDATE tb_catalog SET tb_catalog.amount = [amounts]\r\nWHERE (((tb_catalog.amounts)\u003c\u003e0));\r\n"
+    },
+    {
+        "Name":  "updsd",
+        "Type":  48,
+        "SQL":  "UPDATE tb_catalog SET tb_catalog.amounts = Null;\r\n"
+    },
+    {
+        "Name":  "void_old_cust",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.ocupation = \"-1\"\r\nWHERE (((IIf(nz([cust_list]![cdate])\u003enz([cust_list]![chdate]),[cust_list]![cdate],[cust_list]![chdate])) Is Not Null And (IIf(nz([cust_list]![cdate])\u003enz([cust_list]![chdate]),[cust_list]![cdate],[cust_list]![chdate]))\u003e=[Forms]![empty_tables]![fwdate] And (IIf(nz([cust_list]![cdate])\u003enz([cust_list]![chdate]),[cust_list]![cdate],[cust_list]![chdate]))\u003c=[Forms]![empty_tables]![twdate]));\r\n"
+    }
+]

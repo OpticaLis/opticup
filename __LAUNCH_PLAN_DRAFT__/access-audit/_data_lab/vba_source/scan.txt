@@ -1,0 +1,239 @@
+﻿Option Compare Database
+Public Function scana(fldr As String, fn As String) As Boolean
+On Error GoTo out
+
+  Dim objCommonDialog As WIA.CommonDialog
+  Dim objImage As WIA.ImageFile
+  Dim strFilePath As String
+  ' instantiate Scan WIA objects
+  Set objCommonDialog = New WIA.CommonDialog
+  Set objImage = objCommonDialog.ShowAcquireImage
+' strFilePath = Environ$("TEMP") & "\Scan.bmp" ' set temporary file
+strFilePath = fldr & fn & ".tif" ' set temporary file
+
+  If Not objImage Is Nothing Then
+   If Dir(strFilePath) <> "" Then Kill strFilePath
+   objImage.SaveFile strFilePath 'save into temp file
+   DoEvents
+  End If
+
+out:
+End Function
+Public Function scanb(fldr As String, fn As String) As Boolean
+On Error GoTo out
+Dim wiaImg As New WIA.ImageFile
+Dim wiaDialog As New WIA.CommonDialog
+Dim wiaScanner As WIA.Device
+Dim strFilePath As String
+Dim strFilename As String
+
+Set wiaScanner = wiaDialog.ShowSelectDevice
+
+With wiaScanner.Items(1)
+' Scammer Options you can set
+ '   .Properties("6146").Value = 1 '4 is Black-white,gray is 2, color 1 (Color Intent)
+'    .Properties("6147").Value = 100 'dots per inch/horizontal
+'    .Properties("6148").Value = 100 'dots per inch/vertical
+'    .Properties("6149").Value = 0 'x point where to start scan
+'    .Properties("6150").Value = 0 'y-point where to start scan
+'
+' Paper sizes. This is a 4x6 photo.BrowseFolder
+ '   .Properties("6151").Value = 400 'horizontal DPI x inches wide
+ '   .Properties("6152").Value = 600 'vertical DPI x inches tall
+    
+' Available formats
+' wiaFormatBMP, wiaFormatPNG, wiaFormatGIF, wiaFormatJPEG, wiaFormatTIFF
+' Change file file extension in strFilename to match format
+Set wiaImg = wiaScanner.Items(1).Transfer(wiaFormatJPEG)
+
+' Make sure its saved as correct format, not bmp
+If wiaImg.FormatID <> wiaFormatJPEG Then
+    Dim IP 'As New ImageProcess
+    Set IP = CreateObject("Wia.ImageProcess")
+    
+    IP.Filters.Add IP.FilterInfos("Convert").FilterID
+    IP.Filters(1).Properties("FormatID").Value = wiaFormatJPEG
+    Set wiaImg = IP.Apply(wiaImg)
+End If
+
+End With
+
+'Set the filename
+'strFilename = "Scan-" & Format(Now, "yyyymmddhhmm") & ".tif"
+
+' set the file path
+strFilePath = fldr & fn & ".jpg" ' set temporary file
+DoCmd.SetWarnings False
+DoCmd.OpenQuery "del_tb_email"
+DoCmd.SetWarnings True
+Set dbs = CurrentDb()
+Set rst = dbs.OpenRecordset("tb_email")
+' Check if filename exists, if so, delete before saving new
+    If Dir(strFilePath) <> "" Then Kill strFilePath
+      wiaImg.SaveFile strFilePath 'save into temp file
+    DoEvents
+    rst.AddNew
+    rst![qemail] = strFilePath
+    rst.Update
+    rst.Close
+    scanb = True
+    Exit Function
+    
+out:
+    scanb = False
+End Function
+Public Function FeederSacan(fldr As String, fn As String) As Boolean
+'Scan more than one sheet of scanner at once from feedr
+'----------------------
+'Must include reference to Microsoft Windows Image Acquisition 2.0 dll
+'                        -----------------------------------------------
+''Create variables to handle the scanner
+'On Error GoTo Handle_Err
+Dim ComDialog As New WIA.CommonDialog, DPI As Integer, pp As Integer, l As Integer
+Dim wiaScanner As WIA.Device
+Dim wiaImg As WIA.ImageFile
+Dim intPages As Integer
+Dim strFileJPG As String
+Dim rsParent As DAO.Recordset2
+Dim rsChild As DAO.Recordset2
+Dim blnContScan As Boolean
+'Dim ContScan As String    'msgbox to chk if more pages are to be scanned
+Dim strFilePDF As String
+Dim RptName As String
+Dim strProcName As String
+Dim picfullname
+strProcName = "ScanDocs"
+blnContScan = False
+Dim Counter As Integer
+On Error Resume Next
+    Kill fldr & "1\" & "*.*"
+    RmDir (fldr & "1")
+On Error GoTo Handle_Err
+    MkDir (fldr & "1")
+    DoCmd.SetWarnings False
+    DoCmd.OpenQuery "del_tb_email"
+    DoCmd.SetWarnings True
+    Set dbs = CurrentDb()
+    Set rst = dbs.OpenRecordset("tb_email")
+    'The value of the image resolution is 150,200,300,400,500,600,1200 - I have a scanner (HP ScanJet Pro 2500 )
+    'Store the value of the image resolution in the (DPI) variable.
+    'The value of the image resolution comes from  table (DPI) field [DPI]
+    DPI = 200
+ 
+   
+ 
+  Set ComDialog = New WIA.CommonDialog
+'  Set wiaScanner = ComDialog.ShowSelectDevice(WiaDeviceType.UnspecifiedDeviceType, False, True)
+Counter = 0 'A variable that stores the number of scans, to add to the image name
+
+'With wiaScanner.Items(1)
+'         Scanner.Properties("3088").Value = 1 'Automatic Document Feeder
+        'Adjust image settings
+        'The Colour of the image  comes from  table (DPI) field [Colour]
+'        .Properties("6146").Value = DLookup("[Colour]", "DPI") 'Colour intent (1 for color, 2 for grayscale, 4 for b & w)
+'        The value of the image resolution comes from (DPI) variable - horizontal and vertical
+'        .Properties("6147").Value = DPI 'DPI horizontal
+'        .Properties("6148").Value = DPI 'DPI vertical
+'        Scan start point
+'        .Properties("6149").Value = 0 'x point to start scan
+'        .Properties("6150").Value = 0 'y point to start scan
+'        Scan end  point Horizontal comes from table (DPI) field [Horizontal]
+'        .Properties("6151").Value = DLookup("[Horizontal]", "DPI") * DPI 'Horizontal extent -A4 = 8.5
+'        Scan end  point Vertical comes from table (DPI) field [Vertical]
+'        .Properties("6152").Value = DLookup("[Vertical]", "DPI") * DPI     'Vertical extent for letter -A4 = 11
+
+'  Dim DialogScan As New WIA.CommonDialog, DPI As Integer, pp As Integer, l    As Integer
+    
+    
+    Set wiaScanner = ComDialog.ShowSelectDevice(WIA.WiaDeviceType.ScannerDeviceType, False, False)
+
+    'set properties device
+        wiaScanner.Properties("3088").Value = 1 'Automatic Document Feeder
+        wiaScanner.Items(1).Properties("6146").Value = 1 'Colour intent
+        wiaScanner.Items(1).Properties("6147").Value = DPI 'DPI horizontal
+        wiaScanner.Items(1).Properties("6148").Value = DPI 'DPI vertical
+        wiaScanner.Items(1).Properties("6149").Value = 0 'x point to start scan
+        wiaScanner.Items(1).Properties("6150").Value = 0 'y point to start scan
+        wiaScanner.Items(1).Properties("6151").Value = 8.27 * DPI  'Horizontal extent
+        wiaScanner.Items(1).Properties("6152").Value = 11.7 * DPI    'Vertical extent for A4
+      '  wiaScanner.Items(1).Properties("6154").Value = 80 'brightness
+      '  Scanner.Items(1).Properties("6155").Value = 30 'contrast
+
+'End With
+
+        'The scanning process will be repeated until the paper runs out of the feed (Start)
+        'Start Scan if err number -2145320957 Scan document finish
+        Do While err.number <> -2145320957 'error number is ADF status don't feed document
+   
+      ' On Error GoTo here
+            Counter = Counter + 1
+' Set the image name and the full path - it is the variable with the main path, then a folder with the name of the current record code, then add the current time and date in the custom format and number in variable (Counter)
+
+        picfullname = fldr & "1\" & Format(Now, "d-m-yy_h-n-s") & "-" & Counter & ".jpg"
+        
+'        Scanning step of the image from the scanner
+
+        Set wiaImg = wiaScanner.Items(1).Transfer(WIA.FormatID.wiaFormatJPEG)
+  
+      '    Set wiaImg = wiaScanner.Items(1).Transfer(WIA.FormatID.wiaFormatTIFF)
+        '    save image in the path in variable (picfullname)
+       
+            wiaImg.SaveFile picfullname
+           
+'           empty variables from the last-image data
+            Set wiaImg = Nothing
+          
+         
+            If err.number <> -2145320957 Then
+             rst.AddNew
+             rst![qemail] = picfullname
+             rst.Update
+             blnContScan = True
+            End If
+ Loop
+ 
+ 
+'here:
+           
+ 'End of scan repeat code from feedr
+'rst.Close
+'FeederSacan = True
+
+Handle_Exit:
+   
+    Exit Function
+
+
+Handle_Err:
+
+    Select Case err.number
+        Case -2145320957
+            If blnContScan = True Then
+             rst.Close
+             FeederSacan = True
+             Resume Handle_Exit
+            Else
+              MsgBox "Oops! Something went wrong." & vbCrLf & vbCrLf & _
+             "In Function:" & vbTab & strProcName & vbCrLf & _
+             "Err Number: " & vbTab & err.number & vbCrLf & _
+             "Description: " & vbTab & err.Description, 0, _
+             "Error in " & Chr$(34) & strProcName & Chr$(34)
+             FeederSacan = False
+             Resume Handle_Exit
+            End If
+        Case 2501
+            FeederSacan = False
+            Resume Handle_Exit
+       Case Else
+            MsgBox "Oops! Something went wrong." & vbCrLf & vbCrLf & _
+            "In Function:" & vbTab & strProcName & vbCrLf & _
+            "Err Number: " & vbTab & err.number & vbCrLf & _
+            "Description: " & vbTab & err.Description, 0, _
+            "Error in " & Chr$(34) & strProcName & Chr$(34)
+            
+            FeederSacan = False
+           Resume Handle_Exit
+       End Select
+            FeederSacan = False
+            Resume Handle_Exit
+End Function

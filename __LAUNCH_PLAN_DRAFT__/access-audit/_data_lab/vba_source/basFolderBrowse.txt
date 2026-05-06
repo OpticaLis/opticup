@@ -1,0 +1,26 @@
+﻿Option Compare Database
+Option Explicit
+Global f As Object
+
+
+Function BrowseFolder() As Variant
+On Error GoTo out
+Dim strDBDir As String
+  Set f = Application.FileDialog(4)
+   f.AllowMultiSelect = True
+   f.Show
+   strDBDir = Trim$(f.SelectedItems(1))
+   strDBDir = Trim(Nz(strDBDir))
+   
+ If Nz(strDBDir) <> "" Then
+  If Mid(strDBDir, Len(strDBDir), 1) <> "\" Then
+     strDBDir = strDBDir & "\"
+  End If
+  BrowseFolder = strDBDir
+ Else
+  BrowseFolder = Null
+ End If
+out:
+ End Function
+
+

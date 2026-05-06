@@ -1,0 +1,80 @@
+﻿Option Compare Database
+Private sURL As String
+    
+    Private un As String
+    Private pw As String
+    Private accid As String
+    Private sysPW As String
+    Private t As String
+
+    Private txtUserCellular As String
+    Private destination As String
+    Private txtSMSmessage As String
+    Private dteToDeliver As String
+'Public Function SendSms(Ito As String, msg As String, Optional fromt As String) As Boolean
+'On Error GoTo out
+'    Dim msgSms
+'
+'Dim sURL, un, pw, accid, sysPW
+'Dim txtUserCellular, destination, txtSMSmessage, dteToDeliver
+'
+' sURL = "https://sapi.itnewsletter.co.il/WebServices/webserviceSMS.asmx?WSDL"
+'
+'
+'Set dbs = CurrentDb()
+'Set rst = dbs.OpenRecordset("add_order")
+' rst.MoveFirst
+'
+' If Nz(rst![smsparms]) <> "" Then
+'  un = xg_GetSubString(Nz(rst![smsparms]), 1, ";")
+'  pw = xg_GetSubString(Nz(rst![smsparms]), 2, ";")
+'  accid = xg_GetSubString(Nz(rst![smsparms]), 3, ";")
+'  txtUserCellular = xg_GetSubString(Nz(rst![smsparms]), 4, ";")
+'  sysPW = "itnewslettrSMS"
+' End If
+' rst.Close
+'
+'
+'
+'
+'    destination = Ito
+'    txtSMSmessage = msg
+'    dteToDeliver = ""
+'
+'     Dim objSClient As SoapClient30
+'
+'    ' Point the SOAP API to the web service that we want to call...'
+'    Set objSClient = New SoapClient30
+'
+'    Call objSClient.MSSoapInit(par_WSDLFile:=sURL)
+'    ' Call the web service's web method
+'    Dim smscost As Integer
+'
+'    msgSms = objSClient.sendSMSrecipients(un, pw, accid, sysPW, t, txtUserCellular, destination, txtSMSmessage, dteToDeliver)
+'    Set objSClient = Nothing
+'
+'    SendSms = True
+'    Exit Function
+'
+'out:
+'   SendSms = False
+'End Function
+Function wpp(str As String, ph As String) As Boolean
+On Error GoTo out
+    Dim IE As Object
+    Dim WaitUntil
+    Set IE = CreateObject("InternetExplorer.Application") 'Create object IE
+    IE.navigate "whatsapp://send?phone=" & ph & "&text= " & str  'Send message "something" to this phone (Brazil)
+  '  Application.Wait Now() + TimeSerial(0, 0, 3) 'ok just one wait and sendkeys :v
+    WaitUntil = Now() + TimeSerial(0, 0, 3)
+    Do
+      DoEvents
+    Loop Until Now >= WaitUntil
+    SendKeys "~"
+    'IE.Quit 'The navigate already kills the IE
+    Set IE = Nothing 'Clear the object
+    wpp = True
+    Exit Function
+out:
+    wpp = False
+End Function

@@ -1,0 +1,298 @@
+﻿[
+    {
+        "Table":  "order_list",
+        "Name":  "code",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "code"
+    },
+    {
+        "Table":  "order_list",
+        "Name":  "ordernum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "ordernum"
+    },
+    {
+        "Table":  "order_list",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "resp_name",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "SAPAKIM",
+        "Name":  "PrimaryKey",
+        "Primary":  true,
+        "Unique":  true,
+        "Required":  true,
+        "Fields":  "CODE SAPAK"
+    },
+    {
+        "Table":  "SAPAKIM",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "SAPAKIM",
+        "Name":  "מוסדותקוד מוסד",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "CODE SAPAK"
+    },
+    {
+        "Table":  "SAPAKIM",
+        "Name":  "קוד סניף",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "SHEM SAPAK"
+    },
+    {
+        "Table":  "tb_ad_catalog",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_argaz",
+        "Name":  "barcode",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "barcode"
+    },
+    {
+        "Table":  "tb_argaz",
+        "Name":  "num",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "num"
+    },
+    {
+        "Table":  "tb_argaz",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_argaz_detail",
+        "Name":  "{B7F992E0-089E-4085-A5CB-3F6B05AD6DFE}",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_argaz_detail",
+        "Name":  "barcode",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "catg"
+    },
+    {
+        "Table":  "tb_argaz_detail",
+        "Name":  "order_num",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "order_num"
+    },
+    {
+        "Table":  "tb_argaz_detail",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_argaz_detail",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_catalog",
+        "Name":  "barcode",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "barcode"
+    },
+    {
+        "Table":  "tb_catalog",
+        "Name":  "incode",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "incode"
+    },
+    {
+        "Table":  "tb_catalog",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_upd_amount",
+        "Name":  "{B5D6CDAE-4300-46A7-AA2D-8367F2A3582C}",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_upd_amount",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_upd_amount",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_upd_amount_ad",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_upd_amount_ad",
+        "Name":  "tb_ad_catalogtb_upd_amount",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_upd_amount_ad",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_zikuyim",
+        "Name":  "num",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "num"
+    },
+    {
+        "Table":  "tb_zikuyim",
+        "Name":  "num_k",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "num_k"
+    },
+    {
+        "Table":  "tb_zikuyim",
+        "Name":  "numd",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "numd"
+    },
+    {
+        "Table":  "tb_zikuyim",
+        "Name":  "nump",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "nump"
+    },
+    {
+        "Table":  "tb_zikuyim",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_zikuyim_detail",
+        "Name":  "{5E56D393-B62F-4EB1-90A4-D887D178692E}",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_zikuyim_detail",
+        "Name":  "barcode",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "godel"
+    },
+    {
+        "Table":  "tb_zikuyim_detail",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_zikuyim_detail",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "TT  TELEFONE  SAPAKIM",
+        "Name":  "CODE SAPAK",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "CODE SAPAK"
+    },
+    {
+        "Table":  "TT  TELEFONE  SAPAKIM",
+        "Name":  "SAPAKIMTT  TELEFONE  SAPAKIM",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "CODE SAPAK"
+    }
+]

@@ -1,0 +1,586 @@
+﻿[
+    {
+        "Table":  "adchecks",
+        "Name":  "bdikanum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "bdikanum"
+    },
+    {
+        "Table":  "adchecks",
+        "Name":  "cust_listadchecks",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "adchecks",
+        "Name":  "numw",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "add_num",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "add_order",
+        "Name":  "order_num",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "prop_num"
+    },
+    {
+        "Table":  "add_order",
+        "Name":  "order_num1",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "worder_num"
+    },
+    {
+        "Table":  "add_order",
+        "Name":  "prop_num",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wprop_num"
+    },
+    {
+        "Table":  "add_order",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "order_num"
+    },
+    {
+        "Table":  "BANK_LIST",
+        "Name":  "bank",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "tran"
+    },
+    {
+        "Table":  "checks",
+        "Name":  "bdikanum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "bdikanum"
+    },
+    {
+        "Table":  "checks",
+        "Name":  "cust_listchecks",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "checks",
+        "Name":  "numw",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "checks_remarks",
+        "Name":  "checkschecks_remarks",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "bdikanumw"
+    },
+    {
+        "Table":  "checks_remarks",
+        "Name":  "numw",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "bdikanumw"
+    },
+    {
+        "Table":  "checks_remarks",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "CREDIT_LIST",
+        "Name":  "credit",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "tran"
+    },
+    {
+        "Table":  "cust_list",
+        "Name":  "numw",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "cust_list",
+        "Name":  "PrimaryKey",
+        "Primary":  true,
+        "Unique":  true,
+        "Required":  true,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "cust_listb",
+        "Name":  "number",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "number"
+    },
+    {
+        "Table":  "cust_listb",
+        "Name":  "numw",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "cust_listb",
+        "Name":  "PrimaryKey",
+        "Primary":  true,
+        "Unique":  true,
+        "Required":  true,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "employees",
+        "Name":  "PrimaryKey",
+        "Primary":  true,
+        "Unique":  true,
+        "Required":  true,
+        "Fields":  "EmployeeID"
+    },
+    {
+        "Table":  "employees",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "items_sales",
+        "Name":  "EmployeeID",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "EmployeeID"
+    },
+    {
+        "Table":  "items_sales",
+        "Name":  "ordersitems_sales",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "items_sales",
+        "Name":  "wrnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wrnum"
+    },
+    {
+        "Table":  "orders",
+        "Name":  "cust_listorders",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "orders",
+        "Name":  "EmployeeID",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "EmployeeID"
+    },
+    {
+        "Table":  "orders",
+        "Name":  "numw",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "number"
+    },
+    {
+        "Table":  "orders",
+        "Name":  "numw1",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "orders",
+        "Name":  "ordernum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "ordernum"
+    },
+    {
+        "Table":  "orders",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "person_remarks",
+        "Name":  "cust_listperson_remarks",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "person_remarks",
+        "Name":  "numw",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "presence",
+        "Name":  "{A9D6CBC9-DF50-48B0-87CC-E69C13CCA669}",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "num"
+    },
+    {
+        "Table":  "presence",
+        "Name":  "num",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "num"
+    },
+    {
+        "Table":  "presence",
+        "Name":  "qvalid",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "qvalid"
+    },
+    {
+        "Table":  "presence",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "presence_back",
+        "Name":  "{269FC0CB-E0CD-4356-A423-7F697AAC946E}",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "num"
+    },
+    {
+        "Table":  "presence_back",
+        "Name":  "num",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "num"
+    },
+    {
+        "Table":  "presence_type",
+        "Name":  "pnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "pnum"
+    },
+    {
+        "Table":  "proposals",
+        "Name":  "cust_listproposals",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "proposals",
+        "Name":  "incode",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "incode"
+    },
+    {
+        "Table":  "proposals",
+        "Name":  "numw1",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "numw"
+    },
+    {
+        "Table":  "proposals",
+        "Name":  "ordernum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "propnum"
+    },
+    {
+        "Table":  "proposals",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_comp",
+        "Name":  "cust_listtb_comp",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_comp",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_comp",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_date_list",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_gnrl_tests",
+        "Name":  "cust_listtb_gnrl_tests",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_gnrl_tests",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_gnrl_tests",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_hsapakim",
+        "Name":  "code_sapak",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "code_sapak"
+    },
+    {
+        "Table":  "tb_hsapakim",
+        "Name":  "hnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "hnum"
+    },
+    {
+        "Table":  "tb_hsapakim",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_kabala",
+        "Name":  "orderstb_kabala",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_kabala",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_kabala",
+        "Name":  "wnum1",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_log",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_order_rem",
+        "Name":  "orderstb_order_rem",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_order_rem",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_order_rem",
+        "Name":  "wnum1",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_q_checks",
+        "Name":  "cnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "hnum1"
+    },
+    {
+        "Table":  "tb_q_checks",
+        "Name":  "code_sapak",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "code_sapak"
+    },
+    {
+        "Table":  "tb_q_checks",
+        "Name":  "hnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "cnum"
+    },
+    {
+        "Table":  "tb_q_checks",
+        "Name":  "hnum1",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "hnum2"
+    },
+    {
+        "Table":  "tb_q_checks",
+        "Name":  "hnum11",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "hnum3"
+    },
+    {
+        "Table":  "tb_q_checks",
+        "Name":  "hnum12",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "hnum4"
+    },
+    {
+        "Table":  "tb_q_checks",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_quest",
+        "Name":  "cust_listtb_quest",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wnum"
+    },
+    {
+        "Table":  "tb_quest",
+        "Name":  "rnum",
+        "Primary":  false,
+        "Unique":  true,
+        "Required":  false,
+        "Fields":  "rnum"
+    },
+    {
+        "Table":  "tb_quest",
+        "Name":  "wnum",
+        "Primary":  false,
+        "Unique":  false,
+        "Required":  false,
+        "Fields":  "wnum"
+    }
+]

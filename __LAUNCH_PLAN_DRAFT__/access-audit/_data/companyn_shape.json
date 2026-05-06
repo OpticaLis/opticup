@@ -1,0 +1,17 @@
+﻿{
+    "name_len":  28,
+    "adr_len":  7,
+    "tel_len":  10,
+    "pr":  true,
+    "tym":  true,
+    "rpt":  false,
+    "msrd":  false,
+    "kupar":  true,
+    "ax":  false,
+    "qpd":  true,
+    "catg":  true,
+    "num_snif":  1,
+    "qosek_len":  0,
+    "sivug_len":  0,
+    "btxt_len":  0
+}

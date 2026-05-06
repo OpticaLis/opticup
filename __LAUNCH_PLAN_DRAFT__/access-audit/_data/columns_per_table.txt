@@ -1,0 +1,882 @@
+﻿============================================================
+TABLE: adchecks  (cols=34)
+============================================================
+  0  cnrtype                    Text            [50] ..
+  1  cnrcomp                    Text            [50] ..
+  2  cnrbc                      Text            [50] ..
+  3  cnrkoter                   Text            [10] ..
+  4  cnrsph                     Text            [50] ..
+  5  cnrcyl                     Text            [50] ..
+  6  cnradd                     Text            [10] ..
+  7  cnraxis                    Long            [4] ..
+  8  cnrvisus                   Text            [50] ..
+  9  cnltype                    Text            [50] ..
+  10 cnlcomp                    Text            [50] ..
+  11 cnlbc                      Text            [50] ..
+  12 cnlkoter                   Text            [10] ..
+  13 cnlsph                     Text            [50] ..
+  14 cnlcyl                     Text            [50] ..
+  15 cnlaxis                    Long            [4] ..
+  16 cnladd                     Text            [10] ..
+  17 cnlvisus                   Text            [50] ..
+  18 cnvisus                    Text            [50] ..
+  19 cadcheckname               Text            [50] ..
+  20 caddate                    Date/Time       [8] ..
+  21 remark                     Memo             ..
+  22 numw                       Long            [4] ..
+  23 bdikanum                   Long            [4] ..
+  24 bdka                       Boolean         [1] ..
+  25 cnror                      Text            [255] ..
+  26 cnlor                      Text            [255] ..
+  27 cnrorv                     Text            [255] ..
+  28 cnlorv                     Text            [255] ..
+  29 cnrktr                     Text            [255] ..
+  30 cnlktr                     Text            [255] ..
+  31 qtyp                       Text            [255] ..
+  32 cyeda                      Text            [255] ..
+  33 qdomin                     Text            [50] ..
+
+============================================================
+TABLE: add_num  (cols=1)
+============================================================
+  0  wnum                       Long            [4] ..
+
+============================================================
+TABLE: add_order  (cols=25)
+============================================================
+  0  order_num                  Long            [4] ..
+  1  prop_num                   Long            [4] ..
+  2  wprop_num                  Long            [4] ..
+  3  worder_num                 Long            [4] ..
+  4  maam                       Double          [8] ..
+  5  maamal                     Double          [8] ..
+  6  pathw                      Text            [255] ..
+  7  genremk                    Memo             ..
+  8  ncopy                      Integer         [2] ..
+  9  igul                       Boolean         [1] ..
+  10 wmaam                      Boolean         [1] ..
+  11 qhourw                     Date/Time       [8] ..
+  12 qinterval                  Integer         [2] ..
+  13 qstop                      Boolean         [1] ..
+  14 sern                       Text            [255] ..
+  15 teur1                      Memo             ..
+  16 teur2                      Memo             ..
+  17 mlm                        Boolean         [1] ..
+  18 lab                        Boolean         [1] ..
+  19 emp                        Boolean         [1] ..
+  20 mlmw                       Boolean         [1] ..
+  21 smsparms                   Text            [255] ..
+  22 waptparms                  Text            [255] ..
+  23 wap                        Memo             ..
+  24 wapmsg                     Memo             ..
+
+============================================================
+TABLE: BANK_LIST  (cols=8)
+============================================================
+  0  bank                       Text            [50] ..
+  1  tran                       Text            [1] ..
+  2  qtyp                       Integer         [2] ..
+  3  q_url                      Text            [255] ..
+  4  redc                       Integer         [2] ..
+  5  reda                       Double          [8] ..
+  6  tm                         Double          [8] ..
+  7  str                        Text            [255] ..
+
+============================================================
+TABLE: checks  (cols=65)
+============================================================
+  0  crsph                      Text            [20] ..
+  1  crcyl                      Text            [50] ..
+  2  craxis                     Long            [4] ..
+  3  crvisus                    Text            [50] ..
+  4  crpris                     Text            [255] ..
+  5  crprist                    Text            [50] ..
+  6  clsph                      Text            [50] ..
+  7  clcyl                      Text            [50] ..
+  8  claxis                     Long            [4] ..
+  9  clvisus                    Text            [50] ..
+  10 clpris                     Text            [255] ..
+  11 clprist                    Text            [50] ..
+  12 cradd                      Double          [8] ..
+  13 cladd                      Double          [8] ..
+  14 crpd                       Double          [8] ..
+  15 clpd                       Double          [8] ..
+  16 cvisus                     Text            [255] ..
+  17 pd                         Double          [8] ..
+  18 ncvisus                    Text            [255] ..
+  19 ncrpd                      Double          [8] ..
+  20 nclpd                      Double          [8] ..
+  21 npd                        Double          [8] ..
+  22 chdate                     Date/Time       [8] ..
+  23 checkname                  Text            [50] ..
+  24 remark                     Memo             ..
+  25 numw                       Long            [4] ..
+  26 bdikanum                   Long            [4] ..
+  27 clhigh                     Double          [8] ..
+  28 crhigh                     Double          [8] ..
+  29 ncrmadd                    Double          [8] ..
+  30 nclmadd                    Double          [8] ..
+  31 ncrbadd                    Double          [8] ..
+  32 nclbadd                    Double          [8] ..
+  33 bdk                        Boolean         [1] ..
+  34 ncriadd                    Double          [8] ..
+  35 ncliadd                    Double          [8] ..
+  36 crpvisus                   Text            [50] ..
+  37 clpvisus                   Text            [50] ..
+  38 ct                         Text            [50] ..
+  39 bdka                       Boolean         [1] ..
+  40 ctpvisus                   Text            [255] ..
+  41 ctvisus                    Text            [255] ..
+  42 crph                       Text            [255] ..
+  43 clph                       Text            [255] ..
+  44 crnvisus                   Text            [255] ..
+  45 clnvisus                   Text            [255] ..
+  46 cnvisus                    Text            [255] ..
+  47 nocv                       Text            [255] ..
+  48 qtyp                       Text            [255] ..
+  49 yeda                       Text            [255] ..
+  50 qdomin                     Text            [50] ..
+  51 qmr                        Text            [255] ..
+  52 nrmm1                      Double          [8] ..
+  53 nrmm2                      Double          [8] ..
+  54 nrdd2                      Double          [8] ..
+  55 nlmm1                      Double          [8] ..
+  56 nlmm2                      Double          [8] ..
+  57 nldd2                      Double          [8] ..
+  58 crball                     Double          [8] ..
+  59 clball                     Double          [8] ..
+  60 qnext                      Text            [255] ..
+  61 pupilr                     Double          [8] ..
+  62 pupill                     Double          [8] ..
+  63 wapdone                    Boolean         [1] ..
+  64 qtipul                     Text            [255] ..
+
+============================================================
+TABLE: checks_remarks  (cols=5)
+============================================================
+  0  datew                      Date/Time       [8] ..
+  1  mem                        Memo             ..
+  2  bdikanumw                  Long            [4] ..
+  3  qtyp                       Integer         [2] ..
+  4  rnum                       Long            [4] ..
+
+============================================================
+TABLE: companyn  (cols=18)
+============================================================
+  0  name_c                     Text            [50] ..
+  1  adress_c                   Text            [50] ..
+  2  city_c                     Text            [50] ..
+  3  tel_c                      Text            [50] ..
+  4  fax__c                     Text            [50] ..
+  5  pr                         Boolean         [1] ..
+  6  tym                        Boolean         [1] ..
+  7  rpt                        Boolean         [1] ..
+  8  lbl                        Text            [255] ..
+  9  msrd                       Boolean         [1] ..
+  10 qosek                      Text            [255] ..
+  11 sivug                      Text            [255] ..
+  12 btxt                       Memo             ..
+  13 kupar                      Boolean         [1] ..
+  14 ax                         Boolean         [1] ..
+  15 num_snif                   Integer         [2] ..
+  16 qpd                        Boolean         [1] ..
+  17 catg                       Boolean         [1] ..
+
+============================================================
+TABLE: CREDIT_LIST  (cols=2)
+============================================================
+  0  credit                     Text            [50] ..
+  1  tran                       Text            [1] ..
+
+============================================================
+TABLE: cust_list  (cols=66)
+============================================================
+  0  fname                      Text            [50] ..
+  1  wsort                      Text            [50] ..
+  2  pname                      Text            [50] ..
+  3  bdate                      Date/Time       [8] ..
+  4  zehut                      Text            [10] ..
+  5  wbdate                     Long            [4] ..
+  6  min                        Text            [50] ..
+  7  hwd                        Text            [50] ..
+  8  hwm                        Text            [50] ..
+  9  hwy                        Text            [50] ..
+  10 address                    Text            [50] ..
+  11 city                       Text            [50] ..
+  12 email                      Text            [50] ..
+  13 kupa                       Text            [50] ..
+  14 mkor                       Text            [255] ..
+  15 kamp                       Text            [255] ..
+  16 yeda                       Text            [50] ..
+  17 sendb                      Text            [50] ..
+  18 tel                        Text            [50] ..
+  19 sel                        Text            [50] ..
+  20 ocupation                  Text            [50] ..
+  21 cdate                      Date/Time       [8] ..
+  22 checkname                  Text            [50] ..
+  23 remark                     Memo             ..
+  24 dcheckname                 Text            [50] ..
+  25 dremark                    Memo             ..
+  26 chdate                     Date/Time       [8] ..
+  27 swd                        Boolean         [1] ..
+  28 swb                        Boolean         [1] ..
+  29 aswb                       Boolean         [1] ..
+  30 nrop                       Text            [50] ..
+  31 nlop                       Text            [50] ..
+  32 nrmm1                      Double          [8] ..
+  33 nrmm2                      Double          [8] ..
+  34 nrdd1                      Double          [8] ..
+  35 nrdd2                      Double          [8] ..
+  36 nlmm1                      Double          [8] ..
+  37 nlmm2                      Double          [8] ..
+  38 nldd1                      Double          [8] ..
+  39 nldd2                      Double          [8] ..
+  40 insdate                    Date/Time       [8] ..
+  41 cleandate                  Date/Time       [8] ..
+  42 kupadate                   Date/Time       [8] ..
+  43 ct                         Text            [50] ..
+  44 colv                       Date/Time       [8] ..
+  45 khist                      Memo             ..
+  46 ltm                        Text            [255] ..
+  47 lty                        Text            [255] ..
+  48 area                       Text            [100] ..
+  49 qmikzoa                    Text            [50] ..
+  50 moadon                     Text            [255] ..
+  51 qdomin                     Text            [50] ..
+  52 cyeda                      Text            [255] ..
+  53 number                     Long            [4] ..
+  54 kupon                      Text            [255] ..
+  55 cadsh                      Double          [8] ..
+  56 cmsgr                      Double          [8] ..
+  57 qhaver                     Text            [255] ..
+  58 fwdateh                    Date/Time       [8] ..
+  59 twdateh                    Date/Time       [8] ..
+  60 cust_open                  Boolean         [1] ..
+  61 hvshin                     Double          [8] ..
+  62 hvshinm                    Double          [8] ..
+  63 hvshdate                   Date/Time       [8] ..
+  64 msgdone                    Boolean         [1] ..
+  65 numw                       Long            [4] ..
+
+============================================================
+TABLE: cust_listb  (cols=26)
+============================================================
+  0  fname                      Text            [50] ..
+  1  wsort                      Text            [50] ..
+  2  pname                      Text            [50] ..
+  3  bdate                      Date/Time       [8] ..
+  4  zehut                      Text            [10] ..
+  5  wbdate                     Long            [4] ..
+  6  min                        Text            [50] ..
+  7  address                    Text            [50] ..
+  8  city                       Text            [50] ..
+  9  email                      Text            [50] ..
+  10 kupa                       Text            [50] ..
+  11 mkor                       Text            [255] ..
+  12 kamp                       Text            [255] ..
+  13 telw                       Text            [50] ..
+  14 fax                        Text            [50] ..
+  15 tel                        Text            [50] ..
+  16 sel                        Text            [50] ..
+  17 colv                       Date/Time       [8] ..
+  18 khist                      Memo             ..
+  19 area                       Text            [100] ..
+  20 mikud                      Text            [50] ..
+  21 qmikzoa                    Text            [50] ..
+  22 moadon                     Text            [255] ..
+  23 number                     Long            [4] ..
+  24 kupon                      Text            [255] ..
+  25 numw                       Long            [4] ..
+
+============================================================
+TABLE: doc_title  (cols=37)
+============================================================
+  0  wtitle                     Memo             ..
+  1  wtitleb                    Memo             ..
+  2  wap1                       Memo             ..
+  3  wap2                       Memo             ..
+  4  wap3                       Memo             ..
+  5  wap4                       Memo             ..
+  6  wapr1                      Memo             ..
+  7  wapr2                      Memo             ..
+  8  wapr3                      Memo             ..
+  9  wapr4                      Memo             ..
+  10 wapk                       Memo             ..
+  11 wapma                      Memo             ..
+  12 wapmb                      Memo             ..
+  13 waprk                      Memo             ..
+  14 waprma                     Memo             ..
+  15 waprmb                     Memo             ..
+  16 wapab                      Memo             ..
+  17 waprab                     Memo             ..
+  18 חתימה                      LongBinary(OLE)  ..
+  19 לוגו                       LongBinary(OLE)  ..
+  20 reduce                     Double          [8] ..
+  21 wapmy                      Memo             ..
+  22 waprmy                     Memo             ..
+  23 fmf                        Integer         [2] ..
+  24 fmt                        Integer         [2] ..
+  25 smf                        Integer         [2] ..
+  26 smt                        Integer         [2] ..
+  27 br_pn                      Integer         [2] ..
+  28 br_in                      Double          [8] ..
+  29 br_main_in                 Double          [8] ..
+  30 wapsg1                     Memo             ..
+  31 wapsgr1                    Memo             ..
+  32 wparameters                Memo             ..
+  33 wapmmf1                    Memo             ..
+  34 wapmmfr1                   Memo             ..
+  35 wapmms1                    Memo             ..
+  36 wapmmsr1                   Memo             ..
+
+============================================================
+TABLE: employees  (cols=15)
+============================================================
+  0  EmployeeID                 Long            [4] ..
+  1  LastName                   Text            [50] ..
+  2  FirstName                  Text            [50] ..
+  3  TEUDAT ZEUT                Text            [50] ..
+  4  REHOV                      Text            [50] ..
+  5  MISPAR                     Text            [50] ..
+  6  EZOR                       Text            [50] ..
+  7  MIKUD                      Text            [50] ..
+  8  IR                         Text            [50] ..
+  9  Tel                        Text            [50] ..
+  10 sel                        Text            [50] ..
+  11 ahuz                       Double          [8] ..
+  12 qhours                     Date/Time       [8] ..
+  13 wsort                      Text            [50] ..
+  14 rnum                       Long            [4] ..
+
+============================================================
+TABLE: items_sales  (cols=28)
+============================================================
+  0  EmployeeID                 Long            [4] ..
+  1  item_name1                 Text            [50] ..
+  2  item_name2                 Text            [50] ..
+  3  item_name3                 Text            [50] ..
+  4  item_name4                 Text            [50] ..
+  5  item_name5                 Text            [255] ..
+  6  item_name6                 Text            [255] ..
+  7  item_name21                Text            [255] ..
+  8  item_name22                Text            [255] ..
+  9  item_name23                Text            [255] ..
+  10 item_name24                Text            [255] ..
+  11 item_name25                Text            [255] ..
+  12 item_name26                Text            [255] ..
+  13 lakoah_name                Text            [50] ..
+  14 price                      Double          [8] ..
+  15 wdate                      Date/Time       [8] ..
+  16 qtyp                       Integer         [2] ..
+  17 wrnum                      Long            [4] ..
+  18 typ                        Text            [50] ..
+  19 wnumber                    Text            [50] ..
+  20 wname                      Text            [50] ..
+  21 wsnif                      Text            [50] ..
+  22 whashbon                   Text            [50] ..
+  23 tpiraon                    Date/Time       [8] ..
+  24 nt                         Integer         [2] ..
+  25 total                      Double          [8] ..
+  26 pr                         Boolean         [1] ..
+  27 numw                       Long            [4] ..
+
+============================================================
+TABLE: orders  (cols=146)
+============================================================
+  0  odate                      Date/Time       [8] ..
+  1  odatetime                  Date/Time       [8] ..
+  2  ob_comp                    Text            [50] ..
+  3  ob_type                    Text            [50] ..
+  4  ocolor                     Text            [50] ..
+  5  bprice                     Double          [8] ..
+  6  gpricer                    Double          [8] ..
+  7  gpricel                    Double          [8] ..
+  8  gprice                     Double          [8] ..
+  9  gdisc                      Long            [4] ..
+  10 greduce                    Double          [8] ..
+  11 gpay                       Double          [8] ..
+  12 gf_price                   Double          [8] ..
+  13 number                     Long            [4] ..
+  14 gremk                      Memo             ..
+  15 cn                         Boolean         [1] ..
+  16 ordernum                   Long            [4] ..
+  17 EmployeeID                 Long            [4] ..
+  18 ob_size                    Text            [255] ..
+  19 ob_comp2                   Text            [255] ..
+  20 ob_type2                   Text            [255] ..
+  21 ob_size2                   Text            [255] ..
+  22 ocolor2                    Text            [255] ..
+  23 bprice2                    Double          [8] ..
+  24 gpricer2                   Double          [8] ..
+  25 gpricel2                   Double          [8] ..
+  26 qmaam                      Double          [8] ..
+  27 gpricet                    Double          [8] ..
+  28 gpricet2                   Double          [8] ..
+  29 color                      Text            [255] ..
+  30 color2                     Text            [255] ..
+  31 ar                         Boolean         [1] ..
+  32 ar2                        Boolean         [1] ..
+  33 al                         Boolean         [1] ..
+  34 al2                        Boolean         [1] ..
+  35 swa                        Boolean         [1] ..
+  36 swm                        Boolean         [1] ..
+  37 swo                        Boolean         [1] ..
+  38 rdate                      Date/Time       [8] ..
+  39 cdate                      Date/Time       [8] ..
+  40 rtime                      Date/Time       [8] ..
+  41 pbprice                    Double          [8] ..
+  42 pbprice2                   Double          [8] ..
+  43 pgpricet                   Double          [8] ..
+  44 pgpricet2                  Double          [8] ..
+  45 pgpricetb                  Double          [8] ..
+  46 pgpricetb2                 Double          [8] ..
+  47 pdisc                      Text            [255] ..
+  48 pdisc2                     Text            [255] ..
+  49 pdisct                     Text            [255] ..
+  50 pdisct2                    Text            [255] ..
+  51 pdisctb                    Text            [255] ..
+  52 pdisctb2                   Text            [255] ..
+  53 gdate                      Date/Time       [8] ..
+  54 qpart                      Text            [255] ..
+  55 qplace                     Text            [255] ..
+  56 qpart2                     Text            [255] ..
+  57 zikuy                      Double          [8] ..
+  58 tpay                       Double          [8] ..
+  59 otht1                      Text            [255] ..
+  60 otht2                      Text            [255] ..
+  61 otht3                      Text            [255] ..
+  62 othp1                      Double          [8] ..
+  63 othp2                      Double          [8] ..
+  64 othp3                      Double          [8] ..
+  65 othpp1                     Double          [8] ..
+  66 othpp2                     Double          [8] ..
+  67 othpp3                     Double          [8] ..
+  68 othpr1                     Text            [255] ..
+  69 othpr2                     Text            [255] ..
+  70 othpr3                     Text            [255] ..
+  71 swtk                       Boolean         [1] ..
+  72 alut                       Double          [8] ..
+  73 alut2                      Double          [8] ..
+  74 bar_size                   Text            [255] ..
+  75 bar_size2                  Text            [255] ..
+  76 sun                        Boolean         [1] ..
+  77 sun2                       Boolean         [1] ..
+  78 mwdate                     Date/Time       [8] ..
+  79 sapakm                     Text            [255] ..
+  80 sapakm2                    Text            [255] ..
+  81 swh                        Boolean         [1] ..
+  82 yeda                       Text            [255] ..
+  83 qmsgr                      Text            [255] ..
+  84 swkp                       Boolean         [1] ..
+  85 lang                       Text            [255] ..
+  86 multia                     Boolean         [1] ..
+  87 multib                     Boolean         [1] ..
+  88 swtka                      Boolean         [1] ..
+  89 swtkb                      Boolean         [1] ..
+  90 shoursa                    Date/Time       [8] ..
+  91 thoursa                    Date/Time       [8] ..
+  92 shoursb                    Date/Time       [8] ..
+  93 thoursb                    Date/Time       [8] ..
+  94 dworka                     Date/Time       [8] ..
+  95 ddonea                     Date/Time       [8] ..
+  96 ddelva                     Date/Time       [8] ..
+  97 dworkb                     Date/Time       [8] ..
+  98 ddoneb                     Date/Time       [8] ..
+  99 ddelvb                     Date/Time       [8] ..
+  100 catga                      Text            [255] ..
+  101 catgb                      Text            [255] ..
+  102 qplacea                    Text            [255] ..
+  103 qplaceb                    Text            [255] ..
+  104 wnuma                      Long            [4] ..
+  105 wnumb                      Long            [4] ..
+  106 wnuma2                     Long            [4] ..
+  107 wnumb2                     Long            [4] ..
+  108 amounta                    Integer         [2] ..
+  109 amounta2                   Integer         [2] ..
+  110 amountb                    Integer         [2] ..
+  111 amountb2                   Integer         [2] ..
+  112 totala                     Double          [8] ..
+  113 totala2                    Double          [8] ..
+  114 totalb                     Double          [8] ..
+  115 totalb2                    Double          [8] ..
+  116 aluta                      Double          [8] ..
+  117 aluta2                     Double          [8] ..
+  118 alutat                     Double          [8] ..
+  119 alutat2                    Double          [8] ..
+  120 alutb                      Double          [8] ..
+  121 alutb2                     Double          [8] ..
+  122 alutatb                    Double          [8] ..
+  123 alutatb2                   Double          [8] ..
+  124 rema                       Text            [255] ..
+  125 rema2                      Text            [255] ..
+  126 remb                       Text            [255] ..
+  127 remb2                      Text            [255] ..
+  128 ada                        Long            [4] ..
+  129 ada2                       Long            [4] ..
+  130 adb                        Long            [4] ..
+  131 adb2                       Long            [4] ..
+  132 dorda                      Date/Time       [8] ..
+  133 dordb                      Date/Time       [8] ..
+  134 nhoursa                    Date/Time       [8] ..
+  135 nhoursb                    Date/Time       [8] ..
+  136 radsh                      Double          [8] ..
+  137 rmsgr                      Double          [8] ..
+  138 zadsh                      Double          [8] ..
+  139 zmsgr                      Double          [8] ..
+  140 rkamp                      Text            [255] ..
+  141 rkampsw                    Boolean         [1] ..
+  142 hvshkod                    Text            [255] ..
+  143 hvshred                    Double          [8] ..
+  144 numw                       Long            [4] ..
+  145 rnum                       Long            [4] ..
+
+============================================================
+TABLE: pass  (cols=1)
+============================================================
+  0  main                       Text            [14] ..
+
+============================================================
+TABLE: passm  (cols=1)
+============================================================
+  0  main                       Text            [14] ..
+
+============================================================
+TABLE: person_remarks  (cols=7)
+============================================================
+  0  datew                      Date/Time       [8] ..
+  1  teur                       Memo             ..
+  2  sw                         Boolean         [1] ..
+  3  numw                       Long            [4] ..
+  4  addw                       Text            [255] ..
+  5  qtyp                       Integer         [2] ..
+  6  mem                        Memo             ..
+
+============================================================
+TABLE: presence  (cols=9)
+============================================================
+  0  num                        Long            [4] ..
+  1  wdate                      Date/Time       [8] ..
+  2  wdatee                     Date/Time       [8] ..
+  3  wtime                      Date/Time       [8] ..
+  4  typ                        Integer         [2] ..
+  5  add_day                    Boolean         [1] ..
+  6  short_day                  Boolean         [1] ..
+  7  qvalid                     Text            [6] ..
+  8  rnum                       Long            [4] ..
+
+============================================================
+TABLE: presence_back  (cols=7)
+============================================================
+  0  num                        Long            [4] ..
+  1  wdate                      Date/Time       [8] ..
+  2  wdatee                     Date/Time       [8] ..
+  3  wtime                      Date/Time       [8] ..
+  4  typ                        Integer         [2] ..
+  5  add_day                    Boolean         [1] ..
+  6  short_day                  Boolean         [1] ..
+
+============================================================
+TABLE: presence_type  (cols=4)
+============================================================
+  1  ptyp                       Text            [50] ..
+  2  pnum                       Integer         [2] ..
+  3  hours                      Date/Time       [8] ..
+  4  shours                     Date/Time       [8] ..
+
+============================================================
+TABLE: proposals  (cols=46)
+============================================================
+  0  odate                      Date/Time       [8] ..
+  1  ob_comp                    Text            [50] ..
+  2  ob_type                    Text            [50] ..
+  3  ocolor                     Text            [50] ..
+  4  ocomp                      Text            [50] ..
+  5  og_type                    Text            [50] ..
+  6  bprice                     Double          [8] ..
+  7  gpricer                    Double          [8] ..
+  8  gpricel                    Double          [8] ..
+  9  gprice                     Double          [8] ..
+  10 gdisc                      Long            [4] ..
+  11 greduce                    Double          [8] ..
+  12 gf_price                   Double          [8] ..
+  13 numw                       Long            [4] ..
+  14 gremk                      Memo             ..
+  15 cn                         Boolean         [1] ..
+  16 gl                         Boolean         [1] ..
+  17 propnum                    Long            [4] ..
+  18 rnum                       Long            [4] ..
+  19 ob_size                    Text            [255] ..
+  20 ob_comp2                   Text            [255] ..
+  21 ob_type2                   Text            [255] ..
+  22 ob_size2                   Text            [255] ..
+  23 ocolor2                    Text            [255] ..
+  24 ocomp2                     Text            [255] ..
+  25 og_type2                   Text            [255] ..
+  26 bprice2                    Double          [8] ..
+  27 gpricer2                   Double          [8] ..
+  28 gpricel2                   Double          [8] ..
+  29 qmaam                      Double          [8] ..
+  30 gpricet                    Double          [8] ..
+  31 gpricet2                   Double          [8] ..
+  32 adds                       Text            [50] ..
+  33 adds2                      Text            [50] ..
+  34 cover                      Text            [255] ..
+  35 cover2                     Text            [255] ..
+  36 ar                         Boolean         [1] ..
+  37 ar2                        Boolean         [1] ..
+  38 al                         Boolean         [1] ..
+  39 al2                        Boolean         [1] ..
+  40 swa                        Boolean         [1] ..
+  41 swm                        Boolean         [1] ..
+  42 swo                        Boolean         [1] ..
+  43 swam                       Boolean         [1] ..
+  44 incode                     Long            [4] ..
+  45 incode2                    Long            [4] ..
+
+============================================================
+TABLE: tb_amlot  (cols=13)
+============================================================
+  0  qcredit                    Text            [50] ..
+  1  n1                         Double          [8] ..
+  2  n2                         Double          [8] ..
+  3  n3                         Double          [8] ..
+  4  n4                         Double          [8] ..
+  5  n5                         Double          [8] ..
+  6  n6                         Double          [8] ..
+  7  n7                         Double          [8] ..
+  8  n8                         Double          [8] ..
+  9  n9                         Double          [8] ..
+  10 n10                        Double          [8] ..
+  11 n11                        Double          [8] ..
+  12 n12                        Double          [8] ..
+
+============================================================
+TABLE: tb_comp  (cols=11)
+============================================================
+  0  wnum                       Long            [4] ..
+  1  datew                      Date/Time       [8] ..
+  2  rnum                       Long            [4] ..
+  3  gijr                       Integer         [2] ..
+  4  gijl                       Integer         [2] ..
+  5  gior                       Integer         [2] ..
+  6  giol                       Integer         [2] ..
+  7  kr                         Integer         [2] ..
+  8  kl                         Integer         [2] ..
+  9  tbr                        Integer         [2] ..
+  10 tbl                        Integer         [2] ..
+
+============================================================
+TABLE: tb_date_list  (cols=10)
+============================================================
+  0  datew                      Date/Time       [8] ..
+  1  mem                        Memo             ..
+  2  qhour                      Date/Time       [8] ..
+  3  qhoure                     Date/Time       [8] ..
+  4  qhourf                     Date/Time       [8] ..
+  5  dn                         Boolean         [1] ..
+  6  type                       Long            [4] ..
+  7  codel                      Long            [4] ..
+  8  snif                       Text            [255] ..
+  9  wnum                       Long            [4] ..
+
+============================================================
+TABLE: tb_gnrl_tests  (cols=64)
+============================================================
+  0  datew                      Date/Time       [8] ..
+  1  wnum                       Long            [4] ..
+  2  rnum                       Long            [4] ..
+  3  tst1                       Text            [255] ..
+  4  tst2                       Text            [255] ..
+  5  tst3                       Text            [255] ..
+  6  tst4                       Text            [255] ..
+  7  tst5                       Text            [255] ..
+  8  tst6                       Text            [255] ..
+  9  tst7                       Text            [255] ..
+  10 tst8                       Text            [255] ..
+  11 tst9                       Text            [255] ..
+  12 tst10                      Text            [255] ..
+  13 tst11                      Text            [255] ..
+  14 tst12                      Text            [255] ..
+  15 tst13                      Text            [255] ..
+  16 tst14                      Text            [255] ..
+  17 tst15                      Text            [255] ..
+  18 tst16                      Text            [255] ..
+  19 tst17                      Text            [255] ..
+  20 tst18                      Text            [255] ..
+  21 tst19                      Text            [255] ..
+  22 tst20                      Text            [255] ..
+  23 tst21                      Text            [255] ..
+  24 tst22                      Text            [255] ..
+  25 tst23                      Text            [255] ..
+  26 tst24                      Text            [255] ..
+  27 tst25                      Text            [255] ..
+  28 tst26                      Text            [255] ..
+  29 tst27                      Text            [255] ..
+  30 tst28                      Text            [255] ..
+  31 tst29                      Text            [255] ..
+  32 tst30                      Text            [255] ..
+  33 tst31                      Text            [255] ..
+  34 tst32                      Text            [255] ..
+  35 tst33                      Text            [255] ..
+  36 tst34                      Text            [255] ..
+  37 tst35                      Text            [255] ..
+  38 tst36                      Text            [255] ..
+  39 tst37                      Text            [255] ..
+  40 tst38                      Text            [255] ..
+  41 tst39                      Text            [255] ..
+  42 tst40                      Text            [255] ..
+  43 tst41                      Text            [255] ..
+  44 tst42                      Text            [255] ..
+  45 tst43                      Text            [255] ..
+  46 tst44                      Text            [255] ..
+  47 tst45                      Text            [255] ..
+  48 tst46                      Text            [255] ..
+  49 tst47                      Text            [255] ..
+  50 tst48                      Text            [255] ..
+  51 tst49                      Text            [255] ..
+  52 tst50                      Text            [255] ..
+  53 tst51                      Text            [255] ..
+  54 tst52                      Text            [255] ..
+  55 tst53                      Text            [255] ..
+  56 tst54                      Text            [255] ..
+  57 tst55                      Text            [255] ..
+  58 tst56                      Text            [255] ..
+  59 tst57                      Text            [255] ..
+  60 tst58                      Text            [255] ..
+  61 tst59                      Text            [255] ..
+  62 tst60                      Text            [255] ..
+  63 qtyp                       Boolean         [1] ..
+
+============================================================
+TABLE: tb_hsapakim  (cols=16)
+============================================================
+  0  code_sapak                 Text            [50] ..
+  1  hdate                      Date/Time       [8] ..
+  2  hnum                       Text            [50] ..
+  3  p_total                    Double          [8] ..
+  4  maam                       Double          [8] ..
+  5  t_maam                     Double          [8] ..
+  6  mas                        Double          [8] ..
+  7  t_mas                      Double          [8] ..
+  8  total                      Double          [8] ..
+  9  qstatus                    Text            [50] ..
+  10 pmaam                      Double          [8] ..
+  11 tuyak                      Text            [255] ..
+  12 remark                     Text            [100] ..
+  13 snif                       Text            [255] ..
+  14 pr                         Boolean         [1] ..
+  15 wnum                       Long            [4] ..
+
+============================================================
+TABLE: tb_kabala  (cols=13)
+============================================================
+  0  rnum                       Long            [4] ..
+  1  wdate                      Date/Time       [8] ..
+  2  typ                        Text            [50] ..
+  3  wnumber                    Text            [50] ..
+  4  wname                      Text            [50] ..
+  5  wsnif                      Text            [50] ..
+  6  whashbon                   Text            [50] ..
+  7  tpiraon                    Date/Time       [8] ..
+  8  nt                         Integer         [2] ..
+  9  total                      Double          [8] ..
+  10 pr                         Boolean         [1] ..
+  11 wnum                       Long            [4] ..
+  12 bck                        Boolean         [1] ..
+
+============================================================
+TABLE: tb_log  (cols=8)
+============================================================
+  0  datew                      Date/Time       [8] ..
+  1  hh                         Date/Time       [8] ..
+  2  custn                      Long            [4] ..
+  3  custnf                     Long            [4] ..
+  4  tot                        Double          [8] ..
+  5  remk                       Text            [255] ..
+  6  typ                        Integer         [2] ..
+  7  rnum                       Long            [4] ..
+
+============================================================
+TABLE: tb_order_rem  (cols=4)
+============================================================
+  0  rnum                       Long            [4] ..
+  1  wdate                      Date/Time       [8] ..
+  2  remk                       Memo             ..
+  3  wnum                       Long            [4] ..
+
+============================================================
+TABLE: tb_q_checks  (cols=17)
+============================================================
+  1  tdate                      Date/Time       [8] ..
+  2  cdate                      Date/Time       [8] ..
+  3  cnum                       Text            [50] ..
+  4  code_sapak                 Text            [50] ..
+  5  remark                     Memo             ..
+  6  total                      Double          [8] ..
+  7  hnum1                      Text            [50] ..
+  8  hnum2                      Text            [50] ..
+  9  hnum3                      Text            [50] ..
+  10 hnum4                      Text            [50] ..
+  11 sw                         Boolean         [1] ..
+  12 qstatus                    Text            [50] ..
+  13 qcount                     Integer         [2] ..
+  14 fqcount                    Integer         [2] ..
+  15 pr                         Boolean         [1] ..
+  16 snif                       Text            [255] ..
+  17 wnum                       Long            [4] ..
+
+============================================================
+TABLE: tb_quest  (cols=51)
+============================================================
+  0  qyes1                      Boolean         [1] ..
+  1  qno1                       Boolean         [1] ..
+  2  qyes2                      Boolean         [1] ..
+  3  qno2                       Boolean         [1] ..
+  4  qyes3                      Boolean         [1] ..
+  5  qno3                       Boolean         [1] ..
+  6  qyes4                      Boolean         [1] ..
+  7  qno4                       Boolean         [1] ..
+  8  qyes5                      Boolean         [1] ..
+  9  qno5                       Boolean         [1] ..
+  10 qyes6                      Boolean         [1] ..
+  11 qno6                       Boolean         [1] ..
+  12 qyes7                      Boolean         [1] ..
+  13 qno7                       Boolean         [1] ..
+  14 qyes8                      Boolean         [1] ..
+  15 qno8                       Boolean         [1] ..
+  16 remk1                      Memo             ..
+  17 remk2                      Memo             ..
+  18 remk3                      Memo             ..
+  19 remk4                      Memo             ..
+  20 remk5                      Memo             ..
+  21 remk6                      Memo             ..
+  22 remk7                      Memo             ..
+  23 remk8                      Memo             ..
+  24 remk9                      Memo             ..
+  25 remk10                     Memo             ..
+  26 remk11                     Memo             ..
+  27 a1                         Boolean         [1] ..
+  28 a2                         Boolean         [1] ..
+  29 a3                         Boolean         [1] ..
+  30 a4                         Boolean         [1] ..
+  31 a5                         Boolean         [1] ..
+  32 m1                         Boolean         [1] ..
+  33 m2                         Boolean         [1] ..
+  34 m3                         Boolean         [1] ..
+  35 m4                         Boolean         [1] ..
+  36 j1                         Boolean         [1] ..
+  37 j2                         Boolean         [1] ..
+  38 r1                         Boolean         [1] ..
+  39 r2                         Boolean         [1] ..
+  40 r3                         Boolean         [1] ..
+  41 r4                         Boolean         [1] ..
+  42 wnum                       Long            [4] ..
+  43 t1                         Boolean         [1] ..
+  44 t2                         Boolean         [1] ..
+  45 t3                         Boolean         [1] ..
+  46 e1                         Boolean         [1] ..
+  47 e2                         Boolean         [1] ..
+  48 e3                         Boolean         [1] ..
+  49 datew                      Date/Time       [8] ..
+  50 rnum                       Long            [4] ..
+

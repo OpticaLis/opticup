@@ -1,0 +1,18 @@
+﻿[
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_csapak",
+        "Type":  0,
+        "DateCreated":  "\/Date(1725178028310)\/",
+        "LastUpdated":  "\/Date(1725178028310)\/",
+        "SQL":  "SELECT DISTINCTROW [qa_descs].[desc], [qa_descs].[code]\r\nFROM qa_descs;\r\n",
+        "ReturnsRecords":  true
+    },
+    {
+        "Name":  "~sq_cf_catalog~sq_csapak",
+        "Type":  0,
+        "DateCreated":  "\/Date(1725531969001)\/",
+        "LastUpdated":  "\/Date(1725531969025)\/",
+        "SQL":  "SELECT DISTINCTROW [qa_descs].[desc], [qa_descs].[code]\r\nFROM qa_descs;\r\n",
+        "ReturnsRecords":  true
+    }
+]

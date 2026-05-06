@@ -1,0 +1,842 @@
+﻿[
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_ccylw",
+        "formRefs":  "Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog"
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_ccylwb",
+        "formRefs":  "Forms!f_ad_catalog"
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_chevraw",
+        "formRefs":  "Forms!f_ad_catalog"
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_cktrw",
+        "formRefs":  "Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog"
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_cmatw",
+        "formRefs":  "Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog"
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_csphw",
+        "formRefs":  "Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog"
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_csphwb",
+        "formRefs":  "Forms!f_ad_catalog"
+    },
+    {
+        "Name":  "~sq_cf_ad_catalog~sq_ctypw",
+        "formRefs":  "Forms!f_ad_catalog,Forms!f_ad_catalog"
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cog_type",
+        "formRefs":  "Forms!print_cust"
+    },
+    {
+        "Name":  "~sq_cprint_cust~sq_cqadds",
+        "formRefs":  "Forms!print_cust,Forms!print_cust"
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_ccylw",
+        "formRefs":  "Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot"
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_chevraw",
+        "formRefs":  "Forms!s_mehirot"
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cktrw",
+        "formRefs":  "Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot"
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_cmatw",
+        "formRefs":  "Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot"
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_csphw",
+        "formRefs":  "Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot"
+    },
+    {
+        "Name":  "~sq_cs_mehirot~sq_ctypw",
+        "formRefs":  "Forms!s_mehirot,Forms!s_mehirot"
+    },
+    {
+        "Name":  "~sq_cs_orders~sq_cog_type",
+        "formRefs":  "Forms!s_orders"
+    },
+    {
+        "Name":  "~sq_drp_order_m~sq_dChild439",
+        "formRefs":  "Forms!customers,Forms!person_orders_list,Forms!customers,Forms!person_orders_list,Forms!customers,Forms!person_orders_list,Forms!customers,Forms!person_orders_list"
+    },
+    {
+        "Name":  "adashot_list_c",
+        "formRefs":  "Forms!cust_adchecks_full"
+    },
+    {
+        "Name":  "adashot_list_c2",
+        "formRefs":  "Forms!cust_adchecks_full"
+    },
+    {
+        "Name":  "checks_pre",
+        "formRefs":  "Forms!customers,Forms!person_orders_list"
+    },
+    {
+        "Name":  "checks_pre_ad",
+        "formRefs":  "Forms!customers,Forms!person_orders_list"
+    },
+    {
+        "Name":  "clga_adds",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "Copy Of qrefractr",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "copy_checks_del",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "ctlg_color",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlg_color2",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlg_hevra",
+        "formRefs":  "Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlg_hevra2",
+        "formRefs":  "Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlg_size",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlg_size2",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlg_type",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlg_type2",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlga_adds",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlga_adds2",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlga_cover",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlga_cover2",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlga_hevra",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlga_ktr",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlga_ktr2",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlga_type",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlga_type_a",
+        "formRefs":  "Forms!customers,Forms!customers"
+    },
+    {
+        "Name":  "ctlga_type_a2",
+        "formRefs":  "Forms!customers,Forms!customers"
+    },
+    {
+        "Name":  "ctlga_type_ah",
+        "formRefs":  "Forms!cust_adchecks_full,Forms!cust_adchecks_full"
+    },
+    {
+        "Name":  "ctlga_type_ah2",
+        "formRefs":  "Forms!cust_adchecks_full,Forms!cust_adchecks_full"
+    },
+    {
+        "Name":  "ctlga_type_at",
+        "formRefs":  "Forms!cust_adchecks_test,Forms!cust_adchecks_test"
+    },
+    {
+        "Name":  "ctlga_type_at2",
+        "formRefs":  "Forms!cust_adchecks_test,Forms!cust_adchecks_test"
+    },
+    {
+        "Name":  "ctlga_type2",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "ctlgact_type",
+        "formRefs":  "Forms!find_a_catg,Forms!find_a_catg"
+    },
+    {
+        "Name":  "ctlgah_hevra",
+        "formRefs":  "Forms!s_orders,Forms!s_orders"
+    },
+    {
+        "Name":  "ctlgah_type",
+        "formRefs":  "Forms!s_orders,Forms!s_orders,Forms!s_orders,Forms!s_orders,Forms!s_orders,Forms!s_orders"
+    },
+    {
+        "Name":  "ctlgap_hevra",
+        "formRefs":  "Forms!person_prop_list,Forms!person_prop_list"
+    },
+    {
+        "Name":  "ctlgap_type",
+        "formRefs":  "Forms!person_prop_list,Forms!person_prop_list"
+    },
+    {
+        "Name":  "ctlgap_type2",
+        "formRefs":  "Forms!person_prop_list,Forms!person_prop_list"
+    },
+    {
+        "Name":  "ctlgar_hevra",
+        "formRefs":  "Forms!print_cust,Forms!print_cust"
+    },
+    {
+        "Name":  "ctlgar_type",
+        "formRefs":  "Forms!print_cust,Forms!print_cust,Forms!print_cust,Forms!print_cust"
+    },
+    {
+        "Name":  "ctlgas_hevra",
+        "formRefs":  "Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot"
+    },
+    {
+        "Name":  "ctlgas_type",
+        "formRefs":  "Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot"
+    },
+    {
+        "Name":  "ctlgf_color",
+        "formRefs":  "Forms!find_catg,Forms!find_catg,Forms!find_catg,Forms!find_catg"
+    },
+    {
+        "Name":  "ctlgf_hevra",
+        "formRefs":  "Forms!find_catg"
+    },
+    {
+        "Name":  "ctlgf_size",
+        "formRefs":  "Forms!find_catg,Forms!find_catg,Forms!find_catg"
+    },
+    {
+        "Name":  "ctlgf_type",
+        "formRefs":  "Forms!find_catg,Forms!find_catg"
+    },
+    {
+        "Name":  "ctlgh_color",
+        "formRefs":  "Forms!s_orders,Forms!s_orders,Forms!s_orders,Forms!s_orders"
+    },
+    {
+        "Name":  "ctlgh_hevra",
+        "formRefs":  "Forms!s_orders"
+    },
+    {
+        "Name":  "ctlgh_size",
+        "formRefs":  "Forms!s_orders,Forms!s_orders,Forms!s_orders"
+    },
+    {
+        "Name":  "ctlgh_type",
+        "formRefs":  "Forms!s_orders,Forms!s_orders"
+    },
+    {
+        "Name":  "ctlgm_color",
+        "formRefs":  "Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai"
+    },
+    {
+        "Name":  "ctlgm_size",
+        "formRefs":  "Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai"
+    },
+    {
+        "Name":  "ctlgm_type",
+        "formRefs":  "Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai"
+    },
+    {
+        "Name":  "ctlgr_color",
+        "formRefs":  "Forms!find_order,Forms!find_order,Forms!find_order,Forms!find_order,Forms!find_order,Forms!find_order"
+    },
+    {
+        "Name":  "ctlgr_size",
+        "formRefs":  "Forms!find_order,Forms!find_order,Forms!find_order,Forms!find_order"
+    },
+    {
+        "Name":  "ctlgr_type",
+        "formRefs":  "Forms!find_order,Forms!find_order"
+    },
+    {
+        "Name":  "ctlgs_color",
+        "formRefs":  "Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot"
+    },
+    {
+        "Name":  "ctlgs_hevra",
+        "formRefs":  "Forms!s_mehirot"
+    },
+    {
+        "Name":  "ctlgs_size",
+        "formRefs":  "Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot"
+    },
+    {
+        "Name":  "ctlgs_type",
+        "formRefs":  "Forms!s_mehirot,Forms!s_mehirot"
+    },
+    {
+        "Name":  "ctlgsr_hevra",
+        "formRefs":  "Forms!print_cust"
+    },
+    {
+        "Name":  "ctlgsr_type",
+        "formRefs":  "Forms!print_cust,Forms!print_cust"
+    },
+    {
+        "Name":  "del_add",
+        "formRefs":  "Forms!cust_checks"
+    },
+    {
+        "Name":  "del_tb_date_list",
+        "formRefs":  "Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance"
+    },
+    {
+        "Name":  "del_tb_in",
+        "formRefs":  "Forms!empty_tables,Forms!empty_tables"
+    },
+    {
+        "Name":  "dup_order",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "dup_order_msgr",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "person_remarks_q",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "prt_gnrl_tests",
+        "formRefs":  "Forms!f_gnrl_tests"
+    },
+    {
+        "Name":  "prt_gnrl_testsa",
+        "formRefs":  "Forms!f_gnrl_testsa"
+    },
+    {
+        "Name":  "prt_mirshamp",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "q_adchecks",
+        "formRefs":  "Forms!customers,Forms!cust_adchecks,Forms!cust_adchecks"
+    },
+    {
+        "Name":  "q_adchecks_full",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "q_adchecks_test",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "q_birthdate",
+        "formRefs":  "Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays"
+    },
+    {
+        "Name":  "q_birthdate_frm",
+        "formRefs":  "Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays"
+    },
+    {
+        "Name":  "q_birthdate_frms",
+        "formRefs":  "Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays"
+    },
+    {
+        "Name":  "q_birthdate_L",
+        "formRefs":  "Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays"
+    },
+    {
+        "Name":  "q_birthdate_mail",
+        "formRefs":  "Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays"
+    },
+    {
+        "Name":  "q_birthdate_rv",
+        "formRefs":  "Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays"
+    },
+    {
+        "Name":  "q_birthdate_u",
+        "formRefs":  "Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays"
+    },
+    {
+        "Name":  "q_birthdate_xls",
+        "formRefs":  "Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays,Forms!birthdays"
+    },
+    {
+        "Name":  "q_birthdateh",
+        "formRefs":  "Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb"
+    },
+    {
+        "Name":  "q_birthdateh_frm",
+        "formRefs":  "Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb"
+    },
+    {
+        "Name":  "q_birthdateh_frms",
+        "formRefs":  "Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb"
+    },
+    {
+        "Name":  "q_birthdateh_L",
+        "formRefs":  "Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb"
+    },
+    {
+        "Name":  "q_birthdateh_mail",
+        "formRefs":  "Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb"
+    },
+    {
+        "Name":  "q_birthdateh_rv",
+        "formRefs":  "Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb"
+    },
+    {
+        "Name":  "q_birthdateh_u",
+        "formRefs":  "Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb"
+    },
+    {
+        "Name":  "q_birthdateh_xls",
+        "formRefs":  "Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb,Forms!birthdaysheb"
+    },
+    {
+        "Name":  "q_cartis_atst",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "q_check_again_old",
+        "formRefs":  "Forms!f_bdikat_maakav,Forms!f_bdikat_maakav,Forms!f_bdikat_maakav,Forms!f_bdikat_maakav,Forms!f_bdikat_maakav,Forms!f_bdikat_maakav,Forms!f_bdikat_maakav,Forms!f_bdikat_maakav,Forms!f_bdikat_maakav,Forms!f_bdikat_maakav"
+    },
+    {
+        "Name":  "q_check_again_rv",
+        "formRefs":  "Forms!f_bdikat_maakav,Forms!f_bdikat_maakav,Forms!f_bdikat_maakav"
+    },
+    {
+        "Name":  "q_check_again_rva",
+        "formRefs":  "Forms!f_bdikat_maakav,Forms!f_bdikat_maakav,Forms!f_bdikat_maakav"
+    },
+    {
+        "Name":  "q_check_again_rvm",
+        "formRefs":  "Forms!f_bdikat_maakav,Forms!f_bdikat_maakav,Forms!f_bdikat_maakav"
+    },
+    {
+        "Name":  "q_checks",
+        "formRefs":  "Forms!customers,Forms!cust_checks,Forms!cust_checks"
+    },
+    {
+        "Name":  "q_checks_a",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "q_checks_add",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "q_checks_add_app",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "q_checks_add_appb",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "q_checks_full",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "q_checks_myupye",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "q_clean",
+        "formRefs":  "Forms!f_tipul_adashot"
+    },
+    {
+        "Name":  "q_clean_frm",
+        "formRefs":  "Forms!f_tipul_adashot"
+    },
+    {
+        "Name":  "q_clean_frms",
+        "formRefs":  "Forms!f_tipul_adashot"
+    },
+    {
+        "Name":  "q_cust_frmb",
+        "formRefs":  "Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb,Forms!cust_listb"
+    },
+    {
+        "Name":  "q_cust_remarks",
+        "formRefs":  "Forms!person_remarks_list"
+    },
+    {
+        "Name":  "q_mehirot_adb_x",
+        "formRefs":  "Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot"
+    },
+    {
+        "Name":  "q_mehirotb_x",
+        "formRefs":  "Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot"
+    },
+    {
+        "Name":  "q_orders_chk",
+        "formRefs":  "Forms!cust_checks_full,Forms!cust_checks_full"
+    },
+    {
+        "Name":  "qkavgl",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "qkavgr",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "qlist_adaptationp",
+        "formRefs":  "Forms!s_adap,Forms!s_adap,Forms!s_adap,Forms!s_adap"
+    },
+    {
+        "Name":  "qlist_appoint",
+        "formRefs":  "Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance"
+    },
+    {
+        "Name":  "qlist_appoint_sel",
+        "formRefs":  "Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance"
+    },
+    {
+        "Name":  "qlist_check_remarks",
+        "formRefs":  "Forms!cust_checks_full"
+    },
+    {
+        "Name":  "qlist_ltv_lekohot12_m",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltv_lekohot24_m",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36lkpltv_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36lkpltv_m",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36ltv_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36ltvc_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36ltvc_m",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltv_lekohotk_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltv_lekohotk_m",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltv_lekohotp_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltv_lekohotp_m",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltvret_n12p_m",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltvret_n24p_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltvret_n24p_m",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltvret_n36p_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltvret_n36p_m",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltvret_np_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltvret_np_m",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltvret_total_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ltvret_total_m",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ordersgn_l",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ordersgn_lg",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ordersgnp_l",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ordersgnp_lg",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ordersgnpb_l",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_ordersgnpb_lg",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderslk_first_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderslk_first_lg",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderslk_first_new_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderslk_first_new_lg",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderslknew_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderslkpb_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderslkpb_lg",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderssumlk_firstp_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderssumlkold_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderssumlkp_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderssumlkpb_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderssumlktot_am_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderssumltv_first_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qlist_orderssumltvn24p_g",
+        "formRefs":  "Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash,Forms!f_cash"
+    },
+    {
+        "Name":  "qp_order",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "qp_order_all_add",
+        "formRefs":  "Forms!person_orders_list"
+    },
+    {
+        "Name":  "qp_order_all_ext",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "qp_order_all_ext_env",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "qp_order_all_ext_lab",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "qp_order_all_ext_msgra",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "qp_order_all_ext_msgrb",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "qp_order_all_ext_repair_old",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "qp_order_all_rps_ext",
+        "formRefs":  "Forms!person_orders_list"
+    },
+    {
+        "Name":  "qprt_achecks_pr",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "qprt_achecks_pr_chk",
+        "formRefs":  "Forms!cust_adchecks_full,Forms!cust_adchecks_full"
+    },
+    {
+        "Name":  "qprt_checks_pr",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "qprt_checks_pr_chk",
+        "formRefs":  "Forms!cust_checks_full,Forms!cust_checks_full"
+    },
+    {
+        "Name":  "qprt_checks_pr_lab",
+        "formRefs":  "Forms!person_orders_list,Forms!person_orders_list"
+    },
+    {
+        "Name":  "qrefractl",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "qrefractr",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "qrp_upd_amount",
+        "formRefs":  "Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai"
+    },
+    {
+        "Name":  "qrp_upd_amount_catg",
+        "formRefs":  "Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai"
+    },
+    {
+        "Name":  "qsclera_all",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "qsclerar",
+        "formRefs":  "Forms!customers"
+    },
+    {
+        "Name":  "qsort_ad_catalog",
+        "formRefs":  "Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog,Forms!f_ad_catalog"
+    },
+    {
+        "Name":  "qsort_catalog",
+        "formRefs":  "Forms!f_catalog,Forms!f_catalog,Forms!f_catalog,Forms!f_catalog,Forms!f_catalog,Forms!f_catalog,Forms!f_catalog,Forms!f_catalog,Forms!f_catalog,Forms!f_catalog,Forms!f_catalog,Forms!f_catalog,Forms!f_catalog,Forms!f_catalog"
+    },
+    {
+        "Name":  "qsort_catalog_rp",
+        "formRefs":  "Forms!f_catalog,Forms!f_catalog,Forms!f_catalog,Forms!f_catalog"
+    },
+    {
+        "Name":  "qtb_date_list",
+        "formRefs":  "Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance"
+    },
+    {
+        "Name":  "qtb_date_list_rem",
+        "formRefs":  "Forms!Calendar_of_Attendance"
+    },
+    {
+        "Name":  "qtb_moadon_amount",
+        "formRefs":  "Forms!f_catalog"
+    },
+    {
+        "Name":  "qtb_upd_amount",
+        "formRefs":  "Forms!f_catalog"
+    },
+    {
+        "Name":  "qtb_upd_amount_ad",
+        "formRefs":  "Forms!f_ad_catalog"
+    },
+    {
+        "Name":  "refractw",
+        "formRefs":  "Forms!customers,Forms!customers"
+    },
+    {
+        "Name":  "rpt_date_list",
+        "formRefs":  "Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance"
+    },
+    {
+        "Name":  "tb_q_catalog_melai_price",
+        "formRefs":  "Forms!s_melai_prt,Forms!s_melai_prt,Forms!s_melai_prt,Forms!s_melai_prt"
+    },
+    {
+        "Name":  "upd_details",
+        "formRefs":  "Forms!customers,Forms!customers"
+    },
+    {
+        "Name":  "upd_presence",
+        "formRefs":  "Forms!Employees"
+    },
+    {
+        "Name":  "הזמנה_לבדיקה",
+        "formRefs":  "Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance,Forms!Calendar_of_Attendance"
+    },
+    {
+        "Name":  "הזמנת_מסגרות",
+        "formRefs":  "Forms!f_catalog,Forms!f_catalog"
+    },
+    {
+        "Name":  "מלאי_old",
+        "formRefs":  "Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai,Forms!s_melai"
+    },
+    {
+        "Name":  "מסגרות",
+        "formRefs":  "Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot,Forms!s_mehirot"
+    },
+    {
+        "Name":  "תקבול_תשלום",
+        "formRefs":  "Forms!s_takbul,Forms!s_takbul,Forms!s_takbul,Forms!s_takbul,Forms!s_takbul,Forms!s_takbul"
+    }
+]

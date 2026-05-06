@@ -1,0 +1,383 @@
+﻿Option Compare Database
+Option Explicit
+
+
+Type hdatetype
+     year As Integer
+     hyear As String * 5
+     hyearn As String * 5
+     eyear As String * 4
+     beyear As String * 4
+     day As Integer
+     hday As String * 2
+     eday As String * 2
+     month As Single
+     hmonth As String
+     emonth As String
+     ehday As String
+     elong As String
+     belong As String
+     holiday As String
+End Type
+
+
+   Function getgimatrics$(ByVal num%)
+   Dim r$
+   Dim digit%
+   r$ = ""
+   If num% >= 1000 Then
+    r$ = getgimatrics(num% \ 1000)
+    num = num Mod 1000
+   End If
+   If num% >= 900 Then r$ = r$ + "תתק"
+   If num% >= 500 And num% < 900 Then
+    r$ = r$ + "ת"
+    r$ = r$ + Chr$(Asc("ק") + (num \ 100 - 5))
+    End If
+    
+    If num >= 100 And num < 500 Then
+    r$ = r$ + Chr$(Asc("ק") + (num \ 100 - 1))
+    End If
+    
+    digit = (num Mod 100) \ 10
+    If digit Then
+    Select Case digit
+    Case 1: r$ = r$ + "י"
+    Case 2: r$ = r$ + "כ"
+    Case 3: r$ = r$ + "ל"
+    Case 4: r$ = r$ + "מ"
+    Case 5 To 7: r$ = r$ + Chr$(Asc("נ") + digit - 5)
+    Case 8: r$ = r$ + "פ"
+    Case 9: r$ = r$ + "צ"
+    End Select
+    
+    End If
+    
+    digit = (num Mod 10)
+    If digit Then r$ = r$ + Chr$(Asc("א") + digit - 1)
+    
+    If r$ = "יה" Then r$ = "טו"
+    If r$ = "יו" Then r$ = "טז"
+    If r$ = "" Then r$ = "ל"
+    getgimatrics = r$
+    
+    End Function
+    Function getpdate(ByVal hyear%) As Date
+    Dim aa, mm, a, b, m, c
+    Dim pdate As Date
+    aa = hyear%
+    a = (12 * aa + 17) Mod 19
+    b = aa Mod 4
+    mm = Int(32.0441 + 1.55424 * a + 0.25 * b - 0.0031779 * aa)
+    m = (32.0441 + 1.55424 * a + 0.25 * b - 0.0031779 * aa) - mm
+    c = (mm + 3 * aa + 5 * b + 5) Mod 7
+    pdate = DateSerial(aa - 3760, 3, mm)
+    If c = 2 Or c = 4 Or c = 6 Then pdate = pdate + 1
+    If c = 1 And a > 6 And m >= 0.6329 Then pdate = pdate + 2
+    If c = 0 And a > 11 And m >= 0.8977 Then pdate = pdate + 1
+    getpdate = pdate
+        
+    End Function
+    Function getmonthname$(ByVal month)
+     Select Case month
+     Case 1: getmonthname$ = "תשרי"
+     Case 2: getmonthname$ = "חשון"
+     Case 3: getmonthname$ = "כסלו"
+     Case 4: getmonthname$ = "טבת"
+     Case 5: getmonthname$ = "שבט"
+     Case 6: getmonthname$ = "אדר"
+     Case 6.1: getmonthname$ = "אדר א"
+     Case 6.2: getmonthname$ = "אדר ב"
+     Case 7: getmonthname$ = "ניסן"
+     Case 8: getmonthname$ = "אייר"
+     Case 9: getmonthname$ = "סיון"
+     Case 10: getmonthname$ = "תמוז"
+     Case 11: getmonthname$ = "אב"
+     Case 12: getmonthname$ = "אלול"
+     End Select
+     
+    End Function
+    Function getholiday$(hdate As hdatetype, ByVal gdate As Date, ByVal kislevl%)
+    Dim curweekday%
+    Dim holiday$
+    curweekday = WeekDay(gdate)
+     
+    If hdate.day = 1 And hdate.month = 1 Then
+     holiday = "א ראש השנה"
+     
+      ElseIf hdate.day = 2 And hdate.month = 1 Then
+      holiday = "ב ראש השנה"
+      
+     ElseIf ((hdate.day = 3 And curweekday <= 5) Or (hdate.day = 4 And curweekday = 1)) And hdate.month = 1 Then
+     holiday = "צום גדליה"
+     
+     ElseIf hdate.day = 10 And hdate.month = 1 Then
+     holiday = "יום כיפור"
+      
+      ElseIf hdate.day = 15 And hdate.month = 1 Then
+      holiday = "א סוכות"
+      
+      ElseIf hdate.day >= 16 And hdate.day <= 20 And hdate.month = 1 Then
+      holiday = "חוהמ" + Chr$(34) + "ס"
+      
+      ElseIf hdate.day = 21 And hdate.month = 1 Then
+      holiday = "הושענא רבה"
+       
+      
+      ElseIf hdate.day = 22 And hdate.month = 1 Then
+      holiday = "שמחת תורה"
+      
+      ElseIf hdate.month = 3 And hdate.day >= 25 Then
+       holiday = Chr$(Asc("א") + hdate.day - 25) + "' " + " חנוכה"
+      
+       ElseIf hdate.month = 4 And kislevl = 29 And hdate.day <= (32 - kislevl) Then
+        holiday = Chr$(Asc("ב") + hdate.day + 32 - kislevl) + "' " + " חנוכה"
+        
+       ElseIf hdate.month = 4 And kislevl = 30 And hdate.day <= (32 - kislevl) Then
+        holiday = Chr$(Asc("ד") + hdate.day + 32 - kislevl) + "' " + " חנוכה"
+         
+         
+       ElseIf hdate.day = 15 And hdate.month = 5 Then
+       holiday = "טו בשבט"
+       
+       ElseIf hdate.day = 14 And (hdate.month = 6 Or hdate.month = 6.2) Then
+       holiday = "פורים"
+       
+       ElseIf hdate.day = 15 And (hdate.month = 6 Or hdate.month = 6.2) Then
+       holiday = "שושן פורים"
+       
+       ElseIf hdate.day = 15 And hdate.month = 7 Then
+       holiday = "פסח"
+        
+        ElseIf hdate.day >= 16 And hdate.day <= 20 And hdate.month = 7 Then
+        holiday = "חוהמ" + Chr$(34) + "פ"
+        
+        ElseIf hdate.day = 21 And hdate.month = 7 Then
+        holiday = "שביעי של פסח"
+        
+        ElseIf hdate.day = 18 And hdate.month = 8 Then
+        holiday = "לג בעומר"
+        
+        ElseIf hdate.day = 6 And hdate.month = 9 Then
+        holiday = "שבועות"
+        
+        ElseIf hdate.month = 11 Then
+        If (hdate.day = 9 And curweekday <= 5) Or (hdate.day = 8 And curweekday = 5) Or (hdate.day = 10 And curweekday = 1) Then
+        holiday = "ט' באב"
+        End If
+        End If
+        
+        If hdate.month = 7 Then
+        If (hdate.day = 27 And curweekday >= 2 And curweekday <= 5) Or ((hdate.day = 26 Or hdate.day = 25) And curweekday = 5) _
+         Or ((hdate.day = 28) And curweekday = 2) Then
+        holiday = "יום השואה"
+        End If
+        End If
+        
+        If hdate.month = 8 Then
+        If (hdate.day = 5 And curweekday >= 3 And curweekday < 6) Or ((hdate.day = 4 Or hdate.day = 3) And curweekday = 5) _
+         Or ((hdate.day = 6) And curweekday = 3) Then
+        holiday = "יום העצמאות"
+        End If
+        End If
+         
+         If hdate.month = 8 Then
+       ' If (hdate.day = 28 And curweekday >= 1 And curweekday < 6) Then
+        If (hdate.day = 28) Then
+        holiday = "יום ירושלים"
+        End If
+        End If
+        
+        If hdate.month = 8 Then
+        If ((hdate.day = 27 Or hdate.day = 26) And curweekday = 5) Then
+        holiday = "יום ירושלים מוקדם"
+        End If
+        End If
+         
+         If hdate.month = 8 Then
+        If (hdate.day = 4 And curweekday >= 2 And curweekday <= 4) Or ((hdate.day = 3 Or hdate.day = 2) And curweekday = 4) _
+         Or ((hdate.day = 5) And curweekday = 2) Then
+        holiday = "יום הזיכרון"
+        End If
+        End If
+        
+                
+        If hdate.month = 4 Then
+        If (hdate.day = 10 And curweekday <= 6) Or (hdate.day = 11 And curweekday = 1) Then
+        holiday = "צום י' בטבת"
+        End If
+        End If
+         
+        If hdate.month = 10 Then
+        If (hdate.day = 17 And curweekday <= 5) Or (hdate.day = 16 And curweekday = 5) Or (hdate.day = 18 And curweekday = 1) Then
+        holiday = "צום יז בתמוז"
+        End If
+        End If
+          
+        If (hdate.month = 6 Or hdate.month = 6.2) Then
+        If (hdate.day = 13 And curweekday <= 5) Or (hdate.day = 12 And curweekday = 5) Or (hdate.day = 11 And curweekday = 5) Then
+        holiday = "תענית אסתר"
+        End If
+        End If
+        getholiday = holiday
+                                    
+    End Function
+    Function gethdate(ByVal gdate As Date) As hdatetype
+        
+    Dim hdate As hdatetype
+    Dim jdate As Date
+    Dim pdate As Date
+    Dim pdis As Integer
+    Dim ppdate As Date
+    Dim lyl%
+    Dim kislevl%, heshvanl%
+    kislevl = 30: heshvanl = 29
+    jdate = gdate - 13
+    hdate.year = year(jdate) + 3760
+gethdate:
+    pdate = getpdate(hdate.year)
+    pdis = jdate - pdate
+    If pdis > 162 Then
+    hdate.year = year(jdate) + 3761
+    GoTo gethdate
+    End If
+    hdate.month = 7
+    hdate.day = 15 + pdis
+    If hdate.day > 0 Then
+    If hdate.day = 30 Then GoTo out
+    If hdate.day > 30 Then hdate.month = 8: hdate.day = hdate.day - 30
+    If hdate.day > 29 Then hdate.month = 9: hdate.day = hdate.day - 29
+    If hdate.day = 30 Then GoTo out
+    If hdate.day > 30 Then hdate.month = 10: hdate.day = hdate.day - 30
+    If hdate.day > 29 Then hdate.month = 11: hdate.day = hdate.day - 29
+    If hdate.day = 30 Then GoTo out
+    If hdate.day > 30 Then hdate.month = 12: hdate.day = hdate.day - 30
+    If hdate.day > 29 Then hdate.month = 13: hdate.day = hdate.day - 29
+out:
+    Else
+    ppdate = getpdate(hdate.year - 1)
+    lyl = pdate - ppdate
+    If lyl = 385 Or lyl = 355 Then heshvanl = 30
+    If lyl = 383 Or lyl = 353 Then kislevl = 29
+    If lyl > 360 Then
+    If hdate.day < 1 Then hdate.month = 6.2: hdate.day = hdate.day + 29
+    If hdate.day < 1 Then hdate.month = 6.1: hdate.day = hdate.day + 30
+    Else
+    If hdate.day < 1 Then hdate.month = 6: hdate.day = hdate.day + 29
+    End If
+    If hdate.day < 1 Then hdate.month = 5: hdate.day = hdate.day + 30
+    If hdate.day < 1 Then hdate.month = 4: hdate.day = hdate.day + 29
+    If hdate.day < 1 Then hdate.month = 3: hdate.day = hdate.day + kislevl
+    If hdate.day < 1 Then hdate.month = 2: hdate.day = hdate.day + heshvanl
+    If hdate.day < 1 Then hdate.month = 1: hdate.day = hdate.day + 30
+    If hdate.day < 1 Then hdate.month = 0: hdate.day = hdate.day + 29
+    End If
+    hdate.eday = Right("0" + Trim$(str$(Nz(hdate.day))), 2)
+    hdate.emonth = Trim$(str$(Nz(hdate.month)))
+    If hdate.emonth = "6.1" Or hdate.emonth = "6.2" Then
+     hdate.emonth = "6"
+    End If
+    hdate.emonth = Right(("0" + hdate.emonth), 2)
+    hdate.eyear = Trim$(str$(Nz(hdate.year)))
+    hdate.beyear = Trim$(str$(Nz((hdate.year) + 13)))
+    hdate.elong = hdate.eyear + hdate.emonth + hdate.eday
+    hdate.belong = hdate.beyear + hdate.emonth + hdate.eday
+    
+    hdate.hday = getgimatrics(hdate.day)
+    hdate.hmonth = getmonthname(hdate.month)
+    hdate.hyear = getgimatrics(hdate.year)
+    hdate.hyearn = getgimatrics((hdate.year) + 1)
+    hdate.holiday = getholiday(hdate, gdate, kislevl)
+    gethdate = hdate
+    
+     End Function
+
+ 
+ Function gethdatee(ByVal gdate As Date, q As Integer) As String
+    On Error GoTo outerr
+    Dim hdate As hdatetype
+    Dim jdate As Date
+    Dim pdate As Date
+    Dim pdis As Integer
+    Dim ppdate As Date
+    Dim lyl%
+    Dim kislevl%, heshvanl%
+    kislevl = 30: heshvanl = 29
+    jdate = gdate - 13
+    hdate.year = year(jdate) + 3760
+gethdate:
+    pdate = getpdate(hdate.year)
+    pdis = jdate - pdate
+    If pdis > 162 Then
+    hdate.year = year(jdate) + 3761
+    GoTo gethdate
+    End If
+    hdate.month = 70
+    hdate.day = 15 + pdis
+    If hdate.day > 0 Then
+    If hdate.day = 30 Then GoTo out
+    If hdate.day > 30 Then hdate.month = 80: hdate.day = hdate.day - 30
+    If hdate.day > 29 Then hdate.month = 90: hdate.day = hdate.day - 29
+    If hdate.day = 30 Then GoTo out
+    If hdate.day > 30 Then hdate.month = 100: hdate.day = hdate.day - 30
+    If hdate.day > 29 Then hdate.month = 110: hdate.day = hdate.day - 29
+    If hdate.day = 30 Then GoTo out
+    If hdate.day > 30 Then hdate.month = 120: hdate.day = hdate.day - 30
+    If hdate.day > 29 Then hdate.month = 130: hdate.day = hdate.day - 29
+out:
+    Else
+    ppdate = getpdate(hdate.year - 1)
+    lyl = pdate - ppdate
+    If lyl = 385 Or lyl = 355 Then heshvanl = 30
+    If lyl = 383 Or lyl = 353 Then kislevl = 29
+    If lyl > 360 Then
+    If hdate.day < 1 Then hdate.month = 62: hdate.day = hdate.day + 29
+    If hdate.day < 1 Then hdate.month = 61: hdate.day = hdate.day + 30
+    Else
+    If hdate.day < 1 Then hdate.month = 60: hdate.day = hdate.day + 29
+    End If
+    If hdate.day < 1 Then hdate.month = 50: hdate.day = hdate.day + 30
+    If hdate.day < 1 Then hdate.month = 40: hdate.day = hdate.day + 29
+    If hdate.day < 1 Then hdate.month = 30: hdate.day = hdate.day + kislevl
+    If hdate.day < 1 Then hdate.month = 20: hdate.day = hdate.day + heshvanl
+    If hdate.day < 1 Then hdate.month = 10: hdate.day = hdate.day + 30
+    If hdate.day < 1 Then hdate.month = 0: hdate.day = hdate.day + 29
+    End If
+  '  hdate.eday = Right("0" + Trim$(str$(Nz(hdate.day))), 2)
+    hdate.emonth = Trim$(str$(Nz(hdate.month)))
+    
+    If q = 0 Then
+     If hdate.emonth = "60" Then hdate.emonth = "60"
+     If hdate.emonth = "61" Then hdate.emonth = "60"
+     If hdate.emonth = "62" Then hdate.emonth = "60"
+    End If
+    If q = 1 Then
+     If hdate.emonth = "60" Then hdate.emonth = "999"
+     If hdate.emonth = "61" Then hdate.emonth = "61"
+     If hdate.emonth = "62" Then hdate.emonth = "999"
+    End If
+    If q = 2 Then
+     If hdate.emonth = "60" Then hdate.emonth = "62"
+     If hdate.emonth = "61" Then hdate.emonth = "999"
+     If hdate.emonth = "62" Then hdate.emonth = "62"
+    End If
+    
+    hdate.emonth = Right(("000" + hdate.emonth), 3)
+  '  hdate.eyear = Trim$(str$(Nz(hdate.year)))
+  '  hdate.beyear = Trim$(str$(Nz((hdate.year) + 13)))
+  '  hdate.elong = hdate.eyear + hdate.emonth + hdate.eday
+  '  hdate.belong = hdate.beyear + hdate.emonth + hdate.eday
+    
+    hdate.ehday = Trim$(str$(Nz(hdate.day)))
+     
+    hdate.ehday = Right(("00" + Nz(hdate.ehday)), 2)
+     
+  '  hdate.hmonth = getmonthname(hdate.month)
+   
+  '  hdate.hyear = Trim$(str$(Nz(hdate.year)))
+   ' hdate.holiday = getholiday(hdate, gdate, kislevl)
+    
+    gethdatee = Trim$(hdate.emonth & hdate.ehday)
+     
+outerr:
+     End Function

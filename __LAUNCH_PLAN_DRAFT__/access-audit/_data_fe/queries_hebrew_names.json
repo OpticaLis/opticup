@@ -1,0 +1,127 @@
+﻿[
+    {
+        "Name":  "~sq_cf_adds_catalog_1~sq_cסוג",
+        "Type":  0,
+        "SQLPreview":  "SELECT BANK_LIST.bank, BANK_LIST.tran, BANK_LIST.qtyp, Val(nz([qtyp])) AS q\r\nFROM BANK_LIST\r\nWHERE (((Val(nz([qtyp])))=30))\r\nORDER BY BANK_LIST.tran;\r\n"
+    },
+    {
+        "Name":  "~sq_cf_adds_catalog_1~sq_cתאור",
+        "Type":  0,
+        "SQLPreview":  "SELECT BANK_LIST.bank, BANK_LIST.tran, BANK_LIST.qtyp, BANK_LIST.redc, BANK_LIST.tm, BANK_LIST.reda, Val(nz([qtyp])) AS q\r\nFROM BANK_LIST\r\nWHERE (((Val(nz([qtyp])))=31))\r\nORDER BY BANK_LIST.tran;\r\n"
+    },
+    {
+        "Name":  "~sq_cf_adds_catalog~sq_cתאור",
+        "Type":  0,
+        "SQLPreview":  "SELECT BANK_LIST.bank, BANK_LIST.tran, BANK_LIST.qtyp, BANK_LIST.redc, BANK_LIST.tm, BANK_LIST.reda, Val(nz([qtyp])) AS q\r\nFROM BANK_LIST\r\nWHERE (((Val(nz([qtyp])))=31))\r\nORDER BY BANK_LIST.tran;\r\n"
+    },
+    {
+        "Name":  "~sq_drp_order_m~sq_dמירשם משקפיים",
+        "Type":  0,
+        "SQLPreview":  "SELECT items_sales.item_name1, items_sales.item_name2, items_sales.item_name3, items_sales.item_name4, items_sales.item_name5, items_sales.item_name6, items_sales.item_name21, items_sales.item_name22,"
+    },
+    {
+        "Name":  "~sq_drp_order_spka~sq_dמירשם משקפיים",
+        "Type":  0,
+        "SQLPreview":  "SELECT items_sales.item_name1, items_sales.item_name2, items_sales.item_name3, items_sales.item_name4, items_sales.item_name5, items_sales.item_name6, items_sales.item_name21, items_sales.item_name22,"
+    },
+    {
+        "Name":  "qlist_total_orders_frmֹ_first",
+        "Type":  0,
+        "SQLPreview":  "SELECT orders.*, Trim$([fname])+\"  \"+Trim$([pname]) \u0026 \" \" \u0026 IIf(nz([cust_list]![sel])\u003c\u003e\"\",[cust_list]![sel],nz([cust_list]![tel])) AS namew, Trim$([pname])+\"  \"+Trim$([fname]) AS prname, [cust_list]!["
+    },
+    {
+        "Name":  "qlist_total_orders_frmֹ_sg",
+        "Type":  0,
+        "SQLPreview":  "SELECT orders.*, Trim$([fname])+\"  \"+Trim$([pname]) \u0026 \" \" \u0026 IIf(nz([cust_list]![sel])\u003c\u003e\"\",[cust_list]![sel],nz([cust_list]![tel])) AS namew, Trim$([pname])+\"  \"+Trim$([fname]) AS prname, [cust_list]!["
+    },
+    {
+        "Name":  "הזמנה_לבדיקה",
+        "Type":  0,
+        "SQLPreview":  "SELECT cust_list.sel AS מספר, nz(Format([datew],\"Short Date\")) AS תאריך, Format([qhour],\"Short Time\") AS שעה, Trim$(nz([pname]))+\" \"+Trim$(nz([fname])) AS שם\r\nFROM tb_date_list INNER JOIN cust_list ON"
+    },
+    {
+        "Name":  "הזמנת_מסגרות",
+        "Type":  0,
+        "SQLPreview":  "SELECT DISTINCTROW SAPAKIM.[SHEM SAPAK] AS [שם ספק], tb_catalog.hevra AS חברה, tb_catalog.degem AS דגם, tb_catalog.godel AS גודל, tb_catalog.color AS צבע, tb_catalog.barcode AS ברקוד, nz(DLookUp(\"amou"
+    },
+    {
+        "Name":  "מייל",
+        "Type":  0,
+        "SQLPreview":  "SELECT letter_labels.name AS [שם לקוח], letter_labels.pname AS [שם-פרטי], letter_labels.fname AS [שם-משפחה], letter_labels.email AS מייל, letter_labels.lang AS שפה\r\nFROM letter_labels;\r\n"
+    },
+    {
+        "Name":  "מלאי_old",
+        "Type":  0,
+        "SQLPreview":  "SELECT xg_ReplaceAllWith((Trim$(nz([hevra]))),\"\u0027\",\"\"\"\") AS חברה, xg_ReplaceAllWith((Trim$(nz([degem]))),\"\u0027\",\"\"\"\") AS דגם, xg_ReplaceAllWith((Trim$(nz([godel]))),\"\u0027\",\"\"\"\") AS גודל, xg_ReplaceAllWith((T"
+    },
+    {
+        "Name":  "מלאי-מסגרות",
+        "Type":  0,
+        "SQLPreview":  "SELECT tb_q_catalog_melai.barcode AS [בר-קוד], xg_ReplaceAllWith((Trim$(nz([hevra]))),\"\u0027\",\"\"\"\") AS חברה, xg_ReplaceAllWith((Trim$(nz([degem]))),\"\u0027\",\"\"\"\") AS דגם, xg_ReplaceAllWith((Trim$(nz([godel])))"
+    },
+    {
+        "Name":  "מלאי-מסגרותG",
+        "Type":  0,
+        "SQLPreview":  "SELECT tb_q_catalog_melai.barcode AS [בר-קוד], SAPAKIM.[SHEM SAPAK] AS [שם ספק], tb_q_catalog_melai.hevra AS חברה, tb_q_catalog_melai.degem AS דגם, tb_q_catalog_melai.godel AS גודל, tb_q_catalog_melai"
+    },
+    {
+        "Name":  "מלאי-מסגרות-חברה",
+        "Type":  0,
+        "SQLPreview":  "SELECT SAPAKIM.[SHEM SAPAK] AS [שם ספק], xg_ReplaceAllWith((Trim$(nz([hevra]))),\"\u0027\",\"\"\"\") AS חברה, Sum(tb_q_catalog_melai.amount) AS כמות, tb_q_catalog_melai.ws AS שמש\r\nFROM (tb_q_catalog_melai INNER "
+    },
+    {
+        "Name":  "מלאי-מסגרות-חברהG",
+        "Type":  0,
+        "SQLPreview":  "SELECT SAPAKIM.[SHEM SAPAK] AS [שם ספק], tb_q_catalog_melai.hevra AS חברה, Sum(tb_q_catalog_melai.amount) AS כמות, tb_q_catalog_melai.ws AS שמש\r\nFROM tb_q_catalog_melai LEFT JOIN SAPAKIM ON tb_q_catal"
+    },
+    {
+        "Name":  "מלאי-מסגרות-חברהR",
+        "Type":  0,
+        "SQLPreview":  "SELECT SAPAKIM.[SHEM SAPAK] AS [שם ספק], xg_ReplaceAllWith((Trim$(nz([hevra]))),\"\u0027\",\"\"\"\") AS חברה, Sum(tb_q_catalog_melai_price.amount) AS כמות, tb_q_catalog_melai_price.ws AS שמש\r\nFROM tb_q_catalog_m"
+    },
+    {
+        "Name":  "מסגרות",
+        "Type":  0,
+        "SQLPreview":  "SELECT SAPAKIM.[SHEM SAPAK] AS ספק, nz([qhevra]) AS חברה, nz([qdegem]) AS דגם, q_mehirotb_x.sun AS [משקפי-שמש], Sum(q_mehirotb_x.qbprice) AS מכירות, Sum(q_mehirotb_x.qsprice) AS עלות, Count(q_mehirotb"
+    },
+    {
+        "Name":  "נייד",
+        "Type":  0,
+        "SQLPreview":  "SELECT letter_labels.sel AS נייד, nz([pname]) \u0026 \" \" \u0026 nz([fname]) AS שם, letter_labels.pname AS [שם-פרטי], letter_labels.fname AS [שם-משפחה], letter_labels.lang AS שפה\r\nFROM letter_labels;\r\n"
+    },
+    {
+        "Name":  "עדשות",
+        "Type":  0,
+        "SQLPreview":  "SELECT SAPAKIM.[SHEM SAPAK] AS ספק, q_mehirot_adb_x.Expr6 AS [סוג מרשם], q_mehirot_adb_x.Expr7 AS קטגוריה, q_mehirot_adb_x.Expr9 AS חברה, q_mehirot_adb_x.Expr10 AS אינדקס, q_mehirot_adb_x.Expr11 AS קו"
+    },
+    {
+        "Name":  "פרטי-לקוח",
+        "Type":  0,
+        "SQLPreview":  "SELECT letter_labels.numw AS קוד, letter_labels.fname AS [שם-משפחה], letter_labels.pname AS [שם-פרטי], letter_labels.lang AS שפה, letter_labels.Min AS מין, letter_labels.zehut AS [ת-זהות], letter_labe"
+    },
+    {
+        "Name":  "קטלוג-מסגרות",
+        "Type":  0,
+        "SQLPreview":  "SELECT tb_catalog_sw.barcode AS [בר קןד], SAPAKIM.[SHEM SAPAK] AS ספק, tb_catalog_sw.hevra AS חברה, tb_catalog_sw.degem AS דגם, tb_catalog_sw.godel AS גודל, tb_catalog_sw.color AS צבע, tb_catalog_sw.a"
+    },
+    {
+        "Name":  "קטלוג-עדשות",
+        "Type":  0,
+        "SQLPreview":  "SELECT tb_ad_catalog_sw.barcode AS [בר קןד], SAPAKIM.[SHEM SAPAK] AS ספק, tb_ad_catalog_sw.hevra AS חברה, tb_ad_catalog_sw.typ AS [סוג עדשה], tb_ad_catalog_sw.mat AS אינדקס, tb_ad_catalog_sw.ktr AS קו"
+    },
+    {
+        "Name":  "תקבול_הזמנה",
+        "Type":  0,
+        "SQLPreview":  "SELECT q_tashlumim_xls.namew AS [שם לקוח], q_tashlumim_xls.ordernum AS [מספר הזמנה], q_tashlumim_xls.typ AS [אופן תשלום], q_tashlumim_xls.odate AS [תאריך הזמנה], q_tashlumim_xls.wdate AS [תאריך תשלום]"
+    },
+    {
+        "Name":  "תקבול_פירעון",
+        "Type":  0,
+        "SQLPreview":  "SELECT q_tashlumim_xls.namew AS [שם לקוח], q_tashlumim_xls.ordernum AS [מספר הזמנה], q_tashlumim_xls.typ AS [אופן תשלום], q_tashlumim_xls.odate AS [תאריך הזמנה], q_tashlumim_xls.wdate AS [תאריך תשלום]"
+    },
+    {
+        "Name":  "תקבול_תשלום",
+        "Type":  0,
+        "SQLPreview":  "SELECT q_tashlumim_xls.namew AS [שם לקוח], q_tashlumim_xls.ordernum AS [מספר הזמנה], q_tashlumim_xls.typ AS [אופן תשלום], q_tashlumim_xls.odate AS [תאריך הזמנה], q_tashlumim_xls.wdate AS [תאריך תשלום]"
+    }
+]

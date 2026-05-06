@@ -1,0 +1,3114 @@
+﻿Option Compare Database
+Option Explicit
+'  ShrinkerStretcher v97.9.1 for Access 97 from Peter's Software
+'
+'    Scales controls, fonts, and forms in proportion to the size of the form window.
+'
+'  This module was created by:
+'
+'    Peter's Software
+'    1317 Oceanfront #2
+'    Santa Monica, CA  90401
+'    USA
+'    info@peterssoftware.com
+'    http://www.peterssoftware.com
+'
+'  Special thanks to
+'
+'    Stuart Kinnear
+'    http://www.skproactive.com
+'
+'  If you find that this product is useful to you, and you haven't already
+'  registered it, please do so by sending a check (made out to "Peter's
+'  Software") for the equivalent of US$35.95 to the address above.
+'
+'  With your registration, you are allowed to use ShrinkerStretcher on up
+'  to 5 computers (to Purchase additional licenses see the accompanying
+'  "ReadMe.txt" file). Also, you will receive the latest full version of
+'  ShrinkerStretcher, one free upgrade as it becomes available, and
+'  subsequent upgrade notifications.
+'
+'  I do not require that this header be included in any apps you distribute,
+'  but would appreciate credit being given in your documentation.
+'
+'  Usage 1:
+'    SS_OpenForm "MyFormName"   - from the OnClick event of a command button
+'
+'  Usage 2:
+'    SS_OnOpen Me      - from your form's OnOpen event.
+'    SS_OnResize Me    - from your form's OnResize event.
+'
+'  Usage 3 (one time only rescaling - causes form to be scaled when it first opens, and not after that):
+'    SS_OpenForm "MyFormName", , , , , "Resize=OneTimeOnly"
+'
+'  Usage 4 (one time only rescaling):
+'    SS_OnOpen Me          - from your form's OnOpen event.
+'
+'    Me.TimerInterval = 0  - from your form's
+'    SS_OnResize Me        -   OnTimer event.
+'
+'    Also, set form TimerInterval property to 1.
+'
+'  Usage 5 (static rescaling):
+'    "SSStaticRescale" anywhere in form tag property to mark form for static rescaling.
+'    "SSMaximize" anywhere in form tag property if form is meant to be maximized when opened.
+'    Use Macro "Rescale Marked Forms" to rescale and save all marked forms (can be run at
+'      application startup as part of autoexec macro).
+'
+'  Usage 6 (individual form scaling):
+'    Open the "SSControl" form, select a form, and click the rescale button.
+
+Const conShrinkStretch = True       '* "False" will disable ShrinkerStretcher.
+Const conChangeFonts = True         '* "True" means that non-shrinkable fonts will be changed to shrinkable ones.
+Const conLongFormAdj = True         '* "True" means that multi-page (long) forms won't be excessively shrunk when they are first opened.
+Const conAdjustToRes = True         '* Adjust form size up or down to match screen resolution (for other than maximized forms)
+'*
+'* If conAdjustToRes = True, then you must set the screen resolution,
+'* Log Pixels (font size), and Taskbar height  that your application was developed with.
+'*
+
+'*
+'Public Const conOrigWd = 1440     '* un-comment these lines if development
+'Public Const conOrigHt = 900      '* environment is 1280x800 resolution.
+Public Const conOrigWd = 1280     '* un-comment these lines if development
+Public Const conOrigHt = 800      '* environment is 1280x800 resolution.
+
+'Public Const conOrigWd = 1024     '* un-comment these lines if development
+'Public Const conOrigHt = 768      '* environment is 1024x768 resolution.
+
+'Public Const conOrigWd = 800     '* un-comment these lines if development
+'Public Const conOrigHt = 600      '* environment is 1024x768 resolution.
+
+'*
+Const conOrigLogPixelsY = 96    '* un-comment this line if development environment is small fonts
+'Const conOrigLogPixelsY = 120  '* un-comment this line if development environment is large fonts (125%)
+'Const conOrigLogPixelsy = 144  '* un-comment this line if development environment is larger fonts (150%)
+'Const conOrigLogPixelsy = 168  '* un-comment this line if development environment is even larger fonts (175%)
+'*
+'* Adjust to Resolution based on Access window size.
+Const conOrigHorzTaskbarHeight = 20     '* un-comment this line if development environment has horizontal taskbar
+'Const conOrigHorzTaskbarHeight = -2    '* un-comment this line if development environment has hidden taskbar
+'Const conOrigHorzTaskbarHeight = -8    '* un-comment this line if development environment has vertical taskbar
+'*
+'Const conOrigVertTaskbarWidth = 27     '* un-comment this line if development environment has vertical taskbar
+'Const conOrigVertTaskbarWidth = -2    '* un-comment this line if development environment has hidden taskbar
+Const conOrigVertTaskbarWidth = -8    '* un-comment this line if development environment has horizontal taskbar
+
+
+Const conCheckClientArea = False    '* When static rescaling, "True" will cause rescaling to occur only if client area rectangle has changed
+Const conSSVerbose = True           '* "True" displays messages during static rescaling
+Const conRetainProportion = True    '* Retain original form proportions.
+Const conMinimumFontSize = 7        '* Set this to smallest readable font point size
+Const conTabCtlLoopAdj = False     '* "True" can result in more accurately resized tab controls, slower performance
+Const conOptGroupLoopAdj = False     '* "True" can result in more accurately resized option groups, slower performance
+Const conSameResNoInitialScaling = False    '* "True" will inhibit initial scaling when current screen res is same as form original resolution
+'pddxxx .91 New compile-time constant
+Const conScaleSubformWidthToFit = False      '* "True" will scale subform width to fit subform control
+                                            '* "False" will open the subform control at its saved size
+Const conRetainSubformProportion = True     '* "True" will retain subform aspect ratio.
+                                            '* "False", along with conScaleSubformWidthToFit = "True",
+                                            '* will scale subform dis-proportionately.
+Const conDatasheetDefault8ptRowHeight = 225   '* Used to determine default datasheet row height just prior to scaling
+Const conAutoDetermineLongForm = False  '* "True" - SS will automatically determine which forms are long (multi-page) forms.
+                                        '* "False - Forms must have "SSLong" in tag property to be treated as long forms.
+Const conAdjustToSizeOfAccessWindow = True  '* "True", if conAdjustToRes is also true, then initial rescaling
+                                            '* will size to fit within Access window
+                                            '* "False", if conAdjustToRes is true, then initial rescaling will
+                                            '* adjust forms based on screen resolution
+Const conAdjustResUpperLimit = 9.9      '* On initial resolution adjustment, these constants set an upper and
+Const conAdjustResLowerLimit = 0.1      '*   lower limit to rescaling. 1.2 = 120%, 0.8 = 80% (non-maximized forms only)
+Const conScaleFonts = True              '* "True" will scale fonts, "False" will inhibit font scaling.
+
+Const conDebug = 0
+Const conDesignView = 0
+Const conFormView = 1
+Const conDatasheetView = 2
+Const conContinuousForms = 1
+Const conLFmax = 4
+Const conCFmax = 20
+Const conFRFormsMax = 20        '* this must be at least 2
+Const conExitOnError = True
+Const mcModuleName = "basShrinkerStretcher"
+Const mcOpenFormHidden = True
+Const conTabControlFixedBorderWidth = 136
+'pddxxx .91 This value seems to vary between 135 and 142. So choose mid value
+Const conTabControlFixedBorderHeight = 139
+Const conTabControlFixedBorderWidthStyleNone = 82
+'pddxxx .91 This value seems to vary between 75 and 81. So choose mid value
+Const conTabControlFixedBorderHeightStyleNone = 78
+Const conTabFixedHeightDefault = 270
+Const WM_HORZRES = 8
+Const WM_VERTRES = 10
+
+Public Const conSSdemo = False
+Public Const SS_LOGPIXELSX = 88
+Public Const SS_LOGPIXELSY = 90
+Public Const SS_SM_CXVSCROLL = 2
+Public Const SS_SM_CXFRAME = 32
+Public Const SS_SW_MAXIMIZE = 3
+Public Const SS_HORZRES = 8
+Public Const SS_VERTRES = 10
+Public Const SS_SW_HIDE = 0
+Public Const SS_SW_SHOW = 5
+Public Const SS_SW_RESTORE = 9
+Public Const SS_GWL_STYLE = (-16)
+Public Const SS_SWP_NOZORDER = &H4
+Public Const SS_SWP_SHOWWINDOW = &H40
+Public Const SS_SWP_HIDEWINDOW = &H80
+Public Const SS_SWP_NOMOVE = &H2
+Public Const SS_SWP_NOSIZE = &H1
+
+Public Type SS_RECT
+    Left As Long
+    Top As Long
+    Right As Long
+    Bottom As Long
+End Type
+Type SS_RECT_WDHT
+    Left As Integer
+    Top As Integer
+    Width As Integer
+    height As Integer
+End Type
+
+'*pddxxx .91 New type created for improved tab control sizing
+Type SS_RECT_WDHT_TC
+    name As String
+    Left As Integer
+    Top As Integer
+    Width As Integer
+    height As Integer
+    PageHorzAdj As Single
+    PageVertAdj As Single
+    OrigPageLeft As Integer
+    OrigPageTop As Integer
+End Type
+
+Type FREntry    '* Font ratio array entry
+    formname As String
+    controlname As String
+    fontratio As Single
+    FontName As String
+End Type
+Type CFEntry    '* Continuous form array entry
+    formname As String
+    oldheight As Integer
+End Type
+
+Public SkipSS As Integer
+'* This variable is true when SS routines are first called after the form is opened
+'* from perhaps an event sink class module.
+Public SSInitWhenFormAlreadyOpen As Integer
+Dim SShDesktopWnd As Long
+Dim SShDCcaps As Long
+Dim DisplayBits As Integer
+Dim DisplayPlanes As Integer
+Dim DisplayWidth As Long
+Dim DisplayHeight As Long
+Dim DisplayLogPixelsY As Long
+Dim DisplayLogPixelsX As Long
+Dim WindowScrollBar As Integer
+Dim WindowFrame As Integer
+Dim SSTwipsPerPixel As Integer
+Dim JustOpened As Integer
+Dim LongForm As Integer
+Dim sf_flag As Integer      '* subform flag
+Dim sf_PrevHt As Integer
+Dim sf_PrevWd As Integer
+Dim SSCurrentFormHeight As Integer
+Dim SSCurrentFormWidth As Integer
+
+Dim SSStaticResize As Integer
+
+'* Make sure that JustOpened variable does not get turned off too soon.
+Dim SSMainFormName As String
+Dim SSResFactor As Single
+
+Dim FRFormName As String
+Dim FRLastRow As Integer
+Dim LFSub As Integer
+
+Dim FR() As FREntry
+Dim lf(4) As String     '* Holds names of all of the Long Forms ecountered.
+Dim CF(40) As CFEntry   '* Holds old height and width values for each continuous form encountered
+
+Global gcolForms        As New Collection
+#If VBA7 Then
+Declare PtrSafe Function SS_apiGetWindowRect Lib "user32" Alias "GetWindowRect" (ByVal hwnd As Long, lpRect As SS_RECT) As Long     '*7.0
+Declare PtrSafe Function SS_apiGetDesktopWindow Lib "user32" Alias "GetDesktopWindow" () As Long    '*7.0
+Declare PtrSafe Function SS_apiGetDC Lib "user32" Alias "GetDC" (ByVal hwnd As Long) As Long    '*7.0
+Declare PtrSafe Function SS_apiGetDeviceCaps Lib "gdi32" Alias "GetDeviceCaps" (ByVal hdc As Long, ByVal nIndex As Long) As Long   '*7.0
+Declare PtrSafe Function SS_apiGetSystemMetrics Lib "user32" Alias "GetSystemMetrics" (ByVal nIndex As Long) As Long    '*7.0
+Declare PtrSafe Function SS_apiReleaseDC Lib "user32" Alias "ReleaseDC" (ByVal hwnd As Long, ByVal hdc As Long) As Long        '*7.0
+Declare PtrSafe Function SS_apiIsZoomed Lib "user32" Alias "IsZoomed" (ByVal hwnd As Long) As Long      '*7.0
+Declare PtrSafe Function SS_apiGetClientRect Lib "user32" Alias "GetClientRect" (ByVal hwnd As Long, lpRect As SS_RECT) As Long     '*7.0
+Declare PtrSafe Function SS_apiShowWindow Lib "user32" Alias "ShowWindow" (ByVal hwnd As Long, ByVal nCmdShow As Long) As Long
+Declare PtrSafe Function SS_apiAdjustWindowRect Lib "user32" Alias "AdjustWindowRect" (lpRect As SS_RECT, ByVal dwStyle As Long, ByVal bMenu As Long) As Long
+Declare PtrSafe Function SS_apiGetWindowLong Lib "user32" Alias "GetWindowLongA" (ByVal hwnd As Long, ByVal nIndex As Long) As Long
+Declare PtrSafe Function SS_apiSetWindowPos Lib "user32" Alias "SetWindowPos" (ByVal hwnd As Long, ByVal hWndInsertAfter As Long, ByVal X As Long, ByVal Y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long) As Long
+#Else
+Declare Function SS_apiGetWindowRect Lib "user32" Alias "GetWindowRect" (ByVal hwnd As Long, lpRect As SS_RECT) As Long     '*7.0
+Declare Function SS_apiGetDesktopWindow Lib "user32" Alias "GetDesktopWindow" () As Long    '*7.0
+Declare Function SS_apiGetDC Lib "user32" Alias "GetDC" (ByVal hwnd As Long) As Long    '*7.0
+Declare Function SS_apiGetDeviceCaps Lib "gdi32" Alias "GetDeviceCaps" (ByVal hdc As Long, ByVal nIndex As Long) As Long   '*7.0
+Declare Function SS_apiGetSystemMetrics Lib "user32" Alias "GetSystemMetrics" (ByVal nIndex As Long) As Long    '*7.0
+Declare Function SS_apiReleaseDC Lib "user32" Alias "ReleaseDC" (ByVal hwnd As Long, ByVal hdc As Long) As Long        '*7.0
+Declare Function SS_apiIsZoomed Lib "user32" Alias "IsZoomed" (ByVal hwnd As Long) As Long      '*7.0
+Declare Function SS_apiGetClientRect Lib "user32" Alias "GetClientRect" (ByVal hwnd As Long, lpRect As SS_RECT) As Long     '*7.0
+Declare Function SS_apiShowWindow Lib "user32" Alias "ShowWindow" (ByVal hwnd As Long, ByVal nCmdShow As Long) As Long
+Declare Function SS_apiAdjustWindowRect Lib "user32" Alias "AdjustWindowRect" (lpRect As SS_RECT, ByVal dwStyle As Long, ByVal bMenu As Long) As Long
+Declare Function SS_apiGetWindowLong Lib "user32" Alias "GetWindowLongA" (ByVal hwnd As Long, ByVal nIndex As Long) As Long
+Declare Function SS_apiSetWindowPos Lib "user32" Alias "SetWindowPos" (ByVal hwnd As Long, ByVal hWndInsertAfter As Long, ByVal X As Long, ByVal Y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long) As Long
+#End If
+
+Function a_OpenDemoForm()
+SS_OpenForm "SSDemo"
+End Function
+
+
+
+
+Function SS_ProcUncommentedTextExists(mdl As Module, sProcName As String, sTextToFind As String) As Integer
+'* Returns True if text is found in the specified procedure of the specified module
+Dim i As Integer
+Dim ipos As Integer
+Dim sLines As String
+Dim sLine As String
+Dim iRtn As Integer
+'Dim vbext_pk_Proc
+On Error Resume Next
+iRtn = False
+
+'MsgBox mdl.Application.CurrentDb.Name
+'If SS_IsMDE(mdl.Application.CurrentDb) Then
+If SS_IsMDE(mdl.Application.CurrentDb) Or SysCmd(acSysCmdRuntime) Then
+    GoTo exit_section
+Else
+End If
+If err <> 0 Then
+    MsgBox "Error near top of SS_ProcUncommentedTextExists - " & err & " " & err.Description
+    err.Clear
+End If
+
+'* Loop through each proc line to see if the uncommented text exists
+For i = mdl.ProcStartLine(sProcName, vbext_pk_Proc) To (mdl.ProcStartLine(sProcName, vbext_pk_Proc) + mdl.ProcCountLines(sProcName, vbext_pk_Proc))
+    If err <> 0 Then
+        If err = 35 Then
+            '* Sub or function doesn't exist
+            err.Clear
+        Else
+            MsgBox "Error in function SS_ProcUncommentedTextExists " & err & " " & err.Description
+            err.Clear
+        End If
+        GoTo exit_section
+    End If
+    sLine = mdl.Lines(i, 1)
+    
+    ipos = InStr(1, sLine, sTextToFind)
+    If ipos > 0 Then
+        'Check to see if this line is a comment
+        If InStr(1, Mid(sLine, 1, ipos), "'") Then
+            '* It's a comment
+        Else
+            iRtn = True
+            Exit For
+        End If
+    End If
+Next i
+
+If err <> 0 Then
+    MsgBox "Error in SS_ProcUncommentedTextExists " & err & " " & err.Description
+    err.Clear
+    GoTo exit_section
+End If
+
+exit_section:
+SS_ProcUncommentedTextExists = iRtn
+End Function
+Function SS_IsMDE(dbAny As DAO.Database) As Boolean
+'* Returns True if the passed database is an MDE file
+Dim varRet As Variant
+On Error Resume Next
+varRet = dbAny.Properties("MDE")
+SS_IsMDE = (varRet = "T") And (err.number = 0)
+err.Clear
+End Function
+Public Function SS_BindFormEvents(ByRef rForm As Form, Optional varOpenArgs As Variant) As Boolean
+'*  Purpose:    To bind the form events to the input form.
+'*  Revised:    Peter De Baets 2/11/01
+'*  Author:     Stuart Kinnear (included with permission)
+'*  Passed:     rForm = form that events will be bound to.
+'*  Returns:    True/False
+
+On Error GoTo SS_BindFormEvents_err
+
+    Dim objForm As clsSinkSSFormEvents
+    Dim strForm As String
+    Dim blnSuccess As Boolean
+    
+If conDebug = 1 Then MsgBox "SS_BindFormEvents for " & rForm.name
+    
+    SS_BindFormEvents = False
+    
+    If rForm Is Nothing Then
+        GoTo SS_BindFormEvents_done
+    End If
+    
+    strForm = rForm.name
+
+    On Error Resume Next
+    Set objForm = gcolForms.Item(strForm)
+    If err = 0 Then
+        blnSuccess = objForm.Init(rForm)
+        If blnSuccess Then
+            SS_BindFormEvents = True
+        End If
+    Else
+        On Error GoTo SS_BindFormEvents_err
+        Set objForm = New clsSinkSSFormEvents
+        blnSuccess = objForm.Init(rForm, varOpenArgs)
+        If blnSuccess Then
+            SS_BindFormEvents = True
+            gcolForms.Add objForm, strForm
+        End If
+    End If
+
+SS_BindFormEvents_done:
+On Error Resume Next
+Set objForm = Nothing
+If conDebug = 1 Then MsgBox "Done with SS_BindFormEvents for " & rForm.name
+On Error GoTo 0
+Exit Function
+
+SS_BindFormEvents_err:
+Select Case err.number
+
+Case Else
+MsgBox "Error in SS_BindFormEvents " & err & " " & err.Description
+End Select
+Resume SS_BindFormEvents_done
+Resume
+End Function
+Function SS_OpenForm(ByVal vstrForm As String, _
+    Optional rstrFilterName As String, _
+    Optional rstrWhereCondition As String, _
+    Optional rvarDataMode As Variant = acFormPropertySettings, _
+    Optional rvarWindowMode As Variant = acWindowNormal, _
+    Optional rvarOpenArgs As Variant)
+'*  Purpose:    To open a form using opening arguments, and automatically bind events to rescaling procedures.
+'*  Revised:    Peter De Baets 2/11/01
+'*  Author:     Stuart Kinnear (included with permission)
+'*  Passed:     vstrForm = name of form
+'*              Other arguments are similar to the DoCmd.OpenForm method.
+
+    Dim objForm         As clsSinkSSFormEvents
+    Dim varOpenArgs     As Variant
+    Dim strFilterName   As String
+    Dim strWhereCondition As String
+    Dim varDataMode     As Variant
+    Dim varWindowMode   As Variant
+    Dim intOrigHadOnResizeEventProc As Integer
+    'Dim strBindTest     As String
+    
+     On Error GoTo SS_OpenForm_err
+    
+    If conDebug = 1 Then MsgBox "SS_OpenForm for " & vstrForm
+    
+    If IsMissing(rstrFilterName) Then
+        strFilterName = ""
+    Else
+        strFilterName = rstrFilterName
+    End If
+    
+    If IsMissing(rstrWhereCondition) Then
+        strWhereCondition = ""
+    Else
+        strWhereCondition = rstrWhereCondition
+    End If
+    
+    varDataMode = rvarDataMode
+    
+    varWindowMode = rvarWindowMode
+    
+    If IsMissing(rvarOpenArgs) Then
+        varOpenArgs = ""
+    Else
+        varOpenArgs = rvarOpenArgs
+    End If
+    
+    Select Case varWindowMode
+    Case acWindowNormal, acHidden
+    Case Else
+        MsgBox "The specified WindowMode parameter is not allowed when opening a form using SS_OpenForm."
+        varWindowMode = acWindowNormal
+    End Select
+    
+    '* Turn Echo off prior to opening form.
+    Application.Echo False, "Opening form..."
+    
+'-- Check to see if form is loaded
+    If (0 <> SysCmd(acSysCmdGetObjectState, acForm, vstrForm)) Then
+    '-- Form already open, hide it then show it if visible to
+    '   trigger the activate event. The form's activate event
+    '   will take care of any arguments forwarded to it.
+     
+       
+         
+        Forms(vstrForm).Visible = False
+        
+    '-- If the resize conditions are different close & re-open form
+        On Error Resume Next
+
+        Set objForm = gcolForms.Item(vstrForm)
+        If err = 0 Then
+            If Not IsMissing(varOpenArgs) Then
+                If Len(varOpenArgs & "") > 0 Then
+                    If InStr(varOpenArgs & ";", "=" & objForm.ResizeState & ";") > 0 Then
+                    Else
+                        DoCmd.Close acForm, vstrForm
+                        DoCmd.OpenForm vstrForm, , strFilterName, strWhereCondition, varDataMode, , varOpenArgs
+                         
+                    End If
+                End If
+            End If
+        End If
+    Else
+        DoCmd.OpenForm vstrForm, , strFilterName, strWhereCondition, varDataMode, , varOpenArgs
+    End If
+
+'-- Check to see if form is loaded
+    If (0 = SysCmd(acSysCmdGetObjectState, acForm, vstrForm)) Then
+        err.Raise 31000, , "Form cannot be opened."
+    End If
+    
+    '* Fix problem with screen not being redrawn correctly in some circumstances.
+    intOrigHadOnResizeEventProc = False
+    If Forms(vstrForm).OnResize = "[Event Procedure]" Then
+        intOrigHadOnResizeEventProc = True
+    Else
+    End If
+  ' Zalman
+  
+    '* If no module exists, then display error message
+     If Forms(vstrForm).HasModule Then
+  '      '* Check for existing rescaling code
+         If InStr(1, Forms(vstrForm).Tag, "SS_OpenForm") > 0 Then
+  '      If SS_ProcUncommentedTextExists(Forms(vstrForm).Module, "Form_Resize", "SS_OnResize ") _
+  '          Or SS_ProcUncommentedTextExists(Forms(vstrForm).Module, "Form_Timer", "SS_OnResize ") Then
+  '          '* Rescaling code already exists, so don't bind any new events
+         Else
+  '          '* Bind the form events
+           SS_BindFormEvents Forms(vstrForm), varOpenArgs
+         End If
+     Else
+  '      '* No form module, so can't bind events
+         If InStr(1, varOpenArgs, "Resize=OneTimeOnly") Then
+  '          '* No problem here because 'no module' forms behave the same as onetimeonly forms
+         Else
+             MsgBox "ShrinkerStretcher cannot rescale this form using the 'SS_OpenForm' function because the form has no module (HasModule Property = 'No'). " _
+                 & vbCrLf & vbCrLf & "Try setting the HasModule property to 'Yes'." _
+                 & vbCrLf & vbCrLf & "Form name = " & vstrForm
+         End If
+  '      '* Run the bind form event code to get the SS_OnOpen, and SS_OnResize code to execute from the
+  '      '* init method.
+         SS_BindFormEvents Forms(vstrForm), varOpenArgs
+     End If
+
+    '* Fix problem with screen not being redrawn correctly in some circumstances.
+    If intOrigHadOnResizeEventProc Then
+        Application.Echo False
+    Else
+    End If
+    
+    If varWindowMode = acHidden Then
+        Forms(vstrForm).Visible = False
+    Else
+        Forms(vstrForm).Visible = True
+    End If
+    
+    Application.Echo True
+    
+    If InStr(varOpenArgs & "", "Mode=DataSheet") > 0 Then
+        RunCommand acCmdDatasheetView
+    End If
+
+SS_OpenForm_done:
+    On Error Resume Next
+    Application.Echo True
+    If conDebug = 1 Then MsgBox "Done with SS_OpenForm for " & vstrForm
+    On Error GoTo 0
+    Exit Function
+
+SS_OpenForm_err:
+    Application.Echo True
+    MsgBox "SS_OpenForm Error. Form " & vstrForm & " could not be opened." & _
+            vbCrLf & vbCrLf & "Error: " & err & " - " & err.Description
+    Resume SS_OpenForm_done
+    Resume
+End Function
+Function SS_GetFormHeight(frm As Form) As Integer
+'* Compute the height of a form
+Dim iHt As Integer
+On Error Resume Next
+iHt = 0
+iHt = iHt + frm.Section(0).height
+iHt = iHt + frm.Section(1).height
+iHt = iHt + frm.Section(2).height
+iHt = iHt + frm.Section(3).height
+iHt = iHt + frm.Section(4).height
+SS_GetFormHeight = iHt
+End Function
+
+
+Function SS_SetDatasheetBasisRowHeight(frm As Form) As Integer
+'* This function sets the Datasheet Basis Row Height for the form being scaled.
+'*
+'* SPECIAL INSTRUCTIONS: If you have a datasheet subform to be scaled whose row height is such that
+'* more than one horizontal line of text is displayed, you need to put that subform name in the
+'* Select case statement below and specify the basis row height by taking the number of lines
+'* displayed in the datasheet row and multiply by 225. Some examples are shown below.
+'*
+On Error GoTo err_section
+Dim iRtn As Integer
+Select Case frm.name
+'Case "MyDatasheetSubformWith2LinesPerRow"
+'    iRtn = 450   'Double line
+'Case "MyDatasheetSubformWith3LinesPerRow"
+'    iRtn = 675   'Triple line
+'pddxxx .91 Provide for a way to make slight adjustments in datasheet row height and width
+'* Reducing the basis row height will reduce the height of the datasheet rows in relation to
+'* the datasheet font. It will also squeeze the datasheet column widths, so they will have to
+'* be adjusted after making a change such as the one below.
+Case "SSDatasheet"
+    iRtn = 225 * 0.9    '* Reduce basis row height by 10%
+Case "SSDatasheet2"
+    iRtn = 450   'Double line
+Case Else
+    '* Use the default basis row height
+    iRtn = conDatasheetDefault8ptRowHeight
+End Select
+
+exit_section:
+SS_SetDatasheetBasisRowHeight = iRtn
+Exit Function
+
+err_section:
+MsgBox "Error in SS_SetDatasheetBasisRowHeight " & err & " " & err.Description
+Resume exit_section
+Resume
+End Function
+
+Sub SS_SizeWindow(sWindow As String, X As Integer, Y As Integer, cx As Integer, cy As Integer)
+'* Size the active form window, or the main Access window.
+'* Parameter sWindow:  "Active" - Size the active form window.
+'*                     "Access" - Size the main Access window.
+'*                 x:  left boundry for window (pixels)
+'*                 y:  top boundry for window
+'*                cx:  width of window
+'*                cy:  height of window
+Dim iRtn As Integer
+Dim lrtn As Long
+Dim hWndSize As Long
+Dim SShDCcaps As Long
+Dim SShDesktopWnd As Long
+Dim DisplayWidth As Long
+Dim DisplayHeight As Long
+
+On Error GoTo err_section
+
+If sWindow = "Active" Then
+    hWndSize = Screen.ActiveForm.hwnd
+ElseIf sWindow = "Access" Then
+    hWndSize = Application.hWndAccessApp
+    '* make API calls to get desktop settings
+    SShDesktopWnd = SS_apiGetDesktopWindow() 'get handle to desktop
+    SShDCcaps = SS_apiGetDC(SShDesktopWnd) 'get display context for desktop
+    DisplayHeight = SS_apiGetDeviceCaps(SShDCcaps, SS_VERTRES) 'vertical resolution
+    DisplayWidth = SS_apiGetDeviceCaps(SShDCcaps, SS_HORZRES) 'horizontal resolution
+    lrtn = SS_apiReleaseDC(SShDesktopWnd, SShDCcaps) 'release display contex
+    If (cx = DisplayWidth) And (cy = DisplayHeight) Then
+        'maximize Access window
+        iRtn = SS_apiShowWindow(hWndSize, SS_SW_MAXIMIZE)
+        GoTo exit_section
+    Else
+        If (cx > DisplayWidth) Or (cy > DisplayHeight) Then
+            Beep
+            MsgBox "Cannot size Access window beyond desktop area."
+            GoTo exit_section
+        Else
+        End If
+    End If
+Else
+    MsgBox "Invalid parameter passed to SS_SizeWindow = " & sWindow
+    GoTo exit_section
+End If
+
+iRtn = SS_apiShowWindow(hWndSize, SS_SW_RESTORE)
+
+Call SS_apiSetWindowPos(hWndSize, 0, X, Y, cx, cy, SS_SWP_NOZORDER Or SS_SWP_SHOWWINDOW)
+
+exit_section:
+Exit Sub
+
+err_section:
+MsgBox "Error in SS_SizeWindow - " & err & " " & err.Description
+Resume exit_section
+End Sub
+Sub SS_SaveFormInsideSettings(frm As Form)
+'* Get these starting values for non-autoresize scaling. Save them in form tag property
+Dim i As Integer
+On Error GoTo err_section
+'* Check for old SSInfo string in tag property
+i = InStr(1, frm.Tag, "SSInfo:")
+If i > 0 Then
+    '* Remove old "SSInfo" from tag property
+    frm.Tag = Left(frm.Tag, i - 1)
+End If
+frm.Tag = frm.Tag & "SSInfo:fiw=" & frm.InsideWidth & _
+    ",fih=" & frm.InsideHeight & ";"
+
+exit_section:
+Exit Sub
+
+err_section:
+MsgBox "Error in SS_SaveFormInsideSettings " & err & " " & err.Description
+Resume exit_section
+
+End Sub
+
+Function SS_GetWordsBetween(sMain As String, s1 As String, s2 As String) As String
+'* Returns a trimmed substring of the string 'sMain' that lies between substrings s1 and s2
+'* Ex.: xg_GetWordsBetween("The Lazy Fox", "The", "Fox") returns "Lazy".
+On Error Resume Next
+Dim iStart As Integer, iEnd As Integer
+    iStart = InStr(1, sMain, s1) + Len(s1)
+    iEnd = InStr(iStart, sMain, s2)
+    SS_GetWordsBetween = Trim(Mid(sMain, iStart, iEnd - iStart))
+End Function
+Sub SS_MsgBox(strPrompt As String)
+'* Open the custom msgbox form, and display the passed message.
+Dim sPrompt As String
+On Error GoTo Err_SS_MsgBox
+
+If IsNull(strPrompt) Then
+    sPrompt = ""
+Else
+    sPrompt = Trim(strPrompt)
+End If
+
+DoCmd.OpenForm "SSMsgbox", acNormal, , , , acDialog, sPrompt
+
+Exit_SS_MsgBox:
+    Exit Sub
+Err_SS_MsgBox:
+    MsgBox "Error " & err & " in SS_MsgBox - " & err.Description
+    Resume Exit_SS_MsgBox
+End Sub
+
+
+
+
+Sub SS_OnResize(frm As Form, _
+    Optional iOriginalDisplayResolutionWidth As Integer = conOrigWd, _
+    Optional iOriginalDisplayResolutionHeight As Integer = conOrigHt, _
+    Optional iHandleEchoInternally As Integer = True)
+'* Call the SS_Rescale subform, and handle screen echo before and after the call
+
+On Error GoTo Err_SS_OnResize
+
+'* Turning echo off here will eliminate visual "flickering".
+If iHandleEchoInternally Then DoCmd.Echo False, "ShrinkerStretcher..."
+
+SS_Rescale frm, iOriginalDisplayResolutionWidth, iOriginalDisplayResolutionHeight, iHandleEchoInternally
+
+Exit_SS_OnResize:
+    If iHandleEchoInternally Then DoCmd.Echo True
+    Exit Sub
+Err_SS_OnResize:
+    MsgBox "Error " & err & " in SS_OnResize - " & err.Description
+    Resume Exit_SS_OnResize
+End Sub
+Sub SS_SetFontSize(frm As Form, ctl As Control)
+'* Scale font for the passed control by using entries in the the Font Ratio (FR) array.
+Dim FRsub As Integer
+Dim t1 As String
+Dim t2 As String
+Dim newfontsize As Single
+
+On Error GoTo Err_SS_SetFontSize
+
+'* if conScaleFonts constant is false, then skip font scaling.
+If conScaleFonts Then
+Else
+    '* Skip font scaling
+    GoTo Exit_SS_SetFontSize
+End If
+
+'* Find entry corresponding to the current control in the FR array.
+t1 = frm.name
+t2 = ctl.name
+FRsub = SS_FindFRRow(t1, t2, FRsub)
+'* Get fonts to jump down to smaller size a bit earlier
+'* This should minimize the problem of text getting "cut off" by control borders.
+'newfontsize = ctl.height * FR(FRsub).fontratio     <== old way
+newfontsize = (ctl.height * FR(FRsub).fontratio) - 0.4
+
+'* Fonts can't be shrunk smaller than a minimum font size.
+If newfontsize < conMinimumFontSize Then newfontsize = conMinimumFontSize
+
+If conChangeFonts = True Then
+    If TypeOf ctl Is ObjectFrame Then
+        '* No font associated with object frames
+    Else
+        '* Change font if current font does not have small sizes.
+        If newfontsize < 7.5 And FR(FRsub).FontName = "MS Sans Serif" Then
+            ctl.FontName = "Arial"
+        ElseIf newfontsize < 9.5 And FR(FRsub).FontName = "System" Then
+            ctl.FontName = "Arial"
+        Else
+            ctl.FontName = FR(FRsub).FontName
+        End If
+    End If
+End If
+If newfontsize > 0.5 And newfontsize < 127.5 Then
+    '* Control may have ".fontsize" property, or may have ".font.size" property, or something
+    '* else, so handle as many as possible.
+    On Error Resume Next
+    ctl.FontSize = newfontsize
+    If err = 0 Then
+    Else
+        If err = 438 Or err = 2455 Then
+            '* Control does not have this property associated to it.
+            '* Look for the control object font size property...
+            err.Clear
+            ctl.Object.Font.Size = newfontsize  '* This may work for some ActiveX controls (like TreeView)
+            If err = 0 Then
+            Else
+                'pddxxx .91 improved error handling
+                Select Case err
+                Case 438, 2455
+                    '* Control does not have property associated to it.
+                Case 2684
+                    '* The OLE object is empty
+                Case 2774
+                    '* The component doesn't support Automation.
+                Case Else
+                    '* Ignore error, and continue
+                End Select
+            End If
+        Else
+            MsgBox "Error in SS_SetFontSize (2) - " & err & " " & err.Description
+        End If
+        err.Clear
+    End If
+End If
+
+Exit_SS_SetFontSize:
+    Exit Sub
+    
+Err_SS_SetFontSize:
+    If err = 438 Then
+        '* control does not this property associated to it
+        Resume Next
+    ElseIf err = 2455 Then
+        '* control does not have a font associated to it
+        Resume Next
+    Else
+        MsgBox "Error in SS_SetFontSize - " & err & " " & err.Description
+    End If
+    GoTo Exit_SS_SetFontSize
+End Sub
+
+
+Sub SS_StaticResize(passedfrm As Form)
+'* Makes a backup of form if one does not already exist, then rescales
+'* and saves form.
+Dim i As Integer
+Dim foundit As Integer
+Dim sNameToFind As String
+Dim sCurrFormName As String
+Dim dbs As DAO.Database
+Dim frm As Form
+Dim iZoomed As Integer
+
+On Error GoTo Err_SS_StaticResize
+
+Set frm = passedfrm
+'* make a backup copy of the current form if one does not exist!
+Set dbs = CurrentDb()
+foundit = False
+sNameToFind = frm.name & " (SSOriginal)"
+For i = 0 To (dbs.Containers!Forms.Documents.Count - 1)
+    If dbs.Containers!Forms.Documents(i).name = sNameToFind Then
+        foundit = True
+        Exit For
+    End If
+Next i
+
+If foundit = True Then
+    '* backup copy already exists
+Else
+    '* No backup exists, copy the current form to "<formname> (SSOriginal)"
+    sCurrFormName = frm.name
+    DoCmd.CopyObject , sCurrFormName & " (SSOriginal)", acForm, sCurrFormName
+End If
+
+'* save current zoom status
+iZoomed = False
+If SS_apiIsZoomed(frm.hwnd) Then iZoomed = True
+
+'* rescale form
+SSStaticResize = True
+SS_OnOpen frm
+If (InStr(1, frm.Tag, "SSMaximize", 1) <> 0) Then
+    'Note: The code below could be used to scale non maximized forms to screen dimensions
+    '    a third possibility?
+    DoCmd.Maximize
+    'DoCmd.MoveSize 0, 0, DisplayWidth * SSTwipsPerPixel, _
+    '    DisplayHeight * SSTwipsPerPixel
+Else
+    DoCmd.Restore
+End If
+SS_Rescale frm, conOrigWd, conOrigHt
+SSStaticResize = False
+
+'* save the form
+DoCmd.DoMenuItem A_FORMBAR, A_FILE, A_SAVEFORM
+
+'* restore zoom status
+If iZoomed Then
+    DoCmd.Maximize
+Else
+    DoCmd.Restore
+End If
+
+Exit_SS_StaticResize:
+    '* Clean up some object variables
+    On Error Resume Next
+    Set frm = Nothing
+    Set dbs = Nothing
+    On Error GoTo 0
+    Exit Sub
+
+Err_SS_StaticResize:
+    MsgBox "Error in SS_StaticResize " & err & " " & err.Description
+    If conExitOnError Then
+        GoTo Exit_SS_StaticResize
+    Else
+        Resume Next
+    End If
+End Sub
+
+
+Function SS_RescaleForms(WhichOnes As String) As Integer
+'* Statically rescales and saves all forms, marked forms, or an individual form.
+'*
+'* Saves a copy (gives it the name: "<formname> SSOriginal") of each form that
+'* is processed.
+'*
+'* The "WhichOnes" parameter can be set to:
+'*      "ALL"       - to process all forms (except those suffixed with "SSOriginal"),
+'*      "Marked"    - to process all forms marked with "SSStaticRescale" in form tag
+'*                      property (except those suffixed with "SSOriginal"),
+'*      "<frmname>" - to process "<frmname>".
+'*
+'* NOTES:  This function can be executed via a macro ("=SS_RescaleForms('all')" or
+'* "=SS_RescaleForms('marked')") at application startup to statically rescale forms
+'* to fit the resolution of the user's screen.
+'*
+'* If your form contains subform controls, then you will also want to include the
+'* ShrinkerStretcher subroutine calls in your (parent) form's OnOpen and OnResize event
+'* procedures. Otherwise, when static resizing using this function, it is not
+'* necessary to include these subroutine calls in your form.
+'*
+'* Include the text "SSMaximize" in your form tag property if you are statically
+'* rescaling your forms and you intend for your form to be maximized when opened.
+'*
+'* If the constant "conCheckClientArea" is true, this function will maintain a table
+'* that holds the right and bottom values for the Access window client area rectangle,
+'* and will only execute if this area has changed since last time.
+'*
+'* If the constant "conSSVerbose" is true, then informational messages will be
+'* generated, so, for automatic execution, set "conSSVerbose" to false.
+'*
+Const SSTableName = "tSSClientRectSize"
+Dim i As Integer
+Dim icount As Integer
+Dim l As Long
+Dim frm As Form
+Dim dbs As DAO.Database
+Dim iresp As Integer
+Dim vrtn As Variant
+Dim frmname As String
+Dim frmToRescale As String
+Dim foundit As Integer
+Dim stabname As String
+Dim AccessClientRect As SS_RECT
+Dim MyTableDef As TableDef, MyField As Field
+Dim MySet As Recordset
+Dim iEchoOff As Integer
+Dim lrtn As Long
+
+On Error GoTo Err_SS_RescaleForms
+iEchoOff = False
+
+Set dbs = CurrentDb()
+
+'* Check to see if tSSClientRectSize table exists
+foundit = False
+For i = 0 To (dbs.TableDefs.Count - 1)
+    If dbs.TableDefs(i).name = SSTableName Then
+        foundit = True
+        Exit For
+    End If
+Next i
+
+If conCheckClientArea Then
+    '* Check to see if client area rectangle size has changed. Rescale only if size is different.
+    '* Find the size of the current Access window client area rectangle
+    Call SS_apiGetClientRect(Application.hWndAccessApp, AccessClientRect)
+
+    If foundit Then
+        '* The client rectangle size table exists, read old client rect values from table
+        Set MySet = dbs.OpenRecordset(SSTableName, DB_OPEN_DYNASET)
+        MySet.MoveFirst
+        '* if new = old, there is no need to rescale, so exit function
+        If MySet!Right = AccessClientRect.Right Then
+            If MySet!Bottom = AccessClientRect.Bottom Then
+                '* Client area rectangle has not changed since last rescaling
+                If conSSVerbose Then
+                    iresp = MsgBox("Client area rectangle has not changed since last rescaling. Would you like to rescale anyway?.", 4, "ShrinkerStretcher")
+                    If iresp = 6 Then   '* yes
+                        '* Rescale anyway
+                    Else
+                        '* Skip rescaling
+                        MySet.Close
+                        GoTo Exit_SS_RescaleForms
+                    End If
+                Else
+                    '* Skip rescaling
+                    MySet.Close
+                    GoTo Exit_SS_RescaleForms
+                End If
+            End If
+        End If
+
+        '* Prepare record for update
+        MySet.Edit
+    Else
+        '* the client rectangle size table does not exist, so create it, and update fields
+        '* Create new TableDef.
+        Set MyTableDef = dbs.CreateTableDef(SSTableName)
+        '* Add fields to MyTableDef.
+        Set MyField = MyTableDef.CreateField("Right", DB_INTEGER)
+        MyTableDef.Fields.Append MyField
+        Set MyField = MyTableDef.CreateField("Bottom", DB_INTEGER)
+        MyTableDef.Fields.Append MyField
+        '* Save TableDef definition by appending it to TableDefs collection.
+        dbs.TableDefs.Append MyTableDef
+
+        '* Open table and prepare new record for update
+        Set MySet = dbs.OpenRecordset(SSTableName, DB_OPEN_DYNASET)
+        MySet.AddNew
+    End If
+    
+    '* Update table with current values
+    MySet!Right = AccessClientRect.Right
+    MySet!Bottom = AccessClientRect.Bottom
+    MySet.Update
+    MySet.Close
+Else
+    If foundit Then
+        '* delete table if CheckClientArea constant is not set.
+        dbs.TableDefs.Delete SSTableName
+    End If
+End If
+
+foundit = True
+icount = 0
+If WhichOnes = "All" Then
+    '* All forms (except those suffixed with "SSOriginal") will be processed.
+Else
+    If WhichOnes = "Marked" Then
+        '* All forms Marked with "SSStaticRescale" in form tag property (except
+        '* those suffixed with "SSOriginal") will be processed.
+    Else
+        If conSSdemo Then
+            If Left(WhichOnes, 2) = "SS" Then
+                '* Only let SS forms in on the fun.
+            Else
+                Beep
+                MsgBox "ShrinkerStretcher - This function only works on the demo forms in the unregistered version."
+                GoTo Exit_SS_RescaleForms
+            End If
+        End If
+        '* Passed parameter holds form to be processed.
+        frmToRescale = WhichOnes
+        foundit = False     '* individual form to be rescaled has not yet been found
+    End If
+End If
+
+DoCmd.Echo False, "ShrinkerStretcher Static Resize..."
+iEchoOff = True
+
+'* Loop through all forms in current database
+For i = 0 To (dbs.Containers!Forms.Documents.Count - 1)
+    frmname = dbs.Containers!Forms.Documents(i).name
+    'MsgBox "Processing " & frmname
+    vrtn = SysCmd(SYSCMD_SETSTATUS, "Checking " & frmname)
+
+    If (InStr(1, frmname, "(SSOriginal)", 1) <> 0) Then
+        'MsgBox "skipped"
+        '* Skip static rescaling of original versions of forms
+    Else
+        If WhichOnes = "All" Then
+            '* Process All forms (except original versions)
+            DoCmd.OpenForm frmname, acDesign, , , , acNormal
+            Set frm = Forms(frmname)
+            lrtn = SS_apiShowWindow(frm.hwnd, SS_SW_HIDE)
+            SS_StaticResize frm
+            DoCmd.Close acForm, frmname
+            icount = icount + 1
+        Else
+            If WhichOnes = "Marked" Then
+                '* Process Marked forms (except original versions)
+                DoCmd.OpenForm frmname, acDesign, , , , acNormal
+                Set frm = Forms(frmname)
+                lrtn = SS_apiShowWindow(frm.hwnd, SS_SW_HIDE)
+                If (InStr(1, frm.Tag, "SSStaticRescale", 1) <> 0) Then
+                    SS_StaticResize frm
+                    icount = icount + 1
+                End If
+                DoCmd.Close acForm, frmname
+            Else
+                '* Process the passed form
+                If frmname = frmToRescale Then
+                    foundit = True
+                    DoCmd.OpenForm frmname, acDesign, , , , acNormal
+                    Set frm = Forms(frmname)
+                    lrtn = SS_apiShowWindow(frm.hwnd, SS_SW_HIDE)
+                    SS_StaticResize frm
+                    DoCmd.Close acForm, frmname
+                    icount = icount + 1
+                End If
+            End If
+        End If
+    End If
+Next i
+
+If Not foundit Then
+    Beep
+    MsgBox "SS_RescaleForms function could not find the form you specified - '" & frmToRescale & "'."
+End If
+
+vrtn = SysCmd(SYSCMD_CLEARSTATUS)
+DoCmd.Echo True
+iEchoOff = False
+
+If conSSVerbose Then
+    MsgBox "ShrinkerStretcher rescaled " & str(icount) & " form(s)."
+End If
+
+Exit_SS_RescaleForms:
+    '* Clean up some object variables
+    On Error Resume Next
+    Set dbs = Nothing
+    Set MySet = Nothing
+    Set frm = Nothing
+    Set MyTableDef = Nothing
+    Set MyField = Nothing
+    
+    If iEchoOff Then
+        DoCmd.Echo True
+        iEchoOff = False
+    End If
+    On Error GoTo 0
+    Exit Function
+
+Err_SS_RescaleForms:
+    If err = 2475 Then
+        '* No form is currently open
+        GoTo Exit_SS_RescaleForms
+    ElseIf err = 3021 Then
+        '* No current record.
+        Resume Next
+    Else
+        MsgBox "Error in SS_RescaleForms " & err & " " & err.Description
+        If conExitOnError Then
+            GoTo Exit_SS_RescaleForms
+        Else
+            Resume Next
+        End If
+    End If
+
+End Function
+Sub SS_FillFRArray(frm As Form)
+'* Fill font ratio array for the passed form
+Dim i As Integer
+Dim j As Integer
+Dim ctl As Control
+
+On Error GoTo Err_SS_FillFRArray
+If conDebug = 1 Then MsgBox "SS_FillFRArray for " & frm.name
+
+'* Find starting position in array
+For i = 0 To FRLastRow
+    If FR(i).formname = "" Then
+        Exit For
+    End If
+Next i
+
+'* Loop thru controls, fill FR array, compute fontratio.
+For j = 0 To (frm.Count - 1)
+    Set ctl = frm(j)
+    '* Set control properties.
+    FR(i).formname = frm.name
+    FR(i).controlname = ctl.name
+    If TypeOf ctl Is ObjectFrame Then
+        FR(i).fontratio = 1
+    Else
+        FR(i).FontName = ctl.FontName
+        If ctl.height <> 0 Then
+            '* Use FontSize property, but if it doesn't exist then check for
+            '* the Object.Font.Size property.
+            On Error Resume Next
+            FR(i).fontratio = ctl.FontSize / ctl.height
+            If err = 0 Then
+            Else
+                If err = 438 Or err = 2455 Then
+                    '* Control does not have this property associated to it.
+                    '* Look for the control object font size property...
+                    err.Clear
+                    FR(i).fontratio = ctl.Object.Font.Size / ctl.height  '* This may work for some ActiveX controls (like TreeView)
+                    If err = 0 Then
+                    Else
+                        'pddxxx .91 improved error handling
+                        Select Case err
+                        Case 438, 2455
+                            '* Control does not have property associated to it.
+                        Case 2684
+                            '* The OLE object is empty
+                        Case 2774
+                            '* The component doesn't support Automation.
+                        Case Else
+                            '* Ignore errors, and continue
+                        End Select
+                    End If
+                Else
+                    MsgBox "Error in SS_FillFRArray (2) - " & err & " " & err.Description
+                End If
+                err.Clear
+            End If
+            On Error GoTo Err_SS_FillFRArray
+        Else
+            FR(i).fontratio = 1
+        End If
+    End If
+    i = i + 1
+Next j
+
+Set ctl = Nothing
+
+Exit_SS_FillFRArray:
+    If conDebug = 1 Then MsgBox "done with SS_FillFRArray for " & frm.name
+    Exit Sub
+
+Err_SS_FillFRArray:
+    If err = 2455 Then
+        '* control does not have a font associated to it
+        Resume Next
+    ElseIf err = 438 Then
+        '* control does not have this property associated to it
+        Resume Next
+    ElseIf err = 2462 Then
+        '* section does not exist
+        Resume Next
+    Else
+        MsgBox "Error in SS_FillFRArray " & err & " " & err.Description
+        If conExitOnError Then      '*pddxxx
+            GoTo Exit_SS_FillFRArray
+        Else
+            Resume Next
+        End If
+    End If
+
+End Sub
+
+Function SS_FindFRRow(frmname As String, ctlName As String, startrow As Integer) As Integer
+'* Find matching row in the FR array.
+    Dim i As Integer, j As Integer
+    Dim foundit As Integer
+    
+On Error GoTo Err_SS_FindRow
+
+j = 0
+foundit = False
+For i = startrow To FRLastRow       '* start from current row
+    j = j + 1
+    If (FR(i).formname = frmname) And (FR(i).controlname = ctlName) Then
+        foundit = True
+        Exit For
+    End If
+Next i
+
+If foundit = False Then             '* start from first row
+    For i = 0 To startrow - 1
+        j = j + 1
+        If (FR(i).formname = frmname) And (FR(i).controlname = ctlName) Then
+            foundit = True
+            Exit For
+        End If
+    Next i
+End If
+
+If foundit = False Then             '* can not find the control in the FR array??
+    MsgBox "Could not find an entry in the FR array for control = " & frmname & " " & ctlName & _
+        Chr(13) & Chr(13) & "You may need to close the form, or database, and re-open it in order to re-initialize this array."
+    i = -1
+End If
+
+SS_FindFRRow = i
+
+Exit Function
+
+Err_SS_FindRow:
+    MsgBox "Error in SS_FindFRRow " & err & " " & err.Description
+    Resume Next
+End Function
+
+Function SS_Init(frm As Form, processing_a_subform As Integer) As Integer
+'* Set some initial values and insure that the FR array is filled correctly
+    Dim i As Integer
+    Dim j As Integer
+    Dim k As Integer
+    Dim foundit As Integer
+    Dim test1 As String
+    Dim knt As Integer
+    Dim tempname As String
+    Dim lLongFormHeightTolerance As Long
+    Dim iLongFormFound As Integer
+
+    
+On Error GoTo Err_SS_Init
+
+If conDebug = 1 Then MsgBox "Init for " & frm.name
+
+If frm.name = FRFormName Then GoTo Continue_SS_Init   '* same form as last time - no need to initialize again.
+
+If FRLastRow = 0 Then
+    '* redim
+    FRLastRow = frm.Count
+    ReDim FR(FRLastRow)
+    '* add entries at end of array
+    SS_FillFRArray frm
+Else
+    '* Check to see if entries already exist for this form
+    foundit = False
+    i = 0
+    Do While FR(i).formname <> ""
+        If frm.name = FR(i).formname Then
+            foundit = True
+            Exit Do
+        End If
+        i = i + 1
+    Loop
+    If foundit Then
+        '* Refresh array entries if this is a new form
+        If JustOpened Then
+            '* remove array entries for current form
+            SS_RemoveFRRows (frm.name)
+            '* redim preserve
+            FRLastRow = FRLastRow + frm.Count
+            ReDim Preserve FR(FRLastRow)
+            '* add entries at end of array
+            SS_FillFRArray frm
+        Else
+            '* Entries are already in the FR array
+        End If
+    Else
+        '* count forms in array
+        knt = 1
+        i = 0
+        tempname = FR(i).formname
+        Do While FR(i).formname <> ""
+            If (tempname <> FR(i).formname) And (FR(i).formname <> "") Then
+                knt = knt + 1
+                tempname = FR(i).formname
+            End If
+            i = i + 1
+        Loop
+        If knt <= conFRFormsMax Then
+            FRLastRow = FRLastRow + frm.Count
+            ReDim Preserve FR(FRLastRow)
+            '* add entries at end of array
+            SS_FillFRArray frm
+        Else
+            If processing_a_subform And Not JustOpened Then
+                If frm.Parent.name = FR(0).formname Then
+                    '* don't remove the parent form entries.
+                Else
+                    '* remove first form from array
+                    SS_RemoveFRRows (FR(0).formname)
+                End If
+            Else
+                '* remove first form from array
+                SS_RemoveFRRows (FR(0).formname)
+            End If
+            FRLastRow = FRLastRow + frm.Count
+            ReDim Preserve FR(FRLastRow)
+            '* add entries at end of array
+            SS_FillFRArray frm
+        End If
+    End If
+End If
+
+
+Continue_SS_Init:
+'* set SSCurrentFormHeight and SSCurrentFormWidth to starting values
+
+SSCurrentFormWidth = frm.Width
+
+If frm.DefaultView = conContinuousForms Then
+    '* not checking to see if just opened, always using subform height for scaling basis
+    If processing_a_subform Then
+        SSCurrentFormHeight = sf_PrevHt
+        'pddxxx .91 Use new constant instead of conRetainSubformProportion here.
+        If conScaleSubformWidthToFit Then
+            '* Rescale subform width to fit subform control.
+        Else
+            '* Set SSCurrentFormWidth to be width of subform control, not width of form.
+            '* So, subform width won't be changed when the subform is opened.
+            SSCurrentFormWidth = sf_PrevWd
+        End If
+    Else
+        If JustOpened Then
+            '* Use form height rather than window inside height.
+            '* Allows for resolution adjustment scaling later.
+            SSCurrentFormHeight = SS_GetFormHeight(frm)
+            
+            '* put continuous form info into CF array
+            '* replace an entry if it is already there
+            '* if array is full, delete first entry and add to the end.
+            i = 0
+            foundit = False
+            Do While i <= conCFmax
+                If (CF(i).formname = frm.name) Or (CF(i).formname = "") Then
+                    foundit = True
+                    Exit Do
+                End If
+                i = i + 1
+            Loop
+            If Not foundit Then
+                '* delete first entry
+                For i = 0 To conCFmax - 1
+                    CF(i).formname = CF(i + 1).formname
+                    CF(i).oldheight = CF(i + 1).oldheight
+                Next i
+                i = conCFmax
+            End If
+            CF(i).formname = frm.name
+            CF(i).oldheight = SSCurrentFormHeight
+        Else
+            '* find old height
+            For i = 0 To conCFmax
+                If CF(i).formname = frm.name Then
+                    SSCurrentFormHeight = CF(i).oldheight
+                    Exit For
+                End If
+            Next i
+        End If
+    End If
+Else
+    '* Use a function to compute form height
+    SSCurrentFormHeight = SS_GetFormHeight(frm)
+
+    '* check to see if the form is a Long (multi-page) form.
+    iLongFormFound = False
+    If JustOpened And conLongFormAdj Then
+        If conAutoDetermineLongForm Then
+            '* Use the form inside height and a factor to determine if form is a long form.
+            '* The idea here is: If the form height is greater than 1.75 times the inside width of the form window,
+            '* then this must be a long (multi-page) form. This is not always accurate, however, because of varying
+            '* form window sizes.
+            If SSResFactor = 0 Then
+                SSResFactor = 1
+            End If
+            lLongFormHeightTolerance = (frm.InsideHeight * (1.75 / SSResFactor))
+            If (SSCurrentFormHeight > lLongFormHeightTolerance) Then
+                iLongFormFound = True
+            End If
+        Else
+            '* See if form has been explicitly designated to be a long form by looking at form tag property.
+            If InStr(1, frm.Tag, "SSLong") Then
+                iLongFormFound = True
+            Else
+            End If
+        End If
+    Else
+    End If
+
+    If iLongFormFound Then
+        '* check to see if this form name is already in LF array.
+        foundit = 0
+        For i = 0 To conLFmax
+            If lf(i) = frm.name Then
+                '* already in LF array
+                foundit = 1
+                Exit For
+            End If
+        Next i
+        '* add entry to LF (long form) array
+        If foundit = 0 Then
+            lf(LFSub) = frm.name
+            If LFSub >= conLFmax Then
+                LFSub = 0
+            Else
+                LFSub = LFSub + 1
+            End If
+        End If
+    End If
+End If
+
+FRFormName = frm.name
+
+Exit_SS_Init:
+    If conDebug = 1 Then MsgBox "done with SS_Init for " & frm.name
+    Exit Function
+
+Err_SS_Init:
+    If err = 2455 Then
+        '* control does not have a font associated to it
+        Resume Next
+    ElseIf err = 2462 Then
+        '* section does not exist
+        Resume Next
+    Else
+        MsgBox "Error in SS_Init " & err & " " & err.Description
+        If conExitOnError Then
+            GoTo Exit_SS_Init
+        Else
+            Resume Next
+        End If
+    End If
+End Function
+Sub SS_OnOpen(frm As Form)
+'* Reset the FRFormName variable so that the FR (font ratio) array will
+'* be filled (during the OnResize event) each time the form is opened.
+'* Set other starting values.
+Dim i As Integer
+Dim s As String
+
+If conDebug = 1 Then MsgBox "SS_OnOpen for " & frm.name
+On Error GoTo Err_SS_OnOpen
+
+'* Set Break On All Errors to false so that this module can handle its own error processing.
+Application.SetOption "Break On All Errors", False
+
+FRFormName = ""
+JustOpened = True
+SkipSS = False
+'* Keep track of the name of the form that has just been opened
+If SSMainFormName = "" Then
+    SSMainFormName = frm.name
+End If
+
+'* Get the inside height and width starting values for non-autoresize scaling. Save them in form tag property
+SS_SaveFormInsideSettings frm
+
+Exit_SS_OnOpen:
+    If conDebug = 1 Then MsgBox "Done with SS_OnOpen for " & frm.name
+    Exit Sub
+
+Err_SS_OnOpen:
+   ' MsgBox "Error in SS_OnOpen " & err & " " & err.Description
+    Resume Next
+End Sub
+Sub SS_Rescale(frm As Form, _
+    iOriginalDisplayResolutionWidth As Integer, _
+    iOriginalDisplayResolutionHeight As Integer, _
+    Optional iHandleEchoInternally As Integer = True)
+'* find new window height and width, compute the horizontal and vertical
+'* percentage of change, find resolution adjustment, handle special processing,
+'* then call the function to resize controls, and handle any special processing afterward.
+
+    Dim i As Integer
+    Dim j As Integer
+    Dim foundit As Integer
+    Dim cpctH As Long
+    Dim cpctV As Long
+    Dim retvalue As Long
+    Dim iDesiredFormWidth As Integer
+    Dim iDesiredFormHeight As Integer
+    Dim test1 As String
+    Dim ResFactor As Single
+    Dim ctl As Control
+    Dim AdjustRes As Integer
+    Dim AccessWinRect As SS_RECT
+    Dim AccessClientRect As SS_RECT
+    Dim NewRight As Integer
+    Dim NewDown As Integer
+    Dim rectFormClientArea As SS_RECT
+    Dim iFormWindowWd As Integer
+    Dim iFormWindowHt As Integer
+    Dim iOrigWd As Integer
+    Dim iOrigHt As Integer
+    Dim ctlCurrSubform As Control
+    Dim t1 As String
+    Dim newfontsize As Single
+    Dim lNewWidth As Long
+    Dim lNewHeight As Long
+    Dim dWindowStyle As Double
+    Dim lOldWidth As Long
+    Dim lOldHeight As Long
+    Dim processing_a_subform As Integer
+    Dim SSwinrect As SS_RECT
+    Dim iSaveJustOpenedVar As Integer
+    Dim sSaveJustOpenedFormName As String
+
+On Error GoTo Err_SS_Rescale
+
+'* If you do not want a subform to rescale, you can put its name here:
+Select Case frm.name
+Case "MyFormIWantToSkip"
+    GoTo Exit_SS_Rescale
+Case Else
+End Select
+
+If conDebug = 1 Then MsgBox "SS_Rescale for " & frm.name
+'************************
+'* testing area
+'Exit Function
+'************************
+
+'* Skip ShrinkerStretcher if SkipSS flag is set or if ShrinkStretch flag is
+'* turned off.
+If conShrinkStretch = False Then GoTo Exit_SS_Rescale
+If SkipSS = True Then
+    GoTo Exit_SS_Rescale
+Else
+    SkipSS = False
+End If
+
+'* During dynamic rescaling, skip forms marked with "SSStaticRescale" in tag property.
+'* However, if these forms have subform controls, then recursively perform rescaling
+'* for the subform controls.
+If SSStaticResize Then
+Else
+    '* if form has "SSStaticRescale" in tag, don't rescale it
+    If (InStr(1, frm.Tag, "SSStaticRescale", 1) <> 0) Then
+        If frm.CurrentView = conDesignView Then
+            '* Skip recursive calls to subform when in design (static rescaling) mode.
+        Else
+            '* before exiting, check to see if this form has any subforms that need to be resized
+            For j = 0 To (frm.Count - 1)
+                Set ctl = frm(j)
+                If TypeOf ctl Is SubForm Then
+                    '* force a recursive call to SS for the subform of parent form.
+                    '* This is for statically rescaled parent forms only
+                    SS_Rescale frm(ctl.name).Form, conOrigWd, conOrigHt
+                End If
+            Next j
+            '*.7 Clean up object variable
+            Set ctl = Nothing
+        End If
+        GoTo Exit_SS_Rescale
+    End If
+End If
+
+'* Crippling code for demo versions
+If conSSdemo Then
+    If (CInt(Format(Now, "nn")) Mod 2) = 0 Then   '* Even numbered minutes
+        If Right(Format(Now, "ss"), 1) = "0" Then       '* display info every tenth resize (roughly).
+            If (Format(Now, "dd") Mod 2) = 1 Then
+                Beep
+                MsgBox "You are using an un-registered copy of ShrinkerStretcher." & Chr(13) & Chr(13) & "To register ShrinkerStretcher and get rid of these annoying messages, please see the ordering information form."
+            Else
+                Beep
+                MsgBox "Visit the Peter's Software website for other great products and freeware:" & Chr(13) & Chr(13) & "http://www.peterssoftware.com"
+            End If
+            Beep
+            MsgBox "ShrinkerStretcher Demo." & Chr(13) & Chr(13) & "Peter's Software" & Chr(13) & "1317 Oceanfront #2" & Chr(13) & "Santa Monica, CA  90401-1025" & Chr(13) & "USA" & Chr(13) & Chr(13) & "e-mail:  info@peterssoftware.com"
+
+            '* The MsgBox's above will cause problems with screen redrawing when the lockwindow update API
+            '* call is used. So we must re-draw the screen with the ShowWindow API to straighten things out.
+            If JustOpened Or frm.PopUp Then
+                retvalue = SS_apiShowWindow(Application.hWndAccessApp, SS_SW_HIDE)
+                retvalue = SS_apiShowWindow(Application.hWndAccessApp, SS_SW_SHOW)
+            End If
+            
+        End If
+    End If
+End If
+
+'* Original form design environment width and height passed to local variables
+iOrigWd = iOriginalDisplayResolutionWidth
+iOrigHt = iOriginalDisplayResolutionHeight
+
+'* make API calls to get desktop settings
+SShDesktopWnd = SS_apiGetDesktopWindow() 'get handle to desktop
+SShDCcaps = SS_apiGetDC(SShDesktopWnd) 'get display context for desktop
+DisplayHeight = SS_apiGetDeviceCaps(SShDCcaps, SS_VERTRES) 'vertical resolution
+DisplayWidth = SS_apiGetDeviceCaps(SShDCcaps, SS_HORZRES) 'horizontal resolution
+DisplayLogPixelsY = SS_apiGetDeviceCaps(SShDCcaps, SS_LOGPIXELSY)
+WindowScrollBar = SS_apiGetSystemMetrics(SS_SM_CXVSCROLL)
+WindowFrame = SS_apiGetSystemMetrics(SS_SM_CXFRAME)
+retvalue = SS_apiReleaseDC(SShDesktopWnd, SShDCcaps) 'release display contex
+SSTwipsPerPixel = 1440 / DisplayLogPixelsY
+
+'* Get Access window rectangle
+'* used for maximized longform res adjustment, and justopened autocenter forms
+Call SS_apiGetWindowRect(Application.hWndAccessApp, AccessWinRect)
+
+'* Find resolution adjustment factor and assign it to a global variable.
+If conAdjustToSizeOfAccessWindow And (Not frm.PopUp) Then
+    '* Adjust forms based on size of Access window
+    '* Note: The taskbar adjustment assumes development environment Access window is maximized.
+    If ((AccessWinRect.Bottom - AccessWinRect.Top) / (iOrigHt - conOrigHorzTaskbarHeight)) _
+        > ((AccessWinRect.Right - AccessWinRect.Left) / (iOrigWd - conOrigVertTaskbarWidth)) Then
+        SSResFactor = ((AccessWinRect.Right - AccessWinRect.Left) / (iOrigWd - conOrigVertTaskbarWidth))
+    Else
+        SSResFactor = ((AccessWinRect.Bottom - AccessWinRect.Top) / (iOrigHt - conOrigHorzTaskbarHeight))
+    End If
+    SSResFactor = SSResFactor * (conOrigLogPixelsY / DisplayLogPixelsY)
+Else
+    '* Adjust forms based on screen resolution
+    SSResFactor = (DisplayHeight / iOrigHt) * (conOrigLogPixelsY / DisplayLogPixelsY)
+End If
+If SSResFactor > conAdjustResUpperLimit Then
+    SSResFactor = conAdjustResUpperLimit
+ElseIf SSResFactor < conAdjustResLowerLimit Then
+    SSResFactor = conAdjustResLowerLimit
+End If
+
+'* When opened at same resolution as design resolution, no need to scale.
+If conSameResNoInitialScaling Then
+    If conAdjustToRes And JustOpened Then
+        If (DisplayHeight = iOrigHt) And (DisplayWidth = iOrigWd) And (DisplayLogPixelsY = conOrigLogPixelsY) Then
+            GoTo Exit_SS_Rescale
+        End If
+    End If
+End If
+
+'* set Processing_a_Subform flag if this form is a subform
+err.Clear
+On Error Resume Next
+If frm.Parent.name <> "" Then processing_a_subform = True
+If err <> 0 Then
+    processing_a_subform = False
+    err.Clear
+Else
+End If
+After_Subform_Check:
+On Error GoTo Err_SS_Rescale
+
+'* Find subform control on parent form
+If processing_a_subform Then
+    foundit = False
+    For i = 0 To (frm.Parent.Count - 1)
+        Set ctl = frm.Parent(i)
+        If TypeOf ctl Is SubForm Then
+            If ctl.SourceObject = frm.name Then
+                foundit = True
+                Set ctlCurrSubform = ctl
+                Exit For
+            End If
+        End If
+    Next i
+    '* Clean up object variable
+    Set ctl = Nothing
+    If Not foundit Then
+        MsgBox "Can't find parent subform control whose SourceObject matches current form name=" & frm.name
+    End If
+End If
+
+'* Get form settings
+If processing_a_subform Then
+    '* These variables are not used with subforms, so don't really need to set them.
+    lOldWidth = ctlCurrSubform.Width
+    lOldHeight = ctlCurrSubform.height
+Else
+    Call SS_apiGetClientRect(frm.hwnd, rectFormClientArea)
+    i = InStr(1, frm.Tag, "SSInfo:")
+    If i > 0 Then
+        t1 = Right(frm.Tag, Len(frm.Tag) - i + 1)
+        lOldWidth = CLng(SS_GetWordsBetween(t1, "fiw=", ","))
+        lOldHeight = CLng(SS_GetWordsBetween(t1, "fih=", ";"))
+    Else
+        '* This may occur when there is no "SS_OnOpen Me" call in the form OnOpen event proc
+        'pddxxx .91 Error message removed since the variables have to do with Long forms only.
+        'MsgBox "There was an error finding saved form inside height and inside width values. Using defaults."
+        lOldWidth = frm.InsideWidth
+        lOldHeight = frm.InsideHeight
+    End If
+End If
+
+'* Rescale datasheets
+If frm.CurrentView = conDatasheetView Then
+    If conRetainProportion Then
+        If processing_a_subform Then
+            Dim iStartingRowHeight As Integer
+            Dim iBasisRowHeight As Integer
+            Dim dDSScaleFact As Double
+            
+            iBasisRowHeight = SS_SetDatasheetBasisRowHeight(frm)
+            
+            If JustOpened Then
+                '* Reset datasheet properties to pre-scaling values based on application default font
+                '* size, and expected basis row height
+                'frm.DatasheetFontHeight = Val(Application.GetOption("default font size"))
+                If conScaleFonts Then
+                    newfontsize = Val(Application.GetOption("default font size"))
+                    If newfontsize < conMinimumFontSize Then
+                        frm.DatasheetFontHeight = conMinimumFontSize
+                    Else
+                        frm.DatasheetFontHeight = newfontsize
+                    End If
+                End If
+                iStartingRowHeight = iBasisRowHeight * (1 + ((frm.DatasheetFontHeight - 8) / 8))
+                If frm.RowHeight <> 0 Then
+                    dDSScaleFact = iStartingRowHeight / frm.RowHeight
+                Else
+                    dDSScaleFact = 1
+                End If
+                
+                On Error Resume Next
+                '* Reset column widths
+                For Each ctl In frm.Controls
+                    If ctl.Section = acDetail Then
+                        ctl.ColumnWidth = ctl.ColumnWidth * dDSScaleFact
+                    End If
+                Next ctl
+                err.Clear
+                Set ctl = Nothing
+                On Error GoTo Err_SS_Rescale
+                
+                frm.RowHeight = iStartingRowHeight
+            
+            End If
+            
+            If sf_PrevHt <> 0 Then
+                dDSScaleFact = (1 + ((ctlCurrSubform.height - sf_PrevHt) / sf_PrevHt))
+            Else
+                dDSScaleFact = 1
+            End If
+            
+            '* The following factor takes into account the record selector (wd = 285), which does not scale
+            If ctlCurrSubform.Width <> 0 Then
+                dDSScaleFact = dDSScaleFact * (1 + (((285 * dDSScaleFact) - 285) / ctlCurrSubform.Width))
+            End If
+            
+            frm.RowHeight = frm.RowHeight * dDSScaleFact
+            
+            '* 8pt font requires cell height of 225 for a single line. A common setting for iBasisRowHeight is 225
+            If conScaleFonts Then
+                If iBasisRowHeight <> 0 Then
+                    'pddxxx .91 Allow fonts to jump down to smaller fonts sooner
+                    'newfontsize = (8 * frm.RowHeight) / iBasisRowHeight
+                    newfontsize = ((8 * frm.RowHeight) / iBasisRowHeight) - 0.4
+                    If newfontsize < conMinimumFontSize Then
+                        frm.DatasheetFontHeight = conMinimumFontSize
+                    Else
+                        frm.DatasheetFontHeight = newfontsize
+                    End If
+                End If
+            End If
+            
+            '* If control does not have a columnwidth property, skip it.
+            On Error Resume Next
+            '* Loop through the controls, adjusting datasheet columnwidth
+            For Each ctl In frm.Controls
+                If ctl.Section = acDetail Then
+                    If ctl.ColumnWidth < 0 Then
+                        ctl.ColumnWidth = 1440 * Val(Application.GetOption("default column width"))
+                    End If
+                    If sf_PrevWd <> 0 Then
+                        ctl.ColumnWidth = ctl.ColumnWidth * dDSScaleFact
+                        
+                        '* column width adjustment
+                        If TypeOf ctl Is ListBox Then
+                            If IsNull(ctl.ColumnWidths) Then
+                            Else
+                                t1 = ctl.ColumnWidths
+                                ctl.ColumnWidths = SS_ResizeColWd(t1, (dDSScaleFact - 1) * 100 * 100)
+                            End If
+                        End If
+                        If TypeOf ctl Is ComboBox Then
+                            If IsNull(ctl.ColumnWidths) Then
+                            Else
+                                t1 = ctl.ColumnWidths
+                                ctl.ColumnWidths = SS_ResizeColWd(t1, (dDSScaleFact - 1) * 100 * 100)
+                                ctl.ListWidth = ctl.ListWidth * dDSScaleFact    '* Can't do this in Access 2.0
+                            End If
+                        End If
+                        
+                    End If
+                    If err <> 0 Then
+                        err.Clear
+                    End If
+                End If
+            Next ctl
+            err.Clear
+            Set ctl = Nothing
+            On Error GoTo Err_SS_Rescale
+        End If
+    End If
+    GoTo Exit_SS_Rescale
+End If
+
+i = SS_Init(frm, processing_a_subform)        '* call function to fill FR (font/ratio) array.
+'test1 = ""
+'MsgBox "FRLastRow=" & FRLastRow
+'For i = 0 To FRLastRow
+'    test1 = test1 & Str(i) & ".  " & Left(FR(i).formname, 3) & " " & Left(FR(i).controlname, 3) & "," & Chr(13)
+'Next i
+'If conDebug = 1 Then MsgBox "FR array:" & Chr(13) & Chr(13) & test1
+
+'* Set resolution adjustment flag
+AdjustRes = False
+If conAdjustToRes And JustOpened Then
+    If (DisplayLogPixelsY = 0) Or (iOrigHt = 0) Then
+        ResFactor = 1
+    Else
+        AdjustRes = True
+        ResFactor = SSResFactor
+    End If
+    '* Special processing for autocenter forms
+    If frm.AutoCenter = True Then
+        If SS_apiIsZoomed(frm.hwnd) Then
+            '* Form is maximized
+        Else
+            '* Move form to 0,0 so centered form scaling (hopefully) won't exceed client area width or height
+            '* Make form visible just before movesize, so movesize will take effect
+            '* This is only necessary when form is already opened in hidden mode.
+            foundit = False
+            If SSInitWhenFormAlreadyOpen Then
+                If Not frm.Visible Then
+                    frm.Visible = True
+                    foundit = True
+                End If
+            End If
+            DoCmd.MoveSize 0, 0
+            If foundit Then
+                frm.Visible = False
+            End If
+        End If
+    End If
+Else
+    ResFactor = 1
+End If
+
+'* determine if current form is a "long" form by finding an entry in the long form array
+LongForm = False
+If conLongFormAdj Then
+    For i = 0 To conLFmax
+        If lf(i) = frm.name Then
+            '* long form found
+            LongForm = True
+            Exit For
+        End If
+    Next i
+End If
+'* Continuous forms will be treated like long forms where the width and height in
+'* relation to the form inside width and height will be retained.
+If frm.DefaultView = conContinuousForms And (Not processing_a_subform) Then
+    LongForm = True
+Else
+End If
+
+'* Adjust Res for just opened maximized long forms.
+If SS_apiIsZoomed(frm.hwnd) Then
+    If (LongForm And JustOpened) Then
+        '* Allow resolution adjustment
+    Else
+        ResFactor = 1
+    End If
+Else
+    '* Not maximized
+End If
+
+If processing_a_subform Then
+    '* Adjustments made for nav buttons, scrollbars.
+    If LongForm Then
+        iDesiredFormHeight = SSCurrentFormHeight
+    Else
+        iDesiredFormHeight = ctlCurrSubform.height
+        If frm.DefaultView = conContinuousForms Then
+        Else
+            If (Not frm.NavigationButtons) And (frm.ScrollBars = 0 Or frm.ScrollBars = 2) Then
+            Else
+                'pddxxx - twips perpixel for ht(vertical) adjustment? seems to be working OK
+                iDesiredFormHeight = ctlCurrSubform.height - (30 + (WindowScrollBar * SSTwipsPerPixel))
+            End If
+        End If
+    End If
+    
+    'pddxxx .91 New constant conScaleSubformWidthToFit sizes subforms to fit width of subform control
+    'If conRetainSubformProportion Then
+    If Not conScaleSubformWidthToFit Then
+        '* Use current subform width/prev subform width as basis for scaling
+        iDesiredFormWidth = ctlCurrSubform.Width
+    Else
+        '* Record selectors and scrollbars adjustments
+        If frm.ScrollBars = 0 Or frm.ScrollBars = 1 Then
+            If frm.RecordSelectors = True Then
+                '30 is horz adjustment
+                'RecordSelectors (285), and extra adjustment (30)
+                iDesiredFormWidth = ctlCurrSubform.Width - (30 + 285)
+            Else
+                'extra adjustment (30) only
+                iDesiredFormWidth = ctlCurrSubform.Width - (30)
+            End If
+        Else
+            If frm.RecordSelectors = True Then
+                '30 is horz adjustment
+                'RecordSelectors (285), scroll bar, and extra adjustment (30)
+                iDesiredFormWidth = ctlCurrSubform.Width - (30 + 285 + (WindowScrollBar * SSTwipsPerPixel))
+            Else
+                'scroll bar and extra adjustment (30) only
+                iDesiredFormWidth = ctlCurrSubform.Width - (30 + (WindowScrollBar * SSTwipsPerPixel))
+            End If
+        End If
+    End If
+Else
+    '* If form window does not automatically size to fit, size to fit anyway prior to scaling
+    '* (pddxxx - maybe comment out this section, and resize form window, then form instead.)
+    If frm.AutoResize = False Then  '* only for forms that don't automatically size window to fit form
+        If JustOpened And AdjustRes And Not LongForm Then
+            On Error Resume Next
+            SkipSS = True
+            DoCmd.RunCommand acCmdSizeToFitForm
+            SkipSS = False
+            On Error GoTo Err_SS_Rescale
+        End If
+    End If
+    
+    '* Compute percentage change for current form
+    If LongForm Then
+        If SS_apiIsZoomed(frm.hwnd) And AdjustRes Then
+            '* Maximized long form, just make resolution adjustment
+            iDesiredFormHeight = SSCurrentFormHeight
+            '* The formula below attempts to calculate a desired form height based on the ratio of the old
+            '* form insideheight to the new form insideheight. Since the old form insideheight in
+            '* this instance is unknown, it is estimated based on current form settings, and the resolution
+            '* adjustment factor.
+            '* This approach assumes similar window caption and border heights at each resolution.
+            '* So it is still a bit off at each resolution. (ex.: form "tSSLongMax2")
+            iDesiredFormHeight = iDesiredFormHeight * (frm.InsideHeight / _
+                (((AccessWinRect.Bottom - AccessWinRect.Top) * SSTwipsPerPixel / ResFactor) - _
+                (((AccessWinRect.Bottom - AccessWinRect.Top) * SSTwipsPerPixel) - frm.InsideHeight)))
+        Else
+            If lOldHeight <> 0 Then
+                iDesiredFormHeight = frm.InsideHeight * (SSCurrentFormHeight / lOldHeight)
+            Else
+                MsgBox "There was an error - lOldHeight variable not set. Default used."
+                iDesiredFormHeight = SSCurrentFormHeight
+            End If
+            iDesiredFormHeight = iDesiredFormHeight * ResFactor
+        End If
+    Else
+        '* When first opened, and adjustres, we may have form window scrollbars, so
+        '* res adjustment should be based on height of form, not inside height.
+        'iDesiredFormHeight = frm.InsideHeight
+        If SS_apiIsZoomed(frm.hwnd) Then
+            iDesiredFormHeight = frm.InsideHeight
+        Else
+            If AdjustRes Then
+                iDesiredFormHeight = SSCurrentFormHeight
+            Else
+                iDesiredFormHeight = frm.InsideHeight
+            End If
+        End If
+        
+        If frm.CurrentView = conDesignView Then
+            If frm.ScrollBars = 0 Or frm.ScrollBars = 2 Then    '* if no horz scrollbar
+                iDesiredFormHeight = iDesiredFormHeight + (WindowScrollBar * SSTwipsPerPixel)   '*     adjust height
+            End If
+        End If
+        iDesiredFormHeight = iDesiredFormHeight * ResFactor
+    End If
+
+    '* Minimum form height is 1/4 inch (360) to accomodate menu-bar type forms
+    If iDesiredFormHeight < 360 Then
+        iDesiredFormHeight = 360
+    End If
+
+    '* When first opened, and adjustres, we may have form window scrollbars, so
+    '* res adjustment should be based on width of form, not insidewidth of window
+    '* Restored forms only
+    If SS_apiIsZoomed(frm.hwnd) Then
+        If frm.RecordSelectors = True Then
+            iDesiredFormWidth = frm.InsideWidth - 285     '* 285 is border, 195 is scroll bar
+        Else
+            iDesiredFormWidth = frm.InsideWidth
+        End If
+    Else
+        If AdjustRes Then
+            '* When first opened, and adjustres, we may have form window scrollbars, so
+            '* res adjustment should be based on width of form, not insidewidth of window
+            iDesiredFormWidth = SSCurrentFormWidth
+        Else
+            If frm.RecordSelectors = True Then
+                iDesiredFormWidth = frm.InsideWidth - 285     '* 285 is border, 195 is scroll bar
+            Else
+                iDesiredFormWidth = frm.InsideWidth
+            End If
+        End If
+    End If
+    
+    If frm.CurrentView = conDesignView Then
+        If frm.ScrollBars = 0 Or frm.ScrollBars = 1 Then    '* if no vert scrollbar
+            iDesiredFormWidth = iDesiredFormWidth + (WindowScrollBar * SSTwipsPerPixel)   '*     adjust width
+        End If
+    End If
+    '* vertical scroll bar adjustment for long forms
+    If LongForm Then
+        If frm.ScrollBars = 2 Or frm.ScrollBars = 3 Then    '* if vert scrollbar exists
+            If frm.RecordSelectors = True Then
+                '* 30 is horz adjustment
+                '* RecordSelectors (285), scroll bar, and extra adjustment (30)
+                iDesiredFormWidth = iDesiredFormWidth - (30 + 285 + (WindowScrollBar * SSTwipsPerPixel))
+            Else
+                '* Scroll bar and extra adjustment (30) only
+                iDesiredFormWidth = iDesiredFormWidth - (30 + (WindowScrollBar * SSTwipsPerPixel))
+            End If
+        End If
+    End If
+
+    iDesiredFormWidth = iDesiredFormWidth * ResFactor
+    
+    '* Minimum form width is 1 inch (1440)
+    If iDesiredFormWidth < 1440 Then
+        iDesiredFormWidth = 1440
+    End If
+End If
+Set ctlCurrSubform = Nothing
+    
+'* Set Vertical and Horizontal percent change. Multiply by 100 for accuracy.
+If SSCurrentFormHeight <> 0 Then
+    cpctV = ((iDesiredFormHeight - SSCurrentFormHeight) / SSCurrentFormHeight) * 100 * 100
+Else
+    cpctV = 0
+End If
+
+If SSCurrentFormWidth <> 0 Then
+    cpctH = ((iDesiredFormWidth - SSCurrentFormWidth) / SSCurrentFormWidth) * 100 * 100
+Else
+    cpctH = 0
+End If
+    
+'* If "conRetainProportion" is true, make sure the horizontal and vertical resizing
+'* percentages are equal. This code will maintain form aspect ratio.
+If conRetainProportion Then
+    If Not processing_a_subform Then
+        If Not (frm.DefaultView = conContinuousForms) Then
+            iFormWindowWd = (rectFormClientArea.Right * SSTwipsPerPixel)
+            iFormWindowHt = (rectFormClientArea.Bottom * SSTwipsPerPixel)
+            If SSCurrentFormHeight = 0 Then SSCurrentFormHeight = 1440
+            If iFormWindowHt = 0 Then
+                cpctH = cpctV
+            Else
+                If LongForm Then
+                    '* Scale longform height
+                    cpctH = cpctV
+                Else
+                    If (iFormWindowWd / iFormWindowHt) > (SSCurrentFormWidth / SSCurrentFormHeight) Then
+                        cpctH = cpctV
+                    ElseIf (iFormWindowWd / iFormWindowHt) < (SSCurrentFormWidth / SSCurrentFormHeight) Then
+                        cpctV = cpctH
+                    End If
+                End If
+            End If
+        Else
+            '* Retain stand alone continuous form aspect ratio
+            cpctH = cpctV
+        End If
+    End If
+End If
+
+'pddxxx .91 if "conRetainSubformProportion" is true, then make sure subform
+'* horz and vert rescaling percentages are equal.
+If conRetainSubformProportion Then
+    If processing_a_subform Then
+        cpctV = cpctH
+    End If
+End If
+    
+
+If conDebug = 1 Then MsgBox frm.name & ":  cpctH=" & cpctH & " cpctV=" & cpctV
+i = SS_ResizeControls(frm, cpctH, cpctV, iHandleEchoInternally)       '* call function to resize form and all controls on it.
+            
+            
+'* Handle special processing after resizing all controls
+If AdjustRes Then
+    SkipSS = True
+    On Error Resume Next
+    '* Non-AutoResize long form processing
+    If (Not frm.AutoResize) And LongForm Then
+        '* Adjust form window to current resolution based on adjusted size of client area.
+        dWindowStyle = SS_apiGetWindowLong(frm.hwnd, SS_GWL_STYLE)
+        If dWindowStyle = 0 Then
+            '* Couldn't find window style, so can't compute new window size based on client area.
+            '* Just do a size to fit form instead
+            SkipSS = True
+            DoCmd.RunCommand acCmdSizeToFitForm
+            SkipSS = False
+        Else
+            '* Use res adjustment factor to find new client area size
+            If SS_apiIsZoomed(frm.hwnd) Then
+            Else
+                frm.InsideWidth = frm.InsideWidth * ResFactor
+                SkipSS = True
+                frm.InsideHeight = frm.InsideHeight * ResFactor
+            End If
+        End If
+    Else
+        '* Don't size to fit if processing a subform
+        If processing_a_subform Then
+        Else
+            '* Size window to fit form
+            SkipSS = True
+            DoCmd.RunCommand acCmdSizeToFitForm
+            SkipSS = False
+        End If
+    End If
+    
+    On Error GoTo Err_SS_Rescale
+
+    If frm.name = "MyFormNameHere" Then
+        frm.InsideWidth = 1440 * 6 * ResFactor
+        SkipSS = True
+        frm.InsideHeight = 1440 * 2 * ResFactor
+    End If
+    
+    SkipSS = False
+    
+    If (SS_apiIsZoomed(frm.hwnd) Or processing_a_subform) Then
+        '* skip autocenter/window movement if form is maximized, or is a subform
+    Else
+        Call SS_apiGetWindowRect(frm.hwnd, SSwinrect)
+        Call SS_apiGetClientRect(Application.hWndAccessApp, AccessClientRect)
+            
+        '* If autocenter is yes, then center the form on the screen.
+        If frm.AutoCenter = True Then
+            '* Added feature lets popup forms center in relation to screen, not Access window.
+            If frm.PopUp Then
+                If InStr(1, frm.Tag, "SSScreenCenterPopup") Then
+                    NewRight = 1 * _
+                        (((DisplayWidth) - _
+                        (SSwinrect.Right - SSwinrect.Left)) / 2)
+                    NewDown = 1 * _
+                        (((DisplayHeight) - _
+                        (SSwinrect.Bottom - SSwinrect.Top)) / 3)
+                Else
+                    NewRight = 1 * _
+                        (((AccessClientRect.Right - AccessClientRect.Left) - _
+                        (SSwinrect.Right - SSwinrect.Left)) / 2)
+                    NewDown = 1 * _
+                        (((AccessClientRect.Bottom - AccessClientRect.Top) - _
+                        (SSwinrect.Bottom - SSwinrect.Top)) / 3)
+                    NewRight = NewRight + (1 * AccessWinRect.Left)
+                    NewDown = NewDown + (1 * AccessWinRect.Top)
+                End If
+            Else
+                NewRight = 1 * _
+                    (((AccessClientRect.Right - AccessClientRect.Left) - _
+                    (SSwinrect.Right - SSwinrect.Left)) / 2)
+                '* 23 is (roughtly) a common height setting for the title bar, border
+                '* Could calculate this by retrieving caption height, border values
+                NewDown = 1 * _
+                    ((((AccessClientRect.Bottom - AccessClientRect.Top) - _
+                    (SSwinrect.Bottom - SSwinrect.Top)) / 3) - 23)
+            End If
+        Else
+            '* Move window to resolution-adjusted position
+            NewRight = (SSwinrect.Right * ResFactor) _
+                / SSTwipsPerPixel
+            '* Includes fudge factor ((ResFactor - 1) * 400) to account for changes in size of caption,
+            '* menu, and borders at each resolution
+            NewDown = (SSwinrect.Bottom * ResFactor + ((ResFactor - 1) * 400)) _
+                / SSTwipsPerPixel
+        End If
+        
+        '* Adjustment to get correct units for the MoveSize command.
+        NewRight = NewRight * SSTwipsPerPixel
+        NewDown = NewDown * SSTwipsPerPixel
+        
+        If NewRight < 0 Then NewRight = 0
+        If NewDown < 0 Then NewDown = 0
+        
+        'pddxxx .91 Allow skipping resolution adjustment window positioning.
+        'DoCmd.MoveSize NewRight, NewDown   '(uses different units than the setwindowpos API, below)
+        If frm.AutoCenter = True Or _
+            (InStr(1, frm.Tag, "SSSkipAutoPosition") = 0) Then
+            DoCmd.MoveSize NewRight, NewDown   '(uses different units than the setwindowpos API, below)
+        End If
+        
+        '* This is an alternate method for setting window position
+        'SkipSS = True
+        'Call SS_apiSetWindowPos(frm.hWnd, 0, NewRight, NewDown, 0, 0, _
+        '        SS_SWP_NOSIZE Or SS_SWP_NOZORDER)
+        'SkipSS = False
+        
+    End If
+End If
+
+'* save the current window height and width for use as "old" values next time.
+SSCurrentFormHeight = iDesiredFormHeight
+SSCurrentFormWidth = iDesiredFormWidth
+
+'* Get the inside height and width values for non-autoresize scaling. Save them in form tag property
+SS_SaveFormInsideSettings frm
+
+If frm.DefaultView = conContinuousForms Then
+    '* Put continuous form info into CF array
+    '* Replace an entry if it is already there
+    '* If array is full, delete first entry and add to the end.
+    i = 0
+    foundit = False
+    Do While i <= conCFmax
+        If (CF(i).formname = frm.name) Or (CF(i).formname = "") Then
+            foundit = True
+            Exit Do
+        End If
+        i = i + 1
+    Loop
+    If Not foundit Then
+        '* delete first entry
+        For i = 0 To conCFmax - 1
+            CF(i).formname = CF(i + 1).formname
+            CF(i).oldheight = CF(i + 1).oldheight
+        Next i
+        i = conCFmax
+    End If
+    CF(i).formname = frm.name
+    CF(i).oldheight = iDesiredFormHeight
+End If
+    
+Exit_SS_Rescale:
+    '* Turn off some module flags when appropriate
+    If SkipSS Then
+    Else
+        If frm.name = SSMainFormName Then
+            JustOpened = False
+            SSMainFormName = ""
+        End If
+    End If
+    '* This moved here from above to prevent switching off 'JustOpened' flag too soon.
+    SkipSS = False
+    
+    If conDebug = 1 Then MsgBox "done with SS_Rescale for " & frm.name
+    
+    Exit Sub
+
+Err_SS_Rescale:
+    If err = 2475 Then
+        '* No form is currently open
+        GoTo Exit_SS_Rescale
+    'pddxxx - not needed?
+    ElseIf err = 2452 Then
+        '* invalid reference to parent property
+        Resume After_Subform_Check
+    ElseIf err = 2459 Then
+        Resume After_Subform_Check
+    ElseIf err = 2462 Then
+        '* section does not exist
+        Resume Next
+    ElseIf err = 6 Then
+        '* overflow
+   '     MsgBox "SS_Rescale " & err & " " & err.Description & " - You may be trying to rescale your form beyond the MS Access 22 inch limit"
+        Resume Next
+    ElseIf err = 2046 Then
+        '* size to fit form command not available
+        Resume Next
+    Else
+     '   MsgBox "Error in SS_Rescale " & err & " " & err.Description
+        If conExitOnError Then
+            GoTo Exit_SS_Rescale
+        Else
+            Resume Next
+        End If
+    End If
+End Sub
+
+Sub SS_RemoveFRRows(frmname As String)
+'* Remove rows from the font/ratio array that correspond to the passed form name
+Dim i As Integer
+Dim j As Integer
+Dim startpoint As Integer
+Dim startofnextform As Integer
+Dim entriestoremove As Integer
+Dim newlastrow As Integer
+
+On Error GoTo Err_SS_RemoveFRRows
+
+'* find first occurance of frmname in the FR array
+startpoint = -1
+For i = 0 To FRLastRow
+    If FR(i).formname = frmname Then
+        startpoint = i
+        Exit For
+    End If
+Next i
+If startpoint = -1 Then GoTo Exit_SS_RemoveFRRows
+
+'* find position where next form starts
+startofnextform = -1
+For i = startpoint To FRLastRow
+    If FR(i).formname <> frmname Then
+        startofnextform = i
+        Exit For
+    End If
+Next i
+
+entriestoremove = startofnextform - startpoint
+newlastrow = FRLastRow - entriestoremove
+If newlastrow < 0 Then newlastrow = 0
+
+'* remove rows
+j = startofnextform
+For i = startpoint To (FRLastRow - 1)
+    FR(i).formname = FR(j).formname
+    FR(i).controlname = FR(j).controlname
+    FR(i).fontratio = FR(j).fontratio
+    FR(i).FontName = FR(j).FontName
+    If j < FRLastRow Then j = j + 1
+Next i
+
+'* set new last row value
+FRLastRow = newlastrow
+
+Exit_SS_RemoveFRRows:
+    Exit Sub
+
+Err_SS_RemoveFRRows:
+    If err = 2475 Then
+        '* No form is currently open
+        GoTo Exit_SS_RemoveFRRows
+    Else
+        MsgBox "Error in SS_RemoveFRRows " & err & " " & err.Description
+        If conExitOnError Then
+            GoTo Exit_SS_RemoveFRRows
+        Else
+            Resume Next
+        End If
+    End If
+        
+End Sub
+Function SS_ResizeColWd(widths As String, cpctH As Long) As String
+'* Resize column widths for combo and list boxes.
+Dim i As Integer
+Dim pos As Integer
+Dim val1 As Integer
+Dim w As String
+
+On Error GoTo Err_SS_ResizeColWd
+w = ""
+If (widths = "") Or IsNull(widths) Then
+Else
+    i = 1
+    pos = InStr(i, widths, ";")
+    Do While pos <> 0
+        val1 = Val(Mid(widths, i, pos - 1))
+        val1 = val1 * (1 + (cpctH / (100 * 100)))
+        w = w & Trim(str(val1)) & ";"
+        i = pos + 1
+        pos = InStr(i, widths, ";")
+    Loop
+    
+    val1 = Val(Mid(widths, i, Len(widths)))
+    val1 = val1 * (1 + (cpctH / (100 * 100)))
+    w = w & Trim(str(val1))
+End If
+
+SS_ResizeColWd = w
+
+Exit Function
+
+Err_SS_ResizeColWd:
+    If err = 2475 Then
+        '* No form is currently open
+        Exit Function
+    Else
+        MsgBox "Error in SS_ResizeColWd " & err & " " & err.Description
+        Resume Next
+    End If
+
+End Function
+
+Function SS_ResizeControls(frm As Form, _
+    cpctH As Long, _
+    cpctV As Long, _
+    iHandleEchoInternally As Integer) As Integer
+'* Resize each control on passed form according to the horizontal and vertical change percentage.
+'* cpctH - horizontal window size change percent * 100
+'* cpctH - vertical window size change percent * 100
+    Dim i As Integer, j As Integer, k As Integer, iOG As Integer, iTC As Integer
+    Dim l As Long
+    Dim rtn As Integer
+    Dim t1 As String
+    Dim sFocusControl As String
+    Dim ctl As Control
+    
+    '*pddxxx .91
+    Dim ctlloop As Control
+    Dim iFoundIt As Integer
+    Dim LeftAdj As Single
+    Dim TopAdj As Single
+    Dim WidthAdj As Single
+    Dim HeightAdj As Single
+    Dim TempAdj As Single
+    Dim TabFixedHeight As Integer
+    Dim iSaveFormWidth As Integer
+    Dim iSaveSectionHeight As Integer
+    Dim iFixedBorderWidth As Integer
+    Dim iFixedBorderHeight As Integer
+    
+    Dim VertAdj As Single
+    Dim HorzAdj As Single
+    Dim iNoOptionGroups As Integer
+    Dim OGLastRow As Integer
+    Dim OG() As SS_RECT_WDHT_TC
+    Dim iSkipControl As Integer
+    Dim dtopdiff As Double
+    Dim dhtdiff As Double
+    Dim dleftdiff As Double
+    Dim dwddiff As Double
+    Dim iLoopVal As Integer
+    Dim iNoTabControls As Integer
+    Dim TCLastRow As Integer
+    Dim TC() As SS_RECT_WDHT_TC
+    
+    Dim iNoSubformControls As Integer
+
+On Error GoTo Err_SS_ResizeControls
+
+If conDebug = 1 Then MsgBox "ResizeControls for " & frm.name
+
+'* Turning echo off here reduces flickering for complex forms
+If iHandleEchoInternally Then DoCmd.Echo False, "ShrinkerStretcher..."
+
+rtn = 0
+
+VertAdj = (1 + (cpctV / (100 * 100)))
+HorzAdj = (1 + (cpctH / (100 * 100)))
+
+'pddxxx .91 Initialize each adjustment variable
+LeftAdj = HorzAdj
+WidthAdj = HorzAdj
+TopAdj = VertAdj
+HeightAdj = VertAdj
+
+'* Save name of control that has the focus when form is maximized so we can return the focus
+'* to it when the tabfixedheight, width adjustments cause the focus to be lost.
+'* This won't work when a maximized report is closed, and a docmd.maximize happens for the form
+If SSStaticResize Then
+    sFocusControl = ""
+Else
+    If SS_apiIsZoomed(frm.hwnd) Then
+        sFocusControl = frm.ActiveControl.name
+    Else
+        sFocusControl = ""
+    End If
+End If
+
+'* Check for and count option groups. Check for tab controls.
+OGLastRow = -1
+TCLastRow = -1
+iNoOptionGroups = True
+iNoTabControls = True
+iNoSubformControls = True
+For j = 0 To (frm.Count - 1)
+    Set ctl = frm(j)
+    If TypeOf ctl Is OptionGroup Then
+        iNoOptionGroups = False
+        OGLastRow = OGLastRow + 1
+    End If
+    If TypeOf ctl Is TabControl Then
+        iNoTabControls = False
+        TCLastRow = TCLastRow + 1
+        'pddxxx .91 Use actual default value for tab fixed height, so that it can be more easily scaled.
+        If ctl.style = 2 Then   'Style = None
+            ctl.TabFixedHeight = 0
+        Else
+            If ctl.TabFixedHeight = 0 Then
+                ctl.TabFixedHeight = 270
+            End If
+        End If
+    End If
+    If TypeOf ctl Is SubForm Then
+        iNoSubformControls = False
+    End If
+Next j
+
+'* Skip rescaling when change percentages are 0.
+If cpctV = 0 And cpctH = 0 Then
+    '* Control sizes will not be changed...
+    If iNoSubformControls Then
+        '* Skip rescaling
+        GoTo Exit_SS_ResizeControls
+    Else
+        '* This form has subform controls
+        '* We must continue scaling because one of these subforms may be a datasheet subform and
+        '* these can't be skipped.
+    End If
+Else
+End If
+
+'pddxxx - for debugging
+'If frm.Name = "ssmain" Then
+'    If conDebug = 1 Then MsgBox "rescaling SSMain"
+'End If
+
+'* Check for option groups and tab controls
+If iNoOptionGroups And iNoTabControls Then
+Else
+    If iNoOptionGroups Then
+    Else
+        ReDim OG(OGLastRow)
+    End If
+    If iNoTabControls Then
+    Else
+        ReDim TC(TCLastRow)
+    End If
+    iOG = 0
+    iTC = 0
+    For j = 0 To (frm.Count - 1)
+        Set ctl = frm(j)
+        If TypeOf ctl Is OptionGroup Then
+            '* Fill the option group array. It is used later to resize option groups.
+            'pddxxx .91 Make adjustments for option groups on tab controls
+            'OG(iOG).Top = ctl.Top * VertAdj
+            'OG(iOG).Height = ctl.Height * VertAdj
+            'OG(iOG).Left = ctl.Left * HorzAdj
+            'OG(iOG).Width = ctl.Width * HorzAdj
+            OG(iOG).name = ctl.name
+            If ctl.Parent.name = frm.name Then
+                OG(iOG).Top = ctl.Top * TopAdj
+                OG(iOG).height = ctl.height * HeightAdj
+                OG(iOG).Left = ctl.Left * LeftAdj
+                OG(iOG).Width = ctl.Width * WidthAdj
+            Else
+                '* Option group does not sit directly on form
+                If TypeOf ctl.Parent Is Page Then
+                    '* Option group is on a tab control
+                    If ctl.Parent.Parent.MultiRow Then  'If tab control is multi-row
+                        OG(iOG).Top = ctl.Top * TopAdj
+                        OG(iOG).height = ctl.height * HeightAdj
+                        OG(iOG).Left = ctl.Left * LeftAdj
+                        OG(iOG).Width = ctl.Width * WidthAdj
+                    Else
+                        '* Option group is on a single row tab control page, so make adjustments
+                        '* Since the tab control has fixed borders that do not resize, slight adjustments
+                        '* need to be made to effectively scale the option group.
+                        If ctl.Parent.Parent.style = 2 Then    'Style = None
+                            iFixedBorderWidth = conTabControlFixedBorderWidthStyleNone
+                            iFixedBorderHeight = conTabControlFixedBorderHeightStyleNone
+                        Else
+                            iFixedBorderWidth = conTabControlFixedBorderWidth
+                            iFixedBorderHeight = conTabControlFixedBorderHeight
+                        End If
+                        '* TempAdj is the adjustment for the page on the tab control
+                        TempAdj = ((((ctl.Parent.Parent.height - ctl.Parent.Parent.TabFixedHeight) * VertAdj) _
+                            - (iFixedBorderHeight * 2)) _
+                            / ctl.Parent.height)
+                        OG(iOG).Top = ((ctl.Parent.Parent.Top + ctl.Parent.Parent.TabFixedHeight) * TopAdj) _
+                            + iFixedBorderHeight _
+                            + ((ctl.Top - ctl.Parent.Top) * TempAdj)
+                        OG(iOG).height = ctl.height * TempAdj
+                        TempAdj = (((ctl.Parent.Parent.Width * HorzAdj) _
+                            - (iFixedBorderWidth * 2)) _
+                            / ctl.Parent.Width)
+                        OG(iOG).Width = ctl.Width * TempAdj
+                        OG(iOG).Left = (ctl.Parent.Parent.Left * LeftAdj) _
+                            + iFixedBorderWidth _
+                            + ((ctl.Left - ctl.Parent.Left) * TempAdj)
+                    End If
+                Else
+                    OG(iOG).Top = ctl.Top * TopAdj
+                    OG(iOG).height = ctl.height * HeightAdj
+                    OG(iOG).Left = ctl.Left * LeftAdj
+                    OG(iOG).Width = ctl.Width * WidthAdj
+                End If
+            End If
+            iOG = iOG + 1
+        End If
+        If TypeOf ctl Is TabControl Then
+            '* Fill the Tab Control array. It is used later to resize Tab Controls.
+            If VertAdj < 1 Then
+                'pddxxx .91 If tab control is shrinking, adjust the TabFixedHeight, and Width
+                '* before scaling controls within it. This gives controls within more rescaling room.
+                ctl.TabFixedHeight = ctl.TabFixedHeight * HeightAdj
+                ctl.TabFixedWidth = ctl.TabFixedWidth * WidthAdj
+            End If
+            'pddxxx .91 Set tab control border width and height variables depending on tab control style
+            If ctl.style = 2 Then   'Style = None
+                iFixedBorderWidth = conTabControlFixedBorderWidthStyleNone
+                iFixedBorderHeight = conTabControlFixedBorderHeightStyleNone
+            Else
+                iFixedBorderWidth = conTabControlFixedBorderWidth
+                iFixedBorderHeight = conTabControlFixedBorderHeight
+            End If
+            
+            'pddxxx .91 New variables were added to the TC array type to facilitate better
+            '* tab control scaling.
+            'TC(iTC).Top = ctl.Top * VertAdj
+            'TC(iTC).Height = ctl.Height * VertAdj
+            'TC(iTC).Left = ctl.Left * HorzAdj
+            'TC(iTC).Width = ctl.Width * HorzAdj
+            TC(iTC).name = ctl.name
+            TC(iTC).Top = ctl.Top * TopAdj
+            TC(iTC).height = ctl.height * HeightAdj
+            TC(iTC).Left = ctl.Left * LeftAdj
+            TC(iTC).Width = ctl.Width * WidthAdj
+            TC(iTC).OrigPageLeft = ctl.Pages(0).Left
+            TC(iTC).OrigPageTop = ctl.Pages(0).Top
+            If ctl.MultiRow Then
+                TC(iTC).PageHorzAdj = WidthAdj
+                TC(iTC).PageVertAdj = HeightAdj
+            Else
+                TC(iTC).PageHorzAdj = ((ctl.Width * WidthAdj) _
+                    - (iFixedBorderWidth * 2)) _
+                    / ctl.Pages(0).Width
+                If TC(iTC).PageHorzAdj < 0 Then
+                    TC(iTC).PageHorzAdj = WidthAdj
+                End If
+                TabFixedHeight = ctl.TabFixedHeight
+                TC(iTC).PageVertAdj = (((ctl.height - TabFixedHeight) * HeightAdj) _
+                    - (iFixedBorderHeight * 2)) _
+                    / ctl.Pages(0).height
+                If TC(iTC).PageVertAdj < 0 Then
+                    TC(iTC).PageVertAdj = HeightAdj
+                End If
+            End If
+            iTC = iTC + 1
+        End If
+    Next j
+End If
+
+If cpctV > 0 Then
+    '* When form is stretching, enlarge sections before controls
+    For i = 0 To 4
+        '* all sections:
+        If frm.Section(i).height <> 0 Then
+            l = frm.Section(i).height * HeightAdj
+            frm.Section(i).height = l
+        End If
+    Next i
+End If
+
+If cpctH > 0 Then
+    '* When form is stretching, enlarge sections before controls
+    '* all sections:
+    If frm.Width <> 0 Then
+        l = frm.Width * WidthAdj
+        frm.Width = l
+    End If
+End If
+
+'* Shrink/stretch controls
+For j = 0 To (frm.Count - 1)
+    Set ctl = frm(j)
+    '* Set control properties.
+    iSkipControl = False
+    If TypeOf ctl Is Page Or TypeOf ctl Is TabControl Then
+        '* skip tab controls for now.
+        iSkipControl = True
+    End If
+    If TypeOf ctl Is OptionGroup Then
+        '* skip option groups for now
+        iSkipControl = True
+    End If
+    If iSkipControl Then
+        '* Skip this control
+    Else
+        If TypeOf ctl Is SubForm Then
+            '* Remember width and height for later proportional scaling
+            sf_PrevHt = ctl.height
+            sf_PrevWd = ctl.Width
+        End If
+        'pddxxx .91 Adjustments for controls on tab control pages
+        If iNoTabControls Then
+        Else
+            'pddxxx .91 Make adjustment for control on a tab control page.
+            '* Initialize adjustment vars
+            LeftAdj = HorzAdj
+            WidthAdj = HorzAdj
+            TopAdj = VertAdj
+            HeightAdj = VertAdj
+            If ctl.Parent.name <> frm.name Then
+                '* Control has a parent. Could be a label, a control on an option group,
+                '* on a tab control, or a control on an option group on a tab control.
+                '* Traverse from child to parent via loop until a tab control page is found.
+                Set ctlloop = ctl
+                Do While ctlloop.Parent.name <> frm.name
+                    Set ctlloop = ctlloop.Parent
+                    If TypeOf ctlloop Is Page Then
+                        Exit Do
+                    End If
+                Loop
+                If TypeOf ctlloop Is Page Then
+                    'pddxxx .91 Ctl is part of a tab control page
+                    If ctlloop.Parent.MultiRow Then
+                        'pddxxx .91 Objects on multi-row tab controls will be scaled using default
+                        '* adjustment variable values.
+                    Else
+                        '* Find the entry in the TC array for the tab control this page is a part of
+                        iFoundIt = False
+                        For i = 0 To TCLastRow
+                            If ctlloop.Parent.name = TC(i).name Then
+                                iFoundIt = True
+                                Exit For
+                            End If
+                        Next i
+                        If iFoundIt Then
+                            'pddxxx .91 OK, now we know the ctl is on a tab control page, and we have
+                            '* the rescaled position of the tab control from the TC array.
+                            If ctlloop.Parent.style = 2 Then   'Style = None
+                                iFixedBorderWidth = conTabControlFixedBorderWidthStyleNone
+                                iFixedBorderHeight = conTabControlFixedBorderHeightStyleNone
+                            Else
+                                iFixedBorderWidth = conTabControlFixedBorderWidth
+                                iFixedBorderHeight = conTabControlFixedBorderHeight
+                            End If
+                            If ctl.Left <> 0 Then
+                                WidthAdj = TC(i).PageHorzAdj
+                                '* New left position is
+                                '* New tab control left plus fixed border width,
+                                '* plus new distance from page border to control left
+                                '* So, LeftAdj is all that over the original ctl.Left
+                                LeftAdj = ( _
+                                    (TC(i).Left) _
+                                    + iFixedBorderWidth _
+                                    + ((ctl.Left - TC(i).OrigPageLeft) * TC(i).PageHorzAdj) _
+                                    ) / ctl.Left
+                            Else
+                            End If
+                            If ctl.Top <> 0 Then
+                                TabFixedHeight = ctlloop.Parent.TabFixedHeight
+                                '* New top position is
+                                '* New tab control top plus adjusted tab header height
+                                '* plus fixed border width,
+                                '* plus new distance from page top to control top
+                                '* So, TopAdj is all that over the original ctl.Top
+                                TopAdj = ( _
+                                    (TC(i).Top + (TabFixedHeight * HeightAdj)) _
+                                    + iFixedBorderHeight _
+                                    + ((ctl.Top - TC(i).OrigPageTop) * TC(i).PageVertAdj) _
+                                    ) / ctl.Top
+                                HeightAdj = TC(i).PageVertAdj
+                            Else
+                            End If
+                        Else
+                        End If
+                    End If
+                Else
+                    '* Control is not part of a tab control page, so leave adjustment variables
+                    '* at their original initialized values.
+                End If
+            Else
+            End If
+        End If
+        
+        '* Resize the control
+        SkipSS = True
+        ctl.Top = ctl.Top * TopAdj
+        SkipSS = True
+        ctl.height = ctl.height * HeightAdj
+        SkipSS = True
+        ctl.Left = ctl.Left * LeftAdj
+        SkipSS = True
+        ctl.Width = ctl.Width * WidthAdj
+        SkipSS = False
+        
+        If frm.CurrentView = conDesignView Then
+            '* Skip recursive calls to subform when in design (static rescaling) mode.
+        Else
+            If TypeOf ctl Is SubForm Then
+                '* Force a recursive call to SS for the subform of a parent form.
+                '* The orig width and height don't matter here because we will be processing a subform.
+                '* Error checking added
+                err.Clear
+                On Error Resume Next
+                SS_Rescale frm(ctl.name).Form, conOrigWd, conOrigHt, iHandleEchoInternally
+                If err = 0 Then
+                Else
+                    If err = 2455 Then
+                        'MsgBox "SS_ResizeControls subform section - subform not available!! - " & Err & " " & Err.Description
+                    Else
+                        If err = 2467 Then
+                            '* Object no longer exists - unbound subform error
+                        Else
+                          '  MsgBox "SS_ResizeControls subform section " & err & " " & err.Description
+                        End If
+                    End If
+                    err.Clear
+                End If
+                On Error GoTo Err_SS_ResizeControls
+            End If
+        End If
+        
+        '* Reset subform variables
+        If TypeOf ctl Is SubForm Then
+            sf_PrevHt = 0
+            sf_PrevWd = 0
+        End If
+
+        SS_SetFontSize frm, ctl
+        '* Column width adjustment
+        If TypeOf ctl Is ListBox Then
+            If IsNull(ctl.ColumnWidths) Then
+            Else
+                t1 = ctl.ColumnWidths
+                'pddxxx .91 Use new WidthAdj variable in subroutine call
+                'ctl.ColumnWidths = SS_ResizeColWd(t1, cpctH)
+                ctl.ColumnWidths = SS_ResizeColWd(t1, (WidthAdj - 1) * 100 * 100)
+            End If
+        End If
+        If TypeOf ctl Is ComboBox Then
+            If IsNull(ctl.ColumnWidths) Then
+            Else
+                t1 = ctl.ColumnWidths
+                'pddxxx .91 Use new WidthAdj variable in subroutine call
+                'ctl.ColumnWidths = SS_ResizeColWd(t1, cpctH)
+                ctl.ColumnWidths = SS_ResizeColWd(t1, (WidthAdj - 1) * 100 * 100)
+                ctl.ListWidth = ctl.ListWidth * WidthAdj
+            End If
+        End If
+    End If
+Next j
+
+'*pddxxx .91 Reset adjustment factors
+If iNoTabControls Then
+Else
+    LeftAdj = HorzAdj
+    WidthAdj = HorzAdj
+    TopAdj = VertAdj
+    HeightAdj = VertAdj
+End If
+
+'pddxxx .91 Save form width so that it can be changed, and restored later.
+iSaveFormWidth = frm.Width
+
+'* Now handle option groups
+If iNoOptionGroups Then
+Else
+    'pddxxx .91 Loop through option group array and resize each option group
+    For iOG = 0 To OGLastRow
+        Set ctl = frm(OG(iOG).name)
+        ctl.Top = OG(iOG).Top
+        ctl.height = OG(iOG).height
+        ctl.Left = OG(iOG).Left
+        ctl.Width = OG(iOG).Width
+        If ctl.Top <> OG(iOG).Top _
+            Or ctl.height <> OG(iOG).height _
+            Or ctl.Left <> OG(iOG).Left _
+            Or ctl.Width <> OG(iOG).Width Then
+            'pddxxx .91 For whatever reason, the direct method of resizing the control did not work,
+            '* so use more sophisticated method.
+            '* Increase section height to max, so that lower border won't get in the way.
+            iSaveSectionHeight = frm.Section(ctl.Section).height
+            If ctl.Top <> OG(iOG).Top Then
+                frm.Section(ctl.Section).height = 31680  'max height
+            End If
+            
+            '* Incrementally change the size of option groups
+            If conOptGroupLoopAdj Then
+                iLoopVal = Int((Abs(VertAdj - 1) * 20))
+                If iLoopVal < 3 Then iLoopVal = 3
+                If iLoopVal > 15 Then iLoopVal = 15
+            Else
+                iLoopVal = 5
+            End If
+            
+            dtopdiff = (OG(iOG).Top - ctl.Top)
+            dhtdiff = (OG(iOG).height - ctl.height)
+            dleftdiff = (OG(iOG).Left - ctl.Left)
+            dwddiff = (OG(iOG).Width - ctl.Width)
+            For k = 1 To iLoopVal
+                ctl.Top = ctl.Top + (dtopdiff / iLoopVal)
+                ctl.height = ctl.height + (dhtdiff / iLoopVal)
+                ctl.Left = ctl.Left + (dleftdiff / iLoopVal)
+                ctl.Width = ctl.Width + (dwddiff / iLoopVal)
+            Next k
+            '* Final adjustment
+            ctl.Top = OG(iOG).Top
+            ctl.height = OG(iOG).height
+            ctl.Left = OG(iOG).Left
+            ctl.Width = OG(iOG).Width
+            'pddxxx .91 Reset section height
+            frm.Section(ctl.Section).height = iSaveSectionHeight
+        End If
+    Next iOG
+    
+    'pddxxx .91 Option group rescaling can bump against form right border and widen form.
+    '* This adjustment should reset it to the correct width.
+    If frm.Width <> iSaveFormWidth Then
+        'MsgBox "width before =" & frm.Width
+        frm.Width = iSaveFormWidth
+        'MsgBox "width after =" & frm.Width
+    End If
+    
+End If
+
+'* Now handle tab controls
+If iNoTabControls Then
+Else
+    For iTC = 0 To TCLastRow
+        Set ctl = frm(TC(iTC).name)
+        '* Handle multiple tab controls
+        '* These next two lines will cause focus to be lost when form is maximized
+        If VertAdj >= 1 Then
+            ctl.TabFixedHeight = ctl.TabFixedHeight * HeightAdj
+            ctl.TabFixedWidth = ctl.TabFixedWidth * WidthAdj
+        End If
+        'pddxxx .91 Move tab control directly to its new position.
+        '* Only make step adjustments if this fails
+        ctl.Top = TC(iTC).Top
+        ctl.height = TC(iTC).height
+        ctl.Left = TC(iTC).Left
+        ctl.Width = TC(iTC).Width
+        'pddxxx .91
+        '* Check to see if tab control adjustment is close enough. If not,
+        '* use incremental adjustment method.
+        If Abs(ctl.Top - TC(iTC).Top) > 4 _
+            Or Abs(ctl.height - TC(iTC).height) > 7 _
+            Or Abs(ctl.Left - TC(iTC).Left) > 4 _
+            Or Abs(ctl.Width - TC(iTC).Width) > 5 Then
+            'pddxxx .91 For whatever reason, the direct method of resizing the control did not work,
+            '* so use more sophisticated method.
+            '* Increase section height to max, so that lower border won't get in the way.
+            iSaveSectionHeight = frm.Section(ctl.Section).height
+            If ctl.Top <> TC(iTC).Top Then
+                frm.Section(ctl.Section).height = 31680  'max height
+            End If
+            
+            If conTabCtlLoopAdj Then
+                iLoopVal = Int((Abs(VertAdj - 1) * 20))
+                If iLoopVal < 3 Then iLoopVal = 3
+                If iLoopVal > 15 Then iLoopVal = 15
+            Else
+                iLoopVal = 3
+            End If
+            
+            dtopdiff = (TC(iTC).Top - ctl.Top)
+            dhtdiff = (TC(iTC).height - ctl.height)
+            dleftdiff = (TC(iTC).Left - ctl.Left)
+            dwddiff = (TC(iTC).Width - ctl.Width)
+            For i = 1 To iLoopVal
+                ctl.Top = ctl.Top + (dtopdiff / iLoopVal)
+                ctl.height = ctl.height + (dhtdiff / iLoopVal)
+                ctl.Left = ctl.Left + (dleftdiff / iLoopVal)
+                ctl.Width = ctl.Width + (dwddiff / iLoopVal)
+            Next i
+            '* Final adjustments to tab control...
+            If ctl.Top <> TC(iTC).Top Then ctl.Top = TC(iTC).Top
+            If ctl.height <> TC(iTC).height Then ctl.height = TC(iTC).height
+            If ctl.Left <> TC(iTC).Left Then ctl.Left = TC(iTC).Left
+            If ctl.Width <> TC(iTC).Width Then ctl.Width = TC(iTC).Width
+            
+            frm.Section(ctl.Section).height = iSaveSectionHeight
+        End If
+        
+        '* Set page tab font size
+        SS_SetFontSize frm, ctl
+    Next iTC
+    
+    'pddxxx .91 Tab control rescaling can bump against form right border and widen form.
+    '* This adjustment should reset it to the correct width.
+    If frm.Width <> iSaveFormWidth Then
+        frm.Width = iSaveFormWidth
+    End If
+    
+    '* Restore focus if needed
+    If sFocusControl = "" Then
+    Else
+        On Error Resume Next
+        '* If focus was on a subform control, this statement will generate an error.
+        '* That's OK because subforms do not appear to have a focus problem like other controls
+        '* contained in tab controls.
+        frm(sFocusControl).SetFocus    '* restore focus
+        On Error GoTo Err_SS_ResizeControls
+    End If
+End If
+
+
+If cpctV < 0 Then
+    '* When form is shrinking, shrink sections after controls
+    For i = 0 To 4
+        '* All sections:
+        If frm.Section(i).height <> 0 Then
+            frm.Section(i).height = frm.Section(i).height * HeightAdj
+        End If
+    Next i
+End If
+
+If cpctH < 0 Then
+    '* When form is shrinking, shrink sections after controls
+    '* all sections:
+    If frm.Width <> 0 Then
+        frm.Width = frm.Width * WidthAdj
+    End If
+End If
+
+If frm.CurrentView = conDesignView Then
+Else
+    If iHandleEchoInternally Then frm.Repaint
+End If
+
+Exit_SS_ResizeControls:
+    '* Clean up some object variables
+    On Error Resume Next
+    Set ctl = Nothing
+    Set ctlloop = Nothing
+    SS_ResizeControls = rtn
+    If conDebug = 1 Then MsgBox "done with ResizeControls for " & frm.name
+    On Error GoTo 0
+    Exit Function
+
+Err_SS_ResizeControls:
+    If err = 2462 Then
+        '* frm.section(x) not found
+        Resume Next
+    ElseIf err = 2467 Then
+        '* Object no longer exists - unbound subform error
+        Resume Next
+    ElseIf err = 2474 Then
+        '* Object needs to have the focus
+        Resume Next
+    ElseIf err = 438 Then
+        '* control does not this property associated to it
+        Resume Next
+    ElseIf err = 2455 Then
+        '* control does not have a font associated to it
+        Resume Next
+    ElseIf err = 2100 Then
+        '* tried to resize control beyond bounds of form
+        Resume Next
+    Else
+    '    MsgBox "Error in SS_ResizeControls " & err & " " & err.Description
+        If conExitOnError Then
+            GoTo Exit_SS_ResizeControls
+        Else
+            Resume Next
+        End If
+    End If
+    
+End Function
+Function xg_GetScreenResolution() As String
+'return the display height and width
+Dim DisplayHeight As Integer
+Dim DisplayWidth As Integer
+Dim hDesktopWnd As Long
+Dim hDCcaps As Long
+Dim iRtn As Integer
+
+'* make API calls to get desktop settings
+hDesktopWnd = SS_apiGetDesktopWindow() 'get handle to desktop
+hDCcaps = SS_apiGetDC(hDesktopWnd) 'Get Display Context
+DisplayHeight = SS_apiGetDeviceCaps(hDCcaps, WM_VERTRES)
+DisplayWidth = SS_apiGetDeviceCaps(hDCcaps, WM_HORZRES)
+iRtn = SS_apiReleaseDC(hDesktopWnd, hDCcaps)
+
+xg_GetScreenResolution = DisplayWidth & "x" & DisplayHeight
+
+End Function
