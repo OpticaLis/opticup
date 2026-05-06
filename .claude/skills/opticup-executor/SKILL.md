@@ -337,6 +337,39 @@ view, new RPC, new migration, or even new field in an existing table), you MUST:
    correctly-fetched current-tenant values, NEVER the prior tenant's
    values. Source: M4_HARDCODED_PRIZMA_REMOVAL M4-DOC-09 — preview-only
    impact path is structurally different from customer-facing path.
+
+5e. **PUBLIC-inheritance check on RPC EXECUTE migrations (MANDATORY —
+   added 2026-05-06 after M4-DB-01).** Before any migration that REVOKEs
+   function EXECUTE, inspect `pg_proc.proacl` for the `=X/...` PUBLIC entry:
+   ```sql
+   SELECT proname, proacl FROM pg_proc
+   WHERE pronamespace='public'::regnamespace AND proname=?;
+   ```
+   If present (and it always is for Supabase functions by default), the
+   migration MUST include `REVOKE EXECUTE FROM PUBLIC` in addition to any
+   role-specific revocation. Verify post-migration via
+   `has_function_privilege('anon', oid, 'EXECUTE')` — if anon still has
+   EXECUTE despite the FROM-anon revoke, you missed the FROM PUBLIC.
+   Source: M4_TENANT_ISOLATION_HARDENING_PART2 Stage 1 was a security
+   no-op until Stage 2 added the FROM PUBLIC.
+
+5f. **SQL-matrix substitute for Chrome-MCP-unavailable QA (added 2026-05-06).**
+   When SPEC §12 requires a Chrome MCP CRM walk-through to verify CRM
+   staff regression AND Chrome MCP is unavailable in the executor session,
+   substitute via SQL `has_function_privilege()` matrix or RLS-context
+   simulation:
+   ```sql
+   BEGIN;
+   SET LOCAL ROLE authenticated;
+   SET LOCAL request.jwt.claims = '{"tenant_id":"<demo>","role":"authenticated"}';
+   -- exercise the security boundary
+   ROLLBACK;
+   ```
+   This is strictly stronger for security verification (deterministic,
+   role-explicit) but does NOT test UI rendering or click-handler bindings.
+   Document the substitution in EXECUTION_REPORT §3 Deviations + flag for
+   Daniel UAT. Don't escalate — Daniel UAT is the right place for UI sanity.
+   Source: M4_TENANT_ISOLATION_HARDENING_PART1 + PART2 (2-occurrence pattern).
 6. **Field-reuse check:** if the SPEC adds a field that semantically overlaps
    an existing one (e.g. `phone`, `phone_number`, `mobile`, `contact_phone`),
    STOP and escalate. Foreman decides: reuse existing vs create new.

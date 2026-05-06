@@ -487,6 +487,26 @@ Step 1.5 DB Pre-Flight — intentionally. Defense in depth.
    disagreed." This rule + bullet 6 above together cover the four families:
    columns, catalog rows, RPC bodies, filesystem paths.
 
+9. **PUBLIC-inheritance check on RPC permissions (MANDATORY — applied 2026-05-06 after M4-DB-01).**
+   Whenever a SPEC will REVOKE or GRANT EXECUTE on a function, INSPECT the
+   function's existing ACL FIRST:
+   ```sql
+   SELECT proname, proacl FROM pg_proc
+   WHERE pronamespace='public'::regnamespace AND proname=?;
+   ```
+   Look for the `=X/postgres` entry — that IS the PUBLIC grant. Postgres
+   adds `EXECUTE TO PUBLIC` at function creation by default. `REVOKE EXECUTE
+   FROM anon` strips only the direct grant; anon still inherits EXECUTE via
+   PUBLIC. The SPEC's migration body MUST include `REVOKE EXECUTE ... FROM
+   PUBLIC` for every function being locked down. Verify post-migration via
+   `has_function_privilege('anon', oid, 'EXECUTE')` returning `false` —
+   anything else means PUBLIC inheritance is still active.
+
+   **This rule is non-negotiable on first introduction — no 3-occurrence wait.**
+   It is a Postgres-architectural reality, not a name-from-memory issue. Source:
+   M4_TENANT_ISOLATION_HARDENING_PART2/M4-DB-01. Stage 1 of that SPEC was a
+   security no-op until the corrective added FROM PUBLIC.
+
 8. **Preview-vs-customer-facing distinction in §2 threat model
    (added 2026-05-06).** When the SPEC cites a hardcoded value, distinguish
    whether it appears in:

@@ -114,6 +114,13 @@ After the executor finishes, the repo should contain:
 same commit. The `_up`/`_down` convention is the project standard since
 2026-04-29 — do NOT use the older single-prefix `_rollback` suffix.
 
+**Function-EXECUTE permission migrations:** when REVOKEing function-level
+EXECUTE GRANTs, the migration MUST include both `REVOKE EXECUTE ... FROM
+PUBLIC` AND any role-specific revocation. The PUBLIC line is mandatory
+because Postgres grants `EXECUTE TO PUBLIC` at function creation by
+default; revoking from `anon` alone is a no-op due to PUBLIC inheritance.
+Source: M4_TENANT_ISOLATION_HARDENING_PART2 M4-DB-01.
+
 ### Modified files
 - `path/to/existing/file.md` — lines {A}–{B} changed: {description}
 
