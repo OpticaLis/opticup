@@ -488,6 +488,7 @@
         <button class="btn btn-p btn-sm" onclick="searchReceiptBarcode()" style="margin-bottom:2px">&#128269; חפש</button>
         <button class="btn btn-g btn-sm" onclick="addNewReceiptRow()" style="margin-bottom:2px">&#10010; שורה חדשה</button>
         <label class="btn btn-g btn-sm" style="margin-bottom:2px;cursor:pointer">&#128194; ייבוא Excel<input type="file" accept=".xlsx,.xls,.csv" onchange="handleReceiptExcel(event)" style="display:none"></label>
+        <button class="btn btn-g btn-sm" id="rcpt-sort-lock-btn" title="נעילת סדר העמודות בטבלה — לחץ לשחרור / נעילה" onclick="toggleRcptSortLock()" style="margin-bottom:2px">&#128274; סדר נעול</button>
       </div>
       <div class="rcpt-items-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
         <table id="rcpt-items-table" style="min-width:1100px">
@@ -919,6 +920,7 @@
 <script src="modules/goods-receipts/receipt-doc-numbers.js"></script>
 <script src="modules/goods-receipts/receipt-form.js"></script>
 <script src="modules/goods-receipts/receipt-form-items.js"></script>
+<script src="modules/goods-receipts/receipt-form-validate.js"></script>
 <script src="modules/goods-receipts/receipt-guide.js"></script>
 <script src="modules/goods-receipts/receipt-ocr-supplier.js"></script>
 <script src="modules/goods-receipts/receipt-ocr-po.js"></script>
