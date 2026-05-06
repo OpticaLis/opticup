@@ -73,8 +73,8 @@ async function saveReceiptDraft() {
       rcptEditMode = true;
     }
 
-    // Insert items
-    const itemRows = items.map(i => ({
+    // Insert items (item 15: sort_order = DOM index + 1 = typed entry order)
+    const itemRows = items.map((i, idx) => ({
       receipt_id: receiptId,
       inventory_id: i.inventory_id || null,
       barcode: i.barcode || null,
@@ -93,6 +93,7 @@ async function saveReceiptDraft() {
       from_po: i.from_po || false,
       product_type: i.product_type || null,
       note: i.note || null,
+      sort_order: idx + 1,
       tenant_id: getTenantId()
     }));
 
@@ -150,7 +151,8 @@ async function saveReceiptDraftInternal() {
     rcptEditMode = true;
   }
 
-  const itemRows = items.map(i => ({
+  // Item 15: sort_order = DOM index + 1 = typed entry order
+  const itemRows = items.map((i, idx) => ({
     receipt_id: receiptId,
     inventory_id: i.inventory_id || null,
     barcode: i.barcode || null,
@@ -167,6 +169,7 @@ async function saveReceiptDraftInternal() {
     receipt_status: i.receipt_status || null,
     from_po: i.from_po || false,
     product_type: i.product_type || null,
+    sort_order: idx + 1,
     tenant_id: getTenantId()
   }));
 

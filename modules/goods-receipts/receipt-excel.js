@@ -90,7 +90,9 @@ async function exportReceiptExcel() {
   try { items = getReceiptItems(); } catch (e) { return; }
   if (!items.length) { toast('אין פריטים לייצוא', 'w'); return; }
 
-  const rcptNumber = ($('rcpt-number').value || '').trim() || 'receipt';
+  // Local var renamed from rcptNumber to avoid rule-21-orphans cross-file false positive
+  // with receipt-actions.js (FINDING-B in RECEIPT_FORM_FIXES_FROM_MANAGER findings).
+  const rcptNumForExcel = ($('rcpt-number').value || '').trim() || 'receipt';
   const rows = items.map((i, idx) => ({
     '#': idx + 1,
     'ברקוד': i.barcode,
@@ -108,7 +110,7 @@ async function exportReceiptExcel() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'פריטים');
   const dateStr = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, `קבלה-${rcptNumber}-${dateStr}.xlsx`);
+  XLSX.writeFile(wb, `קבלה-${rcptNumForExcel}-${dateStr}.xlsx`);
   toast('קובץ Excel יוצא', 's');
 }
 
@@ -178,10 +180,13 @@ async function exportReceiptToAccess(receiptId) {
 async function exportReceiptBarcodes(receiptId) {
   showLoading('\u05D8\u05D5\u05E2\u05DF \u05E4\u05E8\u05D9\u05D8\u05D9 \u05E7\u05D1\u05DC\u05D4...');
   try {
+    // Item 15: export barcodes in manager-typed entry order (sort_order ASC, then id ASC for legacy rows)
     var { data: items, error } = await sb.from(T.RCPT_ITEMS)
-      .select('barcode, barcodes_csv, brand, model, size, color, quantity, unit_cost, receipt_status, po_match_status')
+      .select('barcode, barcodes_csv, brand, model, size, color, quantity, unit_cost, receipt_status, po_match_status, sort_order')
       .eq('receipt_id', receiptId)
-      .eq('tenant_id', getTenantId());
+      .eq('tenant_id', getTenantId())
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('id', { ascending: true });
     if (error) throw error;
 
     // Filter: only items that actually entered inventory
