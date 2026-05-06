@@ -130,3 +130,29 @@ ALTER TABLE crm_leads
 --
 -- Full migration in migrations/2026_05_06_tenant_isolation_part1_up.sql.
 -- Companion rollback in migrations/2026_05_06_tenant_isolation_part1_down.sql.
+
+-- =============================================================================
+-- M4_HARDCODED_PRIZMA_REMOVAL (2026-05-06) — tenant config seed
+-- =============================================================================
+-- Closes Phase 1 audit G-CRIT-4 + G-HIGH-3 + G-HIGH-6 + G-HIGH-7 by populating
+-- previously-NULL columns + extending tenants.ui_config JSONB with 5 keys that
+-- replace hardcoded values in source code (event-register UI, messaging-template
+-- preview defaults, 3 EFs that hardcoded STOREFRONT_URL).
+--
+-- Top-level columns populated (already existed, were NULL on prizma):
+--   tenants.business_phone   text
+--   tenants.business_address text
+--
+-- New keys appended to tenants.ui_config JSONB (preserves existing keys via ||):
+--   whatsapp_phone_e164   text  -- e.g. '972533645404'
+--   support_phone_display text  -- e.g. '053-3645404'
+--   storefront_url        text  -- e.g. 'https://prizma-optic.co.il'
+--   brand                 object with { gold, gold_light, gold_hover } hex strings
+--
+-- Existing key preserved on prizma: `default_waze_url`.
+-- Existing keys preserved on demo: `default_waze_url`, `--color-primary`,
+--   `--color-primary-dark`, `--color-primary-hover`, `--color-primary-light`
+--   (a separate pre-existing color-token namespace; coexists with `brand.*`).
+--
+-- Full migration in migrations/2026_05_06_tenant_config_seed_up.sql.
+-- Companion rollback in migrations/2026_05_06_tenant_config_seed_down.sql.
