@@ -2,6 +2,34 @@
 
 ---
 
+## M4_HARDCODED_PRIZMA_REMOVAL — tenant config + 4 EFs + client + preview defaults (2026-05-06) ✅
+
+| Hash | Message |
+|------|---------|
+| `54b835e` | `feat(crm): seed tenant_config for prizma + demo (M4_HARDCODED_PRIZMA_REMOVAL)` |
+| `c576bd3` | `feat(crm): _shared/tenant-config.ts helper for EF tenant lookups` |
+| `73dd0e3` | `fix(crm): client JS/CSS reads tenant config instead of hardcoded prizma values` |
+| `e9e06e4` | `fix(crm): EFs use tenant_config.storefront_url instead of hardcoded constant` |
+| _(this commit)_ | `chore(spec): close M4_HARDCODED_PRIZMA_REMOVAL with retrospective` |
+
+CRITICAL SaaS-readiness hotfix closing 1 of 4 audit CRITICAL findings (G-CRIT-4 WhatsApp) plus 3 HIGHs (G-HIGH-3 STOREFRONT_URL, G-HIGH-6 brand colors, G-HIGH-7 messaging template defaults). The largest Iron Rule 9 (no hardcoded business values) closure of the post-cutover backlog: every Prizma-specific business value in M4 source has been replaced with `tenants` table reads.
+
+**5-commit sequence:**
+1. **Migration** (`54b835e`): seed `business_phone`, `business_address`, and 5 new `ui_config` JSONB keys (`whatsapp_phone_e164`, `support_phone_display`, `storefront_url`, `brand{gold,gold_light,gold_hover}`) for both prizma + demo. Demo gets distinct test values (green palette `#059669`/`#d1fae5`/`#047857` vs prizma's gold `#c9a555`/`#e8da94`/`#b8943f`) so cross-tenant rendering bugs surface immediately. Existing keys (`default_waze_url`, `--color-primary*`) preserved via `||` operator.
+2. **Shared helper** (`c576bd3`): `supabase/functions/_shared/tenant-config.ts` — single SELECT against tenants returning a typed `TenantConfig`. Caller-decides-fallback (returns null for missing keys, never substitutes a hardcoded default). MODULE_MAP entry added under new "Edge Function shared helpers" section.
+3. **Client JS/CSS** (`73dd0e3`): `event-register.css` gold canon hex codes replaced with neutral grayscale defaults (`#888`/`#ccc`/`#555`) — the page never flashes Prizma-specific colors before JS loads. `event-register.js` adds `applyTenantBrand()` and `whatsappLineHtml()` helpers reading from a new `data.tenant_ui_config` field. `crm-messaging-templates.js` preview defaults replaced with tenant-neutral Hebrew placeholders. All SPEC §3 grep checks #8/#9/#10 pass.
+4. **EFs** (`e9e06e4`): 4 EFs (one more than SPEC §9 anticipated) wired to the helper. `quick-register` `lookup_url` op uses tenant's storefront_url. `send-message/url-builders.ts` `buildUnsubscribeUrl` + `buildRegistrationUrl` fetch tenant config once and thread origin to `createShortLink`. `resolve-link` architectural upgrade: existing-row branch derives tenant homepage from `short_links.tenant_id` → tenant's storefront_url; no-row/no-code branch falls back to `Deno.env.get("SHORT_LINK_FALLBACK_URL")` or HTTP 404 (never to a tenant-specific URL we cannot authoritatively choose). `event-register` GET response extended with `tenant_ui_config` subset for the public form (4th deploy — necessary for client-side brand + WhatsApp rendering).
+
+**Deploys:** all 4 EFs deployed via Daniel's local CLI (Supabase MCP `deploy_edge_function` had 3+ prior occurrences of OPEN-021 5xx; CLI also auto-traverses the new `_shared` import graph which MCP would require manual file listing for). Live versions: `quick-register` v6, `send-message` v20, `resolve-link` v3, `event-register` v15.
+
+**E2E verification on demo:** Test 2 GREEN — message_log row shows `https://demo.opticalis.co.il/r/...` (NOT `prizma-optic.co.il/...`) for a demo-tenant lead, confirming the per-tenant `storefront_url` plumbing works end-to-end. Test 3 GREEN — short-link resolution: demo code → demo URL; prizma code → prizma URL (regression check); invalid code → HTTP 404. Test 1 (visual brand color in browser) deferred to manual UAT (Chrome MCP not loaded this session). 0 prizma writes during run, whitelist contacts only.
+
+**Architecture-context note:** the `event-register.css` header previously cited "Daniel pre-authorized Option a in SPEC §1.5" (the pre-cutover decision to inline canon gold values directly in CSS for single-tenant simplicity). This SPEC supersedes that decision as part of the SaaS-readiness pivot — documented in retrospective.
+
+See `modules/Module 4 - CRM/docs/specs/M4_HARDCODED_PRIZMA_REMOVAL/`.
+
+---
+
 ## M4_TENANT_ISOLATION_HARDENING_PART1 — cms_leads canonical RLS + 7 v_crm_* views security_invoker (2026-05-06) ✅
 
 | Hash | Message |
