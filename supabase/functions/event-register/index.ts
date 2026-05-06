@@ -248,7 +248,7 @@ Deno.serve(async (req: Request) => {
       .eq("is_deleted", false)
       .maybeSingle(),
     db.from("crm_events")
-      .select("id, status, name, event_date, start_time, location_address")
+      .select("id, status, name, event_date, start_time, end_time, location_address")
       .eq("id", body.event_id!)
       .eq("tenant_id", body.tenant_id!)
       .eq("is_deleted", false)
@@ -322,10 +322,6 @@ Deno.serve(async (req: Request) => {
       phone: lead.phone || "",
       email: lead.email || "",
       lead_id: body.lead_id!,
-      event_name: event.name || "",
-      event_date: event.event_date || "",
-      event_time: event.start_time || "",
-      event_location: event.location_address || "",
     };
     await dispatchRegistrationMessages(
       body.tenant_id!,

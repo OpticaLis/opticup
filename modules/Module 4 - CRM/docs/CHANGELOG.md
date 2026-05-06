@@ -2,6 +2,18 @@
 
 ---
 
+## M4_PUBLIC_FORM_VARIABLES_HIGH — public-form confirmation date+time formatter bypass (2026-05-06) ✅
+
+| Hash | Message |
+|------|---------|
+| _(this commit)_ | `fix(crm): event-register passes empty event_* vars so formatter renders DD/MM/YYYY + HH:MM-HH:MM (M4_PUBLIC_FORM_VARIABLES_HIGH)` |
+
+Hotfix for HIGH severity bug found in PHASE2 audit T5-HIGH-1 + Daniel-spotted `%event_time%` corruption (2026-05-06). Public-form registrants were getting confirmation messages with raw ISO date (`📅 2026-05-13`) and start_time-only (`09:00:00`) instead of canonical `📅 13/05/2026` and `09:00 - 14:00`. Root cause: `event-register/index.ts` pre-filled `event_date`/`event_time` in the `variables` object passed to `dispatchRegistrationMessages`, defeating `injectEventVariables` which is caller-wins. Fix: removed all 4 `event_*` keys from the variables object; widened the event SELECT to include `end_time` for completeness. EF deployed v13→v14 (Daniel's CLI after MCP returned `InternalServerErrorException` twice — same OPEN-021 flakiness pattern as ATOMIC_CONFIRMATION_FLOW). E2E on demo: SMS + email both render `13/05/2026` and `09:00 - 14:00`; staff-path regression check (send-message direct call with `variables={}`) renders correctly; 0 prizma writes during test; whitelist-only contacts.
+
+See `modules/Module 4 - CRM/docs/specs/M4_PUBLIC_FORM_VARIABLES_HIGH/`.
+
+---
+
 ## ATOMIC_CONFIRMATION_FLOW — 3-button atomic modal commit + silent-drop race fix (2026-05-04) ✅
 
 | Hash | Message |
