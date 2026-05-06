@@ -53,6 +53,7 @@ function addReceiptItemRow(data) {
     </select></td>
     <td><input type="number" class="rcpt-qty col-qty" min="1" value="${data?.quantity || 1}"></td>
     <td><input type="number" class="rcpt-ucost col-price" step="0.01" min="0" value="${data?.unit_cost || ''}"></td>
+    <td class="rcpt-line-total" style="text-align:end;font-variant-numeric:tabular-nums">—</td>
     <td><input type="number" class="rcpt-sprice col-price" step="0.01" min="0" value="${data?.sell_price || ''}"></td>
     <td><input type="number" class="rcpt-sdisc" step="0.1" min="0" max="100" value="${data?.sell_discount ? (data.sell_discount * 100).toFixed(1) : ''}" placeholder="0" style="width:55px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:.82rem"></td>
     <td><select class="rcpt-sync" style="min-width:65px" ${isExisting ? 'disabled' : ''}>
@@ -245,6 +246,13 @@ function updateReceiptItemsStats() {
   var partialCnt = items.filter(i => i.receipt_status === 'partial_received').length;
   // Total cost of active items
   var totalCost = activeItems.reduce((s, i) => s + i.quantity * (i.unit_cost || 0), 0);
+  // Per-row line-total cell update (item 14: visible line total)
+  document.querySelectorAll('#rcpt-items-body tr[data-row]').forEach(function(tr) {
+    var q = parseFloat((tr.querySelector('.rcpt-qty') || {}).value) || 0;
+    var c = parseFloat((tr.querySelector('.rcpt-ucost') || {}).value) || 0;
+    var cell = tr.querySelector('.rcpt-line-total');
+    if (cell) cell.textContent = (q > 0 && c > 0) ? (q * c).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₪' : '—';
+  });
   var extra = '';
   if (partialCnt) extra += ' | ' + partialCnt + ' \u05D7\u05DC\u05E7\u05D9\u05EA';
   if (notRecvd) extra += ' | ' + notRecvd + ' \u05DC\u05D0 \u05D4\u05D2\u05D9\u05E2\u05D5';
@@ -253,6 +261,8 @@ function updateReceiptItemsStats() {
   $('rcpt-items-stats').textContent = items.length
     ? `\u05E1\u05D4"\u05DB ${items.length} \u05E9\u05D5\u05E8\u05D5\u05EA | ${total} \u05D9\u05D7\u05D9\u05D3\u05D5\u05EA | ${existCount} \u05E7\u05D9\u05D9\u05DE\u05D9\u05DD | ${newCount} \u05D7\u05D3\u05E9\u05D9\u05DD` + extra
     : '';
+  // Invoice-total compare (item 14: defined in receipt-form-validate.js)
+  if (typeof _updateRcptInvoiceCompare === 'function') _updateRcptInvoiceCompare(totalCost);
 }
 
 function addNewReceiptRow() {
