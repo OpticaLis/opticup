@@ -2,6 +2,26 @@
 
 ---
 
+## M4_TENANT_ISOLATION_HARDENING_PART1 — cms_leads canonical RLS + 7 v_crm_* views security_invoker (2026-05-06) ✅
+
+| Hash | Message |
+|------|---------|
+| _(this commit)_ | `fix(crm): tenant-scoped cms_leads policy + security_invoker on 7 v_crm views (M4_TENANT_ISOLATION_HARDENING_PART1)` |
+
+CRITICAL hotfix closing 2 of 4 tenant-isolation findings from the M4 overnight audit (Phase 1). G-CRIT-2 (12 anon-callable SECURITY DEFINER RPCs) is deferred to PART 2 — separate SPEC, separate session.
+
+**G-CRIT-1 (cms_leads policy bypass) closed.** Replaced 3 broken policies (`cms_leads_anon_insert WITH CHECK=true`, `cms_leads_authenticated_read USING=true`, `cms_leads_service_all`) with the canonical 2-policy pattern from CLAUDE.md §5 Rule 15: `service_bypass` (service_role, all-pass) + `tenant_isolation` (public, JWT-claim USING+CHECK). Verified: anon attempt to direct-INSERT into cms_leads with cross-tenant tenant_id is now rejected with `42501: new row violates row-level security policy`.
+
+**G-CRIT-3 (7 SECURITY DEFINER views) closed.** Applied `SET (security_invoker = on)` to `v_crm_campaign_performance`, `v_crm_event_attendees_full`, `v_crm_event_dashboard`, `v_crm_event_stats`, `v_crm_lead_event_history`, `v_crm_lead_timeline`, `v_crm_leads_with_tags`. Views now run as the querying user, so RLS on the underlying CRM tables applies normally. Verified: demo tenant authenticated context sees its own slice (15/15/8/5/218/5/7 rows) — a strict subset of the global counts (19/19/227/1177/514/1177/0).
+
+Single migration applied atomically via Supabase MCP `apply_migration` (`m4_tenant_isolation_part1`). Forward + rollback files at `modules/Module 4 - CRM/migrations/2026_05_06_tenant_isolation_part1_{up,down}.sql`. Pre/post row counts match exactly (no data loss). 0 prizma writes during session.
+
+**Important context:** `cms_leads` is the **legacy storefront table** that was deprecated by P5_7_STOREFRONT_FORM_REWIRE on cutover (2026-05-03). Last cms_leads write was 2026-05-03 (pre-cutover). All current production traffic flows through `lead-intake` EF → `crm_leads`. The new RLS therefore closes a now-dormant attack surface; no live writer is affected.
+
+See `modules/Module 4 - CRM/docs/specs/M4_TENANT_ISOLATION_HARDENING_PART1/`.
+
+---
+
 ## M4_UNSUB_SUPPRESSION_CRIT — send-message rejects dispatch to unsubscribed leads (2026-05-06) ✅
 
 | Hash | Message |

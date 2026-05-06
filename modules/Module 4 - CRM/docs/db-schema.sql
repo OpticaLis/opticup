@@ -95,3 +95,38 @@ ALTER TABLE crm_leads
 -- CREATE OR REPLACE VIEW cannot insert columns mid-list (42P16). Functionally
 -- equivalent for callers (JS selects by name).
 -- Full definition in migrations/2026_05_03_lead_eye_exam_default_02_view.sql.
+
+-- =============================================================================
+-- M4_TENANT_ISOLATION_HARDENING_PART1 (2026-05-06) — RLS + view security_invoker
+-- =============================================================================
+-- Closes Phase 1 audit G-CRIT-1 (cms_leads policy bypass) and G-CRIT-3 (7
+-- SECURITY DEFINER views). G-CRIT-2 (12 anon-callable SECURITY DEFINER RPCs)
+-- deferred to PART 2.
+--
+-- cms_leads policies — replaced 3 broken policies with the canonical 2-policy
+-- pattern from CLAUDE.md §5 Rule 15:
+--
+--   DROP POLICY cms_leads_anon_insert        ON public.cms_leads;  -- WITH CHECK=true was a hole
+--   DROP POLICY cms_leads_authenticated_read ON public.cms_leads;  -- USING=true was a hole
+--   DROP POLICY cms_leads_service_all        ON public.cms_leads;  -- replaced by service_bypass
+--
+--   CREATE POLICY service_bypass ON public.cms_leads FOR ALL TO service_role
+--     USING (true) WITH CHECK (true);
+--
+--   CREATE POLICY tenant_isolation ON public.cms_leads FOR ALL TO public
+--     USING      (tenant_id = (((current_setting('request.jwt.claims', true))::json ->> 'tenant_id'))::uuid)
+--     WITH CHECK (tenant_id = (((current_setting('request.jwt.claims', true))::json ->> 'tenant_id'))::uuid);
+--
+-- 7 v_crm_* views — added security_invoker=on so RLS on underlying tables
+-- applies when the view is queried (replaces default SECURITY DEFINER behavior):
+--
+--   ALTER VIEW public.v_crm_campaign_performance SET (security_invoker = on);
+--   ALTER VIEW public.v_crm_event_attendees_full SET (security_invoker = on);
+--   ALTER VIEW public.v_crm_event_dashboard      SET (security_invoker = on);
+--   ALTER VIEW public.v_crm_event_stats          SET (security_invoker = on);
+--   ALTER VIEW public.v_crm_lead_event_history   SET (security_invoker = on);
+--   ALTER VIEW public.v_crm_lead_timeline        SET (security_invoker = on);
+--   ALTER VIEW public.v_crm_leads_with_tags      SET (security_invoker = on);
+--
+-- Full migration in migrations/2026_05_06_tenant_isolation_part1_up.sql.
+-- Companion rollback in migrations/2026_05_06_tenant_isolation_part1_down.sql.
