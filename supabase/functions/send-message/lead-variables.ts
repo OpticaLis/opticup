@@ -15,23 +15,23 @@ export async function injectLeadVariables(
   leadId: string,
   tenantId: string,
   vars: Record<string, unknown>,
-): Promise<void> {
-  if (!leadId || !tenantId) return;
+): Promise<{ unsubscribed_at: string | null; status: string | null } | null> {
+  if (!leadId || !tenantId) return null;
 
   const { data: lead, error } = await db
     .from("crm_leads")
-    .select("id, full_name, phone, email")
+    .select("id, full_name, phone, email, unsubscribed_at, status")
     .eq("id", leadId)
     .eq("tenant_id", tenantId)
     .maybeSingle();
 
   if (error) {
     console.warn("injectLeadVariables: lead lookup failed:", error.message);
-    return;
+    return null;
   }
   if (!lead) {
     console.warn("injectLeadVariables: lead not found id=" + leadId);
-    return;
+    return null;
   }
 
   // Caller-wins merge: only set if the caller didn't pass a value.
@@ -39,4 +39,9 @@ export async function injectLeadVariables(
   if (vars.phone == null) vars.phone = lead.phone || "";
   if (vars.email == null) vars.email = lead.email || "";
   if (vars.lead_id == null) vars.lead_id = lead.id || "";
+
+  return {
+    unsubscribed_at: lead.unsubscribed_at ?? null,
+    status: lead.status ?? null,
+  };
 }

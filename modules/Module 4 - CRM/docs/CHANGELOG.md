@@ -2,6 +2,18 @@
 
 ---
 
+## M4_UNSUB_SUPPRESSION_CRIT — send-message rejects dispatch to unsubscribed leads (2026-05-06) ✅
+
+| Hash | Message |
+|------|---------|
+| _(this commit)_ | `fix(crm): send-message rejects dispatch to unsubscribed leads (M4_UNSUB_SUPPRESSION_CRIT)` |
+
+CRITICAL hotfix closing the CAN-SPAM-equivalent regulatory exposure found in PHASE 2 audit T14-CRIT-1. `send-message` v18 had no `unsubscribed_at` check anywhere — customers who clicked "הסרה מרשימה" continued receiving messages from any subsequent automation rule, broadcast, manual send, or dispatch-queue call. Fix: widened `injectLeadVariables` SELECT to fetch `unsubscribed_at` + `status`, changed signature to return suppression fields, and inserted a gate in `index.ts` after the lead lookup that rejects with `status='rejected', error_message='lead_unsubscribed'` when EITHER `unsubscribed_at IS NOT NULL` OR `status='unsubscribed'` (defense-in-depth per Iron Rule 22). All channels covered (SMS + email). All callers covered (CRM staff, automation engine, public form, dispatch-queue, broadcast). EF deployed v18→v19 (Daniel's CLI after MCP `InternalServerErrorException` ×2 — 3rd occurrence of OPEN-021). E2E demo: Test 1 (SMS suppress) GREEN, Test 2 (email suppress) GREEN, Test 3 (re-subscribe restores send) GREEN, Test 4 (regression — never-unsubscribed lead unaffected) GREEN. 0 prizma writes during test, whitelist contacts only.
+
+See `modules/Module 4 - CRM/docs/specs/M4_UNSUB_SUPPRESSION_CRIT/`.
+
+---
+
 ## M4_PUBLIC_FORM_VARIABLES_HIGH — public-form confirmation date+time formatter bypass (2026-05-06) ✅
 
 | Hash | Message |

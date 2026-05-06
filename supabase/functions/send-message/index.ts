@@ -154,8 +154,22 @@ Deno.serve(async (req: Request) => {
   // --- Inject lead vars (P31 commit 2): name, phone, email, lead_id from
   // crm_leads. Caller-wins — only fills gaps. Unconditional on every dispatch
   // (not gated on event_id) so direct-send paths can never produce a message
-  // with literal %name%.
-  await injectLeadVariables(db, leadId, tenantId, variables);
+  // with literal %name%. Returns the lead's suppression fields for the gate
+  // immediately below.
+  const supRow = await injectLeadVariables(db, leadId, tenantId, variables);
+
+  // --- Suppression gate (M4_UNSUB_SUPPRESSION_CRIT) ---
+  // CAN-SPAM equivalent: respect `unsubscribed_at` on every dispatch. The
+  // unsubscribe EF sets both `unsubscribed_at` and `status='unsubscribed'`
+  // in one UPDATE; either condition suppresses (defense in depth — Iron Rule 22).
+  if (supRow && (supRow.unsubscribed_at != null || supRow.status === "unsubscribed")) {
+    await db.from("crm_message_log").insert({
+      tenant_id: tenantId, lead_id: leadId, event_id: eventId, run_id: runId,
+      template_id: null, channel, content: "",
+      status: "rejected", error_message: "lead_unsubscribed",
+    });
+    return jsonResponse({ ok: false, error: "lead_unsubscribed" }, 200);
+  }
 
   // --- Inject auto URLs (unsubscribe + registration) and event-derived vars ---
   // Rung 1 (P5_V2_REBUILD_RUNG1_PLUMBING): URL injectors moved to event-variables.ts
