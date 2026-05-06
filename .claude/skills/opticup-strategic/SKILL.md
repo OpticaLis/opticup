@@ -432,6 +432,43 @@ Step 1.5 DB Pre-Flight — intentionally. Defense in depth.
    "Cross-Reference Check completed 2026-04-14 against GLOBAL_SCHEMA rev X:
    0 collisions / N hits resolved." An empty or missing line = incomplete SPEC.
 
+6. **DB-object role verification (MANDATORY — applied 2026-05-06 after 3-occurrence rule).**
+   For every database object the SPEC will reference AS A WRITER OR READER of a
+   target table (e.g., "submit_storefront_lead writes to cms_leads",
+   "register_lead_to_event reads crm_event_attendees"), confirm by SQL
+   BEFORE writing §10 Dependencies or §12 QA Plan:
+   ```sql
+   -- Find every public RPC whose body references the target table
+   SELECT proname FROM pg_proc
+   WHERE pronamespace='public'::regnamespace
+     AND prosrc ILIKE '%<target_table>%';
+   ```
+   ALSO confirm template slugs, automation rule slugs, and view names by SELECT:
+   ```sql
+   SELECT slug FROM crm_message_templates WHERE tenant_id=? AND slug=?;
+   SELECT slug FROM crm_automation_rules  WHERE tenant_id=? AND slug=?;
+   SELECT relname FROM pg_class WHERE relkind='v' AND relname=?;
+   ```
+   ALSO confirm column names cited in §3 Success Criteria via:
+   ```sql
+   SELECT column_name, is_nullable, data_type FROM information_schema.columns
+   WHERE table_schema='public' AND table_name=? AND column_name=?;
+   ```
+   If the named object does not appear, the SPEC's assumed call path is wrong
+   — re-verify the actual caller via `pg_proc.prosrc` text search OR by
+   tracing the application code. NEVER cite a DB-object's role from memory.
+   This is a hard gate: a SPEC that fails this check is NOT ready to dispatch.
+
+   **Why this rule exists:** 3 consecutive SPECs (M4_PUBLIC_FORM_VARIABLES_HIGH,
+   M4_UNSUB_SUPPRESSION_CRIT, M4_TENANT_ISOLATION_HARDENING_PART1) cited DB
+   objects from author memory that didn't exist or had wrong role:
+   `recipient_phone`/`recipient_email` columns (don't exist),
+   `event_registration_open` template slug (doesn't exist),
+   `submit_storefront_lead` (writes to `storefront_leads`, not `cms_leads`).
+   Each cost the executor 2-5 minutes of mid-run substitution + finding-logging.
+   Per Self-Improvement Mandate "3 reviews → must apply", this rule is now
+   binding — not an aspiration.
+
 #### Step 1.5e — File-size pre-flight refresh (MANDATORY, NOT conditional)
 
 For EVERY file mentioned in §3 (Success Criteria) and §8 (Expected Final State),

@@ -286,6 +286,36 @@ view, new RPC, new migration, or even new field in an existing table), you MUST:
    ```
    If ANY hit — STOP. This is a Rule 21 (No Duplicates) red flag. Report the
    collision to the Foreman, do NOT invent a new name unilaterally.
+
+5b. **DB-object role verification (MANDATORY — added 2026-05-06 after 3-occurrence rule).**
+   For every DB object the SPEC references AS A WRITER OR READER of a
+   target table (e.g., "submit_storefront_lead writes to cms_leads"),
+   confirm BEFORE running QA that the named object actually plays
+   that role:
+   ```sql
+   -- Find every public RPC whose body references the target table
+   SELECT proname FROM pg_proc
+   WHERE pronamespace='public'::regnamespace
+     AND prosrc ILIKE '%<target_table>%';
+   ```
+   ALSO confirm template slugs / automation rule slugs / view names
+   that the SPEC's QA cites:
+   ```sql
+   SELECT slug FROM crm_message_templates WHERE tenant_id=? AND slug=?;
+   SELECT slug FROM crm_automation_rules  WHERE tenant_id=? AND slug=?;
+   SELECT relname FROM pg_class WHERE relkind='v' AND relname=?;
+   ```
+   If the named object does not appear, the SPEC's assumed call path
+   is WRONG. Substitute the closest valid alternative for QA, and log
+   a finding in `FINDINGS.md` so the SPEC author can fix the reference
+   in the next SPEC. Do NOT escalate mid-run for this class — the
+   substitute test verifies the SPEC's intent; the finding closes the
+   doc-quality loop.
+
+   **3-occurrence pattern** (M4_PUBLIC_FORM_VARIABLES_HIGH/M4-DOC-02,
+   M4_UNSUB_SUPPRESSION_CRIT/M4-DOC-04,
+   M4_TENANT_ISOLATION_HARDENING_PART1/M4-DOC-05) → this rule is now
+   binding, not aspirational.
 6. **Field-reuse check:** if the SPEC adds a field that semantically overlaps
    an existing one (e.g. `phone`, `phone_number`, `mobile`, `contact_phone`),
    STOP and escalate. Foreman decides: reuse existing vs create new.

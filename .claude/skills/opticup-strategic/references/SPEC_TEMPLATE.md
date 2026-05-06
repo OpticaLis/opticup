@@ -99,6 +99,12 @@ After the executor finishes, the repo should contain:
 - `path/to/new/file1.ts`
 - `path/to/new/file2.sql`
 
+**Migration file naming (when SPEC creates a SQL migration):** use
+`YYYY_MM_DD_<spec_slug>_up.sql` for the forward migration + a paired
+`YYYY_MM_DD_<spec_slug>_down.sql` for the rollback. Both files in the
+same commit. The `_up`/`_down` convention is the project standard since
+2026-04-29 — do NOT use the older single-prefix `_rollback` suffix.
+
 ### Modified files
 - `path/to/existing/file.md` — lines {A}–{B} changed: {description}
 
