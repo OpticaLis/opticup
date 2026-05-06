@@ -1,10 +1,13 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { dispatchQuickRegister } from "./dispatch.ts";
+import { loadTenantConfig } from "../_shared/tenant-config.ts";
 
 // ============================================================
 // quick-register — Walk-in QR registration EF
 // Module 4 CRM — QUICK_REGISTER_QR_FLOW SPEC, 2026-05-04
+// 2026-05-06 (M4_HARDCODED_PRIZMA_REMOVAL): hardcoded STOREFRONT_URL replaced
+// with tenant-scoped lookup via loadTenantConfig().
 // ============================================================
 // Two ops dispatched from a single endpoint:
 //   default ('register'): walk-in customer scans QR, fills the storefront
@@ -16,11 +19,6 @@ import { dispatchQuickRegister } from "./dispatch.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-// Storefront base URL used to build the /quick-register/ link in lookup_url.
-// Hardcoded per current single-tenant SaaS deploy. When a second tenant ships,
-// promote to tenant config (see FINDINGS.md).
-const STOREFRONT_URL = "https://prizma-optic.co.il";
 
 // Event statuses for which both ops accept the event. Anything else → 409.
 // Matches SPEC §3.1.3 + §3.2.3 (registration_open / will_open_tomorrow / event_day).
@@ -172,9 +170,12 @@ Deno.serve(async (req: Request) => {
 
   // ---- Op: lookup_url (Make WhatsApp branch) ----
   if (op === "lookup_url") {
+    const cfg = await loadTenantConfig(db, tenantId);
+    const storefront = cfg?.storefront_url;
+    if (!storefront) return errorResponse("tenant_storefront_unconfigured", 500);
     return jsonResponse({
       ok: true,
-      url: `${STOREFRONT_URL}/quick-register/?event=${event.event_number}`,
+      url: `${storefront}/quick-register/?event=${event.event_number}`,
       event_number: event.event_number,
       event_name: event.name ?? "",
       event_date_he: formatHebrewDate(event.event_date),
