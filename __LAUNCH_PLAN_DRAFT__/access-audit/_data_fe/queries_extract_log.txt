@@ -1,0 +1,27 @@
+﻿Top-30 longest saved
+qmail saved: 7
+del saved: 34
+upd saved: 13
+action saved: 179
+passthru saved: 27
+maketable saved: 28
+multi-join (manual) index saved: 99
+hebrew named saved: 25
+  KW SAPAKIM                      66
+  KW tb_credits                    3
+  KW tb_yoman                      3
+  KW tb_catalog                   54
+  KW tb_ad_catalog                88
+  KW Watsp                         0
+  KW Watsap                        0
+  KW SMS                           0
+  KW kupa                         43
+  KW moadon                       37
+  KW hesh                          8
+  KW YEAR(                        82
+  KW DATEDIFF                     28
+  KW IIF                         242
+  KW Forms!                      210
+  KW Reports!                      0
+IIF queries: 242 / total IIF expressions: 0
+Form-referencing queries: 210

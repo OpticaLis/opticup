@@ -286,6 +286,90 @@ view, new RPC, new migration, or even new field in an existing table), you MUST:
    ```
    If ANY hit — STOP. This is a Rule 21 (No Duplicates) red flag. Report the
    collision to the Foreman, do NOT invent a new name unilaterally.
+
+5b. **DB-object role verification (MANDATORY — added 2026-05-06 after 3-occurrence rule).**
+   For every DB object the SPEC references AS A WRITER OR READER of a
+   target table (e.g., "submit_storefront_lead writes to cms_leads"),
+   confirm BEFORE running QA that the named object actually plays
+   that role:
+   ```sql
+   -- Find every public RPC whose body references the target table
+   SELECT proname FROM pg_proc
+   WHERE pronamespace='public'::regnamespace
+     AND prosrc ILIKE '%<target_table>%';
+   ```
+   ALSO confirm template slugs / automation rule slugs / view names
+   that the SPEC's QA cites:
+   ```sql
+   SELECT slug FROM crm_message_templates WHERE tenant_id=? AND slug=?;
+   SELECT slug FROM crm_automation_rules  WHERE tenant_id=? AND slug=?;
+   SELECT relname FROM pg_class WHERE relkind='v' AND relname=?;
+   ```
+   If the named object does not appear, the SPEC's assumed call path
+   is WRONG. Substitute the closest valid alternative for QA, and log
+   a finding in `FINDINGS.md` so the SPEC author can fix the reference
+   in the next SPEC. Do NOT escalate mid-run for this class — the
+   substitute test verifies the SPEC's intent; the finding closes the
+   doc-quality loop.
+
+   **3-occurrence pattern** (M4_PUBLIC_FORM_VARIABLES_HIGH/M4-DOC-02,
+   M4_UNSUB_SUPPRESSION_CRIT/M4-DOC-04,
+   M4_TENANT_ISOLATION_HARDENING_PART1/M4-DOC-05) → this rule is now
+   binding, not aspirational.
+
+5c. **Filesystem path verification (MANDATORY — added 2026-05-06 after
+   4-occurrence rule).** For every file path cited in the SPEC's §2/§8/§12,
+   confirm by `ls` or `find` BEFORE editing. If the cited path doesn't
+   exist, locate the actual file via:
+   ```bash
+   find . -name '<basename>' -not -path '*/.git/*' 2>/dev/null
+   ```
+   Edit at the actual path; log the discrepancy as a finding so the SPEC
+   author can correct the reference. Common pattern: SPECs miss the
+   `/public/` subfolder qualifier (e.g., `modules/crm/event-register.js`
+   vs actual `modules/crm/public/event-register.js`).
+
+5d. **Cross-tenant preview QA (when client preview helpers touched).**
+   When SPEC modifies a client-side preview/template helper (e.g.,
+   `crm-messaging-templates.js` substitute()), the QA must include a
+   "preview as tenant 2" walkthrough: open the helper while logged in as
+   the OTHER tenant, confirm preview shows tenant-neutral placeholders OR
+   correctly-fetched current-tenant values, NEVER the prior tenant's
+   values. Source: M4_HARDCODED_PRIZMA_REMOVAL M4-DOC-09 — preview-only
+   impact path is structurally different from customer-facing path.
+
+5e. **PUBLIC-inheritance check on RPC EXECUTE migrations (MANDATORY —
+   added 2026-05-06 after M4-DB-01).** Before any migration that REVOKEs
+   function EXECUTE, inspect `pg_proc.proacl` for the `=X/...` PUBLIC entry:
+   ```sql
+   SELECT proname, proacl FROM pg_proc
+   WHERE pronamespace='public'::regnamespace AND proname=?;
+   ```
+   If present (and it always is for Supabase functions by default), the
+   migration MUST include `REVOKE EXECUTE FROM PUBLIC` in addition to any
+   role-specific revocation. Verify post-migration via
+   `has_function_privilege('anon', oid, 'EXECUTE')` — if anon still has
+   EXECUTE despite the FROM-anon revoke, you missed the FROM PUBLIC.
+   Source: M4_TENANT_ISOLATION_HARDENING_PART2 Stage 1 was a security
+   no-op until Stage 2 added the FROM PUBLIC.
+
+5f. **SQL-matrix substitute for Chrome-MCP-unavailable QA (added 2026-05-06).**
+   When SPEC §12 requires a Chrome MCP CRM walk-through to verify CRM
+   staff regression AND Chrome MCP is unavailable in the executor session,
+   substitute via SQL `has_function_privilege()` matrix or RLS-context
+   simulation:
+   ```sql
+   BEGIN;
+   SET LOCAL ROLE authenticated;
+   SET LOCAL request.jwt.claims = '{"tenant_id":"<demo>","role":"authenticated"}';
+   -- exercise the security boundary
+   ROLLBACK;
+   ```
+   This is strictly stronger for security verification (deterministic,
+   role-explicit) but does NOT test UI rendering or click-handler bindings.
+   Document the substitution in EXECUTION_REPORT §3 Deviations + flag for
+   Daniel UAT. Don't escalate — Daniel UAT is the right place for UI sanity.
+   Source: M4_TENANT_ISOLATION_HARDENING_PART1 + PART2 (2-occurrence pattern).
 6. **Field-reuse check:** if the SPEC adds a field that semantically overlaps
    an existing one (e.g. `phone`, `phone_number`, `mobile`, `contact_phone`),
    STOP and escalate. Foreman decides: reuse existing vs create new.

@@ -1,0 +1,100 @@
+﻿[
+    {
+        "table":  "orders",
+        "col":  "odate",
+        "min":  "\/Date(1609884000000)\/",
+        "max":  "\/Date(1777928400000)\/",
+        "notnull":  9803
+    },
+    {
+        "table":  "orders",
+        "col":  "dworka",
+        "min":  "\/Date(946677600000)\/",
+        "max":  "\/Date(1777928400000)\/",
+        "notnull":  721
+    },
+    {
+        "table":  "orders",
+        "col":  "ddonea",
+        "min":  "\/Date(1711231200000)\/",
+        "max":  "\/Date(1777928400000)\/",
+        "notnull":  2471
+    },
+    {
+        "table":  "orders",
+        "col":  "ddelva",
+        "min":  "\/Date(1618174800000)\/",
+        "max":  "\/Date(1777928400000)\/",
+        "notnull":  2565
+    },
+    {
+        "table":  "cust_list",
+        "col":  "cdate",
+        "min":  "\/Date(1610316000000)\/",
+        "max":  "\/Date(1777928400000)\/",
+        "notnull":  3940
+    },
+    {
+        "table":  "cust_list",
+        "col":  "bdate",
+        "min":  "\/Date(-2803773600000)\/",
+        "max":  "\/Date(1654549200000)\/",
+        "notnull":  220
+    },
+    {
+        "table":  "cust_list",
+        "col":  "colv",
+        "min":  "\/Date(1577829600000)\/",
+        "max":  "\/Date(1777928400000)\/",
+        "notnull":  3704
+    },
+    {
+        "table":  "checks",
+        "col":  "chdate",
+        "min":  "\/Date(1610316000000)\/",
+        "max":  "\/Date(1777928400000)\/",
+        "notnull":  6248
+    },
+    {
+        "table":  "adchecks",
+        "col":  "caddate",
+        "min":  "\/Date(1611007200000)\/",
+        "max":  "\/Date(1777842000000)\/",
+        "notnull":  251
+    },
+    {
+        "table":  "tb_kabala",
+        "col":  "wdate",
+        "min":  "\/Date(-29809393200000)\/",
+        "max":  "\/Date(1787864400000)\/",
+        "notnull":  9827
+    },
+    {
+        "table":  "person_remarks",
+        "col":  "datew",
+        "min":  "\/Date(1720990800000)\/",
+        "max":  "\/Date(1777496400000)\/",
+        "notnull":  62
+    },
+    {
+        "table":  "tb_log",
+        "col":  "datew",
+        "min":  "\/Date(1772488800000)\/",
+        "max":  "\/Date(1777842000000)\/",
+        "notnull":  18
+    },
+    {
+        "table":  "tb_order_rem",
+        "col":  "wdate",
+        "min":  "\/Date(1736287200000)\/",
+        "max":  "\/Date(1773525600000)\/",
+        "notnull":  9
+    },
+    {
+        "table":  "tb_quest",
+        "col":  "datew",
+        "min":  "\/Date(1717362000000)\/",
+        "max":  "\/Date(1771279200000)\/",
+        "notnull":  31
+    }
+]

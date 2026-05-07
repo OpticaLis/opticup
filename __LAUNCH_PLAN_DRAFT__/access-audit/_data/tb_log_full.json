@@ -1,0 +1,182 @@
+﻿[
+    {
+        "datew":  "\/Date(1772488800000)\/",
+        "hh":  null,
+        "custn":  9753,
+        "custnf":  null,
+        "tot":  200,
+        "typ":  1,
+        "rnum":  1,
+        "remk_short":  "טסט"
+    },
+    {
+        "datew":  "\/Date(1772661600000)\/",
+        "hh":  null,
+        "custn":  20766,
+        "custnf":  null,
+        "tot":  100,
+        "typ":  2,
+        "rnum":  9,
+        "remk_short":  "ביקורת סרטון"
+    },
+    {
+        "datew":  "\/Date(1772661600000)\/",
+        "hh":  null,
+        "custn":  20408,
+        "custnf":  null,
+        "tot":  100,
+        "typ":  2,
+        "rnum":  2,
+        "remk_short":  "ביקורת בסרטון"
+    },
+    {
+        "datew":  "\/Date(1772661600000)\/",
+        "hh":  null,
+        "custn":  20767,
+        "custnf":  null,
+        "tot":  100,
+        "typ":  1,
+        "rnum":  3,
+        "remk_short":  "ביקורת בסרטון"
+    },
+    {
+        "datew":  "\/Date(1772661600000)\/",
+        "hh":  null,
+        "custn":  20769,
+        "custnf":  null,
+        "tot":  100,
+        "typ":  1,
+        "rnum":  4,
+        "remk_short":  "סרטון ביקורת"
+    },
+    {
+        "datew":  "\/Date(1772661600000)\/",
+        "hh":  null,
+        "custn":  20769,
+        "custnf":  null,
+        "tot":  100,
+        "typ":  2,
+        "rnum":  5,
+        "remk_short":  "טעות"
+    },
+    {
+        "datew":  "\/Date(1772661600000)\/",
+        "hh":  null,
+        "custn":  20769,
+        "custnf":  null,
+        "tot":  200,
+        "typ":  2,
+        "rnum":  6,
+        "remk_short":  "תיקון"
+    },
+    {
+        "datew":  "\/Date(1772661600000)\/",
+        "hh":  null,
+        "custn":  20769,
+        "custnf":  null,
+        "tot":  100,
+        "typ":  1,
+        "rnum":  7,
+        "remk_short":  "תיקון"
+    },
+    {
+        "datew":  "\/Date(1772661600000)\/",
+        "hh":  null,
+        "custn":  20770,
+        "custnf":  null,
+        "tot":  100,
+        "typ":  2,
+        "rnum":  8,
+        "remk_short":  "ביקורת סרטון"
+    },
+    {
+        "datew":  "\/Date(1772748000000)\/",
+        "hh":  null,
+        "custn":  9753,
+        "custnf":  null,
+        "tot":  100,
+        "typ":  1,
+        "rnum":  11,
+        "remk_short":  "שימוש ביתרת צבירה 25-1-9753-100"
+    },
+    {
+        "datew":  "\/Date(1772748000000)\/",
+        "hh":  null,
+        "custn":  9753,
+        "custnf":  null,
+        "tot":  100,
+        "typ":  1,
+        "rnum":  12,
+        "remk_short":  "שימוש ביתרת צבירה 25-1-9753-100"
+    },
+    {
+        "datew":  "\/Date(1772748000000)\/",
+        "hh":  null,
+        "custn":  20767,
+        "custnf":  null,
+        "tot":  100,
+        "typ":  1,
+        "rnum":  13,
+        "remk_short":  "תיקון"
+    },
+    {
+        "datew":  "\/Date(1772748000000)\/",
+        "hh":  null,
+        "custn":  20767,
+        "custnf":  null,
+        "tot":  100,
+        "typ":  2,
+        "rnum":  14,
+        "remk_short":  "תיקון"
+    },
+    {
+        "datew":  "\/Date(1772748000000)\/",
+        "hh":  null,
+        "custn":  19959,
+        "custnf":  null,
+        "tot":  200,
+        "typ":  1,
+        "rnum":  10,
+        "remk_short":  "עיכוב"
+    },
+    {
+        "datew":  "\/Date(1773612000000)\/",
+        "hh":  "\/Date(-2209100160000)\/",
+        "custn":  20739,
+        "custnf":  9753,
+        "tot":  300,
+        "typ":  1,
+        "rnum":  15,
+        "remk_short":  "ביטול צבירה בעקבות המלצה - ביטול הזמנה 15-1-20739"
+    },
+    {
+        "datew":  "\/Date(1773871200000)\/",
+        "hh":  "\/Date(-2209109640000)\/",
+        "custn":  20767,
+        "custnf":  null,
+        "tot":  300,
+        "typ":  1,
+        "rnum":  16,
+        "remk_short":  "עיכוב משמעותי בייצור"
+    },
+    {
+        "datew":  "\/Date(1777842000000)\/",
+        "hh":  "\/Date(-2209095540000)\/",
+        "custn":  20957,
+        "custnf":  null,
+        "tot":  50,
+        "typ":  2,
+        "rnum":  17,
+        "remk_short":  "שילמו פיקדון ולא קנו. שמור כזיכוי לאירוע הבא"
+    },
+    {
+        "datew":  "\/Date(1777842000000)\/",
+        "hh":  "\/Date(-2209094700000)\/",
+        "custn":  20958,
+        "custnf":  null,
+        "tot":  50,
+        "typ":  2,
+        "rnum":  18,
+        "remk_short":  "לא קנה באירוע האחרון, נשאר זיכוי לאירוע הבא"
+    }
+]

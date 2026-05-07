@@ -1,0 +1,324 @@
+﻿Option Compare Database
+Option Explicit
+Global qkey As Variant
+Global qkeyw As Variant
+
+Function qregkey(itz As Variant) As Variant
+On Error GoTo out
+Dim tz As String
+Dim i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12 As Integer
+Dim tot
+Dim dig1, dig2, dig3, dig4, dig5, dig6, dig7, dig8, dig9, dig10, dig11, dig12
+Dim totw, regkey
+tz = Right$("000000000000" + Trim$(itz), 12)
+
+
+i1 = Val(Mid$(tz, 1, 1)) * 1
+i2 = Val(Mid$(tz, 3, 1)) * 2
+i3 = Val(Mid$(tz, 5, 1)) * 1
+i4 = Val(Mid$(tz, 7, 1)) * 2
+i5 = Val(Mid$(tz, 9, 1)) * 1
+i6 = Val(Mid$(tz, 11, 1)) * 2
+i7 = Val(Mid$(tz, 2, 1)) * 1
+i8 = Val(Mid$(tz, 4, 1)) * 2
+i9 = Val(Mid$(tz, 6, 1)) * 1
+i10 = Val(Mid$(tz, 8, 1)) * 2
+i11 = Val(Mid$(tz, 10, 1)) * 1
+i12 = Val(Mid$(tz, 12, 1)) * 2
+
+ 
+
+If i1 > 9 Then i1 = Eval(Mid$(Nz(i1), 1, 1) & " + " & Mid$(Nz(i1), 2, 1))
+tot = i1
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig1 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig1 = 10 Then
+ dig1 = 0
+End If
+If i2 > 9 Then i2 = Eval(Mid$(Nz(i2), 1, 1) & " + " & Mid$(Nz(i2), 2, 1))
+tot = i1 + i2
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig2 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig2 = 10 Then
+ dig2 = 0
+End If
+If i3 > 9 Then i3 = Eval(Mid$(Nz(i3), 1, 1) & " + " & Mid$(Nz(i3), 2, 1))
+tot = i1 + i2 + i3
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig3 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig3 = 10 Then
+ dig3 = 0
+End If
+If i4 > 9 Then i4 = Eval(Mid$(Nz(i4), 1, 1) & " + " & Mid$(Nz(i4), 2, 1))
+tot = i1 + i2 + i3 + i4
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig4 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig4 = 10 Then
+ dig4 = 0
+End If
+If i5 > 9 Then i5 = Eval(Mid$(Nz(i5), 1, 1) & " + " & Mid$(Nz(i5), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig5 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig5 = 10 Then
+ dig5 = 0
+End If
+If i6 > 9 Then i6 = Eval(Mid$(Nz(i6), 1, 1) & " + " & Mid$(Nz(i6), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig6 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig6 = 10 Then
+ dig6 = 0
+End If
+If i7 > 9 Then i7 = Eval(Mid$(Nz(i7), 1, 1) & " + " & Mid$(Nz(i7), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6 + i7
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig7 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig7 = 10 Then
+ dig7 = 0
+End If
+If i8 > 9 Then i8 = Eval(Mid$(Nz(i8), 1, 1) & " + " & Mid$(Nz(i8), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig8 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig8 = 10 Then
+ dig8 = 0
+End If
+If i9 > 9 Then i9 = Eval(Mid$(Nz(i9), 1, 1) & " + " & Mid$(Nz(i9), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig9 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig9 = 10 Then
+ dig9 = 0
+End If
+If i10 > 9 Then i10 = Eval(Mid$(Nz(i10), 1, 1) & " + " & Mid$(Nz(i10), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig10 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig10 = 10 Then
+ dig10 = 0
+End If
+If i11 > 9 Then i11 = Eval(Mid$(Nz(i11), 1, 1) & " + " & Mid$(Nz(i11), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 + i11
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig11 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig11 = 10 Then
+ dig11 = 0
+End If
+If i12 > 9 Then i12 = Eval(Mid$(Nz(i12), 1, 1) & " + " & Mid$(Nz(i12), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 + i11 + i12
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig12 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig12 = 10 Then
+ dig12 = 0
+End If
+
+ 
+regkey = Nz(dig1) & Nz(dig2) & Nz(dig3) & Nz(dig4) & Nz(dig5) & Nz(dig6) & Nz(dig7) & Nz(dig8) & Nz(dig9) & Nz(dig10) & Nz(dig11) & Nz(dig12)
+
+
+qregkey = regkey
+out:
+End Function
+Function qaddkey(itz As Variant) As Variant
+On Error GoTo out
+Dim tz As String
+Dim i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12 As Integer
+Dim tot
+Dim dig1, dig2, dig3, dig4, dig5, dig6, dig7, dig8, dig9, dig10, dig11, dig12
+Dim totw, regkey
+tz = Right$("000000000000" + Trim$(itz), 12)
+
+
+i1 = Val(Mid$(tz, 12, 1)) * 1
+i2 = Val(Mid$(tz, 11, 1)) * 2
+i3 = Val(Mid$(tz, 10, 1)) * 1
+i4 = Val(Mid$(tz, 9, 1)) * 2
+i5 = Val(Mid$(tz, 8, 1)) * 1
+i6 = Val(Mid$(tz, 7, 1)) * 2
+i7 = Val(Mid$(tz, 6, 1)) * 1
+i8 = Val(Mid$(tz, 5, 1)) * 2
+i9 = Val(Mid$(tz, 4, 1)) * 1
+i10 = Val(Mid$(tz, 3, 1)) * 2
+i11 = Val(Mid$(tz, 2, 1)) * 1
+i12 = Val(Mid$(tz, 1, 1)) * 2
+
+ 
+
+If i1 > 9 Then i1 = Eval(Mid$(Nz(i1), 1, 1) & " + " & Mid$(Nz(i1), 2, 1))
+tot = i1
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig1 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig1 = 10 Then
+ dig1 = 0
+End If
+If i2 > 9 Then i2 = Eval(Mid$(Nz(i2), 1, 1) & " + " & Mid$(Nz(i2), 2, 1))
+tot = i1 + i2
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig2 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig2 = 10 Then
+ dig2 = 0
+End If
+If i3 > 9 Then i3 = Eval(Mid$(Nz(i3), 1, 1) & " + " & Mid$(Nz(i3), 2, 1))
+tot = i1 + i2 + i3
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig3 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig3 = 10 Then
+ dig3 = 0
+End If
+If i4 > 9 Then i4 = Eval(Mid$(Nz(i4), 1, 1) & " + " & Mid$(Nz(i4), 2, 1))
+tot = i1 + i2 + i3 + i4
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig4 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig4 = 10 Then
+ dig4 = 0
+End If
+If i5 > 9 Then i5 = Eval(Mid$(Nz(i5), 1, 1) & " + " & Mid$(Nz(i5), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig5 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig5 = 10 Then
+ dig5 = 0
+End If
+If i6 > 9 Then i6 = Eval(Mid$(Nz(i6), 1, 1) & " + " & Mid$(Nz(i6), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig6 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig6 = 10 Then
+ dig6 = 0
+End If
+If i7 > 9 Then i7 = Eval(Mid$(Nz(i7), 1, 1) & " + " & Mid$(Nz(i7), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6 + i7
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig7 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig7 = 10 Then
+ dig7 = 0
+End If
+If i8 > 9 Then i8 = Eval(Mid$(Nz(i8), 1, 1) & " + " & Mid$(Nz(i8), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig8 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig8 = 10 Then
+ dig8 = 0
+End If
+If i9 > 9 Then i9 = Eval(Mid$(Nz(i9), 1, 1) & " + " & Mid$(Nz(i9), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig9 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig9 = 10 Then
+ dig9 = 0
+End If
+If i10 > 9 Then i10 = Eval(Mid$(Nz(i10), 1, 1) & " + " & Mid$(Nz(i10), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig10 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig10 = 10 Then
+ dig10 = 0
+End If
+If i11 > 9 Then i11 = Eval(Mid$(Nz(i11), 1, 1) & " + " & Mid$(Nz(i11), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 + i11
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig11 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig11 = 10 Then
+ dig11 = 0
+End If
+If i12 > 9 Then i12 = Eval(Mid$(Nz(i12), 1, 1) & " + " & Mid$(Nz(i12), 2, 1))
+tot = i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 + i11 + i12
+totw = Right$("00" + Trim$(Nz(tot)), 2)
+dig12 = 10 - Val(Mid$(Nz(totw), 2, 1))
+If dig12 = 10 Then
+ dig12 = 0
+End If
+
+ 
+regkey = Nz(dig1) & Nz(dig2) & Nz(dig3) & Nz(dig4) & Nz(dig5) & Nz(dig6) & Nz(dig7) & Nz(dig8) & Nz(dig9) & Nz(dig10) & Nz(dig11) & Nz(dig12)
+
+
+qaddkey = regkey
+out:
+End Function
+
+Function q30(qdates As Date) As Integer
+On Error GoTo out
+
+    
+    Dim sw As Integer
+    
+    
+    
+    If Date < qdates Then
+     sw = -99
+    Else
+      sw = DateDiff("d", qdates, Date)
+    End If
+     
+    
+     
+
+    q30 = sw
+    
+   
+out:
+     
+End Function
+Function qreg() As Boolean
+On Error GoTo out
+    Dim dbs As Database
+    Dim i As Integer
+    Dim myid
+    Dim ins As String
+    Dim outs As String
+    Dim path As String
+   
+' Set dbs = CurrentDb()
+' path = dbs.name
+' i = InStr(1, path, ".")
+' i = i - 1
+' path = Mid$(path, 1, i) & ".txt"
+'
+'  myid = dir(path)
+'  If Nz(myid) <> "" Then
+'
+'   Open path For Input As #1
+'   Input #1, ins
+'   Input #1, outs
+'   Close #1
+'
+'   If Nz(ins) = Nz(GetSerialNumber("C")) And Nz(qregkey(GetSerialNumber("C"))) = Nz(outs) Then
+'     qreg = True
+'   Else
+'    qreg = False
+'    Kill path
+'   End If
+'  Else
+'   qreg = False
+'  End If
+Set dbs = CurrentDb()
+Set rst = dbs.OpenRecordset("companyn")
+rst.MoveFirst
+If Nz(rst![tym]) = True Then
+ qreg = True
+Else
+ qreg = False
+End If
+rst.Close
+     
+
+
+
+out:
+End Function
+Function qver() As Boolean
+On Error GoTo out
+    Set dbs = CurrentDb
+    Set rst = dbs.OpenRecordset("tb_comp")
+   
+out:
+ 
+    If Val(Nz(err)) <> 0 Then
+     qver = False
+    Else
+     qver = True
+     rst.Close
+    End If
+End Function

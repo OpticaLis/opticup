@@ -163,6 +163,72 @@
 --     translation_corrections, tenant_i18n_overrides
 
 -- ------------------------------------------------------------
+-- Module 4 — CRM (28 tables)
+-- ------------------------------------------------------------
+-- Lead → registration → event-day pipeline with messaging hub + automation engine.
+-- Module 4 entered MAINTENANCE phase 2026-05-06; all 4 audit CRITICALs CLOSED.
+--
+--   Lead pipeline (8):
+--     crm_leads, crm_lead_notes, crm_lead_tags, crm_tags,
+--     crm_unsubscribes, crm_custom_field_defs, crm_custom_field_vals,
+--     crm_field_visibility
+--
+--   Events (4):
+--     crm_events, crm_event_attendees, crm_event_status_history,
+--     crm_campaigns
+--
+--   Messaging (4):
+--     crm_message_templates, crm_message_log, crm_message_queue,
+--     crm_broadcasts
+--
+--   Automation (2):
+--     crm_automation_rules, crm_automation_runs
+--
+--   Status / labels (2):
+--     crm_statuses, crm_audit_log
+--
+--   Campaign analytics (5):
+--     crm_campaign_pages, crm_facebook_campaigns, crm_ad_spend,
+--     crm_cx_surveys, crm_unit_economics
+--
+--   Storefront ingress (2):
+--     cms_leads (legacy WP-shortcode form, retired 2026-05-03 cutover),
+--     short_links (HMAC-wrapped /r/<code> redirects)
+--
+--   Admin tooling (1):
+--     crm_monday_column_map (one-time Monday board → tenant_id mapping)
+--
+-- RLS pattern (post-M4_TENANT_ISOLATION_HARDENING_PART1 + PART2, 2026-05-06):
+--   Every M4 table has RLS enabled with the canonical 2-policy pattern:
+--   service_bypass (service_role) + tenant_isolation (public, JWT-claim USING
+--   per Iron Rule 15). cms_leads policy migrated to canonical pattern in PART1.
+--   The 7 v_crm_* views run with security_invoker=on (PART1) so RLS on
+--   underlying tables applies when queried from authenticated context.
+--
+-- RPC EXECUTE access (post-PART2, 2026-05-06):
+--   anon+auth+service:    register_lead_to_event, submit_storefront_lead,
+--                          verify_campaign_page_password (3 public ingress)
+--   auth+service only:    check_in_attendee, move_attendee_between_events,
+--                          transfer_credit_to_new_attendee, next_crm_event_number,
+--                          restore_event_from_log, soft_delete_event_if_empty,
+--                          sync_lead_status_from_attendee (7 staff actions)
+--   service only:         cascade_attendee_soft_delete (DB trigger),
+--                          import_leads_from_monday (admin) (2 internal)
+--
+-- Tenant config (2026-05-06 M4_HARDCODED_PRIZMA_REMOVAL):
+--   tenants.business_phone + tenants.business_address columns populated.
+--   tenants.ui_config JSONB extended with: whatsapp_phone_e164,
+--   support_phone_display, storefront_url, brand{gold/_light/_hover}.
+--   Replaces previously-hardcoded Prizma values across 5 source files +
+--   3 EFs. SaaS-readiness: tenant 2 onboarding requires only DB rows.
+--
+-- Module 4 schema authoritative file:
+--   modules/Module 4 - CRM/docs/db-schema.sql (currently documents only the
+--   payment-lifecycle additions per M4_ATTENDEE_PAYMENT_SCHEMA + 3 cycle
+--   migrations from 2026-05-06; full 28-table reconstruction deferred to a
+--   future Sentinel-tracked SPEC).
+
+-- ------------------------------------------------------------
 -- Pre-multitenancy (4 tables) — SECURITY DEBT
 -- ------------------------------------------------------------
 -- customers, prescriptions, sales, work_orders

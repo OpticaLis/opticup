@@ -1,0 +1,160 @@
+﻿Option Compare Database
+Option Explicit
+'  Back Color Gradient v1.0 for MS Access from Peter's Software
+'
+'    Adds a detail section back color gradient effect to your MS Access forms
+'
+'  This module was created by:
+'
+'    Peter's Software
+'    10540 National Blvd #21
+'    Los Angeles, CA  90034
+'    USA
+'    info@peterssoftware.com
+'    http://www.peterssoftware.com
+'
+'  We do not require that this header be included in any apps you distribute,
+'  but would appreciate credit being given in your documentation.
+'
+'  Usage:
+'    bcg_CreateRectangles "<MyFormName>", False   - Run this from the "Examples" subroutine in this module
+'                                                   (The last parm can be set to "True" for horizontal
+'                                                   rectangles, providing a vertical color gradient)
+'
+'    bcg_SetColors Me, <Color1>, <Color2>         - From your form's OnOpen or OnActivate event procedure
+'                                                   where <Color1> and <Color2> are Windows system color IDs
+'                                                   or MS Access color values.
+
+Const mconNamePrefix = "rctGrad"
+
+
+#If VBA7 Then
+Private Declare PtrSafe Function apiGetSysColor Lib "user32" Alias "GetSysColor" (ByVal nIndex As Long) As Long
+#Else
+Private Declare Function apiGetSysColor Lib "user32" Alias "GetSysColor" (ByVal nIndex As Long) As Long
+#End If
+
+
+
+Sub bcg_SetColors(frm As Form, plngStartingColor As Long, plngEndingColor As Long)
+'* Loop through all the gradient rectangles on the form and color them.
+Dim i As Integer
+Dim intNumOfBoxes As Integer
+Dim intBoxNo As Integer
+Dim intTailLength As Integer
+Dim intStartingRed As Integer
+Dim intStartingGreen As Integer
+Dim intStartingBlue As Integer
+Dim intEndingRed As Integer
+Dim intEndingGreen As Integer
+Dim intEndingBlue As Integer
+Dim intIncrementRed As Integer
+Dim intIncrementGreen As Integer
+Dim intIncrementBlue As Integer
+Dim sngRemainingDiffRed As Single
+Dim sngRemainingDiffGreen As Single
+Dim sngRemainingDiffBlue As Single
+Dim lngStartingColor As Long
+Dim lngEndingColor As Long
+Dim ctl As Control
+Dim intMax As Integer
+Dim intThisBoxNo As Integer
+Dim strProcName As String
+
+On Error Resume Next
+strProcName = "bcg_SetColors"
+
+If plngStartingColor < 0 Then
+    '* Get system color using system color id
+    lngStartingColor = apiGetSysColor(bcg_GetColorIndexFromColorID(plngStartingColor))
+Else
+    lngStartingColor = plngStartingColor
+End If
+
+If plngEndingColor < 0 Then
+    '* Get system color using system color id
+    lngEndingColor = apiGetSysColor(bcg_GetColorIndexFromColorID(plngEndingColor))
+Else
+    lngEndingColor = plngEndingColor
+End If
+
+If err <> 0 Then Beep: MsgBox "Error in " & strProcName & " (1): " & err.number & " - " & err.Description: err.Clear: GoTo exit_section
+
+'* Find number of boxes (color gradient rectangle controls)
+intMax = 0
+For Each ctl In frm.Controls
+    If Left(ctl.name, Len(mconNamePrefix)) = mconNamePrefix Then
+        intThisBoxNo = CInt(Right(ctl.name, Len(ctl.name) - Len(mconNamePrefix)))
+        If intThisBoxNo > intMax Then
+            intMax = intThisBoxNo
+        End If
+    End If
+Next ctl
+If err <> 0 Then Beep: MsgBox "Error in " & strProcName & " (2): " & err.number & " - " & err.Description: err.Clear: GoTo exit_section
+
+If intMax = 0 Then
+    '* No gradient rectangle controls found
+    GoTo exit_section
+End If
+
+intNumOfBoxes = intMax + 1
+
+'* Compute starting and ending RGB color values
+intStartingRed = GetRGB(lngStartingColor, 1)
+intStartingGreen = GetRGB(lngStartingColor, 2)
+intStartingBlue = GetRGB(lngStartingColor, 3)
+intEndingRed = GetRGB(lngEndingColor, 1)
+intEndingGreen = GetRGB(lngEndingColor, 2)
+intEndingBlue = GetRGB(lngEndingColor, 3)
+
+'* Find difference between starting and ending values
+sngRemainingDiffRed = (intEndingRed - intStartingRed)
+sngRemainingDiffGreen = (intEndingGreen - intStartingGreen)
+sngRemainingDiffBlue = (intEndingBlue - intStartingBlue)
+
+'* Loop through all gradient rectangle controls and set gradient colors by
+'* smoothly decrementing the difference between the two colors.
+For i = 0 To intNumOfBoxes - 1
+    Set ctl = frm(mconNamePrefix & i)
+    If err <> 0 Then Beep: MsgBox "Error in " & strProcName & " (3): " & err.number & " - " & err.Description: err.Clear: Exit For
+    
+    ctl.BackColor = RGB( _
+        intEndingRed - CInt(sngRemainingDiffRed), _
+        intEndingGreen - CInt(sngRemainingDiffGreen), _
+        intEndingBlue - CInt(sngRemainingDiffBlue) _
+        )
+    If err <> 0 Then Beep: MsgBox "Error in " & strProcName & " (4): " & err.number & " - " & err.Description: err.Clear: GoTo exit_section
+    
+    sngRemainingDiffRed = sngRemainingDiffRed - (sngRemainingDiffRed / (intNumOfBoxes - i))
+    sngRemainingDiffGreen = sngRemainingDiffGreen - (sngRemainingDiffGreen / (intNumOfBoxes - i))
+    sngRemainingDiffBlue = sngRemainingDiffBlue - (sngRemainingDiffBlue / (intNumOfBoxes - i))
+Next i
+
+ctl.BackColor = RGB( _
+    intEndingRed - CInt(sngRemainingDiffRed), _
+    intEndingGreen - CInt(sngRemainingDiffGreen), _
+    intEndingBlue - CInt(sngRemainingDiffBlue) _
+    )
+If err <> 0 Then Beep: MsgBox "Error in " & strProcName & " (5): " & err.number & " - " & err.Description: err.Clear: GoTo exit_section
+
+exit_section:
+    Set ctl = Nothing
+
+End Sub
+Function bcg_GetColorIndexFromColorID(lngSystemColorID As Long) As Long
+'* Find the Windows system color index from the Windows system color ID
+bcg_GetColorIndexFromColorID = lngSystemColorID + 2147483648#
+End Function
+
+Function GetRGB(RGBval As Long, num As Integer) As Integer
+'* Returns the Red (Num=1), Green (Num=2), or Blue (Num=3) value for the passed MS Access color value.
+   ' Check if Num, RGBval are valid.
+   If num > 0 And num < 4 And RGBval > -1 And RGBval < 16777216 Then
+     GetRGB = RGBval \ 256 ^ (num - 1) And 255
+   Else
+     ' Return True (-1) if Num or RGBval are invalid.
+     GetRGB = True
+   End If
+End Function
+
+

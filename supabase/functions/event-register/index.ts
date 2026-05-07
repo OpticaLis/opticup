@@ -186,14 +186,17 @@ Deno.serve(async (req: Request) => {
       return jsonResp({ success: false, error: "lead_not_found" }, 404);
     }
     const tRes = await db.from("tenants")
-      .select("name, logo_url")
+      .select("name, logo_url, ui_config")
       .eq("id", evRes.data.tenant_id)
       .maybeSingle();
+    const ui = (tRes.data?.ui_config ?? {}) as Record<string, unknown>;
+    const s = (k: string) => typeof ui[k] === "string" ? ui[k] as string : null;
     return jsonResp({
       success: true,
       tenant_id: evRes.data.tenant_id,
       tenant_name: tRes.data?.name || null,
       tenant_logo_url: tRes.data?.logo_url || null,
+      tenant_ui_config: { whatsapp_phone_e164: s("whatsapp_phone_e164"), support_phone_display: s("support_phone_display"), brand: ui.brand && typeof ui.brand === "object" ? ui.brand : null },
       lead_id: leadRes.data.id,
       event_id: evRes.data.id,
       lead_name: leadRes.data.full_name || "",
@@ -248,7 +251,7 @@ Deno.serve(async (req: Request) => {
       .eq("is_deleted", false)
       .maybeSingle(),
     db.from("crm_events")
-      .select("id, status, name, event_date, start_time, location_address")
+      .select("id, status, name, event_date, start_time, end_time, location_address")
       .eq("id", body.event_id!)
       .eq("tenant_id", body.tenant_id!)
       .eq("is_deleted", false)
@@ -322,10 +325,6 @@ Deno.serve(async (req: Request) => {
       phone: lead.phone || "",
       email: lead.email || "",
       lead_id: body.lead_id!,
-      event_name: event.name || "",
-      event_date: event.event_date || "",
-      event_time: event.start_time || "",
-      event_location: event.location_address || "",
     };
     await dispatchRegistrationMessages(
       body.tenant_id!,

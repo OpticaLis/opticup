@@ -2,6 +2,122 @@
 
 ---
 
+## M4_CLOSURE_AND_INTEGRATION_CEREMONY — administrative closure of the audit cycle (2026-05-06) ✅
+
+| Hash | Message |
+|------|---------|
+| `e811bd9` | `docs(spec): backfill ACTIVITY_LOG_DEDUPLICATION_DELETE_EVENT FOREMAN_REVIEW` |
+| `6e75307` | `docs(spec): backfill RESTORE_DELETED_EVENT_UI FOREMAN_REVIEW` |
+| `1e89832` | `docs(spec): backfill POST_4_LEADS_PAGINATION_BUMP FOREMAN_REVIEW` |
+| `d1090e5` | `docs(spec): backfill PHONE_SEARCH_PARTIAL_FIX FOREMAN_REVIEW` |
+| _(this commit)_ | `docs(m4): refresh MODULE_MAP + SESSION_CONTEXT + CHANGELOG for 2026-05-06 cycle` |
+| _(next)_ | `docs(global): merge M4 into GLOBAL_MAP — Integration Ceremony` |
+| _(next)_ | `docs(global): merge M4 schema into GLOBAL_SCHEMA — Integration Ceremony` |
+| _(next)_ | `chore(spec): close M4_CLOSURE_AND_INTEGRATION_CEREMONY with retrospective` |
+
+Documentation-only SPEC closing Module 4 administratively. Backfilled the 4 missing FOREMAN_REVIEW.md files for SPECs that closed 2026-05-04 (ACTIVITY_LOG_DEDUP, RESTORE_DELETED_EVENT_UI, POST_4, PHONE_SEARCH). Refreshed MODULE_MAP with `crm-event-delete.js` (50→34 lines), new `crm-event-restore.js`, `loadTenantConfig` helper, and the 12-RPC EXECUTE-access matrix post-PART2. SESSION_CONTEXT updated to "MAINTENANCE phase." MASTER_ROADMAP unchanged (no phase boundary). Subsequent commits 6+7 merge M4 into GLOBAL_MAP + GLOBAL_SCHEMA per CLAUDE.md §10 Integration Ceremony — first time M4 lands in those project-global files.
+
+**Audit cycle 2026-05-01 to 2026-05-06 summary:** 41 Phase-1 findings + 2 Phase-2 NEW findings → 5 production SPECs shipped (M4_PUBLIC_FORM_VARIABLES_HIGH, M4_UNSUB_SUPPRESSION_CRIT, M4_TENANT_ISOLATION_HARDENING_PART1, M4_HARDCODED_PRIZMA_REMOVAL, M4_TENANT_ISOLATION_HARDENING_PART2). All 4 audit CRITICALs CLOSED. SaaS-readiness threshold crossed (tenant 2 onboarding requires only DB rows). Tech-debt items logged in TECH_DEBT.md.
+
+See `modules/Module 4 - CRM/docs/specs/M4_CLOSURE_AND_INTEGRATION_CEREMONY/`.
+
+---
+
+## M4_TENANT_ISOLATION_HARDENING_PART2 — revoke anon EXECUTE from 9 internal RPCs + 2 admin-only (2026-05-06) ✅
+
+| Hash | Message |
+|------|---------|
+| _(this commit)_ | `fix(crm): revoke anon EXECUTE from 9 internal RPCs + 2 admin-only (M4_TENANT_ISOLATION_HARDENING_PART2)` |
+
+CRITICAL hotfix closing the LAST of the 4 audit CRITICAL findings (G-CRIT-2). 12 SECURITY DEFINER RPCs were inadvertently EXECUTABLE by anon (Postgres' default `EXECUTE TO PUBLIC` plus explicit anon GRANTs at function-definition time). The audit flagged this as the largest tenant-isolation surface remaining after PART1.
+
+**Caller classification (verified live by grep against modules/ + supabase/functions/):**
+- **9 REVOKE-ANON** (CRM-staff-only): `move_attendee_between_events`, `check_in_attendee`, `transfer_credit_to_new_attendee`, `next_crm_event_number`, `restore_event_from_log`, `soft_delete_event_if_empty`, `sync_lead_status_from_attendee` — authenticated retains direct EXECUTE.
+- **2 REVOKE-ANON-AND-AUTH** (DB-internal-only): `cascade_attendee_soft_delete` (DB trigger), `import_leads_from_monday` (one-time admin tool) — only service_role retains EXECUTE.
+- **3 KEEP-ANON** (public ingress): `register_lead_to_event`, `submit_storefront_lead`, `verify_campaign_page_password` — unchanged. Tenant validation in their bodies (`WHERE tenant_id = p_tenant_id`) is the second defense layer per Iron Rule 22.
+
+**Two-stage migration applied:** Stage 1 (`m4_revoke_anon_rpc_execute`) stripped direct anon/authenticated grants. Stage 2 (`m4_revoke_anon_rpc_execute_v2_strip_public`) stripped the PUBLIC EXECUTE inheritance — needed because Postgres functions get `EXECUTE TO PUBLIC` at creation by default, and `REVOKE FROM anon` doesn't strip the PUBLIC parent. Both stages consolidated in the `_up.sql` source-of-truth file. The PUBLIC oversight is logged as a finding for future SPEC authoring.
+
+**E2E verification:** Test 4 GREEN — anon → `move_attendee_between_events` returns SQLSTATE `42501: permission denied for function`. Test 1 GREEN — public form path (event-register EF) successfully calls register_lead_to_event for a demo lead. Test 2 GREEN — quick-register EF lookup_url op returns 200 with demo's storefront URL. Test 3 (CRM staff Chrome walk) deferred to Daniel UAT; the §3 #4 EXECUTE matrix confirms `authenticated=true` on all 9 REVOKE-ANON RPCs which is the staff path.
+
+**Audit status post-SPEC:** ALL 4 audit CRITICALs closed (G-CRIT-1 + G-CRIT-3 in PART1; G-CRIT-4 in M4_HARDCODED_PRIZMA_REMOVAL; G-CRIT-2 in this SPEC).
+
+See `modules/Module 4 - CRM/docs/specs/M4_TENANT_ISOLATION_HARDENING_PART2/`.
+
+---
+
+## M4_HARDCODED_PRIZMA_REMOVAL — tenant config + 4 EFs + client + preview defaults (2026-05-06) ✅
+
+| Hash | Message |
+|------|---------|
+| `54b835e` | `feat(crm): seed tenant_config for prizma + demo (M4_HARDCODED_PRIZMA_REMOVAL)` |
+| `c576bd3` | `feat(crm): _shared/tenant-config.ts helper for EF tenant lookups` |
+| `73dd0e3` | `fix(crm): client JS/CSS reads tenant config instead of hardcoded prizma values` |
+| `e9e06e4` | `fix(crm): EFs use tenant_config.storefront_url instead of hardcoded constant` |
+| _(this commit)_ | `chore(spec): close M4_HARDCODED_PRIZMA_REMOVAL with retrospective` |
+
+CRITICAL SaaS-readiness hotfix closing 1 of 4 audit CRITICAL findings (G-CRIT-4 WhatsApp) plus 3 HIGHs (G-HIGH-3 STOREFRONT_URL, G-HIGH-6 brand colors, G-HIGH-7 messaging template defaults). The largest Iron Rule 9 (no hardcoded business values) closure of the post-cutover backlog: every Prizma-specific business value in M4 source has been replaced with `tenants` table reads.
+
+**5-commit sequence:**
+1. **Migration** (`54b835e`): seed `business_phone`, `business_address`, and 5 new `ui_config` JSONB keys (`whatsapp_phone_e164`, `support_phone_display`, `storefront_url`, `brand{gold,gold_light,gold_hover}`) for both prizma + demo. Demo gets distinct test values (green palette `#059669`/`#d1fae5`/`#047857` vs prizma's gold `#c9a555`/`#e8da94`/`#b8943f`) so cross-tenant rendering bugs surface immediately. Existing keys (`default_waze_url`, `--color-primary*`) preserved via `||` operator.
+2. **Shared helper** (`c576bd3`): `supabase/functions/_shared/tenant-config.ts` — single SELECT against tenants returning a typed `TenantConfig`. Caller-decides-fallback (returns null for missing keys, never substitutes a hardcoded default). MODULE_MAP entry added under new "Edge Function shared helpers" section.
+3. **Client JS/CSS** (`73dd0e3`): `event-register.css` gold canon hex codes replaced with neutral grayscale defaults (`#888`/`#ccc`/`#555`) — the page never flashes Prizma-specific colors before JS loads. `event-register.js` adds `applyTenantBrand()` and `whatsappLineHtml()` helpers reading from a new `data.tenant_ui_config` field. `crm-messaging-templates.js` preview defaults replaced with tenant-neutral Hebrew placeholders. All SPEC §3 grep checks #8/#9/#10 pass.
+4. **EFs** (`e9e06e4`): 4 EFs (one more than SPEC §9 anticipated) wired to the helper. `quick-register` `lookup_url` op uses tenant's storefront_url. `send-message/url-builders.ts` `buildUnsubscribeUrl` + `buildRegistrationUrl` fetch tenant config once and thread origin to `createShortLink`. `resolve-link` architectural upgrade: existing-row branch derives tenant homepage from `short_links.tenant_id` → tenant's storefront_url; no-row/no-code branch falls back to `Deno.env.get("SHORT_LINK_FALLBACK_URL")` or HTTP 404 (never to a tenant-specific URL we cannot authoritatively choose). `event-register` GET response extended with `tenant_ui_config` subset for the public form (4th deploy — necessary for client-side brand + WhatsApp rendering).
+
+**Deploys:** all 4 EFs deployed via Daniel's local CLI (Supabase MCP `deploy_edge_function` had 3+ prior occurrences of OPEN-021 5xx; CLI also auto-traverses the new `_shared` import graph which MCP would require manual file listing for). Live versions: `quick-register` v6, `send-message` v20, `resolve-link` v3, `event-register` v15.
+
+**E2E verification on demo:** Test 2 GREEN — message_log row shows `https://demo.opticalis.co.il/r/...` (NOT `prizma-optic.co.il/...`) for a demo-tenant lead, confirming the per-tenant `storefront_url` plumbing works end-to-end. Test 3 GREEN — short-link resolution: demo code → demo URL; prizma code → prizma URL (regression check); invalid code → HTTP 404. Test 1 (visual brand color in browser) deferred to manual UAT (Chrome MCP not loaded this session). 0 prizma writes during run, whitelist contacts only.
+
+**Architecture-context note:** the `event-register.css` header previously cited "Daniel pre-authorized Option a in SPEC §1.5" (the pre-cutover decision to inline canon gold values directly in CSS for single-tenant simplicity). This SPEC supersedes that decision as part of the SaaS-readiness pivot — documented in retrospective.
+
+See `modules/Module 4 - CRM/docs/specs/M4_HARDCODED_PRIZMA_REMOVAL/`.
+
+---
+
+## M4_TENANT_ISOLATION_HARDENING_PART1 — cms_leads canonical RLS + 7 v_crm_* views security_invoker (2026-05-06) ✅
+
+| Hash | Message |
+|------|---------|
+| _(this commit)_ | `fix(crm): tenant-scoped cms_leads policy + security_invoker on 7 v_crm views (M4_TENANT_ISOLATION_HARDENING_PART1)` |
+
+CRITICAL hotfix closing 2 of 4 tenant-isolation findings from the M4 overnight audit (Phase 1). G-CRIT-2 (12 anon-callable SECURITY DEFINER RPCs) is deferred to PART 2 — separate SPEC, separate session.
+
+**G-CRIT-1 (cms_leads policy bypass) closed.** Replaced 3 broken policies (`cms_leads_anon_insert WITH CHECK=true`, `cms_leads_authenticated_read USING=true`, `cms_leads_service_all`) with the canonical 2-policy pattern from CLAUDE.md §5 Rule 15: `service_bypass` (service_role, all-pass) + `tenant_isolation` (public, JWT-claim USING+CHECK). Verified: anon attempt to direct-INSERT into cms_leads with cross-tenant tenant_id is now rejected with `42501: new row violates row-level security policy`.
+
+**G-CRIT-3 (7 SECURITY DEFINER views) closed.** Applied `SET (security_invoker = on)` to `v_crm_campaign_performance`, `v_crm_event_attendees_full`, `v_crm_event_dashboard`, `v_crm_event_stats`, `v_crm_lead_event_history`, `v_crm_lead_timeline`, `v_crm_leads_with_tags`. Views now run as the querying user, so RLS on the underlying CRM tables applies normally. Verified: demo tenant authenticated context sees its own slice (15/15/8/5/218/5/7 rows) — a strict subset of the global counts (19/19/227/1177/514/1177/0).
+
+Single migration applied atomically via Supabase MCP `apply_migration` (`m4_tenant_isolation_part1`). Forward + rollback files at `modules/Module 4 - CRM/migrations/2026_05_06_tenant_isolation_part1_{up,down}.sql`. Pre/post row counts match exactly (no data loss). 0 prizma writes during session.
+
+**Important context:** `cms_leads` is the **legacy storefront table** that was deprecated by P5_7_STOREFRONT_FORM_REWIRE on cutover (2026-05-03). Last cms_leads write was 2026-05-03 (pre-cutover). All current production traffic flows through `lead-intake` EF → `crm_leads`. The new RLS therefore closes a now-dormant attack surface; no live writer is affected.
+
+See `modules/Module 4 - CRM/docs/specs/M4_TENANT_ISOLATION_HARDENING_PART1/`.
+
+---
+
+## M4_UNSUB_SUPPRESSION_CRIT — send-message rejects dispatch to unsubscribed leads (2026-05-06) ✅
+
+| Hash | Message |
+|------|---------|
+| _(this commit)_ | `fix(crm): send-message rejects dispatch to unsubscribed leads (M4_UNSUB_SUPPRESSION_CRIT)` |
+
+CRITICAL hotfix closing the CAN-SPAM-equivalent regulatory exposure found in PHASE 2 audit T14-CRIT-1. `send-message` v18 had no `unsubscribed_at` check anywhere — customers who clicked "הסרה מרשימה" continued receiving messages from any subsequent automation rule, broadcast, manual send, or dispatch-queue call. Fix: widened `injectLeadVariables` SELECT to fetch `unsubscribed_at` + `status`, changed signature to return suppression fields, and inserted a gate in `index.ts` after the lead lookup that rejects with `status='rejected', error_message='lead_unsubscribed'` when EITHER `unsubscribed_at IS NOT NULL` OR `status='unsubscribed'` (defense-in-depth per Iron Rule 22). All channels covered (SMS + email). All callers covered (CRM staff, automation engine, public form, dispatch-queue, broadcast). EF deployed v18→v19 (Daniel's CLI after MCP `InternalServerErrorException` ×2 — 3rd occurrence of OPEN-021). E2E demo: Test 1 (SMS suppress) GREEN, Test 2 (email suppress) GREEN, Test 3 (re-subscribe restores send) GREEN, Test 4 (regression — never-unsubscribed lead unaffected) GREEN. 0 prizma writes during test, whitelist contacts only.
+
+See `modules/Module 4 - CRM/docs/specs/M4_UNSUB_SUPPRESSION_CRIT/`.
+
+---
+
+## M4_PUBLIC_FORM_VARIABLES_HIGH — public-form confirmation date+time formatter bypass (2026-05-06) ✅
+
+| Hash | Message |
+|------|---------|
+| _(this commit)_ | `fix(crm): event-register passes empty event_* vars so formatter renders DD/MM/YYYY + HH:MM-HH:MM (M4_PUBLIC_FORM_VARIABLES_HIGH)` |
+
+Hotfix for HIGH severity bug found in PHASE2 audit T5-HIGH-1 + Daniel-spotted `%event_time%` corruption (2026-05-06). Public-form registrants were getting confirmation messages with raw ISO date (`📅 2026-05-13`) and start_time-only (`09:00:00`) instead of canonical `📅 13/05/2026` and `09:00 - 14:00`. Root cause: `event-register/index.ts` pre-filled `event_date`/`event_time` in the `variables` object passed to `dispatchRegistrationMessages`, defeating `injectEventVariables` which is caller-wins. Fix: removed all 4 `event_*` keys from the variables object; widened the event SELECT to include `end_time` for completeness. EF deployed v13→v14 (Daniel's CLI after MCP returned `InternalServerErrorException` twice — same OPEN-021 flakiness pattern as ATOMIC_CONFIRMATION_FLOW). E2E on demo: SMS + email both render `13/05/2026` and `09:00 - 14:00`; staff-path regression check (send-message direct call with `variables={}`) renders correctly; 0 prizma writes during test; whitelist-only contacts.
+
+See `modules/Module 4 - CRM/docs/specs/M4_PUBLIC_FORM_VARIABLES_HIGH/`.
+
+---
+
 ## ATOMIC_CONFIRMATION_FLOW — 3-button atomic modal commit + silent-drop race fix (2026-05-04) ✅
 
 | Hash | Message |

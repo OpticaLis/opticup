@@ -1,0 +1,897 @@
+﻿[
+    {
+        "Name":  "adashot_list",
+        "Type":  128,
+        "SQLPreview":  "SELECT adchecks.cnrtype AS typew\r\nFROM adchecks\r\nWHERE (((nz([cnrtype]))\u003c\u003e\"\"))\r\nGROUP BY adchecks.cnrtype;\r\nUNION SELECT adchecks.cnltype AS typew\r\nFROM adchecks\r\nWHERE (((nz([cnltype]))\u003c\u003e\"\"))\r\nGROUP BY adchecks.cnltype;\r\n"
+    },
+    {
+        "Name":  "add_lbincode",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO tb_labels ( qcode, hevra, degem, godel, color, price, amount )\r\nSELECT tb_catalog.incode, tb_catalog.hevra, tb_catalog.degem, tb_catalog.godel, tb_catalog.color, tb_catalog.cprice, tb_catalog.amount\r\nFROM tb_catalog\r\nWHERE (((tb_catalog.incode) Is Not Null))\r\nORDER BY tb_catalog.incode;\r"
+    },
+    {
+        "Name":  "adds",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.adds\r\nFROM orders\r\nWHERE (((nz([adds]))\u003c\u003e\"\"))\r\nGROUP BY orders.adds \r\nUNION SELECT orders.adds2\r\nFROM orders\r\nWHERE (((nz([adds2]))\u003c\u003e\"\"))\r\nGROUP BY orders.adds2 \r\nUNION SELECT proposals.adds\r\nFROM proposals\r\nWHERE (((nz([adds]))\u003c\u003e\"\"))\r\nGROUP BY proposals.adds\r\nUNION SELECT proposals.ad"
+    },
+    {
+        "Name":  "addsg",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.adds\r\nFROM orders\r\nWHERE (((nz([adds]))\u003c\u003e\"\"))\r\nGROUP BY orders.adds \r\nUNION SELECT orders.adds2\r\nFROM orders\r\nWHERE (((nz([adds2]))\u003c\u003e\"\"))\r\nGROUP BY orders.adds2\r\nORDER BY adds;\r\n"
+    },
+    {
+        "Name":  "addsp",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.adds\r\nFROM orders\r\nWHERE (((nz([adds]))\u003c\u003e\"\"))\r\nGROUP BY orders.adds \r\nUNION SELECT orders.adds2\r\nFROM orders\r\nWHERE (((nz([adds2]))\u003c\u003e\"\"))\r\nGROUP BY orders.adds2 \r\nUNION SELECT proposals.adds\r\nFROM proposals\r\nWHERE (((nz([adds]))\u003c\u003e\"\"))\r\nGROUP BY proposals.adds\r\nORDER BY adds \r\nUNION SEL"
+    },
+    {
+        "Name":  "addss",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.adds\r\nFROM orders\r\nWHERE (((nz([adds]))\u003c\u003e\"\"))\r\nGROUP BY orders.adds \r\nUNION SELECT orders.adds2\r\nFROM orders\r\nWHERE (((nz([adds2]))\u003c\u003e\"\"))\r\nGROUP BY orders.adds2 \r\nUNION SELECT proposals.adds\r\nFROM proposals\r\nWHERE (((nz([adds]))\u003c\u003e\"\"))\r\nGROUP BY proposals.adds\r\nORDER BY adds \r\nUNION SEL"
+    },
+    {
+        "Name":  "app_tb_qnum",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO tb_qnum ( qnum )\r\nSELECT tb_qnum_un.qnum\r\nFROM tb_qnum_un;\r\n"
+    },
+    {
+        "Name":  "b_company",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ob_comp\r\nFROM orders\r\nWHERE (((nz([ob_comp]))\u003c\u003e\"\"))\r\nGROUP BY orders.ob_comp\r\nUNION SELECT orders.ob_comp2\r\nFROM orders\r\nWHERE (((nz([ob_comp2]))\u003c\u003e\"\"))\r\nGROUP BY orders.ob_comp2\r\nUNION SELECT proposals.ob_comp\r\nFROM proposals\r\nWHERE (((nz([ob_comp]))\u003c\u003e\"\"))\r\nGROUP BY proposals.ob_comp\r\n"
+    },
+    {
+        "Name":  "bl_company",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ob_comp\r\nFROM orders\r\nWHERE (((nz([ob_comp]))\u003c\u003e\"\"))\r\nGROUP BY orders.ob_comp\r\nUNION SELECT orders.ob_comp2\r\nFROM orders\r\nWHERE (((nz([ob_comp2]))\u003c\u003e\"\"))\r\nGROUP BY orders.ob_comp2\r\nORDER BY ob_comp;\r\n"
+    },
+    {
+        "Name":  "border_type",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ob_type\r\nFROM orders\r\nWHERE (((nz([ob_type]))\u003c\u003e\"\"))\r\nGROUP BY orders.ob_type \r\nUNION SELECT orders.ob_type2\r\nFROM orders\r\nWHERE (((nz([ob_type2]))\u003c\u003e\"\"))\r\nGROUP BY orders.ob_type2 \r\nUNION SELECT proposals.ob_type\r\nFROM proposals\r\nWHERE (((nz([ob_type]))\u003c\u003e\"\"))\r\nGROUP BY proposals.ob_type"
+    },
+    {
+        "Name":  "checks_prep",
+        "Type":  128,
+        "SQLPreview":  "SELECT cust_list.chrsph, cust_list.chrcyl, cust_list.chraxis,cust_list.chrpris,cust_list.chrprist, cust_list.chradd, cust_list.chpd, cust_list.chlsph, cust_list.chlcyl,cust_list.chlaxis,cust_list.chlpris,cust_list.chlprist, cust_list.chladd, cust_list.chapd, cust_list.pd, cust_list.numw, cust_list.c"
+    },
+    {
+        "Name":  "checks_prep_ad",
+        "Type":  128,
+        "SQLPreview":  "SELECT cust_list.nrsph, cust_list.nrcyl, cust_list.nraxis,null,null, cust_list.nradd,null, cust_list.nlsph, cust_list.nlcyl,cust_list.nlaxis,null,null, cust_list.nladd, cust_list.chapd,null, cust_list.numw, cust_list.chdate, cust_list.dremark,null, null,null, null,null, null,null,null,null,null AS b"
+    },
+    {
+        "Name":  "cmb_ado1",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ocomp]) AS qcmp, nz([og_type]) AS qtyp, ([gpricer]) AS qprc\r\nFROM orders\r\nWHERE (((nz([ocomp]))=nz([Forms]![person_orders_list]![ocomp])) AND ((nz([og_type]))=nz([Forms]![person_orders_list]![og_type])) AND ((nz([gpricer]))\u003e0));\r\nUNION SELECT nz([ocomp2]) AS qcmp, nz([og_type2]) AS qtyp, "
+    },
+    {
+        "Name":  "cmb_ado11",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ocomp]) AS qcmp, nz([og_type]) AS qtyp, ([gpricel]) AS qprc\r\nFROM orders\r\nWHERE (((nz([ocomp]))=nz([Forms]![person_orders_list]![ocomp])) AND ((nz([og_type]))=nz([Forms]![person_orders_list]![og_type])) AND ((nz([gpricel]))\u003e0));\r\nUNION SELECT nz([ocomp2]) AS qcmp, nz([og_type2]) AS qtyp, "
+    },
+    {
+        "Name":  "cmb_ado2",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ocomp]) AS qcmp, nz([og_type]) AS qtyp, ([gpricer]) AS qprc\r\nFROM orders\r\nWHERE (((nz([ocomp]))=nz([Forms]![person_orders_list]![ocomp2])) AND ((nz([og_type]))=nz([Forms]![person_orders_list]![og_type2])) AND ((nz([gpricer]))\u003e0));\r\nUNION SELECT nz([ocomp2]) AS qcmp, nz([og_type2]) AS qtyp"
+    },
+    {
+        "Name":  "cmb_ado22",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ocomp]) AS qcmp, nz([og_type]) AS qtyp, ([gpricel]) AS qprc\r\nFROM orders\r\nWHERE (((nz([ocomp]))=nz([Forms]![person_orders_list]![ocomp2])) AND ((nz([og_type]))=nz([Forms]![person_orders_list]![og_type2])) AND ((nz([gpricel]))\u003e0));\r\nUNION SELECT nz([ocomp2]) AS qcmp, nz([og_type2]) AS qtyp"
+    },
+    {
+        "Name":  "cmb_adp1",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ocomp]) AS qcmp, nz([og_type]) AS qtyp, ([gpricer]) AS qprc\r\nFROM orders\r\nWHERE (((nz([ocomp]))=nz([Forms]![person_prop_list]![ocomp])) AND ((nz([og_type]))=nz([Forms]![person_prop_list]![og_type])) AND ((nz([gpricer]))\u003e0));\r\nUNION SELECT nz([ocomp2]) AS qcmp, nz([og_type2]) AS qtyp, ([gp"
+    },
+    {
+        "Name":  "cmb_adp11",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ocomp]) AS qcmp, nz([og_type]) AS qtyp, ([gpricel]) AS qprc\r\nFROM orders\r\nWHERE (((nz([ocomp]))=nz([Forms]![person_prop_list]![ocomp])) AND ((nz([og_type]))=nz([Forms]![person_prop_list]![og_type])) AND ((nz([gpricel]))\u003e0));\r\nUNION SELECT nz([ocomp2]) AS qcmp, nz([og_type2]) AS qtyp, ([gp"
+    },
+    {
+        "Name":  "cmb_adp2",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ocomp]) AS qcmp, nz([og_type]) AS qtyp, ([gpricer]) AS qprc\r\nFROM orders\r\nWHERE (((nz([ocomp]))=nz([Forms]![person_prop_list]![ocomp2])) AND ((nz([og_type]))=nz([Forms]![person_prop_list]![og_type2])) AND ((nz([gpricer]))\u003e0));\r\nUNION SELECT nz([ocomp2]) AS qcmp, nz([og_type2]) AS qtyp, (["
+    },
+    {
+        "Name":  "cmb_adp22",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ocomp]) AS qcmp, nz([og_type]) AS qtyp, ([gpricel]) AS qprc\r\nFROM orders\r\nWHERE (((nz([ocomp]))=nz([Forms]![person_prop_list]![ocomp2])) AND ((nz([og_type]))=nz([Forms]![person_prop_list]![og_type2])) AND ((nz([gpricel]))\u003e0));\r\nUNION SELECT nz([ocomp2]) AS qcmp, nz([og_type2]) AS qtyp, (["
+    },
+    {
+        "Name":  "cmb_pro1",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ob_comp]) AS qcmp, nz([ob_type]) AS qtyp, ([bprice]) AS qprc\r\nFROM orders\r\nWHERE (((nz([ob_comp]))=nz([Forms]![person_orders_list]![ob_comp])) AND ((nz([ob_type]))=nz([Forms]![person_orders_list]![ob_type])) AND (val(nz([bprice]))\u003e0));\r\nUNION SELECT nz([ob_comp2]) AS qcmp, nz([ob_type2]) "
+    },
+    {
+        "Name":  "cmb_pro2",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ob_comp]) AS qcmp, nz([ob_type]) AS qtyp,  ([bprice]) AS qprc\r\nFROM orders\r\nWHERE (((nz([ob_comp]))=nz([Forms]![person_orders_list]![ob_comp2])) AND ((nz([ob_type]))=nz([Forms]![person_orders_list]![ob_type2])) AND  (val(nz([bprice]))\u003e0));\r\nUNION SELECT nz([ob_comp2]) AS qcmp, nz([ob_type"
+    },
+    {
+        "Name":  "cmb_prp1",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ob_comp]) AS qcmp, nz([ob_type]) AS qtyp, ([bprice]) AS qprc\r\nFROM orders\r\nWHERE (((nz([ob_comp]))=nz([Forms]![person_prop_list]![ob_comp])) AND ((nz([ob_type]))=nz([Forms]![person_prop_list]![ob_type])) AND  (val(nz([bprice]))\u003e0));\r\nUNION SELECT nz([ob_comp2]) AS qcmp, nz([ob_type2]) AS "
+    },
+    {
+        "Name":  "cmb_prp2",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ob_comp]) AS qcmp, nz([ob_type]) AS qtyp,  ([bprice]) AS qprc\r\nFROM orders\r\nWHERE (((nz([ob_comp]))=nz([Forms]![person_prop_list]![ob_comp2])) AND ((nz([ob_type]))=nz([Forms]![person_prop_list]![ob_type2])) AND  (val(nz([bprice]))\u003e0));\r\nUNION SELECT nz([ob_comp2]) AS qcmp, nz([ob_type2]) "
+    },
+    {
+        "Name":  "cmb_typ",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ob_comp]) AS qcmp, nz([ob_type]) AS qtyp\r\nFROM orders\r\nWHERE nz([ob_type]) \u003c\u003e\"\";\r\nUNION SELECT nz([ob_comp2]) AS qcmp, nz([ob_type2]) AS qtyp\r\nFROM orders\r\nWHERE nz([ob_type2]) \u003c\u003e\"\";\r\n"
+    },
+    {
+        "Name":  "cmb_typo1",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ob_comp]) AS qcmp, nz([ob_type]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp]))=nz([Forms]![person_orders_list]![ob_comp])) AND ((nz([ob_type])) \u003c\u003e\"\"));\r\nUNION SELECT nz([ob_comp2]) AS qcmp, nz([ob_type2]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp2]))=nz([Forms]![person_orders_list]![ob_c"
+    },
+    {
+        "Name":  "cmb_typo1m",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ob_comp]) AS qcmp, nz([ob_type]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp]))=nz([Forms]![s_mehirot]![ob_comp])) AND ((nz([ob_type])) \u003c\u003e\"\"));\r\nUNION SELECT nz([ob_comp2]) AS qcmp, nz([ob_type2]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp2]))=nz([Forms]![s_mehirot]![ob_comp])) AND ((nz([o"
+    },
+    {
+        "Name":  "cmb_typo1s",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ob_comp]) AS qcmp, nz([ob_type]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp]))=nz([Forms]![order_list]![ob_comp])) AND ((nz([ob_type])) \u003c\u003e\"\"));\r\nUNION SELECT nz([ob_comp2]) AS qcmp, nz([ob_type2]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp2]))=nz([Forms]![order_list]![ob_comp])) AND ((nz("
+    },
+    {
+        "Name":  "cmb_typo2",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ob_comp]) AS qcmp, nz([ob_type]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp]))=nz([Forms]![person_orders_list]![ob_comp2])) AND ((nz([ob_type])) \u003c\u003e\"\"));\r\nUNION SELECT nz([ob_comp2]) AS qcmp, nz([ob_type2]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp2]))=nz([Forms]![person_orders_list]![ob_"
+    },
+    {
+        "Name":  "cmb_typo2h",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ob_comp]) AS qcmp, nz([ob_type]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp]))=nz([Forms]![s_orders]![ob_comp])) AND ((nz([ob_type])) \u003c\u003e\"\"));\r\nUNION SELECT nz([ob_comp2]) AS qcmp, nz([ob_type2]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp2]))=nz([Forms]![s_orders]![ob_comp])) AND ((nz([ob_"
+    },
+    {
+        "Name":  "cmb_typo2s",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ob_comp]) AS qcmp, nz([ob_type]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp]))=nz([Forms]![order_list]![ob_comp2])) AND ((nz([ob_type])) \u003c\u003e\"\"));\r\nUNION SELECT nz([ob_comp2]) AS qcmp, nz([ob_type2]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp2]))=nz([Forms]![order_list]![ob_comp2])) AND ((n"
+    },
+    {
+        "Name":  "cmb_typp1",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ob_comp]) AS qcmp, nz([ob_type]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp]))=nz([Forms]![person_prop_list]![ob_comp])) AND ((nz([ob_type])) \u003c\u003e\"\"));\r\nUNION SELECT nz([ob_comp2]) AS qcmp, nz([ob_type2]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp2]))=nz([Forms]![person_prop_list]![ob_comp]"
+    },
+    {
+        "Name":  "cmb_typp2",
+        "Type":  128,
+        "SQLPreview":  "SELECT nz([ob_comp]) AS qcmp, nz([ob_type]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp]))=nz([Forms]![person_prop_list]![ob_comp2])) AND ((nz([ob_type])) \u003c\u003e\"\"));\r\nUNION SELECT nz([ob_comp2]) AS qcmp, nz([ob_type2]) AS qtyp\r\nFROM orders\r\nWHERE (((nz([ob_comp2]))=nz([Forms]![person_prop_list]![ob_comp"
+    },
+    {
+        "Name":  "color",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.color\r\nFROM orders\r\nWHERE (((nz([color]))\u003c\u003e\"\"))\r\nGROUP BY orders.color \r\nUNION SELECT orders.color2\r\nFROM orders\r\nWHERE (((nz([color2]))\u003c\u003e\"\"))\r\nGROUP BY orders.color2\r\nORDER BY color;\r\n"
+    },
+    {
+        "Name":  "colors",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ocolor\r\nFROM orders\r\nWHERE (((nz([ocolor]))\u003c\u003e\"\"))\r\nGROUP BY orders.ocolor \r\nUNION SELECT orders.ocolor2\r\nFROM orders\r\nWHERE (((nz([ocolor2]))\u003c\u003e\"\"))\r\nGROUP BY orders.ocolor2 \r\nUNION SELECT proposals.ocolor\r\nFROM proposals\r\nWHERE (((nz([ocolor]))\u003c\u003e\"\"))\r\nGROUP BY proposals.ocolor\r\nUNION S"
+    },
+    {
+        "Name":  "combo_bodek",
+        "Type":  128,
+        "SQLPreview":  "SELECT cust_list.checkname\r\nFROM cust_list\r\nWHERE (((nz([checkname]))\u003c\u003e\"\"))\r\nGROUP BY cust_list.checkname;\r\nUNION SELECT cust_list.dcheckname\r\nFROM cust_list\r\nWHERE (((nz([dcheckname]))\u003c\u003e\"\"))\r\nGROUP BY cust_list.dcheckname;\r\n"
+    },
+    {
+        "Name":  "comp_list",
+        "Type":  128,
+        "SQLPreview":  "SELECT adchecks.cnrcomp AS compw\r\nFROM adchecks\r\nWHERE (((nz([cnrcomp]))\u003c\u003e\"\"))\r\nGROUP BY adchecks.cnrcomp;\r\nUNION SELECT adchecks.cnlcomp AS compw\r\nFROM adchecks\r\nWHERE (((nz([cnlcomp]))\u003c\u003e\"\"))\r\nGROUP BY adchecks.cnlcomp;\r\n"
+    },
+    {
+        "Name":  "company",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ocomp\r\nFROM orders\r\nWHERE (((nz([ocomp]))\u003c\u003e\"\") )\r\nGROUP BY orders.ocomp \r\nUNION SELECT orders.ocomp2\r\nFROM orders\r\nWHERE (((nz([ocomp2]))\u003c\u003e\"\") )\r\nGROUP BY orders.ocomp2 \r\nUNION SELECT proposals.ocomp\r\nFROM proposals\r\nWHERE (((nz([ocomp]))\u003c\u003e\"\") )\r\nGROUP BY proposals.ocomp\r\nORDER BY ocom"
+    },
+    {
+        "Name":  "companyg",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ocomp\r\nFROM orders\r\nWHERE (((nz([ocomp]))\u003c\u003e\"\"))\r\nGROUP BY orders.ocomp \r\nUNION SELECT orders.ocomp2\r\nFROM orders\r\nWHERE (((nz([ocomp2]))\u003c\u003e\"\"))\r\nGROUP BY orders.ocomp2\r\nORDER BY ocomp;\r\n"
+    },
+    {
+        "Name":  "companyl",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ocomp\r\nFROM orders\r\nWHERE (((nz([ocomp]))\u003c\u003e\"\") )\r\nGROUP BY orders.ocomp \r\nUNION SELECT orders.ocomp2\r\nFROM orders\r\nWHERE (((nz([ocomp2]))\u003c\u003e\"\") )\r\nGROUP BY orders.ocomp2\r\nORDER BY ocomp;\r\n"
+    },
+    {
+        "Name":  "companyp",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ocomp\r\nFROM orders\r\nWHERE (((nz([ocomp]))\u003c\u003e\"\"))\r\nGROUP BY orders.ocomp \r\nUNION SELECT orders.ocomp2\r\nFROM orders\r\nWHERE (((nz([ocomp2]))\u003c\u003e\"\") )\r\nGROUP BY orders.ocomp2 \r\nUNION SELECT proposals.ocomp\r\nFROM proposals\r\nWHERE (((nz([ocomp]))\u003c\u003e\"\") )\r\nGROUP BY proposals.ocomp\r\nORDER BY ocomp"
+    },
+    {
+        "Name":  "companys",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ocomp\r\nFROM orders\r\nWHERE (((nz([ocomp]))\u003c\u003e\"\") )\r\nGROUP BY orders.ocomp \r\nUNION SELECT orders.ocomp2\r\nFROM orders\r\nWHERE (((nz([ocomp2]))\u003c\u003e\"\") )\r\nGROUP BY orders.ocomp2 \r\nUNION SELECT proposals.ocomp\r\nFROM proposals\r\nWHERE (((nz([ocomp]))\u003c\u003e\"\") )\r\nGROUP BY proposals.ocomp\r\nORDER BY ocom"
+    },
+    {
+        "Name":  "copy_adchecks",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO adchecks ( cnrtype, cnrcomp, cnrbc, cnrkoter, cnrsph, cnrcyl, cnradd, cnraxis, cnrvisus, cnltype, cnlcomp, cnlbc, cnlkoter, cnlsph, cnlcyl, cnlaxis, cnladd, cnlvisus, cnvisus, cadcheckname, caddate, qtyp, remark, cnrktr, cnlktr, bdka, cnror, cnlor, cnrorv, cnlorv, cyeda, qdomin, numw )\r\n"
+    },
+    {
+        "Name":  "copy_adchecks_new",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO adchecks ( caddate, numw )\r\nSELECT Date() AS Expr1, [Forms]![customers]![numw] AS Expr2;\r\n"
+    },
+    {
+        "Name":  "copy_checks",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO checks ( crsph, crcyl, craxis, crvisus, crpris, crprist, clsph, clcyl, claxis, clvisus, clpris, clprist, cradd, cladd, crpd, clpd, cvisus, pd, ncvisus, ncrpd, nclpd, npd, checkname, remark, numw, clhigh, crhigh, ncrmadd, nclmadd, ncrbadd, nclbadd, bdk, ncriadd, ncliadd, crpvisus, clpvisu"
+    },
+    {
+        "Name":  "copy_checks_del",
+        "Type":  32,
+        "SQLPreview":  "DELETE checks.*, checks.bdka, checks.numw\r\nFROM checks\r\nWHERE (((checks.bdka)=True) And ((checks.numw)=Forms!customers!numw));\r\n"
+    },
+    {
+        "Name":  "copy_checks_new",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO checks ( chdate, numw, bdka )\r\nSELECT Date() AS Expr1, [Forms]![customers]![numw] AS Expr2, True AS Expr3;\r\n"
+    },
+    {
+        "Name":  "cover",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.cover\r\nFROM orders\r\nWHERE (((nz([cover]))\u003c\u003e\"\"))\r\nGROUP BY orders.cover \r\nUNION SELECT orders.cover2\r\nFROM orders\r\nWHERE (((nz([cover2]))\u003c\u003e\"\"))\r\nGROUP BY orders.cover2 \r\nUNION SELECT proposals.cover\r\nFROM proposals\r\nWHERE (((nz([cover]))\u003c\u003e\"\"))\r\nGROUP BY proposals.cover\r\nUNION SELECT pro"
+    },
+    {
+        "Name":  "del_add",
+        "Type":  32,
+        "SQLPreview":  "DELETE checks.bdka, checks.numw\r\nFROM checks\r\nWHERE (((checks.bdka)=True) And ((checks.numw)=Forms!cust_checks!numw));\r\n"
+    },
+    {
+        "Name":  "del_bill_order",
+        "Type":  32,
+        "SQLPreview":  "DELETE bill_order.*\r\nFROM bill_order;\r\n"
+    },
+    {
+        "Name":  "del_bodeka",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.checkname = Null\r\nWHERE (((cust_list.checkname)=[Forms]![empty_tables]![bodek]));\r\n"
+    },
+    {
+        "Name":  "del_bodekb",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.dcheckname = Null\r\nWHERE (((cust_list.dcheckname)=[Forms]![empty_tables]![bodek]));\r\n"
+    },
+    {
+        "Name":  "del_csv_table",
+        "Type":  32,
+        "SQLPreview":  "DELETE csv_table.*\r\nFROM csv_table;\r\n"
+    },
+    {
+        "Name":  "del_frm",
+        "Type":  32,
+        "SQLPreview":  "DELETE items_sales.*, items_sales.numw\r\nFROM items_sales\r\nWHERE (((items_sales.numw)=[Forms]![person_orders_list]![rnum]));\r\n"
+    },
+    {
+        "Name":  "del_item",
+        "Type":  32,
+        "SQLPreview":  "DELETE items_sales.item_name1, items_sales.item_name2, items_sales.item_name3, items_sales.item_name4, items_sales.item_name5, items_sales.*, items_sales.item_name6, items_sales.item_name21, items_sales.item_name22, items_sales.item_name23, items_sales.item_name24, items_sales.item_name25, items_sal"
+    },
+    {
+        "Name":  "del_kupon",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.kupon = Null\r\nWHERE (((cust_list.kupon)=nz([Forms]![f_sivug]![bank])));\r\n"
+    },
+    {
+        "Name":  "del_letter_labels",
+        "Type":  32,
+        "SQLPreview":  "DELETE letter_labels.*\r\nFROM letter_labels;\r\n"
+    },
+    {
+        "Name":  "del_old_cust",
+        "Type":  32,
+        "SQLPreview":  "DELETE cust_list.*, IIf(nz([cust_list]![cdate])\u003enz([cust_list]![chdate]),[cust_list]![cdate],[cust_list]![chdate]) AS rpdate\r\nFROM cust_list\r\nWHERE (((IIf(nz([cust_list]![cdate])\u003enz([cust_list]![chdate]),[cust_list]![cdate],[cust_list]![chdate])) Is Not Null And (IIf(nz([cust_list]![cdate])\u003enz([cust"
+    },
+    {
+        "Name":  "del_presence",
+        "Type":  32,
+        "SQLPreview":  "DELETE presence.*, presence.wdate AS Expr1\r\nFROM presence\r\nWHERE (((presence.wdate) Is Not Null And (presence.wdate)\u003e=[Forms]![empty_tables]![fwdate] And (presence.wdate)\u003c=[Forms]![empty_tables]![twdate]));\r\n"
+    },
+    {
+        "Name":  "del_presence_wrk_tbl",
+        "Type":  32,
+        "SQLPreview":  "DELETE presence_wrk_tbl.*\r\nFROM presence_wrk_tbl;\r\n"
+    },
+    {
+        "Name":  "del_qnum",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_qnum.*\r\nFROM tb_qnum;\r\n"
+    },
+    {
+        "Name":  "del_qnum_un",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_qnum_un.*\r\nFROM tb_qnum_un;\r\n"
+    },
+    {
+        "Name":  "del_sel_list",
+        "Type":  32,
+        "SQLPreview":  "DELETE sel_list.*\r\nFROM sel_list;\r\n"
+    },
+    {
+        "Name":  "del_tb_adashot",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_adashot.*\r\nFROM tb_adashot;\r\n"
+    },
+    {
+        "Name":  "del_tb_checks",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_q_checks.*, tb_q_checks.tdate\r\nFROM tb_q_checks\r\nWHERE (((tb_q_checks.tdate) Is Not Null And (tb_q_checks.tdate)\u003e=[Forms]![empty_tables]![fwdate] And (tb_q_checks.tdate)\u003c=[Forms]![empty_tables]![twdate]));\r\n"
+    },
+    {
+        "Name":  "del_tb_credits",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_credits.*\r\nFROM tb_credits;\r\n"
+    },
+    {
+        "Name":  "del_tb_date_list",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_date_list.*, tb_date_list.datew AS q1, nz([snif]) AS q2\r\nFROM tb_date_list\r\nWHERE (((tb_date_list.datew)\u003e=Forms!Calendar_of_Attendance!fwdate And (tb_date_list.datew)\u003c=Forms!Calendar_of_Attendance!twdate) And ((nz([snif]))=nz(Forms!Calendar_of_Attendance!qsnif)));\r\n"
+    },
+    {
+        "Name":  "del_tb_email",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_email.*\r\nFROM tb_email;\r\n"
+    },
+    {
+        "Name":  "del_tb_graph",
+        "Type":  48,
+        "SQLPreview":  "UPDATE tb_graf SET tb_graf.qnumpr = Null, tb_graf.qnumpl = Null;\r\n"
+    },
+    {
+        "Name":  "del_tb_hsapakim",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_hsapakim.*, tb_hsapakim.hdate\r\nFROM tb_hsapakim\r\nWHERE (((tb_hsapakim.hdate) Is Not Null And (tb_hsapakim.hdate)\u003e=[Forms]![empty_tables]![fwdate] And (tb_hsapakim.hdate)\u003c=[Forms]![empty_tables]![twdate]));\r\n"
+    },
+    {
+        "Name":  "del_tb_in",
+        "Type":  32,
+        "SQLPreview":  "DELETE items_sales.*, Val(nz([qtyp])) AS q, items_sales.wdate\r\nFROM items_sales\r\nWHERE (((Val(nz([qtyp])))\u003e0) And ((items_sales.wdate) Is Not Null And (items_sales.wdate)\u003e=Forms!empty_tables!fwdate And (items_sales.wdate)\u003c=Forms!empty_tables!twdate));\r\n"
+    },
+    {
+        "Name":  "del_tb_labels",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_labels.*\r\nFROM tb_labels;\r\n"
+    },
+    {
+        "Name":  "del_tb_lekohot",
+        "Type":  48,
+        "SQLPreview":  "UPDATE tb_lekohot SET tb_lekohot.mm = Null, tb_lekohot.totl = Null, tb_lekohot.totnew = Null, tb_lekohot.perc_new = Null, tb_lekohot.multi_new = Null, tb_lekohot.flow_old = Null, tb_lekohot.flow_new = Null, tb_lekohot.flow_tot = Null;\r\n"
+    },
+    {
+        "Name":  "del_tb_ltv",
+        "Type":  48,
+        "SQLPreview":  "UPDATE tb_ltv SET tb_ltv.mm = Null, tb_ltv.totl = Null, tb_ltv.n12 = Null, tb_ltv.n24 = Null, tb_ltv.n36 = Null, tb_ltv.totlk = Null, tb_ltv.avrgp = Null, tb_ltv.totp = Null;\r\n"
+    },
+    {
+        "Name":  "del_tb_ltv_return",
+        "Type":  48,
+        "SQLPreview":  "UPDATE tb_ltv_return SET tb_ltv_return.mm = Null, tb_ltv_return.totl = Null, tb_ltv_return.totm = Null, tb_ltv_return.n12 = Null, tb_ltv_return.n12p = Null, tb_ltv_return.n24 = Null, tb_ltv_return.n24p = Null, tb_ltv_return.n36 = Null, tb_ltv_return.n36p = Null, tb_ltv_return.nr = Null, tb_ltv_retur"
+    },
+    {
+        "Name":  "del_tb_misgarot",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_misgarot.*\r\nFROM tb_misgarot;\r\n"
+    },
+    {
+        "Name":  "del_tb_orders",
+        "Type":  32,
+        "SQLPreview":  "DELETE orders.*, orders.odate\r\nFROM orders\r\nWHERE (((orders.odate) Is Not Null And (orders.odate)\u003e=[Forms]![empty_tables]![fwdate] And (orders.odate)\u003c=[Forms]![empty_tables]![twdate]));\r\n"
+    },
+    {
+        "Name":  "del_tb_q_credits",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_q_credits.*\r\nFROM tb_q_credits;\r\n"
+    },
+    {
+        "Name":  "del_tb_sumlekohot",
+        "Type":  48,
+        "SQLPreview":  "UPDATE tb_sum_lekohot SET tb_sum_lekohot.mm = Null, tb_sum_lekohot.totlk = Null, tb_sum_lekohot.totnew = Null, tb_sum_lekohot.perc_new = Null, tb_sum_lekohot.flow_tot = Null, tb_sum_lekohot.flow_old = Null, tb_sum_lekohot.perc_old = Null, tb_sum_lekohot.avg_tot = Null, tb_sum_lekohot.flow_new = Null"
+    },
+    {
+        "Name":  "del_tb_xls_data",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_xls_data.*\r\nFROM tb_xls_data;\r\n"
+    },
+    {
+        "Name":  "del_tb_xls_data_lids",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_xls_data_lids.*\r\nFROM tb_xls_data_lids;\r\n"
+    },
+    {
+        "Name":  "del_tb_yoman",
+        "Type":  48,
+        "SQLPreview":  "UPDATE tb_yoman SET tb_yoman.t1 = Null, tb_yoman.eh1 = Null, tb_yoman.l1 = Null, tb_yoman.m1 = Null, tb_yoman.t2 = Null, tb_yoman.eh2 = Null, tb_yoman.l2 = Null, tb_yoman.m2 = Null, tb_yoman.t3 = Null, tb_yoman.eh3 = Null, tb_yoman.l3 = Null, tb_yoman.m3 = Null, tb_yoman.t4 = Null, tb_yoman.eh4 = Nu"
+    },
+    {
+        "Name":  "dup_order",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO orders ( odate, numw, odatetime, ob_comp, ob_type, ocolor, bprice, [number], gremk, cn, EmployeeID, ob_size, ob_comp2, ob_type2, ob_size2, ocolor2, bprice2, gpricer2, gpricel2, qmaam, gpricet, gpricet2, color, color2, ar, ar2, al, al2, swa, swm, swo, rdate, CDate, rtime, pbprice, pbprice"
+    },
+    {
+        "Name":  "dup_order_msgr",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO orders ( odate, numw, odatetime, ob_comp, ob_type, ocolor, sapakm, cn, ob_size, ob_comp2, ob_type2, ob_size2, ocolor2, sapakm2, pbprice, pbprice2, pdisc, pdisc2, bprice, bprice2, bar_size, bar_size2, qpart, qpart2 )\r\nSELECT Date() AS Expr1, orders.numw, orders.odatetime, orders.ob_comp, "
+    },
+    {
+        "Name":  "dyopter",
+        "Type":  128,
+        "SQLPreview":  "SELECT Val(nz([dyopter])) AS qdyopter\r\nFROM orders\r\nWHERE (((Val(nz([dyopter])))\u003c\u003e0));\r\nUNION SELECT Val(nz([dyopter2])) AS qdyopter\r\nFROM orders\r\nWHERE (((Val(nz([dyopter2])))\u003c\u003e0))\r\nORDER BY qdyopter;\r\n"
+    },
+    {
+        "Name":  "gtype",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.og_type\r\nFROM orders\r\nWHERE (((nz([og_type]))\u003c\u003e\"\") )\r\nGROUP BY orders.og_type \r\nUNION SELECT orders.og_type2\r\nFROM orders\r\nWHERE (((nz([og_type2]))\u003c\u003e\"\") )\r\nGROUP BY orders.og_type2 \r\nUNION SELECT proposals.og_type\r\nFROM proposals\r\nWHERE (((nz([og_type]))\u003c\u003e\"\") )\r\nGROUP BY proposals.og_t"
+    },
+    {
+        "Name":  "gtypeg",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.og_type\r\nFROM orders\r\nWHERE (((nz([og_type]))\u003c\u003e\"\"))\r\nGROUP BY orders.og_type \r\nUNION SELECT orders.og_type2\r\nFROM orders\r\nWHERE (((nz([og_type2]))\u003c\u003e\"\"))\r\nGROUP BY orders.og_type2\r\nORDER BY og_type;\r\n"
+    },
+    {
+        "Name":  "gtypel",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.og_type\r\nFROM orders\r\nWHERE (((nz([og_type]))\u003c\u003e\"\"))\r\nGROUP BY orders.og_type \r\nUNION SELECT orders.og_type2\r\nFROM orders\r\nWHERE (((nz([og_type2]))\u003c\u003e\"\") )\r\nGROUP BY orders.og_type2\r\nORDER BY og_type;\r\n"
+    },
+    {
+        "Name":  "gtypep",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.og_type\r\nFROM orders\r\nWHERE (((nz([og_type]))\u003c\u003e\"\") )\r\nGROUP BY orders.og_type \r\nUNION SELECT orders.og_type2\r\nFROM orders\r\nWHERE (((nz([og_type2]))\u003c\u003e\"\") )\r\nGROUP BY orders.og_type2 \r\nUNION SELECT proposals.og_type\r\nFROM proposals\r\nWHERE (((nz([og_type]))\u003c\u003e\"\") )\r\nGROUP BY proposals.og_t"
+    },
+    {
+        "Name":  "gtypes",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.og_type\r\nFROM orders\r\nWHERE (((nz([og_type]))\u003c\u003e\"\") )\r\nGROUP BY orders.og_type \r\nUNION SELECT orders.og_type2\r\nFROM orders\r\nWHERE (((nz([og_type2]))\u003c\u003e\"\") )\r\nGROUP BY orders.og_type2 \r\nUNION SELECT proposals.og_type\r\nFROM proposals\r\nWHERE (((nz([og_type]))\u003c\u003e\"\") )\r\nGROUP BY proposals.og_t"
+    },
+    {
+        "Name":  "ktr",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.oheight\r\nFROM orders\r\nWHERE (((nz([oheight]))\u003c\u003e\"\"))\r\nGROUP BY orders.oheight \r\nUNION SELECT orders.oheight2\r\nFROM orders\r\nWHERE (((nz([oheight2]))\u003c\u003e\"\"))\r\nGROUP BY orders.oheight2\r\nORDER BY oheight;\r\n"
+    },
+    {
+        "Name":  "pq_total_sales",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.EmployeeID, [gprice] AS total, orders.odate AS qdate, 1 as typ,null As qq\r\nFROM orders\r\nWHERE (((orders.EmployeeID) Is Not Null));\r\nUNION ALL SELECT items_sales.EmployeeID, items_sales.price AS total, items_sales.wdate AS qdate, 0 AS typ, Val(nz([qtyp])) AS qq\r\nFROM items_sales\r\nWHERE "
+    },
+    {
+        "Name":  "ptb_hsapakim",
+        "Type":  128,
+        "SQLPreview":  "SELECT tb_hsapakim.code_sapak, tb_hsapakim.pr, tb_hsapakim.hdate, val(nz(tb_hsapakim.sht)) AS qsht,tb_hsapakim.hnum, nz([hnum]) AS qnum, tb_hsapakim.p_total, tb_hsapakim.maam, tb_hsapakim.t_maam, tb_hsapakim.mas, tb_hsapakim.t_mas, tb_hsapakim.total, tb_hsapakim.qstatus, tb_hsapakim.pmaam, tb_hsapak"
+    },
+    {
+        "Name":  "q_birthdate_L",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO letter_labels ( wsort, name, waddress, wcity )\r\nSELECT cust_list.wsort, Trim$(nz([pname]))+\" \"+Trim$(nz([fname])) AS name, Trim$(nz([address])) \u0026 \" \" \u0026 Trim$(nz([area])) AS waddress, Trim$(nz([city]))+\" \"+Trim$(nz([mikud])) AS wcity\r\nFROM cust_list\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) An"
+    },
+    {
+        "Name":  "q_birthdate_mail",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO tb_email ( qemail )\r\nSELECT cust_list.email\r\nFROM cust_list\r\nWHERE (((cust_list.email) Is Not Null) And ((Val(nz([ocupation])))\u003c\u003e-1) And ((Val(nz([sendb])))=-1) And ((cust_list.bdate) Is Not Null) And ((nz([wbdate]))\u003c\u003eYear(Date())) And ((Format(Month([bdate]),\"00\") \u0026 Format(Day([bdate]),"
+    },
+    {
+        "Name":  "q_birthdate_rv",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.wbdate = Null\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) And ((cust_list.bdate) Is Not Null) And ((Format(Month([bdate]),\"00\") \u0026 Format(Day([bdate]),\"00\"))\u003e=Format(Forms!birthdays!fm,\"00\") \u0026 Format(Forms!birthdays!fd,\"00\") And (Format(Month([bdate]),\"00\") \u0026 Format(Day([bdate"
+    },
+    {
+        "Name":  "q_birthdate_u",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.wbdate = Year(Date())\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) And ((cust_list.bdate) Is Not Null) And ((nz([wbdate]))\u003c\u003eYear(Date())) And ((Format(Month([bdate]),\"00\") \u0026 Format(Day([bdate]),\"00\"))\u003e=Format(Forms!birthdays!fm,\"00\") \u0026 Format(Forms!birthdays!fd,\"00\") And (Form"
+    },
+    {
+        "Name":  "q_birthdate_xls",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO sel_list ( name, pname, fname, sel_number, wdate, wmail )\r\nSELECT Trim$([fname])+\"  \"+Trim$([pname]) AS namew, Trim$([pname]) AS pnamew, Trim$([fname]) AS fnamew, cust_list.sel, cust_list.bdate, cust_list.email\r\nFROM cust_list\r\nWHERE (((cust_list.sel) Is Not Null) And ((cust_list.bdate) "
+    },
+    {
+        "Name":  "q_birthdateh_L",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO letter_labels ( wsort, name, waddress, wcity )\r\nSELECT cust_list.wsort, Trim$(nz([pname]))+\" \"+Trim$(nz([fname])) AS name, Trim$(nz([address])) \u0026 \" \" \u0026 Trim$(nz([area])) AS waddress, Trim$(nz([city]))+\" \"+Trim$(nz([mikud])) AS wcity\r\nFROM cust_list\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) An"
+    },
+    {
+        "Name":  "q_birthdateh_mail",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO tb_email ( qemail )\r\nSELECT cust_list.email\r\nFROM cust_list\r\nWHERE (((cust_list.email) Is Not Null) And ((Val(nz([ocupation])))\u003c\u003e-1) And ((Val(nz([sendb])))=-1) And ((cust_list.bdate) Is Not Null) And ((nz([wbdate]))\u003c\u003eYear(Date())) And ((gethdatee(nz([bdate]),Forms!birthdaysheb!q))\u003e=Form"
+    },
+    {
+        "Name":  "q_birthdateh_rv",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.wbdate = Null\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) And ((cust_list.bdate) Is Not Null) And ((gethdatee(nz([bdate]),Forms!birthdaysheb!q))\u003e=Format(Forms!birthdaysheb!mm,\"000\") \u0026 Format(Forms!birthdaysheb!fm,\"00\") And (gethdatee(nz([bdate]),Forms!birthdaysheb!q))\u003c=Format"
+    },
+    {
+        "Name":  "q_birthdateh_u",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.wbdate = Year(Date())\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) And ((cust_list.bdate) Is Not Null) And ((nz([wbdate]))\u003c\u003eYear(Date())) And ((gethdatee(nz([bdate]),Forms!birthdaysheb!q))\u003e=Format(Forms!birthdaysheb!mm,\"000\") \u0026 Format(Forms!birthdaysheb!fm,\"00\") And (gethdatee"
+    },
+    {
+        "Name":  "q_birthdateh_xls",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO sel_list ( name, pname, fname, sel_number, wdate, wmail )\r\nSELECT Trim$([fname])+\"  \"+Trim$([pname]) AS namew, Trim$([fname])+\"  \"+Trim$([pname]) AS pnamew, Trim$([fname])+\"  \"+Trim$([pname]) AS fnamew, cust_list.sel, cust_list.bdate, cust_list.email\r\nFROM cust_list\r\nWHERE (((cust_list.s"
+    },
+    {
+        "Name":  "q_check_again_L",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO letter_labels ( wsort, name, waddress, wcity, CDate, chdate )\r\nSELECT cust_list.wsort, Trim$(nz([pname]))+\" \"+Trim$(nz([fname])) AS name, Trim$(nz([address])) \u0026 \" \" \u0026 Trim$(nz([area])) AS waddress, Trim$(nz([city]))+\" \"+Trim$(nz([mikud])) AS wcity, cust_list.CDate, cust_list.chdate\r\nFROM"
+    },
+    {
+        "Name":  "q_check_again_rv",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.ltm = Null, cust_list.lty = Null\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) And ((Val(nz([sendb])))=-1) And ((IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))=IIf(nz(Forms!f_bdikat_maakav!chknw)\u003c\u003e\"\",Forms!f_bdikat_maakav!chknw,IIf(nz([cdate])\u003enz([chdate]),[checkname],"
+    },
+    {
+        "Name":  "q_check_again_rva",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.ltm = Null, cust_list.lty = Null\r\nWHERE (((cust_list.chdate) Is Not Null) And ((Val(nz([ocupation])))\u003c\u003e-1) And ((Val(nz([sendb])))=-1) And ((IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))=IIf(nz(Forms!f_bdikat_maakav!chknw)\u003c\u003e\"\",Forms!f_bdikat_maakav!chknw,IIf("
+    },
+    {
+        "Name":  "q_check_again_rvm",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.ltm = Null, cust_list.lty = Null\r\nWHERE (((cust_list.cdate) Is Not Null) And ((Val(nz([ocupation])))\u003c\u003e-1) And ((Val(nz([sendb])))=-1) And ((IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))=IIf(nz(Forms!f_bdikat_maakav!chknw)\u003c\u003e\"\",Forms!f_bdikat_maakav!chknw,IIf(n"
+    },
+    {
+        "Name":  "q_check_again_u",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.ltm = [Forms]![f_bdikat_maakav]![fm], cust_list.lty = Year(Date()), cust_list.swd = False\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) AND ((Val(nz([sendb])))=-1) AND ((IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))=IIf(nz([Forms]![f_bdikat_maakav]![chknw])\u003c\u003e\"\",[Forms"
+    },
+    {
+        "Name":  "q_check_again_ua",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.ltm = [Forms]![f_bdikat_maakav]![fm], cust_list.lty = Year(Date()), cust_list.swd = False\r\nWHERE (((cust_list.chdate) Is Not Null) AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((Val(nz([sendb])))=-1) AND ((IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))=IIf(nz([Forms]!"
+    },
+    {
+        "Name":  "q_check_again_um",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.ltm = [Forms]![f_bdikat_maakav]![fm], cust_list.lty = Year(Date()), cust_list.swd = False\r\nWHERE (((cust_list.cdate) Is Not Null) AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((Val(nz([sendb])))=-1) AND ((IIf(nz([cdate])\u003enz([chdate]),[checkname],[dcheckname]))=IIf(nz([Forms]!["
+    },
+    {
+        "Name":  "q_check_xls",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO sel_list ( name, pname, fname, sel_number, wdate )\r\nSELECT Trim$([fname])+\"  \"+Trim$([pname]) AS namew, Trim$([pname]) AS pnamew, Trim$([fname]) AS fnamew, cust_list.sel, IIf(nz([cdate])\u003enz([chdate]),[cdate],[chdate]) AS rpdate\r\nFROM cust_list\r\nWHERE (((cust_list.sel) Is Not Null) AND (("
+    },
+    {
+        "Name":  "q_checks_add_app",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO checks ( crsph, crcyl, craxis, crvisus, crpris, crprist, clsph, clcyl, claxis, clvisus, clpris, clprist, cradd, cladd, crpd, clpd, cvisus, pd, ncvisus, ncrpd, nclpd, npd, chdate, checkname, remark, clhigh, crhigh, ncrmadd, nclmadd, ncrbadd, nclbadd, ncriadd, ncliadd, crpvisus, clpvisus, "
+    },
+    {
+        "Name":  "q_checks_add_appb",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO checks ( crsph, crcyl, craxis, crvisus, crpris, crprist, clsph, clcyl, claxis, clvisus, clpris, clprist, cradd, cladd, crpd, clpd, cvisus, pd, ncvisus, ncrpd, nclpd, npd, chdate, checkname, remark, clhigh, crhigh, ncrmadd, nclmadd, ncrbadd, nclbadd, ncriadd, ncliadd, crpvisus, clpvisus, "
+    },
+    {
+        "Name":  "q_credit_receipt",
+        "Type":  128,
+        "SQLPreview":  "SELECT tb_kabala.rnum, orders.cn, Trim$([fname])+\"  \"+Trim$([pname]) AS namew, tb_kabala.wdate, orders.odate, orders.ordernum, tb_kabala.typ, tb_kabala.wnumber, tb_kabala.wname, tb_kabala.wsnif, tb_kabala.whashbon, tb_kabala.tpiraon AS TP, tb_kabala.nt, (DateAdd(\"m\",Val(nz([nt]))-1,[tpiraon])) AS qd"
+    },
+    {
+        "Name":  "q_insw_L",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO letter_labels ( name, waddress, wcity, wsort )\r\nSELECT Trim$(nz([pname]))+\" \"+Trim$(nz([fname])) AS name, Trim$(nz([address])) \u0026 \" \" \u0026 Trim$(nz([area])) AS waddress, Trim$(nz([city])) AS wcity, cust_list.wsort\r\nFROM cust_list\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) AND ((cust_list.cleandate"
+    },
+    {
+        "Name":  "q_insw_u",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.aswb = True\r\nWHERE (((cust_list.aswb)=False) AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((cust_list.cleandate) Is Not Null) AND ((DateAdd(\"m\",-1,[cleandate]))\u003c=Date()) AND ((DateAdd(\"d\",+14,[cleandate]))\u003e=Date()));\r\n"
+    },
+    {
+        "Name":  "q_insw_un",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.aswb = False\r\nWHERE (((cust_list.aswb)=True) AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((cust_list.cleandate) Is Not Null) AND ((DateAdd(\"m\",-1,[cleandate]))\u003c=Date()) AND ((DateAdd(\"d\",+14,[cleandate]))\u003e=Date()));\r\n"
+    },
+    {
+        "Name":  "q_insw_xls",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO sel_list ( name, pname, fname, sel_number, wdate )\r\nSELECT Trim$([fname])+\"  \"+Trim$([pname]) AS namew, Trim$([pname]) AS pnamew, Trim$([fname]) AS fnamew, cust_list.sel, cust_list.cleandate\r\nFROM cust_list\r\nWHERE (((cust_list.sel) Is Not Null) AND ((cust_list.cleandate) Is Not Null) AND"
+    },
+    {
+        "Name":  "q_inv_L",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO letter_labels ( name, waddress, wcity, wsort )\r\nSELECT Trim$(nz([pname]))+\" \"+Trim$(nz([fname])) AS name, Trim$(nz([address])) \u0026 \" \" \u0026 Trim$(nz([area])) AS waddress, Trim$(nz([city]))+\" \"+Trim$(nz([mikud])) AS wcity, cust_list.wsort\r\nFROM cust_list\r\nWHERE (((Val(nz([ocupation])))\u003c\u003e-1) AN"
+    },
+    {
+        "Name":  "q_inv_u",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.swd = True\r\nWHERE (((cust_list.swd)=False) AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((DateAdd(\"ww\",-1,[insdate]))\u003c=Date()));\r\n"
+    },
+    {
+        "Name":  "q_inv_un",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.swd = False\r\nWHERE (((cust_list.swd)=True) AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((DateAdd(\"ww\",-1,[insdate]))\u003c=Date()));\r\n"
+    },
+    {
+        "Name":  "q_inv_xls",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO sel_list ( name, pname, fname, sel_number, wdate )\r\nSELECT Trim$([pname])+\"  \"+Trim$([fname]) AS namew, Trim$([pname]) AS pnamew, Trim$([fname]) AS fnamew, cust_list.sel, cust_list.insdate\r\nFROM cust_list\r\nWHERE (((cust_list.sel) Is Not Null) AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((DateAd"
+    },
+    {
+        "Name":  "q_items",
+        "Type":  128,
+        "SQLPreview":  "SELECT items_sales.item_name1 AS item_name\r\nFROM items_sales\r\nGROUP BY items_sales.item_name1\r\nHAVING (((items_sales.item_name1) Is Not Null));\r\nUNION SELECT items_sales.item_name2 AS item_name\r\nFROM items_sales\r\nGROUP BY items_sales.item_name2\r\nHAVING (((items_sales.item_name2) Is Not Null));\r\nUNIO"
+    },
+    {
+        "Name":  "q_mehirot_all",
+        "Type":  128,
+        "SQLPreview":  "SELECT cust_list.numw, cust_list.area, cust_list.moadon, cust_list.kupa,cust_list.city, tb_q_orders.ordernum, tb_q_orders.odate ,tb_q_orders.color AS qcolor,tb_q_orders.qyeda, tb_q_orders.qmsgr,tb_q_orders.sun,tb_q_orders.qemp, tb_q_orders.sapakm,tb_q_orders.qhevra, tb_q_orders.qdegem, tb_q_orders.q"
+    },
+    {
+        "Name":  "q_melai_p_date",
+        "Type":  128,
+        "SQLPreview":  "SELECT tb_q_ordersml.qsmodel AS MD, tb_q_ordersml.odate AS DT, tb_q_ordersml.ordernum AS ORDR, -1*Val(Count([qsmodel])) AS s, Null AS Expr2, \"מ\" AS t, -1*Sum(tb_q_ordersml.qalut) AS AL\r\nFROM (tb_q_ordersml INNER JOIN tb_q_catalog ON tb_q_ordersml.qsmodel = tb_q_catalog.qsmodel) INNER JOIN qlist_upd_"
+    },
+    {
+        "Name":  "q_mirsham_a",
+        "Type":  128,
+        "SQLPreview":  "SELECT adchecks.cnrsph, adchecks.cnrcyl, adchecks.cnraxis, adchecks.cnradd, adchecks.cnrkoter, adchecks.cnrvisus,adchecks.cnrcomp, adchecks.cnrtype, adchecks.cnrbc, adchecks.cnrktr, adchecks.cnlsph, adchecks.cnlcyl, adchecks.cnlaxis, adchecks.cnladd, adchecks.cnlkoter, adchecks.cnlvisus, adchecks.cn"
+    },
+    {
+        "Name":  "q_sapakim_all",
+        "Type":  128,
+        "SQLPreview":  "SELECT SAPAKIM.[SHEM SAPAK] AS SHEM, tb_hsapakim.code_sapak, tb_hsapakim.snif, tb_hsapakim.remark, tb_hsapakim.qstatus, tb_hsapakim.hdate AS DT, tb_hsapakim.hdate AS TP, nz([hnum]) AS NUM, Null AS qntyp, 0 AS TOTO, tb_hsapakim.total AS TOTI\r\nFROM tb_hsapakim LEFT JOIN SAPAKIM ON tb_hsapakim.code_sap"
+    },
+    {
+        "Name":  "q_takbul",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.cn,cust_list.kamp, Trim$([fname])+\"  \"+Trim$([pname]) AS namew, tb_kabala.rnum, orders.ordernum, orders.odate  , tb_kabala.typ, tb_kabala.wnumber, tb_kabala.wname, tb_kabala.wsnif, tb_kabala.whashbon, tb_kabala.tpiraon AS TP, tb_kabala.nt, tb_kabala.total, tb_kabala.wnum ,Null\r\nFROM (c"
+    },
+    {
+        "Name":  "q_takbul_h",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.cn, cust_list.kamp, Trim$([fname])+\"  \"+Trim$([pname]) AS namew, tb_kabala.rnum, orders.ordernum, orders.odate AS TP, tb_kabala.typ, tb_kabala.wnumber, tb_kabala.wname, tb_kabala.wsnif, tb_kabala.whashbon, tb_kabala.tpiraon, tb_kabala.nt, tb_kabala.total, tb_kabala.wnum, Null AS Expr1\r"
+    },
+    {
+        "Name":  "q_tashlumim",
+        "Type":  128,
+        "SQLPreview":  "SELECT tb_credits.cn,null As kamp, tb_credits.namew, tb_credits.ordernum, tb_credits.typ, tb_credits.tpiraon, tb_credits.total, tb_credits.qtotal, tb_credits.qpay, tb_credits.qpayn\r\nFROM tb_credits;\r\nUNION ALL SELECT orders.cn, cust_list.kamp,Trim$([fname])+\"  \"+Trim$([pname]) AS namew, orders.order"
+    },
+    {
+        "Name":  "q_tashlumim_xls",
+        "Type":  128,
+        "SQLPreview":  "SELECT tb_credits.cn, tb_credits.namew, tb_credits.ordernum, tb_credits.typ,tb_credits.odate,tb_credits.wdate, tb_credits.tpiraon, tb_credits.total, tb_credits.qtotal, tb_credits.qpay, tb_credits.qpayn\r\nFROM tb_credits;\r\nUNION ALL SELECT orders.cn, Trim$([fname])+\"  \"+Trim$([pname]) AS namew, orders"
+    },
+    {
+        "Name":  "qbar",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.bar_size\r\nFROM orders\r\nGROUP BY orders.bar_size\r\nHAVING (((orders.bar_size) Is Not Null));\r\nUNION ALL SELECT orders.bar_size2\r\nFROM orders\r\nGROUP BY orders.bar_size2\r\nHAVING (((orders.bar_size2) Is Not Null));\r\nUNION SELECT \"ניילון\" AS Expr1\r\nFROM orders\r\nGROUP BY \"ניילון\";\r\nUNION SELE"
+    },
+    {
+        "Name":  "qgil",
+        "Type":  32,
+        "SQLPreview":  "DELETE tb_graf.*, tb_graf.qnumpr, tb_graf.qnumpl, tb_graf.sw\r\nFROM tb_graf\r\nWHERE (((tb_graf.qnumpr) Is Null) AND ((tb_graf.qnumpl) Is Null) AND ((tb_graf.sw)=True));\r\n"
+    },
+    {
+        "Name":  "qlist_checks",
+        "Type":  128,
+        "SQLPreview":  "SELECT tb_q_checks.cdate,tb_q_checks.snif, tb_q_checks.tdate, tb_q_checks.cnum, tb_q_checks.code_sapak, tb_q_checks.total,  tb_q_checks.hnum4,tb_q_checks.qstatus\r\nFROM tb_q_checks \r\nWHERE (((tb_q_checks.hnum4)\u003c\u003e\"הוראת קבע\"  AND  (tb_q_checks.hnum4)\u003c\u003e\"אשראי\"))\r\nUNION ALL SELECT tb_q_credits.cdate,tb_"
+    },
+    {
+        "Name":  "qlist_datep",
+        "Type":  128,
+        "SQLPreview":  "SELECT adchecks.caddate, adchecks.numw\r\nFROM adchecks\r\nGROUP BY adchecks.caddate, adchecks.numw\r\nHAVING (((adchecks.caddate) Is Not Null));\r\nUNION SELECT checks.chdate, checks.numw\r\nFROM checks\r\nGROUP BY checks.chdate, checks.numw\r\nHAVING (((checks.chdate) Is Not Null));\r\nUNION SELECT orders.odate, "
+    },
+    {
+        "Name":  "qlist_kuponp",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.qmsgr, Null AS Expr1 FROM orders GROUP BY orders.qmsgr, Null HAVING (((orders.qmsgr) Is Not Null)) ORDER BY orders.qmsgr; UNION ALL SELECT BANK_LIST.bank, Val(nz([qtyp])) AS Expr1 FROM BANK_LIST WHERE (((BANK_LIST.bank) Is Not Null) AND ((Val(nz([qtyp])))=3));\r\n"
+    },
+    {
+        "Name":  "qlist_log_names",
+        "Type":  128,
+        "SQLPreview":  "SELECT qlist_log.custn, qlist_log.custn_name\r\nFROM qlist_log\r\nGROUP BY qlist_log.custn, qlist_log.custn_name\r\nHAVING (((qlist_log.custn) Is Not Null));\r\nUNION SELECT qlist_log.custnf, qlist_log.custnf_name\r\nFROM qlist_log\r\nGROUP BY qlist_log.custnf, qlist_log.custnf_name \r\nHAVING (((qlist_log.custnf"
+    },
+    {
+        "Name":  "qlist_oth",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.odate, orders.otht1, orders.othp1, IIf(Val(nz([gdisc]))\u003e0 And Val(nz([gprice]))\u003e0,(Format([othp1]*((Val(Nz([qmaam]))/100)+1),\"Fixed\"))-(Val(nz([gdisc]))*(Format([othp1]*((Val(Nz([qmaam]))/100)+1),\"Fixed\")))/100,IIf(Val(nz([gprice]))\u003e0 And Val(nz([greduce]))\u003e0,(Format([othp1]*((Val(Nz(["
+    },
+    {
+        "Name":  "qlist_pothp",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.oth1, orders.otht1, [otht1] \u0026 \" \" \u0026 [oth1] AS str, Max(orders.othp1) AS qprice\r\nFROM orders\r\nWHERE (((orders.ordernum)\u003e0))\r\nGROUP BY orders.oth1, orders.otht1, [otht1] \u0026 \" \" \u0026 [oth1]\r\nHAVING (((orders.oth1) Is Not Null) AND ((orders.otht1) Is Not Null));\r\n\r\nUNION ALL SELECT  orders.oth"
+    },
+    {
+        "Name":  "qlist_qmaga_upd",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list INNER JOIN orders ON cust_list.numw=orders.numw SET orders.swo = False\r\nWHERE (((orders.swo)=True) AND ((DateDiff(\"d\",Date(),[gdate]))\u003c=7));\r\n"
+    },
+    {
+        "Name":  "qlist_qmaga_xls",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO sel_list ( pname, fname, sel_number, name, wdate )\r\nSELECT cust_list.pname, cust_list.fname, cust_list.sel, Trim$([fname])+\"  \"+Trim$([pname]) AS namew, orders.odate\r\nFROM cust_list INNER JOIN orders ON cust_list.numw=orders.numw\r\nWHERE (((orders.swo)=True) AND ((DateDiff(\"d\",Date(),[gda"
+    },
+    {
+        "Name":  "qlist_sales",
+        "Type":  128,
+        "SQLPreview":  "SELECT cust_list.numw,cust_list.moadon,cust_list.kupa,cust_list.city,cust_list.fname \u0026 \" \" \u0026   cust_list.pname AS qname, orders.odate,orders.yeda As qyeda, orders.qmsgr ,orders.sapakm , orders.sun , val(nz(orders.EmployeeID)) AS qemp, null AS p0,orders.ob_type AS p1, Null AS p2, nz([orders.ob_comp])"
+    },
+    {
+        "Name":  "qlist_sales_old1",
+        "Type":  128,
+        "SQLPreview":  "SELECT cust_list.numw,cust_list.moadon,cust_list.kupa,cust_list.fname \u0026 \" \" \u0026   cust_list.pname AS qname, orders.odate,orders.yeda As qyeda, orders.qmsgr ,orders.sapakm ,val(nz(orders.EmployeeID)) AS qemp, null AS p0,orders.ob_type AS p1, Null AS p2, orders.ob_comp AS p3, orders.bprice, orders.order"
+    },
+    {
+        "Name":  "qlist_sapakim",
+        "Type":  128,
+        "SQLPreview":  "SELECT [tb_q_checks].code_sapak FROM [tb_q_checks] GROUP BY [tb_q_checks].code_sapak HAVING ((([tb_q_checks].code_sapak) Is Not Null));\r\nUNION SELECT tb_hsapakim.code_sapak\r\nFROM tb_hsapakim\r\nGROUP BY tb_hsapakim.code_sapak\r\nHAVING (((tb_hsapakim.code_sapak) Is Not Null));\r\n"
+    },
+    {
+        "Name":  "qlist_snifim",
+        "Type":  128,
+        "SQLPreview":  "SELECT [tb_q_checks].snif FROM [tb_q_checks] GROUP BY [tb_q_checks].snif HAVING ((([tb_q_checks].snif) Is Not Null));\r\nUNION SELECT tb_hsapakim.snif\r\nFROM tb_hsapakim\r\nGROUP BY tb_hsapakim.snif\r\nHAVING (((tb_hsapakim.snif) Is Not Null));\r\n"
+    },
+    {
+        "Name":  "qlist_total_ordersp",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.odate, orders.mwdate, orders.ordernum, orders.cn, orders.numw, orders.gf_price, orders.gpay,  orders.gdate, orders.rdate, orders.CDate,  orders.multia, orders.multib, orders.catga,  orders.totala,  orders.lang , orders.qmsgr,orders.yeda, orders.swtk, orders.color, orders.pgpricet, orde"
+    },
+    {
+        "Name":  "qmail_list_bd",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO tb_email ( qemail )\r\nSELECT nz([email]) AS qemail\r\nFROM cust_list\r\nWHERE (((nz([email]))\u003c\u003e\"\") AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((Val(nz([sendb])))=-1) AND ((Format((nz([lty])),\"0000\") \u0026 Format((nz([ltm])),\"00\"))=\"\" Or (Format((nz([lty])),\"0000\") \u0026 Format((nz([ltm])),\"00\"))\u003cFormat(Yea"
+    },
+    {
+        "Name":  "qmail_list_insw",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO tb_email ( qemail )\r\nSELECT nz([email]) AS qemail\r\nFROM cust_list\r\nWHERE (((nz([email]))\u003c\u003e\"\") AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((cust_list.cleandate) Is Not Null) AND ((DateAdd(\"m\",-1,[cleandate]))\u003c=Date()) AND ((DateAdd(\"d\",+14,[cleandate]))\u003e=Date()) AND ((cust_list.aswb)=False));\r\n"
+    },
+    {
+        "Name":  "qmail_list_inv",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO tb_email ( qemail )\r\nSELECT nz([email]) AS qemail\r\nFROM cust_list\r\nWHERE (((nz([email]))\u003c\u003e\"\") AND ((Val(nz([ocupation])))\u003c\u003e-1) AND ((DateAdd(\"ww\",-1,[insdate]))\u003c=Date()) AND ((cust_list.swd)=False));\r\n"
+    },
+    {
+        "Name":  "qmail_sapak_old",
+        "Type":  128,
+        "SQLPreview":  "SELECT SAPAKIM.EMAIL, SAPAKIM.[SHEM SAPAK]\r\nFROM (orders INNER JOIN tb_catalog ON orders.ob_comp = tb_catalog.hevra) INNER JOIN SAPAKIM ON tb_catalog.sapak = SAPAKIM.[CODE SAPAK]\r\nGROUP BY orders.rnum, SAPAKIM.EMAIL,SAPAKIM.[SHEM SAPAK]\r\nHAVING (((orders.rnum)=[Forms]![person_orders_list]![rnum]));\r"
+    },
+    {
+        "Name":  "qmail_sapak_old2",
+        "Type":  128,
+        "SQLPreview":  "SELECT SAPAKIM.EMAIL, SAPAKIM.[SHEM SAPAK]\r\nFROM orders INNER JOIN SAPAKIM ON orders.sapakm = SAPAKIM.[CODE SAPAK]\r\nGROUP BY SAPAKIM.EMAIL, SAPAKIM.[SHEM SAPAK], orders.rnum\r\nHAVING (((orders.rnum)=[Forms]![person_orders_list]![rnum]));\r\nUNION  SELECT SAPAKIM.EMAIL, SAPAKIM.[SHEM SAPAK]\r\nFROM orders"
+    },
+    {
+        "Name":  "qmirsham",
+        "Type":  128,
+        "SQLPreview":  "SELECT tb_mirsham.ct, tb_mirsham.wnum AS q, Null AS Expr1\r\nFROM tb_mirsham\r\nGROUP BY tb_mirsham.ct, tb_mirsham.wnum, Null\r\nHAVING (((tb_mirsham.ct) Is Not Null))\r\nUNION SELECT BANK_LIST.bank, BANK_LIST.qtyp AS q, BANK_LIST.tran\r\nFROM BANK_LIST\r\nGROUP BY BANK_LIST.bank, BANK_LIST.qtyp, BANK_LIST.tran"
+    },
+    {
+        "Name":  "qodrd1",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.odate, tb_ad_catalog.hevra AS ocomp, tb_ad_catalog.typ AS og_type, tb_ad_catalog.mat AS adds, orders.ob_comp, orders.ob_type, orders.ocolor, orders.bprice, orders.gpricer, orders.gpricel, orders.gprice, orders.gdisc, orders.greduce, orders.gpay, orders.gf_price, orders.number, orders.n"
+    },
+    {
+        "Name":  "qodrd2",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.odate, tb_ad_catalog.hevra AS ocomp, tb_ad_catalog.typ AS og_type, tb_ad_catalog.mat AS adds, orders.ob_comp, orders.ob_type, orders.ocolor, orders.bprice, orders.gpricer, orders.gpricel, orders.gprice, orders.gdisc, orders.greduce, orders.gpay, orders.gf_price, orders.number, orders.n"
+    },
+    {
+        "Name":  "qorder",
+        "Type":  128,
+        "SQLPreview":  "SELECT qodrd1.*\r\nFROM qodrd1;\r\nUNION ALL SELECT qodrd2.*\r\nFROM qodrd2;\r\n"
+    },
+    {
+        "Name":  "qorders_old1",
+        "Type":  128,
+        "SQLPreview":  "SELECT Val(nz([ordernum])) AS tl\r\nFROM orders\r\nWHERE (((ordernum)\u003e0))\r\nUNION SELECT Val(nz([worder_num])) AS tl\r\nFROM add_order\r\nWHERE (((Val(nz([worder_num])))\u003e0))\r\nORDER BY tl DESC;\r\n"
+    },
+    {
+        "Name":  "qoth",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.otht1\r\nFROM orders\r\nGROUP BY orders.otht1\r\nHAVING (((orders.otht1) Is Not Null));\r\nUNION ALL SELECT orders.otht2\r\nFROM orders\r\nGROUP BY orders.otht2\r\nHAVING (((orders.otht2) Is Not Null));\r\nUNION ALL SELECT orders.otht3\r\nFROM orders\r\nGROUP BY orders.otht3\r\nHAVING (((orders.otht3) Is No"
+    },
+    {
+        "Name":  "qotht",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.otht1\r\nFROM orders\r\nGROUP BY orders.otht1\r\nHAVING (((orders.otht1) Is Not Null));\r\nUNION ALL SELECT orders.otht2\r\nFROM orders\r\nGROUP BY orders.otht2\r\nHAVING (((orders.otht2) Is Not Null));\r\nUNION ALL SELECT orders.otht3\r\nFROM orders\r\nGROUP BY orders.otht3\r\nHAVING (((orders.otht3) Is No"
+    },
+    {
+        "Name":  "qprop",
+        "Type":  128,
+        "SQLPreview":  "SELECT Val(nz([propnum])) AS tl\r\nFROM proposals\r\nWHERE (((propnum)\u003e0))\r\nUNION SELECT Val(nz([wprop_num])) AS tl\r\nFROM add_order\r\nWHERE (((Val(nz([wprop_num])))\u003e0))\r\nORDER BY tl DESC;\r\n"
+    },
+    {
+        "Name":  "qrp_upd_amount_n",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO tb_qnum ( qnum )\r\nSELECT tb_q_catalog_melai.wnum\r\nFROM ((tb_q_catalog_melai INNER JOIN q_melai_p_date ON tb_q_catalog_melai.qsmodel = q_melai_p_date.MD) INNER JOIN q_melai_p_date_sum ON tb_q_catalog_melai.qsmodel = q_melai_p_date_sum.MD) LEFT JOIN SAPAKIM ON tb_q_catalog_melai.sapak = SA"
+    },
+    {
+        "Name":  "qsug",
+        "Type":  128,
+        "SQLPreview":  "SELECT items_sales.item_name1, 9 as s\r\nFROM items_sales\r\nGROUP BY items_sales.item_name1\r\nHAVING (((items_sales.item_name1) Is Not Null And (items_sales.item_name1)\u003c\u003e\"מלאה\" And (items_sales.item_name1)\u003c\u003e\"ניילון\" And (items_sales.item_name1)\u003c\u003e\"ברגים\"));\r\nUNION  SELECT items_sales.item_name21, 9 as s\r"
+    },
+    {
+        "Name":  "qtb_lens",
+        "Type":  128,
+        "SQLPreview":  "SELECT tb_lens.part, tb_lens.wnum, tb_lens.typ\r\nFROM tb_lens;\r\nUNION ALL SELECT BANK_LIST.bank AS part, IIf(Val(nz([qtyp]))=10,88,99) AS wnum, IIf(Val(nz([qtyp]))=10,1,2) AS typ\r\nFROM BANK_LIST\r\nWHERE (((Val(nz([qtyp])))=10 Or (Val(nz([qtyp])))=11))\r\nORDER BY tb_lens.typ, tb_lens.wnum;\r\n"
+    },
+    {
+        "Name":  "sizes",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ob_size\r\nFROM orders\r\nWHERE (((nz([ob_size]))\u003c\u003e\"\"))\r\nGROUP BY orders.ob_size \r\nUNION SELECT orders.ob_size2\r\nFROM orders\r\nWHERE (((nz([ob_size2]))\u003c\u003e\"\"))\r\nGROUP BY orders.ob_size2  \r\nUNION SELECT proposals.ob_size\r\nFROM proposals\r\nWHERE (((nz([ob_size]))\u003c\u003e\"\"))\r\nGROUP BY proposals.ob_siz"
+    },
+    {
+        "Name":  "sw_tb_labels",
+        "Type":  48,
+        "SQLPreview":  "UPDATE tb_labels SET tb_labels.sw = True;\r\n"
+    },
+    {
+        "Name":  "tb_cat_order",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ob_comp AS hevra, orders.ob_type AS degem, orders.ob_size AS godel, orders.ocolor AS color\r\nFROM orders;\r\nUNION SELECT orders.ob_comp2 AS hevra, orders.ob_type2 AS degem, orders.ob_size2 AS godel, orders.ocolor2 AS color\r\nFROM orders;\r\n"
+    },
+    {
+        "Name":  "tb_q_orders",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ordernum, orders.numw, orders.odate, orders.cn,orders.yeda AS qyeda,orders.qmsgr,orders.sun,orders.bar_size,null As color,orders.sapakm,val(nz(orders.EmployeeID)) AS qemp, xg_ReplaceAllWith((Trim$(nz([ob_comp]))),\"\u0027\",\"\"\"\") AS qhevra, xg_ReplaceAllWith((Trim$(nz([ob_type]))),\"\u0027\",\"\"\"\") A"
+    },
+    {
+        "Name":  "tb_q_orders_ad",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ordernum, orders.numw, orders.odate, orders.cn, orders.yeda AS qyeda, orders.qmsgr, orders.sapaka, Val(nz(orders.EmployeeID)) AS qemp, xg_ReplaceAllWith((Trim$(nz([ocomp]))),\"\u0027\",\"\"\"\") AS qhevra, xg_ReplaceAllWith((Trim$(nz([og_type]))),\"\u0027\",\"\"\"\") AS qdegem, xg_ReplaceAllWith((Trim$(nz(["
+    },
+    {
+        "Name":  "tb_q_orders_adp",
+        "Type":  128,
+        "SQLPreview":  "SELECT tb_ad_catalog.*, orders.ordernum, val(nz(orders.EmployeeID)) As emp, orders.numw, orders.amounta, orders.totala, orders.aluta, orders.alutat, orders.odate, orders.cn, orders.yeda AS qyeda, orders.qmsgr, nz([color]) AS qcolor\r\nFROM orders INNER JOIN tb_ad_catalog ON orders.wnuma = tb_ad_catalo"
+    },
+    {
+        "Name":  "tb_q_ordersml",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ordernum, orders.numw, orders.odate, orders.cn,orders.yeda AS qyeda,orders.sun,orders.bar_size, xg_ReplaceAllWith((Trim$(nz([ob_comp]))),\"\u0027\",\"\"\"\") AS qhevra, xg_ReplaceAllWith((Trim$(nz([ob_type]))),\"\u0027\",\"\"\"\") AS qdegem, xg_ReplaceAllWith((Trim$(nz([ob_size]))),\"\u0027\",\"\"\"\") AS qgodel, xg_R"
+    },
+    {
+        "Name":  "tb_q_ordersp",
+        "Type":  128,
+        "SQLPreview":  "SELECT orders.ordernum, orders.numw, orders.odate,orders.yeda AS qyeda,orders.qmsgr,val(nz(orders.EmployeeID)) AS qemp,orders.alut,orders.sapakm,orders.sun,orders.bar_size, orders.cn, xg_ReplaceAllWith((Trim$(nz([ob_comp]))),\"\u0027\",\"\"\"\") AS qhevra, xg_ReplaceAllWith((Trim$(nz([ob_type]))),\"\u0027\",\"\"\"\") AS "
+    },
+    {
+        "Name":  "upd_add_graph",
+        "Type":  64,
+        "SQLPreview":  "INSERT INTO tb_graf ( gil, qnumpl, qnumpr )\r\nSELECT qsclera_all.gil, qsclera_all.qnuml, qsclera_all.qnumr\r\nFROM qsclera_all LEFT JOIN tb_graf ON qsclera_all.gil = tb_graf.gil\r\nWHERE (((tb_graf.gil) Is Null));\r\n"
+    },
+    {
+        "Name":  "upd_cust_close",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.cust_open = False\r\nWHERE (((cust_list.cust_open)=True));\r\n"
+    },
+    {
+        "Name":  "upd_details",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.address = [Forms]![customers]![address], cust_list.city = [Forms]![customers]![city], cust_list.area = [Forms]![customers]![area], cust_list.tel = [Forms]![customers]![tel], cust_list.sel = [Forms]![customers]![sel], cust_list.khist = [Forms]![customers]![khist]\r\nWHERE"
+    },
+    {
+        "Name":  "upd_orders_num",
+        "Type":  48,
+        "SQLPreview":  "UPDATE orders SET orders.[number] = [Forms]![customers]![number]\r\nWHERE (((orders.numw)=[Forms]![customers]![norders]));\r\n"
+    },
+    {
+        "Name":  "upd_swkp",
+        "Type":  48,
+        "SQLPreview":  "UPDATE orders SET orders.swkp = False\r\nWHERE (((orders.numw)=[Forms]![person_orders_list]![numw]));\r\n"
+    },
+    {
+        "Name":  "upd_tb_graph",
+        "Type":  48,
+        "SQLPreview":  "UPDATE tb_graf INNER JOIN qsclera_all ON tb_graf.gil=qsclera_all.gil SET tb_graf.qnumpr = [qnumr], tb_graf.qnumpl = [qnuml];\r\n"
+    },
+    {
+        "Name":  "updsc",
+        "Type":  48,
+        "SQLPreview":  "UPDATE tb_catalog SET tb_catalog.amount = [amounts]\r\nWHERE (((tb_catalog.amounts)\u003c\u003e0));\r\n"
+    },
+    {
+        "Name":  "updsd",
+        "Type":  48,
+        "SQLPreview":  "UPDATE tb_catalog SET tb_catalog.amounts = Null;\r\n"
+    },
+    {
+        "Name":  "void_old_cust",
+        "Type":  48,
+        "SQLPreview":  "UPDATE cust_list SET cust_list.ocupation = \"-1\"\r\nWHERE (((IIf(nz([cust_list]![cdate])\u003enz([cust_list]![chdate]),[cust_list]![cdate],[cust_list]![chdate])) Is Not Null And (IIf(nz([cust_list]![cdate])\u003enz([cust_list]![chdate]),[cust_list]![cdate],[cust_list]![chdate]))\u003e=[Forms]![empty_tables]![fwdate] "
+    }
+]

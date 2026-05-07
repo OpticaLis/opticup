@@ -1,0 +1,82 @@
+﻿[
+    {
+        "keyword":  "SAPAKIM",
+        "label":  "supplier list",
+        "queryCount":  66
+    },
+    {
+        "keyword":  "tb_credits",
+        "label":  "credits table",
+        "queryCount":  3
+    },
+    {
+        "keyword":  "tb_yoman",
+        "label":  "diary",
+        "queryCount":  3
+    },
+    {
+        "keyword":  "tb_catalog",
+        "label":  "catalog",
+        "queryCount":  54
+    },
+    {
+        "keyword":  "tb_ad_catalog",
+        "label":  "ad catalog",
+        "queryCount":  88
+    },
+    {
+        "keyword":  "Watsp",
+        "label":  "WhatsApp",
+        "queryCount":  0
+    },
+    {
+        "keyword":  "Watsap",
+        "label":  "WhatsApp",
+        "queryCount":  0
+    },
+    {
+        "keyword":  "SMS",
+        "label":  "SMS",
+        "queryCount":  0
+    },
+    {
+        "keyword":  "kupa",
+        "label":  "health fund",
+        "queryCount":  43
+    },
+    {
+        "keyword":  "moadon",
+        "label":  "loyalty club",
+        "queryCount":  37
+    },
+    {
+        "keyword":  "hesh",
+        "label":  "account",
+        "queryCount":  8
+    },
+    {
+        "keyword":  "YEAR(",
+        "label":  "year func",
+        "queryCount":  82
+    },
+    {
+        "keyword":  "DATEDIFF",
+        "label":  "datediff",
+        "queryCount":  28
+    },
+    {
+        "keyword":  "IIF",
+        "label":  "conditional",
+        "queryCount":  242
+    },
+    {
+        "keyword":  "Forms!",
+        "label":  "form reference",
+        "queryCount":  210
+    },
+    {
+        "keyword":  "Reports!",
+        "label":  "report reference",
+        "queryCount":  0
+    }
+]

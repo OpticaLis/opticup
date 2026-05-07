@@ -1,0 +1,172 @@
+﻿[
+    {
+        "Name":  "del_add",
+        "Type":  32,
+        "SQL":  "DELETE checks.bdka, checks.numw\r\nFROM checks\r\nWHERE (((checks.bdka)=True) And ((checks.numw)=Forms!cust_checks!numw));\r\n"
+    },
+    {
+        "Name":  "del_bill_order",
+        "Type":  32,
+        "SQL":  "DELETE bill_order.*\r\nFROM bill_order;\r\n"
+    },
+    {
+        "Name":  "del_bodeka",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.checkname = Null\r\nWHERE (((cust_list.checkname)=[Forms]![empty_tables]![bodek]));\r\n"
+    },
+    {
+        "Name":  "del_bodekb",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.dcheckname = Null\r\nWHERE (((cust_list.dcheckname)=[Forms]![empty_tables]![bodek]));\r\n"
+    },
+    {
+        "Name":  "del_csv_table",
+        "Type":  32,
+        "SQL":  "DELETE csv_table.*\r\nFROM csv_table;\r\n"
+    },
+    {
+        "Name":  "del_frm",
+        "Type":  32,
+        "SQL":  "DELETE items_sales.*, items_sales.numw\r\nFROM items_sales\r\nWHERE (((items_sales.numw)=[Forms]![person_orders_list]![rnum]));\r\n"
+    },
+    {
+        "Name":  "del_item",
+        "Type":  32,
+        "SQL":  "DELETE items_sales.item_name1, items_sales.item_name2, items_sales.item_name3, items_sales.item_name4, items_sales.item_name5, items_sales.*, items_sales.item_name6, items_sales.item_name21, items_sales.item_name22, items_sales.item_name23, items_sales.item_name24, items_sales.item_name25, items_sales.item_name26\r\nFROM items_sales\r\nWHERE (((items_sales.item_name1) Is Null) AND ((items_sales.item_name2) Is Null) AND ((items_sales.item_name3) Is Null) AND ((items_sales.item_name4) Is Null) AND ((items_sales.item_name5) Is Null) AND ((items_sales.item_name6) Is Null) AND ((items_sales.item_name21) Is Null) AND ((items_sales.item_name22) Is Null) AND ((items_sales.item_name23) Is Null) AND ((items_sales.item_name24) Is Null) AND ((items_sales.item_name25) Is Null) AND ((items_sales.item_name26) Is Null));\r\n"
+    },
+    {
+        "Name":  "del_kupon",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.kupon = Null\r\nWHERE (((cust_list.kupon)=nz([Forms]![f_sivug]![bank])));\r\n"
+    },
+    {
+        "Name":  "del_letter_labels",
+        "Type":  32,
+        "SQL":  "DELETE letter_labels.*\r\nFROM letter_labels;\r\n"
+    },
+    {
+        "Name":  "del_old_cust",
+        "Type":  32,
+        "SQL":  "DELETE cust_list.*, IIf(nz([cust_list]![cdate])\u003enz([cust_list]![chdate]),[cust_list]![cdate],[cust_list]![chdate]) AS rpdate\r\nFROM cust_list\r\nWHERE (((IIf(nz([cust_list]![cdate])\u003enz([cust_list]![chdate]),[cust_list]![cdate],[cust_list]![chdate])) Is Not Null And (IIf(nz([cust_list]![cdate])\u003enz([cust_list]![chdate]),[cust_list]![cdate],[cust_list]![chdate]))\u003e=[Forms]![empty_tables]![fwdate] And (IIf(nz([cust_list]![cdate])\u003enz([cust_list]![chdate]),[cust_list]![cdate],[cust_list]![chdate]))\u003c=[Forms]![empty_tables]![twdate]));\r\n"
+    },
+    {
+        "Name":  "del_presence",
+        "Type":  32,
+        "SQL":  "DELETE presence.*, presence.wdate AS Expr1\r\nFROM presence\r\nWHERE (((presence.wdate) Is Not Null And (presence.wdate)\u003e=[Forms]![empty_tables]![fwdate] And (presence.wdate)\u003c=[Forms]![empty_tables]![twdate]));\r\n"
+    },
+    {
+        "Name":  "del_presence_wrk_tbl",
+        "Type":  32,
+        "SQL":  "DELETE presence_wrk_tbl.*\r\nFROM presence_wrk_tbl;\r\n"
+    },
+    {
+        "Name":  "del_qnum",
+        "Type":  32,
+        "SQL":  "DELETE tb_qnum.*\r\nFROM tb_qnum;\r\n"
+    },
+    {
+        "Name":  "del_qnum_un",
+        "Type":  32,
+        "SQL":  "DELETE tb_qnum_un.*\r\nFROM tb_qnum_un;\r\n"
+    },
+    {
+        "Name":  "del_sel_list",
+        "Type":  32,
+        "SQL":  "DELETE sel_list.*\r\nFROM sel_list;\r\n"
+    },
+    {
+        "Name":  "del_tb_adashot",
+        "Type":  32,
+        "SQL":  "DELETE tb_adashot.*\r\nFROM tb_adashot;\r\n"
+    },
+    {
+        "Name":  "del_tb_checks",
+        "Type":  32,
+        "SQL":  "DELETE tb_q_checks.*, tb_q_checks.tdate\r\nFROM tb_q_checks\r\nWHERE (((tb_q_checks.tdate) Is Not Null And (tb_q_checks.tdate)\u003e=[Forms]![empty_tables]![fwdate] And (tb_q_checks.tdate)\u003c=[Forms]![empty_tables]![twdate]));\r\n"
+    },
+    {
+        "Name":  "del_tb_credits",
+        "Type":  32,
+        "SQL":  "DELETE tb_credits.*\r\nFROM tb_credits;\r\n"
+    },
+    {
+        "Name":  "del_tb_date_list",
+        "Type":  32,
+        "SQL":  "DELETE tb_date_list.*, tb_date_list.datew AS q1, nz([snif]) AS q2\r\nFROM tb_date_list\r\nWHERE (((tb_date_list.datew)\u003e=Forms!Calendar_of_Attendance!fwdate And (tb_date_list.datew)\u003c=Forms!Calendar_of_Attendance!twdate) And ((nz([snif]))=nz(Forms!Calendar_of_Attendance!qsnif)));\r\n"
+    },
+    {
+        "Name":  "del_tb_email",
+        "Type":  32,
+        "SQL":  "DELETE tb_email.*\r\nFROM tb_email;\r\n"
+    },
+    {
+        "Name":  "del_tb_graph",
+        "Type":  48,
+        "SQL":  "UPDATE tb_graf SET tb_graf.qnumpr = Null, tb_graf.qnumpl = Null;\r\n"
+    },
+    {
+        "Name":  "del_tb_hsapakim",
+        "Type":  32,
+        "SQL":  "DELETE tb_hsapakim.*, tb_hsapakim.hdate\r\nFROM tb_hsapakim\r\nWHERE (((tb_hsapakim.hdate) Is Not Null And (tb_hsapakim.hdate)\u003e=[Forms]![empty_tables]![fwdate] And (tb_hsapakim.hdate)\u003c=[Forms]![empty_tables]![twdate]));\r\n"
+    },
+    {
+        "Name":  "del_tb_in",
+        "Type":  32,
+        "SQL":  "DELETE items_sales.*, Val(nz([qtyp])) AS q, items_sales.wdate\r\nFROM items_sales\r\nWHERE (((Val(nz([qtyp])))\u003e0) And ((items_sales.wdate) Is Not Null And (items_sales.wdate)\u003e=Forms!empty_tables!fwdate And (items_sales.wdate)\u003c=Forms!empty_tables!twdate));\r\n"
+    },
+    {
+        "Name":  "del_tb_labels",
+        "Type":  32,
+        "SQL":  "DELETE tb_labels.*\r\nFROM tb_labels;\r\n"
+    },
+    {
+        "Name":  "del_tb_lekohot",
+        "Type":  48,
+        "SQL":  "UPDATE tb_lekohot SET tb_lekohot.mm = Null, tb_lekohot.totl = Null, tb_lekohot.totnew = Null, tb_lekohot.perc_new = Null, tb_lekohot.multi_new = Null, tb_lekohot.flow_old = Null, tb_lekohot.flow_new = Null, tb_lekohot.flow_tot = Null;\r\n"
+    },
+    {
+        "Name":  "del_tb_ltv",
+        "Type":  48,
+        "SQL":  "UPDATE tb_ltv SET tb_ltv.mm = Null, tb_ltv.totl = Null, tb_ltv.n12 = Null, tb_ltv.n24 = Null, tb_ltv.n36 = Null, tb_ltv.totlk = Null, tb_ltv.avrgp = Null, tb_ltv.totp = Null;\r\n"
+    },
+    {
+        "Name":  "del_tb_ltv_return",
+        "Type":  48,
+        "SQL":  "UPDATE tb_ltv_return SET tb_ltv_return.mm = Null, tb_ltv_return.totl = Null, tb_ltv_return.totm = Null, tb_ltv_return.n12 = Null, tb_ltv_return.n12p = Null, tb_ltv_return.n24 = Null, tb_ltv_return.n24p = Null, tb_ltv_return.n36 = Null, tb_ltv_return.n36p = Null, tb_ltv_return.nr = Null, tb_ltv_return.nrp = Null;\r\n"
+    },
+    {
+        "Name":  "del_tb_misgarot",
+        "Type":  32,
+        "SQL":  "DELETE tb_misgarot.*\r\nFROM tb_misgarot;\r\n"
+    },
+    {
+        "Name":  "del_tb_orders",
+        "Type":  32,
+        "SQL":  "DELETE orders.*, orders.odate\r\nFROM orders\r\nWHERE (((orders.odate) Is Not Null And (orders.odate)\u003e=[Forms]![empty_tables]![fwdate] And (orders.odate)\u003c=[Forms]![empty_tables]![twdate]));\r\n"
+    },
+    {
+        "Name":  "del_tb_q_credits",
+        "Type":  32,
+        "SQL":  "DELETE tb_q_credits.*\r\nFROM tb_q_credits;\r\n"
+    },
+    {
+        "Name":  "del_tb_sumlekohot",
+        "Type":  48,
+        "SQL":  "UPDATE tb_sum_lekohot SET tb_sum_lekohot.mm = Null, tb_sum_lekohot.totlk = Null, tb_sum_lekohot.totnew = Null, tb_sum_lekohot.perc_new = Null, tb_sum_lekohot.flow_tot = Null, tb_sum_lekohot.flow_old = Null, tb_sum_lekohot.perc_old = Null, tb_sum_lekohot.avg_tot = Null, tb_sum_lekohot.flow_new = Null, tb_sum_lekohot.perc_flow_new = Null, tb_sum_lekohot.ret24 = Null, tb_sum_lekohot.perc_24 = Null, tb_sum_lekohot.tot_maam = Null, tb_sum_lekohot.tot_m = Null, tb_sum_lekohot.tot_a = Null, tb_sum_lekohot.tot_am = Null, tb_sum_lekohot.perc_tot_m = Null, tb_sum_lekohot.perc_tot_a = Null, tb_sum_lekohot.perc_tot_am = Null;\r\n"
+    },
+    {
+        "Name":  "del_tb_xls_data",
+        "Type":  32,
+        "SQL":  "DELETE tb_xls_data.*\r\nFROM tb_xls_data;\r\n"
+    },
+    {
+        "Name":  "del_tb_xls_data_lids",
+        "Type":  32,
+        "SQL":  "DELETE tb_xls_data_lids.*\r\nFROM tb_xls_data_lids;\r\n"
+    },
+    {
+        "Name":  "del_tb_yoman",
+        "Type":  48,
+        "SQL":  "UPDATE tb_yoman SET tb_yoman.t1 = Null, tb_yoman.eh1 = Null, tb_yoman.l1 = Null, tb_yoman.m1 = Null, tb_yoman.t2 = Null, tb_yoman.eh2 = Null, tb_yoman.l2 = Null, tb_yoman.m2 = Null, tb_yoman.t3 = Null, tb_yoman.eh3 = Null, tb_yoman.l3 = Null, tb_yoman.m3 = Null, tb_yoman.t4 = Null, tb_yoman.eh4 = Null, tb_yoman.l4 = Null, tb_yoman.m4 = Null, tb_yoman.t5 = Null, tb_yoman.eh5 = Null, tb_yoman.l5 = Null, tb_yoman.m5 = Null;\r\n"
+    }
+]

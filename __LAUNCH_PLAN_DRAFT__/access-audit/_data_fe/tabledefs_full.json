@@ -1,0 +1,922 @@
+﻿[
+    {
+        "Name":  "adchecks",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "adchecks",
+        "DateCreated":  "\/Date(1776665151083)\/",
+        "LastUpdated":  "\/Date(1776665151087)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "add_num",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "add_num",
+        "DateCreated":  "\/Date(1776665151089)\/",
+        "LastUpdated":  "\/Date(1776665151089)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "add_order",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "add_order",
+        "DateCreated":  "\/Date(1776665151089)\/",
+        "LastUpdated":  "\/Date(1776665151092)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "Attendance_type",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249242)\/",
+        "LastUpdated":  "\/Date(1741531316059)\/",
+        "RecordCount":  4,
+        "Attributes":  0,
+        "FieldCount":  2
+    },
+    {
+        "Name":  "BANK_LIST",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "BANK_LIST",
+        "DateCreated":  "\/Date(1776665151095)\/",
+        "LastUpdated":  "\/Date(1776665151099)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "checks",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "checks",
+        "DateCreated":  "\/Date(1776665151102)\/",
+        "LastUpdated":  "\/Date(1776665151116)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "checks_remarks",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "checks_remarks",
+        "DateCreated":  "\/Date(1776665151119)\/",
+        "LastUpdated":  "\/Date(1776665151121)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "companyn",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "companyn",
+        "DateCreated":  "\/Date(1776665151122)\/",
+        "LastUpdated":  "\/Date(1776665151124)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "CREDIT_LIST",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "CREDIT_LIST",
+        "DateCreated":  "\/Date(1776665151125)\/",
+        "LastUpdated":  "\/Date(1776665151126)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "csv_table",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249288)\/",
+        "LastUpdated":  "\/Date(1741531264601)\/",
+        "RecordCount":  0,
+        "Attributes":  0,
+        "FieldCount":  6
+    },
+    {
+        "Name":  "cust_list",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "cust_list",
+        "DateCreated":  "\/Date(1776665151126)\/",
+        "LastUpdated":  "\/Date(1776665151134)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "cust_listb",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "cust_listb",
+        "DateCreated":  "\/Date(1776665151136)\/",
+        "LastUpdated":  "\/Date(1776665151139)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "doc_title",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "doc_title",
+        "DateCreated":  "\/Date(1776665151140)\/",
+        "LastUpdated":  "\/Date(1776665151142)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "employees",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "employees",
+        "DateCreated":  "\/Date(1776665151142)\/",
+        "LastUpdated":  "\/Date(1776665151144)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "hebday",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249320)\/",
+        "LastUpdated":  "\/Date(1741531264845)\/",
+        "RecordCount":  7,
+        "Attributes":  0,
+        "FieldCount":  2
+    },
+    {
+        "Name":  "hebwday",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249320)\/",
+        "LastUpdated":  "\/Date(1741531294695)\/",
+        "RecordCount":  30,
+        "Attributes":  0,
+        "FieldCount":  2
+    },
+    {
+        "Name":  "hebwmonthtbl",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249335)\/",
+        "LastUpdated":  "\/Date(1741531294728)\/",
+        "RecordCount":  14,
+        "Attributes":  0,
+        "FieldCount":  2
+    },
+    {
+        "Name":  "items_sales",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "items_sales",
+        "DateCreated":  "\/Date(1776665151145)\/",
+        "LastUpdated":  "\/Date(1776665151148)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "letter_labels",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249366)\/",
+        "LastUpdated":  "\/Date(1749632701607)\/",
+        "RecordCount":  0,
+        "Attributes":  0,
+        "FieldCount":  28
+    },
+    {
+        "Name":  "monthn",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249366)\/",
+        "LastUpdated":  "\/Date(1741531282458)\/",
+        "RecordCount":  12,
+        "Attributes":  0,
+        "FieldCount":  3
+    },
+    {
+        "Name":  "MSysAccessStorage",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531123067)\/",
+        "LastUpdated":  "\/Date(1741531123083)\/",
+        "RecordCount":  2375,
+        "Attributes":  2,
+        "FieldCount":  7
+    },
+    {
+        "Name":  "MSysAccessXML",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741532221737)\/",
+        "LastUpdated":  "\/Date(1741532221737)\/",
+        "RecordCount":  0,
+        "Attributes":  2,
+        "FieldCount":  6
+    },
+    {
+        "Name":  "MSysACEs",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531123067)\/",
+        "LastUpdated":  "\/Date(1741531123067)\/",
+        "RecordCount":  4393,
+        "Attributes":  -2147483648,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "MSysComplexColumns",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531123067)\/",
+        "LastUpdated":  "\/Date(1741531123067)\/",
+        "RecordCount":  1,
+        "Attributes":  -2147483648,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "MSysIMEXColumns",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1762357670807)\/",
+        "LastUpdated":  "\/Date(1762357670807)\/",
+        "RecordCount":  0,
+        "Attributes":  2,
+        "FieldCount":  8
+    },
+    {
+        "Name":  "MSysIMEXSpecs",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1762357670807)\/",
+        "LastUpdated":  "\/Date(1762357670807)\/",
+        "RecordCount":  0,
+        "Attributes":  2,
+        "FieldCount":  13
+    },
+    {
+        "Name":  "MSysNameMap",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1758465835677)\/",
+        "LastUpdated":  "\/Date(1758465835677)\/",
+        "RecordCount":  1,
+        "Attributes":  2,
+        "FieldCount":  5
+    },
+    {
+        "Name":  "MSysNavPaneGroupCategories",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531123099)\/",
+        "LastUpdated":  "\/Date(1741531123099)\/",
+        "RecordCount":  3,
+        "Attributes":  2,
+        "FieldCount":  7
+    },
+    {
+        "Name":  "MSysNavPaneGroups",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531123099)\/",
+        "LastUpdated":  "\/Date(1741531123099)\/",
+        "RecordCount":  96,
+        "Attributes":  2,
+        "FieldCount":  7
+    },
+    {
+        "Name":  "MSysNavPaneGroupToObjects",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531123099)\/",
+        "LastUpdated":  "\/Date(1741531123099)\/",
+        "RecordCount":  1756,
+        "Attributes":  2,
+        "FieldCount":  7
+    },
+    {
+        "Name":  "MSysNavPaneObjectIDs",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531438336)\/",
+        "LastUpdated":  "\/Date(1741531438336)\/",
+        "RecordCount":  1144,
+        "Attributes":  2,
+        "FieldCount":  3
+    },
+    {
+        "Name":  "MSysObjects",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531123067)\/",
+        "LastUpdated":  "\/Date(1741531123067)\/",
+        "RecordCount":  1464,
+        "Attributes":  -2147483648,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "MSysQueries",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531123067)\/",
+        "LastUpdated":  "\/Date(1741531123067)\/",
+        "RecordCount":  12980,
+        "Attributes":  -2147483648,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "MSysRelationships",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531123067)\/",
+        "LastUpdated":  "\/Date(1741531123067)\/",
+        "RecordCount":  0,
+        "Attributes":  -2147483648,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "MSysResources",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1758465830244)\/",
+        "LastUpdated":  "\/Date(1758465830293)\/",
+        "RecordCount":  1,
+        "Attributes":  2,
+        "FieldCount":  5
+    },
+    {
+        "Name":  "order_list",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt_all.accdb",
+        "SourceTableName":  "order_list",
+        "DateCreated":  "\/Date(1776665155605)\/",
+        "LastUpdated":  "\/Date(1776665155610)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "orders",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "orders",
+        "DateCreated":  "\/Date(1776665151149)\/",
+        "LastUpdated":  "\/Date(1776665151167)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "parameters",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249413)\/",
+        "LastUpdated":  "\/Date(1741531324687)\/",
+        "RecordCount":  1,
+        "Attributes":  0,
+        "FieldCount":  18
+    },
+    {
+        "Name":  "pass",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "pass",
+        "DateCreated":  "\/Date(1776665151173)\/",
+        "LastUpdated":  "\/Date(1776665151174)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "passm",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "passm",
+        "DateCreated":  "\/Date(1776665151175)\/",
+        "LastUpdated":  "\/Date(1776665151176)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "path",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249429)\/",
+        "LastUpdated":  "\/Date(1773323269842)\/",
+        "RecordCount":  1,
+        "Attributes":  0,
+        "FieldCount":  6
+    },
+    {
+        "Name":  "person_remarks",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "person_remarks",
+        "DateCreated":  "\/Date(1776665151177)\/",
+        "LastUpdated":  "\/Date(1776665151178)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "presence",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "presence",
+        "DateCreated":  "\/Date(1776665151178)\/",
+        "LastUpdated":  "\/Date(1776665151180)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "presence_back",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "presence_back",
+        "DateCreated":  "\/Date(1776665151180)\/",
+        "LastUpdated":  "\/Date(1776665151181)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "presence_type",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "presence_type",
+        "DateCreated":  "\/Date(1776665151182)\/",
+        "LastUpdated":  "\/Date(1776665151183)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "presence_wrk_tbl",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249460)\/",
+        "LastUpdated":  "\/Date(1741531274521)\/",
+        "RecordCount":  0,
+        "Attributes":  0,
+        "FieldCount":  14
+    },
+    {
+        "Name":  "proposals",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "proposals",
+        "DateCreated":  "\/Date(1776665151186)\/",
+        "LastUpdated":  "\/Date(1776665151196)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "qpid",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249491)\/",
+        "LastUpdated":  "\/Date(1741531321505)\/",
+        "RecordCount":  1,
+        "Attributes":  0,
+        "FieldCount":  1
+    },
+    {
+        "Name":  "SAPAKIM",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt_all.accdb",
+        "SourceTableName":  "SAPAKIM",
+        "DateCreated":  "\/Date(1776665155611)\/",
+        "LastUpdated":  "\/Date(1776665155614)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "sel_list",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249522)\/",
+        "LastUpdated":  "\/Date(1741531274572)\/",
+        "RecordCount":  0,
+        "Attributes":  0,
+        "FieldCount":  6
+    },
+    {
+        "Name":  "tb_ad_catalog",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt_all.accdb",
+        "SourceTableName":  "tb_ad_catalog",
+        "DateCreated":  "\/Date(1776665155615)\/",
+        "LastUpdated":  "\/Date(1776665155617)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_adashot",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249538)\/",
+        "LastUpdated":  "\/Date(1741531274587)\/",
+        "RecordCount":  1,
+        "Attributes":  0,
+        "FieldCount":  9
+    },
+    {
+        "Name":  "tb_amlot",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "tb_amlot",
+        "DateCreated":  "\/Date(1776665151197)\/",
+        "LastUpdated":  "\/Date(1776665151198)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_catalog",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt_all.accdb",
+        "SourceTableName":  "tb_catalog",
+        "DateCreated":  "\/Date(1776665155619)\/",
+        "LastUpdated":  "\/Date(1776665155620)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_comp",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "tb_comp",
+        "DateCreated":  "\/Date(1776665151199)\/",
+        "LastUpdated":  "\/Date(1776665151200)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_credits",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249569)\/",
+        "LastUpdated":  "\/Date(1741531274732)\/",
+        "RecordCount":  1160,
+        "Attributes":  0,
+        "FieldCount":  12
+    },
+    {
+        "Name":  "tb_date_list",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "tb_date_list",
+        "DateCreated":  "\/Date(1776665151204)\/",
+        "LastUpdated":  "\/Date(1776665151210)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_email",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249569)\/",
+        "LastUpdated":  "\/Date(1741531274798)\/",
+        "RecordCount":  0,
+        "Attributes":  0,
+        "FieldCount":  2
+    },
+    {
+        "Name":  "tb_frame",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249585)\/",
+        "LastUpdated":  "\/Date(1741531295981)\/",
+        "RecordCount":  4,
+        "Attributes":  0,
+        "FieldCount":  2
+    },
+    {
+        "Name":  "tb_gnrl_tests",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "tb_gnrl_tests",
+        "DateCreated":  "\/Date(1776665151214)\/",
+        "LastUpdated":  "\/Date(1776665151239)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_graf_main",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741788734679)\/",
+        "LastUpdated":  "\/Date(1742376653286)\/",
+        "RecordCount":  37,
+        "Attributes":  0,
+        "FieldCount":  6
+    },
+    {
+        "Name":  "tb_grafb",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741592669443)\/",
+        "LastUpdated":  "\/Date(1742376663344)\/",
+        "RecordCount":  11,
+        "Attributes":  0,
+        "FieldCount":  5
+    },
+    {
+        "Name":  "tb_grafr",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1742289060050)\/",
+        "LastUpdated":  "\/Date(1742376672990)\/",
+        "RecordCount":  11,
+        "Attributes":  0,
+        "FieldCount":  2
+    },
+    {
+        "Name":  "tb_hsapakim",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "tb_hsapakim",
+        "DateCreated":  "\/Date(1776665151249)\/",
+        "LastUpdated":  "\/Date(1776665151258)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_kabala",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "tb_kabala",
+        "DateCreated":  "\/Date(1776665151260)\/",
+        "LastUpdated":  "\/Date(1776665151265)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_labels",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249616)\/",
+        "LastUpdated":  "\/Date(1741531267734)\/",
+        "RecordCount":  0,
+        "Attributes":  0,
+        "FieldCount":  9
+    },
+    {
+        "Name":  "tb_lastfolder",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249616)\/",
+        "LastUpdated":  "\/Date(1741531334687)\/",
+        "RecordCount":  1,
+        "Attributes":  0,
+        "FieldCount":  2
+    },
+    {
+        "Name":  "tb_lekohot",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1754901514925)\/",
+        "LastUpdated":  "\/Date(1755090641454)\/",
+        "RecordCount":  12,
+        "Attributes":  0,
+        "FieldCount":  15
+    },
+    {
+        "Name":  "tb_lens",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249616)\/",
+        "LastUpdated":  "\/Date(1741531266711)\/",
+        "RecordCount":  8,
+        "Attributes":  0,
+        "FieldCount":  3
+    },
+    {
+        "Name":  "tb_log",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "tb_log",
+        "DateCreated":  "\/Date(1776665151267)\/",
+        "LastUpdated":  "\/Date(1776665151269)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_ltv",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1757851276013)\/",
+        "LastUpdated":  "\/Date(1758215502064)\/",
+        "RecordCount":  12,
+        "Attributes":  0,
+        "FieldCount":  10
+    },
+    {
+        "Name":  "tb_ltv_return",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1757919743234)\/",
+        "LastUpdated":  "\/Date(1758105234996)\/",
+        "RecordCount":  12,
+        "Attributes":  0,
+        "FieldCount":  12
+    },
+    {
+        "Name":  "tb_mirsham",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249632)\/",
+        "LastUpdated":  "\/Date(1741531266760)\/",
+        "RecordCount":  7,
+        "Attributes":  0,
+        "FieldCount":  2
+    },
+    {
+        "Name":  "tb_misgarot",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1764239068803)\/",
+        "LastUpdated":  "\/Date(1764239221093)\/",
+        "RecordCount":  1,
+        "Attributes":  0,
+        "FieldCount":  2
+    },
+    {
+        "Name":  "tb_misgeret",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249632)\/",
+        "LastUpdated":  "\/Date(1741531266809)\/",
+        "RecordCount":  3,
+        "Attributes":  0,
+        "FieldCount":  3
+    },
+    {
+        "Name":  "tb_order_rem",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "tb_order_rem",
+        "DateCreated":  "\/Date(1776665151271)\/",
+        "LastUpdated":  "\/Date(1776665151272)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_parts",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249647)\/",
+        "LastUpdated":  "\/Date(1741531296956)\/",
+        "RecordCount":  18,
+        "Attributes":  0,
+        "FieldCount":  2
+    },
+    {
+        "Name":  "tb_parts_ordr",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249663)\/",
+        "LastUpdated":  "\/Date(1741531296989)\/",
+        "RecordCount":  10,
+        "Attributes":  0,
+        "FieldCount":  2
+    },
+    {
+        "Name":  "tb_q_checks",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "tb_q_checks",
+        "DateCreated":  "\/Date(1776665151272)\/",
+        "LastUpdated":  "\/Date(1776665151275)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_q_credits",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249678)\/",
+        "LastUpdated":  "\/Date(1741531274994)\/",
+        "RecordCount":  0,
+        "Attributes":  0,
+        "FieldCount":  12
+    },
+    {
+        "Name":  "tb_qnum",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249678)\/",
+        "LastUpdated":  "\/Date(1741531274554)\/",
+        "RecordCount":  0,
+        "Attributes":  0,
+        "FieldCount":  1
+    },
+    {
+        "Name":  "tb_qnum_un",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1748934925334)\/",
+        "LastUpdated":  "\/Date(1748937358238)\/",
+        "RecordCount":  0,
+        "Attributes":  0,
+        "FieldCount":  2
+    },
+    {
+        "Name":  "tb_quest",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt.accdb",
+        "SourceTableName":  "tb_quest",
+        "DateCreated":  "\/Date(1776665151277)\/",
+        "LastUpdated":  "\/Date(1776665151281)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_sum_lekohot",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1760604671540)\/",
+        "LastUpdated":  "\/Date(1760943673929)\/",
+        "RecordCount":  12,
+        "Attributes":  0,
+        "FieldCount":  20
+    },
+    {
+        "Name":  "tb_upd_amount",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt_all.accdb",
+        "SourceTableName":  "tb_upd_amount",
+        "DateCreated":  "\/Date(1776665155621)\/",
+        "LastUpdated":  "\/Date(1776665155623)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_upd_amount_ad",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt_all.accdb",
+        "SourceTableName":  "tb_upd_amount_ad",
+        "DateCreated":  "\/Date(1776665155623)\/",
+        "LastUpdated":  "\/Date(1776665155625)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "tb_xls_data",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249710)\/",
+        "LastUpdated":  "\/Date(1777300195855)\/",
+        "RecordCount":  0,
+        "Attributes":  0,
+        "FieldCount":  30
+    },
+    {
+        "Name":  "tb_xls_data_lids",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1767519220488)\/",
+        "LastUpdated":  "\/Date(1777527658780)\/",
+        "RecordCount":  0,
+        "Attributes":  0,
+        "FieldCount":  36
+    },
+    {
+        "Name":  "tb_yoman",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249710)\/",
+        "LastUpdated":  "\/Date(1741531275061)\/",
+        "RecordCount":  49,
+        "Attributes":  0,
+        "FieldCount":  23
+    },
+    {
+        "Name":  "tmp_parameters",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249710)\/",
+        "LastUpdated":  "\/Date(1741531277511)\/",
+        "RecordCount":  1,
+        "Attributes":  0,
+        "FieldCount":  5
+    },
+    {
+        "Name":  "TT  TELEFONE  SAPAKIM",
+        "Connect":  ";DATABASE=C:\\OpticPlus_Data\\optic_dt_all.accdb",
+        "SourceTableName":  "TT  TELEFONE  SAPAKIM",
+        "DateCreated":  "\/Date(1776665155626)\/",
+        "LastUpdated":  "\/Date(1776665155626)\/",
+        "RecordCount":  -1,
+        "Attributes":  1073741824,
+        "FieldCount":  0
+    },
+    {
+        "Name":  "year_list",
+        "Connect":  "",
+        "SourceTableName":  "",
+        "DateCreated":  "\/Date(1741531249725)\/",
+        "LastUpdated":  "\/Date(1741531321177)\/",
+        "RecordCount":  46,
+        "Attributes":  0,
+        "FieldCount":  1
+    }
+]

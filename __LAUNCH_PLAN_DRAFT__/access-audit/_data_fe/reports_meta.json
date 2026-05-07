@@ -1,0 +1,617 @@
+﻿[
+    {
+        "Name":  "birth_doc",
+        "DateCreated":  "\/Date(1741531253734)\/",
+        "DateModified":  "\/Date(1771853095875)\/"
+    },
+    {
+        "Name":  "rp_stg_doc",
+        "DateCreated":  "\/Date(1772979177460)\/",
+        "DateModified":  "\/Date(1773052993011)\/"
+    },
+    {
+        "Name":  "rp_order_msgra",
+        "DateCreated":  "\/Date(1741531260697)\/",
+        "DateModified":  "\/Date(1770632589498)\/"
+    },
+    {
+        "Name":  "rp_takbul_t_d",
+        "DateCreated":  "\/Date(1741531262929)\/",
+        "DateModified":  "\/Date(1771430026488)\/"
+    },
+    {
+        "Name":  "rp_order_msgrb",
+        "DateCreated":  "\/Date(1741531260932)\/",
+        "DateModified":  "\/Date(1770632625787)\/"
+    },
+    {
+        "Name":  "mirsham_myupye",
+        "DateCreated":  "\/Date(1741775342578)\/",
+        "DateModified":  "\/Date(1773055282775)\/"
+    },
+    {
+        "Name":  "rp_order_spkm",
+        "DateCreated":  "\/Date(1741531262055)\/",
+        "DateModified":  "\/Date(1770632720808)\/"
+    },
+    {
+        "Name":  "rp_ltvret_multi",
+        "DateCreated":  "\/Date(1758112107517)\/",
+        "DateModified":  "\/Date(1760622994073)\/"
+    },
+    {
+        "Name":  "rp_sum_sapakim_all",
+        "DateCreated":  "\/Date(1741531262664)\/",
+        "DateModified":  "\/Date(1741531384389)\/"
+    },
+    {
+        "Name":  "rp_lekohot_sum_multi",
+        "DateCreated":  "\/Date(1761203030989)\/",
+        "DateModified":  "\/Date(1761203053415)\/"
+    },
+    {
+        "Name":  "rp_ltv_multi",
+        "DateCreated":  "\/Date(1758216901714)\/",
+        "DateModified":  "\/Date(1758216921632)\/"
+    },
+    {
+        "Name":  "rp_order_env_t",
+        "DateCreated":  "\/Date(1741531259325)\/",
+        "DateModified":  "\/Date(1770738329932)\/"
+    },
+    {
+        "Name":  "rp_order_env",
+        "DateCreated":  "\/Date(1741531259090)\/",
+        "DateModified":  "\/Date(1770738031738)\/"
+    },
+    {
+        "Name":  "rp_lekohot_gnrl_ltv",
+        "DateCreated":  "\/Date(1755092554262)\/",
+        "DateModified":  "\/Date(1761202719405)\/"
+    },
+    {
+        "Name":  "rp_order_a_env",
+        "DateCreated":  "\/Date(1741531258171)\/",
+        "DateModified":  "\/Date(1770632271527)\/"
+    },
+    {
+        "Name":  "rp_lekohot_multi_ltv",
+        "DateCreated":  "\/Date(1755090686201)\/",
+        "DateModified":  "\/Date(1758117103220)\/"
+    },
+    {
+        "Name":  "rp_qmaga",
+        "DateCreated":  "\/Date(1741531262336)\/",
+        "DateModified":  "\/Date(1770632786190)\/"
+    },
+    {
+        "Name":  "yitra_doc",
+        "DateCreated":  "\/Date(1741531263770)\/",
+        "DateModified":  "\/Date(1770632963920)\/"
+    },
+    {
+        "Name":  "rp_order_frm",
+        "DateCreated":  "\/Date(1741531259590)\/",
+        "DateModified":  "\/Date(1770632442389)\/"
+    },
+    {
+        "Name":  "rp_order_mpchk",
+        "DateCreated":  "\/Date(1741531260479)\/",
+        "DateModified":  "\/Date(1770632587099)\/"
+    },
+    {
+        "Name":  "rplist_sales_sum",
+        "DateCreated":  "\/Date(1741531263630)\/",
+        "DateModified":  "\/Date(1741531392641)\/"
+    },
+    {
+        "Name":  "rp_quest",
+        "DateCreated":  "\/Date(1741531262366)\/",
+        "DateModified":  "\/Date(1770632793111)\/"
+    },
+    {
+        "Name":  "rplist_sales",
+        "DateCreated":  "\/Date(1741531263475)\/",
+        "DateModified":  "\/Date(1741531392078)\/"
+    },
+    {
+        "Name":  "rp_order_task",
+        "DateCreated":  "\/Date(1741531262163)\/",
+        "DateModified":  "\/Date(1770632783920)\/"
+    },
+    {
+        "Name":  "rplist_orders_find_m",
+        "DateCreated":  "\/Date(1741531263380)\/",
+        "DateModified":  "\/Date(1741531391502)\/"
+    },
+    {
+        "Name":  "rplist_orders_find_a",
+        "DateCreated":  "\/Date(1741531263302)\/",
+        "DateModified":  "\/Date(1770632928500)\/"
+    },
+    {
+        "Name":  "rp_repair",
+        "DateCreated":  "\/Date(1741531262476)\/",
+        "DateModified":  "\/Date(1770632817766)\/"
+    },
+    {
+        "Name":  "rplist_checks",
+        "DateCreated":  "\/Date(1741531263162)\/",
+        "DateModified":  "\/Date(1770632912818)\/"
+    },
+    {
+        "Name":  "rp_total_month_detail_p",
+        "DateCreated":  "\/Date(1741531263021)\/",
+        "DateModified":  "\/Date(1741531387945)\/"
+    },
+    {
+        "Name":  "rp_melai_detail_p",
+        "DateCreated":  "\/Date(1741531257608)\/",
+        "DateModified":  "\/Date(1747147094859)\/"
+    },
+    {
+        "Name":  "rpl_order",
+        "DateCreated":  "\/Date(1741531263069)\/",
+        "DateModified":  "\/Date(1770632909737)\/"
+    },
+    {
+        "Name":  "rp_order",
+        "DateCreated":  "\/Date(1741531257889)\/",
+        "DateModified":  "\/Date(1770632226901)\/"
+    },
+    {
+        "Name":  "rp_mehirotb",
+        "DateCreated":  "\/Date(1741531257327)\/",
+        "DateModified":  "\/Date(1741531360504)\/"
+    },
+    {
+        "Name":  "rp_order_spka",
+        "DateCreated":  "\/Date(1741531261633)\/",
+        "DateModified":  "\/Date(1770632682115)\/"
+    },
+    {
+        "Name":  "rp_order_spka_ad",
+        "DateCreated":  "\/Date(1741531261883)\/",
+        "DateModified":  "\/Date(1770632703746)\/"
+    },
+    {
+        "Name":  "rp_xlsa",
+        "DateCreated":  "\/Date(1741531263054)\/",
+        "DateModified":  "\/Date(1741531388819)\/"
+    },
+    {
+        "Name":  "person_list_labels",
+        "DateCreated":  "\/Date(1741531255106)\/",
+        "DateModified":  "\/Date(1770631867234)\/"
+    },
+    {
+        "Name":  "rp_takbul_in",
+        "DateCreated":  "\/Date(1741531262834)\/",
+        "DateModified":  "\/Date(1762328325084)\/"
+    },
+    {
+        "Name":  "rp_xls",
+        "DateCreated":  "\/Date(1741531263054)\/",
+        "DateModified":  "\/Date(1741531388522)\/"
+    },
+    {
+        "Name":  "rp_total_month_sum",
+        "DateCreated":  "\/Date(1741531263037)\/",
+        "DateModified":  "\/Date(1741531388241)\/"
+    },
+    {
+        "Name":  "rp_takbul",
+        "DateCreated":  "\/Date(1741531262788)\/",
+        "DateModified":  "\/Date(1762328070139)\/"
+    },
+    {
+        "Name":  "rp_order_mp",
+        "DateCreated":  "\/Date(1741531260058)\/",
+        "DateModified":  "\/Date(1770632516689)\/"
+    },
+    {
+        "Name":  "rp_total_month_detail",
+        "DateCreated":  "\/Date(1741531263007)\/",
+        "DateModified":  "\/Date(1741531387648)\/"
+    },
+    {
+        "Name":  "rp_order_achk",
+        "DateCreated":  "\/Date(1741531258544)\/",
+        "DateModified":  "\/Date(1770632332483)\/"
+    },
+    {
+        "Name":  "rp_title",
+        "DateCreated":  "\/Date(1741531262976)\/",
+        "DateModified":  "\/Date(1741531387353)\/"
+    },
+    {
+        "Name":  "rp_tel_sapakim",
+        "DateCreated":  "\/Date(1741531262959)\/",
+        "DateModified":  "\/Date(1770631665202)\/"
+    },
+    {
+        "Name":  "rp_sum_sapakim",
+        "DateCreated":  "\/Date(1741531262616)\/",
+        "DateModified":  "\/Date(1741531383921)\/"
+    },
+    {
+        "Name":  "rp_takbul_t",
+        "DateCreated":  "\/Date(1741531262897)\/",
+        "DateModified":  "\/Date(1762327872528)\/"
+    },
+    {
+        "Name":  "rp_mehirot_p",
+        "DateCreated":  "\/Date(1741531257248)\/",
+        "DateModified":  "\/Date(1741531359928)\/"
+    },
+    {
+        "Name":  "rp_mehirot_adp_bar_nsell",
+        "DateCreated":  "\/Date(1741531256922)\/",
+        "DateModified":  "\/Date(1767885426076)\/"
+    },
+    {
+        "Name":  "rp_melai_detail",
+        "DateCreated":  "\/Date(1741531257405)\/",
+        "DateModified":  "\/Date(1747147043343)\/"
+    },
+    {
+        "Name":  "rp_order_keep",
+        "DateCreated":  "\/Date(1741531259605)\/",
+        "DateModified":  "\/Date(1771449299553)\/"
+    },
+    {
+        "Name":  "rp_order_prop",
+        "DateCreated":  "\/Date(1741531261149)\/",
+        "DateModified":  "\/Date(1770632634838)\/"
+    },
+    {
+        "Name":  "rp_order_m",
+        "DateCreated":  "\/Date(1741531259808)\/",
+        "DateModified":  "\/Date(1770632495411)\/"
+    },
+    {
+        "Name":  "rp_takbul_k",
+        "DateCreated":  "\/Date(1741531262851)\/",
+        "DateModified":  "\/Date(1769939229004)\/"
+    },
+    {
+        "Name":  "rp_mehirot_adp_bar_miss",
+        "DateCreated":  "\/Date(1741531256890)\/",
+        "DateModified":  "\/Date(1767885269043)\/"
+    },
+    {
+        "Name":  "rp_melai_prt",
+        "DateCreated":  "\/Date(1741531257859)\/",
+        "DateModified":  "\/Date(1747141975758)\/"
+    },
+    {
+        "Name":  "rp_sum_sapakim_all_s",
+        "DateCreated":  "\/Date(1741531262726)\/",
+        "DateModified":  "\/Date(1741531384872)\/"
+    },
+    {
+        "Name":  "ReportToPdf",
+        "DateCreated":  "\/Date(1741531255328)\/",
+        "DateModified":  "\/Date(1741531345606)\/"
+    },
+    {
+        "Name":  "rp_mehirot_oth",
+        "DateCreated":  "\/Date(1741531257170)\/",
+        "DateModified":  "\/Date(1768754060554)\/"
+    },
+    {
+        "Name":  "rp_check",
+        "DateCreated":  "\/Date(1741531255455)\/",
+        "DateModified":  "\/Date(1770631979833)\/"
+    },
+    {
+        "Name":  "rp_sapak",
+        "DateCreated":  "\/Date(1741531262586)\/",
+        "DateModified":  "\/Date(1770632868871)\/"
+    },
+    {
+        "Name":  "rp_order_lab_check",
+        "DateCreated":  "\/Date(1741531259778)\/",
+        "DateModified":  "\/Date(1769937337713)\/"
+    },
+    {
+        "Name":  "rp_order_mp_all",
+        "DateCreated":  "\/Date(1741531260308)\/",
+        "DateModified":  "\/Date(1770632559254)\/"
+    },
+    {
+        "Name":  "rp_order_adb",
+        "DateCreated":  "\/Date(1741531258887)\/",
+        "DateModified":  "\/Date(1770632375362)\/"
+    },
+    {
+        "Name":  "rp_order_ada",
+        "DateCreated":  "\/Date(1741531258670)\/",
+        "DateModified":  "\/Date(1770632335554)\/"
+    },
+    {
+        "Name":  "rp_order_a_env_t",
+        "DateCreated":  "\/Date(1741531258357)\/",
+        "DateModified":  "\/Date(1770632295037)\/"
+    },
+    {
+        "Name":  "rp_order_a",
+        "DateCreated":  "\/Date(1741531257999)\/",
+        "DateModified":  "\/Date(1770632269246)\/"
+    },
+    {
+        "Name":  "rp_melai_not_active",
+        "DateCreated":  "\/Date(1741531257843)\/",
+        "DateModified":  "\/Date(1741531363360)\/"
+    },
+    {
+        "Name":  "rp_melai_hold",
+        "DateCreated":  "\/Date(1741531257796)\/",
+        "DateModified":  "\/Date(1757235999226)\/"
+    },
+    {
+        "Name":  "rp_mehirot_all",
+        "DateCreated":  "\/Date(1741531257000)\/",
+        "DateModified":  "\/Date(1741531358882)\/"
+    },
+    {
+        "Name":  "rp_mehirot_adp_bar_sel",
+        "DateCreated":  "\/Date(1741531256968)\/",
+        "DateModified":  "\/Date(1741531358071)\/"
+    },
+    {
+        "Name":  "rp_mehirot_adp_bar_over",
+        "DateCreated":  "\/Date(1741531256937)\/",
+        "DateModified":  "\/Date(1741531357711)\/"
+    },
+    {
+        "Name":  "rp_mehirot_adp",
+        "DateCreated":  "\/Date(1741531256735)\/",
+        "DateModified":  "\/Date(1769942211739)\/"
+    },
+    {
+        "Name":  "rp_mehirot_adb",
+        "DateCreated":  "\/Date(1741531256657)\/",
+        "DateModified":  "\/Date(1741531355574)\/"
+    },
+    {
+        "Name":  "rp_mehirot_ad",
+        "DateCreated":  "\/Date(1741531256562)\/",
+        "DateModified":  "\/Date(1741531354998)\/"
+    },
+    {
+        "Name":  "rp_mehirot",
+        "DateCreated":  "\/Date(1741531256484)\/",
+        "DateModified":  "\/Date(1770632169117)\/"
+    },
+    {
+        "Name":  "rp_ins",
+        "DateCreated":  "\/Date(1741531256407)\/",
+        "DateModified":  "\/Date(1741531353844)\/"
+    },
+    {
+        "Name":  "rp_clndr",
+        "DateCreated":  "\/Date(1741531255579)\/",
+        "DateModified":  "\/Date(1770632015904)\/"
+    },
+    {
+        "Name":  "rp_inpiraon",
+        "DateCreated":  "\/Date(1741531256391)\/",
+        "DateModified":  "\/Date(1762328192980)\/"
+    },
+    {
+        "Name":  "rp_heshboniyot",
+        "DateCreated":  "\/Date(1741531256359)\/",
+        "DateModified":  "\/Date(1741531353094)\/"
+    },
+    {
+        "Name":  "rp_hesh",
+        "DateCreated":  "\/Date(1741531256329)\/",
+        "DateModified":  "\/Date(1770632141245)\/"
+    },
+    {
+        "Name":  "rp_order_repairb",
+        "DateCreated":  "\/Date(1742892613061)\/",
+        "DateModified":  "\/Date(1742893752945)\/"
+    },
+    {
+        "Name":  "rp_hafkada",
+        "DateCreated":  "\/Date(1741531256297)\/",
+        "DateModified":  "\/Date(1770632112576)\/"
+    },
+    {
+        "Name":  "rp_gnrl_tests_p",
+        "DateCreated":  "\/Date(1741531256234)\/",
+        "DateModified":  "\/Date(1770632106533)\/"
+    },
+    {
+        "Name":  "rp_gnrl_tests_a",
+        "DateCreated":  "\/Date(1741531256172)\/",
+        "DateModified":  "\/Date(1770632088291)\/"
+    },
+    {
+        "Name":  "r_letter_labels33",
+        "DateCreated":  "\/Date(1741531255138)\/",
+        "DateModified":  "\/Date(1741531343844)\/"
+    },
+    {
+        "Name":  "rp_gnrl_tests",
+        "DateCreated":  "\/Date(1741531256094)\/",
+        "DateModified":  "\/Date(1770632065709)\/"
+    },
+    {
+        "Name":  "rp_crmelai_detail_p",
+        "DateCreated":  "\/Date(1741531255907)\/",
+        "DateModified":  "\/Date(1764922678718)\/"
+    },
+    {
+        "Name":  "rp_crmelai_detail",
+        "DateCreated":  "\/Date(1741531255704)\/",
+        "DateModified":  "\/Date(1770632025239)\/"
+    },
+    {
+        "Name":  "rp_clndr_yoman",
+        "DateCreated":  "\/Date(1741531255688)\/",
+        "DateModified":  "\/Date(1741531348429)\/"
+    },
+    {
+        "Name":  "rp_clndr_find",
+        "DateCreated":  "\/Date(1741531255658)\/",
+        "DateModified":  "\/Date(1741531348118)\/"
+    },
+    {
+        "Name":  "rp_clndr_day",
+        "DateCreated":  "\/Date(1741531255611)\/",
+        "DateModified":  "\/Date(1741531347743)\/"
+    },
+    {
+        "Name":  "rp_ashrai",
+        "DateCreated":  "\/Date(1741531255407)\/",
+        "DateModified":  "\/Date(1762328254396)\/"
+    },
+    {
+        "Name":  "rp_ad_tests",
+        "DateCreated":  "\/Date(1741531255343)\/",
+        "DateModified":  "\/Date(1770631963408)\/"
+    },
+    {
+        "Name":  "r_total_sales_p",
+        "DateCreated":  "\/Date(1741531255297)\/",
+        "DateModified":  "\/Date(1741531345310)\/"
+    },
+    {
+        "Name":  "r_total_sales",
+        "DateCreated":  "\/Date(1741531255265)\/",
+        "DateModified":  "\/Date(1741531344967)\/"
+    },
+    {
+        "Name":  "r_total_orders",
+        "DateCreated":  "\/Date(1741531255235)\/",
+        "DateModified":  "\/Date(1770631899407)\/"
+    },
+    {
+        "Name":  "r_person_remarks",
+        "DateCreated":  "\/Date(1741531255154)\/",
+        "DateModified":  "\/Date(1770631895076)\/"
+    },
+    {
+        "Name":  "r_letter_labels",
+        "DateCreated":  "\/Date(1741531255138)\/",
+        "DateModified":  "\/Date(1770631869609)\/"
+    },
+    {
+        "Name":  "mirsham_m_old_all",
+        "DateCreated":  "\/Date(1741531254981)\/",
+        "DateModified":  "\/Date(1770631827480)\/"
+    },
+    {
+        "Name":  "mirsham_m_old",
+        "DateCreated":  "\/Date(1741531254936)\/",
+        "DateModified":  "\/Date(1770631809288)\/"
+    },
+    {
+        "Name":  "mirsham_m",
+        "DateCreated":  "\/Date(1741531254779)\/",
+        "DateModified":  "\/Date(1770631778356)\/"
+    },
+    {
+        "Name":  "mirsham_a_old_all",
+        "DateCreated":  "\/Date(1741531254748)\/",
+        "DateModified":  "\/Date(1770631737503)\/"
+    },
+    {
+        "Name":  "mirsham_a_old",
+        "DateCreated":  "\/Date(1741531254701)\/",
+        "DateModified":  "\/Date(1770631735311)\/"
+    },
+    {
+        "Name":  "mirsham_a",
+        "DateCreated":  "\/Date(1741531254591)\/",
+        "DateModified":  "\/Date(1770631671565)\/"
+    },
+    {
+        "Name":  "kishrey_hutz",
+        "DateCreated":  "\/Date(1741531254561)\/",
+        "DateModified":  "\/Date(1770631665028)\/"
+    },
+    {
+        "Name":  "inv_doc",
+        "DateCreated":  "\/Date(1741531254498)\/",
+        "DateModified":  "\/Date(1770631662662)\/"
+    },
+    {
+        "Name":  "insw_doc",
+        "DateCreated":  "\/Date(1741531254435)\/",
+        "DateModified":  "\/Date(1770631643614)\/"
+    },
+    {
+        "Name":  "cust_list_doc_area",
+        "DateCreated":  "\/Date(1741531254218)\/",
+        "DateModified":  "\/Date(1770631618034)\/"
+    },
+    {
+        "Name":  "rp_stgm_doc",
+        "DateCreated":  "\/Date(1772982195086)\/",
+        "DateModified":  "\/Date(1773063742583)\/"
+    },
+    {
+        "Name":  "cust_list_doc",
+        "DateCreated":  "\/Date(1741531254015)\/",
+        "DateModified":  "\/Date(1772980172640)\/"
+    },
+    {
+        "Name":  "check_doc",
+        "DateCreated":  "\/Date(1741531253890)\/",
+        "DateModified":  "\/Date(1741531336651)\/"
+    },
+    {
+        "Name":  "cartis_blank",
+        "DateCreated":  "\/Date(1741531253858)\/",
+        "DateModified":  "\/Date(1741531336091)\/"
+    },
+    {
+        "Name":  "birth_doch",
+        "DateCreated":  "\/Date(1741531253812)\/",
+        "DateModified":  "\/Date(1770631570920)\/"
+    },
+    {
+        "Name":  "rp_order_repaira",
+        "DateCreated":  "\/Date(1741531261305)\/",
+        "DateModified":  "\/Date(1770632656729)\/"
+    },
+    {
+        "Name":  "rp_lekohot_multi",
+        "DateCreated":  "\/Date(1754918119178)\/",
+        "DateModified":  "\/Date(1760618248511)\/"
+    },
+    {
+        "Name":  "rp_ltv_gnrl",
+        "DateCreated":  "\/Date(1757857979710)\/",
+        "DateModified":  "\/Date(1760608359821)\/"
+    },
+    {
+        "Name":  "rp_lekohot_gnrl",
+        "DateCreated":  "\/Date(1755001702787)\/",
+        "DateModified":  "\/Date(1760608055273)\/"
+    },
+    {
+        "Name":  "rp_ltvret_gnrl",
+        "DateCreated":  "\/Date(1758117862341)\/",
+        "DateModified":  "\/Date(1760608349940)\/"
+    },
+    {
+        "Name":  "rp_lekohot_sum",
+        "DateCreated":  "\/Date(1760618277114)\/",
+        "DateModified":  "\/Date(1761202985928)\/"
+    },
+    {
+        "Name":  "rplist_orders",
+        "DateCreated":  "\/Date(1767773043311)\/",
+        "DateModified":  "\/Date(1770632918953)\/"
+    },
+    {
+        "Name":  "rp_log_doc",
+        "DateCreated":  "\/Date(1771853122843)\/",
+        "DateModified":  "\/Date(1772706056996)\/"
+    }
+]

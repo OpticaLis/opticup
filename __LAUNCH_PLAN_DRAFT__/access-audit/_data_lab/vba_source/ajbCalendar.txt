@@ -1,0 +1,23 @@
+﻿Option Compare Database
+Option Explicit
+
+'Calendar form variable:
+Public gtxtCalTarget As TextBox 'Text box to return the date from the calendar to.
+
+Public Function CalendarFor(txt As TextBox, Optional strTitle As String)
+On Error GoTo Err_Handler
+    'Purpose:   Open the calendar form, identifying the text box to return the date to.
+    'Arguments: txt = the text box to return the date to.
+    '           strTitle = the caption for the calendar form (passed in OpenArgs).
+    
+    Set gtxtCalTarget = txt
+    DoCmd.OpenForm "frmCalendar", windowmode:=acDialog, OpenArgs:=strTitle
+    
+Exit_Handler:
+    Exit Function
+
+Err_Handler:
+    MsgBox "Error " & err.number & " - " & err.Description, vbExclamation, "CalendarFor()"
+    Resume Exit_Handler
+End Function
+

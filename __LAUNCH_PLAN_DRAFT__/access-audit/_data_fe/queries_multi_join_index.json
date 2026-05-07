@@ -1,0 +1,596 @@
+﻿[
+    {
+        "Name":  "Copy Of qrefractr",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  858
+    },
+    {
+        "Name":  "q_checks_a_old_plus",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  276
+    },
+    {
+        "Name":  "q_checks_m_old_plus",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  307
+    },
+    {
+        "Name":  "q_cheks",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  486
+    },
+    {
+        "Name":  "q_credit_receipt",
+        "Type":  128,
+        "joinCount":  2,
+        "SQLLen":  975
+    },
+    {
+        "Name":  "q_hesh",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  686
+    },
+    {
+        "Name":  "q_mehirot",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  558
+    },
+    {
+        "Name":  "q_mehirot_ad",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  701
+    },
+    {
+        "Name":  "q_mehirot_adb",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  785
+    },
+    {
+        "Name":  "q_mehirot_adp",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  780
+    },
+    {
+        "Name":  "q_mehirot_adp_n",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  284
+    },
+    {
+        "Name":  "q_mehirot_adp_np",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  670
+    },
+    {
+        "Name":  "q_mehirot_adp_s",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  1069
+    },
+    {
+        "Name":  "q_mehirot_all",
+        "Type":  128,
+        "joinCount":  3,
+        "SQLLen":  1399
+    },
+    {
+        "Name":  "q_mehirotb",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  697
+    },
+    {
+        "Name":  "q_mehirotb_x",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  1564
+    },
+    {
+        "Name":  "q_melai_p_date",
+        "Type":  128,
+        "joinCount":  3,
+        "SQLLen":  930
+    },
+    {
+        "Name":  "q_order_sel",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  1615
+    },
+    {
+        "Name":  "q_sapakim_all",
+        "Type":  128,
+        "joinCount":  2,
+        "SQLLen":  1328
+    },
+    {
+        "Name":  "q_takbul",
+        "Type":  128,
+        "joinCount":  2,
+        "SQLLen":  804
+    },
+    {
+        "Name":  "q_takbul_h",
+        "Type":  128,
+        "joinCount":  2,
+        "SQLLen":  813
+    },
+    {
+        "Name":  "q_takbul_k",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  627
+    },
+    {
+        "Name":  "q_takbul_t",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  580
+    },
+    {
+        "Name":  "q_tashlumim",
+        "Type":  128,
+        "joinCount":  2,
+        "SQLLen":  575
+    },
+    {
+        "Name":  "q_tashlumim_xls",
+        "Type":  128,
+        "joinCount":  2,
+        "SQLLen":  612
+    },
+    {
+        "Name":  "q_yitra",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  607
+    },
+    {
+        "Name":  "qcust_list",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  1368
+    },
+    {
+        "Name":  "qcust_list_L",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  1256
+    },
+    {
+        "Name":  "qcust_list_rp",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  1105
+    },
+    {
+        "Name":  "qcust_list_XLS",
+        "Type":  0,
+        "joinCount":  4,
+        "SQLLen":  1290
+    },
+    {
+        "Name":  "qlist_adaptation",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  242
+    },
+    {
+        "Name":  "qlist_adaptationp",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  1271
+    },
+    {
+        "Name":  "qlist_ltv_lekohot12_g",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  626
+    },
+    {
+        "Name":  "qlist_ltv_lekohot12_m",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  907
+    },
+    {
+        "Name":  "qlist_ltv_lekohot24_g",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  626
+    },
+    {
+        "Name":  "qlist_ltv_lekohot24_m",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  907
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36_g",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  626
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36_m",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  959
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36ltv_g",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  634
+    },
+    {
+        "Name":  "qlist_ltv_lekohot36ltv_m",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  999
+    },
+    {
+        "Name":  "qlist_ordersgn_l",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  1207
+    },
+    {
+        "Name":  "qlist_ordersgn_lg",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  1202
+    },
+    {
+        "Name":  "qlist_sales",
+        "Type":  128,
+        "joinCount":  7,
+        "SQLLen":  7090
+    },
+    {
+        "Name":  "qlist_sales_old1",
+        "Type":  128,
+        "joinCount":  7,
+        "SQLLen":  6514
+    },
+    {
+        "Name":  "qlist_total_orders_a",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  1809
+    },
+    {
+        "Name":  "qlist_total_orders_frm",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  1113
+    },
+    {
+        "Name":  "qlist_total_orders_frmֹ_first",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  1160
+    },
+    {
+        "Name":  "qlist_total_orders_frmֹ_sg",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  1135
+    },
+    {
+        "Name":  "qlist_total_orders_m",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  2159
+    },
+    {
+        "Name":  "qlist_total_orders_multi",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  3246
+    },
+    {
+        "Name":  "qlist_total_ordersp",
+        "Type":  128,
+        "joinCount":  4,
+        "SQLLen":  2867
+    },
+    {
+        "Name":  "qlist_yoman",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  455
+    },
+    {
+        "Name":  "qmail_list",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  1485
+    },
+    {
+        "Name":  "qmail_sapak_old",
+        "Type":  128,
+        "joinCount":  8,
+        "SQLLen":  1250
+    },
+    {
+        "Name":  "qmail_sapak_old2",
+        "Type":  128,
+        "joinCount":  4,
+        "SQLLen":  974
+    },
+    {
+        "Name":  "qodrd1",
+        "Type":  128,
+        "joinCount":  2,
+        "SQLLen":  3264
+    },
+    {
+        "Name":  "qodrd2",
+        "Type":  128,
+        "joinCount":  2,
+        "SQLLen":  3263
+    },
+    {
+        "Name":  "qp_order",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  1285
+    },
+    {
+        "Name":  "qp_order_all",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  1076
+    },
+    {
+        "Name":  "qp_order_all_add",
+        "Type":  0,
+        "joinCount":  4,
+        "SQLLen":  1150
+    },
+    {
+        "Name":  "qp_order_all_ext",
+        "Type":  0,
+        "joinCount":  9,
+        "SQLLen":  3968
+    },
+    {
+        "Name":  "qp_order_all_ext_ad",
+        "Type":  0,
+        "joinCount":  4,
+        "SQLLen":  1574
+    },
+    {
+        "Name":  "qp_order_all_ext_all",
+        "Type":  0,
+        "joinCount":  4,
+        "SQLLen":  1843
+    },
+    {
+        "Name":  "qp_order_all_ext_all1",
+        "Type":  0,
+        "joinCount":  4,
+        "SQLLen":  2267
+    },
+    {
+        "Name":  "qp_order_all_ext_env",
+        "Type":  0,
+        "joinCount":  9,
+        "SQLLen":  3797
+    },
+    {
+        "Name":  "qp_order_all_ext_g",
+        "Type":  0,
+        "joinCount":  9,
+        "SQLLen":  3636
+    },
+    {
+        "Name":  "qp_order_all_ext_gnrl",
+        "Type":  0,
+        "joinCount":  9,
+        "SQLLen":  2747
+    },
+    {
+        "Name":  "qp_order_all_ext_lab",
+        "Type":  0,
+        "joinCount":  9,
+        "SQLLen":  3845
+    },
+    {
+        "Name":  "qp_order_all_ext_msgra",
+        "Type":  0,
+        "joinCount":  6,
+        "SQLLen":  2207
+    },
+    {
+        "Name":  "qp_order_all_ext_msgrb",
+        "Type":  0,
+        "joinCount":  6,
+        "SQLLen":  2220
+    },
+    {
+        "Name":  "qp_order_all_ext_repair",
+        "Type":  0,
+        "joinCount":  8,
+        "SQLLen":  2127
+    },
+    {
+        "Name":  "qp_order_all_ext_repair_old",
+        "Type":  0,
+        "joinCount":  8,
+        "SQLLen":  2763
+    },
+    {
+        "Name":  "qp_order_all_ext_repairb",
+        "Type":  0,
+        "joinCount":  8,
+        "SQLLen":  2127
+    },
+    {
+        "Name":  "qp_order_all_ext_task",
+        "Type":  0,
+        "joinCount":  5,
+        "SQLLen":  1174
+    },
+    {
+        "Name":  "qp_order_all_extchk",
+        "Type":  0,
+        "joinCount":  4,
+        "SQLLen":  1811
+    },
+    {
+        "Name":  "qp_order_all_rps",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  935
+    },
+    {
+        "Name":  "qp_order_all_rps_ext",
+        "Type":  0,
+        "joinCount":  4,
+        "SQLLen":  1013
+    },
+    {
+        "Name":  "qp_order_all_rps_tst",
+        "Type":  0,
+        "joinCount":  4,
+        "SQLLen":  1037
+    },
+    {
+        "Name":  "qp_order_all_tst",
+        "Type":  0,
+        "joinCount":  9,
+        "SQLLen":  3141
+    },
+    {
+        "Name":  "qp_order_all_tstchk",
+        "Type":  0,
+        "joinCount":  4,
+        "SQLLen":  1498
+    },
+    {
+        "Name":  "qp_order_all_tstchk1",
+        "Type":  0,
+        "joinCount":  5,
+        "SQLLen":  1679
+    },
+    {
+        "Name":  "qp_order_allp",
+        "Type":  0,
+        "joinCount":  7,
+        "SQLLen":  1297
+    },
+    {
+        "Name":  "qp_order_kupa",
+        "Type":  0,
+        "joinCount":  7,
+        "SQLLen":  5857
+    },
+    {
+        "Name":  "qp_order_kupa_old",
+        "Type":  0,
+        "joinCount":  5,
+        "SQLLen":  6919
+    },
+    {
+        "Name":  "qpl_order",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  874
+    },
+    {
+        "Name":  "qrefractl",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  457
+    },
+    {
+        "Name":  "qrefractr",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  457
+    },
+    {
+        "Name":  "qrp_upd_amount",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  2129
+    },
+    {
+        "Name":  "qrp_upd_amount_catg",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  2368
+    },
+    {
+        "Name":  "qrp_upd_amount_n",
+        "Type":  64,
+        "joinCount":  3,
+        "SQLLen":  1151
+    },
+    {
+        "Name":  "qsort_catalog_rp",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  995
+    },
+    {
+        "Name":  "rpt_date_list",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  850
+    },
+    {
+        "Name":  "rpt_date_list_find",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  709
+    },
+    {
+        "Name":  "tb_q_orders_adp",
+        "Type":  128,
+        "joinCount":  4,
+        "SQLLen":  2295
+    },
+    {
+        "Name":  "upd_hesh",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  192
+    },
+    {
+        "Name":  "הזמנת_מסגרות",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  673
+    },
+    {
+        "Name":  "מלאי_old",
+        "Type":  0,
+        "joinCount":  3,
+        "SQLLen":  2052
+    },
+    {
+        "Name":  "מלאי-מסגרות",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  2227
+    },
+    {
+        "Name":  "מלאי-מסגרות-חברה",
+        "Type":  0,
+        "joinCount":  2,
+        "SQLLen":  938
+    }
+]

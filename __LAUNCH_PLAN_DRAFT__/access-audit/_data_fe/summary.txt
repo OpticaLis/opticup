@@ -1,0 +1,273 @@
+﻿=== Linked Tables (front-end -> back-end) ===
+Linked count: 38
+  adchecks                  -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  add_num                   -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  add_order                 -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  BANK_LIST                 -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  checks                    -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  checks_remarks            -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  companyn                  -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  CREDIT_LIST               -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  cust_list                 -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  cust_listb                -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  doc_title                 -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  employees                 -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  items_sales               -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  order_list                -> ;DATABASE=C:\OpticPlus_Data\optic_dt_all.accdb
+  orders                    -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  pass                      -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  passm                     -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  person_remarks            -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  presence                  -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  presence_back             -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  presence_type             -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  proposals                 -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  SAPAKIM                   -> ;DATABASE=C:\OpticPlus_Data\optic_dt_all.accdb
+  tb_ad_catalog             -> ;DATABASE=C:\OpticPlus_Data\optic_dt_all.accdb
+  tb_amlot                  -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  tb_catalog                -> ;DATABASE=C:\OpticPlus_Data\optic_dt_all.accdb
+  tb_comp                   -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  tb_date_list              -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  tb_gnrl_tests             -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  tb_hsapakim               -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  tb_kabala                 -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  tb_log                    -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  tb_order_rem              -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  tb_q_checks               -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  tb_quest                  -> ;DATABASE=C:\OpticPlus_Data\optic_dt.accdb
+  tb_upd_amount             -> ;DATABASE=C:\OpticPlus_Data\optic_dt_all.accdb
+  tb_upd_amount_ad          -> ;DATABASE=C:\OpticPlus_Data\optic_dt_all.accdb
+  TT  TELEFONE  SAPAKIM     -> ;DATABASE=C:\OpticPlus_Data\optic_dt_all.accdb
+
+=== LOCAL TableDefs (NOT linked, NOT MSys) ===
+Local count: 39
+  Attendance_type                fields=2 rows=4
+  csv_table                      fields=6 rows=0
+  hebday                         fields=2 rows=7
+  hebwday                        fields=2 rows=30
+  hebwmonthtbl                   fields=2 rows=14
+  letter_labels                  fields=28 rows=0
+  monthn                         fields=3 rows=12
+  parameters                     fields=18 rows=1
+  path                           fields=6 rows=1
+  presence_wrk_tbl               fields=14 rows=0
+  qpid                           fields=1 rows=1
+  sel_list                       fields=6 rows=0
+  tb_adashot                     fields=9 rows=1
+  tb_credits                     fields=12 rows=1160
+  tb_email                       fields=2 rows=0
+  tb_frame                       fields=2 rows=4
+  tb_graf_main                   fields=6 rows=37
+  tb_grafb                       fields=5 rows=11
+  tb_grafr                       fields=2 rows=11
+  tb_labels                      fields=9 rows=0
+  tb_lastfolder                  fields=2 rows=1
+  tb_lekohot                     fields=15 rows=12
+  tb_lens                        fields=3 rows=8
+  tb_ltv                         fields=10 rows=12
+  tb_ltv_return                  fields=12 rows=12
+  tb_mirsham                     fields=2 rows=7
+  tb_misgarot                    fields=2 rows=1
+  tb_misgeret                    fields=3 rows=3
+  tb_parts                       fields=2 rows=18
+  tb_parts_ordr                  fields=2 rows=10
+  tb_q_credits                   fields=12 rows=0
+  tb_qnum                        fields=1 rows=0
+  tb_qnum_un                     fields=2 rows=0
+  tb_sum_lekohot                 fields=20 rows=12
+  tb_xls_data                    fields=30 rows=0
+  tb_xls_data_lids               fields=36 rows=0
+  tb_yoman                       fields=23 rows=49
+  tmp_parameters                 fields=5 rows=1
+  year_list                      fields=1 rows=46
+
+=== QueryDef TYPE distribution ===
+  Type 0     count=856
+  Type 128   count=91
+  Type 32    count=27
+  Type 48    count=33
+  Type 64    count=28
+
+=== QueryDef name patterns ===
+  prefix '~sq            ' count=320
+  prefix 'q              ' count=157
+  prefix 'qlist          ' count=148
+  prefix 'del            ' count=34
+  prefix 'qp             ' count=29
+  prefix 'qtb            ' count=24
+  prefix 'cmb            ' count=21
+  prefix 'tb             ' count=20
+  prefix 'ctlga          ' count=16
+  prefix 'upd            ' count=11
+  prefix 'qprt           ' count=10
+  prefix 'prt            ' count=8
+  prefix 'ctlg           ' count=8
+  prefix 'combo          ' count=8
+  prefix 'qmail          ' count=7
+  prefix 'מלאי           ' count=6
+  prefix 'copy           ' count=5
+  prefix 'cust           ' count=5
+  prefix 'qcust          ' count=5
+  prefix 'checks         ' count=5
+  prefix 'qrp            ' count=5
+  prefix 'ctlgh          ' count=4
+  prefix 'ctlgf          ' count=4
+  prefix 'ctlgr          ' count=4
+  prefix 'ctlgm          ' count=4
+  prefix 'ctlgs          ' count=4
+  prefix 'qlast          ' count=3
+  prefix 'qorders        ' count=3
+  prefix 'ctlgap         ' count=3
+  prefix 'qsort          ' count=3
+
+=== QueryDef SQL keyword analysis ===
+  SELECT  : 943
+  INSERT  : 28
+  UPDATE  : 33
+  DELETE  : 27
+  DDL     : 0
+  TRANSFORM(crosstab): 0
+
+=== QueryDef SQL JOIN complexity ===
+  No JOIN        : 809
+  Single JOIN    : 126
+  Multi JOIN (>=2): 100
+
+=== Forms list (149) ג€ sample first 50 ===
+ = @{Scripts=System.Object[]; Reports=System.Object[]; Forms=System.Object[]; Relationships=System.Object[]; SysRel=System.Object[]; DataAccessPages=System.Object[]; Databases=System.Object[]; Modules=System.Object[]; Tables=System.Object[]}.Forms
+Write-Host (Forms total: 0  -f .Count)
+ | Sort-Object Name | Select-Object -First 50 | ForEach-Object { Write-Host ( 0  -f .Name) }
+
+Write-Host "
+Write-Host  === Reports list 123 ג€ sample first 50 ===
+Reports total: 123
+  birth_doc
+  birth_doch
+  cartis_blank
+  check_doc
+  cust_list_doc
+  cust_list_doc_area
+  insw_doc
+  inv_doc
+  kishrey_hutz
+  mirsham_a
+  mirsham_a_old
+  mirsham_a_old_all
+  mirsham_m
+  mirsham_m_old
+  mirsham_m_old_all
+  mirsham_myupye
+  person_list_labels
+  r_letter_labels
+  r_letter_labels33
+  r_person_remarks
+  r_total_orders
+  r_total_sales
+  r_total_sales_p
+  ReportToPdf
+  rp_ad_tests
+  rp_ashrai
+  rp_check
+  rp_clndr
+  rp_clndr_day
+  rp_clndr_find
+  rp_clndr_yoman
+  rp_crmelai_detail
+  rp_crmelai_detail_p
+  rp_gnrl_tests
+  rp_gnrl_tests_a
+  rp_gnrl_tests_p
+  rp_hafkada
+  rp_hesh
+  rp_heshboniyot
+  rp_inpiraon
+  rp_ins
+  rp_lekohot_gnrl
+  rp_lekohot_gnrl_ltv
+  rp_lekohot_multi
+  rp_lekohot_multi_ltv
+  rp_lekohot_sum
+  rp_lekohot_sum_multi
+  rp_log_doc
+  rp_ltv_gnrl
+  rp_ltv_multi
+
+=== Modules list (15) ===
+  ajbCalendar
+  basFolderBrowse
+  basFormBackColorGradient
+  basLabelSaver
+  basShrinkerStretcher
+  clsSinkSSFormEvents
+  GetSerial
+  Mod open applic
+  mymod
+  mymod1
+  mymod2
+  s_lang
+  scan
+  Send_SMS_MDL
+  Send_Watsp
+
+=== Scripts (Macros) list (28) ===
+  barweb
+  catalog_xls
+  cataloga_xls
+  closereport
+  cust_xls
+  find_field
+  mail_xls
+  mehirot_xls
+  mehirotad_xls
+  melai_g_xls
+  melai_g_xlsG
+  melai_xls
+  melai_xlsG
+  open_doc
+  open_tb_ad_catalog
+  open_tb_catalog
+  open_tb_log
+  print_rep
+  quit_mdb
+  sel_xls
+  setuppr
+  xls
+  xls_ap
+  xls_bill
+  xls_h
+  xls_hold
+  xls_p
+  xls_t
+
+=== Top 30 longest queries (likely report/business logic) ===
+  qlist_sales                                        sql_len=7090
+  qp_order_kupa_old                                  sql_len=6919
+  qlist_sales_old1                                   sql_len=6514
+  qp_order_kupa                                      sql_len=5857
+  q_check_again_frm                                  sql_len=4287
+  q_check_again                                      sql_len=4168
+  qp_order_all_ext                                   sql_len=3968
+  qp_order_all_ext_lab                               sql_len=3845
+  q_check_again_frmsa                                sql_len=3836
+  q_check_again_frmsm                                sql_len=3835
+  qp_order_all_ext_env                               sql_len=3797
+  q_check_again_frms                                 sql_len=3757
+  qp_order_all_ext_g                                 sql_len=3636
+  q_check_xls                                        sql_len=3602
+  q_check_again_L                                    sql_len=3451
+  qmail_list_bd                                      sql_len=3414
+  q_check_again_ua                                   sql_len=3298
+  q_check_again_um                                   sql_len=3297
+  qodrd1                                             sql_len=3264
+  qodrd2                                             sql_len=3263
+  q_check_again_u                                    sql_len=3261
+  qlist_total_orders_multi                           sql_len=3246
+  qp_order_all_tst                                   sql_len=3141
+  qlist_total_orders                                 sql_len=3079
+  dup_order                                          sql_len=3040
+  tb_q_ordersp                                       sql_len=2879
+  qlist_total_ordersp                                sql_len=2867
+  qp_order_all_ext_repair_old                        sql_len=2763
+  qp_order_all_ext_gnrl                              sql_len=2747
+  tb_q_ordersml                                      sql_len=2638
+queries_index.json saved

@@ -1,6 +1,6 @@
 # GLOBAL_MAP.md — Optic Up Architectural Map
 
-> **Last reconciled:** 2026-04-11 (Module 3.1 Phase 3A)
+> **Last reconciled:** 2026-05-06 (M4_CLOSURE_AND_INTEGRATION_CEREMONY — Module 4 CRM merged in; previous: 2026-04-11 Module 3.1 Phase 3A)
 >
 > This document is the **architectural map** of the Optic Up platform.
 > For the data model see `docs/GLOBAL_SCHEMA.sql`.
@@ -68,6 +68,7 @@ target, not by tenant.
 | 2 | Platform Admin | ✅ Complete (v2.0) | opticup | Super-admin control plane: tenant provisioning, plans/limits/features, audit log, PIN reset, suspend/activate/delete |
 | 3 | Storefront | 🟡 Phase B remediation | opticup-storefront | Public storefront: CMS pages, campaigns, blog, AI content, translations, media library, lead forms, brand pages, SEO |
 | 3.1 | Project Reconstruction | ✅ Complete (closed April 11, 2026) | opticup | Meta-module: foundation doc rewrites, DB audit, roadmap reconciliation. Does not own code — owns documentation accuracy. |
+| 4 | CRM | ✅ Complete (audit cycle closed 2026-05-06; MAINTENANCE phase) | opticup | Lead → registration → event-day flow: incoming/Tier 2 tabs, Events table, Event Day check-in, Messaging Hub (templates/rules/broadcast/log), Automation Engine (server-side EF), payment lifecycle (paid/refund/credit-pending/transfer), public form ingress (event-register EF + quick-register EF). 23 tables, 12 RPCs, 7 v_crm_* views, 5 EFs (lead-intake, send-message, automation-engine, quick-register, event-register, resolve-link), 1 _shared helper (tenant-config). All 4 audit CRITICALs CLOSED 2026-05-06. SaaS-readiness threshold crossed: tenant 2 onboarding requires only `tenants` row + ui_config JSONB. |
 
 ---
 
@@ -108,6 +109,8 @@ Summary in `docs/GLOBAL_SCHEMA.sql` VIEWS section.
 | `submit_storefront_lead` | Storefront → DB | Lead form submission (SECURITY DEFINER) |
 | `create_translated_page` | ERP Studio → DB | Creates translated page variant |
 | `mark_translations_stale` | ERP Studio → DB | Flags translations after source edit |
+| `verify_campaign_page_password` | Storefront → DB | Password gate for protected campaign pages (SECURITY DEFINER, anon-callable per M4_TENANT_ISOLATION_HARDENING_PART2) |
+| `register_lead_to_event` | event-register EF / quick-register EF / ERP CRM → DB | Canonical attendee registration with capacity check + dedup + waiting_list (SECURITY DEFINER, anon+auth+service per PART2) |
 
 ### 4.3 Image proxy
 
@@ -166,18 +169,21 @@ renames, and checkbox→boolean coercion.
 > are documented in each module's MODULE_MAP.md. This section is a
 > category-level summary for orientation only.
 
-### 5.1 RPC functions (Supabase — 41 project functions)
+### 5.1 RPC functions (Supabase — 53 project functions including Module 4)
 
 | Category | Functions | Count |
 |----------|-----------|-------|
 | Tenant lifecycle | activate/create/delete/suspend/update_tenant, get_all_tenants_overview, get_tenant_* (3), validate_slug | 10 |
 | Plan / feature gates | check_plan_limit, is_feature_enabled, is_platform_super_admin | 3 |
 | Inventory atomics | increment/decrement/set_inventory_qty, apply_stock_count_delta, get_low_stock_brands | 5 |
-| Sequential numbers (Iron Rule #13) | next_po_number, next_return_number, next_box_number, next_internal_doc_number | 4 |
+| Sequential numbers (Iron Rule #13) | next_po_number, next_return_number, next_box_number, next_internal_doc_number, next_crm_event_number | 5 |
 | Shipments / debt / payments | increment_shipment_counters, increment_paid_amount, increment_prepaid_used, get_po_aggregates | 4 |
 | Auth | reset_employee_pin | 1 |
 | Alerts | generate_daily_alerts | 1 |
-| Storefront / content / translation | submit_storefront_lead, create_translated_page, mark_translations_stale, get_translation_context, save_translation_memory_batch (×2), promote_to_platform | 7 |
+| Storefront / content / translation | submit_storefront_lead, create_translated_page, mark_translations_stale, get_translation_context, save_translation_memory_batch (×2), promote_to_platform, verify_campaign_page_password | 8 |
+| **CRM (Module 4)** — public ingress | register_lead_to_event, submit_storefront_lead, verify_campaign_page_password (anon+auth+service) | 3 |
+| **CRM (Module 4)** — staff actions | check_in_attendee, move_attendee_between_events, transfer_credit_to_new_attendee, restore_event_from_log, soft_delete_event_if_empty, sync_lead_status_from_attendee (auth+service only, post-PART2) | 6 |
+| **CRM (Module 4)** — admin/trigger | cascade_attendee_soft_delete (DB trigger), import_leads_from_monday (one-time admin) — service_role only post-PART2 | 2 |
 | OCR | update_ocr_template_stats (×2) | 2 |
 | Triggers | save_previous_blocks, update_*_updated_at (×3), update_updated_at | 5 |
 
@@ -192,7 +198,12 @@ Full parameter/return detail: `modules/Module 3.1 - Project Reconstruction/db-au
 | `ocr-extract` | Module 1 (Inventory) | — | Claude Vision OCR for supplier documents |
 | `remove-background` | Module 1 (Inventory) | — | Server-side background removal for product images |
 | `lead-intake` | Module 4 (CRM) | P1, P3c+P4, P5_7 | Public lead form intake — validate, normalize phone, dedupe by tenant+phone, INSERT `crm_leads`. **[P3c+P4]** Also dispatches SMS+Email via `send-message` on new lead (`lead_intake_new`), duplicate (`lead_intake_duplicate`), and active-event branch (`event_invite_new` / T5). **[P5_7, v22]** Email is required + lowercased server-side. Storefront SuperSale form posts here directly via the shortcode's EF-mode (P5_7). `verify_jwt: true` (per config.toml; `Authorization: Bearer <legacy anon JWT>` accepted). |
-| `send-message` | Module 4 (CRM) | P3c+P4 | Messaging pipeline — template fetch from `crm_message_templates`, `%var%` substitution, `crm_message_log` write, Make webhook dispatch. Supports template mode and raw-body broadcast mode. `verify_jwt: true`. |
+| `send-message` | Module 4 (CRM) | P3c+P4, M4_UNSUB_SUPPRESSION_CRIT, M4_HARDCODED_PRIZMA_REMOVAL | Messaging pipeline — template fetch from `crm_message_templates`, `%var%` substitution, `crm_message_log` write, Make webhook dispatch. Supports template mode and raw-body broadcast mode. `verify_jwt: true`. **[M4_UNSUB v19]** Suppression gate rejects dispatch when lead is unsubscribed (`status='rejected', error_message='lead_unsubscribed'`). **[M4_HARDCODED v20]** `url-builders.ts` reads tenant-scoped `storefront_url` from `tenants.ui_config` via `_shared/tenant-config.ts` instead of hardcoded constant. |
+| `event-register` | Module 4 (CRM) | P16, STOREFRONT_FORMS, M4_PUBLIC_FORM_VARIABLES_HIGH, M4_HARDCODED_PRIZMA_REMOVAL | Public event-registration EF — POST registers a lead to an event via `register_lead_to_event` RPC, fires confirmation SMS+Email. GET returns bootstrap payload (event details + lead pre-fill + tenant_ui_config subset for the form's brand colors + WhatsApp). `verify_jwt: false` (public form). **[v14]** Empty `event_*` variables in dispatch so `injectEventVariables` formatters render DD/MM/YYYY + HH:MM-HH:MM. **[v15]** Returns tenant-scoped `tenant_ui_config` to the client. |
+| `quick-register` | Module 4 (CRM) | QUICK_REGISTER_QR_FLOW, M4_HARDCODED_PRIZMA_REMOVAL | WhatsApp QR walk-in registration EF. Two ops: `register` (form submit → upsert lead + register attendee + dispatch coupon-delivery / waiting-list) and `lookup_url` (Make returns storefront URL for QR wrap). `verify_jwt: true`. **[v6]** `lookup_url` reads tenant `storefront_url` per request via `loadTenantConfig`. |
+| `resolve-link` | Module 4 (CRM) | SHORT_LINKS, M4_HARDCODED_PRIZMA_REMOVAL | Public 302-redirect EF for `/r/<code>` short links. Reads `short_links.target_url`. **[v3]** Per-row tenant-scoped fallback (expired-row → that tenant's `storefront_url`); no-row/no-code → `SHORT_LINK_FALLBACK_URL` env var or HTTP 404. `verify_jwt: false`. |
+| `automation-engine` | Module 4 (CRM) | M4_AUTOMATION_ENGINE_SERVER_SIDE, ATOMIC_CONFIRMATION_FLOW | Server-side automation rule evaluator. Two modes: `evaluate` (no DB-mutating side effects) + `dispatch` (post-actions + queue_send + send-message). Cron callers + browser callers (via `crm-automation-client.js`). `verify_jwt: true`. v7 ACTIVE. |
+| `unsubscribe` | Module 4 (CRM) | (existing) | Public unsubscribe link target — verifies HMAC token, sets `crm_leads.unsubscribed_at` + `status='unsubscribed'`. Paired with `send-message` suppression gate for end-to-end opt-out. |
 
 ### 5.3 ERP HTML Pages
 
@@ -228,6 +239,9 @@ Full parameter/return detail: `modules/Module 3.1 - Project Reconstruction/db-au
 | `renderFeatureLockedState(featureName)` | shared/js/plan-helpers.js | Show lock UI when isFeatureEnabled() returns false; used by 8 storefront-*.html gates (added 2026-04-15) |
 | `CrmEventSendMessage.{open, wire}` | modules/crm/crm-event-send-message.js | Module 4 — compose-and-send modal for event-wide raw-body broadcasts (status-filter chips + channel picker + per-lead dispatch). Added 2026-04-24 (CRM_HOTFIXES). |
 | `CrmAutomation.promoteWaitingLeadsToInvited(planItems, results)` | modules/crm/crm-automation-engine.js | Module 4 — atomic UPDATE of `crm_leads.status` waiting→invited after an event-invitation rule dispatches. Added 2026-04-24 (CRM_HOTFIXES). |
+| `CrmEventActions.softDeleteEventIfEmpty(eventId)` | modules/crm/crm-event-delete.js | Module 4 — wraps `soft_delete_event_if_empty` RPC (server-gated on `SUM(purchase_amount)=0`). Added 2026-05-04 (DELETE_EMPTY_EVENT). |
+| `CrmEventActions.restoreEventFromLog(logId, tenantId)` | modules/crm/crm-event-restore.js | Module 4 — wraps `restore_event_from_log` RPC (Approach B: replays explicit `attendee_ids` from audit row). Added 2026-05-04 (RESTORE_DELETED_EVENT_UI). |
+| `loadTenantConfig(db, tenantId)` | supabase/functions/_shared/tenant-config.ts | Cross-EF helper — single SELECT against `tenants`, returns typed `TenantConfig` (storefront_url, whatsapp_phone_e164, support_phone_display, business_phone, business_address, brand{gold/_light/_hover}, ui_config). Caller-decides-fallback. Used by `quick-register`, `send-message/url-builders`, `resolve-link`, `event-register`. Added 2026-05-06 (M4_HARDCODED_PRIZMA_REMOVAL). |
 
 ---
 

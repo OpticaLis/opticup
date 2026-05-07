@@ -1,0 +1,184 @@
+﻿Option Compare Database
+Option Explicit
+
+Function calc_time(intm, outm) As String
+
+
+Dim h1#, m1#, h2#, m2 As Double
+Dim t1#, t2 As Double
+Dim tt3 As Double
+Dim tots#, totsw As Double
+
+Dim ii As Double
+Dim aa As Double
+ 
+h1 = Hour(TimeValue(intm))
+m1 = Minute(TimeValue(intm))
+t1 = (h1 * 60) + (m1)
+
+h2 = Hour(TimeValue(outm))
+m2 = Minute(TimeValue(outm))
+t2 = (h2 * 60) + (m2)
+
+totsw = t2 - t1
+
+If totsw >= 60 Then
+  tots = ((totsw / 60))
+  ii = Int([tots])
+  aa = totsw - ([ii] * 60)
+Else
+  ii = 0
+  aa = totsw
+End If
+  
+If aa > 0 Then
+ If aa < 10 Then
+    calc_time = Trim$(str$([ii])) + ":" + "0" + Trim$(str$([aa]))
+ Else
+    calc_time = Trim$(str$([ii])) + ":" + Trim$(str$([aa]))
+ End If
+Else
+   calc_time = Trim$(str$([ii]))
+End If
+End Function
+Function calc_min(intm) As Double
+
+Dim h1#, m1 As Double
+Dim X As Byte
+
+
+X = InStr(1, intm, ":")
+If X = 0 Then
+ intm = intm & ":00"
+End If
+
+
+h1 = Hour(TimeValue(intm))
+
+
+m1 = Minute(TimeValue(intm))
+
+calc_min = (h1 * 60) + (m1)
+
+
+End Function
+Function calc_hours(intm) As String
+
+Dim tots As Double
+
+Dim ii As Double
+Dim aa As Double
+Dim mn As Boolean
+
+
+mn = False
+If intm < 0 Then
+ intm = Abs(intm)
+ mn = True
+End If
+
+If intm >= 60 Then
+  tots = ((intm / 60))
+  ii = Int([tots])
+  aa = intm - ([ii] * 60)
+Else
+   ii = 0
+   aa = intm
+End If
+
+If aa > 0 Then
+ If aa < 10 Then
+    calc_hours = Trim$(str$([ii])) + ":" + "0" + Trim$(str$([aa]))
+ Else
+    calc_hours = Trim$(str$([ii])) + ":" + Trim$(str$([aa]))
+ End If
+Else
+   calc_hours = Trim$(str$([ii])) + ":00"
+End If
+If mn = True Then
+  calc_hours = "-" & calc_hours
+End If
+End Function
+Function qday(inday As Integer) As String
+Dim codew
+codew = DLookup("[hebday]", "hebday", "[nday]=" & inday)
+If Nz(codew) <> "" Then
+ qday = codew
+End If
+End Function
+Function femp(emp As Integer) As String
+Dim codew, codew2
+codew = DLookup("[LastName]", "employees", "[EmployeeID]=" & emp)
+codew2 = DLookup("[FirstName]", "employees", "[EmployeeID]=" & emp)
+  femp = Trim$(Nz(codew2)) & " " & Trim$(Nz(codew))
+End Function
+Function dos_let(txt As String) As String
+Dim i
+Dim fname As String
+ fname = ""
+ Do Until i = Len(Trim$(Nz(txt)))
+    i = i + 1
+    If InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "כ") = 1 Then
+     fname = fname & Chr$(139)
+    ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ך") = 1 Then
+     fname = fname & Chr$(138)
+    ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "מ") = 1 Then
+     fname = fname & Chr$(142)
+    ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ם") = 1 Then
+     fname = fname & Chr$(141)
+    ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "נ") = 1 Then
+     fname = fname & Chr$(144)
+    ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ן") = 1 Then
+     fname = fname & Chr$(143)
+    ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "פ") = 1 Then
+     fname = fname & Chr$(148)
+    ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ף") = 1 Then
+     fname = fname & Chr$(147)
+    ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "צ") = 1 Then
+     fname = fname & Chr$(150)
+    ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ץ") = 1 Then
+      fname = fname & Chr$(149)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "א") = 1 Then
+      fname = fname & Chr$(128)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ב") = 1 Then
+      fname = fname & Chr$(129)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ג") = 1 Then
+      fname = fname & Chr$(130)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ד") = 1 Then
+      fname = fname & Chr$(131)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ה") = 1 Then
+      fname = fname & Chr$(132)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ו") = 1 Then
+      fname = fname & Chr$(133)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ז") = 1 Then
+      fname = fname & Chr$(134)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ח") = 1 Then
+      fname = fname & Chr$(135)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ט") = 1 Then
+      fname = fname & Chr$(136)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "י") = 1 Then
+      fname = fname & Chr$(137)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ל") = 1 Then
+      fname = fname & Chr$(140)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ס") = 1 Then
+      fname = fname & Chr$(145)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ע") = 1 Then
+      fname = fname & Chr$(146)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ק") = 1 Then
+      fname = fname & Chr$(151)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ר") = 1 Then
+      fname = fname & Chr$(152)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ש") = 1 Then
+     fname = fname & Chr$(153)
+     ElseIf InStr(1, Mid$(Trim$(Nz(txt)), i, 1), "ת") = 1 Then
+     fname = fname & Chr$(154)
+    
+    Else
+     
+     fname = fname & (Mid$(Trim$(Nz(txt)), i, 1))
+    End If
+    dos_let = fname
+  Loop
+End Function
+
+

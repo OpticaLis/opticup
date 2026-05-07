@@ -5,18 +5,16 @@
 //   unsubscribe  = `${lead_id}:${tenant_id}:${exp}`              (verified by unsubscribe EF)
 //   registration = `${lead_id}:${tenant_id}:${event_id}:${exp}`  (verified by event-register EF)
 // TTL: 90 days — long enough that an old email link still works.
-// STOREFRONT_FORMS P-A: both URLs hardcoded to prizma-optic.co.il; SaaS-ification
-// via tenants.storefront_domain is out of scope per the SPEC.
-//
-// SHORT_LINKS SPEC: buildUnsubscribeUrl / buildRegistrationUrl now wrap the
-// long HMAC URL in a short `/r/<code>` redirect stored in short_links. The
-// destination EF still validates the token — short links are wrappers, not
-// replacements for the security model.
+// 2026-05-06 (M4_HARDCODED_PRIZMA_REMOVAL): hardcoded STOREFRONT_ORIGIN
+// replaced with tenant-scoped lookup via loadTenantConfig(). The two public
+// builders fetch the tenant's storefront_url once and thread it down into
+// createShortLink — 1 extra SELECT per builder call (negligible at our scale).
+
+import { loadTenantConfig } from "../_shared/tenant-config.ts";
 
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 export const TOKEN_TTL_SECONDS = 90 * 24 * 3600;
-export const STOREFRONT_ORIGIN = "https://prizma-optic.co.il";
 
 function b64urlEncode(bytes: Uint8Array): string {
   let binary = "";
@@ -43,6 +41,7 @@ async function createShortLink(
   linkType: string,
   leadId: string,
   eventId: string | null,
+  storefrontOrigin: string,
 ): Promise<string> {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -73,25 +72,33 @@ async function createShortLink(
       );
       return targetUrl;
     }
-    return `${STOREFRONT_ORIGIN}/r/${row.code}`;
+    return `${storefrontOrigin}/r/${row.code}`;
   }
-  return `${STOREFRONT_ORIGIN}/r/${row.code}`;
+  return `${storefrontOrigin}/r/${row.code}`;
 }
 
 export async function buildUnsubscribeUrl(
+  // deno-lint-ignore no-explicit-any
   db: any, leadId: string, tenantId: string,
 ): Promise<string> {
+  const cfg = await loadTenantConfig(db, tenantId);
+  const origin = cfg?.storefront_url;
+  if (!origin) throw new Error("tenant_storefront_unconfigured");
   const exp = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;
   const token = await signToken(`${leadId}:${tenantId}:${exp}`);
-  const fullUrl = `${STOREFRONT_ORIGIN}/unsubscribe?token=${token}`;
-  return createShortLink(db, tenantId, fullUrl, "unsubscribe", leadId, null);
+  const fullUrl = `${origin}/unsubscribe?token=${token}`;
+  return createShortLink(db, tenantId, fullUrl, "unsubscribe", leadId, null, origin);
 }
 
 export async function buildRegistrationUrl(
+  // deno-lint-ignore no-explicit-any
   db: any, leadId: string, tenantId: string, eventId: string,
 ): Promise<string> {
+  const cfg = await loadTenantConfig(db, tenantId);
+  const origin = cfg?.storefront_url;
+  if (!origin) throw new Error("tenant_storefront_unconfigured");
   const exp = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;
   const token = await signToken(`${leadId}:${tenantId}:${eventId}:${exp}`);
-  const fullUrl = `${STOREFRONT_ORIGIN}/event-register?token=${token}`;
-  return createShortLink(db, tenantId, fullUrl, "registration", leadId, eventId);
+  const fullUrl = `${origin}/event-register?token=${token}`;
+  return createShortLink(db, tenantId, fullUrl, "registration", leadId, eventId, origin);
 }

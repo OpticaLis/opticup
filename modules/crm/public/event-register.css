@@ -1,14 +1,15 @@
 /* =============================================================================
    event-register.css — Auto event-registration form (PRE_CUTOVER_QA_B B2)
    Restyled 2026-05-01 per Prizma Design System Canon v1.1 (sealed 2026-04-28).
-   See __LAUNCH_PLAN_DRAFT__/campaign-overseer/PRIZMA_DESIGN_SYSTEM_CANONICAL.md
-   Canon values inlined directly (Daniel pre-authorized Option a in SPEC §1.5).
+   2026-05-06 (M4_HARDCODED_PRIZMA_REMOVAL): tenant-specific brand hex values
+   removed; neutral grayscale defaults below. event-register.js injects the
+   active tenant's brand on page load via style.setProperty('--gold', ...).
    ============================================================================= */
 :root {
-  /* Canon — gold (single source of truth) */
-  --gold:        #c9a555;
-  --gold-light:  #e8da94;
-  --gold-hover:  #b8943f;
+  /* Neutral defaults — overridden at runtime by tenant config (Iron Rule 9). */
+  --gold:        #888888;
+  --gold-light:  #cccccc;
+  --gold-hover:  #555555;
   /* Canon — text + surfaces */
   --text:        #1a1a1a;
   --text-muted:  #6b6b6b;

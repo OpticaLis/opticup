@@ -1,0 +1,52 @@
+﻿Option Compare Database
+Option Explicit
+#If VBA7 Then
+Private Declare PtrSafe Function GetKeyboardLayoutName Lib "user32" _
+Alias "GetKeyboardLayoutNameA" _
+(ByVal pwszKLID As String) As Long
+Private Declare PtrSafe Function LoadKeyboardLayout Lib "user32" _
+Alias "LoadKeyboardLayoutA" _
+(ByVal pwszKLID As String, ByVal flags As Long) As Long
+#Else
+Private Declare Function GetKeyboardLayoutName Lib "user32" _
+Alias "GetKeyboardLayoutNameA" _
+(ByVal pwszKLID As String) As Long
+Private Declare Function LoadKeyboardLayout Lib "user32" _
+Alias "LoadKeyboardLayoutA" _
+(ByVal pwszKLID As String, ByVal flags As Long) As Long
+#End If
+Const KLF_ACTIVATE = &H1
+
+' some languages code
+Private Const LANG_ENGLISH As String = "00000409"
+Private Const LANG_HEBREW As String = "0000040D"
+
+
+Private Function SwitchKeyboardLang(ByVal strLangID As String) As Boolean
+'Returns TRUE when the KeyboardLayout was set properly, FALSE otherwise
+Dim strRet As String
+On Error Resume Next
+strRet = String(9, 0)
+GetKeyboardLayoutName strRet
+If strRet = (strLangID & Chr(0)) Then
+' you are try to switch to the already selected language
+' so return without doing anything
+SwitchKeyboardLang = True
+Exit Function
+Else
+strRet = String(9, 0)
+strRet = LoadKeyboardLayout((strLangID & Chr(0)), KLF_ACTIVATE)
+End If
+
+GetKeyboardLayoutName strRet ' Test if switch successed
+If strRet = (strLangID) Then
+SwitchKeyboardLang = True
+End If
+End Function
+
+Function lang_heb()
+SwitchKeyboardLang (LANG_HEBREW)
+End Function
+Function lang_eng()
+SwitchKeyboardLang (LANG_ENGLISH)
+End Function

@@ -1,0 +1,130 @@
+﻿[
+    {
+        "form":  "f_cash",
+        "queryCount":  258
+    },
+    {
+        "form":  "person_orders_list",
+        "queryCount":  109
+    },
+    {
+        "form":  "s_mehirot",
+        "queryCount":  94
+    },
+    {
+        "form":  "birthdaysheb",
+        "queryCount":  64
+    },
+    {
+        "form":  "s_melai",
+        "queryCount":  47
+    },
+    {
+        "form":  "f_ad_catalog",
+        "queryCount":  41
+    },
+    {
+        "form":  "birthdays",
+        "queryCount":  40
+    },
+    {
+        "form":  "customers",
+        "queryCount":  35
+    },
+    {
+        "form":  "cust_listb",
+        "queryCount":  24
+    },
+    {
+        "form":  "f_catalog",
+        "queryCount":  22
+    },
+    {
+        "form":  "Calendar_of_Attendance",
+        "queryCount":  21
+    },
+    {
+        "form":  "s_orders",
+        "queryCount":  19
+    },
+    {
+        "form":  "f_bdikat_maakav",
+        "queryCount":  19
+    },
+    {
+        "form":  "print_cust",
+        "queryCount":  12
+    },
+    {
+        "form":  "find_order",
+        "queryCount":  12
+    },
+    {
+        "form":  "find_catg",
+        "queryCount":  10
+    },
+    {
+        "form":  "cust_adchecks_full",
+        "queryCount":  8
+    },
+    {
+        "form":  "person_prop_list",
+        "queryCount":  6
+    },
+    {
+        "form":  "s_takbul",
+        "queryCount":  6
+    },
+    {
+        "form":  "cust_checks_full",
+        "queryCount":  5
+    },
+    {
+        "form":  "s_adap",
+        "queryCount":  4
+    },
+    {
+        "form":  "s_melai_prt",
+        "queryCount":  4
+    },
+    {
+        "form":  "cust_adchecks_test",
+        "queryCount":  4
+    },
+    {
+        "form":  "f_tipul_adashot",
+        "queryCount":  3
+    },
+    {
+        "form":  "cust_checks",
+        "queryCount":  3
+    },
+    {
+        "form":  "empty_tables",
+        "queryCount":  2
+    },
+    {
+        "form":  "cust_adchecks",
+        "queryCount":  2
+    },
+    {
+        "form":  "find_a_catg",
+        "queryCount":  2
+    },
+    {
+        "form":  "person_remarks_list",
+        "queryCount":  1
+    },
+    {
+        "form":  "f_gnrl_tests",
+        "queryCount":  1
+    },
+    {
+        "form":  "Employees",
+        "queryCount":  1
+    },
+    {
+        "form":  "f_gnrl_testsa",
+        "queryCount":  1
+    }
+]

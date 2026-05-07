@@ -1,0 +1,42 @@
+﻿[
+    {
+        "Name":  "~sq_ff_credit_list",
+        "Type":  0,
+        "SQL":  "SELECT DISTINCTROW *\r\nFROM CREDIT_LIST;\r\n"
+    },
+    {
+        "Name":  "del_tb_credits",
+        "Type":  32,
+        "SQL":  "DELETE tb_credits.*\r\nFROM tb_credits;\r\n"
+    },
+    {
+        "Name":  "del_tb_q_credits",
+        "Type":  32,
+        "SQL":  "DELETE tb_q_credits.*\r\nFROM tb_q_credits;\r\n"
+    },
+    {
+        "Name":  "q_credit",
+        "Type":  0,
+        "SQL":  "SELECT CREDIT_LIST.credit, CREDIT_LIST.tran\r\nFROM CREDIT_LIST\r\nGROUP BY CREDIT_LIST.credit, CREDIT_LIST.tran\r\nORDER BY CREDIT_LIST.tran;\r\n"
+    },
+    {
+        "Name":  "q_credit_receipt",
+        "Type":  128,
+        "SQL":  "SELECT tb_kabala.rnum, orders.cn, Trim$([fname])+\"  \"+Trim$([pname]) AS namew, tb_kabala.wdate, orders.odate, orders.ordernum, tb_kabala.typ, tb_kabala.wnumber, tb_kabala.wname, tb_kabala.wsnif, tb_kabala.whashbon, tb_kabala.tpiraon AS TP, tb_kabala.nt, (DateAdd(\"m\",Val(nz([nt]))-1,[tpiraon])) AS qdate, tb_kabala.total, tb_kabala.wnum, Null AS Expr1\r\nFROM cust_list INNER JOIN (orders INNER JOIN tb_kabala ON orders.rnum = tb_kabala.rnum) ON cust_list.numw = orders.numw\r\nWHERE (((orders.cn)=False) AND ((tb_kabala.typ)=\"אשראי\"));\r\nUNION ALL SELECT  Null AS Expr1, Null AS Expr2,null,items_sales.wdate, Null,\"כללי\" AS Expr3, items_sales.typ, items_sales.wnumber, items_sales.wname, items_sales.wsnif, items_sales.whashbon, items_sales.tpiraon AS TP, items_sales.nt, (DateAdd(\"m\",Val(nz([nt]))-1,[tpiraon])) AS qdate,items_sales.total,  items_sales.wrnum, Val(nz([qtyp])) AS q\r\nFROM items_sales\r\nWHERE (((items_sales.typ)=\"אשראי\") AND  ((Val(nz([qtyp])))\u003e0))\r\nORDER BY TP;\r\n"
+    },
+    {
+        "Name":  "q_out_credit",
+        "Type":  0,
+        "SQL":  "SELECT tb_q_checks.tdate, tb_q_checks.CDate, tb_q_checks.cnum, tb_q_checks.code_sapak, tb_q_checks.snif, tb_q_checks.qcount, tb_q_checks.CDate AS tpiraon, DateAdd(\"m\",Val(nz([qcount]))-1,[cdate]) AS qdate, tb_q_checks.total, tb_q_checks.hnum4, tb_q_checks.qstatus\r\nFROM tb_q_checks\r\nWHERE (((tb_q_checks.hnum4)=\"אשראי\"));\r\n"
+    },
+    {
+        "Name":  "q_tashlumim",
+        "Type":  128,
+        "SQL":  "SELECT tb_credits.cn,null As kamp, tb_credits.namew, tb_credits.ordernum, tb_credits.typ, tb_credits.tpiraon, tb_credits.total, tb_credits.qtotal, tb_credits.qpay, tb_credits.qpayn\r\nFROM tb_credits;\r\nUNION ALL SELECT orders.cn, cust_list.kamp,Trim$([fname])+\"  \"+Trim$([pname]) AS namew, orders.ordernum, tb_kabala.typ, tb_kabala.tpiraon, tb_kabala.total,null ,null  ,null \r\nFROM (cust_list INNER JOIN orders ON cust_list.numw = orders.numw) INNER JOIN tb_kabala ON orders.rnum = tb_kabala.rnum\r\nWHERE (((orders.cn)=False) AND ((tb_kabala.typ)\u003c\u003e\"אשראי\"))\r\nORDER BY tpiraon;\r\n"
+    },
+    {
+        "Name":  "q_tashlumim_xls",
+        "Type":  128,
+        "SQL":  "SELECT tb_credits.cn, tb_credits.namew, tb_credits.ordernum, tb_credits.typ,tb_credits.odate,tb_credits.wdate, tb_credits.tpiraon, tb_credits.total, tb_credits.qtotal, tb_credits.qpay, tb_credits.qpayn\r\nFROM tb_credits;\r\nUNION ALL SELECT orders.cn, Trim$([fname])+\"  \"+Trim$([pname]) AS namew, orders.ordernum, tb_kabala.typ, orders.odate, tb_kabala.wdate, tb_kabala.tpiraon, tb_kabala.total,null ,null  ,null \r\nFROM (cust_list INNER JOIN orders ON cust_list.numw = orders.numw) INNER JOIN tb_kabala ON orders.rnum = tb_kabala.rnum\r\nWHERE (((orders.cn)=False) AND ((tb_kabala.typ)\u003c\u003e\"אשראי\"))\r\nORDER BY tpiraon;\r\n"
+    }
+]

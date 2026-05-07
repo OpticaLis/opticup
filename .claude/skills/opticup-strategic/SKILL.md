@@ -432,6 +432,95 @@ Step 1.5 DB Pre-Flight — intentionally. Defense in depth.
    "Cross-Reference Check completed 2026-04-14 against GLOBAL_SCHEMA rev X:
    0 collisions / N hits resolved." An empty or missing line = incomplete SPEC.
 
+6. **DB-object role verification (MANDATORY — applied 2026-05-06 after 3-occurrence rule).**
+   For every database object the SPEC will reference AS A WRITER OR READER of a
+   target table (e.g., "submit_storefront_lead writes to cms_leads",
+   "register_lead_to_event reads crm_event_attendees"), confirm by SQL
+   BEFORE writing §10 Dependencies or §12 QA Plan:
+   ```sql
+   -- Find every public RPC whose body references the target table
+   SELECT proname FROM pg_proc
+   WHERE pronamespace='public'::regnamespace
+     AND prosrc ILIKE '%<target_table>%';
+   ```
+   ALSO confirm template slugs, automation rule slugs, and view names by SELECT:
+   ```sql
+   SELECT slug FROM crm_message_templates WHERE tenant_id=? AND slug=?;
+   SELECT slug FROM crm_automation_rules  WHERE tenant_id=? AND slug=?;
+   SELECT relname FROM pg_class WHERE relkind='v' AND relname=?;
+   ```
+   ALSO confirm column names cited in §3 Success Criteria via:
+   ```sql
+   SELECT column_name, is_nullable, data_type FROM information_schema.columns
+   WHERE table_schema='public' AND table_name=? AND column_name=?;
+   ```
+   If the named object does not appear, the SPEC's assumed call path is wrong
+   — re-verify the actual caller via `pg_proc.prosrc` text search OR by
+   tracing the application code. NEVER cite a DB-object's role from memory.
+   This is a hard gate: a SPEC that fails this check is NOT ready to dispatch.
+
+   **Why this rule exists:** 3 consecutive SPECs (M4_PUBLIC_FORM_VARIABLES_HIGH,
+   M4_UNSUB_SUPPRESSION_CRIT, M4_TENANT_ISOLATION_HARDENING_PART1) cited DB
+   objects from author memory that didn't exist or had wrong role:
+   `recipient_phone`/`recipient_email` columns (don't exist),
+   `event_registration_open` template slug (doesn't exist),
+   `submit_storefront_lead` (writes to `storefront_leads`, not `cms_leads`).
+   Each cost the executor 2-5 minutes of mid-run substitution + finding-logging.
+   Per Self-Improvement Mandate "3 reviews → must apply", this rule is now
+   binding — not an aspiration.
+
+7. **Filesystem path verification (MANDATORY — applied 2026-05-06 after 4-occurrence rule).**
+   For every filesystem path cited in §2 (sites table), §8 (Expected Final
+   State), or §12 (QA Plan), confirm it exists BEFORE finalizing the SPEC:
+   ```bash
+   ls modules/<exact-path-cited>     # for code files
+   find . -name '<filename>' -not -path '*/.git/*' 2>/dev/null  # if location uncertain
+   ```
+   If the path doesn't exist, the SPEC has a wrong premise. Do NOT cite paths
+   from memory — repos are restructured frequently (e.g., `modules/crm/public/`
+   subfolder added during the storefront refactor; SPECs authored from older
+   mental models miss the qualifier).
+
+   **Why:** 4-occurrence pattern in the M4 cycle (M4-DOC-02 columns,
+   M4-DOC-04 template slug, M4-DOC-05 RPC role, M4-DOC-06 file paths). All
+   share the root-cause class "author cited a name from memory; live system
+   disagreed." This rule + bullet 6 above together cover the four families:
+   columns, catalog rows, RPC bodies, filesystem paths.
+
+9. **PUBLIC-inheritance check on RPC permissions (MANDATORY — applied 2026-05-06 after M4-DB-01).**
+   Whenever a SPEC will REVOKE or GRANT EXECUTE on a function, INSPECT the
+   function's existing ACL FIRST:
+   ```sql
+   SELECT proname, proacl FROM pg_proc
+   WHERE pronamespace='public'::regnamespace AND proname=?;
+   ```
+   Look for the `=X/postgres` entry — that IS the PUBLIC grant. Postgres
+   adds `EXECUTE TO PUBLIC` at function creation by default. `REVOKE EXECUTE
+   FROM anon` strips only the direct grant; anon still inherits EXECUTE via
+   PUBLIC. The SPEC's migration body MUST include `REVOKE EXECUTE ... FROM
+   PUBLIC` for every function being locked down. Verify post-migration via
+   `has_function_privilege('anon', oid, 'EXECUTE')` returning `false` —
+   anything else means PUBLIC inheritance is still active.
+
+   **This rule is non-negotiable on first introduction — no 3-occurrence wait.**
+   It is a Postgres-architectural reality, not a name-from-memory issue. Source:
+   M4_TENANT_ISOLATION_HARDENING_PART2/M4-DB-01. Stage 1 of that SPEC was a
+   security no-op until the corrective added FROM PUBLIC.
+
+8. **Preview-vs-customer-facing distinction in §2 threat model
+   (added 2026-05-06).** When the SPEC cites a hardcoded value, distinguish
+   whether it appears in:
+   - **`[customer-facing]`** — value reaches the customer's screen / SMS /
+     email body / public form
+   - **`[internal]`** — value appears in staff tooling, preview helpers,
+     debug pages, template editor previews, etc.
+   Iron Rule 9 violations in `[internal]` are real but lower-severity, and
+   the fix differs (tenant-neutral placeholder vs dynamic tenant lookup).
+   Mark each violation with `[customer-facing]` or `[internal]` in the §2
+   sites table. **Source:** M4_HARDCODED_PRIZMA_REMOVAL Finding M4-DOC-09 —
+   `crm-messaging-templates.js` preview defaults were initially framed as
+   customer-facing; they are not.
+
 #### Step 1.5e — File-size pre-flight refresh (MANDATORY, NOT conditional)
 
 For EVERY file mentioned in §3 (Success Criteria) and §8 (Expected Final State),

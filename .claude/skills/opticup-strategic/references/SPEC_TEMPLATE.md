@@ -91,6 +91,15 @@ Things that look related but MUST NOT be touched in this SPEC:
 
 ---
 
+> **Authoring note for §2 (Background) sites tables:**
+> When citing a hardcoded value, mark each row with one of:
+> - **`[customer-facing]`** — value reaches customer screen / SMS / email body / public form
+> - **`[internal]`** — appears in staff tooling, preview helpers, debug pages, template editor previews
+>
+> Iron Rule 9 violations in `[internal]` are real but lower-severity, and the fix differs (tenant-neutral placeholder vs dynamic tenant lookup). The distinction informs both severity and architecture.
+
+---
+
 ## 8. Expected Final State
 
 After the executor finishes, the repo should contain:
@@ -98,6 +107,19 @@ After the executor finishes, the repo should contain:
 ### New files
 - `path/to/new/file1.ts`
 - `path/to/new/file2.sql`
+
+**Migration file naming (when SPEC creates a SQL migration):** use
+`YYYY_MM_DD_<spec_slug>_up.sql` for the forward migration + a paired
+`YYYY_MM_DD_<spec_slug>_down.sql` for the rollback. Both files in the
+same commit. The `_up`/`_down` convention is the project standard since
+2026-04-29 — do NOT use the older single-prefix `_rollback` suffix.
+
+**Function-EXECUTE permission migrations:** when REVOKEing function-level
+EXECUTE GRANTs, the migration MUST include both `REVOKE EXECUTE ... FROM
+PUBLIC` AND any role-specific revocation. The PUBLIC line is mandatory
+because Postgres grants `EXECUTE TO PUBLIC` at function creation by
+default; revoking from `anon` alone is a no-op due to PUBLIC inheritance.
+Source: M4_TENANT_ISOLATION_HARDENING_PART2 M4-DB-01.
 
 ### Modified files
 - `path/to/existing/file.md` — lines {A}–{B} changed: {description}

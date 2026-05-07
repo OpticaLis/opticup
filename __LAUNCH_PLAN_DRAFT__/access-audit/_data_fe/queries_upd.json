@@ -1,0 +1,67 @@
+﻿[
+    {
+        "Name":  "upd_add_graph",
+        "Type":  64,
+        "SQL":  "INSERT INTO tb_graf ( gil, qnumpl, qnumpr )\r\nSELECT qsclera_all.gil, qsclera_all.qnuml, qsclera_all.qnumr\r\nFROM qsclera_all LEFT JOIN tb_graf ON qsclera_all.gil = tb_graf.gil\r\nWHERE (((tb_graf.gil) Is Null));\r\n"
+    },
+    {
+        "Name":  "upd_cust_close",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.cust_open = False\r\nWHERE (((cust_list.cust_open)=True));\r\n"
+    },
+    {
+        "Name":  "upd_details",
+        "Type":  48,
+        "SQL":  "UPDATE cust_list SET cust_list.address = [Forms]![customers]![address], cust_list.city = [Forms]![customers]![city], cust_list.area = [Forms]![customers]![area], cust_list.tel = [Forms]![customers]![tel], cust_list.sel = [Forms]![customers]![sel], cust_list.khist = [Forms]![customers]![khist]\r\nWHERE (((cust_list.number)=Forms!customers!number And (cust_list.number)\u003c\u003e0) And ((cust_list.numw)\u003c\u003eForms!customers!numw));\r\n"
+    },
+    {
+        "Name":  "upd_dup_cust",
+        "Type":  0,
+        "SQL":  "SELECT cust_list.numw AS q, cust_list.*\r\nFROM cust_list, tmp_parameters\r\nWHERE (((cust_list.numw)=[tmp_parameters]![b1]));\r\n"
+    },
+    {
+        "Name":  "upd_hesh",
+        "Type":  0,
+        "SQL":  "SELECT SAPAKIM.[CODE SAPAK], tb_upd_amount.hesh\r\nFROM (tb_catalog INNER JOIN SAPAKIM ON tb_catalog.sapak=SAPAKIM.[CODE SAPAK]) INNER JOIN tb_upd_amount ON tb_catalog.wnum=tb_upd_amount.rnum;\r\n"
+    },
+    {
+        "Name":  "upd_orders_num",
+        "Type":  48,
+        "SQL":  "UPDATE orders SET orders.[number] = [Forms]![customers]![number]\r\nWHERE (((orders.numw)=[Forms]![customers]![norders]));\r\n"
+    },
+    {
+        "Name":  "upd_presence",
+        "Type":  0,
+        "SQL":  "SELECT presence.num, presence.wdate, Trim$(Year(nz([wdate])))+Trim$(Format(Month(nz([wdate])),\"00\")) AS mm, presence.wtime, presence.wdatee, presence.typ, presence.add_day, presence.short_day, presence.rnum\r\nFROM presence\r\nWHERE (((presence.num)=Forms!Employees!EmployeeID) And ((Trim$(Year(nz([wdate])))+Trim$(Format(Month(nz([wdate])),\"00\")))\u003e=(Trim$(Year(DateAdd(\"m\",-1,Date())))+Trim$(Format(Month(DateAdd(\"m\",-1,Date())),\"00\")))))\r\nORDER BY presence.wdate, presence.wtime;\r\n"
+    },
+    {
+        "Name":  "upd_presence_all",
+        "Type":  0,
+        "SQL":  "SELECT presence.num, presence.wdate, presence.wtime, presence.wdatee, presence.typ, presence.add_day, presence.short_day, presence.rnum\r\nFROM presence\r\nWHERE (((presence.num)=[Forms]![Employees]![EmployeeID]))\r\nORDER BY presence.wdate, presence.wtime;\r\n"
+    },
+    {
+        "Name":  "upd_swkp",
+        "Type":  48,
+        "SQL":  "UPDATE orders SET orders.swkp = False\r\nWHERE (((orders.numw)=[Forms]![person_orders_list]![numw]));\r\n"
+    },
+    {
+        "Name":  "upd_tb_graph",
+        "Type":  48,
+        "SQL":  "UPDATE tb_graf INNER JOIN qsclera_all ON tb_graf.gil=qsclera_all.gil SET tb_graf.qnumpr = [qnumr], tb_graf.qnumpl = [qnuml];\r\n"
+    },
+    {
+        "Name":  "upd_wt",
+        "Type":  0,
+        "SQL":  "SELECT cust_list.hwy AS tl\r\nFROM cust_list\r\nWHERE (((cust_list.hwy) Is Not Null) AND ((IsNumeric([hwy]))=True))\r\nORDER BY cust_list.hwy DESC;\r\n"
+    },
+    {
+        "Name":  "updsc",
+        "Type":  48,
+        "SQL":  "UPDATE tb_catalog SET tb_catalog.amount = [amounts]\r\nWHERE (((tb_catalog.amounts)\u003c\u003e0));\r\n"
+    },
+    {
+        "Name":  "updsd",
+        "Type":  48,
+        "SQL":  "UPDATE tb_catalog SET tb_catalog.amounts = Null;\r\n"
+    }
+]

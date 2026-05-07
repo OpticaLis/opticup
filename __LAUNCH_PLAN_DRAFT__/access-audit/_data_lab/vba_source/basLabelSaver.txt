@@ -1,0 +1,199 @@
+﻿Option Compare Database
+Option Explicit
+'  Label Saver v97.30 from Peter's Software
+'
+'    Allows users to specify a starting label position and a number of copies via input boxes
+'    when printing labels
+'
+'  This module was created by:
+'
+'    Peter's Software
+'    http://www.peterssoftware.com
+'    info@peterssoftware.com
+'
+'  ...with some help from Microsoft Knowledge Base article Q299024
+'
+'  This module is freeware.
+'
+'  I do not require that this header be included in any apps you distribute,
+'  but would appreciate credit being given in your documentation.
+'
+'  If you find that this product is useful to you, please drop by our web site
+'  at http://www.peterssoftware.com and sign up on our mailing list so we can
+'  notify you when new versions of Label Saver and other Access tools become available
+'
+'  Usage:
+'    LS_Init                         - from your label report's report header OnFormat event procedure
+'                                      (create a label report header if you don't have one already. Set
+'                                      the report header section height to 0.)
+'    LS_ReportOnOpen Me, Cancel      - from your label report's OnOpen event procedure, and
+'    LS_DetailOnPrint Me             - from your label report's Detail OnPrint event procedure.
+'
+
+'Module variables
+Dim iLSBlankRecordsToPrint As Integer
+Dim iLSBlankCount As Integer
+Dim iLSCopiesToPrint As Integer
+Dim iLSCopiesCount As Integer
+Sub ls_DetailOnPrint(rpt As Report)
+'Print a specified number of blank detail sections.
+
+On Error GoTo ls_DetailOnPrint_err
+
+
+If iLSBlankCount < iLSBlankRecordsToPrint Then
+    'Leave a blank detail section without skipping a record
+    rpt.NextRecord = False
+    rpt.PrintSection = False
+    iLSBlankCount = iLSBlankCount + 1
+Else
+    If iLSCopiesCount < iLSCopiesToPrint Then
+        rpt.NextRecord = False
+        iLSCopiesCount = iLSCopiesCount + 1
+    Else
+        iLSCopiesCount = 1
+    End If
+End If
+
+
+ls_DetailOnPrint_exit:
+    Exit Sub
+ls_DetailOnPrint_err:
+   ' MsgBox "Error in Label Saver subroutine ls_DetailOnPrint - " & err & " - " & err.Description
+    GoTo ls_DetailOnPrint_exit
+End Sub
+
+Sub ls_Init()
+iLSBlankCount = 0
+iLSCopiesCount = 1
+End Sub
+
+Sub ls_ReportOnOpen(rpt As Report, ByRef Cancel As Integer)
+'Prompts user for a label printing start position, and a number of copies.
+'Sets variables for the OnFormat event procedure to handle
+
+Dim iStartLabel As Integer
+Dim iCopies As Integer
+Dim vResp As Variant
+
+
+On Error GoTo ls_ReportOnOpen_err
+
+'Prompt user for starting label position
+vResp = InputBox("?היחל מאיזה תווית", "ניהול תוויות", 1)
+If vResp = "" Then
+    'Cancel was clicked
+    Cancel = True
+    GoTo ls_ReportOnOpen_exit
+End If
+iStartLabel = CInt(vResp)
+
+'Validation check
+If iStartLabel >= 1 And iStartLabel <= 36 Then
+Else
+    MsgBox "תווית ראשונה חייבת להיות בין 1 ל- 36" & vbCrLf & vbCrLf & " פעולה בוטלה"
+    Cancel = True
+    GoTo ls_ReportOnOpen_exit
+End If
+
+'Prompt user for number of copies
+vResp = InputBox("?כמה עותקים מכל תווית", "ניהול תוויות", 1)
+If vResp = "" Then
+    'Cancel was clicked
+    Cancel = True
+    GoTo ls_ReportOnOpen_exit
+End If
+iCopies = CInt(vResp)
+
+'Validation check
+If iCopies < 1 Then
+    MsgBox "מספר העותקים חייב להיות גדול מ- 0" & vbCrLf & vbCrLf & " פעולה בוטלה"
+    Cancel = True
+    GoTo ls_ReportOnOpen_exit
+Else
+    If iCopies >= 1 And iCopies <= 3 Then
+    Else
+        If MsgBox("?בטוח שרוצה להדפיס " & iCopies & " עותקים מכל תווית ", vbYesNo, "ניהול תוויות") = vbYes Then
+        Else
+            MsgBox "פעולה בוטלה"
+            Cancel = True
+            GoTo ls_ReportOnOpen_exit
+        End If
+    End If
+End If
+
+'Set variables. These are used in the Report Detail OnFormat event procedure
+iLSBlankRecordsToPrint = iStartLabel - 1
+iLSCopiesToPrint = iCopies
+
+ls_ReportOnOpen_exit:
+    Exit Sub
+ls_ReportOnOpen_err:
+  '  MsgBox "Error in Label Saver subroutine ls_ReportOnOpen - " & err & " - " & err.Description
+    GoTo ls_ReportOnOpen_exit
+End Sub
+
+
+Sub ls_ReportOnPage()
+'iLSBlankCount = 0
+End Sub
+Sub ls_ReportOnOpenb(rpt As Report, ByRef Cancel As Integer)
+'Prompts user for a label printing start position, and a number of copies.
+'Sets variables for the OnFormat event procedure to handle
+
+Dim iStartLabel As Integer
+Dim iCopies As Integer
+Dim vResp As Variant
+
+
+On Error GoTo ls_ReportOnOpen_err
+
+'Prompt user for starting label position
+vResp = InputBox("?היחל מאיזה תווית", "ניהול תוויות", 1)
+If vResp = "" Then
+    'Cancel was clicked
+    Cancel = True
+    GoTo ls_ReportOnOpen_exit
+End If
+iStartLabel = CInt(vResp)
+
+'Validation check
+If iStartLabel >= 1 And iStartLabel <= 36 Then
+Else
+    MsgBox "תווית ראשונה חייבת להיות בין 1 ל- 36" & vbCrLf & vbCrLf & " פעולה בוטלה"
+    Cancel = True
+    GoTo ls_ReportOnOpen_exit
+End If
+
+'Prompt user for number of copies
+
+iCopies = 1
+
+'Validation check
+If iCopies < 1 Then
+    MsgBox "מספר העותקים חייב להיות גדול מ- 0" & vbCrLf & vbCrLf & " פעולה בוטלה"
+    Cancel = True
+    GoTo ls_ReportOnOpen_exit
+Else
+    If iCopies >= 1 And iCopies <= 3 Then
+    Else
+        If MsgBox("?בטוח שרוצה להדפיס " & iCopies & " עותקים מכל תווית ", vbYesNo, "ניהול תוויות") = vbYes Then
+        Else
+            MsgBox "פעולה בוטלה"
+            Cancel = True
+            GoTo ls_ReportOnOpen_exit
+        End If
+    End If
+End If
+
+'Set variables. These are used in the Report Detail OnFormat event procedure
+iLSBlankRecordsToPrint = iStartLabel - 1
+iLSCopiesToPrint = iCopies
+
+ls_ReportOnOpen_exit:
+    Exit Sub
+ls_ReportOnOpen_err:
+  '  MsgBox "Error in Label Saver subroutine ls_ReportOnOpen - " & err & " - " & err.Description
+    GoTo ls_ReportOnOpen_exit
+End Sub
+

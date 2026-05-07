@@ -1,0 +1,657 @@
+﻿[
+    {
+        "Name":  "ajbCalendar",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  23,
+        "Procedures":  [
+                           {
+                               "Name":  "CalendarFor",
+                               "StartLine":  6,
+                               "LineCount":  18
+                           }
+                       ]
+    },
+    {
+        "Name":  "basFolderBrowse",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  26,
+        "Procedures":  [
+                           {
+                               "Name":  "BrowseFolder",
+                               "StartLine":  4,
+                               "LineCount":  23
+                           }
+                       ]
+    },
+    {
+        "Name":  "basFormBackColorGradient",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  160,
+        "Procedures":  [
+                           {
+                               "Name":  "bcg_SetColors",
+                               "StartLine":  36,
+                               "LineCount":  108
+                           },
+                           {
+                               "Name":  "bcg_GetColorIndexFromColorID",
+                               "StartLine":  144,
+                               "LineCount":  4
+                           },
+                           {
+                               "Name":  "GetRGB",
+                               "StartLine":  148,
+                               "LineCount":  13
+                           }
+                       ]
+    },
+    {
+        "Name":  "basLabelSaver",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  199,
+        "Procedures":  [
+                           {
+                               "Name":  "ls_DetailOnPrint",
+                               "StartLine":  38,
+                               "LineCount":  27
+                           },
+                           {
+                               "Name":  "ls_Init",
+                               "StartLine":  65,
+                               "LineCount":  5
+                           },
+                           {
+                               "Name":  "ls_ReportOnOpen",
+                               "StartLine":  70,
+                               "LineCount":  65
+                           },
+                           {
+                               "Name":  "ls_ReportOnPage",
+                               "StartLine":  135,
+                               "LineCount":  5
+                           },
+                           {
+                               "Name":  "ls_ReportOnOpenb",
+                               "StartLine":  140,
+                               "LineCount":  60
+                           }
+                       ]
+    },
+    {
+        "Name":  "basShrinkerStretcher",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  3114,
+        "Procedures":  [
+                           {
+                               "Name":  "a_OpenDemoForm",
+                               "StartLine":  263,
+                               "LineCount":  4
+                           },
+                           {
+                               "Name":  "SS_ProcUncommentedTextExists",
+                               "StartLine":  267,
+                               "LineCount":  61
+                           },
+                           {
+                               "Name":  "SS_IsMDE",
+                               "StartLine":  328,
+                               "LineCount":  8
+                           },
+                           {
+                               "Name":  "SS_BindFormEvents",
+                               "StartLine":  336,
+                               "LineCount":  56
+                           },
+                           {
+                               "Name":  "SS_OpenForm",
+                               "StartLine":  392,
+                               "LineCount":  157
+                           },
+                           {
+                               "Name":  "SS_GetFormHeight",
+                               "StartLine":  549,
+                               "LineCount":  12
+                           },
+                           {
+                               "Name":  "SS_SetDatasheetBasisRowHeight",
+                               "StartLine":  561,
+                               "LineCount":  39
+                           },
+                           {
+                               "Name":  "SS_SizeWindow",
+                               "StartLine":  600,
+                               "LineCount":  57
+                           },
+                           {
+                               "Name":  "SS_SaveFormInsideSettings",
+                               "StartLine":  657,
+                               "LineCount":  21
+                           },
+                           {
+                               "Name":  "SS_GetWordsBetween",
+                               "StartLine":  678,
+                               "LineCount":  10
+                           },
+                           {
+                               "Name":  "SS_MsgBox",
+                               "StartLine":  688,
+                               "LineCount":  19
+                           },
+                           {
+                               "Name":  "SS_OnResize",
+                               "StartLine":  707,
+                               "LineCount":  24
+                           },
+                           {
+                               "Name":  "SS_SetFontSize",
+                               "StartLine":  731,
+                               "LineCount":  90
+                           },
+                           {
+                               "Name":  "SS_StaticResize",
+                               "StartLine":  821,
+                               "LineCount":  80
+                           },
+                           {
+                               "Name":  "SS_RescaleForms",
+                               "StartLine":  901,
+                               "LineCount":  244
+                           },
+                           {
+                               "Name":  "SS_FillFRArray",
+                               "StartLine":  1145,
+                               "LineCount":  91
+                           },
+                           {
+                               "Name":  "SS_FindFRRow",
+                               "StartLine":  1236,
+                               "LineCount":  42
+                           },
+                           {
+                               "Name":  "SS_Init",
+                               "StartLine":  1278,
+                               "LineCount":  216
+                           },
+                           {
+                               "Name":  "SS_OnOpen",
+                               "StartLine":  1494,
+                               "LineCount":  32
+                           },
+                           {
+                               "Name":  "SS_Rescale",
+                               "StartLine":  1526,
+                               "LineCount":  806
+                           },
+                           {
+                               "Name":  "SS_RemoveFRRows",
+                               "StartLine":  2332,
+                               "LineCount":  65
+                           },
+                           {
+                               "Name":  "SS_ResizeColWd",
+                               "StartLine":  2397,
+                               "LineCount":  40
+                           },
+                           {
+                               "Name":  "SS_ResizeControls",
+                               "StartLine":  2437,
+                               "LineCount":  660
+                           },
+                           {
+                               "Name":  "xg_GetScreenResolution",
+                               "StartLine":  3097,
+                               "LineCount":  18
+                           }
+                       ]
+    },
+    {
+        "Name":  "clsSinkSSFormEvents",
+        "Type":  2,
+        "TypeName":  "Class Module",
+        "Lines":  401,
+        "Procedures":  [
+                           {
+                               "Name":  "GetTopHwnd",
+                               "StartLine":  39,
+                               "LineCount":  22
+                           },
+                           {
+                               "Name":  "Class_Initialize",
+                               "StartLine":  61,
+                               "LineCount":  12
+                           },
+                           {
+                               "Name":  "Init",
+                               "StartLine":  73,
+                               "LineCount":  171
+                           },
+                           {
+                               "Name":  "BindEvents",
+                               "StartLine":  244,
+                               "LineCount":  24
+                           },
+                           {
+                               "Name":  "Terminate",
+                               "StartLine":  268,
+                               "LineCount":  32
+                           },
+                           {
+                               "Name":  "mobjForm_Close",
+                               "StartLine":  300,
+                               "LineCount":  6
+                           },
+                           {
+                               "Name":  "mobjForm_Resize",
+                               "StartLine":  306,
+                               "LineCount":  43
+                           },
+                           {
+                               "Name":  "mobjForm_Unload",
+                               "StartLine":  394,
+                               "LineCount":  8
+                           }
+                       ]
+    },
+    {
+        "Name":  "GetSerial",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  324,
+        "Procedures":  [
+                           {
+                               "Name":  "qregkey",
+                               "StartLine":  5,
+                               "LineCount":  118
+                           },
+                           {
+                               "Name":  "qaddkey",
+                               "StartLine":  123,
+                               "LineCount":  117
+                           },
+                           {
+                               "Name":  "q30",
+                               "StartLine":  240,
+                               "LineCount":  24
+                           },
+                           {
+                               "Name":  "qreg",
+                               "StartLine":  264,
+                               "LineCount":  47
+                           },
+                           {
+                               "Name":  "qver",
+                               "StartLine":  311,
+                               "LineCount":  14
+                           }
+                       ]
+    },
+    {
+        "Name":  "Mod open applic",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  94,
+        "Procedures":  [
+                           {
+                               "Name":  "ExecCmd",
+                               "StartLine":  73,
+                               "LineCount":  22
+                           }
+                       ]
+    },
+    {
+        "Name":  "mymod",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  890,
+        "Procedures":  [
+                           {
+                               "Name":  "ChangeProperty",
+                               "StartLine":  32,
+                               "LineCount":  32
+                           },
+                           {
+                               "Name":  "wfind",
+                               "StartLine":  64,
+                               "LineCount":  15
+                           },
+                           {
+                               "Name":  "wsortname",
+                               "StartLine":  79,
+                               "LineCount":  54
+                           },
+                           {
+                               "Name":  "tranl",
+                               "StartLine":  133,
+                               "LineCount":  36
+                           },
+                           {
+                               "Name":  "close_report",
+                               "StartLine":  169,
+                               "LineCount":  10
+                           },
+                           {
+                               "Name":  "prt_rep",
+                               "StartLine":  179,
+                               "LineCount":  21
+                           },
+                           {
+                               "Name":  "aun",
+                               "StartLine":  200,
+                               "LineCount":  20
+                           },
+                           {
+                               "Name":  "add_fld1",
+                               "StartLine":  220,
+                               "LineCount":  142
+                           },
+                           {
+                               "Name":  "qmonth",
+                               "StartLine":  362,
+                               "LineCount":  8
+                           },
+                           {
+                               "Name":  "xg_ReplaceAllWith",
+                               "StartLine":  370,
+                               "LineCount":  28
+                           },
+                           {
+                               "Name":  "amla",
+                               "StartLine":  398,
+                               "LineCount":  15
+                           },
+                           {
+                               "Name":  "fCursorToStartOnClick",
+                               "StartLine":  413,
+                               "LineCount":  10
+                           },
+                           {
+                               "Name":  "ZoomCtl",
+                               "StartLine":  423,
+                               "LineCount":  5
+                           },
+                           {
+                               "Name":  "qpass",
+                               "StartLine":  428,
+                               "LineCount":  11
+                           },
+                           {
+                               "Name":  "IsLoaded",
+                               "StartLine":  439,
+                               "LineCount":  14
+                           },
+                           {
+                               "Name":  "findstr",
+                               "StartLine":  453,
+                               "LineCount":  3
+                           },
+                           {
+                               "Name":  "findstrb",
+                               "StartLine":  456,
+                               "LineCount":  3
+                           },
+                           {
+                               "Name":  "xg_GetSubString",
+                               "StartLine":  459,
+                               "LineCount":  44
+                           },
+                           {
+                               "Name":  "qlbl",
+                               "StartLine":  503,
+                               "LineCount":  11
+                           },
+                           {
+                               "Name":  "qax",
+                               "StartLine":  514,
+                               "LineCount":  10
+                           },
+                           {
+                               "Name":  "qpr",
+                               "StartLine":  524,
+                               "LineCount":  10
+                           },
+                           {
+                               "Name":  "last_GetSubString",
+                               "StartLine":  534,
+                               "LineCount":  40
+                           },
+                           {
+                               "Name":  "close_tables",
+                               "StartLine":  574,
+                               "LineCount":  21
+                           },
+                           {
+                               "Name":  "backup_db",
+                               "StartLine":  595,
+                               "LineCount":  73
+                           },
+                           {
+                               "Name":  "qwrn",
+                               "StartLine":  668,
+                               "LineCount":  16
+                           },
+                           {
+                               "Name":  "backup_dt",
+                               "StartLine":  684,
+                               "LineCount":  39
+                           },
+                           {
+                               "Name":  "q_open",
+                               "StartLine":  723,
+                               "LineCount":  8
+                           },
+                           {
+                               "Name":  "prp",
+                               "StartLine":  731,
+                               "LineCount":  12
+                           },
+                           {
+                               "Name":  "q_logo",
+                               "StartLine":  743,
+                               "LineCount":  16
+                           },
+                           {
+                               "Name":  "send_mail",
+                               "StartLine":  759,
+                               "LineCount":  19
+                           },
+                           {
+                               "Name":  "CreateContextMenu",
+                               "StartLine":  778,
+                               "LineCount":  21
+                           },
+                           {
+                               "Name":  "fCut",
+                               "StartLine":  799,
+                               "LineCount":  5
+                           },
+                           {
+                               "Name":  "fCopy",
+                               "StartLine":  804,
+                               "LineCount":  5
+                           },
+                           {
+                               "Name":  "fPaste",
+                               "StartLine":  809,
+                               "LineCount":  5
+                           },
+                           {
+                               "Name":  "OpenDb",
+                               "StartLine":  814,
+                               "LineCount":  18
+                           },
+                           {
+                               "Name":  "close_forms",
+                               "StartLine":  832,
+                               "LineCount":  11
+                           },
+                           {
+                               "Name":  "getFileName",
+                               "StartLine":  843,
+                               "LineCount":  48
+                           }
+                       ]
+    },
+    {
+        "Name":  "mymod1",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  184,
+        "Procedures":  [
+                           {
+                               "Name":  "calc_time",
+                               "StartLine":  3,
+                               "LineCount":  41
+                           },
+                           {
+                               "Name":  "calc_min",
+                               "StartLine":  44,
+                               "LineCount":  21
+                           },
+                           {
+                               "Name":  "calc_hours",
+                               "StartLine":  65,
+                               "LineCount":  37
+                           },
+                           {
+                               "Name":  "qday",
+                               "StartLine":  102,
+                               "LineCount":  7
+                           },
+                           {
+                               "Name":  "femp",
+                               "StartLine":  109,
+                               "LineCount":  6
+                           },
+                           {
+                               "Name":  "dos_let",
+                               "StartLine":  115,
+                               "LineCount":  70
+                           }
+                       ]
+    },
+    {
+        "Name":  "mymod2",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  383,
+        "Procedures":  [
+                           {
+                               "Name":  "getgimatrics",
+                               "StartLine":  22,
+                               "LineCount":  43
+                           },
+                           {
+                               "Name":  "getpdate",
+                               "StartLine":  65,
+                               "LineCount":  16
+                           },
+                           {
+                               "Name":  "getmonthname",
+                               "StartLine":  81,
+                               "LineCount":  19
+                           },
+                           {
+                               "Name":  "getholiday",
+                               "StartLine":  100,
+                               "LineCount":  125
+                           },
+                           {
+                               "Name":  "gethdate",
+                               "StartLine":  225,
+                               "LineCount":  69
+                           },
+                           {
+                               "Name":  "gethdatee",
+                               "StartLine":  294,
+                               "LineCount":  90
+                           }
+                       ]
+    },
+    {
+        "Name":  "s_lang",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  52,
+        "Procedures":  [
+                           {
+                               "Name":  "SwitchKeyboardLang",
+                               "StartLine":  23,
+                               "LineCount":  23
+                           },
+                           {
+                               "Name":  "lang_heb",
+                               "StartLine":  46,
+                               "LineCount":  4
+                           },
+                           {
+                               "Name":  "lang_eng",
+                               "StartLine":  50,
+                               "LineCount":  3
+                           }
+                       ]
+    },
+    {
+        "Name":  "scan",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  239,
+        "Procedures":  [
+                           {
+                               "Name":  "scana",
+                               "StartLine":  2,
+                               "LineCount":  20
+                           },
+                           {
+                               "Name":  "scanb",
+                               "StartLine":  22,
+                               "LineCount":  63
+                           },
+                           {
+                               "Name":  "FeederSacan",
+                               "StartLine":  85,
+                               "LineCount":  155
+                           }
+                       ]
+    },
+    {
+        "Name":  "Send_SMS_MDL",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  80,
+        "Procedures":  [
+                           {
+                               "Name":  "wpp",
+                               "StartLine":  14,
+                               "LineCount":  67
+                           }
+                       ]
+    },
+    {
+        "Name":  "Send_watsp",
+        "Type":  1,
+        "TypeName":  "Standard Module",
+        "Lines":  75,
+        "Procedures":  [
+                           {
+                               "Name":  "SendWMessage",
+                               "StartLine":  3,
+                               "LineCount":  58
+                           },
+                           {
+                               "Name":  "q_msg",
+                               "StartLine":  61,
+                               "LineCount":  3
+                           },
+                           {
+                               "Name":  "q_wap",
+                               "StartLine":  64,
+                               "LineCount":  12
+                           }
+                       ]
+    }
+]
