@@ -13,7 +13,7 @@ if (typeof ActivityLog !== 'undefined' && !window.ActivityLog) window.ActivityLo
 
   var PRIZMA_PHONE_RE = /^\+972(\d{9})$/;
 
-  // --- Phone format: +972507175675 -> 050-717-5675 ---
+  // --- Phone format: +9725XXXXXXXX -> 0XX-XXX-XXXX (E.164 → local) ---
   function formatPhone(raw) {
     if (!raw) return '';
     var m = String(raw).match(PRIZMA_PHONE_RE);

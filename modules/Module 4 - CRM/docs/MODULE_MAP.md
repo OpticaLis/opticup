@@ -164,7 +164,7 @@
 ### Shared namespace: `window.CrmHelpers`
 | Method | Purpose |
 |--------|---------|
-| `formatPhone(raw)` | `+972507175675` → `050-717-5675` |
+| `formatPhone(raw)` | `+9725XXXXXXXX` → `0XX-XXX-XXXX` (E.164 → local; corrected 2026-05-06 per SPEC M4_HARDCODED_DEMO_PHONE_CLEANUP — prior example used a literal that was later mistaken for a real Prizma number) |
 | `formatCurrency(n)` | `39460` → `₪39,460` |
 | `formatDate(iso)` | `2026-03-27` → `27.03.2026` |
 | `formatDateTime(iso)` | Date + HH:MM |
