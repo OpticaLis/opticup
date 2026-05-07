@@ -12,8 +12,14 @@
 
 BEGIN;
 
+-- 2026-05-06 correction: original SPEC M4_HARDCODED_PRIZMA_REMOVAL pulled
+-- a non-existent phone literal from a decorative comment in crm-helpers.js.
+-- That value was never a real Prizma number. Verified-real value is
+-- 053-3645404 (the support line, also stored in ui_config.support_phone_display).
+-- See SPEC M4_HARDCODED_DEMO_PHONE_CLEANUP for full forensics including the
+-- exact prior literal.
 UPDATE public.tenants
-   SET business_phone   = '050-717-5675',
+   SET business_phone   = '053-3645404',
        business_address = 'הרצל 32, אשקלון',
        ui_config = ui_config || jsonb_build_object(
          'whatsapp_phone_e164',   '972533645404',
