@@ -51,3 +51,29 @@ as Prizma's official contact number, despite never being a real value.
   forbidden.
 
 **How a reviewer enforces this:** `grep -rn "050-\|052-\|053-\|054-\|058-" --include='*.js' --include='*.ts' --include='*.astro' --include='*.md'` on any cleanup SPEC's diff. Every hit must be either (a) inside a verified-real config row (per criterion #2 above), or (b) a placeholder pattern per criterion #1.
+
+---
+
+## L-PROJECT-002 — JSONB column writes require type-preservation, not text substitution
+
+**Status:** LOCKED (2026-05-08)
+**Source incident:** SPEC `M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL`. The earlier `M3_PHONE_TEMPLATING_AND_CLEANUP` migration (2026-05-07) modified content inside `storefront_pages.blocks` (a `jsonb` array column) by string-level `.replace()` on the JSON text and saved the result. Postgres accepted the write because `jsonb` columns accept any valid JSON value — including a top-level string. 16 customer-facing pages on the production storefront then rendered empty bodies because the Astro renderer expected an array, called `Array.isArray()`, got `false`, and short-circuited. Pages were broken for ~24 hours before discovery. (16, not the 12 originally suspected — 3 `/accessibility/` rows had been broken via a separate manual session 2026-05-01, and SPEC §1 arithmetic miscounted §2's enumerated list of 16 as "15".)
+
+**Rule:**
+When a SPEC modifies content inside a `jsonb` column whose schema requires `array` or `object`:
+1. **Parse the value to its native runtime type (Array / Object) BEFORE making changes.** Use the Postgres driver's native deserialization, NOT string slicing on the column's text representation.
+2. **Mutate the parsed value** using runtime methods (Array.map, Object.assign, etc.).
+3. **UPDATE with the mutated native value.** The Postgres driver re-serializes correctly. Do not stringify the value yourself before passing it.
+4. **NEVER** do `column::text` then `.replace()` then write the resulting string back as the column value. Postgres will accept it but every consumer that expects an array/object will silently fail.
+
+**Defense (now in place at DB layer):**
+- `storefront_pages.blocks` and `storefront_pages.previous_blocks` carry `CHECK (col IS NULL OR jsonb_typeof(col) = 'array')` constraints (added by M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL). Future writes of the wrong type fail at INSERT/UPDATE time with `SQLSTATE 23514`. The bug surfaces in test/dev/CI, not in production rendering.
+
+**Generalization beyond `storefront_pages`:** every `jsonb` column whose application code assumes a specific runtime shape (array, object) SHOULD have a CHECK constraint enforcing `jsonb_typeof()`. Pre-flight a new such column with: "If a string was written here by accident, would the reader code crash gracefully or produce silent garbage?" If silent garbage — add the constraint.
+
+**Forbidden patterns** (fail review on sight):
+- `UPDATE T SET jsonb_col = REPLACE(jsonb_col::text, ...)` — produces a top-level string.
+- `const newVal = JSON.stringify(arr.map(...)); UPDATE T SET jsonb_col = newVal` — driver-dependent; some Postgres drivers wrap this in a string. Pass the JS array directly.
+- Migration scripts that read `pg_typeof(column)` instead of `jsonb_typeof(column)` for type assertion — `pg_typeof` always returns `jsonb`, useless for shape validation.
+
+**How a reviewer enforces this:** Before approving any SPEC that writes to a `jsonb` column whose schema requires array/object, check the SPEC's example query for: (a) does it mutate via runtime parse-then-modify, or (b) does it do text replace? If (b), reject. Additionally, pre-flight `SELECT jsonb_typeof(target_col), COUNT(*) FROM target GROUP BY 1` against the production DB to confirm no rows are already broken before the SPEC runs.

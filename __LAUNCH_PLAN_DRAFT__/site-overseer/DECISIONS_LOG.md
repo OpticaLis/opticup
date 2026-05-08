@@ -24,6 +24,15 @@
 
 ## Entries
 
+### 2026-05-08 — cms-blocks-restore-incident-hot-fix (M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL)
+
+- **Context:** 16 customer-facing CMS pages on `www.prizma-optic.co.il` rendering empty bodies for ~24 hours. Root cause: M3_PHONE_TEMPLATING_AND_CLEANUP migration on 2026-05-07 did string-level `.replace()` on jsonb content and saved the result as a top-level JSON string instead of a native array. Astro renderer's `Array.isArray()` returned false → empty render. (3 of the 16 — `/accessibility/` ×3 — broken earlier on 2026-05-01 via a separate manual session that hit the same anti-pattern.)
+- **Question:** Step 0 returned count = 16 broken rows, not the 15 in SPEC §1/§5/§6 stop trigger. SPEC §2's enumerated inventory actually lists 16 explicitly (1+3+3+3+3+3). Should executor STOP per literal §6 trigger or continue per intent (live state matches §2 inventory verbatim)?
+- **Decision:** Continue with all 16 — Bounded-Autonomy intent-vs-literal applied. SPEC author's "15" is a §1/§5 arithmetic miscount of §2's enumerated table. Logged as Deviation 1 in EXECUTION_REPORT.
+- **Rationale:** Genuine SPEC-internal contradiction; live state aligns perfectly with §2 inventory which is the most-detailed enumeration; stopping mid-flow with 16 broken pages in production was clearly worse than continuing with evidence-based count. Foreman to ratify.
+- **Operational action:** Restored all 16 rows (15 single-encoded via pass2 unwrap, 1 double-encoded `/terms/` he via pass3 unwrap) plus 13 `previous_blocks` (12 pass2 + 1 pass3). Installed CHECK constraints on `storefront_pages.blocks` AND `.previous_blocks`. Verified all 16 live destinations render 40-65KB bodies. LEARNINGS L-PROJECT-002 added project-wide. Site Overseer SKILL v0.3 with case study + jsonb pre-write checklist.
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL/`; `docs/LEARNINGS.md` L-PROJECT-002; `__LAUNCH_PLAN_DRAFT__/site-overseer/SITE_OVERSEER_SKILL.md` §5b + §5c.
+
 ### 2026-05-08 — wp-blog-post-mapping (REC-SITE-015 follow-up)
 
 - **Context:** Daniel directive 2026-05-08: "אין לי בעיה שכל עמודי המוצר הישנים יפנו את המשתמש לעמוד המותגים או משהו בסגנון. הבעיה היא עם עמודים שיש הרבה כניסות אליהם שזה בעיקר הבלוג." Bulk-fallback `/blog/` for blog posts loses high-intent SEO traffic; specific per-post mapping preserves it.

@@ -1,11 +1,11 @@
-# Site Overseer — SKILL knowledge map (v0.2)
+# Site Overseer — SKILL knowledge map (v0.3)
 
 > **Purpose:** Drop-in knowledge so future Site Overseer Mode B sessions can answer
 > common questions about the Optic Up storefront without re-discovering structure
 > each time. This file is loaded BEFORE running any Mode B audit.
 >
 > **Created:** 2026-05-08 during M3_WP_BLOG_POST_MAPPING execution.
-> **Version:** 0.2 (initial knowledge baseline; expand as future SPECs surface gaps).
+> **Version:** 0.3 — added Production Incident Pattern Library + jsonb pre-write checklist (M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL, 2026-05-08).
 > **Authority for canonical truth:** the live system (Supabase + Vercel + WP). When
 > this file disagrees with the live system, the live system wins — and this file
 > needs an update.
@@ -77,6 +77,51 @@ Views are the public-read surface for the storefront. **Iron Rule 13: Storefront
 | `v_storefront_blog_posts` | Published blog posts | `WHERE status='published'` |
 | `v_storefront_categories` | Active product categories | `WHERE is_active=true` |
 | `v_storefront_brands` | Active brands | similar |
+
+## 5b. Pre-write checklist for jsonb columns (added v0.3)
+
+**Before any SPEC touches a `jsonb` column whose schema requires array/object** (e.g. `storefront_pages.blocks`, `storefront_pages.previous_blocks`, future block-typed columns):
+
+1. **Run `jsonb_typeof()` on a representative row** to confirm runtime type matches expectation:
+   ```sql
+   SELECT jsonb_typeof(target_col), COUNT(*) FROM target_table GROUP BY 1;
+   ```
+2. **Mutate via parse-then-modify**, never via text replace:
+   ```js
+   // GOOD — driver re-serializes the array correctly
+   const arr = row.blocks;                    // already an Array (jsonb auto-parsed)
+   arr.forEach(b => b.data.body = b.data.body.replace(...));
+   await sb.from('t').update({ blocks: arr });
+
+   // BAD — produces a top-level JSON string, fails Array.isArray() at the renderer
+   const newText = JSON.stringify(row.blocks).replace(...);
+   await sb.from('t').update({ blocks: newText });
+   ```
+3. **Verify the post-state runtime type after the UPDATE**:
+   ```sql
+   SELECT jsonb_typeof(target_col) FROM target_table WHERE id = $1;
+   -- expected: 'array' (or whatever the schema requires)
+   ```
+
+The CHECK constraint on `storefront_pages.blocks` (and `.previous_blocks`) added 2026-05-08 enforces this at the DB layer — but other jsonb columns in the schema do NOT yet have analogous constraints. If you find one whose application code assumes a runtime shape, propose a constraint as a follow-up SPEC.
+
+## 5c. Production Incident Pattern Library (added v0.3)
+
+### Case Study #1 — 2026-05-08, M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL
+
+**Symptoms:** 16 customer-facing pages (`/terms/` he, `/privacy/` ×3 langs, `/deal/` ×3, `/צרו-קשר/` ×3, `/שאלות-ותשובות/` ×3, `/accessibility/` ×3) returned HTTP 200 with empty body for ~24 hours. Affected: legal pages, contact, FAQ, accessibility statement — all critical compliance pages.
+
+**Root cause:** Earlier SPEC `M3_PHONE_TEMPLATING_AND_CLEANUP` (2026-05-07) modified `storefront_pages.blocks` jsonb content via string `.replace()` and saved the result. Postgres accepted the write because jsonb accepts any JSON value, including top-level strings. The Astro renderer's `Array.isArray()` returned false → empty render. (Plus 3 older `/accessibility/` rows broken on 2026-05-01 via a manual site-overseer session that hit the same anti-pattern.)
+
+**Detection signal:** Daniel noticed `/terms/` returned no body. Queries on `jsonb_typeof(blocks)` revealed 16 rows where the type was 'string' instead of 'array'.
+
+**Recovery:** Two-pass unwrap (`(blocks #>> '{}')::jsonb`) for 15 single-encoded rows; three-pass unwrap (`((blocks #>> '{}')::jsonb #>> '{}')::jsonb`) for `/terms/ he` which was double-encoded. All 16 recovered to non-empty arrays — zero data loss.
+
+**Permanent fix:** Two CHECK constraints `storefront_pages_blocks_must_be_array` and `storefront_pages_previous_blocks_must_be_array` enforce `jsonb_typeof IN ('array', null)`. Future bad writes fail with SQLSTATE 23514 at the DB layer.
+
+**Sentinel signature for future detection:** if any `storefront_pages` row has `jsonb_typeof(blocks) <> 'array' AND blocks IS NOT NULL`, that's the same incident. The constraint should now make this impossible — but if it ever returns, the constraint has been dropped or bypassed.
+
+**LEARNINGS:** L-PROJECT-002 codifies the rule project-wide; this skill file's §5b is the operational checklist.
 
 ## 6. WordPress legacy — cPanel + REST API
 
