@@ -1,6 +1,6 @@
 # Site Overseer — HANDOFF
 
-**Last updated:** 2026-05-08 (after M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL close — incident hot-fix)
+**Last updated:** 2026-05-08 (after M3_PHONE_434_LEGACY_CLEANUP close — REC-SITE-002 documentation closure)
 **Mode:** **Mode B** (post-discovery — SITE_MAP.md + SITE_OVERSEER_SKILL.md v0.2 baseline exists)
 **Site Overseer state:** Ready to receive targeted Mode-B audits; knowledge map now loaded so structure questions resolve in <2 min via lookup vs ~20 min re-discovery
 
@@ -50,7 +50,7 @@ Site Overseer formally transitions Mode A → Mode B with this HANDOFF.
 | ID | Severity | Description | Estimated SPEC scope |
 |---|---|---|---|
 | REC-SITE-001 | (closed) | M4_HARDCODED_DEMO_PHONE_CLEANUP — closed 2026-05-07. | — |
-| REC-SITE-002 | CRITICAL | Provenance + cleanup of `053-434-7265` and `prizma-optice.co.il` typo. Includes: bulk CMS row update (24 rows), delete `_deprecated/legal-terms.ts` + `_deprecated/legal-privacy.ts`, delete misnamed `public/images/lab/israel-hayom-logo.png`. **Daniel must first confirm the phone's status.** | 1 SPEC, 1-2 commits, includes DB writes (Level 2), 1-3 hours executor time. |
+| REC-SITE-002 | (closed) | CMS-row half closed by M3_PHONE_TEMPLATING_AND_CLEANUP (2026-05-07). File-level half closed by storefront commit `a4723b5` (2026-05-07, by Daniel) which deleted all 3 named artifacts. M3_PHONE_434_LEGACY_CLEANUP (2026-05-08) provided the documentation closure + Site Overseer audit trail. The `prizma-optice.co.il` typo: 0 occurrences in live CMS; 5 file-level occurrences are in `docs/` historical archives (preserved per discipline) + `scripts/seo/output/` cached files (auto-regenerable). Closed-as-no-action. | — |
 | REC-SITE-003 | (closed) | M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL — closed 2026-05-08. 16 rows restored, 2 CHECK constraints active (cannot recur). | — |
 | REC-SITE-004 | HIGH | Vercel redirect UTF-8 mis-encoding fix. Investigate redirect rule, replace with host-only redirect. Affects 6 Hebrew-slug pages. | 1 SPEC, infra-config-only, 30-60 min. |
 | REC-SITE-005 | HIGH | Lead-intake EF / API: `from:` header derivation from tenant config (not hardcoded "Optic Up Leads"). Touches `src/pages/api/leads/submit.ts:148-163`. | 1 SPEC, code-only, 30 min + QA. |
@@ -78,6 +78,7 @@ Site Overseer formally transitions Mode A → Mode B with this HANDOFF.
 | 2026-05-08 | "Include all 3,221 with bulk mapping" — scope expansion in M3_WP_SUBDOMAINS_REDIRECT after URL count drift from 1,675 → 3,223 | Phase A executor crawled all 3,223 URLs across 9 sitemap types per subdomain; bulk-mapped extra 1,548 taxonomy/archive URLs via existing rules. | CSVs delivered (1,609 ru + 1,610 en) ready for Daniel's Phase B cPanel import. LEARNINGS L-SITE-001 added (subdomain enumeration rule). |
 | 2026-05-08 | M3_WP_BLOG_POST_MAPPING — title-match per-post redirects + Site Overseer skill knowledge map | Executor: 42 ru + 43 en blog posts matched to Astro slugs (HIGH 71 / LOW 10 / NONE 4). Live mutations via Redirection plugin REST API: ru. surgical replace, en. full import (was 0 redirects). 5/5 ru + 5/5 en spot-check passes. SITE_OVERSEER_SKILL.md v0.2 created. | REC-SITE-015 fully closed; Phase C remains deferred. |
 | 2026-05-08 | M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL — production hot-fix: 16 broken CMS pages + permanent CHECK constraints + L-PROJECT-002 + Site Overseer skill v0.3 | Executor: restored 16 storefront_pages rows via two-pass (15) + three-pass (1) unwrap of double-encoded blocks/previous_blocks. Installed CHECK constraints on both columns. Verified 16/16 live destinations now non-empty (40-65KB body). | REC-SITE-003 closed; bug class can no longer recur (DB-layer guardrail). |
+| 2026-05-08 | M3_PHONE_434_LEGACY_CLEANUP — closure-only SPEC; storefront cleanup was already done by `a4723b5` (2026-05-07, Daniel) | Executor: Step 0 surfaced that all 3 target files were already deleted; AskUserQuestion to Daniel; chose ERP-retro-only path. ERP commit documents REC-SITE-002 closure. Findings logged: SPEC was authored on stale state (Foreman pre-flight gap). | REC-SITE-002 closed; defunct phone fully eliminated from customer-facing surface (CMS-row half + file-level half). |
 
 ---
 

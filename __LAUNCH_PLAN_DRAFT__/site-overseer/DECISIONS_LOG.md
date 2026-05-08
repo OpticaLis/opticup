@@ -24,6 +24,15 @@
 
 ## Entries
 
+### 2026-05-08 — phone-434-legacy-cleanup-closure (M3_PHONE_434_LEGACY_CLEANUP)
+
+- **Context:** SPEC `M3_PHONE_434_LEGACY_CLEANUP` authored 2026-05-08 to close REC-SITE-002 file-level half by deleting 3 storefront files containing the defunct `053-434-7265`. Step 0 verification revealed all 3 files were ALREADY DELETED by storefront commit `a4723b5` (2026-05-07, by Daniel) — the same commit that did the M3_PHONE_TEMPLATING_AND_CLEANUP CMS-row work. SPEC was authored on stale state. Live homepage already 0 occurrences of `053-434-7265`.
+- **Question:** Three closure paths surfaced via AskUserQuestion: (a) ERP retro only — skip storefront commit, (b) empty marker commit on storefront for criterion-6 literal compliance, (c) abort SPEC entirely.
+- **Decision:** "ERP retro only — skip storefront commit." (Daniel via tool prompt during executor session.)
+- **Rationale:** The cleanup work was genuinely already done; no storefront-side change has any content. An empty marker commit would have been pure ceremony. Aborting entirely would have lost the audit trail (Site Overseer needs to formally mark REC-SITE-002 closed). ERP retro captures the documentation closure + the Foreman pre-flight learning.
+- **Operational action:** ERP commit on develop with EXECUTION_REPORT + FINDINGS + HANDOFF (REC-SITE-002 closed) + DECISIONS_LOG (this entry). 0 storefront commits. 0 PRs. Findings: M3-SPEC-01 (MEDIUM — Foreman authored SPEC on stale state) + M3-DATA-02 (INFO — `_deprecated/` retains 5 unrelated files, leave intact per §7).
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_PHONE_434_LEGACY_CLEANUP/`; storefront commit `a4723b5`; REC-SITE-002.
+
 ### 2026-05-08 — cms-blocks-restore-incident-hot-fix (M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL)
 
 - **Context:** 16 customer-facing CMS pages on `www.prizma-optic.co.il` rendering empty bodies for ~24 hours. Root cause: M3_PHONE_TEMPLATING_AND_CLEANUP migration on 2026-05-07 did string-level `.replace()` on jsonb content and saved the result as a top-level JSON string instead of a native array. Astro renderer's `Array.isArray()` returned false → empty render. (3 of the 16 — `/accessibility/` ×3 — broken earlier on 2026-05-01 via a separate manual session that hit the same anti-pattern.)
