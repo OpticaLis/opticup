@@ -1,6 +1,6 @@
 # Site Overseer — HANDOFF
 
-**Last updated:** 2026-05-07
+**Last updated:** 2026-05-08
 **Mode:** **Mode B** (post-discovery — SITE_MAP.md baseline now exists)
 **Site Overseer state:** Ready to receive targeted Mode-B audits
 
@@ -63,6 +63,8 @@ Site Overseer formally transitions Mode A → Mode B with this HANDOFF.
 | REC-SITE-012 | MEDIUM | WP-drift sweep beyond phone+email — pre-2024 dates, "online checkout" verbiage in legal pages, third-party shortcodes. May benefit from Israeli consumer-law attorney engagement, not a Claude SPEC. | Daniel decides scope. |
 | REC-SITE-013 | MEDIUM | Run Lighthouse + axe-core on the 5 anchor pages (`/`, `/supersale/`, `/products/`, `/brands/`, `/about/`); install tooling under `__LAUNCH_PLAN_DRAFT__/site-overseer/tools/`; archive scores; nightly cron. | 1 SPEC, tooling-bootstrap + scheduled task. |
 | REC-SITE-014 | LOW | Cleanup: delete orphan `poweredBy` i18n keys (3 langs), delete `_deprecated/` folder if not already removed in REC-SITE-002, delete `/test-shortcodes/` archived rows or have route-handler skip them. | 1 SPEC, cosmetic, 30 min. |
+| REC-SITE-015 | HIGH | **Phase A done 2026-05-08.** Legacy WP subdomains `ru.` + `en.` crawled, mapped, CSVs ready (`modules/Module 3 - Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/redirects/`). 3,219 unique source URLs → bulk-mapped to `www.prizma-optic.co.il/{lang}/...`. 20 high-confidence page overrides via slug-match. **Phase B (Daniel's manual cPanel import) pending.** Phase C (WP decomm ~30 days post-Google-reindex) deferred. | Phase B: 30-60 min Daniel manual. Phase C: 1 SPEC, 1-2 hours. |
+| REC-SITE-016 | LOW | Astro slug `/multi/` is too short; substring-matched `/multifocal/` (ru) and `/multifocal-glasses/` (en) WP slugs but is risky for future SEO collisions. Consider rename to `/multifocal-glasses/` with self-redirect — but only if SEO benefit is measured to outweigh the rename cost. | Investigation SPEC. Source: M3_WP_SUBDOMAINS_REDIRECT/FINDINGS.md M3-SEO-03. |
 
 ---
 
@@ -73,6 +75,7 @@ Site Overseer formally transitions Mode A → Mode B with this HANDOFF.
 | 2026-05-06 | "תתקן למספר 053-3645404 דחוף ותעשה דיפלוי" | UPDATE tenants SET business_phone='053-3645404' WHERE slug='prizma'. | Storefront verified correct on top-bar phone CTA. |
 | 2026-05-06 | Drafted SPEC `M4_HARDCODED_DEMO_PHONE_CLEANUP` | Replaced decorative comment + corrected migration + LEARNINGS L-PROJECT-001. | Closed 2026-05-07 by opticup-executor. |
 | 2026-05-06 | Drafted SPEC `M3_SITE_COMPREHENSIVE_REVIEW` for Mode A discovery | Site Overseer Foreman authored full audit SPEC. | This SPEC executed 2026-05-07 by opticup-executor — see audit deliverables. |
+| 2026-05-08 | "Include all 3,221 with bulk mapping" — scope expansion in M3_WP_SUBDOMAINS_REDIRECT after URL count drift from 1,675 → 3,223 | Phase A executor crawled all 3,223 URLs across 9 sitemap types per subdomain; bulk-mapped extra 1,548 taxonomy/archive URLs via existing rules. | CSVs delivered (1,609 ru + 1,610 en) ready for Daniel's Phase B cPanel import. LEARNINGS L-SITE-001 added (subdomain enumeration rule). |
 
 ---
 
