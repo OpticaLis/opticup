@@ -24,6 +24,15 @@
 
 ## Entries
 
+### 2026-05-08 — tenant-name-fallback-saas (M3_TENANT_NAME_FALLBACK_SAAS)
+
+- **Context:** REC-SITE-006 — 13 hardcoded `?? 'Optic Up'` fallbacks across storefront pages. SPEC §1/§2/§5-E specified 13 .astro files; Step 0 found 28 (10 HE root + 9 en + 9 ru). Same recurring Foreman pre-flight gap as M3_PHONE_434_LEGACY_CLEANUP and M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL — third recurrence in 4 days.
+- **Question:** Continue with all 28 (intent-vs-literal — same fix applies uniformly), stick to the 13 in SPEC §2 (would leave 15 still broken), or abort & re-author?
+- **Decision:** "Continue with all 28 (Recommended)." (Daniel via tool prompt during executor session.)
+- **Rationale:** Same pattern as previous SPEC-internal contradictions; SaaS-clean fix applies uniformly to all 28; partial fix would necessitate a follow-up SPEC. Foreman SKILL needs cited-count pre-flight (executor proposal §8 Proposal 1 in EXECUTION_REPORT).
+- **Operational action:** Built `scripts/generate-tenant-fallback-map.mjs` (queries v_public_tenant + v_storefront_config), `src/data/tenant-fallback-map.json` (3 keys: _default + prizma + prizma-optic.co.il), `resolveTenantNameFallback(request, locale)` export in tenant.ts, modified 28 .astro files. `npm run build` succeeded. 11/11 unit tests on the resolver PASS. Optic Up leak check CLEAN. Storefront commit `a8c2acd` pushed to develop and merged to main by Daniel via GitHub UI; Vercel auto-deploy triggered.
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_TENANT_NAME_FALLBACK_SAAS/`; storefront commit `a8c2acd`; REC-SITE-006.
+
 ### 2026-05-08 — phone-434-legacy-cleanup-closure (M3_PHONE_434_LEGACY_CLEANUP)
 
 - **Context:** SPEC `M3_PHONE_434_LEGACY_CLEANUP` authored 2026-05-08 to close REC-SITE-002 file-level half by deleting 3 storefront files containing the defunct `053-434-7265`. Step 0 verification revealed all 3 files were ALREADY DELETED by storefront commit `a4723b5` (2026-05-07, by Daniel) — the same commit that did the M3_PHONE_TEMPLATING_AND_CLEANUP CMS-row work. SPEC was authored on stale state. Live homepage already 0 occurrences of `053-434-7265`.
