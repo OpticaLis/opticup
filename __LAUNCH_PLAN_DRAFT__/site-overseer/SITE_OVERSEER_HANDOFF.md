@@ -1,8 +1,8 @@
 # Site Overseer — HANDOFF
 
-**Last updated:** 2026-05-08
-**Mode:** **Mode B** (post-discovery — SITE_MAP.md baseline now exists)
-**Site Overseer state:** Ready to receive targeted Mode-B audits
+**Last updated:** 2026-05-08 (after M3_WP_BLOG_POST_MAPPING close)
+**Mode:** **Mode B** (post-discovery — SITE_MAP.md + SITE_OVERSEER_SKILL.md v0.2 baseline exists)
+**Site Overseer state:** Ready to receive targeted Mode-B audits; knowledge map now loaded so structure questions resolve in <2 min via lookup vs ~20 min re-discovery
 
 ---
 
@@ -63,7 +63,7 @@ Site Overseer formally transitions Mode A → Mode B with this HANDOFF.
 | REC-SITE-012 | MEDIUM | WP-drift sweep beyond phone+email — pre-2024 dates, "online checkout" verbiage in legal pages, third-party shortcodes. May benefit from Israeli consumer-law attorney engagement, not a Claude SPEC. | Daniel decides scope. |
 | REC-SITE-013 | MEDIUM | Run Lighthouse + axe-core on the 5 anchor pages (`/`, `/supersale/`, `/products/`, `/brands/`, `/about/`); install tooling under `__LAUNCH_PLAN_DRAFT__/site-overseer/tools/`; archive scores; nightly cron. | 1 SPEC, tooling-bootstrap + scheduled task. |
 | REC-SITE-014 | LOW | Cleanup: delete orphan `poweredBy` i18n keys (3 langs), delete `_deprecated/` folder if not already removed in REC-SITE-002, delete `/test-shortcodes/` archived rows or have route-handler skip them. | 1 SPEC, cosmetic, 30 min. |
-| REC-SITE-015 | HIGH | **Phase A done 2026-05-08.** Legacy WP subdomains `ru.` + `en.` crawled, mapped, CSVs ready (`modules/Module 3 - Storefront/docs/specs/M3_WP_SUBDOMAINS_REDIRECT/redirects/`). 3,219 unique source URLs → bulk-mapped to `www.prizma-optic.co.il/{lang}/...`. 20 high-confidence page overrides via slug-match. **Phase B (Daniel's manual cPanel import) pending.** Phase C (WP decomm ~30 days post-Google-reindex) deferred. | Phase B: 30-60 min Daniel manual. Phase C: 1 SPEC, 1-2 hours. |
+| REC-SITE-015 | HIGH | **CLOSED 2026-05-08.** Phase A done; Phase B executed live for both subdomains via REST API; blog-post titles fuzzy-matched to specific Astro destinations (M3_WP_BLOG_POST_MAPPING). Final state: ru. and en. each have 1,610 live 301 redirects, 42-43 of them per-post specific (HIGH or LOW confidence) with `/blog/` index fallback for the ~3 unmatched. Phase C (WP decomm ~30 days post-Google-reindex) deferred. | Phase C: 1 SPEC, 1-2 hours. |
 | REC-SITE-016 | LOW | Astro slug `/multi/` is too short; substring-matched `/multifocal/` (ru) and `/multifocal-glasses/` (en) WP slugs but is risky for future SEO collisions. Consider rename to `/multifocal-glasses/` with self-redirect — but only if SEO benefit is measured to outweigh the rename cost. | Investigation SPEC. Source: M3_WP_SUBDOMAINS_REDIRECT/FINDINGS.md M3-SEO-03. |
 
 ---
@@ -76,6 +76,7 @@ Site Overseer formally transitions Mode A → Mode B with this HANDOFF.
 | 2026-05-06 | Drafted SPEC `M4_HARDCODED_DEMO_PHONE_CLEANUP` | Replaced decorative comment + corrected migration + LEARNINGS L-PROJECT-001. | Closed 2026-05-07 by opticup-executor. |
 | 2026-05-06 | Drafted SPEC `M3_SITE_COMPREHENSIVE_REVIEW` for Mode A discovery | Site Overseer Foreman authored full audit SPEC. | This SPEC executed 2026-05-07 by opticup-executor — see audit deliverables. |
 | 2026-05-08 | "Include all 3,221 with bulk mapping" — scope expansion in M3_WP_SUBDOMAINS_REDIRECT after URL count drift from 1,675 → 3,223 | Phase A executor crawled all 3,223 URLs across 9 sitemap types per subdomain; bulk-mapped extra 1,548 taxonomy/archive URLs via existing rules. | CSVs delivered (1,609 ru + 1,610 en) ready for Daniel's Phase B cPanel import. LEARNINGS L-SITE-001 added (subdomain enumeration rule). |
+| 2026-05-08 | M3_WP_BLOG_POST_MAPPING — title-match per-post redirects + Site Overseer skill knowledge map | Executor: 42 ru + 43 en blog posts matched to Astro slugs (HIGH 71 / LOW 10 / NONE 4). Live mutations via Redirection plugin REST API: ru. surgical replace, en. full import (was 0 redirects). 5/5 ru + 5/5 en spot-check passes. SITE_OVERSEER_SKILL.md v0.2 created. | REC-SITE-015 fully closed; Phase C remains deferred. |
 
 ---
 
