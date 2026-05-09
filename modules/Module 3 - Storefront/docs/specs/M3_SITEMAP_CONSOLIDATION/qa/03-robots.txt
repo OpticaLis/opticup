@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Block internal/system paths
+Disallow: /api/
+Disallow: /search
+
+
+Disallow: /ru/search
+Disallow: /en/search
+# Sitemap
+Sitemap: https://www.prizma-optic.co.il/sitemap-dynamic.xml

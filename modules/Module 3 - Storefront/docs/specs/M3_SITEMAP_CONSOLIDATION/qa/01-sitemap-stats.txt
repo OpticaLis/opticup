@@ -1,0 +1,19 @@
+=== curl: sitemap-dynamic.xml head + counts ===
+HTTP/1.1 200 OK
+Age: 0
+Cache-Control: public, max-age=0, must-revalidate
+
+Total <loc>: 364
+Total <xhtml:link>: 986
+Domain check (should be 1):
+https://www.prizma-optic.co.il
+
+=== branch URL grep ===
+href="https://www.prizma-optic.co.il/branches/"
+href="https://www.prizma-optic.co.il/en/branches/"
+href="https://www.prizma-optic.co.il/ru/branches/"
+href="https://www.prizma-optic.co.il/branches/"
+href="https://www.prizma-optic.co.il/branches/ashkelon/"
+href="https://www.prizma-optic.co.il/en/branches/ashkelon/"
+href="https://www.prizma-optic.co.il/ru/branches/ashkelon/"
+href="https://www.prizma-optic.co.il/branches/ashkelon/"

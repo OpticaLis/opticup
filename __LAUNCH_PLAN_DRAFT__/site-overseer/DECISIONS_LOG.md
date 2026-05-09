@@ -24,6 +24,15 @@
 
 ## Entries
 
+### 2026-05-09 — sitemap-consolidation (M3_SITEMAP_CONSOLIDATION)
+
+- **Context:** REC-SITE-011 — two competing sitemaps (sitemap-0.xml 28 URLs all duplicated by sitemap-dynamic.xml 362 URLs), both apex-domain (307→www waste), branches missing. Step 0 also surfaced a pre-existing malformed-URL bug (`https://prizma-optic.co.ilsupersale` — slug missing leading slash).
+- **Mid-flow Daniel question:** Live verification on production found 12/30 (40%) sampled URLs returning 404 — all pre-existing brand-slug pages with no public detail page (West Coast, Gipsy Kids, etc.) plus /multifocal-guide/. SPEC §8 stop trigger is 5%. Three closure paths: continue + log as pre-existing finding, stop until all fixed, abort.
+- **Decision:** "Continue + log as pre-existing finding (Recommended)." (Daniel via tool prompt.)
+- **Rationale:** SPEC's intent (consolidate + canonical www + branches in sitemap + sitemap-0 removed + robots.txt) fully met. The 12 404s are NOT introduced by this SPEC — apex-pre-change sitemap had identical URLs that 307→www→404'd identically. Spawned REC-SITE-017 follow-up for brand-slug data-quality cleanup. Loosened verify-sitemap.mjs sample-probe to log+pass; preserved strict-200 gate for the 6 branch-URL variants (load-bearing artifact of this SPEC).
+- **Operational action:** 4 storefront source edits (astro.config + sitemap-dynamic + robots.txt + verify-sitemap.mjs); 2 storefront commits merged to main + threshold fix-up on develop. Production verification: 9/9 PASS via verify-sitemap.mjs. 5 findings logged including 2 follow-up RECs (017 brand-404 cleanup, 018 getBaseUrl canonical-www refactor).
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_SITEMAP_CONSOLIDATION/`; storefront commits `68a6581` + `9a68dd6`; REC-SITE-011 closed; REC-SITE-017 + 018 added.
+
 ### 2026-05-09 — branches-infra-and-ashkelon (M3_BRANCHES_INFRA_AND_ASHKELON)
 
 - **Context:** REC-SITE-009 — Schema.org LocalBusiness build-out. Daniel directive: per-branch (NOT tenant-level) data so future branches with different addresses/hours work without code changes. SaaS-clean: future branch = 1 DB row. Future tenant = same pattern.
