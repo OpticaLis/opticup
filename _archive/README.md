@@ -8,6 +8,9 @@
 - `project-genesis/` — March 2026 era files (old `archive/`, `data/`, `---QA---/`)
 - `launch-plan-versions/` — historical MASTER_LIVE_PLAN versions (current truth: `/MASTER_ROADMAP.md`)
 - `session-outputs/` — historical session prompts/handoffs from `outputs/`
+- `access-audit/` — historical OpticPlus DB audits (input to module designs; closed 2026-05-09 by MODULES_HOME_UNIFICATION SPEC)
+- `supervisor-system/` — legacy session notes from pre-skill era (closed 2026-05-09)
+- `spec-history/` — closed cross-cutting SPEC artifacts (one subfolder per SPEC, e.g. `PROJECT_STRUCTURE_CLEANUP/`, `MODULES_HOME_UNIFICATION/`)
 
 ## How to add to archive
 
