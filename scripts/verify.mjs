@@ -70,6 +70,19 @@ if (verbose) {
 }
 
 // --- Load checks ---
+// Each .mjs in scripts/checks/ is auto-loaded as a check module.
+// Contract: `export default async function(files, opts) → { violations, warnings }`.
+//
+// Available checks (auto-discovered):
+//   - file-size              — Iron Rule 12 (file size limits, 350-line hard max)
+//   - null-bytes             — Cowork-VM-style corruption detection
+//   - rule-14-tenant-id      — Iron Rule 14 (tenant_id NOT NULL on every table)
+//   - rule-15-rls            — Iron Rule 15 (canonical RLS policies on every table)
+//   - rule-18-unique-tenant  — Iron Rule 18 (UNIQUE includes tenant_id)
+//   - rule-21-orphans        — Iron Rule 21 (no duplicate function names)
+//   - rule-23-secrets        — Iron Rule 23 (no secrets in code/docs)
+//   - check-root-discipline  — Root Discipline Rule (CLAUDE.md §0.5) — added 2026-05-09 by STRUCTURE_PROTECTIONS SPEC
+//                              Detects newly-added root-level files/dirs not on scripts/checks/root-allowlist.json.
 let checkEntries;
 try {
   checkEntries = await readdir(CHECKS_DIR);
