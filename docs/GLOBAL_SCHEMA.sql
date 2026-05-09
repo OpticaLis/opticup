@@ -2,7 +2,7 @@
 -- GLOBAL SCHEMA — Optic Up
 -- Reconciled from live DB: 2026-04-11 (Phase 3A Part 2)
 -- Sources: modules/Module 3.1 - Project Reconstruction/db-audit/
---            01-tables.md     — 84 base tables
+--            01-tables.md     — 84 base tables (snapshot 2026-04-11; live count 113 as of 2026-05-09)
 --            02-columns.md    — column-level detail (base tables + view columns)
 --            03-views.md      — 24 views with full definitions
 --            04-policies.md   — 162 RLS policies
@@ -65,7 +65,7 @@
 
 
 -- ============================================================
--- TABLES (84 total, grouped by owning module)
+-- TABLES (113 total live; 84 in initial reconstruction snapshot — see db-audit/01-tables.md, grouped by owning module)
 -- Full column lists live in db-audit/02-columns.md.
 -- Every table has rls_enabled=true (see db-audit/01-tables.md).
 -- ============================================================
