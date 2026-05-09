@@ -28,6 +28,9 @@ Format for full entries (in `decisions/<MODULE>.md`): situation → my recommend
 | 5 | 2026-05-09 | Project Structure Cleanup SPEC executed (11 commits) | Root Discipline Rule installed in CLAUDE.md §0.5; 4 archive locations consolidated; Module 1 duplicate resolved; per-tenant chat onboarding docs archived. |
 | 6 | 2026-05-09 | SPEC's pre-flight caught 5 author bugs | Executor's pre-flight check found 5 SPEC defects (data/+---QA--- omitted, git mv vs mv, MASTER_LIVE_PLAN modification at risk, Pre-SPEC commits needed, JWT in archived files). All resolved inline. **Author was Cowork; executor was Claude Code with full repo state visibility.** |
 | 7 | 2026-05-09 | Module Close Ceremony performed for Project Structure Cleanup | Lessons P27 (sketch-the-feature) + P28 (executor pre-flight beats author intent) promoted to SKILL.md. |
+| 8 | 2026-05-09 | Daniel question: why are in-design modules in `__LAUNCH_PLAN_DRAFT__/` when built modules are in `modules/`? | Author-blindspot — historical accident I never noticed. Fixed by MODULES_HOME_UNIFICATION SPEC. **Pattern: Daniel asks structural questions from a clean-thinker perspective; my job is to listen, not defend the status quo.** |
+| 9 | 2026-05-09 | MODULES_HOME_UNIFICATION SPEC executed (12 commits) | One Home Per Module rule established. `__LAUNCH_PLAN_DRAFT__/` retired entirely. 8 in-design module Briefs moved to `modules/Module N - Name/architecture-brief/`. New `roles/` at repo root for operational personas. 99 files updated for path-reference rewriting. |
+| 10 | 2026-05-09 | Module Close Ceremony for MODULES_HOME_UNIFICATION | Lessons P29 (sweep-references pre-flight) + P30 ([retired-YYYY-MM-DD:NAME] marker for closed-SPEC narrative refs) promoted to SKILL.md. F1/F2/F3 also documented for `opticup-executor` SKILL update (separate session). |
 
 ---
 
@@ -158,6 +161,7 @@ When a module's Architecture Brief is sealed:
 **Last Module Close ceremonies performed:**
 - **M12 — 2026-05-09** — promoted P24, P25, P26 to SKILL.md.
 - **Project Structure Cleanup — 2026-05-09** — promoted P27 (sketch-the-feature) + P28 (executor-pre-flight) to SKILL.md.
+- **MODULES_HOME_UNIFICATION — 2026-05-09** — promoted P29 (sweep-references pre-flight) + P30 (retired-marker policy) to SKILL.md.
 
 **Modules pending Module Close Ceremony retroactively** (skipped at the time):
 - M5, M6, M7, M8, M11 — these closed without ceremony. Catch-up sweep done 2026-05-09 (this index).

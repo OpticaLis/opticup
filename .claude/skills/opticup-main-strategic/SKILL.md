@@ -464,6 +464,42 @@ When designing a feature that lives inside a larger context (a tab inside a cust
 
 **The rule:** "What is the smallest meaningful unit that conveys this change?" That's the unit you sketch. Provide a one-line orientation note ("📍 Lives inside <host>") if location ambiguity could exist; otherwise let the unit speak for itself.
 
+### P29 — When a SPEC includes a "sweep references" commit, pre-flight MUST count actual reference patterns.
+
+**Promoted to skill 2026-05-09 (MODULES_HOME_UNIFICATION close).** Direct extension of P28.
+
+When a SPEC includes any commit whose job is "rewrite all references from OLD to NEW", the SPEC author cannot reliably enumerate every reference style used across the codebase. References evolve organically — some files use `OLD/foo/bar.md`, others use `OLD/foo.md` (skipping a folder level), others use just `OLD` as a concept. The author's enumerated substitution list will MISS some.
+
+**Rule for SPEC authoring:** Any SPEC with a "sweep references" commit MUST include a Pre-Flight directive: "Run `grep -rn 'OLD_PATTERN' . | sort -u` to enumerate ACTUAL patterns in use. Verify the SPEC's substitution list covers all observed patterns. If any pattern is uncovered, STOP and request SPEC amendment OR pre-authorize the executor to extend the substitution list with documented additions."
+
+**Rule for executor:** Don't trust the SPEC's enumerated substitutions blindly. Always run the pre-flight grep, count files, and compare to SPEC's expected count. If 6 expected vs 111 actual (as happened in MODULES_HOME_UNIFICATION) → that's a P28 author-blindspot moment. Stop, report, get authorization, then proceed.
+
+**Why this matters more than P28 alone:** P28 says "executor catches author bugs." P29 specifies WHERE in the SPEC pattern to do the catching: the sweep-references commit is the highest-risk type of structural change because the author CAN'T have full visibility into how every file in the codebase references the moved entity.
+
+### P30 — Closed-historical-SPEC narrative references use a `[retired-YYYY-MM-DD:NAME]` marker.
+
+**Promoted to skill 2026-05-09 (MODULES_HOME_UNIFICATION close).** Originated from F3 of that SPEC.
+
+When a structural SPEC retires a directory or major file, references to that retired entity in CLOSED historical SPECs (EXECUTION_REPORT, FINDINGS, FOREMAN_REVIEW from past phases) are awkward to handle:
+- **Direct path replacement** (`OLD_PATH/foo` → `NEW_PATH/foo`) works for actual file-path references.
+- **Narrative/conceptual references** ("the entire `OLD_PATH/` tree was scattered WIP") break grammar if path-replaced (the new state has multiple destinations, not one).
+
+**The policy:** for narrative references in closed historical SPECs, rewrite the literal name to `[retired-YYYY-MM-DD:OLD_NAME]`. Example:
+- BEFORE: "files were scattered across `__LAUNCH_PLAN_DRAFT__/`"
+- AFTER: "files were scattered across `[retired-2026-05-09:LAUNCH_PLAN_DRAFT]/`"
+
+**Why the marker works:**
+- Removes the literal old name → passes the "clean grep" success criterion.
+- Carries the retirement date → preserves historical accuracy ("at the time of this SPEC, the folder existed; it was retired on date X").
+- Bracket-styled → visually distinct from real paths (won't be confused with a live location).
+- Reads naturally in narrative contexts.
+
+**When NOT to use the marker:** for direct path references (`see foo.md at OLD_PATH/x/y/`) where the file actually moved to a known new location — those are simple path-replacements, not narrative references.
+
+**The decision-tree:** Is the reference a path-string (machine-followable) or a concept-mention (narrative)?
+- Path-string → rewrite to new location.
+- Concept-mention → use `[retired-YYYY-MM-DD:NAME]` marker.
+
 ### P28 — Executor pre-flight catches author blindspots. Trust it, don't bypass it.
 
 **Promoted to skill 2026-05-09 (Project Structure Cleanup close).** Single instance but transformational — the Project Cleanup SPEC executor caught **5 author bugs** in pre-flight that would have caused real damage if the SPEC ran as written.
