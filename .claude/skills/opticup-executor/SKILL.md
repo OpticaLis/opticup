@@ -54,6 +54,16 @@ Before touching any file, do these steps. No exceptions.
    (never a raw filesystem walk), so autocrlf does not produce false positives.
    Reference: `scripts/verify-tree-integrity.mjs`.
 
+4b. **Browser-QA readiness check.** Before editing any file, scan the SPEC's `§10 QA Steps` and `§3 Success Criteria` for keywords: "open localhost", "browser", "console", "click", "DOM", "Chrome".
+
+   - **If present and Chrome not running with `--remote-debugging-port=9222`:** include this in the readiness sentence: "Browser-QA required by SPEC §X.Y but Chrome debug-port not detected — please start Chrome with `--remote-debugging-port=9222` before I proceed past commit." Continue the SPEC up to commit, then surface the readiness gap before post-deploy verification.
+   - **If present and Chrome IS running with debug port:** confirm in the readiness sentence: "Chrome debug-port detected; browser QA enabled."
+   - **If absent (HTTP/SQL/script-based QA only):** state in the readiness sentence: "SPEC's QA is non-browser; Chrome readiness check skipped."
+
+   This converts a mid-execution surprise into a session-start clarification.
+
+   (Source: improvement #1 from M3_STUDIO_TRANSLATIONS_BRAND_FILTER FOREMAN_REVIEW, 2026-05-09. Symmetric to opticup-strategic improvement A2 in SPEC_TEMPLATE §10.)
+
 5. **Read CLAUDE.md** — the constitution for this repo. Contains the Iron Rules.
 
 5.5. **Skill-reference file lookup rule (E1 — added 2026-04-16):** When a SPEC
@@ -178,6 +188,18 @@ The mechanical workaround is well-established (precedents: M4 P12 `info`/`phone`
 
 Applied to opticup-executor via FOREMAN_REVIEW for ATOMIC_CONFIRMATION_FLOW (3rd-cycle trigger from prior reviews).
 
+#### Build-side-effect file restoration
+
+After running build/codegen scripts (e.g. `npm run build`, generators, type emitters), run `git status --short` and identify side-effect files. Apply the following decision:
+
+1. **Are they listed in SPEC §8 as expected regeneration?** → Include in commit.
+2. **Are they unrelated to the SPEC's scope?** → `git checkout <file>` to restore BEFORE staging. Log as finding (TECH_DEBT) so the drift is visible without expanding the SPEC's scope.
+3. **Unknown:** default to restore + log as finding. Never commit unintended side-effect drift just because the build produced it.
+
+The SPEC author SHOULD pre-declare expected side-effects per the SPEC_TEMPLATE §8 "Build-side-effect file expectations" sub-section. If they didn't, the default rules above apply.
+
+(Source: improvement #2 from M3_SITEMAP_BRAND_404_CLEANUP FOREMAN_REVIEW, 2026-05-09. Symmetric to opticup-strategic improvement A2 in SPEC_TEMPLATE §8.)
+
 ### File discipline:
 - Target 300 lines per file, max 350
 - Split by logical separation, not arbitrary line count
@@ -266,6 +288,17 @@ green-light to proceed. See First Action step 4a for interpretation.
 4. Read `FOREMAN_REVIEW.md` from the 3 most recent SPECs in the SAME module
    (`ls ../` on the specs folder) — harvest executor-improvement proposals
    relevant to this SPEC. Apply them to your execution plan.
+
+### Step 1.4 — Cross-section tension resolution
+
+When two SPEC sections appear to conflict (e.g. a stop-trigger in §4 vs an explicit out-of-scope decision in §7), apply this tie-breaker:
+
+- **The section that explicitly resolves the question wins** over the section that flags it as a generic risk.
+- The out-of-scope decision (§7) is the SPEC author's stated intent; the stop-trigger (§4) is a guardrail. Read both, identify which is intent and which is guardrail, and document the resolution in EXECUTION_REPORT §4.
+- **Special case for subset relationships:** if §7 names a subset relationship explicitly (per the SPEC_TEMPLATE convention), the SPEC predicate intentionally emits fewer items than a related consumer accepts. SQL pre-flight should confirm the predicate is a STRICT subset (i.e. `spec_emits_but_404s = 0`) before proceeding. Strict-subset under-emit is safe; superset over-emit is the case the §4 stop-trigger is designed for.
+- **If the conflict is genuine** (both are intent statements with no clear hierarchy), STOP and ask Daniel.
+
+(Source: improvement #1 from M3_SITEMAP_BRAND_404_CLEANUP FOREMAN_REVIEW, 2026-05-09.)
 
 ### Step 1.5 — DB Pre-Flight Check (MANDATORY before any DDL or schema-touching work)
 
