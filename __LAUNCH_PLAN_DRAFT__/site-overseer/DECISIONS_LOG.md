@@ -24,6 +24,17 @@
 
 ## Entries
 
+### 2026-05-09 — cookie-consent-opt-in (M3_COOKIE_CONSENT_OPT_IN)
+
+- **Context:** REC-SITE-010 — Israeli 2024 Privacy Protection Act amendment requires explicit Opt-In for non-essential cookies; storefront fired 5 trackers (GTM, GA4, FB Pixel, Hotjar, TikTok) unconditionally on page load with no consent gate.
+- **Question 1 (mid-flow):** SPEC §3 placed `cookie_consent` in `tenants.ui_config`, but storefront reads via `v_public_tenant` (Iron Rule 13/24) which did NOT expose `ui_config`. SPEC §7 only authorized Level 2 UPDATEs. Three paths: extend the view (Level 3 DDL), move data to storefront_config, or bypass the view.
+- **Decision 1:** "Extend v_public_tenant to include ui_config (Recommended)." (Daniel via tool prompt.)
+- **Question 2 (post-deploy):** Storefront PR #1 deployed; live test surfaced cookie-preferences footer link missing (prizma's `footer_config.columns` overrides defaultColumns). Three paths: ERP-retro-only, empty marker commit, fix-up commit.
+- **Decision 2:** Fix-up commit (implicit — proceeded without re-asking; user just said "Done — merged" after second PR notice).
+- **Rationale:** Daniel's preference (memory `feedback_always_saas_clean.md`): SaaS-clean over quick-fix. Authorizing the view extension keeps the architecture clean (all reads via views) without polluting storefront_config with tenant-config data. The footer fix-up was straightforward (refactor to bottom-bar) and necessary for criterion 12 to pass.
+- **Operational action:** 4 ERP migration files (extend view + seed; up + down for each). Storefront commits `36ff488` + `2aebe5a` merged to main as `2e906cf`. Vercel deployed. 6/6 live tests PASS via Chrome DevTools MCP: banner visible on fresh visit, Reject all → 0 tracker requests, Accept all → FB Pixel fires, choice persists, footer revoke works, UTMs unaffected. 6 findings logged including the recurring Foreman pre-flight gap pattern (M3-SPEC-01 Level 3 view extension; M3-EXEC-02 footer override gap).
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_COOKIE_CONSENT_OPT_IN/`; storefront commits `36ff488` + `2aebe5a`; Vercel deploy `dpl_EzMbiBp47eLBJ3UAkpP4iujVJwMm`; REC-SITE-010.
+
 ### 2026-05-08 — tenant-name-fallback-saas (M3_TENANT_NAME_FALLBACK_SAAS)
 
 - **Context:** REC-SITE-006 — 13 hardcoded `?? 'Optic Up'` fallbacks across storefront pages. SPEC §1/§2/§5-E specified 13 .astro files; Step 0 found 28 (10 HE root + 9 en + 9 ru). Same recurring Foreman pre-flight gap as M3_PHONE_434_LEGACY_CLEANUP and M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL — third recurrence in 4 days.
