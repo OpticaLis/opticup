@@ -269,6 +269,38 @@ Block counts match (all 3 = 8), but block TYPES and ORDER diverge. R1 removed ti
 
 ---
 
+### #10 — 🟢 `tenant-fallback-map.json` drifts on every storefront build (M3-DEBT-12)
+
+**Where:** `opticup-storefront/src/data/tenant-fallback-map.json` (committed copy) vs `scripts/generate-tenant-fallback-map.mjs` (generator).
+
+**Why it's debt:** Running `npm run build` regenerates the JSON and produces a phantom modification — the generator now emits a `www.prizma-optic.co.il` key (canonical www) that's missing from the committed copy. Every developer who runs build sees `M src/data/tenant-fallback-map.json` in git status. Either gets committed accidentally to unrelated PRs or gets restored manually. CI also produces this drift on every build and discards it.
+
+**Why not fixed now:** 1-commit fix (run generator → commit fresh JSON), but doesn't justify a SPEC of its own. Bundle with other small drift items in a "post-cutover hygiene" SPEC.
+
+**Planned fix:** Run `node scripts/generate-tenant-fallback-map.mjs` and commit the regenerated file. Verify the consuming code (`resolveTenantNameFallback()` per M3_TENANT_NAME_FALLBACK_SAAS) handles both apex + www keys correctly before committing.
+
+**Effort:** ~5 min.
+
+**Source:** `modules/Module 3 - Storefront/docs/specs/M3_SITEMAP_BRAND_404_CLEANUP/FINDINGS.md` Finding M3-DEBT-12 (executor-discovered 2026-05-09).
+
+---
+
+### #11 — 🟢 `verify-sitemap.mjs` check #8 warn-only allowance is now stale (M3-OBS-01)
+
+**Where:** `opticup-storefront/scripts/verify-sitemap.mjs` lines ~108-126 (check #8, the existing 30-URL random-sample probe).
+
+**Why it's debt:** Check #8 was authored as warn-only because the prior data-quality issue (brand-block 404s) was tracked as a separate REC. After M3_SITEMAP_BRAND_404_CLEANUP shipped 2026-05-09, the post-deploy verify run reports `Sample probe: 30/30 returned 200 (0 pre-existing 404s logged)`. The "pre-existing data-quality issue" was entirely brand-block-driven and is now resolved. Check #8 could safely be tightened from warn-only to a strict gate, AND its inline comment is now misleading (mentions a problem that no longer exists).
+
+**Why not fixed now:** Wait for 2 weeks of continuous 30/30 to confirm zero residual non-brand 404s before tightening (data confidence). The new `brand404Probe()` (check #10) already covers brands strictly, so tightening check #8 is incremental hardening, not bug-fix urgency.
+
+**Planned fix:** After 2 weeks of continuous PASS: change `console.warn` → `throw new Error()` and update the inline comment to remove the "pre-existing data-quality issue" reference.
+
+**Effort:** ~5 min.
+
+**Source:** `modules/Module 3 - Storefront/docs/specs/M3_SITEMAP_BRAND_404_CLEANUP/FINDINGS.md` Finding M3-OBS-01 (executor-discovered 2026-05-09).
+
+---
+
 ## Resolved Debt
 
 ### #7 — 🟢 verify.mjs warnings exit policy inconsistent between ERP and Storefront ✅ RESOLVED

@@ -6,7 +6,7 @@
 >
 > **Scope:** Only **actionable tasks** that someone needs to do. NOT: ideas, future modules, completed work, observations.
 
-**Last updated:** 2026-05-09 (end-of-day Cowork session)
+**Last updated:** 2026-05-09 (Cowork session — overnight SPEC authored)
 
 ---
 
@@ -14,9 +14,8 @@
 
 | # | Task | Owner role | Estimated time | Why now |
 |---|---|---|---|---|
-| 1 | **Skills audit** — Claude Code reviews all 7 skills, returns report on structure / gaps / duplication. | Main Strategic + opticup-strategic executor | ~45 min | Daniel asked end-of-day 2026-05-09. Must run BEFORE building new role-specific skills. |
-| 2 | **GITIGNORE_CLEANUP SPEC** — fix 3 cleanup leftovers from POST_MERGE_QA: stray `-p/` directory, `.gitignore` line 34 duplicate `.claude/`, recursive Module 3 backups bloat. | Main Strategic → opticup-executor | ~30 min | All 3 are LOW severity but visible nuisance. Bundle into one SPEC. |
-| 3 | **M13 (Loyalty Club) — Architecture Brief** — next module in build sequence per MASTER_ROADMAP §2.5. Handoff already at `modules/Module 13 - Loyalty Club/architecture-brief/M13_HANDOFF.md`. | Main Strategic | ~2-3 hours | Critical-path to LIVE. Only M13 + M9 remain before Module Strategists begin SPEC authoring. |
+| 1 | **OVERNIGHT_HYGIENE_SWEEP_2026_05_09 — execute** — 16-item overnight autonomous run bundling Skills audit + GITIGNORE_CLEANUP + 9 Sentinel findings + 4 TECH_DEBT items + FOREMAN_REVIEW catch-up. SPEC + ACTIVATION_PROMPT ready at `modules/Module 4 - CRM/docs/specs/OVERNIGHT_HYGIENE_SWEEP_2026_05_09/`. | Daniel → opticup-executor (Claude Code, Windows desktop) | 8-12 hours | All 16 items are independent low-risk. Daniel directive 2026-05-09: skip-not-stop, sub-agents authorized, quality > speed. Run on Windows desktop (sibling-repo storefront mount needed for items 14-15). |
+| 2 | **M13 (Loyalty Club) — Architecture Brief** — next module in build sequence per MASTER_ROADMAP §2.5. Handoff already at `modules/Module 13 - Loyalty Club/architecture-brief/M13_HANDOFF.md`. | Main Strategic | ~2-3 hours | Critical-path to LIVE. Only M13 + M9 remain before Module Strategists begin SPEC authoring. NOT in overnight run — requires Daniel-in-the-loop strategic session. |
 
 ---
 
