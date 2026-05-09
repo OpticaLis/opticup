@@ -1,0 +1,8 @@
+PASS — 7 checks:
+  ✓ /branches/ lists ashkelon
+  ✓ /en/branches/ lists ashkelon
+  ✓ /ru/branches/ lists ashkelon
+  ✓ /branches/ashkelon/ has all expected fields
+  ✓ JSON-LD valid: type=OpticalStore, 10 hour entries, 4 images
+  ✓ 4 gallery images all 200
+  ✓ EN + RU detail pages render with valid JSON-LD

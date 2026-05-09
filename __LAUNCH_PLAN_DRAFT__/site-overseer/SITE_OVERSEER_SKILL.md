@@ -1,11 +1,11 @@
-# Site Overseer — SKILL knowledge map (v0.3)
+# Site Overseer — SKILL knowledge map (v0.4)
 
 > **Purpose:** Drop-in knowledge so future Site Overseer Mode B sessions can answer
 > common questions about the Optic Up storefront without re-discovering structure
 > each time. This file is loaded BEFORE running any Mode B audit.
 >
 > **Created:** 2026-05-08 during M3_WP_BLOG_POST_MAPPING execution.
-> **Version:** 0.3 — added Production Incident Pattern Library + jsonb pre-write checklist (M3_CMS_BLOCKS_RESTORE_AND_GUARDRAIL, 2026-05-08).
+> **Version:** 0.4 — added `tenant_branches` + `v_storefront_branches` to the table/view knowledge map (M3_BRANCHES_INFRA_AND_ASHKELON, 2026-05-09).
 > **Authority for canonical truth:** the live system (Supabase + Vercel + WP). When
 > this file disagrees with the live system, the live system wins — and this file
 > needs an update.
@@ -63,6 +63,7 @@ All under tenant_id-scoped RLS per Iron Rule 15. Live DB: `https://tsxrrxzmdxaen
 | `storefront_config` | Per-tenant UI / SaaS config | `tenant_id`, `key`, `value` (JSON) | Storefront via `v_storefront_config`. Common keys: `phone_general`, `phone_catalog`, `support_phone_display`, `whatsapp_phone_e164`, `business_phone`, `business_email`, `business_address`, `business_hours_*`, `social_*` |
 | `storefront_pages` | CMS-driven static pages | `tenant_id`, `lang`, `slug`, `title`, `blocks` (JSON), `status` | Astro page render via `v_storefront_pages`. Slugs include native-language paths like `/about/`, `/multifocal-guide/`, `/צרו-קשר/` |
 | `blog_posts` | Blog post content | `tenant_id`, `lang`, `slug`, `title`, `body` (rich) | Astro `/{lang}/blog/` index + `/{lang}/{slug}/` per-post pages. **Counts as of 2026-05-08:** he=59, en=58, ru=58. |
+| `tenant_branches` | Per-branch storefront data (M3_BRANCHES_INFRA_AND_ASHKELON, 2026-05-09) | `tenant_id`, `slug`, localized `name/street/city/region/intro` (he/en/ru), `phone`, `whatsapp_e164`, `latitude`, `longitude`, `hours` (jsonb array of `{day,opens,closes}`), `gallery` (jsonb array of proxy URLs), `google_business_url`, `waze_url`, `status`. CHECK: `hours`/`gallery` must be jsonb arrays. UNIQUE `(tenant_id, slug)`. Canonical 2-policy RLS. | Storefront `/branches/` index + `/branches/{slug}/` detail pages × 3 langs. Schema.org OpticalStore JSON-LD per branch. **Counts as of 2026-05-09:** prizma has 1 branch (`ashkelon`). |
 | `pending_sales` | Lead/conversion intake | (not storefront read; ERP write) | Used as canonical RLS reference (canonical RLS-with-JWT-claims pattern, see CLAUDE.md §5 Rule 15) |
 
 ## 5. Database — key views (storefront-readable)
@@ -75,6 +76,7 @@ Views are the public-read surface for the storefront. **Iron Rule 13: Storefront
 | `v_storefront_config` | UI config keys | `WHERE storefront_config.tenant_id=current_tenant` (via JWT claim) |
 | `v_storefront_pages` | Published CMS pages | `WHERE status='published'` |
 | `v_storefront_blog_posts` | Published blog posts | `WHERE status='published'` |
+| `v_storefront_branches` | Published, non-deleted branches per tenant (M3_BRANCHES_INFRA_AND_ASHKELON) | `WHERE status='published' AND is_deleted=false`, ORDER BY display_order. anon GRANT. |
 | `v_storefront_categories` | Active product categories | `WHERE is_active=true` |
 | `v_storefront_brands` | Active brands | similar |
 

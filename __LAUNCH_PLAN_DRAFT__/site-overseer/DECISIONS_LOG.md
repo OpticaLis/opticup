@@ -24,6 +24,15 @@
 
 ## Entries
 
+### 2026-05-09 — branches-infra-and-ashkelon (M3_BRANCHES_INFRA_AND_ASHKELON)
+
+- **Context:** REC-SITE-009 — Schema.org LocalBusiness build-out. Daniel directive: per-branch (NOT tenant-level) data so future branches with different addresses/hours work without code changes. SaaS-clean: future branch = 1 DB row. Future tenant = same pattern.
+- **Mid-flow Daniel question:** PR-merge confirmation (twice — initial commit `ae4a746` + fix-up commit `ae60b37`).
+- **Decision (combined):** Continue with all design + implementation; fix the one platform-config issue (vercel.json `/branches/` redirect) that surfaced via live verification.
+- **Rationale:** SPEC §11 anticipated this kind of pre-flight gap — the live verification step (verify-branches.mjs) caught it cleanly. Fix-up was 5-line removal + standard re-deploy cycle. Bottom-bar pattern for the footer "branches" link mirrors the cookie-prefs pattern from M3_COOKIE_CONSENT_OPT_IN — sidesteps the recurring `footer_config.columns` override issue.
+- **Operational action:** 3 DB migrations applied (schema + view + Ashkelon seed). 2 storefront commits merged to main. Production verification: 7/7 PASS via verify-branches.mjs. Schema.org JSON-LD saved to SPEC folder for Daniel's optional Rich Results Test paste-in. Site Overseer SKILL bumped to v0.4.
+- **Cross-refs:** `modules/Module 3 - Storefront/docs/specs/M3_BRANCHES_INFRA_AND_ASHKELON/`; storefront commits `ae4a746` + `ae60b37`; REC-SITE-009.
+
 ### 2026-05-09 — image-proxy-enforcement (M3_IMAGE_PROXY_ENFORCEMENT)
 
 - **Context:** REC-SITE-007 — Iron Rule 25 enforcement. Live homepage HTML emitted 3 direct `https://*.supabase.co/storage/...` URLs (all in `tenant-logos` bucket from 3 DB rows). Pre-flight inventory found `resolveStorageUrl()` already existed but had a passthrough bug for full http(s) URLs.
